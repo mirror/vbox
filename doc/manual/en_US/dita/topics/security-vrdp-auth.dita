@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="security-vrdp-auth">
+  <title>VRDP Remote Desktop Authentication</title>
+  
+  <body>
+    <p>
+          When using the Oracle VM VirtualBox Extension Pack provided by
+          Oracle for VRDP remote desktop support, you can optionally use
+          various methods to configure RDP authentication. The "null"
+          method is very insecure and should be avoided in a public
+          network. See <xref href="vbox-auth.dita#vbox-auth"/>.
+        </p>
+  </body>
+  
+</topic>

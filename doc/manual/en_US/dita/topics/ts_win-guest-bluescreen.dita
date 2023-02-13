@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_win-guest-bluescreen">
+  <title>Windows Bluescreens After Changing VM Configuration</title>
+  
+  <body>
+    <p>
+        Changing certain virtual machine settings can cause Windows
+        guests to fail during start up with a bluescreen. This may
+        happen if you change VM settings after installing Windows, or if
+        you copy a disk image with an already installed Windows to a
+        newly created VM which has settings that differ from the
+        original machine.
+      </p>
+    <p>
+        This applies in particular to the following settings:
+      </p>
+    <ul>
+      <li>
+        <p>
+            The ACPI and I/O APIC settings should never be changed after
+            installing Windows. Depending on the presence of these
+            hardware features, the Windows installation program chooses
+            special kernel and device driver versions and will fail to
+            startup should these hardware features be removed. Enabling
+            them for a Windows VM which was installed without them does
+            not cause any harm. However, Windows will not use these
+            features in this case.
+          </p>
+      </li>
+      <li>
+        <p>
+            Changing the storage controller hardware will cause bootup
+            failures as well. This might also apply to you if you copy a
+            disk image from an older version of Oracle VM VirtualBox to a new
+            virtual machine. The default subtype of IDE controller
+            hardware used by Oracle VM VirtualBox is PIIX4. Make sure that the
+            storage controller settings are identical.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="intro-starting-vm-first-time">
+  <title>Starting a New VM for the First Time</title>
+  
+  <body>
+    <p>
+        When you start a VM for the first time the OS installation
+        process is started automatically, using the ISO image file
+        specified in the <b outputclass="bold">Create Virtual
+        Machine</b> wizard.
+      </p>
+    <p>
+        Follow the onscreen instructions to install your OS.
+      </p>
+  </body>
+  
+</topic>

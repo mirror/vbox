@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="glossentry-com">
+  <title>COM</title>
+  <body>
+    <section>
+      <p>
+        Microsoft Component Object Model, a programming infrastructure for modular software. 
+        COM enables applications to provide application programming interfaces which can be 
+        accessed from various other programming languages and applications. 
+        Oracle VM VirtualBox makes use of COM both internally and externally to provide a 
+        comprehensive API to third party developers.
+      </p>
+    </section>
+  </body>
+</topic>

@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="intro-removing">
+  <title>Removing and Moving Virtual Machines</title>
+  
+  <body>
+    <p>
+      You can remove a VM from Oracle VM VirtualBox or move the VM and its
+      associated files, such as disk images, to another location on the
+      host.
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Removing a VM.</b> To remove a
+          VM, right-click on the VM in the VirtualBox Manager machine list and
+          select <b outputclass="bold">Remove</b>.
+        </p>
+        <p>
+          The confirmation dialog enables you to specify whether to only
+          remove the VM from the list of machines or to remove the files
+          associated with the VM.
+        </p>
+        <p>
+          Note that the <b outputclass="bold">Remove</b> menu
+          item is disabled while a VM is running.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Moving a VM.</b> To move a VM to
+          a new location on the host, right-click on the VM in the
+          VirtualBox Manager's machine list and select
+          <b outputclass="bold">Move</b>.
+        </p>
+        <p>
+          The file dialog prompts you to specify a new location for the
+          VM.
+        </p>
+        <p>
+          When you move a VM, Oracle VM VirtualBox configuration files are
+          updated automatically to use the new location on the host.
+        </p>
+        <p>
+          Note that the <b outputclass="bold">Move</b> menu item
+          is disabled while a VM is running.
+        </p>
+        <p>
+          You can also use the <userinput>VBoxManage movevm</userinput>
+          command to move a VM. See <xref href="man_VBoxManage-movevm.dita#vboxmanage-movevm"/>.
+        </p>
+      </li>
+    </ul>
+    <p>
+      For information about removing or moving a disk image file from
+      Oracle VM VirtualBox, see <xref href="virtual-media-manager.dita#virtual-media-manager"/>.
+    </p>
+  </body>
+  
+</topic>

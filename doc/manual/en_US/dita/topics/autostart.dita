@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="autostart">
+  <title>Starting Virtual Machines During System Boot</title>
+  
+  <body>
+    <p>
+      You can start VMs automatically during system boot on Linux,
+      Oracle Solaris, and macOS platforms for all users.
+    </p>
+  </body>
+</topic>

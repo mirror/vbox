@@ -1,0 +1,107 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxheadless">
+  <title>VBoxHeadless, the Remote Desktop Server</title>
+  
+  <body>
+    <p>
+        While any VM started from VirtualBox Manager is capable of running
+        virtual machines remotely, it is not convenient to have to run
+        the full GUI if you never want to have VMs displayed locally in
+        the first place. In particular, if you are running server
+        hardware whose only purpose is to host VMs, and all your VMs are
+        supposed to run remotely over VRDP, then it is pointless to have
+        a graphical user interface on the server at all. This is
+        especially true for Linux or Oracle Solaris hosts, as the
+        VirtualBox Manager comes with dependencies on the Qt and SDL libraries.
+        This is inconvenient if you would rather not have the X Window
+        system on your server at all.
+      </p>
+    <p>
+        Oracle VM VirtualBox therefore comes with a front-end called
+        <userinput>VBoxHeadless</userinput>, which produces no visible
+        output on the host at all, but still can optionally deliver VRDP
+        data. This front-end has no dependencies on the X Window system
+        on Linux and Oracle Solaris hosts.
+      </p>
+    <note>
+      <p>
+          In legacy releases of Oracle VM VirtualBox, the headless server was
+          called <userinput>VBoxVRDP</userinput>. For backwards
+          compatibility, the Oracle VM VirtualBox installation still includes
+          an executable with that name.
+        </p>
+    </note>
+    <p>
+        To start a virtual machine with <userinput>VBoxHeadless</userinput>,
+        you have the following options:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Use the <userinput>VBoxManage</userinput> command, as follows:
+          </p>
+        <pre xml:space="preserve">$ VBoxManage startvm <varname>VM-name</varname> --type headless</pre>
+        <p>
+            The <codeph>--type</codeph> option causes Oracle VM VirtualBox to
+            use <userinput>VBoxHeadless</userinput> as the front-end to the
+            internal virtualization engine, instead of the Qt front-end.
+          </p>
+      </li>
+      <li>
+        <p>
+            Use the <userinput>VBoxHeadless</userinput> command, as follows:
+          </p>
+        <pre xml:space="preserve">VBoxHeadless --startvm <varname>uuid</varname>|<varname>vmname</varname>
+                        </pre>
+        <p>
+            This way of starting the VM helps troubleshooting problems
+            reported by <userinput>VBoxManage startvm</userinput>, because
+            you can sometimes see more detailed error messages,
+            especially for early failures before the VM execution is
+            started. In normal situations <userinput>VBoxManage
+            startvm</userinput> is preferred, since it runs the VM
+            directly as a background process which has to be done
+            explicitly when directly starting with
+            <userinput>VBoxHeadless</userinput>. <!--The full documentation of
+            the command is in <xref href="man_vboxheadless.dita#man_vboxheadless"/>.-->
+          </p>
+      </li>
+      <li>
+        <p>
+            Start <userinput>VBoxHeadless</userinput> from VirtualBox Manager, by
+            pressing the Shift key when starting a virtual machine or by
+            selecting <b outputclass="bold">Headless Start</b>
+            from the <b outputclass="bold">Machine</b> menu.
+          </p>
+      </li>
+    </ul>
+    <p>
+        When you use the <userinput>VBoxHeadless</userinput> command to
+        start a VM, the VRDP server will be enabled according to the VM
+        configuration. You can override the VM's setting using
+        <codeph>--vrde</codeph> command line parameter. To enable the
+        VRDP server, start the VM as follows:
+      </p>
+    <pre xml:space="preserve">VBoxHeadless --startvm <varname>uuid</varname>|<varname>vmname</varname> --vrde on</pre>
+    <p>
+        To disable the VRDP server:
+      </p>
+    <pre xml:space="preserve">VBoxHeadless --startvm <varname>uuid</varname>|<varname>vmname</varname> --vrde off</pre>
+    <p>
+        To have the VRDP server enabled depending on the VM
+        configuration, as for other front-ends:
+      </p>
+    <pre xml:space="preserve">VBoxHeadless --startvm <varname>uuid</varname>|<varname>vmname</varname> --vrde config</pre>
+    <p>
+        This command is the same as the following:
+      </p>
+    <pre xml:space="preserve">VBoxHeadless --startvm <varname>uuid</varname>|<varname>vmname</varname>
+                  </pre>
+    <p>
+        If you start the VM with <userinput>VBoxManage startvm</userinput>
+        then the configuration settings of the VM are always used.
+      </p>
+  </body>
+  
+</topic>

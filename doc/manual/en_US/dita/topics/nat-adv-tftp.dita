@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="nat-adv-tftp">
+  <title>Configuring the Boot Server (Next Server) of a NAT Network Interface</title>
+  
+  <body>
+    <p>
+        For network booting in NAT mode, by default Oracle VM VirtualBox uses
+        a built-in TFTP server at the IP address 10.0.2.4. This default
+        behavior should work fine for typical remote-booting scenarios.
+        However, it is possible to change the boot server IP and the
+        location of the boot image with the following commands:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage modifyvm <varname>VM-name</varname> \
+--nattftpserver1 10.0.2.2
+$ VBoxManage modifyvm <varname>VM-name</varname> \
+--nattftpfile1 /srv/tftp/boot/MyPXEBoot.pxe</pre>
+  </body>
+  
+</topic>

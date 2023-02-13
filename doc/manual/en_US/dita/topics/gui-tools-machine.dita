@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="gui-tools-machine">
+  <title>Machine Tools</title>
+  
+  <body>
+    <p>
+          In the machine list in the left pane of the VirtualBox Manager window,
+          select a virtual machine.
+        </p>
+    <p>
+          Click the <b outputclass="bold">Menu</b> icon to the
+          right of the virtual machine name. The
+          <b outputclass="bold">Machine Tools</b> menu is
+          displayed.
+        </p>
+    <fig id="fig-machine-tools-menu">
+      <title>Machine Tools Menu</title>
+      <image href="images/machine-tools-menu.png" placement="break"/>
+    </fig>
+    <p>
+          A drop-down list enables you to select from the following
+          machine tools:
+        </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Details.</b> Displays the
+              Details pane for the selected virtual machine. See
+              <xref href="gui-details.dita#gui-details"/>.
+            </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Snapshots.</b> Displays the
+              <b outputclass="bold">Snapshots</b> tool. This tool
+              enables you to view and manage snapshots for the virtual
+              machine. See <xref href="snapshots.dita#snapshots"/>.
+            </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Logs.</b> Displays the
+              <b outputclass="bold">Log Viewer</b> tool. This
+              tool enables you to view and search system logs for the
+              virtual machine. See <xref href="log-viewer.dita#log-viewer"/>.
+            </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Activity.</b> Displays the
+              <b outputclass="bold">VM Activity</b> page of the
+              <b outputclass="bold">Session Information</b>
+              dialog. This dialog enables you to view and analyze
+              performance metrics for the virtual machine. See
+              <xref href="vm-info.dita#vm-info"/>.
+            </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">File Manager.</b> Displays
+              the <b outputclass="bold">Guest Control File
+              Manager</b> tool. This tool enables you to manage
+              files on the guest system. See
+              <xref href="guestadd-gc-file-manager.dita#guestadd-gc-file-manager"/>.
+            </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

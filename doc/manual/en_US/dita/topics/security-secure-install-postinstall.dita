@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="security-secure-install-postinstall">
+  <title>Post Installation Configuration</title>
+  
+  <body>
+    <p>
+        Normally there is no post installation configuration of
+        Oracle VM VirtualBox components required. However, on Oracle Solaris
+        and Linux hosts it is necessary to configure the proper
+        permissions for users executing VMs and who should be able to
+        access certain host resources. For instance, Linux users must be
+        member of the <i>vboxusers</i> group to be able to
+        pass USB devices to a guest. If a serial host interface should
+        be accessed from a VM, the proper permissions must be granted to
+        the user to be able to access that device. The same applies to
+        other resources like raw partitions, DVD/CD drives, and sound
+        devices.
+      </p>
+  </body>
+  
+</topic>

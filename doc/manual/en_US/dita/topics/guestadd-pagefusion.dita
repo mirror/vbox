@@ -1,0 +1,106 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestadd-pagefusion">
+  <title>Page Fusion</title>
+  
+  <body>
+    <p>
+        Whereas memory ballooning simply reduces the amount of RAM that
+        is available to a VM, Page Fusion works differently. It avoids
+        memory duplication between several similar running VMs.
+      </p>
+    <p>
+        In a server environment running several similar VMs on the same
+        host, lots of memory pages are identical. For example, if the
+        VMs are using identical operating systems. Oracle VM VirtualBox's Page
+        Fusion technology can efficiently identify these identical
+        memory pages and share them between multiple VMs.
+      </p>
+    <note>
+      <p>
+          Oracle VM VirtualBox supports Page Fusion only on 64-bit hosts, and
+          it is not supported on macOS hosts. Page Fusion currently
+          works only with Windows 2000 and later guests.
+        </p>
+    </note>
+    <p>
+        The more similar the VMs on a given host are, the more
+        efficiently Page Fusion can reduce the amount of host memory
+        that is in use. It therefore works best if all VMs on a host run
+        identical operating systems. Instead of having a complete copy
+        of each operating system in each VM, Page Fusion identifies the
+        identical memory pages in use by these operating systems and
+        eliminates the duplicates, sharing host memory between several
+        machines. This is called <i>deduplication</i>. If
+        a VM tries to modify a page that has been shared with other VMs,
+        a new page is allocated again for that VM with a copy of the
+        shared page. This is called <i>copy on write</i>.
+        All this is fully transparent to the virtual machine.
+      </p>
+    <p>
+        You may be familiar with this kind of memory overcommitment from
+        other hypervisor products, which call this feature
+        <i>page sharing</i> or <i>same page
+        merging</i>. However, Page Fusion differs significantly
+        from those other solutions, whose approaches have several
+        drawbacks:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Traditional hypervisors scan <i>all</i> guest
+            memory and compute checksums, also called hashes, for every
+            single memory page. Then, they look for pages with identical
+            hashes and compare the entire content of those pages. If two
+            pages produce the same hash, it is very likely that the
+            pages are identical in content. This process can take rather
+            long, especially if the system is not idling. As a result,
+            the additional memory only becomes available after a
+            significant amount of time, such as hours or sometimes days.
+            Even worse, this kind of page sharing algorithm generally
+            consumes significant CPU resources and increases the
+            virtualization overhead by 10 to 20%.
+          </p>
+        <p>
+            Page Fusion in Oracle VM VirtualBox uses logic in the
+            Oracle VM VirtualBox Guest Additions to quickly identify memory
+            cells that are most likely identical across VMs. It can
+            therefore achieve most of the possible savings of page
+            sharing almost immediately and with almost no overhead.
+          </p>
+      </li>
+      <li>
+        <p>
+            Page Fusion is also much less likely to be confused by
+            identical memory that it will eliminate, just to learn
+            seconds later that the memory will now change and having to
+            perform a highly expensive and often service-disrupting
+            reallocation.
+          </p>
+      </li>
+    </ul>
+    <p>
+        At this time, Page Fusion can only be controlled with
+        <userinput>VBoxManage</userinput>, and only while a VM is shut down.
+        To enable Page Fusion for a VM, use the following command:
+      </p>
+    <pre xml:space="preserve">VBoxManage modifyvm "VM name" --page-fusion on</pre>
+    <p>
+        You can observe Page Fusion operation using some metrics.
+        <codeph>RAM/VMM/Shared</codeph> shows the total amount of
+        fused pages, whereas the per-VM metric
+        <codeph>Guest/RAM/Usage/Shared</codeph> will return the amount
+        of fused memory for a given VM. See
+        <xref href="man_VBoxManage-metrics.dita#vboxmanage-metrics"/> for information on how to
+        query metrics.
+      </p>
+    <note>
+      <p>
+          Enabling Page Fusion might indirectly increase the chances for
+          malicious guests to successfully attack other VMs running on
+          the same host. See <xref href="pot-insecure.dita">Potentially Insecure Operations</xref>.
+        </p>
+    </note>
+  </body>
+  
+</topic>

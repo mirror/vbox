@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="hostpowertweaks">
+  <title>Handling of Host Power Management Events</title>
+  
+  <body>
+    <p>
+      Some host power management events are handled by Oracle VM VirtualBox.
+      The actual behavior depends on the platform:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Host Suspends.</b> This event is
+          generated when the host is about to suspend, that is, the host
+          saves the state to some non-volatile storage and powers off.
+        </p>
+        <p>
+          This event is currently only handled on Windows hosts and Mac
+          OS X hosts. When this event is generated, Oracle VM VirtualBox will
+          pause all running VMs.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Host Resumes.</b> This event is
+          generated when the host woke up from the suspended state.
+        </p>
+        <p>
+          This event is currently only handled on Windows hosts and Mac
+          OS X hosts. When this event is generated, Oracle VM VirtualBox will
+          resume all VMs which are where paused before.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Battery Low.</b> The battery
+          level reached a critical level, usually less than 5 percent
+          charged.
+        </p>
+        <p>
+          This event is currently only handled on Windows hosts and Mac
+          OS X hosts. When this event is generated, Oracle VM VirtualBox will
+          save the state and terminate all VMs in preparation of a
+          potential host powerdown.
+        </p>
+        <p>
+          The behavior can be configured. By executing the following
+          command, no VM is saved:
+        </p>
+        <pre xml:space="preserve">$ VBoxManage setextradata global "VBoxInternal2/SavestateOnBatteryLow" 0</pre>
+        <p>
+          This is a global setting as well as a per-VM setting. The
+          per-VM value has higher precedence than the global value. The
+          following command will save the state of all VMs but will not
+          save the state of VM "foo":
+        </p>
+        <pre xml:space="preserve">$ VBoxManage setextradata global "VBoxInternal2/SavestateOnBatteryLow" 1
+$ VBoxManage setextradata "foo" "VBoxInternal2/SavestateOnBatteryLow" 0</pre>
+        <p>
+          The first line is actually not required as by default the
+          savestate action is performed.
+        </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

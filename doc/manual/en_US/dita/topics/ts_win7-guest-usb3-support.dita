@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_win7-guest-usb3-support">
+  <title>No USB 3.0 Support in Windows 7 Guests</title>
+  
+  <body>
+    <p>
+        If a Windows 7 or Windows Server 2008 R2 guest is configured for
+        USB 3.0 (xHCI) support, the guest OS will not have any USB
+        support at all. This happens because Windows 7 predates USB 3.0
+        and therefore does not ship with any xHCI drivers. Microsoft
+        also does not offer any vendor-provided xHCI drivers through
+        Windows Update.
+      </p>
+    <p>
+        To solve this problem, it is necessary to download and install
+        the Intel xHCI driver in the guest. Intel offers the driver as
+        the USB 3.0 eXtensible Host Controller (xHCI) driver for Intel 7
+        Series/C216 chipsets.
+      </p>
+    <p>
+        Note that the driver only supports Windows 7 and Windows Server
+        2008 R2. The driver package includes support for both 32-bit and
+        64-bit OS variants.
+      </p>
+  </body>
+  
+</topic>

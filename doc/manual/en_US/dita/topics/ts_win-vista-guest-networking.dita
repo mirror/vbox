@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_win-vista-guest-networking">
+  <title>No Networking in Windows Vista Guests</title>
+  
+  <body>
+    <p>
+        With Windows Vista, Microsoft dropped support for the AMD PCNet
+        card that legacy versions of Oracle VM VirtualBox used to provide as
+        the default virtual network card. For Windows Vista guests,
+        Oracle VM VirtualBox now uses an Intel E1000 card by default.
+      </p>
+    <p>
+        If, for some reason, you still want to use the AMD card, you
+        need to download the PCNet driver from the AMD website. This
+        driver is available for 32-bit Windows only. You can transfer it
+        into the virtual machine using a shared folder. See
+        <xref href="sharedfolders.dita">Shared Folders</xref>.
+      </p>
+  </body>
+  
+</topic>

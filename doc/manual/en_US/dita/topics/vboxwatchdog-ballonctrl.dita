@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxwatchdog-ballonctrl">
+  <title>Memory Ballooning Control</title>
+  
+  <body>
+    <p>
+        The memory ballooning control inflates and deflates the memory
+        balloon of VMs based on the VMs free memory and the desired
+        maximum balloon size.
+      </p>
+    <p>
+        To set up the memory ballooning control the maximum ballooning
+        size a VM can reach needs to be set. This can be specified using
+        the command line, as follows:
+      </p>
+    <pre xml:space="preserve">--balloon-max &lt;Size in MB&gt;</pre>
+    <p>
+        Using a per-VM basis extradata value, as follows:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata &lt;VM-Name&gt; VBoxInternal2/Watchdog/BalloonCtrl/BalloonSizeMax &lt;Size in MB&gt;</pre>
+    <p>
+        Using a global extradata value, as follows:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata global VBoxInternal2/Watchdog/BalloonCtrl/BalloonSizeMax &lt;Size in MB&gt;</pre>
+    <note>
+      <p>
+          If no maximum ballooning size is specified by at least one of
+          the parameters above, no ballooning will be performed at all.
+        </p>
+    </note>
+    <p>
+        Setting the ballooning increment in MB can be either done using
+        command line, as follows:
+      </p>
+    <pre xml:space="preserve">--balloon-inc &lt;Size in MB&gt;</pre>
+    <p>
+        Using a global extradata value, as follows:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata global VBoxInternal2/Watchdog/BalloonCtrl/BalloonIncrementMB &lt;Size in MB&gt;</pre>
+    <p>
+        The default ballooning increment is 256 MB if not specified.
+      </p>
+    <p>
+        The same options apply for a ballooning decrement. Using the
+        command line, as follows:
+      </p>
+    <pre xml:space="preserve">--balloon-dec &lt;Size in MB&gt;</pre>
+    <p>
+        Using a global extradata value, as follows:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata global VBoxInternal2/Watchdog/BalloonCtrl/BalloonDecrementMB &lt;Size in MB&gt;</pre>
+    <p>
+        The default ballooning decrement is 128 MB if not specified.
+      </p>
+    <p>
+        The lower limit in MB for a balloon can be defined using the
+        command line, as follows:
+      </p>
+    <pre xml:space="preserve">--balloon-lower-limit &lt;Size in MB&gt;</pre>
+    <p>
+        Using a global extradata value, as follows:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata global VBoxInternal2/Watchdog/BalloonCtrl/BalloonLowerLimitMB &lt;Size in MB&gt;</pre>
+    <p>
+        The default lower limit is 128 MB if not specified.
+      </p>
+  </body>
+  
+</topic>

@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="sysprep">
+  <title>Automated Windows System Preparation</title>
+  
+  <body>
+    <p>
+        Microsoft offers a system preparation tool called Sysprep, to
+        prepare a Windows system for deployment or redistribution. Some
+        Windows releases include Sysprep on the installation medium, but
+        the tool is also available for download from the Microsoft web
+        site. In a standard For most Windows versions, Sysprep is
+        included in a default installation. Sysprep mainly consists of
+        an executable called <userinput>sysprep.exe</userinput> which is
+        invoked by the user to put the Windows installation into
+        preparation mode.
+      </p>
+    <p>
+        The Guest Additions offer a way to launch a system preparation
+        on the guest operating system in an automated way, controlled
+        from the host system. See
+        <xref href="guestadd-guestcontrol.dita">Guest Control of Applications</xref> for details of how to
+        use this feature with the special identifier
+        <codeph>sysprep</codeph> as the program to execute, along with
+        the user name <codeph>sysprep</codeph> and password
+        <codeph>sysprep</codeph> for the credentials. Sysprep is then
+        started with the required system rights.
+      </p>
+    <note>
+      <p>
+          Specifying the location of <userinput>sysprep.exe</userinput> is
+          <b outputclass="bold">not possible</b>. Instead the
+          following paths are used, based on the Windows release:
+        </p>
+      <ul>
+        <li>
+          <p><filepath>C:\sysprep\sysprep.exe</filepath> for Windows XP
+              and earlier
+            </p>
+        </li>
+        <li>
+          <p><filepath>%WINDIR%\System32\sysprep\sysprep.exe</filepath>
+              for Windows Vista and later
+            </p>
+        </li>
+      </ul>
+      <p>
+          The Guest Additions will automatically use the appropriate
+          path to execute the system preparation tool.
+        </p>
+    </note>
+  </body>
+  
+</topic>

@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="glossentry-pxe">
+  <title>PXE</title>
+  <body>
+    <section>
+      <p>
+        Preboot Execution Environment, an industry standard for booting 
+        PC systems from remote network locations. It includes DHCP for IP 
+        configuration and TFTP for file transfer. Using UNDI, a hardware 
+        independent driver stack for accessing the network card from bootstrap 
+        code is available.
+      </p>
+    </section>
+  </body>
+</topic>

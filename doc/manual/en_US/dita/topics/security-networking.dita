@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="security-networking">
+  <title>Networking</title>
+  
+  <body>
+    <p>
+          The default networking mode for VMs is NAT which means that
+          the VM acts like a computer behind a router, see
+          <xref href="network_nat.dita">Network Address Translation (NAT)</xref>. The guest is part of a private
+          subnet belonging to this VM and the guest IP is not visible
+          from the outside. This networking mode works without any
+          additional setup and is sufficient for many purposes. Keep in
+          mind that NAT allows access to the host operating system's
+          loopback interface.
+        </p>
+    <p>
+          If bridged networking is used, the VM acts like a computer
+          inside the same network as the host, see
+          <xref href="network_bridged.dita">Bridged Networking</xref>. In this case, the guest has
+          the same network access as the host and a firewall might be
+          necessary to protect other computers on the subnet from a
+          potential malicious guest as well as to protect the guest from
+          a direct access from other computers. In some cases it is
+          worth considering using a forwarding rule for a specific port
+          in NAT mode instead of using bridged networking.
+        </p>
+    <p>
+          Some setups do not require a VM to be connected to the public
+          network at all. Internal networking, see
+          <xref href="network_internal.dita">Internal Networking</xref>, or host-only networking,
+          see <xref href="network_hostonly.dita">Host-Only Networking</xref>, are often sufficient
+          to connect VMs among each other or to connect VMs only with
+          the host but not with the public network.
+        </p>
+  </body>
+  
+</topic>

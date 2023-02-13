@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloningvdis">
+  <title>Cloning Disk Images</title>
+  
+  <body>
+    <p>
+      You can duplicate hard disk image files on the same host to
+      quickly produce a second virtual machine with the same OS setup.
+      However, you should <i>only</i> make copies of
+      virtual disk images using the utility supplied with
+      Oracle VM VirtualBox. See <xref href="man_VBoxManage-clonemedium.dita#vboxmanage-clonemedium"/>.
+      This is because Oracle VM VirtualBox assigns a UUID to each disk image,
+      which is also stored inside the image, and Oracle VM VirtualBox will
+      refuse to work with two images that use the same number. If you do
+      accidentally try to reimport a disk image which you copied
+      normally, you can make a second copy using the <userinput>VBoxManage
+      clonevm</userinput> command and import that instead.
+    </p>
+    <p>
+      Note that Linux distributions identify the boot hard disk from the
+      ID of the drive. The ID Oracle VM VirtualBox reports for a drive is
+      determined from the UUID of the virtual disk image. So if you
+      clone a disk image and try to boot the copied image the guest
+      might not be able to determine its own boot disk as the UUID
+      changed. In this case you have to adapt the disk ID in your boot
+      loader script, for example
+      <filepath>/boot/grub/menu.lst</filepath>. The disk ID looks like
+      the following:
+    </p>
+    <pre xml:space="preserve">scsi-SATA_VBOX_HARDDISK_VB5cfdb1e2-c251e503</pre>
+    <p>
+      The ID for the copied image can be determined as follows:
+    </p>
+    <pre xml:space="preserve">hdparm -i /dev/sda</pre>
+  </body>
+  
+</topic>

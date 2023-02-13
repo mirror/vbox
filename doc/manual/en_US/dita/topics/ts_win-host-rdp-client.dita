@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_win-host-rdp-client">
+  <title>Sluggish Response When Using Microsoft RDP Client</title>
+  
+  <body>
+    <p>
+        If connecting to a Virtual Machine using the Microsoft RDP
+        client, called a Remote Desktop Connection, there can be large
+        delays between input such as moving the mouse over a menu and
+        output. This is because this RDP client collects input for a
+        certain time before sending it to the RDP server.
+      </p>
+    <p>
+        The interval can be decreased by setting a Windows registry key
+        to smaller values than the default of 100. The key does not
+        exist initially and must be of type DWORD. The unit for its
+        values is milliseconds. Values around 20 are suitable for
+        low-bandwidth connections between the RDP client and server.
+        Values around 4 can be used for a gigabit Ethernet connection.
+        Generally values below 10 achieve a performance that is very
+        close to that of the local input devices and screen of the host
+        on which the Virtual Machine is running.
+      </p>
+    <p>
+        Depending whether the setting should be changed for an
+        individual user or for the system, set either of the following.
+      </p>
+    <pre xml:space="preserve">HKEY_CURRENT_USER\Software\Microsoft\Terminal Server Client\Min Send Interval</pre>
+    <pre xml:space="preserve">HKEY_LOCAL_MACHINE\Software\Microsoft\Terminal Server Client\Min Send Interval</pre>
+  </body>
+  
+</topic>

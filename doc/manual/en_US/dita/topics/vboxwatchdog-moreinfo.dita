@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxwatchdog-moreinfo">
+  <title>More Information</title>
+  
+  <body>
+    <p>
+        For more advanced options and parameters like verbose logging
+        check the built-in command line help accessible with
+        <codeph>--help</codeph>.
+      </p>
+  </body>
+  
+</topic>

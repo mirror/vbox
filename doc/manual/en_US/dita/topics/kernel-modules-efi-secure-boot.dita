@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="kernel-modules-efi-secure-boot">
+  <title>Kernel Modules and UEFI Secure Boot</title>
+  
+  <body>
+    <p>
+          If you are running on a system using UEFI (Unified Extensible
+          Firmware Interface) Secure Boot, you may need to sign the
+          following kernel modules before you can load them:
+        </p>
+    <ul>
+      <li>
+        <p>
+          <userinput>vboxdrv</userinput>
+        </p>
+      </li>
+      <li>
+        <p>
+          <userinput>vboxnetadp</userinput>
+        </p>
+      </li>
+      <li>
+        <p>
+          <userinput>vboxnetflt</userinput>
+        </p>
+      </li>
+      <li>
+        <p>
+          <userinput>vboxpci</userinput>
+        </p>
+      </li>
+    </ul>
+    <p>
+          See your system documentation for details of the kernel module
+          signing process.
+        </p>
+  </body>
+  
+</topic>

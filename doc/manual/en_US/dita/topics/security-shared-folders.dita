@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="security-shared-folders">
+  <title>Shared Folders</title>
+  
+  <body>
+    <p>
+          If any host folder is shared with the guest then a remote user
+          connected to the guest over the network can access these files
+          too as the folder sharing mechanism cannot be selectively
+          disabled for remote users.
+        </p>
+  </body>
+  
+</topic>

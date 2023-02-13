@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-vm-oci-group">
+  <title>About the OCI VM Group</title>
+  
+  <body>
+    <p>
+          All cloud VMs are shown in the machine list in VirtualBox Manager, in
+          a special VM group called
+          <b outputclass="bold">OCI</b>.
+        </p>
+    <p>
+          Cloud VMs are further grouped according to the cloud profile
+          used to connect to them. The cloud profile identifies the user
+          and compartment for the cloud VM and includes details of the
+          key pair used to connect to cloud instances. See
+          <xref href="cloud-create-cloud-profile.dita#cloud-create-cloud-profile"/>.
+        </p>
+    <fig id="fig-cloud-vm-oci-group">
+      <title>OCI Group, Containing Cloud VMs</title>
+      <image href="images/cloudvm-oci-group.png" placement="break"/>
+    </fig>
+    <p>
+          All cloud profiles registered with Oracle VM VirtualBox are listed
+          automatically in the OCI group.
+        </p>
+    <p>
+          To enable or disable listing of cloud VMs in VirtualBox Manager for a
+          specific cloud profile, do the following:
+        </p>
+    <p>
+          Display the <b outputclass="bold">Cloud Profile
+          Manager</b> and select or deselect the
+          <b outputclass="bold">List VMs</b> check box for each
+          cloud profile.
+        </p>
+  </body>
+  
+</topic>

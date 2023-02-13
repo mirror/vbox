@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="install-mac-uninstall">
+  <title>Uninstallation</title>
+  
+  <body>
+    <p>
+        To uninstall Oracle VM VirtualBox, open the disk image
+        <filepath>dmg</filepath> file and double-click on the uninstall
+        icon shown.
+      </p>
+  </body>
+  
+</topic>

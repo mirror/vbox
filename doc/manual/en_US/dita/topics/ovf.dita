@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ovf">
+  <title>Importing and Exporting Virtual Machines</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox can import and export virtual machines in the
+      following formats:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Open Virtualization Format
+          (OVF).</b> This is the industry-standard format. See
+          <xref href="ovf-about.dita#ovf-about"/>.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Cloud service formats.</b> Export
+          to and import from cloud services such as Oracle Cloud Infrastructure is supported.
+          See <xref href="cloud-integration.dita#cloud-integration"/>.
+        </p>
+      </li>
+    </ul>
+  </body>
+</topic>

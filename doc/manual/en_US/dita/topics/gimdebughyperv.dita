@@ -1,0 +1,120 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="gimdebughyperv">
+  <title>Hyper-V Debug Options</title>
+  
+  <body>
+    <p>
+        All of the options listed below are optional, and thus the
+        default value specified will be used when the corresponding
+        key-value pair is not specified.
+      </p>
+    <ul>
+      <li>
+        <p>
+            Key:
+            <b outputclass="bold"><codeph>enabled</codeph></b>
+                        </p>
+        <p>
+            Value: <codeph>0</codeph> or <codeph>1</codeph>
+                        </p>
+        <p>
+            Default: <codeph>0</codeph>
+                        </p>
+        <p>
+            Specify <codeph>1</codeph> to enable the Hyper-V debug
+            interface. If this key-value pair is not specified or the
+            value is not <codeph>1</codeph>, the Hyper-V debug
+            interface is disabled regardless of other key-value pairs
+            being present.
+          </p>
+      </li>
+      <li>
+        <p>
+            Key:
+            <b outputclass="bold"><codeph>address</codeph></b>
+                        </p>
+        <p>
+            Value: IPv4 address
+          </p>
+        <p>
+            Default: 127.0.0.1
+          </p>
+        <p>
+            Specify the IPv4 address where the remote debugger is
+            connected.
+          </p>
+      </li>
+      <li>
+        <p>
+            Key:
+            <b outputclass="bold"><codeph>port</codeph></b>
+                        </p>
+        <p>
+            Value: UDP port number
+          </p>
+        <p>
+            Default: 50000
+          </p>
+        <p>
+            Specify the UDP port number where the remote debugger is
+            connected.
+          </p>
+      </li>
+      <li>
+        <p>
+            Key:
+            <b outputclass="bold"><codeph>vendor</codeph></b>
+                        </p>
+        <p>
+            Value: Hyper-V vendor signature reported by CPUID to the
+            guest
+          </p>
+        <p>
+            Default: When debugging is enabled: <codeph>Microsoft
+            Hv</codeph>, otherwise: <codeph>VBoxVBoxVBox</codeph>
+                        </p>
+        <p>
+            Specify the Hyper-V vendor signature which is exposed to the
+            guest by CPUID. For debugging Microsoft Windows guests, it
+            is required the hypervisor reports the Microsoft vendor.
+          </p>
+      </li>
+      <li>
+        <p>
+            Key:
+            <b outputclass="bold"><codeph>hypercallinterface</codeph></b>
+                        </p>
+        <p>
+            Value: <codeph>0</codeph> or <codeph>1</codeph>
+                        </p>
+        <p>
+            Default: <codeph>0</codeph>
+                        </p>
+        <p>
+            Specify whether hypercalls should be suggested for
+            initiating debug data transfers between host and guest
+            rather than MSRs when requested by the guest.
+          </p>
+      </li>
+      <li>
+        <p>
+            Key: <b outputclass="bold"><codeph>vsinterface</codeph></b>
+                        </p>
+        <p>
+            Value: <codeph>0</codeph> or <codeph>1</codeph>
+                        </p>
+        <p>
+            Default: When debugging is enabled, <codeph>1</codeph>,
+            otherwise <codeph>0</codeph>
+                        </p>
+        <p>
+            Specify whether to expose the VS#1 virtualization service
+            interface to the guest. This interface is required for
+            debugging Microsoft Windows 10 32-bit guests, but is
+            optional for other Windows versions.
+          </p>
+      </li>
+    </ul>
+  </body>
+</topic>

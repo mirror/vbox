@@ -1,0 +1,104 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestadd-dnd">
+  <title>Drag and Drop</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox enables you to drag and drop content from the host
+      to the guest, and vice versa. For this to work the latest version
+      of the Guest Additions must be installed on the guest.
+    </p>
+    <p>
+      Drag and drop transparently allows copying or opening files,
+      directories, and even certain clipboard formats from one end to
+      the other. For example, from the host to the guest or from the
+      guest to the host. You then can perform drag and drop operations
+      between the host and a VM, as it would be a native drag and drop
+      operation on the host OS.
+    </p>
+    <p>
+      At the moment drag and drop is implemented for Windows-based and
+      X-Windows-based systems, both on the host and guest side. As
+      X-Windows supports many different drag and drop protocols only the
+      most common one, XDND, is supported for now. Applications using
+      other protocols, such as Motif or OffiX, will not be recognized by
+      Oracle VM VirtualBox.
+    </p>
+    <p>
+      In the context of using drag and drop, the origin of the data is
+      called the <i>source</i>. That is, where the actual
+      data comes from and is specified. The
+      <i>destination</i> specifies where the data from the
+      source should go to. Transferring data from the source to the
+      destination can be done in various ways, such as copying, moving,
+      or linking.
+    </p>
+    <note>
+      <p>
+        At the moment only copying of data is supported. Moving or
+        linking is not yet implemented.
+      </p>
+    </note>
+    <p>
+      When transferring data from the host to the guest OS, the host in
+      this case is the source, whereas the guest OS is the destination.
+      However, when transferring data from the guest OS to the host, the
+      guest OS this time became the source and the host is the
+      destination.
+    </p>
+    <p>
+      For security reasons drag and drop can be configured at runtime on
+      a per-VM basis either using the <b outputclass="bold">Drag and
+      Drop</b> menu item in the
+      <b outputclass="bold">Devices</b> menu of the virtual
+      machine, as shown below, or the <userinput>VBoxManage</userinput>
+      command.
+    </p>
+    <fig id="fig-drag-drop-options">
+      <title>Drag and Drop Menu Options</title>
+      <image href="images/dnd-modes.png" placement="break"/>
+    </fig>
+    <p>
+      The following drag and drop modes are available:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Disabled.</b> Disables the drag
+          and drop feature entirely. This is the default when creating a
+          new VM.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Host To Guest.</b> Enables drag
+          and drop operations from the host to the guest only.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Guest To Host.</b> Enables drag
+          and drop operations from the guest to the host only.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Bidirectional.</b> Enables drag
+          and drop operations in both directions: from the host to the
+          guest, and from the guest to the host.
+        </p>
+      </li>
+    </ul>
+    <note>
+      <p>
+        Drag and drop support depends on the frontend being used. At the
+        moment, only the VirtualBox Manager frontend provides this
+        functionality.
+      </p>
+    </note>
+    <p>
+      To use the <userinput>VBoxManage</userinput> command to control the
+      current drag and drop mode, see <xref href="vboxmanage.dita#vboxmanage"/>. The
+      <userinput>modifyvm</userinput> and <userinput>controlvm</userinput>
+      commands enable setting of a VM's current drag and drop mode from
+      the command line.
+    </p>
+  </body>
+</topic>

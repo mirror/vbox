@@ -1,0 +1,112 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="externalkernelmodules">
+  <title>The Oracle VM VirtualBox Kernel Modules</title>
+  
+  <body>
+    <p>
+        In order to run other operating systems in virtual machines
+        alongside your main operating system, Oracle VM VirtualBox needs to
+        integrate very tightly with your system. To do this it installs
+        a driver module called <userinput>vboxdrv</userinput> into the
+        system kernel. The kernel is the part of the operating system
+        which controls your processor and physical hardware. Without
+        this kernel module, you can still use VirtualBox Manager to configure
+        virtual machines, but they will not start.
+      </p>
+    <p>
+        Network drivers called <userinput>vboxnetflt</userinput> and
+        <userinput>vboxnetadp</userinput> are also installed. They enable
+        virtual machines to make more use of your computer's network
+        capabilities and are needed for any virtual machine networking
+        beyond the basic NAT mode.
+      </p>
+    <p>
+        Since distributing driver modules separately from the kernel is
+        not something which Linux supports well, the Oracle VM VirtualBox
+        install process creates the modules on the system where they
+        will be used. This means that you may need to install some
+        software packages from the distribution which are needed for the
+        build process. Required packages may include the following:
+      </p>
+    <ul>
+      <li>
+        <p>
+            GNU compiler (GCC)
+          </p>
+      </li>
+      <li>
+        <p>
+            GNU Make (make)
+          </p>
+      </li>
+      <li>
+        <p>
+            Kernel header files
+          </p>
+      </li>
+    </ul>
+    <p>
+        Also ensure that all system updates have been installed and that
+        your system is running the most up-to-date kernel for the
+        distribution.
+      </p>
+    <note>
+      <p>
+          The running kernel and the kernel header files must be updated
+          to matching versions.
+        </p>
+    </note>
+    <p>
+        The following list includes some details of the required files
+        for some common distributions. Start by finding the version name
+        of your kernel, using the command <userinput>uname -r</userinput> in
+        a terminal. The list assumes that you have not changed too much
+        from the original installation, in particular that you have not
+        installed a different kernel type.
+      </p>
+    <ul>
+      <li>
+        <p>
+            With Debian and Ubuntu-based distributions, you must install
+            the correct version of the
+            <filepath>linux-headers</filepath>, usually whichever of
+            <filepath>linux-headers-generic</filepath>,
+            <filepath>linux-headers-amd64</filepath>,
+            <filepath>linux-headers-i686</filepath> or
+            <filepath>linux-headers-i686-pae</filepath> best matches the
+            kernel version name. Also, the
+            <filepath>linux-kbuild</filepath> package if it exists.
+            Basic Ubuntu releases should have the correct packages
+            installed by default.
+          </p>
+      </li>
+      <li>
+        <p>
+            On Fedora, Red Hat, Oracle Linux and many other RPM-based
+            systems, the kernel version sometimes has a code of letters
+            or a word close to the end of the version name. For example
+            "uek" for the Oracle Unbreakable Enterprise Kernel or
+            "default" or "desktop" for the standard kernels. In this
+            case, the package name is
+            <filepath>kernel-uek-devel</filepath> or equivalent. If
+            there is no such code, it is usually
+            <filepath>kernel-devel</filepath>.
+          </p>
+      </li>
+      <li>
+        <p>
+            On some SUSE and openSUSE Linux versions, you may need to
+            install the <filepath>kernel-source</filepath> and
+            <filepath>kernel-syms</filepath> packages.
+          </p>
+      </li>
+    </ul>
+    <p>
+        If you suspect that something has gone wrong with module
+        installation, check that your system is set up as described
+        above and try running the following command, as root:
+      </p>
+    <pre xml:space="preserve">rcvboxdrv setup</pre>
+  </body>
+</topic>

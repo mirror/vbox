@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_linux-host-ide-messages">
+  <title>Strange Guest IDE Error Messages When Writing to CD or DVD</title>
+  
+  <body>
+    <p>
+        If the experimental CD or DVD writer support is enabled with an
+        incorrect host or guest configuration, it is possible that any
+        attempt to access the CD or DVD writer fails and simply results
+        in guest kernel error messages for Linux guests or application
+        error messages for Windows guests. Oracle VM VirtualBox performs the
+        usual consistency checks when a VM is powered up. In particular,
+        it aborts with an error message if the device for the CD or DVD
+        writer is not writable by the user starting the VM. But
+        Oracle VM VirtualBox cannot detect all misconfigurations. The
+        necessary host and guest OS configuration is not specific for
+        Oracle VM VirtualBox, but a few frequent problems are listed here
+        which occurred in connection with Oracle VM VirtualBox.
+      </p>
+    <p>
+        Special care must be taken to use the correct device. The
+        configured host CD or DVD device file name, in most cases
+        <filepath>/dev/cdrom</filepath>, must point to the device that
+        allows writing to the CD or DVD unit. For CD or DVD writer units
+        connected to a SCSI controller or to a IDE controller that
+        interfaces to the Linux SCSI subsystem, common for some SATA
+        controllers, this must refer to the SCSI device node, such as
+        <filepath>/dev/scd0</filepath>. Even for IDE CD or DVD writer
+        units this must refer to the appropriate SCSI CD-ROM device
+        node, such as <filepath>/dev/scd0</filepath>, if the
+        <userinput>ide-scsi</userinput> kernel module is loaded. This module
+        is required for CD or DVD writer support with some early 2.6
+        kernels. Many Linux distributions load this module whenever a CD
+        or DVD writer is detected in the system, even if the kernel
+        would support CD or DVD writers without the module.
+        Oracle VM VirtualBox supports the use of IDE device files, such as
+        <filepath>/dev/hdc</filepath>, provided the kernel supports this
+        and the <userinput>ide-scsi</userinput> module is not loaded.
+      </p>
+    <p>
+        Similar rules, except that within the guest the CD or DVD writer
+        is always an IDE device, apply to the guest configuration. Since
+        this setup is very common, it is likely that the default
+        configuration of the guest works as expected.
+      </p>
+  </body>
+  
+</topic>

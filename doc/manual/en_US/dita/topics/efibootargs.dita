@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="efibootargs">
+  <title>Specifying Boot Arguments</title>
+  
+  <body>
+    <p>
+        It is currently not possible to manipulate EFI variables from
+        within a running guest. For example, setting the
+        <codeph>boot-args</codeph> variable by running the
+        <userinput>nvram</userinput> tool in a Mac OS X guest will not work.
+        As an alternative method,
+        <codeph>VBoxInternal2/EfiBootArgs</codeph> extradata can be
+        passed to a VM in order to set the <codeph>boot-args</codeph>
+        variable. To change the <codeph>boot-args</codeph> EFI
+        variable, use the following command:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name" VBoxInternal2/EfiBootArgs &lt;value&gt;</pre>
+  </body>
+  
+</topic>

@@ -1,0 +1,88 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="pot-insecure">
+  <title>Potentially Insecure Operations</title>
+  
+  <body>
+    <p>
+        The following features of Oracle VM VirtualBox can present security
+        problems:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Enabling 3D graphics using the Guest Additions exposes the
+            host to additional security risks. See
+            <xref href="guestadd-3d.dita">Hardware 3D Acceleration (OpenGL and Direct3D 8/9)</xref>.
+          </p>
+      </li>
+      <li>
+        <p>
+            When teleporting a machine, the data stream through which
+            the machine's memory contents are transferred from one host
+            to another is not encrypted. A third party with access to
+            the network through which the data is transferred could
+            therefore intercept that data. An SSH tunnel could be used
+            to secure the connection between the two hosts. But when
+            considering teleporting a VM over an untrusted network the
+            first question to answer is how both VMs can securely access
+            the same virtual disk image with a reasonable performance.
+          </p>
+        <p>
+        If the network is not sufficiently trusted, the password
+        should be changed for each teleportation as a third party
+        could detect the unecrypted password hash when it is
+        transferred between the target and source host machines.
+        </p>
+      </li>
+      <li>
+        <p>
+            When <xref href="guestadd-pagefusion.dita">Page Fusion</xref>,
+            is enabled, it is possible that a side-channel opens up that
+            enables a malicious guest to determine the address space of
+            another VM running on the same host layout. For example,
+            where DLLs are typically loaded. This information leak in
+            itself is harmless, however the malicious guest may use it
+            to optimize attack against that VM through unrelated attack
+            vectors. It is recommended to only enable Page Fusion if you
+            do not think this is a concern in your setup.
+          </p>
+      </li>
+      <li>
+        <p>
+            When using the Oracle VM VirtualBox web service to control an
+            Oracle VM VirtualBox host remotely, connections to the web
+            service, over which the API calls are transferred using SOAP
+            XML, are not encrypted. They use plain HTTP by default. This
+            is a potential security risk. For details about the web
+            service, see <xref href="VirtualBoxAPI.dita#VirtualBoxAPI"/>.
+          </p>
+        <p>
+            The web services are not started by default. See
+            <xref href="vboxwebsrv-daemon.dita#vboxwebsrv-daemon"/> to find out how to start
+            this service and how to enable SSL/TLS support. It has to be
+            started as a regular user and only the VMs of that user can
+            be controlled. By default, the service binds to localhost
+            preventing any remote connection.
+          </p>
+      </li>
+      <li>
+        <p>
+            Traffic sent over a UDP Tunnel network attachment is not
+            encrypted. You can either encrypt it on the host network
+            level, with IPsec, or use encrypted protocols in the guest
+            network, such as SSH. The security properties are similar to
+            bridged Ethernet.
+          </p>
+      </li>
+      <li>
+        <p>
+            Because of shortcomings in older Windows versions, using
+            Oracle VM VirtualBox on Windows versions older than Vista with
+            Service Pack 1 is not recommended.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

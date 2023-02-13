@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="iocaching">
+  <title>Host Input/Output Caching</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox can optionally disable the I/O caching that the
+      host OS would otherwise perform on disk image files.
+    </p>
+    <p>
+      Traditionally, Oracle VM VirtualBox has opened disk image files as
+      normal files, which results in them being cached by the host OS
+      like any other file. The main advantage of this is speed: when the
+      guest OS writes to disk and the host OS cache uses delayed
+      writing, the write operation can be reported as completed to the
+      guest OS quickly while the host OS can perform the operation
+      asynchronously. Also, when you start a VM a second time and have
+      enough memory available for the OS to use for caching, large parts
+      of the virtual disk may be in system memory, and the VM can access
+      the data much faster.
+    </p>
+    <p>
+      Note that this applies only to image files. Buffering does not
+      occur for virtual disks residing on remote iSCSI storage, which is
+      the more common scenario in enterprise-class setups. See
+      <xref href="storage-iscsi.dita#storage-iscsi"/>.
+    </p>
+    <p>
+      While buffering is a useful default setting for virtualizing a few
+      machines on a desktop computer, there are some disadvantages to
+      this approach:
+    </p>
+    <ul>
+      <li>
+        <p>
+          Delayed writing through the host OS cache is less secure. When
+          the guest OS writes data, it considers the data written even
+          though it has not yet arrived on a physical disk. If for some
+          reason the write does not happen, such as power failure or
+          host crash, the likelihood of data loss increases.
+        </p>
+      </li>
+      <li>
+        <p>
+          Disk image files tend to be very large. Caching them can
+          therefore quickly use up the entire host OS cache. Depending
+          on the efficiency of the host OS caching, this may slow down
+          the host immensely, especially if several VMs run at the same
+          time. For example, on Linux hosts, host caching may result in
+          Linux delaying all writes until the host cache is nearly full
+          and then writing out all these changes at once, possibly
+          stalling VM execution for minutes. This can result in I/O
+          errors in the guest as I/O requests time out there.
+        </p>
+      </li>
+      <li>
+        <p>
+          Physical memory is often wasted as guest OSes typically have
+          their own I/O caches, which may result in the data being
+          cached twice, in both the guest and the host caches, for
+          little effect.
+        </p>
+      </li>
+    </ul>
+    <p>
+      If you decide to disable host I/O caching for the above reasons,
+      Oracle VM VirtualBox uses its own small cache to buffer writes, but no
+      read caching since this is typically already performed by the
+      guest OS. In addition, Oracle VM VirtualBox fully supports asynchronous
+      I/O for its virtual SATA, SCSI, and SAS controllers through
+      multiple I/O threads.
+    </p>
+    <p>
+      Since asynchronous I/O is not supported by IDE controllers, for
+      performance reasons, you may want to leave host caching enabled
+      for your VM's virtual IDE controllers.
+    </p>
+    <p>
+      For this reason, Oracle VM VirtualBox enables you to configure whether
+      the host I/O cache is used for each I/O controller separately.
+      Either select the <b outputclass="bold">Use Host I/O
+      Cache</b> check box in the
+      <b outputclass="bold">Storage</b> settings for a given
+      virtual storage controller, or use the following
+      <userinput>VBoxManage</userinput> command to disable the host I/O
+      cache for a virtual storage controller:
+    </p>
+    <pre xml:space="preserve">VBoxManage storagectl "VM name" --name &lt;controllername&gt; --hostiocache off</pre>
+    <p>
+      See <xref href="man_VBoxManage-storagectl.dita#vboxmanage-storagectl"/>.
+    </p>
+    <p>
+      For the above reasons, Oracle VM VirtualBox uses SATA controllers by
+      default for new virtual machines.
+    </p>
+  </body>
+  
+</topic>

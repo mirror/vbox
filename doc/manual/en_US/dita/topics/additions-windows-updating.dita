@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="additions-windows-updating">
+  <title>Updating the Windows Guest Additions</title>
+  
+  <body>
+    <p>
+          Windows Guest Additions can be updated by running the
+          installation program again. This replaces the previous
+          Additions drivers with updated versions.
+        </p>
+    <p>
+          Alternatively, you can also open the Windows Device Manager
+          and select <b outputclass="bold">Update Driver...</b>
+          for the following devices:
+        </p>
+    <ul>
+      <li>
+        <p>
+              Oracle VM VirtualBox Graphics Adapter
+            </p>
+      </li>
+      <li>
+        <p>
+              Oracle VM VirtualBox System Device
+            </p>
+      </li>
+    </ul>
+    <p>
+          For each, choose the option to provide your own driver, click
+          <b outputclass="bold">Have Disk</b> and navigate to the
+          CD-ROM drive with the Guest Additions.
+        </p>
+  </body>
+  
+</topic>

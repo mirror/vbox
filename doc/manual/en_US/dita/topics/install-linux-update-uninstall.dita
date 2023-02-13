@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="install-linux-update-uninstall">
+  <title>Updating and Uninstalling Oracle VM VirtualBox</title>
+  
+  <body>
+    <p>
+          Before updating or uninstalling Oracle VM VirtualBox, you must
+          terminate any virtual machines which are currently running and
+          exit the Oracle VM VirtualBox or VBoxSVC applications. To update
+          Oracle VM VirtualBox, simply run the installer of the updated
+          version. To uninstall Oracle VM VirtualBox, run the installer as
+          follows:
+        </p>
+    <pre xml:space="preserve">sudo ./VirtualBox.run uninstall</pre>
+    <p>
+          As root, you can use the following command:
+        </p>
+    <pre xml:space="preserve">./VirtualBox.run uninstall</pre>
+    <p>
+          You can uninstall the .run package as follows:
+        </p>
+    <pre xml:space="preserve">/opt/VirtualBox/uninstall.sh</pre>
+    <p>
+          To manually uninstall Oracle VM VirtualBox, perform the manual
+          installation steps in reverse order.
+        </p>
+  </body>
+  
+</topic>

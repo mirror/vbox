@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="glossentry-msi">
+  <title>MSI</title>
+  <body>
+    <section>
+      <p>
+        Message Signaled Interrupts, as supported by modern chipsets such as 
+        the ICH9. See <xref href="settings-motherboard.dita"/>. As opposed to traditional 
+        pin-based interrupts, with MSI, a small amount of data can accompany 
+        the actual interrupt message. This reduces the amount of hardware pins 
+        required and allows for more interrupts and better performance. 
+      </p>
+    </section>
+  </body>
+</topic>

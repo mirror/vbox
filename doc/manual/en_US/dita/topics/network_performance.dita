@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="network_performance">
+            <title>Improving Network Performance</title>
+            
+            <body>
+               <p>
+      Oracle VM VirtualBox provides a variety of virtual network adapters that
+      can be attached to the host's network in a number of ways.
+      Depending on which types of adapters and attachments are used the
+      network performance will be different. Performance-wise the virtio
+      network adapter is preferable over Intel PRO/1000 emulated
+      adapters, which are preferred over the PCNet family of adapters.
+      Both virtio and Intel PRO/1000 adapters enjoy the benefit of
+      segmentation and checksum offloading. Segmentation offloading is
+      essential for high performance as it allows for less context
+      switches, dramatically increasing the sizes of packets that cross
+      the VM/host boundary.
+    </p>
+               <note>
+                  <p>
+        Neither virtio nor Intel PRO/1000 drivers for Windows XP support
+        segmentation offloading. Therefore Windows XP guests never reach
+        the same transmission rates as other guest types. Refer to MS
+        Knowledge base article 842264 for additional information.
+      </p>
+               </note>
+               <p>
+      Three attachment types: Internal, Bridged, and Host-Only, have
+      nearly identical performance. The Internal type is a little bit
+      faster and uses less CPU cycles as the packets never reach the
+      host's network stack. The NAT attachment type is the slowest and
+      most secure of all attachment types, as it provides network
+      address translation. The generic driver attachment is special and
+      cannot be considered as an alternative to other attachment types.
+    </p>
+               <p>
+      The number of CPUs assigned to VM does not improve network
+      performance and in some cases may hurt it due to increased
+      concurrency in the guest.
+    </p>
+               <p>
+      Here is a short summary of things to check in order to improve
+      network performance:
+    </p>
+               <ul>
+                  <li>
+                     <p>
+          Whenever possible use the virtio network adapter. Otherwise,
+          use one of the Intel PRO/1000 adapters.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          Use a Bridged attachment instead of NAT.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          Make sure segmentation offloading is enabled in the guest OS.
+          Usually it will be enabled by default. You can check and
+          modify offloading settings using the
+          <userinput>ethtool</userinput> command on Linux guests.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          Perform a full detailed analysis of network traffic on the
+          VM's network adaptor using a third party tool such as
+          Wireshark. To do this, a promiscuous mode policy needs to be
+          used on the VM's network adaptor. Use of this mode is only
+          possible on the following network types: NAT Network, Bridged
+          Adapter, Internal Network, and Host-Only Adapter.
+        </p>
+                     <p>
+          To setup a promiscuous mode policy, either select from the
+          drop down list located in the <b outputclass="bold">Network
+          Settings</b> dialog for the network adaptor or use the
+          command line tool <userinput>VBoxManage</userinput>. See
+          <xref href="man_VBoxManage-modifyvm.dita#vboxmanage-modifyvm"/>.
+        </p>
+                     <p>
+          Promiscuous mode policies are as follows:
+        </p>
+                     <ul>
+                        <li>
+                           <p>
+                              <codeph>deny</codeph>, which hides any traffic not
+              intended for the VM's network adaptor. This is the default
+              setting.
+            </p>
+                        </li>
+                        <li>
+                           <p>
+                              <codeph>allow-vms</codeph>, which hides all host traffic
+              from the VM's network adaptor, but allows it to see
+              traffic from and to other VMs.
+            </p>
+                        </li>
+                        <li>
+                           <p>
+                              <codeph>allow-all</codeph>, which removes all
+              restrictions. The VM's network adaptor sees all traffic.
+            </p>
+                        </li>
+                     </ul>
+                  </li>
+               </ul>
+            </body>
+            
+         </topic>

@@ -1,0 +1,85 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="collect-debug-info">
+  <title>Collecting Debugging Information</title>
+  
+  <body>
+    <p>
+        For problem determination, it is often important to collect
+        debugging information which can be analyzed by Oracle VM VirtualBox
+        support. This section contains information about what kind of
+        information can be obtained.
+      </p>
+    <p>
+        Every time Oracle VM VirtualBox starts up a VM, a so-called
+        <i>release log file</i> is created, containing
+        lots of information about the VM configuration and runtime
+        events. The log file is called <filepath>VBox.log</filepath> and
+        resides in the VM log file folder, which is
+        <filepath>$HOME/VirtualBox
+        VMs/<varname>VM-name</varname>/Logs</filepath> by
+        default.
+      </p>
+    <p>
+        When starting a VM, the configuration file of the last run will
+        be renamed to <filepath>.1</filepath>, up to
+        <filepath>.3</filepath>. Sometimes when there is a problem, it
+        is useful to have a look at the logs. Also when requesting
+        support for Oracle VM VirtualBox, supplying the corresponding log file
+        is mandatory.
+      </p>
+    <p>
+        For convenience, for each virtual machine, VirtualBox Manager can show
+        these logs in a window. Select a virtual machine from the
+        machine list on the left and click
+        <b outputclass="bold">Logs</b> in the machine tools menu.
+      </p>
+    <p>
+        The release log file, <filepath>VBox.log</filepath>, contains a
+        wealth of diagnostic information, such as Host OS type and
+        version, Oracle VM VirtualBox version and build. It also includes a
+        complete dump of the guest's configuration (CFGM), detailed
+        information about the host CPU type and supported features,
+        whether hardware virtualization is enabled, information about
+        VT-x/AMD-V setup, state transitions (such as creating, running,
+        paused, stopping), guest BIOS messages, Guest Additions
+        messages, device-specific log entries and, at the end of
+        execution, final guest state and condensed statistics.
+      </p>
+    <p>
+        In case of crashes, it is very important to collect
+        <i>crash dumps</i>. This is true for both host and
+        guest crashes. For information about enabling core dumps on
+        Linux, Oracle Solaris, and macOS systems, refer to the following
+        core dump article on the Oracle VM VirtualBox website:
+      </p>
+    <p><ph>http://www.virtualbox.org/wiki/Core_dump</ph>.
+      </p>
+    <p>
+        You can also use <userinput>VBoxManage debugvm</userinput> to create
+        a dump of a complete virtual machine. See
+        <xref href="man_VBoxManage-debugvm.dita">VBoxManage debugvm</xref>.
+      </p>
+    <p>
+        For network related problems, it is often helpful to capture a
+        trace of network traffic. If the traffic is routed through an
+        adapter on the host, it is possible to use Wireshark or a
+        similar tool to capture the traffic there. However, this often
+        also includes a lot of traffic unrelated to the VM.
+      </p>
+    <p>
+        Oracle VM VirtualBox provides an ability to capture network traffic
+        only on a specific VM's network adapter. Refer to the following
+        network tracing article on the Oracle VM VirtualBox website for
+        information on enabling this capture:
+      </p>
+    <p><ph>http://www.virtualbox.org/wiki/Network_tips</ph>.
+      </p>
+    <p>
+        The trace files created by Oracle VM VirtualBox are in
+        <filepath>.pcap</filepath> format and can be easily analyzed
+        with Wireshark.
+      </p>
+  </body>
+  
+</topic>

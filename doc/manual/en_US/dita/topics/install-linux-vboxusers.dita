@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="install-linux-vboxusers">
+  <title>The vboxusers Group</title>
+  
+  <body>
+    <p>
+        The Linux installers create the system user group
+        <codeph>vboxusers</codeph> during installation. Any system
+        user who is going to use USB devices from Oracle VM VirtualBox guests
+        must be a member of that group. A user can be made a member of
+        the group <codeph>vboxusers</codeph> either by using the
+        desktop user and group tools, or with the following command:
+      </p>
+    <pre xml:space="preserve">sudo usermod -a -G vboxusers username</pre>
+  </body>
+  
+</topic>

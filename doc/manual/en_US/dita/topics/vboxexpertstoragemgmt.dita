@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxexpertstoragemgmt">
+  <title>Oracle VM VirtualBox Expert Storage Management</title>
+  
+  <body>
+    <p>
+      In case the snapshot model of Oracle VM VirtualBox is not sufficient it
+      is possible to enable a special mode which makes it possible to
+      reconfigure storage attachments while the VM is paused. The user
+      has to make sure that the disk data stays consistent to the guest
+      because unlike with hotplugging the guest is not informed about
+      detached or newly attached media.
+    </p>
+    <p>
+      The expert storage management mode can be enabled per VM
+      executing:
+    </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> "VBoxInternal2/SilentReconfigureWhilePaused" 1</pre>
+    <p>
+      You can reconfigure storage attachments later while the VM is
+      paused by using the <userinput>VBoxManage storageattach</userinput>
+      command.
+    </p>
+  </body>
+  
+</topic>

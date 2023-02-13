@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="additions-solaris-install">
+  <title>Installing the Oracle Solaris Guest Additions</title>
+  
+  <body>
+    <p>
+          The Oracle VM VirtualBox Guest Additions for Oracle Solaris are
+          provided on the same ISO CD-ROM as the Additions for Windows
+          and Linux. They come with an installation program that guides
+          you through the setup process.
+        </p>
+    <p>
+          Installation involves the following steps:
+        </p>
+    <ol>
+      <li>
+        <p>
+              Mount the <filepath>VBoxGuestAdditions.iso</filepath> file
+              as your Oracle Solaris guest's virtual CD-ROM drive,
+              exactly the same way as described for a Windows guest in
+              <xref href="mountingadditionsiso.dita#mountingadditionsiso"/>.
+            </p>
+        <p>
+              If the CD-ROM drive on the guest does not get mounted, as
+              seen with some versions of Oracle Solaris 10, run the
+              following command as root:
+            </p>
+        <pre xml:space="preserve">svcadm restart volfs</pre>
+      </li>
+      <li>
+        <p>
+              Change to the directory where your CD-ROM drive is mounted
+              and run the following command as root:
+            </p>
+        <pre xml:space="preserve">pkgadd -G -d ./VBoxSolarisAdditions.pkg</pre>
+      </li>
+      <li>
+        <p>
+              Choose <b outputclass="bold">1</b> and confirm
+              installation of the Guest Additions package. After the
+              installation is complete, log out and log in to X server
+              on your guest, to activate the X11 Guest Additions.
+            </p>
+      </li>
+    </ol>
+  </body>
+  
+</topic>

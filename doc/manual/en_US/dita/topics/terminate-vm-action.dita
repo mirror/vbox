@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="terminate-vm-action">
+  <title>Action when Terminating the VM</title>
+  
+  <body>
+    <p>
+        You can disallow certain actions when terminating a VM. To
+        disallow specific actions, use the following command:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> GUI/RestrictedCloseActions <varname>property</varname>[,<varname>property</varname>...]</pre>
+    <p><varname>property</varname> is one of the following:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+          <codeph>SaveState</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not allow the user to save the VM state when
+              terminating the VM.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Shutdown</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not allow the user to shutdown the VM by sending the
+              ACPI power-off event to the guest.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>PowerOff</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not allow the user to power off the VM.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>PowerOffRestoringSnapshot</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not allow the user to return to the last snapshot when
+              powering off the VM.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Detach</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not allow the user to detach from the VM process if the
+              VM was started in separate mode.
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        This is a per-VM setting. You can specify any combination of
+        properties. If all properties are specified, the VM cannot be
+        shut down.
+      </p>
+  </body>
+  
+</topic>

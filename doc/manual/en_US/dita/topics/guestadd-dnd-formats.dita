@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestadd-dnd-formats">
+  <title>Supported Formats</title>
+  
+  <body>
+    <p>
+        As Oracle VM VirtualBox can run on a variety of host operating systems
+        and also supports a wide range of guests, certain data formats
+        must be translated after transfer. This is so that the
+        destination operating system, which receives the data, is able
+        to handle them in an appropriate manner.
+      </p>
+    <note>
+      <p>
+          When dragging files no data conversion is done in any way. For
+          example, when transferring a file from a Linux guest to a
+          Windows host the Linux-specific line endings are not converted
+          to Windows line endings.
+        </p>
+    </note>
+    <p>
+        The following formats are handled by the Oracle VM VirtualBox drag and
+        drop service:
+      </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Plain text:</b> From
+            applications such as text editors, internet browsers and
+            terminal windows.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Files:</b> From file managers
+            such as Windows Explorer, Nautilus, and Finder.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Directories:</b> For
+            directories, the same formats apply as for files.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

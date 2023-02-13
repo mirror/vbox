@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="soft-keyb">
+            <title>Soft Keyboard</title>
+            
+            <body>
+               <p>
+      Oracle VM VirtualBox provides a <i>soft keyboard</i> that
+      enables you to input keyboard characters on the guest. A soft
+      keyboard is an on-screen keyboard that can be used as an
+      alternative to a physical keyboard. See
+      <xref href="soft-keyb-using.dita#soft-keyb-using"/> for details of how to use the
+      soft keyboard.
+    </p>
+               <note type="caution">
+                  <p>
+        For best results, ensure that the keyboard layout configured on
+        the guest OS matches the keyboard layout used by the soft
+        keyboard. Oracle VM VirtualBox does not do this automatically.
+      </p>
+               </note>
+               <fig id="fig-soft-keyb">
+                  <title>Soft Keyboard in a Guest Virtual Machine</title>
+                  <image href="images/softkeybd.png" placement="break"/>
+               </fig>
+               <p>
+      The soft keyboard can be used in the following scenarios:
+    </p>
+               <ul>
+                  <li>
+                     <p>
+          When the physical keyboard on the host is not the same as the
+          keyboard layout configured on the guest. For example, if the
+          guest is configured to use an international keyboard, but the
+          host keyboard is US English.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          To send special key combinations to the guest. Note that some
+          common key combinations are also available in the
+          <b outputclass="bold">Input</b>,
+          <b outputclass="bold">Keyboard</b> menu of the guest VM
+          window. See <xref href="specialcharacters.dita#specialcharacters"/>.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          For guests in kiosk mode, where a physical keyboard is not
+          present.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          When using nested virtualization, the soft keyboard provides a
+          method of sending key presses to a guest.
+        </p>
+                  </li>
+               </ul>
+               <p>
+      By default, the soft keyboard includes some common international
+      keyboard layouts. You can copy and modify these to meet your own
+      requirements. See <xref href="soft-keyb-custom.dita#soft-keyb-custom"/>.
+    </p>
+            </body>
+            
+            
+         </topic>

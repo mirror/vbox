@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="autostart-linux">
+  <title>Linux: Starting the Autostart Service With init</title>
+  
+  <body>
+    <p>
+        On Linux, the autostart service is activated by setting two
+        variables in <filepath>/etc/default/virtualbox</filepath>. The
+        first one is <codeph>VBOXAUTOSTART_DB</codeph> which contains
+        an absolute path to the autostart database directory. The
+        directory should have write access for every user who should be
+        able to start virtual machines automatically. Furthermore the
+        directory should have the sticky bit set. The second variable is
+        <codeph>VBOXAUTOSTART_CONFIG</codeph> which points the service
+        to the autostart configuration file which is used during boot to
+        determine whether to allow individual users to start a VM
+        automatically and configure startup delays. The configuration
+        file can be placed in <filepath>/etc/vbox</filepath> and
+        contains several options. One is
+        <codeph>default_policy</codeph> which controls whether the
+        autostart service allows or denies to start a VM for users which
+        are not in the exception list. The exception list starts with
+        <codeph>exception_list</codeph> and contains a comma separated
+        list with usernames. Furthermore a separate startup delay can be
+        configured for every user to avoid overloading the host. A
+        sample configuration is given below:
+      </p>
+    <pre xml:space="preserve"># Default policy is to deny starting a VM, the other option is "allow".
+default_policy = deny
+
+# Bob is allowed to start virtual machines but starting them
+# will be delayed for 10 seconds
+bob = {
+    allow = true
+    startup_delay = 10
+}
+
+# Alice is not allowed to start virtual machines, useful to exclude certain users
+# if the default policy is set to allow.
+alice = {
+    allow = false
+}
+</pre>
+    <p>
+        Any user who wants to enable autostart for individual machines
+        must set the path to the autostart database directory with the
+        following command:
+      </p>
+    <pre xml:space="preserve">VBoxManage setproperty autostartdbpath <varname>autostart-directory</varname>
+                  </pre>
+  </body>
+  
+</topic>

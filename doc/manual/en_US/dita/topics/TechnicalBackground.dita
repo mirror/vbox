@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="TechnicalBackground">
+  <title>Technical Background</title>
+  
+  <body>
+    <p>
+    This chapter provides additional information for readers who are
+    familiar with computer architecture and technology and wish to find
+    out more about how Oracle VM VirtualBox works <i>under the
+    hood</i>. The contents of this chapter are not required
+    reading in order to use Oracle VM VirtualBox successfully.
+  </p>
+  </body>
+</topic>

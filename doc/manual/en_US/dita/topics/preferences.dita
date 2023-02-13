@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="preferences">
+  <title>Preferences</title>
+  
+  <body>
+    <p>
+      The Preferences window offers a selection of settings, which apply
+      to all virtual machines of the current user.
+    </p>
+    <p>
+      To display the Preferences window, do either of the following:
+    </p>
+    <ul>
+      <li>
+        <p>
+          Select <b outputclass="bold">File</b>,
+          <b outputclass="bold">Preferences</b>.
+        </p>
+      </li>
+      <li>
+        <p>
+          Click <b outputclass="bold">Preferences</b> on the
+          Welcome screen in VirtualBox Manager.
+        </p>
+      </li>
+    </ul>
+    <p>
+      The following settings are available:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">General.</b> Enables you to
+          specify the default folder or directory for VM files, and the
+          VRDP Authentication Library.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Input.</b> Enables you to specify
+          keyboard shortcuts, such as the <b outputclass="bold">Host
+          key</b>. This is the key that toggles whether the
+          cursor is in the focus of the VM or the Host OS windows, see
+          <xref href="keyb_mouse_normal.dita#keyb_mouse_normal"/>. The Host key is also used
+          to trigger certain VM actions, see
+          <xref href="specialcharacters.dita#specialcharacters"/>.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Update.</b> Enables you to
+          specify various settings for Automatic Updates.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Language.</b> Enables you to
+          specify the language used for menus, labels, and text in
+          VirtualBox Manager.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Display.</b> Enables you to
+          specify the screen resolution, and its width and height. A
+          default scale factor can be specified for all guest screens.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Proxy.</b> Enables you to
+          configure an HTTP Proxy Server.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Interface.</b> Enables you to
+          select a color theme for the VirtualBox Manager user interface.
+        </p>
+        <note>
+          <p>
+            This setting is only available on Windows host platforms.
+          </p>
+        </note>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

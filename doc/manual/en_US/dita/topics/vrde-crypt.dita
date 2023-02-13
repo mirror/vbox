@@ -1,0 +1,128 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vrde-crypt">
+  <title>RDP Encryption</title>
+  
+  <body>
+    <p>
+        RDP features data stream encryption, which is based on the RC4
+        symmetric cipher, with keys up to 128-bit. The RC4 keys are
+        replaced at regular intervals, every 4096 packets.
+      </p>
+    <p>
+        RDP provides the following different authentication methods:
+      </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">RDP 4</b> authentication was
+            used historically. With RDP 4, the RDP client does not
+            perform any checks in order to verify the identity of the
+            server it connects to. Since user credentials can be
+            obtained using a man in the middle (MITM) attack, RDP4
+            authentication is insecure and should generally not be used.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">RDP 5.1</b> authentication
+            employs a server certificate for which the client possesses
+            the public key. This way it is guaranteed that the server
+            possess the corresponding private key. However, as this
+            hard-coded private key became public some years ago, RDP 5.1
+            authentication is also insecure.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">RDP 5.2 or later</b>
+            authentication uses Enhanced RDP Security, which means that
+            an external security protocol is used to secure the
+            connection. RDP 4 and RDP 5.1 use Standard RDP Security. The
+            VRDP server supports Enhanced RDP Security with TLS protocol
+            and, as a part of the TLS handshake, sends the server
+            certificate to the client.
+          </p>
+        <p>
+            The <codeph>Security/Method</codeph> VRDE property sets
+            the desired security method, which is used for a connection.
+            Valid values are as follows:
+          </p>
+        <ul>
+          <li>
+            <p><b outputclass="bold">Negotiate.</b> Both
+                Enhanced (TLS) and Standard RDP Security connections are
+                allowed. The security method is negotiated with the
+                client. This is the default setting.
+              </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">RDP.</b> Only Standard RDP
+                Security is accepted.
+              </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">TLS.</b> Only Enhanced RDP
+                Security is accepted. The client must support TLS.
+              </p>
+            <p>
+                The version of OpenSSL used by Oracle VM VirtualBox supports
+                TLS versions 1.0, 1.1, 1.2, and 1.3.
+              </p>
+          </li>
+        </ul>
+        <p>
+            For example, the following command enables a client to use
+            either Standard or Enhanced RDP Security connection:
+          </p>
+        <pre xml:space="preserve">vboxmanage modifyvm <varname>VM-name</varname> --vrde-property "Security/Method=negotiate"</pre>
+        <p>
+            If the <codeph>Security/Method</codeph> property is set to
+            either Negotiate or TLS, the TLS protocol will be
+            automatically used by the server, if the client supports
+            TLS. However, in order to use TLS the server must possess
+            the Server Certificate, the Server Private Key and the
+            Certificate Authority (CA) Certificate. The following
+            example shows how to generate a server certificate.
+          </p>
+        <ol>
+          <li>
+            <p>
+                Create a CA self signed certificate.
+              </p>
+            <pre xml:space="preserve">openssl req -new -x509 -days 365 -extensions v3_ca \
+  -keyout ca_key_private.pem -out ca_cert.pem</pre>
+          </li>
+          <li>
+            <p>
+                Generate a server private key and a request for signing.
+              </p>
+            <pre xml:space="preserve">openssl genrsa -out server_key_private.pem
+openssl req -new -key server_key_private.pem -out server_req.pem</pre>
+          </li>
+          <li>
+            <p>
+                Generate the server certificate.
+              </p>
+            <pre xml:space="preserve">openssl x509 -req -days 365 -in server_req.pem \
+  -CA ca_cert.pem -CAkey ca_key_private.pem -set_serial 01 -out server_cert.pem</pre>
+          </li>
+        </ol>
+        <p>
+            The server must be configured to access the required files.
+            For example:
+          </p>
+        <pre xml:space="preserve">vboxmanage modifyvm <varname>VM-name</varname> \
+  --vrde-property "Security/CACertificate=path/ca_cert.pem"</pre>
+        <pre xml:space="preserve">vboxmanage modifyvm <varname>VM-name</varname> \
+  --vrde-property "Security/ServerCertificate=path/server_cert.pem"</pre>
+        <pre xml:space="preserve">vboxmanage modifyvm <varname>VM-name</varname> \
+  --vrde-property "Security/ServerPrivateKey=path/server_key_private.pem"</pre>
+      </li>
+    </ul>
+    <p>
+        As the client that connects to the server determines what type
+        of encryption will be used, with <userinput>rdesktop</userinput>,
+        the Linux RDP viewer, use the <codeph>-4</codeph> or
+        <codeph>-5</codeph> options.
+      </p>
+  </body>
+  
+</topic>

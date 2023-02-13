@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="nat-limitations">
+  <title>NAT Limitations</title>
+  
+  <body>
+    <p>
+        There are some limitations of NAT mode which users should be
+        aware of, as follows:
+      </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">ICMP protocol limitations.</b>
+            Some frequently used network debugging tools, such as
+            <userinput>ping</userinput> or <userinput>traceroute</userinput>,
+            rely on the ICMP protocol for sending and receiving
+            messages. Oracle VM VirtualBox ICMP support has some limitations,
+            meaning <userinput>ping</userinput> should work but some other
+            tools may not work reliably.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Receiving of UDP
+            broadcasts.</b> The guest does not reliably receive
+            UDP broadcasts. In order to save resources, it only listens
+            for a certain amount of time after the guest has sent UDP
+            data on a particular port. As a consequence, NetBios name
+            resolution based on broadcasts does not always work, but
+            WINS always works. As a workaround, you can use the numeric
+            IP of the desired server in the
+            <filepath>\\<varname>server</varname>\<varname>share</varname></filepath>
+            notation.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Some protocols are not
+            supported.</b> Protocols other than TCP and UDP are
+            not supported. GRE is not supported. This means some VPN
+            products, such as PPTP from Microsoft, cannot be used. There
+            are other VPN products which use only TCP and UDP.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Forwarding host ports below
+            1024.</b> On UNIX-based hosts, such as Linux, Oracle
+            Solaris, and macOS, it is not possible to bind to ports
+            below 1024 from applications that are not run by
+            <codeph>root</codeph>. As a result, if you try to
+            configure such a port forwarding, the VM will refuse to
+            start.
+          </p>
+      </li>
+    </ul>
+    <p>
+        These limitations normally do not affect standard network use.
+        But the presence of NAT has also subtle effects that may
+        interfere with protocols that are normally working. One example
+        is NFS, where the server is often configured to refuse
+        connections from non-privileged ports, which are those ports not
+        below 1024.
+      </p>
+  </body>
+  
+</topic>

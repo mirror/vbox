@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_win-host-host-only-network-adapters">
+  <title>Host-Only Networking Adapters Cannot be Created</title>
+  
+  <body>
+    <p>
+        If a host-only adapter cannot be created, either with the
+        VirtualBox Manager or the <userinput>VBoxManage</userinput> command, then
+        the INF cache is probably corrupt. In this case, the install log
+        at <filepath>%windir%\inf\setupapi.dev.log</filepath> would
+        typically mention the failure to find a suitable driver package
+        for the <filepath>sun_VBoxNetAdp</filepath> component. Again, as
+        with the bridged networking problem described above, the
+        solution is to uninstall Oracle VM VirtualBox, remove the INF cache
+        (<filepath>%windir%\inf\INFCACHE.1</filepath>), reboot and try
+        to reinstall Oracle VM VirtualBox.
+      </p>
+  </body>
+  
+</topic>

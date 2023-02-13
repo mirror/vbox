@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ovf-about">
+  <title>About the OVF Format</title>
+  
+  <body>
+    <p>
+        OVF is a cross-platform standard supported by many
+        virtualization products which enables the creation of ready-made
+        virtual machines that can then be imported into a hypervisor
+        such as Oracle VM VirtualBox. Oracle VM VirtualBox makes OVF import and
+        export easy to do, using VirtualBox Manager or the command-line
+        interface.
+      </p>
+    <p>
+        Using OVF enables packaging of <i>virtual
+        appliances</i>. These are disk images, together with
+        configuration settings that can be distributed easily. This way
+        one can offer complete ready-to-use software packages, including
+        OSes with applications, that need no configuration or
+        installation except for importing into Oracle VM VirtualBox.
+      </p>
+    <note>
+      <p>
+          The OVF standard is complex, and support in Oracle VM VirtualBox is
+          an ongoing process. In particular, no guarantee is made that
+          Oracle VM VirtualBox supports all appliances created by other
+          virtualization software. For a list of known limitations, see
+          <xref href="KnownIssues.dita">Known Limitations</xref>.
+        </p>
+    </note>
+    <p>
+        Appliances in OVF format can appear in the following variants:
+      </p>
+    <ul>
+      <li>
+        <p>
+            They can come in several files, as one or several disk
+            images, typically in the widely-used VMDK format. See
+            <xref href="vdidetails.dita"/>. They also include a textual
+            description file in an XML dialect with an
+            <filepath>.ovf</filepath> extension. These files must then
+            reside in the same directory for Oracle VM VirtualBox to be able
+            to import them.
+          </p>
+      </li>
+      <li>
+        <p>
+            Alternatively, the above files can be packed together into a
+            single archive file, typically with an
+            <filepath>.ova</filepath> extension. Such archive files use
+            a variant of the TAR archive format and can therefore be
+            unpacked outside of Oracle VM VirtualBox with any utility that can
+            unpack standard TAR files.
+          </p>
+      </li>
+    </ul>
+    <note>
+      <p>
+          OVF cannot describe snapshots that were taken for a virtual
+          machine. As a result, when you export a virtual machine that
+          has snapshots, only the current state of the machine will be
+          exported. The disk images in the export will have a
+          <i>flattened</i> state identical to the current
+          state of the virtual machine.
+        </p>
+    </note>
+  </body>
+  
+</topic>

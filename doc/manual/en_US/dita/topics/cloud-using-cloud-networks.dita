@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-using-cloud-networks">
+  <title>Using a Cloud Network</title>
+  
+  <body>
+    <p>
+        A cloud network is a type of network that can be used for
+        connections from a local VM to a remote Oracle Cloud Infrastructure cloud instance.
+      </p>
+    <p>
+        To create and use a cloud network, do the following:
+      </p>
+    <ol>
+      <li>
+        <p>
+            Set up a virtual cloud network on Oracle Cloud Infrastructure.
+          </p>
+        <p>
+            The following steps create and configure a virtual cloud
+            network (VCN) on Oracle Cloud Infrastructure. The VCN is used to tunnel network
+            traffic across the cloud.
+          </p>
+        <ol>
+          <li>
+            <p>
+                Ensure that you have a cloud profile for connecting to
+                Oracle Cloud Infrastructure. See <xref href="cloud-create-cloud-profile.dita#cloud-create-cloud-profile"/>.
+              </p>
+          </li>
+          <li>
+            <p>
+                Run the following <userinput>VBoxManage cloud</userinput>
+                command:
+              </p>
+            <pre xml:space="preserve">VBoxManage cloud --provider="OCI" --profile="vbox-oci" network setup</pre>
+            <p>
+                where <codeph>vbox-oci</codeph> is the name of your
+                cloud profile.
+              </p>
+            <p>
+                Other options are available for the <userinput>VBoxManage
+                cloud network setup</userinput> command, to enable you to
+                configure details for the VCN. For example, you can
+                configure the operating system used for the cloud
+                gateway instance and the IP address range used by the
+                tunneling network. See
+                <xref href="man_VBoxManage-cloud.dita#vboxmanage-cloud"/>.
+              </p>
+            <p>
+                For best results, use an Oracle Linux 7 instance for the
+                cloud gateway. This is the default option.
+              </p>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <p>
+            Register the new cloud network with Oracle VM VirtualBox.
+          </p>
+        <p>
+            Use the <b outputclass="bold">Cloud Networks</b> tab
+            in the <b outputclass="bold">Network Manager</b>
+            tool. See
+            <xref href="network-manager-cloud-network-tab.dita#network-manager-cloud-network-tab"/>.
+          </p>
+      </li>
+      <li>
+        <p>
+            Add cloud network adaptors to the local VMs that will use
+            the cloud network. See <xref href="network_cloud.dita#network_cloud"/>.
+          </p>
+      </li>
+    </ol>
+  </body>
+  
+</topic>

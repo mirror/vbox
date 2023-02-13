@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="virt-why-useful">
+            <title>Why is Virtualization Useful?</title>
+            
+            <body>
+               <p>
+      The techniques and features that Oracle VM VirtualBox provides are
+      useful in the following scenarios:
+    </p>
+               <ul>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Running multiple operating systems
+          simultaneously.</b> Oracle VM VirtualBox enables you to run
+          more than one OS at a time. This way, you can run software
+          written for one OS on another, such as Windows software on
+          Linux or a Mac, without having to reboot to use it. Since you
+          can configure what kinds of <i>virtual</i>
+          hardware should be presented to each such OS, you can install
+          an old OS such as DOS or OS/2 even if your real computer's
+          hardware is no longer supported by that OS.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Easier software
+          installations.</b> Software vendors can use virtual
+          machines to ship entire software configurations. For example,
+          installing a complete mail server solution on a real machine
+          can be a tedious task. With Oracle VM VirtualBox, such a complex
+          setup, often called an <i>appliance</i>, can be
+          packed into a virtual machine. Installing and running a mail
+          server becomes as easy as importing such an appliance into
+          Oracle VM VirtualBox.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Testing and disaster
+          recovery.</b> Once installed, a virtual machine and its
+          virtual hard disks can be considered a
+          <i>container</i> that can be arbitrarily frozen,
+          woken up, copied, backed up, and transported between hosts.
+        </p>
+                     <p>
+          Using virtual machines enables you to build and test a
+          multi-node networked service, for example. Issues with
+          networking, operating system, and software configuration can
+          be investigated easily.
+        </p>
+                     <p>
+          In addition to that, with the use of another Oracle VM VirtualBox
+          feature called <i>snapshots</i>, one can save a
+          particular state of a virtual machine and revert back to that
+          state, if necessary. This way, one can freely experiment with
+          a computing environment. If something goes wrong, such as
+          problems after installing software or infecting the guest with
+          a virus, you can easily switch back to a previous snapshot and
+          avoid the need of frequent backups and restores.
+        </p>
+                     <p>
+          Any number of snapshots can be created, allowing you to travel
+          back and forward in virtual machine time. You can delete
+          snapshots while a VM is running to reclaim disk space.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Infrastructure consolidation.</b>
+          Virtualization can significantly reduce hardware and
+          electricity costs. Most of the time, computers today only use
+          a fraction of their potential power and run with low average
+          system loads. A lot of hardware resources as well as
+          electricity is thereby wasted. So, instead of running many
+          such physical computers that are only partially used, one can
+          pack many virtual machines onto a few powerful hosts and
+          balance the loads between them.
+        </p>
+                  </li>
+               </ul>
+            </body>
+            
+         </topic>

@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vmencryption-limitations">
+  <title>Limitations of VM Encryption</title>
+  
+  <body>
+    <p>
+        There are some limitations the user needs to be aware of when
+        using this feature:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Exporting appliances containing an encrypted VM is not
+            possible, because the OVF specification does not support
+            this. The VM is therefore decrypted during export.
+          </p>
+      </li>
+      <li>
+        <p>
+            The DEK is kept in memory while the VM is running to be able
+            to encrypt and decrypt VM data. While this should be obvious
+            the user needs to be aware of this because an attacker might
+            be able to extract the key on a compromised host and decrypt
+            the data.
+          </p>
+      </li>
+      <li>
+        <p>
+            When encrypting or decrypting the VM, the password is passed
+            in clear text using the Oracle VM VirtualBox API. This needs to be
+            kept in mind, especially when using third party API clients
+            which make use of the web service where the password might
+            be transmitted over the network. The use of HTTPS is
+            mandatory in such a case.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

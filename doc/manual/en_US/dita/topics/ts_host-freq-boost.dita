@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_host-freq-boost">
+  <title>Performance Variation with Frequency Boosting</title>
+  
+  <body>
+    <p>
+        Many multicore processors support some form of frequency
+        boosting, which means that if only one core is utilized, it can
+        run possibly 50% faster or even more than the rated CPU
+        frequency. This causes measured performance to vary somewhat as
+        a function of the momentary overall system load. The exact
+        behavior depends strongly on the specific processor model.
+      </p>
+    <p>
+        As a consequence, benchmarking on systems which utilize
+        frequency boosting may produce unstable and non-repeatable
+        results. This is especially true if benchmark runs are short, of
+        the order of seconds. To obtain stable results, benchmarks must
+        be run over longer periods of time and with a constant system
+        load apart from the VM being tested.
+      </p>
+  </body>
+  
+</topic>

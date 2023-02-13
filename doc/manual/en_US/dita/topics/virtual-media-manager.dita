@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="virtual-media-manager">
+            <title>The Virtual Media Manager</title>
+            
+            <body>
+               <p>
+      Oracle VM VirtualBox keeps track of all the hard disk, CD/DVD-ROM, and
+      floppy disk images which are in use by virtual machines. These are
+      often referred to as <i>known media</i> and come
+      from two sources:
+    </p>
+               <ul>
+                  <li>
+                     <p>
+          All media currently attached to virtual machines.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          Registered media, for compatibility with legacy Oracle VM VirtualBox
+          versions.
+        </p>
+                  </li>
+               </ul>
+               <p>
+      The known media can be viewed and changed using the
+      <b outputclass="bold">Virtual Media Manager</b> tool, which
+      you access by clicking <b outputclass="bold">Media</b> on
+      the global <b outputclass="bold">Tools</b> menu in
+      VirtualBox Manager.
+    </p>
+               <fig id="fig-virtual-media-manager">
+                  <title>The Virtual Media Manager, Showing Hard Disk Images</title>
+                  <image href="images/virtual-disk-manager.png" placement="break"/>
+               </fig>
+               <p>
+      The known media are conveniently grouped in separate tabs for the
+      supported formats. These formats are:
+    </p>
+               <ul>
+                  <li>
+                     <p>
+          Hard disk images, either in Oracle VM VirtualBox's own Virtual Disk
+          Image (VDI) format, or in the third-party formats listed in
+          <xref href="vdidetails.dita#vdidetails"/>.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          CD/DVD images in standard ISO format.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          Floppy images in standard RAW format.
+        </p>
+                  </li>
+               </ul>
+               <p>
+      For each image, the Virtual Media Manager shows you the full path
+      of the image file and other information, such as the virtual
+      machine the image is currently attached to.
+    </p>
+               <p>
+      The Virtual Media Manager enables you to do the following:
+    </p>
+               <ul>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Add</b> an image to the known
+          media.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Create</b> a new disk image.
+        </p>
+                     <ul>
+                        <li>
+                           <p>
+              For hard disks, the <b outputclass="bold">Create Virtual
+              Hard Disk</b> wizard is shown. See
+              <xref href="create-virtual-hard-disk-image.dita#create-virtual-hard-disk-image"/>.
+            </p>
+                        </li>
+                        <li>
+                           <p>
+              For optical disks, the <b outputclass="bold">VISO
+              Creator</b> tool is shown. See
+              <xref href="create-optical-disk-image.dita#create-optical-disk-image"/>.
+            </p>
+                        </li>
+                        <li>
+                           <p>
+              For floppy disks, the <b outputclass="bold">Floppy Disk
+              Creator</b> tool is shown. See
+              <xref href="create-floppy-disk-image.dita#create-floppy-disk-image"/>.
+            </p>
+                        </li>
+                     </ul>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Copy</b> an image to create
+          another one.
+        </p>
+                     <p>
+          For virtual hard disks, you can specify one of the following
+          target types: VDI, VHD, or VMDK.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Move</b> an image to another
+          location.
+        </p>
+                     <p>
+          A file dialog prompts you for the new image file location.
+        </p>
+                     <p>
+          When you use the Virtual Media Manager to move a disk image,
+          Oracle VM VirtualBox updates all related configuration files
+          automatically.
+        </p>
+                     <note>
+                        <p>
+            Always use the Virtual Media Manager or the
+            <userinput>VBoxManage modifymedium</userinput> command to move a
+            disk image.
+          </p>
+                        <p>
+            If you use a file management feature of the host OS to move
+            a disk image to a new location, run the <userinput>VBoxManage
+              modifymedium --setlocation</userinput>                       
+            command to configure the new path of the disk image on the
+            host file system. This command updates the Oracle VM VirtualBox
+            configuration automatically.
+          </p>
+                     </note>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Remove</b> an image from the
+          known media. You can optionally delete the image file when
+          removing the image.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Release</b> an image to detach it
+          from a VM. This action only applies if the image is currently
+          attached to a VM as a virtual hard disk.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Clear</b> all inaccessible disk
+          images from the list. The disk images are released from the
+          VMs they are attached to and removed from the known media.
+        </p>
+                     <note>
+                        <p>
+            This option is for optical disks and floppy disks only.
+          </p>
+                     </note>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Search</b> for an image by name
+          or UUID.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          View and edit the <b outputclass="bold">Properties</b>
+          of a disk image.
+        </p>
+                     <p>
+          Available properties include the following:
+        </p>
+                     <ul>
+                        <li>
+                           <p>
+                              <b outputclass="bold">Type:</b> Specifies the
+              snapshot behavior of the disk. See
+              <xref href="hdimagewrites.dita#hdimagewrites"/>.
+            </p>
+                        </li>
+                        <li>
+                           <p>
+                              <b outputclass="bold">Location:</b> Specifies the
+              location of the disk image file on the host system. You
+              can use a file dialog to browse for the disk image
+              location.
+            </p>
+                        </li>
+                        <li>
+                           <p>
+                              <b outputclass="bold">Description:</b> Specifies a
+              short description of the disk image.
+            </p>
+                        </li>
+                        <li>
+                           <p>
+                              <b outputclass="bold">Size:</b> Specifies the size
+              of the disk image. You can use the slider to increase or
+              decrease the disk image size.
+            </p>
+                        </li>
+                        <li>
+                           <p>
+                              <b outputclass="bold">Information:</b> Specifies
+              detailed information about the disk image.
+            </p>
+                        </li>
+                     </ul>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Refresh</b> the property values
+          of the selected disk image.
+        </p>
+                  </li>
+               </ul>
+               <p>
+      To perform these actions, highlight the medium in the Virtual
+      Media Manager and then do one of the following:
+    </p>
+               <ul>
+                  <li>
+                     <p>
+          Click an icon in the Virtual Media Manager toolbar.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          Right-click the medium and select an option.
+        </p>
+                  </li>
+               </ul>
+               <p>
+      Use the <b outputclass="bold">Storage</b> page in a VM's
+      <b outputclass="bold">Settings</b> window to create a new
+      disk image. By default, disk images are stored in the VM's folder.
+    </p>
+               <p>
+      You can copy hard disk image files to other host systems and then
+      import them in to VMs from the host system. However, some Windows
+      guest OSes may require that you configure the new VM in a similar
+      way to the old one.
+    </p>
+               <note>
+                  <p>
+        Do not simply make copies of virtual disk images. If you import
+        such a second copy into a VM, Oracle VM VirtualBox issues an error
+        because Oracle VM VirtualBox assigns a universally unique identifier
+        (UUID) to each disk image to ensure that it is only used one
+        time. See <xref href="cloningvdis.dita#cloningvdis"/>. Also, if you want to
+        copy a VM to another system, use the Oracle VM VirtualBox import and
+        export features. See <xref href="ovf.dita#ovf"/>.
+      </p>
+               </note>
+            </body>
+            
+            
+            
+         </topic>

@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vrde-multiconnection">
+  <title>Multiple Connections to the VRDP Server</title>
+  
+  <body>
+    <p>
+        The VRDP server of Oracle VM VirtualBox supports multiple simultaneous
+        connections to the same running VM from different clients. All
+        connected clients see the same screen output and share a mouse
+        pointer and keyboard focus. This is similar to several people
+        using the same computer at the same time, taking turns at the
+        keyboard.
+      </p>
+    <p>
+        The following command enables multiple connection mode:
+      </p>
+    <pre xml:space="preserve">VBoxManage modifyvm <varname>VM-name</varname> --vrde-multi-con on</pre>
+  </body>
+  
+</topic>

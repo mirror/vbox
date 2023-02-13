@@ -1,0 +1,74 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cpuhotplug">
+  <title>CPU Hot-Plugging</title>
+  
+  <body>
+    <p>
+      With virtual machines running modern server operating systems,
+      Oracle VM VirtualBox supports CPU hot-plugging.
+    </p>
+    <p>
+      On a physical computer CPU hot-plugging would mean that a CPU can
+      be added or removed while the machine is running. Oracle VM VirtualBox
+      supports adding and removing of virtual CPUs while a virtual
+      machine is running.
+    </p>
+    <p>
+      CPU hot-plugging works only with guest operating systems that
+      support the feature. So far this applies only to Linux and Windows
+      Server. Windows supports only hot-add, while Linux supports
+      hot-add and hot-remove. To use this feature with more than 8 CPUs,
+      a 64-bit Linux guest is required.
+    </p>
+    <p>
+      CPU hot-plugging is done using the <userinput>VBoxManage</userinput>
+      command-line interface. First, hot-plugging needs to be enabled
+      for a virtual machine:
+    </p>
+    <pre xml:space="preserve">$ VBoxManage modifyvm <varname>VM-name</varname> --cpu-hotplug on</pre>
+    <p>
+      The <codeph>--cpus</codeph> option is used to specify the maximum
+      number of CPUs that the virtual machine can have:
+    </p>
+    <pre xml:space="preserve">$ VBoxManage modifyvm <varname>VM-name</varname> --cpus 8</pre>
+    <p>
+      When the VM is off, you can then add and remove virtual CPUs with
+      the <userinput>VBoxManage modifyvm --plug-cpu</userinput> and
+      <userinput>VBoxManage modifyvm --unplug-cpu</userinput> commands,
+      which take the number of the virtual CPU as a parameter, as
+      follows:
+    </p>
+    <pre xml:space="preserve">$ VBoxManage modifyvm <varname>VM-name</varname> --plug-cpu 3
+$ VBoxManage modifyvm <varname>VM-name</varname> --unplug-cpu 3</pre>
+    <p>
+      Note that CPU 0 can never be removed.
+    </p>
+    <p>
+      While the VM is running, CPUs can be added and removed with the
+      <userinput>VBoxManage controlvm plugcpu</userinput> and
+      <userinput>VBoxManage controlvm unplugcpu</userinput> commands
+      instead, as follows:
+    </p>
+    <pre xml:space="preserve">$ VBoxManage controlvm <varname>VM-name</varname> plugcpu 3
+$ VBoxManage controlvm <varname>VM-name</varname> unplugcpu 3</pre>
+    <p>
+      See <xref href="man_VBoxManage-modifyvm.dita">VBoxManage modifyvm</xref> and
+      <xref href="man_VBoxManage-controlvm.dita">VBoxManage controlvm</xref> for details.
+    </p>
+    <p>
+      With Linux guests, the following applies:
+    </p>
+    <p>
+      To prevent ejection while the CPU is still used it has to be
+      ejected from within the guest before. The Linux Guest Additions
+      contain a service which receives hot-remove events and ejects the
+      CPU. Also, after a CPU is added to the VM it is not automatically
+      used by Linux. The Linux Guest Additions service will take care of
+      that if installed. If not a CPU can be started with the following
+      command:
+    </p>
+    <pre xml:space="preserve">$ echo 1 &gt; /sys/devices/system/cpu/cpu&lt;id&gt;/online</pre>
+  </body>
+  
+</topic>

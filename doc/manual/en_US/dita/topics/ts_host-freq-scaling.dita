@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_host-freq-scaling">
+  <title>Frequency Scaling Effect on CPU Usage</title>
+  
+  <body>
+    <p>
+        On some hardware platforms and operating systems, CPU frequency
+        scaling may cause CPU usage reporting to be highly misleading.
+        This happens in situations when the host CPU load is significant
+        but not heavy, such as between 15% to 30% of the maximum.
+      </p>
+    <p>
+        Most operating systems determine CPU usage in terms of time
+        spent, measuring for example how many nanoseconds the systems or
+        a process was active within one second. However, in order to
+        save energy, systems can significantly scale down CPU speed when
+        the system is not fully loaded. When the CPU is running at for
+        example one half of its maximum speed, the same number of
+        instructions will take roughly twice as long to execute compared
+        to running at full speed.
+      </p>
+    <p>
+        Depending on the specific hardware and host OS, this effect can
+        very significantly skew the CPU usage reported by the OS. The
+        reported CPU usage can be several times higher than what it
+        would have been had the CPU been running at full speed. The
+        effect can be observed both on the host OS and in a guest OS.
+      </p>
+  </body>
+  
+</topic>

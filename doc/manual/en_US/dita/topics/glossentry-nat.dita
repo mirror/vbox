@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="glossentry-nat">
+  <title>NAT</title>
+  <body>
+    <section>
+      <p>
+        Network Address Translation. A technique to share networking interfaces 
+        by which an interface modifies the source and/or target IP addresses of 
+        network packets according to specific rules. Commonly employed by routers 
+        and firewalls to shield an internal network from the Internet, 
+        Oracle VM VirtualBox can use NAT to easily share a host's physical 
+        networking hardware with its virtual machines. 
+        See <xref href="network_nat.dita"/>. 
+      </p>
+    </section>
+  </body>
+</topic>

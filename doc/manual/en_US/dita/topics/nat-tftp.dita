@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="nat-tftp">
+  <title>PXE Booting with NAT</title>
+  
+  <body>
+    <p>
+        PXE booting is now supported in NAT mode. The NAT DHCP server
+        provides a boot file name of the form
+        <filepath><varname>vmname</varname>.pxe</filepath> if
+        the directory <codeph>TFTP</codeph> exists in the directory
+        where the user's <filepath>VirtualBox.xml</filepath> file is
+        kept. It is the responsibility of the user to provide
+        <filepath><varname>vmname</varname>.pxe</filepath>.
+      </p>
+  </body>
+  
+</topic>

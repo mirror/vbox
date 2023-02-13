@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-vbox-oci-tasks">
+  <title>Using Oracle VM VirtualBox With Oracle Cloud Infrastructure</title>
+  
+  <body>
+    <p>
+        This section describes how you can use Oracle VM VirtualBox with Oracle Cloud Infrastructure
+        to do the following tasks:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Create, add, and manage Oracle Cloud Infrastructure cloud instances using
+            VirtualBox Manager. See <xref href="cloud-vm.dita#cloud-vm"/>.
+          </p>
+      </li>
+      <li>
+        <p>
+            Export an Oracle VM VirtualBox VM to Oracle Cloud Infrastructure. See
+            <xref href="cloud-export-oci.dita#cloud-export-oci"/>.
+          </p>
+      </li>
+      <li>
+        <p>
+            Import a cloud instance into Oracle VM VirtualBox. See
+            <xref href="cloud-import-oci.dita#cloud-import-oci"/>.
+          </p>
+      </li>
+      <li>
+        <p>
+            Connect from a local VM to an Oracle Cloud Infrastructure cloud subnet. See
+            <xref href="cloud-using-cloud-networks.dita#cloud-using-cloud-networks"/>.
+          </p>
+      </li>
+      <li>
+        <p>
+            Use the <userinput>VBoxManage</userinput> commands to integrate
+            with Oracle Cloud Infrastructure and perform cloud operations. See
+            <xref href="cloud-using-cli.dita#cloud-using-cli"/>.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

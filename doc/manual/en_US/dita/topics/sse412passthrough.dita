@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="sse412passthrough">
+  <title>Passing Through SSE4.1/SSE4.2 Instructions</title>
+  
+  <body>
+    <p>
+      To provide SSE 4.1/SSE 4.2 support to guests, the host CPU has to
+      implement these instruction sets. The instruction sets are exposed
+      to guests by default, but it is possible to disable the
+      instructions for certain guests by using the following commands:
+    </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> \
+VBoxInternal/CPUM/IsaExts/SSE4.1 0
+$ VBoxManage setextradata <varname>VM-name</varname> \
+VBoxInternal/CPUM/IsaExts/SSE4.2 0</pre>
+    <p>
+      These are per-VM settings which are enabled by default.
+    </p>
+  </body>
+  
+</topic>

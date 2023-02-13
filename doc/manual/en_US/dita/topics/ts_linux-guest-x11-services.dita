@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_linux-guest-x11-services">
+  <title>Shared Clipboard, Auto-Resizing, and Seamless Desktop in X11 Guests</title>
+  
+  <body>
+    <p>
+        Guest desktop services in guests running the X11 window system
+        such as Oracle Solaris and Linux, are provided by a guest
+        service called <userinput>VBoxClient</userinput>, which runs under
+        the ID of the user who started the desktop session and is
+        automatically started using the following command lines when
+        your X11 user session is started if you are using a common
+        desktop environment such as Gnome or KDE.
+      </p>
+    <pre xml:space="preserve">$ VBoxClient --clipboard
+$ VBoxClient --display
+$ VBoxClient --seamless</pre>
+    <p>
+        If a particular desktop service is not working correctly, it is
+        worth checking whether the process which should provide it is
+        running.
+      </p>
+    <p>
+        The <userinput>VBoxClient</userinput> processes create files in the
+        user's home directory with names of the form
+        <filepath>.vboxclient-*.pid</filepath> when they are running in
+        order to prevent a given service from being started twice. It
+        can happen due to misconfiguration that these files are created
+        owned by root and not deleted when the services are stopped,
+        which will prevent them from being started in future sessions.
+        If the services cannot be started, you may wish to check whether
+        these files still exist.
+      </p>
+  </body>
+  
+</topic>

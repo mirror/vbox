@@ -1,0 +1,226 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="pcspeaker_passthrough">
+  <title>PC Speaker Passthrough</title>
+  
+  <body>
+    <p>
+      As an experimental feature, primarily due to being limited to
+      Linux host only and unknown Linux distribution coverage,
+      Oracle VM VirtualBox supports passing through the PC speaker to the
+      host. The PC speaker, sometimes called the system speaker, is a
+      way to produce audible feedback such as beeps without the need for
+      regular audio and sound card support.
+    </p>
+    <p>
+      The PC speaker passthrough feature in Oracle VM VirtualBox handles beeps
+      only. Advanced PC speaker use by the VM, such as PCM audio, will
+      not work, resulting in undefined host behavior.
+    </p>
+    <p>
+      Producing beeps on Linux is a very complex topic. Oracle VM VirtualBox
+      offers a collection of options, in an attempt to make this work
+      deterministically and reliably on as many Linux distributions and
+      system configurations as possible. These are summarized in the
+      following table.
+    </p>
+    <table id="table-pcspeaker-config">
+      <title>PC Speaker Configuration Options</title>
+      <tgroup cols="3">      
+        <thead>
+          <row>
+            <entry>
+              <p>
+                <b outputclass="bold">Code</b>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                <b outputclass="bold">Device</b>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                <b outputclass="bold">Notes</b>
+              </p>
+            </entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>
+              <p>
+                1
+              </p>
+            </entry>
+            <entry>
+              <p>
+                <filepath>/dev/input/by-path/platform-pcspkr-event-spkr</filepath>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                Direct host PC speaker use.
+              </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                2
+              </p>
+            </entry>
+            <entry>
+              <filepath>/dev/tty</filepath>
+            </entry>
+            <entry>
+              <p>
+                Uses the terminal association of the VM process. VM
+                needs to be started on a virtual console.
+              </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                3
+              </p>
+            </entry>
+            <entry>
+              <p><filepath>/dev/tty0</filepath> or
+                <filepath>/dev/vc/0</filepath>
+                              </p>
+            </entry>
+            <entry>
+              <p>
+                Can only be used by user <codeph>root</codeph> or
+                users with <codeph>cap_sys_tty_config</codeph>
+                capability.
+              </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                9
+              </p>
+            </entry>
+            <entry>
+              <p>
+                A user-specified console or evdev device path.
+              </p>
+            </entry>
+            <entry>
+              <p>
+                As for codes 1 to 3, but with a custom device path.
+              </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                70
+              </p>
+            </entry>
+            <entry>
+              <p>
+                <filepath>/dev/tty</filepath>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                Standard beep only. Loses frequency and length. See code
+                2.
+              </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                79
+              </p>
+            </entry>
+            <entry>
+              <p>
+                A user-specified terminal device path.
+              </p>
+            </entry>
+            <entry>
+              <p>
+                As for code 70, but with a custom device path.
+              </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                100
+              </p>
+            </entry>
+            <entry>
+              <p>
+                All of the above.
+              </p>
+            </entry>
+            <entry>
+              <p>
+                Tries all the available codes.
+              </p>
+            </entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+    <p>
+      To enable PC speaker passthrough use the following command:
+    </p>
+    <pre xml:space="preserve">VBoxManage setextradata <varname>VM-name</varname> "VBoxInternal/Devices/i8254/0/Config/PassthroughSpeaker" <varname>N</varname>
+               </pre>
+    <p>
+      Replace <varname>N</varname> with the code representing
+      the case you want to use. Changing this setting takes effect when
+      you next start the VM. It is safe to enable PC speaker passthrough
+      on all host OSes. It will only have an effect on Linux.
+    </p>
+    <p>
+      The VM log file, <filepath>VBox.log</filepath>, contains lines
+      with the prefix <codeph>PIT: speaker:</codeph> showing the PC
+      speaker passthrough setup activities. It gives hints which device
+      it picked or why it failed.
+    </p>
+    <p>
+      Enabling PC speaker passthrough for the VM is usually the simple
+      part. The real difficulty is making sure that Oracle VM VirtualBox can
+      access the necessary device, because in a typical Linux install
+      most of them can only be accessed by user <codeph>root</codeph>.
+      You should follow the preferred way to persistently change this,
+      such as by referring to your distribution's documentation. Since
+      there are countless Linux distribution variants, we can only give
+      the general hints that there is often a way to give the X11
+      session user access to additional devices, or you need to find a
+      working solution using a udev configuration file. If everything
+      fails you might try setting the permissions using a script which
+      is run late enough in the host system startup.
+    </p>
+    <p>
+      Sometimes additional rules are applied by the kernel to limit
+      access. For example, that the VM process must have the same
+      controlling terminal as the device configured to be used for
+      beeping, something which is often very difficult to achieve for
+      GUI applications such as Oracle VM VirtualBox. The table above contains
+      some hints, but in general refer to the Linux documentation.
+    </p>
+    <p>
+      If you have trouble getting any beeps even if the device
+      permissions are set up and VBox.log confirms that it uses evdev or
+      console for the PC speaker control, check if your system has a PC
+      speaker. Some systems do not have one. Other complications can
+      arise from Linux rerouting the PC speaker output to a sound card.
+      Check if the beeps are audible if you connect speakers to your
+      sound card. Today almost all systems have one. Finally, check if
+      the audio mixer control has a channel named "beep", which could be
+      hidden in the mixer settings, and that it is not muted.
+    </p>
+  </body>
+  
+</topic>

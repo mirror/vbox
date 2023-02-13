@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-import-oci">
+  <title>Importing an Instance from Oracle Cloud Infrastructure</title>
+  
+  <body>
+    <p>
+        Perform the following steps to import a cloud instance from
+        Oracle Cloud Infrastructure into Oracle VM VirtualBox:
+      </p>
+    <ol>
+      <li>
+        <p>
+            Select <b outputclass="bold">File</b>,
+            <b outputclass="bold">Import Appliance</b> to open
+            the <b outputclass="bold">Import Virtual
+            Appliance</b> wizard.
+          </p>
+        <p>
+            In the <b outputclass="bold">Source</b> drop-down
+            list, select <b outputclass="bold">Oracle Cloud Infrastructure</b>.
+          </p>
+        <p>
+            In the <b outputclass="bold">Profile</b> drop-down
+            list, select the cloud profile for your Oracle Cloud Infrastructure account.
+          </p>
+        <p>
+            Choose the required cloud instance from the list in the
+            <b outputclass="bold">Machines</b> field.
+          </p>
+        <p>
+            Click <b outputclass="bold">Next</b> to make an API
+            request to the Oracle Cloud Infrastructure service and display the
+            <b outputclass="bold">Appliance Settings</b> page.
+          </p>
+      </li>
+      <li>
+        <p>
+            (Optional) Edit settings for the new local virtual machine.
+          </p>
+        <p>
+            For example, you can edit the VM name and description.
+          </p>
+        <fig id="fig-import-instance-oci">
+          <title>Import Cloud Instance Wizard: Appliance Settings</title>
+          <image href="images/import-instance.png" placement="break"/>
+        </fig>
+        <p>
+            Click <b outputclass="bold">Finish</b> to import the
+            instance from Oracle Cloud Infrastructure.
+          </p>
+      </li>
+      <li>
+        <p>
+            Monitor the import process by using the Oracle Cloud Infrastructure Console.
+          </p>
+      </li>
+    </ol>
+    <p>
+        You can also use the <userinput>VBoxManage import</userinput>
+        command to import an instance from Oracle Cloud Infrastructure. See
+        <xref href="man_VBoxManage-import.dita"/>.
+      </p>
+  </body>
+</topic>

@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="additions-linux-install">
+  <title>Installing the Linux Guest Additions</title>
+  
+  <body>
+    <p>
+          The Oracle VM VirtualBox Guest Additions for Linux are provided on
+          the same virtual CD-ROM file as the Guest Additions for
+          Windows. See <xref href="mountingadditionsiso.dita#mountingadditionsiso"/>. They also
+          come with an installation program that guides you through the
+          setup process. However, due to the significant differences
+          between Linux distributions, installation may be slightly more
+          complex when compared to Windows.
+        </p>
+    <p>
+          Installation generally involves the following steps:
+        </p>
+    <ol>
+      <li>
+        <p>
+              Before installing the Guest Additions, you prepare your
+              guest system for building external kernel modules. This
+              works as described in
+              <xref href="externalkernelmodules.dita#externalkernelmodules"/>, except that this
+              step must be performed in your Linux
+              <i>guest</i> instead of on a Linux host
+              system.
+            </p>
+        <p>
+              If you suspect that something has gone wrong, check that
+              your guest is set up correctly and run the following
+              command as root:
+            </p>
+        <pre xml:space="preserve">rcvboxadd setup</pre>
+      </li>
+      <li>
+        <p>
+              Insert the <filepath>VBoxGuestAdditions.iso</filepath> CD
+              file into your Linux guest's virtual CD-ROM drive, as
+              described for a Windows guest in
+              <xref href="mountingadditionsiso.dita#mountingadditionsiso"/>.
+            </p>
+      </li>
+      <li>
+        <p>
+              Change to the directory where your CD-ROM drive is mounted
+              and run the following command as root:
+            </p>
+        <pre xml:space="preserve">sh ./VBoxLinuxAdditions.run</pre>
+      </li>
+    </ol>
+  </body>
+  
+</topic>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="sf_mount_auto">
+               <title>Automatic Mounting</title>
+               
+               <body>
+                  <p>
+        Oracle VM VirtualBox provides the option to mount shared folders
+        automatically. When automatic mounting is enabled for a shared
+        folder, the Guest Additions service will mount it for you
+        automatically. For Windows or OS/2, a preferred drive letter can
+        also be specified. For Linux or Oracle Solaris, a mount point
+        directory can also be specified.
+      </p>
+                  <p>
+        If a drive letter or mount point is not specified, or is in use
+        already, an alternative location is found by the Guest Additions
+        service. The service searches for an alternative location
+        depending on the guest OS, as follows:
+      </p>
+                  <ul>
+                     <li>
+                        <p>
+                           <b outputclass="bold">Windows and OS/2 guests.</b>
+            Search for a free drive letter, starting at
+            <filepath>Z:</filepath>. If all drive letters are assigned,
+            the folder is not mounted.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+                           <b outputclass="bold">Linux and Oracle Solaris
+            guests.</b> Folders are mounted under the
+            <filepath>/media</filepath> directory. The folder name is
+            normalized (no spaces, slashes or colons) and is prefixed
+            with <filepath>sf_</filepath>.
+          </p>
+                        <p>
+            For example, if you have a shared folder called
+            <filepath>myfiles</filepath>, it will appear as
+            <filepath>/media/sf_myfiles</filepath> in the guest.
+          </p>
+                        <p>
+            The guest properties
+            <codeph>/VirtualBox/GuestAdd/SharedFolders/MountDir</codeph>
+            and the more generic
+            <codeph>/VirtualBox/GuestAdd/SharedFolders/MountPrefix</codeph>
+            can be used to override the automatic mount directory and
+            prefix. See <xref href="guestadd-guestprops.dita#guestadd-guestprops"/>.
+          </p>
+                     </li>
+                  </ul>
+                  <p>
+        Access to an automatically mounted shared folder is granted to
+        everyone in a Windows guest, including the guest user. For Linux
+        and Oracle Solaris guests, access is restricted to members of
+        the group <codeph>vboxsf</codeph> and the
+        <codeph>root</codeph> user.
+      </p>
+               </body>
+               
+            </topic>

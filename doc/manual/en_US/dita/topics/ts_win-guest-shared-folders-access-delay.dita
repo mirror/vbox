@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_win-guest-shared-folders-access-delay">
+  <title>Long Delays When Accessing Shared Folders</title>
+  
+  <body>
+    <p>
+        The performance for accesses to shared folders from a Windows
+        guest might be decreased due to delays during the resolution of
+        the Oracle VM VirtualBox shared folders name service. To fix these
+        delays, add the following entries to the file
+        <filepath>\windows\system32\drivers\etc\lmhosts</filepath> of
+        the Windows guest:
+      </p>
+    <pre xml:space="preserve">255.255.255.255        VBOXSVR #PRE
+255.255.255.255        VBOXSRV #PRE</pre>
+    <p>
+        After doing this change, a reboot of the guest is required.
+      </p>
+  </body>
+  
+</topic>

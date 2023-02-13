@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="glossentry-mac">
+  <title>MAC</title>
+  <body>
+    <section>
+      <p>
+        Media Access Control, a part of an Ethernet network card. A MAC address 
+        is a 6-byte number which identifies a network card. It is typically written 
+        in hexadecimal notation where the bytes are separated by colons, 
+        such as <codeph>00:17:3A:5E:CB:08</codeph>. 
+      </p>
+    </section>
+  </body>
+</topic>

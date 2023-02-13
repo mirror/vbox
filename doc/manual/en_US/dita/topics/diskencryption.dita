@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="diskencryption">
+  <title>Encryption of Disk Images</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox enables you to transparently encrypt the data
+      stored in hard disk images for the guest. It does not depend on a
+      specific image format to be used. Images which have the data
+      encrypted are not portable between Oracle VM VirtualBox and other
+      virtualization software.
+    </p>
+    <p>
+      Oracle VM VirtualBox uses the AES algorithm in XTS mode and supports
+      128-bit or 256-bit data encryption keys (DEK). The DEK is stored
+      encrypted in the medium properties and is decrypted during VM
+      startup by entering a password which was chosen when the image was
+      encrypted.
+    </p>
+    <p>
+      Since the DEK is stored as part of the VM configuration file, it
+      is important that it is kept safe. Losing the DEK means that the
+      data stored in the disk images is lost irrecoverably. Having
+      complete and up to date backups of all data related to the VM is
+      the responsibility of the user.
+    </p>
+  </body>
+</topic>

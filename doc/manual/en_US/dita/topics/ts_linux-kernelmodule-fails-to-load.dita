@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_linux-kernelmodule-fails-to-load">
+  <title>Linux Kernel Module Refuses to Load</title>
+  
+  <body>
+    <p>
+        If the Oracle VM VirtualBox kernel module, <userinput>vboxdrv</userinput>,
+        refuses to load you may see an <codeph>Error inserting vboxdrv:
+        Invalid argument</codeph> message. As root, check the output of
+        the <userinput>dmesg</userinput> command to find out why the load
+        failed. Most probably the kernel disagrees with the version of
+        <userinput>gcc</userinput> used to compile the module. Make sure
+        that you use the same compiler that was used to build the
+        kernel.
+      </p>
+  </body>
+  
+</topic>

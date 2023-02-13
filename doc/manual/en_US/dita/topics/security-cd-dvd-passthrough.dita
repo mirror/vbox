@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="security-cd-dvd-passthrough">
+  <title>CD/DVD Passthrough</title>
+  
+  <body>
+    <p>
+          Enabling CD/DVD passthrough enables the guest to perform
+          advanced operations on the CD/DVD drive, see
+          <xref href="storage-cds.dita">CD/DVD Support</xref>. This could induce a security
+          risk as a guest could overwrite data on a CD/DVD medium.
+        </p>
+  </body>
+  
+</topic>

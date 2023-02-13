@@ -1,0 +1,114 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="rdp-viewers">
+  <title>Common Third-Party RDP Viewers</title>
+  
+  <body>
+    <p>
+        Since VRDP is backwards-compatible to RDP, you can use any
+        standard RDP viewer to connect to such a remote virtual machine.
+        For this to work, you must specify the IP address of your
+        <i>host</i> system, not of the virtual machine, as
+        the server address to connect to. You must also specify the port
+        number that the VRDP server is using.
+      </p>
+    <p>
+        The following examples are for the most common RDP viewers:
+      </p>
+    <ul>
+      <li>
+        <p>
+            On Windows, you can use the Microsoft Terminal Services
+            Connector, <userinput>mstsc.exe</userinput>, that is included
+            with Windows. Press the Windows key + R, to display the
+            <b outputclass="bold">Run</b> dialog. Enter
+            <userinput>mstsc</userinput> to start the program. You can also
+            find the program in <b outputclass="bold">Start</b>,
+            <b outputclass="bold">All Programs</b>,
+            <b outputclass="bold">Accessories</b>,
+            <b outputclass="bold">Remote Desktop Connection</b>.
+            If you use the <b outputclass="bold">Run</b> dialog,
+            you can enter options directly. For example:
+          </p>
+        <pre xml:space="preserve">mstsc 1.2.3.4:3389</pre>
+        <p>
+            Replace <codeph>1.2.3.4</codeph> with the host IP address,
+            and <codeph>3389</codeph> with a different port, if
+            necessary.
+          </p>
+        <note>
+          <ul>
+            <li>
+              <p>
+                  IPv6 addresses must be enclosed in square brackets to
+                  specify a port. For example: <codeph>mstsc
+                  [fe80::1:2:3:4]:3389</codeph>
+                                 </p>
+            </li>
+            <li>
+              <p>
+                  When connecting to localhost in order to test the
+                  connection, the addresses <codeph>localhost</codeph>
+                  and <codeph>127.0.0.1</codeph> might not work using
+                  <userinput>mstsc.exe</userinput>. Instead, the address
+                  <codeph>127.0.0.2[:3389]</codeph> has to be used.
+                </p>
+            </li>
+          </ul>
+        </note>
+      </li>
+      <li>
+        <p>
+            On other systems, you can use the standard open source
+            <userinput>rdesktop</userinput> program. This ships with most
+            Linux distributions.
+          </p>
+        <p>
+            With <userinput>rdesktop</userinput>, use a command line such as
+            the following:
+          </p>
+        <pre xml:space="preserve">$ rdesktop -a 16 -N 1.2.3.4:3389</pre>
+        <p>
+            Replace <codeph>1.2.3.4</codeph> with the host IP address,
+            and <codeph>3389</codeph> with a different port, if
+            necessary. The <codeph>-a</codeph> 16 option requests a
+            color depth of 16 bits per pixel, which we recommend. For
+            best performance, after installation of the guest operating
+            system, you should set its display color depth to the same
+            value. The <codeph>-N</codeph> option enables use of the
+            NumPad keys.
+          </p>
+      </li>
+      <li>
+        <p>
+            You can use the Remmina remote desktop client with VRDP.
+            This application is included with some Linux distributions,
+            such as Debian and Ubuntu.
+          </p>
+      </li>
+      <li>
+        <p>
+            If you run the KDE desktop, you can use
+            <userinput>krdc</userinput>, the KDE RDP viewer. A typical
+            command line is as follows:
+          </p>
+        <pre xml:space="preserve">$ krdc rdp://1.2.3.4:3389</pre>
+        <p>
+            Replace <codeph>1.2.3.4</codeph> with the host IP address,
+            and <codeph>3389</codeph> with a different port, if
+            necessary. The <codeph>rdp:// </codeph> prefix is required
+            with <userinput>krdc</userinput> to switch it into RDP mode.
+          </p>
+      </li>
+      <li>
+        <p>
+            With Sun Ray thin clients you can use
+            <userinput>uttsc</userinput>, which is part of the Sun Ray
+            Windows Connector package. See the Sun Ray documentation for
+            details.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

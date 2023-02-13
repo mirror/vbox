@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="disabletimesync">
+  <title>Disabling the Guest Additions Time Synchronization</title>
+  
+  <body>
+    <p>
+        Once installed and started, the Oracle VM VirtualBox Guest Additions
+        will try to synchronize the guest time with the host time. This
+        can be prevented by forbidding the guest service from reading
+        the host clock:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> "VBoxInternal/Devices/VMMDev/0/Config/GetHostTimeDisabled" 1</pre>
+  </body>
+  
+</topic>

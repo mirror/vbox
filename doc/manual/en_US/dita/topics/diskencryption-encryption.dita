@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="diskencryption-encryption">
+  <title>Encrypting Disk Images</title>
+  
+  <body>
+    <p>
+        Encrypting disk images can be done either using VirtualBox Manager or
+        the <userinput>VBoxManage</userinput>. While VirtualBox Manager is easier to
+        use, it works on a per VM basis and encrypts all disk images
+        attached to the specific VM. With <userinput>VBoxManage</userinput>
+        one can encrypt individual images, including all differencing
+        images. To encrypt an unencrypted medium with
+        <userinput>VBoxManage</userinput>, use:
+      </p>
+    <pre xml:space="preserve">VBoxManage encryptmedium <varname>uuid</varname>|<varname>filename</varname> \
+--newpassword <varname>filename</varname>|- --cipher <varname>cipher-ID</varname> --newpasswordid "<varname>ID</varname>
+                  </pre>
+    <p>
+        To supply the encryption password point
+        <userinput>VBoxManage</userinput> to the file where the password is
+        stored or specify <codeph>-</codeph> to let <userinput>VBoxManage</userinput> ask you
+        for the password on the command line.
+      </p>
+    <p>
+        The cipher parameter specifies the cipher to use for encryption
+        and can be either <codeph>AES-XTS128-PLAIN64</codeph> or
+        <codeph>AES-XTS256-PLAIN64</codeph>. The specified password
+        identifier can be freely chosen by the user and is used for
+        correct identification when supplying multiple passwords during
+        VM startup.
+      </p>
+    <p>
+        If the user uses the same password when encrypting multiple
+        images and also the same password identifier, the user needs to
+        supply the password only once during VM startup.
+      </p>
+  </body>
+  
+</topic>

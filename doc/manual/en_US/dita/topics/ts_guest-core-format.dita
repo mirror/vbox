@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_guest-core-format">
+  <title>VM Core Format</title>
+  
+  <body>
+    <p>
+        Oracle VM VirtualBox uses the 64-bit ELF format for its VM core files
+        created by <userinput>VBoxManage debugvm</userinput>, see
+        <xref href="man_VBoxManage-debugvm.dita">VBoxManage debugvm</xref>. The VM core file contain
+        the memory and CPU dumps of the VM and can be useful for
+        debugging your guest OS. The 64-bit ELF object format
+        specification can be obtained at:
+      </p>
+    <p><ph>http://downloads.openwatcom.org/ftp/devel/docs/elf-64-gen.pdf</ph>.
+      </p>
+    <p>
+        The overall layout of the VM core format is as follows:
+      </p>
+    <pre xml:space="preserve">[ ELF 64 Header]
+[ Program Header, type PT_NOTE ]
+  → offset to COREDESCRIPTOR
+[ Program Header, type PT_LOAD ] - one for each contiguous physical memory range
+  → Memory offset of range
+  → File offset
+[ Note Header, type NT_VBOXCORE ]
+[ COREDESCRIPTOR ]
+  → Magic
+  → VM core file version
+  → VBox version
+  → Number of vCPUs etc.
+[ Note Header, type NT_VBOXCPU ] - one for each vCPU
+[ vCPU 1 Note Header ]
+  [ DBGFCORECPU - vCPU 1 dump ]
+[ Additional Notes + Data ] - currently unused
+[ Memory dump ]</pre>
+    <p>
+        The memory descriptors contain physical addresses relative to
+        the guest and not virtual addresses. Regions of memory such as
+        MMIO regions are not included in the core file.
+      </p>
+    <p>
+        The relevant data structures and definitions can be found in the
+        Oracle VM VirtualBox sources under the following header files:
+        <filepath>include/VBox/dbgfcorefmt.h</filepath>,
+        <filepath>include/iprt/x86.h</filepath> and
+        <filepath>src/VBox/Runtime/include/internal/ldrELFCommon.h</filepath>.
+      </p>
+    <p>
+        The VM core file can be inspected using
+        <userinput>elfdump</userinput> and GNU <userinput>readelf</userinput> or
+        other similar utilities.
+      </p>
+  </body>
+  
+</topic>

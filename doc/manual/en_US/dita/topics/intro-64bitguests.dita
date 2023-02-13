@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="intro-64bitguests">
+  <title>64-bit Guests</title>
+  
+  <body>
+    <note type="attention">
+      <p>
+          Be sure to enable <b outputclass="bold">I/O APIC</b>
+          for virtual machines that you intend to use in 64-bit mode.
+          This is especially true for 64-bit Windows VMs. See
+          <xref href="settings-motherboard.dita#settings-motherboard"/>. For 64-bit Windows
+          guests, ensure that the VM uses the
+          <b outputclass="bold">Intel networking device</b>
+          because there is no 64-bit driver support for the AMD PCNet
+          card. See <xref href="nichardware.dita#nichardware"/>.
+        </p>
+    </note>
+    <p>
+        If you use the <b outputclass="bold">Create VM</b> wizard
+        of VirtualBox Manager, Oracle VM VirtualBox automatically uses the correct
+        settings for each selected 64-bit OS type. See
+        <xref href="create-vm-wizard.dita#create-vm-wizard"/>.
+      </p>
+  </body>
+  
+</topic>

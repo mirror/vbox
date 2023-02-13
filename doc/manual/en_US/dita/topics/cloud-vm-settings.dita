@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-vm-settings">
+  <title>Changing Settings for a Cloud VM</title>
+  
+  <body>
+    <p>
+          Select the cloud VM in VirtualBox Manager and click
+          <b outputclass="bold">Settings</b>.
+        </p>
+    <ul>
+      <li>
+        <p>
+              For a <i>new</i> cloud VM, you can change
+              many settings for the Oracle Cloud Infrastructure instance, such as the display
+              name, shape, and disk size.
+            </p>
+      </li>
+      <li>
+        <p>
+              When you <i>add</i> a cloud VM based on an
+              existing Oracle Cloud Infrastructure instance you can only change the display
+              name.
+            </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

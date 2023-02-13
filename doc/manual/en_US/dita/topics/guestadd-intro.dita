@@ -1,0 +1,161 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestadd-intro">
+  <title>Introduction to Guest Additions</title>
+  
+  <body>
+    <p>
+      As mentioned in <xref href="virtintro.dita#virtintro"/>, the Guest Additions
+      are designed to be installed <i>inside</i> a virtual
+      machine after the guest operating system has been installed. They
+      consist of device drivers and system applications that optimize
+      the guest operating system for better performance and usability.
+      See <xref href="guestossupport.dita#guestossupport"/> for details on what guest
+      operating systems are fully supported with Guest Additions by
+      Oracle VM VirtualBox.
+    </p>
+    <p>
+      The Oracle VM VirtualBox Guest Additions for all supported guest
+      operating systems are provided as a single CD-ROM image file which
+      is called <filepath>VBoxGuestAdditions.iso</filepath>. This image
+      file is located in the installation directory of Oracle VM VirtualBox.
+      To install the Guest Additions for a particular VM, you mount this
+      ISO file in your VM as a virtual CD-ROM and install from there.
+    </p>
+    <p>
+      The Guest Additions offer the following features:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Mouse pointer integration</b>. To
+          overcome the limitations for mouse support described in
+          <xref href="keyb_mouse_normal.dita#keyb_mouse_normal"/>, this feature provides
+          you with seamless mouse support. You will only have one mouse
+          pointer and pressing the Host key is no longer required to
+          <i>free</i> the mouse from being captured by the
+          guest OS. To make this work, a special mouse driver is
+          installed in the guest that communicates with the physical
+          mouse driver on your host and moves the guest mouse pointer
+          accordingly.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Shared folders.</b> These provide
+          an easy way to exchange files between the host and the guest.
+          Much like ordinary Windows network shares, you can tell
+          Oracle VM VirtualBox to treat a certain host directory as a shared
+          folder, and Oracle VM VirtualBox will make it available to the guest
+          operating system as a network share, irrespective of whether
+          the guest actually has a network. See
+          <xref href="sharedfolders.dita#sharedfolders"/>.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Better video support.</b> While
+          the virtual graphics card which Oracle VM VirtualBox emulates for
+          any guest operating system provides all the basic features,
+          the custom video drivers that are installed with the Guest
+          Additions provide you with extra high and non-standard video
+          modes, as well as accelerated video performance.
+        </p>
+        <p>
+          In addition, with Windows, Linux, and Oracle Solaris guests,
+          you can resize the virtual machine's window if the Guest
+          Additions are installed. The video resolution in the guest
+          will be automatically adjusted, as if you had manually entered
+          an arbitrary resolution in the guest's
+          <b outputclass="bold">Display</b> settings. See
+          <xref href="intro-resize-window.dita#intro-resize-window"/>.
+        </p>
+        <p>
+          If the Guest Additions are installed, 3D graphics and 2D video
+          for guest applications can be accelerated. See
+          <xref href="guestadd-video.dita#guestadd-video"/>.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Seamless windows.</b> With this
+          feature, the individual windows that are displayed on the
+          desktop of the virtual machine can be mapped on the host's
+          desktop, as if the underlying application was actually running
+          on the host. See <xref href="seamlesswindows.dita#seamlesswindows"/>.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Generic host/guest communication
+          channels.</b> The Guest Additions enable you to control
+          and monitor guest execution. The <i>guest
+          properties</i> provide a generic string-based mechanism
+          to exchange data bits between a guest and a host, some of
+          which have special meanings for controlling and monitoring the
+          guest. See <xref href="guestadd-guestprops.dita#guestadd-guestprops"/>.
+        </p>
+        <p>
+          Additionally, applications can be started in a guest from the
+          host. See <xref href="guestadd-guestcontrol.dita#guestadd-guestcontrol"/>.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Time synchronization.</b> With
+          the Guest Additions installed, Oracle VM VirtualBox can ensure that
+          the guest's system time is better synchronized with that of
+          the host.
+        </p>
+        <p>
+          For various reasons, the time in the guest might run at a
+          slightly different rate than the time on the host. The host
+          could be receiving updates through NTP and its own time might
+          not run linearly. A VM could also be paused, which stops the
+          flow of time in the guest for a shorter or longer period of
+          time. When the wall clock time between the guest and host only
+          differs slightly, the time synchronization service attempts to
+          gradually and smoothly adjust the guest time in small
+          increments to either catch up or lose time. When the
+          difference is too great, for example if a VM paused for hours
+          or restored from saved state, the guest time is changed
+          immediately, without a gradual adjustment.
+        </p>
+        <p>
+          The Guest Additions will resynchronize the time regularly. See
+          <xref href="changetimesync.dita">Tuning the Guest Additions Time Synchronization Parameters</xref> for how to configure the
+          parameters of the time synchronization mechanism.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Shared clipboard.</b> With the
+          Guest Additions installed, the clipboard of the guest
+          operating system can optionally be shared with your host
+          operating system. See <xref href="generalsettings.dita"/>.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Automated logins.</b> Also called
+          credentials passing. See <xref href="autologon.dita">Automated Guest Logins</xref>.
+        </p>
+      </li>
+    </ul>
+    <p>
+      Each version of Oracle VM VirtualBox, even minor releases, ship with
+      their own version of the Guest Additions. While the interfaces
+      through which the Oracle VM VirtualBox core communicates with the Guest
+      Additions are kept stable so that Guest Additions already
+      installed in a VM should continue to work when Oracle VM VirtualBox is
+      upgraded on the host, for best results, it is recommended to keep
+      the Guest Additions at the same version.
+    </p>
+    <p>
+      The Windows and Linux Guest Additions therefore check
+      automatically whether they have to be updated. If the host is
+      running a newer Oracle VM VirtualBox version than the Guest Additions, a
+      notification with further instructions is displayed in the guest.
+    </p>
+    <p>
+      To disable this update check for the Guest Additions of a given
+      virtual machine, set the value of its
+      <codeph>/VirtualBox/GuestAdd/CheckHostVersion</codeph> guest
+      property to <codeph>0</codeph>. See
+      <xref href="guestadd-guestprops.dita#guestadd-guestprops"/>.
+    </p>
+  </body>
+  
+</topic>

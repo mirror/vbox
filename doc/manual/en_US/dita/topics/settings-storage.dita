@@ -1,0 +1,173 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="settings-storage">
+  <title>Storage Settings</title>
+  
+  <body>
+    <p>
+      The <b outputclass="bold">Storage</b> category in the VM
+      settings enables you to connect virtual hard disk, CD/DVD, and
+      floppy images and drives to your virtual machine.
+    </p>
+    <p>
+      In a real computer, so-called <i>storage
+      controllers</i> connect physical disk drives to the rest of
+      the computer. Similarly, Oracle VM VirtualBox presents virtual storage
+      controllers to a virtual machine. Under each controller, the
+      virtual devices, such as hard disks, CD/DVD or floppy drives,
+      attached to the controller are shown.
+    </p>
+    <note>
+      <p>
+        This section gives a quick introduction to the Oracle VM VirtualBox
+        storage settings. See <xref href="storage.dita#storage"/> for a full
+        description of the available storage settings in Oracle VM VirtualBox.
+      </p>
+    </note>
+    <p>
+      If you have used the <b outputclass="bold">Create Virtual
+      Machine</b> wizard to create a machine, you will normally
+      see something like the following:
+    </p>
+    <fig id="fig-storage-settings">
+      <title>Storage Settings for a Virtual Machine</title>
+      <image href="images/vm-settings-harddisk.png" placement="break"/>
+    </fig>
+    <p>
+      Depending on the guest OS type that you selected when you created
+      the VM, a new VM includes the following storage devices:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">IDE controller.</b> A virtual
+          CD/DVD drive is attached to device 0 on the secondary channel
+          of the IDE controller.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">SATA controller.</b> This is a
+          modern type of storage controller for higher hard disk data
+          throughput, to which the virtual hard disks are attached.
+          Initially you will normally have one such virtual disk, but as
+          shown in the previous screenshot, you can have more than one.
+          Each is represented by a disk image file, such as a VDI file
+          in this example.
+        </p>
+      </li>
+    </ul>
+    <p>
+      If you created your VM with an older version of Oracle VM VirtualBox,
+      the default storage layout may differ. You might then only have an
+      IDE controller to which both the CD/DVD drive and the hard disks
+      have been attached. This might also apply if you selected an older
+      OS type when you created the VM. Since older OSes do not support
+      SATA without additional drivers, Oracle VM VirtualBox will make sure
+      that no such devices are present initially. See
+      <xref href="harddiskcontrollers.dita#harddiskcontrollers"/>.
+    </p>
+    <p>
+      Oracle VM VirtualBox also provides a <i>floppy
+      controller</i>. You cannot add devices other than floppy
+      drives to this controller. Virtual floppy drives, like virtual
+      CD/DVD drives, can be connected to either a host floppy drive, if
+      you have one, or a disk image, which in this case must be in RAW
+      format.
+    </p>
+    <p>
+      You can modify these media attachments freely. For example, if you
+      wish to copy some files from another virtual disk that you
+      created, you can connect that disk as a second hard disk, as in
+      the above screenshot. You could also add a second virtual CD/DVD
+      drive, or change where these items are attached. The following
+      options are available:
+    </p>
+    <ul>
+      <li>
+        <p>
+          To <b outputclass="bold">add another virtual hard disk, or a
+          CD/DVD or floppy drive</b>, select the storage
+          controller to which it should be added (such as IDE, SATA,
+          SCSI, SAS, floppy controller) and then click the
+          <b outputclass="bold">Add Disk</b> button below the
+          tree. You can then either select <b outputclass="bold">Optical
+          Drive</b> or <b outputclass="bold">Hard
+          Disk</b>. If you clicked on a floppy controller, you
+          can add a floppy drive instead. Alternatively, right-click on
+          the storage controller and select a menu item there.
+        </p>
+        <p>
+          A dialog is displayed, enabling you to select an existing disk
+          image file or to create a new disk image file. Depending on
+          the type of disk image, the dialog is called
+          <b outputclass="bold">Hard Disk Selector</b>,
+          <b outputclass="bold">Optical Disk Selector</b>, or
+          <b outputclass="bold">Floppy Disk Selector</b>.
+        </p>
+        <p>
+          See <xref href="vdidetails.dita#vdidetails"/> for information on the image
+          file types that are supported by Oracle VM VirtualBox.
+        </p>
+        <p>
+          For virtual CD/DVD drives, the image files will typically be
+          in the standard ISO format instead. Most commonly, you will
+          select this option when installing an OS from an ISO file that
+          you have obtained from the Internet. For example, most Linux
+          distributions are available in this way.
+        </p>
+        <p>
+          Depending on the type of disk image, you can set the following
+          <b outputclass="bold">Attributes</b> for the disk image
+          in the right part of the Storage settings page:
+        </p>
+        <ul>
+          <li>
+            <p>
+              The <b outputclass="bold">device slot</b> of the
+              controller that the virtual disk is connected to. IDE
+              controllers have four slots: primary device 0, primary
+              device 1, secondary device 0, and secondary device 1. By
+              contrast, SATA and SCSI controllers offer you up to 30
+              slots for attaching virtual devices.
+            </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">Solid-state Drive</b>
+              presents a virtual disk to the guest as a solid-state
+              device.
+            </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">Hot-pluggable</b> presents a
+              virtual disk to the guest as a hot-pluggable device.
+            </p>
+          </li>
+          <li>
+            <p>
+              For virtual CD/DVD drives, you can select
+              <b outputclass="bold">Live CD/DVD</b>. This means
+              that the virtual optical disk is not removed from when the
+              guest system ejects it.
+            </p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>
+          To <b outputclass="bold">remove an attachment</b>,
+          either select it and click on the
+          <b outputclass="bold">Remove</b> icon at the bottom, or
+          right-click on it and select the menu item.
+        </p>
+      </li>
+    </ul>
+    <p>
+      Removable media, such as CD/DVDs and floppies, can be changed
+      while the guest is running. Since the
+      <b outputclass="bold">Settings</b> window is not available
+      at that time, you can also access these settings from the
+      <b outputclass="bold">Devices</b> menu of your virtual
+      machine window.
+    </p>
+  </body>
+  
+</topic>

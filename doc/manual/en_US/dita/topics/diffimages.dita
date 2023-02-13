@@ -1,0 +1,156 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="diffimages">
+  <title>Differencing Images</title>
+  
+  <body>
+    <p>
+      The previous section mentioned differencing images and how they
+      are used with snapshots, immutable images, and multiple disk
+      attachments. This section describes in more detail how
+      differencing images work.
+    </p>
+    <p>
+      A differencing image is a special disk image that only holds the
+      differences to another image. A differencing image by itself is
+      useless, it must always refer to another image. The differencing
+      image is then typically referred to as a
+      <i>child</i>, which holds the differences to its
+      <i>parent</i>.
+    </p>
+    <p>
+      When a differencing image is active, it receives all write
+      operations from the virtual machine instead of its parent. The
+      differencing image only contains the sectors of the virtual hard
+      disk that have changed since the differencing image was created.
+      When the machine reads a sector from such a virtual hard disk, it
+      looks into the differencing image first. If the sector is present,
+      it is returned from there. If not, Oracle VM VirtualBox looks into the
+      parent. In other words, the parent becomes
+      <i>read-only</i>. It is never written to again, but
+      it is read from if a sector has not changed.
+    </p>
+    <p>
+      Differencing images can be chained. If another differencing image
+      is created for a virtual disk that already has a differencing
+      image, then it becomes a <i>grandchild</i> of the
+      original parent. The first differencing image then becomes
+      read-only as well, and write operations only go to the
+      second-level differencing image. When reading from the virtual
+      disk, Oracle VM VirtualBox needs to look into the second differencing
+      image first, then into the first if the sector was not found, and
+      then into the original image.
+    </p>
+    <p>
+      There can be an unlimited number of differencing images, and each
+      image can have more than one child. As a result, the differencing
+      images can form a complex tree with parents, siblings, and
+      children, depending on how complex your machine configuration is.
+      Write operations always go to the one <i>active</i>
+      differencing image that is attached to the machine, and for read
+      operations, Oracle VM VirtualBox may need to look up all the parents in
+      the chain until the sector in question is found. You can view such
+      a tree in the Virtual Media Manager.
+    </p>
+    <fig id="fig-diff-images">
+      <title>Differencing Images, Shown in Virtual Media Manager</title>
+      <image href="images/virtual-disk-manager-2.png" placement="break"/>
+    </fig>
+    <p>
+      In all of these situations, from the point of view of the virtual
+      machine, the virtual hard disk behaves like any other disk. While
+      the virtual machine is running, there is a slight run-time I/O
+      overhead because Oracle VM VirtualBox might need to look up sectors
+      several times. This is not noticeable however since the tables
+      with sector information are always kept in memory and can be
+      looked up quickly.
+    </p>
+    <p>
+      Differencing images are used in the following situations:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Snapshots.</b> When you create a
+          snapshot, as explained in the previous section, Oracle VM VirtualBox
+          <i>freezes</i> the images attached to the
+          virtual machine and creates differencing images for each image
+          that is not in <i>write-through</i> mode. From
+          the point of view of the virtual machine, the virtual disks
+          continue to operate before, but all write operations go into
+          the differencing images. Each time you create another
+          snapshot, for each hard disk attachment, another differencing
+          image is created and attached, forming a chain or tree.
+        </p>
+        <p>
+          In the above screenshot, you see that the original disk image
+          is now attached to a snapshot, representing the state of the
+          disk when the snapshot was taken.
+        </p>
+        <p>
+          If you <i>restore</i> a snapshot, and want to go
+          back to the exact machine state that was stored in the
+          snapshot, the following happens:
+        </p>
+        <ul>
+          <li>
+            <p>
+              Oracle VM VirtualBox copies the virtual machine settings that
+              were copied into the snapshot back to the virtual machine.
+              As a result, if you have made changes to the machine
+              configuration since taking the snapshot, they are undone.
+            </p>
+          </li>
+          <li>
+            <p>
+              If the snapshot was taken while the machine was running,
+              it contains a saved machine state, and that state is
+              restored as well. After restoring the snapshot, the
+              machine will then be in Saved state and resume execution
+              from there when it is next started. Otherwise the machine
+              will be in Powered Off state and do a full boot.
+            </p>
+          </li>
+          <li>
+            <p>
+              For each disk image attached to the machine, the
+              differencing image holding all the write operations since
+              the current snapshot was taken is thrown away, and the
+              original parent image is made active again. If you
+              restored the root snapshot, then this will be the root
+              disk image for each attachment. Otherwise, some other
+              differencing image descended from it. This effectively
+              restores the old machine state.
+            </p>
+          </li>
+        </ul>
+        <p>
+          If you later <i>delete</i> a snapshot in order
+          to free disk space, for each disk attachment, one of the
+          differencing images becomes obsolete. In this case, the
+          differencing image of the disk attachment cannot simply be
+          deleted. Instead, Oracle VM VirtualBox needs to look at each sector
+          of the differencing image and needs to copy it back into its
+          parent. This is called "merging" images and can be a
+          potentially lengthy process, depending on how large the
+          differencing image is. It can also temporarily need a
+          considerable amount of extra disk space, before the
+          differencing image obsoleted by the merge operation is
+          deleted.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Immutable images.</b> When an
+          image is switched to immutable mode, a differencing image is
+          created as well. As with snapshots, the parent image then
+          becomes read-only, and the differencing image receives all the
+          write operations. Every time the virtual machine is started,
+          all the immutable images which are attached to it have their
+          respective differencing image thrown away, effectively
+          resetting the virtual machine's virtual disk with every
+          restart.
+        </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

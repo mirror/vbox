@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="glossentry-gui">
+  <title>GUI</title>
+  <body>
+    <section>
+      <p>
+        Graphical User Interface. Commonly used as an antonym to a "command line interface". 
+        In the context of Oracle VM VirtualBox, we sometimes refer to the main graphical 
+        VirtualBox program as the "GUI", to differentiate it from the VBoxManage interface. 
+      </p>
+    </section>
+  </body>
+</topic>

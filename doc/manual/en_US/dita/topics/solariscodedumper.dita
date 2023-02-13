@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="solariscodedumper">
+  <title>Configuring the Oracle VM VirtualBox CoreDumper on Oracle Solaris Hosts</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox is capable of producing its own core files for
+      extensive debugging when things go wrong. Currently this is only
+      available on Oracle Solaris hosts.
+    </p>
+    <p>
+      The Oracle VM VirtualBox CoreDumper can be enabled using the following
+      command:
+    </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> VBoxInternal2/CoreDumpEnabled 1</pre>
+    <p>
+      You can specify which directory to use for core dumps with this
+      command, as follows:
+    </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> VBoxInternal2/CoreDumpDir <varname>path-to-directory</varname>
+               </pre>
+    <p>
+      Make sure the directory you specify is on a volume with sufficient
+      free space and that the Oracle VM VirtualBox process has sufficient
+      permissions to write files to this directory. If you skip this
+      command and do not specify any core dump directory, the current
+      directory of the Oracle VM VirtualBox executable will be used. This
+      would most likely fail when writing cores as they are protected
+      with root permissions. It is recommended you explicitly set a core
+      dump directory.
+    </p>
+    <p>
+      You must specify when the Oracle VM VirtualBox CoreDumper should be
+      triggered. This is done using the following commands:
+    </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> VBoxInternal2/CoreDumpReplaceSystemDump 1
+$ VBoxManage setextradata <varname>VM-name</varname> VBoxInternal2/CoreDumpLive 1</pre>
+    <p>
+      At least one of the above two commands will have to be provided if
+      you have enabled the Oracle VM VirtualBox CoreDumper.
+    </p>
+    <p>
+      Setting <codeph>CoreDumpReplaceSystemDump</codeph> sets up the
+      VM to override the host's core dumping mechanism and in the event
+      of any crash only the Oracle VM VirtualBox CoreDumper would produce the
+      core file.
+    </p>
+    <p>
+      Setting <codeph>CoreDumpLive</codeph> sets up the VM to produce
+      cores whenever the VM process receives a
+      <codeph>SIGUSR2</codeph> signal. After producing the core file,
+      the VM will not be terminated and will continue to run. You can
+      thus take cores of the VM process using the following command:
+    </p>
+    <pre xml:space="preserve">$ kill -s SIGUSR2 <varname>VM-process-id</varname>
+               </pre>
+    <p>
+      The Oracle VM VirtualBox CoreDumper creates core files of the form
+      <filepath>core.vb.<varname>process-name</varname>.<varname>process-ID</varname>
+                  </filepath>
+      such as <filepath>core.vb.VBoxHeadless.11321</filepath>.
+    </p>
+  </body>
+  
+</topic>

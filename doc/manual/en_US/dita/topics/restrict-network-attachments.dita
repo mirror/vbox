@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="restrict-network-attachments">
+  <title>Removing Certain Modes of Networking From the GUI</title>
+  
+  <body>
+    <p>
+        It is possible to remove networking modes from Oracle VM VirtualBox
+        GUI. To do this, use the following command:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata global GUI/RestrictedNetworkAttachmentTypes <varname>property</varname>[,<varname>property</varname>...]</pre>
+    <p><varname>property</varname> is one of the following:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+          <codeph>NAT</codeph>
+        </dt>
+        <dd>
+          <p>
+              Remove the <b outputclass="bold">NAT</b> option
+              from the GUI.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>NATNetwork</codeph>
+        </dt>
+        <dd>
+          <p>
+              Remove the <b outputclass="bold">NAT network</b>
+              option from the GUI.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>BridgedAdapter</codeph>
+        </dt>
+        <dd>
+          <p>
+              Remove the <b outputclass="bold">Bridged
+              networking</b> option from the GUI.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>InternalNetwork</codeph>
+        </dt>
+        <dd>
+          <p>
+              Remove the <b outputclass="bold">Internal
+              networking</b> option from the GUI.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>HostOnlyAdapter</codeph>
+        </dt>
+        <dd>
+          <p>
+              Remove the <b outputclass="bold">Host Only
+              networking</b> option from the GUI.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>GenericDriver</codeph>
+        </dt>
+        <dd>
+          <p>
+              Remove the <b outputclass="bold">Generic
+              networking</b> option from the GUI.
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        This is a global setting. You can specify any combination of
+        properties. To restore the default behavior, use the following
+        command:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata global GUI/RestrictedNetworkAttachmentTypes</pre>
+  </body>
+  
+</topic>

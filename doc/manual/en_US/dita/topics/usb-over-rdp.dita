@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="usb-over-rdp">
+  <title>Remote USB</title>
+  
+  <body>
+    <p>
+        As a special feature additional to the VRDP support,
+        Oracle VM VirtualBox also supports remote USB devices over the wire.
+        That is, an Oracle VM VirtualBox guest that runs on one computer can
+        access the USB devices of the remote computer on which the VRDP
+        data is being displayed the same way as USB devices that are
+        connected to the actual host. This enables running of virtual
+        machines on an Oracle VM VirtualBox host that acts as a server, where
+        a client can connect from elsewhere that needs only a network
+        adapter and a display capable of running an RDP viewer. When USB
+        devices are plugged into the client, the remote Oracle VM VirtualBox
+        server can access them.
+      </p>
+    <p>
+        For these remote USB devices, the same filter rules apply as for
+        other USB devices. See <xref href="settings-usb.dita">USB Settings</xref>. All you
+        have to do is specify Remote, or Any, when setting up these
+        rules.
+      </p>
+    <p>
+        Accessing remote USB devices is only possible if the RDP client
+        supports this extension. Some versions of
+        <userinput>uttsc</userinput>, a client tailored for the use with Sun
+        Ray thin clients, support accessing remote USB devices. RDP
+        clients for other platforms will be provided in future
+        Oracle VM VirtualBox versions.
+      </p>
+  </body>
+  
+</topic>

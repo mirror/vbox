@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="gui-tools">
+  <title>VirtualBox Manager Tools</title>
+  
+  <body>
+    <p>
+        VirtualBox Manager provides two types of user tools, to enable you to
+        perform common tasks easily.
+      </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Global Tools.</b> These tools
+            apply to <i>all</i> virtual machines. See
+            <xref href="gui-tools-global.dita#gui-tools-global"/>.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Machine Tools.</b> These tools
+            apply to a <i>specific</i> virtual machine.
+            See <xref href="gui-tools-machine.dita#gui-tools-machine"/>.
+          </p>
+      </li>
+    </ul>
+  </body>
+</topic>

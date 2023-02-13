@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_linux-host-malloc">
+  <title>Linux Kernel vmalloc Pool Exhausted</title>
+  
+  <body>
+    <p>
+        When running a large number of VMs with a lot of RAM on a Linux
+        system, say 20 VMs with 1 GB of RAM each, additional VMs might
+        fail to start with a kernel error saying that the vmalloc pool
+        is exhausted and should be extended. The error message also
+        tells you to specify <codeph>vmalloc=256MB</codeph> in your
+        kernel parameter list. If adding this parameter to your GRUB or
+        LILO configuration makes the kernel fail to boot, with an error
+        message such as <codeph>failed to mount the root
+        partition</codeph>, then you have probably run into a memory
+        conflict of your kernel and initial RAM disk. This can be solved
+        by adding the following parameter to your GRUB configuration:
+      </p>
+    <pre xml:space="preserve">uppermem 524288</pre>
+  </body>
+  
+</topic>

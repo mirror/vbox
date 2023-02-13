@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="help-viewer">
+  <title>Help Viewer</title>
+  
+  <body>
+    <p>
+        The Help Viewer is a window that displays context-sensitive help
+        to assist you in completing common VirtualBox Manager tasks. You can
+        display the Help Viewer in the following ways:
+      </p>
+    <ul>
+      <li>
+        <p>
+            In a VirtualBox Manager wizard or dialog, click
+            <b outputclass="bold">Help</b> to display the
+            relevant help topic.
+          </p>
+      </li>
+      <li>
+        <p>
+            In VirtualBox Manager or from a guest VM, do either of the
+            following:
+          </p>
+        <ul>
+          <li>
+            <p>
+                Select the <b outputclass="bold">Help</b>,
+                <b outputclass="bold">Contents</b> menu option.
+              </p>
+          </li>
+          <li>
+            <p>
+                Press the <b outputclass="bold">F1</b> button.
+              </p>
+            <p>
+                The keyboard shortcut used to access the Help Viewer can
+                be configured in the
+                <b outputclass="bold">Preferences</b> window.
+              </p>
+          </li>
+        </ul>
+      </li>
+    </ul>
+    <p>
+        The Help Viewer has the following features:
+      </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Navigation tools.</b> The left
+            hand pane contains the following navigation tools:
+          </p>
+        <ul>
+          <li>
+            <p><b outputclass="bold">Contents.</b> Displays the
+                help topic location in the Oracle VM VirtualBox documentation.
+              </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">Search.</b> Enables you to
+                search the documentation for help topics.
+              </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">Bookmarks.</b> Enables you
+                to bookmark useful help topics.
+              </p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p><b outputclass="bold">Tabbed browsing.</b> Help
+            topics that you have visited are displayed in tabs in the
+            main window pane.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Zoomable topics.</b> Zoom
+            controls enable you to enlarge help topic details.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Printing.</b> Help topics can
+            be printed to PDF file or to a local printer.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="iscsi-intnet">
+  <title>Access iSCSI Targets Using Internal Networking</title>
+  
+  <body>
+    <p>
+        As an experimental feature, Oracle VM VirtualBox enables access to an
+        iSCSI target running in a virtual machine which is configured to
+        use Internal Networking mode. See
+        <xref href="storage-iscsi.dita">iSCSI Servers</xref>,
+        <xref href="network_internal.dita">Internal Networking</xref>, and
+        <xref href="man_VBoxManage-storageattach.dita">VBoxManage storageattach</xref>.
+      </p>
+    <p>
+        The IP stack accessing Internal Networking must be configured in
+        the virtual machine which accesses the iSCSI target. A free
+        static IP and a MAC address not used by other virtual machines
+        must be chosen. In the example below, adapt the name of the
+        virtual machine, the MAC address, the IP configuration, and the
+        Internal Networking name (MyIntNet) according to your needs. The
+        following eight commands must first be issued:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> \
+VBoxInternal/Devices/IntNetIP/0/Trusted 1
+$ VBoxManage setextradata <varname>VM-name</varname> \
+VBoxInternal/Devices/IntNetIP/0/Config/MAC 08:00:27:01:02:0f
+$ VBoxManage setextradata <varname>VM-name</varname> \
+VBoxInternal/Devices/IntNetIP/0/Config/IP 10.0.9.1
+$ VBoxManage setextradata <varname>VM-name</varname> \
+VBoxInternal/Devices/IntNetIP/0/Config/Netmask 255.255.255.0
+$ VBoxManage setextradata <varname>VM-name</varname> \
+VBoxInternal/Devices/IntNetIP/0/LUN#0/Driver IntNet
+$ VBoxManage setextradata <varname>VM-name</varname> \
+VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/Network MyIntNet
+$ VBoxManage setextradata <varname>VM-name</varname> \
+VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/TrunkType 2
+$ VBoxManage setextradata <varname>VM-name</varname> \
+VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/IsService 1</pre>
+    <p>
+        Finally the iSCSI disk must be attached with the
+        <codeph>--intnet</codeph> option to tell the iSCSI initiator to
+        use internal networking, as follows:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage storageattach ... --medium iscsi --server 10.0.9.30 \
+--target iqn.2008-12.com.sun:sampletarget --intnet</pre>
+    <p>
+        Compared to a regular iSCSI setup, the IP address of the target
+        <i>must</i> be specified as a numeric IP address,
+        as there is no DNS resolver for internal networking.
+      </p>
+    <p>
+        The virtual machine with the iSCSI target should be started
+        before the VM using it is powered on. If a virtual machine using
+        an iSCSI disk is started without having the iSCSI target powered
+        up, it can take up to 200 seconds to detect this situation. The
+        VM will fail to power up.
+      </p>
+  </body>
+  
+</topic>

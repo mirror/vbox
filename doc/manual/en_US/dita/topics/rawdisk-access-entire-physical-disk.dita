@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="rawdisk-access-entire-physical-disk">
+  <title>Access to Entire Physical Hard Disk</title>
+  
+  <body>
+    <p>
+          While this variant is the simplest to set up, you must be
+          aware that this will give a guest operating system direct and
+          full access to an <i>entire physical disk</i>.
+          If your <i>host</i> operating system is also
+          booted from this disk, please take special care to not access
+          the partition from the guest at all. On the positive side, the
+          physical disk can be repartitioned in arbitrary ways without
+          having to recreate the image file that gives access to the raw
+          disk.
+        </p>
+    <p>
+          On a Linux host, to create an image that represents an entire
+          physical hard disk which will not contain any actual data, as
+          this will all be stored on the physical disk, use the
+          following command:
+        </p>
+    <pre xml:space="preserve">$ VBoxManage createmedium disk --filename <varname>path-to-file</varname>.vmdk --format=VMDK
+ --variant RawDisk --property RawDrive=/dev/sda</pre>
+    <p>
+          This creates the
+          <filepath><varname>path-to-file</varname>.vmdk</filepath>
+          file image that must be an absolute path. All data is read and
+          written from <filepath>/dev/sda</filepath>.
+        </p>
+    <p>
+          On a Windows host, instead of the above device specification,
+          for example use <filepath>\\.\PhysicalDrive0</filepath>. On a
+          macOS host, instead of the above device specification use for
+          example <filepath>/dev/rdisk1</filepath>. Note that on Mac OS
+          X you can only get access to an entire disk if no volume is
+          mounted from it.
+        </p>
+    <p>
+          Creating the image requires read/write access for the given
+          device. Read/write access is also later needed when using the
+          image from a virtual machine. On some host platforms, such as
+          Windows, raw disk access may be restricted and not permitted
+          by the host OS in some situations.
+        </p>
+    <p>
+          Just like with regular disk images, this does not
+          automatically attach the newly created image to a virtual
+          machine. This can be done as follows:
+        </p>
+    <pre xml:space="preserve">$ VBoxManage storageattach WindowsXP --storagectl "IDE Controller" \
+ --port 0 --device 0 --type hdd --medium <varname>path-to-file</varname>.vmdk</pre>
+    <p>
+          When this is done the selected virtual machine will boot from
+          the specified physical disk.
+        </p>
+  </body>
+  
+</topic>

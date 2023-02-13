@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="network_bandwidth_limit">
+  <title>Limiting Bandwidth for Network Input/Output</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox supports limiting of the maximum bandwidth used for
+      network transmission. Several network adapters of one VM may share
+      limits through bandwidth groups. It is possible to have more than
+      one such limit.
+    </p>
+    <note>
+      <p>
+        Oracle VM VirtualBox shapes VM traffic only in the transmit direction,
+        delaying the packets being sent by virtual machines. It does not
+        limit the traffic being received by virtual machines.
+      </p>
+    </note>
+    <p>
+      Limits are configured through <userinput>VBoxManage</userinput>. The
+      following example creates a bandwidth group named Limit, sets the
+      limit to 20 Mbps and assigns the group to the first and second
+      adapters of the VM:
+    </p>
+    <pre xml:space="preserve">VBoxManage bandwidthctl "VM name" add Limit --type network --limit 20m
+VBoxManage modifyvm "VM name" --nicbandwidthgroup1 Limit
+VBoxManage modifyvm "VM name" --nicbandwidthgroup2 Limit</pre>
+    <p>
+      All adapters in a group share the bandwidth limit, meaning that in
+      the example above the bandwidth of both adapters combined can
+      never exceed 20 Mbps. However, if one adapter does not require
+      bandwidth the other can use the remaining bandwidth of its group.
+    </p>
+    <p>
+      The limits for each group can be changed while the VM is running,
+      with changes being picked up immediately. The following example
+      changes the limit for the group created in the previous example to
+      100 Kbps:
+    </p>
+    <pre xml:space="preserve">VBoxManage bandwidthctl "VM name" set Limit --limit 100k</pre>
+    <p>
+      To completely disable shaping for the first adapter of VM use the
+      following command:
+    </p>
+    <pre xml:space="preserve">VBoxManage modifyvm "VM name" --nicbandwidthgroup1 none</pre>
+    <p>
+      It is also possible to disable shaping for all adapters assigned
+      to a bandwidth group while VM is running, by specifying the zero
+      limit for the group. For example, for the bandwidth group named
+      Limit:
+    </p>
+    <pre xml:space="preserve">VBoxManage bandwidthctl "VM name" set Limit --limit 0</pre>
+  </body>
+  
+</topic>

@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_linux-buggy">
+  <title>Buggy Linux 2.6 Kernel Versions</title>
+  
+  <body>
+    <p>
+        The following bugs in Linux kernels prevent them from executing
+        correctly in Oracle VM VirtualBox, causing VM boot crashes:
+      </p>
+    <ul>
+      <li>
+        <p>
+            The Linux kernel version 2.6.18, and some 2.6.17 versions,
+            introduced a race condition that can cause boot crashes in
+            Oracle VM VirtualBox. Please use a kernel version 2.6.19 or later.
+          </p>
+      </li>
+      <li>
+        <p>
+            With hardware virtualization and the I/O APIC enabled,
+            kernels before 2.6.24-rc6 may panic on boot with the
+            following message:
+          </p>
+        <pre xml:space="preserve">Kernel panic - not syncing: IO-APIC + timer doesn't work!  Boot with
+apic=debug and send a report.  Then try booting with the 'noapic' option</pre>
+        <p>
+            If you see this message, either disable hardware
+            virtualization or the I/O APIC as described in
+            <xref href="settings-system.dita">System Settings</xref>, or upgrade the guest to
+            a newer kernel.
+          </p>
+        <p>
+            See
+            <ph>http://www.mail-archive.com/git-commits-head@vger.kernel.org/msg30813.html</ph>
+            for details about the kernel fix.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

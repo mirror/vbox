@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="install-solaris-unattended">
+  <title>Unattended Installation</title>
+  
+  <body>
+    <p>
+        To perform a non-interactive installation of Oracle VM VirtualBox
+        there is a response file named
+        <filepath>autoresponse</filepath>. The installer uses this for
+        responses to inputs, rather than prompting the user.
+      </p>
+    <p>
+        Extract the tar.gz package as described in
+        <xref href="install-solaris-performing.dita#install-solaris-performing"/>. Then open a root
+        terminal session and run the following command:
+      </p>
+    <pre xml:space="preserve">pkgadd -d VirtualBox-<varname>version-number</varname>-SunOS-x86 -n -a autoresponse SUNWvbox</pre>
+    <p>
+        To perform a non-interactive uninstallation, open a root
+        terminal session and run the following command:
+      </p>
+    <pre xml:space="preserve">pkgrm -n -a /opt/VirtualBox/autoresponse SUNWvbox</pre>
+  </body>
+  
+</topic>

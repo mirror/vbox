@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="install-linux-manual">
+  <title>Performing a Manual Installation</title>
+  
+  <body>
+    <p>
+          If you cannot use the shell script installer described in
+          <xref href="install-linux-alt-installer.dita#install-linux-alt-installer"/>, you can perform
+          a manual installation. Run the installer as follows:
+        </p>
+    <pre xml:space="preserve">./VirtualBox.run --keep --noexec</pre>
+    <p>
+          This will unpack all the files needed for installation in the
+          directory <codeph>install</codeph> under the current
+          directory. The Oracle VM VirtualBox application files are contained
+          in <filepath>VirtualBox.tar.bz2</filepath> which you can
+          unpack to any directory on your system. For example:
+        </p>
+    <pre xml:space="preserve">sudo mkdir /opt/VirtualBox
+sudo tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</pre>
+    <p>
+          To run the same example as root, use the following commands:
+        </p>
+    <pre xml:space="preserve">mkdir /opt/VirtualBox
+tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</pre>
+    <p>
+          The sources for Oracle VM VirtualBox's kernel module are provided in
+          the <filepath>src</filepath> directory. To build the module,
+          change to the directory and use the following command:
+        </p>
+    <pre xml:space="preserve">make</pre>
+    <p>
+          If everything builds correctly, run the following command to
+          install the module to the appropriate module directory:
+        </p>
+    <pre xml:space="preserve">sudo make install</pre>
+    <p>
+          In case you do not have sudo, switch the user account to root
+          and run the following command:
+        </p>
+    <pre xml:space="preserve">make install</pre>
+    <p>
+          The Oracle VM VirtualBox kernel module needs a device node to
+          operate. The above <userinput>make</userinput> command will tell
+          you how to create the device node, depending on your Linux
+          system. The procedure is slightly different for a classical
+          Linux setup with a <filepath>/dev</filepath> directory, a
+          system with the now deprecated <userinput>devfs</userinput> and a
+          modern Linux system with <userinput>udev</userinput>.
+        </p>
+    <p>
+          On certain Linux distributions, you might experience
+          difficulties building the module. You will have to analyze the
+          error messages from the build system to diagnose the cause of
+          the problems. In general, make sure that the correct Linux
+          kernel sources are used for the build process.
+        </p>
+    <p>
+          Note that the <filepath>/dev/vboxdrv</filepath> kernel module
+          device node must be owned by root:root and must be
+          read/writable only for the user.
+        </p>
+    <p>
+          Next, you install the system initialization script for the
+          kernel module and activate the initialization script using the
+          right method for your distribution, as follows:
+        </p>
+    <pre xml:space="preserve">cp /opt/VirtualBox/vboxdrv.sh /sbin/rcvboxdrv</pre>
+    <p>
+          This example assumes you installed Oracle VM VirtualBox to the
+          <filepath>/opt/VirtualBox</filepath> directory.
+        </p>
+    <p>
+          Create a configuration file for Oracle VM VirtualBox, as follows:
+        </p>
+    <pre xml:space="preserve">mkdir /etc/vbox
+echo INSTALL_DIR=/opt/VirtualBox &gt; /etc/vbox/vbox.cfg</pre>
+    <p>
+          Create the following symbolic links:
+        </p>
+    <pre xml:space="preserve">ln -sf /opt/VirtualBox/VBox.sh /usr/bin/VirtualBox
+ln -sf /opt/VirtualBox/VBox.sh /usr/bin/VBoxManage
+ln -sf /opt/VirtualBox/VBox.sh /usr/bin/VBoxHeadless</pre>
+  </body>
+  
+</topic>

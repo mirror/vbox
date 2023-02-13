@@ -1,0 +1,96 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="natforward">
+  <title>Configuring Port Forwarding with NAT</title>
+  
+  <body>
+    <p>
+        As the virtual machine is connected to a private network
+        internal to Oracle VM VirtualBox and invisible to the host, network
+        services on the guest are not accessible to the host machine or
+        to other computers on the same network. However, like a physical
+        router, Oracle VM VirtualBox can make selected services available to
+        the world outside the guest through <i>port
+        forwarding</i>. This means that Oracle VM VirtualBox listens to
+        certain ports on the host and resends all packets which arrive
+        there to the guest, on the same or a different port.
+      </p>
+    <p>
+        To an application on the host or other physical or virtual
+        machines on the network, it looks as though the service being
+        proxied is actually running on the host. This also means that
+        you cannot run the same service on the same ports on the host.
+        However, you still gain the advantages of running the service in
+        a virtual machine. For example, services on the host machine or
+        on other virtual machines cannot be compromised or crashed by a
+        vulnerability or a bug in the service, and the service can run
+        in a different operating system than the host system.
+      </p>
+    <p>
+        To configure port forwarding you can use the graphical
+        <b outputclass="bold">Port Forwarding</b> editor which
+        can be found in the <b outputclass="bold">Network</b>
+        settings dialog for network adaptors configured to use NAT.
+        Here, you can map host ports to guest ports to allow network
+        traffic to be routed to a specific port in the guest.
+      </p>
+    <p>
+        Alternatively, the command line tool
+        <userinput>VBoxManage</userinput> can be used. See
+        <xref href="man_VBoxManage-modifyvm.dita#vboxmanage-modifyvm"/>.
+      </p>
+    <p>
+        You will need to know which ports on the guest the service uses
+        and to decide which ports to use on the host. You may want to
+        use the same ports on the guest and on the host. You can use any
+        ports on the host which are not already in use by a service. For
+        example, to set up incoming NAT connections to an
+        <userinput>ssh</userinput> server in the guest, use the following
+        command:
+      </p>
+    <pre xml:space="preserve">VBoxManage modifyvm "VM name" --nat-pf1 "guestssh,tcp,,2222,,22"</pre>
+    <p>
+        In the above example, all TCP traffic arriving on port 2222 on
+        any host interface will be forwarded to port 22 in the guest.
+        The protocol name <codeph>tcp</codeph> is a mandatory
+        attribute defining which protocol should be used for forwarding,
+        <codeph>udp</codeph> could also be used. The name
+        <codeph>guestssh</codeph> is purely descriptive and will be
+        auto-generated if omitted. The number after
+        <codeph>--nat-pf</codeph> denotes the network card, as with
+        other <userinput>VBoxManage</userinput> commands.
+      </p>
+    <p>
+        To remove this forwarding rule, use the following command:
+      </p>
+    <pre xml:space="preserve">VBoxManage modifyvm "VM name" --natpf1 delete "guestssh"</pre>
+    <p>
+        If for some reason the guest uses a static assigned IP address
+        not leased from the built-in DHCP server, it is required to
+        specify the guest IP when registering the forwarding rule, as
+        follows:
+      </p>
+    <pre xml:space="preserve">VBoxManage modifyvm "VM name" --natpf1 "guestssh,tcp,,2222,10.0.2.19,22"</pre>
+    <p>
+        This example is identical to the previous one, except that the
+        NAT engine is being told that the guest can be found at the
+        10.0.2.19 address.
+      </p>
+    <p>
+        To forward <i>all</i> incoming traffic from a
+        specific host interface to the guest, specify the IP of that
+        host interface as follows:
+      </p>
+    <pre xml:space="preserve">VBoxManage modifyvm "VM name" --natpf1 "guestssh,tcp,127.0.0.1,2222,,22"</pre>
+    <p>
+        This example forwards all TCP traffic arriving on the localhost
+        interface at 127.0.0.1 through port 2222 to port 22 in the
+        guest.
+      </p>
+    <p>
+        It is possible to configure incoming NAT connections while the
+        VM is running, see <xref href="man_VBoxManage-controlvm.dita#vboxmanage-controlvm"/>.
+      </p>
+  </body>
+  
+</topic>

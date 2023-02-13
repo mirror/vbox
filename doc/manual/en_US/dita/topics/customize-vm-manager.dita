@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="customize-vm-manager">
+  <title>Customizing VirtualBox Manager</title>
+  
+  <body>
+    <p>
+        There are several advanced customization settings for locking
+        down VirtualBox Manager. Locking down means removing some features that
+        the user should not see.
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata global GUI/Customizations <varname>property</varname>[,<varname>property</varname> ...]</pre>
+    <p><varname>property</varname> is one of the following
+        properties:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+          <codeph>noSelector</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not allow users to start VirtualBox Manager. Trying to do so
+              will show a window containing a proper error message.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>noMenuBar</codeph>
+        </dt>
+        <dd>
+          <p>
+              VM windows will not contain a menu bar.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>noStatusBar</codeph>
+        </dt>
+        <dd>
+          <p>
+              VM windows will not contain a status bar.
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        To disable any of these VirtualBox Manager customizations use the
+        following command:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata global GUI/Customizations</pre>
+  </body>
+  
+</topic>

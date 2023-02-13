@@ -1,0 +1,135 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="config-vm-window-status-bar">
+  <title>Configure VM Window Status Bar Entries</title>
+  
+  <body>
+    <p>
+        You can disable certain status bar items:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedStatusBarIndicators OPTION[,OPTION...]</pre>
+    <p>
+        where <codeph>OPTION</codeph> is one of the following
+        keywords:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+          <codeph>HardDisks</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the hard disk icon in the VM window status
+              bar. By default the hard disk icon is only shown if the VM
+              configuration contains one or more hard disks.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>OpticalDisks</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the CD icon in the VM window status bar. By
+              default the CD icon is only shown if the VM configuration
+              contains one or more CD drives.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>FloppyDisks</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the floppy icon in the VM window status bar.
+              By default the floppy icon is only shown if the VM
+              configuration contains one or more floppy drives.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Network</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the network icon in the VM window status bar.
+              By default the network icon is only shown if the VM
+              configuration contains one or more active network
+              adapters.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>USB</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the USB icon in the status bar.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>SharedFolders</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the shared folders icon in the status bar.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Capture</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the capture icon in the status bar.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Features</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the CPU features icon in the status bar.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Mouse</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the mouse icon in the status bar.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Keyboard</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the keyboard icon in the status bar.
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        This is a per-VM or global setting. Any combination of the above
+        is allowed. If all options are specified, no icons are displayed
+        in the status bar of the VM window. To restore the default
+        behavior, use
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedStatusBarIndicators</pre>
+  </body>
+  
+</topic>

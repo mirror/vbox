@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="Introduction">
+  <title>First Steps</title>
+  
+  <body>
+    <p>
+    Welcome to Oracle VM VirtualBox.
+  </p>
+    <p>
+    Oracle VM VirtualBox is a cross-platform virtualization application. What
+    does that mean? For one thing, it installs on your existing Intel or
+    AMD-based computers, whether they are running Windows, macOS, Linux,
+    or Oracle Solaris operating systems (OSes). Secondly, it extends the
+    capabilities of your existing computer so that it can run multiple
+    OSes, inside multiple virtual machines, at the same time. As an
+    example, you can run Windows and Linux on your Mac, run Windows
+    Server on your Linux server, run Linux on your Windows PC, and so
+    on, all alongside your existing applications. You can install and
+    run as many virtual machines as you like. The only practical limits
+    are disk space and memory.
+  </p>
+    <p>
+    Oracle VM VirtualBox is deceptively simple yet also very powerful. It can
+    run everywhere from small embedded systems or desktop class machines
+    all the way up to datacenter deployments and even Cloud
+    environments.
+  </p>
+    <p>
+    The following screenshot shows how Oracle VM VirtualBox, installed on an
+    Apple Mac computer, is running Windows Server 2016 in a virtual
+    machine window.
+  </p>
+    <fig id="fig-win2016-intro">
+      <title>Windows Server 2016 Virtual Machine, Displayed on a macOS Host</title>
+      <image href="images/vm-vista-running.png" placement="break"/>
+    </fig>
+    <p>
+    In this User Manual, we will begin simply with a quick introduction
+    to virtualization and how to get your first virtual machine running
+    with the easy-to-use Oracle VM VirtualBox graphical user interface.
+    Subsequent chapters will go into much more detail covering more
+    powerful tools and features, but fortunately, it is not necessary to
+    read the entire User Manual before you can use Oracle VM VirtualBox.
+  </p>
+    <p>
+    You can find a summary of Oracle VM VirtualBox's capabilities in
+    <xref href="features-overview.dita#features-overview"/>. For existing Oracle VM VirtualBox
+    users who just want to find out what is new in this release, see the
+    <xref href="https://docs.oracle.com/en/virtualization/virtualbox/7.0/relnotes/ChangeLog.html" format="html" scope="external">Change Log</xref>.
+  </p>
+  </body>
+</topic>

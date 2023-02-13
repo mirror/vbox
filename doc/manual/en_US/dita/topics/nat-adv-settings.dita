@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="nat-adv-settings">
+  <title>Tuning TCP/IP Buffers for NAT</title>
+  
+  <body>
+    <p>
+        The Oracle VM VirtualBox NAT stack performance is often determined by
+        its interaction with the host's TCP/IP stack and the size of
+        several buffers, <codeph>SO_RCVBUF</codeph> and
+        <codeph>SO_SNDBUF</codeph>. For certain setups users might
+        want to adjust the buffer size for a better performance. This
+        can by achieved using the following commands, where values are
+        in kilobytes and can range from 8 to 1024:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage modifyvm <varname>VM-name</varname> \
+--natsettings1 16000,128,128,0,0</pre>
+    <p>
+        This example illustrates tuning the NAT settings. The first
+        parameter is the MTU, then the size of the socket's send buffer
+        and the size of the socket's receive buffer, the initial size of
+        the TCP send window, and lastly the initial size of the TCP
+        receive window. Note that specifying zero means fallback to the
+        default value.
+      </p>
+    <p>
+        Each of these buffers has a default size of 64KB and default MTU
+        is 1500.
+      </p>
+  </body>
+  
+</topic>

@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="security_clipboard">
+  <title>Clipboard</title>
+  
+  <body>
+    <p>
+          The shared clipboard enables users to share data between the
+          host and the guest. Enabling the clipboard in Bidirectional
+          mode enables the guest to read and write the host clipboard.
+          The Host to Guest mode and the Guest to Host mode limit the
+          access to one direction. If the guest is able to access the
+          host clipboard it can also potentially access sensitive data
+          from the host which is shared over the clipboard.
+        </p>
+    <p>
+          If the guest is able to read from and/or write to the host
+          clipboard then a remote user connecting to the guest over the
+          network will also gain this ability, which may not be
+          desirable. As a consequence, the shared clipboard is disabled
+          for new machines.
+        </p>
+  </body>
+  
+</topic>

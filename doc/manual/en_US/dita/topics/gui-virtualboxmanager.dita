@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="gui-virtualboxmanager">
+  <title>VirtualBox Manager</title>
+  
+  <body>
+    <p>
+      VirtualBox Manager is the user interface for Oracle VM VirtualBox. You can use
+      VirtualBox Manager to create, configure, and manage your virtual machines.
+    </p>
+    <p>
+      This section describes the main features of the VirtualBox Manager user
+      interface. Subsequent sections and chapters describe how to use
+      VirtualBox Manager to perform tasks in Oracle VM VirtualBox.
+    </p>
+    <p>
+      When you start Oracle VM VirtualBox, the
+      <b outputclass="bold">VirtualBox Manager</b> window is displayed.
+    </p>
+    <p><xref href="#gui-virtualboxmanager/fig-vbox-manager-initial"/> shows VirtualBox Manager the
+      first time you start Oracle VM VirtualBox, before you have created any
+      virtual machines.
+    </p>
+    <fig id="fig-vbox-manager-initial">
+      <title>VirtualBox Manager, Showing Welcome Screen After Initial Startup</title>
+      <image href="images/virtualbox-main-empty.png" placement="break"/>
+    </fig>
+    <p><xref href="#gui-virtualboxmanager/fig-vbox-manager-populated"/> shows how VirtualBox Manager
+      might look after you have created some virtual machines.
+    </p>
+    <fig id="fig-vbox-manager-populated">
+      <title>VirtualBox Manager Window, After Creating Virtual Machines</title>
+      <image href="images/virtualbox-main.png" placement="break"/>
+    </fig>
+    <p>
+      The main components of the VirtualBox Manager window are as follows:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">The machine list.</b> The left
+          pane of the <b outputclass="bold">VirtualBox
+          Manager</b> window lists all your virtual machines. If
+          you have not yet created any virtual machines, this list is
+          empty. See <xref href="gui-machine-list.dita#gui-machine-list"/>.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">The Details pane.</b> The pane on
+          the right displays the properties of the currently selected
+          virtual machine. If you do not have any machines yet, the pane
+          displays a welcome message.
+        </p>
+        <p>
+          The toolbar buttons on the Details pane can be used to create
+          and work with virtual machines. See
+          <xref href="gui-details.dita#gui-details"/>.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Help Viewer.</b> A window that
+          displays context-sensitive help topics for VirtualBox Manager tasks.
+          See <xref href="help-viewer.dita#help-viewer"/>.
+        </p>
+      </li>
+    </ul>
+  </body>
+</topic>

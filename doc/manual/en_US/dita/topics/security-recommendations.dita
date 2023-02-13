@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="security-recommendations">
+  <title>Security Recommendations</title>
+  
+  <body>
+    <p>
+      This section contains security recommendations for specific
+      issues. By default VirtualBox will configure the VMs to run in a
+      secure manner, however this may not always be possible without
+      additional user actions such as host OS or firmware configuration
+      changes.
+    </p>
+  </body>
+</topic>

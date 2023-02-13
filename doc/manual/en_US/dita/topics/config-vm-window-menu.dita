@@ -1,0 +1,958 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="config-vm-window-menu">
+  <title>Configure VM Window Menu Entries</title>
+  
+  <body>
+    <p>
+        You can disable certain menu actions in the VM window:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeMenus OPTION[,OPTION...]</pre>
+    <p>
+        where <codeph>OPTION</codeph> is one of the following
+        keywords:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+          <codeph>All</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show any menu in the VM window.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Application</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show
+              <b outputclass="bold">Application/File</b> menu in
+              the VM window.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Machine</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Machine</b>
+              menu in the VM window.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>View</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">View</b> menu
+              in the VM window.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Input</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show <b outputclass="bold">Input</b> menu in
+              the VM window.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Devices</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Devices</b>
+              menu in the VM window.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Help</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Help</b> menu
+              in the VM window.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Debug</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Debug</b>
+              menu in the VM window. The Debug menu is only visible if
+              the GUI was started with special command line parameters
+              or environment variable settings.
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        This is a per-VM or global setting. Any combination of the above
+        is allowed. To restore the default behavior, use the following
+        command:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeMenus</pre>
+    <p>
+        You can also disable certain menu actions of certain menus. Use
+        the following command to disable certain actions of the
+        <b outputclass="bold">Application</b> menu. This is only
+        available on macOS hosts.
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeApplicationMenuActions OPTION[,OPTION...]</pre>
+    <p>
+        where <codeph>OPTION</codeph> is one of the following
+        keywords:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+          <codeph>All</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show any menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>About</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">About</b>
+              menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Preferences</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the
+              <b outputclass="bold">Preferences</b> menu item in
+              this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>NetworkAccessManager</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Network Operations
+              Manager</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>ResetWarnings</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Reset All
+              Warnings</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Close</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Close</b>
+              menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        This is a per-VM or global setting. Any combination of the above
+        is allowed. To restore the default behavior, use the following
+        command:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeMenus</pre>
+    <p>
+        Use the following command to disable certain actions of the
+        <b outputclass="bold">Machine</b> menu:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeMachineMenuActions OPTION[,OPTION...]</pre>
+    <p>
+        where <codeph>OPTION</codeph> is one of the following
+        keywords:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+          <codeph>All</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show any menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>SettingsDialog</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Settings</b>
+              menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>TakeSnapshot</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Take
+              Snapshot...</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>InformationDialog</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Session
+              Information...</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>FileManagerDialog</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">File
+              Manager...</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Pause</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Pause</b>
+              menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Reset</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Reset</b>
+              menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Shutdown</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">ACPI
+              Shutdown</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        This is a per-VM or global setting. Any combination of the above
+        is allowed. To restore the default behavior, use
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeMachineMenuActions</pre>
+    <p>
+        Use the following command to disable certain actions of the
+        <b outputclass="bold">View</b> menu:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeViewMenuActions OPTION[,OPTION...]</pre>
+    <p>
+        where <codeph>OPTION</codeph> is one of the following
+        keywords:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+          <codeph>All</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show any menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Fullscreen</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Full-screen
+              Mode</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Seamless</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Seamless
+              Mode</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Scale</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Scaled
+              Mode</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>GuestAutoresize</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Auto-resize Guest
+              Display</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>AdjustWindow</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Adjust Window
+              Size</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>TakeScreenshot</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Take
+              Screenshot...</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Recording</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Recording</b>
+              menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>VRDEServer</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Remote
+              Display</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>MenuBar</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Menu Bar</b>
+              menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>MenuBarSettings</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Menu Bar
+              Settings...</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>StatusBar</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Status
+              Bar</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>StatusbarSettings</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Statusbar
+              Settings...</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        This is a per-VM or global setting. Any combination of the above
+        is allowed. To restore the default behavior, use
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeViewMenuActions</pre>
+    <p>
+        Use the following command to disable certain actions of the
+        <b outputclass="bold">Input</b> menu:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeInputMenuActions OPTION[,OPTION...]</pre>
+    <p>
+        where <codeph>OPTION</codeph> is one of the following
+        keywords:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+          <codeph>All</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show any menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Keyboard</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Keyboard</b>
+              menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>KeyboardSettings</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Keyboard
+              Settings...</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>SoftKeyboard</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Soft
+              Keyboard...</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>TypeCAD</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Insert
+              Ctrl-Alt-Del</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>TypeCABS</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Insert
+              Ctrl-Alt-Backspace</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>TypeCtrlBreak</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Insert
+              Ctrl-Break</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>TypeInsert</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Insert
+              Insert</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>TypePrintScreen</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Insert Print
+              Screen</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>TypeAltPrintScreen</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Insert Alt Print
+              Screen</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>TypeHostKeyCombo</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Insert Host Key
+              Combo</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>MouseIntegration</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the
+              <b outputclass="bold">MouseIntegration</b> menu
+              item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        This is a per-VM or global setting. Any combination of the above
+        is allowed. To restore the default behavior, use
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeInputMenuActions</pre>
+    <p>
+        Use the following command to disable certain actions of the
+        <b outputclass="bold">Devices</b> menu:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeDevicesMenuActions OPTION[,OPTION...]</pre>
+    <p>
+        where <codeph>OPTION</codeph> is one of the following keywords
+        to disable actions in the
+        <b outputclass="bold">Devices</b> menu:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+          <codeph>All</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show any menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>HardDrives</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Hard
+              Disks</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>OpticalDevices</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Optical
+              Devices</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>FloppyDevices</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Floppy
+              Drives</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Audio</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Audio</b>
+              menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Network</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Network</b>
+              menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>NetworkSettings</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Network
+              Settings</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>USBDevices</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">USB </b> menu
+              item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>WebCams</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">WebCams </b>
+              menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>SharedFolders</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Shared
+              Folders</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>SharedFoldersSettings</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Shared Folders
+              Settings...</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>SharedClipboard</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Shared
+              Clipboard</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>DragAndDrop</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Drag and
+              Drop</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>InstallGuestTools</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Insert Guest
+              Additions CD image...</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        This is a per-VM or global or global setting. Any combination of
+        the above is allowed. To restore the default behavior, use
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeDevicesMenuActions</pre>
+    <p>
+        Use the following command to disable certain actions of the
+        <b outputclass="bold">Debug</b> menu:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeDebuggerMenuActions OPTION[,OPTION...]</pre>
+    <p>
+        where <codeph>OPTION</codeph> is one of the following keywords
+        to disable actions in the <i>Debug</i> menu, which
+        is normally completely disabled:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+          <codeph>All</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show any menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Statistics</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the
+              <b outputclass="bold">Statistics...</b> menu item
+              in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>CommandLine</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Command
+              Line...</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Logging</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the
+              <b outputclass="bold">Logging...</b> menu item in
+              this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>LogDialog</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Show
+              Log...</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>GuestControlConsole</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Guest Control
+              Terminal...</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        This is a per-VM or global setting. Any combination of the above
+        is allowed. To restore the default behavior, use
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeDebuggerMenuActions</pre>
+    <p>
+        Use the following command to disable certain actions of the
+        <b outputclass="bold">View</b> menu:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeHelpMenuActions OPTION[,OPTION...]</pre>
+    <p>
+        where <codeph>OPTION</codeph> is one of the following keywords
+        to disable actions in the <b outputclass="bold">Help</b>
+        menu, which is normally completely disabled:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+          <codeph>All</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show any menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Contents</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the
+              <b outputclass="bold">Contents...</b> menu item in
+              this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>WebSite</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">VirtualBox Web
+              Site...</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>BugTracker</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">VirtualBox Bug
+              Tracker...</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Forums</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">VirtualBox
+              Forums...</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Oracle</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Oracle Web
+              Site...</b> menu item in this menu.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>About</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">About
+              VirtualBox...</b> menu item in this menu. Only for
+              non-macOS hosts.
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        This is a per-VM or global setting. Any combination of the above
+        is allowed. To restore the default behavior, use
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeHelpMenuActions</pre>
+  </body>
+  
+</topic>

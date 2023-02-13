@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestadd-guestprops-waits">
+  <title>Using Guest Properties to Wait on VM Events</title>
+  
+  <body>
+    <p>
+        The properties <codeph>/VirtualBox/HostInfo/VBoxVer</codeph>,
+        <codeph>/VirtualBox/HostInfo/VBoxVerExt</codeph> or
+        <codeph>/VirtualBox/HostInfo/VBoxRev</codeph> can be waited on
+        to detect that the VM state was restored from saved state or
+        snapshot:
+      </p>
+    <pre xml:space="preserve">$ VBoxControl guestproperty wait /VirtualBox/HostInfo/VBoxVer</pre>
+    <p>
+        Similarly the
+        <codeph>/VirtualBox/HostInfo/ResumeCounter</codeph> can be
+        used to detect that a VM was resumed from the paused state or
+        saved state.
+      </p>
+  </body>
+  
+</topic>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboximg-mount">
+            <title>vboximg-mount: A Utility for FUSE Mounting a Virtual Disk Image</title>
+            
+            <body>
+               <p>
+                  <userinput>vboximg-mount</userinput> is a command line utility for Mac
+      OS and Linux hosts that provides raw access to an Oracle VM VirtualBox
+      virtual disk image on the host system. Use this utility to mount,
+      view, and optionally modify the disk image contents.
+    </p>
+               <p>
+      The utility is based on Filesystem in Userspace (FUSE) technology
+      and uses the VirtualBox runtime engine. Ensure that Oracle VM VirtualBox
+      is running on the host system.
+    </p>
+               <note>
+                  <p>
+        When using <userinput>vboximg-mount</userinput>, ensure that the
+        following conditions apply:
+      </p>
+                  <ul>
+                     <li>
+                        <p>
+            The disk image is not being used by any other systems, such
+            as by guest VMs.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+            No VMs are running on the host system.
+          </p>
+                     </li>
+                  </ul>
+               </note>
+               <p>
+      Raw access using FUSE is preferred over direct loopback mounting
+      of virtual disk images, because it is snapshot aware. It can
+      selectively merge disk differencing images in an exposed virtual
+      hard disk, providing historical or up-to-date representations of
+      the virtual disk contents.
+    </p>
+               <p>
+                  <userinput>vboximg-mount</userinput> enables you to view information
+      about registered VMs, their attached disk media, and any
+      snapshots. Also, you can view partition information for a disk
+      image.
+    </p>
+               <p>
+      The <userinput>vboximg-mount </userinput>command includes experimental
+      read-only access to file systems inside a VM disk image. This
+      feature enables you to extract some files from the disk image
+      without starting the VM and without requiring third-party file
+      system drivers on the host system. FAT, NTFS, ext2, ext3, and ext4
+      file systems are supported.
+    </p>
+               <p>
+      Use the <codeph>--help</codeph> option to view information about
+      the <userinput>vboximg-mount</userinput> command usage. The complete
+      command reference is described in
+      <xref href="man_vboximg-mount.dita"/>.
+    </p>
+               <p>
+      When <userinput>vboximg-mount</userinput> mounts an Oracle VM VirtualBox
+      disk image, it creates a one level deep file system at a mount
+      point that you specify. The file system includes a device node
+      that represents the synthesized disk image as a readable or
+      readable-writeable bytestream. This bytestream can be mounted
+      either by using the host OS or by using other FUSE-based file
+      systems.
+    </p>
+            </body>
+            
+            
+         </topic>

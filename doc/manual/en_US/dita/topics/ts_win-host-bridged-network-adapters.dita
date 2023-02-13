@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_win-host-bridged-network-adapters">
+  <title>Bridged Networking Adapters Missing</title>
+  
+  <body>
+    <p>
+        If no bridged adapters show up in the
+        <b outputclass="bold">Networking</b> section of the VM
+        settings, this typically means that the bridged networking
+        driver was not installed properly on your host. This could be
+        due to the following reasons:
+      </p>
+    <ul>
+      <li>
+        <p>
+            The maximum allowed filter count was reached on the host. In
+            this case, the MSI log would mention the
+            <codeph>0x8004a029</codeph> error code returned on NetFlt
+            network component install, as follows:
+          </p>
+        <pre xml:space="preserve">VBoxNetCfgWinInstallComponent: Install failed, hr (0x8004a029)</pre>
+        <p>
+            You can try to increase the maximum filter count in the
+            Windows registry using the following key:
+          </p>
+        <pre xml:space="preserve">HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Network\MaxNumFilters</pre>
+        <p>
+            The maximum number allowed is 14. After a reboot, try to
+            reinstall Oracle VM VirtualBox.
+          </p>
+      </li>
+      <li>
+        <p>
+            The INF cache is corrupt. In this case, the install log at
+            <filepath>%windir%\inf\setupapi.dev.log</filepath> would
+            typically mention the failure to find a suitable driver
+            package for either the <userinput>sun_VBoxNetFlt</userinput> or
+            <userinput>sun_VBoxNetFltmp</userinput> components. The solution
+            then is to uninstall Oracle VM VirtualBox, remove the INF cache
+            (<filepath>%windir%\inf\INFCACHE.1</filepath>), reboot and
+            try to reinstall Oracle VM VirtualBox.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

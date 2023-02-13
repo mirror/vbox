@@ -1,0 +1,188 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="autologon_unix">
+  <title>Automated Linux and UNIX Guest Logins</title>
+  
+  <body>
+    <p>
+        Oracle VM VirtualBox provides a custom PAM module (Pluggable
+        Authentication Module) which can be used to perform automated
+        guest logins on platforms which support this framework.
+        Virtually all modern Linux and UNIX distributions rely on PAM.
+      </p>
+    <p>
+        For automated logins on Ubuntu, or Ubuntu-derived, distributions
+        using LightDM as the display manager. See
+        <xref href="autologon_unix_lightdm.dita#autologon_unix_lightdm"/>.
+      </p>
+    <p>
+        The <filepath>pam_vbox.so</filepath> module itself
+        <i>does not</i> do an actual verification of the
+        credentials passed to the guest OS. Instead it relies on other
+        modules such as <filepath>pam_unix.so</filepath> or
+        <filepath>pam_unix2.so</filepath> down in the PAM stack to do
+        the actual validation using the credentials retrieved by
+        <filepath>pam_vbox.so</filepath>. Therefore
+        <filepath>pam_vbox.so</filepath> has to be on top of the
+        authentication PAM service list.
+      </p>
+    <note>
+      <p>
+          The <filepath>pam_vbox.so</filepath> module only supports the
+          <codeph>auth</codeph> primitive. Other primitives such as
+          <codeph>account</codeph>, <codeph>session</codeph>, or
+          <codeph>password</codeph> are not supported.
+        </p>
+    </note>
+    <p>
+        The <filepath>pam_vbox.so</filepath> module is shipped as part
+        of the Guest Additions but it is not installed and/or activated
+        on the guest OS by default. In order to install it, it has to be
+        copied from
+        <filepath>/opt/VBoxGuestAdditions-<varname>version</varname>/other/</filepath>
+        to the security modules directory. This is usually
+        <filepath>/lib/security/</filepath> on 32-bit Linux guests or
+        <filepath>/lib64/security/</filepath> on 64-bit Linux guests.
+        Please refer to your guest OS documentation for the correct PAM
+        module directory.
+      </p>
+    <p>
+        For example, to use <filepath>pam_vbox.so</filepath> with a
+        Ubuntu Linux guest OS and the GNOME Desktop Manager (GDM) to log
+        in users automatically with the credentials passed by the host,
+        configure the guest OS as follows:
+      </p>
+    <ol>
+      <li>
+        <p>
+            Copy the <filepath>pam_vbox.so</filepath> module to the
+            security modules directory. In this case,
+            <filepath>/lib/security</filepath>.
+          </p>
+      </li>
+      <li>
+        <p>
+            Edit the PAM configuration file for GDM, found at
+            <filepath>/etc/pam.d/gdm</filepath>. Add the line
+            <codeph>auth requisite pam_vbox.so</codeph> at the top.
+            Additionally, in most Linux distributions there is a file
+            called <filepath>/etc/pam.d/common-auth</filepath>. This
+            file is included in many other services, like the GDM file
+            mentioned above. There you also have to add the line
+            <codeph>auth requisite pam_vbox.so</codeph>.
+          </p>
+      </li>
+      <li>
+        <p>
+            If authentication against the shadow database using
+            <filepath>pam_unix.so</filepath> or
+            <filepath>pam_unix2.so</filepath> is desired, the argument
+            <codeph>try_first_pass</codeph> for
+            <filepath>pam_unix.so</filepath> or
+            <codeph>use_first_pass</codeph> for
+            <filepath>pam_unix2.so</filepath> is needed in order to pass
+            the credentials from the Oracle VM VirtualBox module to the shadow
+            database authentication module. For Ubuntu, this needs to be
+            added to <filepath>/etc/pam.d/common-auth</filepath>, to the
+            end of the line referencing
+            <filepath>pam_unix.so</filepath>. This argument tells the
+            PAM module to use credentials already present in the stack,
+            such as the ones provided by the Oracle VM VirtualBox PAM module.
+          </p>
+      </li>
+    </ol>
+    <note type="attention">
+      <p>
+          An incorrectly configured PAM stack can effectively prevent
+          you from logging into your guest system.
+        </p>
+    </note>
+    <p>
+        To make deployment easier, you can pass the argument
+        <codeph>debug</codeph> right after the
+        <filepath>pam_vbox.so</filepath> statement. Debug log output
+        will then be recorded using syslog.
+      </p>
+    <note>
+      <p>
+          By default, <userinput>pam_vbox</userinput> does not wait for
+          credentials to arrive from the host. When a login prompt is
+          shown, for example by GDM/KDM or the text console, and
+          <userinput>pam_vbox</userinput> does not yet have credentials it
+          does not wait until they arrive. Instead the next module in
+          the PAM stack, depending on the PAM configuration, will have
+          the chance for authentication.
+        </p>
+    </note>
+    <p><userinput>pam_vbox</userinput> supports various guest property
+        parameters that are located in
+        <filepath>/VirtualBox/GuestAdd/PAM/</filepath>. These parameters
+        allow <userinput>pam_vbox</userinput> to wait for credentials to be
+        provided by the host and optionally can show a message while
+        waiting for those. The following guest properties can be set:
+      </p>
+    <ul>
+      <li>
+        <p><codeph>CredsWait</codeph>: Set to 1 if
+            <userinput>pam_vbox</userinput> should start waiting until
+            credentials arrive from the host. Until then no other
+            authentication methods such as manually logging in will be
+            available. If this property is empty or gets deleted no
+            waiting for credentials will be performed and
+            <userinput>pam_vbox</userinput> will act like before. This
+            property must be set read-only for the guest
+            (<codeph>RDONLYGUEST</codeph>).
+          </p>
+      </li>
+      <li>
+        <p><codeph>CredsWaitAbort</codeph>: Aborts waiting for
+            credentials when set to any value. Can be set from host and
+            the guest.
+          </p>
+      </li>
+      <li>
+        <p><codeph>CredsWaitTimeout</codeph>: Timeout, in seconds, to
+            let <userinput>pam_vbox</userinput> wait for credentials to
+            arrive. When no credentials arrive within this timeout,
+            authentication of <userinput>pam_vbox</userinput> will be set to
+            failed and the next PAM module in chain will be asked. If
+            this property is not specified, set to 0 or an invalid
+            value, an infinite timeout will be used. This property must
+            be set read-only for the guest
+            (<codeph>RDONLYGUEST</codeph>).
+          </p>
+      </li>
+    </ul>
+    <p>
+        To customize <userinput>pam_vbox</userinput> further there are the
+        following guest properties:
+      </p>
+    <ul>
+      <li>
+        <p><codeph>CredsMsgWaiting</codeph>: Custom message showed
+            while pam_vbox is waiting for credentials from the host.
+            This property must be set read-only for the guest
+            (<codeph>RDONLYGUEST</codeph>).
+          </p>
+      </li>
+      <li>
+        <p><codeph>CredsMsgWaitTimeout</codeph>: Custom message
+            showed when waiting for credentials by
+            <userinput>pam_vbox</userinput> has timed out. For example, they
+            did not arrive within time. This property must be set
+            read-only for the guest (<codeph>RDONLYGUEST</codeph>).
+          </p>
+      </li>
+    </ul>
+    <note>
+      <p>
+          If a <userinput>pam_vbox</userinput> guest property does not have
+          the correct flag set (<codeph>RDONLYGUEST</codeph>) the
+          property is ignored and, depending on the property, a default
+          value will be used. This can result in pam_vbox not waiting
+          for credentials. Consult the appropriate syslog file for more
+          information and use the <codeph>debug</codeph> option.
+        </p>
+    </note>
+  </body>
+</topic>

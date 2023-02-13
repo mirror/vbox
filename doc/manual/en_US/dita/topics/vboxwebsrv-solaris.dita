@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxwebsrv-solaris">
+  <title>Oracle Solaris: Starting the Web Service With SMF</title>
+  
+  <body>
+    <p>
+        On Oracle Solaris hosts, the Oracle VM VirtualBox web service daemon
+        is integrated into the SMF framework. You can change the
+        parameters, but do not have to if the defaults below already
+        match your needs:
+      </p>
+    <pre xml:space="preserve">svccfg -s svc:/application/virtualbox/webservice:default setprop config/host=localhost
+svccfg -s svc:/application/virtualbox/webservice:default setprop config/port=18083
+svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=root</pre>
+    <p>
+        The table in <xref href="vboxwebsrv-linux.dita#vboxwebsrv-linux"/> showing the
+        parameter names and defaults also applies for Oracle Solaris.
+        The parameter names must be changed to lowercase and a prefix of
+        <codeph>config/</codeph> has to be added. For example:
+        <codeph>config/user</codeph> or
+        <codeph>config/ssl_keyfile</codeph>. If you make any change,
+        do not forget to run the following command to put the changes
+        into effect immediately:
+      </p>
+    <pre xml:space="preserve">svcadm refresh svc:/application/virtualbox/webservice:default</pre>
+    <p>
+        If you forget the above command then the previous settings are
+        used when enabling the service. Check the current property
+        settings as follows:
+      </p>
+    <pre xml:space="preserve">svcprop -p config svc:/application/virtualbox/webservice:default</pre>
+    <p>
+        When everything is configured correctly you can start the
+        Oracle VM VirtualBox web service with the following command:
+      </p>
+    <pre xml:space="preserve">svcadm enable svc:/application/virtualbox/webservice:default</pre>
+    <p>
+        For more information about SMF, please refer to the Oracle
+        Solaris documentation.
+      </p>
+  </body>
+  
+</topic>

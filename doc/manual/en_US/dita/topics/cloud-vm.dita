@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-vm">
+  <title>Using Cloud Virtual Machines</title>
+  
+  <body>
+    <p>
+        A cloud virtual machine (<i>cloud VM</i>) is a
+        type of VM that represents an instance on a cloud service. Cloud
+        VMs are shown in the machine list in VirtualBox Manager, in the same way
+        as local VMs are.
+      </p>
+    <p>
+        By using cloud VMs you can create, manage, and control your
+        Oracle Cloud Infrastructure instances from VirtualBox Manager.
+      </p>
+    <note>
+      <p>
+          Cloud VMs do not install, export, or import instances to the
+          Oracle VM VirtualBox host. All operations are done remotely on the
+          cloud service.
+        </p>
+    </note>
+    <fig id="fig-cloud-vm-overview">
+      <title>Cloud VMs, Shown in VirtualBox Manager</title>
+      <image href="images/cloudvm-overview.png" placement="break"/>
+    </fig>
+    <p>
+        Cloud VMs can be used to do the following tasks in Oracle Cloud Infrastructure:
+      </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Create a new Oracle Cloud Infrastructure
+            instance.</b> See <xref href="cloud-vm-new.dita#cloud-vm-new"/>.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold"> Use an existing Oracle Cloud Infrastructure
+            instance.</b> See <xref href="cloud-vm-add.dita#cloud-vm-add"/>.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Configure an Oracle Cloud Infrastructure
+            instance.</b> You can change settings for the
+            instance, such as display name and shape. See
+            <xref href="cloud-vm-settings.dita#cloud-vm-settings"/>.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Control an Oracle Cloud Infrastructure instance.</b>
+            Stop, start, and terminate the instance. See
+            <xref href="cloud-vm-control.dita#cloud-vm-control"/>
+                        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Create a console connection to an
+            Oracle Cloud Infrastructure instance</b>. See
+            <xref href="cloud-vm-instance-console.dita#cloud-vm-instance-console"/>.
+          </p>
+      </li>
+    </ul>
+  </body>
+</topic>

@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxmanage-intro">
+            <title>Introduction</title>
+            
+            <body>
+               <p>
+      As briefly mentioned in <xref href="frontends.dita#frontends"/>,
+      <userinput>VBoxManage</userinput> is the command-line interface to
+      Oracle VM VirtualBox. With it, you can completely control Oracle VM VirtualBox
+      from the command line of your host operating system.
+      <userinput>VBoxManage</userinput> supports all the features that the
+      graphical user interface gives you access to, but it supports a
+      lot more than that. It exposes all the features of the
+      virtualization engine, even those that cannot be accessed from the
+      GUI.
+    </p>
+               <p>
+      You will need to use the command line if you want to do the
+      following:
+    </p>
+               <ul>
+                  <li>
+                     <p>
+          Use a different user interface than the main GUI such as the
+          VBoxHeadless server.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          Control some of the more advanced and experimental
+          configuration settings for a VM.
+        </p>
+                  </li>
+               </ul>
+               <p>
+      There are two main things to keep in mind when using
+      <userinput>VBoxManage</userinput>. First,
+      <userinput>VBoxManage</userinput> must always be used with a specific
+      subcommand, such as <userinput>list</userinput> or
+      <userinput>createvm</userinput> or <userinput>startvm</userinput>. All the
+      subcommands that <userinput>VBoxManage</userinput> supports are
+      described in detail in <xref href="vboxmanage.dita#vboxmanage"/>.
+    </p>
+               <p>
+      Second, most of these subcommands require that you specify a
+      particular virtual machine after the subcommand. There are two
+      ways you can do this:
+    </p>
+               <ul>
+                  <li>
+                     <p>
+          You can specify the VM name, as it is shown in the
+          Oracle VM VirtualBox GUI. Note that if that name contains spaces,
+          then you must enclose the entire name in double quotes. This
+          is always required with command line arguments that contain
+          spaces. For example:
+        </p>
+                     <pre xml:space="preserve">VBoxManage startvm "Windows XP"</pre>
+                  </li>
+                  <li>
+                     <p>
+          You can specify the UUID, which is the internal unique
+          identifier that Oracle VM VirtualBox uses to refer to the virtual
+          machine. Assuming that the VM called "Windows XP" has the UUID
+          shown below, the following command has the same effect as the
+          previous example:
+        </p>
+                     <pre xml:space="preserve">VBoxManage startvm 670e746d-abea-4ba6-ad02-2a3b043810a5</pre>
+                  </li>
+               </ul>
+               <p>
+      You can enter <userinput>VBoxManage list vms</userinput> to have all
+      currently registered VMs listed with all their settings, including
+      their respective names and UUIDs.
+    </p>
+               <p>
+      Some typical examples of how to control Oracle VM VirtualBox from the
+      command line are listed below:
+    </p>
+               <ul>
+                  <li>
+                     <p>
+          To create a new virtual machine from the command line and
+          immediately register it with Oracle VM VirtualBox, use
+          <userinput>VBoxManage createvm</userinput> with the
+          <!--option not processed within -->--register option, as follows:
+        </p>
+                     <pre xml:space="preserve">$ VBoxManage createvm --name "SUSE 10.2" --register
+VirtualBox Command Line Management Interface Version <varname>version-number</varname>
+(C) 2005-2018 Oracle Corporation
+All rights reserved.
+
+Virtual machine 'SUSE 10.2' is created.
+UUID: c89fc351-8ec6-4f02-a048-57f4d25288e5
+Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'</pre>
+                     <p>
+          As can be seen from the above output, a new virtual machine
+          has been created with a new UUID and a new XML settings file.
+        </p>
+                     <p>
+          For more details, see
+          <xref href="man_VBoxManage-createvm.dita#vboxmanage-createvm"/>.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          To show the configuration of a particular VM, use
+          <userinput>VBoxManage showvminfo</userinput>. See
+          <xref href="man_VBoxManage-showvminfo.dita#vboxmanage-showvminfo"/> for details
+          and an example.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          To change settings while a VM is powered off, use
+          <userinput>VBoxManage modifyvm</userinput>. For example:
+        </p>
+                     <pre xml:space="preserve">VBoxManage modifyvm "Windows XP" --memory 512</pre>
+                     <p>
+          See also <xref href="man_VBoxManage-modifyvm.dita#vboxmanage-modifyvm"/>.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          To change the storage configuration, such as to add a storage
+          controller and then a virtual disk, use <userinput>VBoxManage
+          storagectl</userinput> and <userinput>VBoxManage
+          storageattach</userinput>. See
+          <xref href="man_VBoxManage-storagectl.dita#vboxmanage-storagectl"/> and
+          <xref href="man_VBoxManage-storageattach.dita#vboxmanage-storageattach"/>.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          To control VM operation, use one of the following:
+        </p>
+                     <ul>
+                        <li>
+                           <p>
+              To start a VM that is currently powered off, use
+              <userinput>VBoxManage startvm</userinput>. See
+              <xref href="man_VBoxManage-startvm.dita#vboxmanage-startvm"/>.
+            </p>
+                        </li>
+                        <li>
+                           <p>
+              To pause or save a VM that is currently running or change
+              some of its settings, use <userinput>VBoxManage
+              controlvm</userinput>. See
+              <xref href="man_VBoxManage-controlvm.dita#vboxmanage-controlvm"/>.
+            </p>
+                        </li>
+                     </ul>
+                  </li>
+               </ul>
+            </body>
+            
+         </topic>

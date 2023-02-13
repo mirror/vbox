@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="additions-solaris-updating">
+  <title>Updating the Oracle Solaris Guest Additions</title>
+  
+  <body>
+    <p>
+          The Guest Additions should be updated by first uninstalling
+          the existing Guest Additions and then installing the new ones.
+          Attempting to install new Guest Additions without removing the
+          existing ones is not possible.
+        </p>
+  </body>
+  
+</topic>

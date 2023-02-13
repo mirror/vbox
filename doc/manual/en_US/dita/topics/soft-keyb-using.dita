@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="soft-keyb-using">
+               <title>Using the Soft Keyboard</title>
+               
+               <body>
+                  <ol>
+                     <li>
+                        <p>
+            Display the soft keyboard.
+          </p>
+                        <p>
+            In the guest VM window, select
+            <b outputclass="bold">Input</b>,
+            <b outputclass="bold">Keyboard</b>,
+            <b outputclass="bold">Soft Keyboard</b>.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+            Select the required keyboard layout.
+          </p>
+                        <p>
+            The name of the current keyboard layout is displayed in the
+            toolbar of the soft keyboard window. This is the previous
+            keyboard layout that was used.
+          </p>
+                        <p>
+            Click the <b outputclass="bold">Layout List</b> icon
+            in the toolbar of the soft keyboard window. The
+            <b outputclass="bold">Layout List</b> window is
+            displayed.
+          </p>
+                        <p>
+            Select the required keyboard layout from the entries in the
+            <b outputclass="bold">Layout List</b> window.
+          </p>
+                        <p>
+            The keyboard display graphic is updated to show the
+            available input keys.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+            Use the soft keyboard to enter keyboard characters on the
+            guest.
+          </p>
+                        <ul>
+                           <li>
+                              <p>
+                Modifier keys such as Shift, Ctrl, and Alt are available
+                on the soft keyboard. Click once to select the modifier
+                key, click twice to lock the modifier key.
+              </p>
+                              <p>
+                The <b outputclass="bold">Reset the Keyboard and Release
+                All Keys</b> icon can be used to release all
+                pressed modifier keys, both on the host and the guest.
+              </p>
+                           </li>
+                           <li>
+                              <p>
+                To change the look of the soft keyboard, click the
+                <b outputclass="bold">Settings</b> icon in the
+                toolbar. You can change colors used in the keyboard
+                graphic, and can hide or show sections of the keyboard,
+                such as the NumPad or multimedia keys.
+              </p>
+                           </li>
+                        </ul>
+                     </li>
+                  </ol>
+               </body>
+               
+            </topic>

@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxwatchdog">
+  <title>Oracle VM VirtualBox Watchdog</title>
+  
+  <body>
+    <p>
+      The memory ballooning service, formerly known as
+      <userinput>VBoxBalloonCtrl</userinput>, was renamed to VBoxWatchdog.
+      This service now incorporates the following host services that are
+      meant to be run in a server environment:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Memory ballooning control.</b>
+          This service automatically takes care of a VM's configured
+          memory balloon. See <xref href="guestadd-balloon.dita">Memory Ballooning</xref>. This
+          service is useful for server environments where VMs may
+          dynamically require more or less memory during runtime.
+        </p>
+        <p>
+          The service periodically checks a VM's current memory balloon
+          and its free guest RAM and automatically adjusts the current
+          memory balloon by inflating or deflating it accordingly. This
+          handling only applies to running VMs having recent Guest
+          Additions installed.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Host isolation detection.</b>
+          This service provides a way to detect whether the host cannot
+          reach the specific Oracle VM VirtualBox server instance anymore and
+          take appropriate actions, such as shutting down, saving the
+          current state or even powering down certain VMs.
+        </p>
+      </li>
+    </ul>
+    <p>
+      All configuration values can be either specified using the command
+      line or global extradata, whereas command line values always have
+      a higher priority when set. Some of the configuration values also
+      be specified on a per-VM basis. So the overall lookup order is:
+      command line, per-VM basis extradata if available, global
+      extradata.
+    </p>
+  </body>
+</topic>

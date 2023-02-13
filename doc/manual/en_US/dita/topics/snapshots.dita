@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="snapshots">
+            <title>Snapshots</title>
+            
+            <body>
+               <p>
+      With snapshots, you can save a particular state of a virtual
+      machine for later use. At any later time, you can revert to that
+      state, even though you may have changed the VM considerably since
+      then. A snapshot of a virtual machine is thus similar to a machine
+      in Saved state, but there can be many of them, and these saved
+      states are preserved.
+    </p>
+               <p>
+      To see the snapshots of a virtual machine, click on the machine
+      name in VirtualBox Manager. In the machine tools menu for the VM, click
+      <b outputclass="bold">Snapshots</b>. The Snapshots tool is
+      displayed.
+    </p>
+               <fig id="fig-snapshots-tool">
+                  <title>Snapshots Tool, Showing Snapshot Properties</title>
+                  <image href="images/snapshots-1.png" placement="break"/>
+               </fig>
+               <p>
+      If you select multiple VMs in the machine list, all snapshots are
+      listed for each VM.
+    </p>
+               <p>
+      Until you take a snapshot of the virtual machine, the list of
+      snapshots will be empty, except for the
+      <b outputclass="bold">Current State</b> item. This item
+      represents the current point in the lifetime of the virtual
+      machine.
+    </p>
+               <p>
+      The Snapshots window includes a toolbar, enabling you to perform
+      the following snapshot operations:
+    </p>
+               <ul>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Take.</b> Takes a snapshot of the
+          selected VM. See
+          <xref href="snapshots-take-restore-delete.dita#snapshots-take-restore-delete"/>.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Delete.</b> Removes a snapshot
+          from the list of snapshots. See
+          <xref href="snapshots-take-restore-delete.dita#snapshots-take-restore-delete"/>.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Restore.</b> Restores the VM
+          state to be the same as the selected snapshot. See
+          <xref href="snapshots-take-restore-delete.dita#snapshots-take-restore-delete"/>.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Properties.</b> Displays the
+          properties for the selected snapshot. The
+          <b outputclass="bold">Attributes</b> tab is used to
+          specify a Name and Description for the snapshot. The
+          <b outputclass="bold">Information</b> tab shows VM
+          settings for the snapshot.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Clone.</b> Displays the
+          <b outputclass="bold">Clone Virtual Machine</b> wizard.
+          This enables you to create a clone of the VM, based on the
+          selected snapshot.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Settings.</b> Available for the
+          Current State snapshot only. Displays the
+          <b outputclass="bold">Settings</b> window for the VM,
+          enabling you to make configuration changes.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Discard.</b> For a running VM,
+          discards the saved state for the VM and closes it down.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Start.</b> Start the VM. This
+          operation is available for the <b outputclass="bold">Current
+          State</b> item.
+        </p>
+                  </li>
+               </ul>
+            </body>
+            
+            
+         </topic>

@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ExperimentalFeatures">
+  <title>Experimental Features</title>
+  
+  <body>
+    <p>
+      Some Oracle VM VirtualBox features are labeled as experimental. Such
+      features are provided on an "as-is" basis and are not formally
+      supported. However, feedback and suggestions about such features
+      are welcome. A comprehensive list of experimental features is as
+      follows:
+    </p>
+    <ul>
+      <li>
+        <p>
+          Hardware 3D acceleration support for Windows, Linux, and
+          Oracle Solaris guests
+        </p>
+      </li>
+      <li>
+        <p>
+          Hardware 2D video playback acceleration support for Windows
+          guests
+        </p>
+      </li>
+      <li>
+        <p>
+          Mac OS X guests (macOS hosts only)
+        </p>
+      </li>
+      <li>
+        <p>
+          ICH9 chipset emulation
+        </p>
+      </li>
+      <li>
+        <p>
+          EFI firmware
+        </p>
+      </li>
+      <li>
+        <p>
+          Host CD/DVD drive passthrough
+        </p>
+      </li>
+      <li>
+        <p>
+          Support of iSCSI using internal networking
+        </p>
+      </li>
+      <li>
+        <p>
+          Using Oracle VM VirtualBox and Hyper-V on the same host
+        </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

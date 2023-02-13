@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxwatchdog-solaris">
+  <title>Oracle Solaris: Starting the Watchdog Service With SMF</title>
+  
+  <body>
+    <p>
+        On Oracle Solaris hosts, the Oracle VM VirtualBox watchdog service
+        daemon is integrated into the SMF framework. You can change the
+        parameters, but do not have to if the defaults already match
+        your needs:
+      </p>
+    <pre xml:space="preserve">svccfg -s svc:/application/virtualbox/balloonctrl:default setprop \
+  config/balloon_interval=10000
+svccfg -s svc:/application/virtualbox/balloonctrl:default setprop \
+config/balloon_safetymargin=134217728</pre>
+    <p><xref href="vboxwatchdog-linux.dita#vboxwatchdog-linux/table-vboxwatchdog-config-params"/> also applies
+        for Oracle Solaris. The parameter names must be changed to
+        lowercase and a prefix of <codeph>config/</codeph> has to be
+        added. For example: <codeph>config/user</codeph> or
+        <codeph>config/balloon_safetymargin</codeph>. If you made any
+        change, do not forget to run the following command to put the
+        changes into effect immediately:
+      </p>
+    <pre xml:space="preserve">svcadm refresh svc:/application/virtualbox/balloonctrl:default</pre>
+    <p>
+        If you forget the above command then the previous settings will
+        be used when enabling the service. Check the current property
+        settings with the following command:
+      </p>
+    <pre xml:space="preserve">svcprop -p config svc:/application/virtualbox/balloonctrl:default</pre>
+    <p>
+        When everything is configured correctly you can start the
+        Oracle VM VirtualBox watchdog service with the following command:
+      </p>
+    <pre xml:space="preserve">svcadm enable svc:/application/virtualbox/balloonctrl:default</pre>
+    <p>
+        For more information about SMF, please refer to the Oracle
+        Solaris documentation.
+      </p>
+  </body>
+  
+</topic>

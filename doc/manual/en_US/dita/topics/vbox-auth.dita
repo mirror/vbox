@@ -1,0 +1,165 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vbox-auth">
+  <title>RDP Authentication</title>
+  
+  <body>
+    <p>
+        For each virtual machine that is remotely accessible using RDP,
+        you can individually determine if and how client connections are
+        authenticated. For this, use the <userinput>VBoxManage
+        modifyvm</userinput> command with the
+        <codeph>--vrde-auth-type</codeph> option. See
+        <xref href="man_VBoxManage-modifyvm.dita">VBoxManage modifyvm</xref>. The following methods of
+        authentication are available:
+      </p>
+    <ul>
+      <li>
+        <p>
+            The <b outputclass="bold">null</b> method means that
+            there is no authentication at all. Any client can connect to
+            the VRDP server and thus the virtual machine. This is very
+            insecure and only to be recommended for private networks.
+          </p>
+      </li>
+      <li>
+        <p>
+            The <b outputclass="bold">external</b> method
+            provides external authentication through a special
+            authentication library. Oracle VM VirtualBox ships with two
+            special authentication libraries:
+          </p>
+        <ol>
+          <li>
+            <p>
+                The default authentication library,
+                <userinput>VBoxAuth</userinput>, authenticates against user
+                credentials of the hosts. Depending on the host
+                platform, this means the following:
+              </p>
+            <ul>
+              <li>
+                <p>
+                    On Linux hosts, <userinput>VBoxAuth.so</userinput>
+                    authenticates users against the host's PAM system.
+                  </p>
+              </li>
+              <li>
+                <p>
+                    On Windows hosts, <userinput>VBoxAuth.dll</userinput>
+                    authenticates users against the host's WinLogon
+                    system.
+                  </p>
+              </li>
+              <li>
+                <p>
+                    On macOS hosts, <userinput>VBoxAuth.dylib</userinput>
+                    authenticates users against the host's directory
+                    service.
+                  </p>
+              </li>
+            </ul>
+            <p>
+                In other words, the external method by default performs
+                authentication with the user accounts that exist on the
+                host system. Any user with valid authentication
+                credentials is accepted. For example, the username does
+                not have to correspond to the user running the VM.
+              </p>
+          </li>
+          <li>
+            <p>
+                An additional library called
+                <userinput>VBoxAuthSimple</userinput> performs
+                authentication against credentials configured in the
+                <codeph>extradata</codeph> section of a virtual
+                machine's XML settings file. This is probably the
+                simplest way to get authentication that does not depend
+                on a running and supported guest. The following steps
+                are required:
+              </p>
+            <ol>
+              <li>
+                <p>
+                    Enable <userinput>VBoxAuthSimple</userinput> with the
+                    following command:
+                  </p>
+                <pre xml:space="preserve">VBoxManage setproperty vrdeauthlibrary "VBoxAuthSimple"</pre>
+              </li>
+              <li>
+                <p>
+                    To enable the library for a particular VM, you must
+                    switch authentication to external, as follows:
+                  </p>
+                <pre xml:space="preserve">VBoxManage modifyvm <varname>VM-name</varname> --vrde-auth-type external</pre>
+                <p>
+                    Replace <varname>VM-name</varname> with the
+                    VM name or UUID.
+                  </p>
+              </li>
+              <li>
+                <p>
+                    You then need to configure users and passwords by
+                    writing items into the machine's extradata. Since
+                    the XML machine settings file, into whose
+                    <codeph>extradata</codeph> section the password
+                    needs to be written, is a plain text file,
+                    Oracle VM VirtualBox uses hashes to encrypt passwords. The
+                    following command must be used:
+                  </p>
+                <pre xml:space="preserve">VBoxManage setextradata <varname>VM-name</varname> "VBoxAuthSimple/users/<varname>user</varname>" <varname>hash</varname>
+                                    </pre>
+                <p>
+                    Replace <varname>VM-name</varname> with the
+                    VM name or UUID, <varname>user</varname>
+                    with the user name who should be allowed to log in
+                    and <varname>hash</varname> with the
+                    encrypted password. The following command example
+                    obtains the hash value for the password
+                    <codeph>secret</codeph>:
+                  </p>
+                <pre xml:space="preserve">$ VBoxManage internalcommands passwordhash "secret"
+2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b</pre>
+                <p>
+                    You then use <userinput>VBoxManage
+                    setextradata</userinput> to store this value in the
+                    machine's <codeph>extradata</codeph> section.
+                  </p>
+                <p>
+                    As a combined example, to set the password for the
+                    user <codeph>john</codeph> and the machine
+                    <codeph>My VM</codeph> to
+                    <codeph>secret</codeph>, use this command:
+                  </p>
+                <pre xml:space="preserve">VBoxManage setextradata "My VM" "VBoxAuthSimple/users/john"
+    2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b</pre>
+              </li>
+            </ol>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <p>
+            The <b outputclass="bold">guest</b> authentication
+            method performs authentication with a special component that
+            comes with the Guest Additions. As a result, authentication
+            is not performed on the host, but with the guest user
+            accounts.
+          </p>
+        <p>
+            This method is currently still in testing and not yet
+            supported.
+          </p>
+      </li>
+    </ul>
+    <p>
+        In addition to the methods described above, you can replace the
+        default external authentication module with any other module.
+        For this, Oracle VM VirtualBox provides a well-defined interface that
+        enables you to write your own authentication module. This is
+        described in detail in the Oracle VM VirtualBox Software Development
+        Kit (SDK) reference. See <xref href="VirtualBoxAPI.dita#VirtualBoxAPI"/>.
+      </p>
+  </body>
+  
+</topic>

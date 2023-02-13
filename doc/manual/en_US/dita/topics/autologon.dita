@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="autologon">
+  <title>Automated Guest Logins</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox provides Guest Addition modules for Windows, Linux,
+      and Oracle Solaris to enable automated logins on the guest.
+    </p>
+    <p>
+      When a guest operating system is running in a virtual machine, it
+      might be desirable to perform coordinated and automated logins
+      using credentials passed from the host. Credentials are user name,
+      password, and domain name, where each value might be empty.
+    </p>
+  </body>
+</topic>

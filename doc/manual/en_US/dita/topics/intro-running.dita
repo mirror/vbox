@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="intro-running">
+  <title>Running Your Virtual Machine</title>
+  
+  <body>
+    <p>
+      To start a virtual machine, you have the following options:
+    </p>
+    <ul>
+      <li>
+        <p>
+          Double-click on the VM's entry in the machine list in
+          VirtualBox Manager.
+        </p>
+      </li>
+      <li>
+        <p>
+          Select the VM's entry in the machine list in VirtualBox Manager, and
+          click <b outputclass="bold">Start</b> in the toolbar
+          the top of the window.
+        </p>
+      </li>
+      <li>
+        <p>
+          Go to the <filepath>VirtualBox VMs</filepath> folder in your
+          system user's home directory. Find the subdirectory of the
+          machine you want to start and double-click on the machine
+          settings file. This file has a <filepath>.vbox</filepath> file
+          extension.
+        </p>
+      </li>
+    </ul>
+    <p>
+      Starting a virtual machine displays a new window, and the virtual
+      machine which you selected will boot up. Everything which would
+      normally be seen on the virtual system's monitor is shown in the
+      window. See <xref href="Introduction.dita#Introduction/fig-win2016-intro"/>.
+    </p>
+    <p>
+      In general, you can use the virtual machine as you would use a
+      real computer. The following topics describe a few points to note
+      when running a VM.
+    </p>
+  </body>
+</topic>

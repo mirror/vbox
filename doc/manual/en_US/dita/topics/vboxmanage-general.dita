@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxmanage-general">
+            <title>General Options</title>
+            <!-- topic/titlealts  not supplied within  topic/topic -->
+            <body>
+               <ul>
+                  <li>
+                     <p>
+          <!--option not processed within -->-v|--version: Show the version of this tool
+          and exit.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          <!--option not processed within -->--nologo: Suppress the output of the logo
+          information. This option is useful for scripts.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          <!--option not processed within -->--settingspw: Specify a settings password.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          <!--option not processed within -->--settingspwfile: Specify a file containing
+          the settings password.
+        </p>
+                  </li>
+               </ul>
+               <p>
+      The settings password is used for certain settings which need to
+      be stored in encrypted form for security reasons. At the moment,
+      the only encrypted setting is the iSCSI initiator secret, see
+      <xref href="man_VBoxManage-storageattach.dita"/>. As long as no
+      settings password is specified, this information is stored in
+      <i>plain text</i>. After using the
+      <!--option not processed within -->--settingspw|--settingspwfile option once, it
+      must be always used. Otherwise, the encrypted setting cannot be
+      unencrypted.
+    </p>
+            </body>
+            <!-- topic/topic  not supplied within  topic/topic -->
+         </topic>

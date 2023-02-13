@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_win-guest-bluescreen-record-info">
+  <title>How to Record Bluescreen Information from Windows Guests</title>
+  
+  <body>
+    <p>
+        When Windows guests run into a kernel crash, they display a
+        bluescreen error. Depending on how Windows is configured, the
+        information will remain on the screen until the machine is
+        restarted or it will reboot automatically. During installation,
+        Windows is usually configured to reboot automatically. With
+        automatic reboots, there is no chance to record the bluescreen
+        information which might be important for problem determination.
+      </p>
+    <p>
+        Oracle VM VirtualBox provides a method of halting a guest when it
+        wants to perform a reset. In order to enable this feature, use
+        the following command:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> "VBoxInternal/PDM/HaltOnReset" 1</pre>
+  </body>
+  
+</topic>

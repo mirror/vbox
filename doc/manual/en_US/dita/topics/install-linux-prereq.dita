@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="install-linux-prereq">
+  <title>Prerequisites</title>
+  
+  <body>
+    <p>
+        For the various versions of Linux that are supported as host
+        operating systems, see <xref href="hostossupport.dita#hostossupport"/>.
+      </p>
+    <p>
+        You may need to install the following packages on your Linux
+        system before starting the installation. Some systems will do
+        this for you automatically when you install Oracle VM VirtualBox.
+      </p>
+    <ul>
+      <li>
+        <p>
+            Qt 5.3.2 or later. Qt 5.6.2 or later is recommended.
+          </p>
+      </li>
+      <li>
+        <p>
+            SDL 1.2.7 or later. This graphics library is typically
+            called <filepath>libsdl</filepath> or similar.
+          </p>
+      </li>
+    </ul>
+    <note>
+      <p>
+          These packages are only required if you want to run the
+          Oracle VM VirtualBox graphical user interfaces. In particular,
+          <userinput>VirtualBox</userinput>, the graphical VirtualBox
+          Manager, requires both Qt and SDL. If you only want to run
+          <userinput>VBoxHeadless</userinput>, neither Qt nor SDL are
+          required.
+        </p>
+    </note>
+  </body>
+  
+</topic>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="storage-bandwidth-limit">
+            <title>Limiting Bandwidth for Disk Images</title>
+            
+            <body>
+               <p>
+      Oracle VM VirtualBox supports limiting of the maximum bandwidth used for
+      asynchronous I/O. Additionally it supports sharing limits through
+      bandwidth groups for several images. It is possible to have more
+      than one such limit.
+    </p>
+               <p>
+      Limits are configured using <userinput>VBoxManage</userinput>. The
+      example below creates a bandwidth group named Limit, sets the
+      limit to 20 MB per second, and assigns the group to the attached
+      disks of the VM:
+    </p>
+               <pre xml:space="preserve">VBoxManage bandwidthctl "VM name" add Limit --type disk --limit 20M
+VBoxManage storageattach "VM name" --storagectl "SATA" --port 0 --device 0 --type hdd
+                                   --medium disk1.vdi --bandwidthgroup Limit
+VBoxManage storageattach "VM name" --storagectl "SATA" --port 1 --device 0 --type hdd
+                                   --medium disk2.vdi --bandwidthgroup Limit</pre>
+               <p>
+      All disks in a group share the bandwidth limit, meaning that in
+      the example above the bandwidth of both images combined can never
+      exceed 20 MBps. However, if one disk does not require bandwidth
+      the other can use the remaining bandwidth of its group.
+    </p>
+               <p>
+      The limits for each group can be changed while the VM is running,
+      with changes being picked up immediately. The example below
+      changes the limit for the group created in the example above to 10
+      MBps:
+    </p>
+               <pre xml:space="preserve">VBoxManage bandwidthctl "VM name" set Limit --limit 10M</pre>
+            </body>
+            
+         </topic>

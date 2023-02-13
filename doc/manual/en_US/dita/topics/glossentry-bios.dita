@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="glossentry-bios">
+  <title>BIOS</title>
+  <body>
+    <section>
+      <p>
+        Basic Input/Output System, the firmware built into most personal computers which is 
+        responsible of initializing the hardware after the computer has been turned on and 
+        then booting an operating system. Oracle VM VirtualBox ships with its own virtual BIOS 
+        that runs when a virtual machine is started. 
+      </p>
+    </section>
+  </body>
+</topic>

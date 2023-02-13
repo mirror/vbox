@@ -1,0 +1,130 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="teleporting">
+  <title>Teleporting</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox supports <i>teleporting</i>.
+      Teleporting is moving a virtual machine over a network from one
+      Oracle VM VirtualBox host to another, while the virtual machine is
+      running. This works regardless of the host operating system that
+      is running on the hosts. You can teleport virtual machines between
+      Oracle Solaris and macOS hosts, for example.
+    </p>
+    <p>
+      Teleporting requires that a machine be currently running on one
+      host, which is called the <i>source</i>. The host to
+      which the virtual machine will be teleported is called the
+      <i>target</i>. The machine on the target is then
+      configured to wait for the source to contact the target. The
+      machine's running state will then be transferred from the source
+      to the target with minimal downtime.
+    </p>
+    <p>
+      Teleporting happens over any TCP/IP network. The source and the
+      target only need to agree on a TCP/IP port which is specified in
+      the teleporting settings.
+    </p>
+    <p>
+      At this time, there are a few prerequisites for this to work, as
+      follows:
+    </p>
+    <ul>
+      <li>
+        <p>
+          On the target host, you must configure a virtual machine in
+          Oracle VM VirtualBox with exactly the same hardware settings as the
+          machine on the source that you want to teleport. This does not
+          apply to settings which are merely descriptive, such as the VM
+          name, but obviously for teleporting to work, the target
+          machine must have the same amount of memory and other hardware
+          settings. Otherwise teleporting will fail with an error
+          message.
+        </p>
+      </li>
+      <li>
+        <p>
+          The two virtual machines on the source and the target must
+          share the same storage, hard disks as well as floppy disks and
+          CD/DVD images. This means that they either use the same iSCSI
+          targets or that the storage resides somewhere on the network
+          and both hosts have access to it using NFS or SMB/CIFS.
+        </p>
+        <p>
+          This also means that neither the source nor the target machine
+          can have any snapshots.
+        </p>
+      </li>
+    </ul>
+    <p>
+      To configure teleporting, perform the following steps:
+    </p>
+    <ol>
+      <li>
+        <p>
+          On the <i>target</i> host, configure the virtual
+          machine to wait for a teleport request to arrive when it is
+          started, instead of actually attempting to start the machine.
+          This is done with the following <userinput>VBoxManage</userinput>
+          command:
+        </p>
+        <pre xml:space="preserve">VBoxManage modifyvm <varname>targetvmname</varname> --teleporter on --teleporter-port <varname>port</varname>
+                     </pre>
+        <p><varname>targetvmname</varname> is the name of the
+          virtual machine on the target host and
+          <varname>port</varname> is a TCP/IP port number to be
+          used on both the source and the target hosts. For example, use
+          6000. See <xref href="man_VBoxManage-modifyvm.dita">VBoxManage modifyvm</xref>.
+        </p>
+      </li>
+      <li>
+        <p>
+          Start the VM on the target host. Instead of running, the VM
+          shows a progress dialog, indicating that it is waiting for a
+          teleport request to arrive.
+        </p>
+      </li>
+      <li>
+        <p>
+          Start the VM on the <i>source</i> host as usual.
+          When it is running and you want it to be teleported, issue the
+          following command on the source host:
+        </p>
+        <pre xml:space="preserve">VBoxManage controlvm <varname>sourcevmname</varname> teleport --host <varname>targethost</varname> --port <varname>port</varname>
+                     </pre>
+        <p>
+          where <varname>sourcevmname</varname> is the name of
+          the virtual machine on the source host, which is the machine
+          that is currently running.
+          <varname>targethost</varname> is the host or IP name
+          of the target host on which the machine is waiting for the
+          teleport request, and <varname>port</varname> must be
+          the same number as specified in the command on the target
+          host. See <xref href="man_VBoxManage-controlvm.dita">VBoxManage controlvm</xref>.
+        </p>
+      </li>
+    </ol>
+    <p>
+      For testing, you can also teleport machines on the same host. In
+      that case, use localhost as the hostname on both the source and
+      the target host.
+    </p>
+    <note>
+      <p>
+        In rare cases, if the CPUs of the source and the target are very
+        different, teleporting can fail with an error message, or the
+        target may hang. This may happen especially if the VM is running
+        application software that is highly optimized to run on a
+        particular CPU without correctly checking that certain CPU
+        features are actually present. Oracle VM VirtualBox filters what CPU
+        capabilities are presented to the guest operating system.
+        Advanced users can attempt to restrict these virtual CPU
+        capabilities with the <userinput>VBoxManage modifyvm
+        --cpuid-portability-level</userinput> command. See
+        <xref href="man_VBoxManage-modifyvm.dita">VBoxManage modifyvm</xref>.
+      </p>
+    </note>
+  </body>
+  
+</topic>

@@ -1,0 +1,86 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxconfigdata-summary-locations">
+  <title>Summary of Configuration Data Locations</title>
+  
+  <body>
+    <p>
+        The following table gives a brief overview of the configuration
+        data locations on an Oracle VM VirtualBox host.
+      </p>
+    <table id="table-config-summary">
+      <title>Configuration File Locations</title>
+      <tgroup cols="2">
+        <thead>
+          <row>
+            <entry>
+              <p>
+                <b outputclass="bold">Setting</b>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                <b outputclass="bold">Location</b>
+              </p>
+            </entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>
+              <p>
+                  Default machines folder
+                </p>
+            </entry>
+            <entry>
+              <p>
+                <filepath>$HOME/VirtualBox VMs</filepath>
+              </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                  Default disk image location
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  In each machine's folder
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                  Machine settings file extension
+                </p>
+            </entry>
+            <entry>
+              <p>
+                <filepath>.vbox</filepath>
+              </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                  Media registry
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Each machine settings file
+                </p>
+              <p>
+                  Media registration is done automatically when a
+                  storage medium is attached to a VM
+                </p>
+            </entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+  </body>
+  
+</topic>

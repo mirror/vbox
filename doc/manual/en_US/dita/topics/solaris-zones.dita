@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="solaris-zones">
+               <title>Configuring a Zone for Running Oracle VM VirtualBox</title>
+               
+               <body>
+                  <p>
+        Assuming that Oracle VM VirtualBox has already been installed into
+        your zone, you need to give the zone access to Oracle VM VirtualBox's
+        device node. This is done by performing the following steps.
+        Start a root terminal and run the following command:
+      </p>
+                  <pre xml:space="preserve">zonecfg -z <varname>vboxzone</varname>
+                  </pre>
+                  <p>
+        Replace <varname>vboxzone</varname> with the name of the
+        zone where you intend to run Oracle VM VirtualBox.
+      </p>
+                  <p>
+        Use <userinput>zonecfg</userinput> to add the
+        <codeph>device</codeph> resource and <codeph>match</codeph>
+        properties to the zone, as follows:
+      </p>
+                  <pre xml:space="preserve">zonecfg:vboxzone&gt;add device
+zonecfg:vboxzone:device&gt;set match=/dev/vboxdrv
+zonecfg:vboxzone:device&gt;end
+zonecfg:vboxzone&gt;add device
+zonecfg:vboxzone:device&gt;set match=/dev/vboxdrvu
+zonecfg:vboxzone:device&gt;end
+zonecfg:vboxzone&gt;exit</pre>
+                  <p>
+        On Oracle Solaris 11 or later, you may also add a device for
+        <filepath>/dev/vboxusbmon</filepath>, similar to that shown
+        above.
+      </p>
+                  <p>
+        If you are not using sparse root zones, you will need to
+        loopback mount <filepath>/opt/VirtualBox</filepath> from the
+        global zone into the non-global zone at the same path. This is
+        specified below using the <codeph>dir</codeph> attribute and
+        the <codeph>special</codeph> attribute. For example:
+      </p>
+                  <pre xml:space="preserve">zonecfg:vboxzone&gt;add fs
+zonecfg:vboxzone:device&gt;set dir=/opt/VirtualBox
+zonecfg:vboxzone:device&gt;set special=/opt/VirtualBox
+zonecfg:vboxzone:device&gt;set type=lofs
+zonecfg:vboxzone:device&gt;end
+zonecfg:vboxzone&gt;exit</pre>
+                  <p>
+        Reboot the zone using <userinput>zoneadm</userinput> and you should
+        be able to run Oracle VM VirtualBox from within the configured zone.
+      </p>
+               </body>
+               
+            </topic>

@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_win2k-guest-install">
+  <title>Windows 2000 Installation Failures</title>
+  
+  <body>
+    <p>
+        When installing Windows 2000 guests, you might run into one of
+        the following issues:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Installation reboots, usually during component registration.
+          </p>
+      </li>
+      <li>
+        <p>
+            Installation fills the whole hard disk with empty log files.
+          </p>
+      </li>
+      <li>
+        <p>
+            Installation complains about a failure installing
+            <filepath>msgina.dll</filepath>.
+          </p>
+      </li>
+    </ul>
+    <p>
+        These problems are all caused by a bug in the hard disk driver
+        of Windows 2000. After issuing a hard disk request, there is a
+        race condition in the Windows driver code which leads to
+        corruption if the operation completes too fast. For example, the
+        hardware interrupt from the IDE controller arrives too soon.
+        With physical hardware, there is a guaranteed delay in most
+        systems so the problem is usually hidden there. However, it
+        should be possible to also reproduce it on physical hardware. In
+        a virtual environment, it is possible for the operation to be
+        done immediately, especially on very fast systems with multiple
+        CPUs, and the interrupt is signaled sooner than on a physical
+        system. The solution is to introduce an artificial delay before
+        delivering such interrupts. This delay can be configured for a
+        VM using the following command:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> "VBoxInternal/Devices/piix3ide/0/Config/IRQDelay" 1</pre>
+    <p>
+        This sets the delay to one millisecond. In case this does not
+        help, increase it to a value between 1 and 5 milliseconds.
+        Please note that this slows down disk performance. After
+        installation, you should be able to remove the key, or set it to
+        0.
+      </p>
+  </body>
+  
+</topic>

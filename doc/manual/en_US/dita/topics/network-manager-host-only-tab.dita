@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="network-manager-host-only-tab">
+  <title>Host-Only Networks Tab</title>
+  
+  <body>
+    <p>
+        The Host-Only Networks tab in Network Manager lists all
+        host-only networks that are currently in use.
+      </p>
+    <ul>
+      <li>
+        <p>
+            Click <b outputclass="bold">Create</b> to add a new
+            host-only network to the list.
+          </p>
+      </li>
+      <li>
+        <p>
+            Click <b outputclass="bold">Remove</b> to remove a
+            host-only network from the list.
+          </p>
+      </li>
+      <li>
+        <p>
+            Click <b outputclass="bold">Properties</b> to show or
+            hide settings for the selected host-only network.
+          </p>
+      </li>
+    </ul>
+    <p>
+        To configure a host-only network, select the network name in the
+        <b outputclass="bold">Name</b> field and do the
+        following:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Use the <b outputclass="bold">Adapter</b> tab to
+            configure the network adapter for the host-only network.
+          </p>
+      </li>
+      <li>
+        <p>
+            Use the <b outputclass="bold">DHCP Server</b> tab to
+            configure settings for the DHCP server used by the host-only
+            network. The DHCP server is built into Oracle VM VirtualBox and
+            manages IP addresses for the network automatically.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestadd-memory-usage">
+  <title>Memory Overcommitment</title>
+  
+  <body>
+    <p>
+      In server environments with many VMs, the Guest Additions can be
+      used to share physical host memory between several VMs. This
+      reduces the total amount of memory in use by the VMs. If memory
+      usage is the limiting factor and CPU resources are still
+      available, this can help with running more VMs on each host.
+    </p>
+  </body>
+</topic>

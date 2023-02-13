@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="network_cloud">
+  <title>Cloud Networks</title>
+  
+  <body>
+    <p>
+      Cloud networks can be used for connections from a local VM to a
+      subnet on a remote Oracle Cloud Infrastructure instance. See
+      <xref href="network-manager-cloud-network-tab.dita#network-manager-cloud-network-tab"/> for details of
+      how to create and configure a cloud network using the Network
+      Manager tool in VirtualBox Manager.
+    </p>
+    <p>
+      To enable a cloud network interface for a virtual machine, do
+      either of the following:
+    </p>
+    <ul>
+      <li>
+        <p>
+          Go to the <b outputclass="bold">Network</b> page in the
+          virtual machine's <b outputclass="bold">Settings</b>
+          dialog and select an <b outputclass="bold">Adapter</b>
+          tab. Ensure that the <b outputclass="bold">Enable Network
+          Adapter</b> check box is selected and choose
+          <b outputclass="bold">Cloud Network</b> for the
+          <b outputclass="bold">Attached To</b> field.
+        </p>
+      </li>
+      <li>
+        <p>
+          On the command line, use <userinput>VBoxManage modifyvm
+          vmname --nic <varname>x</varname> cloud</userinput>. See
+          <xref href="man_VBoxManage-modifyvm.dita#vboxmanage-modifyvm"/>.
+        </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

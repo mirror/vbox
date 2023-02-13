@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="virtintro">
+            <title>Some Terminology</title>
+            
+            <body>
+               <p>
+      When dealing with virtualization, and also for understanding the
+      following chapters of this documentation, it helps to acquaint
+      oneself with a bit of crucial terminology, especially the
+      following terms:
+    </p>
+               <ul>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Host operating system (host
+          OS).</b> This is the OS of the physical computer on
+          which Oracle VM VirtualBox was installed. There are versions of
+          Oracle VM VirtualBox for Windows, macOS, Linux, and Oracle Solaris
+          hosts. See <xref href="hostossupport.dita#hostossupport"/>.
+        </p>
+                     <p>
+          Most of the time, this manual discusses all Oracle VM VirtualBox
+          versions together. There may be platform-specific differences
+          which we will point out where appropriate.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Guest operating system (guest
+          OS).</b> This is the OS that is running inside the
+          virtual machine. Theoretically, Oracle VM VirtualBox can run any x86
+          OS such as DOS, Windows, OS/2, FreeBSD, and OpenBSD. But to
+          achieve near-native performance of the guest code on your
+          machine, we had to go through a lot of optimizations that are
+          specific to certain OSes. So while your favorite OS
+          <i>may</i> run as a guest, we officially support
+          and optimize for a select few, which include the most common
+          OSes.
+        </p>
+                     <p>
+          See <xref href="guestossupport.dita#guestossupport"/>.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Virtual machine (VM).</b> This is
+          the special environment that Oracle VM VirtualBox creates for your
+          guest OS while it is running. In other words, you run your
+          guest OS <i>in</i> a VM. Normally, a VM is shown
+          as a window on your computer's desktop. Depending on which of
+          the various frontends of Oracle VM VirtualBox you use, the VM might
+          be shown in full screen mode or remotely on another computer.
+        </p>
+                     <p>
+          Internally, Oracle VM VirtualBox treats a VM as a set of parameters
+          that specify its behavior. Some parameters describe hardware
+          settings, such as the amount of memory and number of CPUs
+          assigned. Other parameters describe the state information,
+          such as whether the VM is running or saved.
+        </p>
+                     <p>
+          You can view these VM settings in VirtualBox Manager, in the
+          <b outputclass="bold">Settings</b> window, and by
+          running the <userinput>VBoxManage</userinput> command. See
+          <xref href="vboxmanage.dita#vboxmanage"/>.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Guest Additions.</b> This refers
+          to special software packages which are shipped with
+          Oracle VM VirtualBox but designed to be installed
+          <i>inside</i> a VM to improve performance of the
+          guest OS and to add extra features. See
+          <xref href="guestadditions.dita#guestadditions"/>.
+        </p>
+                  </li>
+               </ul>
+            </body>
+            
+         </topic>

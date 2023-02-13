@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="install-ext-pack-manager">
+  <title>The Extension Pack Manager</title>
+  
+  <body>
+    <p>
+        Extension packs can be installed and managed using the
+        <b outputclass="bold">Extension Pack Manager</b> tool in
+        VirtualBox Manager.
+      </p>
+    <p>
+        The Extension Pack Manager lists the extension packs that are
+        currently installed on the host, and enables you to install and
+        uninstall extension packs.
+      </p>
+    <p>
+        To display the Extension Pack Manager, go to the global
+        <b outputclass="bold">Tools</b> menu and click
+        <b outputclass="bold">Extensions</b>. The Extension Pack
+        Manager is shown.
+      </p>
+    <p>
+        To install an extension pack using the Extension Pack Manager,
+        click <b outputclass="bold">Install</b> and select an
+        extension package file. The extension pack is installed on the
+        host and listed in Extension Pack Manager.
+      </p>
+    <p>
+        To uninstall an extension pack with the Extension Pack Manager,
+        do the following:
+      </p>
+    <ol>
+      <li>
+        <p>
+            Select the extension pack in the Extension Pack Manager
+            window and click <b outputclass="bold">Uninstall</b>.
+          </p>
+      </li>
+      <li>
+        <p>
+            Click <b outputclass="bold">Remove</b> in the prompt
+            dialog.
+          </p>
+        <p>
+            The extension pack is uninstalled from the host and removed
+            from the Extension Pack Manager.
+          </p>
+      </li>
+    </ol>
+    <p>
+        Alternatively, you can use the <userinput>VBoxManage</userinput>
+        command line to install and manage Oracle VM VirtualBox extension
+        packs. See <xref href="man_VBoxManage-extpack.dita#vboxmanage-extpack"/>.
+      </p>
+  </body>
+  
+</topic>

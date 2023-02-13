@@ -1,0 +1,72 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-create-api-keypair">
+  <title>Creating an API Signing Key Pair</title>
+  
+  <body>
+    <p/>
+    <p>
+        To use the cloud integration features of Oracle VM VirtualBox, you
+        must generate an API signing key pair that is used for API
+        requests to Oracle Cloud Infrastructure.
+      </p>
+    <p>
+        Your API requests are signed with your private key, and Oracle Cloud Infrastructure
+        uses the public key to verify the authenticity of the request.
+        You must upload the public key to the Oracle Cloud Infrastructure Console.
+      </p>
+    <note>
+      <p>
+          This key pair is not the same SSH key that you use to access
+          compute instances on Oracle Cloud Infrastructure.
+        </p>
+    </note>
+    <ol>
+      <li>
+        <p>
+            (Optional) Create a <filepath>.oci</filepath> directory to
+            store the key pair.
+          </p>
+        <pre xml:space="preserve">$ mkdir ~/.oci</pre>
+        <p>
+            The key pair is usually installed in the
+            <filepath>.oci</filepath> folder in your home directory. For
+            example, <filepath>~/.oci</filepath> on a Linux system.
+          </p>
+      </li>
+      <li>
+        <p>
+            Generate the private key.
+          </p>
+        <p>
+            Use the <codeph>openssl</codeph> command.
+          </p>
+        <ul>
+          <li>
+            <p>
+                To generate a private key with a passphrase:
+              </p>
+            <pre xml:space="preserve">$ openssl genrsa -out ~/.oci/oci_api_key.pem -aes128 2048 </pre>
+          </li>
+          <li>
+            <p>
+                To generate a private key without a passphrase:
+              </p>
+            <pre xml:space="preserve">$ openssl genrsa -out ~/.oci/oci_api_key.pem 2048</pre>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>
+            Change permissions for the private key.
+          </p>
+        <pre xml:space="preserve">$ chmod 600 ~/.oci/oci_api_key.pem</pre>
+        <p>
+            Generate the public key.
+          </p>
+        <pre xml:space="preserve">$ openssl rsa -pubout -in ~/.oci/oci_api_key.pem -out ~/.oci/oci_api_key_public.pem</pre>
+      </li>
+    </ol>
+  </body>
+  
+</topic>

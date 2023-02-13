@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_vboxbugreport">
+  <title>Using the VBoxBugReport Command to Collect Debug Information
+        Automatically</title>
+  
+  <body>
+    <p>
+        The <userinput>VBoxBugReport</userinput> command is used to collect
+        debug information automatically for an Oracle VM VirtualBox
+        installation. This command can be useful when you need to gather
+        information to send to Oracle Support.
+      </p>
+    <p>
+        The following examples show how to use
+        <userinput>VBoxBugReport</userinput>.
+      </p>
+    <p>
+        By default, the command collects <userinput>VBoxSVC</userinput>
+        process logs, device settings, and global configuration data for
+        an Oracle VM VirtualBox host.
+      </p>
+    <pre xml:space="preserve">$ VBoxBugReport
+  ...
+  0% - collecting VBoxSVC.log.10...
+  7% - collecting VBoxSVC.log.9...
+  ...
+ 64% - collecting VBoxSVC.log.1...
+ 71% - collecting VBoxSVC.log...
+ 78% - collecting VirtualBox.xml...
+ 85% - collecting HostUsbDevices...
+ 92% - collecting HostUsbFilters...
+100% - compressing...
+
+Report was written to '2019-03-26-13-32-02-bugreport.tgz'</pre>
+    <p>
+        The results are saved as a compressed tar file archive in the
+        same directory where the command is run.
+      </p>
+    <p>
+        To specify a different output file location:
+      </p>
+    <pre xml:space="preserve">$ VBoxBugReport --output ~/debug/bug004.tgz</pre>
+    <p>
+        To output all debug information to a single text file, rather
+        than a <filepath>tgz</filepath> file:
+      </p>
+    <pre xml:space="preserve">$ VBoxBugReport --text</pre>
+    <p>
+        To collect information for a specific VM, called
+        <codeph>Windows_10</codeph>:
+      </p>
+    <pre xml:space="preserve">$ VBoxBugReport Windows_10</pre>
+    <p>
+        This command collects machine settings, guest properties, and
+        log files for the specified VM. Global configuration information
+        for the host is also included.
+      </p>
+    <p>
+        To collect information for several VMs, called
+        <codeph>Windows_7</codeph>, <codeph>Windows_8</codeph>, and
+        <codeph>Windows_10</codeph>:
+      </p>
+    <pre xml:space="preserve">$ VBoxBugReport Windows_7 Windows_8 Windows_10</pre>
+    <p>
+        To collect information for all VMs:
+      </p>
+    <pre xml:space="preserve">$ VBoxBugReport --all</pre>
+    <p>
+        To show a full list of the available command options, run
+        <userinput>VBoxBugReport --help</userinput>.
+      </p>
+  </body>
+  
+</topic>

@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxbowsolaris11">
+  <title>Installing the Alternate Bridged Networking Driver on Oracle Solaris 11
+      Hosts</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox includes a network filter driver that utilizes
+      Oracle Solaris 11's Crossbow functionality. By default, this new
+      driver is installed for Oracle Solaris 11 hosts that have support
+      for it.
+    </p>
+    <p>
+      To force installation of the older STREAMS based network filter
+      driver, execute as root the following command before installing
+      the Oracle VM VirtualBox package:
+    </p>
+    <pre xml:space="preserve">$ touch /etc/vboxinst_vboxflt</pre>
+    <p>
+      To force installation of the Crossbow based network filter driver,
+      execute as root the following command before installing the
+      Oracle VM VirtualBox package:
+    </p>
+    <pre xml:space="preserve">$ touch /etc/vboxinst_vboxbow</pre>
+    <p>
+      To check which driver is currently being used by Oracle VM VirtualBox,
+      execute:
+    </p>
+    <pre xml:space="preserve">$ modinfo | grep vbox</pre>
+    <p>
+      If the output contains "vboxbow", it indicates Oracle VM VirtualBox is
+      using the Crossbow network filter driver, while the name "vboxflt"
+      indicates usage of the older STREAMS network filter.
+    </p>
+  </body>
+  
+</topic>

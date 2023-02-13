@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="soft-keyb-custom">
+               <title>Creating a Custom Keyboard Layout</title>
+               
+               <body>
+                  <p>
+        You can use one of the supplied default keyboard layouts as the
+        starting point to create a custom keyboard layout.
+      </p>
+                  <note>
+                     <p>
+          To permananently save a custom keyboard layout, you must save
+          it to a file. Otherwise, any changes you make are discarded
+          when you close down the <b outputclass="bold">Soft
+          Keyboard</b> window.
+        </p>
+                     <p>
+          Custom keyboard layouts that you save are stored as an XML
+          file on the host, in the <filepath>keyboardLayouts</filepath>
+          folder in the global configuration data directory. For
+          example, in
+          <filepath>$HOME/.config/VirtualBox/keyboardLayouts</filepath>
+          on a Linux host.
+        </p>
+                  </note>
+                  <ol>
+                     <li>
+                        <p>
+            Display the <b outputclass="bold">Layout List</b>.
+          </p>
+                        <p>
+            Click the <b outputclass="bold">Layout List</b> icon
+            in the toolbar of the soft keyboard window.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+            Make a copy of an existing keyboard layout.
+          </p>
+                        <p>
+            Highlight the required layout and click the
+            <b outputclass="bold">Copy the Selected Layout</b>
+            icon.
+          </p>
+                        <p>
+            A new layout entry with a name suffix of
+            <codeph>-Copy</codeph> is created.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+            Edit the new keyboard layout.
+          </p>
+                        <p>
+            Highlight the new layout in the <b outputclass="bold">Layout
+            List</b> and click the <b outputclass="bold">Edit the
+            Selected Layout</b> icon.
+          </p>
+                        <p>
+            Enter a new name for the layout.
+          </p>
+                        <p>
+            Edit keys in the new layout. Click on the key that you want
+            to edit and enter new key captions in the
+            <b outputclass="bold">Captions</b> fields.
+          </p>
+                        <p>
+            The keyboard graphic is updated with the new captions.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+            (Optional) Save the layout to a file. This means that your
+            custom keyboard layout will be available for future use.
+          </p>
+                        <p>
+            Highlight the new layout in the <b outputclass="bold">Layout
+            List</b> and click the <b outputclass="bold">Save the
+            Selected Layout into File</b> icon.
+          </p>
+                        <p>
+            Any custom layouts that you create can later be removed from
+            the Layout List, by highlighting and clicking the
+            <b outputclass="bold">Delete the Selected Layout</b>
+            icon.
+          </p>
+                     </li>
+                  </ol>
+               </body>
+               
+            </topic>

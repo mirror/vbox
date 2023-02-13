@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="additions-os2">
+  <title>Guest Additions for OS/2</title>
+  
+  <body>
+    <p>
+        Oracle VM VirtualBox also ships with a set of drivers that improve
+        running OS/2 in a virtual machine. Due to restrictions of OS/2
+        itself, this variant of the Guest Additions has a limited
+        feature set. See <xref href="KnownIssues.dita">Known Limitations</xref> for details.
+      </p>
+    <p>
+        The OS/2 Guest Additions are provided on the same ISO CD-ROM as
+        those for the other platforms. Mount the ISO in OS/2 as
+        described previously. The OS/2 Guest Additions are located in
+        the directory <filepath>\OS2</filepath>.
+      </p>
+    <p>
+        We do not provide an automatic installer at this time. See the
+        <filepath>readme.txt</filepath> file in the CD-ROM directory,
+        which describes how to install the OS/2 Guest Additions
+        manually.
+      </p>
+  </body>
+  
+</topic>

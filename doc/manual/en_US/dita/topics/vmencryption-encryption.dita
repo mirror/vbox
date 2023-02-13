@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vmencryption-encryption">
+  <title>Encrypting a VM</title>
+  
+  <body>
+    <p>
+        Encrypting a VM can be done either using VirtualBox Manager or the
+        <userinput>VBoxManage</userinput>. To encrypt an unencrypted VM with
+        <userinput>VBoxManage</userinput>, use:
+      </p>
+    <pre xml:space="preserve">VBoxManage encryptvm <varname>uuid</varname>|<varname>vmname</varname> setencryption --new-password <varname>filename</varname>|- \
+--cipher <varname>cipher-ID</varname> --new-password-id <varname>ID</varname>
+                  </pre>
+    <p>
+        To supply the encryption password, point
+        <userinput>VBoxManage</userinput> to the file where the password is
+        stored or specify <codeph>-</codeph> to let
+        <userinput>VBoxManage</userinput> prompt for the password on the
+        command line.
+      </p>
+    <p>
+        The cipher parameter specifies the cipher to use for encryption
+        and can be either <codeph>AES-128</codeph> or
+        <codeph>AES-256</codeph>. The appropriate mode of operation,
+        such as GCM, CTR, or XTS will be selected by the VM depending on
+        the encrypting component. The specified password identifier can
+        be freely chosen by the user and is used for correct
+        identification when supplying multiple passwords for the VM.
+      </p>
+  </body>
+  
+</topic>

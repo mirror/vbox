@@ -1,0 +1,269 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_debugger">
+  <title>The Built-In VM Debugger</title>
+  
+  <body>
+    <p>
+        Oracle VM VirtualBox includes a built-in VM debugger, which advanced
+        users may find useful. This debugger enables you to examine and,
+        to some extent, control the VM state.
+      </p>
+    <note type="attention">
+      <p>
+          Use the VM debugger at your own risk. There is no support for
+          it, and the following documentation is only made available for
+          advanced users with a very high level of familiarity with the
+          x86/AMD64 machine instruction set, as well as detailed
+          knowledge of the PC architecture. A degree of familiarity with
+          the internals of the guest OS in question may also be very
+          helpful.
+        </p>
+    </note>
+    <p>
+        The VM debugger is available in all regular production versions
+        of Oracle VM VirtualBox, but it is disabled by default because the
+        average user will have little use for it. There are two ways to
+        access the debugger:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Using a debugger console window displayed alongside the VM
+          </p>
+      </li>
+      <li>
+        <p>
+            Using the <userinput>telnet</userinput> protocol on port 5000
+          </p>
+      </li>
+    </ul>
+    <p>
+        The debugger can be enabled in the following ways:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Start the VM directly using <userinput>VirtualBoxVM
+            --startvm</userinput>, with an additional
+            <codeph>--dbg</codeph>, <codeph>--debug</codeph>, or
+            <codeph>--debug-command-line</codeph> argument. See the
+            <userinput>VirtualBoxVM --help</userinput> command usage help
+            for details.
+          </p>
+      </li>
+      <li>
+        <p>
+            Set the <codeph>VBOX_GUI_DBG_ENABLED</codeph> or
+            <codeph>VBOX_GUI_DBG_AUTO_SHOW</codeph> environment
+            variable to <codeph>true</codeph> before launching the
+            Oracle VM VirtualBox process. Setting these variables, only their
+            presence is checked, is effective even when the first
+            Oracle VM VirtualBox process is the VM selector window. VMs
+            subsequently launched from the selector will have the
+            debugger enabled.
+          </p>
+      </li>
+      <li>
+        <p>
+            Set the <codeph>GUI/Dbg/Enabled</codeph> extra data item
+            to <codeph>true</codeph> before launching the VM. This can
+            be set globally or on a per VM basis.
+          </p>
+      </li>
+    </ul>
+    <p>
+        A new <b outputclass="bold">Debug</b> menu entry is added
+        to the Oracle VM VirtualBox application. This menu enables the user to
+        open the debugger console.
+      </p>
+    <p>
+        The VM debugger command syntax is loosely modeled on Microsoft
+        and IBM debuggers used on DOS, OS/2, and Windows. Users familiar
+        with symdeb, CodeView, or the OS/2 kernel debugger will find the
+        Oracle VM VirtualBox VM debugger familiar.
+      </p>
+    <p>
+        The most important command is <userinput>help</userinput>. This will
+        print brief usage help for all debugger commands. The set of
+        commands supported by the VM debugger changes frequently and the
+        <userinput>help</userinput> command is always up-to-date.
+      </p>
+    <p>
+        A brief summary of frequently used commands is as follows:
+      </p>
+    <ul>
+      <li>
+        <p><userinput>stop</userinput>: Stops the VM execution and enables
+            single stepping
+          </p>
+      </li>
+      <li>
+        <p><userinput>g</userinput>: Continue VM execution
+          </p>
+      </li>
+      <li>
+        <p><userinput>t</userinput>: Single step an instruction
+          </p>
+      </li>
+      <li>
+        <p><userinput>rg</userinput>, <userinput>rh</userinput>, and
+            <userinput>r</userinput>: Print the guest, hypervisor, and
+            current registers
+          </p>
+      </li>
+      <li>
+        <p><userinput>kg</userinput>, <userinput>kh</userinput>, and
+            <userinput>k</userinput>: Print the guest, hypervisor, and
+            current call stack
+          </p>
+      </li>
+      <li>
+        <p><userinput>da</userinput>, <userinput>db</userinput>,
+            <userinput>dw</userinput>, <userinput>dd</userinput>,
+            <userinput>dq</userinput>: Print memory contents as ASCII,
+            bytes, words, dwords, and qwords
+          </p>
+      </li>
+      <li>
+        <p><userinput>u</userinput>: Unassemble memory
+          </p>
+      </li>
+      <li>
+        <p><userinput>dg</userinput>: Print the guest's GDT
+          </p>
+      </li>
+      <li>
+        <p><userinput>di</userinput>: Print the guest's IDT
+          </p>
+      </li>
+      <li>
+        <p><userinput>dl</userinput>: Print the guest's LDT
+          </p>
+      </li>
+      <li>
+        <p><userinput>dt</userinput>: Print the guest's TSS
+          </p>
+      </li>
+      <li>
+        <p><userinput>dp*</userinput>: Print the guest's page table
+            structures
+          </p>
+      </li>
+      <li>
+        <p><userinput>bp</userinput> and <userinput>br</userinput>: Set a
+            normal and recompiler breakpoint
+          </p>
+      </li>
+      <li>
+        <p><userinput>bl</userinput>: List breakpoints
+          </p>
+      </li>
+      <li>
+        <p><userinput>bc</userinput>: Clear a breakpoint
+          </p>
+      </li>
+      <li>
+        <p><userinput>writecore</userinput>: Write a VM core file to disk.
+            See <xref href="ts_guest-core-format.dita#ts_guest-core-format"/></p>
+      </li>
+    </ul>
+    <p>
+        See the built-in <userinput>help</userinput> for other available
+        commands.
+      </p>
+    <p>
+        The VM debugger supports symbolic debugging, although symbols
+        for guest code are often not available. For Oracle Solaris
+        guests, the <userinput>detect</userinput> command automatically
+        determines the guest OS version and locates kernel symbols in
+        guest's memory. Symbolic debugging is then available. For Linux
+        guests, the <userinput>detect</userinput> commands also determines
+        the guest OS version, but there are no symbols in the guest's
+        memory. Kernel symbols are available in the file
+        <filepath>/proc/kallsyms</filepath> on Linux guests. This file
+        must be copied to the host, for example using
+        <userinput>scp</userinput>. The <userinput>loadmap</userinput> debugger
+        command can be used to make the symbol information available to
+        the VM debugger. Note that the <filepath>kallsyms</filepath>
+        file contains the symbols for the currently loaded modules. If
+        the guest's configuration changes, the symbols will change as
+        well and must be updated.
+      </p>
+    <p>
+        For all guests, a simple way to verify that the correct symbols
+        are loaded is the <userinput>k</userinput> command. The guest is
+        normally idling and it should be clear from the symbolic
+        information that the guest operating system's idle loop is being
+        executed.
+      </p>
+    <p>
+        Another group of debugger commands is the set of
+        <userinput>info</userinput> commands. Running <userinput>info
+        help</userinput> provides complete usage information. The
+        information commands provide ad-hoc data pertinent to various
+        emulated devices and aspects of the VMM. There is no general
+        guideline for using the <userinput>info</userinput> commands, the
+        right command to use depends entirely on the problem being
+        investigated. Some of the <userinput>info</userinput> commands are
+        as follows:
+      </p>
+    <ul>
+      <li>
+        <p><userinput>cfgm</userinput>: Print a branch of the configuration
+            tree
+          </p>
+      </li>
+      <li>
+        <p><userinput>cpuid</userinput>: Display the guest CPUID leaves
+          </p>
+      </li>
+      <li>
+        <p><userinput>ioport</userinput>: Print registered I/O port ranges
+          </p>
+      </li>
+      <li>
+        <p><userinput>mmio</userinput>: Print registered MMIO ranges
+          </p>
+      </li>
+      <li>
+        <p><userinput>mode</userinput>: Print the current paging mode
+          </p>
+      </li>
+      <li>
+        <p><userinput>pit</userinput>: Print the i8254 PIT state
+          </p>
+      </li>
+      <li>
+        <p><userinput>pic</userinput>: Print the i8259A PIC state
+          </p>
+      </li>
+      <li>
+        <p><userinput>ohci</userinput>, <userinput>ehci</userinput>,
+            <userinput>xhci</userinput>: Print a subset of the OHCI, EHCI,
+            and xHCI USB controller state
+          </p>
+      </li>
+      <li>
+        <p><userinput>pcnet0</userinput>: Print the PCnet state
+          </p>
+      </li>
+      <li>
+        <p><userinput>vgatext</userinput>: Print the contents of the VGA
+            framebuffer formatted as standard text mode
+          </p>
+      </li>
+      <li>
+        <p><userinput>timers</userinput>: Print all VM timers
+          </p>
+      </li>
+    </ul>
+    <p>
+        The output of the <userinput>info</userinput> commands generally
+        requires in-depth knowledge of the emulated device or
+        Oracle VM VirtualBox VMM internals. However, when used properly, the
+        information provided can be invaluable.
+      </p>
+  </body>
+  
+</topic>

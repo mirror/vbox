@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-integration-steps">
+  <title>Preparing for Oracle Cloud Infrastructure Integration</title>
+  
+  <body>
+    <p>
+        Perform the following configuration steps before using
+        Oracle VM VirtualBox to integrate with your Oracle Cloud Infrastructure account.
+      </p>
+    <ol>
+      <li>
+        <p><b outputclass="bold">Install the Extension Pack.</b>
+            Cloud integration features are only available when you
+            install the Oracle VM VirtualBox Extension Pack. See
+            <xref href="intro-installing.dita#intro-installing"/>.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Create a key pair.</b> Generate
+            an API signing key pair that is used for API requests to
+            Oracle Cloud Infrastructure. See <xref href="cloud-create-api-keypair.dita#cloud-create-api-keypair"/>.
+          </p>
+        <p>
+            Upload the public key of the key pair from your client
+            device to the cloud service. See
+            <xref href="cloud-upload-public-key.dita#cloud-upload-public-key"/>.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Create a cloud profile.</b> The
+            cloud profile contains resource identifiers for your cloud
+            account, such as your user OCID, and details of your key
+            pair. See <xref href="cloud-create-cloud-profile.dita#cloud-create-cloud-profile"/>.
+          </p>
+      </li>
+    </ol>
+  </body>
+  
+</topic>

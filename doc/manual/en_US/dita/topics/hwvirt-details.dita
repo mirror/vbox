@@ -1,0 +1,92 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="hwvirt-details">
+  <title>Details About Hardware Virtualization</title>
+  
+  <body>
+    <p>
+      With Intel VT-x, there are two distinct modes of CPU operation:
+      VMX root mode and non-root mode.
+    </p>
+    <ul>
+      <li>
+        <p>
+          In root mode, the CPU operates much like older generations of
+          processors without VT-x support. There are four privilege
+          levels, called rings, and the same instruction set is
+          supported, with the addition of several virtualization
+          specific instruction. Root mode is what a host operating
+          system without virtualization uses, and it is also used by a
+          hypervisor when virtualization is active.
+        </p>
+      </li>
+      <li>
+        <p>
+          In non-root mode, CPU operation is significantly different.
+          There are still four privilege rings and the same instruction
+          set, but a new structure called VMCS (Virtual Machine Control
+          Structure) now controls the CPU operation and determines how
+          certain instructions behave. Non-root mode is where guest
+          systems run.
+        </p>
+      </li>
+    </ul>
+    <p>
+      Switching from root mode to non-root mode is called "VM entry",
+      the switch back is "VM exit". The VMCS includes a guest and host
+      state area which is saved/restored at VM entry and exit. Most
+      importantly, the VMCS controls which guest operations will cause
+      VM exits.
+    </p>
+    <p>
+      The VMCS provides fairly fine-grained control over what the guests
+      can and cannot do. For example, a hypervisor can allow a guest to
+      write certain bits in shadowed control registers, but not others.
+      This enables efficient virtualization in cases where guests can be
+      allowed to write control bits without disrupting the hypervisor,
+      while preventing them from altering control bits over which the
+      hypervisor needs to retain full control. The VMCS also provides
+      control over interrupt delivery and exceptions.
+    </p>
+    <p>
+      Whenever an instruction or event causes a VM exit, the VMCS
+      contains information about the exit reason, often with
+      accompanying detail. For example, if a write to the CR0 register
+      causes an exit, the offending instruction is recorded, along with
+      the fact that a write access to a control register caused the
+      exit, and information about source and destination register. Thus
+      the hypervisor can efficiently handle the condition without
+      needing advanced techniques such as CSAM and PATM described above.
+    </p>
+    <p>
+      VT-x inherently avoids several of the problems which software
+      virtualization faces. The guest has its own completely separate
+      address space not shared with the hypervisor, which eliminates
+      potential clashes. Additionally, guest OS kernel code runs at
+      privilege ring 0 in VMX non-root mode, obviating the problems by
+      running ring 0 code at less privileged levels. For example the
+      SYSENTER instruction can transition to ring 0 without causing
+      problems. Naturally, even at ring 0 in VMX non-root mode, any I/O
+      access by guest code still causes a VM exit, allowing for device
+      emulation.
+    </p>
+    <p>
+      The biggest difference between VT-x and AMD-V is that AMD-V
+      provides a more complete virtualization environment. VT-x requires
+      the VMX non-root code to run with paging enabled, which precludes
+      hardware virtualization of real-mode code and non-paged
+      protected-mode software. This typically only includes firmware and
+      OS loaders, but nevertheless complicates VT-x hypervisor
+      implementation. AMD-V does not have this restriction.
+    </p>
+    <p>
+      Of course hardware virtualization is not perfect. Compared to
+      software virtualization, the overhead of VM exits is relatively
+      high. This causes problems for devices whose emulation requires
+      high number of traps. One example is a VGA device in 16-color
+      mode, where not only every I/O port access but also every access
+      to the framebuffer memory must be trapped.
+    </p>
+  </body>
+  
+</topic>

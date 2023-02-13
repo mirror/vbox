@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="secure-config-vms">
+  <title>Secure Configuration of Virtual Machines</title>
+  
+  <body>
+    <p>
+        Several aspects of a virtual machine configuration are subject
+        to security considerations.
+      </p>
+  </body>
+</topic>

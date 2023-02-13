@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="additions-solaris-install-unattended">
+  <title>Unattended Installation of the Oracle Solaris Guest Additions</title>
+  
+  <body>
+    <p>
+          You can configure unattended installation of the
+          Oracle VM VirtualBox Guest Additions when you create a new VM using
+          the <b outputclass="bold">Create Virtual Machine</b>
+          wizard. Select the <b outputclass="bold">Guest
+          Additions</b> check box on the
+          <b outputclass="bold">Unattended Guest OS Install</b>
+          page of the wizard.
+        </p>
+    <p>
+          Guest Additions are installed automatically, following
+          completion of the guest OS installation.
+        </p>
+  </body>
+  
+</topic>

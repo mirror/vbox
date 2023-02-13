@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestadd-gc-file-manager">
+  <title>Guest Control File Manager</title>
+  
+  <body>
+    <p>
+      The Guest Control File Manager is a feature of the Guest Additions
+      that enables easy copying and moving of files between a guest and
+      the host system. Other file management operations provide support
+      to create new folders and to rename or delete files.
+    </p>
+    <p>
+      This feature is useful when the VM window of a guest is not
+      visible. For example, when the guest is running in headless mode.
+    </p>
+    <note>
+      <p>
+        To use the Guest Control File Manager, the guest must be
+        running. For powered-off guests, it is disabled automatically.
+      </p>
+    </note>
+    <fig id="fig-guest-control-fm">
+      <title>Guest Control File Manager</title>
+      <image href="images/guest-fm.png" placement="break"/>
+    </fig>
+    <p>
+      The Guest Control File Manager works by mounting the host file
+      system. Guest users must authenticate and create a guest session
+      before they can transfer files.
+    </p>
+  </body>
+</topic>

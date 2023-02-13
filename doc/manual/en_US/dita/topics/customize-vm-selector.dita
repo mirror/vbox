@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="customize-vm-selector">
+  <title>VM Selector Customization</title>
+  
+  <body>
+    <p>
+        The following per-machine VM extradata settings can be used to
+        change the behavior of the VM selector window in respect of
+        certain VMs:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname>
+                     <varname>property</varname> true</pre>
+    <p><varname>property</varname> can be any of the following:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+          <codeph>GUI/HideDetails</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the VM configuration of a certain VM. The
+              details window will remain just empty if this VM is
+              selected.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>GUI/PreventReconfiguration</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not allow the user to open the
+              <b outputclass="bold">Settings</b> dialog for a
+              certain VM.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>GUI/PreventSnapshotOperations</codeph>
+        </dt>
+        <dd>
+          <p>
+              Prevent snapshot operations for a VM from the GUI, either
+              at runtime or when the VM is powered off.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>GUI/HideFromManager</codeph>
+        </dt>
+        <dd>
+          <p>
+              Hide a certain VM in the VM selector window.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>GUI/PreventApplicationUpdate</codeph>
+        </dt>
+        <dd>
+          <p>
+              Disable the automatic update check and hide the
+              corresponding menu item.
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        Note that these settings do not prevent the user from
+        reconfiguring the VM by using the <userinput>VBoxManage
+        modifyvm</userinput> command.
+      </p>
+  </body>
+  
+</topic>

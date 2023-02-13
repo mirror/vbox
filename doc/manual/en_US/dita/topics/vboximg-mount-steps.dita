@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboximg-mount-steps">
+               <title>Mounting a Virtual Disk Image</title>
+               
+               <body>
+                  <p>
+        The following steps show how to use the
+        <userinput>vboximg-mount</userinput> command to mount a partition of
+        a virtual disk image on the host OS.
+      </p>
+                  <ol>
+                     <li>
+                        <p>
+            Create a mount point on the host OS. For example:
+          </p>
+                        <pre xml:space="preserve">$ mkdir macos_sysdisk</pre>
+                     </li>
+                     <li>
+                        <p>
+            Show partition information about the virtual disk image.
+          </p>
+                        <pre xml:space="preserve">$ vboximg-mount --image=<varname>uuid</varname> --list</pre>
+                        <p>
+            where <varname>uuid</varname> is the UUID of the
+            disk image.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+            Use <userinput>vboximg-mount</userinput> to perform a FUSE mount
+            of a partition on the virtual disk image. For example:
+          </p>
+                        <pre xml:space="preserve">$ vboximg-mount --image=<varname>uuid</varname> -p 2 macos_sysdisk</pre>
+                        <p>
+            where <varname>uuid</varname> is the UUID for the
+            disk image.
+          </p>
+                        <p>
+            In this example, partition 2 is mounted on the
+            <filepath>macos_sysdisk</filepath> mount point. The mount
+            includes all snapshots for the disk image.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+            Use the host OS to mount the <codeph>vhdd</codeph> device
+            node. The FUSE-mounted device node represents the virtual
+            disk image.
+          </p>
+                        <pre xml:space="preserve">$ ls macos_sysdisk
+   macOS High Sierra 10.13.vdi  vhdd
+$ sudo mount macos_sysdisk/vhdd /mnt</pre>
+                     </li>
+                  </ol>
+               </body>
+               
+            </topic>

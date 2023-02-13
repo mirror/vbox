@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="BasicConcepts">
+  <title>Configuring Virtual Machines</title>
+  
+  <body>
+    <p>
+    This chapter provides detailed steps for configuring an
+    Oracle VM VirtualBox virtual machine (VM). For an introduction to
+    Oracle VM VirtualBox and steps to get your first virtual machine running,
+    see <xref href="Introduction.dita#Introduction"/>.
+  </p>
+    <p>
+    You have considerable latitude when deciding what virtual hardware
+    to provide to the guest. Use virtual hardware to communicate with
+    the host system or with other guests. For example, you can use
+    virtual hardware in the following ways:
+  </p>
+    <ul>
+      <li>
+        <p>
+        Have Oracle VM VirtualBox present an ISO CD-ROM image to a guest
+        system as if it were a physical CD-ROM.
+      </p>
+      </li>
+      <li>
+        <p>
+        Provide a guest system access to the physical network through
+        its virtual network card.
+      </p>
+      </li>
+      <li>
+        <p>
+        Provide the host system, other guests, and computers on the
+        Internet access to the guest system.
+      </p>
+      </li>
+    </ul>
+  </body>
+</topic>

@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="config-vm-window-visual-modes">
+  <title>Configure VM Window Visual Modes</title>
+  
+  <body>
+    <p>
+        You can disable certain VM visual modes:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> GUI/RestrictedVisualStates <varname>property</varname>[,<varname>property</varname>...]</pre>
+    <p><varname>property</varname> is one of the following:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+          <codeph>Fullscreen</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not allow to switch the VM into full screen mode.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Seamless</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not allow to switch the VM into seamless mode.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Scale</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not allow to switch the VM into scale mode.
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        This is a per-VM setting. You can specify any combination of
+        properties. To restore the default behavior, use the following
+        command:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> GUI/RestrictedVisualStates</pre>
+  </body>
+  
+</topic>

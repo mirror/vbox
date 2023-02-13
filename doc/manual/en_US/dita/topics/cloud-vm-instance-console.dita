@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-vm-instance-console">
+  <title>Creating an Instance Console Connection for a Cloud VM</title>
+  
+  <body>
+    <p>
+          To create a instance console connection, the cloud VM must be
+          in <b outputclass="bold">Running</b> state.
+        </p>
+    <ol>
+      <li>
+        <p>
+              Right-click on the cloud VM name and select
+              <b outputclass="bold">Console</b>,
+              <b outputclass="bold">Create Connection</b>.
+            </p>
+      </li>
+      <li>
+        <p>
+              The <b outputclass="bold">Public Key</b> dialog is
+              displayed. Paste the public key used for the instance
+              connection into the dialog and click
+              <b outputclass="bold">OK</b>.
+            </p>
+        <p>
+              By default, either the first entry in your SSH keys folder
+              or the public key used for your previous instance console
+              connection is used.
+            </p>
+      </li>
+      <li>
+        <p>
+              Click <b outputclass="bold">Connect</b> to connect
+              to the instance. An instance console is displayed
+              automatically on the host.
+            </p>
+      </li>
+      <li>
+        <p>
+              (Optional) Click <b outputclass="bold">Show Log</b>
+              to display log messages for the instance console
+              connection.
+            </p>
+      </li>
+    </ol>
+    <p>
+          See the Oracle Cloud Infrastructure documentation for details about how you can use
+          an instance console connection to troubleshoot instance
+          problems.
+        </p>
+  </body>
+  
+</topic>

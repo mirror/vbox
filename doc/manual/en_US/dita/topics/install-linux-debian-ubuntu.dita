@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="install-linux-debian-ubuntu">
+  <title>Installing Oracle VM VirtualBox from a Debian or Ubuntu Package</title>
+  
+  <body>
+    <p>
+          Download the appropriate package for your distribution. The
+          following example assumes that you are installing to a 64-bit
+          Ubuntu Xenial system. Use <userinput>dpkg</userinput> to install
+          the Debian package,as follows:
+        </p>
+    <pre xml:space="preserve">sudo dpkg -i virtualbox-<varname>version-number</varname>_Ubuntu_xenial_amd64.deb</pre>
+    <p>
+          The installer will also try to build kernel modules suitable
+          for the current running kernel. If the build process is not
+          successful you will be shown a warning and the package will be
+          left unconfigured. Look at
+          <filepath>/var/log/vbox-install.log</filepath> to find out why
+          the compilation failed. You may have to install the
+          appropriate Linux kernel headers, see
+          <xref href="externalkernelmodules.dita#externalkernelmodules"/>. After correcting any
+          problems, run the following command:
+        </p>
+    <pre xml:space="preserve">sudo rcvboxdrv setup</pre>
+    <p>
+          This will start a second attempt to build the module.
+        </p>
+    <p>
+          If a suitable kernel module was found in the package or the
+          module was successfully built, the installation script will
+          attempt to load that module. If this fails, please see
+          <xref href="ts_linux-kernelmodule-fails-to-load.dita">Linux Kernel Module Refuses to Load</xref> for
+          further information.
+        </p>
+    <p>
+          Once Oracle VM VirtualBox has been successfully installed and
+          configured, you can start it by clicking
+          <b outputclass="bold">VirtualBox</b> in your
+          <b outputclass="bold">Start</b> menu or from the
+          command line. See <xref href="startingvboxonlinux.dita"/>.
+        </p>
+  </body>
+  
+</topic>

@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="preface-audience">
+  <title>Audience</title>
+  
+  <body>
+    <p>
+      This document is intended for administrators with previous
+      experience of using Oracle VM VirtualBox. It is assumed that readers are
+      familiar with Web technologies and have a general understanding of
+      Windows and UNIX platforms.
+    </p>
+  </body>
+  
+</topic>

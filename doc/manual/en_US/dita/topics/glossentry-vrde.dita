@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="glossentry-vrde">
+  <title>VRDE</title>
+  <body>
+    <section>
+      <p>
+        VirtualBox Remote Desktop Extension. This interface is built into 
+        Oracle VM VirtualBox to allow Oracle VM VirtualBox extension packages 
+        to supply remote access to virtual machines. An Oracle VM VirtualBox extension 
+        package by Oracle provides VRDP support. 
+        See <xref href="vrde.dita">Remote Display (VRDP Support)</xref>. 
+      </p>
+    </section>
+  </body>
+</topic>

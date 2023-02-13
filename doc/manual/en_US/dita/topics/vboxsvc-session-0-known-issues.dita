@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxsvc-session-0-known-issues">
+  <title>Known Issues</title>
+  
+  <body>
+    <ul>
+      <li>
+        <p>
+            Due to different Windows sessions having their own set of
+            resources, there might be some issues with accessing network
+            shares created in the interactive user session when at least
+            one of the Oracle VM VirtualBox processes are running in session
+            0.
+          </p>
+        <p>
+            For accessing network shares within session 0, a possible
+            workaround is to establish permanent access to the share and
+            then restart the host.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-upload-public-key">
+  <title>Uploading the Public Key to Oracle Cloud Infrastructure</title>
+  
+  <body>
+    <p>
+        Use the following steps to upload your public key to Oracle Cloud Infrastructure.
+      </p>
+    <ol>
+      <li>
+        <p>
+            Log in to the Oracle Cloud Infrastructure Console.
+          </p>
+      </li>
+      <li>
+        <p>
+            Display the <b outputclass="bold">User Settings</b>
+            page.
+          </p>
+        <p>
+            Click <b outputclass="bold">Profile</b>,
+            <b outputclass="bold">User Settings</b>.
+          </p>
+      </li>
+      <li>
+        <p>
+            Display your current API signing keys.
+          </p>
+        <p>
+            Click <b outputclass="bold">Resources</b>,
+            <b outputclass="bold">API Keys</b>.
+          </p>
+      </li>
+      <li>
+        <p>
+            Upload the public key.
+          </p>
+        <p>
+            Click <b outputclass="bold">Add Public Key</b>.
+          </p>
+        <p>
+            The <b outputclass="bold">Add Public Key</b> dialog
+            is displayed.
+          </p>
+        <fig id="fig-upload-key-oci">
+          <title>Upload Public Key Dialog in Oracle Cloud Infrastructure Console</title>
+          <image href="images/upload-key.png" placement="break"/>
+        </fig>
+        <p>
+            Select one of the following options:
+          </p>
+        <ul>
+          <li>
+            <p><b outputclass="bold">Choose Public Key File.</b>
+                This option enables you to browse to the public key file
+                on your local hard disk.
+              </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">Paste Public Keys.</b> This
+                option enables you to paste the contents of the public
+                key file into the window in the dialog box.
+              </p>
+          </li>
+        </ul>
+        <p>
+            Click <b outputclass="bold">Add</b> to upload the
+            public key.
+          </p>
+      </li>
+    </ol>
+  </body>
+  
+</topic>

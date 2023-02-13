@@ -1,0 +1,97 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="autostart-windows">
+  <title>Windows: Starting the Autostart Service</title>
+  
+  <body>
+    <p>
+        On Windows, autostart functionality consist of two components.
+        The first component is a configuration file where the
+        administrator can both set a delayed start for the VMs and
+        temporarily disable autostarting for a particular user. The
+        configuration file should be located in a folder accessible by
+        all required users but it should have permissions allowing only
+        reading by everyone but administrators. The configuration file
+        contains several options. The <codeph>default_policy</codeph>
+        controls whether the autostart service allows or denies starting
+        of a VM for users that are not in the exception list. The
+        exception list starts with <codeph>exception_list</codeph> and
+        contains a comma separated list with usernames. Furthermore, a
+        separate startup delay can be configured for every user to avoid
+        overloading the host. A sample configuration is given below:
+      </p>
+    <pre xml:space="preserve">    # Default policy is to deny starting a VM, the other option is "allow".
+    default_policy = deny
+
+    # Bob is allowed to start virtual machines but starting them
+    # will be delayed for 10 seconds
+    bob = {
+        allow = true
+        startup_delay = 10
+    }
+
+    # Alice is not allowed to start virtual machines, useful to exclude certain users
+    # if the default policy is set to allow.
+    alice = {
+        allow = false
+    }
+</pre>
+    <p>
+        The user name can be specified using the following forms:
+        "user", "domain\user", ".\user" and "user@domain". An
+        administrator must add the
+        <codeph>VBOXAUTOSTART_CONFIG</codeph> environment variable
+        into system variables containing the path to the configuration
+        file described above. The environment variable tells the
+        autostart services which configuration file is used.
+      </p>
+    <p>
+        The second component of autostart functionality is a Windows
+        service. Every instance of this works on behalf of a particular
+        user using their credentials.
+      </p>
+    <p>
+        To enable autostarting for a particular user, a member of the
+        administrators group must run the following command:
+      </p>
+    <pre xml:space="preserve">VBoxAutostartSvc install --user=<varname>user</varname> [--password-file=<varname>password_file</varname>]</pre>
+    <p>
+        The password file should contain the password followed by a line
+        break. The rest of the file is ignored. The user will be asked
+        for a password if the password file is not specified.
+      </p>
+    <p>
+        To disable autostarting for particular user, a member of the
+        administrators group must run the following command:
+      </p>
+    <pre xml:space="preserve">VBoxAutostartSvc delete --user=<varname>user</varname>
+                  </pre>
+    <p>
+        If a user has changed their password then a member of the
+        administrators group must either reinstall the service or change
+        the service credentials using Windows Service Manager. Due to
+        Windows security policies, the autostart service cannot be
+        installed for users with empty passwords.
+      </p>
+    <p>
+        Finally, the user should define which VMs should be started at
+        boot. The user should run the following command for every VM
+        they wish to start at boot:
+      </p>
+    <pre xml:space="preserve">VBoxManage modifyvm <varname>VM name or UUID</varname> --autostart-enabled on</pre>
+    <p>
+        The user can remove a particular VM from the VMs starting at
+        boot by running the following command:
+      </p>
+    <pre xml:space="preserve">VBoxManage modifyvm <varname>VM name or UUID</varname> --autostart-enabled off</pre>
+    <note>
+      <p>
+          On Windows hosts, starting VMs via the autostart service might
+          cause some issues, as the virtual machines are starting within
+          the same session as VBoxSVC. For more information see
+          <xref href="vboxsvc-session-0.dita#vboxsvc-session-0"/>.
+        </p>
+    </note>
+  </body>
+  
+</topic>

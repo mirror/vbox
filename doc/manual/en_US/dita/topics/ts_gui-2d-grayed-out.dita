@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_gui-2d-grayed-out">
+  <title>GUI: 2D Video Acceleration Option is Grayed Out</title>
+  
+  <body>
+    <p>
+        To use 2D Video Acceleration within Oracle VM VirtualBox, your host's
+        video card should support certain OpenGL extensions. On startup,
+        Oracle VM VirtualBox checks for those extensions, and, if the test
+        fails, this option is silently grayed out.
+      </p>
+    <p>
+        To find out why it has failed, you can manually execute the
+        following command:
+      </p>
+    <pre xml:space="preserve">$ VBoxTestOGL --log "log_file_name" --test 2D</pre>
+    <p>
+        It will list the required OpenGL extensions one by one and will
+        show you which one failed the test. This usually means that you
+        are running an outdated or misconfigured OpenGL driver on your
+        host. It can also mean that your video chip is lacking required
+        functionality.
+      </p>
+  </body>
+  
+</topic>

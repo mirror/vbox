@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="install-solaris-vboxuser">
+  <title>The vboxuser Group</title>
+  
+  <body>
+    <p>
+        The installer creates the system user group
+        <codeph>vboxuser</codeph> during installation for Oracle
+        Solaris hosts that support the USB features required by
+        Oracle VM VirtualBox. Any system user who is going to use USB devices
+        from Oracle VM VirtualBox guests must be a member of this group. A
+        user can be made a member of this group either by using the
+        desktop user and group tools or by running the following command
+        as root:
+      </p>
+    <pre xml:space="preserve">usermod -G vboxuser username</pre>
+    <p>
+        Note that adding an active user to the
+        <codeph>vboxuser</codeph> group will require the user to log
+        out and then log in again. This should be done manually after
+        successful installation of the package.
+      </p>
+  </body>
+  
+</topic>

@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="create-vm-wizard-unattended-install">
+  <title>(Optional) Create Virtual Machine Wizard: Unattended Guest OS Install</title>
+  
+  <body>
+    <p>
+        Unattended guest OS installation enables you to install the OS
+        on a virtual machine automatically.
+      </p>
+    <note>
+      <p>
+          This page is optional. It is not displayed if you have
+          selected the <b outputclass="bold">Skip Unattended
+          Installation</b> option on the initial wizard page.
+        </p>
+    </note>
+    <p>
+        Use this page to set up the required parameters for unattended
+        guest OS installation and to configure automatic installation of
+        the Oracle VM VirtualBox Guest Additions. See also
+        <xref href="create-vm-wizard-unattended-examples.dita#create-vm-wizard-unattended-examples"/> for some
+        typical scenarios when using automated installation.
+      </p>
+    <fig id="fig-create-vm-unattended-install">
+      <title>Creating a Virtual Machine: Unattended Guest OS Installation</title>
+      <image href="images/create-vm-2.png" placement="break"/>
+    </fig>
+    <p>
+        The following fields are available on this wizard page:
+      </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Username and Password.</b>
+            Enter the credentials for a default user on the guest OS.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Guest Additions.</b> Enables
+            automatic installation of the Guest Additions, following
+            installation of the guest OS. Use the drop-down list to
+            select the location of the ISO image file for the Guest
+            Additions.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Additional Options.</b> The
+            following options enable you to perform extra configuration
+            of the guest OS:
+          </p>
+        <ul>
+          <li>
+            <p><b outputclass="bold">Product Key.</b> For
+                Windows guests only. Enter the product key required for
+                Windows installation.
+              </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">Hostname.</b> Host name for
+                the guest. By default, this is the same as the VM name.
+              </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">Domain Name.</b> Domain
+                name for the guest.
+              </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">Install in Background.</b>
+                Enable headless mode for the VM, where a graphical user
+                interface is not shown.
+              </p>
+          </li>
+        </ul>
+      </li>
+    </ul>
+    <p>
+        Click <b outputclass="bold">Next</b> to go to the next
+        wizard page.
+      </p>
+  </body>
+  
+</topic>

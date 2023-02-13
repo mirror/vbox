@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_win-guest-high-cpu">
+  <title>Windows Guests may Cause a High CPU Load</title>
+  
+  <body>
+    <p>
+        Several background applications of Windows guests, especially
+        virus scanners, are known to increase the CPU load notably even
+        if the guest appears to be idle. We recommend to deactivate
+        virus scanners within virtualized guests if possible.
+      </p>
+  </body>
+  
+</topic>

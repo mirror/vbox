@@ -1,0 +1,76 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="privacy">
+  <title>Oracle VM VirtualBox Privacy Information</title>
+  
+  <body>
+    <p>
+    Version 5, Dec 13, 2012
+  </p>
+    <p>
+    The Oracle Privacy Policies posted on
+    <ph>https://www.oracle.com/legal/privacy/privacy-policy.html</ph>
+    apply to your personal data collected and used by Oracle. The
+    following privacy information describes in more detail which
+    information is exchanged between the Oracle VM VirtualBox application and
+    Oracle, and which information is collected by the virtualbox.org
+    website.
+  </p>
+    <p><b outputclass="bold">§ 1 virtualbox.org.</b> The
+    "virtualbox.org" website logs anonymous usage information such as
+    your IP address, geographical location, browser type, referral
+    source, length of visit and number of page views while you visit
+    (collectively, "anonymous data"). In addition, but only if you
+    choose to register, the website's bug tracking and forum services
+    store the data you choose to reveal upon registration, such as your
+    user name and contact information.
+  </p>
+    <p><b outputclass="bold">§ 2 Cookies.</b> The virtualbox.org
+    website, the bug tracker and the forum services use cookies to
+    identify and track the visiting web browser and, if you have
+    registered, to facilitate login. Most browsers allow you to refuse
+    to accept cookies. While you can still visit the website with
+    cookies disabled, logging into the bug tracker and forum services
+    will most likely not work without them.
+  </p>
+    <p><b outputclass="bold">§ 3 Oracle VM VirtualBox registration
+    process.</b> The Oracle VM VirtualBox application may ask that the
+    user optionally register with Oracle. If you choose to register,
+    your name, e-mail address, country and company will be submitted to
+    Oracle and stored together with the IP address of the submitter as
+    well as product version and platform being used.
+  </p>
+    <p><b outputclass="bold">§ 4 Update notifications.</b> The
+    Oracle VM VirtualBox application may contact Oracle to find out whether a
+    new version of Oracle VM VirtualBox has been released and notify the user
+    if that is the case. In the process, anonymous data such as your IP
+    address and a non-identifying counter, together with the product
+    version and the platform being used, is sent so that the server can
+    find out whether an update is available. By default, this check is
+    performed once a day. You change this interval or disable these
+    checks altogether in the Oracle VM VirtualBox preferences.
+  </p>
+    <p><b outputclass="bold">§ 5 Usage of personal information.</b>
+    Oracle may use anonymous and personal data collected by the means
+    above for statistical purposes as well as to automatically inform
+    you about new notices related to your posts on the bug tracker and
+    forum services, to administer the website and to contact you due to
+    technical issues. Oracle may also inform you about new product
+    releases related to Oracle VM VirtualBox.
+  </p>
+    <p>
+    In no event will personal data without your express consent be
+    provided to any third parties, unless Oracle may be required to do
+    so by law or in connection with legal proceedings.
+  </p>
+    <p><b outputclass="bold">§ 6 Updates.</b> Oracle may update the
+    privacy policy at any time by posting a new version at
+    <ph>https://www.oracle.com/legal/privacy/privacy-policy.html</ph>
+    and the privacy information will be kept up to date in the
+    documentation which comes with the Oracle VM VirtualBox application. You
+    should check these places occasionally to ensure you are happy with
+    any changes.
+  </p>
+  </body>
+  
+</topic>

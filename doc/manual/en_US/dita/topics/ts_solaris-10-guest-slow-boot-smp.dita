@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_solaris-10-guest-slow-boot-smp">
+  <title>Certain Oracle Solaris 10 Releases May Take a Long Time to Boot with SMP</title>
+  
+  <body>
+    <p>
+        When using more than one CPU, Oracle Solaris 10 10/08, and
+        Oracle Solaris 10 5/09 may take a long time to boot and may
+        print warnings on the system console regarding failures to read
+        from disk. This is a bug in Oracle Solaris 10 which affects
+        specific physical and virtual configurations. It is caused by
+        trying to read microcode updates from the boot disk when the
+        disk interrupt is reassigned to a not yet fully initialized
+        secondary CPU. Disk reads will time out and fail, triggering
+        delays of about 45 seconds and warnings.
+      </p>
+    <p>
+        The recommended solution is upgrading to at least Oracle Solaris
+        10 10/09 which includes a fix for this problem. Alternative
+        solutions include restricting the number of virtual CPUs to one
+        or possibly using a different storage controller.
+      </p>
+  </body>
+  
+</topic>

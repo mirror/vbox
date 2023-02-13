@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="nat_host_resolver_name_intercepting">
+  <title>User-Defined Host Name Resolving</title>
+  
+  <body>
+    <p>
+          In some cases it might be useful to intercept the name
+          resolving mechanism, providing a user-defined IP address on a
+          particular DNS request. The intercepting mechanism enables the
+          user to map not only a single host but domains and even more
+          complex naming conventions if required.
+        </p>
+    <p>
+          The following command sets a rule for mapping a name to a
+          specified IP:
+        </p>
+    <pre xml:space="preserve">VBoxManage setextradata <varname>VM-name</varname> \
+"VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/AttachedDriver/Config/HostResolverMappings/ \
+<varname>unique-rule-name-of-interception-rule</varname>/HostIP" <varname>IPv4</varname>
+
+VBoxManage setextradata <varname>VM-name</varname> \
+"VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/AttachedDriver/Config/HostResolverMappings/ \
+<varname>unique-rule-name</varname>/HostName" <varname>hostname</varname>
+                     </pre>
+    <p>
+          The following command sets a rule for mapping a pattern name
+          to a specified IP:
+        </p>
+    <pre xml:space="preserve">VBoxManage setextradata <varname>VM-name</varname> \
+"VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/AttachedDriver/Config/HostResolverMappings/ \
+<varname>unique-rule-name</varname>/HostIP" <varname>IPv4</varname>
+
+VBoxManage setextradata <varname>VM-name</varname> \
+"VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/AttachedDriver/Config/HostResolverMappings/ \
+<varname>unique-rule-name</varname>/HostNamePattern" <varname>hostpattern</varname>
+                     </pre>
+    <p>
+          The host name pattern can include the following wildcard
+          characters: pipe (<codeph>|</codeph>), question mark
+          (<codeph>?</codeph>), and asterisk (<codeph>*</codeph>).
+        </p>
+    <p>
+          This example demonstrates how to instruct the host-resolver
+          mechanism to resolve all domain and probably some mirrors of
+          www.blocked-site.info site with IP 127.0.0.1:
+        </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> \
+"VBoxInternal/Devices/e1000/0/LUN#0/AttachedDriver/Config/HostResolverMappings/all_blocked_site/HostIP" 127.0.0.1
+$ VBoxManage setextradata <varname>VM-name</varname> \
+"VBoxInternal/Devices/e1000/0/LUN#0/AttachedDriver/Config/HostResolverMappings/all_blocked_site/HostNamePattern" "*.blocked-site.*|*.fb.org"</pre>
+    <p>
+          The host resolver mechanism should be enabled to use
+          user-defined mapping rules, otherwise they do not have any
+          effect.
+        </p>
+  </body>
+  
+</topic>

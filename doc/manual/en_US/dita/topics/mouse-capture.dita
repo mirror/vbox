@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="mouse-capture">
+  <title>Configuring Automatic Mouse Capturing</title>
+  
+  <body>
+    <p>
+        By default, the mouse is captured if the user clicks on the
+        guest window and the guest expects relative mouse coordinates at
+        this time. This happens if the pointing device is configured as
+        PS/2 mouse and the guest has not yet started the Oracle VM VirtualBox
+        Guest Additions. For instance, the guest is booting or the Guest
+        Additions are not installed, or if the pointing device is
+        configured as a USB tablet but the guest has no USB driver
+        loaded yet. Once the Guest Additions become active or the USB
+        guest driver is started, the mouse capture is automatically
+        released.
+      </p>
+    <p>
+        The default behavior is sometimes not desired. Therefore it can
+        be configured as follows:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata <varname>VM-name</varname> GUI/MouseCapturePolicy <varname>mode</varname>
+                  </pre>
+    <p><varname>mode</varname> is one of the following:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+          <codeph>Default</codeph>
+        </dt>
+        <dd>
+          <p>
+              The default behavior as described above.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>HostComboOnly</codeph>
+        </dt>
+        <dd>
+          <p>
+              The mouse is only captured if the Host Key is toggled.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Disabled</codeph>
+        </dt>
+        <dd>
+          <p>
+              The mouse is never captured, also not by toggling the Host
+              Key
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        This is a per-VM setting.
+      </p>
+  </body>
+  
+</topic>

@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="install-solaris-starting">
+  <title>Starting Oracle VM VirtualBox on Oracle Solaris</title>
+  
+  <body>
+    <p>
+        The easiest way to start an Oracle VM VirtualBox program is by running
+        the program of your choice (<userinput>VirtualBox</userinput>,
+        <userinput>VBoxManage</userinput>, or
+        <userinput>VBoxHeadless</userinput>) from a terminal. These are
+        symbolic links to <userinput>VBox.sh</userinput> that start the
+        required program for you.
+      </p>
+    <p>
+        Alternatively, you can directly invoke the required programs
+        from <filepath>/opt/VirtualBox</filepath>. Using the links
+        provided is easier as you do not have to enter the full path.
+      </p>
+    <p>
+        You can configure some elements of the
+        <userinput>VirtualBox</userinput> Qt GUI, such as fonts and colours,
+        by running <userinput>VBoxQtconfig</userinput> from the terminal.
+      </p>
+  </body>
+  
+</topic>

@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="network-manager-cloud-network-tab">
+  <title>Cloud Networks Tab</title>
+  
+  <body>
+    <p>
+        The Cloud Networks tab in Network Manager lists all cloud
+        networks that are currently in use.
+      </p>
+    <ul>
+      <li>
+        <p>
+            Click <b outputclass="bold">Create</b> to add a new
+            cloud network to the list.
+          </p>
+      </li>
+      <li>
+        <p>
+            Click <b outputclass="bold">Remove</b> to remove a
+            cloud network from the list.
+          </p>
+      </li>
+      <li>
+        <p>
+            Click <b outputclass="bold">Properties</b> to show or
+            hide settings for the selected cloud network.
+          </p>
+      </li>
+    </ul>
+    <p>
+        To configure a cloud network, select the network name in the
+        <b outputclass="bold">Name</b> field and specify the
+        following:
+      </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Name:</b> The name used for the
+            cloud network.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Provider:</b> The cloud service
+            provider, such as Oracle Cloud Infrastructure.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Profile:</b> The cloud profile
+            used to connect to the cloud network.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">ID:</b> The OCID for the cloud
+            tunneling network. Click the
+            <b outputclass="bold">Network</b> icon to view the
+            subnets on Oracle Cloud Infrastructure that are available for tunneling traffic.
+          </p>
+        <p>
+            See <xref href="cloud-using-cloud-networks.dita#cloud-using-cloud-networks"/> for details
+            of how you can use the <userinput>VBoxManage cloud</userinput>
+            command to create and configure a virtual cloud network
+            (VCN) on Oracle Cloud Infrastructure.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

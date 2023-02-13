@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="changetscmode">
+  <title>Configuring the Guest Time Stamp Counter (TSC) to Reflect Guest
+        Execution</title>
+  
+  <body>
+    <p>
+        By default, Oracle VM VirtualBox keeps all sources of time visible to
+        the guest synchronized to a single time source, the monotonic
+        host time. This reflects the assumptions of many guest operating
+        systems, which expect all time sources to reflect "wall clock"
+        time. In special circumstances it may be useful however to make
+        the time stamp counter (TSC) in the guest reflect the time
+        actually spent executing the guest.
+      </p>
+    <p>
+        This special TSC handling mode can be enabled on a per-VM basis,
+        and for best results must be used only in combination with
+        hardware virtualization. To enable this mode use the following
+        command:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> "VBoxInternal/TM/TSCTiedToExecution" 1</pre>
+    <p>
+        To revert to the default TSC handling mode use:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> "VBoxInternal/TM/TSCTiedToExecution"</pre>
+    <p>
+        Note that if you use the special TSC handling mode with a guest
+        operating system which is very strict about the consistency of
+        time sources you may get a warning or error message about the
+        timing inconsistency. It may also cause clocks to become
+        unreliable with some guest operating systems depending on how
+        they use the TSC.
+      </p>
+  </body>
+  
+</topic>

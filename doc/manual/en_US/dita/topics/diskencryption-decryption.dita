@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="diskencryption-decryption">
+  <title>Decrypting Encrypted Images</title>
+  
+  <body>
+    <p>
+        In some circumstances it might be required to decrypt previously
+        encrypted images. This can be done in VirtualBox Manager for a complete
+        VM or using <userinput>VBoxManage</userinput> with the following
+        command:
+      </p>
+    <pre xml:space="preserve">VBoxManage encryptmedium <varname>uuid</varname>|<varname>filename</varname> --oldpassword <varname>file</varname>|-</pre>
+    <p>
+        The only required parameter is the password the image was
+        encrypted with. The options are the same as for encrypting
+        images.
+      </p>
+  </body>
+  
+</topic>

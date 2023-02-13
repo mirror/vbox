@@ -1,0 +1,418 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="host-key-customize">
+  <title>Host Key Customization</title>
+  
+  <body>
+    <p>
+        To disable all Host key combinations, open the preferences and
+        change the Host key to None. This might be useful when using
+        Oracle VM VirtualBox in a kiosk mode.
+      </p>
+    <p>
+        To redefine or disable certain Host key actions, use the
+        following command:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata global GUI/Input/MachineShortcuts "FullscreenMode=F,...."</pre>
+    <p>
+        The following table shows the possible Host key actions,
+        together with their default Host key shortcut. Setting an action
+        to None will disable that Host key action.
+      </p>
+    <table id="table-host-key-customize">
+      <title>Host Key Customization</title>
+      <tgroup cols="3">
+        <thead>
+          <row>
+            <entry>
+              <p>
+                <b outputclass="bold">Action</b>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                <b outputclass="bold">Default Key</b>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                <b outputclass="bold">Action</b>
+              </p>
+            </entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>
+              <p>
+                <codeph>TakeSnapshot</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  T
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Take a snapshot
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>TakeScreenshot</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  E
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Take a screenshot
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>MouseIntegration</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  I
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Toggle mouse integration
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>TypeCAD</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Del
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Inject Ctrl+Alt+Del
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>TypeCABS</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Backspace
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Inject Ctrl+Alt+Backspace
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>Pause</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  P
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Pause the VM
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>Reset</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  R
+                </p>
+            </entry>
+            <entry>Hard reset the guest</entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>SaveState</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+            <entry>
+              <p>
+                  Save the VM state and terminate the VM
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>Shutdown</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  H
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Press the virtual ACPI power button
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>PowerOff</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+            <entry>
+              <p>
+                  Power off the VM without saving the state
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>Close</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Q
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Show the Close VM dialog
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>FullscreenMode</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  F
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Switch the VM into full screen mode
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>SeamlessMode</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  L
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Switch the VM into seamless mode
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>ScaleMode</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  C
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Switch the VM into scaled mode
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>GuestAutoResize</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  G
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Automatically resize the guest window
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>WindowAdjust</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  A
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Immediately resize the guest window
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>PopupMenu</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Home
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Show the popup menu in full screen mode and seamless
+                  mode
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>SettingsDialog</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  S
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Open the VM Settings dialog
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>InformationDialog</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  N
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Show the VM Session Information window
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>NetworkAdaptersDialog</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+            <entry>
+              <p>
+                  Show the VM Network Adapters dialog
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>SharedFoldersDialog</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+            <entry>
+              <p>
+                  Show the VM Shared Folders dialog
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>InstallGuestAdditions</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  D
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  Mount the ISO containing the Guest Additions
+                </p>
+            </entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+    <p>
+        To disable full screen mode and seamless mode, use the following
+        command:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata global GUI/Input/MachineShortcuts "FullscreenMode=None,SeamlessMode=None"</pre>
+  </body>
+  
+</topic>

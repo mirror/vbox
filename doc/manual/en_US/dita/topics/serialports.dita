@@ -1,0 +1,214 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="serialports">
+  <title>Serial Ports</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox supports the use of virtual serial ports in a
+      virtual machine.
+    </p>
+    <p>
+      Ever since the original IBM PC, personal computers have been
+      equipped with one or two serial ports, also called COM ports by
+      DOS and Windows. Serial ports were commonly used with modems, and
+      some computer mice used to be connected to serial ports before USB
+      became commonplace.
+    </p>
+    <p>
+      While serial ports are no longer as common as they used to be,
+      there are still some important uses left for them. For example,
+      serial ports can be used to set up a primitive network over a
+      null-modem cable, in case Ethernet is not available. Also, serial
+      ports are indispensable for system programmers needing to do
+      kernel debugging, since kernel debugging software usually
+      interacts with developers over a serial port. With virtual serial
+      ports, system programmers can do kernel debugging on a virtual
+      machine instead of needing a real computer to connect to.
+    </p>
+    <p>
+      If a virtual serial port is enabled, the guest OS sees a standard
+      16550A compatible UART device. Other UART types can be configured
+      using the <userinput>VBoxManage modifyvm</userinput> command. Both
+      receiving and transmitting data is supported. How this virtual
+      serial port is then connected to the host is configurable, and the
+      details depend on your host OS.
+    </p>
+    <p>
+      You can use either the Settings tabs or the
+      <userinput>VBoxManage</userinput> command to set up virtual serial
+      ports. For the latter, see <xref href="man_VBoxManage-modifyvm.dita#vboxmanage-modifyvm"/>
+      for information on the <codeph>--uart</codeph>,
+      <codeph>--uart-mode</codeph> and <codeph>--uart-type</codeph>
+      options.
+    </p>
+    <p>
+      You can configure up to four virtual serial ports per virtual
+      machine. For each device, you must set the following:
+    </p>
+    <ol>
+      <li>
+        <p><b outputclass="bold">Port Number:</b> This determines
+          the serial port that the virtual machine should see. For best
+          results, use the traditional values as follows:
+        </p>
+        <ul>
+          <li>
+            <p>
+              COM1: I/O base 0x3F8, IRQ 4
+            </p>
+          </li>
+          <li>
+            <p>
+              COM2: I/O base 0x2F8, IRQ 3
+            </p>
+          </li>
+          <li>
+            <p>
+              COM3: I/O base 0x3E8, IRQ 4
+            </p>
+          </li>
+          <li>
+            <p>
+              COM4: I/O base 0x2E8, IRQ 3
+            </p>
+          </li>
+        </ul>
+        <p>
+          You can also configure a user-defined serial port. Enter an
+          I/O base address and interrupt (IRQ).
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Port Mode:</b> What the virtual
+          port is connected to. For each virtual serial port, you have
+          the following options:
+        </p>
+        <ul>
+          <li>
+            <p><b outputclass="bold">Disconnected:</b> The guest
+              will see the device, but it will behave as if no cable had
+              been connected to it.
+            </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">Host Device:</b> Connects the
+              virtual serial port to a physical serial port on your
+              host. On a Windows host, this will be a name like
+              <codeph>COM1</codeph>. On Linux or Oracle Solaris hosts,
+              it will be a device node like
+              <filepath>/dev/ttyS0</filepath>. Oracle VM VirtualBox will then
+              simply redirect all data received from and sent to the
+              virtual serial port to the physical device.
+            </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">Host Pipe:</b> Configure
+              Oracle VM VirtualBox to connect the virtual serial port to a
+              software pipe on the host. This depends on your host OS,
+              as follows:
+            </p>
+            <ul>
+              <li>
+                <p>
+                  On a Windows host, data will be sent and received
+                  through a named pipe. The pipe name must be in the
+                  format
+                  <filepath>\\.\pipe\<varname>name</varname>
+                                    </filepath>
+                  where <varname>name</varname> should identify
+                  the virtual machine but may be freely chosen.
+                </p>
+              </li>
+              <li>
+                <p>
+                  On a Mac OS, Linux, or Oracle Solaris host, a local
+                  domain socket is used instead. The socket filename
+                  must be chosen such that the user running
+                  Oracle VM VirtualBox has sufficient privileges to create and
+                  write to it. The <filepath>/tmp</filepath> directory
+                  is often a good candidate.
+                </p>
+                <p>
+                  On Linux there are various tools which can connect to
+                  a local domain socket or create one in server mode.
+                  The most flexible tool is <userinput>socat</userinput> and
+                  is available as part of many distributions.
+                </p>
+              </li>
+            </ul>
+            <p>
+              In this case, you can configure whether Oracle VM VirtualBox
+              should create the named pipe, or the local domain socket
+              non-Windows hosts, itself or whether Oracle VM VirtualBox should
+              assume that the pipe or socket exists already. With the
+              <userinput>VBoxManage</userinput> command-line options, this
+              is referred to as server mode or client mode,
+              respectively.
+            </p>
+            <p>
+              For a direct connection between two virtual machines,
+              corresponding to a null-modem cable, simply configure one
+              VM to create a pipe or socket and another to attach to it.
+            </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">Raw File:</b> Send the
+              virtual serial port output to a file. This option is very
+              useful for capturing diagnostic output from a guest. Any
+              file may be used for this purpose, as long as the user
+              running Oracle VM VirtualBox has sufficient privileges to create
+              and write to the file.
+            </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">TCP:</b> Useful for
+              forwarding serial traffic over TCP/IP, acting as a server,
+              or it can act as a TCP client connecting to other servers.
+              This option enables a remote machine to directly connect
+              to the guest's serial port using TCP.
+            </p>
+            <ul>
+              <li>
+                <p><b outputclass="bold">TCP Server:</b> Deselect
+                  the <b outputclass="bold">Connect to Existing
+                  Pipe/Socket</b> check box and specify the port
+                  number in the
+                  <b outputclass="bold">Path/Address</b> field.
+                  This is typically 23 or 2023. Note that on UNIX-like
+                  systems you will have to use a port a number greater
+                  than 1024 for regular users.
+                </p>
+                <p>
+                  The client can use software such as
+                  <userinput>PuTTY</userinput> or the
+                  <userinput>telnet</userinput> command line tool to access
+                  the TCP Server.
+                </p>
+              </li>
+              <li>
+                <p><b outputclass="bold">TCP Client:</b> To create
+                  a virtual null-modem cable over the Internet or LAN,
+                  the other side can connect using TCP by specifying
+                  <codeph><varname>hostname</varname>:<varname>port</varname></codeph>
+                  in the <b outputclass="bold">Path/Address</b>
+                  field. The TCP socket will act in client mode if you
+                  select the <b outputclass="bold">Connect to Existing
+                  Pipe/Socket</b> check box.
+                </p>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ol>
+    <p>
+      Up to four serial ports can be configured per virtual machine, but
+      you can pick any port numbers out of the above. However, serial
+      ports cannot reliably share interrupts. If both ports are to be
+      used at the same time, they must use different interrupt levels,
+      for example COM1 and COM2, but not COM1 and COM3.
+    </p>
+  </body>
+  
+</topic>

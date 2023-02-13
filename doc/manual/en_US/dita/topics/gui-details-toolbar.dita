@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="gui-details-toolbar">
+  <title>VirtualBox Manager Toolbar</title>
+  
+  <body>
+    <p>
+          A toolbar at the top of the Details pane contains buttons that
+          enable you to configure the selected virtual machine, or to
+          create a new virtual machine.
+        </p>
+    <p>
+          The toolbar includes the following buttons:
+        </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">New.</b> Creates a new
+              virtual machine, and adds it to the machine list.
+            </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Add.</b> Adds an existing
+              virtual machine to the machine list.
+            </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Settings.</b> Displays the
+              <b outputclass="bold">Settings</b> window for the
+              virtual machine, enabling you to make configuration
+              changes.
+            </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Discard.</b> For a running
+              virtual machine, discards the saved state for the virtual
+              machine and closes it down.
+            </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Show/Start.</b> For a running
+              virtual machine, <b outputclass="bold">Show</b>
+              displays the virtual machine window. For a stopped virtual
+              machine, <b outputclass="bold">Start</b> displays
+              options for powering up the virtual machine.
+            </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

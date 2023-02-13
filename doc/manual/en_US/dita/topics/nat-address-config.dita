@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="nat-address-config">
+  <title>Configuring the Address of a NAT Network Interface</title>
+  
+  <body>
+    <p>
+        In NAT mode, the guest network interface is assigned to the IPv4
+        range <codeph>10.0.<varname>x</varname>.0/24</codeph>
+        by default where <varname>x</varname> corresponds to the
+        instance of the NAT interface +2. So
+        <varname>x</varname> is 2 when there is only one NAT
+        instance active. In that case the guest is assigned to the
+        address <codeph>10.0.2.15</codeph>, the gateway is set to
+        <codeph>10.0.2.2</codeph> and the name server can be found at
+        <codeph>10.0.2.3</codeph>.
+      </p>
+    <p>
+        If the NAT network needs to be changed, use the following
+        command:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage modifyvm <varname>VM-name</varname> \
+--natnet1 "192.168/16"</pre>
+    <p>
+        This command would reserve the network addresses from
+        <codeph>192.168.0.0</codeph> to
+        <codeph>192.168.254.254</codeph> for the first NAT network
+        instance of <varname>VM-name</varname> The guest IP
+        would be assigned to <codeph>192.168.0.15</codeph> and the
+        default gateway could be found at
+        <codeph>192.168.0.2</codeph>.
+      </p>
+  </body>
+  
+</topic>

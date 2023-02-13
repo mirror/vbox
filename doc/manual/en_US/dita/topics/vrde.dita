@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vrde">
+  <title>Remote Display (VRDP Support)</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox can display virtual machines remotely, meaning that
+      a virtual machine can execute on one computer even though the
+      machine will be displayed on a second computer, and the machine
+      will be controlled from there as well, as if the virtual machine
+      was running on that second computer.
+    </p>
+    <p>
+      For maximum flexibility, Oracle VM VirtualBox implements remote machine
+      display through a generic extension interface called the
+      VirtualBox Remote Desktop Extension (VRDE). The base open source
+      Oracle VM VirtualBox package only provides this interface, while
+      implementations can be supplied by third parties with
+      Oracle VM VirtualBox extension packages, which must be installed
+      separately from the base package. See
+      <xref href="intro-installing.dita">Installing Oracle VM VirtualBox and Extension Packs</xref>.
+    </p>
+    <p>
+      Oracle provides support for the VirtualBox Remote Display Protocol
+      (VRDP) in such an Oracle VM VirtualBox extension package.
+    </p>
+    <p>
+      VRDP is a backwards-compatible extension to Microsoft's Remote
+      Desktop Protocol (RDP). As a result, you can use any standard RDP
+      client to control the remote VM.
+    </p>
+    <p>
+      Even when the extension is installed, the VRDP server is disabled
+      by default. It can easily be enabled on a per-VM basis either from
+      VirtualBox Manager in the <b outputclass="bold">Display</b>
+      settings, see <xref href="settings-display.dita">Display Settings</xref>, or with the
+      <userinput>VBoxManage</userinput> command, as follows:
+    </p>
+    <pre xml:space="preserve">$ VBoxManage modifyvm <varname>VM-name</varname> --vrde on</pre>
+    <p>
+      By default, the VRDP server uses TCP port <codeph>3389</codeph>.
+      You will need to change the default port if you run more than one
+      VRDP server, since the port can only be used by one server at a
+      time. You might also need to change it on Windows hosts since the
+      default port might already be used by the RDP server that is built
+      into Windows itself. Ports 5000 through 5050 are typically not
+      used and might be a good choice.
+    </p>
+    <p>
+      The port can be changed either in the
+      <b outputclass="bold">Display</b> settings of the graphical
+      user interface or with the <codeph>--vrde-port</codeph> option of
+      the <userinput>VBoxManage modifyvm</userinput> command. You can
+      specify a comma-separated list of ports or ranges of ports. Use a
+      dash between two port numbers to specify a range. The VRDP server
+      will bind to <i>one</i> of the available ports from
+      the specified list. For example, <userinput>VBoxManage modifyvm
+      <varname>VM-name</varname> --vrde-port
+      5000,5010-5012</userinput> configures the server to bind to one of
+      the ports 5000, 5010, 5011, or 5012. See
+      <xref href="man_VBoxManage-modifyvm.dita">VBoxManage modifyvm</xref>.
+    </p>
+    <p>
+      The actual port used by a running VM can be either queried with
+      the <userinput>VBoxManage showvminfo</userinput> command or seen in
+      VirtualBox Manager on the <b outputclass="bold">Runtime</b> tab of
+      the <b outputclass="bold">Session Information</b> dialog,
+      which is accessible from the
+      <b outputclass="bold">Machine</b> menu of the VM window.
+    </p>
+    <p>
+      Oracle VM VirtualBox supports IPv6. If the host OS supports IPv6 the
+      VRDP server will automatically listen for IPv6 connections in
+      addition to IPv4.
+    </p>
+  </body>
+</topic>

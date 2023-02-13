@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_linux-host-grsec">
+  <title>PAX/grsec Kernels</title>
+  
+  <body>
+    <p>
+        Linux kernels including the grsec patch, see
+        <ph>http://www.grsecurity.net/</ph>, and derivates have
+        to disable PAX_MPROTECT for the <userinput>VBox</userinput> binaries
+        to be able to start a VM. The reason is that Oracle VM VirtualBox has
+        to create executable code on anonymous memory.
+      </p>
+  </body>
+  
+</topic>

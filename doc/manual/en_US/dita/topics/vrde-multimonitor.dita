@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vrde-multimonitor">
+  <title>Multiple Remote Monitors</title>
+  
+  <body>
+    <p>
+        To access two or more remote VM displays you have to enable the
+        VRDP multiconnection mode. See
+        <xref href="vrde-multiconnection.dita#vrde-multiconnection"/>.
+      </p>
+    <p>
+        The RDP client can select the virtual monitor number to connect
+        to using the <codeph>domain</codeph> login parameter
+        (<codeph>-d</codeph>). If the parameter ends with
+        <codeph>@</codeph> followed by a number, Oracle VM VirtualBox
+        interprets this number as the screen index. The primary guest
+        screen is selected with <codeph>@1</codeph>, the first
+        secondary screen is <codeph>@2</codeph>, and so on.
+      </p>
+    <p>
+        The Microsoft RDP 6 client does not let you specify a separate
+        domain name. Instead, enter
+        <codeph><varname>domain</varname>\<varname>username</varname></codeph>
+        in the <b outputclass="bold">Username</b> field. For
+        example, <codeph>@2\<varname>name</varname>
+                     </codeph>.
+        <varname>name</varname> must be supplied, and must be
+        the name used to log in if the VRDP server is set up to require
+        credentials. If it is not, you may use any text as the username.
+      </p>
+  </body>
+  
+</topic>

@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="create-vm-wizard-summary">
+  <title>Create Virtual Machine Wizard: Summary</title>
+  
+  <body>
+    <p>
+        This page displays a summary of the configuration for the
+        virtual machine.
+      </p>
+    <p>
+        If you are not happy with any of the settings, use the
+        <b outputclass="bold">Back</b> button to return to the
+        corresponding page and modify the setting.
+      </p>
+    <p>
+        Click <b outputclass="bold">Finish</b> to create your new
+        virtual machine. The virtual machine is displayed in the machine
+        list on the left side of the VirtualBox Manager window, with the name
+        that you entered on the first page of the wizard.
+      </p>
+  </body>
+  
+</topic>

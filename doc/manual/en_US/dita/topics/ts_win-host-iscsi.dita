@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_win-host-iscsi">
+  <title>Running an iSCSI Initiator and Target on a Single System</title>
+  
+  <body>
+    <p>
+        Deadlocks can occur on a Windows host when attempting to access
+        an iSCSI target running in a guest virtual machine with an iSCSI
+        initiator, such as a Microsoft iSCSI Initiator, that is running
+        on the host. This is caused by a flaw in the Windows cache
+        manager component, and causes sluggish host system response for
+        several minutes, followed by a "Delayed Write Failed" error
+        message in the system tray or in a separate message window. The
+        guest is blocked during that period and may show error messages
+        or become unstable.
+      </p>
+    <p>
+        Setting the <codeph>VBOX_DISABLE_HOST_DISK_CACHE</codeph>
+        environment variable to <codeph>1</codeph> enables a
+        workaround for this problem until Microsoft addresses the issue.
+        For example, open a command prompt window and start
+        Oracle VM VirtualBox like this:
+      </p>
+    <pre xml:space="preserve">set VBOX_DISABLE_HOST_DISK_CACHE=1
+VirtualBox</pre>
+    <p>
+        While this will decrease guest disk performance, especially
+        writes, it does not affect the performance of other applications
+        running on the host.
+      </p>
+  </body>
+  
+</topic>

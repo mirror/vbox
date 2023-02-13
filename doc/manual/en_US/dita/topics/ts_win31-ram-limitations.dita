@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_win31-ram-limitations">
+  <title>Windows 3.x Limited to 64 MB RAM</title>
+  
+  <body>
+    <p>
+        Windows 3.x guests are typically limited to 64 MB RAM, even if a
+        VM is assigned much more memory. While Windows 3.1 is
+        theoretically capable of using up to 512 MB RAM, it only uses
+        memory available through the XMS interface. Versions of
+        HIMEM.SYS, the Microsoft XMS manager, shipped with MS-DOS and
+        Microsoft Windows 3.x can only use up to 64 MB on standard PCs.
+      </p>
+    <p>
+        This is a known HIMEM.SYS limitation. Windows 3.1 memory limits
+        are described in detail in Microsoft Knowledge base article KB
+        84388.
+      </p>
+    <p>
+        It is possible for Windows 3.x guests to utilize more than 64 MB
+        RAM if a different XMS provider is used. That could be a newer
+        HIMEM.SYS version, such as that shipped with Windows 98, or a
+        more capable third-party memory manager, such as QEMM.
+      </p>
+  </body>
+  
+</topic>

@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="warpguest">
+  <title>Accelerate or Slow Down the Guest Clock</title>
+  
+  <body>
+    <p>
+        For certain purposes it can be useful to accelerate or to slow
+        down the virtual guest clock. This can be achieved as follows:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> "VBoxInternal/TM/WarpDrivePercentage" 200</pre>
+    <p>
+        The above example will double the speed of the guest clock while
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> "VBoxInternal/TM/WarpDrivePercentage" 50</pre>
+    <p>
+        will halve the speed of the guest clock. Note that changing the
+        rate of the virtual clock can confuse the guest and can even
+        lead to abnormal guest behavior. For instance, a higher clock
+        rate means shorter timeouts for virtual devices with the result
+        that a slightly increased response time of a virtual device due
+        to an increased host load can cause guest failures. Note further
+        that any time synchronization mechanism will frequently try to
+        resynchronize the guest clock with the reference clock, which is
+        the host clock if the Oracle VM VirtualBox Guest Additions are active.
+        Therefore any time synchronization should be disabled if the
+        rate of the guest clock is changed as described above. See
+        <xref href="changetimesync.dita#changetimesync"/>.
+      </p>
+  </body>
+  
+</topic>

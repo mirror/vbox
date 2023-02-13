@@ -1,0 +1,140 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="headless-vm-steps">
+  <title>Step by Step: Creating a Virtual Machine on a Headless Server</title>
+  
+  <body>
+    <p>
+        The following instructions describe how to create a virtual
+        machine on a headless server over a network connection. This
+        example creates a virtual machine, establishes an RDP connection
+        and installs a guest operating system. All of these tasks are
+        done without having to touch the headless server. You need the
+        following prerequisites:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Oracle VM VirtualBox on a server machine with a supported host
+            operating system. The Oracle VM VirtualBox Extension Pack for the
+            VRDP server must be installed, see <xref href="vrde.dita#vrde"/>.
+            The procedures assume a Linux server is used.
+          </p>
+      </li>
+      <li>
+        <p>
+            An ISO file accessible from the server, containing the
+            installation data for the guest operating system to install.
+            Windows XP is used in the example.
+          </p>
+      </li>
+      <li>
+        <p>
+            A terminal connection to that host through which you can
+            access a command line, such as <userinput>ssh</userinput>.
+          </p>
+      </li>
+      <li>
+        <p>
+            An RDP viewer on the remote client. See
+            <xref href="rdp-viewers.dita#rdp-viewers"/> for examples.
+          </p>
+      </li>
+    </ul>
+    <p>
+        Note that on the server machine, since we will only use the
+        headless server, Qt and the X Window system are not required.
+      </p>
+    <ol>
+      <li>
+        <p>
+            On the headless server, create a new virtual machine. For
+            example:
+          </p>
+        <pre xml:space="preserve">VBoxManage createvm --name "Windows XP" --ostype WindowsXP --register</pre>
+        <p>
+            If you do not specify <codeph>--register</codeph>, you will
+            have to manually use the <userinput>registervm</userinput>
+            command later.
+          </p>
+        <p>
+            You do not need to specify <codeph>--ostype</codeph>, but
+            doing so selects some sensible default values for certain VM
+            parameters. For example, the RAM size and the type of the
+            virtual network device. To get a complete list of supported
+            operating systems you can use the following command:
+          </p>
+        <pre xml:space="preserve">VBoxManage list ostypes</pre>
+      </li>
+      <li>
+        <p>
+            Make sure the settings for the VM are appropriate for the
+            guest operating system that we will install. For example:
+          </p>
+        <pre xml:space="preserve">VBoxManage modifyvm "Windows XP" --memory 256 --acpi on --boot1 dvd --nic1 nat</pre>
+      </li>
+      <li>
+        <p>
+            Create a virtual hard disk for the VM. For example, to
+            create a 10 GB virtual hard disk:
+          </p>
+        <pre xml:space="preserve">VBoxManage createhd --filename "WinXP.vdi" --size 10000</pre>
+      </li>
+      <li>
+        <p>
+            Add an IDE Controller to the new VM. For example:
+          </p>
+        <pre xml:space="preserve">VBoxManage storagectl "Windows XP" --name "IDE Controller"
+  --add ide --controller PIIX4</pre>
+      </li>
+      <li>
+        <p>
+            Set the VDI file you created as the first virtual hard disk
+            of the new VM. For example:
+          </p>
+        <pre xml:space="preserve">VBoxManage storageattach "Windows XP" --storagectl "IDE Controller"
+ --port 0 --device 0 --type hdd --medium "WinXP.vdi"</pre>
+      </li>
+      <li>
+        <p>
+            Attach the ISO file that contains the operating system
+            installation that you want to install later to the virtual
+            machine. This is done so that the VM can boot from it.
+          </p>
+        <pre xml:space="preserve">VBoxManage storageattach "Windows XP" --storagectl "IDE Controller"
+ --port 0 --device 1 --type dvddrive --medium /full/path/to/iso.iso</pre>
+      </li>
+      <li>
+        <p>
+            Enable the VirtualBox Remote Desktop Extension, the VRDP
+            server, as follows:
+          </p>
+        <pre xml:space="preserve">VBoxManage modifyvm "Windows XP" --vrde on</pre>
+      </li>
+      <li>
+        <p>
+            Start the virtual machine using the
+            <userinput>VBoxHeadless</userinput> command:
+          </p>
+        <pre xml:space="preserve">VBoxHeadless --startvm "Windows XP"</pre>
+        <p>
+            If the configuration steps worked, you should see a
+            copyright notice. If you are returned to the command line,
+            then something did not work correctly.
+          </p>
+      </li>
+      <li>
+        <p>
+            On the client machine, start the RDP viewer and connect to
+            the server. See <xref href="rdp-viewers.dita#rdp-viewers"/> for details
+            of how to use various common RDP viewers.
+          </p>
+        <p>
+            The installation routine of your guest operating system
+            should be displayed in the RDP viewer.
+          </p>
+      </li>
+    </ol>
+  </body>
+  
+</topic>

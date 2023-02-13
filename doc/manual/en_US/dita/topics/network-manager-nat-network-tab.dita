@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="network-manager-nat-network-tab">
+  <title>NAT Networks Tab</title>
+  
+  <body>
+    <p>
+        The NAT Networks tab in Network Manager lists all NAT networks
+        that are currently in use.
+      </p>
+    <ul>
+      <li>
+        <p>
+            Click <b outputclass="bold">Create</b> to add a new
+            NAT network to the list.
+          </p>
+      </li>
+      <li>
+        <p>
+            Click <b outputclass="bold">Remove</b> to remove a
+            NAT network from the list.
+          </p>
+      </li>
+      <li>
+        <p>
+            Click <b outputclass="bold">Properties</b> to show or
+            hide settings for the selected NAT network.
+          </p>
+      </li>
+    </ul>
+    <p>
+        To configure a NAT network, select the network name in the
+        <b outputclass="bold">Name</b> field and do the
+        following:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Use the <b outputclass="bold">General Options</b> tab
+            to configure the network settings used by the NAT network.
+            For example, the network address and mask of the NAT service
+            interface.
+          </p>
+      </li>
+      <li>
+        <p>
+            Use the <b outputclass="bold">Port Forwarding</b> tab
+            to configure port forwarding rules used by the NAT network.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

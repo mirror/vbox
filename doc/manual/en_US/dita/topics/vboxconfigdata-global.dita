@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxconfigdata-global">
+  <title>Global Settings</title>
+  
+  <body>
+    <p>
+        In addition to the files for the virtual machines,
+        Oracle VM VirtualBox maintains global configuration data in the
+        following directory:
+      </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Linux and Oracle Solaris:</b><filepath>$HOME/.config/VirtualBox</filepath>.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Windows:</b><filepath>$HOME/.VirtualBox</filepath>.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">macOS:</b><filepath>$HOME/Library/VirtualBox</filepath>.
+          </p>
+      </li>
+    </ul>
+    <p>
+        Oracle VM VirtualBox creates this configuration directory
+        automatically, if necessary. You can specify an alternate
+        configuration directory by either setting the
+        <codeph>VBOX_USER_HOME</codeph> environment variable, or on
+        Linux or Oracle Solaris by using the standard
+        <codeph>XDG_CONFIG_HOME</codeph> variable. Since the global
+        <filepath>VirtualBox.xml</filepath> settings file points to all
+        other configuration files, this enables switching between
+        several Oracle VM VirtualBox configurations.
+      </p>
+    <p>
+        In this configuration directory, Oracle VM VirtualBox stores its
+        global settings file, an XML file called
+        <filepath>VirtualBox.xml</filepath>. This file includes global
+        configuration options and a list of registered virtual machines
+        with pointers to their XML settings files.
+      </p>
+  </body>
+  
+</topic>

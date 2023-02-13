@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="additions-windows-install-unattended-certs">
+  <title>Installing Code Signing Certificates</title>
+  
+  <body>
+    <p>
+            To avoid popups when performing an unattended installation
+            of the Oracle VM VirtualBox Guest Additions, the code signing
+            certificates used to sign the drivers needs to be installed
+            in the correct certificate stores on the guest operating
+            system. Failure to do this will cause a typical Windows
+            installation to display multiple dialogs asking whether you
+            want to install a particular driver.
+          </p>
+    <note>
+      <p>
+              On some legacy Windows versions, such as Windows 2000 and
+              Windows XP, the user intervention popups mentioned above
+              are always displayed, even after importing the Oracle
+              certificates.
+            </p>
+    </note>
+    <p>
+            Installing the code signing certificates on a Windows guest
+            can be done automatically. Use the
+            <filepath>VBoxCertUtil.exe</filepath> utility from the
+            <filepath>cert</filepath> folder on the Guest Additions
+            installation CD.
+          </p>
+    <p>
+            Use the following steps:
+          </p>
+    <ol>
+      <li>
+        <p>
+                Log in as Administrator on the guest.
+              </p>
+      </li>
+      <li>
+        <p>
+                Mount the Oracle VM VirtualBox Guest Additions .ISO.
+              </p>
+      </li>
+      <li>
+        <p>
+                Open a command line window on the guest and change to
+                the <filepath>cert</filepath> folder on the
+                Oracle VM VirtualBox Guest Additions CD.
+              </p>
+      </li>
+      <li>
+        <p>
+                Run the following command:
+              </p>
+        <pre xml:space="preserve">VBoxCertUtil.exe add-trusted-publisher vbox*.cer --root vbox*.cer</pre>
+        <p>
+                This command installs the certificates to the
+                certificate store. When installing the same certificate
+                more than once, an appropriate error will be displayed.
+              </p>
+      </li>
+    </ol>
+    <p>
+            To allow for completely unattended guest installations, you
+            can specify a command line parameter to the install
+            launcher:
+          </p>
+    <pre xml:space="preserve">VBoxWindowsAdditions.exe /S</pre>
+    <p>
+            This automatically installs the right files and drivers for
+            the corresponding platform, either 32-bit or 64-bit.
+          </p>
+    <note>
+      <p>
+              By default on an unattended installation on a Vista or
+              Windows 7 guest, there will be the XPDM graphics driver
+              installed. This graphics driver does not support Windows
+              Aero / Direct3D on the guest. Instead, the WDDM graphics
+              driver needs to be installed. To select this driver by
+              default, add the command line parameter
+              <codeph>/with_wddm</codeph> when invoking the Windows
+              Guest Additions installer. This is only required for Vista
+              and Windows 7.
+            </p>
+    </note>
+    <note>
+      <p>
+              For Windows Aero to run correctly on a guest, the guest's
+              VRAM size needs to be configured to at least 128 MB.
+            </p>
+    </note>
+    <p>
+            For more options regarding unattended guest installations,
+            consult the command line help by using the command:
+          </p>
+    <pre xml:space="preserve">VBoxWindowsAdditions.exe /?</pre>
+  </body>
+  
+</topic>

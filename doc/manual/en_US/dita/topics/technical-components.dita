@@ -1,0 +1,227 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="technical-components">
+  <title>Oracle VM VirtualBox Executables and Components</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox was designed to be modular and flexible. When the
+      Oracle VM VirtualBox graphical user interface (GUI) is opened and a VM
+      is started, at least the following three processes are running:
+    </p>
+    <ul>
+      <li>
+        <p><userinput>VBoxSVC</userinput>, the Oracle VM VirtualBox service process
+          which always runs in the background. This process is started
+          automatically by the first Oracle VM VirtualBox client process and
+          exits a short time after the last client exits. The first
+          Oracle VM VirtualBox service can be VirtualBox Manager,
+          <userinput>VBoxManage</userinput>,
+          <userinput>VBoxHeadless</userinput>, the web service amongst
+          others. The service is responsible for bookkeeping,
+          maintaining the state of all VMs, and for providing
+          communication between Oracle VM VirtualBox components. This
+          communication is implemented using COM/XPCOM.
+        </p>
+        <note>
+          <p>
+            When we refer to <i>clients</i> here, we mean
+            the local clients of a particular <userinput>VBoxSVC</userinput>
+            server process, not clients in a network. Oracle VM VirtualBox
+            employs its own client/server design to allow its processes
+            to cooperate, but all these processes run under the same
+            user account on the host operating system, and this is
+            totally transparent to the user.
+          </p>
+        </note>
+      </li>
+      <li>
+        <p>
+          The GUI process, <userinput>VirtualBoxVM</userinput>, a client
+          application based on the cross-platform Qt library. When
+          started without the <codeph>--startvm</codeph> option, this
+          application acts as VirtualBox Manager, displaying the VMs and their
+          settings. It then communicates settings and state changes to
+          <userinput>VBoxSVC</userinput> and also reflects changes effected
+          through other means, such as the <userinput>VBoxManage</userinput>
+          command.
+        </p>
+      </li>
+      <li>
+        <p>
+          If the <userinput>VirtualBoxVM</userinput> client application is
+          started with the <codeph>--startvm</codeph> argument, it loads
+          the VMM library which includes the actual hypervisor and then
+          runs a virtual machine and provides the input and output for
+          the guest.
+        </p>
+      </li>
+    </ul>
+    <p>
+      Any Oracle VM VirtualBox front-end, or client, will communicate with the
+      service process and can both control and reflect the current
+      state. For example, either the VM selector or the VM window or
+      VBoxManage can be used to pause the running VM, and other
+      components will always reflect the changed state.
+    </p>
+    <p>
+      The Oracle VM VirtualBox GUI application, called VirtualBox Manager, is only one
+      of several available front ends, or clients. The complete list
+      shipped with Oracle VM VirtualBox is as follows:
+    </p>
+    <ul>
+      <li>
+        <p><userinput>VirtualBoxVM</userinput>: The Qt front end implementing
+          VirtualBox Manager and running VMs.
+        </p>
+      </li>
+      <li>
+        <p><userinput>VBoxManage</userinput>: A less user-friendly but more
+          powerful alternative. See <xref href="vboxmanage.dita">VBoxManage</xref>.
+        </p>
+      </li>
+      <li>
+        <p><userinput>VBoxHeadless</userinput>: A VM front end which does not
+          directly provide any video output and keyboard or mouse input,
+          but enables redirection through the VirtualBox Remote Desktop
+          Extension. See <xref href="vboxheadless.dita"/>.
+        </p>
+      </li>
+      <li>
+        <p><userinput>vboxwebsrv</userinput>: The Oracle VM VirtualBox web service
+          process which enables control of an Oracle VM VirtualBox host
+          remotely. This is described in detail in the Oracle VM VirtualBox
+          Software Development Kit (SDK) reference. See
+          <xref href="VirtualBoxAPI.dita"/>.
+        </p>
+      </li>
+      <li>
+        <p>
+          The Oracle VM VirtualBox Python shell: A Python alternative to
+          <userinput>VBoxManage</userinput>. This is also described in the
+          SDK reference.
+        </p>
+      </li>
+    </ul>
+    <p>
+      Internally, Oracle VM VirtualBox consists of many more or less separate
+      components. You may encounter these when analyzing Oracle VM VirtualBox
+      internal error messages or log files. These include the following:
+    </p>
+    <ul>
+      <li>
+        <p>
+          IPRT: A portable runtime library which abstracts file access,
+          threading, and string manipulation. Whenever Oracle VM VirtualBox
+          accesses host operating features, it does so through this
+          library for cross-platform portability.
+        </p>
+      </li>
+      <li>
+        <p>
+          VMM (Virtual Machine Monitor): The heart of the hypervisor.
+        </p>
+      </li>
+      <li>
+        <p>
+          EM (Execution Manager): Controls execution of guest code.
+        </p>
+      </li>
+      <li>
+        <p>
+          TRPM (Trap Manager): Intercepts and processes guest traps and
+          exceptions.
+        </p>
+      </li>
+      <li>
+        <p>
+          HM (Hardware Acceleration Manager): Provides support for VT-x
+          and AMD-V.
+        </p>
+      </li>
+      <li>
+        <p>
+          GIM (Guest Interface Manager): Provides support for various
+          paravirtualization interfaces to the guest.
+        </p>
+      </li>
+      <li>
+        <p>
+          PDM (Pluggable Device Manager): An abstract interface between
+          the VMM and emulated devices which separates device
+          implementations from VMM internals and makes it easy to add
+          new emulated devices. Through PDM, third-party developers can
+          add new virtual devices to Oracle VM VirtualBox without having to
+          change Oracle VM VirtualBox itself.
+        </p>
+      </li>
+      <li>
+        <p>
+          PGM (Page Manager): A component that controls guest paging.
+        </p>
+      </li>
+      <li>
+        <p>
+          TM (Time Manager): Handles timers and all aspects of time
+          inside guests.
+        </p>
+      </li>
+      <li>
+        <p>
+          CFGM (Configuration Manager): Provides a tree structure which
+          holds configuration settings for the VM and all emulated
+          devices.
+        </p>
+      </li>
+      <li>
+        <p>
+          SSM (Saved State Manager): Saves and loads VM state.
+        </p>
+      </li>
+      <li>
+        <p>
+          VUSB (Virtual USB): A USB layer which separates emulated USB
+          controllers from the controllers on the host and from USB
+          devices. This component also enables remote USB.
+        </p>
+      </li>
+      <li>
+        <p>
+          DBGF (Debug Facility): A built-in VM debugger.
+        </p>
+      </li>
+      <li>
+        <p>
+          Oracle VM VirtualBox emulates a number of devices to provide the
+          hardware environment that various guests need. Most of these
+          are standard devices found in many PC compatible machines and
+          widely supported by guest operating systems. For network and
+          storage devices in particular, there are several options for
+          the emulated devices to access the underlying hardware. These
+          devices are managed by PDM.
+        </p>
+      </li>
+      <li>
+        <p>
+          Guest Additions for various guest operating systems. This is
+          code that is installed from within a virtual machine. See
+          <xref href="guestadditions.dita">Guest Additions</xref>.
+        </p>
+      </li>
+      <li>
+        <p>
+          The "Main" component is special. It ties all the above bits
+          together and is the only public API that Oracle VM VirtualBox
+          provides. All the client processes listed above use only this
+          API and never access the hypervisor components directly. As a
+          result, third-party applications that use the Oracle VM VirtualBox
+          Main API can rely on the fact that it is always well-tested
+          and that all capabilities of Oracle VM VirtualBox are fully exposed.
+          It is this API that is described in the Oracle VM VirtualBox SDK.
+          See <xref href="VirtualBoxAPI.dita#VirtualBoxAPI"/>.
+        </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

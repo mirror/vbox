@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="intro-removable-media-changing">
+  <title>Changing Removable Media</title>
+  
+  <body>
+    <p>
+        While a virtual machine is running, you can change removable
+        media in the <b outputclass="bold">Devices</b> menu of
+        the VM's window. Here you can select in detail what
+        Oracle VM VirtualBox presents to your VM as a CD, DVD, or floppy
+        drive.
+      </p>
+    <p>
+        The settings are the same as those available for the VM in the
+        <b outputclass="bold">Settings</b> window of VirtualBox Manager.
+        But as the <b outputclass="bold">Settings</b> window is
+        disabled while the VM is in the Running or Saved state, the
+        <b outputclass="bold">Devices</b> menu saves you from
+        having to shut down and restart the VM every time you want to
+        change media.
+      </p>
+    <p>
+        Using the <b outputclass="bold">Devices</b> menu, you can
+        attach the host drive to the guest or select a floppy or DVD
+        image, as described in <xref href="settings-storage.dita#settings-storage"/>.
+      </p>
+    <p>
+        The <b outputclass="bold">Devices</b> menu also includes
+        an option for creating a virtual ISO (VISO) from selected files
+        on the host.
+      </p>
+  </body>
+  
+</topic>

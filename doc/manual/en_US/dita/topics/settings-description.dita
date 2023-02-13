@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="settings-description">
+  <title>Description Tab</title>
+  
+  <body>
+    <p>
+        On the <b outputclass="bold">Description</b> tab you can
+        enter a description for your virtual machine. This has no effect
+        on the functionality of the machine, but you may find this space
+        useful to note down things such as the configuration of a
+        virtual machine and the software that has been installed into
+        it.
+      </p>
+    <p>
+        To insert a line break into the
+        <b outputclass="bold">Description</b> text field, press
+        Shift+Enter.
+      </p>
+  </body>
+  
+</topic>

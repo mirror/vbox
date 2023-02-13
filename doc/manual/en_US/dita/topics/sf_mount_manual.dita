@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="sf_mount_manual">
+               <title>Manual Mounting</title>
+               
+               <body>
+                  <p>
+        You can mount the shared folder from inside a VM, in the same
+        way as you would mount an ordinary network share:
+      </p>
+                  <ul>
+                     <li>
+                        <p>
+            In a Windows guest, shared folders are browseable and
+            therefore visible in Windows Explorer. To attach the host's
+            shared folder to your Windows guest, open Windows Explorer
+            and look for the folder in <b outputclass="bold">My
+            Networking Places</b>, <b outputclass="bold">Entire
+            Network</b>, <b outputclass="bold">Oracle VM VirtualBox
+            Shared Folders</b>. By right-clicking on a shared
+            folder and selecting <b outputclass="bold">Map Network
+            Drive</b> from the menu that pops up, you can assign
+            a drive letter to that shared folder.
+          </p>
+                        <p>
+            Alternatively, on the Windows command line, use the
+            following command:
+          </p>
+                        <pre xml:space="preserve">net use x: \\vboxsvr\sharename</pre>
+                        <p>
+            While <codeph>vboxsvr</codeph> is a fixed name, note that
+            <codeph>vboxsrv</codeph> would also work, replace
+            <varname>x:</varname> with the drive letter that you
+            want to use for the share, and
+            <varname>sharename</varname> with the share name
+            specified with <userinput>VBoxManage</userinput>.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+            In a Linux guest, use the following command:
+          </p>
+                        <pre xml:space="preserve">mount -t vboxsf [-o OPTIONS] sharename mountpoint</pre>
+                        <p>
+            To mount a shared folder during boot, add the following
+            entry to <filepath>/etc/fstab</filepath>:
+          </p>
+                        <pre xml:space="preserve">sharename   mountpoint   vboxsf   defaults  0   0</pre>
+                     </li>
+                     <li>
+                        <p>
+            In a Oracle Solaris guest, use the following command:
+          </p>
+                        <pre xml:space="preserve">mount -F vboxfs [-o OPTIONS] sharename mountpoint</pre>
+                        <p>
+            Replace <varname>sharename</varname>, use a
+            lowercase string, with the share name specified with
+            <userinput>VBoxManage</userinput> or VirtualBox Manager. Replace
+            <varname>mountpoint</varname> with the path where
+            you want the share to be mounted on the guest, such as
+            <filepath>/mnt/share</filepath>. The usual mount rules
+            apply. For example, create this directory first if it does
+            not exist yet.
+          </p>
+                        <p>
+            Here is an example of mounting the shared folder for the
+            user jack on Oracle Solaris:
+          </p>
+                        <pre xml:space="preserve">$ id
+uid=5000(jack) gid=1(other)
+$ mkdir /export/home/jack/mount
+$ pfexec mount -F vboxfs -o uid=5000,gid=1 jackshare /export/home/jack/mount
+$ cd ~/mount
+$ ls
+sharedfile1.mp3 sharedfile2.txt
+$</pre>
+                        <p>
+            Beyond the standard options supplied by the
+            <userinput>mount</userinput> command, the following are
+            available:
+          </p>
+                        <pre xml:space="preserve">iocharset CHARSET</pre>
+                        <p>
+            This option sets the character set used for I/O operations.
+            Note that on Linux guests, if the
+            <codeph>iocharset</codeph> option is not specified, then
+            the Guest Additions driver will attempt to use the character
+            set specified by the CONFIG_NLS_DEFAULT kernel option. If
+            this option is not set either, then UTF-8 is used.
+          </p>
+                        <pre xml:space="preserve">convertcp CHARSET</pre>
+                        <p>
+            This option specifies the character set used for the shared
+            folder name. This is UTF-8 by default.
+          </p>
+                        <p>
+            The generic mount options, documented in the
+            <userinput>mount</userinput> manual page, apply also. Especially
+            useful are the options <codeph>uid</codeph>,
+            <codeph>gid</codeph> and <codeph>mode</codeph>, as they
+            can allow access by normal users in read/write mode,
+            depending on the settings, even if root has mounted the
+            filesystem.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+            In an OS/2 guest, use the <userinput>VBoxControl</userinput>
+            command to manage shared folders. For example:
+          </p>
+                        <pre xml:space="preserve">VBoxControl sharedfolder use D: MyShareName
+VBoxControl sharedfolder unuse D:
+VBoxControl sharedfolder list</pre>
+                        <p>
+            As with Windows guests, shared folders can also be accessed
+            via UNC using <filepath>\\VBoxSF\</filepath>,
+            <filepath>\\VBoxSvr\</filepath> or
+            <filepath>\\VBoxSrv\</filepath> as the server name and the
+            shared folder name as <varname>sharename</varname>.
+          </p>
+                     </li>
+                  </ul>
+               </body>
+               
+            </topic>

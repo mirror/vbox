@@ -1,0 +1,76 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestxorgsetup">
+  <title>Guest Graphics and Mouse Driver Setup in Depth</title>
+  
+  <body>
+    <p>
+        This section assumes that you are familiar with configuring the
+        X.Org server using xorg.conf and optionally the newer mechanisms
+        using hal or udev and xorg.conf.d. If not you can learn about
+        them by studying the documentation which comes with X.Org.
+      </p>
+    <p>
+        The Oracle VM VirtualBox Guest Additions includes drivers for X.Org.
+        By default these drivers are in the following directory:
+      </p>
+    <p>
+      <filepath>/opt/VBoxGuestAdditions-<varname>version</varname>/other/</filepath>
+    </p>
+    <p>
+        The correct versions for the X server are symbolically linked
+        into the X.Org driver directories.
+      </p>
+    <p>
+        For graphics integration to work correctly, the X server must
+        load the <codeph>vboxvideo</codeph> driver. Many recent X
+        server versions look for it automatically if they see that they
+        are running in Oracle VM VirtualBox. For an optimal user experience,
+        the guest kernel drivers must be loaded and the Guest Additions
+        tool <userinput>VBoxClient</userinput> must be running as a client
+        in the X session.
+      </p>
+    <p>
+        For mouse integration to work correctly, the guest kernel
+        drivers must be loaded. In addition, for legacy X servers the
+        correct <codeph>vboxmouse</codeph> driver must be loaded and
+        associated with <filepath>/dev/mouse</filepath> or
+        <filepath>/dev/psaux</filepath>. For most guests, a driver for a
+        PS/2 mouse must be loaded and the correct vboxmouse driver must
+        be associated with <filepath>/dev/vboxguest</filepath>.
+      </p>
+    <p>
+        The Oracle VM VirtualBox guest graphics driver can use any graphics
+        configuration for which the virtual resolution fits into the
+        virtual video memory allocated to the virtual machine, minus a
+        small amount used by the guest driver, as described in
+        <xref href="settings-display.dita">Display Settings</xref>. The driver will offer a
+        range of standard modes at least up to the default guest
+        resolution for all active guest monitors. The default mode can
+        be changed by setting the output property VBOX_MODE to
+        "&lt;width&gt;x&lt;height&gt;" for any guest monitor. When
+        VBoxClient and the kernel drivers are active this is done
+        automatically when the host requests a mode change. The driver
+        for older versions can only receive new modes by querying the
+        host for requests at regular intervals.
+      </p>
+    <p>
+        With legacy X Servers before version 1.3, you can also add your
+        own modes to the X server configuration file. Add them to the
+        "Modes" list in the "Display" subsection of the "Screen"
+        section. For example, the following section has a custom
+        2048x800 resolution mode added:
+      </p>
+    <pre xml:space="preserve">Section "Screen"
+        Identifier    "Default Screen"
+        Device        "VirtualBox graphics card"
+        Monitor       "Generic Monitor"
+        DefaultDepth  24
+        SubSection "Display"
+                Depth         24
+                Modes         "2048x800" "800x600" "640x480"
+        EndSubSection
+EndSection</pre>
+  </body>
+  
+</topic>

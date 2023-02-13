@@ -1,0 +1,146 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="network_hostonly">
+  <title>Host-Only Networking</title>
+  
+  <body>
+    <p>
+      Host-only networking can be thought of as a hybrid between the
+      bridged and internal networking modes. As with bridged networking,
+      the virtual machines can talk to each other and the host as if
+      they were connected through a physical Ethernet switch. As with
+      internal networking, a physical networking interface need not be
+      present, and the virtual machines cannot talk to the world outside
+      the host since they are not connected to a physical networking
+      interface.
+    </p>
+    <p>
+      When host-only networking is used, Oracle VM VirtualBox creates a new
+      software interface on the host which then appears next to your
+      existing network interfaces. In other words, whereas with bridged
+      networking an existing physical interface is used to attach
+      virtual machines to, with host-only networking a new
+      <i>loopback</i> interface is created on the host.
+      And whereas with internal networking, the traffic between the
+      virtual machines cannot be seen, the traffic on the loopback
+      interface on the host can be intercepted.
+    </p>
+    <note>
+      <p>
+        Hosts running recent macOS versions do not support host-only
+        adapters. These adapters are replaced by host-only networks,
+        which define a network mask and an IP address range, where the
+        host network interface receives the lowest address in the range.
+      </p>
+      <p>
+        The host network interface gets added and removed dynamically by
+        the operating system, whenever a host-only network is used by
+        virtual machines.
+      </p>
+      <p>
+        On macOS hosts, choose the <b outputclass="bold">Host-Only
+        Network</b> option when configuring a network adapter.
+        The <b outputclass="bold">Host-Only Adapter</b> option is
+        provided for legacy support.
+      </p>
+    </note>
+    <p>
+      Host-only networking is particularly useful for preconfigured
+      virtual appliances, where multiple virtual machines are shipped
+      together and designed to cooperate. For example, one virtual
+      machine may contain a web server and a second one a database, and
+      since they are intended to talk to each other, the appliance can
+      instruct Oracle VM VirtualBox to set up a host-only network for the two.
+      A second, bridged, network would then connect the web server to
+      the outside world to serve data to, but the outside world cannot
+      connect to the database.
+    </p>
+    <p>
+      To enable a host-only network interface for a virtual machine, do
+      either of the following:
+    </p>
+    <ul>
+      <li>
+        <p>
+          Go to the <b outputclass="bold">Network</b> page in the
+          virtual machine's <b outputclass="bold">Settings</b>
+          dialog and select an <b outputclass="bold">Adapter</b>
+          tab. Ensure that the <b outputclass="bold">Enable Network
+          Adapter</b> check box is selected and choose
+          <b outputclass="bold">Host-Only Adapter</b> for the
+          <b outputclass="bold">Attached To</b> field.
+        </p>
+      </li>
+      <li>
+        <p>
+          On the command line, use <userinput>VBoxManage modifyvm
+         vmname --nic <varname>x</varname> hostonly</userinput>. See
+          <xref href="man_VBoxManage-modifyvm.dita#vboxmanage-modifyvm"/>.
+        </p>
+      </li>
+    </ul>
+    <p>
+      For host-only networking, as with internal networking, you may
+      find the DHCP server useful that is built into Oracle VM VirtualBox.
+      This is enabled by default and manages the IP addresses in the
+      host-only network. Without the DHCP server you would need to
+      configure all IP addresses statically.
+    </p>
+    <ul>
+      <li>
+        <p>
+          In VirtualBox Manager you can configure the DHCP server by choosing
+          <b outputclass="bold">File</b>,
+          <b outputclass="bold">Tools</b>,
+          <b outputclass="bold">Network Manager</b>. The Network
+          Manager window lists all host-only networks which are
+          presently in use. Select the network name and then use the
+          <b outputclass="bold">DHCP Server</b> tab to configure
+          DHCP server settings. See <xref href="network-manager.dita#network-manager"/>.
+        </p>
+      </li>
+      <li>
+        <p>
+          Alternatively, you can use the <userinput>VBoxManage
+          dhcpserver</userinput> command. See
+          <xref href="man_VBoxManage-dhcpserver.dita#vboxmanage-dhcpserver"/>.
+        </p>
+      </li>
+    </ul>
+    <note>
+      <p>
+        On Linux and macOS hosts the number of host-only interfaces is
+        limited to 128. There is no such limit for Oracle Solaris and
+        Windows hosts.
+      </p>
+    </note>
+    <p>
+      On Linux, macOS and Solaris Oracle VM VirtualBox will only allow IP
+      addresses in 192.168.56.0/21 range to be assigned to host-only
+      adapters. For IPv6 only link-local addresses are allowed. If other
+      ranges are desired, they can be enabled by creating
+      <filepath>/etc/vbox/networks.conf</filepath> and specifying
+      allowed ranges there. For example, to allow 10.0.0.0/8 and
+      192.168.0.0/16 IPv4 ranges as well as 2001::/64 range put the
+      following lines into <filepath>/etc/vbox/networks.conf</filepath>:
+    </p>
+    <pre xml:space="preserve">      * 10.0.0.0/8 192.168.0.0/16
+      * 2001::/64
+      </pre>
+    <p>
+      Lines starting with the hash <userinput>#</userinput> are ignored. The
+      following example allows any addresses, effectively disabling
+      range control:
+    </p>
+    <pre xml:space="preserve">      * 0.0.0.0/0 ::/0
+      </pre>
+    <p>
+      If the file exists, but no ranges are specified in it, no
+      addresses will be assigned to host-only adapters. The following
+      example effectively disables all ranges:
+    </p>
+    <pre xml:space="preserve">      # No addresses are allowed for host-only adapters
+      </pre>
+  </body>
+  
+</topic>

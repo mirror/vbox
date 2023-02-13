@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="storage">
+         <title>Virtual Storage</title>
+         
+         <body>
+            <p>
+    As the virtual machine will most probably expect to see a hard disk
+    built into its virtual computer, Oracle VM VirtualBox must be able to
+    present real storage to the guest as a virtual hard disk. There are
+    presently three methods by which to achieve this:
+  </p>
+            <ul>
+               <li>
+                  <p>
+        Oracle VM VirtualBox can use large image files on a real hard disk and
+        present them to a guest as a virtual hard disk. This is the most
+        common method, described in <xref href="vdidetails.dita#vdidetails"/>.
+      </p>
+               </li>
+               <li>
+                  <p>
+        iSCSI storage servers can be attached to Oracle VM VirtualBox. This is
+        described in <xref href="storage-iscsi.dita#storage-iscsi"/>.
+      </p>
+               </li>
+               <li>
+                  <p>
+        You can allow a virtual machine to access one of your host disks
+        directly. This is an advanced feature, described in
+        <xref href="rawdisk.dita">Using a Raw Host Hard Disk From a Guest</xref>.
+      </p>
+               </li>
+            </ul>
+            <p>
+    Each such virtual storage device, such as an image file, iSCSI
+    target, or physical hard disk, needs to be connected to the virtual
+    hard disk controller that Oracle VM VirtualBox presents to a virtual
+    machine. This is explained in the next section.
+  </p>
+         </body>
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+      </topic>

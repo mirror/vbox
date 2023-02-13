@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="glossentry-pae">
+  <title>PAE</title>
+  <body>
+    <section>
+      <p>
+        Physical Address Extension. This enables access to more than 4 GB 
+        of RAM, even in 32-bit environments. See <xref href="settings-general-advanced.dita"/>. 
+      </p>
+    </section>
+  </body>
+</topic>

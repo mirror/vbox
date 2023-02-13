@@ -1,0 +1,206 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxwatchdog-linux">
+  <title>Linux: Starting the Watchdog Service With init</title>
+  
+  <body>
+    <p>
+        On Linux, the watchdog service can be automatically started
+        during host boot by adding appropriate parameters to the file
+        <filepath>/etc/default/virtualbox</filepath>. There is one
+        mandatory parameter, <codeph>VBOXWATCHDOG_USER</codeph>, which
+        must be set to the user which will later start the VMs. For
+        backward compatibility you can also specify
+        <codeph>VBOXBALLOONCTRL_USER</codeph>.
+      </p>
+    <p>
+        The parameters in the following table all start with the
+        <codeph>VBOXWATCHDOG_</codeph> prefix string. For example:
+        <codeph>VBOXWATCHDOG_BALLOON_INTERVAL</codeph> and
+        <codeph>VBOXWATCHDOG_LOGSIZE</codeph>. Legacy parameters such
+        as <codeph>VBOXBALLOONCTRL_INTERVAL</codeph> can still be
+        used.
+      </p>
+    <table id="table-vboxwatchdog-config-params">
+      <title>Oracle VM VirtualBox Watchdog Configuration Parameters</title>
+      <tgroup cols="3">       
+        <thead>
+          <row>
+            <entry>
+              <p>
+                <b outputclass="bold">Parameter</b>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                <b outputclass="bold">Description</b>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                <b outputclass="bold">Default</b>
+              </p>
+            </entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>
+              <p>
+                <codeph>USER</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  The user which the watchdog service runs as
+                </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>ROTATE</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Number of log files, 0 disables log rotation
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  10
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>LOGSIZE</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Maximum log file size to trigger rotation, in bytes
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  1MB
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>LOGINTERVAL</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Maximum time interval to trigger log rotation, in
+                  seconds
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  1 day
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>BALLOON_INTERVAL</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Interval for checking the balloon size, in
+                  milliseconds
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  30000
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>BALLOON_INCREMENT</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Balloon size increment, in megabytes
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  256
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>BALLOON_DECREMENT</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Balloon size decrement, in megabytes
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  128
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>BALLOON_LOWERLIMIT</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Balloon size lower limit, in megabytes
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  64
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>BALLOON_SAFETYMARGIN</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Free memory required for decreasing the balloon size,
+                  in megabytes
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  1024
+                </p>
+            </entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+  </body>
+  
+</topic>

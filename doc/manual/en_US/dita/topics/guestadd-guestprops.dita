@@ -1,0 +1,145 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestadd-guestprops">
+  <title>Guest Properties</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox enables requests of some properties from a running
+      guest, provided that the Oracle VM VirtualBox Guest Additions are
+      installed and the VM is running. This provides the following
+      advantages:
+    </p>
+    <ul>
+      <li>
+        <p>
+          A number of predefined VM characteristics are automatically
+          maintained by Oracle VM VirtualBox and can be retrieved on the host.
+          For example, to monitor VM performance and statistics.
+        </p>
+      </li>
+      <li>
+        <p>
+          Arbitrary string data can be exchanged between guest and host.
+          This works in both directions.
+        </p>
+      </li>
+    </ul>
+    <p>
+      To accomplish this, Oracle VM VirtualBox establishes a private
+      communication channel between the Oracle VM VirtualBox Guest Additions
+      and the host, and software on both sides can use this channel to
+      exchange string data for arbitrary purposes. Guest properties are
+      simply string keys to which a value is attached. They can be set,
+      or written to, by either the host and the guest. They can also be
+      read from both sides.
+    </p>
+    <p>
+      In addition to establishing the general mechanism of reading and
+      writing values, a set of predefined guest properties is
+      automatically maintained by the Oracle VM VirtualBox Guest Additions to
+      allow for retrieving interesting guest data such as the guest's
+      exact operating system and service pack level, the installed
+      version of the Guest Additions, users that are currently logged
+      into the guest OS, network statistics and more. These predefined
+      properties are all prefixed with <codeph>/VirtualBox/</codeph>
+      and organized into a hierarchical tree of keys.
+    </p>
+    <p>
+      Some of this runtime information is shown when you select
+      <b outputclass="bold">Session Information Dialog</b> from a
+      virtual machine's <b outputclass="bold">Machine</b> menu.
+    </p>
+    <p>
+      A more flexible way to use this channel is with the
+      <userinput>VBoxManage guestproperty</userinput> command. See
+      <xref href="man_VBoxManage-guestproperty.dita#vboxmanage-guestproperty"/>. For example, to have
+      <i>all</i> the available guest properties for a
+      given running VM listed with their respective values, use this
+      command:
+    </p>
+    <pre xml:space="preserve">$ VBoxManage guestproperty enumerate "Windows Vista III"
+VirtualBox Command Line Management Interface Version <varname>version-number</varname>
+Copyright (C) 2005-2022 Oracle and/or its affiliates
+
+Name: /VirtualBox/GuestInfo/OS/Product, value: Windows Vista Business Edition,
+    timestamp: 1229098278843087000, flags:
+Name: /VirtualBox/GuestInfo/OS/Release, value: 6.0.6001,
+    timestamp: 1229098278950553000, flags:
+Name: /VirtualBox/GuestInfo/OS/ServicePack, value: 1,
+    timestamp: 1229098279122627000, flags:
+Name: /VirtualBox/GuestAdd/InstallDir,
+    value: C:/Program Files/Oracle/VirtualBox
+    Guest Additions, timestamp: 1229098279269739000, flags:
+Name: /VirtualBox/GuestAdd/Revision, value: 40720,
+    timestamp: 1229098279345664000, flags:
+Name: /VirtualBox/GuestAdd/Version, value: <varname>version-number</varname>,
+    timestamp: 1229098279479515000, flags:
+Name: /VirtualBox/GuestAdd/Components/VBoxControl.exe, value: <varname>version-number</varname>r40720,
+    timestamp: 1229098279651731000, flags:
+Name: /VirtualBox/GuestAdd/Components/VBoxHook.dll, value: <varname>version-number</varname>r40720,
+    timestamp: 1229098279804835000, flags:
+Name: /VirtualBox/GuestAdd/Components/VBoxDisp.dll, value: <varname>version-number</varname>r40720,
+    timestamp: 1229098279880611000, flags:
+Name: /VirtualBox/GuestAdd/Components/VBoxMRXNP.dll, value: <varname>version-number</varname>r40720,
+    timestamp: 1229098279882618000, flags:
+Name: /VirtualBox/GuestAdd/Components/VBoxService.exe, value: <varname>version-number</varname>r40720,
+    timestamp: 1229098279883195000, flags:
+Name: /VirtualBox/GuestAdd/Components/VBoxTray.exe, value: <varname>version-number</varname>r40720,
+    timestamp: 1229098279885027000, flags:
+Name: /VirtualBox/GuestAdd/Components/VBoxGuest.sys, value: <varname>version-number</varname>r40720,
+    timestamp: 1229098279886838000, flags:
+Name: /VirtualBox/GuestAdd/Components/VBoxMouse.sys, value: <varname>version-number</varname>r40720,
+    timestamp: 1229098279890600000, flags:
+Name: /VirtualBox/GuestAdd/Components/VBoxSF.sys, value: <varname>version-number</varname>r40720,
+    timestamp: 1229098279893056000, flags:
+Name: /VirtualBox/GuestAdd/Components/VBoxVideo.sys, value: <varname>version-number</varname>r40720,
+    timestamp: 1229098279895767000, flags:
+Name: /VirtualBox/GuestInfo/OS/LoggedInUsers, value: 1,
+    timestamp: 1229099826317660000, flags:
+Name: /VirtualBox/GuestInfo/OS/NoLoggedInUsers, value: false,
+    timestamp: 1229098455580553000, flags:
+Name: /VirtualBox/GuestInfo/Net/Count, value: 1,
+    timestamp: 1229099826299785000, flags:
+Name: /VirtualBox/HostInfo/GUI/LanguageID, value: C,
+    timestamp: 1229098151272771000, flags:
+Name: /VirtualBox/GuestInfo/Net/0/V4/IP, value: 192.168.2.102,
+    timestamp: 1229099826300088000, flags:
+Name: /VirtualBox/GuestInfo/Net/0/V4/Broadcast, value: 255.255.255.255,
+    timestamp: 1229099826300220000, flags:
+Name: /VirtualBox/GuestInfo/Net/0/V4/Netmask, value: 255.255.255.0,
+    timestamp: 1229099826300350000, flags:
+Name: /VirtualBox/GuestInfo/Net/0/Status, value: Up,
+    timestamp: 1229099826300524000, flags:
+Name: /VirtualBox/GuestInfo/OS/LoggedInUsersList, value: username,
+    timestamp: 1229099826317386000, flags:</pre>
+    <p>
+      To query the value of a single property, use the
+      <userinput>get</userinput> subcommand as follows:
+    </p>
+    <pre xml:space="preserve">$ VBoxManage guestproperty get "Windows Vista III" "/VirtualBox/GuestInfo/OS/Product"
+VirtualBox Command Line Management Interface Version <varname>version-number</varname>
+Copyright (C) 2005-2022 Oracle and/or its affiliates
+
+Value: Windows Vista Business Edition</pre>
+    <p>
+      To add or change guest properties from the guest, use the tool
+      <userinput>VBoxControl</userinput>. This tool is included in the Guest
+      Additions. When started from a Linux guest, this tool requires
+      root privileges for security reasons.
+    </p>
+    <pre xml:space="preserve">$ sudo VBoxControl guestproperty enumerate
+VirtualBox Guest Additions Command Line Management Interface Version <varname>version-number</varname>
+Copyright (C) 2005-2022 Oracle and/or its affiliates
+
+Name: /VirtualBox/GuestInfo/OS/Release, value: 2.6.28-18-generic,
+    timestamp: 1265813265835667000, flags: &lt;NULL&gt;
+Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:03 UTC 2010,
+    timestamp: 1265813265836305000, flags: &lt;NULL&gt;
+      ...</pre>
+    <p>
+      For more complex needs, you can use the Oracle VM VirtualBox programming
+      interfaces. See <xref href="VirtualBoxAPI.dita">Oracle VM VirtualBox Programming Interfaces</xref>.
+    </p>
+  </body>
+</topic>

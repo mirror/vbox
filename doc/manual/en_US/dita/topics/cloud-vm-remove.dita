@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-vm-remove">
+  <title>Removing a Cloud VM</title>
+  
+  <body>
+    <p>
+          You can use VirtualBox Manager to remove a cloud VM as follows:
+        </p>
+    <p>
+          Right-click on the cloud VM name and select
+          <b outputclass="bold">Remove</b>.
+        </p>
+    <ul>
+      <li>
+        <p>
+              Click <b outputclass="bold">Remove Only</b> to
+              remove the cloud VM from the machine list in VirtualBox
+              Manager.
+            </p>
+      </li>
+      <li>
+        <p>
+              Click <b outputclass="bold">Delete Everything</b>
+              to remove the cloud VM from VirtualBox Manager and also to delete
+              the Oracle Cloud Infrastructure instance and any associated boot volumes.
+            </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_win98-guest-usb-tablet-coordinates">
+  <title>USB Tablet Coordinates Wrong in Windows 98 Guests</title>
+  
+  <body>
+    <p>
+        If a Windows 98 VM is configured to use the emulated USB tablet
+        (absolute pointing device), the coordinate translation may be
+        incorrect and the pointer is restricted to the upper left
+        quarter of the guest's screen.
+      </p>
+    <p>
+        The USB HID (Human Interface Device) drivers in Windows 98 are
+        very old and do not handle tablets in the same way as modern
+        operating systems do. To work around the problem, use the
+        following command:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> "VBoxInternal/USB/HidMouse/0/Config/CoordShift" 0</pre>
+    <p>
+        To restore the default behavior, remove the key or set its value
+        to 1.
+      </p>
+  </body>
+  
+</topic>

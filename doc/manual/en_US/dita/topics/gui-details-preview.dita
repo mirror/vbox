@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="gui-details-preview">
+  <title>Preview Window</title>
+  
+  <body>
+    <p>
+          The virtual machine display is shown in a small window.
+        </p>
+    <p>
+          You can use the Preview window to check if your virtual
+          machine has finished booting up.
+        </p>
+    <p>
+          Click the arrow icon to hide or show the Preview window.
+        </p>
+  </body>
+  
+</topic>

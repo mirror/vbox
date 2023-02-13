@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="preface">
+  <title>Preface</title>
+  
+  <body>
+    <p>
+      This document provides information on the advanced features 
+      of Oracle VM VirtualBox.
+  </p>
+  </body>
+</topic>

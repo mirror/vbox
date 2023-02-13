@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="install-solaris-performing">
+  <title>Performing the Installation</title>
+  
+  <body>
+    <p>
+        Oracle VM VirtualBox is available as a standard Oracle Solaris
+        package. Download the Oracle VM VirtualBox SunOS package, which
+        includes the 64-bit version of Oracle VM VirtualBox. <i>The
+        installation must be performed as root and from the global
+        zone</i>. This is because the Oracle VM VirtualBox installer
+        loads kernel drivers, which cannot be done from non-global
+        zones. To verify which zone you are currently in, execute the
+        <userinput>zonename</userinput> command.
+      </p>
+    <p>
+        To start installation, run the following commands:
+      </p>
+    <pre xml:space="preserve">gunzip -cd VirtualBox-<varname>version-number</varname>-SunOS.tar.gz | tar xvf -</pre>
+    <p>
+        The Oracle VM VirtualBox kernel package is integrated into the main
+        package. Install the Oracle VM VirtualBox package as follows:
+      </p>
+    <pre xml:space="preserve">pkgadd -d VirtualBox-<varname>version-number</varname>-SunOS.pkg</pre>
+    <p>
+        The installer will then prompt you to enter the package you wish
+        to install. Choose <b outputclass="bold">1</b> or
+        <b outputclass="bold">all</b> and proceed. Next the
+        installer will ask you if you want to allow the postinstall
+        script to be executed. Choose <b outputclass="bold">y</b>
+        and proceed, as it is essential to execute this script which
+        installs the Oracle VM VirtualBox kernel module. Following this
+        confirmation the installer will install Oracle VM VirtualBox and
+        execute the postinstall setup script.
+      </p>
+    <p>
+        Once the postinstall script has been executed your installation
+        is now complete. You may now safely delete the uncompressed
+        package and <filepath>autoresponse</filepath> files from your
+        system. Oracle VM VirtualBox is installed in
+        <filepath>/opt/VirtualBox</filepath>.
+      </p>
+    <note>
+      <p>
+          If you need to use Oracle VM VirtualBox from non-global zones, see
+          <xref href="solaris-zones.dita#solaris-zones"/>.
+        </p>
+    </note>
+  </body>
+  
+</topic>

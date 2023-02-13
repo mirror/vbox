@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="security-encryption">
+  <title>Encryption</title>
+  
+  <body>
+    <p>
+        The following components of Oracle VM VirtualBox use encryption to
+        protect sensitive data:
+      </p>
+    <ul>
+      <li>
+        <p>
+            When using the Oracle VM VirtualBox Extension Pack provided by
+            Oracle for VRDP remote desktop support, RDP data can
+            optionally be encrypted. See <xref href="vrde-crypt.dita#vrde-crypt"/>.
+            Only the Enhanced RDP Security method (RDP5.2) with TLS
+            protocol provides a secure connection. Standard RDP Security
+            (RDP4 and RDP5.1) is vulnerable to a man-in-the-middle
+            attack.
+          </p>
+      </li>
+      <li>
+        <p>
+            When using the Oracle VM VirtualBox Extension Pack provided by
+            Oracle for disk encryption, the data stored in disk images
+            can optionally be encrypted. See
+            <xref href="diskencryption.dita#diskencryption"/>. This feature covers disk
+            image content only. All other data for a virtual machine is
+            stored unencrypted, including the VM's memory and device
+            state which is stored as part of a saved state, both when
+            created explicitly or part of a snapshot of a running VM.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

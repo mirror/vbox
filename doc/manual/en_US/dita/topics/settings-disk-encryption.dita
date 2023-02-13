@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="settings-disk-encryption">
+               <title>Disk Encryption Tab</title>
+               
+               <body>
+                  <p>
+        The <b outputclass="bold">Disk Encryption</b> tab enables
+        you to encrypt disks that are attached to the virtual machine.
+      </p>
+                  <p>
+        To enable disk encryption, select the
+        <b outputclass="bold">Enable Disk Encryption</b> check
+        box.
+      </p>
+                  <p>
+        Settings are available to configure the cipher used for
+        encryption and the encryption password.
+      </p>
+                  <note>
+                     <p>
+          All files related to the virtual machine except disk images
+          are stored unencrypted. To encrypt these files, use the
+          <userinput>VBoxManage encryptvm</userinput> command as described
+          in <xref href="vmencryption.dita">Encryption of VMs</xref>.
+        </p>
+                  </note>
+               </body>
+               
+            </topic>

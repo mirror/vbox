@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_host-powermgmt">
+  <title>Poor Performance Caused by Host Power Management</title>
+  
+  <body>
+    <p>
+        On some hardware platforms and operating systems, virtualization
+        performance is negatively affected by host CPU power management.
+        The symptoms may be choppy audio in the guest or erratic guest
+        clock behavior.
+      </p>
+    <p>
+        Some of the problems may be caused by firmware and/or host
+        operating system bugs. Therefore, updating the firmware and
+        applying operating systems fixes is recommended.
+      </p>
+    <p>
+        For optimal virtualization performance, the C1E power state
+        support in the system's BIOS should be disabled, if such a
+        setting is available. Not all systems support the C1E power
+        state. On Intel systems, the <codeph>Intel C State</codeph>
+        setting should be disabled. Disabling other power management
+        settings may also improve performance. However, a balance
+        between performance and power consumption must always be
+        considered.
+      </p>
+  </body>
+  
+</topic>

@@ -1,0 +1,80 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="preface-conventions">
+  <title id="conventions-title">Conventions</title>
+  <body>
+    <section id="conventions-body">
+      <p>
+        The following text conventions are used in this document:
+      </p>
+      <table frame="all">
+        <desc>
+          <ph>This table summarizes conventions used in this
+          document.</ph>
+        </desc>
+        <tgroup cols="2">
+          <colspec colnum="1" colwidth="25*"/>
+          <colspec colnum="2" colwidth="75*"/>
+          <thead>
+            <row>
+              <entry outputclass="col">
+                <p>
+                  Convention
+                </p>
+              </entry>
+              <entry outputclass="col">
+                <p>
+                  Meaning
+                </p>
+              </entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry outputclass="row">
+                <p>
+                  <b>boldface</b>
+                </p>
+              </entry>
+              <entry>
+                <p>
+                  Boldface type indicates graphical user interface
+                  elements associated with an action, or terms defined
+                  in text or the glossary.
+                </p>
+              </entry>
+            </row>
+            <row>
+              <entry outputclass="row">
+                <p>
+                  <i>italic</i>
+                </p>
+              </entry>
+              <entry>
+                <p>
+                  Italic type indicates book titles, emphasis, or
+                  placeholder variables for which you supply particular
+                  values.
+                </p>
+              </entry>
+            </row>
+            <row>
+              <entry outputclass="row">
+                <p>
+                  <codeph>monospace</codeph>
+                </p>
+              </entry>
+              <entry>
+                <p>
+                  Monospace type indicates commands within a paragraph,
+                  URLs, code in examples, text that appears on the
+                  screen, or text that you enter.
+                </p>
+              </entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </section>
+  </body>
+</topic>

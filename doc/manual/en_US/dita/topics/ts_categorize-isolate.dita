@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_categorize-isolate">
+  <title>Categorizing and Isolating Problems</title>
+  
+  <body>
+    <p>
+        More often than not, a virtualized guest behaves like a physical
+        system. Any problems that a physical machine would encounter, a
+        virtual machine will encounter as well. If, for example,
+        Internet connectivity is lost due to external issues, virtual
+        machines will be affected just as much as physical ones.
+      </p>
+    <p>
+        If a true Oracle VM VirtualBox problem is encountered, it helps to
+        categorize and isolate the problem first. Here are some of the
+        questions that should be answered before reporting a problem:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Is the problem specific to a certain guest OS? Or a specific
+            release of a guest OS? Especially with Linux guest related
+            problems, the issue may be specific to a certain
+            distribution and version of Linux.
+          </p>
+      </li>
+      <li>
+        <p>
+            Is the problem specific to a certain host OS? Problems are
+            usually not host OS specific, because most of the
+            Oracle VM VirtualBox code base is shared across all supported
+            platforms, but especially in the areas of networking and USB
+            support, there are significant differences between host
+            platforms. Some GUI related issues are also host specific.
+          </p>
+      </li>
+      <li>
+        <p>
+            Is the problem specific to certain host hardware? This
+            category of issues is typically related to the host CPU.
+            Because of significant differences between VT-x and AMD-V,
+            problems may be specific to one or the other technology. The
+            exact CPU model may also make a difference because different
+            CPUs support different features, which may affect certain
+            aspects of guest CPU operation.
+          </p>
+      </li>
+      <li>
+        <p>
+            Is the problem specific to guest SMP? That is, is it related
+            to the number of virtual CPUs (VCPUs) in the guest? Using
+            more than one CPU usually significantly affects the internal
+            operation of a guest OS.
+          </p>
+      </li>
+      <li>
+        <p>
+            Is the problem specific to the Guest Additions? In some
+            cases, this is obvious, such as a shared folders problem. In
+            other cases such as display problems, it may be less
+            obvious. If the problem is Guest Additions specific, is it
+            also specific to a certain version of the Guest Additions?
+          </p>
+      </li>
+      <li>
+        <p>
+            Is the problem specific to a certain environment? Some
+            problems are related to a particular environment external to
+            the VM. This usually involves network setup. Certain
+            configurations of external servers such as DHCP or PXE may
+            expose problems which do not occur with other, similar
+            servers.
+          </p>
+      </li>
+      <li>
+        <p>
+            Is the problem a regression? Knowing that an issue is a
+            regression usually makes it significantly easier to find the
+            solution. In this case, it is crucial to know which version
+            is affected and which is not.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

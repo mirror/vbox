@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestadd-dnd-limitations">
+  <title>Known Limitations</title>
+  
+  <body>
+    <p>
+        The following limitations are known for drag and drop:
+      </p>
+    <p>
+        On Windows hosts, dragging and dropping content between
+        UAC-elevated (User Account Control) programs and
+        non-UAC-elevated programs is not allowed. If you start
+        Oracle VM VirtualBox with Administrator privileges then drag and drop
+        will not work with Windows Explorer, which runs with regular
+        user privileges by default.
+      </p>
+    <p>
+        On Linux hosts and guests, programs can query for drag and drop
+        data while the drag operation is still in progress. For example,
+        on LXDE using the PCManFM file manager. This currently is not
+        supported. As a workaround, a different file manager, such as
+        Nautilus, can be used instead.
+      </p>
+  </body>
+  
+</topic>

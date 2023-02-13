@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="usbip-setup-server">
+  <title>Setting up USB/IP Support on a Linux System</title>
+  
+  <body>
+    <p>
+        This section gives a brief overview on how to set up a Linux
+        based system to act as a USB device server. The system on the
+        server requires that the <filepath>usbip-core.ko</filepath> and
+        <filepath>usbip-host.ko</filepath> kernel drivers are available,
+        and that the USB/IP tools package is installed. The particular
+        installation method for the necessary tools depends on which
+        distribution is used. For example, for Debian based systems, use
+        the following command to install the required tools:
+      </p>
+    <pre xml:space="preserve">$ apt-get install usbip-utils</pre>
+    <p>
+        To check whether the necessary tools are already installed use
+        the following command:
+      </p>
+    <pre xml:space="preserve">$ usbip list -l
+      </pre>
+    <p>
+        This should produce output similar to that shown in the example
+        below:
+      </p>
+    <pre xml:space="preserve"> - busid 4-2 (0bda:0301)
+   Realtek Semiconductor Corp. : multicard reader (0bda:0301)
+
+ - busid 5-1 (046d:c52b)
+   Logitech, Inc. : Unifying Receiver (046d:c52b)
+      </pre>
+    <p>
+        If everything is installed, the USB/IP server needs to be
+        started as <codeph>root</codeph> using the following command:
+      </p>
+    <pre xml:space="preserve"># usbipd -D</pre>
+    <p>
+        See the documentation for the installed distribution to
+        determine how to start the service when the system boots.
+      </p>
+    <p>
+        By default, no device on the server is exported. This must be
+        done manually for each device. To export a device use the
+        following command:
+      </p>
+    <pre xml:space="preserve"># usbip bind -b "bus identifier"</pre>
+    <p>
+        To export the multicard reader in the previous example:
+      </p>
+    <pre xml:space="preserve"># usbip bind -b 4-2</pre>
+  </body>
+  
+</topic>

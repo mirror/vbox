@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="webcam-win-hosts">
+  <title>Windows Hosts</title>
+  
+  <body>
+    <p>
+        When the webcam device is detached from the host, the emulated
+        webcam device is automatically detached from the guest.
+      </p>
+  </body>
+  
+</topic>

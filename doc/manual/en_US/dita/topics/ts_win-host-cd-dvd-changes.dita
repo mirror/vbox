@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_win-host-cd-dvd-changes">
+  <title>CD and DVD Changes Not Recognized</title>
+  
+  <body>
+    <p>
+        In case you have assigned a physical CD or DVD drive to a guest
+        and the guest does not notice when the medium changes, make sure
+        that the Windows media change notification (MCN) feature is not
+        turned off. This is represented by the following key in the
+        Windows registry:
+      </p>
+    <pre xml:space="preserve">HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\Cdrom\Autorun</pre>
+    <p>
+        Certain applications may disable this key against Microsoft's
+        advice. If it is set to 0, change it to 1 and reboot your
+        system. Oracle VM VirtualBox relies on Windows notifying it of media
+        changes.
+      </p>
+  </body>
+  
+</topic>

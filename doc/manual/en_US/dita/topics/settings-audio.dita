@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="settings-audio">
+  <title>Audio Settings</title>
+  
+  <body>
+    <p>
+      The <b outputclass="bold">Audio</b> section in a virtual
+      machine's <b outputclass="bold">Settings</b> window
+      determines whether the VM will detect a connected sound card, and
+      if the audio output should be played on the host system.
+    </p>
+    <p>
+      To enable audio for a guest, select the
+      <b outputclass="bold">Enable Audio</b> check box. The
+      following settings are available:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Host Audio Driver:</b> The audio
+          driver that Oracle VM VirtualBox uses on the host.
+        </p>
+        <p>
+          The <b outputclass="bold">Default</b> option is enabled
+          by default for all new VMs. This option selects the best audio
+          driver for the host platform automatically. This enables you
+          to move VMs between different platforms without having to
+          change the audio driver.
+        </p>
+        <p>
+          On a Linux host, depending on your host configuration, you can
+          select between the OSS, ALSA, or the PulseAudio subsystem. On
+          newer Linux distributions, the PulseAudio subsystem is
+          preferred.
+        </p>
+        <p>
+          Only OSS is supported on Oracle Solaris hosts. The Oracle
+          Solaris Audio audio backend is no longer supported on Oracle
+          Solaris hosts.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Audio Controller:</b> You can
+          choose between the emulation of an Intel AC'97 controller, an
+          Intel HD Audio controller, or a SoundBlaster 16 card.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Enable Audio Output:</b> Enables
+          audio output only for the VM.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Enable Audio Input:</b> Enables
+          audio input only for the VM.
+        </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

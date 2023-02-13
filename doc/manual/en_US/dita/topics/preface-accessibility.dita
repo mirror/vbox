@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="preface-accessibility">
+  <title>Access to Oracle Support for Accessibility</title>
+  <body>
+    <section id="accessibility-body">
+      <p> Oracle customers that have purchased support have access to electronic support through My
+        Oracle Support. For information, visit <xref href="https://www.oracle.com/corporate/accessibility/learning-support.html#support-tab" format="html" scope="external"/>. </p>
+    </section>
+  </body>
+</topic>

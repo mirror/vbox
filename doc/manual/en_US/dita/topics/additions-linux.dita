@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="additions-linux">
+  <title>Guest Additions for Linux</title>
+  
+  <body>
+    <p>
+        Like the Windows Guest Additions, the Oracle VM VirtualBox Guest
+        Additions for Linux are a set of device drivers and system
+        applications which may be installed in the guest operating
+        system.
+      </p>
+    <p>
+        The following Linux distributions are officially supported:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Oracle Linux as of version 5, including UEK kernels
+          </p>
+      </li>
+      <li>
+        <p>
+            Fedora as of Fedora Core 4
+          </p>
+      </li>
+      <li>
+        <p>
+            Red Hat Enterprise Linux as of version 3
+          </p>
+      </li>
+      <li>
+        <p>
+            SUSE and openSUSE Linux as of version 9
+          </p>
+      </li>
+      <li>
+        <p>
+            Ubuntu as of version 5.10
+          </p>
+      </li>
+    </ul>
+    <p>
+        Many other distributions are known to work with the Guest
+        Additions.
+      </p>
+    <p>
+        The version of the Linux kernel supplied by default in SUSE and
+        openSUSE 10.2, Ubuntu 6.10 (all versions) and Ubuntu 6.06
+        (server edition) contains a bug which can cause it to crash
+        during startup when it is run in a virtual machine. The Guest
+        Additions work in those distributions.
+      </p>
+    <p>
+        Note that some Linux distributions already come with all or part
+        of the Oracle VM VirtualBox Guest Additions. You may choose to keep
+        the distribution's version of the Guest Additions but these are
+        often not up to date and limited in functionality, so we
+        recommend replacing them with the Guest Additions that come with
+        Oracle VM VirtualBox. The Oracle VM VirtualBox Linux Guest Additions
+        installer tries to detect an existing installation and replace
+        them but depending on how the distribution integrates the Guest
+        Additions, this may require some manual interaction. It is
+        highly recommended to take a snapshot of the virtual machine
+        before replacing preinstalled Guest Additions.
+      </p>
+  </body>
+</topic>

@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="webcam-linux-hosts">
+  <title>Linux and Oracle Solaris Hosts</title>
+  
+  <body>
+    <p>
+        When the webcam is detached from the host the emulated webcam
+        device is automatically detached from the guest only if the
+        webcam is streaming video. If the emulated webcam is inactive it
+        should be manually detached using the <userinput>VBoxManage
+        controlvm <varname>VM-name</varname> webcam
+        detach</userinput> command.
+      </p>
+    <p>
+        Aliases <filepath>.0</filepath> and <filepath>.1</filepath> are
+        mapped to <filepath>/dev/video0</filepath>, alias
+        <filepath>.2</filepath> is mapped to
+        <filepath>/dev/video1</filepath> and so forth.
+      </p>
+  </body>
+  
+</topic>

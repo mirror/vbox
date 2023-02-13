@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="storage-cds">
+            <title>CD/DVD Support</title>
+            
+            <body>
+               <p>
+      Virtual CD/DVD drives by default support only reading. The medium
+      configuration is changeable at runtime. You can select between the
+      following options to provide the medium data:
+    </p>
+               <ul>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Host Drive</b> defines that the
+          guest can read from the medium in the host drive.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Image file</b> gives the guest
+          read-only access to the data in the image. This is typically
+          an ISO file.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Empty</b> means a drive without
+          an inserted medium.
+        </p>
+                  </li>
+               </ul>
+               <p>
+      Changing between the above, or changing a medium in the host drive
+      that is accessed by a machine, or changing an image file will
+      signal a medium change to the guest OS. The guest OS can then
+      react to the change, for example by starting an installation
+      program.
+    </p>
+               <p>
+      Medium changes can be prevented by the guest, and Oracle VM VirtualBox
+      reflects that by locking the host drive if appropriate. You can
+      force a medium removal in such situations by using the VirtualBox
+      Manager or the <userinput>VBoxManage</userinput> command line tool.
+      Effectively this is the equivalent of the emergency eject which
+      many CD/DVD drives provide, with all associated side effects. The
+      guest OS can issue error messages, just like on real hardware, and
+      guest applications may misbehave. Use this with caution.
+    </p>
+               <note>
+                  <p>
+        The identification string of the drive provided to the guest,
+        displayed by configuration tools such as the Windows Device
+        Manager, is always VBOX CD-ROM, irrespective of the current
+        configuration of the virtual drive. This is to prevent hardware
+        detection from being triggered in the guest OS every time the
+        configuration is changed.
+      </p>
+               </note>
+               <p>
+      The standard CD/DVD emulation enables reading of standard data CD
+      and DVD formats only. As an experimental feature, for additional
+      capabilities, it is possible to give the guest direct access to
+      the CD/DVD host drive by enabling <i>passthrough</i>
+      mode. Depending on the host hardware, this may potentially enable
+      the following things to work:
+    </p>
+               <ul>
+                  <li>
+                     <p>
+          CD/DVD writing from within the guest, if the host DVD drive is
+          a CD/DVD writer
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          Playing audio CDs
+        </p>
+                  </li>
+                  <li>
+                     <p>
+          Playing encrypted DVDs
+        </p>
+                  </li>
+               </ul>
+               <p>
+      To enable host drive passthrough you can use the
+      <codeph>--passthrough</codeph> option of the <userinput>VBoxManage
+      storageattach</userinput> command. See
+      <xref href="man_VBoxManage-storageattach.dita#vboxmanage-storageattach"/>.
+    </p>
+               <p>
+      Even if passthrough is enabled, unsafe commands, such as updating
+      the drive firmware, will be blocked. Video CD formats are never
+      supported, not even in passthrough mode, and cannot be played from
+      a virtual machine.
+    </p>
+               <p>
+      On Oracle Solaris hosts, passthrough requires running
+      Oracle VM VirtualBox with real root permissions due to security measures
+      enforced by the host.
+    </p>
+            </body>
+            
+         </topic>

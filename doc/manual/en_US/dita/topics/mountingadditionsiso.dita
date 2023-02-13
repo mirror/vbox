@@ -1,0 +1,132 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="mountingadditionsiso">
+  <title>Installing the Windows Guest Additions</title>
+  
+  <body>
+    <p>
+          In the <b outputclass="bold">Devices</b> menu in the
+          virtual machine's menu bar, Oracle VM VirtualBox has a menu item
+          <b outputclass="bold">Insert Guest Additions CD
+          Image</b>, which mounts the Guest Additions ISO file
+          inside your virtual machine. A Windows guest should then
+          automatically start the Guest Additions installer, which
+          installs the Guest Additions on your Windows guest.
+        </p>
+    <p>
+          For other guest operating systems, or if automatic start of
+          software on a CD is disabled, you need to do a manual start of
+          the installer.
+        </p>
+    <note>
+      <p>
+            For the basic Direct3D acceleration to work in a Windows
+            guest, you have to install the WDDM video driver available
+            for Windows Vista or later.
+          </p>
+      <p>
+            For Windows 8 and later, only the WDDM Direct3D video driver
+            is available. For basic Direct3D acceleration to work in
+            Windows XP guests, you have to install the Guest Additions
+            in Safe Mode. See <xref href="KnownIssues.dita">Known Limitations</xref> for
+            details.
+          </p>
+    </note>
+    <p>
+          If you prefer to mount the Guest Additions manually, you can
+          perform the following steps:
+        </p>
+    <ol>
+      <li>
+        <p>
+              Start the virtual machine in which you have installed
+              Windows.
+            </p>
+      </li>
+      <li>
+        <p>
+              Select <b outputclass="bold">Optical Drives</b>
+              from the <b outputclass="bold">Devices</b> menu in
+              the virtual machine's menu bar and then
+              <b outputclass="bold">Choose/Create a Disk
+              Image</b>. This displays the Virtual Media Manager,
+              described in <xref href="virtual-media-manager.dita#virtual-media-manager"/>.
+            </p>
+      </li>
+      <li>
+        <p>
+              In the Virtual Media Manager, click
+              <b outputclass="bold">Add</b> and browse your host
+              file system for the
+              <filepath>VBoxGuestAdditions.iso</filepath> file.
+            </p>
+        <ul>
+          <li>
+            <p>
+                  On a Windows host, this file is in the Oracle VM VirtualBox
+                  installation directory, usually in
+                  <filepath>C:\Program
+                  files\Oracle\VirtualBox</filepath>.
+                </p>
+          </li>
+          <li>
+            <p>
+                  On macOS hosts, this file is in the application bundle
+                  of Oracle VM VirtualBox. Right-click on the Oracle VM VirtualBox
+                  icon in Finder and choose <b outputclass="bold">Show
+                  Package Contents</b>. The file is located in
+                  the <filepath>Contents/MacOS</filepath> folder.
+                </p>
+          </li>
+          <li>
+            <p>
+                  On a Linux host, this file is in the
+                  <filepath>additions</filepath> folder where you
+                  installed Oracle VM VirtualBox, usually
+                  <filepath>/opt/VirtualBox/</filepath>.
+                </p>
+          </li>
+          <li>
+            <p>
+                  On Oracle Solaris hosts, this file is in the
+                  <filepath>additions</filepath> folder where you
+                  installed Oracle VM VirtualBox, usually
+                  <filepath>/opt/VirtualBox</filepath>.
+                </p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>
+              In the Virtual Media Manager, select the ISO file and
+              click the <b outputclass="bold">Add</b> button.
+              This mounts the ISO file and presents it to your Windows
+              guest as a CD-ROM.
+            </p>
+      </li>
+    </ol>
+    <p>
+          Unless you have the Autostart feature disabled in your Windows
+          guest, Windows will now autostart the Oracle VM VirtualBox Guest
+          Additions installation program from the Additions ISO. If the
+          Autostart feature has been turned off, choose
+          <filepath>VBoxWindowsAdditions.exe</filepath> from the CD/DVD
+          drive inside the guest to start the installer.
+        </p>
+    <p>
+          The installer will add several device drivers to the Windows
+          driver database and then invoke the hardware detection wizard.
+        </p>
+    <p>
+          Depending on your configuration, it might display warnings
+          that the drivers are not digitally signed. You must confirm
+          these in order to continue the installation and properly
+          install the Additions.
+        </p>
+    <p>
+          After installation, reboot your guest operating system to
+          activate the Additions.
+        </p>
+  </body>
+  
+</topic>

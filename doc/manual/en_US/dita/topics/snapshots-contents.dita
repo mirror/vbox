@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="snapshots-contents">
+               <title>Snapshot Contents</title>
+               
+               <body>
+                  <p>
+        Think of a snapshot as a point in time that you have preserved.
+        More formally, a snapshot consists of the following:
+      </p>
+                  <ul>
+                     <li>
+                        <p>
+            The snapshot contains a complete copy of the VM settings,
+            including the hardware configuration, so that when you
+            restore a snapshot, the VM settings are restored as well.
+            For example, if you changed the hard disk configuration or
+            the VM's system settings, that change is undone when you
+            restore the snapshot.
+          </p>
+                        <p>
+            The copy of the settings is stored in the machine
+            configuration, an XML text file, and thus occupies very
+            little space.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+            The complete state of all the virtual disks attached to the
+            machine is preserved. Going back to a snapshot means that
+            all changes that had been made to the machine's disks, file
+            by file and bit by bit, will be undone as well. Files that
+            were since created will disappear, files that were deleted
+            will be restored, changes to files will be reverted.
+          </p>
+                        <p>
+            Strictly speaking, this is only true for virtual hard disks
+            in "normal" mode. You can configure disks to behave
+            differently with snapshots, see
+            <xref href="hdimagewrites.dita#hdimagewrites"/>. In technical terms, it is
+            not the virtual disk itself that is restored when a snapshot
+            is restored. Instead, when a snapshot is taken,
+            Oracle VM VirtualBox creates differencing images which contain
+            only the changes since the snapshot were taken. When the
+            snapshot is restored, Oracle VM VirtualBox throws away that
+            differencing image, thus going back to the previous state.
+            This is both faster and uses less disk space. For the
+            details, which can be complex, see
+            <xref href="diffimages.dita#diffimages"/>.
+          </p>
+                        <p>
+            Creating the differencing image as such does not occupy much
+            space on the host disk initially, since the differencing
+            image will initially be empty and grow dynamically later
+            with each write operation to the disk. The longer you use
+            the machine after having created the snapshot, however, the
+            more the differencing image will grow in size.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+            If you took a snapshot while the machine was running, the
+            memory state of the machine is also saved in the snapshot.
+            This is in the same way that memory can be saved when you
+            close a VM window. When you restore such a snapshot,
+            execution resumes at exactly the point when the snapshot was
+            taken.
+          </p>
+                        <p>
+            The memory state file can be as large as the memory size of
+            the VM and will therefore occupy considerable disk space.
+          </p>
+                     </li>
+                  </ul>
+               </body>
+               
+            </topic>

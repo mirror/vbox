@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="heartbeatservice">
+  <title>Configuring the Heartbeat Service</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox ships a simple heartbeat service. Once the Guest
+      Additions are active, the guest sends frequent heartbeat pings to
+      the host. If the guest stops sending the heartbeat pings without
+      properly terminating the service, the VM process will log this
+      event in the VBox.log file. In the future it might be possible to
+      configure dedicated actions but for now there is only a warning in
+      the log file.
+    </p>
+    <p>
+      There are two parameters to configure. The <i>heartbeat
+      interval</i> defines the time between two heartbeat pings.
+      The default value is 2 seconds, that is, the heartbeat service of
+      the Oracle VM VirtualBox Guest Additions will send a heartbeat ping
+      every two seconds. The value in nanoseconds can be configured like
+      this:
+    </p>
+    <pre xml:space="preserve">VBoxManage setextradata <varname>VM-name</varname> \
+VBoxInternal/Devices/VMMDev/0/Config/HeartbeatInterval 2000000000</pre>
+    <p>
+      The <i>heartbeat timeout</i> defines the time the
+      host waits starting from the last heartbeat ping before it defines
+      the guest as unresponsive. The default value is 2 times the
+      heartbeat interval (4 seconds) and can be configured as following,
+      in nanoseconds:
+    </p>
+    <pre xml:space="preserve">VBoxManage setextradata <varname>VM-name</varname> \
+VBoxInternal/Devices/VMMDev/0/Config/HeartbeatTimeout 4000000000</pre>
+    <p>
+      If the heartbeat timeout expires, there will be a log message like
+      <i>VMMDev: HeartBeatCheckTimer: Guest seems to be
+      unresponsive. Last heartbeat received 5 seconds ago.</i> If
+      another heartbeat ping arrives after this warning, there will be a
+      log message like <i>VMMDev: GuestHeartBeat: Guest is
+      alive.</i>
+               </p>
+  </body>
+  
+</topic>

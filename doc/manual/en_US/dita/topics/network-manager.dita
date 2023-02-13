@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="network-manager">
+  <title>Network Manager</title>
+  
+  <body>
+    <p>
+      The <b outputclass="bold">Network Manager</b> tool in
+      VirtualBox Manager enables you to create, delete, and configure the
+      following types of networks used by Oracle VM VirtualBox:
+    </p>
+    <ul>
+      <li>
+        <p>
+          Host-only networks. See
+          <xref href="network-manager-host-only-tab.dita#network-manager-host-only-tab"/>.
+        </p>
+      </li>
+      <li>
+        <p>
+          NAT networks. See
+          <xref href="network-manager-nat-network-tab.dita#network-manager-nat-network-tab"/>.
+        </p>
+      </li>
+      <li>
+        <p>
+          Cloud networks. See
+          <xref href="network-manager-cloud-network-tab.dita#network-manager-cloud-network-tab"/>.
+        </p>
+      </li>
+    </ul>
+    <p>
+      To display the Network Manager, go to the global
+      <b outputclass="bold">Tools</b> menu and click
+      <b outputclass="bold">Network</b>.
+    </p>
+  </body>
+</topic>

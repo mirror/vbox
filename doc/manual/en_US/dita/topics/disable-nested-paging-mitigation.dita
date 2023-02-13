@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="disable-nested-paging-mitigation">
+  <title>Disable Nested Paging</title>
+  
+  <body>
+    <p>
+          By disabling nested paging (EPT), the VMM will construct page
+          tables shadowing the ones in the guest. It is no possible for
+          the guest to insert anything fishy into the page tables, since
+          the VMM carefully validates each entry before shadowing it.
+        </p>
+    <p>
+          As a side effect of disabling nested paging, several CPU
+          features will not be made available to the guest. Among these
+          features are AVX, AVX2, XSAVE, AESNI, and POPCNT. Not all
+          guests may be able to cope with dropping these features after
+          installation. Also, for some guests, especially in SMP
+          configurations, there could be stability issues arising from
+          disabling nested paging. Finally, some workloads may
+          experience a performance degradation.
+        </p>
+  </body>
+  
+</topic>

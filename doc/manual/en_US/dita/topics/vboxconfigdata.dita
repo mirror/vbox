@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxconfigdata">
+  <title>Where Oracle VM VirtualBox Stores its Files</title>
+  
+  <body>
+    <p>
+      In Oracle VM VirtualBox, a virtual machine and its settings are
+      described in a virtual machine settings file in XML format. In
+      addition, most virtual machines have one or more virtual hard
+      disks. These are typically represented by disk images, such as
+      those in VDI format. The location of these files may vary,
+      depending on the host operating system. See
+      <xref href="vboxconfigdata-machine-folder.dita#vboxconfigdata-machine-folder"/>.
+    </p>
+    <p>
+      Global configuration data for Oracle VM VirtualBox is maintained in
+      another location on the host. See
+      <xref href="vboxconfigdata-global.dita#vboxconfigdata-global"/>.
+    </p>
+  </body>
+</topic>

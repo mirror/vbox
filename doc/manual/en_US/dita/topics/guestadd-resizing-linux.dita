@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestadd-resizing-linux">
+  <title>X11/Wayland Desktop Environments</title>
+  
+  <body>
+    <p>
+        The Guest Additions provide services for controlling the guest
+        system's monitor topology. Monitor topology means the resolution
+        of each virtual monitor and its state (disabled/enabled). The
+        resolution of a virtual monitor can be modified from the host
+        side either by resizing the window that hosts the virtual
+        monitor, by using the <b outputclass="bold">View</b> menu
+        or the <userinput>VBoxManage controlvm
+        <varname>vmname</varname> setscreenlayout</userinput>
+        command. On guest operating systems with X11/Wayland desktops
+        this is put into effect by either of the following two services:
+      </p>
+    <pre xml:space="preserve">        VBoxClient --vmsvga
+        VBoxDRMClient
+      </pre>
+    <p>
+        The following are some details about guest screen resolution
+        control functionality:
+      </p>
+    <ul>
+      <li>
+        <p>
+            On X11/Wayland desktops the resizing service is started
+            during desktop session initialization, that is desktop
+            login. On X11 desktops <codeph>VBoxClient --vmsvga</codeph>
+            handles screen topology through the RandR extension. On
+            Wayland clients <codeph>VBoxDRMClient</codeph> is used. The
+            decision is made automatically at each desktop session
+            start.
+          </p>
+      </li>
+      <li>
+        <p>
+            On 32-bit guest operating systems
+            <userinput>VBoxDRMClient</userinput> is always used, in order to
+            work around bugs.
+          </p>
+      </li>
+      <li>
+        <p>
+            Since the monitor topology control services are initialized
+            during the desktop session start, it is impossible to
+            control the monitor resolution of display managers such as
+            GDM or LightDM. This default behavior can be changed by
+            setting the guest property
+            <codeph>/VirtualBox/GuestAdd/DRMResize</codeph> of the
+            virtual machine to any value. See
+            <xref href="guestadd-guestprops.dita#guestadd-guestprops"/> for details of how to
+            update guest properties. When this guest property is set
+            then <userinput>VBoxDRMClient</userinput> is started during the
+            guest OS boot and stays active all the time, for both the
+            display manager login screen and the desktop session.
+          </p>
+      </li>
+    </ul>
+  </body>
+</topic>

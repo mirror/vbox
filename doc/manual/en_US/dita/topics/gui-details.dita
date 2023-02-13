@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="gui-details">
+  <title>The Details Pane</title>
+  
+  <body>
+    <p>
+        The Details pane shows configuration information for a virtual
+        machine that is selected in the machine list. The pane also
+        includes a toolbar for performing tasks.
+      </p>
+    <fig id="fig-vbox-details-pane">
+      <title>VirtualBox Manager Details Pane, Including Toolbar</title>
+      <image href="images/details-pane.png" placement="break"/>
+    </fig>
+    <p>
+        The Details pane includes the following:
+      </p>
+  </body>
+</topic>

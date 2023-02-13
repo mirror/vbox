@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="sec-rec-cve-2018-3646">
+  <title>CVE-2018-3646</title>
+  
+  <body>
+    <p>
+        This security issue affect a range of Intel CPUs with nested
+        paging. AMD CPUs are expected not to be impacted (pending direct
+        confirmation by AMD). Also the issue does not affect VMs running
+        with hardware virtualization disabled or with nested paging
+        disabled.
+      </p>
+    <p>
+        For more information about nested paging, see
+        <xref href="nestedpaging.dita#nestedpaging"/>.
+      </p>
+    <p>
+        The following mitigation options are available.
+      </p>
+  </body>
+</topic>

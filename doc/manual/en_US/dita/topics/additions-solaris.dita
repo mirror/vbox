@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="additions-solaris">
+  <title>Guest Additions for Oracle Solaris</title>
+  
+  <body>
+    <p>
+        Like the Windows Guest Additions, the Oracle VM VirtualBox Guest
+        Additions for Oracle Solaris take the form of a set of device
+        drivers and system applications which may be installed in the
+        guest operating system.
+      </p>
+    <p>
+        The following Oracle Solaris distributions are officially
+        supported:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Oracle Solaris 11, including Oracle Solaris 11 Express
+          </p>
+      </li>
+      <li>
+        <p>
+            Oracle Solaris 10 4/08 and later
+          </p>
+      </li>
+    </ul>
+    <p>
+        Other distributions may work if they are based on comparable
+        software releases.
+      </p>
+  </body>
+</topic>

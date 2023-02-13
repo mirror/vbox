@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="gimdebug">
+  <title>Paravirtualized Debugging</title>
+  
+  <body>
+    <p>
+      This section covers debugging of guest operating systems using
+      interfaces supported by paravirtualization providers.
+    </p>
+    <note>
+      <p>
+        Paravirtualized debugging significantly alter guest operating
+        system behaviour and should only be used by expert users for
+        debugging and diagnostics.
+      </p>
+    </note>
+    <p>
+      These debug options are specified as a string of key-value pairs
+      separated by commas. An empty string disables paravirtualized
+      debugging.
+    </p>
+  </body>
+</topic>

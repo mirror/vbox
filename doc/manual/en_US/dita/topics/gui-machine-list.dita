@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="gui-machine-list">
+  <title>The Machine List</title>
+  
+  <body>
+    <p>
+        The list of virtual machines in the left pane is called the
+        <i>machine list</i>.
+      </p>
+    <p>
+        The following methods can be used to control and configure
+        virtual machines in the machine list:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Right-click on the virtual machine name, to display menu
+            options.
+          </p>
+      </li>
+      <li>
+        <p>
+            Click on the Machine Tools menu, to the right of the virtual
+            machine name. See <xref href="gui-tools-machine.dita#gui-tools-machine"/>.
+          </p>
+      </li>
+      <li>
+        <p>
+            Click a button in the toolbar in the Details pane. See
+            <xref href="gui-details.dita#gui-details"/>.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

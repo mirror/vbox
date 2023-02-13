@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="windows-guest-file-extraction">
+                  <title>Manual File Extraction</title>
+                  
+                  <body>
+                     <p>
+          If you would like to install the files and drivers manually,
+          you can extract the files from the Windows Guest Additions
+          setup as follows:
+        </p>
+                     <pre xml:space="preserve">VBoxWindowsAdditions.exe /extract</pre>
+                     <p>
+          To explicitly extract the Windows Guest Additions for another
+          platform than the current running one, such as 64-bit files on
+          a 32-bit system, you must use the appropriate platform
+          installer. Use
+          <filepath>VBoxWindowsAdditions-x86.exe</filepath> or
+          <filepath>VBoxWindowsAdditions-amd64.exe</filepath> with the
+          <codeph>/extract</codeph> parameter.
+        </p>
+                  </body>
+                  
+               </topic>

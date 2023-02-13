@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="intro-macosxguests">
+  <title>Mac OS X Guests</title>
+  
+  <body>
+    <p>
+        Oracle VM VirtualBox enables you to install and execute unmodified
+        versions of Mac OS X guests on supported host hardware. Note
+        that this feature is experimental and thus unsupported.
+      </p>
+    <p>
+        Oracle VM VirtualBox is the first product to provide the modern PC
+        architecture expected by OS X without requiring any of the
+        modifications used by competing virtualization solutions. For
+        example, some competing solutions perform modifications to the
+        Mac OS X install DVDs, such as a different boot loader and
+        replaced files.
+      </p>
+    <p>
+        Be aware of the following important issues before you attempt to
+        install a Mac OS X guest:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Mac OS X is commercial, licensed software and contains
+            <b outputclass="bold">both license and technical
+            restrictions</b> that limit its use to certain
+            hardware and usage scenarios. You must understand and comply
+            with these restrictions.
+          </p>
+        <p>
+            In particular, Apple prohibits the installation of most
+            versions of Mac OS X on non-Apple hardware.
+          </p>
+        <p>
+            These license restrictions are also enforced on a technical
+            level. Mac OS X verifies that it is running on Apple
+            hardware. Most DVDs that accompany Apple hardware check for
+            the exact model. These restrictions are
+            <i>not</i> circumvented by Oracle VM VirtualBox and
+            continue to apply.
+          </p>
+      </li>
+      <li>
+        <p>
+            Only <b outputclass="bold">CPUs</b> that are known
+            and tested by Apple are supported. As a result, if your
+            Intel CPU is newer than the Mac OS X build, or if you have a
+            non-Intel CPU, you will likely encounter a panic during
+            bootup with an "Unsupported CPU" exception.
+          </p>
+        <p>
+            Ensure that you use the Mac OS X DVD that comes with your
+            Apple hardware.
+          </p>
+      </li>
+      <li>
+        <p>
+            The Mac OS X installer expects the hard disk to be
+            <i>partitioned</i>. So, the installer will not
+            offer a partition selection to you. Before you can install
+            the software successfully, start the Disk Utility from the
+            Tools menu and partition the hard disk. Close the Disk
+            Utility and proceed with the installation.
+          </p>
+      </li>
+      <li>
+        <p>
+            In addition, Mac OS X support in Oracle VM VirtualBox is an
+            experimental feature. See <xref href="KnownIssues.dita">Known Limitations</xref>.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

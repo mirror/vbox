@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="security-model">
+  <title>The Security Model</title>
+  
+  <body>
+    <p>
+        One property of virtual machine monitors (VMMs) like
+        Oracle VM VirtualBox is to encapsulate a guest by executing it in a
+        protected environment, a virtual machine, running as a user
+        process on the host operating system. The guest cannot
+        communicate directly with the hardware or other computers but
+        only through the VMM. The VMM provides emulated physical
+        resources and devices to the guest which are accessed by the
+        guest operating system to perform the required tasks. The VM
+        settings control the resources provided to the guest, for
+        example the amount of guest memory or the number of guest
+        processors and the enabled features for that guest. For example
+        remote control, certain screen settings and others. See
+        <xref href="generalsettings.dita">General Settings</xref>.
+      </p>
+  </body>
+  
+</topic>

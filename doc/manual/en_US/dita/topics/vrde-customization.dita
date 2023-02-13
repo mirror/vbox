@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vrde-customization">
+  <title>VRDP Customization</title>
+  
+  <body>
+    <p>
+        You can disable display output, mouse and keyboard input, audio,
+        remote USB, or clipboard individually in the VRDP server.
+      </p>
+    <p>
+        The following commands change the corresponding server settings:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage modifyvm <varname>VM-name</varname> --vrde-property Client/DisableDisplay=1
+$ VBoxManage modifyvm <varname>VM-name</varname> --vrde-property Client/DisableInput=1
+$ VBoxManage modifyvm <varname>VM-name</varname> --vrde-property Client/DisableUSB=1
+$ VBoxManage modifyvm <varname>VM-name</varname> --vrde-property Client/DisableAudio=1
+$ VBoxManage modifyvm <varname>VM-name</varname> --vrde-property Client/DisableClipboard=1
+$ VBoxManage modifyvm <varname>VM-name</varname> --vrde-property Client/DisableUpstreamAudio=1</pre>
+    <p>
+        To reenable a feature, use a similar command without the
+        trailing 1. For example:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage modifyvm <varname>VM-name</varname> --vrde-property Client/DisableDisplay=</pre>
+  </body>
+  
+</topic>

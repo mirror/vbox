@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxwatchdog-hostisln">
+  <title>Host Isolation Detection</title>
+  
+  <body>
+    <p>
+        To detect whether a host is being isolated, that is, the host
+        cannot reach the Oracle VM VirtualBox server instance anymore, the
+        host needs to set an alternating value to a global extradata
+        value within a time period. If this value is not set within that
+        time period a timeout occurred and the so-called host isolation
+        response will be performed to the VMs handled. Which VMs are
+        handled can be controlled by defining VM groups and assigning
+        VMs to those groups. By default no groups are set, meaning that
+        all VMs on the server will be handled when no host response is
+        received within 30 seconds.
+      </p>
+    <p>
+        Set the groups handled by the host isolation detection using the
+        following command line:
+      </p>
+    <pre xml:space="preserve">--apimon-groups=&lt;string[,stringN]&gt;</pre>
+    <p>
+        Using a global extradata value, as follows:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata global VBoxInternal2/Watchdog/APIMonitor/Groups &lt;string[,stringN]&gt;</pre>
+    <p>
+        Set the host isolation timeout using the following command line:
+      </p>
+    <pre xml:space="preserve">--apimon-isln-timeout=&lt;ms&gt;</pre>
+    <p>
+        Using a global extradata value, as follows:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata global VBoxInternal2/Watchdog/APIMonitor/IsolationTimeoutMS &lt;ms&gt;</pre>
+    <p>
+        Set the actual host isolation response using the following
+        command line:
+      </p>
+    <pre xml:space="preserve">--apimon-isln-response=&lt;cmd&gt;</pre>
+    <p>
+        Using a global extradata value, as follows:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata global VBoxInternal2/Watchdog/APIMonitor/IsolationResponse &lt;cmd&gt;</pre>
+    <p>
+        The following response commands are available:
+      </p>
+    <ul>
+      <li>
+        <p><codeph>none</codeph>. This has no effect.
+          </p>
+      </li>
+      <li>
+        <p><codeph>pause</codeph>. Pauses the execution of a VM.
+          </p>
+      </li>
+      <li>
+        <p><codeph>poweroff</codeph>. Shuts down the VM by pressing
+            the virtual power button. The VM will not have the chance of
+            saving any data or veto the shutdown process.
+          </p>
+      </li>
+      <li>
+        <p><codeph>save</codeph>. Saves the current machine state and
+            powers off the VM afterwards. If saving the machine state
+            fails the VM will be paused.
+          </p>
+      </li>
+      <li>
+        <p><codeph>shutdown</codeph>. Shuts down the VM in a gentle
+            way by sending an <codeph>ACPI</codeph> shutdown event to
+            the VM's operating system. The OS then has the chance of
+            doing a clean shutdown.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="Troubleshooting">
+  <title>Troubleshooting</title>
+  
+  <body>
+    <p>
+    This chapter provides answers to commonly asked questions. In order
+    to improve your user experience with Oracle VM VirtualBox, it is
+    recommended to read this section to learn more about common pitfalls
+    and get recommendations on how to use the product.
+  </p>
+  </body>
+</topic>

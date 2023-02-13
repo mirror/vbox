@@ -1,0 +1,168 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-using-cloud-profile-manager">
+  <title>Using the Cloud Profile Manager</title>
+  
+  <body>
+    <p>
+        This section describes how to use the Cloud Profile Manager to
+        create a cloud profile.
+      </p>
+    <p>
+        To open the Cloud Profile Manager click
+        <b outputclass="bold">File</b>,
+        <b outputclass="bold">Cloud Profile Manager</b> in
+        VirtualBox Manager.
+      </p>
+    <fig id="fig-cloud-profile-manager">
+      <title>The Cloud Profile Manager</title>
+      <image href="images/cloud-profile-manager.png" placement="break"/>
+    </fig>
+    <p>
+        You can use the Cloud Profile Manager in the following ways:
+      </p>
+    <ul>
+      <li>
+        <p>
+            To create a new cloud profile automatically
+          </p>
+      </li>
+      <li>
+        <p>
+            To create a cloud profile by importing settings from your
+            Oracle Cloud Infrastructure configuration file.
+          </p>
+      </li>
+    </ul>
+    <p>
+        Perform the following steps to create a new cloud profile
+        automatically, using the Cloud Profile Manager:
+      </p>
+    <ol>
+      <li>
+        <p>
+            Click the <b outputclass="bold">Add</b> icon and
+            specify a <b outputclass="bold">Name</b> for the
+            profile.
+          </p>
+      </li>
+      <li>
+        <p>
+            Click <b outputclass="bold">Properties</b> and
+            specify the following property values for the profile:
+          </p>
+        <ul>
+          <li>
+            <p>
+                Compartment OCID
+              </p>
+          </li>
+          <li>
+            <p>
+                Fingerprint of the public key
+              </p>
+          </li>
+          <li>
+            <p>
+                Location of the private key on the client device
+              </p>
+          </li>
+          <li>
+            <p>
+                Region OCID
+              </p>
+          </li>
+          <li>
+            <p>
+                Tenancy OCID
+              </p>
+          </li>
+          <li>
+            <p>
+                User OCID
+              </p>
+          </li>
+        </ul>
+        <p>
+            Some of these are settings for your Oracle Cloud Infrastructure account, which you
+            can view from the Oracle Cloud Infrastructure Console.
+          </p>
+      </li>
+      <li>
+        <p>
+            (Optional) If you are using the cloud profile to connect to
+            cloud virtual machines, select the
+            <b outputclass="bold">Show VMs</b> check box.
+          </p>
+        <p>
+            This creates a new subgroup of the
+            <b outputclass="bold">OCI</b> group in VirtualBox Manager.
+            See <xref href="cloud-vm-oci-group.dita#cloud-vm-oci-group"/>.
+          </p>
+      </li>
+      <li>
+        <p>
+            Click <b outputclass="bold">Apply</b> to save your
+            changes.
+          </p>
+        <p>
+            The cloud profile settings are saved to the
+            <filepath>oci_config</filepath> file in your Oracle VM VirtualBox
+            global settings directory.
+          </p>
+      </li>
+    </ol>
+    <p>
+        Perform the following steps to import an existing Oracle Cloud Infrastructure
+        configuration file into the Cloud Profile Manager:
+      </p>
+    <ol>
+      <li>
+        <p>
+            Ensure that a <filepath>config</filepath> file is present in
+            your Oracle Cloud Infrastructure configuration directory. For example, this is
+            <filepath>$HOME/.oci/config</filepath> on a Linux host.
+          </p>
+      </li>
+      <li>
+        <p>
+            Click the <b outputclass="bold">Import</b> icon to
+            open a dialog that prompts you to import cloud profiles from
+            external files.
+          </p>
+        <note type="attention">
+          <p>
+              This action overwrites any cloud profiles that are in your
+              Oracle VM VirtualBox global settings directory.
+            </p>
+        </note>
+      </li>
+      <li>
+        <p>
+            Click <b outputclass="bold">Import</b>.
+          </p>
+        <p>
+            Your cloud profile settings are saved to the
+            <filepath>oci_config</filepath> file in your Oracle VM VirtualBox
+            global settings directory.
+          </p>
+      </li>
+      <li>
+        <p>
+            Click <b outputclass="bold">Properties</b> to show
+            the cloud profile settings.
+          </p>
+        <p>
+            Double-click on the appropriate field to change the value.
+          </p>
+      </li>
+      <li>
+        <p>
+            Click <b outputclass="bold">Apply</b> to save your
+            changes.
+          </p>
+      </li>
+    </ol>
+  </body>
+  
+</topic>

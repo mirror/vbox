@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="basic-unattended">
+  <title>Unattended Guest Installation</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox can install a guest OS automatically. You only need
+      to provide the installation medium and a few other parameters,
+      such as the name of the default user.
+    </p>
+    <p>
+      You can perform an unattended guest installation in the following
+      ways:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Use the Create Virtual Machine
+          wizard.</b> An optional step in the wizard enables you
+          to configure unattended installation. You can specify the
+          default user credentials for the guest OS and also whether to
+          install the Guest Additions automatically. See
+          <xref href="create-vm-wizard.dita#create-vm-wizard"/>.
+        </p>
+        <p>
+          During this step, Oracle VM VirtualBox scans the installation medium
+          and changes certain parameters to ensure a seamless
+          installation as a guest running on Oracle VM VirtualBox.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Use the <userinput>VBoxManage</userinput>
+          commands.</b><xref href="unattended-guest-install-example.dita#unattended-guest-install-example"/> describes
+          how to perform an unattended guest installation for an Oracle
+          Linux guest.
+        </p>
+      </li>
+    </ul>
+    <p>
+      When you first start a VM that has been configured for unattended
+      installation, the guest OS installation is performed
+      automatically.
+    </p>
+    <p>
+      The installation operation changes the boot device order to boot
+      the virtual hard disk first and then the virtual DVD drive. If the
+      virtual hard disk is empty prior to the automatic installation,
+      the VM boots from the virtual DVD drive and begins the
+      installation.
+    </p>
+    <p>
+      If the virtual hard disk contains a bootable OS, the installation
+      operation exits. In this case, change the boot device order
+      manually by pressing F12 during the BIOS splash screen.
+    </p>
+  </body>
+</topic>

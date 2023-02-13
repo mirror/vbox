@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="sec-rec-cve-2018-12126-et-al">
+  <title>CVE-2018-12126, CVE-2018-12127, CVE-2018-12130, CVE-2019-11091</title>
+  
+  <body>
+    <p>
+        These security issues affect a range of Intel CPUs starting with
+        Nehalem. The CVE-2018-12130 also affects some Atom Silvermont,
+        Atom Airmont, and Knights family CPUs, however the scope is so
+        limited that the host OS should deal with it and Oracle VM VirtualBox
+        is therefore not affected. Leaks only happens when entering and
+        leaving C states.
+      </p>
+    <p>
+        The following mitigation option is available.
+      </p>
+  </body>
+</topic>

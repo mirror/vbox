@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="networkingdetails">
+  <title>Virtual Networking</title>
+  
+  <body>
+    <p>
+    As mentioned in <xref href="settings-network.dita#settings-network"/>, Oracle VM VirtualBox
+    provides up to eight virtual PCI Ethernet cards for each virtual
+    machine. For each such card, you can individually select the
+    following:
+  </p>
+    <ul>
+      <li>
+        <p>
+        The hardware that will be virtualized.
+      </p>
+      </li>
+      <li>
+        <p>
+        The virtualization mode that the virtual card operates in, with
+        respect to your physical networking hardware on the host.
+      </p>
+      </li>
+    </ul>
+    <p>
+    Four of the network cards can be configured in the
+    <b outputclass="bold">Network</b> section of the
+    <b outputclass="bold">Settings</b> window in VirtualBox Manager. You
+    can configure all eight network cards on the command line using
+    <userinput>VBoxManage modifyvm</userinput>. See
+    <xref href="man_VBoxManage-modifyvm.dita#vboxmanage-modifyvm"/>.
+  </p>
+    <p>
+    This chapter explains the various networking settings in more
+    detail.
+  </p>
+  </body>
+</topic>

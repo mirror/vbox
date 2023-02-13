@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="intro-starting">
+  <title>Starting Oracle VM VirtualBox</title>
+  
+  <body>
+    <p>
+      After installation, you can start Oracle VM VirtualBox as follows:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Windows hosts.</b> In the
+          <b outputclass="bold">Programs</b> menu, click on the
+          item in the <b outputclass="bold">VirtualBox</b> group.
+          On some Windows platforms, you can also enter
+          <userinput>VirtualBox</userinput> in the search box of the
+          <b outputclass="bold">Start</b> menu.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">macOS hosts.</b> In the Finder,
+          double-click on the
+          <b outputclass="bold">VirtualBox</b> item in the
+          Applications folder. You may want to drag this item onto your
+          Dock.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Linux or Oracle Solaris
+          hosts</b>. Depending on your desktop environment, an
+          Oracle VM VirtualBox item may have been placed in either the System
+          or System Tools group of your
+          <b outputclass="bold">Applications</b> menu.
+          Alternatively, you can enter <userinput>VirtualBox</userinput> in
+          a terminal window.
+        </p>
+      </li>
+    </ul>
+    <p>
+      When you start Oracle VM VirtualBox, the VirtualBox Manager interface is shown.
+      See <xref href="gui-virtualboxmanager.dita#gui-virtualboxmanager"/>.
+    </p>
+  </body>
+  
+</topic>

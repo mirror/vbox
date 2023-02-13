@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_ide-sata-flush">
+  <title>Responding to Guest IDE/SATA Flush Requests</title>
+  
+  <body>
+    <p>
+        If desired, the virtual disk images can be flushed when the
+        guest issues the IDE FLUSH CACHE command. Normally these
+        requests are ignored for improved performance. The parameters
+        below are only accepted for disk drives. They must not be set
+        for DVD drives.
+      </p>
+    <p>
+        To enable flushing for IDE disks, issue the following command:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> "VBoxInternal/Devices/piix3ide/0/LUN#[<varname>x</varname>]/Config/IgnoreFlush" 0</pre>
+    <p><codeph>[<varname>x</varname>]</codeph> specifies the
+        disk. Enter <codeph>0</codeph> for device 0 on the primary
+        channel, <codeph>1</codeph> for device 1 on the primary
+        channel, <codeph>2</codeph> for device 0 on the secondary
+        channel, or <codeph>3</codeph> for device 1 on the secondary
+        channel.
+      </p>
+    <p>
+        To enable flushing for SATA disks, issue the following command:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> "VBoxInternal/Devices/ahci/0/LUN#[x]/Config/IgnoreFlush" 0</pre>
+    <p>
+        The value [x] that selects the disk can be a value between 0 and
+        29.
+      </p>
+    <p>
+        Note that this does not affect the flushes performed according
+        to the configuration described in
+        <xref href="ts_config-periodic-flush.dita#ts_config-periodic-flush"/>. Restoring the
+        default of ignoring flush commands is possible by setting the
+        value to 1 or by removing the key.
+      </p>
+  </body>
+  
+</topic>

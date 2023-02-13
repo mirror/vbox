@@ -1,0 +1,198 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="gimdebughyperv-windows-setup">
+  <title>Setting up Windows Guests for Debugging with the Hyper-V
+          Paravirtualization Provider</title>
+  
+  <body>
+    <p>
+          Windows supports debugging over a serial cable, USB, IEEE 1394
+          Firewire, and Ethernet. USB and IEEE 1394 are not applicable
+          for virtual machines, and Ethernet requires Windows 8 or
+          later. While a serial connection is universally usable, it is
+          slow.
+        </p>
+    <p>
+          Debugging using the Hyper-V debug transport, supported on
+          Windows Vista and later, offers significant benefits. It
+          provides excellent performance due to direct host-to-guest
+          transfers, it is easy to set up and requires minimal support
+          from the hypervisor. It can be used with the debugger running
+          on the same host as the VM or with the debugger and VM on
+          separate machines connected over a network.
+        </p>
+    <p>
+      <b outputclass="bold">Prerequisites</b>
+    </p>
+    <ul>
+      <li>
+        <p>
+              A VM configured for Hyper-V paravirtualization running a
+              Windows Vista or newer Windows guest. You can check the
+              effective paravirtualization provider for your VM with the
+              output of the following <userinput>VBoxManage</userinput>
+              command:
+            </p>
+        <pre xml:space="preserve">$ VBoxManage showvminfo <varname>VM-name</varname>
+                           </pre>
+      </li>
+      <li>
+        <p>
+              A sufficiently up-to-date version of the Microsoft WinDbg
+              debugger required to debug the version of Windows in your
+              VM.
+            </p>
+      </li>
+      <li>
+        <p>
+              While Windows 8 and newer Windows guests ship with Hyper-V
+              debug support, Windows 7 and Vista do not. To use Hyper-V
+              debugging with a Windows 7 or Vista guest, copy the file
+              <filepath>kdvm.dll</filepath> from a Windows 8.0
+              installation. This file is typically located in
+              <filepath>C:\Windows\System32</filepath>. Copy it to the
+              same location in your Windows 7/Vista guest. Make sure you
+              copy the 32-bit or 64-bit version of the DLL which matches
+              your guest OS.
+            </p>
+        <note>
+          <p>
+                Only Windows 8.0 ships <filepath>kdvm.dll</filepath>.
+                Windows 8.1 and newer Windows versions do not.
+              </p>
+        </note>
+      </li>
+    </ul>
+    <p>
+      <b outputclass="bold">VM and Guest Configuration</b>
+    </p>
+    <ol>
+      <li>
+        <p>
+              Power off the VM.
+            </p>
+      </li>
+      <li>
+        <p>
+              Enable the debug options with the following
+              <userinput>VBoxManage</userinput> command:
+            </p>
+        <pre xml:space="preserve">$ VBoxManage modifyvm <varname>VM-name</varname> --paravirt-debug "enabled=1"</pre>
+        <p>
+              The above command assumes your debugger will connect to
+              your host machine on UDP port 50000. However, if you need
+              to run the debugger on a remote machine you may specify
+              the remote address and port here. For example:
+            </p>
+        <pre xml:space="preserve">$ VBoxManage modifyvm <varname>VM-name</varname> \
+--paravirt-debug "enabled=1,address=192.168.32.1,port=55000"</pre>
+        <p>
+              See <xref href="gimdebughyperv.dita#gimdebughyperv"/> for the complete set
+              of options.
+            </p>
+      </li>
+      <li>
+        <p>
+              Start the VM.
+            </p>
+      </li>
+      <li>
+        <p>
+              In the guest, start an elevated command prompt and execute
+              the following commands:
+            </p>
+        <ul>
+          <li>
+            <p>
+                  For a Windows 8 or newer Windows guest:
+                </p>
+            <pre xml:space="preserve">bcdedit /dbgsettings net hostip:5.5.5.5 port:50000 key:1.2.3.4</pre>
+          </li>
+          <li>
+            <p>
+                  For a Windows 7 or Vista guest:
+                </p>
+            <pre xml:space="preserve">bcdedit /set loadoptions host_ip=5.5.5.5,host_port=50000,encryption_key=1.2.3.4</pre>
+            <pre xml:space="preserve">bcdedit /set dbgtransport kdvm.dll</pre>
+            <p>
+                  The IP address and port in the
+                  <userinput>bcdedit</userinput> command are ignored when
+                  using the Hyper-V debug transport. Any valid IP and a
+                  port number greater than 49151 and lower than 65536
+                  can be entered.
+                </p>
+            <p>
+                  The encryption key in the <userinput>bcdedit</userinput>
+                  command is relevant and must be valid. The key
+                  "1.2.3.4" used in the above example is valid and may
+                  be used if security is not a concern. If you do not
+                  specify any encryption key, <userinput>bcdedit</userinput>
+                  will generate one for you and you will need to copy
+                  this key to later enter in Microsoft WinDbg on the
+                  remote end. This encryption key is used to encrypt the
+                  debug data exchanged between Windows and the debugger.
+                </p>
+          </li>
+          <li>
+            <p>
+                  Run one or more of the following commands to enable
+                  debugging for the appropriate phase or component of
+                  your Windows guest:
+                </p>
+            <pre xml:space="preserve">bcdedit /set debug on</pre>
+            <pre xml:space="preserve">bcdedit /set bootdebug on</pre>
+            <pre xml:space="preserve">bcdedit /set {bootmgr} bootdebug on</pre>
+            <p>
+                  Please note that the <userinput>bootdebug</userinput>
+                  options are only effective on Windows 8 or newer when
+                  using the Hyper-V debug transport. Refer to Microsoft
+                  Windows documentation for detailed explanation of
+                  <userinput>bcdedit</userinput> options.
+                </p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>
+              Start Microsoft WinDbg on your host machine or remote
+              host.
+            </p>
+        <p>
+              From the <b outputclass="bold">File</b> menu,
+              select <b outputclass="bold">Kernel Debug</b>. On
+              the <b outputclass="bold">NET</b> tab, specify the
+              UDP port number you used in the
+              <codeph>paravirtdebug</codeph> options. If you did not
+              specify any, leave it as 50000. Ensure that the UDP port
+              is not blocked by a firewall or other security software.
+            </p>
+        <p>
+              In the <b outputclass="bold">Key</b> field, enter
+              <codeph>1.2.3.4</codeph> or the encryption key from the
+              <userinput>bcdedit</userinput> command in your Windows guest.
+            </p>
+        <p>
+              Click <b outputclass="bold">OK</b> to start
+              listening for connections. Microsoft WinDbg typically
+              shows a Waiting to Reconnect message during this phase.
+            </p>
+        <p>
+              Alternatively, to directly start a debug session, run
+              WinDbg from the command line as follows :
+            </p>
+        <pre xml:space="preserve">windbg.exe -k net:port=50000,key=1.2.3.4</pre>
+        <p>
+              See the WinDbg documentation for the complete command line
+              syntax.
+            </p>
+      </li>
+      <li>
+        <p>
+              Reboot your Windows guest and it should then connect as a
+              debuggee with Microsoft WinDbg.
+            </p>
+      </li>
+    </ol>
+  </body>
+  
+</topic>

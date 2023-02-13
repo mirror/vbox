@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="install-linux-debian-automatic">
+  <title>Automatic Installation of Debian Packages</title>
+  
+  <body>
+    <p>
+          The Debian packages will request some user feedback when
+          installed for the first time. The debconf system is used to
+          perform this task. To prevent any user interaction during
+          installation, default values can be defined. A file
+          <codeph>vboxconf</codeph> can contain the following debconf
+          settings:
+        </p>
+    <pre xml:space="preserve">virtualbox virtualbox/module-compilation-allowed boolean true
+virtualbox virtualbox/delete-old-modules boolean true</pre>
+    <p>
+          The first line enables compilation of the vboxdrv kernel
+          module if no module was found for the current kernel. The
+          second line enables the package to delete any old vboxdrv
+          kernel modules compiled by previous installations.
+        </p>
+    <p>
+          These default settings can be applied prior to the
+          installation of the Oracle VM VirtualBox Debian package, as follows:
+        </p>
+    <pre xml:space="preserve">debconf-set-selections vboxconf</pre>
+    <p>
+          In addition there are some common configuration options that
+          can be set prior to the installation. See
+          <xref href="linux_install_opts.dita#linux_install_opts"/>.
+        </p>
+  </body>
+  
+</topic>

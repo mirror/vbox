@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="install-win-prereq">
+  <title>Prerequisites</title>
+  
+  <body>
+    <p>
+        For the various versions of Windows that are supported as host
+        operating systems, please refer to
+        <xref href="hostossupport.dita#hostossupport"/>.
+      </p>
+    <p>
+        In addition, Windows Installer must be present on your system.
+        This should be the case for all supported Windows platforms.
+      </p>
+  </body>
+  
+</topic>

@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="hidledssync">
+  <title>Support for Keyboard Indicator Synchronization</title>
+  
+  <body>
+    <p>
+      This feature makes the host keyboard indicators (LEDs) match those
+      of the VM's emulated keyboard when the machine window is active.
+      It is currently implemented for macOS and Windows hosts. This
+      feature is enabled by default on supported host OSes. You can
+      disable this feature by running the following command:
+    </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> GUI/HidLedsSync 0</pre>
+    <p>
+      This is a per-VM setting that is enabled by default.
+    </p>
+  </body>
+  
+</topic>

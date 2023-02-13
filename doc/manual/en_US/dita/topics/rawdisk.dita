@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="rawdisk">
+  <title>Using a Raw Host Hard Disk From a Guest</title>
+  
+  <body>
+    <p>
+        As an alternative to using virtual disk images as described in
+        <xref href="storage.dita">Virtual Storage</xref>, Oracle VM VirtualBox can also present
+        either entire physical hard disks or selected partitions as
+        virtual disks to virtual machines.
+      </p>
+    <p>
+        With Oracle VM VirtualBox, this type of access is called <i>raw
+        hard disk access</i>. It enables a guest operating system
+        to access its virtual hard disk without going through the host
+        OS file system. The actual performance difference for image
+        files compared to raw disk varies greatly depending on the
+        overhead of the host file system, whether dynamically growing
+        images are used, and on host OS caching strategies. The caching
+        indirectly also affects other aspects such as failure behavior.
+        For example, whether the virtual disk contains all data written
+        before a host OS crash. Consult your host OS documentation for
+        details on this.
+      </p>
+    <note type="attention">
+      <p>
+          Raw hard disk access is for expert users only. Incorrect use
+          or use of an outdated configuration can lead to
+          <b outputclass="bold">total loss of data</b> on the
+          physical disk. Most importantly, <i>do not</i>
+          attempt to boot the partition with the currently running host
+          operating system in a guest. This will lead to severe data
+          corruption.
+        </p>
+    </note>
+    <p>
+        Raw hard disk access, both for entire disks and individual
+        partitions, is implemented as part of the VMDK image format
+        support. As a result, you will need to create a special VMDK
+        image file which defines where the data will be stored. After
+        creating such a special VMDK image, you can use it like a
+        regular virtual disk image. For example, you can use the Virtual
+        Media Manager, see <xref href="virtual-media-manager.dita">The Virtual Media Manager</xref>, or
+        <userinput>VBoxManage</userinput> to assign the image to a virtual
+        machine.
+      </p>
+  </body>
+</topic>

@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="create-vm-wizard">
+  <title>Creating Your First Virtual Machine</title>
+  
+  <body>
+    <p>
+      Click <b outputclass="bold">New</b> in the VirtualBox
+      Manager window. The <b outputclass="bold">Create Virtual
+      Machine</b> wizard is shown, to guide you through the
+      required steps for setting up a new virtual machine (VM).
+    </p>
+    <p>
+      The <b outputclass="bold">Create Virtual Machine</b> wizard
+      pages are described in the following sections.
+    </p>
+  </body>
+</topic>

@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="installation">
+  <title>Installation Details</title>
+  
+  <body>
+    <p>
+    As installation of Oracle VM VirtualBox varies depending on your host
+    operating system, the following sections provide installation
+    instructions for Windows, macOS, Linux, and Oracle Solaris.
+  </p>
+  </body>
+</topic>

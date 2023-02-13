@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxmanager-wizards">
+               <title>About VirtualBox Manager Wizards</title>
+               
+               <body>
+                  <p>
+        VirtualBox Manager includes wizards that enable you to complete tasks
+        easily. Examples of such tasks are when you create a new virtual
+        machine or use the cloud integration features of Oracle VM VirtualBox.
+      </p>
+                  <p>
+        To display a help topic for the wizard, click the
+        <b outputclass="bold">Help</b> button.
+      </p>
+                  <p>
+        Some wizards can be displayed in either of the following modes:
+      </p>
+                  <ul>
+                     <li>
+                        <p>
+                           <b outputclass="bold">Guided mode.</b> This is the
+            default display mode. Wizards are shown in the conventional
+            manner, using a series of pages with descriptions to guide
+            the user through the steps for a task.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+                           <b outputclass="bold">
+                              <b outputclass="bold">Expert
+            mode.</b>
+                           </b> This display mode is designed
+            for more advanced users of Oracle VM VirtualBox. All settings are
+            displayed on a single page, enabling quicker completion of
+            tasks.
+          </p>
+                     </li>
+                  </ul>
+                  <p>
+        Click the button at the bottom of the wizard window to switch
+        between Guided mode and Expert mode.
+      </p>
+               </body>
+               
+            </topic>

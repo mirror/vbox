@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vrde-videochannel">
+  <title>VRDP Video Redirection</title>
+  
+  <body>
+    <p>
+        The VRDP server can redirect video streams from the guest to the
+        RDP client. Video frames are compressed using the JPEG algorithm
+        allowing a higher compression ratio than standard RDP bitmap
+        compression methods. It is possible to increase the compression
+        ratio by lowering the video quality.
+      </p>
+    <p>
+        The VRDP server automatically detects video streams in a guest
+        as frequently updated rectangular areas. As a result, this
+        method works with any guest operating system without having to
+        install additional software in the guest. In particular, the
+        Guest Additions are not required.
+      </p>
+    <p>
+        On the client side, however, currently only the Windows 7 Remote
+        Desktop Connection client supports this feature. If a client
+        does not support video redirection, the VRDP server falls back
+        to regular bitmap updates.
+      </p>
+    <p>
+        The following command enables video redirection:
+      </p>
+    <pre xml:space="preserve">VBoxManage modifyvm <varname>VM-name</varname> --vrde-video-channel on</pre>
+    <p>
+        The quality of the video is defined as a value from 10 to 100
+        percent, representing a JPEG compression level, where lower
+        numbers mean lower quality but higher compression. The quality
+        can be changed using the following command:
+      </p>
+    <pre xml:space="preserve">VBoxManage modifyvm <varname>VM-name</varname> --vrde-video-channel-quality 75</pre>
+  </body>
+  
+</topic>

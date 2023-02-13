@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="startingvboxonlinux">
+               <title>Starting Oracle VM VirtualBox on Linux</title>
+               
+               <body>
+                  <p>
+        The easiest way to start an Oracle VM VirtualBox program is by running
+        the program of your choice (<userinput>VirtualBox</userinput>,
+        <userinput>VBoxManage</userinput>, or
+        <userinput>VBoxHeadless</userinput>) from a terminal. These are
+        symbolic links to <userinput>VBox.sh</userinput> that start the
+        required program for you.
+      </p>
+                  <p>
+        The following detailed instructions should only be of interest
+        if you wish to execute Oracle VM VirtualBox without installing it
+        first. You should start by compiling the
+        <userinput>vboxdrv</userinput> kernel module and inserting it into
+        the Linux kernel. Oracle VM VirtualBox consists of a service daemon,
+        <userinput>VBoxSVC</userinput>, and several application programs.
+        The daemon is automatically started if necessary. All
+        Oracle VM VirtualBox applications will communicate with the daemon
+        through UNIX local domain sockets. There can be multiple daemon
+        instances under different user accounts and applications can
+        only communicate with the daemon running under the user account
+        as the application. The local domain socket resides in a
+        subdirectory of your system's directory for temporary files
+        called <filepath>.vbox-&lt;username&gt;-ipc</filepath>. In case
+        of communication problems or server startup problems, you may
+        try to remove this directory.
+      </p>
+                  <p>
+        All Oracle VM VirtualBox applications (<userinput>VirtualBox</userinput>,
+        <userinput>VBoxManage</userinput>, and
+        <userinput>VBoxHeadless</userinput>) require the Oracle VM VirtualBox
+        directory to be in the library path, as follows:
+      </p>
+                  <pre xml:space="preserve">LD_LIBRARY_PATH=. ./VBoxManage showvminfo "Windows XP"</pre>
+               </body>
+               
+            </topic>

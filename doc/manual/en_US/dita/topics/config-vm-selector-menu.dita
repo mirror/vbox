@@ -1,0 +1,112 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="config-vm-selector-menu">
+  <title>Configure VM Selector Menu Entries</title>
+  
+  <body>
+    <p>
+        You can disable certain entries in the global settings page of
+        the VM selector:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata global GUI/RestrictedGlobalSettingsPages <varname>property</varname>[,<varname>property</varname>...]</pre>
+    <p><varname>property</varname> is one of the following:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+          <codeph>General</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">General</b>
+              settings pane.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Input</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Input</b>
+              settings pane.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Update</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Update</b>
+              settings pane.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Language</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Language</b>
+              settings pane.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Display</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Display</b>
+              settings pane.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Network</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Network</b>
+              settings pane.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Extensions</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the
+              <b outputclass="bold">Extensions</b> settings pane.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+          <codeph>Proxy</codeph>
+        </dt>
+        <dd>
+          <p>
+              Do not show the <b outputclass="bold">Proxy</b>
+              settings pane.
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        This is a global setting. You can specify any combination of
+        properties. To restore the default behavior, use the following
+        command:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata global GUI/RestrictedGlobalSettingsPages</pre>
+  </body>
+  
+</topic>

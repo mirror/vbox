@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="webcam-mac-hosts">
+  <title>macOS Hosts</title>
+  
+  <body>
+    <p>
+        When the webcam device is detached from the host, the emulated
+        webcam device remains attached to the guest and must be manually
+        detached using the <userinput>VBoxManage controlvm
+        <varname>VM-name</varname> webcam detach</userinput>
+        command.
+      </p>
+  </body>
+  
+</topic>

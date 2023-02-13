@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-vm-add">
+  <title>Adding a Cloud VM</title>
+  
+  <body>
+    <p>
+          When you add a cloud VM, an <i>existing</i>
+          Oracle Cloud Infrastructure instance is associated with the cloud VM. You can only
+          add one cloud VM for each instance.
+        </p>
+    <p>
+          Perform the following steps to add a cloud VM:
+        </p>
+    <ol>
+      <li>
+        <p>
+              Click on a cloud profile in the
+              <b outputclass="bold">OCI</b> group.
+            </p>
+        <p>
+              The cloud VMs for the selected cloud profile are
+              displayed.
+            </p>
+      </li>
+      <li>
+        <p>
+              Select <b outputclass="bold">Group</b>,
+              <b outputclass="bold">Add Machine</b>.
+            </p>
+        <p>
+              The <b outputclass="bold">Add Cloud Virtual
+              Machine</b> wizard is displayed.
+            </p>
+        <fig id="fig-cloudvm-add">
+          <title>Add Cloud Virtual Machine Wizard</title>
+          <image href="images/cloudvm-add.png" placement="break"/>
+        </fig>
+      </li>
+      <li>
+        <p>
+              Configure the following settings:
+            </p>
+        <ul>
+          <li>
+            <p><b outputclass="bold">Source:</b> The cloud
+                  service provider that hosts the instance used for the
+                  cloud VM. Select
+                  <b outputclass="bold">Oracle Cloud Infrastructure</b>.
+                </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">Profile:</b> The cloud
+                  profile used to connect to the running instance.
+                  Select from the available cloud profiles.
+                </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">Instances:</b> The
+                  instance to use for the cloud VM. Choose from the
+                  available instances on your cloud service.
+                </p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>
+              Click <b outputclass="bold">Finish</b> to add a
+              cloud VM based on the selected instance.
+            </p>
+        <p>
+              A cloud VM with the same name as the instance is added to
+              the <b outputclass="bold">OCI</b> group in
+              VirtualBox Manager.
+            </p>
+      </li>
+      <li>
+        <p>
+              (Optional) To change the display name for the instance,
+              click <b outputclass="bold">Settings</b> and edit
+              the <b outputclass="bold">Display Name</b> field.
+            </p>
+        <p>
+              The cloud VM name in VirtualBox Manager is updated automatically.
+            </p>
+      </li>
+    </ol>
+  </body>
+  
+</topic>

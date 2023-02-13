@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_config-periodic-flush">
+  <title>Guest Shows IDE/SATA Errors for File-Based Images on Slow Host File
+        System</title>
+  
+  <body>
+    <p>
+        Occasionally, some host file systems provide very poor writing
+        performance and as a consequence cause the guest to time out
+        IDE/SATA commands. This is normal behavior and should normally
+        cause no real problems, as the guest should repeat commands that
+        have timed out. However, guests such as some Linux versions have
+        severe problems if a write to an image file takes longer than
+        about 15 seconds. Some file systems however require more than a
+        minute to complete a single write, if the host cache contains a
+        large amount of data that needs to be written.
+      </p>
+    <p>
+        The symptom for this problem is that the guest can no longer
+        access its files during large write or copying operations,
+        usually leading to an immediate hang of the guest.
+      </p>
+    <p>
+        In order to work around this problem, the true fix is to use a
+        faster file system that does not exhibit such unacceptable write
+        performance, it is possible to flush the image file after a
+        certain amount of data has been written. This interval is
+        normally infinite, but can be configured individually for each
+        disk of a VM.
+      </p>
+    <p>
+        For IDE disks use the following command:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata <varname>VM-name</varname>
+"VBoxInternal/Devices/piix3ide/0/LUN#[<varname>x</varname>]/Config/FlushInterval" [<varname>b</varname>]</pre>
+    <p>
+        For SATA disks use the following command:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata <varname>VM-name</varname>
+"VBoxInternal/Devices/ahci/0/LUN#[<varname>x</varname>]/Config/FlushInterval" [<varname>b</varname>]</pre>
+    <p><codeph>[<varname>x</varname>]</codeph> specifies the
+        disk. For IDE, <codeph>0</codeph> represents device 0 on the
+        primary channel, <codeph>1</codeph> represents device 1 on the
+        primary channel, <codeph>2</codeph> represents device 0 on the
+        secondary channel, and <codeph>3</codeph> represents device 1
+        on the secondary channel. For SATA, use values between
+        <codeph>0</codeph> and <codeph>29</codeph>. This
+        configuration option applies to disks only. Do not use this
+        option for CD or DVD drives.
+      </p>
+    <p>
+        The unit of the interval
+        (<codeph>[<varname>b</varname>]</codeph>) is the
+        number of bytes written since the last flush. The value for it
+        must be selected so that the occasional long write delays do not
+        occur. Since the proper flush interval depends on the
+        performance of the host and the host filesystem, finding the
+        optimal value that makes the problem disappear requires some
+        experimentation. Values between 1000000 and 10000000 (1 to 10
+        megabytes) are a good starting point. Decreasing the interval
+        both decreases the probability of the problem and the write
+        performance of the guest. Setting the value unnecessarily low
+        will cost performance without providing any benefits. An
+        interval of 1 will cause a flush for each write operation and
+        should solve the problem in any case, but has a severe write
+        performance penalty.
+      </p>
+    <p>
+        Providing a value of <codeph>0</codeph> for
+        <codeph>[<varname>b</varname>]</codeph> is treated as
+        an infinite flush interval, effectively disabling this
+        workaround. Removing the extra data key by specifying no value
+        for <codeph>[<varname>b</varname>]</codeph> has the
+        same effect.
+      </p>
+  </body>
+  
+</topic>

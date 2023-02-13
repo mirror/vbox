@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="gimproviders">
+  <title>Paravirtualization Providers</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox enables the exposure of a paravirtualization
+      interface, to facilitate accurate and efficient execution of
+      software within a virtual machine. These interfaces require the
+      guest operating system to recognize their presence and make use of
+      them in order to leverage the benefits of communicating with the
+      Oracle VM VirtualBox hypervisor.
+    </p>
+    <p>
+      Most modern, mainstream guest operating systems, including Windows
+      and Linux, ship with support for one or more paravirtualization
+      interfaces. Hence, there is typically no need to install
+      additional software in the guest to take advantage of this
+      feature.
+    </p>
+    <p>
+      Exposing a paravirtualization provider to the guest operating
+      system does not rely on the choice of host platforms. For example,
+      the <i>Hyper-V</i> paravirtualization provider can
+      be used for VMs to run on any host platform supported by
+      Oracle VM VirtualBox and not just Windows.
+    </p>
+    <p>
+      Oracle VM VirtualBox provides the following interfaces:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Minimal</b>: Announces the
+          presence of a virtualized environment. Additionally, reports
+          the TSC and APIC frequency to the guest operating system. This
+          provider is mandatory for running any Mac OS X guests.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">KVM</b>: Presents a Linux KVM
+          hypervisor interface which is recognized by Linux kernels
+          version 2.6.25 or later. Oracle VM VirtualBox's implementation
+          currently supports paravirtualized clocks and SMP spinlocks.
+          This provider is recommended for Linux guests.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Hyper-V</b>: Presents a Microsoft
+          Hyper-V hypervisor interface which is recognized by Windows 7
+          and newer operating systems. Oracle VM VirtualBox's implementation
+          currently supports paravirtualized clocks, APIC frequency
+          reporting, guest debugging, guest crash reporting and relaxed
+          timer checks. This provider is recommended for Windows guests.
+        </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

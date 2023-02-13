@@ -1,0 +1,98 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="install-linux-alt-installer">
+  <title>Using the Alternative Generic Installer (VirtualBox.run)</title>
+  
+  <body>
+    <p>
+          The alternative generic installer performs the following
+          steps:
+        </p>
+    <ul>
+      <li>
+        <p>
+              Unpacks the application files to the target directory
+              <filepath>/opt/VirtualBox/</filepath>, which cannot be
+              changed.
+            </p>
+      </li>
+      <li>
+        <p>
+              Builds and installs the Oracle VM VirtualBox kernel modules:
+              <userinput>vboxdrv</userinput>, <userinput>vboxnetflt</userinput>,
+              and <userinput>vboxnetadp</userinput>.
+            </p>
+      </li>
+      <li>
+        <p>
+              Creates <filepath>/sbin/rcvboxdrv</filepath>, an init
+              script to start the Oracle VM VirtualBox kernel module.
+            </p>
+      </li>
+      <li>
+        <p>
+              Creates a new system group called
+              <codeph>vboxusers</codeph>.
+            </p>
+      </li>
+      <li>
+        <p>
+              Creates symbolic links in <filepath>/usr/bin</filepath> to
+              a shell script <filepath>/opt/VirtualBox/VBox</filepath>
+              which does some sanity checks and dispatches to the actual
+              executables: <userinput>VirtualBox</userinput>,
+              <userinput>VBoxVRDP</userinput>,
+              <userinput>VBoxHeadless</userinput> and
+              <userinput>VBoxManage</userinput>.
+            </p>
+      </li>
+      <li>
+        <p>
+              Creates
+              <filepath>/etc/udev/rules.d/60-vboxdrv.rules</filepath>, a
+              description file for udev, if that is present, which makes
+              the USB devices accessible to all users in the
+              <codeph>vboxusers</codeph> group.
+            </p>
+      </li>
+      <li>
+        <p>
+              Writes the installation directory to
+              <filepath>/etc/vbox/vbox.cfg</filepath>.
+            </p>
+      </li>
+    </ul>
+    <p>
+          The installer must be executed as root with either
+          <codeph>install</codeph> or <codeph>uninstall</codeph> as
+          the first parameter. For example:
+        </p>
+    <pre xml:space="preserve">sudo ./VirtualBox.run install</pre>
+    <p>
+          Or if you do not have the <userinput>sudo</userinput> command
+          available, run the following as root instead:
+        </p>
+    <pre xml:space="preserve">./VirtualBox.run install</pre>
+    <p>
+          Add every user who needs to access USB devices from a
+          VirtualBox guests to the group <codeph>vboxusers</codeph>.
+          Either use the OS user management tools or run the following
+          command as root:
+        </p>
+    <pre xml:space="preserve">sudo usermod -a -G vboxusers username</pre>
+    <note>
+      <p>
+            The <userinput>usermod</userinput> command of some older Linux
+            distributions does not support the <codeph>-a</codeph>
+            option, which adds the user to the given group without
+            affecting membership of other groups. In this case, find out
+            the current group memberships with the
+            <userinput>groups</userinput> command and add all these groups
+            in a comma-separated list to the command line after the
+            <codeph>-G</codeph> option. For example: <userinput>usermod -G
+            <varname>group1</varname>,<varname>group2</varname>,vboxusers <varname>username</varname></userinput>.
+          </p>
+    </note>
+  </body>
+  
+</topic>

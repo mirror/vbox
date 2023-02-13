@@ -1,0 +1,107 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="changetimesync">
+  <title>Tuning the Guest Additions Time Synchronization Parameters</title>
+  
+  <body>
+    <p>
+        The Oracle VM VirtualBox Guest Additions ensure that the guest's
+        system time is synchronized with the host time. There are
+        several parameters which can be tuned. The parameters can be set
+        for a specific VM using the following command:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage guestproperty set <varname>VM-name</varname> "/VirtualBox/GuestAdd/VBoxService/<varname>property</varname>" <varname>value</varname>
+                  </pre>
+    <p><varname>property</varname> is one of the following:
+      </p>
+    <dl>
+      <dlentry>
+        <dt><codeph>--timesync-interval</codeph>
+          </dt>
+        <dd>
+          <p>
+              Specifies the interval at which to synchronize the time
+              with the host. The default is 10000 ms (10 seconds).
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt><codeph>--timesync-min-adjust</codeph>
+          </dt>
+        <dd>
+          <p>
+              The minimum absolute drift value measured in milliseconds
+              to make adjustments for. The default is 1000 ms on OS/2
+              and 100 ms elsewhere.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt><codeph>--timesync-latency-factor</codeph>
+          </dt>
+        <dd>
+          <p>
+              The factor to multiply the time query latency with to
+              calculate the dynamic minimum adjust time. The default is
+              8 times, which means as follows:
+            </p>
+          <p>
+              Measure the time it takes to determine the host time, the
+              guest has to contact the VM host service which may take
+              some time. Multiply this value by 8 and do an adjustment
+              only if the time difference between host and guest is
+              bigger than this value. Do not do any time adjustment
+              otherwise.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt><codeph>--timesync-max-latency</codeph>
+          </dt>
+        <dd>
+          <p>
+              The max host timer query latency to accept. The default is
+              250 ms.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt><codeph>--timesync-set-threshold</codeph>
+          </dt>
+        <dd>
+          <p>
+              The absolute drift threshold, given as milliseconds where
+              to start setting the time instead of trying to smoothly
+              adjust it. The default is 20 minutes.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt><codeph>--timesync-set-start</codeph>
+          </dt>
+        <dd>
+          <p>
+              Set the time when starting the time sync service.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt><codeph>--timesync-set-on-restore</codeph> 0|1
+          </dt>
+        <dd>
+          <p>
+              Set the time after the VM was restored from a saved state
+              when passing 1 as parameter. This is the default. Disable
+              by passing 0. In the latter case, the time will be
+              adjusted smoothly, which can take a long time.
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        All these parameters can be specified as command line parameters
+        to <codeph>VBoxService</codeph> as well.
+      </p>
+  </body>
+  
+</topic>

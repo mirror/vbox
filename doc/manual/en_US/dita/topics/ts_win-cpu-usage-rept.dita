@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_win-cpu-usage-rept">
+  <title>Inaccurate Windows CPU Usage Reporting</title>
+  
+  <body>
+    <p>
+        CPU usage reporting tools which come with Windows, such as Task
+        Manager or Resource Monitor, do not take the time spent
+        processing hardware interrupts into account. If the interrupt
+        load is heavy, with thousands of interrupts per second, CPU
+        usage may be significantly underreported.
+      </p>
+    <p>
+        This problem affects Windows as both host and guest OS.
+        Sysinternals tools, such as Process Explorer, do not suffer from
+        this problem.
+      </p>
+  </body>
+  
+</topic>

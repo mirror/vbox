@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="settings-system">
+            <title>System Settings</title>
+            
+            <body>
+               <p>
+      The <b outputclass="bold">System</b> category groups
+      various settings that are related to the basic hardware that is
+      presented to the virtual machine.
+    </p>
+               <note>
+                  <p>
+        As the activation mechanism of Microsoft Windows is sensitive to
+        hardware changes, if you are changing hardware settings for a
+        Windows guest, some of these changes may trigger a request for
+        another activation with Microsoft.
+      </p>
+               </note>
+               <p>
+      The following tabs are available.
+    </p>
+            </body>
+            
+            
+            
+         </topic>

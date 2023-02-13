@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="linux_install_opts">
+  <title>Automatic Installation Options</title>
+  
+  <body>
+    <p>
+          To configure the installation process for .deb and .rpm
+          packages, you can create a response file named
+          <filepath>/etc/default/virtualbox</filepath>. The automatic
+          generation of the udev rule can be prevented with the
+          following setting:
+        </p>
+    <pre xml:space="preserve">INSTALL_NO_UDEV=1</pre>
+    <p>
+          The creation of the group vboxusers can be prevented as
+          follows:
+        </p>
+    <pre xml:space="preserve">INSTALL_NO_GROUP=1</pre>
+    <p>
+          If the following line is specified, the package installer will
+          not try to build the <userinput>vboxdrv</userinput> kernel module
+          if no module fitting the current kernel was found.
+        </p>
+    <pre xml:space="preserve">INSTALL_NO_VBOXDRV=1</pre>
+  </body>
+  
+</topic>

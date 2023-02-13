@@ -1,0 +1,109 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="keyb_mouse_normal">
+  <title>Capturing and Releasing Keyboard and Mouse</title>
+  
+  <body>
+    <p>
+        Oracle VM VirtualBox provides a virtual USB tablet device to new
+        virtual machines through which mouse events are communicated to
+        the guest OS. If you are running a modern guest OS that can
+        handle such devices, mouse support may work out of the box
+        without the mouse being <i>captured</i> as
+        described below. See <xref href="settings-motherboard.dita#settings-motherboard"/>.
+      </p>
+    <p>
+        Otherwise, if the virtual machine detects only standard PS/2
+        mouse and keyboard devices, since the OS in the virtual machine
+        does not know that it is not running on a real computer, it
+        expects to have exclusive control over your keyboard and mouse.
+        But unless you are running the VM in full screen mode, your VM
+        needs to share keyboard and mouse with other applications and
+        possibly other VMs on your host.
+      </p>
+    <p>
+        After installing a guest OS and before you install the Guest
+        Additions, described in <xref href="guestadditions.dita#guestadditions"/>, either
+        your VM or the rest of your computer can
+        <i>own</i> the keyboard and the mouse. Both cannot
+        own the keyboard and mouse at the same time. You will see a
+        <i>second</i> mouse pointer which is always
+        confined to the limits of the VM window. You activate the VM by
+        clicking inside it.
+      </p>
+    <p>
+        To return ownership of keyboard and mouse to your host OS,
+        Oracle VM VirtualBox reserves a special key on your keyboard: the
+        <i>Host key</i>. By default, this is the
+        <i>right Ctrl key</i> on your keyboard. On a Mac
+        host, the default Host key is the left Command key. You can
+        change this default using the Preferences window. See
+        <xref href="preferences.dita#preferences"/>. The current setting for the Host
+        key is always displayed at the bottom right of your VM window.
+      </p>
+    <fig id="fig-host-key">
+      <title>Host Key Setting on the Virtual Machine Taskbar</title>
+      <image href="images/vm-hostkey.png" placement="break"/>
+    </fig>
+    <p>
+        This means the following:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Your <b outputclass="bold">keyboard</b> is owned by
+            the VM if the VM window on your host desktop has the
+            keyboard focus. If you have many windows open in your guest
+            OS, the window that has the focus in your VM is used. This
+            means that if you want to enter text within your VM, click
+            on the title bar of your VM window first.
+          </p>
+        <p>
+            To release keyboard ownership, press the Host key. As
+            explained above, this is typically the right Ctrl key.
+          </p>
+        <p>
+            Note that while the VM owns the keyboard, some key
+            sequences, such as Alt+Tab, will no longer be seen by the
+            host, but will go to the guest instead. After you press the
+            Host key to reenable the host keyboard, all key presses will
+            go through the host again, so that sequences such as Alt+Tab
+            will no longer reach the guest. For technical reasons it may
+            not be possible for the VM to get all keyboard input even
+            when it does own the keyboard. Examples of this are the
+            Ctrl+Alt+Del sequence on Windows hosts or single keys
+            grabbed by other applications on X11 hosts such as the GNOME
+            desktop Locate Pointer feature.
+          </p>
+      </li>
+      <li>
+        <p>
+            Your <b outputclass="bold">mouse</b> is owned by the
+            VM only after you have clicked in the VM window. The host
+            mouse pointer will disappear, and your mouse will drive the
+            guest's pointer instead of your normal mouse pointer.
+          </p>
+        <p>
+            Note that mouse ownership is independent of that of the
+            keyboard. Even after you have clicked on a titlebar to be
+            able to enter text into the VM window, your mouse is not
+            necessarily owned by the VM yet.
+          </p>
+        <p>
+            To release ownership of your mouse by the VM, press the Host
+            key.
+          </p>
+      </li>
+    </ul>
+    <p>
+        As this behavior is inconvenient, Oracle VM VirtualBox provides a set
+        of tools and device drivers for guest systems called the
+        Oracle VM VirtualBox Guest Additions. These tools make VM keyboard and
+        mouse operations much more seamless. Most importantly, the Guest
+        Additions suppress the second "guest" mouse pointer and make
+        your host mouse pointer work directly in the guest. See
+        <xref href="guestadditions.dita#guestadditions"/>.
+      </p>
+  </body>
+  
+</topic>

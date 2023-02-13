@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="gui-tools-global">
+  <title>Global Tools</title>
+  
+  <body>
+    <p>
+          In the left pane of the VirtualBox Manager window, click the
+          <b outputclass="bold">Menu</b> icon in the
+          <b outputclass="bold">Tools</b> banner located above
+          the machine list. The <b outputclass="bold">Global
+          Tools</b> menu is displayed.
+        </p>
+    <fig id="fig-global-tools-menu">
+      <title>Global Tools Menu</title>
+      <image href="images/global-tools-menu.png" placement="break"/>
+    </fig>
+    <p>
+          A drop-down list enables you to select from the following
+          global tools:
+        </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Welcome.</b> Displays the
+              VirtualBox Manager welcome message. The VirtualBox Manager toolbar is also
+              included, to enable you to get started with using
+              Oracle VM VirtualBox. See
+              <xref href="gui-virtualboxmanager.dita#gui-virtualboxmanager/fig-vbox-manager-initial"/>.
+            </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Extensions.</b> Displays the
+              <b outputclass="bold">Extension Pack Manager</b>
+              tool. This tool is used to install and uninstall
+              Oracle VM VirtualBox Extension Packs. See
+              <xref href="install-ext-pack-manager.dita#install-ext-pack-manager"/>.
+            </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Media.</b> Displays the
+              <b outputclass="bold">Virtual Media Manager</b>
+              tool. This tool is used to manage the disk images used by
+              Oracle VM VirtualBox. See
+              <xref href="virtual-media-manager.dita#virtual-media-manager"/>.
+            </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Network.</b> Displays the
+              <b outputclass="bold">Network Manager</b> tool.
+              This tool is used to create and configure some types of
+              networks used by Oracle VM VirtualBox. See
+              <xref href="network-manager.dita#network-manager"/>.
+            </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Cloud.</b> Displays the
+              <b outputclass="bold">Cloud Profile Editor</b>
+              tool. This tool is used to configure connections to a
+              cloud service, such as Oracle Cloud Infrastructure. See
+              <xref href="cloud-using-cloud-profile-manager.dita#cloud-using-cloud-profile-manager"/>.
+            </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Activities.</b> Displays the
+              <b outputclass="bold">VM Activity Overview</b>
+              tool. This tool is used to monitor performance and
+              resource usage of virtual machines. See
+              <xref href="vm-info.dita#vm-info"/>.
+            </p>
+      </li>
+    </ul>
+    <p>
+          The <b outputclass="bold">Pin</b> icon is used to keep
+          the <b outputclass="bold">Tools</b> banner visible as
+          you scroll down the entries in the machine list.
+        </p>
+  </body>
+  
+</topic>

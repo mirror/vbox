@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="glossentry-dhcp">
+  <title>DHCP</title>
+  <body>
+    <section>
+      <p>
+        Dynamic Host Configuration Protocol. This enables a networking device in a network to 
+        acquire its IP address and other networking details automatically, in order to avoid 
+        having to configure all devices in a network with fixed IP addresses. Oracle VM VirtualBox 
+        has a built-in DHCP server that delivers an IP addresses to a virtual machine when networking 
+        is configured to NAT. See <xref href="networkingdetails.dita"/>.  
+      </p>
+    </section>
+  </body>
+</topic>

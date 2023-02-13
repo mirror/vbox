@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxbowvnictemplates">
+  <title>Oracle VM VirtualBox VNIC Templates for VLANs on Oracle Solaris 11 Hosts</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox supports Virtual Network Interface (VNIC) templates
+      for configuring VMs over VLANs. An Oracle VM VirtualBox VNIC template is
+      a VNIC whose name starts with
+      <filepath>vboxvnic_template</filepath>. The string is
+      case-sensitive.
+    </p>
+    <p>
+      On Oracle Solaris 11 hosts, when Crossbow-based bridged networking
+      is used, a VNIC template may be used to specify the VLAN ID to use
+      while bridging over a network link.
+    </p>
+    <p>
+      The following is an example of how to use a VNIC template to
+      configure a VM over a VLAN. Create an Oracle VM VirtualBox VNIC
+      template, by executing as root:
+    </p>
+    <pre xml:space="preserve"># dladm create-vnic -t -l nge0 -v 23 vboxvnic_template0</pre>
+    <p>
+      This will create a temporary VNIC template over interface
+      <userinput>nge0</userinput> with the VLAN ID 23. To create VNIC
+      templates that are persistent across host reboots, skip the
+      <codeph>-t</codeph> parameter in the above command. You may check
+      the current state of links using the following command:
+    </p>
+    <pre xml:space="preserve">$ dladm show-link
+LINK        CLASS     MTU    STATE    BRIDGE     OVER
+nge0        phys      1500   up       --         --
+nge1        phys      1500   down     --         --
+vboxvnic_template0 vnic 1500 up       --         nge0
+
+$ dladm show-vnic
+LINK         OVER         SPEED  MACADDRESS        MACADDRTYPE         VID
+vboxvnic_template0 nge0   1000   2:8:20:25:12:75   random              23</pre>
+    <p>
+      Once the VNIC template is created, any VMs that need to be on VLAN
+      23 over the interface <userinput>nge0</userinput> can be configured to
+      bridge using this VNIC template.
+    </p>
+    <p>
+      VNIC templates makes managing VMs on VLANs simpler and efficient.
+      The VLAN details are not stored as part of every VM's
+      configuration but rather inherited from the VNIC template while
+      starting the VM. The VNIC template itself can be modified anytime
+      using the <userinput>dladm</userinput> command.
+    </p>
+    <p>
+      VNIC templates can be created with additional properties such as
+      bandwidth limits and CPU fanout. Refer to your Oracle Solaris
+      network documentation for details. The additional properties are
+      also applied to VMs which bridge using the VNIC template.
+    </p>
+  </body>
+  
+</topic>

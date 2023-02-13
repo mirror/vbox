@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="nat-adv-alias">
+  <title>Configuring Aliasing of the NAT Engine</title>
+  
+  <body>
+    <p>
+        By default, the NAT core uses aliasing and uses random ports
+        when generating an alias for a connection. This works well for
+        the most protocols like SSH, FTP and so on. Though some
+        protocols might need a more transparent behavior or may depend
+        on the real port number the packet was sent from. You can change
+        the NAT mode by using the following commands:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage modifyvm <varname>VM-name</varname> \
+--nataliasmode1 proxyonly</pre>
+    <pre xml:space="preserve">$ VBoxManage modifyvm "Linux Guest" --nataliasmode1 sameports</pre>
+    <p>
+        The first example disables aliasing and switches NAT into
+        transparent mode, the second example enforces preserving of port
+        values. These modes can be combined if necessary.
+      </p>
+  </body>
+  
+</topic>

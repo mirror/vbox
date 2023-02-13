@@ -1,0 +1,73 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="intro-installing">
+  <title>Installing Oracle VM VirtualBox and Extension Packs</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox comes in many different packages, and installation
+      depends on your host OS. If you have installed software before,
+      installation should be straightforward. On each host platform,
+      Oracle VM VirtualBox uses the installation method that is most common
+      and easy to use. If you run into trouble or have special
+      requirements, see <xref href="installation.dita#installation"/> for details
+      about the various installation methods.
+    </p>
+    <p>
+      Oracle VM VirtualBox is split into the following components:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Base package.</b> The base
+          package consists of all open source components and is licensed
+          under the GNU General Public License V2.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Extension packs.</b> Additional
+          extension packs can be downloaded which extend the
+          functionality of the Oracle VM VirtualBox base package. Currently,
+          Oracle provides a single extension pack, available from:
+          <ph>http://www.virtualbox.org</ph>. The extension pack
+          provides the following added functionality:
+        </p>
+        <ul>
+          <li>
+            <p>
+              VirtualBox Remote Desktop Protocol (VRDP) support. See
+              <xref href="vrde.dita">Remote Display (VRDP Support)</xref>.
+            </p>
+          </li>
+          <li>
+            <p>
+              Host webcam passthrough. See
+              <xref href="webcam-passthrough.dita">Webcam Passthrough</xref>.
+            </p>
+          </li>
+          <li>
+            <p>
+              Intel PXE boot ROM.
+            </p>
+          </li>
+          <li>
+            <p>
+              Disk image encryption with AES algorithm. See
+              <xref href="diskencryption.dita">Encryption of Disk Images</xref>.
+            </p>
+          </li>
+          <li>
+            <p>
+              Cloud integration features. See
+              <xref href="cloud-integration.dita"/>.
+            </p>
+          </li>
+        </ul>
+        <p>
+          For details of how to install an extension pack, see
+          <xref href="install-ext-pack.dita"/>.
+        </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

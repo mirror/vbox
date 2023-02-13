@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="VirtualBoxAPI">
+  <title>Oracle VM VirtualBox Programming Interfaces</title>
+  
+  <body>
+    <p>
+    Oracle VM VirtualBox comes with comprehensive support for third-party
+    developers. The so-called <i>Main API</i> of
+    Oracle VM VirtualBox exposes the entire feature set of the virtualization
+    engine. It is completely documented and available to anyone who
+    wishes to control Oracle VM VirtualBox programmatically.
+  </p>
+    <p>
+    The Main API is made available to C++ clients through COM on Windows
+    hosts or XPCOM on other hosts. Bridges also exist for SOAP, Java and
+    Python.
+  </p>
+    <p>
+    All programming information such as documentation, reference
+    information, header and other interface files, as well as samples
+    have been split out to a separate <b outputclass="bold">Software
+    Development Kit (SDK)</b>. The SDK is available for download
+    from
+    <ph>http://www.virtualbox.org</ph>.
+    In particular, the SDK comes with a Programming Guide and Reference
+    manual in PDF format. This manual contains, among other things, the
+    information that was previously in this chapter of the User Manual.
+  </p>
+  </body>
+  
+</topic>

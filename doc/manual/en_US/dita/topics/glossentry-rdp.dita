@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="glossentry-rdp">
+  <title>RDP</title>
+  <body>
+    <section>
+      <p>
+        Remote Desktop Protocol, a protocol developed by Microsoft as an 
+        extension to the ITU T.128 and T.124 video conferencing protocol. 
+        With RDP, a PC system can be controlled from a remote location 
+        using a network connection over which data is transferred in 
+        both directions. Typically graphics updates and audio are sent 
+        from the remote machine and keyboard and mouse input events are 
+        sent from the client. An Oracle VM VirtualBox extension package by 
+        Oracle provides VRDP, an enhanced implementation of the relevant 
+        standards which is largely compatible with Microsoft's RDP 
+        implementation. 
+        See <xref href="remotevm.dita">Remote Display (VRDP Support)</xref> for details. 
+      </p>
+    </section>
+  </body>
+</topic>

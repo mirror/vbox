@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="settings-remote-display">
+  <title>Remote Display Tab</title>
+  
+  <body>
+    <p>
+        On the <b outputclass="bold">Remote Display</b> tab, if
+        the VirtualBox Remote Display Extension (VRDE) is installed, you
+        can enable the VRDP server that is built into Oracle VM VirtualBox.
+        This enables you to connect to the console of the virtual
+        machine remotely with any standard RDP viewer, such as
+        <userinput>mstsc.exe</userinput> that comes with Microsoft Windows.
+        On Linux and Oracle Solaris systems you can use the standard
+        open source <userinput>rdesktop</userinput> program. These features
+        are described in <xref href="vrde.dita">Remote Display (VRDP Support)</xref>.
+      </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Enable Server:</b> Select this
+            check box and configure settings for the remote display
+            connection.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

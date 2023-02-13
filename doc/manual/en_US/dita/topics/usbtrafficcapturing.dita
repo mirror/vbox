@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="usbtrafficcapturing">
+  <title>Capturing USB Traffic for Selected Devices</title>
+  
+  <body>
+    <p>
+      You can capture USB traffic for single USB devices or on the root
+      hub level, which captures the traffic of all USB devices attached
+      to the root hub. Oracle VM VirtualBox stores the traffic in a format
+      which is compatible with Wireshark. To capture the traffic of a
+      specific USB device it must be attached to the VM with
+      <userinput>VBoxManage</userinput> using the following command:
+    </p>
+    <pre xml:space="preserve">VBoxManage controlvm <varname>VM-name</varname> usbattach <varname>device uuid</varname>|<varname>address</varname> --capturefile <varname>filename</varname>
+               </pre>
+    <p>
+      In order to enable capturing on the root hub use the following
+      command while the VM is not running:
+    </p>
+    <pre xml:space="preserve">VBoxManage setextradata <varname>VM-name</varname> \
+VBoxInternal/Devices/usb-ehci/0/LUN#0/Config/CaptureFilename <varname>filename</varname>
+               </pre>
+    <p>
+      The command above enables capturing on the root hub attached to
+      the EHCI controller. To enable it for the OHCI or XHCI controller
+      replace <codeph>usb-ehci</codeph> with
+      <codeph>usb-ohci</codeph> or <codeph>usb-xhci</codeph>,
+      respectively.
+    </p>
+  </body>
+  
+</topic>

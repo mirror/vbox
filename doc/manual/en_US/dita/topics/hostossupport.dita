@@ -1,0 +1,181 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="hostossupport">
+  <title>Supported Host Operating Systems</title>
+  
+  <body>
+    <p>
+      Currently, Oracle VM VirtualBox runs on the following host OSes:
+    </p>
+    <ul>
+      <li>
+        <p>
+          <b outputclass="bold">Windows hosts (64-bit):</b>
+        </p>
+        <ul>
+          <li>
+            <p>
+              Windows 8.1
+            </p>
+          </li>
+          <li>
+            <p>
+              Windows 10
+            </p>
+          </li>
+          <li>
+            <p>
+              Windows 11 21H2
+            </p>
+          </li>
+          <li>
+            <p>
+              Windows Server 2012
+            </p>
+          </li>
+          <li>
+            <p>
+              Windows Server 2012 R2
+            </p>
+          </li>
+          <li>
+            <p>
+              Windows Server 2016
+            </p>
+          </li>
+          <li>
+            <p>
+              Windows Server 2019
+            </p>
+          </li>
+          <li>
+            <p>
+              Windows Server 2022
+            </p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>
+          <b outputclass="bold">macOS hosts (64-bit):</b>
+        </p>
+        <ul>
+          <li>
+            <p>
+              10.15 (Catalina)
+            </p>
+          </li>
+          <li>
+            <p>
+              11 (Big Sur)
+            </p>
+          </li>
+          <li>
+            <p>
+              12 (Monterey)
+            </p>
+          </li>
+        </ul>
+        <p>
+          Intel hardware is required. See also
+          <xref href="KnownIssues.dita">Known Limitations</xref>.
+        </p>
+        <p>
+          An installer package is available for macOS/Arm64, for systems
+          using an Apple silicon CPU. With this package, you can run
+          some guest operating systems for Intel x86/x64 CPUs in an
+          emulation.
+        </p>
+        <p>
+          The macOS/Arm64 installer package for Apple silicon platform
+          is available as a Developer Preview release. This package
+          represents a work in progress project and the performance is
+          very modest.
+        </p>
+        <note>
+          <p>
+            Developer Preview is a public release for developers, which
+            provides early access to unsupported software release and
+            features.
+          </p>
+        </note>
+      </li>
+      <li>
+        <p><b outputclass="bold">Linux hosts (64-bit).</b>
+          Includes the following:
+        </p>
+        <ul>
+          <li>
+            <p>
+              Ubuntu 18.04 LTS, 20.04 LTS and 22.04
+            </p>
+          </li>
+          <li>
+            <p>
+              Debian GNU/Linux 10 ("Buster") and 11 ("Bullseye")
+            </p>
+          </li>
+          <li>
+            <p>
+              Oracle Linux 7, 8 and 9
+            </p>
+          </li>
+          <li>
+            <p>
+              CentOS/Red Hat Enterprise Linux 7, 8 and 9
+            </p>
+          </li>
+          <li>
+            <p>
+              Fedora 35 and 36
+            </p>
+          </li>
+          <li>
+            <p>
+              Gentoo Linux
+            </p>
+          </li>
+          <li>
+            <p>
+              SUSE Linux Enterprise server 12 and 15
+            </p>
+          </li>
+          <li>
+            <p>
+              openSUSE Leap 15.3
+            </p>
+          </li>
+        </ul>
+        <p>
+          It should be possible to use Oracle VM VirtualBox on most systems
+          based on Linux kernel 2.6, 3.x, 4.x or 5.x using either the
+          Oracle VM VirtualBox installer or by doing a manual installation.
+          See <xref href="install-linux-host.dita#install-linux-host"/>. However, the
+          formally tested and supported Linux distributions are those
+          for which we offer a dedicated package.
+        </p>
+        <p>
+          Note that Linux 2.4-based host OSes are no longer supported.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Oracle Solaris hosts (64-bit
+          only).</b> The following versions are supported with
+          the restrictions listed in <xref href="KnownIssues.dita">Known Limitations</xref>:
+        </p>
+        <ul>
+          <li>
+            <p>
+              Oracle Solaris 11.4
+            </p>
+          </li>
+        </ul>
+      </li>
+    </ul>
+    <p>
+      Note that any feature which is marked as
+      <i>experimental</i> is not supported. Feedback and
+      suggestions about such features are welcome.
+    </p>
+  </body>
+</topic>

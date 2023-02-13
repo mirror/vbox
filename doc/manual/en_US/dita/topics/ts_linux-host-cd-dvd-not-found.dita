@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_linux-host-cd-dvd-not-found">
+  <title>Linux Host CD/DVD or Floppy Disk Drive Not Found</title>
+  
+  <body>
+    <p>
+        If you have configured a virtual machine to use the host's CD or
+        DVD drive or floppy disk drive, but this does not appear to
+        work, make sure that the current user has permission to access
+        the corresponding Linux device file. For example, for a CD or
+        DVD drive this may be <filepath>/dev/hdc</filepath>,
+        <filepath>/dev/scd0</filepath>, <filepath>/dev/cdrom</filepath>
+        or similar. On most distributions, the user must be added to a
+        corresponding group, usually called <userinput>cdrom</userinput> or
+        <userinput>cdrw</userinput> or <userinput>floppy</userinput>.
+      </p>
+    <p>
+        On supported Linux distributions, Oracle VM VirtualBox uses
+        <userinput>udev</userinput> to locate hardware such as CD/DVD drives
+        and floppy disk drives.
+      </p>
+  </body>
+  
+</topic>

@@ -1,0 +1,103 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ovf-import-appliance">
+  <title>Importing an Appliance in OVF Format</title>
+  
+  <body>
+    <p>
+        The following steps show how to import an appliance in OVF
+        format.
+      </p>
+    <ol>
+      <li>
+        <p>
+            Double-click on the OVF or OVA file.
+          </p>
+        <p>
+            Oracle VM VirtualBox creates file type associations automatically
+            for any OVF and OVA files on your host OS.
+          </p>
+        <p>
+            The <b outputclass="bold">Appliance Settings</b> page
+            of the <b outputclass="bold">Import Virtual
+            Appliance</b> wizard is shown.
+          </p>
+        <fig id="fig-import-appliance">
+          <title>Import Virtual Appliance Wizard: Appliance Settings</title>
+          <image href="images/ovf-import.png" placement="break"/>
+        </fig>
+      </li>
+      <li>
+        <p>
+            The <b outputclass="bold">Appliance Settings</b> page
+            shows the VMs described in the OVF or OVA file and enables
+            you to change the VM settings.
+          </p>
+        <p>
+            By default, membership of VM groups is preserved on import
+            for VMs that were initially exported from Oracle VM VirtualBox.
+            You can change this behavior by using the
+            <b outputclass="bold">Primary Group</b> setting for
+            the VM.
+          </p>
+        <p>
+            The following global settings apply to all of the VMs that
+            you import:
+          </p>
+        <ul>
+          <li>
+            <p><b outputclass="bold">Base Folder:</b> Specifies
+                the directory on the host in which to store the imported
+                VMs.
+              </p>
+            <p>
+                If an appliance has multiple VMs, you can specify a
+                different directory for each VM by editing the
+                <b outputclass="bold">Base Folder</b> setting for
+                the VM.
+              </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">MAC Address Policy:</b>
+                Reinitializes the MAC addresses of network cards in your
+                VMs prior to import, by default. You can override the
+                default behavior and preserve the MAC addresses on
+                import.
+              </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">Import Hard Drives as
+                VDI:</b> Imports hard drives in the VDI format
+                rather than in the default VMDK format.
+              </p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>
+            Click <b outputclass="bold">Finish</b> to import the
+            appliance.
+          </p>
+        <p>
+            Oracle VM VirtualBox copies the disk images and creates local VMs
+            with the settings described on the
+            <b outputclass="bold">Appliance Settings</b> page.
+            The imported VMs are shown in the list of VMs in VirtualBox
+            Manager.
+          </p>
+        <p>
+            Because disk images are large, the VMDK images that are
+            included with virtual appliances are shipped in a compressed
+            format that cannot be used directly by VMs. So, the images
+            are first unpacked and copied, which might take several
+            minutes.
+          </p>
+      </li>
+    </ol>
+    <p>
+        You can use the <userinput>VBoxManage import</userinput> command to
+        import an appliance. See <xref href="man_VBoxManage-import.dita#vboxmanage-import"/>.
+      </p>
+  </body>
+  
+</topic>

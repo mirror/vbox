@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="diskencryption-startvm">
+  <title>Starting a VM with Encrypted Images</title>
+  
+  <body>
+    <p>
+        When a VM is started using VirtualBox Manager, a dialog will open where
+        the user needs to enter all passwords for all encrypted images
+        attached to the VM. If another frontend like VBoxHeadless is
+        used, the VM will be paused as soon as the guest tries to access
+        an encrypted disk. The user needs to provide the passwords
+        through <userinput>VBoxManage</userinput> using the following
+        command:
+      </p>
+    <pre xml:space="preserve">VBoxManage controlvm <varname>uuid</varname>|<varname>vmname</varname> addencpassword <varname>ID</varname>
+                     <varname>password</varname> [--removeonsuspend yes|no]</pre>
+    <p><varname>ID</varname> must be the same as the password
+        identifier supplied when encrypting the images.
+        <varname>password</varname> is the password used when
+        encrypting the images. Optionally, you can specify
+        <codeph>--removeonsuspend</codeph> yes|no to specify whether to
+        remove the password from VM memory when the VM is suspended.
+        Before the VM can be resumed, the user needs to supply the
+        passwords again. This is useful when a VM is suspended by a host
+        suspend event and the user does not want the password to remain
+        in memory.
+      </p>
+  </body>
+  
+</topic>

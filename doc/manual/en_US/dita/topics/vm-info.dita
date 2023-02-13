@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vm-info">
+            <title>Monitoring of Virtual Machines</title>
+            
+            <body>
+               <p>
+      VirtualBox Manager includes the following tools for viewing runtime
+      information and changing the configuration of virtual machines.
+    </p>
+               <ul>
+                  <li>
+                     <p>
+                        <b outputclass="bold"> VM Activity Overview.</b>
+          Displays an overview of performance metrics for all running
+          VMs.
+        </p>
+                     <p>
+          See <xref href="vm-activity-overview.dita#vm-activity-overview"/>.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Session Information Dialog.</b>
+          Displays configuration and runtime information for the
+          selected guest system.
+        </p>
+                     <p>
+          See <xref href="vm-activity-session-information.dita#vm-activity-session-information"/>
+                     </p>
+                  </li>
+               </ul>
+            </body>
+            
+            
+         </topic>

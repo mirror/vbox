@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="install-linux-performing">
+  <title>Performing the Installation</title>
+  
+  <body>
+    <p>
+        Oracle VM VirtualBox is available in a number of package formats
+        native to various common Linux distributions. See
+        <xref href="hostossupport.dita#hostossupport"/>. In addition, there is an
+        alternative generic installer (.run) which you can use on
+        supported Linux distributions.
+      </p>
+  </body>
+</topic>

@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="create-virtual-hard-disk-image">
+  <title>Creating a Virtual Hard Disk Image</title>
+  
+  <body>
+    <p>
+        Use the <b outputclass="bold">Create Virtual Hard
+        Disk</b> wizard to create a hard disk image.
+      </p>
+    <ol>
+      <li>
+        <p>
+            Display the <b outputclass="bold">Hard Disks</b> tab
+            in Virtual Media Manager and click
+            <b outputclass="bold">Create</b>.
+          </p>
+        <p>
+            The <b outputclass="bold">Create Virtual Hard
+            Disk</b> wizard is shown.
+          </p>
+        <fig id="fig-virtual-hard-disk-wizard">
+          <title>Create Virtual Hard Disk Wizard</title>
+          <image href="images/virtual-hard-disk-wizard.png" placement="break"/>
+        </fig>
+      </li>
+      <li>
+        <p>
+            On the <b outputclass="bold">Virtual Hard Disk File
+            Type</b> page, select a file type for the new virtual
+            hard disk image.
+          </p>
+        <p>
+            Click <b outputclass="bold">Next</b>.
+          </p>
+      </li>
+      <li>
+        <p>
+            On the <b outputclass="bold">Storage on Physical Hard
+            Disk</b> page, select whether the size of the virtual
+            hard disk file is dynamically allocated or is of fixed size.
+          </p>
+        <p>
+            Click <b outputclass="bold">Next</b>.
+          </p>
+      </li>
+      <li>
+        <p>
+            On the <b outputclass="bold">File Location and
+            Size</b> page, configure the location of the virtual
+            hard disk file and use the slider to set the size limit for
+            the virtual hard disk.
+          </p>
+        <p>
+            Click <b outputclass="bold">Finish</b> to create the
+            virtual hard disk file.
+          </p>
+        <p>
+            The virtual hard disk image is created in the specified
+            location and added to the <b outputclass="bold">Hard
+            Disks</b> tab in Virtual Media Manager.
+          </p>
+      </li>
+    </ol>
+  </body>
+  
+</topic>

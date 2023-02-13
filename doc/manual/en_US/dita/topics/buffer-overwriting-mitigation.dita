@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="buffer-overwriting-mitigation">
+  <title>Buffer Overwriting and Disabling Hyper-Threading</title>
+  
+  <body>
+    <p>
+          First, up to date CPU microcode is a prerequisite for the
+          buffer overwriting (clearing) mitigations. Some host OSes may
+          install these automatically, though it has traditionally been
+          a task best performed by the system firmware. Please check
+          with your system or mainboard manufacturer for the latest
+          firmware update.
+        </p>
+    <p>
+          This mitigation aims at removing potentially sensitive data
+          from the affected buffers before running guest code. Since
+          this means additional work each time the guest is scheduled,
+          there might be some performance side effects.
+        </p>
+    <p>
+          We recommend disabling hyper-threading (HT) on hosts affected
+          by CVE-2018-12126 and CVE-2018-12127, because the affected
+          sets of buffers are normally shared between thread pairs and
+          therefore cause leaks between the threads. This is
+          traditionally done from the firmware setup, but some OSes also
+          offers ways disable HT. In some cases it may be disabled by
+          default, but please verify as the effectiveness of the
+          mitigation depends on it.
+        </p>
+    <p>
+          The default action taken by Oracle VM VirtualBox is to clear the
+          affected buffers when a thread is scheduled to execute guest
+          code, rather than on each VM entry. This reduces the
+          performance impact, while making the assumption that the host
+          OS will not handle security sensitive data from interrupt
+          handlers and similar without taking precautions.
+        </p>
+    <p>
+          The <userinput>VBoxManage modifyvm</userinput> command provides a
+          more aggressive flushing option is provided by means of the
+          <codeph>--mds-clear-on-vm-entry</codeph> option. When enabled
+          the affected buffers will be cleared on every VM entry. The
+          performance impact is greater than with the default option,
+          though this of course depends on the workload. Workloads
+          producing a lot of VM exits (like networking, VGA access, and
+          similiar) will probably be most impacted.
+        </p>
+    <p>
+          For users not concerned by this security issue, the default
+          mitigation can be disabled using the <userinput>VBoxManage
+          modifyvm name --mds-clear-on-sched off</userinput> command.
+        </p>
+  </body>
+  
+</topic>

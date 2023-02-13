@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="hyperv-support">
+  <title>Using Hyper-V with Oracle VM VirtualBox</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox can be used on a Windows host where Hyper-V is
+      running. This is an experimental feature.
+    </p>
+    <p>
+      No configuration is required. Oracle VM VirtualBox detects Hyper-V
+      automatically and uses Hyper-V as the virtualization engine for
+      the host system. The CPU icon in the VM window status bar
+      indicates that Hyper-V is being used.
+    </p>
+    <note>
+      <p>
+        When using this feature, some host systems might experience
+        significant Oracle VM VirtualBox performance degradation.
+      </p>
+    </note>
+  </body>
+  
+</topic>

@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-vm-control">
+  <title>Controlling a Cloud VM</title>
+  
+  <body>
+    <p>
+          You can use VirtualBox Manager to control a cloud VM as follows:
+        </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Start.</b> Use the
+              <b outputclass="bold">Start</b> button in the
+              VirtualBox Manager toolbar.
+            </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Stop.</b> Right-click on the
+              cloud VM name, to display the
+              <b outputclass="bold">Close</b> menu. Options to
+              shut down and power off the cloud VM are available.
+            </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Terminate.</b> Use the
+              <b outputclass="bold">Terminate</b> button in the
+              VirtualBox Manager toolbar.
+            </p>
+        <note type="caution">
+          <p>
+                This action deletes the instance from Oracle Cloud Infrastructure.
+              </p>
+        </note>
+      </li>
+    </ul>
+    <p>
+          When you control a cloud VM in VirtualBox Manager the machine list is
+          updated automatically with the current instance state, such as
+          <b outputclass="bold">Stopped</b> or
+          <b outputclass="bold">Running</b>.
+        </p>
+    <p>
+          When you control an instance using the Oracle Cloud Infrastructure console,
+          VirtualBox Manager updates the status for the corresponding cloud VM
+          automatically.
+        </p>
+  </body>
+  
+</topic>

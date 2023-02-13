@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboximg-mount-display">
+               <title>Viewing Detailed Information About a Virtual Disk Image</title>
+               
+               <body>
+                  <p>
+        The following examples show how to use the
+        <userinput>vboximg-mount</userinput> command to view information
+        about virtual disk images.
+      </p>
+                  <p>
+        The following command outputs detailed information about all
+        registered VMs and associated snapshots:
+      </p>
+                  <pre xml:space="preserve">$ vboximg-mount --list --verbose
+
+    ------------------------------------------------------
+    VM Name:   "macOS High Sierra 10.13"
+    UUID:      3887d96d-831c-4187-a55a-567c504ff0e1
+    Location:  /Volumes/work/vm_guests/macOS High Sierra 10.13/macOS High Sierra 10.13.vbox
+       -----------------------
+       HDD base:   "macOS High Sierra 10.13.vdi"
+       UUID:       f9ea7173-6869-4aa9-b487-68023a655980
+       Location:   /Volumes/work/vm_guests/macOS High Sierra 10.13/macOS High Sierra 10.13.vdi
+
+         Diff 1:
+              UUID:       98c2bac9-cf37-443d-a935-4e879b70166d
+              Location:   /Volumes/work/vm_guests/macOS High Sierra 10.13/
+              Snapshots/{98c2bac9-cf37-443d-a935-4e879b70166d}.vdi
+         Diff 2:
+              UUID:       f401f381-7377-40b3-948e-3c61241b1a42
+              Location:   /Volumes/work/vm_guests/macOS High Sierra 10.13/
+              Snapshots/{f401f381-7377-40b3-948e-3c61241b1a42}.vdi
+       -----------------------
+       HDD base:   "simple_fixed_disk.vdi"
+       UUID:       ffba4d7e-1277-489d-8173-22ca7660773d
+       Location:   /Volumes/work/vm_guests/macOS High Sierra 10.13/simple_fixed_disk.vdi
+
+         Diff 1:
+              UUID:       aecab681-0d2d-468b-8682-93f79dc97a48
+              Location:   /Volumes/work/vm_guests/macOS High Sierra 10.13/
+              Snapshots/{aecab681-0d2d-468b-8682-93f79dc97a48}.vdi
+         Diff 2:
+              UUID:       70d6b34d-8422-47fa-8521-3b6929a1971c
+              Location:   /Volumes/work/vm_guests/macOS High Sierra 10.13/
+              Snapshots/{70d6b34d-8422-47fa-8521-3b6929a1971c}.vdi
+      ------------------------------------------------------
+      VM Name:   "debian"
+      UUID:      5365ab5f-470d-44c0-9863-dad532ee5905
+      Location:  /Volumes/work/vm_guests/debian/debian.vbox
+         -----------------------
+         HDD base:   "debian.vdi"
+         UUID:       96d2e92e-0d4e-46ab-a0f1-008fdbf997e7
+         Location:   /Volumes/work/vm_guests/debian/ol7.vdi
+
+            Diff 1:
+                UUID:       f9cc866a-9166-42e9-a503-bbfe9b7312e8
+                Location:   /Volumes/work/vm_guests/debian/Snapshots/
+                {f9cc866a-9166-42e9-a503-bbfe9b7312e8}.vdi</pre>
+                  <p>
+        The following command outputs partition information about the
+        specified disk image:
+      </p>
+                  <pre xml:space="preserve">$ vboximg-mount --image=f9ea7173-6869-4aa9-b487-68023a655980 --list
+
+    Virtual disk image:
+
+       Path: /Volumes/work/vm_guests/macOS High Sierra 10.13/macOS High Sierra 10.13.vdi
+       UUID: f9ea7173-6869-4aa9-b487-68023a655980
+
+      #     Start  Sectors     Size       Offset  Type
+      1        40  409599    199.9M        20480  EFI System
+      2    409640  67453071   32.1G    209735680  Hierarchical File System Plus (HFS+)
+      3  67862712  1269535   107.8M  34745708544  Apple Boot (Recovery HD)</pre>
+               </body>
+               
+            </topic>

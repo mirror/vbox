@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="import-instance-sequence">
+  <title>Importing an Instance: Overview of Events</title>
+  
+  <body>
+    <p>
+          The following describes the sequence of events when you import
+          an instance from Oracle Cloud Infrastructure.
+        </p>
+    <ul>
+      <li>
+        <p>
+              A custom image is created from the boot volume of the
+              instance.
+            </p>
+      </li>
+      <li>
+        <p>
+              The custom image is exported to an Oracle Cloud Infrastructure object and is
+              stored using Object Storage in the bucket specified by the
+              user.
+            </p>
+      </li>
+      <li>
+        <p>
+              The Oracle Cloud Infrastructure object is downloaded to the local host. The
+              object is a TAR archive which contains a boot volume of
+              the instance in QCOW2 format and a JSON file containing
+              metadata related to the instance.
+            </p>
+      </li>
+      <li>
+        <p>
+              The boot volume of the instance is extracted from the
+              archive and a new VMDK image is created by converting the
+              boot volume into the VMDK format. The VMDK image is
+              registered with Oracle VM VirtualBox.
+            </p>
+      </li>
+      <li>
+        <p>
+              A new VM is created using the VMDK image for the cloud
+              instance.
+            </p>
+        <p>
+              By default, the new VM is not started after import from
+              Oracle Cloud Infrastructure.
+            </p>
+      </li>
+      <li>
+        <p>
+              The downloaded TAR archive is deleted after a successful
+              import.
+            </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

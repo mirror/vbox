@@ -1,0 +1,198 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="install-win-performing">
+  <title>Performing the Installation</title>
+  
+  <body>
+    <p>
+        The Oracle VM VirtualBox installation can be started in either of the
+        following ways:
+      </p>
+    <ul>
+      <li>
+        <p>
+            By double-clicking on the executable file.
+          </p>
+      </li>
+      <li>
+        <p>
+            By entering the following command:
+          </p>
+        <pre xml:space="preserve">VirtualBox-&lt;version&gt;-&lt;revision&gt;-Win.exe -extract</pre>
+        <p>
+            This will extract the installer into a temporary directory,
+            along with the .MSI file. Run the following command to
+            perform the installation:
+          </p>
+        <pre xml:space="preserve">msiexec /i VirtualBox-&lt;version&gt;-&lt;revision&gt;-Win.msi</pre>
+      </li>
+    </ul>
+    <p>
+        Using either way displays the installation
+        <b outputclass="bold">Welcome</b> dialog and enables you
+        to choose where to install Oracle VM VirtualBox, and which components
+        to install. In addition to the Oracle VM VirtualBox application, the
+        following components are available:
+      </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">USB support.</b> This package
+            contains special drivers for your Windows host that
+            Oracle VM VirtualBox requires to fully support USB devices inside
+            your virtual machines.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Networking.</b> This package
+            contains extra networking drivers for your Windows host that
+            Oracle VM VirtualBox needs to support Bridged Networking. This
+            enables your VM's virtual network cards to be accessed from
+            other machines on your physical network.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Python support.</b> This
+            package contains Python scripting support for the
+            Oracle VM VirtualBox API, see <xref href="VirtualBoxAPI.dita">Oracle VM VirtualBox Programming Interfaces</xref>.
+            For this to work, an already working Windows Python
+            installation on the system is required.
+          </p>
+        <p>
+            See, for example:
+            <ph>http://www.python.org/download/windows/</ph>.
+          </p>
+        <note>
+          <p>
+              Python version at least 2.6 is required. Python 3 is also
+              supported.
+            </p>
+        </note>
+      </li>
+    </ul>
+    <p>
+        Depending on your Windows configuration, you may see warnings
+        about unsigned drivers, or similar. Click
+        <b outputclass="bold">Continue</b> for these warnings, as
+        otherwise Oracle VM VirtualBox might not function correctly after
+        installation.
+      </p>
+    <p>
+        The installer will create an Oracle VM VirtualBox group in the Windows
+        <b outputclass="bold">Start</b> menu, which enables you
+        to launch the application and access its documentation.
+      </p>
+    <p>
+        With standard settings, Oracle VM VirtualBox will be installed for all
+        users on the local system. If this is not wanted, you must
+        invoke the installer by first extracting as follows:
+      </p>
+    <pre xml:space="preserve">VirtualBox.exe -extract</pre>
+    <p>
+        Then, run either of the following commands on the extracted .MSI
+        file. This will install Oracle VM VirtualBox only for the current
+        user.
+      </p>
+    <pre xml:space="preserve">VirtualBox.exe -msiparams ALLUSERS=2</pre>
+    <pre xml:space="preserve">msiexec /i VirtualBox-&lt;version&gt;-Win.msi ALLUSERS=2</pre>
+    <p>
+        If you do not want to install all features of Oracle VM VirtualBox,
+        you can set the optional <codeph>ADDLOCAL</codeph> parameter
+        to explicitly name the features to be installed. The following
+        features are available:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+            VBoxApplication
+          </dt>
+        <dd>
+          <p>
+              Main binaries of Oracle VM VirtualBox.
+            </p>
+          <note>
+            <p>
+                This feature must not be absent, since it contains the
+                minimum set of files to have working Oracle VM VirtualBox
+                installation.
+              </p>
+          </note>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            VBoxUSB
+          </dt>
+        <dd>
+          <p>
+              USB support.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            VBoxNetwork
+          </dt>
+        <dd>
+          <p>
+              All networking support. This includes the VBoxNetworkFlt
+              and VBoxNetworkAdp features.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            VBoxNetworkFlt
+          </dt>
+        <dd>
+          <p>
+              Bridged networking support.
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            VBoxNetworkAdp
+          </dt>
+        <dd>
+          <p>
+              Host-only networking support
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            VBoxPython
+          </dt>
+        <dd>
+          <p>
+              Python support
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        For example, to only install USB support along with the main
+        binaries, run either of the following commands:
+      </p>
+    <pre xml:space="preserve">VirtualBox.exe -msiparams ADDLOCAL=VBoxApplication,VBoxUSB</pre>
+    <pre xml:space="preserve">msiexec /i VirtualBox-&lt;version&gt;-Win.msi ADDLOCAL=VBoxApplication,VBoxUSB</pre>
+    <p>
+        The user is able to choose between NDIS5 and NDIS6 host network
+        filter drivers during the installation. This is done using a
+        command line parameter, <codeph>NETWORKTYPE</codeph>. The
+        NDIS6 driver is the default for most supported Windows hosts.
+        For some legacy Windows versions, the installer will
+        automatically select the NDIS5 driver and this cannot be
+        changed.
+      </p>
+    <p>
+        You can force an install of the legacy NDIS5 host network filter
+        driver by specifying <codeph>NETWORKTYPE=NDIS5</codeph>. For
+        example, to install the NDIS5 driver on Windows 7 use either of
+        the following commands:
+      </p>
+    <pre xml:space="preserve">VirtualBox.exe -msiparams NETWORKTYPE=NDIS5</pre>
+    <pre xml:space="preserve">msiexec /i VirtualBox-&lt;version&gt;-Win;.msi NETWORKTYPE=NDIS5</pre>
+  </body>
+  
+</topic>

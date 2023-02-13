@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vm-activity-overview">
+               <title>VM Activity Overview</title>
+               
+               <body>
+                  <p>
+        The VM Activity Overview tool displays several performance
+        metrics for all running virtual machines and for the host
+        system. This provides an overview of system resources used by
+        individual virtual machines and the host system.
+      </p>
+                  <p>
+        To display the VM Activity Overview tool, do the following:
+      </p>
+                  <p>
+        Go to the global <b outputclass="bold">Tools</b> menu and
+        click <b outputclass="bold">Activities</b>. The
+        <b outputclass="bold">VM Activity Overview</b> window is
+        shown.
+      </p>
+                  <fig id="fig-vm-activity-overview-widget">
+                     <title>VM Activity Overview Tool</title>
+                     <image href="images/vm-activity-overview.png" placement="break"/>
+                  </fig>
+                  <p>
+        To show metrics for <i>all</i> virtual machines,
+        including those that are not running, right-click on the list of
+        virtual machines and select <b outputclass="bold">List All
+        Virtual Machines</b>.
+      </p>
+                  <p>
+        To configure the set of metrics to be shown, click
+        <b outputclass="bold">Columns</b> in the toolbar. You can
+        then sort the list of virtual machines by a particular metric.
+      </p>
+                  <p>
+        To see more performance information for a virtual machine,
+        select the VM name and click <b outputclass="bold">VM
+        Activity</b> in the toolbar. The <b outputclass="bold">VM
+        Activity</b> tab of the <b outputclass="bold">Session
+        Information</b> dialog is shown, see
+        <xref href="vm-activity-session-information.dita#vm-activity-session-information"/>.
+      </p>
+               </body>
+               
+            </topic>

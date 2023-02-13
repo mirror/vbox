@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestadd-resizing-linux-limitations">
+  <title>Known Limitations</title>
+  
+  <body>
+    <p><userinput>VBoxDRMClient</userinput> is not able to handle
+          arbitrary guest monitor topologies. Specifically, disabling a
+          guest monitor that is not the last one invalidates the monitor
+          topology due to limitations in the
+          <codeph>vmwgfx.ko</codeph> Linux kernel module. For example,
+          when the guest is configured to have four monitors it is not
+          recommended to disable the second or third monitor.
+        </p>
+  </body>
+  
+</topic>

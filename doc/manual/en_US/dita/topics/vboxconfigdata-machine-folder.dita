@@ -1,0 +1,104 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxconfigdata-machine-folder">
+  <title>The Machine Folder</title>
+  
+  <body>
+    <p>
+        By default, each virtual machine has a directory on your host
+        computer where all the files of that machine are stored: the XML
+        settings file, with a <filepath>.vbox</filepath> file extension,
+        and its disk images. This is called the <i>machine
+        folder</i>.
+      </p>
+    <p>
+        By default, this machine folder is located in a common folder
+        called <filepath>VirtualBox VMs</filepath>, which Oracle VM VirtualBox
+        creates in the current system user's home directory. The
+        location of this home directory depends on the conventions of
+        the host operating system, as follows:
+      </p>
+    <ul>
+      <li>
+        <p>
+            On Windows, this is the location returned by the
+            <codeph>SHGetFolderPath</codeph> function of the Windows
+            system library Shell32.dll, asking for the user profile. A
+            typical location is
+            <filepath>C:\Users\<varname>username</varname>
+                           </filepath>.
+          </p>
+      </li>
+      <li>
+        <p>
+            On Linux, macOS, and Oracle Solaris, this is generally
+            taken from the environment variable
+            <filepath>$HOME</filepath>, except for the user
+            <codeph>root</codeph> where it is taken from the account
+            database. This is a workaround for the frequent trouble
+            caused by users using Oracle VM VirtualBox in combination with the
+            tool <userinput>sudo</userinput>, which by default does not
+            reset the environment variable <filepath>$HOME</filepath>.
+          </p>
+        <p>
+            A typical location on Linux and Oracle Solaris is
+            <filepath>/home/<varname>username</varname>
+                           </filepath>
+            and on macOS is
+            <filepath>/Users/<varname>username</varname>
+                           </filepath>.
+          </p>
+      </li>
+    </ul>
+    <p>
+        For simplicity, we abbreviate the location of the home directory
+        as <filepath>$HOME</filepath>. Using that convention, the common
+        folder for all virtual machines is <filepath>$HOME/VirtualBox
+        VMs</filepath>.
+      </p>
+    <p>
+        As an example, when you create a virtual machine called "Example
+        VM", Oracle VM VirtualBox creates the following:
+      </p>
+    <ul>
+      <li>
+        <p>
+            A machine folder: <filepath>$HOME/VirtualBox VMs/Example
+            VM/</filepath>
+                        </p>
+      </li>
+      <li>
+        <p>
+            In the machine folder, a settings file: <filepath>Example
+            VM.vbox</filepath>
+                        </p>
+      </li>
+      <li>
+        <p>
+            In the machine folder, a virtual disk image:
+            <filepath>Example VM.vdi</filepath>.
+          </p>
+      </li>
+    </ul>
+    <p>
+        This is the default layout if you use the
+        <b outputclass="bold">Create New Virtual Machine</b>
+        wizard described in <xref href="create-vm-wizard.dita">Creating Your First Virtual Machine</xref>. Once you
+        start working with the VM, additional files are added. Log files
+        are in a subfolder called <filepath>Logs</filepath>, and if you
+        have taken snapshots, they are in a
+        <filepath>Snapshots</filepath> subfolder. For each VM, you can
+        change the location of its snapshots folder in the VM settings.
+      </p>
+    <p>
+        You can change the default machine folder by selecting
+        <b outputclass="bold">Preferences</b> from the
+        <b outputclass="bold">File</b> menu in the Oracle VM VirtualBox
+        main window. Then, in the displayed window, click on the
+        <b outputclass="bold">General</b> tab. Alternatively, use
+        the <userinput>VBoxManage setproperty machinefolder</userinput>
+        command. See <xref href="man_VBoxManage-setproperty.dita">VBoxManage setproperty</xref>.
+      </p>
+  </body>
+  
+</topic>

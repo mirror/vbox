@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_win-guest-active-dir-domain">
+  <title>Windows Guests are Removed From an Active Directory Domain After
+        Restoring a Snapshot</title>
+  
+  <body>
+    <p>
+        If a Windows guest is a member of an Active Directory domain and
+        the snapshot feature of Oracle VM VirtualBox is used, it could be
+        removed from the Active Direcory domain after you restore an
+        older snapshot.
+      </p>
+    <p>
+        This is caused by automatic machine password changes performed
+        by Windows at regular intervals for security purposes. You can
+        disable this feature as shown in the following article from
+        Microsoft:
+        <ph>http://support.microsoft.com/kb/154501</ph>.
+      </p>
+  </body>
+  
+</topic>

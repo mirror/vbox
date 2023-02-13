@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="seamlesswindows">
+  <title>Seamless Windows</title>
+  
+  <body>
+    <p>
+      With the <i>seamless windows</i> feature of
+      Oracle VM VirtualBox, you can have the windows that are displayed within
+      a virtual machine appear side by side next to the windows of your
+      host. This feature is supported for the following guest operating
+      systems, provided that the Guest Additions are installed:
+    </p>
+    <ul>
+      <li>
+        <p>
+          Windows guests.
+        </p>
+      </li>
+      <li>
+        <p>
+          Supported Linux or Oracle Solaris guests running the X Window
+          System.
+        </p>
+      </li>
+    </ul>
+    <p>
+      After seamless windows are enabled, Oracle VM VirtualBox suppresses the
+      display of the desktop background of your guest, allowing you to
+      run the windows of your guest operating system seamlessly next to
+      the windows of your host.
+    </p>
+    <fig id="fig-seamless-windows">
+      <title>Seamless Windows on a Host Desktop</title>
+      <image href="images/seamless.png" placement="break"/>
+    </fig>
+    <p>
+      To enable seamless mode, after starting the virtual machine, press
+      the <b outputclass="bold">Host key + L</b>. The Host key is
+      normally the right control key. This will enlarge the size of the
+      VM's display to the size of your host screen and mask out the
+      guest operating system's background. To disable seamless windows
+      and go back to the normal VM display, press the Host key + L
+      again.
+    </p>
+  </body>
+  
+</topic>

@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="create-vm-wizard-hardware">
+  <title>Create Virtual Machine Wizard: Hardware</title>
+  
+  <body>
+    <p>
+        Use this page to configure hardware settings for the virtual
+        machine.
+      </p>
+    <fig id="fig-create-vm-hardware">
+      <title>Creating a Virtual Machine: Hardware</title>
+      <image href="images/create-vm-3.png" placement="break"/>
+    </fig>
+    <p>
+        The following fields are available on this wizard page:
+      </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Base Memory.</b> Select the
+            amount of RAM that Oracle VM VirtualBox should allocate every time
+            the virtual machine is started. The amount of memory
+            selected here will be taken away from your host machine and
+            presented to the guest OS, which will report this size as
+            the virtual machines installed RAM.
+          </p>
+        <note type="caution">
+          <p>
+              Choose this setting carefully. The memory you give to the
+              VM will not be available to your host OS while the VM is
+              running, so do not specify more than you can spare.
+            </p>
+          <p>
+              For example, if your host machine has 4 GB of RAM and you
+              enter 2048 MB as the amount of RAM for a particular
+              virtual machine, you will only have 2 GB left for all the
+              other software on your host while the VM is running. If
+              you run two VMs at the same time, even more memory will be
+              allocated for the second VM, which may not even be able to
+              start if that memory is not available.
+            </p>
+          <p>
+              On the other hand, you should specify as much as your
+              guest OS and your applications will require to run
+              properly. A guest OS may require at least 1 or 2 GB of
+              memory to install and boot up. For best performance, more
+              memory than that may be required.
+            </p>
+        </note>
+        <p>
+            Always ensure that the host OS has enough RAM remaining. If
+            insufficient RAM remains, the system might excessively swap
+            memory to the hard disk, which effectively brings the host
+            system to a standstill.
+          </p>
+        <p>
+            As with other <b outputclass="bold">Create Virtual
+            Machine</b> wizard settings, you can change this
+            setting later, after you have created the VM.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Processor(s).</b> Select the
+            number of virtual processors to assign to the VM.
+          </p>
+        <p>
+            It is not advised to assign more than half of the total
+            processor threads from the host machine.
+          </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Enable EFI.</b> Enables
+            Extensible Firware Interface (EFI) booting for the guest OS.
+          </p>
+      </li>
+    </ul>
+    <p>
+        Click <b outputclass="bold">Next</b> to go to the next
+        wizard page.
+      </p>
+  </body>
+  
+</topic>

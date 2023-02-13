@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vdidetails">
+            <title>Disk Image Files (VDI, VMDK, VHD, HDD)</title>
+            
+            <body>
+               <p>
+      Disk image files reside on the host system and are seen by the
+      guest systems as hard disks of a certain geometry. When a guest OS
+      reads from or writes to a hard disk, Oracle VM VirtualBox redirects the
+      request to the image file.
+    </p>
+               <p>
+      Like a physical disk, a virtual disk has a size, or capacity,
+      which must be specified when the image file is created. As opposed
+      to a physical disk however, Oracle VM VirtualBox enables you to expand
+      an image file after creation, even if it has data already. See
+      <xref href="man_VBoxManage-modifymedium.dita#vboxmanage-modifymedium"/>.
+    </p>
+               <p>
+      Oracle VM VirtualBox supports the following types of disk image files:
+    </p>
+               <ul>
+                  <li>
+                     <p>
+                        <b outputclass="bold">VDI.</b> Normally, Oracle VM VirtualBox
+          uses its own container format for guest hard disks. This is
+          called a Virtual Disk Image (VDI) file. This format is used
+          when you create a new virtual machine with a new disk.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">VMDK.</b> Oracle VM VirtualBox also
+          fully supports the popular and open VMDK container format that
+          is used by many other virtualization products, such as VMware.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">VHD.</b> Oracle VM VirtualBox also
+          fully supports the VHD format used by Microsoft.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">HDD.</b> Image files of Parallels
+          version 2 (HDD format) are also supported.
+        </p>
+                     <p>
+          Due to lack of documentation of the format, newer versions
+          such as 3 and 4 are not supported. You can however convert
+          such image files to version 2 format using tools provided by
+          Parallels.
+        </p>
+                  </li>
+               </ul>
+               <p>
+      Irrespective of the disk capacity and format, as mentioned in
+      <xref href="create-vm-wizard.dita#create-vm-wizard"/>, there are two options for
+      creating a disk image: fixed-size or dynamically allocated.
+    </p>
+               <ul>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Fixed-size.</b> If you create a
+          fixed-size image, an image file will be created on your host
+          system which has roughly the same size as the virtual disk's
+          capacity. So, for a 10 GB disk, you will have a 10 GB file.
+          Note that the creation of a fixed-size image can take a long
+          time depending on the size of the image and the write
+          performance of your hard disk.
+        </p>
+                  </li>
+                  <li>
+                     <p>
+                        <b outputclass="bold">Dynamically allocated.</b> For
+          more flexible storage management, use a dynamically allocated
+          image. This will initially be very small and not occupy any
+          space for unused virtual disk sectors, but will grow every
+          time a disk sector is written to for the first time, until the
+          drive reaches the maximum capacity chosen when the drive was
+          created. While this format takes less space initially, the
+          fact that Oracle VM VirtualBox needs to expand the image file
+          consumes additional computing resources, so until the disk
+          file size has stabilized, write operations may be slower than
+          with fixed size disks. However, after a time the rate of
+          growth will slow and the average penalty for write operations
+          will be negligible.
+        </p>
+                  </li>
+               </ul>
+            </body>
+            
+         </topic>

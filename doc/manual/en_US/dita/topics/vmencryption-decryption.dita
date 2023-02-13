@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vmencryption-decryption">
+  <title>Decrypting Encrypted VMs</title>
+  
+  <body>
+    <p>
+        In some circumstances it might be required to decrypt previously
+        encrypted VMs. This can be done in VirtualBox Manager or using
+        <userinput>VBoxManage</userinput> with the following command:
+      </p>
+    <pre xml:space="preserve">VBoxManage encryptvm <varname>uuid</varname>|<varname>vmname</varname> setencryption --old-password <varname>file</varname>|-</pre>
+    <p>
+        The only required parameter is the password the VM was encrypted
+        with. The options are the same as for encrypting VMs.
+      </p>
+  </body>
+  
+</topic>

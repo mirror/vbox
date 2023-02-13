@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="create-floppy-disk-image">
+  <title>Creating a Virtual Floppy Disk Image</title>
+  
+  <body>
+    <p>
+        Use the <b outputclass="bold">Floppy Disk Creator</b>
+        tool to create a floppy disk image.
+      </p>
+    <ol>
+      <li>
+        <p>
+            Display the <b outputclass="bold">Floppy Disks</b>
+            tab in Virtual Media Manager and click
+            <b outputclass="bold">Create</b>.
+          </p>
+        <p>
+            The <b outputclass="bold">Floppy Disk Creator</b>
+            tool is shown.
+          </p>
+      </li>
+      <li>
+        <p>
+            Configure the following settings:
+          </p>
+        <ul>
+          <li>
+            <p><b outputclass="bold">File Path:</b> The name and
+                location of the floppy disk image.
+              </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">Size:</b> Select from the
+                list of supported floppy disk sizes.
+              </p>
+          </li>
+          <li>
+            <p><b outputclass="bold">Format Disk as FAT 12:</b>
+                This is the default format used for most floppy disks.
+                For an unformatted disk, do not select this option.
+              </p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>
+            Create the floppy disk image file.
+          </p>
+        <p>
+            Click <b outputclass="bold">Create</b>.
+          </p>
+        <p>
+            The floppy disk image is created in the specified location
+            and added to the <b outputclass="bold">Floppy
+            Disks</b> tab in Virtual Media Manager.
+          </p>
+      </li>
+    </ol>
+  </body>
+  
+</topic>

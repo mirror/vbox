@@ -1,0 +1,73 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="diskencryption-limitations">
+  <title>Limitations of Disk Encryption</title>
+  
+  <body>
+    <p>
+        There are some limitations the user needs to be aware of when
+        using this feature:
+      </p>
+    <ul>
+      <li>
+        <p>
+            This feature is part of the Oracle VM VirtualBox Extension Pack,
+            which needs to be installed. Otherwise disk encryption is
+            unavailable.
+          </p>
+      </li>
+      <li>
+        <p>
+            Since encryption works only on the stored user data, it is
+            currently not possible to check for metadata integrity of
+            the disk image. Attackers might destroy data by removing or
+            changing blocks of data in the image or change metadata
+            items such as the disk size.
+          </p>
+      </li>
+      <li>
+        <p>
+            Exporting appliances which contain encrypted disk images is
+            not possible because the OVF specification does not support
+            this. All images are therefore decrypted during export.
+          </p>
+      </li>
+      <li>
+        <p>
+            The DEK is kept in memory while the VM is running to be able
+            to decrypt data read and encrypt data written by the guest.
+            While this should be obvious the user needs to be aware of
+            this because an attacker might be able to extract the key on
+            a compromised host and decrypt the data.
+          </p>
+      </li>
+      <li>
+        <p>
+            When encrypting or decrypting the images, the password is
+            passed in clear text using the Oracle VM VirtualBox API. This
+            needs to be kept in mind, especially when using third party
+            API clients which make use of the webservice where the
+            password might be transmitted over the network. The use of
+            HTTPS is mandatory in such a case.
+          </p>
+      </li>
+      <li>
+        <p>
+            Encrypting images with differencing images is only possible
+            if there are no snapshots or a linear chain of snapshots.
+            This limitation may be addressed in a future Oracle VM VirtualBox
+            version.
+          </p>
+      </li>
+      <li>
+        <p>
+            The disk encryption feature can protect the content of the
+            disks configured for a VM only. It does not cover any other
+            data related to a VM, including saved state or the
+            configuration file itself.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

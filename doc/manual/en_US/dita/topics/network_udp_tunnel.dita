@@ -1,0 +1,76 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="network_udp_tunnel">
+  <title>UDP Tunnel Networking</title>
+  
+  <body>
+    <p>
+      This networking mode enables you to interconnect virtual machines
+      running on different hosts.
+    </p>
+    <p>
+      Technically this is done by encapsulating Ethernet frames sent or
+      received by the guest network card into UDP/IP datagrams, and
+      sending them over any network available to the host.
+    </p>
+    <p>
+      UDP Tunnel mode has the following parameters:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Source UDP port:</b> The port on
+          which the host listens. Datagrams arriving on this port from
+          any source address will be forwarded to the receiving part of
+          the guest network card.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Destination address:</b> IP
+          address of the target host of the transmitted data.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Destination UDP port:</b> Port
+          number to which the transmitted data is sent.
+        </p>
+      </li>
+    </ul>
+    <p>
+      When interconnecting two virtual machines on two different hosts,
+      their IP addresses must be swapped. On a single host, source and
+      destination UDP ports must be swapped.
+    </p>
+    <p>
+      In the following example, host 1 uses the IP address 10.0.0.1 and
+      host 2 uses IP address 10.0.0.2. To configure using the
+      command-line:
+    </p>
+    <pre xml:space="preserve">        VBoxManage modifyvm "VM 01 on host 1" --nic&lt;x&gt; generic
+        VBoxManage modifyvm "VM 01 on host 1" --nic-generic-drv&lt;x&gt; UDPTunnel
+        VBoxManage modifyvm "VM 01 on host 1" --nic-property&lt;x&gt; dest=10.0.0.2
+        VBoxManage modifyvm "VM 01 on host 1" --nic-property&lt;x&gt; sport=10001
+        VBoxManage modifyvm "VM 01 on host 1" --nic-property&lt;x&gt; dport=10002</pre>
+    <pre xml:space="preserve">        VBoxManage modifyvm "VM 02 on host 2" --nic&lt;y&gt; generic
+        VBoxManage modifyvm "VM 02 on host 2" --nic-generic-drv&lt;y&gt; UDPTunnel
+        VBoxManage modifyvm "VM 02 on host 2" --nic-property&lt;y&gt; dest=10.0.0.1
+        VBoxManage modifyvm "VM 02 on host 2" --nic-property&lt;y&gt; sport=10002
+        VBoxManage modifyvm "VM 02 on host 2" --nic-property&lt;y&gt; dport=10001</pre>
+    <p>
+      Of course, you can always interconnect two virtual machines on the
+      same host, by setting the destination address parameter to
+      127.0.0.1 on both. It will act similarly to an internal network in
+      this case. However, the host can see the network traffic which it
+      could not in the normal internal network case.
+    </p>
+    <note>
+      <p>
+        On UNIX-based hosts, such as Linux, Oracle Solaris, and Mac OS
+        X, it is not possible to bind to ports below 1024 from
+        applications that are not run by <codeph>root</codeph>. As a
+        result, if you try to configure such a source UDP port, the VM
+        will refuse to start.
+      </p>
+    </note>
+  </body>
+  
+</topic>

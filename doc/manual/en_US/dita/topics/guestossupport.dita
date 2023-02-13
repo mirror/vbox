@@ -1,0 +1,349 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestossupport">
+  <title>Supported Guest Operating Systems</title>
+  
+  <body>
+    <p>
+      Because Oracle VM VirtualBox is designed to provide a generic
+      virtualization environment for x86 systems, it can run guest
+      operating systems (OSes) of any kind.
+    </p>
+    <p>
+      The following guest OS platforms are supported:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Platforms With Full Support.</b>
+          These guest OS platforms qualify for Oracle Premier Support.
+          See <xref href="#guestossupport/table-premier-support"/>.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Platforms With Limited
+          Support.</b> These legacy guest OS platforms can be
+          used with Oracle VM VirtualBox, but only qualify for <i>best
+          effort</i> support. Therefore, resolution of customer
+          issues is not guaranteed. See
+          <xref href="#guestossupport/table-limited-support"/>.
+        </p>
+      </li>
+    </ul>
+    <table id="table-premier-support">
+      <title>Guest Operating Systems With Full Support</title>
+      <tgroup cols="2">
+        <thead>
+          <row>
+            <entry>
+              <p>
+                <b outputclass="bold">Operating System</b>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                <b outputclass="bold">Comments</b>
+              </p>
+            </entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>
+              <p>
+                Windows 11 (64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p>
+                Insider preview builds are not supported
+              </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Windows 10 (32-bit and 64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p>
+                Insider preview builds are not supported
+              </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Windows 8 and 8.1 (32-bit and 64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Windows Server 2019 (64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Windows Server 2016 (64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Windows Server 2012 and 2012 R2 (64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Solaris 11 (32-bit and 64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Solaris 10 8/11 Update 10 and later (32-bit and 64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Oracle Linux 9 (64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p>
+                Includes Red Hat Enterprise Linux 9, CentOS 9
+              </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Oracle Linux 8 (64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p>
+                Includes Red Hat Enterprise Linux 8, CentOS 8
+              </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Oracle Linux 7 (64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p>
+                Includes Red Hat Enterprise Linux 7, CentOS 7
+              </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Oracle Linux 6 (32-bit and 64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p>
+                Includes Red Hat Enterprise Linux 6, CentOS 6
+              </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Ubuntu 16.04 LTS (Xenial Xerus) (32-bit and 64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Ubuntu 18.04 LTS (Bionic Beaver) (64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Ubuntu 20.04 LTS (Focal Fossa) (64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                SUSE Linux Enterprise Server 15 (64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                SUSE Linux Enterprise Server 12 (64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+    <table id="table-limited-support">
+      <title>Legacy Guest Operating Systems With Limited Support</title>
+      <tgroup cols="2">
+        <thead>
+          <row>
+            <entry>
+              <p>
+                <b outputclass="bold">Operating System</b>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                <b outputclass="bold">Comments</b>
+              </p>
+            </entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>
+              <p>
+                Windows 7 (32-bit and 64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Windows Vista SP2 and later (32-bit and 64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Windows XP (32-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Windows Vista (32-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Windows Server 2008 and 2008 R2 (32-bit and 64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Windows Server 2003 (32-bit and 64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Oracle Linux 5 (32-bit and 64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p>
+                Includes Red Hat Enterprise Linux 5, CentOS 5
+              </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                Ubuntu 14.04.5 LTS (Trusty Tahr) (32-bit and 64-bit)
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                OS/2 Warp 4.5
+              </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+  </body>
+</topic>

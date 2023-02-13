@@ -1,0 +1,110 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="webcam-using-guest">
+  <title>Using a Host Webcam in the Guest</title>
+  
+  <body>
+    <p>
+        Oracle VM VirtualBox includes a feature called <i>webcam
+        passthrough</i>, which enables a guest to use a host
+        webcam. This complements the general USB passthrough support
+        which was the typical way of using host webcams in legacy
+        releases. The webcam passthrough support can handle non-USB
+        video sources in theory, but this is completely untested.
+      </p>
+    <note>
+      <p>
+          The webcam passthrough module is shipped as part of the
+          Oracle VM VirtualBox extension pack, which must be installed
+          separately. See <xref href="intro-installing.dita">Installing Oracle VM VirtualBox and Extension Packs</xref>.
+        </p>
+    </note>
+    <p>
+        The host webcam can be attached to the VM using the
+        <b outputclass="bold">Devices</b> menu in the VM menu
+        bar. The <b outputclass="bold">Webcams</b> menu contains
+        a list of available video input devices on the host. Clicking on
+        a webcam name attaches or detaches the corresponding host
+        device.
+      </p>
+    <p>
+        The <userinput>VBoxManage</userinput> command line tool can be used
+        to enable webcam passthrough. Please see the host-specific
+        sections below for additional details. The following commands
+        are available:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Get a list of host webcams, or other video input devices:
+          </p>
+        <pre xml:space="preserve">$ VBoxManage list webcams</pre>
+        <p>
+            The output format is as follows:
+          </p>
+        <pre xml:space="preserve">alias "user friendly name"
+host path or identifier</pre>
+        <p>
+            The alias can be used as a shortcut in other commands. Alias
+            '.0' means the default video input device on the host. Alias
+            '.1', '.2'means first, second video input device, and so on.
+            The device order is host-specific.
+          </p>
+      </li>
+      <li>
+        <p>
+            Attach a webcam to a running VM, as follows:
+          </p>
+        <pre xml:space="preserve">VBoxManage controlvm <varname>VM name</varname> webcam attach [<varname>host_path</varname>|<varname>alias</varname> [<varname>settings</varname>]]</pre>
+        <p>
+            This attaches a USB webcam device to the guest.
+          </p>
+        <p>
+            The <codeph>settings</codeph> parameter is a string
+            <codeph>Setting1=Value1;Setting2=Value2</codeph>, which
+            enables you to configure the emulated webcam device. The
+            following settings are supported:
+          </p>
+        <ul>
+          <li>
+            <p><codeph>MaxFramerate</codeph>: The highest rate at
+                which video frames are sent to the guest. A higher frame
+                rate requires more CPU power. Therefore sometimes it is
+                useful to set a lower limit. Default is no limit and
+                allow the guest to use all frame rates supported by the
+                host webcam.
+              </p>
+          </li>
+          <li>
+            <p><codeph>MaxPayloadTransferSize</codeph>: How many
+                bytes the emulated webcam can send to the guest at a
+                time. Default value is 3060 bytes, which is used by some
+                webcams. Higher values can slightly reduce CPU load, if
+                the guest is able to use larger buffers. However, a high
+                <codeph>MaxPayloadTransferSize</codeph> might be not
+                supported by some guests.
+              </p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>
+            Detach a webcam from a running VM, as follows:
+          </p>
+        <pre xml:space="preserve">VBoxManage controlvm <varname>VM-name</varname> webcam detach [<varname>host_path</varname>|<varname>alias</varname>]</pre>
+      </li>
+      <li>
+        <p>
+            List the webcams attached to a running VM, as follows:
+          </p>
+        <pre xml:space="preserve">VBoxManage controlvm <varname>VM-name</varname> webcam list</pre>
+        <p>
+            The output contains the path or alias which was used in the
+            <userinput>webcam attach</userinput> command for each attached
+            webcam.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

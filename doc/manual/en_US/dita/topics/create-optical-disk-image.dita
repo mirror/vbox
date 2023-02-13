@@ -1,0 +1,98 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="create-optical-disk-image">
+  <title>Creating a Virtual Optical Disk Image</title>
+  
+  <body>
+    <p>
+        Use the <b outputclass="bold">VISO Creator</b> tool to
+        create a virtual optical disk image. This enables you to create
+        a virtual ISO from selected files on the host.
+      </p>
+    <ol>
+      <li>
+        <p>
+            Display the <b outputclass="bold">Optical Disks</b>
+            tab in Virtual Media Manager and click
+            <b outputclass="bold">Create</b>.
+          </p>
+        <p>
+            The <b outputclass="bold">VISO Creator</b> tool is
+            shown.
+          </p>
+      </li>
+      <li>
+        <p>
+            Create the virtual ISO file.
+          </p>
+        <ol>
+          <li>
+            <p>
+                Configure the name of the ISO file.
+              </p>
+            <p>
+                Click <b outputclass="bold">Configuration</b> and
+                enter a name in the <b outputclass="bold">Viso
+                Name</b> field.
+              </p>
+          </li>
+          <li>
+            <p>
+                Add files to your virtual ISO.
+              </p>
+            <p>
+                In the <b outputclass="bold">Host File System</b>
+                pane, select files to copy from the host system to the
+                virtual ISO.
+              </p>
+            <p>
+                Click <b outputclass="bold">Add Items To
+                VISO</b>. The files are displayed in the
+                <b outputclass="bold">VISO Content</b> pane.
+              </p>
+            <p>
+                The following file operations are also available:
+              </p>
+            <ul>
+              <li>
+                <p>
+                    To create folders on the virtual ISO, click
+                    <b outputclass="bold">Create New
+                    Directory</b>.
+                  </p>
+              </li>
+              <li>
+                <p>
+                    To remove files from the virtual ISO, select files
+                    in the <b outputclass="bold">VISO Content</b>
+                    pane and click <b outputclass="bold">Remove Items
+                    From VISO</b>.
+                  </p>
+              </li>
+              <li>
+                <p>
+                    To remove <i>all</i> files from the
+                    virtual ISO, click <b outputclass="bold">Reset the
+                    VISO Content</b>.
+                  </p>
+              </li>
+            </ul>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <p>
+            Create the virtual ISO image.
+          </p>
+        <p>
+            Click <b outputclass="bold">Create</b>.
+          </p>
+        <p>
+            A virtual ISO file with the specified name and content is
+            created.
+          </p>
+      </li>
+    </ol>
+  </body>
+  
+</topic>

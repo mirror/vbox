@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="settings-usb">
+               <title>USB Settings</title>
+               
+               <body>
+                  <p>
+        The <b outputclass="bold">USB</b> section in a virtual
+        machine's <b outputclass="bold">Settings</b> window
+        enables you to configure Oracle VM VirtualBox's sophisticated USB
+        support.
+      </p>
+                  <p>
+        Oracle VM VirtualBox can enable virtual machines to access the USB
+        devices on your host directly. To achieve this, Oracle VM VirtualBox
+        presents the guest OS with a virtual USB controller. As soon as
+        the guest system starts using a USB device, it will appear as
+        unavailable on the host.
+      </p>
+                  <note>
+                     <ul>
+                        <li>
+                           <p>
+              Be careful with USB devices that are currently in use on
+              the host. For example, if you allow your guest to connect
+              to your USB hard disk that is currently mounted on the
+              host, when the guest is activated, it will be disconnected
+              from the host without a proper shutdown. This may cause
+              data loss.
+            </p>
+                        </li>
+                        <li>
+                           <p>
+              Oracle Solaris hosts have a few known limitations
+              regarding USB support. See <xref href="KnownIssues.dita">Known Limitations</xref>.
+            </p>
+                        </li>
+                     </ul>
+                  </note>
+                  <p>
+        In addition to allowing a guest access to your local USB
+        devices, Oracle VM VirtualBox even enables your guests to connect to
+        remote USB devices by use of the VirtualBox Remote Desktop
+        Extension (VRDE). See <xref href="usb-over-rdp.dita">Remote USB</xref>.
+      </p>
+                  <p>
+        To enable USB for a VM, select the <b outputclass="bold">Enable
+        USB Controller</b> check box. The following settings are
+        available:
+      </p>
+                  <ul>
+                     <li>
+                        <p>
+                           <b outputclass="bold">USB Controller:</b> Selects a
+            controller with the specified level of USB support, as
+            follows:
+          </p>
+                        <ul>
+                           <li>
+                              <p>
+                OHCI for USB 1.1
+              </p>
+                           </li>
+                           <li>
+                              <p>
+                EHCI for USB 2.0. This also enables OHCI.
+              </p>
+                           </li>
+                           <li>
+                              <p>
+                xHCI for USB 3.0. This supports all USB speeds.
+              </p>
+                           </li>
+                        </ul>
+                     </li>
+                     <li>
+                        <p>
+                           <b outputclass="bold">USB Device Filters:</b> When
+            USB support is enabled for a VM, you can determine in detail
+            which devices will be automatically attached to the guest.
+            For this, you can create filters by specifying certain
+            properties of the USB device. USB devices with a matching
+            filter will be automatically passed to the guest once they
+            are attached to the host. USB devices without a matching
+            filter can be passed manually to the guest, for example by
+            using the <b outputclass="bold">Devices</b>,
+            <b outputclass="bold">USB</b> menu.
+          </p>
+                        <p>
+            Clicking on the <b outputclass="bold">+</b> button to
+            the right of the <b outputclass="bold">USB Device
+            Filters</b> window creates a new filter. You can give
+            the filter a name, for later reference, and specify the
+            filter criteria. The more criteria you specify, the more
+            precisely devices will be selected. For instance, if you
+            specify only a vendor ID of 046d, all devices produced by
+            Logitech will be available to the guest. If you fill in all
+            fields, on the other hand, the filter will only apply to a
+            particular device model from a particular vendor, and not
+            even to other devices of the same type with a different
+            revision and serial number.
+          </p>
+                        <p>
+            In detail, the following criteria are available:
+          </p>
+                        <ul>
+                           <li>
+                              <p>
+                                 <b outputclass="bold">Vendor and Product ID.</b>
+                With USB, each vendor of USB products carries an
+                identification number that is unique world-wide, called
+                the <i>vendor ID</i>. Similarly, each line
+                of products is assigned a <i>product
+                ID</i> number. Both numbers are commonly written
+                in hexadecimal, and a colon separates the vendor from
+                the product ID. For example,
+                <codeph>046d:c016</codeph> stands for Logitech as a
+                vendor, and the M-UV69a Optical Wheel Mouse product.
+              </p>
+                              <p>
+                Alternatively, you can also specify
+                <b outputclass="bold">Manufacturer</b> and
+                <b outputclass="bold">Product</b> by name.
+              </p>
+                              <p>
+                To list all the USB devices that are connected to your
+                host machine with their respective vendor IDs and
+                product IDs, use the following command:
+              </p>
+                              <pre xml:space="preserve">VBoxManage list usbhost</pre>
+                              <p>
+                On Windows, you can also see all USB devices that are
+                attached to your system in the Device Manager. On Linux,
+                you can use the <userinput>lsusb</userinput> command.
+              </p>
+                           </li>
+                           <li>
+                              <p>
+                                 <b outputclass="bold">Serial Number.</b> While
+                vendor ID and product ID are quite specific to identify
+                USB devices, if you have two identical devices of the
+                same brand and product line, you will also need their
+                serial numbers to filter them out correctly.
+              </p>
+                           </li>
+                           <li>
+                              <p>
+                                 <b outputclass="bold">Remote.</b> This setting
+                specifies whether the device will be local only, remote
+                only, such as over VRDP, or either.
+              </p>
+                           </li>
+                        </ul>
+                        <p>
+            On a Windows host, you will need to unplug and reconnect a
+            USB device to use it after creating a filter for it.
+          </p>
+                        <p>
+            As an example, you could create a new USB filter and specify
+            a vendor ID of 046d for Logitech, Inc, a manufacturer index
+            of 1, and "not remote". Then any USB devices on the host
+            system produced by Logitech, Inc with a manufacturer index
+            of 1 will be visible to the guest system.
+          </p>
+                        <p>
+            Several filters can select a single device. For example, a
+            filter which selects all Logitech devices, and one which
+            selects a particular webcam.
+          </p>
+                        <p>
+            You can deactivate filters without deleting them by
+            deselecting the check box next to the filter name.
+          </p>
+                     </li>
+                  </ul>
+               </body>
+               
+            </topic>

@@ -1,0 +1,198 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="hdimagewrites">
+  <title>Special Image Write Modes</title>
+  
+  <body>
+    <p>
+      For each virtual disk image supported by Oracle VM VirtualBox, you can
+      determine separately how it should be affected by write operations
+      from a virtual machine and snapshot operations. This applies to
+      all of the aforementioned image formats (VDI, VMDK, VHD, or HDD)
+      and irrespective of whether an image is fixed-size or dynamically
+      allocated.
+    </p>
+    <p>
+      By default, images are in <i>normal</i> mode. To
+      mark an existing image with one of the non-standard modes listed
+      below, use <userinput>VBoxManage modifymedium</userinput>. See
+      <xref href="man_VBoxManage-modifymedium.dita#vboxmanage-modifymedium"/>. Alternatively, use
+      <userinput>VBoxManage storageattach</userinput> to attach the image to
+      a VM and specify the <codeph>--mtype</codeph> argument. See
+      <xref href="man_VBoxManage-storageattach.dita#vboxmanage-storageattach"/>.
+    </p>
+    <p>
+      The available virtual disk image modes are as follows:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Normal images</b> have no
+          restrictions on how guests can read from and write to the
+          disk. This is the default image mode.
+        </p>
+        <p>
+          When you take a snapshot of your virtual machine as described
+          in <xref href="snapshots.dita#snapshots"/>, the state of a normal hard
+          disk is recorded together with the snapshot, and when
+          reverting to the snapshot, its state will be fully reset.
+        </p>
+        <p>
+          The image file itself is not reset. Instead, when a snapshot
+          is taken, Oracle VM VirtualBox <i>freezes</i> the
+          image file and no longer writes to it. For the write
+          operations from the VM, a second,
+          <i>differencing</i> image file is created which
+          receives only the changes to the original image. See
+          <xref href="diffimages.dita#diffimages"/>.
+        </p>
+        <p>
+          While you can attach the same normal image to more than one
+          virtual machine, only one of these virtual machines attached
+          to the same image file can be executed simultaneously, as
+          otherwise there would be conflicts if several machines write
+          to the same image file.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Write-through hard disks</b> are
+          completely unaffected by snapshots. Their state is
+          <i>not</i> saved when a snapshot is taken, and
+          not restored when a snapshot is restored.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Shareable hard disks</b> are a
+          variant of write-through hard disks. In principle they behave
+          exactly the same. Their state is <i>not</i>
+          saved when a snapshot is taken, and not restored when a
+          snapshot is restored. The difference only shows if you attach
+          such disks to several VMs. Shareable disks may be attached to
+          several VMs which may run concurrently. This makes them
+          suitable for use by cluster filesystems between VMs and
+          similar applications which are explicitly prepared to access a
+          disk concurrently. Only fixed size images can be used in this
+          way, and dynamically allocated images are rejected.
+        </p>
+        <note type="attention">
+          <p>
+            This is an expert feature, and misuse can lead to data loss,
+            as regular filesystems are not prepared to handle
+            simultaneous changes by several parties.
+          </p>
+        </note>
+      </li>
+      <li>
+        <p><b outputclass="bold">Immutable images</b> only
+          remember write accesses temporarily while the virtual machine
+          is running. All changes are lost when the virtual machine is
+          powered on the next time. As a result, as opposed to Normal
+          images, the same immutable image can be used with several
+          virtual machines without restrictions.
+        </p>
+        <p>
+          Creating an immutable image makes little sense since it would
+          be initially empty and lose its contents with every machine
+          restart. You would have a disk that is always unformatted when
+          the machine starts up. Instead, you can first create a normal
+          image and then later mark it as immutable when you decide that
+          the contents are useful.
+        </p>
+        <p>
+          If you take a snapshot of a machine with immutable images,
+          then on every machine power-up, those images are reset to the
+          state of the last (current) snapshot, instead of the state of
+          the original immutable image.
+        </p>
+        <note>
+          <p>
+            As a special exception, immutable images are
+            <i>not</i> reset if they are attached to a
+            machine in a saved state or whose last snapshot was taken
+            while the machine was running. This is called an
+            <i>online snapshot</i>. As a result, if the
+            machine's current snapshot is an online snapshot, its
+            immutable images behave exactly like the a normal image. To
+            reenable the automatic resetting of such images, delete the
+            current snapshot of the machine.
+          </p>
+        </note>
+        <p>
+          Oracle VM VirtualBox never writes to an immutable image directly at
+          all. All write operations from the machine are directed to a
+          differencing image. The next time the VM is powered on, the
+          differencing image is reset so that every time the VM starts,
+          its immutable images have exactly the same content.
+        </p>
+        <p>
+          The differencing image is only reset when the machine is
+          powered on from within Oracle VM VirtualBox, not when you reboot by
+          requesting a reboot from within the machine. This is also why
+          immutable images behave as described above when snapshots are
+          also present, which use differencing images as well.
+        </p>
+        <p>
+          If the automatic discarding of the differencing image on VM
+          startup does not fit your needs, you can turn it off using the
+          <codeph>autoreset</codeph> parameter of <userinput>VBoxManage
+          modifymedium</userinput>. See
+          <xref href="man_VBoxManage-modifymedium.dita#vboxmanage-modifymedium"/>.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Multiattach mode images</b> can
+          be attached to more than one virtual machine at the same time,
+          even if these machines are running simultaneously. For each
+          virtual machine to which such an image is attached, a
+          differencing image is created. As a result, data that is
+          written to such a virtual disk by one machine is not seen by
+          the other machines to which the image is attached. Each
+          machine creates its own write history of the multiattach
+          image.
+        </p>
+        <p>
+          Technically, a multiattach image behaves identically to an
+          immutable image except the differencing image is not reset
+          every time the machine starts.
+        </p>
+        <p>
+          This mode is useful for sharing files which are almost never
+          written, for instance picture galleries, where every guest
+          changes only a small amount of data and the majority of the
+          disk content remains unchanged. The modified blocks are stored
+          in differencing images which remain relatively small and the
+          shared content is stored only once at the host.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Read-only images</b> are used
+          automatically for CD/DVD images, since CDs/DVDs can never be
+          written to.
+        </p>
+      </li>
+    </ul>
+    <p>
+      The following scenario illustrates the differences between the
+      various image modes, with respect to snapshots.
+    </p>
+    <p>
+      Assume you have installed your guest OS in your VM, and you have
+      taken a snapshot. Later, your VM is infected with a virus and you
+      would like to go back to the snapshot. With a normal hard disk
+      image, you simply restore the snapshot, and the earlier state of
+      your hard disk image will be restored as well and your virus
+      infection will be undone. With an immutable hard disk, all it
+      takes is to shut down and power on your VM, and the virus
+      infection will be discarded. With a write-through image however,
+      you cannot easily undo the virus infection by means of
+      virtualization, but will have to disinfect your virtual machine
+      like a real computer.
+    </p>
+    <p>
+      You might find write-through images useful if you want to preserve
+      critical data irrespective of snapshots. As you can attach more
+      than one image to a VM, you may want to have one immutable image
+      for the OS and one write-through image for your data files.
+    </p>
+  </body>
+  
+</topic>

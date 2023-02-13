@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="install-mac-performing">
+  <title>Performing the Installation</title>
+  
+  <body>
+    <p>
+        For macOS hosts, Oracle VM VirtualBox ships in a
+        <filepath>dmg</filepath> disk image file. Perform the following
+        steps to install on a macOS host:
+      </p>
+    <ol>
+      <li>
+        <p>
+            Double-click on the <filepath>dmg</filepath> file, to mount
+            the contents.
+          </p>
+      </li>
+      <li>
+        <p>
+            A window opens, prompting you to double-click on the
+            <filepath>VirtualBox.pkg</filepath> installer file displayed
+            in that window.
+          </p>
+      </li>
+      <li>
+        <p>
+            This starts the installer, which enables you to select where
+            to install Oracle VM VirtualBox.
+          </p>
+      </li>
+      <li>
+        <p>
+            An Oracle VM VirtualBox icon is added to the
+            <filepath>Applications</filepath> folder in the Finder.
+          </p>
+      </li>
+    </ol>
+  </body>
+  
+</topic>

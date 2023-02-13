@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="linux-guest-manual-setup">
+  <title>Manual Setup of Selected Guest Services on Linux</title>
+  
+  <body>
+    <p>
+        The Oracle VM VirtualBox Guest Additions contain several different
+        drivers. If you do not want to configure them all, use the
+        following command to install the Guest Additions:
+      </p>
+    <pre xml:space="preserve">$ sh ./VBoxLinuxAdditions.run no_setup</pre>
+    <p>
+        After running this script, run the <userinput>rcvboxadd
+        setup</userinput> command as <codeph>root</codeph> to compile
+        the kernel modules.
+      </p>
+    <p>
+        On some 64-bit guests, you must replace <filepath>lib</filepath>
+        with <filepath>lib64</filepath>. On older guests that do not run
+        the <userinput>udev</userinput> service, you must add the
+        <userinput>vboxadd</userinput> service to the default runlevel to
+        ensure that the modules are loaded.
+      </p>
+    <p>
+        To set up the time synchronization service, add the
+        <userinput>vboxadd-service</userinput> service to the default
+        runlevel. To set up the X11 and OpenGL part of the Guest
+        Additions, run the <userinput>rcvboxadd-x11 setup</userinput>
+        command. Note that you do not need to enable additional
+        services.
+      </p>
+    <p>
+        Use the <userinput>rcvboxadd setup</userinput> to recompile the
+        guest kernel modules.
+      </p>
+    <p>
+        After compilation, reboot your guest to ensure that the new
+        modules are loaded.
+      </p>
+  </body>
+  
+</topic>

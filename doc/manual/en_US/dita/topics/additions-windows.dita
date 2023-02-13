@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="additions-windows">
+  <title>Guest Additions for Windows</title>
+  
+  <body>
+    <p>
+        The Oracle VM VirtualBox Windows Guest Additions are designed to be
+        installed in a virtual machine running a Windows operating
+        system. The following versions of Windows guests are supported:
+      </p>
+    <ul>
+      <li>
+        <p>
+            Microsoft Windows 11
+          </p>
+      </li>
+      <li>
+        <p>
+            Microsoft Windows Server 2022
+          </p>
+      </li>
+      <li>
+        <p>
+            Microsoft Windows 10 (all feature updates)
+          </p>
+      </li>
+      <li>
+        <p>
+            Microsoft Windows Server 2019
+          </p>
+      </li>
+      <li>
+        <p>
+            Microsoft Windows Server 2016
+          </p>
+      </li>
+      <li>
+        <p>
+            Microsoft Windows 8.1 (all editions)
+          </p>
+      </li>
+      <li>
+        <p>
+            Microsoft Windows Server 2012R2
+          </p>
+      </li>
+      <li>
+        <p>
+            Microsoft Windows 8 (all editions)
+          </p>
+      </li>
+      <li>
+        <p>
+            Microsoft Windows Server 2012
+          </p>
+      </li>
+      <li>
+        <p>
+            Microsoft Windows 7 (all editions)
+          </p>
+      </li>
+      <li>
+        <p>
+            Microsoft Windows Server 2008R2
+          </p>
+      </li>
+      <li>
+        <p>
+            Microsoft Windows Vista (all editions)
+          </p>
+      </li>
+      <li>
+        <p>
+            Microsoft Windows Server 2008
+          </p>
+      </li>
+      <li>
+        <p>
+            Microsoft Windows XP (any service pack)
+          </p>
+      </li>
+      <li>
+        <p>
+            Microsoft Windows Server 2003 (any service pack)
+          </p>
+      </li>
+      <li>
+        <p>
+            Microsoft Windows 2000 (any service pack)
+          </p>
+      </li>
+      <li>
+        <p>
+            Microsoft Windows NT 4.0 (any service pack)
+          </p>
+      </li>
+    </ul>
+  </body>
+</topic>

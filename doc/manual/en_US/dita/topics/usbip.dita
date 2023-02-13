@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="usbip">
+  <title>Accessing USB devices Exposed Over the Network with USB/IP</title>
+  
+  <body>
+    <p>
+      Oracle VM VirtualBox supports passing through USB devices which are
+      exposed over the network using the USB over IP protocol without
+      the need to configure the client side provided by the kernel and
+      usbip tools. Furthermore, this feature works with Oracle VM VirtualBox
+      running on any supported host, rather than just Linux alone, as is
+      the case with the official client.
+    </p>
+    <p>
+      To enable support for passing through USB/IP devices, use the
+      following command to add the device server that exports the
+      devices:
+    </p>
+    <pre xml:space="preserve">VBoxManage usbdevsource add <varname>unique-name</varname> --backend <varname>USBIP</varname> --address <varname>device-server</varname>[:<varname>port</varname>]</pre>
+    <p>
+      USB devices exported on the device server are then accessible
+      through VirtualBox Manager or <userinput>VBoxManage</userinput>, like any USB
+      devices attached locally. This can be used multiple times to
+      access different device servers.
+    </p>
+    <p>
+      To remove a device server, the following command can be used:
+    </p>
+    <pre xml:space="preserve">$ VBoxManage usbdevsource remove <varname>unique-name</varname>
+               </pre>
+  </body>
+</topic>

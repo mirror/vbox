@@ -1,0 +1,74 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="nestedpaging">
+  <title>Nested Paging and VPIDs</title>
+  
+  <body>
+    <p>
+      In addition to normal hardware virtualization, your processor may
+      also support the following additional sophisticated techniques:
+    </p>
+    <ul>
+      <li>
+        <p>
+          Nested paging implements some memory management in hardware,
+          which can greatly accelerate hardware virtualization since
+          these tasks no longer need to be performed by the
+          virtualization software.
+        </p>
+        <p>
+          With nested paging, the hardware provides another level of
+          indirection when translating linear to physical addresses.
+          Page tables function as before, but linear addresses are now
+          translated to "guest physical" addresses first and not
+          physical addresses directly. A new set of paging registers now
+          exists under the traditional paging mechanism and translates
+          from guest physical addresses to host physical addresses,
+          which are used to access memory.
+        </p>
+        <p>
+          Nested paging eliminates the overhead caused by VM exits and
+          page table accesses. In essence, with nested page tables the
+          guest can handle paging without intervention from the
+          hypervisor. Nested paging thus significantly improves
+          virtualization performance.
+        </p>
+        <p>
+          On AMD processors, nested paging has been available starting
+          with the Barcelona (K10) architecture. They now call it rapid
+          virtualization indexing (RVI). Intel added support for nested
+          paging, which they call extended page tables (EPT), with their
+          Core i7 (Nehalem) processors.
+        </p>
+        <p>
+          If nested paging is enabled, the Oracle VM VirtualBox hypervisor can
+          also use <i>large pages</i> to reduce TLB usage
+          and overhead. This can yield a performance improvement of up
+          to 5%. To enable this feature for a VM, you use the
+          <userinput>VBoxManage modifyvm --large-pages</userinput> command.
+          See <xref href="man_VBoxManage-modifyvm.dita">VBoxManage modifyvm</xref>.
+        </p>
+        <p>
+          If you have an Intel CPU with EPT, please consult
+          <xref href="sec-rec-cve-2018-3646.dita#sec-rec-cve-2018-3646"/> for security concerns
+          regarding EPT.
+        </p>
+      </li>
+      <li>
+        <p>
+          On Intel CPUs, a hardware feature called Virtual Processor
+          Identifiers (VPIDs) can greatly accelerate context switching
+          by reducing the need for expensive flushing of the processor's
+          Translation Lookaside Buffers (TLBs).
+        </p>
+        <p>
+          To enable these features for a VM, you use the
+          <userinput>VBoxManage modifyvm --vtx-vpid</userinput> and
+          <userinput>VBoxManage modifyvm --large-pages</userinput> commands.
+          See <xref href="man_VBoxManage-modifyvm.dita">VBoxManage modifyvm</xref>.
+        </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="additions-solaris-uninstall">
+  <title>Uninstalling the Oracle Solaris Guest Additions</title>
+  
+  <body>
+    <p>
+          The Oracle Solaris Guest Additions can be safely removed by
+          removing the package from the guest. Open a root terminal
+          session and run the following command:
+        </p>
+    <pre xml:space="preserve">pkgrm SUNWvboxguest</pre>
+  </body>
+  
+</topic>

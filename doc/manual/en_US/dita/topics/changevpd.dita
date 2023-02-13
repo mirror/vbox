@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="changevpd">
+  <title>Configuring the Hard Disk Vendor Product Data (VPD)</title>
+  
+  <body>
+    <p>
+        Oracle VM VirtualBox reports vendor product data for its virtual hard
+        disks which consist of hard disk serial number, firmware
+        revision and model number. These can be changed using the
+        following commands:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> \
+"VBoxInternal/Devices/ahci/0/Config/Port0/SerialNumber" "serial"
+$ VBoxManage setextradata <varname>VM-name</varname> \
+"VBoxInternal/Devices/ahci/0/Config/Port0/FirmwareRevision" "firmware"
+$ VBoxManage setextradata <varname>VM-name</varname> \
+"VBoxInternal/Devices/ahci/0/Config/Port0/ModelNumber" "model"</pre>
+    <p>
+        The serial number is a 20 byte alphanumeric string, the firmware
+        revision an 8 byte alphanumeric string and the model number a 40
+        byte alphanumeric string. Instead of Port0, referring to the
+        first port, specify the desired SATA hard disk port.
+      </p>
+    <p>
+        The above commands apply to virtual machines with an AHCI (SATA)
+        controller. The commands for virtual machines with an IDE
+        controller are:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> \
+"VBoxInternal/Devices/piix3ide/0/Config/PrimaryMaster/SerialNumber" "serial"
+$ VBoxManage setextradata <varname>VM-name</varname> \
+"VBoxInternal/Devices/piix3ide/0/Config/PrimaryMaster/FirmwareRevision" "firmware"
+$ VBoxManage setextradata <varname>VM-name</varname> \
+"VBoxInternal/Devices/piix3ide/0/Config/PrimaryMaster/ModelNumber" "model"</pre>
+    <p>
+        For hard disks, you can mark the drive as having a
+        non-rotational medium by using the following command:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> \
+"VBoxInternal/Devices/ahci/0/Config/Port0/NonRotational" "1"</pre>
+    <p>
+        Additional three parameters are needed for CD/DVD drives to
+        report the vendor product data:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> \
+"VBoxInternal/Devices/ahci/0/Config/Port0/ATAPIVendorId" "vendor"
+VBoxManage setextradata <varname>VM-name</varname> \
+"VBoxInternal/Devices/ahci/0/Config/Port0/ATAPIProductId" "product"
+VBoxManage setextradata <varname>VM-name</varname> \
+"VBoxInternal/Devices/ahci/0/Config/Port0/ATAPIRevision" "revision"</pre>
+    <p>
+        The vendor id is an 8 byte alphanumeric string, the product id
+        an 16 byte alphanumeric string and the revision a 4 byte
+        alphanumeric string. Instead of Port0, referring to the first
+        port, specify the desired SATA hard disk port.
+      </p>
+  </body>
+  
+</topic>

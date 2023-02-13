@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="glossentry-acpi">
+  <title>ACPI</title>
+  <body>
+    <section>
+      <p>
+        Advanced Configuration and Power Interface, an industry specification for BIOS and hardware extensions 
+        to configure PC hardware and perform power management. Windows 2000 and later, as well as Linux 2.4 and later 
+        support ACPI. Windows can only enable or disable ACPI support at installation time.
+      </p>
+    </section>
+  </body>
+</topic>

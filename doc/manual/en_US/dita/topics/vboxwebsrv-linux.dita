@@ -1,0 +1,312 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxwebsrv-linux">
+  <title>Linux: Starting the Web Service With init</title>
+  
+  <body>
+    <p>
+        On Linux, the web service can be automatically started during
+        host boot by adding appropriate parameters to the file
+        <filepath>/etc/default/virtualbox</filepath>. There is one
+        mandatory parameter, <codeph>VBOXWEB_USER</codeph>, which must
+        be set to the user which will later start the VMs. The
+        parameters in the following table all start with the
+        <codeph>VBOXWEB_</codeph> prefix string. For example:
+        <codeph>VBOXWEB_HOST</codeph> and
+        <codeph>VBOXWEB_PORT</codeph>.
+      </p>
+    <table id="table-websrv-config-params">
+      <title>Web Service Configuration Parameters</title>
+      <tgroup cols="3">       
+        <thead>
+          <row>
+            <entry>
+              <p>
+                <b outputclass="bold">Parameter</b>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                <b outputclass="bold">Description</b>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                <b outputclass="bold">Default</b>
+              </p>
+            </entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>
+              <p>
+                <codeph>USER</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  The user which the web service runs as
+                </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>HOST</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  The host to bind the web service to
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  localhost
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>PORT</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  The port to bind the web service to
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  18083
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>SSL_KEYFILE</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Server key and certificate file, in PEM format
+                </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>SSL_PASSWORDFILE</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  File name for password to server key
+                </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>SSL_CACERT</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  CA certificate file, in PEM format
+                </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>SSL_CAPATH</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  CA certificate path
+                </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>SSL_DHFILE</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  DH file name or DH key length in bits
+                </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>SSL_RANDFILE</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  File containing seed for random number generator
+                </p>
+            </entry>
+            <entry>
+              <p/>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>TIMEOUT</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Session timeout in seconds, 0 disables timeouts
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  300
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>CHECK_INTERVAL</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Frequency of timeout checks in seconds
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  5
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>THREADS</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Maximum number of worker threads to run in parallel
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  100
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>KEEPALIVE</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Maximum number of requests before a socket will be
+                  closed
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  100
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>ROTATE</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Number of log files, 0 disables log rotation
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  10
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>LOGSIZE</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Maximum log file size to trigger rotation, in bytes
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  1MB
+                </p>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <p>
+                <codeph>LOGINTERVAL</codeph>
+              </p>
+            </entry>
+            <entry>
+              <p>
+                  Maximum time interval to trigger log rotation, in
+                  seconds
+                </p>
+            </entry>
+            <entry>
+              <p>
+                  1 day
+                </p>
+            </entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+    <p>
+        Setting the parameter <codeph>SSL_KEYFILE</codeph> enables the
+        SSL/TLS support. Using encryption is strongly encouraged, as
+        otherwise everything, including passwords, is transferred in
+        clear text.
+      </p>
+  </body>
+  
+</topic>

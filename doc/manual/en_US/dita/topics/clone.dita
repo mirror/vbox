@@ -1,0 +1,167 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="clone">
+  <title>Cloning Virtual Machines</title>
+  
+  <body>
+    <p>
+      You can create a full copy or a linked copy of an existing VM.
+      This copy is called a <i>clone</i>. You might use a
+      cloned VM to experiment with a VM configuration, to test different
+      guest OS levels, or to back up a VM.
+    </p>
+    <p>
+      The <b outputclass="bold">Clone Virtual Machine</b> wizard
+      guides you through the cloning process.
+    </p>
+    <p>
+      You can start the Clone Virtual Machine wizard in one of the
+      following ways:
+    </p>
+    <ul>
+      <li>
+        <p>
+          Click the VM name in the machine list and then select
+          <b outputclass="bold">Clone</b> from the
+          <b outputclass="bold">Machine</b> menu.
+        </p>
+      </li>
+      <li>
+        <p>
+          Click <b outputclass="bold">Clone</b> in the
+          <b outputclass="bold">Snapshots</b> window for the
+          selected VM.
+        </p>
+      </li>
+    </ul>
+    <note>
+      <p>
+        The <b outputclass="bold">Clone</b> menu item is disabled
+        while a virtual machine is running.
+      </p>
+    </note>
+    <p>
+      The <b outputclass="bold">New Machine Name and Path</b>
+      page is displayed.
+    </p>
+    <fig id="fig-clone-wizard-name-path">
+      <title>Clone Virtual Machine Wizard: New Machine Name and Path</title>
+      <image href="images/clone-vm-1.png" placement="break"/>
+    </fig>
+    <p>
+      The following clone options are available:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Name:</b> A name for the cloned
+          machine.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Path:</b> Choose a location for
+          the cloned virtual machine, otherwise Oracle VM VirtualBox uses the
+          default machines folder.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">MAC Address Policy:</b> Specifies
+          whether to retain network card MAC addresses when cloning the
+          VM.
+        </p>
+        <p>
+          For example, the <b outputclass="bold">Generate New MAC
+          Addresses For All Network Adapters</b> value assigns a
+          new MAC address to each network card during cloning. This is
+          the default setting. This is the best option when both the
+          source VM and the cloned VM must operate on the same network.
+          Other values enable you to retain the existing MAC addresses
+          in the cloned VM.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Keep Disk Names:</b> Retains the
+          disk image names when cloning the VM.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Keep Hardware UUIDs:</b> Retains
+          the hardware universally unique identifiers (UUIDs) when
+          cloning the VM.
+        </p>
+      </li>
+    </ul>
+    <p>
+      Click <b outputclass="bold">Next</b>. The
+      <b outputclass="bold">Clone Type</b> page is displayed.
+    </p>
+    <fig id="fig-clone-wizard-clone-type">
+      <title>Clone Virtual Machine Wizard: Clone Type</title>
+      <image href="images/clone-vm-2.png" placement="break"/>
+    </fig>
+    <p>
+      The <b outputclass="bold">Clone Type</b> option specifies
+      whether to create a clone that is linked to the source VM or to
+      create a fully independent clone:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Full Clone:</b> Copies all
+          dependent disk images to the new VM folder. A full clone can
+          operate fully without the source VM.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Linked Clone:</b> Creates new
+          differencing disk images based on the source VM disk images.
+          If you select the current state of the source VM as the clone
+          point, Oracle VM VirtualBox creates a new snapshot.
+        </p>
+      </li>
+    </ul>
+    <p>
+      (Optional) Click <b outputclass="bold">Next</b>. The
+      <b outputclass="bold">Snapshots</b> page is displayed.
+    </p>
+    <note>
+      <p>
+        The Snapshots page is only displayed for machines that have
+        snapshots and the selected clone type is
+        <b outputclass="bold">Full Clone</b>.
+      </p>
+    </note>
+    <fig id="fig-clone-wizard-snapshots">
+      <title>Clone Virtual Machine Wizard: Snapshots</title>
+      <image href="images/clone-vm-3.png" placement="break"/>
+    </fig>
+    <p>
+      You use this page to select which parts of the snapshot tree to
+      include in the clone. The available options are as follows:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Current Machine State:</b> Clones
+          the current state of the VM. Snapshots are not included.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Everything:</b> Clones the
+          current machine state and all its snapshots.
+        </p>
+      </li>
+    </ul>
+    <p>
+      Click <b outputclass="bold">Finish</b> to start the clone
+      operation.
+    </p>
+    <p>
+      The duration of the clone operation depends on the size and number
+      of attached disk images. In addition, the clone operation saves
+      all the differencing disk images of a snapshot.
+    </p>
+    <p>
+      You can also use the <userinput>VBoxManage clonevm</userinput> command
+      to clone a VM. See <xref href="man_VBoxManage-clonevm.dita#vboxmanage-clonevm"/>.
+    </p>
+  </body>
+  
+</topic>

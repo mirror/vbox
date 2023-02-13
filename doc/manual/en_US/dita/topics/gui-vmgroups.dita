@@ -1,0 +1,110 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="gui-vmgroups">
+  <title>Using VM Groups</title>
+  
+  <body>
+    <p>
+      VM groups are groups of VMs that you can create as and when
+      required. You can manage and perform functions on them
+      collectively, as well as individually.
+    </p>
+    <p>
+      The following figure shows VM groups displayed in VirtualBox
+      Manager.
+    </p>
+    <fig id="fig-vm-groups">
+      <title>Groups of Virtual Machines</title>
+      <image href="images/vm-groups.png" placement="break"/>
+    </fig>
+    <p>
+      The following features are available for groups:
+    </p>
+    <ul>
+      <li>
+        <p>
+          Create a group using VirtualBox Manager. Do one of the following:
+        </p>
+        <ul>
+          <li>
+            <p>
+              Drag a VM on top of another VM.
+            </p>
+          </li>
+          <li>
+            <p>
+              Select multiple VMs and select
+              <b outputclass="bold">Group</b> from the
+              right-click menu.
+            </p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>
+          Create and manage a group using the command line. Do one of
+          the following:
+        </p>
+        <ul>
+          <li>
+            <p>
+              Create a group and assign a VM. For example:
+            </p>
+            <pre xml:space="preserve">VBoxManage modifyvm "vm01" --groups "/TestGroup"</pre>
+            <p>
+              This command creates a group <codeph>TestGroup</codeph>
+              and attaches the VM <codeph>vm01</codeph> to that group.
+            </p>
+          </li>
+          <li>
+            <p>
+              Detach a VM from the group, and delete the group if empty.
+              For example:
+            </p>
+            <pre xml:space="preserve">VBoxManage modifyvm "vm01" --groups ""</pre>
+            <p>
+              This command detaches all groups from the VM
+              <codeph>vm01</codeph> and deletes the empty group.
+            </p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>
+          Create multiple groups. For example:
+        </p>
+        <pre xml:space="preserve">VBoxManage modifyvm "vm01" --groups "/TestGroup,/TestGroup2"</pre>
+        <p>
+          This command creates the groups <codeph>TestGroup</codeph>
+          and <codeph>TestGroup2</codeph>, if they do not exist, and
+          attaches the VM <codeph>vm01</codeph> to both of them.
+        </p>
+      </li>
+      <li>
+        <p>
+          Create nested groups, having a group hierarchy. For example:
+        </p>
+        <pre xml:space="preserve">VBoxManage modifyvm "vm01" --groups "/TestGroup/TestGroup2"</pre>
+        <p>
+          This command attaches the VM <codeph>vm01</codeph> to the
+          subgroup <codeph>TestGroup2</codeph> of the
+          <codeph>TestGroup</codeph> group.
+        </p>
+      </li>
+      <li>
+        <p>
+          Use VirtualBox Manager menu options to control and manage all the VMs
+          in a group. For example:
+          <b outputclass="bold">Start</b>,
+          <b outputclass="bold">Pause</b>,
+          <b outputclass="bold">Reset</b>,
+          <b outputclass="bold">Close</b> (save state, send
+          shutdown signal, poweroff), <b outputclass="bold">Discard
+          Saved State</b>, <b outputclass="bold">Show in
+          Explorer</b>, <b outputclass="bold">Sort</b>.
+        </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

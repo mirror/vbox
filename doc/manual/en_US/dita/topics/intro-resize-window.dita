@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="intro-resize-window">
+  <title>Resizing the Machine's Window</title>
+  
+  <body>
+    <p>
+        You can resize the VM's window while that VM is running. When
+        you do, the window is scaled as follows:
+      </p>
+    <ul>
+      <li>
+        <p>
+            If you have <b outputclass="bold">scaled mode</b>
+            enabled, then the virtual machine's screen will be scaled to
+            the size of the window. This can be useful if you have many
+            machines running and want to have a look at one of them
+            while it is running in the background. Alternatively, it
+            might be useful to enlarge a window if the VM's output
+            screen is very small, for example because you are running an
+            old OS in it.
+          </p>
+        <p>
+            To enable scaled mode, press <b outputclass="bold">Host key
+            + C</b>, or select <b outputclass="bold">Scaled
+            Mode</b> from the
+            <b outputclass="bold">View</b> menu in the VM window.
+            To leave scaled mode, press <b outputclass="bold">Host key +
+            C </b>again.
+          </p>
+        <p>
+            The aspect ratio of the guest screen is preserved when
+            resizing the window. To ignore the aspect ratio, press
+            <b outputclass="bold">Shift</b> during the resize
+            operation.
+          </p>
+        <p>
+            See <xref href="KnownIssues.dita">Known Limitations</xref> for additional remarks.
+          </p>
+      </li>
+      <li>
+        <p>
+            If you have the Guest Additions installed and they support
+            automatic <b outputclass="bold">resizing</b>, the
+            Guest Additions will automatically adjust the screen
+            resolution of the guest OS. For example, if you are running
+            a Windows guest with a resolution of 1024x768 pixels and you
+            then resize the VM window to make it 100 pixels wider, the
+            Guest Additions will change the Windows display resolution
+            to 1124x768.
+          </p>
+        <p>
+            See <xref href="guestadditions.dita"/>.
+          </p>
+      </li>
+      <li>
+        <p>
+            Otherwise, if the window is bigger than the VM's screen, the
+            screen will be centered. If it is smaller, then scroll bars
+            will be added to the machine window.
+          </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

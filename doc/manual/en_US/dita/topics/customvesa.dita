@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="customvesa">
+  <title>Custom VESA Resolutions</title>
+  
+  <body>
+    <p>
+        Apart from the standard VESA resolutions, the Oracle VM VirtualBox
+        VESA BIOS enables you to add up to 16 custom video modes which
+        will be reported to the guest operating system. When using
+        Windows guests with the Oracle VM VirtualBox Guest Additions, a custom
+        graphics driver will be used instead of the fallback VESA
+        solution so this information does not apply.
+      </p>
+    <p>
+        Additional video modes can be configured for each VM using the
+        extra data facility. The extra data key is called
+        <codeph>CustomVideoMode<varname>x</varname>
+                     </codeph>
+        with <varname>x</varname> being a number from 1 to 16.
+        Please note that modes will be read from 1 until either the
+        following number is not defined or 16 is reached. The following
+        example adds a video mode that corresponds to the native display
+        resolution of many notebook computers:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> "CustomVideoMode1" "1400x1050x16"</pre>
+    <p>
+        The VESA mode IDs for custom video modes start at
+        <codeph>0x160</codeph>. In order to use the above defined
+        custom video mode, the following command line has to be supplied
+        to Linux:
+      </p>
+    <pre xml:space="preserve">vga = 0x200 | 0x160
+vga = 864</pre>
+    <p>
+        For guest operating systems with Oracle VM VirtualBox Guest Additions,
+        a custom video mode can be set using the video mode hint
+        feature.
+      </p>
+  </body>
+  
+</topic>

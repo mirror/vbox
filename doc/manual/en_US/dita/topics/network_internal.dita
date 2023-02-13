@@ -1,0 +1,84 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="network_internal">
+  <title>Internal Networking</title>
+  
+  <body>
+    <p>
+      Internal Networking is similar to bridged networking in that the
+      VM can directly communicate with the outside world. However, the
+      outside world is limited to other VMs on the same host which
+      connect to the same internal network.
+    </p>
+    <p>
+      Even though technically, everything that can be done using
+      internal networking can also be done using bridged networking,
+      there are security advantages with internal networking. In bridged
+      networking mode, all traffic goes through a physical interface of
+      the host system. It is therefore possible to attach a packet
+      sniffer such as Wireshark to the host interface and log all
+      traffic that goes over it. If, for any reason, you prefer two or
+      more VMs on the same machine to communicate privately, hiding
+      their data from both the host system and the user, bridged
+      networking therefore is not an option.
+    </p>
+    <p>
+      Internal networks are created automatically as needed. There is no
+      central configuration. Every internal network is identified simply
+      by its name. Once there is more than one active virtual network
+      card with the same internal network ID, the Oracle VM VirtualBox support
+      driver will automatically <i>wire</i> the cards and
+      act as a network switch. The Oracle VM VirtualBox support driver
+      implements a complete Ethernet switch and supports both
+      broadcast/multicast frames and promiscuous mode.
+    </p>
+    <p>
+      In order to attach a VM's network card to an internal network, set
+      its networking mode to Internal Networking. There are two ways to
+      accomplish this:
+    </p>
+    <ul>
+      <li>
+        <p>
+          Use the VM's <b outputclass="bold">Settings</b> window
+          in VirtualBox Manager. In the <b outputclass="bold">Network</b>
+          category of the Settings window, select
+          <b outputclass="bold">Internal Network</b> from the
+          drop-down list of networking modes. Select the name of an
+          existing internal network from the drop-down list below, or
+          enter a new name into the
+          <b outputclass="bold">Name</b> field.
+        </p>
+      </li>
+      <li>
+        <p>
+          Use the command line, for example:
+        </p>
+        <pre xml:space="preserve">VBoxManage modifyvm "VM name" --nic&lt;x&gt; intnet</pre>
+        <p>
+          Optionally, you can specify a network name with the command:
+        </p>
+        <pre xml:space="preserve">VBoxManage modifyvm "VM name" --intnet&lt;x&gt; "network name"</pre>
+        <p>
+          If you do not specify a network name, the network card will be
+          attached to the network <codeph>intnet</codeph> by default.
+        </p>
+      </li>
+    </ul>
+    <p>
+      Unless you configure the virtual network cards in the guest
+      operating systems that are participating in the internal network
+      to use static IP addresses, you may want to use the DHCP server
+      that is built into Oracle VM VirtualBox to manage IP addresses for the
+      internal network. See <xref href="man_VBoxManage-dhcpserver.dita#vboxmanage-dhcpserver"/>.
+    </p>
+    <p>
+      As a security measure, by default, the Linux implementation of
+      internal networking only allows VMs running under the same user ID
+      to establish an internal network. However, it is possible to
+      create a shared internal networking interface, accessible by users
+      with different user IDs.
+    </p>
+  </body>
+  
+</topic>

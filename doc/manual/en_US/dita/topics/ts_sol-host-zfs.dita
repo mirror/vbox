@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_sol-host-zfs">
+  <title>Cannot Start VM, Not Enough Contiguous Memory</title>
+  
+  <body>
+    <p>
+        The ZFS file system is known to use nearly all available RAM as
+        cache if the default system settings are not changed. This may
+        lead to a heavy fragmentation of the host memory preventing
+        Oracle VM VirtualBox VMs from being started. We recommend to limit the
+        ZFS cache by adding the following line to
+        <filepath>/etc/system</filepath>, where
+        <varname>xxxx</varname> bytes is the amount of memory
+        usable for the ZFS cache.
+      </p>
+    <pre xml:space="preserve">set zfs:zfs_arc_max = xxxx</pre>
+  </body>
+  
+</topic>

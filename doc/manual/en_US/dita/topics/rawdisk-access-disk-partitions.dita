@@ -1,0 +1,119 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="rawdisk-access-disk-partitions">
+  <title>Access to Individual Physical Hard Disk Partitions</title>
+  
+  <body>
+    <p>
+          This <i>raw partition support</i> is quite
+          similar to the full hard disk access described above. However,
+          in this case, any partitioning information will be stored
+          inside the VMDK image. This means that you can install a
+          different boot loader in the virtual hard disk without
+          affecting the host's partitioning information. While the guest
+          will be able to <i>see</i> all partitions that
+          exist on the physical disk, access will be filtered in that
+          reading from partitions for which no access is allowed the
+          partitions will only yield zeroes, and all writes to them are
+          ignored.
+        </p>
+    <p>
+          To create a special image for raw partition support, which
+          will contain a small amount of data, on a Linux host, use the
+          command:
+        </p>
+    <pre xml:space="preserve">$ VBoxManage createmedium disk --filename <varname>path-to-file</varname>.vmdk --format=VMDK
+--variant RawDisk --property RawDrive=/dev/sda --property Partitions=1,5</pre>
+    <p>
+          The command is identical to the one for full hard disk access,
+          except for the additional <codeph>--property</codeph>
+          Partitions=1,5 parameter. This example would create
+          the image
+          <filepath><varname>path-to-file</varname>.vmdk</filepath>,
+          which must be absolute, and partitions 1 and 5 of
+          <filepath>/dev/sda</filepath> would be made accessible to the
+          guest.
+        </p>
+    <p>
+          Oracle VM VirtualBox uses the same partition numbering as your Linux
+          host. As a result, the numbers given in the above example
+          would refer to the first primary partition and the first
+          logical drive in the extended partition, respectively.
+        </p>
+    <p>
+          On a Windows host, instead of the above device specification,
+          use for example <filepath>\\.\PhysicalDrive0</filepath>. On a
+          macOS host, instead of the above device specification use
+          <filepath>/dev/rdisk1</filepath>, for example. Note that on OS
+          X you can only use partitions which are not mounted. Unmount
+          the respective disk first using <i>diskutil unmountDisk
+          <filepath>/dev/diskX</filepath>
+                        </i>. Partition numbers
+          are the same on Linux, Windows, and macOS hosts.
+        </p>
+    <p>
+          The numbers for the list of partitions can be taken from the
+          output of the following command:
+        </p>
+    <pre xml:space="preserve">$ VBoxManage list hostdrives</pre>
+    <p>
+          The output lists available drives and their partitions with
+          the partition types and sizes to give the user enough
+          information to identify the partitions necessary for the
+          guest.
+        </p>
+    <p>
+          Images which give access to individual partitions are specific
+          to a particular host disk setup. You cannot transfer these
+          images to another host. Also, whenever the host partitioning
+          changes, the image <i>must be recreated</i>.
+        </p>
+    <p>
+          Creating the image requires read/write access for the given
+          device. Read/write access is also later needed when using the
+          image from a virtual machine. If this is not feasible, there
+          is a special variant for raw partition access, currently only
+          available on Linux hosts, that avoids having to give the
+          current user access to the entire disk. To set up such an
+          image, use:
+        </p>
+    <pre xml:space="preserve">$ VBoxManage createmedium disk --filename <varname>path-to-file</varname>.vmdk --format=VMDK
+--variant RawDisk --property RawDrive=/dev/sda --property Partitions=1,5
+--property Relative=1</pre>
+    <p>
+          When used from a virtual machine, the image will then refer
+          not to the entire disk, but only to the individual partitions.
+          In this example, <filepath>/dev/sda1</filepath> and
+          <filepath>/dev/sda5</filepath>. As a consequence, read/write
+          access is only required for the affected partitions, not for
+          the entire disk. During creation however, read-only access to
+          the entire disk is required to obtain the partitioning
+          information.
+        </p>
+    <p>
+          In some configurations it may be necessary to change the MBR
+          code of the created image. For example, to replace the Linux
+          boot loader that is used on the host by another boot loader.
+          This enables for example the guest to boot directly to
+          Windows, while the host boots Linux from the "same" disk. For
+          this purpose the <codeph>--property-file</codeph>
+          BootSector=<varname>path-to-file-with-boot-sector</varname>
+          parameter is provided. It specifies a file name from which to
+          take the MBR code. The partition table is not modified at all,
+          so a MBR file from a system with totally different
+          partitioning can be used. An example of this is:
+        </p>
+    <pre xml:space="preserve">$ VBoxManage createmedium disk --filename <varname>path-to-file</varname>.vmdk --format=VMDK
+--variant RawDisk --property RawDrive=/dev/sda --property Partitions=1,5
+--property-file BootSector=winxp.mbr</pre>
+    <p>
+          The modified MBR will be stored inside the image, not on the
+          host disk.
+        </p>
+    <p>
+          The created image can be attached to a storage controller in a
+          VM configuration as usual.
+        </p>
+  </body>
+  
+</topic>

@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-using-cli">
+  <title>Using VBoxManage Commands With Oracle Cloud Infrastructure</title>
+  
+  <body>
+    <p>
+        This section includes some examples of how
+        <userinput>VBoxManage</userinput> commands can be used to integrate
+        with Oracle Cloud Infrastructure and perform common cloud operations.
+      </p>
+    <p>
+      <b outputclass="bold">Creating a Cloud Profile</b>
+    </p>
+    <p>
+        To create a cloud profile called <codeph>vbox-oci</codeph>:
+      </p>
+    <pre xml:space="preserve">VBoxManage cloudprofile --provider "OCI" --profile="vbox-oci" add \
+--clouduser="ocid1.user.oc1..."  --keyfile="/home/username/.oci/oci_api_key.pem" \
+--tenancy="ocid1.tenancy.oc1..."  --compartment="ocid1.compartment.oc1..."  --region="us-ashburn-1"
+</pre>
+    <p>
+        The new cloud profile is added to the
+        <filepath>oci_config</filepath> file in your Oracle VM VirtualBox
+        global configuration directory. For example, this is
+        <filepath>$HOME/.VirtualBox/oci_config</filepath> on a Windows
+        host.
+      </p>
+    <p>
+      <b outputclass="bold">Listing Cloud Instances</b>
+    </p>
+    <p>
+        To list the instances in your Oracle Cloud Infrastructure compartment:
+      </p>
+    <pre xml:space="preserve">VBoxManage cloud --provider="OCI" --profile="vbox-oci" list instances
+</pre>
+    <p>
+      <b outputclass="bold">Exporting an Oracle VM VirtualBox VM to the
+        Cloud</b>
+    </p>
+    <p>
+        To export a VM called <codeph>myVM</codeph> and create a cloud
+        instance called <codeph>myVM_Cloud</codeph>:
+      </p>
+    <pre xml:space="preserve">VBoxManage export myVM --output OCI:// --cloud 0 --vmname myVM_Cloud \
+--cloudprofile "vbox-oci" --cloudbucket myBucket \
+--cloudshape VM.Standard2.1 --clouddomain US-ASHBURN-AD-1 --clouddisksize 50  \
+--cloudocivcn ocid1.vcn.oc1... --cloudocisubnet ocid1.subnet.oc1... \
+--cloudkeepobject true --cloudlaunchinstance true --cloudpublicip true
+      </pre>
+    <p>
+      <b outputclass="bold">Importing a Cloud Instance Into
+        Oracle VM VirtualBox</b>
+    </p>
+    <p>
+        To import a cloud instance and create an Oracle VM VirtualBox VM
+        called <codeph>oci_Import</codeph>:
+      </p>
+    <pre xml:space="preserve">VBoxManage import OCI:// --cloud --vmname oci_Import --memory 4000
+--cpus 3 --ostype FreeBSD_64 --cloudprofile "vbox-oci"
+--cloudinstanceid ocid1.instance.oc1... --cloudbucket myBucket
+  </pre>
+    <p>
+      <b outputclass="bold">Creating a New Cloud Instance From a
+        Custom Image</b>
+    </p>
+    <p>
+        To create a new cloud instance from a custom image on Oracle Cloud Infrastructure:
+      </p>
+    <pre xml:space="preserve">VBoxManage cloud --provider="OCI" --profile="vbox-oci" instance create \
+--domain-name="oraclecloud.com" --image-id="ocid1.image.oc1..." --display-name="myInstance" \
+--shape="VM.Standard2.1" --subnet="ocid1.subnet.oc1..."</pre>
+    <p>
+      <b outputclass="bold">Terminating a Cloud Instance</b>
+    </p>
+    <p>
+        To terminate an instance in your compartment on Oracle Cloud Infrastructure:
+      </p>
+    <pre xml:space="preserve">VBoxManage cloud --provider="OCI" --profile="vbox-oci" instance terminate \
+--id="ocid1.instance.oc1..." </pre>
+    <p>
+        For more details about the available commands for cloud
+        operations, see <xref href="man_VBoxManage-cloud.dita#vboxmanage-cloud"/>.
+      </p>
+  </body>
+  
+</topic>

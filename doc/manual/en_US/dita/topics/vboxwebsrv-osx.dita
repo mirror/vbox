@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vboxwebsrv-osx">
+  <title>macOS: Starting the Web Service With launchd</title>
+  
+  <body>
+    <p>
+        On macOS, launchd is used to start the Oracle VM VirtualBox
+        webservice. An example configuration file can be found in
+        <filepath>$HOME/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist</filepath>.
+        It can be enabled by changing the <codeph>Disabled</codeph>
+        key from <codeph>true</codeph> to <codeph>false</codeph>. To
+        manually start the service use the following command:
+      </p>
+    <pre xml:space="preserve">launchctl load ~/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist</pre>
+    <p>
+        For additional information on how launchd services could be
+        configured see:
+      </p>
+    <p><ph>https://developer.apple.com/library/mac/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html</ph>.
+      </p>
+  </body>
+  
+</topic>

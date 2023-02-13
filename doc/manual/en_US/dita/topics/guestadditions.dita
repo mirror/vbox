@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestadditions">
+  <title>Guest Additions</title>
+  
+  <body>
+    <p>
+    The previous chapter covered getting started with Oracle VM VirtualBox and
+    installing operating systems in a virtual machine. For any serious
+    and interactive use, the Oracle VM VirtualBox Guest Additions will make
+    your life much easier by providing closer integration between host
+    and guest and improving the interactive performance of guest
+    systems. This chapter describes the Guest Additions in detail.
+  </p>
+  </body>
+</topic>

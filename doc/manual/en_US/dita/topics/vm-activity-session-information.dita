@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="vm-activity-session-information">
+               <title>Session Information Dialog</title>
+               
+               <body>
+                  <p>
+        The Session Information dialog includes multiple tabs which show
+        important configuration and runtime information for the guest
+        system. The tabs of the dialog are as follows:
+      </p>
+                  <ul>
+                     <li>
+                        <p>
+                           <b outputclass="bold">Configuration Details.</b>
+            Displays the system configuration of the virtual machine in
+            a tabular format. The displayed information includes details
+            such as storage configuration and audio settings.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+                           <b outputclass="bold">Runtime Information.</b>
+            Displays runtime information for the guest session in a
+            tabular format similar to the Configuration Details tab.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+                           <b outputclass="bold">VM Activity.</b> Includes
+            several time series charts which monitor guest resource
+            usage including CPU, RAM, Disk I/O, and Network. Note that
+            the RAM chart requires the Guest Additions to be running on
+            the guest system. The VM Activity tab can also be accessed
+            directly from the VM Activity Overview tool. See
+            <xref href="vm-activity-overview.dita#vm-activity-overview"/>.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+                           <b outputclass="bold">Guest Control</b>. Details of
+            processes used by the Guest Control File Manager. See
+            <xref href="guestadd-gc-file-manager.dita#guestadd-gc-file-manager"/>.
+          </p>
+                     </li>
+                  </ul>
+                  <p>
+        To display the Session Information dialog, select
+        <b outputclass="bold">Machine</b>,
+        <b outputclass="bold">Session Information</b> in the
+        guest VM.
+      </p>
+                  <fig id="fig-vm-session-information">
+                     <title>Session Information Dialog, Showing VM Activity Tab</title>
+                     <image href="images/session-information.png" placement="break"/>
+                  </fig>
+               </body>
+               
+            </topic>

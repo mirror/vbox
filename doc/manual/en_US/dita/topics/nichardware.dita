@@ -1,0 +1,107 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="nichardware">
+  <title>Virtual Networking Hardware</title>
+  
+  <body>
+    <p>
+      For each card, you can individually select what kind of
+      <i>hardware</i> will be presented to the virtual
+      machine. Oracle VM VirtualBox can virtualize the following types of
+      networking hardware:
+    </p>
+    <ul>
+      <li>
+        <p>
+          AMD PCNet PCI II (Am79C970A)
+        </p>
+      </li>
+      <li>
+        <p>
+          AMD PCNet FAST III (Am79C973), the default setting
+        </p>
+      </li>
+      <li>
+        <p>
+          Intel PRO/1000 MT Desktop (82540EM)
+        </p>
+      </li>
+      <li>
+        <p>
+          Intel PRO/1000 T Server (82543GC)
+        </p>
+      </li>
+      <li>
+        <p>
+          Intel PRO/1000 MT Server (82545EM)
+        </p>
+      </li>
+      <li>
+        <p>
+          Paravirtualized network adapter (virtio-net)
+        </p>
+      </li>
+    </ul>
+    <p>
+      The PCNet FAST III is the default because it is supported by
+      nearly all operating systems, as well as by the GNU GRUB boot
+      manager. As an exception, the Intel PRO/1000 family adapters are
+      chosen for some guest operating system types that no longer ship
+      with drivers for the PCNet card, such as Windows Vista.
+    </p>
+    <p>
+      The Intel PRO/1000 MT Desktop type works with Windows Vista and
+      later versions. The T Server variant of the Intel PRO/1000 card is
+      recognized by Windows XP guests without additional driver
+      installation. The MT Server variant facilitates OVF imports from
+      other platforms.
+    </p>
+    <p>
+      The Paravirtualized network adapter (virtio-net) is special. If
+      you select this adapter, then Oracle VM VirtualBox does
+      <i>not</i> virtualize common networking hardware
+      that is supported by common guest operating systems. Instead,
+      Oracle VM VirtualBox expects a special software interface for
+      virtualized environments to be provided by the guest, thus
+      avoiding the complexity of emulating networking hardware and
+      improving network performance. Oracle VM VirtualBox provides support for
+      the industry-standard <i>virtio</i> networking
+      drivers, which are part of the open source KVM project.
+    </p>
+    <p>
+      The virtio networking drivers are available for the following
+      guest operating systems:
+    </p>
+    <ul>
+      <li>
+        <p>
+          Linux kernels version 2.6.25 or later can be configured to
+          provide virtio support. Some distributions have also
+          back-ported virtio to older kernels.
+        </p>
+      </li>
+      <li>
+        <p>
+          For Windows 2000, XP, and Vista, virtio drivers can be
+          downloaded and installed from the KVM project web page:
+        </p>
+        <p><ph>http://www.linux-kvm.org/page/WindowsGuestDrivers</ph>.
+        </p>
+      </li>
+    </ul>
+    <p>
+      Oracle VM VirtualBox also has limited support for <i>jumbo
+      frames</i>. These are networking packets with more than
+      1500 bytes of data, provided that you use the Intel card
+      virtualization and bridged networking. Jumbo frames are not
+      supported with the AMD networking devices. In those cases, jumbo
+      packets will silently be dropped for both the transmit and the
+      receive direction. Guest operating systems trying to use this
+      feature will observe this as a packet loss, which may lead to
+      unexpected application behavior in the guest. This does not cause
+      problems with guest operating systems in their default
+      configuration, as jumbo frames need to be explicitly enabled.
+    </p>
+  </body>
+  
+</topic>

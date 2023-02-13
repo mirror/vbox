@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="nat_host_resolver_proxy">
+  <title>Using the Host's Resolver as a DNS Proxy in NAT Mode</title>
+  
+  <body>
+    <p>
+        For resolving network names, the DHCP server of the NAT engine
+        offers a list of registered DNS servers of the host. If for some
+        reason you need to hide this DNS server list and use the host's
+        resolver settings, thereby forcing the Oracle VM VirtualBox NAT engine
+        to intercept DNS requests and forward them to host's resolver,
+        use the following command:
+      </p>
+    <pre xml:space="preserve">$ VBoxManage modifyvm <varname>VM-name</varname> --natdnshostresolver1 on</pre>
+    <p>
+        Note that this setting is similar to the DNS proxy mode, however
+        whereas the proxy mode just forwards DNS requests to the
+        appropriate servers, the resolver mode will interpret the DNS
+        requests and use the host's DNS API to query the information and
+        return it to the guest.
+      </p>
+  </body>
+</topic>

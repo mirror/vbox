@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="specialcharacters">
+               <title>Typing Special Characters</title>
+               
+               <body>
+                  <p>
+        Some OSes expect certain key combinations to initiate certain
+        procedures. The key combinations that you type into a VM might
+        target the host OS, the Oracle VM VirtualBox software, or the guest
+        OS. The recipient of these keypresses depends on a number of
+        factors, including the key combination itself.
+      </p>
+                  <ul>
+                     <li>
+                        <p>
+            Host OSes reserve certain key combinations for themselves.
+            For example, you cannot use the
+            <b outputclass="bold">Ctrl+Alt+Delete</b> combination
+            to reboot the guest OS in your VM, because this key
+            combination is reserved by the host OS. Even though both
+            Windows and Linux OSes can intercept this key combination,
+            the host OS is rebooted automatically.
+          </p>
+                        <p>
+            On Linux and Oracle Solaris hosts, which use the X Window
+            System, the key combination
+            <b outputclass="bold">Ctrl+Alt+Backspace</b> normally
+            resets the X server and restarts the entire graphical user
+            interface. As the X server intercepts this combination,
+            pressing it will usually restart your
+            <i>host</i> graphical user interface and kill
+            all running programs, including Oracle VM VirtualBox, in the
+            process.
+          </p>
+                        <p>
+            On Linux hosts supporting virtual terminals, the key
+            combination <b outputclass="bold">Ctrl+Alt+Fx</b>,
+            where Fx is one of the function keys from F1 to F12,
+            normally enables you to switch between virtual terminals. As
+            with <b outputclass="bold">Ctrl+Alt+Delete</b>, these
+            combinations are intercepted by the host OS and therefore
+            always switch terminals on the <i>host</i>.
+          </p>
+                        <p>
+            If, instead, you want to send these key combinations to the
+            <i>guest</i> OS in the virtual machine, you
+            will need to use one of the following methods:
+          </p>
+                        <ul>
+                           <li>
+                              <p>
+                Use the items in the
+                <b outputclass="bold">Input</b>,
+                <b outputclass="bold">Keyboard</b> menu of the
+                virtual machine window. This menu includes the settings
+                <b outputclass="bold">Insert Ctrl+Alt+Delete</b>
+                and <b outputclass="bold">Insert
+                Ctrl+Alt+Backspace</b>. However, the latter
+                setting affects only Linux guests or Oracle Solaris
+                guests.
+              </p>
+                              <p>
+                This menu also includes an option for inserting the Host
+                key combination.
+              </p>
+                           </li>
+                           <li>
+                              <p>
+                Use special key combinations with the Host key, which is
+                normally the right Control key. Oracle VM VirtualBox then
+                translates the following key combinations for the VM:
+              </p>
+                              <ul>
+                                 <li>
+                                    <p>
+                                       <b outputclass="bold">Host key + Del</b>
+                    sends <b outputclass="bold">Ctrl+Alt+Del</b>
+                    to reboot the guest OS.
+                  </p>
+                                 </li>
+                                 <li>
+                                    <p>
+                                       <b outputclass="bold">Host key +
+                    Backspace</b> sends
+                    <b outputclass="bold">Ctrl+Alt+Backspace</b>
+                    to restart the graphical user interface of a Linux
+                    or Oracle Solaris guest.
+                  </p>
+                                 </li>
+                                 <li>
+                                    <p>
+                                       <b outputclass="bold">Host key + Function
+                    key</b>. For example, use this key
+                    combination to simulate
+                    <b outputclass="bold">Ctrl+Alt+Fx</b> to
+                    switch between virtual terminals in a Linux guest.
+                  </p>
+                                 </li>
+                              </ul>
+                           </li>
+                        </ul>
+                     </li>
+                     <li>
+                        <p>
+            For some other keyboard combinations such as
+            <b outputclass="bold">Alt+Tab</b> to switch between
+            open windows, Oracle VM VirtualBox enables you to configure
+            whether these combinations will affect the host or the
+            guest, if a virtual machine currently has the focus. This is
+            a global setting for all virtual machines and can be found
+            under <b outputclass="bold">File</b>,
+            <b outputclass="bold">Preferences</b>,
+            <b outputclass="bold">Input</b>.
+          </p>
+                     </li>
+                     <li>
+                        <p>
+            A soft keyboard can be used to input key combinations in the
+            guest. See <xref href="soft-keyb.dita#soft-keyb"/>.
+          </p>
+                     </li>
+                  </ul>
+               </body>
+               
+            </topic>

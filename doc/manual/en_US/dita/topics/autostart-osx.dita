@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="autostart-osx">
+  <title>macOS: Starting the Autostart Service With launchd</title>
+  
+  <body>
+    <p>
+        On macOS, launchd is used to start the Oracle VM VirtualBox autostart
+        service. An example configuration file can be found in
+        <filepath>/Applications/VirtualBox.app/Contents/MacOS/org.virtualbox.vboxautostart.plist</filepath>.
+        To enable the service copy the file to
+        <filepath>/Library/LaunchDaemons</filepath> and change the
+        <codeph>Disabled</codeph> key from <codeph>true</codeph> to
+        <codeph>false</codeph>. Furthermore replace the second
+        parameter to an existing configuration file which has the same
+        format as on Linux, see <xref href="autostart-linux.dita#autostart-linux"/>.
+      </p>
+    <p>
+        To manually start the service use the following command:
+      </p>
+    <pre xml:space="preserve"># launchctl load /Library/LaunchDaemons/org.virtualbox.vboxautostart.plist</pre>
+    <p>
+        For additional information on how launchd services can be
+        configured see:
+      </p>
+    <p><ph>http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html</ph>.
+      </p>
+  </body>
+  
+</topic>

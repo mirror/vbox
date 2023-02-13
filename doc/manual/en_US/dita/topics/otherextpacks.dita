@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="otherextpacks">
+  <title>Other Extension Packs</title>
+  
+  <body>
+    <p>
+      Another extension pack called VNC is available. This extension
+      pack is open source and replaces the previous integration of the
+      VNC remote access protocol. This is experimental code, and is
+      initially available in the Oracle VM VirtualBox source code package
+      only. It is to a large portion code contributed by users, and is
+      not supported in any way by Oracle.
+    </p>
+    <p>
+      The keyboard handling is severely limited, and only the US
+      keyboard layout works. Other keyboard layouts will have at least
+      some keys which produce the wrong results, often with quite
+      surprising effects, and for layouts which have significant
+      differences to the US keyboard layout it is most likely unusable.
+    </p>
+    <p>
+      It is possible to install both the Oracle VM VirtualBox Extension Pack
+      and VNC, but only one VRDE module can be active at any time. The
+      following command switches to the VNC VRDE module in VNC:
+    </p>
+    <pre xml:space="preserve">VBoxManage setproperty vrdeextpack VNC</pre>
+    <p>
+      Configuring the remote access works very similarly to VRDP, see
+      <xref href="vrde.dita#vrde"/>, with some limitations. VNC does not
+      support specifying several port numbers, and the authentication is
+      done differently. VNC can only deal with password authentication,
+      and there is no option to use password hashes. This leaves no
+      other choice than having a clear-text password in the VM
+      configuration, which can be set with the following command:
+    </p>
+    <pre xml:space="preserve">VBoxManage modifyvm <varname>VM-name</varname> --vrde-property VNCPassword=secret</pre>
+    <p>
+      The user is responsible for keeping this password secret, and it
+      should be removed when a VM configuration is passed to another
+      person, for whatever purpose. Some VNC servers claim to have
+      encrypted passwords in the configuration. This is not true
+      encryption, it is only concealing the passwords, which is only as
+      secure as using clear-text passwords.
+    </p>
+    <p>
+      The following command switches back to VRDP, if installed:
+    </p>
+    <pre xml:space="preserve">VBoxManage setproperty vrdeextpack "Oracle VM VirtualBox Extension Pack"</pre>
+  </body>
+  
+</topic>

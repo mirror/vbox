@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="security-general">
+  <title>General Security Principles</title>
+  
+  <body>
+    <p>
+      The following principles are fundamental to using any application
+      securely.
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Keep software up to date</b>. One
+          of the principles of good security practise is to keep all
+          software versions and patches up to date. Activate the
+          Oracle VM VirtualBox update notification to get notified when a new
+          Oracle VM VirtualBox release is available. When updating
+          Oracle VM VirtualBox, do not forget to update the Guest Additions.
+          Keep the host operating system as well as the guest operating
+          system up to date.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Restrict network access to critical
+          services.</b> Use proper means, for instance a
+          firewall, to protect your computer and your guests from
+          accesses from the outside. Choosing the proper networking mode
+          for VMs helps to separate host networking from the guest and
+          vice versa.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Follow the principle of least
+          privilege.</b> The principle of least privilege states
+          that users should be given the least amount of privilege
+          necessary to perform their jobs. Always execute Oracle VM VirtualBox
+          as a regular user. We strongly discourage anyone from
+          executing Oracle VM VirtualBox with system privileges.
+        </p>
+        <p>
+          Choose restrictive permissions when creating configuration
+          files, for instance when creating /etc/default/virtualbox, see
+          <xref href="linux_install_opts.dita">Automatic Installation Options</xref>. Mode 0600 is preferred.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Monitor system activity.</b>
+          System security builds on three pillars: good security
+          protocols, proper system configuration and system monitoring.
+          Auditing and reviewing audit records address the third
+          requirement. Each component within a system has some degree of
+          monitoring capability. Follow audit advice in this document
+          and regularly monitor audit records.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Keep up to date on latest security
+          information.</b> Oracle continually improves its
+          software and documentation. Check this note yearly for
+          revisions.
+        </p>
+      </li>
+    </ul>
+  </body>
+  
+</topic>

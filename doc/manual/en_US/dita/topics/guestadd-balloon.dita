@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestadd-balloon">
+  <title>Memory Ballooning</title>
+  
+  <body>
+    <p>
+        The Guest Additions can change the amount of host memory that a
+        VM uses, while the machine is running. Because of how this is
+        implemented, this feature is called <i>memory
+        ballooning</i>.
+      </p>
+    <note>
+      <ul>
+        <li>
+          <p>
+              Oracle VM VirtualBox supports memory ballooning only on 64-bit
+              hosts. It is not supported on macOS hosts.
+            </p>
+        </li>
+        <li>
+          <p>
+              Memory ballooning does not work well with large pages
+              enabled. To turn off large pages support for a VM, run
+              <userinput>VBoxManage modifyvm <varname>vmname</varname> --large-pages
+              off</userinput>
+                           </p>
+        </li>
+      </ul>
+    </note>
+    <p>
+        Normally, to change the amount of memory allocated to a virtual
+        machine, you have to shut down the virtual machine entirely and
+        modify its settings. With memory ballooning, memory that was
+        allocated for a virtual machine can be given to another virtual
+        machine without having to shut the machine down.
+      </p>
+    <p>
+        When memory ballooning is requested, the Oracle VM VirtualBox Guest
+        Additions, which run inside the guest, allocate physical memory
+        from the guest operating system on the kernel level and lock
+        this memory down in the guest. This ensures that the guest will
+        not use that memory any longer. No guest applications can
+        allocate it, and the guest kernel will not use it either.
+        Oracle VM VirtualBox can then reuse this memory and give it to another
+        virtual machine.
+      </p>
+    <p>
+        The memory made available through the ballooning mechanism is
+        only available for reuse by Oracle VM VirtualBox. It is
+        <i>not</i> returned as free memory to the host.
+        Requesting balloon memory from a running guest will therefore
+        not increase the amount of free, unallocated memory on the host.
+        Effectively, memory ballooning is therefore a memory
+        overcommitment mechanism for multiple virtual machines while
+        they are running. This can be useful to temporarily start
+        another machine, or in more complicated environments, for
+        sophisticated memory management of many virtual machines that
+        may be running in parallel depending on how memory is used by
+        the guests.
+      </p>
+    <p>
+        At this time, memory ballooning is only supported through
+        <userinput>VBoxManage</userinput>. Use the following command to
+        increase or decrease the size of the memory balloon within a
+        running virtual machine that has Guest Additions installed:
+      </p>
+    <pre xml:space="preserve">VBoxManage controlvm "VM name" guestmemoryballoon n</pre>
+    <p>
+        where <varname>VM name</varname> is the name or UUID of
+        the virtual machine in question and <varname>n</varname>
+        is the amount of memory to allocate from the guest in megabytes.
+        See <xref href="man_VBoxManage-controlvm.dita#vboxmanage-controlvm"/>.
+      </p>
+    <p>
+        You can also set a default balloon that will automatically be
+        requested from the VM every time after it has started up with
+        the following command:
+      </p>
+    <pre xml:space="preserve">VBoxManage modifyvm "VM name" --guest-memory-balloon n</pre>
+    <p>
+        By default, no balloon memory is allocated. This is a VM
+        setting, like other <userinput>modifyvm</userinput> settings, and
+        therefore can only be set while the machine is shut down. See
+        <xref href="man_VBoxManage-modifyvm.dita#vboxmanage-modifyvm"/>.
+      </p>
+  </body>
+  
+</topic>

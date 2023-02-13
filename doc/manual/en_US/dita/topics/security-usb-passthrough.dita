@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="security-usb-passthrough">
+  <title>USB Passthrough</title>
+  
+  <body>
+    <p>
+          Passing USB devices to the guest provides the guest full
+          access to these devices, see <xref href="settings-usb.dita">USB Settings</xref>.
+          For instance, in addition to reading and writing the content
+          of the partitions of an external USB disk the guest will be
+          also able to read and write the partition table and hardware
+          data of that disk.
+        </p>
+  </body>
+  
+</topic>

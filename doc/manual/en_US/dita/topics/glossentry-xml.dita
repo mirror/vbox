@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="glossentry-xml">
+  <title>XML</title>
+  <body>
+    <section>
+      <p>
+        The eXtensible Markup Language, a metastandard for all kinds of 
+        textual information. XML only specifies how data in the document 
+        is organized generally and does not prescribe how to semantically 
+        organize content.
+      </p>
+    </section>
+  </body>
+</topic>

@@ -1,0 +1,350 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="efividmode">
+  <title>Video Modes in EFI</title>
+  
+  <body>
+    <p>
+        EFI provides two distinct video interfaces: GOP (Graphics Output
+        Protocol) and UGA (Universal Graphics Adapter). Modern OSes,
+        such as Mac OS X, generally use GOP, while some older ones still
+        use UGA. Oracle VM VirtualBox provides a configuration option to
+        control the graphics resolution for both interfaces, making the
+        difference mostly irrelevant for users.
+      </p>
+    <p>
+        The default resolution is 1024x768. To select a graphics
+        resolution for EFI, use the following
+        <userinput>VBoxManage</userinput> command:
+      </p>
+    <pre xml:space="preserve">VBoxManage setextradata "VM name" VBoxInternal2/EfiGraphicsResolution HxV</pre>
+    <p>
+        Determine the horizontal resolution H and the vertical
+        resolution V from the following list of default resolutions:
+      </p>
+    <dl>
+      <dlentry>
+        <dt>
+            VGA
+          </dt>
+        <dd>
+          <p>
+              640x480, 32bpp, 4:3
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            SVGA
+          </dt>
+        <dd>
+          <p>
+              800x600, 32bpp, 4:3
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            XGA
+          </dt>
+        <dd>
+          <p>
+              1024x768, 32bpp, 4:3
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            XGA+
+          </dt>
+        <dd>
+          <p>
+              1152x864, 32bpp, 4:3
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            HD
+          </dt>
+        <dd>
+          <p>
+              1280x720, 32bpp, 16:9
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            WXGA
+          </dt>
+        <dd>
+          <p>
+              1280x800, 32bpp, 16:10
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            SXGA
+          </dt>
+        <dd>
+          <p>
+              1280x1024, 32bpp, 5:4
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            SXGA+
+          </dt>
+        <dd>
+          <p>
+              1400x1050, 32bpp, 4:3
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            WXGA+
+          </dt>
+        <dd>
+          <p>
+              1440x900, 32bpp, 16:10
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            HD+
+          </dt>
+        <dd>
+          <p>
+              1600x900, 32bpp, 16:9
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            UXGA
+          </dt>
+        <dd>
+          <p>
+              1600x1200, 32bpp, 4:3
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            WSXGA+
+          </dt>
+        <dd>
+          <p>
+              1680x1050, 32bpp, 16:10
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            Full HD
+          </dt>
+        <dd>
+          <p>
+              1920x1080, 32bpp, 16:9
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            WUXGA
+          </dt>
+        <dd>
+          <p>
+              1920x1200, 32bpp, 16:10
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            DCI 2K
+          </dt>
+        <dd>
+          <p>
+              2048x1080, 32bpp, 19:10
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            Full HD+
+          </dt>
+        <dd>
+          <p>
+              2160x1440, 32bpp, 3:2
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            Unnamed
+          </dt>
+        <dd>
+          <p>
+              2304x1440, 32bpp, 16:10
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            QHD
+          </dt>
+        <dd>
+          <p>
+              2560x1440, 32bpp, 16:9
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            WQXGA
+          </dt>
+        <dd>
+          <p>
+              2560x1600, 32bpp, 16:10
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            QWXGA+
+          </dt>
+        <dd>
+          <p>
+              2880x1800, 32bpp, 16:10
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            QHD+
+          </dt>
+        <dd>
+          <p>
+              3200x1800, 32bpp, 16:9
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            WQSXGA
+          </dt>
+        <dd>
+          <p>
+              3200x2048, 32bpp, 16:10
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            4K UHD
+          </dt>
+        <dd>
+          <p>
+              3840x2160, 32bpp, 16:9
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            WQUXGA
+          </dt>
+        <dd>
+          <p>
+              3840x2400, 32bpp, 16:10
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            DCI 4K
+          </dt>
+        <dd>
+          <p>
+              4096x2160, 32bpp, 19:10
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            HXGA
+          </dt>
+        <dd>
+          <p>
+              4096x3072, 32bpp, 4:3
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            UHD+
+          </dt>
+        <dd>
+          <p>
+              5120x2880, 32bpp, 16:9
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            WHXGA
+          </dt>
+        <dd>
+          <p>
+              5120x3200, 32bpp, 16:10
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            WHSXGA
+          </dt>
+        <dd>
+          <p>
+              6400x4096, 32bpp, 16:10
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            HUXGA
+          </dt>
+        <dd>
+          <p>
+              6400x4800, 32bpp, 4:3
+            </p>
+        </dd>
+      </dlentry>
+      <dlentry>
+        <dt>
+            8K UHD2
+          </dt>
+        <dd>
+          <p>
+              7680x4320, 32bpp, 16:9
+            </p>
+        </dd>
+      </dlentry>
+    </dl>
+    <p>
+        If this list of default resolution does not cover your needs,
+        see <xref href="customvesa.dita">Custom VESA Resolutions</xref>. Note that the color depth
+        value specified in a custom video mode must be specified. Color
+        depths of 8, 16, 24, and 32 are accepted. EFI assumes a color
+        depth of 32 by default.
+      </p>
+    <p>
+        The EFI default video resolution settings can only be changed
+        when the VM is powered off.
+      </p>
+  </body>
+  
+</topic>

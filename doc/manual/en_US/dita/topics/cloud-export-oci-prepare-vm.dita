@@ -1,0 +1,180 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-export-oci-prepare-vm">
+  <title>Preparing a VM for Export to Oracle Cloud Infrastructure</title>
+  
+  <body>
+    <p>
+          Oracle Cloud Infrastructure provides the option to import a custom Linux image.
+          Before an Oracle VM VirtualBox image can be exported to Oracle Cloud Infrastructure, the
+          custom image needs to be prepared to ensure that instances
+          launched from the custom image can boot correctly and that
+          network connections will work. This section provides advice on
+          how to prepare a Linux image for export from Oracle VM VirtualBox.
+        </p>
+    <p>
+          The following list shows some tasks to consider when preparing
+          an Oracle Linux VM for export:
+        </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Use DHCP for network
+              addresses.</b> Configure the VM to use a DHCP
+              server to allocate network addresses, rather than using a
+              static IP address. The Oracle Cloud Infrastructure instance will then be
+              allocated an IP address automatically.
+            </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Do not specify a MAC
+              address.</b> The network interface configuration
+              for the VM must not specify the MAC address.
+            </p>
+        <p>
+              Remove the HWADDR setting from the
+              <filepath>/etc/sysconfig/ifcfg-<varname>devicename</varname></filepath>
+              network script.
+            </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Disable persistent network device
+              naming rules.</b> This means that the Oracle Cloud Infrastructure
+              instance will use the same network device names as the VM.
+            </p>
+        <ol>
+          <li>
+            <p>
+                  Change the GRUB kernel parameters.
+                </p>
+            <p>
+                  Add <codeph>net.ifnames=0</codeph> and
+                  <codeph>biosdevname=0</codeph> as kernel parameter
+                  values to the <codeph>GRUB_CMDLINE_LINUX</codeph>
+                  variable.
+                </p>
+          </li>
+          <li>
+            <p>
+                  Update the GRUB configuration.
+                </p>
+            <pre xml:space="preserve"># grub2-mkconfig -o /boot/grub2/grub.cfg</pre>
+          </li>
+          <li>
+            <p>
+                  Disable any <codeph>udev</codeph> rules for network
+                  device naming.
+                </p>
+            <p>
+                  For example, if an automated <codeph>udev</codeph>
+                  rule exists for <codeph>net-persistence</codeph>:
+                </p>
+            <pre xml:space="preserve"># cd /etc/udev/rules.d
+# rm -f 70-persistent-net.rules
+# ln -s /dev/null /etc/udev/rules.d/70-persistent-net.rules</pre>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <p><b outputclass="bold">Enable the serial
+              console.</b> This enables you to troubleshoot the
+              instance when it is running on Oracle Cloud Infrastructure.
+            </p>
+        <ol>
+          <li>
+            <p>
+                  Edit the <filepath>/etc/default/grub</filepath> file,
+                  as follows:
+                </p>
+            <ul>
+              <li>
+                <p>
+                      Remove the <codeph>resume</codeph> setting from
+                      the kernel parameters. This setting slows down
+                      boot time significantly.
+                    </p>
+              </li>
+              <li>
+                <p>
+                      Replace <codeph>GRUB_TERMINAL="gfxterm"</codeph>
+                      with <codeph>GRUB_TERMINAL="console
+                      serial"</codeph>. This configures use of the
+                      serial console instead of a graphical terminal.
+                    </p>
+              </li>
+              <li>
+                <p>
+                      Add <codeph>GRUB_SERIAL_COMMAND="serial --unit=0
+                      --speed=115200"</codeph>. This configures the
+                      serial connection.
+                    </p>
+              </li>
+              <li>
+                <p>
+                      Add <codeph>console=tty0
+                      console=ttyS0,115200</codeph> to the
+                      <codeph>GRUB_CMDLINE_LINUX</codeph> variable.
+                      This adds the serial console to the Linux kernel
+                      boot parameters.
+                    </p>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <p>
+                  Regenerate the GRUB configuration.
+                </p>
+            <pre xml:space="preserve"># grub2-mkconfig -o /boot/grub2/grub.cfg</pre>
+          </li>
+          <li>
+            <p>
+                  To verify the changes, reboot the machine and run the
+                  <userinput>dmesg</userinput> command to look for the
+                  updated kernel parameters.
+                </p>
+            <pre xml:space="preserve"># dmesg |grep console=ttyS0</pre>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <p><b outputclass="bold">Enable paravirtualized device
+              support.</b> You do this by adding the
+              <codeph>virtio</codeph> drivers to the
+              <codeph>initrd</codeph> for the VM.
+            </p>
+        <ol>
+          <li>
+            <p>
+                  This procedure works only on machines with a Linux
+                  kernel of version 3.4 or later. Check that the VM is
+                  running a supported kernel:
+                </p>
+            <pre xml:space="preserve"># uname -a</pre>
+          </li>
+          <li>
+            <p>
+                  Use the <codeph>dracut</codeph> tool to rebuild
+                  <codeph>initrd</codeph>. Add the
+                  <codeph>qemu</codeph> module, as follows:
+                </p>
+            <pre xml:space="preserve"># dracut –-logfile /var/log/Dracut.log --force --add qemu</pre>
+          </li>
+          <li>
+            <p>
+                  Verify that the <codeph>virtio</codeph> drivers are
+                  now present in <codeph>initrd</codeph>.
+                </p>
+            <pre xml:space="preserve"> # lsinitrd |grep virtio</pre>
+          </li>
+        </ol>
+      </li>
+    </ul>
+    <p>
+          For more information about importing a custom Linux image into
+          Oracle Cloud Infrastructure, see also:
+        </p>
+    <p>
+      <ph>https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/importingcustomimagelinux.htm</ph>
+    </p>
+  </body>
+  
+</topic>

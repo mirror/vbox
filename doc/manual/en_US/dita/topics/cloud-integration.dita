@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="cloud-integration">
+  <title>Integrating with Oracle Cloud Infrastructure</title>
+  
+  <body>
+    <p>
+      This section describes how to use the features of Oracle VM VirtualBox
+      to integrate with Oracle Cloud Infrastructure.
+    </p>
+    <p>
+      Integrating with Oracle Cloud Infrastructure involves the following steps:
+    </p>
+    <ul>
+      <li>
+        <p><b outputclass="bold">Prepare for Oracle Cloud Infrastructure
+          Integration.</b> Before using Oracle VM VirtualBox with Oracle Cloud Infrastructure
+          there are some initial configuration steps you may need to do.
+          See <xref href="cloud-integration-steps.dita#cloud-integration-steps"/>.
+        </p>
+      </li>
+      <li>
+        <p><b outputclass="bold">Use Oracle VM VirtualBox with
+          Oracle Cloud Infrastructure.</b><xref href="cloud-vbox-oci-tasks.dita#cloud-vbox-oci-tasks"/>
+          describes how you can use Oracle VM VirtualBox with Oracle Cloud Infrastructure.
+        </p>
+      </li>
+    </ul>
+  </body>
+</topic>

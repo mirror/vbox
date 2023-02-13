@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ts_win-guest-bluescreen-smp">
+  <title>Windows 0x101 Bluescreens with SMP Enabled (IPI Timeout)</title>
+  
+  <body>
+    <p>
+        If a VM is configured to have more than one processor
+        (symmetrical multiprocessing, SMP), some configurations of
+        Windows guests crash with an 0x101 error message, indicating a
+        timeout for interprocessor interrupts (IPIs). These interrupts
+        synchronize memory management between processors.
+      </p>
+    <p>
+        According to Microsoft, this is due to a race condition in
+        Windows. A hotfix is available from Microsoft.
+      </p>
+    <p>
+        If this does not help, please reduce the number of virtual
+        processors to 1.
+      </p>
+  </body>
+  
+</topic>

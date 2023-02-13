@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="glossentry-smp">
+  <title>SMP</title>
+  <body>
+    <section>
+      <p>
+        Symmetrical Multiprocessing, meaning that the resources of a 
+        computer are shared between several processors. These can either 
+        be several processor chips or, as is more common with modern 
+        hardware, multiple CPU cores in one processor. 
+      </p>
+    </section>
+  </body>
+</topic>

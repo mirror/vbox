@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="changeacpicust">
+  <title>Configuring Custom ACPI Tables</title>
+  
+  <body>
+    <p>
+      You can configure Oracle VM VirtualBox to present up to four custom ACPI
+      tables to the guest. Use a command such as the following to
+      configure custom ACPI tables. Note that
+      <codeph>CustomTable1</codeph>, <codeph>CustomTable2</codeph>,
+      and <codeph>CustomTable3</codeph> are available in addition to
+      <codeph>CustomTable0</codeph>.
+    </p>
+    <pre xml:space="preserve">$ VBoxManage setextradata <varname>VM-name</varname> \
+"VBoxInternal/Devices/acpi/0/Config/CustomTable0" "/<varname>path-to-table</varname>.bin"</pre>
+    <p>
+      Configuring custom ACPI tables can for example avoid the need for
+      asking for a new product key on Windows Vista, Windows 7, Windows
+      8 and later guests. On Linux hosts, one of the system's ACPI
+      tables can be read from
+      <filepath>/sys/firmware/acpi/tables/</filepath>.
+    </p>
+  </body>
+  
+</topic>
