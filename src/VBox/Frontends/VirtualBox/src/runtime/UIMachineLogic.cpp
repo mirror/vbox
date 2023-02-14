@@ -101,9 +101,6 @@
 #include "CUSBDevice.h"
 #include "CVirtualBoxErrorInfo.h"
 #include "CVRDEServer.h"
-#ifdef VBOX_WS_MAC
-# include "CGuest.h"
-#endif
 
 /* Other VBox includes: */
 #include <iprt/path.h>
@@ -295,11 +292,6 @@ CMachine& UIMachineLogic::machine() const
 CConsole& UIMachineLogic::console() const
 {
     return uisession()->console();
-}
-
-CGuest& UIMachineLogic::guest() const
-{
-    return uisession()->guest();
 }
 
 QString UIMachineLogic::machineName() const
@@ -1221,7 +1213,7 @@ void UIMachineLogic::prepareDock()
     /* Now the dock icon preview: */
     QPixmap pixmap = generalIconPool().userMachinePixmap(machine(), QSize(42, 42));
     if (pixmap.isNull())
-        pixmap = generalIconPool().guestOSTypePixmap(guest().GetOSTypeId(), QSize(42, 42));
+        pixmap = generalIconPool().guestOSTypePixmap(machine().GetOSTypeId(), QSize(42, 42));
     m_pDockIconPreview = new UIDockIconPreview(uimachine(), pixmap);
 
     /* Should the dock-icon be updated at runtime? */

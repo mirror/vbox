@@ -56,7 +56,6 @@ class UIVMInformationDialog;
 class CSession;
 class CMachine;
 class CConsole;
-class CGuest;
 class CMouse;
 class CSnapshot;
 class CUSBDevice;
@@ -121,8 +120,6 @@ public:
     CMachine& machine() const;
     /** Returns the session's console reference. */
     CConsole& console() const;
-    /** Returns the console's guest reference. */
-    CGuest& guest() const;
 
     /** Returns the machine name. */
     QString machineName() const;
