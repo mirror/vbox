@@ -1674,6 +1674,7 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
              if (rc == VERR_NOT_AVAILABLE)
              {
                  Log6Func(("Nothing found in %s\n", VIRTQNAME(uVirtqNbr)));
+                 virtioCoreR3VirtqBufRelease(&pThis->Virtio, pVirtqBuf);
                  continue;
              }
 
