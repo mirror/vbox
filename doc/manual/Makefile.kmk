@@ -887,11 +887,10 @@ man_vboximg-mount.xml \
  	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/saxon/saxon9-dom.jar' \
  	--
 
-VBOX_USER_MANUAL_DITA_FILES = $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/*dita)
-VBOX_USER_MANUAL_DITA_IMAGES = $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/images/*)
+ VBOX_USER_MANUAL_DITA_FILES = $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/*dita)
+ VBOX_USER_MANUAL_DITA_IMAGES = $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/images/*)
 
-$(info xxxxxxxxx $(VBOX_USER_MANUAL_DITA_FILES))
-$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/user.ditamap:
+ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/user.ditamap:
 	$(QUIET)$(MKDIR) -p  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/images
 	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_PATH_MANUAL_SRC)/en_US/dita/user.ditamap "$(@D)"
 	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_USER_MANUAL_DITA_FILES) "$(@D)/topics"
