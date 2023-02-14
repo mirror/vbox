@@ -65,7 +65,6 @@ class UIMachineLogic;
 class UIMachineWindow;
 class UINativeEventFilter;
 class UISession;
-class CConsole;
 class CGuest;
 class CMachine;
 class CSession;
@@ -274,8 +273,6 @@ protected:
 
     /** Returns the session's machine reference. */
     CMachine& machine() const;
-    /** Returns the session's console reference. */
-    CConsole& console() const;
 
     /* Protected getters: */
     UIActionPool* actionPool() const;
