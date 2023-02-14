@@ -887,12 +887,22 @@ man_vboximg-mount.xml \
  	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/saxon/saxon9-dom.jar' \
  	--
 
+VBOX_USER_MANUAL_DITA_FILES = $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/*dita)
+VBOX_USER_MANUAL_DITA_IMAGES = $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/images/*)
+
+$(info xxxxxxxxx $(VBOX_USER_MANUAL_DITA_FILES))
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/user.ditamap:
+	$(QUIET)$(MKDIR) -p  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/images
+	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_PATH_MANUAL_SRC)/en_US/dita/user.ditamap "$(@D)"
+	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_USER_MANUAL_DITA_FILES) "$(@D)/topics"
+	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_USER_MANUAL_DITA_IMAGES) "$(@D)/topics/images"
+
  define def_ditamap_to_pdf
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf: \
-  		$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/UserManual_dita.ditamap
-	$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
-		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/UserManual_dita.ditamap \
+  		$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/user.ditamap
+		$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
+		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/user.ditamap \
 			/transtype:pdf /ditadir:$(VBOX_DITA_PATH) /outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_ditamap_to_pdf,$(lang)))
