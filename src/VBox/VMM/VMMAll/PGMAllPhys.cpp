@@ -418,7 +418,8 @@ static VBOXSTRICTRC pgmPhysMmio2WriteHandlerCommon(PVMCC pVM, PVMCPUCC pVCpu, ui
     if (RT_SUCCESS(rc) && GCPtr != ~(RTGCPTR)0)
     {
         rc = PGMShwMakePageWritable(pVCpu, GCPtr, PGM_MK_PG_IS_MMIO2 | PGM_MK_PG_IS_WRITE_FAULT);
-        AssertMsgReturn(rc == VINF_SUCCESS, ("PGMShwModifyPage -> GCPtr=%RGv rc=%d\n", GCPtr, rc), rc);
+        AssertMsgReturn(rc == VINF_SUCCESS || rc == VERR_PAGE_TABLE_NOT_PRESENT,
+                        ("PGMShwModifyPage -> GCPtr=%RGv rc=%d\n", GCPtr, rc), rc);
     }
 #else
     RT_NOREF(pVCpu, GCPtr);
