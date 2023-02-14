@@ -976,7 +976,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                     oFailedResult = aoParents[min(2, len(aoParents) - 1)];
                 else:
                     oFailedResult = aoParents[min(5, len(aoParents) - 1)];
-                    
+
                 # Only report a failure once.
                 if oFailedResult.idTestResult not in oCaseFile.dReasonForResultId:
                     sKey = oFailedResult.sName;
