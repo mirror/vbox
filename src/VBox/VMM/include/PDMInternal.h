@@ -1513,7 +1513,9 @@ typedef struct PDM
     uint32_t                        u32Padding1;
     /** Array of ring-0 capable queues running in parallel to PDMR0PERVM::aQueues. */
     R3PTRTYPE(PPDMQUEUE)            apRing0Queues[16];
-    /** Number of ring-3 only queues  */
+
+    /** Number of ring-3 only queues.
+     * PDMUSERPERVM::ListCritSect protects this and the next two members. */
     uint32_t                        cRing3Queues;
     /** The allocation size of the ring-3 queue handle table. */
     uint32_t                        cRing3QueuesAlloc;
@@ -1649,7 +1651,7 @@ typedef struct PDMUSERPERVM
 {
     /** @todo move more stuff over here. */
 
-    /** Lock protecting the lists below it. */
+    /** Lock protecting the lists below it and the queue list. */
     RTCRITSECT                      ListCritSect;
     /** Pointer to list of loaded modules. */
     PPDMMOD                         pModules;

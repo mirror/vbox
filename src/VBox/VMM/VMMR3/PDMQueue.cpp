@@ -47,6 +47,7 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+static int                  pdmR3QueueDestroyLocked(PVM pVM, PDMQUEUEHANDLE hQueue, void *pvOwner);
 static DECLCALLBACK(void)   pdmR3QueueTimer(PVM pVM, TMTIMERHANDLE hTimer, void *pvUser);
 
 
@@ -60,21 +61,28 @@ static DECLCALLBACK(void)   pdmR3QueueTimer(PVM pVM, TMTIMERHANDLE hTimer, void 
  * @param   cItems              Number of items.
  * @param   cMilliesInterval    Number of milliseconds between polling the queue.
  *                              If 0 then the emulation thread will be notified whenever an item arrives.
- * @param   fRZEnabled          Set if the queue will be used from RC/R0 and need to be allocated from the hyper heap.
+ * @param   fRZEnabled          Set if the queue will be used from RC/R0,
+ *                              these can only be created from EMT0.
  * @param   pszName             The queue name. Unique. Not copied.
  * @param   enmType             Owner type.
  * @param   pvOwner             The queue owner pointer.
  * @param   uCallback           Callback function.
  * @param   phQueue             Where to store the queue handle.
+ *
+ * @thread  Emulation thread only. When @a fRZEnables is true only EMT0.
+ * @note    Caller owns ListCritSect.
  */
-static int pdmR3QueueCreate(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval, bool fRZEnabled,
-                            const char *pszName, PDMQUEUETYPE enmType, void *pvOwner, uintptr_t uCallback,
-                            PDMQUEUEHANDLE *phQueue)
+static int pdmR3QueueCreateLocked(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval, bool fRZEnabled,
+                                  const char *pszName, PDMQUEUETYPE enmType, void *pvOwner, uintptr_t uCallback,
+                                  PDMQUEUEHANDLE *phQueue)
 {
     /*
      * Validate and adjust the input.
      */
-    VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT); /* serialization by exclusivity */
+    if (fRZEnabled)
+        VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+    else
+        VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
 
     cbItem = RT_ALIGN(cbItem, sizeof(uint64_t));
     AssertMsgReturn(cbItem >= sizeof(PDMQUEUEITEMCORE) && cbItem < PDMQUEUE_MAX_ITEM_SIZE, ("cbItem=%zu\n", cbItem),
@@ -191,7 +199,7 @@ static int pdmR3QueueCreate(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cM
         if (RT_FAILURE(rc))
         {
             if (!fRZEnabled)
-                PDMR3QueueDestroy(pVM, hQueue, pvOwner);
+                pdmR3QueueDestroyLocked(pVM, hQueue, pvOwner);
             /* else: will clean up queue when VM is destroyed */
             return rc;
         }
@@ -240,7 +248,7 @@ static int pdmR3QueueCreate(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cM
  * @param   fRZEnabled          Set if the queue must be usable from RC/R0.
  * @param   pszName             The queue name. Unique. Copied.
  * @param   phQueue             Where to store the queue handle on success.
- * @thread  Emulation thread only.
+ * @thread  Emulation thread only. Only EMT0 when @a fRZEnables is true.
  */
 VMMR3_INT_DECL(int) PDMR3QueueCreateDevice(PVM pVM, PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems,
                                            uint32_t cMilliesInterval, PFNPDMQUEUEDEV pfnCallback,
@@ -262,8 +270,13 @@ VMMR3_INT_DECL(int) PDMR3QueueCreateDevice(PVM pVM, PPDMDEVINS pDevIns, size_t c
     /*
      * Create the queue.
      */
-    int rc = pdmR3QueueCreate(pVM, cbItem, cItems, cMilliesInterval, fRZEnabled, pszName,
-                              PDMQUEUETYPE_DEV, pDevIns, (uintptr_t)pfnCallback, phQueue);
+    int rc = RTCritSectEnter(&pVM->pUVM->pdm.s.ListCritSect);
+    AssertRCReturn(rc, rc);
+
+    rc = pdmR3QueueCreateLocked(pVM, cbItem, cItems, cMilliesInterval, fRZEnabled, pszName,
+                                PDMQUEUETYPE_DEV, pDevIns, (uintptr_t)pfnCallback, phQueue);
+
+    RTCritSectLeave(&pVM->pUVM->pdm.s.ListCritSect);
     if (RT_SUCCESS(rc))
         Log(("PDM: Created device queue %#RX64; cbItem=%d cItems=%d cMillies=%d pfnCallback=%p pDevIns=%p\n",
              *phQueue, cbItem, cItems, cMilliesInterval, pfnCallback, pDevIns));
@@ -302,8 +315,13 @@ VMMR3_INT_DECL(int) PDMR3QueueCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, size_t c
     /*
      * Create the queue.
      */
-    int rc = pdmR3QueueCreate(pVM, cbItem, cItems, cMilliesInterval, false /*fRZEnabled*/, pszName,
-                              PDMQUEUETYPE_DRV, pDrvIns, (uintptr_t)pfnCallback, phQueue);
+    int rc = RTCritSectEnter(&pVM->pUVM->pdm.s.ListCritSect);
+    AssertRCReturn(rc, rc);
+
+    rc = pdmR3QueueCreateLocked(pVM, cbItem, cItems, cMilliesInterval, false /*fRZEnabled*/, pszName,
+                                PDMQUEUETYPE_DRV, pDrvIns, (uintptr_t)pfnCallback, phQueue);
+
+    RTCritSectLeave(&pVM->pUVM->pdm.s.ListCritSect);
     if (RT_SUCCESS(rc))
         Log(("PDM: Created driver queue %#RX64; cbItem=%d cItems=%d cMillies=%d pfnCallback=%p pDrvIns=%p\n",
              *phQueue, cbItem, cItems, cMilliesInterval, pfnCallback, pDrvIns));
@@ -324,7 +342,7 @@ VMMR3_INT_DECL(int) PDMR3QueueCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, size_t c
  * @param   fRZEnabled          Set if the queue must be usable from RC/R0.
  * @param   pszName             The queue name. Unique. Copied.
  * @param   phQueue             Where to store the queue handle on success.
- * @thread  Emulation thread only.
+ * @thread  Emulation thread only. When @a fRZEnables is true only EMT0.
  */
 VMMR3_INT_DECL(int) PDMR3QueueCreateInternal(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
                                              PFNPDMQUEUEINT pfnCallback, bool fRZEnabled,
@@ -342,8 +360,13 @@ VMMR3_INT_DECL(int) PDMR3QueueCreateInternal(PVM pVM, size_t cbItem, uint32_t cI
     /*
      * Create the queue.
      */
-    int rc = pdmR3QueueCreate(pVM, cbItem, cItems, cMilliesInterval, fRZEnabled, pszName,
-                              PDMQUEUETYPE_INTERNAL, pVM, (uintptr_t)pfnCallback, phQueue);
+    int rc = RTCritSectEnter(&pVM->pUVM->pdm.s.ListCritSect);
+    AssertRCReturn(rc, rc);
+
+    rc = pdmR3QueueCreateLocked(pVM, cbItem, cItems, cMilliesInterval, fRZEnabled, pszName,
+                                PDMQUEUETYPE_INTERNAL, pVM, (uintptr_t)pfnCallback, phQueue);
+
+    RTCritSectLeave(&pVM->pUVM->pdm.s.ListCritSect);
     if (RT_SUCCESS(rc))
         Log(("PDM: Created internal queue %p; cbItem=%d cItems=%d cMillies=%d pfnCallback=%p\n",
              *phQueue, cbItem, cItems, cMilliesInterval, pfnCallback));
@@ -382,8 +405,13 @@ VMMR3DECL(int) PDMR3QueueCreateExternal(PVM pVM, size_t cbItem, uint32_t cItems,
     /*
      * Create the queue.
      */
-    int rc = pdmR3QueueCreate(pVM, cbItem, cItems, cMilliesInterval, false /*fRZEnabled*/, pszName,
-                              PDMQUEUETYPE_EXTERNAL, pvUser, (uintptr_t)pfnCallback, phQueue);
+    int rc = RTCritSectEnter(&pVM->pUVM->pdm.s.ListCritSect);
+    AssertRCReturn(rc, rc);
+
+    rc = pdmR3QueueCreateLocked(pVM, cbItem, cItems, cMilliesInterval, false /*fRZEnabled*/, pszName,
+                                PDMQUEUETYPE_EXTERNAL, pvUser, (uintptr_t)pfnCallback, phQueue);
+
+    RTCritSectLeave(&pVM->pUVM->pdm.s.ListCritSect);
     if (RT_SUCCESS(rc))
         Log(("PDM: Created external queue %p; cbItem=%d cItems=%d cMillies=%d pfnCallback=%p pvUser=%p\n",
              *phQueue, cbItem, cItems, cMilliesInterval, pfnCallback, pvUser));
@@ -398,17 +426,17 @@ VMMR3DECL(int) PDMR3QueueCreateExternal(PVM pVM, size_t cbItem, uint32_t cItems,
  * @param   pVM         Pointer to the cross context VM structure.
  * @param   hQueue      Handle to the queue that should be destroyed.
  * @param   pvOwner     The owner address.
- * @thread  EMT(0)
- * @note    Externally visible mainly for testing purposes.
+ * @thread  EMT
  */
-VMMR3DECL(int) PDMR3QueueDestroy(PVM pVM, PDMQUEUEHANDLE hQueue, void *pvOwner)
+static int pdmR3QueueDestroyLocked(PVM pVM, PDMQUEUEHANDLE hQueue, void *pvOwner)
 {
-    LogFlow(("PDMR3QueueDestroy: hQueue=%p pvOwner=%p\n", hQueue, pvOwner));
+    LogFlow(("pdmR3QueueDestroyLocked: hQueue=%p pvOwner=%p\n", hQueue, pvOwner));
+    Assert(RTCritSectIsOwner(&pVM->pUVM->pdm.s.ListCritSect));
 
     /*
      * Validate input.
      */
-    VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT); /* serialization */
+    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
     if (hQueue == NIL_PDMQUEUEHANDLE)
         return VINF_SUCCESS;
 
@@ -468,13 +496,35 @@ VMMR3DECL(int) PDMR3QueueDestroy(PVM pVM, PDMQUEUEHANDLE hQueue, void *pvOwner)
 
 
 /**
+ * Destroy a queue.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the cross context VM structure.
+ * @param   hQueue      Handle to the queue that should be destroyed.
+ * @param   pvOwner     The owner address.
+ * @thread  EMT
+ * @note    Externally visible mainly for testing purposes.
+ */
+VMMR3DECL(int) PDMR3QueueDestroy(PVM pVM, PDMQUEUEHANDLE hQueue, void *pvOwner)
+{
+    PUVM const pUVM = pVM->pUVM;
+    RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
+
+    int rc = pdmR3QueueDestroyLocked(pVM, hQueue, pvOwner);
+
+    RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
+    return rc;
+}
+
+
+/**
  * Destroy a all queues with a given owner.
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   pvOwner     The owner pointer.
  * @param   enmType     Owner type.
- * @thread  EMT(0)
+ * @thread  EMT
  */
 static int pdmR3QueueDestroyByOwner(PVM pVM, void *pvOwner, PDMQUEUETYPE enmType)
 {
@@ -485,11 +535,14 @@ static int pdmR3QueueDestroyByOwner(PVM pVM, void *pvOwner, PDMQUEUETYPE enmType
      */
     AssertPtrReturn(pvOwner, VERR_INVALID_PARAMETER);
     AssertReturn(pvOwner != pVM, VERR_INVALID_PARAMETER);
-    VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT); /* serialization */
+    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT); /* Not requiring EMT0 here as we cannot destroy RZ capable ones here. */
 
     /*
      * Scan and destroy.
      */
+    PUVM const pUVM = pVM->pUVM;
+    RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
+
     uint32_t i = pVM->pdm.s.cRing0Queues;
     while (i-- > 0)
     {
@@ -510,9 +563,10 @@ static int pdmR3QueueDestroyByOwner(PVM pVM, void *pvOwner, PDMQUEUETYPE enmType
         if (   pQueue
             && pQueue->u.Gen.pvOwner == pvOwner
             && pQueue->enmType       == enmType)
-            PDMR3QueueDestroy(pVM, i + RT_ELEMENTS(pVM->pdm.s.apRing0Queues), pvOwner);
+            pdmR3QueueDestroyLocked(pVM, i + RT_ELEMENTS(pVM->pdm.s.apRing0Queues), pvOwner);
     }
 
+    RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
     return VINF_SUCCESS;
 }
 
@@ -812,6 +866,9 @@ static DECLCALLBACK(void) pdmR3QueueTimer(PVM pVM, TMTIMERHANDLE hTimer, void *p
  */
 DECLHIDDEN(void) pdmR3QueueTerm(PVM pVM)
 {
+    PUVM const pUVM = pVM->pUVM;
+    RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
+
     if (pVM->pdm.s.papRing3Queues)
     {
         /*
@@ -823,7 +880,7 @@ DECLHIDDEN(void) pdmR3QueueTerm(PVM pVM)
             {
                 PPDMQUEUE pQueue = pVM->pdm.s.papRing3Queues[i];
 
-                PDMR3QueueDestroy(pVM, RT_ELEMENTS(pVM->pdm.s.apRing0Queues) + i, pQueue->u.Gen.pvOwner);
+                pdmR3QueueDestroyLocked(pVM, RT_ELEMENTS(pVM->pdm.s.apRing0Queues) + i, pQueue->u.Gen.pvOwner);
                 Assert(!pVM->pdm.s.papRing3Queues[i]);
             }
 
@@ -831,4 +888,6 @@ DECLHIDDEN(void) pdmR3QueueTerm(PVM pVM)
         pVM->pdm.s.cRing3QueuesAlloc = 0;
         pVM->pdm.s.papRing3Queues    = NULL;
     }
+
+    RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
 }
