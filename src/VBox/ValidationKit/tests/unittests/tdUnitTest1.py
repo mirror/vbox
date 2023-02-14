@@ -384,11 +384,8 @@ class tdUnitTest1(vbox.TestDriver):
         # also acts the source for copying over the testcases to a remote target.
         self.sUnitTestsPathSrc = None;
 
-        # Array of environment variables with NAME=VAL entries
-        # to be applied for testcases.
-        #
-        # This is also needed for testcases which are being executed remotely.
-        self.asEnv = [];
+        ## Remote environment changes.
+        self.dRemoteEnvChg = {};
 
         # The destination directory our unit tests live when being
         # copied over to a remote target (via TxS).
@@ -969,9 +966,7 @@ class tdUnitTest1(vbox.TestDriver):
 
     def _envSet(self, sName, sValue):
         if self.isRemoteMode():
-            # For remote execution we cache the environment block and pass it
-            # right when the process execution happens.
-            self.asEnv.append([ sName, sValue ]);
+            self.dRemoteEnvChg[sName] = sValue;
         else:
             os.environ[sName] = sValue;
         return True;
@@ -1066,7 +1061,7 @@ class tdUnitTest1(vbox.TestDriver):
         sXmlFile = os.path.join(self.sUnitTestsPathDst, 'result.xml');
 
         self._envSet('IPRT_TEST_OMIT_TOP_TEST', '1');
-        self._envSet('IPRT_TEST_FILE', sXmlFile);
+        self._envSet('IPRT_TEST_FILE', sXmlFile);  ## @todo skip for remote. Makes _no_ sense.
 
         if self._wrapPathExists(sXmlFile):
             try:    os.unlink(sXmlFile);
@@ -1090,8 +1085,9 @@ class tdUnitTest1(vbox.TestDriver):
 
         if not self.fDryRun:
             if fCopyToRemote:
+                asRemoteEnvChg = ['%s=%s' % (sKey, self.dRemoteEnvChg[sKey]) for sKey in self.dRemoteEnvChg];
                 fRc = self.txsRunTest(self.oTxsSession, sName, cMsTimeout = 30 * 60 * 1000, sExecName = asArgs[0],
-                                      asArgs = asArgs, asAddEnv = self.asEnv, fCheckSessionStatus = True);
+                                      asArgs = asArgs, asAddEnv = asRemoteEnvChg, fCheckSessionStatus = True);
                 if fRc:
                     iRc = 0;
                 else:
