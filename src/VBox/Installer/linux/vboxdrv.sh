@@ -388,6 +388,15 @@ module_signed()
     mod="$1"
     [ -n "$mod" ] || return
 
+    # Be nice with distributions which do not provide tools which we
+    # use in order to verify module signature. This variable needs to
+    # be explicitly set by administrator. This script will look for it
+    # in /etc/vbox/vbox.cfg. Make sure that you know what you do!
+    if [ "$VBOX_BYPASS_MODULES_SIGNATURE_CHECK" = "1" ]; then
+        echo "1"
+        return
+    fi
+
     extraction_tool=/lib/modules/"$(uname -r)"/build/scripts/extract-module-sig.pl
     mod_path=$(module_path "$mod" 2>/dev/null)
     openssl_tool=$(which openssl 2>/dev/null)
