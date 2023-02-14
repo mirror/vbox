@@ -382,7 +382,7 @@ class tdUnitTest1(vbox.TestDriver):
         self.cPassed    = 0;
         self.cFailed    = 0;
 
-        # The source directory where our unit tests live.
+        ## The source directory where our unit tests live.
         # This most likely is our out/ or some staging directory and
         # also acts the source for copying over the testcases to a remote target.
         self.sUnitTestsPathSrc = None;
@@ -426,13 +426,6 @@ class tdUnitTest1(vbox.TestDriver):
         reporter.log2('Detecting paths ...');
 
         #
-        # Do some sanity checking first.
-        #
-        if self.sMode == 'remote-exec' and not self.sUnitTestsPathSrc: # There is no way we can figure this out automatically.
-            reporter.error('Unit tests source must be specified explicitly for selected mode!');
-            return False;
-
-        #
         # We need a VBox install (/ build) to test.
         #
         if False is True: ## @todo r=andy ??
@@ -449,7 +442,10 @@ class tdUnitTest1(vbox.TestDriver):
         # Where are the files installed?
         # Solaris requires special handling because of it's multi arch subdirs.
         #
-        if not self.sVBoxInstallRoot:
+        if not self.sVBoxInstallRoot and self.sMode == 'remote-exec':
+            self.sVBoxInstallRoot = '${CDROM}/${OS}/${ARCH}';
+
+        elif not self.sVBoxInstallRoot:
             self.sVBoxInstallRoot = self.oBuild.sInstallPath;
             if not self.oBuild.isDevBuild() and utils.getHostOs() == 'solaris':
                 sArchDir = utils.getHostArch();
@@ -475,7 +471,10 @@ class tdUnitTest1(vbox.TestDriver):
         #
         # The unittests are generally not installed, so look for them.
         #
-        if not self.sUnitTestsPathSrc:
+        if not self.sUnitTestsPathSrc and self.sMode == 'remote-exec':
+            self.sUnitTestsPathSrc = '${CDROM}/testcase/${OS}/${ARCH}';
+
+        elif not self.sUnitTestsPathSrc:
             sBinOrDist = 'dist' if utils.getHostOs() in [ 'darwin', ] else 'bin';
             asCandidates = [
                 self.oBuild.sInstallPath,
@@ -1015,7 +1014,9 @@ class tdUnitTest1(vbox.TestDriver):
             self._wrapCopyFile(sSrc, sDst, fModeExe);
             asFilesToRemove.append(sDst);
 
-            # Copy required dependencies to destination.
+            # Copy required dependencies to destination .
+            # Note! The testcases are statically linked, so there are no VBoxRT.dll/so/dylib
+            #       to copy here.  This code can be currently be ignored.
             if self.isRemoteMode():
                 for sLib in self.kdTestCaseDepsLibs:
                     for sSuff in [ '.dll', '.so', '.dylib' ]:
@@ -1025,6 +1026,9 @@ class tdUnitTest1(vbox.TestDriver):
                             sDst = os.path.join(sDstDir, os.path.basename(sSrc));
                             self._wrapCopyFile(sSrc, sDst, fModeDeps);
                             asFilesToRemove.append(sDst);
+
+            ## @todo r=bird: The next two are check for _local_ files matching the remote path when in remote-mode.
+            ##               It makes for very confusing reading and is a potential for trouble.
 
             # Copy any associated .dll/.so/.dylib.
             for sSuff in [ '.dll', '.so', '.dylib' ]:
