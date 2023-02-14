@@ -460,6 +460,21 @@ bool UIMachine::acquireScreenShot(ulong uScreenId, ulong uWidth, ulong uHeight, 
     return uisession()->acquireScreenShot(uScreenId, uWidth, uHeight, enmFormat, pBits);
 }
 
+bool UIMachine::notifyScaleFactorChange(ulong uScreenId, ulong uScaleFactorWMultiplied, ulong uScaleFactorHMultiplied)
+{
+    return uisession()->notifyScaleFactorChange(uScreenId, uScaleFactorWMultiplied, uScaleFactorHMultiplied);
+}
+
+bool UIMachine::notifyHiDPIOutputPolicyChange(bool fUnscaledHiDPI)
+{
+    return uisession()->notifyHiDPIOutputPolicyChange(fUnscaledHiDPI);
+}
+
+bool UIMachine::setSeamlessMode(bool fEnabled)
+{
+    return uisession()->setSeamlessMode(fEnabled);
+}
+
 bool UIMachine::isGuestAdditionsActive() const
 {
     return uisession()->isGuestAdditionsActive();

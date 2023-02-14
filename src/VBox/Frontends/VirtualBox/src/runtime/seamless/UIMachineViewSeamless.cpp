@@ -45,7 +45,6 @@
 
 /* COM includes: */
 #include "CConsole.h"
-#include "CDisplay.h"
 
 /* Other VBox includes: */
 #include "VBox/log.h"
@@ -135,14 +134,14 @@ void UIMachineViewSeamless::prepareConsoleConnections()
 void UIMachineViewSeamless::prepareSeamless()
 {
     /* Set seamless feature flag to the guest: */
-    display().SetSeamlessMode(true);
+    uimachine()->setSeamlessMode(true);
 }
 
 void UIMachineViewSeamless::cleanupSeamless()
 {
     /* Reset seamless feature flag if possible: */
     if (uimachine()->isRunning())
-        display().SetSeamlessMode(false);
+        uimachine()->setSeamlessMode(false);
 }
 
 void UIMachineViewSeamless::adjustGuestScreenSize()

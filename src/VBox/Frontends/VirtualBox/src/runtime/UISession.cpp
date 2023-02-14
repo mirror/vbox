@@ -485,6 +485,36 @@ bool UISession::acquireScreenShot(ulong uScreenId, ulong uWidth, ulong uHeight, 
     return fSuccess;
 }
 
+bool UISession::notifyScaleFactorChange(ulong uScreenId, ulong uScaleFactorWMultiplied, ulong uScaleFactorHMultiplied)
+{
+    CDisplay comDisplay = display();
+    comDisplay.NotifyScaleFactorChange(uScreenId, uScaleFactorWMultiplied, uScaleFactorHMultiplied);
+    const bool fSuccess = comDisplay.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotChangeDisplayParameter(comDisplay);
+    return fSuccess;
+}
+
+bool UISession::notifyHiDPIOutputPolicyChange(bool fUnscaledHiDPI)
+{
+    CDisplay comDisplay = display();
+    comDisplay.NotifyHiDPIOutputPolicyChange(fUnscaledHiDPI);
+    const bool fSuccess = comDisplay.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotChangeDisplayParameter(comDisplay);
+    return fSuccess;
+}
+
+bool UISession::setSeamlessMode(bool fEnabled)
+{
+    CDisplay comDisplay = display();
+    comDisplay.SetSeamlessMode(fEnabled);
+    const bool fSuccess = comDisplay.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotChangeDisplayParameter(comDisplay);
+    return fSuccess;
+}
+
 void UISession::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states)
 {
     CConsole comConsole = console();

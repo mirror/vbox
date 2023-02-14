@@ -40,7 +40,6 @@
 #include "UIMachineWindow.h"
 
 /* COM includes: */
-#include "CDisplay.h"
 #include "CGraphicsAdapter.h"
 
 /* Other VBox includes: */
@@ -84,9 +83,9 @@ void UIMachineViewScale::sltPerformGuestScale()
                 yScaleFactor *= dDevicePixelRatioActual;
             }
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
-            display().NotifyScaleFactorChange(m_uScreenId,
-                                              (uint32_t)(xScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
-                                              (uint32_t)(yScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+            uimachine()->notifyScaleFactorChange(m_uScreenId,
+                                                 (uint32_t)(xScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                                 (uint32_t)(yScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
         }
     }
 
@@ -143,9 +142,9 @@ void UIMachineViewScale::applyMachineViewScaleFactor()
                 yScaleFactor *= dDevicePixelRatioActual;
             }
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
-            display().NotifyScaleFactorChange(m_uScreenId,
-                                              (uint32_t)(xScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
-                                              (uint32_t)(yScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+            uimachine()->notifyScaleFactorChange(m_uScreenId,
+                                                 (uint32_t)(xScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                                 (uint32_t)(yScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
         }
     }
 
@@ -153,7 +152,7 @@ void UIMachineViewScale::applyMachineViewScaleFactor()
     frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
     /* Propagate unscaled-hidpi-output feature to 3D service if necessary: */
     if (machine().GetGraphicsAdapter().GetAccelerate3DEnabled())
-        display().NotifyHiDPIOutputPolicyChange(fUseUnscaledHiDPIOutput);
+        uimachine()->notifyHiDPIOutputPolicyChange(fUseUnscaledHiDPIOutput);
 
     /* Perform frame-buffer rescaling: */
     frameBuffer()->performRescale();

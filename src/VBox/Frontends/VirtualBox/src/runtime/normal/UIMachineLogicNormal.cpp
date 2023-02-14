@@ -50,7 +50,6 @@
 
 /* COM includes: */
 #include "CConsole.h"
-#include "CDisplay.h"
 #include "CGraphicsAdapter.h"
 
 

@@ -248,10 +248,10 @@ void UIMachineView::applyMachineViewScaleFactor()
         if (!fUseUnscaledHiDPIOutput)
             dScaleFactorFor3D *= frameBuffer()->devicePixelRatioActual();
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
-        display().NotifyScaleFactorChange(m_uScreenId,
-                                          (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
-                                          (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
-        display().NotifyHiDPIOutputPolicyChange(fUseUnscaledHiDPIOutput);
+        uimachine()->notifyScaleFactorChange(m_uScreenId,
+                                             (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                             (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+        uimachine()->notifyHiDPIOutputPolicyChange(fUseUnscaledHiDPIOutput);
     }
 
     /* Perform frame-buffer rescaling: */
@@ -1001,10 +1001,10 @@ void UIMachineView::sltHandleScaleFactorChange(const QUuid &uMachineID)
         if (!fUseUnscaledHiDPIOutput)
             dScaleFactorFor3D *= frameBuffer()->devicePixelRatioActual();
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
-        display().NotifyScaleFactorChange(m_uScreenId,
-                                          (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
-                                          (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
-        display().NotifyHiDPIOutputPolicyChange(fUseUnscaledHiDPIOutput);
+        uimachine()->notifyScaleFactorChange(m_uScreenId,
+                                             (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                             (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+        uimachine()->notifyHiDPIOutputPolicyChange(fUseUnscaledHiDPIOutput);
     }
 
     /* Handle scale attributes change: */
@@ -1233,10 +1233,10 @@ void UIMachineView::prepareFrameBuffer()
             if (!fUseUnscaledHiDPIOutput)
                 dScaleFactorFor3D *= dDevicePixelRatioActual;
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
-            display().NotifyScaleFactorChange(m_uScreenId,
-                                              (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
-                                              (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
-            display().NotifyHiDPIOutputPolicyChange(fUseUnscaledHiDPIOutput);
+            uimachine()->notifyScaleFactorChange(m_uScreenId,
+                                                 (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                                 (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+            uimachine()->notifyHiDPIOutputPolicyChange(fUseUnscaledHiDPIOutput);
         }
 
         /* Perform frame-buffer rescaling: */
