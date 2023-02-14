@@ -939,6 +939,9 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         Checks out a VBox unittest problem.
         """
 
+        # Determine if this is a host or guest run before we start.
+        fRunsInGuest = '(guest)' in oCaseFile.oTestCase.sName or 'selected VMs' in oCaseFile.oTestCase.sName;
+
         #
         # Process simple test case failures first, using their name as reason.
         # We do the reason management just like for BSODs.
@@ -962,10 +965,18 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                 cRelevantOnes += 1
 
             elif oFailedResult.oParent is not None:
-                # Get the 2nd level node because that's where we'll find the unit test name.
-                while oFailedResult.oParent.oParent is not None:
-                    oFailedResult = oFailedResult.oParent;
-
+                # Host:  Get the 2nd level node because that's where we'll find the unit test name.
+                # Guest: Get the 6th level node.
+                aoParents = [];
+                oParent = oFailedResult.oParent;
+                while oParent is not None:
+                    aoParents.insert(0, oParent);
+                    oParent = oParent.oParent;
+                if not fRunsInGuest:
+                    oFailedResult = aoParents[min(2, len(aoParents) - 1)];
+                else:
+                    oFailedResult = aoParents[min(5, len(aoParents) - 1)];
+                    
                 # Only report a failure once.
                 if oFailedResult.idTestResult not in oCaseFile.dReasonForResultId:
                     sKey = oFailedResult.sName;
