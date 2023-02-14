@@ -93,8 +93,8 @@ ifdef HHC
  $(error HHC was renamed to VBOX_HHC!)
 endif
 
-VBOX_DITA_CONVERTER_PATH = $(PATH_ROOT)/src/libs/dbdita/db2dita/
-VBOX_DITA_PATH = $(PATH_ROOT)/src/libs/DITA-OT1.8.5
+VBOX_DITA_CONVERTER_PATH = $(PATH_ROOT)/src/libs/dbdita-1.0
+VBOX_DITA_PATH = $(PATH_ROOT)/src/libs/DITA-OT-1.8.5
 
 VBOX_QHELP_OUTPUT_FILES = \
 	UserManual.qch \
@@ -850,13 +850,13 @@ man_vboximg-mount.xml \
  ##########################################################################################
  define def_vbox_refentry_to_dita
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$(addsuffix .dita,$(basename $(2))): \
-  		$$(VBOX_DITA_CONVERTER_PATH)/docbook2dita.xsl \
+  		$$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl \
   		$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2) \
   		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) \
   		$$(VBOX_XML_ENTITIES) $$(VBOX_VERSION_STAMP) | $$$$(dir $$$$@)
 	$$(call MSG_TOOL,xsltproc $$(notdir $$(firstword $$(filter %.xsl,$$^))),,$$(firstword $$(filter %.xml,$$^)),$$@)
 	$$(QUIET)$$(RM) -f "$$@"
-	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output $$@ $$(VBOX_DITA_CONVERTER_PATH)/docbook2dita.xsl $$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2)
+	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output $$@ $$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl $$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2)
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_REFENTRY_FILES) \
 , $(evalcall2 def_vbox_refentry_to_dita,$(lang),$(file))))
