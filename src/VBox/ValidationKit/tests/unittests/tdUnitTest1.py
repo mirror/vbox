@@ -373,6 +373,9 @@ class tdUnitTest1(vbox.TestDriver):
         #   "local":       Execute unit tests locally (same host, default).
         #   "remote-copy": Copies unit tests from host to the remote, then executing it.
         #   "remote-exec": Executes unit tests right on the remote from a given source.
+        ## @todo r=bird: 'remote-exec' and 'remote-copy' are confusing. We're presumably executing the test remotely in both
+        ## cases, the different being that in the latter case we copy from the valkit iso rather than uploading the test files.
+        ## That's hardly clear from the names or the explanation.
         self.sMode      = 'local';
 
         self.cSkipped   = 0;
@@ -383,9 +386,6 @@ class tdUnitTest1(vbox.TestDriver):
         # This most likely is our out/ or some staging directory and
         # also acts the source for copying over the testcases to a remote target.
         self.sUnitTestsPathSrc = None;
-
-        ## Remote environment changes.
-        self.dRemoteEnvChg = {};
 
         # The destination directory our unit tests live when being
         # copied over to a remote target (via TxS).
@@ -535,7 +535,7 @@ class tdUnitTest1(vbox.TestDriver):
         reporter.log('  --mode <local|remote-copy|remote-exec>');
         reporter.log('      Specifies the test execution mode:');
         reporter.log('      local:       Locally on the same machine.');
-        reporter.log('      remote-copy: On remote (guest) by copying them from the local source.');
+        reporter.log('      remote-copy: On remote (guest) by copying them from the local source. (BORKED!)');
         reporter.log('      remote-exec: On remote (guest) directly (needs unit test source).');
         reporter.log('  --only-whitelist');
         reporter.log('      Only processes the white list.');
@@ -964,13 +964,6 @@ class tdUnitTest1(vbox.TestDriver):
             reporter.log('Failed to remove "%s".' % (sPath,));
         return fRc;
 
-    def _envSet(self, sName, sValue):
-        if self.isRemoteMode():
-            self.dRemoteEnvChg[sName] = sValue;
-        else:
-            os.environ[sName] = sValue;
-        return True;
-
     def _executeTestCase(self, oTestVm, sName, sFilePathAbs, sTestCaseSubDir, oDevNull): # pylint: disable=too-many-locals,too-many-statements
         """
         Executes a test case.
@@ -983,19 +976,21 @@ class tdUnitTest1(vbox.TestDriver):
         fSkipped = False;
 
         #
-        # If hardening is enabled, some test cases and their dependencies
-        # needs to be copied to and execute from the source
-        # directory in order to work. They also have to be executed as
-        # root, i.e. via sudo.
+        # If hardening is enabled, some test cases and their dependencies needs
+        # to be copied to and execute from the source directory in order to
+        # work.  They also have to be executed as root, i.e. via sudo.
         #
+        # When executing test remotely we must also copy stuff over to the
+        # remote location.  Currently there is no diferent between remote-copy
+        # and remote-exec here, which it would be nice if Andy could explain...
+        #
+        ## @todo r=bird: Please explain + fix ^^.
         fHardened       = sName in self.kasHardened and self.sUnitTestsPathSrc != self.sVBoxInstallRoot;
-        fCopyToRemote   = self.isRemoteMode();
-        fCopyDeps       = self.isRemoteMode();
         asFilesToRemove = []; # Stuff to clean up.
         asDirsToRemove  = []; # Ditto.
 
-        if fHardened or fCopyToRemote:
-            if fCopyToRemote:
+        if fHardened or self.isRemoteMode():
+            if self.isRemoteMode():
                 sDstDir = os.path.join(self.sUnitTestsPathDst, sTestCaseSubDir);
             else:
                 sDstDir = os.path.join(self.sVBoxInstallRoot, sTestCaseSubDir);
@@ -1006,10 +1001,10 @@ class tdUnitTest1(vbox.TestDriver):
             sSrc = sFilePathAbs;
             # If the testcase source does not exist for whatever reason, just mark it as skipped
             # instead of reporting an error.
-            if not self._wrapPathExists(sSrc):
-                self.cSkipped += 1;
-                fSkipped = True;
-                return fSkipped;
+            if not self._wrapPathExists(sSrc): ## @todo r=bird: This doesn't add up for me with the two remote modes.
+                self.cSkipped += 1;            ## It seems to presuppose that we're in remote-exec mode as _wrapPathExists
+                fSkipped = True;               ## does not differentiate between the two remote modes and will always check
+                return fSkipped;               ## the path on the remote side.
 
             sDst = os.path.join(sDstDir, os.path.basename(sFilePathAbs));
             fModeExe  = 0;
@@ -1021,7 +1016,7 @@ class tdUnitTest1(vbox.TestDriver):
             asFilesToRemove.append(sDst);
 
             # Copy required dependencies to destination.
-            if fCopyDeps:
+            if self.isRemoteMode():
                 for sLib in self.kdTestCaseDepsLibs:
                     for sSuff in [ '.dll', '.so', '.dylib' ]:
                         assert self.sVBoxInstallRoot is not None;
@@ -1052,20 +1047,33 @@ class tdUnitTest1(vbox.TestDriver):
             sFilePathAbs = os.path.join(sDstDir, os.path.basename(sFilePathAbs));
 
         #
-        # Set up arguments and environment.
+        # Set up arguments.
         #
         asArgs = [sFilePathAbs,]
         if sName in self.kdArguments:
             asArgs.extend(self.kdArguments[sName]);
 
-        sXmlFile = os.path.join(self.sUnitTestsPathDst, 'result.xml');
+        #
+        # Set up the environment.
+        #
+        # - We set IPRT_TEST_OMIT_TOP_TEST to avoid the unnecessary top-test
+        #   entry when running the inner tests, as it'll just add an unnecessary
+        #   result nesting.
+        #
+        # - IPRT_TEST_FILE is set to a result.xml file when running locally.
+        #   This is not necessary when executing via TxS as it sets IPRT_TEST_PIPE,
+        #   which overrides IPRT_TEST_FILE, to collect the XML output.
+        #
+        dEnvChanges = {
+            'IPRT_TEST_OMIT_TOP_TEST': '1',
+        };
 
-        self._envSet('IPRT_TEST_OMIT_TOP_TEST', '1');
-        self._envSet('IPRT_TEST_FILE', sXmlFile);  ## @todo skip for remote. Makes _no_ sense.
-
-        if self._wrapPathExists(sXmlFile):
-            try:    os.unlink(sXmlFile);
-            except: self._wrapDeleteFile(sXmlFile);
+        sXmlFile = os.path.join(self.sUnitTestsPathDst, 'result.xml') if not self.isRemoteMode() else None;
+        if sXmlFile:
+            dEnvChanges['IPRT_TEST_FILE'] = sXmlFile;
+            if self._wrapPathExists(sXmlFile):
+                try:    os.unlink(sXmlFile);
+                except: self._wrapDeleteFile(sXmlFile);
 
         #
         # Execute the test case.
@@ -1084,8 +1092,9 @@ class tdUnitTest1(vbox.TestDriver):
         iRc = 0;
 
         if not self.fDryRun:
-            if fCopyToRemote:
-                asRemoteEnvChg = ['%s=%s' % (sKey, self.dRemoteEnvChg[sKey]) for sKey in self.dRemoteEnvChg];
+            if self.isRemoteMode():
+                asRemoteEnvChg = ['%s=%s' % (sKey, dEnvChanges[sKey]) for sKey in dEnvChanges];
+
                 fRc = self.txsRunTest(self.oTxsSession, sName, cMsTimeout = 30 * 60 * 1000, sExecName = asArgs[0],
                                       asArgs = asArgs, asAddEnv = asRemoteEnvChg, fCheckSessionStatus = True);
                 if fRc:
@@ -1099,6 +1108,9 @@ class tdUnitTest1(vbox.TestDriver):
                     else:
                         iRc = -1; ## @todo
             else:
+                for sKey in dEnvChanges:
+                    os.environ[sKey] = dEnvChanges[sKey];
+
                 oChild = None;
                 try:
                     if fHardened:
@@ -1128,9 +1140,9 @@ class tdUnitTest1(vbox.TestDriver):
             self._wrapRemoveDir(sPath);
 
         #
-        # Report.
+        # Report (sXmlFile is None when in remote mode).
         #
-        if os.path.exists(sXmlFile):
+        if sXmlFile and os.path.exists(sXmlFile):
             reporter.addSubXmlFile(sXmlFile);
             if fHardened:
                 self._wrapDeleteFile(sXmlFile);
