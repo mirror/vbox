@@ -65,7 +65,6 @@
 
 /* COM includes: */
 #include "CConsole.h"
-#include "CDisplay.h"
 #include "CGraphicsAdapter.h"
 #include "CSession.h"
 #include "CFramebuffer.h"
@@ -370,7 +369,7 @@ QSize UIMachineView::maximumGuestSize()
 
 void UIMachineView::updateViewport()
 {
-    display().ViewportChanged(screenId(), contentsX(), contentsY(), visibleWidth(), visibleHeight());
+    uimachine()->viewportChanged(screenId(), contentsX(), contentsY(), visibleWidth(), visibleHeight());
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
@@ -671,7 +670,7 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
 
     /* Ask for just required guest display update (it will also update
      * the viewport through IFramebuffer::NotifyUpdate): */
-    display().InvalidateAndUpdateScreen(m_uScreenId);
+    uimachine()->invalidateAndUpdateScreen(m_uScreenId);
 
     /* If we are in normal or scaled mode and if GA are active,
      * remember the guest-screen size to be able to restore it when necessary: */
@@ -1084,7 +1083,7 @@ void UIMachineView::sltMachineStateChanged()
                     resetPausePixmap();
                     /* Ask for full guest display update (it will also update
                      * the viewport through IFramebuffer::NotifyUpdate): */
-                    display().InvalidateAndUpdate();
+                    uimachine()->invalidateAndUpdate();
                 }
             }
             /* Reapply machine-view scale-factor: */
@@ -1401,7 +1400,7 @@ void UIMachineView::cleanupFrameBuffer()
      * from view in order to respect the thread synchonisation logic (see UIFrameBuffer.h).
      * Note: VBOX_WITH_CROGL additionally requires us to call DetachFramebuffer
      * to ensure 3D gets notified of view being destroyed... */
-    if (console().isOk() && !display().isNull())
+    if (console().isOk())
         frameBuffer()->detach();
 
     /* Detach framebuffer from view: */
@@ -1428,11 +1427,6 @@ CMachine& UIMachineView::machine() const
 CConsole& UIMachineView::console() const
 {
     return uisession()->console();
-}
-
-CDisplay& UIMachineView::display() const
-{
-    return uisession()->display();
 }
 
 UIActionPool* UIMachineView::actionPool() const
@@ -1603,7 +1597,7 @@ void UIMachineView::takePausePixmapLive()
                                        Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
     /* Dim screen-shot if it is Ok: */
-    if (display().isOk() && !screenShot.isNull())
+    if (!screenShot.isNull())
         dimImage(screenShot);
 
     /* Finally copy the screen-shot to pause-pixmap: */

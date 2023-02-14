@@ -475,6 +475,21 @@ bool UIMachine::setSeamlessMode(bool fEnabled)
     return uisession()->setSeamlessMode(fEnabled);
 }
 
+bool UIMachine::viewportChanged(ulong uScreenId, ulong xOrigin, ulong yOrigin, ulong uWidth, ulong uHeight)
+{
+    return uisession()->viewportChanged(uScreenId, xOrigin, yOrigin, uWidth, uHeight);
+}
+
+bool UIMachine::invalidateAndUpdate()
+{
+    return uisession()->invalidateAndUpdate();
+}
+
+bool UIMachine::invalidateAndUpdateScreen(ulong uScreenId)
+{
+    return uisession()->invalidateAndUpdateScreen(uScreenId);
+}
+
 bool UIMachine::isGuestAdditionsActive() const
 {
     return uisession()->isGuestAdditionsActive();

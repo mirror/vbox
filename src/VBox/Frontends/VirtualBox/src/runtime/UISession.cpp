@@ -515,6 +515,36 @@ bool UISession::setSeamlessMode(bool fEnabled)
     return fSuccess;
 }
 
+bool UISession::viewportChanged(ulong uScreenId, ulong xOrigin, ulong yOrigin, ulong uWidth, ulong uHeight)
+{
+    CDisplay comDisplay = display();
+    comDisplay.ViewportChanged(uScreenId, xOrigin, yOrigin, uWidth, uHeight);
+    const bool fSuccess = comDisplay.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotChangeDisplayParameter(comDisplay);
+    return fSuccess;
+}
+
+bool UISession::invalidateAndUpdate()
+{
+    CDisplay comDisplay = display();
+    comDisplay.InvalidateAndUpdate();
+    const bool fSuccess = comDisplay.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotChangeDisplayParameter(comDisplay);
+    return fSuccess;
+}
+
+bool UISession::invalidateAndUpdateScreen(ulong uScreenId)
+{
+    CDisplay comDisplay = display();
+    comDisplay.InvalidateAndUpdateScreen(uScreenId);
+    const bool fSuccess = comDisplay.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotChangeDisplayParameter(comDisplay);
+    return fSuccess;
+}
+
 void UISession::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states)
 {
     CConsole comConsole = console();
