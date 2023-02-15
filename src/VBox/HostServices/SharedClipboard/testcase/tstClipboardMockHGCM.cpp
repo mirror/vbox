@@ -698,7 +698,7 @@ int main(int argc, char *argv[])
 #endif
 
     PTSTHGCMMOCKSVC const pSvc = TstHgcmMockSvcInst();
-    TstHgcmMockSvcCreate(pSvc, sizeof(SHCLCLIENT));
+    TstHgcmMockSvcCreate(pSvc);
     TstHgcmMockSvcStart(pSvc);
 
     /*

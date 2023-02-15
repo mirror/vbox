@@ -170,9 +170,6 @@ typedef struct TSTHGCMMOCKSVC
     /** Next HGCM client ID to assign.
      *  0 is considered as being invalid. */
     HGCMCLIENTID       uNextClientId;
-    /** Size (in bytes) of opaque pvClient area to reserve
-     *  for a connected client. */
-    size_t             cbClient;
     /** Array of connected HGCM mock clients.
      *  Currently limited to 4 clients maximum. */
     TSTHGCMMOCKCLIENT  aHgcmClient[4];
@@ -197,7 +194,8 @@ typedef struct TSTHGCMMOCKSVC
 } TSTHGCMMOCKSVC;
 
 /** Static HGCM service to mock. */
-static TSTHGCMMOCKSVC s_tstHgcmSvc;
+static TSTHGCMMOCKSVC g_tstHgcmSvc;
+
 
 /*********************************************************************************************************************************
 *  Prototypes.                                                                                                                   *
@@ -205,7 +203,7 @@ static TSTHGCMMOCKSVC s_tstHgcmSvc;
 PTSTHGCMMOCKSVC    TstHgcmMockSvcInst(void);
 PTSTHGCMMOCKCLIENT TstHgcmMockSvcWaitForConnectEx(PTSTHGCMMOCKSVC pSvc, RTMSINTERVAL msTimeout);
 PTSTHGCMMOCKCLIENT TstHgcmMockSvcWaitForConnect(PTSTHGCMMOCKSVC pSvc);
-int                TstHgcmMockSvcCreate(PTSTHGCMMOCKSVC pSvc, size_t cbClient);
+int                TstHgcmMockSvcCreate(PTSTHGCMMOCKSVC pSvc);
 int                TstHgcmMockSvcDestroy(PTSTHGCMMOCKSVC pSvc);
 int                TstHgcmMockSvcStart(PTSTHGCMMOCKSVC pSvc);
 int                TstHgcmMockSvcStop(PTSTHGCMMOCKSVC pSvc);
@@ -280,7 +278,7 @@ static DECLCALLBACK(int) tstHgcmMockSvcConnect(PTSTHGCMMOCKSVC pSvc, void *pvSer
 
     PTSTHGCMMOCKCLIENT pClient = &pSvc->aHgcmClient[pSvc->uNextClientId];
 
-    int rc = tstHgcmMockClientInit(pClient, pSvc->uNextClientId, pSvc->cbClient);
+    int rc = tstHgcmMockClientInit(pClient, pSvc->uNextClientId, pSvc->fnTable.cbClient);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -348,7 +346,8 @@ static DECLCALLBACK(int) tstHgcmMockSvcCall(PTSTHGCMMOCKSVC pSvc, void *pvServic
 
     pFn->u.Call.hCall    = callHandle;
     pFn->u.Call.iFunc    = function;
-    pFn->u.Call.pParms   = (PVBOXHGCMSVCPARM)RTMemDup(paParms, cbParms);
+    PVBOXHGCMSVCPARM const paParmsCopy = (PVBOXHGCMSVCPARM)RTMemDup(paParms, cbParms);
+    pFn->u.Call.pParms   = paParmsCopy;
     AssertPtrReturn(pFn->u.Call.pParms, VERR_NO_MEMORY);
     pFn->u.Call.cParms   = cParms;
 
@@ -360,7 +359,9 @@ static DECLCALLBACK(int) tstHgcmMockSvcCall(PTSTHGCMMOCKSVC pSvc, void *pvServic
     rc2 = RTSemEventWait(pClient->hEvent, RT_INDEFINITE_WAIT);
     AssertRCReturn(rc2, rc2);
 
-    memcpy(paParms, pFn->u.Call.pParms, cbParms);
+    memcpy(paParms, paParmsCopy, cbParms);
+    /** @todo  paParmsCopy is leaked, right? Doesn't appear to be a
+     *         use-after-free here. (pFn is freeded though) */
 
     return VINF_SUCCESS; /** @todo Return host call rc */
 }
@@ -502,8 +503,9 @@ static DECLCALLBACK(int) tstHgcmMockSvcThread(RTTHREAD hThread, void *pvUser)
 
                     case TSTHGCMMOCKFNTYPE_CALL:
                     {
-                        pSvc->fnTable.pfnCall(NULL, pFn->u.Call.hCall, pFn->pClient->idClient, pFn->pClient->pvClient,
-                                              pFn->u.Call.iFunc, pFn->u.Call.cParms, pFn->u.Call.pParms, RTTimeMilliTS());
+                        pSvc->fnTable.pfnCall(pSvc->fnTable.pvService, pFn->u.Call.hCall, pFn->pClient->idClient,
+                                              pFn->pClient->pvClient, pFn->u.Call.iFunc, pFn->u.Call.cParms,
+                                              pFn->u.Call.pParms, RTTimeNanoTS());
 
                         /* Note: Call will be completed in the call completion callback. */
                         break;
@@ -511,7 +513,8 @@ static DECLCALLBACK(int) tstHgcmMockSvcThread(RTTHREAD hThread, void *pvUser)
 
                     case TSTHGCMMOCKFNTYPE_HOST_CALL:
                     {
-                        pSvc->rcHostCall = pSvc->fnTable.pfnHostCall(NULL, pFn->u.HostCall.iFunc, pFn->u.HostCall.cParms, pFn->u.HostCall.pParms);
+                        pSvc->rcHostCall = pSvc->fnTable.pfnHostCall(pSvc->fnTable.pvService, pFn->u.HostCall.iFunc,
+                                                                     pFn->u.HostCall.cParms, pFn->u.HostCall.pParms);
 
                         int rc2 = RTSemEventSignal(pSvc->hEventHostCall);
                         AssertRC(rc2);
@@ -543,7 +546,7 @@ static DECLCALLBACK(int) tstHgcmMockSvcThread(RTTHREAD hThread, void *pvUser)
  */
 PTSTHGCMMOCKSVC TstHgcmMockSvcInst(void)
 {
-    return &s_tstHgcmSvc;
+    return &g_tstHgcmSvc;
 }
 
 /**
@@ -580,13 +583,9 @@ PTSTHGCMMOCKCLIENT TstHgcmMockSvcWaitForConnect(PTSTHGCMMOCKSVC pSvc)
  *
  * @return VBox status code.
  * @param  pSvc                 HGCM mock service instance to create.
- * @param  cbClient             Size (in bytes) of service-specific client data to
- *                              allocate for a HGCM mock client.
  */
-int TstHgcmMockSvcCreate(PTSTHGCMMOCKSVC pSvc, size_t cbClient)
+int TstHgcmMockSvcCreate(PTSTHGCMMOCKSVC pSvc)
 {
-    AssertReturn(cbClient, VERR_INVALID_PARAMETER);
-
     RT_ZERO(pSvc->aHgcmClient);
     pSvc->fShutdown = false;
     int rc = RTSemEventCreate(&pSvc->hEventQueue);
@@ -599,8 +598,6 @@ int TstHgcmMockSvcCreate(PTSTHGCMMOCKSVC pSvc, size_t cbClient)
             if (RT_SUCCESS(rc))
             {
                 RTListInit(&pSvc->lstCall);
-
-                pSvc->cbClient = cbClient;
             }
         }
     }

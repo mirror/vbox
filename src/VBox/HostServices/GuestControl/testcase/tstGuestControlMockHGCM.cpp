@@ -25,6 +25,10 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include <VBox/HostServices/GuestControlSvc.h>
 #include <VBox/VBoxGuestLib.h>
 
@@ -50,6 +54,8 @@ static RTTEST     g_hTest;
 /*********************************************************************************************************************************
 *   Shared Clipboard testing                                                                                                     *
 *********************************************************************************************************************************/
+/** @todo r=bird: Clipboard?  */
+
 struct CLIPBOARDTESTDESC;
 /** Pointer to a test description. */
 typedef CLIPBOARDTESTDESC *PTESTDESC;
@@ -102,6 +108,8 @@ typedef struct CLIPBOARDTESTCTX
 /** The one and only clipboard test context. One at a time. */
 CLIPBOARDTESTCTX g_TstCtx;
 
+#if 0 /** @todo r=bird: Clipboard? This times out and asserts and doesn't seems to do anything sensible. */
+
 /**
  * Structure for keeping a clipboard test description.
  */
@@ -118,6 +126,8 @@ typedef struct CLIPBOARDTESTDESC
 typedef struct SHCLCONTEXT
 {
 } SHCLCONTEXT;
+
+#endif
 
 
 static void testGuestSimple(void)
@@ -154,6 +164,9 @@ static void testHostCall(void)
 /*********************************************************************************************************************************
  * Test: Guest reading from host                                                                                                 *
  ********************************************************************************************************************************/
+/** @todo r=bird: Reading from the host? WTF?  Doesn't seem to work, so I've disabled it till it can be rewritten and
+ * made to do something useful rather than asserting. */
+#if 0
 typedef struct TSTUSERMOCK
 {
 } TSTUSERMOCK;
@@ -192,10 +205,7 @@ static DECLCALLBACK(int) tstTestReadFromHost_ThreadGuest(PTSTHGCMUTILSCTX pCtx, 
 static DECLCALLBACK(int) tstTestReadFromHostSetup(PCLIPBOARDTESTCTX pTstCtx, void **ppvCtx)
 {
     RT_NOREF(pTstCtx, ppvCtx);
-
-    int rc = VINF_SUCCESS;
-
-    return rc;
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) tstTestReadFromHostExec(PCLIPBOARDTESTCTX pTstCtx, void *pvCtx)
@@ -232,10 +242,13 @@ static DECLCALLBACK(int) tstTestReadFromHostDestroy(PCLIPBOARDTESTCTX pTstCtx, v
     return vrc;
 }
 
+#endif
+
 
 /*********************************************************************************************************************************
  * Main                                                                                                                          *
  ********************************************************************************************************************************/
+#if 0 /** @todo r=bird: Same as above.  */
 
 /** Test definition table. */
 CLIPBOARDTESTDESC g_aTests[] =
@@ -264,28 +277,25 @@ static int tstOne(PTESTDESC pTstDesc)
     return rc;
 }
 
-int main(int argc, char *argv[])
+#endif
+
+int main()
 {
     /*
      * Init the runtime, test and say hello.
      */
-    const char *pcszExecName;
-    NOREF(argc);
-    pcszExecName = strrchr(argv[0], '/');
-    pcszExecName = pcszExecName ? pcszExecName + 1 : argv[0];
-    RTEXITCODE rcExit = RTTestInitAndCreate(pcszExecName, &g_hTest);
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstGuestControlMockHGCM", &g_hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
     RTTestBanner(g_hTest);
 
-#ifndef DEBUG_andy
+#if 0 //ndef DEBUG_andy - bird: fix the 'ing code.
     /* Don't let assertions in the host service panic (core dump) the test cases. */
     RTAssertSetMayPanic(false);
 #endif
 
     PTSTHGCMMOCKSVC const pSvc = TstHgcmMockSvcInst();
-
-    TstHgcmMockSvcCreate(pSvc, 42 /** @todo */);
+    TstHgcmMockSvcCreate(pSvc);
     TstHgcmMockSvcStart(pSvc);
 
     /*
@@ -297,6 +307,7 @@ int main(int argc, char *argv[])
         testHostCall();
     }
 
+#if 0 /** @todo r=bird: Clipboard? This times out and asserts and doesn't seems to do anything sensible. */
     RT_ZERO(g_TstCtx);
 
     PTSTHGCMUTILSCTX pCtx = &g_TstCtx.HGCM;
@@ -310,6 +321,7 @@ int main(int argc, char *argv[])
         tstOne(&g_aTests[i]);
 
     TstHGCMUtilsTaskDestroy(pTask);
+#endif
 
     TstHgcmMockSvcStop(pSvc);
     TstHgcmMockSvcDestroy(pSvc);
