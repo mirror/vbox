@@ -689,6 +689,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
     ktReason_Unknown_VM_Terminated                     = ( 'Unknown',           'VM terminated' );
     ktReason_Unknown_VM_Start_Error                    = ( 'Unknown',           'VM Start Error' );
     ktReason_Unknown_VM_Runtime_Error                  = ( 'Unknown',           'VM Runtime Error' );
+    ktReason_VMM_Assert                                = ( 'VMM',               'Assert' );
     ktReason_VMM_kvm_lock_spinning                     = ( 'VMM',               'kvm_lock_spinning' );
     ktReason_Ignore_Buggy_Test_Driver                  = ( 'Ignore',            'Buggy test driver' );
     ktReason_Ignore_Stale_Files                        = ( 'Ignore',            'Stale files' );
@@ -987,8 +988,14 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                         oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
                     else:
                         self.dprint(u'Unit test failure "%s" not found in %s;' % (sKey, self.asUnitTestReasons));
-                        tReason = ( self.ksUnitTestCategory, self.ksUnitTestAddNew );
-                        oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult, sComment = sKey);
+                        sResultLog = TestSetData.extractLogSectionElapsed(sMainLog, oFailedResult.tsCreated,
+                                                                          oFailedResult.tsElapsed);
+                        if 'AudioMixer.cpp' in sResultLog:  # Pipe drain assertion.
+                            tReason = self.ktReason_VMM_Assert;
+                            oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult, sComment = 'AudioMixer.cpp');
+                        else:
+                            tReason = ( self.ksUnitTestCategory, self.ksUnitTestAddNew );
+                            oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult, sComment = sKey);
                     cRelevantOnes += 1
             else:
                 self.vprint(u'Internal error: expected oParent to NOT be None for %s' % (oFailedResult,));
