@@ -893,8 +893,7 @@ class Session(TdTaskBase):
                     reporter.log('taskExecEx: Standard input is ignored... why?');
                     del oStdIn.uTxsClientCrc32;
                     oStdIn = '/dev/null';
-                elif  sOpcode in ('STDINMEM', 'STDINBAD', 'STDINCRC',)\
-                  and msPendingInputReply is not None:
+                elif sOpcode in ('STDINMEM', 'STDINBAD', 'STDINCRC',) and msPendingInputReply is not None:
                     # TXS STDIN error, abort.
                     # TODO: STDINMEM - consider undoing the previous stdin read and try resubmitt it.
                     msPendingInputReply = None;
