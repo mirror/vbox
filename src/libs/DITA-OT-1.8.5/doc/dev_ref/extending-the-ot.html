@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en-us" lang="en-us">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="copyright" content="(C) Copyright 2005"/>
+<meta name="DC.rights.owner" content="(C) Copyright 2005"/>
+<meta name="DC.Type" content="reference"/>
+<meta name="DC.Title" content="Extending the DITA Open Toolkit"/>
+<meta name="abstract" content="There are several methods that can be used to extend the toolkit; not all of them are recommended or supported. The best way to create most extensions is with a plug-in; extended documentation for creating plug-ins is provided in the next section."/>
+<meta name="description" content="There are several methods that can be used to extend the toolkit; not all of them are recommended or supported. The best way to create most extensions is with a plug-in; extended documentation for creating plug-ins is provided in the next section."/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/developer-reference.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/plugins-installing.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/plugins-removing.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/rebuilding-the-dita-ot-documentation.html"/>
+<meta name="DC.Format" content="XHTML"/>
+<meta name="DC.Identifier" content="extending-the-ot"/>
+<meta name="DC.Language" content="en-us"/>
+<link rel="stylesheet" type="text/css" href="../commonltr.css"/>
+<link rel="stylesheet" type="text/css" href="../dita-ot-doc.css"/>
+<title>Extending the DITA Open Toolkit</title>
+</head>
+<body id="extending-the-ot">
+
+
+<h1 class="title topictitle1">Extending the DITA Open Toolkit</h1>
+
+
+<div class="body refbody"><p class="shortdesc">There are several methods that can be used to extend the
+toolkit; not all of them are recommended or supported. The best way
+to create most extensions is with a plug-in; extended documentation
+for creating plug-ins is provided in the next section.</p>
+
+<div class="section"><ul class="ul">
+<li class="li">Creating a plug-in can be very simple to very complex, and is generally the best method for
+          changing or extending the toolkit. Plug-ins can be used to accomplish almost any
+          modification that is needed for toolkit processing, from minor style tweaks to extensive,
+          complicated new output formats.</li>
+
+<li class="li">The PDF process was initially developed independently of the toolkit,
+and created its own extension mechanism using customization directories.
+Many (but not quite all) of the capabilities available through PDF
+customization directories are now available through plug-ins.</li>
+
+<li class="li">Using a single XSL file as an override by passing it in as a parameter.
+For example, when building XHTML content, the XSL parameter allows
+users to specify a single local XSL file (inside or outside of the
+toolkit) that is called in place of the default XHTML code. Typically,
+this code imports the default processing code, and overrides a couple
+of processing routines. This approach is best when the override is
+very minimal, or when the style varies from build to build. However,
+any extension made with this sort of override is also possible with
+a plug-in.</li>
+
+<li class="li">Editing DITA-OT code directly may work in some cases, but is not
+advised. Modifying the code directly significantly increases the work
+and risk involved with future upgrades. It is also likely that such
+modifications will break plug-ins provided by others, limiting the
+function available to the toolkit.</li>
+
+</ul>
+</div>
+
+</div>
+
+<div class="related-links">
+<ul class="ullinks">
+<li class="link ulchildlink"><strong><a href="../dev_ref/plugins-installing.html">Installing plug-ins</a></strong><br/>
+Plug-ins are generally distributed as zip files. There are two steps to installing a     plug-in: unzipping and integrating.</li>
+<li class="link ulchildlink"><strong><a href="../dev_ref/plugins-removing.html">Removing plug-ins</a></strong><br/>
+Plug-ins can be installed by removing the plug-in and running integration     process.</li>
+<li class="link ulchildlink"><strong><a href="../dev_ref/rebuilding-the-dita-ot-documentation.html">Rebuilding the DITA-OT documentation</a></strong><br/>
+The DITA-OT ships with Ant scripts that enable you to rebuild the toolkit         documentation. This is especially helpful if your environment contains plug-ins that         integrate additional messages into the toolkit. </li>
+</ul>
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong> <a class="link" href="../dev_ref/developer-reference.html" title="The DITA Open Toolkit Developer Reference is designed to provide more advanced information about the DITA OT. It is geared to an audience that needs information about the DITA-OT architecture, configuring and extending the DITA-OT, and creating DITA-OT plug-ins.">DITA Open Toolkit Developer Reference</a></div>
+</div>
+</div>
+
+</body>
+</html>

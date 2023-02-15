@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en-us" lang="en-us">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="copyright" content="(C) Copyright 2005"/>
+<meta name="DC.rights.owner" content="(C) Copyright 2005"/>
+<meta name="DC.Type" content="reference"/>
+<meta name="DC.Title" content="Command-line tool parameters: All transformations"/>
+<meta name="abstract" content="Certain parameters apply to all transformations that are supported by the DITA Open Toolkit."/>
+<meta name="description" content="Certain parameters apply to all transformations that are supported by the DITA Open Toolkit."/>
+<meta name="DC.subject" content="command-line tool, parameters, basedir, cleantemp, debug, ditadir, ditaext, ditalocale, draft, filter, grammarcache, i, logdir, outdir, outext, tempdir, transtype, validate"/>
+<meta name="keywords" content="command-line tool, parameters, basedir, cleantemp, debug, ditadir, ditaext, ditalocale, draft, filter, grammarcache, i, logdir, outdir, outext, tempdir, transtype, validate"/>
+<meta name="DC.Relation" scheme="URI" content="../readme/dita-ot_java_properties.html"/>
+<meta name="DC.Format" content="XHTML"/>
+<meta name="DC.Identifier" content="tool-parameters-all-transformation"/>
+<link rel="stylesheet" type="text/css" href="../commonltr.css"/>
+<link rel="stylesheet" type="text/css" href="../dita-ot-doc.css"/>
+<title>Command-line tool parameters: All transformations</title>
+</head>
+<body id="tool-parameters-all-transformation">
+
+
+  <h1 class="title topictitle1">Command-line tool parameters: All transformations</h1>
+
+  
+  
+  
+  <div class="body refbody"><p class="shortdesc">Certain parameters apply to all transformations that are supported by the DITA Open
+    Toolkit.</p>
+
+    
+<div class="tablenoborder"><table cellpadding="4" cellspacing="0" summary="" class="table" frame="border" border="1" rules="all"><caption><span class="tablecap">Table 1. Command-line tool parameters: All transformations</span></caption>
+        
+        
+        <thead class="thead" align="left">
+          <tr class="row">
+            <th class="entry" valign="top" width="27.27272727272727%" id="d35605e83">Parameters</th>
+
+            <th class="entry" valign="top" width="72.72727272727273%" id="d35605e86">Description</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody class="tbody">
+          <tr class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d35605e83 "><span class="keyword parmname">basedir</span></td>
+
+            <td class="entry" id="tool-parameters-all-transformation__basedir.desc" valign="top" width="72.72727272727273%" headers="d35605e86 ">The directory where your project's ant build script resides.
+              The DITA-OT will look for your .dita files relative to this directory. DITA-OT's
+              default build script sets this as an attribute of the project, but you can also define
+              it as a project property.</td>
+
+          </tr>
+
+          <tr class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d35605e83 "><span class="keyword parmname">cleantemp</span></td>
+
+            <td class="entry" valign="top" width="72.72727272727273%" headers="d35605e86 ">Specifies whether the DITA-OT deletes the files in the
+              temporary directory after it finishes a build. The allowed values are
+              <span class="keyword option">yes</span> and <span class="keyword option">no</span>; the default value is
+              <span class="keyword option">yes</span>.</td>
+
+          </tr>
+
+          <tr class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d35605e83 "><span class="keyword parmname">debug</span></td>
+
+            <td class="entry" valign="top" width="72.72727272727273%" headers="d35605e86 ">Specifies whether debugging information is included in the
+              log. The allowed values are <span class="keyword option">yes</span> and <span class="keyword option">no</span>; the default
+              value is <span class="keyword option">no</span>.</td>
+
+          </tr>
+
+          <tr class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d35605e83 "><span class="keyword parmname">ditadir</span></td>
+
+            <td class="entry" valign="top" width="72.72727272727273%" headers="d35605e86 ">Specifies where the DITA-OT is installed.</td>
+
+          </tr>
+
+            <tr class="row">
+              <td class="entry" valign="top" width="27.27272727272727%" headers="d35605e83 "><span class="keyword parmname">ditaext</span></td>
+
+              <td class="entry" valign="top" width="72.72727272727273%" headers="d35605e86 ">Specifies the file extension that the DITA-OT uses for
+              files in the temporary directory. The allowed values are <span class="keyword option">xml</span> and
+              <span class="keyword option">dita</span>; the default value is <span class="keyword option">xml</span>.<div class="note note"><span class="notetitle">Note:</span> This
+                parameter is deprecated in favor of the <span class="keyword parmname">dita.ext</span>
+                parameter.</div>
+</td>
+
+            </tr>
+
+          <tr class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d35605e83 "><span class="keyword parmname">ditalocale</span></td>
+
+            <td class="entry" valign="top" width="72.72727272727273%" headers="d35605e86 ">Specifies the language locale file to use for sorting
+              index entries.<div class="note note"><span class="notetitle">Note:</span> This parameter is not available for the XHTML
+                transformation.</div>
+</td>
+
+          </tr>
+
+<tr class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d35605e83 "><span class="keyword parmname">draft</span></td>
+
+            <td class="entry" valign="top" width="72.72727272727273%" headers="d35605e86 ">Specifies whether the content of &lt;draft-comment&gt; and
+              &lt;required-cleanup&gt; elements is included in the output. The allowed values are
+                <span class="keyword option">yes</span> and <span class="keyword option">no</span>; the default value is
+                <span class="keyword option">no</span>. <span class="ph">Corresponds to XSLT parameter
+                  <span class="keyword parmname">DRAFT</span> in most XSLT modules.</span><div class="note tip"><span class="tiptitle">Tip:</span> For PDF
+                output, setting the <span class="keyword parmname">args.draft</span> parameter to
+                  <span class="keyword option">yes</span> causes the contents of the &lt;titlealts&gt; element to be
+                rendered below the title.</div>
+
+            </td>
+
+</tr>
+
+          <tr class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d35605e83 "><span class="keyword parmname">filter</span></td>
+
+            <td class="entry" valign="top" width="72.72727272727273%" headers="d35605e86 ">Specifies a filter file to be
+              used to include, exclude, or flag content. Filter files must have a .ditaval or
+              .DITAVAL extension.<div class="note note"><span class="notetitle">Note:</span> Deprecated in favor of the
+                  <span class="keyword parmname">args.filter</span> parameter.</div>
+</td>
+
+          </tr>
+
+          <tr class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d35605e83 "><span class="keyword parmname">grammarcache</span></td>
+
+            <td class="entry" valign="top" width="72.72727272727273%" headers="d35605e86 ">Specifies whether the
+              grammar-caching feature of the XML parser is used. The allowed values are
+                <span class="keyword option">yes</span> and <span class="keyword option">no</span>; the default value is
+                <span class="keyword option">no</span>.<div class="note note"><span class="notetitle">Note:</span> This option dramatically speeds up processing time.
+                However, there is a known problem with using this feature for documents that use XML
+                entities. If your build fails with parser errors about entity resolution, set this
+                parameter to <span class="keyword option">no</span>.</div>
+</td>
+
+          </tr>
+
+          <tr class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d35605e83 "><span class="keyword parmname">i</span></td>
+
+            <td class="entry" valign="top" width="72.72727272727273%" headers="d35605e86 ">Specifies the master file for your documentation project.
+              Typically this is a DITA map, however it also can be a DITA topic if you want to
+              transform a single DITA file. The path can be absolute, relative to <span class="keyword parmname">args.input.dir</span>,
+              or relative to the directory where your project's ant build script resides
+              if <span class="keyword parmname">args.input.dir</span> is not defined. 
+            </td>
+
+          </tr>
+
+          <tr class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d35605e83 "><span class="keyword parmname">logdir</span></td>
+
+            <td class="entry" valign="top" width="72.72727272727273%" headers="d35605e86 ">Specifies the location where the DITA-OT places log files
+              for your project.</td>
+
+          </tr>
+
+          <tr class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d35605e83 "><span class="keyword parmname">outdir</span></td>
+
+            <td class="entry" valign="top" width="72.72727272727273%" headers="d35605e86 ">Specifies the name and location of the output directory. By
+              default, the output is written to
+              <span class="ph filepath"><var class="keyword varname">DITA-dir</var>\out</span>.</td>
+
+          </tr>
+
+          <tr class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d35605e83 "><span class="keyword parmname">outext</span></td>
+
+            <td class="entry" valign="top" width="72.72727272727273%" headers="d35605e86 ">Specifies an extension to use for DITA topics; All DITA topics
+              will use this single extension in the temp directory. The default value is .xml. <span class="ph">Corresponds to XSLT parameter
+                  <span class="keyword parmname">DITAEXT</span>.</span>
+            </td>
+
+          </tr>
+
+          <tr class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d35605e83 "><span class="keyword parmname">tempdir</span></td>
+
+            <td class="entry" valign="top" width="72.72727272727273%" headers="d35605e86 ">Specifies the location of the temporary directory. The
+              temporary directory is where the DITA-OT writes temporary files that are generated
+              during the transformation process.</td>
+
+          </tr>
+
+
+
+          <tr class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d35605e83 "><span class="keyword parmname">transtype</span></td>
+
+            <td class="entry" valign="top" width="72.72727272727273%" headers="d35605e86 ">Specifies the output format. You can create plug-ins to add
+              new values for this parameter; by default, the following values are available:<ul class="ul">
+                <li class="li">docbook</li>
+
+                <li class="li">eclipsehelp</li>
+
+                <li class="li">eclipsecontent</li>
+
+                <li class="li">htmlhelp</li>
+
+                <li class="li">javahelp</li>
+
+                <li class="li">legacypdf</li>
+
+                <li class="li">odt</li>
+
+                <li class="li">pdf</li>
+
+                <li class="li">wordrtf</li>
+
+                <li class="li">troff</li>
+
+                <li class="li">xhtml</li>
+
+              </ul>
+
+            </td>
+
+          </tr>
+
+          <tr class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d35605e83 "><span class="keyword parmname">validate</span></td>
+
+            <td class="entry" valign="top" width="72.72727272727273%" headers="d35605e86 ">Specifies whether the DITA-OT validates the content. The
+              allowed values are <span class="keyword option">true</span> and <span class="keyword option">false</span>; the default value is
+                <span class="keyword option">true</span>.</td>
+
+          </tr>
+
+        </tbody>
+
+      </table>
+</div>
+
+  </div>
+
+<div class="related-links">
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong> <a class="link" href="../readme/dita-ot_java_properties.html" title="Certain parameters apply to all DITA-OT transformations. Other parameters are common to the HTML-based transformations. Finally, some parameters apply only to the specific transformation types.">Command-line tool parameters</a></div>
+</div>
+</div>
+
+</body>
+</html>

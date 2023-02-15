@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en-us" lang="en-us">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="copyright" content="(C) Copyright 2005"/>
+<meta name="DC.rights.owner" content="(C) Copyright 2005"/>
+<meta name="DC.Type" content="task"/>
+<meta name="DC.Title" content="Creating an Ant build script"/>
+<meta name="abstract" content="Instead of typing the DITA-OT parameters at the command prompt, you might want to create an Ant build script that contains all of the parameters."/>
+<meta name="description" content="Instead of typing the DITA-OT parameters at the command prompt, you might want to create an Ant build script that contains all of the parameters."/>
+<meta name="DC.Relation" scheme="URI" content="../readme/DITA-ant.html"/>
+<meta name="DC.Relation" scheme="URI" content="../readme/DITA-antuse.html"/>
+<meta name="DC.Relation" scheme="URI" content="../readme/ant.html"/>
+<meta name="DC.Relation" scheme="URI" content="../readme/dita-ot_ant_properties.html"/>
+<meta name="DC.Relation" scheme="URI" content="http://ant.apache.org/manual/index.html"/>
+<meta name="DC.Format" content="XHTML"/>
+<meta name="DC.Identifier" content="creating-an-ant-build-script"/>
+<link rel="stylesheet" type="text/css" href="../commonltr.css"/>
+<link rel="stylesheet" type="text/css" href="../dita-ot-doc.css"/>
+<title>Creating an Ant build script</title>
+</head>
+<body id="creating-an-ant-build-script">
+
+
+    <h1 class="title topictitle1">Creating an Ant build script</h1>
+
+    
+    <div class="body taskbody"><p class="shortdesc">Instead of typing the DITA-OT parameters at the command prompt, you might want to
+        create an Ant build script that contains all of the parameters.</p>
+
+        <div class="tasklabel"><h2 class="sectiontitle tasklabel">Procedure</h2></div><ol class="ol steps"><li class="li step stepexpand">
+                <span class="ph cmd">Create an XML file that contains the following content:</span>
+                <div class="itemgroup info">
+                    <pre class="pre codeblock">&lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+&lt;project name="@project-name@" default="@default-target@" basedir="."&gt;
+
+  &lt;property name="dita.dir" location="@path-to-DITA-OT@"/&gt;
+ 
+  &lt;target name="@target-name@"&gt;
+    &lt;ant antfile="${dita.dir}${file.separator}build.xml"&gt;
+      &lt;property name="args.input" value="@DITA-input@"/&gt;
+      &lt;property name="transtype" value="xhtml"/&gt;
+    &lt;/ant&gt;
+  &lt;/target&gt;
+
+&lt;/project&gt;</pre>
+
+                </div>
+                <div class="itemgroup info">You will replace the placeholder content (indicated by the @ signs) with
+                    content applicable to your environment.</div>
+            </li>
+<li class="li step stepexpand">
+                <span class="ph cmd">Specify project information:</span>
+                <ol type="a" class="ol substeps">
+                    <li class="li substep substepexpand">
+                        <span class="ph cmd">Set the value of the @name attribute to X.</span>
+                    </li>
+
+                    <li class="li substep substepexpand">
+                        <span class="ph cmd">Set the value of the @default attribute to the name of a target in the
+                            build script.</span>
+                        <div class="itemgroup info">If the build script is invoked without specifying a target, this
+                            target will be run.</div>
+                    </li>
+
+                </ol>
+
+            </li>
+<li class="li step stepexpand">
+                <span class="ph cmd">Set the value of the <span class="keyword parmname">dita.dir</span> property to the location of
+                    the DITA-OT.</span>
+                <div class="itemgroup info">This can be a fully qualified path, or you can specify it relative to the
+                    location of the Ant build script that you are writing. </div>
+            </li>
+<li class="li step stepexpand">
+                <span class="ph cmd">Create the Ant target:</span>
+                <ol type="a" class="ol substeps">
+                    <li class="li substep">
+                        <span class="ph cmd">Set the value of the @name attribute.</span>
+                    </li>
+
+                    <li class="li substep">
+                        <span class="ph cmd">Specify the value for the <span class="keyword parmname">args.input</span>
+                            property.</span>
+                    </li>
+
+                    <li class="li substep">
+                        <span class="ph cmd">Specify the value of the <span class="keyword parmname">transtype</span> property.</span>
+                    </li>
+
+                </ol>
+
+            </li>
+<li class="li step stepexpand">
+                <span class="ph cmd">Save the build script.</span>
+            </li>
+</ol>
+
+        <div class="example"><div class="tasklabel"><h2 class="sectiontitle tasklabel">Example</h2></div>
+            <div class="p">The following Ant build script generates CHM and PDF output for the
+                    <span class="ph filepath">userguide.ditamap</span>
+                file.<pre class="pre codeblock">&lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+&lt;project name="Toolkit-documentation" default="all" basedir="."&gt;
+    
+    &lt;property name="dita.dir" location="C:\DITA-OT1.6.M5"/&gt;
+    
+    &lt;target name="all" description="build CHM and PDF" depends="chm,pdf"/&gt;
+    
+    &lt;target name="chm" description="build CHM"&gt;
+        &lt;ant antfile="${dita.dir}\build.xml"&gt;
+            &lt;property name="args.input" value="C:\dita-ot\src\main\doc\userguide.ditamap"/&gt;
+            &lt;property name="args.gen.task.lbl" value="YES"/&gt;   
+            &lt;property name="output.dir" value="C:\kje\temp\out"/&gt;
+            &lt;property name="transtype" value="htmlhelp"/&gt;
+        &lt;/ant&gt;
+    &lt;/target&gt;
+    
+    &lt;target name="pdf" description="build PDF"&gt;
+        &lt;ant antfile="${dita.dir}\build.xml"&gt;
+            &lt;property name="args.input" value="C:\dita-ot\src\main\doc\userguide.ditamap"/&gt;
+            &lt;property name="args.gen.task.lbl" value="YES"/&gt;   
+            &lt;property name="args.rellinks" value="nofamily"/&gt;   
+            &lt;property name="output.dir" value="C:\kje\temp\out"/&gt;
+            &lt;property name="transtype" value="pdf"/&gt;
+        &lt;/ant&gt;
+    &lt;/target&gt;
+    
+&lt;/project&gt;</pre>
+</div>
+
+            <div class="p">In addition to the mandatory parameters (<span class="keyword parmname">args.input</span> and
+                    <span class="keyword parmname">transtype</span>), the chm and pdf targets each specify some
+                optional parameters:<ul class="ul">
+                    <li class="li">The <span class="keyword parmname">args.gen.task.lbl</span> property is set to YES, which
+                        ensures that headings are automatically generated for the sections of task
+                        topics.</li>
+
+                    <li class="li">The <span class="keyword parmname">output.dir</span> property specifies where the DITA OT
+                        writes the output   of the transformations.</li>
+
+                </ul>
+</div>
+
+            <p class="p">The pdf target also specifies that related links should be generated in the PDF, but
+                only those links that are created by relationship tables and &lt;link&gt; elements.</p>
+
+            <p class="p">Finally, the all target simply specifies that both the chm and pdf target should be
+                run.</p>
+
+        </div>
+
+        <div class="section postreq"><div class="tasklabel"><h2 class="sectiontitle tasklabel">What to do next</h2></div>Another resource for learning about Ant scripts are the files in the
+                <span class="ph filepath">samples/ant_samples</span> directory. This directory contains the Ant
+            build files used by the demo build, as well as templates that you can use to create Ant
+            scripts.</div>
+
+    </div>
+
+<div class="related-links">
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong> <a class="link" href="../readme/DITA-ant.html" title="You can use Ant to invoke the DITA Open Toolkit (DITA-OT) and generate output. This is the most robust method of transforming DITA content; you can use the complete set of parameters that are supported by the toolkit.">Publishing DITA content from Ant</a></div>
+</div>
+<div class="relinfo relconcepts"><strong>Related concepts</strong><br/>
+<div><a class="link" href="../readme/ant.html" title="Ant is a Java-based, open-source tool that is provided by the Apache Foundation. It can be used to declare a sequence of build actions. It is well suited for both development and document builds. The full-easy-install version of the toolkit ships with a copy of Ant.">Ant</a></div>
+</div>
+<div class="relinfo reltasks"><strong>Related tasks</strong><br/>
+<div><a class="link" href="../readme/DITA-antuse.html" title="You can build output by running the ant command and specifying the DITA-OT parameters at the command prompt. You also can use an Ant build script to provide the DITA-OT parameters">Building output using Ant</a></div>
+</div>
+<div class="relinfo relref"><strong>Related reference</strong><br/>
+<div><a class="link" href="../readme/dita-ot_ant_properties.html" title="Certain parameters apply to all DITA-OT transformations. Other parameters are common to the HTML-based transformations. Finally, some parameters apply only to the specific transformation types.">Ant parameters</a></div>
+<div><a class="link" href="http://ant.apache.org/manual/index.html" target="_blank">Apache Ant documentation</a></div>
+</div>
+</div>
+
+</body>
+</html>

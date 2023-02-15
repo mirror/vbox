@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en-us" lang="en-us">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="copyright" content="(C) Copyright 2005"/>
+<meta name="DC.rights.owner" content="(C) Copyright 2005"/>
+<meta name="DC.Type" content="reference"/>
+<meta name="DC.Title" content="Generate lists (gen-list)"/>
+<meta name="abstract" content="The gen-list step examines the input files and creates lists of topics, images, document properties, or other content. These lists are used by later steps in the pipeline. For example, one list includes all topics that make use of the conref attribute; only those files are processed during the conref stage of the build. This step is implemented in Ant and Java."/>
+<meta name="description" content="The gen-list step examines the input files and creates lists of topics, images, document properties, or other content. These lists are used by later steps in the pipeline. For example, one list includes all topics that make use of the conref attribute; only those files are processed during the conref stage of the build. This step is implemented in Ant and Java."/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/DITA-OTPreprocess.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/preprocess-debugfilter.html"/>
+<meta name="DC.Format" content="XHTML"/>
+<meta name="DC.Identifier" content="preprocess-genlist"/>
+<meta name="DC.Language" content="en-us"/>
+<link rel="stylesheet" type="text/css" href="../commonltr.css"/>
+<link rel="stylesheet" type="text/css" href="../dita-ot-doc.css"/>
+<title>Generate lists (gen-list)</title>
+</head>
+<body id="preprocess-genlist">
+
+
+<h1 class="title topictitle1">Generate lists (gen-list)</h1>
+
+
+<div class="body refbody"><p class="shortdesc">The <samp class="ph codeph">gen-list</samp> step examines the input files
+and creates lists of topics, images, document properties, or other
+content. These lists are used by later steps in the pipeline. For
+example, one list includes all topics that make use of the conref
+attribute; only those files are processed         during the conref
+stage of the build. This step is implemented in Ant and Java.</p>
+
+<div class="section"><p class="p">The result of this list is a set of several list files
+in the temporary directory, including <span class="ph filepath">dita.list</span> and <span class="ph filepath">dita.xml.properties</span>.</p>
+
+<div class="tablenoborder"><table cellpadding="4" cellspacing="0" summary="" class="table" frame="border" border="1" rules="all">
+
+<thead class="thead" align="left">
+<tr class="row">
+<th class="entry" valign="top" id="d10247e40">List file property</th>
+
+<th class="entry" valign="top" id="d10247e43">List file</th>
+
+<th class="entry" valign="top" id="d10247e46">List property</th>
+
+<th class="entry" valign="top" id="d10247e49">Usage</th>
+
+</tr>
+
+</thead>
+
+<tbody class="tbody">
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">canditopicsfile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">canditopics.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">canditopicslist</td>
+
+<td class="entry" valign="top" headers="d10247e49 "> </td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">chunkedditamapfile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">chunkedditamap.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">chunkedditamaplist</td>
+
+<td class="entry" valign="top" headers="d10247e49 "> </td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">chunkedtopicfile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">chunkedtopic.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">chunkedtopiclist</td>
+
+<td class="entry" valign="top" headers="d10247e49 "> </td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">codereffile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">coderef.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">codereflist</td>
+
+<td class="entry" valign="top" headers="d10247e49 ">topics with coderef</td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">conreffile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">conref.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">conreflist</td>
+
+<td class="entry" valign="top" headers="d10247e49 ">Documents that contains conref attribute that
+need to be resolved in preprocess.</td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">conrefpushfile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">conrefpush.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">conrefpushlist</td>
+
+<td class="entry" valign="top" headers="d10247e49 "> </td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">conreftargetsfile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">conreftargets.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">conreftargetslist</td>
+
+<td class="entry" valign="top" headers="d10247e49 "> </td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">copytosourcefile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">copytosource.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">copytosourcelist</td>
+
+<td class="entry" valign="top" headers="d10247e49 "> </td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">copytotarget2sourcemapfile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">copytotarget2sourcemap.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">copytotarget2sourcemaplist</td>
+
+<td class="entry" valign="top" headers="d10247e49 "> </td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">flagimagefile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">flagimage.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">flagimagelist</td>
+
+<td class="entry" valign="top" headers="d10247e49 "> </td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">fullditamapandtopicfile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">fullditamapandtopic.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">fullditamapandtopiclist</td>
+
+<td class="entry" valign="top" headers="d10247e49 ">All of the ditamap and topic files that are
+referenced during the transformation. These                 may be
+referenced by href or conref attributes.</td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">fullditamapfile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">fullditamap.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">fullditamaplist</td>
+
+<td class="entry" valign="top" headers="d10247e49 ">All of the ditamap files in dita.list</td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">fullditatopicfile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">fullditatopic.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">fullditatopiclist</td>
+
+<td class="entry" valign="top" headers="d10247e49 ">All of the topic files in dita.list</td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">hrefditatopicfile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">hrefditatopic.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">hrefditatopiclist</td>
+
+<td class="entry" valign="top" headers="d10247e49 ">All of the topic files that are referenced with
+an href attribute</td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">hreftargetsfile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">hreftargets.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">hreftargetslist</td>
+
+<td class="entry" valign="top" headers="d10247e49 ">link targets</td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">htmlfile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">html.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">htmllist</td>
+
+<td class="entry" valign="top" headers="d10247e49 ">resource files</td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">imagefile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">image.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">imagelist</td>
+
+<td class="entry" valign="top" headers="d10247e49 ">Images files that are referenced in the content</td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">keyreffile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">keyref.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">keyreflist</td>
+
+<td class="entry" valign="top" headers="d10247e49 ">Topics and maps which have key references.</td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">outditafilesfile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">outditafiles.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">outditafileslist</td>
+
+<td class="entry" valign="top" headers="d10247e49 "> </td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">relflagimagefile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">relflagimage.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">relflagimagelist</td>
+
+<td class="entry" valign="top" headers="d10247e49 "> </td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">resourceonlyfile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">resourceonly.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">resourceonlylist</td>
+
+<td class="entry" valign="top" headers="d10247e49 "> </td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">skipchunkfile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">skipchunk.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">skipchunklist</td>
+
+<td class="entry" valign="top" headers="d10247e49 "> </td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">subjectschemefile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">subjectscheme.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">subjectschemelist</td>
+
+<td class="entry" valign="top" headers="d10247e49 "> </td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">subtargetsfile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "><samp class="ph codeph">subtargets.list</samp></td>
+
+<td class="entry" valign="top" headers="d10247e46 ">subtargetslist</td>
+
+<td class="entry" valign="top" headers="d10247e49 "> </td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">tempdirToinputmapdir.relative.value</td>
+
+<td class="entry" valign="top" headers="d10247e43 "> </td>
+
+<td class="entry" valign="top" headers="d10247e46 "> </td>
+
+<td class="entry" valign="top" headers="d10247e49 "> </td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">uplevels</td>
+
+<td class="entry" valign="top" headers="d10247e43 "> </td>
+
+<td class="entry" valign="top" headers="d10247e46 "> </td>
+
+<td class="entry" valign="top" headers="d10247e49 "> </td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">user.input.dir</td>
+
+<td class="entry" valign="top" headers="d10247e43 "> </td>
+
+<td class="entry" valign="top" headers="d10247e46 "> </td>
+
+<td class="entry" valign="top" headers="d10247e49 ">Absolute input directory path</td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">user.input.file.listfile</td>
+
+<td class="entry" valign="top" headers="d10247e43 "> </td>
+
+<td class="entry" valign="top" headers="d10247e46 "> </td>
+
+<td class="entry" valign="top" headers="d10247e49 ">Input file list file</td>
+
+</tr>
+
+<tr class="row">
+<td class="entry" valign="top" headers="d10247e40 ">user.input.file</td>
+
+<td class="entry" valign="top" headers="d10247e43 "> </td>
+
+<td class="entry" valign="top" headers="d10247e46 "> </td>
+
+<td class="entry" valign="top" headers="d10247e49 ">Input file path, relative to input directory</td>
+
+</tr>
+
+</tbody>
+
+</table>
+</div>
+</div>
+
+</div>
+
+<div class="related-links">
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong> <a class="link" href="../dev_ref/DITA-OTPreprocess.html" title="The pre-processing operation is a set of steps that typically runs at the beginning of every DITA-OT transformation. Each step or stage corresponds to an Ant target in the build pipeline; the preprocess target calls the entire set of steps.">Pre-processing modules</a></div>
+<div class="nextlink"><strong>Next topic:</strong> <a class="link" href="../dev_ref/preprocess-debugfilter.html" title="The debug-filter step processes all referenced DITA content and creates copies in a temporary directory. As the DITA content is copied, filtering is performed, debugging information is inserted, and table column names are adjusted. This step is implemented in Java.">Debug and filter (debug-filter)</a></div>
+</div>
+</div>
+
+</body>
+</html>

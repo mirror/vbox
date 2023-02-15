@@ -1,0 +1,560 @@
+<?xml version="1.0" encoding="utf-8"?><!-- This file is part of the DITA Open Toolkit project hosted on
+     Sourceforge.net. See the accompanying license.txt file for
+     applicable licenses.--><!-- (c) Copyright IBM Corp. 2006 All Rights Reserved. --><project name="DOST" default="init">
+
+  <property file="${basedir}/local.properties"></property>
+
+  <!-- Initialize DITA-OT base directory -->
+  <dirname property="ant.file.DOST.dir" file="${ant.file.DOST}"></dirname>
+  <condition property="dita.dir" value="${ant.file.DOST.dir}">
+    <not>
+      <isset property="dita.dir"></isset>
+    </not>
+  </condition>
+  <condition property="dita.dir" value="${basedir}">
+    <not>
+      <isset property="dita.dir"></isset>
+    </not>
+  </condition>
+
+  <path id="dost.class.path">
+
+<pathelement location="${dita.dir}${file.separator}plugins/org.dita.pdf2/lib/fo.jar"/>
+    <pathelement location="${dita.dir}${file.separator}lib${file.separator}dost.jar"></pathelement>
+  </path>
+
+  <target name="init">
+    <dita-ot-fail id="DOTA001F">
+      <condition>
+        <and>
+          <not><equals arg1="${transtype}" arg2="xhtml" casesensitive="false"/></not><not><equals arg1="${transtype}" arg2="htmlhelp" casesensitive="false"/></not><not><equals arg1="${transtype}" arg2="tocjs" casesensitive="false"/></not><not><equals arg1="${transtype}" arg2="eclipsehelp" casesensitive="false"/></not><not><equals arg1="${transtype}" arg2="troff" casesensitive="false"/></not><not><equals arg1="${transtype}" arg2="eclipsecontent" casesensitive="false"/></not><not><equals arg1="${transtype}" arg2="legacypdf" casesensitive="false"/></not><not><equals arg1="${transtype}" arg2="javahelp" casesensitive="false"/></not><not><equals arg1="${transtype}" arg2="wordrtf" casesensitive="false"/></not><not><equals arg1="${transtype}" arg2="odt" casesensitive="false"/></not><not><equals arg1="${transtype}" arg2="pdf" casesensitive="false"/></not><not><equals arg1="${transtype}" arg2="pdf2" casesensitive="false"/></not><not><equals arg1="${transtype}" arg2="docbook" casesensitive="false"/></not>
+        </and>
+      </condition>
+      <param name="1" value="${transtype}"></param>
+    </dita-ot-fail>
+    <condition property="transtarget" value="pdf2" else="${transtype}">
+      <equals arg1="${transtype}" arg2="pdf" casesensitive="false"></equals>
+    </condition>
+    <condition property="clean.temp" value="true">
+      <not><isset property="clean.temp"></isset></not>
+    </condition>
+    <condition property="clean-temp.skip">
+      <isfalse value="${clean.temp}"></isfalse>
+    </condition>
+    <antcall>
+      <target name="dita2${transtarget}"></target>
+      <target name="clean-temp"></target>
+    </antcall>
+  </target>
+
+  <property name='dita.plugin.org.dita.htmlhelp.dir' location='${dita.dir}\plugins/org.dita.htmlhelp'/><property name='dita.plugin.org.dita.base.dir' location='${dita.dir}'/><property name='dita.plugin.org.dita.specialization.h2d.dir' location='${dita.dir}\plugins/h2d'/><property name='dita.plugin.com.sophos.tocjs.dir' location='${dita.dir}\plugins/com.sophos.tocjs'/><property name='dita.plugin.org.dita.eclipsehelp.dir' location='${dita.dir}\plugins/org.dita.eclipsehelp'/><property name='dita.plugin.org.dita.specialization.dita11.dir' location='${dita.dir}\plugins/org.dita.specialization.dita11'/><property name='dita.plugin.org.dita.troff.dir' location='${dita.dir}\plugins/org.dita.troff'/><property name='dita.plugin.org.dita.eclipsecontent.dir' location='${dita.dir}\plugins/org.dita.eclipsecontent'/><property name='dita.plugin.org.dita.legacypdf.dir' location='${dita.dir}\plugins/legacypdf'/><property name='dita.plugin.org.dita.javahelp.dir' location='${dita.dir}\plugins/org.dita.javahelp'/><property name='dita.plugin.org.dita.specialization.eclipsemap.dir' location='${dita.dir}\plugins/org.dita.specialization.eclipsemap'/><property name='dita.plugin.org.dita.wordrtf.dir' location='${dita.dir}\plugins/org.dita.wordrtf'/><property name='dita.plugin.org.dita.xhtml.dir' location='${dita.dir}\plugins/org.dita.xhtml'/><property name='dita.plugin.org.dita.odt.dir' location='${dita.dir}\plugins/org.dita.odt'/><property name='dita.plugin.org.dita.specialization.dita132.dir' location='${dita.dir}\plugins/org.dita.specialization.dita132'/><property name='dita.plugin.org.dita.pdf.dir' location='${dita.dir}\plugins/org.dita.pdf'/><property name='dita.plugin.org.dita.pdf2.dir' location='${dita.dir}\plugins/org.dita.pdf2'/><property name='dita.plugin.org.dita.docbook.dir' location='${dita.dir}\plugins/org.dita.docbook'/>
+  <!--
+  This file is part of the DITA Open Toolkit project hosted on
+  Sourceforge.net. See the accompanying license.txt file for
+  applicable licenses.
+
+  (C) Copyright Shawn McKenzie, 2007. All Rights Reserved.
+
+  UPDATES:
+    20110817 RDA: Several changes:
+        * Use property dita.plugin.com.sophos.tocjs.dir (remove hard-coded demo/ dir)
+        * Original design only works if $output.file is set in an Ant file, and
+          if XHTML is created independently. Refactoring to use that original
+          processing when $output.file is specified; otherwise:
+          1) Return HTML files along with navigation
+          2) Return default frameset (with name based on map name)
+          3) Set $output.file to a default value of toctree.js
+          4) Return supporting JS and CSS files for the default frameset
+  *-->
+
+
+<target name="dita2tocjs" depends="build-init, preprocess, tocjsInit, map2tocjs, topic2tocjs, tocjsDefaultOutput">
+  </target>
+
+
+<target name="tocjsInit">
+
+<condition property="dita.plugin.com.sophos.tocjs.copydefaults" value="true">
+
+<not>
+
+<isset property="output.file"></isset>
+          </not>
+      </condition>
+
+<condition property="output.file" value="${output.dir}${file.separator}toctree.js">
+
+<not>
+
+<isset property="output.file"></isset>
+          </not>
+      </condition>
+  </target>
+
+
+<target name="topic2tocjs" if="noMap">
+
+<antcall target="dita.map.tocjs">
+      <!-- No real support for tocjs on a single topic, only for map -->
+    </antcall>
+
+<echo>The TocJS output type only supports ditamap files as input.</echo>
+  </target>
+
+
+<target name="map2tocjs" unless="noMap">
+
+<antcall target="dita.map.tocjs">
+
+<param name="input" value="${dita.temp.dir}${file.separator}${user.input.file}"></param>
+    </antcall>
+  </target>
+
+
+<target name="dita.map.tocjs" description="generate merged for tocjs">
+
+<xslt in="${input}" out="${output.file}" style="${dita.plugin.com.sophos.tocjs.dir}/xsl/tocjs.xsl">
+
+<param name="contentwin" expression="${content.frame}" if="content.frame"></param>
+
+<param name="ditaext" expression="${dita.ext}" if="dita.ext"></param>
+
+<param name="htmlext" expression="${out.ext}"></param>
+
+<xmlcatalog refid="dita.catalog"></xmlcatalog>
+    </xslt>
+  </target>
+
+
+<target name="tocjsDefaultOutput" if="dita.plugin.com.sophos.tocjs.copydefaults">
+      <!-- Create usable output for people trying tocjs for the first time -->
+
+<antcall target="tocjsDefaultXhtmlOutput"></antcall>
+
+<antcall target="tocjsDefaultFrameset"></antcall>
+      <!-- Copy default JS and related files -->
+
+<copy todir="${output.dir}">
+<fileset dir="${dita.plugin.com.sophos.tocjs.dir}${file.separator}basefiles">
+<include name="**/*"></include></fileset></copy>
+  </target>
+
+
+<target name="tocjsDefaultXhtmlOutput" depends="dita.map.xhtml, copy-revflag, copy-css , dita.topics.xhtml, dita.inner.topics.xhtml, dita.outer.topics.xhtml">
+      <!-- Preprocess has already completed based on original dependencies;
+           this target continues to XHTML for default output. Seems very
+           indirect way to create the XHTML, so would like something better,
+           but do not want to add new XHTML processing for people using
+           the original dita2tocjs target. -->
+  </target>
+
+
+<target name="tocjsDefaultFrameset" if="dita.plugin.com.sophos.tocjs.copydefaults">
+      <!-- Create the default frameset itself -->
+
+<condition property="out.ext" value=".html">
+
+<not>
+
+<isset property="out.ext"></isset>
+          </not>
+      </condition>
+
+<xslt basedir="${dita.temp.dir}" destdir="${output.dir}" includesfile="${dita.temp.dir}${file.separator}${user.input.file.listfile}" extension="${out.ext}" style="${dita.plugin.com.sophos.tocjs.dir}${file.separator}xsl${file.separator}frameset.xsl">
+
+<excludesfile name="${dita.temp.dir}${file.separator}${resourceonlyfile}" if="resourceonlyfile"></excludesfile>
+
+<param name="DITAEXT" expression="${dita.ext}" if="dita.ext"></param>
+
+<param name="OUTEXT" expression="${out.ext}" if="out.ext"></param>
+
+<param name="CSSPATH" expression="${CSSPATH}" if="csspath"></param>
+
+<xmlcatalog refid="dita.catalog"></xmlcatalog>
+      </xslt>
+  </target>
+
+<!-- This file is part of the DITA Open Toolkit project hosted on
+    Sourceforge.net. See the accompanying license.txt file for
+    applicable licenses.--><!-- (c) Copyright IBM Corp. 2006 All Rights Reserved. -->
+
+
+<target name="dita2legacypdf" depends="build-init, topic2legacypdf.init, preprocess, map2legacypdf, topic2legacypdf">
+        </target>
+
+
+<target name="topic2legacypdf.init">
+
+<available classname="org.apache.fop.tools.anttasks.Fop" property="hasFOP">
+
+<classpath>
+
+<pathelement location="${dita.dir}/demo/legacypdf/lib/fop.jar"></pathelement>
+            </classpath>
+          </available>
+          <!-- append a '.' to ${fo.img.ext} if ${args.fo.img.ext} not contains '.' -->
+
+<condition property="fo.img.ext" value=".${args.fo.img.ext}">
+
+<and>
+
+<isset property="args.fo.img.ext"></isset>
+
+<not>
+
+<contains string="${args.fo.img.ext}" substring="."></contains>
+              </not>
+            </and>
+          </condition>
+
+<condition property="fo.img.ext" value="${args.fo.img.ext}">
+
+<and>
+
+<isset property="args.fo.img.ext"></isset>
+
+<contains string="${args.fo.img.ext}" substring="."></contains>
+            </and>
+          </condition>
+        </target>
+
+
+<target name="topic2legacypdf" if="noMap">
+
+<antcall target="dita.topic.fo">
+
+<param name="input" value="${dita.temp.dir}${file.separator}${user.input.file}"></param>
+
+<param name="output" value="${dita.map.output.dir}${file.separator}${dita.topic.filename.root}.fo"></param>
+            </antcall>
+
+<antcall target="dita.fo2pdf">
+
+<param name="input" value="${dita.map.output.dir}${file.separator}${dita.topic.filename.root}.fo"></param>
+
+<param name="output" value="${dita.map.output.dir}${file.separator}${dita.topic.filename.root}.pdf"></param>
+            </antcall>
+        </target>
+
+
+<target name="map2legacypdf" unless="noMap">
+
+<antcall target="dita.map.fo">
+
+<param name="input" value="${dita.temp.dir}${file.separator}${user.input.file}"></param>
+
+<param name="output" value="${dita.map.output.dir}${file.separator}${dita.map.filename.root}.fo"></param>
+            </antcall>
+
+<antcall target="dita.fo2pdf">
+
+<param name="input" value="${dita.map.output.dir}${file.separator}${dita.map.filename.root}.fo"></param>
+
+<param name="output" value="${dita.map.output.dir}${file.separator}${dita.map.filename.root}.pdf"></param>
+            </antcall>
+        </target>
+
+        <!-- Build XSL-FO output from ditamap -->
+
+<target name="dita.map.fo" description="Build XSL-FO output from ditamap">
+
+<condition property="args.xsl" value="${dita.plugin.org.dita.legacypdf.dir}${file.separator}dita2fo-shell.xsl">
+
+<not>
+
+<isset property="args.xsl"></isset>
+                </not>
+            </condition>
+
+<dirname file="${dita.temp.dir}${file.separator}${user.input.file}" property="dita.merged.dir"></dirname>
+
+<xslt in="${input}" out="${dita.merged.dir}${file.separator}${dita.map.filename.root}_MERGED.xml" style="${dita.plugin.org.dita.legacypdf.dir}${file.separator}xslfo${file.separator}topicmerge.xsl">
+                <!--<xmlcatalog refid="dita.catalog" />-->
+            </xslt>
+
+<xslt in="${dita.merged.dir}${file.separator}${dita.map.filename.root}_MERGED.xml" out="${output}" style="${args.xsl}">
+                <!--<xmlcatalog refid="dita.catalog" />-->
+
+<param name="output-related-links" expression="${args.fo.output.rel.links}" if="args.fo.output.rel.links"></param>
+
+<param name="DITAEXT" expression="${dita.ext}" if="dita.ext"></param>
+
+<param name="DRAFT" expression="${args.draft}" if="args.draft"></param>
+
+<param name="ARTLBL" expression="${args.artlbl}" if="args.artlbl"></param>
+
+<param name="dflt-ext" expression="${fo.img.ext}" if="fo.img.ext"></param>
+            </xslt>
+        </target>
+
+        <!-- Build PDF from FO using FOP, need to include FOP, Avalon,
+            and Batik relevant jar files in CLASSPATH -->
+
+<target name="dita.fo2pdf" if="hasFOP" description="Build PDF from FO using FOP">
+
+<taskdef name="fop" classname="org.apache.fop.tools.anttasks.Fop">
+
+<classpath>
+
+<fileset dir="${dita.plugin.org.dita.legacypdf.dir}/lib">
+
+<include name="*.jar"></include>
+                    </fileset>
+
+<fileset dir="${dita.dir}/lib">
+
+<include name="*.jar"></include>
+                    </fileset>
+                </classpath>
+            </taskdef>
+
+<antcall target="dita.fo2pdf.userconfig"></antcall>
+
+<antcall target="dita.fo2pdf.nouserconfig"></antcall>
+        </target>
+
+
+<target name="dita.fo2pdf.userconfig" if="args.fo.userconfig">
+
+<fop format="application/pdf" basedir="${input}" fofile="${input}" outfile="${output}" messagelevel="info" userconfig="${args.fo.userconfig}">
+            </fop>
+        </target>
+
+
+<target name="dita.fo2pdf.nouserconfig" unless="args.fo.userconfig">
+
+<fop format="application/pdf" basedir="${input}" fofile="${input}" outfile="${output}" messagelevel="info">
+            </fop>
+        </target>
+
+        <!-- Build XSL-FO output from dita topic -->
+
+<target name="dita.topic.fo" description="Build XSL-FO output from dita topic">
+
+<condition property="args.xsl" value="${dita.plugin.org.dita.legacypdf.dir}${file.separator}dita2fo-shell.xsl">
+
+<not>
+
+<isset property="args.xsl"></isset>
+                </not>
+            </condition>
+
+<xslt in="${input}" out="${output}" style="${args.xsl}">
+                <!--<xmlcatalog refid="dita.catalog" />-->
+
+<param name="output-related-links" expression="${args.fo.output.rel.links}" if="args.fo.output.rel.links"></param>
+
+<param name="DITAEXT" expression="${dita.ext}" if="dita.ext"></param>
+
+<param name="DRAFT" expression="${args.draft}" if="args.draft"></param>
+
+<param name="ARTLBL" expression="${args.artlbl}" if="args.artlbl"></param>
+
+<param name="dflt-ext" expression="${fo.img.ext}" if="fo.img.ext"></param>
+            </xslt>
+        </target>
+
+    <!-- This file is part of the DITA Open Toolkit project hosted on
+    Sourceforge.net. See the accompanying license.txt file for
+    applicable licenses.--><!--
+    | (C) Copyright IBM Corporation 2006. All Rights Reserved.
+    *-->
+
+  <!--property name="dita.eclipse.plugin" value="no"/-->
+
+
+  <!--
+  This file is part of the DITA Open Toolkit project.
+  See the accompanying license.txt file for applicable licenses.
+-->
+
+<import file="plugins/org.dita.xhtml/build_general.xml"></import>
+
+<import file="plugins/org.dita.xhtml/build_dita2xhtml.xml"></import>
+<!--
+  This file is part of the DITA Open Toolkit project.
+  See the accompanying license.txt file for applicable licenses.
+-->
+
+<import file="plugins/org.dita.htmlhelp/build_dita2htmlhelp.xml"></import>
+<!--
+  This file is part of the DITA Open Toolkit project.
+  See the accompanying license.txt file for applicable licenses.
+-->
+
+<import file="plugins/org.dita.base/build_init.xml"></import>
+
+<import file="plugins/org.dita.base/build_preprocess.xml"></import>
+<!--
+  This file is part of the DITA Open Toolkit project.
+  See the accompanying license.txt file for applicable licenses.
+-->
+
+<import file="plugins/org.dita.eclipsehelp/build_dita2eclipsehelp.xml"></import>
+<!--
+  This file is part of the DITA Open Toolkit project.
+  See the accompanying license.txt file for applicable licenses.
+-->
+
+<import file="plugins/org.dita.troff/build_dita2troff.xml"></import>
+<!--
+  This file is part of the DITA Open Toolkit project.
+  See the accompanying license.txt file for applicable licenses.
+-->
+
+<import file="plugins/org.dita.eclipsecontent/build_dita2eclipsecontent.xml"></import>
+<!--
+  This file is part of the DITA Open Toolkit project.
+  See the accompanying license.txt file for applicable licenses.
+-->
+
+<import file="plugins/org.dita.javahelp/build_dita2javahelp.xml"></import>
+<!--
+  This file is part of the DITA Open Toolkit project.
+  See the accompanying license.txt file for applicable licenses.
+-->
+
+<import file="plugins/org.dita.wordrtf/build_dita2wordrtf.xml"></import>
+<!--
+  This file is part of the DITA Open Toolkit project.
+  See the accompanying license.txt file for applicable licenses.
+-->
+
+<import file="plugins/org.dita.odt/build_dita2odt.xml"></import>
+
+
+
+<import file="plugins/org.dita.pdf2/build.xml"></import>
+
+<!--
+  This file is part of the DITA Open Toolkit project.
+  See the accompanying license.txt file for applicable licenses.
+-->
+
+<import file="plugins/org.dita.docbook/build_dita2docbook.xml"></import>
+
+
+  <target name="help">
+    <echo level="info">Mandatory properties:</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.input=&lt;file&gt;</echo>
+    <echo level="info">    Path and name of the input file.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  transtype={docbook|eclipsecontent|eclipsehelp|htmlhelp|javahelp|legacypdf|odt|pdf|pdf2|tocjs|troff|wordrtf|xhtml}</echo>
+    <echo level="info">    Transformation type.</echo>
+    <echo level="info"></echo>
+    <echo level="info">Optional properties:</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.logdir=&lt;dir&gt;</echo>
+    <echo level="info">    Log directory.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.draft={yes|no}</echo>
+    <echo level="info">    Specify whether to output draft info. Default is &quot;no&quot;.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.ftr=&lt;file&gt;</echo>
+    <echo level="info">    File to be placed in the BODY running-footing area.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.hdr=&lt;file&gt;</echo>
+    <echo level="info">    File to be placed in the BODY running-heading area.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.hdf=&lt;file&gt;</echo>
+    <echo level="info">    File to be placed in the HEAD area.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.csspath=&lt;file|url&gt;</echo>
+    <echo level="info">    Path for CSS reference.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.css=&lt;file&gt;</echo>
+    <echo level="info">    User CSS file.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.cssroot=&lt;dir&gt;</echo>
+    <echo level="info">    Root directory for user specified CSS file.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.copycss={yes|no}</echo>
+    <echo level="info">    Copy user specified CSS files. Default is &quot;no&quot;.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.indexshow={yes|no}</echo>
+    <echo level="info">    Index entries should display within the body of the text itself. Default is &quot;no&quot;.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.outext=&lt;ext&gt;</echo>
+    <echo level="info">    Output file extension for generated XHTML files. Default is &quot;.html&quot;.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.xsl=&lt;file&gt;</echo>
+    <echo level="info">    XSLT file used to replace the default XSLT file.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.xsl.pdf=&lt;file&gt;</echo>
+    <echo level="info">    XSLT file used to replace the default XSLT file when transforming PDF.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.odt.include.rellinks={none|all|nofamily}</echo>
+    <echo level="info">    Determine which links are included in the ODT. Default is &quot;none&quot;.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.javahelp.toc=&lt;file&gt;</echo>
+    <echo level="info">    Root file name of the output javahelp toc file in javahelp transformation. Default is the name of the input ditamap file.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.javahelp.map=&lt;file&gt;</echo>
+    <echo level="info">    Root file name of the output javahelp map file in javahelp transformation. Default is the name of the input ditamap file.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.eclipsehelp.toc=&lt;file&gt;</echo>
+    <echo level="info">    Root file name of the output eclipsehelp toc file in eclipsehelp transformation. Default is the name of the input ditamap file.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.eclipsecontent.toc=&lt;file&gt;</echo>
+    <echo level="info">    Root file name of the output Eclipse content provider toc file in eclipsecontent transformation. Default is the name of the input ditamap file.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.debug={yes|no}</echo>
+    <echo level="info">    Extra debug information should be included in the log. Default is &quot;no&quot;.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.grammar.cache={yes|no}</echo>
+    <echo level="info">    Use grammar pool caching when parsing dita files. Default is &quot;yes&quot;.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.odt.img.embed={yes|no}</echo>
+    <echo level="info">    Embedding images as binary data in ODT transform. Default is &quot;yes&quot;.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.xhtml.toc=&lt;file&gt;</echo>
+    <echo level="info">    Root file name of the output XHTML toc file in XHTML transformation.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.xhtml.classattr={yes|no}</echo>
+    <echo level="info">    DITA element names and ancestry are included in XHTML class attributes. Default is &quot;yes&quot;.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.gen.task.lbl={YES|NO}</echo>
+    <echo level="info">    DITA Task sections should get headings. Default is &quot;NO&quot;.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  artlbl={yes|no}</echo>
+    <echo level="info">    Specify whether to output artwork filenames.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  basedir=&lt;dir&gt;</echo>
+    <echo level="info">    Working directory.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  clean.temp={yes|no}</echo>
+    <echo level="info">    Clean the temp directory before each build. Default is &quot;yes&quot;.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  dita.dir=&lt;dir&gt;</echo>
+    <echo level="info">    Toolkit&apos;s home directory.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  dita.temp.dir=&lt;dir&gt;</echo>
+    <echo level="info">    Temporary directory.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  dita.extname=&lt;ext&gt;</echo>
+    <echo level="info">    File extension name to be used in the temp directory. Default is &quot;.xml&quot;.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  args.filter=&lt;file&gt;</echo>
+    <echo level="info">    Name of the file that contains the filter/flaggin/revision information.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  generate.copy.outer={1|2|3}</echo>
+    <echo level="info">    Specify how to deal with the overflowing dita/topic files. Default is &quot;1&quot;.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  onlytopic.in.map={true|false}</echo>
+    <echo level="info">    Make dita processor only resolve dita/topic files which are referenced by primary ditamap files. Default is &quot;false&quot;.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  out.dir=&lt;dir&gt;</echo>
+    <echo level="info">    Output directory.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  outer.control={fail|warn|quiet}</echo>
+    <echo level="info">    Respond to the overflowing dita/topic files. Default is &quot;warn&quot;.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  retain.topic.fo</echo>
+    <echo level="info">    Temporary FO file should be preserved in the output directory. Specify any value, such as &quot;yes&quot;, to preserve the file.</echo>
+    <echo level="info"></echo>
+    <echo level="info">  validate={true|false}</echo>
+    <echo level="info">    Input files are validated. Default is &quot;true&quot;.</echo>
+  </target>
+
+</project>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en-us" lang="en-us">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="copyright" content="(C) Copyright 2005"/>
+<meta name="DC.rights.owner" content="(C) Copyright 2005"/>
+<meta name="DC.Type" content="concept"/>
+<meta name="DC.Title" content="HTML Help processing"/>
+<meta name="abstract" content="The htmlhelp transformation created HTML Help control files. If the build runs on a system that has the HTML Help compiler installed, the control files are compiled into a CHM file."/>
+<meta name="description" content="The htmlhelp transformation created HTML Help control files. If the build runs on a system that has the HTML Help compiler installed, the control files are compiled into a CHM file."/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/XhtmlWithNavigation.html"/>
+<meta name="DC.Format" content="XHTML"/>
+<meta name="DC.Identifier" content="xhtmlchm"/>
+<meta name="DC.Language" content="en-us"/>
+<link rel="stylesheet" type="text/css" href="../commonltr.css"/>
+<link rel="stylesheet" type="text/css" href="../dita-ot-doc.css"/>
+<title>HTML Help processing</title>
+</head>
+<body id="xhtmlchm">
+
+
+<h1 class="title topictitle1">HTML Help processing</h1>
+
+
+<div class="body conbody"><p class="shortdesc">The <span class="keyword option">htmlhelp</span> transformation created HTML Help control files. If the
+build runs on a system that has the HTML Help compiler installed, the control files are compiled
+into a CHM file.</p>
+
+<div class="section"><p class="p">Once the pre-processing and XHTML processes are completed, most of the HTML Help processing is
+handled by the following targets:</p>
+
+<dl class="dl">
+
+<dt class="dt dlterm"><samp class="ph codeph">dita.map.htmlhelp</samp></dt>
+
+<dd class="dd">Create the HHP, HHC, and HHK files. The HHK file is sorted based on the language of the
+map.</dd>
+
+
+
+<dt class="dt dlterm"><samp class="ph codeph">dita.htmlhelp.convertlang</samp></dt>
+
+<dd class="dd">Ensures that the content can be processed correctly by the compiler, and that the appropriate
+code pages and languages are used.</dd>
+
+
+
+<dt class="dt dlterm"><samp class="ph codeph">compile.HTML.Help</samp></dt>
+
+<dd class="dd">Attempts to detect the HTML Help compiler. If the compiler is found, the full project is
+compiled into a single CHM file.</dd>
+
+
+</dl>
+</div>
+
+</div>
+
+<div class="related-links">
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong> <a class="link" href="../dev_ref/XhtmlWithNavigation.html" title="The DITA-OT ships with several varieties of XHTML output, each of which follows roughly the same path through the processing pipeline. All XHTML-based transformation begin with the same call to the pre-processing module, after which they generate XHTML files and then branch to create the transformation-specific navigation files.">XHTML processing modules</a></div>
+</div>
+</div>
+
+</body>
+</html>

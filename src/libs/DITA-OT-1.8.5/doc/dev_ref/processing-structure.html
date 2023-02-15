@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en-us" lang="en-us">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="copyright" content="(C) Copyright 2005"/>
+<meta name="DC.rights.owner" content="(C) Copyright 2005"/>
+<meta name="DC.Type" content="concept"/>
+<meta name="DC.Title" content="DITA-OT processing structure"/>
+<meta name="abstract" content="The DITA-OT implements a multi-stage, map-driven architecture to process DITA content. Each stage in the process examines some or all of the content; some stages result in temporary files that are used by later steps, while others stages result in updated copies of the DITA content. Most of the processing takes place in a temporary working directory; the source files themselves are never modified."/>
+<meta name="description" content="The DITA-OT implements a multi-stage, map-driven architecture to process DITA content. Each stage in the process examines some or all of the content; some stages result in temporary files that are used by later steps, while others stages result in updated copies of the DITA content. Most of the processing takes place in a temporary working directory; the source files themselves are never modified."/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/DITA-OTArchitecture.html"/>
+<meta name="DC.Format" content="XHTML"/>
+<meta name="DC.Identifier" content="processing-structure"/>
+<link rel="stylesheet" type="text/css" href="../commonltr.css"/>
+<link rel="stylesheet" type="text/css" href="../dita-ot-doc.css"/>
+<title>DITA-OT processing structure</title>
+</head>
+<body id="processing-structure">
+
+
+ <h1 class="title topictitle1">DITA-OT processing structure</h1>
+
+ 
+ <div class="body conbody"><p class="shortdesc">The DITA-OT implements a multi-stage, map-driven architecture to process DITA content.
+  Each stage in the process examines some or all of the content; some stages result in temporary
+  files that are used by later steps, while others stages result in updated copies of the DITA
+  content. Most of the processing takes place in a temporary working directory; the source files
+  themselves are never modified.</p>
+
+  <p class="p">The DITA-OT is designed as a pipeline. Most of the pipeline is common to all output formats; it
+   is known as the <dfn class="term">pre-processing stage</dfn>. In general, any DITA process begins with this
+   common set of pre-processing routines. Once the pre-processing is completed, the pipeline
+   diverges based on the requested output format. Some processing is still common to multiple output
+   formats; for example, Eclipse Help and HTML Help both use the same routines to generate XHTML
+   topics, after which the two pipelines branch to create different sets of navigation files.</p>
+
+  <p class="p">The following image illustrates how the pipeline works for some common output types: Docbook,
+   PDF, Eclipse Help, XHTML, JavaHelp, and HTML Help.</p>
+
+  <br/><img class="image" src="images/mainarch.gif" alt="Diagram of some possible paths through the transform pipeline."/><br/>
+ </div>
+
+<div class="related-links">
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong> <a class="link" href="../dev_ref/DITA-OTArchitecture.html" title="The DITA Open Toolkit (DITA-OT) is an open-source implementation of the OASIS specification for the Darwin Information Typing Architecture (DITA). The toolkit uses ANT, XSLT, and Java to implement transforming DITA content (maps and topics) into different deliverable formats.">Architecture of the DITA Open Toolkit</a></div>
+</div>
+</div>
+
+</body>
+</html>

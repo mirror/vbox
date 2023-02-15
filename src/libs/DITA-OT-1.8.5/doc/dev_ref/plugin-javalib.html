@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en-us" lang="en-us">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="copyright" content="(C) Copyright 2005"/>
+<meta name="DC.rights.owner" content="(C) Copyright 2005"/>
+<meta name="DC.Type" content="reference"/>
+<meta name="DC.Title" content="Adding Java libraries to the classpath"/>
+<meta name="abstract" content="If your Ant or XSLT extensions require additional Java libraries in the classpath, you can add them to the global DITA-OT classpath with the following feature."/>
+<meta name="description" content="If your Ant or XSLT extensions require additional Java libraries in the classpath, you can add them to the global DITA-OT classpath with the following feature."/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/plugins-overview.html"/>
+<meta name="DC.Format" content="XHTML"/>
+<meta name="DC.Identifier" content="plugin-javalib"/>
+<meta name="DC.Language" content="en-us"/>
+<link rel="stylesheet" type="text/css" href="../commonltr.css"/>
+<link rel="stylesheet" type="text/css" href="../dita-ot-doc.css"/>
+<title>Adding Java libraries to the classpath</title>
+</head>
+<body id="plugin-javalib">
+
+
+<h1 class="title topictitle1">Adding Java libraries to the classpath</h1>
+
+
+<div class="body refbody"><p class="shortdesc">If your Ant or XSLT extensions require additional Java
+libraries in the classpath, you can add them to the global DITA-OT
+classpath with the following feature.</p>
+
+<div class="section">       <dl class="dl">
+<dt class="dt dlterm"><samp class="ph codeph">dita.conductor.lib.import</samp></dt>
+
+<dd class="dd">Add Java libraries to DITA-OT classpath.</dd>
+
+</dl>
+       </div>
+
+<div class="example"><h2 class="title sectiontitle">Example</h2><p class="p">The following plug-in adds the compiled
+Java code from <span class="ph filepath">myJavaLibrary.jar</span> into the global
+DITA-OT classpath. XSLT or Ant code can then make use of the added
+code.</p>
+<pre class="pre codeblock">&lt;plugin id="com.example.addjar"&gt;
+  &lt;feature extension="dita.conductor.lib.import" file="myJavaLibrary.jar"/&gt;
+&lt;/plugin&gt;</pre>
+<p class="p">Now assume that in this case myJavaLibrary.jar
+performs some validation step in the middle of processing, and you
+always want it to run immediately before the conref step. In that
+case you need to make use of several features in this plug-in</p>
+<ul class="ul">
+<li class="li">The JAR file must be added to the classpath.</li>
+
+<li class="li">An Ant target must be created that uses this class, and the Ant
+wrapper integrated into the code.</li>
+
+<li class="li">The Ant target must be added to the dependency chain for conref.</li>
+
+</ul>
+<p class="p">In this extended example, the files might look something like
+this.</p>
+<pre class="pre codeblock">plugin.xml:
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;plugin id="com.example.samplejava"&gt;
+  &lt;!-- Add the JAR file to the DITA-OT CLASSPATH --&gt;
+  <strong class="ph b">&lt;feature extension="dita.conductor.lib.import" file="com.example.sampleValidation.jar"/&gt;</strong>
+  &lt;!-- Integrate the Ant code --&gt;
+  &lt;feature extension="dita.conductor.target.relative" file="antWrapper.xml"/&gt;
+  &lt;!-- Define the Ant target that is called, and the location (before conref) --&gt;
+  &lt;feature extension="depend.preprocess.conref.pre" value="validateWithJava"/&gt;
+&lt;/plugin&gt;
+
+antWrapper.xml imports the new Ant code:
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;dummy&gt;
+  &lt;import file="calljava-antcode.xml"/&gt;
+&lt;/dummy&gt;
+
+calljava-antcode.xml:
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project default="validateWithJava"&gt;
+  &lt;target name="validateWithJava"&gt;
+    &lt;java classname="com.example.sampleValidation"&gt;
+      &lt;!-- The class was added to dost.class.path (the DITA-OT classpath) --&gt;
+      &lt;classpath refid="dost.class.path"/&gt;
+    &lt;/java&gt;
+  &lt;/target&gt;
+&lt;/project&gt;</pre>
+</div>
+
+</div>
+
+<div class="related-links">
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong> <a class="link" href="../dev_ref/plugins-overview.html" title="The DITA Open Toolkit comes with a built in mechanism for adding in extensions through plug-ins. These plug-ins may do a wide variety of things, such as adding support for specialized DITA DTDs or Schemas, integrating processing overrides, or even providing entirely new output transforms. Plug-ins are the best way to extend the toolkit in a way that is consistent, easily sharable, and easy to preserve through toolkit upgrades.">Creating DITA-OT plug-ins</a></div>
+</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en-us" lang="en-us">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="copyright" content="(C) Copyright 2005"/>
+<meta name="DC.rights.owner" content="(C) Copyright 2005"/>
+<meta name="DC.Type" content="concept"/>
+<meta name="DC.Title" content="Pre-processing modules"/>
+<meta name="abstract" content="The pre-processing operation is a set of steps that typically runs at the beginning of every DITA-OT transformation. Each step or stage corresponds to an Ant target in the build pipeline; the preprocess target calls the entire set of steps."/>
+<meta name="description" content="The pre-processing operation is a set of steps that typically runs at the beginning of every DITA-OT transformation. Each step or stage corresponds to an Ant target in the build pipeline; the preprocess target calls the entire set of steps."/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/DITA-OTArchitecture.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/preprocess-genlist.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/preprocess-debugfilter.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/preprocess-copyfiles.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/preprocess-conrefpush.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/preprocess-conref.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/preprocess-metadata.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/preprocess-keyref.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/preprocess-coderef.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/preprocess-mapref.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/preprocess-mappull.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/preprocess-chunk.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/preprocess-maplink.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/preprocess-topicpull.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/preprocess-flagging.html"/>
+<meta name="DC.Format" content="XHTML"/>
+<meta name="DC.Identifier" content="preprocessarch"/>
+<meta name="DC.Language" content="en-us"/>
+<link rel="stylesheet" type="text/css" href="../commonltr.css"/>
+<link rel="stylesheet" type="text/css" href="../dita-ot-doc.css"/>
+<title>Pre-processing modules</title>
+</head>
+<body id="preprocessarch">
+
+
+<h1 class="title topictitle1">Pre-processing modules</h1>
+
+<p class="shortdesc">The pre-processing operation is a set of steps that typically runs at the beginning of
+  every DITA-OT transformation. Each step or stage corresponds to an Ant target in the build
+  pipeline; the preprocess target calls the entire set of steps.</p>
+
+<div class="related-links">
+<ol class="olchildlinks">
+<li class="link olchildlink"><a href="../dev_ref/preprocess-genlist.html">Generate lists (gen-list)</a><br/>
+The <samp class="ph codeph">gen-list</samp> step examines the input files and creates lists of topics, images, document properties, or other content. These lists are used by later steps in the pipeline. For example, one list includes all topics that make use of the conref attribute; only those files are processed         during the conref stage of the build. This step is implemented in Ant and Java.</li>
+<li class="link olchildlink"><a href="../dev_ref/preprocess-debugfilter.html">Debug and filter (debug-filter)</a><br/>
+The <samp class="ph codeph">debug-filter</samp> step processes all referenced DITA content and creates copies in a temporary directory. As the DITA content is copied, filtering is performed, debugging information is inserted, and table column names are adjusted. This step is implemented in Java.</li>
+<li class="link olchildlink"><a href="../dev_ref/preprocess-copyfiles.html">Copy related files (copy-files)</a><br/>
+The <samp class="ph codeph">copy-files</samp> step copies non-DITA resources to the output directory,   such as HTML files that are referenced in a map or images that are referenced by a DITAVAL   file.</li>
+<li class="link olchildlink"><a href="../dev_ref/preprocess-conrefpush.html">Conref push (conrefpush)</a><br/>
+The <samp class="ph codeph">conrefpush</samp> step resolves "conref push" references. This step only     processes documents that use conref push or that are updated due to the push action. This step     is implemented in Java.</li>
+<li class="link olchildlink"><a href="../dev_ref/preprocess-conref.html">Conref (conref)</a><br/>
+The <samp class="ph codeph">conref</samp> step resolves conref attributes, processing only the DITA     maps or topics that use the @conref attribute. This step is implemented in XSLT.</li>
+<li class="link olchildlink"><a href="../dev_ref/preprocess-metadata.html">Move metadata (move-meta-entries)</a><br/>
+The <samp class="ph codeph">move-meta-entries</samp> step pushes metadata back and forth between maps   and topics. For example, index entries and copyrights in the map are pushed into affected topics,   so that the topics can be processed later in isolation while retaining all relevant metadata. This   step is implemented in Java.</li>
+<li class="link olchildlink"><a href="../dev_ref/preprocess-keyref.html">Resolve keyref (keyref)</a><br/>
+The <samp class="ph codeph">keyref</samp> step examines all the keys that are defined in the DITA   source and resolved the key references. Links that make use of keys are updated so that any @href   value is replaced by the appropriate target; key-based text replacement is also performed. This   step is implemented in Java.</li>
+<li class="link olchildlink"><a href="../dev_ref/preprocess-coderef.html">Resolve code references (codref)</a><br/>
+The <samp class="ph codeph">coderef</samp> step resolves references made with the &lt;coderef&gt; element.     This step is implemented in Java.</li>
+<li class="link olchildlink"><a href="../dev_ref/preprocess-mapref.html">Resolve map references (mapref)</a><br/>
+The <samp class="ph codeph">mapref</samp> step resolves references from one DITA map to another. This         step is implemented in XSLT.</li>
+<li class="link olchildlink"><a href="../dev_ref/preprocess-mappull.html">Pull content into maps (mappull)</a><br/>
+The <samp class="ph codeph">mappull</samp> step pulls content from referenced topics into maps, and then cascades data within maps. This step is implemented in XSLT.</li>
+<li class="link olchildlink"><a href="../dev_ref/preprocess-chunk.html">Chunk topics (chunk)</a><br/>
+The <samp class="ph codeph">chunk</samp> step breaks apart and assembles referenced DITA content based on the @chunk attribute in maps. This step is implemented in Java.</li>
+<li class="link olchildlink"><a href="../dev_ref/preprocess-maplink.html">Map based linking (maplink and move-links)</a><br/>
+These two steps work together to create links based on a map and move those links into     the referenced topics. The links are created based on hierarchy in the DITA map, the     @collection-type attribute, and relationship tables. This step is implemented in XSLT and     Java.</li>
+<li class="link olchildlink"><a href="../dev_ref/preprocess-topicpull.html">Pull content into topics (topicpull)</a><br/>
+The <samp class="ph codeph">topicpull</samp> step pulls content into &lt;xref&gt; and &lt;link&gt; elements. This step is implemented in XSLT.</li>
+<li class="link olchildlink"><a href="../dev_ref/preprocess-flagging.html">Flagging in the toolkit</a><br/>
+Beginning with DITA-OT 1.7, flagging support is implemented as a common preprocess module. The module evaluates the DITAVAL against all flagging attributes, and adds DITA-OT specific hints in to the topic when flags are active. Any extended transform type may use these hints to support flagging without adding logic to interpret the DITAVAL.</li>
+</ol>
+
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong> <a class="link" href="../dev_ref/DITA-OTArchitecture.html" title="The DITA Open Toolkit (DITA-OT) is an open-source implementation of the OASIS specification for the Darwin Information Typing Architecture (DITA). The toolkit uses ANT, XSLT, and Java to implement transforming DITA content (maps and topics) into different deliverable formats.">Architecture of the DITA Open Toolkit</a></div>
+</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en-us" lang="en-us">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="copyright" content="(C) Copyright 2005"/>
+<meta name="DC.rights.owner" content="(C) Copyright 2005"/>
+<meta name="DC.Type" content="concept"/>
+<meta name="DC.Title" content="Common XHTML processing"/>
+<meta name="abstract" content="After the pre-processing operation runs, XHTML-based builds each run a common series of Ant targets to generate XHTML file. Navigation may be created before or after this set of common routines."/>
+<meta name="description" content="After the pre-processing operation runs, XHTML-based builds each run a common series of Ant targets to generate XHTML file. Navigation may be created before or after this set of common routines."/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/XhtmlWithNavigation.html"/>
+<meta name="DC.Format" content="XHTML"/>
+<meta name="DC.Identifier" content="XhtmlCommon"/>
+<link rel="stylesheet" type="text/css" href="../commonltr.css"/>
+<link rel="stylesheet" type="text/css" href="../dita-ot-doc.css"/>
+<title>Common XHTML processing</title>
+</head>
+<body id="XhtmlCommon">
+
+
+ <h1 class="title topictitle1">Common XHTML processing</h1>
+
+ 
+ <div class="body conbody"><p class="shortdesc">After the pre-processing operation runs, XHTML-based builds each run a common series of
+  Ant targets to generate XHTML file. Navigation may be created before or after this set of common
+  routines.</p>
+
+  <div class="p">After the pre-processing is completed, the following targets are run for all of the XHTML-based builds:<ul class="ul">
+    <li class="li">If the <span class="keyword parmname">arg.css</span> parameter is passed to the build to add a CSS file, the
+      <samp class="ph codeph">copy-css</samp> target copies the CSS file from its source location to the relative
+     location in the output directory.</li>
+
+    <li class="li">If a DITAVAL file is used, the <samp class="ph codeph">copy-revflag</samp> target copies the default
+     start- and end-revision flags into the output directory.</li>
+
+    <li class="li">The DITA topics are converted to XHTML files. Unless the @chunk attribute was specified,
+     each DITA topic in the temporary directory now corresponds to one XHTML file.
+      The<samp class="ph codeph">dita.inner.topics.xhtml</samp> target is used to process documents that are in
+     the map directory (or subdirectories of the map directory). The
+      <samp class="ph codeph">dita.outer.topics.xhtml</samp> target is used to process documents that are outside
+     of the scope of the map, and thus might end up outside of the designated output directory.
+     Various DITA-OT parameters control how documents processed by the
+      <samp class="ph codeph">dita.outer.topics.xhtml</samp> target are handled.</li>
+
+   </ul>
+</div>
+
+ </div>
+
+<div class="related-links">
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong> <a class="link" href="../dev_ref/XhtmlWithNavigation.html" title="The DITA-OT ships with several varieties of XHTML output, each of which follows roughly the same path through the processing pipeline. All XHTML-based transformation begin with the same call to the pre-processing module, after which they generate XHTML files and then branch to create the transformation-specific navigation files.">XHTML processing modules</a></div>
+</div>
+</div>
+
+</body>
+</html>

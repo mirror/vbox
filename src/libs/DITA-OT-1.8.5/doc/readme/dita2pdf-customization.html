@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="copyright" content="(C) Copyright 2005"/>
+<meta name="DC.rights.owner" content="(C) Copyright 2005"/>
+<meta name="DC.Type" content="task"/>
+<meta name="DC.Title" content="Customizing PDF output"/>
+<meta name="abstract" content="Example of PDF output customization with a custom transformation type."/>
+<meta name="description" content="Example of PDF output customization with a custom transformation type."/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/developer-reference.html"/>
+<meta name="DC.Format" content="XHTML"/>
+<meta name="DC.Identifier" content="dita2pdf-customization"/>
+<meta name="DC.Language" content="en"/>
+<link rel="stylesheet" type="text/css" href="../commonltr.css"/>
+<link rel="stylesheet" type="text/css" href="../dita-ot-doc.css"/>
+<title>Customizing PDF output</title>
+</head>
+<body id="dita2pdf-customization">
+
+
+  <h1 class="title topictitle1">Customizing PDF output</h1>
+
+  
+  <div class="body taskbody"><p class="shortdesc">Example of PDF output customization with a custom transformation type.</p>
+
+    <div class="tasklabel"><h2 class="sectiontitle tasklabel">Procedure</h2></div><ol class="ol steps"><li class="li step stepexpand">
+        <span class="ph cmd">Create a new plug-in directory <span class="ph filepath">com.example.print-pdf</span> into DITA-OT
+            <span class="ph filepath">plugins</span> directory.</span>
+      </li>
+<li class="li step stepexpand">
+      <span class="ph cmd">Create a plug-in configuration file <span class="ph filepath">plugin.xml</span>, declare the new
+          transformation type <span class="keyword">print-pdf</span> and dependencies.</span>
+      <div class="itemgroup info"><div class="fig fignone"><pre class="pre codeblock">&lt;?xml version='1.0' encoding='UTF-8'?&gt;
+&lt;plugin id="com.example.print-pdf"&gt;
+  &lt;require plugin="org.dita.pdf2"/&gt;
+  &lt;feature extension="dita.conductor.transtype.check" value="print-pdf"/&gt;
+  &lt;feature extension="dita.transtype.print" value="print-pdf"/&gt;
+  &lt;feature extension="dita.conductor.target.relative" file="integrator.xml"/&gt;
+&lt;/plugin&gt;</pre>
+</div>
+</div>
+      </li>
+<li class="li step stepexpand">
+      <span class="ph cmd">Add an Ant script <span class="ph filepath">integrator.xml</span> to define the transformation
+          type.</span>
+      <div class="itemgroup info"><pre class="pre codeblock">&lt;?xml version='1.0' encoding='UTF-8'?&gt;
+&lt;project name="com.example.print-pdf"&gt;
+  &lt;target name="dita2print-pdf.init"&gt;
+    &lt;property name="customization.dir" location="${dita.plugin.com.example.print-pdf.dir}/cfg"/&gt;
+  &lt;/target&gt;
+  &lt;target name="dita2print-pdf" depends="dita2print-pdf.init, dita2pdf2"/&gt;
+&lt;/project&gt;</pre>
+</div>
+      </li>
+<li class="li step stepexpand">
+      <span class="ph cmd">Add a <span class="ph filepath">cfg/catalog.xml</span> file to take custom XSLT stylesheets into
+          use.</span>
+      <div class="itemgroup info"><pre class="pre codeblock">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;catalog prefer="system" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog"&gt;
+  &lt;uri name="cfg:fo/attrs/custom.xsl" uri="fo/attrs/custom.xsl"/&gt;
+  &lt;uri name="cfg:fo/xsl/custom.xsl" uri="fo/xsl/custom.xsl"/&gt;
+&lt;/catalog&gt;</pre>
+</div>
+      </li>
+<li class="li step stepexpand">
+      <span class="ph cmd">Add attribute and variable overrides to
+          <span class="ph filepath">cfg/fo/attrs/custom.xsl</span></span>
+     <div class="itemgroup info"> <pre class="pre codeblock">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                version="2.0"&gt;
+  &lt;!-- Change page size to A4 --&gt;
+  &lt;xsl:variable name="page-width"&gt;210mm&lt;/xsl:variable&gt;
+  &lt;xsl:variable name="page-height"&gt;297mm&lt;/xsl:variable&gt;
+&lt;/xsl:stylesheet&gt;</pre>
+</div>
+      </li>
+<li class="li step stepexpand">
+        <span class="ph cmd">Add XSLT overrides to <span class="ph filepath">cfg/fo/xsl/custom.xsl</span></span>
+        <div class="itemgroup info">
+          <pre class="pre codeblock">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                xmlns:fo="http://www.w3.org/1999/XSL/Format"
+                version="2.0"&gt;
+  &lt;!-- Move figure title to top and description to bottom --&gt;
+  &lt;xsl:template match="*[contains(@class,' topic/fig ')]"&gt;
+    &lt;fo:block xsl:use-attribute-sets="fig"&gt;
+      &lt;xsl:call-template name="commonattributes"/&gt;
+      &lt;xsl:if test="not(@id)"&gt;
+        &lt;xsl:attribute name="id"&gt;
+          &lt;xsl:call-template name="get-id"/&gt;
+        &lt;/xsl:attribute&gt;
+      &lt;/xsl:if&gt;
+      &lt;xsl:apply-templates select="*[contains(@class,' topic/title ')]"/&gt;
+      &lt;xsl:apply-templates select="*[not(contains(@class,' topic/title ') or contains(@class,' topic/desc '))]"/&gt;
+      &lt;xsl:apply-templates select="*[contains(@class,' topic/desc ')]"/&gt;
+    &lt;/fo:block&gt;
+  &lt;/xsl:template&gt;
+&lt;/xsl:stylesheet&gt;</pre>
+
+        </div>
+      </li>
+<li class="li step stepexpand">
+        <span class="ph cmd">Add variable definition file <span class="ph filepath">cfg/common/vars/en.xml</span> for English to
+          override generated text.</span>
+        <div class="itemgroup info">
+          <pre class="pre codeblock">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;vars xmlns="http://www.idiominc.com/opentopic/vars"&gt;
+  &lt;!-- Remove dot from list number --&gt;
+  &lt;variable id="Ordered List Number"&gt;&lt;param ref-name="number"/&gt;&lt;/variable&gt;
+  &lt;!-- Change unordered list bullet to an em dash --&gt;
+  &lt;variable id="Unordered List bullet"&gt;&amp;#x2014;&lt;/variable&gt;
+&lt;/vars&gt;</pre>
+
+        </div>
+      </li>
+</ol>
+
+    <div class="section result" id="dita2pdf-customization__result_23y_yv3_tf"><div class="tasklabel"><h2 class="sectiontitle tasklabel">Results</h2></div>
+      <p class="p">The plug-in directory should have the layout and files:</p>
+
+      <pre class="pre codeblock">com.example.print-pdf/
+  cfg/
+    common/
+      vars/
+        en.xml
+    fo/
+      attrs/
+        custom.xsl
+      xsl/
+        custom.xsl
+    catalog.xml
+  integrator.xml
+  plugin.xml</pre>
+
+    </div>
+
+    <div class="section postreq" id="dita2pdf-customization__postreq_mqj_zz3_tf"><div class="tasklabel"><h2 class="sectiontitle tasklabel">What to do next</h2></div>
+      <p class="p">Run integration process to install the plug-in and take the <span class="keyword">print-pdf</span>
+        transformation type into use.</p>
+
+    </div>
+
+  </div>
+
+<div class="related-links">
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong> <a class="link" href="../dev_ref/developer-reference.html" title="The DITA Open Toolkit Developer Reference is designed to provide more advanced information about the DITA OT. It is geared to an audience that needs information about the DITA-OT architecture, configuring and extending the DITA-OT, and creating DITA-OT plug-ins.">DITA Open Toolkit Developer Reference</a></div>
+</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This file is part of the DITA Open Toolkit project.
+     See the accompanying license.txt file for applicable licenses. -->
+<!-- (c) Copyright IBM Corp. 2006 All Rights Reserved. -->
+<project name="dita.integrator" default="strict" basedir=".">
+  
+  <dirname property="ant.file.dita.integrator.dir" file="${ant.file.dita.integrator}"/>
+  
+  <!-- First try to initialize ${dita.dir} using the special 
+       property passed by Ant's import task. -->
+  <condition property="dita.dir" value="${ant.file.dita.integrator.dir}">
+    <and>
+      <isset property="ant.file.dita.integrator"/>
+      <not>
+        <isset property="dita.dir"/>
+      </not>
+    </and>
+  </condition>
+  
+  <!-- Try to initialize ${dita.dir} again if it was not set. -->
+  <!-- Deprecated -->
+  <condition property="dita.dir" value="${basedir}">
+    <not>
+      <isset property="dita.dir"/>
+    </not>
+  </condition>
+  
+  <path id="dost.class.path">
+    <pathelement location="${dita.dir}${file.separator}lib${file.separator}dost.jar"/>
+  </path>
+  
+  <!-- Deprecated -->
+  <condition property="properties" value="${dita.dir}${file.separator}integrator.properties">
+    <not>
+      <isset property="properties"/>
+    </not>
+  </condition>
+
+  <taskdef name="integrate" classname="org.dita.dost.platform.IntegratorTask">
+    <classpath refid="dost.class.path"/>
+  </taskdef>
+  
+  <target name="integrate">
+    <condition property="strict" value="false">
+      <not>
+        <isset property="strict"/>
+      </not>
+    </condition>
+    <integrate ditadir="${dita.dir}" properties="${properties}" strict="${strict}"/>
+  </target>
+  
+  <target name="lax" description="Run integration in lax mode">
+    <antcall target="integrate">
+      <param name="strict" value="false"/>
+    </antcall>
+  </target>
+
+  <target name="strict" description="Run integration in strict mode">
+    <antcall target="integrate">
+      <param name="strict" value="true"/>
+    </antcall>
+  </target>
+
+</project>

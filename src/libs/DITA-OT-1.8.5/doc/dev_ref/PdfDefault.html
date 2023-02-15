@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en-us" lang="en-us">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="copyright" content="(C) Copyright 2005"/>
+<meta name="DC.rights.owner" content="(C) Copyright 2005"/>
+<meta name="DC.Type" content="concept"/>
+<meta name="DC.Title" content="PDF processing modules"/>
+<meta name="abstract" content="The PDF (formerly known as PDF2) transformation process runs the pre-processing routine and follows it by a series of additional targets. These steps work together to create a merged set of content, convert the merged content to XSL-FO, and then format the XSL-FO file to PDF."/>
+<meta name="description" content="The PDF (formerly known as PDF2) transformation process runs the pre-processing routine and follows it by a series of additional targets. These steps work together to create a merged set of content, convert the merged content to XSL-FO, and then format the XSL-FO file to PDF."/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/DITA-OTArchitecture.html"/>
+<meta name="DC.Format" content="XHTML"/>
+<meta name="DC.Identifier" content="pdfdefault"/>
+<meta name="DC.Language" content="en-us"/>
+<link rel="stylesheet" type="text/css" href="../commonltr.css"/>
+<link rel="stylesheet" type="text/css" href="../dita-ot-doc.css"/>
+<title>PDF processing modules</title>
+</head>
+<body id="pdfdefault">
+
+
+<h1 class="title topictitle1">PDF processing modules</h1>
+
+
+<div class="body conbody"><p class="shortdesc">The <span class="keyword option">PDF</span> (formerly known as <span class="keyword option">PDF2</span>) transformation process
+runs the pre-processing routine and follows it by a series of additional targets. These steps work
+together to create a merged set of content, convert the merged content to XSL-FO, and then format
+the XSL-FO file to PDF.</p>
+
+<div class="section"><p class="p">The PDF process includes many Ant targets. During a typical conversion from map to PDF, the
+following targets are most significant.</p>
+
+<dl class="dl">
+
+<dt class="dt dlterm">map2pdf2</dt>
+
+<dd class="dd">Creates a merged file by calling a common Java merge module. It then calls the
+<samp class="ph codeph">publish.map.pdf</samp> target to do the remainder of the work.</dd>
+
+
+
+<dt class="dt dlterm">publish.map.pdf</dt>
+
+<dd class="dd">Performs some initialization and then calls the <samp class="ph codeph">transform.topic2pdf</samp> target to
+do the remainder of processing.</dd>
+
+
+
+<dt class="dt dlterm">transform.topic2pdf</dt>
+
+<dd class="dd">Converts the merged file to XSL-FO, generates the PDF, and deletes the
+<span class="ph filepath">topic.fo</span> file, unless instructed to keep it. Uses the following targets to
+perform those tasks:<dl class="dl">
+
+<dt class="dt dlterm">transform.topic2fo</dt>
+
+<dd class="dd">Convert the merged file to an XSL-FO file. This process is composed of several Ant
+targets.<table cellpadding="4" cellspacing="0" summary="" border="1" class="simpletable"><tr class="sthead">
+<th valign="bottom" align="left" id="d2981e74" class="stentry" width="50%">Ant target</th>
+
+<th valign="bottom" align="left" id="d2981e77" class="stentry" width="50%">Description</th>
+
+</tr>
+<tr class="strow">
+<td valign="top" headers="d2981e74" class="stentry">transform.topic2fo.index</td>
+
+<td valign="top" headers="d2981e77" class="stentry">Runs a Java process to set up index processing, based on the document language. This step
+generates the file <span class="ph filepath">stage1.xml</span> in the temporary processing directory.</td>
+
+</tr>
+<tr class="strow">
+<td valign="top" headers="d2981e74" class="stentry">transform.topic2fo.flagging</td>
+
+<td valign="top" headers="d2981e77" class="stentry">Sets up preprocessing for flagging based on a DITAVAL file. This step generates the file
+<span class="ph filepath">stage1a.xml</span> in the temporary processing directory.</td>
+
+</tr>
+<tr class="strow">
+<td valign="top" headers="d2981e74" class="stentry">transform.topic2fo.main</td>
+
+<td valign="top" headers="d2981e77" class="stentry">Does the bulk of the conversion from DITA to XSL-FO. It runs the XSLT based process that
+creates <span class="ph filepath">stage2.fo</span> in the temporary processing directory</td>
+
+</tr>
+<tr class="strow">
+<td valign="top" headers="d2981e74" class="stentry">transform.topic2fo.i18n</td>
+
+<td valign="top" headers="d2981e77" class="stentry">Does additional localization processing on the FO file; it runs a Java process that
+converts <span class="ph filepath">stage2.fo</span> into <span class="ph filepath">stage3.fo</span>, followed by an XSLT
+process that converts <span class="ph filepath">stage3.fo</span> into <span class="ph filepath">topic.fo</span>.</td>
+
+</tr>
+<tr class="strow"/>
+</table>
+</dd>
+
+
+
+<dt class="dt dlterm">transform.fo2pdf</dt>
+
+<dd class="dd">Converts the <span class="ph filepath">topic.fo</span> file into PDF using the specified FO processor
+(Antenna House, XEP, or Apache FOP).</dd>
+
+
+
+<dt class="dt dlterm">delete.fo2pdf.topic.fo</dt>
+
+<dd class="dd">Deletes the <span class="ph filepath">topic.fo</span> file, unless otherwise specified by setting an Ant
+property or command-line option.</dd>
+
+
+</dl>
+</dd>
+
+
+</dl>
+</div>
+
+</div>
+
+<div class="related-links">
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong> <a class="link" href="../dev_ref/DITA-OTArchitecture.html" title="The DITA Open Toolkit (DITA-OT) is an open-source implementation of the OASIS specification for the Darwin Information Typing Architecture (DITA). The toolkit uses ANT, XSLT, and Java to implement transforming DITA content (maps and topics) into different deliverable formats.">Architecture of the DITA Open Toolkit</a></div>
+</div>
+</div>
+
+</body>
+</html>

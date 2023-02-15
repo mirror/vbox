@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en-us" lang="en-us">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="copyright" content="(C) Copyright 2005"/>
+<meta name="DC.rights.owner" content="(C) Copyright 2005"/>
+<meta name="DC.Type" content="reference"/>
+<meta name="DC.Title" content="Ant parameters: Eclipse help transformation"/>
+<meta name="abstract" content="Certain parameters are specific to the Eclipse help transformation."/>
+<meta name="description" content="Certain parameters are specific to the Eclipse help transformation."/>
+<meta name="DC.subject" content="Ant, parameters, args.eclipsehelp.toc, args.eclipse.country, args.eclipse.language, args.eclipse.provider, args.eclipse.version, args.eclipse.symbolic.name"/>
+<meta name="keywords" content="Ant, parameters, args.eclipsehelp.toc, args.eclipse.country, args.eclipse.language, args.eclipse.provider, args.eclipse.version, args.eclipse.symbolic.name"/>
+<meta name="DC.Relation" scheme="URI" content="../readme/dita-ot_ant_properties.html"/>
+<meta name="DC.Relation" scheme="URI" content="../readme/dita2eclipsehelp.html"/>
+<meta name="DC.Relation" scheme="URI" content="../readme/ant-parameters-all-transformation-types.html"/>
+<meta name="DC.Relation" scheme="URI" content="../readme/ant-parameters-common-html-transtypes.html"/>
+<meta name="DC.Relation" scheme="URI" content="../readme/ant-parameters-common-html-transtypes.html"/>
+<meta name="DC.Format" content="XHTML"/>
+<meta name="DC.Identifier" content="ant-parameters-eclipse-help-transformation.dita"/>
+<link rel="stylesheet" type="text/css" href="../commonltr.css"/>
+<link rel="stylesheet" type="text/css" href="../dita-ot-doc.css"/>
+<title>Ant parameters: Eclipse help transformation</title>
+</head>
+<body id="ant-parameters-eclipse-help-transformation.dita">
+
+
+  <h1 class="title topictitle1">Ant parameters: Eclipse help transformation</h1>
+
+  
+  
+  
+  <div class="body refbody"><p class="shortdesc">Certain parameters are specific to the Eclipse help transformation.</p>
+
+    
+<div class="tablenoborder"><table cellpadding="4" cellspacing="0" summary="" class="table" frame="border" border="1" rules="all"><caption><span class="tablecap">Table 1. Ant parameters: Eclipse help transformation</span></caption>
+        
+        
+        <thead class="thead" align="left">
+          <tr class="row">
+            <th class="entry" valign="top" width="27.27272727272727%" id="d26133e62">Parameters</th>
+
+            <th class="entry" valign="top" width="72.72727272727273%" id="d26133e65">Description</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody class="tbody">
+          <tr id="ant-parameters-eclipse-help-transformation.dita__args.eclipsehelp.toc" class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d26133e62 "><span class="keyword parmname">args.eclipsehelp.toc</span></td>
+
+            <td class="entry" id="ant-parameters-eclipse-help-transformation.dita__args.eclipsehelp.toc.desc" valign="top" width="72.72727272727273%" headers="d26133e65 ">Specifies the name of the TOC file.</td>
+
+          </tr>
+
+          <tr id="ant-parameters-eclipse-help-transformation.dita__args.eclipse.country" class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d26133e62 "><span class="keyword parmname">args.eclipse.country</span></td>
+
+            <td class="entry" id="ant-parameters-eclipse-help-transformation.dita__args.eclipse.country.desc" valign="top" width="72.72727272727273%" headers="d26133e65 ">Specifies the region for the language that is
+              specified by the <span class="keyword parmname">args.eclipse.language</span> parameter. For example,
+                <span class="keyword option">us</span>, <span class="keyword option">ca</span>, and <span class="keyword option">gb</span> would clarify a
+              value of <span class="keyword option">en</span> set for the <span class="keyword parmname">args.eclipse.language</span>
+              parameter. The content will be moved into the appropriate directory structure for an
+              Eclipse fragment.</td>
+
+          </tr>
+
+          <tr id="ant-parameters-eclipse-help-transformation.dita__args.eclipse.language" class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d26133e62 "><span class="keyword parmname">args.eclipse.language</span></td>
+
+            <td class="entry" id="ant-parameters-eclipse-help-transformation.dita__args.eclipse.language.desc" valign="top" width="72.72727272727273%" headers="d26133e65 ">Specifies the base language for translated
+              content, such as <span class="keyword option">en</span> for English. This parameter is a prerequisite for
+              the <span class="keyword parmname">args.eclipse.country</span> parameter. The content will be moved
+              into the appropriate directory structure for an Eclipse fragment.</td>
+
+          </tr>
+
+          <tr id="ant-parameters-eclipse-help-transformation.dita__args.eclipse.provider" class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d26133e62 "><span class="keyword parmname">args.eclipse.provider</span></td>
+
+            <td class="entry" id="ant-parameters-eclipse-help-transformation.dita__args.eclipse.provider.desc" valign="top" width="72.72727272727273%" headers="d26133e65 ">Specifies the name of the person or organization
+              that provides the Eclipse help. The default value is <span class="keyword option">DITA</span>. <div class="note tip"><span class="tiptitle">Tip:</span> The toolkit ignores the value of this parameter when it processes an
+                Eclipse map.</div>
+
+            </td>
+
+          </tr>
+
+          <tr id="ant-parameters-eclipse-help-transformation.dita__args.eclipse.version" class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d26133e62 "><span class="keyword parmname">args.eclipse.version</span></td>
+
+            <td class="entry" id="ant-parameters-eclipse-help-transformation.dita__args.eclipse.version.desc" valign="top" width="72.72727272727273%" headers="d26133e65 ">Specifies the version number to include in the
+              output. The default value is <span class="keyword option">0.0.0</span>.<div class="note tip"><span class="tiptitle">Tip:</span> The toolkit
+                ignores the value of this parameter when it processes an Eclipse map.</div>
+</td>
+
+          </tr>
+
+          <tr id="ant-parameters-eclipse-help-transformation.dita__args.eclipse.symbolic.name" class="row">
+            <td class="entry" valign="top" width="27.27272727272727%" headers="d26133e62 "><span class="keyword parmname">args.eclipse.symbolic.name</span></td>
+
+            <td class="entry" id="ant-parameters-eclipse-help-transformation.dita__args.eclipse.symbolic.name.desc" valign="top" width="72.72727272727273%" headers="d26133e65 "> Specifies the symbolic name (aka plugin ID)
+              in the output for an Eclipse Help project. The @id value from the DITA map or the
+              Eclipse map collection (Eclipse help specialization) is the symbolic name for the
+              plugin in Eclipse. The default value is <span class="keyword option">org.sample.help.doc</span>.<div class="note tip"><span class="tiptitle">Tip:</span> The toolkit ignores the value of this parameter when it processes an
+                Eclipse map.</div>
+</td>
+
+          </tr>
+
+        </tbody>
+
+      </table>
+</div>
+
+  </div>
+
+<div class="related-links">
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong> <a class="link" href="../readme/dita-ot_ant_properties.html" title="Certain parameters apply to all DITA-OT transformations. Other parameters are common to the HTML-based transformations. Finally, some parameters apply only to the specific transformation types.">Ant parameters</a></div>
+</div>
+<div class="relinfo relconcepts"><strong>Related concepts</strong><br/>
+<div><a class="link" href="../readme/dita2eclipsehelp.html" title="The eclipsehelp transformation generates XHTML output, CSS files, and the control files that are needed for Eclipse help.">Eclipse help transformation</a></div>
+</div>
+<div class="relinfo relref"><strong>Related reference</strong><br/>
+<div><a class="link" href="../readme/ant-parameters-all-transformation-types.html" title="Certain parameters apply to all transformations that are supported by the DITA Open Toolkit.">Ant parameters: All transformations</a></div>
+<div><a class="link" href="../readme/ant-parameters-common-html-transtypes.html" title="Certain parameters apply to all the HTML-based transformation types: Eclipse content, Eclipse help, HTML Help, JavaHelp, TocJS, and XHTML.">Ant parameters: Common HTML-based transformations</a></div>
+</div>
+</div>
+
+</body>
+</html>

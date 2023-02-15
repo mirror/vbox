@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en-us" lang="en-us">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="copyright" content="(C) Copyright 2005"/>
+<meta name="DC.rights.owner" content="(C) Copyright 2005"/>
+<meta name="DC.Type" content="concept"/>
+<meta name="DC.Title" content="Conref (conref)"/>
+<meta name="abstract" content="The conref step resolves conref attributes, processing only the DITA maps or topics that use the @conref attribute. This step is implemented in XSLT."/>
+<meta name="description" content="The conref step resolves conref attributes, processing only the DITA maps or topics that use the @conref attribute. This step is implemented in XSLT."/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/DITA-OTPreprocess.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/preprocess-conrefpush.html"/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/preprocess-metadata.html"/>
+<meta name="DC.Format" content="XHTML"/>
+<meta name="DC.Identifier" content="preprocess-conref"/>
+<meta name="DC.Language" content="en-us"/>
+<link rel="stylesheet" type="text/css" href="../commonltr.css"/>
+<link rel="stylesheet" type="text/css" href="../dita-ot-doc.css"/>
+<title>Conref (conref)</title>
+</head>
+<body id="preprocess-conref">
+
+
+<h1 class="title topictitle1">Conref (conref)</h1>
+
+
+<div class="body conbody"><p class="shortdesc">The <samp class="ph codeph">conref</samp> step resolves conref attributes, processing only the DITA
+    maps or topics that use the @conref attribute. This step is implemented in XSLT.</p>
+
+<div class="section"><p class="p">The values of the @id attribute on referenced content are changed as the elements are pulled into
+        the new locations. This ensures that the values of the @id attribute within the referencing
+        topic remain unique.</p>
+<div class="p">If an element is pulled into a new context along with a cross reference that references the
+        target, both the values of the @id and @xref attributes are updated so that they remain
+        valid in the new location. For example, a referenced topic might include a section as in the
+        following example: <div class="fig fignone"><span class="figcap">Figure 1. Referenced topic that contains a section and cross reference</span>
+          
+          <pre class="pre codeblock">&lt;topic id="referenced_topic"&gt;
+  &lt;title&gt;...&lt;/title&gt;
+  &lt;body&gt;
+    &lt;section id="sect"&gt;&lt;title&gt;Sample section&lt;/title&gt;
+      &lt;p&gt;Figure &lt;xref href="#referenced_topic/fig"/&gt; contains an code sample that demonstrates ... .&lt;/p&gt;
+      &lt;fig id="fig"&gt;&lt;title&gt;Code sample&lt;/title&gt;
+        &lt;codeblock&gt;....&lt;/codeblock&gt;
+      &lt;/fig&gt;
+    &lt;/section&gt;
+  &lt;/body&gt;
+&lt;/topic&gt;</pre>
+
+        </div>
+</div>
+<div class="p">When the section is referenced using a @conref attribute, the value of the @id attribute on the
+        &lt;fig&gt; element is modified to ensure that it remains unique in the new context. At the
+        same time, the &lt;xref&gt; element is also modified so that  it remains valid as a local
+        reference. For example, if the referencing topic has an @id  set to "new_topic", then the
+        conrefed &lt;section&gt; element may look like this in the intermediate document.<div class="fig fignone"><span class="figcap">Figure 2. Resolved conrefed &lt;section&gt; element after the conref step</span>
+          
+          <pre class="pre codeblock">&lt;section id="sect"&gt;&lt;title&gt;Sample section&lt;/title&gt;
+    &lt;p&gt;Figure &lt;xref href="#new_topic/d1e25"/&gt; contains an code sample that demonstrates ... .&lt;/p&gt;
+    &lt;fig id="d1e25"&gt;&lt;title&gt;Code sample&lt;/title&gt;
+        &lt;codeblock&gt;....&lt;/codeblock&gt;
+    &lt;/fig&gt;
+&lt;/section&gt;</pre>
+
+        </div>
+</div>
+<p class="p">In this case, the value of the @id attribute on the &lt;fig&gt; element has been changed to a
+        generated value of "d1e25". At the same time, the &lt;xref&gt; element has been updated to use
+        that new generated ID, so that the cross reference remains valid.</p>
+</div>
+
+</div>
+
+<div class="related-links">
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong> <a class="link" href="../dev_ref/DITA-OTPreprocess.html" title="The pre-processing operation is a set of steps that typically runs at the beginning of every DITA-OT transformation. Each step or stage corresponds to an Ant target in the build pipeline; the preprocess target calls the entire set of steps.">Pre-processing modules</a></div>
+<div class="previouslink"><strong>Previous topic:</strong> <a class="link" href="../dev_ref/preprocess-conrefpush.html" title="The conrefpush step resolves &#34;conref push&#34; references. This step only processes documents that use conref push or that are updated due to the push action. This step is implemented in Java.">Conref push (conrefpush)</a></div>
+<div class="nextlink"><strong>Next topic:</strong> <a class="link" href="../dev_ref/preprocess-metadata.html" title="The move-meta-entries step pushes metadata back and forth between maps and topics. For example, index entries and copyrights in the map are pushed into affected topics, so that the topics can be processed later in isolation while retaining all relevant metadata. This step is implemented in Java.">Move metadata (move-meta-entries)</a></div>
+</div>
+</div>
+
+</body>
+</html>

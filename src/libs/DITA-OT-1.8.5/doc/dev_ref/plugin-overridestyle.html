@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en-us" lang="en-us">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="copyright" content="(C) Copyright 2005"/>
+<meta name="DC.rights.owner" content="(C) Copyright 2005"/>
+<meta name="DC.Type" content="reference"/>
+<meta name="DC.Title" content="Override styles with XSLT"/>
+<meta name="abstract" content="The XSLT import extension points are used to override various steps of XSLT processing. For this, the extension attribute indicates the step that the override applies to; the file attribute is a relative path to the override within the current plugin. The plugin installer will add an XSL import statement to the default code so that your override becomes a part of the normal build."/>
+<meta name="description" content="The XSLT import extension points are used to override various steps of XSLT processing. For this, the extension attribute indicates the step that the override applies to; the file attribute is a relative path to the override within the current plugin. The plugin installer will add an XSL import statement to the default code so that your override becomes a part of the normal build."/>
+<meta name="DC.Relation" scheme="URI" content="../dev_ref/plugins-overview.html"/>
+<meta name="DC.Format" content="XHTML"/>
+<meta name="DC.Identifier" content="plugin-overridestyle"/>
+<meta name="DC.Language" content="en-us"/>
+<link rel="stylesheet" type="text/css" href="../commonltr.css"/>
+<link rel="stylesheet" type="text/css" href="../dita-ot-doc.css"/>
+<title>Override styles with XSLT</title>
+</head>
+<body id="plugin-overridestyle">
+
+
+<h1 class="title topictitle1">Override styles with XSLT</h1>
+
+
+<div class="body refbody"><p class="shortdesc">The XSLT import extension points are used to override various
+steps of XSLT processing. For         this, the extension attribute
+indicates the step that the override applies to; the <samp class="ph codeph">file</samp> attribute
+is a relative path to the override within the current plugin. The plugin
+installer will add an XSL import statement to the default code so
+that your override becomes a part of the normal build.</p>
+
+<div class="section">       <p class="p">The following XSLT steps are available to override
+in the core toolkit: </p>
+<dl class="dl">
+<dt class="dt dlterm"><samp class="ph codeph">dita.xsl.xhtml</samp></dt>
+
+<dd class="dd">Overrides default (X)HTML output (including HTML Help and Eclipse
+Help). The referenced file is integrated directly into the XSLT step
+that generates XHTML.</dd>
+
+
+<dt class="dt dlterm"><samp class="ph codeph">dita.xsl.xslfo</samp></dt>
+
+<dd class="dd">Overrides default PDF output (formerly known as PDF2).  The referenced
+file is integrated directly into the XSLT step that generates XSL-FO
+for PDF.</dd>
+
+
+<dt class="dt dlterm"><samp class="ph codeph">dita.xsl.docbook</samp></dt>
+
+<dd class="dd">Overrides default DocBook output.</dd>
+
+
+<dt class="dt dlterm"><samp class="ph codeph">dita.xsl.rtf</samp></dt>
+
+<dd class="dd">Overrides default RTF output.</dd>
+
+
+<dt class="dt dlterm"><samp class="ph codeph">dita.xsl.eclipse.plugin</samp></dt>
+
+<dd class="dd">Overrides the step that generates plugin.xml for Eclipse.</dd>
+
+
+<dt class="dt dlterm"><samp class="ph codeph">dita.xsl.conref</samp></dt>
+
+<dd class="dd">Overrides the preprocess step that resolves conref.</dd>
+
+
+<dt class="dt dlterm"><samp class="ph codeph">dita.xsl.topicpull</samp></dt>
+
+<dd class="dd">Overrides the preprocess step "topicpull" (the step that pulls
+text into &lt;xref&gt; elements, among other things).</dd>
+
+
+<dt class="dt dlterm"><samp class="ph codeph">dita.xsl.mapref</samp></dt>
+
+<dd class="dd">Overrides the preprocess step "mapref" (the step that resolves
+references to other maps).</dd>
+
+
+<dt class="dt dlterm"><samp class="ph codeph">dita.xsl.mappull</samp></dt>
+
+<dd class="dd">Overrides the preprocess step "mappull" (the step that updates
+navtitles in maps and causes             attributes to cascade).</dd>
+
+
+<dt class="dt dlterm"><samp class="ph codeph">dita.xsl.maplink</samp></dt>
+
+<dd class="dd">Overrides the preprocess step "maplink" (the step that generates
+map-based links).</dd>
+
+
+<dt class="dt dlterm"><samp class="ph codeph">dita.xsl.fo</samp></dt>
+
+<dd class="dd">Override the (now deprecated) original PDF output, which is still
+available with the transform type "legacypdf".</dd>
+
+</dl>
+       </div>
+
+<div class="example"><h2 class="title sectiontitle">Example</h2><p class="p">The following two files represent
+a complete, simple style plug-in. The <span class="ph filepath">plugin.xml</span> file
+declares an XSLT file that extends XHTML processing; the XSLT file
+overrides default header processing to provide a (theoretical) banner.</p>
+<pre class="pre codeblock">plugin.xml:
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;plugin id="com.example.brandheader"&gt;
+  &lt;feature extension="dita.xsl.xhtml" file="xsl/header.xsl"/&gt;
+&lt;/plugin&gt;
+
+xsl/header.xsl:
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet version="1.0" 
+                xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
+  &lt;xsl:template name="gen-user-header"&gt;
+    &lt;div&gt;&lt;img src="http://www.example.com/company_banner.jpg" 
+              alt="Example Company Banner"/&gt;&lt;/div&gt;
+  &lt;/xsl:template&gt;
+&lt;/xsl:stylesheet&gt;</pre>
+</div>
+
+</div>
+
+<div class="related-links">
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong> <a class="link" href="../dev_ref/plugins-overview.html" title="The DITA Open Toolkit comes with a built in mechanism for adding in extensions through plug-ins. These plug-ins may do a wide variety of things, such as adding support for specialized DITA DTDs or Schemas, integrating processing overrides, or even providing entirely new output transforms. Plug-ins are the best way to extend the toolkit in a way that is consistent, easily sharable, and easy to preserve through toolkit upgrades.">Creating DITA-OT plug-ins</a></div>
+</div>
+</div>
+
+</body>
+</html>

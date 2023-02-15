@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en-us" lang="en-us">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="copyright" content="(C) Copyright 2005"/>
+<meta name="DC.rights.owner" content="(C) Copyright 2005"/>
+<meta name="DC.Type" content="concept"/>
+<meta name="DC.Title" content="Log files"/>
+<meta name="abstract" content="When you run the DITA-OT, key information is logged on the screen. This information also is written to a log file. If you encounter a problem, you can analyze this information to determine the source of the problem and then take action to resolve it."/>
+<meta name="description" content="When you run the DITA-OT, key information is logged on the screen. This information also is written to a log file. If you encounter a problem, you can analyze this information to determine the source of the problem and then take action to resolve it."/>
+<meta name="DC.Relation" scheme="URI" content="../readme/troubleshooting-overview.html"/>
+<meta name="DC.Format" content="XHTML"/>
+<meta name="DC.Identifier" content="loghandling"/>
+<meta name="DC.Language" content="en-us"/>
+<link rel="stylesheet" type="text/css" href="../commonltr.css"/>
+<link rel="stylesheet" type="text/css" href="../dita-ot-doc.css"/>
+<title>Log files</title>
+</head>
+<body id="loghandling">
+
+
+<h1 class="title topictitle1">Log files</h1>
+
+  
+<div class="body conbody"><p class="shortdesc">When you run the DITA-OT, key information is logged on the screen. This information
+    also is written to a log file. If you encounter a problem, you can analyze this information to
+    determine the source of the problem and then take action to resolve it.</p>
+
+    <div class="p">The logging behavior varies depending on whether you use the DITA-OT command-line tool or Ant
+      to invoke a toolkit build.<dl class="dl">
+        
+          <dt class="dt dlterm">Ant</dt>
+
+          <dd class="dd">By default, status information is written to the screen. If you issue the
+              <span class="keyword parmname">-l</span> parameter, the build runs silently and the information is
+            written to a log file with the name and location that you specified. (You also can use
+            other Ant loggers; see the Ant documentation for more information.)</dd>
+
+        
+        
+          <dt class="dt dlterm">Command-line tool</dt>
+
+          <dd class="dd">Status information is written to the screen and the log file. The log file name
+            contains the input file name and transformation type; by default, it is located in the
+            output directory. If you issue the <span class="keyword parmname">/logdir</span> parameter, you can
+            specify a different location for where the log file is written.</dd>
+
+        
+      </dl>
+</div>
+
+    
+    
+    
+</div>
+
+<div class="related-links">
+<div class="familylinks">
+<div class="parentlink"><strong>Parent topic:</strong> <a class="link" href="../readme/troubleshooting-overview.html" title="This section contains information about problems that you might encounter and how to resolve them.">Error messages and troubleshooting</a></div>
+</div>
+</div>
+
+</body>
+</html>
