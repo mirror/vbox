@@ -621,6 +621,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
     ktReason_Add_ShFl_Automount                        = ( 'Additions',         'Automounting' );
     ktReason_Add_ShFl_FsPerf                           = ( 'Additions',         'FsPerf' );
     ktReason_Add_ShFl_FsPerf_Abend                     = ( 'Additions',         'FsPerf abend' );
+    ktReason_Add_GstCtl                                = ( 'Additions',         'GstCtl' );
     ktReason_Add_GstCtl_Preparations                   = ( 'Additions',         'GstCtl preparations' );
     ktReason_Add_GstCtl_SessionBasics                  = ( 'Additions',         'Session basics' );
     ktReason_Add_GstCtl_SessionProcRefs                = ( 'Additions',         'Session process' );
@@ -1258,6 +1259,8 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                 enmReason = self.ktReason_Add_GstCtl_CopyToGuest_Timeout;
         elif oFailedResult.sName.find('Session w/ Guest Reboot') >= 0:
             enmReason = self.ktReason_Add_GstCtl_Session_Reboot;
+        elif sParentName == 'Guest Control' or oFailedResult.sName == 'Guest Control':
+            enmReason = self.ktReason_Add_GstCtl;
         # shared folders:
         elif sParentName == 'Shared Folders' and oFailedResult.sName == 'Automounting':
             enmReason = self.ktReason_Add_ShFl_Automount;
