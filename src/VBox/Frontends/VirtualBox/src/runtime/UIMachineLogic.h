@@ -172,6 +172,7 @@ protected slots:
 
     /* Console callback handlers: */
     virtual void sltMachineStateChanged();
+    virtual void sltSessionStateChanged(const QUuid &uId, const KSessionState enmState);
     virtual void sltAdditionsStateChanged();
     virtual void sltMouseCapabilityChanged();
     virtual void sltKeyboardLedsChanged();

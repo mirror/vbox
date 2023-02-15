@@ -71,6 +71,7 @@
 #include "UISettingsDialogSpecific.h"
 #include "UISoftKeyboard.h"
 #include "UITakeSnapshotDialog.h"
+#include "UIVirtualBoxEventHandler.h"
 #include "UIVMLogViewerDialog.h"
 #include "UIVMInformationDialog.h"
 #ifdef VBOX_WS_MAC
@@ -497,33 +498,22 @@ void UIMachineLogic::sltMachineStateChanged()
         case KMachineState_Aborted:
         case KMachineState_AbortedSaved:
         {
-            /* If not in 'manual-override' mode: */
+            /* Spontaneous machine-state-change ('manual-override' mode): */
             if (!uimachine()->isManualOverrideMode())
             {
-                /* VM has been powered off, saved, teleported or aborted.
-                 * We must close Runtime UI: */
+                /* For separate process: */
                 if (uiCommon().isSeparateProcess())
                 {
-                    /* Hack: The VM process is terminating, so wait a bit to make sure that
-                     * the session is unlocked and the GUI process can save extradata
-                     * in UIMachine::cleanupMachineLogic.
-                     */
-                    /** @todo Probably should wait for the session state change event. */
-                    KSessionState sessionState = uisession()->session().GetState();
-                    int c = 0;
-                    while (   sessionState == KSessionState_Locked
-                           || sessionState == KSessionState_Unlocking)
-                    {
-                         if (++c > 50) break;
-
-                         RTThreadSleep(100);
-                         sessionState = uisession()->session().GetState();
-                    }
+                    LogRel(("GUI: Waiting for session to be unlocked to close Runtime UI..\n"));
                 }
-
-                LogRel(("GUI: Request to close Runtime UI because VM is powered off already.\n"));
-                uimachine()->closeRuntimeUI();
-                return;
+                /* For embedded process: */
+                else
+                {
+                    /* We just close Runtime UI: */
+                    LogRel(("GUI: Request to close Runtime UI because VM is powered off.\n"));
+                    uimachine()->closeRuntimeUI();
+                    return;
+                }
             }
             break;
         }
@@ -552,6 +542,34 @@ void UIMachineLogic::sltMachineStateChanged()
     /* Update Dock Overlay: */
     updateDockOverlay();
 #endif /* VBOX_WS_MAC */
+}
+
+void UIMachineLogic::sltSessionStateChanged(const QUuid &uId, const KSessionState enmState)
+{
+    /* Make sure that's our signal: */
+    if (uId != uiCommon().managedVMUuid())
+        return;
+
+    switch (enmState)
+    {
+        case KSessionState_Unlocked:
+        {
+            /* Spontaneous machine-state-change ('manual-override' mode): */
+            if (!uimachine()->isManualOverrideMode())
+            {
+                /* For separate process: */
+                if (uiCommon().isSeparateProcess())
+                {
+                    LogRel(("GUI: Request to close Runtime UI because session is unlocked.\n"));
+                    uimachine()->closeRuntimeUI();
+                    return;
+                }
+            }
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 void UIMachineLogic::sltAdditionsStateChanged()
@@ -1091,6 +1109,14 @@ void UIMachineLogic::prepareOtherConnections()
     /* UICommon connections: */
     connect(&uiCommon(), &UICommon::sigAskToCommitData,
             this, &UIMachineLogic::sltHandleCommitData);
+
+    /* For separate process: */
+    if (uiCommon().isSeparateProcess())
+    {
+        /* Global VBox event connections: */
+        connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSessionStateChange,
+                this, &UIMachineLogic::sltSessionStateChanged);
+    }
 }
 
 void UIMachineLogic::prepareHandlers()
