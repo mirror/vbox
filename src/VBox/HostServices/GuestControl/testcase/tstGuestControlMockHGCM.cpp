@@ -289,11 +289,6 @@ int main()
         return rcExit;
     RTTestBanner(g_hTest);
 
-#if 0 //ndef DEBUG_andy - bird: fix the 'ing code.
-    /* Don't let assertions in the host service panic (core dump) the test cases. */
-    RTAssertSetMayPanic(false);
-#endif
-
     PTSTHGCMMOCKSVC const pSvc = TstHgcmMockSvcInst();
     TstHgcmMockSvcCreate(pSvc);
     TstHgcmMockSvcStart(pSvc);

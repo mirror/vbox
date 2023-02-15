@@ -678,24 +678,15 @@ static int tstOne(PTESTDESC pTstDesc)
     return rc;
 }
 
-int main(int argc, char *argv[])
+int main()
 {
     /*
      * Init the runtime, test and say hello.
      */
-    const char *pcszExecName;
-    NOREF(argc);
-    pcszExecName = strrchr(argv[0], '/');
-    pcszExecName = pcszExecName ? pcszExecName + 1 : argv[0];
-    RTEXITCODE rcExit = RTTestInitAndCreate(pcszExecName, &g_hTest);
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstClipboardMockHGCM", &g_hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
     RTTestBanner(g_hTest);
-
-#ifndef DEBUG_andy
-    /* Don't let assertions in the host service panic (core dump) the test cases. */
-    RTAssertSetMayPanic(false);
-#endif
 
     PTSTHGCMMOCKSVC const pSvc = TstHgcmMockSvcInst();
     TstHgcmMockSvcCreate(pSvc);
@@ -704,11 +695,10 @@ int main(int argc, char *argv[])
     /*
      * Run the tests.
      */
-    if (0)
-    {
+    if (0) /** @todo triggers assertion */
         testGuestSimple();
+    if (1)
         testHostCall();
-    }
 
     RT_ZERO(g_TstCtx);
 
