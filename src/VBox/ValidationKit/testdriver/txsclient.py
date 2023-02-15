@@ -874,8 +874,9 @@ class Session(TdTaskBase):
                     uStreamCrc32 = getU32(abPayload, 0);
                     oOut.uTxsClientCrc32 = zlib.crc32(abPayload[4:], oOut.uTxsClientCrc32);
                     if uStreamCrc32 != (oOut.uTxsClientCrc32 & 0xffffffff):
-                        sFailure = 'crc error - mine=%#x their=%#x (%s, %u bytes)' \
-                            % (oOut.uTxsClientCrc32 & 0xffffffff, uStreamCrc32, sOpcode, cbMsg);
+                        sFailure = 'crc error - mine=%#x their=%#x (%s, %u bytes: %s)' \
+                            % (oOut.uTxsClientCrc32 & 0xffffffff, uStreamCrc32, sOpcode, cbMsg,
+                               ' '.join(['%02x' % (b,) for b in abPayload]),);
                         reporter.maybeErr(self.fErr, 'taskExecEx: %s' % (sFailure));
                         rc = None;
                         break;
