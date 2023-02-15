@@ -849,7 +849,7 @@ man_vboximg-mount.xml \
  #
  ##########################################################################################
  define def_vbox_refentry_to_dita
-  $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$(addsuffix .dita,$(basename $(2))): \
+  $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(addsuffix .dita,$(basename $(2))): \
   		$$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl \
   		$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2) \
   		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) \
@@ -862,7 +862,10 @@ man_vboximg-mount.xml \
 , $(evalcall2 def_vbox_refentry_to_dita,$(lang),$(file))))
 
  refentry-to-dita: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file, $(basename $(VBOX_MANUAL_XML_REFENTRY_FILES)) \
- 				,$$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/$(file).dita))
+ 				,$$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/dita/topics/$(file).dita))
+
+VBOX_REFENTRY_DITA_FILES = $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file, $(basename $(VBOX_MANUAL_XML_REFENTRY_FILES)) \
+ 				,$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/dita/topics/$(file).dita))
 
  ##########################################################################################
  #
@@ -899,7 +902,8 @@ man_vboximg-mount.xml \
  define def_ditamap_to_pdf
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf: \
-  		$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/user.ditamap
+  		$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/user.ditamap \
+		$(VBOX_REFENTRY_DITA_FILES)
 		$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
 		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/user.ditamap \
 			/transtype:pdf /ditadir:$(VBOX_DITA_PATH) /outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)
