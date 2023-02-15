@@ -90,9 +90,9 @@
 #define VERR_INVALID_MAGIC                  (-3)
 /** Invalid magic or cookie. */
 #define VWRN_INVALID_MAGIC                  3
-/** Invalid loader handle. */
+/** Invalid handle. */
 #define VERR_INVALID_HANDLE                 (-4)
-/** Invalid loader handle. */
+/** Invalid handle. */
 #define VWRN_INVALID_HANDLE                 4
 /** Failed to lock the address range. */
 #define VERR_LOCK_FAILED                    (-5)
