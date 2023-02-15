@@ -191,12 +191,13 @@ static DECLCALLBACK(int) tstHgcmMockSvcCall(PTSTHGCMMOCKSVC pSvc, void *pvServic
 
     pFn->u.Call.hCall    = callHandle;
     pFn->u.Call.iFunc    = function;
+    pFn->u.Call.cParms   = cParms;
     PVBOXHGCMSVCPARM const paParmsCopy = (PVBOXHGCMSVCPARM)RTMemDup(paParms, cbParms);
     pFn->u.Call.pParms   = paParmsCopy;
-    AssertPtrReturn(pFn->u.Call.pParms, VERR_NO_MEMORY);
-    pFn->u.Call.cParms   = cParms;
+    AssertPtrReturn(paParmsCopy, VERR_NO_MEMORY);
 
     RTListAppend(&pSvc->lstCall, &pFn->Node);
+    pFn = NULL; /* Thread takes ownership now. We keep ownership of paParmsCopy. */
 
     int rc2 = RTSemEventSignal(pSvc->hEventQueue);
     AssertRCReturn(rc2, rc2);
@@ -205,8 +206,7 @@ static DECLCALLBACK(int) tstHgcmMockSvcCall(PTSTHGCMMOCKSVC pSvc, void *pvServic
     AssertRCReturn(rc2, rc2);
 
     memcpy(paParms, paParmsCopy, cbParms);
-    /** @todo  paParmsCopy is leaked, right? Doesn't appear to be a
-     *         use-after-free here. (pFn is freeded though) */
+    RTMemFree(paParmsCopy);
 
     return VINF_SUCCESS; /** @todo Return host call rc */
 }
