@@ -339,7 +339,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
     def setGuestEnvVar(self, oSession, oTxsSession, oTestVm, sName, sValue):
         """ Sets a system-wide environment variable on the guest. Only supports Windows guests so far. """
         _ = oSession;
-        if oTestVm.isWindows():
+        if oTestVm.sKind not in ('WindowsNT4',):
             sPathRegExe   = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'reg.exe');
             self.txsRunTest(oTxsSession, ('Set env var \"%s\"' % (sName,)),
                             30 * 1000, sPathRegExe,
@@ -364,17 +364,20 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         #
         if oTestVm.sKind not in ('WindowsNT4', 'Windows2000', 'WindowsXP', 'Windows2003'):
             fRc = self.txsRunTest(oTxsSession, 'VBoxCertUtil.exe', 1 * 60 * 1000,
-                                   '${CDROM}/%s/cert/VBoxCertUtil.exe' % self.sGstPathGaPrefix,
-                                  ('${CDROM}/%s/cert/VBoxCertUtil.exe' % self.sGstPathGaPrefix, 'add-trusted-publisher',
-                                   '${CDROM}/%s/cert/vbox-sha1.cer'    % self.sGstPathGaPrefix),
+                                  '${CDROM}/%s/cert/VBoxCertUtil.exe' % (self.sGstPathGaPrefix,),
+                                  ('${CDROM}/%s/cert/VBoxCertUtil.exe' % (self.sGstPathGaPrefix,),
+                                   'add-trusted-publisher',
+                                   '${CDROM}/%s/cert/vbox-sha1.cer'    % (self.sGstPathGaPrefix,)),
                                   fCheckSessionStatus = True);
             if not fRc:
                 reporter.error('Error installing SHA1 certificate');
             else:
                 fRc = self.txsRunTest(oTxsSession, 'VBoxCertUtil.exe', 1 * 60 * 1000,
-                                       '${CDROM}/%s/cert/VBoxCertUtil.exe' % self.sGstPathGaPrefix,
-                                      ('${CDROM}/%s/cert/VBoxCertUtil.exe' % self.sGstPathGaPrefix, 'add-trusted-publisher',
-                                       '${CDROM}/%s/cert/vbox-sha256.cer'  % self.sGstPathGaPrefix), fCheckSessionStatus = True);
+                                      '${CDROM}/%s/cert/VBoxCertUtil.exe' % (self.sGstPathGaPrefix,),
+                                      ('${CDROM}/%s/cert/VBoxCertUtil.exe' % (self.sGstPathGaPrefix,),
+                                       'add-trusted-publisher',
+                                       '${CDROM}/%s/cert/vbox-sha256.cer'  % (self.sGstPathGaPrefix,)),
+                                      fCheckSessionStatus = True);
                 if not fRc:
                     reporter.error('Error installing SHA256 certificate');
 
@@ -393,42 +396,37 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
         # Apply The SetupAPI logging level so that we also get the (most verbose) setupapi.dev.log file.
         ## @todo !!! HACK ALERT !!! Add the value directly into the testing source image. Later.
-        sRegExe = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'reg.exe');
-        fHaveSetupApiDevLog = self.txsRunTest(oTxsSession, 'Enabling setupapi.dev.log', 30 * 1000,
-                                              sRegExe,
-                                              (sRegExe, 'add',
-                                               '"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Setup"',
-                                               '/v', 'LogLevel', '/t', 'REG_DWORD', '/d', '0xFF'),
-                                               fCheckSessionStatus = True);
+        fHaveSetupApiDevLog = False;
+        if oTestVm.sKind not in ('WindowsNT4',):
+            sRegExe = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'reg.exe');
+            fHaveSetupApiDevLog = self.txsRunTest(oTxsSession, 'Enabling setupapi.dev.log', 30 * 1000,
+                                                  sRegExe,
+                                                  (sRegExe, 'add',
+                                                   '"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Setup"',
+                                                   '/v', 'LogLevel', '/t', 'REG_DWORD', '/d', '0xFF'),
+                                                   fCheckSessionStatus = True);
 
         for sGstFile, _ in aasLogFiles:
             self.txsRmFile(oSession, oTxsSession, sGstFile, 10 * 1000, fIgnoreErrors = True);
 
         # Enable installing the optional auto-logon modules (VBoxGINA/VBoxCredProv).
         # Also tell the installer to produce the appropriate log files.
-        sExe   = '${CDROM}/%s/VBoxWindowsAdditions.exe' % self.sGstPathGaPrefix;
+        sExe   = '${CDROM}/%s/VBoxWindowsAdditions.exe' % (self.sGstPathGaPrefix,);
         asArgs = [ sExe, '/S', '/l', '/with_autologon' ];
 
         # Determine if we need to force installing the legacy timestamp CA to make testing succeed.
         # Note: Don't force installing when the Guest Additions installer should do this automatically,
         #       i.e, only force it for Windows Server 2016 and up.
-        fForceInstallTimeStampCA = False;
-        if     self.fpApiVer >= 6.1 \
-           and oTestVm.getNonCanonicalGuestOsType() \
-           in [ 'Windows2016', 'Windows2019', 'Windows2022', 'Windows11' ]:
-            fForceInstallTimeStampCA = True;
-
-        # As we don't have a console command line to parse for the Guest Additions installer (only a message box) and
-        # unknown / unsupported parameters get ignored with silent installs anyway, we safely can add the following parameter(s)
-        # even if older Guest Addition installers might not support those.
-        if fForceInstallTimeStampCA:
-            asArgs.extend([ '/install_timestamp_ca' ]);
+        # Note! This may mess up testing if GA ISO is from before r152467 when the option was added.
+        #       Just add a VBox revision check here if we're suddenly keen on testing old stuff.
+        if (    self.fpApiVer >= 6.1
+            and oTestVm.getNonCanonicalGuestOsType() in [ 'Windows2016', 'Windows2019', 'Windows2022', 'Windows11' ]):
+            asArgs.append('/install_timestamp_ca');
 
         #
         # Do the actual install.
         #
-        fRc = self.txsRunTest(oTxsSession, 'VBoxWindowsAdditions.exe', 5 * 60 * 1000,
-                              sExe, asArgs, fCheckSessionStatus = True);
+        fRc = self.txsRunTest(oTxsSession, 'VBoxWindowsAdditions.exe', 5 * 60 * 1000, sExe, asArgs, fCheckSessionStatus = True);
 
         # Add the Windows Guest Additions installer files to the files we want to download
         # from the guest. Note: There won't be a install_ui.log because of the silent installation.
