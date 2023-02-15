@@ -618,6 +618,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
     ## @{
 
     ktReason_Add_Installer_Win_Failed                  = ( 'Additions',         'Win GA install' );
+    ktReason_Add_ShFl                                  = ( 'Additions',         'ShFl' );
     ktReason_Add_ShFl_Automount                        = ( 'Additions',         'Automounting' );
     ktReason_Add_ShFl_FsPerf                           = ( 'Additions',         'FsPerf' );
     ktReason_Add_ShFl_FsPerf_Abend                     = ( 'Additions',         'FsPerf abend' );
@@ -1231,6 +1232,12 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         return fRet;
 
 
+    ## Fallback reasons based on GA test groups.
+    kdGATestFallbacks = {
+        'Guest Control':  ktReason_Add_GstCtl,
+        'Shared Folders': ktReason_Add_ShFl,
+    };
+
     def investigateGATest(self, oCaseFile, oFailedResult, sResultLog):
         """
         Investigates a failed VM run.
@@ -1259,8 +1266,6 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                 enmReason = self.ktReason_Add_GstCtl_CopyToGuest_Timeout;
         elif oFailedResult.sName.find('Session w/ Guest Reboot') >= 0:
             enmReason = self.ktReason_Add_GstCtl_Session_Reboot;
-        elif sParentName == 'Guest Control' or oFailedResult.sName == 'Guest Control':
-            enmReason = self.ktReason_Add_GstCtl;
         # shared folders:
         elif sParentName == 'Shared Folders' and oFailedResult.sName == 'Automounting':
             enmReason = self.ktReason_Add_ShFl_Automount;
@@ -1274,6 +1279,14 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
 
         if enmReason is not None:
             return oCaseFile.noteReasonForId(enmReason, oFailedResult.idTestResult);
+
+        # Generalistic fallbacks:
+        for sKey in self.kdGATestFallbacks:
+            oTmpFailedResult = oFailedResult;
+            while oTmpFailedResult:
+                if oTmpFailedResult.sName == sKey:
+                    return oCaseFile.noteReasonForId(self.kdGATestFallbacks[sKey], oFailedResult.idTestResult);
+                oTmpFailedResult = oTmpFailedResult.oParent;
 
         self.vprint(u'TODO: Cannot place GA failure idTestResult=%u - %s' % (oFailedResult.idTestResult, oFailedResult.sName,));
         self.dprint(u'%s + %s <<\n%s\n<<' % (oFailedResult.tsCreated, oFailedResult.tsElapsed, sResultLog,));
