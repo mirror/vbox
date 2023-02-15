@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ | LICENSE: This file is part of the DITA Open Toolkit project hosted on
+ |          Sourceforge.net. See the accompanying license.txt file for
+ |          applicable licenses.
+ *-->
+<!--
+ | (C) Copyright IBM Corporation 2006. All Rights Reserved.
+ *-->
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN"
+ "topic.dtd">
+<topic id="demoxsl" xml:lang="en-us">
+<title>Demonstration transforms</title>
+<shortdesc>The examples of DocBook and DITA interoperability can be processed
+with demonstration transforms.</shortdesc>
+<body>
+<p>The plugin contributes the following targets to the DITA Open Toolkit: </p>
+<dl><dlentry>
+<dt>docbook2dita</dt>
+<dd>Convert DocBook divisions to DITA topics. The DITA topics can then be
+processed with the DITA Open Toolkit.<p>Executed by the <keyword>docbook2DITADemo</keyword> target
+in the run-ant demo build.</p></dd>
+</dlentry><dlentry>
+<dt>docbookRelatePush</dt>
+<dd>Push relationships from a DITA map into DocBook articles. The DocBook
+articles can then be processed with the DocBook transform tools.<p>Executed
+by the <keyword>docbookRelateDemo</keyword> target in the run-ant demo build.</p></dd>
+</dlentry><dlentry>
+<dt>docbookMix2dita</dt>
+<dd>Convert DocBook articles referenced from a DITA map to DITA. The DITA
+map can then be processed with the DITA Open Toolkit.<p>Executed by the <keyword>docbookMixDemo</keyword> target
+in the run-ant demo build.</p></dd>
+</dlentry><dlentry>
+<dt>docbookCompose2docbook</dt>
+<dd>Assemble a DocBook book from DocBook divisions as specified by a DITA
+map. The DocBook book can then be processed with the DocBook transform tools.<p>Executed
+by the <keyword>docbookComposeDemo</keyword> target in the run-ant demo build.</p></dd>
+</dlentry><dlentry>
+<dt>docbookDitaref2docbook</dt>
+<dd>Populate a DocBook book by reference to a DITA map. The DocBook book can
+then be processed with the DocBook transform tools.<p>Executed by the <keyword>docbookDitarefDemo</keyword> target
+in the run-ant demo build.</p></dd>
+</dlentry></dl>
+</body>
+</topic>

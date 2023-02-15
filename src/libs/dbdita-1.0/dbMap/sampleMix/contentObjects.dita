@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE concept PUBLIC "-//OASIS//DTD DITA Concept//EN"
+ "../../../../dtd/concept.dtd">
+<!--
+ | LICENSE: This file is part of the DITA Open Toolkit project hosted on
+ |          Sourceforge.net. See the accompanying license.txt file for
+ |          applicable licenses.
+ *-->
+<!--
+ | (C) Copyright IBM Corporation 2005 - 2006. All Rights Reserved.
+ *-->
+<concept id="contentObjects" xml:lang="en-us">
+<title>Content objects</title>
+<shortdesc>A content object is a unit of content that provides a complete
+explanation. Content objects can be combined in different ways using a DITA
+map. </shortdesc>
+</concept>

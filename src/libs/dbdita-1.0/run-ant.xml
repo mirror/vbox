@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+ | LICENSE: This file is part of the DITA Open Toolkit project hosted on
+ |          Sourceforge.net. See the accompanying license.txt file for
+ |          applicable licenses.
+ *-->
+<!--
+ | (C) Copyright IBM Corporation 2006. All Rights Reserved.
+ *-->
+<project name="dbdita" default="all" basedir="..\..">
+
+<import file="${basedir}${file.separator}conductor.xml"/>
+
+  <target name="all"
+        description="build all targets for DocBook with DITA demo"
+        depends="docbookComposeDemo, docbookDitarefDemo, docbookRelateDemo, docbookMixDemo, docbook2DITADemo"/>
+
+  <target name="docbookDitaDoc" depends="use-init"
+        description="build the documentation for the DocBook and DITA demos">
+      <condition property="dita.ext" value=".dita">
+        <not><isset property="dita.ext"></isset></not>
+      </condition>
+      <mkdir dir="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}out${file.separator}dbDoc" />
+      <antcall target="dita2xhtml">
+		<param name="args.input"         value="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}dbdita.ditamap"/>
+		<param name="output.dir"         value="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}out${file.separator}dbDoc"/>
+        <param name="transtype"          value="xhtml"/>
+        <param name="dita.extname"       value="${dita.ext}"/>
+		<param name="clean.temp"         value="yes"/>
+      </antcall>
+      <copy file="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}frameset.html"
+          tofile="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}out${file.separator}dbDoc${file.separator}frameset.html"/>
+  </target>
+
+  <target name="docbook2DITADemo"
+    description="Demonstrate converting DocBook to DITA">
+    <antcall target="docbook2dita">
+      <param name="dbdita.input.dir"     value="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}dbMap${file.separator}sampleRelate"/>
+      <param name="dbdita.output.dir"    value="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}out${file.separator}db2ditaDemo"/>
+      <param name="dbdita.docbook.input" value="articleAbout.xml"/>
+      <param name="dbdita.dita.output"   value="articleAbout.dita"/>
+    </antcall>
+  </target>
+
+  <target name="docbook2DITATest" if="dbtest.dir">
+    <antcall target="docbook2ditaDir">
+      <param name="dbdita.input.dir"     value="${dbtest.dir}"/>
+      <param name="dbdita.output.dir"    value="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}out${file.separator}db2ditaTest"/>
+      <param name="dbdita.input.pattern" value="*.xml"/>
+    </antcall>
+  </target>
+
+  <target name="docbookComposeDemo"
+    description="Demonstrate composing DocBook divisions as specified by a DITA map">
+    <antcall target="docbookCompose2xhtml">
+      <param name="dbdita.input.dir"    value="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}dbMap${file.separator}sampleCompose"/>
+      <param name="dbdita.output.dir"   value="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}out${file.separator}dbCompose"/>
+      <param name="dbdita.map.input"    value="dbmapBook.ditamap"/>
+      <param name="dbdita.docbook.temp" value="dbmapBook_GENERATED.xml"/>
+      <param name="dbdita.html.out"     value="dbmapBook.html"/>
+    </antcall>
+  </target>
+
+  <target name="docbookDitarefDemo"
+    description="Demonstrate populating a DocBook book by reference to a DITA map">
+    <antcall target="docbookDitaref2xhtml">
+      <param name="dbdita.input.dir"     value="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}dbMap${file.separator}sampleDitaref"/>
+      <param name="dbdita.output.dir"    value="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}out${file.separator}dbDitaref"/>
+      <param name="dbdita.docbook.input" value="ditarefBook.xml"/>
+      <param name="dbdita.docbook.temp"  value="ditarefBook_GENERATED.xml"/>
+      <param name="dbdita.html.out"      value="ditarefBook.html"/>
+    </antcall>
+  </target>
+
+  <target name="docbookRelateDemo"
+    description="Demonstrate establishing relationships between DocBook articles with a DITA map">
+    <antcall target="docbookRelate2xhtml">
+      <param name="dbdita.input.dir"    value="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}dbMap${file.separator}sampleRelate"/>
+      <param name="dbdita.output.dir"   value="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}out${file.separator}dbRelate"/>
+      <param name="dbdita.map.input"    value="articleRelate.ditamap"/>
+      <param name="dbdita.map.temp"     value="articleRelate_GENERATED.ditamap"/>
+    </antcall>
+    <copy file="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}dbMap${file.separator}sampleRelate${file.separator}frameset.html"
+          tofile="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}out${file.separator}dbRelate${file.separator}frameset.html"/>
+  </target>
+
+  <target name="docbookMixDemo"
+    description="Demonstrate relationships for a mix of DITA topics and DocBook articles">
+    <antcall target="docbookMix2xhtml">
+      <param name="dbdita.input.dir"    value="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}dbMap${file.separator}sampleMix"/>
+      <param name="dbdita.output.dir"   value="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}out${file.separator}dbMix"/>
+      <param name="dbdita.map.input"    value="articleMix.ditamap"/>
+      <param name="dbdita.map.temp"     value="articleMix_GENERATED.ditamap"/>
+    </antcall>
+    <copy file="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}dbMap${file.separator}sampleMix${file.separator}frameset.html"
+          tofile="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}out${file.separator}dbMix${file.separator}frameset.html"/>
+  </target>
+
+  <target name="docbookDitaDemoClean"
+        description="clean the sample build">
+    <delete>
+      <fileset dir="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}dbMap${file.separator}sampleCompose">
+        <include name="*_GENERATED.xml"/>
+      </fileset>
+    </delete>
+    <delete>
+      <fileset dir="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}dbMap${file.separator}sampleDitaref">
+        <include name="*_GENERATED.xml"/>
+      </fileset>
+    </delete>
+    <delete>
+      <fileset dir="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}dbMap${file.separator}sampleMix">
+        <include name="*_GENERATED.ditamap"/>
+        <include name="*_GENERATED.dita"/>
+        <include name="*_GENERATED.txt"/>
+      </fileset>
+    </delete>
+    <delete>
+      <fileset dir="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}dbMap${file.separator}sampleRelate">
+        <include name="*_GENERATED.ditamap"/>
+        <include name="*_GENERATED.xml"/>
+      </fileset>
+    </delete>
+    <delete includeemptydirs="true">
+      <fileset dir="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}out">
+        <include name="**/*"/>
+        <exclude name="${basedir}${file.separator}demo${file.separator}dbdita${file.separator}out"/>
+      </fileset>
+    </delete>
+  </target>
+</project>

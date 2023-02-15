@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ | LICENSE: This file is part of the DITA Open Toolkit project hosted on
+ |          Sourceforge.net. See the accompanying license.txt file for
+ |          applicable licenses.
+ *-->
+<!--
+ | (C) Copyright IBM Corporation 2006. All Rights Reserved.
+ *-->
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN"
+ "topic.dtd">
+<topic id="ditawriter" xml:lang="en-us">
+<title>DITA writer</title>
+<shortdesc>This directory contains the DITA output writer.</shortdesc>
+<body>
+<p>The output writer provides the following rules for each output element.
+(In the descriptions, <varname>moduleName</varname> stands for a module that
+provides an element or attribute, <varname>elementName</varname> stands for
+an element, and <varname>attributeName</varname> stands for an attributeName.)
+Each rule consists of a mode:</p>
+<dl><dlentry>
+<dt><varname>moduleName</varname>.<varname>elementName</varname>.out</dt>
+<dd>Generates the <varname>elementName</varname> element from the <varname>moduleName</varname> module.
+For instance, the <codeph>topic.keyword.out</codeph> rule generates a <codeph>&lt;keyword></codeph> element.
+The rule also fires the wrapper rules to request the attributes and content
+of the element. </dd>
+</dlentry><dlentry>
+<dt><varname>moduleName</varname>.<varname>elementName</varname>.atts.in</dt>
+<dd>Provides a wrapper for requesting the attributes of the <varname>elementName</varname> element
+from <varname>moduleName</varname> module.</dd>
+</dlentry><dlentry>
+<dt><varname>moduleName</varname>.<varname>elementName</varname>.<varname>attributeName</varname>.att.in</dt>
+<dd>Requests the value of <varname>attributeName</varname> in the context
+of the <varname>elementName</varname> element from the <varname>moduleName</varname> module.
+The default handler for this rule requests the value of <varname>attributeName</varname> in
+any context. </dd>
+</dlentry><dlentry>
+<dt><varname>attributeName</varname>.att.in</dt>
+<dd>Requests the value of <varname>attributeName</varname> in any context. </dd>
+</dlentry><dlentry>
+<dt><varname>moduleName</varname>.<varname>elementName</varname>.content.in</dt>
+<dd>Provides a wrapper for requesting the content of the <varname>elementName</varname> element
+from <varname>moduleName</varname> module. If the content model isn't shared,
+the default handler for this rule requests content from the children and text
+(if the content model supports mixed content) of the current input node.<p>If
+the content model is shared, the default handler invokes a rule for the shared
+content model. For instance, elements that accept content conforming to the <codeph>words.cnt</codeph> group
+invoke the rule for <codeph>words.cnt.text.in</codeph>.</p><p>If the content
+model takes a simple sequence, the default handler for this rule requests
+the subelements in sequence. </p></dd>
+</dlentry><dlentry>
+<dt><varname>moduleName</varname>.<varname>elementName</varname>.child</dt>
+<dd>Requests the current input element as a child in the context of the <varname>elementName</varname> element
+from the <varname>moduleName</varname> module. The default handler for this
+rule requests the current input element as a child in any context.</dd>
+</dlentry><dlentry>
+<dt>child</dt>
+<dd>Requests the current input element as a child in any context.</dd>
+</dlentry><dlentry>
+<dt><varname>moduleName</varname>.<varname>elementName</varname>.in</dt>
+<dd>Requests the <varname>elementName</varname> element from the <varname>moduleName</varname> module.
+This rule gets invoked only by a content wrapper when the content model has
+a simple sequence.</dd>
+</dlentry></dl>
+<p>The reader can handle a request in a specific output context or in any
+context as appropriate. For instance, the Docbook reader handles a context-free
+request for an id attribute by copying the id (if present) on the current
+input element to the output. In addition, however, the Docbook reader handles
+the request for an id attribute in a topic context by generating an id if
+necessary. </p>
+<pre></pre>
+</body>
+</topic>

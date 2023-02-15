@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ | LICENSE: This file is part of the DITA Open Toolkit project hosted on
+ |          Sourceforge.net. See the accompanying license.txt file for
+ |          applicable licenses.
+ *-->
+<!--
+ | (C) Copyright IBM Corporation 2006. All Rights Reserved.
+ *-->
+
+<!--vocabulary declarations-->
+
+<!--vocabulary substitution (one for each extended base element,
+    with the name of the domain(s) in which the extension was declared)-->
+
+<!--vocabulary attributes (must be declared ahead of the dtds, which puts @domains first in order) -->
+<!ENTITY included-domains "">
+
+<!--Embed map to get generic elements -->
+<!ENTITY % map-type PUBLIC
+  "-//OASIS//ELEMENTS DITA Map//EN" 
+  "../../../../dtd/map.mod">
+  %map-type;
+
+<!ENTITY % dbmap-type PUBLIC
+  "-//IBM//ELEMENTS DocBook Composition Map//EN"
+  "docbookMap.mod">
+  %dbmap-type;
+
+<!--vocabulary definitions-->

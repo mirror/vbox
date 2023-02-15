@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+    "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<!--
+ | LICENSE: This file is part of the DITA Open Toolkit project hosted on
+ |          Sourceforge.net. See the accompanying license.txt file for
+ |          applicable licenses.
+ *-->
+<!--
+ | (C) Copyright IBM Corporation 2005 - 2006. All Rights Reserved.
+ *-->
+<article>
+<title>Relationships between articles</title>
+<para>You can maintain the relationships between articles outside of
+the articles in a DITA map. This approach has the benefit that you can
+reuse the same article for many different purposes in many different
+contexts. In particular:</para>
+<itemizedlist>
+<listitem>
+<para>You can assign different parent and child articles.</para>
+</listitem>
+<listitem>
+<para>You can provide different related links.</para>
+</listitem>
+<listitem>
+<para>You can integrate with DITA and other non-DocBook content.</para>
+</listitem>
+</itemizedlist>
+</article>

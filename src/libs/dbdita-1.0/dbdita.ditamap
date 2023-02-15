@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ | LICENSE: This file is part of the DITA Open Toolkit project hosted on
+ |          Sourceforge.net. See the accompanying license.txt file for
+ |          applicable licenses.
+ *-->
+<!--
+ | (C) Copyright IBM Corporation 2006. All Rights Reserved.
+ *-->
+<!DOCTYPE map PUBLIC "-//OASIS//DTD DITA Map//EN"
+ "../../dtd/map.dtd">
+<map title="Docbook and DITA">
+<topicref href="README.dita" navtitle="Docbook and DITA" type="topic">
+<topicref href="doc/dbInstall.dita" navtitle="Installing the DocBook-DITA plugin" type="task">
+</topicref>
+<topicref href="doc/docbook2dita.dita" navtitle="The Docbook to DITA transform"
+type="topic">
+<topicref href="doc/ditaWriter.dita" navtitle="DITA writer" type="topic">
+</topicref>
+<topicref href="doc/ditaWriterMake.dita" navtitle="DITA writer make" type="topic">
+</topicref>
+</topicref>
+<topicref href="doc/dbMap.dita" navtitle="DITA maps and DocBook" type="topic">
+</topicref>
+<topicref href="doc/dbMapXSL.dita" navtitle="Demonstration transforms" type="topic">
+</topicref>
+</topicref>
+<topicgroup toc="no" collection-type="family">
+<topicref href="doc/dbInstall.dita" linking="sourceonly" navtitle="Installing the DocBook-DITA plugin" type="task">
+</topicref>
+<topicref href="doc/dbMapXSL.dita" linking="targetonly" navtitle="Demonstration transforms" type="topic">
+</topicref>
+</topicgroup>
+</map>

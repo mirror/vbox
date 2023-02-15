@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+    "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<!--
+ | LICENSE: This file is part of the DITA Open Toolkit project hosted on
+ |          Sourceforge.net. See the accompanying license.txt file for
+ |          applicable licenses.
+ *-->
+<!--
+ | (C) Copyright IBM Corporation 2005 - 2006. All Rights Reserved.
+ *-->
+<article>
+<title>Relationship types</title>
+<para>A content object can have two basic types of relationships
+within a DITA map:</para>
+<variablelist>
+<varlistentry>
+<term>Navigation relationships</term>
+<listitem>
+<para>Such relationships to content objects that are nearby
+in the navigation hierarchy include parent, previous, next,
+and child relationships.  A content object that appears 
+in more than one position within the hierarchy can have
+different relationships in different contexts.  Nearby 
+content often contributes to a larger composite content
+object. 
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Related content</term>
+<listitem>
+<para>Such relationships can cut across the navigation hierarchy
+and, in some respects, resemble a see-also relationship 
+in an index.
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</article>
