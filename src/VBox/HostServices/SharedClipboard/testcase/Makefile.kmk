@@ -44,8 +44,8 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  tstClipboardMockHGCM_SOURCES = \
  	tstClipboardMockHGCM.cpp \
  	../VBoxSharedClipboardSvc.cpp \
- 	../../testcase/TstHgcmMock.cpp \
- 	../../testcase/TstHgcmMockUtils.cpp \
+ 	../../testcase/TstHGCMMock.cpp \
+ 	../../testcase/TstHGCMMockUtils.cpp \
  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestR3LibClipboard.cpp \
  	$(PATH_ROOT)/src/VBox/HostServices/common/message.cpp

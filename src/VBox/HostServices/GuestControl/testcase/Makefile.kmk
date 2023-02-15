@@ -45,7 +45,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  tstGuestControlMockHGCM_DEFS     = VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL
  tstGuestControlMockHGCM_SOURCES  = \
  	../VBoxGuestControlSvc.cpp \
- 	../../testcase/TstHgcmMock.cpp \
+ 	../../testcase/TstHGCMMock.cpp \
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestR3LibGuestCtrl.cpp \
  	$(PATH_ROOT)/src/VBox/HostServices/common/message.cpp \
  	tstGuestControlMockHGCM.cpp
