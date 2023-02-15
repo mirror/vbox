@@ -42,11 +42,13 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  tstClipboardMockHGCM_TEMPLATE = VBoxR3TstExe
  tstClipboardMockHGCM_DEFS    = VBOX_WITH_HGCM VBOX_WITH_SHARED_CLIPBOARD
  tstClipboardMockHGCM_SOURCES = \
+ 	tstClipboardMockHGCM.cpp \
  	../VBoxSharedClipboardSvc.cpp \
+ 	../../testcase/TstHgcmMock.cpp \
+ 	../../testcase/TstHgcmMockUtils.cpp \
  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/lib/VBoxGuestR3LibClipboard.cpp \
- 	$(PATH_ROOT)/src/VBox/HostServices/common/message.cpp \
- 	tstClipboardMockHGCM.cpp
+ 	$(PATH_ROOT)/src/VBox/HostServices/common/message.cpp
  tstClipboardMockHGCM_LIBS    = $(LIB_RUNTIME)
 
  if1of ($(KBUILD_TARGET), linux solaris)
