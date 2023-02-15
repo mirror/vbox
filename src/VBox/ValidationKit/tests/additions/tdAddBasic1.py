@@ -339,7 +339,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
     def setGuestEnvVar(self, oSession, oTxsSession, oTestVm, sName, sValue):
         """ Sets a system-wide environment variable on the guest. Only supports Windows guests so far. """
         _ = oSession;
-        if oTestVm.sKind not in ('WindowsNT4',):
+        if oTestVm.sKind not in ('WindowsNT4', 'Windows2000',):
             sPathRegExe   = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'reg.exe');
             self.txsRunTest(oTxsSession, ('Set env var \"%s\"' % (sName,)),
                             30 * 1000, sPathRegExe,
@@ -397,7 +397,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # Apply The SetupAPI logging level so that we also get the (most verbose) setupapi.dev.log file.
         ## @todo !!! HACK ALERT !!! Add the value directly into the testing source image. Later.
         fHaveSetupApiDevLog = False;
-        if oTestVm.sKind not in ('WindowsNT4',):
+        if oTestVm.sKind not in ('WindowsNT4', 'Windows2000',):
             sRegExe = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'reg.exe');
             fHaveSetupApiDevLog = self.txsRunTest(oTxsSession, 'Enabling setupapi.dev.log', 30 * 1000,
                                                   sRegExe,
