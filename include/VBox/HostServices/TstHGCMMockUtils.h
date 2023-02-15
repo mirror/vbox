@@ -58,13 +58,13 @@
  * SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
  */
 
-#ifndef VBOX_INCLUDED_GuestHost_HGCMMockUtils_h
-#define VBOX_INCLUDED_GuestHost_HGCMMockUtils_h
+#ifndef VBOX_INCLUDED_HostServices_TstHGCMMockUtils_h
+#define VBOX_INCLUDED_HostServices_TstHGCMMockUtils_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
-#include <VBox/GuestHost/HGCMMock.h>
+#include <VBox/HostServices/TstHGCMMock.h>
 
 /** Pointer to a HGCM Mock utils context. */
 typedef struct TSTHGCMUTILSCTX *PTSTHGCMUTILSCTX;
@@ -156,5 +156,5 @@ int TstHGCMUtilsHostThreadStop(PTSTHGCMUTILSCTX pCtx);
 /** @} */
 
 
-#endif /* !VBOX_INCLUDED_GuestHost_HGCMMockUtils_h */
+#endif /* !VBOX_INCLUDED_HostServices_TstHGCMMockUtils_h */
 

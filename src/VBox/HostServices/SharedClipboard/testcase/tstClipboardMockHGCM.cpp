@@ -40,8 +40,8 @@
 # include <VBox/GuestHost/SharedClipboard-win.h>
 #endif
 
-#include <VBox/GuestHost/HGCMMock.h>
-#include <VBox/GuestHost/HGCMMockUtils.h>
+#include <VBox/HostServices/TstHGCMMock.h>
+#include <VBox/HostServices/TstHGCMMockUtils.h>
 
 #include <iprt/assert.h>
 #include <iprt/initterm.h>
@@ -54,7 +54,7 @@
 
 
 /*********************************************************************************************************************************
-*   Static globals                                                                                                               *
+*   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 static RTTEST     g_hTest;
 
@@ -652,8 +652,8 @@ static DECLCALLBACK(int) tstTestReadFromHostDestroy(PCLIPBOARDTESTCTX pTstCtx, v
 
 
 /*********************************************************************************************************************************
- * Main                                                                                                                          *
- ********************************************************************************************************************************/
+*   Main                                                                                                                         *
+*********************************************************************************************************************************/
 
 /** Test definition table. */
 CLIPBOARDTESTDESC g_aTests[] =

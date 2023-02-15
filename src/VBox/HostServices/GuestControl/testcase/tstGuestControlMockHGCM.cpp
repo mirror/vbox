@@ -32,8 +32,8 @@
 #include <VBox/HostServices/GuestControlSvc.h>
 #include <VBox/VBoxGuestLib.h>
 
-#include <VBox/GuestHost/HGCMMock.h>
-#include <VBox/GuestHost/HGCMMockUtils.h>
+#include <VBox/HostServices/TstHGCMMock.h>
+#include <VBox/HostServices/TstHGCMMockUtils.h>
 
 #include <iprt/assert.h>
 #include <iprt/initterm.h>

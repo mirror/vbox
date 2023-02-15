@@ -40,8 +40,8 @@
  * SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
  */
 
-#ifndef VBOX_INCLUDED_GuestHost_HGCMMock_h
-#define VBOX_INCLUDED_GuestHost_HGCMMock_h
+#ifndef VBOX_INCLUDED_HostServices_TstHGCMMock_h
+#define VBOX_INCLUDED_HostServices_TstHGCMMock_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -193,4 +193,4 @@ VBGLR3DECL(int)    VbglR3HGCMCall(PVBGLIOCHGCMCALL pInfo, size_t cbInfo);
 
 #endif /* IN_RING3 */
 
-#endif /* !VBOX_INCLUDED_GuestHost_HGCMMock_h */
+#endif /* !VBOX_INCLUDED_HostServices_TstHGCMMock_h */
