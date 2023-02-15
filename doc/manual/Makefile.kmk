@@ -864,8 +864,8 @@ man_vboximg-mount.xml \
  refentry-to-dita: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file, $(basename $(VBOX_MANUAL_XML_REFENTRY_FILES)) \
  				,$$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/dita/topics/$(file).dita))
 
-VBOX_REFENTRY_DITA_FILES = $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file, $(basename $(VBOX_MANUAL_XML_REFENTRY_FILES)) \
- 				,$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/dita/topics/$(file).dita))
+ VBOX_REFENTRY_DITA_FILES = $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file, $(basename $(VBOX_MANUAL_XML_REFENTRY_FILES)) \
+ 	,$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/dita/topics/$(file).dita))
 
  ##########################################################################################
  #
@@ -903,7 +903,7 @@ VBOX_REFENTRY_DITA_FILES = $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach fil
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf: \
   		$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/user.ditamap \
-		$(VBOX_REFENTRY_DITA_FILES)
+  		$(VBOX_REFENTRY_DITA_FILES)
 		$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
 		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/user.ditamap \
 			/transtype:pdf /ditadir:$(VBOX_DITA_PATH) /outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)
