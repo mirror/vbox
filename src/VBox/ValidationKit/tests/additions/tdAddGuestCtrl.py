@@ -1603,19 +1603,21 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         if oTestVm.isWindows():
             sPathSC = os.path.join(self.oTstDrv.getGuestSystemDir(oTestVm), 'sc.exe');
+            if oTestVm.sKind in ('WindowsNT3x', 'WindowsNT4', 'Windows2000',): # W2K too?
+                sPathSC = os.path.join(self.oTstDrv.getGuestSystemDir(oTestVm), 'net.exe');
             if fStart is True:
-                fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Starting VBoxService', 30 * 1000, \
+                fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Starting VBoxService', 30 * 1000,
                                               sPathSC, (sPathSC, 'start', 'VBoxService'));
             else:
-                fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Stopping VBoxService', 30 * 1000, \
+                fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Stopping VBoxService', 30 * 1000,
                                               sPathSC, (sPathSC, 'stop', 'VBoxService'));
         elif oTestVm.isLinux():
             sPathService = "/sbin/rcvboxadd-service";
             if fStart is True:
-                fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Starting VBoxService', 30 * 1000, \
+                fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Starting VBoxService', 30 * 1000,
                                               sPathService, (sPathService, 'start'));
             else:
-                fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Stopping VBoxService', 30 * 1000, \
+                fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Stopping VBoxService', 30 * 1000,
                                               sPathService, (sPathService, 'stop'));
         else:
             reporter.log('Controlling VBoxService not supported for this guest yet');
@@ -1687,8 +1689,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Whether to enable verbose logging for VBoxService.
         fEnableVerboseLogging = False;
 
-        # On Windows guests we always can enable verbose logging.
-        if oTestVm.isWindows():
+        # On Windows guests we always can enable verbose logging. NT4 and W2K doesn't have reg.exe nor (at least NT4) sc.exe.
+        if oTestVm.isWindows() and oTestVm.sKind not in ('WindowsNT4', 'Windows2000',):
             fEnableVerboseLogging = True;
 
         # Old TxS versions had a bug which caused an infinite loop when executing stuff containing "$xxx",
