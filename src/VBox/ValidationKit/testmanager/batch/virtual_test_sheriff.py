@@ -653,6 +653,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
     ktReason_Host_InstallationWantReboot               = ( 'Host',              'Installation want reboot' );
     ktReason_Host_InvalidPackage                       = ( 'Host',              'ERROR_INSTALL_PACKAGE_INVALID' );
     ktReason_Host_InstallSourceAbsent                  = ( 'Host',              'ERROR_INSTALL_SOURCE_ABSENT' );
+    ktReason_Host_Install_Hang                         = ( 'Host',              'Install hang' );
     ktReason_Host_NotSignedWithBuildCert               = ( 'Host',              'Not signed with build cert' );
     ktReason_Host_DiskFull                             = ( 'Host',              'Host disk full' );
     ktReason_Host_DoubleFreeHeap                       = ( 'Host',              'Double free or corruption' );
@@ -660,9 +661,9 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
     ktReason_Host_win32com_gen_py                      = ( 'Host',              'win32com.gen_py' );
     ktReason_Host_Reboot_OSX_Watchdog_Timeout          = ( 'Host Reboot',       'OSX Watchdog Timeout' );
     ktReason_Host_Modprobe_Failed                      = ( 'Host',              'Modprobe failed' );
-    ktReason_Host_Install_Hang                         = ( 'Host',              'Install hang' );
     ktReason_Host_NetworkMisconfiguration              = ( 'Host',              'Network misconfiguration' );
     ktReason_Host_TSTInfo_Accuracy_OOR                 = ( 'Host',              'TSTInfo accuracy out of range' );
+    ktReason_Host_UninstallationFailed                 = ( 'Host',              'Uninstallation failed' );
     ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
     ktReason_Networking_VERR_INTNET_FLT_IF_NOT_FOUND   = ( 'Networking',        'VERR_INTNET_FLT_IF_NOT_FOUND' );
     ktReason_OSInstall_GRUB_hang                       = ( 'O/S Install',       'GRUB hang' );
@@ -925,6 +926,15 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                 if fStopOnHit:
                     return True;
                 fFoundSomething = True;
+
+        # If we didn't find something specific, just add a general install/uninstall
+        # failure reason so it's easier to get an idea why a test failed when
+        # looking at the failure listing in the test manager.
+        if not fFoundSomething:
+            if fInstall:
+                oCaseFile.noteReasonForId(self.ktReason_Host_InstallationFailed, oFailedResult.idTestResult);
+            else:
+                oCaseFile.noteReasonForId(self.ktReason_Host_UninstallationFailed, oFailedResult.idTestResult);
 
         return fFoundSomething if fFoundSomething else None;
 
