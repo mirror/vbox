@@ -175,6 +175,11 @@ running_vboxvideo()
     lsmod | grep -q "vboxvideo[^_-]"
 }
 
+running_module()
+{
+    lsmod | grep -q $1
+}
+
 # Get version string of currently running kernel module.
 running_module_version()
 {
@@ -198,6 +203,59 @@ check_running_module_version()
     [ -n "$expected" ] || return
 
     [ "$expected" = "$(running_module_version "$mod")" ] || return
+}
+
+# A wrapper for check_running_module_version.
+# Go through the list of Guest Additions' modules and
+# verify if they are loaded and running version matches
+# to current installation version. Skip vboxvideo since
+# it is not loaded for old guests.
+check_status_kernel()
+{
+    for mod in vboxguest vboxsf; do
+        running_module "$mod" || fail "module $mod not loaded"
+        check_running_module_version "$mod" || fail "currently loaded module $mod version ($(running_module_version "$mod")) does not match to VirtualBox Guest Additions installation version ($VBOX_VERSION $VBOX_REVISION)"
+    done
+}
+
+# Checks if systemctl is present and functional (i.e., systemd is the init process).
+use_systemd()
+{
+    systemctl status >/dev/null 2>&1
+}
+
+## Did we install a systemd service?
+systemd_service_installed()
+{
+    ## Name of service to test.
+    name="${1}"
+
+    test -f /lib/systemd/system/"${name}".service ||
+        test -f /usr/lib/systemd/system/"${name}".service
+}
+
+## Perform an action on a service
+do_sysvinit_action()
+{
+    ## Name of service to start.
+    name="${1}"
+    ## The action to perform, normally "start", "stop" or "status".
+    action="${2}"
+
+    if use_systemd -a systemd_service_installed "${name}"; then
+        systemctl -q ${action} "${name}"
+    elif test -x "/etc/rc.d/init.d/${name}"; then
+        "/etc/rc.d/init.d/${name}" "${action}" quiet
+    elif test -x "/etc/init.d/${name}"; then
+        "/etc/init.d/${name}" "${action}" quiet
+    fi
+}
+
+# Check whether user-land processes are running.
+# Currently only check for VBoxService.
+check_status_user()
+{
+    do_sysvinit_action vboxadd-service status >/dev/null 2>&1
 }
 
 do_vboxguest_non_udev()
@@ -644,7 +702,6 @@ module_revision()
     modinfo "$mod" 2>/dev/null | grep -e "^version:" | tr -s ' ' | cut -d " " -f3
 }
 
-
 # Returns "1" if module is signed and signature can be verified
 # with public key provided in DEB_PUB_KEY. Or empty string otherwise.
 module_signed()
@@ -888,39 +945,6 @@ stop()
     return 0
 }
 
-# Checks if systemctl is present and functional (i.e., systemd is the init process).
-use_systemd()
-{
-    systemctl status >/dev/null 2>&1
-}
-
-## Did we install a systemd service?
-systemd_service_installed()
-{
-    ## Name of service to test.
-    name="${1}"
-
-    test -f /lib/systemd/system/"${name}".service ||
-        test -f /usr/lib/systemd/system/"${name}".service
-}
-
-## Perform an action on a service
-do_sysvinit_action()
-{
-    ## Name of service to start.
-    name="${1}"
-    ## The action to perform, normally "start", "stop" or "status".
-    action="${2}"
-
-    if use_systemd -a systemd_service_installed "${name}"; then
-        systemctl -q ${action} "${name}"
-    elif test -x "/etc/rc.d/init.d/${name}"; then
-        "/etc/rc.d/init.d/${name}" "${action}" quiet
-    elif test -x "/etc/init.d/${name}"; then
-        "/etc/init.d/${name}" "${action}" quiet
-    fi
-}
-
 # Check if process with this PID is running.
 check_pid()
 {
@@ -1046,11 +1070,12 @@ reload()
 
     if [ $? -eq 0 ]; then
 
-        # Check if we just loaded modules of correct version. Skip vboxvideo
-        # since it's not loaded for very old guests.
-        for mod in vboxguest vboxsf; do
-            check_running_module_version "$mod" || fail "currently loaded module $mod version ($(running_module_version "$mod")) does not match to VirtualBox Guest Additions installation version ($VBOX_VERSION $VBOX_REVISION)"
-        done
+        # Check if we just loaded modules of correct version.
+        check_status_kernel
+
+        # Check if user-land processes were restarted as well.
+        check_status_user
+
         # Take reported version of running Guest Additions from running vboxguest module (as a paranoia check).
         info "kernel modules and services $(running_module_version "vboxguest") reloaded"
         info "NOTE: you may still consider to re-login if some user session specific services (Shared Clipboard, Drag and Drop, Seamless or Guest Screen Resize) were not restarted automatically"
@@ -1118,8 +1143,19 @@ cleanup)
 status)
     dmnstatus
     ;;
+status-kernel)
+    check_status_kernel && info "Kernel modules are loaded"
+    ;;
+status-user)
+    check_status_user
+    if [ $? -eq 0 ]; then
+        info "User-land services are running"
+    else
+        fail "User-land services are not running"
+    fi
+    ;;
 *)
-    echo "Usage: $0 {start|stop|restart|reload|status|setup|quicksetup|cleanup} [quiet]"
+    echo "Usage: $0 {start|stop|restart|reload|status|status-kernel|status-user|setup|quicksetup|cleanup} [quiet]"
     exit 1
 esac
 
