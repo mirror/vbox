@@ -117,7 +117,7 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
  *  query the extended error information on the current thread (using
  *  com::ErrorInfo) if the interface reports that it supports error information.
  *
- *  Used by command line tools or for debugging and assumes the |HRESULT rc|
+ *  Used by command line tools or for debugging and assumes the |HRESULT hrc|
  *  variable is accessible for assigning in the current scope.
  * @sa CHECK_ERROR2, CHECK_ERROR2I
  */
