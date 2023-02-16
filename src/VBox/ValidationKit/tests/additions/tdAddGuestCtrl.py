@@ -3619,7 +3619,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         for (i, tTest) in enumerate(atTests):
             oCurTest = tTest[0] # type: tdTestDirCreate
             oCurRes  = tTest[1] # type: tdTestResult
-            reporter.log('Testing #%d, sDirectory="%s" ...' % (i, limitString(oCurTest.sDirectory)));
+            reporter.log('Testing #%d, sDirectory="%s" ...' % (i, limitString(oCurTest.sDirectory),));
 
             fRc = oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
             if not fRc:
