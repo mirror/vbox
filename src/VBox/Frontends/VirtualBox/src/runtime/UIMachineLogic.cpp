@@ -106,10 +106,6 @@
 /* Other VBox includes: */
 #include <iprt/path.h>
 #include <iprt/thread.h>
-#ifdef VBOX_WITH_DEBUGGER_GUI
-# include <VBox/dbggui.h>
-# include <iprt/ldr.h>
-#endif
 
 /* VirtualBox interface declarations: */
 #include <VBox/com/VirtualBox.h>
@@ -216,13 +212,6 @@ void UIMachineLogic::prepare()
     prepareDock();
 #endif /* VBOX_WS_MAC */
 
-#if 0 /* To early! The debugger needs a VM handle to work. So, must be done after power on.  Moved to initializePostPowerUp. */
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /* Prepare debugger: */
-    prepareDebugger();
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-#endif
-
     /* Load settings: */
     loadSettings();
 
@@ -264,7 +253,7 @@ void UIMachineLogic::initializePostPowerUp()
 {
 #ifdef VBOX_WITH_DEBUGGER_GUI
     prepareDebugger();
-#endif
+#endif /* VBOX_WITH_DEBUGGER_GUI */
     sltMachineStateChanged();
     sltAdditionsStateChanged();
     sltMouseCapabilityChanged();
@@ -278,11 +267,6 @@ UISession *UIMachineLogic::uisession() const
 UIActionPool *UIMachineLogic::actionPool() const
 {
     return uimachine()->actionPool();
-}
-
-CSession& UIMachineLogic::session() const
-{
-    return uisession()->session();
 }
 
 CMachine& UIMachineLogic::machine() const
@@ -757,10 +741,6 @@ UIMachineLogic::UIMachineLogic(UIMachine *pMachine)
     , m_pSharedClipboardActions(0)
     , m_pDragAndDropActions(0)
     , m_fIsWindowsCreated(false)
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    , m_pDbgGui(0)
-    , m_pDbgGuiVT(0)
-#endif /* VBOX_WITH_DEBUGGER_GUI */
 #ifdef VBOX_WS_MAC
     , m_fIsDockIconEnabled(true)
     , m_pDockIconPreview(0)
@@ -1387,7 +1367,7 @@ void UIMachineLogic::loadSettings()
 void UIMachineLogic::cleanupDebugger()
 {
     /* Close debugger: */
-    dbgDestroy();
+    uimachine()->dbgDestroy();
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
@@ -2470,21 +2450,19 @@ void UIMachineLogic::sltInstallGuestAdditions()
 
 void UIMachineLogic::sltShowDebugStatistics()
 {
-    if (dbgCreated())
+    if (uimachine()->dbgCreated(actionPool()->action(UIActionIndexRT_M_Debug)))
     {
         keyboardHandler()->setDebuggerActive();
-        const QByteArray &expandBytes = uiCommon().getDebuggerStatisticsExpand().toUtf8();
-        const QByteArray &filterBytes = uiCommon().getDebuggerStatisticsFilter().toUtf8();
-        m_pDbgGuiVT->pfnShowStatistics(m_pDbgGui, filterBytes.constData(), expandBytes.constData());
+        uimachine()->dbgShowStatistics();
     }
 }
 
 void UIMachineLogic::sltShowDebugCommandLine()
 {
-    if (dbgCreated())
+    if (uimachine()->dbgCreated(actionPool()->action(UIActionIndexRT_M_Debug)))
     {
         keyboardHandler()->setDebuggerActive();
-        m_pDbgGuiVT->pfnShowCommandLine(m_pDbgGui);
+        uimachine()->dbgShowCommandLine();
     }
 }
 
@@ -2710,11 +2688,10 @@ void UIMachineLogic::sltHandleVisualStateChange()
 void UIMachineLogic::sltHandleCommitData()
 {
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    /* Cleanup debugger before VBoxDbg module handle cleaned up: */
     cleanupDebugger();
-    sltCloseLogDialog();
     sltCloseGuestControlConsoleDialog();
-#endif
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+    sltCloseLogDialog();
     activateScreenSaver();
     sltCloseFileManagerDialog();
     sltCloseInformationDialog();
@@ -2734,17 +2711,6 @@ void UIMachineLogic::typeHostKeyComboPressRelease(bool fToggleSequence)
         return;
     pHostKeyAction->toggle();
 }
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-void UIMachineLogic::dbgAdjustRelativePos()
-{
-    if (m_pDbgGui)
-    {
-        const QRect rct = activeMachineWindow()->frameGeometry();
-        m_pDbgGuiVT->pfnAdjustRelativePos(m_pDbgGui, rct.x(), rct.y(), rct.width(), rct.height());
-    }
-}
-#endif /* VBOX_WITH_DEBUGGER_GUI */
 
 void UIMachineLogic::updateMenuDevicesStorage(QMenu *pMenu)
 {
@@ -3263,59 +3229,6 @@ bool UIMachineLogic::mountBootMedium(const QUuid &uMediumId)
     }
     return fSuccess;
 }
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-
-bool UIMachineLogic::dbgCreated()
-{
-    if (m_pDbgGui)
-        return true;
-
-    RTLDRMOD hLdrMod = uiCommon().getDebuggerModule();
-    if (hLdrMod == NIL_RTLDRMOD)
-        return false;
-
-    PFNDBGGUICREATE pfnGuiCreate;
-    int rc = RTLdrGetSymbol(hLdrMod, "DBGGuiCreate", (void**)&pfnGuiCreate);
-    if (RT_SUCCESS(rc))
-    {
-        ISession *pISession = session().raw();
-        rc = pfnGuiCreate(pISession, &m_pDbgGui, &m_pDbgGuiVT);
-        if (RT_SUCCESS(rc))
-        {
-            if (   DBGGUIVT_ARE_VERSIONS_COMPATIBLE(m_pDbgGuiVT->u32Version, DBGGUIVT_VERSION)
-                || m_pDbgGuiVT->u32EndVersion == m_pDbgGuiVT->u32Version)
-            {
-                m_pDbgGuiVT->pfnSetParent(m_pDbgGui, activeMachineWindow());
-                m_pDbgGuiVT->pfnSetMenu(m_pDbgGui, actionPool()->action(UIActionIndexRT_M_Debug));
-                dbgAdjustRelativePos();
-                return true;
-            }
-
-            LogRel(("GUI: DBGGuiCreate failed, incompatible versions (loaded %#x/%#x, expected %#x)\n",
-                    m_pDbgGuiVT->u32Version, m_pDbgGuiVT->u32EndVersion, DBGGUIVT_VERSION));
-        }
-        else
-            LogRel(("GUI: DBGGuiCreate failed, rc=%Rrc\n", rc));
-    }
-    else
-        LogRel(("GUI: RTLdrGetSymbol(,\"DBGGuiCreate\",) -> %Rrc\n", rc));
-
-    m_pDbgGui = 0;
-    m_pDbgGuiVT = 0;
-    return false;
-}
-
-void UIMachineLogic::dbgDestroy()
-{
-    if (m_pDbgGui)
-    {
-        m_pDbgGuiVT->pfnDestroy(m_pDbgGui);
-        m_pDbgGui = 0;
-        m_pDbgGuiVT = 0;
-    }
-}
-#endif /* VBOX_WITH_DEBUGGER_GUI */
 
 void UIMachineLogic::reset(bool fShowConfirmation)
 {

@@ -619,6 +619,33 @@ bool UIMachine::acquireEffectiveCPULoad(ulong &uLoad)
     return uisession()->acquireEffectiveCPULoad(uLoad);
 }
 
+#ifdef VBOX_WITH_DEBUGGER_GUI
+bool UIMachine::dbgCreated(void *pActionDebug)
+{
+    return uisession()->dbgCreated(pActionDebug);
+}
+
+void UIMachine::dbgDestroy()
+{
+    return uisession()->dbgDestroy();
+}
+
+void UIMachine::dbgShowStatistics()
+{
+    return uisession()->dbgShowStatistics();
+}
+
+void UIMachine::dbgShowCommandLine()
+{
+    return uisession()->dbgShowCommandLine();
+}
+
+void UIMachine::dbgAdjustRelativePos()
+{
+    return uisession()->dbgAdjustRelativePos();
+}
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+
 void UIMachine::detachUi()
 {
     /* Manually close Runtime UI: */

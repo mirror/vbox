@@ -53,7 +53,6 @@ class UIMouseHandler;
 class UIDockIconPreview;
 class UISoftKeyboard;
 class UIVMInformationDialog;
-class CSession;
 class CMachine;
 class CConsole;
 class CMouse;
@@ -63,11 +62,6 @@ class CVirtualBoxErrorInfo;
 #if defined(VBOX_WS_X11)
  struct X11ScreenSaverInhibitMethod;
 #endif
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-typedef struct DBGGUIVT const *PCDBGGUIVT;
-typedef struct DBGGUI *PDBGGUI;
-#endif /* VBOX_WITH_DEBUGGER_GUI */
 
 /* Machine logic interface: */
 class UIMachineLogic : public QIWithRetranslateUI3<QObject>
@@ -114,8 +108,6 @@ public:
     /** Returns action-pool reference.  */
     UIActionPool *actionPool() const;
 
-    /** Returns the session reference. */
-    CSession& session() const;
     /** Returns the session's machine reference. */
     CMachine& machine() const;
     /** Returns the session's console reference. */
@@ -147,11 +139,6 @@ public:
 
     /** An public interface to sltTypeHostKeyComboPressRelease. */
     void typeHostKeyComboPressRelease(bool fToggleSequence);
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /** Adjusts relative position for debugger window. */
-    void dbgAdjustRelativePos();
-#endif /* VBOX_WITH_DEBUGGER_GUI */
 
 protected slots:
 
@@ -413,16 +400,6 @@ private:
     QMap<int, MenuUpdateHandler> m_menuUpdateHandlers;
 
     bool m_fIsWindowsCreated : 1;
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /* Debugger functionality: */
-    bool dbgCreated();
-    void dbgDestroy();
-    /* The handle to the debugger GUI: */
-    PDBGGUI m_pDbgGui;
-    /* The virtual method table for the debugger GUI: */
-    PCDBGGUIVT m_pDbgGuiVT;
-#endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef VBOX_WS_MAC
     bool m_fIsDockIconEnabled;

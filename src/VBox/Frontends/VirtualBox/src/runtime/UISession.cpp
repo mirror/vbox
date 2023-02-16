@@ -71,6 +71,12 @@
 # include "CNetworkAdapter.h"
 #endif
 
+/* Other VBox includes: */
+#ifdef VBOX_WITH_DEBUGGER_GUI
+# include <VBox/dbggui.h>
+# include <iprt/ldr.h>
+#endif
+
 /* External includes: */
 #ifdef VBOX_WS_X11
 # include <X11/Xlib.h>
@@ -712,6 +718,79 @@ bool UISession::acquireEffectiveCPULoad(ulong &uLoad)
     return fSuccess;
 }
 
+#ifdef VBOX_WITH_DEBUGGER_GUI
+bool UISession::dbgCreated(void *pActionDebug)
+{
+    if (m_pDbgGui)
+        return true;
+
+    RTLDRMOD hLdrMod = uiCommon().getDebuggerModule();
+    if (hLdrMod == NIL_RTLDRMOD)
+        return false;
+
+    PFNDBGGUICREATE pfnGuiCreate;
+    int rc = RTLdrGetSymbol(hLdrMod, "DBGGuiCreate", (void**)&pfnGuiCreate);
+    if (RT_SUCCESS(rc))
+    {
+        ISession *pISession = session().raw();
+        rc = pfnGuiCreate(pISession, &m_pDbgGui, &m_pDbgGuiVT);
+        if (RT_SUCCESS(rc))
+        {
+            if (   DBGGUIVT_ARE_VERSIONS_COMPATIBLE(m_pDbgGuiVT->u32Version, DBGGUIVT_VERSION)
+                || m_pDbgGuiVT->u32EndVersion == m_pDbgGuiVT->u32Version)
+            {
+                m_pDbgGuiVT->pfnSetParent(m_pDbgGui, activeMachineWindow());
+                m_pDbgGuiVT->pfnSetMenu(m_pDbgGui, pActionDebug);
+                dbgAdjustRelativePos();
+                return true;
+            }
+
+            LogRel(("GUI: DBGGuiCreate failed, incompatible versions (loaded %#x/%#x, expected %#x)\n",
+                    m_pDbgGuiVT->u32Version, m_pDbgGuiVT->u32EndVersion, DBGGUIVT_VERSION));
+        }
+        else
+            LogRel(("GUI: DBGGuiCreate failed, rc=%Rrc\n", rc));
+    }
+    else
+        LogRel(("GUI: RTLdrGetSymbol(,\"DBGGuiCreate\",) -> %Rrc\n", rc));
+
+    m_pDbgGui = 0;
+    m_pDbgGuiVT = 0;
+    return false;
+}
+
+void UISession::dbgDestroy()
+{
+    if (m_pDbgGui)
+    {
+        m_pDbgGuiVT->pfnDestroy(m_pDbgGui);
+        m_pDbgGui = 0;
+        m_pDbgGuiVT = 0;
+    }
+}
+
+void UISession::dbgShowStatistics()
+{
+    const QByteArray &expandBytes = uiCommon().getDebuggerStatisticsExpand().toUtf8();
+    const QByteArray &filterBytes = uiCommon().getDebuggerStatisticsFilter().toUtf8();
+    m_pDbgGuiVT->pfnShowStatistics(m_pDbgGui, filterBytes.constData(), expandBytes.constData());
+}
+
+void UISession::dbgShowCommandLine()
+{
+    m_pDbgGuiVT->pfnShowCommandLine(m_pDbgGui);
+}
+
+void UISession::dbgAdjustRelativePos()
+{
+    if (m_pDbgGui)
+    {
+        const QRect rct = activeMachineWindow()->frameGeometry();
+        m_pDbgGuiVT->pfnAdjustRelativePos(m_pDbgGui, rct.x(), rct.y(), rct.width(), rct.height());
+    }
+}
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+
 bool UISession::prepareToBeSaved()
 {
     return    isPaused()
@@ -810,6 +889,11 @@ UISession::UISession(UIMachine *pMachine)
     , m_ulGuestAdditionsRunLevel(0)
     , m_fIsGuestSupportsGraphics(false)
     , m_fIsGuestSupportsSeamless(false)
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /* Debug UI stuff: */
+    , m_pDbgGui(0)
+    , m_pDbgGuiVT(0)
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 {
 }
 
