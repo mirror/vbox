@@ -433,11 +433,13 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         sGuestAddsDir = 'C:\\Program Files\\Oracle\\VirtualBox Guest Additions\\';
         aasLogFiles.append((sGuestAddsDir + 'install.log',           'ga-install-%s.log' % (oTestVm.sVmName,),));
         aasLogFiles.append((sGuestAddsDir + 'install_drivers.log',   'ga-install_drivers-%s.log' % (oTestVm.sVmName,),));
-        aasLogFiles.append(('C:\\Windows\\setupapi.log',             'ga-setupapi-%s.log' % (oTestVm.sVmName,),));
+        aasLogFiles.append((oTestVm.pathJoin(self.getGuestWinDir(oTestVm), 'setupapi.log'),
+                            'ga-setupapi-%s.log' % (oTestVm.sVmName,),));
 
         # Note: setupapi.dev.log only is available since Windows 2000.
         if fHaveSetupApiDevLog:
-            aasLogFiles.append(('C:\\Windows\\setupapi.dev.log',     'ga-setupapi.dev-%s.log' % (oTestVm.sVmName,),));
+            aasLogFiles.append((oTestVm.pathJoin(self.getGuestWinDir(oTestVm), 'setupapi.dev.log'),
+                                'ga-setupapi.dev-%s.log' % (oTestVm.sVmName,),));
 
         #
         # Download log files.
