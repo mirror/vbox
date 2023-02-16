@@ -354,19 +354,19 @@ public:
     /** @name Debugger stuff.
      ** @{ */
         /** Defines whether log is @a fEnabled. */
-        void setLogEnabled(bool fEnabled);
-        /** Returns whether log is enabled. */
-        bool isLogEnabled();
+        bool setLogEnabled(bool fEnabled);
+        /** Acquires whether log is @a fEnabled. */
+        bool acquireWhetherLogEnabled(bool &fEnabled);
 
-        /** Returns VM's execution engine type. */
-        KVMExecutionEngine executionEngineType();
-        /** Returns whether nested paging hardware virtualization extension is enabled. */
-        bool isHwVirtExNestedPagingEnabled();
-        /** Returns whether UX hardware virtualization extension is enabled. */
-        bool isHwVirtExUXEnabled();
+        /** Acquires VM's execution engine @a enmType. */
+        bool acquireExecutionEngineType(KVMExecutionEngine &enmType);
+        /** Acquires whether nested paging hardware virtualization extension is @a fEnabled. */
+        bool acquireWhetherHwVirtExNestedPagingEnabled(bool &fEnabled);
+        /** Acquires whether UX hardware virtualization extension is @a fEnabled. */
+        bool acquireWhetherHwVirtExUXEnabled(bool &fEnabled);
 
-        /** Returns CPU load percentage. */
-        int cpuLoadPercentage();
+        /** Acquires effective CPU @a uLoad. */
+        bool acquireEffectiveCPULoad(ulong &uLoad);
     /** @} */
 
     /** @name Close stuff.

@@ -639,60 +639,77 @@ void UISession::acquireFeaturesStatusInfo(QString &strInfo, KVMExecutionEngine &
                                                   enmProvider);
 }
 
-void UISession::setLogEnabled(bool fEnabled)
+bool UISession::setLogEnabled(bool fEnabled)
 {
     CMachineDebugger comDebugger = debugger();
     comDebugger.SetLogEnabled(fEnabled ? TRUE : FALSE);
-    if (!comDebugger.isOk())
+    const bool fSuccess = comDebugger.isOk();
+    if (!fSuccess)
         UINotificationMessage::cannotChangeMachineDebuggerParameter(comDebugger);
+    return fSuccess;
 }
 
-bool UISession::isLogEnabled()
+bool UISession::acquireWhetherLogEnabled(bool &fEnabled)
 {
     CMachineDebugger comDebugger = debugger();
-    const BOOL fEnabled = comDebugger.GetLogEnabled();
-    if (!comDebugger.isOk())
+    const BOOL fLogEnabled = comDebugger.GetLogEnabled();
+    const bool fSuccess = comDebugger.isOk();
+    if (!fSuccess)
         UINotificationMessage::cannotAcquireMachineDebuggerParameter(comDebugger);
-    return fEnabled == TRUE;
+    else
+        fEnabled = fLogEnabled == TRUE;
+    return fSuccess;
 }
 
-KVMExecutionEngine UISession::executionEngineType()
+bool UISession::acquireExecutionEngineType(KVMExecutionEngine &enmType)
 {
     CMachineDebugger comDebugger = debugger();
-    const KVMExecutionEngine enmEngine = comDebugger.GetExecutionEngine();
-    if (!comDebugger.isOk())
+    const KVMExecutionEngine enmEngineType = comDebugger.GetExecutionEngine();
+    const bool fSuccess = comDebugger.isOk();
+    if (!fSuccess)
         UINotificationMessage::cannotAcquireMachineDebuggerParameter(comDebugger);
-    return enmEngine;
+    else
+        enmType = enmEngineType;
+    return fSuccess;
 }
 
-bool UISession::isHwVirtExNestedPagingEnabled()
+bool UISession::acquireWhetherHwVirtExNestedPagingEnabled(bool &fEnabled)
 {
     CMachineDebugger comDebugger = debugger();
-    const BOOL fEnabled = comDebugger.GetHWVirtExNestedPagingEnabled();
-    if (!comDebugger.isOk())
+    const BOOL fFeatureEnabled = comDebugger.GetHWVirtExNestedPagingEnabled();
+    const bool fSuccess = comDebugger.isOk();
+    if (!fSuccess)
         UINotificationMessage::cannotAcquireMachineDebuggerParameter(comDebugger);
-    return fEnabled == TRUE;
+    else
+        fEnabled = fFeatureEnabled == TRUE;
+    return fSuccess;
 }
 
-bool UISession::isHwVirtExUXEnabled()
+bool UISession::acquireWhetherHwVirtExUXEnabled(bool &fEnabled)
 {
     CMachineDebugger comDebugger = debugger();
-    const BOOL fEnabled = comDebugger.GetHWVirtExUXEnabled();
-    if (!comDebugger.isOk())
+    const BOOL fFeatureEnabled = comDebugger.GetHWVirtExUXEnabled();
+    const bool fSuccess = comDebugger.isOk();
+    if (!fSuccess)
         UINotificationMessage::cannotAcquireMachineDebuggerParameter(comDebugger);
-    return fEnabled == TRUE;
+    else
+        fEnabled = fFeatureEnabled == TRUE;
+    return fSuccess;
 }
 
-int UISession::cpuLoadPercentage()
+bool UISession::acquireEffectiveCPULoad(ulong &uLoad)
 {
     CMachineDebugger comDebugger = debugger();
     ULONG uPctExecuting;
     ULONG uPctHalted;
     ULONG uPctOther;
     comDebugger.GetCPULoad(0x7fffffff, uPctExecuting, uPctHalted, uPctOther);
-    if (!comDebugger.isOk())
+    const bool fSuccess = comDebugger.isOk();
+    if (!fSuccess)
         UINotificationMessage::cannotAcquireMachineDebuggerParameter(comDebugger);
-    return uPctExecuting + uPctOther;
+    else
+        uLoad = uPctExecuting + uPctOther;
+    return fSuccess;
 }
 
 bool UISession::prepareToBeSaved()

@@ -3004,7 +3004,8 @@ void UIMachineLogic::updateMenuDevicesDragAndDrop(QMenu *pMenu)
 #ifdef VBOX_WITH_DEBUGGER_GUI
 void UIMachineLogic::updateMenuDebug(QMenu*)
 {
-    const bool fEnabled = uimachine()->isLogEnabled();
+    bool fEnabled = false;
+    uimachine()->acquireWhetherLogEnabled(fEnabled);
     actionPool()->action(UIActionIndexRT_M_Debug_T_Logging)->blockSignals(true);
     actionPool()->action(UIActionIndexRT_M_Debug_T_Logging)->setChecked(fEnabled);
     actionPool()->action(UIActionIndexRT_M_Debug_T_Logging)->blockSignals(false);

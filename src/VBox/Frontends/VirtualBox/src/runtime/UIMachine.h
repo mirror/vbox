@@ -452,12 +452,12 @@ public:
     /** @name Debugger stuff.
      ** @{ */
         /** Defines whether log is @a fEnabled. */
-        void setLogEnabled(bool fEnabled);
-        /** Returns whether log is enabled. */
-        bool isLogEnabled();
+        bool setLogEnabled(bool fEnabled);
+        /** Acquires whether log is @a fEnabled. */
+        bool acquireWhetherLogEnabled(bool &fEnabled);
 
-        /** Returns CPU load percentage. */
-        int cpuLoadPercentage();
+        /** Acquires effective CPU @a uLoad. */
+        bool acquireEffectiveCPULoad(ulong &uLoad);
     /** @} */
 
     /** @name Close stuff.
