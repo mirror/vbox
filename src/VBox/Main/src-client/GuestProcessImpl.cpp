@@ -1675,7 +1675,7 @@ int GuestProcess::i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitRe
             LogFlowThisFunc(("Got new status change: fWaitFlags=0x%x, newStatus=%RU32, waitResult=%RU32\n",
                              fWaitFlags, newStatus, waitResult));
 #endif
-            if (ProcessWaitResult_None != waitResult) /* We got a waiting result. */
+            if (waitResult != ProcessWaitResult_None) /* We got a waiting result. */
                 break;
         }
         else /* Waiting failed, bail out. */
@@ -1686,7 +1686,8 @@ int GuestProcess::i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitRe
 
     unregisterWaitEvent(pEvent);
 
-    LogFlowThisFunc(("Returned waitResult=%RU32, newStatus=%RU32, vrc=%Rrc\n", waitResult, newStatus, vrc));
+    LogFlowThisFunc(("returns %Rrc - waitResult=%RU32 newStatus=%RU32 *pvrcGuest=%Rrc\n",
+                     vrc, waitResult, newStatus, pvrcGuest ? *pvrcGuest : -VERR_IPE_UNINITIALIZED_STATUS));
     return vrc;
 }
 
@@ -1882,7 +1883,8 @@ int GuestProcess::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeou
         *pvrcGuest = pEvent->GuestResult();
     Assert(vrc != VERR_GSTCTL_GUEST_ERROR || !pvrcGuest || *pvrcGuest != (int)0xcccccccc);
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowFunc(("LEAVE: %Rrc *pvrcGuest=%Rrc *pProcessStatus=%d\n",
+                 vrc, pvrcGuest ? *pvrcGuest : -VERR_IPE_UNINITIALIZED_STATUS, pProcessStatus ? *pProcessStatus : -1));
     return vrc;
 }
 
@@ -2410,7 +2412,7 @@ bool GuestProcessToolbox::isRunning(void)
  */
 bool GuestProcessToolbox::isTerminatedOk(void)
 {
-    return getTerminationStatus() == VINF_SUCCESS ? true : false;
+    return getTerminationStatus() == VINF_SUCCESS;
 }
 
 /**
@@ -2427,32 +2429,31 @@ bool GuestProcessToolbox::isTerminatedOk(void)
  *                                  VERR_GSTCTL_GUEST_ERROR is returned.
  */
 /* static */
-int GuestProcessToolbox::run(      GuestSession              *pGuestSession,
-                             const GuestProcessStartupInfo   &startupInfo,
-                                   int                       *pvrcGuest /* = NULL */)
+int GuestProcessToolbox::run(GuestSession                  *pGuestSession,
+                             GuestProcessStartupInfo const &startupInfo,
+                             int                           *pvrcGuest /* = NULL */)
 {
-    int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-
     GuestProcessToolErrorInfo errorInfo = { VERR_IPE_UNINITIALIZED_STATUS, INT32_MAX };
     int vrc = runErrorInfo(pGuestSession, startupInfo, errorInfo);
     if (RT_SUCCESS(vrc))
     {
+/** @todo r=bird: Seems like this is duplicated in the runErrInfo or
+ *        something, because it returns with VERR_GSTCTL_GUEST_ERROR.
+ *        Temporary fix is to always set pvrcGuest before returning. */
         /* Make sure to check the error information we got from the guest tool. */
         if (GuestProcess::i_isGuestError(errorInfo.vrcGuest))
         {
             if (errorInfo.vrcGuest == VERR_GSTCTL_PROCESS_EXIT_CODE) /* Translate exit code to a meaningful error code. */
-                vrcGuest = GuestProcessToolbox::exitCodeToRc(startupInfo, errorInfo.iExitCode);
-            else /* At least return something. */
-                vrcGuest = errorInfo.vrcGuest;
-
-            if (pvrcGuest)
-                *pvrcGuest = vrcGuest;
-
+                errorInfo.vrcGuest = GuestProcessToolbox::exitCodeToRc(startupInfo, errorInfo.iExitCode);
             vrc = VERR_GSTCTL_GUEST_ERROR;
         }
     }
 
-    LogFlowFunc(("Returned vrc=%Rrc, vrcGuest=%Rrc, iExitCode=%d\n", vrc, errorInfo.vrcGuest, errorInfo.iExitCode));
+    /* See above. */
+    if (pvrcGuest)
+        *pvrcGuest = errorInfo.vrcGuest;
+
+    LogFlowFunc(("returns %Rrc - vrcGuest=%Rrc iExitCode=%d\n", vrc, errorInfo.vrcGuest, errorInfo.iExitCode));
     return vrc;
 }
 
@@ -2512,7 +2513,7 @@ int GuestProcessToolbox::runEx(GuestSession                  *pGuestSession,
         }
     }
 
-    LogFlowFunc(("Returned vrc=%Rrc, vrcGuest=%Rrc, iExitCode=%d\n", vrc, errorInfo.vrcGuest, errorInfo.iExitCode));
+    LogFlowFunc(("returns %Rrc - vrcGuest=%Rrc iExitCode=%d\n", vrc, errorInfo.vrcGuest, errorInfo.iExitCode));
     return vrc;
 }
 
@@ -2552,9 +2553,10 @@ int GuestProcessToolbox::runExErrorInfo(GuestSession                  *pGuestSes
             try
             {
                 GuestToolboxStreamBlock strmBlk;
-                vrc = procTool.waitEx(  paStrmOutObjects
-                                        ? GUESTPROCESSTOOL_WAIT_FLAG_STDOUT_BLOCK
-                                        : GUESTPROCESSTOOL_WAIT_FLAG_NONE, &strmBlk, &errorInfo.vrcGuest);
+                vrc = procTool.waitEx(paStrmOutObjects
+                                      ? GUESTPROCESSTOOL_WAIT_FLAG_STDOUT_BLOCK
+                                      : GUESTPROCESSTOOL_WAIT_FLAG_NONE,
+                                      &strmBlk, &errorInfo.vrcGuest);
                 if (paStrmOutObjects)
                     paStrmOutObjects->push_back(strmBlk);
             }
@@ -2576,7 +2578,8 @@ int GuestProcessToolbox::runExErrorInfo(GuestSession                  *pGuestSes
             errorInfo.vrcGuest = procTool.getTerminationStatus(&errorInfo.iExitCode);
     }
 
-    LogFlowFunc(("Returned vrc=%Rrc, vrcGuest=%Rrc, iExitCode=%d\n", vrc, errorInfo.vrcGuest, errorInfo.iExitCode));
+    LogFlowFunc(("returns %Rrc - vrcGuest=%Rrc iExitCode=%d (%#x)\n",
+                 vrc, errorInfo.vrcGuest, errorInfo.iExitCode, errorInfo.iExitCode));
     return vrc;
 }
 
