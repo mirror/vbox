@@ -57,9 +57,9 @@ using namespace guestControl;
 #endif
 
 /** Vector holding a process' CPU affinity. */
-typedef std::vector <LONG> ProcessAffinity;
+typedef std::vector<LONG> ProcessAffinity;
 /** Vector holding process startup arguments. */
-typedef std::vector <Utf8Str> ProcessArguments;
+typedef std::vector<Utf8Str> ProcessArguments;
 
 class GuestToolboxStreamBlock;
 class GuestSession;

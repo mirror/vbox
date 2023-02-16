@@ -941,13 +941,13 @@ HRESULT GuestSession::i_directoryCopyFlagFromStr(const com::Utf8Str &strFlags, b
  * @param   uMode               Creation mode to use (octal, 0777 max).
  * @param   uFlags              Directory creation flags to use.
  * @param   pvrcGuest           Where to return the guest error when
- *                              VERR_GSTCTL_GUEST_ERROR was returned. Optional.
+ *                              VERR_GSTCTL_GUEST_ERROR was returned.
  */
 int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, int *pvrcGuest)
 {
     AssertPtrReturn(pvrcGuest, VERR_INVALID_POINTER);
-
     LogFlowThisFunc(("strPath=%s, uMode=%x, uFlags=%x\n", strPath.c_str(), uMode, uFlags));
+    *pvrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
 
     int vrc = VINF_SUCCESS;
 
@@ -987,12 +987,12 @@ int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode, uint
         }
     }
     else
-    {
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
+    {
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
         GuestProcessStartupInfo procInfo;
         procInfo.mFlags      = ProcessCreateFlag_Hidden;
-        procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_MKDIR);
+        procInfo.mExecutable = VBOXSERVICE_TOOL_MKDIR;
 
         try
         {
@@ -1014,9 +1014,7 @@ int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode, uint
 
                 char szMode[16];
                 if (RTStrPrintf(szMode, sizeof(szMode), "%o", uMode))
-                {
                     procInfo.mArguments.push_back(Utf8Str(szMode));
-                }
                 else
                     vrc = VERR_BUFFER_OVERFLOW;
             }
@@ -1032,11 +1030,9 @@ int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode, uint
         if (RT_SUCCESS(vrc))
             vrc = GuestProcessToolbox::run(this, procInfo, pvrcGuest);
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
-#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
     }
-#endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowFunc(("LEAVE: %Rrc *pvrcGuest=%Rrc\n", vrc, pvrcGuest ? *pvrcGuest : -VERR_IPE_UNINITIALIZED_STATUS));
     return vrc;
 }
 
