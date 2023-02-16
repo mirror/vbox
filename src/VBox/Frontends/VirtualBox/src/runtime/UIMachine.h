@@ -345,16 +345,16 @@ public:
         int keyboardState() const { return m_iKeyboardState; }
 
         /** Sends a scan @a iCode to VM's keyboard. */
-        void putScancode(LONG iCode);
+        bool putScancode(LONG iCode);
         /** Sends a list of scan @a codes to VM's keyboard. */
-        void putScancodes(const QVector<LONG> &codes);
+        bool putScancodes(const QVector<LONG> &codes);
         /** Sends the CAD sequence to VM's keyboard. */
-        void putCad();
+        bool putCAD();
         /** Releases all keys. */
-        void releaseKeys();
+        bool releaseKeys();
         /** Sends a USB HID @a iUsageCode and @a iUsagePage to VM's keyboard.
           * The @a fKeyRelease flag is set when the key is being released. */
-        void putUsageCode(LONG iUsageCode, LONG iUsagePage, BOOL fKeyRelease);
+        bool putUsageCode(LONG iUsageCode, LONG iUsagePage, bool fKeyRelease);
     /** @} */
 
     /** @name Mouse stuff.
@@ -401,11 +401,11 @@ public:
         int mouseState() const { return m_iMouseState; }
 
         /** Sends relative mouse move event to VM's mouse. */
-        void putMouseEvent(LONG iDx, LONG iDy, LONG iDz, LONG iDw, LONG iButtonState);
+        bool putMouseEvent(long iDx, long iDy, long iDz, long iDw, long iButtonState);
         /** Sends absolute mouse move event to VM's mouse. */
-        void putMouseEventAbsolute(LONG iX, LONG iY, LONG iDz, LONG iDw, LONG iButtonState);
+        bool putMouseEventAbsolute(long iX, long iY, long iDz, long iDw, long iButtonState);
         /** Sends multi-touch event to VM's mouse. */
-        void putEventMultiTouch(LONG iCount, const QVector<LONG64> &contacts, BOOL fIsTouchScreen, ULONG uScanTime);
+        bool putEventMultiTouch(long iCount, const QVector<LONG64> &contacts, bool fIsTouchScreen, ulong uScanTime);
     /** @} */
 
     /** @name Virtualization stuff.
@@ -425,7 +425,7 @@ public:
     /** @name Status-bar stuff.
      ** @{ */
         /** Acquires device activity composing a vector of current @a states for device with @a deviceTypes specified. */
-        void acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states);
+        bool acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states);
 
         /** Acquires status info for hard disk indicator. */
         void acquireHardDiskStatusInfo(QString &strInfo, bool &fAttachmentsPresent);

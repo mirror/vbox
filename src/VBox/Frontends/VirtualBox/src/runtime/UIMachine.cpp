@@ -505,49 +505,49 @@ bool UIMachine::isGuestSupportsSeamless() const
     return uisession()->isGuestSupportsSeamless();
 }
 
-void UIMachine::putScancode(LONG iCode)
+bool UIMachine::putScancode(LONG iCode)
 {
-    uisession()->putScancode(iCode);
+    return uisession()->putScancode(iCode);
 }
 
-void UIMachine::putScancodes(const QVector<LONG> &codes)
+bool UIMachine::putScancodes(const QVector<LONG> &codes)
 {
-    uisession()->putScancodes(codes);
+    return uisession()->putScancodes(codes);
 }
 
-void UIMachine::putCad()
+bool UIMachine::putCAD()
 {
-    uisession()->putCad();
+    return uisession()->putCAD();
 }
 
-void UIMachine::releaseKeys()
+bool UIMachine::releaseKeys()
 {
-    uisession()->releaseKeys();
+    return uisession()->releaseKeys();
 }
 
-void UIMachine::putUsageCode(LONG iUsageCode, LONG iUsagePage, BOOL fKeyRelease)
+bool UIMachine::putUsageCode(LONG iUsageCode, LONG iUsagePage, bool fKeyRelease)
 {
-    uisession()->putUsageCode(iUsageCode, iUsagePage, fKeyRelease);
+    return uisession()->putUsageCode(iUsageCode, iUsagePage, fKeyRelease);
 }
 
-void UIMachine::putMouseEvent(LONG iDx, LONG iDy, LONG iDz, LONG iDw, LONG iButtonState)
+bool UIMachine::putMouseEvent(long iDx, long iDy, long iDz, long iDw, long iButtonState)
 {
-    uisession()->putMouseEvent(iDx, iDy, iDz, iDw, iButtonState);
+    return uisession()->putMouseEvent(iDx, iDy, iDz, iDw, iButtonState);
 }
 
-void UIMachine::putMouseEventAbsolute(LONG iX, LONG iY, LONG iDz, LONG iDw, LONG iButtonState)
+bool UIMachine::putMouseEventAbsolute(long iX, long iY, long iDz, long iDw, long iButtonState)
 {
-    uisession()->putMouseEventAbsolute(iX, iY, iDz, iDw, iButtonState);
+    return uisession()->putMouseEventAbsolute(iX, iY, iDz, iDw, iButtonState);
 }
 
-void UIMachine::putEventMultiTouch(LONG iCount, const QVector<LONG64> &contacts, BOOL fIsTouchScreen, ULONG uScanTime)
+bool UIMachine::putEventMultiTouch(long iCount, const QVector<LONG64> &contacts, bool fIsTouchScreen, ulong uScanTime)
 {
-    uisession()->putEventMultiTouch(iCount, contacts, fIsTouchScreen, uScanTime);
+    return uisession()->putEventMultiTouch(iCount, contacts, fIsTouchScreen, uScanTime);
 }
 
-void UIMachine::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states)
+bool UIMachine::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states)
 {
-    uisession()->acquireDeviceActivity(deviceTypes, states);
+    return uisession()->acquireDeviceActivity(deviceTypes, states);
 }
 
 void UIMachine::acquireHardDiskStatusInfo(QString &strInfo, bool &fAttachmentsPresent)

@@ -2062,7 +2062,7 @@ void UIMachineLogic::sltCloseSoftKeyboard(bool fAsync /* = false */)
 
 void UIMachineLogic::sltTypeCAD()
 {
-    uimachine()->putCad();
+    uimachine()->putCAD();
 }
 
 #ifdef VBOX_WS_X11

@@ -1261,7 +1261,7 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
     uimachine()->putEventMultiTouch(pTouchEvent->touchPoints().size(),
                                     contacts,
                                     fTouchScreen,
-                                    (ULONG)RTTimeMilliTS());
+                                    RTTimeMilliTS());
 
     /* Eat by default? */
     return true;

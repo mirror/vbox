@@ -248,110 +248,125 @@ WId UISession::mainMachineWindowId() const
 
 bool UISession::setPause(bool fPause)
 {
+    CConsole comConsole = console();
     if (fPause)
-        console().Pause();
+        comConsole.Pause();
     else
-        console().Resume();
-
-    const bool fOk = console().isOk();
-    if (!fOk)
+        comConsole.Resume();
+    const bool fSuccess = comConsole.isOk();
+    if (!fSuccess)
     {
         if (fPause)
-            UINotificationMessage::cannotPauseMachine(console());
+            UINotificationMessage::cannotPauseMachine(comConsole);
         else
-            UINotificationMessage::cannotResumeMachine(console());
+            UINotificationMessage::cannotResumeMachine(comConsole);
     }
-
-    return fOk;
+    return fSuccess;
 }
 
-void UISession::putScancode(LONG iCode)
+bool UISession::putScancode(LONG iCode)
 {
     CKeyboard comKeyboard = keyboard();
     comKeyboard.PutScancode(iCode);
-    if (!comKeyboard.isOk())
+    const bool fSuccess = comKeyboard.isOk();
+    if (!fSuccess)
         UINotificationMessage::cannotChangeKeyboardParameter(comKeyboard);
+    return fSuccess;
 }
 
-void UISession::putScancodes(const QVector<LONG> &codes)
+bool UISession::putScancodes(const QVector<LONG> &codes)
 {
     CKeyboard comKeyboard = keyboard();
     comKeyboard.PutScancodes(codes);
-    if (!comKeyboard.isOk())
+    const bool fSuccess = comKeyboard.isOk();
+    if (!fSuccess)
         UINotificationMessage::cannotChangeKeyboardParameter(comKeyboard);
+    return fSuccess;
 }
 
-void UISession::putCad()
+bool UISession::putCAD()
 {
     CKeyboard comKeyboard = keyboard();
     comKeyboard.PutCAD();
-    if (!comKeyboard.isOk())
+    const bool fSuccess = comKeyboard.isOk();
+    if (!fSuccess)
         UINotificationMessage::cannotChangeKeyboardParameter(comKeyboard);
+    return fSuccess;
 }
 
-void UISession::releaseKeys()
+bool UISession::releaseKeys()
 {
     CKeyboard comKeyboard = keyboard();
     comKeyboard.ReleaseKeys();
-    if (!comKeyboard.isOk())
+    const bool fSuccess = comKeyboard.isOk();
+    if (!fSuccess)
         UINotificationMessage::cannotChangeKeyboardParameter(comKeyboard);
+    return fSuccess;
 }
 
-void UISession::putUsageCode(LONG iUsageCode, LONG iUsagePage, BOOL fKeyRelease)
+bool UISession::putUsageCode(LONG iUsageCode, LONG iUsagePage, bool fKeyRelease)
 {
     CKeyboard comKeyboard = keyboard();
     comKeyboard.PutUsageCode(iUsageCode, iUsagePage, fKeyRelease);
-    if (!comKeyboard.isOk())
+    const bool fSuccess = comKeyboard.isOk();
+    if (!fSuccess)
         UINotificationMessage::cannotChangeKeyboardParameter(comKeyboard);
+    return fSuccess;
 }
 
-BOOL UISession::getAbsoluteSupported()
+bool UISession::getAbsoluteSupported()
 {
     return mouse().GetAbsoluteSupported();
 }
 
-BOOL UISession::getRelativeSupported()
+bool UISession::getRelativeSupported()
 {
     return mouse().GetRelativeSupported();
 }
 
-BOOL UISession::getTouchScreenSupported()
+bool UISession::getTouchScreenSupported()
 {
     return mouse().GetTouchScreenSupported();
 }
 
-BOOL UISession::getTouchPadSupported()
+bool UISession::getTouchPadSupported()
 {
     return mouse().GetTouchPadSupported();
 }
 
-BOOL UISession::getNeedsHostCursor()
+bool UISession::getNeedsHostCursor()
 {
     return mouse().GetNeedsHostCursor();
 }
 
-void UISession::putMouseEvent(LONG iDx, LONG iDy, LONG iDz, LONG iDw, LONG iButtonState)
+bool UISession::putMouseEvent(long iDx, long iDy, long iDz, long iDw, long iButtonState)
 {
     CMouse comMouse = mouse();
     comMouse.PutMouseEvent(iDx, iDy, iDz, iDw, iButtonState);
-    if (!comMouse.isOk())
+    const bool fSuccess = comMouse.isOk();
+    if (!fSuccess)
         UINotificationMessage::cannotChangeMouseParameter(comMouse);
+    return fSuccess;
 }
 
-void UISession::putMouseEventAbsolute(LONG iX, LONG iY, LONG iDz, LONG iDw, LONG iButtonState)
+bool UISession::putMouseEventAbsolute(long iX, long iY, long iDz, long iDw, long iButtonState)
 {
     CMouse comMouse = mouse();
     comMouse.PutMouseEventAbsolute(iX, iY, iDz, iDw, iButtonState);
-    if (!comMouse.isOk())
+    const bool fSuccess = comMouse.isOk();
+    if (!fSuccess)
         UINotificationMessage::cannotChangeMouseParameter(comMouse);
+    return fSuccess;
 }
 
-void UISession::putEventMultiTouch(LONG iCount, const QVector<LONG64> &contacts, BOOL fIsTouchScreen, ULONG uScanTime)
+bool UISession::putEventMultiTouch(long iCount, const QVector<LONG64> &contacts, bool fIsTouchScreen, ulong uScanTime)
 {
     CMouse comMouse = mouse();
     comMouse.PutEventMultiTouch(iCount, contacts, fIsTouchScreen, uScanTime);
-    if (!comMouse.isOk())
+    const bool fSuccess = comMouse.isOk();
+    if (!fSuccess)
         UINotificationMessage::cannotChangeMouseParameter(comMouse);
+    return fSuccess;
 }
 
 bool UISession::guestAdditionsUpgradable()
@@ -371,7 +386,7 @@ bool UISession::guestAdditionsUpgradable()
         return false;
 
     /* Also check whether we have something to update automatically: */
-    if (m_ulGuestAdditionsRunLevel < (ULONG)KAdditionsRunLevelType_Userland)
+    if (m_ulGuestAdditionsRunLevel < (ulong)KAdditionsRunLevelType_Userland)
         return false;
 
     return true;
@@ -545,12 +560,14 @@ bool UISession::invalidateAndUpdateScreen(ulong uScreenId)
     return fSuccess;
 }
 
-void UISession::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states)
+bool UISession::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states)
 {
     CConsole comConsole = console();
     states = comConsole.GetDeviceActivity(deviceTypes);
-    if (!comConsole.isOk())
+    const bool fSuccess = comConsole.isOk();
+    if (!fSuccess)
         UINotificationMessage::cannotAcquireConsoleParameter(comConsole);
+    return fSuccess;
 }
 
 void UISession::acquireHardDiskStatusInfo(QString &strInfo, bool &fAttachmentsPresent)
@@ -736,11 +753,11 @@ void UISession::sltStateChange(KMachineState enmState)
 void UISession::sltAdditionsChange()
 {
     /* Acquire actual states: */
-    const ULONG ulGuestAdditionsRunLevel = guest().GetAdditionsRunLevel();
-    LONG64 lLastUpdatedIgnored;
-    const bool fIsGuestSupportsGraphics = guest().GetFacilityStatus(KAdditionsFacilityType_Graphics, lLastUpdatedIgnored)
+    const ulong ulGuestAdditionsRunLevel = guest().GetAdditionsRunLevel();
+    LONG64 iLastUpdatedIgnored;
+    const bool fIsGuestSupportsGraphics = guest().GetFacilityStatus(KAdditionsFacilityType_Graphics, iLastUpdatedIgnored)
                                         == KAdditionsFacilityStatus_Active;
-    const bool fIsGuestSupportsSeamless = guest().GetFacilityStatus(KAdditionsFacilityType_Seamless, lLastUpdatedIgnored)
+    const bool fIsGuestSupportsSeamless = guest().GetFacilityStatus(KAdditionsFacilityType_Seamless, iLastUpdatedIgnored)
                                         == KAdditionsFacilityStatus_Active;
 
     /* Check if something had changed: */
