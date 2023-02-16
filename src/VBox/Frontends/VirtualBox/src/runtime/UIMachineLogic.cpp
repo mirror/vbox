@@ -1611,7 +1611,7 @@ void UIMachineLogic::sltShowInformationDialog()
         return;
 
     if (!m_pVMInformationDialog)
-        m_pVMInformationDialog = new UIVMInformationDialog(activeMachineWindow());
+        m_pVMInformationDialog = new UIVMInformationDialog(uimachine());
 
     if (m_pVMInformationDialog)
     {

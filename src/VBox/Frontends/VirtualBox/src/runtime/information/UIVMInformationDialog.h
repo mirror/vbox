@@ -45,7 +45,7 @@
 /* Forward declarations: */
 class QITabWidget;
 class QIDialogButtonBox;
-class UIMachineWindow;
+class UIMachine;
 
 /* Type definitions: */
 typedef QIWithRestorableGeometry<QMainWindow> QMainWindowWithRestorableGeometry;
@@ -64,10 +64,8 @@ signals:
 
 public:
 
-    /** Constructs information dialog for passed @a pMachineWindow. */
-    UIVMInformationDialog(UIMachineWindow *pMachineWindow);
-    /** Destructs information dialog. */
-    ~UIVMInformationDialog();
+    /** Constructs information dialog for passed @a pMachine. */
+    UIVMInformationDialog(UIMachine *pMachine);
 
     /** Returns whether the dialog should be maximized when geometry being restored. */
     virtual bool shouldBeMaximized() const RT_OVERRIDE;
@@ -95,8 +93,6 @@ private:
     };
     /** Prepares all. */
     void prepare();
-    /** Prepares this. */
-    void prepareThis();
     /** Prepares central-widget. */
     void prepareCentralWidget();
     /** Prepares tab-widget. */
@@ -105,8 +101,13 @@ private:
     void prepareTab(int iTabIndex);
     /** Prepares button-box. */
     void prepareButtonBox();
+    /** Prepares connections: */
+    void prepareConnections();
     void loadDialogGeometry();
     void saveDialogGeometry();
+
+    /** Holds the machine UI reference. */
+    UIMachine *m_pMachine;
 
     /** @name Widget variables.
      * @{ */
@@ -116,12 +117,11 @@ private:
        QMap<int, QWidget*>           m_tabs;
        /** Holds the dialog button-box instance. */
        QIDialogButtonBox            *m_pButtonBox;
-       /** Holds the machine-window reference. */
-       UIMachineWindow              *m_pMachineWindow;
     /** @} */
     bool m_fCloseEmitted;
     int m_iGeometrySaveTimerId;
     QUuid m_uMachineId;
+    QString m_strMachineName;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_information_UIVMInformationDialog_h */

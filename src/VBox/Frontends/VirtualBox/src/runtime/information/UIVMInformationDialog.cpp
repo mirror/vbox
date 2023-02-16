@@ -43,7 +43,6 @@
 #include "UIMachineLogic.h"
 #include "UIMachine.h"
 #include "UIMachineView.h"
-#include "UIMachineWindow.h"
 #include "UIMessageCenter.h"
 #include "UIVMActivityMonitor.h"
 #include "UISession.h"
@@ -67,26 +66,14 @@
 /* Other VBox includes: */
 #include <iprt/time.h>
 
-UIVMInformationDialog::UIVMInformationDialog(UIMachineWindow *pMachineWindow)
+UIVMInformationDialog::UIVMInformationDialog(UIMachine *pMachine)
     : QMainWindowWithRestorableGeometryAndRetranslateUi(0)
+    , m_pMachine(pMachine)
     , m_pTabWidget(0)
-    , m_pMachineWindow(pMachineWindow)
     , m_fCloseEmitted(false)
     , m_iGeometrySaveTimerId(-1)
 {
-    if (m_pMachineWindow && !m_pMachineWindow->console().isNull())
-    {
-        CMachine comMachine = m_pMachineWindow->console().GetMachine();
-        m_uMachineId = comMachine.GetId();
-    }
-    /* Prepare: */
     prepare();
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
-            this, &UIVMInformationDialog::sltMachineStateChange);
-}
-
-UIVMInformationDialog::~UIVMInformationDialog()
-{
 }
 
 bool UIVMInformationDialog::shouldBeMaximized() const
@@ -97,7 +84,7 @@ bool UIVMInformationDialog::shouldBeMaximized() const
 void UIVMInformationDialog::retranslateUi()
 {
     /* Setup dialog title: */
-    setWindowTitle(tr("%1 - Session Information").arg(m_pMachineWindow->machine().GetName()));
+    setWindowTitle(tr("%1 - Session Information").arg(m_strMachineName));
 
     /* Translate tabs: */
     m_pTabWidget->setTabText(Tabs_ConfigurationDetails, tr("Configuration &Details"));
@@ -184,14 +171,14 @@ void UIVMInformationDialog::saveDialogGeometry()
 
 void UIVMInformationDialog::prepare()
 {
-    /* Prepare dialog: */
-    prepareThis();
-    /* Load settings: */
-    loadDialogGeometry();
-}
+    /* Load and clear: */
+    AssertPtrReturnVoid(m_pMachine);
 
-void UIVMInformationDialog::prepareThis()
-{
+    /// @todo to be encapsulated in UIMachine soon
+    CMachine comMachine = m_pMachine->uisession()->machine();
+    m_uMachineId = comMachine.GetId();
+    m_strMachineName = comMachine.GetName();
+
 #ifdef VBOX_WS_MAC
     /* No window-icon on Mac OS X, because it acts as proxy icon which isn't necessary here. */
     setWindowIcon(QIcon());
@@ -200,11 +187,15 @@ void UIVMInformationDialog::prepareThis()
     setWindowIcon(UIIconPool::iconSetFull(":/session_info_32px.png", ":/session_info_16px.png"));
 #endif
 
-    /* Prepare central-widget: */
+    /* Prepare stuff: */
     prepareCentralWidget();
+    prepareConnections();
 
-    /* Retranslate: */
+    /* Apply language settings: */
     retranslateUi();
+
+    /* Load settings: */
+    loadDialogGeometry();
 }
 
 void UIVMInformationDialog::prepareCentralWidget()
@@ -237,7 +228,7 @@ void UIVMInformationDialog::prepareTabWidget()
 
         /* Create Configuration Details tab: */
         UIInformationConfiguration *pInformationConfigurationWidget =
-            new UIInformationConfiguration(this, m_pMachineWindow->machine(), m_pMachineWindow->console());
+            new UIInformationConfiguration(this, m_pMachine->uisession()->machine(), m_pMachine->uisession()->console());
         if (pInformationConfigurationWidget)
         {
             m_tabs.insert(Tabs_ConfigurationDetails, pInformationConfigurationWidget);
@@ -246,7 +237,7 @@ void UIVMInformationDialog::prepareTabWidget()
 
         /* Create Runtime Information tab: */
         UIInformationRuntime *pInformationRuntimeWidget =
-            new UIInformationRuntime(this, m_pMachineWindow->machine(), m_pMachineWindow->console(), m_pMachineWindow->uimachine());
+            new UIInformationRuntime(this, m_pMachine->uisession()->machine(), m_pMachine->uisession()->console(), m_pMachine);
         if (pInformationRuntimeWidget)
         {
             m_tabs.insert(Tabs_RuntimeInformation, pInformationRuntimeWidget);
@@ -255,26 +246,19 @@ void UIVMInformationDialog::prepareTabWidget()
 
         /* Create Performance Monitor tab: */
         UIVMActivityMonitor *pVMActivityMonitorWidget =
-            new UIVMActivityMonitor(EmbedTo_Dialog, this, m_pMachineWindow->machine());
+            new UIVMActivityMonitor(EmbedTo_Dialog, this, m_pMachine->uisession()->machine());
         if (pVMActivityMonitorWidget)
         {
-            connect(m_pMachineWindow->uimachine(), &UIMachine::sigAdditionsStateChange,
+            connect(m_pMachine, &UIMachine::sigAdditionsStateChange,
                     pVMActivityMonitorWidget, &UIVMActivityMonitor::sltGuestAdditionsStateChange);
             m_tabs.insert(Tabs_ActivityMonitor, pVMActivityMonitorWidget);
             m_pTabWidget->addTab(m_tabs.value(Tabs_ActivityMonitor), QString());
         }
 
         /* Create Guest Process Control tab: */
-        QString strMachineName;
-        if (m_pMachineWindow && m_pMachineWindow->console().isOk())
-        {
-            CMachine comMachine = m_pMachineWindow->console().GetMachine();
-            if (comMachine.isOk())
-                strMachineName = comMachine.GetName();
-        }
         UIGuestProcessControlWidget *pGuestProcessControlWidget =
-            new UIGuestProcessControlWidget(EmbedTo_Dialog, m_pMachineWindow->console().GetGuest(),
-                                            this, strMachineName, false /* fShowToolbar */);
+            new UIGuestProcessControlWidget(EmbedTo_Dialog, m_pMachine->uisession()->guest(),
+                                            this, m_strMachineName, false /* fShowToolbar */);
         if (pGuestProcessControlWidget)
         {
             m_tabs.insert(3, pGuestProcessControlWidget);
@@ -310,9 +294,15 @@ void UIVMInformationDialog::prepareButtonBox()
     }
 }
 
+void UIVMInformationDialog::prepareConnections()
+{
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
+            this, &UIVMInformationDialog::sltMachineStateChange);
+}
+
 void UIVMInformationDialog::loadDialogGeometry()
 {
-    const QRect geo = gEDataManager->sessionInformationDialogGeometry(this, m_pMachineWindow);
+    const QRect geo = gEDataManager->sessionInformationDialogGeometry(this, m_pMachine->activeWindow());
     LogRel2(("GUI: UIVMInformationDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
              geo.x(), geo.y(), geo.width(), geo.height()));
     restoreGeometry(geo);
