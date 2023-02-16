@@ -791,6 +791,18 @@ void UISession::dbgAdjustRelativePos()
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
+bool UISession::acquireWhetherGuestEnteredACPIMode(bool &fEntered)
+{
+    CConsole comConsole = console();
+    const BOOL fGuestEntered = comConsole.GetGuestEnteredACPIMode();
+    const bool fSuccess = comConsole.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireConsoleParameter(comConsole);
+    else
+        fEntered = fGuestEntered == TRUE;
+    return fSuccess;
+}
+
 bool UISession::prepareToBeSaved()
 {
     return    isPaused()
@@ -799,7 +811,8 @@ bool UISession::prepareToBeSaved()
 
 bool UISession::prepareToBeShutdowned()
 {
-    const bool fValidMode = console().GetGuestEnteredACPIMode();
+    bool fValidMode = false;
+    acquireWhetherGuestEnteredACPIMode(fValidMode);
     if (!fValidMode)
         UINotificationMessage::cannotSendACPIToMachine();
     return fValidMode;

@@ -53,7 +53,6 @@
 #include "UIVMCloseDialog.h"
 
 /* COM includes: */
-#include "CConsole.h"
 #include "CGraphicsAdapter.h"
 #include "CSnapshot.h"
 
@@ -224,11 +223,6 @@ UIActionPool *UIMachineWindow::actionPool() const
 CMachine& UIMachineWindow::machine() const
 {
     return uisession()->machine();
-}
-
-CConsole& UIMachineWindow::console() const
-{
-    return uisession()->console();
 }
 
 QString UIMachineWindow::machineName() const
@@ -429,8 +423,10 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
     {
         /* Prepare close-dialog: */
         QWidget *pParentDlg = windowManager().realParentWindow(this);
+        bool fInACPIMode = false;
+        uimachine()->acquireWhetherGuestEnteredACPIMode(fInACPIMode);
         QPointer<UIVMCloseDialog> pCloseDlg = new UIVMCloseDialog(pParentDlg, machine(),
-                                                                  console().GetGuestEnteredACPIMode(),
+                                                                  fInACPIMode,
                                                                   restrictedCloseActions);
         /* Configure close-dialog: */
         if (uimachine()->machineWindowIcon())

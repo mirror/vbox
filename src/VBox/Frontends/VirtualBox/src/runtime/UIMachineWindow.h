@@ -95,8 +95,6 @@ public:
 
     /** Returns the session's machine reference. */
     CMachine& machine() const;
-    /** Returns the session's console reference. */
-    CConsole& console() const;
 
     /** Returns the machine name. */
     QString machineName() const;

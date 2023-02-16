@@ -646,6 +646,11 @@ void UIMachine::dbgAdjustRelativePos()
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
+bool UIMachine::acquireWhetherGuestEnteredACPIMode(bool &fEntered)
+{
+    return uisession()->acquireWhetherGuestEnteredACPIMode(fEntered);
+}
+
 void UIMachine::detachUi()
 {
     /* Manually close Runtime UI: */

@@ -391,6 +391,9 @@ public:
 
     /** @name Close stuff.
      ** @{ */
+        /** Acquires whether guest @a fEntered ACPI mode. */
+        bool acquireWhetherGuestEnteredACPIMode(bool &fEntered);
+
         /** Prepares VM to be saved. */
         bool prepareToBeSaved();
         /** Returns whether VM can be shutdowned. */

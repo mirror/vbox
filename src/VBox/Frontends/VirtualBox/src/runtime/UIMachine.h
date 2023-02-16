@@ -489,6 +489,9 @@ public:
         /** Returns merged restricted close actions. */
         MachineCloseAction restrictedCloseActions() const { return m_restrictedCloseActions; }
 
+        /** Acquires whether guest @a fEntered ACPI mode. */
+        bool acquireWhetherGuestEnteredACPIMode(bool &fEntered);
+
         /** Detaches and closes Runtime UI. */
         void detachUi();
         /** Saves VM state, then closes Runtime UI. */
