@@ -325,17 +325,18 @@ static int rtPipeWriteCheckCompletion(RTPIPEINTERNAL *pThis)
                 }
 
                 /* resubmit the remainder of the buffer - can this actually happen? */
-                memmove(&pThis->pbBounceBuf[0], &pThis->pbBounceBuf[cbWritten], pThis->cbBounceBufUsed - cbWritten);
+                pThis->cbBounceBufUsed -= cbWritten;
+                memmove(&pThis->pbBounceBuf[0], &pThis->pbBounceBuf[cbWritten], pThis->cbBounceBufUsed);
                 rc = ResetEvent(pThis->Overlapped.hEvent); Assert(rc == TRUE);
-                if (!WriteFile(pThis->hPipe, pThis->pbBounceBuf, (DWORD)pThis->cbBounceBufUsed,
-                               &cbWritten, &pThis->Overlapped))
+                if (!WriteFile(pThis->hPipe, pThis->pbBounceBuf, (DWORD)pThis->cbBounceBufUsed, &cbWritten, &pThis->Overlapped))
                 {
-                    if (GetLastError() == ERROR_IO_PENDING)
+                    DWORD const dwErr = GetLastError();
+                    if (dwErr == ERROR_IO_PENDING)
                         rc = VINF_TRY_AGAIN;
                     else
                     {
                         pThis->fIOPending = false;
-                        if (GetLastError() == ERROR_NO_DATA)
+                        if (dwErr == ERROR_NO_DATA)
                             rc = VERR_BROKEN_PIPE;
                         else
                             rc = RTErrConvertFromWin32(GetLastError());
