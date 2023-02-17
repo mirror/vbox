@@ -1592,6 +1592,10 @@ class TestVmSet(object):
         reporter.log('      Default: %s  (all)' % (self.getAllVmNames(),));
         reporter.log('  --skip-vms     <vm1[:vm2[:...]]>');
         reporter.log('      Skip the specified VMs when testing.');
+        reporter.log('  --skip-win-vms');
+        reporter.log('      Skips Windows test VMs (accumulative).');
+        reporter.log('  --skip-non-win-vms');
+        reporter.log('      Skips non-Windows test VMs (accumulative).');
         reporter.log('  --snapshot-restore-current');
         reporter.log('      Restores the current snapshot and resumes execution.');
         reporter.log('  --paravirt-modes   <pv1[:pv2[:...]]>');
@@ -1682,6 +1686,18 @@ class TestVmSet(object):
                 if oTestVm is None:
                     reporter.log('warning: The "--test-vms" value "%s" does not specify any of our test VMs.' % (s,));
                 else:
+                    oTestVm.fSkip = True;
+
+        elif asArgs[iArg] == '--skip-win-vms':
+            asTestVMs = asArgs[iArg].split(':');
+            for oTestVm in self.oTestVmManager.aoTestVms:
+                if oTestVm.isWindows():
+                    oTestVm.fSkip = True;
+
+        elif asArgs[iArg] == '--skip-non-win-vms':
+            asTestVMs = asArgs[iArg].split(':');
+            for oTestVm in self.oTestVmManager.aoTestVms:
+                if not oTestVm.isWindows():
                     oTestVm.fSkip = True;
 
         elif asArgs[iArg] == '--snapshot-restore-current':
