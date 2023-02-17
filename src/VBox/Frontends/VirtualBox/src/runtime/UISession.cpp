@@ -803,19 +803,58 @@ bool UISession::acquireWhetherGuestEnteredACPIMode(bool &fEntered)
     return fSuccess;
 }
 
-bool UISession::prepareToBeSaved()
+void UISession::saveState()
 {
-    return    isPaused()
-           || (isRunning() && pause());
+    if (   isPaused()
+        || (isRunning() && pause()))
+    {
+        /* Enable 'manual-override',
+         * preventing automatic Runtime UI closing: */
+        uimachine()->setManualOverrideMode(true);
+
+        /* Now, do the magic: */
+        LogRel(("GUI: Saving VM state..\n"));
+        UINotificationProgressMachineSaveState *pNotification =
+            new UINotificationProgressMachineSaveState(machine());
+        connect(pNotification, &UINotificationProgressMachineSaveState::sigMachineStateSaved,
+                this, &UISession::sltHandleMachineStateSaved);
+        gpNotificationCenter->append(pNotification);
+    }
 }
 
-bool UISession::prepareToBeShutdowned()
+void UISession::shutdown()
 {
+    /* Check whether guest is in proper mode: */
     bool fValidMode = false;
     acquireWhetherGuestEnteredACPIMode(fValidMode);
     if (!fValidMode)
         UINotificationMessage::cannotSendACPIToMachine();
-    return fValidMode;
+    else
+    {
+        /* Now, do the magic: */
+        LogRel(("GUI: Sending ACPI shutdown signal..\n"));
+        CConsole comConsole = console();
+        comConsole.PowerButton();
+        if (!comConsole.isOk())
+            UINotificationMessage::cannotACPIShutdownMachine(comConsole);
+    }
+}
+
+void UISession::powerOff(bool fIncludingDiscard)
+{
+    /* Enable 'manual-override',
+     * preventing automatic Runtime UI closing: */
+    uimachine()->setManualOverrideMode(true);
+
+    /* Now, do the magic: */
+    LogRel(("GUI: Powering VM off..\n"));
+    UINotificationProgressMachinePowerOff *pNotification =
+        new UINotificationProgressMachinePowerOff(machine(),
+                                                  console(),
+                                                  fIncludingDiscard);
+    connect(pNotification, &UINotificationProgressMachinePowerOff::sigMachinePoweredOff,
+            this, &UISession::sltHandleMachinePoweredOff);
+    gpNotificationCenter->append(pNotification);
 }
 
 void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
@@ -888,6 +927,50 @@ void UISession::sltAdditionsChange()
 
     /* Notify listeners about GA state change event came: */
     emit sigAdditionsStateChange();
+}
+
+void UISession::sltHandleMachineStateSaved(bool fSuccess)
+{
+    /* Let user try again if saving failed: */
+    if (!fSuccess)
+    {
+        /* Disable 'manual-override' finally: */
+        uimachine()->setManualOverrideMode(false);
+    }
+    /* Close Runtime UI otherwise: */
+    else
+        uimachine()->closeRuntimeUI();
+}
+
+void UISession::sltHandleMachinePoweredOff(bool fSuccess, bool fIncludingDiscard)
+{
+    /* Let user try again if power off failed: */
+    if (!fSuccess)
+    {
+        /* Disable 'manual-override' finally: */
+        uimachine()->setManualOverrideMode(false);
+    }
+    /* Check for other tasks otherwise: */
+    else
+    {
+        if (fIncludingDiscard)
+        {
+            /* Now, do more magic! */
+            UINotificationProgressSnapshotRestore *pNotification =
+                new UINotificationProgressSnapshotRestore(uiCommon().managedVMUuid());
+            connect(pNotification, &UINotificationProgressSnapshotRestore::sigSnapshotRestored,
+                    this, &UISession::sltHandleSnapshotRestored);
+            gpNotificationCenter->append(pNotification);
+        }
+        else
+            uimachine()->closeRuntimeUI();
+    }
+}
+
+void UISession::sltHandleSnapshotRestored(bool)
+{
+    /* Close Runtime UI independent of snapshot restoring state: */
+    uimachine()->closeRuntimeUI();
 }
 
 UISession::UISession(UIMachine *pMachine)

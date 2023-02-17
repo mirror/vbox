@@ -394,10 +394,12 @@ public:
         /** Acquires whether guest @a fEntered ACPI mode. */
         bool acquireWhetherGuestEnteredACPIMode(bool &fEntered);
 
-        /** Prepares VM to be saved. */
-        bool prepareToBeSaved();
-        /** Returns whether VM can be shutdowned. */
-        bool prepareToBeShutdowned();
+        /** Saves VM state, then closes Runtime UI. */
+        void saveState();
+        /** Calls for guest shutdown to close Runtime UI. */
+        void shutdown();
+        /** Powers VM off, then closes Runtime UI. */
+        void powerOff(bool fIncludingDiscard);
     /** @} */
 
 public slots:
@@ -430,6 +432,20 @@ private slots:
      ** @{ */
         /** Handles event about guest additions change. */
         void sltAdditionsChange();
+    /** @} */
+
+    /** @name Close stuff.
+     ** @{ */
+        /** Handles signal about machine state saved.
+          * @param  fSuccess  Brings whether state was saved successfully. */
+        void sltHandleMachineStateSaved(bool fSuccess);
+        /** Handles signal about machine powered off.
+          * @param  fSuccess           Brings whether machine was powered off successfully.
+          * @param  fIncludingDiscard  Brings whether machine state should be discarded. */
+        void sltHandleMachinePoweredOff(bool fSuccess, bool fIncludingDiscard);
+        /** Handles signal about snapshot restored.
+          * @param  fSuccess  Brings whether machine was powered off successfully. */
+        void sltHandleSnapshotRestored(bool fSuccess);
     /** @} */
 
 private:

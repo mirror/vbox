@@ -660,52 +660,17 @@ void UIMachine::detachUi()
 
 void UIMachine::saveState()
 {
-    /* Prepare VM to be saved: */
-    if (!uisession()->prepareToBeSaved())
-        return;
-
-    /* Enable 'manual-override',
-     * preventing automatic Runtime UI closing: */
-    setManualOverrideMode(true);
-
-    /* Now, do the magic: */
-    LogRel(("GUI: Saving VM state..\n"));
-    UINotificationProgressMachineSaveState *pNotification =
-        new UINotificationProgressMachineSaveState(uisession()->machine());
-    connect(pNotification, &UINotificationProgressMachineSaveState::sigMachineStateSaved,
-            this, &UIMachine::sltHandleMachineStateSaved);
-    gpNotificationCenter->append(pNotification);
+    uisession()->saveState();
 }
 
 void UIMachine::shutdown()
 {
-    /* Prepare VM to be shutdowned: */
-    if (!uisession()->prepareToBeShutdowned())
-        return;
-
-    /* Now, do the magic: */
-    LogRel(("GUI: Sending ACPI shutdown signal..\n"));
-    CConsole comConsole = uisession()->console();
-    comConsole.PowerButton();
-    if (!comConsole.isOk())
-        UINotificationMessage::cannotACPIShutdownMachine(uisession()->console());
+    uisession()->shutdown();
 }
 
 void UIMachine::powerOff(bool fIncludingDiscard)
 {
-    /* Enable 'manual-override',
-     * preventing automatic Runtime UI closing: */
-    setManualOverrideMode(true);
-
-    /* Now, do the magic: */
-    LogRel(("GUI: Powering VM off..\n"));
-    UINotificationProgressMachinePowerOff *pNotification =
-        new UINotificationProgressMachinePowerOff(uisession()->machine(),
-                                                  uisession()->console(),
-                                                  fIncludingDiscard);
-    connect(pNotification, &UINotificationProgressMachinePowerOff::sigMachinePoweredOff,
-            this, &UIMachine::sltHandleMachinePoweredOff);
-    gpNotificationCenter->append(pNotification);
+    uisession()->powerOff(fIncludingDiscard);
 }
 
 void UIMachine::closeRuntimeUI()
@@ -1044,50 +1009,6 @@ void UIMachine::sltCursorPositionChange(bool fContainsData, unsigned long uX, un
         /* Notify listeners: */
         emit sigCursorPositionChange();
     }
-}
-
-void UIMachine::sltHandleMachineStateSaved(bool fSuccess)
-{
-    /* Let user try again if saving failed: */
-    if (!fSuccess)
-    {
-        /* Disable 'manual-override' finally: */
-        setManualOverrideMode(false);
-    }
-    /* Close Runtime UI otherwise: */
-    else
-        closeRuntimeUI();
-}
-
-void UIMachine::sltHandleMachinePoweredOff(bool fSuccess, bool fIncludingDiscard)
-{
-    /* Let user try again if power off failed: */
-    if (!fSuccess)
-    {
-        /* Disable 'manual-override' finally: */
-        setManualOverrideMode(false);
-    }
-    /* Check for other tasks otherwise: */
-    else
-    {
-        if (fIncludingDiscard)
-        {
-            /* Now, do more magic! */
-            UINotificationProgressSnapshotRestore *pNotification =
-                new UINotificationProgressSnapshotRestore(uiCommon().managedVMUuid());
-            connect(pNotification, &UINotificationProgressSnapshotRestore::sigSnapshotRestored,
-                    this, &UIMachine::sltHandleSnapshotRestored);
-            gpNotificationCenter->append(pNotification);
-        }
-        else
-            closeRuntimeUI();
-    }
-}
-
-void UIMachine::sltHandleSnapshotRestored(bool)
-{
-    /* Close Runtime UI independent of snapshot restoring state: */
-    closeRuntimeUI();
 }
 
 UIMachine::UIMachine()
