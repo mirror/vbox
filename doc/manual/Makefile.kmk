@@ -905,12 +905,18 @@ man_vboximg-mount.xml \
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf: \
   		$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/user.ditamap \
-  		$(VBOX_REFENTRY_DITA_FILES)
+  		$(VBOX_REFENTRY_DITA_FILES) \
+  		$$(VBOX_PATH_MANUAL_SRC)/correct_references.py
+		$$(call MSG_L1,correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics)
+		$$(QUIET)$$(VBOX_BLD_PYTHON) $$(VBOX_PATH_MANUAL_SRC)/correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics
 		$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
 		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/user.ditamap \
 			/transtype:pdf /ditadir:$(VBOX_DITA_PATH) /outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)
+
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_ditamap_to_pdf,$(lang)))
+
+
 
  #
  # ChangeLog.html
