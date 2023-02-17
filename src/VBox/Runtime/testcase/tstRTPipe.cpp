@@ -48,12 +48,16 @@
 #include <iprt/param.h>
 #include <iprt/process.h>
 #include <iprt/string.h>
+#ifdef RT_OS_WINDOWS
+# include <iprt/system.h>
+#endif
 #include <iprt/test.h>
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+static RTTEST     g_hTest            = NIL_RTTEST;
 static const char g_szTest4Message[] = "This is test #4, everything is working fine.\n\r";
 static const char g_szTest5Message[] = "This is test #5, everything is working fine.\n\r";
 
@@ -213,7 +217,6 @@ static void tstRTPipe4(void)
 static void tstRTPipe3(void)
 {
     RTTestISub("Full write buffer");
-
 #ifdef RT_OS_WINDOWS
     /* Kludge! The RTPipeWrite+RTPipeWriteBlocking code is able to write twice the size
                of the pipe buffer, so the testcase won't behave right if we go lower
@@ -254,12 +257,28 @@ static void tstRTPipe3(void)
             RTTESTI_CHECK_RC(RTPipeSelectOne(hPipeW, 1), VERR_TIMEOUT);
             size_t cbRead;
             RTTESTI_CHECK_RC(RTPipeReadBlocking(hPipeR, s_abBuf, cbToRead, &cbRead), VINF_SUCCESS);
-            RTTESTI_CHECK_RC(RTPipeSelectOne(hPipeW, 0), VINF_SUCCESS);
-            RTTESTI_CHECK_RC(RTPipeSelectOne(hPipeW, 1), VINF_SUCCESS);
 
-            size_t cbWritten = _1G;
-            rc = RTPipeWrite(hPipeW, s_abBuf, sizeof(s_abBuf), &cbWritten);
-            RTTESTI_CHECK(rc == VINF_SUCCESS);
+#ifdef RT_OS_WINDOWS
+            /* Kludge! Older Windows NT versions does not complete a pending write till
+                       all the pending data has been read and the pipe buffer is
+                       completely empty. Applies to NT4, W2K, and XP. Though on XP the
+                       test works at 50% for some reason and we can write double the
+                       amount, so possibly a different issue there, so we'l
+
+                       This does not seem to be a bug in pipe-win.cpp. */
+            if (RTSystemGetNtVersion() < (uPct == 50 ? RTSYSTEM_MAKE_NT_VERSION(5,2,0) : RTSYSTEM_MAKE_NT_VERSION(6,0,0)))
+                RTTestIPrintf(RTTESTLVL_ALWAYS, "old buggy windows - skipping 2nd part (0: %Rrc, 1: %Rrc)\n",
+                              RTPipeSelectOne(hPipeW, 0), RTPipeSelectOne(hPipeW, 1));
+            else
+#endif
+            {
+                RTTESTI_CHECK_RC(RTPipeSelectOne(hPipeW, 0), VINF_SUCCESS);
+                RTTESTI_CHECK_RC(RTPipeSelectOne(hPipeW, 1), VINF_SUCCESS);
+
+                size_t cbWritten = _1G;
+                rc = RTPipeWrite(hPipeW, s_abBuf, sizeof(s_abBuf), &cbWritten);
+                RTTESTI_CHECK(rc == VINF_SUCCESS);
+            }
         }
 
         RTTESTI_CHECK_RC(RTPipeClose(hPipeR), VINF_SUCCESS);
@@ -507,17 +526,16 @@ int main(int argc, char **argv)
     if (argc == 3 && !strcmp(argv[1], "--child-5"))
         return tstRTPipe5Child(argv[2]);
 
-    RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstRTPipe", &hTest);
+    int rc = RTTestInitAndCreate("tstRTPipe", &g_hTest);
     if (rc)
         return rc;
-    RTTestBanner(hTest);
+    RTTestBanner(g_hTest);
 
     /*
      * The tests.
      */
     tstRTPipe1();
-    if (RTTestErrorCount(hTest) == 0)
+    if (RTTestErrorCount(g_hTest) == 0)
     {
         bool fMayPanic = RTAssertMayPanic();
         bool fQuiet    = RTAssertAreQuiet();
@@ -535,6 +553,6 @@ int main(int argc, char **argv)
     /*
      * Summary.
      */
-    return RTTestSummaryAndDestroy(hTest);
+    return RTTestSummaryAndDestroy(g_hTest);
 }
 
