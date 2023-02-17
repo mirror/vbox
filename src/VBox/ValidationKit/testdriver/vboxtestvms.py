@@ -1690,13 +1690,13 @@ class TestVmSet(object):
 
         elif asArgs[iArg] == '--skip-win-vms':
             asTestVMs = asArgs[iArg].split(':');
-            for oTestVm in self.oTestVmManager.aoTestVms:
+            for oTestVm in self.aoTestVms:
                 if oTestVm.isWindows():
                     oTestVm.fSkip = True;
 
         elif asArgs[iArg] == '--skip-non-win-vms':
             asTestVMs = asArgs[iArg].split(':');
-            for oTestVm in self.oTestVmManager.aoTestVms:
+            for oTestVm in self.aoTestVms:
                 if not oTestVm.isWindows():
                     oTestVm.fSkip = True;
 
