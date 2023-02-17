@@ -2273,36 +2273,10 @@ void UIMachineLogic::sltAttachUSBDevice()
 
     /* Attach USB device: */
     if (target.attach)
-    {
-        /* Try to attach corresponding device: */
-        console().AttachUSBDevice(target.id, QString(""));
-        /* Check if console is OK: */
-        if (!console().isOk())
-        {
-            /* Get current host: */
-            CHost host = uiCommon().host();
-            /* Search the host for the corresponding USB device: */
-            CHostUSBDevice hostDevice = host.FindUSBDeviceById(target.id);
-            /* Get USB device from host USB device: */
-            CUSBDevice device(hostDevice);
-            /* Show a message about procedure failure: */
-            UINotificationMessage::cannotAttachUSBDevice(console(), uiCommon().usbDetails(device));
-        }
-    }
+        uimachine()->attachUSBDevice(target.id);
     /* Detach USB device: */
     else
-    {
-        /* Search the console for the corresponding USB device: */
-        CUSBDevice device = console().FindUSBDeviceById(target.id);
-        /* Try to detach corresponding device: */
-        console().DetachUSBDevice(target.id);
-        /* Check if console is OK: */
-        if (!console().isOk())
-        {
-            /* Show a message about procedure failure: */
-            UINotificationMessage::cannotDetachUSBDevice(console(), uiCommon().usbDetails(device));
-        }
-    }
+        uimachine()->detachUSBDevice(target.id);
 }
 
 void UIMachineLogic::sltAttachWebCamDevice()
@@ -2810,13 +2784,12 @@ void UIMachineLogic::updateMenuDevicesNetwork(QMenu *pMenu)
 
 void UIMachineLogic::updateMenuDevicesUSB(QMenu *pMenu)
 {
-    /* Get current host: */
-    const CHost host = uiCommon().host();
-    /* Get host USB device list: */
-    const CHostUSBDeviceVector devices = host.GetUSBDevices();
+    /* Acquire device list: */
+    QList<USBDeviceInfo> guiUSBDevices;
+    const bool fSuccess = uimachine()->usbDevices(guiUSBDevices);
 
     /* If device list is empty: */
-    if (devices.isEmpty())
+    if (!fSuccess || guiUSBDevices.isEmpty())
     {
         /* Add only one - "empty" action: */
         QAction *pEmptyMenuAction = pMenu->addAction(UIIconPool::iconSet(":/usb_unavailable_16px.png",
@@ -2829,24 +2802,17 @@ void UIMachineLogic::updateMenuDevicesUSB(QMenu *pMenu)
     else
     {
         /* Populate menu with host USB devices: */
-        foreach (const CHostUSBDevice& hostDevice, devices)
+        foreach (const USBDeviceInfo &guiUSBDevice, guiUSBDevices)
         {
-            /* Get USB device from current host USB device: */
-            const CUSBDevice device(hostDevice);
-
             /* Create USB device action: */
-            QAction *pAttachUSBAction = pMenu->addAction(uiCommon().usbDetails(device),
+            QAction *pAttachUSBAction = pMenu->addAction(guiUSBDevice.m_strName,
                                                          this, SLOT(sltAttachUSBDevice()));
-            pAttachUSBAction->setToolTip(uiCommon().usbToolTip(device));
+            pAttachUSBAction->setToolTip(guiUSBDevice.m_strToolTip);
             pAttachUSBAction->setCheckable(true);
-
-            /* Check if that USB device was already attached to this session: */
-            const CUSBDevice attachedDevice = console().FindUSBDeviceById(device.GetId());
-            pAttachUSBAction->setChecked(!attachedDevice.isNull());
-            pAttachUSBAction->setEnabled(hostDevice.GetState() != KUSBDeviceState_Unavailable);
-
-            /* Set USB attach data: */
-            pAttachUSBAction->setData(QVariant::fromValue(USBTarget(!pAttachUSBAction->isChecked(), device.GetId())));
+            pAttachUSBAction->setChecked(guiUSBDevice.m_fIsChecked);
+            pAttachUSBAction->setEnabled(guiUSBDevice.m_fIsEnabled);
+            pAttachUSBAction->setData(QVariant::fromValue(USBTarget(!pAttachUSBAction->isChecked(),
+                                                                    guiUSBDevice.m_uId)));
         }
     }
 }

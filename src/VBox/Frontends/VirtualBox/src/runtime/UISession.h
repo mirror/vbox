@@ -39,6 +39,7 @@
 
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
+#include "UIMachineDefs.h"
 #include "UIMediumDefs.h"
 #include "UIMousePointerShapeData.h"
 
@@ -270,6 +271,16 @@ public:
         bool putMouseEventAbsolute(long iX, long iY, long iDz, long iDw, long iButtonState);
         /** Sends multi-touch event to VM's mouse. */
         bool putEventMultiTouch(long iCount, const QVector<LONG64> &contacts, bool fIsTouchScreen, ulong uScanTime);
+    /** @} */
+
+    /** @name USB stuff.
+     ** @{ */
+        /** Returns a list of USB devices. */
+        bool usbDevices(QList<USBDeviceInfo> &guiUSBDevices);
+        /** Attaches USB device with passed @a uId. */
+        bool attachUSBDevice(const QUuid &uId);
+        /** Detaches USB device with passed @a uId. */
+        bool detachUSBDevice(const QUuid &uId);
     /** @} */
 
     /** @name Guest additions stuff.

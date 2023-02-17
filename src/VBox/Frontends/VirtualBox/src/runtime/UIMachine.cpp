@@ -545,6 +545,21 @@ bool UIMachine::putEventMultiTouch(long iCount, const QVector<LONG64> &contacts,
     return uisession()->putEventMultiTouch(iCount, contacts, fIsTouchScreen, uScanTime);
 }
 
+bool UIMachine::usbDevices(QList<USBDeviceInfo> &guiUSBDevices)
+{
+    return uisession()->usbDevices(guiUSBDevices);
+}
+
+bool UIMachine::attachUSBDevice(const QUuid &uId)
+{
+    return uisession()->attachUSBDevice(uId);
+}
+
+bool UIMachine::detachUSBDevice(const QUuid &uId)
+{
+    return uisession()->detachUSBDevice(uId);
+}
+
 bool UIMachine::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states)
 {
     return uisession()->acquireDeviceActivity(deviceTypes, states);

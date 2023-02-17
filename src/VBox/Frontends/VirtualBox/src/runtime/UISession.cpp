@@ -65,6 +65,7 @@
 #include "CStorageController.h"
 #include "CSystemProperties.h"
 #include "CUSBController.h"
+#include "CUSBDevice.h"
 #include "CUSBDeviceFilter.h"
 #include "CUSBDeviceFilters.h"
 #ifdef VBOX_WITH_NETFLT
@@ -76,6 +77,9 @@
 # include <VBox/dbggui.h>
 # include <iprt/ldr.h>
 #endif
+
+/* VirtualBox interface declarations: */
+#include <VBox/com/VirtualBox.h>
 
 /* External includes: */
 #ifdef VBOX_WS_X11
@@ -372,6 +376,96 @@ bool UISession::putEventMultiTouch(long iCount, const QVector<LONG64> &contacts,
     const bool fSuccess = comMouse.isOk();
     if (!fSuccess)
         UINotificationMessage::cannotChangeMouseParameter(comMouse);
+    return fSuccess;
+}
+
+bool UISession::usbDevices(QList<USBDeviceInfo> &guiUSBDevices)
+{
+    const CHost comHost = uiCommon().host();
+    const CHostUSBDeviceVector comHostUSBDevices = comHost.GetUSBDevices();
+    bool fSuccess = comHost.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireHostParameter(comHost);
+    else
+    {
+        foreach (const CHostUSBDevice &comHostUSBDevice, comHostUSBDevices)
+        {
+            /* Get USB device from current host USB device,
+             * this stuff requires #include <VBox/com/VirtualBox.h> */
+            const CUSBDevice comUSBDevice(comHostUSBDevice);
+
+            /* Fill structure fields: */
+            USBDeviceInfo guiUSBDevice;
+            if (fSuccess)
+            {
+                guiUSBDevice.m_uId = comUSBDevice.GetId();
+                fSuccess = comUSBDevice.isOk();
+            }
+            if (fSuccess)
+            {
+                /// @todo make sure UICommon::usbDetails is checked for errors as well
+                guiUSBDevice.m_strName = uiCommon().usbDetails(comUSBDevice);
+                fSuccess = comUSBDevice.isOk();
+            }
+            if (fSuccess)
+            {
+                /// @todo make sure UICommon::usbToolTip is checked for errors as well
+                guiUSBDevice.m_strToolTip = uiCommon().usbToolTip(comUSBDevice);
+                fSuccess = comUSBDevice.isOk();
+            }
+            if (fSuccess)
+            {
+                /* Check if that USB device was already attached to this session;
+                 * Nothing to check for errors here because error is valid case as well. */
+                const CUSBDevice comAttachedDevice = console().FindUSBDeviceById(guiUSBDevice.m_uId);
+                guiUSBDevice.m_fIsChecked = !comAttachedDevice.isNull();
+            }
+            if (fSuccess)
+            {
+                guiUSBDevice.m_fIsEnabled = comHostUSBDevice.GetState() != KUSBDeviceState_Unavailable;
+                fSuccess = comHostUSBDevice.isOk();
+            }
+
+            /* Append or break if necessary: */
+            if (fSuccess)
+                guiUSBDevices << guiUSBDevice;
+            else
+                break;
+        }
+    }
+    return fSuccess;
+}
+
+bool UISession::attachUSBDevice(const QUuid &uId)
+{
+    CConsole comConsole = console();
+    comConsole.AttachUSBDevice(uId, QString(""));
+    const bool fSuccess = comConsole.isOk();
+    if (!fSuccess)
+    {
+        CHost comHost = uiCommon().host();
+        /* Nothing to check for errors here because error is valid case as well. */
+        CHostUSBDevice comHostUSBDevice = comHost.FindUSBDeviceById(uId);
+        /* Get USB device from current host USB device,
+         * this stuff requires #include <VBox/com/VirtualBox.h> */
+        CUSBDevice comUSBDevice(comHostUSBDevice);
+        UINotificationMessage::cannotAttachUSBDevice(comConsole, uiCommon().usbDetails(comUSBDevice));
+        /// @todo make sure UICommon::usbDetails is checked for errors as well
+    }
+    return fSuccess;
+}
+
+bool UISession::detachUSBDevice(const QUuid &uId)
+{
+    CConsole comConsole = console();
+    comConsole.DetachUSBDevice(uId);
+    const bool fSuccess = comConsole.isOk();
+    if (!fSuccess)
+    {
+        CUSBDevice comUSBDevice = CConsole(comConsole).FindUSBDeviceById(uId);
+        UINotificationMessage::cannotDetachUSBDevice(comConsole, uiCommon().usbDetails(comUSBDevice));
+        /// @todo make sure UICommon::usbDetails is checked for errors as well
+    }
     return fSuccess;
 }
 

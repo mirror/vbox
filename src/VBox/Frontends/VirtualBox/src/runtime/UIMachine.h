@@ -408,6 +408,16 @@ public:
         bool putEventMultiTouch(long iCount, const QVector<LONG64> &contacts, bool fIsTouchScreen, ulong uScanTime);
     /** @} */
 
+    /** @name USB stuff.
+     ** @{ */
+        /** Returns a list of USB devices. */
+        bool usbDevices(QList<USBDeviceInfo> &guiUSBDevices);
+        /** Attaches USB device with passed @a uId. */
+        bool attachUSBDevice(const QUuid &uId);
+        /** Detaches USB device with passed @a uId. */
+        bool detachUSBDevice(const QUuid &uId);
+    /** @} */
+
     /** @name Virtualization stuff.
      ** @{ */
         /** Returns IMachineDebugger::ExecutionEngine reference. */
