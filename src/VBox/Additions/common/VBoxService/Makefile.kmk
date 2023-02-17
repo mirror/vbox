@@ -47,7 +47,7 @@ PROGRAMS += VBoxService
 VBOX_WITH_VBOXSERVICE_TIMESYNC      := 1
 
 # Busybox-like toolbox, embedded into VBoxService.
-ifndef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
+ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
  VBOX_WITH_VBOXSERVICE_TOOLBOX      := 1
 endif
 
