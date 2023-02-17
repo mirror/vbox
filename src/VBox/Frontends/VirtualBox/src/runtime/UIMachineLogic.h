@@ -301,7 +301,7 @@ private slots:
     void sltOpenSettingsDialogUSBDevices();
     void sltOpenSettingsDialogSharedFolders();
     void sltAttachUSBDevice();
-    void sltAttachWebCamDevice();
+    void sltAttachWebcamDevice();
     void sltChangeSharedClipboardType(QAction *pAction);
     void sltToggleNetworkAdapterConnection();
     void sltChangeDragAndDropType(QAction *pAction);
@@ -352,7 +352,7 @@ private:
     /** Update 'Devices' : 'USB Devices' menu routine. */
     void updateMenuDevicesUSB(QMenu *pMenu);
     /** Update 'Devices' : 'Web Cams' menu routine. */
-    void updateMenuDevicesWebCams(QMenu *pMenu);
+    void updateMenuDevicesWebcams(QMenu *pMenu);
     /** Update 'Devices' : 'Shared Clipboard' menu routine. */
     void updateMenuDevicesSharedClipboard(QMenu *pMenu);
     /** Update 'Devices' : 'Drag and Drop' menu routine. */

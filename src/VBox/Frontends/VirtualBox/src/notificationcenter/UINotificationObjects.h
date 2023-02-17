@@ -325,6 +325,9 @@ public:
         /** Notifies about inability to acquire IUpdateAgent parameter.
           * @param  comAgent  Brings the object parameter get acquired from. */
         static void cannotAcquireUpdateAgentParameter(const CUpdateAgent &comAgent);
+        /** Notifies about inability to acquire IEmulatedUSB parameter.
+          * @param  comDispatcher  Brings the object parameter get acquired from. */
+        static void cannotAcquireEmulatedUSBParameter(const CEmulatedUSB &comDispatcher);
         /** Notifies about inability to acquire IVirtualSystemDescription parameter.
           * @param  comVsd  Brings the object parameter get acquired from. */
         static void cannotAcquireVirtualSystemDescriptionParameter(const CVirtualSystemDescription &comVsd,

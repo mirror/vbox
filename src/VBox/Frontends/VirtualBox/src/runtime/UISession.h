@@ -281,6 +281,13 @@ public:
         bool attachUSBDevice(const QUuid &uId);
         /** Detaches USB device with passed @a uId. */
         bool detachUSBDevice(const QUuid &uId);
+
+        /** Returns a list of web cam devices. */
+        bool webcamDevices(QList<WebcamDeviceInfo> &guiWebcamDevices);
+        /** Attaches web cam device with passed @a strName and @a strPath. */
+        bool webcamAttach(const QString &strPath, const QString &strName);
+        /** Detaches web cam device with passed @a strName and @a strPath. */
+        bool webcamDetach(const QString &strPath, const QString &strName);
     /** @} */
 
     /** @name Guest additions stuff.

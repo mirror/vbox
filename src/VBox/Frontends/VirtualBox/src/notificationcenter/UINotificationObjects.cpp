@@ -760,6 +760,15 @@ void UINotificationMessage::cannotAcquireUpdateAgentParameter(const CUpdateAgent
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireEmulatedUSBParameter(const CEmulatedUSB &comDispatcher)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Emulated USB failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire emulated USB parameter.") +
+        UIErrorString::formatErrorInfo(comDispatcher));
+}
+
+/* static */
 void UINotificationMessage::cannotAcquireVirtualSystemDescriptionParameter(const CVirtualSystemDescription &comVsd,
                                                                            UINotificationCenter *pParent /* = 0 */)
 {

@@ -560,6 +560,21 @@ bool UIMachine::detachUSBDevice(const QUuid &uId)
     return uisession()->detachUSBDevice(uId);
 }
 
+bool UIMachine::webcamDevices(QList<WebcamDeviceInfo> &guiWebcamDevices)
+{
+    return uisession()->webcamDevices(guiWebcamDevices);
+}
+
+bool UIMachine::webcamAttach(const QString &strPath, const QString &strName)
+{
+    return uisession()->webcamAttach(strPath, strName);
+}
+
+bool UIMachine::webcamDetach(const QString &strPath, const QString &strName)
+{
+    return uisession()->webcamDetach(strPath, strName);
+}
+
 bool UIMachine::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states)
 {
     return uisession()->acquireDeviceActivity(deviceTypes, states);

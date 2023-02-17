@@ -1106,7 +1106,7 @@ void UIMachineLogic::prepareHandlers()
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_FloppyDevices] =   &UIMachineLogic::updateMenuDevicesStorage;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_Network] =         &UIMachineLogic::updateMenuDevicesNetwork;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_USBDevices] =      &UIMachineLogic::updateMenuDevicesUSB;
-    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_WebCams] =         &UIMachineLogic::updateMenuDevicesWebCams;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_WebCams] =         &UIMachineLogic::updateMenuDevicesWebcams;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_SharedClipboard] = &UIMachineLogic::updateMenuDevicesSharedClipboard;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_DragAndDrop] =     &UIMachineLogic::updateMenuDevicesDragAndDrop;
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -2279,7 +2279,7 @@ void UIMachineLogic::sltAttachUSBDevice()
         uimachine()->detachUSBDevice(target.id);
 }
 
-void UIMachineLogic::sltAttachWebCamDevice()
+void UIMachineLogic::sltAttachWebcamDevice()
 {
     /* Get and check sender action object: */
     QAction *pAction = qobject_cast<QAction*>(sender());
@@ -2288,27 +2288,12 @@ void UIMachineLogic::sltAttachWebCamDevice()
     /* Get operation target: */
     WebCamTarget target = pAction->data().value<WebCamTarget>();
 
-    /* Get current emulated USB: */
-    CEmulatedUSB dispatcher = console().GetEmulatedUSB();
-
     /* Attach webcam device: */
     if (target.attach)
-    {
-        /* Try to attach corresponding device: */
-        dispatcher.WebcamAttach(target.path, "");
-        /* Check if dispatcher is OK: */
-        if (!dispatcher.isOk())
-            UINotificationMessage::cannotAttachWebCam(dispatcher, target.name, machineName());
-    }
+        uimachine()->webcamAttach(target.path, target.name);
     /* Detach webcam device: */
     else
-    {
-        /* Try to detach corresponding device: */
-        dispatcher.WebcamDetach(target.path);
-        /* Check if dispatcher is OK: */
-        if (!dispatcher.isOk())
-            UINotificationMessage::cannotDetachWebCam(dispatcher, target.name, machineName());
-    }
+        uimachine()->webcamDetach(target.path, target.name);
 }
 
 void UIMachineLogic::sltChangeSharedClipboardType(QAction *pAction)
@@ -2817,18 +2802,17 @@ void UIMachineLogic::updateMenuDevicesUSB(QMenu *pMenu)
     }
 }
 
-void UIMachineLogic::updateMenuDevicesWebCams(QMenu *pMenu)
+void UIMachineLogic::updateMenuDevicesWebcams(QMenu *pMenu)
 {
     /* Clear contents: */
     pMenu->clear();
 
-    /* Get current host: */
-    const CHost host = uiCommon().host();
-    /* Get host webcam list: */
-    const CHostVideoInputDeviceVector webcams = host.GetVideoInputDevices();
+    /* Acquire device list: */
+    QList<WebcamDeviceInfo> guiWebcamDevices;
+    const bool fSuccess = uimachine()->webcamDevices(guiWebcamDevices);
 
     /* If webcam list is empty: */
-    if (webcams.isEmpty())
+    if (!fSuccess || guiWebcamDevices.isEmpty())
     {
         /* Add only one - "empty" action: */
         QAction *pEmptyMenuAction = pMenu->addAction(UIIconPool::iconSet(":/web_camera_unavailable_16px.png",
@@ -2841,24 +2825,17 @@ void UIMachineLogic::updateMenuDevicesWebCams(QMenu *pMenu)
     else
     {
         /* Populate menu with host webcams: */
-        const QVector<QString> attachedWebcamPaths = console().GetEmulatedUSB().GetWebcams();
-        foreach (const CHostVideoInputDevice &webcam, webcams)
+        foreach (const WebcamDeviceInfo &guiWebcamDevice, guiWebcamDevices)
         {
-            /* Get webcam data: */
-            const QString strWebcamName = webcam.GetName();
-            const QString strWebcamPath = webcam.GetPath();
-
-            /* Create/configure webcam action: */
-            QAction *pAttachWebcamAction = pMenu->addAction(strWebcamName,
-                                                            this, SLOT(sltAttachWebCamDevice()));
-            pAttachWebcamAction->setToolTip(uiCommon().usbToolTip(webcam));
+            /* Create webcam device action: */
+            QAction *pAttachWebcamAction = pMenu->addAction(guiWebcamDevice.m_strName,
+                                                            this, SLOT(sltAttachWebcamDevice()));
+            pAttachWebcamAction->setToolTip(guiWebcamDevice.m_strToolTip);
             pAttachWebcamAction->setCheckable(true);
-
-            /* Check if that webcam was already attached to this session: */
-            pAttachWebcamAction->setChecked(attachedWebcamPaths.contains(strWebcamPath));
-
-            /* Set USB attach data: */
-            pAttachWebcamAction->setData(QVariant::fromValue(WebCamTarget(!pAttachWebcamAction->isChecked(), strWebcamName, strWebcamPath)));
+            pAttachWebcamAction->setChecked(guiWebcamDevice.m_fIsChecked);
+            pAttachWebcamAction->setData(QVariant::fromValue(WebCamTarget(!pAttachWebcamAction->isChecked(),
+                                                                          guiWebcamDevice.m_strName,
+                                                                          guiWebcamDevice.m_strPath)));
         }
     }
 }

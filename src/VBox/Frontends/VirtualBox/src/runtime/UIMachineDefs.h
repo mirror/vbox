@@ -87,4 +87,13 @@ struct USBDeviceInfo
     bool     m_fIsEnabled;
 };
 
+/** Robust struct to bring web cam device info to machine-logic. */
+struct WebcamDeviceInfo
+{
+    QString  m_strName;
+    QString  m_strPath;
+    QString  m_strToolTip;
+    bool     m_fIsChecked;
+};
+
 #endif /* !FEQT_INCLUDED_SRC_runtime_UIMachineDefs_h */

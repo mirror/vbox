@@ -56,9 +56,11 @@
 #endif
 
 /* COM includes: */
+#include "CEmulatedUSB.h"
 #include "CGraphicsAdapter.h"
 #include "CHostNetworkInterface.h"
 #include "CHostUSBDevice.h"
+#include "CHostVideoInputDevice.h"
 #include "CMedium.h"
 #include "CMediumAttachment.h"
 #include "CSnapshot.h"
@@ -465,6 +467,97 @@ bool UISession::detachUSBDevice(const QUuid &uId)
         CUSBDevice comUSBDevice = CConsole(comConsole).FindUSBDeviceById(uId);
         UINotificationMessage::cannotDetachUSBDevice(comConsole, uiCommon().usbDetails(comUSBDevice));
         /// @todo make sure UICommon::usbDetails is checked for errors as well
+    }
+    return fSuccess;
+}
+
+bool UISession::webcamDevices(QList<WebcamDeviceInfo> &guiWebcamDevices)
+{
+    const CHost comHost = uiCommon().host();
+    const CHostVideoInputDeviceVector comHostVideoInputDevices = comHost.GetVideoInputDevices();
+    bool fSuccess = comHost.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireHostParameter(comHost);
+    else
+    {
+        CConsole comConsole = console();
+        CEmulatedUSB comEmulatedUSB = comConsole.GetEmulatedUSB();
+        fSuccess = comConsole.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotAcquireConsoleParameter(comConsole);
+        else
+        {
+            const QVector<QString> attachedWebcamPaths = comEmulatedUSB.GetWebcams();
+            fSuccess = comEmulatedUSB.isOk();
+            if (!fSuccess)
+                UINotificationMessage::cannotAcquireEmulatedUSBParameter(comEmulatedUSB);
+            else
+            {
+                foreach (const CHostVideoInputDevice &comHostVideoInputDevice, comHostVideoInputDevices)
+                {
+                    /* Fill structure fields: */
+                    WebcamDeviceInfo guiWebcamDevice;
+                    if (fSuccess)
+                    {
+                        guiWebcamDevice.m_strName = comHostVideoInputDevice.GetName();
+                        fSuccess = comHostVideoInputDevice.isOk();
+                    }
+                    if (fSuccess)
+                    {
+                        guiWebcamDevice.m_strPath = comHostVideoInputDevice.GetPath();
+                        fSuccess = comHostVideoInputDevice.isOk();
+                    }
+                    if (fSuccess)
+                    {
+                        /// @todo make sure UICommon::usbToolTip is checked for errors as well
+                        guiWebcamDevice.m_strToolTip = uiCommon().usbToolTip(comHostVideoInputDevice);
+                        fSuccess = comHostVideoInputDevice.isOk();
+                    }
+                    if (fSuccess)
+                        guiWebcamDevice.m_fIsChecked = attachedWebcamPaths.contains(guiWebcamDevice.m_strPath);
+
+                    /* Append or break if necessary: */
+                    if (fSuccess)
+                        guiWebcamDevices << guiWebcamDevice;
+                    else
+                        break;
+                }
+            }
+        }
+    }
+    return fSuccess;
+}
+
+bool UISession::webcamAttach(const QString &strPath, const QString &strName)
+{
+    CConsole comConsole = console();
+    CEmulatedUSB comDispatcher = comConsole.GetEmulatedUSB();
+    bool fSuccess = comConsole.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireConsoleParameter(comConsole);
+    else
+    {
+        comDispatcher.WebcamAttach(strPath, "");
+        fSuccess = comDispatcher.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotAttachWebCam(comDispatcher, strName, machineName());
+    }
+    return fSuccess;
+}
+
+bool UISession::webcamDetach(const QString &strPath, const QString &strName)
+{
+    CConsole comConsole = console();
+    CEmulatedUSB comDispatcher = comConsole.GetEmulatedUSB();
+    bool fSuccess = comConsole.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireConsoleParameter(comConsole);
+    else
+    {
+        comDispatcher.WebcamDetach(strPath);
+        fSuccess = comDispatcher.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotDetachWebCam(comDispatcher, strName, machineName());
     }
     return fSuccess;
 }
