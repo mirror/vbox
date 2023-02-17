@@ -2752,7 +2752,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                             /* Recover from underflow situation where CIV caught up with LVI
                                and the DMA processing stopped.  We clear the status condition,
                                update LVI and then try to load the next BDLE.  Unfortunately,
-                               we cannot do this from ring-3 as much of the BDLE state is
+                               we cannot do this from ring-0 as much of the BDLE state is
                                ring-3 only. */
                             pStream->Regs.sr &= ~(AC97_SR_DCH | AC97_SR_CELV);
                             pStream->Regs.lvi = u32 % AC97_MAX_BDLE;
@@ -2775,6 +2775,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                             int rc2 = PDMDevHlpTimerSetRelative(pDevIns, pStream->hTimer, cTicksToDeadline, &pStream->uArmedTs);
                             AssertRC(rc2);
 #else
+                            DEVAC97_UNLOCK(pDevIns, pThis);
                             rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
                         }
