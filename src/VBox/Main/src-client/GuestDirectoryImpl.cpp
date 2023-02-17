@@ -618,9 +618,9 @@ int GuestDirectory::i_readInternal(GuestFsObjData &objData, int *pvrcGuest)
 #ifndef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
         RT_NOREF(objData);
         vrc = VERR_NOT_SUPPORTED;
-#else  /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
+#else
         vrc = i_readInternalViaToolbox(objData, pvrcGuest);
-#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
+#endif
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
     }
 #endif

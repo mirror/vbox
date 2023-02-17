@@ -268,16 +268,14 @@ public:
 public:
 
     /** Wrapped @name Static run methods.
+     * @note Do not call anything 'run' here, it's way too common.
      * @{ */
-    static int run(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, int *pvrcGuest);
+    static int runTool(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, int *pvrcGuest,
+                       GuestCtrlStreamObjects *pLstStdOutObjPairs = NULL, uint32_t cStdOutObjectsToRead = 1);
 
-    static int runErrorInfo(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, GuestProcessToolErrorInfo &errorInfo);
-
-    static int runEx(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
-                     GuestCtrlStreamObjects *pStrmOutObjects, uint32_t cStrmOutObjects, int *pvrcGuest);
-
-    static int runExErrorInfo(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
-                              GuestCtrlStreamObjects *pStrmOutObjects, uint32_t cStrmOutObjects, GuestProcessToolErrorInfo &errorInfo);
+    static int runToolWithErrorInfo(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
+                                    GuestProcessToolErrorInfo &errorInfo,
+                                    GuestCtrlStreamObjects *pLstStdOutObjPairs = NULL, uint32_t cStdOutObjectsToRead = 1);
     /** @}  */
 
     /** Wrapped @name Static exit code conversion methods.

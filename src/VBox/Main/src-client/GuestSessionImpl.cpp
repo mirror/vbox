@@ -1028,7 +1028,7 @@ int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode, uint
         }
 
         if (RT_SUCCESS(vrc))
-            vrc = GuestProcessToolbox::run(this, procInfo, pvrcGuest);
+            vrc = GuestProcessToolbox::runTool(this, procInfo, pvrcGuest);
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
     }
 
@@ -1302,7 +1302,7 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
         }
 
         GuestCtrlStreamObjects stdOut;
-        vrc = GuestProcessToolbox::runEx(this, procInfo, &stdOut, 1 /* cStrmOutObjects */, &vrcGuest);
+        vrc = GuestProcessToolbox::runTool(this, procInfo, &vrcGuest, &stdOut);
         if (!GuestProcess::i_isGuestError(vrc))
         {
             GuestFsObjData objData;
@@ -1733,8 +1733,8 @@ int GuestSession::i_fileRemove(const Utf8Str &strPath, int *pvrcGuest)
         }
 
         GuestCtrlStreamObjects stdOut;
-        vrc = GuestProcessToolbox::runEx(this, procInfo, &stdOut, 1 /* cStrmOutObjects */, &vrcGuest);
-        if (GuestProcess::i_isGuestError(vrc))
+        vrc = GuestProcessToolbox::runTool(this, procInfo, &vrcGuest, &stdOut);
+        if (!GuestProcess::i_isGuestError(vrc))
         {
             if (!stdOut.empty())
             {
@@ -2039,7 +2039,7 @@ int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, Gu
         procInfo.mFlags = ProcessCreateFlag_WaitForStdOut;
         try
         {
-            procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_STAT);
+            procInfo.mExecutable = VBOXSERVICE_TOOL_STAT;
             procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
             procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
             if (fFollowSymlinks)
@@ -2054,7 +2054,7 @@ int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, Gu
         }
 
         GuestCtrlStreamObjects stdOut;
-        vrc = GuestProcessToolbox::runEx(this, procInfo, &stdOut, 1 /* cStrmOutObjects */, &vrcGuest);
+        vrc = GuestProcessToolbox::runTool(this, procInfo, &vrcGuest, &stdOut);
         if (!GuestProcess::i_isGuestError(vrc))
         {
             if (!stdOut.empty())
