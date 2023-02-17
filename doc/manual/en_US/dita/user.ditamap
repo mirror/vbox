@@ -426,7 +426,7 @@
       <topicref href="topics/man_VBoxManage-snapshot.dita"/>
       <topicref href="topics/man_VBoxManage-movevm.dita"/>
       <topicref href="topics/man_VBoxManage-createmedium.dita"/>
-      <topicref href="topics/man_VBoxManage-dhcpserver-dhcpoptions.dita"/>
+      <!-- <topicref href="topics/man_VBoxManage-dhcpserver-dhcpoptions.dita"/>-->
       <topicref href="topics/man_VBoxManage-dhcpserver.dita"/>
       <topicref href="topics/man_VBoxManage-modifymedium.dita"/>
       <topicref href="topics/man_VBoxManage-adoptstate.dita"/>
