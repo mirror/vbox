@@ -860,13 +860,13 @@ man_vboximg-mount.xml \
 	$$(call MSG_TOOL,xsltproc $$(notdir $$(firstword $$(filter %.xsl,$$^))),,$$(firstword $$(filter %.xml,$$^)),$$@)
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output $$@ $$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2)
  endef
- $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_REFENTRY_FILES) \
+ $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_REFENTRY_FILES) man_vboximg-mount.xml\
 , $(evalcall2 def_vbox_refentry_to_dita,$(lang),$(file))))
 
- refentry-to-dita: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file, $(basename $(VBOX_MANUAL_XML_REFENTRY_FILES)) \
+ refentry-to-dita: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file, $(basename $(VBOX_MANUAL_XML_REFENTRY_FILES)) man_vboximg-mount \
  				,$$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/dita/topics/$(file).dita))
 
- VBOX_REFENTRY_DITA_FILES = $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file, $(basename $(VBOX_MANUAL_XML_REFENTRY_FILES)) \
+ VBOX_REFENTRY_DITA_FILES = $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file, $(basename $(VBOX_MANUAL_XML_REFENTRY_FILES)) man_vboximg-mount \
  	,$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/dita/topics/$(file).dita))
 
  ##########################################################################################
