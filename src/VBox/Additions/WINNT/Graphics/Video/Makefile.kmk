@@ -42,11 +42,18 @@ VBoxVideo-inf_INST = $(INST_ADDITIONS)
 VBoxVideo-inf_MODE = a+r,u+w
 VBoxVideo-inf_SOURCES = \
 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf
+VBoxVideo-inf_SOURCES.x86 = \
+	$(PATH_TARGET)/VBoxVideoEarlyNTCat.dir/VBoxVideoEarlyNT.inf
 VBoxVideo-inf_CLEAN = $(VBoxVideo-inf_SOURCES)
 VBoxVideo-inf_BLDDIRS = $(PATH_TARGET)/VBoxVideoCat.dir
+VBoxVideo-inf_BLDDIRS.x86 = $(PATH_TARGET)/VBoxVideoEarlyNTCat.dir
 
 $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf: $(PATH_SUB_CURRENT)/mp/xpdm/VBoxVideo.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxVideo-inf,$@,$<)
+	$(call VBOX_EDIT_INF_FN,$<,$@)
+
+$(PATH_TARGET)/VBoxVideoEarlyNTCat.dir/VBoxVideoEarlyNT.inf: $(PATH_SUB_CURRENT)/mp/xpdm/VBoxVideoEarlyNT.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(call MSG_GENERATE,VBoxVideoEarlyNT-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
@@ -55,11 +62,15 @@ if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
  	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat=>VBoxVideo-PreW10.cat \
  	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys \
  	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll
+ VBoxVideo-inf_SOURCES.x86 += \
+ 	$(PATH_TARGET)/VBoxVideoEarlyNTCat.dir/VBoxVideoEarlyNT.cat
 
- $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys: $$(VBoxVideo_1_TARGET) | $$(dir $$@)
+ $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys \
+ $(PATH_TARGET)/VBoxVideoEarlyNTCat.dir/VBoxVideo.sys: $$(VBoxVideo_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
- $(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll: $$(VBoxDisp_1_TARGET) | $$(dir $$@)
+ $(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll \
+ $(PATH_TARGET)/VBoxVideoEarlyNTCat.dir/VBoxDisp.dll: $$(VBoxDisp_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
  $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat: \
@@ -68,6 +79,14 @@ if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
  		$(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll
 	$(call MSG_TOOL,Inf2Cat,VBoxVideo-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
+
+ $(PATH_TARGET)/VBoxVideoEarlyNTCat.dir/VBoxVideoEarlyNT.cat: \
+ 		$(PATH_TARGET)/VBoxVideoEarlyNTCat.dir/VBoxVideoEarlyNT.inf \
+ 		$(PATH_TARGET)/VBoxVideoEarlyNTCat.dir/VBoxVideo.sys \
+ 		$(PATH_TARGET)/VBoxVideoEarlyNTCat.dir/VBoxDisp.dll
+	$(call MSG_TOOL,Inf2Cat,VBoxVideoEarlyNT-inf,$@,$<)
+	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
+
 endif # signing
 
 ifdef VBOX_WITH_WDDM

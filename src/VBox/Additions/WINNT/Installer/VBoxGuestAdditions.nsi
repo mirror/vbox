@@ -236,6 +236,8 @@ Var g_bLogEnable                        ; Do logging when installing? "true" or 
 Var g_bCapDllCache                      ; Capability: Does the (Windows) guest have have a DLL cache which needs to be taken care of?
 Var g_bCapXPDM                          ; Capability: Is the guest able to handle/use our XPDM driver?
 Var g_bCapWDDM                          ; Capability: Is the guest able to handle/use our WDDM driver?
+Var g_strEarlyNTDrvInfix                ; Empty or 'EarlyNT'.  For Picking VBoxGuestEarlyNT.inf and VBoxVideoEarlyNT.inf on w2k & nt4.
+
 
 ; Command line parameters - these can be set/modified
 ; on the command line
@@ -1038,6 +1040,15 @@ Function .onInit
   Call GetWindowsVersionEx
   Pop $g_strWinVersion
 
+  ; Init global variables that depends on the windows version.
+  ${If} $g_strWinVersion == "2000"
+    StrCpy $g_strEarlyNTDrvInfix "EarlyNT"
+  ${ElseIf} $g_strWinVersion == "NT4"
+    StrCpy $g_strEarlyNTDrvInfix "EarlyNT"
+  ${Else}
+    StrCpy $g_strEarlyNTDrvInfix ""
+  ${EndIf}
+
   ; Retrieve capabilities
   Call CheckForCapabilities
 
@@ -1184,6 +1195,15 @@ proceed:
   ; Retrieve Windows version we're running on and store it in $g_strWinVersion
   Call un.GetWindowsVersionEx
   Pop $g_strWinVersion
+
+  ; Init global variables that depends on the windows version.
+  ${If} $g_strWinVersion == "2000"
+    StrCpy $g_strEarlyNTDrvInfix "EarlyNT"
+  ${ElseIf} $g_strWinVersion == "NT4"
+    StrCpy $g_strEarlyNTDrvInfix "EarlyNT"
+  ${Else}
+    StrCpy $g_strEarlyNTDrvInfix ""
+  ${EndIf}
 
   ; Retrieve capabilities
   Call un.CheckForCapabilities

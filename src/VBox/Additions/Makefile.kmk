@@ -108,11 +108,19 @@ ifeq ($(KBUILD_TARGET),win)
  VBoxGuest-inf_MODE = a+r,u+w
  VBoxGuest-inf_SOURCES = \
  	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf
+ VBoxGuest-inf_SOURCES.x86 = \
+ 	$(PATH_TARGET)/VBoxGuestEarlyNTCat.dir/VBoxGuestEarlyNT.inf
  VBoxGuest-inf_CLEAN = $(VBoxGuest-inf_SOURCES)
+ VBoxGuest-inf_CLEAN.x86 = $(VBoxGuest-inf_SOURCES.x86)
  VBoxGuest-inf_BLDDIRS = $(PATH_TARGET)/VBoxGuestCat.dir
+ VBoxGuest-inf_BLDDIRS.x86 = $(PATH_TARGET)/VBoxGuestEarlyNTCat.dir
 
  $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf: $(PATH_SUB_CURRENT)/common/VBoxGuest/win/VBoxGuest.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxGuest-inf,$@,$<)
+	$(call VBOX_EDIT_INF_FN,$<,$@)
+
+ $(PATH_TARGET)/VBoxGuestEarlyNTCat.dir/VBoxGuestEarlyNT.inf: $(PATH_SUB_CURRENT)/common/VBoxGuest/win/VBoxGuestEarlyNT.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(call MSG_GENERATE,VBoxGuestEarlyNT-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
  if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
@@ -122,14 +130,19 @@ ifeq ($(KBUILD_TARGET),win)
   	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
   	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
   	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe
+  VBoxGuest-inf_SOURCES.x86 += \
+  	$(PATH_TARGET)/VBoxGuestEarlyNTCat.dir/VBoxGuestEarlyNT.cat
 
-  $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys: $$(VBoxGuest_1_TARGET) | $$(dir $$@)
+  $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
+  $(PATH_TARGET)/VBoxGuestEarlyNTCat.dir/VBoxGuest.sys: $$(VBoxGuest_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-  $(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe: $$(VBoxControl_1_TARGET) | $$(dir $$@)
+  $(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
+  $(PATH_TARGET)/VBoxGuestEarlyNTCat.dir/VBoxControl.exe: $$(VBoxControl_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 755 $< $(@D)
 
-  $(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe: $$(VBoxTray_1_TARGET) | $$(dir $$@)
+  $(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe \
+  $(PATH_TARGET)/VBoxGuestEarlyNTCat.dir/VBoxTray.exe: $$(VBoxTray_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 755 $< $(@D)
 
   $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat: \
@@ -138,6 +151,14 @@ ifeq ($(KBUILD_TARGET),win)
   		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
   		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe
 	$(call MSG_TOOL,Inf2Cat,VBoxGuest-inf,$@,$<)
+	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
+
+  $(PATH_TARGET)/VBoxGuestEarlyNTCat.dir/VBoxGuestEarlyNT.cat: \
+  		$(PATH_TARGET)/VBoxGuestEarlyNTCat.dir/VBoxGuestEarlyNT.inf \
+  		$(PATH_TARGET)/VBoxGuestEarlyNTCat.dir/VBoxGuest.sys \
+  		$(PATH_TARGET)/VBoxGuestEarlyNTCat.dir/VBoxControl.exe \
+  		$(PATH_TARGET)/VBoxGuestEarlyNTCat.dir/VBoxTray.exe
+	$(call MSG_TOOL,Inf2Cat,VBoxGuestEarlyNT-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
  endif # signing
 endif # KBUILD_TARGET == win

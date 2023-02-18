@@ -379,6 +379,14 @@ Function W2K_CopyFiles
   ; Guest driver
   FILE "$%PATH_OUT%\bin\additions\VBoxGuest.sys"
   FILE "$%PATH_OUT%\bin\additions\VBoxGuest.inf"
+!if $%KBUILD_TARGET_ARCH% == "x86"
+  ${If} $g_strEarlyNTDrvInfix != ""
+    FILE "$%PATH_OUT%\bin\additions\VBoxGuestEarlyNT.inf"
+  !ifdef VBOX_SIGN_ADDITIONS
+    FILE "$%PATH_OUT%\bin\additions\VBoxGuestEarlyNT.cat"
+  !endif
+  ${EndIf}
+!endif
 !ifdef VBOX_SIGN_ADDITIONS
   ${If} $g_strWinVersion == "10"
     FILE "$%PATH_OUT%\bin\additions\VBoxGuest.cat"
@@ -505,7 +513,7 @@ Function W2K_InstallFiles
 
   ${If} $g_bNoGuestDrv == "false"
     ${LogVerbose} "Installing guest driver ..."
-    ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" driver install $\"$INSTDIR\VBoxGuest.inf$\" $\"$INSTDIR\install_drivers.log$\"" 'non-zero-exitcode=abort'
+    ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" driver install $\"$INSTDIR\VBoxGuest$g_strEarlyNTDrvInfix.inf$\" $\"$INSTDIR\install_drivers.log$\"" 'non-zero-exitcode=abort'
   ${Else}
     ${LogVerbose} "Guest driver installation skipped!"
   ${EndIf}
@@ -516,7 +524,7 @@ Function W2K_InstallFiles
       ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" driver install $\"$INSTDIR\VBoxWddm.inf$\" $\"$INSTDIR\install_drivers.log$\"" 'non-zero-exitcode=abort'
     ${Else}
       ${LogVerbose} "Installing video driver ..."
-      ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" driver install $\"$INSTDIR\VBoxVideo.inf$\" $\"$INSTDIR\install_drivers.log$\"" 'non-zero-exitcode=abort'
+      ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" driver install $\"$INSTDIR\VBoxVideo$g_strEarlyNTDrvInfix.inf$\" $\"$INSTDIR\install_drivers.log$\"" 'non-zero-exitcode=abort'
     ${EndIf}
   ${Else}
     ${LogVerbose} "Video driver installation skipped!"
@@ -593,6 +601,8 @@ Function ${un}W2K_UninstallInstDir
   Delete /REBOOTOK "$INSTDIR\VBoxVideo.sys"
   Delete /REBOOTOK "$INSTDIR\VBoxVideo.inf"
   Delete /REBOOTOK "$INSTDIR\VBoxVideo.cat"
+  Delete /REBOOTOK "$INSTDIR\VBoxVideoEarlyNT.inf"
+  Delete /REBOOTOK "$INSTDIR\VBoxVideoEarlyNT.cat"
   Delete /REBOOTOK "$INSTDIR\VBoxDisp.dll"
 
   Delete /REBOOTOK "$INSTDIR\VBoxMouse.sys"
@@ -604,6 +614,8 @@ Function ${un}W2K_UninstallInstDir
   Delete /REBOOTOK "$INSTDIR\VBoxGuest.sys"
   Delete /REBOOTOK "$INSTDIR\VBoxGuest.inf"
   Delete /REBOOTOK "$INSTDIR\VBoxGuest.cat"
+  Delete /REBOOTOK "$INSTDIR\VBoxGuestEarlyNT.inf"
+  Delete /REBOOTOK "$INSTDIR\VBoxGuestEarlyNT.cat"
 
   Delete /REBOOTOK "$INSTDIR\VBCoInst.dll" ; Deprecated, does not get installed anymore
   Delete /REBOOTOK "$INSTDIR\VBoxControl.exe"
@@ -677,7 +689,7 @@ Function ${un}W2K_Uninstall
 
   ; Remove VirtualBox video driver
   ${LogVerbose} "Uninstalling video driver ..."
-  ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" driver uninstall $\"$INSTDIR\VBoxVideo.inf$\"" 'non-zero-exitcode=log'
+  ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" driver uninstall $\"$INSTDIR\VBoxVideo$g_strEarlyNTDrvInfix.inf$\"" 'non-zero-exitcode=log'
   ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" service delete VBoxVideo" 'non-zero-exitcode=log'
   Delete /REBOOTOK "$g_strSystemDir\drivers\VBoxVideo.sys"
   Delete /REBOOTOK "$g_strSystemDir\VBoxDisp.dll"
@@ -763,7 +775,7 @@ Function ${un}W2K_Uninstall
 
   ; Remove guest driver
   ${LogVerbose} "Removing guest driver ..."
-  ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" driver uninstall $\"$INSTDIR\VBoxGuest.inf$\"" 'non-zero-exitcode=log'
+  ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" driver uninstall $\"$INSTDIR\VBoxGuest$g_strEarlyNTDrvInfix.inf$\"" 'non-zero-exitcode=log'
 
   ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" service delete VBoxGuest" 'non-zero-exitcode=log'
   Delete /REBOOTOK "$g_strSystemDir\drivers\VBoxGuest.sys"

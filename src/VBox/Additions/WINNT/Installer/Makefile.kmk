@@ -176,6 +176,12 @@ ifeq ($(KBUILD_TARGET_ARCH),amd64) # 32-bit network provider DLLs for 32-bit app
  	$(PATH_STAGE_BIN)/additions/VBoxMRXNP-x86.dll
 endif
 
+ifeq ($(KBUILD_TARGET_ARCH),x86)
+ VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
+ 	$(PATH_STAGE_BIN)/additions/VBoxGuestEarlyNT.inf \
+ 	$(PATH_STAGE_BIN)/additions/VBoxVideoEarlyNT.inf
+endif
+
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
  VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
  	$(PATH_STAGE_BIN)/additions/VBoxVideo.cat \
@@ -184,6 +190,11 @@ if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
  	$(PATH_STAGE_BIN)/additions/VBoxGuest-PreW10.cat \
  	$(PATH_STAGE_BIN)/additions/VBoxMouse.cat \
  	$(PATH_STAGE_BIN)/additions/VBoxMouse-PreW10.cat
+ ifeq ($(KBUILD_TARGET_ARCH),x86)
+  VBOX_WINDOWS_ADDITIONS_OTHER_FILES += \
+  	$(PATH_STAGE_BIN)/additions/VBoxGuestEarlyNT.cat \
+  	$(PATH_STAGE_BIN)/additions/VBoxVideoEarlyNT.cat
+ endif
 endif
 
 VBOX_WINDOWS_ADDITIONS_OTHER_FILES := \

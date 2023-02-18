@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; VirtualBox Video miniport driver, XP+ edition.
+; VirtualBox Video miniport driver, Windows 2000 and NT4 edition.
 ;
 
 ;
@@ -32,22 +32,20 @@ ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
 Class=Display
 DriverPackageType=PlugAndPlay
 ;edit-DriverVer=08/26/2008,2.00.0000
-;cat CatalogFile = VBoxVideo.cat
+;cat CatalogFile = VBoxVideoEarlyNT.cat
 
 [DestinationDirs]
 DefaultDestDir=11
 VBoxVideo.Miniport = 12 ; drivers
 VBoxVideo.Display  = 11 ; system32
 
+; Windows 2000 and NT4 treats entries here as pure 'name=section' and will not
+; split the value on commas. Newer InfVerif.exe requires the comma stuff here.
 [Manufacturer]
-;x86   %ORACLE%=VBoxVideo@COMMA-NT-ARCH@
-;amd64 %ORACLE%=VBoxVideo@COMMA-NT-ARCH@@COMMA-NT-ARCH@.6.0
+%ORACLE%=VBoxVideo
 
-[VBoxVideo@DOT-NT-ARCH@]
+[VBoxVideo]
 %VBoxVideo.SvcDesc% = VBoxVideo_Install, PCI\VEN_80EE&DEV_BEEF
-
-;amd64 [VBoxVideo@DOT-NT-ARCH@.6.0]
-;amd64 %VBoxVideo.SvcDesc% = VBoxVideo_Install, PCI\VEN_80EE&DEV_BEEF
 
 [VBoxVideo_Install]
 ;amd64 FeatureScore = F8
@@ -59,7 +57,7 @@ VBoxVideo.sys,,,0x100
 [VBoxVideo.Display]
 VBoxDisp.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 
-[VBoxVideo_Install.Services]
+[VBoxVideo.Services]
 AddService=VBoxVideo, 0x00000002, vboxvideo_Service_Inst, vboxvideo_EventLog_Inst
 
 [vboxvideo_Service_Inst]

@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; INF file for installing the VirtualBox Windows guest driver, XP and later.
+; INF file for installing the VirtualBox Windows guest driver, pre-XP variant.
 ;
 
 ;
@@ -41,7 +41,7 @@ ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
 Class=System
 DriverPackageType=PlugAndPlay
 ;edit-DriverVer=08/26/2008,2.00.0000
-;cat CatalogFile=VBoxGuest.cat
+;cat CatalogFile=VBoxGuestEarlyNT.cat
 
 [SourceDisksNames]
 1 = %VBoxGuest.MediaDesc%
@@ -55,10 +55,12 @@ VBoxTray.exe = 1
 DefaultDestDir = 12 ; drivers
 VBoxTray_CopyFiles = 11 ; system32
 
+; Windows 2000 and NT4 treats entries here as pure 'name=section' and will not
+; split the value on commas. Newer InfVerif.exe requires the comma stuff here.
 [Manufacturer]
-%ORACLE%=VBoxGuest@COMMA-NT-ARCH@
+%ORACLE%=VBoxGuest
 
-[VBoxGuest@DOT-NT-ARCH@]
+[VBoxGuest]
 %VBoxGuest.DeviceDesc%=VBoxGuest_Install,PCI\VEN_80ee&DEV_cafe
 
 [VBoxGuest_Install]
