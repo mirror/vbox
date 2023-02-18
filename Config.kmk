@@ -606,7 +606,7 @@ endif
 ifdef VBOX_WITH_VMSVGA3D
  VBOX_WITH_VMSVGA3D_DX = 1
  # Enable DXVK library for supporting VGPU10 DX on non Windows hosts
- if1of ($(KBUILD_TARGET), linux darwin)
+ if1of ($(KBUILD_TARGET), linux)
   VBOX_WITH_DXVK = 1
  endif
 endif
