@@ -5,7 +5,9 @@
 #pragma push_macro("_WIN32")
 #undef _WIN32
 #endif
+#if !defined(RT_ARCH_ARM64) /*VBOX*/
 #include <x86intrin.h>
+#endif
 #if defined(__WINE__) && defined(__clang__)
 #pragma pop_macro("_WIN32")
 #endif
@@ -55,7 +57,7 @@ namespace dxvk::bit {
     return _tzcnt_u32(n);
     #elif defined(__BMI__)
     return __tzcnt_u32(n);
-    #elif defined(__GNUC__) || defined(__clang__)
+    #elif (defined(__GNUC__) || defined(__clang__)) && !defined(RT_ARCH_ARM64) /*VBOX*/
     uint32_t res;
     uint32_t tmp;
     asm (
@@ -99,7 +101,7 @@ namespace dxvk::bit {
   inline uint32_t lzcnt(uint32_t n) {
     #if (defined(_MSC_VER) && !defined(__clang__)) || defined(__LZCNT__)
     return _lzcnt_u32(n);
-    #elif defined(__GNUC__) || defined(__clang__)
+    #elif (defined(__GNUC__) || defined(__clang__)) && !defined(RT_ARCH_ARM64) /*VBOX*/
     return n != 0 ? __builtin_clz(n) : 32;
     #else
     uint32_t r = 0;
@@ -144,7 +146,7 @@ namespace dxvk::bit {
   template<typename T>
   bool bcmpeq(const T* a, const T* b) {
     static_assert(alignof(T) >= 16);
-    #if defined(__GNUC__) || defined(__clang__) || defined(_MSC_VER)
+    #if (defined(__GNUC__) || defined(__clang__) || defined(_MSC_VER)) && !defined(RT_ARCH_ARM64) /*VBOX*/
     auto ai = reinterpret_cast<const __m128i*>(a);
     auto bi = reinterpret_cast<const __m128i*>(b);
 
