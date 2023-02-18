@@ -487,6 +487,11 @@ ifdef VBOX_WITH_VMSVGA3D
  	MacOS/VBoxSVGA3D.dylib \
  	MacOS/VBoxSVGA3DObjC.dylib
 endif
+ifdef VBOX_WITH_DXVK
+ VBOX_DI_VBAPP_DYLIBS += \
+ 	MacOS/VBoxDxVk.dylib \
+ 	MacOS/libMoltenVK.dylib
+endif
 
 ifdef VBOX_WITH_PYTHON
  VBOX_DI_VBAPP_DYLIBS.x86 += \
