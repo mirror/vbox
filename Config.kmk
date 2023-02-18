@@ -4643,8 +4643,8 @@ endif
 VBOX_EDIT_INF32_FN = $(SED) $(if $(VBOX_SIGNING_MODE),-e 's/^;cat  *//', -e '/^;cat /d') \
 	-e 's/^;x86  *//' \
 	-e '/^;amd64 /d' \
-	-e 's/@DOT-NT-ARCH@/.ntx86/g' \
-	-e 's/@COMMA-NT-ARCH@/,ntx86/g' \
+	-e 's/@DOT-NT-ARCH@/.NTx86/g' \
+	-e 's/@COMMA-NT-ARCH@/,NTx86/g' \
 	-e 's/^;edit-DriverVer.*/DriverVer = $(date-utc %m\/%d\/%Y),$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD).$(expr $(VBOX_SVN_REV) % 50000) ; r$(VBOX_SVN_REV)/' \
 	--output $(2) \
 	$(1)
@@ -4655,8 +4655,8 @@ VBOX_EDIT_INF64_FN = $(SED) \
 	$(if $(VBOX_SIGNING_MODE),-e 's/^;cat  *//', -e '/^;cat /d') \
 	-e 's/^;amd64  *//' \
 	-e '/^;x86 /d' \
-	-e 's/@DOT-NT-ARCH@/.ntamd64/g' \
-	-e 's/@COMMA-NT-ARCH@/,ntamd64/g' \
+	-e 's/@DOT-NT-ARCH@/.NTAMD64/g' \
+	-e 's/@COMMA-NT-ARCH@/,NTAMD64/g' \
 	-e 's/^;edit-DriverVer.*/DriverVer = $(date-utc %m\/%d\/%Y),$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD).$(expr $(VBOX_SVN_REV) % 50000) ; r$(VBOX_SVN_REV)/' \
 	--output $(2) \
 	$(1)
