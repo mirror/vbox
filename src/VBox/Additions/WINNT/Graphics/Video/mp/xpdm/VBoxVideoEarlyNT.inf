@@ -42,12 +42,12 @@ VBoxVideo.Display  = 11 ; system32
 ; Windows 2000 and NT4 treats entries here as pure 'name=section' and will not
 ; split the value on commas. Newer InfVerif.exe requires the comma stuff here.
 [Manufacturer]
-%ORACLE%=VBoxVideo
+%ORACLE%=Model
+
+[Model]
+%VBoxVideo.SvcDesc% = VBoxVideo, PCI\VEN_80EE&DEV_BEEF
 
 [VBoxVideo]
-%VBoxVideo.SvcDesc% = VBoxVideo_Install, PCI\VEN_80EE&DEV_BEEF
-
-[VBoxVideo_Install]
 ;amd64 FeatureScore = F8
 CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display
 
