@@ -358,6 +358,9 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
     # @todo This is probably not the nicest way to do this...
     VBoxDD_POST_CMDS.darwin  += \
     	$(INSTALL) -m 0644 $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/moltenvk/v*)))/libMoltenVK.dylib $(PATH_STAGE_BIN)/libMoltenVK.dylib
+
+    # mac2 clang is too old to know the -Wclass-conversion switch in the ignore pragma it seems.
+    Graphics/DevVGA-SVGA3d-dx-dx11.cpp_CXXFLAGS.darwin += -Wno-error
    endif
   endif
   VBoxDD_SOURCES       += \
