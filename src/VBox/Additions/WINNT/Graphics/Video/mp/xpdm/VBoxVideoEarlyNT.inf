@@ -44,6 +44,9 @@ VBoxVideo.Display  = 11 ; system32
 [Manufacturer]
 %ORACLE%=Model
 
+; For Windows 2000 and NT4, this section must be called 'Model' it seems.
+; Calling it VBoxVideo like VBoxVideo.inf does, results in
+; ERROR_NON_WINDOWS_NT_DRIVER (0xe000022d). See r155932.
 [Model]
 %VBoxVideo.SvcDesc% = VBoxVideo, PCI\VEN_80EE&DEV_BEEF
 
