@@ -2283,6 +2283,7 @@ VBOX_UNITTEST_PYTHON ?= $(VBOX_BLD_PYTHON)
 #         * Newer pylint doesn't grok older warning disables in sources (e.g. W0142 in db.py). Wonderful!
 #   I0012:locally-enabled - Locally enabling XXXXX.
 #         * We temporarily disable stuff and then renabled it. Very tedious.
+#   :nested-min-max - Buggy in 2.16.2 when mixing iterable and regular form, thus disabled.
 #
 # Note! Yes, --max-branchs is a typo, but not by me.
 #
@@ -2350,6 +2351,7 @@ VBOX_PYLINT_FLAGS = $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--reports=n,--repo
 	$(if-expr $(VBOX_PYLINT_VERSION) >= 20900,--disable=super-with-arguments --disable=raise-missing-from,) \
 	$(if-expr $(VBOX_PYLINT_VERSION) >= 21200,--disable=consider-using-f-string --disable=unnecessary-semicolon --disable=redundant-u-string-prefix) \
 	$(if-expr $(VBOX_PYLINT_VERSION) >= 21602,--disable=broad-exception-raised) \
+	$(if-expr $(VBOX_PYLINT_VERSION) >= 21602,--disable=nested-min-max) \
 	--disable=unnecessary-semicolon,invalid-encoded-data,global-statement,bare-except,broad-except,multiple-statements,no-self-use,fixme \
 	--disable=I0011 \
 	--ignored-classes=testdriver.vboxcon
