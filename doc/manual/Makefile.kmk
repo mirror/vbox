@@ -895,23 +895,23 @@ man_vboximg-mount.xml \
  VBOX_USER_MANUAL_DITA_FILES = $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/*dita)
  VBOX_USER_MANUAL_DITA_IMAGES = $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/images/*)
 
- $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/user.ditamap:
+ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap:
 	$(QUIET)$(MKDIR) -p  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/images
-	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_PATH_MANUAL_SRC)/en_US/dita/user.ditamap "$(@D)"
+	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_PATH_MANUAL_SRC)/en_US/dita/UserManual.ditamap "$(@D)"
 	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_USER_MANUAL_DITA_FILES) "$(@D)/topics"
 	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_USER_MANUAL_DITA_IMAGES) "$(@D)/topics/images"
 
  define def_ditamap_to_pdf
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf: \
-  		$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/user.ditamap \
+  		$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
   		$(VBOX_REFENTRY_DITA_FILES) \
   		$$(VBOX_PATH_MANUAL_SRC)/correct_references.py
 		$$(call MSG_L1,correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics)
 		$$(QUIET)$$(VBOX_BLD_PYTHON) $$(VBOX_PATH_MANUAL_SRC)/correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics
 		$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
-		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/user.ditamap \
-			/transtype:pdf /ditadir:$(VBOX_DITA_PATH) /outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1) /tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp
+		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
+			/transtype:pdf /ditadir:$(VBOX_DITA_PATH) /outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1) /tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)
 
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_ditamap_to_pdf,$(lang)))
