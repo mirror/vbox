@@ -64,7 +64,7 @@ if sys.platform == 'win32':
     from testdriver         import winbase;
 
 # Figure where we are.
-try:    __file__
+try:    __file__                            # pylint: disable=used-before-assignment
 except: __file__ = sys.argv[0];
 g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)));
 

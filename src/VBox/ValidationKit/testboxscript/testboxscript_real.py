@@ -53,7 +53,7 @@ import time
 import uuid
 
 # Only the main script needs to modify the path.
-try:    __file__
+try:    __file__                            # pylint: disable=used-before-assignment
 except: __file__ = sys.argv[0];
 g_ksTestScriptDir = os.path.dirname(os.path.abspath(__file__));
 g_ksValidationKitDir = os.path.dirname(g_ksTestScriptDir);

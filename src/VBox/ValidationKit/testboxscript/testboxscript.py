@@ -91,7 +91,7 @@ class TestBoxScriptWrapper(object): # pylint: disable=too-few-public-methods
 
         # Figure out where we live first.
         try:
-            __file__
+            __file__                        # pylint: disable=used-before-assignment
         except:
             __file__ = sys.argv[0];
         sTestBoxScriptDir = os.path.dirname(os.path.abspath(__file__));

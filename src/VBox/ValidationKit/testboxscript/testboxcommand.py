@@ -53,7 +53,7 @@ from testboxupgrade     import upgradeFromZip;
 from testboxtasks       import TestBoxExecTask, TestBoxCleanupTask, TestBoxTestDriverTask;
 
 # Figure where we are.
-try:    __file__
+try:    __file__                            # pylint: disable=used-before-assignment
 except: __file__ = sys.argv[0];
 g_ksTestScriptDir = os.path.dirname(os.path.abspath(__file__));
 

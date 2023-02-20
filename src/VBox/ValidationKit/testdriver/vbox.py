@@ -52,7 +52,7 @@ import time
 import traceback
 
 # Figure out where the validation kit lives and make sure it's in the path.
-try:    __file__
+try:    __file__                            # pylint: disable=used-before-assignment
 except: __file__ = sys.argv[0];
 g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)));
 if g_ksValidationKitDir not in sys.path:
