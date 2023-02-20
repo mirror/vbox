@@ -1097,7 +1097,7 @@ class tdUnitTest1(vbox.TestDriver):
 
         if not self.fDryRun:
             if self.isRemoteMode():
-                asRemoteEnvChg = ['%s=%s' % (sKey, dEnvChanges[sKey]) for sKey in dEnvChanges];
+                asRemoteEnvChg = ['%s=%s' % (sKey, dEnvChanges[sKey]) for sKey in dEnvChanges.items()];
 
                 fRc = self.txsRunTest(self.oTxsSession, sName, cMsTimeout = 30 * 60 * 1000, sExecName = asArgs[0],
                                       asArgs = asArgs, asAddEnv = asRemoteEnvChg, fCheckSessionStatus = True);
@@ -1112,7 +1112,7 @@ class tdUnitTest1(vbox.TestDriver):
                     else:
                         iRc = -1; ## @todo
             else:
-                for sKey in dEnvChanges:
+                for sKey in dEnvChanges.items():
                     os.environ[sKey] = dEnvChanges[sKey];
 
                 oChild = None;
