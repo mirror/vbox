@@ -420,7 +420,7 @@ public:
 
         void warnAboutVBoxSVCUnavailable() const;
         bool warnAboutGuruMeditation(const QString &strLogFolder);
-        void showRuntimeError(const CConsole &console, bool fFatal, const QString &strErrorId, const QString &strErrorMsg) const;
+        void showRuntimeError(MessageType emnMessageType, const QString &strErrorId, const QString &strErrorMsg) const;
 
         bool confirmInputCapture(bool &fAutoConfirmed) const;
         bool confirmGoingFullscreen(const QString &strHotKey) const;
