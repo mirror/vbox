@@ -1048,6 +1048,9 @@ int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
     /*
      * Place used buffer's descriptor in used ring but don't update used ring's slot index.
      * That will be done with a subsequent client call to virtioCoreVirtqUsedRingSync()
+     *
+     * @todo r=aeichner: The increment of the shadow index is not atomic but this code can be called
+     *                   concurrently!!
      */
     virtioWriteUsedElem(pDevIns, pVirtio, pVirtq, pVirtq->uUsedIdxShadow++, pVirtqBuf->uHeadIdx, (uint32_t)cbTotal);
 

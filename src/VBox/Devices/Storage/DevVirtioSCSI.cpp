@@ -367,7 +367,8 @@ typedef VIRTIOSCSIWORKER *PVIRTIOSCSIWORKER;
 typedef struct VIRTIOSCSIWORKERR3
 {
     R3PTRTYPE(PPDMTHREAD)           pThread;                    /**< pointer to worker thread's handle                 */
-    uint16_t                        auRedoDescs[VIRTQ_SIZE];/**< List of previously suspended reqs to re-submit    */
+    RTCRITSECT                      CritSectVirtq;              /**< Protecting the virtq against concurrent thread access. */
+    uint16_t                        auRedoDescs[VIRTQ_SIZE];    /**< List of previously suspended reqs to re-submit    */
     uint16_t                        cRedoDescs;                 /**< Number of redo desc chain head desc idxes in list */
 } VIRTIOSCSIWORKERR3;
 /** Pointer to a VirtIO SCSI worker. */
@@ -716,6 +717,31 @@ static uint8_t virtioScsiEstimateCdbLen(uint8_t uCmd, uint8_t cbMax)
 #endif /* LOG_ENABLED */
 
 
+/**
+ * Wrapper around virtioCoreR3VirtqUsedBufPut() and virtioCoreVirtqUsedRingSync() doing some device locking.
+ *
+ * @returns nothing.
+ * @param   pDevIns         The PDM device instance.
+ * @param   pVirtio         Pointer to the shared virtio core structure.
+ * @param   uVirtqNbr       The virtq number.
+ * @param   pSgVirtReturn   The S/G buffer to return data from.
+ * @param   pVirtqBuf       The virtq buffer.
+ *
+ * @note This is a temporary fix, see @bugref{9440#c164} on why it is necessary. Should be moved to VirtioCore or
+ *       VirtioCore should be changed to not require locking.
+ */
+DECLINLINE(void) virtioScsiR3VirtqUsedBufPutAndSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, PRTSGBUF pSgVirtReturn,
+                                                    PVIRTQBUF pVirtqBuf)
+{
+    PVIRTIOSCSICC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIOSCSICC);
+
+    RTCritSectEnter(&pThisCC->aWorkers[uVirtqNbr].CritSectVirtq);
+    virtioCoreR3VirtqUsedBufPut(pThisCC->pDevIns, pVirtio, uVirtqNbr, pSgVirtReturn, pVirtqBuf, true /* fFence */);
+    virtioCoreVirtqUsedRingSync(pThisCC->pDevIns, pVirtio, uVirtqNbr);
+    RTCritSectLeave(&pThisCC->aWorkers[uVirtqNbr].CritSectVirtq);
+}
+
+
 /*
  * @todo Figure out how to implement this with R0 changes. Not used by current linux driver
  */
@@ -792,11 +818,7 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
     RTSGBUF ReqSgBuf;
     RTSgBufInit(&ReqSgBuf, aReqSegs, RT_ELEMENTS(aReqSegs));
 
-    rc = virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, EVENTQ_IDX, &ReqSgBuf, pVirtqBuf, true /*fFence*/);
-    if (rc == VINF_SUCCESS)
-        virtioCoreVirtqUsedRingSync(pDevIns, &pThis->Virtio, EVENTQ_IDX, false);
-    else
-        LogRel(("Error writing control message to guest\n"));
+    virtioScsiR3VirtqUsedBufPutAndSync(pDevIns, &pThis->Virtio, EVENTQ_IDX, &ReqSgBuf, pVirtqBuf);
     virtioCoreR3VirtqBufRelease(&pThis->Virtio, pVirtqBuf);
 
     return rc;
@@ -888,9 +910,7 @@ static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t uV
     if (pThis->fResetting)
         pRespHdr->uResponse = VIRTIOSCSI_S_RESET;
 
-    virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, uVirtqNbr, &ReqSgBuf, pVirtqBuf, true /* fFence */);
-    virtioCoreVirtqUsedRingSync(pDevIns, &pThis->Virtio, uVirtqNbr);
-
+    virtioScsiR3VirtqUsedBufPutAndSync(pDevIns, &pThis->Virtio, uVirtqNbr, &ReqSgBuf, pVirtqBuf);
     Log2(("---------------------------------------------------------------------------------\n"));
 
     return VINF_SUCCESS;
@@ -1073,9 +1093,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
                         cbReqSgBuf, pReq->pVirtqBuf->cbPhysReturn),
                         VERR_BUFFER_OVERFLOW);
 
-        virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, pReq->uVirtqNbr, &ReqSgBuf, pReq->pVirtqBuf, true /* fFence TBD */);
-        virtioCoreVirtqUsedRingSync(pDevIns, &pThis->Virtio, pReq->uVirtqNbr);
-
+        virtioScsiR3VirtqUsedBufPutAndSync(pDevIns, &pThis->Virtio, pReq->uVirtqNbr, &ReqSgBuf, pReq->pVirtqBuf);
         Log2(("-----------------------------------------------------------------------------------------\n"));
     }
 
@@ -1559,9 +1577,7 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
     RTSGBUF ReqSgBuf;
     RTSgBufInit(&ReqSgBuf, aReqSegs, cSegs);
 
-    virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, uVirtqNbr, &ReqSgBuf, pVirtqBuf, true /*fFence*/);
-    virtioCoreVirtqUsedRingSync(pDevIns, &pThis->Virtio, uVirtqNbr);
-
+    virtioScsiR3VirtqUsedBufPutAndSync(pDevIns, &pThis->Virtio, uVirtqNbr, &ReqSgBuf, pVirtqBuf);
     return VINF_SUCCESS;
 }
 
@@ -2459,6 +2475,9 @@ static DECLCALLBACK(int) virtioScsiR3Destruct(PPDMDEVINS pDevIns)
                                  __FUNCTION__, rc, rcThread));
            pThisCC->aWorkers[uVirtqNbr].pThread = NULL;
         }
+
+        if (RTCritSectIsInitialized(&pThisCC->aWorkers[uVirtqNbr].CritSectVirtq))
+            RTCritSectDelete(&pThisCC->aWorkers[uVirtqNbr].CritSectVirtq);
     }
 
     virtioCoreR3Term(pDevIns, &pThis->Virtio, &pThisCC->Virtio);
@@ -2573,6 +2592,10 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
                                            N_("DevVirtioSCSI: Failed to create SUP event semaphore"));
         }
         pThis->afVirtqAttached[uVirtqNbr] = true;
+        rc = RTCritSectInit(&pThisCC->aWorkers[uVirtqNbr].CritSectVirtq);
+        if (RT_FAILURE(rc))
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                       N_("DevVirtioSCSI: Failed to create worker critical section"));
     }
 
     /*
