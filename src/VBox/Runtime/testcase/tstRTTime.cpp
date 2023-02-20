@@ -62,10 +62,19 @@ int main()
      * is less or equal to the return of the previous call.
      */
 
+    /* Take down the start time of both sources, try get them w/o being rescheduled. */
     RTTimeSystemNanoTS(); RTTimeNanoTS(); RTThreadYield();
     uint64_t u64RTStartTS = RTTimeNanoTS();
     uint64_t u64OSStartTS = RTTimeSystemNanoTS();
+    uint64_t const cNsMaxTolerance = 256 * RT_NS_1US;
+    for (unsigned cTries = 0; cTries < 32 && RTTimeNanoTS() - u64RTStartTS > cNsMaxTolerance; cTries++)
+    {
+        RTThreadYield();
+        u64RTStartTS = RTTimeNanoTS();
+        u64OSStartTS = RTTimeSystemNanoTS();
+    }
 
+    /* Test loop. */
     uint32_t i;
     uint64_t u64Prev = RTTimeNanoTS();
     for (i = 0; i < 100*_1M; i++)
@@ -97,13 +106,22 @@ int main()
         u64Prev = u64;
     }
 
+    /* Take down the stop time of both sources, again try get them w/o being rescheduled. */
     RTTimeSystemNanoTS(); RTTimeNanoTS(); RTThreadYield();
     uint64_t u64RTElapsedTS = RTTimeNanoTS();
     uint64_t u64OSElapsedTS = RTTimeSystemNanoTS();
+    for (unsigned cTries = 0; cTries < 32 && RTTimeNanoTS() - u64RTElapsedTS > cNsMaxTolerance; cTries++)
+    {
+        RTThreadYield();
+        u64RTElapsedTS = RTTimeNanoTS();
+        u64OSElapsedTS = RTTimeSystemNanoTS();
+    }
     u64RTElapsedTS -= u64RTStartTS;
     u64OSElapsedTS -= u64OSStartTS;
+
+    /* Check the runtime difference between the two sources. */
     int64_t i64Diff = u64OSElapsedTS >= u64RTElapsedTS ? u64OSElapsedTS - u64RTElapsedTS : u64RTElapsedTS - u64OSElapsedTS;
-    if (i64Diff > (int64_t)(u64OSElapsedTS / 1000))
+    if (i64Diff > (int64_t)(RT_MAX(u64OSElapsedTS / 1000, cNsMaxTolerance)))
         RTTestFailed(hTest, "total time differs too much! u64OSElapsedTS=%#llx u64RTElapsedTS=%#llx delta=%lld\n",
                      u64OSElapsedTS, u64RTElapsedTS, u64OSElapsedTS - u64RTElapsedTS);
     else
@@ -116,6 +134,7 @@ int main()
                      u64OSElapsedTS, u64RTElapsedTS, u64OSElapsedTS - u64RTElapsedTS);
     }
 
+    /* Report debug details: */
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) /** @todo This isn't really x86 or AMD64 specific... */
     RTTestValue(hTest, "RTTimeDbgSteps",        RTTimeDbgSteps(),                           RTTESTUNIT_OCCURRENCES);
     RTTestValue(hTest, "RTTimeDbgSteps pp",     ((uint64_t)RTTimeDbgSteps() * 1000) / i,    RTTESTUNIT_PP1K);
