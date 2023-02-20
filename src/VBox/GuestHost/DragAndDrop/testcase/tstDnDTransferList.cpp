@@ -137,19 +137,31 @@ int main()
     DnDTransferListDestroy(&list);
 
     /* From URI data. */
-#ifdef RT_OS_WINDOWS
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
     RTStrPrintf(szPathTest, sizeof(szPathTest),  "C:/Windows/");
-    const char szURI[] =
+    static const char s_szURI[] =
         "file:///C:/Windows/System32/Boot/\r\n"
         "file:///C:/Windows/System/\r\n";
+    static const char s_szURIFmtURI[] =
+        "file:///base/System32/Boot/\r\n"
+        "file:///base/System/\r\n";
+    static const char s_szURIFmtNative[] =
+        "\\base\\System32\\Boot\\\r\n"
+        "\\base\\System\\\r\n";
 #else
     RTStrPrintf(szPathTest, sizeof(szPathTest), "/usr/");
-    const char szURI[] =
+    static const char s_szURI[] =
         "file:///usr/bin/\r\n"
         "file:///usr/lib/\r\n";
+    static const char s_szURIFmtURI[] =
+        "file:///base/bin/\r\n"
+        "file:///base/lib/\r\n";
+    static const char s_szURIFmtNative[] =
+        "/base/bin/\r\n"
+        "/base/lib/\r\n";
 #endif
 
-    RTTEST_CHECK_RC(hTest, DnDTransferListAppendPathsFromBuffer(&list, DNDTRANSFERLISTFMT_URI, szURI, sizeof(szURI), "\r\n",
+    RTTEST_CHECK_RC(hTest, DnDTransferListAppendPathsFromBuffer(&list, DNDTRANSFERLISTFMT_URI, s_szURI, sizeof(s_szURI), "\r\n",
                                                                 DNDTRANSFERLIST_FLAGS_NONE), VINF_SUCCESS);
     RTTEST_CHECK(hTest, DnDTransferListGetRootCount(&list) == 2);
     RTTEST_CHECK(hTest, RTPathCompare(DnDTransferListGetRootPathAbs(&list), szPathTest) == 0);
@@ -157,13 +169,16 @@ int main()
     /* Validate returned lengths. */
     pszBuf = NULL;
     RTTEST_CHECK_RC(hTest, DnDTransferListGetRootsEx(&list, DNDTRANSFERLISTFMT_URI, "/base/", "\r\n", &pszBuf, &cbBuf), VINF_SUCCESS);
-    RTTEST_CHECK_MSG(hTest, RTStrCmp(pszBuf, "file:///base/bin/\r\nfile:///base/lib/\r\n") == 0, (hTest, "Got '%s'", pszBuf));
+    RTTEST_CHECK_MSG(hTest, RTStrCmp(pszBuf, s_szURIFmtURI) == 0, (hTest, "Got '%s'", pszBuf));
     RTTEST_CHECK_MSG(hTest, cbBuf == strlen(pszBuf) + 1, (hTest, "Got %d, expected %d\n", cbBuf, strlen(pszBuf) + 1));
     RTStrFree(pszBuf);
 
     pszBuf = NULL;
     RTTEST_CHECK_RC(hTest, DnDTransferListGetRootsEx(&list, DNDTRANSFERLISTFMT_NATIVE, "/base/", "\r\n", &pszBuf, &cbBuf), VINF_SUCCESS);
-    RTTEST_CHECK_MSG(hTest, RTStrCmp(pszBuf, "/base/bin/\r\n/base/lib/\r\n") == 0, (hTest, "Got '%s'", pszBuf));
+    RTTEST_CHECK_MSG(hTest, RTStrCmp(pszBuf, s_szURIFmtNative) == 0,
+                     (hTest, "Expected %.*Rhxs\nGot      %.*Rhxs\n   '%s'",
+                      sizeof(s_szURIFmtNative) - 1, s_szURIFmtNative,
+                      strlen(pszBuf), pszBuf, pszBuf));
     RTTEST_CHECK_MSG(hTest, cbBuf == strlen(pszBuf) + 1, (hTest, "Got %d, expected %d\n", cbBuf, strlen(pszBuf) + 1));
     RTStrFree(pszBuf);
 
