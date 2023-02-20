@@ -258,6 +258,16 @@ WId UISession::mainMachineWindowId() const
     return mainMachineWindow() ? mainMachineWindow()->winId() : 0;
 }
 
+bool UISession::reset()
+{
+    CConsole comConsole = console();
+    comConsole.Reset();
+    const bool fSuccess = comConsole.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotResetMachine(comConsole);
+    return fSuccess;
+}
+
 bool UISession::setPause(bool fPause)
 {
     CConsole comConsole = console();

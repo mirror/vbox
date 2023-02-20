@@ -424,6 +424,9 @@ public:
         /** Notifies about inability to ACPI shutdown machine.
           * @param  comConsole  Brings console trying to shutdown machine. */
         static void cannotACPIShutdownMachine(const CConsole &comConsole);
+        /** Notifies about inability to reset machine.
+          * @param  comConsole  Brings console trying to reset machine. */
+        static void cannotResetMachine(const CConsole &comConsole);
     /** @} */
 
     /** @name COM VirtualBox Manager warnings.

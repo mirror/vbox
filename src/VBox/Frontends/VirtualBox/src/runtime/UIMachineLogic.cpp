@@ -3201,18 +3201,18 @@ bool UIMachineLogic::mountBootMedium(const QUuid &uMediumId)
 
 void UIMachineLogic::reset(bool fShowConfirmation)
 {
-    if (fShowConfirmation)
+    if (   !fShowConfirmation
+        || msgCenter().confirmResetMachine(machineName()))
     {
-        /* Confirm/Reset current console: */
-        if (msgCenter().confirmResetMachine(machineName()))
-            console().Reset();
+        const bool fSuccess = uimachine()->reset();
+        if (fSuccess)
+        {
+            // WORKAROUND:
+            // On reset the additional screens didn't get a display
+            // update. Emulate this for now until it get fixed. */
+            const ulong uMonitorCount = machine().GetGraphicsAdapter().GetMonitorCount();
+            for (ulong uScreenId = 1; uScreenId < uMonitorCount; ++uScreenId)
+                machineWindows().at(uScreenId)->update();
+        }
     }
-    else
-        console().Reset();
-
-    /* TODO_NEW_CORE: On reset the additional screens didn't get a display
-       update. Emulate this for now until it get fixed. */
-    ulong uMonitorCount = machine().GetGraphicsAdapter().GetMonitorCount();
-    for (ulong uScreenId = 1; uScreenId < uMonitorCount; ++uScreenId)
-        machineWindows().at(uScreenId)->update();
 }

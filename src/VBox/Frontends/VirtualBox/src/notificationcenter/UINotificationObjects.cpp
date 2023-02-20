@@ -1057,6 +1057,16 @@ void UINotificationMessage::cannotACPIShutdownMachine(const CConsole &comConsole
 }
 
 /* static */
+void UINotificationMessage::cannotResetMachine(const CConsole &comConsole)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't reset machine ..."),
+        QApplication::translate("UIMessageCenter", "Failed to reset the virtual machine "
+                                                   "<b>%1</b>.").arg(CConsole(comConsole).GetMachine().GetName()) +
+        UIErrorString::formatErrorInfo(comConsole));
+}
+
+/* static */
 void UINotificationMessage::cannotCreateAppliance(const CVirtualBox &comVBox,
                                                   UINotificationCenter *pParent /* = 0 */)
 {

@@ -232,6 +232,8 @@ public:
         /** Returns whether VM is one of states where guest-screen is undrawable. */
         bool isGuestScreenUnDrawable() const;
 
+        /** Resets VM. */
+        bool reset();
         /** Performes VM pausing. */
         bool pause();
         /** Performes VM resuming. */

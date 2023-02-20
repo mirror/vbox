@@ -325,6 +325,11 @@ bool UIMachine::isGuestScreenUnDrawable() const
     return uisession()->isGuestScreenUnDrawable();
 }
 
+bool UIMachine::reset()
+{
+    return uisession()->reset();
+}
+
 bool UIMachine::pause()
 {
     return uisession()->pause();

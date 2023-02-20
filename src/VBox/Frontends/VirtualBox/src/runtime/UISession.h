@@ -229,6 +229,8 @@ public:
         bool isGuestScreenUnDrawable() const { return    machineState() == KMachineState_Stopping
                                                       || machineState() == KMachineState_Saving; }
 
+        /** Resets VM. */
+        bool reset();
         /** Performes VM pausing. */
         bool pause() { return setPause(true); }
         /** Performes VM resuming. */
