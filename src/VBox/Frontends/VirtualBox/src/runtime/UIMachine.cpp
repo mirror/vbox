@@ -550,6 +550,11 @@ bool UIMachine::putEventMultiTouch(long iCount, const QVector<LONG64> &contacts,
     return uisession()->putEventMultiTouch(iCount, contacts, fIsTouchScreen, uScanTime);
 }
 
+bool UIMachine::addEncryptionPassword(const QString &strId, const QString &strPassword, bool fClearOnSuspend)
+{
+    return uisession()->addEncryptionPassword(strId, strPassword, fClearOnSuspend);
+}
+
 bool UIMachine::usbDevices(QList<USBDeviceInfo> &guiUSBDevices)
 {
     return uisession()->usbDevices(guiUSBDevices);

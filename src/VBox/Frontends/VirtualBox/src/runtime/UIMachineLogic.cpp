@@ -274,11 +274,6 @@ CMachine& UIMachineLogic::machine() const
     return uisession()->machine();
 }
 
-CConsole& UIMachineLogic::console() const
-{
-    return uisession()->console();
-}
-
 QString UIMachineLogic::machineName() const
 {
     return uimachine()->machineName();
@@ -3015,11 +3010,9 @@ void UIMachineLogic::askUserForTheDiskEncryptionPasswords()
 
             /* Apply the disk encryption passwords: */
             foreach (const QString &strKey, encryptionPasswords.keys())
-            {
-                console().AddEncryptionPassword(strKey, encryptionPasswords.value(strKey), false);
-                if (!console().isOk())
-                    msgCenter().cannotAddDiskEncryptionPassword(console());
-            }
+                uimachine()->addEncryptionPassword(strKey,
+                                                   encryptionPasswords.value(strKey),
+                                                   false /* do NOT clear on suspend */);
         }
         else
         {

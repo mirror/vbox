@@ -410,6 +410,12 @@ public:
         bool putEventMultiTouch(long iCount, const QVector<LONG64> &contacts, bool fIsTouchScreen, ulong uScanTime);
     /** @} */
 
+    /** @name Storage stuff.
+     ** @{ */
+        /** Adds encryption password. */
+        bool addEncryptionPassword(const QString &strId, const QString &strPassword, bool fClearOnSuspend);
+    /** @} */
+
     /** @name USB stuff.
      ** @{ */
         /** Returns a list of USB devices. */

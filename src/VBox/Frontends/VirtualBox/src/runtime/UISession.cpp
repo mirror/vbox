@@ -391,6 +391,16 @@ bool UISession::putEventMultiTouch(long iCount, const QVector<LONG64> &contacts,
     return fSuccess;
 }
 
+bool UISession::addEncryptionPassword(const QString &strId, const QString &strPassword, bool fClearOnSuspend)
+{
+    CConsole comConsole = console();
+    comConsole.AddEncryptionPassword(strId, strPassword, fClearOnSuspend);
+    const bool fSuccess = comConsole.isOk();
+    if (!fSuccess)
+        msgCenter().cannotAddDiskEncryptionPassword(comConsole);
+    return fSuccess;
+}
+
 bool UISession::usbDevices(QList<USBDeviceInfo> &guiUSBDevices)
 {
     const CHost comHost = uiCommon().host();
