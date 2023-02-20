@@ -838,7 +838,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
      */
     PVM pVM;
     PUVM pUVM;
-    rc = VMR3Create(1, NULL, NULL, NULL, cfgmR3CreateDefault, &cbMem, &pVM, &pUVM);
+    rc = VMR3Create(1 /*cCpus*/, NULL, 0 /*fFlags*/, NULL, NULL, cfgmR3CreateDefault, &cbMem, &pVM, &pUVM);
     if (RT_SUCCESS(rc))
     {
         /*

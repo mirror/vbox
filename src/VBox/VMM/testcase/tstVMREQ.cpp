@@ -239,7 +239,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
      * Create empty VM.
      */
     PUVM pUVM;
-    int rc = VMR3Create(1, NULL, NULL, NULL, tstVMREQConfigConstructor, NULL, NULL, &pUVM);
+    int rc = VMR3Create(1 /*cCpus*/, NULL, 0 /*fFlags*/, NULL, NULL, tstVMREQConfigConstructor, NULL, NULL, &pUVM);
     if (RT_SUCCESS(rc))
     {
         /*

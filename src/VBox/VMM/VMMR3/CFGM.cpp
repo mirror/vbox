@@ -1086,6 +1086,16 @@ VMMR3DECL(int) CFGMR3ConstructDefaultTree(PVM pVM)
     UPDATERC();
 
     /*
+     * HM.
+     */
+    PCFGMNODE pHm;
+    rc = CFGMR3InsertNode(pRoot, "HM", &pHm);
+    UPDATERC();
+    rc = CFGMR3InsertInteger(pHm, "FallbackToIEM",          1); /* boolean */
+    UPDATERC();
+
+
+    /*
      * PDM.
      */
     PCFGMNODE pPdm;
@@ -3292,6 +3302,10 @@ VMMR3DECL(void) CFGMR3Dump(PCFGMNODE pRoot)
     bool fOldBuffered = RTLogRelSetBuffering(true /*fBuffered*/);
     LogRel(("************************* CFGM dump *************************\n"));
     cfgmR3Dump(pRoot, 0, DBGFR3InfoLogRelHlp());
+#ifdef LOG_ENABLED
+    if (LogIsEnabled())
+        cfgmR3Dump(pRoot, 0, DBGFR3InfoLogHlp());
+#endif
     LogRel(("********************* End of CFGM dump **********************\n"));
     RTLogRelSetBuffering(fOldBuffered);
 }

@@ -383,10 +383,15 @@ typedef DECLCALLBACKTYPE(int, FNVMPROGRESS,(PUVM pUVM, unsigned uPercent, void *
 typedef FNVMPROGRESS *PFNVMPROGRESS;
 
 
-VMMR3DECL(int)          VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVm2UserCbs,
+VMMR3DECL(int)          VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVm2UserCbs, uint64_t fFlags,
                                    PFNVMATERROR pfnVMAtError, void *pvUserVM,
                                    PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM,
                                    PVM *ppVM, PUVM *ppUVM);
+/** @name VMCREATE_F_XXX - VMR3Create flags.
+ * @{ */
+/** Create the VM with SUPLib in driverless mode. */
+#define VMCREATE_F_DRIVERLESS       RT_BIT_64(0)
+/** @} */
 VMMR3DECL(int)          VMR3PowerOn(PUVM pUVM);
 VMMR3DECL(int)          VMR3Suspend(PUVM pUVM, VMSUSPENDREASON enmReason);
 VMMR3DECL(VMSUSPENDREASON) VMR3GetSuspendReason(PUVM);

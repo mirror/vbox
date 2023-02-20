@@ -423,7 +423,7 @@ static void DoTests(void)
 {
     PVM  pVM;
     PUVM pUVM;
-    RTTESTI_CHECK_RC_OK_RETV(VMR3Create(1, NULL, NULL, NULL, NULL, NULL, &pVM, &pUVM));
+    RTTESTI_CHECK_RC_OK_RETV(VMR3Create(1 /*cCpus*/, NULL, VMCREATE_F_DRIVERLESS, NULL, NULL, NULL, NULL, &pVM, &pUVM));
 
     /*
      * Do the tests.

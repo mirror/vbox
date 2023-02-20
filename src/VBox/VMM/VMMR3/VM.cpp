@@ -132,6 +132,7 @@ static int                  vmR3SetErrorU(PUVM pUVM, int rc, RT_SRC_POS_DECL, co
  * @param   pVmm2UserMethods    An optional method table that the VMM can use
  *                              to make the user perform various action, like
  *                              for instance state saving.
+ * @param   fFlags              VMCREATE_F_XXX
  * @param   pfnVMAtError        Pointer to callback function for setting VM
  *                              errors.  This was added as an implicit call to
  *                              VMR3AtErrorRegister() since there is no way the
@@ -150,13 +151,13 @@ static int                  vmR3SetErrorU(PUVM pUVM, int rc, RT_SRC_POS_DECL, co
  *                              *MUST* remember to pass the returned value to
  *                              VMR3ReleaseUVM() once done with the handle.
  */
-VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
+VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods, uint64_t fFlags,
                             PFNVMATERROR pfnVMAtError, void *pvUserVM,
                             PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM,
                             PVM *ppVM, PUVM *ppUVM)
 {
-    LogFlow(("VMR3Create: cCpus=%RU32 pVmm2UserMethods=%p pfnVMAtError=%p pvUserVM=%p  pfnCFGMConstructor=%p pvUserCFGM=%p ppVM=%p ppUVM=%p\n",
-             cCpus, pVmm2UserMethods, pfnVMAtError, pvUserVM, pfnCFGMConstructor, pvUserCFGM, ppVM, ppUVM));
+    LogFlow(("VMR3Create: cCpus=%RU32 pVmm2UserMethods=%p fFlags=%#RX64 pfnVMAtError=%p pvUserVM=%p  pfnCFGMConstructor=%p pvUserCFGM=%p ppVM=%p ppUVM=%p\n",
+             cCpus, pVmm2UserMethods, fFlags, pfnVMAtError, pvUserVM, pfnCFGMConstructor, pvUserCFGM, ppVM, ppUVM));
 
     if (pVmm2UserMethods)
     {
@@ -176,6 +177,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
     AssertPtrNullReturn(ppVM, VERR_INVALID_POINTER);
     AssertPtrNullReturn(ppUVM, VERR_INVALID_POINTER);
     AssertReturn(ppVM || ppUVM, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(!(fFlags & ~VMCREATE_F_DRIVERLESS), ("%#RX64\n", fFlags), VERR_INVALID_FLAGS);
 
     /*
      * Validate input.
@@ -197,7 +199,10 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
         /*
          * Initialize the support library creating the session for this VM.
          */
-        rc = SUPR3Init(&pUVM->vm.s.pSession);
+        if (fFlags & VMCREATE_F_DRIVERLESS)
+            rc = SUPR3InitEx(SUPR3INIT_F_DRIVERLESS | SUPR3INIT_F_DRIVERLESS_IEM_ALLOWED, &pUVM->vm.s.pSession);
+        else
+            rc = SUPR3Init(&pUVM->vm.s.pSession);
         if (RT_SUCCESS(rc))
         {
 #if defined(VBOX_WITH_DTRACE_R3) && !defined(VBOX_WITH_NATIVE_DTRACE)

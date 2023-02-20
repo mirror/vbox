@@ -11021,6 +11021,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
         PVM           pVM  = NULL;
         vrc = pVMM->pfnVMR3Create(cCpus,
                                   pConsole->mpVmm2UserMethods,
+                                  0 /*fFlags*/,
                                   Console::i_genericVMSetErrorCallback,
                                   &pTask->mErrorMsg,
                                   pTask->mpfnConfigConstructor,
