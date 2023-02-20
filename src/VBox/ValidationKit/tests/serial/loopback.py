@@ -204,7 +204,7 @@ class SerialLoopback(object):
         self.sType     = sType;
         self.sLocation = sLocation;
         self.oLock     = threading.Lock();
-        self.oThread   = threading.Thread(target=self.threadWorker, args=(), name=('SerLoopback'));
+        self.oThread   = threading.Thread(target=self.threadWorker, args=(), name='SerLoopback');
 
         if sType == g_ksLoopbackTcpServ:
             self.oIoPumper = SerialLoopbackTcpServ(sLocation, 0.5);
