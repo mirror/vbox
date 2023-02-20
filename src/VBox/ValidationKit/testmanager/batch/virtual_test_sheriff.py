@@ -1291,7 +1291,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
             return oCaseFile.noteReasonForId(enmReason, oFailedResult.idTestResult);
 
         # Generalistic fallbacks:
-        for sKey in self.kdGATestFallbacks.items():
+        for sKey in self.kdGATestFallbacks:
             oTmpFailedResult = oFailedResult;
             while oTmpFailedResult:
                 if oTmpFailedResult.sName == sKey:
