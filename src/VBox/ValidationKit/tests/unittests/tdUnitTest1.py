@@ -47,7 +47,7 @@ import re
 
 
 # Only the main script needs to modify the path.
-try:    __file__
+try:    __file__                            # pylint: disable=used-before-assignment
 except: __file__ = sys.argv[0];
 g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(g_ksValidationKitDir)
@@ -428,7 +428,7 @@ class tdUnitTest1(vbox.TestDriver):
         #
         # We need a VBox install (/ build) to test.
         #
-        if False is True: ## @todo r=andy ??
+        if False is True: ## @todo r=andy ?? # pylint: disable=comparison-of-constants
             if not self.importVBoxApi():
                 reporter.error('Unabled to import the VBox Python API.');
                 return False;
@@ -1097,7 +1097,7 @@ class tdUnitTest1(vbox.TestDriver):
 
         if not self.fDryRun:
             if self.isRemoteMode():
-                asRemoteEnvChg = ['%s=%s' % (sKey, dEnvChanges[sKey]) for sKey in dEnvChanges];
+                asRemoteEnvChg = ['%s=%s' % (sKey, sValue) for sKey, sValue in utils.iteritems(dEnvChanges)];
 
                 fRc = self.txsRunTest(self.oTxsSession, sName, cMsTimeout = 30 * 60 * 1000, sExecName = asArgs[0],
                                       asArgs = asArgs, asAddEnv = asRemoteEnvChg, fCheckSessionStatus = True);
@@ -1112,8 +1112,8 @@ class tdUnitTest1(vbox.TestDriver):
                     else:
                         iRc = -1; ## @todo
             else:
-                for sKey in dEnvChanges:
-                    os.environ[sKey] = dEnvChanges[sKey];
+                for sKey, sValue in utils.iteritems(dEnvChanges):
+                    os.environ[sKey] = sValue;
 
                 oChild = None;
                 try:

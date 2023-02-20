@@ -76,6 +76,24 @@ if sys.version_info[0] >= 3:
 
 
 #
+# Python 2/3 glue.
+#
+
+if sys.version_info[0] >= 3:
+    def iteritems(dDict):
+        """
+        Wrapper around dict.items() / dict.iteritems().
+        """
+        return iter(dDict.items());
+else:
+    def iteritems(dDict):
+        """
+        Wrapper around dict.items() / dict.iteritems().
+        """
+        return dDict.iteritems();
+
+
+#
 # Strings.
 #
 
@@ -2266,7 +2284,7 @@ def unpackTarFile(sArchive, sDstDir, fnLog, fnError = None, fnFilter = None):
     # 60%+ speedup for python 2.7 and 50%+ speedup for python 3.5, both on windows with PDBs.
     # 20%+ speedup for python 2.7 and 15%+ speedup for python 3.5, both on windows skipping PDBs.
     #
-    if True is True: # pylint: disable=comparison-with-itself
+    if True is True: # pylint: disable=comparison-with-itself,comparison-of-constants
         __installShUtilHacks(shutil);
         global g_fTarCopyFileObjOverriddend;
         if g_fTarCopyFileObjOverriddend is False:
