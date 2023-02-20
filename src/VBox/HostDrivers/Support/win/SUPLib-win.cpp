@@ -285,6 +285,9 @@ DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, uint32_t fFlags
                 pErrInfo->pszMsg[0] = '\0';
         }
 
+#else
+        RT_NOREF1(penmWhat);
+
         /*
          * Do fallback.
          */
@@ -296,9 +299,6 @@ DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, uint32_t fFlags
             pThis->fDriverless = true;
             return VINF_SUCCESS;
         }
-
-#else
-        RT_NOREF1(penmWhat);
 #endif
         return rc;
     }
