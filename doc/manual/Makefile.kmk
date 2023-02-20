@@ -1023,7 +1023,7 @@ ifdef VBOX_WITH_DOCS_QHELP
  define def_vbox_usermanual_hhp_qhelp_to_qhp
   local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)
   $$(out_dir)/qhelp/UserManual.qhp: \
-  		$$(out_dir)/qhelp/UserManual.hhp \
+  		$$(out_dir)/qhelp/htmlhelp.hhp \
   		$$(addprefix $$(out_dir)/qhelp/,$$(VBOX_MANUAL_PNG_FILES_$(lang))) \
   		| $$$$(dir $$$$@)
 	$$(call MSG_L1,htmlhelp-qthelp.py $$<,=> $$@)
