@@ -1889,7 +1889,7 @@ class TestVmSet(object):
 
                         cTests = cTests + (rc2 is not None);
                         if sParavirtMode is not None:
-                            reporter.testDone(fSkipped = (rc2 is None));
+                            reporter.testDone(fSkipped = rc2 is None);
 
                     reporter.testDone(fSkipped = cTests == cStartTests);
 

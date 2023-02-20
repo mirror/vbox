@@ -436,7 +436,8 @@ class TdTaskBase(object):
 
     def lockTask(self):
         """ Wrapper around oCv.acquire(). """
-        if True is True: # change to False for debugging deadlocks. # pylint: disable=comparison-with-itself
+        # Change this to False for debugging deadlocks.
+        if True is True: # pylint: disable=comparison-with-itself,comparison-of-constants
             self.oCv.acquire();
         else:
             msStartWait = timestampMilli();
@@ -653,7 +654,7 @@ class Process(TdTaskBase):
                 if winbase.processPollByHandle(self.hWin):
                     try:
                         if hasattr(self.hWin, '__int__'): # Needed for newer pywin32 versions.
-                            (uPid, uStatus) = os.waitpid(self.hWin.__int__(), 0);
+                            (uPid, uStatus) = os.waitpid(self.hWin.__int__(), 0); # pylint: disable=unnecessary-dunder-call
                         else:
                             (uPid, uStatus) = os.waitpid(self.hWin, 0);
                         if uPid in (self.hWin, self.uPid,):
@@ -1078,8 +1079,7 @@ class TestDriverBase(object): # pylint: disable=too-many-instance-attributes
             self.aoTasks.remove(oTask);
         except:
             return None;
-        else:
-            oTask.setTaskOwner(None);
+        oTask.setTaskOwner(None);
         #reporter.log2('tasks left: %d - %s' % (len(self.aoTasks), self.aoTasks));
         return oTask;
 

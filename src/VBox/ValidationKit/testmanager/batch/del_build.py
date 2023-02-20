@@ -83,9 +83,8 @@ def markBuildsDeleted():
             if oConfig.fQuiet:
                 sys.exit(1);
             raise;
-        else:
-            if not oConfig.fQuiet:
-                print("del_build.py: Marked %u builds associated with '%s' as deleted." % (cBuilds, sBuildBin,));
+        if not oConfig.fQuiet:
+            print("del_build.py: Marked %u builds associated with '%s' as deleted." % (cBuilds, sBuildBin,));
 
     oDb.close()
     return 0;

@@ -555,8 +555,7 @@ class EventHandlerBase(object):
         """
         Called when working in passive mode.
         """
-        self.oThread = threading.Thread(target = self.threadForPassiveMode, \
-            args=(), name=('PAS-%s' % (self.sName,)));
+        self.oThread = threading.Thread(target = self.threadForPassiveMode, args=(), name='PAS-%s' % (self.sName,) );
         self.oThread.setDaemon(True); # pylint: disable=deprecated-method
         self.oThread.start();
         return None;
@@ -616,14 +615,14 @@ class EventHandlerBase(object):
             try:
                 oRet = oVBoxMgr.createCallback(sICallbackNm, oSubClass, dArgsCopy);
             except:
-                reporter.errorXcpt('%s::registerCallback(%s) failed%s' % (sSrcParentNm, oRet, sLogSuffix));
+                reporter.errorXcpt('%s::createCallback(%s) failed%s' % (sSrcParentNm, sICallbackNm, sLogSuffix,));
             else:
                 try:
                     oSrcParent.registerCallback(oRet);
                     return oRet;
                 except Exception as oXcpt:
                     if fMustSucceed or ComError.notEqual(oXcpt, ComError.E_UNEXPECTED):
-                        reporter.errorXcpt('%s::registerCallback(%s)%s' % (sSrcParentNm, oRet, sLogSuffix));
+                        reporter.errorXcpt('%s::registerCallback(%s)%s' % (sSrcParentNm, oRet, sLogSuffix,));
         else:
             #
             # Scalable event handling introduced in VBox 4.0.
@@ -943,7 +942,7 @@ class TestDriver(base.TestDriver):                                              
             return True;
 
         # Try dev build first since that's where I'll be using it first...
-        if True is True: # pylint: disable=comparison-with-itself
+        if True is True: # pylint: disable=comparison-with-itself,comparison-of-constants
             try:
                 self.oBuild = Build(self, None);
                 reporter.log('VBox %s build at %s (%s).'

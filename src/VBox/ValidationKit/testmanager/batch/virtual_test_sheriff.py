@@ -1291,7 +1291,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
             return oCaseFile.noteReasonForId(enmReason, oFailedResult.idTestResult);
 
         # Generalistic fallbacks:
-        for sKey in self.kdGATestFallbacks:
+        for sKey in utils.iteritems(self.kdGATestFallbacks):
             oTmpFailedResult = oFailedResult;
             while oTmpFailedResult:
                 if oTmpFailedResult.sName == sKey:
@@ -1433,7 +1433,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
             if sInfoText:
                 for sNeedle, fnHandler in self.katInfoTextHandlers:
                     if sInfoText.find(sNeedle) > 0:
-                        (fStop, tReason) = fnHandler(self, oCaseFile, sInfoText, dLogs);
+                        (fStop, tReason) = fnHandler(self, oCaseFile, sInfoText, dLogs);# ? pylint: disable=too-many-function-args
                         if tReason is not None:
                             oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
                             if fStop:

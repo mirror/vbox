@@ -3376,7 +3376,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         reporter.log('Creating reboot thread ...');
                         oThreadReboot = threading.Thread(target = self.threadForTestGuestCtrlSessionReboot,
                                                          args = (oGuestProcess,),
-                                                         name = ('threadForTestGuestCtrlSessionReboot'));
+                                                         name = 'threadForTestGuestCtrlSessionReboot');
                         oThreadReboot.setDaemon(True); # pylint: disable=deprecated-method
                         oThreadReboot.start();
 

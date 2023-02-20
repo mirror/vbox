@@ -141,7 +141,7 @@ def processExists(uPid):
             return False;
         reporter.logXcpt('uPid=%s oXcpt=%s' % (uPid, oXcpt));
     except Exception as oXcpt:
-        reporter.logXcpt('uPid=%s' % (uPid,));
+        reporter.logXcpt('uPid=%s oXcpt=%s' % (uPid, oXcpt));
         return False;
     else:
         hProcess.Close(); #win32api.CloseHandle(hProcess)

@@ -112,7 +112,7 @@ class TestBoxScriptWrapper(object): # pylint: disable=too-few-public-methods
             if asArgs[i] == '--':
                 break;
         if sPidFile:
-            with open(sPidFile, 'w') as oPidFile:
+            with open(sPidFile, 'w') as oPidFile:   # pylint: disable=unspecified-encoding
                 oPidFile.write(str(os.getpid()));
 
         # Execute the testbox script almost forever in a relaxed loop.

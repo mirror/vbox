@@ -156,10 +156,10 @@ class WuiHlpBarGraph(WuiHlpGraphMatplotlibBase):
         oSubPlot = oFigure.add_subplot(1, 1, 1);
 
         aoBars = [];
-        for i, _ in enumerate(aoSeries):
+        for i, oValue in enumerate(aoSeries):
             sColor = self.calcSeriesColor(i);
             aoBars.append(oSubPlot.bar(oXRange + self.cxBarWidth * i,
-                                       aoSeries[i],
+                                       oValue,
                                        self.cxBarWidth,
                                        color = sColor,
                                        align = 'edge'));
@@ -175,10 +175,8 @@ class WuiHlpBarGraph(WuiHlpGraphMatplotlibBase):
         oSubPlot.set_yticks(numpy_arange(fpMin, fpMax + (fpMax - fpMin) / 10 * 0, fpMax / 10));
         oSubPlot.grid(True);
         fpPadding = (fpMax - fpMin) * 0.02;
-        for i, _ in enumerate(aoBars):
-            aoRects = aoBars[i]
-            for j, _ in enumerate(aoRects):
-                oRect = aoRects[j];
+        for i, aoRects in enumerate(aoBars):
+            for j, oRect in enumerate(aoRects):
                 fpValue = float(aoTable[j + 1].aoValues[i]);
                 if fpValue <= fpMid:
                     oSubPlot.text(oRect.get_x() + oRect.get_width() / 2.0,

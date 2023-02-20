@@ -213,13 +213,13 @@ def _doUpgradeApply(sUpgradeDir, asMembers):
                     testboxcommons.log('Error: failed to rename (old) "%s" to "%s": %s' % (sDst, sDstRm, oXcpt));
                     try:
                         shutil.copy(sDst, sDstRm);
-                    except Exception as oXcpt:
-                        testboxcommons.log('Error: failed to copy (old) "%s" to "%s": %s' % (sDst, sDstRm, oXcpt));
+                    except Exception as oXcpt2:
+                        testboxcommons.log('Error: failed to copy (old) "%s" to "%s": %s' % (sDst, sDstRm, oXcpt2));
                         break;
                     try:
                         os.unlink(sDst);
-                    except Exception as oXcpt:
-                        testboxcommons.log('Error: failed to unlink (old) "%s": %s' % (sDst, oXcpt));
+                    except Exception as oXcpt2:
+                        testboxcommons.log('Error: failed to unlink (old) "%s": %s' % (sDst, oXcpt2));
                         break;
 
             # Move/copy the new one into place.
@@ -230,8 +230,8 @@ def _doUpgradeApply(sUpgradeDir, asMembers):
                 testboxcommons.log('Warning: failed to rename (new) "%s" to "%s": %s' % (sSrc, sDst, oXcpt));
                 try:
                     shutil.copy(sSrc, sDst);
-                except:
-                    testboxcommons.log('Error: failed to copy (new) "%s" to "%s": %s' % (sSrc, sDst, oXcpt));
+                except Exception as oXcpt2:
+                    testboxcommons.log('Error: failed to copy (new) "%s" to "%s": %s' % (sSrc, sDst, oXcpt2));
                     fRc = False;
                     break;
 

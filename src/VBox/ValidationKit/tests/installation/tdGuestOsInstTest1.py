@@ -311,7 +311,7 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         Extend standard options set
         """
 
-        if False is True:
+        if False is True: # placeholder.    pylint: disable=comparison-of-constants
             pass;
         elif asArgs[iArg] == '--ioapic':
             for oTestVm in self.oTestVmSet.aoTestVms:

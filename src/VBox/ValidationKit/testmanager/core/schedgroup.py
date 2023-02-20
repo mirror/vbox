@@ -407,8 +407,7 @@ class SchedGroupDataEx(SchedGroupData):
                     asErrors.append(str(dErrors));
 
             if not asErrors:
-                for i, _ in enumerate(aoNewMembers):
-                    idTestGroup = aoNewMembers[i];
+                for i, idTestGroup in enumerate(aoNewMembers):
                     for j in range(i + 1, len(aoNewMembers)):
                         if aoNewMembers[j].idTestGroup == idTestGroup:
                             asErrors.append('Duplicate test group #%d!' % (idTestGroup, ));
@@ -427,8 +426,7 @@ class SchedGroupDataEx(SchedGroupData):
                     asErrors.append(str(dErrors));
 
             if not asErrors:
-                for i, _ in enumerate(aoNewMembers):
-                    idTestBox = aoNewMembers[i];
+                for i, idTestBox in enumerate(aoNewMembers):
                     for j in range(i + 1, len(aoNewMembers)):
                         if aoNewMembers[j].idTestBox == idTestBox:
                             asErrors.append('Duplicate test box #%d!' % (idTestBox, ));

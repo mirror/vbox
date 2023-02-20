@@ -246,9 +246,9 @@ class ModelDataBase(ModelBase): # pylint: disable=too-few-public-methods
         #
         elif isinstance(oValue, list) and oValue and isinstance(oValue[0], ModelDataBase):
             oValue = copy.copy(oValue);
-            for i, _ in enumerate(oValue):
-                assert isinstance(oValue[i], ModelDataBase);
-                oValue[i] = copy.copy(oValue[i]);
+            for i, oSubValue in enumerate(oValue):
+                assert isinstance(oSubValue, ModelDataBase);
+                oValue[i] = copy.copy(oSubValue);
                 oValue[i].convertFromParamNull();
 
         elif isinstance(oValue, ModelDataBase):
@@ -282,9 +282,9 @@ class ModelDataBase(ModelBase): # pylint: disable=too-few-public-methods
         #
         elif isinstance(oValue, list) and oValue and isinstance(oValue[0], ModelDataBase):
             oValue = copy.copy(oValue);
-            for i, _ in enumerate(oValue):
-                assert isinstance(oValue[i], ModelDataBase);
-                oValue[i] = copy.copy(oValue[i]);
+            for i, oSubValue in enumerate(oValue):
+                assert isinstance(oSubValue, ModelDataBase);
+                oValue[i] = copy.copy(oSubValue);
                 oValue[i].convertToParamNull();
 
         elif isinstance(oValue, ModelDataBase):

@@ -2325,8 +2325,8 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
     def _stringifyStack(aoStack):
         """Returns a string rep of the stack."""
         sRet = '';
-        for i, _ in enumerate(aoStack):
-            sRet += 'aoStack[%d]=%s\n' % (i, aoStack[i]);
+        for i, oFrame in enumerate(aoStack):
+            sRet += 'aoStack[%d]=%s\n' % (i, oFrame);
         return sRet;
 
     def _getResultStack(self, idTestSet):
@@ -2343,8 +2343,8 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
         for aoRow in self._oDb.fetchAll():
             aoStack.append(TestResultData().initFromDbRow(aoRow));
 
-        for i, _ in enumerate(aoStack):
-            assert aoStack[i].iNestingDepth == len(aoStack) - i - 1, self._stringifyStack(aoStack);
+        for i, oFrame in enumerate(aoStack):
+            assert oFrame.iNestingDepth == len(aoStack) - i - 1, self._stringifyStack(aoStack);
 
         return aoStack;
 

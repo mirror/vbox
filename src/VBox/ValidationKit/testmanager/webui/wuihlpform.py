@@ -695,8 +695,7 @@ class WuiHlpForm(object):
 
         oDefMember = TestGroupMemberData();
         aoTestGroupMembers = list(aoTestGroupMembers); # Copy it so we can pop.
-        for iTestCase, _ in enumerate(aoAllTestCases):
-            oTestCase = aoAllTestCases[iTestCase];
+        for iTestCase, oTestCase in enumerate(aoAllTestCases):
 
             # Is it a member?
             oMember = None;
@@ -806,8 +805,7 @@ class WuiHlpForm(object):
 
         oDefMember = SchedGroupMemberData();
         aoSchedGroupMembers = list(aoSchedGroupMembers); # Copy it so we can pop.
-        for iTestGroup, _ in enumerate(aoAllRelevantTestGroups):
-            oTestGroup = aoAllRelevantTestGroups[iTestGroup];
+        for iTestGroup, oTestGroup in enumerate(aoAllRelevantTestGroups):
 
             # Is it a member?
             oMember = None;
