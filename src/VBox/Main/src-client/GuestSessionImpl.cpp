@@ -989,7 +989,6 @@ int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode, uint
     else
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
     {
-#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
         GuestProcessStartupInfo procInfo;
         procInfo.mFlags      = ProcessCreateFlag_Hidden;
         procInfo.mExecutable = VBOXSERVICE_TOOL_MKDIR;
@@ -1029,7 +1028,6 @@ int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode, uint
 
         if (RT_SUCCESS(vrc))
             vrc = GuestProcessToolbox::runTool(this, procInfo, pvrcGuest);
-#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
     }
 
     LogFlowFunc(("LEAVE: %Rrc *pvrcGuest=%Rrc\n", vrc, pvrcGuest ? *pvrcGuest : -VERR_IPE_UNINITIALIZED_STATUS));
@@ -1260,9 +1258,8 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
         }
     }
     else
-    {
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
-#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
+    {
         GuestProcessStartupInfo procInfo;
         procInfo.mFlags = ProcessCreateFlag_WaitForStdOut;
         try
@@ -1325,13 +1322,7 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
         }
         else if (pvrcGuest)
             *pvrcGuest = vrcGuest;
-#else
-        RT_NOREF(strName);
-        vrc = VERR_NOT_SUPPORTED;
-#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
-#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
     }
-#endif
 
     LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, vrcGuest));
     return vrc;
@@ -1711,9 +1702,8 @@ int GuestSession::i_fileRemove(const Utf8Str &strPath, int *pvrcGuest)
         }
     }
     else
-    {
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
-#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
+    {
         GuestProcessStartupInfo procInfo;
         GuestToolboxStream  streamOut;
 
@@ -1753,13 +1743,7 @@ int GuestSession::i_fileRemove(const Utf8Str &strPath, int *pvrcGuest)
         }
         else if (pvrcGuest)
             *pvrcGuest = vrcGuest;
-#else
-        RT_NOREF(pvrcGuest);
-        vrc = VERR_NOT_SUPPORTED;
-#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
-#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
     }
-#endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
 
     LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, vrcGuest));
     return vrc;
@@ -2031,9 +2015,8 @@ int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, Gu
         unregisterWaitEvent(pEvent);
     }
     else
-    {
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
-#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
+    {
         /** @todo Merge this with IGuestFile::queryInfo(). */
         GuestProcessStartupInfo procInfo;
         procInfo.mFlags = ProcessCreateFlag_WaitForStdOut;
@@ -2073,13 +2056,7 @@ int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, Gu
         }
         else if (pvrcGuest)
             *pvrcGuest = vrcGuest;
-#else
-        RT_NOREF(fFollowSymlinks, objData, pvrcGuest);
-        vrc = VERR_NOT_SUPPORTED;
-#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
-#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
     }
-#endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
 
     LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, vrcGuest));
     return vrc;

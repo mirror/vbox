@@ -268,17 +268,10 @@ int GuestDirectory::i_open(int *pvrcGuest)
         }
     }
     else
-    {
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
-#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
+    {
         vrc = i_openViaToolbox(pvrcGuest);
-#else
-        RT_NOREF(pvrcGuest);
-        vrc = VERR_NOT_SUPPORTED;
-#endif
-#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
     }
-#endif
 
     return vrc;
 }
@@ -557,17 +550,10 @@ int GuestDirectory::i_close(int *pvrcGuest)
         vrc = VERR_NOT_IMPLEMENTED;
     }
     else
-    {
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
-#ifndef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
-        RT_NOREF(pvrcGuest);
-        vrc = VINF_SUCCESS; /* Nothing to do here. */
-#else
+    {
         vrc = i_closeViaToolbox(pvrcGuest);
-#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
-#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
     }
-#endif
 
     AssertPtr(mSession);
     int vrc2 = mSession->i_directoryUnregister(this);
@@ -613,17 +599,10 @@ int GuestDirectory::i_readInternal(GuestFsObjData &objData, int *pvrcGuest)
         vrc = 0;
     }
     else
-    {
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
-#ifndef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
-        RT_NOREF(objData);
-        vrc = VERR_NOT_SUPPORTED;
-#else
+    {
         vrc = i_readInternalViaToolbox(objData, pvrcGuest);
-#endif
-#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
     }
-#endif
 
     LogFlowThisFunc(("Returning vrc=%Rrc\n", vrc));
     return vrc;
