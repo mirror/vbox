@@ -36,6 +36,8 @@
 #include "UIGuestControlConsole.h"
 #include "UIGuestProcessControlDialog.h"
 #include "UICommon.h"
+#include "UIMachine.h"
+#include "UISession.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -45,18 +47,15 @@
 *   Class UIGuestProcessControlDialogFactory implementation.                                                                     *
 *********************************************************************************************************************************/
 
-UIGuestProcessControlDialogFactory::UIGuestProcessControlDialogFactory(UIActionPool *pActionPool /* = 0 */,
-                                                         const CGuest &comGuest /* = CGuest() */,
-                                                         const QString &strMachineName /* = QString() */)
-    : m_pActionPool(pActionPool)
-    , m_comGuest(comGuest)
-    , m_strMachineName(strMachineName)
+UIGuestProcessControlDialogFactory::UIGuestProcessControlDialogFactory(UIMachine *pMachine /* = 0 */)
+    : m_pMachine(pMachine)
 {
 }
 
 void UIGuestProcessControlDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UIGuestProcessControlDialog(pCenterWidget, m_pActionPool, m_comGuest, m_strMachineName);
+    AssertPtrReturnVoid(m_pMachine);
+    pDialog = new UIGuestProcessControlDialog(pCenterWidget, m_pMachine);
 }
 
 
@@ -64,14 +63,12 @@ void UIGuestProcessControlDialogFactory::create(QIManagerDialog *&pDialog, QWidg
 *   Class UIGuestProcessControlDialog implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIGuestProcessControlDialog::UIGuestProcessControlDialog(QWidget *pCenterWidget,
-                                           UIActionPool *pActionPool,
-                                           const CGuest &comGuest,
-                                           const QString &strMachineName /* = QString() */)
+UIGuestProcessControlDialog::UIGuestProcessControlDialog(QWidget *pCenterWidget, UIMachine *pMachine)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
-    , m_pActionPool(pActionPool)
-    , m_comGuest(comGuest)
-    , m_strMachineName(strMachineName)
+    , m_pMachine(pMachine)
+    , m_pActionPool(m_pMachine->actionPool())
+    , m_comGuest(m_pMachine->uisession()->guest())
+    , m_strMachineName(m_pMachine->machineName())
 {
 }
 

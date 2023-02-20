@@ -44,6 +44,7 @@
 
 /* Forward declarations: */
 class UIActionPool;
+class UIMachine;
 class UIGuestProcessControlDialog;
 class CGuest;
 
@@ -52,7 +53,9 @@ class UIGuestProcessControlDialogFactory : public QIManagerDialogFactory
 {
 public:
 
-    UIGuestProcessControlDialogFactory(UIActionPool *pActionPool = 0, const CGuest &comGuest = CGuest(), const QString &strMachineName = QString());
+    /** Constructs dialog factory.
+      * @param  pMachine  Brings the machine UI reference to be used by the created dialog. */
+    UIGuestProcessControlDialogFactory(UIMachine *pMachine = 0);
 
 protected:
 
@@ -60,9 +63,8 @@ protected:
       * @param  pCenterWidget  Passes the widget to center wrt. pCenterWidget. */
     virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) RT_OVERRIDE;
 
-    UIActionPool *m_pActionPool;
-    CGuest        m_comGuest;
-    QString       m_strMachineName;
+    /** Holds the machine UI reference. */
+    UIMachine *m_pMachine;
 };
 
 
@@ -74,10 +76,8 @@ class UIGuestProcessControlDialog : public QIWithRetranslateUI<QIManagerDialog>
 public:
 
     /** Constructs Guest Control dialog.
-      * @param  pCenterWidget  Passes the widget reference to center according to.
-      * @param  pActionPool    Passes the action-pool reference.
-      * @param  comGuest       Passes the com-guest reference. */
-    UIGuestProcessControlDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CGuest &comGuest, const QString &strMachineName = QString());
+      * @param  pMachine  Brings the machine UI reference to be used by the created dialog. */
+    UIGuestProcessControlDialog(QWidget *pCenterWidget, UIMachine *pMachine);
 
 protected:
 
@@ -114,9 +114,10 @@ private slots:
 
 private:
 
+    UIMachine    *m_pMachine;
     UIActionPool *m_pActionPool;
-    CGuest      m_comGuest;
-    QString     m_strMachineName;
+    CGuest        m_comGuest;
+    QString       m_strMachineName;
 };
 
 

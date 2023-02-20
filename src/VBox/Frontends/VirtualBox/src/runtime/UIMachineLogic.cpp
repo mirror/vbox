@@ -2466,7 +2466,7 @@ void UIMachineLogic::sltShowGuestControlConsoleDialog()
         return;
 
     QIManagerDialog *pProcessControlDialog;
-    UIGuestProcessControlDialogFactory dialogFactory(actionPool(), console().GetGuest(), machine().GetName());
+    UIGuestProcessControlDialogFactory dialogFactory(uimachine());
     dialogFactory.prepare(pProcessControlDialog, activeMachineWindow());
     if (pProcessControlDialog)
     {
