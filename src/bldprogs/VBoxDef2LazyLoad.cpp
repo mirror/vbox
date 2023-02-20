@@ -233,14 +233,14 @@ static RTEXITCODE parseInputInner(FILE *pInput, const char *pszInput)
                 {
                     if (!g_fIgnoreData)
                     {
-                        fprintf(stderr, "%s:%u: error: Cannot wrap up DATA export '%.*s'.\n",
+                        fprintf(stderr, "%s:%u: error: Cannot process DATA export '%.*s'.\n",
                                 pszInput, iLine, cchName, pchName);
                         return RTEXITCODE_SUCCESS;
                     }
                 }
                 else if (!WORD_CMP(psz, cch, "PRIVATE"))
                 {
-                    fprintf(stderr, "%s:%u: error: Cannot wrap up DATA export '%.*s'.\n",
+                    fprintf(stderr, "%s:%u: error: Cannot process DATA export '%.*s'.\n",
                             pszInput, iLine, cchName, pchName);
                     return RTEXITCODE_SUCCESS;
                 }
@@ -299,7 +299,7 @@ static RTEXITCODE parseInputInner(FILE *pInput, const char *pszInput)
      */
     if (feof(pInput))
         return RTEXITCODE_SUCCESS;
-    fprintf(stderr, "error: Read while reading '%s' (iLine=%u).\n", pszInput, iLine);
+    fprintf(stderr, "error: Incompletely read '%s' (iLine=%u).\n", pszInput, iLine);
     return RTEXITCODE_FAILURE;
 }
 
@@ -400,7 +400,7 @@ static RTEXITCODE generateOutputInnerX86AndAMD64(FILE *pOutput)
      */
     fprintf(pOutput,
             ";\n"
-            "; Import pointers. Initialized to point a lazy loading stubs.\n"
+            "; Import pointers. Initialized to point to lazy loading stubs.\n"
             ";\n"
             "BEGINDATA\n"
             "g_apfnImports:\n");
@@ -1055,7 +1055,7 @@ static RTEXITCODE generateOutputInnerArm64(FILE *pOutput)
      */
     fprintf(pOutput,
             ";\n"
-            "; Import pointers. Initialized to point a lazy loading stubs.\n"
+            "; Import pointers. Initialized to point to lazy loading stubs.\n"
             ";\n"
             ".section __DATA,__data\n"
             ".p2align 3\n"
