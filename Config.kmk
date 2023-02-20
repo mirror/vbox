@@ -2349,7 +2349,7 @@ VBOX_PYLINT_FLAGS = $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--reports=n,--repo
 	$(if-expr $(VBOX_PYLINT_VERSION) >= 20000,--disable=useless-object-inheritance --disable=useless-return,) \
 	$(if-expr $(VBOX_PYLINT_VERSION) >= 20400,--disable=import-outside-toplevel,) \
 	$(if-expr $(VBOX_PYLINT_VERSION) >= 20900,--disable=super-with-arguments --disable=raise-missing-from,) \
-	$(if-expr $(VBOX_PYLINT_VERSION) >= 21200,--disable=consider-using-f-string --disable=unnecessary-semicolon --disable=redundant-u-string-prefix --disable=consider-using-dict-items) \
+	$(if-expr $(VBOX_PYLINT_VERSION) >= 21200,--disable=consider-using-f-string --disable=unnecessary-semicolon --disable=redundant-u-string-prefix) \
 	$(if-expr $(VBOX_PYLINT_VERSION) >= 21602,--disable=broad-exception-raised) \
 	$(if-expr $(VBOX_PYLINT_VERSION) >= 21602,--disable=nested-min-max) \
 	--disable=unnecessary-semicolon,invalid-encoded-data,global-statement,bare-except,broad-except,multiple-statements,no-self-use,fixme \
