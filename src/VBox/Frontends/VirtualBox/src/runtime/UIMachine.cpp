@@ -295,6 +295,11 @@ void UIMachine::forgetPreviousMachineState()
     uisession()->forgetPreviousMachineState();
 }
 
+bool UIMachine::acquireLiveMachineState(KMachineState &enmState)
+{
+    return uisession()->acquireLiveMachineState(enmState);
+}
+
 bool UIMachine::isTurnedOff() const
 {
     return uisession()->isTurnedOff();

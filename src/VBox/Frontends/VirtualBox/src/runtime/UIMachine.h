@@ -213,11 +213,14 @@ public:
 
     /** @name Machine-state stuff.
      ** @{ */
-        /** Returns machine state. */
+        /** Returns cached machine state. */
         KMachineState machineState() const;
 
         /** Resets previous state to be the same as current one. */
         void forgetPreviousMachineState();
+
+        /** Acquire live machine state. */
+        bool acquireLiveMachineState(KMachineState &enmState);
 
         /** Returns whether VM is in one of turned off states. */
         bool isTurnedOff() const;

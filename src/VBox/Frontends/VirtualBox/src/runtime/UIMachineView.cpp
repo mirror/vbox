@@ -1055,7 +1055,8 @@ void UIMachineView::sltMachineStateChanged()
                 // WORKAROUND:
                 // We can't take pause pixmap if actual state is Saving, this produces
                 // a lock and GUI will be frozen until SaveState call is complete...
-                const KMachineState enmActualState = machine().GetState();
+                KMachineState enmActualState = KMachineState_Null;
+                uimachine()->acquireLiveMachineState(enmActualState);
                 if (enmActualState != KMachineState_Saving)
                 {
                     /* Take live pause-pixmap: */
@@ -1265,9 +1266,12 @@ void UIMachineView::prepareFrameBuffer()
     QSize size;
     {
 #ifdef VBOX_WS_X11
-        /* Processing pseudo resize-event to synchronize frame-buffer with stored framebuffer size.
-         * On X11 this will be additional done when the machine state was 'saved'. */
-        if (machine().GetState() == KMachineState_Saved || machine().GetState() == KMachineState_AbortedSaved)
+        // WORKAROUND:
+        // Processing pseudo resize-event to synchronize frame-buffer with stored framebuffer size.
+        // On X11 this have to be additionally done when the machine state was 'saved'.
+        KMachineState enmActualState = KMachineState_Null;
+        uimachine()->acquireLiveMachineState(enmActualState);
+        if (enmActualState == KMachineState_Saved || enmActualState == KMachineState_AbortedSaved)
             size = storedGuestScreenSizeHint();
 #endif /* VBOX_WS_X11 */
 

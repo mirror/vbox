@@ -407,8 +407,10 @@ void UIMachineWindowNormal::loadSettings()
             m_geometry = geo;
             UIDesktopWidgetWatchdog::setTopLevelGeometry(this, m_geometry);
 
-            /* If previous machine-state was NOT SAVED => normalize window to the optimal-size: */
-            if (machine().GetState() != KMachineState_Saved && machine().GetState() != KMachineState_AbortedSaved)
+            /* If actual machine-state is NOT saved => normalize window to the optimal-size: */
+            KMachineState enmActualState = KMachineState_Null;
+            uimachine()->acquireLiveMachineState(enmActualState);
+            if (enmActualState != KMachineState_Saved && enmActualState != KMachineState_AbortedSaved)
                 normalizeGeometry(false /* adjust position */, shouldResizeToGuestDisplay());
 
             /* Maximize window (if necessary): */

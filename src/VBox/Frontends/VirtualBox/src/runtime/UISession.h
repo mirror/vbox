@@ -198,11 +198,14 @@ public:
      ** @{ */
         /** Returns previous machine state. */
         KMachineState machineStatePrevious() const { return m_enmMachineStatePrevious; }
-        /** Returns machine state. */
+        /** Returns cached machine state. */
         KMachineState machineState() const { return m_enmMachineState; }
 
         /** Resets previous state to be the same as current one. */
         void forgetPreviousMachineState() { m_enmMachineStatePrevious = m_enmMachineState; }
+
+        /** Acquire live machine state. */
+        bool acquireLiveMachineState(KMachineState &enmState);
 
         /** Returns whether VM is in one of saved states. */
         bool isSaved() const { return    machineState() == KMachineState_Saved

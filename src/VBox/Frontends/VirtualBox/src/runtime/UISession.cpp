@@ -258,6 +258,18 @@ WId UISession::mainMachineWindowId() const
     return mainMachineWindow() ? mainMachineWindow()->winId() : 0;
 }
 
+bool UISession::acquireLiveMachineState(KMachineState &enmState)
+{
+    CMachine comMachine = machine();
+    KMachineState enmMachineState = comMachine.GetState();
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+        enmState = enmMachineState;
+    return fSuccess;
+}
+
 bool UISession::reset()
 {
     CConsole comConsole = console();
