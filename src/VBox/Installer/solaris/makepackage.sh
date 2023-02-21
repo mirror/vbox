@@ -37,6 +37,7 @@ HARDENED=""
 IPS_PACKAGE=""
 PACKAGE_SPEC="prototype"
 OPT_WITHOUT_VBoxBugReport=""
+OPT_WITHOUT_VBoxBalloonCtrl=""
 while [ $# -ge 1 ];
 do
     case "$1" in
@@ -47,8 +48,11 @@ do
             IPS_PACKAGE=1
             PACKAGE_SPEC="virtualbox.p5m"
             ;;
-        --without-VBoxBugReport
+        --without-VBoxBugReport)
             OPT_WITHOUT_VBoxBugReport="yes"
+            ;;
+        --without-VBoxBalloonCtrl)
+            OPT_WITHOUT_VBoxBalloonCtrl="yes"
             ;;
         *)
             break
@@ -245,7 +249,9 @@ package_spec_fixup_content()
 
     # Manifest class action scripts
     package_spec_fixup_filelist '$3 == "/var/svc/manifest/application/virtualbox/virtualbox-webservice.xml"'    '$2 = "manifest";$6 = "sys"'
-    package_spec_fixup_filelist '$3 == "/var/svc/manifest/application/virtualbox/virtualbox-balloonctrl.xml"'   '$2 = "manifest";$6 = "sys"'
+    if [ -z "${OPT_WITHOUT_VBoxBalloonCtrl}" ]; then
+        package_spec_fixup_filelist '$3 == "/var/svc/manifest/application/virtualbox/virtualbox-balloonctrl.xml"'   '$2 = "manifest";$6 = "sys"'
+    fi
     package_spec_fixup_filelist '$3 == "/var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml"'    '$2 = "manifest";$6 = "sys"'
 
     # Use 'root' as group so as to match attributes with the previous installation and prevent a conflict. Otherwise pkgadd bails out thinking
@@ -299,11 +305,14 @@ package_spec_append_info "$PKG_BASE_DIR"
 package_spec_append_content "$PKG_BASE_DIR"
 
 # Add hardlinks for executables to launch the 32-bit or 64-bit executable
-for f in VBoxManage VBoxSDL VBoxAutostart vboxwebsrv VBoxZoneAccess VBoxSVC VBoxBalloonCtrl VBoxTestOGL VirtualBox VirtualBoxVM vbox-img VBoxHeadless; do
+for f in VBoxManage VBoxSDL VBoxAutostart vboxwebsrv VBoxZoneAccess VBoxSVC VBoxTestOGL VirtualBox VirtualBoxVM vbox-img VBoxHeadless; do
     package_spec_append_hardlink VBoxISAExec $f "$PKG_BASE_DIR" "$VBOX_INSTALLED_DIR"
 done
 if [ -z "${OPT_WITHOUT_VBoxBugReport}" ]; then
     package_spec_append_hardlink VBoxISAExec VBoxBugReport "$PKG_BASE_DIR" "$VBOX_INSTALLED_DIR"
+fi
+if [ -z "${OPT_WITHOUT_VBoxBalloonCtrl}" ]; then
+    package_spec_append_hardlink VBoxISAExec VBoxBalloonCtrl "$PKG_BASE_DIR" "$VBOX_INSTALLED_DIR"
 fi
 
 package_spec_fixup_content
