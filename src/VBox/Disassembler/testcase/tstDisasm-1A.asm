@@ -468,6 +468,15 @@ BEGINPROC TestProc64
         vpmovmskb rax, xmm3
         vpmovmskb r11, ymm9
 
+        sha1nexte xmm0, xmm1
+        sha1msg1  xmm0, xmm1
+        sha1msg2  xmm0, xmm1
+        sha1rnds4 xmm1, xmm2, 0
+        sha1rnds4 xmm1, xmm2, 1
+        sha256msg1 xmm0, xmm1
+        sha256msg2 xmm0, xmm1
+        sha256rnds2 xmm0, xmm1
+
         ret
 ENDPROC   TestProc64
 %endif ; !OS2

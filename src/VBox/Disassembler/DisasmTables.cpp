@@ -1318,6 +1318,28 @@ const DISOPCODE g_aThreeByteMapX86_0F38_1[16] =
     INVALID_OPCODE,
 };
 
+/** Three byte opcode map (0x66 0x0F 0x38 0xCx) */
+const DISOPCODE g_aThreeByteMapX86_0F38_C[16] =
+{
+    /* D */
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    OP("sha1nexte %Vdq,%Wdq",      IDX_ParseModRM,    IDX_UseModRM,       0,      OP_SHA1NEXTE,     OP_PARM_Vdq,  OP_PARM_Wdq,  OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    OP("sha1msg1 %Vdq,%Wdq",       IDX_ParseModRM,    IDX_UseModRM,       0,      OP_SHA1MSG1,      OP_PARM_Vdq,  OP_PARM_Wdq,  OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    OP("sha1msg2 %Vdq,%Wdq",       IDX_ParseModRM,    IDX_UseModRM,       0,      OP_SHA1MSG2,      OP_PARM_Vdq,  OP_PARM_Wdq,  OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    OP("sha256rnds2 %Vdq,%Wdq",    IDX_ParseModRM,    IDX_UseModRM,       0,      OP_SHA256RNDS2,   OP_PARM_Vdq,  OP_PARM_Wdq,  OP_PARM_NONE, DISOPTYPE_HARMLESS), /** @todo xmm0 is implicit, anything to do to annotate it properly? */
+    OP("sha256msg1 %Vdq,%Wdq",     IDX_ParseModRM,    IDX_UseModRM,       0,      OP_SHA256MSG1,    OP_PARM_Vdq,  OP_PARM_Wdq,  OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    OP("sha256msg2 %Vdq,%Wdq",     IDX_ParseModRM,    IDX_UseModRM,       0,      OP_SHA256MSG2,    OP_PARM_Vdq,  OP_PARM_Wdq,  OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    INVALID_OPCODE,
+    INVALID_OPCODE
+};
+
 /** Three byte opcode map (0x0F 0x38 0xFx) */
 const DISOPCODE g_aThreeByteMapX86_0F38_F[16] =
 {
@@ -1368,7 +1390,7 @@ PCDISOPCODE const g_apThreeByteMapX86_0F38[16] =
     /* b */
     NULL,
     /* c */
-    NULL,
+    &g_aThreeByteMapX86_0F38_C[0],
     /* d */
     NULL,
     /* e */
@@ -1791,6 +1813,26 @@ const DISOPCODE g_aThreeByteMapX86_0F3A_0[16] =
     OP("palignr %Pq,%Qq,%Ib",   IDX_ParseModRM,    IDX_UseModRM,   IDX_ParseImmByte,   OP_PALIGNR,   OP_PARM_Pq,   OP_PARM_Qq,   OP_PARM_Ib, DISOPTYPE_HARMLESS),
 };
 
+const DISOPCODE g_aThreeByteMapX86_0F3A_C[16] =
+{
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    OP("sha1rnds4 %Vdq,%Wdq,%Ib",   IDX_ParseModRM,    IDX_UseModRM,   IDX_ParseImmByte,   OP_SHA1RNDS4, OP_PARM_Vdq,   OP_PARM_Wdq,   OP_PARM_Ib, DISOPTYPE_HARMLESS),
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+};
+
 PCDISOPCODE const g_apThreeByteMapX86_0F3A[16] =
 {
     /* 0 */
@@ -1818,7 +1860,7 @@ PCDISOPCODE const g_apThreeByteMapX86_0F3A[16] =
     /* b */
     NULL,
     /* c */
-    NULL,
+    &g_aThreeByteMapX86_0F3A_C[0],
     /* d */
     NULL,
     /* e */
