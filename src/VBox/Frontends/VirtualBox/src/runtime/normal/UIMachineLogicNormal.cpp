@@ -280,13 +280,15 @@ void UIMachineLogicNormal::prepareMachineWindows()
     ::darwinSetFrontMostProcess();
 #endif /* VBOX_WS_MAC */
 
-    /* Get monitors count: */
-    ulong uMonitorCount = machine().GetGraphicsAdapter().GetMonitorCount();
+    /* Acquire monitor count: */
+    ulong cMonitorCount = 0;
+    uimachine()->acquireMonitorCount(cMonitorCount);
+
     /* Create machine window(s): */
-    for (ulong uScreenId = 0; uScreenId < uMonitorCount; ++ uScreenId)
+    for (ulong uScreenId = 0; uScreenId < cMonitorCount; ++ uScreenId)
         addMachineWindow(UIMachineWindow::create(this, uScreenId));
     /* Order machine window(s): */
-    for (ulong uScreenId = uMonitorCount; uScreenId > 0; -- uScreenId)
+    for (ulong uScreenId = cMonitorCount; uScreenId > 0; -- uScreenId)
         machineWindows()[uScreenId - 1]->raise();
 
     /* Listen for frame-buffer resize: */

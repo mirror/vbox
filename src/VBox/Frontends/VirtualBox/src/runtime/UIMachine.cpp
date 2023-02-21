@@ -433,6 +433,11 @@ void UIMachine::setLastFullScreenSize(ulong uScreenId, QSize size)
     m_monitorLastFullScreenSizeVector[(int)uScreenId] = size;
 }
 
+bool UIMachine::acquireMonitorCount(ulong &uCount)
+{
+    return uisession()->acquireMonitorCount(uCount);
+}
+
 bool UIMachine::acquireGuestScreenParameters(ulong uScreenId,
                                              ulong &uWidth, ulong &uHeight, ulong &uBitsPerPixel,
                                              long &xOrigin, long &yOrigin, KGuestMonitorStatus &enmMonitorStatus)
@@ -1322,13 +1327,17 @@ void UIMachine::prepareScreens()
 # endif /* !VBOX_WS_X11 || VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 #endif /* !VBOX_WS_MAC */
 
+    /* Accquire monitor count: */
+    ulong cMonitorCount = 0;
+    acquireMonitorCount(cMonitorCount);
+
     /* Prepare initial screen visibility status: */
-    m_monitorVisibilityVector.resize(uisession()->machine().GetGraphicsAdapter().GetMonitorCount());
+    m_monitorVisibilityVector.resize(cMonitorCount);
     m_monitorVisibilityVector.fill(false);
     m_monitorVisibilityVector[0] = true;
 
     /* Prepare empty last full-screen size vector: */
-    m_monitorLastFullScreenSizeVector.resize(uisession()->machine().GetGraphicsAdapter().GetMonitorCount());
+    m_monitorLastFullScreenSizeVector.resize(cMonitorCount);
     m_monitorLastFullScreenSizeVector.fill(QSize(-1, -1));
 
     /* If machine is in 'saved' state: */
@@ -1366,7 +1375,7 @@ void UIMachine::prepareScreens()
     }
 
     /* Prepare initial screen visibility status of host-desires (same as facts): */
-    m_monitorVisibilityVectorHostDesires.resize(uisession()->machine().GetGraphicsAdapter().GetMonitorCount());
+    m_monitorVisibilityVectorHostDesires.resize(cMonitorCount);
     for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
         m_monitorVisibilityVectorHostDesires[iScreenIndex] = m_monitorVisibilityVector[iScreenIndex];
 

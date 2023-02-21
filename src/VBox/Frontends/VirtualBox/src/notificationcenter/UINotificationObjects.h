@@ -298,6 +298,9 @@ public:
         /** Notifies about inability to acquire IMachineDebugger parameter.
           * @param  comMachineDebugger  Brings the object parameter get acquired from. */
         static void cannotAcquireMachineDebuggerParameter(const CMachineDebugger &comMachineDebugger);
+        /** Notifies about inability to acquire IGraphicsAdapter parameter.
+          * @param  comAdapter  Brings the object parameter get acquired from. */
+        static void cannotAcquireGraphicsAdapterParameter(const CGraphicsAdapter &comAdapter);
         /** Notifies about inability to acquire IConsole parameter.
           * @param  comConsole  Brings the object parameter get acquired from. */
         static void cannotAcquireConsoleParameter(const CConsole &comConsole);

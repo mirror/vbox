@@ -43,7 +43,7 @@
 
 UIMultiScreenLayout::UIMultiScreenLayout(UIMachineLogic *pMachineLogic)
     : m_pMachineLogic(pMachineLogic)
-    , m_cGuestScreens(m_pMachineLogic->machine().GetGraphicsAdapter().GetMonitorCount())
+    , m_cGuestScreens(0)
     , m_cHostMonitors(0)
 {
     prepare();
@@ -296,6 +296,7 @@ void UIMultiScreenLayout::calculateGuestScreenCount()
 {
     m_guestScreens.clear();
     m_disabledGuestScreens.clear();
+    uimachine()->acquireMonitorCount(m_cGuestScreens);
     for (uint iGuestScreen = 0; iGuestScreen < m_cGuestScreens; ++iGuestScreen)
         if (uimachine()->isScreenVisible(iGuestScreen))
             m_guestScreens << iGuestScreen;

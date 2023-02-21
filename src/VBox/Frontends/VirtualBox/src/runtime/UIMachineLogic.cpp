@@ -2532,9 +2532,11 @@ void UIMachineLogic::sltChangeDockIconUpdate(bool fEnabled)
         setDockIconPreviewEnabled(fEnabled);
         if (m_pDockPreviewSelectMonitorGroup)
         {
+            ulong cMonitorCount = 0;
+            uimachine()->acquireMonitorCount(cMonitorCount);
             m_pDockPreviewSelectMonitorGroup->setEnabled(fEnabled);
             m_DockIconPreviewMonitor = qMin(gEDataManager->realtimeDockIconUpdateMonitor(uiCommon().managedVMUuid()),
-                                            (int)machine().GetGraphicsAdapter().GetMonitorCount() - 1);
+                                            (int)cMonitorCount - 1);
         }
         /* Resize the dock icon in the case the preview monitor has changed. */
         QSize size = machineWindows().at(m_DockIconPreviewMonitor)->machineView()->size();
@@ -3060,13 +3062,14 @@ int UIMachineLogic::searchMaxSnapshotIndex(const CMachine &machine,
 void UIMachineLogic::takeScreenshot(const QString &strFile, const QString &strFormat /* = "png" */) const
 {
     /* Get console: */
-    const ulong cGuestScreens = machine().GetGraphicsAdapter().GetMonitorCount();
+    ulong cMonitorCount = 0;
+    uimachine()->acquireMonitorCount(cMonitorCount);
     QList<QImage> images;
     ulong uMaxWidth  = 0;
     ulong uMaxHeight = 0;
     /* First create screenshots of all guest screens and save them in a list.
      * Also sum the width of all images and search for the biggest image height. */
-    for (ulong uScreenIndex = 0; uScreenIndex < cGuestScreens; ++uScreenIndex)
+    for (ulong uScreenIndex = 0; uScreenIndex < cMonitorCount; ++uScreenIndex)
     {
         ulong uWidth = 0, uHeight = 0, uDummy = 0;
         long iDummy = 0;
@@ -3203,8 +3206,9 @@ void UIMachineLogic::reset(bool fShowConfirmation)
             // WORKAROUND:
             // On reset the additional screens didn't get a display
             // update. Emulate this for now until it get fixed. */
-            const ulong uMonitorCount = machine().GetGraphicsAdapter().GetMonitorCount();
-            for (ulong uScreenId = 1; uScreenId < uMonitorCount; ++uScreenId)
+            ulong cMonitorCount = 0;
+            uimachine()->acquireMonitorCount(cMonitorCount);
+            for (ulong uScreenId = 1; uScreenId < cMonitorCount; ++uScreenId)
                 machineWindows().at(uScreenId)->update();
         }
     }

@@ -266,8 +266,12 @@ void UIMachineLogicSeamless::prepareMachineWindows()
     /* Update the multi-screen layout: */
     m_pScreenLayout->update();
 
+    /* Acquire monitor count: */
+    ulong cMonitorCount = 0;
+    uimachine()->acquireMonitorCount(cMonitorCount);
+
     /* Create machine-window(s): */
-    for (uint cScreenId = 0; cScreenId < machine().GetGraphicsAdapter().GetMonitorCount(); ++cScreenId)
+    for (uint cScreenId = 0; cScreenId < cMonitorCount; ++cScreenId)
         addMachineWindow(UIMachineWindow::create(this, cScreenId));
 
     /* Listen for frame-buffer resize: */

@@ -325,6 +325,9 @@ public:
         /** Returns frame-buffer size for screen with index @a uScreenId. */
         QSize frameBufferSize(ulong uScreenId) const;
 
+        /** Acquires monitor count. */
+        bool acquireMonitorCount(ulong &uCount);
+
         /** Acquires parameters for guest-screen with passed uScreenId. */
         bool acquireGuestScreenParameters(ulong uScreenId,
                                           ulong &uWidth, ulong &uHeight, ulong &uBitsPerPixel,

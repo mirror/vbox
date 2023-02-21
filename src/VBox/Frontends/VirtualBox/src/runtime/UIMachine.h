@@ -278,6 +278,9 @@ public:
         /** Defines whether guest screen resize should be @a fIgnored. */
         void setGuestResizeIgnored(bool fIgnored) { m_fIsGuestResizeIgnored = fIgnored; }
 
+        /** Acquires monitor count. */
+        bool acquireMonitorCount(ulong &uCount);
+
         /** Acquires parameters for guest-screen with passed uScreenId. */
         bool acquireGuestScreenParameters(ulong uScreenId,
                                           ulong &uWidth, ulong &uHeight, ulong &uBitsPerPixel,

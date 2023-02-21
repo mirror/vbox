@@ -679,6 +679,15 @@ void UINotificationMessage::cannotAcquireMachineDebuggerParameter(const CMachine
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireGraphicsAdapterParameter(const CGraphicsAdapter &comAdapter)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Graphics adapter failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire graphics adapter parameter.") +
+        UIErrorString::formatErrorInfo(comAdapter));
+}
+
+/* static */
 void UINotificationMessage::cannotAcquireConsoleParameter(const CConsole &comConsole)
 {
     createMessage(

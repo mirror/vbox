@@ -624,6 +624,25 @@ QSize UISession::frameBufferSize(ulong uScreenId) const
     return pFramebuffer ? QSize(pFramebuffer->width(), pFramebuffer->height()) : QSize();
 }
 
+bool UISession::acquireMonitorCount(ulong &uCount)
+{
+    CMachine comMachine = machine();
+    CGraphicsAdapter comAdapter = comMachine.GetGraphicsAdapter();
+    bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        const ULONG uMonitorCount = comAdapter.GetMonitorCount();
+        fSuccess = comAdapter.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotAcquireGraphicsAdapterParameter(comAdapter);
+        else
+            uCount = uMonitorCount;
+    }
+    return fSuccess;
+}
+
 bool UISession::acquireGuestScreenParameters(ulong uScreenId,
                                              ulong &uWidth, ulong &uHeight, ulong &uBitsPerPixel,
                                              long &xOrigin, long &yOrigin, KGuestMonitorStatus &enmMonitorStatus)
@@ -1344,8 +1363,11 @@ void UISession::prepareConsoleEventHandlers()
 
 void UISession::prepareFramebuffers()
 {
-    /* Each framebuffer will be really prepared on first UIMachineView creation: */
-    m_frameBufferVector.resize(machine().GetGraphicsAdapter().GetMonitorCount());
+    /* Each framebuffer will be really prepared on first UIMachineView creation;
+     * For now we should just create an empty frame-buffer vector to fill later. */
+    ulong cMonitorCount = 0;
+    acquireMonitorCount(cMonitorCount);
+    m_frameBufferVector.resize(cMonitorCount);
 }
 
 void UISession::prepareConnections()

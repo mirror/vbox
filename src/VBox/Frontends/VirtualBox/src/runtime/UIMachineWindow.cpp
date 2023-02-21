@@ -286,14 +286,11 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
         strMachineName += " - " + (strUserProductName.isEmpty() ? defaultWindowTitle() : strUserProductName);
 #endif /* !VBOX_WS_MAC */
 
-        /* Check if we can get graphics adapter: */
-        CGraphicsAdapter comAdapter = machine().GetGraphicsAdapter();
-        if (machine().isOk() && comAdapter.isNotNull())
-        {
-            /* Append screen number only if there are more than one present: */
-            if (comAdapter.GetMonitorCount() > 1)
-                strMachineName += QString(" : %1").arg(m_uScreenId + 1);
-        }
+        /* Append screen number only if there are more than one present: */
+        ulong cMonitorCount = 0;
+        uimachine()->acquireMonitorCount(cMonitorCount);
+        if (cMonitorCount > 1)
+            strMachineName += QString(" : %1").arg(m_uScreenId + 1);
 
         /* Assign title finally: */
         setWindowTitle(strMachineName);
