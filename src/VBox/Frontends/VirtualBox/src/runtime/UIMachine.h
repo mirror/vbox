@@ -245,6 +245,14 @@ public:
         bool setPause(bool fPause);
     /** @} */
 
+    /** @name Snapshot stuff.
+     ** @{ */
+        /** Acquires snapshot count. */
+        bool acquireSnapshotCount(ulong &uCount);
+        /** Acquires current snapshot name. */
+        bool acquireCurrentSnapshotName(QString &strName);
+    /** @} */
+
     /** @name Host-screen stuff.
      ** @{ */
         /** Returns the list of host-screen geometries we currently have. */

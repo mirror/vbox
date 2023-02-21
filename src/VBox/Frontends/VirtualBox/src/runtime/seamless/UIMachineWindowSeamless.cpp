@@ -310,10 +310,13 @@ void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
         {
             /* Get snapshot(s): */
             QString strSnapshotName;
-            if (machine().GetSnapshotCount() > 0)
+            ulong uSnapshotCount = 0;
+            uimachine()->acquireSnapshotCount(uSnapshotCount);
+            if (uSnapshotCount > 0)
             {
-                CSnapshot snapshot = machine().GetCurrentSnapshot();
-                strSnapshotName = " (" + snapshot.GetName() + ")";
+                QString strCurrentSnapshotName;
+                uimachine()->acquireCurrentSnapshotName(strCurrentSnapshotName);
+                strSnapshotName = " (" + strCurrentSnapshotName + ")";
             }
             /* Update mini-toolbar text: */
             m_pMiniToolBar->setText(machineName() + strSnapshotName);

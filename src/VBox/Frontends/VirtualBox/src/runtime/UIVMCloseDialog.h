@@ -46,7 +46,7 @@ class QHBoxLayout;
 class QLabel;
 class QRadioButton;
 class QVBoxLayout;
-class CMachine;
+class UIMachine;
 
 /** QIDialog extension to handle Runtime UI close-event. */
 class UIVMCloseDialog : public QIWithRetranslateUI<QIDialog>
@@ -56,10 +56,10 @@ class UIVMCloseDialog : public QIWithRetranslateUI<QIDialog>
 public:
 
     /** Constructs close dialog passing @a pParent to the base-class.
-      * @param  comMachine             Brings the machine dialog created for.
+      * @param  pMachine               Brings the machine UI dialog created for.
       * @param  fIsACPIEnabled         Brings whether ACPI is enabled.
       * @param  restictedCloseActions  Brings a set of restricted actions. */
-    UIVMCloseDialog(QWidget *pParent, CMachine &comMachine,
+    UIVMCloseDialog(QWidget *pParent, UIMachine *pMachine,
                     bool fIsACPIEnabled, MachineCloseAction restictedCloseActions);
 
     /** Returns whether dialog is valid. */
@@ -136,8 +136,8 @@ private:
     /** Updates pixmaps. */
     void updatePixmaps();
 
-    /** Holds the live machine reference. */
-    CMachine                 &m_comMachine;
+    /** Holds the machine UI reference. */
+    UIMachine                *m_pMachine;
     /** Holds whether ACPI is enabled. */
     bool                      m_fIsACPIEnabled;
     /** Holds a set of restricted actions. */

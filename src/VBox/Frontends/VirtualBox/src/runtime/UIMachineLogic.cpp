@@ -1793,8 +1793,10 @@ void UIMachineLogic::sltPowerOff()
     }
 
     LogRel(("GUI: User requested to power VM off.\n"));
+    ulong uSnapshotCount = 0;
+    uimachine()->acquireSnapshotCount(uSnapshotCount);
     const bool fDiscardStateOnPowerOff = gEDataManager->discardStateOnPowerOff(uiCommon().managedVMUuid());
-    uimachine()->powerOff(machine().GetSnapshotCount() > 0 && fDiscardStateOnPowerOff);
+    uimachine()->powerOff(uSnapshotCount > 0 && fDiscardStateOnPowerOff);
 }
 
 void UIMachineLogic::sltMinimizeActiveMachineWindow()

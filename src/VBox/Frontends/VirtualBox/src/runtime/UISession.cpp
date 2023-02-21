@@ -298,6 +298,36 @@ bool UISession::setPause(bool fPause)
     return fSuccess;
 }
 
+bool UISession::acquireSnapshotCount(ulong &uCount)
+{
+    CMachine comMachine = machine();
+    const ULONG uSnapshotCount = comMachine.GetSnapshotCount();
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+        uCount = uSnapshotCount;
+    return fSuccess;
+}
+
+bool UISession::acquireCurrentSnapshotName(QString &strName)
+{
+    CMachine comMachine = machine();
+    CSnapshot comSnapshot = comMachine.GetCurrentSnapshot();
+    bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    {
+        const QString strSnapshotName = comSnapshot.GetName();
+        fSuccess = comSnapshot.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotAcquireSnapshotParameter(comSnapshot);
+        else
+            strName = strSnapshotName;
+    }
+    return fSuccess;
+}
+
 bool UISession::putScancode(LONG iCode)
 {
     CKeyboard comKeyboard = keyboard();

@@ -350,6 +350,16 @@ bool UIMachine::setPause(bool fPause)
     return uisession()->setPause(fPause);
 }
 
+bool UIMachine::acquireSnapshotCount(ulong &uCount)
+{
+    return uisession()->acquireSnapshotCount(uCount);
+}
+
+bool UIMachine::acquireCurrentSnapshotName(QString &strName)
+{
+    return uisession()->acquireCurrentSnapshotName(strName);
+}
+
 bool UIMachine::isScreenVisibleHostDesires(ulong uScreenId) const
 {
     /* Make sure index feats the bounds: */

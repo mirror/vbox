@@ -37,25 +37,20 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UIIconPool.h"
-#include "UIVMCloseDialog.h"
-#include "UIExtraDataManager.h"
-#include "UIMessageCenter.h"
-#include "UIConverter.h"
-#include "UICommon.h"
 #include "QIDialogButtonBox.h"
+#include "UICommon.h"
+#include "UIConverter.h"
+#include "UIExtraDataManager.h"
+#include "UIIconPool.h"
+#include "UIMachine.h"
+#include "UIMessageCenter.h"
+#include "UIVMCloseDialog.h"
 
-/* COM includes: */
-#include "CMachine.h"
-#include "CSession.h"
-#include "CConsole.h"
-#include "CSnapshot.h"
 
-
-UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent, CMachine &comMachine,
+UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent, UIMachine *pMachine,
                                  bool fIsACPIEnabled, MachineCloseAction restictedCloseActions)
     : QIWithRetranslateUI<QIDialog>(pParent)
-    , m_comMachine(comMachine)
+    , m_pMachine(pMachine)
     , m_fIsACPIEnabled(fIsACPIEnabled)
     , m_restictedCloseActions(restictedCloseActions)
     , m_fValid(false)
@@ -542,7 +537,8 @@ void UIVMCloseDialog::prepareButtonBox()
 void UIVMCloseDialog::configure()
 {
     /* Get actual machine-state: */
-    KMachineState machineState = m_comMachine.GetState();
+    KMachineState enmActualState = KMachineState_Null;
+    m_pMachine->acquireLiveMachineState(enmActualState);
 
     /* Check which close-actions are resticted: */
     bool fIsDetachAllowed = uiCommon().isSeparateProcess() && !(m_restictedCloseActions & MachineCloseAction_Detach);
@@ -554,25 +550,31 @@ void UIVMCloseDialog::configure()
     /* Make 'Detach' button visible/hidden depending on restriction: */
     setButtonVisibleDetach(fIsDetachAllowed);
     /* Make 'Detach' button enabled/disabled depending on machine-state: */
-    setButtonEnabledDetach(machineState != KMachineState_Stuck);
+    setButtonEnabledDetach(enmActualState != KMachineState_Stuck);
 
     /* Make 'Save state' button visible/hidden depending on restriction: */
     setButtonVisibleSave(fIsStateSavingAllowed);
     /* Make 'Save state' button enabled/disabled depending on machine-state: */
-    setButtonEnabledSave(machineState != KMachineState_Stuck);
+    setButtonEnabledSave(enmActualState != KMachineState_Stuck);
 
     /* Make 'Shutdown' button visible/hidden depending on restriction: */
     setButtonVisibleShutdown(fIsACPIShutdownAllowed);
     /* Make 'Shutdown' button enabled/disabled depending on console and machine-state: */
-    setButtonEnabledShutdown(m_fIsACPIEnabled && machineState != KMachineState_Stuck);
+    setButtonEnabledShutdown(m_fIsACPIEnabled && enmActualState != KMachineState_Stuck);
 
     /* Make 'Power off' button visible/hidden depending on restriction: */
     setButtonVisiblePowerOff(fIsPowerOffAllowed);
     /* Make the Restore Snapshot checkbox visible/hidden depending on snapshot count & restrictions: */
-    setCheckBoxVisibleDiscard(fIsPowerOffAndRestoreAllowed && m_comMachine.GetSnapshotCount() > 0);
+    ulong uSnapshotCount = 0;
+    m_pMachine->acquireSnapshotCount(uSnapshotCount);
+    setCheckBoxVisibleDiscard(fIsPowerOffAndRestoreAllowed && uSnapshotCount > 0);
     /* Assign Restore Snapshot checkbox text: */
-    if (!m_comMachine.GetCurrentSnapshot().isNull())
-        m_strDiscardCheckBoxText = m_comMachine.GetCurrentSnapshot().GetName();
+    if (uSnapshotCount > 0)
+    {
+        QString strCurrentSnapshotName;
+        m_pMachine->acquireCurrentSnapshotName(strCurrentSnapshotName);
+        m_strDiscardCheckBoxText = strCurrentSnapshotName;
+    }
 
     /* Check which radio-button should be initially chosen: */
     QRadioButton *pRadioButtonToChoose = 0;

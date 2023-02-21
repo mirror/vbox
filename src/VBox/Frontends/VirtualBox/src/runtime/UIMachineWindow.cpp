@@ -271,10 +271,13 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
         QString strMachineName = machineName();
 
         /* Append snapshot name: */
-        if (machine().GetSnapshotCount() > 0)
+        ulong uSnapshotCount = 0;
+        uimachine()->acquireSnapshotCount(uSnapshotCount);
+        if (uSnapshotCount > 0)
         {
-            const CSnapshot comSnapshot = machine().GetCurrentSnapshot();
-            strMachineName += " (" + comSnapshot.GetName() + ")";
+            QString strCurrentSnapshotName;
+            uimachine()->acquireCurrentSnapshotName(strCurrentSnapshotName);
+            strMachineName += " (" + strCurrentSnapshotName + ")";
         }
 
         /* Append state name: */
@@ -422,7 +425,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
         QWidget *pParentDlg = windowManager().realParentWindow(this);
         bool fInACPIMode = false;
         uimachine()->acquireWhetherGuestEnteredACPIMode(fInACPIMode);
-        QPointer<UIVMCloseDialog> pCloseDlg = new UIVMCloseDialog(pParentDlg, machine(),
+        QPointer<UIVMCloseDialog> pCloseDlg = new UIVMCloseDialog(pParentDlg, uimachine(),
                                                                   fInACPIMode,
                                                                   restrictedCloseActions);
         /* Configure close-dialog: */

@@ -242,6 +242,14 @@ public:
         bool setPause(bool fPause);
     /** @} */
 
+    /** @name Snapshot stuff.
+     ** @{ */
+        /** Acquires snapshot count. */
+        bool acquireSnapshotCount(ulong &uCount);
+        /** Acquires current snapshot name. */
+        bool acquireCurrentSnapshotName(QString &strName);
+    /** @} */
+
     /** @name Keyboard stuff.
      ** @{ */
         /** Sends a scan @a iCode to VM's keyboard. */
