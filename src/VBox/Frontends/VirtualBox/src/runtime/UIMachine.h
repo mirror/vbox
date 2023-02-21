@@ -278,6 +278,12 @@ public:
         /** Defines whether guest screen resize should be @a fIgnored. */
         void setGuestResizeIgnored(bool fIgnored) { m_fIsGuestResizeIgnored = fIgnored; }
 
+        /** Acquires graphics controller type. */
+        bool acquireGraphicsControllerType(KGraphicsControllerType &enmType);
+        /** Acquires VRAM size. */
+        bool acquireVRAMSize(ulong &uSize);
+        /** Acquires whether accelerate 3D is enabled. */
+        bool acquireWhetherAccelerate3DEnabled(bool &fEnabled);
         /** Acquires monitor count. */
         bool acquireMonitorCount(ulong &uCount);
 

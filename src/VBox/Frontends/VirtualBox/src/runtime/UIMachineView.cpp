@@ -236,7 +236,9 @@ void UIMachineView::applyMachineViewScaleFactor()
     frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
 
     /* Propagate the scale-factor related attributes to 3D service if necessary: */
-    if (machine().GetGraphicsAdapter().GetAccelerate3DEnabled())
+    bool fAccelerate3DEnabled = false;
+    uimachine()->acquireWhetherAccelerate3DEnabled(fAccelerate3DEnabled);
+    if (fAccelerate3DEnabled)
     {
         double dScaleFactorFor3D = dScaleFactor;
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
@@ -671,6 +673,10 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
      * the viewport through IFramebuffer::NotifyUpdate): */
     uimachine()->invalidateAndUpdateScreen(m_uScreenId);
 
+    /* Acquire graphics controller type: */
+    KGraphicsControllerType enmType = KGraphicsControllerType_Null;
+    uimachine()->acquireGraphicsControllerType(enmType);
+
     /* If we are in normal or scaled mode and if GA are active,
      * remember the guest-screen size to be able to restore it when necessary: */
     /* As machines with Linux/Solaris and VMSVGA are not able to tell us
@@ -679,7 +685,7 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
      * ourselves.  Windows guests should use VBoxVGA controllers, not VMSVGA. */
     if (   !isFullscreenOrSeamless()
         && uimachine()->isGuestSupportsGraphics()
-        && (machine().GetGraphicsAdapter().GetGraphicsControllerType() != KGraphicsControllerType_VMSVGA))
+        && (enmType != KGraphicsControllerType_VMSVGA))
         setStoredGuestScreenSizeHint(frameBufferSizeNew);
 
     LogRel2(("GUI: UIMachineView::sltHandleNotifyChange: Complete for Screen=%d, Size=%dx%d\n",
@@ -989,7 +995,9 @@ void UIMachineView::sltHandleScaleFactorChange(const QUuid &uMachineID)
     frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
 
     /* Propagate the scale-factor related attributes to 3D service if necessary: */
-    if (machine().GetGraphicsAdapter().GetAccelerate3DEnabled())
+    bool fAccelerate3DEnabled = false;
+    uimachine()->acquireWhetherAccelerate3DEnabled(fAccelerate3DEnabled);
+    if (fAccelerate3DEnabled)
     {
         double dScaleFactorFor3D = dScaleFactor;
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
@@ -1221,7 +1229,9 @@ void UIMachineView::prepareFrameBuffer()
         frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
 
         /* Propagate the scale-factor related attributes to 3D service if necessary: */
-        if (machine().GetGraphicsAdapter().GetAccelerate3DEnabled())
+        bool fAccelerate3DEnabled = false;
+        uimachine()->acquireWhetherAccelerate3DEnabled(fAccelerate3DEnabled);
+        if (fAccelerate3DEnabled)
         {
             double dScaleFactorFor3D = dScaleFactor;
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)

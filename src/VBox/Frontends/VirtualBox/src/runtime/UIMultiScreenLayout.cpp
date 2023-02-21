@@ -35,11 +35,6 @@
 #include "UIMessageCenter.h"
 #include "UIMultiScreenLayout.h"
 
-/* COM includes: */
-#include "COMEnums.h"
-#include "CMachine.h"
-#include "CGraphicsAdapter.h"
-
 
 UIMultiScreenLayout::UIMultiScreenLayout(UIMachineLogic *pMachineLogic)
     : m_pMachineLogic(pMachineLogic)
@@ -224,8 +219,10 @@ void UIMultiScreenLayout::sltHandleScreenLayoutChange(int iRequestedGuestScreen,
     bool fSuccess = true;
     if (uimachine()->isGuestSupportsGraphics())
     {
-        quint64 uAvailBits = machineLogic()->machine().GetGraphicsAdapter().GetVRAMSize() * _1M * 8;
-        quint64 uUsedBits = memoryRequirements(tmpMap);
+        ulong uVRAMSize = 0;
+        uimachine()->acquireVRAMSize(uVRAMSize);
+        const quint64 uAvailBits = uVRAMSize * _1M * 8;
+        const quint64 uUsedBits = memoryRequirements(tmpMap);
         fSuccess = uAvailBits >= uUsedBits;
         if (!fSuccess)
         {

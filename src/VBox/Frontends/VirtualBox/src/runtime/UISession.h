@@ -325,6 +325,12 @@ public:
         /** Returns frame-buffer size for screen with index @a uScreenId. */
         QSize frameBufferSize(ulong uScreenId) const;
 
+        /** Acquires graphics controller type. */
+        bool acquireGraphicsControllerType(KGraphicsControllerType &enmType);
+        /** Acquires VRAM size. */
+        bool acquireVRAMSize(ulong &uSize);
+        /** Acquires whether accelerate 3D is enabled. */
+        bool acquireWhetherAccelerate3DEnabled(bool &fEnabled);
         /** Acquires monitor count. */
         bool acquireMonitorCount(ulong &uCount);
 

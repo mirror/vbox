@@ -80,12 +80,14 @@ bool UIMachineLogicSeamless::checkAvailability()
     /* Check if there is enough physical memory to enter seamless: */
     if (uimachine()->isGuestSupportsSeamless())
     {
-        quint64 availBits = machine().GetGraphicsAdapter().GetVRAMSize() /* VRAM */ * _1M /* MiB to bytes */ * 8 /* to bits */;
-        quint64 usedBits = m_pScreenLayout->memoryRequirements();
-        if (availBits < usedBits)
+        ulong uVRAMSize = 0;
+        uimachine()->acquireVRAMSize(uVRAMSize);
+        quint64 uAvailBits = uVRAMSize * _1M /* MiB to bytes */ * 8 /* to bits */;
+        quint64 uUsedBits = m_pScreenLayout->memoryRequirements();
+        if (uAvailBits < uUsedBits)
         {
             msgCenter().cannotEnterSeamlessMode(0, 0, 0,
-                                                (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
+                                                (((uUsedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
             return false;
         }
     }
