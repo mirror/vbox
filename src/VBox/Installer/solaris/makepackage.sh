@@ -38,6 +38,7 @@ IPS_PACKAGE=""
 PACKAGE_SPEC="prototype"
 OPT_WITHOUT_VBoxBugReport=""
 OPT_WITHOUT_VBoxBalloonCtrl=""
+OPT_WITHOUT_VBoxAutostart=""
 while [ $# -ge 1 ];
 do
     case "$1" in
@@ -53,6 +54,9 @@ do
             ;;
         --without-VBoxBalloonCtrl)
             OPT_WITHOUT_VBoxBalloonCtrl="yes"
+            ;;
+        --without-VBoxAutostart)
+            OPT_WITHOUT_VBoxAutostart="yes"
             ;;
         *)
             break
@@ -313,6 +317,9 @@ if [ -z "${OPT_WITHOUT_VBoxBugReport}" ]; then
 fi
 if [ -z "${OPT_WITHOUT_VBoxBalloonCtrl}" ]; then
     package_spec_append_hardlink VBoxISAExec VBoxBalloonCtrl "$PKG_BASE_DIR" "$VBOX_INSTALLED_DIR"
+fi
+if [ -z "${OPT_WITHOUT_VBoxAutostart}" ]; then
+    package_spec_append_hardlink VBoxISAExec VBoxAutostart "$PKG_BASE_DIR" "$VBOX_INSTALLED_DIR"
 fi
 
 package_spec_fixup_content

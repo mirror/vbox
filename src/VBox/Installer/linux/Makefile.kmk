@@ -84,7 +84,7 @@ linux-bin_SOURCES = \
 	prerm-common.sh \
 	routines.sh \
 	VBoxSysInfo.sh \
-	vboxautostart-service.sh \
+	$(if $(VBOX_WITH_FE_AUTOSTART),vboxautostart-service.sh) \
 	$(if $(VBOX_WITH_FE_BALLOONCTRL),vboxballoonctrl-service.sh) \
 	VBoxCreateUSBNode.sh \
 	vboxdrv.sh \
@@ -101,7 +101,7 @@ linux-scripts_SOURCES = \
 	prerm-common.sh \
 	routines.sh \
 	uninstall.sh \
-	vboxautostart-service.sh \
+	$(if $(VBOX_WITH_FE_AUTOSTART),vboxautostart-service.sh) \
 	$(if $(VBOX_WITH_FE_BALLOONCTRL),vboxballoonctrl-service.sh) \
 	vboxdrv.sh \
 	vboxweb-service.sh
@@ -169,7 +169,7 @@ VBOX_LNX_STRIP_BIN = \
 	VBoxHostChannel.so \
 	$(if $(VBOX_WITH_DRAG_AND_DROP),VBoxDragAndDropSvc.so,) \
 	$(if $(VBOX_WITH_MAIN), \
-	VBoxAutostart \
+	$(if $(VBOX_WITH_FE_AUTOSTART),VBoxAutostart,) \
 	$(if $(VBOX_WITH_FE_BALLOONCTRL),VBoxBalloonCtrl,) \
 	$(if $(VBOX_WITH_FE_BUGREPORT),VBoxBugReport,) \
 	VBoxManage \
@@ -241,7 +241,7 @@ VBOX_LNX_NO_STRIP = \
 	prerm-common.sh \
 	routines.sh \
 	VBoxSysInfo.sh \
-	vboxautostart-service.sh \
+	$(if $(VBOX_WITH_FE_AUTOSTART),vboxautostart-service.sh) \
 	$(if $(VBOX_WITH_FE_BALLOONCTRL),vboxballoonctrl-service.sh) \
 	VBoxCreateUSBNode.sh \
 	vboxdrv.sh \

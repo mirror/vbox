@@ -418,7 +418,7 @@ VBOX_DI_VBAPP_PROGS = \
 	MacOS/VBoxExtPackHelperApp \
 	$(if $(VBOX_WITH_FE_BUGREPORT),MacOS/VBoxBugReport) \
 	$(if $(VBOX_WITH_FE_BALLOONCTRL),MacOS/VBoxBalloonCtrl) \
-	MacOS/VBoxAutostart \
+	$(if $(VBOX_WITH_FE_AUTOSTART),MacOS/VBoxAutostart) \
 	$(if $(VBOX_WITH_WEBSERVICES),MacOS/vboxwebsrv) \
 	$(if $(VBOX_WITH_DTRACE),MacOS/VBoxDTrace,) \
 	$(if $(VBOX_WITH_HOST_SHIPPING_AUDIO_TEST),MacOS/VBoxAudioTest,)
@@ -688,8 +688,8 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$(if-expr defined(VBOX_PROVISIONPROFILE_TEAM_ID),$(VBOX_PATH_DI_SRC)/VirtualBox/$(VBOX_PROVISIONPROFILE_TEAM_ID).provisionprofile,) \
 		$(if $(VBOX_WITH_WEBSERVICES),$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxwebsrv.plist,) \
 		$(if $(VBOX_WITH_FE_BALLOONCTRL),$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxballoonctrl.plist) \
-		$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxautostart.plist \
-		$(VBOX_PATH_DI_SRC)/VirtualBox/VBoxAutostartDarwin.sh \
+		$(if $(VBOX_WITH_FE_AUTOSTART),$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxautostart.plist) \
+		$(if $(VBOX_WITH_FE_AUTOSTART),$(VBOX_PATH_DI_SRC)/VirtualBox/VBoxAutostartDarwin.sh) \
 		$(if-expr defined(VBOX_WITH_DTRACE), \
 			$(foreach f, $(VBOXINST_DTRACE_LIB_ARCH_FILES), \
 				$(call VBOX_DI_FN_DEP_32,VirtualBox.app/Contents/MacOS/dtrace/lib/x86/$f) \
@@ -768,8 +768,10 @@ endif
 ifdef VBOX_WITH_FE_BALLOONCTRL
 	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxballoonctrl.plist  $(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/
 endif
+ifdef VBOX_WITH_FE_AUTOSTART
 	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxautostart.plist    $(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/
 	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VirtualBox/VBoxAutostartDarwin.sh                $(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/
+endif
 # Install the python bridge stuff
 ifdef VBOX_WITH_PYTHON
 	$(foreach f,$(VBOX_DI_VBAPP_PYTHON_FILES) \
@@ -863,8 +865,8 @@ ifdef VBOX_SIGNING_MODE
 		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(bin),org.virtualbox.app.macos.$(notdir $(bin))) )
 	$(foreach file, $(if-expr defined(VBOX_WITH_WEBSERVICES),MacOS/org.virtualbox.vboxwebsrv.plist,) \
 			$(if-expr defined(VBOX_WITH_FE_BALLOONCTRL),MacOS/org.virtualbox.vboxballoonctrl.plist,) \
-			MacOS/org.virtualbox.vboxautostart.plist \
-			MacOS/VBoxAutostartDarwin.sh \
+			$(if-expr defined(VBOX_WITH_FE_AUTOSTART),MacOS/org.virtualbox.vboxautostart.plist,) \
+			$(if-expr defined(VBOX_WITH_FE_AUTOSTART),MacOS/VBoxAutostartDarwin.sh,) \
 			$(if-expr defined(VBOX_WITH_PYTHON),$(addprefix MacOS/, $(VBOX_DI_VBAPP_PYTHON_FILES) vboxshell.py),) \
 			$(if-expr defined(VBOX_WITH_JXPCOM),MacOS/sdk/bindings/xpcom/java/vboxjxpcom.jar,) \
 			$(filter MacOS/%,$(VBOX_DI_VBAPP_MISC_FILES)) \
@@ -1017,8 +1019,10 @@ ifdef VBOX_WITH_FE_BALLOONCTRL
 	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxBalloonCtrl \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxBalloonCtrl "$$@"'
 endif
+ifdef VBOX_WITH_FE_AUTOSTART
 	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxAutostart \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxAutostart "$$@"'
+endif
 ifdef VBOX_WITH_DTRACE
 	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxDTrace \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxDTrace "$$@"'

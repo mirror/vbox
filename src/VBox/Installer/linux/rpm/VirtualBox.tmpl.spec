@@ -188,12 +188,12 @@ ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxDTrace
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxAudioTest
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxdtrace
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxaudiotest
-test -f VBoxBugReport && ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxBugReport
-test -f VBoxBugReport && ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxbugreport
+test -f VBoxBugReport   && ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxBugReport
+test -f VBoxBugReport   && ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxbugreport
 test -f VBoxBalloonCtrl && ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxBalloonCtrl
 test -f VBoxBalloonCtrl && ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxballoonctrl
-ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxAutostart
-ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxautostart
+test -f VBoxAutostart   && ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxAutostart
+test -f VBoxAutostart   && ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxautostart
 test -f vboxwebsrv && ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxwebsrv
 ln -s /usr/lib/virtualbox/vbox-img $RPM_BUILD_ROOT/usr/bin/vbox-img
 ln -s /usr/lib/virtualbox/vboximg-mount $RPM_BUILD_ROOT/usr/bin/vboximg-mount

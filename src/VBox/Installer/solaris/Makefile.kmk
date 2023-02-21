@@ -122,7 +122,7 @@ solaris-bin_SOURCES = \
 	$(VBOX_PATH_SOL_INST_SRC)/VBox.sh \
 	$(VBOX_PATH_SOL_INST_SRC)/pkginstall.sh \
 	$(if $(VBOX_WITH_FE_BALLOONCTRL),$(VBOX_PATH_SOL_INST_SRC)/smf-vboxballoonctrl.sh) \
-	$(VBOX_PATH_SOL_INST_SRC)/smf-vboxautostart.sh \
+	$(if $(VBOX_WITH_FE_AUTOSTART),$(VBOX_PATH_SOL_INST_SRC)/smf-vboxautostart.sh) \
 	$(if $(VBOX_WITH_WEBSERVICES),$(VBOX_PATH_SOL_INST_SRC)/smf-vboxwebsrv.sh,)
 
 solaris-drv-confs_INST = bin/
@@ -179,7 +179,7 @@ SOLARIS_SMF_FILES.DST     := $(VBOX_PATH_SI_SCRATCH_PKG)/var/svc/manifest/applic
 SOLARIS_SMF_FILES = \
 	virtualbox-zoneaccess.xml \
 	$(if-expr defined(VBOX_WITH_FE_BALLOONCTRL),mvirtualbox-balloonctrl.xml,) \
-	virtualbox-autostart.xml \
+	$(if-expr defined(VBOX_WITH_FE_AUTOSTART),virtualbox-autostart.xml,) \
 	$(if-expr defined(VBOX_WITH_WEBSERVICES),virtualbox-webservice.xml,)
 
 ## @def SOLARIS_MIME_INFO_FILES
@@ -433,7 +433,7 @@ SOLARIS_COMMON_EXES += \
 	VBox.sh \
 	pkginstall.sh \
 	$(if $(VBOX_WITH_FE_BALLOONCTRL),smf-vboxballoonctrl.sh) \
-	smf-vboxautostart.sh \
+	$(if $(VBOX_WITH_FE_AUTOSTART),smf-vboxautostart.sh) \
 	$(if $(VBOX_WITH_WEBSERVICES),smf-vboxwebsrv.sh)
 
 
@@ -490,7 +490,7 @@ SOLARIS_STRIP_EXES += \
 	$(if $(VBOX_WITH_HEADLESS),VBoxHeadless) \
 	$(if $(VBOX_WITH_FE_BUGREPORT),VBoxBugReport) \
 	$(if $(VBOX_WITH_FE_BALLOONCTRL),VBoxBalloonCtrl) \
-	VBoxAutostart \
+	$(if $(VBOX_WITH_FE_AUTOSTART),VBoxAutostart) \
 	$(if $(VBOX_WITH_WEBSERVICES),vboxwebsrv) \
 	$(if $(VBOX_WITH_VBOX_IMG)$(VBOX_WITH_TESTCASES),vbox-img)
 
@@ -687,6 +687,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 		$(if-expr defined(VBOX_WITH_HARDENING),--hardened,) \
 		$(if-expr !defined(VBOX_WITH_FE_BUGREPORT),--without-VBoxBugReport,) \
 		$(if-expr !defined(VBOX_WITH_FE_BALLOONCTRL),--without-VBoxBalloonCtrl,) \
+		$(if-expr !defined(VBOX_WITH_FE_AUTOSTART),--without-VBoxAutostart,) \
 		$(VBOX_PATH_SI_SCRATCH_PKG) \
 		$(PKG_FILENAME) \
 		$(KBUILD_TARGET_ARCH) \
@@ -737,6 +738,7 @@ $(PATH_STAGE_BIN)/$(PKG_FILENAME_SMF_STYLE).p5p: \
 		$(if-expr defined(VBOX_WITH_HARDENING),--hardened,) \
 		$(if-expr !defined(VBOX_WITH_FE_BUGREPORT),--without-VBoxBugReport,) \
 		$(if-expr !defined(VBOX_WITH_FE_BALLOONCTRL),--without-VBoxBalloonCtrl,) \
+		$(if-expr !defined(VBOX_WITH_FE_AUTOSTART),--without-VBoxAutostart,) \
 		$(VBOX_PATH_SI_SCRATCH_PKG) \
 		$(PKG_FILENAME_SMF_STYLE) \
 		$(KBUILD_TARGET_ARCH) \
