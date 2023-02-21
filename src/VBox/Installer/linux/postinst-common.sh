@@ -69,7 +69,9 @@ fi
 if [ -f ${MY_PATH}/vboxautostart-service.sh ]; then
     install_init_script "${MY_PATH}/vboxautostart-service.sh" vboxautostart-service
 fi
-install_init_script "${MY_PATH}/vboxweb-service.sh" vboxweb-service
+if [ -f ${MY_PATH}/vboxweb-service.sh ]; then
+    install_init_script "${MY_PATH}/vboxweb-service.sh" vboxweb-service
+fi
 finish_init_script_install
 
 delrunlevel vboxdrv
@@ -83,7 +85,9 @@ if [ -f ${MY_PATH}/vboxautostart-service.sh ]; then
     addrunlevel vboxautostart-service
 fi
 delrunlevel vboxweb-service
-addrunlevel vboxweb-service
+if [ -f ${MY_PATH}/vboxweb-service.sh ]; then
+    addrunlevel vboxweb-service
+fi
 
 ln -sf "${MY_PATH}/postinst-common.sh" /sbin/vboxconfig
 

@@ -178,7 +178,7 @@ SOLARIS_SMF_FILES.SRC     := $(VBOX_PATH_SOL_INST_SRC)
 SOLARIS_SMF_FILES.DST     := $(VBOX_PATH_SI_SCRATCH_PKG)/var/svc/manifest/application/virtualbox
 SOLARIS_SMF_FILES = \
 	virtualbox-zoneaccess.xml \
-	$(if-expr defined(VBOX_WITH_FE_BALLOONCTRL),mvirtualbox-balloonctrl.xml,) \
+	$(if-expr defined(VBOX_WITH_FE_BALLOONCTRL),virtualbox-balloonctrl.xml,) \
 	$(if-expr defined(VBOX_WITH_FE_AUTOSTART),virtualbox-autostart.xml,) \
 	$(if-expr defined(VBOX_WITH_WEBSERVICES),virtualbox-webservice.xml,)
 
@@ -688,6 +688,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 		$(if-expr !defined(VBOX_WITH_FE_BUGREPORT),--without-VBoxBugReport,) \
 		$(if-expr !defined(VBOX_WITH_FE_BALLOONCTRL),--without-VBoxBalloonCtrl,) \
 		$(if-expr !defined(VBOX_WITH_FE_AUTOSTART),--without-VBoxAutostart,) \
+		$(if-expr !defined(VBOX_WITH_WEBSERVICES),--without-vboxwebsrv,) \
 		$(VBOX_PATH_SI_SCRATCH_PKG) \
 		$(PKG_FILENAME) \
 		$(KBUILD_TARGET_ARCH) \
@@ -739,6 +740,7 @@ $(PATH_STAGE_BIN)/$(PKG_FILENAME_SMF_STYLE).p5p: \
 		$(if-expr !defined(VBOX_WITH_FE_BUGREPORT),--without-VBoxBugReport,) \
 		$(if-expr !defined(VBOX_WITH_FE_BALLOONCTRL),--without-VBoxBalloonCtrl,) \
 		$(if-expr !defined(VBOX_WITH_FE_AUTOSTART),--without-VBoxAutostart,) \
+		$(if-expr !defined(VBOX_WITH_WEBSERVICES),--without-vboxwebsrv,) \
 		$(VBOX_PATH_SI_SCRATCH_PKG) \
 		$(PKG_FILENAME_SMF_STYLE) \
 		$(KBUILD_TARGET_ARCH) \

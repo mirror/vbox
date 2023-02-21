@@ -28,7 +28,8 @@
 
 #
 # Usage:
-#       makepackage.sh [--hardened] [--ips] [--without-VBoxBugReport] \
+#       makepackage.sh [--hardened] [--ips] [--without-VBoxBugReport] [--without-VBoxBalloonCtrl] \
+#           [--without-VBoxAutostart] [--without-vboxwebsrv] \
 #           $(PATH_TARGET)/install packagename {$(KBUILD_TARGET_ARCH)|neutral} $(VBOX_SVN_REV)
 
 
@@ -39,6 +40,7 @@ PACKAGE_SPEC="prototype"
 OPT_WITHOUT_VBoxBugReport=""
 OPT_WITHOUT_VBoxBalloonCtrl=""
 OPT_WITHOUT_VBoxAutostart=""
+OPT_WITHOUT_vboxwebsrv=""
 while [ $# -ge 1 ];
 do
     case "$1" in
@@ -57,6 +59,9 @@ do
             ;;
         --without-VBoxAutostart)
             OPT_WITHOUT_VBoxAutostart="yes"
+            ;;
+        --without-vboxwebsrv)
+            OPT_WITHOUT_vboxwebsrv="yes"
             ;;
         *)
             break
@@ -309,7 +314,7 @@ package_spec_append_info "$PKG_BASE_DIR"
 package_spec_append_content "$PKG_BASE_DIR"
 
 # Add hardlinks for executables to launch the 32-bit or 64-bit executable
-for f in VBoxManage VBoxSDL VBoxAutostart vboxwebsrv VBoxZoneAccess VBoxSVC VBoxTestOGL VirtualBox VirtualBoxVM vbox-img VBoxHeadless; do
+for f in VBoxManage VBoxSDL VBoxAutostart VBoxZoneAccess VBoxSVC VBoxTestOGL VirtualBox VirtualBoxVM vbox-img VBoxHeadless; do
     package_spec_append_hardlink VBoxISAExec $f "$PKG_BASE_DIR" "$VBOX_INSTALLED_DIR"
 done
 if [ -z "${OPT_WITHOUT_VBoxBugReport}" ]; then
@@ -320,6 +325,9 @@ if [ -z "${OPT_WITHOUT_VBoxBalloonCtrl}" ]; then
 fi
 if [ -z "${OPT_WITHOUT_VBoxAutostart}" ]; then
     package_spec_append_hardlink VBoxISAExec VBoxAutostart "$PKG_BASE_DIR" "$VBOX_INSTALLED_DIR"
+fi
+if [ -z "${OPT_WITHOUT_vboxwebsrv}" ]; then
+    package_spec_append_hardlink VBoxISAExec vboxwebsrv "$PKG_BASE_DIR" "$VBOX_INSTALLED_DIR"
 fi
 
 package_spec_fixup_content

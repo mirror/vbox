@@ -339,7 +339,9 @@ if [ "$ACTION" = "install" ]; then
         ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxBugReport
     fi
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxAutostart
-    ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/vboxwebsrv
+    if [ -f $INSTALLATION_DIR/vboxwebsrv ]; then
+        ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/vboxwebsrv
+    fi
     ln -sf $INSTALLATION_DIR/vbox-img /usr/bin/vbox-img
     ln -sf $INSTALLATION_DIR/vboximg-mount /usr/bin/vboximg-mount
     if [ -d /usr/share/pixmaps/ ]; then
