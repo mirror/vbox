@@ -18,6 +18,7 @@ else:
     from HTMLParser import HTMLParser
 
 
+
 __copyright__ = \
 """
 Copyright (C) 2006-2023 Oracle and/or its affiliates.
@@ -90,15 +91,14 @@ def create_image_list(folder):
         image_files_list.append('<file>images/' + f + '</file>')
     return image_files_list
 
-# open htmlhelp.hhp files and read the list of html files from there
-def create_html_list(folder):
+# open files list and read the list of html files from there
+def create_html_list(folder, list_file):
     global html_files
-    file_name = 'htmlhelp.hhp'
     html_file_lines = []
-    if not file_name in os.listdir(folder):
-        logging.error('Could not find the file "%s" in "%s"', file_name, folder)
+    if not list_file in os.listdir(folder):
+        logging.error('Could not find the file "%s" in "%s"', list_file, folder)
         return html_file_lines
-    full_path = os.path.join(folder, 'htmlhelp.hhp')
+    full_path = os.path.join(folder, list_file)
     file = codecs.open(full_path, encoding='iso-8859-1')
 
     lines = file.readlines()
@@ -117,10 +117,10 @@ def create_html_list(folder):
     return html_file_lines
 
 
-def create_files_section(folder):
+def create_files_section(folder, list_file):
     files_section_lines = ['<files>']
     files_section_lines += create_image_list(folder)
-    files_section_lines += create_html_list(folder)
+    files_section_lines += create_html_list(folder, list_file)
     files_section_lines.append('</files>')
     return files_section_lines
 
@@ -187,12 +187,12 @@ def parse_line(lines, index):
         result = parse_non_object_tag(lines, index)
     return result
 
-# parse toc.hhc file. assuming all the relevant information
+# parse TOC file. assuming all the relevant information
 # is stored in tags and attributes. whatever is outside of
 # <... > pairs is filtered out. we also assume < ..> are not nested
 # and each < matches to a >
-def create_toc(folder):
-    toc_file = 'toc.hhc'
+def create_toc(folder, toc_file):
+    toc_string_list = []
     content = [x[2] for x in os.walk(folder)]
     if toc_file not in content[0]:
         logging.error('Could not find toc file "%s" under "%s"', toc_file, folder)
@@ -218,7 +218,7 @@ def create_toc(folder):
     # # insert new line chars. to make sure each line includes at most one tag
     # content = re.sub(r'>.*?<', r'>\n<', content)
     # lines = content.split('\n')
-    toc_string_list = ['<toc>']
+    toc_string_list.append('<toc>')
     index = 0
     for tag in tag_list:
         str = parse_line(tag_list, index)
@@ -237,8 +237,10 @@ def usage(arg):
 def main(argv):
     helphtmlfolder = ''
     output_filename = ''
+    list_file = ''
+    toc_file = ''
     try:
-        opts, args = getopt.getopt(sys.argv[1:],"hd:o:")
+        opts, args = getopt.getopt(sys.argv[1:],"hd:o:f:t:")
     except getopt.GetoptError as err:
         print(err)
         usage(2)
@@ -247,6 +249,12 @@ def main(argv):
             usage(0)
         elif opt in ("-d"):
             helphtmlfolder = arg
+            print(helphtmlfolder)
+        elif opt in ("-f"):
+            list_file = arg
+        elif opt in ("-t"):
+            toc_file = arg
+            print(toc_file)
         elif opt in ("-o"):
              output_filename = arg
 
@@ -269,7 +277,7 @@ def main(argv):
                      '<namespace>org.virtualbox</namespace>', \
                      '<virtualFolder>doc</virtualFolder>', \
                      '<filterSection>']
-    out_xml_lines += create_toc(helphtmlfolder) + create_files_section(helphtmlfolder)
+    out_xml_lines += create_toc(helphtmlfolder, toc_file) + create_files_section(helphtmlfolder, list_file)
     out_xml_lines += create_keywords_section(helphtmlfolder)
     out_xml_lines += ['</filterSection>', '</QtHelpProject>']
 
