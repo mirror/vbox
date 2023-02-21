@@ -28,13 +28,15 @@
 
 #
 # Usage:
-#       makepackage.sh [--hardened] [--ips] $(PATH_TARGET)/install packagename {$(KBUILD_TARGET_ARCH)|neutral} $(VBOX_SVN_REV)
+#       makepackage.sh [--hardened] [--ips] [--without-VBoxBugReport] \
+#           $(PATH_TARGET)/install packagename {$(KBUILD_TARGET_ARCH)|neutral} $(VBOX_SVN_REV)
 
 
 # Parse options.
 HARDENED=""
 IPS_PACKAGE=""
 PACKAGE_SPEC="prototype"
+OPT_WITHOUT_VBoxBugReport=""
 while [ $# -ge 1 ];
 do
     case "$1" in
@@ -45,9 +47,12 @@ do
             IPS_PACKAGE=1
             PACKAGE_SPEC="virtualbox.p5m"
             ;;
-    *)
-        break
-        ;;
+        --without-VBoxBugReport
+            OPT_WITHOUT_VBoxBugReport="yes"
+            ;;
+        *)
+            break
+            ;;
     esac
     shift
 done
@@ -294,9 +299,12 @@ package_spec_append_info "$PKG_BASE_DIR"
 package_spec_append_content "$PKG_BASE_DIR"
 
 # Add hardlinks for executables to launch the 32-bit or 64-bit executable
-for f in VBoxManage VBoxSDL VBoxAutostart vboxwebsrv VBoxZoneAccess VBoxSVC VBoxBugReport VBoxBalloonCtrl VBoxTestOGL VirtualBox VirtualBoxVM vbox-img VBoxHeadless; do
-    package_spec_append_hardlink VBoxISAExec    $f  "$PKG_BASE_DIR" "$VBOX_INSTALLED_DIR"
+for f in VBoxManage VBoxSDL VBoxAutostart vboxwebsrv VBoxZoneAccess VBoxSVC VBoxBalloonCtrl VBoxTestOGL VirtualBox VirtualBoxVM vbox-img VBoxHeadless; do
+    package_spec_append_hardlink VBoxISAExec $f "$PKG_BASE_DIR" "$VBOX_INSTALLED_DIR"
 done
+if [ -z "${OPT_WITHOUT_VBoxBugReport}" ]; then
+    package_spec_append_hardlink VBoxISAExec VBoxBugReport "$PKG_BASE_DIR" "$VBOX_INSTALLED_DIR"
+fi
 
 package_spec_fixup_content
 

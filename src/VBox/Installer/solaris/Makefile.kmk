@@ -488,7 +488,7 @@ SOLARIS_STRIP_BINS += \
 
 SOLARIS_STRIP_EXES += \
 	$(if $(VBOX_WITH_HEADLESS),VBoxHeadless) \
-	VBoxBugReport \
+	$(if $(VBOX_WITH_FE_BUGREPORT),VBoxBugReport) \
 	VBoxBalloonCtrl \
 	VBoxAutostart \
 	$(if $(VBOX_WITH_WEBSERVICES),vboxwebsrv) \
@@ -733,6 +733,7 @@ $(PATH_STAGE_BIN)/$(PKG_FILENAME_SMF_STYLE).p5p: \
 	$(VBOX_PATH_SI_SCRATCH_PKG)/makepackage.sh \
 		--ips \
 		$(if-expr defined(VBOX_WITH_HARDENING),--hardened,) \
+		$(if-expr !defined(VBOX_WITH_FE_BUGREPORT),--without-VBoxBugReport,) \
 		$(VBOX_PATH_SI_SCRATCH_PKG) \
 		$(PKG_FILENAME_SMF_STYLE) \
 		$(KBUILD_TARGET_ARCH) \

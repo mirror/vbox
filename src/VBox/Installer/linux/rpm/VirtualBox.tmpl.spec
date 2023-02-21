@@ -188,8 +188,8 @@ ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxDTrace
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxAudioTest
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxdtrace
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxaudiotest
-ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxBugReport
-ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxbugreport
+test -f VBoxBugReport && ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxBugReport
+test -f VBoxBugReport && ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxbugreport
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxBalloonCtrl
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxballoonctrl
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxAutostart

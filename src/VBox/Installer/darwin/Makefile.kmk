@@ -416,7 +416,7 @@ VBOX_DI_VBAPP_PROGS = \
 	MacOS/VBoxXPCOMIPCD \
 	MacOS/VBoxNetAdpCtl \
 	MacOS/VBoxExtPackHelperApp \
-	MacOS/VBoxBugReport \
+	$(if $(VBOX_WITH_FE_BUGREPORT),MacOS/VBoxBugReport) \
 	MacOS/VBoxBalloonCtrl \
 	MacOS/VBoxAutostart \
 	$(if $(VBOX_WITH_WEBSERVICES),MacOS/vboxwebsrv) \
@@ -1007,8 +1007,10 @@ if defined(VBOX_WITH_VBOXIMGMOUNT)
 	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/vboximg-mount \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/vboximg-mount "$$@"'
 endif
+if defined(VBOX_WITH_FE_BUGREPORT)
 	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxBugReport \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxBugReport "$$@"'
+endif
 	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxBalloonCtrl \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxBalloonCtrl "$$@"'
 	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxAutostart \

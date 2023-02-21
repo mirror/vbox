@@ -171,7 +171,7 @@ VBOX_LNX_STRIP_BIN = \
 	$(if $(VBOX_WITH_MAIN), \
 	VBoxAutostart \
 	VBoxBalloonCtrl \
-	VBoxBugReport \
+	$(if $(VBOX_WITH_FE_BUGREPORT),VBoxBugReport,) \
 	VBoxManage \
 	VBoxNetDHCP $(if $(VBOX_WITH_HARDENING),VBoxNetDHCP.so,) \
 	$(if $(VBOX_WITH_LWIP_NAT),VBoxNetNAT $(if $(VBOX_WITH_HARDENING),VBoxNetNAT.so,),) \
