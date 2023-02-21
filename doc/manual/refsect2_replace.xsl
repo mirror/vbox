@@ -1,6 +1,10 @@
 <!--
     refsect2_replace.xsl:
-        Replaces refsect2 elements with corresponding refsect1.
+        - Replaces refsect2 elements with corresponding refsect1. It looks
+        like dita does not like nested refsect sections. So we flat them out.
+        - When href attribute of a xref element has http in its value
+        then add scope="external" attribute to that element. This attribute
+        tells dita pdf output java stuff not to retrieve and parse those documents.
 -->
 <!--
     Copyright (C) 2006-2023 Oracle and/or its affiliates.
@@ -25,20 +29,37 @@
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
     <xsl:output encoding="UTF-8" method="xml" omit-xml-declaration="no" indent="yes" />
-    <xsl:output doctype-system="http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
-         doctype-public="-//OASIS//DTD DocBook XML V4.5//EN"/>
+    <xsl:output doctype-system="http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" doctype-public="-//OASIS//DTD DocBook XML V4.5//EN"/>
 
     <xsl:template match="refsect2">
         <xsl:element name="refsect1">
             <xsl:for-each select="@*">
-                <xsl:attribute name="{name()}"><xsl:value-of select="." /></xsl:attribute>
+                <xsl:attribute name="{name()}">
+                    <xsl:value-of select="." />
+                </xsl:attribute>
             </xsl:for-each>
             <xsl:copy-of select="node()"/>
         </xsl:element>
     </xsl:template>
+
     <xsl:template match="node()|@*">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
         </xsl:copy>
+    </xsl:template>
+
+
+    <xsl:template match="xref">
+        <xsl:choose>
+            <xsl:when test="contains(@href, 'http')">
+                <xsl:copy>
+                    <xsl:attribute name="scope">external</xsl:attribute>
+                    <xsl:apply-templates select="@*|node()"/>
+                </xsl:copy>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:copy-of select="."/>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
 </xsl:stylesheet>
