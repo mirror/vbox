@@ -982,8 +982,10 @@ int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode, uint
             vrc = pEvent->Wait(30 * 1000);
             if (RT_SUCCESS(vrc))
             {
-                /// @todo To be implemented
+                // Nothing to do here.
             }
+            else if (pEvent->HasGuestError() && pvrcGuest)
+                *pvrcGuest = pEvent->GuestResult();
         }
     }
     else
@@ -1721,8 +1723,10 @@ int GuestSession::i_fileRemove(const Utf8Str &strPath, int *pvrcGuest)
             vrc = pEvent->Wait(30 * 1000);
             if (RT_SUCCESS(vrc))
             {
-                /// @todo To be implemented
+                // Nothing to do here.
             }
+            else if (pEvent->HasGuestError() && pvrcGuest)
+                *pvrcGuest = pEvent->GuestResult();
         }
     }
     else

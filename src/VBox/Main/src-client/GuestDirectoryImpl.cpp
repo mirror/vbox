@@ -488,13 +488,16 @@ Utf8Str GuestDirectory::i_guestErrorToString(int vrcGuest, const char *pcszWhat)
 {
     AssertPtrReturn(pcszWhat, "");
 
+#define CASE_MSG(a_iRc, ...) \
+        case a_iRc: strErr.printf(__VA_ARGS__); break;
+
     Utf8Str strErr;
     switch (vrcGuest)
     {
-#define CASE_MSG(a_iRc, ...) \
-        case a_iRc: strErr.printf(__VA_ARGS__); break;
-        CASE_MSG(VERR_CANT_CREATE  , tr("Access to guest directory \"%s\" is denied"), pcszWhat);
-        CASE_MSG(VERR_DIR_NOT_EMPTY, tr("Guest directory \"%s\" is not empty"), pcszWhat);
+        CASE_MSG(VERR_ACCESS_DENIED,  tr("Access to guest directory \"%s\" is denied"), pcszWhat);
+        CASE_MSG(VERR_ALREADY_EXISTS, tr("Guest directory \"%s\" already exists"), pcszWhat);
+        CASE_MSG(VERR_CANT_CREATE,    tr("Guest directory \"%s\" cannot be created"), pcszWhat);
+        CASE_MSG(VERR_DIR_NOT_EMPTY,  tr("Guest directory \"%s\" is not empty"), pcszWhat);
         default:
             strErr.printf(tr("Error %Rrc for guest directory \"%s\" occurred\n"), vrcGuest, pcszWhat);
             break;
