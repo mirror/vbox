@@ -966,7 +966,7 @@ int GuestFile::i_readData(uint32_t uSize, uint32_t uTimeoutMS,
                 *pcbRead = cbRead;
         }
         else if (pEvent->HasGuestError()) /* Return guest vrc if available. */
-            vrc = pEvent->GetGuestError();
+            vrc = pEvent->GuestResult();
     }
 
     unregisterWaitEvent(pEvent);
@@ -1038,7 +1038,7 @@ int GuestFile::i_readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutM
                 *pcbRead = cbRead;
         }
         else if (pEvent->HasGuestError()) /* Return guest vrc if available. */
-            vrc = pEvent->GetGuestError();
+            vrc = pEvent->GuestResult();
     }
 
     unregisterWaitEvent(pEvent);
@@ -1108,7 +1108,7 @@ int GuestFile::i_seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType,
                 *puOffset = uOffset;
         }
         else if (pEvent->HasGuestError()) /* Return guest vrc if available. */
-            vrc = pEvent->GetGuestError();
+            vrc = pEvent->GuestResult();
     }
 
     unregisterWaitEvent(pEvent);
@@ -1432,7 +1432,7 @@ int GuestFile::i_writeData(uint32_t uTimeoutMS, const void *pvData, uint32_t cbD
                 *pcbWritten = cbWritten;
         }
         else if (pEvent->HasGuestError()) /* Return guest vrc if available. */
-            vrc = pEvent->GetGuestError();
+            vrc = pEvent->GuestResult();
     }
 
     unregisterWaitEvent(pEvent);
@@ -1507,7 +1507,7 @@ int GuestFile::i_writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
                 *pcbWritten = cbWritten;
         }
         else if (pEvent->HasGuestError()) /* Return guest vrc if available. */
-            vrc = pEvent->GetGuestError();
+            vrc = pEvent->GuestResult();
     }
 
     unregisterWaitEvent(pEvent);
@@ -1833,8 +1833,9 @@ HRESULT GuestFile::setSize(LONG64 aSize)
                 else
                     vrc = VWRN_GSTCTL_OBJECTSTATE_CHANGED;
             }
-            if (RT_FAILURE(vrc) && pWaitEvent->HasGuestError()) /* Return guest vrc if available. */
-                vrc = pWaitEvent->GetGuestError();
+
+            if (pWaitEvent->HasGuestError()) /* Return guest vrc if available. */
+                vrc = pWaitEvent->GuestResult();
         }
 
         /*

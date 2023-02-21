@@ -1226,12 +1226,13 @@ protected:
 
 public:
 
-    uint32_t                ContextID(void) { return mCID; };
-    int                     GuestResult(void) { return mGuestRc; }
-    int                     Result(void) { return mVrc; }
-    GuestWaitEventPayload  &Payload(void) { return mPayload; }
-    int                     SignalInternal(int vrc, int vrcGuest, const GuestWaitEventPayload *pPayload);
-    int                     Wait(RTMSINTERVAL uTimeoutMS);
+    uint32_t               ContextID(void) const { return mCID; };
+    int                    GuestResult(void) const { return mGuestRc; }
+    bool                   HasGuestError(void) const { return mVrc == VERR_GSTCTL_GUEST_ERROR; }
+    int                    Result(void) const { return mVrc; }
+    GuestWaitEventPayload &Payload(void) { return mPayload; }
+    int                    SignalInternal(int vrc, int vrcGuest, const GuestWaitEventPayload *pPayload);
+    int                    Wait(RTMSINTERVAL uTimeoutMS);
 
 protected:
 
@@ -1272,12 +1273,10 @@ public:
     int                              Init(uint32_t uCID);
     int                              Init(uint32_t uCID, const GuestEventTypes &lstEvents);
     int                              Cancel(void);
-    const ComPtr<IEvent>             Event(void) { return mEvent; }
-    bool                             HasGuestError(void) const { return mVrc == VERR_GSTCTL_GUEST_ERROR; }
-    int                              GetGuestError(void) const { return mGuestRc; }
+    const ComPtr<IEvent>             Event(void) const { return mEvent; }
     int                              SignalExternal(IEvent *pEvent);
-    const GuestEventTypes           &Types(void) { return mEventTypes; }
-    size_t                           TypeCount(void) { return mEventTypes.size(); }
+    const GuestEventTypes           &Types(void) const { return mEventTypes; }
+    size_t                           TypeCount(void) const { return mEventTypes.size(); }
 
 protected:
 

@@ -755,7 +755,7 @@ int GuestDirectory::i_rewind(uint32_t uTimeoutMS, int *pvrcGuest)
                     vrc = VWRN_GSTCTL_OBJECTSTATE_CHANGED;
             }
             else if (pEvent->HasGuestError()) /* Return guest vrc if available. */
-                vrc = pEvent->GetGuestError();
+                vrc = pEvent->GuestResult();
         }
 
         unregisterWaitEvent(pEvent);

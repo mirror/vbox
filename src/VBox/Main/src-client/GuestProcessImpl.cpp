@@ -1879,7 +1879,7 @@ int GuestProcess::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeou
             *pvrcGuest = (int)lGuestRc;
     }
     /* waitForEvent may also return VERR_GSTCTL_GUEST_ERROR like we do above, so make pvrcGuest is set. */
-    else if (vrc == VERR_GSTCTL_GUEST_ERROR && pvrcGuest)
+    else if (pEvent->HasGuestError() && pvrcGuest)
         *pvrcGuest = pEvent->GuestResult();
     Assert(vrc != VERR_GSTCTL_GUEST_ERROR || !pvrcGuest || *pvrcGuest != (int)0xcccccccc);
 

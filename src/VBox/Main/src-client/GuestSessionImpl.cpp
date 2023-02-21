@@ -1181,8 +1181,7 @@ int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t fFlags, int
     if (RT_SUCCESS(vrc))
     {
         vrc = pEvent->Wait(30 * 1000);
-        if (   vrc == VERR_GSTCTL_GUEST_ERROR
-            && pvrcGuest)
+        if (pEvent->HasGuestError() && pvrcGuest)
             *pvrcGuest = pEvent->GuestResult();
     }
 
@@ -1272,11 +1271,8 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
             }
             else
             {
-                if (vrc == VERR_GSTCTL_GUEST_ERROR)
-                {
-                    if (pvrcGuest)
-                        *pvrcGuest = pEvent->GuestResult();
-                }
+                if (pEvent->HasGuestError() && pvrcGuest)
+                    *pvrcGuest = pEvent->GuestResult();
             }
         }
     }
@@ -2016,11 +2012,8 @@ int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, Gu
             }
             else
             {
-                if (vrc == VERR_GSTCTL_GUEST_ERROR)
-                {
-                    if (pvrcGuest)
-                        *pvrcGuest = pEvent->GuestResult();
-                }
+                if (pEvent->HasGuestError() && pvrcGuest)
+                    *pvrcGuest = pEvent->GuestResult();
             }
         }
         unregisterWaitEvent(pEvent);
@@ -2872,8 +2865,7 @@ int GuestSession::i_pathRename(const Utf8Str &strSource, const Utf8Str &strDest,
     if (RT_SUCCESS(vrc))
     {
         vrc = pEvent->Wait(30 * 1000);
-        if (   vrc == VERR_GSTCTL_GUEST_ERROR
-            && pvrcGuest)
+        if (pEvent->HasGuestError() && pvrcGuest)
             *pvrcGuest = pEvent->GuestResult();
     }
 
@@ -2922,11 +2914,8 @@ int GuestSession::i_pathUserDocuments(Utf8Str &strPath, int *pvrcGuest)
         }
         else
         {
-            if (vrc == VERR_GSTCTL_GUEST_ERROR)
-            {
-                if (pvrcGuest)
-                    *pvrcGuest = pEvent->GuestResult();
-            }
+            if (pEvent->HasGuestError() && pvrcGuest)
+                *pvrcGuest = pEvent->GuestResult();
         }
     }
 
@@ -2975,11 +2964,8 @@ int GuestSession::i_pathUserHome(Utf8Str &strPath, int *pvrcGuest)
         }
         else
         {
-            if (vrc == VERR_GSTCTL_GUEST_ERROR)
-            {
-                if (pvrcGuest)
-                    *pvrcGuest = pEvent->GuestResult();
-            }
+            if (pEvent->HasGuestError() && pvrcGuest)
+                *pvrcGuest = pEvent->GuestResult();
         }
     }
 
@@ -3361,7 +3347,7 @@ int GuestSession::i_shutdown(uint32_t fFlags, int *pvrcGuest)
         vrc = pEvent->Wait(30 * 1000);
         if (RT_FAILURE(vrc))
         {
-            if (vrc == VERR_GSTCTL_GUEST_ERROR)
+            if (pEvent->HasGuestError())
                 vrcGuest = pEvent->GuestResult();
         }
     }
@@ -3369,8 +3355,7 @@ int GuestSession::i_shutdown(uint32_t fFlags, int *pvrcGuest)
     if (RT_FAILURE(vrc))
     {
         LogRel(("Guest Control: Shutting down guest failed, vrc=%Rrc\n", vrc == VERR_GSTCTL_GUEST_ERROR ? vrcGuest : vrc));
-        if (   vrc == VERR_GSTCTL_GUEST_ERROR
-            && pvrcGuest)
+        if (pEvent->HasGuestError() && pvrcGuest)
             *pvrcGuest = vrcGuest;
     }
 
@@ -3683,7 +3668,7 @@ int GuestSession::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t fWaitFl
             AssertMsgFailedReturn(("Got unexpected event type %#x\n", evtType), VERR_WRONG_ORDER);
     }
     /* waitForEvent may also return VERR_GSTCTL_GUEST_ERROR like we do above, so make pvrcGuest is set. */
-    else if (vrc == VERR_GSTCTL_GUEST_ERROR && pvrcGuest)
+    else if (pEvent->HasGuestError() && pvrcGuest)
         *pvrcGuest = pEvent->GuestResult();
     Assert(vrc != VERR_GSTCTL_GUEST_ERROR || !pvrcGuest || *pvrcGuest != (int)0xcccccccc);
 

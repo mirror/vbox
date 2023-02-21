@@ -1799,7 +1799,7 @@ int GuestWaitEventBase::SignalInternal(int vrc, int vrcGuest, const GuestWaitEve
  *
  * @returns VBox status code.
  * @retval  VERR_GSTCTL_GUEST_ERROR may be returned, call GuestResult() to get
- *          the actual result.
+ *          the actual result from the guest side.
  *
  * @param   msTimeout           Timeout (in ms) to wait.
  *                              Specifiy 0 to wait indefinitely.
