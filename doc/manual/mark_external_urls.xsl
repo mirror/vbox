@@ -26,8 +26,8 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-    <xsl:output encoding="UTF-8" method="xml" omit-xml-declaration="no" indent="yes" />
-    <xsl:output doctype-system="http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" doctype-public="-//OASIS//DTD DocBook XML V4.5//EN"/>
+    <xsl:output method="xml" indent="yes" omit-xml-declaration="no" standalone="no"/>
+    <xsl:output  encoding='UTF-8'    doctype-public="-//OASIS//DTD DITA Reference//EN"  doctype-system="reference.dtd"/>
 
     <xsl:template match="node()|@*">
         <xsl:copy>

@@ -859,6 +859,7 @@ man_vboximg-mount.xml \
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2) $(VBOX_PATH_MANUAL_SRC)/refsect2_replace.xsl $$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2)
 	$$(call MSG_TOOL,xsltproc $$(notdir $$(firstword $$(filter %.xsl,$$^))),,$$(firstword $$(filter %.xml,$$^)),$$@)
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output $$@ $$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2)
+	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output $$@ $(VBOX_PATH_MANUAL_SRC)/mark_external_urls.xsl $$@
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_REFENTRY_FILES) man_vboximg-mount.xml\
 , $(evalcall2 def_vbox_refentry_to_dita,$(lang),$(file))))
@@ -899,6 +900,7 @@ man_vboximg-mount.xml \
 	$(QUIET)$(MKDIR) -p  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/images
 	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_PATH_MANUAL_SRC)/en_US/dita/UserManual.ditamap "$(@D)"
 	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_USER_MANUAL_DITA_FILES) "$(@D)/topics"
+	$(QUIET)touch -- "$(@D)/topics/reference.dtd"
 	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_USER_MANUAL_DITA_IMAGES) "$(@D)/topics/images"
 
  define def_ditamap_to_pdf
