@@ -332,7 +332,9 @@ if [ "$ACTION" = "install" ]; then
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxSDL
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxVRDP
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxHeadless
-    ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxBalloonCtrl
+    if [ -f $INSTALLATION_DIR/VBoxBalloonCtrl ]; then
+        ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxBalloonCtrl
+    fi
     if [ -f $INSTALLATION_DIR/VBoxBugReport ]; then
         ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxBugReport
     fi

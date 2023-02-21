@@ -417,7 +417,7 @@ VBOX_DI_VBAPP_PROGS = \
 	MacOS/VBoxNetAdpCtl \
 	MacOS/VBoxExtPackHelperApp \
 	$(if $(VBOX_WITH_FE_BUGREPORT),MacOS/VBoxBugReport) \
-	MacOS/VBoxBalloonCtrl \
+	$(if $(VBOX_WITH_FE_BALLOONCTRL),MacOS/VBoxBalloonCtrl) \
 	MacOS/VBoxAutostart \
 	$(if $(VBOX_WITH_WEBSERVICES),MacOS/vboxwebsrv) \
 	$(if $(VBOX_WITH_DTRACE),MacOS/VBoxDTrace,) \
@@ -687,7 +687,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$(if-expr defined(VBOX_WITH_JXPCOM), $(addprefix $(VBOX_PATH_DIST)/, sdk/bindings/xpcom/java/vboxjxpcom.jar),) \
 		$(if-expr defined(VBOX_PROVISIONPROFILE_TEAM_ID),$(VBOX_PATH_DI_SRC)/VirtualBox/$(VBOX_PROVISIONPROFILE_TEAM_ID).provisionprofile,) \
 		$(if $(VBOX_WITH_WEBSERVICES),$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxwebsrv.plist,) \
-		$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxballoonctrl.plist \
+		$(if $(VBOX_WITH_FE_BALLOONCTRL),$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxballoonctrl.plist) \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxautostart.plist \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/VBoxAutostartDarwin.sh \
 		$(if-expr defined(VBOX_WITH_DTRACE), \
@@ -765,7 +765,9 @@ endif
 ifdef VBOX_WITH_WEBSERVICES
 	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxwebsrv.plist       $(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/
 endif
+ifdef VBOX_WITH_FE_BALLOONCTRL
 	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxballoonctrl.plist  $(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/
+endif
 	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxautostart.plist    $(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/
 	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VirtualBox/VBoxAutostartDarwin.sh                $(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/
 # Install the python bridge stuff
@@ -860,7 +862,7 @@ ifdef VBOX_SIGNING_MODE
 	$(foreach bin, $(filter-out MacOS/VirtualBox,$(VBOX_DI_VBAPP_PROGS) $(if-expr !defined(VBOX_WITH_MACOS_HARDENED_RUNTIME),$(VBOX_DI_VBAPP_PROGS_HARDENED),)) \
 		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(bin),org.virtualbox.app.macos.$(notdir $(bin))) )
 	$(foreach file, $(if-expr defined(VBOX_WITH_WEBSERVICES),MacOS/org.virtualbox.vboxwebsrv.plist,) \
-			MacOS/org.virtualbox.vboxballoonctrl.plist \
+			$(if-expr defined(VBOX_WITH_FE_BALLOONCTRL),MacOS/org.virtualbox.vboxballoonctrl.plist,) \
 			MacOS/org.virtualbox.vboxautostart.plist \
 			MacOS/VBoxAutostartDarwin.sh \
 			$(if-expr defined(VBOX_WITH_PYTHON),$(addprefix MacOS/, $(VBOX_DI_VBAPP_PYTHON_FILES) vboxshell.py),) \
@@ -1003,16 +1005,18 @@ if defined(VBOX_WITH_VBOX_IMG) || defined(VBOX_WITH_TESTCASES)
 	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/vbox-img \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/vbox-img "$$@"'
 endif
-if defined(VBOX_WITH_VBOXIMGMOUNT)
+ifdef VBOX_WITH_VBOXIMGMOUNT
 	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/vboximg-mount \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/vboximg-mount "$$@"'
 endif
-if defined(VBOX_WITH_FE_BUGREPORT)
+ifdef VBOX_WITH_FE_BUGREPORT
 	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxBugReport \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxBugReport "$$@"'
 endif
+ifdef VBOX_WITH_FE_BALLOONCTRL
 	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxBalloonCtrl \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxBalloonCtrl "$$@"'
+endif
 	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxAutostart \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxAutostart "$$@"'
 ifdef VBOX_WITH_DTRACE

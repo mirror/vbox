@@ -85,7 +85,7 @@ linux-bin_SOURCES = \
 	routines.sh \
 	VBoxSysInfo.sh \
 	vboxautostart-service.sh \
-	vboxballoonctrl-service.sh \
+	$(if $(VBOX_WITH_FE_BALLOONCTRL),vboxballoonctrl-service.sh) \
 	VBoxCreateUSBNode.sh \
 	vboxdrv.sh \
 	vboxweb-service.sh \
@@ -102,7 +102,7 @@ linux-scripts_SOURCES = \
 	routines.sh \
 	uninstall.sh \
 	vboxautostart-service.sh \
-	vboxballoonctrl-service.sh \
+	$(if $(VBOX_WITH_FE_BALLOONCTRL),vboxballoonctrl-service.sh) \
 	vboxdrv.sh \
 	vboxweb-service.sh
 
@@ -170,7 +170,7 @@ VBOX_LNX_STRIP_BIN = \
 	$(if $(VBOX_WITH_DRAG_AND_DROP),VBoxDragAndDropSvc.so,) \
 	$(if $(VBOX_WITH_MAIN), \
 	VBoxAutostart \
-	VBoxBalloonCtrl \
+	$(if $(VBOX_WITH_FE_BALLOONCTRL),VBoxBalloonCtrl,) \
 	$(if $(VBOX_WITH_FE_BUGREPORT),VBoxBugReport,) \
 	VBoxManage \
 	VBoxNetDHCP $(if $(VBOX_WITH_HARDENING),VBoxNetDHCP.so,) \
@@ -242,7 +242,7 @@ VBOX_LNX_NO_STRIP = \
 	routines.sh \
 	VBoxSysInfo.sh \
 	vboxautostart-service.sh \
-	vboxballoonctrl-service.sh \
+	$(if $(VBOX_WITH_FE_BALLOONCTRL),vboxballoonctrl-service.sh) \
 	VBoxCreateUSBNode.sh \
 	vboxdrv.sh \
 	VBox.sh \
