@@ -2327,8 +2327,10 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMkTemp(PGCTLCMDCTX pCtx, int argc, cha
     if (strTemplate.isEmpty())
         return errorSyntax(GuestCtrl::tr("No template specified!"));
 
+#ifndef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
     if (!fDirectory)
         return errorSyntax(GuestCtrl::tr("Creating temporary files is currently not supported!"));
+#endif
 
     RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
     if (rcExit != RTEXITCODE_SUCCESS)

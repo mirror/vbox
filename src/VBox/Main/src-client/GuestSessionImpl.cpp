@@ -1253,7 +1253,30 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
             vrc = pEvent->Wait(30 * 1000);
             if (RT_SUCCESS(vrc))
             {
-                /// @todo To be implemented
+                PCALLBACKDATA_FS_NOTIFY const pFsNotify = (PCALLBACKDATA_FS_NOTIFY)pEvent->Payload().Raw();
+                AssertPtrReturn(pFsNotify, VERR_INVALID_POINTER);
+                vrcGuest = (int)pFsNotify->rc;
+                if (RT_SUCCESS(vrcGuest))
+                {
+                    AssertReturn(pFsNotify->uType == GUEST_FS_NOTIFYTYPE_CREATE_TEMP, VERR_INVALID_PARAMETER);
+                    AssertReturn(pFsNotify->u.CreateTemp.cbPath, VERR_INVALID_PARAMETER);
+                    strName = pFsNotify->u.CreateTemp.pszPath;
+                    RTStrFree(pFsNotify->u.CreateTemp.pszPath);
+                }
+                else
+                {
+                    if (pvrcGuest)
+                        *pvrcGuest = vrcGuest;
+                    vrc = VERR_GSTCTL_GUEST_ERROR;
+                }
+            }
+            else
+            {
+                if (vrc == VERR_GSTCTL_GUEST_ERROR)
+                {
+                    if (pvrcGuest)
+                        *pvrcGuest = pEvent->GuestResult();
+                }
             }
         }
     }
@@ -1526,6 +1549,11 @@ int GuestSession::i_dispatchToThis(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTR
             vrc = VERR_INTERNAL_ERROR;
             break;
 
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
+        case GUEST_MSG_FS_NOTIFY:
+            vrc = i_onFsNotify(pCbCtx, pSvcCbData);
+            break;
+#endif
         case GUEST_MSG_SESSION_NOTIFY: /* Guest Additions >= 4.3.0. */
             vrc = i_onSessionStatusChange(pCbCtx, pSvcCbData);
             break;
@@ -1950,15 +1978,13 @@ int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, Gu
         if (RT_FAILURE(vrc))
             return vrc;
 
-        uint32_t fFlags = GSTCTL_QUERYINFO_F_NONE;
-        if (fFollowSymlinks)
-            fFlags |= GSTCTL_QUERYINFO_F_FOLLOW_LINK;
+        uint32_t const fFlags = fFollowSymlinks ? GSTCTL_QUERYINFO_F_FOLLOW_LINK : GSTCTL_QUERYINFO_F_ON_LINK;
 
         /* Prepare HGCM call. */
         VBOXHGCMSVCPARM paParms[4];
         int i = 0;
         HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
-        HGCMSvcSetPv (&paParms[i++], (void*)strPath.c_str(), (ULONG)strPath.length() + 1);
+        HGCMSvcSetStr(&paParms[i++], strPath.c_str());
         HGCMSvcSetU32(&paParms[i++], GSTCTLFSOBJATTRADD_UNIX /* Implicit */);
         HGCMSvcSetU32(&paParms[i++], fFlags);
 
@@ -1970,38 +1996,23 @@ int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, Gu
             vrc = pEvent->Wait(30 * 1000);
             if (RT_SUCCESS(vrc))
             {
-                /// @todo To be implemented
-            #if 0
-                const ComPtr<IEvent> pThisEvent = pEvent->Event();
-                if (pThisEvent.isNotNull()) /* Make sure that we actually have an event associated. */
+                PCALLBACKDATA_FS_NOTIFY const pFsNotify = (PCALLBACKDATA_FS_NOTIFY)pEvent->Payload().Raw();
+                AssertPtrReturn(pFsNotify, VERR_INVALID_POINTER);
+                vrcGuest = (int)pFsNotify->rc;
+                if (RT_SUCCESS(vrcGuest))
                 {
-                    if (pType)
-                    {
-                        HRESULT hrc = pThisEvent->COMGETTER(Type)(pType);
-                        if (FAILED(hrc))
-                            vrc = VERR_COM_UNEXPECTED;
-                    }
-                    if (   RT_SUCCESS(vrc)
-                        && ppEvent)
-                        pThisEvent.queryInterfaceTo(ppEvent);
-
-                    unconst(pThisEvent).setNull();
-                }
-
-                if (pEvent->Payload().Size() == sizeof(GSTCTLFSOBJINFO))
-                {
-                    HRESULT hrc1 = pFileEvent->COMGETTER(Data)(ComSafeArrayAsOutParam(data));
-                    ComAssertComRC(hrc1);
-
+                    AssertReturn(pFsNotify->uType == GUEST_FS_NOTIFYTYPE_QUERY_INFO, VERR_INVALID_PARAMETER);
                     objData.Init(strPath);
-
-                    PGSTCTLFSOBJINFO
-
-                    objData.FromGuestFsObjInfo((PGSTCTLFSOBJINFO)pEvent->Payload().Raw());
+                    vrc = objData.FromGuestFsObjInfo(&pFsNotify->u.QueryInfo.objInfo);
+                    RTStrFree(pFsNotify->u.QueryInfo.pszUser);
+                    RTStrFree(pFsNotify->u.QueryInfo.pszGroups);
                 }
                 else
-                    vrc = VERR_INVALID_PARAMETER;
-            #endif
+                {
+                    if (pvrcGuest)
+                        *pvrcGuest = vrcGuest;
+                    vrc = VERR_GSTCTL_GUEST_ERROR;
+                }
             }
             else
             {
@@ -2230,6 +2241,100 @@ int GuestSession::i_onRemove(void)
     return vrc;
 }
 
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
+/**
+ * Handles guest file system notifications.
+ *
+ * @returns VBox status code.
+ * @param   pCbCtx              Host callback context from HGCM service.
+ * @param   pSvcCbData          HGCM service callback data.
+ */
+int GuestSession::i_onFsNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
+{
+    AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSvcCbData, VERR_INVALID_POINTER);
+
+    if (pSvcCbData->mParms < 4)
+        return VERR_INVALID_PARAMETER;
+
+    CALLBACKDATA_FS_NOTIFY dataCb;
+    RT_ZERO(dataCb);
+    /* pSvcCb->mpaParms[0] always contains the context ID. */
+    int vrc = HGCMSvcGetU32(&pSvcCbData->mpaParms[1], &dataCb.uType);
+    AssertRCReturn(vrc, vrc);
+    vrc = HGCMSvcGetU32(&pSvcCbData->mpaParms[2], &dataCb.rc);
+    AssertRCReturn(vrc, vrc);
+
+    int const vrcGuest = (int)dataCb.rc;
+
+    if (RT_SUCCESS(vrcGuest))
+    {
+        switch (dataCb.uType)
+        {
+            case GUEST_FS_NOTIFYTYPE_QUERY_INFO:
+            {
+                AssertBreakStmt(pSvcCbData->mParms >= 7, VERR_INVALID_PARAMETER);
+                PGSTCTLFSOBJINFO pObjInfo;
+                uint32_t         cbObjInfo;
+                vrc = HGCMSvcGetPv(&pSvcCbData->mpaParms[3], (void **)&pObjInfo, &cbObjInfo);
+                AssertRCBreak(vrc);
+                AssertBreakStmt(cbObjInfo == sizeof(GSTCTLFSOBJINFO), VERR_INVALID_PARAMETER);
+                memcpy(&dataCb.u.QueryInfo.objInfo, pObjInfo, sizeof(GSTCTLFSOBJINFO));
+
+                char    *pszUser;
+                uint32_t cbUser;
+                vrc = HGCMSvcGetStr(&pSvcCbData->mpaParms[4], &pszUser, &cbUser);
+                AssertRCBreak(vrc);
+                dataCb.u.QueryInfo.pszUser = RTStrDup(pszUser);
+                AssertPtrBreakStmt(dataCb.u.QueryInfo.pszUser, vrc = VERR_NO_MEMORY);
+                dataCb.u.QueryInfo.cbUser  = cbUser;
+
+                char    *pszGroups;
+                uint32_t cbGroups;
+                vrc = HGCMSvcGetStr(&pSvcCbData->mpaParms[5], &pszGroups, &cbGroups);
+                AssertRCBreak(vrc);
+                dataCb.u.QueryInfo.pszGroups = RTStrDup(pszGroups);
+                AssertPtrBreakStmt(dataCb.u.QueryInfo.pszGroups, vrc = VERR_NO_MEMORY);
+                dataCb.u.QueryInfo.cbGroups  = cbGroups;
+
+                /** @todo ACLs not implemented yet. */
+                break;
+            }
+
+            case GUEST_FS_NOTIFYTYPE_CREATE_TEMP:
+            {
+                char    *pszPath;
+                uint32_t cbPath;
+                vrc = HGCMSvcGetStr(&pSvcCbData->mpaParms[3], &pszPath, &cbPath);
+                AssertRCBreak(vrc);
+                dataCb.u.CreateTemp.pszPath = RTStrDup(pszPath);
+                AssertPtrBreakStmt(dataCb.u.CreateTemp.pszPath, vrc = VERR_NO_MEMORY);
+                dataCb.u.CreateTemp.cbPath  = cbPath;
+                break;
+            }
+
+            case GUEST_FS_NOTIFYTYPE_UNKNOWN:
+                RT_FALL_THROUGH();
+            default:
+                vrc = VERR_NOT_SUPPORTED;
+                break;
+        }
+    }
+
+    try
+    {
+        GuestWaitEventPayload evPayload(dataCb.uType, &dataCb, sizeof(dataCb));
+        vrc = signalWaitEventInternal(pCbCtx, dataCb.rc, &evPayload);
+    }
+    catch (int vrcEx) /* Thrown by GuestWaitEventPayload constructor. */
+    {
+        vrc = vrcEx;
+    }
+
+    return vrc;
+}
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
+
 /**
  * Handles guest session status changes from the guest.
  *
@@ -2242,7 +2347,6 @@ int GuestSession::i_onRemove(void)
 int GuestSession::i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
 {
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
-    /* pCallback is optional. */
     AssertPtrReturn(pSvcCbData, VERR_INVALID_POINTER);
 
     if (pSvcCbData->mParms < 3)

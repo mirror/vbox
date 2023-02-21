@@ -1779,9 +1779,10 @@ static int vgsvcGstCtrlSessionHandleFsQueryInfo(const PVBOXSERVICECTRLSESSION pS
     int rc = VbglR3GuestCtrlFsGetQueryInfo(pHostCtx, szPath, sizeof(szPath), &enmAttrAdd, &fFlags);
     if (RT_SUCCESS(rc))
     {
+        uint32_t fFlagsRuntime = 0;
+
         if (!(fFlags & ~GSTCTL_QUERYINFO_F_VALID_MASK))
         {
-            uint32_t fFlagsRuntime = 0;
             if (fFlags & GSTCTL_QUERYINFO_F_ON_LINK)
                 fFlagsRuntime |= RTPATH_F_ON_LINK;
             if (fFlags & GSTCTL_QUERYINFO_F_FOLLOW_LINK)
@@ -1789,6 +1790,17 @@ static int vgsvcGstCtrlSessionHandleFsQueryInfo(const PVBOXSERVICECTRLSESSION pS
             if (fFlags & GSTCTL_QUERYINFO_F_NO_SYMLINKS)
                 fFlagsRuntime |= RTPATH_F_NO_SYMLINKS;
 
+            if (!RTPATH_F_IS_VALID(fFlagsRuntime, 0))
+                rc = VERR_INVALID_PARAMETER;
+        }
+        else
+            rc = VERR_INVALID_PARAMETER;
+
+        if (RT_FAILURE(rc))
+            VGSvcError("Invalid fsqueryinfo flags: %#x (%#x)\n", fFlags, fFlagsRuntime);
+
+        if (RT_SUCCESS(rc))
+        {
 #define CASE_ATTR_ADD_VAL(a_Val) \
             case GSTCTL##a_Val: enmAttrRuntime = RT##a_Val; break;
 
@@ -1819,11 +1831,6 @@ static int vgsvcGstCtrlSessionHandleFsQueryInfo(const PVBOXSERVICECTRLSESSION pS
             AssertCompileSize(RTFSOBJATTR, sizeof(GSTCTLFSOBJATTR));
 
             rc = RTPathQueryInfoEx(szPath, &objInfoRuntime, enmAttrRuntime, fFlagsRuntime);
-        }
-        else
-        {
-            VGSvcError("Invalid stat flags: %#x\n", fFlags);
-            rc = VERR_NOT_SUPPORTED;
         }
 
         PGSTCTLFSOBJINFO pObjInfo = (PGSTCTLFSOBJINFO)&objInfoRuntime;

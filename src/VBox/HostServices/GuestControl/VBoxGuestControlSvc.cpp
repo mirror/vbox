@@ -2247,6 +2247,9 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
         case GUEST_MSG_EXEC_IO_NOTIFY:
         case GUEST_MSG_DIR_NOTIFY:
         case GUEST_MSG_FILE_NOTIFY:
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
+        case GUEST_MSG_FS_NOTIFY:
+#endif
             LogFlowFunc(("[Client %RU32] %s\n", idClient, GstCtrlGuestMsgToStr((eGuestMsg)u32Function)));
             rc = pThis->clientToMain(pClient, u32Function /* Msg */, cParms, paParms);
             Assert(rc != VINF_HGCM_ASYNC_EXECUTE);

@@ -2624,7 +2624,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFsCbQueryInfoEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint
     AssertReturn(cbACL, VERR_INVALID_PARAMETER);
 
     HGCMReplyFsNotify Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.reply_hdr.hdr, pCtx->uClientID, GUEST_MSG_FS_NOTIFY, 4);
+    VBGL_HGCM_HDR_INIT(&Msg.reply_hdr.hdr, pCtx->uClientID, GUEST_MSG_FS_NOTIFY, 7);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.type, GUEST_FS_NOTIFYTYPE_QUERY_INFO);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.rc, uRc);
@@ -2633,7 +2633,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFsCbQueryInfoEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint
     VbglHGCMParmPtrSetString(&Msg.u.queryinfo.groups, pszGroups);
     VbglHGCMParmPtrSet      (&Msg.u.queryinfo.acl,    pvACL, cbACL);
 
-    return VbglR3HGCMCall(&Msg.reply_hdr.hdr, RT_UOFFSET_AFTER(HGCMReplyDirNotify, u.read));
+    return VbglR3HGCMCall(&Msg.reply_hdr.hdr, RT_UOFFSET_AFTER(HGCMReplyFsNotify, u.queryinfo));
 }
 
 

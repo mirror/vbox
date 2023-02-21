@@ -1455,5 +1455,47 @@ public:
     static int Translate(Utf8Str &strPath, PathStyle_T enmSrcPathStyle, PathStyle_T enmDstPathStyle, bool fForce = false);
     /** @}  */
 };
+
+
+/*******************************************************************************
+* Callback data structures.                                                    *
+*******************************************************************************/
+
+/**
+ * Callback data for guest file system operations.
+ */
+typedef struct CALLBACKDATA_FS_NOTIFY
+{
+    /** Callback data header. */
+    CALLBACKDATA_HEADER hdr;
+    /** Notification type (of type GUEST_FS_NOTIFYTYPE_XXX). */
+    uint32_t uType;
+    /** IPRT result of overall operation. */
+    uint32_t rc;
+    union
+    {
+        struct
+        {
+            GSTCTLFSOBJINFO objInfo;
+            /** Resolved user name. */
+            char           *pszUser;
+            /** Size (in bytes) of \a pszUser. */
+            uint32_t        cbUser;
+            /** Resolved user group(s). */
+            char           *pszGroups;
+            /** Size (in bytes) of \a pszGroups. */
+            uint32_t        cbGroups;
+        } QueryInfo;
+        struct
+        {
+            /** Path of created temporary file / directory. */
+            char    *pszPath;
+            /** Size (in bytes) of \a pszPath. */
+            uint32_t cbPath;
+        } CreateTemp;
+    } u;
+} CALLBACKDATA_FS_NOTIFY;
+/** Pointer to a CALLBACKDATA_FS_NOTIFY struct. */
+typedef CALLBACKDATA_FS_NOTIFY *PCALLBACKDATA_FS_NOTIFY;
 #endif /* !MAIN_INCLUDED_GuestCtrlImplPrivate_h */
 
