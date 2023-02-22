@@ -374,6 +374,7 @@ ifdef VBOX_WITH_32_ON_64_MAIN_API
  SOLARIS_STRIP_BINS += \
  	VBoxRT-x86.so \
  	VBoxXPCOM-x86.so \
+ 	VBoxCAPI-x86.so \
  	components/VBoxClient-x86.so \
  	components/VBoxSVCM-x86.so \
  	components/VBoxXPCOMIPCC-x86.so
