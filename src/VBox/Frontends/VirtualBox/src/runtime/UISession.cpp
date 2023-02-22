@@ -261,7 +261,7 @@ WId UISession::mainMachineWindowId() const
 bool UISession::acquireLiveMachineState(KMachineState &enmState)
 {
     CMachine comMachine = machine();
-    KMachineState enmMachineState = comMachine.GetState();
+    const KMachineState enmMachineState = comMachine.GetState();
     const bool fSuccess = comMachine.isOk();
     if (!fSuccess)
         UINotificationMessage::cannotAcquireMachineParameter(comMachine);
@@ -718,7 +718,7 @@ bool UISession::acquireWhetherAccelerate3DEnabled(bool &fEnabled)
         if (!fSuccess)
             UINotificationMessage::cannotAcquireGraphicsAdapterParameter(comAdapter);
         else
-            fEnabled = fAccelerate3DEnabeld;
+            fEnabled = fAccelerate3DEnabeld == TRUE;
     }
     return fSuccess;
 }
@@ -755,12 +755,15 @@ bool UISession::acquireGuestScreenParameters(ulong uScreenId,
     const bool fSuccess = comDisplay.isOk();
     if (!fSuccess)
         UINotificationMessage::cannotAcquireDisplayParameter(comDisplay);
-    uWidth = uGuestWidth;
-    uHeight = uGuestHeight;
-    uBitsPerPixel = uGuestBitsPerPixel;
-    xOrigin = iGuestXOrigin;
-    yOrigin = iGuestYOrigin;
-    enmMonitorStatus = enmGuestMonitorStatus;
+    else
+    {
+        uWidth = uGuestWidth;
+        uHeight = uGuestHeight;
+        uBitsPerPixel = uGuestBitsPerPixel;
+        xOrigin = iGuestXOrigin;
+        yOrigin = iGuestYOrigin;
+        enmMonitorStatus = enmGuestMonitorStatus;
+    }
     return fSuccess;
 }
 
@@ -781,7 +784,7 @@ bool UISession::acquireVideoModeHint(ulong uScreenId, bool &fEnabled, bool &fCha
                                      ulong &uBitsPerPixel)
 {
     CDisplay comDisplay = display();
-    BOOL fGuestEnabled = false, fGuestChangeOrigin = false;
+    BOOL fGuestEnabled = FALSE, fGuestChangeOrigin = FALSE;
     LONG iGuestXOrigin = 0, iGuestYOrigin = 0;
     ULONG uGuestWidth = 0, uGuestHeight = 0, uGuestBitsPerPixel = 0;
     comDisplay.GetVideoModeHint(uScreenId, fGuestEnabled, fGuestChangeOrigin,
@@ -790,13 +793,16 @@ bool UISession::acquireVideoModeHint(ulong uScreenId, bool &fEnabled, bool &fCha
     const bool fSuccess = comDisplay.isOk();
     if (!fSuccess)
         UINotificationMessage::cannotAcquireDisplayParameter(comDisplay);
-    fEnabled = fGuestEnabled;
-    fChangeOrigin = fGuestChangeOrigin;
-    xOrigin = iGuestXOrigin;
-    yOrigin = iGuestYOrigin;
-    uWidth = uGuestWidth;
-    uHeight = uGuestHeight;
-    uBitsPerPixel = uGuestBitsPerPixel;
+    else
+    {
+        fEnabled = fGuestEnabled == TRUE;
+        fChangeOrigin = fGuestChangeOrigin == TRUE;
+        xOrigin = iGuestXOrigin;
+        yOrigin = iGuestYOrigin;
+        uWidth = uGuestWidth;
+        uHeight = uGuestHeight;
+        uBitsPerPixel = uGuestBitsPerPixel;
+    }
     return fSuccess;
 }
 
@@ -894,10 +900,12 @@ bool UISession::invalidateAndUpdateScreen(ulong uScreenId)
 bool UISession::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states)
 {
     CConsole comConsole = console();
-    states = comConsole.GetDeviceActivity(deviceTypes);
+    const QVector<KDeviceActivity> currentStates = comConsole.GetDeviceActivity(deviceTypes);
     const bool fSuccess = comConsole.isOk();
     if (!fSuccess)
         UINotificationMessage::cannotAcquireConsoleParameter(comConsole);
+    else
+        states = currentStates;
     return fSuccess;
 }
 
