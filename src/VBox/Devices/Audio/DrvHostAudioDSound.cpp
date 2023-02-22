@@ -248,10 +248,6 @@ typedef struct DRVHOSTDSOUND
 static HRESULT  directSoundPlayRestore(PDRVHOSTDSOUND pThis, LPDIRECTSOUNDBUFFER8 pDSB);
 static int      drvHostDSoundStreamStopPlayback(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, bool fReset);
 
-static int      dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PDMAUDIOHOSTENUM pDevEnm, uint32_t fEnum);
-
-static void     dsoundUpdateStatusInternal(PDRVHOSTDSOUND pThis);
-
 
 #if defined(LOG_ENABLED) || defined(RTLOG_REL_ENABLED)
 /**
@@ -714,47 +710,6 @@ static HRESULT drvHostDSoundCreateDSCaptureInstance(LPCGUID pGUID, LPDIRECTSOUND
 
     LogFlowFunc(("LEAVE %Rhrc\n", hrc));
     return hrc;
-}
-
-
-/**
- * Updates this host driver's internal status, according to the global, overall input/output
- * state and all connected (native) audio streams.
- *
- * @todo r=bird: This is a 'ing waste of 'ing time!  We're doing this everytime
- *       an 'ing stream is created and we doesn't 'ing use the information here
- *       for any darn thing!  Given the reported slowness of enumeration and
- *       issues with the 'ing code the only appropriate response is:
- *       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARG!!!!!!!
- *
- * @param   pThis               Host audio driver instance.
- */
-static void dsoundUpdateStatusInternal(PDRVHOSTDSOUND pThis)
-{
-#if 0 /** @todo r=bird: This isn't doing *ANYTHING* useful. So, I've just disabled it.  */
-    AssertPtrReturnVoid(pThis);
-    LogFlowFuncEnter();
-
-    PDMAudioHostEnumDelete(&pThis->DeviceEnum);
-    int rc = dsoundDevicesEnumerate(pThis, &pThis->DeviceEnum);
-    if (RT_SUCCESS(rc))
-    {
-#if 0
-        if (   pThis->fEnabledOut != RT_BOOL(cbCtx.cDevOut)
-            || pThis->fEnabledIn  != RT_BOOL(cbCtx.cDevIn))
-        {
-            /** @todo Use a registered callback to the audio connector (e.g "OnConfigurationChanged") to
-             *        let the connector know that something has changed within the host backend. */
-        }
-#endif
-        pThis->fEnabledIn  = PDMAudioHostEnumCountMatching(&pThis->DeviceEnum, PDMAUDIODIR_IN)  != 0;
-        pThis->fEnabledOut = PDMAudioHostEnumCountMatching(&pThis->DeviceEnum, PDMAUDIODIR_OUT) != 0;
-    }
-
-    LogFlowFuncLeaveRC(rc);
-#else
-    RT_NOREF(pThis);
-#endif
 }
 
 
@@ -1696,9 +1651,6 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamCreate(PPDMIHOSTAUDIO pInterface,
     LogFlowFunc(("enmPath=%s '%s'\n", PDMAudioPathGetName(pCfgReq->enmPath), pCfgReq->szName));
     RTListInit(&pStreamDS->ListEntry); /* paranoia */
 
-    /* For whatever reason: */
-    dsoundUpdateStatusInternal(pThis);
-
     /*
      * DSound has different COM interfaces for working with input and output
      * streams, so we'll quickly part ways here after some common format
@@ -2377,9 +2329,6 @@ static DECLCALLBACK(int) drvHostDSoundHA_StreamPlay(PPDMIHOSTAUDIO pInterface, P
         return VINF_SUCCESS;
     }
     Log4Func(("cbBuf=%#x stream '%s' {%s}\n", cbBuf, pStreamDS->Cfg.szName, drvHostDSoundStreamStatusString(pStreamDS) ));
-
-/** @todo Any condition under which we should call dsoundUpdateStatusInternal(pThis) here?
- * The old code thought it did so in case of failure, only it couldn't ever fails, so it never did. */
 
     /*
      * Transfer loop.
