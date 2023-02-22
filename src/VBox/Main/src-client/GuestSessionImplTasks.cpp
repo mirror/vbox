@@ -2683,7 +2683,7 @@ int GuestSessionTaskUpdateAdditions::checkGuestAdditionsStatus(GuestSession *pSe
 {
     int vrc = VINF_SUCCESS;
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
-    int hrc;
+    HRESULT hrc;
 
     if (osType == eOSType_Linux)
     {
