@@ -613,7 +613,7 @@ void UICommon::prepare()
             if (machine.isNull() && showStartVMErrors())
                 return msgCenter().cannotFindMachineByName(m_comVBox, vmNameOrUuid);
         }
-        m_strManagedVMId = machine.GetId();
+        m_uManagedVMId = machine.GetId();
 
         if (m_fSeparateProcess)
         {
@@ -666,8 +666,8 @@ void UICommon::prepare()
     if (m_fSettingsPwSet)
         m_comVBox.SetSettingsSecret(m_astrSettingsPw);
 
-    if (visualStateType != UIVisualStateType_Invalid && !m_strManagedVMId.isNull())
-        gEDataManager->setRequestedVisualState(visualStateType, m_strManagedVMId);
+    if (visualStateType != UIVisualStateType_Invalid && !m_uManagedVMId.isNull())
+        gEDataManager->setRequestedVisualState(visualStateType, m_uManagedVMId);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* For Runtime UI: */

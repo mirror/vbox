@@ -1553,7 +1553,7 @@ void UIMachineLogic::sltOpenSettingsDialog(const QString &strCategory /* = QStri
     if (!m_settings.contains(UISettingsDialog::DialogType_Machine))
     {
         m_settings[UISettingsDialog::DialogType_Machine] = new UISettingsDialogMachine(activeMachineWindow(),
-                                                                                       machine().GetId(),
+                                                                                       uiCommon().managedVMUuid(),
                                                                                        actionPool(),
                                                                                        strCategory,
                                                                                        strControl);
@@ -1669,7 +1669,7 @@ void UIMachineLogic::sltShowFileManagerDialog()
     }
 
     QIManagerDialog *pFileManagerDialog;
-    UIFileManagerDialogFactory dialogFactory(actionPool(), machine().GetId(), machine().GetName());
+    UIFileManagerDialogFactory dialogFactory(actionPool(), uiCommon().managedVMUuid(), uimachine()->machineName());
     dialogFactory.prepare(pFileManagerDialog, activeMachineWindow());
     if (pFileManagerDialog)
     {
@@ -1707,7 +1707,7 @@ void UIMachineLogic::sltShowLogDialog()
         return;
 
     QIManagerDialog *pLogViewerDialog;
-    UIVMLogViewerDialogFactory dialogFactory(actionPool(), machine().GetId(), machine().GetName());
+    UIVMLogViewerDialogFactory dialogFactory(actionPool(), uiCommon().managedVMUuid(), uimachine()->machineName());
     dialogFactory.prepare(pLogViewerDialog, activeMachineWindow());
     if (pLogViewerDialog)
     {
@@ -1863,7 +1863,7 @@ void UIMachineLogic::sltTakeScreenshot()
     /* Formatting default filename for screenshot. VM folder is the default directory to save: */
     const QFileInfo fi(machine().GetSettingsFilePath());
     const QString strCurrentTime = QDateTime::currentDateTime().toString("dd_MM_yyyy_hh_mm_ss");
-    const QString strFormatDefaultFileName = QString("VirtualBox").append("_").append(machine().GetName()).append("_").append(strCurrentTime);
+    const QString strFormatDefaultFileName = QString("VirtualBox").append("_").append(uimachine()->machineName()).append("_").append(strCurrentTime);
     const QString strDefaultFileName = QDir(fi.absolutePath()).absoluteFilePath(strFormatDefaultFileName);
 
     /* Formatting temporary filename for screenshot. It is saved in system temporary directory if available, else in VM folder: */
@@ -1975,7 +1975,7 @@ void UIMachineLogic::sltToggleRecording(bool fEnabled)
         /* Make sure action is updated: */
         uimachine()->updateStateRecordingAction();
         /* Notify about the error: */
-        return UINotificationMessage::cannotToggleRecording(comRecordingSettings, machine().GetName(), fEnabled);
+        return UINotificationMessage::cannotToggleRecording(comRecordingSettings, uimachine()->machineName(), fEnabled);
     }
 
     /* Save machine-settings: */
@@ -2039,7 +2039,7 @@ void UIMachineLogic::sltShowSoftKeyboard()
     if (!m_pSoftKeyboardDialog)
     {
         QWidget *pCenterWidget = windowManager().realParentWindow(activeMachineWindow());
-        m_pSoftKeyboardDialog = new UISoftKeyboard(0, uimachine(), pCenterWidget, machine().GetName());
+        m_pSoftKeyboardDialog = new UISoftKeyboard(0, uimachine(), pCenterWidget, uimachine()->machineName());
         connect(m_pSoftKeyboardDialog, &UISoftKeyboard::sigClose, this, &UIMachineLogic::sltCloseSoftKeyboardDefault);
     }
 
@@ -3113,7 +3113,7 @@ void UIMachineLogic::activateScreenSaver()
     bool fAnother = false;
     for (int i = 0; i < machines.size(); ++i)
     {
-        if (machines[i].GetState() == KMachineState_Running && machines[i].GetId() != machine().GetId())
+        if (machines[i].GetState() == KMachineState_Running && machines[i].GetId() != uiCommon().managedVMUuid())
         {
             fAnother = true;
             break;
