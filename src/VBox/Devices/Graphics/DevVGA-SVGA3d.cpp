@@ -1146,6 +1146,7 @@ int vmsvga3dScreenUpdate(PVGASTATECC pThisCC, uint32_t idDstScreen, SVGASignedRe
         uint8_t const *pu8Src = (uint8_t *)srcMap.pvData;
 
         uint32_t const cbDst = pScreen->cHeight * pScreen->cbPitch;
+        uint32_t cbScreenPixel = RT_ALIGN(pScreen->cBpp, 8) / 8;
         uint8_t *pu8Dst;
         if (pScreen->pvScreenBitmap)
             pu8Dst = (uint8_t *)pScreen->pvScreenBitmap;
@@ -1185,23 +1186,30 @@ int vmsvga3dScreenUpdate(PVGASTATECC pThisCC, uint32_t idDstScreen, SVGASignedRe
                 + ((box.x + pSurface->cxBlock - 1) / pSurface->cxBlock) * pSurface->cxBlock * pSurface->cbBlock
                 + ((box.y + pSurface->cyBlock - 1) / pSurface->cyBlock) * pSurface->cyBlock * srcMap.cbRowPitch;
 
-            /* The 'box' is actually in the destination coordinates relative to the top-left corner of destRect.
-             * Therefore it is relative to the top-left corner of srcRect as well.
+            /* The 'box' is in coordinates relative to the top-left dstRect or srcRect corner.
+             * The 'dstBoxAbs' and 'srcBoxAbs' are absolute coordinates of 'box' within screen object or texture face (respectively).
              */
-            box.x += srcBox.x;
-            box.y += srcBox.y;
+            SVGA3dBox srcBoxAbs = box, dstBoxAbs = box;
+
+            srcBoxAbs.x += srcBox.x;
+            srcBoxAbs.y += srcBox.y;
+
+            dstBoxAbs.x += dstBox.x;
+            dstBoxAbs.y += dstBox.y;
+
+            uint32_t offDst = pScreen->cbPitch * dstBoxAbs.y + cbScreenPixel * dstBoxAbs.x;
 
             VMSGA3D_BOX_DIMENSIONS srcDims;
-            rc = vmsvga3dGetBoxDimensions(pThisCC, &srcImage, &box, &srcDims);
+            rc = vmsvga3dGetBoxDimensions(pThisCC, &srcImage, &srcBoxAbs, &srcDims);
             if (RT_SUCCESS(rc))
             {
                 AssertContinue(srcDims.cyBlocks > 0);
 
-                ASSERT_GUEST_BREAK(   srcDims.offBox <= cbDst
-                                   && pScreen->cbPitch * (srcDims.cyBlocks - 1) + srcDims.cbRow <= cbDst - srcDims.offBox);
+                ASSERT_GUEST_BREAK(   offDst <= cbDst
+                                   && pScreen->cbPitch * (srcDims.cyBlocks - 1) + srcDims.cbRow <= cbDst - offDst);
                 RT_UNTRUSTED_VALIDATED_FENCE();
 
-                uint8_t *pu8DstBox = pu8Dst + srcDims.offBox;
+                uint8_t *pu8DstBox = pu8Dst + offDst;
 
                 if (   pSurface->format == SVGA3D_R8G8B8A8_UNORM
                     || pSurface->format == SVGA3D_R8G8B8A8_UNORM_SRGB)
