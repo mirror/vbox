@@ -767,6 +767,28 @@ bool UISession::acquireGuestScreenParameters(ulong uScreenId,
     return fSuccess;
 }
 
+bool UISession::acquireSavedGuestScreenInfo(ulong uScreenId,
+                                            long &xOrigin, long &yOrigin,
+                                            ulong &uWidth, ulong &uHeight, bool &fEnabled)
+{
+    CMachine comMachine = machine();
+    ULONG uGuestXOrigin = 0, uGuestYOrigin = 0, uGuestWidth = 0, uGuestHeight = 0;
+    BOOL fGuestEnabled = FALSE;
+    comMachine.QuerySavedGuestScreenInfo(uScreenId, uGuestXOrigin, uGuestYOrigin, uGuestWidth, uGuestHeight, fGuestEnabled);
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        xOrigin = uGuestXOrigin;
+        yOrigin = uGuestYOrigin;
+        uWidth = uGuestWidth;
+        uHeight = uGuestHeight;
+        fEnabled = fGuestEnabled == TRUE;
+    }
+    return fSuccess;
+}
+
 bool UISession::setVideoModeHint(ulong uScreenId, bool fEnabled, bool fChangeOrigin, long xOrigin, long yOrigin,
                                  ulong uWidth, ulong uHeight, ulong uBitsPerPixel, bool fNotify)
 {
@@ -833,6 +855,23 @@ bool UISession::acquireScreenShot(ulong uScreenId, ulong uWidth, ulong uHeight, 
         fSuccess = comDisplay.isOk();
         if (!fSuccess)
             UINotificationMessage::cannotAcquireDisplayParameter(comDisplay);
+    }
+    return fSuccess;
+}
+
+bool UISession::acquireSavedScreenshotInfo(ulong uScreenId, ulong &uWidth, ulong &uHeight, QVector<KBitmapFormat> &formats)
+{
+    CMachine comMachine = machine();
+    ULONG uGuestWidth = 0, uGuestHeight = 0;
+    QVector<KBitmapFormat> guestFormats = comMachine.QuerySavedScreenshotInfo(uScreenId, uGuestWidth, uGuestHeight);
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        uWidth = uGuestWidth;
+        uHeight = uGuestHeight;
+        formats = guestFormats;
     }
     return fSuccess;
 }

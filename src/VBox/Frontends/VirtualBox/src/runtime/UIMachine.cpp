@@ -479,6 +479,15 @@ bool UIMachine::acquireGuestScreenParameters(ulong uScreenId,
                                                      xOrigin, yOrigin, enmMonitorStatus);
 }
 
+bool UIMachine::acquireSavedGuestScreenInfo(ulong uScreenId,
+                                            long &xOrigin, long &yOrigin,
+                                            ulong &uWidth, ulong &uHeight, bool &fEnabled)
+{
+    return uisession()->acquireSavedGuestScreenInfo(uScreenId,
+                                                    xOrigin, yOrigin,
+                                                    uWidth, uHeight, fEnabled);
+}
+
 bool UIMachine::setVideoModeHint(ulong uScreenId, bool fEnabled, bool fChangeOrigin,
                                  long xOrigin, long yOrigin, ulong uWidth, ulong uHeight,
                                  ulong uBitsPerPixel, bool fNotify)
@@ -500,6 +509,11 @@ bool UIMachine::acquireVideoModeHint(ulong uScreenId, bool &fEnabled, bool &fCha
 bool UIMachine::acquireScreenShot(ulong uScreenId, ulong uWidth, ulong uHeight, KBitmapFormat enmFormat, uchar *pBits)
 {
     return uisession()->acquireScreenShot(uScreenId, uWidth, uHeight, enmFormat, pBits);
+}
+
+bool UIMachine::acquireSavedScreenshotInfo(ulong uScreenId, ulong &uWidth, ulong &uHeight, QVector<KBitmapFormat> &formats)
+{
+    return uisession()->acquireSavedScreenshotInfo(uScreenId, uWidth, uHeight, formats);
 }
 
 bool UIMachine::notifyScaleFactorChange(ulong uScreenId, ulong uScaleFactorWMultiplied, ulong uScaleFactorHMultiplied)
@@ -1378,11 +1392,10 @@ void UIMachine::prepareScreens()
         /* Update screen visibility status from saved-state: */
         for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
         {
-            BOOL fEnabled = true;
-            ULONG uGuestOriginX = 0, uGuestOriginY = 0, uGuestWidth = 0, uGuestHeight = 0;
-            uisession()->machine().QuerySavedGuestScreenInfo(iScreenIndex,
-                                                             uGuestOriginX, uGuestOriginY,
-                                                             uGuestWidth, uGuestHeight, fEnabled);
+            long iDummy = 0;
+            ulong uDummy = 0;
+            bool fEnabled = true;
+            acquireSavedGuestScreenInfo(iScreenIndex, iDummy, iDummy, uDummy, uDummy, fEnabled);
             m_monitorVisibilityVector[iScreenIndex] = fEnabled;
         }
         /* And make sure at least one of them is visible (primary if others are hidden): */

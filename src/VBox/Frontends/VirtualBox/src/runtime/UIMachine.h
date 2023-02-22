@@ -302,6 +302,10 @@ public:
         bool acquireGuestScreenParameters(ulong uScreenId,
                                           ulong &uWidth, ulong &uHeight, ulong &uBitsPerPixel,
                                           long &xOrigin, long &yOrigin, KGuestMonitorStatus &enmMonitorStatus);
+        /** Acquires saved info for guest-screen with passed uScreenId. */
+        bool acquireSavedGuestScreenInfo(ulong uScreenId,
+                                         long &xOrigin, long &yOrigin,
+                                         ulong &uWidth, ulong &uHeight, bool &fEnabled);
         /** Defines video mode hint for guest-screen with passed uScreenId. */
         bool setVideoModeHint(ulong uScreenId, bool fEnabled, bool fChangeOrigin,
                               long xOrigin, long yOrigin, ulong uWidth, ulong uHeight,
@@ -312,6 +316,8 @@ public:
                                   ulong &uBitsPerPixel);
         /** Acquires screen-shot for guest-screen with passed uScreenId. */
         bool acquireScreenShot(ulong uScreenId, ulong uWidth, ulong uHeight, KBitmapFormat enmFormat, uchar *pBits);
+        /** Acquires saved screen-shot info for guest-screen with passed uScreenId. */
+        bool acquireSavedScreenshotInfo(ulong uScreenId, ulong &uWidth, ulong &uHeight, QVector<KBitmapFormat> &formats);
         /** Notifies guest-screen with passed uScreenId about scale-factor change. */
         bool notifyScaleFactorChange(ulong uScreenId, ulong uScaleFactorWMultiplied, ulong uScaleFactorHMultiplied);
         /** Notifies display about unscaled HiDPI policy change. */

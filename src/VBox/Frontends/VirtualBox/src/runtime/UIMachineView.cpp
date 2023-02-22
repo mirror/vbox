@@ -1282,16 +1282,20 @@ void UIMachineView::prepareFrameBuffer()
         /* If there is a preview image saved, we will resize the framebuffer to the size of that image: */
         if (enmActualState == KMachineState_Saved || enmActualState == KMachineState_AbortedSaved)
         {
-            ULONG uWidth = 0, uHeight = 0;
-            QVector<KBitmapFormat> formats = machine().QuerySavedScreenshotInfo(0, uWidth, uHeight);
+            ulong uWidth = 0, uHeight = 0;
+            QVector<KBitmapFormat> formats;
+            uimachine()->acquireSavedScreenshotInfo(m_uScreenId, uWidth, uHeight, formats);
             if (formats.size() > 0)
             {
                 /* Init with the screenshot size: */
                 size = QSize(uWidth, uHeight);
                 /* Try to get the real guest dimensions from the save-state: */
-                ULONG uGuestOriginX = 0, uGuestOriginY = 0, uGuestWidth = 0, uGuestHeight = 0;
-                BOOL fEnabled = true;
-                machine().QuerySavedGuestScreenInfo(m_uScreenId, uGuestOriginX, uGuestOriginY, uGuestWidth, uGuestHeight, fEnabled);
+                long iDummy = 0;
+                ulong uGuestWidth = 0, uGuestHeight = 0;
+                bool fDummy = true;
+                uimachine()->acquireSavedGuestScreenInfo(m_uScreenId,
+                                                         iDummy, iDummy,
+                                                         uGuestWidth, uGuestHeight, fDummy);
                 if (uGuestWidth  > 0 && uGuestHeight > 0)
                     size = QSize(uGuestWidth, uGuestHeight);
             }
@@ -1634,9 +1638,10 @@ void UIMachineView::takePausePixmapSnapshot()
         return;
 
     /* Acquire the screen-data properties from the saved-state: */
-    ULONG uGuestOriginX = 0, uGuestOriginY = 0, uGuestWidth = 0, uGuestHeight = 0;
-    BOOL fEnabled = true;
-    machine().QuerySavedGuestScreenInfo(m_uScreenId, uGuestOriginX, uGuestOriginY, uGuestWidth, uGuestHeight, fEnabled);
+    long iDummy = 0;
+    ulong uGuestWidth = 0, uGuestHeight = 0;
+    bool fDummy = true;
+    uimachine()->acquireSavedGuestScreenInfo(m_uScreenId, iDummy, iDummy, uGuestWidth, uGuestHeight, fDummy);
 
     /* Calculate effective size: */
     QSize effectiveSize = uGuestWidth > 0 ? QSize(uGuestWidth, uGuestHeight) : storedGuestScreenSizeHint();
