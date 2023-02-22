@@ -2673,13 +2673,64 @@ int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, Gues
 }
 
 /**
+ * Helper function which checks Guest Additions installation status.
+ *
+ * @returns IPRT status code.
+ * @param   pSession    Guest session to use.
+ * @param   osType      Guest type.
+ */
+int GuestSessionTaskUpdateAdditions::checkGuestAdditionsStatus(GuestSession *pSession, eOSType osType)
+{
+    int vrc = VINF_SUCCESS;
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
+    int hrc;
+
+    if (osType == eOSType_Linux)
+    {
+        const Utf8Str ksStatusScript = Utf8Str("/usr/sbin/rcvboxadd");
+
+        /* Check if Guest Additions kernel modules were loaded. */
+        GuestProcessStartupInfo procInfo;
+        procInfo.mFlags = ProcessCreateFlag_None;
+        procInfo.mExecutable = Utf8Str("/bin/sh");;
+        procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
+        procInfo.mArguments.push_back(ksStatusScript);
+        procInfo.mArguments.push_back("status-kernel");
+
+        vrc = runFileOnGuest(pSession, procInfo);
+        if (RT_SUCCESS(vrc))
+        {
+            /* Replace the last argument with corresponding value and check
+             * if Guest Additions user services were started. */
+            procInfo.mArguments.pop_back();
+            procInfo.mArguments.push_back("status-user");
+
+            vrc = runFileOnGuest(pSession, procInfo);
+            if (RT_FAILURE(vrc))
+                hrc = setProgressErrorMsg(VBOX_E_GSTCTL_GUEST_ERROR,
+                                          Utf8StrFmt(tr("Automatic update of Guest Additions has failed: "
+                                                        "files were installed, but user services were not reloaded automatically. "
+                                                        "Please consider rebooting the guest")));
+        }
+        else
+            hrc = setProgressErrorMsg(VBOX_E_GSTCTL_GUEST_ERROR,
+                                      Utf8StrFmt(tr("Automatic update of Guest Additions has failed: "
+                                                    "files were installed, but kernel modules were not reloaded automatically. "
+                                                    "Please consider rebooting the guest")));
+    }
+#endif
+    return vrc;
+}
+
+/**
  * Helper function which waits until Guest Additions services started.
  *
  * @returns 0 on success or VERR_TIMEOUT if guest services were not
  *          started on time.
  * @param   pGuest      Guest interface to use.
+ * @param   osType      Guest type.
  */
-int GuestSessionTaskUpdateAdditions::waitForGuestSession(ComObjPtr<Guest> pGuest)
+int GuestSessionTaskUpdateAdditions::waitForGuestSession(ComObjPtr<Guest> pGuest, eOSType osType)
 {
     int vrc                         = VERR_GSTCTL_GUEST_ERROR;
     int vrcRet                      = VERR_TIMEOUT;
@@ -2713,6 +2764,13 @@ int GuestSessionTaskUpdateAdditions::waitForGuestSession(ComObjPtr<Guest> pGuest
                 vrc = pSession->i_waitFor(GuestSessionWaitForFlag_Start, 100 /* timeout, ms */, enmWaitResult, &vrcGuest2);
                 if (RT_SUCCESS(vrc))
                 {
+                    /* Make sure Guest Additions were reloaded on the guest side. */
+                    vrc = checkGuestAdditionsStatus(pSession, osType);
+                    if (RT_SUCCESS(vrc))
+                        LogRel(("Guest Additions were successfully reloaded after installation\n"));
+                    else
+                        LogRel(("Guest Additions were failed to reload after installation, please consider rebooting the guest\n"));
+
                     vrc = pSession->Close();
                     vrcRet = VINF_SUCCESS;
                     break;
@@ -3227,7 +3285,7 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                             LogRel(("Old guest session has terminated, waiting updated guest services to start\n"));
 
                             /* Wait for VBoxService to restart. */
-                            vrc = waitForGuestSession(pSession->i_getParent());
+                            vrc = waitForGuestSession(pSession->i_getParent(), osType);
                             if (RT_FAILURE(vrc))
                                 hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                                           Utf8StrFmt(tr("Automatic update of Guest Additions has failed: "
