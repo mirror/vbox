@@ -1265,30 +1265,36 @@ void UIMachineView::prepareFrameBuffer()
     /* Calculate frame-buffer size: */
     QSize size;
     {
-#ifdef VBOX_WS_X11
-        // WORKAROUND:
-        // Processing pseudo resize-event to synchronize frame-buffer with stored framebuffer size.
-        // On X11 this have to be additionally done when the machine state was 'saved'.
+        /* Acquire actual machine state to be sure: */
         KMachineState enmActualState = KMachineState_Null;
         uimachine()->acquireLiveMachineState(enmActualState);
+
+#ifdef VBOX_WS_X11
+        // WORKAROUND:
+        // No idea why this was required for X11 before.
+        // Currently I don't see a reason why I should keep it.
+# if 0
         if (enmActualState == KMachineState_Saved || enmActualState == KMachineState_AbortedSaved)
             size = storedGuestScreenSizeHint();
+# endif
 #endif /* VBOX_WS_X11 */
 
-        /* If there is a preview image saved,
-         * we will resize the framebuffer to the size of that image: */
-        ULONG uWidth = 0, uHeight = 0;
-        QVector<KBitmapFormat> formats = machine().QuerySavedScreenshotInfo(0, uWidth, uHeight);
-        if (formats.size() > 0)
+        /* If there is a preview image saved, we will resize the framebuffer to the size of that image: */
+        if (enmActualState == KMachineState_Saved || enmActualState == KMachineState_AbortedSaved)
         {
-            /* Init with the screenshot size: */
-            size = QSize(uWidth, uHeight);
-            /* Try to get the real guest dimensions from the save-state: */
-            ULONG uGuestOriginX = 0, uGuestOriginY = 0, uGuestWidth = 0, uGuestHeight = 0;
-            BOOL fEnabled = true;
-            machine().QuerySavedGuestScreenInfo(m_uScreenId, uGuestOriginX, uGuestOriginY, uGuestWidth, uGuestHeight, fEnabled);
-            if (uGuestWidth  > 0 && uGuestHeight > 0)
-                size = QSize(uGuestWidth, uGuestHeight);
+            ULONG uWidth = 0, uHeight = 0;
+            QVector<KBitmapFormat> formats = machine().QuerySavedScreenshotInfo(0, uWidth, uHeight);
+            if (formats.size() > 0)
+            {
+                /* Init with the screenshot size: */
+                size = QSize(uWidth, uHeight);
+                /* Try to get the real guest dimensions from the save-state: */
+                ULONG uGuestOriginX = 0, uGuestOriginY = 0, uGuestWidth = 0, uGuestHeight = 0;
+                BOOL fEnabled = true;
+                machine().QuerySavedGuestScreenInfo(m_uScreenId, uGuestOriginX, uGuestOriginY, uGuestWidth, uGuestHeight, fEnabled);
+                if (uGuestWidth  > 0 && uGuestHeight > 0)
+                    size = QSize(uGuestWidth, uGuestHeight);
+            }
         }
 
         /* If we have a valid size, resize/rescale the frame-buffer. */
