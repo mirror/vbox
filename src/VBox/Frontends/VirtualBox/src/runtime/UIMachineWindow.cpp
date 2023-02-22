@@ -40,7 +40,6 @@
 #include "UIExtraDataManager.h"
 #include "UIMachine.h"
 #include "UIMessageCenter.h"
-#include "UISession.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIMachineWindowNormal.h"
@@ -210,19 +209,9 @@ UIMachine *UIMachineWindow::uimachine() const
     return machineLogic()->uimachine();
 }
 
-UISession *UIMachineWindow::uisession() const
-{
-    return machineLogic()->uisession();
-}
-
 UIActionPool *UIMachineWindow::actionPool() const
 {
     return machineLogic()->actionPool();
-}
-
-CMachine& UIMachineWindow::machine() const
-{
-    return uisession()->machine();
 }
 
 QString UIMachineWindow::machineName() const
@@ -457,11 +446,12 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
                     /* If that is the separate VM process UI: */
                     else
                     {
-                        /* We are going to show close-dialog only
-                         * if headless frontend stopped/killed already: */
-                        CMachine comMachine = machine();
-                        KMachineState enmMachineState = comMachine.GetState();
-                        fShowCloseDialog = !comMachine.isOk() || enmMachineState == KMachineState_Null;
+                        // WORKAROUND:
+                        // We are going to show close-dialog only
+                        // if headless frontend stopped/killed already:
+                        KMachineState enmActualState = KMachineState_Null;
+                        uimachine()->acquireLiveMachineState(enmActualState);
+                        fShowCloseDialog = enmActualState == KMachineState_Null;
                     }
                 }
             }
@@ -528,9 +518,11 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
         {
             /* Power VM off: */
             LogRel(("GUI: Request for close-action to power VM off.\n"));
+            ulong uSnapshotCount = 0;
+            uimachine()->acquireSnapshotCount(uSnapshotCount);
             const bool fDiscardStateOnPowerOff  = gEDataManager->discardStateOnPowerOff(uiCommon().managedVMUuid())
                                                || closeAction == MachineCloseAction_PowerOff_RestoringSnapshot;
-            uimachine()->powerOff(machine().GetSnapshotCount() > 0 && fDiscardStateOnPowerOff);
+            uimachine()->powerOff(uSnapshotCount > 0 && fDiscardStateOnPowerOff);
             break;
         }
         default:

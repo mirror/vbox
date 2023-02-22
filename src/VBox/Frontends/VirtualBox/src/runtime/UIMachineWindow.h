@@ -41,10 +41,6 @@
 # include "VBoxUtils-darwin.h"
 #endif /* VBOX_WS_MAC */
 
-/* COM includes: */
-#include "COMEnums.h"
-#include "CMachine.h"
-
 /* Forward declarations: */
 class QCloseEvent;
 class QEvent;
@@ -54,7 +50,6 @@ class QShowEvent;
 class QSpacerItem;
 class UIActionPool;
 class UIMachine;
-class UISession;
 class UIMachineLogic;
 class UIMachineView;
 class CSession;
@@ -87,14 +82,9 @@ public:
 
     /** Returns machine UI reference. */
     UIMachine *uimachine() const;
-    /** Returns session UI reference. */
-    UISession *uisession() const;
 
     /** Returns action-pool reference. */
     UIActionPool *actionPool() const;
-
-    /** Returns the session's machine reference. */
-    CMachine& machine() const;
 
     /** Returns the machine name. */
     QString machineName() const;

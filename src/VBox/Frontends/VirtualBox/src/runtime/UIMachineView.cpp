@@ -268,7 +268,7 @@ UIMachine *UIMachineView::uimachine() const
 
 UISession *UIMachineView::uisession() const
 {
-    return machineWindow()->uisession();
+    return uimachine()->uisession();
 }
 
 UIMachineLogic *UIMachineView::machineLogic() const
