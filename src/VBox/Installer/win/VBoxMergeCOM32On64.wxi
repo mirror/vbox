@@ -54,6 +54,10 @@
                   Source="$(env.PATH_OUT)\bin\x86\VBoxRT-x86.dll"
                   DiskId="$(var.Property_DiskIdCommon)">
             </File>
+            <File Id="file_VBoxCAPI_x86" Name="VBoxCAPI-x86.dll"
+                  Source="$(env.PATH_OUT)\bin\x86\VBoxCAPI-x86.dll"
+                  DiskId="$(var.Property_DiskIdCommon)">
+            </File>
             <?include $(env.PATH_TARGET)\VirtualBox_TypeLib_x86.wxi ?>
 
     <?if $(env.VBOX_WITH_CRT_PACKING) = "yes" ?>
