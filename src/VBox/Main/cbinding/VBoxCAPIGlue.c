@@ -48,7 +48,7 @@
 #ifndef WIN32
 # include <dlfcn.h>
 # include <pthread.h>
-#else /* WIN32 */
+#else  /* WIN32 */
 # include <Windows.h>
 #endif /* WIN32 */
 
@@ -56,16 +56,44 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+#if defined(__i386__) || defined(_M_IX86) || defined(__X86__)
+/** This is a 32-bit process running against a 64-bit VBox installation.
+ * Since there are only 64-bit VBox now, we don't need any runtime checks.  */
+# define IS_32_ON_64
+#endif
+
 #if defined(__linux__) || defined(__linux_gnu__) || defined(__sun__) || defined(__FreeBSD__)
-# define DYNLIB_NAME        "VBoxXPCOMC.so"
+# ifndef IS_32_ON_64
+#  define DYNLIB_NAME           "VBoxXPCOMC.so"
+# else
+#  define DYNLIB_NAME           "VBoxCAPI-x86.so"
+# endif
 #elif defined(__APPLE__)
-# define DYNLIB_NAME        "VBoxXPCOMC.dylib"
-#elif defined(__OS2__)
-# define DYNLIB_NAME        "VBoxXPCOMC.dll"
+# ifndef IS_32_ON_64
+#  define DYNLIB_NAME           "VBoxXPCOMC.dylib"
+# else
+#  define DYNLIB_NAME           "VBoxCAPI-x86.dylib"
+# endif
 #elif defined(WIN32)
-# define DYNLIB_NAME        "VBoxCAPI.dll"
+# ifndef IS_32_ON_64
+#  define DYNLIB_NAME           "VBoxCAPI.dll"
+# else
+#  define DYNLIB_NAME           "VBoxCAPI-x86.dll"
+#  define DYNLIB_SUBDIR         "x86"
+#  define SLASH_DYNLIB_SUBDIR   "\\" DYNLIB_SUBDIR
+# endif
 #else
 # error "Port me"
+#endif
+#ifndef DYNLIB_SUBDIR
+# define DYNLIB_SUBDIR          ""
+# define SLASH_DYNLIB_SUBDIR    ""
+#endif
+
+#ifdef WIN32
+# define DIR_SLASH_CH           '\\'
+#else
+# define DIR_SLASH_CH           '/'
 #endif
 
 
@@ -130,29 +158,38 @@ static void setErrMsg(int fAlways, const char *pszFormat, ...)
  * @param   fSetAppHome     Whether to set the VBOX_APP_HOME env.var. or not
  *                          (boolean).
  */
-static int tryLoadLibrary(const char *pszHome, int fSetAppHome)
+static int tryLoadLibrary(const char *pszHome, const char *pszSub, int fSetAppHome)
 {
-    size_t      cchHome = pszHome ? strlen(pszHome) : 0;
-    size_t      cbBufNeeded;
-    char        szName[4096];
+    size_t const cchHome = pszHome ? strlen(pszHome) : 0;
+    size_t const cchSub  = pszSub  ? strlen(pszSub)  : 0;
+    size_t       cbBufNeeded;
+    size_t       offName;
+    char         szName[4096];
 
     /*
      * Construct the full name.
      */
-    cbBufNeeded = cchHome + sizeof("/" DYNLIB_NAME);
+    cbBufNeeded = cchHome + !!cchHome + cchSub + !!cchSub + sizeof(DYNLIB_NAME);
     if (cbBufNeeded > sizeof(szName))
     {
         setErrMsg(1, "path buffer too small: %u bytes needed",
                   (unsigned)cbBufNeeded);
         return -1;
     }
+    offName = 0;
     if (cchHome)
     {
-        memcpy(szName, pszHome, cchHome);
-        szName[cchHome] = '/';
-        cchHome++;
+        memcpy(&szName[offName], pszHome, cchHome);
+        offName += cchHome;
+        szName[offName++] = DIR_SLASH_CH;
     }
-    memcpy(&szName[cchHome], DYNLIB_NAME, sizeof(DYNLIB_NAME));
+    if (cchSub)
+    {
+        memcpy(&szName[offName], pszSub, cchSub);
+        offName += cchSub;
+        szName[offName++] = DIR_SLASH_CH;
+    }
+    memcpy(&szName[offName], DYNLIB_NAME, sizeof(DYNLIB_NAME));
 
     /*
      * Try load it by that name, setting the VBOX_APP_HOME first (for now).
@@ -171,7 +208,10 @@ static int tryLoadLibrary(const char *pszHome, int fSetAppHome)
 #ifndef WIN32
     g_hVBoxCAPI = dlopen(szName, RTLD_NOW | RTLD_LOCAL);
 #else /* WIN32 */
-    g_hVBoxCAPI = LoadLibraryExA(szName, NULL /* hFile */, 0 /* dwFlags */);
+    g_hVBoxCAPI = LoadLibraryExA(szName, NULL /* hFile */,
+                                 cchHome ? LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32 : 0 /* dwFlags */);
+    if (!g_hVBoxCAPI && GetLastError() == ERROR_INVALID_PARAMETER)
+        g_hVBoxCAPI = LoadLibraryExA(szName, NULL /* hFile */, 0 /* dwFlags */);
 #endif /* WIN32 */
     if (g_hVBoxCAPI)
     {
@@ -193,10 +233,10 @@ static int tryLoadLibrary(const char *pszHome, int fSetAppHome)
             g_pVBoxFuncs = pfnGetFunctions(VBOX_CAPI_VERSION);
             if (g_pVBoxFuncs)
             {
-                if (   (   VBOX_CAPI_MAJOR(g_pVBoxFuncs->uVersion)
-                        == VBOX_CAPI_MAJOR(VBOX_CAPI_VERSION))
-                    && (   VBOX_CAPI_MINOR(g_pVBoxFuncs->uVersion)
-                        >= VBOX_CAPI_MINOR(VBOX_CAPI_VERSION)))
+                if (      VBOX_CAPI_MAJOR(g_pVBoxFuncs->uVersion)
+                       == VBOX_CAPI_MAJOR(VBOX_CAPI_VERSION)
+                    &&    VBOX_CAPI_MINOR(g_pVBoxFuncs->uVersion)
+                       >= VBOX_CAPI_MINOR(VBOX_CAPI_VERSION))
                 {
                     g_pfnGetFunctions = pfnGetFunctions;
                     return 0;
@@ -265,47 +305,37 @@ int VBoxCGlueInit(void)
      */
     pszHome = getenv("VBOX_APP_HOME");
     if (pszHome)
-        return tryLoadLibrary(pszHome, 0);
+        return tryLoadLibrary(pszHome, DYNLIB_SUBDIR, 0);
 
     /*
      * Try the known standard locations.
      */
 #if defined(__gnu__linux__) || defined(__linux__)
-    if (tryLoadLibrary("/opt/VirtualBox", 1) == 0)
+    if (tryLoadLibrary("/opt/VirtualBox", DYNLIB_SUBDIR, 1) == 0)
         return 0;
-    if (tryLoadLibrary("/usr/lib/virtualbox", 1) == 0)
+    if (tryLoadLibrary("/usr/lib/virtualbox", DYNLIB_SUBDIR, 1) == 0)
         return 0;
 #elif defined(__sun__)
-    if (tryLoadLibrary("/opt/VirtualBox/amd64", 1) == 0)
+    if (tryLoadLibrary("/opt/VirtualBox/amd64", NULL, 1) == 0)
         return 0;
-    if (tryLoadLibrary("/opt/VirtualBox/i386", 1) == 0)
+    if (tryLoadLibrary("/opt/VirtualBox/i386", NULL, 1) == 0)
         return 0;
 #elif defined(__APPLE__)
-    if (tryLoadLibrary("/Applications/VirtualBox.app/Contents/MacOS", 1) == 0)
+    if (tryLoadLibrary("/Applications/VirtualBox.app/Contents/MacOS", DYNLIB_SUBDIR, 1) == 0)
         return 0;
 #elif defined(__FreeBSD__)
-    if (tryLoadLibrary("/usr/local/lib/virtualbox", 1) == 0)
-        return 0;
-#elif defined(__OS2__)
-    if (tryLoadLibrary("C:/Apps/VirtualBox", 1) == 0)
+    if (tryLoadLibrary("/usr/local/lib/virtualbox", DYNLIB_SUBDIR, 1) == 0)
         return 0;
 #elif defined(WIN32)
+# ifdef IS_32_ON_64
+    pszHome = getenv("ProgramW6432");
+    if (pszHome && tryLoadLibrary(pszHome, "\\Oracle\\VirtualBox" SLASH_DYNLIB_SUBDIR, 1) == 0)
+        return 0;
+# endif
     pszHome = getenv("ProgramFiles");
-    if (pszHome)
-    {
-        char szPath[4096];
-        size_t cb = sizeof(szPath);
-        char *tmp = szPath;
-        strncpy(tmp, pszHome, cb);
-        tmp[cb - 1] = '\0';
-        cb -= strlen(tmp);
-        tmp += strlen(tmp);
-        strncpy(tmp, "/Oracle/VirtualBox", cb);
-        tmp[cb - 1] = '\0';
-        if (tryLoadLibrary(szPath, 1) == 0)
-            return 0;
-    }
-    if (tryLoadLibrary("C:/Program Files/Oracle/VirtualBox", 1) == 0)
+    if (pszHome && tryLoadLibrary(pszHome, "\\Oracle\\VirtualBox" SLASH_DYNLIB_SUBDIR, 1) == 0)
+        return 0;
+    if (tryLoadLibrary("C:\\Program Files\\Oracle\\VirtualBox", DYNLIB_SUBDIR, 1) == 0)
         return 0;
 #else
 # error "port me"
@@ -314,7 +344,7 @@ int VBoxCGlueInit(void)
     /*
      * Finally try the dynamic linker search path.
      */
-    if (tryLoadLibrary(NULL, 1) == 0)
+    if (tryLoadLibrary(NULL, NULL, 1) == 0)
         return 0;
 
     /* No luck, return failure. */

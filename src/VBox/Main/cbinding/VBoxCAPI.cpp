@@ -775,7 +775,7 @@ VBoxGetCAPIFunctions(unsigned uVersion)
     /* This is the first piece of code which knows that IPRT exists, so
      * initialize it properly. The limited initialization in VBoxC is not
      * sufficient, and causes trouble with com::Initialize() misbehaving. */
-    RTR3InitDll(0);
+    RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
 
     /*
      * The current interface version.

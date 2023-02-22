@@ -6880,6 +6880,11 @@ if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TAR
  	$(PATH_TOOL_$(TEMPLATE_VBoxR3Exe_TOOL.win.x86)_LIB)/oldnames.lib
 endif
 
+# x86 version of VBoxR3TstExe
+TEMPLATE_VBoxR3TstExe-x86              := 32-bit VBox Ring 3 Testcase Exe
+TEMPLATE_VBoxR3TstExe-x86_EXTENDS      := VBoxR3TstExe
+TEMPLATE_VBoxR3TstExe-x86_BLD_TRG_ARCH := x86
+TEMPLATE_VBoxR3TstExe-x86_LIBS          = $(LIB_RUNTIME_X86) $(TEMPLATE_VBoxR3Exe_LIBS)
 
 #
 # Ring-3 testcase DLL.
@@ -7387,6 +7392,19 @@ ifn1of ($(KBUILD_TARGET), darwin os2 win)
  TEMPLATE_VBoxMainClientDll_LDFLAGS     = -fPIC $(TEMPLATE_VBoxMainClientExe_LDFLAGS)
 endif
 TEMPLATE_VBoxMainClientDll_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBoxMainClientExe_LDFLAGS.darwin))
+
+# x86 version of VBoxMainClientDll
+TEMPLATE_VBoxMainClientDll-x86              := 32-bit VBox MAIN Client (shared library)
+TEMPLATE_VBoxMainClientDll-x86_EXTENDS      := VBoxMainClientDll
+TEMPLATE_VBoxMainClientDll-x86_BLD_TRG_ARCH := x86
+TEMPLATE_VBoxMainClientDll-x86_INST.win      = $(INST_DLL)x86/
+TEMPLATE_VBoxMainClientDll-x86_DEFS          = $(filter-out HC_ARCH_BITS%,$(TEMPLATE_VBoxMainClientDll_DEFS)) \
+	HC_ARCH_BIT=32 ARCH_BITS=32 VBOX_IN_32_ON_64_MAIN_API
+TEMPLATE_VBoxMainClientDll-x86_LIBS = \
+	$(subst $(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB),$(PATH_STAGE_LIB)/VBoxCOM-x86$(VBOX_SUFF_LIB), \
+	$(subst $(LIB_RUNTIME),$(VBOX_LIB_RUNTIME_X86), \
+	$(subst $(LIB_XPCOM),$(VBOX_LIB_XPCOM_X86), \
+	$(TEMPLATE_VBoxMainClientDll_LIBS))))
 
 #
 # Template for building testcases which are API clients.

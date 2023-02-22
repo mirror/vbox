@@ -103,6 +103,18 @@ if !defined(VBOX_ONLY_SDK)
  	$(CAPIHeaders_0_OUTDIR)/VBoxCAPI.h
 
  #
+ # The C API binding utility DLL, 32-bit variant for 64-bit hosts.
+ #
+ ifdef VBOX_WITH_32_ON_64_MAIN_API
+  DLLS += VBoxCAPI-x86
+  VBoxCAPI-x86_EXTENDS  := VBoxCAPI
+  VBoxCAPI-x86_TEMPLATE := VBoxMainClientDll-x86
+  ifdef VBOX_WITH_XPCOM
+   VBoxCAPI-x86_INST    := $(INST_BIN)VBoxCAPI-x86$(VBOX_SUFF_DLL)
+  endif
+ endif
+
+ #
  # The C glue library.
  #
  LIBRARIES += VBoxCAPIGlue
@@ -123,6 +135,15 @@ if !defined(VBOX_ONLY_SDK)
  VBoxCAPIGlue_INTERMEDIATES = \
  	$(VBOX_PATH_SDK)/bindings/c/glue/VBoxCAPIGlue.h \
  	$(VBOX_PATH_SDK)/bindings/c/include/VBoxCAPI_v$(VBOX_API_VERSION).h
+
+
+ ifdef VBOX_WITH_32_ON_64_MAIN_API
+ # Same as above, but 32-bit version.
+  LIBRARIES += VBoxCAPIGlue-x86
+  VBoxCAPIGlue-x86_EXTENDS      := VBoxCAPIGlue
+  VBoxCAPIGlue-x86_BLD_TRG_ARCH := x86
+ endif
+
 
  if defined(VBOX_WITH_TESTCASES) && "$(KBUILD_TARGET)" != "darwin"
   #
@@ -149,6 +170,15 @@ if !defined(VBOX_ONLY_SDK)
   	tstCAPIGlue.c
   tstCAPIGlue_LIBS = \
   	$(VBoxCAPIGlue_1_TARGET)
+
+  ifdef VBOX_WITH_32_ON_64_MAIN_API
+   # Same as above, but 32-bit version.
+   PROGRAMS += tstCAPIGlue-x86
+   tstCAPIGlue-x86_EXTENDS      := tstCAPIGlue
+   tstCAPIGlue-x86_TEMPLATE     := VBoxR3TstExe-x86
+   tstCAPIGlue-x86_BLD_TRG_ARCH := x86
+   tstCAPIGlue-x86_LIBS          = $(VBoxCAPIGlue-x86_1_TARGET)
+  endif
  endif
 
 endif # ! VBOX_ONLY_SDK
