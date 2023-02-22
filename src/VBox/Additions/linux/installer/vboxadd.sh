@@ -78,10 +78,10 @@ setup_log()
     test -z "${LOG}" || return 0
     # Rotate log files
     LOG="/var/log/vboxadd-setup.log"
-    mv "${LOG}.3" "${LOG}.4" 2>/dev/null
-    mv "${LOG}.2" "${LOG}.3" 2>/dev/null
-    mv "${LOG}.1" "${LOG}.2" 2>/dev/null
-    mv "${LOG}" "${LOG}.1" 2>/dev/null
+    mv -f "${LOG}.3" "${LOG}.4" 2>/dev/null
+    mv -f "${LOG}.2" "${LOG}.3" 2>/dev/null
+    mv -f "${LOG}.1" "${LOG}.2" 2>/dev/null
+    mv -f "${LOG}" "${LOG}.1" 2>/dev/null
 }
 
 if $MODPROBE -c 2>/dev/null | grep -q '^allow_unsupported_modules  *0'; then
@@ -177,7 +177,7 @@ running_vboxvideo()
 
 running_module()
 {
-    lsmod | grep -q $1
+    lsmod | grep -q "$1"
 }
 
 # Get version string of currently running kernel module.
@@ -205,18 +205,6 @@ check_running_module_version()
     [ "$expected" = "$(running_module_version "$mod")" ] || return
 }
 
-# A wrapper for check_running_module_version.
-# Go through the list of Guest Additions' modules and
-# verify if they are loaded and running version matches
-# to current installation version. Skip vboxvideo since
-# it is not loaded for old guests.
-check_status_kernel()
-{
-    for mod in vboxguest vboxsf; do
-        running_module "$mod" || fail "module $mod not loaded"
-        check_running_module_version "$mod" || fail "currently loaded module $mod version ($(running_module_version "$mod")) does not match to VirtualBox Guest Additions installation version ($VBOX_VERSION $VBOX_REVISION)"
-    done
-}
 
 # Checks if systemctl is present and functional (i.e., systemd is the init process).
 use_systemd()
@@ -249,13 +237,6 @@ do_sysvinit_action()
     elif test -x "/etc/init.d/${name}"; then
         "/etc/init.d/${name}" "${action}" quiet
     fi
-}
-
-# Check whether user-land processes are running.
-# Currently only check for VBoxService.
-check_status_user()
-{
-    do_sysvinit_action vboxadd-service status >/dev/null 2>&1
 }
 
 do_vboxguest_non_udev()
@@ -950,7 +931,51 @@ check_pid()
 {
     pid=$1
 
-    [ -d "/proc/$pid" ] && true
+    test -n "$pid" -a -d "/proc/$pid"
+}
+
+# A wrapper for check_running_module_version.
+# Go through the list of Guest Additions' modules and
+# verify if they are loaded and running version matches
+# to current installation version. Skip vboxvideo since
+# it is not loaded for old guests.
+check_status_kernel()
+{
+    for mod in vboxguest vboxsf; do
+
+        for attempt in 1 2 3 4 5; do
+
+            # Wait before the next attempt.
+            [ $? -ne 0 ] && sleep 1
+
+            running_module "$mod"
+            if [ $? -eq 0 ]; then
+                mod_is_running="1"
+                check_running_module_version "$mod"
+                [ $? -eq 0 ] && break
+            else
+                mod_is_running=""
+                false
+            fi
+
+        done
+
+        # In case of error, try to print out proper reason of failure.
+        if [ $? -ne 0 ]; then
+            # Was module loaded?
+            [ -n "$mod_is_running" ] || fail "module $mod is not loaded"
+            # If module was loaded it means that it has incorrect version.
+            fail "currently loaded module $mod version ($(running_module_version "$mod")) does not match to VirtualBox Guest Additions installation version ($VBOX_VERSION $VBOX_REVISION)"
+        fi
+
+    done
+}
+
+# Check whether user-land processes are running.
+# Currently only check for VBoxService.
+check_status_user()
+{
+    check_pid "$(cat /var/run/vboxadd-service.sh)" >/dev/null 2>&1
 }
 
 send_sig_usr1_by_pidfile()
@@ -1012,14 +1037,17 @@ reload()
     # Check if modules were previously build.
     [ "$(setup_complete)" = "1" ] || fail "kernel modules were set up yet, please consider running 'rcvboxadd setup' first."
 
-    # Stop VBoxService (systemctl stop vboxadd-service.service).
-    do_sysvinit_action vboxadd-service stop >/dev/null 2>&1
+    # Stop VBoxService if running.
+    do_sysvinit_action vboxadd-service status >/dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        do_sysvinit_action vboxadd-service stop >/dev/null 2>&1 || fail "unable to stop VBoxService"
+    fi
 
     # Unmount Shared Folders.
-    [ $? -eq 0 ] && umount -a -t vboxsf >/dev/null 2>&1
+    umount -a -t vboxsf >/dev/null 2>&1 || fail "unable to unmount shared folders"
 
     # Stop VBoxDRMClient.
-    [ $? -eq 0 ] && send_sig_usr1_by_pidfile "/var/run/VBoxDRMClient"
+    send_sig_usr1_by_pidfile "/var/run/VBoxDRMClient" || fail "unable to stop VBoxDRMClient"
 
     if [ $? -eq 0 ]; then
         # Tell legacy VBoxClient processes to release vboxguest.ko references.
@@ -1042,6 +1070,7 @@ reload()
             running_vboxguest
             if [ $? -eq 0 ]; then
                 modprobe -r vboxguest >/dev/null  2>&1
+                [ $? -eq 0 ] && break
             else
                 # Do not spoil $?.
                 true
@@ -1066,21 +1095,23 @@ reload()
 
         # Reload VBoxClient processes.
         [ $? -eq 0 ] && send_sig_usr1 "control"
-    fi
 
-    if [ $? -eq 0 ]; then
+        if [ $? -eq 0 ]; then
 
-        # Check if we just loaded modules of correct version.
-        check_status_kernel
+            # Check if we just loaded modules of correct version.
+            check_status_kernel
 
-        # Check if user-land processes were restarted as well.
-        check_status_user
+            # Check if user-land processes were restarted as well.
+            check_status_user
 
-        # Take reported version of running Guest Additions from running vboxguest module (as a paranoia check).
-        info "kernel modules and services $(running_module_version "vboxguest") reloaded"
-        info "NOTE: you may still consider to re-login if some user session specific services (Shared Clipboard, Drag and Drop, Seamless or Guest Screen Resize) were not restarted automatically"
+            # Take reported version of running Guest Additions from running vboxguest module (as a paranoia check).
+            info "kernel modules and services $(running_module_version "vboxguest") reloaded"
+            info "NOTE: you may still consider to re-login if some user session specific services (Shared Clipboard, Drag and Drop, Seamless or Guest Screen Resize) were not restarted automatically"
+        else
+            fail "cannot verify if kernel modules and services were reloaded"
+        fi
     else
-        fail "cannot reload kernel modules and restart services"
+        fail "cannot stop user services"
     fi
 }
 
