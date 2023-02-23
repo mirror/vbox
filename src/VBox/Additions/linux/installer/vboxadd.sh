@@ -1034,9 +1034,6 @@ reload()
     # Check if script was started with root privileges.
     [ `id -u` -eq 0 ] || fail "root privileges are required"
 
-    # Check if modules were previously build.
-    [ "$(setup_complete)" = "1" ] || fail "kernel modules were set up yet, please consider running 'rcvboxadd setup' first."
-
     # Stop VBoxService if running.
     do_sysvinit_action vboxadd-service status >/dev/null 2>&1
     if [ $? -eq 0 ]; then
