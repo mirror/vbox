@@ -46,7 +46,6 @@ class QMimeData;
 
 class UIDnDMIMEData;
 class UIMachine;
-class UISession;
 
 /**
  * Main class for implementing Drag'n'Drop in the frontend.
@@ -57,7 +56,7 @@ class UIDnDHandler: public QObject
 
 public:
 
-    UIDnDHandler(UIMachine *pMachine, UISession *pSession, QWidget *pParent);
+    UIDnDHandler(UIMachine *pMachine, QWidget *pParent);
     virtual ~UIDnDHandler(void);
 
     /**
@@ -135,8 +134,6 @@ protected:
 
     /** Pointer to machine UI. */
     UIMachine        *m_pMachine;
-    /** Pointer to session UI. */
-    UISession        *m_pSession;
     /** Pointer to parent widget. */
     QWidget          *m_pParent;
     /** Drag and drop source instance. */

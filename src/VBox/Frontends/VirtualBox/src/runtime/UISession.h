@@ -284,6 +284,11 @@ public:
         bool putMouseEventAbsolute(long iX, long iY, long iDz, long iDw, long iButtonState);
         /** Sends multi-touch event to VM's mouse. */
         bool putEventMultiTouch(long iCount, const QVector<LONG64> &contacts, bool fIsTouchScreen, ulong uScanTime);
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+        /** Acquires D&D mode. */
+        bool acquireDnDMode(KDnDMode &enmMode);
+#endif /* VBOX_WITH_DRAG_AND_DROP */
     /** @} */
 
     /** @name Storage stuff.

@@ -80,9 +80,8 @@
 #endif
 
 
-UIDnDHandler::UIDnDHandler(UIMachine *pMachine, UISession *pSession, QWidget *pParent)
+UIDnDHandler::UIDnDHandler(UIMachine *pMachine, QWidget *pParent)
     : m_pMachine(pMachine)
-    , m_pSession(pSession)
     , m_pParent(pParent)
     , m_fDataRetrieved(false)
 #ifdef RT_OS_WINDOWS
@@ -91,9 +90,12 @@ UIDnDHandler::UIDnDHandler(UIMachine *pMachine, UISession *pSession, QWidget *pP
     , m_pMIMEData(NULL)
 #endif
 {
-    AssertPtr(pSession);
-    m_dndSource = static_cast<CDnDSource>(pSession->guest().GetDnDSource());
-    m_dndTarget = static_cast<CDnDTarget>(pSession->guest().GetDnDTarget());
+    AssertPtr(m_pMachine);
+    if (m_pMachine)
+    {
+        m_dndSource = static_cast<CDnDSource>(m_pMachine->uisession()->guest().GetDnDSource());
+        m_dndTarget = static_cast<CDnDTarget>(m_pMachine->uisession()->guest().GetDnDTarget());
+   }
 }
 
 UIDnDHandler::~UIDnDHandler(void)

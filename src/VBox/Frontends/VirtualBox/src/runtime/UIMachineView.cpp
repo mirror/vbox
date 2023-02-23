@@ -1333,7 +1333,7 @@ int UIMachineView::prepareDnd(void)
     int vrc;
 
     /* Create the drag and drop handler instance: */
-    m_pDnDHandler = new UIDnDHandler(uimachine(), uisession(), this /* pParent */);
+    m_pDnDHandler = new UIDnDHandler(uimachine(), this /* pParent */);
     if (m_pDnDHandler)
     {
         vrc = m_pDnDHandler->init();
@@ -1439,11 +1439,6 @@ void UIMachineView::cleanupNativeFilters()
         delete m_pNativeEventFilter;
         m_pNativeEventFilter = 0;
     }
-}
-
-CMachine& UIMachineView::machine() const
-{
-    return uisession()->machine();
 }
 
 UIActionPool* UIMachineView::actionPool() const
@@ -1998,20 +1993,32 @@ void UIMachineView::focusOutEvent(QFocusEvent *pEvent)
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
 
-bool UIMachineView::dragAndDropCanAccept(void) const
+bool UIMachineView::dragAndDropCanAccept() const
 {
-    bool fAccept =  m_pDnDHandler
+    bool fAccept = m_pDnDHandler;
 # ifdef VBOX_WITH_DRAG_AND_DROP_GH
-                 && !m_fIsDraggingFromGuest
+    if (fAccept)
+        fAccept = !m_fIsDraggingFromGuest;
 # endif
-                 && machine().GetDnDMode() != KDnDMode_Disabled;
+    if (fAccept)
+    {
+        KDnDMode enmDnDMode = KDnDMode_Disabled;
+        uimachine()->acquireDnDMode(enmDnDMode);
+        fAccept = enmDnDMode != KDnDMode_Disabled;
+    }
     return fAccept;
 }
 
-bool UIMachineView::dragAndDropIsActive(void) const
+bool UIMachineView::dragAndDropIsActive() const
 {
-    return (   m_pDnDHandler
-            && machine().GetDnDMode() != KDnDMode_Disabled);
+    bool fActive = m_pDnDHandler;
+    if (fActive)
+    {
+        KDnDMode enmDnDMode = KDnDMode_Disabled;
+        uimachine()->acquireDnDMode(enmDnDMode);
+        fActive = enmDnDMode != KDnDMode_Disabled;
+    }
+    return fActive;
 }
 
 void UIMachineView::dragEnterEvent(QDragEnterEvent *pEvent)

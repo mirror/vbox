@@ -433,6 +433,20 @@ bool UISession::putEventMultiTouch(long iCount, const QVector<LONG64> &contacts,
     return fSuccess;
 }
 
+#ifdef VBOX_WITH_DRAG_AND_DROP
+bool UISession::acquireDnDMode(KDnDMode &enmMode)
+{
+    CMachine comMachine = machine();
+    const KDnDMode enmDnDMode = comMachine.GetDnDMode();
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+        enmMode = enmDnDMode;
+    return fSuccess;
+}
+#endif /* VBOX_WITH_DRAG_AND_DROP */
+
 bool UISession::addEncryptionPassword(const QString &strId, const QString &strPassword, bool fClearOnSuspend)
 {
     CConsole comConsole = console();

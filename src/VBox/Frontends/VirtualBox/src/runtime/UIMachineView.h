@@ -66,7 +66,6 @@ class UIMachineWindow;
 class UINativeEventFilter;
 class UISession;
 class CGuest;
-class CMachine;
 class CSession;
 #ifdef VBOX_WITH_DRAG_AND_DROP
 class CDnDTarget;
@@ -271,9 +270,6 @@ protected:
     virtual void cleanupNativeFilters();
     //virtual void saveMachineViewSettings() {}
 
-    /** Returns the session's machine reference. */
-    CMachine& machine() const;
-
     /* Protected getters: */
     UIActionPool* actionPool() const;
     QSize sizeHint() const;
@@ -337,13 +333,13 @@ protected:
      * Returns @true if the VM window can accept (start is, start) a drag and drop
      * operation, @false if not.
      */
-    bool dragAndDropCanAccept(void) const;
+    bool dragAndDropCanAccept() const;
 
     /**
      * Returns @true if drag and drop for this machine is active
      * (that is, host->guest, guest->host or bidirectional), @false if not.
      */
-    bool dragAndDropIsActive(void) const;
+    bool dragAndDropIsActive() const;
 
     /**
      * Host -> Guest: Issued when the host cursor enters the guest (VM) window.
