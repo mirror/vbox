@@ -79,6 +79,7 @@ static RTEXITCODE handleCloudMachineImpl(CMachineHandlerArg *a, int iFirst);
 
 static RTEXITCODE handleCloudMachineStart(CMachineHandlerArg *a, int iFirst);
 static RTEXITCODE handleCloudMachineReboot(CMachineHandlerArg *a, int iFirst);
+static RTEXITCODE handleCloudMachineReset(CMachineHandlerArg *a, int iFirst);
 static RTEXITCODE handleCloudMachineShutdown(CMachineHandlerArg *a, int iFirst);
 static RTEXITCODE handleCloudMachinePowerdown(CMachineHandlerArg *a, int iFirst);
 static RTEXITCODE handleCloudMachineTerminate(CMachineHandlerArg *a, int iFirst);
@@ -610,6 +611,7 @@ handleCloudMachineImpl(CMachineHandlerArg *a, int iFirst)
         kMachine_List,
         kMachine_Powerdown,
         kMachine_Reboot,
+        kMachine_Reset,
         kMachine_Shutdown,
         kMachine_Start,
         kMachine_Terminate,
@@ -624,6 +626,7 @@ handleCloudMachineImpl(CMachineHandlerArg *a, int iFirst)
         { "list",               kMachine_List,              RTGETOPT_REQ_NOTHING },
         { "powerdown",          kMachine_Powerdown,         RTGETOPT_REQ_NOTHING },
         { "reboot",             kMachine_Reboot,            RTGETOPT_REQ_NOTHING },
+        { "reset",              kMachine_Reset,             RTGETOPT_REQ_NOTHING },
         { "shutdown",           kMachine_Shutdown,          RTGETOPT_REQ_NOTHING },
         { "start",              kMachine_Start,             RTGETOPT_REQ_NOTHING },
         { "terminate",          kMachine_Terminate,         RTGETOPT_REQ_NOTHING },
@@ -683,6 +686,9 @@ handleCloudMachineImpl(CMachineHandlerArg *a, int iFirst)
 
             case kMachine_Reboot:
                 return handleCloudMachineReboot(a, OptState.iNext);
+
+            case kMachine_Reset:
+                return handleCloudMachineReset(a, OptState.iNext);
 
             case kMachine_Shutdown:
                 return handleCloudMachineShutdown(a, OptState.iNext);
@@ -1327,6 +1333,31 @@ handleCloudMachineReboot(CMachineHandlerArg *a, int iFirst)
     ComPtr<IProgress> pProgress;
     CHECK_ERROR2_RET(hrc, a->pMachine,
         Reboot(pProgress.asOutParam()),
+            RTEXITCODE_FAILURE);
+
+    hrc = showProgress(pProgress, SHOW_PROGRESS_NONE);
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+
+/*
+ * cloud machine reset "id"
+ *     Force power down machine, then power the instance back up.
+ */
+static RTEXITCODE
+handleCloudMachineReset(CMachineHandlerArg *a, int iFirst)
+{
+    HRESULT hrc;
+
+    // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE_RESET);
+    RTEXITCODE status = getMachineFromArgs(a, iFirst);
+    if (status != RTEXITCODE_SUCCESS)
+        return status;
+
+
+    ComPtr<IProgress> pProgress;
+    CHECK_ERROR2_RET(hrc, a->pMachine,
+        Reset(pProgress.asOutParam()),
             RTEXITCODE_FAILURE);
 
     hrc = showProgress(pProgress, SHOW_PROGRESS_NONE);

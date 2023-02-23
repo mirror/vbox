@@ -29498,7 +29498,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
              uuid="147816c8-17e0-11eb-81fa-87cea6263e1a"
              wsmap="managed"
              rest="managed"
-             reservedMethods="16" reservedAttributes="8"
+             reservedMethods="15" reservedAttributes="8"
       >
     <desc>
       Virtual virtual machine (sic) in the cloud.
@@ -29608,6 +29608,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="reboot">
       <desc>
         Reboot cloud virtual machine.
+      </desc>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
+    <method name="reset">
+      <desc>
+        Forcing reset or hard reset of a cloud virtual machine.
       </desc>
       <param name="progress" type="IProgress" dir="return">
         <desc>
@@ -29766,7 +29777,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="ICloudClient" extends="$unknown"
     uuid="c2db178a-7485-11ec-aec4-2fbf90681a84"
     wsmap="managed"
-    reservedMethods="16" reservedAttributes="8"
+    reservedMethods="15" reservedAttributes="8"
     >
 
     <method name="getExportDescriptionForm">
@@ -30135,6 +30146,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="uid" type="wstring" dir="in">
         <desc>the id of instance in the Cloud.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="resetInstance">
+      <desc>
+        Reset an existing instance with passed id.
+      </desc>
+      <param name="uid" type="wstring" dir="in">
+        <desc>The id of instance in the Cloud.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
