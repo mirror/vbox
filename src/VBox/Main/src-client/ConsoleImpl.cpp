@@ -3028,6 +3028,8 @@ HRESULT Console::detachUSBDevice(const com::Guid &aId, ComPtr<IUSBDevice> &aDevi
                 hrc = i_detachUSBDevice(pUSBDevice);
                 if (SUCCEEDED(hrc))
                 {
+                    //return the detached USB device
+                    pUSBDevice.queryInterfaceTo(aDevice.asOutParam());
                     /* Request the device release. Even if it fails, the device will
                      * remain as held by proxy, which is OK for us (the VM process). */
                     return mControl->DetachUSBDevice(Bstr(aId.toString()).raw(), true /* aDone */);
