@@ -33,6 +33,7 @@
 
 /* Qt includes: */
 #include <QMainWindow>
+#include <QUuid>
 
 /* GUI includes: */
 #include "QIWithRestorableGeometry.h"
