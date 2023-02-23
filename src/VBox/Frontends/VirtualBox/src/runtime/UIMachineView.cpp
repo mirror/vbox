@@ -1630,10 +1630,9 @@ void UIMachineView::takePausePixmapLive()
 void UIMachineView::takePausePixmapSnapshot()
 {
     /* Acquire the screen-data from the saved-state: */
-    ULONG uWidth = 0, uHeight = 0;
-    const QVector<BYTE> screenData = machine().ReadSavedScreenshotToArray(0, KBitmapFormat_PNG, uWidth, uHeight);
-
-    /* Make sure there is saved-state screen-data: */
+    ulong uDummy = 0;
+    QVector<BYTE> screenData;
+    uimachine()->acquireSavedScreenshot(m_uScreenId, KBitmapFormat_PNG, uDummy, uDummy, screenData);
     if (screenData.isEmpty())
         return;
 
@@ -1655,7 +1654,7 @@ void UIMachineView::takePausePixmapSnapshot()
     QImage screenShot = QImage::fromData(screenData.data(), screenData.size(), "PNG").scaled(effectiveSize);
 
     /* Dim screen-shot if it is Ok: */
-    if (machine().isOk() && !screenShot.isNull())
+    if (!screenShot.isNull())
         dimImage(screenShot);
 
     /* Finally copy the screen-shot to pause-pixmap: */

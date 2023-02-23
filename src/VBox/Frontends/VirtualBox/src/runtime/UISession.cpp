@@ -876,6 +876,25 @@ bool UISession::acquireSavedScreenshotInfo(ulong uScreenId, ulong &uWidth, ulong
     return fSuccess;
 }
 
+bool UISession::acquireSavedScreenshot(ulong uScreenId, KBitmapFormat enmFormat,
+                                       ulong &uWidth, ulong &uHeight, QVector<BYTE> &screenshot)
+{
+    CMachine comMachine = machine();
+    ULONG uGuestWidth = 0, uGuestHeight = 0;
+    const QVector<BYTE> guestScreenshot = comMachine.ReadSavedScreenshotToArray(uScreenId, enmFormat,
+                                                                                uGuestWidth, uGuestHeight);
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        uWidth = uGuestWidth;
+        uHeight = uGuestHeight;
+        screenshot = guestScreenshot;
+    }
+    return fSuccess;
+}
+
 bool UISession::notifyScaleFactorChange(ulong uScreenId, ulong uScaleFactorWMultiplied, ulong uScaleFactorHMultiplied)
 {
     CDisplay comDisplay = display();

@@ -516,6 +516,13 @@ bool UIMachine::acquireSavedScreenshotInfo(ulong uScreenId, ulong &uWidth, ulong
     return uisession()->acquireSavedScreenshotInfo(uScreenId, uWidth, uHeight, formats);
 }
 
+bool UIMachine::acquireSavedScreenshot(ulong uScreenId, KBitmapFormat enmFormat,
+                                       ulong &uWidth, ulong &uHeight, QVector<BYTE> &screenshot)
+{
+    return uisession()->acquireSavedScreenshot(uScreenId, enmFormat,
+                                               uWidth, uHeight, screenshot);
+}
+
 bool UIMachine::notifyScaleFactorChange(ulong uScreenId, ulong uScaleFactorWMultiplied, ulong uScaleFactorHMultiplied)
 {
     return uisession()->notifyScaleFactorChange(uScreenId, uScaleFactorWMultiplied, uScaleFactorHMultiplied);

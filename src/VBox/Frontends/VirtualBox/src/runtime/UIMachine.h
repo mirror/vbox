@@ -318,6 +318,9 @@ public:
         bool acquireScreenShot(ulong uScreenId, ulong uWidth, ulong uHeight, KBitmapFormat enmFormat, uchar *pBits);
         /** Acquires saved screen-shot info for guest-screen with passed uScreenId. */
         bool acquireSavedScreenshotInfo(ulong uScreenId, ulong &uWidth, ulong &uHeight, QVector<KBitmapFormat> &formats);
+        /** Acquires saved screen-shot for guest-screen with passed uScreenId. */
+        bool acquireSavedScreenshot(ulong uScreenId, KBitmapFormat enmFormat,
+                                    ulong &uWidth, ulong &uHeight, QVector<BYTE> &screenshot);
         /** Notifies guest-screen with passed uScreenId about scale-factor change. */
         bool notifyScaleFactorChange(ulong uScreenId, ulong uScaleFactorWMultiplied, ulong uScaleFactorHMultiplied);
         /** Notifies display about unscaled HiDPI policy change. */
