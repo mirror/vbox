@@ -1137,6 +1137,8 @@ typedef struct CPUMFEATURES
     uint32_t        fAesNi : 1;
     /** Support MOVBE instruction. */
     uint32_t        fMovBe : 1;
+    /** Support SHA instructions. */
+    uint32_t        fSha : 1;
 
     /** Supports AMD 3DNow instructions. */
     uint32_t        f3DNow : 1;
@@ -1197,7 +1199,7 @@ typedef struct CPUMFEATURES
 
     /** Alignment padding / reserved for future use (96 bits total, plus 12 bytes
      *  prior to the bit fields -> total of 24 bytes) */
-    uint32_t        fPadding0 : 26;
+    uint32_t        fPadding0 : 25;
 
 
     /** @name SVM

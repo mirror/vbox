@@ -17422,3 +17422,242 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_rdseed_u64_fallback,(uint64_t *puDst, uint32_t 
     *pEFlags |= X86_EFL_CF;
 }
 
+
+/**
+ * SHA1NEXTE
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_sha1nexte_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    uint32_t u32Tmp = ASMRotateLeftU32(puDst->au32[3], 30);
+
+    puDst->au32[0] = puSrc->au32[0];
+    puDst->au32[1] = puSrc->au32[1];
+    puDst->au32[2] = puSrc->au32[2];
+    puDst->au32[3] = puSrc->au32[3] + u32Tmp;
+}
+
+/**
+ * SHA1MSG1
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_sha1msg1_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    uint32_t u32W0 = puDst->au32[3];
+    uint32_t u32W1 = puDst->au32[2];
+    uint32_t u32W2 = puDst->au32[1];
+    uint32_t u32W3 = puDst->au32[0];
+    uint32_t u32W4 = puSrc->au32[3];
+    uint32_t u32W5 = puSrc->au32[2];
+
+    puDst->au32[3] = u32W2 ^ u32W0;
+    puDst->au32[2] = u32W3 ^ u32W1;
+    puDst->au32[1] = u32W4 ^ u32W2;
+    puDst->au32[0] = u32W5 ^ u32W3;
+}
+
+/**
+ * SHA1MSG2
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_sha1msg2_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    uint32_t u32W13 = puSrc->au32[2];
+    uint32_t u32W14 = puSrc->au32[1];
+    uint32_t u32W15 = puSrc->au32[0];
+    uint32_t u32W16 = ASMRotateLeftU32(puDst->au32[3] ^ u32W13, 1);
+    uint32_t u32W17 = ASMRotateLeftU32(puDst->au32[2] ^ u32W14, 1);
+    uint32_t u32W18 = ASMRotateLeftU32(puDst->au32[1] ^ u32W15, 1);
+    uint32_t u32W19 = ASMRotateLeftU32(puDst->au32[0] ^ u32W16, 1);
+
+    puDst->au32[3] = u32W16;
+    puDst->au32[2] = u32W17;
+    puDst->au32[1] = u32W18;
+    puDst->au32[0] = u32W19;
+}
+
+/**
+ * SHA1RNDS4
+ */
+typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSHA1RNDS4FN, (uint32_t u32B, uint32_t u32C, uint32_t u32D));
+typedef FNIEMAIMPLSHA1RNDS4FN *PFNIEMAIMPLSHA1RNDS4FN;
+
+static DECLCALLBACK(uint32_t) iemAImpl_sha1rnds4_f0(uint32_t u32B, uint32_t u32C, uint32_t u32D)
+{
+    return (u32B & u32C) ^ (~u32B & u32D);
+}
+
+static DECLCALLBACK(uint32_t) iemAImpl_sha1rnds4_f1(uint32_t u32B, uint32_t u32C, uint32_t u32D)
+{
+    return u32B ^ u32C ^ u32D;
+}
+
+static DECLCALLBACK(uint32_t) iemAImpl_sha1rnds4_f2(uint32_t u32B, uint32_t u32C, uint32_t u32D)
+{
+    return (u32B & u32C) ^ (u32B & u32D) ^ (u32C & u32D);
+}
+
+static DECLCALLBACK(uint32_t) iemAImpl_sha1rnds4_f3(uint32_t u32B, uint32_t u32C, uint32_t u32D)
+{
+    return u32B ^ u32C ^ u32D;
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_sha1rnds4_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t bEvil))
+{
+    static uint32_t s_au32K[] = { UINT32_C(0x5a827999), UINT32_C(0x6ed9eba1), UINT32_C(0x8f1bbcdc), UINT32_C(0xca62c1d6) };
+    static PFNIEMAIMPLSHA1RNDS4FN s_apfnFn[] = { iemAImpl_sha1rnds4_f0, iemAImpl_sha1rnds4_f1, iemAImpl_sha1rnds4_f2, iemAImpl_sha1rnds4_f3 };
+
+    uint32_t au32A[5];
+    uint32_t au32B[5];
+    uint32_t au32C[5];
+    uint32_t au32D[5];
+    uint32_t au32E[5];
+    uint32_t au32W[4];
+    PFNIEMAIMPLSHA1RNDS4FN pfnFn = s_apfnFn[bEvil & 0x3];
+    uint32_t u32K = s_au32K[bEvil & 0x3];
+
+    au32A[0] = puDst->au32[3];
+    au32B[0] = puDst->au32[2];
+    au32C[0] = puDst->au32[1];
+    au32D[0] = puDst->au32[0];
+    for (uint32_t i = 0; i < RT_ELEMENTS(au32W); i++)
+        au32W[i] = puSrc->au32[3 - i];
+
+    /* Round 0 is a bit different than the other rounds. */
+    au32A[1] = pfnFn(au32B[0], au32C[0], au32D[0]) + ASMRotateLeftU32(au32A[0], 5) + au32W[0] + u32K;
+    au32B[1] = au32A[0];
+    au32C[1] = ASMRotateLeftU32(au32B[0], 30);
+    au32D[1] = au32C[0];
+    au32E[1] = au32D[0];
+
+    for (uint32_t i = 1; i <= 3; i++)
+    {
+        au32A[i + 1] = pfnFn(au32B[i], au32C[i], au32D[i]) + ASMRotateLeftU32(au32A[i], 5) + au32W[i] + au32E[i] + u32K;
+        au32B[i + 1] = au32A[i];
+        au32C[i + 1] = ASMRotateLeftU32(au32B[i], 30);
+        au32D[i + 1] = au32C[i];
+        au32E[i + 1] = au32D[i];
+    }
+
+    puDst->au32[3] = au32A[4];
+    puDst->au32[2] = au32B[4];
+    puDst->au32[1] = au32C[4];
+    puDst->au32[0] = au32D[4];
+}
+
+
+/**
+ * SHA256MSG1
+ */
+DECLINLINE(uint32_t) iemAImpl_sha256_lower_sigma0(uint32_t u32Val)
+{
+    return ASMRotateRightU32(u32Val, 7) ^ ASMRotateRightU32(u32Val, 18) ^ (u32Val >> 3);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_sha256msg1_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    uint32_t u32W4 = puSrc->au32[0];
+    uint32_t u32W3 = puDst->au32[3];
+    uint32_t u32W2 = puDst->au32[2];
+    uint32_t u32W1 = puDst->au32[1];
+    uint32_t u32W0 = puDst->au32[0];
+
+    puDst->au32[3] = u32W3 + iemAImpl_sha256_lower_sigma0(u32W4);
+    puDst->au32[2] = u32W2 + iemAImpl_sha256_lower_sigma0(u32W3);
+    puDst->au32[1] = u32W1 + iemAImpl_sha256_lower_sigma0(u32W2);
+    puDst->au32[0] = u32W0 + iemAImpl_sha256_lower_sigma0(u32W1);
+}
+
+/**
+ * SHA256MSG2
+ */
+DECLINLINE(uint32_t) iemAImpl_sha256_lower_sigma1(uint32_t u32Val)
+{
+    return ASMRotateRightU32(u32Val, 17) ^ ASMRotateRightU32(u32Val, 19) ^ (u32Val >> 10);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_sha256msg2_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    uint32_t u32W14 = puSrc->au32[2];
+    uint32_t u32W15 = puSrc->au32[3];
+    uint32_t u32W16 = puDst->au32[0] + iemAImpl_sha256_lower_sigma1(u32W14);
+    uint32_t u32W17 = puDst->au32[1] + iemAImpl_sha256_lower_sigma1(u32W15);
+    uint32_t u32W18 = puDst->au32[2] + iemAImpl_sha256_lower_sigma1(u32W16);
+    uint32_t u32W19 = puDst->au32[3] + iemAImpl_sha256_lower_sigma1(u32W17);
+
+    puDst->au32[3] = u32W19;
+    puDst->au32[2] = u32W18;
+    puDst->au32[1] = u32W17;
+    puDst->au32[0] = u32W16;
+}
+
+/**
+ * SHA256RNDS2
+ */
+DECLINLINE(uint32_t) iemAImpl_sha256_ch(uint32_t u32X, uint32_t u32Y, uint32_t u32Z)
+{
+    return (u32X & u32Y) ^ (~u32X & u32Z);
+}
+
+DECLINLINE(uint32_t) iemAImpl_sha256_maj(uint32_t u32X, uint32_t u32Y, uint32_t u32Z)
+{
+    return (u32X & u32Y) ^ (u32X & u32Z) ^ (u32Y & u32Z);
+}
+
+DECLINLINE(uint32_t) iemAImpl_sha256_upper_sigma0(uint32_t u32Val)
+{
+    return ASMRotateRightU32(u32Val, 2) ^ ASMRotateRightU32(u32Val, 13) ^ ASMRotateRightU32(u32Val, 22);
+}
+
+DECLINLINE(uint32_t) iemAImpl_sha256_upper_sigma1(uint32_t u32Val)
+{
+    return ASMRotateRightU32(u32Val, 6) ^ ASMRotateRightU32(u32Val, 11) ^ ASMRotateRightU32(u32Val, 25);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_sha256rnds2_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc, PCRTUINT128U puXmm0Constants))
+{
+    uint32_t au32A[3];
+    uint32_t au32B[3];
+    uint32_t au32C[3];
+    uint32_t au32D[3];
+    uint32_t au32E[3];
+    uint32_t au32F[3];
+    uint32_t au32G[3];
+    uint32_t au32H[3];
+    uint32_t au32WK[2];
+
+    au32A[0]  = puSrc->au32[3];
+    au32B[0]  = puSrc->au32[2];
+    au32C[0]  = puDst->au32[3];
+    au32D[0]  = puDst->au32[2];
+    au32E[0]  = puSrc->au32[1];
+    au32F[0]  = puSrc->au32[0];
+    au32G[0]  = puDst->au32[1];
+    au32H[0]  = puDst->au32[0];
+
+    au32WK[0] = puXmm0Constants->au32[0];
+    au32WK[1] = puXmm0Constants->au32[1];
+
+    for (uint32_t i = 0; i < 2; i++)
+    {
+        au32A[i + 1] =    iemAImpl_sha256_ch(au32E[i], au32F[i], au32G[i])
+                        + iemAImpl_sha256_upper_sigma1(au32E[i])
+                        + au32WK[i]
+                        + au32H[i]
+                        + iemAImpl_sha256_maj(au32A[i], au32B[i], au32C[i])
+                        + iemAImpl_sha256_upper_sigma0(au32A[i]);
+        au32B[i + 1] = au32A[i];
+        au32C[i + 1] = au32B[i];
+        au32D[i + 1] = au32C[i];
+        au32E[i + 1] =    iemAImpl_sha256_ch(au32E[i], au32F[i], au32G[i])
+                        + iemAImpl_sha256_upper_sigma1(au32E[i])
+                        + au32WK[i]
+                        + au32H[i]
+                        + au32D[i];
+        au32F[i + 1] = au32E[i];
+        au32G[i + 1] = au32F[i];
+        au32H[i + 1] = au32G[i];
+    }
+
+    puDst->au32[3] = au32A[2];
+    puDst->au32[2] = au32B[2];
+    puDst->au32[1] = au32E[2];
+    puDst->au32[0] = au32F[2];
+}

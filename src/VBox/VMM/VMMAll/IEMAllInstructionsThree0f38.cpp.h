@@ -273,7 +273,8 @@ FNIEMOP_DEF_1(iemOpCommonSse42_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128
  * takes no FXSAVE state, just the operands.
  *
  * @sa  iemOpCommonSse2_FullFull_To_Full, iemOpCommonSsse3_FullFull_To_Full,
- *      iemOpCommonSse41_FullFull_To_Full, iemOpCommonSse42_FullFull_To_Full
+ *      iemOpCommonSse41_FullFull_To_Full, iemOpCommonSse42_FullFull_To_Full,
+ *      iemOpCommonSha_FullFull_To_Full
  */
 FNIEMOP_DEF_1(iemOpCommonAesNi_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU128)
 {
@@ -309,6 +310,66 @@ FNIEMOP_DEF_1(iemOpCommonAesNi_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_MAYBE_RAISE_AESNI_RELATED_XCPT();
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
+
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+}
+
+
+/**
+ * Common worker for SSE-style SHA instructions of the form:
+ *      shaxxx  xmm1, xmm2/mem128
+ *
+ * Proper alignment of the 128-bit operand is enforced.
+ * Exceptions type 4. SHA cpuid checks.
+ *
+ * Unlike iemOpCommonSse41_FullFull_To_Full, the @a pfnU128 worker function
+ * takes no FXSAVE state, just the operands.
+ *
+ * @sa  iemOpCommonSse2_FullFull_To_Full, iemOpCommonSsse3_FullFull_To_Full,
+ *      iemOpCommonSse41_FullFull_To_Full, iemOpCommonSse42_FullFull_To_Full,
+ *      iemOpCommonAesNi_FullFull_To_Full
+ */
+FNIEMOP_DEF_1(iemOpCommonSha_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU128)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(PRTUINT128U,                 puDst, 0);
+        IEM_MC_ARG(PCRTUINT128U,                puSrc, 1);
+        IEM_MC_MAYBE_RAISE_SHA_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puSrc,       IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_CALL_VOID_AIMPL_2(pfnU128, puDst, puSrc);
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(2, 2);
+        IEM_MC_ARG(PRTUINT128U,                 puDst,       0);
+        IEM_MC_LOCAL(RTUINT128U,                uSrc);
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc, 1);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SHA_RELATED_XCPT();
         IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
         IEM_MC_PREPARE_SSE_USAGE();
@@ -1409,23 +1470,121 @@ FNIEMOP_DEF(iemOp_invpcid_Gy_Mdq)
 /*  Opcode 0x66 0x0f 0x38 0xc6 - invalid. */
 /*  Opcode      0x0f 0x38 0xc7 - invalid. */
 /*  Opcode 0x66 0x0f 0x38 0xc7 - invalid. */
+
+
 /** Opcode      0x0f 0x38 0xc8. */
-FNIEMOP_STUB(iemOp_sha1nexte_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_sha1nexte_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC2(RM, SHA1NEXTE, sha1nexte, Vdq, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSha_FullFull_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSha, iemAImpl_sha1nexte_u128, iemAImpl_sha1nexte_u128_fallback));
+}
+
+
 /*  Opcode 0x66 0x0f 0x38 0xc8 - invalid. */
+
+
 /** Opcode      0x0f 0x38 0xc9. */
-FNIEMOP_STUB(iemOp_sha1msg1_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_sha1msg1_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC2(RM, SHA1MSG1, sha1msg1, Vdq, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSha_FullFull_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSha, iemAImpl_sha1msg1_u128, iemAImpl_sha1msg1_u128_fallback));
+}
+
+
 /*  Opcode 0x66 0x0f 0x38 0xc9 - invalid. */
+
+
 /** Opcode      0x0f 0x38 0xca. */
-FNIEMOP_STUB(iemOp_sha1msg2_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_sha1msg2_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC2(RM, SHA1MSG2, sha1msg2, Vdq, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSha_FullFull_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSha, iemAImpl_sha1msg2_u128, iemAImpl_sha1msg2_u128_fallback));
+}
+
+
 /*  Opcode 0x66 0x0f 0x38 0xca - invalid. */
+
+
 /** Opcode      0x0f 0x38 0xcb. */
-FNIEMOP_STUB(iemOp_sha256rnds2_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_sha256rnds2_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC2(RM, SHA256RNDS2, sha256rnds2, Vdq, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES); /** @todo Actually RMI with implicit XMM0 */
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(3, 0);
+        IEM_MC_ARG(PRTUINT128U,                 puDst, 0);
+        IEM_MC_ARG(PCRTUINT128U,                puSrc, 1);
+        IEM_MC_ARG(PCRTUINT128U,                puXmm0, 2);
+        IEM_MC_MAYBE_RAISE_SHA_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puSrc,       IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puXmm0,      0);
+        IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fSha, iemAImpl_sha256rnds2_u128, iemAImpl_sha256rnds2_u128_fallback),
+                                 puDst, puSrc, puXmm0);
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(3, 2);
+        IEM_MC_ARG(PRTUINT128U,                 puDst,       0);
+        IEM_MC_LOCAL(RTUINT128U,                uSrc);
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc, 1);
+        IEM_MC_ARG(PCRTUINT128U,                puXmm0,      2);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SHA_RELATED_XCPT();
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_XREG_U128(puDst,             IEM_GET_MODRM_REG(pVCpu, bRm));
+        IEM_MC_REF_XREG_U128_CONST(puXmm0,      0);
+        IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fSha, iemAImpl_sha256rnds2_u128, iemAImpl_sha256rnds2_u128_fallback),
+                                 puDst, puSrc, puXmm0);
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+}
+
+
 /*  Opcode 0x66 0x0f 0x38 0xcb - invalid. */
+
+
 /** Opcode      0x0f 0x38 0xcc. */
-FNIEMOP_STUB(iemOp_sha256msg1_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_sha256msg1_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC2(RM, SHA256MSG1, sha256msg1, Vdq, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSha_FullFull_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSha, iemAImpl_sha256msg1_u128, iemAImpl_sha256msg1_u128_fallback));
+}
+
+
 /*  Opcode 0x66 0x0f 0x38 0xcc - invalid. */
+
+
 /** Opcode      0x0f 0x38 0xcd. */
-FNIEMOP_STUB(iemOp_sha256msg2_Vdq_Wdq);
+FNIEMOP_DEF(iemOp_sha256msg2_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC2(RM, SHA256MSG2, sha256msg2, Vdq, Wdq, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES);
+    return FNIEMOP_CALL_1(iemOpCommonSha_FullFull_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSha, iemAImpl_sha256msg2_u128, iemAImpl_sha256msg2_u128_fallback));
+}
+
+
 /*  Opcode 0x66 0x0f 0x38 0xcd - invalid. */
 /*  Opcode      0x0f 0x38 0xce - invalid. */
 /*  Opcode 0x66 0x0f 0x38 0xce - invalid. */

@@ -3738,6 +3738,11 @@ IEMIMPL_MEDIA_OPT_F2 aesenc,   0
 IEMIMPL_MEDIA_OPT_F2 aesdec,   0
 IEMIMPL_MEDIA_OPT_F2 aesenclast, 0
 IEMIMPL_MEDIA_OPT_F2 aesdeclast, 0
+IEMIMPL_MEDIA_OPT_F2 sha1nexte,  0
+IEMIMPL_MEDIA_OPT_F2 sha1msg1,   0
+IEMIMPL_MEDIA_OPT_F2 sha1msg2,   0
+IEMIMPL_MEDIA_OPT_F2 sha256msg1, 0
+IEMIMPL_MEDIA_OPT_F2 sha256msg2, 0
 
 ;;
 ; Media instruction working on one full sized and one half sized register (lower half).
@@ -6236,3 +6241,62 @@ IEMIMPL_RDRAND_RDSEED rdseed, ax,  16
 IEMIMPL_RDRAND_RDSEED rdseed, eax, 32
 IEMIMPL_RDRAND_RDSEED rdseed, rax, 64
 
+
+;;
+; sha1rnds4 xmm1, xmm2, imm8.
+;
+; @param    1       The instruction name.
+;
+; @param    A0      Pointer to the first media register size operand (input/output).
+; @param    A1      Pointer to the second source media register size operand (input).
+; @param    A2      The 8-bit immediate
+;
+BEGINPROC_FASTCALL iemAImpl_sha1rnds4_u128, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movdqu  xmm0, [A0]
+        movdqu  xmm1, [A1]
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A2 + A2*2]         ; sizeof(insnX+ret) == 6: (A2 * 3) * 2
+        lea     T1, [T1 + T0*2]
+        call    T1
+        movdqu  [A0], xmm0
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       sha1rnds4       xmm0, xmm1, bImm
+       ret
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*6 == 0x600
+dw 0xf9ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x105ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_sha1rnds4_u128
+
+
+;;
+; sha256rnds2 xmm1, xmm2, <XMM0>.
+;
+; @param    1       The instruction name.
+;
+; @param    A0      Pointer to the first media register size operand (input/output).
+; @param    A1      Pointer to the second source media register size operand (input).
+; @param    A2      Pointer to the implicit XMM0 constants (input).
+;
+BEGINPROC_FASTCALL iemAImpl_sha256rnds2_u128, 16
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movdqu       xmm0, [A2]
+        movdqu       xmm1, [A0]
+        movdqu       xmm2, [A1]
+        sha256rnds2  xmm1, xmm2
+        movdqu       [A0], xmm1
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_sha256rnds2_u128
