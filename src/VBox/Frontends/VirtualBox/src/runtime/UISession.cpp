@@ -644,7 +644,7 @@ bool UISession::guestAdditionsUpgradable()
         return false;
 
     /* Auto GA update is currently for Windows and Linux guests only */
-    const CGuestOSType osType = uiCommon().vmGuestOSType(machine().GetOSTypeId());
+    const CGuestOSType osType = uiCommon().vmGuestOSType(uimachine()->osTypeId());
     if (!osType.isOk())
         return false;
 
@@ -1072,6 +1072,18 @@ bool UISession::acquireWhetherLogEnabled(bool &fEnabled)
     return fSuccess;
 }
 
+bool UISession::acquireLogFolder(QString &strFolder)
+{
+    CMachine comMachine = machine();
+    const QString strLogFolder = comMachine.GetLogFolder();
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+        strFolder = strLogFolder;
+    return fSuccess;
+}
+
 bool UISession::acquireExecutionEngineType(KVMExecutionEngine &enmType)
 {
     CMachineDebugger comDebugger = debugger();
@@ -1468,8 +1480,9 @@ bool UISession::prepareSession()
     if (m_comDebugger.isNull())
         return false;
 
-    /* Update machine-name: */
+    /* Update machine attributes: */
     m_strMachineName = machine().GetName();
+    m_strOSTypeId = machine().GetOSTypeId();
 
     /* Update machine-state: */
     m_enmMachineState = machine().GetState();

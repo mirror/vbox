@@ -414,7 +414,8 @@ void UIMachineLogic::sltMachineStateChanged()
             /* Prevent machine-view from resizing: */
             uimachine()->setGuestResizeIgnored(true);
             /* Get log-folder: */
-            QString strLogFolder = machine().GetLogFolder();
+            QString strLogFolder;
+            uimachine()->acquireLogFolder(strLogFolder);
             /* Take the screenshot for debugging purposes: */
             takeScreenshot(strLogFolder + "/VBox.png", "png");
             /* How should we handle Guru Meditation? */
@@ -1240,7 +1241,7 @@ void UIMachineLogic::prepareDock()
     /* Now the dock icon preview: */
     QPixmap pixmap = generalIconPool().userMachinePixmap(machine(), QSize(42, 42));
     if (pixmap.isNull())
-        pixmap = generalIconPool().guestOSTypePixmap(machine().GetOSTypeId(), QSize(42, 42));
+        pixmap = generalIconPool().guestOSTypePixmap(uimachine()->osTypeId(), QSize(42, 42));
     m_pDockIconPreview = new UIDockIconPreview(uimachine(), pixmap);
 
     /* Should the dock-icon be updated at runtime? */
@@ -1657,7 +1658,7 @@ void UIMachineLogic::sltCloseInformationDialog(bool fAsync /* = false */)
 
 void UIMachineLogic::sltShowFileManagerDialog()
 {
-    if (machine().isNull() || !activeMachineWindow())
+    if (!activeMachineWindow())
         return;
 
     /* Create a file manager only if we don't have one already: */
@@ -1699,7 +1700,7 @@ void UIMachineLogic::sltCloseFileManagerDialog()
 
 void UIMachineLogic::sltShowLogDialog()
 {
-    if (machine().isNull() || !activeMachineWindow())
+    if (!activeMachineWindow())
         return;
 
     /* Create a logviewer only if we don't have one already */
@@ -2033,7 +2034,7 @@ void UIMachineLogic::sltShowKeyboardSettings()
 
 void UIMachineLogic::sltShowSoftKeyboard()
 {
-    if (machine().isNull() || !activeMachineWindow())
+    if (!activeMachineWindow())
         return;
 
     if (!m_pSoftKeyboardDialog)
@@ -2455,7 +2456,7 @@ void UIMachineLogic::sltLoggingToggled(bool fState)
 
 void UIMachineLogic::sltShowGuestControlConsoleDialog()
 {
-    if (machine().isNull() || !activeMachineWindow())
+    if (!activeMachineWindow())
         return;
 
     /* Create the dialog only if we don't have one already */

@@ -184,6 +184,8 @@ public:
      ** @{ */
         /** Returns the machine name. */
         QString machineName() const;
+        /** Returns the OS type id. */
+        QString osTypeId() const;
     /** @} */
 
     /** @name Branding stuff.
@@ -514,6 +516,9 @@ public:
         bool setLogEnabled(bool fEnabled);
         /** Acquires whether log is @a fEnabled. */
         bool acquireWhetherLogEnabled(bool &fEnabled);
+
+        /** Acquire log folder. */
+        bool acquireLogFolder(QString &strFolder);
 
         /** Acquires effective CPU @a uLoad. */
         bool acquireEffectiveCPULoad(ulong &uLoad);
