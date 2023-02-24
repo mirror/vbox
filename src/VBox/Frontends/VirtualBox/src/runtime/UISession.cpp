@@ -56,6 +56,8 @@
 #endif
 
 /* COM includes: */
+#include "CAudioAdapter.h"
+#include "CAudioSettings.h"
 #include "CEmulatedUSB.h"
 #include "CGraphicsAdapter.h"
 #include "CHostNetworkInterface.h"
@@ -671,6 +673,142 @@ bool UISession::guestAdditionsUpgradable()
         return false;
 
     return true;
+}
+
+bool UISession::acquireWhetherAudioAdapterPresent(bool &fPresent)
+{
+    CMachine comMachine = machine();
+    CAudioSettings comSettings = comMachine.GetAudioSettings();
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        CAudioAdapter comAdapter = comSettings.GetAdapter();
+        fPresent = comSettings.isOk() && comAdapter.isNotNull();
+    }
+    return fSuccess;
+}
+
+bool UISession::acquireWhetherAudioAdapterEnabled(bool &fEnabled)
+{
+    CMachine comMachine = machine();
+    CAudioSettings comSettings = comMachine.GetAudioSettings();
+    bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        CAudioAdapter comAdapter = comSettings.GetAdapter();
+        fSuccess = comSettings.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotAcquireAudioSettingsParameter(comSettings);
+        {
+            const BOOL fAdapterEnabled = comAdapter.GetEnabled();
+            fSuccess = comAdapter.isOk();
+            if (!fSuccess)
+                UINotificationMessage::cannotAcquireAudioAdapterParameter(comAdapter);
+            else
+                fEnabled = fAdapterEnabled == TRUE;
+        }
+    }
+    return fSuccess;
+}
+
+bool UISession::acquireWhetherAudioAdapterOutputEnabled(bool &fEnabled)
+{
+    CMachine comMachine = machine();
+    CAudioSettings comSettings = comMachine.GetAudioSettings();
+    bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        CAudioAdapter comAdapter = comSettings.GetAdapter();
+        fSuccess = comSettings.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotAcquireAudioSettingsParameter(comSettings);
+        {
+            const BOOL fOutputEnabled = comAdapter.GetEnabledOut();
+            fSuccess = comAdapter.isOk();
+            if (!fSuccess)
+                UINotificationMessage::cannotAcquireAudioAdapterParameter(comAdapter);
+            else
+                fEnabled = fOutputEnabled == TRUE;
+        }
+    }
+    return fSuccess;
+}
+
+bool UISession::acquireWhetherAudioAdapterInputEnabled(bool &fEnabled)
+{
+    CMachine comMachine = machine();
+    CAudioSettings comSettings = comMachine.GetAudioSettings();
+    bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        CAudioAdapter comAdapter = comSettings.GetAdapter();
+        fSuccess = comSettings.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotAcquireAudioSettingsParameter(comSettings);
+        {
+            const BOOL fInputEnabled = comAdapter.GetEnabledIn();
+            fSuccess = comAdapter.isOk();
+            if (!fSuccess)
+                UINotificationMessage::cannotAcquireAudioAdapterParameter(comAdapter);
+            else
+                fEnabled = fInputEnabled == TRUE;
+        }
+    }
+    return fSuccess;
+}
+
+bool UISession::setAudioAdapterOutputEnabled(bool fEnabled)
+{
+    CMachine comMachine = machine();
+    CAudioSettings comSettings = comMachine.GetAudioSettings();
+    bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        CAudioAdapter comAdapter = comSettings.GetAdapter();
+        fSuccess = comSettings.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotAcquireAudioSettingsParameter(comSettings);
+        {
+            comAdapter.SetEnabledOut(fEnabled);
+            fSuccess = comAdapter.isOk();
+            if (!fSuccess)
+                UINotificationMessage::cannotToggleAudioOutput(comAdapter, machineName(), fEnabled);
+        }
+    }
+    return fSuccess;
+}
+
+bool UISession::setAudioAdapterInputEnabled(bool fEnabled)
+{
+    CMachine comMachine = machine();
+    CAudioSettings comSettings = comMachine.GetAudioSettings();
+    bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        CAudioAdapter comAdapter = comSettings.GetAdapter();
+        fSuccess = comSettings.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotAcquireAudioSettingsParameter(comSettings);
+        {
+            comAdapter.SetEnabledIn(fEnabled);
+            fSuccess = comAdapter.isOk();
+            if (!fSuccess)
+                UINotificationMessage::cannotToggleAudioInput(comAdapter, machineName(), fEnabled);
+        }
+    }
+    return fSuccess;
 }
 
 UIFrameBuffer *UISession::frameBuffer(ulong uScreenId) const

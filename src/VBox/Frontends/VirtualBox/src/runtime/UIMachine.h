@@ -261,6 +261,22 @@ public:
         bool acquireCurrentSnapshotName(QString &strName);
     /** @} */
 
+    /** @name Audio stuff.
+     ** @{ */
+        /** Acquires whether audio adapter is present. */
+        bool acquireWhetherAudioAdapterPresent(bool &fPresent);
+        /** Acquires whether audio adapter is enabled. */
+        bool acquireWhetherAudioAdapterEnabled(bool &fEnabled);
+        /** Acquires whether audio adapter output is enabled. */
+        bool acquireWhetherAudioAdapterOutputEnabled(bool &fEnabled);
+        /** Acquires whether audio adapter input is enabled. */
+        bool acquireWhetherAudioAdapterInputEnabled(bool &fEnabled);
+        /** Defines whether audio adapter output is enabled. */
+        bool setAudioAdapterOutputEnabled(bool fEnabled);
+        /** Defines whether audio adapter input is enabled. */
+        bool setAudioAdapterInputEnabled(bool fEnabled);
+    /** @} */
+
     /** @name Host-screen stuff.
      ** @{ */
         /** Returns the list of host-screen geometries we currently have. */

@@ -2172,28 +2172,22 @@ void UIMachineLogic::sltToggleAudioOutput(bool fEnabled)
     if (!isMachineWindowsCreated())
         return;
 
-    /* Access audio adapter: */
-    CAudioSettings const comAudioSettings = machine().GetAudioSettings();
-    CAudioAdapter        comAdapter       = comAudioSettings.GetAdapter();
-    AssertMsgReturnVoid(machine().isOk() && comAdapter.isNotNull(),
+    /* Make sure audio adapter present: */
+    bool fAdapterPresent = false;
+    uimachine()->acquireWhetherAudioAdapterPresent(fAdapterPresent);
+    AssertMsgReturnVoid(fAdapterPresent,
                         ("Audio adapter should NOT be null!\n"));
 
     /* Make sure something had changed: */
-    if (comAdapter.GetEnabledOut() == static_cast<BOOL>(fEnabled))
+    bool fAudioOutputEnabled = false;
+    uimachine()->acquireWhetherAudioAdapterOutputEnabled(fAudioOutputEnabled);
+    if (fAudioOutputEnabled == fEnabled)
         return;
 
-    /* Update audio output state: */
-    comAdapter.SetEnabledOut(fEnabled);
-    if (!comAdapter.isOk())
-    {
-        /* Make sure action is updated: */
-        uimachine()->updateStateAudioActions();
-        /* Notify about the error: */
-        return UINotificationMessage::cannotToggleAudioOutput(comAdapter, machineName(), fEnabled);
-    }
-
-    /* Save machine-settings, make sure action is updated in case of failure: */
-    if (!uimachine()->saveSettings())
+    /* Update and save audio adapter output state,
+     * make sure action is updated in case of failure: */
+    if (   !uimachine()->setAudioAdapterOutputEnabled(fEnabled)
+        || !uimachine()->saveSettings())
         return uimachine()->updateStateAudioActions();
 }
 
@@ -2203,28 +2197,22 @@ void UIMachineLogic::sltToggleAudioInput(bool fEnabled)
     if (!isMachineWindowsCreated())
         return;
 
-    /* Access audio adapter: */
-    CAudioSettings const comAudioSettings = machine().GetAudioSettings();
-    CAudioAdapter        comAdapter       = comAudioSettings.GetAdapter();
-    AssertMsgReturnVoid(machine().isOk() && comAdapter.isNotNull(),
+    /* Make sure audio adapter present: */
+    bool fAdapterPresent = false;
+    uimachine()->acquireWhetherAudioAdapterPresent(fAdapterPresent);
+    AssertMsgReturnVoid(fAdapterPresent,
                         ("Audio adapter should NOT be null!\n"));
 
     /* Make sure something had changed: */
-    if (comAdapter.GetEnabledIn() == static_cast<BOOL>(fEnabled))
+    bool fAudioInputEnabled = false;
+    uimachine()->acquireWhetherAudioAdapterInputEnabled(fAudioInputEnabled);
+    if (fAudioInputEnabled == fEnabled)
         return;
 
-    /* Update audio input state: */
-    comAdapter.SetEnabledIn(fEnabled);
-    if (!comAdapter.isOk())
-    {
-        /* Make sure action is updated: */
-        uimachine()->updateStateAudioActions();
-        /* Notify about the error: */
-        return UINotificationMessage::cannotToggleAudioInput(comAdapter, machineName(), fEnabled);
-    }
-
-    /* Save machine-settings, make sure action is updated in case of failure: */
-    if (!uimachine()->saveSettings())
+    /* Update and save audio adapter input state,
+     * make sure action is updated in case of failure: */
+    if (   !uimachine()->setAudioAdapterInputEnabled(fEnabled)
+        || !uimachine()->saveSettings())
         return uimachine()->updateStateAudioActions();
 }
 

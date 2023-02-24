@@ -336,6 +336,22 @@ public:
         bool guestAdditionsUpgradable();
     /** @} */
 
+    /** @name Audio stuff.
+     ** @{ */
+        /** Acquires whether audio adapter is present. */
+        bool acquireWhetherAudioAdapterPresent(bool &fPresent);
+        /** Acquires whether audio adapter is enabled. */
+        bool acquireWhetherAudioAdapterEnabled(bool &fEnabled);
+        /** Acquires whether audio adapter output is enabled. */
+        bool acquireWhetherAudioAdapterOutputEnabled(bool &fEnabled);
+        /** Acquires whether audio adapter input is enabled. */
+        bool acquireWhetherAudioAdapterInputEnabled(bool &fEnabled);
+        /** Defines whether audio adapter output is enabled. */
+        bool setAudioAdapterOutputEnabled(bool fEnabled);
+        /** Defines whether audio adapter input is enabled. */
+        bool setAudioAdapterInputEnabled(bool fEnabled);
+    /** @} */
+
     /** @name Graphics stuff.
      ** @{ */
         /** Returns existing framebuffer for the screen with given @a uScreenId;

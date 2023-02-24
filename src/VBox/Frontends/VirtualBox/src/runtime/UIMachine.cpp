@@ -248,19 +248,21 @@ void UIMachine::updateStateAdditionsActions()
 void UIMachine::updateStateAudioActions()
 {
     /* Make sure Audio adapter is present: */
-    const CAudioSettings comAudioSettings = uisession()->machine().GetAudioSettings();
-    AssertMsgReturnVoid(uisession()->machine().isOk() && comAudioSettings.isNotNull(),
-                        ("Audio audio settings should NOT be null!\n"));
-    const CAudioAdapter comAdapter = comAudioSettings.GetAdapter();
-    AssertMsgReturnVoid(comAudioSettings.isOk() && comAdapter.isNotNull(),
-                        ("Audio audio adapter should NOT be null!\n"));
+    bool fAdapterPresent = false;
+    acquireWhetherAudioAdapterPresent(fAdapterPresent);
+    AssertMsgReturnVoid(fAdapterPresent,
+                        ("Audio adapter can't be null!\n"));
 
     /* Check/Uncheck Audio adapter output/input actions depending on features status: */
+    bool fAudioOutputEnabled = false;
+    bool fAudioInputEnabled = false;
+    acquireWhetherAudioAdapterOutputEnabled(fAudioOutputEnabled);
+    acquireWhetherAudioAdapterInputEnabled(fAudioInputEnabled);
     actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->blockSignals(true);
-    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->setChecked(comAdapter.GetEnabledOut());
+    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->setChecked(fAudioOutputEnabled);
     actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->blockSignals(false);
     actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->blockSignals(true);
-    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->setChecked(comAdapter.GetEnabledIn());
+    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->setChecked(fAudioInputEnabled);
     actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->blockSignals(false);
 }
 
@@ -374,6 +376,36 @@ bool UIMachine::acquireSnapshotCount(ulong &uCount)
 bool UIMachine::acquireCurrentSnapshotName(QString &strName)
 {
     return uisession()->acquireCurrentSnapshotName(strName);
+}
+
+bool UIMachine::acquireWhetherAudioAdapterPresent(bool &fPresent)
+{
+    return uisession()->acquireWhetherAudioAdapterPresent(fPresent);
+}
+
+bool UIMachine::acquireWhetherAudioAdapterEnabled(bool &fEnabled)
+{
+    return uisession()->acquireWhetherAudioAdapterEnabled(fEnabled);
+}
+
+bool UIMachine::acquireWhetherAudioAdapterOutputEnabled(bool &fEnabled)
+{
+    return uisession()->acquireWhetherAudioAdapterOutputEnabled(fEnabled);
+}
+
+bool UIMachine::acquireWhetherAudioAdapterInputEnabled(bool &fEnabled)
+{
+    return uisession()->acquireWhetherAudioAdapterInputEnabled(fEnabled);
+}
+
+bool UIMachine::setAudioAdapterOutputEnabled(bool fEnabled)
+{
+    return uisession()->setAudioAdapterOutputEnabled(fEnabled);
+}
+
+bool UIMachine::setAudioAdapterInputEnabled(bool fEnabled)
+{
+    return uisession()->setAudioAdapterInputEnabled(fEnabled);
 }
 
 bool UIMachine::isScreenVisibleHostDesires(ulong uScreenId) const
@@ -1665,10 +1697,12 @@ void UIMachine::updateActionRestrictions()
 
     /* Audio stuff: */
     {
-        /* Check whether audio controller is enabled. */
-        const CAudioSettings comAudioSettings = uisession()->machine().GetAudioSettings();
-        const CAudioAdapter comAudioAdapter = comAudioSettings.GetAdapter();
-        if (comAudioAdapter.isNull() || !comAudioAdapter.GetEnabled())
+        /* Check whether audio adapter is present & enabled: */
+        bool fAdapterPresent = false;
+        bool fAdapterEnabled = false;
+        acquireWhetherAudioAdapterPresent(fAdapterPresent);
+        acquireWhetherAudioAdapterEnabled(fAdapterEnabled);
+        if (!fAdapterPresent || !fAdapterEnabled)
             restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
                                     (restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio);
     }
