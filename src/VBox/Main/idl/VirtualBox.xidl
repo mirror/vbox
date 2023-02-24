@@ -28137,7 +28137,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="groups" type="wstring" readonly="yes">
       <desc>Resolved user groups of the directory entry.</desc>
       <!-- @todo This actually should be a SafeArray<wstring> to cover all non-primary groups,
-                 but our COM generation code does not yet support this yet for events. 
+                 but our COM generation code does not yet support this yet for events.
                  See @todo in genRetParam in compimpl.xsl. -->
     </attribute>
 
