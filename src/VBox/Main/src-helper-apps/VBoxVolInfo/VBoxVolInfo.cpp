@@ -36,9 +36,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <VBox/err.h>
+#include <VBox/errcore.h>
 
 #include "libdevmapper.h"
+
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
