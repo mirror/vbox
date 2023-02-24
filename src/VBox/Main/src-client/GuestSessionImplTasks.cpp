@@ -2622,8 +2622,9 @@ int GuestSessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, RTV
  * @returns VBox status code.
  * @param   pSession            Guest session to use.
  * @param   procInfo            Guest process startup info to use.
+ * @param   fSilent             Whether to set progress into failure state in case of error.
  */
-int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, GuestProcessStartupInfo &procInfo)
+int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, GuestProcessStartupInfo &procInfo, bool fSilent)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
 
@@ -2640,7 +2641,8 @@ int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, Gues
             vrc = procToRun.getTerminationStatus();
     }
 
-    if (RT_FAILURE(vrc))
+    if (   RT_FAILURE(vrc)
+        && !fSilent)
     {
         switch (vrc)
         {
@@ -2687,7 +2689,7 @@ int GuestSessionTaskUpdateAdditions::checkGuestAdditionsStatus(GuestSession *pSe
 
     if (osType == eOSType_Linux)
     {
-        const Utf8Str ksStatusScript = Utf8Str("/usr/sbin/rcvboxadd");
+        const Utf8Str ksStatusScript = Utf8Str("/sbin/rcvboxadd");
 
         /* Check if Guest Additions kernel modules were loaded. */
         GuestProcessStartupInfo procInfo;
@@ -2697,7 +2699,7 @@ int GuestSessionTaskUpdateAdditions::checkGuestAdditionsStatus(GuestSession *pSe
         procInfo.mArguments.push_back(ksStatusScript);
         procInfo.mArguments.push_back("status-kernel");
 
-        vrc = runFileOnGuest(pSession, procInfo);
+        vrc = runFileOnGuest(pSession, procInfo, true /* fSilent */);
         if (RT_SUCCESS(vrc))
         {
             /* Replace the last argument with corresponding value and check
@@ -2705,7 +2707,7 @@ int GuestSessionTaskUpdateAdditions::checkGuestAdditionsStatus(GuestSession *pSe
             procInfo.mArguments.pop_back();
             procInfo.mArguments.push_back("status-user");
 
-            vrc = runFileOnGuest(pSession, procInfo);
+            vrc = runFileOnGuest(pSession, procInfo, true /* fSilent */);
             if (RT_FAILURE(vrc))
                 hrc = setProgressErrorMsg(VBOX_E_GSTCTL_GUEST_ERROR,
                                           Utf8StrFmt(tr("Automatic update of Guest Additions has failed: "
@@ -3289,14 +3291,14 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                             if (RT_FAILURE(vrc))
                                 hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                                           Utf8StrFmt(tr("Automatic update of Guest Additions has failed: "
-                                                                        "guest services were not restarted, please reinstall Guest Additions")));
+                                                                        "guest services were not restarted, please reinstall Guest Additions manually")));
                         }
                         else
                         {
                             vrc = VERR_TRY_AGAIN;
                             hrc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                                       Utf8StrFmt(tr("Old guest session is still active, guest services were not restarted "
-                                                                    "after installation, please reinstall Guest Additions")));
+                                                                    "after installation, please reinstall Guest Additions manually")));
                         }
                     }
 

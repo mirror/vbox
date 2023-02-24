@@ -418,7 +418,7 @@ protected:
 
     int addProcessArguments(ProcessArguments &aArgumentsDest, const ProcessArguments &aArgumentsSource);
     int copyFileToGuest(GuestSession *pSession, RTVFS hVfsIso, Utf8Str const &strFileSource, const Utf8Str &strFileDest, bool fOptional);
-    int runFileOnGuest(GuestSession *pSession, GuestProcessStartupInfo &procInfo);
+    int runFileOnGuest(GuestSession *pSession, GuestProcessStartupInfo &procInfo, bool fSilent = false);
 
     int checkGuestAdditionsStatus(GuestSession *pSession, eOSType osType);
     int waitForGuestSession(ComObjPtr<Guest> pGuest, eOSType osType);
