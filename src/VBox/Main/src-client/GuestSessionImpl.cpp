@@ -933,6 +933,65 @@ HRESULT GuestSession::i_directoryCopyFlagFromStr(const com::Utf8Str &strFlags, b
     return S_OK;
 }
 
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
+/**
+ * Creates a directory on the guest.
+ *
+ * @returns VBox status code.
+ * @param   strPath             Path on guest to directory to create.
+ * @param   uMode               Creation mode to use (octal, 0777 max).
+ * @param   uFlags              Directory creation flags to use.
+ * @param   pvrcGuest           Where to return the guest error when
+ *                              VERR_GSTCTL_GUEST_ERROR was returned.
+ */
+int GuestSession::i_directoryCreateViaToolbox(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, int *pvrcGuest)
+{
+    int vrc = VINF_SUCCESS;
+
+    GuestProcessStartupInfo procInfo;
+    procInfo.mFlags      = ProcessCreateFlag_Hidden;
+    procInfo.mExecutable = VBOXSERVICE_TOOL_MKDIR;
+
+    try
+    {
+        procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
+
+        /* Construct arguments. */
+        if (uFlags)
+        {
+            if (uFlags & DirectoryCreateFlag_Parents)
+                procInfo.mArguments.push_back(Utf8Str("--parents")); /* We also want to create the parent directories. */
+            else
+                vrc = VERR_INVALID_PARAMETER;
+        }
+
+        if (   RT_SUCCESS(vrc)
+            && uMode)
+        {
+            procInfo.mArguments.push_back(Utf8Str("--mode")); /* Set the creation mode. */
+
+            char szMode[16];
+            if (RTStrPrintf(szMode, sizeof(szMode), "%o", uMode))
+                procInfo.mArguments.push_back(Utf8Str(szMode));
+            else
+                vrc = VERR_BUFFER_OVERFLOW;
+        }
+
+        procInfo.mArguments.push_back("--");    /* '--version' is a valid directory name. */
+        procInfo.mArguments.push_back(strPath); /* The directory we want to create. */
+    }
+    catch (std::bad_alloc &)
+    {
+        vrc = VERR_NO_MEMORY;
+    }
+
+    if (RT_SUCCESS(vrc))
+        vrc = GuestProcessToolbox::runTool(this, procInfo, pvrcGuest);
+
+    return vrc;
+}
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
+
 /**
  * Creates a directory on the guest.
  *
@@ -991,45 +1050,7 @@ int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode, uint
     else
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
     {
-        GuestProcessStartupInfo procInfo;
-        procInfo.mFlags      = ProcessCreateFlag_Hidden;
-        procInfo.mExecutable = VBOXSERVICE_TOOL_MKDIR;
-
-        try
-        {
-            procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
-
-            /* Construct arguments. */
-            if (uFlags)
-            {
-                if (uFlags & DirectoryCreateFlag_Parents)
-                    procInfo.mArguments.push_back(Utf8Str("--parents")); /* We also want to create the parent directories. */
-                else
-                    vrc = VERR_INVALID_PARAMETER;
-            }
-
-            if (   RT_SUCCESS(vrc)
-                && uMode)
-            {
-                procInfo.mArguments.push_back(Utf8Str("--mode")); /* Set the creation mode. */
-
-                char szMode[16];
-                if (RTStrPrintf(szMode, sizeof(szMode), "%o", uMode))
-                    procInfo.mArguments.push_back(Utf8Str(szMode));
-                else
-                    vrc = VERR_BUFFER_OVERFLOW;
-            }
-
-            procInfo.mArguments.push_back("--");    /* '--version' is a valid directory name. */
-            procInfo.mArguments.push_back(strPath); /* The directory we want to create. */
-        }
-        catch (std::bad_alloc &)
-        {
-            vrc = VERR_NO_MEMORY;
-        }
-
-        if (RT_SUCCESS(vrc))
-            vrc = GuestProcessToolbox::runTool(this, procInfo, pvrcGuest);
+        vrc = i_directoryCreateViaToolbox(strPath, uMode, uFlags, pvrcGuest);
     }
 
     LogFlowFunc(("LEAVE: %Rrc *pvrcGuest=%Rrc\n", vrc, pvrcGuest ? *pvrcGuest : -VERR_IPE_UNINITIALIZED_STATUS));
@@ -1194,6 +1215,94 @@ int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t fFlags, int
 }
 
 /**
+ * Creates a temporary directory / file on the guest (legacy version).
+ *
+ * @returns VBox status code.
+ * @returns VERR_GSTCTL_GUEST_ERROR on received guest error.
+ * @param   strTemplate         Name template to use.
+ *                              \sa RTDirCreateTemp / RTDirCreateTempSecure.
+ * @param   strPath             Path where to create the temporary directory / file.
+ * @param   fDirectory          Whether to create a temporary directory or file.
+ * @param   strName             Where to return the created temporary name on success.
+ * @param   fMode               File mode to use for creation (octal, umask-style).
+ *                              Ignored when \a fSecure is specified.
+ * @param   fSecure             Whether to perform a secure creation or not.
+ * @param   pvrcGuest           Guest VBox status code, when returning
+ *                              VERR_GSTCTL_GUEST_ERROR.
+ */
+int GuestSession::i_fsCreateTempViaToolbox(const Utf8Str &strTemplate, const Utf8Str &strPath, bool fDirectory, Utf8Str &strName,
+                                           uint32_t fMode, bool fSecure, int *pvrcGuest)
+{
+    int vrc;
+
+    GuestProcessStartupInfo procInfo;
+    procInfo.mFlags = ProcessCreateFlag_WaitForStdOut;
+    try
+    {
+        procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
+        procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
+        procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
+        if (fDirectory)
+            procInfo.mArguments.push_back(Utf8Str("-d"));
+        if (strPath.length()) /* Otherwise use /tmp or equivalent. */
+        {
+            procInfo.mArguments.push_back(Utf8Str("-t"));
+            procInfo.mArguments.push_back(strPath);
+        }
+        /* Note: Secure flag and mode cannot be specified at the same time. */
+        if (fSecure)
+        {
+            procInfo.mArguments.push_back(Utf8Str("--secure"));
+        }
+        else
+        {
+            procInfo.mArguments.push_back(Utf8Str("--mode"));
+
+            /* Note: Pass the mode unmodified down to the guest. See @ticketref{21394}. */
+            char szMode[16];
+            vrc = RTStrPrintf2(szMode, sizeof(szMode), "%d", fMode);
+            AssertRCReturn(vrc, vrc);
+            procInfo.mArguments.push_back(szMode);
+        }
+        procInfo.mArguments.push_back("--"); /* strTemplate could be '--help'. */
+        procInfo.mArguments.push_back(strTemplate);
+    }
+    catch (std::bad_alloc &)
+    {
+        Log(("Out of memory!\n"));
+        return VERR_NO_MEMORY;
+    }
+
+    GuestCtrlStreamObjects stdOut;
+    int vrcGuest;
+    vrc = GuestProcessToolbox::runTool(this, procInfo, &vrcGuest, &stdOut);
+    if (!GuestProcess::i_isGuestError(vrc))
+    {
+        GuestFsObjData objData;
+        if (!stdOut.empty())
+        {
+            vrc = objData.FromToolboxMkTemp(stdOut.at(0));
+            if (RT_FAILURE(vrc))
+            {
+                vrcGuest = vrc;
+                if (pvrcGuest)
+                    *pvrcGuest = vrcGuest;
+                vrc = VERR_GSTCTL_GUEST_ERROR;
+            }
+        }
+        else
+            vrc = VERR_BROKEN_PIPE;
+
+        if (RT_SUCCESS(vrc))
+            strName = objData.mName;
+    }
+    else if (pvrcGuest)
+        *pvrcGuest = vrcGuest;
+
+    return vrc;
+}
+
+/**
  * Creates a temporary directory / file on the guest.
  *
  * @returns VBox status code.
@@ -1281,68 +1390,7 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
     else
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
     {
-        GuestProcessStartupInfo procInfo;
-        procInfo.mFlags = ProcessCreateFlag_WaitForStdOut;
-        try
-        {
-            procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
-            procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
-            procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
-            if (fDirectory)
-                procInfo.mArguments.push_back(Utf8Str("-d"));
-            if (strPath.length()) /* Otherwise use /tmp or equivalent. */
-            {
-                procInfo.mArguments.push_back(Utf8Str("-t"));
-                procInfo.mArguments.push_back(strPath);
-            }
-            /* Note: Secure flag and mode cannot be specified at the same time. */
-            if (fSecure)
-            {
-                procInfo.mArguments.push_back(Utf8Str("--secure"));
-            }
-            else
-            {
-                procInfo.mArguments.push_back(Utf8Str("--mode"));
-
-                /* Note: Pass the mode unmodified down to the guest. See @ticketref{21394}. */
-                char szMode[16];
-                vrc = RTStrPrintf2(szMode, sizeof(szMode), "%d", fMode);
-                AssertRCReturn(vrc, vrc);
-                procInfo.mArguments.push_back(szMode);
-            }
-            procInfo.mArguments.push_back("--"); /* strTemplate could be '--help'. */
-            procInfo.mArguments.push_back(strTemplate);
-        }
-        catch (std::bad_alloc &)
-        {
-            Log(("Out of memory!\n"));
-            return VERR_NO_MEMORY;
-        }
-
-        GuestCtrlStreamObjects stdOut;
-        vrc = GuestProcessToolbox::runTool(this, procInfo, &vrcGuest, &stdOut);
-        if (!GuestProcess::i_isGuestError(vrc))
-        {
-            GuestFsObjData objData;
-            if (!stdOut.empty())
-            {
-                vrc = objData.FromToolboxMkTemp(stdOut.at(0));
-                if (RT_FAILURE(vrc))
-                {
-                    vrcGuest = vrc;
-                    if (pvrcGuest)
-                        *pvrcGuest = vrcGuest;
-                    vrc = VERR_GSTCTL_GUEST_ERROR;
-                }
-            }
-            else
-                vrc = VERR_BROKEN_PIPE;
-
-            if (RT_SUCCESS(vrc))
-                strName = objData.mName;
-        }
-        else if (pvrcGuest)
-            *pvrcGuest = vrcGuest;
+        vrc = i_fsCreateTempViaToolbox(strTemplate, strPath, fDirectory, strName, fMode, fSecure, pvrcGuest);
     }
 
     LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, vrcGuest));
@@ -1685,6 +1733,61 @@ int GuestSession::i_fileUnregister(GuestFile *pFile)
 }
 
 /**
+ * Removes a file from the guest (legacy version).
+ *
+ * @returns VBox status code.
+ * @returns VERR_GSTCTL_GUEST_ERROR on received guest error.
+ * @param   strPath             Path of file on guest to remove.
+ * @param   pvrcGuest           Where to return the guest error when
+ *                              VERR_GSTCTL_GUEST_ERROR was returned. Optional.
+ */
+int GuestSession::i_fileRemoveViaToolbox(const Utf8Str &strPath, int *pvrcGuest)
+{
+    GuestProcessStartupInfo procInfo;
+    GuestToolboxStream  streamOut;
+
+    procInfo.mFlags      = ProcessCreateFlag_WaitForStdOut;
+    procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_RM);
+
+    try
+    {
+        procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
+        procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
+        procInfo.mArguments.push_back("--"); /* strPath could be '--help', which is a valid filename. */
+        procInfo.mArguments.push_back(strPath); /* The file we want to remove. */
+    }
+    catch (std::bad_alloc &)
+    {
+        return VERR_NO_MEMORY;
+    }
+
+    GuestCtrlStreamObjects stdOut;
+    int vrcGuest;
+    int vrc = GuestProcessToolbox::runTool(this, procInfo, &vrcGuest, &stdOut);
+    if (!GuestProcess::i_isGuestError(vrc))
+    {
+        if (!stdOut.empty())
+        {
+            GuestFsObjData objData;
+            vrc = objData.FromToolboxRm(stdOut.at(0));
+            if (RT_FAILURE(vrc))
+            {
+                vrcGuest = vrc;
+                if (pvrcGuest)
+                    *pvrcGuest = vrcGuest;
+                vrc = VERR_GSTCTL_GUEST_ERROR;
+            }
+        }
+        else
+            vrc = VERR_BROKEN_PIPE;
+    }
+    else if (pvrcGuest)
+        *pvrcGuest = vrcGuest;
+
+    return vrc;
+}
+
+/**
  * Removes a file from the guest.
  *
  * @returns VBox status code.
@@ -1732,45 +1835,7 @@ int GuestSession::i_fileRemove(const Utf8Str &strPath, int *pvrcGuest)
     else
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
     {
-        GuestProcessStartupInfo procInfo;
-        GuestToolboxStream  streamOut;
-
-        procInfo.mFlags      = ProcessCreateFlag_WaitForStdOut;
-        procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_RM);
-
-        try
-        {
-            procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
-            procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
-            procInfo.mArguments.push_back("--"); /* strPath could be '--help', which is a valid filename. */
-            procInfo.mArguments.push_back(strPath); /* The file we want to remove. */
-        }
-        catch (std::bad_alloc &)
-        {
-            return VERR_NO_MEMORY;
-        }
-
-        GuestCtrlStreamObjects stdOut;
-        vrc = GuestProcessToolbox::runTool(this, procInfo, &vrcGuest, &stdOut);
-        if (!GuestProcess::i_isGuestError(vrc))
-        {
-            if (!stdOut.empty())
-            {
-                GuestFsObjData objData;
-                vrc = objData.FromToolboxRm(stdOut.at(0));
-                if (RT_FAILURE(vrc))
-                {
-                    vrcGuest = vrc;
-                    if (pvrcGuest)
-                        *pvrcGuest = vrcGuest;
-                    vrc = VERR_GSTCTL_GUEST_ERROR;
-                }
-            }
-            else
-                vrc = VERR_BROKEN_PIPE;
-        }
-        else if (pvrcGuest)
-            *pvrcGuest = vrcGuest;
+        vrc = i_fileRemoveViaToolbox(strPath, pvrcGuest);
     }
 
     LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, vrcGuest));
@@ -1951,6 +2016,63 @@ int GuestSession::i_fileQuerySize(const Utf8Str &strPath, bool fFollowSymlinks, 
 }
 
 /**
+ * Queries information of a file system object (file, directory, ...). Legacy version.
+ *
+ * @return  IPRT status code.
+ * @param   strPath             Path to file system object to query information for.
+ * @param   fFollowSymlinks     Whether to follow symbolic links or not.
+ * @param   objData             Where to return the file system object data, if found.
+ * @param   pvrcGuest           Guest VBox status code, when returning
+ *                              VERR_GSTCTL_GUEST_ERROR. Any other return code
+ *                              indicates some host side error.
+ */
+int GuestSession::i_fsQueryInfoViaToolbox(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pvrcGuest)
+{
+    /** @todo Merge this with IGuestFile::queryInfo(). */
+    GuestProcessStartupInfo procInfo;
+    procInfo.mFlags = ProcessCreateFlag_WaitForStdOut;
+    try
+    {
+        procInfo.mExecutable = VBOXSERVICE_TOOL_STAT;
+        procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
+        procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
+        if (fFollowSymlinks)
+            procInfo.mArguments.push_back(Utf8Str("-L"));
+        procInfo.mArguments.push_back("--"); /* strPath could be '--help', which is a valid filename. */
+        procInfo.mArguments.push_back(strPath);
+    }
+    catch (std::bad_alloc &)
+    {
+        Log(("Out of memory!\n"));
+        return VERR_NO_MEMORY;
+    }
+
+    GuestCtrlStreamObjects stdOut;
+    int vrcGuest;
+    int vrc = GuestProcessToolbox::runTool(this, procInfo, &vrcGuest, &stdOut);
+    if (!GuestProcess::i_isGuestError(vrc))
+    {
+        if (!stdOut.empty())
+        {
+            vrc = objData.FromToolboxStat(stdOut.at(0));
+            if (RT_FAILURE(vrc))
+            {
+                vrcGuest = vrc;
+                if (pvrcGuest)
+                    *pvrcGuest = vrcGuest;
+                vrc = VERR_GSTCTL_GUEST_ERROR;
+            }
+        }
+        else
+            vrc = VERR_BROKEN_PIPE;
+    }
+    else if (pvrcGuest)
+        *pvrcGuest = vrcGuest;
+
+    return vrc;
+}
+
+/**
  * Queries information of a file system object (file, directory, ...).
  *
  * @return  IPRT status code.
@@ -2025,45 +2147,7 @@ int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, Gu
     else
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
     {
-        /** @todo Merge this with IGuestFile::queryInfo(). */
-        GuestProcessStartupInfo procInfo;
-        procInfo.mFlags = ProcessCreateFlag_WaitForStdOut;
-        try
-        {
-            procInfo.mExecutable = VBOXSERVICE_TOOL_STAT;
-            procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
-            procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
-            if (fFollowSymlinks)
-                procInfo.mArguments.push_back(Utf8Str("-L"));
-            procInfo.mArguments.push_back("--"); /* strPath could be '--help', which is a valid filename. */
-            procInfo.mArguments.push_back(strPath);
-        }
-        catch (std::bad_alloc &)
-        {
-            Log(("Out of memory!\n"));
-            return VERR_NO_MEMORY;
-        }
-
-        GuestCtrlStreamObjects stdOut;
-        vrc = GuestProcessToolbox::runTool(this, procInfo, &vrcGuest, &stdOut);
-        if (!GuestProcess::i_isGuestError(vrc))
-        {
-            if (!stdOut.empty())
-            {
-                vrc = objData.FromToolboxStat(stdOut.at(0));
-                if (RT_FAILURE(vrc))
-                {
-                    vrcGuest = vrc;
-                    if (pvrcGuest)
-                        *pvrcGuest = vrcGuest;
-                    vrc = VERR_GSTCTL_GUEST_ERROR;
-                }
-            }
-            else
-                vrc = VERR_BROKEN_PIPE;
-        }
-        else if (pvrcGuest)
-            *pvrcGuest = vrcGuest;
+        vrc = i_fsQueryInfoViaToolbox(strPath, fFollowSymlinks, objData, pvrcGuest);
     }
 
     LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, vrcGuest));
