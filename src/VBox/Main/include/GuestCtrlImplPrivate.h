@@ -1019,7 +1019,7 @@ public:
 
     const char *GetString(const char *pszKey) const;
     size_t      GetCount(void) const;
-    int         GetVrc(void) const;
+    int         GetVrc(bool fSucceedIfNotFound = false) const;
     int         GetInt64Ex(const char *pszKey, int64_t *piVal) const;
     int64_t     GetInt64(const char *pszKey) const;
     int         GetUInt32Ex(const char *pszKey, uint32_t *puVal) const;

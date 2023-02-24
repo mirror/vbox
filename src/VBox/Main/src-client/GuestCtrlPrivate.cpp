@@ -428,10 +428,10 @@ int GuestFsObjData::FromToolboxRm(const GuestToolboxStreamBlock &strmBlk)
     strmBlk.DumpToLog();
 #endif
     /* Object name. */
-    mName = strmBlk.GetString("fname");
+    mName = strmBlk.GetString("fname"); /* Note: RTPathRmCmd() only sets this on failure. */
 
     /* Return the stream block's vrc. */
-    return strmBlk.GetVrc();
+    return strmBlk.GetVrc(true /* fSucceedIfNotFound */);
 }
 
 /**
@@ -596,12 +596,17 @@ size_t GuestToolboxStreamBlock::GetCount(void) const
  *
  * @return  VBox status code.
  * @retval  VERR_NOT_FOUND if the return code string ("rc") was not found.
+ * @param   fSucceedIfNotFound  When set to @c true, this reports back VINF_SUCCESS when the key ("rc") is not found.
+ *                              This can happen with some (older) IPRT-provided tools such as RTPathRmCmd(), which only outputs
+ *                              rc on failure but not on success. Defaults to @c false.
  */
-int GuestToolboxStreamBlock::GetVrc(void) const
+int GuestToolboxStreamBlock::GetVrc(bool fSucceedIfNotFound /* = false */) const
 {
     const char *pszValue = GetString("rc");
     if (pszValue)
         return RTStrToInt16(pszValue);
+    if (fSucceedIfNotFound)
+        return VINF_SUCCESS;
     /** @todo We probably should have a dedicated error for that, VERR_GSTCTL_GUEST_TOOLBOX_whatever. */
     return VERR_NOT_FOUND;
 }
