@@ -51,6 +51,9 @@ ifndef VBOX_ONLY_EXTPACKS
  if defined(VBOX_WITH_OPEN_WATCOM) && defined(VBOX_WITH_UNATTENDED)
   include $(PATH_SUB_CURRENT)/src-helper-apps/os2/Makefile.kmk
  endif
+ if defined(VBOX_WITH_DEVMAPPER)
+  include $(PATH_SUB_CURRENT)/src-helper-apps/VBoxVolInfo/Makefile.kmk
+ endif
 endif
 
 
@@ -1354,16 +1357,6 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
   VBoxExtPackHelperApp_LIBS = \
   	$(LIB_RUNTIME)
  endif # VBOX_WITH_EXTPACK
-
- #
- # VolInfo
- #
- ifdef VBOX_WITH_DEVMAPPER
-  PROGRAMS.linux     += VBoxVolInfo
-  VBoxVolInfo_TEMPLATE = VBoxR3SetUidToRoot
-  VBoxVolInfo_SOURCES = src-helper-apps/VBoxVolInfo.cpp
-  VBoxVolInfo_LIBS    = devmapper
- endif
 
 
 endif # !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) (the ifndef is far above)

@@ -31,21 +31,43 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <dirent.h>
-extern "C"
-{
-#define private privatekw
-#include <libdevmapper.h>
-}
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <VBox/err.h>
+
+#include "libdevmapper.h"
 
 /*********************************************************************************************************************************
-*   Function Prototypes                                                                                                          *
+*   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-void print_dev_name(dev_t devid);
+
+/*
+ * Looks up device name by id using /dev directory. Prints it to stdout.
+ */
+static void print_dev_name(dev_t devid)
+{
+    char path[PATH_MAX];
+    struct dirent *de;
+    DIR *dir = opendir("/dev");
+
+    while ((de = readdir(dir)) != NULL)
+    {
+        struct stat st;
+        snprintf(path, sizeof(path), "/dev/%s", de->d_name);
+        if (!stat(path, &st))
+            if (S_ISBLK(st.st_mode))
+                if (devid == st.st_rdev)
+                {
+                    puts(de->d_name);
+                    break;
+                }
+    }
+    closedir(dir);
+}
+
 
 /*
  * Extracts logical volume dependencies via devmapper API and print them out.
@@ -58,6 +80,13 @@ int main(int argc, char **argv)
     if (argc != 2)
     {
         fprintf(stderr, "USAGE: %s <volume_name>\n", argv[0]);
+        return 1;
+    }
+
+    int vrc = RTDevmapperLoadLib();
+    if (RT_FAILURE(vrc))
+    {
+        fprintf(stderr, "%s: libdevmapper library not found.  Service not available.\n", argv[0]);
         return 1;
     }
 
@@ -80,28 +109,4 @@ int main(int argc, char **argv)
 
     dm_task_destroy(dmtask);
     return 0;
-}
-
-/*
- * Looks up device name by id using /dev directory. Prints it to stdout.
- */
-void print_dev_name(dev_t devid)
-{
-    char path[PATH_MAX];
-    struct dirent *de;
-    DIR *dir = opendir("/dev");
-
-    while ((de = readdir(dir)) != NULL)
-    {
-        struct stat st;
-        snprintf(path, sizeof(path), "/dev/%s", de->d_name);
-        if (!stat(path, &st))
-            if (S_ISBLK(st.st_mode))
-                if (devid == st.st_rdev)
-                {
-                    puts(de->d_name);
-                    break;
-                }
-    }
-    closedir(dir);
 }
