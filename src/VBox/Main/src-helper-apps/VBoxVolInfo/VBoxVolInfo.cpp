@@ -36,7 +36,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <VBox/errcore.h>
+#include <iprt/errcore.h>
 
 #include "libdevmapper.h"
 
