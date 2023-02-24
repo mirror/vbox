@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Sub-Makefile for the VBoxVolInfo helper app.
+# Source code massager settings for the includes.
 #
 
 #
@@ -25,19 +25,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 #
 
-SUB_DEPTH = ../../../../..
-include $(KBUILD_PATH)/subheader.kmk
 
-#
-# VolInfo
-#
-PROGRAMS.linux     += VBoxVolInfo
-VBoxVolInfo_TEMPLATE = VBoxR3SetUidToRoot
-VBoxVolInfo_SOURCES = \
-	VBoxVolInfo.cpp \
-	libdevmapper.cpp
-VBoxVolInfo_LIBS = \
-	$(LIB_RUNTIME)
-
-include $(FILE_KBUILD_SUB_FOOTER)
+# Some headers actually shouldn't have include guards:
+/libdevmapper-calls.h:                     --no-fix-header-guards
 
