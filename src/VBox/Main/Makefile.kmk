@@ -51,7 +51,7 @@ ifndef VBOX_ONLY_EXTPACKS
  if defined(VBOX_WITH_OPEN_WATCOM) && defined(VBOX_WITH_UNATTENDED)
   include $(PATH_SUB_CURRENT)/src-helper-apps/os2/Makefile.kmk
  endif
- if defined(VBOX_WITH_DEVMAPPER)
+ if defined(VBOX_WITH_DEVMAPPER) && !defined(VBOX_ONLY_SDK)
   include $(PATH_SUB_CURRENT)/src-helper-apps/VBoxVolInfo/Makefile.kmk
  endif
 endif
