@@ -244,6 +244,12 @@ public:
         bool setPause(bool fPause);
     /** @} */
 
+    /** @name Machine-data stuff.
+     ** @{ */
+        /** Saves machine data. */
+        bool saveSettings();
+    /** @} */
+
     /** @name Snapshot stuff.
      ** @{ */
         /** Acquires snapshot count. */

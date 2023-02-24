@@ -298,6 +298,16 @@ bool UISession::setPause(bool fPause)
     return fSuccess;
 }
 
+bool UISession::saveSettings()
+{
+    CMachine comMachine = machine();
+    comMachine.SaveSettings();
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotSaveMachineSettings(comMachine);
+    return fSuccess;
+}
+
 bool UISession::acquireSnapshotCount(ulong &uCount)
 {
     CMachine comMachine = machine();
@@ -1829,14 +1839,8 @@ bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType en
     }
 
     /* Save machine settings: */
-    machine().SaveSettings();
-
-    /* Show error message if necessary: */
-    if (!machine().isOk())
-    {
-        UINotificationMessage::cannotSaveMachineSettings(machine());
+    if (!saveSettings())
         return false;
-    }
 
     /* True by default: */
     return true;

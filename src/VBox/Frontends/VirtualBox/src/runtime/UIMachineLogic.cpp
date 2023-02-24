@@ -1979,15 +1979,9 @@ void UIMachineLogic::sltToggleRecording(bool fEnabled)
         return UINotificationMessage::cannotToggleRecording(comRecordingSettings, uimachine()->machineName(), fEnabled);
     }
 
-    /* Save machine-settings: */
-    machine().SaveSettings();
-    if (!machine().isOk())
-    {
-        /* Make sure action is updated: */
-        uimachine()->updateStateRecordingAction();
-        /* Notify about the error: */
-        return UINotificationMessage::cannotSaveMachineSettings(machine());
-    }
+    /* Save machine-settings, make sure action is updated in case of failure: */
+    if (!uimachine()->saveSettings())
+        return uimachine()->updateStateRecordingAction();
 }
 
 void UIMachineLogic::sltToggleVRDE(bool fEnabled)
@@ -2015,15 +2009,9 @@ void UIMachineLogic::sltToggleVRDE(bool fEnabled)
         return UINotificationMessage::cannotToggleVRDEServer(server, machineName(), fEnabled);
     }
 
-    /* Save machine-settings: */
-    machine().SaveSettings();
-    if (!machine().isOk())
-    {
-        /* Make sure action is updated: */
-        uimachine()->updateStateVRDEServerAction();
-        /* Notify about the error: */
-        return UINotificationMessage::cannotSaveMachineSettings(machine());
-    }
+    /* Save machine-settings, make sure action is updated in case of failure: */
+    if (!uimachine()->saveSettings())
+        return uimachine()->updateStateVRDEServerAction();
 }
 
 void UIMachineLogic::sltShowKeyboardSettings()
@@ -2216,15 +2204,9 @@ void UIMachineLogic::sltToggleAudioOutput(bool fEnabled)
         return UINotificationMessage::cannotToggleAudioOutput(comAdapter, machineName(), fEnabled);
     }
 
-    /* Save machine-settings: */
-    machine().SaveSettings();
-    if (!machine().isOk())
-    {
-        /* Make sure action is updated: */
-        uimachine()->updateStateAudioActions();
-        /* Notify about the error: */
-        return UINotificationMessage::cannotSaveMachineSettings(machine());
-    }
+    /* Save machine-settings, make sure action is updated in case of failure: */
+    if (!uimachine()->saveSettings())
+        return uimachine()->updateStateAudioActions();
 }
 
 void UIMachineLogic::sltToggleAudioInput(bool fEnabled)
@@ -2253,15 +2235,9 @@ void UIMachineLogic::sltToggleAudioInput(bool fEnabled)
         return UINotificationMessage::cannotToggleAudioInput(comAdapter, machineName(), fEnabled);
     }
 
-    /* Save machine-settings: */
-    machine().SaveSettings();
-    if (!machine().isOk())
-    {
-        /* Make sure action is updated: */
-        uimachine()->updateStateAudioActions();
-        /* Notify about the error: */
-        return UINotificationMessage::cannotSaveMachineSettings(machine());
-    }
+    /* Save machine-settings, make sure action is updated in case of failure: */
+    if (!uimachine()->saveSettings())
+        return uimachine()->updateStateAudioActions();
 }
 
 void UIMachineLogic::sltOpenSettingsDialogNetwork()
@@ -2349,9 +2325,7 @@ void UIMachineLogic::sltToggleNetworkAdapterConnection()
         return UINotificationMessage::cannotToggleNetworkCable(adapter, machineName(), fConnect);
 
     /* Save machine-settings: */
-    machine().SaveSettings();
-    if (!machine().isOk())
-        return UINotificationMessage::cannotSaveMachineSettings(machine());
+    uimachine()->saveSettings();
 }
 
 void UIMachineLogic::sltChangeDragAndDropType(QAction *pAction)
@@ -3186,15 +3160,7 @@ bool UIMachineLogic::mountBootMedium(const QUuid &uMediumId)
     if (!fSuccess)
         msgCenter().cannotRemountMedium(comMachine, guiMedium, true /* mount? */, false /* retry? */, pParent);
     else
-    {
-        /* Save machine settings: */
-        comMachine.SaveSettings();
-        fSuccess = comMachine.isOk();
-
-        /* Show error message if necessary: */
-        if (!fSuccess)
-            UINotificationMessage::cannotSaveMachineSettings(machine());
-    }
+        fSuccess = uimachine()->saveSettings();
     return fSuccess;
 }
 

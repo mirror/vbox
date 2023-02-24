@@ -355,6 +355,11 @@ bool UIMachine::setPause(bool fPause)
     return uisession()->setPause(fPause);
 }
 
+bool UIMachine::saveSettings()
+{
+    return uisession()->saveSettings();
+}
+
 bool UIMachine::acquireSnapshotCount(ulong &uCount)
 {
     return uisession()->acquireSnapshotCount(uCount);
