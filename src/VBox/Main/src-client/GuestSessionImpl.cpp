@@ -1392,7 +1392,7 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
         vrc = i_fsCreateTempViaToolbox(strTemplate, strPath, fDirectory, strName, fMode, fSecure, pvrcGuest);
     }
 
-    LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, vrcGuest));
+    LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, pvrcGuest ? *pvrcGuest : VERR_IPE_UNINITIALIZED_STATUS));
     return vrc;
 }
 
@@ -1836,7 +1836,7 @@ int GuestSession::i_fileRemove(const Utf8Str &strPath, int *pvrcGuest)
         vrc = i_fileRemoveViaToolbox(strPath, pvrcGuest);
     }
 
-    LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, vrcGuest));
+    LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, pvrcGuest ? *pvrcGuest : VERR_IPE_UNINITIALIZED_STATUS));
     return vrc;
 }
 
@@ -2146,7 +2146,7 @@ int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, Gu
         vrc = i_fsQueryInfoViaToolbox(strPath, fFollowSymlinks, objData, pvrcGuest);
     }
 
-    LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, vrcGuest));
+    LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, pvrcGuest ? *pvrcGuest : VERR_IPE_UNINITIALIZED_STATUS));
     return vrc;
 }
 
