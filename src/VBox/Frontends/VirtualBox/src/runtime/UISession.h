@@ -400,6 +400,13 @@ public:
         bool acquireWhetherVRDEServerEnabled(bool &fEnabled);
         /** Defines whether VRDE server is enabled. */
         bool setVRDEServerEnabled(bool fEnabled);
+
+        /** Acquires whether recording settings is present. */
+        bool acquireWhetherRecordingSettingsPresent(bool &fPresent);
+        /** Acquires whether recording settings is enabled. */
+        bool acquireWhetherRecordingSettingsEnabled(bool &fEnabled);
+        /** Defines whether recording settings is enabled. */
+        bool setRecordingSettingsEnabled(bool fEnabled);
     /** @} */
 
     /** @name Status-bar stuff.

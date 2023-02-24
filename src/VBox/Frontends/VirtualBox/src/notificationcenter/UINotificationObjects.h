@@ -331,6 +331,9 @@ public:
         /** Notifies about inability to acquire IEmulatedUSB parameter.
           * @param  comDispatcher  Brings the object parameter get acquired from. */
         static void cannotAcquireEmulatedUSBParameter(const CEmulatedUSB &comDispatcher);
+        /** Notifies about inability to acquire IRecordingSettings parameter.
+          * @param  comSettings  Brings the object parameter get acquired from. */
+        static void cannotAcquireRecordingSettingsParameter(const CRecordingSettings &comSettings);
         /** Notifies about inability to acquire IVRDEServer parameter.
           * @param  comServer  Brings the object parameter get acquired from. */
         static void cannotAcquireVRDEServerParameter(const CVRDEServer &comServer);

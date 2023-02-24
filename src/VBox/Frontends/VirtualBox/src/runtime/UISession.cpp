@@ -63,6 +63,7 @@
 #include "CHostVideoInputDevice.h"
 #include "CMedium.h"
 #include "CMediumAttachment.h"
+#include "CRecordingSettings.h"
 #include "CSnapshot.h"
 #include "CStorageController.h"
 #include "CSystemProperties.h"
@@ -1020,6 +1021,50 @@ bool UISession::setVRDEServerEnabled(bool fEnabled)
         fSuccess = comServer.isOk();
         if (!fSuccess)
             UINotificationMessage::cannotToggleVRDEServer(comServer, machineName(), fEnabled);
+    }
+    return fSuccess;
+}
+
+bool UISession::acquireWhetherRecordingSettingsPresent(bool &fPresent)
+{
+    CMachine comMachine = machine();
+    CRecordingSettings comSettings = comMachine.GetRecordingSettings();
+    fPresent = comMachine.isOk() && comSettings.isNotNull();
+    return true;
+}
+
+bool UISession::acquireWhetherRecordingSettingsEnabled(bool &fEnabled)
+{
+    CMachine comMachine = machine();
+    CRecordingSettings comSettings = comMachine.GetRecordingSettings();
+    bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        const BOOL fSettingsEnabled = comSettings.GetEnabled();
+        fSuccess = comSettings.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotAcquireRecordingSettingsParameter(comSettings);
+        else
+            fEnabled = fSettingsEnabled == TRUE;
+    }
+    return fSuccess;
+}
+
+bool UISession::setRecordingSettingsEnabled(bool fEnabled)
+{
+    CMachine comMachine = machine();
+    CRecordingSettings comSettings = comMachine.GetRecordingSettings();
+    bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        comSettings.SetEnabled(fEnabled);
+        fSuccess = comSettings.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotToggleRecording(comSettings, machineName(), fEnabled);
     }
     return fSuccess;
 }

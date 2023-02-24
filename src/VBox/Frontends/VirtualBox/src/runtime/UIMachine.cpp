@@ -266,14 +266,17 @@ void UIMachine::updateStateAudioActions()
 
 void UIMachine::updateStateRecordingAction()
 {
-    /* Make sure recording settingss present: */
-    const CRecordingSettings comRecordingSettings = uisession()->machine().GetRecordingSettings();
-    AssertMsgReturnVoid(uisession()->machine().isOk() && comRecordingSettings.isNotNull(),
+    /* Make sure Recording settings present: */
+    bool fSettingsPresent = false;
+    acquireWhetherRecordingSettingsPresent(fSettingsPresent);
+    AssertMsgReturnVoid(fSettingsPresent,
                         ("Recording settings can't be null!\n"));
 
-    /* Check/Uncheck Capture action depending on feature status: */
+    /* Check/Uncheck Recording action depending on feature status: */
+    bool fSettingsEnabled = false;
+    acquireWhetherRecordingSettingsEnabled(fSettingsEnabled);
     actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start)->blockSignals(true);
-    actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start)->setChecked(comRecordingSettings.GetEnabled());
+    actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start)->setChecked(fSettingsEnabled);
     actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start)->blockSignals(false);
 }
 
@@ -579,6 +582,21 @@ bool UIMachine::acquireWhetherVRDEServerEnabled(bool &fEnabled)
 bool UIMachine::setVRDEServerEnabled(bool fEnabled)
 {
     return uisession()->setVRDEServerEnabled(fEnabled);
+}
+
+bool UIMachine::acquireWhetherRecordingSettingsPresent(bool &fPresent)
+{
+    return uisession()->acquireWhetherRecordingSettingsPresent(fPresent);
+}
+
+bool UIMachine::acquireWhetherRecordingSettingsEnabled(bool &fEnabled)
+{
+    return uisession()->acquireWhetherRecordingSettingsEnabled(fEnabled);
+}
+
+bool UIMachine::setRecordingSettingsEnabled(bool fEnabled)
+{
+    return uisession()->setRecordingSettingsEnabled(fEnabled);
 }
 
 bool UIMachine::isGuestAdditionsActive() const

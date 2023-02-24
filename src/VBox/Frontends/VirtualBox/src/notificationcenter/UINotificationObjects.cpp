@@ -778,6 +778,15 @@ void UINotificationMessage::cannotAcquireEmulatedUSBParameter(const CEmulatedUSB
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireRecordingSettingsParameter(const CRecordingSettings &comSettings)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Recording settings failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire recording settings parameter.") +
+        UIErrorString::formatErrorInfo(comSettings));
+}
+
+/* static */
 void UINotificationMessage::cannotAcquireVRDEServerParameter(const CVRDEServer &comServer)
 {
     createMessage(

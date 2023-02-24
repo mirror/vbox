@@ -1965,22 +1965,15 @@ void UIMachineLogic::sltToggleRecording(bool fEnabled)
         return;
 
     /* Make sure something had changed: */
-    CRecordingSettings comRecordingSettings = machine().GetRecordingSettings();
-    if (comRecordingSettings.GetEnabled() == static_cast<BOOL>(fEnabled))
+    bool fSettingsEnabled = false;
+    uimachine()->acquireWhetherRecordingSettingsEnabled(fSettingsEnabled);
+    if (fSettingsEnabled == fEnabled)
         return;
 
-    /* Update recording state: */
-    comRecordingSettings.SetEnabled(fEnabled);
-    if (!comRecordingSettings.isOk())
-    {
-        /* Make sure action is updated: */
-        uimachine()->updateStateRecordingAction();
-        /* Notify about the error: */
-        return UINotificationMessage::cannotToggleRecording(comRecordingSettings, uimachine()->machineName(), fEnabled);
-    }
-
-    /* Save machine-settings, make sure action is updated in case of failure: */
-    if (!uimachine()->saveSettings())
+    /* Update and save recording settings state,
+     * make sure action is updated in case of failure: */
+    if (   !uimachine()->setRecordingSettingsEnabled(fEnabled)
+        || !uimachine()->saveSettings())
         return uimachine()->updateStateRecordingAction();
 }
 
