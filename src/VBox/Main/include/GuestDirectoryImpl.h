@@ -75,6 +75,7 @@ public:
     int            i_readInternal(GuestFsObjData &objData, int *pvrcGuest);
     int            i_rewind(uint32_t uTimeoutMS, int *pvrcGuest);
     int            i_setStatus(DirectoryStatus_T enmStatus, int vrcDir);
+    int            i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, DirectoryStatus_T *penmStatus, int *prcGuest);
     /** @}  */
 
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT

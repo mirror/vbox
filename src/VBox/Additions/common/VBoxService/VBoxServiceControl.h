@@ -39,6 +39,8 @@
 #include <VBox/GuestHost/GuestControl.h>
 #include <VBox/HostServices/GuestControlSvc.h>
 
+#include "VBoxServiceUtils.h" /* For VGSVCIDCACHE. */
+
 
 /**
  * Pipe IDs for handling the guest process poll set.
@@ -218,6 +220,8 @@ typedef struct VBOXSERVICECTRLSESSION
     uint32_t                        fFlags;
     /** How many processes do we allow keeping around at a time? */
     uint32_t                        uProcsMaxKept;
+    /** The uid/gid cache for this session. */
+    VGSVCIDCACHE                    IdCache;
 } VBOXSERVICECTRLSESSION;
 /** Pointer to guest session. */
 typedef VBOXSERVICECTRLSESSION *PVBOXSERVICECTRLSESSION;

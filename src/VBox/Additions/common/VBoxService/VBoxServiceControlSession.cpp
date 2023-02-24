@@ -1136,7 +1136,7 @@ static int vgsvcGstCtrlSessionHandleDirRead(const PVBOXSERVICECTRLSESSION pSessi
      * Retrieve the message.
      */
     uint32_t           uHandle;
-    size_t             cbDirEntry;
+    size_t             cbDirEntry = 0;
     GSTCTLFSOBJATTRADD enmAttrAdd;
     uint32_t           fFlags;
     GSTCTLDIRENTRYEX   DirEntryEx;
@@ -1146,7 +1146,7 @@ static int vgsvcGstCtrlSessionHandleDirRead(const PVBOXSERVICECTRLSESSION pSessi
         PVBOXSERVICECTRLDIR pDir = vgsvcGstCtrlSessionDirAcquire(pSession, uHandle);
         if (pDir)
         {
-            VGSvcVerbose(2, "[Dir %s] Reading next entry (handle=%RU32)\n", pDir ? pDir->pszPathAbs : "<Not found>", uHandle);
+            RT_ZERO(DirEntryEx);
 
             /*
              * For now we ASSUME that RTDIRENTRYEX == GSTCTLDIRENTRYEX, which implies that we simply can cast RTDIRENTRYEX
@@ -1166,12 +1166,37 @@ static int vgsvcGstCtrlSessionHandleDirRead(const PVBOXSERVICECTRLSESSION pSessi
             /* Paranoia. */
             AssertStmt(cbDirEntry <= _256K, rc = VERR_BUFFER_OVERFLOW);
 
-            if (RT_SUCCESS(rc))
-            {
-                int rc2 = VbglR3GuestCtrlDirCbRead(pHostCtx, rc, &DirEntryEx, (uint32_t)cbDirEntry);
-                if (RT_FAILURE(rc2))
-                    VGSvcError("Failed to report directory read status, rc=%Rrc\n", rc2);
-            }
+            VGSvcVerbose(2, "[Dir %s] Read next entry '%s' -> %Rrc\n",
+                         pDir->pszPathAbs, RT_SUCCESS(rc) ? DirEntryEx.szName : "<None>", rc);
+
+            char *pszUser = RT_SUCCESS(rc)
+                          ? RTStrDup(VGSvcIdCacheGetUidName(&pSession->IdCache,
+                                                            DirEntryEx.Info.Attr.u.Unix.uid, DirEntryEx.szName, pDir->pszPathAbs))
+                          : NULL;
+
+            char *pszGroup = RT_SUCCESS(rc)
+                           ? RTStrDup(VGSvcIdCacheGetGidName(&pSession->IdCache,
+                                                             DirEntryEx.Info.Attr.u.Unix.gid, DirEntryEx.szName, pDir->pszPathAbs))
+                           : NULL;
+
+            VGSvcVerbose(2, "[Dir %s] Entry '%s': %zu bytes, uid=%s (%d), gid=%s (%d)\n",
+                         pDir->pszPathAbs, DirEntryEx.szName, DirEntryEx.Info.cbObject,
+                         pszUser ? pszUser : "", DirEntryEx.Info.Attr.u.UnixOwner.uid,
+                         pszGroup ? pszGroup : "", DirEntryEx.Info.Attr.u.UnixGroup.gid);
+
+            char szIgnored[] = "???"; /** @todo Implement ACL support. */
+            int rc2 = VbglR3GuestCtrlDirCbReadEx(pHostCtx, rc,
+                                                 &DirEntryEx, (uint32_t)(sizeof(GSTCTLDIRENTRYEX) + cbDirEntry),
+                                                 pszUser ? pszUser : szIgnored, pszGroup ? pszGroup : szIgnored,
+                                                 szIgnored /* pvACL */, sizeof(szIgnored) /* cbACL */);
+            RTStrFree(pszUser);
+            RTStrFree(pszGroup);
+
+            if (RT_FAILURE(rc2))
+                VGSvcError("Failed to report directory read status (%Rrc), rc=%Rrc\n", rc, rc2);
+
+            if (rc == VERR_NO_MORE_FILES) /* Directory reading done. */
+                rc = VINF_SUCCESS;
 
             vgsvcGstCtrlSessionDirRelease(pDir);
         }
@@ -1179,18 +1204,6 @@ static int vgsvcGstCtrlSessionHandleDirRead(const PVBOXSERVICECTRLSESSION pSessi
         {
             VGSvcError("Directory %u (%#x) not found!\n", uHandle, uHandle);
             rc = VERR_NOT_FOUND;
-        }
-
-        if (RT_FAILURE(rc))
-        {
-            /* On failure we send a simply reply to save bandwidth. */
-            int rc2 = VbglR3GuestCtrlMsgReply(pHostCtx, rc);
-            if (RT_FAILURE(rc2))
-            {
-                VGSvcError("Failed to report directory read error %Rrc, rc=%Rrc\n", rc, rc2);
-                if (RT_SUCCESS(rc))
-                    rc = rc2;
-            }
         }
     }
     else
@@ -1781,13 +1794,13 @@ static int vgsvcGstCtrlSessionHandleFsQueryInfo(const PVBOXSERVICECTRLSESSION pS
     {
         uint32_t fFlagsRuntime = 0;
 
-        if (!(fFlags & ~GSTCTL_QUERYINFO_F_VALID_MASK))
+        if (!(fFlags & ~GSTCTL_PATH_F_VALID_MASK))
         {
-            if (fFlags & GSTCTL_QUERYINFO_F_ON_LINK)
+            if (fFlags & GSTCTL_PATH_F_ON_LINK)
                 fFlagsRuntime |= RTPATH_F_ON_LINK;
-            if (fFlags & GSTCTL_QUERYINFO_F_FOLLOW_LINK)
+            if (fFlags & GSTCTL_PATH_F_FOLLOW_LINK)
                 fFlagsRuntime |= RTPATH_F_FOLLOW_LINK;
-            if (fFlags & GSTCTL_QUERYINFO_F_NO_SYMLINKS)
+            if (fFlags & GSTCTL_PATH_F_NO_SYMLINKS)
                 fFlagsRuntime |= RTPATH_F_NO_SYMLINKS;
 
             if (!RTPATH_F_IS_VALID(fFlagsRuntime, 0))
@@ -1835,12 +1848,22 @@ static int vgsvcGstCtrlSessionHandleFsQueryInfo(const PVBOXSERVICECTRLSESSION pS
 
         PGSTCTLFSOBJINFO pObjInfo = (PGSTCTLFSOBJINFO)&objInfoRuntime;
 
-        /** @todo Implement lookups! */
-        char  szNotImplemented[] = "<not-implemented>";
-        char *pszUser   = szNotImplemented;
-        char *pszGroups = szNotImplemented;
-        int rc2 = VbglR3GuestCtrlFsCbQueryInfoEx(pHostCtx, rc, pObjInfo, pszUser, pszGroups,
+        char *pszUser = RTStrDup(  RT_SUCCESS(rc)
+                                 ? VGSvcIdCacheGetUidName(&pSession->IdCache, pObjInfo->Attr.u.Unix.uid, szPath, NULL /* pszRelativeTo */)
+                                 : "<error>");
+        AssertStmt(pszUser != NULL, rc = VERR_NO_MEMORY);
+
+        char *pszGroup = RTStrDup(  RT_SUCCESS(rc)
+                                  ? VGSvcIdCacheGetGidName(&pSession->IdCache, pObjInfo->Attr.u.Unix.gid, szPath, NULL /* pszRelativeTo */)
+                                  : "<error>");
+        AssertStmt(pszGroup != NULL, rc = VERR_NO_MEMORY);
+
+        char  szNotImplemented[] = "<not-implemented>"; /** @todo Implement ACL support. */
+        int rc2 = VbglR3GuestCtrlFsCbQueryInfoEx(pHostCtx, rc, pObjInfo, pszUser, pszGroup,
                                                  szNotImplemented, sizeof(szNotImplemented));
+        RTStrFree(pszUser);
+        RTStrFree(pszGroup);
+
         if (RT_FAILURE(rc2))
         {
             VGSvcError("Failed to reply to fsqueryinfo request %Rrc, rc=%Rrc\n", rc, rc2);
@@ -2678,6 +2701,8 @@ int VGSvcGstCtrlSessionInit(PVBOXSERVICECTRLSESSION pSession, uint32_t fFlags)
     pSession->cFiles     = 0;
 
     pSession->fFlags = fFlags;
+
+    RT_ZERO(pSession->IdCache);
 
     /* Init critical section for protecting the thread lists. */
     int rc = RTCritSectInit(&pSession->CritSect);

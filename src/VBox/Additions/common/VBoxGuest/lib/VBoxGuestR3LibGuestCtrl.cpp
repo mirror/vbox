@@ -1008,15 +1008,15 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx, char *psz
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
         VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_DIR_OPEN);
         VbglHGCMParmPtrSet(&Msg.path, pszPath, cbPath);
-        VbglHGCMParmUInt64Set(&Msg.flags, 0);
-        VbglHGCMParmUInt64Set(&Msg.filter, 0);
+        VbglHGCMParmUInt32Set(&Msg.filter, 0);
+        VbglHGCMParmUInt32Set(&Msg.flags, 0);
 
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
         if (RT_SUCCESS(rc))
         {
             Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.flags.GetUInt32(pfFlags);
             Msg.filter.GetUInt32((uint32_t *)penmFilter);
+            Msg.flags.GetUInt32(pfFlags);
         }
     } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
@@ -1043,7 +1043,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
         HGCMMsgDirClose Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
         VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_DIR_CLOSE);
-        VbglHGCMParmUInt64Set(&Msg.handle, 0);
+        VbglHGCMParmUInt32Set(&Msg.handle, 0);
 
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
         if (RT_SUCCESS(rc))
@@ -1070,7 +1070,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t 
                                           uint32_t *penmAddAttrib, uint32_t *pfFlags)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-    AssertReturn(pCtx->uNumParms == 4, VERR_INVALID_PARAMETER);
+    AssertReturn(pCtx->uNumParms == 5, VERR_INVALID_PARAMETER);
 
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbDirEntry, VERR_INVALID_POINTER);
@@ -1083,8 +1083,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t 
         HGCMMsgDirRead Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
         VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_DIR_READ);
-        VbglHGCMParmUInt64Set(&Msg.handle, 0);
-        VbglHGCMParmUInt32Set(&Msg.entry_size, 0);
+        VbglHGCMParmUInt32Set(&Msg.handle, 0);
+        VbglHGCMParmUInt32Set(&Msg.max_entry_size, 0);
         VbglHGCMParmUInt32Set(&Msg.add_attributes, 0);
         VbglHGCMParmUInt32Set(&Msg.flags, 0);
 
@@ -1093,7 +1093,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t 
         {
             Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.handle.GetUInt32(puHandle);
-            Msg.entry_size.GetUInt32(pcbDirEntry);
+            Msg.max_entry_size.GetUInt32(pcbDirEntry);
             Msg.add_attributes.GetUInt32(penmAddAttrib);
             Msg.flags.GetUInt32(pfFlags);
         }
@@ -2235,14 +2235,12 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirCbOpen(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t u
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     HGCMReplyDirNotify Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.reply_hdr.hdr, pCtx->uClientID, GUEST_MSG_DIR_NOTIFY,
-                       RT_SUCCESS((int)uRc) ? GSTCTL_HGCM_REPLY_HDR_PARMS + 1 : GSTCTL_HGCM_REPLY_HDR_PARMS);
+    VBGL_HGCM_HDR_INIT(&Msg.reply_hdr.hdr, pCtx->uClientID, GUEST_MSG_DIR_NOTIFY, GSTCTL_HGCM_REPLY_HDR_PARMS + 1);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.type, GUEST_DIR_NOTIFYTYPE_OPEN);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.rc, uRc);
 
-    if (RT_SUCCESS((int)uRc))
-        VbglHGCMParmUInt32Set(&Msg.u.open.handle, uDirHandle);
+    VbglHGCMParmUInt32Set(&Msg.u.open.handle, uDirHandle);
 
     return VbglR3HGCMCall(&Msg.reply_hdr.hdr, RT_UOFFSET_AFTER(HGCMReplyDirNotify, u.open));
 }
@@ -2265,7 +2263,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirCbClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t 
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.type, GUEST_DIR_NOTIFYTYPE_CLOSE);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.rc, uRc);
 
-    return VbglR3HGCMCall(&Msg.reply_hdr.hdr, RT_UOFFSET_AFTER(HGCMReplyDirNotify, u));
+    return VbglR3HGCMCall(&Msg.reply_hdr.hdr, RT_UOFFSET_AFTER(HGCMReplyDirNotify, reply_hdr));
 }
 
 
@@ -2289,25 +2287,21 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirCbReadEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
                                            char *pszUser, char *pszGroups, void *pvACL, size_t cbACL)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-    AssertReturn(RT_FAILURE((int)uRc) || pszUser, VERR_INVALID_POINTER);
-    AssertReturn(RT_FAILURE((int)uRc) || pszGroups, VERR_INVALID_POINTER);
-    AssertReturn(RT_FAILURE((int)uRc) || pvACL, VERR_INVALID_POINTER);
-    AssertReturn(RT_FAILURE((int)uRc) || cbACL, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszGroups, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvACL, VERR_INVALID_POINTER);
+    AssertReturn(cbACL, VERR_INVALID_PARAMETER);
 
     HGCMReplyDirNotify Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.reply_hdr.hdr, pCtx->uClientID, GUEST_MSG_DIR_NOTIFY,
-                       RT_SUCCESS((int)uRc) ? GSTCTL_HGCM_REPLY_HDR_PARMS + 4 : GSTCTL_HGCM_REPLY_HDR_PARMS);
+    VBGL_HGCM_HDR_INIT(&Msg.reply_hdr.hdr, pCtx->uClientID, GUEST_MSG_DIR_NOTIFY, GSTCTL_HGCM_REPLY_HDR_PARMS + 4);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.type, GUEST_DIR_NOTIFYTYPE_READ);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.rc, uRc);
 
-    if (RT_SUCCESS((int)uRc))
-    {
-        VbglHGCMParmPtrSet(&Msg.u.read.entry, pEntry, cbSize);
-        VbglHGCMParmPtrSetString(&Msg.u.read.user,   pszUser);
-        VbglHGCMParmPtrSetString(&Msg.u.read.groups, pszGroups);
-        VbglHGCMParmPtrSet      (&Msg.u.read.acl,    pvACL, cbACL);
-    }
+    VbglHGCMParmPtrSet      (&Msg.u.read.entry,   pEntry, cbSize);
+    VbglHGCMParmPtrSetString(&Msg.u.read.user,    pszUser);
+    VbglHGCMParmPtrSetString(&Msg.u.read.groups,  pszGroups);
+    VbglHGCMParmPtrSet      (&Msg.u.read.acl,     pvACL, cbACL);
 
     return VbglR3HGCMCall(&Msg.reply_hdr.hdr, RT_UOFFSET_AFTER(HGCMReplyDirNotify, u.read));
 }
@@ -2326,7 +2320,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirCbReadEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
  */
 VBGLR3DECL(int) VbglR3GuestCtrlDirCbRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLDIRENTRYEX pEntry, uint32_t cbSize)
 {
-    char szIgnored[1];
+    char szIgnored[1] = { 0 };
     return VbglR3GuestCtrlDirCbReadEx(pCtx, uRc, pEntry, cbSize, szIgnored /* pszUser */, szIgnored /* pszGroups */,
                                       szIgnored /* pvACL */, sizeof(szIgnored) /* cbACL */);
 }

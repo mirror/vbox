@@ -965,7 +965,7 @@ typedef struct HGCMMsgFsQueryInfo
     HGCMFunctionParameter path;
     /** Additional file system attributes to lookup (GSTCTLFSOBJATTRADD). */
     HGCMFunctionParameter add_attributes;
-    /** Flags (GSTCTL_QUERYINFO_F_XXX). */
+    /** Flags (GSTCTL_PATH_F_XXX). */
     HGCMFunctionParameter flags;
 } HGCMMsgFsQueryInfo;
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
@@ -1028,10 +1028,8 @@ typedef struct HGCMMsgDirOpen
     HGCMFunctionParameter context;
     /** Path of directory to open. */
     HGCMFunctionParameter path;
-    /** Filter string to use (wildcard style). */
-    HGCMFunctionParameter filter;
     /** Filter type to use when walking the directory (GSTCTLDIRFILTER). */
-    HGCMFunctionParameter filter_type;
+    HGCMFunctionParameter filter;
     /** Directory open flags (GSTCTLDIR_F_XXX). */
     HGCMFunctionParameter flags;
 } HGCMMsgDirOpen;
@@ -1058,11 +1056,13 @@ typedef struct HGCMMsgDirRead
     HGCMFunctionParameter context;
     /** Handle of directory listing to read the next entry for. */
     HGCMFunctionParameter handle;
-    /** Custom directory entry size (in bytes) to use. */
-    HGCMFunctionParameter entry_size;
+    /** Maximum directory entry size (in bytes) to use.
+     *  @sa GSTCTL_DIRENTRY_MAX_SIZE */
+    HGCMFunctionParameter max_entry_size;
     /** Additional directory attributes to use (GSTCTLFSOBJATTRADD). */
     HGCMFunctionParameter add_attributes;
-    /** Directory reading flags. */
+    /** Directory reading flags.
+     *  GSTCTL_PATH_F_ON_LINK or GSTCTL_PATH_F_FOLLOW_LINK. */
     HGCMFunctionParameter flags;
 } HGCMMsgDirRead;
 
@@ -1705,40 +1705,6 @@ typedef struct CALLBACKDATA_PROC_INPUT
     /** Size (in bytes) of processed input data. */
     uint32_t uProcessed;
 } CALLBACKDATA_PROC_INPUT, *PCALLBACKDATA_PROC_INPUT;
-
-/**
- * General guest directory notification callback.
- */
-typedef struct CALLBACKDATA_DIR_NOTIFY
-{
-    /** Callback data header. */
-    CALLBACKDATA_HEADER hdr;
-    /** Notification type. */
-    uint32_t uType;
-    /** IPRT result of overall operation. */
-    uint32_t rc;
-    union
-    {
-        struct
-        {
-            /** Pointer to directory information. */
-            PGSTCTLFSOBJINFO pObjInfo;
-        } info;
-        struct
-        {
-            /** Guest directory handle. */
-            uint32_t uHandle;
-        } open;
-        /** Note: Close does not have any additional data (yet). */
-        struct
-        {
-            /** Size (in bytes) of directory entry information. */
-            uint32_t          cbEntry;
-            /** Pointer to directory entry information. */
-            GSTCTLDIRENTRYEX *pEntry;
-        } read;
-    } u;
-} CALLBACKDATA_DIR_NOTIFY, *PCALLBACKDATA_DIR_NOTIFY;
 
 /**
  * General guest file notification callback.

@@ -1978,7 +1978,7 @@ int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, Gu
         if (RT_FAILURE(vrc))
             return vrc;
 
-        uint32_t const fFlags = fFollowSymlinks ? GSTCTL_QUERYINFO_F_FOLLOW_LINK : GSTCTL_QUERYINFO_F_ON_LINK;
+        uint32_t const fFlags = fFollowSymlinks ? GSTCTL_PATH_F_FOLLOW_LINK : GSTCTL_PATH_F_ON_LINK;
 
         /* Prepare HGCM call. */
         VBOXHGCMSVCPARM paParms[4];
@@ -2270,12 +2270,12 @@ int GuestSession::i_onFsNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOS
         {
             case GUEST_FS_NOTIFYTYPE_QUERY_INFO:
             {
-                AssertBreakStmt(pSvcCbData->mParms >= 7, VERR_INVALID_PARAMETER);
+                AssertBreakStmt(pSvcCbData->mParms >= 7, vrc = VERR_INVALID_PARAMETER);
                 PGSTCTLFSOBJINFO pObjInfo;
                 uint32_t         cbObjInfo;
                 vrc = HGCMSvcGetPv(&pSvcCbData->mpaParms[3], (void **)&pObjInfo, &cbObjInfo);
                 AssertRCBreak(vrc);
-                AssertBreakStmt(cbObjInfo == sizeof(GSTCTLFSOBJINFO), VERR_INVALID_PARAMETER);
+                AssertBreakStmt(cbObjInfo == sizeof(GSTCTLFSOBJINFO), vrc = VERR_INVALID_PARAMETER);
                 memcpy(&dataCb.u.QueryInfo.objInfo, pObjInfo, sizeof(GSTCTLFSOBJINFO));
 
                 char    *pszUser;

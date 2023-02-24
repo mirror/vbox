@@ -401,18 +401,18 @@ typedef GSTCTLFSOBJATTR *PGSTCTLFSOBJATTR;
 /** Pointer to a const guest filesystem object attributes structure. */
 typedef const GSTCTLFSOBJATTR *PCGSTCTLFSOBJATTR;
 
-/** @name GSTCTL_QUERYINFO_F_XXX - Generic flags for querying guest file system information.
+/** @name GSTCTL_PATH_F_XXX - Generic flags for querying guest file system information.
  * @{ */
 /** No guest stat flags specified. */
-#define GSTCTL_QUERYINFO_F_NONE               UINT32_C(0)
+#define GSTCTL_PATH_F_NONE               UINT32_C(0)
 /** Last component: Work on the link. */
-#define GSTCTL_QUERYINFO_F_ON_LINK            RT_BIT_32(0)
+#define GSTCTL_PATH_F_ON_LINK            RT_BIT_32(0)
 /** Last component: Follow if link. */
-#define GSTCTL_QUERYINFO_F_FOLLOW_LINK        RT_BIT_32(1)
+#define GSTCTL_PATH_F_FOLLOW_LINK        RT_BIT_32(1)
 /** Don't allow symbolic links as part of the path. */
-#define GSTCTL_QUERYINFO_F_NO_SYMLINKS        RT_BIT_32(2)
-/** GSTCTL_QUERYINFO_F_XXX flag valid mask. */
-#define GSTCTL_QUERYINFO_F_VALID_MASK         UINT32_C(0x00000007)
+#define GSTCTL_PATH_F_NO_SYMLINKS        RT_BIT_32(2)
+/** GSTCTL_PATH_F_XXX flag valid mask. */
+#define GSTCTL_PATH_F_VALID_MASK         UINT32_C(0x00000007)
 /** @} */
 
 /**
@@ -442,6 +442,8 @@ typedef enum GSTCTLDIRFILTER
 
 /** @name GSTCTLDIR_F_XXX - Directory flags for HOST_MSG_DIR_OPEN.
  * @{ */
+/** No directory open flags specified. */
+#define GSTCTLDIR_F_NONE            UINT32_C(0)
 /** Don't allow symbolic links as part of the path.
  * @remarks this flag is currently not implemented and will be ignored. */
 #define GSTCTLDIR_F_NO_SYMLINKS     RT_BIT_32(0)
@@ -530,6 +532,9 @@ typedef struct GSTCTLDIRENTRYEX
 typedef GSTCTLDIRENTRYEX *PGSTCTLDIRENTRYEX;
 /** Pointer to a const guest directory entry. */
 typedef GSTCTLDIRENTRYEX const *PCGSTCTLDIRENTRYEX;
+
+/** The maximum size (in bytes) of a GSTCTLDIRENTRYEX (includes dynamic szName[pDirEntry->cbName + 1]). */
+#define GSTCTL_DIRENTRY_MAX_SIZE    (sizeof(GSTCTLDIRENTRYEX) + RTPATH_MAX)
 
 } /* namespace guestControl */
 

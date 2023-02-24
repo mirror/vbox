@@ -46,8 +46,72 @@
 #include "VBoxEvents.h"
 
 #include <VBox/com/array.h>
+#include <VBox/com/listeners.h>
 #include <VBox/AssertGuest.h>
 
+
+/**
+ * Internal listener class to serve events in an
+ * active manner, e.g. without polling delays.
+ */
+class GuestDirectoryListener
+{
+public:
+
+    GuestDirectoryListener(void)
+    {
+    }
+
+    virtual ~GuestDirectoryListener()
+    {
+    }
+
+    HRESULT init(GuestDirectory *pDir)
+    {
+        AssertPtrReturn(pDir, E_POINTER);
+        mDir = pDir;
+        return S_OK;
+    }
+
+    void uninit(void)
+    {
+        mDir = NULL;
+    }
+
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
+    {
+        switch (aType)
+        {
+            case VBoxEventType_OnGuestDirectoryStateChanged:
+                RT_FALL_THROUGH();
+            case VBoxEventType_OnGuestDirectoryRead:
+            {
+                AssertPtrReturn(mDir, E_POINTER);
+                int vrc2 = mDir->signalWaitEvent(aType, aEvent);
+                RT_NOREF(vrc2);
+#ifdef DEBUG_andy
+                LogFlowFunc(("Signalling events of type=%RU32, dir=%p resulted in vrc=%Rrc\n",
+                             aType, mDir, vrc2));
+#endif
+                break;
+            }
+
+            default:
+                AssertMsgFailed(("Unhandled event %RU32\n", aType));
+                break;
+        }
+
+        return S_OK;
+    }
+
+private:
+
+    /** Weak pointer to the guest directory object to listen for. */
+    GuestDirectory *mDir;
+};
+typedef ListenerImpl<GuestDirectoryListener, GuestDirectory *> GuestDirectoryListenerImpl;
+
+VBOX_LISTENER_DECLARE(GuestDirectoryListenerImpl)
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -97,6 +161,44 @@ int GuestDirectory::init(Console *pConsole, GuestSession *pSession, ULONG aObjec
         HRESULT hr = mEventSource->init();
         if (FAILED(hr))
             vrc = VERR_COM_UNEXPECTED;
+    }
+
+    if (RT_SUCCESS(vrc))
+    {
+        try
+        {
+            GuestDirectoryListener *pListener = new GuestDirectoryListener();
+            ComObjPtr<GuestDirectoryListenerImpl> thisListener;
+            HRESULT hr = thisListener.createObject();
+            if (SUCCEEDED(hr))
+                hr = thisListener->init(pListener, this);
+
+            if (SUCCEEDED(hr))
+            {
+                com::SafeArray <VBoxEventType_T> eventTypes;
+                eventTypes.push_back(VBoxEventType_OnGuestDirectoryStateChanged);
+                eventTypes.push_back(VBoxEventType_OnGuestDirectoryRead);
+                hr = mEventSource->RegisterListener(thisListener,
+                                                    ComSafeArrayAsInParam(eventTypes),
+                                                    TRUE /* Active listener */);
+                if (SUCCEEDED(hr))
+                {
+                    vrc = baseInit();
+                    if (RT_SUCCESS(vrc))
+                    {
+                        mLocalListener = thisListener;
+                    }
+                }
+                else
+                    vrc = VERR_COM_UNEXPECTED;
+            }
+            else
+                vrc = VERR_COM_UNEXPECTED;
+        }
+        catch(std::bad_alloc &)
+        {
+            vrc = VERR_NO_MEMORY;
+        }
     }
 
     /* Confirm a successful initialization when it's the case. */
@@ -193,7 +295,7 @@ int GuestDirectory::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGU
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
 
-    LogFlowThisFunc(("strPath=%s, uContextID=%RU32, uFunction=%RU32, pSvcCb=%p\n",
+    LogFlowThisFunc(("strPath=%s, uContextID=%RU32, uMessage=%RU32, pSvcCb=%p\n",
                      mData.mOpenInfo.mPath.c_str(), pCbCtx->uContextID, pCbCtx->uMessage, pSvcCb));
 
     int vrc;
@@ -247,12 +349,14 @@ int GuestDirectory::i_open(int *pvrcGuest)
             vrc = VERR_NO_MEMORY;
         }
 
+        if (RT_FAILURE(vrc))
+            return vrc;
+
         /* Prepare HGCM call. */
         VBOXHGCMSVCPARM paParms[8];
         int i = 0;
         HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
-        HGCMSvcSetPv(&paParms[i++], (void *)mData.mOpenInfo.mPath.c_str(), (ULONG)mData.mOpenInfo.mPath.length() + 1);
-        HGCMSvcSetPv(&paParms[i++], (void *)mData.mOpenInfo.mFilter.c_str(), (ULONG)mData.mOpenInfo.mFilter.length() + 1);
+        HGCMSvcSetStr(&paParms[i++], mData.mOpenInfo.mPath.c_str());
         HGCMSvcSetU32(&paParms[i++], mData.mOpenInfo.menmFilter);
         HGCMSvcSetU32(&paParms[i++], mData.mOpenInfo.mFlags);
 
@@ -260,12 +364,7 @@ int GuestDirectory::i_open(int *pvrcGuest)
 
         vrc = sendMessage(HOST_MSG_DIR_OPEN, i, paParms);
         if (RT_SUCCESS(vrc))
-        {
-            vrc = pEvent->Wait(30 * 1000);
-            if (RT_SUCCESS(vrc))
-            {
-            }
-        }
+            vrc = i_waitForStatusChange(pEvent, 30 * 1000, NULL /* FileStatus */, pvrcGuest);
     }
     else
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
@@ -384,7 +483,7 @@ int GuestDirectory::i_onDirNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
     if (RT_FAILURE(vrcGuest))
     {
         hrc = errorInfo->initEx(VBOX_E_GSTCTL_GUEST_ERROR, vrcGuest,
-                                COM_IIDOF(IGuestFile), getComponentName(),
+                                COM_IIDOF(IGuestDirectory), getComponentName(),
                                 i_guestErrorToString(vrcGuest, mData.mOpenInfo.mPath.c_str()));
         ComAssertComRCRet(hrc, VERR_COM_UNEXPECTED);
     }
@@ -399,6 +498,9 @@ int GuestDirectory::i_onDirNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
 
         case GUEST_DIR_NOTIFYTYPE_OPEN:
         {
+            AssertBreakStmt(pSvcCbData->mParms >= 4, vrc = VERR_INVALID_PARAMETER);
+            vrc = HGCMSvcGetU32(&pSvcCbData->mpaParms[idx++], &dataCb.u.open.uHandle /* Guest native file handle */);
+            AssertRCBreak(vrc);
             vrc = i_setStatus(DirectoryStatus_Open, vrcGuest);
             break;
         }
@@ -416,23 +518,45 @@ int GuestDirectory::i_onDirNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
             ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mpaParms[idx].type == VBOX_HGCM_SVC_PARM_PTR,
                                         ("type=%u\n", pSvcCbData->mpaParms[idx].type),
                                         vrc = VERR_WRONG_PARAMETER_TYPE);
-
-            PGSTCTLFSOBJINFO pObjInfo;
-            uint32_t         cbObjInfo;
-            vrc = HGCMSvcGetPv(&pSvcCbData->mpaParms[idx++], (void **)&pObjInfo, &cbObjInfo);
+            PGSTCTLDIRENTRYEX pEntry;
+            uint32_t          cbEntry;
+            vrc = HGCMSvcGetPv(&pSvcCbData->mpaParms[idx++], (void **)&pEntry, &cbEntry);
             AssertRCBreak(vrc);
-            AssertBreakStmt(cbObjInfo == sizeof(GSTCTLFSOBJINFO), VERR_INVALID_PARAMETER);
+            AssertBreakStmt(   cbEntry >= sizeof(GSTCTLDIRENTRYEX)
+                            && cbEntry <= GSTCTL_DIRENTRY_MAX_SIZE, VERR_INVALID_PARAMETER);
+            dataCb.u.read.pEntry  = (PGSTCTLDIRENTRYEX)RTMemDup(pEntry, cbEntry);
+            AssertPtrBreakStmt(dataCb.u.read.pEntry, vrc = VERR_NO_MEMORY);
+            dataCb.u.read.cbEntry = cbEntry;
 
-            GuestFsObjData fsObjData(mData.mOpenInfo.mPath);
-            vrc = fsObjData.FromGuestFsObjInfo(pObjInfo);
+            char    *pszUser;
+            uint32_t cbUser;
+            vrc = HGCMSvcGetStr(&pSvcCbData->mpaParms[idx++], &pszUser, &cbUser);
+            AssertRCBreak(vrc);
+            dataCb.u.read.pszUser = RTStrDup(pszUser);
+            AssertPtrBreakStmt(dataCb.u.read.pszUser, vrc = VERR_NO_MEMORY);
+            dataCb.u.read.cbUser  = cbUser;
+
+            char    *pszGroups;
+            uint32_t cbGroups;
+            vrc = HGCMSvcGetStr(&pSvcCbData->mpaParms[idx++], &pszGroups, &cbGroups);
+            AssertRCBreak(vrc);
+            dataCb.u.read.pszGroups = RTStrDup(pszGroups);
+            AssertPtrBreakStmt(dataCb.u.read.pszGroups, vrc = VERR_NO_MEMORY);
+            dataCb.u.read.cbGroups  = cbGroups;
+
+            /** @todo ACLs not implemented yet. */
+
+            GuestFsObjData fsObjData(dataCb.u.read.pEntry->szName);
+            vrc = fsObjData.FromGuestFsObjInfo(&dataCb.u.read.pEntry->Info);
             AssertRCBreak(vrc);
             ComObjPtr<GuestFsObjInfo> ptrFsObjInfo;
             hrc = ptrFsObjInfo.createObject();
-            ComAssertComRCBreak(hrc, VERR_COM_UNEXPECTED);
+            ComAssertComRCBreak(hrc, vrc = VERR_COM_UNEXPECTED);
             vrc = ptrFsObjInfo->init(fsObjData);
             AssertRCBreak(vrc);
 
-            ::FireGuestDirectoryReadEvent(mEventSource, mSession, this, ptrFsObjInfo);
+            ::FireGuestDirectoryReadEvent(mEventSource, mSession, this,
+                                          dataCb.u.read.pEntry->szName, ptrFsObjInfo, dataCb.u.read.pszUser, dataCb.u.read.pszGroups);
             break;
         }
 
@@ -480,7 +604,7 @@ int GuestDirectory::i_onDirNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
  * Converts a given guest directory error to a string.
  *
  * @returns Error string.
- * @param   vrcGuest            Guest file error to return string for.
+ * @param   vrcGuest            Guest directory error to return string for.
  * @param   pcszWhat            Hint of what was involved when the error occurred.
  */
 /* static */
@@ -549,8 +673,39 @@ int GuestDirectory::i_close(int *pvrcGuest)
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
     if (mSession->i_getParent()->i_getGuestControlFeatures0() & VBOX_GUESTCTRL_GF_0_TOOLBOX_AS_CMDS)
     {
-        /// @todo To be implemented
-        vrc = VERR_NOT_IMPLEMENTED;
+        GuestWaitEvent *pEvent = NULL;
+        GuestEventTypes eventTypes;
+        try
+        {
+            eventTypes.push_back(VBoxEventType_OnGuestDirectoryStateChanged);
+
+            vrc = registerWaitEvent(eventTypes, &pEvent);
+        }
+        catch (std::bad_alloc &)
+        {
+            vrc = VERR_NO_MEMORY;
+        }
+
+        if (RT_FAILURE(vrc))
+            return vrc;
+
+        /* Prepare HGCM call. */
+        VBOXHGCMSVCPARM paParms[2];
+        int i = 0;
+        HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+        HGCMSvcSetU32(&paParms[i++], mObjectID /* Guest directory handle */);
+
+        vrc = sendMessage(HOST_MSG_DIR_CLOSE, i, paParms);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = pEvent->Wait(30 * 1000);
+            if (RT_SUCCESS(vrc))
+            {
+                // Nothing to do here.
+            }
+            else if (pEvent->HasGuestError() && pvrcGuest)
+                *pvrcGuest = pEvent->GuestResult();
+        }
     }
     else
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
@@ -594,12 +749,64 @@ int GuestDirectory::i_readInternal(GuestFsObjData &objData, int *pvrcGuest)
     AssertPtrReturn(pvrcGuest, VERR_INVALID_POINTER);
 
     int vrc;
+    int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
     if (mSession->i_getParent()->i_getGuestControlFeatures0() & VBOX_GUESTCTRL_GF_0_TOOLBOX_AS_CMDS)
     {
-        /// @todo To be implemented
-        RT_NOREF(objData, pvrcGuest);
-        vrc = 0;
+        GuestWaitEvent *pEvent = NULL;
+        GuestEventTypes eventTypes;
+        try
+        {
+            vrc = registerWaitEvent(eventTypes, &pEvent);
+        }
+        catch (std::bad_alloc &)
+        {
+            vrc = VERR_NO_MEMORY;
+        }
+
+        if (RT_FAILURE(vrc))
+            return vrc;
+
+        /* Prepare HGCM call. */
+        VBOXHGCMSVCPARM paParms[8];
+        int i = 0;
+        HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+        HGCMSvcSetU32(&paParms[i++], mObjectID /* Guest directory handle */);
+        HGCMSvcSetU32(&paParms[i++], GSTCTL_DIRENTRY_MAX_SIZE);
+        HGCMSvcSetU32(&paParms[i++], GSTCTLFSOBJATTRADD_UNIX /* Implicit */);
+        HGCMSvcSetU32(&paParms[i++], GSTCTL_PATH_F_ON_LINK);
+
+        vrc = sendMessage(HOST_MSG_DIR_READ, i, paParms);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = pEvent->Wait(30 * 1000);
+            if (RT_SUCCESS(vrc))
+            {
+                PCALLBACKDATA_DIR_NOTIFY const pDirNotify = (PCALLBACKDATA_DIR_NOTIFY)pEvent->Payload().Raw();
+                AssertPtrReturn(pDirNotify, VERR_INVALID_POINTER);
+                vrcGuest = (int)pDirNotify->rc;
+                if (RT_SUCCESS(vrcGuest))
+                {
+                    AssertReturn(pDirNotify->uType == GUEST_DIR_NOTIFYTYPE_READ, VERR_INVALID_PARAMETER);
+                    AssertPtrReturn(pDirNotify->u.read.pEntry, VERR_INVALID_POINTER);
+                    objData.Init(pDirNotify->u.read.pEntry->szName);
+                    vrc = objData.FromGuestFsObjInfo(&pDirNotify->u.read.pEntry->Info,
+                                                     pDirNotify->u.read.pszUser, pDirNotify->u.read.pszGroups);
+                    RTMemFree(pDirNotify->u.read.pEntry);
+                    RTStrFree(pDirNotify->u.read.pszUser);
+                    RTStrFree(pDirNotify->u.read.pszGroups);
+                }
+                else
+                {
+                    if (pvrcGuest)
+                        *pvrcGuest = vrcGuest;
+                    vrc = VERR_GSTCTL_GUEST_ERROR;
+                }
+            }
+            else if (pEvent->HasGuestError() && pvrcGuest)
+                *pvrcGuest = pEvent->GuestResult();
+        }
     }
     else
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
@@ -812,10 +1019,69 @@ int GuestDirectory::i_setStatus(DirectoryStatus_T enmStatus, int vrcDir)
 
         alock.release(); /* Release lock before firing off event. */
 
-        ::FireGuestDirectoryStateChangedEvent(mEventSource, mSession, this, enmStatus, errorInfo);
+        ::FireGuestDirectoryStateChangedEvent(mEventSource, mSession, this, mData.mStatus, errorInfo);
     }
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Waits for a guest directory status change.
+ *
+ * @note Similar code in GuestFile::i_waitForStatusChange().
+ *
+ * @returns VBox status code.
+ * @retval  VERR_GSTCTL_GUEST_ERROR when an error from the guest side has been received.
+ * @param   pEvent              Guest wait event to wait for.
+ * @param   uTimeoutMS          Timeout (in ms) to wait.
+ * @param   penmStatus          Where to return the directoy status on success.
+ * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR was returned.
+ */
+int GuestDirectory::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
+                                          DirectoryStatus_T *penmStatus, int *prcGuest)
+{
+    AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
+    /* penmStatus is optional. */
+
+    VBoxEventType_T evtType;
+    ComPtr<IEvent>  pIEvent;
+    int vrc = waitForEvent(pEvent, uTimeoutMS, &evtType, pIEvent.asOutParam());
+    if (RT_SUCCESS(vrc))
+    {
+        AssertReturn(evtType == VBoxEventType_OnGuestDirectoryStateChanged, VERR_WRONG_TYPE);
+        ComPtr<IGuestDirectoryStateChangedEvent> pDirectoryEvent = pIEvent;
+        AssertReturn(!pDirectoryEvent.isNull(), VERR_COM_UNEXPECTED);
+
+        HRESULT hr;
+        if (penmStatus)
+        {
+            hr = pDirectoryEvent->COMGETTER(Status)(penmStatus);
+            ComAssertComRC(hr);
+        }
+
+        ComPtr<IVirtualBoxErrorInfo> errorInfo;
+        hr = pDirectoryEvent->COMGETTER(Error)(errorInfo.asOutParam());
+        ComAssertComRC(hr);
+
+        LONG lGuestRc;
+        hr = errorInfo->COMGETTER(ResultDetail)(&lGuestRc);
+        ComAssertComRC(hr);
+
+        LogFlowThisFunc(("resultDetail=%RI32 (%Rrc)\n", lGuestRc, lGuestRc));
+
+        if (RT_FAILURE((int)lGuestRc))
+            vrc = VERR_GSTCTL_GUEST_ERROR;
+
+        if (prcGuest)
+            *prcGuest = (int)lGuestRc;
+    }
+    /* waitForEvent may also return VERR_GSTCTL_GUEST_ERROR like we do above, so make prcGuest is set. */
+    /** @todo Also see todo in GuestFile::i_waitForStatusChange(). */
+    else if (vrc == VERR_GSTCTL_GUEST_ERROR && prcGuest)
+        *prcGuest = pEvent->GuestResult();
+    Assert(vrc != VERR_GSTCTL_GUEST_ERROR || !prcGuest || *prcGuest != (int)0xcccccccc);
+
+    return vrc;
 }
 
 // implementation of public methods

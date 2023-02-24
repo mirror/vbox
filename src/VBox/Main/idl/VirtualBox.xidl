@@ -28114,16 +28114,31 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IGuestDirectoryReadEvent" extends="IGuestDirectoryEvent"
-    uuid="6eef78d9-51d6-495b-8f91-807654a189a2"
+    uuid="4e774bbe-5285-4517-8d34-21260633c513"
     wsmap="managed" autogen="VBoxEvent" id="OnGuestDirectoryRead"
     >
     <desc>
       Notification when a directory entry has been read.
     </desc>
 
+    <attribute name="path" type="wstring" readonly="yes">
+      <desc>Path of the directory entry.</desc>
+    </attribute>
+
     <attribute name="objInfo" type="IFsObjInfo" readonly="yes">
-      <desc>Object information of the current directory entry read. Also see
+      <desc>Object information of the directory entry. Also see
         <link to="IFsObjInfo"/>.</desc>
+    </attribute>
+
+    <attribute name="owner" type="wstring" readonly="yes">
+      <desc>Resolved owner name of the directory entry.</desc>
+    </attribute>
+
+    <attribute name="groups" type="wstring" readonly="yes">
+      <desc>Resolved user groups of the directory entry.</desc>
+      <!-- @todo This actually should be a SafeArray<wstring> to cover all non-primary groups,
+                 but our COM generation code does not yet support this yet for events. 
+                 See @todo in genRetParam in compimpl.xsl. -->
     </attribute>
 
   </interface>

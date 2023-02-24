@@ -40,6 +40,7 @@
 
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
+#include "VBoxServiceUtils.h"
 
 
 #ifdef VBOX_WITH_GUEST_PROPS
@@ -321,4 +322,100 @@ int VGSvcUtilWinGetFileVersionString(const char *pszPath, const char *pszFilenam
 }
 
 #endif /* RT_OS_WINDOWS */
+
+
+/**
+ * Resolves the UID to a name as best as we can.
+ *
+ * @returns Read-only name string.  Only valid till the next cache call.
+ * @param   pIdCache        The ID cache.
+ * @param   uid             The UID to resolve.
+ * @param   pszEntry        The filename of the UID.
+ * @param   pszRelativeTo   What @a pszEntry is relative to, NULL if absolute.
+ */
+const char *VGSvcIdCacheGetUidName(PVGSVCIDCACHE pIdCache, RTUID uid, const char *pszEntry, const char *pszRelativeTo)
+{
+    /* Check cached entries. */
+    for (uint32_t i = 0; i < pIdCache->cEntries; i++)
+        if (   pIdCache->aEntries[i].id == uid
+            && pIdCache->aEntries[i].fIsUid)
+            return pIdCache->aEntries[i].szName;
+
+    /* Miss. */
+    RTFSOBJINFO ObjInfo;
+    RT_ZERO(ObjInfo); /* shut up msc */
+    int rc;
+    if (!pszRelativeTo)
+        rc = RTPathQueryInfoEx(pszEntry, &ObjInfo, RTFSOBJATTRADD_UNIX_OWNER, RTPATH_F_ON_LINK);
+    else
+    {
+        char szPath[RTPATH_MAX];
+        rc = RTPathJoin(szPath, sizeof(szPath), pszRelativeTo, pszEntry);
+        if (RT_SUCCESS(rc))
+            rc = RTPathQueryInfoEx(szPath, &ObjInfo, RTFSOBJATTRADD_UNIX_OWNER, RTPATH_F_ON_LINK);
+    }
+
+    if (   RT_SUCCESS(rc)
+        && ObjInfo.Attr.u.UnixOwner.uid == uid)
+    {
+        uint32_t i = pIdCache->cEntries;
+        if (i < RT_ELEMENTS(pIdCache->aEntries))
+            pIdCache->cEntries = i + 1;
+        else
+            i = pIdCache->iNextReplace++ % RT_ELEMENTS(pIdCache->aEntries);
+        pIdCache->aEntries[i].id     = uid;
+        pIdCache->aEntries[i].fIsUid = true;
+        RTStrCopy(pIdCache->aEntries[i].szName, sizeof(pIdCache->aEntries[i].szName), ObjInfo.Attr.u.UnixOwner.szName);
+        return pIdCache->aEntries[i].szName;
+    }
+    return "";
+}
+
+
+/**
+ * Resolves the GID to a name as best as we can.
+ *
+ * @returns Read-only name string.  Only valid till the next cache call.
+ * @param   pIdCache        The ID cache.
+ * @param   gid             The GID to resolve.
+ * @param   pszEntry        The filename of the GID.
+ * @param   pszRelativeTo   What @a pszEntry is relative to, NULL if absolute.
+ */
+const char *VGSvcIdCacheGetGidName(PVGSVCIDCACHE pIdCache, RTGID gid, const char *pszEntry, const char *pszRelativeTo)
+{
+    /* Check cached entries. */
+    for (uint32_t i = 0; i < pIdCache->cEntries; i++)
+        if (   pIdCache->aEntries[i].id == gid
+            && !pIdCache->aEntries[i].fIsUid)
+            return pIdCache->aEntries[i].szName;
+
+    /* Miss. */
+    RTFSOBJINFO ObjInfo;
+    RT_ZERO(ObjInfo); /* shut up msc */
+    int rc;
+    if (!pszRelativeTo)
+        rc = RTPathQueryInfoEx(pszEntry, &ObjInfo, RTFSOBJATTRADD_UNIX_GROUP, RTPATH_F_ON_LINK);
+    else
+    {
+        char szPath[RTPATH_MAX];
+        rc = RTPathJoin(szPath, sizeof(szPath), pszRelativeTo, pszEntry);
+        if (RT_SUCCESS(rc))
+            rc = RTPathQueryInfoEx(szPath, &ObjInfo, RTFSOBJATTRADD_UNIX_GROUP, RTPATH_F_ON_LINK);
+    }
+
+    if (   RT_SUCCESS(rc)
+        && ObjInfo.Attr.u.UnixGroup.gid == gid)
+    {
+        uint32_t i = pIdCache->cEntries;
+        if (i < RT_ELEMENTS(pIdCache->aEntries))
+            pIdCache->cEntries = i + 1;
+        else
+            i = pIdCache->iNextReplace++ % RT_ELEMENTS(pIdCache->aEntries);
+        pIdCache->aEntries[i].id     = gid;
+        pIdCache->aEntries[i].fIsUid = false;
+        RTStrCopy(pIdCache->aEntries[i].szName, sizeof(pIdCache->aEntries[i].szName), ObjInfo.Attr.u.UnixGroup.szName);
+        return pIdCache->aEntries[i].szName;
+    }
+    return "";
+}
 

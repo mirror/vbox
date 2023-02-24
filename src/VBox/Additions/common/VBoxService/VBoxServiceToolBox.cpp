@@ -132,31 +132,6 @@ typedef struct VBOXSERVICETOOLBOXPATHENTRY
     char       *pszName;
 } VBOXSERVICETOOLBOXPATHENTRY, *PVBOXSERVICETOOLBOXPATHENTRY;
 
-/** ID cache entry. */
-typedef struct VGSVCTOOLBOXUIDENTRY
-{
-    /** The identifier name. */
-    uint32_t    id;
-    /** Set if UID, clear if GID. */
-    bool        fIsUid;
-    /** The name. */
-    char        szName[128 - 4 - 1];
-} VGSVCTOOLBOXUIDENTRY;
-typedef VGSVCTOOLBOXUIDENTRY *PVGSVCTOOLBOXUIDENTRY;
-
-
-/** ID cache. */
-typedef struct VGSVCTOOLBOXIDCACHE
-{
-    /** Number of valid cache entries. */
-    uint32_t                cEntries;
-    /** The next entry to replace. */
-    uint32_t                iNextReplace;
-    /** The cache entries. */
-    VGSVCTOOLBOXUIDENTRY    aEntries[16];
-} VGSVCTOOLBOXIDCACHE;
-typedef VGSVCTOOLBOXIDCACHE *PVGSVCTOOLBOXIDCACHE;
-
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -574,104 +549,6 @@ static RTEXITCODE vgsvcToolboxCat(int argc, char **argv)
 
 
 /**
- * Resolves the UID to a name as best as we can.
- *
- * @returns Read-only name string.  Only valid till the next cache call.
- * @param   pIdCache        The ID cache.
- * @param   uid             The UID to resolve.
- * @param   pszEntry        The filename of the UID.
- * @param   pszRelativeTo   What @a pszEntry is relative to, NULL if absolute.
- */
-static const char *vgsvcToolboxIdCacheGetUidName(PVGSVCTOOLBOXIDCACHE pIdCache, RTUID uid,
-                                                 const char *pszEntry, const char *pszRelativeTo)
-{
-    /* Check cached entries. */
-    for (uint32_t i = 0; i < pIdCache->cEntries; i++)
-        if (   pIdCache->aEntries[i].id == uid
-            && pIdCache->aEntries[i].fIsUid)
-            return pIdCache->aEntries[i].szName;
-
-    /* Miss. */
-    RTFSOBJINFO ObjInfo;
-    RT_ZERO(ObjInfo); /* shut up msc */
-    int rc;
-    if (!pszRelativeTo)
-        rc = RTPathQueryInfoEx(pszEntry, &ObjInfo, RTFSOBJATTRADD_UNIX_OWNER, RTPATH_F_ON_LINK);
-    else
-    {
-        char szPath[RTPATH_MAX];
-        rc = RTPathJoin(szPath, sizeof(szPath), pszRelativeTo, pszEntry);
-        if (RT_SUCCESS(rc))
-            rc = RTPathQueryInfoEx(szPath, &ObjInfo, RTFSOBJATTRADD_UNIX_OWNER, RTPATH_F_ON_LINK);
-    }
-
-    if (   RT_SUCCESS(rc)
-        && ObjInfo.Attr.u.UnixOwner.uid == uid)
-    {
-        uint32_t i = pIdCache->cEntries;
-        if (i < RT_ELEMENTS(pIdCache->aEntries))
-            pIdCache->cEntries = i + 1;
-        else
-            i = pIdCache->iNextReplace++ % RT_ELEMENTS(pIdCache->aEntries);
-        pIdCache->aEntries[i].id     = uid;
-        pIdCache->aEntries[i].fIsUid = true;
-        RTStrCopy(pIdCache->aEntries[i].szName, sizeof(pIdCache->aEntries[i].szName), ObjInfo.Attr.u.UnixOwner.szName);
-        return pIdCache->aEntries[i].szName;
-    }
-    return "";
-}
-
-
-/**
- * Resolves the GID to a name as best as we can.
- *
- * @returns Read-only name string.  Only valid till the next cache call.
- * @param   pIdCache        The ID cache.
- * @param   gid             The GID to resolve.
- * @param   pszEntry        The filename of the GID.
- * @param   pszRelativeTo   What @a pszEntry is relative to, NULL if absolute.
- */
-static const char *vgsvcToolboxIdCacheGetGidName(PVGSVCTOOLBOXIDCACHE pIdCache, RTGID gid,
-                                                 const char *pszEntry, const char *pszRelativeTo)
-{
-    /* Check cached entries. */
-    for (uint32_t i = 0; i < pIdCache->cEntries; i++)
-        if (   pIdCache->aEntries[i].id == gid
-            && !pIdCache->aEntries[i].fIsUid)
-            return pIdCache->aEntries[i].szName;
-
-    /* Miss. */
-    RTFSOBJINFO ObjInfo;
-    RT_ZERO(ObjInfo); /* shut up msc */
-    int rc;
-    if (!pszRelativeTo)
-        rc = RTPathQueryInfoEx(pszEntry, &ObjInfo, RTFSOBJATTRADD_UNIX_GROUP, RTPATH_F_ON_LINK);
-    else
-    {
-        char szPath[RTPATH_MAX];
-        rc = RTPathJoin(szPath, sizeof(szPath), pszRelativeTo, pszEntry);
-        if (RT_SUCCESS(rc))
-            rc = RTPathQueryInfoEx(szPath, &ObjInfo, RTFSOBJATTRADD_UNIX_GROUP, RTPATH_F_ON_LINK);
-    }
-
-    if (   RT_SUCCESS(rc)
-        && ObjInfo.Attr.u.UnixGroup.gid == gid)
-    {
-        uint32_t i = pIdCache->cEntries;
-        if (i < RT_ELEMENTS(pIdCache->aEntries))
-            pIdCache->cEntries = i + 1;
-        else
-            i = pIdCache->iNextReplace++ % RT_ELEMENTS(pIdCache->aEntries);
-        pIdCache->aEntries[i].id     = gid;
-        pIdCache->aEntries[i].fIsUid = false;
-        RTStrCopy(pIdCache->aEntries[i].szName, sizeof(pIdCache->aEntries[i].szName), ObjInfo.Attr.u.UnixGroup.szName);
-        return pIdCache->aEntries[i].szName;
-    }
-    return "";
-}
-
-
-/**
  * Prints information (based on given flags) of a file system object (file/directory/...)
  * to stdout.
  *
@@ -685,7 +562,7 @@ static const char *vgsvcToolboxIdCacheGetGidName(PVGSVCTOOLBOXIDCACHE pIdCache, 
  * @param   pObjInfo        Pointer to object information.
  */
 static int vgsvcToolboxPrintFsInfo(const char *pszName, size_t cchName, uint32_t fOutputFlags, const char *pszRelativeTo,
-                                   PVGSVCTOOLBOXIDCACHE pIdCache, PRTFSOBJINFO pObjInfo)
+                                   PVGSVCIDCACHE pIdCache, PRTFSOBJINFO pObjInfo)
 {
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertReturn(cchName, VERR_INVALID_PARAMETER);
@@ -772,10 +649,10 @@ static int vgsvcToolboxPrintFsInfo(const char *pszName, size_t cchName, uint32_t
                      RTTimeSpecToString(&pObjInfo->AccessTime,       szTimeAccess,       sizeof(szTimeAccess)),       0);
             if (pObjInfo->Attr.u.Unix.uid != NIL_RTUID)
                 RTPrintf("uid=%RU32%cusername=%s%c", pObjInfo->Attr.u.Unix.uid, 0,
-                         vgsvcToolboxIdCacheGetUidName(pIdCache, pObjInfo->Attr.u.Unix.uid, pszName, pszRelativeTo), 0);
+                         VGSvcIdCacheGetUidName(pIdCache, pObjInfo->Attr.u.Unix.uid, pszName, pszRelativeTo), 0);
             if (pObjInfo->Attr.u.Unix.gid != NIL_RTGID)
                 RTPrintf("gid=%RU32%cgroupname=%s%c", pObjInfo->Attr.u.Unix.gid, 0,
-                         vgsvcToolboxIdCacheGetGidName(pIdCache, pObjInfo->Attr.u.Unix.gid, pszName, pszRelativeTo), 0);
+                         VGSvcIdCacheGetGidName(pIdCache, pObjInfo->Attr.u.Unix.gid, pszName, pszRelativeTo), 0);
             if (   (RTFS_IS_DEV_BLOCK(pObjInfo->Attr.fMode) || RTFS_IS_DEV_CHAR(pObjInfo->Attr.fMode))
                 && pObjInfo->Attr.u.Unix.Device)
                 RTPrintf("st_rdev=%RU32%c", pObjInfo->Attr.u.Unix.Device, 0);
@@ -846,7 +723,7 @@ static int vgsvcToolboxPrintFsInfo(const char *pszName, size_t cchName, uint32_t
  * @param   pIdCache        The ID cache.
  */
 static int vgsvcToolboxLsHandleDirSub(char *pszDir, size_t cchDir, PRTDIRENTRYEX pDirEntry,
-                                      uint32_t fFlags, uint32_t fOutputFlags, PVGSVCTOOLBOXIDCACHE pIdCache)
+                                      uint32_t fFlags, uint32_t fOutputFlags, PVGSVCIDCACHE pIdCache)
 {
     Assert(cchDir > 0); Assert(pszDir[cchDir] == '\0');
 
@@ -970,7 +847,7 @@ static int vgsvcToolboxLsHandleDirSub(char *pszDir, size_t cchDir, PRTDIRENTRYEX
  * @param   fOutputFlags    Flags of type VBOXSERVICETOOLBOXOUTPUTFLAG.
  * @param   pIdCache        The ID cache.
  */
-static int vgsvcToolboxLsHandleDir(const char *pszDir, uint32_t fFlags, uint32_t fOutputFlags, PVGSVCTOOLBOXIDCACHE pIdCache)
+static int vgsvcToolboxLsHandleDir(const char *pszDir, uint32_t fFlags, uint32_t fOutputFlags, PVGSVCIDCACHE pIdCache)
 {
     AssertPtrReturn(pszDir, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pIdCache, VERR_INVALID_PARAMETER);
@@ -1093,7 +970,7 @@ static RTEXITCODE vgsvcToolboxLs(int argc, char **argv)
         vgsvcToolboxPrintStrmHeader("vbt_ls", 1 /* Stream version */);
     }
 
-    VGSVCTOOLBOXIDCACHE IdCache;
+    VGSVCIDCACHE IdCache;
     RT_ZERO(IdCache);
 
     char szDirCur[RTPATH_MAX];
@@ -1592,7 +1469,7 @@ static RTEXITCODE vgsvcToolboxStat(int argc, char **argv)
             vgsvcToolboxPrintStrmHeader("vbt_stat", 1 /* Stream version */);
         }
 
-        VGSVCTOOLBOXIDCACHE IdCache;
+        VGSVCIDCACHE IdCache;
         RT_ZERO(IdCache);
 
         while ((ch = RTGetOpt(&GetState, &ValueUnion)))
