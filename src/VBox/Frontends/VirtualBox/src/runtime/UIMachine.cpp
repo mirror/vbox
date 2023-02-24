@@ -280,13 +280,16 @@ void UIMachine::updateStateRecordingAction()
 void UIMachine::updateStateVRDEServerAction()
 {
     /* Make sure VRDE server present: */
-    const CVRDEServer comServer = uisession()->machine().GetVRDEServer();
-    AssertMsgReturnVoid(uisession()->machine().isOk() && comServer.isNotNull(),
+    bool fServerPresent = false;
+    acquireWhetherVRDEServerPresent(fServerPresent);
+    AssertMsgReturnVoid(fServerPresent,
                         ("VRDE server can't be null!\n"));
 
     /* Check/Uncheck VRDE Server action depending on feature status: */
+    bool fServerEnabled = false;
+    acquireWhetherVRDEServerEnabled(fServerEnabled);
     actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer)->blockSignals(true);
-    actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer)->setChecked(comServer.GetEnabled());
+    actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer)->setChecked(fServerEnabled);
     actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer)->blockSignals(false);
 }
 
@@ -561,6 +564,21 @@ bool UIMachine::invalidateAndUpdate()
 bool UIMachine::invalidateAndUpdateScreen(ulong uScreenId)
 {
     return uisession()->invalidateAndUpdateScreen(uScreenId);
+}
+
+bool UIMachine::acquireWhetherVRDEServerPresent(bool &fPresent)
+{
+    return uisession()->acquireWhetherVRDEServerPresent(fPresent);
+}
+
+bool UIMachine::acquireWhetherVRDEServerEnabled(bool &fEnabled)
+{
+    return uisession()->acquireWhetherVRDEServerEnabled(fEnabled);
+}
+
+bool UIMachine::setVRDEServerEnabled(bool fEnabled)
+{
+    return uisession()->setVRDEServerEnabled(fEnabled);
 }
 
 bool UIMachine::isGuestAdditionsActive() const
@@ -1596,8 +1614,9 @@ void UIMachine::updateActionRestrictions()
     /* VRDE server stuff: */
     {
         /* Initialize 'View' menu: */
-        const CVRDEServer comServer = uisession()->machine().GetVRDEServer();
-        if (comServer.isNull())
+        bool fServerPresent = false;
+        acquireWhetherVRDEServerPresent(fServerPresent);
+        if (!fServerPresent)
             restrictionForView = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)
                                  (restrictionForView | UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer);
     }

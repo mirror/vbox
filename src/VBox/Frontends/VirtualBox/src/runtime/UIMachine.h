@@ -341,6 +341,13 @@ public:
         bool invalidateAndUpdate();
         /** Notifies display about screen with passed uScreenId was invalidated. */
         bool invalidateAndUpdateScreen(ulong uScreenId);
+
+        /** Acquires whether VRDE server is present. */
+        bool acquireWhetherVRDEServerPresent(bool &fPresent);
+        /** Acquires whether VRDE server is enabled. */
+        bool acquireWhetherVRDEServerEnabled(bool &fEnabled);
+        /** Defines whether VRDE server is enabled. */
+        bool setVRDEServerEnabled(bool fEnabled);
     /** @} */
 
     /** @name Guest additions stuff.

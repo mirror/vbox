@@ -778,6 +778,15 @@ void UINotificationMessage::cannotAcquireEmulatedUSBParameter(const CEmulatedUSB
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireVRDEServerParameter(const CVRDEServer &comServer)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "VRDE server failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire VRDE server parameter.") +
+        UIErrorString::formatErrorInfo(comServer));
+}
+
+/* static */
 void UINotificationMessage::cannotAcquireVirtualSystemDescriptionParameter(const CVirtualSystemDescription &comVsd,
                                                                            UINotificationCenter *pParent /* = 0 */)
 {
