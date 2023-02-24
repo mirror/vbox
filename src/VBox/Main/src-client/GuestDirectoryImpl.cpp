@@ -749,7 +749,6 @@ int GuestDirectory::i_readInternal(GuestFsObjData &objData, int *pvrcGuest)
     AssertPtrReturn(pvrcGuest, VERR_INVALID_POINTER);
 
     int vrc;
-    int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
 
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
     if (mSession->i_getParent()->i_getGuestControlFeatures0() & VBOX_GUESTCTRL_GF_0_TOOLBOX_AS_CMDS)
