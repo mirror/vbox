@@ -736,8 +736,8 @@ static uint8_t bs3CpuInstr3_WorkerTestType1(uint8_t bMode, BS3CPUINSTR3_TEST1_T 
                         && pExtCtx->Ctx.x.Hdr.bmXState == 0x7
                         && pExtCtxOut->Ctx.x.Hdr.bmXState == 0x3)
                         pExtCtxOut->Ctx.x.Hdr.bmXState = 0x7;
-                    Bs3TestCheckExtCtx(pExtCtxOut, pExtCtx, 0 /*fFlags*/, pszMode, idTestStep);
 #endif
+                    Bs3TestCheckExtCtx(pExtCtxOut, pExtCtx, 0 /*fFlags*/, pszMode, idTestStep);
 
                     if (TrapFrame.bXcpt != bXcptExpect)
                         Bs3TestFailedF("Expected bXcpt = %#x, got %#x", bXcptExpect, TrapFrame.bXcpt);
@@ -11579,8 +11579,8 @@ static uint8_t bs3CpuInstr3_WorkerTestType5(uint8_t bMode, BS3CPUINSTR3_TEST5_T 
                         && pExtCtx->Ctx.x.Hdr.bmXState == 0x7
                         && pExtCtxOut->Ctx.x.Hdr.bmXState == 0x3)
                         pExtCtxOut->Ctx.x.Hdr.bmXState = 0x7;
-                    Bs3TestCheckExtCtx(pExtCtxOut, pExtCtx, 0 /*fFlags*/, pszMode, idTestStep);
 #endif
+                    Bs3TestCheckExtCtx(pExtCtxOut, pExtCtx, 0 /*fFlags*/, pszMode, idTestStep);
 
                     if (TrapFrame.bXcpt != bXcptExpect)
                         Bs3TestFailedF("Expected bXcpt = %#x, got %#x", bXcptExpect, TrapFrame.bXcpt);
