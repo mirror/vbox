@@ -3031,7 +3031,7 @@ VBoxRT-x86_SDKS  = VBoxLibXml2
 ifdef VBOX_WITH_LIBCURL
  VBoxRT-x86_SDKS += VBoxLibCurl-x86
 endif
-ifdef VBOX_WITH_LIBZMA
+ifdef VBOX_WITH_LIBLZMA
  VBoxRT-x86_SDKS += VBoxLibLzma-x86
 endif
 VBoxRT-x86_SDKS  += VBoxOpenSslStatic-x86
