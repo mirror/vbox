@@ -815,8 +815,11 @@ RuntimeBaseR3_SOURCES      := \
 	r3/udp.cpp \
 	r3/generic/semspinmutex-r3-generic.cpp \
 	r3/xml.cpp \
-	common/zip/xarvfs.cpp \
-	common/zip/lzmavfs.cpp \
+	common/zip/xarvfs.cpp
+ifdef VBOX_WITH_LIBLZMA
+ RuntimeBaseR3_SOURCES += \
+ 	common/zip/lzmavfs.cpp
+endif
 
 
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
@@ -2470,7 +2473,6 @@ RuntimeBldProg_SOURCES          = \
 	common/vfs/vfsstdfile.cpp \
 	common/vfs/vfsstdpipe.cpp \
 	common/zip/gzipvfs.cpp \
-	common/zip/lzmavfs.cpp \
 	common/zip/tarcmd.cpp \
 	common/zip/tarvfs.cpp \
 	common/zip/tarvfswriter.cpp \
@@ -2524,6 +2526,10 @@ RuntimeBldProg_SOURCES          = \
 ifneq ($(KBUILD_HOST),win)
  RuntimeBldProg_SOURCES        += \
  	common/err/errmsgxpcom.cpp
+endif
+ifdef VBOX_WITH_LIBLZMA
+ RuntimeBldProg_SOURCES        += \
+ 	common/zip/lzmavfs.cpp
 endif
 
 RuntimeBldProg_SOURCES.darwin = $(filter-out \
