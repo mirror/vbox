@@ -121,9 +121,9 @@ endif
 
 
 # liblzma is used by the IPRT compression code and the iPXE ROM tool.
-if defined(VBOX_WITH_LIBLZMA) \
- && !defined(VBOX_ONLY_SDK) \
- && "$(SDK_VBoxLibLzma_INCS)" == "$(PATH_ROOT)/src/libs/liblzma-5.4.1/api"
+if   defined(VBOX_WITH_LIBLZMA) \
+  && !defined(VBOX_ONLY_SDK) \
+  && "$(SDK_VBoxLibLzma_INCS)" == "$(PATH_ROOT)/src/libs/liblzma-5.4.1/api"
  include $(PATH_SUB_CURRENT)/liblzma-5.4.1/Makefile.kmk
 endif
 
