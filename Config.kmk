@@ -946,6 +946,8 @@ VBOX_WITH_FULL_VM_ENCRYPTION = 1
 if1of ($(KBUILD_TARGET), win)
  VBOX_WITH_BLD_RTSIGNTOOL_SIGNING = 1
 endif
+# Enables support for liblzma inside of IPRT.
+VBOX_WITH_LIBLZMA = 1
 ## @}
 
 
