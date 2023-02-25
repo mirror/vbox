@@ -4909,7 +4909,7 @@ SDK_VBoxLzf_LIBS              ?= $(PATH_STAGE_LIB)/VBox-liblzf$(VBOX_SUFF_LIB)
 
 SDK_VBoxLzf-x86               := lzf/x86 compressor/decompressor for dll linking.
 SDK_VBoxLzf-x86_EXTENDS       := VBoxLzf
-SDK_VBoxLzf_LIBS-x86          ?= $(PATH_STAGE_LIB)/VBox-liblzf-x86$(VBOX_SUFF_LIB)
+SDK_VBoxLzf-x86_LIBS          ?= $(PATH_STAGE_LIB)/VBox-liblzf-x86$(VBOX_SUFF_LIB)
 
 SDK_VBoxLzf_STATIC            := lzf compressor/decompressor for static linking.
 SDK_VBoxLzf_STATIC_EXTENDS    := VBoxLzf
