@@ -1362,8 +1362,13 @@ stream_decode_mt(void *coder_ptr, const lzma_allocator *allocator,
 		// values after we read these as those changes can only be
 		// towards more favorable conditions (less memory in use,
 		// more in cache).
+#ifndef VBOX
 		uint64_t mem_in_use;
 		uint64_t mem_cached;
+#else
+		uint64_t mem_in_use = 0; /* Shut up msc who can't grok the mythread_sync construct below. */
+		uint64_t mem_cached = 0;
+#endif
 		struct worker_thread *thr = NULL; // Init to silence warning.
 
 		mythread_sync(coder->mutex) {

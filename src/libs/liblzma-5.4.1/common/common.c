@@ -47,7 +47,11 @@ lzma_alloc(size_t size, const lzma_allocator *allocator)
 	if (allocator != NULL && allocator->alloc != NULL)
 		ptr = allocator->alloc(allocator->opaque, 1, size);
 	else
+#ifndef VBOX
 		ptr = malloc(size);
+#else
+		ptr = RTMemAlloc(size);
+#endif
 
 	return ptr;
 }
@@ -67,7 +71,12 @@ lzma_alloc_zero(size_t size, const lzma_allocator *allocator)
 		if (ptr != NULL)
 			memzero(ptr, size);
 	} else {
+#ifndef VBOX
 		ptr = calloc(1, size);
+#else
+		ptr = RTMemAllocZ(size);
+#endif
+
 	}
 
 	return ptr;
@@ -80,7 +89,11 @@ lzma_free(void *ptr, const lzma_allocator *allocator)
 	if (allocator != NULL && allocator->free != NULL)
 		allocator->free(allocator->opaque, ptr);
 	else
+#ifndef VBOX
 		free(ptr);
+#else
+		RTMemFree(ptr);
+#endif
 
 	return;
 }

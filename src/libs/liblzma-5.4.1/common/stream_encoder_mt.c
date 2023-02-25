@@ -649,7 +649,11 @@ stream_encode_in(lzma_stream_coder *coder, const lzma_allocator *allocator,
 		}
 
 		if (block_error) {
+#ifndef VBOX
 			lzma_ret ret;
+#else
+			lzma_ret ret = LZMA_OK; /* Shut up msc who can't grok the mythread_sync construct below. */
+#endif
 
 			mythread_sync(coder->mutex) {
 				ret = coder->thread_error;
