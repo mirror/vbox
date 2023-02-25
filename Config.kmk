@@ -5043,7 +5043,7 @@ ifdef VBOX_WITH_LIBLZMA
 
  SDK_VBoxLibLzma-x86             := liblzma/x86 compressor/decompressor for dll linking.
  SDK_VBoxLibLzma-x86_EXTENDS     := VBoxLibLzma
- SDK_VBoxLibLzma_LIBS-x86        ?= $(PATH_STAGE_LIB)/VBox-liblzma-x86$(VBOX_SUFF_LIB)
+ SDK_VBoxLibLzma-x86_LIBS        ?= $(PATH_STAGE_LIB)/VBox-liblzma-x86$(VBOX_SUFF_LIB)
 
  SDK_VBoxLibLzmaStatic           := liblzma for static linking
  SDK_VBoxLibLzmaStatic_EXTENDS   := VBoxLibLzma
