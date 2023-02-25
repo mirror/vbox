@@ -185,7 +185,10 @@ static inline int
 mythread_cond_timedwait(mythread_cond *cond, mythread_mutex *mutex,
 		const mythread_condtime *condtime)
 {
-	RTCondVarCritSectWait(*cond, mutex, condtime->timeout);
+	int rc = RTCondVarCritSectWait(*cond, mutex, condtime->timeout);
+	if (rc == VERR_TIMEOUT)
+		return -1;
+	return 0;
 }
 
 static inline void
