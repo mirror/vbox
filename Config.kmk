@@ -5033,6 +5033,17 @@ ifdef VBOX_WITH_LIBVPX
  SDK_VBoxLibVpx_LIBS             ?= $(PATH_STAGE_LIB)/VBox-libvpx$(VBOX_SUFF_LIB)
 endif
 
+ifdef VBOX_WITH_LIBLZMA
+ SDK_VBoxLibLzma                 := liblzma for dll linking.
+ SDK_VBoxLibLzma_DEFAULT_INCS    := $(PATH_ROOT)/src/libs/liblzma-5.4.1/api
+ SDK_VBoxLibLzma_INCS            ?= $(SDK_VBoxLibLzma_DEFAULT_INCS)
+ SDK_VBoxLibLzma_LIBS            ?= $(PATH_STAGE_LIB)/VBox-liblzma$(VBOX_SUFF_LIB)
+
+ SDK_VBoxLibLzmaStatic           := liblzma for static linking
+ SDK_VBoxLibLzmaStatic_EXTENDS   := VBoxLibLzma
+ SDK_VBoxLibLzmaStatic_LIBS      ?= $(PATH_STAGE_LIB)/VBox-liblzma-static$(VBOX_SUFF_LIB)
+endif
+
 # libxml2
 SDK_VBoxLibXml2               := libxml2 for dll linking.
 SDK_VBoxLibXml2_INCS          ?= $(PATH_ROOT)/src/libs/libxml2-2.9.14/include
@@ -6568,11 +6579,13 @@ endif
 if1of ($(KBUILD_TARGET), os2 win)
  TEMPLATE_VBoxR3Static_LIBS.$(KBUILD_TARGET_ARCH) += \
  	$(SDK_VBoxLzf_STATIC_LIBS) \
- 	$(SDK_VBoxZlibStatic_LIBS)
+ 	$(SDK_VBoxZlibStatic_LIBS) \
+ 	$(SDK_VBoxLibLzmaStatic_LIBS)
 else
  TEMPLATE_VBoxR3Static_LIBS.$(KBUILD_TARGET_ARCH) += \
  	$(SDK_VBoxLzf_LIBS) \
- 	$(SDK_VBoxZlib_LIBS)
+ 	$(SDK_VBoxZlib_LIBS) \
+ 	$(SDK_VBoxLibLzma_LIBS)
  if1of ($(KBUILD_TARGET), darwin freebsd)
   TEMPLATE_VBoxR3Static_LIBS       += iconv
  else ifeq ($(KBUILD_TARGET),solaris)
@@ -6852,8 +6865,8 @@ TEMPLATE_VBoxR3AutoTest_INST        = $(INST_TESTCASE)
 TEMPLATE_VBoxR3AutoTest_LIBS.$(KBUILD_TARGET_ARCH) = $(filter-out \
 	$(if-expr !defined(SDK_VBoxLibXml2_LIBS),$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB),) \
 	$(if-expr "$(KBUILD_TARGET)" == "win" || "$(KBUILD_TARGET)" == "os2" \
-	,$(SDK_VBoxLzf_STATIC_LIBS) $(SDK_VBoxZlibStatic_LIBS) \
-	,$(SDK_VBoxLzf_LIBS) $(SDK_VBoxZlib_LIBS)) \
+	,$(SDK_VBoxLzf_STATIC_LIBS) $(SDK_VBoxZlibStatic_LIBS) $(SDK_VBoxLibLzmaStatic_LIBS) \
+	,$(SDK_VBoxLzf_LIBS) $(SDK_VBoxZlib_LIBS) $(SDK_VBoxLibLzma_LIBS)) \
 	,$(TEMPLATE_$(TEMPLATE_VBoxR3AutoTest_EXTENDS)_LIBS.$(KBUILD_TARGET_ARCH)))
 
 #

@@ -3037,6 +3037,8 @@
 # define RTZipXarFsStreamFromIoStream                   RT_MANGLER(RTZipXarFsStreamFromIoStream)
 # define RTZipTarFsStreamForFile                        RT_MANGLER(RTZipTarFsStreamForFile)
 # define RTZipCpioFsStreamFromIoStream                  RT_MANGLER(RTZipCpioFsStreamFromIoStream)
+# define RTZipXzCompressIoStream                        RT_MANGLER(RTZipXzCompressIoStream)
+# define RTZipXzDecompressIoStream                      RT_MANGLER(RTZipXzDecompressIoStream)
 
 /* sort/merge into the above later: */
 # define RTAsn1ContentAllocZ                            RT_MANGLER(RTAsn1ContentAllocZ)

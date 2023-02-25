@@ -342,6 +342,10 @@ endif
 ifdef IPRT_WITH_LZO
  RuntimeBaseR3_DEFS        += RTZIP_USE_LZO
 endif
+ifdef VBOX_WITH_LIBLZMA
+ RuntimeBaseR3_DEFS        += IPRT_WITH_LZMA
+ RuntimeBaseR3_SDKS        += VBoxLibLzma
+endif
 ifn1of ($(KBUILD_TARGET), win)
  RuntimeBaseR3_DEFS        += RT_WITH_ICONV_CACHE
 endif
@@ -811,7 +815,8 @@ RuntimeBaseR3_SOURCES      := \
 	r3/udp.cpp \
 	r3/generic/semspinmutex-r3-generic.cpp \
 	r3/xml.cpp \
-	common/zip/xarvfs.cpp
+	common/zip/xarvfs.cpp \
+	common/zip/lzmavfs.cpp \
 
 
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
@@ -1832,6 +1837,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	r3/alloc-ef.cpp \
   	r3/xml.cpp \
   	common/zip/xarvfs.cpp \
+  	common/zip/lzmavfs.cpp \
   	common/misc/json.cpp \
   	generic/RTLogWriteStdErr-generic.cpp \
   	generic/RTLogWriteStdOut-generic.cpp \
@@ -2464,6 +2470,7 @@ RuntimeBldProg_SOURCES          = \
 	common/vfs/vfsstdfile.cpp \
 	common/vfs/vfsstdpipe.cpp \
 	common/zip/gzipvfs.cpp \
+	common/zip/lzmavfs.cpp \
 	common/zip/tarcmd.cpp \
 	common/zip/tarvfs.cpp \
 	common/zip/tarvfswriter.cpp \
@@ -2706,12 +2713,13 @@ RuntimeBldProg_SOURCES.os2 += \
 #
 RuntimeGuestR3_TEMPLATE                 := VBoxGuestR3Lib
 RuntimeGuestR3_EXTENDS                  := RuntimeR3
-RuntimeGuestR3_DEFS                      = $(filter-out RTCRITSECT_STRICT RT_NO_GIP IN_SUP_R3, $(RuntimeR3_DEFS))
+RuntimeGuestR3_DEFS                      = $(filter-out RTCRITSECT_STRICT RT_NO_GIP IN_SUP_R3 IPRT_WITH_LZMA, $(RuntimeR3_DEFS))
 RuntimeGuestR3_SOURCES                   = $(filter-out \
 	common/time/timesupref.cpp \
 	common/time/timesupA.asm \
 	common/time/timesup.cpp \
 	common/zip/xarvfs.cpp \
+	common/zip/lzmavfs.cpp \
 	r3/xml.cpp \
 	generic/RTLogWriteUser-generic.cpp \
 	, $(RuntimeR3_SOURCES)) \
@@ -2773,6 +2781,9 @@ VBoxRT_SDKS                    = VBoxLibXml2
 ifdef VBOX_WITH_LIBCURL
  VBoxRT_SDKS                  += VBoxLibCurl
 endif
+ifdef VBOX_WITH_LIBLZMA
+ VBoxRT_SDKS                  += VBoxLibLzma
+endif
 VBoxRT_SDKS                   += VBoxOpenSslStatic
 if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
  VBoxRT_SDKS                  += VBoxSoftFloatR3Shared
@@ -2793,6 +2804,9 @@ ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
 endif
 ifdef VBOX_WITH_LIBCURL
  VBoxRT_DEFS                  += IPRT_WITH_HTTP
+endif
+ifdef VBOX_WITH_LIBLZMA
+ VBoxRT_DEFS                  += IPRT_WITH_LZMA
 endif
 ifdef RTALLOC_REPLACE_MALLOC
  VBoxRT_DEFS                  += RTALLOC_REPLACE_MALLOC
@@ -3010,6 +3024,9 @@ VBoxRT-x86_INST.win = $(INST_DLL)x86/
 VBoxRT-x86_SDKS  = VBoxLibXml2
 ifdef VBOX_WITH_LIBCURL
  VBoxRT-x86_SDKS += VBoxLibCurl-x86
+endif
+ifdef VBOX_WITH_LIBZMA
+ VBoxRT-x86_SDKS += VBoxLibLzma-x86
 endif
 VBoxRT-x86_SDKS  += VBoxOpenSslStatic-x86
 
