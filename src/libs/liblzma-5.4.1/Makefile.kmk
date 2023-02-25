@@ -160,13 +160,13 @@ VBox-liblzma_SOURCES = \
 	simple/arm.c \
 	simple/armthumb.c \
 	simple/arm64.c \
-	simple/sparc.c \
+	simple/sparc.c
 
 VBox-liblzma-static_TEMPLATE = VBoxR3StaticNonPedantic
 VBox-liblzma-static_DEFS = $(VBox-liblzma_DEFS)
 VBox-liblzma-static_INCS = $(VBox-liblzma_INCS)
 ifdef VBOX_WITH_NOCRT_STATIC
-VBox-liblzma-static_DEFS += IPRT_NO_CRT_FOR_3RD_PARTY
+ VBox-liblzma-static_DEFS += IPRT_NO_CRT_FOR_3RD_PARTY
 endif
 VBox-liblzma-static_SOURCES = $(VBox-liblzma_SOURCES)
 
