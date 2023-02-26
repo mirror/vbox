@@ -230,7 +230,7 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PVMCPU pVCpu, PPDMCRITSECT p
          * Do the wait.
          *
          * In ring-3 this gets cluttered by lock validation and thread state
-         * maintainence.
+         * maintenance.
          *
          * In ring-0 we have to deal with the possibility that the thread has
          * been signalled and the interruptible wait function returning
