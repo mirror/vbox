@@ -947,7 +947,7 @@ if1of ($(KBUILD_TARGET), win)
  VBOX_WITH_BLD_RTSIGNTOOL_SIGNING = 1
 endif
 # Enables support for liblzma inside of IPRT.
-#VBOX_WITH_LIBLZMA = 1
+VBOX_WITH_LIBLZMA = 1
 ## @}
 
 
