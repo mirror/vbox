@@ -51,6 +51,7 @@
 #include "UINotificationCenter.h"
 #include "UISession.h"
 #include "UISettingsDialogSpecific.h"
+#include "UITextTable.h"
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
 # include "UIKeyboardHandler.h"
 # include <signal.h>
@@ -1400,6 +1401,13 @@ void UISession::acquireFeaturesStatusInfo(QString &strInfo, KVMExecutionEngine &
                                                   enmEngine,
                                                   fNestedPagingEnabled, fUxEnabled,
                                                   enmProvider);
+}
+
+void UISession::generateMachineInformationGeneral(const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &fOptions,
+                                                         UITextTable &returnTable)
+{
+    CMachine comMachine = machine();
+    returnTable = UIDetailsGenerator::generateMachineInformationGeneral(comMachine, fOptions);
 }
 
 bool UISession::setLogEnabled(bool fEnabled)

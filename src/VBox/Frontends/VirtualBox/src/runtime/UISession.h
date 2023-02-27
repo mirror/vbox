@@ -42,6 +42,7 @@
 #include "UIMachineDefs.h"
 #include "UIMediumDefs.h"
 #include "UIMousePointerShapeData.h"
+#include "UITextTable.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -525,6 +526,13 @@ public:
         void shutdown();
         /** Powers VM off, then closes Runtime UI. */
         void powerOff(bool fIncludingDiscard);
+    /** @} */
+
+    /** @name VM information stuff.
+     ** @{ */
+        /** Return general info. for the machine(). */
+        void generateMachineInformationGeneral(const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &fOptions,
+                                               UITextTable &returnTable);
     /** @} */
 
 public slots:
