@@ -246,6 +246,9 @@ public:
 
     /** @name Machine-data stuff.
      ** @{ */
+        /** Acquires settings file path. */
+        bool acquireSettingsFilePath(QString &strPath);
+
         /** Saves machine data. */
         bool saveSettings();
     /** @} */

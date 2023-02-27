@@ -302,6 +302,18 @@ bool UISession::setPause(bool fPause)
     return fSuccess;
 }
 
+bool UISession::acquireSettingsFilePath(QString &strPath)
+{
+    CMachine comMachine = machine();
+    const QString strSettingsFilePath = comMachine.GetSettingsFilePath();
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotSaveMachineSettings(comMachine);
+    else
+        strPath = strSettingsFilePath;
+    return fSuccess;
+}
+
 bool UISession::saveSettings()
 {
     CMachine comMachine = machine();

@@ -1860,7 +1860,9 @@ void UIMachineLogic::sltTakeScreenshot()
         return;
 
     /* Formatting default filename for screenshot. VM folder is the default directory to save: */
-    const QFileInfo fi(machine().GetSettingsFilePath());
+    QString strSettingsFilePath;
+    uimachine()->acquireSettingsFilePath(strSettingsFilePath);
+    const QFileInfo fi(strSettingsFilePath);
     const QString strCurrentTime = QDateTime::currentDateTime().toString("dd_MM_yyyy_hh_mm_ss");
     const QString strFormatDefaultFileName = QString("VirtualBox").append("_").append(uimachine()->machineName()).append("_").append(strCurrentTime);
     const QString strDefaultFileName = QDir(fi.absolutePath()).absoluteFilePath(strFormatDefaultFileName);

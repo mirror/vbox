@@ -363,6 +363,11 @@ bool UIMachine::setPause(bool fPause)
     return uisession()->setPause(fPause);
 }
 
+bool UIMachine::acquireSettingsFilePath(QString &strPath)
+{
+    return uisession()->acquireSettingsFilePath(strPath);
+}
+
 bool UIMachine::saveSettings()
 {
     return uisession()->saveSettings();
