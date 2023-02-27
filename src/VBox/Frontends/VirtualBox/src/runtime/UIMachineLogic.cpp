@@ -1620,11 +1620,8 @@ void UIMachineLogic::sltTakeSnapshot()
     if (!fDialogAccepted)
         return;
 
-    /* Take snapshot: */
-    UINotificationProgressSnapshotTake *pNotification = new UINotificationProgressSnapshotTake(machine(),
-                                                                                               strSnapshotName,
-                                                                                               strSnapshotDescription);
-    gpNotificationCenter->append(pNotification);
+    /* Take snapshot finally: */
+    uimachine()->takeSnapshot(strSnapshotName, strSnapshotDescription);
 }
 
 void UIMachineLogic::sltShowInformationDialog()

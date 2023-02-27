@@ -383,6 +383,11 @@ bool UIMachine::acquireMaxSnapshotIndex(const QString &strNameTemplate, ulong &u
     return uisession()->acquireMaxSnapshotIndex(strNameTemplate, uIndex);
 }
 
+void UIMachine::takeSnapshot(const QString &strName, const QString &strDescription)
+{
+    return uisession()->takeSnapshot(strName, strDescription);
+}
+
 bool UIMachine::acquireWhetherAudioAdapterPresent(bool &fPresent)
 {
     return uisession()->acquireWhetherAudioAdapterPresent(fPresent);

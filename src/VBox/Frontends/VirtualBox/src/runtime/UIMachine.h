@@ -262,6 +262,9 @@ public:
 
         /** Recursively searches for a first snapshot matching name template conditions. */
         bool acquireMaxSnapshotIndex(const QString &strNameTemplate, ulong &uIndex);
+
+        /** Takes snapshot with name & description specified. */
+        void takeSnapshot(const QString &strName, const QString &strDescription);
     /** @} */
 
     /** @name Audio stuff.

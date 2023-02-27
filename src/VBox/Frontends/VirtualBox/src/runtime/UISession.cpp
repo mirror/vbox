@@ -349,6 +349,15 @@ bool UISession::acquireMaxSnapshotIndex(const QString &strNameTemplate, ulong &u
     return searchMaxSnapshotIndex(comMachine, comSnapshot, strNameTemplate, uIndex);
 }
 
+void UISession::takeSnapshot(const QString &strName, const QString &strDescription)
+{
+    CMachine comMachine = machine();
+    UINotificationProgressSnapshotTake *pNotification = new UINotificationProgressSnapshotTake(comMachine,
+                                                                                               strName,
+                                                                                               strDescription);
+    gpNotificationCenter->append(pNotification);
+}
+
 bool UISession::putScancode(LONG iCode)
 {
     CKeyboard comKeyboard = keyboard();
