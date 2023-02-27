@@ -3037,7 +3037,7 @@ endif
 VBoxRT-x86_SDKS  += VBoxOpenSslStatic-x86
 
 VBoxRT-x86_LIBS = \
-	$(SDK_VBoxLzf_LIBS-x86)
+	$(SDK_VBoxLzf-x86_LIBS)
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  VBoxRT-x86_LIBS += \
  	$(PATH_STAGE_LIB)/SUPR3-x86$(VBOX_SUFF_LIB)
