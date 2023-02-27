@@ -485,10 +485,15 @@ public:
         /** Sends multi-touch event to VM's mouse. */
         bool putEventMultiTouch(long iCount, const QVector<LONG64> &contacts, bool fIsTouchScreen, ulong uScanTime);
 
-#ifdef VBOX_WITH_DRAG_AND_DROP
+        /** Acquires clipboard mode. */
+        bool acquireClipboardMode(KClipboardMode &enmMode);
+        /** Defines clipboard mode. */
+        bool setClipboardMode(KClipboardMode enmMode);
+
         /** Acquires D&D mode. */
         bool acquireDnDMode(KDnDMode &enmMode);
-#endif /* VBOX_WITH_DRAG_AND_DROP */
+        /** Defines D&D mode. */
+        bool setDnDMode(KDnDMode enmMode);
     /** @} */
 
     /** @name Storage stuff.

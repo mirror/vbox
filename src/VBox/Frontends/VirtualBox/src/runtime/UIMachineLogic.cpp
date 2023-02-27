@@ -2275,8 +2275,8 @@ void UIMachineLogic::sltAttachWebcamDevice()
 void UIMachineLogic::sltChangeSharedClipboardType(QAction *pAction)
 {
     /* Assign new mode (without save): */
-    KClipboardMode enmMode = pAction->data().value<KClipboardMode>();
-    machine().SetClipboardMode(enmMode);
+    AssertPtrReturnVoid(pAction);
+    uimachine()->setClipboardMode(pAction->data().value<KClipboardMode>());
 }
 
 void UIMachineLogic::sltToggleNetworkAdapterConnection(bool fChecked)
@@ -2298,8 +2298,8 @@ void UIMachineLogic::sltToggleNetworkAdapterConnection(bool fChecked)
 void UIMachineLogic::sltChangeDragAndDropType(QAction *pAction)
 {
     /* Assign new mode (without save): */
-    KDnDMode enmMode = pAction->data().value<KDnDMode>();
-    machine().SetDnDMode(enmMode);
+    AssertPtrReturnVoid(pAction);
+    uimachine()->setDnDMode(pAction->data().value<KDnDMode>());
 }
 
 void UIMachineLogic::sltInstallGuestAdditions()
@@ -2810,7 +2810,8 @@ void UIMachineLogic::updateMenuDevicesWebcams(QMenu *pMenu)
 void UIMachineLogic::updateMenuDevicesSharedClipboard(QMenu *pMenu)
 {
     /* Acquire current clipboard mode: */
-    const KClipboardMode enmCurrentMode = machine().GetClipboardMode();
+    KClipboardMode enmCurrentMode = KClipboardMode_Disabled;
+    uimachine()->acquireClipboardMode(enmCurrentMode);
 
     /* First run: */
     if (!m_pSharedClipboardActions)
@@ -2845,7 +2846,8 @@ void UIMachineLogic::updateMenuDevicesSharedClipboard(QMenu *pMenu)
 void UIMachineLogic::updateMenuDevicesDragAndDrop(QMenu *pMenu)
 {
     /* Acquire current DnD mode: */
-    const KDnDMode enmCurrentMode = machine().GetDnDMode();
+    KDnDMode enmCurrentMode = KDnDMode_Disabled;
+    uimachine()->acquireDnDMode(enmCurrentMode);
 
     /* First run: */
     if (!m_pDragAndDropActions)

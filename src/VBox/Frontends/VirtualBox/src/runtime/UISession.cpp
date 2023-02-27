@@ -476,7 +476,28 @@ bool UISession::putEventMultiTouch(long iCount, const QVector<LONG64> &contacts,
     return fSuccess;
 }
 
-#ifdef VBOX_WITH_DRAG_AND_DROP
+bool UISession::acquireClipboardMode(KClipboardMode &enmMode)
+{
+    CMachine comMachine = machine();
+    const KClipboardMode enmClipboardMode = comMachine.GetClipboardMode();
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+        enmMode = enmClipboardMode;
+    return fSuccess;
+}
+
+bool UISession::setClipboardMode(KClipboardMode enmMode)
+{
+    CMachine comMachine = machine();
+    comMachine.SetClipboardMode(enmMode);
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    return fSuccess;
+}
+
 bool UISession::acquireDnDMode(KDnDMode &enmMode)
 {
     CMachine comMachine = machine();
@@ -488,7 +509,16 @@ bool UISession::acquireDnDMode(KDnDMode &enmMode)
         enmMode = enmDnDMode;
     return fSuccess;
 }
-#endif /* VBOX_WITH_DRAG_AND_DROP */
+
+bool UISession::setDnDMode(KDnDMode enmMode)
+{
+    CMachine comMachine = machine();
+    comMachine.SetDnDMode(enmMode);
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    return fSuccess;
+}
 
 bool UISession::addEncryptionPassword(const QString &strId, const QString &strPassword, bool fClearOnSuspend)
 {
