@@ -342,6 +342,13 @@ bool UISession::acquireCurrentSnapshotName(QString &strName)
     return fSuccess;
 }
 
+bool UISession::acquireMaxSnapshotIndex(const QString &strNameTemplate, ulong &uIndex)
+{
+    CMachine comMachine = machine();
+    CSnapshot comSnapshot = comMachine.FindSnapshot(QString());
+    return searchMaxSnapshotIndex(comMachine, comSnapshot, strNameTemplate, uIndex);
+}
+
 bool UISession::putScancode(LONG iCode)
 {
     CKeyboard comKeyboard = keyboard();
@@ -2100,6 +2107,48 @@ void UISession::recacheMachineMedia()
 
     /* Start media enumeration: */
     uiCommon().enumerateMedia(comMedia);
+}
+
+/* static */
+bool UISession::searchMaxSnapshotIndex(const CMachine &comMachine,
+                                       const CSnapshot &comSnapshot,
+                                       const QString &strNameTemplate,
+                                       ulong &uIndex)
+{
+    bool fSuccess = true;
+    ulong uMaxIndex = 0;
+    QRegExp regExp(QString("^") + strNameTemplate.arg("([0-9]+)") + QString("$"));
+    if (!comSnapshot.isNull())
+    {
+        /* Check current snapshot name: */
+        const QString strName = comSnapshot.GetName();
+        fSuccess = comSnapshot.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotAcquireSnapshotParameter(comSnapshot);
+        else
+        {
+            const int iPos = regExp.indexIn(strName);
+            if (iPos != -1)
+                uMaxIndex = regExp.cap(1).toULong() > uMaxIndex ? regExp.cap(1).toULong() : uMaxIndex;
+            /* Traversing all the snapshot children: */
+            QVector<CSnapshot> comSnapshotChildren = comSnapshot.GetChildren();
+            fSuccess = comSnapshot.isOk();
+            if (!fSuccess)
+                UINotificationMessage::cannotAcquireSnapshotParameter(comSnapshot);
+            else
+                foreach (const CSnapshot &comSnapshotChild, comSnapshotChildren)
+                {
+                    ulong uMaxIndexOfChildren = 0;
+                    fSuccess = searchMaxSnapshotIndex(comMachine, comSnapshotChild, strNameTemplate, uMaxIndexOfChildren);
+                    if (!fSuccess)
+                        break;
+                    uMaxIndex = uMaxIndexOfChildren > uMaxIndex ? uMaxIndexOfChildren : uMaxIndex;
+                }
+        }
+    }
+    if (fSuccess)
+        uIndex = uMaxIndex;
+    return fSuccess;
 }
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER

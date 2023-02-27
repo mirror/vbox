@@ -1598,8 +1598,9 @@ void UIMachineLogic::sltTakeSnapshot()
 
     /* Search for the max available filter index: */
     const QString strNameTemplate = UITakeSnapshotDialog::tr("Snapshot %1");
-    int iMaxSnapshotIndex = searchMaxSnapshotIndex(machine(), machine().FindSnapshot(QString()), strNameTemplate);
-    pDlg->setName(strNameTemplate.arg(++ iMaxSnapshotIndex));
+    ulong uMaxSnapshotIndex = 0;
+    uimachine()->acquireMaxSnapshotIndex(strNameTemplate, uMaxSnapshotIndex);
+    pDlg->setName(strNameTemplate.arg(++uMaxSnapshotIndex));
 
     /* Exec the dialog: */
     const bool fDialogAccepted = pDlg->exec() == QDialog::Accepted;
@@ -2987,29 +2988,6 @@ void UIMachineLogic::askUserForTheDiskEncryptionPasswords()
             }
         }
     }
-}
-
-int UIMachineLogic::searchMaxSnapshotIndex(const CMachine &machine,
-                                           const CSnapshot &snapshot,
-                                           const QString &strNameTemplate)
-{
-    int iMaxIndex = 0;
-    QRegExp regExp(QString("^") + strNameTemplate.arg("([0-9]+)") + QString("$"));
-    if (!snapshot.isNull())
-    {
-        /* Check the current snapshot name */
-        QString strName = snapshot.GetName();
-        int iPos = regExp.indexIn(strName);
-        if (iPos != -1)
-            iMaxIndex = regExp.cap(1).toInt() > iMaxIndex ? regExp.cap(1).toInt() : iMaxIndex;
-        /* Traversing all the snapshot children */
-        foreach (const CSnapshot &child, snapshot.GetChildren())
-        {
-            int iMaxIndexOfChildren = searchMaxSnapshotIndex(machine, child, strNameTemplate);
-            iMaxIndex = iMaxIndexOfChildren > iMaxIndex ? iMaxIndexOfChildren : iMaxIndex;
-        }
-    }
-    return iMaxIndex;
 }
 
 void UIMachineLogic::takeScreenshot(const QString &strFile, const QString &strFormat /* = "png" */) const

@@ -259,6 +259,9 @@ public:
         bool acquireSnapshotCount(ulong &uCount);
         /** Acquires current snapshot name. */
         bool acquireCurrentSnapshotName(QString &strName);
+
+        /** Recursively searches for a first snapshot matching name template conditions. */
+        bool acquireMaxSnapshotIndex(const QString &strNameTemplate, ulong &uIndex);
     /** @} */
 
     /** @name Audio stuff.

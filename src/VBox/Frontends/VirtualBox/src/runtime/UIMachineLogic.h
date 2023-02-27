@@ -367,7 +367,6 @@ private:
     void askUserForTheDiskEncryptionPasswords();
 
     /* Helpers: */
-    static int searchMaxSnapshotIndex(const CMachine &machine, const CSnapshot &snapshot, const QString &strNameTemplate);
     void takeScreenshot(const QString &strFile, const QString &strFormat /* = "png" */) const;
 
     /** Reactivates the screen saver. This is possbily called during vm window close and enables host screen
