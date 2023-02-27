@@ -50,6 +50,7 @@
 #include <iprt/string.h>
 #include <iprt/vfslowlevel.h>
 
+#define LZMA_API_STATIC
 #include <lzma.h>
 
 
