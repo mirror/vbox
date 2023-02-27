@@ -32,6 +32,7 @@ include $(KBUILD_PATH)/subheader.kmk
 LIBRARIES += VBox-liblzma VBox-liblzma-static
 VBox-liblzma_TEMPLATE = VBoxR3RuntimeDllNonPedantic
 VBox-liblzma_CFLAGS.linux = -std=gnu99
+VBox-liblzma_CFLAGS.solaris = -std=gnu99
 VBox-liblzma_INCS += \
 	api \
 	common \
