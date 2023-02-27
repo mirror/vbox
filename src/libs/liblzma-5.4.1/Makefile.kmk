@@ -167,6 +167,7 @@ VBox-liblzma_SOURCES = \
 VBox-liblzma-static_TEMPLATE = VBoxR3StaticNonPedantic
 VBox-liblzma-static_DEFS = $(VBox-liblzma_DEFS)
 VBox-liblzma-static_INCS = $(VBox-liblzma_INCS)
+VBox-liblzma-static_CFLAGS = $(VBox-liblzma_CFLAGS)
 ifdef VBOX_WITH_NOCRT_STATIC
  VBox-liblzma-static_DEFS += IPRT_NO_CRT_FOR_3RD_PARTY
 endif
