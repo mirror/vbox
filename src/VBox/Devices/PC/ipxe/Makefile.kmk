@@ -45,8 +45,7 @@ iPxeBiosBin_SOURCES  = $(iPxeBiosBin_0_OUTDIR)/iPxeBiosBin.c
 iPxeBiosBin_CLEAN    = \
 	$(iPxeBiosBin_0_OUTDIR)/iPxeBiosBin.c \
 
-# Disabled building on Linux as well until liblzma is available on the build boxes @bugref{10254}
-if1of ($(KBUILD_TARGET), darwin os2 solaris win linux)
+if1of ($(KBUILD_TARGET), darwin os2 solaris win)
  $$(iPxeBiosBin_0_OUTDIR)/iPxeBiosBin.c: $(PATH_SUB_CURRENT)/iPxeBiosBin.rom $(VBOX_BIN2C) | $$(dir $$@)
 	$(call MSG_TOOL,bin2c,iPxeBiosBin,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) -min 32 -max 56 -mask 0x1ff -export NetBiosBinary $< $@
@@ -175,10 +174,10 @@ endif
 	-DASM_TCHAR_OPS=@
  TEMPLATE_iPxe_DEFS = \
 	ARCH=i386 \
-	PLATFORM=pcbios \
-	VERSION_MAJOR=1 \
-	VERSION_MINOR=0 \
-	VERSION_PATCH=0 \
+	PLATFORM=pcbios  \
+	VERSION_MAJOR=1  \
+	VERSION_MINOR=21 \
+	VERSION_PATCH=1  \
 	ASM_TCHAR=@ \
 	ASM_TCHAR_OPS=@
  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
@@ -403,7 +402,14 @@ endif
  ipxezbin_TEMPLATE = VBoxBldProg
  ipxezbin_CFLAGS   = -Wno-format -Wno-unused-function -Wno-pointer-arith
  ipxezbin_SOURCES  = src/util/zbin.c
- ipxezbin_LIBS     = lzma # @todo Can't assume liblzma on the build system
+ ifdef VBOX_WITH_LIBLZMA
+  ipxezbin_INCS     = $(SDK_VBoxLibLzma_INCS) # Can't use the proper SDK here as link order matters and liblzma depends on our runtime.
+  ipxezbin_LIBS    = \
+  	$(SDK_VBoxLibLzma_LIBS) \
+  	$(PATH_STAGE_LIB)/RuntimeBldProg$(VBOX_HOSTSUFF_LIB)
+ else
+  ipxezbin_LIBS = lzma # Assume it is installed on the system ready for linking
+ endif
 
 endif
 
