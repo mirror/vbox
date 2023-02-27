@@ -27,6 +27,7 @@
 
 /* Qt includes: */
 #include <QApplication>
+#include <QRegExp>
 #include <QWidget>
 #ifdef VBOX_WS_WIN
 # include <iprt/win/windows.h> /* Workaround for compile errors if included directly by QtWin. */
