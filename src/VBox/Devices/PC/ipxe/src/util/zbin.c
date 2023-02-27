@@ -6,6 +6,10 @@
 #include <sys/stat.h>
 #include <lzma.h>
 
+#if defined(VBOX) && defined(DEBUG)
+# undef DEBUG
+#endif
+
 #define DEBUG 0
 
 /* LZMA filter choices.  Must match those used by unlzma.S */
