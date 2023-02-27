@@ -2279,26 +2279,17 @@ void UIMachineLogic::sltChangeSharedClipboardType(QAction *pAction)
     machine().SetClipboardMode(enmMode);
 }
 
-void UIMachineLogic::sltToggleNetworkAdapterConnection()
+void UIMachineLogic::sltToggleNetworkAdapterConnection(bool fChecked)
 {
-    /* Do not process if window(s) missed! */
-    if (!isMachineWindowsCreated())
-        return;
-
     /* Get and check 'the sender' action object: */
     QAction *pAction = qobject_cast<QAction*>(sender());
     AssertMsgReturnVoid(pAction, ("Sender action should NOT be null!\n"));
 
-    /* Get operation target: */
-    CNetworkAdapter adapter = machine().GetNetworkAdapter((ULONG)pAction->property("slot").toInt());
-    AssertMsgReturnVoid(machine().isOk() && !adapter.isNull(),
-                        ("Network adapter should NOT be null!\n"));
+    /* Acquire adapter slot: */
+    const ulong uSlot = pAction->property("slot").toUInt();
 
-    /* Connect/disconnect cable to/from target: */
-    const bool fConnect = !adapter.GetCableConnected();
-    adapter.SetCableConnected(fConnect);
-    if (!adapter.isOk())
-        return UINotificationMessage::cannotToggleNetworkCable(adapter, machineName(), fConnect);
+    /* Toggle network adapter cable connection: */
+    uimachine()->setNetworkCableConnected(uSlot, fChecked);
 
     /* Save machine-settings: */
     uimachine()->saveSettings();
@@ -2707,23 +2698,23 @@ void UIMachineLogic::updateMenuDevicesStorage(QMenu *pMenu)
 void UIMachineLogic::updateMenuDevicesNetwork(QMenu *pMenu)
 {
     /* Determine how many adapters we should display: */
-    const KChipsetType chipsetType = machine().GetChipsetType();
-    const ULONG uCount = qMin((ULONG)4, uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(chipsetType));
+    const KChipsetType enmChipsetType = machine().GetChipsetType();
+    const ulong uCount = qMin((ulong)4, (ulong)uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(enmChipsetType));
 
     /* Enumerate existing network adapters: */
-    QMap<int, bool> adapterData;
-    for (ULONG uSlot = 0; uSlot < uCount; ++uSlot)
+    QMap<ulong, bool> adapterData;
+    for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
     {
-        /* Get and check iterated adapter: */
-        const CNetworkAdapter adapter = machine().GetNetworkAdapter(uSlot);
-        AssertReturnVoid(machine().isOk() && !adapter.isNull());
-
         /* Skip disabled adapters: */
-        if (!adapter.GetEnabled())
+        bool fAdapterEnabled = false;
+        uimachine()->acquireWhetherNetworkAdapterEnabled(uSlot, fAdapterEnabled);
+        if (!fAdapterEnabled)
             continue;
 
         /* Remember adapter data: */
-        adapterData.insert((int)uSlot, (bool)adapter.GetCableConnected());
+        bool fCableConnected = false;
+        uimachine()->acquireWhetherNetworkCableConnected(uSlot, fCableConnected);
+        adapterData.insert(uSlot, fCableConnected);
     }
 
     /* Make sure at least one adapter was enabled: */
@@ -2731,15 +2722,15 @@ void UIMachineLogic::updateMenuDevicesNetwork(QMenu *pMenu)
         return;
 
     /* Add new actions: */
-    foreach (int iSlot, adapterData.keys())
+    foreach (ulong uSlot, adapterData.keys())
     {
         QAction *pAction = pMenu->addAction(UIIconPool::iconSetOnOff(":/connect_on_16px.png", ":/connect_16px.png"),
                                             adapterData.size() == 1 ? UIActionPool::tr("&Connect Network Adapter") :
-                                                                      UIActionPool::tr("Connect Network Adapter &%1").arg(iSlot + 1),
-                                            this, SLOT(sltToggleNetworkAdapterConnection()));
-        pAction->setProperty("slot", iSlot);
+                                                                      UIActionPool::tr("Connect Network Adapter &%1").arg(uSlot + 1),
+                                            this, SLOT(sltToggleNetworkAdapterConnection(bool)));
+        pAction->setProperty("slot", (uint)uSlot);
         pAction->setCheckable(true);
-        pAction->setChecked(adapterData[iSlot]);
+        pAction->setChecked(adapterData.value(uSlot));
     }
 }
 

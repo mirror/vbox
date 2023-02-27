@@ -514,6 +514,16 @@ public:
         bool webcamDetach(const QString &strPath, const QString &strName);
     /** @} */
 
+    /** @name Network stuff.
+     ** @{ */
+        /** Acquires whether network adapter is enabled. */
+        bool acquireWhetherNetworkAdapterEnabled(ulong uSlot, bool &fEnabled);
+        /** Acquires whether network adapter cable is connected. */
+        bool acquireWhetherNetworkCableConnected(ulong uSlot, bool &fConnected);
+        /** Set whether network adapter cable is connected. */
+        bool setNetworkCableConnected(ulong uSlot, bool fConnected);
+    /** @} */
+
     /** @name Virtualization stuff.
      ** @{ */
         /** Returns IMachineDebugger::ExecutionEngine reference. */

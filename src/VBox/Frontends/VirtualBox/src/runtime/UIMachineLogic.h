@@ -300,7 +300,7 @@ private slots:
     void sltAttachUSBDevice();
     void sltAttachWebcamDevice();
     void sltChangeSharedClipboardType(QAction *pAction);
-    void sltToggleNetworkAdapterConnection();
+    void sltToggleNetworkAdapterConnection(bool fChecked);
     void sltChangeDragAndDropType(QAction *pAction);
     void sltInstallGuestAdditions();
 

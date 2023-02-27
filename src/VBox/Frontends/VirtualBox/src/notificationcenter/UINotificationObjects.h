@@ -307,6 +307,9 @@ public:
         /** Notifies about inability to acquire IAudioAdapter parameter.
           * @param  comAdapter  Brings the object parameter get acquired from. */
         static void cannotAcquireAudioAdapterParameter(const CAudioAdapter &comAdapter);
+        /** Notifies about inability to acquire INetworkAdapter parameter.
+          * @param  comAdapter  Brings the object parameter get acquired from. */
+        static void cannotAcquireNetworkAdapterParameter(const CNetworkAdapter &comAdapter);
         /** Notifies about inability to acquire IConsole parameter.
           * @param  comConsole  Brings the object parameter get acquired from. */
         static void cannotAcquireConsoleParameter(const CConsole &comConsole);

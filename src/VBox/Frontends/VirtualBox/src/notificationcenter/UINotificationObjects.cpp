@@ -707,6 +707,15 @@ void UINotificationMessage::cannotAcquireAudioAdapterParameter(const CAudioAdapt
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireNetworkAdapterParameter(const CNetworkAdapter &comAdapter)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Network adapter failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire network adapter parameter.") +
+        UIErrorString::formatErrorInfo(comAdapter));
+}
+
+/* static */
 void UINotificationMessage::cannotAcquireConsoleParameter(const CConsole &comConsole)
 {
     createMessage(

@@ -681,6 +681,61 @@ bool UISession::webcamDetach(const QString &strPath, const QString &strName)
     return fSuccess;
 }
 
+bool UISession::acquireWhetherNetworkAdapterEnabled(ulong uSlot, bool &fEnabled)
+{
+    CMachine comMachine = machine();
+    CNetworkAdapter comAdapter = comMachine.GetNetworkAdapter(uSlot);
+    bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        const BOOL fAdapterEnabled = comAdapter.GetEnabled();
+        fSuccess = comAdapter.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotAcquireNetworkAdapterParameter(comAdapter);
+        else
+            fEnabled = fAdapterEnabled == TRUE;
+    }
+    return fSuccess;
+}
+
+bool UISession::acquireWhetherNetworkCableConnected(ulong uSlot, bool &fConnected)
+{
+    CMachine comMachine = machine();
+    CNetworkAdapter comAdapter = comMachine.GetNetworkAdapter(uSlot);
+    bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        const BOOL fCableConnected = comAdapter.GetCableConnected();
+        fSuccess = comAdapter.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotAcquireNetworkAdapterParameter(comAdapter);
+        else
+            fConnected = fCableConnected == TRUE;
+    }
+    return fSuccess;
+}
+
+bool UISession::setNetworkCableConnected(ulong uSlot, bool fConnected)
+{
+    CMachine comMachine = machine();
+    CNetworkAdapter comAdapter = comMachine.GetNetworkAdapter(uSlot);
+    bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        comAdapter.SetCableConnected(fConnected);
+        fSuccess = comAdapter.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotToggleNetworkCable(comAdapter, machineName(), fConnected);
+    }
+    return fSuccess;
+}
+
 bool UISession::guestAdditionsUpgradable()
 {
     if (!machine().isOk())

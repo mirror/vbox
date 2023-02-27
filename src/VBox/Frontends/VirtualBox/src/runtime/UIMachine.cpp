@@ -743,6 +743,21 @@ bool UIMachine::webcamDetach(const QString &strPath, const QString &strName)
     return uisession()->webcamDetach(strPath, strName);
 }
 
+bool UIMachine::acquireWhetherNetworkAdapterEnabled(ulong uSlot, bool &fEnabled)
+{
+    return uisession()->acquireWhetherNetworkAdapterEnabled(uSlot, fEnabled);
+}
+
+bool UIMachine::acquireWhetherNetworkCableConnected(ulong uSlot, bool &fConnected)
+{
+    return uisession()->acquireWhetherNetworkCableConnected(uSlot, fConnected);
+}
+
+bool UIMachine::setNetworkCableConnected(ulong uSlot, bool fConnected)
+{
+    return uisession()->setNetworkCableConnected(uSlot, fConnected);
+}
+
 bool UIMachine::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states)
 {
     return uisession()->acquireDeviceActivity(deviceTypes, states);
