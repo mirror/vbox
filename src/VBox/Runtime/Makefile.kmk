@@ -1840,7 +1840,6 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	r3/alloc-ef.cpp \
   	r3/xml.cpp \
   	common/zip/xarvfs.cpp \
-  	common/zip/lzmavfs.cpp \
   	common/misc/json.cpp \
   	generic/RTLogWriteStdErr-generic.cpp \
   	generic/RTLogWriteStdOut-generic.cpp \
