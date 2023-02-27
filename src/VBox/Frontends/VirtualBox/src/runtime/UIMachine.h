@@ -39,6 +39,7 @@
 #include "UIExtraDataDefs.h"
 #include "UIMachineDefs.h"
 #include "UIMousePointerShapeData.h"
+#include "UITextTable.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -46,8 +47,8 @@
 /* Forward declarations: */
 class QWidget;
 class UIActionPool;
-class UISession;
 class UIMachineLogic;
+class UISession;
 class CMediumAttachment;
 class CNetworkAdapter;
 class CUSBDevice;
@@ -624,6 +625,13 @@ public:
         void shutdown();
         /** Powers VM off, then closes Runtime UI. */
         void powerOff(bool fIncludingDiscard);
+    /** @} */
+
+    /** @name VM information stuff.
+     ** @{ */
+        /** Return general info. for the machine(). */
+        void generateMachineInformationGeneral(const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &fOptions,
+                                               UITextTable &returnTable);
     /** @} */
 
 public slots:

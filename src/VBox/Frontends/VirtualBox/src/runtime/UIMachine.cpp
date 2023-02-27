@@ -830,6 +830,12 @@ void UIMachine::acquireFeaturesStatusInfo(QString &strInfo, KVMExecutionEngine &
                                            paravirtProvider());
 }
 
+void UIMachine::generateMachineInformationGeneral(const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &fOptions,
+                                                  UITextTable &returnTable)
+{
+    uisession()->generateMachineInformationGeneral(fOptions, returnTable);
+}
+
 bool UIMachine::setLogEnabled(bool fEnabled)
 {
     return uisession()->setLogEnabled(fEnabled);

@@ -44,7 +44,6 @@
 #include "UIIconPool.h"
 #include "UIInformationConfiguration.h"
 #include "UIMachine.h"
-#include "UISession.h"
 #include "UIVirtualBoxEventHandler.h"
 
 UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent, const CMachine &machine, const CConsole &console)
@@ -109,18 +108,17 @@ void UIInformationConfiguration::retranslateUi()
 
 void UIInformationConfiguration::createTableItems()
 {
-    if (!m_pTableWidget)
+    if (!m_pTableWidget || !gpMachine)
         return;
-    if (!gpMachine || !gpMachine->uisession())
-        return;
-    UISession *pSession = gpMachine->uisession();
+
     resetTable();
     QFontMetrics fontMetrics(m_pTableWidget->font());
     int iMaxColumn1Length = 0;
+
     /* General section: */
     insertTitleRow(m_strGeneralTitle, UIIconPool::iconSet(":/machine_16px.png"), fontMetrics);
     UITextTable infoRows;
-    pSession->generateMachineInformationGeneral(UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Default, infoRows);
+    gpMachine->generateMachineInformationGeneral(UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Default, infoRows);
     insertInfoRows(infoRows, fontMetrics, iMaxColumn1Length);
 
     /* System section: */
