@@ -37,7 +37,6 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CGuest.h"
-#include "CMachine.h"
 #include "CConsole.h"
 
 /* GUI includes: */
@@ -58,9 +57,8 @@ class UIInformationConfiguration : public QIWithRetranslateUI<QWidget>
 public:
 
     /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.
-      * @param machine is machine reference.
       * @param console is machine console reference. */
-    UIInformationConfiguration(QWidget *pParent, const CMachine &machine, const CConsole &console);
+    UIInformationConfiguration(QWidget *pParent, const CConsole &console);
 
 protected:
 
@@ -84,7 +82,6 @@ private:
     QString removeHtmlFromString(const QString &strOriginal);
     QString tableData() const;
 
-    CMachine m_machine;
     CConsole m_console;
     QVBoxLayout *m_pMainLayout;
     QTableWidget *m_pTableWidget;

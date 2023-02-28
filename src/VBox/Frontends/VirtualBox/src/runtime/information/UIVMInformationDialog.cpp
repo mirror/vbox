@@ -212,7 +212,7 @@ void UIVMInformationDialog::prepareTabWidget()
 
         /* Create Configuration Details tab: */
         UIInformationConfiguration *pInformationConfigurationWidget =
-            new UIInformationConfiguration(this, m_pMachine->uisession()->machine(), m_pMachine->uisession()->console());
+            new UIInformationConfiguration(this, m_pMachine->uisession()->console());
         if (pInformationConfigurationWidget)
         {
             m_tabs.insert(Tabs_ConfigurationDetails, pInformationConfigurationWidget);
