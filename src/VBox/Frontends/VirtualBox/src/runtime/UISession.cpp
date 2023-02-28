@@ -41,6 +41,7 @@
 #include "UIDetailsGenerator.h"
 #include "UIExtraDataManager.h"
 #include "UIFrameBuffer.h"
+#include "UIIconPool.h"
 #include "UIMachine.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
@@ -262,6 +263,27 @@ bool UISession::powerUp()
 WId UISession::mainMachineWindowId() const
 {
     return mainMachineWindow() ? mainMachineWindow()->winId() : 0;
+}
+
+void UISession::acquireMachineIcon(const QSize &size, QPixmap &pixmap)
+{
+    QPixmap machinePixmap = generalIconPool().userMachinePixmap(machine(), size);
+    if (machinePixmap.isNull())
+        machinePixmap = generalIconPool().guestOSTypePixmap(osTypeId(), size);
+    if (!machinePixmap.isNull())
+        pixmap = machinePixmap;
+}
+
+bool UISession::acquireChipsetType(KChipsetType &enmType)
+{
+    CMachine comMachine = machine();
+    const KChipsetType enmChipsetType = comMachine.GetChipsetType();
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+        enmType = enmChipsetType;
+    return fSuccess;
 }
 
 bool UISession::acquireLiveMachineState(KMachineState &enmState)

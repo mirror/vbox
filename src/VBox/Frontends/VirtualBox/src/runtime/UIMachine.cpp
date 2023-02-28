@@ -237,6 +237,16 @@ QString UIMachine::osTypeId() const
     return uisession()->osTypeId();
 }
 
+void UIMachine::acquireMachineIcon(const QSize &size, QPixmap &pixmap)
+{
+    return uisession()->acquireMachineIcon(size, pixmap);
+}
+
+bool UIMachine::acquireChipsetType(KChipsetType &enmType)
+{
+    return uisession()->acquireChipsetType(enmType);
+}
+
 void UIMachine::updateStateAdditionsActions()
 {
     /* Make sure action-pool knows whether GA supports graphics: */

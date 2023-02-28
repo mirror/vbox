@@ -187,6 +187,12 @@ public:
         QString machineName() const;
         /** Returns the OS type id. */
         QString osTypeId() const;
+
+        /** Acquire machine icon. */
+        void acquireMachineIcon(const QSize &size, QPixmap &pixmap);
+
+        /** Acquires chipset type. */
+        bool acquireChipsetType(KChipsetType &enmType);
     /** @} */
 
     /** @name Branding stuff.
