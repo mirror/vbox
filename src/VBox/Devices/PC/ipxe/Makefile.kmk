@@ -130,7 +130,7 @@ endif
 	-fstrength-reduce \
 	-falign-jumps=1 \
 	-falign-loops=1 \
-	-Oz \
+	-Os \
 	-falign-functions=1 \
 	-mpreferred-stack-boundary=2 \
 	-mregparm=3 \
