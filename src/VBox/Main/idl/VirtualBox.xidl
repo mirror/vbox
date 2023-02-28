@@ -14864,8 +14864,7 @@
     </attribute>
     <attribute name="timeout" type="unsigned long">
       <desc>
-<!-- r=bird: Using 'Returns' for writable attributes is misleading. -->
-        Returns the session timeout (in ms).
+        Gets or sets the session timeout (in ms).
         <result name="E_NOTIMPL">
           This attribute is not implemented yet.
         </result>
