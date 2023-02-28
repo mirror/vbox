@@ -1908,23 +1908,77 @@ static int vgsvcGstCtrlSessionHandleFsCreateTemp(const PVBOXSERVICECTRLSESSION p
     {
         if (!(fFlags & ~GSTCTL_CREATETEMP_F_VALID_MASK))
         {
-            const char *pszWhat = fMode & GSTCTL_CREATETEMP_F_DIRECTORY ? "directory" : "file";
-            VGSvcVerbose(4, "Creating temporary %s (szTemplate='%s', fFlags=%#x), rc=%Rrc\n", pszWhat, szTemplate, fFlags, rc);
+            const char *pszWhat = fFlags & GSTCTL_CREATETEMP_F_DIRECTORY ? "directory" : "file";
 
-            bool const fSecure = RT_BOOL(fMode & GSTCTL_CREATETEMP_F_SECURE);
-            if (fMode & GSTCTL_CREATETEMP_F_DIRECTORY)
+            /* Validate that the template is as IPRT requires (asserted by IPRT). */
+            if (   RTPathHasPath(szTemplate)
+                || (   !strstr(szTemplate, "XXX")
+                    && szTemplate[strlen(szTemplate) - 1] != 'X'))
             {
-                if (fSecure)
-                    rc = RTDirCreateTempSecure(szTemplate); /* File mode is fixed to 0700. */
-                else
-                    rc = RTDirCreateTemp(szTemplate, fMode);
+                VGSvcError("createtemp: Template '%s' should contain a file name with no path and at least three consecutive 'X' characters or ending in 'X'\n",
+                            szTemplate);
+                rc = VERR_INVALID_PARAMETER;
             }
-            else /* File */
+
+            if (   RT_SUCCESS(rc)
+                && szPath[0] != '\0' && !RTPathStartsWithRoot(szPath))
             {
-                if (fSecure)
-                    rc = RTFileCreateTempSecure(szTemplate); /* File mode is fixed to 0700. */
+                VGSvcError("createtemp: Path '%s' must be absolute\n", szPath);
+                rc = VERR_INVALID_PARAMETER;
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                char szTemplateWithPath[RTPATH_MAX] = "";
+                if (szPath[0] != '\0')
+                {
+                    rc = RTStrCopy(szTemplateWithPath, sizeof(szTemplateWithPath), szPath);
+                    if (RT_FAILURE(rc))
+                    {
+                        VGSvcError("createtemp: Path '%s' too long\n", szPath);
+                        rc = VERR_INVALID_PARAMETER;
+                    }
+                }
                 else
-                    rc = RTFileCreateTemp(szTemplate, fMode);
+                {
+                    rc = RTPathTemp(szTemplateWithPath, sizeof(szTemplateWithPath));
+                    if (RT_FAILURE(rc))
+                    {
+                        VGSvcError("createtemp: Failed to get the temporary directory (%Rrc)", rc);
+                        rc = VERR_INVALID_PARAMETER;
+                    }
+                }
+
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTPathAppend(szTemplateWithPath, sizeof(szTemplateWithPath), szTemplate);
+                    if (RT_FAILURE(rc))
+                    {
+                        VGSvcError("createtemp: Template '%s' too long for path\n", szTemplate);
+                        rc = VERR_INVALID_PARAMETER;
+                    }
+                    else
+                    {
+                        bool const fSecure = RT_BOOL(fFlags & GSTCTL_CREATETEMP_F_SECURE);
+                        if (fFlags & GSTCTL_CREATETEMP_F_DIRECTORY)
+                        {
+                            if (fSecure)
+                                rc = RTDirCreateTempSecure(szTemplateWithPath); /* File mode is fixed to 0700. */
+                            else
+                                rc = RTDirCreateTemp(szTemplate, fMode);
+                        }
+                        else /* File */
+                        {
+                            if (fSecure)
+                                rc = RTFileCreateTempSecure(szTemplateWithPath); /* File mode is fixed to 0700. */
+                            else
+                                rc = RTFileCreateTemp(szTemplate, fMode);
+                        }
+
+                        VGSvcVerbose(3, "Creating temporary %s (szTemplate='%s', fFlags=%#x, fMode=%#x) -> rc=%Rrc\n",
+                                     pszWhat, szTemplate, fFlags, fMode, rc);
+                    }
+                }
             }
         }
         else
@@ -1949,7 +2003,7 @@ static int vgsvcGstCtrlSessionHandleFsCreateTemp(const PVBOXSERVICECTRLSESSION p
         VGSvcError("Error fetching parameters for file/directory creation operation: %Rrc\n", rc);
         VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID, rc, UINT32_MAX);
     }
-    VGSvcVerbose(5, "Creating temporary file/directory returned rc=%Rrc\n", rc);
+    VGSvcVerbose(3, "Creating temporary file/directory returned rc=%Rrc\n", rc);
     return rc;
 }
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
