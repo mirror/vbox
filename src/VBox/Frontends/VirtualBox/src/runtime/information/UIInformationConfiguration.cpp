@@ -46,9 +46,8 @@
 #include "UIMachine.h"
 #include "UIVirtualBoxEventHandler.h"
 
-UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent, const CConsole &console)
+UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_console(console)
     , m_pMainLayout(0)
     , m_pTableWidget(0)
     , m_pCopyWholeTableAction(0)

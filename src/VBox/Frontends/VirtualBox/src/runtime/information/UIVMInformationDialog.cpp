@@ -211,8 +211,7 @@ void UIVMInformationDialog::prepareTabWidget()
         m_pTabWidget->setTabIcon(Tabs_RuntimeInformation, UIIconPool::iconSet(":/session_info_runtime_16px.png"));
 
         /* Create Configuration Details tab: */
-        UIInformationConfiguration *pInformationConfigurationWidget =
-            new UIInformationConfiguration(this, m_pMachine->uisession()->console());
+        UIInformationConfiguration *pInformationConfigurationWidget = new UIInformationConfiguration(this);
         if (pInformationConfigurationWidget)
         {
             m_tabs.insert(Tabs_ConfigurationDetails, pInformationConfigurationWidget);
