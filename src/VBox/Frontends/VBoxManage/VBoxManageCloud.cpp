@@ -1293,7 +1293,7 @@ static RTEXITCODE handleCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
                 return terminateCloudInstance(a, GetState.iNext, pCommonOpts);
 
             case kCloudInstance_Reset:
-//              setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_RESET);
+                setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_RESET);
                 return resetCloudInstance(a, GetState.iNext, pCommonOpts);
 
             case 'h':

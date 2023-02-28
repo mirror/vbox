@@ -129,6 +129,15 @@
        <arg choice="plain">pause</arg>
        <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
      </cmdsynopsis>
+     <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-reset" sepchar=" ">
+       <command moreinfo="none">VBoxManage cloud</command>
+       <arg choice="req">--provider=<replaceable>name</replaceable></arg>
+       <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+       <sbr/>
+       <arg choice="plain">instance</arg>
+       <arg choice="plain">reset</arg>
+       <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
+     </cmdsynopsis>
 
      <!-- Cloud image commands -->
       <cmdsynopsis id="synopsis-vboxmanage-cloudimage-create" sepchar=" "> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
@@ -416,6 +425,17 @@
       </variablelist>
     </refsect2>
 
+    <refsect2 id="vboxmanage-cloudinstance-reset">
+      <title>cloud instance reset</title>
+      <para>
+        Force reset a cloud instance with a specified id.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--id</option></term><listitem><para>Unique identifier which fully identify the instance in the Cloud.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
 
     <!-- Cloud image commands -->
     <refsect2 id="vboxmanage-cloudimage-create">
