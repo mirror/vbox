@@ -34,14 +34,9 @@
 /* Qt includes: */
 #include <QWidget>
 
-/* COM includes: */
-#include "COMEnums.h"
-#include "CGuest.h"
-
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 #include "UITextTable.h"
-
 
 /* Forward declarations: */
 class QTableWidget;

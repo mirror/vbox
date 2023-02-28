@@ -50,9 +50,6 @@
 #include "UIVMInformationDialog.h"
 #include "VBoxUtils.h"
 
-/* Other VBox includes: */
-#include <iprt/time.h>
-
 UIVMInformationDialog::UIVMInformationDialog(UIMachine *pMachine)
     : QMainWindowWithRestorableGeometryAndRetranslateUi(0)
     , m_pMachine(pMachine)
