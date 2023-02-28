@@ -745,6 +745,11 @@ bool UIMachine::storageDevices(KDeviceType enmDeviceType, QList<StorageDeviceInf
     return uisession()->storageDevices(enmDeviceType, guiStorageDevices);
 }
 
+bool UIMachine::acquireEncryptedMedia(EncryptedMediumMap &media)
+{
+    return uisession()->acquireEncryptedMedia(media);
+}
+
 bool UIMachine::addEncryptionPassword(const QString &strId, const QString &strPassword, bool fClearOnSuspend)
 {
     return uisession()->addEncryptionPassword(strId, strPassword, fClearOnSuspend);

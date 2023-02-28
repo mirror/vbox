@@ -2913,20 +2913,8 @@ void UIMachineLogic::askUserForTheDiskEncryptionPasswords()
 {
     /* Prepare the map of the encrypted media: */
     EncryptedMediumMap encryptedMedia;
-    foreach (const CMediumAttachment &attachment, machine().GetMediumAttachments())
-    {
-        /* Acquire hard-drive attachments only: */
-        if (attachment.GetType() == KDeviceType_HardDisk)
-        {
-            /* Get the attachment medium base: */
-            const CMedium medium = attachment.GetMedium();
-            /* Update the map with this medium if it's encrypted: */
-            QString strCipher;
-            const QString strPasswordId = medium.GetEncryptionSettings(strCipher);
-            if (medium.isOk())
-                encryptedMedia.insert(strPasswordId, medium.GetId());
-        }
-    }
+    if (!uimachine()->acquireEncryptedMedia(encryptedMedia))
+        return;
 
     /* Ask for the disk encryption passwords if necessary: */
     EncryptionPasswordMap encryptionPasswords;

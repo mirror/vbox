@@ -637,6 +637,61 @@ bool UISession::storageDevices(KDeviceType enmActualDeviceType, QList<StorageDev
     return fSuccess;
 }
 
+bool UISession::acquireEncryptedMedia(EncryptedMediumMap &media)
+{
+    EncryptedMediumMap encryptedMedia;
+    CMachine comMachine = machine();
+    const CMediumAttachmentVector comAttachments = comMachine.GetMediumAttachments();
+    bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        foreach (const CMediumAttachment &comAttachment, comAttachments)
+        {
+            const KDeviceType enmType = comAttachment.GetType();
+            fSuccess = comAttachment.isOk();
+            if (!fSuccess)
+            {
+                UINotificationMessage::cannotAcquireMediumAttachmentParameter(comAttachment);
+                break;
+            }
+
+            /* Look for hard-drive attachments only: */
+            if (enmType != KDeviceType_HardDisk)
+                continue;
+
+            /* Get the attachment medium: */
+            const CMedium comMedium = comAttachment.GetMedium();
+            fSuccess = comAttachment.isOk();
+            if (!fSuccess)
+            {
+                UINotificationMessage::cannotAcquireMediumAttachmentParameter(comAttachment);
+                break;
+            }
+
+            /* Get the medium ID: */
+            const QUuid uId = comMedium.GetId();
+            fSuccess = comMedium.isOk();
+            if (!fSuccess)
+            {
+                UINotificationMessage::cannotAcquireMediumParameter(comMedium);
+                break;
+            }
+
+            /* Update the map with this medium if it's encrypted: */
+            QString strCipher;
+            const QString strPasswordId = comMedium.GetEncryptionSettings(strCipher);
+            if (comMedium.isOk()) // GetEncryptionSettings failure is a valid case
+                encryptedMedia.insert(strPasswordId, uId);
+        }
+    }
+
+    if (fSuccess)
+        media = encryptedMedia;
+    return fSuccess;
+}
+
 bool UISession::addEncryptionPassword(const QString &strId, const QString &strPassword, bool fClearOnSuspend)
 {
     CConsole comConsole = console();

@@ -38,6 +38,7 @@
 #include <QObject>
 
 /* GUI includes: */
+#include "UIAddDiskEncryptionPasswordDialog.h"
 #include "UIExtraDataDefs.h"
 #include "UIMachineDefs.h"
 #include "UIMediumDefs.h"
@@ -325,6 +326,8 @@ public:
         /** Returns a list of storage devices. */
         bool storageDevices(KDeviceType enmDeviceType, QList<StorageDeviceInfo> &guiStorageDevices);
 
+        /** Acquires encrypted media map. */
+        bool acquireEncryptedMedia(EncryptedMediumMap &media);
         /** Adds encryption password. */
         bool addEncryptionPassword(const QString &strId, const QString &strPassword, bool fClearOnSuspend);
 
