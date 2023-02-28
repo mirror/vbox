@@ -221,38 +221,48 @@ int vmsvga3dDXLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC,
     /*
      * Surfaces
      */
-    p3dState->papSurfaces = (PVMSVGA3DSURFACE *)RTMemAlloc(p3dState->cSurfaces * sizeof(PVMSVGA3DSURFACE));
-    AssertReturn(p3dState->papSurfaces, VERR_NO_MEMORY);
-    for (uint32_t i = 0; i < p3dState->cSurfaces; ++i)
+    if (p3dState->cSurfaces)
     {
-        p3dState->papSurfaces[i] = (PVMSVGA3DSURFACE)RTMemAllocZ(sizeof(VMSVGA3DSURFACE));
-        AssertPtrReturn(p3dState->papSurfaces[i], VERR_NO_MEMORY);
-        p3dState->papSurfaces[i]->id = SVGA3D_INVALID_ID;
-    }
+        p3dState->papSurfaces = (PVMSVGA3DSURFACE *)RTMemAlloc(p3dState->cSurfaces * sizeof(PVMSVGA3DSURFACE));
+        AssertReturn(p3dState->papSurfaces, VERR_NO_MEMORY);
+        for (uint32_t i = 0; i < p3dState->cSurfaces; ++i)
+        {
+            p3dState->papSurfaces[i] = (PVMSVGA3DSURFACE)RTMemAllocZ(sizeof(VMSVGA3DSURFACE));
+            AssertPtrReturn(p3dState->papSurfaces[i], VERR_NO_MEMORY);
+            p3dState->papSurfaces[i]->id = SVGA3D_INVALID_ID;
+        }
 
-    for (uint32_t i = 0; i < p3dState->cSurfaces; ++i)
-    {
-        rc = vmsvga3dDXLoadSurface(pHlp, pThisCC, pSSM);
-        AssertRCReturn(rc, rc);
+        for (uint32_t i = 0; i < p3dState->cSurfaces; ++i)
+        {
+            rc = vmsvga3dDXLoadSurface(pHlp, pThisCC, pSSM);
+            AssertRCReturn(rc, rc);
+        }
     }
+    else
+        p3dState->papSurfaces = NULL;
 
     /*
      * DX contexts
      */
-    p3dState->papDXContexts = (PVMSVGA3DDXCONTEXT *)RTMemAlloc(p3dState->cDXContexts * sizeof(PVMSVGA3DDXCONTEXT));
-    AssertReturn(p3dState->papDXContexts, VERR_NO_MEMORY);
-    for (uint32_t i = 0; i < p3dState->cDXContexts; ++i)
+    if (p3dState->cDXContexts)
     {
-        p3dState->papDXContexts[i] = (PVMSVGA3DDXCONTEXT)RTMemAllocZ(sizeof(VMSVGA3DDXCONTEXT));
-        AssertPtrReturn(p3dState->papDXContexts[i], VERR_NO_MEMORY);
-        p3dState->papDXContexts[i]->cid = SVGA3D_INVALID_ID;
-    }
+        p3dState->papDXContexts = (PVMSVGA3DDXCONTEXT *)RTMemAlloc(p3dState->cDXContexts * sizeof(PVMSVGA3DDXCONTEXT));
+        AssertReturn(p3dState->papDXContexts, VERR_NO_MEMORY);
+        for (uint32_t i = 0; i < p3dState->cDXContexts; ++i)
+        {
+            p3dState->papDXContexts[i] = (PVMSVGA3DDXCONTEXT)RTMemAllocZ(sizeof(VMSVGA3DDXCONTEXT));
+            AssertPtrReturn(p3dState->papDXContexts[i], VERR_NO_MEMORY);
+            p3dState->papDXContexts[i]->cid = SVGA3D_INVALID_ID;
+        }
 
-    for (uint32_t i = 0; i < p3dState->cDXContexts; ++i)
-    {
-        rc = vmsvga3dDXLoadContext(pHlp, pThisCC, pSSM);
-        AssertRCReturn(rc, rc);
+        for (uint32_t i = 0; i < p3dState->cDXContexts; ++i)
+        {
+            rc = vmsvga3dDXLoadContext(pHlp, pThisCC, pSSM);
+            AssertRCReturn(rc, rc);
+        }
     }
+    else
+        p3dState->papDXContexts = NULL;
 
     if (pSvgaR3State->idDXContextCurrent != SVGA_ID_INVALID)
         vmsvga3dDXSwitchContext(pThisCC, pSvgaR3State->idDXContextCurrent);
