@@ -33,7 +33,6 @@
 #include <iprt/err.h>
 #include <iprt/ldr.h>
 #include <iprt/system.h> /* For querying OS version. */
-#include <VBox/VBoxGuestLib.h>
 
 #define WIN32_NO_STATUS
 #include <iprt/win/ws2tcpip.h>
