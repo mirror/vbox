@@ -78,6 +78,7 @@
 #include "CUSBDeviceFilter.h"
 #include "CUSBDeviceFilters.h"
 #include "CVRDEServer.h"
+#include "CVRDEServerInfo.h"
 #ifdef VBOX_WITH_NETFLT
 # include "CNetworkAdapter.h"
 #endif
@@ -888,6 +889,23 @@ bool UISession::setNetworkCableConnected(ulong uSlot, bool fConnected)
     return fSuccess;
 }
 
+bool UISession::acquireVRDEServerPort(LONG &uPort)
+{
+    CConsole comConsole = console();
+    CVRDEServerInfo comVRDEServerInfo = comConsole.GetVRDEServerInfo();
+    bool fSuccess = comConsole.isOk();
+
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireConsoleParameter(comConsole);
+    LONG uVRDEPort = comVRDEServerInfo.GetPort();
+    fSuccess = comVRDEServerInfo.isOk();
+
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireVRDEServerInfoParameter(comVRDEServerInfo);
+    uPort = uVRDEPort;
+    return fSuccess;
+}
+
 bool UISession::guestAdditionsUpgradable()
 {
     if (!machine().isOk())
@@ -909,6 +927,30 @@ bool UISession::guestAdditionsUpgradable()
         return false;
 
     return true;
+}
+
+bool UISession::acquireGuestAdditionsVersion(QString &strGAVersion)
+{
+    CGuest &comGuest = guest();
+    QString strVersion = comGuest.GetAdditionsVersion();
+    const bool fSuccess = comGuest.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireGuestParameter(comGuest);
+    else
+        strGAVersion = strVersion;
+    return fSuccess;
+}
+
+bool UISession::acquireGuestAdditionsRevision(ULONG &uRevision)
+{
+    CGuest &comGuest = guest();
+    ULONG uRev = comGuest.GetAdditionsRevision();
+    const bool fSuccess = comGuest.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireGuestParameter(comGuest);
+    else
+        uRevision = uRev;
+    return fSuccess;
 }
 
 bool UISession::acquireWhetherAudioAdapterPresent(bool &fPresent)
@@ -1668,6 +1710,18 @@ bool UISession::acquireEffectiveCPULoad(ulong &uLoad)
         UINotificationMessage::cannotAcquireMachineDebuggerParameter(comDebugger);
     else
         uLoad = uPctExecuting + uPctOther;
+    return fSuccess;
+}
+
+bool UISession::acquireUptime(LONG64 &uUpTime)
+{
+    CMachineDebugger comDebugger = debugger();
+    LONG64 uTime = comDebugger.GetUptime();
+    const bool fSuccess = comDebugger.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineDebuggerParameter(comDebugger);
+    else
+        uUpTime = uTime;
     return fSuccess;
 }
 

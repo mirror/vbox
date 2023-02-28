@@ -37,7 +37,6 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CConsole.h"
-#include "CGuest.h"
 #include "CMachine.h"
 
 /* GUI includes: */
@@ -85,7 +84,6 @@ private:
 
     CMachine m_machine;
     CConsole m_console;
-    CGuest m_comGuest;
 
     /** Holds the instance of layout we create. */
     QVBoxLayout *m_pMainLayout;

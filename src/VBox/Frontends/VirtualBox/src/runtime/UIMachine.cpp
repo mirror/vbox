@@ -671,6 +671,15 @@ bool UIMachine::isGuestSupportsSeamless() const
     return uisession()->isGuestSupportsSeamless();
 }
 
+bool UIMachine::acquireGuestAdditionsVersion(QString &strGAVersion)
+{
+    return uisession()->acquireGuestAdditionsVersion(strGAVersion);
+}
+bool UIMachine::acquireGuestAdditionsRevision(ULONG &uRevision)
+{
+    return uisession()->acquireGuestAdditionsRevision(uRevision);
+}
+
 bool UIMachine::putScancode(LONG iCode)
 {
     return uisession()->putScancode(iCode);
@@ -789,6 +798,11 @@ bool UIMachine::acquireWhetherNetworkCableConnected(ulong uSlot, bool &fConnecte
 bool UIMachine::setNetworkCableConnected(ulong uSlot, bool fConnected)
 {
     return uisession()->setNetworkCableConnected(uSlot, fConnected);
+}
+
+bool UIMachine::acquireVRDEServerPort(LONG &uPort)
+{
+    return uisession()->acquireVRDEServerPort(uPort);
 }
 
 bool UIMachine::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states)
@@ -922,6 +936,11 @@ bool UIMachine::acquireLogFolder(QString &strFolder)
 bool UIMachine::acquireEffectiveCPULoad(ulong &uLoad)
 {
     return uisession()->acquireEffectiveCPULoad(uLoad);
+}
+
+bool UIMachine::acquireUptime(LONG64 &uLoad)
+{
+    return uisession()->acquireUptime(uLoad);
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

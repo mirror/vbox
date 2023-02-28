@@ -80,7 +80,9 @@ class CStorageController;
 class CVirtualBox;
 class CVirtualBoxErrorInfo;
 class CVRDEServer;
+class CVRDEServerInfo;
 class CUnattended;
+
 
 /** UINotificationObject extension for message functionality. */
 class SHARED_LIBRARY_STUFF UINotificationMessage : public UINotificationSimple
@@ -354,6 +356,9 @@ public:
         /** Notifies about inability to acquire IVRDEServer parameter.
           * @param  comServer  Brings the object parameter get acquired from. */
         static void cannotAcquireVRDEServerParameter(const CVRDEServer &comServer);
+        /** Notifies about inability to acquire IVRDEServerInfo parameter.
+          * @param  comVRDEServerInfo  Brings the object parameter get acquired from. */
+        static void cannotAcquireVRDEServerInfoParameter(const CVRDEServerInfo &comVRDEServerInfo);
         /** Notifies about inability to acquire IVirtualSystemDescription parameter.
           * @param  comVsd  Brings the object parameter get acquired from. */
         static void cannotAcquireVirtualSystemDescriptionParameter(const CVirtualSystemDescription &comVsd,
@@ -378,6 +383,10 @@ public:
           * @param  comCloudMachine  Brings the object parameter get acquired from. */
         static void cannotAcquireCloudMachineParameter(const CCloudMachine &comCloudMachine,
                                                        UINotificationCenter *pParent = 0);
+        /** Notifies about inability to acquire IGuest parameter.
+          * @param  comGuest  Brings the object parameter get acquired from. */
+        static void cannotAcquireGuestParameter(const CGuest &comGuest,
+                                                UINotificationCenter *pParent = 0);
 
         /** Notifies about inability to change IMedium parameter.
           * @param  comMedium  Brings the object parameter being changed for. */

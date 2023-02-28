@@ -77,6 +77,7 @@
 #include "CUnattended.h"
 #include "CUpdateAgent.h"
 #include "CVRDEServer.h"
+#include "CVRDEServerInfo.h"
 
 /* Other VBox stuff: */
 #ifdef VBOX_WS_X11
@@ -744,6 +745,15 @@ void UINotificationMessage::cannotAcquireConsoleParameter(const CConsole &comCon
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireVRDEServerInfoParameter(const CVRDEServerInfo &comVRDEServerInfo)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "VRDE Server Info failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire VRDE server parameter.") +
+        UIErrorString::formatErrorInfo(comVRDEServerInfo));
+}
+
+/* static */
 void UINotificationMessage::cannotAcquireSnapshotParameter(const CSnapshot &comSnapshot)
 {
     createMessage(
@@ -905,6 +915,16 @@ void UINotificationMessage::cannotAcquireCloudMachineParameter(const CCloudMachi
         QApplication::translate("UIMessageCenter", "Cloud failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to acquire cloud machine parameter.") +
         UIErrorString::formatErrorInfo(comCloudMachine),
+        QString(), QString(), pParent);
+}
+
+/* static */
+void UINotificationMessage::cannotAcquireGuestParameter(const CGuest &comGuest, UINotificationCenter *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Guest failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire guest parameter.") +
+        UIErrorString::formatErrorInfo(comGuest),
         QString(), QString(), pParent);
 }
 

@@ -45,7 +45,6 @@
 /* COM includes: */
 #include "CDisplay.h"
 #include "CGraphicsAdapter.h"
-#include "CGuest.h"
 #include "CMachineDebugger.h"
 #include "CVRDEServerInfo.h"
 
@@ -251,14 +250,15 @@ void UIRuntimeInfoWidget::insertInfoRow(InfoRow enmInfoRow, const QString& strLa
 
 QString UIRuntimeInfoWidget::screenResolution(int iScreenID)
 {
+    AssertPtrReturn(gpMachine, QString());
     /* Determine resolution: */
-    ULONG uWidth = 0;
-    ULONG uHeight = 0;
-    ULONG uBpp = 0;
-    LONG xOrigin = 0;
-    LONG yOrigin = 0;
+    ulong uWidth = 0;
+    ulong uHeight = 0;
+    ulong uBpp = 0;
+    long xOrigin = 0;
+    long yOrigin = 0;
     KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
-    m_console.GetDisplay().GetScreenResolution(iScreenID, uWidth, uHeight, uBpp, xOrigin, yOrigin, monitorStatus);
+    gpMachine->acquireGuestScreenParameters(iScreenID, uWidth, uHeight, uBpp, xOrigin, yOrigin, monitorStatus);
     QString strResolution = QString("%1x%2").arg(uWidth).arg(uHeight);
     if (uBpp)
         strResolution += QString("x%1").arg(uBpp);
@@ -311,14 +311,17 @@ void UIRuntimeInfoWidget::updateScreenInfo(int iScreenID /* = -1 */)
 
 void UIRuntimeInfoWidget::updateUpTime()
 {
-    CMachineDebugger debugger = m_console.GetDebugger();
-    uint32_t uUpSecs = (debugger.GetUptime() / 5000) * 5;
+    AssertPtrReturnVoid(gpMachine);
+    LONG64 uUptime;
+    if (!gpMachine->acquireUptime(uUptime))
+        return;
+    uint64_t uUpSecs = (uUptime / 5000) * 5;
     char szUptime[32];
-    uint32_t uUpDays = uUpSecs / (60 * 60 * 24);
+    uint64_t uUpDays = uUpSecs / (60 * 60 * 24);
     uUpSecs -= uUpDays * 60 * 60 * 24;
-    uint32_t uUpHours = uUpSecs / (60 * 60);
+    uint64_t uUpHours = uUpSecs / (60 * 60);
     uUpSecs -= uUpHours * 60 * 60;
-    uint32_t uUpMins  = uUpSecs / 60;
+    uint64_t uUpMins  = uUpSecs / 60;
     uUpSecs -= uUpMins * 60;
     RTStrPrintf(szUptime, sizeof(szUptime), "%dd %02d:%02d:%02d",
                 uUpDays, uUpHours, uUpMins, uUpSecs);
@@ -343,7 +346,8 @@ void UIRuntimeInfoWidget::updateTitleRow()
 
 void UIRuntimeInfoWidget::updateOSTypeRow()
 {
-   QString strOSType = m_console.GetGuest().GetOSTypeId();
+    AssertPtrReturnVoid(gpMachine);
+    QString strOSType = gpMachine->osTypeId();
     if (strOSType.isEmpty())
         strOSType = m_strOSNotDetected;
     else
@@ -353,12 +357,11 @@ void UIRuntimeInfoWidget::updateOSTypeRow()
 
 void UIRuntimeInfoWidget::updateVirtualizationInfo()
 {
-
-    /* Determine virtualization attributes: */
-    CMachineDebugger debugger = m_console.GetDebugger();
+    AssertPtrReturnVoid(gpMachine);
+    KVMExecutionEngine enmExecutionEngineType = gpMachine->vmExecutionEngine();
 
     QString strExecutionEngine;
-    switch (debugger.GetExecutionEngine())
+    switch (enmExecutionEngineType)
     {
         case KVMExecutionEngine_HwVirt:
             strExecutionEngine = "VT-x/AMD-V";  /* no translation */
@@ -376,9 +379,9 @@ void UIRuntimeInfoWidget::updateVirtualizationInfo()
             strExecutionEngine = m_strExecutionEngineNotSet;
             break;
     }
-    QString strNestedPaging = debugger.GetHWVirtExNestedPagingEnabled() ?
+    QString strNestedPaging = gpMachine->isHWVirtExNestedPagingEnabled() ?
         m_strNestedPagingActive : m_strNestedPagingInactive;
-    QString strUnrestrictedExecution = debugger.GetHWVirtExUXEnabled() ?
+    QString strUnrestrictedExecution = gpMachine->isHWVirtExUXEnabled() ?
         m_strUnrestrictedExecutionActive : m_strUnrestrictedExecutionInactive;
     QString strParavirtProvider = gpConverter->toString(m_machine.GetEffectiveParavirtProvider());
 
@@ -390,13 +393,15 @@ void UIRuntimeInfoWidget::updateVirtualizationInfo()
 
 void UIRuntimeInfoWidget::updateGAsVersion()
 {
-    CGuest guest = m_console.GetGuest();
-    QString strGAVersion = guest.GetAdditionsVersion();
+    AssertPtrReturnVoid(gpMachine);
+    QString strGAVersion;
+    gpMachine->acquireGuestAdditionsVersion(strGAVersion);
     if (strGAVersion.isEmpty())
         strGAVersion = m_strGANotDetected;
     else
     {
-        ULONG uRevision = guest.GetAdditionsRevision();
+        ULONG uRevision = 0;
+        gpMachine->acquireGuestAdditionsRevision(uRevision);
         if (uRevision != 0)
             strGAVersion += QString(" r%1").arg(uRevision);
     }
@@ -405,7 +410,9 @@ void UIRuntimeInfoWidget::updateGAsVersion()
 
 void UIRuntimeInfoWidget::updateVRDE()
 {
-    int iVRDEPort = m_console.GetVRDEServerInfo().GetPort();
+    AssertPtrReturnVoid(gpMachine);
+    LONG iVRDEPort = 0;
+    gpMachine->acquireVRDEServerPort(iVRDEPort);
     QString strVRDEInfo = (iVRDEPort == 0 || iVRDEPort == -1) ?
         m_strVRDEPortNotAvailable : QString("%1").arg(iVRDEPort);
    updateInfoRow(InfoRow_RemoteDesktop, QString("%1").arg(m_strRemoteDesktopLabel), strVRDEInfo);
@@ -506,8 +513,6 @@ UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &mac
     , m_pRuntimeInfoWidget(0)
     , m_pCopyWholeTableAction(0)
 {
-    if (!m_console.isNull())
-        m_comGuest = m_console.GetGuest();
     connect(pMachine, &UIMachine::sigAdditionsStateChange, this, &UIInformationRuntime::sltGuestAdditionsStateChange);
     connect(pMachine, &UIMachine::sigGuestMonitorChange, this, &UIInformationRuntime::sltGuestMonitorChange);
     connect(pMachine, &UIMachine::sigVRDEChange, this, &UIInformationRuntime::sltVRDEChange);
