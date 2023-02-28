@@ -1278,8 +1278,19 @@ static int vgsvcGstCtrlSessionHandleDirCreate(const PVBOXSERVICECTRLSESSION pSes
     {
         if (!(fCreate & ~GSTCTL_CREATEDIRECTORY_F_VALID_MASK))
         {
-            VGSvcVerbose(4, "Creating directory (szPath='%s', fMode=%#x, fCreate=%#x), rc=%Rrc\n", szPath, fMode, fCreate, rc);
-            rc = RTDirCreate(szPath, fMode, fCreate);
+            /* Translate flags. */
+            int fCreateRuntime = 0; /* RTDIRCREATE_FLAGS_XXX */
+            if (fCreate & GSTCTL_CREATEDIRECTORY_F_NO_SYMLINKS)
+                fCreateRuntime |= RTDIRCREATE_FLAGS_NO_SYMLINKS;
+            if (fCreate & GSTCTL_CREATEDIRECTORY_F_IGNORE_UMASK)
+                fCreateRuntime |= RTDIRCREATE_FLAGS_IGNORE_UMASK;
+
+            if (fCreate & GSTCTL_CREATEDIRECTORY_F_PARENTS)
+                rc = RTDirCreateFullPath(szPath, fMode);
+            else
+                rc = RTDirCreate(szPath, fMode, fCreateRuntime);
+
+            VGSvcVerbose(4, "Creating directory (szPath='%s', fMode=%#x, fCreate=%#x) -> rc=%Rrc\n", szPath, fMode, fCreate, rc);
         }
         else
         {
