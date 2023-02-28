@@ -2684,7 +2684,6 @@ int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, Gues
 int GuestSessionTaskUpdateAdditions::checkGuestAdditionsStatus(GuestSession *pSession, eOSType osType)
 {
     int vrc = VINF_SUCCESS;
-#ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
     HRESULT hrc;
 
     if (osType == eOSType_Linux)
@@ -2720,7 +2719,7 @@ int GuestSessionTaskUpdateAdditions::checkGuestAdditionsStatus(GuestSession *pSe
                                                     "files were installed, but kernel modules were not reloaded automatically. "
                                                     "Please consider rebooting the guest")));
     }
-#endif
+
     return vrc;
 }
 
