@@ -835,7 +835,7 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
         Utf8Str strNotFound;
     };
 
-    const size_t vsdHReadableArraySize = 13;//the number of items in the vsdHReadableArray
+    const size_t vsdHReadableArraySize = 15;//the number of items in the vsdHReadableArray
     vsdHReadable vsdHReadableArray[vsdHReadableArraySize] = {
         {VirtualSystemDescriptionType_CloudDomain, Cloud::tr("Availability domain = %ls\n"), Cloud::tr("Availability domain wasn't found\n")},
         {VirtualSystemDescriptionType_Name, Cloud::tr("Instance displayed name = %ls\n"), Cloud::tr("Instance displayed name wasn't found\n")},
@@ -850,8 +850,10 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
         {VirtualSystemDescriptionType_Memory, Cloud::tr("RAM = %ls MB\n"), Cloud::tr("Value for RAM wasn't found\n")},
         {VirtualSystemDescriptionType_CPU, Cloud::tr("CPUs = %ls\n"), Cloud::tr("Numbers of CPUs weren't found\n")},
         {VirtualSystemDescriptionType_CloudPublicIP, Cloud::tr("Instance public IP = %ls\n"), Cloud::tr("Public IP wasn't found\n")},
-        {VirtualSystemDescriptionType_Miscellaneous, "%ls\n", Cloud::tr("Free-form tags or metadata weren't found\n")},
-        {VirtualSystemDescriptionType_CloudInitScriptPath, "%ls\n", Cloud::tr("Cloud-init script wasn't found\n")}
+        {VirtualSystemDescriptionType_Miscellaneous, "%ls\n", Cloud::tr("Miscellanious wasn't found\n")},
+        {VirtualSystemDescriptionType_CloudInstanceFreeFormTags, "%ls\n", Cloud::tr("Free-form tags weren't found\n")},
+        {VirtualSystemDescriptionType_CloudInstanceMetadata, "%ls\n", Cloud::tr("Metadata was't found\n")},
+        {VirtualSystemDescriptionType_CloudInitScriptPath, "Cloud-init script: \n\t%ls\n", Cloud::tr("Cloud-init script wasn't found\n")}
     };
 
     com::SafeArray<VirtualSystemDescriptionType_T> retTypes;

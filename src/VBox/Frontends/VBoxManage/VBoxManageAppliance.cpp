@@ -1378,6 +1378,9 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                         case VirtualSystemDescriptionType_CloudCompartmentId:
                         case VirtualSystemDescriptionType_CloudShapeCpus:
                         case VirtualSystemDescriptionType_CloudShapeMemory:
+                        case VirtualSystemDescriptionType_CloudInstanceMetadata:
+                        case VirtualSystemDescriptionType_CloudInstanceFreeFormTags:
+                        case VirtualSystemDescriptionType_CloudImageFreeFormTags:
                             /** @todo  VirtualSystemDescriptionType_Miscellaneous? */
                             break;
 

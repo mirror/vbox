@@ -4430,7 +4430,7 @@
 
   <enum
     name="VirtualSystemDescriptionType"
-    uuid="247f8b6f-1042-4c15-8910-3e3c64395eb7"
+    uuid="d171d08c-f7bf-4bee-932f-ffbf998f7ac4"
     >
     <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
     a configuration value.</desc>
@@ -4502,6 +4502,9 @@
     <const name="CloudCompartmentId" value="51" />
     <const name="CloudShapeCpus" value="52" />
     <const name="CloudShapeMemory" value="53" />
+    <const name="CloudInstanceMetadata" value="54" />
+    <const name="CloudInstanceFreeFormTags" value="55" />
+    <const name="CloudImageFreeFormTags" value="56" />
     <const name="HardDiskControllerVirtioSCSI" value="60" />
   </enum>
 
