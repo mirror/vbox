@@ -505,6 +505,9 @@ public:
 
     /** @name Storage stuff.
      ** @{ */
+        /** Returns a list of storage devices. */
+        bool storageDevices(KDeviceType enmDeviceType, QList<StorageDeviceInfo> &guiStorageDevices);
+
         /** Adds encryption password. */
         bool addEncryptionPassword(const QString &strId, const QString &strPassword, bool fClearOnSuspend);
 

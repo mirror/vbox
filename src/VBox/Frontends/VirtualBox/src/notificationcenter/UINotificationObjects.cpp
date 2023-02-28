@@ -70,6 +70,7 @@
 #include "CRangedIntegerFormValue.h"
 #include "CRecordingSettings.h"
 #include "CStringFormValue.h"
+#include "CStorageController.h"
 #ifdef VBOX_WITH_UPDATE_AGENT
 # include "CSystemProperties.h"
 #endif
@@ -641,6 +642,24 @@ void UINotificationMessage::cannotAcquireHostParameter(const CHost &comHost)
         QApplication::translate("UIMessageCenter", "Host failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to acquire host parameter.") +
         UIErrorString::formatErrorInfo(comHost));
+}
+
+/* static */
+void UINotificationMessage::cannotAcquireStorageControllerParameter(const CStorageController &comStorageController)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Storage controller failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire storage controller parameter.") +
+        UIErrorString::formatErrorInfo(comStorageController));
+}
+
+/* static */
+void UINotificationMessage::cannotAcquireMediumAttachmentParameter(const CMediumAttachment &comMediumAttachment)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Medium attachment failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire medium attachment parameter.") +
+        UIErrorString::formatErrorInfo(comMediumAttachment));
 }
 
 /* static */

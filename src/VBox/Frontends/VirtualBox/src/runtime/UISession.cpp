@@ -38,6 +38,7 @@
 #include "UIActionPoolRuntime.h"
 #include "UICommon.h"
 #include "UIConsoleEventHandler.h"
+#include "UIConverter.h"
 #include "UIDetailsGenerator.h"
 #include "UIExtraDataManager.h"
 #include "UIFrameBuffer.h"
@@ -540,6 +541,98 @@ bool UISession::setDnDMode(KDnDMode enmMode)
     const bool fSuccess = comMachine.isOk();
     if (!fSuccess)
         UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    return fSuccess;
+}
+
+bool UISession::storageDevices(KDeviceType enmActualDeviceType, QList<StorageDeviceInfo> &guiStorageDevices)
+{
+    const CMachine comMachine = machine();
+    const CMediumAttachmentVector comAttachments = comMachine.GetMediumAttachments();
+    bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        foreach (const CMediumAttachment &comAttachment, comAttachments)
+        {
+            /* Get device type: */
+            const KDeviceType enmDeviceType = comAttachment.GetType();
+            fSuccess = comAttachment.isOk();
+            if (!fSuccess)
+            {
+                UINotificationMessage::cannotAcquireMediumAttachmentParameter(comAttachment);
+                break;
+            }
+            /* And make sure it's actual one: */
+            if (enmDeviceType != enmActualDeviceType)
+                continue;
+
+            /* Get controller name: */
+            const QString strControllerName = comAttachment.GetController();
+            fSuccess = comAttachment.isOk();
+            if (!fSuccess)
+            {
+                UINotificationMessage::cannotAcquireMediumAttachmentParameter(comAttachment);
+                break;
+            }
+            /* And search for it's presence: */
+            const CStorageController comController = comMachine.GetStorageControllerByName(strControllerName);
+            fSuccess = comMachine.isOk();
+            if (!fSuccess)
+            {
+                UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+                break;
+            }
+
+            /* Fill structure fields: */
+            StorageDeviceInfo guiStorageDevice;
+            guiStorageDevice.m_strControllerName = strControllerName; // already confirmed
+            const KStorageBus enmStorageBus = comController.GetBus();
+            fSuccess = comController.isOk();
+            if (!fSuccess)
+            {
+                UINotificationMessage::cannotAcquireStorageControllerParameter(comController);
+                break;
+            }
+            switch (enmStorageBus)
+            {
+                case KStorageBus_IDE:        guiStorageDevice.m_icon = UIIconPool::iconSet(":/ide_16px.png"); break;
+                case KStorageBus_SATA:       guiStorageDevice.m_icon = UIIconPool::iconSet(":/sata_16px.png"); break;
+                case KStorageBus_SCSI:       guiStorageDevice.m_icon = UIIconPool::iconSet(":/scsi_16px.png"); break;
+                case KStorageBus_Floppy:     guiStorageDevice.m_icon = UIIconPool::iconSet(":/floppy_16px.png"); break;
+                case KStorageBus_SAS:        guiStorageDevice.m_icon = UIIconPool::iconSet(":/sas_16px.png"); break;
+                case KStorageBus_USB:        guiStorageDevice.m_icon = UIIconPool::iconSet(":/usb_16px.png"); break;
+                case KStorageBus_PCIe:       guiStorageDevice.m_icon = UIIconPool::iconSet(":/pcie_16px.png"); break;
+                case KStorageBus_VirtioSCSI: guiStorageDevice.m_icon = UIIconPool::iconSet(":/virtio_scsi_16px.png"); break;
+                default: break;
+            }
+            const long iPort = comAttachment.GetPort();
+            fSuccess = comAttachment.isOk();
+            if (!fSuccess)
+            {
+                UINotificationMessage::cannotAcquireMediumAttachmentParameter(comAttachment);
+                break;
+            }
+            const long iDevice = comAttachment.GetDevice();
+            fSuccess = comAttachment.isOk();
+            if (!fSuccess)
+            {
+                UINotificationMessage::cannotAcquireMediumAttachmentParameter(comAttachment);
+                break;
+            }
+            if (fSuccess)
+            {
+                const StorageSlot guiStorageSlot(enmStorageBus, iPort, iDevice);
+                guiStorageDevice.m_guiStorageSlot = guiStorageSlot;
+            }
+
+            /* Append or break if necessary: */
+            if (fSuccess)
+                guiStorageDevices << guiStorageDevice;
+            else
+                break;
+        }
+    }
     return fSuccess;
 }
 

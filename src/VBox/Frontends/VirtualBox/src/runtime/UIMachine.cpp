@@ -731,6 +731,11 @@ bool UIMachine::setDnDMode(KDnDMode enmMode)
     return uisession()->setDnDMode(enmMode);
 }
 
+bool UIMachine::storageDevices(KDeviceType enmDeviceType, QList<StorageDeviceInfo> &guiStorageDevices)
+{
+    return uisession()->storageDevices(enmDeviceType, guiStorageDevices);
+}
+
 bool UIMachine::addEncryptionPassword(const QString &strId, const QString &strPassword, bool fClearOnSuspend)
 {
     return uisession()->addEncryptionPassword(strId, strPassword, fClearOnSuspend);

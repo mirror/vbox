@@ -2649,52 +2649,42 @@ void UIMachineLogic::updateMenuDevicesStorage(QMenu *pMenu)
     /* Determine device-type: */
     const QMenu *pOpticalDevicesMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_OpticalDevices)->menu();
     const QMenu *pFloppyDevicesMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_FloppyDevices)->menu();
-    const KDeviceType deviceType = pMenu == pOpticalDevicesMenu ? KDeviceType_DVD :
-                                   pMenu == pFloppyDevicesMenu  ? KDeviceType_Floppy :
-                                                                  KDeviceType_Null;
-    AssertMsgReturnVoid(deviceType != KDeviceType_Null, ("Incorrect storage device-type!\n"));
+    const KDeviceType enmDeviceType = pMenu == pOpticalDevicesMenu
+                                    ? KDeviceType_DVD
+                                    : pMenu == pFloppyDevicesMenu
+                                    ? KDeviceType_Floppy
+                                    : KDeviceType_Null;
+    AssertMsgReturnVoid(enmDeviceType != KDeviceType_Null, ("Incorrect storage device-type!\n"));
 
-    /* Prepare/fill all storage menus: */
-    foreach (const CMediumAttachment &attachment, machine().GetMediumAttachments())
+    /* Acquire device list: */
+    QList<StorageDeviceInfo> guiStorageDevices;
+    if (!uimachine()->storageDevices(enmDeviceType, guiStorageDevices))
+        return;
+
+    /* Populate menu with host storage devices: */
+    foreach (const StorageDeviceInfo &guiStorageDevice, guiStorageDevices)
     {
-        /* Current controller: */
-        const CStorageController controller = machine().GetStorageControllerByName(attachment.GetController());
-        /* If controller present and device-type correct: */
-        if (!controller.isNull() && attachment.GetType() == deviceType)
+        /* Prepare current storage menu: */
+        QMenu *pStorageMenu = 0;
+        /* If it will be more than one storage menu: */
+        if (pMenu->menuAction()->data().toInt() > 1)
         {
-            /* Current controller/attachment attributes: */
-            const QString strControllerName = controller.GetName();
-            const StorageSlot storageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice());
-
-            /* Prepare current storage menu: */
-            QMenu *pStorageMenu = 0;
-            /* If it will be more than one storage menu: */
-            if (pMenu->menuAction()->data().toInt() > 1)
-            {
-                /* We have to create sub-menu for each of them: */
-                pStorageMenu = new QMenu(QString("%1 (%2)").arg(strControllerName).arg(gpConverter->toString(storageSlot)), pMenu);
-                switch (controller.GetBus())
-                {
-                    case KStorageBus_IDE:        pStorageMenu->setIcon(QIcon(":/ide_16px.png")); break;
-                    case KStorageBus_SATA:       pStorageMenu->setIcon(QIcon(":/sata_16px.png")); break;
-                    case KStorageBus_SCSI:       pStorageMenu->setIcon(QIcon(":/scsi_16px.png")); break;
-                    case KStorageBus_Floppy:     pStorageMenu->setIcon(QIcon(":/floppy_16px.png")); break;
-                    case KStorageBus_SAS:        pStorageMenu->setIcon(QIcon(":/sas_16px.png")); break;
-                    case KStorageBus_USB:        pStorageMenu->setIcon(QIcon(":/usb_16px.png")); break;
-                    case KStorageBus_PCIe:       pStorageMenu->setIcon(QIcon(":/pcie_16px.png")); break;
-                    case KStorageBus_VirtioSCSI: pStorageMenu->setIcon(QIcon(":/virtio_scsi_16px.png")); break;
-                    default: break;
-                }
-                pMenu->addMenu(pStorageMenu);
-            }
-            /* Otherwise just use existing one: */
-            else pStorageMenu = pMenu;
-
-            /* Fill current storage menu: */
-            uiCommon().prepareStorageMenu(*pStorageMenu,
-                                            this, SLOT(sltMountStorageMedium()),
-                                            machine(), strControllerName, storageSlot);
+            /* We have to create sub-menu for each of them: */
+            pStorageMenu = new QMenu(QString("%1 (%2)")
+                                        .arg(guiStorageDevice.m_strControllerName)
+                                        .arg(gpConverter->toString(guiStorageDevice.m_guiStorageSlot)),
+                                     pMenu);
+            pStorageMenu->setIcon(guiStorageDevice.m_icon);
+            pMenu->addMenu(pStorageMenu);
         }
+        /* Otherwise just use existing one: */
+        else
+            pStorageMenu = pMenu;
+
+        /* Fill current storage menu: */
+        uiCommon().prepareStorageMenu(*pStorageMenu,
+                                      this, SLOT(sltMountStorageMedium()), machine(),
+                                      guiStorageDevice.m_strControllerName, guiStorageDevice.m_guiStorageSlot);
     }
 }
 

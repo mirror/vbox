@@ -32,8 +32,12 @@
 #endif
 
 /* Qt includes: */
+#include <QIcon>
 #include <QString>
 #include <QUuid>
+
+/* GUI includes: */
+#include "UIDefs.h"
 
 /* Other VBox includes: */
 #include <iprt/cdefs.h>
@@ -75,6 +79,14 @@ enum UIKeyboardStateType
     UIKeyboardStateType_KeyboardCaptured        = RT_BIT(0),
     UIKeyboardStateType_HostKeyPressed          = RT_BIT(1),
     UIKeyboardStateType_HostKeyPressedInsertion = RT_BIT(2)
+};
+
+/** Robust struct to bring storage device info to machine-logic. */
+struct StorageDeviceInfo
+{
+    QString      m_strControllerName;
+    StorageSlot  m_guiStorageSlot;
+    QIcon        m_icon;
 };
 
 /** Robust struct to bring USB device info to machine-logic. */

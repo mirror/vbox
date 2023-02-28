@@ -73,8 +73,10 @@ class CCloudProfile;
 class CEmulatedUSB;
 class CKeyboard;
 class CMachineDebugger;
+class CMediumAttachment;
 class CMouse;
 class CNetworkAdapter;
+class CStorageController;
 class CVirtualBox;
 class CVirtualBoxErrorInfo;
 class CVRDEServer;
@@ -286,6 +288,12 @@ public:
         /** Notifies about inability to acquire IHost parameter.
           * @param  comHost  Brings the object parameter get acquired from. */
         static void cannotAcquireHostParameter(const CHost &comHost);
+        /** Notifies about inability to acquire IStorageController parameter.
+          * @param  comStorageController  Brings the object parameter get acquired from. */
+        static void cannotAcquireStorageControllerParameter(const CStorageController &comStorageController);
+        /** Notifies about inability to acquire IMediumAttachment parameter.
+          * @param  comMediumAttachment  Brings the object parameter get acquired from. */
+        static void cannotAcquireMediumAttachmentParameter(const CMediumAttachment &comMediumAttachment);
         /** Notifies about inability to acquire IMedium parameter.
           * @param  comMedium  Brings the object parameter get acquired from. */
         static void cannotAcquireMediumParameter(const CMedium &comMedium);
