@@ -112,62 +112,63 @@ void UIInformationConfiguration::createTableItems()
         return;
 
     resetTable();
+    UITextTable infoRows;
+
     QFontMetrics fontMetrics(m_pTableWidget->font());
     int iMaxColumn1Length = 0;
 
     /* General section: */
     insertTitleRow(m_strGeneralTitle, UIIconPool::iconSet(":/machine_16px.png"), fontMetrics);
-    UITextTable infoRows;
     gpMachine->generateMachineInformationGeneral(UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Default, infoRows);
     insertInfoRows(infoRows, fontMetrics, iMaxColumn1Length);
 
     /* System section: */
     insertTitleRow(m_strSystemTitle, UIIconPool::iconSet(":/chipset_16px.png"), fontMetrics);
-    insertInfoRows(UIDetailsGenerator::generateMachineInformationSystem(m_machine,
-                                                                        UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Default),
-                   fontMetrics, iMaxColumn1Length);
+    infoRows.clear();
+    gpMachine->generateMachineInformationSystem(UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Default, infoRows);
+    insertInfoRows(infoRows, fontMetrics, iMaxColumn1Length);
 
     /* Display section: */
     insertTitleRow(m_strDisplayTitle, UIIconPool::iconSet(":/vrdp_16px.png"), fontMetrics);
-    insertInfoRows(UIDetailsGenerator::generateMachineInformationDisplay(m_machine,
-                                                                         UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Default),
-                   fontMetrics, iMaxColumn1Length);
+    infoRows.clear();
+    gpMachine->generateMachineInformationDisplay(UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Default, infoRows);
+    insertInfoRows(infoRows, fontMetrics, iMaxColumn1Length);
 
     /* Storage section: */
     insertTitleRow(m_strStorageTitle, UIIconPool::iconSet(":/hd_16px.png"), fontMetrics);
-    insertInfoRows(UIDetailsGenerator::generateMachineInformationStorage(m_machine,
-                                                                         UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Default),
-                   fontMetrics, iMaxColumn1Length);
+    infoRows.clear();
+    gpMachine->generateMachineInformationStorage(UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Default, infoRows);
+    insertInfoRows(infoRows, fontMetrics, iMaxColumn1Length);
 
     /* Audio section: */
     insertTitleRow(m_strAudioTitle, UIIconPool::iconSet(":/sound_16px.png"), fontMetrics);
-    insertInfoRows(UIDetailsGenerator::generateMachineInformationAudio(m_machine,
-                                                                       UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Default),
-                   fontMetrics, iMaxColumn1Length);
+    infoRows.clear();
+    gpMachine->generateMachineInformationAudio(UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Default, infoRows);
+    insertInfoRows(infoRows, fontMetrics, iMaxColumn1Length);
 
     /* Network section: */
     insertTitleRow(m_strNetworkTitle, UIIconPool::iconSet(":/nw_16px.png"), fontMetrics);
-    insertInfoRows(UIDetailsGenerator::generateMachineInformationNetwork(m_machine,
-                                                                         UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Default),
-                   fontMetrics, iMaxColumn1Length);
+    infoRows.clear();
+    gpMachine->generateMachineInformationNetwork(UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Default, infoRows);
+    insertInfoRows(infoRows, fontMetrics, iMaxColumn1Length);
 
     /* Serial port section: */
     insertTitleRow(m_strSerialPortsTitle, UIIconPool::iconSet(":/serial_port_16px.png"), fontMetrics);
-    insertInfoRows(UIDetailsGenerator::generateMachineInformationSerial(m_machine,
-                                                                        UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Default),
-                   fontMetrics, iMaxColumn1Length);
+    infoRows.clear();
+    gpMachine->generateMachineInformationSerial(UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Default, infoRows);
+    insertInfoRows(infoRows, fontMetrics, iMaxColumn1Length);
 
     /* USB section: */
     insertTitleRow(m_strUSBTitle, UIIconPool::iconSet(":/usb_16px.png"), fontMetrics);
-    insertInfoRows(UIDetailsGenerator::generateMachineInformationUSB(m_machine,
-                                                                     UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Default),
-                   fontMetrics, iMaxColumn1Length);
+    infoRows.clear();
+    gpMachine->generateMachineInformationUSB(UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Default, infoRows);
+    insertInfoRows(infoRows, fontMetrics, iMaxColumn1Length);
 
-    /* Share folders section: */
+    /* Shared folders section: */
     insertTitleRow(m_strSharedFoldersTitle, UIIconPool::iconSet(":/sf_16px.png"), fontMetrics);
-    insertInfoRows(UIDetailsGenerator::generateMachineInformationSharedFolders(m_machine,
-                                                                               UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Default),
-                   fontMetrics, iMaxColumn1Length);
+    infoRows.clear();
+    gpMachine->generateMachineInformationSharedFolders(UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Default, infoRows);
+    insertInfoRows(infoRows, fontMetrics, iMaxColumn1Length);
 
     m_pTableWidget->resizeColumnToContents(0);
     /* Resize the column 1 a bit larger than the max string if contains: */

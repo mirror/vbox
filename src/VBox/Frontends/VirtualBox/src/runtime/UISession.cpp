@@ -1404,10 +1404,65 @@ void UISession::acquireFeaturesStatusInfo(QString &strInfo, KVMExecutionEngine &
 }
 
 void UISession::generateMachineInformationGeneral(const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &fOptions,
-                                                         UITextTable &returnTable)
+                                                  UITextTable &returnTable)
 {
     CMachine comMachine = machine();
     returnTable = UIDetailsGenerator::generateMachineInformationGeneral(comMachine, fOptions);
+}
+
+void UISession::generateMachineInformationSystem(const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem &fOptions,
+                                                 UITextTable &returnTable)
+{
+    CMachine comMachine = machine();
+    returnTable = UIDetailsGenerator::generateMachineInformationSystem(comMachine, fOptions);
+}
+
+void UISession::generateMachineInformationDisplay(const UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay &fOptions,
+                                                  UITextTable &returnTable)
+{
+    CMachine comMachine = machine();
+    returnTable = UIDetailsGenerator::generateMachineInformationDisplay(comMachine, fOptions);
+}
+
+void UISession::generateMachineInformationStorage(const UIExtraDataMetaDefs::DetailsElementOptionTypeStorage &fOptions,
+                                                  UITextTable &returnTable)
+{
+    CMachine comMachine = machine();
+    returnTable = UIDetailsGenerator::generateMachineInformationStorage(comMachine, fOptions);
+}
+
+void UISession::generateMachineInformationAudio(const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio &fOptions,
+                                        UITextTable &returnTable)
+{
+    CMachine comMachine = machine();
+    returnTable = UIDetailsGenerator::generateMachineInformationAudio(comMachine, fOptions);
+}
+
+void UISession::generateMachineInformationNetwork(const UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork &fOptions,
+                                        UITextTable &returnTable)
+{
+    CMachine comMachine = machine();
+    returnTable = UIDetailsGenerator::generateMachineInformationNetwork(comMachine, fOptions);
+}
+void UISession::generateMachineInformationSerial(const UIExtraDataMetaDefs::DetailsElementOptionTypeSerial &fOptions,
+                                        UITextTable &returnTable)
+{
+    CMachine comMachine = machine();
+    returnTable = UIDetailsGenerator::generateMachineInformationSerial(comMachine, fOptions);
+}
+
+void UISession::generateMachineInformationUSB(const UIExtraDataMetaDefs::DetailsElementOptionTypeUsb &fOptions,
+                                        UITextTable &returnTable)
+{
+    CMachine comMachine = machine();
+    returnTable = UIDetailsGenerator::generateMachineInformationUSB(comMachine, fOptions);
+}
+
+void UISession::generateMachineInformationSharedFolders(const UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders &fOptions,
+                                                        UITextTable &returnTable)
+{
+    CMachine comMachine = machine();
+    returnTable = UIDetailsGenerator::generateMachineInformationSharedFolders(comMachine, fOptions);
 }
 
 bool UISession::setLogEnabled(bool fEnabled)

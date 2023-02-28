@@ -836,6 +836,54 @@ void UIMachine::generateMachineInformationGeneral(const UIExtraDataMetaDefs::Det
     uisession()->generateMachineInformationGeneral(fOptions, returnTable);
 }
 
+void UIMachine::generateMachineInformationSystem(const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem &fOptions,
+                                                  UITextTable &returnTable)
+{
+    uisession()->generateMachineInformationSystem(fOptions, returnTable);
+}
+
+void UIMachine::generateMachineInformationDisplay(const UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay &fOptions,
+                                                  UITextTable &returnTable)
+{
+    uisession()->generateMachineInformationDisplay(fOptions, returnTable);
+}
+
+void UIMachine::generateMachineInformationStorage(const UIExtraDataMetaDefs::DetailsElementOptionTypeStorage &fOptions,
+                                                  UITextTable &returnTable)
+{
+    uisession()->generateMachineInformationStorage(fOptions, returnTable);
+}
+
+void UIMachine::generateMachineInformationAudio(const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio &fOptions,
+                                                  UITextTable &returnTable)
+{
+    uisession()->generateMachineInformationAudio(fOptions, returnTable);
+}
+
+void UIMachine::generateMachineInformationNetwork(const UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork &fOptions,
+                                                  UITextTable &returnTable)
+{
+    uisession()->generateMachineInformationNetwork(fOptions, returnTable);
+}
+
+void UIMachine::generateMachineInformationSerial(const UIExtraDataMetaDefs::DetailsElementOptionTypeSerial &fOptions,
+                                                  UITextTable &returnTable)
+{
+    uisession()->generateMachineInformationSerial(fOptions, returnTable);
+}
+
+void UIMachine::generateMachineInformationUSB(const UIExtraDataMetaDefs::DetailsElementOptionTypeUsb &fOptions,
+                                                  UITextTable &returnTable)
+{
+    uisession()->generateMachineInformationUSB(fOptions, returnTable);
+}
+
+void UIMachine::generateMachineInformationSharedFolders(const UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders &fOptions,
+                                                        UITextTable &returnTable)
+{
+    uisession()->generateMachineInformationSharedFolders(fOptions, returnTable);
+}
+
 bool UIMachine::setLogEnabled(bool fEnabled)
 {
     return uisession()->setLogEnabled(fEnabled);
