@@ -16468,7 +16468,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_aesdeclast_u128_fallback,(PRTUINT128U puDst, PC
 /**
  * [V]PCMPISTRI
  */
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPXSTRXSRC pSrc, uint8_t bEvil))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil))
 {
     RT_NOREF(pu32Ecx, pEFlags, pSrc, bEvil);
     AssertReleaseFailed();
@@ -16478,7 +16478,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128_fallback,(uint32_t *pu32Ecx, uin
 /**
  * [V]PCMPESTRI
  */
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPXSTRXSRC pSrc, uint8_t bEvil))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPESTRXSRC pSrc, uint8_t bEvil))
 {
     RT_NOREF(pu32Ecx, pEFlags, pSrc, bEvil);
     AssertReleaseFailed();
@@ -16488,7 +16488,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestri_u128_fallback,(uint32_t *pu32Ecx, uin
 /**
  * [V]PCMPISTRM
  */
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistrm_u128_fallback,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPXSTRXSRC pSrc, uint8_t bEvil))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistrm_u128_fallback,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil))
 {
     RT_NOREF(puDst, pEFlags, pSrc, bEvil);
     AssertReleaseFailed();
@@ -16498,7 +16498,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistrm_u128_fallback,(PRTUINT128U puDst, uin
 /**
  * [V]PCMPESTRM
  */
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestrm_u128_fallback,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPXSTRXSRC pSrc, uint8_t bEvil))
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestrm_u128_fallback,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPESTRXSRC pSrc, uint8_t bEvil))
 {
     RT_NOREF(puDst, pEFlags, pSrc, bEvil);
     AssertReleaseFailed();

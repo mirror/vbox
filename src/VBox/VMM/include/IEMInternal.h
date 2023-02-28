@@ -2386,23 +2386,33 @@ FNIEMAIMPLMEDIAOPTF2U128IMM8 iemAImpl_sha1rnds4_u128,   iemAImpl_sha1rnds4_u128_
 IEM_DECL_IMPL_DEF(void, iemAImpl_sha256rnds2_u128,(PRTUINT128U puDst, PCRTUINT128U puSrc, PCRTUINT128U puXmm0Constants));
 IEM_DECL_IMPL_DEF(void, iemAImpl_sha256rnds2_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc, PCRTUINT128U puXmm0Constants));
 
-typedef struct IEMPCMPXSTRXSRC
+typedef struct IEMPCMPISTRXSRC
 {
     RTUINT128U              uSrc1;
     RTUINT128U              uSrc2;
-} IEMPCMPXSTRXSRC;
-typedef IEMPCMPXSTRXSRC *PIEMPCMPXSTRXSRC;
-typedef const IEMPCMPXSTRXSRC *PCIEMPCMPXSTRXSRC;
+} IEMPCMPISTRXSRC;
+typedef IEMPCMPISTRXSRC *PIEMPCMPISTRXSRC;
+typedef const IEMPCMPISTRXSRC *PCIEMPCMPISTRXSRC;
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPXSTRXSRC pSrc, uint8_t bEvil));
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPXSTRXSRC pSrc, uint8_t bEvil));
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestri_u128,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPXSTRXSRC pSrc, uint8_t bEvil));
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPXSTRXSRC pSrc, uint8_t bEvil));
+typedef struct IEMPCMPESTRXSRC
+{
+    RTUINT128U              uSrc1;
+    RTUINT128U              uSrc2;
+    uint64_t                u64Rax;
+    uint64_t                u64Rdx;
+} IEMPCMPESTRXSRC;
+typedef IEMPCMPESTRXSRC *PIEMPCMPESTRXSRC;
+typedef const IEMPCMPESTRXSRC *PCIEMPCMPESTRXSRC;
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistrm_u128,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPXSTRXSRC pSrc, uint8_t bEvil));
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistrm_u128_fallback,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPXSTRXSRC pSrc, uint8_t bEvil));
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestrm_u128,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPXSTRXSRC pSrc, uint8_t bEvil));
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestrm_u128_fallback,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPXSTRXSRC pSrc, uint8_t bEvil));
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil));
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil));
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestri_u128,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPESTRXSRC pSrc, uint8_t bEvil));
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPESTRXSRC pSrc, uint8_t bEvil));
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistrm_u128,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil));
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistrm_u128_fallback,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil));
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestrm_u128,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPESTRXSRC pSrc, uint8_t bEvil));
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestrm_u128_fallback,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPESTRXSRC pSrc, uint8_t bEvil));
 
 FNIEMAIMPLMEDIAOPTF2U128IMM8 iemAImpl_pclmulqdq_u128, iemAImpl_pclmulqdq_u128_fallback;
 FNIEMAIMPLMEDIAOPTF3U128IMM8 iemAImpl_vpclmulqdq_u128, iemAImpl_vpclmulqdq_u128_fallback;

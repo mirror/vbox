@@ -5222,26 +5222,32 @@ IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vpclmulqdq, 0
 ;;
 ; Need to move this as well somewhere better?
 ;
-struc IEMPCMPXSTRXSRC
+struc IEMPCMPISTRXSRC
     .uSrc1        resd 4
     .uSrc2        resd 4
 endstruc
 
+struc IEMPCMPESTRXSRC
+    .uSrc1        resd 4
+    .uSrc2        resd 4
+    .u64Rax       resd 2
+    .u64Rdx       resd 2
+endstruc
+
 ;;
-; The pcmpistri/pcmpestri instruction template.
+; The pcmpistri instruction.
 ;
 ; @param    A0      Pointer to the ECX register to store the result to (output).
 ; @param    A1      Pointer to the EFLAGS register.
 ; @param    A2      Pointer to the structure containing the source operands (input).
 ; @param    A3      The 8-bit immediate
 ;
-%macro IEMIMPL_MEDIA_PCMPXSTRI_INSN_IMM8_6 1
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
+BEGINPROC_FASTCALL iemAImpl_pcmpistri_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
 
-        movdqu  xmm0, [A2 + IEMPCMPXSTRXSRC.uSrc1]
-        movdqu  xmm1, [A2 + IEMPCMPXSTRXSRC.uSrc2]
+        movdqu  xmm0, [A2 + IEMPCMPISTRXSRC.uSrc1]
+        movdqu  xmm1, [A2 + IEMPCMPISTRXSRC.uSrc2]
         mov     T2, A0                  ; A0 can be ecx/rcx in some calling conventions which gets overwritten later (T2 only available on AMD64)
         lea     T1, [.imm0 xWrtRIP]
         lea     T0, [A3 + A3*3]         ; sizeof(insnX+ret) == 8: (A3 * 4) * 2
@@ -5256,7 +5262,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
  %assign bImm 0
  %rep 256
 .imm %+ bImm:
-       %1 xmm0, xmm1, bImm
+       pcmpistri xmm0, xmm1, bImm
        ret
        int3
   %assign bImm bImm + 1
@@ -5264,28 +5270,64 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
 .immEnd:                                ; 256*8 == 0x800
 dw 0xf7ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
 dw 0x107ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
-ENDPROC iemAImpl_ %+ %1 %+ _u128
-%endmacro
-
-IEMIMPL_MEDIA_PCMPXSTRI_INSN_IMM8_6 pcmpistri
-IEMIMPL_MEDIA_PCMPXSTRI_INSN_IMM8_6 pcmpestri
-
+ENDPROC iemAImpl_pcmpistri_u128
 
 ;;
-; The pcmpistrm/pcmpestrm instruction template.
+; The pcmpestri instruction.
+;
+; @param    A0      Pointer to the ECX register to store the result to (output).
+; @param    A1      Pointer to the EFLAGS register.
+; @param    A2      Pointer to the structure containing the source operands (input).
+; @param    A3      The 8-bit immediate
+;
+BEGINPROC_FASTCALL iemAImpl_pcmpestri_u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movdqu  xmm0, [A2 + IEMPCMPESTRXSRC.uSrc1]
+        movdqu  xmm1, [A2 + IEMPCMPESTRXSRC.uSrc2]
+        mov     T2, A0                  ; A0 can be ecx/rcx in some calling conventions which gets overwritten later (T2 only available on AMD64)
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A3 + A3*3]         ; sizeof(insnX+ret) == 8: (A3 * 4) * 2
+        lea     T1, [T1 + T0*2]
+        push    xDX                                     ; xDX can be A1 or A2 depending on the calling convention
+        mov     xAX,  [A2 + IEMPCMPESTRXSRC.u64Rax]     ; T0 is rax, so only overwrite it after we're done using it
+        mov     xDX,  [A2 + IEMPCMPESTRXSRC.u64Rdx]
+        call    T1
+
+        pop     xDX
+        IEM_SAVE_FLAGS A1, X86_EFL_STATUS_BITS, 0
+        mov    [T2], ecx
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       pcmpestri xmm0, xmm1, bImm
+       ret
+       int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*8 == 0x800
+dw 0xf7ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x107ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_pcmpestri_u128
+
+;;
+; The pcmpistrm instruction template.
 ;
 ; @param    A0      Pointer to the XMM0 register to store the result to (output).
 ; @param    A1      Pointer to the EFLAGS register.
 ; @param    A2      Pointer to the structure containing the source operands (input).
 ; @param    A3      The 8-bit immediate
 ;
-%macro IEMIMPL_MEDIA_PCMPXSTRM_INSN_IMM8_6 1
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
+BEGINPROC_FASTCALL iemAImpl_pcmpistrm_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
 
-        movdqu  xmm1, [A2 + IEMPCMPXSTRXSRC.uSrc1]
-        movdqu  xmm2, [A2 + IEMPCMPXSTRXSRC.uSrc2]
+        movdqu  xmm1, [A2 + IEMPCMPISTRXSRC.uSrc1]
+        movdqu  xmm2, [A2 + IEMPCMPISTRXSRC.uSrc2]
         lea     T1, [.imm0 xWrtRIP]
         lea     T0, [A3 + A3*3]         ; sizeof(insnX+ret) == 8: (A3 * 4) * 2
         lea     T1, [T1 + T0*2]
@@ -5299,7 +5341,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
  %assign bImm 0
  %rep 256
 .imm %+ bImm:
-       %1 xmm1, xmm2, bImm
+       pcmpistrm xmm1, xmm2, bImm
        ret
        int3
   %assign bImm bImm + 1
@@ -5307,11 +5349,50 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
 .immEnd:                                ; 256*8 == 0x800
 dw 0xf7ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
 dw 0x107ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
-ENDPROC iemAImpl_ %+ %1 %+ _u128
-%endmacro
+ENDPROC iemAImpl_pcmpistrm_u128
 
-IEMIMPL_MEDIA_PCMPXSTRM_INSN_IMM8_6 pcmpistrm
-IEMIMPL_MEDIA_PCMPXSTRM_INSN_IMM8_6 pcmpestrm
+;;
+; The pcmpestrm instruction template.
+;
+; @param    A0      Pointer to the XMM0 register to store the result to (output).
+; @param    A1      Pointer to the EFLAGS register.
+; @param    A2      Pointer to the structure containing the source operands (input).
+; @param    A3      The 8-bit immediate
+;
+BEGINPROC_FASTCALL iemAImpl_pcmpestrm_u128, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        push xAX
+        push xDX
+        movdqu  xmm1, [A2 + IEMPCMPESTRXSRC.uSrc1]
+        movdqu  xmm2, [A2 + IEMPCMPESTRXSRC.uSrc2]
+        mov     xAX,  [A2 + IEMPCMPESTRXSRC.u64Rax]
+        mov     xDX,  [A2 + IEMPCMPESTRXSRC.u64Rdx]
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A3 + A3*3]         ; sizeof(insnX+ret) == 8: (A3 * 4) * 2
+        lea     T1, [T1 + T0*2]
+        call    T1
+
+        IEM_SAVE_FLAGS A1, X86_EFL_STATUS_BITS, 0
+        movdqu  [A0], xmm0
+        pop    xDX
+        pop    xAX
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       pcmpestrm xmm1, xmm2, bImm
+       ret
+       int3
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*8 == 0x800
+dw 0xf7ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x107ff - (.immEnd - .imm0)          ; will cause warning if entries are too small.
+ENDPROC iemAImpl_pcmpestrm_u128
 
 
 ;;
