@@ -152,7 +152,7 @@ enum eProcessStatus
 /** Creates a secure temporary file / directory.
  *  Might not be supported on all (guest) OSes.
  *
- *  @sa IPRT's implementation of RTDirCreateTempSecure() / RTFileCreateTempSecumre(). */
+ *  @sa IPRT's implementation of RTDirCreateTempSecure() / RTFileCreateTempSecure(). */
 #define GSTCTL_CREATETEMP_F_SECURE          RT_BIT(1)
 /** Mask of valid flags. */
 #define GSTCTL_CREATETEMP_F_VALID_MASK      UINT32_C(0x00000003)
