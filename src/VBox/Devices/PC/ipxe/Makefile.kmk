@@ -58,7 +58,7 @@ else
 
  $$(iPxeBiosBin_0_OUTDIR)/iPxeBiosBin.c: $$(iPxeBiosBin_0_OUTDIR)/iPxeBiosBin.rom $(VBOX_BIN2C)
 	$(call MSG_TOOL,bin2c,iPxeBiosBin,$<,$@)
-	$(QUIET)$(VBOX_BIN2C) -min 32 -max 56 -mask 0x1ff -export NetBiosBinary $< $@
+	$(QUIET)$(VBOX_BIN2C) -min 32 -max 56 -export NetBiosBinary $< $@
 
 
  $$(iPxeBiosBin_0_OUTDIR)/iPxeBiosBin.rom: \
@@ -74,7 +74,6 @@ else
 	    $(iPxeBiosBin_0_OUTDIR)/iPxeBaseBin.rom.bin \
 	    $(iPxeBiosBin_0_OUTDIR)/iPxeBaseBin.rom.zinfo \
 	    > $@
-	perl $(VBOX_PATH_IPXE_SRC)/src/util/padimg.pl --blksize=512 --byte=0xff $@
 	perl $(VBOX_PATH_IPXE_SRC)/src/util/fixrom.pl $@
 	$(RM) -- \
 	    $(iPxeBiosBin_0_OUTDIR)/iPxeBaseBin.rom.bin \
@@ -298,9 +297,6 @@ endif
 	src/crypto/md5.c \
 	src/drivers/bitbash/bitbash.c \
 	src/drivers/bitbash/spi_bit.c \
-	src/drivers/block/ata.c \
-	src/drivers/block/ibft.c \
-	src/drivers/block/scsi.c \
 	src/drivers/bus/pci.c \
 	src/drivers/bus/pciextra.c \
 	src/drivers/bus/pci_settings.c \
