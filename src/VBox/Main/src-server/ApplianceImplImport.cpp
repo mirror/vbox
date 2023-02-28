@@ -1458,6 +1458,9 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
 
     /* Should be defined here because it's used later, at least when ComposeMachineFilename() is called */
     Utf8Str strVMName("VM_exported_from_cloud");
+    Utf8Str strVMGroup("/");
+    Utf8Str strVMBaseFolder;
+    Utf8Str strVMSettingFilePath;
 
     if (m->virtualSystemDescriptions.size() == 1)
     {
@@ -1490,18 +1493,66 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                 /* No check again because it would be weird if a VM with such unique name exists */
             }
 
-            /* Check the target path. If the path exists and folder isn't empty return an error */
+            Bstr bstrSettingsFilename;
+            GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_SettingsFile);
+            if (aVBoxValues.size() == 0)
             {
-                Bstr bstrSettingsFilename;
+                GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_PrimaryGroup);
+                if (aVBoxValues.size() != 0)
+                    strVMGroup = aVBoxValues[0];
+
+                GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_BaseFolder);
+                if (aVBoxValues.size() != 0)
+                    strVMBaseFolder = aVBoxValues[0];
+
                 /* Based on the VM name, create a target machine path. */
                 hrc = mVirtualBox->ComposeMachineFilename(Bstr(strVMName).raw(),
-                                                          Bstr("/").raw(),
+                                                          Bstr(strVMGroup).raw(),
                                                           NULL /* aCreateFlags */,
-                                                          NULL /* aBaseFolder */,
+                                                          Bstr(strVMBaseFolder).raw(),
                                                           bstrSettingsFilename.asOutParam());
                 if (FAILED(hrc))
                     break;
+            }
+            else
+            {
+                bstrSettingsFilename = aVBoxValues[0];
+                vsd->AddDescription(VirtualSystemDescriptionType_SettingsFile,
+                                    bstrSettingsFilename.raw(),
+                                    NULL);
+            }
 
+            {
+                // CPU count
+                GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CPU);
+                if (aVBoxValues.size() == 0)//1 CPU by default
+                    vsd->AddDescription(VirtualSystemDescriptionType_CPU,
+                                        Bstr("1").raw(),
+                                        NULL);
+
+                // RAM
+                GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_Memory);
+                if (aVBoxValues.size() == 0)//1000MB by default
+                    vsd->AddDescription(VirtualSystemDescriptionType_Memory,
+                                        Bstr("1000").raw(),
+                                        NULL);
+
+                // audio adapter
+                GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_SoundCard);
+//              if (aVBoxValues.size() == 0)
+//                  vsd->AddDescription(VirtualSystemDescriptionType_SoundCard,
+//                                      Bstr("SB16").raw(),
+//                                      NULL);
+
+                //description
+                GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_Description);
+                if (aVBoxValues.size() == 0)
+                    vsd->AddDescription(VirtualSystemDescriptionType_Description,
+                                        Bstr("There is no description for this VM").raw(),
+                                        NULL);
+            }
+
+            {
                 Utf8Str strMachineFolder(bstrSettingsFilename);
                 strMachineFolder.stripFilename();
 
