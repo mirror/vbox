@@ -1586,9 +1586,13 @@ void UIMachineLogic::sltTakeSnapshot()
     if (!isMachineWindowsCreated())
         return;
 
+    /* First of all, we should calculate amount of immutable images: */
+    ulong cAmountOfImmutableMediums = 0;
+    uimachine()->acquireAmountOfImmutableImages(cAmountOfImmutableMediums);
+
     /* Create take-snapshot dialog: */
     QWidget *pDlgParent = windowManager().realParentWindow(activeMachineWindow());
-    QPointer<UITakeSnapshotDialog> pDlg = new UITakeSnapshotDialog(pDlgParent, machine());
+    QPointer<UITakeSnapshotDialog> pDlg = new UITakeSnapshotDialog(pDlgParent, cAmountOfImmutableMediums);
     windowManager().registerNewParent(pDlg, pDlgParent);
 
     /* Assign corresponding icon: */

@@ -507,6 +507,9 @@ public:
      ** @{ */
         /** Adds encryption password. */
         bool addEncryptionPassword(const QString &strId, const QString &strPassword, bool fClearOnSuspend);
+
+        /** Calculates @a cAmount of immutable images. */
+        bool acquireAmountOfImmutableImages(ulong &cAmount);
     /** @} */
 
     /** @name USB stuff.

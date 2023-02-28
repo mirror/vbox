@@ -1620,9 +1620,13 @@ bool UISnapshotPane::takeSnapshot(bool fAutomatically /* = false */)
     /* In manual mode we should show take snapshot dialog: */
     if (!fAutomatically)
     {
+        /* First of all, we should calculate amount of immutable images: */
+        ulong cAmountOfImmutableMediums = 0;
+        UICommon::acquireAmountOfImmutableImages(comMachine, cAmountOfImmutableMediums);
+
         /* Create take-snapshot dialog: */
         QWidget *pDlgParent = windowManager().realParentWindow(this);
-        QPointer<UITakeSnapshotDialog> pDlg = new UITakeSnapshotDialog(pDlgParent, comMachine);
+        QPointer<UITakeSnapshotDialog> pDlg = new UITakeSnapshotDialog(pDlgParent, cAmountOfImmutableMediums);
         windowManager().registerNewParent(pDlg, pDlgParent);
 
         /* Assign corresponding icon: */

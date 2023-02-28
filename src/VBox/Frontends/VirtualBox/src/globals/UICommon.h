@@ -440,6 +440,9 @@ public:
             it looks for recent folder extra data for other medium types. As the last resort returns default vm folder path.
           * @param  enmMediumType       Passes the medium type. */
         QString defaultFolderPathForType(UIMediumDeviceType enmMediumType);
+
+        /** Calculates @a cAmount of immutable images used by @a comMachine specified. */
+        static bool acquireAmountOfImmutableImages(const CMachine &comMachine, ulong &cAmount);
     /** @} */
 
     /** @name COM: USB stuff.

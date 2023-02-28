@@ -45,7 +45,6 @@ class QLineEdit;
 class QTextEdit;
 class QIDialogButtonBox;
 class QILabel;
-class CMachine;
 
 /** QIDialog subclass for taking snapshot name/description. */
 class SHARED_LIBRARY_STUFF UITakeSnapshotDialog : public QIWithRetranslateUI<QIDialog>
@@ -55,8 +54,8 @@ class SHARED_LIBRARY_STUFF UITakeSnapshotDialog : public QIWithRetranslateUI<QID
 public:
 
     /** Constructs take snapshot dialog passing @ pParent to the base-class.
-      * @param  comMachine  Brings the machine to take snapshot for. */
-    UITakeSnapshotDialog(QWidget *pParent, const CMachine &comMachine);
+      * @param  cImmutableMedia  Brings the amount of immutable mediums. */
+    UITakeSnapshotDialog(QWidget *pParent, ulong cImmutableMedia);
 
     /** Defines snapshot @a icon. */
     void setIcon(const QIcon &icon);
@@ -92,14 +91,11 @@ private:
     /** Updates pixmap. */
     void updatePixmap();
 
-    /** Holds the wrapper of machine to take snapshot for. */
-    const CMachine &m_comMachine;
+    /** Holds the amount of immutable mediums. */
+    const ulong  m_cImmutableMedia;
 
     /** Holds the snapshot icon. */
     QIcon m_icon;
-
-    /** Holds the amount of immutable attachments. */
-    int  m_cImmutableMedia;
 
     /** Holds the icon label instance. */
     QLabel *m_pLabelIcon;

@@ -553,6 +553,12 @@ bool UISession::addEncryptionPassword(const QString &strId, const QString &strPa
     return fSuccess;
 }
 
+bool UISession::acquireAmountOfImmutableImages(ulong &cAmount)
+{
+    CMachine comMachine = machine();
+    return UICommon::acquireAmountOfImmutableImages(comMachine, cAmount);
+}
+
 bool UISession::usbDevices(QList<USBDeviceInfo> &guiUSBDevices)
 {
     const CHost comHost = uiCommon().host();

@@ -736,6 +736,11 @@ bool UIMachine::addEncryptionPassword(const QString &strId, const QString &strPa
     return uisession()->addEncryptionPassword(strId, strPassword, fClearOnSuspend);
 }
 
+bool UIMachine::acquireAmountOfImmutableImages(ulong &cAmount)
+{
+    return uisession()->acquireAmountOfImmutableImages(cAmount);
+}
+
 bool UIMachine::usbDevices(QList<USBDeviceInfo> &guiUSBDevices)
 {
     return uisession()->usbDevices(guiUSBDevices);
