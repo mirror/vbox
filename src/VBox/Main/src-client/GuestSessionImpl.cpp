@@ -1363,7 +1363,7 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
             {
                 PCALLBACKDATA_FS_NOTIFY const pFsNotify = (PCALLBACKDATA_FS_NOTIFY)pEvent->Payload().Raw();
                 AssertPtrReturn(pFsNotify, VERR_INVALID_POINTER);
-                vrcGuest = (int)pFsNotify->rc;
+                int vrcGuest = (int)pFsNotify->rc;
                 if (RT_SUCCESS(vrcGuest))
                 {
                     AssertReturn(pFsNotify->uType == GUEST_FS_NOTIFYTYPE_CREATE_TEMP, VERR_INVALID_PARAMETER);
@@ -2115,7 +2115,7 @@ int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, Gu
             {
                 PCALLBACKDATA_FS_NOTIFY const pFsNotify = (PCALLBACKDATA_FS_NOTIFY)pEvent->Payload().Raw();
                 AssertPtrReturn(pFsNotify, VERR_INVALID_POINTER);
-                vrcGuest = (int)pFsNotify->rc;
+                int vrcGuest = (int)pFsNotify->rc;
                 if (RT_SUCCESS(vrcGuest))
                 {
                     AssertReturn(pFsNotify->uType == GUEST_FS_NOTIFYTYPE_QUERY_INFO, VERR_INVALID_PARAMETER);
