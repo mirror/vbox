@@ -162,11 +162,19 @@ enum eProcessStatus
  * @{
  */
 /** Does not specify anything. */
-#define GSTCTL_CREATEDIRECTORY_F_NONE       UINT32_C(0)
+#define GSTCTL_CREATEDIRECTORY_F_NONE                              UINT32_C(0)
 /** Also creates parent directories if they don't exist yet. */
-#define GSTCTL_CREATEDIRECTORY_F_PARENTS    RT_BIT(0)
+#define GSTCTL_CREATEDIRECTORY_F_PARENTS                           RT_BIT(0)
+/** Don't allow symbolic links as part of the path. */
+#define GSTCTL_CREATEDIRECTORY_F_NO_SYMLINKS                       RT_BIT(1)
+/** Set the not-content-indexed flag (default).  Windows only atm. */
+#define GSTCTL_CREATEDIRECTORY_F_NOT_CONTENT_INDEXED_DONT_SET      RT_BIT(2)
+/** Ignore errors setting the not-content-indexed flag.  Windows only atm. */
+#define GSTCTL_CREATEDIRECTORY_F_NOT_CONTENT_INDEXED_NOT_CRITICAL  RT_BIT(3)
+/** Ignore umask when applying the mode. */
+#define GSTCTL_CREATEDIRECTORY_F_IGNORE_UMASK                      RT_BIT(4)
 /** Mask of valid flags. */
-#define GSTCTL_CREATEDIRECTORY_F_VALID_MASK UINT32_C(0x00000001)
+#define GSTCTL_CREATEDIRECTORY_F_VALID_MASK                        UINT32_C(0x0000001F)
 /** @} */
 
 /** @name GUEST_SHUTDOWN_FLAG_XXX - Guest shutdown flags.
