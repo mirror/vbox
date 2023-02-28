@@ -1458,7 +1458,181 @@ public:
 
 /*******************************************************************************
 * Callback data structures.                                                    *
+*                                                                              *
+* These structures make up the actual low level HGCM callback data sent from   *
+* the guest back to the host.                                                  *
 *******************************************************************************/
+
+/**
+ * The guest control callback data header. Must come first
+ * on each callback structure defined below this struct.
+ */
+typedef struct CALLBACKDATA_HEADER
+{
+    /** Context ID to identify callback data. This is
+     *  and *must* be the very first parameter in this
+     *  structure to still be backwards compatible. */
+    uint32_t uContextID;
+} CALLBACKDATA_HEADER;
+/** Pointer to a CALLBACKDATA_HEADER struct. */
+typedef CALLBACKDATA_HEADER *PCALLBACKDATA_HEADER;
+
+/**
+ * Host service callback data when a HGCM client disconnected.
+ */
+typedef struct CALLBACKDATA_CLIENT_DISCONNECTED
+{
+    /** Callback data header. */
+    CALLBACKDATA_HEADER hdr;
+} CALLBACKDATA_CLIENT_DISCONNECTED;
+/** Pointer to a CALLBACKDATA_CLIENT_DISCONNECTED struct. */
+typedef CALLBACKDATA_CLIENT_DISCONNECTED *PCALLBACKDATA_CLIENT_DISCONNECTED;
+
+/**
+ * Host service callback data for a generic guest reply.
+ */
+typedef struct CALLBACKDATA_MSG_REPLY
+{
+    /** Callback data header. */
+    CALLBACKDATA_HEADER hdr;
+    /** Notification type. */
+    uint32_t uType;
+    /** Notification result. Note: int vs. uint32! */
+    uint32_t rc;
+    /** Pointer to optional payload. */
+    void *pvPayload;
+    /** Payload size (in bytes). */
+    uint32_t cbPayload;
+} CALLBACKDATA_MSG_REPLY;
+/** Pointer to a CALLBACKDATA_MSG_REPLY struct. */
+typedef CALLBACKDATA_MSG_REPLY *PCALLBACKDATA_MSG_REPLY;
+
+/**
+ * Host service callback data for guest session notifications.
+ */
+typedef struct CALLBACKDATA_SESSION_NOTIFY
+{
+    /** Callback data header. */
+    CALLBACKDATA_HEADER hdr;
+    /** Notification type. */
+    uint32_t uType;
+    /** Notification result. Note: int vs. uint32! */
+    uint32_t uResult;
+} CALLBACKDATA_SESSION_NOTIFY;
+/** Pointer to a CALLBACKDATA_SESSION_NOTIFY struct. */
+typedef CALLBACKDATA_SESSION_NOTIFY *PCALLBACKDATA_SESSION_NOTIFY;
+
+/**
+ * Host service callback data for guest process status notifications.
+ */
+typedef struct CALLBACKDATA_PROC_STATUS
+{
+    /** Callback data header. */
+    CALLBACKDATA_HEADER hdr;
+    /** The process ID (PID). */
+    uint32_t uPID;
+    /** The process status. */
+    uint32_t uStatus;
+    /** Optional flags, varies, based on u32Status. */
+    uint32_t uFlags;
+    /** Optional data buffer (not used atm). */
+    void *pvData;
+    /** Size of optional data buffer (not used atm). */
+    uint32_t cbData;
+} CALLBACKDATA_PROC_STATUS;
+/** Pointer to a CALLBACKDATA_PROC_OUTPUT struct. */
+typedef CALLBACKDATA_PROC_STATUS* PCALLBACKDATA_PROC_STATUS;
+
+/**
+ * Host service callback data for guest process output notifications.
+ */
+typedef struct CALLBACKDATA_PROC_OUTPUT
+{
+    /** Callback data header. */
+    CALLBACKDATA_HEADER hdr;
+    /** The process ID (PID). */
+    uint32_t uPID;
+    /** The handle ID (stdout/stderr). */
+    uint32_t uHandle;
+    /** Optional flags (not used atm). */
+    uint32_t uFlags;
+    /** Optional data buffer. */
+    void *pvData;
+    /** Size (in bytes) of optional data buffer. */
+    uint32_t cbData;
+} CALLBACKDATA_PROC_OUTPUT;
+/** Pointer to a CALLBACKDATA_PROC_OUTPUT struct. */
+typedef CALLBACKDATA_PROC_OUTPUT *PCALLBACKDATA_PROC_OUTPUT;
+
+/**
+ * Host service callback data guest process input notifications.
+ */
+typedef struct CALLBACKDATA_PROC_INPUT
+{
+    /** Callback data header. */
+    CALLBACKDATA_HEADER hdr;
+    /** The process ID (PID). */
+    uint32_t uPID;
+    /** Current input status. */
+    uint32_t uStatus;
+    /** Optional flags. */
+    uint32_t uFlags;
+    /** Size (in bytes) of processed input data. */
+    uint32_t uProcessed;
+} CALLBACKDATA_PROC_INPUT;
+/** Pointer to a CALLBACKDATA_PROC_INPUT struct. */
+typedef CALLBACKDATA_PROC_INPUT *PCALLBACKDATA_PROC_INPUT;
+
+/**
+ * General guest file notification callback.
+ */
+typedef struct CALLBACKDATA_FILE_NOTIFY
+{
+    /** Callback data header. */
+    CALLBACKDATA_HEADER hdr;
+    /** Notification type. */
+    uint32_t uType;
+    /** IPRT result of overall operation. */
+    uint32_t rc;
+    union
+    {
+        struct
+        {
+            /** Guest file handle. */
+            uint32_t uHandle;
+        } open;
+        /** Note: Close does not have any additional data (yet). */
+        struct
+        {
+            /** How much data (in bytes) have been read. */
+            uint32_t cbData;
+            /** Actual data read (if any). */
+            void *pvData;
+        } read;
+        struct
+        {
+            /** How much data (in bytes) have been successfully written. */
+            uint32_t cbWritten;
+        } write;
+        struct
+        {
+            /** New file offset after successful seek. */
+            uint64_t uOffActual;
+        } seek;
+        struct
+        {
+            /** New file offset after successful tell. */
+            uint64_t uOffActual;
+        } tell;
+        struct
+        {
+            /** The new file siz.e */
+            uint64_t cbSize;
+        } SetSize;
+    } u;
+} CALLBACKDATA_FILE_NOTIFY;
+/** Pointer to a CALLBACKDATA_FILE_NOTIFY, struct. */
+typedef CALLBACKDATA_FILE_NOTIFY *PCALLBACKDATA_FILE_NOTIFY;
 
 /**
  * Callback data for guest directory operations.
