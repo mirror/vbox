@@ -388,7 +388,9 @@ uint64_t CollectorSolaris::wrapDetection(uint64_t cur, uint64_t prev, const char
  */
 int CollectorSolaris::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx)
 {
+#if ARCH_BITS == 32
     static bool g_fNotReported = true;
+#endif
     AssertReturn(strlen(name) < KSTAT_STRLEN, VERR_INVALID_PARAMETER);
     LogFlowThisFunc(("m=%s i=%d n=%s\n", "link", -1, name));
     kstat_t *ksAdapter = kstat_lookup(mKC, (char *)"link", -1, (char *)name);

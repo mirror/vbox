@@ -8499,7 +8499,7 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
 #ifdef RT_OS_SOLARIS
         /* setup host core dumper for the VM */
         Bstr value;
-        HRESULT hrc = mMachine->GetExtraData(Bstr("VBoxInternal2/CoreDumpEnabled").raw(), value.asOutParam());
+        hrc = mMachine->GetExtraData(Bstr("VBoxInternal2/CoreDumpEnabled").raw(), value.asOutParam());
         if (SUCCEEDED(hrc) && value == "1")
         {
             Bstr coreDumpDir, coreDumpReplaceSys, coreDumpLive;

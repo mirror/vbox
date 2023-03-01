@@ -1837,6 +1837,8 @@ static int vboxNetFltSolarisSetMuxId(vnode_t *pVNode, struct lifreq *pInterface)
 static int vboxNetFltSolarisMuxIdToFd(vnode_t *pVNode, int MuxId, int *pFd)
 {
     int ret;
+
+    *pFd = -1; /* silence compiler warnings from -Wmaybe-uninitialized */
     int rc = strioctl(pVNode, _I_MUXID2FD, (intptr_t)MuxId, 0, K_TO_K, kcred, &ret);
     if (!rc)
     {
