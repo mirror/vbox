@@ -36,7 +36,6 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CConsole.h"
 #include "CMachine.h"
 
 /* GUI includes: */
@@ -57,9 +56,8 @@ class UIInformationRuntime : public QIWithRetranslateUI<QWidget>
 public:
 
     /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.
-      * @param machine is machine reference.
-      * @param console is machine console reference. */
-    UIInformationRuntime(QWidget *pParent, const CMachine &machine, const CConsole &console, const UIMachine *pMachine);
+      * @param machine is machine reference. */
+    UIInformationRuntime(QWidget *pParent, const CMachine &machine, const UIMachine *pMachine);
 
 protected:
 
@@ -83,7 +81,6 @@ private:
     void prepareObjects();
 
     CMachine m_machine;
-    CConsole m_console;
 
     /** Holds the instance of layout we create. */
     QVBoxLayout *m_pMainLayout;

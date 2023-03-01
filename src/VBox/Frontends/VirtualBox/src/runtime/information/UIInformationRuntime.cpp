@@ -68,8 +68,7 @@ enum InfoRow
 /*********************************************************************************************************************************
 *   UIRuntimeInfoWidget definition.                                                                                     *
 *********************************************************************************************************************************/
-/** A QTablWidget extention to show some runtime attributes. Some of these are updated in response to IConsole events. Uptime field
-  * is updated thru a QTimer. */
+/** A QTablWidget extention to show some runtime attributes */
 class UIRuntimeInfoWidget : public QIWithRetranslateUI<QTableWidget>
 {
 
@@ -77,7 +76,7 @@ class UIRuntimeInfoWidget : public QIWithRetranslateUI<QTableWidget>
 
 public:
 
-    UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machine, const CConsole &console);
+    UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machine);
     void updateScreenInfo(int iScreenId = -1);
     void updateGAsVersion();
     void updateVRDE();
@@ -111,7 +110,6 @@ private:
     void computeMinimumWidth();
 
     CMachine m_machine;
-    CConsole m_console;
 
     /** @name Cached translated strings.
       * @{ */
@@ -150,10 +148,9 @@ private:
 *   UIRuntimeInfoWidget implementation.                                                                                     *
 *********************************************************************************************************************************/
 
-UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machine, const CConsole &console)
+UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machine)
     : QIWithRetranslateUI<QTableWidget>(pParent)
     , m_machine(machine)
-    , m_console(console)
     , m_iMinimumWidth(0)
     , m_pTimer(0)
 {
@@ -506,10 +503,9 @@ void UIRuntimeInfoWidget::computeMinimumWidth()
 *   UIInformationRuntime implementation.                                                                                     *
 *********************************************************************************************************************************/
 
-UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &machine, const CConsole &console, const UIMachine *pMachine)
+UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &machine, const UIMachine *pMachine)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_machine(machine)
-    , m_console(console)
     , m_pMainLayout(0)
     , m_pRuntimeInfoWidget(0)
     , m_pCopyWholeTableAction(0)
@@ -537,7 +533,7 @@ void UIInformationRuntime::prepareObjects()
         return;
     m_pMainLayout->setSpacing(0);
 
-    m_pRuntimeInfoWidget = new UIRuntimeInfoWidget(0, m_machine, m_console);
+    m_pRuntimeInfoWidget = new UIRuntimeInfoWidget(0, m_machine);
     AssertReturnVoid(m_pRuntimeInfoWidget);
     connect(m_pRuntimeInfoWidget, &UIRuntimeInfoWidget::customContextMenuRequested,
             this, &UIInformationRuntime::sltHandleTableContextMenuRequest);
