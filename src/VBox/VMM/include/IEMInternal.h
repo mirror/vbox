@@ -4306,7 +4306,7 @@ IEM_CIMPL_PROTO_2(iemCImpl_vmclear, uint8_t, iEffSeg, RTGCPTR, GCPtrVmcs);
 IEM_CIMPL_PROTO_2(iemCImpl_vmwrite_reg, uint64_t, u64Val, uint64_t, u64VmcsField);
 IEM_CIMPL_PROTO_3(iemCImpl_vmwrite_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrVal, uint32_t, u64VmcsField);
 IEM_CIMPL_PROTO_2(iemCImpl_vmread_reg64, uint64_t *, pu64Dst, uint64_t, u64VmcsField);
-IEM_CIMPL_PROTO_2(iemCImpl_vmread_reg32, uint32_t *, pu32Dst, uint32_t, u32VmcsField);
+IEM_CIMPL_PROTO_2(iemCImpl_vmread_reg32, uint64_t *, pu32Dst, uint32_t, u32VmcsField);
 IEM_CIMPL_PROTO_3(iemCImpl_vmread_mem_reg64, uint8_t, iEffSeg, RTGCPTR, GCPtrDst, uint32_t, u64VmcsField);
 IEM_CIMPL_PROTO_3(iemCImpl_vmread_mem_reg32, uint8_t, iEffSeg, RTGCPTR, GCPtrDst, uint32_t, u32VmcsField);
 IEM_CIMPL_PROTO_3(iemCImpl_invvpid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvvpidDesc, uint64_t, uInvvpidType);

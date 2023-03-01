@@ -9742,9 +9742,13 @@ IEM_CIMPL_DEF_2(iemCImpl_vmread_reg64, uint64_t *, pu64Dst, uint64_t, u64VmcsFie
 /**
  * Implements 'VMREAD' register (32-bit).
  */
-IEM_CIMPL_DEF_2(iemCImpl_vmread_reg32, uint32_t *, pu32Dst, uint32_t, u32VmcsField)
+IEM_CIMPL_DEF_2(iemCImpl_vmread_reg32, uint64_t *, pu64Dst, uint32_t, u32VmcsField)
 {
-    return iemVmxVmreadReg32(pVCpu, cbInstr, pu32Dst, u32VmcsField, NULL /* pExitInfo */);
+    VBOXSTRICTRC const rcStrict = iemVmxVmreadReg32(pVCpu, cbInstr, (uint32_t *)pu64Dst, u32VmcsField, NULL /* pExitInfo */);
+    /* Zero the high part of the register on success. */
+    if (rcStrict == VINF_SUCCESS)
+        *pu64Dst = (uint32_t)*pu64Dst;
+    return rcStrict;
 }
 
 
