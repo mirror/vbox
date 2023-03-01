@@ -557,6 +557,46 @@ bool UISession::setDnDMode(KDnDMode enmMode)
     return fSuccess;
 }
 
+bool UISession::acquireAmountOfStorageDevices(ulong &cHardDisks, ulong &cOpticalDrives, ulong &cFloppyDrives)
+{
+    const CMachine comMachine = machine();
+    ulong cActualHardDisks = 0, cActualOpticalDrives = 0, cActualFloppyDrives = 0;
+    const CMediumAttachmentVector comAttachments = comMachine.GetMediumAttachments();
+    bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        foreach (const CMediumAttachment &comAttachment, comAttachments)
+        {
+            /* Get device type: */
+            const KDeviceType enmDeviceType = comAttachment.GetType();
+            fSuccess = comAttachment.isOk();
+            if (!fSuccess)
+            {
+                UINotificationMessage::cannotAcquireMediumAttachmentParameter(comAttachment);
+                break;
+            }
+
+            /* And advance corresponding amount: */
+            switch (enmDeviceType)
+            {
+                case KDeviceType_HardDisk: ++cActualHardDisks; break;
+                case KDeviceType_DVD: ++cActualOpticalDrives; break;
+                case KDeviceType_Floppy: ++cActualFloppyDrives; break;
+                default: break;
+            }
+        }
+    }
+    if (fSuccess)
+    {
+        cHardDisks = cActualHardDisks;
+        cOpticalDrives = cActualOpticalDrives;
+        cFloppyDrives = cActualFloppyDrives;
+    }
+    return fSuccess;
+}
+
 bool UISession::storageDevices(KDeviceType enmActualDeviceType, QList<StorageDeviceInfo> &guiStorageDevices)
 {
     const CMachine comMachine = machine();

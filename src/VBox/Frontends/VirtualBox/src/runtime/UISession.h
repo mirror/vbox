@@ -325,6 +325,9 @@ public:
 
     /** @name Storage stuff.
      ** @{ */
+        /** Enumerates amount of storage devices. */
+        bool acquireAmountOfStorageDevices(ulong &cHardDisks, ulong &cOpticalDrives, ulong &cFloppyDrives);
+
         /** Returns a list of storage devices. */
         bool storageDevices(KDeviceType enmDeviceType, QList<StorageDeviceInfo> &guiStorageDevices);
 

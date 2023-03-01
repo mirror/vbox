@@ -751,6 +751,11 @@ bool UIMachine::setDnDMode(KDnDMode enmMode)
     return uisession()->setDnDMode(enmMode);
 }
 
+bool UIMachine::acquireAmountOfStorageDevices(ulong &cHardDisks, ulong &cOpticalDrives, ulong &cFloppyDrives)
+{
+    return uisession()->acquireAmountOfStorageDevices(cHardDisks, cOpticalDrives, cFloppyDrives);
+}
+
 bool UIMachine::storageDevices(KDeviceType enmDeviceType, QList<StorageDeviceInfo> &guiStorageDevices)
 {
     return uisession()->storageDevices(enmDeviceType, guiStorageDevices);
@@ -1833,23 +1838,18 @@ void UIMachine::updateActionRestrictions()
     /* Storage stuff: */
     {
         /* Initialize CD/FD menus: */
-        int iDevicesCountCD = 0;
-        int iDevicesCountFD = 0;
-        foreach (const CMediumAttachment &comAttachment, uisession()->machine().GetMediumAttachments())
-        {
-            if (comAttachment.GetType() == KDeviceType_DVD)
-                ++iDevicesCountCD;
-            if (comAttachment.GetType() == KDeviceType_Floppy)
-                ++iDevicesCountFD;
-        }
+        ulong cHardDisks = 0;
+        ulong iOpticalDevices = 0;
+        ulong cFloppyDevices = 0;
+        acquireAmountOfStorageDevices(cHardDisks, iOpticalDevices, cFloppyDevices);
         QAction *pOpticalDevicesMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_OpticalDevices);
         QAction *pFloppyDevicesMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_FloppyDevices);
-        pOpticalDevicesMenu->setData(iDevicesCountCD);
-        pFloppyDevicesMenu->setData(iDevicesCountFD);
-        if (!iDevicesCountCD)
+        pOpticalDevicesMenu->setData((int)iOpticalDevices);
+        pFloppyDevicesMenu->setData((int)cFloppyDevices);
+        if (!iOpticalDevices)
             restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
                                     (restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices);
-        if (!iDevicesCountFD)
+        if (!cFloppyDevices)
             restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
                                     (restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices);
     }
