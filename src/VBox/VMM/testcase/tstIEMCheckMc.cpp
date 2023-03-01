@@ -923,15 +923,15 @@ IEMOPUNARYSIZES g_iemAImpl_not;
     do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3);  (a_rc) = VINF_SUCCESS; (void)fMcBegin; } while (0)
 #define IEM_MC_CALL_CIMPL_0(a_pfnCImpl)                                 do { (void)fMcBegin; } while (0)
 #define IEM_MC_CALL_CIMPL_1(a_pfnCImpl, a0) \
-    do { CHK_CALL_ARG(a0, 0);  (void)fMcBegin; } while (0)
+    do { CHK_CALL_ARG(a0, 0);  (void)fMcBegin; return VINF_SUCCESS; } while (0)
 #define IEM_MC_CALL_CIMPL_2(a_pfnCImpl, a0, a1) \
-    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); (void)fMcBegin; } while (0)
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); (void)fMcBegin; return VINF_SUCCESS; } while (0)
 #define IEM_MC_CALL_CIMPL_3(a_pfnCImpl, a0, a1, a2) \
-    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); (void)fMcBegin; } while (0)
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); (void)fMcBegin; return VINF_SUCCESS; } while (0)
 #define IEM_MC_CALL_CIMPL_4(a_pfnCImpl, a0, a1, a2, a3) \
-    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3); (void)fMcBegin; } while (0)
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3); (void)fMcBegin; return VINF_SUCCESS; } while (0)
 #define IEM_MC_CALL_CIMPL_5(a_pfnCImpl, a0, a1, a2, a3, a4) \
-    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3); CHK_CALL_ARG(a4, 4); (void)fMcBegin; } while (0)
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3); CHK_CALL_ARG(a4, 4); (void)fMcBegin; return VINF_SUCCESS; } while (0)
 #define IEM_MC_DEFER_TO_CIMPL_0(a_pfnCImpl)                             (VINF_SUCCESS)
 #define IEM_MC_DEFER_TO_CIMPL_1(a_pfnCImpl, a0)                         (VINF_SUCCESS)
 #define IEM_MC_DEFER_TO_CIMPL_2(a_pfnCImpl, a0, a1)                     (VINF_SUCCESS)
