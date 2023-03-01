@@ -4298,7 +4298,6 @@ FNIEMOP_DEF_1(iemOp_VGrp15_vstmxcsr,  uint8_t, bRm)
     IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
     IEM_MC_CALL_CIMPL_2(iemCImpl_vstmxcsr, iEffSeg, GCPtrEff);
     IEM_MC_END();
-    return VINF_SUCCESS;
 }
 
 /*  Opcode VEX.0F 0xae mem/4 - invalid. */
