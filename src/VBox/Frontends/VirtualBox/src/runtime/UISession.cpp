@@ -944,23 +944,6 @@ bool UISession::setNetworkCableConnected(ulong uSlot, bool fConnected)
     return fSuccess;
 }
 
-bool UISession::acquireVRDEServerPort(LONG &uPort)
-{
-    CConsole comConsole = console();
-    CVRDEServerInfo comVRDEServerInfo = comConsole.GetVRDEServerInfo();
-    bool fSuccess = comConsole.isOk();
-
-    if (!fSuccess)
-        UINotificationMessage::cannotAcquireConsoleParameter(comConsole);
-    LONG uVRDEPort = comVRDEServerInfo.GetPort();
-    fSuccess = comVRDEServerInfo.isOk();
-
-    if (!fSuccess)
-        UINotificationMessage::cannotAcquireVRDEServerInfoParameter(comVRDEServerInfo);
-    uPort = uVRDEPort;
-    return fSuccess;
-}
-
 bool UISession::guestAdditionsUpgradable()
 {
     if (!machine().isOk())
@@ -984,27 +967,27 @@ bool UISession::guestAdditionsUpgradable()
     return true;
 }
 
-bool UISession::acquireGuestAdditionsVersion(QString &strGAVersion)
+bool UISession::acquireGuestAdditionsVersion(QString &strVersion)
 {
-    CGuest &comGuest = guest();
-    QString strVersion = comGuest.GetAdditionsVersion();
+    CGuest comGuest = guest();
+    const QString strGAVersion = comGuest.GetAdditionsVersion();
     const bool fSuccess = comGuest.isOk();
     if (!fSuccess)
         UINotificationMessage::cannotAcquireGuestParameter(comGuest);
     else
-        strGAVersion = strVersion;
+        strVersion = strGAVersion;
     return fSuccess;
 }
 
-bool UISession::acquireGuestAdditionsRevision(ULONG &uRevision)
+bool UISession::acquireGuestAdditionsRevision(ulong &uRevision)
 {
-    CGuest &comGuest = guest();
-    ULONG uRev = comGuest.GetAdditionsRevision();
+    CGuest comGuest = guest();
+    const ULONG uGARevision = comGuest.GetAdditionsRevision();
     const bool fSuccess = comGuest.isOk();
     if (!fSuccess)
         UINotificationMessage::cannotAcquireGuestParameter(comGuest);
     else
-        uRevision = uRev;
+        uRevision = uGARevision;
     return fSuccess;
 }
 
@@ -1496,6 +1479,25 @@ bool UISession::setVRDEServerEnabled(bool fEnabled)
     return fSuccess;
 }
 
+bool UISession::acquireVRDEServerPort(long &iPort)
+{
+    CConsole comConsole = console();
+    const CVRDEServerInfo comVRDEServerInfo = comConsole.GetVRDEServerInfo();
+    bool fSuccess = comConsole.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireConsoleParameter(comConsole);
+    else
+    {
+        const LONG iVRDEPort = comVRDEServerInfo.GetPort();
+        fSuccess = comVRDEServerInfo.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotAcquireVRDEServerInfoParameter(comVRDEServerInfo);
+        else
+            iPort = iVRDEPort;
+    }
+    return fSuccess;
+}
+
 bool UISession::acquireWhetherRecordingSettingsPresent(bool &fPresent)
 {
     CMachine comMachine = machine();
@@ -1650,27 +1652,27 @@ void UISession::generateMachineInformationStorage(const UIExtraDataMetaDefs::Det
 }
 
 void UISession::generateMachineInformationAudio(const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio &fOptions,
-                                        UITextTable &returnTable)
+                                                UITextTable &returnTable)
 {
     CMachine comMachine = machine();
     returnTable = UIDetailsGenerator::generateMachineInformationAudio(comMachine, fOptions);
 }
 
 void UISession::generateMachineInformationNetwork(const UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork &fOptions,
-                                        UITextTable &returnTable)
+                                                  UITextTable &returnTable)
 {
     CMachine comMachine = machine();
     returnTable = UIDetailsGenerator::generateMachineInformationNetwork(comMachine, fOptions);
 }
 void UISession::generateMachineInformationSerial(const UIExtraDataMetaDefs::DetailsElementOptionTypeSerial &fOptions,
-                                        UITextTable &returnTable)
+                                                 UITextTable &returnTable)
 {
     CMachine comMachine = machine();
     returnTable = UIDetailsGenerator::generateMachineInformationSerial(comMachine, fOptions);
 }
 
 void UISession::generateMachineInformationUSB(const UIExtraDataMetaDefs::DetailsElementOptionTypeUsb &fOptions,
-                                        UITextTable &returnTable)
+                                              UITextTable &returnTable)
 {
     CMachine comMachine = machine();
     returnTable = UIDetailsGenerator::generateMachineInformationUSB(comMachine, fOptions);
@@ -1768,15 +1770,15 @@ bool UISession::acquireEffectiveCPULoad(ulong &uLoad)
     return fSuccess;
 }
 
-bool UISession::acquireUptime(LONG64 &uUpTime)
+bool UISession::acquireUptime(LONG64 &iUpTime)
 {
     CMachineDebugger comDebugger = debugger();
-    LONG64 uTime = comDebugger.GetUptime();
+    const LONG64 iGuestUpTime = comDebugger.GetUptime();
     const bool fSuccess = comDebugger.isOk();
     if (!fSuccess)
         UINotificationMessage::cannotAcquireMachineDebuggerParameter(comDebugger);
     else
-        uUpTime = uTime;
+        iUpTime = iGuestUpTime;
     return fSuccess;
 }
 

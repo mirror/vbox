@@ -83,7 +83,6 @@ class CVRDEServer;
 class CVRDEServerInfo;
 class CUnattended;
 
-
 /** UINotificationObject extension for message functionality. */
 class SHARED_LIBRARY_STUFF UINotificationMessage : public UINotificationSimple
 {
@@ -323,6 +322,9 @@ public:
         /** Notifies about inability to acquire IConsole parameter.
           * @param  comConsole  Brings the object parameter get acquired from. */
         static void cannotAcquireConsoleParameter(const CConsole &comConsole);
+        /** Notifies about inability to acquire IGuest parameter.
+          * @param  comGuest  Brings the object parameter get acquired from. */
+        static void cannotAcquireGuestParameter(const CGuest &comGuest);
         /** Notifies about inability to acquire ISnapshot parameter.
           * @param  comSnapshot  Brings the object parameter get acquired from. */
         static void cannotAcquireSnapshotParameter(const CSnapshot &comSnapshot);
@@ -383,10 +385,6 @@ public:
           * @param  comCloudMachine  Brings the object parameter get acquired from. */
         static void cannotAcquireCloudMachineParameter(const CCloudMachine &comCloudMachine,
                                                        UINotificationCenter *pParent = 0);
-        /** Notifies about inability to acquire IGuest parameter.
-          * @param  comGuest  Brings the object parameter get acquired from. */
-        static void cannotAcquireGuestParameter(const CGuest &comGuest,
-                                                UINotificationCenter *pParent = 0);
 
         /** Notifies about inability to change IMedium parameter.
           * @param  comMedium  Brings the object parameter being changed for. */

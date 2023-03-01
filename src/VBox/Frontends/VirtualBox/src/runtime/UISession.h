@@ -360,8 +360,6 @@ public:
         bool acquireWhetherNetworkCableConnected(ulong uSlot, bool &fConnected);
         /** Set whether network adapter cable is connected. */
         bool setNetworkCableConnected(ulong uSlot, bool fConnected);
-        /** Acquires VRDE server port. */
-        bool acquireVRDEServerPort(LONG &uPort);
     /** @} */
 
     /** @name Guest additions stuff.
@@ -377,9 +375,9 @@ public:
         /** Returns whether GA can be upgraded. */
         bool guestAdditionsUpgradable();
         /** Acquires the guest addition's version. */
-        bool acquireGuestAdditionsVersion(QString &strGAVersion);
+        bool acquireGuestAdditionsVersion(QString &strVersion);
         /** Acquires the guest addition's revision. */
-        bool acquireGuestAdditionsRevision(ULONG &uRevision);
+        bool acquireGuestAdditionsRevision(ulong &uRevision);
     /** @} */
 
     /** @name Audio stuff.
@@ -462,6 +460,8 @@ public:
         bool acquireWhetherVRDEServerEnabled(bool &fEnabled);
         /** Defines whether VRDE server is enabled. */
         bool setVRDEServerEnabled(bool fEnabled);
+        /** Acquires VRDE server port. */
+        bool acquireVRDEServerPort(long &iPort);
 
         /** Acquires whether recording settings is present. */
         bool acquireWhetherRecordingSettingsPresent(bool &fPresent);
@@ -519,8 +519,8 @@ public:
 
         /** Acquires effective CPU @a uLoad. */
         bool acquireEffectiveCPULoad(ulong &uLoad);
-        /** Acquires uptime @a uUpTime. */
-        bool acquireUptime(LONG64 &uUpTime);
+        /** Acquires uptime @a iUpTime as milliseconds. */
+        bool acquireUptime(LONG64 &iUpTime);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
         /** Makes sure debugger GUI is created. */

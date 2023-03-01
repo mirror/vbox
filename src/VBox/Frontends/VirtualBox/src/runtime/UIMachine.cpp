@@ -641,6 +641,11 @@ bool UIMachine::setVRDEServerEnabled(bool fEnabled)
     return uisession()->setVRDEServerEnabled(fEnabled);
 }
 
+bool UIMachine::acquireVRDEServerPort(long &iPort)
+{
+    return uisession()->acquireVRDEServerPort(iPort);
+}
+
 bool UIMachine::acquireWhetherRecordingSettingsPresent(bool &fPresent)
 {
     return uisession()->acquireWhetherRecordingSettingsPresent(fPresent);
@@ -671,11 +676,12 @@ bool UIMachine::isGuestSupportsSeamless() const
     return uisession()->isGuestSupportsSeamless();
 }
 
-bool UIMachine::acquireGuestAdditionsVersion(QString &strGAVersion)
+bool UIMachine::acquireGuestAdditionsVersion(QString &strVersion)
 {
-    return uisession()->acquireGuestAdditionsVersion(strGAVersion);
+    return uisession()->acquireGuestAdditionsVersion(strVersion);
 }
-bool UIMachine::acquireGuestAdditionsRevision(ULONG &uRevision)
+
+bool UIMachine::acquireGuestAdditionsRevision(ulong &uRevision)
 {
     return uisession()->acquireGuestAdditionsRevision(uRevision);
 }
@@ -803,11 +809,6 @@ bool UIMachine::acquireWhetherNetworkCableConnected(ulong uSlot, bool &fConnecte
 bool UIMachine::setNetworkCableConnected(ulong uSlot, bool fConnected)
 {
     return uisession()->setNetworkCableConnected(uSlot, fConnected);
-}
-
-bool UIMachine::acquireVRDEServerPort(LONG &uPort)
-{
-    return uisession()->acquireVRDEServerPort(uPort);
 }
 
 bool UIMachine::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, QVector<KDeviceActivity> &states)
@@ -943,9 +944,9 @@ bool UIMachine::acquireEffectiveCPULoad(ulong &uLoad)
     return uisession()->acquireEffectiveCPULoad(uLoad);
 }
 
-bool UIMachine::acquireUptime(LONG64 &uLoad)
+bool UIMachine::acquireUptime(LONG64 &iUpTime)
 {
-    return uisession()->acquireUptime(uLoad);
+    return uisession()->acquireUptime(iUpTime);
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

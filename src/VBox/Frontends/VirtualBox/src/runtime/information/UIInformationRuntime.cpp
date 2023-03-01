@@ -400,7 +400,7 @@ void UIRuntimeInfoWidget::updateGAsVersion()
         strGAVersion = m_strGANotDetected;
     else
     {
-        ULONG uRevision = 0;
+        ulong uRevision = 0;
         gpMachine->acquireGuestAdditionsRevision(uRevision);
         if (uRevision != 0)
             strGAVersion += QString(" r%1").arg(uRevision);
@@ -411,11 +411,12 @@ void UIRuntimeInfoWidget::updateGAsVersion()
 void UIRuntimeInfoWidget::updateVRDE()
 {
     AssertPtrReturnVoid(gpMachine);
-    LONG iVRDEPort = 0;
+    long iVRDEPort = 0;
     gpMachine->acquireVRDEServerPort(iVRDEPort);
-    QString strVRDEInfo = (iVRDEPort == 0 || iVRDEPort == -1) ?
-        m_strVRDEPortNotAvailable : QString("%1").arg(iVRDEPort);
-   updateInfoRow(InfoRow_RemoteDesktop, QString("%1").arg(m_strRemoteDesktopLabel), strVRDEInfo);
+    const QString strVRDEInfo = (iVRDEPort == 0 || iVRDEPort == -1)
+                              ? m_strVRDEPortNotAvailable
+                              : QString("%1").arg(iVRDEPort);
+    updateInfoRow(InfoRow_RemoteDesktop, QString("%1").arg(m_strRemoteDesktopLabel), strVRDEInfo);
 }
 
 void UIRuntimeInfoWidget::updateClipboardMode(KClipboardMode enmMode /* = KClipboardMode_Max */)
