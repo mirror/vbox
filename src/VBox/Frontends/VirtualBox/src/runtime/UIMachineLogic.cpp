@@ -269,11 +269,6 @@ UIActionPool *UIMachineLogic::actionPool() const
     return uimachine()->actionPool();
 }
 
-CMachine& UIMachineLogic::machine() const
-{
-    return uisession()->machine();
-}
-
 QString UIMachineLogic::machineName() const
 {
     return uimachine()->machineName();
@@ -2166,7 +2161,7 @@ void UIMachineLogic::sltMountStorageMedium()
     const UIMediumTarget target = pAction->data().value<UIMediumTarget>();
 
     /* Update current machine mount-target: */
-    uiCommon().updateMachineStorage(machine(), target, actionPool());
+    uimachine()->updateMachineStorage(target, actionPool());
 }
 
 void UIMachineLogic::sltToggleAudioOutput(bool fEnabled)
@@ -2682,9 +2677,9 @@ void UIMachineLogic::updateMenuDevicesStorage(QMenu *pMenu)
             pStorageMenu = pMenu;
 
         /* Fill current storage menu: */
-        uiCommon().prepareStorageMenu(*pStorageMenu,
-                                      this, SLOT(sltMountStorageMedium()), machine(),
-                                      guiStorageDevice.m_strControllerName, guiStorageDevice.m_guiStorageSlot);
+        uimachine()->prepareStorageMenu(pStorageMenu,
+                                        this, SLOT(sltMountStorageMedium()),
+                                        guiStorageDevice.m_strControllerName, guiStorageDevice.m_guiStorageSlot);
     }
 }
 

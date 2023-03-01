@@ -420,7 +420,7 @@ public:
           * @param  comMachine         Brings the #CMachine object, this @a menu being prepared for.
           * @param  strControllerName  Brings the name of the #CStorageController in the @a machine above.
           * @param  storageSlot        Brings the #StorageSlot of the storage controller with @a strControllerName above. */
-        void prepareStorageMenu(QMenu &menu,
+        void prepareStorageMenu(QMenu *pMenu,
                                 QObject *pListener, const char *pszSlotName,
                                 const CMachine &comMachine, const QString &strControllerName, const StorageSlot &storageSlot);
         /** Updates @a comConstMachine storage with data described by @a target. */

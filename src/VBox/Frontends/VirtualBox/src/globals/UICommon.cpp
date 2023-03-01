@@ -1709,9 +1709,9 @@ QUuid UICommon::openMediumCreatorDialog(UIActionPool *pActionPool, QWidget *pPar
     return uMediumId;
 }
 
-void UICommon::prepareStorageMenu(QMenu &menu,
-                                    QObject *pListener, const char *pszSlotName,
-                                    const CMachine &comMachine, const QString &strControllerName, const StorageSlot &storageSlot)
+void UICommon::prepareStorageMenu(QMenu *pMenu,
+                                  QObject *pListener, const char *pszSlotName,
+                                  const CMachine &comMachine, const QString &strControllerName, const StorageSlot &storageSlot)
 {
     /* Current attachment attributes: */
     const CMediumAttachment comCurrentAttachment = comMachine.GetMediumAttachment(strControllerName,
@@ -1729,16 +1729,16 @@ void UICommon::prepareStorageMenu(QMenu &menu,
     AssertMsgReturnVoid(enmMediumType != UIMediumDeviceType_Invalid, ("Incorrect storage medium type!\n"));
 
     /* Prepare open-existing-medium action: */
-    QAction *pActionOpenExistingMedium = menu.addAction(UIIconPool::iconSet(":/select_file_16px.png"),
-                                                        QString(), pListener, pszSlotName);
+    QAction *pActionOpenExistingMedium = pMenu->addAction(UIIconPool::iconSet(":/select_file_16px.png"),
+                                                          QString(), pListener, pszSlotName);
     pActionOpenExistingMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
                                                                           comCurrentAttachment.GetDevice(), enmMediumType)));
     pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose/Create a disk image..."));
 
 
     /* Prepare open medium file action: */
-    QAction *pActionFileSelector = menu.addAction(UIIconPool::iconSet(":/select_file_16px.png"),
-                                                  QString(), pListener, pszSlotName);
+    QAction *pActionFileSelector = pMenu->addAction(UIIconPool::iconSet(":/select_file_16px.png"),
+                                                    QString(), pListener, pszSlotName);
     pActionFileSelector->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
                                                                     comCurrentAttachment.GetDevice(), enmMediumType,
                                                                     UIMediumTarget::UIMediumTargetType_WithFileDialog)));
@@ -1746,7 +1746,7 @@ void UICommon::prepareStorageMenu(QMenu &menu,
 
 
     /* Insert separator: */
-    menu.addSeparator();
+    pMenu->addSeparator();
 
     /* Get existing-host-drive vector: */
     CMediumVector comMedia;
@@ -1776,7 +1776,7 @@ void UICommon::prepareStorageMenu(QMenu &menu,
         /* If host-drives usage is unique: */
         if (!fIsHostDriveUsed)
         {
-            QAction *pActionChooseHostDrive = menu.addAction(UIMedium(comMedium, enmMediumType).name(), pListener, pszSlotName);
+            QAction *pActionChooseHostDrive = pMenu->addAction(UIMedium(comMedium, enmMediumType).name(), pListener, pszSlotName);
             pActionChooseHostDrive->setCheckable(true);
             pActionChooseHostDrive->setChecked(!comCurrentMedium.isNull() && comMedium.GetId() == uCurrentID);
             pActionChooseHostDrive->setData(QVariant::fromValue(UIMediumTarget(strControllerName,
@@ -1831,8 +1831,8 @@ void UICommon::prepareStorageMenu(QMenu &menu,
         /* If recent-medium usage is unique: */
         if (!fIsRecentMediumUsed)
         {
-            QAction *pActionChooseRecentMedium = menu.addAction(QFileInfo(strRecentMediumLocation).fileName(),
-                                                                pListener, pszSlotName);
+            QAction *pActionChooseRecentMedium = pMenu->addAction(QFileInfo(strRecentMediumLocation).fileName(),
+                                                                  pListener, pszSlotName);
             pActionChooseRecentMedium->setCheckable(true);
             pActionChooseRecentMedium->setChecked(!comCurrentMedium.isNull() && strRecentMediumLocation == strCurrentLocation);
             pActionChooseRecentMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName,
@@ -1849,10 +1849,10 @@ void UICommon::prepareStorageMenu(QMenu &menu,
     if (enmMediumType == UIMediumDeviceType_DVD || enmMediumType == UIMediumDeviceType_Floppy)
     {
         /* Insert separator: */
-        menu.addSeparator();
+        pMenu->addSeparator();
 
         /* Prepare unmount-current-medium action: */
-        QAction *pActionUnmountMedium = menu.addAction(QString(), pListener, pszSlotName);
+        QAction *pActionUnmountMedium = pMenu->addAction(QString(), pListener, pszSlotName);
         pActionUnmountMedium->setEnabled(!comCurrentMedium.isNull());
         pActionUnmountMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
                                                                          comCurrentAttachment.GetDevice())));

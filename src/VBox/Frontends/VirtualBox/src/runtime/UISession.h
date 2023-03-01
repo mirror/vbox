@@ -337,6 +337,13 @@ public:
         /** Attempts to mount medium with @p uMediumId to the machine
           * if it can find an appropriate controller and port. */
         bool mountBootMedium(const QUuid &uMediumId);
+
+        /** Prepares storage menu. */
+        void prepareStorageMenu(QMenu *pMenu,
+                                QObject *pListener, const char *pszSlotName,
+                                const QString &strControllerName, const StorageSlot &storageSlot);
+        /** Updates machine storage with data described by target. */
+        void updateMachineStorage(const UIMediumTarget &target, UIActionPool *pActionPool);
     /** @} */
 
     /** @name USB stuff.

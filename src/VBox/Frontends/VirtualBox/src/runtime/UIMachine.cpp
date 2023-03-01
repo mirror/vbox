@@ -771,6 +771,20 @@ bool UIMachine::mountBootMedium(const QUuid &uMediumId)
     return uisession()->mountBootMedium(uMediumId);
 }
 
+void UIMachine::prepareStorageMenu(QMenu *pMenu,
+                                   QObject *pListener, const char *pszSlotName,
+                                   const QString &strControllerName, const StorageSlot &storageSlot)
+{
+    return uisession()->prepareStorageMenu(pMenu,
+                                           pListener, pszSlotName,
+                                           strControllerName, storageSlot);
+}
+
+void UIMachine::updateMachineStorage(const UIMediumTarget &target, UIActionPool *pActionPool)
+{
+    return uisession()->updateMachineStorage(target, pActionPool);
+}
+
 bool UIMachine::usbDevices(QList<USBDeviceInfo> &guiUSBDevices)
 {
     return uisession()->usbDevices(guiUSBDevices);

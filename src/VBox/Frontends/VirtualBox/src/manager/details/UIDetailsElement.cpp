@@ -1076,7 +1076,7 @@ void UIDetailsElement::popupStorageEditor(const QString &strValue)
     StorageSlot storageSlot = gpConverter->fromString<StorageSlot>(strValue.section(',', 1));
 
     /* Fill storage-menu: */
-    uiCommon().prepareStorageMenu(menu, this, SLOT(sltMountStorageMedium()),
+    uiCommon().prepareStorageMenu(&menu, this, SLOT(sltMountStorageMedium()),
                                   machine(), strControllerName, storageSlot);
 
     /* Exec menu: */

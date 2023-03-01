@@ -36,9 +36,6 @@
 #include "UIExtraDataDefs.h"
 #include "UISettingsDialog.h"
 
-/* COM includes: */
-#include "COMEnums.h"
-
 /* Forward declarations: */
 class QAction;
 class QActionGroup;
@@ -53,9 +50,6 @@ class UIMouseHandler;
 class UIDockIconPreview;
 class UISoftKeyboard;
 class UIVMInformationDialog;
-class CMachine;
-class CMouse;
-class CSnapshot;
 class CUSBDevice;
 class CVirtualBoxErrorInfo;
 #if defined(VBOX_WS_X11)
@@ -106,9 +100,6 @@ public:
     UISession *uisession() const;
     /** Returns action-pool reference.  */
     UIActionPool *actionPool() const;
-
-    /** Returns the session's machine reference. */
-    CMachine& machine() const;
 
     /** Returns the machine name. */
     QString machineName() const;

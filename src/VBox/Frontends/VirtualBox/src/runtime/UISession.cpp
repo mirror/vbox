@@ -843,6 +843,22 @@ bool UISession::mountBootMedium(const QUuid &uMediumId)
     return fSuccess;
 }
 
+void UISession::prepareStorageMenu(QMenu *pMenu,
+                                   QObject *pListener, const char *pszSlotName,
+                                   const QString &strControllerName, const StorageSlot &storageSlot)
+{
+    CMachine comMachine = machine();
+    uiCommon().prepareStorageMenu(pMenu,
+                                  pListener, pszSlotName,
+                                  comMachine, strControllerName, storageSlot);
+}
+
+void UISession::updateMachineStorage(const UIMediumTarget &target, UIActionPool *pActionPool)
+{
+    CMachine comMachine = machine();
+    uiCommon().updateMachineStorage(comMachine, target, pActionPool);
+}
+
 bool UISession::usbDevices(QList<USBDeviceInfo> &guiUSBDevices)
 {
     const CHost comHost = uiCommon().host();
