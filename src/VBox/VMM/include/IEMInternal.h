@@ -4335,7 +4335,7 @@ IEM_CIMPL_PROTO_0(iemCImpl_vmmcall); /* svm */
 IEM_CIMPL_PROTO_1(iemCImpl_Hypercall, uint16_t, uDisOpcode); /* both */
 
 
-extern const PFNIEMOP g_apfnOneByteMap[256];
+extern const PFNIEMOP g_apfnIemInterpretOnlyOneByteMap[256];
 
 /** @} */
 

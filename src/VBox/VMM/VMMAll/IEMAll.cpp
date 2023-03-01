@@ -9894,7 +9894,7 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
     IEM_TRY_SETJMP(pVCpu, rcStrict)
     {
         uint8_t b; IEM_OPCODE_GET_FIRST_U8(&b);
-        rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
+        rcStrict = FNIEMOP_CALL(g_apfnIemInterpretOnlyOneByteMap[b]);
     }
     IEM_CATCH_LONGJMP_BEGIN(pVCpu, rcStrict);
     {
@@ -9903,7 +9903,7 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
     IEM_CATCH_LONGJMP_END(pVCpu);
 #else
     uint8_t b; IEM_OPCODE_GET_FIRST_U8(&b);
-    VBOXSTRICTRC rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
+    VBOXSTRICTRC rcStrict = FNIEMOP_CALL(g_apfnIemInterpretOnlyOneByteMap[b]);
 #endif
     if (rcStrict == VINF_SUCCESS)
         pVCpu->iem.s.cInstructions++;
@@ -9954,7 +9954,7 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
             IEM_TRY_SETJMP_AGAIN(pVCpu, rcStrict)
             {
                 uint8_t b; IEM_OPCODE_GET_FIRST_U8(&b);
-                rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
+                rcStrict = FNIEMOP_CALL(g_apfnIemInterpretOnlyOneByteMap[b]);
             }
             IEM_CATCH_LONGJMP_BEGIN(pVCpu, rcStrict);
             {
@@ -9963,7 +9963,7 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
             IEM_CATCH_LONGJMP_END(pVCpu);
 #else
             IEM_OPCODE_GET_FIRST_U8(&b);
-            rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
+            rcStrict = FNIEMOP_CALL(g_apfnIemInterpretOnlyOneByteMap[b]);
 #endif
             if (rcStrict == VINF_SUCCESS)
             {
@@ -10244,7 +10244,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
                  * Do the decoding and emulation.
                  */
                 uint8_t b; IEM_OPCODE_GET_FIRST_U8(&b);
-                rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
+                rcStrict = FNIEMOP_CALL(g_apfnIemInterpretOnlyOneByteMap[b]);
 #ifdef VBOX_STRICT
                 CPUMAssertGuestRFlagsCookie(pVM, pVCpu);
 #endif
@@ -10412,7 +10412,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPUCC pVCpu, uint32_t fWillExit, uint32
                 uint32_t const cPotentialExits = pVCpu->iem.s.cPotentialExits;
 
                 uint8_t b; IEM_OPCODE_GET_FIRST_U8(&b);
-                rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
+                rcStrict = FNIEMOP_CALL(g_apfnIemInterpretOnlyOneByteMap[b]);
 
                 if (   cPotentialExits != pVCpu->iem.s.cPotentialExits
                     && cInstructionSinceLastExit > 0 /* don't count the first */ )
