@@ -1216,8 +1216,8 @@ FNIEMOP_DEF(iemOp_pcmpestrm_Vdq_Wdq_Ib)
             IEM_MC_PREPARE_SSE_USAGE();
             IEM_MC_FETCH_XREG_U128(Src.uSrc1, IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_FETCH_XREG_U128(Src.uSrc2, IEM_GET_MODRM_RM(pVCpu, bRm));
-            IEM_MC_FETCH_GREG_U32_ZX_U64(Src.u64Rax, X86_GREG_xAX);
-            IEM_MC_FETCH_GREG_U32_ZX_U64(Src.u64Rdx, X86_GREG_xDX);
+            IEM_MC_FETCH_GREG_U32_SX_U64(Src.u64Rax, X86_GREG_xAX);
+            IEM_MC_FETCH_GREG_U32_SX_U64(Src.u64Rdx, X86_GREG_xDX);
             IEM_MC_REF_XREG_U128(puDst, 0 /*xmm0*/);
             IEM_MC_REF_EFLAGS(pEFlags);
             IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fSse42,
@@ -1249,8 +1249,8 @@ FNIEMOP_DEF(iemOp_pcmpestrm_Vdq_Wdq_Ib)
             IEM_MC_PREPARE_SSE_USAGE();
             IEM_MC_REF_GREG_U32(pu32Ecx, X86_GREG_xCX);
             IEM_MC_FETCH_XREG_U128(Src.uSrc1, IEM_GET_MODRM_REG(pVCpu, bRm));
-            IEM_MC_FETCH_GREG_U32_ZX_U64(Src.u64Rax, X86_GREG_xAX);
-            IEM_MC_FETCH_GREG_U32_ZX_U64(Src.u64Rdx, X86_GREG_xDX);
+            IEM_MC_FETCH_GREG_U32_SX_U64(Src.u64Rax, X86_GREG_xAX);
+            IEM_MC_FETCH_GREG_U32_SX_U64(Src.u64Rdx, X86_GREG_xDX);
             IEM_MC_REF_EFLAGS(pEFlags);
             IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fSse42,
                                                                  iemAImpl_pcmpestri_u128,
@@ -1354,8 +1354,8 @@ FNIEMOP_DEF(iemOp_pcmpestri_Vdq_Wdq_Ib)
             IEM_MC_REF_GREG_U32(pu32Ecx, X86_GREG_xCX);
             IEM_MC_FETCH_XREG_U128(Src.uSrc1, IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_FETCH_XREG_U128(Src.uSrc2, IEM_GET_MODRM_RM(pVCpu, bRm));
-            IEM_MC_FETCH_GREG_U32_ZX_U64(Src.u64Rax, X86_GREG_xAX);
-            IEM_MC_FETCH_GREG_U32_ZX_U64(Src.u64Rdx, X86_GREG_xDX);
+            IEM_MC_FETCH_GREG_U32_SX_U64(Src.u64Rax, X86_GREG_xAX);
+            IEM_MC_FETCH_GREG_U32_SX_U64(Src.u64Rdx, X86_GREG_xDX);
             IEM_MC_REF_EFLAGS(pEFlags);
             IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fSse42,
                                                                  iemAImpl_pcmpestri_u128,
@@ -1387,8 +1387,8 @@ FNIEMOP_DEF(iemOp_pcmpestri_Vdq_Wdq_Ib)
             IEM_MC_PREPARE_SSE_USAGE();
             IEM_MC_REF_GREG_U32(pu32Ecx, X86_GREG_xCX);
             IEM_MC_FETCH_XREG_U128(Src.uSrc1, IEM_GET_MODRM_REG(pVCpu, bRm));
-            IEM_MC_FETCH_GREG_U32_ZX_U64(Src.u64Rax, X86_GREG_xAX);
-            IEM_MC_FETCH_GREG_U32_ZX_U64(Src.u64Rdx, X86_GREG_xDX);
+            IEM_MC_FETCH_GREG_U32_SX_U64(Src.u64Rax, X86_GREG_xAX);
+            IEM_MC_FETCH_GREG_U32_SX_U64(Src.u64Rdx, X86_GREG_xDX);
             IEM_MC_REF_EFLAGS(pEFlags);
             IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fSse42,
                                                                  iemAImpl_pcmpestri_u128,
