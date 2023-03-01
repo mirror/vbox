@@ -1235,7 +1235,7 @@ void UIMachineLogic::prepareDock()
 
     /* Now the dock icon preview: */
     QPixmap pixmap;
-    uimachine()->acquireMachineIcon(QSize(42, 42), pixmap);
+    uimachine()->acquireMachinePixmap(QSize(42, 42), pixmap);
     m_pDockIconPreview = new UIDockIconPreview(uimachine(), pixmap);
 
     /* Should the dock-icon be updated at runtime? */

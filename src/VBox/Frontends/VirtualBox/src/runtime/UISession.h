@@ -197,8 +197,10 @@ public:
         /** Returns main machine-widget id. */
         WId mainMachineWindowId() const;
 
-        /** Acquire machine icon. */
-        void acquireMachineIcon(const QSize &size, QPixmap &pixmap);
+        /** Acquire machine pixmap. */
+        void acquireMachinePixmap(const QSize &size, QPixmap &pixmap);
+        /** Acquire user machine icon. */
+        void acquireUserMachineIcon(QIcon &icon);
 
         /** Acquires chipset type. */
         bool acquireChipsetType(KChipsetType &enmType);

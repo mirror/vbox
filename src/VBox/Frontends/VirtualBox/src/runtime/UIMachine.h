@@ -190,8 +190,10 @@ public:
         /** Returns the OS type id. */
         QString osTypeId() const;
 
-        /** Acquire machine icon. */
-        void acquireMachineIcon(const QSize &size, QPixmap &pixmap);
+        /** Acquire machine pixmap. */
+        void acquireMachinePixmap(const QSize &size, QPixmap &pixmap);
+        /** Acquire user machine icon. */
+        void acquireUserMachineIcon(QIcon &icon);
 
         /** Acquires chipset type. */
         bool acquireChipsetType(KChipsetType &enmType);
