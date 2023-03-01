@@ -3031,7 +3031,7 @@ void UIMachineLogic::activateScreenSaver()
 
 void UIMachineLogic::showBootFailureDialog()
 {
-    UIBootFailureDialog *pBootFailureDialog = new UIBootFailureDialog(activeMachineWindow(), machine());
+    UIBootFailureDialog *pBootFailureDialog = new UIBootFailureDialog(activeMachineWindow());
     AssertPtrReturnVoid(pBootFailureDialog);
 
     int iResult = pBootFailureDialog->exec(false);
@@ -3041,55 +3041,10 @@ void UIMachineLogic::showBootFailureDialog()
 
     QFileInfo bootMediumFileInfo(strISOPath);
     if (bootMediumFileInfo.exists() && bootMediumFileInfo.isReadable())
-        mountBootMedium(uiCommon().openMedium(UIMediumDeviceType_DVD, strISOPath));
+        uimachine()->mountBootMedium(uiCommon().openMedium(UIMediumDeviceType_DVD, strISOPath));
 
     if (iResult == static_cast<int>(UIBootFailureDialog::ReturnCode_Reset))
         reset(false);
-}
-
-bool UIMachineLogic::mountBootMedium(const QUuid &uMediumId)
-{
-    AssertReturn(!uMediumId.isNull(), false);
-
-    CVirtualBox comVBox = uiCommon().virtualBox();
-    CMachine &comMachine = machine();
-    const CGuestOSType &comOsType = comVBox.GetGuestOSType(comMachine.GetOSTypeId());
-    /* Get recommended controller bus & type: */
-    const KStorageBus enmRecommendedDvdBus = comOsType.GetRecommendedDVDStorageBus();
-    const KStorageControllerType enmRecommendedDvdType = comOsType.GetRecommendedDVDStorageController();
-
-    CMediumAttachment comAttachment;
-    /* Search for an attachment of required bus & type: */
-    foreach (const CMediumAttachment &comCurrentAttachment, comMachine.GetMediumAttachments())
-    {
-        /* Determine current attachment's controller: */
-        const CStorageController &comCurrentController = comMachine.GetStorageControllerByName(comCurrentAttachment.GetController());
-
-        if (   comCurrentController.GetBus() == enmRecommendedDvdBus
-            && comCurrentController.GetControllerType() == enmRecommendedDvdType
-            && comCurrentAttachment.GetType() == KDeviceType_DVD)
-        {
-            comAttachment = comCurrentAttachment;
-            break;
-        }
-    }
-    AssertMsgReturn(!comAttachment.isNull(), ("Storage Controller is NOT properly configured!\n"), false);
-
-    const UIMedium guiMedium = uiCommon().medium(uMediumId);
-    const CMedium comMedium = guiMedium.medium();
-
-    /* Mount medium to the predefined port/device: */
-    comMachine.MountMedium(comAttachment.GetController(), comAttachment.GetPort(), comAttachment.GetDevice(), comMedium, false /* force */);
-    bool fSuccess = comMachine.isOk();
-
-    QWidget *pParent = windowManager().realParentWindow(activeMachineWindow());
-
-    /* Show error message if necessary: */
-    if (!fSuccess)
-        msgCenter().cannotRemountMedium(comMachine, guiMedium, true /* mount? */, false /* retry? */, pParent);
-    else
-        fSuccess = uimachine()->saveSettings();
-    return fSuccess;
 }
 
 void UIMachineLogic::reset(bool fShowConfirmation)

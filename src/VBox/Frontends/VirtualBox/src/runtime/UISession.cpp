@@ -49,6 +49,7 @@
 #include "UIMachineWindow.h"
 #include "UIMedium.h"
 #include "UIMessageCenter.h"
+#include "UIModalWindowManager.h"
 #include "UIMousePointerShapeData.h"
 #include "UINotificationCenter.h"
 #include "UISession.h"
@@ -706,6 +707,140 @@ bool UISession::acquireAmountOfImmutableImages(ulong &cAmount)
 {
     CMachine comMachine = machine();
     return UICommon::acquireAmountOfImmutableImages(comMachine, cAmount);
+}
+
+bool UISession::mountBootMedium(const QUuid &uMediumId)
+{
+    AssertReturn(!uMediumId.isNull(), false);
+
+    /* Get recommended controller bus & type: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+    const CGuestOSType comOsType = comVBox.GetGuestOSType(osTypeId());
+    if (!comVBox.isOk())
+    {
+        UINotificationMessage::cannotAcquireVirtualBoxParameter(comVBox);
+        return false;
+    }
+    const KStorageBus enmRecommendedDvdBus = comOsType.GetRecommendedDVDStorageBus();
+    if (!comOsType.isOk())
+    {
+        UINotificationMessage::cannotAcquireGuestOSTypeParameter(comOsType);
+        return false;
+    }
+    const KStorageControllerType enmRecommendedDvdType = comOsType.GetRecommendedDVDStorageController();
+    if (!comOsType.isOk())
+    {
+        UINotificationMessage::cannotAcquireGuestOSTypeParameter(comOsType);
+        return false;
+    }
+
+    /* Search for an attachment of required bus & type: */
+    CMachine comMachine = machine();
+    CMediumAttachmentVector comMediumAttachments = comMachine.GetMediumAttachments();
+    bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+    {
+        CMediumAttachment comChosenAttachment;
+        QString strChosenControllerName;
+        LONG iChosenAttachmentPort = 0;
+        LONG iChosenAttachmentDevice = 0;
+        foreach (const CMediumAttachment &comAttachment, comMediumAttachments)
+        {
+            /* Get attachment type: */
+            const KDeviceType enmCurrentDeviceType = comAttachment.GetType();
+            fSuccess = comAttachment.isOk();
+            if (!fSuccess)
+            {
+                UINotificationMessage::cannotAcquireMediumAttachmentParameter(comAttachment);
+                break;
+            }
+            /* And make sure it's DVD: */
+            if (enmCurrentDeviceType != KDeviceType_DVD)
+                continue;
+
+            /* Get controller name: */
+            const QString strControllerName = comAttachment.GetController();
+            fSuccess = comAttachment.isOk();
+            if (!fSuccess)
+            {
+                UINotificationMessage::cannotAcquireMediumAttachmentParameter(comAttachment);
+                break;
+            }
+            /* And look for corresponding controller: */
+            const CStorageController comCurrentController = comMachine.GetStorageControllerByName(strControllerName);
+            fSuccess = comMachine.isOk();
+            if (!fSuccess)
+            {
+                UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+                break;
+            }
+
+            /* Get current controller bus: */
+            const KStorageBus enmCurrentBus = comCurrentController.GetBus();
+            fSuccess = comCurrentController.isOk();
+            if (!fSuccess)
+            {
+                UINotificationMessage::cannotAcquireStorageControllerParameter(comCurrentController);
+                break;
+            }
+            /* Get current controller type: */
+            const KStorageControllerType enmCurrentType = comCurrentController.GetControllerType();
+            fSuccess = comCurrentController.isOk();
+            if (!fSuccess)
+            {
+                UINotificationMessage::cannotAcquireStorageControllerParameter(comCurrentController);
+                break;
+            }
+            /* And check if they are suitable: */
+            if (   enmCurrentBus != enmRecommendedDvdBus
+                || enmCurrentType != enmRecommendedDvdType)
+                continue;
+
+            /* Get current attachment port: */
+            iChosenAttachmentPort = comAttachment.GetPort();
+            fSuccess = comAttachment.isOk();
+            if (!fSuccess)
+            {
+                UINotificationMessage::cannotAcquireMediumAttachmentParameter(comAttachment);
+                break;
+            }
+            /* Get current attachment device: */
+            iChosenAttachmentDevice = comAttachment.GetDevice();
+            fSuccess = comAttachment.isOk();
+            if (!fSuccess)
+            {
+                UINotificationMessage::cannotAcquireMediumAttachmentParameter(comAttachment);
+                break;
+            }
+
+            /* Everything is nice it seems: */
+            comChosenAttachment = comAttachment;
+            strChosenControllerName = strControllerName;
+            break;
+        }
+        AssertMsgReturn(!comChosenAttachment.isNull(), ("Storage Controller is NOT properly configured!\n"), false);
+
+        /* Get medium to mount: */
+        const UIMedium guiMedium = uiCommon().medium(uMediumId);
+        const CMedium comMedium = guiMedium.medium();
+
+        /* Mount medium to the predefined port/device: */
+        comMachine.MountMedium(strChosenControllerName,
+                               iChosenAttachmentPort, iChosenAttachmentDevice,
+                               comMedium, false /* force */);
+        fSuccess = comMachine.isOk();
+        if (!fSuccess)
+        {
+            QWidget *pParent = windowManager().realParentWindow(activeMachineWindow());
+            msgCenter().cannotRemountMedium(machine(), guiMedium, true /* mount? */, false /* retry? */, pParent);
+        }
+        else
+            fSuccess = saveSettings();
+    }
+
+    return fSuccess;
 }
 
 bool UISession::usbDevices(QList<USBDeviceInfo> &guiUSBDevices)
