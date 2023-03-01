@@ -1110,6 +1110,47 @@ bool UISession::acquireWhetherNetworkAdapterEnabled(ulong uSlot, bool &fEnabled)
     return fSuccess;
 }
 
+bool UISession::acquireWhetherAtLeastOneNetworkAdapterEnabled(bool &fEnabled)
+{
+    /* Acquire system properties: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+    AssertReturn(comVBox.isNotNull(), false);
+    CSystemProperties comProperties = comVBox.GetSystemProperties();
+    if (!comVBox.isOk())
+    {
+        UINotificationMessage::cannotAcquireVirtualBoxParameter(comVBox);
+        return false;
+    }
+
+    /* Acquire chipset type: */
+    KChipsetType enmChipsetType = KChipsetType_Null;
+    bool fSuccess = acquireChipsetType(enmChipsetType);
+    if (fSuccess)
+    {
+        /* Acquire maximum network adapters count: */
+        const ulong uSlots = comProperties.GetMaxNetworkAdapters(enmChipsetType);
+        fSuccess = comProperties.isOk();
+        if (!fSuccess)
+            UINotificationMessage::cannotAcquireSystemPropertiesParameter(comProperties);
+        else
+        {
+            /* Search for 1st enabled adapter: */
+            for (ulong uSlot = 0; uSlot < uSlots; ++uSlot)
+            {
+                bool fAdapterEnabled = false;
+                fSuccess = acquireWhetherNetworkAdapterEnabled(uSlot, fAdapterEnabled);
+                if (!fSuccess)
+                    break;
+                if (!fAdapterEnabled)
+                    continue;
+                fEnabled = true;
+                break;
+            }
+        }
+    }
+    return fSuccess;
+}
+
 bool UISession::acquireWhetherNetworkCableConnected(ulong uSlot, bool &fConnected)
 {
     CMachine comMachine = machine();

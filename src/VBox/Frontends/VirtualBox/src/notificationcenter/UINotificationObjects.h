@@ -78,6 +78,7 @@ class CMediumAttachment;
 class CMouse;
 class CNetworkAdapter;
 class CStorageController;
+class CSystemProperties;
 class CVirtualBox;
 class CVirtualBoxErrorInfo;
 class CVRDEServer;
@@ -281,6 +282,9 @@ public:
           * @param  comVBox  Brings the object parameter get acquired from. */
         static void cannotAcquireApplianceParameter(const CAppliance &comAppliance,
                                                     UINotificationCenter *pParent = 0);
+        /** Notifies about inability to acquire ISystemProperties parameter.
+          * @param  comProperties  Brings the object parameter get acquired from. */
+        static void cannotAcquireSystemPropertiesParameter(const CSystemProperties &comProperties);
         /** Notifies about inability to acquire IExtPackManager parameter.
           * @param  comVBox  Brings the object parameter get acquired from. */
         static void cannotAcquireExtensionPackManagerParameter(const CExtPackManager &comEPManager);

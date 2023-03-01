@@ -372,6 +372,8 @@ public:
      ** @{ */
         /** Acquires whether network adapter is enabled. */
         bool acquireWhetherNetworkAdapterEnabled(ulong uSlot, bool &fEnabled);
+        /** Acquires whether at leasst one network adapter is enabled. */
+        bool acquireWhetherAtLeastOneNetworkAdapterEnabled(bool &fEnabled);
         /** Acquires whether network adapter cable is connected. */
         bool acquireWhetherNetworkCableConnected(ulong uSlot, bool &fConnected);
         /** Set whether network adapter cable is connected. */

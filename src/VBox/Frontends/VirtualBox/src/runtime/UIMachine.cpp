@@ -830,6 +830,11 @@ bool UIMachine::acquireWhetherNetworkAdapterEnabled(ulong uSlot, bool &fEnabled)
     return uisession()->acquireWhetherNetworkAdapterEnabled(uSlot, fEnabled);
 }
 
+bool UIMachine::acquireWhetherAtLeastOneNetworkAdapterEnabled(bool &fEnabled)
+{
+    return uisession()->acquireWhetherAtLeastOneNetworkAdapterEnabled(fEnabled);
+}
+
 bool UIMachine::acquireWhetherNetworkCableConnected(ulong uSlot, bool &fConnected)
 {
     return uisession()->acquireWhetherNetworkCableConnected(uSlot, fConnected);
@@ -1869,19 +1874,9 @@ void UIMachine::updateActionRestrictions()
     /* Network stuff: */
     {
         /* Initialize Network menu: */
-        bool fAtLeastOneAdapterActive = false;
-        const KChipsetType enmChipsetType = uisession()->machine().GetChipsetType();
-        ULONG uSlots = uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(enmChipsetType);
-        for (ULONG uSlot = 0; uSlot < uSlots; ++uSlot)
-        {
-            const CNetworkAdapter &comNetworkAdapter = uisession()->machine().GetNetworkAdapter(uSlot);
-            if (comNetworkAdapter.GetEnabled())
-            {
-                fAtLeastOneAdapterActive = true;
-                break;
-            }
-        }
-        if (!fAtLeastOneAdapterActive)
+        bool fAtLeastOneAdapterEnabled = false;
+        acquireWhetherAtLeastOneNetworkAdapterEnabled(fAtLeastOneAdapterEnabled);
+        if (!fAtLeastOneAdapterEnabled)
             restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
                                     (restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network);
     }

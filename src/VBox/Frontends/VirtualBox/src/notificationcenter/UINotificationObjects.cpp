@@ -72,9 +72,7 @@
 #include "CRecordingSettings.h"
 #include "CStringFormValue.h"
 #include "CStorageController.h"
-#ifdef VBOX_WITH_UPDATE_AGENT
-# include "CSystemProperties.h"
-#endif
+#include "CSystemProperties.h"
 #include "CUnattended.h"
 #include "CUpdateAgent.h"
 #include "CVRDEServer.h"
@@ -617,6 +615,15 @@ void UINotificationMessage::cannotAcquireApplianceParameter(const CAppliance &co
         QApplication::translate("UIMessageCenter", "Failed to acquire appliance parameter.") +
         UIErrorString::formatErrorInfo(comAppliance),
         QString(), QString(), pParent);
+}
+
+/* static */
+void UINotificationMessage::cannotAcquireSystemPropertiesParameter(const CSystemProperties &comProperties)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "System properties failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire system properties parameter.") +
+        UIErrorString::formatErrorInfo(comProperties));
 }
 
 /* static */
