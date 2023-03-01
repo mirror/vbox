@@ -2301,7 +2301,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirCbReadEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
     VbglHGCMParmPtrSet      (&Msg.u.read.entry,   pEntry, cbSize);
     VbglHGCMParmPtrSetString(&Msg.u.read.user,    pszUser);
     VbglHGCMParmPtrSetString(&Msg.u.read.groups,  pszGroups);
-    VbglHGCMParmPtrSet      (&Msg.u.read.acl,     pvACL, cbACL);
+    VbglHGCMParmPtrSet      (&Msg.u.read.acl,     pvACL, (uint32_t)cbACL);
 
     return VbglR3HGCMCall(&Msg.reply_hdr.hdr, RT_UOFFSET_AFTER(HGCMReplyDirNotify, u.read));
 }
