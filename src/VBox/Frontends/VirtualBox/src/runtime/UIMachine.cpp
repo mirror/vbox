@@ -766,6 +766,11 @@ bool UIMachine::acquireAmountOfImmutableImages(ulong &cAmount)
     return uisession()->acquireAmountOfImmutableImages(cAmount);
 }
 
+bool UIMachine::mountBootMedium(const QUuid &uMediumId)
+{
+    return uisession()->mountBootMedium(uMediumId);
+}
+
 bool UIMachine::usbDevices(QList<USBDeviceInfo> &guiUSBDevices)
 {
     return uisession()->usbDevices(guiUSBDevices);

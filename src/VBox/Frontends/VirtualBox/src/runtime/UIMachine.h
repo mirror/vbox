@@ -522,6 +522,10 @@ public:
 
         /** Calculates @a cAmount of immutable images. */
         bool acquireAmountOfImmutableImages(ulong &cAmount);
+
+        /** Attempts to mount medium with @p uMediumId to the machine
+          * if it can find an appropriate controller and port. */
+        bool mountBootMedium(const QUuid &uMediumId);
     /** @} */
 
     /** @name USB stuff.

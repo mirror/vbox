@@ -59,6 +59,7 @@
 #include "CEmulatedUSB.h"
 #include "CExtPack.h"
 #include "CGraphicsAdapter.h"
+#include "CGuestOSType.h"
 #include "CHostNetworkInterface.h"
 #include "CHostOnlyNetwork.h"
 #include "CKeyboard.h"
@@ -751,6 +752,15 @@ void UINotificationMessage::cannotAcquireGuestParameter(const CGuest &comGuest)
         QApplication::translate("UIMessageCenter", "Guest failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to acquire guest parameter.") +
         UIErrorString::formatErrorInfo(comGuest));
+}
+
+/* static */
+void UINotificationMessage::cannotAcquireGuestOSTypeParameter(const CGuestOSType &comGuestOSType)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Guest OS type failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire guest OS type parameter.") +
+        UIErrorString::formatErrorInfo(comGuestOSType));
 }
 
 /* static */
