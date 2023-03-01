@@ -76,7 +76,7 @@ class UIRuntimeInfoWidget : public QIWithRetranslateUI<QTableWidget>
 
 public:
 
-    UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machine);
+    UIRuntimeInfoWidget(QWidget *pParent);
     void updateScreenInfo(int iScreenId = -1);
     void updateGAsVersion();
     void updateVRDE();
@@ -108,8 +108,6 @@ private:
      * to the row @p iRow. If @p iRow is -1 then the items inserted to the end of the table. */
     void insertInfoRow(InfoRow enmInfoRow, const QString& strLabel, const QString &strInfo, int iRow = -1);
     void computeMinimumWidth();
-
-    CMachine m_machine;
 
     /** @name Cached translated strings.
       * @{ */
@@ -148,9 +146,8 @@ private:
 *   UIRuntimeInfoWidget implementation.                                                                                     *
 *********************************************************************************************************************************/
 
-UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machine)
+UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent)
     : QIWithRetranslateUI<QTableWidget>(pParent)
-    , m_machine(machine)
     , m_iMinimumWidth(0)
     , m_pTimer(0)
 {
@@ -275,7 +272,11 @@ void UIRuntimeInfoWidget::sltTimeout()
 
 void UIRuntimeInfoWidget::updateScreenInfo(int iScreenID /* = -1 */)
 {
-    ULONG uGuestScreens = m_machine.GetGraphicsAdapter().GetMonitorCount();
+    AssertPtrReturnVoid(gpMachine);
+    ulong uGuestScreens = 0;
+    gpMachine->acquireMonitorCount(uGuestScreens);
+    AssertReturnVoid(uGuestScreens > 0);
+
     m_screenResolutions.resize(uGuestScreens);
     if (iScreenID != -1 && iScreenID >= (int)uGuestScreens)
         return;
@@ -380,7 +381,7 @@ void UIRuntimeInfoWidget::updateVirtualizationInfo()
         m_strNestedPagingActive : m_strNestedPagingInactive;
     QString strUnrestrictedExecution = gpMachine->isHWVirtExUXEnabled() ?
         m_strUnrestrictedExecutionActive : m_strUnrestrictedExecutionInactive;
-    QString strParavirtProvider = gpConverter->toString(m_machine.GetEffectiveParavirtProvider());
+    QString strParavirtProvider = gpConverter->toString(gpMachine->paravirtProvider());
 
     updateInfoRow(InfoRow_ExecutionEngine, QString("%1").arg(m_strExcutionEngineLabel), strExecutionEngine);
     updateInfoRow(InfoRow_NestedPaging, QString("%1").arg(m_strNestedPagingLabel), strNestedPaging);
@@ -418,9 +419,14 @@ void UIRuntimeInfoWidget::updateVRDE()
 
 void UIRuntimeInfoWidget::updateClipboardMode(KClipboardMode enmMode /* = KClipboardMode_Max */)
 {
+    AssertPtrReturnVoid(gpMachine);
     if (enmMode == KClipboardMode_Max)
+    {
+        KClipboardMode enmClipboardMode = KClipboardMode_Max;
+        gpMachine->acquireClipboardMode(enmClipboardMode);
         updateInfoRow(InfoRow_ClipboardMode, QString("%1").arg(m_strClipboardModeLabel),
-                      gpConverter->toString(m_machine.GetClipboardMode()));
+                      gpConverter->toString(enmClipboardMode));
+    }
     else
         updateInfoRow(InfoRow_ClipboardMode, QString("%1").arg(m_strClipboardModeLabel),
                       gpConverter->toString(enmMode));
@@ -428,9 +434,14 @@ void UIRuntimeInfoWidget::updateClipboardMode(KClipboardMode enmMode /* = KClipb
 
 void UIRuntimeInfoWidget::updateDnDMode(KDnDMode enmMode /* = KDnDMode_Max */)
 {
+    AssertPtrReturnVoid(gpMachine);
     if (enmMode == KDnDMode_Max)
+    {
+        KDnDMode enmDnDMode = KDnDMode_Max;
+        gpMachine->acquireDnDMode(enmDnDMode);
         updateInfoRow(InfoRow_DnDMode, QString("%1").arg(m_strDragAndDropLabel),
-                  gpConverter->toString(m_machine.GetDnDMode()));
+                  gpConverter->toString(enmDnDMode));
+    }
     else
         updateInfoRow(InfoRow_DnDMode, QString("%1").arg(m_strDragAndDropLabel),
                       gpConverter->toString(enmMode));
@@ -503,9 +514,8 @@ void UIRuntimeInfoWidget::computeMinimumWidth()
 *   UIInformationRuntime implementation.                                                                                     *
 *********************************************************************************************************************************/
 
-UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &machine, const UIMachine *pMachine)
+UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const UIMachine *pMachine)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_machine(machine)
     , m_pMainLayout(0)
     , m_pRuntimeInfoWidget(0)
     , m_pCopyWholeTableAction(0)
@@ -533,7 +543,7 @@ void UIInformationRuntime::prepareObjects()
         return;
     m_pMainLayout->setSpacing(0);
 
-    m_pRuntimeInfoWidget = new UIRuntimeInfoWidget(0, m_machine);
+    m_pRuntimeInfoWidget = new UIRuntimeInfoWidget(0);
     AssertReturnVoid(m_pRuntimeInfoWidget);
     connect(m_pRuntimeInfoWidget, &UIRuntimeInfoWidget::customContextMenuRequested,
             this, &UIInformationRuntime::sltHandleTableContextMenuRequest);

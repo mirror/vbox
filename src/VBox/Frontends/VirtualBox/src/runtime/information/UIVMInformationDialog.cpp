@@ -217,7 +217,7 @@ void UIVMInformationDialog::prepareTabWidget()
 
         /* Create Runtime Information tab: */
         UIInformationRuntime *pInformationRuntimeWidget =
-            new UIInformationRuntime(this, m_pMachine->uisession()->machine(), m_pMachine);
+            new UIInformationRuntime(this, m_pMachine);
         if (pInformationRuntimeWidget)
         {
             m_tabs.insert(Tabs_RuntimeInformation, pInformationRuntimeWidget);
