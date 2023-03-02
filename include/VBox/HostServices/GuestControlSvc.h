@@ -1032,6 +1032,12 @@ typedef struct HGCMMsgDirOpen
     HGCMFunctionParameter filter;
     /** Directory open flags (GSTCTLDIR_F_XXX). */
     HGCMFunctionParameter flags;
+    /** Additional directory attributes to use
+     *  (GSTCTLFSOBJATTRADD, for subsequent directory entry read calls). */
+    HGCMFunctionParameter read_attr_add;
+    /** Directory reading flags (for subsequent directory entry read calls).
+     *  GSTCTL_PATH_F_ON_LINK or GSTCTL_PATH_F_FOLLOW_LINK. */
+    HGCMFunctionParameter read_flags;
 } HGCMMsgDirOpen;
 
 /**
@@ -1059,11 +1065,6 @@ typedef struct HGCMMsgDirRead
     /** Maximum directory entry size (in bytes) to use.
      *  @sa GSTCTL_DIRENTRY_MAX_SIZE */
     HGCMFunctionParameter max_entry_size;
-    /** Additional directory attributes to use (GSTCTLFSOBJATTRADD). */
-    HGCMFunctionParameter add_attributes;
-    /** Directory reading flags.
-     *  GSTCTL_PATH_F_ON_LINK or GSTCTL_PATH_F_FOLLOW_LINK. */
-    HGCMFunctionParameter flags;
 } HGCMMsgDirRead;
 
 /**

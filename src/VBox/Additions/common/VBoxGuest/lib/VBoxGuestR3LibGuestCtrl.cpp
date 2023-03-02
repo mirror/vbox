@@ -989,17 +989,21 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint
  * @param   cbPath              Size (in bytes) of \a pszPath.
  * @param   pfFlags             Where to return the directory listing flags.
  * @param   enmFilter           Where to return the directory filter type.
+ * @param   penmAttrAdd         Where to return the additional attributes enumeration to use for reading directory entries later.
+ * @param   pfReadFlags         Where to return the flags for reading directory entries later.
  */
 VBGLR3DECL(int) VbglR3GuestCtrlDirGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx, char *pszPath, uint32_t cbPath, uint32_t *pfFlags,
-                                          GSTCTLDIRFILTER *penmFilter)
+                                          GSTCTLDIRFILTER *penmFilter, GSTCTLFSOBJATTRADD *penmReadAttrAdd, uint32_t *pfReadFlags)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-    AssertReturn(pCtx->uNumParms == 4, VERR_INVALID_PARAMETER);
+    AssertReturn(pCtx->uNumParms == 6, VERR_INVALID_PARAMETER);
 
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(cbPath, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
     AssertPtrReturn(penmFilter, VERR_INVALID_POINTER);
+    AssertPtrReturn(penmReadAttrAdd, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfReadFlags, VERR_INVALID_POINTER);
 
     int rc;
     do
@@ -1010,6 +1014,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx, char *psz
         VbglHGCMParmPtrSet(&Msg.path, pszPath, cbPath);
         VbglHGCMParmUInt32Set(&Msg.filter, 0);
         VbglHGCMParmUInt32Set(&Msg.flags, 0);
+        VbglHGCMParmUInt32Set(&Msg.read_attr_add, 0);
+        VbglHGCMParmUInt32Set(&Msg.read_flags, 0);
 
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
         if (RT_SUCCESS(rc))
@@ -1017,6 +1023,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx, char *psz
             Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.filter.GetUInt32((uint32_t *)penmFilter);
             Msg.flags.GetUInt32(pfFlags);
+            Msg.read_attr_add.GetUInt32((uint32_t *)penmReadAttrAdd);
+            Msg.read_flags.GetUInt32(pfReadFlags);
         }
     } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
@@ -1063,19 +1071,14 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
  * @param   pCtx                Guest control command context to use.
  * @param   puHandle            Where to return the directory handle to rewind.
  * @param   pcbDirEntry         Where to return the directory entry size.
- * @param   penmAddAttrib       Where to return the additional attributes enumeration.
- * @param   pfFlags             Where to return the directory reading flags..
  */
-VBGLR3DECL(int) VbglR3GuestCtrlDirGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle, uint32_t *pcbDirEntry,
-                                          uint32_t *penmAddAttrib, uint32_t *pfFlags)
+VBGLR3DECL(int) VbglR3GuestCtrlDirGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle, uint32_t *pcbDirEntry)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertReturn(pCtx->uNumParms == 5, VERR_INVALID_PARAMETER);
 
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbDirEntry, VERR_INVALID_POINTER);
-    AssertPtrReturn(penmAddAttrib, VERR_INVALID_POINTER);
-    AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
     int rc;
     do
@@ -1085,8 +1088,6 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t 
         VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_DIR_READ);
         VbglHGCMParmUInt32Set(&Msg.handle, 0);
         VbglHGCMParmUInt32Set(&Msg.max_entry_size, 0);
-        VbglHGCMParmUInt32Set(&Msg.add_attributes, 0);
-        VbglHGCMParmUInt32Set(&Msg.flags, 0);
 
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
         if (RT_SUCCESS(rc))
@@ -1094,8 +1095,6 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t 
             Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.handle.GetUInt32(puHandle);
             Msg.max_entry_size.GetUInt32(pcbDirEntry);
-            Msg.add_attributes.GetUInt32(penmAddAttrib);
-            Msg.flags.GetUInt32(pfFlags);
         }
     } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;

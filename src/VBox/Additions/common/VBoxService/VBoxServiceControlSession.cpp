@@ -1014,11 +1014,13 @@ static int vgsvcGstCtrlSessionHandleDirOpen(const PVBOXSERVICECTRLSESSION pSessi
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
-    char            szPath[RTPATH_MAX];
-    uint32_t        fFlags;
-    GSTCTLDIRFILTER enmFilter;
-    uint32_t        uHandle = 0;
-    int rc = VbglR3GuestCtrlDirGetOpen(pHostCtx, szPath, sizeof(szPath), &fFlags, &enmFilter);
+    char               szPath[RTPATH_MAX];
+    uint32_t           fFlags;
+    GSTCTLDIRFILTER    enmFilter;
+    uint32_t           uHandle = 0;
+    uint32_t           fReadFlags;
+    GSTCTLFSOBJATTRADD enmAttrAdd;
+    int rc = VbglR3GuestCtrlDirGetOpen(pHostCtx, szPath, sizeof(szPath), &fFlags, &enmFilter, &enmAttrAdd, &fReadFlags);
     VGSvcVerbose(4, "[Dir %s]: fFlags=%#x, enmFilter=%#x, rc=%Rrc\n", szPath, fFlags, enmFilter, rc);
     if (RT_SUCCESS(rc))
     {
@@ -1030,6 +1032,10 @@ static int vgsvcGstCtrlSessionHandleDirOpen(const PVBOXSERVICECTRLSESSION pSessi
             pDir->pszPathAbs = RTStrDup(szPath);
             if (!pDir->pszPathAbs)
                 rc = VERR_NO_MEMORY;
+
+            /* Save reading parameters for subsequent directory entry read calls later. */
+            pDir->fRead          = fReadFlags;
+            pDir->enmReadAttrAdd = enmAttrAdd;
 
             if (RT_SUCCESS(rc))
             {
@@ -1137,10 +1143,8 @@ static int vgsvcGstCtrlSessionHandleDirRead(const PVBOXSERVICECTRLSESSION pSessi
      */
     uint32_t           uHandle;
     size_t             cbDirEntry = 0;
-    GSTCTLFSOBJATTRADD enmAttrAdd;
-    uint32_t           fFlags;
     GSTCTLDIRENTRYEX   DirEntryEx;
-    int rc = VbglR3GuestCtrlDirGetRead(pHostCtx, &uHandle, (uint32_t *)&cbDirEntry, (uint32_t *)&enmAttrAdd, &fFlags);
+    int rc = VbglR3GuestCtrlDirGetRead(pHostCtx, &uHandle, (uint32_t *)&cbDirEntry);
     if (RT_SUCCESS(rc))
     {
         PVBOXSERVICECTRLDIR pDir = vgsvcGstCtrlSessionDirAcquire(pSession, uHandle);
@@ -1161,7 +1165,7 @@ static int vgsvcGstCtrlSessionHandleDirRead(const PVBOXSERVICECTRLSESSION pSessi
 
             PRTDIRENTRYEX pDirEntryExRuntime = (PRTDIRENTRYEX)&DirEntryEx;
 
-            rc = RTDirReadEx(pDir->hDir, pDirEntryExRuntime, &cbDirEntry, (RTFSOBJATTRADD)enmAttrAdd, fFlags);
+            rc = RTDirReadEx(pDir->hDir, pDirEntryExRuntime, &cbDirEntry, (RTFSOBJATTRADD)pDir->enmReadAttrAdd, pDir->fRead);
 
             /* Paranoia. */
             AssertStmt(cbDirEntry <= _256K, rc = VERR_BUFFER_OVERFLOW);

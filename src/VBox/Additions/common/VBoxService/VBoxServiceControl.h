@@ -79,6 +79,10 @@ typedef struct VBOXSERVICECTRLDIR
     uint32_t                        uHandle;
     /** Context ID. */
     uint32_t                        uContextID;
+    /** Flags for reading directory entries. */
+    uint32_t                        fRead;
+    /** Additional attributes enumeration to use for reading directory entries. */
+    GSTCTLFSOBJATTRADD              enmReadAttrAdd;
 } VBOXSERVICECTRLDIR;
 /** Pointer to a guest directory. */
 typedef VBOXSERVICECTRLDIR *PVBOXSERVICECTRLDIR;
