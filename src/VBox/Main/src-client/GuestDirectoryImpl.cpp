@@ -515,7 +515,7 @@ int GuestDirectory::i_onDirNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
 
         case GUEST_DIR_NOTIFYTYPE_READ:
         {
-            ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mParms == 7, ("mParms=%u\n", pSvcCbData->mParms),
+            ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mParms == 6, ("mParms=%u\n", pSvcCbData->mParms),
                                         vrc = VERR_WRONG_PARAMETER_COUNT);
             ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mpaParms[idx].type == VBOX_HGCM_SVC_PARM_PTR,
                                         ("type=%u\n", pSvcCbData->mpaParms[idx].type),
@@ -524,7 +524,7 @@ int GuestDirectory::i_onDirNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
             uint32_t          cbEntry;
             vrc = HGCMSvcGetPv(&pSvcCbData->mpaParms[idx++], (void **)&pEntry, &cbEntry);
             AssertRCBreak(vrc);
-            AssertBreakStmt(   cbEntry >= sizeof(GSTCTLDIRENTRYEX)
+            AssertBreakStmt(   cbEntry >= RT_UOFFSETOF(GSTCTLDIRENTRYEX, szName[2])
                             && cbEntry <= GSTCTL_DIRENTRY_MAX_SIZE, VERR_INVALID_PARAMETER);
             dataCb.u.read.pEntry  = (PGSTCTLDIRENTRYEX)RTMemDup(pEntry, cbEntry);
             AssertPtrBreakStmt(dataCb.u.read.pEntry, vrc = VERR_NO_MEMORY);
@@ -774,7 +774,6 @@ int GuestDirectory::i_readInternal(GuestFsObjData &objData, int *pvrcGuest)
         int i = 0;
         HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
         HGCMSvcSetU32(&paParms[i++], mObjectID /* Guest directory handle */);
-        HGCMSvcSetU32(&paParms[i++], GSTCTL_DIRENTRY_MAX_SIZE);
 
         vrc = sendMessage(HOST_MSG_DIR_READ, i, paParms);
         if (RT_SUCCESS(vrc))

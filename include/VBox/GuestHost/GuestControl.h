@@ -302,6 +302,7 @@ AssertCompileSize(RTUID,   4);
 /**
  * Additional Unix Attributes (GSTCTLFSOBJATTRADD_UNIX).
  */
+#pragma pack(1)
 typedef struct GSTCTLFSOBJATTRUNIX
 {
     /** The user owning the filesystem object (st_uid).
@@ -343,6 +344,8 @@ typedef struct GSTCTLFSOBJATTRUNIX
      * when the OS doesn't subscribe to the major+minor device idenfication scheme. */
     RTDEV           Device;
 } GSTCTLFSOBJATTRUNIX;
+#pragma pack()
+AssertCompileSize(GSTCTLFSOBJATTRUNIX, 36);
 
 /**
  * Additional guest Unix attributes (GSTCTLFSOBJATTRADD_UNIX_OWNER).
@@ -548,8 +551,8 @@ typedef GSTCTLDIRENTRYEX *PGSTCTLDIRENTRYEX;
 /** Pointer to a const guest directory entry. */
 typedef GSTCTLDIRENTRYEX const *PCGSTCTLDIRENTRYEX;
 
-/** The maximum size (in bytes) of a GSTCTLDIRENTRYEX (includes dynamic szName[pDirEntry->cbName + 1]). */
-#define GSTCTL_DIRENTRY_MAX_SIZE    (sizeof(GSTCTLDIRENTRYEX) + RTPATH_MAX)
+/** The maximum size (in bytes) of an entry file name (at least RT_UOFFSETOF(GSTCTLDIRENTRYEX, szName[2]). */
+#define GSTCTL_DIRENTRY_MAX_SIZE    4096
 
 } /* namespace guestControl */
 

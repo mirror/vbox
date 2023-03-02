@@ -1062,9 +1062,6 @@ typedef struct HGCMMsgDirRead
     HGCMFunctionParameter context;
     /** Handle of directory listing to read the next entry for. */
     HGCMFunctionParameter handle;
-    /** Maximum directory entry size (in bytes) to use.
-     *  @sa GSTCTL_DIRENTRY_MAX_SIZE */
-    HGCMFunctionParameter max_entry_size;
 } HGCMMsgDirRead;
 
 /**

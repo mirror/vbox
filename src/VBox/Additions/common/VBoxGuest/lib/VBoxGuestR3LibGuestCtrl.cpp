@@ -1070,15 +1070,13 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
  * @returns VBox status code.
  * @param   pCtx                Guest control command context to use.
  * @param   puHandle            Where to return the directory handle to rewind.
- * @param   pcbDirEntry         Where to return the directory entry size.
  */
-VBGLR3DECL(int) VbglR3GuestCtrlDirGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle, uint32_t *pcbDirEntry)
+VBGLR3DECL(int) VbglR3GuestCtrlDirGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-    AssertReturn(pCtx->uNumParms == 5, VERR_INVALID_PARAMETER);
+    AssertReturn(pCtx->uNumParms == 2, VERR_INVALID_PARAMETER);
 
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcbDirEntry, VERR_INVALID_POINTER);
 
     int rc;
     do
@@ -1087,14 +1085,12 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t 
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
         VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_DIR_READ);
         VbglHGCMParmUInt32Set(&Msg.handle, 0);
-        VbglHGCMParmUInt32Set(&Msg.max_entry_size, 0);
 
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
         if (RT_SUCCESS(rc))
         {
             Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.handle.GetUInt32(puHandle);
-            Msg.max_entry_size.GetUInt32(pcbDirEntry);
         }
     } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
@@ -2273,8 +2269,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirCbClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t 
  * @param   pCtx                Guest control command context to use.
  * @param   uRc                 Guest rc of operation (note: IPRT-style signed int).
  * @param   pEntry              Directory entry to send.
- * @param   cbSize              Size (in bytes) of \a pDirEntry to send.
- *                              This might be needed as the size can be bigger than GSTCTLDIRENTRYEX.
+ * @param   cbSize              Size (in bytes) of the OFFSET(GSTCTLDIRENTRYEX, szName[pEntry->cbName + 1]).
  *                              See RTDirReadEx() for more information.
  * @param   pszUser             Associated user ID (owner, uid) as a string.
  * @param   pszGroups           Associated user groups as a string.
@@ -2308,8 +2303,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirCbReadEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
  * @param   pCtx                Guest control command context to use.
  * @param   uRc                 Guest rc of operation (note: IPRT-style signed int).
  * @param   pEntry              Directory entry to send.
- * @param   cbSize              Size (in bytes) of \a pDirEntry to send.
- *                              This might be needed as the size can be bigger than GSTCTLDIRENTRYEX.
+ * @param   cbSize              Size (in bytes) of the OFFSET(GSTCTLDIRENTRYEX, szName[pEntry->cbName + 1]).
  *                              See RTDirReadEx() for more information.
  */
 VBGLR3DECL(int) VbglR3GuestCtrlDirCbRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLDIRENTRYEX pEntry, uint32_t cbSize)

@@ -1119,7 +1119,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetWaitFor(PVBGLR3GUESTCTRLCMDCTX pCtx, uint3
 VBGLR3DECL(int) VbglR3GuestCtrlDirGetCreate(PVBGLR3GUESTCTRLCMDCTX pCtx, char *pszPath, uint32_t cbPath, uint32_t *pfMode, uint32_t *pfFlags);
 VBGLR3DECL(int) VbglR3GuestCtrlDirGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx, char *pszPath, uint32_t cbPath, uint32_t *pfFlags, GSTCTLDIRFILTER *penmFilter, GSTCTLFSOBJATTRADD *penmReadAttrAdd, uint32_t *pfReadFlags);
 VBGLR3DECL(int) VbglR3GuestCtrlDirGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle);
-VBGLR3DECL(int) VbglR3GuestCtrlDirGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle, uint32_t *pcbDirEntry);
+VBGLR3DECL(int) VbglR3GuestCtrlDirGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle);
 VBGLR3DECL(int) VbglR3GuestCtrlDirGetRewind(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle);
 /** @} */
 #  endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
