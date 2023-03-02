@@ -343,11 +343,6 @@ typedef struct GSTCTLFSOBJATTRUNIX
      * when the OS doesn't subscribe to the major+minor device idenfication scheme. */
     RTDEV           Device;
 } GSTCTLFSOBJATTRUNIX;
-#if ARCH_BITS == 32
-AssertCompileSize(GSTCTLFSOBJATTRUNIX, 36);
-#else
-AssertCompileSize(GSTCTLFSOBJATTRUNIX, 40);
-#endif
 
 /**
  * Additional guest Unix attributes (GSTCTLFSOBJATTRADD_UNIX_OWNER).
