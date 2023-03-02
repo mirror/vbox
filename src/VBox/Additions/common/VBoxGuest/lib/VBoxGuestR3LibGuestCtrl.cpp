@@ -2280,20 +2280,16 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirCbClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t 
  * @param   pszUser             Associated user ID (owner, uid) as a string.
  * @param   pszGroups           Associated user groups as a string.
  *                              Multiple groups are delimited by "\r\n", whereas the first group always is the primary group.
- * @param   pvACL               ACL block to send.
- * @param   cbACL               Size (in bytes) of ACL block to send.
  */
 VBGLR3DECL(int) VbglR3GuestCtrlDirCbReadEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLDIRENTRYEX pEntry, uint32_t cbSize,
-                                           char *pszUser, char *pszGroups, void *pvACL, size_t cbACL)
+                                           char *pszUser, char *pszGroups)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
     AssertPtrReturn(pszGroups, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvACL, VERR_INVALID_POINTER);
-    AssertReturn(cbACL, VERR_INVALID_PARAMETER);
 
     HGCMReplyDirNotify Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.reply_hdr.hdr, pCtx->uClientID, GUEST_MSG_DIR_NOTIFY, GSTCTL_HGCM_REPLY_HDR_PARMS + 4);
+    VBGL_HGCM_HDR_INIT(&Msg.reply_hdr.hdr, pCtx->uClientID, GUEST_MSG_DIR_NOTIFY, GSTCTL_HGCM_REPLY_HDR_PARMS + 3);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.type, GUEST_DIR_NOTIFYTYPE_READ);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.rc, uRc);
@@ -2301,7 +2297,6 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirCbReadEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
     VbglHGCMParmPtrSet      (&Msg.u.read.entry,   pEntry, cbSize);
     VbglHGCMParmPtrSetString(&Msg.u.read.user,    pszUser);
     VbglHGCMParmPtrSetString(&Msg.u.read.groups,  pszGroups);
-    VbglHGCMParmPtrSet      (&Msg.u.read.acl,     pvACL, (uint32_t)cbACL);
 
     return VbglR3HGCMCall(&Msg.reply_hdr.hdr, RT_UOFFSET_AFTER(HGCMReplyDirNotify, u.read));
 }
@@ -2321,8 +2316,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirCbReadEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
 VBGLR3DECL(int) VbglR3GuestCtrlDirCbRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLDIRENTRYEX pEntry, uint32_t cbSize)
 {
     char szIgnored[1] = { 0 };
-    return VbglR3GuestCtrlDirCbReadEx(pCtx, uRc, pEntry, cbSize, szIgnored /* pszUser */, szIgnored /* pszGroups */,
-                                      szIgnored /* pvACL */, sizeof(szIgnored) /* cbACL */);
+    return VbglR3GuestCtrlDirCbReadEx(pCtx, uRc, pEntry, cbSize, szIgnored /* pszUser */, szIgnored /* pszGroups */);
 }
 
 
@@ -2604,28 +2598,24 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbSetSize(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32
  * @param   pszUser             Associated user ID (owner, uid) as a string.
  * @param   pszGroups           Associated user groups as a string.
  *                              Multiple groups are delimited by "\r\n", whereas the first group always is the primary group.
- * @param   pvACL               ACL block to send.
- * @param   cbACL               Size (in bytes) of ACL block to send.
  */
 VBGLR3DECL(int) VbglR3GuestCtrlFsCbQueryInfoEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLFSOBJINFO pFsObjInfo,
-                                               char *pszUser, char *pszGroups, void *pvACL, uint32_t cbACL)
+                                               char *pszUser, char *pszGroups)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pFsObjInfo, VERR_INVALID_POINTER);
     AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
     AssertPtrReturn(pszGroups, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvACL, VERR_INVALID_POINTER);
-    AssertReturn(cbACL, VERR_INVALID_PARAMETER);
 
     HGCMReplyFsNotify Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.reply_hdr.hdr, pCtx->uClientID, GUEST_MSG_FS_NOTIFY, 7);
+    VBGL_HGCM_HDR_INIT(&Msg.reply_hdr.hdr, pCtx->uClientID, GUEST_MSG_FS_NOTIFY, GSTCTL_HGCM_REPLY_HDR_PARMS + 3);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.type, GUEST_FS_NOTIFYTYPE_QUERY_INFO);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.rc, uRc);
+
     VbglHGCMParmPtrSet      (&Msg.u.queryinfo.obj_info, pFsObjInfo, sizeof(GSTCTLFSOBJINFO));
     VbglHGCMParmPtrSetString(&Msg.u.queryinfo.user,   pszUser);
     VbglHGCMParmPtrSetString(&Msg.u.queryinfo.groups, pszGroups);
-    VbglHGCMParmPtrSet      (&Msg.u.queryinfo.acl,    pvACL, cbACL);
 
     return VbglR3HGCMCall(&Msg.reply_hdr.hdr, RT_UOFFSET_AFTER(HGCMReplyFsNotify, u.queryinfo));
 }
@@ -2642,8 +2632,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFsCbQueryInfoEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint
 VBGLR3DECL(int) VbglR3GuestCtrlFsCbQueryInfo(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLFSOBJINFO pFsObjInfo)
 {
     char szIgnored[1];
-    return VbglR3GuestCtrlFsCbQueryInfoEx(pCtx, uRc, pFsObjInfo, szIgnored /* pszUser */, szIgnored /* pszGroups */,
-                                          szIgnored /* pvACL */, sizeof(szIgnored) /* cbACL */);
+    return VbglR3GuestCtrlFsCbQueryInfoEx(pCtx, uRc, pFsObjInfo, szIgnored /* pszUser */, szIgnored /* pszGroups */);
 }
 
 
@@ -2662,10 +2651,11 @@ VBGLR3DECL(int) VbglR3GuestCtrlFsCbCreateTemp(PVBGLR3GUESTCTRLCMDCTX pCtx, uint3
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
 
     HGCMReplyFsNotify Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.reply_hdr.hdr, pCtx->uClientID, GUEST_MSG_FS_NOTIFY, 4);
+    VBGL_HGCM_HDR_INIT(&Msg.reply_hdr.hdr, pCtx->uClientID, GUEST_MSG_FS_NOTIFY, GSTCTL_HGCM_REPLY_HDR_PARMS + 1);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.type, GUEST_FS_NOTIFYTYPE_CREATE_TEMP);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.rc, uRc);
+
     VbglHGCMParmPtrSetString(&Msg.u.createtemp.path, pszPath);
 
     return VbglR3HGCMCall(&Msg.reply_hdr.hdr, RT_UOFFSET_AFTER(HGCMReplyFsNotify, u.createtemp));

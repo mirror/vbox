@@ -2349,7 +2349,7 @@ int GuestSession::i_onFsNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOS
         {
             case GUEST_FS_NOTIFYTYPE_QUERY_INFO:
             {
-                AssertBreakStmt(pSvcCbData->mParms >= 7, vrc = VERR_INVALID_PARAMETER);
+                AssertBreakStmt(pSvcCbData->mParms >= 6, vrc = VERR_INVALID_PARAMETER);
                 PGSTCTLFSOBJINFO pObjInfo;
                 uint32_t         cbObjInfo;
                 vrc = HGCMSvcGetPv(&pSvcCbData->mpaParms[3], (void **)&pObjInfo, &cbObjInfo);
@@ -2372,8 +2372,6 @@ int GuestSession::i_onFsNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOS
                 dataCb.u.QueryInfo.pszGroups = RTStrDup(pszGroups);
                 AssertPtrBreakStmt(dataCb.u.QueryInfo.pszGroups, vrc = VERR_NO_MEMORY);
                 dataCb.u.QueryInfo.cbGroups  = cbGroups;
-
-                /** @todo ACLs not implemented yet. */
                 break;
             }
 

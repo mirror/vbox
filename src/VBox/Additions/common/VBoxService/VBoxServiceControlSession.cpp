@@ -1184,11 +1184,10 @@ static int vgsvcGstCtrlSessionHandleDirRead(const PVBOXSERVICECTRLSESSION pSessi
                          pszUser ? pszUser : "", DirEntryEx.Info.Attr.u.UnixOwner.uid,
                          pszGroup ? pszGroup : "", DirEntryEx.Info.Attr.u.UnixGroup.gid);
 
-            char szIgnored[] = "???"; /** @todo Implement ACL support. */
+            char szIgnored[] = "???";
             int rc2 = VbglR3GuestCtrlDirCbReadEx(pHostCtx, rc,
                                                  &DirEntryEx, (uint32_t)(sizeof(GSTCTLDIRENTRYEX) + cbDirEntry),
-                                                 pszUser ? pszUser : szIgnored, pszGroup ? pszGroup : szIgnored,
-                                                 szIgnored /* pvACL */, sizeof(szIgnored) /* cbACL */);
+                                                 pszUser ? pszUser : szIgnored, pszGroup ? pszGroup : szIgnored);
             RTStrFree(pszUser);
             RTStrFree(pszGroup);
 
@@ -1869,9 +1868,7 @@ static int vgsvcGstCtrlSessionHandleFsQueryInfo(const PVBOXSERVICECTRLSESSION pS
                                   : "<error>");
         AssertStmt(pszGroup != NULL, rc = VERR_NO_MEMORY);
 
-        char  szNotImplemented[] = "<not-implemented>"; /** @todo Implement ACL support. */
-        int rc2 = VbglR3GuestCtrlFsCbQueryInfoEx(pHostCtx, rc, pObjInfo, pszUser, pszGroup,
-                                                 szNotImplemented, sizeof(szNotImplemented));
+        int rc2 = VbglR3GuestCtrlFsCbQueryInfoEx(pHostCtx, rc, pObjInfo, pszUser, pszGroup);
         RTStrFree(pszUser);
         RTStrFree(pszGroup);
 
