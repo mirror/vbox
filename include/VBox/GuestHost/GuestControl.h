@@ -293,6 +293,12 @@ enum GSTCTLFSOBJATTRADD
 /** The number of bytes reserved for the additional attribute union. */
 #define GSTCTLFSOBJATTRUNION_MAX_SIZE       128
 
+/* Validate stuff used in the structures used below. */
+AssertCompileSize(RTINODE, 8);
+AssertCompileSize(RTDEV,   4);
+AssertCompileSize(RTGID,   4);
+AssertCompileSize(RTUID,   4);
+
 /**
  * Additional Unix Attributes (GSTCTLFSOBJATTRADD_UNIX).
  */
@@ -337,7 +343,11 @@ typedef struct GSTCTLFSOBJATTRUNIX
      * when the OS doesn't subscribe to the major+minor device idenfication scheme. */
     RTDEV           Device;
 } GSTCTLFSOBJATTRUNIX;
+#if ARCH_BITS == 32
+AssertCompileSize(GSTCTLFSOBJATTRUNIX, 36);
+#else
 AssertCompileSize(GSTCTLFSOBJATTRUNIX, 40);
+#endif
 
 /**
  * Additional guest Unix attributes (GSTCTLFSOBJATTRADD_UNIX_OWNER).
