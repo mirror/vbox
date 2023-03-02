@@ -220,8 +220,10 @@ typedef struct VBOXSERVICECTRLSESSION
     uint32_t                        fFlags;
     /** How many processes do we allow keeping around at a time? */
     uint32_t                        uProcsMaxKept;
-    /** The uid/gid cache for this session. */
-    VGSVCIDCACHE                    IdCache;
+    /** The uid cache for this session. */
+    VGSVCIDCACHE                    UidCache;
+    /** The gid cache for this session. */
+    VGSVCIDCACHE                    GidCache;
 } VBOXSERVICECTRLSESSION;
 /** Pointer to guest session. */
 typedef VBOXSERVICECTRLSESSION *PVBOXSERVICECTRLSESSION;

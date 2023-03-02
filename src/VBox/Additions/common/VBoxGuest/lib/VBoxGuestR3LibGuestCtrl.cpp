@@ -2282,7 +2282,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirCbClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t 
  *                              Multiple groups are delimited by "\r\n", whereas the first group always is the primary group.
  */
 VBGLR3DECL(int) VbglR3GuestCtrlDirCbReadEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLDIRENTRYEX pEntry, uint32_t cbSize,
-                                           char *pszUser, char *pszGroups)
+                                           const char *pszUser, const char *pszGroups)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
@@ -2600,7 +2600,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbSetSize(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32
  *                              Multiple groups are delimited by "\r\n", whereas the first group always is the primary group.
  */
 VBGLR3DECL(int) VbglR3GuestCtrlFsCbQueryInfoEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLFSOBJINFO pFsObjInfo,
-                                               char *pszUser, char *pszGroups)
+                                               const char *pszUser, const char *pszGroups)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pFsObjInfo, VERR_INVALID_POINTER);
@@ -2631,7 +2631,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFsCbQueryInfoEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint
  */
 VBGLR3DECL(int) VbglR3GuestCtrlFsCbQueryInfo(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLFSOBJINFO pFsObjInfo)
 {
-    char szIgnored[1];
+    char szIgnored[1] = { 0 };
     return VbglR3GuestCtrlFsCbQueryInfoEx(pCtx, uRc, pFsObjInfo, szIgnored /* pszUser */, szIgnored /* pszGroups */);
 }
 

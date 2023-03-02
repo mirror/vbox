@@ -1169,28 +1169,19 @@ static int vgsvcGstCtrlSessionHandleDirRead(const PVBOXSERVICECTRLSESSION pSessi
             VGSvcVerbose(2, "[Dir %s] Read next entry '%s' -> %Rrc\n",
                          pDir->pszPathAbs, RT_SUCCESS(rc) ? DirEntryEx.szName : "<None>", rc);
 
-            char *pszUser = RT_SUCCESS(rc)
-                          ? RTStrDup(VGSvcIdCacheGetUidName(&pSession->IdCache,
-                                                            DirEntryEx.Info.Attr.u.Unix.uid, DirEntryEx.szName, pDir->pszPathAbs))
-                          : NULL;
-
-            char *pszGroup = RT_SUCCESS(rc)
-                           ? RTStrDup(VGSvcIdCacheGetGidName(&pSession->IdCache,
-                                                             DirEntryEx.Info.Attr.u.Unix.gid, DirEntryEx.szName, pDir->pszPathAbs))
-                           : NULL;
+            const char *pszUser  = VGSvcIdCacheGetUidName(&pSession->UidCache, DirEntryEx.Info.Attr.u.Unix.uid, DirEntryEx.szName,
+                                                          pDir->pszPathAbs);
+            const char *pszGroup = VGSvcIdCacheGetGidName(&pSession->GidCache, DirEntryEx.Info.Attr.u.Unix.gid, DirEntryEx.szName,
+                                                          pDir->pszPathAbs);
 
             VGSvcVerbose(2, "[Dir %s] Entry '%s': %zu bytes, uid=%s (%d), gid=%s (%d)\n",
                          pDir->pszPathAbs, DirEntryEx.szName, DirEntryEx.Info.cbObject,
                          pszUser ? pszUser : "", DirEntryEx.Info.Attr.u.UnixOwner.uid,
                          pszGroup ? pszGroup : "", DirEntryEx.Info.Attr.u.UnixGroup.gid);
 
-            char szIgnored[] = "???";
             int rc2 = VbglR3GuestCtrlDirCbReadEx(pHostCtx, rc,
                                                  &DirEntryEx, (uint32_t)(sizeof(GSTCTLDIRENTRYEX) + cbDirEntry),
-                                                 pszUser ? pszUser : szIgnored, pszGroup ? pszGroup : szIgnored);
-            RTStrFree(pszUser);
-            RTStrFree(pszGroup);
-
+                                                 pszUser, pszGroup);
             if (RT_FAILURE(rc2))
                 VGSvcError("Failed to report directory read status (%Rrc), rc=%Rrc\n", rc, rc2);
 
@@ -1858,20 +1849,10 @@ static int vgsvcGstCtrlSessionHandleFsQueryInfo(const PVBOXSERVICECTRLSESSION pS
 
         PGSTCTLFSOBJINFO pObjInfo = (PGSTCTLFSOBJINFO)&objInfoRuntime;
 
-        char *pszUser = RTStrDup(  RT_SUCCESS(rc)
-                                 ? VGSvcIdCacheGetUidName(&pSession->IdCache, pObjInfo->Attr.u.Unix.uid, szPath, NULL /* pszRelativeTo */)
-                                 : "<error>");
-        AssertStmt(pszUser != NULL, rc = VERR_NO_MEMORY);
-
-        char *pszGroup = RTStrDup(  RT_SUCCESS(rc)
-                                  ? VGSvcIdCacheGetGidName(&pSession->IdCache, pObjInfo->Attr.u.Unix.gid, szPath, NULL /* pszRelativeTo */)
-                                  : "<error>");
-        AssertStmt(pszGroup != NULL, rc = VERR_NO_MEMORY);
+        const char *pszUser  = VGSvcIdCacheGetUidName(&pSession->UidCache, pObjInfo->Attr.u.Unix.uid, szPath, NULL /* pszRelativeTo */);
+        const char *pszGroup = VGSvcIdCacheGetGidName(&pSession->GidCache, pObjInfo->Attr.u.Unix.gid, szPath, NULL /* pszRelativeTo */);
 
         int rc2 = VbglR3GuestCtrlFsCbQueryInfoEx(pHostCtx, rc, pObjInfo, pszUser, pszGroup);
-        RTStrFree(pszUser);
-        RTStrFree(pszGroup);
-
         if (RT_FAILURE(rc2))
         {
             VGSvcError("Failed to reply to fsqueryinfo request %Rrc, rc=%Rrc\n", rc, rc2);
@@ -2764,7 +2745,8 @@ int VGSvcGstCtrlSessionInit(PVBOXSERVICECTRLSESSION pSession, uint32_t fFlags)
 
     pSession->fFlags = fFlags;
 
-    RT_ZERO(pSession->IdCache);
+    RT_ZERO(pSession->UidCache);
+    RT_ZERO(pSession->GidCache);
 
     /* Init critical section for protecting the thread lists. */
     int rc = RTCritSectInit(&pSession->CritSect);
