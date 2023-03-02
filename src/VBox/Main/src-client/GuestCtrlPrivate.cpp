@@ -131,7 +131,24 @@ Utf8Str GuestFs::guestErrorToString(const GuestErrorInfo &guestErrorInfo)
 
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
 /**
- * Set the file system object data from a given GSTCTLFSOBJINFO struct.
+ * Sets the file system object data from a given GSTCTLDIRENTRYEX struct.
+ *
+ * @returns VBox status code.
+ * @param   pDirEntryEx         Pointer to GSTCTLDIRENTRYEX struct to use.
+ * @param   strUser             Resolved user name owning the object on the guest.
+ * @param   strGroups           Resolved user group(s) the object on the guest is associated with.
+ *                              On Windows there can be multiple groups assigned. The groups are separated with ";"
+ *                              The first group found is always the primary group.
+ */
+int GuestFsObjData::FromGuestDirEntryEx(PCGSTCTLDIRENTRYEX pDirEntryEx, const Utf8Str &strUser /* = "" */, const Utf8Str &strGroups /* = "" */)
+{
+    mName = pDirEntryEx->szName;
+
+    return FromGuestFsObjInfo(&pDirEntryEx->Info, strUser, strGroups);
+}
+
+/**
+ * Sets the file system object data from a given GSTCTLFSOBJINFO struct.
  *
  * @returns VBox status code.
  * @param   pFsObjInfo          Pointer to GSTCTLFSOBJINFO struct to use.

@@ -846,6 +846,7 @@ struct GuestFsObjData
     void Init(const Utf8Str &strName) { mName = strName; }
 
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
+    int FromGuestDirEntryEx(PCGSTCTLDIRENTRYEX pDirEntryEx, const Utf8Str &strUser = "", const Utf8Str &strGroups = "");
     int FromGuestFsObjInfo(PCGSTCTLFSOBJINFO pFsObjInfo, const Utf8Str &strUser = "", const Utf8Str &strGroups = "",
                            const void *pvACL = NULL, size_t cbACL = 0);
 #endif
