@@ -1555,9 +1555,6 @@ typedef struct HGCMReplyDirNotify
              *  Multiple groups are delimited by "\r\n", whereas
              *  the first group always is the primary group. */
             HGCMFunctionParameter groups;
-            /** @todo ACL; not implemented yet.
-             * Windows ACL, defined in SDDL. */
-            HGCMFunctionParameter acl;
         } read;
     } u;
 } HGCMReplyDirNotify;
@@ -1590,9 +1587,6 @@ typedef struct HGCMReplyFsNotify
              *  Multiple groups are delimited by "\r\n", whereas
              *  the first group always is the primary group. */
             HGCMFunctionParameter groups;
-            /** @todo ACL; not implemented yet.
-             * Windows ACL, defined in SDDL. */
-            HGCMFunctionParameter acl;
         } queryinfo;
         /**
          * Parameters used for \a type GUEST_FS_NOTIFYTYPE_CREATE_TEMP.
