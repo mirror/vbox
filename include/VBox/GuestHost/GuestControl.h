@@ -337,6 +337,7 @@ typedef struct GSTCTLFSOBJATTRUNIX
      * when the OS doesn't subscribe to the major+minor device idenfication scheme. */
     RTDEV           Device;
 } GSTCTLFSOBJATTRUNIX;
+AssertCompileSize(GSTCTLFSOBJATTRUNIX, 40);
 
 /**
  * Additional guest Unix attributes (GSTCTLFSOBJATTRADD_UNIX_OWNER).
@@ -350,6 +351,7 @@ typedef struct GSTCTLFSOBJATTRUNIXOWNER
      * Empty if not available or not supported, truncated if too long. */
     char            szName[GSTCTLFSOBJATTRUNION_MAX_SIZE - sizeof(RTUID)];
 } GSTCTLFSOBJATTRUNIXOWNER;
+AssertCompileSize(GSTCTLFSOBJATTRUNIXOWNER, 128);
 
 /**
  * Additional guest Unix attributes (GSTCTLFSOBJATTRADD_UNIX_GROUP).
@@ -363,11 +365,11 @@ typedef struct GSTCTLFSOBJATTRUNIXGROUP
      * Empty if not available or not supported, truncated if too long. */
     char            szName[GSTCTLFSOBJATTRUNION_MAX_SIZE - sizeof(RTGID)];
 } GSTCTLFSOBJATTRUNIXGROUP;
+AssertCompileSize(GSTCTLFSOBJATTRUNIXGROUP, 128);
 
 /**
  * Guest filesystem object attributes.
  */
-#pragma pack(1)
 typedef struct GSTCTLFSOBJATTR
 {
     /** Mode flags (st_mode). RTFS_UNIX_*, RTFS_TYPE_*, and RTFS_DOS_*. */
@@ -403,7 +405,7 @@ typedef struct GSTCTLFSOBJATTR
         uint8_t         abReserveSpace[128];
     } u;
 } GSTCTLFSOBJATTR;
-#pragma pack()
+AssertCompileSize(GSTCTLFSOBJATTR, sizeof(RTFMODE) + sizeof(GSTCTLFSOBJATTRADD) + 128);
 /** Pointer to a guest filesystem object attributes structure. */
 typedef GSTCTLFSOBJATTR *PGSTCTLFSOBJATTR;
 /** Pointer to a const guest filesystem object attributes structure. */
@@ -471,7 +473,6 @@ typedef enum GSTCTLDIRFILTER
  *     - GUEST_FS_NOTIFYTYPE_QUERY_INFO
  *     - GUEST_DIR_NOTIFYTYPE_READ
  */
-#pragma pack(1)
 typedef struct GSTCTLFSOBJINFO
 {
    /** Logical size (st_size).
@@ -505,7 +506,7 @@ typedef struct GSTCTLFSOBJINFO
    GSTCTLFSOBJATTR  Attr;
 
 } GSTCTLFSOBJINFO;
-#pragma pack()
+AssertCompileSize(GSTCTLFSOBJINFO, 48 + sizeof(GSTCTLFSOBJATTR));
 /** Pointer to a guest filesystem object information structure. */
 typedef GSTCTLFSOBJINFO *PGSTCTLFSOBJINFO;
 /** Pointer to a const guest filesystem object information structure. */
@@ -516,7 +517,6 @@ typedef const GSTCTLFSOBJINFO *PCGSTCTLFSOBJINFO;
  *
  * This is inspired by IPRT + the PC interfaces.
  */
-#pragma pack(1)
 typedef struct GSTCTLDIRENTRYEX
 {
     /** Full information about the guest object. */
@@ -535,7 +535,7 @@ typedef struct GSTCTLDIRENTRYEX
      * Using the pcbDirEntry parameter of RTDirReadEx makes this field variable in size. */
     char            szName[260];
 } GSTCTLDIRENTRYEX;
-#pragma pack()
+AssertCompileSize(GSTCTLDIRENTRYEX, sizeof(GSTCTLFSOBJINFO) + 296);
 /** Pointer to a guest directory entry. */
 typedef GSTCTLDIRENTRYEX *PGSTCTLDIRENTRYEX;
 /** Pointer to a const guest directory entry. */
