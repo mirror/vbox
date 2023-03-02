@@ -405,7 +405,7 @@ typedef struct GSTCTLFSOBJATTR
         uint8_t         abReserveSpace[128];
     } u;
 } GSTCTLFSOBJATTR;
-AssertCompileSize(GSTCTLFSOBJATTR, sizeof(RTFMODE) + sizeof(GSTCTLFSOBJATTRADD) + 128);
+AssertCompileSize(GSTCTLFSOBJATTR /* 136 */, sizeof(RTFMODE) + sizeof(GSTCTLFSOBJATTRADD) + 128);
 /** Pointer to a guest filesystem object attributes structure. */
 typedef GSTCTLFSOBJATTR *PGSTCTLFSOBJATTR;
 /** Pointer to a const guest filesystem object attributes structure. */
@@ -506,7 +506,7 @@ typedef struct GSTCTLFSOBJINFO
    GSTCTLFSOBJATTR  Attr;
 
 } GSTCTLFSOBJINFO;
-AssertCompileSize(GSTCTLFSOBJINFO, 48 + sizeof(GSTCTLFSOBJATTR));
+AssertCompileSize(GSTCTLFSOBJINFO /* 184 */, 48 + sizeof(GSTCTLFSOBJATTR));
 /** Pointer to a guest filesystem object information structure. */
 typedef GSTCTLFSOBJINFO *PGSTCTLFSOBJINFO;
 /** Pointer to a const guest filesystem object information structure. */
@@ -517,6 +517,7 @@ typedef const GSTCTLFSOBJINFO *PCGSTCTLFSOBJINFO;
  *
  * This is inspired by IPRT + the PC interfaces.
  */
+#pragma pack(1)
 typedef struct GSTCTLDIRENTRYEX
 {
     /** Full information about the guest object. */
@@ -535,7 +536,8 @@ typedef struct GSTCTLDIRENTRYEX
      * Using the pcbDirEntry parameter of RTDirReadEx makes this field variable in size. */
     char            szName[260];
 } GSTCTLDIRENTRYEX;
-AssertCompileSize(GSTCTLDIRENTRYEX, sizeof(GSTCTLFSOBJINFO) + 296);
+#pragma pack()
+AssertCompileSize(GSTCTLDIRENTRYEX, sizeof(GSTCTLFSOBJINFO) + 292);
 /** Pointer to a guest directory entry. */
 typedef GSTCTLDIRENTRYEX *PGSTCTLDIRENTRYEX;
 /** Pointer to a const guest directory entry. */
