@@ -5304,9 +5304,9 @@ BEGINPROC_FASTCALL iemAImpl_pcmpestri_u128, 16
  %assign bImm 0
  %rep 256
 .imm %+ bImm:
+       db 0x48                          ; Use the REX.W prefix to make pcmpestr{i,m} use full RAX/RDX (would use EAX/EDX only otherwise.)
        pcmpestri xmm0, xmm1, bImm
        ret
-       int3
   %assign bImm bImm + 1
  %endrep
 .immEnd:                                ; 256*8 == 0x800
@@ -5363,30 +5363,28 @@ BEGINPROC_FASTCALL iemAImpl_pcmpestrm_u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_SSE_PROLOGUE
 
-        push xAX
-        push xDX
         movdqu  xmm1, [A2 + IEMPCMPESTRXSRC.uSrc1]
         movdqu  xmm2, [A2 + IEMPCMPESTRXSRC.uSrc2]
-        mov     xAX,  [A2 + IEMPCMPESTRXSRC.u64Rax]
-        mov     xDX,  [A2 + IEMPCMPESTRXSRC.u64Rdx]
         lea     T1, [.imm0 xWrtRIP]
         lea     T0, [A3 + A3*3]         ; sizeof(insnX+ret) == 8: (A3 * 4) * 2
         lea     T1, [T1 + T0*2]
+        push    xDX                                     ; xDX can be A1 or A2 depending on the calling convention
+        mov     xAX,  [A2 + IEMPCMPESTRXSRC.u64Rax]     ; T0 is rax, so only overwrite it after we're done using it
+        mov     xDX,  [A2 + IEMPCMPESTRXSRC.u64Rdx]
         call    T1
 
+        pop    xDX
         IEM_SAVE_FLAGS A1, X86_EFL_STATUS_BITS, 0
         movdqu  [A0], xmm0
-        pop    xDX
-        pop    xAX
 
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_4_ARGS
  %assign bImm 0
  %rep 256
 .imm %+ bImm:
+       db 0x48                          ; Use the REX.W prefix to make pcmpestr{i,m} use full RAX/RDX (would use EAX/EDX only otherwise.)
        pcmpestrm xmm1, xmm2, bImm
        ret
-       int3
   %assign bImm bImm + 1
  %endrep
 .immEnd:                                ; 256*8 == 0x800

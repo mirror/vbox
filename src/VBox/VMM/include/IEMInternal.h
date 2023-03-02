@@ -2404,15 +2404,20 @@ typedef struct IEMPCMPESTRXSRC
 typedef IEMPCMPESTRXSRC *PIEMPCMPESTRXSRC;
 typedef const IEMPCMPESTRXSRC *PCIEMPCMPESTRXSRC;
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil));
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil));
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestri_u128,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPESTRXSRC pSrc, uint8_t bEvil));
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPESTRXSRC pSrc, uint8_t bEvil));
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLPCMPISTRIU128IMM8,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil));
+typedef FNIEMAIMPLPCMPISTRIU128IMM8 *PFNIEMAIMPLPCMPISTRIU128IMM8;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLPCMPESTRIU128IMM8,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPESTRXSRC pSrc, uint8_t bEvil));
+typedef FNIEMAIMPLPCMPESTRIU128IMM8 *PFNIEMAIMPLPCMPESTRIU128IMM8;
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistrm_u128,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil));
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistrm_u128_fallback,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil));
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestrm_u128,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPESTRXSRC pSrc, uint8_t bEvil));
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestrm_u128_fallback,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPESTRXSRC pSrc, uint8_t bEvil));
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLPCMPISTRMU128IMM8,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil));
+typedef FNIEMAIMPLPCMPISTRMU128IMM8 *PFNIEMAIMPLPCMPISTRMU128IMM8;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLPCMPESTRMU128IMM8,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPESTRXSRC pSrc, uint8_t bEvil));
+typedef FNIEMAIMPLPCMPESTRMU128IMM8 *PFNIEMAIMPLPCMPESTRMU128IMM8;
+
+FNIEMAIMPLPCMPISTRIU128IMM8 iemAImpl_pcmpistri_u128, iemAImpl_pcmpistri_u128_fallback;
+FNIEMAIMPLPCMPESTRIU128IMM8 iemAImpl_pcmpestri_u128, iemAImpl_pcmpestri_u128_fallback;
+FNIEMAIMPLPCMPISTRMU128IMM8 iemAImpl_pcmpistrm_u128, iemAImpl_pcmpistrm_u128_fallback;
+FNIEMAIMPLPCMPESTRMU128IMM8 iemAImpl_pcmpestrm_u128, iemAImpl_pcmpestrm_u128_fallback;
 
 FNIEMAIMPLMEDIAOPTF2U128IMM8 iemAImpl_pclmulqdq_u128, iemAImpl_pclmulqdq_u128_fallback;
 FNIEMAIMPLMEDIAOPTF3U128IMM8 iemAImpl_vpclmulqdq_u128, iemAImpl_vpclmulqdq_u128_fallback;

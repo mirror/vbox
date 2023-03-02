@@ -16486,11 +16486,11 @@ static void iemAImpl_pcmpxstrx_cmp(bool afCmpRes[16][16], PCRTUINT128U puSrc1, P
                     case 2: \
                     case 3: \
                         afCmpRes[idxSrc2][idxSrc1]     = (a_puSrc1)->a_SrcMember[idxSrc1]     == (a_puSrc2)->a_SrcMember[idxSrc2]; \
-                        afCmpRes[idxSrc2][idxSrc1 + 1] = (a_puSrc1)->a_SrcMember[idxSrc1 + 1] == (a_puSrc2)->a_SrcMember[idxSrc2 + 1]; \
+                        afCmpRes[idxSrc2][idxSrc1 + 1] = (a_puSrc1)->a_SrcMember[idxSrc1 + 1] == (a_puSrc2)->a_SrcMember[idxSrc2]; \
                         break; \
                     case 1: \
-                        afCmpRes[idxSrc2][idxSrc1]     = (a_puSrc1)->a_SrcMember[idxSrc1]     >= (a_puSrc2)->a_SrcMember[idxSrc2]; \
-                        afCmpRes[idxSrc2][idxSrc1 + 1] = (a_puSrc1)->a_SrcMember[idxSrc1 + 1] <= (a_puSrc2)->a_SrcMember[idxSrc2 + 1]; \
+                        afCmpRes[idxSrc2][idxSrc1]     = (a_puSrc1)->a_SrcMember[idxSrc1]     <= (a_puSrc2)->a_SrcMember[idxSrc2]; \
+                        afCmpRes[idxSrc2][idxSrc1 + 1] = (a_puSrc1)->a_SrcMember[idxSrc1 + 1] >= (a_puSrc2)->a_SrcMember[idxSrc2]; \
                         break; \
                     default: \
                         AssertReleaseFailed(); \
@@ -16581,9 +16581,8 @@ DECL_FORCE_INLINE(bool) iemAImpl_pcmpxstrx_cmp_override_if_invalid(bool fCmpRes,
     return g_afCmpOverride[bAggOp][bSrc1Valid + bSrc2Valid];
 }
 
-static uint16_t iemAImpl_pcmpxstrx_cmp_aggregate(bool afCmpRes[16][16], uint8_t idxLen1, uint8_t idxLen2, uint8_t bImm)
+static uint16_t iemAImpl_pcmpxstrx_cmp_aggregate(bool afCmpRes[16][16], uint8_t idxLen1, uint8_t idxLen2, uint8_t cElems, uint8_t bImm)
 {
-    uint8_t cElems = (bImm & 0x1) ? 8 : 16;
     uint8_t bAggOp = (bImm >> 2) & 0x3;
     uint16_t u16Result = 0;
 
@@ -16645,23 +16644,23 @@ static uint16_t iemAImpl_pcmpxstrx_cmp_aggregate(bool afCmpRes[16][16], uint8_t 
             break;
 
         case 3: /* Equal ordered */
-            u16Result = cElems == 8 ? 0xff : 0xffff;
+            u16Result = 0;
             for (uint8_t idxSrc2 = 0; idxSrc2 < cElems; idxSrc2++)
             {
-                uint16_t u16Res = 0;
-                for (uint8_t idxSrc1 = 0, k = idxSrc2; (idxSrc1 < cElems - idxSrc2) && (k < cElems); idxSrc1++, k++)
+                uint16_t u16Res = RT_BIT(idxSrc2);
+                for (uint8_t idxSrc1 = 0, k = idxSrc2; (idxSrc1 < (cElems - idxSrc2)) && (k < cElems); idxSrc1++, k++)
                 {
-                    if (iemAImpl_pcmpxstrx_cmp_override_if_invalid(afCmpRes[k][idxSrc1],
-                                                                   idxSrc1 < idxLen1,
-                                                                   k < idxLen2,
-                                                                   bAggOp))
+                    if (!iemAImpl_pcmpxstrx_cmp_override_if_invalid(afCmpRes[k][idxSrc1],
+                                                                    idxSrc1 < idxLen1,
+                                                                    k < idxLen2,
+                                                                    bAggOp))
                     {
-                        u16Res = RT_BIT(idxSrc2);
+                        u16Res = 0;
                         break;
                     }
                 }
 
-                u16Result &= ~u16Res;
+                u16Result |= u16Res;
             }
             break;
     }
@@ -16677,9 +16676,7 @@ static uint16_t iemAImpl_pcmpxstrx_cmp_aggregate(bool afCmpRes[16][16], uint8_t 
             u16Result = (cElems == 8 ? 0xff : 0xffff) ^ u16Result;
             break;
         case 3:
-            for (uint8_t i = 0; i < cElems; i++)
-                if (i < idxLen2)
-                    u16Result ^= RT_BIT(i);
+            u16Result ^= RT_BIT(idxLen2) - 1;
             break;
         default:
             AssertReleaseFailed();
@@ -16703,21 +16700,27 @@ DECL_FORCE_INLINE(void) iemAImpl_pcmpxstrx_set_eflags(uint32_t *pfEFlags, uint16
     *pfEFlags = (*pfEFlags & ~X86_EFL_STATUS_BITS) | fEFlags;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil))
+DECL_FORCE_INLINE(uint16_t) iemAImpl_pcmpxstrx_worker(uint32_t *pEFlags, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2,
+                                                      uint8_t cLen1, uint8_t cLen2, uint8_t bEvil)
 {
     bool afCmpRes[16][16];
     uint8_t cElems = (bEvil & RT_BIT(0)) ? 8 : 16;
-    iemAImpl_pcmpxstrx_cmp(afCmpRes, &pSrc->uSrc1, &pSrc->uSrc2, bEvil);
-    uint8_t cLen1 = iemAImpl_pcmpistrx_get_str_len_implicit(&pSrc->uSrc1, bEvil);
-    uint8_t cLen2 = iemAImpl_pcmpistrx_get_str_len_implicit(&pSrc->uSrc2, bEvil);
 
-    uint16_t u16Result = iemAImpl_pcmpxstrx_cmp_aggregate(afCmpRes, cLen1, cLen2, bEvil);
-    if (bEvil & RT_BIT(6))
+    iemAImpl_pcmpxstrx_cmp(afCmpRes, puSrc1, puSrc2, bEvil);
+    uint16_t u16Result = iemAImpl_pcmpxstrx_cmp_aggregate(afCmpRes, cLen1, cLen2, cElems, bEvil);
+    iemAImpl_pcmpxstrx_set_eflags(pEFlags, u16Result, cLen1, cLen2, cElems);
+
+    return u16Result;
+}
+
+DECL_FORCE_INLINE(void) iemAImpl_pcmpxstri_set_result_index(uint32_t *pu32Ecx, uint16_t u16Result, uint8_t cElems, uint8_t bImm)
+{
+    if (bImm & RT_BIT(6))
     {
         /* Index for MSB set. */
         uint32_t idxMsb = ASMBitLastSetU16(u16Result);
         if (idxMsb)
-            *pu32Ecx = idxMsb;
+            *pu32Ecx = idxMsb - 1;
         else
             *pu32Ecx = cElems;
     }
@@ -16726,12 +16729,20 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128_fallback,(uint32_t *pu32Ecx, uin
         /* Index for LSB set. */
         uint32_t idxLsb = ASMBitFirstSetU16(u16Result);
         if (idxLsb)
-            *pu32Ecx = idxLsb;
+            *pu32Ecx = idxLsb - 1;
         else
             *pu32Ecx = cElems;
     }
+}
 
-    iemAImpl_pcmpxstrx_set_eflags(pEFlags, u16Result, cLen1, cLen2, cElems);
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil))
+{
+    uint8_t cElems = (bEvil & RT_BIT(0)) ? 8 : 16;
+    uint8_t cLen1 = iemAImpl_pcmpistrx_get_str_len_implicit(&pSrc->uSrc1, bEvil);
+    uint8_t cLen2 = iemAImpl_pcmpistrx_get_str_len_implicit(&pSrc->uSrc2, bEvil);
+
+    uint16_t u16Result = iemAImpl_pcmpxstrx_worker(pEFlags, &pSrc->uSrc1, &pSrc->uSrc2, cLen1, cLen2, bEvil);
+    iemAImpl_pcmpxstri_set_result_index(pu32Ecx, u16Result, cElems, bEvil);
 }
 
 
@@ -16740,49 +16751,21 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistri_u128_fallback,(uint32_t *pu32Ecx, uin
  */
 IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestri_u128_fallback,(uint32_t *pu32Ecx, uint32_t *pEFlags, PCIEMPCMPESTRXSRC pSrc, uint8_t bEvil))
 {
-    bool afCmpRes[16][16];
     uint8_t cElems = (bEvil & RT_BIT(0)) ? 8 : 16;
-    iemAImpl_pcmpxstrx_cmp(afCmpRes, &pSrc->uSrc1, &pSrc->uSrc2, bEvil);
     uint8_t cLen1 = iemAImpl_pcmpistrx_get_str_len_explicit((int64_t)pSrc->u64Rax, bEvil);
     uint8_t cLen2 = iemAImpl_pcmpistrx_get_str_len_explicit((int64_t)pSrc->u64Rdx, bEvil);
 
-    uint16_t u16Result = iemAImpl_pcmpxstrx_cmp_aggregate(afCmpRes, cLen1, cLen2, bEvil);
-    if (bEvil & RT_BIT(6))
-    {
-        /* Index for MSB set. */
-        uint32_t idxMsb = ASMBitLastSetU16(u16Result);
-        if (idxMsb)
-            *pu32Ecx = idxMsb;
-        else
-            *pu32Ecx = cElems;
-    }
-    else
-    {
-        /* Index for LSB set. */
-        uint32_t idxLsb = ASMBitFirstSetU16(u16Result);
-        if (idxLsb)
-            *pu32Ecx = idxLsb;
-        else
-            *pu32Ecx = cElems;
-    }
-
-    iemAImpl_pcmpxstrx_set_eflags(pEFlags, u16Result, cLen1, cLen2, cElems);
+    uint16_t u16Result = iemAImpl_pcmpxstrx_worker(pEFlags, &pSrc->uSrc1, &pSrc->uSrc2, cLen1, cLen2, bEvil);
+    iemAImpl_pcmpxstri_set_result_index(pu32Ecx, u16Result, cElems, bEvil);
 }
 
 
 /**
  * [V]PCMPISTRM
  */
-IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistrm_u128_fallback,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil))
+DECL_FORCE_INLINE(void) iemAImpl_pcmpxstrm_set_result_mask(PRTUINT128U puDst, uint16_t u16Result, uint8_t cElems, uint8_t bImm)
 {
-    bool afCmpRes[16][16];
-    uint8_t cElems = (bEvil & RT_BIT(0)) ? 8 : 16;
-    iemAImpl_pcmpxstrx_cmp(afCmpRes, &pSrc->uSrc1, &pSrc->uSrc2, bEvil);
-    uint8_t cLen1 = iemAImpl_pcmpistrx_get_str_len_implicit(&pSrc->uSrc1, bEvil);
-    uint8_t cLen2 = iemAImpl_pcmpistrx_get_str_len_implicit(&pSrc->uSrc2, bEvil);
-
-    uint16_t u16Result = iemAImpl_pcmpxstrx_cmp_aggregate(afCmpRes, cLen1, cLen2, bEvil);
-    if (bEvil & RT_BIT(6))
+    if (bImm & RT_BIT(6))
     {
         /* Generate a mask. */
         if (cElems == 8)
@@ -16808,8 +16791,16 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistrm_u128_fallback,(PRTUINT128U puDst, uin
         puDst->au64[0] = u16Result;
         puDst->au64[1] = 0;
     }
+}
 
-    iemAImpl_pcmpxstrx_set_eflags(pEFlags, u16Result, cLen1, cLen2, cElems);
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistrm_u128_fallback,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPISTRXSRC pSrc, uint8_t bEvil))
+{
+    uint8_t cElems = (bEvil & RT_BIT(0)) ? 8 : 16;
+    uint8_t cLen1 = iemAImpl_pcmpistrx_get_str_len_implicit(&pSrc->uSrc1, bEvil);
+    uint8_t cLen2 = iemAImpl_pcmpistrx_get_str_len_implicit(&pSrc->uSrc2, bEvil);
+
+    uint16_t u16Result = iemAImpl_pcmpxstrx_worker(pEFlags, &pSrc->uSrc1, &pSrc->uSrc2, cLen1, cLen2, bEvil);
+    iemAImpl_pcmpxstrm_set_result_mask(puDst, u16Result, cElems, bEvil);
 }
 
 
@@ -16818,41 +16809,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpistrm_u128_fallback,(PRTUINT128U puDst, uin
  */
 IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpestrm_u128_fallback,(PRTUINT128U puDst, uint32_t *pEFlags, PCIEMPCMPESTRXSRC pSrc, uint8_t bEvil))
 {
-    bool afCmpRes[16][16];
     uint8_t cElems = (bEvil & RT_BIT(0)) ? 8 : 16;
-    iemAImpl_pcmpxstrx_cmp(afCmpRes, &pSrc->uSrc1, &pSrc->uSrc2, bEvil);
     uint8_t cLen1 = iemAImpl_pcmpistrx_get_str_len_explicit((int64_t)pSrc->u64Rax, bEvil);
     uint8_t cLen2 = iemAImpl_pcmpistrx_get_str_len_explicit((int64_t)pSrc->u64Rdx, bEvil);
 
-    uint16_t u16Result = iemAImpl_pcmpxstrx_cmp_aggregate(afCmpRes, cLen1, cLen2, bEvil);
-    if (bEvil & RT_BIT(6))
-    {
-        /* Generate a mask. */
-        if (cElems == 8)
-        {
-            for (uint8_t i = 0; i < RT_ELEMENTS(puDst->au16); i++)
-                if (u16Result & RT_BIT(i))
-                    puDst->au16[i] = 0xffff;
-                else
-                    puDst->au16[i] = 0;
-        }
-        else
-        {
-            for (uint8_t i = 0; i < RT_ELEMENTS(puDst->au8); i++)
-                if (u16Result & RT_BIT(i))
-                    puDst->au8[i] = 0xff;
-                else
-                    puDst->au8[i] = 0;
-        }
-    }
-    else
-    {
-        /* Store the result. */
-        puDst->au64[0] = u16Result;
-        puDst->au64[1] = 0;
-    }
-
-    iemAImpl_pcmpxstrx_set_eflags(pEFlags, u16Result, cLen1, cLen2, cElems);
+    uint16_t u16Result = iemAImpl_pcmpxstrx_worker(pEFlags, &pSrc->uSrc1, &pSrc->uSrc2, cLen1, cLen2, bEvil);
+    iemAImpl_pcmpxstrm_set_result_mask(puDst, u16Result, cElems, bEvil);
 }
 
 
