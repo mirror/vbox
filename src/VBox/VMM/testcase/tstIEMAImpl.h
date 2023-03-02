@@ -517,6 +517,50 @@ typedef struct SSE_CONVERT_MM_R32_TEST_T
     RTUINT64U               OutVal;
 } SSE_CONVERT_MM_R32_TEST_T;
 
+typedef struct SSE_PCMPISTRI_TEST_T
+{
+    X86XMMREG               InVal1;
+    X86XMMREG               InVal2;
+    uint32_t                u32EcxOut;
+    uint32_t                fEFlagsIn;
+    uint32_t                fEFlagsOut;
+    uint8_t                 bImm;
+} SSE_PCMPISTRI_TEST_T;
+
+typedef struct SSE_PCMPESTRI_TEST_T
+{
+    X86XMMREG               InVal1;
+    X86XMMREG               InVal2;
+    uint64_t                u64Rax;
+    uint64_t                u64Rdx;
+    uint32_t                u32EcxOut;
+    uint32_t                fEFlagsIn;
+    uint32_t                fEFlagsOut;
+    uint8_t                 bImm;
+} SSE_PCMPESTRI_TEST_T;
+
+typedef struct SSE_PCMPISTRM_TEST_T
+{
+    X86XMMREG               InVal1;
+    X86XMMREG               InVal2;
+    X86XMMREG               OutVal;
+    uint32_t                fEFlagsIn;
+    uint32_t                fEFlagsOut;
+    uint8_t                 bImm;
+} SSE_PCMPISTRM_TEST_T;
+
+typedef struct SSE_PCMPESTRM_TEST_T
+{
+    X86XMMREG               InVal1;
+    X86XMMREG               InVal2;
+    X86XMMREG               OutVal;
+    uint64_t                u64Rax;
+    uint64_t                u64Rdx;
+    uint32_t                fEFlagsIn;
+    uint32_t                fEFlagsOut;
+    uint8_t                 bImm;
+} SSE_PCMPESTRM_TEST_T;
+
 /** @} */
 
 
@@ -984,6 +1028,11 @@ TSTIEM_DECLARE_TEST_ARRAY_BIN(SseConvert,   SSE_CONVERT_XMM_MM_TEST_T,      cvtp
 
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseConvert,   SSE_CONVERT_MM_R32_TEST_T,      cvtps2pi_u128        );
 TSTIEM_DECLARE_TEST_ARRAY_BIN(SseConvert,   SSE_CONVERT_MM_R32_TEST_T,      cvttps2pi_u128       );
+
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SsePcmpxstrx, SSE_PCMPISTRI_TEST_T,           pcmpistri_u128       );
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SsePcmpxstrx, SSE_PCMPESTRI_TEST_T,           pcmpestri_u128       );
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SsePcmpxstrx, SSE_PCMPISTRM_TEST_T,           pcmpistrm_u128       );
+TSTIEM_DECLARE_TEST_ARRAY_BIN(SsePcmpxstrx, SSE_PCMPESTRM_TEST_T,           pcmpestrm_u128       );
 
 RT_C_DECLS_END
 

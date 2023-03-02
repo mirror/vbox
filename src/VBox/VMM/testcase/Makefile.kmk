@@ -315,7 +315,11 @@ TSTIEMAIMPL_TEST_DATA_DEPS = \
 	tstIEMAImplDataSseConvert-cvtpi2ps_u128.bin \
 	tstIEMAImplDataSseConvert-cvtpi2pd_u128.bin \
 	tstIEMAImplDataSseConvert-cvtps2pi_u128.bin \
-	tstIEMAImplDataSseConvert-cvttps2pi_u128.bin
+	tstIEMAImplDataSseConvert-cvttps2pi_u128.bin \
+	tstIEMAImplDataSsePcmpxstrx-pcmpistri_u128.bin \
+	tstIEMAImplDataSsePcmpxstrx-pcmpistrm_u128.bin \
+	tstIEMAImplDataSsePcmpxstrx-pcmpestri_u128.bin \
+	tstIEMAImplDataSsePcmpxstrx-pcmpestrm_u128.bin
 
 tstIEMAImpl_TEMPLATE  = VBoxR3TstExe
 tstIEMAImpl_DEFS      = $(VMM_COMMON_DEFS) IEM_WITHOUT_ASSEMBLY IN_TSTVMSTRUCT

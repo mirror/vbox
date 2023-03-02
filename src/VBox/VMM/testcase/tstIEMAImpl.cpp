@@ -76,6 +76,19 @@
       a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */ }
 #endif
 
+#define ENTRY_BIN_SSE_OPT(a_Name)   ENTRY_BIN_SSE_OPT_EX(a_Name, 0)
+#ifndef IEM_WITHOUT_ASSEMBLY
+# define ENTRY_BIN_SSE_OPT_EX(a_Name, a_uExtra) \
+    { RT_XSTR(a_Name), iemAImpl_ ## a_Name, NULL, \
+      g_aTests_ ## a_Name, &g_cbTests_ ## a_Name, \
+      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */ }
+#else
+# define ENTRY_BIN_SSE_OPT_EX(a_Name, a_uExtra) \
+    { RT_XSTR(a_Name), iemAImpl_ ## a_Name ## _fallback, NULL, \
+      g_aTests_ ## a_Name, &g_cbTests_ ## a_Name, \
+      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */ }
+#endif
+
 
 #define ENTRY_INTEL(a_Name, a_fEflUndef) ENTRY_INTEL_EX(a_Name, a_fEflUndef, 0)
 #define ENTRY_INTEL_EX(a_Name, a_fEflUndef, a_uExtra) \
@@ -1275,6 +1288,14 @@ static const char *FormatI16(int16_t const *piVal)
 {
     char *pszBuf = g_aszBuf[g_idxBuf++ % RT_ELEMENTS(g_aszBuf)];
     RTStrFormatU16(pszBuf, sizeof(g_aszBuf[0]), *piVal, 16, 0, 0, RTSTR_F_SPECIAL | RTSTR_F_VALSIGNED);
+    return pszBuf;
+}
+
+
+static const char *FormatU128(PCRTUINT128U puVal)
+{
+    char *pszBuf = g_aszBuf[g_idxBuf++ % RT_ELEMENTS(g_aszBuf)];
+    RTStrFormatU128(pszBuf, sizeof(g_aszBuf[0]), puVal, 16, 0, 0, RTSTR_F_SPECIAL);
     return pszBuf;
 }
 
@@ -8748,6 +8769,527 @@ static void SseConvertMmI32XmmR32Test(void)
 }
 
 
+/*
+ * SSE 4.2 pcmpxstrx instructions.
+ */
+TYPEDEF_SUBTEST_TYPE(SSE_PCMPISTRI_T, SSE_PCMPISTRI_TEST_T, PFNIEMAIMPLPCMPISTRIU128IMM8);
+
+static const SSE_PCMPISTRI_T g_aSsePcmpistri[] =
+{
+    ENTRY_BIN_SSE_OPT(pcmpistri_u128),
+};
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static RTEXITCODE SseComparePcmpistriGenerate(const char *pszDataFileFmt, uint32_t cTests)
+{
+    cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
+
+    static struct { RTUINT128U uSrc1; RTUINT128U uSrc2; } const s_aSpecials[] =
+    {
+        { RTUINT128_INIT_C(0, 0), RTUINT128_INIT_C(0, 0) },
+        /** @todo More specials. */
+    };
+
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSsePcmpistri); iFn++)
+    {
+        PFNIEMAIMPLPCMPISTRIU128IMM8 const pfn = g_aSsePcmpistri[iFn].pfnNative ? g_aSsePcmpistri[iFn].pfnNative : g_aSsePcmpistri[iFn].pfn;
+
+        PRTSTREAM pStrmOut = NULL;
+        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSsePcmpistri[iFn].pszName);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSsePcmpistri[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+
+        for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
+        {
+            SSE_PCMPISTRI_TEST_T TestData; RT_ZERO(TestData);
+
+            TestData.InVal1.uXmm = iTest < cTests ? RandU128() : s_aSpecials[iTest - cTests].uSrc1;
+            TestData.InVal2.uXmm = iTest < cTests ? RandU128() : s_aSpecials[iTest - cTests].uSrc2;
+
+            IEMPCMPISTRXSRC TestVal;
+            TestVal.uSrc1 = TestData.InVal1.uXmm;
+            TestVal.uSrc2 = TestData.InVal2.uXmm;
+
+            uint32_t const fEFlagsIn = RandEFlags();
+            for (uint16_t u16Imm = 0; u16Imm < 256; u16Imm++)
+            {
+                uint32_t fEFlagsOut = fEFlagsIn;
+                pfn(&TestData.u32EcxOut, &fEFlagsOut, &TestVal, (uint8_t)u16Imm);
+                TestData.fEFlagsIn  = fEFlagsIn;
+                TestData.fEFlagsOut = fEFlagsOut;
+                TestData.bImm       = (uint8_t)u16Imm;
+                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+            }
+
+            /* Repeat the test with the input value being the same. */
+            TestData.InVal2.uXmm = TestData.InVal1.uXmm;
+            TestVal.uSrc1 = TestData.InVal1.uXmm;
+            TestVal.uSrc2 = TestData.InVal2.uXmm;
+
+            for (uint16_t u16Imm = 0; u16Imm < 256; u16Imm++)
+            {
+                uint32_t fEFlagsOut = fEFlagsIn;
+                pfn(&TestData.u32EcxOut, &fEFlagsOut, &TestVal, (uint8_t)u16Imm);
+                TestData.fEFlagsIn  = fEFlagsIn;
+                TestData.fEFlagsOut = fEFlagsOut;
+                TestData.bImm       = (uint8_t)u16Imm;
+                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+            }
+        }
+        rc = RTStrmClose(pStrmOut);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to close data file for %s: %Rrc", g_aSsePcmpistri[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+#endif
+
+static void SseComparePcmpistriTest(void)
+{
+    X86FXSTATE State;
+    RT_ZERO(State);
+
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSsePcmpistri); iFn++)
+    {
+        if (!SubTestAndCheckIfEnabled(g_aSsePcmpistri[iFn].pszName))
+            continue;
+
+        uint32_t const                          cTests  = *g_aSsePcmpistri[iFn].pcTests;
+        SSE_PCMPISTRI_TEST_T const * const      paTests = g_aSsePcmpistri[iFn].paTests;
+        PFNIEMAIMPLPCMPISTRIU128IMM8            pfn     = g_aSsePcmpistri[iFn].pfn;
+        uint32_t const                          cVars   = COUNT_VARIATIONS(g_aSsePcmpistri[iFn]);
+        if (!cTests) RTTestSkipped(g_hTest, "no tests");
+        for (uint32_t iVar = 0; iVar < cVars; iVar++)
+        {
+            for (uint32_t iTest = 0; iTest < cTests / sizeof(*paTests); iTest++)
+            {
+                IEMPCMPISTRXSRC TestVal;
+                TestVal.uSrc1 = paTests[iTest].InVal1.uXmm;
+                TestVal.uSrc2 = paTests[iTest].InVal2.uXmm;
+
+                uint32_t fEFlags = paTests[iTest].fEFlagsIn;
+                uint32_t u32EcxOut = 0;
+                pfn(&u32EcxOut, &fEFlags, &TestVal, paTests[iTest].bImm);
+                if (   fEFlags != paTests[iTest].fEFlagsOut
+                    || u32EcxOut != paTests[iTest].u32EcxOut)
+                    RTTestFailed(g_hTest, "#%04u%s: efl=%#08x in1=%s in2=%s bImm=%#x\n"
+                                          "%s                 -> efl=%#08x    %RU32\n"
+                                          "%s               expected %#08x    %RU32%s%s\n",
+                                 iTest, iVar ? "/n" : "", paTests[iTest].fEFlagsIn,
+                                 FormatU128(&paTests[iTest].InVal1.uXmm), FormatU128(&paTests[iTest].InVal2.uXmm), paTests[iTest].bImm,
+                                 iVar ? "  " : "", fEFlags, u32EcxOut,
+                                 iVar ? "  " : "", paTests[iTest].fEFlagsOut, paTests[iTest].u32EcxOut,
+                                 EFlagsDiff(fEFlags, paTests[iTest].fEFlagsOut),
+                                 (u32EcxOut != paTests[iTest].u32EcxOut) ? " - val" : "");
+            }
+        }
+    }
+}
+
+
+TYPEDEF_SUBTEST_TYPE(SSE_PCMPISTRM_T, SSE_PCMPISTRM_TEST_T, PFNIEMAIMPLPCMPISTRMU128IMM8);
+
+static const SSE_PCMPISTRM_T g_aSsePcmpistrm[] =
+{
+    ENTRY_BIN_SSE_OPT(pcmpistrm_u128),
+};
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static RTEXITCODE SseComparePcmpistrmGenerate(const char *pszDataFileFmt, uint32_t cTests)
+{
+    cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
+
+    static struct { RTUINT128U uSrc1; RTUINT128U uSrc2; } const s_aSpecials[] =
+    {
+        { RTUINT128_INIT_C(0, 0), RTUINT128_INIT_C(0, 0) },
+        /** @todo More specials. */
+    };
+
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSsePcmpistrm); iFn++)
+    {
+        PFNIEMAIMPLPCMPISTRMU128IMM8 const pfn = g_aSsePcmpistrm[iFn].pfnNative ? g_aSsePcmpistrm[iFn].pfnNative : g_aSsePcmpistrm[iFn].pfn;
+
+        PRTSTREAM pStrmOut = NULL;
+        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSsePcmpistrm[iFn].pszName);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSsePcmpistrm[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+
+        for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
+        {
+            SSE_PCMPISTRM_TEST_T TestData; RT_ZERO(TestData);
+
+            TestData.InVal1.uXmm = iTest < cTests ? RandU128() : s_aSpecials[iTest - cTests].uSrc1;
+            TestData.InVal2.uXmm = iTest < cTests ? RandU128() : s_aSpecials[iTest - cTests].uSrc2;
+
+            IEMPCMPISTRXSRC TestVal;
+            TestVal.uSrc1 = TestData.InVal1.uXmm;
+            TestVal.uSrc2 = TestData.InVal2.uXmm;
+
+            uint32_t const fEFlagsIn = RandEFlags();
+            for (uint16_t u16Imm = 0; u16Imm < 256; u16Imm++)
+            {
+                uint32_t fEFlagsOut = fEFlagsIn;
+                pfn(&TestData.OutVal.uXmm, &fEFlagsOut, &TestVal, (uint8_t)u16Imm);
+                TestData.fEFlagsIn  = fEFlagsIn;
+                TestData.fEFlagsOut = fEFlagsOut;
+                TestData.bImm       = (uint8_t)u16Imm;
+                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+            }
+
+            /* Repeat the test with the input value being the same. */
+            TestData.InVal2.uXmm = TestData.InVal1.uXmm;
+            TestVal.uSrc1 = TestData.InVal1.uXmm;
+            TestVal.uSrc2 = TestData.InVal2.uXmm;
+
+            for (uint16_t u16Imm = 0; u16Imm < 256; u16Imm++)
+            {
+                uint32_t fEFlagsOut = fEFlagsIn;
+                pfn(&TestData.OutVal.uXmm, &fEFlagsOut, &TestVal, (uint8_t)u16Imm);
+                TestData.fEFlagsIn  = fEFlagsIn;
+                TestData.fEFlagsOut = fEFlagsOut;
+                TestData.bImm       = (uint8_t)u16Imm;
+                RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+            }
+        }
+        rc = RTStrmClose(pStrmOut);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to close data file for %s: %Rrc", g_aSsePcmpistrm[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+#endif
+
+static void SseComparePcmpistrmTest(void)
+{
+    X86FXSTATE State;
+    RT_ZERO(State);
+
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSsePcmpistrm); iFn++)
+    {
+        if (!SubTestAndCheckIfEnabled(g_aSsePcmpistrm[iFn].pszName))
+            continue;
+
+        uint32_t const                          cTests  = *g_aSsePcmpistrm[iFn].pcTests;
+        SSE_PCMPISTRM_TEST_T const * const      paTests = g_aSsePcmpistrm[iFn].paTests;
+        PFNIEMAIMPLPCMPISTRMU128IMM8            pfn     = g_aSsePcmpistrm[iFn].pfn;
+        uint32_t const                          cVars   = COUNT_VARIATIONS(g_aSsePcmpistrm[iFn]);
+        if (!cTests) RTTestSkipped(g_hTest, "no tests");
+        for (uint32_t iVar = 0; iVar < cVars; iVar++)
+        {
+            for (uint32_t iTest = 0; iTest < cTests / sizeof(*paTests); iTest++)
+            {
+                IEMPCMPISTRXSRC TestVal;
+                TestVal.uSrc1 = paTests[iTest].InVal1.uXmm;
+                TestVal.uSrc2 = paTests[iTest].InVal2.uXmm;
+
+                uint32_t fEFlags = paTests[iTest].fEFlagsIn;
+                RTUINT128U OutVal;
+                pfn(&OutVal, &fEFlags, &TestVal, paTests[iTest].bImm);
+                if (   fEFlags != paTests[iTest].fEFlagsOut
+                    || OutVal.s.Hi != paTests[iTest].OutVal.uXmm.s.Hi
+                    || OutVal.s.Lo != paTests[iTest].OutVal.uXmm.s.Lo)
+                    RTTestFailed(g_hTest, "#%04u%s: efl=%#08x in1=%s in2=%s bImm=%#x\n"
+                                          "%s                 -> efl=%#08x    %s\n"
+                                          "%s               expected %#08x    %s%s%s\n",
+                                 iTest, iVar ? "/n" : "", paTests[iTest].fEFlagsIn,
+                                 FormatU128(&paTests[iTest].InVal1.uXmm), FormatU128(&paTests[iTest].InVal2.uXmm), paTests[iTest].bImm,
+                                 iVar ? "  " : "", fEFlags, FormatU128(&OutVal),
+                                 iVar ? "  " : "", paTests[iTest].fEFlagsOut, FormatU128(&paTests[iTest].OutVal.uXmm),
+                                 EFlagsDiff(fEFlags, paTests[iTest].fEFlagsOut),
+                                 (   OutVal.s.Hi != paTests[iTest].OutVal.uXmm.s.Hi
+                                  || OutVal.s.Lo != paTests[iTest].OutVal.uXmm.s.Lo) ? " - val" : "");
+            }
+        }
+    }
+}
+
+
+TYPEDEF_SUBTEST_TYPE(SSE_PCMPESTRI_T, SSE_PCMPESTRI_TEST_T, PFNIEMAIMPLPCMPESTRIU128IMM8);
+
+static const SSE_PCMPESTRI_T g_aSsePcmpestri[] =
+{
+    ENTRY_BIN_SSE_OPT(pcmpestri_u128),
+};
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static RTEXITCODE SseComparePcmpestriGenerate(const char *pszDataFileFmt, uint32_t cTests)
+{
+    cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
+
+    static struct { RTUINT128U uSrc1; RTUINT128U uSrc2; } const s_aSpecials[] =
+    {
+        { RTUINT128_INIT_C(0, 0), RTUINT128_INIT_C(0, 0) },
+        /** @todo More specials. */
+    };
+
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSsePcmpestri); iFn++)
+    {
+        PFNIEMAIMPLPCMPESTRIU128IMM8 const pfn = g_aSsePcmpestri[iFn].pfnNative ? g_aSsePcmpestri[iFn].pfnNative : g_aSsePcmpestri[iFn].pfn;
+
+        PRTSTREAM pStrmOut = NULL;
+        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSsePcmpestri[iFn].pszName);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSsePcmpestri[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+
+        for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
+        {
+            SSE_PCMPESTRI_TEST_T TestData; RT_ZERO(TestData);
+
+            TestData.InVal1.uXmm = iTest < cTests ? RandU128() : s_aSpecials[iTest - cTests].uSrc1;
+            TestData.InVal2.uXmm = iTest < cTests ? RandU128() : s_aSpecials[iTest - cTests].uSrc2;
+
+            for (int64_t i64Rax = -20; i64Rax < 20; i64Rax += 20)
+                for (int64_t i64Rdx = -20; i64Rdx < 20; i64Rdx += 20)
+                {
+                    TestData.u64Rax = (uint64_t)i64Rax;
+                    TestData.u64Rdx = (uint64_t)i64Rdx;
+
+                    IEMPCMPESTRXSRC TestVal;
+                    TestVal.uSrc1  = TestData.InVal1.uXmm;
+                    TestVal.uSrc2  = TestData.InVal2.uXmm;
+                    TestVal.u64Rax = TestData.u64Rax;
+                    TestVal.u64Rdx = TestData.u64Rdx;
+
+                    uint32_t const fEFlagsIn = RandEFlags();
+                    for (uint16_t u16Imm = 0; u16Imm < 256; u16Imm++)
+                    {
+                        uint32_t fEFlagsOut = fEFlagsIn;
+                        pfn(&TestData.u32EcxOut, &fEFlagsOut, &TestVal, (uint8_t)u16Imm);
+                        TestData.fEFlagsIn  = fEFlagsIn;
+                        TestData.fEFlagsOut = fEFlagsOut;
+                        TestData.bImm       = (uint8_t)u16Imm;
+                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                    }
+
+                    /* Repeat the test with the input value being the same. */
+                    TestData.InVal2.uXmm = TestData.InVal1.uXmm;
+                    TestVal.uSrc1 = TestData.InVal1.uXmm;
+                    TestVal.uSrc2 = TestData.InVal2.uXmm;
+
+                    for (uint16_t u16Imm = 0; u16Imm < 256; u16Imm++)
+                    {
+                        uint32_t fEFlagsOut = fEFlagsIn;
+                        pfn(&TestData.u32EcxOut, &fEFlagsOut, &TestVal, (uint8_t)u16Imm);
+                        TestData.fEFlagsIn  = fEFlagsIn;
+                        TestData.fEFlagsOut = fEFlagsOut;
+                        TestData.bImm       = (uint8_t)u16Imm;
+                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                    }
+                }
+        }
+        rc = RTStrmClose(pStrmOut);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to close data file for %s: %Rrc", g_aSsePcmpestri[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+#endif
+
+static void SseComparePcmpestriTest(void)
+{
+    X86FXSTATE State;
+    RT_ZERO(State);
+
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSsePcmpestri); iFn++)
+    {
+        if (!SubTestAndCheckIfEnabled(g_aSsePcmpestri[iFn].pszName))
+            continue;
+
+        uint32_t const                          cTests  = *g_aSsePcmpestri[iFn].pcTests;
+        SSE_PCMPESTRI_TEST_T const * const      paTests = g_aSsePcmpestri[iFn].paTests;
+        PFNIEMAIMPLPCMPESTRIU128IMM8            pfn     = g_aSsePcmpestri[iFn].pfn;
+        uint32_t const                          cVars   = COUNT_VARIATIONS(g_aSsePcmpestri[iFn]);
+        if (!cTests) RTTestSkipped(g_hTest, "no tests");
+        for (uint32_t iVar = 0; iVar < cVars; iVar++)
+        {
+            for (uint32_t iTest = 0; iTest < cTests / sizeof(*paTests); iTest++)
+            {
+                IEMPCMPESTRXSRC TestVal;
+                TestVal.uSrc1  = paTests[iTest].InVal1.uXmm;
+                TestVal.uSrc2  = paTests[iTest].InVal2.uXmm;
+                TestVal.u64Rax = paTests[iTest].u64Rax;
+                TestVal.u64Rdx = paTests[iTest].u64Rdx;
+
+                uint32_t fEFlags = paTests[iTest].fEFlagsIn;
+                uint32_t u32EcxOut = 0;
+                pfn(&u32EcxOut, &fEFlags, &TestVal, paTests[iTest].bImm);
+                if (   fEFlags != paTests[iTest].fEFlagsOut
+                    || u32EcxOut != paTests[iTest].u32EcxOut)
+                    RTTestFailed(g_hTest, "#%04u%s: efl=%#08x in1=%s rax1=%RI64 in2=%s rdx2=%RI64 bImm=%#x\n"
+                                          "%s                 -> efl=%#08x    %RU32\n"
+                                          "%s               expected %#08x    %RU32%s%s\n",
+                                 iTest, iVar ? "/n" : "", paTests[iTest].fEFlagsIn,
+                                 FormatU128(&paTests[iTest].InVal1.uXmm), paTests[iTest].u64Rax,
+                                 FormatU128(&paTests[iTest].InVal2.uXmm), paTests[iTest].u64Rdx,
+                                 paTests[iTest].bImm,
+                                 iVar ? "  " : "", fEFlags, u32EcxOut,
+                                 iVar ? "  " : "", paTests[iTest].fEFlagsOut, paTests[iTest].u32EcxOut,
+                                 EFlagsDiff(fEFlags, paTests[iTest].fEFlagsOut),
+                                 (u32EcxOut != paTests[iTest].u32EcxOut) ? " - val" : "");
+            }
+        }
+    }
+}
+
+
+TYPEDEF_SUBTEST_TYPE(SSE_PCMPESTRM_T, SSE_PCMPESTRM_TEST_T, PFNIEMAIMPLPCMPESTRMU128IMM8);
+
+static const SSE_PCMPESTRM_T g_aSsePcmpestrm[] =
+{
+    ENTRY_BIN_SSE_OPT(pcmpestrm_u128),
+};
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static RTEXITCODE SseComparePcmpestrmGenerate(const char *pszDataFileFmt, uint32_t cTests)
+{
+    cTests = RT_MAX(192, cTests); /* there are 144 standard input variations */
+
+    static struct { RTUINT128U uSrc1; RTUINT128U uSrc2; } const s_aSpecials[] =
+    {
+        { RTUINT128_INIT_C(0, 0), RTUINT128_INIT_C(0, 0) },
+        /** @todo More specials. */
+    };
+
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSsePcmpestrm); iFn++)
+    {
+        PFNIEMAIMPLPCMPESTRMU128IMM8 const pfn = g_aSsePcmpestrm[iFn].pfnNative ? g_aSsePcmpestrm[iFn].pfnNative : g_aSsePcmpestrm[iFn].pfn;
+
+        PRTSTREAM pStrmOut = NULL;
+        int rc = RTStrmOpenF("wb", &pStrmOut, pszDataFileFmt, g_aSsePcmpestrm[iFn].pszName);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to open data file for %s for writing: %Rrc", g_aSsePcmpestrm[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+
+        for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
+        {
+            SSE_PCMPESTRM_TEST_T TestData; RT_ZERO(TestData);
+
+            TestData.InVal1.uXmm = iTest < cTests ? RandU128() : s_aSpecials[iTest - cTests].uSrc1;
+            TestData.InVal2.uXmm = iTest < cTests ? RandU128() : s_aSpecials[iTest - cTests].uSrc2;
+
+            for (int64_t i64Rax = -20; i64Rax < 20; i64Rax += 20)
+                for (int64_t i64Rdx = -20; i64Rdx < 20; i64Rdx += 20)
+                {
+                    TestData.u64Rax = (uint64_t)i64Rax;
+                    TestData.u64Rdx = (uint64_t)i64Rdx;
+
+                    IEMPCMPESTRXSRC TestVal;
+                    TestVal.uSrc1  = TestData.InVal1.uXmm;
+                    TestVal.uSrc2  = TestData.InVal2.uXmm;
+                    TestVal.u64Rax = TestData.u64Rax;
+                    TestVal.u64Rdx = TestData.u64Rdx;
+
+                    uint32_t const fEFlagsIn = RandEFlags();
+                    for (uint16_t u16Imm = 0; u16Imm < 256; u16Imm++)
+                    {
+                        uint32_t fEFlagsOut = fEFlagsIn;
+                        pfn(&TestData.OutVal.uXmm, &fEFlagsOut, &TestVal, (uint8_t)u16Imm);
+                        TestData.fEFlagsIn  = fEFlagsIn;
+                        TestData.fEFlagsOut = fEFlagsOut;
+                        TestData.bImm       = (uint8_t)u16Imm;
+                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                    }
+
+                    /* Repeat the test with the input value being the same. */
+                    TestData.InVal2.uXmm = TestData.InVal1.uXmm;
+                    TestVal.uSrc1 = TestData.InVal1.uXmm;
+                    TestVal.uSrc2 = TestData.InVal2.uXmm;
+
+                    for (uint16_t u16Imm = 0; u16Imm < 256; u16Imm++)
+                    {
+                        uint32_t fEFlagsOut = fEFlagsIn;
+                        pfn(&TestData.OutVal.uXmm, &fEFlagsOut, &TestVal, (uint8_t)u16Imm);
+                        TestData.fEFlagsIn  = fEFlagsIn;
+                        TestData.fEFlagsOut = fEFlagsOut;
+                        TestData.bImm       = (uint8_t)u16Imm;
+                        RTStrmWrite(pStrmOut, &TestData, sizeof(TestData));
+                    }
+                }
+        }
+        rc = RTStrmClose(pStrmOut);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Failed to close data file for %s: %Rrc", g_aSsePcmpestrm[iFn].pszName, rc);
+            return RTEXITCODE_FAILURE;
+        }
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+#endif
+
+static void SseComparePcmpestrmTest(void)
+{
+    X86FXSTATE State;
+    RT_ZERO(State);
+
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aSsePcmpestrm); iFn++)
+    {
+        if (!SubTestAndCheckIfEnabled(g_aSsePcmpestrm[iFn].pszName))
+            continue;
+
+        uint32_t const                          cTests  = *g_aSsePcmpestrm[iFn].pcTests;
+        SSE_PCMPESTRM_TEST_T const * const      paTests = g_aSsePcmpestrm[iFn].paTests;
+        PFNIEMAIMPLPCMPESTRMU128IMM8            pfn     = g_aSsePcmpestrm[iFn].pfn;
+        uint32_t const                          cVars   = COUNT_VARIATIONS(g_aSsePcmpestrm[iFn]);
+        if (!cTests) RTTestSkipped(g_hTest, "no tests");
+        for (uint32_t iVar = 0; iVar < cVars; iVar++)
+        {
+            for (uint32_t iTest = 0; iTest < cTests / sizeof(*paTests); iTest++)
+            {
+                IEMPCMPESTRXSRC TestVal;
+                TestVal.uSrc1  = paTests[iTest].InVal1.uXmm;
+                TestVal.uSrc2  = paTests[iTest].InVal2.uXmm;
+                TestVal.u64Rax = paTests[iTest].u64Rax;
+                TestVal.u64Rdx = paTests[iTest].u64Rdx;
+
+                uint32_t fEFlags = paTests[iTest].fEFlagsIn;
+                RTUINT128U OutVal;
+                pfn(&OutVal, &fEFlags, &TestVal, paTests[iTest].bImm);
+                if (   fEFlags != paTests[iTest].fEFlagsOut
+                    || OutVal.s.Hi != paTests[iTest].OutVal.uXmm.s.Hi
+                    || OutVal.s.Lo != paTests[iTest].OutVal.uXmm.s.Lo)
+                    RTTestFailed(g_hTest, "#%04u%s: efl=%#08x in1=%s rax1=%RI64 in2=%s rdx2=%RI64 bImm=%#x\n"
+                                          "%s                 -> efl=%#08x    %s\n"
+                                          "%s               expected %#08x    %s%s%s\n",
+                                 iTest, iVar ? "/n" : "", paTests[iTest].fEFlagsIn,
+                                 FormatU128(&paTests[iTest].InVal1.uXmm), paTests[iTest].u64Rax,
+                                 FormatU128(&paTests[iTest].InVal2.uXmm), paTests[iTest].u64Rdx,
+                                 paTests[iTest].bImm,
+                                 iVar ? "  " : "", fEFlags, FormatU128(&OutVal),
+                                 iVar ? "  " : "", paTests[iTest].fEFlagsOut, FormatU128(&paTests[iTest].OutVal.uXmm),
+                                 EFlagsDiff(fEFlags, paTests[iTest].fEFlagsOut),
+                                 (   OutVal.s.Hi != paTests[iTest].OutVal.uXmm.s.Hi
+                                  || OutVal.s.Lo != paTests[iTest].OutVal.uXmm.s.Lo) ? " - val" : "");
+            }
+        }
+    }
+}
+
+
 
 int main(int argc, char **argv)
 {
@@ -8781,6 +9323,7 @@ int main(int argc, char **argv)
     bool                fCommonData   = true;
     bool                fSseFpBinary  = true;
     bool                fSseFpOther   = true;
+    bool                fSsePcmpxstrx = true;
     uint32_t const      cDefaultTests = 96;
     uint32_t            cTests        = cDefaultTests;
     RTGETOPTDEF const   s_aOptions[]  =
@@ -8799,6 +9342,7 @@ int main(int argc, char **argv)
         { "--fpu-other",            'O', RTGETOPT_REQ_NOTHING },
         { "--sse-fp-binary",        'S', RTGETOPT_REQ_NOTHING },
         { "--sse-fp-other",         'T', RTGETOPT_REQ_NOTHING },
+        { "--sse-pcmpxstrx",        'C', RTGETOPT_REQ_NOTHING },
         { "--int",                  'i', RTGETOPT_REQ_NOTHING },
         { "--include",              'I', RTGETOPT_REQ_STRING },
         { "--exclude",              'X', RTGETOPT_REQ_STRING },
@@ -8836,6 +9380,7 @@ int main(int argc, char **argv)
                 fFpuOther   = true;
                 fSseFpBinary = true;
                 fSseFpOther  = true;
+                fSsePcmpxstrx = true;
                 break;
             case 'z':
                 fCpuData    = false;
@@ -8847,6 +9392,7 @@ int main(int argc, char **argv)
                 fFpuOther   = false;
                 fSseFpBinary = false;
                 fSseFpOther  = false;
+                fSsePcmpxstrx = false;
                 break;
 
             case 'F':
@@ -8866,6 +9412,9 @@ int main(int argc, char **argv)
                 break;
             case 'T':
                 fSseFpOther  = true;
+                break;
+            case 'C':
+                fSsePcmpxstrx = true;
                 break;
             case 'i':
                 fInt        = true;
@@ -8929,6 +9478,8 @@ int main(int argc, char **argv)
                          "    Enable SSE binary 64- and 32-bit FP tests.\n"
                          "  -T, --sse-fp-other\n"
                          "    Enable misc SSE 64- and 32-bit FP tests.\n"
+                         "  -C, --sse-pcmpxstrx\n"
+                         "    Enable SSE pcmpxstrx tests.\n"
                          "  -I,--include=<test-patter>\n"
                          "    Enable tests matching the given pattern.\n"
                          "  -X,--exclude=<test-patter>\n"
@@ -9153,6 +9704,21 @@ int main(int argc, char **argv)
                 return rcExit;
         }
 
+        if (fSsePcmpxstrx)
+        {
+            const char *pszDataFileFmtCmp = fCommonData ? "tstIEMAImplDataSsePcmpxstrx-%s.bin" : pszBitBucket;
+
+            RTEXITCODE rcExit = SseComparePcmpistriGenerate(pszDataFileFmtCmp, cTests);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = SseComparePcmpistrmGenerate(pszDataFileFmtCmp, cTests);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = SseComparePcmpestriGenerate(pszDataFileFmtCmp, cTests);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = SseComparePcmpestrmGenerate(pszDataFileFmtCmp, cTests);
+            if (rcExit != RTEXITCODE_SUCCESS)
+                return rcExit;
+        }
+
         return RTEXITCODE_SUCCESS;
 #else
         return RTMsgErrorExitFailure("Test data generator not compiled in!");
@@ -9275,6 +9841,14 @@ int main(int argc, char **argv)
                 SseConvertXmmR32MmTest();
                 SseConvertXmmR64MmTest();
                 SseConvertMmI32XmmR32Test();
+            }
+
+            if (fSsePcmpxstrx)
+            {
+                SseComparePcmpistriTest();
+                SseComparePcmpistrmTest();
+                SseComparePcmpestriTest();
+                SseComparePcmpestrmTest();
             }
         }
         return RTTestSummaryAndDestroy(g_hTest);
