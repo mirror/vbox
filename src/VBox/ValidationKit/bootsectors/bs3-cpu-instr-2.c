@@ -65,6 +65,7 @@ BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_shrx);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_mulx);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_popcnt);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_crc32);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_adcx_adox);
 BS3TESTMODE_PROTOTYPES_CMN_64(bs3CpuInstr2_cmpxchg16b);
 BS3TESTMODE_PROTOTYPES_CMN_64(bs3CpuInstr2_wrfsbase);
 BS3TESTMODE_PROTOTYPES_CMN_64(bs3CpuInstr2_wrgsbase);
@@ -105,8 +106,9 @@ static const BS3TESTMODEENTRY g_aModeTests[] =
     BS3TESTMODEENTRY_CMN("mulx",  bs3CpuInstr2_mulx),
 #endif
 #if 1
-    BS3TESTMODEENTRY_CMN("popcnt",  bs3CpuInstr2_popcnt), /* Intel: POPCNT; AMD: ABM */
-    BS3TESTMODEENTRY_CMN("crc32",  bs3CpuInstr2_crc32),   /* SSE4.2 */
+    BS3TESTMODEENTRY_CMN("popcnt",  bs3CpuInstr2_popcnt),        /* Intel: POPCNT; AMD: ABM */
+    BS3TESTMODEENTRY_CMN("crc32",  bs3CpuInstr2_crc32),          /* SSE4.2 */
+    BS3TESTMODEENTRY_CMN("adcx/adox", bs3CpuInstr2_adcx_adox),   /* ADX */
 #endif
 #if 1
     BS3TESTMODEENTRY_CMN_64("cmpxchg16b", bs3CpuInstr2_cmpxchg16b),

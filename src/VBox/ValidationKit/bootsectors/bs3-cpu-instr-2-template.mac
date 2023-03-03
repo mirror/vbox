@@ -640,6 +640,78 @@ BS3_PROC_END_CMN            bs3CpuInstr2_crc32_EAX_qword_FSxBX_icebp
 
 
 ;
+; ADCX
+;
+BS3CPUINSTR2_PROC_BEGIN_CMN bs3CpuInstr2_adcx_EAX_EBX_icebp
+        adcx    eax, ebx
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN            bs3CpuInstr2_adcx_EAX_EBX_icebp
+
+ %if TMPL_BITS == 64
+BS3CPUINSTR2_PROC_BEGIN_CMN bs3CpuInstr2_adcx_RAX_RBX_icebp
+        adcx    rax, rbx
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN            bs3CpuInstr2_adcx_RAX_RBX_icebp
+ %endif
+
+BS3CPUINSTR2_PROC_BEGIN_CMN bs3CpuInstr2_adcx_EAX_dword_FSxBX_icebp
+        adcx    eax, dword [fs:xBX]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN            bs3CpuInstr2_adcx_EAX_dword_FSxBX_icebp
+
+ %if TMPL_BITS == 64
+BS3CPUINSTR2_PROC_BEGIN_CMN bs3CpuInstr2_adcx_RAX_qword_FSxBX_icebp
+        adcx    rax, qword [fs:xBX]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN            bs3CpuInstr2_adcx_RAX_qword_FSxBX_icebp
+ %endif
+
+
+;
+; ADOX
+;
+BS3CPUINSTR2_PROC_BEGIN_CMN bs3CpuInstr2_adox_EAX_EBX_icebp
+        adox    eax, ebx
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN            bs3CpuInstr2_adox_EAX_EBX_icebp
+
+ %if TMPL_BITS == 64
+BS3CPUINSTR2_PROC_BEGIN_CMN bs3CpuInstr2_adox_RAX_RBX_icebp
+        adox    rax, rbx
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN            bs3CpuInstr2_adox_RAX_RBX_icebp
+ %endif
+
+BS3CPUINSTR2_PROC_BEGIN_CMN bs3CpuInstr2_adox_EAX_dword_FSxBX_icebp
+        adox    eax, dword [fs:xBX]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN            bs3CpuInstr2_adox_EAX_dword_FSxBX_icebp
+
+ %if TMPL_BITS == 64
+BS3CPUINSTR2_PROC_BEGIN_CMN bs3CpuInstr2_adox_RAX_qword_FSxBX_icebp
+        adox    rax, qword [fs:xBX]
+.again:
+        icebp
+        jmp     .again
+BS3_PROC_END_CMN            bs3CpuInstr2_adox_RAX_qword_FSxBX_icebp
+ %endif
+
+
+;
 ; CMPXCHG16B
 ;
  %if TMPL_BITS == 64
