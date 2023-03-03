@@ -139,19 +139,27 @@ RT_C_DECLS_BEGIN
 
 /** @def IEM_WITH_3DNOW
  * Includes the 3DNow decoding.  */
-#define IEM_WITH_3DNOW
+#if (!defined(IEM_WITH_3DNOW) && !defined(IEM_WITHOUT_3DNOW)) || defined(DOXYGEN_RUNNING)   /* For doxygen, set in Config.kmk. */
+# define IEM_WITH_3DNOW
+#endif
 
 /** @def IEM_WITH_THREE_0F_38
  * Includes the three byte opcode map for instrs starting with 0x0f 0x38. */
-#define IEM_WITH_THREE_0F_38
+#if (!defined(IEM_WITH_THREE_0F_38) && !defined(IEM_WITHOUT_THREE_0F_38)) || defined(DOXYGEN_RUNNING) /* For doxygen, set in Config.kmk. */
+# define IEM_WITH_THREE_0F_38
+#endif
 
 /** @def IEM_WITH_THREE_0F_3A
  * Includes the three byte opcode map for instrs starting with 0x0f 0x38. */
-#define IEM_WITH_THREE_0F_3A
+#if (!defined(IEM_WITH_THREE_0F_3A) && !defined(IEM_WITHOUT_THREE_0F_3A)) || defined(DOXYGEN_RUNNING) /* For doxygen, set in Config.kmk. */
+# define IEM_WITH_THREE_0F_3A
+#endif
 
 /** @def IEM_WITH_VEX
  * Includes the VEX decoding. */
-#define IEM_WITH_VEX
+#if (!defined(IEM_WITH_VEX) && !defined(IEM_WITHOUT_VEX)) || defined(DOXYGEN_RUNNING)       /* For doxygen, set in Config.kmk. */
+# define IEM_WITH_VEX
+#endif
 
 /** @def IEM_CFG_TARGET_CPU
  * The minimum target CPU for the IEM emulation (IEMTARGETCPU_XXX value).
