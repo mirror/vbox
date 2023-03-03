@@ -2001,6 +2001,18 @@ bool UISession::acquireLogFolder(QString &strFolder)
     return fSuccess;
 }
 
+bool UISession::acquireEffectiveParavirtProvider(KParavirtProvider &enmProvider)
+{
+    CMachine comMachine = machine();
+    const KParavirtProvider enmParavirtProvider = comMachine.GetEffectiveParavirtProvider();
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    else
+        enmProvider = enmParavirtProvider;
+    return fSuccess;
+}
+
 bool UISession::acquireExecutionEngineType(KVMExecutionEngine &enmType)
 {
     CMachineDebugger comDebugger = debugger();

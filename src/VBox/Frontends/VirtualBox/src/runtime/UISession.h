@@ -533,6 +533,9 @@ public:
         /** Acquire log folder. */
         bool acquireLogFolder(QString &strFolder);
 
+        /** Acquires effective paravirt provider. */
+        bool acquireEffectiveParavirtProvider(KParavirtProvider &enmProvider);
+
         /** Acquires VM's execution engine @a enmType. */
         bool acquireExecutionEngineType(KVMExecutionEngine &enmType);
         /** Acquires whether nested paging hardware virtualization extension is @a fEnabled. */

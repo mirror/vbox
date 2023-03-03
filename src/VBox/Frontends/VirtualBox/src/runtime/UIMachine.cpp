@@ -2277,5 +2277,5 @@ void UIMachine::updateVirtualizationState()
     uisession()->acquireExecutionEngineType(m_enmVMExecutionEngine);
     uisession()->acquireWhetherHwVirtExNestedPagingEnabled(m_fIsHWVirtExNestedPagingEnabled);
     uisession()->acquireWhetherHwVirtExUXEnabled(m_fIsHWVirtExUXEnabled);
-    m_enmParavirtProvider = uisession()->machine().GetEffectiveParavirtProvider();
+    uisession()->acquireEffectiveParavirtProvider(m_enmParavirtProvider);
 }
