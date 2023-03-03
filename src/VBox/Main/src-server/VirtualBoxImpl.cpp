@@ -5136,12 +5136,18 @@ HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
         // store all hard disks (even differencing images) in the map
         if (devType == DeviceType_HardDisk)
             m->mapHardDisks[id] = pMedium;
-
-        mediumCaller.release();
-        mediaTreeLock.release();
-        *ppMedium = pMedium;
     }
-    else
+
+    /*
+     * If we have been called from Medium::initFromSettings() then the Medium object's
+     * AutoCaller status will be 'InInit' which means that when making the assigment to
+     * ppMedium below the Medium object will not call Medium::uninit().  By excluding
+     * this code path from releasing and reacquiring the media tree lock we avoid a
+     * potential deadlock with other threads which may be operating on the
+     * disks/DVDs/floppies in the VM's media registry at the same time such as
+     * Machine::unregister().
+     */
+    if (!fCalledFromMediumInit)
     {
         // pMedium may be the last reference to the Medium object, and the
         // caller may have specified the same ComObjPtr as the output parameter.
@@ -5152,8 +5158,9 @@ HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
         mediaTreeLock.release();
         // must not hold the media tree write lock any more
         Assert(!i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
-        *ppMedium = pDupMedium;
     }
+
+    *ppMedium = pDupMedium.isNull() ? pMedium : pDupMedium;
 
     if (fAddToGlobalRegistry)
     {
@@ -5166,7 +5173,8 @@ HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
 
     // Restore the initial lock state, so that no unexpected lock changes are
     // done by this method, which would need adjustments everywhere.
-    mediaTreeLock.acquire();
+    if (!fCalledFromMediumInit)
+        mediaTreeLock.acquire();
 
     return hrc;
 }
