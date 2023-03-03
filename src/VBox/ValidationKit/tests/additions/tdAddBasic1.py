@@ -534,7 +534,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             ## @todo VBoxClient does not have facility statuses implemented yet.
             eExpectedRunLevel = vboxcon.AdditionsRunLevelType_Userland;
 
-        return self.waitForGAs(oSession, aenmWaitForRunLevels = [ eExpectedRunLevel ]);
+        # Give the guest some time to build Guest Additions on system boot if needed.
+        return self.waitForGAs(oSession, cMsTimeout = 15 * 60 * 1000, aenmWaitForRunLevels = [ eExpectedRunLevel ]);
 
     def testIGuest_additionsVersion(self, oGuest):
         """
