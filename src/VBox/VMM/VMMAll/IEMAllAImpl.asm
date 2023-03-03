@@ -301,6 +301,24 @@ NAME_FASTCALL(%1,%2,@):
 %endmacro
 
 ;;
+; Load the relevant flags from [%1].
+;
+; @remarks      Clobbers T0, stack. Changes EFLAGS.
+; @param        A2      The register pointing to the flags.
+; @param        1       The parameter (A0..A3) pointing to the eflags.
+; @param        2       The set of flags to load.
+; @param        3       The set of undefined flags.
+;
+%macro IEM_LOAD_FLAGS 3
+        pushf                           ; store current flags
+        mov     T0_32, [%1]             ; load the guest flags
+        and     dword [xSP], ~(%2 | %3) ; mask out the modified and undefined flags
+        and     T0_32, (%2 | %3)        ; select the modified and undefined flags.
+        or      [xSP], T0               ; merge guest flags with host flags.
+        popf                            ; load the mixed flags.
+%endmacro
+
+;;
 ; Update the flag.
 ;
 ; @remarks  Clobbers T0, T1, stack.
@@ -6427,3 +6445,50 @@ BEGINPROC_FASTCALL iemAImpl_sha256rnds2_u128, 16
         IEMIMPL_SSE_EPILOGUE
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_sha256rnds2_u128
+
+
+;
+; 32-bit forms of ADCX and ADOX
+;
+; @param    A0      Pointer to the destination operand (input/output).
+; @param    A1      Pointer to the EFLAGS value (input/output).
+; @param    A2      32-bit source operand 1 (input).
+;
+%macro IEMIMPL_ADX_32 2
+BEGINPROC_FASTCALL  iemAImpl_ %+ %1 %+ _u32, 8
+        PROLOGUE_4_ARGS
+
+        IEM_LOAD_FLAGS A1, %2, 0
+        %1      A2_32, [A0]
+        mov     [A0], A2_32
+        IEM_SAVE_FLAGS A1, %2, 0
+
+        EPILOGUE_4_ARGS
+ENDPROC             iemAImpl_ %+ %1 %+ _u32
+%endmacro
+
+;
+; 64-bit forms of ADCX and ADOX
+;
+; @param    A0      Pointer to the destination operand (input/output).
+; @param    A1      Pointer to the EFLAGS value (input/output).
+; @param    A2      64-bit source operand 1 (input).
+;
+%macro IEMIMPL_ADX_64 2
+BEGINPROC_FASTCALL  iemAImpl_ %+ %1 %+ _u64, 8
+        PROLOGUE_4_ARGS
+
+        IEM_LOAD_FLAGS A1, %2, 0
+        %1      A2, [A0]
+        mov     [A0], A2
+        IEM_SAVE_FLAGS A1, %2, 0
+
+        EPILOGUE_4_ARGS
+ENDPROC             iemAImpl_ %+ %1 %+ _u64
+%endmacro
+
+IEMIMPL_ADX_32 adcx, X86_EFL_CF
+IEMIMPL_ADX_64 adcx, X86_EFL_CF
+
+IEMIMPL_ADX_32 adox, X86_EFL_OF
+IEMIMPL_ADX_64 adox, X86_EFL_OF
