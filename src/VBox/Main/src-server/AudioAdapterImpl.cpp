@@ -204,6 +204,8 @@ void AudioAdapter::uninit(void)
     if (autoUninitSpan.uninitDone())
         return;
 
+    m->bd.free();
+
     unconst(m->pPeer) = NULL;
     unconst(m->pParent) = NULL;
 
