@@ -1183,7 +1183,7 @@ static int vgsvcGstCtrlSessionHandleDirRead(const PVBOXSERVICECTRLSESSION pSessi
 
             PGSTCTLDIRENTRYEX pGstCtlDirEntryEx = (PGSTCTLDIRENTRYEX)pDirEntryEx;
 
-            int rc2 = VbglR3GuestCtrlDirCbReadEx(pHostCtx, rc, pGstCtlDirEntryEx, cbDirEntry, pszUser, pszGroup);
+            int rc2 = VbglR3GuestCtrlDirCbReadEx(pHostCtx, rc, pGstCtlDirEntryEx, (uint32_t)cbDirEntry, pszUser, pszGroup);
             if (RT_FAILURE(rc2))
                 VGSvcError("Failed to report directory read status (%Rrc), rc=%Rrc\n", rc, rc2);
 
