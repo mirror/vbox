@@ -795,6 +795,16 @@ void UIMachine::updateMachineStorage(const UIMediumTarget &target, UIActionPool 
     return uisession()->updateMachineStorage(target, pActionPool);
 }
 
+void UIMachine::acquireWhetherUSBControllerEnabled(bool &fEnabled)
+{
+    return uisession()->acquireWhetherUSBControllerEnabled(fEnabled);
+}
+
+void UIMachine::acquireWhetherVideoInputDevicesEnabled(bool &fEnabled)
+{
+    return uisession()->acquireWhetherVideoInputDevicesEnabled(fEnabled);
+}
+
 bool UIMachine::usbDevices(QList<USBDeviceInfo> &guiUSBDevices)
 {
     return uisession()->usbDevices(guiUSBDevices);
@@ -1814,7 +1824,6 @@ void UIMachine::enterInitialVisualState()
 void UIMachine::updateActionRestrictions()
 {
     /* Get host and prepare restrictions: */
-    const CHost comHost = uiCommon().host();
     UIExtraDataMetaDefs::RuntimeMenuMachineActionType restrictionForMachine =
         UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid;
     UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictionForView =
@@ -1884,9 +1893,8 @@ void UIMachine::updateActionRestrictions()
     /* USB stuff: */
     {
         /* Check whether there is at least one USB controller with an available proxy. */
-        const bool fUSBEnabled =    !uisession()->machine().GetUSBDeviceFilters().isNull()
-                                 && !uisession()->machine().GetUSBControllers().isEmpty()
-                                 && uisession()->machine().GetUSBProxyAvailable();
+        bool fUSBEnabled = false;
+        acquireWhetherUSBControllerEnabled(fUSBEnabled);
         if (!fUSBEnabled)
             restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
                                     (restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices);
@@ -1895,8 +1903,8 @@ void UIMachine::updateActionRestrictions()
     /* WebCams stuff: */
     {
         /* Check whether there is an accessible video input devices pool: */
-        comHost.GetVideoInputDevices();
-        const bool fWebCamsEnabled = comHost.isOk() && !uisession()->machine().GetUSBControllers().isEmpty();
+        bool fWebCamsEnabled = false;
+        acquireWhetherVideoInputDevicesEnabled(fWebCamsEnabled);
         if (!fWebCamsEnabled)
             restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
                                     (restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams);

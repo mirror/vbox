@@ -353,6 +353,11 @@ public:
 
     /** @name USB stuff.
      ** @{ */
+        /** Acquires whether USB controller is enabled. */
+        void acquireWhetherUSBControllerEnabled(bool &fEnabled);
+        /** Acquires whether video input devices are enabled. */
+        void acquireWhetherVideoInputDevicesEnabled(bool &fEnabled);
+
         /** Returns a list of USB devices. */
         bool usbDevices(QList<USBDeviceInfo> &guiUSBDevices);
         /** Attaches USB device with passed @a uId. */

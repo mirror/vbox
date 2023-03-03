@@ -910,6 +910,45 @@ void UISession::updateMachineStorage(const UIMediumTarget &target, UIActionPool 
     uiCommon().updateMachineStorage(comMachine, target, pActionPool);
 }
 
+void UISession::acquireWhetherUSBControllerEnabled(bool &fEnabled)
+{
+    fEnabled = false;
+
+    /* Check whether USB device filters are available: */
+    CMachine comMachine = machine();
+    CUSBDeviceFilters comUSBDeviceFilters = comMachine.GetUSBDeviceFilters();
+    if (!comMachine.isOk() || comUSBDeviceFilters.isNull())
+        return;
+    /* Check whether USB controllers are available: */
+    CUSBControllerVector comUSBControllers = comMachine.GetUSBControllers();
+    if (!comMachine.isOk() || comUSBControllers.isEmpty())
+        return;
+    /* Check whether USB proxy is available: */
+    const BOOL fUSBProxyAvailable = comMachine.GetUSBProxyAvailable();
+    if (!comMachine.isOk() || fUSBProxyAvailable == FALSE)
+        return;
+
+    fEnabled = true;
+}
+
+void UISession::acquireWhetherVideoInputDevicesEnabled(bool &fEnabled)
+{
+    fEnabled = false;
+
+    /* Check whether video input devices are available: */
+    CHost comHost = uiCommon().host();
+    CHostVideoInputDeviceVector comVideoInputDevices = comHost.GetVideoInputDevices();
+    if (!comHost.isOk() || comVideoInputDevices.isEmpty())
+        return;
+    /* Check whether USB controllers are available: */
+    CMachine comMachine = machine();
+    CUSBControllerVector comUSBControllers = comMachine.GetUSBControllers();
+    if (!comMachine.isOk() || comUSBControllers.isEmpty())
+        return;
+
+    fEnabled = true;
+}
+
 bool UISession::usbDevices(QList<USBDeviceInfo> &guiUSBDevices)
 {
     const CHost comHost = uiCommon().host();
