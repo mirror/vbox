@@ -1447,10 +1447,7 @@ HRESULT Medium::initFromSettings(VirtualBox *aVirtualBox,
             if (FAILED(hrc))
                 break;
             hrc = aVirtualBox->i_registerMedium(pActualMedium, &pActualMedium, mediaTreeLock, true /*fCalledFromMediumInit*/);
-            if (FAILED(hrc))
-                break;
-
-            if (pActualMedium == pMedium)
+            if (SUCCEEDED(hrc) && pActualMedium == pMedium)
             {
                 /* It is a truly new medium, remember details for cleanup. */
                 autoInitSpan.setSucceeded();
@@ -1472,6 +1469,9 @@ HRESULT Medium::initFromSettings(VirtualBox *aVirtualBox,
              * drop to 0 without causing uninit trouble. */
             pMedium.setNull();
             mediaTreeLock.acquire();
+
+            if (FAILED(hrc))
+                break;
         }
 
         /* create all children */
@@ -4385,6 +4385,15 @@ bool Medium::i_isHostDrive() const
 }
 
 /**
+ * Internal method which returns true if this medium is in the process of being closed.
+ * @return
+ */
+bool Medium::i_isClosing() const
+{
+    return m->fClosing;
+}
+
+/**
  * Internal method to return the medium's full location. Must have caller + locking!
  * @return
  */
@@ -5702,8 +5711,6 @@ HRESULT Medium::i_close(AutoCaller &autoCaller)
         autoCaller.release();
     }
 
-    // Keep the locks held until after uninit, as otherwise the consistency
-    // of the medium tree cannot be guaranteed.
     uninit();
 
     LogFlowFuncLeave();

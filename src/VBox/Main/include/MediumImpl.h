@@ -116,6 +116,7 @@ public:
     MediumState_T i_getState() const;
     MediumVariant_T i_getVariant() const;
     bool i_isHostDrive() const;
+    bool i_isClosing() const;
     const Utf8Str& i_getLocationFull() const;
     const Utf8Str& i_getFormat() const;
     const ComObjPtr<MediumFormat> & i_getMediumFormat() const;
