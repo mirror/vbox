@@ -555,9 +555,9 @@ protected:
 
 private:
 
-#ifdef Q_OS_WIN
+#ifdef VBOX_WS_WIN
      ComPtr<IUnknown> m_pUnkMarshaler;
-#endif /* Q_OS_WIN */
+#endif
      /** Identifier returned by AttachFramebuffer. Used in DetachFramebuffer. */
      QUuid m_uFramebufferId;
 
@@ -1105,44 +1105,24 @@ HRESULT UIFrameBufferPrivate::init(UIMachineView *pMachineView)
 {
     LogRel2(("GUI: UIFrameBufferPrivate::init %p\n", this));
 
-    /* Assign mahine-view: */
-    m_pMachineView = pMachineView;
-
-    /* Assign index: */
-    m_uScreenId = m_pMachineView->screenId();
-
-    /* Cache window ID: */
-    m_iWinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
-
-#ifdef VBOX_WS_X11
-    /* Sync Qt and X11 Server (see xTracker #7547). */
-    XSync(NativeWindowSubsystem::X11GetDisplay(), false);
-#endif
+    /* Fetch passed view: */
+    setView(pMachineView);
 
     /* Assign display: */
-    m_comDisplay = m_pMachineView->uisession()->display();
+    m_comDisplay = m_pMachineView->uimachine()->uisession()->display();
 
     /* Initialize critical-section: */
     int rc = RTCritSectInit(&m_critSect);
     AssertRC(rc);
 
-    /* Connect handlers: */
-    if (m_pMachineView)
-        prepareConnections();
-
-#ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
-    /* Decide if we are going to use GL to draw the guest screen: */
-    if (isGLWidgetSupported())
-        m_pGLWidget = new GLWidget(m_pMachineView->viewport(), this);
-#endif
-
     /* Resize/rescale frame-buffer to the default size: */
     performResize(640, 480);
     performRescale();
 
-#ifdef Q_OS_WIN
+#ifdef VBOX_WS_WIN
     CoCreateFreeThreadedMarshaler(this, m_pUnkMarshaler.asOutParam());
-#endif /* Q_OS_WIN */
+#endif
+
     return S_OK;
 }
 
@@ -1166,15 +1146,17 @@ void UIFrameBufferPrivate::setView(UIMachineView *pMachineView)
 
     /* Reassign machine-view: */
     m_pMachineView = pMachineView;
+    /* Reassign index: */
+    m_uScreenId = m_pMachineView ? m_pMachineView->screenId() : 0;
     /* Recache window ID: */
     m_iWinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
 
 #ifdef VBOX_WS_X11
-    /* Sync Qt and X11 Server (see xTracker #7547). */
+    /* Resync Qt and X11 Server (see xTracker #7547). */
     XSync(NativeWindowSubsystem::X11GetDisplay(), false);
 #endif
 
-    /* Connect new handlers: */
+    /* Reconnect new handlers: */
     if (m_pMachineView)
         prepareConnections();
 
