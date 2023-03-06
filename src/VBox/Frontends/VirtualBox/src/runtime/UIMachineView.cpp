@@ -246,7 +246,7 @@ void UIMachineView::applyMachineViewScaleFactor()
         // On Windows and Linux opposing to macOS it's only Qt which can auto scale up,
         // not 3D overlay itself, so for auto scale-up mode we have to take that into account.
         if (!fUseUnscaledHiDPIOutput)
-            dScaleFactorFor3D *= frameBuffer()->devicePixelRatioActual();
+            dScaleFactorFor3D *= dDevicePixelRatioActual;
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
         uimachine()->notifyScaleFactorChange(m_uScreenId,
                                              (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
@@ -1199,7 +1199,7 @@ void UIMachineView::prepareFrameBuffer()
         /* Assign it's view: */
         pFrameBuffer->setView(this);
         /* Mark frame-buffer as used again: */
-        LogRelFlow(("GUI: UIMachineView::prepareFrameBuffer: Start EMT callbacks accepting for screen: %d\n", screenId()));
+        LogRelFlow(("GUI: UIMachineView::prepareFrameBuffer: Restart EMT callbacks accepting for screen: %d\n", screenId()));
         pFrameBuffer->setMarkAsUnused(false);
         /* And remember our choice: */
         m_pFrameBuffer = pFrameBuffer;
@@ -1209,54 +1209,17 @@ void UIMachineView::prepareFrameBuffer()
     {
         /* Create new frame-buffer: */
         m_pFrameBuffer = new UIFrameBuffer;
-        frameBuffer()->init(this);
-
-        /* Take scaling optimization type into account: */
-        frameBuffer()->setScalingOptimizationType(gEDataManager->scalingOptimizationType(uiCommon().managedVMUuid()));
-
-        /* Acquire selected scale-factor: */
-        double dScaleFactor = gEDataManager->scaleFactor(uiCommon().managedVMUuid(), m_uScreenId);
-
-        /* Take the device-pixel-ratio into account: */
-        const double dDevicePixelRatioFormal = UIDesktopWidgetWatchdog::devicePixelRatio(machineWindow());
-        const double dDevicePixelRatioActual = UIDesktopWidgetWatchdog::devicePixelRatioActual(machineWindow());
-        const bool fUseUnscaledHiDPIOutput = dScaleFactor != dDevicePixelRatioActual;
-        dScaleFactor = fUseUnscaledHiDPIOutput ? dScaleFactor : 1.0;
-
-        /* Assign frame-buffer with new values: */
-        frameBuffer()->setDevicePixelRatio(dDevicePixelRatioFormal);
-        frameBuffer()->setDevicePixelRatioActual(dDevicePixelRatioActual);
-        frameBuffer()->setScaleFactor(dScaleFactor);
-        frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
-
-        /* Propagate the scale-factor related attributes to 3D service if necessary: */
-        bool fAccelerate3DEnabled = false;
-        uimachine()->acquireWhetherAccelerate3DEnabled(fAccelerate3DEnabled);
-        if (fAccelerate3DEnabled)
-        {
-            double dScaleFactorFor3D = dScaleFactor;
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-            // WORKAROUND:
-            // On Windows and Linux opposing to macOS it's only Qt which can auto scale up,
-            // not 3D overlay itself, so for auto scale-up mode we have to take that into account.
-            if (!fUseUnscaledHiDPIOutput)
-                dScaleFactorFor3D *= dDevicePixelRatioActual;
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
-            uimachine()->notifyScaleFactorChange(m_uScreenId,
-                                                 (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
-                                                 (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
-            uimachine()->notifyHiDPIOutputPolicyChange(fUseUnscaledHiDPIOutput);
-        }
-
-        /* Perform frame-buffer rescaling: */
-        frameBuffer()->performRescale();
-
+        /* Init it's view: */
+        m_pFrameBuffer->init(this);
+        LogRelFlow(("GUI: UIMachineView::prepareFrameBuffer: Start EMT callbacks accepting for screen: %d\n", screenId()));
+        /* Apply machine-view scale-factor: */
+        applyMachineViewScaleFactor();
         /* Associate uisession with frame-buffer finally: */
         uisession()->setFrameBuffer(screenId(), frameBuffer());
     }
 
     /* Make sure frame-buffer was prepared: */
-    AssertReturnVoid(frameBuffer());
+    AssertPtrReturnVoid(frameBuffer());
 
     /* Reattach to IDisplay: */
     frameBuffer()->detach();

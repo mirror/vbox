@@ -2336,12 +2336,12 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
 
 UIFrameBuffer::UIFrameBuffer()
 {
-    m_pFrameBuffer.createObject();
+    prepare();
 }
 
 UIFrameBuffer::~UIFrameBuffer()
 {
-    m_pFrameBuffer.setNull();
+    cleanup();
 }
 
 HRESULT UIFrameBuffer::init(UIMachineView *pMachineView)
@@ -2497,6 +2497,21 @@ void UIFrameBuffer::performRescale()
 void UIFrameBuffer::viewportResized(QResizeEvent *pEvent)
 {
     m_pFrameBuffer->viewportResized(pEvent);
+}
+
+void UIFrameBuffer::prepare()
+{
+    /* Creates COM object we are linked to: */
+    m_pFrameBuffer.createObject();
+
+    /* Take scaling optimization type into account: */
+    setScalingOptimizationType(gEDataManager->scalingOptimizationType(uiCommon().managedVMUuid()));
+}
+
+void UIFrameBuffer::cleanup()
+{
+    /* Detach COM object we are linked to: */
+    m_pFrameBuffer.setNull();
 }
 
 #include "UIFrameBuffer.moc"

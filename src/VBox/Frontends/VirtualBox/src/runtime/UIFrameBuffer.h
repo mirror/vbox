@@ -54,11 +54,10 @@ class UIFrameBuffer : public QObject
 
 public:
 
-    /** Frame-buffer constructor. */
+    /** Constructs frame-buffer. */
     UIFrameBuffer();
-
-    /** Frame-buffer destructor. */
-    ~UIFrameBuffer();
+    /** Destructs frame-buffer. */
+    virtual ~UIFrameBuffer() RT_OVERRIDE;
 
     /** Frame-buffer initialization.
       * @param pMachineView defines machine-view this frame-buffer is bounded to. */
@@ -139,6 +138,11 @@ public:
     void viewportResized(QResizeEvent *pEvent);
 
 private:
+
+    /** Prepares everything. */
+    void prepare();
+    /** Cleanups everything. */
+    void cleanup();
 
     /** Holds the frame-buffer private instance. */
     ComObjPtr<UIFrameBufferPrivate> m_pFrameBuffer;
