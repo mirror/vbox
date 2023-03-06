@@ -1411,7 +1411,6 @@ bool UISession::setAudioAdapterInputEnabled(bool fEnabled)
 
 UIFrameBuffer *UISession::frameBuffer(ulong uScreenId) const
 {
-    Assert(uScreenId < (ulong)m_frameBufferVector.size());
     return m_frameBufferVector.value((int)uScreenId, 0);
 }
 
@@ -2496,11 +2495,10 @@ void UISession::prepareConsoleEventHandlers()
 
 void UISession::prepareFramebuffers()
 {
-    /* Each framebuffer will be really prepared on first UIMachineView creation;
-     * For now we should just create an empty frame-buffer vector to fill later. */
-    ulong cMonitorCount = 0;
-    acquireMonitorCount(cMonitorCount);
-    m_frameBufferVector.resize(cMonitorCount);
+    /* Acquire guest-screen count: */
+    ulong cGuestScreenCount = 0;
+    acquireMonitorCount(cGuestScreenCount);
+    m_frameBufferVector.resize(cGuestScreenCount);
 }
 
 void UISession::prepareConnections()

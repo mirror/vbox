@@ -168,7 +168,7 @@ public:
     /** Returns session UI instance. */
     UISession *uisession() const { return m_pSession; }
     /** Returns machine-logic instance. */
-    UIMachineLogic* machineLogic() const { return m_pMachineLogic; }
+    UIMachineLogic *machineLogic() const { return m_pMachineLogic; }
     /** Returns active machine-window reference (if possible). */
     QWidget* activeWindow() const;
 
