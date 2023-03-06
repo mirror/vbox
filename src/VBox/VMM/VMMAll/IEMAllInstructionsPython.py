@@ -10,6 +10,8 @@ collects information about the instructions.  It can then be used to generate
 disassembler tables and tests.
 """
 
+from __future__ import print_function;
+
 __copyright__ = \
 """
 Copyright (C) 2017-2023 Oracle and/or its affiliates.
@@ -1599,8 +1601,8 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
             return int(sOpcode, 16);
 
         # The /r form:
-        if len(sOpcode) == 4 and sOpcode.startswith('/') and sOpcode[-1].isdigit():
-            return int(sOpcode[-1:]) << 3;
+        if len(sOpcode) == 2 and sOpcode[0] == '/' and sOpcode[1].isdigit():
+            return int(sOpcode[1:]) << 3;
 
         # The 11/r form:
         if len(sOpcode) == 4 and sOpcode.startswith('11/') and sOpcode[-1].isdigit():
@@ -3644,7 +3646,19 @@ def __applyOnlyTest():
                     oInstr.aoTests = [];
     return 0;
 
-def __parseAll():
+## List of all main instruction files and their default maps.
+g_aasAllInstrFilesAndDefaultMap = (
+    ( 'IEMAllInstructionsOneByte.cpp.h',   'one',        ),
+    ( 'IEMAllInstructionsTwoByte0f.cpp.h', 'two0f',      ),
+    ( 'IEMAllInstructionsThree0f38.cpp.h', 'three0f38',  ),
+    ( 'IEMAllInstructionsThree0f3a.cpp.h', 'three0f3a',  ),
+    ( 'IEMAllInstructionsVexMap1.cpp.h',   'vexmap1',    ),
+    ( 'IEMAllInstructionsVexMap2.cpp.h',   'vexmap2',    ),
+    ( 'IEMAllInstructionsVexMap3.cpp.h',   'vexmap3',    ),
+    ( 'IEMAllInstructions3DNow.cpp.h',     '3dnow',      ),
+);
+
+def parseAll():
     """
     Parses all the IEMAllInstruction*.cpp.h files.
 
@@ -3652,16 +3666,7 @@ def __parseAll():
     """
     sSrcDir = os.path.dirname(os.path.abspath(__file__));
     cErrors = 0;
-    for sDefaultMap, sName in [
-        ( 'one',        'IEMAllInstructionsOneByte.cpp.h'),
-        ( 'two0f',      'IEMAllInstructionsTwoByte0f.cpp.h'),
-        ( 'three0f38',  'IEMAllInstructionsThree0f38.cpp.h'),
-        ( 'three0f3a',  'IEMAllInstructionsThree0f3a.cpp.h'),
-        ( 'vexmap1',    'IEMAllInstructionsVexMap1.cpp.h'),
-        ( 'vexmap2',    'IEMAllInstructionsVexMap2.cpp.h'),
-        ( 'vexmap3',    'IEMAllInstructionsVexMap3.cpp.h'),
-        ( '3dnow',      'IEMAllInstructions3DNow.cpp.h'),
-    ]:
+    for sName, sDefaultMap in g_aasAllInstrFilesAndDefaultMap:
         cErrors += __parseFileByName(os.path.join(sSrcDir, sName), sDefaultMap);
     cErrors += __doTestCopying();
     cErrors += __applyOnlyTest();
@@ -3674,13 +3679,9 @@ def __parseAll():
           % (cTotalStubs * 100 // len(g_aoAllInstructions), cTotalStubs, len(g_aoAllInstructions),));
 
     if cErrors != 0:
-        #raise Exception('%d parse errors' % (cErrors,));
-        sys.exit(1);
+        raise Exception('%d parse errors' % (cErrors,));
     return True;
 
-
-
-__parseAll();
 
 
 #
@@ -3717,7 +3718,7 @@ def __formatDisassemblerTableEntry(oInstr):
         pass;
     elif oInstr.sEncoding == 'ModR/M':
         # ASSUME the first operand is using the ModR/M encoding
-        assert len(oInstr.aoOperands) >= 1 and oInstr.aoOperands[0].usesModRM();
+        assert len(oInstr.aoOperands) >= 1 and oInstr.aoOperands[0].usesModRM(), "oInstr=%s" % (oInstr,);
         asColumns.append('IDX_ParseModRM,');
     elif oInstr.sEncoding in [ 'prefix', ]:
         for oOperand in oInstr.aoOperands:
@@ -3836,7 +3837,19 @@ def __checkIfShortTable(aoTableOrdered, oMap):
 def generateDisassemblerTables(oDstFile = sys.stdout):
     """
     Generates disassembler tables.
+
+    Returns exit code.
     """
+
+    #
+    # Parse all.
+    #
+    try:
+        parseAll();
+    except Exception as oXcpt:
+        print('error: parseAll failed: %s' % (oXcpt,), file = sys.stderr);
+        return 1;
+
 
     #
     # The disassembler uses a slightly different table layout to save space,
@@ -3947,7 +3960,8 @@ def generateDisassemblerTables(oDstFile = sys.stdout):
         oDstFile.write('\n');
         oDstFile.write('\n');
         #break; #for now
+    return 0;
 
 if __name__ == '__main__':
-    generateDisassemblerTables();
+    sys.exit(generateDisassemblerTables());
 

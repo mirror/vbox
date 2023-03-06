@@ -453,6 +453,15 @@ class Bs3CpuGenerated1Generator(object):
         """
 
         #
+        # Do the parsing.
+        #
+        try:
+            iai.parseAll();
+        except Exception as oXcpt:
+            print('error: parseAll failed: %s' % (oXcpt,), file = sys.stderr);
+            return False;
+
+        #
         # Group instructions by mnemonic to reduce the number of sub-tests.
         #
         for oInstr in sorted(iai.g_aoAllInstructions,
