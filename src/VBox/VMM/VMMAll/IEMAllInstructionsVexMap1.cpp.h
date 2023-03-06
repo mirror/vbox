@@ -2279,7 +2279,7 @@ FNIEMOP_STUB(iemOp_vcvtsd2si_Gy_Wsd);
 /** Opcode VEX.0F 0x2e - vucomiss Vss, Wss */
 FNIEMOP_DEF(iemOp_vucomiss_Vss_Wss)
 {
-    IEMOP_MNEMONIC2(RM, VUCOMISS, vucomiss, Vss, Wss, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_ZERO);
+    IEMOP_MNEMONIC2(VEX_RM, VUCOMISS, vucomiss, Vss, Wss, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_ZERO);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
@@ -2350,7 +2350,7 @@ FNIEMOP_DEF(iemOp_vucomiss_Vss_Wss)
 /** Opcode VEX.66.0F 0x2e - vucomisd Vsd, Wsd */
 FNIEMOP_DEF(iemOp_vucomisd_Vsd_Wsd)
 {
-    IEMOP_MNEMONIC2(RM, VUCOMISD, vucomisd, Vsd, Wsd, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_ZERO);
+    IEMOP_MNEMONIC2(VEX_RM, VUCOMISD, vucomisd, Vsd, Wsd, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_ZERO);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
@@ -2424,7 +2424,7 @@ FNIEMOP_DEF(iemOp_vucomisd_Vsd_Wsd)
 /** Opcode VEX.0F 0x2f - vcomiss Vss, Wss */
 FNIEMOP_DEF(iemOp_vcomiss_Vss_Wss)
 {
-    IEMOP_MNEMONIC2(RM, VCOMISS, vcomiss, Vss, Wss, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_ZERO);
+    IEMOP_MNEMONIC2(VEX_RM, VCOMISS, vcomiss, Vss, Wss, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_ZERO);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
@@ -2495,7 +2495,7 @@ FNIEMOP_DEF(iemOp_vcomiss_Vss_Wss)
 /** Opcode VEX.66.0F 0x2f - vcomisd Vsd, Wsd */
 FNIEMOP_DEF(iemOp_vcomisd_Vsd_Wsd)
 {
-    IEMOP_MNEMONIC2(RM, VCOMISD, vcomisd, Vsd, Wsd, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_ZERO);
+    IEMOP_MNEMONIC2(VEX_RM, VCOMISD, vcomisd, Vsd, Wsd, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_ZERO);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
@@ -4755,7 +4755,7 @@ FNIEMOP_DEF(iemOp_vpmovmskb_Gd_Ux)
     if (IEM_IS_MODRM_REG_MODE(bRm)) /** @todo test that this is registers only. */
     {
         /* Note! Taking the lazy approch here wrt the high 32-bits of the GREG. */
-        IEMOP_MNEMONIC2(RM_REG, VPMOVMSKB, vpmovmskb, Gd, Ux, DISOPTYPE_SSE | DISOPTYPE_HARMLESS, 0);
+        IEMOP_MNEMONIC2(VEX_RM_REG, VPMOVMSKB, vpmovmskb, Gd, Ux, DISOPTYPE_SSE | DISOPTYPE_HARMLESS, 0);
         IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV();
         if (pVCpu->iem.s.uVexLength)
         {
