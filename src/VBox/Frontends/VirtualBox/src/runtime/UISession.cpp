@@ -1414,13 +1414,6 @@ UIFrameBuffer *UISession::frameBuffer(ulong uScreenId) const
     return m_frameBufferVector.value((int)uScreenId, 0);
 }
 
-void UISession::setFrameBuffer(ulong uScreenId, UIFrameBuffer *pFrameBuffer)
-{
-    Assert(uScreenId < (ulong)m_frameBufferVector.size());
-    if (uScreenId < (ulong)m_frameBufferVector.size())
-        m_frameBufferVector[(int)uScreenId] = pFrameBuffer;
-}
-
 QSize UISession::frameBufferSize(ulong uScreenId) const
 {
     UIFrameBuffer *pFramebuffer = frameBuffer(uScreenId);
@@ -2499,6 +2492,10 @@ void UISession::prepareFramebuffers()
     ulong cGuestScreenCount = 0;
     acquireMonitorCount(cGuestScreenCount);
     m_frameBufferVector.resize(cGuestScreenCount);
+
+    /* Create new frame-buffers: */
+    for (int iIndex = 0; iIndex < m_frameBufferVector.size(); ++iIndex)
+        m_frameBufferVector[iIndex] = new UIFrameBuffer;
 }
 
 void UISession::prepareConnections()

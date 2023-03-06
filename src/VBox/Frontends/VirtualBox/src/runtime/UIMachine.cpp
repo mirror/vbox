@@ -199,6 +199,11 @@ void UIMachine::destroy()
     delete pInstance;
 }
 
+UIFrameBuffer *UIMachine::frameBuffer(ulong uScreenId)
+{
+    return uisession()->frameBuffer(uScreenId);
+}
+
 QWidget* UIMachine::activeWindow() const
 {
     return   machineLogic() && machineLogic()->activeMachineWindow()

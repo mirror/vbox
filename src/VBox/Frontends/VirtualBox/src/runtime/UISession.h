@@ -424,9 +424,6 @@ public:
         /** Returns existing framebuffer for the screen with given @a uScreenId;
           * @returns 0 (asserts) if uScreenId attribute is out of bounds. */
         UIFrameBuffer *frameBuffer(ulong uScreenId) const;
-        /** Sets framebuffer for the screen with given @a uScreenId;
-          * Ignores (asserts) if screen-number attribute is out of bounds. */
-        void setFrameBuffer(ulong uScreenId, UIFrameBuffer *pFrameBuffer);
         /** Returns existing frame-buffer vector. */
         const QVector<UIFrameBuffer*> &frameBuffers() const { return m_frameBufferVector; }
         /** Returns frame-buffer size for screen with index @a uScreenId. */

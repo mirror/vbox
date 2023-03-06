@@ -62,6 +62,8 @@ public:
     /** Frame-buffer initialization.
       * @param pMachineView defines machine-view this frame-buffer is bounded to. */
     HRESULT init(UIMachineView *pMachineView);
+    /** Returns whether frame-buffer was initialized already. */
+    bool isInitialized() const { return m_fInitialized; }
 
     /** Assigns machine-view frame-buffer will be bounded to.
       * @param pMachineView defines machine-view this frame-buffer is bounded to. */
@@ -146,6 +148,9 @@ private:
 
     /** Holds the frame-buffer private instance. */
     ComObjPtr<UIFrameBufferPrivate> m_pFrameBuffer;
+
+    /** Holds whether frame-buffer was initialized already. */
+    bool  m_fInitialized;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_UIFrameBuffer_h */

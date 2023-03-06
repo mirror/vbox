@@ -40,7 +40,6 @@
 #include "UIExtraDataManager.h"
 #include "UIMachine.h"
 #include "UIMessageCenter.h"
-#include "UISession.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIMachineViewNormal.h"
@@ -266,14 +265,14 @@ UIMachine *UIMachineView::uimachine() const
     return machineWindow()->uimachine();
 }
 
-UISession *UIMachineView::uisession() const
-{
-    return uimachine()->uisession();
-}
-
 UIMachineLogic *UIMachineView::machineLogic() const
 {
     return machineWindow()->machineLogic();
+}
+
+UIFrameBuffer *UIMachineView::frameBuffer() const
+{
+    return uimachine()->frameBuffer(m_uScreenId);
 }
 
 int UIMachineView::contentsWidth() const
@@ -1152,7 +1151,6 @@ UIMachineView::UIMachineView(UIMachineWindow *pMachineWindow, ulong uScreenId)
     : QAbstractScrollArea(pMachineWindow->centralWidget())
     , m_pMachineWindow(pMachineWindow)
     , m_uScreenId(uScreenId)
-    , m_pFrameBuffer(0)
     , m_previousState(KMachineState_Null)
     , m_iHostScreenNumber(0)
     , m_enmMaximumGuestScreenSizePolicy(MaximumGuestScreenSizePolicy_Automatic)
@@ -1190,32 +1188,23 @@ void UIMachineView::prepareViewport()
 
 void UIMachineView::prepareFrameBuffer()
 {
-    /* Check whether we already have corresponding frame-buffer: */
-    UIFrameBuffer *pFrameBuffer = uisession()->frameBuffer(screenId());
-
-    /* If we do not: */
-    if (!pFrameBuffer)
+    /* If frame-buffer NOT yet initialized: */
+    if (!frameBuffer()->isInitialized())
     {
         LogRelFlow(("GUI: UIMachineView::prepareFrameBuffer: Start EMT callbacks accepting for screen: %d\n", screenId()));
-        /* Create new frame-buffer: */
-        m_pFrameBuffer = new UIFrameBuffer;
-        /* Init it's view: */
-        m_pFrameBuffer->init(this);
+        /* Initialize for this view: */
+        frameBuffer()->init(this);
         /* Apply machine-view scale-factor: */
         applyMachineViewScaleFactor();
-        /* Associate uisession with frame-buffer finally: */
-        uisession()->setFrameBuffer(screenId(), frameBuffer());
     }
-    /* If we do: */
+    /* Otherwise it must be unused yet: */
     else
     {
         LogRelFlow(("GUI: UIMachineView::prepareFrameBuffer: Restart EMT callbacks accepting for screen: %d\n", screenId()));
         /* Assign it's view: */
-        pFrameBuffer->setView(this);
+        frameBuffer()->setView(this);
         /* Mark frame-buffer as used again: */
-        pFrameBuffer->setMarkAsUnused(false);
-        /* And remember our choice: */
-        m_pFrameBuffer = pFrameBuffer;
+        frameBuffer()->setMarkAsUnused(false);
     }
 
     /* Make sure frame-buffer was prepared: */
@@ -1371,9 +1360,6 @@ void UIMachineView::cleanupFrameBuffer()
     /* Make sure framebuffer still present: */
     if (!frameBuffer())
         return;
-
-    /* Make sure proper framebuffer assigned: */
-    AssertReturnVoid(frameBuffer() == uisession()->frameBuffer(screenId()));
 
     /* Mark framebuffer as unused: */
     LogRelFlow(("GUI: UIMachineView::cleanupFrameBuffer: Stop EMT callbacks accepting for screen: %d\n", screenId()));

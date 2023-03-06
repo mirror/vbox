@@ -2317,6 +2317,7 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
 
 
 UIFrameBuffer::UIFrameBuffer()
+    : m_fInitialized(false)
 {
     prepare();
 }
@@ -2328,7 +2329,9 @@ UIFrameBuffer::~UIFrameBuffer()
 
 HRESULT UIFrameBuffer::init(UIMachineView *pMachineView)
 {
-    return m_pFrameBuffer->init(pMachineView);
+    const HRESULT rc = m_pFrameBuffer->init(pMachineView);
+    m_fInitialized = true;
+    return rc;
 }
 
 void UIFrameBuffer::attach()
