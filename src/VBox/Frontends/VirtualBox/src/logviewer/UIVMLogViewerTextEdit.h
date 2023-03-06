@@ -37,8 +37,6 @@
 
 /* Qt includes: */
 #include <QPlainTextEdit>
-#include <QPair>
-
 
 /* QPlainTextEdit extension with some addtional context menu items,
    a special scrollbar, line number area, bookmarking support,

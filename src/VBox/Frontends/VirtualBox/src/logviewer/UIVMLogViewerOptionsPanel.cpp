@@ -26,7 +26,6 @@
  */
 
 /* Qt includes: */
-#include <QComboBox>
 #include <QHBoxLayout>
 #include <QFontDatabase>
 #include <QFontDialog>

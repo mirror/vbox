@@ -26,15 +26,10 @@
  */
 
 /* Qt includes: */
-#include <QComboBox>
 #include <QHBoxLayout>
-#include <QLabel>
 #include <QPlainTextEdit>
-#include <QTextCursor>
-#include <QToolButton>
 
 /* GUI includes: */
-#include "QIToolButton.h"
 #include "UIIconPool.h"
 #include "UIVMLogPage.h"
 #include "UIVMLogViewerPanel.h"

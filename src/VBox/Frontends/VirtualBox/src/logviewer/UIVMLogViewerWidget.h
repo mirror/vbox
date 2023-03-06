@@ -40,16 +40,13 @@
 /* GUI includes: */
 #include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
-#include "UILibraryDefs.h"
 
 /* COM includes: */
 #include "COMEnums.h"
 #include "CMachine.h"
 
 /* Forward declarations: */
-class QITabWidget;
 class UITabWidget;
-class QPlainTextEdit;
 class QVBoxLayout;
 class UIActionPool;
 class UIDialogPanel;

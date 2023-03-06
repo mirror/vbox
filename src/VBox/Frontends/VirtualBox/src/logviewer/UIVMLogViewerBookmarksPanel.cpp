@@ -28,7 +28,6 @@
 /* Qt includes: */
 #include <QComboBox>
 #include <QHBoxLayout>
-#include <QLabel>
 #include <QStyle>
 #ifdef RT_OS_SOLARIS
 # include <QFontDatabase>

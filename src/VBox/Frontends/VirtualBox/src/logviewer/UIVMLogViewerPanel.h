@@ -31,9 +31,6 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QKeySequence>
-
 /* GUI includes: */
 #include "UIDialogPanel.h"
 

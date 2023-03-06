@@ -34,19 +34,15 @@
 /* Qt includes: */
 #include <QWidget>
 #include <QUuid>
-#include <QPair>
 
 /* GUI includes: */
-#include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
 #include "UIVMLogBookmark.h"
 
 /* Forward declarations: */
-class QITabWidget;
 class QHBoxLayout;
 class QPlainTextEdit;
 class UIVMLogViewerTextEdit;
-
 
 class UIVMLogBookmarkManager
 {

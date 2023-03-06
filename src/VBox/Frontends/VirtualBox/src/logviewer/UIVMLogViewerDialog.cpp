@@ -29,12 +29,7 @@
 #if defined(RT_OS_SOLARIS)
 # include <QFontDatabase>
 #endif
-#include <QDialogButtonBox>
-#include <QKeyEvent>
-#include <QLabel>
-#include <QPlainTextEdit>
 #include <QPushButton>
-#include <QScrollBar>
 #include <QVBoxLayout>
 
 /* GUI includes: */

@@ -26,7 +26,6 @@
  */
 
 /* Qt includes: */
-#include <QAction>
 #include <QCheckBox>
 #include <QComboBox>
 #if defined(RT_OS_SOLARIS)
@@ -36,7 +35,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPlainTextEdit>
-#include <QScrollBar>
 #include <QTextBlock>
 
 /* GUI includes: */

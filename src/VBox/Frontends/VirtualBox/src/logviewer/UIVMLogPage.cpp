@@ -26,15 +26,11 @@
  */
 
 /* Qt includes: */
-#include <QDateTime>
-#include <QDir>
-#include <QVBoxLayout>
+#include <QHBoxLayout>
 #if defined(RT_OS_SOLARIS)
 # include <QFontDatabase>
 #endif
-#include <QPainter>
 #include <QScrollBar>
-#include <QTextBlock>
 
 /* GUI includes: */
 #include "UIVMLogPage.h"

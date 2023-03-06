@@ -32,25 +32,15 @@
 #endif
 
 /* Qt includes: */
-#include <QMap>
 #include <QString>
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
-#include "UILibraryDefs.h"
-
-/* COM includes: */
-#include "COMEnums.h"
-#include "CMachine.h"
 
 /* Forward declarations: */
-class QDialogButtonBox;
-class QVBoxLayout;
 class UIActionPool;
-class UIVMLogViewerDialog;
 class UIVirtualMachineItem;
-class CMachine;
 
 
 /** QIManagerDialogFactory extension used as a factory for Log Viewer dialog. */

@@ -28,7 +28,6 @@
 /* Qt includes: */
 #include <QButtonGroup>
 #include <QComboBox>
-#include <QFrame>
 #include <QHBoxLayout>
 #if defined(RT_OS_SOLARIS)
 # include <QFontDatabase>
@@ -39,7 +38,6 @@
 #include <QRegularExpression>
 #include <QTextCursor>
 #include <QRadioButton>
-#include <QScrollArea>
 
 /* GUI includes: */
 #include "QIToolButton.h"
