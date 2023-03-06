@@ -33,6 +33,7 @@
 
 /* Qt includes: */
 #include <QString>
+#include <QUuid>
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
