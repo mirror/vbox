@@ -5347,7 +5347,9 @@ HRESULT VirtualBox::i_unregisterMachineMedia(const Guid &uuidMachine)
         ComObjPtr<Medium> pMedium = *it;
         Log(("Closing medium %RTuuid\n", pMedium->i_getId().raw()));
         AutoCaller mac(pMedium);
-        pMedium->i_close(mac);
+        HRESULT hrc = pMedium->i_close(mac);
+        if (FAILED(hrc))
+            return hrc;
     }
 
     LogFlowFuncLeave();

@@ -5673,6 +5673,11 @@ HRESULT Medium::i_close(AutoCaller &autoCaller)
             return i_setStateError();
     }
 
+    if (m->fClosing)
+        return setError(VBOX_E_OBJECT_IN_USE,
+                        tr("Medium '%s' cannot be closed because it is already in the process of being closed", ""),
+                        m->strLocationFull.c_str());
+
     if (m->backRefs.size() != 0)
         return setError(VBOX_E_OBJECT_IN_USE,
                         tr("Medium '%s' cannot be closed because it is still attached to %d virtual machines", "",
