@@ -41,7 +41,6 @@
 #include "UIMachineLogicSeamless.h"
 #include "UIMachineViewSeamless.h"
 #include "UIMachineWindow.h"
-#include "UISession.h"
 
 /* COM includes: */
 #include "CConsole.h"

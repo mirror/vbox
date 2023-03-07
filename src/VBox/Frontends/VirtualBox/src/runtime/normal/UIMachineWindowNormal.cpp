@@ -49,7 +49,6 @@
 #include "UIMachineView.h"
 #include "UINotificationCenter.h"
 #include "UIIconPool.h"
-#include "UISession.h"
 #include "QIStatusBar.h"
 #include "QIStatusBarIndicator.h"
 #ifndef VBOX_WS_MAC

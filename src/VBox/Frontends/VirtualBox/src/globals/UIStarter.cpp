@@ -38,7 +38,6 @@
 # include "UIVirtualBoxManager.h"
 #else
 # include "UIMachine.h"
-# include "UISession.h"
 #endif
 
 

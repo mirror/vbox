@@ -41,7 +41,6 @@
 #include "UIMachineLogic.h"
 #include "UIMachineViewNormal.h"
 #include "UIMachineWindow.h"
-#include "UISession.h"
 
 /* Other VBox includes: */
 #include "VBox/log.h"

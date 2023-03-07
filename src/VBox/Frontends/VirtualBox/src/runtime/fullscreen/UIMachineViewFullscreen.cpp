@@ -42,7 +42,6 @@
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineViewFullscreen.h"
 #include "UIMachineWindow.h"
-#include "UISession.h"
 
 /* Other VBox includes: */
 #include "VBox/log.h"
