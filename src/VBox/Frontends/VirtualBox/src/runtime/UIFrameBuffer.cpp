@@ -32,26 +32,18 @@
 #include <QTransform>
 
 /* GUI includes: */
-#include "UIActionPool.h"
 #include "UIActionPoolRuntime.h"
+#include "UICommon.h"
+#include "UIExtraDataManager.h"
 #include "UIFrameBuffer.h"
-#include "UISession.h"
 #include "UIMachine.h"
 #include "UIMachineLogic.h"
-#include "UIMachineWindow.h"
 #include "UIMachineView.h"
+#include "UIMachineWindow.h"
 #include "UINotificationCenter.h"
-#include "UIExtraDataManager.h"
-#include "UICommon.h"
-#ifdef VBOX_WITH_MASKED_SEAMLESS
-# include "UIMachineWindow.h"
-#endif /* VBOX_WITH_MASKED_SEAMLESS */
-#ifdef VBOX_WS_X11
-# include "VBoxUtils-x11.h"
-#endif
+#include "UISession.h"
 
 /* COM includes: */
-#include "CConsole.h"
 #include "CDisplay.h"
 #include "CFramebuffer.h"
 #include "CDisplaySourceBitmap.h"
@@ -65,9 +57,7 @@
 
 /* Other includes: */
 #include <math.h>
-
 #ifdef VBOX_WS_X11
-/* X11 includes: */
 # include <X11/Xlib.h>
 # undef Bool // Qt5 vs Xlib gift..
 #endif /* VBOX_WS_X11 */
@@ -81,15 +71,15 @@
  * The two files are already included, but they are needed if the Qt files are moved to the 'Qt includes:' section. */
 // #include <iprt/stdint.h>
 // #include <iprt/win/windows.h>
-#include <QOffscreenSurface>
-#include <QOpenGLFunctions>
-#include <QOpenGLTexture>
-#include <QOpenGLWidget>
+# include <QOffscreenSurface>
+# include <QOpenGLFunctions>
+# include <QOpenGLTexture>
+# include <QOpenGLWidget>
 
-# ifdef RT_OS_LINUX
+#  ifdef RT_OS_LINUX
 /* GL/glx.h must be included after Qt GL headers (which define GL_GLEXT_LEGACY) to avoid GL_GLEXT_VERSION conflict. */
-#include <GL/glx.h>
-# endif
+#   include <GL/glx.h>
+#  endif
 
 class UIFrameBufferPrivate;
 class GLWidget;
@@ -231,7 +221,10 @@ private:
     /* Texture which contains entire guest screen. Size is m_guestSize. */
     GLuint m_guestTexture;
 };
+
+/* End of experimental code. */
 #endif /* VBOX_GUI_WITH_QTGLFRAMEBUFFER */
+
 
 /** IFramebuffer implementation used to maintain VM display video memory. */
 class ATL_NO_VTABLE UIFrameBufferPrivate : public QObject,
@@ -251,10 +244,10 @@ signals:
 
 public:
 
-    /** Frame-buffer constructor. */
+    /** Constructs frame-buffer. */
     UIFrameBufferPrivate();
-    /** Frame-buffer destructor. */
-    ~UIFrameBufferPrivate();
+    /** Destructs frame-buffer. */
+    virtual ~UIFrameBufferPrivate() RT_OVERRIDE;
 
     /** Frame-buffer initialization.
       * @param pMachineView defines machine-view this frame-buffer is bounded to. */
@@ -283,8 +276,6 @@ public:
     ulong bytesPerLine() const { return m_image.bytesPerLine(); }
     /** Returns default frame-buffer pixel-format. */
     ulong pixelFormat() const { return KBitmapFormat_BGR; }
-    /** Returns the visual-state this frame-buffer is used for. */
-    UIVisualStateType visualState() const { return m_pMachineView ? m_pMachineView->visualStateType() : UIVisualStateType_Invalid; }
 
     /** Defines whether frame-buffer is <b>unused</b>.
       * @note Refer to m_fUnused for more information.
@@ -1097,8 +1088,22 @@ UIFrameBufferPrivate::UIFrameBufferPrivate()
     , m_pGLWidget(0)
 #endif
 {
+    LogRel2(("GUI: UIFrameBufferPrivate::UIFrameBufferPrivate %p\n", this));
+
     /* Update coordinate-system: */
     updateCoordinateSystem();
+}
+
+UIFrameBufferPrivate::~UIFrameBufferPrivate()
+{
+    LogRel2(("GUI: UIFrameBufferPrivate::~UIFrameBufferPrivate %p\n", this));
+
+    /* Disconnect handlers: */
+    if (m_pMachineView)
+        cleanupConnections();
+
+    /* Deinitialize critical-section: */
+    RTCritSectDelete(&m_critSect);
 }
 
 HRESULT UIFrameBufferPrivate::init(UIMachineView *pMachineView)
@@ -1109,7 +1114,7 @@ HRESULT UIFrameBufferPrivate::init(UIMachineView *pMachineView)
     setView(pMachineView);
 
     /* Assign display: */
-    m_comDisplay = m_pMachineView->uimachine()->uisession()->display();
+    m_comDisplay = gpMachine->uisession()->display();
 
     /* Initialize critical-section: */
     int rc = RTCritSectInit(&m_critSect);
@@ -1124,18 +1129,6 @@ HRESULT UIFrameBufferPrivate::init(UIMachineView *pMachineView)
 #endif
 
     return S_OK;
-}
-
-UIFrameBufferPrivate::~UIFrameBufferPrivate()
-{
-    LogRel2(("GUI: UIFrameBufferPrivate::~UIFrameBufferPrivate %p\n", this));
-
-    /* Disconnect handlers: */
-    if (m_pMachineView)
-        cleanupConnections();
-
-    /* Deinitialize critical-section: */
-    RTCritSectDelete(&m_critSect);
 }
 
 void UIFrameBufferPrivate::setView(UIMachineView *pMachineView)
@@ -1175,8 +1168,8 @@ void UIFrameBufferPrivate::attach()
 
 void UIFrameBufferPrivate::detach()
 {
-    CFramebuffer frameBuffer = display().QueryFramebuffer(m_uScreenId);
-    if (!frameBuffer.isNull())
+    CFramebuffer comFramebuffer = display().QueryFramebuffer(m_uScreenId);
+    if (!comFramebuffer.isNull())
     {
         display().DetachFramebuffer(m_uScreenId, m_uFramebufferId);
         m_uFramebufferId = QUuid();
@@ -2344,7 +2337,7 @@ void UIFrameBuffer::detach()
     m_pFrameBuffer->detach();
 }
 
-uchar* UIFrameBuffer::address()
+uchar *UIFrameBuffer::address()
 {
     return m_pFrameBuffer->address();
 }
@@ -2367,11 +2360,6 @@ ulong UIFrameBuffer::bitsPerPixel() const
 ulong UIFrameBuffer::bytesPerLine() const
 {
     return m_pFrameBuffer->bytesPerLine();
-}
-
-UIVisualStateType UIFrameBuffer::visualState() const
-{
-    return m_pFrameBuffer->visualState();
 }
 
 void UIFrameBuffer::setView(UIMachineView *pMachineView)
