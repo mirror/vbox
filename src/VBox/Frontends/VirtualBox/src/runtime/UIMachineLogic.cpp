@@ -1422,7 +1422,7 @@ void UIMachineLogic::cleanupSessionConnections()
     disconnect(uimachine(), &UIMachine::sigUSBDeviceStateChange, this, &UIMachineLogic::sltUSBDeviceStateChange);
     disconnect(uimachine(), &UIMachine::sigRuntimeError, this, &UIMachineLogic::sltRuntimeError);
 #ifdef VBOX_WS_MAC
-    disconnect(uisession(), &UISession::sigShowWindows, this, &UIMachineLogic::sltShowWindows);
+    disconnect(uimachine(), &UIMachine::sigShowWindows, this, &UIMachineLogic::sltShowWindows);
 #endif
     disconnect(uimachine(), &UIMachine::sigGuestMonitorChange, this, &UIMachineLogic::sltGuestMonitorChange);
 
