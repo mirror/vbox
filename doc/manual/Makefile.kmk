@@ -877,9 +877,9 @@ man_vboximg-mount.xml \
  #  DITA-OT-xxxxx/doc folder for details.
  #
  ##########################################################################################
-# Copy the dita library under out folder since at each use the library modifies some
-# run-time configuation files.
-$(VBOX_DITA_PATH):
+ # Copy the dita library under out folder since at each use the library modifies some
+ # run-time configuation files.
+ $(VBOX_DITA_PATH):
 	$(MKDIR) -p $(VBOX_DITA_PATH)
 	cp -R $(VBOX_DITA_ORIGINAL_PATH)/* $(VBOX_DITA_PATH)/
 
@@ -914,7 +914,7 @@ $(VBOX_DITA_PATH):
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf: \
   		$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
-		$(VBOX_DITA_PATH) \
+  		$(VBOX_DITA_PATH) \
   		$(VBOX_REFENTRY_DITA_FILES) \
   		$$(VBOX_PATH_MANUAL_SRC)/correct_references.py
 		$$(call MSG_L1,correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics)
@@ -988,7 +988,7 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_REFENTR
 , $(evalcall2 def_vbox_refentry_to_manpage,$(lang),$(file))))
 
 ifdef VBOX_WITH_DOCS_QHELP
-  #
+ #
  # VirtualBox.qch/VirtualBox.qhc
  #
  # We first generate a .hhp help source file from the preprocessed
@@ -1031,7 +1031,7 @@ ifdef VBOX_WITH_DOCS_QHELP
   ditamap-to-htmlhelp: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp/UserManual.hhp
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp/UserManual.hhp: \
   		$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
-		$(VBOX_DITA_PATH) \
+  		$(VBOX_DITA_PATH) \
   		$(VBOX_REFENTRY_DITA_FILES) \
   		$$(VBOX_PATH_MANUAL_SRC)/correct_references.py
 		$$(call MSG_L1,correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics)
