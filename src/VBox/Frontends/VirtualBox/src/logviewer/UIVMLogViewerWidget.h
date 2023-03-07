@@ -36,6 +36,7 @@
 #include <QPair>
 #include <QPointer>
 #include <QWidget>
+#include <QUuid>
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
