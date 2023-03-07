@@ -1045,7 +1045,9 @@ static int vbsf_inode_atomic_open(struct inode *pDirInode, struct dentry *dentry
  * @param   excl    Possible O_EXCL...
  * @returns 0 on success, Linux error code otherwise
  */
-#if RTLNX_VER_MIN(5,12,0) || defined(DOXYGEN_RUNNING)
+#if RTLNX_VER_MIN(6,3,0)
+static int vbsf_inode_create(struct mnt_idmap *idmap, struct inode *parent, struct dentry *dentry, umode_t mode, bool excl)
+#elif RTLNX_VER_MIN(5,12,0) || defined(DOXYGEN_RUNNING)
 static int vbsf_inode_create(struct user_namespace *ns, struct inode *parent, struct dentry *dentry, umode_t mode, bool excl)
 #elif RTLNX_VER_MIN(3,6,0)
 static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, umode_t mode, bool excl)
@@ -1085,7 +1087,9 @@ static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, int mo
  * @param   mode    file mode
  * @returns 0 on success, Linux error code otherwise
  */
-#if RTLNX_VER_MIN(5,12,0) || defined(DOXYGEN_RUNNING)
+#if RTLNX_VER_MIN(6,3,0)
+static int vbsf_inode_mkdir(struct mnt_idmap *idmap, struct inode *parent, struct dentry *dentry, umode_t mode)
+#elif RTLNX_VER_MIN(5,12,0) || defined(DOXYGEN_RUNNING)
 static int vbsf_inode_mkdir(struct user_namespace *ns, struct inode *parent, struct dentry *dentry, umode_t mode)
 #elif RTLNX_VER_MIN(3,3,0)
 static int vbsf_inode_mkdir(struct inode *parent, struct dentry *dentry, umode_t mode)
@@ -1200,7 +1204,11 @@ static int vbsf_inode_rmdir(struct inode *parent, struct dentry *dentry)
  * @param   flags       flags
  * @returns 0 on success, Linux error code otherwise
  */
-#if RTLNX_VER_MIN(5,12,0) || defined(DOXYGEN_RUNNING)
+#if RTLNX_VER_MIN(6,3,0)
+static int vbsf_inode_rename(struct mnt_idmap *idmap,
+                             struct inode *old_parent, struct dentry *old_dentry,
+                             struct inode *new_parent, struct dentry *new_dentry, unsigned flags)
+#elif RTLNX_VER_MIN(5,12,0) || defined(DOXYGEN_RUNNING)
 static int vbsf_inode_rename(struct user_namespace *ns,
                              struct inode *old_parent, struct dentry *old_dentry,
                              struct inode *new_parent, struct dentry *new_dentry, unsigned flags)
@@ -1312,7 +1320,9 @@ static int vbsf_inode_rename_no_flags(struct inode *old_parent, struct dentry *o
 /**
  * Create a symbolic link.
  */
-#if RTLNX_VER_MIN(5,12,0)
+#if RTLNX_VER_MIN(6,3,0)
+static int vbsf_inode_symlink(struct mnt_idmap *idmap, struct inode *parent, struct dentry *dentry, const char *target)
+#elif RTLNX_VER_MIN(5,12,0)
 static int vbsf_inode_symlink(struct user_namespace *ns, struct inode *parent, struct dentry *dentry, const char *target)
 #else
 static int vbsf_inode_symlink(struct inode *parent, struct dentry *dentry, const char *target)

@@ -275,7 +275,10 @@ extern void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pIno
 extern int  vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced, bool fInodeLocked);
 extern int  vbsf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile, bool fForced, bool fInodeLocked);
 #if RTLNX_VER_MIN(2,5,18)
-# if RTLNX_VER_MIN(5,12,0)
+# if RTLNX_VER_MIN(6,3,0)
+extern int  vbsf_inode_getattr(struct mnt_idmap *idmap, const struct path *path,
+                               struct kstat *kstat, u32 request_mask, unsigned int query_flags);
+# elif RTLNX_VER_MIN(5,12,0)
 extern int  vbsf_inode_getattr(struct user_namespace *ns, const struct path *path,
                                struct kstat *kstat, u32 request_mask, unsigned int query_flags);
 # elif RTLNX_VER_MIN(4,11,0)
@@ -286,7 +289,9 @@ extern int  vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, stru
 #else  /* < 2.5.44 */
 extern int  vbsf_inode_revalidate(struct dentry *dentry);
 #endif /* < 2.5.44 */
-#if RTLNX_VER_MIN(5,12,0)
+#if RTLNX_VER_MIN(6,3,0)
+extern int  vbsf_inode_setattr(struct mnt_idmap *idmap, struct dentry *dentry, struct iattr *iattr);
+#elif RTLNX_VER_MIN(5,12,0)
 extern int  vbsf_inode_setattr(struct user_namespace *ns, struct dentry *dentry, struct iattr *iattr);
 #else
 extern int  vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr);

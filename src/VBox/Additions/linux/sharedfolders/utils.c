@@ -697,8 +697,10 @@ int vbsf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFil
    has inode at all) from these new attributes we derive [kstat] via
    [generic_fillattr] */
 #if RTLNX_VER_MIN(2,5,18)
-
-# if RTLNX_VER_MIN(5,12,0)
+# if RTLNX_VER_MIN(6,3,0)
+int vbsf_inode_getattr(struct mnt_idmap *idmap, const struct path *path,
+                       struct kstat *kstat, u32 request_mask, unsigned int flags)
+# elif RTLNX_VER_MIN(5,12,0)
 int vbsf_inode_getattr(struct user_namespace *ns, const struct path *path,
                        struct kstat *kstat, u32 request_mask, unsigned int flags)
 # elif RTLNX_VER_MIN(4,11,0)
@@ -741,7 +743,9 @@ int vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat
 # endif
     if (rc == 0) {
         /* Do generic filling in of info. */
-# if RTLNX_VER_MIN(5,12,0)
+# if RTLNX_VER_MIN(6,3,0)
+        generic_fillattr(idmap, dentry->d_inode, kstat);
+# elif RTLNX_VER_MIN(5,12,0)
         generic_fillattr(ns, dentry->d_inode, kstat);
 # else
         generic_fillattr(dentry->d_inode, kstat);
@@ -791,7 +795,9 @@ int vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat
 /**
  * Modify inode attributes.
  */
-#if RTLNX_VER_MIN(5,12,0)
+#if RTLNX_VER_MIN(6,3,0)
+int vbsf_inode_setattr(struct mnt_idmap *idmap, struct dentry *dentry, struct iattr *iattr)
+#elif RTLNX_VER_MIN(5,12,0)
 int vbsf_inode_setattr(struct user_namespace *ns, struct dentry *dentry, struct iattr *iattr)
 #else
 int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
@@ -815,7 +821,9 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
      */
     iattr->ia_valid |= ATTR_FORCE;
 #if (RTLNX_VER_RANGE(3,16,39,  3,17,0)) || RTLNX_VER_MIN(4,9,0) || (RTLNX_VER_RANGE(4,1,37,  4,2,0)) || RTLNX_UBUNTU_ABI_MIN(4,4,255,208)
-# if RTLNX_VER_MIN(5,12,0)
+# if RTLNX_VER_MIN(6,3,0)
+    rc = setattr_prepare(idmap, dentry, iattr);
+# elif RTLNX_VER_MIN(5,12,0)
     rc = setattr_prepare(ns, dentry, iattr);
 # else
     rc = setattr_prepare(dentry, iattr);
