@@ -39,6 +39,10 @@
 #include "vbox_drv.h"
 #include <linux/export.h>
 #include <drm/drm_crtc_helper.h>
+#if RTLNX_VER_MIN(6,3,0)
+# include <drm/drm_modeset_helper_vtables.h>
+# include <drm/drm_modeset_helper.h>
+#endif
 #if RTLNX_VER_MIN(3,18,0) || RTLNX_RHEL_MAJ_PREREQ(7,2)
 # include <drm/drm_plane_helper.h>
 #endif

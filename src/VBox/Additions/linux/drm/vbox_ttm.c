@@ -33,6 +33,11 @@
  *          Michael Thayer <michael.thayer@oracle.com>
  */
 #include "vbox_drv.h"
+
+#if RTLNX_VER_MIN(6,3,0)
+# include <drm/ttm/ttm_tt.h>
+#endif
+
 #if RTLNX_VER_MIN(5,11,0) || RTLNX_RHEL_MAJ_PREREQ(8,5)
 # include <drm/drm_gem.h>
 # include <drm/drm_gem_ttm_helper.h>

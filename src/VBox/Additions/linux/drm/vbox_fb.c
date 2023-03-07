@@ -345,12 +345,14 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 	info->flags = FBINFO_DEFAULT | FBINFO_MISC_ALWAYS_SETPAR;
 	info->fbops = &vboxfb_ops;
 
+#if RTLNX_VER_MAX(6,3,0)
 	/*
 	 * This seems to be done for safety checking that the framebuffer
 	 * is not registered twice by different drivers.
 	 */
 	info->apertures->ranges[0].base = pci_resource_start(VBOX_DRM_TO_PCI_DEV(dev), 0);
 	info->apertures->ranges[0].size = pci_resource_len(VBOX_DRM_TO_PCI_DEV(dev), 0);
+#endif
 
 #if RTLNX_VER_MIN(5,2,0) || RTLNX_RHEL_MAJ_PREREQ(8,2)
         /*
@@ -457,11 +459,14 @@ int vbox_fbdev_init(struct drm_device *dev)
 	vbox->fbdev = fbdev;
 	spin_lock_init(&fbdev->dirty_lock);
 
-#if RTLNX_VER_MAX(3,17,0) && !RTLNX_RHEL_MAJ_PREREQ(7,2)
-	fbdev->helper.funcs = &vbox_fb_helper_funcs;
-#else
+#if RTLNX_VER_MIN(6,3,0)
+	drm_fb_helper_prepare(dev, &fbdev->helper, 32, &vbox_fb_helper_funcs);
+#elif RTLNX_VER_MIN(3,17,0) || RTLNX_RHEL_MIN(7,2)
 	drm_fb_helper_prepare(dev, &fbdev->helper, &vbox_fb_helper_funcs);
+#else
+	fbdev->helper.funcs = &vbox_fb_helper_funcs;
 #endif
+
 #if RTLNX_VER_MIN(5,7,0) || RTLNX_RHEL_MIN(8,4) || RTLNX_SUSE_MAJ_PREREQ(15,3)
         ret = drm_fb_helper_init(dev, &fbdev->helper);
 #elif RTLNX_VER_MIN(4,11,0) || RTLNX_RHEL_MAJ_PREREQ(7,5)
@@ -483,7 +488,11 @@ int vbox_fbdev_init(struct drm_device *dev)
 	/* disable all the possible outputs/crtcs before entering KMS mode */
 	drm_helper_disable_unused_functions(dev);
 
+#if RTLNX_VER_MIN(6,3,0)
+	ret = drm_fb_helper_initial_config(&fbdev->helper);
+#else
 	ret = drm_fb_helper_initial_config(&fbdev->helper, 32);
+#endif
 	if (ret)
 		goto err_fini;
 
@@ -498,6 +507,11 @@ void vbox_fbdev_set_base(struct vbox_private *vbox, unsigned long gpu_addr)
 {
 	struct fb_info *fbdev = VBOX_FBDEV_INFO(vbox->fbdev->helper);
 
+#if RTLNX_VER_MIN(6,3,0)
+    fbdev->fix.smem_start = 
+pci_resource_start(VBOX_DRM_TO_PCI_DEV(vbox->fbdev->helper.dev), 0) + gpu_addr;
+#else
 	fbdev->fix.smem_start = fbdev->apertures->ranges[0].base + gpu_addr;
+#endif
 	fbdev->fix.smem_len = vbox->available_vram_size - gpu_addr;
 }
