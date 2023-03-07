@@ -39,7 +39,7 @@ Version:   %BUILDVER%_%BUILDREL%
 Release:   1
 URL:       http://www.virtualbox.org/
 Source:    VirtualBox.tar
-License:   GPLv2
+License:   GPLv3
 Group:     Applications/System
 Vendor:    Oracle Corporation
 BuildRoot: %BUILDROOT%
