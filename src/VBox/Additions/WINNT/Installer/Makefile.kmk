@@ -398,7 +398,7 @@ if defined(VBOX_GA_ATTESTATION_SIGNING) && defined(VBOX_SIGNING_MODE) && defined
  		$(PATH_OUT)/repackadd/sign-attestation.sh \
  		$(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME)
 	$(RM_EXT) -f $(PATH_OUT)/repackadd/*.zip
-	cd $(PATH_OUT)/repackadd && $(SHELL) $(KBUILD_DEVTOOLS)/win/attestation/AttestationSigning.bat "Oracle VM VirtualBox GA drivers $(KBUILD_TARGET_ARCH) $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)r$(VBOX_SVN_REV)" "$(KBUILD_TARGET_ARCH)" "" "$(VBOX_DRIVERS_PACK_NAME)"
+	cd $(PATH_OUT)/repackadd && $(EXEC_X86_WIN32) $(KBUILD_DEVTOOLS)/win/attestation/AttestationSigning.bat "Oracle VM VirtualBox GA drivers $(KBUILD_TARGET_ARCH) $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)r$(VBOX_SVN_REV)" "$(KBUILD_TARGET_ARCH)" "" "$(VBOX_DRIVERS_PACK_NAME)"
 
  #
  # This creates a .CAB file of the driver files that should be attestation signed.
