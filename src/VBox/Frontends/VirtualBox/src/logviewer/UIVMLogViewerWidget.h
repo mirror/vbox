@@ -41,26 +41,23 @@
 #include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
 
-/* COM includes: */
-#include "COMEnums.h"
-#include "CMachine.h"
-
 /* Forward declarations: */
-class UITabWidget;
 class QVBoxLayout;
-class UIActionPool;
-class UIDialogPanel;
 class QIToolBar;
 class QIToolButton;
+class UIActionPool;
+class UIDialogPanel;
 class UIMachineListMenu;
+class UITabWidget;
 class UIVirtualMachineItem;
 class UIVMLogPage;
 class UIVMLogTab;
 class UIVMLogViewerBookmarksPanel;
 class UIVMLogViewerFilterPanel;
+class UIVMLogViewerOptionsPanel;
 class UIVMLogViewerPanel;
 class UIVMLogViewerSearchPanel;
-class UIVMLogViewerOptionsPanel;
+class CMachine;
 
 /** QWidget extension providing GUI for VirtualBox LogViewer. It
  *  encapsulates log pages, toolbar, a tab widget and manages
@@ -212,7 +209,7 @@ private:
     void manageEscapeShortCut();
     void setMachines(const QVector<QUuid> &machineIDs);
     /** Returns the content of the ith log file of @comMachine or possibly an empty string */
-    QString readLogFile(CMachine &comMachine, int iLogFileId);
+    QString readLogFile(const CMachine &comConstMachine, int iLogFileId);
     /** If the current tab is a label tab then switch to the next tab and return true. Returns false otherwise. */
     bool labelTabHandler();
 

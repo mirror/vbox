@@ -48,7 +48,10 @@
 /* GUI includes: */
 #include "QIFileDialog.h"
 #include "QITabWidget.h"
+#include "QIToolBar.h"
+#include "QIToolButton.h"
 #include "UIActionPool.h"
+#include "UICommon.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
@@ -59,11 +62,10 @@
 #include "UIVMLogViewerFilterPanel.h"
 #include "UIVMLogViewerSearchPanel.h"
 #include "UIVMLogViewerOptionsPanel.h"
-#include "QIToolBar.h"
-#include "QIToolButton.h"
-#include "UICommon.h"
 
 /* COM includes: */
+#include "COMEnums.h"
+#include "CMachine.h"
 #include "CSystemProperties.h"
 
 /** Limit the read string size to avoid bloated log viewer pages. */
@@ -349,14 +351,16 @@ void UIVMLogViewerWidget::markLabelTabs()
     }
 }
 
-QString UIVMLogViewerWidget::readLogFile(CMachine &comMachine, int iLogFileId)
+QString UIVMLogViewerWidget::readLogFile(const CMachine &comConstMachine, int iLogFileId)
 {
+    CMachine comMachine(comConstMachine); // ReadLog is non const
     QString strLogFileContent;
     ULONG uOffset = 0;
 
     while (true)
     {
         QVector<BYTE> data = comMachine.ReadLog(iLogFileId, uOffset, _1M);
+        /// @todo it's probably worth testing !comMachine.isOk() and show error message, or not :)
         if (data.size() == 0)
             break;
         strLogFileContent.append(QString::fromUtf8((char*)data.data(), data.size()));
@@ -451,8 +455,7 @@ void UIVMLogViewerWidget::sltSave()
     if (!pLogPage)
         return;
 
-    CMachine comMachine = uiCommon().virtualBox().FindMachine(pLogPage->machineId().toString());
-    if (comMachine.isNull())
+    if (pLogPage->machineId().isNull())
         return;
 
     const QString& fileName = pLogPage->logFileName();
@@ -463,7 +466,7 @@ void UIVMLogViewerWidget::sltSave()
     /* Prepare default filename: */
     const QDateTime dtInfo = fileInfo.lastModified();
     const QString strDtString = dtInfo.toString("yyyy-MM-dd-hh-mm-ss");
-    const QString strDefaultFileName = QString("%1-%2.log").arg(comMachine.GetName()).arg(strDtString);
+    const QString strDefaultFileName = QString("%1-%2.log").arg(pLogPage->machineName()).arg(strDtString);
     const QString strDefaultFullName = QDir::toNativeSeparators(QDir::home().absolutePath() + "/" + strDefaultFileName);
 
     const QString strNewFileName = QIFileDialog::getSaveFileName(strDefaultFullName,
