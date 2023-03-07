@@ -276,12 +276,6 @@ void UIMachineLogicSeamless::prepareMachineWindows()
     for (uint cScreenId = 0; cScreenId < cMonitorCount; ++cScreenId)
         addMachineWindow(UIMachineWindow::create(this, cScreenId));
 
-    /* Listen for frame-buffer resize: */
-    foreach (UIMachineWindow *pMachineWindow, machineWindows())
-        connect(pMachineWindow, &UIMachineWindow::sigFrameBufferResize,
-                this, &UIMachineLogicSeamless::sigFrameBufferResize);
-    emit sigFrameBufferResize();
-
     /* Connect multi-screen layout change handler: */
     connect(m_pScreenLayout, &UIMultiScreenLayout::sigScreenLayoutChange,
             this, &UIMachineLogicSeamless::sltScreenLayoutChanged);

@@ -143,12 +143,6 @@ signals:
         void sigCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY);
     /** @} */
 
-    /** @name Graphics stuff.
-     ** @{ */
-        /** Notifies about frame-buffer resize. */
-        void sigFrameBufferResize();
-    /** @} */
-
 public:
 
     /** Constructs session UI passing @a pMachine to the constructor.

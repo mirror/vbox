@@ -291,12 +291,6 @@ void UIMachineLogicNormal::prepareMachineWindows()
     for (ulong uScreenId = cMonitorCount; uScreenId > 0; -- uScreenId)
         machineWindows()[uScreenId - 1]->raise();
 
-    /* Listen for frame-buffer resize: */
-    foreach (UIMachineWindow *pMachineWindow, machineWindows())
-        connect(pMachineWindow, &UIMachineWindow::sigFrameBufferResize,
-                this, &UIMachineLogicNormal::sigFrameBufferResize);
-    emit sigFrameBufferResize();
-
     /* Mark machine-window(s) created: */
     setMachineWindowsCreated(true);
 }

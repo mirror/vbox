@@ -64,11 +64,6 @@ class UIMachineLogic : public QIWithRetranslateUI3<QObject>
     /** Pointer to menu update-handler for this class: */
     typedef void (UIMachineLogic::*MenuUpdateHandler)(QMenu *pMenu);
 
-signals:
-
-    /** Notifies about frame-buffer resize. */
-    void sigFrameBufferResize();
-
 public:
 
     /** Factory function to create a logic of required type.

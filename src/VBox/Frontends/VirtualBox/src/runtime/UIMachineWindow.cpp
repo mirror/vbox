@@ -577,9 +577,6 @@ void UIMachineWindow::prepareMachineView()
     /* Create machine-view: */
     m_pMachineView = UIMachineView::create(this, m_uScreenId, visualStateType);
 
-    /* Listen for frame-buffer resize: */
-    connect(m_pMachineView, &UIMachineView::sigFrameBufferResize, this, &UIMachineWindow::sigFrameBufferResize);
-
     /* Add machine-view into main-layout: */
     m_pMainLayout->addWidget(m_pMachineView, 1, 1, viewAlignment(visualStateType));
 

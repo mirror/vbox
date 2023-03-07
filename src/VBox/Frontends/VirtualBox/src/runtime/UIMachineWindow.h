@@ -60,11 +60,6 @@ class UIMachineWindow : public QIWithRetranslateUI2<QMainWindow>
 {
     Q_OBJECT;
 
-signals:
-
-    /** Notifies about frame-buffer resize. */
-    void sigFrameBufferResize();
-
 public:
 
     /* Factory functions to create/destroy machine-window: */
