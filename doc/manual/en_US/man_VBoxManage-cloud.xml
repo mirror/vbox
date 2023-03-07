@@ -69,6 +69,16 @@
       <arg choice="req">--compartment-id=<replaceable>string</replaceable></arg>
       <arg>--state=<replaceable>string</replaceable></arg>
     </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-cloudlist-vnicattachments">
+      <command>VBoxManage cloud</command>
+      <arg choice="req">--provider=<replaceable>name</replaceable></arg>
+      <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+      <sbr/>
+      <arg choice="plain">list</arg>
+      <arg choice="plain">vnicattachments</arg>
+      <arg choice="req">--compartment-id=<replaceable>string</replaceable></arg>
+      <arg>--filter=<replaceable>string</replaceable></arg>
+    </cmdsynopsis>
 
     <!-- Cloud instance commands -->
       <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-create" sepchar=" ">
@@ -303,6 +313,39 @@
           <listitem>
             <para>The state of cloud image. The possible states are "available/disabled/deleted" at moment.
             If the state isn't provided the list of images with all possible states is returned.
+            </para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--compartment-id</option></term>
+            <listitem>
+              <para>A compartment is the logical container used to organize and isolate cloud resources.
+              The different cloud providers can have the different names for this entity.
+              </para>
+            </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-cloudlist-vnicattachments">
+      <title>cloud list vnic attachments</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Displays the list of the vnic attachments for a specified compartment.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term>--filter<replaceable>"instanceId/vnicId/domainName=string"</replaceable></term>
+          <listitem>
+            <para>Filters are used to narrow down the set of Vnic attachments of interest.
+            This parameter is repeatible.
+            The possible filters are "instanceId" or "vnicId" or "availabilityDomain" at moment.
+            The form is "instanceId/vnicId/domainName=[string value]" and can be repeated.
+            In instance, "--filter instanceId=ocid1.instance.oc1.iad.anuwcl...js6
+                          --filter vnicId=ocid1.vnic.oc1.iad.abuwcl...jsm
+                          --filter domainName=ergw:US-ASHBURN-AD-2".
+            But in most cases, this is redundant and one filter is enough.
+            If the filter isn't provided the whole list of vnic attachments for a specified compartment is returned.
             </para>
           </listitem>
         </varlistentry>
