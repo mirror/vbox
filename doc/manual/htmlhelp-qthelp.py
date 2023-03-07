@@ -196,7 +196,7 @@ def create_toc(folder, toc_file):
     content = [x[2] for x in os.walk(folder)]
     if toc_file not in content[0]:
         logging.error('Could not find toc file "%s" under "%s"', toc_file, folder)
-        return
+        return toc_string_list
     full_path = os.path.join(folder, toc_file)
     file = codecs.open(full_path, encoding='iso-8859-1')
     content = file.read()
