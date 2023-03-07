@@ -1038,7 +1038,7 @@ static int vbsf_inode_atomic_open(struct inode *pDirInode, struct dentry *dentry
 /**
  * Create a new regular file.
  *
- * @param   ns      The name space.
+ * @param   idmap   idmap of the mount.
  * @param   parent  inode of the directory
  * @param   dentry  directory cache entry
  * @param   mode    file mode
@@ -1081,7 +1081,7 @@ static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, int mo
 /**
  * Create a new directory.
  *
- * @param   ns      The name space.
+ * @param   idmap   idmap of the mount.
  * @param   parent  inode of the directory
  * @param   dentry  directory cache entry
  * @param   mode    file mode
@@ -1196,7 +1196,7 @@ static int vbsf_inode_rmdir(struct inode *parent, struct dentry *dentry)
 /**
  * Rename a regular file / directory.
  *
- * @param   ns          The name space.
+ * @param   idmap       idmap of the mount.
  * @param   old_parent  inode of the old parent directory
  * @param   old_dentry  old directory cache entry
  * @param   new_parent  inode of the new parent directory
