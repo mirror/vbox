@@ -94,7 +94,8 @@ ifdef HHC
 endif
 
 VBOX_DITA_CONVERTER_PATH = $(PATH_ROOT)/src/libs/dbdita-1.0
-VBOX_DITA_PATH = $(PATH_ROOT)/src/libs/dita-ot-1.8.5
+VBOX_DITA_ORIGINAL_PATH = $(PATH_ROOT)/src/libs/dita-ot-1.8.5
+VBOX_DITA_PATH = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-1.8.5
 
 VBOX_QHELP_OUTPUT_FILES = \
 	UserManual.qch \
@@ -876,6 +877,12 @@ man_vboximg-mount.xml \
  #  DITA-OT-xxxxx/doc folder for details.
  #
  ##########################################################################################
+# Copy the dita library under out folder since at each use the library modifies some
+# run-time configuation files.
+$(VBOX_DITA_PATH):
+	$(MKDIR) -p $(VBOX_DITA_PATH)
+	cp -R $(VBOX_DITA_ORIGINAL_PATH)/* $(VBOX_DITA_PATH)/
+
  VBOX_DITA_PATH_LIB ?= $(VBOX_DITA_PATH)/lib
  VBOX_DITA_ENV_SETUP ?= $(REDIRECT) \
  	-E 'ANT_OPTS=-Xmx512m -Djavax.xml.transform.TransformerFactory=net.sf.saxon.TransformerFactoryImpl' \
@@ -907,6 +914,7 @@ man_vboximg-mount.xml \
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf: \
   		$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
+		$(VBOX_DITA_PATH) \
   		$(VBOX_REFENTRY_DITA_FILES) \
   		$$(VBOX_PATH_MANUAL_SRC)/correct_references.py
 		$$(call MSG_L1,correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics)
@@ -979,99 +987,8 @@ endef
 $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_REFENTRY_FILES) \
 , $(evalcall2 def_vbox_refentry_to_manpage,$(lang),$(file))))
 
-# VBOX_WITH_DOCS_QHELP_WITH_DITA is just a temporary variable not to break the qhelp build
-# for others. When we switch to dita completely the code block inside ifdef VBOX_WITH_DOCS_QHELP
-# should be replaced by the one inside VBOX_WITH_DOCS_QHELP_WITH_DITA
-ifdef VBOX_WITH_DOCS_QHELP_WITH_DITA
- VBOX_WITH_DOCS_QHELP       =
-endif
-
 ifdef VBOX_WITH_DOCS_QHELP
- #
- # VirtualBox.qch/VirtualBox.qhc
- #
- # We first generate a .hhp help source file from the preprocessed
- # DocBook XML files, as defined above, then feed that into a converter
- # creating the suitable input for creating a QHelp collection file.
-
- # Generate QCH from QHelp source
- # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
- define def_vbox_usermanual_qhp_to_qch
-  local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)
-  $$(out_dir)/qhelp/UserManual.qch + \
-  $$(out_dir)/qhelp/UserManual.qhc: \
-  		$$(out_dir)/qhelp/UserManual.qhcp \
-  		$$(out_dir)/qhelp/UserManual.qhp \
-  		$$(addprefix $$(out_dir)/qhelp/,$$(VBOX_MANUAL_PNG_FILES_$(lang))) \
-  		| $$$$(dir $$$$@)
-	$$(call MSG_L1,$$(notdir $$(QHELPGENERATOR)) $$<,=> $$@)
-	$$(QUIET)$$(RM) -f $$@
-	$$(QUIET)$$(REDIRECT) -E QT_QPA_PLATFORM_PLUGIN_PATH=$$(PATH_SDK_QT5)/plugins -- $$(QHELPGENERATOR) $$<
-	$$(call MSG_L1,Fresh QCH is now at $$@)
- endef
- $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_usermanual_qhp_to_qch))
-
- # Generate QHP from HHP for QHelp
- # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
- define def_vbox_usermanual_hhp_qhelp_to_qhp
-  local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)
-  $$(out_dir)/qhelp/UserManual.qhp: \
-  		$$(out_dir)/qhelp/htmlhelp.hhp \
-  		$$(addprefix $$(out_dir)/qhelp/,$$(VBOX_MANUAL_PNG_FILES_$(lang))) \
-  		| $$$$(dir $$$$@)
-	$$(call MSG_L1,htmlhelp-qthelp.py $$<,=> $$@)
-	$$(QUIET)$$(RM) -f $$@
-	$$(QUIET)$$(VBOX_BLD_PYTHON) $$(VBOX_PATH_MANUAL_SRC)/htmlhelp-qthelp.py -d $$(<D) -o $$@ -f htmlhelp.hhp -t toc.hhc
- endef
- $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_usermanual_hhp_qhelp_to_qhp))
-
- # Generate HHP for QHelp from XML
- # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
- define def_vbox_usermanual_xml_to_hhp_qhelp
-  local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)
-  $$(out_dir)/qhelp/htmlhelp.hhp: \
-  		$$(addprefix $$(VBOX_PATH_MANUAL_SRC)/$(lang)/,$$(VBOX_MANUAL_XML_FILES)) \
-  		$$(VBOX_MANUAL_XML_FILES_COMMON) \
-  		$$(VBOX_MANUAL_XML_FILES_GENERATED_$(lang)) \
-  		$$(VBOX_DOCBOOK_HTMLHELP_FORMATCFG) \
-  		$$(VBOX_PATH_MANUAL_OUTBASE)/titlepage-htmlhelp.xsl \
-  		$$(if $$(VBOX_HAVE_XMLLINT),$$(out_dir)/validatemanual.run,) \
-  		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) \
-  		$$(VBOX_XML_ENTITIES) | $$$$(dir $$$$@)
-	$$(call MSG_TOOL,xsltproc $$(notdir $$(firstword $$(filter %.xsl,$$^))),,$$(firstword $$(filter %.xml,$$^)),$$@)
-	$$(QUIET)$$(RM) -f $$@
-	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --output $$(@D)/ \
-		--stringparam htmlhelp.chm \
-		$$(subst /,\\,$$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/VirtualBox.chm) \
-		$$(HTMLHELPOPTS) $$(VBOX_PATH_MANUAL_SRC)/docbook-htmlhelp-formatcfg.xsl \
-		$$<
- endef
- $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_usermanual_xml_to_hhp_qhelp))
-
- # copy the qhcp file.
- define def_vbox_cp_qhcp
-  local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/qhelp
-  $$(out_dir)/UserManual.qhcp: \
-  		$$(out_dir)/% : $(VBOX_PATH_MANUAL_SRC)/% | $$$$(dir $$$$@)
-	$$(QUIET)$$(INSTALL_STAGING) -m0644 -- '$$<' '$$(@D)'
- endef
- $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(eval $(def_vbox_cp_qhcp)))
-
- # copy the PNG files.
- # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
- define def_vbox_cp_images_qhelp
-  local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/qhelp
-  $(addprefix $$(out_dir)/,$(VBOX_MANUAL_PNG_FILES_$(lang))): \
-  		$$(out_dir)/% : $(VBOX_PATH_MANUAL_SRC)/$(lang)/% | $$$$(dir $$$$@)
-	$$(call MSG_L1,Copying temporary $$< => $$@)
-	$$(QUIET)$$(INSTALL_STAGING) -m0644 -- '$$<' '$$(@D)'
- endef
- $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(eval $(def_vbox_cp_images_qhelp)))
-
-endif # VBOX_WITH_DOCS_QHELP
-
-ifdef VBOX_WITH_DOCS_QHELP_WITH_DITA
- #
+  #
  # VirtualBox.qch/VirtualBox.qhc
  #
  # We first generate a .hhp help source file from the preprocessed
@@ -1114,6 +1031,7 @@ ifdef VBOX_WITH_DOCS_QHELP_WITH_DITA
   ditamap-to-htmlhelp: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp/UserManual.hhp
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp/UserManual.hhp: \
   		$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
+		$(VBOX_DITA_PATH) \
   		$(VBOX_REFENTRY_DITA_FILES) \
   		$$(VBOX_PATH_MANUAL_SRC)/correct_references.py
 		$$(call MSG_L1,correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics)
@@ -1145,7 +1063,7 @@ ifdef VBOX_WITH_DOCS_QHELP_WITH_DITA
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(eval $(def_vbox_cp_images_qhelp)))
 
-endif # VBOX_WITH_DOCS_QHELP_WITH_DITA
+endif # VBOX_WITH_DOCS_QHELP
 
 # Handy aliases.
 validate-manpages:: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_XML_REFENTRY_FILES))
