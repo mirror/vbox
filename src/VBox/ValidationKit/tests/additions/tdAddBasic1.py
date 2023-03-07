@@ -99,6 +99,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         reporter.log('      Default: %s  (all)' % (':'.join(self.asTestsDef)));
         reporter.log('  --quick');
         reporter.log('      Same as --virt-modes hwvirt --cpu-counts 1.');
+        reporter.log('  --no-reboot-after-install');
+        reporter.log('      Do not reboot guest after Guest Additions installation.');
         return rc;
 
     def parseOption(self, asArgs, iArg):                                  # pylint: disable=too-many-branches,too-many-statements
