@@ -87,7 +87,7 @@ def createXrefIdDictionary(ditafolder):
     xref_dictionary.clear()
     dita_files = glob.glob(ditafolder + "/*.dita")
     for file in dita_files:
-        file_content = open(file, 'r')
+        file_content = open(file, 'r', encoding="utf-8")
         for line in file_content:
             if "reference" in line or "topic" in line or "section" in line:
                 start = line.find("id=\"")
@@ -127,11 +127,11 @@ def main():
 
     vboxmanage_dita_files = glob.glob(ditafolder + "/man_V*dita")
     for file in vboxmanage_dita_files:
-        file_handle = open(file, 'r')
+        file_handle = open(file, 'r', encoding="utf-8")
         file_content = file_handle.readlines()
         correctHrefTargets(file_content)
         file_handle.close()
-        file_handle = open(file, 'w')
+        file_handle = open(file, 'w', encoding="utf-8")
         file_handle.write("".join(file_content))
         file_handle.close()
 
