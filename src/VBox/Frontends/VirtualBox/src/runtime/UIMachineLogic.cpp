@@ -67,7 +67,6 @@
 #include "UIModalWindowManager.h"
 #include "UIMouseHandler.h"
 #include "UINotificationCenter.h"
-#include "UISession.h"
 #include "UISettingsDialogSpecific.h"
 #include "UISoftKeyboard.h"
 #include "UITakeSnapshotDialog.h"
@@ -257,11 +256,6 @@ void UIMachineLogic::initializePostPowerUp()
     sltMachineStateChanged();
     sltAdditionsStateChanged();
     sltMouseCapabilityChanged();
-}
-
-UISession *UIMachineLogic::uisession() const
-{
-    return uimachine()->uisession();
 }
 
 UIActionPool *UIMachineLogic::actionPool() const
@@ -591,7 +585,7 @@ void UIMachineLogic::sltDisableHostScreenSaverStateChanged(bool fDisabled)
 
 void UIMachineLogic::sltKeyboardLedsChanged()
 {
-    /* Here we have to update host LED lock states using values provided by UISession:
+    /* Here we have to update host LED lock states using values provided by UIMachine:
      * [bool] uimachine() -> isNumLock(), isCapsLock(), isScrollLock() can be used for that. */
 
     if (!uimachine()->isHidLedsSyncEnabled())
@@ -2308,9 +2302,9 @@ void UIMachineLogic::sltInstallGuestAdditions()
     if (comSystemProperties.isOk() && !strAdditions.isEmpty())
     {
         if (fOnlyMount)
-            return uisession()->sltMountDVDAdHoc(strAdditions);
+            return uimachine()->sltMountDVDAdHoc(strAdditions);
         else
-            return uisession()->sltInstallGuestAdditionsFrom(strAdditions);
+            return uimachine()->sltInstallGuestAdditionsFrom(strAdditions);
     }
 
     /* Check whether we have already registered image: */
@@ -2332,9 +2326,9 @@ void UIMachineLogic::sltInstallGuestAdditions()
                 if (RTPathCompare(strName.toUtf8().constData(), strFileName.toUtf8().constData()) == 0)
                 {
                     if (fOnlyMount)
-                        return uisession()->sltMountDVDAdHoc(strPath);
+                        return uimachine()->sltMountDVDAdHoc(strPath);
                     else
-                        return uisession()->sltInstallGuestAdditionsFrom(strPath);
+                        return uimachine()->sltInstallGuestAdditionsFrom(strPath);
                 }
             }
         }
@@ -2352,10 +2346,10 @@ void UIMachineLogic::sltInstallGuestAdditions()
         /* After downloading finished => propose to install or just mount the guest additions: */
         if (fOnlyMount)
             connect(pNotification, &UINotificationDownloaderGuestAdditions::sigGuestAdditionsDownloaded,
-                    uisession(), &UISession::sltMountDVDAdHoc);
+                    uimachine(), &UIMachine::sltMountDVDAdHoc);
         else
             connect(pNotification, &UINotificationDownloaderGuestAdditions::sigGuestAdditionsDownloaded,
-                    uisession(), &UISession::sltInstallGuestAdditionsFrom);
+                    uimachine(), &UIMachine::sltInstallGuestAdditionsFrom);
         /* Append and start notification: */
         gpNotificationCenter->append(pNotification);
     }
@@ -2528,8 +2522,8 @@ void UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds()
 
     /* Here we have to store host LED lock states. */
 
-    /* Here we have to update host LED lock states using values provided by UISession registry.
-     * [bool] uisession() -> isNumLock(), isCapsLock(), isScrollLock() can be used for that. */
+    /* Here we have to update host LED lock states using values provided by UIMachine registry.
+     * [bool] uimachine() -> isNumLock(), isCapsLock(), isScrollLock() can be used for that. */
 
     if (!uimachine()->isHidLedsSyncEnabled())
         return;

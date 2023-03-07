@@ -1052,6 +1052,16 @@ void UIMachine::powerOff(bool fIncludingDiscard)
     uisession()->powerOff(fIncludingDiscard);
 }
 
+void UIMachine::sltInstallGuestAdditionsFrom(const QString &strSource)
+{
+    uisession()->sltInstallGuestAdditionsFrom(strSource);
+}
+
+void UIMachine::sltMountDVDAdHoc(const QString &strSource)
+{
+    uisession()->sltMountDVDAdHoc(strSource);
+}
+
 void UIMachine::closeRuntimeUI()
 {
     /* First, we have to hide any opened modal/popup widgets.

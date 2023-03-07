@@ -40,7 +40,6 @@
 class QAction;
 class QActionGroup;
 class QIManagerDialog;
-class UISession;
 class UIActionPool;
 class UIKeyboardHandler;
 class UIMachine;
@@ -91,8 +90,6 @@ public:
 
     /** Returns machine UI reference.  */
     UIMachine *uimachine() const { return m_pMachine; }
-    /** Returns session UI reference.  */
-    UISession *uisession() const;
     /** Returns action-pool reference.  */
     UIActionPool *actionPool() const;
 

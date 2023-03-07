@@ -710,6 +710,16 @@ public:
 
 public slots:
 
+    /** @name Guest additions stuff.
+     ** @{ */
+        /** Handles request to install guest additions image.
+          * @param  strSource  Brings the source of image being installed. */
+        void sltInstallGuestAdditionsFrom(const QString &strSource);
+        /** Mounts DVD adhoc.
+          * @param  strSource  Brings the source of image being mounted. */
+        void sltMountDVDAdHoc(const QString &strSource);
+    /** @} */
+
     /** @name Keyboard stuff.
      ** @{ */
         /** Defines @a iKeyboardState. */
