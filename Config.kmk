@@ -5023,7 +5023,7 @@ endif
 
 ifdef VBOX_WITH_LIBTPMS
  SDK_VBoxLibTpms                 := libtpms for dll linking.
- SDK_VBoxLibTpms_DEFAULT_INCS    := $(PATH_ROOT)/src/libs/libtpms-0.9.0/include
+ SDK_VBoxLibTpms_DEFAULT_INCS    := $(PATH_ROOT)/src/libs/libtpms-0.9.6/include
  SDK_VBoxLibTpms_INCS            ?= $(SDK_VBoxLibTpms_DEFAULT_INCS)
  SDK_VBoxLibTpms_LIBS            ?= $(PATH_STAGE_LIB)/VBox-libtpms$(VBOX_SUFF_LIB)
 endif

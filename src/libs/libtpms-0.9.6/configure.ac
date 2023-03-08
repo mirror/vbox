@@ -3,7 +3,7 @@
 #
 # See the LICENSE file for the license associated with this file.
 
-AC_INIT([libtpms],[0.9.0])
+AC_INIT([libtpms],[0.9.6])
 AC_PREREQ([2.69])
 AC_CONFIG_SRCDIR(Makefile.am)
 AC_CONFIG_AUX_DIR([.])
@@ -284,19 +284,20 @@ AC_ARG_ENABLE([hardening],
   AS_HELP_STRING([--disable-hardening], [Disable hardening flags]))
 
 if test "x$enable_hardening" != "xno"; then
-	# Some versions of gcc fail with -Wstack-protector enabled
-	TMP="$($CC -fstack-protector-strong $srcdir/include/libtpms/tpm_error.h 2>&1)"
-	if echo $TMP | $GREP 'unrecognized command line option' >/dev/null; then
-		HARDENING_CFLAGS="-fstack-protector "
+	# Some versions of gcc fail with -Wstack-protector,
+	# some with -Wstack-protector-strong enabled
+	if ! $CC -fstack-protector-strong $srcdir/include/libtpms/tpm_error.h 2>/dev/null; then
+		if $CC -fstack-protector $srcdir/include/libtpms/tpm_error.h 2>/dev/null; then
+			HARDENING_CFLAGS="-fstack-protector "
+		fi
 	else
 		HARDENING_CFLAGS="-fstack-protector-strong "
 	fi
 
-	dnl Must not have -O0 but must have a -O for -D_FORTIFY_SOURCE=2
-	TMP1="$(echo $CFLAGS | sed -n 's/.*\(-O0\).*/\1/p')"
-	TMP2="$(echo $CFLAGS | sed -n 's/.*\(-O\).*/\1/p')"
-	if test -z "$TMP1" && test -n "$TPM2"; then
-		HARDENING_CFLAGS="$HARDENING_CFLAGS -D_FORTIFY_SOURCE=2 "
+	dnl Only support -D_FORTIFY_SOURCE=2 and have higher levels passed in by user
+	dnl since they may create more overhead
+	if $CC $CFLAGS -Werror -D_FORTIFY_SOURCE=2 $srcdir/include/libtpms/tpm_library.h 2>/dev/null; then
+		HARDENING_CFLAGS="$HARDENING_CFLAGS -D_FORTIFY_SOURCE=2"
 	fi
 	dnl Check linker for 'relro' and 'now'
 	save_CFLAGS="$CFLAGS"

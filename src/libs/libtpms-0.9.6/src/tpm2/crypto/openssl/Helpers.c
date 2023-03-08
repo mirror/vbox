@@ -439,8 +439,6 @@ InitOpenSSLRSAPublicKey(OBJECT      *key,     // IN
         EVP_PKEY_assign_RSA(*pkey, rsakey) == 0)
         ERROR_RETURN(TPM_RC_FAILURE)
 
-    RSA_set_flags(rsakey, RSA_FLAG_NO_BLINDING);
-
     retVal = TPM_RC_SUCCESS;
 
  Exit:
@@ -521,8 +519,7 @@ InitOpenSSLRSAPrivateKey(OBJECT     *rsaKey,   // IN
             ERROR_RETURN(TPM_RC_FAILURE);
         /* Q = N/P; no remainder */
         BN_set_flags(P, BN_FLG_CONSTTIME); // P is secret
-        BN_div(Q, Qr, N, P, ctx);
-        if(!BN_is_zero(Qr))
+        if (!BN_div(Q, Qr, N, P, ctx) || !BN_is_zero(Qr))
             ERROR_RETURN(TPM_RC_BINDING);
         BN_set_flags(Q, BN_FLG_CONSTTIME); // Q is secret
 

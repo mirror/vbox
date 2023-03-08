@@ -1,5 +1,32 @@
 CHANGES - changes for libtpms
 
+version 0.9.6:
+  - tpm2: Check size of buffer before accessing it (CVE-2023-1017 & -1018)
+
+version 0.9.5:
+  - tpm2: Do not set RSA_FLAG_NO_BLINDING on RSA keys anymore
+  - tpm2: Fix a potential overflow expression (coverity)
+  - tpm2: Fix size check in CryptSecretDecrypt
+
+version 0.9.4:
+  - tpm: #undef printf in case it is #define'd (OSS-Fuzz)
+  - tpm2: Check return code of BN_div()
+  - tpm2: Initialize variables due to gcc complaint (s390x, false positive)
+  - tpm12: Initialize variables due to gcc complaint (s390x, false positive)
+  - build-sys: Fix configure script to support _FORTIFY_SOURCE=3
+
+version 0.9.3:
+  - build-sys: Add probing for -fstack-protector
+  - tpm2: Do not call EVP_PKEY_CTX_set0_rsa_oaep_label() for label of size
+    (OSSL 3)
+
+version 0.9.2:
+  - tpm2: When writing state initialize s_ContextSlotMask if not set
+
+version 0.9.1:
+  - tpm2: Do not write permanent state if only clock changed
+  - tpm2: Fix "maybe-uninitialized" warning
+
 version 0.9.0:
   - NOTE: Downgrade to previous versions is not possible. See below.
   - The size of the context gap has been adjusted to 0xffff from 0xff.

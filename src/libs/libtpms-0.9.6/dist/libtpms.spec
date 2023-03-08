@@ -1,8 +1,8 @@
 # --- libtpm rpm-spec ---
 
 %define name      libtpms
-%define version   0.9.0
-%define release   0~dev1
+%define version   0.9.6
+%define release   1
 
 # Valid crypto subsystems are 'freebl' and 'openssl'
 %if "%{?crypto_subsystem}" == ""
@@ -112,6 +112,24 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libtpms.la
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue Feb 28 2023 Stefan Berger - 0.9.6-1
+- tpm2: Check size of buffer before accessing it (CVE-2023-1017 & -1018)
+
+* Fri Jul 01 2022 Stefan Berger - 0.9.5-1
+- Release of version 0.9.5
+
+* Mon Apr 25 2022 Stefan Berger - 0.9.4-1
+- Release of version 0.9.4
+
+* Mon Mar 07 2022 Stefan Berger - 0.9.3-1
+- Release of version 0.9.3
+
+* Thu Jan 06 2022 Stefan Berger - 0.9.2-1
+- Release of version 0.9.2
+
+* Wed Nov 24 2021 Stefan Berger - 0.9.1-1
+- Release of version 0.9.1
+
 * Wed Sep 29 2021 Stefan Berger - 0.9.0-1
 - Release of version 0.9.0 (rev. 164)
 
