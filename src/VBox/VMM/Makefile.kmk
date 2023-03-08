@@ -244,6 +244,12 @@ ifdef VBOX_WITH_NETSHAPER
  	VMMAll/PDMAllNetShaper.cpp
 endif
 
+ifdef VBOX_WITH_IEM_RECOMPILER
+ VBoxVMM_SOURCES += \
+ 	VMMAll/IEMAllInstructionsThreadedRecompiler.cpp \
+ 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp
+endif
+
 ifdef VBOX_WITH_NATIVE_NEM
  VBoxVMM_SOURCES.linux.amd64 += VMMR3/NEMR3Native-linux.cpp
 
@@ -381,6 +387,64 @@ $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h.ts \
 	$(QUIET)$(CP) -v -f --changed -- "$@" "$(patsubst %.ts,%,$@)"
 
 foobar: $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h
+
+ifdef VBOX_WITH_IEM_RECOMPILER
+ #
+ # Generate functions for the threaded recompiler and a modified instruction decoded.
+ # Note! Dependency order matters!
+ #
+ VBoxVMM_INTERMEDIATES += \
+ 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h \
+ 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions.cpp.h
+ VBoxVMM_CLEAN         += \
+ 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h.ts \
+ 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h \
+ 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp \
+ 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions.cpp.h
+ $(call KB_FN_AUTO_CMD_DEPS,$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h.ts)
+ $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h.ts \
+ +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h \
+ +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp \
+ +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions.cpp.h: \
+ 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllThreadedPython.py \
+ 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsPython.py \
+ 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsCommon.cpp.h \
+ 		$(if-expr !defined(IEM_WITHOUT_3DNOW)      ,$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructions3DNow.cpp.h,) \
+ 		$(if-expr !defined(IEM_WITHOUT_THREE_0F_38),$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsThree0f38.cpp.h,) \
+ 		$(if-expr !defined(IEM_WITHOUT_THREE_0F_3A),$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsThree0f3a.cpp.h,) \
+ 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsTwoByte0f.cpp.h \
+ 		$(if-expr !defined(IEM_WITHOUT_VEX), \
+ 			$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsVexMap1.cpp.h \
+ 			$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsVexMap2.cpp.h \
+ 			$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsVexMap3.cpp.h,) \
+ 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsOneByte.cpp.h
+	$(QUIET)$(call MSG_GENERATE,VBoxVMM,$@,VMMAll/IEMAllInstructions*.cpp.h)
+	$(QUIET)$(RM) -f -- \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions.cpp.h.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h.ts"
+	$(QUIET)$(MKDIR) -p -- "$(dir $@)"
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(REDIRECT) -0 /dev/null -- $(VBOX_BLD_PYTHON) $< $(filter %.cpp.h,$^) \
+       	--out-funcs-hdr "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h.ts" \
+       	--out-funcs-cpp "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.ts" \
+       	--out-mod-input "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions.cpp.h.ts"
+	$(QUIET)$(CP) -v -f --changed -- \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions.cpp.h.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions.cpp.h"
+	$(QUIET)$(CP) -v -f --changed -- \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp"
+	$(QUIET)$(CP) -v -f --changed -- \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h"
+	$(QUIET)$(RM) -f -- \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions.cpp.h.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.ts"
+
+ foobared: $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h.ts
+
+endif
 
 if "$(KBUILD_TARGET)" == "win" && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)
  #
@@ -793,7 +857,8 @@ define def_vbox_vmm_py_check
  TESTING += $(name)-py-phony.o
 endef # def_vbox_vmm_py_check
 
-$(foreach py, $(addprefix $(PATH_SUB_CURRENT)/VMMAll/, IEMAllInstructionsPython.py ) , $(eval $(def_vbox_vmm_py_check)))
+$(foreach py, $(addprefix $(PATH_SUB_CURRENT)/VMMAll/, IEMAllInstructionsPython.py IEMAllThreadedPython.py ) \
+, $(eval $(def_vbox_vmm_py_check)))
 
 
 include $(FILE_KBUILD_SUB_FOOTER)

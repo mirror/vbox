@@ -45,12 +45,13 @@ SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
 __version__ = "$Revision$"
 
-# pylint: disable=anomalous-backslash-in-string
+# pylint: disable=anomalous-backslash-in-string,too-many-lines
 
 # Standard python imports.
-import os
-import re
-import sys
+import os;
+import re;
+import sys;
+import traceback;
 
 ## Only the main script needs to modify the path.
 #g_ksValidationKitDir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
@@ -1739,13 +1740,43 @@ g_dInstructionMapsByIemName = { oMap.sIemName: oMap for oMap in g_aoInstructionM
 
 
 
+class McBlock(object):
+    """
+    Microcode block (IEM_MC_BEGIN ... IEM_MC_END).
+    """
+
+    def __init__(self, sSrcFile, iBeginLine, offBeginLine, sFunction, iInFunction):
+        self.sSrcFile     = sSrcFile;                           ##< The source file containing the block.
+        self.iBeginLine   = iBeginLine;                         ##< The line with the IEM_MC_BEGIN statement.
+        self.offBeginLine = offBeginLine;                       ##< The offset of the IEM_MC_BEGIN statement within the line.
+        self.iEndLine     = -1;                                 ##< The line with the IEM_MC_END statement.
+        self.offEndLine   = 0;                                  ##< The offset of the IEM_MC_END statement within the line.
+        self.sFunction    = sFunction;                          ##< The function the block resides in.
+        self.iInFunction  = iInFunction;                        ##< The block number wihtin the function.
+        self.asLines      = []              # type: list(str)   ##< The raw lines the block is made up of.
+
+    def complete(self, iEndLine, offEndLine, asLines):
+        """
+        Completes the microcode block.
+        """
+        assert self.iEndLine == -1;
+        self.iEndLine     = iEndLine;
+        self.offEndLine   = offEndLine;
+        self.asLines      = asLines;
+
+
+## List of microcode blocks.
+g_aoMcBlocks = [] # type: list(McBlock)
+
+
+
 class ParserException(Exception):
     """ Parser exception """
     def __init__(self, sMessage):
         Exception.__init__(self, sMessage);
 
 
-class SimpleParser(object):
+class SimpleParser(object): # pylint: disable=too-many-instance-attributes
     """
     Parser of IEMAllInstruction*.cpp.h instruction specifications.
     """
@@ -1756,6 +1787,49 @@ class SimpleParser(object):
     kiCommentMulti      = 1;
     ## @}
 
+    class Macro(object):
+        """ Macro """
+        def __init__(self, sName, asArgs, sBody, iLine):
+            self.sName       = sName;            ##< The macro name.
+            self.asArgs      = asArgs;           ##< None if simple macro, list of parameters otherwise.
+            self.sBody       = sBody;
+            self.iLine       = iLine;
+            self.oReArgMatch = re.compile(r'(\s*##\s*|\b)(' + '|'.join(asArgs) + r')(\s*##\s*|\b)') if asArgs else None;
+
+        @staticmethod
+        def _needSpace(ch):
+            """ This is just to make the expanded output a bit prettier. """
+            return ch.isspace() and ch != '(';
+
+        def expandMacro(self, oParent, asArgs = None):
+            """ Expands the macro body with the given arguments. """
+            _ = oParent;
+            sBody = self.sBody;
+
+            if self.oReArgMatch:
+                assert len(asArgs) == len(self.asArgs);
+                #oParent.debug('%s: %s' % (self.sName, self.oReArgMatch.pattern,));
+
+                dArgs = { self.asArgs[iArg]: sValue for iArg, sValue in enumerate(asArgs) };
+                oMatch = self.oReArgMatch.search(sBody);
+                while oMatch:
+                    sName  = oMatch.group(2);
+                    #oParent.debug('%s %s..%s (%s)' % (sName, oMatch.start(), oMatch.end(),oMatch.group()));
+                    sValue = dArgs[sName];
+                    sPre   = '';
+                    if not oMatch.group(1) and oMatch.start() > 0 and self._needSpace(sBody[oMatch.start()]):
+                        sPre = ' ';
+                    sPost  = '';
+                    if not oMatch.group(3) and oMatch.end() < len(sBody) and self._needSpace(sBody[oMatch.end()]):
+                        sPost = ' ';
+                    sBody  = sBody[ : oMatch.start()] + sPre + sValue + sPost + sBody[oMatch.end() : ];
+                    oMatch = self.oReArgMatch.search(sBody, oMatch.start() + len(sValue));
+            else:
+                assert not asArgs;
+
+            return sBody;
+
+
     def __init__(self, sSrcFile, asLines, sDefaultMap):
         self.sSrcFile       = sSrcFile;
         self.asLines        = asLines;
@@ -1763,7 +1837,12 @@ class SimpleParser(object):
         self.iState         = self.kiCode;
         self.sComment       = '';
         self.iCommentLine   = 0;
-        self.aoCurInstrs    = [];
+        self.aoCurInstrs    = []    # type: list(Instruction)
+        self.sCurFunction   = None  # type: str
+        self.iMcBlockInFunc = 0;
+        self.oCurMcBlock    = None  # type: McBlock
+        self.dMacros        = {}    # type: Dict[str,SimpleParser.Macro]
+        self.oReMacros      = None  # type: re      ##< Regular expression matching invocations of anything in self.dMacros.
 
         assert sDefaultMap in g_dInstructionMaps;
         self.oDefaultMap    = g_dInstructionMaps[sDefaultMap];
@@ -1771,6 +1850,7 @@ class SimpleParser(object):
         self.cTotalInstr    = 0;
         self.cTotalStubs    = 0;
         self.cTotalTagged   = 0;
+        self.cTotalMcBlocks = 0;
 
         self.oReMacroName   = re.compile('^[A-Za-z_][A-Za-z0-9_]*$');
         self.oReMnemonic    = re.compile('^[A-Za-z_][A-Za-z0-9_]*$');
@@ -1780,7 +1860,15 @@ class SimpleParser(object):
         self.oReDisEnum     = re.compile('^OP_[A-Z0-9_]+$');
         self.oReFunTable    = re.compile('^(IEM_STATIC|static) +const +PFNIEMOP +g_apfn[A-Za-z0-9_]+ *\[ *\d* *\] *= *$');
         self.oReComment     = re.compile('//.*?$|/\*.*?\*/'); ## Full comments.
+        self.oReHashDefine  = re.compile('^\s*#\s*define\s+(.*)$');
+        self.oReHashDefine2 = re.compile('(?s)\A\s*([A-Za-z_][A-Za-z0-9_]*)\(([^)]*)\)\s*(.*)\Z'); ##< With arguments.
+        self.oReHashDefine3 = re.compile('(?s)\A\s*([A-Za-z_][A-Za-z0-9_]*)[^(]\s*(.*)\Z');        ##< Simple, no arguments.
+        self.oReHashUndef   = re.compile('^\s*#\s*undef\s+(.*)$');
+        self.oReMcBeginEnd  = re.compile(r'\bIEM_MC_(BEGIN|END)\s*\(');
+
         self.fDebug         = True;
+        self.fDebugMc       = False;
+        self.fDebugPreProc  = False;
 
         self.dTagHandlers   = {
             '@opbrief':     self.parseTagOpBrief,
@@ -1875,7 +1963,7 @@ class SimpleParser(object):
         For debugging.
         """
         if self.fDebug:
-            print('debug: %s' % (sMessage,));
+            print('debug: %s' % (sMessage,), file = sys.stderr);
 
     def stripComments(self, sLine):
         """
@@ -2125,7 +2213,7 @@ class SimpleParser(object):
         #self.debug('%d..%d: %s; %d @op tags' % (oInstr.iLineCreated, oInstr.iLineCompleted, oInstr.sFunction, oInstr.cOpTags));
         return True;
 
-    def doneInstructions(self, iLineInComment = None):
+    def doneInstructions(self, iLineInComment = None, fEndOfFunction = False):
         """
         Done with current instruction.
         """
@@ -2138,6 +2226,10 @@ class SimpleParser(object):
 
         self.sComment     = '';
         self.aoCurInstrs  = [];
+        if fEndOfFunction:
+            #self.debug('%s: sCurFunction=None' % (self.iLine, ));
+            self.sCurFunction   = None;
+            self.iMcBlockInFunc = 0;
         return True;
 
     def setInstrunctionAttrib(self, sAttrib, oValue, fOverwrite = False):
@@ -3384,7 +3476,69 @@ class SimpleParser(object):
         return self.workerIemOpMnemonicEx(sMacro, sLower + '_' + '_'.join(asOperands), sLower + ' ' + ','.join(asOperands),
                                           sForm, sUpper, sLower, sDisHints, sIemHints, asOperands);
 
-    def checkCodeForMacro(self, sCode):
+    def workerIemMcBegin(self, sCode, offBeginStatementInLine):
+        """
+        Process a IEM_MC_BEGIN macro invocation.
+        """
+        if self.fDebugMc:
+            self.debug('IEM_MC_BEGIN on %s off %s' % (self.iLine, offBeginStatementInLine,));
+
+        # Check preconditions.
+        if not self.sCurFunction:
+            self.raiseError('IEM_MC_BEGIN w/o current function (%s)' % (sCode,));
+        if self.oCurMcBlock:
+            self.raiseError('IEM_MC_BEGIN before IEM_MC_END.  Previous IEM_MC_BEGIN at line %u' % (self.oCurMcBlock.iBeginLine,));
+
+        # Start a new block.
+        self.oCurMcBlock = McBlock(self.sSrcFile, self.iLine, offBeginStatementInLine, self.sCurFunction, self.iMcBlockInFunc);
+        g_aoMcBlocks.append(self.oCurMcBlock);
+        self.cTotalMcBlocks += 1;
+        self.iMcBlockInFunc += 1;
+        return True;
+
+    def workerIemMcEnd(self, offEndStatementInLine):
+        """
+        Process a IEM_MC_END macro invocation.
+        """
+        if self.fDebugMc:
+            self.debug('IEM_MC_END on %s off %s' % (self.iLine, offEndStatementInLine,));
+
+        # Check preconditions.
+        if not self.oCurMcBlock:
+            self.raiseError('IEM_MC_END w/o IEM_MC_BEGIN.');
+
+        #
+        # Complete and discard the current block.
+        #
+        # HACK ALERT! For blocks orginating from macro expansion the start and
+        #             end line will be the same, but the line has multiple
+        #             newlines inside it.  So, we have to do some extra tricks
+        #             to get the lines out of there. We ASSUME macros aren't
+        #             messy, but keep IEM_MC_BEGIN/END on separate lines.
+        #
+        if self.iLine > self.oCurMcBlock.iBeginLine:
+            asLines = self.asLines[self.oCurMcBlock.iBeginLine - 1 : self.iLine];
+            if not asLines[0].strip().startswith('IEM_MC_BEGIN'):
+                self.raiseError('IEM_MC_BEGIN is not the first word on the line');
+        else:
+            sRawLine = self.asLines[self.iLine - 1];
+
+            off = sRawLine.find('\n', offEndStatementInLine);
+            if off > 0:
+                sRawLine = sRawLine[:off + 1];
+
+            off = sRawLine.rfind('\n', 0, self.oCurMcBlock.offBeginLine) + 1;
+            sRawLine = sRawLine[off:];
+            if not sRawLine.strip().startswith('IEM_MC_BEGIN'):
+                sRawLine = sRawLine[self.oCurMcBlock.offBeginLine - off:]
+
+            asLines = [sLine + '\n' for sLine in sRawLine.split('\n')];
+
+        self.oCurMcBlock.complete(self.iLine, offEndStatementInLine, asLines);
+        self.oCurMcBlock = None;
+        return True;
+
+    def checkCodeForMacro(self, sCode, offLine):
         """
         Checks code for relevant macro invocation.
         """
@@ -3395,12 +3549,14 @@ class SimpleParser(object):
             # Look for instruction decoder function definitions. ASSUME single line.
             asArgs = self.findAndParseFirstMacroInvocation(sCode,
                                                            [ 'FNIEMOP_DEF',
+                                                             'FNIEMOPRM_DEF',
                                                              'FNIEMOP_STUB',
                                                              'FNIEMOP_STUB_1',
                                                              'FNIEMOP_UD_STUB',
                                                              'FNIEMOP_UD_STUB_1' ]);
             if asArgs is not None:
-                sFunction = asArgs[1];
+                self.sCurFunction = asArgs[1];
+                #self.debug('%s: sCurFunction=%s' % (self.iLine, self.sCurFunction,));
 
                 if not self.aoCurInstrs:
                     self.addInstruction();
@@ -3409,11 +3565,20 @@ class SimpleParser(object):
                         oInstr.iLineFnIemOpMacro = self.iLine;
                     else:
                         self.error('%s: already seen a FNIEMOP_XXX macro for %s' % (asArgs[0], oInstr,) );
-                self.setInstrunctionAttrib('sFunction', sFunction);
+                self.setInstrunctionAttrib('sFunction', asArgs[1]);
                 self.setInstrunctionAttrib('fStub', asArgs[0].find('STUB') > 0, fOverwrite = True);
                 self.setInstrunctionAttrib('fUdStub', asArgs[0].find('UD_STUB') > 0, fOverwrite = True);
                 if asArgs[0].find('STUB') > 0:
-                    self.doneInstructions();
+                    self.doneInstructions(fEndOfFunction = True);
+                return True;
+
+            # Check for worker function definitions, so we can get a context for MC blocks.
+            asArgs = self.findAndParseFirstMacroInvocation(sCode,
+                                                           [ 'FNIEMOP_DEF_1',
+                                                             'FNIEMOP_DEF_2', ]);
+            if asArgs is not None:
+                self.sCurFunction = asArgs[1];
+                #self.debug('%s: sCurFunction=%s (%s)' % (self.iLine, self.sCurFunction, asArgs[0]));
                 return True;
 
             # IEMOP_HLP_DONE_VEX_DECODING_*
@@ -3437,69 +3602,242 @@ class SimpleParser(object):
             #
             # IEMOP_MNEMONIC*
             #
+            if sCode.find('IEMOP_MNEMONIC') >= 0:
+                # IEMOP_MNEMONIC(a_Stats, a_szMnemonic) IEMOP_INC_STATS(a_Stats)
+                asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC');
+                if asArgs is not None:
+                    if len(self.aoCurInstrs) == 1:
+                        oInstr = self.aoCurInstrs[0];
+                        if oInstr.sStats is None:
+                            oInstr.sStats = asArgs[1];
+                        self.deriveMnemonicAndOperandsFromStats(oInstr, asArgs[1]);
 
-            # IEMOP_MNEMONIC(a_Stats, a_szMnemonic) IEMOP_INC_STATS(a_Stats)
-            asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC');
-            if asArgs is not None:
-                if len(self.aoCurInstrs) == 1:
-                    oInstr = self.aoCurInstrs[0];
-                    if oInstr.sStats is None:
-                        oInstr.sStats = asArgs[1];
-                    self.deriveMnemonicAndOperandsFromStats(oInstr, asArgs[1]);
+                # IEMOP_MNEMONIC0EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_fDisHints, a_fIemHints)
+                asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC0EX');
+                if asArgs is not None:
+                    self.workerIemOpMnemonicEx(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[4], asArgs[5], asArgs[6],
+                                               asArgs[7], []);
+                # IEMOP_MNEMONIC1EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_fDisHints, a_fIemHints)
+                asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC1EX');
+                if asArgs is not None:
+                    self.workerIemOpMnemonicEx(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[4], asArgs[5], asArgs[7],
+                                               asArgs[8], [asArgs[6],]);
+                # IEMOP_MNEMONIC2EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_fDisHints, a_fIemHints)
+                asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC2EX');
+                if asArgs is not None:
+                    self.workerIemOpMnemonicEx(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[4], asArgs[5], asArgs[8],
+                                               asArgs[9], [asArgs[6], asArgs[7]]);
+                # IEMOP_MNEMONIC3EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_fDisHints,
+                #                   a_fIemHints)
+                asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC3EX');
+                if asArgs is not None:
+                    self.workerIemOpMnemonicEx(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[4], asArgs[5], asArgs[9],
+                                               asArgs[10], [asArgs[6], asArgs[7], asArgs[8],]);
+                # IEMOP_MNEMONIC4EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_Op4, a_fDisHints,
+                #                   a_fIemHints)
+                asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC4EX');
+                if asArgs is not None:
+                    self.workerIemOpMnemonicEx(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[4], asArgs[5], asArgs[10],
+                                               asArgs[11], [asArgs[6], asArgs[7], asArgs[8], asArgs[9],]);
 
-            # IEMOP_MNEMONIC0EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_fDisHints, a_fIemHints)
-            asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC0EX');
-            if asArgs is not None:
-                self.workerIemOpMnemonicEx(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[4], asArgs[5], asArgs[6], asArgs[7],
-                                           []);
-            # IEMOP_MNEMONIC1EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_fDisHints, a_fIemHints)
-            asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC1EX');
-            if asArgs is not None:
-                self.workerIemOpMnemonicEx(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[4], asArgs[5], asArgs[7], asArgs[8],
-                                           [asArgs[6],]);
-            # IEMOP_MNEMONIC2EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_fDisHints, a_fIemHints)
-            asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC2EX');
-            if asArgs is not None:
-                self.workerIemOpMnemonicEx(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[4], asArgs[5], asArgs[8], asArgs[9],
-                                           [asArgs[6], asArgs[7]]);
-            # IEMOP_MNEMONIC3EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_fDisHints, a_fIemHints)
-            asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC3EX');
-            if asArgs is not None:
-                self.workerIemOpMnemonicEx(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[4], asArgs[5], asArgs[9],
-                                           asArgs[10], [asArgs[6], asArgs[7], asArgs[8],]);
-            # IEMOP_MNEMONIC4EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_Op4, a_fDisHints,
-            #                   a_fIemHints)
-            asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC4EX');
-            if asArgs is not None:
-                self.workerIemOpMnemonicEx(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[4], asArgs[5], asArgs[10],
-                                           asArgs[11], [asArgs[6], asArgs[7], asArgs[8], asArgs[9],]);
+                # IEMOP_MNEMONIC0(a_Form, a_Upper, a_Lower, a_fDisHints, a_fIemHints)
+                asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC0');
+                if asArgs is not None:
+                    self.workerIemOpMnemonic(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[4], asArgs[5], []);
+                # IEMOP_MNEMONIC1(a_Form, a_Upper, a_Lower, a_Op1, a_fDisHints, a_fIemHints)
+                asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC1');
+                if asArgs is not None:
+                    self.workerIemOpMnemonic(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[5], asArgs[6], [asArgs[4],]);
+                # IEMOP_MNEMONIC2(a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_fDisHints, a_fIemHints)
+                asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC2');
+                if asArgs is not None:
+                    self.workerIemOpMnemonic(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[6], asArgs[7],
+                                             [asArgs[4], asArgs[5],]);
+                # IEMOP_MNEMONIC3(a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_fDisHints, a_fIemHints)
+                asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC3');
+                if asArgs is not None:
+                    self.workerIemOpMnemonic(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[7], asArgs[8],
+                                             [asArgs[4], asArgs[5], asArgs[6],]);
+                # IEMOP_MNEMONIC4(a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_Op4, a_fDisHints, a_fIemHints)
+                asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC4');
+                if asArgs is not None:
+                    self.workerIemOpMnemonic(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[8], asArgs[9],
+                                             [asArgs[4], asArgs[5], asArgs[6], asArgs[7],]);
 
-            # IEMOP_MNEMONIC0(a_Form, a_Upper, a_Lower, a_fDisHints, a_fIemHints)
-            asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC0');
-            if asArgs is not None:
-                self.workerIemOpMnemonic(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[4], asArgs[5], []);
-            # IEMOP_MNEMONIC1(a_Form, a_Upper, a_Lower, a_Op1, a_fDisHints, a_fIemHints)
-            asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC1');
-            if asArgs is not None:
-                self.workerIemOpMnemonic(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[5], asArgs[6], [asArgs[4],]);
-            # IEMOP_MNEMONIC2(a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_fDisHints, a_fIemHints)
-            asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC2');
-            if asArgs is not None:
-                self.workerIemOpMnemonic(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[6], asArgs[7],
-                                         [asArgs[4], asArgs[5],]);
-            # IEMOP_MNEMONIC3(a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_fDisHints, a_fIemHints)
-            asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC3');
-            if asArgs is not None:
-                self.workerIemOpMnemonic(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[7], asArgs[8],
-                                         [asArgs[4], asArgs[5], asArgs[6],]);
-            # IEMOP_MNEMONIC4(a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_Op4, a_fDisHints, a_fIemHints)
-            asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC4');
-            if asArgs is not None:
-                self.workerIemOpMnemonic(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[8], asArgs[9],
-                                         [asArgs[4], asArgs[5], asArgs[6], asArgs[7],]);
+            #
+            # IEM_MC_BEGIN + IEM_MC_END.
+            # We must support multiple instances per code snippet.
+            #
+            offCode = sCode.find('IEM_MC_');
+            if offCode >= 0:
+                for oMatch in self.oReMcBeginEnd.finditer(sCode, offCode):
+                    if oMatch.group(1) == 'END':
+                        self.workerIemMcEnd(offLine + oMatch.start());
+                    else:
+                        self.workerIemMcBegin(sCode, offLine + oMatch.start());
+                return True;
 
         return False;
 
+    def workerPreProcessRecreateMacroRegex(self):
+        """
+        Recreates self.oReMacros when self.dMacros changes.
+        """
+        if self.dMacros:
+            sRegex = '';
+            for sName, oMacro in self.dMacros.items():
+                if sRegex:
+                    sRegex += '|' + sName;
+                else:
+                    sRegex  = '\\b(' + sName;
+                if oMacro.asArgs is not None:
+                    sRegex += '\s*\(';
+                else:
+                    sRegex += '\\b';
+            sRegex += ')';
+            self.oReMacros = re.compile(sRegex);
+        else:
+            self.oReMacros = None;
+        return True;
+
+    def workerPreProcessDefine(self, sRest):
+        """
+        Handles a macro #define, the sRest is what follows after the directive word.
+        """
+
+        #
+        # If using line continutation, just concat all the lines together,
+        # preserving the newline character but not the escaping.
+        #
+        iLineStart = self.iLine;
+        while sRest.endswith('\\\n') and self.iLine < len(self.asLines):
+            sRest = sRest[0:-2].rstrip() + '\n' + self.asLines[self.iLine];
+            self.iLine += 1;
+        #self.debug('workerPreProcessDefine: sRest=%s<EOS>' % (sRest,));
+
+        #
+        # Use regex to split out the name, argument list and body.
+        # If this fails, we assume it's a simple macro.
+        #
+        oMatch = self.oReHashDefine2.match(sRest);
+        if oMatch:
+            asArgs = [sParam.strip() for sParam in oMatch.group(2).split(',')];
+            sBody  = oMatch.group(3);
+        else:
+            oMatch = self.oReHashDefine3.match(sRest);
+            if not oMatch:
+                self.debug('workerPreProcessDefine: wtf? sRest=%s' % (sRest,));
+                return self.error('bogus macro definition: %s' % (sRest,));
+            asArgs = None;
+            sBody  = oMatch.group(2);
+        sName = oMatch.group(1);
+        assert sName == sName.strip();
+        #self.debug('workerPreProcessDefine: sName=%s asArgs=%s sBody=%s<EOS>' % (sName, asArgs, sBody));
+
+        #
+        # Is this of any interest to us?  We do NOT support MC blocks wihtin
+        # nested macro expansion, just to avoid lots of extra work.
+        #
+        if sBody.find("IEM_MC_BEGIN") < 0:
+            #self.debug('workerPreProcessDefine: irrelevant (%s: %s)' % (sName, sBody));
+            return True;
+
+        #
+        # Add the macro.
+        #
+        if self.fDebugPreProc:
+            self.debug('#define %s on line %u' % (sName, self.iLine,));
+        self.dMacros[sName] = SimpleParser.Macro(sName, asArgs, sBody, iLineStart);
+        return self.workerPreProcessRecreateMacroRegex();
+
+    def workerPreProcessUndef(self, sRest):
+        """
+        Handles a macro #undef, the sRest is what follows after the directive word.
+        """
+        # Quick comment strip and isolate the name.
+        offSlash = sRest.find('/');
+        if offSlash > 0:
+            sRest = sRest[:offSlash];
+        sName = sRest.strip();
+
+        # Remove the macro if we're clocking it.
+        if sName in self.dMacros:
+            if self.fDebugPreProc:
+                self.debug('#undef %s on line %u' % (sName, self.iLine,));
+            del self.dMacros[sName];
+            return self.workerPreProcessRecreateMacroRegex();
+
+        return True;
+
+    def checkPreProcessorDirectiveForDefineUndef(self, sLine):
+        """
+        Handles a preprocessor directive.
+        """
+        oMatch = self.oReHashDefine.match(sLine);
+        if oMatch:
+            return self.workerPreProcessDefine(oMatch.group(1) + '\n');
+
+        oMatch = self.oReHashUndef.match(sLine);
+        if oMatch:
+            return self.workerPreProcessUndef(oMatch.group(1) + '\n');
+        return False;
+
+    def expandMacros(self, sLine, oMatch):
+        """
+        Expands macros we know about in the given line.
+        Currently we ASSUME there is only one and that is what oMatch matched.
+        """
+        #
+        # Get our bearings.
+        #
+        offMatch  = oMatch.start();
+        sName     = oMatch.group(1);
+        assert sName == sLine[oMatch.start() : oMatch.end()];
+        fWithArgs = sName.endswith('(');
+        if fWithArgs:
+            sName = sName[:-1].strip();
+        oMacro = self.dMacros[sName]        # type: SimpleParser.Macro
+
+        #
+        # Deal with simple macro invocations w/o parameters.
+        #
+        if not fWithArgs:
+            if self.fDebugPreProc:
+                self.debug('expanding simple macro %s on line %u' % (sName, self.iLine,));
+            return sLine[:offMatch] + oMacro.expandMacro(self) + sLine[oMatch.end():];
+
+        #
+        # Complicated macro with parameters.
+        # Start by extracting the parameters. ASSUMES they are all on the same line!
+        #
+        cLevel        = 1;
+        offCur        = oMatch.end();
+        offCurArg     = offCur;
+        asArgs        = [];
+        while True:
+            ch = sLine[offCur];
+            if ch == '(':
+                cLevel += 1;
+            elif ch == ')':
+                cLevel -= 1;
+                if cLevel == 0:
+                    asArgs.append(sLine[offCurArg:offCur].strip());
+                    break;
+            elif ch == ',' and cLevel == 1:
+                asArgs.append(sLine[offCurArg:offCur].strip());
+                offCurArg = offCur + 1;
+            offCur += 1;
+        if len(oMacro.asArgs) == 0 and len(asArgs) == 1 and asArgs[0] == '': # trick for empty parameter list.
+            asArgs = [];
+        if len(oMacro.asArgs) != len(asArgs):
+            self.raiseError('expandMacros: Argument mismatch in %s invocation' % (oMacro.sName,));
+
+        #
+        # Do the expanding.
+        #
+        if self.fDebugPreProc:
+            self.debug('expanding macro %s on line %u with arguments %s' % (sName, self.iLine, asArgs));
+        return sLine[:offMatch] + oMacro.expandMacro(self, asArgs) + sLine[offCur + 1 :];
 
     def parse(self):
         """
@@ -3512,24 +3850,42 @@ class SimpleParser(object):
         while self.iLine < len(self.asLines):
             sLine = self.asLines[self.iLine];
             self.iLine  += 1;
+            #self.debug('line %u: %s' % (self.iLine, sLine[:-1]));
 
-            # We only look for comments, so only lines with a slash might possibly
-            # influence the parser state.
+            # Expand macros we know about if we're currently in code.
+            if self.iState == self.kiCode and self.oReMacros:
+                oMatch = self.oReMacros.search(sLine);
+                if oMatch:
+                    sLine = self.expandMacros(sLine, oMatch);
+                    if self.fDebugPreProc:
+                        self.debug('line %d: expanded\n%s ==>\n%s' % (self.iLine, self.asLines[self.iLine - 1], sLine[:-1],));
+                    self.asLines[self.iLine - 1] = sLine;
+
+            # Look for comments.
             offSlash = sLine.find('/');
             if offSlash >= 0:
                 if offSlash + 1 >= len(sLine)  or  sLine[offSlash + 1] != '/'  or  self.iState != self.kiCode:
                     offLine = 0;
                     while offLine < len(sLine):
                         if self.iState == self.kiCode:
-                            offHit = sLine.find('/*', offLine); # only multiline comments for now.
+                            # Look for substantial multiline comment so we pass the following MC as a whole line:
+                            #   IEM_MC_ARG_CONST(uint8_t, bImmArg, /*=*/ bImm,   2);
+                            # Note! We ignore C++ comments here, assuming these aren't used in lines with C-style comments.
+                            offHit = sLine.find('/*', offLine);
+                            while offHit >= 0:
+                                offEnd = sLine.find('*/', offHit + 2);
+                                if offEnd < 0 or offEnd - offHit >= 16: # 16 chars is a bit random.
+                                    break;
+                                offHit = sLine.find('/*', offEnd);
+
                             if offHit >= 0:
-                                self.checkCodeForMacro(sLine[offLine:offHit]);
+                                self.checkCodeForMacro(sLine[offLine:offHit], offLine);
                                 self.sComment     = '';
                                 self.iCommentLine = self.iLine;
                                 self.iState       = self.kiCommentMulti;
                                 offLine = offHit + 2;
                             else:
-                                self.checkCodeForMacro(sLine[offLine:]);
+                                self.checkCodeForMacro(sLine[offLine:], offLine);
                                 offLine = len(sLine);
 
                         elif self.iState == self.kiCommentMulti:
@@ -3546,31 +3902,39 @@ class SimpleParser(object):
                             assert False;
                 # C++ line comment.
                 elif offSlash > 0:
-                    self.checkCodeForMacro(sLine[:offSlash]);
+                    self.checkCodeForMacro(sLine[:offSlash], 0);
 
             # No slash, but append the line if in multi-line comment.
             elif self.iState == self.kiCommentMulti:
                 #self.debug('line %d: multi' % (self.iLine,));
                 self.sComment += sLine;
 
+            # No slash, but check if this is a macro #define or #undef, since we
+            # need to be able to selectively expand the ones containing MC blocks.
+            elif self.iState == self.kiCode and sLine.lstrip().startswith('#'):
+                if self.fDebugPreProc:
+                    self.debug('line %d: pre-proc' % (self.iLine,));
+                self.checkPreProcessorDirectiveForDefineUndef(sLine);
+
             # No slash, but check code line for relevant macro.
-            elif self.iState == self.kiCode and sLine.find('IEMOP_') >= 0:
+            elif (     self.iState == self.kiCode
+                  and (sLine.find('IEMOP_') >= 0 or sLine.find('FNIEMOPRM_DEF') >= 0 or sLine.find('IEM_MC') >= 0)):
                 #self.debug('line %d: macro' % (self.iLine,));
-                self.checkCodeForMacro(sLine);
+                self.checkCodeForMacro(sLine, 0);
 
             # If the line is a '}' in the first position, complete the instructions.
             elif self.iState == self.kiCode and sLine[0] == '}':
                 #self.debug('line %d: }' % (self.iLine,));
-                self.doneInstructions();
+                self.doneInstructions(fEndOfFunction = True);
 
             # Look for instruction table on the form 'IEM_STATIC const PFNIEMOP g_apfnVexMap3'
             # so we can check/add @oppfx info from it.
             elif self.iState == self.kiCode and sLine.find('PFNIEMOP') > 0 and self.oReFunTable.match(sLine):
                 self.parseFunctionTable(sLine);
 
-        self.doneInstructions();
-        self.debug('%3s%% / %3s stubs out of %4s instructions in %s'
-                   % (self.cTotalStubs * 100 // self.cTotalInstr, self.cTotalStubs, self.cTotalInstr,
+        self.doneInstructions(fEndOfFunction = True);
+        self.debug('%3s%% / %3s stubs out of %4s instructions and %4s MC blocks in %s'
+                   % (self.cTotalStubs * 100 // self.cTotalInstr, self.cTotalStubs, self.cTotalInstr, self.cTotalMcBlocks,
                       os.path.basename(self.sSrcFile),));
         return self.printErrors();
 
@@ -3583,7 +3947,7 @@ def __parseFileByName(sSrcFile, sDefaultMap):
     # Read sSrcFile into a line array.
     #
     try:
-        oFile = open(sSrcFile, "r");    # pylint: disable=consider-using-with
+        oFile = open(sSrcFile, "r");    # pylint: disable=consider-using-with,unspecified-encoding
     except Exception as oXcpt:
         raise Exception("failed to open %s for reading: %s" % (sSrcFile, oXcpt,));
     try:
@@ -3597,12 +3961,11 @@ def __parseFileByName(sSrcFile, sDefaultMap):
     # Do the parsing.
     #
     try:
-        cErrors = SimpleParser(sSrcFile, asLines, sDefaultMap).parse();
+        oParser = SimpleParser(sSrcFile, asLines, sDefaultMap);
+        return (oParser.parse(), oParser) ;
     except ParserException as oXcpt:
-        print(str(oXcpt));
+        print(str(oXcpt), file = sys.stderr);
         raise;
-
-    return cErrors;
 
 
 def __doTestCopying():
@@ -3648,6 +4011,7 @@ def __applyOnlyTest():
 
 ## List of all main instruction files and their default maps.
 g_aasAllInstrFilesAndDefaultMap = (
+    ( 'IEMAllInstructionsCommon.cpp.h',    'one',        ),
     ( 'IEMAllInstructionsOneByte.cpp.h',   'one',        ),
     ( 'IEMAllInstructionsTwoByte0f.cpp.h', 'two0f',      ),
     ( 'IEMAllInstructionsThree0f38.cpp.h', 'three0f38',  ),
@@ -3658,16 +4022,22 @@ g_aasAllInstrFilesAndDefaultMap = (
     ( 'IEMAllInstructions3DNow.cpp.h',     '3dnow',      ),
 );
 
-def parseAll():
+def __parseFilesWorker(asFilesAndDefaultMap):
     """
     Parses all the IEMAllInstruction*.cpp.h files.
 
+    Returns a list of the parsers on success.
     Raises exception on failure.
     """
-    sSrcDir = os.path.dirname(os.path.abspath(__file__));
-    cErrors = 0;
-    for sName, sDefaultMap in g_aasAllInstrFilesAndDefaultMap:
-        cErrors += __parseFileByName(os.path.join(sSrcDir, sName), sDefaultMap);
+    sSrcDir   = os.path.dirname(os.path.abspath(__file__));
+    cErrors   = 0;
+    aoParsers = [];
+    for sFilename, sDefaultMap in asFilesAndDefaultMap:
+        if not os.path.split(sFilename)[0] and not os.path.exists(sFilename):
+            sFilename = os.path.join(sSrcDir, sFilename);
+        cThisErrors, oParser = __parseFileByName(sFilename, sDefaultMap);
+        cErrors += cThisErrors;
+        aoParsers.append(oParser);
     cErrors += __doTestCopying();
     cErrors += __applyOnlyTest();
 
@@ -3675,13 +4045,46 @@ def parseAll():
     cTotalStubs = 0;
     for oInstr in g_aoAllInstructions:
         cTotalStubs += oInstr.fStub;
-    print('debug: %3s%% / %3s stubs out of %4s instructions in total'
-          % (cTotalStubs * 100 // len(g_aoAllInstructions), cTotalStubs, len(g_aoAllInstructions),));
+    print('debug: %3s%% / %3s stubs out of %4s instructions and %4s MC blocks in total'
+          % (cTotalStubs * 100 // len(g_aoAllInstructions), cTotalStubs, len(g_aoAllInstructions), len(g_aoMcBlocks),),
+          file = sys.stderr);
 
     if cErrors != 0:
         raise Exception('%d parse errors' % (cErrors,));
-    return True;
+    return aoParsers;
 
+
+def parseFiles(asFiles):
+    """
+    Parses a selection of IEMAllInstruction*.cpp.h files.
+
+    Returns a list of the parsers on success.
+    Raises exception on failure.
+    """
+    # Look up default maps for the files and call __parseFilesWorker to do the job.
+    asFilesAndDefaultMap = [];
+    for sFilename in asFiles:
+        sName = os.path.split(sFilename)[1].lower();
+        sMap  = None;
+        for asCur in g_aasAllInstrFilesAndDefaultMap:
+            if asCur[0].lower() == sName:
+                sMap = asCur[1];
+                break;
+        if not sMap:
+            raise Exception('Unable to classify file: %s' % (sFilename,));
+        asFilesAndDefaultMap.append((sFilename, sMap));
+
+    return __parseFilesWorker(asFilesAndDefaultMap);
+
+
+def parseAll():
+    """
+    Parses all the IEMAllInstruction*.cpp.h files.
+
+    Returns a list of the parsers on success.
+    Raises exception on failure.
+    """
+    return __parseFilesWorker(g_aasAllInstrFilesAndDefaultMap);
 
 
 #
@@ -3848,6 +4251,7 @@ def generateDisassemblerTables(oDstFile = sys.stdout):
         parseAll();
     except Exception as oXcpt:
         print('error: parseAll failed: %s' % (oXcpt,), file = sys.stderr);
+        traceback.print_exc(file = sys.stderr);
         return 1;
 
 
@@ -3871,7 +4275,7 @@ def generateDisassemblerTables(oDstFile = sys.stdout):
     # Dump each map.
     #
     asHeaderLines = [];
-    print("debug: maps=%s\n" % (', '.join([oMap.sName for oMap in aoDisasmMaps]),));
+    print("debug: maps=%s\n" % (', '.join([oMap.sName for oMap in aoDisasmMaps]),), file = sys.stderr);
     for oMap in aoDisasmMaps:
         sName = oMap.sName;
 

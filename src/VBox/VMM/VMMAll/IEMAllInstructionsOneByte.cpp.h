@@ -4965,7 +4965,7 @@ FNIEMOP_DEF(iemOp_mov_Ov_rAX)
             IEM_MC_ADD_GREG_U##AddrBits(X86_GREG_xSI, ValBits / 8); \
         } IEM_MC_ENDIF(); \
         IEM_MC_ADVANCE_RIP_AND_FINISH(); \
-        IEM_MC_END()
+        IEM_MC_END();
 
 /**
  * @opcode      0xa4
@@ -5114,7 +5114,7 @@ FNIEMOP_DEF(iemOp_movswd_Xv_Yv)
             IEM_MC_ADD_GREG_U##AddrBits(X86_GREG_xSI, ValBits / 8); \
         } IEM_MC_ENDIF(); \
         IEM_MC_ADVANCE_RIP_AND_FINISH(); \
-        IEM_MC_END()
+        IEM_MC_END();
 
 /**
  * @opcode      0xa6
@@ -5320,7 +5320,7 @@ FNIEMOP_DEF(iemOp_test_eAX_Iz)
             IEM_MC_ADD_GREG_U##AddrBits(X86_GREG_xDI, ValBits / 8); \
         } IEM_MC_ENDIF(); \
         IEM_MC_ADVANCE_RIP_AND_FINISH(); \
-        IEM_MC_END()
+        IEM_MC_END();
 
 /**
  * @opcode      0xaa
@@ -5458,7 +5458,7 @@ FNIEMOP_DEF(iemOp_stoswd_Yv_eAX)
             IEM_MC_ADD_GREG_U##AddrBits(X86_GREG_xSI, ValBits / 8); \
         } IEM_MC_ENDIF(); \
         IEM_MC_ADVANCE_RIP_AND_FINISH(); \
-        IEM_MC_END()
+        IEM_MC_END();
 
 /**
  * @opcode      0xac
@@ -5602,7 +5602,7 @@ FNIEMOP_DEF(iemOp_lodswd_eAX_Xv)
             IEM_MC_ADD_GREG_U##AddrBits(X86_GREG_xDI, ValBits / 8); \
         } IEM_MC_ENDIF(); \
         IEM_MC_ADVANCE_RIP_AND_FINISH(); \
-        IEM_MC_END()
+        IEM_MC_END();
 
 /**
  * @opcode      0xae
@@ -11452,7 +11452,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
                 IEM_MC_ARG(uint16_t, u16Target, 0);
                 IEM_MC_FETCH_GREG_U16(u16Target, IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_CALL_CIMPL_1(iemCImpl_call_16, u16Target);
-                IEM_MC_END()
+                IEM_MC_END();
                 break;
 
             case IEMMODE_32BIT:
@@ -11460,7 +11460,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
                 IEM_MC_ARG(uint32_t, u32Target, 0);
                 IEM_MC_FETCH_GREG_U32(u32Target, IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_CALL_CIMPL_1(iemCImpl_call_32, u32Target);
-                IEM_MC_END()
+                IEM_MC_END();
                 break;
 
             case IEMMODE_64BIT:
@@ -11468,7 +11468,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
                 IEM_MC_ARG(uint64_t, u64Target, 0);
                 IEM_MC_FETCH_GREG_U64(u64Target, IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_CALL_CIMPL_1(iemCImpl_call_64, u64Target);
-                IEM_MC_END()
+                IEM_MC_END();
                 break;
 
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -11487,7 +11487,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_FETCH_MEM_U16(u16Target, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
                 IEM_MC_CALL_CIMPL_1(iemCImpl_call_16, u16Target);
-                IEM_MC_END()
+                IEM_MC_END();
                 break;
 
             case IEMMODE_32BIT:
@@ -11498,7 +11498,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_FETCH_MEM_U32(u32Target, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
                 IEM_MC_CALL_CIMPL_1(iemCImpl_call_32, u32Target);
-                IEM_MC_END()
+                IEM_MC_END();
                 break;
 
             case IEMMODE_64BIT:
@@ -11509,7 +11509,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_FETCH_MEM_U64(u64Target, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
                 IEM_MC_CALL_CIMPL_1(iemCImpl_call_64, u64Target);
-                IEM_MC_END()
+                IEM_MC_END();
                 break;
 
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -11616,7 +11616,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpn_Ev, uint8_t, bRm)
                 IEM_MC_LOCAL(uint16_t, u16Target);
                 IEM_MC_FETCH_GREG_U16(u16Target, IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_SET_RIP_U16_AND_FINISH(u16Target);
-                IEM_MC_END()
+                IEM_MC_END();
                 break;
 
             case IEMMODE_32BIT:
@@ -11624,7 +11624,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpn_Ev, uint8_t, bRm)
                 IEM_MC_LOCAL(uint32_t, u32Target);
                 IEM_MC_FETCH_GREG_U32(u32Target, IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_SET_RIP_U32_AND_FINISH(u32Target);
-                IEM_MC_END()
+                IEM_MC_END();
                 break;
 
             case IEMMODE_64BIT:
@@ -11632,7 +11632,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpn_Ev, uint8_t, bRm)
                 IEM_MC_LOCAL(uint64_t, u64Target);
                 IEM_MC_FETCH_GREG_U64(u64Target, IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_SET_RIP_U64_AND_FINISH(u64Target);
-                IEM_MC_END()
+                IEM_MC_END();
                 break;
 
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -11651,7 +11651,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpn_Ev, uint8_t, bRm)
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_FETCH_MEM_U16(u16Target, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
                 IEM_MC_SET_RIP_U16_AND_FINISH(u16Target);
-                IEM_MC_END()
+                IEM_MC_END();
                 break;
 
             case IEMMODE_32BIT:
@@ -11662,7 +11662,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpn_Ev, uint8_t, bRm)
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_FETCH_MEM_U32(u32Target, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
                 IEM_MC_SET_RIP_U32_AND_FINISH(u32Target);
-                IEM_MC_END()
+                IEM_MC_END();
                 break;
 
             case IEMMODE_64BIT:
@@ -11673,7 +11673,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpn_Ev, uint8_t, bRm)
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_FETCH_MEM_U64(u64Target, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
                 IEM_MC_SET_RIP_U64_AND_FINISH(u64Target);
-                IEM_MC_END()
+                IEM_MC_END();
                 break;
 
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
