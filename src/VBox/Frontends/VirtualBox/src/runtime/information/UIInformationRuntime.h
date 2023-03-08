@@ -51,8 +51,8 @@ class UIInformationRuntime : public QIWithRetranslateUI<QWidget>
 
 public:
 
-    /** Constructs information-tab passing @a pParent to the QWidget base-class constructor. */
-    UIInformationRuntime(QWidget *pParent, const UIMachine *pMachine);
+    /** Constructs information-tab passing @a pParent to the base-class. */
+    UIInformationRuntime(QWidget *pParent);
 
 protected:
 

@@ -50,9 +50,8 @@
 #include "UIVMInformationDialog.h"
 #include "VBoxUtils.h"
 
-UIVMInformationDialog::UIVMInformationDialog(UIMachine *pMachine)
+UIVMInformationDialog::UIVMInformationDialog()
     : QMainWindowWithRestorableGeometryAndRetranslateUi(0)
-    , m_pMachine(pMachine)
     , m_pTabWidget(0)
     , m_fCloseEmitted(false)
     , m_iGeometrySaveTimerId(-1)
@@ -155,11 +154,8 @@ void UIVMInformationDialog::saveDialogGeometry()
 
 void UIVMInformationDialog::prepare()
 {
-    /* Load and clear: */
-    AssertPtrReturnVoid(m_pMachine);
-
     m_uMachineId = uiCommon().managedVMUuid();
-    m_strMachineName = m_pMachine->machineName();
+    m_strMachineName = gpMachine->machineName();
 #ifdef VBOX_WS_MAC
     /* No window-icon on Mac OS X, because it acts as proxy icon which isn't necessary here. */
     setWindowIcon(QIcon());
@@ -217,7 +213,7 @@ void UIVMInformationDialog::prepareTabWidget()
 
         /* Create Runtime Information tab: */
         UIInformationRuntime *pInformationRuntimeWidget =
-            new UIInformationRuntime(this, m_pMachine);
+            new UIInformationRuntime(this);
         if (pInformationRuntimeWidget)
         {
             m_tabs.insert(Tabs_RuntimeInformation, pInformationRuntimeWidget);
@@ -226,10 +222,10 @@ void UIVMInformationDialog::prepareTabWidget()
 
         /* Create Performance Monitor tab: */
         UIVMActivityMonitor *pVMActivityMonitorWidget =
-            new UIVMActivityMonitor(EmbedTo_Dialog, this, m_pMachine->uisession()->machine());
+            new UIVMActivityMonitor(EmbedTo_Dialog, this, gpMachine->uisession()->machine());
         if (pVMActivityMonitorWidget)
         {
-            connect(m_pMachine, &UIMachine::sigAdditionsStateChange,
+            connect(gpMachine, &UIMachine::sigAdditionsStateChange,
                     pVMActivityMonitorWidget, &UIVMActivityMonitor::sltGuestAdditionsStateChange);
             m_tabs.insert(Tabs_ActivityMonitor, pVMActivityMonitorWidget);
             m_pTabWidget->addTab(m_tabs.value(Tabs_ActivityMonitor), QString());
@@ -237,7 +233,7 @@ void UIVMInformationDialog::prepareTabWidget()
 
         /* Create Guest Process Control tab: */
         UIGuestProcessControlWidget *pGuestProcessControlWidget =
-            new UIGuestProcessControlWidget(EmbedTo_Dialog, m_pMachine->uisession()->guest(),
+            new UIGuestProcessControlWidget(EmbedTo_Dialog, gpMachine->uisession()->guest(),
                                             this, m_strMachineName, false /* fShowToolbar */);
         if (pGuestProcessControlWidget)
         {
@@ -282,7 +278,7 @@ void UIVMInformationDialog::prepareConnections()
 
 void UIVMInformationDialog::loadDialogGeometry()
 {
-    const QRect geo = gEDataManager->sessionInformationDialogGeometry(this, m_pMachine->activeWindow());
+    const QRect geo = gEDataManager->sessionInformationDialogGeometry(this, gpMachine->activeWindow());
     LogRel2(("GUI: UIVMInformationDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
              geo.x(), geo.y(), geo.width(), geo.height()));
     restoreGeometry(geo);

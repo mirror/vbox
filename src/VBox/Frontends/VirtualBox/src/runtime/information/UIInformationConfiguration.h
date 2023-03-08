@@ -50,7 +50,7 @@ class UIInformationConfiguration : public QIWithRetranslateUI<QWidget>
 
 public:
 
-    /** Constructs information-tab passing @a pParent to the QWidget base-class constructor. */
+    /** Constructs information-tab passing @a pParent to the base-class. */
     UIInformationConfiguration(QWidget *pParent);
 
 protected:

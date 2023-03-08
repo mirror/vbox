@@ -43,7 +43,6 @@
 /* Forward declarations: */
 class QITabWidget;
 class QIDialogButtonBox;
-class UIMachine;
 
 /* Type definitions: */
 typedef QIWithRestorableGeometry<QMainWindow> QMainWindowWithRestorableGeometry;
@@ -62,8 +61,8 @@ signals:
 
 public:
 
-    /** Constructs information dialog for passed @a pMachine. */
-    UIVMInformationDialog(UIMachine *pMachine);
+    /** Constructs information dialog. */
+    UIVMInformationDialog();
 
     /** Returns whether the dialog should be maximized when geometry being restored. */
     virtual bool shouldBeMaximized() const RT_OVERRIDE;
@@ -103,9 +102,6 @@ private:
     void prepareConnections();
     void loadDialogGeometry();
     void saveDialogGeometry();
-
-    /** Holds the machine UI reference. */
-    UIMachine *m_pMachine;
 
     /** @name Widget variables.
      * @{ */
