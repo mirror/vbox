@@ -1,0 +1,53 @@
+libtpms (0.9.0) RELEASED; urgency=medium
+
+  * Stable release
+
+ -- Stefan Berger <stefanb@linux.ibm.com>  Wed, 29 Sep 2021 09:00:00 -0500
+
+libtpms (0.9.0~dev1) UNRELEASED; urgency=medium
+
+  * Developer release 1
+
+ -- Stefan Berger <stefanb@linux.ibm.com>  Wed, 24 Feb 2021 13:48:00 -0500
+
+libtpms (0.8.0) RELEASED; urgency=medium
+
+  * Stable release
+
+ -- Stefan Berger <stefanb@linux.ibm.com>  Wed, 24 Feb 2021 10:55:00 -0500
+
+libtpms (0.8.0~dev1) UNRELEASED; urgency=medium
+
+  * Developer release 1
+
+ -- Stefan Berger <stefanb@linux.ibm.com>  Fri, 19 Jul 2019 13:38:08 -0500
+
+libtpms (0.7.0-1) RELEASED; urgency=medium
+
+  * Stable release
+
+ -- Stefan Berger <stefanb@linux.ibm.com>  Thu, 18 Jul 2019 16:26:00 -0500
+
+libtpms (0.7.0~dev1) UNRELEASED; urgency=medium
+
+  * Stable release
+
+ -- Stefan Berger <stefanb@linux.ibm.com>  Mon, 14 Jan 2019 10:25:08 -0500
+
+libtpms (0.6.0-1) RELEASED; urgency=medium
+
+  * Stable release
+
+ -- Stefan Berger <stefanb@linux.ibm.com>  Wed, 09 Jan 2019 12:28:12 -0500
+
+libtpms (0.6.0-1~dev1) RELEASED; urgency=medium
+
+  * Developer release 1
+
+ -- Stefan Berger <stefanb@linux.vnet.ibm.com>  Mon, 13 Nov 2017 13:03:00 -0500
+
+libtpms (0.6.0) UNRELEASED; urgency=medium
+
+  * Initial Release.
+
+ -- Stefan Berger <stefanb@linux.vnet.ibm.com>  Tue, 12 Jan 2016 11:28:33 -0500
