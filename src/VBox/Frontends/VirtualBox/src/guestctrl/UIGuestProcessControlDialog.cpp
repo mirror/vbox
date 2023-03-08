@@ -31,6 +31,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIGuestControlConsole.h"
