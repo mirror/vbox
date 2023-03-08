@@ -30,32 +30,26 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UIDesktopWidgetWatchdog.h"
+#include "UICommon.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIGuestControlConsole.h"
 #include "UIGuestProcessControlDialog.h"
-#include "UICommon.h"
 #include "UIMachine.h"
 #include "UISession.h"
-#ifdef VBOX_WS_MAC
-# include "VBoxUtils-darwin.h"
-#endif
 
 
 /*********************************************************************************************************************************
 *   Class UIGuestProcessControlDialogFactory implementation.                                                                     *
 *********************************************************************************************************************************/
 
-UIGuestProcessControlDialogFactory::UIGuestProcessControlDialogFactory(UIMachine *pMachine /* = 0 */)
-    : m_pMachine(pMachine)
+UIGuestProcessControlDialogFactory::UIGuestProcessControlDialogFactory()
 {
 }
 
 void UIGuestProcessControlDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    AssertPtrReturnVoid(m_pMachine);
-    pDialog = new UIGuestProcessControlDialog(pCenterWidget, m_pMachine);
+    pDialog = new UIGuestProcessControlDialog(pCenterWidget);
 }
 
 
@@ -63,12 +57,10 @@ void UIGuestProcessControlDialogFactory::create(QIManagerDialog *&pDialog, QWidg
 *   Class UIGuestProcessControlDialog implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIGuestProcessControlDialog::UIGuestProcessControlDialog(QWidget *pCenterWidget, UIMachine *pMachine)
+UIGuestProcessControlDialog::UIGuestProcessControlDialog(QWidget *pCenterWidget)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
-    , m_pMachine(pMachine)
-    , m_pActionPool(m_pMachine->actionPool())
-    , m_comGuest(m_pMachine->uisession()->guest())
-    , m_strMachineName(m_pMachine->machineName())
+    , m_comGuest(gpMachine->uisession()->guest())
+    , m_strMachineName(gpMachine->machineName())
 {
 }
 

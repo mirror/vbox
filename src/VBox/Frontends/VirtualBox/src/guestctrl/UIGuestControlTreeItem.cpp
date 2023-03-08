@@ -233,7 +233,7 @@ QString UIGuestSessionTreeItem::propertyString() const
 
 void UIGuestSessionTreeItem::sltGuestProcessUnregistered(CGuestProcess guestProcess)
 {
-    if (!UIGuestProcessControlWidget::m_fDeleteAfterUnregister)
+    if (!UIGuestProcessControlWidget::s_fDeleteAfterUnregister)
         return;
     for (int i = 0; i < childCount(); ++i)
     {
@@ -341,7 +341,7 @@ void UIGuestProcessTreeItem::sltGuestProcessUpdated(const CGuestProcessStateChan
         processStatus !=  KProcessStatus_Started &&
         processStatus !=  KProcessStatus_Paused)
     {
-        if (UIGuestProcessControlWidget::m_fDeleteAfterUnregister)
+        if (UIGuestProcessControlWidget::s_fDeleteAfterUnregister)
             this->deleteLater();
     }
 }

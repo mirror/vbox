@@ -42,31 +42,20 @@
 #include "COMEnums.h"
 #include "CGuest.h"
 
-/* Forward declarations: */
-class UIActionPool;
-class UIMachine;
-class UIGuestProcessControlDialog;
-class CGuest;
-
 /** QIManagerDialogFactory extension used as a factory for the Guest Control dialog. */
 class UIGuestProcessControlDialogFactory : public QIManagerDialogFactory
 {
 public:
 
-    /** Constructs dialog factory.
-      * @param  pMachine  Brings the machine UI reference to be used by the created dialog. */
-    UIGuestProcessControlDialogFactory(UIMachine *pMachine = 0);
+    /** Constructs dialog factory. */
+    UIGuestProcessControlDialogFactory();
 
 protected:
 
     /** Creates derived @a pDialog instance.
       * @param  pCenterWidget  Passes the widget to center wrt. pCenterWidget. */
     virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) RT_OVERRIDE;
-
-    /** Holds the machine UI reference. */
-    UIMachine *m_pMachine;
 };
-
 
 /** QIManagerDialog extension providing GUI with the dialog displaying guest control releated logs. */
 class UIGuestProcessControlDialog : public QIWithRetranslateUI<QIManagerDialog>
@@ -75,9 +64,8 @@ class UIGuestProcessControlDialog : public QIWithRetranslateUI<QIManagerDialog>
 
 public:
 
-    /** Constructs Guest Control dialog.
-      * @param  pMachine  Brings the machine UI reference to be used by the created dialog. */
-    UIGuestProcessControlDialog(QWidget *pCenterWidget, UIMachine *pMachine);
+    /** Constructs Guest Control dialog. */
+    UIGuestProcessControlDialog(QWidget *pCenterWidget);
 
 protected:
 
@@ -114,11 +102,8 @@ private slots:
 
 private:
 
-    UIMachine    *m_pMachine;
-    UIActionPool *m_pActionPool;
-    CGuest        m_comGuest;
-    QString       m_strMachineName;
+    CGuest   m_comGuest;
+    QString  m_strMachineName;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_guestctrl_UIGuestProcessControlDialog_h */

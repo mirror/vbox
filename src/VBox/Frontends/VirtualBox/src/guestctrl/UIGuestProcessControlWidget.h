@@ -40,19 +40,14 @@
 #include "CEventListener.h"
 
 /* GUI includes: */
-#include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
+#include "QIManagerDialog.h"
 #include "UIMainEventListener.h"
 
 /* Forward declarations: */
-class QITreeWidget;
 class QVBoxLayout;
-class QSplitter;
-class UIGuestControlConsole;
-class UIGuestControlInterface;
-class UIGuestSessionsEventHandler;
-class UIGuestControlTreeWidget;
 class QIToolBar;
+class UIGuestControlTreeWidget;
 
 /** QWidget extension
   * providing GUI with guest session information and control tab in session-information window. */
@@ -66,7 +61,7 @@ public:
                                 QString strMachineName = QString(), bool fShowToolbar = false);
     ~UIGuestProcessControlWidget();
     /** When true we delete the corresponding tree item as soon as the guest session/process is unregistered. */
-    static const bool           m_fDeleteAfterUnregister;
+    static const bool  s_fDeleteAfterUnregister;
 
 protected:
 
@@ -100,10 +95,11 @@ private:
 
     /** Holds the Qt event listener instance. */
     ComObjPtr<UIMainEventListenerImpl> m_pQtListener;
+
     /** Holds the COM event listener instance. */
-    CEventListener m_comEventListener;
-    const bool     m_fShowToolbar;
-    QString        m_strMachineName;
+    CEventListener  m_comEventListener;
+    const bool      m_fShowToolbar;
+    QString         m_strMachineName;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_guestctrl_UIGuestProcessControlWidget_h */
