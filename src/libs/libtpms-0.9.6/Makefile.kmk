@@ -28,7 +28,7 @@
 SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-VBOX_PATH_LIBTPMS = $(PATH_ROOT)/src/libs/libtpms-0.9.0
+VBOX_PATH_LIBTPMS = $(PATH_ROOT)/src/libs/libtpms-0.9.6
 
 LIBRARIES += VBox-libtpms_tpm12 VBox-libtpms_tpm2 VBox-libtpms
 VBox-libtpms_tpm12_TEMPLATE       = VBoxR3DllNonPedantic
