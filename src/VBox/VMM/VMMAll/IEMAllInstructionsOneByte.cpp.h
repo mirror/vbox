@@ -7098,12 +7098,12 @@ FNIEMOP_DEF_2(iemOpHlpFpu_st0_stN, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, 0, pr80Value2, IEM_GET_MODRM_RM_8(bRm))
+    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, 0, pr80Value2, IEM_GET_MODRM_RM_8(bRm)) {
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pFpuRes, pr80Value1, pr80Value2);
         IEM_MC_STORE_FPU_RESULT(FpuRes, 0);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW(0);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -7130,12 +7130,12 @@ FNIEMOP_DEF_2(iemOpHlpFpuNoStore_st0_stN, uint8_t, bRm, PFNIEMAIMPLFPUR80FSW, pf
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, 0, pr80Value2, IEM_GET_MODRM_RM_8(bRm))
+    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, 0, pr80Value2, IEM_GET_MODRM_RM_8(bRm)) {
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pu16Fsw, pr80Value1, pr80Value2);
         IEM_MC_UPDATE_FSW(u16Fsw);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW(UINT8_MAX);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -7162,12 +7162,12 @@ FNIEMOP_DEF_2(iemOpHlpFpuNoStore_st0_stN_pop, uint8_t, bRm, PFNIEMAIMPLFPUR80FSW
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, 0, pr80Value2, IEM_GET_MODRM_RM_8(bRm))
+    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, 0, pr80Value2, IEM_GET_MODRM_RM_8(bRm)) {
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pu16Fsw, pr80Value1, pr80Value2);
         IEM_MC_UPDATE_FSW_THEN_POP(u16Fsw);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(UINT8_MAX);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -7263,12 +7263,12 @@ FNIEMOP_DEF_2(iemOpHlpFpu_st0_m32r, uint8_t, bRm, PFNIEMAIMPLFPUR32, pfnAImpl)
     IEM_MC_FETCH_MEM_R32(r32Val2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pFpuRes, pr80Value1, pr32Val2);
         IEM_MC_STORE_FPU_RESULT(FpuRes, 0);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW(0);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -7312,12 +7312,12 @@ FNIEMOP_DEF_1(iemOp_fcom_m32r,  uint8_t, bRm)
     IEM_MC_FETCH_MEM_R32(r32Val2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fcom_r80_by_r32, pu16Fsw, pr80Value1, pr32Val2);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -7345,12 +7345,12 @@ FNIEMOP_DEF_1(iemOp_fcomp_m32r, uint8_t, bRm)
     IEM_MC_FETCH_MEM_R32(r32Val2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fcom_r80_by_r32, pu16Fsw, pr80Value1, pr32Val2);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -7451,12 +7451,12 @@ FNIEMOP_DEF_1(iemOp_fld_m32r, uint8_t, bRm)
     IEM_MC_FETCH_MEM_R32(r32Val, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_IS_EMPTY(7)
+    IEM_MC_IF_FPUREG_IS_EMPTY(7) {
         IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fld_r80_from_r32, pFpuRes, pr32Val);
         IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -7481,17 +7481,17 @@ FNIEMOP_DEF_1(iemOp_fst_m32r, uint8_t, bRm)
 
     IEM_MC_MEM_MAP(pr32Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fst_r80_to_r32, pu16Fsw, pr32Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pr32Dst, IEM_ACCESS_DATA_W, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ELSE()
-        IEM_MC_IF_FCW_IM()
+    } IEM_MC_ELSE() {
+        IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_NEG_QNAN_R32_BY_REF(pr32Dst);
             IEM_MC_MEM_COMMIT_AND_UNMAP(pr32Dst, IEM_ACCESS_DATA_W);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -7516,17 +7516,17 @@ FNIEMOP_DEF_1(iemOp_fstp_m32r, uint8_t, bRm)
 
     IEM_MC_MEM_MAP(pr32Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fst_r80_to_r32, pu16Fsw, pr32Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pr32Dst, IEM_ACCESS_DATA_W, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ELSE()
-        IEM_MC_IF_FCW_IM()
+    } IEM_MC_ELSE() {
+        IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_NEG_QNAN_R32_BY_REF(pr32Dst);
             IEM_MC_MEM_COMMIT_AND_UNMAP(pr32Dst, IEM_ACCESS_DATA_W);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -7637,12 +7637,12 @@ FNIEMOP_DEF_1(iemOp_fld_stN, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, IEM_GET_MODRM_RM_8(bRm))
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, IEM_GET_MODRM_RM_8(bRm)) {
         IEM_MC_SET_FPU_RESULT(FpuRes, 0 /*FSW*/, pr80Value);
         IEM_MC_PUSH_FPU_RESULT(FpuRes);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_PUSH_UNDERFLOW();
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
 
     IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
@@ -7666,13 +7666,13 @@ FNIEMOP_DEF_1(iemOp_fxch_stN, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, 0, pr80Value2, IEM_GET_MODRM_RM_8(bRm))
+    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, 0, pr80Value2, IEM_GET_MODRM_RM_8(bRm)) {
         IEM_MC_SET_FPU_RESULT(FpuRes, X86_FSW_C1, pr80Value2);
         IEM_MC_STORE_FPUREG_R80_SRC_REF(IEM_GET_MODRM_RM_8(bRm), pr80Value1);
         IEM_MC_STORE_FPU_RESULT(FpuRes, 0);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_CALL_CIMPL_1(iemCImpl_fxch_underflow, iStReg);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
 
     IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
@@ -7695,11 +7695,11 @@ FNIEMOP_DEF_1(iemOp_fstp_stN, uint8_t, bRm)
         IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
         IEM_MC_PREPARE_FPU_USAGE();
-        IEM_MC_IF_FPUREG_NOT_EMPTY(0)
+        IEM_MC_IF_FPUREG_NOT_EMPTY(0) {
             IEM_MC_UPDATE_FSW_THEN_POP(u16Fsw);
-        IEM_MC_ELSE()
+        } IEM_MC_ELSE() {
             IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(0);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
@@ -7713,12 +7713,12 @@ FNIEMOP_DEF_1(iemOp_fstp_stN, uint8_t, bRm)
         IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
         IEM_MC_PREPARE_FPU_USAGE();
-        IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+        IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
             IEM_MC_SET_FPU_RESULT(FpuRes, 0 /*FSW*/, pr80Value);
             IEM_MC_STORE_FPU_RESULT_THEN_POP(FpuRes, iDstReg);
-        IEM_MC_ELSE()
+        } IEM_MC_ELSE() {
             IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(iDstReg);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
 
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
@@ -7744,12 +7744,12 @@ FNIEMOP_DEF_1(iemOpHlpFpu_st0, PFNIEMAIMPLFPUR80UNARY, pfnAImpl)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_CALL_FPU_AIMPL_2(pfnAImpl, pFpuRes, pr80Value);
         IEM_MC_STORE_FPU_RESULT(FpuRes, 0);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW(0);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -7786,12 +7786,12 @@ FNIEMOP_DEF(iemOp_ftst)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_ftst_r80, pu16Fsw, pr80Value);
         IEM_MC_UPDATE_FSW(u16Fsw);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW(UINT8_MAX);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -7837,12 +7837,12 @@ FNIEMOP_DEF_1(iemOpHlpFpuPushConstant, PFNIEMAIMPLFPUR80LDCONST, pfnAImpl)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_IS_EMPTY(7)
+    IEM_MC_IF_FPUREG_IS_EMPTY(7) {
         IEM_MC_CALL_FPU_AIMPL_1(pfnAImpl, pFpuRes);
         IEM_MC_PUSH_FPU_RESULT(FpuRes);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_PUSH_OVERFLOW();
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -7939,12 +7939,12 @@ FNIEMOP_DEF_2(iemOpHlpFpu_stN_st0_pop, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, IEM_GET_MODRM_RM_8(bRm), pr80Value2, 0)
+    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, IEM_GET_MODRM_RM_8(bRm), pr80Value2, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pFpuRes, pr80Value1, pr80Value2);
         IEM_MC_STORE_FPU_RESULT_THEN_POP(FpuRes, IEM_GET_MODRM_RM_8(bRm));
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(IEM_GET_MODRM_RM_8(bRm));
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -7977,12 +7977,12 @@ FNIEMOP_DEF_1(iemOpHlpFpuReplace_st0_push, PFNIEMAIMPLFPUR80UNARYTWO, pfnAImpl)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_CALL_FPU_AIMPL_2(pfnAImpl, pFpuResTwo, pr80Value);
         IEM_MC_PUSH_FPU_RESULT_TWO(FpuResTwo);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_PUSH_UNDERFLOW_TWO();
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8228,14 +8228,14 @@ FNIEMOP_DEF_1(iemOp_fcmovb_stN,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, IEM_GET_MODRM_RM_8(bRm), 0)
-        IEM_MC_IF_EFL_BIT_SET(X86_EFL_CF)
+    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, IEM_GET_MODRM_RM_8(bRm), 0) {
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_CF) {
             IEM_MC_STORE_FPUREG_R80_SRC_REF(0, pr80ValueN);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_UPDATE_FPU_OPCODE_IP();
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW(0);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8255,14 +8255,14 @@ FNIEMOP_DEF_1(iemOp_fcmove_stN,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, IEM_GET_MODRM_RM_8(bRm), 0)
-        IEM_MC_IF_EFL_BIT_SET(X86_EFL_ZF)
+    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, IEM_GET_MODRM_RM_8(bRm), 0) {
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_ZF) {
             IEM_MC_STORE_FPUREG_R80_SRC_REF(0, pr80ValueN);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_UPDATE_FPU_OPCODE_IP();
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW(0);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8282,14 +8282,14 @@ FNIEMOP_DEF_1(iemOp_fcmovbe_stN, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, IEM_GET_MODRM_RM_8(bRm), 0)
-        IEM_MC_IF_EFL_ANY_BITS_SET(X86_EFL_CF | X86_EFL_ZF)
+    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, IEM_GET_MODRM_RM_8(bRm), 0) {
+        IEM_MC_IF_EFL_ANY_BITS_SET(X86_EFL_CF | X86_EFL_ZF) {
             IEM_MC_STORE_FPUREG_R80_SRC_REF(0, pr80ValueN);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_UPDATE_FPU_OPCODE_IP();
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW(0);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8309,14 +8309,14 @@ FNIEMOP_DEF_1(iemOp_fcmovu_stN,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, IEM_GET_MODRM_RM_8(bRm), 0)
-        IEM_MC_IF_EFL_BIT_SET(X86_EFL_PF)
+    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, IEM_GET_MODRM_RM_8(bRm), 0) {
+        IEM_MC_IF_EFL_BIT_SET(X86_EFL_PF) {
             IEM_MC_STORE_FPUREG_R80_SRC_REF(0, pr80ValueN);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_UPDATE_FPU_OPCODE_IP();
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW(0);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8343,12 +8343,12 @@ FNIEMOP_DEF_1(iemOpHlpFpuNoStore_st0_st1_pop_pop, PFNIEMAIMPLFPUR80FSW, pfnAImpl
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, 0, pr80Value2, 1)
+    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, 0, pr80Value2, 1) {
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pu16Fsw, pr80Value1, pr80Value2);
         IEM_MC_UPDATE_FSW_THEN_POP_POP(u16Fsw);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP_POP();
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8388,12 +8388,12 @@ FNIEMOP_DEF_2(iemOpHlpFpu_st0_m32i, uint8_t, bRm, PFNIEMAIMPLFPUI32, pfnAImpl)
     IEM_MC_FETCH_MEM_I32(i32Val2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pFpuRes, pr80Value1, pi32Val2);
         IEM_MC_STORE_FPU_RESULT(FpuRes, 0);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW(0);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8437,12 +8437,12 @@ FNIEMOP_DEF_1(iemOp_ficom_m32i,  uint8_t, bRm)
     IEM_MC_FETCH_MEM_I32(i32Val2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_ficom_r80_by_i32, pu16Fsw, pr80Value1, pi32Val2);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8470,12 +8470,12 @@ FNIEMOP_DEF_1(iemOp_ficomp_m32i, uint8_t, bRm)
     IEM_MC_FETCH_MEM_I32(i32Val2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_ficom_r80_by_i32, pu16Fsw, pr80Value1, pi32Val2);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8577,12 +8577,12 @@ FNIEMOP_DEF_1(iemOp_fild_m32i, uint8_t, bRm)
     IEM_MC_FETCH_MEM_I32(i32Val, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_IS_EMPTY(7)
+    IEM_MC_IF_FPUREG_IS_EMPTY(7) {
         IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fild_r80_from_i32, pFpuRes, pi32Val);
         IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8607,17 +8607,17 @@ FNIEMOP_DEF_1(iemOp_fisttp_m32i, uint8_t, bRm)
 
     IEM_MC_MEM_MAP(pi32Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fistt_r80_to_i32, pu16Fsw, pi32Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi32Dst, IEM_ACCESS_DATA_W, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ELSE()
-        IEM_MC_IF_FCW_IM()
+    } IEM_MC_ELSE() {
+        IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_I32_CONST_BY_REF(pi32Dst, INT32_MIN /* (integer indefinite) */);
             IEM_MC_MEM_COMMIT_AND_UNMAP(pi32Dst, IEM_ACCESS_DATA_W);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8642,17 +8642,17 @@ FNIEMOP_DEF_1(iemOp_fist_m32i, uint8_t, bRm)
 
     IEM_MC_MEM_MAP(pi32Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fist_r80_to_i32, pu16Fsw, pi32Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi32Dst, IEM_ACCESS_DATA_W, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ELSE()
-        IEM_MC_IF_FCW_IM()
+    } IEM_MC_ELSE() {
+        IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_I32_CONST_BY_REF(pi32Dst, INT32_MIN /* (integer indefinite) */);
             IEM_MC_MEM_COMMIT_AND_UNMAP(pi32Dst, IEM_ACCESS_DATA_W);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8677,17 +8677,17 @@ FNIEMOP_DEF_1(iemOp_fistp_m32i, uint8_t, bRm)
 
     IEM_MC_MEM_MAP(pi32Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fist_r80_to_i32, pu16Fsw, pi32Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi32Dst, IEM_ACCESS_DATA_W, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ELSE()
-        IEM_MC_IF_FCW_IM()
+    } IEM_MC_ELSE() {
+        IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_I32_CONST_BY_REF(pi32Dst, INT32_MIN /* (integer indefinite) */);
             IEM_MC_MEM_COMMIT_AND_UNMAP(pi32Dst, IEM_ACCESS_DATA_W);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8714,12 +8714,12 @@ FNIEMOP_DEF_1(iemOp_fld_m80r, uint8_t, bRm)
     IEM_MC_FETCH_MEM_R80(r80Val, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_IS_EMPTY(7)
+    IEM_MC_IF_FPUREG_IS_EMPTY(7) {
         IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fld_r80_from_r80, pFpuRes, pr80Val);
         IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8744,17 +8744,17 @@ FNIEMOP_DEF_1(iemOp_fstp_m80r, uint8_t, bRm)
 
     IEM_MC_MEM_MAP_EX(pr80Dst, IEM_ACCESS_DATA_W, sizeof(*pr80Dst), pVCpu->iem.s.iEffSeg, GCPtrEffDst, 7 /*cbAlign*/, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fst_r80_to_r80, pu16Fsw, pr80Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pr80Dst, IEM_ACCESS_DATA_W, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ELSE()
-        IEM_MC_IF_FCW_IM()
+    } IEM_MC_ELSE() {
+        IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_NEG_QNAN_R80_BY_REF(pr80Dst);
             IEM_MC_MEM_COMMIT_AND_UNMAP(pr80Dst, IEM_ACCESS_DATA_W);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8774,14 +8774,14 @@ FNIEMOP_DEF_1(iemOp_fcmovnb_stN,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, IEM_GET_MODRM_RM_8(bRm), 0)
-        IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_CF)
+    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, IEM_GET_MODRM_RM_8(bRm), 0) {
+        IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_CF) {
             IEM_MC_STORE_FPUREG_R80_SRC_REF(0, pr80ValueN);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_UPDATE_FPU_OPCODE_IP();
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW(0);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8801,14 +8801,14 @@ FNIEMOP_DEF_1(iemOp_fcmovne_stN,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, IEM_GET_MODRM_RM_8(bRm), 0)
-        IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_ZF)
+    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, IEM_GET_MODRM_RM_8(bRm), 0) {
+        IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_ZF) {
             IEM_MC_STORE_FPUREG_R80_SRC_REF(0, pr80ValueN);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_UPDATE_FPU_OPCODE_IP();
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW(0);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8828,14 +8828,14 @@ FNIEMOP_DEF_1(iemOp_fcmovnbe_stN, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, IEM_GET_MODRM_RM_8(bRm), 0)
-        IEM_MC_IF_EFL_NO_BITS_SET(X86_EFL_CF | X86_EFL_ZF)
+    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, IEM_GET_MODRM_RM_8(bRm), 0) {
+        IEM_MC_IF_EFL_NO_BITS_SET(X86_EFL_CF | X86_EFL_ZF) {
             IEM_MC_STORE_FPUREG_R80_SRC_REF(0, pr80ValueN);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_UPDATE_FPU_OPCODE_IP();
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW(0);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -8855,14 +8855,14 @@ FNIEMOP_DEF_1(iemOp_fcmovnnu_stN, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, IEM_GET_MODRM_RM_8(bRm), 0)
-        IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_PF)
+    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, IEM_GET_MODRM_RM_8(bRm), 0) {
+        IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_PF) {
             IEM_MC_STORE_FPUREG_R80_SRC_REF(0, pr80ValueN);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_UPDATE_FPU_OPCODE_IP();
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW(0);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -9036,12 +9036,12 @@ FNIEMOP_DEF_2(iemOpHlpFpu_stN_st0, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, IEM_GET_MODRM_RM_8(bRm), pr80Value2, 0)
+    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, IEM_GET_MODRM_RM_8(bRm), pr80Value2, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pFpuRes, pr80Value1, pr80Value2);
         IEM_MC_STORE_FPU_RESULT(FpuRes, IEM_GET_MODRM_RM_8(bRm));
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW(IEM_GET_MODRM_RM_8(bRm));
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -9120,12 +9120,12 @@ FNIEMOP_DEF_2(iemOpHlpFpu_ST0_m64r, uint8_t, bRm, PFNIEMAIMPLFPUR64, pfnImpl)
 
     IEM_MC_FETCH_MEM_R64(r64Factor2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Factor1, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Factor1, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(pfnImpl, pFpuRes, pr80Factor1, pr64Factor2);
         IEM_MC_STORE_FPU_RESULT_MEM_OP(FpuRes, 0, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(0, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -9169,12 +9169,12 @@ FNIEMOP_DEF_1(iemOp_fcom_m64r,  uint8_t, bRm)
     IEM_MC_FETCH_MEM_R64(r64Val2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fcom_r80_by_r64, pu16Fsw, pr80Value1, pr64Val2);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -9202,12 +9202,12 @@ FNIEMOP_DEF_1(iemOp_fcomp_m64r, uint8_t, bRm)
     IEM_MC_FETCH_MEM_R64(r64Val2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fcom_r80_by_r64, pu16Fsw, pr80Value1, pr64Val2);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -9306,12 +9306,12 @@ FNIEMOP_DEF_1(iemOp_fld_m64r,    uint8_t, bRm)
 
     IEM_MC_FETCH_MEM_R64(r64Val, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_IS_EMPTY(7)
+    IEM_MC_IF_FPUREG_IS_EMPTY(7) {
         IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fld_r80_from_r64, pFpuRes, pr64Val);
         IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -9336,17 +9336,17 @@ FNIEMOP_DEF_1(iemOp_fisttp_m64i, uint8_t, bRm)
 
     IEM_MC_MEM_MAP(pi64Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fistt_r80_to_i64, pu16Fsw, pi64Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi64Dst, IEM_ACCESS_DATA_W, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ELSE()
-        IEM_MC_IF_FCW_IM()
+    } IEM_MC_ELSE() {
+        IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_I64_CONST_BY_REF(pi64Dst, INT64_MIN /* (integer indefinite) */);
             IEM_MC_MEM_COMMIT_AND_UNMAP(pi64Dst, IEM_ACCESS_DATA_W);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -9371,17 +9371,17 @@ FNIEMOP_DEF_1(iemOp_fst_m64r,    uint8_t, bRm)
 
     IEM_MC_MEM_MAP(pr64Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fst_r80_to_r64, pu16Fsw, pr64Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pr64Dst, IEM_ACCESS_DATA_W, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ELSE()
-        IEM_MC_IF_FCW_IM()
+    } IEM_MC_ELSE() {
+        IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_NEG_QNAN_R64_BY_REF(pr64Dst);
             IEM_MC_MEM_COMMIT_AND_UNMAP(pr64Dst, IEM_ACCESS_DATA_W);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -9408,17 +9408,17 @@ FNIEMOP_DEF_1(iemOp_fstp_m64r,   uint8_t, bRm)
 
     IEM_MC_MEM_MAP(pr64Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fst_r80_to_r64, pu16Fsw, pr64Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pr64Dst, IEM_ACCESS_DATA_W, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ELSE()
-        IEM_MC_IF_FCW_IM()
+    } IEM_MC_ELSE() {
+        IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_NEG_QNAN_R64_BY_REF(pr64Dst);
             IEM_MC_MEM_COMMIT_AND_UNMAP(pr64Dst, IEM_ACCESS_DATA_W);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -9520,12 +9520,12 @@ FNIEMOP_DEF_1(iemOp_fst_stN,     uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_SET_FPU_RESULT(FpuRes, 0 /*FSW*/, pr80Value);
         IEM_MC_STORE_FPU_RESULT(FpuRes, IEM_GET_MODRM_RM_8(bRm));
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW(IEM_GET_MODRM_RM_8(bRm));
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
 
     IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
@@ -9669,12 +9669,12 @@ FNIEMOP_DEF_2(iemOpHlpFpu_st0_m16i, uint8_t, bRm, PFNIEMAIMPLFPUI16, pfnAImpl)
     IEM_MC_FETCH_MEM_I16(i16Val2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pFpuRes, pr80Value1, pi16Val2);
         IEM_MC_STORE_FPU_RESULT(FpuRes, 0);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW(0);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -9718,12 +9718,12 @@ FNIEMOP_DEF_1(iemOp_ficom_m16i,  uint8_t, bRm)
     IEM_MC_FETCH_MEM_I16(i16Val2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_ficom_r80_by_i16, pu16Fsw, pr80Value1, pi16Val2);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -9751,12 +9751,12 @@ FNIEMOP_DEF_1(iemOp_ficomp_m16i, uint8_t, bRm)
     IEM_MC_FETCH_MEM_I16(i16Val2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_ficom_r80_by_i16, pu16Fsw, pr80Value1, pi16Val2);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -9912,12 +9912,12 @@ FNIEMOP_DEF_1(iemOp_fild_m16i, uint8_t, bRm)
     IEM_MC_FETCH_MEM_I16(i16Val, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_IS_EMPTY(7)
+    IEM_MC_IF_FPUREG_IS_EMPTY(7) {
         IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fild_r80_from_i16, pFpuRes, pi16Val);
         IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -9942,17 +9942,17 @@ FNIEMOP_DEF_1(iemOp_fisttp_m16i, uint8_t, bRm)
 
     IEM_MC_MEM_MAP(pi16Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fistt_r80_to_i16, pu16Fsw, pi16Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi16Dst, IEM_ACCESS_DATA_W, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ELSE()
-        IEM_MC_IF_FCW_IM()
+    } IEM_MC_ELSE() {
+        IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_I16_CONST_BY_REF(pi16Dst, INT16_MIN /* (integer indefinite) */);
             IEM_MC_MEM_COMMIT_AND_UNMAP(pi16Dst, IEM_ACCESS_DATA_W);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -9977,17 +9977,17 @@ FNIEMOP_DEF_1(iemOp_fist_m16i,   uint8_t, bRm)
 
     IEM_MC_MEM_MAP(pi16Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fist_r80_to_i16, pu16Fsw, pi16Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi16Dst, IEM_ACCESS_DATA_W, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ELSE()
-        IEM_MC_IF_FCW_IM()
+    } IEM_MC_ELSE() {
+        IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_I16_CONST_BY_REF(pi16Dst, INT16_MIN /* (integer indefinite) */);
             IEM_MC_MEM_COMMIT_AND_UNMAP(pi16Dst, IEM_ACCESS_DATA_W);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -10012,17 +10012,17 @@ FNIEMOP_DEF_1(iemOp_fistp_m16i,  uint8_t, bRm)
 
     IEM_MC_MEM_MAP(pi16Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fist_r80_to_i16, pu16Fsw, pi16Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi16Dst, IEM_ACCESS_DATA_W, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ELSE()
-        IEM_MC_IF_FCW_IM()
+    } IEM_MC_ELSE() {
+        IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_I16_CONST_BY_REF(pi16Dst, INT16_MIN /* (integer indefinite) */);
             IEM_MC_MEM_COMMIT_AND_UNMAP(pi16Dst, IEM_ACCESS_DATA_W);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -10049,12 +10049,12 @@ FNIEMOP_DEF_1(iemOp_fbld_m80d,   uint8_t, bRm)
     IEM_MC_FETCH_MEM_D80(d80Val, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_IS_EMPTY(7)
+    IEM_MC_IF_FPUREG_IS_EMPTY(7) {
         IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fld_r80_from_d80, pFpuRes, pd80Val);
         IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -10081,12 +10081,12 @@ FNIEMOP_DEF_1(iemOp_fild_m64i,   uint8_t, bRm)
     IEM_MC_FETCH_MEM_I64(i64Val, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_IS_EMPTY(7)
+    IEM_MC_IF_FPUREG_IS_EMPTY(7) {
         IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fild_r80_from_i64, pFpuRes, pi64Val);
         IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ELSE()
+    } IEM_MC_ELSE() {
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -10111,17 +10111,17 @@ FNIEMOP_DEF_1(iemOp_fbstp_m80d,  uint8_t, bRm)
 
     IEM_MC_MEM_MAP_EX(pd80Dst, IEM_ACCESS_DATA_W, sizeof(*pd80Dst), pVCpu->iem.s.iEffSeg, GCPtrEffDst, 7 /*cbAlign*/, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fst_r80_to_d80, pu16Fsw, pd80Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pd80Dst, IEM_ACCESS_DATA_W, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ELSE()
-        IEM_MC_IF_FCW_IM()
+    } IEM_MC_ELSE() {
+        IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_INDEF_D80_BY_REF(pd80Dst);
             IEM_MC_MEM_COMMIT_AND_UNMAP(pd80Dst, IEM_ACCESS_DATA_W);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();
@@ -10146,17 +10146,17 @@ FNIEMOP_DEF_1(iemOp_fistp_m64i,  uint8_t, bRm)
 
     IEM_MC_MEM_MAP(pi64Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fist_r80_to_i64, pu16Fsw, pi64Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi64Dst, IEM_ACCESS_DATA_W, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ELSE()
-        IEM_MC_IF_FCW_IM()
+    } IEM_MC_ELSE() {
+        IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_I64_CONST_BY_REF(pi64Dst, INT64_MIN /* (integer indefinite) */);
             IEM_MC_MEM_COMMIT_AND_UNMAP(pi64Dst, IEM_ACCESS_DATA_W);
-        IEM_MC_ENDIF();
+        } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-    IEM_MC_ENDIF();
+    } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
     IEM_MC_END();

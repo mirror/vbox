@@ -1739,6 +1739,56 @@ g_dInstructionMaps          = { oMap.sName:    oMap for oMap in g_aoInstructionM
 g_dInstructionMapsByIemName = { oMap.sIemName: oMap for oMap in g_aoInstructionMaps };
 
 
+class McStmt(object):
+    """
+    Statement in a microcode block.
+    """
+
+    def __init__(self, sName, asParams):
+        self.sName    = sName;     ##< 'IEM_MC_XXX' or 'C++'.
+        self.asParams = asParams;
+        self.oUser    = None;
+
+    def renderCode(self, cchIndent = 0):
+        """
+        Renders the code for the statement. 
+        """
+        return ' ' * cchIndent + self.sName + '(' + ', '.join(self.asParams) + ');';
+
+class McStmtCond(McStmt):
+    """ Base class for conditional statements (IEM_MC_IF_XXX). """
+
+    def __init__(self, sName, asParams):
+        McStmt.__init__(self, sName, asParams);
+        self.aoIfBranch     = [];
+        self.aoElseBranch   = [];
+
+    def renderCode(self, cchIndent = 0):
+        sRet  = ' ' * cchIndent + self.sName + '(' + ', '.join(self.asParams) + ') {\n';
+        for oStmt in self.aoIfBranch:
+            sRet += oStmt.renderCode(cchIndent + 4);
+        if self.aoElseBranch:
+            sRet += ' ' * cchIndent + '} IEM_MC_ELSE() {\n';
+            for oStmt in self.aoElseBranch:
+                sRet += oStmt.renderCode(cchIndent + 4);
+        sRet += ' ' * cchIndent + '} IEM_MC_ENDIF();';
+        return sRet;
+
+class McCppGeneric(McStmt):
+    """
+    Generic C++/C statement.
+    """
+
+    def __init__(self, sCode):
+        McStmt.__init__(self, 'C++', [sCode,]);
+
+    def renderCode(self, cchIndent = 0):
+        return ' ' * cchIndent + self.asParams[0];
+
+#class McLocalVar(McStmt):
+#
+#    def __init__(self, sRaw, , ):
+
 
 class McBlock(object):
     """
@@ -1754,6 +1804,8 @@ class McBlock(object):
         self.sFunction    = sFunction;                          ##< The function the block resides in.
         self.iInFunction  = iInFunction;                        ##< The block number wihtin the function.
         self.asLines      = []              # type: list(str)   ##< The raw lines the block is made up of.
+        ## Decoded statements in the block.
+        self.aoStmts      = []              # type: list(McStmt)
 
     def complete(self, iEndLine, offEndLine, asLines):
         """
@@ -1764,6 +1816,695 @@ class McBlock(object):
         self.offEndLine   = offEndLine;
         self.asLines      = asLines;
 
+    def raiseDecodeError(self, sRawCode, off, sMessage):
+        """ Raises a decoding error. """
+        offStartOfLine = sRawCode.rfind('\n', 0, off) + 1;
+        iLine          = sRawCode.count('\n', 0, off);
+        raise ParserException('%s:%d:%d: parsing error: %s'
+                              % (self.sSrcFile, self.iBeginLine + iLine, off - offStartOfLine + 1, sMessage,));
+    @staticmethod
+    def parseMcGeneric(oSelf, sName, asParams):
+        """ Generic parser that returns a plain McStmt object. """
+        _ = oSelf;
+        return McStmt(sName, asParams);
+
+    @staticmethod
+    def parseMcGenericCond(oSelf, sName, asParams):
+        """ Generic parser that returns a plain McStmtCond object. """
+        _ = oSelf;
+        return McStmtCond(sName, asParams);
+
+    @staticmethod
+    def parseMcBegin(oSelf, sName, asParams):
+        """ IEM_MC_BEGIN """
+        return McBlock.parseMcGeneric(oSelf, sName, asParams);
+
+    @staticmethod
+    def stripComments(sCode):
+        """ Returns sCode with comments removed. """
+        off = 0;
+        while off < len(sCode):
+            off = sCode.find('/', off);
+            if off < 0 or off + 1 >= len(sCode):
+                break;
+
+            if sCode[off + 1] == '/':
+                # C++ comment.
+                offEnd = sCode.find('\n', off + 2);
+                if offEnd < 0:
+                    return sCode[:off].rstrip();
+                sCode = sCode[ : off] + sCode[offEnd : ];
+                off += 1;
+
+            elif sCode[off + 1] == '*':
+                # C comment
+                offEnd = sCode.find('*/', off + 2);
+                if offEnd < 0:
+                    return sCode[:off].rstrip();
+                sSep = ' ';
+                if (off > 0 and sCode[off - 1].isspace())  or  (offEnd + 2 < len(sCode) and sCode[offEnd + 2].isspace()):
+                    sSep = '';
+                sCode = sCode[ : off] + sSep + sCode[offEnd + 2 : ];
+                off += len(sSep);
+
+            else:
+                # Not a comment.
+                off += 1;
+        return sCode;
+
+    @staticmethod
+    def extractParam(sCode, offParam):
+        """
+        Extracts the parameter value at offParam in sCode.
+        Returns stripped value and the end offset of the terminating ',' or ')'.
+        """
+        # Extract it.
+        cNesting = 0;
+        offStart = offParam;
+        while offParam < len(sCode):
+            ch = sCode[offParam];
+            if ch == '(':
+                cNesting += 1;
+            elif ch == ')':
+                if cNesting == 0:
+                    break;
+                cNesting -= 1;
+            elif ch == ',' and cNesting == 0:
+                break;
+            offParam += 1;
+        return (sCode[offStart : offParam].strip(), offParam);
+
+    @staticmethod
+    def extractParams(sCode, offOpenParen):
+        """
+        Parses a parameter list.
+        Returns the list of parameter values and the offset of the closing parentheses.
+        Returns (None, len(sCode)) on if no closing parentheses was found.
+        """
+        assert sCode[offOpenParen] == '(';
+        asParams = [];
+        off      = offOpenParen + 1;
+        while off < len(sCode):
+            ch = sCode[off];
+            if ch.isspace():
+                off += 1;
+            elif ch != ')':
+                (sParam, off) = McBlock.extractParam(sCode, off);
+                asParams.append(sParam);
+                assert off < len(sCode), 'off=%s sCode=%s:"%s"' % (off, len(sCode), sCode,);
+                if sCode[off] == ',':
+                    off += 1;
+            else:
+                return (asParams, off);
+        return (None, off);
+
+    @staticmethod
+    def findClosingBraces(sCode, off, offStop):
+        """
+        Finds the matching '}' for the '{' at off in sCode.
+        Returns offset of the matching '}' on success, otherwise -1.
+
+        Note! Does not take comments into account.
+        """
+        cDepth = 1;
+        off   += 1;
+        while off < offStop:
+            offClose = sCode.find('}', off, offStop);
+            if offClose < 0:
+                break;
+            cDepth += sCode.count('{', off, offClose);
+            cDepth -= 1;
+            if cDepth == 0:
+                return offClose;
+            off = offClose + 1;
+        return -1;
+
+    @staticmethod
+    def countSpacesAt(sCode, off, offStop):
+        """ Returns the number of space characters at off in sCode. """
+        offStart = off;
+        while off < offStop and sCode[off].isspace():
+            off += 1;
+        return off - offStart;
+
+    @staticmethod
+    def skipSpacesAt(sCode, off, offStop):
+        """ Returns first offset at or after off for a non-space character. """
+        return off + McBlock.countSpacesAt(sCode, off, offStop);
+
+    @staticmethod
+    def isSubstrAt(sStr, off, sSubStr):
+        """ Returns true of sSubStr is found at off in sStr. """
+        return sStr[off : off + len(sSubStr)] == sSubStr;
+
+    def decodeCode(self, sRawCode, off = 0, offStop = -1, iLevel = 0):
+        """
+        Decodes sRawCode[off : offStop].
+
+        Returns list of McStmt instances.
+        Raises ParserException on failure.
+        """
+        if offStop < 0:
+            offStop = len(sRawCode);
+        aoStmts = [];
+        while off < offStop:
+            ch = sRawCode[off];
+
+            #
+            # Skip spaces and comments.
+            #
+            if ch.isspace():
+                off += 1;
+
+            elif ch == '/':
+                ch = sRawCode[off + 1];
+                if ch == '/': # C++ comment.
+                    off = sRawCode.find('\n', off + 2);
+                    if off < 0:
+                        break;
+                    off += 1;
+                elif ch == '*': # C comment.
+                    off = sRawCode.find('*/', off + 2);
+                    if off < 0:
+                        break;
+                    off += 2;
+                else:
+                    self.raiseDecodeError(sRawCode, off, 'Unexpected "/"');
+
+            #
+            # Is it a MC statement.
+            #
+            elif ch == 'I' and sRawCode[off : off + len('IEM_MC_')] == 'IEM_MC_':
+                # All MC statements ends with a semicolon, except for conditionals which ends with a '{'.
+                # Extract it and strip comments from it.
+                if not self.isSubstrAt(sRawCode, off, 'IEM_MC_IF_'):
+                    offEnd = sRawCode.find(';', off + len('IEM_MC_'));
+                    if offEnd <= off:
+                        self.raiseDecodeError(sRawCode, off, 'MC statement without a ";"');
+                else:
+                    offEnd = sRawCode.find('{', off + len('IEM_MC_IF_'));
+                    if offEnd <= off:
+                        self.raiseDecodeError(sRawCode, off, 'MC conditional statement without a "{"');
+                    if sRawCode.find(';', off + len('IEM_MC_IF_'), offEnd) > off:
+                        self.raiseDecodeError(sRawCode, off, 'MC conditional statement without an immediate "{"');
+                    offEnd -= 1;
+                    while offEnd > off and sRawCode[offEnd - 1].isspace():
+                        offEnd -= 1;
+
+                sRawStmt = self.stripComments(sRawCode[off : offEnd]);
+
+                # Isolate the statement name.
+                offOpenParen = sRawStmt.find('(');
+                if offOpenParen < 0:
+                    self.raiseDecodeError(sRawCode, off, 'MC statement without a "("');
+                sName = sRawStmt[: offOpenParen].strip();
+
+                # Extract the parameters.
+                (asParams, offCloseParen) = self.extractParams(sRawStmt, offOpenParen);
+                if asParams is None:
+                    self.raiseDecodeError(sRawCode, off, 'MC statement without a closing parenthesis');
+                if offCloseParen + 1 != len(sRawStmt):
+                    self.raiseDecodeError(sRawCode, off,
+                                          'Unexpected code following MC statement: %s' % (sRawStmt[offCloseParen + 1:]));
+
+                # Hand it to the handler.
+                fnParser = g_dMcStmtParsers.get(sName);
+                if not fnParser:
+                    self.raiseDecodeError(sRawCode, off, 'Unknown MC statement: %s' % (sName,));
+                oStmt = fnParser(self, sName, asParams);
+                aoStmts.append(oStmt);
+
+                #
+                # If conditional, we need to parse the whole statement.
+                #
+                # For reasons of simplicity, we assume the following structure
+                # and parse each branch in a recursive call:
+                #   IEM_MC_IF_XXX() {
+                #        IEM_MC_WHATEVER();
+                #   } IEM_MC_ELSE() {
+                #        IEM_MC_WHATEVER();
+                #   } IEM_MC_ENDIF();
+                #
+                if sName.startswith('IEM_MC_IF_'):
+                    if iLevel > 1:
+                        self.raiseDecodeError(sRawCode, off, 'Too deep nesting of conditionals.');
+
+                    # Find start of the IF block:
+                    offBlock1 = self.skipSpacesAt(sRawCode, offEnd, offStop);
+                    if sRawCode[offBlock1] != '{':
+                        self.raiseDecodeError(sRawCode, offBlock1, 'Expected "{" following %s' % (sName,));
+
+                    # Find the end of it.
+                    offBlock1End = self.findClosingBraces(sRawCode, offBlock1, offStop);
+                    if offBlock1End < 0:
+                        self.raiseDecodeError(sRawCode, offBlock1, 'No matching "}" closing IF block of %s' % (sName,));
+
+                    oStmt.aoIfBranch = self.decodeCode(sRawCode, offBlock1 + 1, offBlock1End, iLevel + 1);
+
+                    # Is there an else section?
+                    off = self.skipSpacesAt(sRawCode, offBlock1End + 1, offStop);
+                    if self.isSubstrAt(sRawCode, off, 'IEM_MC_ELSE'):
+                        off = self.skipSpacesAt(sRawCode, off + len('IEM_MC_ELSE'), offStop);
+                        if sRawCode[off] != '(':
+                            self.raiseDecodeError(sRawCode, off, 'Expected "(" following IEM_MC_ELSE"');
+                        off = self.skipSpacesAt(sRawCode, off + 1, offStop);
+                        if sRawCode[off] != ')':
+                            self.raiseDecodeError(sRawCode, off, 'Expected ")" following IEM_MC_ELSE("');
+
+                        # Find start of the ELSE block.
+                        offBlock2 = self.skipSpacesAt(sRawCode, off + 1, offStop);
+                        if sRawCode[offBlock2] != '{':
+                            self.raiseDecodeError(sRawCode, offBlock2, 'Expected "{" following IEM_MC_ELSE()"');
+
+                        # Find the end of it.
+                        offBlock2End = self.findClosingBraces(sRawCode, offBlock2, offStop);
+                        if offBlock2End < 0:
+                            self.raiseDecodeError(sRawCode, offBlock2, 'No matching "}" closing ELSE block of %s' % (sName,));
+
+                        oStmt.aoElseBranch = self.decodeCode(sRawCode, offBlock2 + 1, offBlock2End, iLevel + 1);
+                        off = self.skipSpacesAt(sRawCode, offBlock2End + 1, offStop);
+
+                    # Parse past the endif statement.
+                    if not self.isSubstrAt(sRawCode, off, 'IEM_MC_ENDIF'):
+                        self.raiseDecodeError(sRawCode, off, 'Expected IEM_MC_ENDIF for closing %s' % (sName,));
+                    off = self.skipSpacesAt(sRawCode, off + len('IEM_MC_ENDIF'), offStop);
+                    if sRawCode[off] != '(':
+                        self.raiseDecodeError(sRawCode, off, 'Expected "(" following IEM_MC_ENDIF"');
+                    off = self.skipSpacesAt(sRawCode, off + 1, offStop);
+                    if sRawCode[off] != ')':
+                        self.raiseDecodeError(sRawCode, off, 'Expected ")" following IEM_MC_ENDIF("');
+                    off = self.skipSpacesAt(sRawCode, off + 1, offStop);
+                    if sRawCode[off] != ';':
+                        self.raiseDecodeError(sRawCode, off, 'Expected ";" following IEM_MC_ENDIF()"');
+                    off += 1;
+
+                else:
+                    # Advance.
+                    off = offEnd + 1;
+
+            #
+            # Otherwise it must be a C/C++ statement of sorts.
+            #
+            else:
+                offEnd = sRawCode.find(';', off);
+                if offEnd < 0:
+                    self.raiseDecodeError(sRawCode, off, 'C++ statement without a ";"');
+                aoStmts.append(McCppGeneric(sRawCode[off : offEnd + 1]));
+                off = offEnd + 1;
+        return aoStmts;
+
+
+    def decode(self):
+        """
+        Decodes the block, populating self.aoStmts.
+        Returns the statement list.
+        Raises ParserException on failure.
+        """
+        self.aoStmts = self.decodeCode(''.join(self.asLines));
+        return self.aoStmts;
+
+
+## IEM_MC_XXX -> parser dictionary.
+# The raw table was generated via the following command
+#       sed -n -e "s/^# *define *\(IEM_MC_[A-Z_0-9]*\)[ (].*$/        '\1': McBlock.parseMcGeneric,/p" include/IEMMc.h \
+#       | sort | uniq | gawk "{printf """    %%-60s %%s\n""", $1, $2}"
+g_dMcStmtParsers = {
+    'IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE':                     McBlock.parseMcGeneric,
+    'IEM_MC_ACTUALIZE_AVX_STATE_FOR_READ':                       McBlock.parseMcGeneric,
+    'IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE':                     McBlock.parseMcGeneric,
+    'IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ':                       McBlock.parseMcGeneric,
+    'IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE':                     McBlock.parseMcGeneric,
+    'IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ':                       McBlock.parseMcGeneric,
+    'IEM_MC_ADD_GREG_U16':                                       McBlock.parseMcGeneric,
+    'IEM_MC_ADD_GREG_U16_TO_LOCAL':                              McBlock.parseMcGeneric,
+    'IEM_MC_ADD_GREG_U32':                                       McBlock.parseMcGeneric,
+    'IEM_MC_ADD_GREG_U32_TO_LOCAL':                              McBlock.parseMcGeneric,
+    'IEM_MC_ADD_GREG_U64':                                       McBlock.parseMcGeneric,
+    'IEM_MC_ADD_GREG_U64_TO_LOCAL':                              McBlock.parseMcGeneric,
+    'IEM_MC_ADD_GREG_U8':                                        McBlock.parseMcGeneric,
+    'IEM_MC_ADD_GREG_U8_TO_LOCAL':                               McBlock.parseMcGeneric,
+    'IEM_MC_ADD_LOCAL_S16_TO_EFF_ADDR':                          McBlock.parseMcGeneric,
+    'IEM_MC_ADD_LOCAL_S32_TO_EFF_ADDR':                          McBlock.parseMcGeneric,
+    'IEM_MC_ADD_LOCAL_S64_TO_EFF_ADDR':                          McBlock.parseMcGeneric,
+    'IEM_MC_ADVANCE_RIP_AND_FINISH':                             McBlock.parseMcGeneric,
+    'IEM_MC_AND_2LOCS_U32':                                      McBlock.parseMcGeneric,
+    'IEM_MC_AND_ARG_U16':                                        McBlock.parseMcGeneric,
+    'IEM_MC_AND_ARG_U32':                                        McBlock.parseMcGeneric,
+    'IEM_MC_AND_ARG_U64':                                        McBlock.parseMcGeneric,
+    'IEM_MC_AND_GREG_U16':                                       McBlock.parseMcGeneric,
+    'IEM_MC_AND_GREG_U32':                                       McBlock.parseMcGeneric,
+    'IEM_MC_AND_GREG_U64':                                       McBlock.parseMcGeneric,
+    'IEM_MC_AND_GREG_U8':                                        McBlock.parseMcGeneric,
+    'IEM_MC_AND_LOCAL_U16':                                      McBlock.parseMcGeneric,
+    'IEM_MC_AND_LOCAL_U32':                                      McBlock.parseMcGeneric,
+    'IEM_MC_AND_LOCAL_U64':                                      McBlock.parseMcGeneric,
+    'IEM_MC_AND_LOCAL_U8':                                       McBlock.parseMcGeneric,
+    'IEM_MC_ARG':                                                McBlock.parseMcGeneric,
+    'IEM_MC_ARG_CONST':                                          McBlock.parseMcGeneric,
+    'IEM_MC_ARG_LOCAL_EFLAGS':                                   McBlock.parseMcGeneric,
+    'IEM_MC_ARG_LOCAL_REF':                                      McBlock.parseMcGeneric,
+    'IEM_MC_ASSIGN':                                             McBlock.parseMcGeneric,
+    'IEM_MC_ASSIGN_TO_SMALLER':                                  McBlock.parseMcGeneric,
+    'IEM_MC_BEGIN':                                              McBlock.parseMcGeneric,
+    'IEM_MC_BSWAP_LOCAL_U16':                                    McBlock.parseMcGeneric,
+    'IEM_MC_BSWAP_LOCAL_U32':                                    McBlock.parseMcGeneric,
+    'IEM_MC_BSWAP_LOCAL_U64':                                    McBlock.parseMcGeneric,
+    'IEM_MC_CALC_RM_EFF_ADDR':                                   McBlock.parseMcGeneric,
+    'IEM_MC_CALL_AIMPL_3':                                       McBlock.parseMcGeneric,
+    'IEM_MC_CALL_AIMPL_4':                                       McBlock.parseMcGeneric,
+    'IEM_MC_CALL_AVX_AIMPL_2':                                   McBlock.parseMcGeneric,
+    'IEM_MC_CALL_AVX_AIMPL_3':                                   McBlock.parseMcGeneric,
+    'IEM_MC_CALL_CIMPL_0':                                       McBlock.parseMcGeneric,
+    'IEM_MC_CALL_CIMPL_1':                                       McBlock.parseMcGeneric,
+    'IEM_MC_CALL_CIMPL_2':                                       McBlock.parseMcGeneric,
+    'IEM_MC_CALL_CIMPL_3':                                       McBlock.parseMcGeneric,
+    'IEM_MC_CALL_CIMPL_4':                                       McBlock.parseMcGeneric,
+    'IEM_MC_CALL_CIMPL_5':                                       McBlock.parseMcGeneric,
+    'IEM_MC_CALL_FPU_AIMPL_1':                                   McBlock.parseMcGeneric,
+    'IEM_MC_CALL_FPU_AIMPL_2':                                   McBlock.parseMcGeneric,
+    'IEM_MC_CALL_FPU_AIMPL_3':                                   McBlock.parseMcGeneric,
+    'IEM_MC_CALL_MMX_AIMPL_2':                                   McBlock.parseMcGeneric,
+    'IEM_MC_CALL_MMX_AIMPL_3':                                   McBlock.parseMcGeneric,
+    'IEM_MC_CALL_SSE_AIMPL_2':                                   McBlock.parseMcGeneric,
+    'IEM_MC_CALL_SSE_AIMPL_3':                                   McBlock.parseMcGeneric,
+    'IEM_MC_CALL_VOID_AIMPL_0':                                  McBlock.parseMcGeneric,
+    'IEM_MC_CALL_VOID_AIMPL_1':                                  McBlock.parseMcGeneric,
+    'IEM_MC_CALL_VOID_AIMPL_2':                                  McBlock.parseMcGeneric,
+    'IEM_MC_CALL_VOID_AIMPL_3':                                  McBlock.parseMcGeneric,
+    'IEM_MC_CALL_VOID_AIMPL_4':                                  McBlock.parseMcGeneric,
+    'IEM_MC_CLEAR_EFL_BIT':                                      McBlock.parseMcGeneric,
+    'IEM_MC_CLEAR_FSW_EX':                                       McBlock.parseMcGeneric,
+    'IEM_MC_CLEAR_HIGH_GREG_U64':                                McBlock.parseMcGeneric,
+    'IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF':                         McBlock.parseMcGeneric,
+    'IEM_MC_CLEAR_XREG_U32_MASK':                                McBlock.parseMcGeneric,
+    'IEM_MC_CLEAR_YREG_128_UP':                                  McBlock.parseMcGeneric,
+    'IEM_MC_COMMIT_EFLAGS':                                      McBlock.parseMcGeneric,
+    'IEM_MC_COPY_XREG_U128':                                     McBlock.parseMcGeneric,
+    'IEM_MC_COPY_YREG_U128_ZX_VLMAX':                            McBlock.parseMcGeneric,
+    'IEM_MC_COPY_YREG_U256_ZX_VLMAX':                            McBlock.parseMcGeneric,
+    'IEM_MC_COPY_YREG_U64_ZX_VLMAX':                             McBlock.parseMcGeneric,
+    'IEM_MC_DEFER_TO_CIMPL_0':                                   McBlock.parseMcGeneric,
+    'IEM_MC_DEFER_TO_CIMPL_1':                                   McBlock.parseMcGeneric,
+    'IEM_MC_DEFER_TO_CIMPL_2':                                   McBlock.parseMcGeneric,
+    'IEM_MC_DEFER_TO_CIMPL_3':                                   McBlock.parseMcGeneric,
+    'IEM_MC_END':                                                McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_EFLAGS':                                       McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_EFLAGS_U8':                                    McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_FCW':                                          McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_FSW':                                          McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_GREG_U16':                                     McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_GREG_U16_SX_U32':                              McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_GREG_U16_SX_U64':                              McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_GREG_U16_ZX_U32':                              McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_GREG_U16_ZX_U64':                              McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_GREG_U32':                                     McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_GREG_U32_SX_U64':                              McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_GREG_U32_ZX_U64':                              McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_GREG_U64':                                     McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_GREG_U64_ZX_U64':                              McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_GREG_U8':                                      McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_GREG_U8_SX_U16':                               McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_GREG_U8_SX_U32':                               McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_GREG_U8_SX_U64':                               McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_GREG_U8_ZX_U16':                               McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_GREG_U8_ZX_U32':                               McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_GREG_U8_ZX_U64':                               McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_D80':                                      McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_I16':                                      McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_I32':                                      McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_I64':                                      McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_R32':                                      McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_R64':                                      McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_R80':                                      McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_S32_SX_U64':                               McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U128':                                     McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U128_ALIGN_SSE':                           McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U128_NO_AC':                               McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U16':                                      McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U16_DISP':                                 McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U16_SX_U32':                               McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U16_SX_U64':                               McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U16_ZX_U32':                               McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U16_ZX_U64':                               McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U256':                                     McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U256_ALIGN_AVX':                           McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U256_NO_AC':                               McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U32':                                      McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U32_DISP':                                 McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U32_SX_U64':                               McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U32_ZX_U64':                               McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U64':                                      McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U64_ALIGN_U128':                           McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U64_DISP':                                 McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U8':                                       McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U8_SX_U16':                                McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U8_SX_U32':                                McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U8_SX_U64':                                McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U8_ZX_U16':                                McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U8_ZX_U32':                                McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_U8_ZX_U64':                                McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_XMM':                                      McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_XMM_ALIGN_SSE':                            McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_XMM_NO_AC':                                McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_XMM_U32':                                  McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_XMM_U64':                                  McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_YMM':                                      McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_YMM_ALIGN_AVX':                            McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM_YMM_NO_AC':                                McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM16_U8':                                     McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MEM32_U8':                                     McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MREG_U32':                                     McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_MREG_U64':                                     McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_SREG_BASE_U32':                                McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_SREG_BASE_U64':                                McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_SREG_U16':                                     McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_SREG_ZX_U32':                                  McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_SREG_ZX_U64':                                  McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_XREG_U128':                                    McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_XREG_U16':                                     McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_XREG_U32':                                     McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_XREG_U64':                                     McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_XREG_U8':                                      McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_XREG_XMM':                                     McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_YREG_2ND_U64':                                 McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_YREG_U128':                                    McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_YREG_U256':                                    McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_YREG_U32':                                     McBlock.parseMcGeneric,
+    'IEM_MC_FETCH_YREG_U64':                                     McBlock.parseMcGeneric,
+    'IEM_MC_FLIP_EFL_BIT':                                       McBlock.parseMcGeneric,
+    'IEM_MC_FPU_FROM_MMX_MODE':                                  McBlock.parseMcGeneric,
+    'IEM_MC_FPU_STACK_DEC_TOP':                                  McBlock.parseMcGeneric,
+    'IEM_MC_FPU_STACK_FREE':                                     McBlock.parseMcGeneric,
+    'IEM_MC_FPU_STACK_INC_TOP':                                  McBlock.parseMcGeneric,
+    'IEM_MC_FPU_STACK_PUSH_OVERFLOW':                            McBlock.parseMcGeneric,
+    'IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP':                     McBlock.parseMcGeneric,
+    'IEM_MC_FPU_STACK_PUSH_UNDERFLOW':                           McBlock.parseMcGeneric,
+    'IEM_MC_FPU_STACK_PUSH_UNDERFLOW_TWO':                       McBlock.parseMcGeneric,
+    'IEM_MC_FPU_STACK_UNDERFLOW':                                McBlock.parseMcGeneric,
+    'IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP':                         McBlock.parseMcGeneric,
+    'IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP':                McBlock.parseMcGeneric,
+    'IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP':                       McBlock.parseMcGeneric,
+    'IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP_POP':                   McBlock.parseMcGeneric,
+    'IEM_MC_FPU_TO_MMX_MODE':                                    McBlock.parseMcGeneric,
+    'IEM_MC_IF_CX_IS_NZ':                                        McBlock.parseMcGenericCond,
+    'IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_NOT_SET':                    McBlock.parseMcGenericCond,
+    'IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_SET':                        McBlock.parseMcGenericCond,
+    'IEM_MC_IF_ECX_IS_NZ':                                       McBlock.parseMcGenericCond,
+    'IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_NOT_SET':                   McBlock.parseMcGenericCond,
+    'IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_SET':                       McBlock.parseMcGenericCond,
+    'IEM_MC_IF_EFL_ANY_BITS_SET':                                McBlock.parseMcGenericCond,
+    'IEM_MC_IF_EFL_BIT_NOT_SET':                                 McBlock.parseMcGenericCond,
+    'IEM_MC_IF_EFL_BIT_NOT_SET_AND_BITS_EQ':                     McBlock.parseMcGenericCond,
+    'IEM_MC_IF_EFL_BIT_SET':                                     McBlock.parseMcGenericCond,
+    'IEM_MC_IF_EFL_BIT_SET_OR_BITS_NE':                          McBlock.parseMcGenericCond,
+    'IEM_MC_IF_EFL_BITS_EQ':                                     McBlock.parseMcGenericCond,
+    'IEM_MC_IF_EFL_BITS_NE':                                     McBlock.parseMcGenericCond,
+    'IEM_MC_IF_EFL_NO_BITS_SET':                                 McBlock.parseMcGenericCond,
+    'IEM_MC_IF_FCW_IM':                                          McBlock.parseMcGenericCond,
+    'IEM_MC_IF_FPUREG_IS_EMPTY':                                 McBlock.parseMcGenericCond,
+    'IEM_MC_IF_FPUREG_NOT_EMPTY':                                McBlock.parseMcGenericCond,
+    'IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80':                        McBlock.parseMcGenericCond,
+    'IEM_MC_IF_GREG_BIT_SET':                                    McBlock.parseMcGenericCond,
+    'IEM_MC_IF_LOCAL_IS_Z':                                      McBlock.parseMcGenericCond,
+    'IEM_MC_IF_MXCSR_XCPT_PENDING':                              McBlock.parseMcGenericCond,
+    'IEM_MC_IF_RCX_IS_NZ':                                       McBlock.parseMcGenericCond,
+    'IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_NOT_SET':                   McBlock.parseMcGenericCond,
+    'IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_SET':                       McBlock.parseMcGenericCond,
+    'IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80':                   McBlock.parseMcGenericCond,
+    'IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST':             McBlock.parseMcGenericCond,
+    'IEM_MC_IMPLICIT_AVX_AIMPL_ARGS':                            McBlock.parseMcGeneric,
+    'IEM_MC_INT_CLEAR_ZMM_256_UP':                               McBlock.parseMcGeneric,
+    'IEM_MC_LOCAL':                                              McBlock.parseMcGeneric,
+    'IEM_MC_LOCAL_CONST':                                        McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_AESNI_RELATED_XCPT':                     McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT':                       McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT':                      McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE':                   McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_FPU_XCPT':                               McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT':                          McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT':                       McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT':   McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_EX':                    McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_NON_CANONICAL_ADDR_GP0':                 McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_PCLMUL_RELATED_XCPT':                    McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_SHA_RELATED_XCPT':                       McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT':             McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT':                       McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT':                      McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_SSE3_RELATED_XCPT':                      McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT':                     McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_SSE42_RELATED_XCPT':                     McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_SSSE3_RELATED_XCPT':                     McBlock.parseMcGeneric,
+    'IEM_MC_MAYBE_RAISE_WAIT_DEVICE_NOT_AVAILABLE':              McBlock.parseMcGeneric,
+    'IEM_MC_MEM_COMMIT_AND_UNMAP':                               McBlock.parseMcGeneric,
+    'IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE':                 McBlock.parseMcGeneric,
+    'IEM_MC_MEM_MAP':                                            McBlock.parseMcGeneric,
+    'IEM_MC_MEM_MAP_EX':                                         McBlock.parseMcGeneric,
+    'IEM_MC_MERGE_YREG_U32_U96_ZX_VLMAX':                        McBlock.parseMcGeneric,
+    'IEM_MC_MERGE_YREG_U64_U64_ZX_VLMAX':                        McBlock.parseMcGeneric,
+    'IEM_MC_MERGE_YREG_U64HI_U64HI_ZX_VLMAX':                    McBlock.parseMcGeneric,
+    'IEM_MC_MERGE_YREG_U64LO_U64LO_ZX_VLMAX':                    McBlock.parseMcGeneric,
+    'IEM_MC_MERGE_YREG_U64LO_U64LOCAL_ZX_VLMAX':                 McBlock.parseMcGeneric,
+    'IEM_MC_MERGE_YREG_U64LOCAL_U64HI_ZX_VLMAX':                 McBlock.parseMcGeneric,
+    'IEM_MC_MODIFIED_MREG':                                      McBlock.parseMcGeneric,
+    'IEM_MC_MODIFIED_MREG_BY_REF':                               McBlock.parseMcGeneric,
+    'IEM_MC_OR_2LOCS_U32':                                       McBlock.parseMcGeneric,
+    'IEM_MC_OR_GREG_U16':                                        McBlock.parseMcGeneric,
+    'IEM_MC_OR_GREG_U32':                                        McBlock.parseMcGeneric,
+    'IEM_MC_OR_GREG_U64':                                        McBlock.parseMcGeneric,
+    'IEM_MC_OR_GREG_U8':                                         McBlock.parseMcGeneric,
+    'IEM_MC_OR_LOCAL_U16':                                       McBlock.parseMcGeneric,
+    'IEM_MC_OR_LOCAL_U32':                                       McBlock.parseMcGeneric,
+    'IEM_MC_OR_LOCAL_U8':                                        McBlock.parseMcGeneric,
+    'IEM_MC_POP_U16':                                            McBlock.parseMcGeneric,
+    'IEM_MC_POP_U32':                                            McBlock.parseMcGeneric,
+    'IEM_MC_POP_U64':                                            McBlock.parseMcGeneric,
+    'IEM_MC_PREPARE_AVX_USAGE':                                  McBlock.parseMcGeneric,
+    'IEM_MC_PREPARE_FPU_USAGE':                                  McBlock.parseMcGeneric,
+    'IEM_MC_PREPARE_SSE_USAGE':                                  McBlock.parseMcGeneric,
+    'IEM_MC_PUSH_FPU_RESULT':                                    McBlock.parseMcGeneric,
+    'IEM_MC_PUSH_FPU_RESULT_MEM_OP':                             McBlock.parseMcGeneric,
+    'IEM_MC_PUSH_FPU_RESULT_TWO':                                McBlock.parseMcGeneric,
+    'IEM_MC_PUSH_U16':                                           McBlock.parseMcGeneric,
+    'IEM_MC_PUSH_U32':                                           McBlock.parseMcGeneric,
+    'IEM_MC_PUSH_U32_SREG':                                      McBlock.parseMcGeneric,
+    'IEM_MC_PUSH_U64':                                           McBlock.parseMcGeneric,
+    'IEM_MC_RAISE_DIVIDE_ERROR':                                 McBlock.parseMcGeneric,
+    'IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO':                          McBlock.parseMcGeneric,
+    'IEM_MC_RAISE_GP0_IF_EFF_ADDR_UNALIGNED':                    McBlock.parseMcGeneric,
+    'IEM_MC_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT':                   McBlock.parseMcGeneric,
+    'IEM_MC_REF_EFLAGS':                                         McBlock.parseMcGeneric,
+    'IEM_MC_REF_FPUREG':                                         McBlock.parseMcGeneric,
+    'IEM_MC_REF_GREG_I32':                                       McBlock.parseMcGeneric,
+    'IEM_MC_REF_GREG_I32_CONST':                                 McBlock.parseMcGeneric,
+    'IEM_MC_REF_GREG_I64':                                       McBlock.parseMcGeneric,
+    'IEM_MC_REF_GREG_I64_CONST':                                 McBlock.parseMcGeneric,
+    'IEM_MC_REF_GREG_U16':                                       McBlock.parseMcGeneric,
+    'IEM_MC_REF_GREG_U32':                                       McBlock.parseMcGeneric,
+    'IEM_MC_REF_GREG_U64':                                       McBlock.parseMcGeneric,
+    'IEM_MC_REF_GREG_U8':                                        McBlock.parseMcGeneric,
+    'IEM_MC_REF_LOCAL':                                          McBlock.parseMcGeneric,
+    'IEM_MC_REF_MREG_U32_CONST':                                 McBlock.parseMcGeneric,
+    'IEM_MC_REF_MREG_U64':                                       McBlock.parseMcGeneric,
+    'IEM_MC_REF_MREG_U64_CONST':                                 McBlock.parseMcGeneric,
+    'IEM_MC_REF_MXCSR':                                          McBlock.parseMcGeneric,
+    'IEM_MC_REF_XREG_R32_CONST':                                 McBlock.parseMcGeneric,
+    'IEM_MC_REF_XREG_R64_CONST':                                 McBlock.parseMcGeneric,
+    'IEM_MC_REF_XREG_U128':                                      McBlock.parseMcGeneric,
+    'IEM_MC_REF_XREG_U128_CONST':                                McBlock.parseMcGeneric,
+    'IEM_MC_REF_XREG_U32_CONST':                                 McBlock.parseMcGeneric,
+    'IEM_MC_REF_XREG_U64_CONST':                                 McBlock.parseMcGeneric,
+    'IEM_MC_REF_XREG_XMM_CONST':                                 McBlock.parseMcGeneric,
+    'IEM_MC_REF_YREG_U128':                                      McBlock.parseMcGeneric,
+    'IEM_MC_REF_YREG_U128_CONST':                                McBlock.parseMcGeneric,
+    'IEM_MC_REF_YREG_U64_CONST':                                 McBlock.parseMcGeneric,
+    'IEM_MC_REL_JMP_S16_AND_FINISH':                             McBlock.parseMcGeneric,
+    'IEM_MC_REL_JMP_S32_AND_FINISH':                             McBlock.parseMcGeneric,
+    'IEM_MC_REL_JMP_S8_AND_FINISH':                              McBlock.parseMcGeneric,
+    'IEM_MC_RETURN_ON_FAILURE':                                  McBlock.parseMcGeneric,
+    'IEM_MC_SAR_LOCAL_S16':                                      McBlock.parseMcGeneric,
+    'IEM_MC_SAR_LOCAL_S32':                                      McBlock.parseMcGeneric,
+    'IEM_MC_SAR_LOCAL_S64':                                      McBlock.parseMcGeneric,
+    'IEM_MC_SET_EFL_BIT':                                        McBlock.parseMcGeneric,
+    'IEM_MC_SET_FPU_RESULT':                                     McBlock.parseMcGeneric,
+    'IEM_MC_SET_RIP_U16_AND_FINISH':                             McBlock.parseMcGeneric,
+    'IEM_MC_SET_RIP_U32_AND_FINISH':                             McBlock.parseMcGeneric,
+    'IEM_MC_SET_RIP_U64_AND_FINISH':                             McBlock.parseMcGeneric,
+    'IEM_MC_SHL_LOCAL_S16':                                      McBlock.parseMcGeneric,
+    'IEM_MC_SHL_LOCAL_S32':                                      McBlock.parseMcGeneric,
+    'IEM_MC_SHL_LOCAL_S64':                                      McBlock.parseMcGeneric,
+    'IEM_MC_SHR_LOCAL_U8':                                       McBlock.parseMcGeneric,
+    'IEM_MC_SSE_UPDATE_MXCSR':                                   McBlock.parseMcGeneric,
+    'IEM_MC_STORE_FPU_RESULT':                                   McBlock.parseMcGeneric,
+    'IEM_MC_STORE_FPU_RESULT_MEM_OP':                            McBlock.parseMcGeneric,
+    'IEM_MC_STORE_FPU_RESULT_THEN_POP':                          McBlock.parseMcGeneric,
+    'IEM_MC_STORE_FPU_RESULT_WITH_MEM_OP_THEN_POP':              McBlock.parseMcGeneric,
+    'IEM_MC_STORE_FPUREG_R80_SRC_REF':                           McBlock.parseMcGeneric,
+    'IEM_MC_STORE_GREG_I64':                                     McBlock.parseMcGeneric,
+    'IEM_MC_STORE_GREG_U16':                                     McBlock.parseMcGeneric,
+    'IEM_MC_STORE_GREG_U16_CONST':                               McBlock.parseMcGeneric,
+    'IEM_MC_STORE_GREG_U32':                                     McBlock.parseMcGeneric,
+    'IEM_MC_STORE_GREG_U32_CONST':                               McBlock.parseMcGeneric,
+    'IEM_MC_STORE_GREG_U64':                                     McBlock.parseMcGeneric,
+    'IEM_MC_STORE_GREG_U64_CONST':                               McBlock.parseMcGeneric,
+    'IEM_MC_STORE_GREG_U8':                                      McBlock.parseMcGeneric,
+    'IEM_MC_STORE_GREG_U8_CONST':                                McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_I16_CONST_BY_REF':                         McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_I32_CONST_BY_REF':                         McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_I64_CONST_BY_REF':                         McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_I8_CONST_BY_REF':                          McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_INDEF_D80_BY_REF':                         McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_NEG_QNAN_R32_BY_REF':                      McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_NEG_QNAN_R64_BY_REF':                      McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_NEG_QNAN_R80_BY_REF':                      McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_U128':                                     McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_U128_ALIGN_SSE':                           McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_U16':                                      McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_U16_CONST':                                McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_U256':                                     McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_U256_ALIGN_AVX':                           McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_U32':                                      McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_U32_CONST':                                McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_U64':                                      McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_U64_CONST':                                McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_U8':                                       McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MEM_U8_CONST':                                 McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MREG_U32_ZX_U64':                              McBlock.parseMcGeneric,
+    'IEM_MC_STORE_MREG_U64':                                     McBlock.parseMcGeneric,
+    'IEM_MC_STORE_SREG_BASE_U32':                                McBlock.parseMcGeneric,
+    'IEM_MC_STORE_SREG_BASE_U64':                                McBlock.parseMcGeneric,
+    'IEM_MC_STORE_SSE_RESULT':                                   McBlock.parseMcGeneric,
+    'IEM_MC_STORE_XREG_HI_U64':                                  McBlock.parseMcGeneric,
+    'IEM_MC_STORE_XREG_R32':                                     McBlock.parseMcGeneric,
+    'IEM_MC_STORE_XREG_R64':                                     McBlock.parseMcGeneric,
+    'IEM_MC_STORE_XREG_U128':                                    McBlock.parseMcGeneric,
+    'IEM_MC_STORE_XREG_U16':                                     McBlock.parseMcGeneric,
+    'IEM_MC_STORE_XREG_U32':                                     McBlock.parseMcGeneric,
+    'IEM_MC_STORE_XREG_U32_U128':                                McBlock.parseMcGeneric,
+    'IEM_MC_STORE_XREG_U32_ZX_U128':                             McBlock.parseMcGeneric,
+    'IEM_MC_STORE_XREG_U64':                                     McBlock.parseMcGeneric,
+    'IEM_MC_STORE_XREG_U64_ZX_U128':                             McBlock.parseMcGeneric,
+    'IEM_MC_STORE_XREG_U8':                                      McBlock.parseMcGeneric,
+    'IEM_MC_STORE_XREG_XMM':                                     McBlock.parseMcGeneric,
+    'IEM_MC_STORE_XREG_XMM_U32':                                 McBlock.parseMcGeneric,
+    'IEM_MC_STORE_XREG_XMM_U64':                                 McBlock.parseMcGeneric,
+    'IEM_MC_STORE_YREG_U128_ZX_VLMAX':                           McBlock.parseMcGeneric,
+    'IEM_MC_STORE_YREG_U256_ZX_VLMAX':                           McBlock.parseMcGeneric,
+    'IEM_MC_STORE_YREG_U32_ZX_VLMAX':                            McBlock.parseMcGeneric,
+    'IEM_MC_STORE_YREG_U64_ZX_VLMAX':                            McBlock.parseMcGeneric,
+    'IEM_MC_SUB_GREG_U16':                                       McBlock.parseMcGeneric,
+    'IEM_MC_SUB_GREG_U32':                                       McBlock.parseMcGeneric,
+    'IEM_MC_SUB_GREG_U64':                                       McBlock.parseMcGeneric,
+    'IEM_MC_SUB_GREG_U8':                                        McBlock.parseMcGeneric,
+    'IEM_MC_SUB_LOCAL_U16':                                      McBlock.parseMcGeneric,
+    'IEM_MC_UPDATE_FPU_OPCODE_IP':                               McBlock.parseMcGeneric,
+    'IEM_MC_UPDATE_FSW':                                         McBlock.parseMcGeneric,
+    'IEM_MC_UPDATE_FSW_CONST':                                   McBlock.parseMcGeneric,
+    'IEM_MC_UPDATE_FSW_THEN_POP':                                McBlock.parseMcGeneric,
+    'IEM_MC_UPDATE_FSW_THEN_POP_POP':                            McBlock.parseMcGeneric,
+    'IEM_MC_UPDATE_FSW_WITH_MEM_OP':                             McBlock.parseMcGeneric,
+    'IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP':                    McBlock.parseMcGeneric,
+};
 
 ## List of microcode blocks.
 g_aoMcBlocks = [] # type: list(McBlock)
