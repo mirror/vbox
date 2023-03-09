@@ -478,16 +478,16 @@ man_vboximg-mount.xml \
  #
  ##########################################################################################
 
-ifdef PDF_FROM_LATEX
- # Generate PDF from LaTeX
- # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
- define def_vbox_usermanual_tex_to_pdf
-  local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)
-  $$(out_dir)/UserManual.pdf: \
-  		$$(out_dir)/UserManual.tex \
-  		$$(if $$(VBOX_OSE),,$$(out_dir)/ucs.sty) \
-  		$$(addprefix $$(out_dir)/,$$(VBOX_MANUAL_PNG_FILES_$(lang))) | $$$$(dir $$$$@)
-  # PDF generation via Latex: generate the .tex file
+ ifdef PDF_FROM_LATEX
+  # Generate PDF from LaTeX
+  # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
+  define def_vbox_usermanual_tex_to_pdf
+   local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)
+   $$(out_dir)/UserManual.pdf: \
+   		$$(out_dir)/UserManual.tex \
+   		$$(if $$(VBOX_OSE),,$$(out_dir)/ucs.sty) \
+   		$$(addprefix $$(out_dir)/,$$(VBOX_MANUAL_PNG_FILES_$(lang))) | $$$$(dir $$$$@)
+   # PDF generation via Latex: generate the .tex file
 	$$(call MSG_L1,pdflatex $$< (four passes) -> $$@)
 	$$(QUIET)$$(REDIRECT) -w+ti /dev/null -C $$(@D) -- $$(VBOX_PDFLATEX_CMD) UserManual.tex
 	$$(QUIET)$$(REDIRECT) -w+ti /dev/null -C $$(@D) -- $$(VBOX_PDFLATEX_CMD) UserManual.tex
@@ -498,9 +498,9 @@ ifdef PDF_FROM_LATEX
 		-e '/Warning: There were \(undefined references\|multiply-defined labels\)/{p; q 1}' \
 		$$(basename $$@).log
 	$$(call MSG_L1,Fresh LaTeX-generated PDF is now at $$@)
- endef
- $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_usermanual_tex_to_pdf))
-endif
+  endef
+  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_usermanual_tex_to_pdf))
+ endif
 
  # Generate LaTeX from XML
  # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
@@ -914,7 +914,7 @@ endif
  define def_ditamap_to_pdf
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf: \
-    	$$(addprefix $$(VBOX_PATH_MANUAL_SRC)/$(lang)/,$$(VBOX_MANUAL_XML_FILES)) \
+  		$$(addprefix $$(VBOX_PATH_MANUAL_SRC)/$(lang)/,$$(VBOX_MANUAL_XML_FILES)) \
   		$$(VBOX_MANUAL_XML_FILES_COMMON) \
   		$$(VBOX_MANUAL_XML_FILES_GENERATED_$(lang)) \
   		$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
