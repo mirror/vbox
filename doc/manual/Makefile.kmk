@@ -889,6 +889,7 @@ man_vboximg-mount.xml \
  	-E 'ANT_OPTS=-Xmx512m -Djavax.xml.transform.TransformerFactory=net.sf.saxon.TransformerFactoryImpl' \
  	-E 'ANT_HOME=$(VBOX_DITA_PATH)/tools/ant' \
  	-E 'DITA_DIR=$(VBOX_DITA_PATH)' \
+ 	-E 'JAVA_HOME=$(VBOX_JAVA_HOME)' \
  	-A 'PATH=:$(VBOX_DITA_PATH)/tools/ant/bin' \
  	-E 'CLASSPATH=$(VBOX_DITA_PATH_LIB)/dost.jar' \
  	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)' \
