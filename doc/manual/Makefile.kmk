@@ -856,9 +856,33 @@ man_vboximg-mount.xml \
  #  - flatten refsect1/refsect2 hierarchy in man_VBox???.xml docbook files by
  #    using refsect2_to_refsect1.py.
  #  - convert man_VBox???.xml files into dita files
+ #  - mark external link in the man_VBox????.dita files
  #  - correct all reference targets by calling correct_references.py.
  #
  ##########################################################################################
+
+ VBOX_USER_MANUAL_DITA_FILES = $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/*dita)
+ VBOX_USER_MANUAL_DITA_IMAGES = $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/images/*)
+
+ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap:
+	$(QUIET)$(MKDIR) -p  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/images
+	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_PATH_MANUAL_SRC)/en_US/dita/UserManual.ditamap "$(@D)"
+	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_USER_MANUAL_DITA_FILES) "$(@D)/topics"
+	$(QUIET)touch -- "$(@D)/topics/reference.dtd"
+	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_USER_MANUAL_DITA_IMAGES) "$(@D)/topics/images"
+
+correct_reference_targets: \
+		$$(VBOX_PATH_MANUAL_SRC)/correct_references.py \
+		$$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/ \
+		$$(VBOX_REFENTRY_DITA_FILES)
+		$(call MSG_L1,correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics)
+		$(QUIET)$(VBOX_BLD_PYTHON) $(VBOX_PATH_MANUAL_SRC)/correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics
+
+dita_common: \
+		$$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap \
+		$$(VBOX_DITA_PATH) \
+        correct_reference_targets
+		$(call MSG_L1, Running common dita steps)
 
  ##########################################################################################
  #
@@ -917,28 +941,13 @@ man_vboximg-mount.xml \
  	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/saxon/saxon9-dom.jar' \
  	--
 
- VBOX_USER_MANUAL_DITA_FILES = $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/*dita)
- VBOX_USER_MANUAL_DITA_IMAGES = $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/images/*)
-
- $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap:
-	$(QUIET)$(MKDIR) -p  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/images
-	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_PATH_MANUAL_SRC)/en_US/dita/UserManual.ditamap "$(@D)"
-	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_USER_MANUAL_DITA_FILES) "$(@D)/topics"
-	$(QUIET)touch -- "$(@D)/topics/reference.dtd"
-	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_USER_MANUAL_DITA_IMAGES) "$(@D)/topics/images"
-
  define def_ditamap_to_pdf
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf: \
   		$$(addprefix $$(VBOX_PATH_MANUAL_SRC)/$(lang)/,$$(VBOX_MANUAL_XML_FILES)) \
   		$$(VBOX_MANUAL_XML_FILES_COMMON) \
   		$$(VBOX_MANUAL_XML_FILES_GENERATED_$(lang)) \
-  		$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
-  		$(VBOX_DITA_PATH) \
-  		$(VBOX_REFENTRY_DITA_FILES) \
-  		$$(VBOX_PATH_MANUAL_SRC)/correct_references.py
-		$$(call MSG_L1,correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics)
-		$$(QUIET)$$(VBOX_BLD_PYTHON) $$(VBOX_PATH_MANUAL_SRC)/correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics
+  		dita_common
 		$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
 		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
 			/transtype:pdf /ditadir:$(VBOX_DITA_PATH) /outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1) /tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp
@@ -1050,12 +1059,7 @@ ifdef VBOX_WITH_DOCS_QHELP
  define def_ditamap_to_htmlhelp
   ditamap-to-htmlhelp: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp/UserManual.hhp
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp/UserManual.hhp: \
-  		$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
-  		$(VBOX_DITA_PATH) \
-  		$(VBOX_REFENTRY_DITA_FILES) \
-  		$$(VBOX_PATH_MANUAL_SRC)/correct_references.py
-		$$(call MSG_L1,correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics)
-		$$(QUIET)$$(VBOX_BLD_PYTHON) $$(VBOX_PATH_MANUAL_SRC)/correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics
+  		dita_common
 		$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
 		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
 			/transtype:htmlhelp /ditadir:$(VBOX_DITA_PATH) /outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp /tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp
