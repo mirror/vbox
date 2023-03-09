@@ -3218,6 +3218,7 @@ ifndef VBOX_NOINC_DYNAMIC_CONFIG_KMK
     	/usr/lib/jvm/java-7-openjdk-amd64 \
     	/usr/lib/jvm/default-java \
     	/usr/lib/jvm/java \
+    	/usr/lib/jvm/jre \
     	\
     	/usr/lib/jvm/sun-jdk-1.6 \
     	) /usr/lib/jvm/java-6-sun)
