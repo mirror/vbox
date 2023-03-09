@@ -204,13 +204,6 @@ public:
 
     /** @name Host OS stuff.
      * @{ */
-#ifdef VBOX_WS_MAC
-        /** Mac OS X: Returns #MacOSXRelease determined by <i>uname</i> call. */
-        static MacOSXRelease determineOsRelease();
-        /** Mac OS X: Returns #MacOSXRelease determined during UICommon prepare routine. */
-        MacOSXRelease osRelease() const { return m_enmMacOSVersion; }
-#endif
-
 #ifdef VBOX_WS_WIN
         /** Loads the color theme. */
         static void loadColorTheme();
@@ -648,11 +641,6 @@ private:
 
     /** @name Host OS stuff.
      * @{ */
-#ifdef VBOX_WS_MAC
-        /** Mac OS X: Holds the #MacOSXRelease determined using <i>uname</i> call. */
-        MacOSXRelease  m_enmMacOSVersion;
-#endif
-
 #ifdef VBOX_WS_X11
         /** X11: Holds the #X11WMType of the Window Manager we are running under. */
         X11WMType  m_enmWindowManagerType;

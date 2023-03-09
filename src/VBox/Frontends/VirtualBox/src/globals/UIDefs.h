@@ -97,22 +97,6 @@ namespace UIDefs
 using namespace UIDefs /* if header included */;
 
 
-#ifdef VBOX_WS_MAC
-/** Known macOS releases. */
-enum MacOSXRelease
-{
-    MacOSXRelease_Old,
-    MacOSXRelease_SnowLeopard,
-    MacOSXRelease_Lion,
-    MacOSXRelease_MountainLion,
-    MacOSXRelease_Mavericks,
-    MacOSXRelease_Yosemite,
-    MacOSXRelease_ElCapitan,
-    MacOSXRelease_New,
-};
-#endif /* VBOX_WS_MAC */
-
-
 /** Size suffixes. */
 enum SizeSuffix
 {

@@ -188,9 +188,6 @@ UICommon::UICommon(UIType enmType)
 #ifdef VBOX_WS_WIN
     , m_fDataCommitted(false)
 #endif
-#ifdef VBOX_WS_MAC
-    , m_enmMacOSVersion(MacOSXRelease_Old)
-#endif
 #ifdef VBOX_WS_X11
     , m_enmWindowManagerType(X11WMType_Unknown)
     , m_fCompositingManagerRunning(false)
@@ -243,11 +240,6 @@ void UICommon::prepare()
     connect(qApp, &QGuiApplication::commitDataRequest,
             this, &UICommon::sltHandleCommitDataRequest);
 #endif /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
-
-#ifdef VBOX_WS_MAC
-    /* Determine OS release early: */
-    m_enmMacOSVersion = determineOsRelease();
-#endif /* VBOX_WS_MAC */
 
     /* Create converter: */
     UIConverter::create();
@@ -944,34 +936,6 @@ QString UICommon::brandingGetKey(QString strKey) const
     QSettings settings(m_strBrandingConfigFilePath, QSettings::IniFormat);
     return settings.value(QString("%1").arg(strKey)).toString();
 }
-
-#ifdef VBOX_WS_MAC
-/* static */
-MacOSXRelease UICommon::determineOsRelease()
-{
-    /* Prepare 'utsname' struct: */
-    utsname info;
-    if (uname(&info) != -1)
-    {
-        /* Compose map of known releases: */
-        QMap<int, MacOSXRelease> release;
-        release[10] = MacOSXRelease_SnowLeopard;
-        release[11] = MacOSXRelease_Lion;
-        release[12] = MacOSXRelease_MountainLion;
-        release[13] = MacOSXRelease_Mavericks;
-        release[14] = MacOSXRelease_Yosemite;
-        release[15] = MacOSXRelease_ElCapitan;
-
-        /* Cut the major release index of the string we have, s.a. 'man uname': */
-        const int iRelease = QString(info.release).section('.', 0, 0).toInt();
-
-        /* Return release if determined, return 'New' if version more recent than latest, return 'Old' otherwise: */
-        return release.value(iRelease, iRelease > release.keys().last() ? MacOSXRelease_New : MacOSXRelease_Old);
-    }
-    /* Return 'Old' by default: */
-    return MacOSXRelease_Old;
-}
-#endif /* VBOX_WS_MAC */
 
 #ifdef VBOX_WS_WIN
 /* static */
