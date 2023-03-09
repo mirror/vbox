@@ -575,7 +575,7 @@ public:
                                                UITextTable &returnTable);
         /** Returns system info. of the machine(). */
         void generateMachineInformationSystem(const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem &fOptions,
-                                               UITextTable &returnTable);
+                                              UITextTable &returnTable);
         /** Returns display info. of the machine(). */
         void generateMachineInformationDisplay(const UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay &fOptions,
                                                UITextTable &returnTable);
@@ -584,7 +584,7 @@ public:
                                                UITextTable &returnTable);
         /** Returns audio info. of the machine(). */
         void generateMachineInformationAudio(const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio &fOptions,
-                                               UITextTable &returnTable);
+                                             UITextTable &returnTable);
         /** Returns network info. of the machine(). */
         void generateMachineInformationNetwork(const UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork &fOptions,
                                                UITextTable &returnTable);

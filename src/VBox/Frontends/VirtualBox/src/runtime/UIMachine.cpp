@@ -926,7 +926,7 @@ void UIMachine::generateMachineInformationGeneral(const UIExtraDataMetaDefs::Det
 }
 
 void UIMachine::generateMachineInformationSystem(const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem &fOptions,
-                                                  UITextTable &returnTable)
+                                                 UITextTable &returnTable)
 {
     uisession()->generateMachineInformationSystem(fOptions, returnTable);
 }
@@ -944,7 +944,7 @@ void UIMachine::generateMachineInformationStorage(const UIExtraDataMetaDefs::Det
 }
 
 void UIMachine::generateMachineInformationAudio(const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio &fOptions,
-                                                  UITextTable &returnTable)
+                                                UITextTable &returnTable)
 {
     uisession()->generateMachineInformationAudio(fOptions, returnTable);
 }
@@ -956,13 +956,13 @@ void UIMachine::generateMachineInformationNetwork(const UIExtraDataMetaDefs::Det
 }
 
 void UIMachine::generateMachineInformationSerial(const UIExtraDataMetaDefs::DetailsElementOptionTypeSerial &fOptions,
-                                                  UITextTable &returnTable)
+                                                 UITextTable &returnTable)
 {
     uisession()->generateMachineInformationSerial(fOptions, returnTable);
 }
 
 void UIMachine::generateMachineInformationUSB(const UIExtraDataMetaDefs::DetailsElementOptionTypeUsb &fOptions,
-                                                  UITextTable &returnTable)
+                                              UITextTable &returnTable)
 {
     uisession()->generateMachineInformationUSB(fOptions, returnTable);
 }

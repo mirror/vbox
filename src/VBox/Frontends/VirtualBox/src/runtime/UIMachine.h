@@ -73,7 +73,7 @@ signals:
     void sigInitialized();
 
     /** Requests async visual-state change. */
-    void sigRequestAsyncVisualStateChange(UIVisualStateType visualStateType);
+    void sigRequestAsyncVisualStateChange(UIVisualStateType enmVisualStateType);
 
     /** @name COM events stuff.
      ** @{ */
@@ -114,7 +114,7 @@ signals:
         void sigRuntimeError(bool bIsFatal, const QString &strErrorId, const QString &strMessage);
 
 #ifdef VBOX_WS_MAC
-        /** Notifies about VM window should be shown. */
+        /** macOS X: Notifies about VM window should be shown. */
         void sigShowWindows();
 #endif
     /** @} */
@@ -173,16 +173,16 @@ public:
     /** Returns frame-buffer reference for screen with @a uScreenId specified. */
     UIFrameBuffer *frameBuffer(ulong uScreenId);
     /** Returns active machine-window reference (if possible). */
-    QWidget* activeWindow() const;
+    QWidget *activeWindow() const;
 
     /** Returns whether requested visual @a state allowed. */
     bool isVisualStateAllowed(UIVisualStateType state) const { return m_allowedVisualStates & state; }
 
     /** Requests async visual-state change. */
-    void asyncChangeVisualState(UIVisualStateType visualStateType);
+    void asyncChangeVisualState(UIVisualStateType enmVisualStateType);
 
     /** Requests visual-state to be entered when possible. */
-    void setRequestedVisualState(UIVisualStateType visualStateType);
+    void setRequestedVisualState(UIVisualStateType enmVisualStateType);
     /** Returns requested visual-state to be entered when possible. */
     UIVisualStateType requestedVisualState() const;
 
@@ -684,7 +684,7 @@ public:
                                                UITextTable &returnTable);
         /** Return system info. of the machine(). */
         void generateMachineInformationSystem(const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem &fOptions,
-                                               UITextTable &returnTable);
+                                              UITextTable &returnTable);
         /** Returns system info. of the machine(). */
         void generateMachineInformationDisplay(const UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay &fOptions,
                                                UITextTable &returnTable);
@@ -693,16 +693,16 @@ public:
                                                UITextTable &returnTable);
         /** Returns audio info. of the machine(). */
         void generateMachineInformationAudio(const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio &fOptions,
-                                               UITextTable &returnTable);
+                                             UITextTable &returnTable);
         /** Returns network info. of the machine(). */
         void generateMachineInformationNetwork(const UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork &fOptions,
                                                UITextTable &returnTable);
         /** Returns serial info. of the machine(). */
         void generateMachineInformationSerial(const UIExtraDataMetaDefs::DetailsElementOptionTypeSerial &fOptions,
-                                               UITextTable &returnTable);
+                                              UITextTable &returnTable);
         /** Returns USB info. of the machine(). */
         void generateMachineInformationUSB(const UIExtraDataMetaDefs::DetailsElementOptionTypeUsb &fOptions,
-                                               UITextTable &returnTable);
+                                           UITextTable &returnTable);
         /** Returns shared folders info. of the machine(). */
         void generateMachineInformationSharedFolders(const UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders &fOptions,
                                                      UITextTable &returnTable);
@@ -741,7 +741,7 @@ public slots:
 private slots:
 
     /** Visual state-change handler. */
-    void sltChangeVisualState(UIVisualStateType visualStateType);
+    void sltChangeVisualState(UIVisualStateType enmVisualStateType);
 
     /** @name COM events stuff.
      ** @{ */
@@ -760,7 +760,7 @@ private slots:
     /** @name Actions stuff.
      ** @{ */
 #ifdef VBOX_WS_MAC
-        /** Mac OS X: Handles menu-bar configuration-change. */
+        /** macOS X: Handles menu-bar configuration-change. */
         void sltHandleMenuBarConfigurationChange(const QUuid &uMachineID);
 #endif
     /** @} */
@@ -775,7 +775,7 @@ private slots:
         void sltHandleHostScreenAvailableAreaChange();
 
 #ifdef VBOX_WS_MAC
-        /** MacOS X: Restarts display-reconfiguration watchdog timer from the beginning.
+        /** macOS X: Restarts display-reconfiguration watchdog timer from the beginning.
           * @note Watchdog is trying to determine display reconfiguration in
           *       UISession::sltCheckIfHostDisplayChanged() slot every 500ms for 40 tries. */
         void sltHandleHostDisplayAboutToChange();
@@ -830,10 +830,10 @@ private slots:
 
 private:
 
-    /** Constructor. */
+    /** Constructs machine UI singleton. */
     UIMachine();
-    /** Destructor. */
-    ~UIMachine();
+    /** Destructs machine UI singleton. */
+    virtual ~UIMachine() RT_OVERRIDE;
 
     /** Prepare routine. */
     bool prepare();
@@ -874,7 +874,7 @@ private:
         void updateActionRestrictions();
 
 #ifdef VBOX_WS_MAC
-        /** Mac OS X: Updates menu-bar content. */
+        /** macOS X: Updates menu-bar content. */
         void updateMenu();
 #endif
     /** @} */
@@ -910,6 +910,7 @@ private:
 #endif /* VBOX_WS_X11 || VBOX_WS_MAC */
 
 #ifdef VBOX_WS_WIN
+        /** Windows: Returns whether pointer of 1bpp depth. */
         static bool isPointer1bpp(const uint8_t *pu8XorMask,
                                   uint uWidth,
                                   uint uHeight);
@@ -959,7 +960,7 @@ private:
         UIActionPool *m_pActionPool;
 
 #ifdef VBOX_WS_MAC
-        /** Mac OS X: Holds the menu-bar instance. */
+        /** macOS X: Holds the menu-bar instance. */
         QMenuBar *m_pMenuBar;
 #endif
     /** @} */
@@ -970,7 +971,7 @@ private:
         QList<QRect>  m_hostScreens;
 
 #ifdef VBOX_WS_MAC
-        /** Mac OS X: Watchdog timer looking for display reconfiguration. */
+        /** macOS X: Watchdog timer looking for display reconfiguration. */
         QTimer *m_pWatchdogDisplayChange;
 #endif
     /** @} */

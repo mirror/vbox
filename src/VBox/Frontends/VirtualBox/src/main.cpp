@@ -208,16 +208,16 @@ static void InstallSignalHandler()
 
 /** Qt5 message handler, function that prints out
   * debug, warning, critical, fatal and system error messages.
-  * @param  type        Holds the type of the message.
+  * @param  enmType     Holds the type of the message.
   * @param  context     Holds the message context.
   * @param  strMessage  Holds the message body. */
-static void QtMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &strMessage)
+static void QtMessageOutput(QtMsgType enmType, const QMessageLogContext &context, const QString &strMessage)
 {
     NOREF(context);
 # ifndef VBOX_WS_X11
     NOREF(strMessage);
 # endif
-    switch (type)
+    switch (enmType)
     {
         case QtDebugMsg:
             Log(("Qt DEBUG: %s\n", strMessage.toUtf8().constData()));
@@ -254,10 +254,11 @@ static void QtMessageOutput(QtMsgType type, const QMessageLogContext &context, c
 static void ShowHelp()
 {
 #ifndef VBOX_RUNTIME_UI
-    static const char s_szTitle[] = VBOX_PRODUCT " VM Selector";
+    static const char s_szTitle[] = VBOX_PRODUCT " Manager";
 #else
-    static const char s_szTitle[] = VBOX_PRODUCT " VM Runner";
+    static const char s_szTitle[] = VBOX_PRODUCT " Runner";
 #endif
+
     static const char s_szUsage[] =
 #ifdef VBOX_RUNTIME_UI
         "Options:\n"
@@ -314,7 +315,7 @@ static void ShowHelp()
              "%s",
              s_szTitle, RTBldCfgVersion(), s_szUsage);
 
-#ifdef RT_OS_WINDOWS
+#ifdef VBOX_WS_WIN
     /* Show message box. Modify the option list a little
      * to better make it fit in the upcoming dialog. */
     char szTitleWithVersion[sizeof(s_szTitle) + 128];
@@ -371,12 +372,12 @@ static void ShowHelp()
     RTStrPrintf(szTitleWithVersion, sizeof(szTitleWithVersion), "%s v%s - Command Line Options", s_szTitle, RTBldCfgVersion());
     MessageBoxExA(NULL /*hwndOwner*/, szMsg, szTitleWithVersion, MB_OK | MB_ICONINFORMATION,
                   MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL));
-#endif
+#endif /* VBOX_WS_WIN */
 }
 
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 {
-#ifdef RT_OS_WINDOWS
+#ifdef VBOX_WS_WIN
     ATL::CComModule _Module; /* Required internally by ATL (constructor records instance in global variable). */
 #endif
 
@@ -393,6 +394,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         /* Make sure multi-threaded environment is safe: */
         if (!MakeSureMultiThreadingIsSafe())
             break;
+
         /* Force using Qt platform module 'xcb', we have X11 specific code: */
         RTEnvSet("QT_QPA_PLATFORM", "xcb");
 #endif /* VBOX_WS_X11 */
@@ -437,8 +439,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 
 # ifdef VBOX_RUNTIME_UI
         /* If we're a helper app inside Resources in the main application bundle,
-           we need to amend the library path so the platform plugin can be found.
-           Note! This builds on the initIprtForDarwinHelperApp() hack. */
+         * we need to amend the library path so the platform plugin can be found.
+         * Note! This builds on the initIprtForDarwinHelperApp() hack. */
         {
             char szExecDir[RTPATH_MAX];
             int vrc = RTPathExecDir(szExecDir, sizeof(szExecDir));
@@ -473,6 +475,11 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         /* Create application: */
         QApplication a(argc, argv);
 
+#ifdef VBOX_WS_MAC
+        /* Disable menu icons on MacOS X host: */
+        ::darwinDisableIconsInMenus();
+#endif /* VBOX_WS_MAC */
+
 #ifdef VBOX_WS_WIN
         /* Drag in the sound drivers and DLLs early to get rid of the delay taking
          * place when the main menu bar (or any action from that menu bar) is
@@ -481,14 +488,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
          * load and slows down the load process that happens on the main GUI
          * thread to several seconds). */
         PlaySound(NULL, NULL, 0);
-
 #endif /* VBOX_WS_WIN */
-
-#ifdef VBOX_WS_MAC
-        /* Disable menu icons on MacOS X host: */
-        ::darwinDisableIconsInMenus();
-
-#endif /* VBOX_WS_MAC */
 
 #ifdef VBOX_WS_X11
         /* Make all widget native.
@@ -545,13 +545,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
             /* Exit if UICommon is not valid: */
             if (!uiCommon().isValid())
                 break;
-
-            /* Init link between UI starter and global app instance: */
-            gStarter->init();
-
             /* Exit if UICommon pre-processed arguments: */
             if (uiCommon().processArgs())
                 break;
+
+            /* Init link between UI starter and global app instance: */
+            gStarter->init();
 
             // WORKAROUND:
             // Initially we wanted to make that workaround for Runtime UI only,
@@ -562,7 +561,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
             // shown.  That can happen for example if window is not yet shown because blocked
             // by startup error message-box which is not treated as real window by some
             // reason.  So we are making application exit manual everywhere.
-            qApp->setQuitOnLastWindowClosed(false);
+            a.setQuitOnLastWindowClosed(false);
 
             /* Request to Start UI _after_ QApplication executed: */
             QMetaObject::invokeMethod(gStarter, "sltStartUI", Qt::QueuedConnection);
@@ -652,7 +651,7 @@ int main(int argc, char **argv, char **envp)
 # endif /* VBOX_WS_X11 */
 
     /*
-     * Determin the IPRT/SUPLib initialization flags if runtime UI process.
+     * Determine the IPRT/SUPLib initialization flags if runtime UI process.
      * Only initialize SUPLib if about to start a VM in this process.
      *
      * Note! This must must match the corresponding parsing in hardenedmain.cpp
@@ -701,7 +700,7 @@ int main(int argc, char **argv, char **envp)
         if (fDriverless)
             fFlags |= SUPR3INIT_F_DRIVERLESS << RTR3INIT_FLAGS_SUPLIB_SHIFT;
     }
-# endif
+# endif /* VBOX_RUNTIME_UI */
 
     /* Initialize VBox Runtime: */
 # if defined(RT_OS_DARWIN) && defined(VBOX_RUNTIME_UI)
@@ -709,10 +708,9 @@ int main(int argc, char **argv, char **envp)
 # else
     int rc = RTR3InitExe(argc, &argv, fFlags);
 # endif
+    /* Initialization failed: */
     if (RT_FAILURE(rc))
     {
-        /* Initialization failed: */
-
         /* We have to create QApplication anyway
          * just to show the only one error-message: */
         QApplication a(argc, &argv[0]);

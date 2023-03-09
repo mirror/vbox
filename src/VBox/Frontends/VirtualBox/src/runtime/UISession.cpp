@@ -2636,11 +2636,11 @@ bool UISession::preprocessInitialization()
                     case KNetworkAttachmentType_Bridged:
                         strInterfaceName = comNetworkAdapter.GetBridgedInterface();
                         break;
-#ifndef VBOX_WITH_VMNET
+# ifndef VBOX_WITH_VMNET
                     case KNetworkAttachmentType_HostOnly:
                         strInterfaceName = comNetworkAdapter.GetHostOnlyInterface();
                         break;
-#endif /* !VBOX_WITH_VMNET */
+# endif /* !VBOX_WITH_VMNET */
                     default:
                         break;
                 }
