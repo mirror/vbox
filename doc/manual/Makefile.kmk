@@ -871,17 +871,17 @@ man_vboximg-mount.xml \
 	$(QUIET)touch -- "$(@D)/topics/reference.dtd"
 	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_USER_MANUAL_DITA_IMAGES) "$(@D)/topics/images"
 
-correct_reference_targets: \
-		$$(VBOX_PATH_MANUAL_SRC)/correct_references.py \
-		$$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/ \
-		$$(VBOX_REFENTRY_DITA_FILES)
+ correct_reference_targets: \
+ 		$$(VBOX_PATH_MANUAL_SRC)/correct_references.py \
+ 		$$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/ \
+ 		$$(VBOX_REFENTRY_DITA_FILES)
 		$(call MSG_L1,correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics)
 		$(QUIET)$(VBOX_BLD_PYTHON) $(VBOX_PATH_MANUAL_SRC)/correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics
 
-dita_common: \
-		$$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap \
-		$$(VBOX_DITA_PATH) \
-        correct_reference_targets
+ dita_common: \
+ 		$$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap \
+ 		$$(VBOX_DITA_PATH) \
+ 		correct_reference_targets
 		$(call MSG_L1, Running common dita steps)
 
  ##########################################################################################

@@ -128,7 +128,6 @@ def main():
 
     vboxmanage_dita_files = glob.glob(ditafolder + "/man_V*dita")
     for file in vboxmanage_dita_files:
-        print(file)
         file_handle = open(file, 'r', encoding="utf-8")
         file_content = file_handle.readlines()
         correctHrefTargets(file_content)
