@@ -847,6 +847,21 @@ man_vboximg-mount.xml \
 
  ##########################################################################################
  #
+ #  DITA stuff common to pdf, qhelp, and html outputs.
+ #  - copy DITA-OT library (binaries etc) since at each run several run-time config
+ #     files are updated.
+ #	- create dita/topic folder and copy all user manual dita files under that.
+ #  - copy all images under dita/topics/images and UserManual.ditamap under dita folder
+ #  - copy all man_VBox???.xml docbook files under dita/topic folder.
+ #  - flatten refsect1/refsect2 hierarchy in man_VBox???.xml docbook files by
+ #    using refsect2_to_refsect1.py.
+ #  - convert man_VBox???.xml files into dita files
+ #  - correct all reference targets by calling correct_references.py.
+ #
+ ##########################################################################################
+
+ ##########################################################################################
+ #
  #  Docbook to Dita conversion of our refentry files
  #
  ##########################################################################################
