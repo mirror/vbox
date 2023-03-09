@@ -1751,7 +1751,7 @@ class McStmt(object):
 
     def renderCode(self, cchIndent = 0):
         """
-        Renders the code for the statement. 
+        Renders the code for the statement.
         """
         return ' ' * cchIndent + self.sName + '(' + ', '.join(self.asParams) + ');';
 
