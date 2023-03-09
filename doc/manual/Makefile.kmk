@@ -478,7 +478,7 @@ man_vboximg-mount.xml \
  #
  ##########################################################################################
 
-
+ifdef PDF_FROM_LATEX
  # Generate PDF from LaTeX
  # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
  define def_vbox_usermanual_tex_to_pdf
@@ -500,6 +500,7 @@ man_vboximg-mount.xml \
 	$$(call MSG_L1,Fresh LaTeX-generated PDF is now at $$@)
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_usermanual_tex_to_pdf))
+endif
 
  # Generate LaTeX from XML
  # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
@@ -911,8 +912,11 @@ man_vboximg-mount.xml \
 	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_USER_MANUAL_DITA_IMAGES) "$(@D)/topics/images"
 
  define def_ditamap_to_pdf
-  ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf
-  $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_dita.pdf: \
+  ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf
+  $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf: \
+    	$$(addprefix $$(VBOX_PATH_MANUAL_SRC)/$(lang)/,$$(VBOX_MANUAL_XML_FILES)) \
+  		$$(VBOX_MANUAL_XML_FILES_COMMON) \
+  		$$(VBOX_MANUAL_XML_FILES_GENERATED_$(lang)) \
   		$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
   		$(VBOX_DITA_PATH) \
   		$(VBOX_REFENTRY_DITA_FILES) \
