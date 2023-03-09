@@ -858,7 +858,7 @@ man_vboximg-mount.xml \
   		$$(VBOX_XML_ENTITIES) $$(VBOX_VERSION_STAMP) | $$$$(dir $$$$@)
 
 	$$(QUIET)$$(RM) -f "$$@"
-	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2) $(VBOX_PATH_MANUAL_SRC)/refsect2_replace.xsl $$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2)
+	$$(QUIET)$$(VBOX_BLD_PYTHON) $$(VBOX_PATH_MANUAL_SRC)/refsect2_to_refsect1.py -i $$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2) -o $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2)
 	$$(call MSG_TOOL,xsltproc $$(notdir $$(firstword $$(filter %.xsl,$$^))),,$$(firstword $$(filter %.xml,$$^)),$$@)
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output $$@ $$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2)
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output $$@ $(VBOX_PATH_MANUAL_SRC)/mark_external_urls.xsl $$@
