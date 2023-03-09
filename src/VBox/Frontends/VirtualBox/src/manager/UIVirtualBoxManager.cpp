@@ -451,7 +451,8 @@ void UIVirtualBoxManager::create()
 void UIVirtualBoxManager::destroy()
 {
     /* Make sure VirtualBox Manager is created: */
-    AssertPtrReturnVoid(s_pInstance);
+    if (!s_pInstance)
+        return;
 
     /* Unregister in the modal window manager: */
     windowManager().setMainWindowShown(0);

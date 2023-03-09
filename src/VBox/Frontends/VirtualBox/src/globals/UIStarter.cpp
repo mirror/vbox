@@ -41,44 +41,7 @@
 #endif
 
 
-/* static */
-UIStarter *UIStarter::s_pInstance = 0;
-
-/* static */
-void UIStarter::create()
-{
-    /* Pretect versus double 'new': */
-    if (s_pInstance)
-        return;
-
-    /* Create instance: */
-    new UIStarter;
-}
-
-/* static */
-void UIStarter::destroy()
-{
-    /* Pretect versus double 'delete': */
-    if (!s_pInstance)
-        return;
-
-    /* Destroy instance: */
-    delete s_pInstance;
-}
-
 UIStarter::UIStarter()
-{
-    /* Assign instance: */
-    s_pInstance = this;
-}
-
-UIStarter::~UIStarter()
-{
-    /* Unassign instance: */
-    s_pInstance = 0;
-}
-
-void UIStarter::init()
 {
     /* Listen for UICommon signals: */
     connect(&uiCommon(), &UICommon::sigAskToRestartUI,
@@ -87,7 +50,7 @@ void UIStarter::init()
             this, &UIStarter::sltCloseUI);
 }
 
-void UIStarter::deinit()
+UIStarter::~UIStarter()
 {
     /* Listen for UICommon signals no more: */
     disconnect(&uiCommon(), &UICommon::sigAskToRestartUI,
@@ -104,7 +67,7 @@ void UIStarter::sltStartUI()
 
 #ifndef VBOX_RUNTIME_UI
 
-    /* Make sure Selector UI is permitted, quit if not: */
+    /* Make sure Manager UI is permitted, quit if not: */
     if (gEDataManager->guiFeatureEnabled(GUIFeatureType_NoSelector))
     {
         msgCenter().cannotStartSelector();
@@ -129,14 +92,14 @@ void UIStarter::sltStartUI()
 
 #else /* VBOX_RUNTIME_UI */
 
-    /* Make sure Runtime UI is even possible, quit if not: */
+    /* Make sure Runtime UI is possible at all, quit if not: */
     if (uiCommon().managedVMUuid().isNull())
     {
         msgCenter().cannotStartRuntime();
         return QApplication::quit();
     }
 
-    /* Make sure machine is started, quit if not: */
+    /* Try to start virtual machine, quit if failed: */
     if (!UIMachine::startMachine(uiCommon().managedVMUuid()))
         return QApplication::quit();
 
@@ -156,11 +119,9 @@ void UIStarter::sltCloseUI()
 {
 #ifndef VBOX_RUNTIME_UI
     /* Destroy Manager UI: */
-    if (gpManager)
-        UIVirtualBoxManager::destroy();
+    UIVirtualBoxManager::destroy();
 #else
     /* Destroy Runtime UI: */
-    if (gpMachine)
-        UIMachine::destroy();
+    UIMachine::destroy();
 #endif
 }

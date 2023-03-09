@@ -520,8 +520,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         /* Create modal-window manager: */
         UIModalWindowManager::create();
 
-        /* Create UI starter: */
-        UIStarter::create();
 #ifndef VBOX_RUNTIME_UI
         /* Create global app instance for Selector UI: */
         UICommon::create(UICommon::UIType_SelectorUI);
@@ -540,9 +538,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
             if (uiCommon().processArgs())
                 break;
 
-            /* Init link between UI starter and global app instance: */
-            gStarter->init();
-
             // WORKAROUND:
             // Initially we wanted to make that workaround for Runtime UI only,
             // because only there we had a strict handling for proper application quit
@@ -554,21 +549,18 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
             // reason.  So we are making application exit manual everywhere.
             a.setQuitOnLastWindowClosed(false);
 
+            /* Create UI starter: */
+            UIStarter uiStarter;
             /* Request to Start UI _after_ QApplication executed: */
-            QMetaObject::invokeMethod(gStarter, "sltStartUI", Qt::QueuedConnection);
+            QMetaObject::invokeMethod(&uiStarter, "sltStartUI", Qt::QueuedConnection);
 
             /* Start application: */
             iResultCode = a.exec();
-
-            /* Break link between UI starter and global app instance: */
-            gStarter->deinit();
         }
         while (0);
 
         /* Destroy global app instance: */
         UICommon::destroy();
-        /* Destroy UI starter: */
-        UIStarter::destroy();
 
         /* Destroy modal-window manager: */
         UIModalWindowManager::destroy();
