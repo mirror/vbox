@@ -18050,3 +18050,27 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_adox_u64_fallback,(uint64_t *puDst, uint32_t *p
 {
     ADX_EMIT(X86_EFL_OF, uint64_t, UINT64_MAX);
 }
+
+
+/**
+ * MPSADBW
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_mpsadbw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc, uint8_t bEvil))
+{
+    uint8_t idxSrc2 = (bEvil & 0x3) * sizeof(uint32_t);
+    uint8_t idxSrc1 = ((bEvil >> 2) & 0x1) * sizeof(uint32_t);
+    int16_t ai16Src1[11];
+    int16_t ai16Src2[4];
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(ai16Src1); i++)
+        ai16Src1[i] = puDst->au8[idxSrc1 + i];
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(ai16Src2); i++)
+        ai16Src2[i] = puSrc->au8[idxSrc2 + i];
+
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->au16); i++)
+        puDst->au16[i] =   RT_ABS(ai16Src1[i]     - ai16Src2[0])
+                         + RT_ABS(ai16Src1[i + 1] - ai16Src2[1])
+                         + RT_ABS(ai16Src1[i + 2] - ai16Src2[2])
+                         + RT_ABS(ai16Src1[i + 3] - ai16Src2[3]);
+}
