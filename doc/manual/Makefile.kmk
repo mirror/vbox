@@ -478,7 +478,7 @@ man_vboximg-mount.xml \
  #
  ##########################################################################################
 
- ifdef PDF_FROM_LATEX
+ ifdef TO_BE_REMOVED
   # Generate PDF from LaTeX
   # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
   define def_vbox_usermanual_tex_to_pdf
@@ -500,7 +500,7 @@ man_vboximg-mount.xml \
 	$$(call MSG_L1,Fresh LaTeX-generated PDF is now at $$@)
   endef
   $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_usermanual_tex_to_pdf))
- endif
+ endif # TO_BE_REMOVED
 
  # Generate LaTeX from XML
  # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
@@ -790,40 +790,42 @@ man_vboximg-mount.xml \
  #  UserManual.html
  #
  ##########################################################################################
- VBOX_DOCBOOK_HTML_ONE_PAGE_FORMATCFG = \
- 	$(VBOX_PATH_MANUAL_SRC)/docbook-html-one-page-formatcfg.xsl \
- 	$(VBOX_PATH_MANUAL_SRC)/common-formatcfg.xsl \
- 	$(VBOX_PATH_MANUAL_SRC)/common-html-formatcfg.xsl
 
- $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html: \
- 		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_MANUAL_XML_FILES)) \
- 		$(VBOX_MANUAL_XML_FILES_COMMON) \
- 		$(VBOX_MANUAL_XML_FILES_GENERATED_en_US) \
- 		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US)) \
- 		$(VBOX_DOCBOOK_HTML_ONE_PAGE_FORMATCFG) \
- 		$(if $(VBOX_HAVE_XMLLINT),$(VBOX_PATH_MANUAL_OUTBASE)/en_US/validatemanual.run,) \
- 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(VBOX_XML_CATALOG_MANUAL) \
- 		$(VBOX_XML_ENTITIES) | $$(dir $$@)
+ ifdef TO_BE_REMOVED
+  VBOX_DOCBOOK_HTML_ONE_PAGE_FORMATCFG = \
+  	$(VBOX_PATH_MANUAL_SRC)/docbook-html-one-page-formatcfg.xsl \
+  	$(VBOX_PATH_MANUAL_SRC)/common-formatcfg.xsl \
+  	$(VBOX_PATH_MANUAL_SRC)/common-html-formatcfg.xsl
+
+  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html: \
+  		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_MANUAL_XML_FILES)) \
+  		$(VBOX_MANUAL_XML_FILES_COMMON) \
+  		$(VBOX_MANUAL_XML_FILES_GENERATED_en_US) \
+  		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US)) \
+  		$(VBOX_DOCBOOK_HTML_ONE_PAGE_FORMATCFG) \
+  		$(if $(VBOX_HAVE_XMLLINT),$(VBOX_PATH_MANUAL_OUTBASE)/en_US/validatemanual.run,) \
+  		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(VBOX_XML_CATALOG_MANUAL) \
+  		$(VBOX_XML_ENTITIES) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc $(notdir $(firstword $(filter %.xsl,$^))),,$(firstword $(filter %.xml,$^)),$@)
 	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT) \
 		--output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html \
 		$(VBOX_PATH_MANUAL_SRC)/docbook-html-one-page-formatcfg.xsl \
 		$<
 
- VBOX_DOCBOOK_HTML_CHUNKS_FORMATCFG = \
- 	$(VBOX_PATH_MANUAL_SRC)/docbook-html-chunks-formatcfg.xsl \
- 	$(VBOX_PATH_MANUAL_SRC)/common-formatcfg.xsl \
- 	$(VBOX_PATH_MANUAL_SRC)/common-html-formatcfg.xsl
+  VBOX_DOCBOOK_HTML_CHUNKS_FORMATCFG = \
+  	$(VBOX_PATH_MANUAL_SRC)/docbook-html-chunks-formatcfg.xsl \
+  	$(VBOX_PATH_MANUAL_SRC)/common-formatcfg.xsl \
+  	$(VBOX_PATH_MANUAL_SRC)/common-html-formatcfg.xsl
 
- $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
- 		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_MANUAL_XML_FILES)) \
- 		$(VBOX_MANUAL_XML_FILES_COMMON) \
- 		$(VBOX_MANUAL_XML_FILES_GENERATED_en_US) \
- 		$(VBOX_DOCBOOK_HTML_CHUNKS_FORMATCFG) \
- 		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US)) \
- 		$(if $(VBOX_HAVE_XMLLINT),$(VBOX_PATH_MANUAL_OUTBASE)/en_US/validatemanual.run,) \
- 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(VBOX_XML_CATALOG_MANUAL) \
- 		$(VBOX_XML_ENTITIES) | $$(dir $$@)
+  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
+  		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_MANUAL_XML_FILES)) \
+  		$(VBOX_MANUAL_XML_FILES_COMMON) \
+  		$(VBOX_MANUAL_XML_FILES_GENERATED_en_US) \
+  		$(VBOX_DOCBOOK_HTML_CHUNKS_FORMATCFG) \
+  		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US)) \
+  		$(if $(VBOX_HAVE_XMLLINT),$(VBOX_PATH_MANUAL_OUTBASE)/en_US/validatemanual.run,) \
+  		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(VBOX_XML_CATALOG_MANUAL) \
+  		$(VBOX_XML_ENTITIES) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc $(notdir $(firstword $(filter %.xsl,$^))),,$(firstword $(filter %.xml,$^)),$@)
 	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT) \
 		--output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html \
@@ -831,16 +833,32 @@ man_vboximg-mount.xml \
 		$(VBOX_PATH_MANUAL_SRC)/docbook-html-chunks-formatcfg.xsl \
 		$<
 
- $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip: \
- 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html \
- 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html \
- 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US))
+  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip: \
+  		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html \
+  		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html \
+  		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US))
 	$(call MSG_L1,Packing documentation $@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ -- $(VBOX_ZIP) \
 		-9 -r $@ html-single html-chunks $(VBOX_MANUAL_PNG_FILES_en_US)
+ endif # TO_BE_REMOVED
 
- html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html
+ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip: \
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
+	$(call MSG_L1,Packing documentation $@)
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ -- $(VBOX_ZIP) \
+		-9 -r $@ html-single html-chunks
+
+ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
+ 		$$(VBOX_MANUAL_XML_FILES_COMMON) \
+ 		dita_common
+		$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
+		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap \
+			/transtype:xhtml /ditadir:$(VBOX_DITA_PATH) /outdir:$(@D) /tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp
+
+ # disable for now
+ #html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html
  html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
  qhelp:: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/, $(VBOX_QHELP_OUTPUT_FILES))
  html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip

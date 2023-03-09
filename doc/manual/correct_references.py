@@ -99,7 +99,6 @@ def createXrefIdDictionary(ditafolder):
                         if len(id) > 0:
                             if id not in xref_dictionary:
                                 xref_dictionary[id] = os.path.basename(file)
-                                print("%s %s" % (id, os.path.basename(file)))
                             else:
                                 logging.warning('Non unique topic/section id %s in file %s. This is already found in %s'
                                     % (id, os.path.basename(file), os.path.basename(xref_dictionary[id])))
@@ -135,5 +134,6 @@ def main():
         file_handle = open(file, 'w', encoding="utf-8")
         file_handle.write("".join(file_content))
         file_handle.close()
+
 if __name__ == "__main__":
     main()
