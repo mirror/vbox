@@ -961,7 +961,7 @@ int vmsvga3dSurfaceBlitToScreen(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t i
              srcRect.left, srcRect.top, srcRect.right, srcRect.bottom, cRects));
     for (uint32_t i = 0; i < cRects; i++)
     {
-        LogFunc(("clipping rect %d (%d,%d)(%d,%d)\n", i, pRect[i].left, pRect[i].top, pRect[i].right, pRect[i].bottom));
+        LogFunc(("clipping rect[%d] (%d,%d)(%d,%d)\n", i, pRect[i].left, pRect[i].top, pRect[i].right, pRect[i].bottom));
     }
 
     VMSVGASCREENOBJECT *pScreen = vmsvgaR3GetScreenObject(pThisCC, idDstScreen);
@@ -1092,6 +1092,10 @@ int vmsvga3dScreenUpdate(PVGASTATECC pThisCC, uint32_t idDstScreen, SVGASignedRe
 
     VMSVGASCREENOBJECT *pScreen = &pSvgaR3State->aScreens[idDstScreen];
 
+    uint32_t const cbScreenPixel = (pScreen->cBpp + 7) / 8;
+    ASSERT_GUEST_RETURN(cbScreenPixel == pSurface->cbBlock,
+                        VERR_INVALID_PARAMETER); /* Format conversion is not supported. */
+
     if (   srcRect.right <= srcRect.left
         || srcRect.bottom <= srcRect.top)
         return VINF_SUCCESS; /* Empty src rect. */
@@ -1114,22 +1118,21 @@ int vmsvga3dScreenUpdate(PVGASTATECC pThisCC, uint32_t idDstScreen, SVGASignedRe
     dstBox.h = dstRect.bottom - dstRect.top;
     dstBox.d = 1;
 
-    SVGA3dSize dstBound;
-    dstBound.width = pScreen->cWidth;
-    dstBound.height = pScreen->cHeight;
-    dstBound.depth = 1;
+    SVGA3dSize dstClippingSize;
+    dstClippingSize.width = pScreen->cWidth;
+    dstClippingSize.height = pScreen->cHeight;
+    dstClippingSize.depth = 1;
 
-    vmsvgaR3ClipBox(&dstBound, &dstBox);
+    vmsvgaR3ClipBox(&dstClippingSize, &dstBox);
     ASSERT_GUEST_RETURN(dstBox.w > 0 && dstBox.h > 0, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     /* All dst clip rects will be clipped by the dst box because
      * "The clip rectangle coordinates are measured relative to the top-left corner of destRect."
-     * Therefore they are relative to the top-left corner of srcRect as well.
      */
-    dstBound.width = dstBox.w;
-    dstBound.height = dstBox.h;
-    dstBound.depth = 1;
+    dstClippingSize.width = dstBox.w;
+    dstClippingSize.height = dstBox.h;
+    dstClippingSize.depth = 1;
 
     SVGA3dBox srcBox; /* SurfaceMap will clip the box as necessary (srcMap.box). */
     srcBox.x = srcRect.left;
@@ -1143,10 +1146,22 @@ int vmsvga3dScreenUpdate(PVGASTATECC pThisCC, uint32_t idDstScreen, SVGASignedRe
     rc = vmsvga3dSurfaceMap(pThisCC, &srcImage, &srcBox, VMSVGA3D_SURFACE_MAP_READ, &srcMap);
     if (RT_SUCCESS(rc))
     {
+        /* Clipping rectangle. */
+        SVGASignedRect srcBoundRect;
+        srcBoundRect.left   = srcMap.box.x;
+        srcBoundRect.top    = srcMap.box.y;
+        srcBoundRect.right  = srcMap.box.x + srcMap.box.w;
+        srcBoundRect.bottom = srcMap.box.y + srcMap.box.h;
+
+        /* Clipping rectangle relative to the original srcRect. */
+        srcBoundRect.left   -= srcRect.left;
+        srcBoundRect.top    -= srcRect.top;
+        srcBoundRect.right  -= srcRect.left;
+        srcBoundRect.bottom -= srcRect.top;
+
         uint8_t const *pu8Src = (uint8_t *)srcMap.pvData;
 
         uint32_t const cbDst = pScreen->cHeight * pScreen->cbPitch;
-        uint32_t cbScreenPixel = RT_ALIGN(pScreen->cBpp, 8) / 8;
         uint8_t *pu8Dst;
         if (pScreen->pvScreenBitmap)
             pu8Dst = (uint8_t *)pScreen->pvScreenBitmap;
@@ -1168,75 +1183,62 @@ int vmsvga3dScreenUpdate(PVGASTATECC pThisCC, uint32_t idDstScreen, SVGASignedRe
 
         for (uint32_t i = 0; i < cDstClipRects; i++)
         {
-            SVGASignedRect const *pDstClipRect = &paDstClipRect[i];
+            /* Clip rects are relative to corners of src and dst rectangles. */
+            SVGASignedRect clipRect = paDstClipRect[i];
 
-            SVGA3dBox box;
-            box.x = pDstClipRect->left;
-            box.y = pDstClipRect->top;
-            box.z = 0;
-            box.w = pDstClipRect->right - pDstClipRect->left;
-            box.h = pDstClipRect->bottom - pDstClipRect->top;
-            box.d = 1;
+            /* Clip the rectangle by mapped source box. */
+            vmsvgaR3ClipRect(&srcBoundRect, &clipRect);
 
-            vmsvgaR3ClipBox(&dstBound, &box);
-            ASSERT_GUEST_CONTINUE(box.w > 0 && box.h > 0);
+            SVGA3dBox clipBox;
+            clipBox.x = clipRect.left;
+            clipBox.y = clipRect.top;
+            clipBox.z = 0;
+            clipBox.w = clipRect.right - clipRect.left;
+            clipBox.h = clipRect.bottom - clipRect.top;
+            clipBox.d = 1;
+
+            vmsvgaR3ClipBox(&dstClippingSize, &clipBox);
+            ASSERT_GUEST_CONTINUE(clipBox.w > 0 && clipBox.h > 0);
 
             /* 'pu8Src' points to the mapped 'srcRect'. Take the clipping box into account. */
             uint8_t const *pu8SrcBox = pu8Src
-                + ((box.x + pSurface->cxBlock - 1) / pSurface->cxBlock) * pSurface->cxBlock * pSurface->cbBlock
-                + ((box.y + pSurface->cyBlock - 1) / pSurface->cyBlock) * pSurface->cyBlock * srcMap.cbRowPitch;
+                + ((clipBox.x + pSurface->cxBlock - 1) / pSurface->cxBlock) * pSurface->cxBlock * pSurface->cbBlock
+                + ((clipBox.y + pSurface->cyBlock - 1) / pSurface->cyBlock) * pSurface->cyBlock * srcMap.cbRowPitch;
 
-            /* The 'box' is in coordinates relative to the top-left dstRect or srcRect corner.
-             * The 'dstBoxAbs' and 'srcBoxAbs' are absolute coordinates of 'box' within screen object or texture face (respectively).
-             */
-            SVGA3dBox srcBoxAbs = box, dstBoxAbs = box;
+            /* Calculate the offset of destination box in the screen buffer. */
+            uint32_t const offDstBox = (dstBox.x + clipBox.x) * cbScreenPixel + (dstBox.y + clipBox.y) * pScreen->cbPitch;
 
-            srcBoxAbs.x += srcBox.x;
-            srcBoxAbs.y += srcBox.y;
+            ASSERT_GUEST_BREAK(   offDstBox <= cbDst
+                               && pScreen->cbPitch * (clipBox.h - 1) + cbScreenPixel * clipBox.w <= cbDst - offDstBox);
+            RT_UNTRUSTED_VALIDATED_FENCE();
 
-            dstBoxAbs.x += dstBox.x;
-            dstBoxAbs.y += dstBox.y;
+            uint8_t *pu8DstBox = pu8Dst + offDstBox;
 
-            uint32_t offDst = pScreen->cbPitch * dstBoxAbs.y + cbScreenPixel * dstBoxAbs.x;
-
-            VMSGA3D_BOX_DIMENSIONS srcDims;
-            rc = vmsvga3dGetBoxDimensions(pThisCC, &srcImage, &srcBoxAbs, &srcDims);
-            if (RT_SUCCESS(rc))
+            if (   pSurface->format == SVGA3D_R8G8B8A8_UNORM
+                || pSurface->format == SVGA3D_R8G8B8A8_UNORM_SRGB)
             {
-                AssertContinue(srcDims.cyBlocks > 0);
-
-                ASSERT_GUEST_BREAK(   offDst <= cbDst
-                                   && pScreen->cbPitch * (srcDims.cyBlocks - 1) + srcDims.cbRow <= cbDst - offDst);
-                RT_UNTRUSTED_VALIDATED_FENCE();
-
-                uint8_t *pu8DstBox = pu8Dst + offDst;
-
-                if (   pSurface->format == SVGA3D_R8G8B8A8_UNORM
-                    || pSurface->format == SVGA3D_R8G8B8A8_UNORM_SRGB)
+                for (uint32_t iRow = 0; iRow < clipBox.h; ++iRow)
                 {
-                    for (uint32_t iRow = 0; iRow < srcDims.cyBlocks; ++iRow)
+                    for (uint32_t x = 0; x < clipBox.w * 4; x += 4) /* 'x' is a byte index. */
                     {
-                        for (uint32_t x = 0; x < box.w * 4; x += 4) /* 'x' is a byte index. */
-                        {
-                            pu8DstBox[x    ] = pu8SrcBox[x + 2];
-                            pu8DstBox[x + 1] = pu8SrcBox[x + 1];
-                            pu8DstBox[x + 2] = pu8SrcBox[x    ];
-                            pu8DstBox[x + 3] = pu8SrcBox[x + 3];
-                        }
-
-                        pu8SrcBox += srcMap.cbRowPitch;
-                        pu8DstBox += pScreen->cbPitch;
+                        pu8DstBox[x    ] = pu8SrcBox[x + 2];
+                        pu8DstBox[x + 1] = pu8SrcBox[x + 1];
+                        pu8DstBox[x + 2] = pu8SrcBox[x    ];
+                        pu8DstBox[x + 3] = pu8SrcBox[x + 3];
                     }
+
+                    pu8SrcBox += srcMap.cbRowPitch;
+                    pu8DstBox += pScreen->cbPitch;
                 }
-                else
+            }
+            else
+            {
+                for (uint32_t iRow = 0; iRow < clipBox.h; ++iRow)
                 {
-                    for (uint32_t iRow = 0; iRow < srcDims.cyBlocks; ++iRow)
-                    {
-                        memcpy(pu8DstBox, pu8SrcBox, srcDims.cbRow);
+                    memcpy(pu8DstBox, pu8SrcBox, cbScreenPixel * clipBox.w);
 
-                        pu8SrcBox += srcMap.cbRowPitch;
-                        pu8DstBox += pScreen->cbPitch;
-                    }
+                    pu8SrcBox += srcMap.cbRowPitch;
+                    pu8DstBox += pScreen->cbPitch;
                 }
             }
         }
