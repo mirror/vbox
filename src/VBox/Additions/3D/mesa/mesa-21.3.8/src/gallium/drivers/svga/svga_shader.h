@@ -90,6 +90,11 @@ struct svga_compile_key
       unsigned layer_to_zero:1;
       int aa_point_coord_index;
       float alpha_ref;
+#ifdef VBOX_WITH_MESA3D_NINE_SVGA
+      /* Make sure that this FS corresponds to a particular VS. Fixes a case when the FS was paired
+       * with one of two VSs where generics had different order. */
+      unsigned prev_shader_id;
+#endif
    } fs;
 
    /* tessellation control shader */

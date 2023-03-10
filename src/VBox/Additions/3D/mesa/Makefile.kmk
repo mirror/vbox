@@ -1474,6 +1474,11 @@ VBoxMesaSVGALib_SOURCES  = \
 	$(VBOX_MESA)/src/gallium/drivers/svga/svga_tgsi_insn.c \
 	$(VBOX_MESA)/src/gallium/drivers/svga/svga_tgsi_vgpu10.c
 
+VBoxMesaSVGALib_SOURCES.debug  += \
+	$(VBOX_MESA)/src/gallium/drivers/svga/svgadump/svga_dump.c \
+	$(VBOX_MESA)/src/gallium/drivers/svga/svgadump/svga_shader_dump.c \
+	$(VBOX_MESA)/src/gallium/drivers/svga/svgadump/svga_shader_op.c
+
 # 32 bit lib for 64 bit build
 VBoxMesaSVGALib-x86_EXTENDS      = VBoxMesaSVGALib
 VBoxMesaSVGALib-x86_BLD_TRG_ARCH = x86

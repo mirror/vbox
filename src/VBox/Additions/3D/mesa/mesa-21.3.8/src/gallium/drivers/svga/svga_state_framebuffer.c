@@ -597,6 +597,16 @@ get_viewport_prescale(struct svga_context *svga,
       range_min = viewport->scale[2] *  0.0f + viewport->translate[2];
       range_max = viewport->scale[2] *  1.0f + viewport->translate[2];
       assert(range_min >= 0.0f);
+
+      /* 'clip_halfz' means that the svga gallium driver is a part of our D3D9 ('nine' based) user mode driver.
+       * Therefore take into account that:
+       * "In Direct3D 9, texel centers and pixel centers were a half unit apart."
+       */
+      if (svga_have_vgpu10(svga))
+      {
+          prescale->translate[0] += 0.5f;
+          prescale->translate[1] += 0.5f;
+      }
    }
    else
    {

@@ -197,9 +197,15 @@ make_fs_key(const struct svga_context *svga,
    if (svga->curr.gs) {
       key->fs.gs_generic_outputs = svga->curr.gs->generic_outputs;
       key->fs.layer_to_zero = !svga->curr.gs->base.info.writes_layer;
+#ifdef VBOX_WITH_MESA3D_NINE_SVGA
+      key->fs.prev_shader_id = svga->curr.gs->base.id;
+#endif
    } else {
       key->fs.vs_generic_outputs = svga->curr.vs->generic_outputs;
       key->fs.layer_to_zero = 1;
+#ifdef VBOX_WITH_MESA3D_NINE_SVGA
+      key->fs.prev_shader_id = svga->curr.vs->base.id;
+#endif
    }
 
    /* Only need fragment shader fixup for twoside lighting if doing
