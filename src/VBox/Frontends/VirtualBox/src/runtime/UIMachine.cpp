@@ -1465,6 +1465,7 @@ bool UIMachine::prepare()
         return false;
 
     /* Prepare stuff: */
+    prepareNotificationCenter();
     prepareBranding();
     prepareSessionConnections();
     prepareActions();
@@ -1488,6 +1489,11 @@ bool UIMachine::prepare()
 
     /* True by default: */
     return true;
+}
+
+void UIMachine::prepareNotificationCenter()
+{
+    UINotificationCenter::create();
 }
 
 void UIMachine::prepareBranding()
@@ -1820,6 +1826,11 @@ void UIMachine::cleanupSession()
     m_pSession = 0;
 }
 
+void UIMachine::cleanupNotificationCenter()
+{
+    UINotificationCenter::destroy();
+}
+
 void UIMachine::cleanup()
 {
     /* Preprocess all the meta-events: */
@@ -1830,6 +1841,7 @@ void UIMachine::cleanup()
     cleanupScreens();
     cleanupActions();
     cleanupBranding();
+    cleanupNotificationCenter();
 
     /* Cleanup session UI: */
     cleanupSession();

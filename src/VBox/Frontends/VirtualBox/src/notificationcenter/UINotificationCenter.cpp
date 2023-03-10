@@ -513,6 +513,11 @@ void UINotificationCenter::sltHandleProgressFinished()
         m_pEventLoop->exit();
 }
 
+void UINotificationCenter::sltDetachCOM()
+{
+    cleanup();
+}
+
 void UINotificationCenter::prepare()
 {
     /* Hide initially: */
@@ -536,6 +541,10 @@ void UINotificationCenter::prepare()
     prepareWidgets();
     prepareStateMachineSliding();
     prepareOpenTimer();
+
+    /* COM related connections: */
+    connect(&uiCommon(), &UICommon::sigAskToDetachCOM,
+            this, &UINotificationCenter::sltDetachCOM);
 
     /* Apply language settings: */
     retranslateUi();

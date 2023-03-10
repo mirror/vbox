@@ -647,10 +647,8 @@ private:
 
     /** @name Prepare/cleanup cascade.
      ** @{ */
-        /** Prepares COM session. */
-        bool prepareSession();
-        /** Prepares notification-center. */
-        void prepareNotificationCenter();
+        /** Prepares COM stuff. */
+        bool prepareCOMStuff();
         /** Prepares console event-handler. */
         void prepareConsoleEventHandlers();
         /** Prepares frame-buffers. */
@@ -664,8 +662,6 @@ private:
         void cleanupFramebuffers();
         /** Cleanups console event-handler. */
         void cleanupConsoleEventHandlers();
-        /** Cleanups notification-center. */
-        void cleanupNotificationCenter();
         /** Cleanups COM stuff. */
         void cleanupCOMStuff();
     /** @} */

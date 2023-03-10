@@ -127,7 +127,7 @@ UISession::UISession(UIMachine *pMachine)
 bool UISession::prepare()
 {
     /* Prepare COM stuff: */
-    if (!prepareSession())
+    if (!prepareCOMStuff())
         return false;
 
     /* Cache media early if requested: */
@@ -135,7 +135,6 @@ bool UISession::prepare()
         recacheMachineMedia();
 
     /* Prepare GUI stuff: */
-    prepareNotificationCenter();
     prepareConsoleEventHandlers();
     prepareFramebuffers();
     prepareConnections();
@@ -2237,7 +2236,6 @@ void UISession::sltDetachCOM()
     /* Cleanup everything COM related: */
     cleanupFramebuffers();
     cleanupConsoleEventHandlers();
-    cleanupNotificationCenter();
     cleanupCOMStuff();
 }
 
@@ -2330,7 +2328,7 @@ void UISession::sltHandleSnapshotRestored(bool)
     uimachine()->closeRuntimeUI();
 }
 
-bool UISession::prepareSession()
+bool UISession::prepareCOMStuff()
 {
     /* Open session: */
     m_comSession = uiCommon().openSession(uiCommon().managedVMUuid(),
@@ -2384,11 +2382,6 @@ bool UISession::prepareSession()
 
     /* True by default: */
     return true;
-}
-
-void UISession::prepareNotificationCenter()
-{
-    UINotificationCenter::create();
 }
 
 void UISession::prepareConsoleEventHandlers()
@@ -2501,11 +2494,6 @@ void UISession::cleanupConsoleEventHandlers()
     /* Destroy console event-handler: */
     delete m_pConsoleEventhandler;
     m_pConsoleEventhandler = 0;
-}
-
-void UISession::cleanupNotificationCenter()
-{
-    UINotificationCenter::destroy();
 }
 
 void UISession::cleanupCOMStuff()

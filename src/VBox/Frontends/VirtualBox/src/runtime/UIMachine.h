@@ -837,6 +837,8 @@ private:
 
     /** Prepare routine. */
     bool prepare();
+    /** Prepares notification-center. */
+    void prepareNotificationCenter();
     /** Prepare routine: Branding. */
     void prepareBranding();
     /** Prepare routine: Session connection stuff. */
@@ -862,6 +864,8 @@ private:
     void cleanupBranding();
     /** Cleanup routine: Session stuff. */
     void cleanupSession();
+    /** Cleanups notification-center. */
+    void cleanupNotificationCenter();
     /** Cleanup routine. */
     void cleanup();
 
