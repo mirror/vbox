@@ -145,16 +145,14 @@ signals:
 
 public:
 
-    /** Constructs session UI passing @a pMachine to the constructor.
-      * @param  pSession  Brings the pointer to the session UI being constructed.
+    /** Constructs session UI passing @a pMachine to the base-class.
       * @param  pMachine  Brings the machine UI reference. */
-    static bool create(UISession *&pSession, UIMachine *pMachine);
-    /** Destructs session UI.
-      * @param  pSession  Brings the pointer to the session UI being destructed. */
-    static void destroy(UISession *&pSession);
+    UISession(UIMachine *pMachine);
 
     /** @name General stuff.
      ** @{ */
+        /** Prepares everything. */
+        bool prepare();
         /** Performs session UI intialization. */
         bool initialize();
         /** Powers VM up. */
@@ -647,16 +645,8 @@ private slots:
 
 private:
 
-    /** Constructs session UI passing @a pMachine to the base-class.
-      * @param  pMachine  Brings the machine UI reference. */
-    UISession(UIMachine *pMachine);
-    /** Destructs session UI. */
-    virtual ~UISession() RT_OVERRIDE;
-
     /** @name Prepare/cleanup cascade.
      ** @{ */
-        /** Prepares everything. */
-        bool prepare();
         /** Prepares COM session. */
         bool prepareSession();
         /** Prepares notification-center. */
@@ -676,8 +666,8 @@ private:
         void cleanupConsoleEventHandlers();
         /** Cleanups notification-center. */
         void cleanupNotificationCenter();
-        /** Cleanups COM session. */
-        void cleanupSession();
+        /** Cleanups COM stuff. */
+        void cleanupCOMStuff();
     /** @} */
 
     /** @name General stuff.

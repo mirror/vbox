@@ -104,38 +104,45 @@
 static void signalHandlerSIGUSR1(int sig, siginfo_t *, void *);
 #endif
 
-/* static */
-bool UISession::create(UISession *&pSession, UIMachine *pMachine)
+UISession::UISession(UIMachine *pMachine)
+    : QObject(pMachine)
+    /* Base variables: */
+    , m_pMachine(pMachine)
+    , m_pConsoleEventhandler(0)
+    /* Common variables: */
+    , m_enmMachineStatePrevious(KMachineState_Null)
+    , m_enmMachineState(KMachineState_Null)
+    /* Guest additions flags: */
+    , m_ulGuestAdditionsRunLevel(0)
+    , m_fIsGuestSupportsGraphics(false)
+    , m_fIsGuestSupportsSeamless(false)
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /* Debug UI stuff: */
+    , m_pDbgGui(0)
+    , m_pDbgGuiVT(0)
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 {
-    /* Make sure NULL pointer passed: */
-    AssertReturn(!pSession, false);
+}
 
-    /* Create session UI: */
-    pSession = new UISession(pMachine);
-    AssertPtrReturn(pSession, false);
-
-    /* Make sure it's prepared: */
-    if (!pSession->prepare())
-    {
-        /* Destroy session UI otherwise: */
-        destroy(pSession);
-        /* False in that case: */
+bool UISession::prepare()
+{
+    /* Prepare COM stuff: */
+    if (!prepareSession())
         return false;
-    }
+
+    /* Cache media early if requested: */
+    if (uiCommon().agressiveCaching())
+        recacheMachineMedia();
+
+    /* Prepare GUI stuff: */
+    prepareNotificationCenter();
+    prepareConsoleEventHandlers();
+    prepareFramebuffers();
+    prepareConnections();
+    prepareSignalHandling();
 
     /* True by default: */
     return true;
-}
-
-/* static */
-void UISession::destroy(UISession *&pSession)
-{
-    /* Make sure valid pointer passed: */
-    AssertPtrReturnVoid(pSession);
-
-    /* Delete session: */
-    delete pSession;
-    pSession = 0;
 }
 
 bool UISession::initialize()
@@ -2231,7 +2238,7 @@ void UISession::sltDetachCOM()
     cleanupFramebuffers();
     cleanupConsoleEventHandlers();
     cleanupNotificationCenter();
-    cleanupSession();
+    cleanupCOMStuff();
 }
 
 void UISession::sltStateChange(KMachineState enmState)
@@ -2321,51 +2328,6 @@ void UISession::sltHandleSnapshotRestored(bool)
 {
     /* Close Runtime UI independent of snapshot restoring state: */
     uimachine()->closeRuntimeUI();
-}
-
-UISession::UISession(UIMachine *pMachine)
-    : QObject(pMachine)
-    /* Base variables: */
-    , m_pMachine(pMachine)
-    , m_pConsoleEventhandler(0)
-    /* Common variables: */
-    , m_enmMachineStatePrevious(KMachineState_Null)
-    , m_enmMachineState(KMachineState_Null)
-    /* Guest additions flags: */
-    , m_ulGuestAdditionsRunLevel(0)
-    , m_fIsGuestSupportsGraphics(false)
-    , m_fIsGuestSupportsSeamless(false)
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /* Debug UI stuff: */
-    , m_pDbgGui(0)
-    , m_pDbgGuiVT(0)
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-{
-}
-
-UISession::~UISession()
-{
-}
-
-bool UISession::prepare()
-{
-    /* Prepare COM stuff: */
-    if (!prepareSession())
-        return false;
-
-    /* Cache media early if requested: */
-    if (uiCommon().agressiveCaching())
-        recacheMachineMedia();
-
-    /* Prepare GUI stuff: */
-    prepareNotificationCenter();
-    prepareConsoleEventHandlers();
-    prepareFramebuffers();
-    prepareConnections();
-    prepareSignalHandling();
-
-    /* True by default: */
-    return true;
 }
 
 bool UISession::prepareSession()
@@ -2546,7 +2508,7 @@ void UISession::cleanupNotificationCenter()
     UINotificationCenter::destroy();
 }
 
-void UISession::cleanupSession()
+void UISession::cleanupCOMStuff()
 {
     /* Detach debugger: */
     if (!m_comDebugger.isNull())
