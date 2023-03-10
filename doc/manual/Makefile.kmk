@@ -63,6 +63,7 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
 endif
 
 
+
 #
 # Globals
 #
@@ -179,6 +180,10 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   VBOX_PATH_BIN_QHELP =
  endif
 
+.NOTPARALLEL: \
+	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qch + $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.qhc \
+	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.pdf \
+	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
 
  ifndef VBOX_ONLY_SDK
   VBOX_MANUAL_PACK += \
@@ -848,11 +853,11 @@ man_vboximg-mount.xml \
 	$(call MSG_L1,Packing documentation $@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ -- $(VBOX_ZIP) \
-		-9 -r $@ html-single html-chunks
+		-9 -r $@ html-chunks
 
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
- 		$$(VBOX_MANUAL_XML_FILES_COMMON) \
  		dita_common
+		$(call MSG_L1,Building html chunks $@)
 		$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
 		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap \
 			/transtype:xhtml /ditadir:$(VBOX_DITA_PATH) /outdir:$(@D) /tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp
