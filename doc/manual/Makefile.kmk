@@ -180,10 +180,10 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   VBOX_PATH_BIN_QHELP =
  endif
 
-.NOTPARALLEL: \
-	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qch + $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.qhc \
-	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.pdf \
-	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
+ .NOTPARALLEL: \
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qch + $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.qhc \
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.pdf \
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
 
  ifndef VBOX_ONLY_SDK
   VBOX_MANUAL_PACK += \
