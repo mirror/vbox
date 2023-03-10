@@ -1844,7 +1844,7 @@ class McCppCond(McStmtCond):
 
 class McCppPreProc(McCppGeneric):
     """
-    C++/C Preprocessor directive. 
+    C++/C Preprocessor directive.
     """
 
     def __init__(self, sCode):
