@@ -892,6 +892,7 @@ void UIDetailsElement::popupNameAndSystemEditor(bool fChooseName, bool fChoosePa
         UINameAndSystemEditor *pEditor = new UINameAndSystemEditor(pPopup,
                                                                    fChooseName,
                                                                    fChoosePath,
+                                                                   false /* edition? */,
                                                                    false /* image? */,
                                                                    fChooseType);
         if (pEditor)

@@ -959,6 +959,7 @@ QWidget *UIWizardNewVMExpertPage::createNameOSTypeWidgets()
                                                        true /* fChooseName? */,
                                                        true /* fChoosePath? */,
                                                        true /* fChooseImage? */,
+                                                       true /* fChoseEdition? */,
                                                        true /* fChooseType? */);
     if (m_pNameAndSystemEditor)
         m_pNameAndSystemLayout->addWidget(m_pNameAndSystemEditor, 0, 0, 1, 2);
