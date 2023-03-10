@@ -294,10 +294,10 @@ HRESULT APIENTRY GaDdiTexBlt(HANDLE hDevice, const D3DDDIARG_TEXBLT *pData)
     PVBOXWDDMDISP_RESOURCE pDstRc = (PVBOXWDDMDISP_RESOURCE)pData->hDstResource;
     PVBOXWDDMDISP_RESOURCE pSrcRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;
 
-    Assert(    pDstRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE
-            || pDstRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_CUBE_TEXTURE);
-    Assert(    pSrcRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE
-            || pSrcRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_CUBE_TEXTURE);
+    AssertReturn(    pDstRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE
+                 || pDstRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_CUBE_TEXTURE, E_INVALIDARG);
+    AssertReturn(    pSrcRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE
+                 || pSrcRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_CUBE_TEXTURE, E_INVALIDARG);
     Assert(pSrcRc->aAllocations[0].enmD3DIfType == pDstRc->aAllocations[0].enmD3DIfType);
     Assert(pSrcRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM);
     Assert(pDstRc->RcDesc.enmPool != D3DDDIPOOL_SYSTEMMEM);
@@ -320,6 +320,23 @@ HRESULT APIENTRY GaDdiTexBlt(HANDLE hDevice, const D3DDDIARG_TEXBLT *pData)
         IDirect3DBaseTexture9 *pD3DIfDstTex = (IDirect3DBaseTexture9*)pDstRc->aAllocations[0].pD3DIf;
         Assert(pD3DIfSrcTex);
         Assert(pD3DIfDstTex);
+
+        /* Make sure that the blit is always performed. In particular this is important for
+         * SYSTEMMEM textures created for an application memory buffer (*pSharedHandle == pBuffer)
+         * and updated by application without Lock/Unlock, which means that dirty rect is not
+         * updated automatically.
+         */
+        if (pSrcRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE)
+        {
+            IDirect3DTexture9 *p = (IDirect3DTexture9 *)pD3DIfSrcTex;
+            p->AddDirtyRect(&pData->SrcRect);
+        }
+        else if (pSrcRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_CUBE_TEXTURE)
+        {
+            IDirect3DCubeTexture9 *p = (IDirect3DCubeTexture9 *)pD3DIfSrcTex;
+            p->AddDirtyRect((D3DCUBEMAP_FACES)pData->CubeMapFace, &pData->SrcRect);
+        }
+
         VBOXVDBG_CHECK_TEXBLT(
                 hr = pDevice9If->UpdateTexture(pD3DIfSrcTex, pD3DIfDstTex); Assert(hr == S_OK),
                 pSrcRc,
