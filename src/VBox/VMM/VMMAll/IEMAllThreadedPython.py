@@ -47,27 +47,6 @@ if sys.version_info[0] >= 3:
     long = int;     # pylint: disable=redefined-builtin,invalid-name
 
 
-class LocalVar(object):
-    """
-    A IEM_MC_LOCAL* variable.
-    """
-
-    def __init__(self, sName, sType, sConstValue = None):
-        self.sName       = sName;
-        self.sType       = sType;
-        self.sConstValue = sConstValue;     ##< None if not const, otherwise the const value.
-
-class CallArg(LocalVar):
-    """
-    A IEM_MC_ARG* variable.
-    """
-
-    def __init__(self, sName, sType, iArg, sConstValue = None, oRefLocal = None):
-        LocalVar.__init__(sName, sType, sConstValue);
-        self.iArg      = iArg;
-        self.oRefLocal = oRefLocal;
-
-
 class ThreadedFunction(object):
     """
     A threaded function.
@@ -75,8 +54,8 @@ class ThreadedFunction(object):
 
     def __init__(self, oMcBlock):
         self.oMcBlock               = oMcBlock  # type: IEMAllInstructionsPython.McBlock
-        ### Dictionary of local variables (IEM_MC_LOCAL[_CONST]) and call arguments (IEM_MC_ARG*).
-        #self.dVariables = {}           # type: dict(str,LocalVar)
+        ## Dictionary of local variables (IEM_MC_LOCAL[_CONST]) and call arguments (IEM_MC_ARG*).
+        self.dVariables = {}           # type: dict(str,McStmtVar)
         ###
         #self.aoParams    = []          # type:
 
@@ -93,16 +72,36 @@ class ThreadedFunction(object):
             return 'kIemThreadedFunc_%s' % ( sName, );
         return 'kIemThreadedFunc_%s_%s' % ( sName, self.oMcBlock.iInFunction, );
 
+    def analyzeFindVariablesAndCallArgs(self, aoStmts):
+        """ Scans the statements for MC variables and call arguments. """
+        for oStmt in aoStmts:
+            if isinstance(oStmt, iai.McStmtVar):
+                if oStmt.sVarName in self.dVariables:
+                    raise Exception('Variable %s is defined more than once!' % (oStmt.sVarName,));
+                self.dVariables[oStmt.sVarName] = oStmt.sVarName;
+
+            # There shouldn't be any variables or arguments declared inside if/
+            # else blocks, but scan them too to be on the safe side.
+            if isinstance(oStmt, iai.McStmtCond):
+                cBefore = len(self.dVariables);
+                self.analyzeFindVariablesAndCallArgs(oStmt.aoIfBranch);
+                self.analyzeFindVariablesAndCallArgs(oStmt.aoElseBranch);
+                if len(self.dVariables) != cBefore:
+                    raise Exception('Variables/arguments defined in conditional branches!');
+        return True;
+
     def analyze(self):
         """
         Analyzes the code, identifying the number of parameters it requires and such.
         May raise exceptions if we cannot grok the code.
         """
 
-        #
-        # First we decode it,
-        #
+        # Decode the block into a list/tree of McStmt objects.
         aoStmts = self.oMcBlock.decode();
+
+        # Scan the statements for local variables and call arguments (self.dVariables).
+        self.analyzeFindVariablesAndCallArgs(aoStmts);
+
 
         return True;
 
@@ -112,7 +111,8 @@ class ThreadedFunction(object):
         Modifies the input code.
         """
         assert len(self.oMcBlock.asLines) > 2, "asLines=%s" % (self.oMcBlock.asLines,);
-        return ''.join(self.oMcBlock.asLines);
+        cchIndent = (self.oMcBlock.cchIndent + 3) // 4 * 4;
+        return iai.McStmt.renderCodeForList(self.oMcBlock.aoStmts, cchIndent = cchIndent).replace('\n', ' /* gen */\n', 1);
 
 
 class IEMThreadedGenerator(object):

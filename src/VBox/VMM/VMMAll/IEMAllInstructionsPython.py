@@ -1739,6 +1739,10 @@ g_dInstructionMaps          = { oMap.sName:    oMap for oMap in g_aoInstructionM
 g_dInstructionMapsByIemName = { oMap.sIemName: oMap for oMap in g_aoInstructionMaps };
 
 
+#
+# "Microcode" statements and blocks
+#
+
 class McStmt(object):
     """
     Statement in a microcode block.
@@ -1753,7 +1757,18 @@ class McStmt(object):
         """
         Renders the code for the statement.
         """
-        return ' ' * cchIndent + self.sName + '(' + ', '.join(self.asParams) + ');';
+        return ' ' * cchIndent + self.sName + '(' + ', '.join(self.asParams) + ');\n';
+
+    @staticmethod
+    def renderCodeForList(aoStmts, cchIndent = 0):
+        """
+        Renders a list of statements.
+        """
+        return ''.join([oStmt.renderCode(cchIndent) for oStmt in aoStmts]);
+
+    def isCppStmt(self):
+        """ Checks if this is a C++ statement. """
+        return self.sName.startswith('C++');
 
 class McStmtCond(McStmt):
     """ Base class for conditional statements (IEM_MC_IF_XXX). """
@@ -1765,29 +1780,78 @@ class McStmtCond(McStmt):
 
     def renderCode(self, cchIndent = 0):
         sRet  = ' ' * cchIndent + self.sName + '(' + ', '.join(self.asParams) + ') {\n';
-        for oStmt in self.aoIfBranch:
-            sRet += oStmt.renderCode(cchIndent + 4);
+        sRet += self.renderCodeForList(self.aoIfBranch, cchIndent + 4);
         if self.aoElseBranch:
             sRet += ' ' * cchIndent + '} IEM_MC_ELSE() {\n';
-            for oStmt in self.aoElseBranch:
-                sRet += oStmt.renderCode(cchIndent + 4);
-        sRet += ' ' * cchIndent + '} IEM_MC_ENDIF();';
+            sRet += self.renderCodeForList(self.aoElseBranch, cchIndent + 4);
+        sRet += ' ' * cchIndent + '} IEM_MC_ENDIF();\n';
         return sRet;
+
+class McStmtVar(McStmt):
+    """ IEM_MC_LOCAL_VAR* """
+    def __init__(self, sName, asParams, sType, sVarName, sConstValue = None):
+        McStmt.__init__(self, sName, asParams);
+        self.sType       = sType;
+        self.sVarName    = sVarName;
+        self.sConstValue = sConstValue;     ##< None if not const.
+
+class McStmtArg(McStmtVar):
+    """ IEM_MC_ARG* """
+    def __init__(self, sName, asParams, sType, sVarName, iArg, sConstValue = None, sRef = None, sRefType = 'none'):
+        McStmtVar.__init__(self, sName, asParams, sType, sVarName, sConstValue);
+        self.iArg       = iArg;
+        self.sRef       = sRef;       ##< The reference string (local variable, register).
+        self.sRefType   = sRefType;   ##< The kind of reference: 'local', 'none'.
+        assert sRefType in ('none', 'local');
 
 class McCppGeneric(McStmt):
     """
     Generic C++/C statement.
     """
 
-    def __init__(self, sCode):
-        McStmt.__init__(self, 'C++', [sCode,]);
+    def __init__(self, sCode, fDecode, sName = 'C++'):
+        McStmt.__init__(self, sName, [sCode,]);
+        self.fDecode = fDecode;
 
     def renderCode(self, cchIndent = 0):
-        return ' ' * cchIndent + self.asParams[0];
+        sRet = ' ' * cchIndent + self.asParams[0] + '\n';
+        if self.fDecode:
+            sRet = sRet.replace('\n', ' // C++ decode\n');
+        else:
+            sRet = sRet.replace('\n', ' // C++ normal\n');
+        return sRet;
 
-#class McLocalVar(McStmt):
-#
-#    def __init__(self, sRaw, , ):
+class McCppCond(McStmtCond):
+    """
+    C++/C 'if' statement.
+    """
+    def __init__(self, sCode, fDecode):
+        McStmtCond.__init__(self, 'C++/if', [sCode,]);
+        self.fDecode = fDecode;
+
+    def renderCode(self, cchIndent = 0):
+        sAnnotation = '// C++ decode' if self.fDecode else '// C++ normal';
+        sRet  = ' ' * cchIndent + 'if (' + self.asParams[0] + ') ' + sAnnotation + '\n';
+        sRet += ' ' * cchIndent + '{\n';
+        sRet += self.renderCodeForList(self.aoIfBranch, cchIndent + 4);
+        sRet += ' ' * cchIndent + '}\n';
+        if self.aoElseBranch:
+            sRet += ' ' * cchIndent + 'else ' + sAnnotation + '\n';
+            sRet += ' ' * cchIndent + '{\n';
+            sRet += self.renderCodeForList(self.aoElseBranch, cchIndent + 4);
+            sRet += ' ' * cchIndent + '}\n';
+        return sRet;
+
+class McCppPreProc(McCppGeneric):
+    """
+    C++/C Preprocessor directive. 
+    """
+
+    def __init__(self, sCode):
+        McCppGeneric.__init__(self, sCode, False, sName = 'C++/preproc');
+
+    def renderCode(self, cchIndent = 0):
+        return self.asParams[0] + '\n';
 
 
 class McBlock(object):
@@ -1795,7 +1859,7 @@ class McBlock(object):
     Microcode block (IEM_MC_BEGIN ... IEM_MC_END).
     """
 
-    def __init__(self, sSrcFile, iBeginLine, offBeginLine, sFunction, iInFunction):
+    def __init__(self, sSrcFile, iBeginLine, offBeginLine, sFunction, iInFunction, cchIndent = None):
         self.sSrcFile     = sSrcFile;                           ##< The source file containing the block.
         self.iBeginLine   = iBeginLine;                         ##< The line with the IEM_MC_BEGIN statement.
         self.offBeginLine = offBeginLine;                       ##< The offset of the IEM_MC_BEGIN statement within the line.
@@ -1803,6 +1867,7 @@ class McBlock(object):
         self.offEndLine   = 0;                                  ##< The offset of the IEM_MC_END statement within the line.
         self.sFunction    = sFunction;                          ##< The function the block resides in.
         self.iInFunction  = iInFunction;                        ##< The block number wihtin the function.
+        self.cchIndent    = cchIndent if cchIndent else offBeginLine;
         self.asLines      = []              # type: list(str)   ##< The raw lines the block is made up of.
         ## Decoded statements in the block.
         self.aoStmts      = []              # type: list(McStmt)
@@ -1822,6 +1887,18 @@ class McBlock(object):
         iLine          = sRawCode.count('\n', 0, off);
         raise ParserException('%s:%d:%d: parsing error: %s'
                               % (self.sSrcFile, self.iBeginLine + iLine, off - offStartOfLine + 1, sMessage,));
+
+    def raiseStmtError(self, sName, sMessage):
+        """ Raises a statement parser error. """
+        raise ParserException('%s:%d: %s: parsing error: %s' % (self.sSrcFile, self.iBeginLine, sName, sMessage,));
+
+    def checkStmtParamCount(self, sName, asParams, cParamsExpected):
+        """ Check the parameter count, raising an error it doesn't match. """
+        if len(asParams) != cParamsExpected:
+            raise ParserException('%s:%d: %s: Expected %s parameters, found %s!'
+                                  % (self.sSrcFile, self.iBeginLine, sName, cParamsExpected, len(asParams),));
+        return True;
+
     @staticmethod
     def parseMcGeneric(oSelf, sName, asParams):
         """ Generic parser that returns a plain McStmt object. """
@@ -1837,7 +1914,49 @@ class McBlock(object):
     @staticmethod
     def parseMcBegin(oSelf, sName, asParams):
         """ IEM_MC_BEGIN """
+        oSelf.checkStmtParamCount(sName, asParams, 2);
         return McBlock.parseMcGeneric(oSelf, sName, asParams);
+
+    @staticmethod
+    def parseMcArg(oSelf, sName, asParams):
+        """ IEM_MC_ARG """
+        oSelf.checkStmtParamCount(sName, asParams, 3);
+        return McStmtArg(sName, asParams, asParams[0], asParams[1], int(asParams[2]));
+
+    @staticmethod
+    def parseMcArgConst(oSelf, sName, asParams):
+        """ IEM_MC_ARG_CONST """
+        oSelf.checkStmtParamCount(sName, asParams, 4);
+        return McStmtArg(sName, asParams, asParams[0], asParams[1], int(asParams[3]), sConstValue = asParams[2]);
+
+    @staticmethod
+    def parseMcArgLocalRef(oSelf, sName, asParams):
+        """ IEM_MC_ARG_LOCAL_REF """
+        oSelf.checkStmtParamCount(sName, asParams, 4);
+        return McStmtArg(sName, asParams, asParams[0], asParams[1], int(asParams[3]), sRef = asParams[2], sRefType = 'local');
+
+    @staticmethod
+    def parseMcArgLocalEFlags(oSelf, sName, asParams):
+        """ IEM_MC_ARG_LOCAL_EFLAGS """
+        oSelf.checkStmtParamCount(sName, asParams, 3);
+        # Note! We split this one up into IEM_MC_LOCAL_VAR and IEM_MC_ARG_LOCAL_REF.
+        return (
+            McStmtVar('IEM_MC_LOCAL_VAR', ['uint32_t', asParams[1],], 'uint32_t', asParams[1]),
+            McStmtArg('IEM_MC_ARG_LOCAL_REF', ['uint32_t *', asParams[0], asParams[2], asParams[1]],
+                      'uint32_t *', asParams[0], int(asParams[2]), sRef = asParams[1], sRefType = 'local'),
+        );
+
+    @staticmethod
+    def parseMcLocal(oSelf, sName, asParams):
+        """ IEM_MC_LOCAL """
+        oSelf.checkStmtParamCount(sName, asParams, 2);
+        return McStmtVar(sName, asParams, asParams[0], asParams[1]);
+
+    @staticmethod
+    def parseMcLocalConst(oSelf, sName, asParams):
+        """ IEM_MC_LOCAL_CONST """
+        oSelf.checkStmtParamCount(sName, asParams, 3);
+        return McStmtVar(sName, asParams, asParams[0], asParams[1], sConstValue = asParams[2]);
 
     @staticmethod
     def stripComments(sCode):
@@ -1957,7 +2076,13 @@ class McBlock(object):
         """ Returns true of sSubStr is found at off in sStr. """
         return sStr[off : off + len(sSubStr)] == sSubStr;
 
-    def decodeCode(self, sRawCode, off = 0, offStop = -1, iLevel = 0):
+    koReCppCtrlStmts   = re.compile(r'\b(if\s*[(]|else\b|while\s*[(]|for\s*[(]|do\b)');
+    koReIemDecoderVars = re.compile(  r'iem\.s\.(fPrefixes|uRexReg|uRexB|uRexIndex|iEffSeg|offModRm|cbOpcode|offOpcode'
+                                    + r'|enmEffOpSize|enmDefOpSize|enmDefAddrMode|enmEffAddrMode|idxPrefix'
+                                    + r'|uVex3rdReg|uVexLength|fEvxStuff|uFpuOpcode|abOpcode'
+                                    + r')');
+
+    def decodeCode(self, sRawCode, off = 0, offStop = -1, iLevel = 0): # pylint: disable=too-many-statements,too-many-branches
         """
         Decodes sRawCode[off : offStop].
 
@@ -2032,7 +2157,10 @@ class McBlock(object):
                 if not fnParser:
                     self.raiseDecodeError(sRawCode, off, 'Unknown MC statement: %s' % (sName,));
                 oStmt = fnParser(self, sName, asParams);
-                aoStmts.append(oStmt);
+                if not isinstance(oStmt, (list, tuple)):
+                    aoStmts.append(oStmt);
+                else:
+                    aoStmts.extend(oStmt);
 
                 #
                 # If conditional, we need to parse the whole statement.
@@ -2106,11 +2234,86 @@ class McBlock(object):
             # Otherwise it must be a C/C++ statement of sorts.
             #
             else:
-                offEnd = sRawCode.find(';', off);
-                if offEnd < 0:
-                    self.raiseDecodeError(sRawCode, off, 'C++ statement without a ";"');
-                aoStmts.append(McCppGeneric(sRawCode[off : offEnd + 1]));
-                off = offEnd + 1;
+                # Find the end of the statement.  if and else requires special handling.
+                sCondExpr = None;
+                oMatch = self.koReCppCtrlStmts.match(sRawCode, off);
+                if oMatch:
+                    if oMatch.group(1)[-1] == '(':
+                        (sCondExpr, offEnd) = self.extractParam(sRawCode, oMatch.end());
+                    else:
+                        offEnd = oMatch.end();
+                    if not oMatch.group(1).startswith('if') and oMatch.group(1) != 'else':
+                        self.raiseDecodeError(sRawCode, off, 'Only if/else control statements allowed: %s' % (oMatch.group(1),));
+                elif ch == '#':
+                    offEnd = sRawCode.find('\n', off, offStop);
+                    if offEnd < 0:
+                        offEnd = offStop;
+                    offEnd -= 1;
+                    while offEnd > off and sRawCode[offEnd - 1].isspace():
+                        offEnd -= 1;
+                else:
+                    offEnd = sRawCode.find(';', off);
+                    if offEnd < 0:
+                        self.raiseDecodeError(sRawCode, off, 'C++ statement without a ";"');
+
+                # Check this and the following statement whether it might have
+                # something to do with decoding.  This is a statement filter
+                # criteria when generating the threaded functions blocks.
+                offNextEnd = sRawCode.find(';', offEnd + 1);
+                fDecode    = (   sRawCode.find('IEM_OPCODE_', off, max(offEnd, offNextEnd)) >= 0
+                              or sRawCode.find('IEMOP_HLP_DONE_', off, max(offEnd, offNextEnd)) >= 0);
+
+                if not oMatch:
+                    if ch != '#':
+                        aoStmts.append(McCppGeneric(sRawCode[off : offEnd + 1], fDecode));
+                    else:
+                        aoStmts.append(McCppPreProc(sRawCode[off : offEnd + 1]));
+                    off = offEnd + 1;
+                elif oMatch.group(1).startswith('if'):
+                    #
+                    # if () xxx [else yyy] statement.
+                    #
+                    oStmt = McCppCond(sCondExpr, fDecode);
+                    aoStmts.append(oStmt);
+                    off = offEnd + 1;
+
+                    # Following the if () we can either have a {} containing zero or more statements
+                    # or we have a single statement.
+                    offBlock1 = self.skipSpacesAt(sRawCode, offEnd + 1, offStop);
+                    if sRawCode[offBlock1] == '{':
+                        offBlock1End = self.findClosingBraces(sRawCode, offBlock1, offStop);
+                        if offBlock1End < 0:
+                            self.raiseDecodeError(sRawCode, offBlock1, 'No matching "}" closing if block');
+                        offBlock1 += 1;
+                    else:
+                        offBlock1End = sRawCode.find(';', offBlock1, offStop);
+                        if offBlock1End < 0:
+                            self.raiseDecodeError(sRawCode, off, 'Expected ";" terminating one-line if block"');
+
+                    oStmt.aoIfBranch = self.decodeCode(sRawCode, offBlock1, offBlock1End, iLevel + 1);
+
+                    # The else is optional and can likewise be followed by {} or a single statement.
+                    off = self.skipSpacesAt(sRawCode, offBlock1End + 1, offStop);
+                    if self.isSubstrAt(sRawCode, off, 'else') and sRawCode[off + len('else')].isspace():
+                        offBlock2 = self.skipSpacesAt(sRawCode, off + len('else'), offStop);
+                        if sRawCode[offBlock2] == '{':
+                            offBlock2End = self.findClosingBraces(sRawCode, offBlock2, offStop);
+                            if offBlock2End < 0:
+                                self.raiseDecodeError(sRawCode, offBlock2, 'No matching "}" closing else block');
+                            offBlock2 += 1;
+                        else:
+                            offBlock2End = sRawCode.find(';', offBlock2, offStop);
+                            if offBlock2End < 0:
+                                self.raiseDecodeError(sRawCode, off, 'Expected ";" terminating one-line else block"');
+
+                        oStmt.aoElseBranch = self.decodeCode(sRawCode, offBlock2, offBlock2End, iLevel + 1);
+                        off = offBlock2End + 1;
+
+                elif oMatch.group(1) == 'else':
+                    # Problematic 'else' branch, typically involving #ifdefs.
+                    self.raiseDecodeError(sRawCode, off, 'Mixed up else/#ifdef or something confusing us.');
+
+
         return aoStmts;
 
 
@@ -2159,10 +2362,10 @@ g_dMcStmtParsers = {
     'IEM_MC_AND_LOCAL_U32':                                      McBlock.parseMcGeneric,
     'IEM_MC_AND_LOCAL_U64':                                      McBlock.parseMcGeneric,
     'IEM_MC_AND_LOCAL_U8':                                       McBlock.parseMcGeneric,
-    'IEM_MC_ARG':                                                McBlock.parseMcGeneric,
-    'IEM_MC_ARG_CONST':                                          McBlock.parseMcGeneric,
-    'IEM_MC_ARG_LOCAL_EFLAGS':                                   McBlock.parseMcGeneric,
-    'IEM_MC_ARG_LOCAL_REF':                                      McBlock.parseMcGeneric,
+    'IEM_MC_ARG':                                                McBlock.parseMcArg,
+    'IEM_MC_ARG_CONST':                                          McBlock.parseMcArgConst,
+    'IEM_MC_ARG_LOCAL_EFLAGS':                                   McBlock.parseMcArgLocalEFlags,
+    'IEM_MC_ARG_LOCAL_REF':                                      McBlock.parseMcArgLocalRef,
     'IEM_MC_ASSIGN':                                             McBlock.parseMcGeneric,
     'IEM_MC_ASSIGN_TO_SMALLER':                                  McBlock.parseMcGeneric,
     'IEM_MC_BEGIN':                                              McBlock.parseMcGeneric,
@@ -2334,8 +2537,8 @@ g_dMcStmtParsers = {
     'IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST':             McBlock.parseMcGenericCond,
     'IEM_MC_IMPLICIT_AVX_AIMPL_ARGS':                            McBlock.parseMcGeneric,
     'IEM_MC_INT_CLEAR_ZMM_256_UP':                               McBlock.parseMcGeneric,
-    'IEM_MC_LOCAL':                                              McBlock.parseMcGeneric,
-    'IEM_MC_LOCAL_CONST':                                        McBlock.parseMcGeneric,
+    'IEM_MC_LOCAL':                                              McBlock.parseMcLocal,
+    'IEM_MC_LOCAL_CONST':                                        McBlock.parseMcLocalConst,
     'IEM_MC_MAYBE_RAISE_AESNI_RELATED_XCPT':                     McBlock.parseMcGeneric,
     'IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT':                       McBlock.parseMcGeneric,
     'IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT':                      McBlock.parseMcGeneric,
@@ -4217,12 +4420,13 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         return self.workerIemOpMnemonicEx(sMacro, sLower + '_' + '_'.join(asOperands), sLower + ' ' + ','.join(asOperands),
                                           sForm, sUpper, sLower, sDisHints, sIemHints, asOperands);
 
-    def workerIemMcBegin(self, sCode, offBeginStatementInLine):
+    def workerIemMcBegin(self, sCode, offBeginStatementInCodeStr, offBeginStatementInLine):
         """
         Process a IEM_MC_BEGIN macro invocation.
         """
         if self.fDebugMc:
             self.debug('IEM_MC_BEGIN on %s off %s' % (self.iLine, offBeginStatementInLine,));
+            #self.debug('%s<eos>' % (sCode,));
 
         # Check preconditions.
         if not self.sCurFunction:
@@ -4230,8 +4434,16 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         if self.oCurMcBlock:
             self.raiseError('IEM_MC_BEGIN before IEM_MC_END.  Previous IEM_MC_BEGIN at line %u' % (self.oCurMcBlock.iBeginLine,));
 
+        # Figure out the indent level the block starts at, adjusting for expanded multiline macros.
+        cchIndent = offBeginStatementInCodeStr;
+        offPrevNewline = sCode.rfind('\n', 0, offBeginStatementInCodeStr);
+        if offPrevNewline >= 0:
+            cchIndent -= offPrevNewline + 1;
+        #self.debug('cchIndent=%s offPrevNewline=%s sFunc=%s' % (cchIndent, offPrevNewline, self.sCurFunction));
+
         # Start a new block.
-        self.oCurMcBlock = McBlock(self.sSrcFile, self.iLine, offBeginStatementInLine, self.sCurFunction, self.iMcBlockInFunc);
+        self.oCurMcBlock = McBlock(self.sSrcFile, self.iLine, offBeginStatementInLine,
+                                   self.sCurFunction, self.iMcBlockInFunc, cchIndent);
         g_aoMcBlocks.append(self.oCurMcBlock);
         self.cTotalMcBlocks += 1;
         self.iMcBlockInFunc += 1;
@@ -4283,6 +4495,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         """
         Checks code for relevant macro invocation.
         """
+
         #
         # Scan macro invocations.
         #
@@ -4338,7 +4551,6 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
                                 self.errorOnLine(oInstr.iLineMnemonicMacro,
                                                  'Missing IEMOPHINT_VEX_L_ZERO! (%s on line %d)' % (sMacro, self.iLine,));
                             oInstr.dHints['vex_l_zero'] = True;
-                return True;
 
             #
             # IEMOP_MNEMONIC*
@@ -4415,7 +4627,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
                     if oMatch.group(1) == 'END':
                         self.workerIemMcEnd(offLine + oMatch.start());
                     else:
-                        self.workerIemMcBegin(sCode, offLine + oMatch.start());
+                        self.workerIemMcBegin(sCode, oMatch.start(), offLine + oMatch.start());
                 return True;
 
         return False;
@@ -4488,7 +4700,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         #
         if self.fDebugPreProc:
             self.debug('#define %s on line %u' % (sName, self.iLine,));
-        self.dMacros[sName] = SimpleParser.Macro(sName, asArgs, sBody, iLineStart);
+        self.dMacros[sName] = SimpleParser.Macro(sName, asArgs, sBody.strip(), iLineStart);
         return self.workerPreProcessRecreateMacroRegex();
 
     def workerPreProcessUndef(self, sRest):
