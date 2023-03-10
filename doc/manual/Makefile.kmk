@@ -860,7 +860,7 @@ man_vboximg-mount.xml \
 		$(call MSG_L1,Building html chunks $@)
 		$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
 		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap \
-			/transtype:xhtml /ditadir:$(VBOX_DITA_PATH) /outdir:$(@D) /tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp
+			/transtype:xhtml /ditadir:$(VBOX_DITA_PATH) /outdir:$(@D) /tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml
 
  # disable for now
  #html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html
@@ -973,7 +973,7 @@ man_vboximg-mount.xml \
   		dita_common
 		$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
 		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
-			/transtype:pdf /ditadir:$(VBOX_DITA_PATH) /outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1) /tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp
+			/transtype:pdf /ditadir:$(VBOX_DITA_PATH) /outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1) /tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf
 
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_ditamap_to_pdf,$(lang)))
@@ -1085,7 +1085,7 @@ ifdef VBOX_WITH_DOCS_QHELP
   		dita_common
 		$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
 		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
-			/transtype:htmlhelp /ditadir:$(VBOX_DITA_PATH) /outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp /tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp
+			/transtype:htmlhelp /ditadir:$(VBOX_DITA_PATH) /outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp /tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_htmlhelp
 
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_ditamap_to_htmlhelp,$(lang)))
