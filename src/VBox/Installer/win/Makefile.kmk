@@ -1269,8 +1269,7 @@ else
 
  ifndef VBOX_OSE
   RePackScripts_SOURCES += \
-  	$(RePackScripts_0_OUTDIR)/Single-0-All.cmd \
-  	Scripts/sign-attestation.sh
+  	$(RePackScripts_0_OUTDIR)/Single-0-All.cmd
  endif
 
 endif

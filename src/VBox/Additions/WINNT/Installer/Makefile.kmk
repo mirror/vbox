@@ -395,11 +395,9 @@ if defined(VBOX_GA_ATTESTATION_SIGNING) && defined(VBOX_SIGNING_MODE) && defined
  # This automagically attestation signs the GA drivers.
  #
  $(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME): \
- 		$(PATH_OUT)/repackadd/sign-attestation.sh \
  		$(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME)
 	$(RM_EXT) -f $(PATH_OUT)/repackadd/*.zip
-	cd $(PATH_OUT)/repackadd && $(SHELL) $(PATH_OUT)/repackadd/sign-attestation.sh $(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME)
-	$(MV_EXT) $(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME).*.zip $(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME)
+	cd $(PATH_OUT)/repackadd && $(VBOX_RETRY) $(VBOX_GA_ATTESTATION_SIGNING_EXE) "Oracle VM VirtualBox GA drivers $(KBUILD_TARGET_ARCH) $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)r$(VBOX_SVN_REV)" "$(KBUILD_TARGET_ARCH)" "r$(VBOX_SVN_REV)" "$(VBOX_DRIVERS_PACK_NAME)"
 
  #
  # This creates a .CAB file of the driver files that should be attestation signed.
@@ -436,8 +434,7 @@ RePackScriptsAdd_CLEAN = \
 ifndef VBOX_OSE
  RePackScriptsAdd_SOURCES += \
  	$(RePackScriptsAdd_0_OUTDIR)/Combined-0-Additions.cmd \
- 	$(RePackScriptsAdd_0_OUTDIR)/Combined-2-SignAdditions.cmd \
- 	../../../Installer/win/Scripts/sign-attestation.sh
+ 	$(RePackScriptsAdd_0_OUTDIR)/Combined-2-SignAdditions.cmd
 endif
 
 $(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScriptsAdd,../../../Installer/win/Scripts/PackDriversForSubmission.cmd,PackDriversForSubmission.cmd)
