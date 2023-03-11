@@ -1155,7 +1155,12 @@ setup_operand0_indexing(struct svga_shader_emitter_v10 *emit,
  */
 static void
 emit_indirect_register(struct svga_shader_emitter_v10 *emit,
+#ifndef VBOX_WITH_MESA3D_NINE_SVGA
                        unsigned addr_reg_index)
+#else
+                       unsigned addr_reg_index,
+                       unsigned addr_reg_select)
+#endif
 {
    unsigned tmp_reg_index;
    VGPU10OperandToken0 operand0;
@@ -1171,10 +1176,14 @@ emit_indirect_register(struct svga_shader_emitter_v10 *emit,
    operand0.indexDimension = VGPU10_OPERAND_INDEX_1D;
    operand0.index0Representation = VGPU10_OPERAND_INDEX_IMMEDIATE32;
    operand0.selectionMode = VGPU10_OPERAND_4_COMPONENT_SELECT_1_MODE;
+#ifndef VBOX_WITH_MESA3D_NINE_SVGA
    operand0.swizzleX = 0;
    operand0.swizzleY = 1;
    operand0.swizzleZ = 2;
    operand0.swizzleW = 3;
+#else
+   operand0.selectMask = addr_reg_select;
+#endif
 
    emit_dword(emit, operand0.value);
    emit_dword(emit, remap_temp_index(emit, TGSI_FILE_TEMPORARY, tmp_reg_index));
@@ -1435,7 +1444,11 @@ emit_dst_register(struct svga_shader_emitter_v10 *emit,
    emit_dword(emit, remap_temp_index(emit, file, index));
 
    if (indirect) {
+#ifndef VBOX_WITH_MESA3D_NINE_SVGA
       emit_indirect_register(emit, reg->Indirect.Index);
+#else
+      emit_indirect_register(emit, reg->Indirect.Index, reg->Indirect.Swizzle);
+#endif
    }
 }
 
@@ -1827,14 +1840,22 @@ emit_src_register(struct svga_shader_emitter_v10 *emit,
          emit_dword(emit, index2);
 
          if (indirect2d) {
+#ifndef VBOX_WITH_MESA3D_NINE_SVGA
             emit_indirect_register(emit, reg->DimIndirect.Index);
+#else
+            emit_indirect_register(emit, reg->DimIndirect.Index, reg->DimIndirect.Swizzle);
+#endif
          }
       }
 
       emit_dword(emit, remap_temp_index(emit, file, index));
 
       if (indirect) {
+#ifndef VBOX_WITH_MESA3D_NINE_SVGA
          emit_indirect_register(emit, reg->Indirect.Index);
+#else
+         emit_indirect_register(emit, reg->Indirect.Index, reg->Indirect.Swizzle);
+#endif
       }
    }
 }
@@ -6402,6 +6423,39 @@ emit_arl_uarl(struct svga_shader_emitter_v10 *emit,
 }
 
 
+#ifdef VBOX_WITH_MESA3D_NINE_SVGA
+/**
+ * Emit code for TGSI_OPCODE_ARR instruction.
+ */
+static boolean
+emit_arr(struct svga_shader_emitter_v10 *emit,
+         const struct tgsi_full_instruction *inst)
+{
+   unsigned index = inst->Dst[0].Register.Index;
+   struct tgsi_full_src_register half = make_immediate_reg_float(emit, 0.5f);
+   struct tgsi_full_dst_register address_reg_dst;
+   struct tgsi_full_src_register address_reg_src;
+   VGPU10_OPCODE_TYPE opcode;
+
+   assert(index < MAX_VGPU10_ADDR_REGS);
+   address_reg_dst = make_dst_temp_reg(emit->address_reg_index[index]);
+   address_reg_dst = writemask_dst(&address_reg_dst, inst->Dst[0].Register.WriteMask);
+
+   address_reg_src = make_src_temp_reg(emit->address_reg_index[index]);
+
+   /* ARR dst, s0
+    * Translates into:
+    * ADD address_tmp, s0, 0.5f
+    * FTOI address_tmp, address_tmp
+    */
+
+   emit_instruction_op2(emit, VGPU10_OPCODE_ADD, &address_reg_dst, &inst->Src[0], &half);
+   emit_instruction_op1(emit, VGPU10_OPCODE_FTOI, &address_reg_dst, &address_reg_src);
+
+   return TRUE;
+}
+#endif
+
 /**
  * Emit code for TGSI_OPCODE_CAL instruction.
  */
@@ -9379,6 +9433,10 @@ emit_vgpu10_instruction(struct svga_shader_emitter_v10 *emit,
       FALLTHROUGH;
    case TGSI_OPCODE_UARL:
       return emit_arl_uarl(emit, inst);
+#ifdef VBOX_WITH_MESA3D_NINE_SVGA
+   case TGSI_OPCODE_ARR:
+      return emit_arr(emit, inst);
+#endif
    case TGSI_OPCODE_BGNSUB:
       /* no-op */
       return TRUE;
