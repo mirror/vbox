@@ -1747,7 +1747,6 @@ class McStmt(object):
     """
     Statement in a microcode block.
     """
-
     def __init__(self, sName, asParams):
         self.sName    = sName;     ##< 'IEM_MC_XXX' or 'C++'.
         self.asParams = asParams;
@@ -1771,8 +1770,9 @@ class McStmt(object):
         return self.sName.startswith('C++');
 
 class McStmtCond(McStmt):
-    """ Base class for conditional statements (IEM_MC_IF_XXX). """
-
+    """
+    Base class for conditional statements (IEM_MC_IF_XXX).
+    """
     def __init__(self, sName, asParams):
         McStmt.__init__(self, sName, asParams);
         self.aoIfBranch     = [];
@@ -1804,11 +1804,20 @@ class McStmtArg(McStmtVar):
         self.sRefType   = sRefType;   ##< The kind of reference: 'local', 'none'.
         assert sRefType in ('none', 'local');
 
+
+class McStmtCall(McStmt):
+    """ IEM_MC_CALL_* """
+    def __init__(self, sName, asParams, iFnParam, iRcNameParam = -1):
+        McStmt.__init__(self, sName, asParams);
+        self.idxFn       = iFnParam;
+        self.idxParams   = iFnParam + 1;
+        self.sFn         = asParams[iFnParam];
+        self.iRcName     = None if iRcNameParam < 0 else asParams[iRcNameParam];
+
 class McCppGeneric(McStmt):
     """
     Generic C++/C statement.
     """
-
     def __init__(self, sCode, fDecode, sName = 'C++'):
         McStmt.__init__(self, sName, [sCode,]);
         self.fDecode = fDecode;
@@ -1846,7 +1855,6 @@ class McCppPreProc(McCppGeneric):
     """
     C++/C Preprocessor directive.
     """
-
     def __init__(self, sCode):
         McCppGeneric.__init__(self, sCode, False, sName = 'C++/preproc');
 
@@ -1957,6 +1965,55 @@ class McBlock(object):
         """ IEM_MC_LOCAL_CONST """
         oSelf.checkStmtParamCount(sName, asParams, 3);
         return McStmtVar(sName, asParams, asParams[0], asParams[1], sConstValue = asParams[2]);
+
+    @staticmethod
+    def parseMcCallAImpl(oSelf, sName, asParams):
+        """ IEM_MC_CALL_AIMPL_3|4 """
+        cArgs = int(sName[-1]);
+        oSelf.checkStmtParamCount(sName, asParams, 2 + cArgs);
+        return McStmtCall(sName, asParams, 1, 0);
+
+    @staticmethod
+    def parseMcCallVoidAImpl(oSelf, sName, asParams):
+        """ IEM_MC_CALL_VOID_AIMPL_2|3 """
+        cArgs = int(sName[-1]);
+        oSelf.checkStmtParamCount(sName, asParams, 1 + cArgs);
+        return McStmtCall(sName, asParams, 0);
+
+    @staticmethod
+    def parseMcCallAvxAImpl(oSelf, sName, asParams):
+        """ IEM_MC_CALL_AVX_AIMPL_2|3 """
+        cArgs = int(sName[-1]);
+        oSelf.checkStmtParamCount(sName, asParams, 1 + cArgs);
+        return McStmtCall(sName, asParams, 0);
+
+    @staticmethod
+    def parseMcCallFpuAImpl(oSelf, sName, asParams):
+        """ IEM_MC_CALL_FPU_AIMPL_1|2|3 """
+        cArgs = int(sName[-1]);
+        oSelf.checkStmtParamCount(sName, asParams, 1 + cArgs);
+        return McStmtCall(sName, asParams, 0);
+
+    @staticmethod
+    def parseMcCallMmxAImpl(oSelf, sName, asParams):
+        """ IEM_MC_CALL_MMX_AIMPL_2|3 """
+        cArgs = int(sName[-1]);
+        oSelf.checkStmtParamCount(sName, asParams, 1 + cArgs);
+        return McStmtCall(sName, asParams, 0);
+
+    @staticmethod
+    def parseMcCallSseAImpl(oSelf, sName, asParams):
+        """ IEM_MC_CALL_SSE_AIMPL_2|3 """
+        cArgs = int(sName[-1]);
+        oSelf.checkStmtParamCount(sName, asParams, 1 + cArgs);
+        return McStmtCall(sName, asParams, 0);
+
+    @staticmethod
+    def parseMcCallCImpl(oSelf, sName, asParams):
+        """ IEM_MC_CALL_CIMPL_0|1|2|3|4|5 """
+        cArgs = int(sName[-1]);
+        oSelf.checkStmtParamCount(sName, asParams, 1 + cArgs);
+        return McStmtCall(sName, asParams, 0);
 
     @staticmethod
     def stripComments(sCode):
@@ -2261,7 +2318,10 @@ class McBlock(object):
                 # criteria when generating the threaded functions blocks.
                 offNextEnd = sRawCode.find(';', offEnd + 1);
                 fDecode    = (   sRawCode.find('IEM_OPCODE_', off, max(offEnd, offNextEnd)) >= 0
-                              or sRawCode.find('IEMOP_HLP_DONE_', off, max(offEnd, offNextEnd)) >= 0);
+                              or sRawCode.find('IEMOP_HLP_DONE_', off, max(offEnd, offNextEnd)) >= 0
+                              or sRawCode.find('IEMOP_HLP_DECODED_', off, offEnd) >= 0
+                              or sRawCode.find('IEMOP_HLP_RAISE_UD_IF_MISSING_GUEST_FEATURE', off, offEnd) >= 0
+                           );
 
                 if not oMatch:
                     if ch != '#':
@@ -2373,28 +2433,28 @@ g_dMcStmtParsers = {
     'IEM_MC_BSWAP_LOCAL_U32':                                    McBlock.parseMcGeneric,
     'IEM_MC_BSWAP_LOCAL_U64':                                    McBlock.parseMcGeneric,
     'IEM_MC_CALC_RM_EFF_ADDR':                                   McBlock.parseMcGeneric,
-    'IEM_MC_CALL_AIMPL_3':                                       McBlock.parseMcGeneric,
-    'IEM_MC_CALL_AIMPL_4':                                       McBlock.parseMcGeneric,
-    'IEM_MC_CALL_AVX_AIMPL_2':                                   McBlock.parseMcGeneric,
-    'IEM_MC_CALL_AVX_AIMPL_3':                                   McBlock.parseMcGeneric,
-    'IEM_MC_CALL_CIMPL_0':                                       McBlock.parseMcGeneric,
-    'IEM_MC_CALL_CIMPL_1':                                       McBlock.parseMcGeneric,
-    'IEM_MC_CALL_CIMPL_2':                                       McBlock.parseMcGeneric,
-    'IEM_MC_CALL_CIMPL_3':                                       McBlock.parseMcGeneric,
-    'IEM_MC_CALL_CIMPL_4':                                       McBlock.parseMcGeneric,
-    'IEM_MC_CALL_CIMPL_5':                                       McBlock.parseMcGeneric,
-    'IEM_MC_CALL_FPU_AIMPL_1':                                   McBlock.parseMcGeneric,
-    'IEM_MC_CALL_FPU_AIMPL_2':                                   McBlock.parseMcGeneric,
-    'IEM_MC_CALL_FPU_AIMPL_3':                                   McBlock.parseMcGeneric,
-    'IEM_MC_CALL_MMX_AIMPL_2':                                   McBlock.parseMcGeneric,
-    'IEM_MC_CALL_MMX_AIMPL_3':                                   McBlock.parseMcGeneric,
-    'IEM_MC_CALL_SSE_AIMPL_2':                                   McBlock.parseMcGeneric,
-    'IEM_MC_CALL_SSE_AIMPL_3':                                   McBlock.parseMcGeneric,
-    'IEM_MC_CALL_VOID_AIMPL_0':                                  McBlock.parseMcGeneric,
-    'IEM_MC_CALL_VOID_AIMPL_1':                                  McBlock.parseMcGeneric,
-    'IEM_MC_CALL_VOID_AIMPL_2':                                  McBlock.parseMcGeneric,
-    'IEM_MC_CALL_VOID_AIMPL_3':                                  McBlock.parseMcGeneric,
-    'IEM_MC_CALL_VOID_AIMPL_4':                                  McBlock.parseMcGeneric,
+    'IEM_MC_CALL_AIMPL_3':                                       McBlock.parseMcCallAImpl,
+    'IEM_MC_CALL_AIMPL_4':                                       McBlock.parseMcCallAImpl,
+    'IEM_MC_CALL_AVX_AIMPL_2':                                   McBlock.parseMcCallAvxAImpl,
+    'IEM_MC_CALL_AVX_AIMPL_3':                                   McBlock.parseMcCallAvxAImpl,
+    'IEM_MC_CALL_CIMPL_0':                                       McBlock.parseMcCallCImpl,
+    'IEM_MC_CALL_CIMPL_1':                                       McBlock.parseMcCallCImpl,
+    'IEM_MC_CALL_CIMPL_2':                                       McBlock.parseMcCallCImpl,
+    'IEM_MC_CALL_CIMPL_3':                                       McBlock.parseMcCallCImpl,
+    'IEM_MC_CALL_CIMPL_4':                                       McBlock.parseMcCallCImpl,
+    'IEM_MC_CALL_CIMPL_5':                                       McBlock.parseMcCallCImpl,
+    'IEM_MC_CALL_FPU_AIMPL_1':                                   McBlock.parseMcCallFpuAImpl,
+    'IEM_MC_CALL_FPU_AIMPL_2':                                   McBlock.parseMcCallFpuAImpl,
+    'IEM_MC_CALL_FPU_AIMPL_3':                                   McBlock.parseMcCallFpuAImpl,
+    'IEM_MC_CALL_MMX_AIMPL_2':                                   McBlock.parseMcCallMmxAImpl,
+    'IEM_MC_CALL_MMX_AIMPL_3':                                   McBlock.parseMcCallMmxAImpl,
+    'IEM_MC_CALL_SSE_AIMPL_2':                                   McBlock.parseMcCallSseAImpl,
+    'IEM_MC_CALL_SSE_AIMPL_3':                                   McBlock.parseMcCallSseAImpl,
+    'IEM_MC_CALL_VOID_AIMPL_0':                                  McBlock.parseMcCallVoidAImpl,
+    'IEM_MC_CALL_VOID_AIMPL_1':                                  McBlock.parseMcCallVoidAImpl,
+    'IEM_MC_CALL_VOID_AIMPL_2':                                  McBlock.parseMcCallVoidAImpl,
+    'IEM_MC_CALL_VOID_AIMPL_3':                                  McBlock.parseMcCallVoidAImpl,
+    'IEM_MC_CALL_VOID_AIMPL_4':                                  McBlock.parseMcCallVoidAImpl,
     'IEM_MC_CLEAR_EFL_BIT':                                      McBlock.parseMcGeneric,
     'IEM_MC_CLEAR_FSW_EX':                                       McBlock.parseMcGeneric,
     'IEM_MC_CLEAR_HIGH_GREG_U64':                                McBlock.parseMcGeneric,

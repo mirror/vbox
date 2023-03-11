@@ -590,6 +590,18 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
             return IEMOP_RAISE_INVALID_OPCODE(); \
     } while (0)
 
+/**
+ * Check for a CPUMFEATURES member to be true, raise \#UD if clear.
+ */
+#define IEMOP_HLP_RAISE_UD_IF_MISSING_GUEST_FEATURE(pVCpu, a_fFeature) \
+    do \
+    { \
+        if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->a_fFeature) \
+        { /* likely */ } \
+        else \
+            return IEMOP_RAISE_INVALID_OPCODE(); \
+    } while (0)
+
 VBOXSTRICTRC    iemOpHlpCalcRmEffAddr(PVMCPUCC pVCpu, uint8_t bRm, uint8_t cbImm, PRTGCPTR pGCPtrEff) RT_NOEXCEPT;
 VBOXSTRICTRC    iemOpHlpCalcRmEffAddrEx(PVMCPUCC pVCpu, uint8_t bRm, uint8_t cbImm, PRTGCPTR pGCPtrEff, int8_t offRsp) RT_NOEXCEPT;
 #ifdef IEM_WITH_SETJMP

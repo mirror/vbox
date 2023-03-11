@@ -47,6 +47,64 @@ if sys.version_info[0] >= 3:
     long = int;     # pylint: disable=redefined-builtin,invalid-name
 
 
+g_kdTypeInfo = {
+    # type name:    (cBits, fSigned,)
+    'int8_t':       (    8,    True, ),
+    'int16_t':      (   16,    True, ),
+    'int32_t':      (   32,    True, ),
+    'int64_t':      (   64,    True, ),
+    'uint8_t':      (    8,   False, ),
+    'uint16_t':     (   16,   False, ),
+    'uint32_t':     (   32,   False, ),
+    'uint64_t':     (   64,   False, ),
+    'uintptr_t':    (   64,   False, ), # ASSUMES 64-bit host pointer size.
+    'bool':         (    1,   False, ),
+    'IEMMODE':      (    8,   False, ),
+};
+
+g_kdIemFieldToType = {
+    # Illegal ones:
+    'offInstrNextByte':     ( None, ),
+    'cbInstrBuf':           ( None, ),
+    'pbInstrBuf':           ( None, ),
+    'uInstrBufPc':          ( None, ),
+    'cbInstrBufTotal':      ( None, ),
+    'offCurInstrStart':     ( None, ),
+    'cbOpcode':             ( None, ),
+    'offOpcode':            ( None, ),
+    'offModRm':             ( None, ),
+    # Okay ones.
+    'fPrefixes':            ( 'uint32_t', ),
+    'uRexReg':              ( 'uint8_t', ),
+    'uRexB':                ( 'uint8_t', ),
+    'uRexIndex':            ( 'uint8_t', ),
+    'iEffSeg':              ( 'uint8_t', ),
+    'enmEffOpSize':         ( 'IEMMODE', ),
+    'enmDefAddrMode':       ( 'IEMMODE', ),
+    'enmEffAddrMode':       ( 'IEMMODE', ),
+    'enmDefOpSize':         ( 'IEMMODE', ),
+    'idxPrefix':            ( 'uint8_t', ),
+    'uVex3rdReg':           ( 'uint8_t', ),
+    'uVexLength':           ( 'uint8_t', ),
+    'fEvexStuff':           ( 'uint8_t', ),
+    'uFpuOpcode':           ( 'uint16_t', ),
+};
+
+class ThreadedParamRef(object):
+    """
+    A parameter reference for a threaded function.
+    """
+
+    def __init__(self, sOrgRef, sType, oStmt, iParam, offParam = 0):
+        self.sUseExpr = '';                         ##< The expression for getting the parameter in the threaded function.
+        self.sOrgRef  = sOrgRef;                    ##< The name / reference in the original code.
+        self.sStdRef  = ''.join(sOrgRef.split());   ##< Normalized name to deal with spaces in macro invocations and such.
+        self.sType    = sType;                      ##< The type (typically derived).
+        self.oStmt    = oStmt;                      ##< The statement making the reference.
+        self.iParam   = iParam;                     ##< The parameter containing the references.
+        self.offParam = offParam;                   ##< The offset in the parameter of the reference.
+
+
 class ThreadedFunction(object):
     """
     A threaded function.
@@ -55,14 +113,20 @@ class ThreadedFunction(object):
     def __init__(self, oMcBlock):
         self.oMcBlock               = oMcBlock  # type: IEMAllInstructionsPython.McBlock
         ## Dictionary of local variables (IEM_MC_LOCAL[_CONST]) and call arguments (IEM_MC_ARG*).
-        self.dVariables = {}           # type: dict(str,McStmtVar)
-        ###
-        #self.aoParams    = []          # type:
+        self.dVariables  = {}           # type: dict(str,McStmtVar)
+        ##
+        self.aoParamRefs = []           # type: list(ThreadedParamRef)
+        self.dParamRefs  = {}           # type: dict(str,list(ThreadedParamRef))
+        self.cMinParams  = 0;           ##< Minimum number of parameters to the threaded function.
 
     @staticmethod
     def dummyInstance():
         """ Gets a dummy instance. """
         return ThreadedFunction(iai.McBlock('null', 999999999, 999999999, 'nil', 999999999));
+
+    def raiseProblem(self, sMessage):
+        """ Raises a problem. """
+        raise Exception('%s:%s: error: %s' % (self.oMcBlock.sSrcFile, self.oMcBlock.iBeginLine, sMessage, ));
 
     def getIndexName(self):
         sName = self.oMcBlock.sFunction;
@@ -71,6 +135,233 @@ class ThreadedFunction(object):
         if self.oMcBlock.iInFunction == 0:
             return 'kIemThreadedFunc_%s' % ( sName, );
         return 'kIemThreadedFunc_%s_%s' % ( sName, self.oMcBlock.iInFunction, );
+
+    def analyzeReferenceToType(self, sRef):
+        """
+        Translates a variable or structure reference to a type.
+        Returns type name.
+        Raises exception if unable to figure it out.
+        """
+        ch0 = sRef[0];
+        if ch0 == 'u':
+            if sRef.startswith('u32'):
+                return 'uint32_t';
+            if sRef.startswith('u8') or sRef == 'uReg':
+                return 'uint8_t';
+            if sRef.startswith('u64'):
+                return 'uint64_t';
+            if sRef.startswith('u16'):
+                return 'uint16_t';
+        elif ch0 == 'b':
+            return 'uint8_t';
+        elif ch0 == 'f':
+            return 'bool';
+        elif ch0 == 'i':
+            if sRef.startswith('i8'):
+                return 'int8_t';
+            if sRef.startswith('i16'):
+                return 'int32_t';
+            if sRef.startswith('i32'):
+                return 'int32_t';
+            if sRef.startswith('i64'):
+                return 'int64_t';
+            if sRef in ('iReg', 'iSegReg', 'iSrcReg', 'iDstReg'):
+                return 'uint8_t';
+        elif ch0 == 'p':
+            if sRef.find('-') < 0:
+                return 'uintptr_t';
+            if sRef.startswith('pVCpu->iem.s.'):
+                sField = sRef[len('pVCpu->iem.s.') : ];
+                if sField in g_kdIemFieldToType:
+                    if g_kdIemFieldToType[sField][0]:
+                        return g_kdIemFieldToType[sField][0];
+                    self.raiseProblem('Reference out-of-bounds decoder field: %s' % (sRef,));
+        elif ch0 == 'G' and sRef.startswith('GCPtr'):
+            return 'uint64_t';
+        elif sRef == 'cShift': ## @todo risky
+            return 'uint8_t';
+        self.raiseProblem('Unknown reference: %s' % (sRef,));
+        return None; # Shut up pylint 2.16.2.
+
+    def analyzeConsolidateThreadedParamRefs(self):
+        """
+        Consolidate threaded function parameter references into a dictionary
+        with lists of the references to each variable/field.
+        """
+        # Gather unique parameters.
+        self.dParamRefs = {};
+        for oRef in self.aoParamRefs:
+            if oRef.sStdRef not in self.dParamRefs:
+                self.dParamRefs[oRef.sStdRef] = [oRef,];
+            else:
+                self.dParamRefs[oRef.sStdRef].append(oRef);
+
+        # Organize them by size too for the purpose of optimize them.
+        dBySize = {}        # type: dict(str,str)
+        for sStdRef, aoRefs in self.dParamRefs.items():
+            cBits = g_kdTypeInfo[aoRefs[0].sType][0];
+            assert(cBits <= 64);
+            if cBits not in dBySize:
+                dBySize[cBits] = [sStdRef,]
+            else:
+                dBySize[cBits].append(sStdRef);
+
+        # Pack the parameters as best as we can, starting with the largest ones
+        # and ASSUMING a 64-bit parameter size.
+        self.cMinParams = 0;
+        offParam        = 0;
+        for cBits in sorted(dBySize.keys(), reverse = True):
+            for sStdRef in dBySize[cBits]:
+                if offParam < 64:
+                    offParam        += cBits;
+                else:
+                    self.cMinParams += 1;
+                    offParam         = cBits;
+                assert(offParam <= 64);
+                _ = sStdRef;
+        if offParam > 0:
+            self.cMinParams += 1;
+
+        # Currently there are a few that requires 4 parameters, list these so we can figure out why:
+        if self.cMinParams >= 4:
+            print('debug: cMinParams=%s cRawParams=%s - %s:%d'
+                  % (self.cMinParams, len(self.dParamRefs), self.oMcBlock.sSrcFile, self.oMcBlock.iBeginLine,));
+
+        return True;
+
+    ksHexDigits = '0123456789abcdefABCDEF';
+
+    def analyzeFindThreadedParamRefs(self, aoStmts):
+        """
+        Scans the statements for things that have to passed on to the threaded
+        function (populates self.aoParamRefs).
+        """
+        for oStmt in aoStmts:
+            # Some statements we can skip alltogether.
+            if isinstance(oStmt, (iai.McStmtVar, iai.McCppPreProc)):
+                continue;
+            if not oStmt.asParams:
+                continue;
+            if oStmt.isCppStmt() and oStmt.fDecode:
+                continue;
+
+            # Inspect the target of calls to see if we need to pass down a
+            # function pointer or function table pointer for it to work.
+            aiSkipParams = {};
+            if isinstance(oStmt, iai.McStmtCall):
+                if oStmt.sFn[0] == 'p':
+                    self.aoParamRefs.append(ThreadedParamRef(oStmt.sFn, 'uintptr_t', oStmt, oStmt.idxFn));
+                elif (    oStmt.sFn[0] != 'i'
+                      and not oStmt.sFn.startswith('IEMTARGETCPU_EFL_BEHAVIOR_SELECT')
+                      and not oStmt.sFn.startswith('IEM_SELECT_HOST_OR_FALLBACK') ):
+                    self.raiseProblem('Bogus function name in %s: %s' % (oStmt.sName, oStmt.sFn,));
+                aiSkipParams[oStmt.idxFn] = True;
+
+            # Check all the parameters for bogus references.
+            for iParam, sParam in enumerate(oStmt.asParams):
+                if iParam not in aiSkipParams  and  sParam not in self.dVariables:
+                    # The parameter may contain a C expression, so we have to try
+                    # extract the relevant bits, i.e. variables and fields while
+                    # ignoring operators and parentheses.
+                    offParam = 0;
+                    while offParam < len(sParam):
+                        # Is it the start of an C identifier? If so, find the end, but don't stop on field separators (->, .).
+                        ch = sParam[offParam];
+                        if ch.isalpha() or ch == '_':
+                            offStart = offParam;
+                            offParam += 1;
+                            while offParam < len(sParam):
+                                ch = sParam[offParam];
+                                if not ch.isalnum() and ch != '_' and ch != '.':
+                                    if ch != '-' or sParam[offParam + 1] != '>':
+                                        # Special hack for the 'CTX_SUFF(pVM)' bit in pVCpu->CTX_SUFF(pVM)->xxxx:
+                                        if (    ch == '('
+                                            and sParam[offStart : offParam + len('(pVM)->')] == 'pVCpu->CTX_SUFF(pVM)->'):
+                                            offParam += len('(pVM)->') - 1;
+                                        else:
+                                            break;
+                                    offParam += 1;
+                                offParam += 1;
+                            sRef = sParam[offStart : offParam];
+
+                            # For register references, we pass the full register indexes instead as macros
+                            # like IEM_GET_MODRM_REG implicitly references pVCpu->iem.s.uRexReg and the
+                            # threaded function will be more efficient if we just pass the register index
+                            # as a 4-bit param.
+                            if (   sRef.startswith('IEM_GET_MODRM')
+                                or sRef.startswith('IEM_GET_EFFECTIVE_VVVV') ):
+                                offParam = iai.McBlock.skipSpacesAt(sParam, offParam, len(sParam));
+                                if sParam[offParam] != '(':
+                                    self.raiseProblem('Expected "(" following %s in "%s"' % (sRef, oStmt.renderCode(),));
+                                (asMacroParams, offCloseParam) = iai.McBlock.extractParams(sParam, offParam);
+                                if asMacroParams is None:
+                                    self.raiseProblem('Unable to find ")" for %s in "%s"' % (sRef, oStmt.renderCode(),));
+                                self.aoParamRefs.append(ThreadedParamRef(sRef, 'uint8_t', oStmt, iParam, offStart));
+                                offParam = offCloseParam + 1;
+
+                            # We can skip known variables.
+                            elif sRef in self.dVariables:
+                                pass;
+
+                            # Skip certain macro invocations.
+                            elif sRef in ('IEM_GET_HOST_CPU_FEATURES',
+                                          'IEM_GET_GUEST_CPU_FEATURES',
+                                          'IEM_IS_GUEST_CPU_AMD'):
+                                offParam = iai.McBlock.skipSpacesAt(sParam, offParam, len(sParam));
+                                if sParam[offParam] != '(':
+                                    self.raiseProblem('Expected "(" following %s in "%s"' % (sRef, oStmt.renderCode(),));
+                                (asMacroParams, offCloseParam) = iai.McBlock.extractParams(sParam, offParam);
+                                if asMacroParams is None:
+                                    self.raiseProblem('Unable to find ")" for %s in "%s"' % (sRef, oStmt.renderCode(),));
+                                offParam = offCloseParam + 1;
+                                while offParam < len(sParam) and (sParam[offParam].isalnum() or sParam[offParam] in '_.'):
+                                    offParam += 1;
+
+                            # Skip constants, globals, types (casts), sizeof and macros.
+                            elif (   sRef.startswith('IEM_OP_PRF_')
+                                  or sRef.startswith('IEM_ACCESS_')
+                                  or sRef.startswith('X86_GREG_')
+                                  or sRef.startswith('X86_SREG_')
+                                  or sRef.startswith('X86_EFL_')
+                                  or sRef.startswith('X86_FSW_')
+                                  or sRef.startswith('X86_FCW_')
+                                  or sRef.startswith('g_')
+                                  or sRef in ( 'int8_t',    'int16_t',    'int32_t',
+                                               'INT8_C',    'INT16_C',    'INT32_C',    'INT64_C',
+                                               'UINT8_C',   'UINT16_C',   'UINT32_C',   'UINT64_C',
+                                               'UINT8_MAX', 'UINT16_MAX', 'UINT32_MAX', 'UINT64_MAX',
+                                               'sizeof',    'NOREF',      'RT_NOREF',   'IEMMODE_64BIT' ) ):
+                                pass;
+
+                            # Skip certain macro invocations.
+                            # Any variable (non-field) and decoder fields in IEMCPU will need to be parameterized.
+                            elif (   (    '.' not in sRef
+                                      and '-' not in sRef
+                                      and sRef not in ('pVCpu', ) )
+                                  or iai.McBlock.koReIemDecoderVars.search(sRef) is not None):
+                                self.aoParamRefs.append(ThreadedParamRef(sRef, self.analyzeReferenceToType(sRef),
+                                                                         oStmt, iParam, offStart));
+                        # Number.
+                        elif ch.isdigit():
+                            if (    ch == '0'
+                                and offParam + 2 <= len(sParam)
+                                and sParam[offParam + 1] in 'xX'
+                                and sParam[offParam + 2] in self.ksHexDigits ):
+                                offParam += 2;
+                                while offParam < len(sParam) and sParam[offParam] in self.ksHexDigits:
+                                    offParam += 1;
+                            else:
+                                while offParam < len(sParam) and sParam[offParam].isdigit():
+                                    offParam += 1;
+                        # Whatever else.
+                        else:
+                            offParam += 1;
+
+            # Traverse the branches of conditionals.
+            if isinstance(oStmt, iai.McStmtCond):
+                self.analyzeFindThreadedParamRefs(oStmt.aoIfBranch);
+                self.analyzeFindThreadedParamRefs(oStmt.aoElseBranch);
+        return True;
 
     def analyzeFindVariablesAndCallArgs(self, aoStmts):
         """ Scans the statements for MC variables and call arguments. """
@@ -102,9 +393,13 @@ class ThreadedFunction(object):
         # Scan the statements for local variables and call arguments (self.dVariables).
         self.analyzeFindVariablesAndCallArgs(aoStmts);
 
+        # Now scan the code for variables and field references that needs to
+        # be passed to the threaded function because they are related to the
+        # instruction decoding.
+        self.analyzeFindThreadedParamRefs(aoStmts);
+        self.analyzeConsolidateThreadedParamRefs();
 
         return True;
-
 
     def generateInputCode(self):
         """
@@ -139,8 +434,17 @@ class IEMThreadedGenerator(object):
 
         # Wrap MC blocks into threaded functions and analyze these.
         self.aoThreadedFuncs = [ThreadedFunction(oMcBlock) for oMcBlock in iai.g_aoMcBlocks];
+        dRawParamCounts = {};
+        dMinParamCounts = {};
         for oThreadedFunction in self.aoThreadedFuncs:
             oThreadedFunction.analyze();
+            dRawParamCounts[len(oThreadedFunction.dParamRefs)] = dRawParamCounts.get(len(oThreadedFunction.dParamRefs), 0) + 1;
+            dMinParamCounts[oThreadedFunction.cMinParams]      = dMinParamCounts.get(oThreadedFunction.cMinParams,      0) + 1;
+        print('debug: param count distribution, raw and optimized:', file = sys.stderr);
+        for cCount in sorted(list(dRawParamCounts.keys()) + list(set(dMinParamCounts.keys()) - set(dRawParamCounts.keys()))):
+            print('debug:     %s params: %4s raw, %4s min'
+                  % (cCount, dRawParamCounts.get(cCount, 0), dMinParamCounts.get(cCount, 0)),
+                  file = sys.stderr);
 
         return True;
 

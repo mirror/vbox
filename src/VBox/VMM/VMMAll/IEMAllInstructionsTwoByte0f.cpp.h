@@ -11643,8 +11643,7 @@ FNIEMOP_DEF(iemOp_movnti_My_Gy)
 
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSse2)
-                    return IEMOP_RAISE_INVALID_OPCODE();
+                IEMOP_HLP_RAISE_UD_IF_MISSING_GUEST_FEATURE(pVCpu, fSse2);
 
                 IEM_MC_FETCH_GREG_U32(u32Value, IEM_GET_MODRM_REG(pVCpu, bRm));
                 IEM_MC_STORE_MEM_U32(pVCpu->iem.s.iEffSeg, GCPtrEffDst, u32Value);
@@ -11659,8 +11658,7 @@ FNIEMOP_DEF(iemOp_movnti_My_Gy)
 
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSse2)
-                    return IEMOP_RAISE_INVALID_OPCODE();
+                IEMOP_HLP_RAISE_UD_IF_MISSING_GUEST_FEATURE(pVCpu, fSse2);
 
                 IEM_MC_FETCH_GREG_U64(u64Value, IEM_GET_MODRM_REG(pVCpu, bRm));
                 IEM_MC_STORE_MEM_U64(pVCpu->iem.s.iEffSeg, GCPtrEffDst, u64Value);
