@@ -1754,6 +1754,7 @@ validationkit-fetch:
 	+ $(KMK) -C tools fetch VBOX_ONLY_VALIDATIONKIT=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=darwin  VBOX_ONLY_VALIDATIONKIT=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=darwin  VBOX_ONLY_VALIDATIONKIT=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=arm64 KBUILD_TARGET=darwin  VBOX_ONLY_VALIDATIONKIT=1
 #	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=freebsd VBOX_ONLY_VALIDATIONKIT=1
 #	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=freebsd VBOX_ONLY_VALIDATIONKIT=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=linux   VBOX_ONLY_VALIDATIONKIT=1
@@ -1776,7 +1777,8 @@ validationkit-build: \
 		validationkit-build-freebsd.amd64 \
 		validationkit-build-freebsd.x86 \
 		validationkit-build-darwin.amd64 \
-		validationkit-build-darwin.x86
+		validationkit-build-darwin.x86 \
+		validationkit-build-darwin.arm64
 
 validationkit-build-rsync-into-vms: \
 		validationkit-build-solaris.rsync-into-vm \
@@ -1792,6 +1794,9 @@ VBOX_VALIDATIONKIT_BUILD.amd64 = VBOX_ONLY_VALIDATIONKIT=1 \
 
 VBOX_VALIDATIONKIT_BUILD.x86 = VBOX_ONLY_VALIDATIONKIT=1 \
 	KBUILD_TYPE=$(KBUILD_TYPE) KBUILD_TARGET_ARCH=x86 VBOX_SVN_REV=$(VBOX_SVN_REV)
+
+VBOX_VALIDATIONKIT_BUILD.arm64 = VBOX_ONLY_VALIDATIONKIT=1 \
+	KBUILD_TYPE=$(KBUILD_TYPE) KBUILD_TARGET_ARCH=arm64 VBOX_SVN_REV=$(VBOX_SVN_REV)
 
 # Automatically determine the Validation Kit build subdir name. Used for figuring
 # out directory names inside the test suite building VMs.
@@ -1957,11 +1962,23 @@ else
 	$(call VBOX_BLD_VM_MSG_END__,Darwin/x86 Validation Kit)
 endif
 
+validationkit-build-darwin.arm64:   $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.arm64)
+	+ $(TIME) -- $(KMK) $(VBOX_VALIDATIONKIT_BUILD.arm64) all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
+else
+	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/arm64 Validation Kit)
+	$(TIME) -- $(call VBOX_RSYNC_IN_FN,darwin,arm64) . $(VBOX_BLD_VM_DARWIN_ARM64_IP):/Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
+	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_DARWIN_ARM64_IP) 'PATH=$$PATH:/opt/local/bin; cd /Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && KBUILD_HOST_ARCH=arm64 tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.arm64) all '
+	$(TIME) -- $(VBOX_RSYNC) -am -v --delete $(VBOX_BLD_VM_DARWIN_ARM64_IP):/Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/darwin.arm64 out/
+	$(call VBOX_BLD_VM_MSG_END__,Darwin/arm64 Validation Kit)
+endif
+
 
 validationkit-packing:
 	+ $(KMK) VBOX_ONLY_VALIDATIONKIT=1 \
 		VBOX_WITH_VALIDATIONKIT_PACKING.darwin.amd64=1 \
 		VBOX_WITH_VALIDATIONKIT_PACKING.darwin.x86=2 \
+		VBOX_WITH_VALIDATIONKIT_PACKING.darwin.arm64=1 \
 		VBOX_WITH_VALIDATIONKIT_PACKING.freebsd.amd64= \
 		VBOX_WITH_VALIDATIONKIT_PACKING.freebsd.x86= \
 		VBOX_WITH_VALIDATIONKIT_PACKING.linux.amd64=1 \
@@ -1988,6 +2005,7 @@ validationkit-packing:
 		validationkit-build-freebsd.x86 \
 		validationkit-build-darwin.amd64 \
 		validationkit-build-darwin.x86 \
+		validationkit-build-darwin.arm64 \
 		validationkit-packing
 
 
