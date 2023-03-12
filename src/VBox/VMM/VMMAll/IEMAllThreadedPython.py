@@ -59,7 +59,7 @@ g_kdTypeInfo = {
     'uint64_t':     (   64,   False, ),
     'uintptr_t':    (   64,   False, ), # ASSUMES 64-bit host pointer size.
     'bool':         (    1,   False, ),
-    'IEMMODE':      (    8,   False, ),
+    'IEMMODE':      (    2,   False, ),
 };
 
 g_kdIemFieldToType = {
@@ -441,7 +441,7 @@ class IEMThreadedGenerator(object):
             dRawParamCounts[len(oThreadedFunction.dParamRefs)] = dRawParamCounts.get(len(oThreadedFunction.dParamRefs), 0) + 1;
             dMinParamCounts[oThreadedFunction.cMinParams]      = dMinParamCounts.get(oThreadedFunction.cMinParams,      0) + 1;
         print('debug: param count distribution, raw and optimized:', file = sys.stderr);
-        for cCount in sorted(list(dRawParamCounts.keys()) + list(set(dMinParamCounts.keys()) - set(dRawParamCounts.keys()))):
+        for cCount in sorted({cBits: True for cBits in list(dRawParamCounts.keys()) + list(dMinParamCounts.keys())}.keys()):
             print('debug:     %s params: %4s raw, %4s min'
                   % (cCount, dRawParamCounts.get(cCount, 0), dMinParamCounts.get(cCount, 0)),
                   file = sys.stderr);

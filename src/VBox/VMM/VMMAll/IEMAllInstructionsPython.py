@@ -2834,7 +2834,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
             return sBody;
 
 
-    def __init__(self, sSrcFile, asLines, sDefaultMap):
+    def __init__(self, sSrcFile, asLines, sDefaultMap, oInheritMacrosFrom = None):
         self.sSrcFile       = sSrcFile;
         self.asLines        = asLines;
         self.iLine          = 0;
@@ -2847,6 +2847,9 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         self.oCurMcBlock    = None  # type: McBlock
         self.dMacros        = {}    # type: Dict[str,SimpleParser.Macro]
         self.oReMacros      = None  # type: re      ##< Regular expression matching invocations of anything in self.dMacros.
+        if oInheritMacrosFrom:
+            self.dMacros    = dict(oInheritMacrosFrom.dMacros);
+            self.oReMacros  = oInheritMacrosFrom.oReMacros;
 
         assert sDefaultMap in g_dInstructionMaps;
         self.oDefaultMap    = g_dInstructionMaps[sDefaultMap];
@@ -4828,6 +4831,8 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         offCurArg     = offCur;
         asArgs        = [];
         while True:
+            if offCur >= len(sLine):
+                self.raiseError('expandMacros: Invocation of macro %s spans multiple lines!' % (sName,));
             ch = sLine[offCur];
             if ch == '(':
                 cLevel += 1;
@@ -4947,10 +4952,12 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
         self.doneInstructions(fEndOfFunction = True);
         self.debug('%3s%% / %3s stubs out of %4s instructions and %4s MC blocks in %s'
-                   % (self.cTotalStubs * 100 // self.cTotalInstr, self.cTotalStubs, self.cTotalInstr, self.cTotalMcBlocks,
-                      os.path.basename(self.sSrcFile),));
+                   % (self.cTotalStubs * 100 // max(self.cTotalInstr, 1), self.cTotalStubs, self.cTotalInstr,
+                      self.cTotalMcBlocks, os.path.basename(self.sSrcFile),));
         return self.printErrors();
 
+## The parsed content of IEMAllInstructionsCommonBodyMacros.h.
+g_oParsedCommonBodyMacros = None # type: SimpleParser
 
 def __parseFileByName(sSrcFile, sDefaultMap):
     """
@@ -4971,10 +4978,44 @@ def __parseFileByName(sSrcFile, sDefaultMap):
         oFile.close();
 
     #
+    # On the first call, we parse IEMAllInstructionsCommonBodyMacros.h so we
+    # can use the macros from it when processing the other files.
+    #
+    global g_oParsedCommonBodyMacros;
+    if g_oParsedCommonBodyMacros is None:
+        # Locate the file.
+        sCommonBodyMacros = os.path.join(os.path.split(sSrcFile)[0], 'IEMAllInstructionsCommonBodyMacros.h');
+        if not os.path.isfile(sCommonBodyMacros):
+            sCommonBodyMacros = os.path.join(os.path.split(__file__)[0], 'IEMAllInstructionsCommonBodyMacros.h');
+
+        # Read it.
+        try:
+            with open(sCommonBodyMacros, "r") as oIncFile: # pylint: disable=unspecified-encoding
+                asIncFiles = oIncFile.readlines();
+        except Exception as oXcpt:
+            raise Exception("failed to open/read %s: %s" % (sCommonBodyMacros, oXcpt,));
+
+        # Parse it.
+        try:
+            oParser = SimpleParser(sCommonBodyMacros, asIncFiles, 'one');
+            if oParser.parse() != 0:
+                raise ParserException('%s: errors: See above' % (sCommonBodyMacros, ));
+            if oParser.cTotalInstr != 0 or oParser.cTotalStubs != 0 or oParser.cTotalTagged != 0 or oParser.cTotalMcBlocks != 0:
+                raise ParserException('%s: error: Unexpectedly found %u instr, %u tags, %u stubs and %u MCs, expecting zero. %s'
+                                      % (sCommonBodyMacros, oParser.cTotalInstr, oParser.cTotalStubs, oParser.cTotalTagged,
+                                         oParser.cTotalMcBlocks,
+                                         ', '.join(sorted(  [str(oMcBlock.iBeginLine) for oMcBlock in g_aoMcBlocks]
+                                                          + [str(oInstr.iLineCreated) for oInstr in g_aoAllInstructions])),));
+        except ParserException as oXcpt:
+            print(str(oXcpt), file = sys.stderr);
+            raise;
+        g_oParsedCommonBodyMacros = oParser;
+
+    #
     # Do the parsing.
     #
     try:
-        oParser = SimpleParser(sSrcFile, asLines, sDefaultMap);
+        oParser = SimpleParser(sSrcFile, asLines, sDefaultMap, g_oParsedCommonBodyMacros);
         return (oParser.parse(), oParser) ;
     except ParserException as oXcpt:
         print(str(oXcpt), file = sys.stderr);

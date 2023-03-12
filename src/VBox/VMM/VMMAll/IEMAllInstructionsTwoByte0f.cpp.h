@@ -9995,7 +9995,8 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev)
     IEMOP_MNEMONIC(imul_Gv_Ev, "imul Gv,Ev");
     IEMOP_HLP_MIN_386();
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
-    return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_imul_two_eflags));
+    const IEMOPBINSIZES * const pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_imul_two_eflags);
+    IEMOP_BODY_BINARY_rv_rm(pImpl->pfnNormalU16, pImpl->pfnNormalU32, pImpl->pfnNormalU64, 1);
 }
 
 
@@ -10547,7 +10548,8 @@ FNIEMOP_DEF(iemOp_popcnt_Gv_Ev)
     static const IEMOPBINSIZES s_Fallback =
     {   NULL, NULL, iemAImpl_popcnt_u16_fallback, NULL, iemAImpl_popcnt_u32_fallback, NULL, iemAImpl_popcnt_u64_fallback, NULL };
 #endif
-    return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm, IEM_SELECT_HOST_OR_FALLBACK(fPopCnt, &s_Native, &s_Fallback));
+    const IEMOPBINSIZES * const pImpl = IEM_SELECT_HOST_OR_FALLBACK(fPopCnt, &s_Native, &s_Fallback);
+    IEMOP_BODY_BINARY_rv_rm(pImpl->pfnNormalU16, pImpl->pfnNormalU32, pImpl->pfnNormalU64, 1);
 }
 
 
@@ -10922,8 +10924,9 @@ FNIEMOP_DEF(iemOp_tzcnt_Gv_Ev)
     };
 #endif
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF);
-    return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm,
-                          IEMTARGETCPU_EFL_BEHAVIOR_SELECT_EX(s_iemAImpl_tzcnt_eflags, IEM_GET_HOST_CPU_FEATURES(pVCpu)->fBmi1));
+    const IEMOPBINSIZES * const pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT_EX(s_iemAImpl_tzcnt_eflags,
+                                                                            IEM_GET_HOST_CPU_FEATURES(pVCpu)->fBmi1);
+    IEMOP_BODY_BINARY_rv_rm(pImpl->pfnNormalU16, pImpl->pfnNormalU32, pImpl->pfnNormalU64, 1);
 }
 
 
@@ -10958,8 +10961,9 @@ FNIEMOP_DEF(iemOp_lzcnt_Gv_Ev)
     };
 #endif
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF);
-    return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm,
-                          IEMTARGETCPU_EFL_BEHAVIOR_SELECT_EX(s_iemAImpl_lzcnt_eflags, IEM_GET_HOST_CPU_FEATURES(pVCpu)->fBmi1));
+    const IEMOPBINSIZES * const pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT_EX(s_iemAImpl_lzcnt_eflags,
+                                                                            IEM_GET_HOST_CPU_FEATURES(pVCpu)->fBmi1);
+    IEMOP_BODY_BINARY_rv_rm(pImpl->pfnNormalU16, pImpl->pfnNormalU32, pImpl->pfnNormalU64, 1);
 }
 
 

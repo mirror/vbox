@@ -84,6 +84,7 @@
 /*
  * Include common bits.
  */
+#include "IEMAllInstructionsCommonBodyMacros.h"
 #include "IEMAllInstructionsCommon.cpp.h"
 
 
