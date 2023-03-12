@@ -2537,6 +2537,9 @@ FNIEMAIMPLMXCSRF2XMMIMM8 iemAImpl_roundsd_u128;
 FNIEMAIMPLMXCSRF2XMMIMM8 iemAImpl_roundps_u128, iemAImpl_roundps_u128_fallback;
 FNIEMAIMPLMXCSRF2XMMIMM8 iemAImpl_roundpd_u128, iemAImpl_roundpd_u128_fallback;
 
+FNIEMAIMPLMXCSRF2XMMIMM8 iemAImpl_dpps_u128, iemAImpl_dpps_u128_fallback;
+FNIEMAIMPLMXCSRF2XMMIMM8 iemAImpl_dppd_u128, iemAImpl_dppd_u128_fallback;
+
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMXCSRU64U128,(uint32_t *pfMxcsr, uint64_t *pu64Dst, PCX86XMMREG pSrc));
 typedef FNIEMAIMPLMXCSRU64U128 *PFNIEMAIMPLMXCSRU64U128;
 

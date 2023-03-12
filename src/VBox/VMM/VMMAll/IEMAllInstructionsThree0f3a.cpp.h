@@ -1029,9 +1029,21 @@ FNIEMOP_DEF(iemOp_pinsrd_q_Vdq_Ey_Ib)
 
 
 /** Opcode 0x66 0x0f 0x40. */
-FNIEMOP_STUB(iemOp_dpps_Vx_Wx_Ib);
+FNIEMOP_DEF(iemOp_dpps_Vx_Wx_Ib)
+{
+    IEMOP_MNEMONIC3(RMI, DPPS, dpps, Vx, Wx, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse41Fp_FullFullImm8_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSse41, iemAImpl_dpps_u128, iemAImpl_dpps_u128_fallback));
+}
+
+
 /** Opcode 0x66 0x0f 0x41, */
-FNIEMOP_STUB(iemOp_dppd_Vdq_Wdq_Ib);
+FNIEMOP_DEF(iemOp_dppd_Vdq_Wdq_Ib)
+{
+    IEMOP_MNEMONIC3(RMI, DPPD, dppd, Vx, Wx, Ib, DISOPTYPE_HARMLESS | DISOPTYPE_SSE, 0);
+    return FNIEMOP_CALL_1(iemOpCommonSse41Fp_FullFullImm8_To_Full,
+                          IEM_SELECT_HOST_OR_FALLBACK(fSse41, iemAImpl_dppd_u128, iemAImpl_dppd_u128_fallback));
+}
 
 
 /** Opcode 0x66 0x0f 0x42. */
