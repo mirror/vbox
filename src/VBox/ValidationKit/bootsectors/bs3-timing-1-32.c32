@@ -41,7 +41,11 @@
 #ifndef STANDALONE_EXECUTABLE
 # include <bs3kit.h>
 #endif
-#include <iprt/asm-amd64-x86.h>
+#if defined(RT_ARcH_ARM) || defined(RT_ARCH_ARM64)
+# include <iprt/asm-arm.h>
+#else
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/asm-math.h>
 #include <iprt/asm.h>
 #include <iprt/uint128.h>

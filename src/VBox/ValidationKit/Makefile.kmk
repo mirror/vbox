@@ -50,7 +50,7 @@ VBOX_VALIDATIONKIT_INSTALLS := $(INSTALLS)
 #
 include $(PATH_SUB_CURRENT)/tests/Makefile.kmk
 ifneq ($(KBUILD_HOST),os2)            # needs yasm
- if1of ($(KBUILD_TARGET_ARCH), amd64 x86) # needs yasm
+ if1of ($(KBUILD_TARGET_ARCH), amd64 x86 arm64) # needs yasm
   include $(PATH_SUB_CURRENT)/bootsectors/Makefile.kmk
  endif
 endif
@@ -206,7 +206,7 @@ define def_vbox_validationkit_common_files
    VBOX_VALIDATIONKIT_FILESPEC += \
    	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/loadgeneratorR0.r0
   endif
-  ifn1of ($(os).$(arch), os2.x86 os2.amd64 darwin.arm64) ## not compiling bootsectors, no yasm.  could fix this better.
+  ifn1of ($(os), os2) ## not compiling bootsectors, no yasm.  could fix this better.
    VBOX_VALIDATIONKIT_FILESPEC += \
    	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/bs3-timing-1$(TMP_SUFF_EXE)
   endif
