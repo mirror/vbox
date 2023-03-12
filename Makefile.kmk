@@ -1962,7 +1962,7 @@ else
 	$(call VBOX_BLD_VM_MSG_END__,Darwin/x86 Validation Kit)
 endif
 
-validationkit-build-darwin.arm64:   $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
+validationkit-build-darwin.arm64: $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.arm64)
 	+ $(TIME) -- $(KMK) $(VBOX_VALIDATIONKIT_BUILD.arm64) all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
 else
