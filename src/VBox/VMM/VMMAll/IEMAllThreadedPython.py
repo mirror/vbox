@@ -223,7 +223,7 @@ class ThreadedFunction(object):
             self.cMinParams += 1;
 
         # Currently there are a few that requires 4 parameters, list these so we can figure out why:
-        if self.cMinParams >= 4:
+        if self.cMinParams >= 3:
             print('debug: cMinParams=%s cRawParams=%s - %s:%d'
                   % (self.cMinParams, len(self.dParamRefs), self.oMcBlock.sSrcFile, self.oMcBlock.iBeginLine,));
 
