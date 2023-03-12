@@ -148,7 +148,7 @@ get_host_arch() {
         hppa64|parisc64)
             RETVAL='hppa64'
             ;;
-        arm|arm64|armv4l|armv5tel|armv5tejl)
+        arm|armv4l|armv5tel|armv5tejl)
             RETVAL='arm'
             ;;
         arm64|aarch64)
