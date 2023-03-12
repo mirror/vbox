@@ -40,6 +40,7 @@
 /VMMAll/PGMAllBth.h: --no-fix-header-guards
 /VMMAll/PGMAllGst.h: --no-fix-header-guards
 /VMMAll/PGMAllShw.h: --no-fix-header-guards
+/VMMAll/IEMAllInstructionsCommonBodyMacros.h: --no-fix-header-guards
 /testcase/tstVMStruct.h: --no-fix-header-guards
 /testcase/tstIEMAImplData.h: --no-fix-header-guards
 
