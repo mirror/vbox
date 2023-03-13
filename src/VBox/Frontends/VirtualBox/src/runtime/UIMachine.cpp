@@ -277,20 +277,20 @@ void UIMachine::updateStateAudioActions()
     /* Make sure Audio adapter is present: */
     bool fAdapterPresent = false;
     acquireWhetherAudioAdapterPresent(fAdapterPresent);
-    AssertMsgReturnVoid(fAdapterPresent,
-                        ("Audio adapter can't be null!\n"));
-
-    /* Check/Uncheck Audio adapter output/input actions depending on features status: */
-    bool fAudioOutputEnabled = false;
-    bool fAudioInputEnabled = false;
-    acquireWhetherAudioAdapterOutputEnabled(fAudioOutputEnabled);
-    acquireWhetherAudioAdapterInputEnabled(fAudioInputEnabled);
-    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->blockSignals(true);
-    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->setChecked(fAudioOutputEnabled);
-    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->blockSignals(false);
-    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->blockSignals(true);
-    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->setChecked(fAudioInputEnabled);
-    actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->blockSignals(false);
+    if (fAdapterPresent)
+    {
+        /* Check/Uncheck Audio adapter output/input actions depending on features status: */
+        bool fAudioOutputEnabled = false;
+        bool fAudioInputEnabled = false;
+        acquireWhetherAudioAdapterOutputEnabled(fAudioOutputEnabled);
+        acquireWhetherAudioAdapterInputEnabled(fAudioInputEnabled);
+        actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->blockSignals(true);
+        actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->setChecked(fAudioOutputEnabled);
+        actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output)->blockSignals(false);
+        actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->blockSignals(true);
+        actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->setChecked(fAudioInputEnabled);
+        actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input)->blockSignals(false);
+    }
 }
 
 void UIMachine::updateStateRecordingAction()
