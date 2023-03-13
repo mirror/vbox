@@ -93,8 +93,12 @@ UIDnDHandler::UIDnDHandler(UIMachine *pMachine, QWidget *pParent)
     AssertPtr(m_pMachine);
     if (m_pMachine)
     {
-        m_dndSource = static_cast<CDnDSource>(m_pMachine->uisession()->guest().GetDnDSource());
-        m_dndTarget = static_cast<CDnDTarget>(m_pMachine->uisession()->guest().GetDnDTarget());
+        CGuest comGuest = m_pMachine->uisession()->guest();
+        if (comGuest.isNotNull())
+        {
+            m_dndSource = static_cast<CDnDSource>(comGuest.GetDnDSource());
+            m_dndTarget = static_cast<CDnDTarget>(comGuest.GetDnDTarget());
+        }
    }
 }
 
