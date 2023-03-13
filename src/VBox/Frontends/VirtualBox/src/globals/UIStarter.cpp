@@ -100,7 +100,7 @@ void UIStarter::sltStartUI()
     }
 
     /* Try to start virtual machine, quit if failed: */
-    if (!UIMachine::startMachine(uiCommon().managedVMUuid()))
+    if (!UIMachine::startMachine())
         return QApplication::quit();
 
 #endif /* VBOX_RUNTIME_UI */

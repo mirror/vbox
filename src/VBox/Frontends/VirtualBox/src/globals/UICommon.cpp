@@ -1333,10 +1333,16 @@ bool UICommon::launchMachine(CMachine &comMachine, UILaunchMode enmLaunchMode /*
     return true;
 }
 
-CSession UICommon::openSession(const QUuid &uId, KLockType lockType /* = KLockType_Shared */)
+CSession UICommon::openSession(QUuid uId, KLockType enmLockType /* = KLockType_Write */)
 {
     /* Prepare session: */
     CSession comSession;
+
+    /* Make sure uId isn't null: */
+    if (uId.isNull())
+        uId = managedVMUuid();
+    if (uId.isNull())
+        return comSession;
 
     /* Simulate try-catch block: */
     bool fSuccess = false;
@@ -1358,11 +1364,11 @@ CSession UICommon::openSession(const QUuid &uId, KLockType lockType /* = KLockTy
             break;
         }
 
-        if (lockType == KLockType_VM)
+        if (enmLockType == KLockType_VM)
             comSession.SetName("GUI/Qt");
 
         /* Lock found machine to session: */
-        comMachine.LockMachine(comSession, lockType);
+        comMachine.LockMachine(comSession, enmLockType);
         if (!comMachine.isOk())
         {
             msgCenter().cannotOpenSession(comMachine);
@@ -1390,6 +1396,12 @@ CSession UICommon::openSession(const QUuid &uId, KLockType lockType /* = KLockTy
 
     /* Return session: */
     return comSession;
+}
+
+CSession UICommon::openSession(KLockType enmLockType /* = KLockType_Write */)
+{
+    /* Pass to function above: */
+    return openSession(managedVMUuid(), enmLockType);
 }
 
 CSession UICommon::tryToOpenSessionFor(CMachine &comMachine)

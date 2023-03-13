@@ -335,7 +335,9 @@ public:
         static bool launchMachine(CMachine &comMachine, UILaunchMode enmLaunchMode = UILaunchMode_Default);
 
         /** Opens session of certain @a enmLockType for VM with certain @a uId. */
-        CSession openSession(const QUuid &uId, KLockType enmLockType = KLockType_Write);
+        CSession openSession(QUuid uId, KLockType enmLockType = KLockType_Write);
+        /** Opens session of certain @a enmLockType for currently chosen VM. */
+        CSession openSession(KLockType enmLockType = KLockType_Write);
         /** Opens session of KLockType_Shared type for VM with certain @a uId. */
         CSession openExistingSession(const QUuid &uId) { return openSession(uId, KLockType_Shared); }
         /** Tries to guess if new @a comSession needs to be opened for certain @a comMachine,

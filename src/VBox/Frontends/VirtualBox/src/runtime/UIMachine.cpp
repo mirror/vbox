@@ -112,7 +112,7 @@ void cgDisplayReconfigurationCallback(CGDirectDisplayID display, CGDisplayChange
 UIMachine *UIMachine::s_pInstance = 0;
 
 /* static */
-bool UIMachine::startMachine(const QUuid &uID)
+bool UIMachine::startMachine()
 {
     /* Make sure machine is not created: */
     AssertReturn(!s_pInstance, false);
@@ -121,27 +121,27 @@ bool UIMachine::startMachine(const QUuid &uID)
     if (uiCommon().shouldRestoreCurrentSnapshot())
     {
         /* Create temporary session: */
-        CSession session = uiCommon().openSession(uID, KLockType_VM);
-        if (session.isNull())
+        CSession comSession = uiCommon().openSession(KLockType_VM);
+        if (comSession.isNull())
             return false;
 
         /* Which VM we operate on? */
-        CMachine machine = session.GetMachine();
+        CMachine comMachine = comSession.GetMachine();
         /* Which snapshot we are restoring? */
-        CSnapshot snapshot = machine.GetCurrentSnapshot();
+        CSnapshot comSnapshot = comMachine.GetCurrentSnapshot();
 
         /* Prepare restore-snapshot progress: */
-        CProgress progress = machine.RestoreSnapshot(snapshot);
-        if (!machine.isOk())
-            return msgCenter().cannotRestoreSnapshot(machine, snapshot.GetName(), machine.GetName());
+        CProgress comProgress = comMachine.RestoreSnapshot(comSnapshot);
+        if (!comMachine.isOk())
+            return msgCenter().cannotRestoreSnapshot(comMachine, comSnapshot.GetName(), comMachine.GetName());
 
         /* Show the snapshot-discarding progress: */
-        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_discard_90px.png");
-        if (progress.GetResultCode() != 0)
-            return msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName(), machine.GetName());
+        msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_snapshot_discard_90px.png");
+        if (comProgress.GetResultCode() != 0)
+            return msgCenter().cannotRestoreSnapshot(comProgress, comSnapshot.GetName(), comMachine.GetName());
 
         /* Unlock session finally: */
-        session.UnlockMachine();
+        comSession.UnlockMachine();
 
         /* Clear snapshot-restoring request: */
         uiCommon().setShouldRestoreCurrentSnapshot(false);
