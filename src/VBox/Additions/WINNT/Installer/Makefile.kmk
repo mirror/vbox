@@ -383,7 +383,7 @@ ifdef VBOX_SIGNING_MODE
  $(PATH_TARGET)/uninst.exe: $(PATH_TARGET)/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH)-uninst.exe | $$(dir $$@)
 	$(call MSG_L1,Creating $@, from $<)
 	$(QUIET)$(RM) -f $@
-	- $<
+	-$(REDIRECT) -E __COMPAT_LAYER=RUNASINVOKER -- $<
 	$(TEST) -f $@
 	$(call VBOX_SIGN_FILE_FN,$@)
 
