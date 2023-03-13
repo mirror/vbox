@@ -187,7 +187,7 @@ def getHostArch():
                 sArch = sArch.strip();
                 if sArch != 'amd64':
                     sArch = 'x86';
-        elif sArch in ('arm64', 'ARM64', 'aarch64')
+        elif sArch in ('arm64', 'ARM64', 'aarch64'):
             sArch = 'arm64';
         else:
             raise Exception('Unsupported architecture/machine "%s"' % (sArch,));
