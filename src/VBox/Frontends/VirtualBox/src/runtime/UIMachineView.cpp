@@ -1188,6 +1188,10 @@ void UIMachineView::prepareViewport()
 
 void UIMachineView::prepareFrameBuffer()
 {
+    /* Make sure frame-buffer exists: */
+    if (!frameBuffer())
+        return;
+
     /* If frame-buffer NOT yet initialized: */
     if (!frameBuffer()->isInitialized())
     {
@@ -1397,32 +1401,39 @@ UIActionPool* UIMachineView::actionPool() const
 
 QSize UIMachineView::sizeHint() const
 {
-    /* Temporarily restrict the size to prevent a brief resize to the
-     * frame-buffer dimensions when we exit full-screen.  This is only
-     * applied if the frame-buffer is at full-screen dimensions and
-     * until the first machine view resize. */
+    /* Make sure frame-buffer exists: */
+    QSize size;
+    if (!frameBuffer())
+        size = QSize(640, 480);
+    else
+    {
+        // WORKAROUND:
+        // Temporarily restrict the size to prevent a brief resize to the frame-buffer dimensions when
+        // we exit full-screen.  This is only applied if the frame-buffer is at full-screen dimensions
+        // and until the first machine view resize.
+        /* Get the frame-buffer dimensions: */
+        QSize frameBufferSize(frameBuffer()->width(), frameBuffer()->height());
+        /* Take the scale-factor(s) into account: */
+        frameBufferSize = scaledForward(frameBufferSize);
+        /* Check against the last full-screen size: */
+        if (frameBufferSize == uimachine()->lastFullScreenSize(screenId()) && m_sizeHintOverride.isValid())
+            return m_sizeHintOverride;
 
-    /* Get the frame-buffer dimensions: */
-    QSize frameBufferSize(frameBuffer()->width(), frameBuffer()->height());
-    /* Take the scale-factor(s) into account: */
-    frameBufferSize = scaledForward(frameBufferSize);
-    /* Check against the last full-screen size. */
-    if (frameBufferSize == uimachine()->lastFullScreenSize(screenId()) && m_sizeHintOverride.isValid())
-        return m_sizeHintOverride;
-
-    /* Get frame-buffer size-hint: */
-    QSize size(frameBuffer()->width(), frameBuffer()->height());
-
-    /* Take the scale-factor(s) into account: */
-    size = scaledForward(size);
+        /* Get frame-buffer size-hint: */
+        size = QSize(frameBuffer()->width(), frameBuffer()->height());
+        /* Take the scale-factor(s) into account: */
+        size = scaledForward(size);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    /// @todo Fix all DEBUGGER stuff!
-    /* HACK ALERT! Really ugly workaround for the resizing to 9x1 done by DevVGA if provoked before power on. */
-    if (size.width() < 16 || size.height() < 16)
-        if (uiCommon().shouldStartPaused() || uiCommon().isDebuggerAutoShowEnabled())
-            size = QSize(640, 480);
-#endif /* !VBOX_WITH_DEBUGGER_GUI */
+        /// @todo Fix all DEBUGGER stuff!
+        // WORKAROUND:
+        // Really ugly workaround for the resizing to 9x1
+        // done by DevVGA if provoked before power on.
+        if (size.width() < 16 || size.height() < 16)
+            if (uiCommon().shouldStartPaused() || uiCommon().isDebuggerAutoShowEnabled())
+                size = QSize(640, 480);
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+    }
 
     /* Return the resulting size-hint: */
     return QSize(size.width() + frameWidth() * 2, size.height() + frameWidth() * 2);
@@ -1636,6 +1647,10 @@ void UIMachineView::updateScaledPausePixmap()
 
 void UIMachineView::updateSliders()
 {
+    /* Make sure framebuffer still present: */
+    if (!frameBuffer())
+        return;
+
     /* Get current viewport size: */
     QSize curViewportSize = viewport()->size();
     /* Get maximum viewport size: */
