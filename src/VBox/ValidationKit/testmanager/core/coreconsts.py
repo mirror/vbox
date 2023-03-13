@@ -71,15 +71,15 @@ g_ksOsDotArchAgnostic = 'os-agnostic.noarch';
 # We do some of them by hand to avoid offering too many choices.
 g_kasOsDotCpus = \
 [
-    'darwin.amd64', 'darwin.x86', 'darwin.ppc32', 'darwin.ppc64', 'darwin.arm',
+    'darwin.amd64', 'darwin.x86', 'darwin.ppc32', 'darwin.ppc64', 'darwin.arm', 'darwin.arm64',
     'dos.x86',
     'dragonfly.amd64', 'dragonfly.x86',
-    'freebsd.amd64', 'freebsd.x86', 'freebsd.sparc64', 'freebsd.ia64', 'freebsd.ppc32', 'freebsd.ppc64', 'freebsd.arm',
-    'freebsd.mips32', 'freebsd.mips64',
+    'freebsd.amd64', 'freebsd.x86', 'freebsd.sparc64', 'freebsd.ia64', 'freebsd.ppc32', 'freebsd.ppc64',
+    'freebsd.arm', 'freebsd.arm64', 'freebsd.mips32', 'freebsd.mips64',
     'haiku.amd64', 'haiku.x86',
     'l4.amd64', 'l4.x86', 'l4.ppc32', 'l4.ppc64', 'l4.arm',
-    'nt.amd64',  'nt.x86',  'nt.arm',  'nt.ia64',  'nt.mips32',  'nt.ppc32',  'nt.alpha',
-    'win.amd64', 'win.x86', 'win.arm', 'win.ia64', 'win.mips32', 'win.ppc32', 'win.alpha',
+    'nt.amd64',  'nt.x86',  'nt.arm',  'nt.arm64',  'nt.ia64',  'nt.mips32',  'nt.ppc32',  'nt.alpha',
+    'win.amd64', 'win.x86', 'win.arm', 'win.arm64', 'win.ia64', 'win.mips32', 'win.ppc32', 'win.alpha',
     'os2.x86',
     'solaris.amd64', 'solaris.x86', 'solaris.sparc32', 'solaris.sparc64',
 ];
