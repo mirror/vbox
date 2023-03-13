@@ -287,15 +287,15 @@ public:
     /** @name Mouse stuff.
      ** @{ */
         /** Returns whether VM's mouse supports absolute coordinates. */
-        bool getAbsoluteSupported();
+        bool acquireWhetherAbsoluteSupported(bool &fSupported);
         /** Returns whether VM's mouse supports relative coordinates. */
-        bool getRelativeSupported();
+        bool acquireWhetherRelativeSupported(bool &fSupported);
         /** Returns whether VM's mouse supports touch screen device. */
-        bool getTouchScreenSupported();
+        bool acquireWhetherTouchScreenSupported(bool &fSupported);
         /** Returns whether VM's mouse supports touch pad device. */
-        bool getTouchPadSupported();
+        bool acquireWhetherTouchPadSupported(bool &fSupported);
         /** Returns whether VM's mouse requires host cursor. */
-        bool getNeedsHostCursor();
+        bool acquireWhetherNeedsHostCursor(bool &fNeeds);
 
         /** Sends relative mouse move event to VM's mouse. */
         bool putMouseEvent(long iDx, long iDy, long iDz, long iDw, long iButtonState);

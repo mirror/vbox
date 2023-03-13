@@ -843,6 +843,15 @@ void UINotificationMessage::cannotAcquireUpdateAgentParameter(const CUpdateAgent
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireMouseParameter(const CMouse &comMouse)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Mouse failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire mouse parameter.") +
+        UIErrorString::formatErrorInfo(comMouse));
+}
+
+/* static */
 void UINotificationMessage::cannotAcquireEmulatedUSBParameter(const CEmulatedUSB &comDispatcher)
 {
     createMessage(

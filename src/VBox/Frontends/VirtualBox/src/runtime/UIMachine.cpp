@@ -2179,11 +2179,11 @@ void UIMachine::updateMousePointerShape()
 
 void UIMachine::updateMouseState()
 {
-    m_fIsMouseSupportsAbsolute = uisession()->getAbsoluteSupported();
-    m_fIsMouseSupportsRelative = uisession()->getRelativeSupported();
-    m_fIsMouseSupportsTouchScreen = uisession()->getTouchScreenSupported();
-    m_fIsMouseSupportsTouchPad = uisession()->getTouchPadSupported();
-    m_fIsMouseHostCursorNeeded = uisession()->getNeedsHostCursor();
+    uisession()->acquireWhetherAbsoluteSupported(m_fIsMouseSupportsAbsolute);
+    uisession()->acquireWhetherRelativeSupported(m_fIsMouseSupportsRelative);
+    uisession()->acquireWhetherTouchScreenSupported(m_fIsMouseSupportsTouchScreen);
+    uisession()->acquireWhetherTouchPadSupported(m_fIsMouseSupportsTouchPad);
+    uisession()->acquireWhetherNeedsHostCursor(m_fIsMouseHostCursorNeeded);
 }
 
 #if defined(VBOX_WS_X11) || defined(VBOX_WS_MAC)
