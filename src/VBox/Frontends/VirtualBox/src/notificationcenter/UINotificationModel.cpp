@@ -144,7 +144,7 @@ void UINotificationModel::cleanup()
 {
     /* Wipe out all the objects: */
     foreach (const QUuid &uId, m_ids)
-        delete m_objects.value(uId);
+        revokeObject(uId);
     m_objects.clear();
     m_ids.clear();
 }

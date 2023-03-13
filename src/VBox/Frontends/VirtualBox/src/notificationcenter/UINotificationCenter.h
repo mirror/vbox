@@ -140,9 +140,6 @@ private slots:
       * @note Breaks blocking handleNow() call. */
     void sltHandleProgressFinished();
 
-    /** Handles request to detach COM. */
-    void sltDetachCOM();
-
 private:
 
     /** Prepares everything. */

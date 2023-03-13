@@ -395,8 +395,7 @@ void UINotificationCenter::sltHandleOrderChange()
     m_enmOrder = gEDataManager->notificationCenterOrder();
 
     /* Cleanup items first: */
-    qDeleteAll(m_items);
-    m_items.clear();
+    cleanup();
 
     /* Populate model contents again: */
     foreach (const QUuid &uId, m_pModel->ids())
@@ -513,11 +512,6 @@ void UINotificationCenter::sltHandleProgressFinished()
         m_pEventLoop->exit();
 }
 
-void UINotificationCenter::sltDetachCOM()
-{
-    cleanup();
-}
-
 void UINotificationCenter::prepare()
 {
     /* Hide initially: */
@@ -527,24 +521,22 @@ void UINotificationCenter::prepare()
     if (parent())
         parent()->installEventFilter(this);
 
-    /* Prepare alignment: */
-    m_enmAlignment = gEDataManager->notificationCenterAlignment();
-    connect(gEDataManager, &UIExtraDataManager::sigNotificationCenterAlignmentChange,
-            this, &UINotificationCenter::sltHandleAlignmentChange);
-    /* Prepare order: */
-    m_enmOrder = gEDataManager->notificationCenterOrder();
-    connect(gEDataManager, &UIExtraDataManager::sigNotificationCenterOrderChange,
-            this, &UINotificationCenter::sltHandleOrderChange);
-
     /* Prepare the rest of stuff: */
     prepareModel();
     prepareWidgets();
     prepareStateMachineSliding();
     prepareOpenTimer();
 
-    /* COM related connections: */
-    connect(&uiCommon(), &UICommon::sigAskToDetachCOM,
-            this, &UINotificationCenter::sltDetachCOM);
+    /* Prepare alignment: */
+    m_enmAlignment = gEDataManager->notificationCenterAlignment();
+    connect(gEDataManager, &UIExtraDataManager::sigNotificationCenterAlignmentChange,
+            this, &UINotificationCenter::sltHandleAlignmentChange);
+    sltHandleAlignmentChange();
+    /* Prepare order: */
+    m_enmOrder = gEDataManager->notificationCenterOrder();
+    connect(gEDataManager, &UIExtraDataManager::sigNotificationCenterOrderChange,
+            this, &UINotificationCenter::sltHandleOrderChange);
+    sltHandleOrderChange();
 
     /* Apply language settings: */
     retranslateUi();
