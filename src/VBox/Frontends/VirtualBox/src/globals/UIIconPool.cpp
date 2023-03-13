@@ -538,9 +538,12 @@ UIIconPoolGeneral::~UIIconPoolGeneral()
 
 QIcon UIIconPoolGeneral::userMachineIcon(const CMachine &comMachine) const
 {
+    /* Make sure machine is not NULL: */
+    AssertReturn(comMachine.isNotNull(), QIcon());
+
     /* Get machine ID: */
     const QUuid uMachineId = comMachine.GetId();
-    AssertReturn(comMachine.isOk(), QPixmap());
+    AssertReturn(comMachine.isOk(), QIcon());
 
     /* Prepare icon: */
     QIcon icon;
@@ -626,7 +629,7 @@ QPixmap UIIconPoolGeneral::userMachinePixmapDefault(const CMachine &comMachine, 
 QIcon UIIconPoolGeneral::guestOSTypeIcon(const QString &strOSTypeID) const
 {
     /* Prepare fallback icon: */
-    static QPixmap nullIcon;
+    static QPixmap nullIcon(":/os_other.png");
 
     /* If we do NOT have that 'guest OS type' icon cached already: */
     if (!m_guestOSTypeIcons.contains(strOSTypeID))
