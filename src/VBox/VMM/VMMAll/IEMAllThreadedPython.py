@@ -46,6 +46,8 @@ import IEMAllInstructionsPython as iai;
 if sys.version_info[0] >= 3:
     long = int;     # pylint: disable=redefined-builtin,invalid-name
 
+## Number of generic parameters for the thread functions.
+g_kcThreadedParams = 3;
 
 g_kdTypeInfo = {
     # type name:    (cBits, fSigned,)
@@ -96,7 +98,7 @@ class ThreadedParamRef(object):
     """
 
     def __init__(self, sOrgRef, sType, oStmt, iParam, offParam = 0):
-        self.sUseExpr = '';                         ##< The expression for getting the parameter in the threaded function.
+        self.sNewName = 'x';                        ##< The variable name in the threaded function.
         self.sOrgRef  = sOrgRef;                    ##< The name / reference in the original code.
         self.sStdRef  = ''.join(sOrgRef.split());   ##< Normalized name to deal with spaces in macro invocations and such.
         self.sType    = sType;                      ##< The type (typically derived).
@@ -135,6 +137,14 @@ class ThreadedFunction(object):
         if self.oMcBlock.iInFunction == 0:
             return 'kIemThreadedFunc_%s' % ( sName, );
         return 'kIemThreadedFunc_%s_%s' % ( sName, self.oMcBlock.iInFunction, );
+
+    def getFunctionName(self):
+        sName = self.oMcBlock.sFunction;
+        if sName.startswith('iemOp_'):
+            sName = sName[len('iemOp_'):];
+        if self.oMcBlock.iInFunction == 0:
+            return 'iemThreadedFunc_%s' % ( sName, );
+        return 'iemThreadedFunc_%s_%s' % ( sName, self.oMcBlock.iInFunction, );
 
     def analyzeReferenceToType(self, sRef):
         """
@@ -196,6 +206,32 @@ class ThreadedFunction(object):
             else:
                 self.dParamRefs[oRef.sStdRef].append(oRef);
 
+        # Generate names for them for use in the threaded function.
+        dParamNames = {};
+        for sName, aoRefs in self.dParamRefs.items():
+            # Morph the reference expression into a name.
+            if sName.startswith('IEM_GET_MODRM_REG'):           sName = 'bModRmRegP';
+            elif sName.startswith('IEM_GET_MODRM_RM'):          sName = 'bModRmRmP';
+            elif sName.startswith('IEM_GET_MODRM_REG_8'):       sName = 'bModRmReg8P';
+            elif sName.startswith('IEM_GET_MODRM_RM_8'):        sName = 'bModRmRm8P';
+            elif sName.startswith('IEM_GET_EFFECTIVE_VVVV'):    sName = 'bEffVvvvP';
+            elif sName.find('.') >= 0 or sName.find('->') >= 0:
+                sName = sName[max(sName.rfind('.'), sName.rfind('>')) + 1 : ] + 'P';
+            else:
+                sName += 'P';
+
+            # Ensure it's unique.
+            if sName in dParamNames:
+                for i in range(10):
+                    if sName + str(i) not in dParamNames:
+                        sName += str(i);
+                        break;
+            dParamNames[sName] = True;
+
+            # Update all the references.
+            for oRef in aoRefs:
+                oRef.sNewName = sName;
+
         # Organize them by size too for the purpose of optimize them.
         dBySize = {}        # type: dict(str,str)
         for sStdRef, aoRefs in self.dParamRefs.items():
@@ -218,7 +254,11 @@ class ThreadedFunction(object):
                     self.cMinParams += 1;
                     offParam         = cBits;
                 assert(offParam <= 64);
-                _ = sStdRef;
+
+                for oRef in self.dParamRefs[sStdRef]:
+                    oRef.iParam   = self.cMinParams;
+                    oRef.offParam = offParam - cBits;
+
         if offParam > 0:
             self.cMinParams += 1;
 
@@ -521,13 +561,29 @@ class IEMThreadedGenerator(object):
         ];
 
         # Prototype the function table.
+        sFnType = 'typedef IEM_DECL_IMPL_TYPE(VBOXSTRICTRC, FNIEMTHREADEDFUNC, (PVMCPU pVCpu';
+        for iParam in range(g_kcThreadedParams):
+            sFnType += ', uint64_t uParam' + str(iParam);
+        sFnType += '));'
+
         asLines += [
-            'extern const PFNRT g_apfnIemThreadedFunctions[kIemThreadedFunc_End];',
+            sFnType,
+            'typedef FNIEMTHREADEDFUNC *PFNIEMTHREADEDFUNC;',
+            '',
+            'extern const PFNIEMTHREADEDFUNC g_apfnIemThreadedFunctions[kIemThreadedFunc_End];',
         ];
 
         oOut.write('\n'.join(asLines));
         return True;
 
+    ksBitsToIntMask = {
+        1:  "UINT64_C(0x1)",
+        2:  "UINT64_C(0x3)",
+        4:  "UINT64_C(0xf)",
+        8:  "UINT64_C(0xff)",
+        16: "UINT64_C(0xffff)",
+        32: "UINT64_C(0xffffffff)",
+    };
     def generateThreadedFunctionsSource(self, oOut):
         """
         Generates the threaded functions source file.
@@ -535,8 +591,85 @@ class IEMThreadedGenerator(object):
         """
 
         asLines = self.generateLicenseHeader();
-
         oOut.write('\n'.join(asLines));
+
+        # Prepare the fixed bits.
+        sParamList = '(PVMCPU pVCpu';
+        for iParam in range(g_kcThreadedParams):
+            sParamList += ', uint64_t uParam' + str(iParam);
+        sParamList += '))\n';
+
+        #
+        # Emit the function definitions.
+        #
+        for oThreadedFunction in self.aoThreadedFuncs:
+            oMcBlock = oThreadedFunction.oMcBlock;
+            # Function header
+            oOut.write(  '\n'
+                       + '\n'
+                       + '/**\n'
+                       + ' * %s at line %s offset %s in %s%s\n'
+                          % (oMcBlock.sFunction, oMcBlock.iBeginLine, oMcBlock.offBeginLine, os.path.split(oMcBlock.sSrcFile)[1],
+                             ' (macro expansion)' if oMcBlock.iBeginLine == oMcBlock.iEndLine else '')
+                       + ' */\n'
+                       + 'static IEM_DECL_IMPL_DEF(VBOXSTRICTRC, ' + oThreadedFunction.getFunctionName() + ',\n'
+                       + '                         ' + sParamList
+                       + '{\n');
+
+            aasVars = [];
+            for aoRefs in oThreadedFunction.dParamRefs.values():
+                oRef  = aoRefs[0];
+                cBits = g_kdTypeInfo[oRef.sType][0];
+
+                sTypeDecl = oRef.sType + ' const';
+
+                if cBits == 64:
+                    assert oRef.offParam == 0;
+                    if oRef.sType == 'uint64_t':
+                        sUnpack = 'uParam%s;' % (oRef.iParam,);
+                    else:
+                        sUnpack = '(%s)uParam%s;' % (oRef.sType, oRef.iParam,);
+                elif oRef.offParam == 0:
+                    sUnpack = '(%s)(uParam%s & %s);' % (oRef.sType, oRef.iParam, self.ksBitsToIntMask[cBits]);
+                else:
+                    sUnpack = '(%s)((uParam%s >> %s) & %s);' \
+                            % (oRef.sType, oRef.iParam, oRef.offParam, self.ksBitsToIntMask[cBits]);
+
+                sComment = '/* %s - %s ref%s */' % (oRef.sOrgRef, len(aoRefs), 's' if len(aoRefs) != 1 else '',);
+
+                aasVars.append([ '%s:%02u' % (oRef.iParam, oRef.offParam), sTypeDecl, oRef.sNewName, sUnpack, sComment ]);
+            acchVars = [0, 0, 0, 0, 0];
+            for asVar in aasVars:
+                for iCol, sStr in enumerate(asVar):
+                    acchVars[iCol] = max(acchVars[iCol], len(sStr));
+            sFmt = '    %%-%ss %%-%ss = %%-%ss %%s\n' % (acchVars[1], acchVars[2], acchVars[3]);
+            for asVar in sorted(aasVars):
+                oOut.write(sFmt % (asVar[1], asVar[2], asVar[3], asVar[4],));
+
+            # RT_NOREF for unused parameters.
+            if oThreadedFunction.cMinParams < g_kcThreadedParams:
+                oOut.write('    RT_NOREF('
+                           + ', '.join(['uParam%u' % (i,) for i in range(oThreadedFunction.cMinParams, g_kcThreadedParams)])
+                           + ');\n');
+
+
+            oOut.write('}\n');
+
+        #
+        # Emit the function table.
+        #
+        oOut.write(  '\n'
+                   + '\n'
+                   + '/**\n'
+                   + ' * Function table.\n'
+                   + ' */\n'
+                   + 'const PFNIEMTHREADEDFUNC g_apfnIemThreadedFunctions[kIemThreadedFunc_End] =\n'
+                   + '{\n'
+                   + '    /*Invalid*/ NULL, \n');
+        for iThreadedFunction, oThreadedFunction in enumerate(self.aoThreadedFuncs):
+            oOut.write('    /*%4u*/ %s,\n' % (iThreadedFunction + 1, oThreadedFunction.getFunctionName(),));
+        oOut.write('};\n');
+
         return True;
 
     def getThreadedFunctionByIndex(self, idx):
