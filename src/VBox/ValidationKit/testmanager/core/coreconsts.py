@@ -54,7 +54,7 @@ g_ksCpuArchAgnostic = 'noarch';
 ## All known CPU architectures, except the agnostic one.
 # See KBUILD_ARCHES in kBuild/header.kmk for reference.
 g_kasCpuArches      = ['amd64', 'x86', 'sparc32', 'sparc64', 's390', 's390x', 'ppc32', 'ppc64', 'mips32', 'mips64', 'ia64',
-                       'hppa32', 'hppa64', 'arm', 'alpha'];
+                       'hppa32', 'hppa64', 'arm', 'arm64', 'alpha'];
 ## All known CPU architectures, except the agnostic one.
 # See KBUILD_ARCHES in kBuild/header.kmk for reference.
 g_kasCpuArchesAll   = g_kasCpuArches + [g_ksCpuArchAgnostic,];
