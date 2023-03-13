@@ -187,6 +187,8 @@ def getHostArch():
                 sArch = sArch.strip();
                 if sArch != 'amd64':
                     sArch = 'x86';
+        elif sArch in ('arm64', 'ARM64', 'aarch64')
+            sArch = 'arm64';
         else:
             raise Exception('Unsupported architecture/machine "%s"' % (sArch,));
         g_sHostArch = sArch;
@@ -215,7 +217,7 @@ def isValidArch(sArch):
     Validates the CPU architecture name.
     """
     if sArch in ('x86', 'amd64', 'sparc32', 'sparc64', 's390', 's390x', 'ppc32', 'ppc64', \
-               'mips32', 'mips64', 'ia64', 'hppa32', 'hppa64', 'arm', 'alpha'):
+               'mips32', 'mips64', 'ia64', 'hppa32', 'hppa64', 'arm', 'arm64', 'alpha'):
         return True;
     return False;
 
