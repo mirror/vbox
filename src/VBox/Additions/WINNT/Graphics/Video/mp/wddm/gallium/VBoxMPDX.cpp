@@ -598,6 +598,125 @@ NTSTATUS APIENTRY DxgkDdiDXRender(PVBOXWDDM_CONTEXT pContext, DXGKARG_RENDER *pR
 }
 
 
+SIZE_T svgaGetAllocationSize(PVBOXWDDM_ALLOCATION pAllocation)
+{
+    if (pAllocation->enmType != VBOXWDDM_ALLOC_TYPE_D3D)
+        return pAllocation->AllocData.SurfDesc.cbSize;
+    return pAllocation->dx.desc.cbAllocation;
+}
+
+
+static NTSTATUS svgaPTSysMem2VRAM(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAllocation, DXGKARG_BUILDPAGINGBUFFER *pBuildPagingBuffer)
+{
+    /* This is a simple memcopy. */
+    RT_NOREF(pAllocation);
+
+    uint64_t const offVRAM = pBuildPagingBuffer->Transfer.Destination.SegmentAddress.QuadPart;
+    UINT const TransferOffset = pBuildPagingBuffer->Transfer.TransferOffset;
+    SIZE_T const TransferSize = pBuildPagingBuffer->Transfer.TransferSize;
+    AssertReturn(   offVRAM <= pDevExt->cbVRAMCpuVisible
+                 && TransferOffset <= pDevExt->cbVRAMCpuVisible - offVRAM
+                 && TransferSize <= pDevExt->cbVRAMCpuVisible - offVRAM - TransferOffset,
+                 STATUS_INVALID_PARAMETER);
+
+    void *pvSrc = MmGetSystemAddressForMdlSafe(pBuildPagingBuffer->Transfer.Source.pMdl, NormalPagePriority);
+
+    memcpy((uint8_t *)pDevExt->pvVisibleVram + offVRAM + TransferOffset,
+           (uint8_t *)pvSrc + TransferOffset,
+           TransferSize);
+
+    return STATUS_SUCCESS;
+}
+
+
+static NTSTATUS svgaPTVRAM2SysMem(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAllocation, DXGKARG_BUILDPAGINGBUFFER *pBuildPagingBuffer)
+{
+    /* This is a simple memcopy. */
+    RT_NOREF(pAllocation);
+
+    uint64_t const offVRAM = pBuildPagingBuffer->Transfer.Source.SegmentAddress.QuadPart;
+    UINT const TransferOffset = pBuildPagingBuffer->Transfer.TransferOffset;
+    SIZE_T const TransferSize = pBuildPagingBuffer->Transfer.TransferSize;
+    AssertReturn(   offVRAM <= pDevExt->cbVRAMCpuVisible
+                 && TransferOffset <= pDevExt->cbVRAMCpuVisible - offVRAM
+                 && TransferSize <= pDevExt->cbVRAMCpuVisible - offVRAM - TransferOffset,
+                 STATUS_INVALID_PARAMETER);
+
+    void *pvDst = MmGetSystemAddressForMdlSafe(pBuildPagingBuffer->Transfer.Destination.pMdl, NormalPagePriority);
+
+    memcpy((uint8_t *)pvDst + TransferOffset,
+           (uint8_t *)pDevExt->pvVisibleVram + offVRAM + TransferOffset,
+           TransferSize);
+
+    return STATUS_SUCCESS;
+}
+
+
+static NTSTATUS svgaPagingTransfer(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUILDPAGINGBUFFER *pBuildPagingBuffer, uint32_t *pcbCommands)
+{
+    VBOXWDDM_EXT_VMSVGA *pSvga = pDevExt->pGa->hw.pSvga;
+    RT_NOREF(pSvga);
+
+    PVBOXWDDM_ALLOCATION pAllocation = (PVBOXWDDM_ALLOCATION)pBuildPagingBuffer->Transfer.hAllocation;
+    AssertReturn(pAllocation, STATUS_INVALID_PARAMETER);
+
+    SIZE_T cbAllocation = svgaGetAllocationSize(pAllocation);
+    AssertReturn(   pBuildPagingBuffer->Transfer.TransferOffset <= cbAllocation
+                 && pBuildPagingBuffer->Transfer.TransferSize <= cbAllocation - pBuildPagingBuffer->Transfer.TransferOffset,
+                 STATUS_INVALID_PARAMETER);
+
+    if (pBuildPagingBuffer->Transfer.TransferSize == 0)
+        return STATUS_SUCCESS;
+
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    RT_NOREF(pcbCommands);
+
+    switch (pBuildPagingBuffer->Transfer.Source.SegmentId)
+    {
+        case 0: /* From system memory. */
+        {
+            if (pBuildPagingBuffer->Transfer.Destination.SegmentId == 1) /* To VRAM */
+            {
+                if (!pAllocation->dx.desc.fPrimary)
+                    Status = svgaPTSysMem2VRAM(pDevExt, pAllocation, pBuildPagingBuffer);
+                else
+                {
+                    /* D3D driver primary is a host resource with guest backing storage. */
+                    /** @todo Copy to the backing storage and UPDATE_GB_SURFACE. */
+                    Status = svgaPTSysMem2VRAM(pDevExt, pAllocation, pBuildPagingBuffer);
+                }
+            }
+            else
+                DEBUG_BREAKPOINT_TEST();
+            break;
+        }
+        case 1: /* From VRAM. */
+        {
+            if (pBuildPagingBuffer->Transfer.Destination.SegmentId == 0) /* To system memory */
+            {
+                if (!pAllocation->dx.desc.fPrimary)
+                    Status = svgaPTVRAM2SysMem(pDevExt, pAllocation, pBuildPagingBuffer);
+                else
+                {
+                    /* D3D driver primary is a host resource with guest backing storage. */
+                    /** @todo Issue READBACK, wait and then copy. */
+                    Status = svgaPTVRAM2SysMem(pDevExt, pAllocation, pBuildPagingBuffer);
+                }
+            }
+            else
+                DEBUG_BREAKPOINT_TEST();
+            break;
+        }
+
+        default:
+            DEBUG_BREAKPOINT_TEST();
+    }
+
+    return Status;
+}
+
+
 static NTSTATUS svgaPagingFill(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUILDPAGINGBUFFER *pBuildPagingBuffer, uint32_t *pcbCommands)
 {
     VBOXWDDM_EXT_VMSVGA *pSvga = pDevExt->pGa->hw.pSvga;
@@ -887,7 +1006,7 @@ NTSTATUS DxgkDdiDXBuildPagingBuffer(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUILDPAGINGB
     {
         case DXGK_OPERATION_TRANSFER:
         {
-            DEBUG_BREAKPOINT_TEST();
+            Status = svgaPagingTransfer(pDevExt, pBuildPagingBuffer, &cbCommands);
             break;
         }
         case DXGK_OPERATION_FILL:
