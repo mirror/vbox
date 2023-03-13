@@ -8462,11 +8462,24 @@ else ifn1of ($(KBUILD_TARGET), darwin os2 win)
  TEMPLATE_VBoxGuestR3DllNonPedantic_CXXFLAGS = $(TEMPLATE_VBoxGuestR3ExeBase_CXXFLAGS) -fPIC -fno-exceptions
  TEMPLATE_VBoxGuestR3DllNonPedantic_LDFLAGS  = $(TEMPLATE_VBoxGuestR3ExeBase_LDFLAGS) -fPIC
 endif
-TEMPLATE_VBoxGuestR3DllNonPedantic_LIBS      = \
-	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
-	$(VBOX_LIB_VBGL_R3_SHARED) \
-	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
-	$(TEMPLATE_VBoxGuestR3ExeBase_LIBS)
+ifeq ($(KBUILD_TARGET),win)
+ TEMPLATE_VBoxGuestR3DllNonPedantic_LIBS.x86 = \
+ 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED_X86) \
+ 	$(VBOX_LIB_VBGL_R3_SHARED_X86) \
+ 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED_X86) \
+ 	$(TEMPLATE_VBoxGuestR3ExeBase_LIBS.x86)
+ TEMPLATE_VBoxGuestR3DllNonPedantic_LIBS.$(KBUILD_TARGET_ARCH) = \
+ 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
+ 	$(VBOX_LIB_VBGL_R3_SHARED) \
+ 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
+ 	$(TEMPLATE_VBoxGuestR3ExeBase_LIBS.$(KBUILD_TARGET_ARCH))
+else
+ TEMPLATE_VBoxGuestR3DllNonPedantic_LIBS.$(KBUILD_TARGET_ARCH) = \
+ 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
+ 	$(VBOX_LIB_VBGL_R3_SHARED) \
+ 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
+ 	$(TEMPLATE_VBoxGuestR3ExeBase_LIBS)
+endif
 
 #
 # Template for building normal R3 (dynamic) libraries for the guest additions, strict.

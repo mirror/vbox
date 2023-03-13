@@ -39,7 +39,6 @@ include $(PATH_SUB_CURRENT)/InstallHelper/Makefile.kmk
 # Globals
 #
 VBOX_PATH_WIN_ADD_INS_SRC := $(PATH_SUB_CURRENT)
-VBOX_PATH_ADDITIONS.win.x86 := $(PATH_OUT_BASE)/win.x86/$(KBUILD_TYPE)/bin/additions
 VBOX_WITH_GUEST_INSTALL_HELPER := 1 # Use our guest install helper DLL.
 ## @todo VBOX_WIN_ADD_INS_OUT_DIR := $(PATH_TARGET)/Additions/Installer/win
 
@@ -263,8 +262,6 @@ VBOX_WINDOWS_ADDITIONS_OTHER_FILES += $(addprefix $(PATH_STAGE_BIN)/additions/, 
 VB_WIN_ADD_NSIS_ENV := \
 	-E 'PATH_OUT=$(subst /,\,$(PATH_OUT))' \
 	-E 'PATH_TARGET=$(subst /,\,$(PATH_TARGET))' \
-	-E 'PATH_TARGET_X86=$(subst /,\,$(PATH_OUT_BASE)/win.x86/$(KBUILD_TYPE)/obj)' \
-	-E 'VBOX_PATH_ADDITIONS_WIN_X86=$(subst /,\,$(VBOX_PATH_ADDITIONS.win.x86))' \
 	-E 'VBOX_PATH_DIFX=$(subst /,\,$(VBOX_PATH_DIFX))' \
 	-E 'VBOX_VENDOR=$(VBOX_VENDOR)' \
 	-E 'VBOX_VENDOR_SHORT=$(VBOX_VENDOR_SHORT)' \
