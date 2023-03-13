@@ -1211,22 +1211,12 @@ VBOX_ADDITIONS_BUILD.x86 = VBOX_ONLY_ADDITIONS=1 VBOX_WITHOUT_ADDITIONS_ISO=1 \
 # out directory names inside the additions building VMs.
 VBOX_ADDITIONS_BUILD_SUBDIRNAME := $(lastword $(subst /, ,$(PATH_ROOT)))
 
-# When building in parallel on a Windows host, make sure we finish the host
-# bit before kicking off any UNIX guest or we'll run into file sharing issues.
 ifeq ($(KBUILD_TARGET),win)
- VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST = #additions-build-win.x86 additions-build-win.amd64
-else
- VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST =
-endif
-
-# ASSUMES the 32-bit edition has been built already. Also for serializing VM access.
-ifeq ($(KBUILD_TARGET),win)
- additions-build-win.amd64-just-build:
+ additions-build-win.amd64:
 	+ $(TIME) -- $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) all $(VBOX_ADD_HOST_BUILD_TWEAK)
- additions-build-win.amd64: additions-build-win.x86 additions-build-win.amd64-just-build
 	+ $(TIME) -- $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) packing
 else
- additions-build-win.amd64: additions-build-win.x86
+ additions-build-win.amd64:
 	$(call VBOX_BLD_VM_MSG_BEGIN,Windows/amd64 additions build+pack)
 	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_WIN_AMD64_IP) ' cd e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing '
 	$(call VBOX_BLD_VM_MSG_END__,Windows/amd64 additions build+pack)
