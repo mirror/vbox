@@ -1520,6 +1520,12 @@ bool UISession::acquireWhetherAccelerate3DEnabled(bool &fEnabled)
 
 bool UISession::acquireMonitorCount(ulong &uCount)
 {
+    // WORKAROUND:
+    // We certainly don't want to get into
+    // 'no visible screens' case if something
+    // gone wrong...  Inventing sane default.
+    uCount = 1;
+
     CMachine comMachine = machine();
     CGraphicsAdapter comAdapter = comMachine.GetGraphicsAdapter();
     bool fSuccess = comMachine.isOk();
