@@ -213,6 +213,11 @@ QWidget* UIMachine::activeWindow() const
            : 0;
 }
 
+bool UIMachine::isSessionValid() const
+{
+    return uisession() ? uisession()->isValid() : false;
+}
+
 void UIMachine::asyncChangeVisualState(UIVisualStateType visualState)
 {
     emit sigRequestAsyncVisualStateChange(visualState);

@@ -354,6 +354,13 @@ void UIMachineWindow::hideEvent(QHideEvent *pEvent)
 
 void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
 {
+    /* Fast handling in case if session is invalid: */
+    if (!uimachine()->isSessionValid())
+    {
+        uimachine()->closeRuntimeUI();
+        return;
+    }
+
     /* Always ignore close-event first: */
     pCloseEvent->ignore();
 

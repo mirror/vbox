@@ -174,6 +174,9 @@ public:
     /** Returns active machine-window reference (if possible). */
     QWidget *activeWindow() const;
 
+    /** Returns whether session UI is valid. */
+    bool isSessionValid() const;
+
     /** Returns whether requested visual @a state allowed. */
     bool isVisualStateAllowed(UIVisualStateType state) const { return m_allowedVisualStates & state; }
 
