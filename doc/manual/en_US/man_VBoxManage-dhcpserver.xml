@@ -599,8 +599,7 @@
       <title>Common DHCP Options:</title>
       <remark role="help-scope" condition="DHCPSERVER_ADD|DHCPSERVER_MODIFY"/>
       <!-- The following file is generated from src/VBox/Main/idl/VirtualBox.xidl: -->
-      <!-- Temporarily disabling this include since dita conversion script chokes on this -->
-      <!-- <xi:include href="man_VBoxManage-dhcpserver-dhcpoptions.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/> -->
+      <xi:include href="man_VBoxManage-dhcpserver-dhcpoptions.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
     </refsect2>
 
   </refsect1>

@@ -817,6 +817,10 @@ man_vboximg-mount.xml \
 	$(QUIET)touch -- "$(@D)/topics/reference.dtd"
 	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_USER_MANUAL_DITA_IMAGES) "$(@D)/topics/images"
 
+ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/man_VBoxManage-dhcpserver-dhcpoptions.xml:
+	$(QUIET)$(MKDIR) -p  $(notdir $@)
+	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_PATH_MANUAL_SRC)/en_US/$(notdir $@) "$(@D)"
+
  correct_reference_targets: \
  		$$(VBOX_PATH_MANUAL_SRC)/correct_references.py \
  		$$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/ \
@@ -839,6 +843,7 @@ man_vboximg-mount.xml \
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(addsuffix .dita,$(basename $(2))): \
   		$$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl \
   		$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2) \
+  		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/man_VBoxManage-dhcpserver-dhcpoptions.xml \
   		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) \
   		$$(VBOX_XML_ENTITIES) $$(VBOX_VERSION_STAMP) | $$$$(dir $$$$@)
 
