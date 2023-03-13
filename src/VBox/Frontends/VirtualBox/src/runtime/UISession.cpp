@@ -280,7 +280,9 @@ WId UISession::mainMachineWindowId() const
 
 void UISession::acquireMachinePixmap(const QSize &size, QPixmap &pixmap)
 {
-    QPixmap machinePixmap = generalIconPool().userMachinePixmap(machine(), size);
+    QPixmap machinePixmap;
+    if (machine().isNotNull())
+        machinePixmap = generalIconPool().userMachinePixmap(machine(), size);
     if (machinePixmap.isNull())
         machinePixmap = generalIconPool().guestOSTypePixmap(osTypeId(), size);
     if (!machinePixmap.isNull())
@@ -289,7 +291,9 @@ void UISession::acquireMachinePixmap(const QSize &size, QPixmap &pixmap)
 
 void UISession::acquireUserMachineIcon(QIcon &icon)
 {
-    QIcon machineIcon = generalIconPool().userMachineIcon(machine());
+    QIcon machineIcon;
+    if (machine().isNotNull())
+        machineIcon = generalIconPool().userMachineIcon(machine());
     if (machineIcon.isNull())
         machineIcon = generalIconPool().guestOSTypeIcon(osTypeId());
     if (machineIcon.isNull())
