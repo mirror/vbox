@@ -880,16 +880,16 @@ man_vboximg-mount.xml \
  	-E 'ANT_HOME=$(VBOX_DITA_PATH)/tools/ant' \
  	-E 'DITA_DIR=$(VBOX_DITA_PATH)' \
  	-E 'JAVA_HOME=$(VBOX_JAVA_HOME)' \
- 	-A 'PATH=:$(VBOX_DITA_PATH)/tools/ant/bin' \
+ 	-A 'PATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH)/tools/ant/bin' \
  	-E 'CLASSPATH=$(VBOX_DITA_PATH_LIB)/dost.jar' \
- 	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)' \
- 	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/commons-codec-1.4.jar' \
- 	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/resolver.jar' \
- 	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/icu4j.jar' \
- 	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/xercesImpl.jar' \
- 	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/xml-apis.jar' \
- 	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/saxon/saxon9.jar' \
- 	-A 'CLASSPATH=:$(VBOX_DITA_PATH_LIB)/saxon/saxon9-dom.jar' \
+ 	-A 'CLASSPATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH_LIB)' \
+ 	-A 'CLASSPATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH_LIB)/commons-codec-1.4.jar' \
+ 	-A 'CLASSPATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH_LIB)/resolver.jar' \
+ 	-A 'CLASSPATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH_LIB)/icu4j.jar' \
+ 	-A 'CLASSPATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH_LIB)/xercesImpl.jar' \
+ 	-A 'CLASSPATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH_LIB)/xml-apis.jar' \
+ 	-A 'CLASSPATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH_LIB)/saxon/saxon9.jar' \
+ 	-A 'CLASSPATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH_LIB)/saxon/saxon9-dom.jar' \
  	--
 
  define def_ditamap_to_pdf
