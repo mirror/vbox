@@ -407,11 +407,9 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
   buildserver-docs_MODE = 0644
   buildserver-docs_SOURCES = \
   	$(addprefix $(PATH_TARGET)/, \
-  	$(if-expr defined(VBOX_WITH_DOCS_CHM_PACKING),VirtualBox.chm,) \
   	$(if-expr defined(VBOX_WITH_DOCS_QHELP_PACKING),UserManual.qch UserManual.qhc,) \
   	UserManual.pdf \
   	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES), \
-  	$(if-expr defined(VBOX_WITH_DOCS_CHM_PACKING),VirtualBox_$(f).chm,) \
   	$(if-expr defined(VBOX_WITH_DOCS_QHELP_PACKING),UserManual_$(f).qch UserManual_$(f).qhc,) \
   	UserManual_$(f).pdf))
   buildserver-docs_CLEANS = \
@@ -426,22 +424,18 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
   	UserManual_$(f).pdf))
 
   $$(buildserver-docs_0_OUTDIR)/unpacked.ts +| \
-  $(if-expr defined(VBOX_WITH_DOCS_CHM_PACKING),$(PATH_TARGET)/VirtualBox.chm,) \
   $(if-expr defined(VBOX_WITH_DOCS_QHELP_PACKING),$(PATH_TARGET)/UserManual.qch $(PATH_TARGET)/UserManual.qhc,) \
   $(PATH_TARGET)/UserManual.pdf \
   $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES), \
-  	$(if-expr defined(VBOX_WITH_DOCS_CHM_PACKING),$(PATH_TARGET)/VirtualBox_$(f).chm,) \
   	$(if-expr defined(VBOX_WITH_DOCS_QHELP_PACKING),$(PATH_TARGET)/UserManual_$(f).qch $(PATH_TARGET)/UserManual_$(f).qhc,) \
   	$(PATH_TARGET)/UserManual_$(f).pdf): \
   		$$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip
 	$(call MSG_L1,Unpacking documentation)
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(PATH_TARGET)
 	$(TOUCH) -c -- \
-		$(if-expr defined(VBOX_WITH_DOCS_CHM_PACKING),$(PATH_TARGET)/VirtualBox.chm,) \
 		$(if-expr defined(VBOX_WITH_DOCS_QHELP_PACKING),$(PATH_TARGET)/UserManual.qch $(PATH_TARGET)/UserManual.qhc,) \
 		$(PATH_TARGET)/UserManual.pdf \
 		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES), \
-			$(if-expr defined(VBOX_WITH_DOCS_CHM_PACKING),$(PATH_TARGET)/VirtualBox_$(f).chm,) \
 			$(if-expr defined(VBOX_WITH_DOCS_QHELP_PACKING),$(PATH_TARGET)/UserManual_$(f).qch $(PATH_TARGET)/UserManual_$(f).qhc,) \
 			$(PATH_TARGET)/UserManual_$(f).pdf)
 	$(APPEND) -t $@ "done"

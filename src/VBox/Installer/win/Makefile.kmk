@@ -369,11 +369,6 @@ $(VBOX_WIN_INST_OUT_DIR)/Files_Main.wxi: $(VBOX_WIN_INST_MAKEFILE_DEP) | $$(dir 
 	$(APPEND) -t $@ '<?xml version="1.0" ?>'
 	$(APPEND) $@ '<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">'
 ifdef VBOX_WITH_DOCS_PACKING
- ifdef VBOX_WITH_DOCS_CHM_PACKING
-	$(APPEND) $@ '	<File Id="file_VirtualBox.chm" Name="VirtualBox.chm" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(subst /,\,$(PATH_STAGE_BIN)/VirtualBox.chm)"></File>'
-	$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
-		     '	<File Id="file_VirtualBox_$(lang).chm" Name="VirtualBox_$(lang).chm" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(subst /,\,$(PATH_STAGE_BIN)/VirtualBox_$(lang).chm)"></File>')
- endif
  ifdef VBOX_WITH_DOCS_QHELP_PACKING
 	$(APPEND) $@ '	<File Id="file_UserManual.qch" Name="UserManual.qch" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(subst /,\,$(PATH_STAGE_BIN)/UserManual.qch)"></File>'
 	$(APPEND) $@ '	<File Id="file_UserManual.qhc" Name="UserManual.qhc" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(subst /,\,$(PATH_STAGE_BIN)/UserManual.qhc)"></File>'
@@ -456,13 +451,6 @@ $(VBOX_WIN_INST_OUT_DIR)/Shortcuts_StartMenu.wxi: $(VBOX_WIN_INST_MAKEFILE_DEP) 
 	# Documentation (PDF/CHM)
 	#
 ifdef VBOX_WITH_DOCS_PACKING
- ifdef VBOX_WITH_DOCS_CHM_PACKING
-	$(APPEND) $@ '	<Shortcut Id="sc_StartMenu_ManualCHM_en_US" Directory="dir_StartMenuVBox" Name="!(loc.StartMenu_UserManual) (CHM, English)" Description="!(loc.StartMenu_UserManual)"' \
-	             '            Target="[INSTALLDIR]\VirtualBox.chm" WorkingDirectory="dir_Documents" Advertise="no"/>'
-	$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
-	             '	<Shortcut Id="sc_StartMenu_ManualCHM_$(lang)" Directory="dir_StartMenuVBox" Name="!(loc.StartMenu_UserManual) (CHM, $(VBOX_BRAND_$(lang)_LANG_NAME))"' \
-		     '            Description="!(loc.StartMenu_UserManual) ($(VBOX_BRAND_$(lang)_LANG_NAME))" Target="[INSTALLDIR]\VirtualBox_$(lang).chm" WorkingDirectory="dir_Documents"/>')
- endif
 	$(APPEND) $@ '	<Shortcut Id="sc_StartMenu_ManualPDF_en_US" Directory="dir_StartMenuVBox" Name="!(loc.StartMenu_UserManual) (PDF, English)" Description="!(loc.StartMenu_UserManual)"' \
 	             '            Target="[INSTALLDIR]\doc\UserManual.pdf" WorkingDirectory="dir_Documents" Advertise="no"/>'
 	$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \

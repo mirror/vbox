@@ -441,12 +441,6 @@ VBOX_WITH_DOCS = 1
 #VBOX_WITH_DOCS_FROM_BUILD_SERVER = 1
 # Include documentation in the package
 VBOX_WITH_DOCS_PACKING = 1
-# Include CHM when building docs (unset in LocalConfig.kmk to suppress CHM)
-## @todo CHM docs are on the way out...
-if1of ($(KBUILD_TARGET), win)
- VBOX_WITH_DOCS_CHM =
- VBOX_WITH_DOCS_CHM_PACKING =
-endif
 # Build QHelp documentation, needs qhelpgenerator
 VBOX_WITH_DOCS_QHELP = 1
 # Include QHelp documentation in the package
@@ -1424,8 +1418,6 @@ endif
 # For the docs build box.
 #
 ifdef VBOX_ONLY_DOCS
- # Phase out the .chm docs
- VBOX_WITH_DOCS_CHM =
  # Always produce HTML docs (for publishing on website as part of release)
  VBOX_WITH_DOCS_HTML = 1
  # Always produce QHelp docs (for help in the UI, replacing CHM)
@@ -1566,7 +1558,8 @@ endif
 ifdef VBOX_WITHOUT_DOCS
  # Zap anything that could be contradicting this.
  VBOX_WITH_DOCS :=
- VBOX_WITH_DOCS_CHM :=
+ VBOX_WITH_DOCS_QHELP :=
+ VBOX_WITH_DOCS_HTML :=
 endif
 
 #

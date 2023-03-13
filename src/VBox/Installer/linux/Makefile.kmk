@@ -290,11 +290,6 @@ ifdef VBOX_WITH_DOCS_PACKING
  VBOX_LNX_NO_STRIP += \
  	UserManual.pdf \
  	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),UserManual_$(f).pdf)
- ifdef VBOX_WITH_DOCS_CHM_PACKING
-  VBOX_LNX_NO_STRIP += \
-  	VirtualBox.chm \
-  	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm)
- endif
  ifdef VBOX_WITH_DOCS_QHELP_PACKING
   VBOX_LNX_NO_STRIP += \
   	UserManual.qch UserManual.qhc \
