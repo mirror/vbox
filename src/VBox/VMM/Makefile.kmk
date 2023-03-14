@@ -315,6 +315,173 @@ endif
 
 $(call VBOX_SET_VER_INFO_DLL,VBoxVMM,VirtualBox VMM) # Version info / description.
 
+ifdef VBOX_WITH_VIRT_ARMV8
+#
+# The VMM DLL - ARMv8 variant.
+#
+ DLLS += VBoxVMMArm
+ VBoxVMMArm_TEMPLATE = VBoxR3DllNoPic
+ VBoxVMMArm_SONAME.linux = VBoxVMMArm.so
+ 
+ VBoxVMMArm_DEFS     = VBOX_VMM_TARGET_ARMV8 VBOX_IN_VMM IN_VMM_R3 IN_DIS IN_DBG $(VMM_COMMON_DEFS)
+ ifdef VBOX_WITH_VUSB
+  VBoxVMMArm_DEFS   += VBOX_WITH_USB
+ endif
+ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+  VBoxVMMArm_DEFS   += VBOX_WITH_PDM_ASYNC_COMPLETION
+ endif
+ ifdef VBOX_WITH_NETSHAPER
+  VBoxVMMArm_DEFS   += VBOX_WITH_NETSHAPER
+ endif
+ #ifdef VBOX_WITH_DBGF_TRACING
+ # VBoxVMMArm_DEFS   += VBOX_WITH_DBGF_TRACING
+ #endif
+ #ifdef VBOX_WITH_DBGF_FLOW_TRACING @todo Later
+ # VBoxVMMArm_DEFS   += VBOX_WITH_DBGF_FLOW_TRACING
+ #endif
+ 
+ VBoxVMMArm_INCS     = \
+ 	include \
+ 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs
+ VBoxVMMArm_SOURCES  = \
+ 	VBoxVMM.d \
+ 	VMMR3/VMMR3VTable.cpp \
+ 	VMMR3/APIC.cpp \
+ 	VMMR3/CFGM.cpp \
+ 	VMMR3/CPUM.cpp \
+ 	VMMR3/CPUMR3CpuId.cpp \
+ 	VMMR3/CPUMR3Db.cpp \
+ 	VMMR3/CPUMDbg.cpp \
+ 	VMMR3/DBGF.cpp \
+ 	VMMR3/DBGFAddr.cpp \
+ 	VMMR3/DBGFAddrSpace.cpp \
+ 	VMMR3/DBGFR3Bp.cpp \
+ 	VMMR3/DBGFR3BugCheck.cpp \
+ 	VMMR3/DBGFCoreWrite.cpp \
+ 	VMMR3/DBGFCpu.cpp \
+ 	VMMR3/DBGFDisas.cpp \
+ 	VMMR3/DBGFInfo.cpp \
+ 	VMMR3/DBGFLog.cpp \
+ 	VMMR3/DBGFMem.cpp \
+ 	VMMR3/DBGFR3ModInMem.cpp \
+ 	VMMR3/DBGFOS.cpp \
+ 	VMMR3/DBGFR3PlugIn.cpp \
+ 	VMMR3/DBGFReg.cpp \
+ 	VMMR3/DBGFStack.cpp \
+ 	VMMR3/DBGFR3Flow.cpp \
+ 	VMMR3/DBGFR3Trace.cpp \
+ 	VMMR3/DBGFR3SampleReport.cpp \
+ 	VMMR3/DBGFR3Type.cpp \
+ 	VMMR3/EM.cpp \
+ 	VMMR3/EMR3Dbg.cpp \
+ 	VMMR3/EMHM.cpp \
+ 	VMMR3/EMR3Nem.cpp \
+ 	VMMR3/GCM.cpp \
+ 	VMMR3/GIM.cpp \
+ 	VMMR3/GIMHv.cpp \
+ 	VMMR3/GIMKvm.cpp \
+ 	VMMR3/GIMMinimal.cpp \
+ 	VMMR3/IEMR3.cpp \
+ 	VMMR3/IOM.cpp \
+ 	VMMR3/IOMR3Mmio.cpp \
+ 	VMMR3/GMM.cpp \
+ 	VMMR3/GVMMR3.cpp \
+ 	VMMR3/MM.cpp \
+ 	VMMR3/MMHeap.cpp \
+ 	VMMR3/NEMR3.cpp \
+ 	VMMR3/PDM.cpp \
+ 	VMMR3/PDMBlkCache.cpp \
+ 	VMMR3/PDMDevice.cpp \
+ 	VMMR3/PDMDevHlp.cpp \
+ 	VMMR3/PDMDevMiscHlp.cpp \
+ 	VMMR3/PDMDriver.cpp \
+ 	VMMR3/PDMLdr.cpp \
+ 	VMMR3/PDMCritSect.cpp \
+ 	VMMR3/PDMQueue.cpp \
+ 	VMMR3/PDMR3Task.cpp \
+ 	VMMR3/PDMThread.cpp \
+ 	VMMR3/PGM.cpp \
+ 	VMMR3/PGMDbg.cpp \
+ 	VMMR3/PGMHandler.cpp \
+ 	VMMR3/PGMPhys.cpp \
+ 	VMMR3/PGMPool.cpp \
+ 	VMMR3/PGMSavedState.cpp \
+ 	VMMR3/PGMSharedPage.cpp \
+ 	VMMR3/SSM.cpp \
+ 	VMMR3/STAM.cpp \
+ 	VMMR3/TM.cpp \
+ 	VMMR3/TRPM.cpp \
+ 	VMMR3/VM.cpp \
+ 	VMMR3/VMEmt.cpp \
+ 	VMMR3/VMReq.cpp \
+ 	VMMR3/VMM.cpp \
+ 	VMMR3/VMMGuruMeditation.cpp \
+ 	VMMR3/VMMTests.cpp \
+ 	VMMR3/HM.cpp \
+ 	VMMAll/APICAll.cpp \
+ 	VMMAll/CPUMAllCpuId.cpp \
+ 	VMMAll/CPUMAllRegs.cpp \
+ 	VMMAll/CPUMAllMsrs.cpp \
+ 	VMMAll/DBGFAll.cpp \
+ 	VMMAll/DBGFAllBp.cpp \
+ 	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMAll/DBGFAllTracer.cpp,) \
+ 	VMMAll/IOMAll.cpp \
+ 	VMMAll/IOMAllMmioNew.cpp \
+ 	VMMAll/MMAll.cpp \
+ 	VMMAll/NEMAll.cpp \
+ 	VMMAll/PDMAll.cpp \
+ 	VMMAll/PDMAllCritSect.cpp \
+ 	VMMAll/PDMAllCritSectRw.cpp \
+ 	VMMAll/PDMAllCritSectBoth.cpp \
+ 	VMMAll/PDMAllQueue.cpp \
+ 	VMMAll/PDMAllTask.cpp \
+ 	VMMAll/PGMAll.cpp \
+ 	VMMAll/PGMAllHandler.cpp \
+ 	VMMAll/PGMAllPhys.cpp \
+ 	VMMAll/PGMAllPool.cpp \
+ 	VMMAll/EMAll.cpp \
+ 	VMMAll/GCMAll.cpp \
+ 	VMMAll/GIMAll.cpp \
+ 	VMMAll/GIMAllHv.cpp \
+ 	VMMAll/GIMAllKvm.cpp \
+ 	VMMAll/TMAll.cpp \
+ 	VMMAll/TMAllCpu.cpp \
+ 	VMMAll/TMAllReal.cpp \
+ 	VMMAll/TMAllVirtual.cpp \
+ 	VMMAll/TRPMAll.cpp \
+ 	VMMAll/VMAll.cpp \
+ 	VMMAll/VMMAll.cpp
+ ifdef VBOX_WITH_VUSB
+  VBoxVMMArm_SOURCES += VMMR3/PDMUsb.cpp
+ endif
+ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+  VBoxVMMArm_SOURCES += \
+  	VMMR3/PDMAsyncCompletion.cpp \
+  	VMMR3/PDMAsyncCompletionFile.cpp \
+  	VMMR3/PDMAsyncCompletionFileFailsafe.cpp \
+  	VMMR3/PDMAsyncCompletionFileNormal.cpp
+ endif
+ ifdef VBOX_WITH_NETSHAPER
+  VBoxVMMArm_SOURCES += \
+  	VMMR3/PDMNetShaper.cpp \
+  	VMMAll/PDMAllNetShaper.cpp
+ endif
+ 
+ VBoxVMMArm_SOURCES.darwin.arm64 += \
+ 	VMMR3/NEMR3Native-darwin.cpp
+ VBoxVMMArm_DEFS.darwin.arm64   += VBOX_WITH_NATIVE_NEM
+ 
+ VBoxVMMArm_LIBS = \
+ 	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB)
+ #ifdef VBOX_WITH_DEBUGGER
+ # VBoxVMMArm_LIBS += \
+ # 	$(PATH_STAGE_LIB)/Debugger$(VBOX_SUFF_LIB)
+ #endif
+ VBoxVMMArm_LIBS += \
+ 	$(LIB_RUNTIME)
+ 
+ VBoxVMMArm_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxVMMArm.dylib
+endif
 
 
 #
