@@ -924,6 +924,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_TakeSnapshot));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowFileManager));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_T_Pause));
 #ifndef VBOX_WS_MAC
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_S_MinimizeWindow));
@@ -969,6 +970,13 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndex_M_Window));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndex_M_Window_S_Minimize));
 #endif /* VBOX_WS_MAC */
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Debug));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowStatistics));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowCommandLine));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Debug_T_Logging));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Debug_S_GuestControlConsole));
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 
     /* Move actions into running-n-paused-n-stucked actions group: */
     m_pRunningOrPausedOrStackedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_PowerOff));
