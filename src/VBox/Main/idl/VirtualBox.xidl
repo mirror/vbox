@@ -6306,7 +6306,7 @@
     name="IUefiVariableStore" extends="$unknown"
     uuid="d134c6b6-4479-430d-bb73-68a452ba3e67"
     wsmap="managed"
-    reservedMethods="10" reservedAttributes="5"
+    reservedMethods="9" reservedAttributes="5"
     >
     <desc>
         The IUefiVariableStore interface allows inspecting and manipulating the content
@@ -6450,6 +6450,21 @@
         Convenience method to enroll the standard Microsoft KEK and signatures
         in the signature databases.
       </desc>
+    </method>
+
+    <method name="addSignatureToMok">
+      <desc>
+        Convenience method to add a new entry to the MOK (Machine Owner Key) signature database.
+      </desc>
+      <param name="signature" type="octet" safearray="yes" dir="in">
+        <desc>The signature to add.</desc>
+      </param>
+      <param name="owner" type="uuid" mod="string" dir="in">
+        <desc>UUID of the signature owner.</desc>
+      </param>
+      <param name="signatureType" type="SignatureType" dir="in">
+        <desc>Type of the signature.</desc>
+      </param>
     </method>
 
   </interface>

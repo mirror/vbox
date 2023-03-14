@@ -52,6 +52,9 @@
 /** The GUID used for setting and retrieving variables from the variable store. */
 #define EFI_IMAGE_SECURITY_DATABASE_GUID \
     { 0xd719b2cb, 0x3d3a, 0x4596, { 0xa3, 0xbc, 0xda, 0xd0, 0x0e, 0x67, 0x65, 0x6f }}
+/** The GUID used for setting and retrieving the MOK (Machine Owner Key) from the variable store. */
+#define EFI_IMAGE_MOK_DATABASE_GUID \
+    { 0x605dab50, 0xe046, 0x4300, { 0xab, 0xb6, 0x3d, 0xd8, 0x10, 0xdd, 0x8b, 0x23 }}
 
 
 /**

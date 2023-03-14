@@ -555,6 +555,27 @@ HRESULT UefiVariableStore::enrollDefaultMsSignatures(void)
 }
 
 
+HRESULT UefiVariableStore::addSignatureToMok(const std::vector<BYTE> &aData, const com::Guid &aOwnerUuid, SignatureType_T enmSignatureType)
+{
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pMachine);
+    if (FAILED(adep.hrc())) return adep.hrc();
+
+    HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
+    if (FAILED(hrc)) return hrc;
+
+    AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+
+    EFI_GUID GuidMokList = EFI_IMAGE_MOK_DATABASE_GUID;
+    hrc = i_uefiVarStoreAddSignatureToDbVec(&GuidMokList, "MokList", aData, aOwnerUuid, enmSignatureType);
+
+    i_releaseUefiVariableStore();
+    return hrc;
+}
+
+
+
+
 /**
  * Sets the given attributes for the given EFI variable store variable.
  *
