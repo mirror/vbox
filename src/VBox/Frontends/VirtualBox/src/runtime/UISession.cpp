@@ -193,10 +193,7 @@ bool UISession::initialize()
 
     /* Fetch corresponding states: */
     if (uiCommon().isSeparateProcess())
-    {
         sltAdditionsChange();
-    }
-    machineLogic()->initializePostPowerUp();
 
 #ifdef VBOX_GUI_WITH_PIDFILE
     uiCommon().createPidfile();

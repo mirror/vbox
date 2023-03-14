@@ -86,8 +86,6 @@ public:
     virtual void prepare();
     virtual void cleanup();
 
-    void initializePostPowerUp();
-
     /** Returns machine UI reference.  */
     UIMachine *uimachine() const { return m_pMachine; }
     /** Returns action-pool reference.  */
@@ -124,6 +122,9 @@ protected slots:
 
     /** Handles the VBoxSVC availability change. */
     void sltHandleVBoxSVCAvailabilityChange();
+
+    /** Handles Machine UI initialized event. */
+    void sltHandleMachineInitialized();
 
     /** Checks if some visual-state type was requested. */
     virtual void sltCheckForRequestedVisualStateType() {}

@@ -74,8 +74,8 @@ private slots:
     void sltRecordingChange();
     /** Handles CPU execution cap change event. */
     void sltCPUExecutionCapChange();
-    /** Handles UISession initialized event. */
-    void sltHandleSessionInitialized();
+    /** Handles Machine UI initialized event. */
+    void sltHandleMachineInitialized();
 
 #ifndef RT_OS_DARWIN
     /** Handles menu-bar configuration-change. */

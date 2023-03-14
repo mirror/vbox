@@ -136,7 +136,7 @@ void UIMachineWindowNormal::sltCPUExecutionCapChange()
     updateAppearanceOf(UIVisualElement_FeaturesStuff);
 }
 
-void UIMachineWindowNormal::sltHandleSessionInitialized()
+void UIMachineWindowNormal::sltHandleMachineInitialized()
 {
     /* Update virtualization stuff: */
     updateAppearanceOf(  UIVisualElement_FeaturesStuff
@@ -271,9 +271,9 @@ void UIMachineWindowNormal::prepareSessionConnections()
     connect(machineLogic()->uimachine(), &UIMachine::sigCPUExecutionCapChange,
             this, &UIMachineWindowNormal::sltCPUExecutionCapChange);
 
-    /* Watch for UIMachine signals: */
+    /* Watch for machine UI signals: */
     connect(machineLogic()->uimachine(), &UIMachine::sigInitialized,
-            this, &UIMachineWindowNormal::sltHandleSessionInitialized);
+            this, &UIMachineWindowNormal::sltHandleMachineInitialized);
 }
 
 #ifndef VBOX_WS_MAC

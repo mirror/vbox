@@ -248,16 +248,6 @@ void UIMachineLogic::cleanup()
     cleanupSessionConnections();
 }
 
-void UIMachineLogic::initializePostPowerUp()
-{
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    prepareDebugger();
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-    sltMachineStateChanged();
-    sltAdditionsStateChanged();
-    sltMouseCapabilityChanged();
-}
-
 UIActionPool *UIMachineLogic::actionPool() const
 {
     return uimachine()->actionPool();
@@ -360,6 +350,16 @@ void UIMachineLogic::sltHandleVBoxSVCAvailabilityChange()
     /* Power VM off: */
     LogRel(("GUI: Request to power VM off due to VBoxSVC is unavailable.\n"));
     uimachine()->powerOff(false /* do NOT restore current snapshot */);
+}
+
+void UIMachineLogic::sltHandleMachineInitialized()
+{
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    prepareDebugger();
+#endif
+    sltMachineStateChanged();
+    sltAdditionsStateChanged();
+    sltMouseCapabilityChanged();
 }
 
 void UIMachineLogic::sltChangeVisualStateToNormal()
@@ -855,6 +855,9 @@ void UIMachineLogic::prepareSessionConnections()
     /* We should watch for VBoxSVC availability changes: */
     connect(&uiCommon(), &UICommon::sigVBoxSVCAvailabilityChange,
             this, &UIMachineLogic::sltHandleVBoxSVCAvailabilityChange);
+
+    /* We should watch for machine UI initialization signal: */
+    connect(uimachine(), &UIMachine::sigInitialized, this, &UIMachineLogic::sltHandleMachineInitialized);
 
     /* We should watch for requested modes: */
     connect(uimachine(), &UIMachine::sigInitialized, this, &UIMachineLogic::sltCheckForRequestedVisualStateType, Qt::QueuedConnection);
@@ -1403,6 +1406,9 @@ void UIMachineLogic::cleanupSessionConnections()
     /* We should stop watching for VBoxSVC availability changes: */
     disconnect(&uiCommon(), &UICommon::sigVBoxSVCAvailabilityChange,
                this, &UIMachineLogic::sltHandleVBoxSVCAvailabilityChange);
+
+    /* We should stop watching for machine UI initialization signal: */
+    disconnect(uimachine(), &UIMachine::sigInitialized, this, &UIMachineLogic::sltHandleMachineInitialized);
 
     /* We should stop watching for requested modes: */
     disconnect(uimachine(), &UIMachine::sigInitialized, this, &UIMachineLogic::sltCheckForRequestedVisualStateType);
