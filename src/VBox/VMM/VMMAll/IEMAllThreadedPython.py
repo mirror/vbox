@@ -51,18 +51,19 @@ if sys.version_info[0] >= 3:
 g_kcThreadedParams = 3;
 
 g_kdTypeInfo = {
-    # type name:    (cBits, fSigned,)
-    'int8_t':       (    8,    True, ),
-    'int16_t':      (   16,    True, ),
-    'int32_t':      (   32,    True, ),
-    'int64_t':      (   64,    True, ),
-    'uint8_t':      (    8,   False, ),
-    'uint16_t':     (   16,   False, ),
-    'uint32_t':     (   32,   False, ),
-    'uint64_t':     (   64,   False, ),
-    'uintptr_t':    (   64,   False, ), # ASSUMES 64-bit host pointer size.
-    'bool':         (    1,   False, ),
-    'IEMMODE':      (    2,   False, ),
+    # type name:    (cBits, fSigned, C-type       )
+    'int8_t':       (    8,    True, 'uint8_t',   ),
+    'int16_t':      (   16,    True, 'int16_t',   ),
+    'int32_t':      (   32,    True, 'int32_t',   ),
+    'int64_t':      (   64,    True, 'int64_t',   ),
+    'uint4_t':      (    4,   False, 'uint8_t',   ),
+    'uint8_t':      (    8,   False, 'uint8_t',   ),
+    'uint16_t':     (   16,   False, 'uint16_t',  ),
+    'uint32_t':     (   32,   False, 'uint32_t',  ),
+    'uint64_t':     (   64,   False, 'uint64_t',  ),
+    'uintptr_t':    (   64,   False, 'uintptr_t', ), # ASSUMES 64-bit host pointer size.
+    'bool':         (    1,   False, 'bool',      ),
+    'IEMMODE':      (    2,   False, 'IEMMODE',   ),
 };
 
 g_kdIemFieldToType = {
@@ -98,12 +99,12 @@ class ThreadedParamRef(object):
     A parameter reference for a threaded function.
     """
 
-    def __init__(self, sOrgRef, sType, oStmt, iParam, offParam = 0):
+    def __init__(self, sOrgRef, sType, oStmt, iParam = None, offParam = 0):
         self.sOrgRef  = sOrgRef;                    ##< The name / reference in the original code.
         self.sStdRef  = ''.join(sOrgRef.split());   ##< Normalized name to deal with spaces in macro invocations and such.
         self.sType    = sType;                      ##< The type (typically derived).
         self.oStmt    = oStmt;                      ##< The statement making the reference.
-        self.iParam   = iParam;                     ##< The parameter containing the references.
+        self.iParam   = iParam;                     ##< The parameter containing the references. None if implicit.
         self.offParam = offParam;                   ##< The offset in the parameter of the reference.
 
         self.sNewName     = 'x';                    ##< The variable name in the threaded function.
@@ -233,14 +234,15 @@ class ThreadedFunction(object):
                     #print('iParamRefFirst=%s iParamRef=%s' % (iParamRefFirst, iParamRef));
                     for iCurRef in range(iParamRef - 1, iParamRefFirst - 1, -1):
                         oCurRef = self.aoParamRefs[iCurRef];
-                        assert oCurRef.oStmt == oStmt;
-                        #print('iCurRef=%s iParam=%s sOrgRef=%s' % (iCurRef, oCurRef.iParam, oCurRef.sOrgRef));
-                        sSrcParam = oNewStmt.asParams[oCurRef.iParam];
-                        assert sSrcParam[oCurRef.offParam : oCurRef.offParam + len(oCurRef.sOrgRef)] == oCurRef.sOrgRef, \
-                               'offParam=%s sOrgRef=%s sSrcParam=%s<eos>' % (oCurRef.offParam, oCurRef.sOrgRef, sSrcParam);
-                        oNewStmt.asParams[oCurRef.iParam] = sSrcParam[0 : oCurRef.offParam] \
-                                                          + oCurRef.sNewName \
-                                                          + sSrcParam[oCurRef.offParam + len(oCurRef.sOrgRef) : ];
+                        if oCurRef.iParam is not None:
+                            assert oCurRef.oStmt == oStmt;
+                            #print('iCurRef=%s iParam=%s sOrgRef=%s' % (iCurRef, oCurRef.iParam, oCurRef.sOrgRef));
+                            sSrcParam = oNewStmt.asParams[oCurRef.iParam];
+                            assert sSrcParam[oCurRef.offParam : oCurRef.offParam + len(oCurRef.sOrgRef)] == oCurRef.sOrgRef, \
+                                   'offParam=%s sOrgRef=%s sSrcParam=%s<eos>' % (oCurRef.offParam, oCurRef.sOrgRef, sSrcParam);
+                            oNewStmt.asParams[oCurRef.iParam] = sSrcParam[0 : oCurRef.offParam] \
+                                                              + oCurRef.sNewName \
+                                                              + sSrcParam[oCurRef.offParam + len(oCurRef.sOrgRef) : ];
 
                 # Process branches of conditionals recursively.
                 if isinstance(oStmt, iai.McStmtCond):
@@ -337,9 +339,17 @@ class ThreadedFunction(object):
             # Some statements we can skip alltogether.
             if isinstance(oStmt, (iai.McStmtVar, iai.McCppPreProc)):
                 continue;
-            if not oStmt.asParams:
-                continue;
             if oStmt.isCppStmt() and oStmt.fDecode:
+                continue;
+
+            # Several statements have implicit parameters.
+            if oStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH', 'IEM_MC_REL_JMP_S8_AND_FINISH', 'IEM_MC_REL_JMP_S16_AND_FINISH',
+                               'IEM_MC_REL_JMP_S32_AND_FINISH', 'IEM_MC_CALL_CIMPL_0', 'IEM_MC_CALL_CIMPL_1',
+                               'IEM_MC_CALL_CIMPL_2', 'IEM_MC_CALL_CIMPL_3', 'IEM_MC_CALL_CIMPL_4', 'IEM_MC_CALL_CIMPL_5'):
+                self.aoParamRefs.append(ThreadedParamRef('cbInstr', 'uint4_t', oStmt));
+
+            # We can skip the rest for statements w/o parameters.
+            if not oStmt.asParams:
                 continue;
 
             # Inspect the target of calls to see if we need to pass down a
