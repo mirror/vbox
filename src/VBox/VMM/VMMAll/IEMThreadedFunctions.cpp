@@ -81,5 +81,3 @@
  * The threaded functions.
  */
 #include "IEMThreadedFunctions.cpp.h"
-
-
