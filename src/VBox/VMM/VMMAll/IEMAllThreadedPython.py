@@ -34,6 +34,7 @@ SPDX-License-Identifier: GPL-3.0-only
 __version__ = "$Revision$"
 
 # Standard python imports.
+import copy;
 import datetime;
 import os;
 import sys;
@@ -98,7 +99,6 @@ class ThreadedParamRef(object):
     """
 
     def __init__(self, sOrgRef, sType, oStmt, iParam, offParam = 0):
-        self.sNewName = 'x';                        ##< The variable name in the threaded function.
         self.sOrgRef  = sOrgRef;                    ##< The name / reference in the original code.
         self.sStdRef  = ''.join(sOrgRef.split());   ##< Normalized name to deal with spaces in macro invocations and such.
         self.sType    = sType;                      ##< The type (typically derived).
@@ -106,6 +106,9 @@ class ThreadedParamRef(object):
         self.iParam   = iParam;                     ##< The parameter containing the references.
         self.offParam = offParam;                   ##< The offset in the parameter of the reference.
 
+        self.sNewName     = 'x';                    ##< The variable name in the threaded function.
+        self.iNewParam    = 99;                     ##< The this is packed into.
+        self.offNewParam  = 1024                    ##< The bit offset in iNewParam.
 
 class ThreadedFunction(object):
     """
@@ -120,6 +123,9 @@ class ThreadedFunction(object):
         self.aoParamRefs = []           # type: list(ThreadedParamRef)
         self.dParamRefs  = {}           # type: dict(str,list(ThreadedParamRef))
         self.cMinParams  = 0;           ##< Minimum number of parameters to the threaded function.
+
+        ## List/tree of statements for the threaded function.
+        self.aoStmtsForThreadedFunction = [] # type list(McStmt)
 
     @staticmethod
     def dummyInstance():
@@ -193,6 +199,57 @@ class ThreadedFunction(object):
         self.raiseProblem('Unknown reference: %s' % (sRef,));
         return None; # Shut up pylint 2.16.2.
 
+    def analyzeMorphStmtForThreaded(self, aoStmts, iParamRef = 0):
+        """
+        Transforms (copy) the statements into those for the threaded function.
+
+        Returns list/tree of statements (aoStmts is not modified) and the new
+        iParamRef value.
+        """
+        #
+        # We'll be traversing aoParamRefs in parallel to the statements, so we
+        # must match the traversal in analyzeFindThreadedParamRefs exactly.
+        #
+        #print('McBlock at %s:%s' % (os.path.split(self.oMcBlock.sSrcFile)[1], self.oMcBlock.iBeginLine,));
+        aoThreadedStmts = [];
+        for oStmt in aoStmts:
+            # Skip C++ statements that is purely related to decoding.
+            if not oStmt.isCppStmt() or not oStmt.fDecode:
+                # Copy the statement. Make a deep copy to make sure we've got our own
+                # copies of all instance variables, even if a bit overkill at the moment.
+                oNewStmt = copy.deepcopy(oStmt);
+                aoThreadedStmts.append(oNewStmt);
+                #print('oNewStmt %s %s' % (oNewStmt.sName, len(oNewStmt.asParams),));
+
+                # If the statement has parameter references, process the relevant parameters.
+                # We grab the references relevant to this statement and apply them in reserve order.
+                if iParamRef < len(self.aoParamRefs) and self.aoParamRefs[iParamRef].oStmt == oStmt:
+                    iParamRefFirst = iParamRef;
+                    while True:
+                        iParamRef += 1;
+                        if iParamRef >= len(self.aoParamRefs) or self.aoParamRefs[iParamRef].oStmt != oStmt:
+                            break;
+
+                    #print('iParamRefFirst=%s iParamRef=%s' % (iParamRefFirst, iParamRef));
+                    for iCurRef in range(iParamRef - 1, iParamRefFirst - 1, -1):
+                        oCurRef = self.aoParamRefs[iCurRef];
+                        assert oCurRef.oStmt == oStmt;
+                        #print('iCurRef=%s iParam=%s sOrgRef=%s' % (iCurRef, oCurRef.iParam, oCurRef.sOrgRef));
+                        sSrcParam = oNewStmt.asParams[oCurRef.iParam];
+                        assert sSrcParam[oCurRef.offParam : oCurRef.offParam + len(oCurRef.sOrgRef)] == oCurRef.sOrgRef, \
+                               'offParam=%s sOrgRef=%s sSrcParam=%s<eos>' % (oCurRef.offParam, oCurRef.sOrgRef, sSrcParam);
+                        oNewStmt.asParams[oCurRef.iParam] = sSrcParam[0 : oCurRef.offParam] \
+                                                          + oCurRef.sNewName \
+                                                          + sSrcParam[oCurRef.offParam + len(oCurRef.sOrgRef) : ];
+
+                # Process branches of conditionals recursively.
+                if isinstance(oStmt, iai.McStmtCond):
+                    (oNewStmt.aoIfBranch, iParamRef) = self.analyzeMorphStmtForThreaded(oStmt.aoIfBranch,   iParamRef);
+                    if oStmt.aoElseBranch:
+                        (oNewStmt.aoElseBranch, iParamRef) = self.analyzeMorphStmtForThreaded(oStmt.aoElseBranch, iParamRef);
+
+        return (aoThreadedStmts, iParamRef);
+
     def analyzeConsolidateThreadedParamRefs(self):
         """
         Consolidate threaded function parameter references into a dictionary
@@ -245,21 +302,21 @@ class ThreadedFunction(object):
         # Pack the parameters as best as we can, starting with the largest ones
         # and ASSUMING a 64-bit parameter size.
         self.cMinParams = 0;
-        offParam        = 0;
+        offNewParam     = 0;
         for cBits in sorted(dBySize.keys(), reverse = True):
             for sStdRef in dBySize[cBits]:
-                if offParam < 64:
-                    offParam        += cBits;
+                if offNewParam < 64:
+                    offNewParam     += cBits;
                 else:
                     self.cMinParams += 1;
-                    offParam         = cBits;
-                assert(offParam <= 64);
+                    offNewParam      = cBits;
+                assert(offNewParam <= 64);
 
                 for oRef in self.dParamRefs[sStdRef]:
-                    oRef.iParam   = self.cMinParams;
-                    oRef.offParam = offParam - cBits;
+                    oRef.iNewParam   = self.cMinParams;
+                    oRef.offNewParam = offNewParam - cBits;
 
-        if offParam > 0:
+        if offNewParam > 0:
             self.cMinParams += 1;
 
         # Currently there are a few that requires 4 parameters, list these so we can figure out why:
@@ -336,8 +393,9 @@ class ThreadedFunction(object):
                                 (asMacroParams, offCloseParam) = iai.McBlock.extractParams(sParam, offParam);
                                 if asMacroParams is None:
                                     self.raiseProblem('Unable to find ")" for %s in "%s"' % (sRef, oStmt.renderCode(),));
-                                self.aoParamRefs.append(ThreadedParamRef(sRef, 'uint8_t', oStmt, iParam, offStart));
                                 offParam = offCloseParam + 1;
+                                self.aoParamRefs.append(ThreadedParamRef(sParam[offStart : offParam], 'uint8_t',
+                                                                         oStmt, iParam, offStart));
 
                             # We can skip known variables.
                             elif sRef in self.dVariables:
@@ -438,6 +496,11 @@ class ThreadedFunction(object):
         # instruction decoding.
         self.analyzeFindThreadedParamRefs(aoStmts);
         self.analyzeConsolidateThreadedParamRefs();
+
+        # Morph the statement stream for the block into what we'll be using in the threaded function.
+        (self.aoStmtsForThreadedFunction, iParamRef) = self.analyzeMorphStmtForThreaded(aoStmts);
+        if iParamRef != len(self.aoParamRefs):
+            raise Exception('iParamRef=%s, expected %s!' % (iParamRef, len(self.aoParamRefs),));
 
         return True;
 
@@ -624,20 +687,20 @@ class IEMThreadedGenerator(object):
                 sTypeDecl = oRef.sType + ' const';
 
                 if cBits == 64:
-                    assert oRef.offParam == 0;
+                    assert oRef.offNewParam == 0;
                     if oRef.sType == 'uint64_t':
-                        sUnpack = 'uParam%s;' % (oRef.iParam,);
+                        sUnpack = 'uParam%s;' % (oRef.iNewParam,);
                     else:
-                        sUnpack = '(%s)uParam%s;' % (oRef.sType, oRef.iParam,);
-                elif oRef.offParam == 0:
-                    sUnpack = '(%s)(uParam%s & %s);' % (oRef.sType, oRef.iParam, self.ksBitsToIntMask[cBits]);
+                        sUnpack = '(%s)uParam%s;' % (oRef.sType, oRef.iNewParam,);
+                elif oRef.offNewParam == 0:
+                    sUnpack = '(%s)(uParam%s & %s);' % (oRef.sType, oRef.iNewParam, self.ksBitsToIntMask[cBits]);
                 else:
                     sUnpack = '(%s)((uParam%s >> %s) & %s);' \
-                            % (oRef.sType, oRef.iParam, oRef.offParam, self.ksBitsToIntMask[cBits]);
+                            % (oRef.sType, oRef.iNewParam, oRef.offNewParam, self.ksBitsToIntMask[cBits]);
 
                 sComment = '/* %s - %s ref%s */' % (oRef.sOrgRef, len(aoRefs), 's' if len(aoRefs) != 1 else '',);
 
-                aasVars.append([ '%s:%02u' % (oRef.iParam, oRef.offParam), sTypeDecl, oRef.sNewName, sUnpack, sComment ]);
+                aasVars.append([ '%s:%02u' % (oRef.iNewParam, oRef.offNewParam), sTypeDecl, oRef.sNewName, sUnpack, sComment ]);
             acchVars = [0, 0, 0, 0, 0];
             for asVar in aasVars:
                 for iCol, sStr in enumerate(asVar):
@@ -652,6 +715,8 @@ class IEMThreadedGenerator(object):
                            + ', '.join(['uParam%u' % (i,) for i in range(oThreadedFunction.cMinParams, g_kcThreadedParams)])
                            + ');\n');
 
+            # Now for the actual statements.
+            oOut.write(iai.McStmt.renderCodeForList(oThreadedFunction.aoStmtsForThreadedFunction, cchIndent = 4));
 
             oOut.write('}\n');
 
