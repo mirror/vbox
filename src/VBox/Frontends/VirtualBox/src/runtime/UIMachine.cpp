@@ -1906,12 +1906,23 @@ void UIMachine::updateActionRestrictions()
 
     /* Audio stuff: */
     {
-        /* Check whether audio adapter is present & enabled: */
+        /* Do we need to restrict something? */
+        bool fRestricted = false;
+        /* Check whether audio adapter is present: */
         bool fAdapterPresent = false;
-        bool fAdapterEnabled = false;
         acquireWhetherAudioAdapterPresent(fAdapterPresent);
-        acquireWhetherAudioAdapterEnabled(fAdapterEnabled);
-        if (!fAdapterPresent || !fAdapterEnabled)
+        if (!fAdapterPresent)
+            fRestricted = true;
+        else
+        {
+            /* Check whether audio adapter is enabled: */
+            bool fAdapterEnabled = false;
+            acquireWhetherAudioAdapterEnabled(fAdapterEnabled);
+            if (!fAdapterEnabled)
+                fRestricted = true;
+        }
+        /* Apply restrictions: */
+        if (fRestricted)
             restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
                                     (restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio);
     }
