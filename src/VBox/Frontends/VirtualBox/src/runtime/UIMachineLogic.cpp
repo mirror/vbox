@@ -926,6 +926,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowFileManager));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_T_Pause));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_ViewPopup));
 #ifndef VBOX_WS_MAC
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_S_MinimizeWindow));
 #endif /* !VBOX_WS_MAC */
