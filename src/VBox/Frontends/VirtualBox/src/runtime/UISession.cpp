@@ -302,6 +302,8 @@ void UISession::acquireUserMachineIcon(QIcon &icon)
 bool UISession::acquireChipsetType(KChipsetType &enmType)
 {
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return false;
     const KChipsetType enmChipsetType = comMachine.GetChipsetType();
     const bool fSuccess = comMachine.isOk();
     if (!fSuccess)
@@ -314,6 +316,8 @@ bool UISession::acquireChipsetType(KChipsetType &enmType)
 bool UISession::acquireLiveMachineState(KMachineState &enmState)
 {
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return false;
     const KMachineState enmMachineState = comMachine.GetState();
     const bool fSuccess = comMachine.isOk();
     if (!fSuccess)
@@ -432,6 +436,8 @@ bool UISession::putScancode(LONG iCode)
 bool UISession::putScancodes(const QVector<LONG> &codes)
 {
     CKeyboard comKeyboard = keyboard();
+    if (comKeyboard.isNull())
+        return false;
     comKeyboard.PutScancodes(codes);
     const bool fSuccess = comKeyboard.isOk();
     if (!fSuccess)
@@ -472,6 +478,8 @@ bool UISession::putUsageCode(LONG iUsageCode, LONG iUsagePage, bool fKeyRelease)
 bool UISession::acquireWhetherAbsoluteSupported(bool &fSupported)
 {
     CMouse comMouse = mouse();
+    if (comMouse.isNull())
+        return false;
     const BOOL fAbsoluteSupported = comMouse.GetAbsoluteSupported();
     const bool fSuccess = comMouse.isOk();
     if (!fSuccess)
@@ -484,6 +492,8 @@ bool UISession::acquireWhetherAbsoluteSupported(bool &fSupported)
 bool UISession::acquireWhetherRelativeSupported(bool &fSupported)
 {
     CMouse comMouse = mouse();
+    if (comMouse.isNull())
+        return false;
     const BOOL fRelativeSupported = comMouse.GetRelativeSupported();
     const bool fSuccess = comMouse.isOk();
     if (!fSuccess)
@@ -496,6 +506,8 @@ bool UISession::acquireWhetherRelativeSupported(bool &fSupported)
 bool UISession::acquireWhetherTouchScreenSupported(bool &fSupported)
 {
     CMouse comMouse = mouse();
+    if (comMouse.isNull())
+        return false;
     const BOOL fTouchScreenSupported = comMouse.GetTouchScreenSupported();
     const bool fSuccess = comMouse.isOk();
     if (!fSuccess)
@@ -508,6 +520,8 @@ bool UISession::acquireWhetherTouchScreenSupported(bool &fSupported)
 bool UISession::acquireWhetherTouchPadSupported(bool &fSupported)
 {
     CMouse comMouse = mouse();
+    if (comMouse.isNull())
+        return false;
     const BOOL fTouchPadSupported = comMouse.GetTouchPadSupported();
     const bool fSuccess = comMouse.isOk();
     if (!fSuccess)
@@ -520,6 +534,8 @@ bool UISession::acquireWhetherTouchPadSupported(bool &fSupported)
 bool UISession::acquireWhetherNeedsHostCursor(bool &fNeeds)
 {
     CMouse comMouse = mouse();
+    if (comMouse.isNull())
+        return false;
     const BOOL fNeedsHostCursor = comMouse.GetNeedsHostCursor();
     const bool fSuccess = comMouse.isOk();
     if (!fSuccess)
@@ -532,6 +548,8 @@ bool UISession::acquireWhetherNeedsHostCursor(bool &fNeeds)
 bool UISession::putMouseEvent(long iDx, long iDy, long iDz, long iDw, long iButtonState)
 {
     CMouse comMouse = mouse();
+    if (comMouse.isNull())
+        return false;
     comMouse.PutMouseEvent(iDx, iDy, iDz, iDw, iButtonState);
     const bool fSuccess = comMouse.isOk();
     if (!fSuccess)
@@ -542,6 +560,8 @@ bool UISession::putMouseEvent(long iDx, long iDy, long iDz, long iDw, long iButt
 bool UISession::putMouseEventAbsolute(long iX, long iY, long iDz, long iDw, long iButtonState)
 {
     CMouse comMouse = mouse();
+    if (comMouse.isNull())
+        return false;
     comMouse.PutMouseEventAbsolute(iX, iY, iDz, iDw, iButtonState);
     const bool fSuccess = comMouse.isOk();
     if (!fSuccess)
@@ -552,6 +572,8 @@ bool UISession::putMouseEventAbsolute(long iX, long iY, long iDz, long iDw, long
 bool UISession::putEventMultiTouch(long iCount, const QVector<LONG64> &contacts, bool fIsTouchScreen, ulong uScanTime)
 {
     CMouse comMouse = mouse();
+    if (comMouse.isNull())
+        return false;
     comMouse.PutEventMultiTouch(iCount, contacts, fIsTouchScreen, uScanTime);
     const bool fSuccess = comMouse.isOk();
     if (!fSuccess)
@@ -562,6 +584,8 @@ bool UISession::putEventMultiTouch(long iCount, const QVector<LONG64> &contacts,
 bool UISession::acquireClipboardMode(KClipboardMode &enmMode)
 {
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return false;
     const KClipboardMode enmClipboardMode = comMachine.GetClipboardMode();
     const bool fSuccess = comMachine.isOk();
     if (!fSuccess)
@@ -584,6 +608,8 @@ bool UISession::setClipboardMode(KClipboardMode enmMode)
 bool UISession::acquireDnDMode(KDnDMode &enmMode)
 {
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return false;
     const KDnDMode enmDnDMode = comMachine.GetDnDMode();
     const bool fSuccess = comMachine.isOk();
     if (!fSuccess)
@@ -606,6 +632,8 @@ bool UISession::setDnDMode(KDnDMode enmMode)
 bool UISession::acquireAmountOfStorageDevices(ulong &cHardDisks, ulong &cOpticalDrives, ulong &cFloppyDrives)
 {
     const CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return false;
     ulong cActualHardDisks = 0, cActualOpticalDrives = 0, cActualFloppyDrives = 0;
     const CMediumAttachmentVector comAttachments = comMachine.GetMediumAttachments();
     bool fSuccess = comMachine.isOk();
@@ -962,6 +990,8 @@ void UISession::acquireWhetherUSBControllerEnabled(bool &fEnabled)
 
     /* Check whether USB device filters are available: */
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return;
     CUSBDeviceFilters comUSBDeviceFilters = comMachine.GetUSBDeviceFilters();
     if (!comMachine.isOk() || comUSBDeviceFilters.isNull())
         return;
@@ -988,6 +1018,8 @@ void UISession::acquireWhetherVideoInputDevicesEnabled(bool &fEnabled)
         return;
     /* Check whether USB controllers are available: */
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return;
     CUSBControllerVector comUSBControllers = comMachine.GetUSBControllers();
     if (!comMachine.isOk() || comUSBControllers.isEmpty())
         return;
@@ -1322,6 +1354,8 @@ bool UISession::acquireGuestAdditionsRevision(ulong &uRevision)
 bool UISession::acquireWhetherAudioAdapterPresent(bool &fPresent)
 {
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return false;
     CAudioSettings comSettings = comMachine.GetAudioSettings();
     const bool fSuccess = comMachine.isOk();
     if (!fSuccess)
@@ -1532,6 +1566,8 @@ bool UISession::acquireMonitorCount(ulong &uCount)
     uCount = 1;
 
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return false;
     CGraphicsAdapter comAdapter = comMachine.GetGraphicsAdapter();
     bool fSuccess = comMachine.isOk();
     if (!fSuccess)
@@ -1734,6 +1770,8 @@ bool UISession::setSeamlessMode(bool fEnabled)
 bool UISession::viewportChanged(ulong uScreenId, ulong xOrigin, ulong yOrigin, ulong uWidth, ulong uHeight)
 {
     CDisplay comDisplay = display();
+    if (comDisplay.isNull())
+        return false;
     comDisplay.ViewportChanged(uScreenId, xOrigin, yOrigin, uWidth, uHeight);
     const bool fSuccess = comDisplay.isOk();
     if (!fSuccess)
@@ -1764,6 +1802,8 @@ bool UISession::invalidateAndUpdateScreen(ulong uScreenId)
 bool UISession::acquireWhetherVRDEServerPresent(bool &fPresent)
 {
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return false;
     CVRDEServer comServer = comMachine.GetVRDEServer();
     fPresent = comMachine.isOk() && comServer.isNotNull();
     return true;
@@ -1883,57 +1923,81 @@ bool UISession::acquireDeviceActivity(const QVector<KDeviceType> &deviceTypes, Q
 void UISession::acquireHardDiskStatusInfo(QString &strInfo, bool &fAttachmentsPresent)
 {
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return;
     UIDetailsGenerator::acquireHardDiskStatusInfo(comMachine, strInfo, fAttachmentsPresent);
 }
 
 void UISession::acquireOpticalDiskStatusInfo(QString &strInfo, bool &fAttachmentsPresent, bool &fAttachmentsMounted)
 {
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return;
     UIDetailsGenerator::acquireOpticalDiskStatusInfo(comMachine, strInfo, fAttachmentsPresent, fAttachmentsMounted);
 }
 
 void UISession::acquireFloppyDiskStatusInfo(QString &strInfo, bool &fAttachmentsPresent, bool &fAttachmentsMounted)
 {
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return;
     UIDetailsGenerator::acquireFloppyDiskStatusInfo(comMachine, strInfo, fAttachmentsPresent, fAttachmentsMounted);
 }
 
 void UISession::acquireAudioStatusInfo(QString &strInfo, bool &fAudioEnabled, bool &fEnabledOutput, bool &fEnabledInput)
 {
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return;
     UIDetailsGenerator::acquireAudioStatusInfo(comMachine, strInfo, fAudioEnabled, fEnabledOutput, fEnabledInput);
 }
 
 void UISession::acquireNetworkStatusInfo(QString &strInfo, bool &fAdaptersPresent, bool &fCablesDisconnected)
 {
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return;
     UIDetailsGenerator::acquireNetworkStatusInfo(comMachine, strInfo, fAdaptersPresent, fCablesDisconnected);
 }
 
 void UISession::acquireUsbStatusInfo(QString &strInfo, bool &fUsbEnableds)
 {
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return;
     CConsole comConsole = console();
+    if (comConsole.isNull())
+        return;
     UIDetailsGenerator::acquireUsbStatusInfo(comMachine, comConsole, strInfo, fUsbEnableds);
 }
 
 void UISession::acquireSharedFoldersStatusInfo(QString &strInfo, bool &fFoldersPresent)
 {
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return;
     CConsole comConsole = console();
+    if (comConsole.isNull())
+        return;
     CGuest comGuest = guest();
+    if (comGuest.isNull())
+        return;
     UIDetailsGenerator::acquireSharedFoldersStatusInfo(comMachine, comConsole, comGuest, strInfo, fFoldersPresent);
 }
 
 void UISession::acquireDisplayStatusInfo(QString &strInfo, bool &fAcceleration3D)
 {
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return;
     UIDetailsGenerator::acquireDisplayStatusInfo(comMachine, strInfo, fAcceleration3D);
 }
 
 void UISession::acquireRecordingStatusInfo(QString &strInfo, bool &fRecordingEnabled, bool &fMachinePaused)
 {
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return;
     fMachinePaused = isPaused();
     UIDetailsGenerator::acquireRecordingStatusInfo(comMachine, strInfo, fRecordingEnabled);
 }
@@ -1943,6 +2007,8 @@ void UISession::acquireFeaturesStatusInfo(QString &strInfo, KVMExecutionEngine &
                                           KParavirtProvider enmProvider)
 {
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return;
     UIDetailsGenerator::acquireFeaturesStatusInfo(comMachine, strInfo,
                                                   enmEngine,
                                                   fNestedPagingEnabled, fUxEnabled,
@@ -2024,6 +2090,8 @@ bool UISession::setLogEnabled(bool fEnabled)
 bool UISession::acquireWhetherLogEnabled(bool &fEnabled)
 {
     CMachineDebugger comDebugger = debugger();
+    if (comDebugger.isNull())
+        return false;
     const BOOL fLogEnabled = comDebugger.GetLogEnabled();
     const bool fSuccess = comDebugger.isOk();
     if (!fSuccess)
@@ -2048,6 +2116,8 @@ bool UISession::acquireLogFolder(QString &strFolder)
 bool UISession::acquireEffectiveParavirtProvider(KParavirtProvider &enmProvider)
 {
     CMachine comMachine = machine();
+    if (comMachine.isNull())
+        return false;
     const KParavirtProvider enmParavirtProvider = comMachine.GetEffectiveParavirtProvider();
     const bool fSuccess = comMachine.isOk();
     if (!fSuccess)
@@ -2060,6 +2130,8 @@ bool UISession::acquireEffectiveParavirtProvider(KParavirtProvider &enmProvider)
 bool UISession::acquireExecutionEngineType(KVMExecutionEngine &enmType)
 {
     CMachineDebugger comDebugger = debugger();
+    if (comDebugger.isNull())
+        return false;
     const KVMExecutionEngine enmEngineType = comDebugger.GetExecutionEngine();
     const bool fSuccess = comDebugger.isOk();
     if (!fSuccess)
@@ -2072,6 +2144,8 @@ bool UISession::acquireExecutionEngineType(KVMExecutionEngine &enmType)
 bool UISession::acquireWhetherHwVirtExNestedPagingEnabled(bool &fEnabled)
 {
     CMachineDebugger comDebugger = debugger();
+    if (comDebugger.isNull())
+        return false;
     const BOOL fFeatureEnabled = comDebugger.GetHWVirtExNestedPagingEnabled();
     const bool fSuccess = comDebugger.isOk();
     if (!fSuccess)
@@ -2084,6 +2158,8 @@ bool UISession::acquireWhetherHwVirtExNestedPagingEnabled(bool &fEnabled)
 bool UISession::acquireWhetherHwVirtExUXEnabled(bool &fEnabled)
 {
     CMachineDebugger comDebugger = debugger();
+    if (comDebugger.isNull())
+        return false;
     const BOOL fFeatureEnabled = comDebugger.GetHWVirtExUXEnabled();
     const bool fSuccess = comDebugger.isOk();
     if (!fSuccess)
