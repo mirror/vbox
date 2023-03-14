@@ -529,7 +529,7 @@ if1of ($(KBUILD_TARGET), darwin)
 endif
 # Enables the new breakpoint handling code, see @bugref{8650}
 VBOX_WITH_DBGF_FLOW_TRACING = 1
-# Enables ARMv8 virtualization, see @bugref{10270}
+# Enables ARMv8 virtualization, see @bugref{10383}
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.arm64)
  VBOX_WITH_VIRT_ARMV8 =
 endif
