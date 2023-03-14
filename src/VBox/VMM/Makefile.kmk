@@ -316,13 +316,13 @@ endif
 $(call VBOX_SET_VER_INFO_DLL,VBoxVMM,VirtualBox VMM) # Version info / description.
 
 ifdef VBOX_WITH_VIRT_ARMV8
-#
-# The VMM DLL - ARMv8 variant.
-#
+ #
+ # The VMM DLL - ARMv8 variant.
+ #
  DLLS += VBoxVMMArm
  VBoxVMMArm_TEMPLATE = VBoxR3DllNoPic
  VBoxVMMArm_SONAME.linux = VBoxVMMArm.so
- 
+
  VBoxVMMArm_DEFS     = VBOX_VMM_TARGET_ARMV8 VBOX_IN_VMM IN_VMM_R3 IN_DIS IN_DBG $(VMM_COMMON_DEFS)
  ifdef VBOX_WITH_VUSB
   VBoxVMMArm_DEFS   += VBOX_WITH_USB
@@ -339,7 +339,7 @@ ifdef VBOX_WITH_VIRT_ARMV8
  #ifdef VBOX_WITH_DBGF_FLOW_TRACING @todo Later
  # VBoxVMMArm_DEFS   += VBOX_WITH_DBGF_FLOW_TRACING
  #endif
- 
+
  VBoxVMMArm_INCS     = \
  	include \
  	$(VBoxVMM_0_OUTDIR)/CommonGenIncs
@@ -466,11 +466,11 @@ ifdef VBOX_WITH_VIRT_ARMV8
   	VMMR3/PDMNetShaper.cpp \
   	VMMAll/PDMAllNetShaper.cpp
  endif
- 
+
  VBoxVMMArm_SOURCES.darwin.arm64 += \
  	VMMR3/NEMR3Native-darwin.cpp
  VBoxVMMArm_DEFS.darwin.arm64   += VBOX_WITH_NATIVE_NEM
- 
+
  VBoxVMMArm_LIBS = \
  	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB)
  #ifdef VBOX_WITH_DEBUGGER
@@ -479,7 +479,7 @@ ifdef VBOX_WITH_VIRT_ARMV8
  #endif
  VBoxVMMArm_LIBS += \
  	$(LIB_RUNTIME)
- 
+
  VBoxVMMArm_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxVMMArm.dylib
 endif
 
