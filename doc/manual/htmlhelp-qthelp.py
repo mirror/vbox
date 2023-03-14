@@ -9,7 +9,6 @@
 import sys, getopt
 import os.path
 import re
-import codecs
 import logging
 
 if sys.version_info >= (3, 0):
@@ -52,7 +51,7 @@ def create_keywords_section(folder):
     keywords_section_lines = ['<keywords>']
     for html_file_name in html_files:
         full_html_path = os.path.join(folder, html_file_name)
-        file_content = codecs.open(full_html_path, encoding='utf-8').read()
+        file_content = open(full_html_path, encoding='utf-8').read()
 
         class html_parser(HTMLParser):
           def __init__(self):
@@ -99,7 +98,7 @@ def create_html_list(folder, list_file):
         logging.error('Could not find the file "%s" in "%s"', list_file, folder)
         return html_file_lines
     full_path = os.path.join(folder, list_file)
-    file = codecs.open(full_path, encoding='utf-8')
+    file = open(full_path, encoding='utf-8')
 
     lines = file.readlines()
     file.close()
@@ -198,7 +197,7 @@ def create_toc(folder, toc_file):
         logging.error('Could not find toc file "%s" under "%s"', toc_file, folder)
         return toc_string_list
     full_path = os.path.join(folder, toc_file)
-    file = codecs.open(full_path, encoding='utf-8')
+    file = open(full_path, encoding='utf-8')
     content = file.read()
     file.close()
     # convert the file string into a list of tags there by eliminating whatever
@@ -257,7 +256,6 @@ def main(argv):
             print(toc_file)
         elif opt in ("-o"):
              output_filename = arg
-
     # check supplied helphtml folder argument
     if not helphtmlfolder:
         logging.error('No helphtml folder is provided. Exiting')
