@@ -1,5 +1,5 @@
 /** @file
- * CPUM - CPU Monitor(/ Manager), Context Structures.
+ * CPUM - CPU Monitor(/ Manager), Context Structures for the x86/amd64 emulation/virtualization.
  */
 
 /*
@@ -33,8 +33,8 @@
  * SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
  */
 
-#ifndef VBOX_INCLUDED_vmm_cpumctx_h
-#define VBOX_INCLUDED_vmm_cpumctx_h
+#ifndef VBOX_INCLUDED_vmm_cpumctx_x86_amd64_h
+#define VBOX_INCLUDED_vmm_cpumctx_x86_amd64_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -122,30 +122,6 @@ typedef struct CPUMSYSENTER
     /** Ring 0 esp. */
     uint64_t    esp;
 } CPUMSYSENTER;
-
-/** @def CPUM_UNION_NM
- * For compilers (like DTrace) that does not grok nameless unions, we have a
- * little hack to make them palatable.
- */
-/** @def CPUM_STRUCT_NM
- * For compilers (like DTrace) that does not grok nameless structs (it is
- * non-standard C++), we have a little hack to make them palatable.
- */
-#ifdef VBOX_FOR_DTRACE_LIB
-# define CPUM_UNION_NM(a_Nm)  a_Nm
-# define CPUM_STRUCT_NM(a_Nm) a_Nm
-#elif defined(IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS)
-# define CPUM_UNION_NM(a_Nm)  a_Nm
-# define CPUM_STRUCT_NM(a_Nm) a_Nm
-#else
-# define CPUM_UNION_NM(a_Nm)
-# define CPUM_STRUCT_NM(a_Nm)
-#endif
-/** @def CPUM_UNION_STRUCT_NM
- * Combines CPUM_UNION_NM and CPUM_STRUCT_NM to avoid hitting the right side of
- * the screen in the compile time assertions.
- */
-#define CPUM_UNION_STRUCT_NM(a_UnionNm, a_StructNm) CPUM_UNION_NM(a_UnionNm .) CPUM_STRUCT_NM(a_StructNm)
 
 /** A general register (union). */
 typedef union CPUMCTXGREG
@@ -1112,5 +1088,5 @@ typedef const CPUMCTXMSRS *PCCPUMCTXMSRS;
 
 RT_C_DECLS_END
 
-#endif /* !VBOX_INCLUDED_vmm_cpumctx_h */
+#endif /* !VBOX_INCLUDED_vmm_cpumctx_x86_amd64_h */
 
