@@ -489,66 +489,66 @@ man_vboximg-mount.xml \
 	$$(call MSG_L1,Fresh LaTeX-generated PDF is now at $$@)
   endef
   $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_usermanual_tex_to_pdf))
- endif # TO_BE_REMOVED
 
- # Generate LaTeX from XML
- # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
- define def_vbox_usermanual_xml_to_tex
-  local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)
-  $$(out_dir)/UserManual.tex: \
-  		$$(addprefix $$(VBOX_PATH_MANUAL_SRC)/$(lang)/,$$(VBOX_MANUAL_XML_FILES)) \
-  		$$(VBOX_MANUAL_XML_FILES_COMMON) \
-  		$$(VBOX_MANUAL_XML_FILES_GENERATED_$(lang)) \
-  		$$(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl \
-  		$$(if $$(VBOX_HAVE_XMLLINT),$$(out_dir)/validatemanual.run,) \
-  		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) \
-  		$$(VBOX_XML_ENTITIES) $$(MAKEFILE_CURRENT) | $$$$(dir $$$$@)
+  # Generate LaTeX from XML
+  # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
+  define def_vbox_usermanual_xml_to_tex
+   local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)
+   $$(out_dir)/UserManual.tex: \
+   		$$(addprefix $$(VBOX_PATH_MANUAL_SRC)/$(lang)/,$$(VBOX_MANUAL_XML_FILES)) \
+   		$$(VBOX_MANUAL_XML_FILES_COMMON) \
+   		$$(VBOX_MANUAL_XML_FILES_GENERATED_$(lang)) \
+   		$$(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl \
+   		$$(if $$(VBOX_HAVE_XMLLINT),$$(out_dir)/validatemanual.run,) \
+   		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) \
+   		$$(VBOX_XML_ENTITIES) $$(MAKEFILE_CURRENT) | $$$$(dir $$$$@)
 	$$(call MSG_TOOL,xsltproc $$(notdir $$(filter %.xsl,$$^)),,$$(firstword $$(filter %.xml,$$^)),$$@)
 	$$(QUIET)$$(RM) -f $$(addprefix $$(@D)/,$$(VBOX_MANUAL_LATEX_FILES_TARGET))
-  #   generate TeX source from processed docbook and store it in UserManual.tex.tmp;
-  #   pass current language to xsltproc in TARGETLANG variable
+   #   generate TeX source from processed docbook and store it in UserManual.tex.tmp;
+   #   pass current language to xsltproc in TARGETLANG variable
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --stringparam TARGETLANG $(lang) \
 		-o $$@.tmp $$(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl $$<
-  #   for pretty quotes, replace " with `` or '' depending on whether it's at the start of a word;
-  #   the \QUOTE{} was inserted by docbook2latex.xsl for all quotes _outside_ of screen sections
+   #   for pretty quotes, replace " with `` or '' depending on whether it's at the start of a word;
+   #   the \QUOTE{} was inserted by docbook2latex.xsl for all quotes _outside_ of screen sections
 	$$(QUIET)$$(SED) \
 		-e 's|^\\QUOTE{}|\\OQ{}|g' \
 		-e 's|\(\W\)\\QUOTE{}|\1\\OQ{}|g' \
 		-e 's|\(\w\)\\QUOTE{}|\1\\CQ{}|g' \
 		--output $$@ $$@.tmp
 	$$(QUIET)$$(RM) -f $$@.tmp
- endef
- $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_usermanual_xml_to_tex))
-
+  endef
+  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_usermanual_xml_to_tex))
+ endif # TO_BE_REMOVED
  # Useful aliases
  usermanual UserManual.pdf:: $(PATH_STAGE_BIN)/UserManual.pdf
 
  debug-usermanual:
 	$(MAKE) --pretty-command-printing -j1 VBOX_PDFLATEX_INTERACTION=errorstopmode $(PATH_STAGE_BIN)/UserManual.pdf
 
- #
- # Generate rules for validating the UserManual.xml.  These are invoked
- # automatically at build time, but can also be manually invoked via the
- # 'validatemanual' and 'validatemanual_<lang>' aliases.
- #
- define def_vbox_validate_xml
-  validatemanual_$(lang):: $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/validatemanual.run
-  $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/validatemanual.run: \
-  		$$(addprefix $$(VBOX_PATH_MANUAL_SRC)/$(lang)/,$$(VBOX_MANUAL_XML_FILES)) \
-  		$$(VBOX_MANUAL_XML_FILES_COMMON) \
-  		$$(VBOX_MANUAL_XML_FILES_GENERATED_$(lang)) \
-  		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) \
-  		$$(VBOX_XML_ENTITIES) $$(MAKEFILE_CURRENT) | $$$$(dir $$$$@)
+ ifdef TO_BE_REMOVED
+  #
+  # Generate rules for validating the UserManual.xml.  These are invoked
+  # automatically at build time, but can also be manually invoked via the
+  # 'validatemanual' and 'validatemanual_<lang>' aliases.
+  #
+  define def_vbox_validate_xml
+   validatemanual_$(lang):: $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/validatemanual.run
+   $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/validatemanual.run: \
+   		$$(addprefix $$(VBOX_PATH_MANUAL_SRC)/$(lang)/,$$(VBOX_MANUAL_XML_FILES)) \
+   		$$(VBOX_MANUAL_XML_FILES_COMMON) \
+   		$$(VBOX_MANUAL_XML_FILES_GENERATED_$(lang)) \
+   		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) \
+   		$$(VBOX_XML_ENTITIES) $$(MAKEFILE_CURRENT) | $$$$(dir $$$$@)
 	$$(call MSG_L1,Validating $$<)
 	$$(QUIET)$$(VBOX_XMLLINT_WITH_CAT) --dtdvalid $$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd $$<
 	$$(QUIET)$$(APPEND) -t "$$@" "done"
- endef
- $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_validate_xml))
+  endef
+  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_validate_xml))
 
 
- # Handy aliases.
- validatemanual:: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),validatemanual_$(lang))
-
+  # Handy aliases.
+  validatemanual:: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),validatemanual_$(lang))
+ endif # TO_BE_REMOVED
 
 
  #
@@ -857,12 +857,12 @@ man_vboximg-mount.xml \
 , $(evalcall2 def_vbox_refentry_to_dita,$(lang),$(file))))
 
  VBOX_REFENTRY_DITA_FILES = $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file, $(basename $(VBOX_MANUAL_XML_REFENTRY_FILES)) \
- 	man_vboximg-mount man_VBoxHeadless user_isomakercmd-man\
+ 	man_vboximg-mount man_VBoxHeadless user_isomakercmd-man \
  	,$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/dita/topics/$(file).dita))
 
-$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/user_isomakercmd-man.dita: \
-	$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl \
-	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_isomakercmd-man.xml | $$$(dir $$$@)
+ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/user_isomakercmd-man.dita: \
+ 		$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl \
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_isomakercmd-man.xml | $$$(dir $$$@)
 	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output $@ $(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl $(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_isomakercmd-man.xml
 
  ##########################################################################################
@@ -898,7 +898,6 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/user_isomakercmd-man.dita: \
  define def_ditamap_to_pdf
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf: \
-  		$$(addprefix $$(VBOX_PATH_MANUAL_SRC)/$(lang)/,$$(VBOX_MANUAL_XML_FILES)) \
   		$$(VBOX_MANUAL_XML_FILES_COMMON) \
   		$$(VBOX_MANUAL_XML_FILES_GENERATED_$(lang)) \
   		dita_common
