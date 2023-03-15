@@ -972,7 +972,9 @@ class TestVm(object):
                  sChipsetType = 'piix3',                    # type: str
                  sIommuType = 'none',                       # type: str
                  sHddControllerType = 'IDE Controller',     # type: str
-                 sDvdControllerType = 'IDE Controller'      # type: str
+                 sDvdControllerType = 'IDE Controller',     # type: str
+                 fSecureBoot = False,                       # type: bool
+                 sUefiMokPathPrefix = None                  # type: str
                  ):
         self.oSet                    = oSet;
         self.sVmName                 = sVmName;
@@ -999,6 +1001,9 @@ class TestVm(object):
         self.sChipsetType            = sChipsetType;
         self.sIommuType              = sIommuType;
         self.fCom1RawFile            = False;
+
+        self.fSecureBoot             = fSecureBoot;
+        self.sUefiMokPathPrefix      = sUefiMokPathPrefix;
 
         self.fSnapshotRestoreCurrent = False;        # Whether to restore execution on the current snapshot.
         self.fSkip                   = False;        # All VMs are included in the configured set by default.
@@ -1197,7 +1202,9 @@ class TestVm(object):
                                      sFirmwareType      = self.sFirmwareType,
                                      sChipsetType       = self.sChipsetType,
                                      sIommuType         = self.sIommuType,
-                                     sCom1RawFile       = self.sCom1RawFile if self.fCom1RawFile else None
+                                     sCom1RawFile       = self.sCom1RawFile if self.fCom1RawFile else None,
+                                     fSecureBoot        = self.fSecureBoot,
+                                     sUefiMokPathPrefix = self.sUefiMokPathPrefix
                                      );
 
     def getReconfiguredVm(self, oTestDrv, cCpus, sVirtMode, sParavirtMode = None):
@@ -1949,12 +1956,18 @@ class TestVmManager(object):
         TestVm('tst-ol-8_1-64-efi',         kfGrpStdSmoke,        sHd = '6.1/efi/ol-8_1-efi-amd64-2.vdi',
                sKind = 'Oracle_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
                asParavirtModesSup = [g_ksParavirtProviderKVM,]),
+        TestVm('tst-ol-8_1-64-efi-sb',      kfGrpStdSmoke,        sHd = '6.1/efi/ol-8_1-efi-amd64-2.vdi',
+               sKind = 'Oracle_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
+               asParavirtModesSup = [g_ksParavirtProviderKVM,], fSecureBoot = True, sUefiMokPathPrefix = '7.0/mok/vbox-test-MOK'),
         TestVm('tst-ol-6u2-32',             kfGrpStdSmoke,        sHd = '6.1/ol-6u2-x86.vdi',
                sKind = 'Oracle',    acCpusSup = range(1, 33), fIoApic = True,
                asParavirtModesSup = [g_ksParavirtProviderKVM,]),
         TestVm('tst-ubuntu-15_10-64-efi',   kfGrpStdSmoke,        sHd = '6.1/efi/ubuntu-15_10-efi-amd64-3.vdi',
                sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
                asParavirtModesSup = [g_ksParavirtProviderKVM,]),
+        TestVm('tst-ubuntu-15_10-64-efi-sb', kfGrpStdSmoke,       sHd = '6.1/efi/ubuntu-15_10-efi-amd64-3.vdi',
+               sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
+               asParavirtModesSup = [g_ksParavirtProviderKVM,], fSecureBoot = True, sUefiMokPathPrefix = '7.0/mok/vbox-test-MOK'),
         # Note: Deprecated / buggy; use the one in the 6.1 folder.
         #TestVm('tst-ubuntu-15_10-64-efi',   kfGrpStdSmoke,        sHd = '4.2/efi/ubuntu-15_10-efi-amd64.vdi',
         #       sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',

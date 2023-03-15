@@ -2508,7 +2508,9 @@ class TestDriver(base.TestDriver):                                              
                      sChipsetType = 'piix3',
                      sIommuType = 'none',
                      sDvdControllerType = 'IDE Controller',
-                     sCom1RawFile = None):
+                     sCom1RawFile = None,
+                     fSecureBoot = False,
+                     sUefiMokPathPrefix = None):
         """
         Creates a test VM with a immutable HD from the test resources.
         """
@@ -2566,6 +2568,8 @@ class TestDriver(base.TestDriver):                                              
                 fRc = oSession.setFirmwareType(vboxcon.FirmwareType_BIOS);
             elif fRc and sFirmwareType == 'efi':
                 fRc = oSession.setFirmwareType(vboxcon.FirmwareType_EFI);
+                if fRc and self.fpApiVer >= 7.0 and fSecureBoot:
+                    fRc = oSession.enableSecureBoot(fSecureBoot, sUefiMokPathPrefix);
             if fRc and self.fEnableDebugger:
                 fRc = oSession.setExtraData('VBoxInternal/DBGC/Enabled', '1');
             if fRc and self.fRecordingEnabled:

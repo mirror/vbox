@@ -82,7 +82,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         self.sGstPathGaPrefix = '';
 
         # Wether to reboot guest after Guest Additions installation.
-        self.fRebbotAfterInstall = True;
+        self.fRebootAfterInstall = True;
 
         self.addSubTestDriver(SubTstDrvAddGuestCtrl(self));
         self.addSubTestDriver(SubTstDrvAddSharedFolders1(self));
@@ -118,7 +118,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             self.parseOption(['--cpu-counts', '1'], 0);
 
         elif asArgs[iArg] == '--no-reboot-after-install':
-            self.fRebbotAfterInstall = False;
+            self.fRebootAfterInstall = False;
             reporter.log('Guest will not be rebooted after Guest Additions installation, ' +
                          'kernel modules and user services should be reloaded automatically without reboot');
 
@@ -490,19 +490,42 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         #
         # The actual install.
         # Also tell the installer to produce the appropriate log files.
-        #
+
+        # Deploy signing keys into guest if VM has Secure Boot enabled.
+        if oTestVm.fSecureBoot:
+            reporter.log('Deploying Secure Boot signing keys to the guest');
+            fRc = self.txsMkDirPath(oSession, oTxsSession, '/var/lib/shim-signed/mok');
+            if fRc:
+                fRc = self.txsUploadFile(oSession, oTxsSession,
+                                         self.getFullResourceName(oTestVm.sUefiMokPathPrefix) + '.der',
+                                         '/var/lib/shim-signed/mok/MOK.der')
+            if fRc:
+                fRc = self.txsUploadFile(oSession, oTxsSession,
+                                         self.getFullResourceName(oTestVm.sUefiMokPathPrefix) + '.priv',
+                                         '/var/lib/shim-signed/mok/MOK.priv')
+            if fRc and oTxsSession.isSuccess():
+                pass
+            else:
+                reporter.testFailure('Unable to deploy Secure Boot signing keys to the guest');
+
         # Make sure to add "--nox11" to the makeself wrapper in order to not getting any blocking
         # xterm window spawned.
         fRc = self.txsRunTest(oTxsSession, 'VBoxLinuxAdditions.run', 30 * 60 * 1000,
                               self.getGuestSystemShell(oTestVm),
                               (self.getGuestSystemShell(oTestVm),
                               '${CDROM}/%s/VBoxLinuxAdditions.run' % self.sGstPathGaPrefix, '--nox11'));
-        if not fRc:
-            iRc = self.getAdditionsInstallerResult(oTxsSession);
-            # Check for rc == 0 just for completeness.
-            if iRc in (0, 2): # Can happen if the GA installer has detected older VBox kernel modules running and needs a reboot.
-                reporter.log('Guest has old(er) VBox kernel modules still running; requires a reboot');
-                fRc = True;
+        if fRc and oTxsSession.isSuccess():
+            reporter.log('Installation completed');
+        else:
+            # Guest Additions installer which requires guest reboot after installation might return
+            # special exit code which can indicate that all was installed, but kernel modules were
+            # not rebooted. Handle this case here.
+            if self.fRebootAfterInstall:
+                iRc = self.getAdditionsInstallerResult(oTxsSession);
+                # Check for rc == 0 just for completeness.
+                if iRc in (0, 2): # Can happen if the GA installer has detected older VBox kernel modules running and needs a reboot.
+                    reporter.log('Guest has old(er) VBox kernel modules still running; requires a reboot');
+                    fRc = True;
 
             if not fRc:
                 reporter.error('Installing Linux Additions failed (isSuccess=%s, lastReply=%s, see log file for details)'
@@ -518,7 +541,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
         # Do the final reboot to get the just installed Guest Additions up and running.
         if fRc:
-            if self.fRebbotAfterInstall:
+            if self.fRebootAfterInstall:
                 reporter.testStart('Rebooting guest w/ updated Guest Additions active');
                 (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout = 15 * 60 * 1000);
                 if not fRc:
@@ -529,14 +552,12 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                                       self.getGuestSystemShell(oTestVm),
                                       (self.getGuestSystemShell(oTestVm),
                                       '/sbin/rcvboxadd', 'status-kernel'));
-                iRc = self.getAdditionsInstallerResult(oTxsSession);
-                if fRc and iRc == 0:
+                if fRc and oTxsSession.isSuccess():
                     fRc = self.txsRunTest(oTxsSession, 'Check Guest Additions user services status', 5 * 60 * 1000,
                                           self.getGuestSystemShell(oTestVm),
                                           (self.getGuestSystemShell(oTestVm),
                                           '/sbin/rcvboxadd', 'status-user'));
-                    iRc = self.getAdditionsInstallerResult(oTxsSession);
-                    if fRc and iRc == 0:
+                    if fRc and oTxsSession.isSuccess():
                         pass;
                     else:
                         fRc = False;

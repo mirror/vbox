@@ -44,6 +44,7 @@ __version__ = "$Revision$"
 import os;
 import socket;
 import sys;
+import uuid;
 
 # Validation Kit imports.
 from common     import utils;
@@ -1228,6 +1229,40 @@ class SessionWrapper(TdTaskBase):
         else:
             reporter.log('set firmwareType=%s for "%s"' % (eType, self.sName));
         self.oTstDrv.processPendingEvents();
+        return fRc;
+
+    def enableSecureBoot(self, fEnable, sUefiMokPathPrefix = None):
+        """
+        Enables or disables Secure Boot. Error information is logged.
+        """
+
+        if self.fpApiVer >= 7.0:
+
+            fRc = True;
+            try:
+                self.o.machine.nonVolatileStore.initUefiVariableStore(0);
+
+                # Enroll necessary keys and signatures in case if Secure Boot needs to be turned ON.
+                if fEnable:
+                    self.o.machine.nonVolatileStore.uefiVariableStore.enrollDefaultMsSignatures();
+                    self.o.machine.nonVolatileStore.uefiVariableStore.enrollOraclePlatformKey();
+                    if sUefiMokPathPrefix is not None:
+                        sFullName = self.oTstDrv.getFullResourceName(sUefiMokPathPrefix) + '.der';
+                        with open(sFullName, "rb") as f:
+                            self.o.machine.nonVolatileStore.uefiVariableStore.addSignatureToMok(bytearray(f.read()), uuid.uuid4().hex, vboxcon.SignatureType_X509);
+
+                self.o.machine.nonVolatileStore.uefiVariableStore.secureBootEnabled = fEnable;
+            except:
+                reporter.errorXcpt('failed to change Secure Boot to %s for "%s"' % (fEnable, self.sName));
+                fRc = False;
+            else:
+                reporter.log('changed Secure Boot to %s for "%s"' % (fEnable, self.sName));
+            self.oTstDrv.processPendingEvents();
+
+        else:
+            reporter.log('Secure Boot is only supported for API 7.0 or newer');
+            fRc = False;
+
         return fRc;
 
     def setChipsetType(self, eType):
