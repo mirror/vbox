@@ -39,6 +39,7 @@ set _MY_OPT_GADIR=
 set _MY_OPT_WITH_MAIN=1
 set _MY_OPT_WITH_PDB=1
 set _MY_OPT_EXTPACK=
+set _MY_OPT_NO_EXTRACT=0
 set _MY_OPT_WITH_EXTPACK=1
 set _MY_OPT_WITH_GA=0
 set _MY_OPT_OUTPUT=
@@ -71,6 +72,7 @@ if ".%1" == ".-o"           goto opt_o
 if ".%1" == ".--output"     goto opt_o
 if ".%1" == ".-p"           goto opt_p
 if ".%1" == ".--pdb"        goto opt_p
+if ".%1" == ".--no-extract" goto opt_t
 if ".%1" == ".-x"           goto opt_x
 if ".%1" == ".--no-extpack" goto opt_x
 if ".%1" == ".-g"           goto opt_g
@@ -136,6 +138,11 @@ if ".%~2" == "."            goto syntax_error_missing_value
 set _MY_OPT_OUTPUT=%~2
 goto argument_loop_next_with_value
 
+:opt_t
+set _MY_OPT_NO_EXTRACT=1
+shift
+goto argument_loop
+
 :opt_x
 set _MY_OPT_WITH_EXTPACK=0
 shift
@@ -145,7 +152,6 @@ goto argument_loop
 set _MY_OPT_WITH_GA=1
 shift
 goto argument_loop
-
 
 :syntax_error_missing_value
 echo syntax error: missing or empty option value after %1
@@ -190,6 +196,7 @@ if not exist "%_MY_OPT_PDBDIR%"     goto error_pdbdir_does_not_exist
 :no_pdbdir_validation
 
 if "%_MY_OPT_WITH_EXTPACK%" == "0"  goto no_extpack_validation
+if "%_MY_OPT_NO_EXTRACT%" == "1"    goto no_extpack_validation
 if ".%_MY_OPT_EXTPACK%" == "."      set _MY_OPT_EXTPACK=%_MY_OPT_BINDIR%\Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack
 if not exist "%_MY_OPT_EXTPACK%"    goto error_extpack_does_not_exist
 :no_extpack_validation
@@ -218,6 +225,7 @@ if "%_MY_OPT_WITH_EXTPACK%" == "0" goto no_extpack_unpack
 set _MY_EXTPACK_DIR=%_MY_OPT_BINDIR%\ExtensionPacks\Oracle_VM_VirtualBox_Extension_Pack
 if not exist "%_MY_OPT_BINDIR%\ExtensionPacks"  ( mkdir "%_MY_OPT_BINDIR%\ExtensionPacks" || goto end_failed )
 if not exist "%_MY_EXTPACK_DIR%"                ( mkdir "%_MY_EXTPACK_DIR%" || goto end_failed )
+if "%_MY_OPT_NO_EXTRACT%" == "1" goto no_extpack_unpack
 "%_MY_OPT_BINDIR%\tools\RTTar.exe" -xzf "%_MY_OPT_EXTPACK%"  -C "%_MY_EXTPACK_DIR%" || goto end_failed
 :no_extpack_unpack
 
