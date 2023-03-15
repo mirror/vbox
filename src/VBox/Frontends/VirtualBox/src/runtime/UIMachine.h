@@ -231,6 +231,8 @@ public:
 
     /** @name Machine-state stuff.
      ** @{ */
+        /** Returns previous machine state. */
+        KMachineState machineStatePrevious() const;
         /** Returns cached machine state. */
         KMachineState machineState() const;
 

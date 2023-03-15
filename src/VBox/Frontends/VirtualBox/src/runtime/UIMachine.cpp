@@ -325,6 +325,11 @@ void UIMachine::updateStateVRDEServerAction()
     actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer)->blockSignals(false);
 }
 
+KMachineState UIMachine::machineStatePrevious() const
+{
+    return uisession()->machineStatePrevious();
+}
+
 KMachineState UIMachine::machineState() const
 {
     return uisession()->machineState();
