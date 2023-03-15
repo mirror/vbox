@@ -72,6 +72,7 @@ if ".%1" == ".-o"           goto opt_o
 if ".%1" == ".--output"     goto opt_o
 if ".%1" == ".-p"           goto opt_p
 if ".%1" == ".--pdb"        goto opt_p
+if ".%1" == ".-t"           goto opt_p
 if ".%1" == ".--no-extract" goto opt_t
 if ".%1" == ".-x"           goto opt_x
 if ".%1" == ".--no-extpack" goto opt_x
