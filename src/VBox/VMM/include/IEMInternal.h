@@ -568,7 +568,8 @@ typedef struct IEMCPU
 
     /** @name Decoder state.
      * @{ */
-#ifdef IEM_WITH_CODE_TLB
+#ifndef IEM_WITH_OPAQUE_DECODER_STATE
+# ifdef IEM_WITH_CODE_TLB
     /** The offset of the next instruction byte. */
     uint32_t                offInstrNextByte;                                                               /* 0x08 */
     /** The number of bytes available at pbInstrBuf for the current instruction.
@@ -588,9 +589,9 @@ typedef struct IEMCPU
      * therefore precludes stuff like <tt>pbInstrBuf[offInstrNextByte + cbInstrBuf - cbCurInstr]</tt>
      */
     uint8_t const          *pbInstrBuf;                                                                     /* 0x10 */
-# if ARCH_BITS == 32
+#  if ARCH_BITS == 32
     uint32_t                uInstrBufHigh; /** The high dword of the host context pbInstrBuf member. */
-# endif
+#  endif
     /** The program counter corresponding to pbInstrBuf.
      * This is set to a non-canonical address when we need to invalidate it. */
     uint64_t                uInstrBufPc;                                                                    /* 0x18 */
@@ -616,7 +617,7 @@ typedef struct IEMCPU
 
     /** The offset of the ModR/M byte relative to the start of the instruction. */
     uint8_t                 offModRm;                                                                       /* 0x2c */
-#else  /* !IEM_WITH_CODE_TLB */
+# else  /* !IEM_WITH_CODE_TLB */
     /** The size of what has currently been fetched into abOpcode. */
     uint8_t                 cbOpcode;                                                                       /*       0x08 */
     /** The current offset into abOpcode. */
@@ -637,7 +638,7 @@ typedef struct IEMCPU
     /** The extra REX SIB index field bit (REX.X << 3). */
     uint8_t                 uRexIndex;                                                                      /*       0x12 */
 
-#endif /* !IEM_WITH_CODE_TLB */
+# endif /* !IEM_WITH_CODE_TLB */
 
     /** The effective operand mode. */
     IEMMODE                 enmEffOpSize;                                                                   /* 0x2d, 0x13 */
@@ -662,19 +663,22 @@ typedef struct IEMCPU
     uint8_t                 abAlignment2a[1];                                                               /* 0x35, 0x1b */
     /** The FPU opcode (FOP). */
     uint16_t                uFpuOpcode;                                                                     /* 0x36, 0x1c */
-#ifndef IEM_WITH_CODE_TLB
+# ifndef IEM_WITH_CODE_TLB
     /** Explicit alignment padding. */
     uint8_t                 abAlignment2b[2];                                                               /*       0x1e */
-#endif
+# endif
 
     /** The opcode bytes. */
     uint8_t                 abOpcode[15];                                                                   /* 0x48, 0x20 */
     /** Explicit alignment padding. */
-#ifdef IEM_WITH_CODE_TLB
+# ifdef IEM_WITH_CODE_TLB
     uint8_t                 abAlignment2c[0x48 - 0x47];                                                     /* 0x37 */
-#else
+# else
     uint8_t                 abAlignment2c[0x48 - 0x2f];                                                     /*       0x2f */
-#endif
+# endif
+#else  /* IEM_WITH_OPAQUE_DECODER_STATE */
+    uint8_t                 abOpaqueDecoder[0x48 - 0x8];
+#endif /* IEM_WITH_OPAQUE_DECODER_STATE */
     /** @} */
 
 

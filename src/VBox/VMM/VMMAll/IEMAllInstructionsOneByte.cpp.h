@@ -11243,7 +11243,7 @@ FNIEMOP_DEF(iemOp_loop_Jb)
      * the loop causes guest crashes, but when logging it's nice to skip a few million
      * lines of useless output. */
 #if defined(LOG_ENABLED)
-    if ((LogIs3Enabled() || LogIs4Enabled()) && (-(int8_t)IEM_GET_INSTR_LEN(pVCpu) == i8Imm))
+    if ((LogIs3Enabled() || LogIs4Enabled()) && -(int8_t)IEM_GET_INSTR_LEN(pVCpu) == i8Imm)
         switch (pVCpu->iem.s.enmEffAddrMode)
         {
             case IEMMODE_16BIT:

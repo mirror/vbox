@@ -181,8 +181,9 @@ DECLINLINE(IEMMODE) iemCalcCpuMode(PVMCPUCC pVCpu) RT_NOEXCEPT
     return IEMMODE_16BIT;
 }
 
+#ifndef IEM_WITH_OPAQUE_DECODER_STATE
 
-#if defined(VBOX_INCLUDED_vmm_dbgf_h) || defined(DOXYGEN_RUNNING) /* dbgf.ro.cEnabledHwBreakpoints */
+# if defined(VBOX_INCLUDED_vmm_dbgf_h) || defined(DOXYGEN_RUNNING) /* dbgf.ro.cEnabledHwBreakpoints */
 /**
  * Initializes the execution state.
  *
@@ -208,7 +209,7 @@ DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, bool fBypassHandlers) RT_NOEXCEPT
 
     pVCpu->iem.s.uCpl               = CPUMGetGuestCPL(pVCpu);
     pVCpu->iem.s.enmCpuMode         = iemCalcCpuMode(pVCpu);
-# ifdef VBOX_STRICT
+#  ifdef VBOX_STRICT
     pVCpu->iem.s.enmDefAddrMode     = (IEMMODE)0xfe;
     pVCpu->iem.s.enmEffAddrMode     = (IEMMODE)0xfe;
     pVCpu->iem.s.enmDefOpSize       = (IEMMODE)0xfe;
@@ -224,18 +225,18 @@ DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, bool fBypassHandlers) RT_NOEXCEPT
     pVCpu->iem.s.uVexLength         = 127;
     pVCpu->iem.s.fEvexStuff         = 127;
     pVCpu->iem.s.uFpuOpcode         = UINT16_MAX;
-#  ifdef IEM_WITH_CODE_TLB
+#   ifdef IEM_WITH_CODE_TLB
     pVCpu->iem.s.offInstrNextByte   = UINT16_MAX;
     pVCpu->iem.s.pbInstrBuf         = NULL;
     pVCpu->iem.s.cbInstrBuf         = UINT16_MAX;
     pVCpu->iem.s.cbInstrBufTotal    = UINT16_MAX;
     pVCpu->iem.s.offCurInstrStart   = INT16_MAX;
     pVCpu->iem.s.uInstrBufPc        = UINT64_C(0xc0ffc0ffcff0c0ff);
-#  else
+#   else
     pVCpu->iem.s.offOpcode          = 127;
     pVCpu->iem.s.cbOpcode           = 127;
-#  endif
-# endif /* VBOX_STRICT */
+#   endif
+#  endif /* VBOX_STRICT */
 
     pVCpu->iem.s.cActiveMappings    = 0;
     pVCpu->iem.s.iNextMapping       = 0;
@@ -251,10 +252,10 @@ DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, bool fBypassHandlers) RT_NOEXCEPT
     else
         iemInitPendingBreakpointsSlow(pVCpu);
 }
-#endif /* VBOX_INCLUDED_vmm_dbgf_h */
+# endif /* VBOX_INCLUDED_vmm_dbgf_h */
 
 
-#if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
+# if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
 /**
  * Performs a minimal reinitialization of the execution state.
  *
@@ -284,14 +285,14 @@ DECLINLINE(void) iemReInitExec(PVMCPUCC pVCpu) RT_NOEXCEPT
         pVCpu->iem.s.enmEffOpSize = enmMode;
     }
     pVCpu->iem.s.iEffSeg          = X86_SREG_DS;
-# ifndef IEM_WITH_CODE_TLB
+#  ifndef IEM_WITH_CODE_TLB
     /** @todo Shouldn't we be doing this in IEMTlbInvalidateAll()? */
     pVCpu->iem.s.offOpcode        = 0;
     pVCpu->iem.s.cbOpcode         = 0;
-# endif
+#  endif
     pVCpu->iem.s.rcPassUp         = VINF_SUCCESS;
 }
-#endif
+# endif
 
 
 /**
@@ -303,15 +304,15 @@ DECLINLINE(void) iemReInitExec(PVMCPUCC pVCpu) RT_NOEXCEPT
 DECLINLINE(void) iemUninitExec(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     /* Note! do not touch fInPatchCode here! (see iemUninitExecAndFiddleStatusAndMaybeReenter) */
-#ifdef VBOX_STRICT
-# ifdef IEM_WITH_CODE_TLB
+# ifdef VBOX_STRICT
+#  ifdef IEM_WITH_CODE_TLB
     NOREF(pVCpu);
-# else
+#  else
     pVCpu->iem.s.cbOpcode = 0;
-# endif
-#else
+#  endif
+# else
     NOREF(pVCpu);
-#endif
+# endif
 }
 
 
@@ -339,12 +340,12 @@ DECLINLINE(VBOXSTRICTRC) iemUninitExecAndFiddleStatusAndMaybeReenter(PVMCPUCC pV
  * @param   a_cbInstr   The given instruction length.
  * @param   a_cbMin     The minimum length.
  */
-#define IEMEXEC_ASSERT_INSTR_LEN_RETURN(a_cbInstr, a_cbMin) \
+# define IEMEXEC_ASSERT_INSTR_LEN_RETURN(a_cbInstr, a_cbMin) \
     AssertMsgReturn((unsigned)(a_cbInstr) - (unsigned)(a_cbMin) <= (unsigned)15 - (unsigned)(a_cbMin), \
                     ("cbInstr=%u cbMin=%u\n", (a_cbInstr), (a_cbMin)), VERR_IEM_INVALID_INSTR_LENGTH)
 
 
-#ifndef IEM_WITH_SETJMP
+# ifndef IEM_WITH_SETJMP
 
 /**
  * Fetches the first opcode byte.
@@ -386,7 +387,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetFirstU8(PVMCPUCC pVCpu, uint8_t *pu8) RT_NO
     return iemOpcodeGetNextU8Slow(pVCpu, pu8);
 }
 
-#else  /* IEM_WITH_SETJMP */
+# else  /* IEM_WITH_SETJMP */
 
 /**
  * Fetches the first opcode byte, longjmp on error.
@@ -418,7 +419,7 @@ DECL_INLINE_THROW(uint8_t) iemOpcodeGetFirstU8Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_M
     /*
      * Fetch the first opcode byte.
      */
-# ifdef IEM_WITH_CODE_TLB
+#  ifdef IEM_WITH_CODE_TLB
     uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
     uint8_t const  *pbBuf  = pVCpu->iem.s.pbInstrBuf;
     if (RT_LIKELY(   pbBuf != NULL
@@ -427,18 +428,18 @@ DECL_INLINE_THROW(uint8_t) iemOpcodeGetFirstU8Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_M
         pVCpu->iem.s.offInstrNextByte = (uint32_t)offBuf + 1;
         return pbBuf[offBuf];
     }
-# else
+#  else
     uintptr_t offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_LIKELY((uint8_t)offOpcode < pVCpu->iem.s.cbOpcode))
     {
         pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 1;
         return pVCpu->iem.s.abOpcode[offOpcode];
     }
-# endif
+#  endif
     return iemOpcodeGetNextU8SlowJmp(pVCpu);
 }
 
-#endif /* IEM_WITH_SETJMP */
+# endif /* IEM_WITH_SETJMP */
 
 /**
  * Fetches the first opcode byte, returns/throws automatically on failure.
@@ -446,8 +447,8 @@ DECL_INLINE_THROW(uint8_t) iemOpcodeGetFirstU8Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_M
  * @param   a_pu8               Where to return the opcode byte.
  * @remark Implicitly references pVCpu.
  */
-#ifndef IEM_WITH_SETJMP
-# define IEM_OPCODE_GET_FIRST_U8(a_pu8) \
+# ifndef IEM_WITH_SETJMP
+#  define IEM_OPCODE_GET_FIRST_U8(a_pu8) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetFirstU8(pVCpu, (a_pu8)); \
@@ -456,12 +457,12 @@ DECL_INLINE_THROW(uint8_t) iemOpcodeGetFirstU8Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_M
         else \
             return rcStrict2; \
     } while (0)
-#else
-# define IEM_OPCODE_GET_FIRST_U8(a_pu8) (*(a_pu8) = iemOpcodeGetFirstU8Jmp(pVCpu))
-#endif /* IEM_WITH_SETJMP */
+# else
+#  define IEM_OPCODE_GET_FIRST_U8(a_pu8) (*(a_pu8) = iemOpcodeGetFirstU8Jmp(pVCpu))
+# endif /* IEM_WITH_SETJMP */
 
 
-#ifndef IEM_WITH_SETJMP
+# ifndef IEM_WITH_SETJMP
 
 /**
  * Fetches the next opcode byte.
@@ -483,7 +484,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU8(PVMCPUCC pVCpu, uint8_t *pu8) RT_NOE
     return iemOpcodeGetNextU8Slow(pVCpu, pu8);
 }
 
-#else  /* IEM_WITH_SETJMP */
+# else  /* IEM_WITH_SETJMP */
 
 /**
  * Fetches the next opcode byte, longjmp on error.
@@ -493,7 +494,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU8(PVMCPUCC pVCpu, uint8_t *pu8) RT_NOE
  */
 DECL_INLINE_THROW(uint8_t) iemOpcodeGetNextU8Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
-# ifdef IEM_WITH_CODE_TLB
+#  ifdef IEM_WITH_CODE_TLB
     uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
     uint8_t const  *pbBuf  = pVCpu->iem.s.pbInstrBuf;
     if (RT_LIKELY(   pbBuf != NULL
@@ -502,18 +503,18 @@ DECL_INLINE_THROW(uint8_t) iemOpcodeGetNextU8Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MA
         pVCpu->iem.s.offInstrNextByte = (uint32_t)offBuf + 1;
         return pbBuf[offBuf];
     }
-# else
+#  else
     uintptr_t offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_LIKELY((uint8_t)offOpcode < pVCpu->iem.s.cbOpcode))
     {
         pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 1;
         return pVCpu->iem.s.abOpcode[offOpcode];
     }
-# endif
+#  endif
     return iemOpcodeGetNextU8SlowJmp(pVCpu);
 }
 
-#endif /* IEM_WITH_SETJMP */
+# endif /* IEM_WITH_SETJMP */
 
 /**
  * Fetches the next opcode byte, returns automatically on failure.
@@ -521,8 +522,8 @@ DECL_INLINE_THROW(uint8_t) iemOpcodeGetNextU8Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MA
  * @param   a_pu8               Where to return the opcode byte.
  * @remark Implicitly references pVCpu.
  */
-#ifndef IEM_WITH_SETJMP
-# define IEM_OPCODE_GET_NEXT_U8(a_pu8) \
+# ifndef IEM_WITH_SETJMP
+#  define IEM_OPCODE_GET_NEXT_U8(a_pu8) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU8(pVCpu, (a_pu8)); \
@@ -531,12 +532,12 @@ DECL_INLINE_THROW(uint8_t) iemOpcodeGetNextU8Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MA
         else \
             return rcStrict2; \
     } while (0)
-#else
-# define IEM_OPCODE_GET_NEXT_U8(a_pu8) (*(a_pu8) = iemOpcodeGetNextU8Jmp(pVCpu))
-#endif /* IEM_WITH_SETJMP */
+# else
+#  define IEM_OPCODE_GET_NEXT_U8(a_pu8) (*(a_pu8) = iemOpcodeGetNextU8Jmp(pVCpu))
+# endif /* IEM_WITH_SETJMP */
 
 
-#ifndef IEM_WITH_SETJMP
+# ifndef IEM_WITH_SETJMP
 /**
  * Fetches the next signed byte from the opcode stream.
  *
@@ -548,7 +549,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8(PVMCPUCC pVCpu, int8_t *pi8) RT_NOEX
 {
     return iemOpcodeGetNextU8(pVCpu, (uint8_t *)pi8);
 }
-#endif /* !IEM_WITH_SETJMP */
+# endif /* !IEM_WITH_SETJMP */
 
 
 /**
@@ -558,21 +559,21 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8(PVMCPUCC pVCpu, int8_t *pi8) RT_NOEX
  * @param   a_pi8               Where to return the signed byte.
  * @remark Implicitly references pVCpu.
  */
-#ifndef IEM_WITH_SETJMP
-# define IEM_OPCODE_GET_NEXT_S8(a_pi8) \
+# ifndef IEM_WITH_SETJMP
+#  define IEM_OPCODE_GET_NEXT_S8(a_pi8) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS8(pVCpu, (a_pi8)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
-#else /* IEM_WITH_SETJMP */
-# define IEM_OPCODE_GET_NEXT_S8(a_pi8) (*(a_pi8) = (int8_t)iemOpcodeGetNextU8Jmp(pVCpu))
+# else /* IEM_WITH_SETJMP */
+#  define IEM_OPCODE_GET_NEXT_S8(a_pi8) (*(a_pi8) = (int8_t)iemOpcodeGetNextU8Jmp(pVCpu))
 
-#endif /* IEM_WITH_SETJMP */
+# endif /* IEM_WITH_SETJMP */
 
 
-#ifndef IEM_WITH_SETJMP
+# ifndef IEM_WITH_SETJMP
 /**
  * Fetches the next signed byte from the opcode stream, extending it to
  * unsigned 16-bit.
@@ -591,7 +592,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU16(PVMCPUCC pVCpu, uint16_t *pu16)
     pVCpu->iem.s.offOpcode = offOpcode + 1;
     return VINF_SUCCESS;
 }
-#endif /* !IEM_WITH_SETJMP */
+# endif /* !IEM_WITH_SETJMP */
 
 /**
  * Fetches the next signed byte from the opcode stream and sign-extending it to
@@ -600,19 +601,19 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU16(PVMCPUCC pVCpu, uint16_t *pu16)
  * @param   a_pu16              Where to return the word.
  * @remark Implicitly references pVCpu.
  */
-#ifndef IEM_WITH_SETJMP
-# define IEM_OPCODE_GET_NEXT_S8_SX_U16(a_pu16) \
+# ifndef IEM_WITH_SETJMP
+#  define IEM_OPCODE_GET_NEXT_S8_SX_U16(a_pu16) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS8SxU16(pVCpu, (a_pu16)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
-#else
-# define IEM_OPCODE_GET_NEXT_S8_SX_U16(a_pu16) (*(a_pu16) = (int8_t)iemOpcodeGetNextU8Jmp(pVCpu))
-#endif
+# else
+#  define IEM_OPCODE_GET_NEXT_S8_SX_U16(a_pu16) (*(a_pu16) = (int8_t)iemOpcodeGetNextU8Jmp(pVCpu))
+# endif
 
-#ifndef IEM_WITH_SETJMP
+# ifndef IEM_WITH_SETJMP
 /**
  * Fetches the next signed byte from the opcode stream, extending it to
  * unsigned 32-bit.
@@ -631,7 +632,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU32(PVMCPUCC pVCpu, uint32_t *pu32)
     pVCpu->iem.s.offOpcode = offOpcode + 1;
     return VINF_SUCCESS;
 }
-#endif /* !IEM_WITH_SETJMP */
+# endif /* !IEM_WITH_SETJMP */
 
 /**
  * Fetches the next signed byte from the opcode stream and sign-extending it to
@@ -640,20 +641,20 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU32(PVMCPUCC pVCpu, uint32_t *pu32)
  * @param   a_pu32              Where to return the word.
  * @remark Implicitly references pVCpu.
  */
-#ifndef IEM_WITH_SETJMP
-# define IEM_OPCODE_GET_NEXT_S8_SX_U32(a_pu32) \
+# ifndef IEM_WITH_SETJMP
+#  define IEM_OPCODE_GET_NEXT_S8_SX_U32(a_pu32) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS8SxU32(pVCpu, (a_pu32)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
-#else
-# define IEM_OPCODE_GET_NEXT_S8_SX_U32(a_pu32) (*(a_pu32) = (int8_t)iemOpcodeGetNextU8Jmp(pVCpu))
-#endif
+# else
+#  define IEM_OPCODE_GET_NEXT_S8_SX_U32(a_pu32) (*(a_pu32) = (int8_t)iemOpcodeGetNextU8Jmp(pVCpu))
+# endif
 
 
-#ifndef IEM_WITH_SETJMP
+# ifndef IEM_WITH_SETJMP
 /**
  * Fetches the next signed byte from the opcode stream, extending it to
  * unsigned 64-bit.
@@ -672,7 +673,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU64(PVMCPUCC pVCpu, uint64_t *pu64)
     pVCpu->iem.s.offOpcode = offOpcode + 1;
     return VINF_SUCCESS;
 }
-#endif /* !IEM_WITH_SETJMP */
+# endif /* !IEM_WITH_SETJMP */
 
 /**
  * Fetches the next signed byte from the opcode stream and sign-extending it to
@@ -681,20 +682,20 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU64(PVMCPUCC pVCpu, uint64_t *pu64)
  * @param   a_pu64              Where to return the word.
  * @remark Implicitly references pVCpu.
  */
-#ifndef IEM_WITH_SETJMP
-# define IEM_OPCODE_GET_NEXT_S8_SX_U64(a_pu64) \
+# ifndef IEM_WITH_SETJMP
+#  define IEM_OPCODE_GET_NEXT_S8_SX_U64(a_pu64) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS8SxU64(pVCpu, (a_pu64)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
-#else
-# define IEM_OPCODE_GET_NEXT_S8_SX_U64(a_pu64) (*(a_pu64) = (int8_t)iemOpcodeGetNextU8Jmp(pVCpu))
-#endif
+# else
+#  define IEM_OPCODE_GET_NEXT_S8_SX_U64(a_pu64) (*(a_pu64) = (int8_t)iemOpcodeGetNextU8Jmp(pVCpu))
+# endif
 
 
-#ifndef IEM_WITH_SETJMP
+# ifndef IEM_WITH_SETJMP
 /**
  * Fetches the next opcode byte.
  *
@@ -715,7 +716,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextRm(PVMCPUCC pVCpu, uint8_t *pu8) RT_NOE
     }
     return iemOpcodeGetNextU8Slow(pVCpu, pu8);
 }
-#else  /* IEM_WITH_SETJMP */
+# else  /* IEM_WITH_SETJMP */
 /**
  * Fetches the next opcode byte, longjmp on error.
  *
@@ -724,7 +725,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextRm(PVMCPUCC pVCpu, uint8_t *pu8) RT_NOE
  */
 DECL_INLINE_THROW(uint8_t) iemOpcodeGetNextRmJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
-# ifdef IEM_WITH_CODE_TLB
+#  ifdef IEM_WITH_CODE_TLB
     uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
     pVCpu->iem.s.offModRm  = offBuf;
     uint8_t const  *pbBuf  = pVCpu->iem.s.pbInstrBuf;
@@ -734,7 +735,7 @@ DECL_INLINE_THROW(uint8_t) iemOpcodeGetNextRmJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MA
         pVCpu->iem.s.offInstrNextByte = (uint32_t)offBuf + 1;
         return pbBuf[offBuf];
     }
-# else
+#  else
     uintptr_t offOpcode   = pVCpu->iem.s.offOpcode;
     pVCpu->iem.s.offModRm = offOpcode;
     if (RT_LIKELY((uint8_t)offOpcode < pVCpu->iem.s.cbOpcode))
@@ -742,10 +743,10 @@ DECL_INLINE_THROW(uint8_t) iemOpcodeGetNextRmJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MA
         pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 1;
         return pVCpu->iem.s.abOpcode[offOpcode];
     }
-# endif
+#  endif
     return iemOpcodeGetNextU8SlowJmp(pVCpu);
 }
-#endif /* IEM_WITH_SETJMP */
+# endif /* IEM_WITH_SETJMP */
 
 /**
  * Fetches the next opcode byte, which is a ModR/M byte, returns automatically
@@ -756,8 +757,8 @@ DECL_INLINE_THROW(uint8_t) iemOpcodeGetNextRmJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MA
  * @param   a_pbRm              Where to return the RM opcode byte.
  * @remark Implicitly references pVCpu.
  */
-#ifndef IEM_WITH_SETJMP
-# define IEM_OPCODE_GET_NEXT_RM(a_pbRm) \
+# ifndef IEM_WITH_SETJMP
+#  define IEM_OPCODE_GET_NEXT_RM(a_pbRm) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextRm(pVCpu, (a_pbRm)); \
@@ -766,12 +767,12 @@ DECL_INLINE_THROW(uint8_t) iemOpcodeGetNextRmJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MA
         else \
             return rcStrict2; \
     } while (0)
-#else
-# define IEM_OPCODE_GET_NEXT_RM(a_pbRm) (*(a_pbRm) = iemOpcodeGetNextRmJmp(pVCpu))
-#endif /* IEM_WITH_SETJMP */
+# else
+#  define IEM_OPCODE_GET_NEXT_RM(a_pbRm) (*(a_pbRm) = iemOpcodeGetNextRmJmp(pVCpu))
+# endif /* IEM_WITH_SETJMP */
 
 
-#ifndef IEM_WITH_SETJMP
+# ifndef IEM_WITH_SETJMP
 
 /**
  * Fetches the next opcode word.
@@ -786,17 +787,17 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16(PVMCPUCC pVCpu, uint16_t *pu16) RT_
     if (RT_LIKELY((uint8_t)offOpcode + 2 <= pVCpu->iem.s.cbOpcode))
     {
         pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 2;
-# ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+#  ifdef IEM_USE_UNALIGNED_DATA_ACCESS
         *pu16 = *(uint16_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
-# else
+#  else
         *pu16 = RT_MAKE_U16(pVCpu->iem.s.abOpcode[offOpcode], pVCpu->iem.s.abOpcode[offOpcode + 1]);
-# endif
+#  endif
         return VINF_SUCCESS;
     }
     return iemOpcodeGetNextU16Slow(pVCpu, pu16);
 }
 
-#else  /* IEM_WITH_SETJMP */
+# else  /* IEM_WITH_SETJMP */
 
 /**
  * Fetches the next opcode word, longjmp on error.
@@ -806,35 +807,35 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16(PVMCPUCC pVCpu, uint16_t *pu16) RT_
  */
 DECL_INLINE_THROW(uint16_t) iemOpcodeGetNextU16Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
-# ifdef IEM_WITH_CODE_TLB
+#  ifdef IEM_WITH_CODE_TLB
     uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
     uint8_t const  *pbBuf  = pVCpu->iem.s.pbInstrBuf;
     if (RT_LIKELY(   pbBuf != NULL
                   && offBuf + 2 <= pVCpu->iem.s.cbInstrBuf))
     {
         pVCpu->iem.s.offInstrNextByte = (uint32_t)offBuf + 2;
-#  ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+#   ifdef IEM_USE_UNALIGNED_DATA_ACCESS
         return *(uint16_t const *)&pbBuf[offBuf];
-#  else
+#   else
         return RT_MAKE_U16(pbBuf[offBuf], pbBuf[offBuf + 1]);
-#  endif
+#   endif
     }
-# else /* !IEM_WITH_CODE_TLB */
+#  else /* !IEM_WITH_CODE_TLB */
     uintptr_t const offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_LIKELY((uint8_t)offOpcode + 2 <= pVCpu->iem.s.cbOpcode))
     {
         pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 2;
-#  ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+#   ifdef IEM_USE_UNALIGNED_DATA_ACCESS
         return *(uint16_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
-#  else
+#   else
         return RT_MAKE_U16(pVCpu->iem.s.abOpcode[offOpcode], pVCpu->iem.s.abOpcode[offOpcode + 1]);
-#  endif
+#   endif
     }
-# endif /* !IEM_WITH_CODE_TLB */
+#  endif /* !IEM_WITH_CODE_TLB */
     return iemOpcodeGetNextU16SlowJmp(pVCpu);
 }
 
-#endif /* IEM_WITH_SETJMP */
+# endif /* IEM_WITH_SETJMP */
 
 /**
  * Fetches the next opcode word, returns automatically on failure.
@@ -842,19 +843,19 @@ DECL_INLINE_THROW(uint16_t) iemOpcodeGetNextU16Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_
  * @param   a_pu16              Where to return the opcode word.
  * @remark Implicitly references pVCpu.
  */
-#ifndef IEM_WITH_SETJMP
-# define IEM_OPCODE_GET_NEXT_U16(a_pu16) \
+# ifndef IEM_WITH_SETJMP
+#  define IEM_OPCODE_GET_NEXT_U16(a_pu16) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU16(pVCpu, (a_pu16)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
-#else
-# define IEM_OPCODE_GET_NEXT_U16(a_pu16) (*(a_pu16) = iemOpcodeGetNextU16Jmp(pVCpu))
-#endif
+# else
+#  define IEM_OPCODE_GET_NEXT_U16(a_pu16) (*(a_pu16) = iemOpcodeGetNextU16Jmp(pVCpu))
+# endif
 
-#ifndef IEM_WITH_SETJMP
+# ifndef IEM_WITH_SETJMP
 /**
  * Fetches the next opcode word, zero extending it to a double word.
  *
@@ -872,7 +873,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16ZxU32(PVMCPUCC pVCpu, uint32_t *pu32
     pVCpu->iem.s.offOpcode = offOpcode + 2;
     return VINF_SUCCESS;
 }
-#endif /* !IEM_WITH_SETJMP */
+# endif /* !IEM_WITH_SETJMP */
 
 /**
  * Fetches the next opcode word and zero extends it to a double word, returns
@@ -881,19 +882,19 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16ZxU32(PVMCPUCC pVCpu, uint32_t *pu32
  * @param   a_pu32              Where to return the opcode double word.
  * @remark Implicitly references pVCpu.
  */
-#ifndef IEM_WITH_SETJMP
-# define IEM_OPCODE_GET_NEXT_U16_ZX_U32(a_pu32) \
+# ifndef IEM_WITH_SETJMP
+#  define IEM_OPCODE_GET_NEXT_U16_ZX_U32(a_pu32) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU16ZxU32(pVCpu, (a_pu32)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
-#else
-# define IEM_OPCODE_GET_NEXT_U16_ZX_U32(a_pu32) (*(a_pu32) = iemOpcodeGetNextU16Jmp(pVCpu))
-#endif
+# else
+#  define IEM_OPCODE_GET_NEXT_U16_ZX_U32(a_pu32) (*(a_pu32) = iemOpcodeGetNextU16Jmp(pVCpu))
+# endif
 
-#ifndef IEM_WITH_SETJMP
+# ifndef IEM_WITH_SETJMP
 /**
  * Fetches the next opcode word, zero extending it to a quad word.
  *
@@ -911,7 +912,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16ZxU64(PVMCPUCC pVCpu, uint64_t *pu64
     pVCpu->iem.s.offOpcode = offOpcode + 2;
     return VINF_SUCCESS;
 }
-#endif /* !IEM_WITH_SETJMP */
+# endif /* !IEM_WITH_SETJMP */
 
 /**
  * Fetches the next opcode word and zero extends it to a quad word, returns
@@ -920,20 +921,20 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16ZxU64(PVMCPUCC pVCpu, uint64_t *pu64
  * @param   a_pu64              Where to return the opcode quad word.
  * @remark Implicitly references pVCpu.
  */
-#ifndef IEM_WITH_SETJMP
-# define IEM_OPCODE_GET_NEXT_U16_ZX_U64(a_pu64) \
+# ifndef IEM_WITH_SETJMP
+#  define IEM_OPCODE_GET_NEXT_U16_ZX_U64(a_pu64) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU16ZxU64(pVCpu, (a_pu64)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
-#else
-# define IEM_OPCODE_GET_NEXT_U16_ZX_U64(a_pu64)  (*(a_pu64) = iemOpcodeGetNextU16Jmp(pVCpu))
-#endif
+# else
+#  define IEM_OPCODE_GET_NEXT_U16_ZX_U64(a_pu64)  (*(a_pu64) = iemOpcodeGetNextU16Jmp(pVCpu))
+# endif
 
 
-#ifndef IEM_WITH_SETJMP
+# ifndef IEM_WITH_SETJMP
 /**
  * Fetches the next signed word from the opcode stream.
  *
@@ -945,7 +946,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS16(PVMCPUCC pVCpu, int16_t *pi16) RT_N
 {
     return iemOpcodeGetNextU16(pVCpu, (uint16_t *)pi16);
 }
-#endif /* !IEM_WITH_SETJMP */
+# endif /* !IEM_WITH_SETJMP */
 
 
 /**
@@ -955,19 +956,19 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS16(PVMCPUCC pVCpu, int16_t *pi16) RT_N
  * @param   a_pi16              Where to return the signed word.
  * @remark Implicitly references pVCpu.
  */
-#ifndef IEM_WITH_SETJMP
-# define IEM_OPCODE_GET_NEXT_S16(a_pi16) \
+# ifndef IEM_WITH_SETJMP
+#  define IEM_OPCODE_GET_NEXT_S16(a_pi16) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS16(pVCpu, (a_pi16)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
-#else
-# define IEM_OPCODE_GET_NEXT_S16(a_pi16) (*(a_pi16) = (int16_t)iemOpcodeGetNextU16Jmp(pVCpu))
-#endif
+# else
+#  define IEM_OPCODE_GET_NEXT_S16(a_pi16) (*(a_pi16) = (int16_t)iemOpcodeGetNextU16Jmp(pVCpu))
+# endif
 
-#ifndef IEM_WITH_SETJMP
+# ifndef IEM_WITH_SETJMP
 
 /**
  * Fetches the next opcode dword.
@@ -982,20 +983,20 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32(PVMCPUCC pVCpu, uint32_t *pu32) RT_
     if (RT_LIKELY((uint8_t)offOpcode + 4 <= pVCpu->iem.s.cbOpcode))
     {
         pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 4;
-# ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+#  ifdef IEM_USE_UNALIGNED_DATA_ACCESS
         *pu32 = *(uint32_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
-# else
+#  else
         *pu32 = RT_MAKE_U32_FROM_U8(pVCpu->iem.s.abOpcode[offOpcode],
                                     pVCpu->iem.s.abOpcode[offOpcode + 1],
                                     pVCpu->iem.s.abOpcode[offOpcode + 2],
                                     pVCpu->iem.s.abOpcode[offOpcode + 3]);
-# endif
+#  endif
         return VINF_SUCCESS;
     }
     return iemOpcodeGetNextU32Slow(pVCpu, pu32);
 }
 
-#else  /* IEM_WITH_SETJMP */
+# else  /* IEM_WITH_SETJMP */
 
 /**
  * Fetches the next opcode dword, longjmp on error.
@@ -1005,41 +1006,41 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32(PVMCPUCC pVCpu, uint32_t *pu32) RT_
  */
 DECL_INLINE_THROW(uint32_t) iemOpcodeGetNextU32Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
-# ifdef IEM_WITH_CODE_TLB
+#  ifdef IEM_WITH_CODE_TLB
     uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
     uint8_t const  *pbBuf  = pVCpu->iem.s.pbInstrBuf;
     if (RT_LIKELY(   pbBuf != NULL
                   && offBuf + 4 <= pVCpu->iem.s.cbInstrBuf))
     {
         pVCpu->iem.s.offInstrNextByte = (uint32_t)offBuf + 4;
-#  ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+#   ifdef IEM_USE_UNALIGNED_DATA_ACCESS
         return *(uint32_t const *)&pbBuf[offBuf];
-#  else
+#   else
         return RT_MAKE_U32_FROM_U8(pbBuf[offBuf],
                                    pbBuf[offBuf + 1],
                                    pbBuf[offBuf + 2],
                                    pbBuf[offBuf + 3]);
-#  endif
+#   endif
     }
-# else
+#  else
     uintptr_t const offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_LIKELY((uint8_t)offOpcode + 4 <= pVCpu->iem.s.cbOpcode))
     {
         pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 4;
-#  ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+#   ifdef IEM_USE_UNALIGNED_DATA_ACCESS
         return *(uint32_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
-#  else
+#   else
         return RT_MAKE_U32_FROM_U8(pVCpu->iem.s.abOpcode[offOpcode],
                                    pVCpu->iem.s.abOpcode[offOpcode + 1],
                                    pVCpu->iem.s.abOpcode[offOpcode + 2],
                                    pVCpu->iem.s.abOpcode[offOpcode + 3]);
-#  endif
+#   endif
     }
-# endif
+#  endif
     return iemOpcodeGetNextU32SlowJmp(pVCpu);
 }
 
-#endif /* IEM_WITH_SETJMP */
+# endif /* IEM_WITH_SETJMP */
 
 /**
  * Fetches the next opcode dword, returns automatically on failure.
@@ -1047,19 +1048,19 @@ DECL_INLINE_THROW(uint32_t) iemOpcodeGetNextU32Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_
  * @param   a_pu32              Where to return the opcode dword.
  * @remark Implicitly references pVCpu.
  */
-#ifndef IEM_WITH_SETJMP
-# define IEM_OPCODE_GET_NEXT_U32(a_pu32) \
+# ifndef IEM_WITH_SETJMP
+#  define IEM_OPCODE_GET_NEXT_U32(a_pu32) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU32(pVCpu, (a_pu32)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
-#else
-# define IEM_OPCODE_GET_NEXT_U32(a_pu32) (*(a_pu32) = iemOpcodeGetNextU32Jmp(pVCpu))
-#endif
+# else
+#  define IEM_OPCODE_GET_NEXT_U32(a_pu32) (*(a_pu32) = iemOpcodeGetNextU32Jmp(pVCpu))
+# endif
 
-#ifndef IEM_WITH_SETJMP
+# ifndef IEM_WITH_SETJMP
 /**
  * Fetches the next opcode dword, zero extending it to a quad word.
  *
@@ -1080,7 +1081,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32ZxU64(PVMCPUCC pVCpu, uint64_t *pu64
     pVCpu->iem.s.offOpcode = offOpcode + 4;
     return VINF_SUCCESS;
 }
-#endif /* !IEM_WITH_SETJMP */
+# endif /* !IEM_WITH_SETJMP */
 
 /**
  * Fetches the next opcode dword and zero extends it to a quad word, returns
@@ -1089,20 +1090,20 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32ZxU64(PVMCPUCC pVCpu, uint64_t *pu64
  * @param   a_pu64              Where to return the opcode quad word.
  * @remark Implicitly references pVCpu.
  */
-#ifndef IEM_WITH_SETJMP
-# define IEM_OPCODE_GET_NEXT_U32_ZX_U64(a_pu64) \
+# ifndef IEM_WITH_SETJMP
+#  define IEM_OPCODE_GET_NEXT_U32_ZX_U64(a_pu64) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU32ZxU64(pVCpu, (a_pu64)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
-#else
-# define IEM_OPCODE_GET_NEXT_U32_ZX_U64(a_pu64) (*(a_pu64) = iemOpcodeGetNextU32Jmp(pVCpu))
-#endif
+# else
+#  define IEM_OPCODE_GET_NEXT_U32_ZX_U64(a_pu64) (*(a_pu64) = iemOpcodeGetNextU32Jmp(pVCpu))
+# endif
 
 
-#ifndef IEM_WITH_SETJMP
+# ifndef IEM_WITH_SETJMP
 /**
  * Fetches the next signed double word from the opcode stream.
  *
@@ -1114,7 +1115,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32(PVMCPUCC pVCpu, int32_t *pi32) RT_N
 {
     return iemOpcodeGetNextU32(pVCpu, (uint32_t *)pi32);
 }
-#endif
+# endif
 
 /**
  * Fetches the next signed double word from the opcode stream, returning
@@ -1123,19 +1124,19 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32(PVMCPUCC pVCpu, int32_t *pi32) RT_N
  * @param   a_pi32              Where to return the signed double word.
  * @remark Implicitly references pVCpu.
  */
-#ifndef IEM_WITH_SETJMP
-# define IEM_OPCODE_GET_NEXT_S32(a_pi32) \
+# ifndef IEM_WITH_SETJMP
+#  define IEM_OPCODE_GET_NEXT_S32(a_pi32) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS32(pVCpu, (a_pi32)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
-#else
-# define IEM_OPCODE_GET_NEXT_S32(a_pi32)    (*(a_pi32) = (int32_t)iemOpcodeGetNextU32Jmp(pVCpu))
-#endif
+# else
+#  define IEM_OPCODE_GET_NEXT_S32(a_pi32)    (*(a_pi32) = (int32_t)iemOpcodeGetNextU32Jmp(pVCpu))
+# endif
 
-#ifndef IEM_WITH_SETJMP
+# ifndef IEM_WITH_SETJMP
 /**
  * Fetches the next opcode dword, sign extending it into a quad word.
  *
@@ -1157,7 +1158,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32SxU64(PVMCPUCC pVCpu, uint64_t *pu64
     pVCpu->iem.s.offOpcode = offOpcode + 4;
     return VINF_SUCCESS;
 }
-#endif /* !IEM_WITH_SETJMP */
+# endif /* !IEM_WITH_SETJMP */
 
 /**
  * Fetches the next opcode double word and sign extends it to a quad word,
@@ -1166,19 +1167,19 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32SxU64(PVMCPUCC pVCpu, uint64_t *pu64
  * @param   a_pu64              Where to return the opcode quad word.
  * @remark Implicitly references pVCpu.
  */
-#ifndef IEM_WITH_SETJMP
-# define IEM_OPCODE_GET_NEXT_S32_SX_U64(a_pu64) \
+# ifndef IEM_WITH_SETJMP
+#  define IEM_OPCODE_GET_NEXT_S32_SX_U64(a_pu64) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextS32SxU64(pVCpu, (a_pu64)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
-#else
-# define IEM_OPCODE_GET_NEXT_S32_SX_U64(a_pu64) (*(a_pu64) = (int32_t)iemOpcodeGetNextU32Jmp(pVCpu))
-#endif
+# else
+#  define IEM_OPCODE_GET_NEXT_S32_SX_U64(a_pu64) (*(a_pu64) = (int32_t)iemOpcodeGetNextU32Jmp(pVCpu))
+# endif
 
-#ifndef IEM_WITH_SETJMP
+# ifndef IEM_WITH_SETJMP
 
 /**
  * Fetches the next opcode qword.
@@ -1192,9 +1193,9 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU64(PVMCPUCC pVCpu, uint64_t *pu64) RT_
     uintptr_t const offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_LIKELY((uint8_t)offOpcode + 8 <= pVCpu->iem.s.cbOpcode))
     {
-# ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+#  ifdef IEM_USE_UNALIGNED_DATA_ACCESS
         *pu64 = *(uint64_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
-# else
+#  else
         *pu64 = RT_MAKE_U64_FROM_U8(pVCpu->iem.s.abOpcode[offOpcode],
                                     pVCpu->iem.s.abOpcode[offOpcode + 1],
                                     pVCpu->iem.s.abOpcode[offOpcode + 2],
@@ -1203,14 +1204,14 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU64(PVMCPUCC pVCpu, uint64_t *pu64) RT_
                                     pVCpu->iem.s.abOpcode[offOpcode + 5],
                                     pVCpu->iem.s.abOpcode[offOpcode + 6],
                                     pVCpu->iem.s.abOpcode[offOpcode + 7]);
-# endif
+#  endif
         pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 8;
         return VINF_SUCCESS;
     }
     return iemOpcodeGetNextU64Slow(pVCpu, pu64);
 }
 
-#else  /* IEM_WITH_SETJMP */
+# else  /* IEM_WITH_SETJMP */
 
 /**
  * Fetches the next opcode qword, longjmp on error.
@@ -1220,16 +1221,16 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU64(PVMCPUCC pVCpu, uint64_t *pu64) RT_
  */
 DECL_INLINE_THROW(uint64_t) iemOpcodeGetNextU64Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
-# ifdef IEM_WITH_CODE_TLB
+#  ifdef IEM_WITH_CODE_TLB
     uintptr_t       offBuf = pVCpu->iem.s.offInstrNextByte;
     uint8_t const  *pbBuf  = pVCpu->iem.s.pbInstrBuf;
     if (RT_LIKELY(   pbBuf != NULL
                   && offBuf + 8 <= pVCpu->iem.s.cbInstrBuf))
     {
         pVCpu->iem.s.offInstrNextByte = (uint32_t)offBuf + 8;
-#  ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+#   ifdef IEM_USE_UNALIGNED_DATA_ACCESS
         return *(uint64_t const *)&pbBuf[offBuf];
-#  else
+#   else
         return RT_MAKE_U64_FROM_U8(pbBuf[offBuf],
                                    pbBuf[offBuf + 1],
                                    pbBuf[offBuf + 2],
@@ -1238,16 +1239,16 @@ DECL_INLINE_THROW(uint64_t) iemOpcodeGetNextU64Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_
                                    pbBuf[offBuf + 5],
                                    pbBuf[offBuf + 6],
                                    pbBuf[offBuf + 7]);
-#  endif
+#   endif
     }
-# else
+#  else
     uintptr_t const offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_LIKELY((uint8_t)offOpcode + 8 <= pVCpu->iem.s.cbOpcode))
     {
         pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 8;
-#  ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+#   ifdef IEM_USE_UNALIGNED_DATA_ACCESS
         return *(uint64_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
-#  else
+#   else
         return RT_MAKE_U64_FROM_U8(pVCpu->iem.s.abOpcode[offOpcode],
                                    pVCpu->iem.s.abOpcode[offOpcode + 1],
                                    pVCpu->iem.s.abOpcode[offOpcode + 2],
@@ -1256,13 +1257,13 @@ DECL_INLINE_THROW(uint64_t) iemOpcodeGetNextU64Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_
                                    pVCpu->iem.s.abOpcode[offOpcode + 5],
                                    pVCpu->iem.s.abOpcode[offOpcode + 6],
                                    pVCpu->iem.s.abOpcode[offOpcode + 7]);
-#  endif
+#   endif
     }
-# endif
+#  endif
     return iemOpcodeGetNextU64SlowJmp(pVCpu);
 }
 
-#endif /* IEM_WITH_SETJMP */
+# endif /* IEM_WITH_SETJMP */
 
 /**
  * Fetches the next opcode quad word, returns automatically on failure.
@@ -1270,17 +1271,19 @@ DECL_INLINE_THROW(uint64_t) iemOpcodeGetNextU64Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_
  * @param   a_pu64              Where to return the opcode quad word.
  * @remark Implicitly references pVCpu.
  */
-#ifndef IEM_WITH_SETJMP
-# define IEM_OPCODE_GET_NEXT_U64(a_pu64) \
+# ifndef IEM_WITH_SETJMP
+#  define IEM_OPCODE_GET_NEXT_U64(a_pu64) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU64(pVCpu, (a_pu64)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
-#else
-# define IEM_OPCODE_GET_NEXT_U64(a_pu64)    ( *(a_pu64) = iemOpcodeGetNextU64Jmp(pVCpu) )
-#endif
+# else
+#  define IEM_OPCODE_GET_NEXT_U64(a_pu64)    ( *(a_pu64) = iemOpcodeGetNextU64Jmp(pVCpu) )
+# endif
+
+#endif /* !IEM_WITH_OPAQUE_DECODER_STATE */
 
 
 /** @name  Misc Worker Functions.
@@ -1344,6 +1347,8 @@ DECLINLINE(void) iemHlpLoadNullDataSelectorProt(PVMCPUCC pVCpu, PCPUMSELREG pSRe
  * Helpers routines.
  *
  */
+
+#ifndef IEM_WITH_OPAQUE_DECODER_STATE
 
 /**
  * Recalculates the effective operand size.
@@ -1417,6 +1422,7 @@ DECLINLINE(void) iemRecalEffOpSize64DefaultAndIntelIgnoresOpSizePrefix(PVMCPUCC 
         pVCpu->iem.s.enmEffOpSize = IEMMODE_16BIT;
 }
 
+#endif /* !IEM_WITH_OPAQUE_DECODER_STATE */
 
 
 
@@ -1517,6 +1523,7 @@ DECLINLINE(void *) iemGRegRef(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 }
 
 
+#ifndef IEM_WITH_OPAQUE_DECODER_STATE
 /**
  * Gets a reference (pointer) to the specified 8-bit general purpose register.
  *
@@ -1537,6 +1544,7 @@ DECLINLINE(uint8_t *) iemGRegRefU8(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
     Assert(iReg < 8);
     return &pVCpu->cpum.GstCtx.aGRegs[iReg & 3].bHi;
 }
+#endif
 
 
 /**
@@ -1624,6 +1632,7 @@ DECLINLINE(uint64_t *) iemSRegBaseRefU64(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOE
 }
 
 
+#ifndef IEM_WITH_OPAQUE_DECODER_STATE
 /**
  * Fetches the value of a 8-bit general purpose register.
  *
@@ -1635,6 +1644,7 @@ DECLINLINE(uint8_t) iemGRegFetchU8(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     return *iemGRegRefU8(pVCpu, iReg);
 }
+#endif
 
 
 /**
@@ -1877,6 +1887,7 @@ DECLINLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRfEx(PVMCPUCC pVCpu, 
 }
 
 
+#ifndef IEM_WITH_OPAQUE_DECODER_STATE
 /**
  * Updates the RIP/EIP/IP to point to the next instruction and clears EFLAGS.RF.
  *
@@ -1886,6 +1897,7 @@ DECLINLINE(VBOXSTRICTRC) iemRegUpdateRipAndFinishClearingRF(PVMCPUCC pVCpu) RT_N
 {
     return iemRegAddToRipAndFinishingClearingRF(pVCpu, IEM_GET_INSTR_LEN(pVCpu));
 }
+#endif
 
 
 /**
@@ -2258,6 +2270,7 @@ DECLINLINE(void) iemFpuStoreQNan(PRTFLOAT80U pReg) RT_NOEXCEPT
 }
 
 
+#ifndef IEM_WITH_OPAQUE_DECODER_STATE
 /**
  * Updates the FOP, FPU.CS and FPUIP registers.
  *
@@ -2284,7 +2297,7 @@ DECLINLINE(void) iemFpuUpdateOpcodeAndIpWorker(PVMCPUCC pVCpu, PX86FXSTATE pFpuC
     else
         *(uint64_t *)&pFpuCtx->FPUIP = pVCpu->cpum.GstCtx.rip;
 }
-
+#endif /* !IEM_WITH_OPAQUE_DECODER_STATE */
 
 
 

@@ -111,47 +111,64 @@ class ThreadedParamRef(object):
         self.iNewParam    = 99;                     ##< The this is packed into.
         self.offNewParam  = 1024                    ##< The bit offset in iNewParam.
 
-class ThreadedFunction(object):
-    """
-    A threaded function.
-    """
 
-    def __init__(self, oMcBlock):
-        self.oMcBlock               = oMcBlock  # type: IEMAllInstructionsPython.McBlock
-        ## Dictionary of local variables (IEM_MC_LOCAL[_CONST]) and call arguments (IEM_MC_ARG*).
-        self.dVariables  = {}           # type: dict(str,McStmtVar)
-        ##
-        self.aoParamRefs = []           # type: list(ThreadedParamRef)
-        self.dParamRefs  = {}           # type: dict(str,list(ThreadedParamRef))
-        self.cMinParams  = 0;           ##< Minimum number of parameters to the threaded function.
+class ThreadedFunctionVariation(object):
+    """ Threaded function variation. """
+
+    ## @name Variations.
+    ## These variations will match translation block selection/distinctions as well.
+    ## @note Effective operand size is generally handled in the decoder, at present
+    ##       we only do variations on addressing and memory accessing.
+    ## @{
+    ksVariation_Default     = '';               ##< No variations.
+    ksVariation_Addr16      = '_Addr16';        ##< 16-bit addressing mode.
+    ksVariation_Addr32      = '_Addr32';        ##< 32-bit addressing mode.
+    ksVariation_Addr32Flat  = '_Addr32Flat';    ##< 32-bit addressing mode with CS, DS, ES and SS flat and 4GB wide.
+    ksVariation_Addr64      = '_Addr64';        ##< 64-bit addressing mode.
+    ksVariation_Addr64_32   = '_Addr6432';      ##< 32-bit addressing in 64-bit mode.
+    kasVariations_EffAddr   = (
+        ksVariation_Addr16, ksVariation_Addr32, ksVariation_Addr32Flat, ksVariation_Addr64, ksVariation_Addr64_32
+    );
+    ## @}
+
+    def __init__(self, oThreadedFunction, sVariation = ksVariation_Default):
+        self.oParent        = oThreadedFunction # type: ThreadedFunction
+        ##< ksVariation_Xxxx.
+        self.sVariation     = sVariation
+
+        ## Threaded function parameter references.
+        self.aoParamRefs    = []            # type: list(ThreadedParamRef)
+        ## Unique parameter references.
+        self.dParamRefs     = {}            # type: dict(str,list(ThreadedParamRef))
+        ## Minimum number of parameters to the threaded function.
+        self.cMinParams     = 0;
 
         ## List/tree of statements for the threaded function.
         self.aoStmtsForThreadedFunction = [] # type list(McStmt)
 
-    @staticmethod
-    def dummyInstance():
-        """ Gets a dummy instance. """
-        return ThreadedFunction(iai.McBlock('null', 999999999, 999999999, 'nil', 999999999));
+    def getIndexName(self):
+        sName = self.oParent.oMcBlock.sFunction;
+        if sName.startswith('iemOp_'):
+            sName = sName[len('iemOp_'):];
+        if self.oParent.oMcBlock.iInFunction == 0:
+            return 'kIemThreadedFunc_%s%s' % ( sName, self.sVariation, );
+        return 'kIemThreadedFunc_%s_%s%s' % ( sName, self.oParent.oMcBlock.iInFunction, self.sVariation, );
+
+    def getFunctionName(self):
+        sName = self.oParent.oMcBlock.sFunction;
+        if sName.startswith('iemOp_'):
+            sName = sName[len('iemOp_'):];
+        if self.oParent.oMcBlock.iInFunction == 0:
+            return 'iemThreadedFunc_%s%s' % ( sName, self.sVariation, );
+        return 'iemThreadedFunc_%s_%s%s' % ( sName, self.oParent.oMcBlock.iInFunction, self.sVariation, );
+
+    #
+    # Analysis and code morphing.
+    #
 
     def raiseProblem(self, sMessage):
         """ Raises a problem. """
-        raise Exception('%s:%s: error: %s' % (self.oMcBlock.sSrcFile, self.oMcBlock.iBeginLine, sMessage, ));
-
-    def getIndexName(self):
-        sName = self.oMcBlock.sFunction;
-        if sName.startswith('iemOp_'):
-            sName = sName[len('iemOp_'):];
-        if self.oMcBlock.iInFunction == 0:
-            return 'kIemThreadedFunc_%s' % ( sName, );
-        return 'kIemThreadedFunc_%s_%s' % ( sName, self.oMcBlock.iInFunction, );
-
-    def getFunctionName(self):
-        sName = self.oMcBlock.sFunction;
-        if sName.startswith('iemOp_'):
-            sName = sName[len('iemOp_'):];
-        if self.oMcBlock.iInFunction == 0:
-            return 'iemThreadedFunc_%s' % ( sName, );
-        return 'iemThreadedFunc_%s_%s' % ( sName, self.oMcBlock.iInFunction, );
+        self.oParent.raiseProblem(sMessage);
 
     def analyzeReferenceToType(self, sRef):
         """
@@ -182,7 +199,7 @@ class ThreadedFunction(object):
                 return 'int32_t';
             if sRef.startswith('i64'):
                 return 'int64_t';
-            if sRef in ('iReg', 'iSegReg', 'iSrcReg', 'iDstReg'):
+            if sRef in ('iReg', 'iGReg', 'iSegReg', 'iSrcReg', 'iDstReg'):
                 return 'uint8_t';
         elif ch0 == 'p':
             if sRef.find('-') < 0:
@@ -195,8 +212,12 @@ class ThreadedFunction(object):
                     self.raiseProblem('Reference out-of-bounds decoder field: %s' % (sRef,));
         elif ch0 == 'G' and sRef.startswith('GCPtr'):
             return 'uint64_t';
+        elif ch0 == 'e':
+            if sRef == 'enmEffOpSize':
+                return 'IEMMODE';
         elif sRef == 'cShift': ## @todo risky
             return 'uint8_t';
+
         self.raiseProblem('Unknown reference: %s' % (sRef,));
         return None; # Shut up pylint 2.16.2.
 
@@ -243,6 +264,35 @@ class ThreadedFunction(object):
                             oNewStmt.asParams[oCurRef.iParam] = sSrcParam[0 : oCurRef.offParam] \
                                                               + oCurRef.sNewName \
                                                               + sSrcParam[oCurRef.offParam + len(oCurRef.sOrgRef) : ];
+
+                # Morph IEM_MC_CALC_RM_EFF_ADDR into IEM_MC_CALC_RM_EFF_ADDR_THREADED ...
+                if oNewStmt.sName == 'IEM_MC_CALC_RM_EFF_ADDR':
+                    assert self.sVariation != self.ksVariation_Default;
+                    oNewStmt.sName = 'IEM_MC_CALC_RM_EFF_ADDR_THREADED' + self.sVariation.upper();
+                    assert len(oNewStmt.asParams) == 3;
+                    if self.sVariation == self.ksVariation_Addr16:
+                        oNewStmt.asParams = [
+                            oNewStmt.asParams[0], oNewStmt.asParams[1], self.dParamRefs['u16Disp'][0].sNewName,
+                        ];
+                    elif self.sVariation in (self.ksVariation_Addr32, self.ksVariation_Addr32Flat):
+                        oNewStmt.asParams = [
+                            oNewStmt.asParams[0], oNewStmt.asParams[1], self.dParamRefs['bSib'][0].sNewName,
+                            self.dParamRefs['u32Disp'][0].sNewName,
+                        ];
+                    else:
+                        oNewStmt.asParams = [
+                            oNewStmt.asParams[0], self.dParamRefs['bRmEx'][0].sNewName, self.dParamRefs['bSib'][0].sNewName,
+                            self.dParamRefs['u32Disp'][0].sNewName, self.dParamRefs['cbInstr'][0].sNewName,
+                        ];
+                # ... and IEM_MC_ADVANCE_RIP_AND_FINISH into *_THREADED ...
+                elif oNewStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH', 'IEM_MC_REL_JMP_S8_AND_FINISH',
+                                        'IEM_MC_REL_JMP_S16_AND_FINISH', 'IEM_MC_REL_JMP_S32_AND_FINISH'):
+                    oNewStmt.sName += '_THREADED';
+                    oNewStmt.asParams.append(self.dParamRefs['cbInstr'][0].sNewName);
+                # ... and IEM_MC_CALL_CIMPL_[0-5] into *_THREADED ...
+                elif oNewStmt.sName.startswith('IEM_MC_CALL_CIMPL_'):
+                    oNewStmt.sName += '_THREADED';
+                    oNewStmt.asParams.insert(0, self.dParamRefs['cbInstr'][0].sNewName);
 
                 # Process branches of conditionals recursively.
                 if isinstance(oStmt, iai.McStmtCond):
@@ -294,8 +344,12 @@ class ThreadedFunction(object):
         # Organize them by size too for the purpose of optimize them.
         dBySize = {}        # type: dict(str,str)
         for sStdRef, aoRefs in self.dParamRefs.items():
-            cBits = g_kdTypeInfo[aoRefs[0].sType][0];
-            assert(cBits <= 64);
+            if aoRefs[0].sType[0] != 'P':
+                cBits = g_kdTypeInfo[aoRefs[0].sType][0];
+                assert(cBits <= 64);
+            else:
+                cBits = 64;
+
             if cBits not in dBySize:
                 dBySize[cBits] = [sStdRef,]
             else:
@@ -322,9 +376,9 @@ class ThreadedFunction(object):
             self.cMinParams += 1;
 
         # Currently there are a few that requires 4 parameters, list these so we can figure out why:
-        if self.cMinParams >= 3:
+        if self.cMinParams >= 4:
             print('debug: cMinParams=%s cRawParams=%s - %s:%d'
-                  % (self.cMinParams, len(self.dParamRefs), self.oMcBlock.sSrcFile, self.oMcBlock.iBeginLine,));
+                  % (self.cMinParams, len(self.dParamRefs), self.oParent.oMcBlock.sSrcFile, self.oParent.oMcBlock.iBeginLine,));
 
         return True;
 
@@ -337,24 +391,42 @@ class ThreadedFunction(object):
         """
         for oStmt in aoStmts:
             # Some statements we can skip alltogether.
-            if isinstance(oStmt, (iai.McStmtVar, iai.McCppPreProc)):
+            if isinstance(oStmt, iai.McCppPreProc):
                 continue;
             if oStmt.isCppStmt() and oStmt.fDecode:
                 continue;
 
+            if isinstance(oStmt, iai.McStmtVar):
+                if oStmt.sConstValue is None:
+                    continue;
+                aiSkipParams = { 0: True, 1: True, 3: True };
+            else:
+                aiSkipParams = {};
+
             # Several statements have implicit parameters.
             if oStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH', 'IEM_MC_REL_JMP_S8_AND_FINISH', 'IEM_MC_REL_JMP_S16_AND_FINISH',
                                'IEM_MC_REL_JMP_S32_AND_FINISH', 'IEM_MC_CALL_CIMPL_0', 'IEM_MC_CALL_CIMPL_1',
-                               'IEM_MC_CALL_CIMPL_2', 'IEM_MC_CALL_CIMPL_3', 'IEM_MC_CALL_CIMPL_4', 'IEM_MC_CALL_CIMPL_5'):
+                               'IEM_MC_CALL_CIMPL_2', 'IEM_MC_CALL_CIMPL_3', 'IEM_MC_CALL_CIMPL_4', 'IEM_MC_CALL_CIMPL_5', ):
                 self.aoParamRefs.append(ThreadedParamRef('cbInstr', 'uint4_t', oStmt));
 
-            # We can skip the rest for statements w/o parameters.
-            if not oStmt.asParams:
-                continue;
+            if oStmt.sName == 'IEM_MC_CALC_RM_EFF_ADDR':
+                ## @todo figure out how to do this in the input part...
+                if self.sVariation == self.ksVariation_Addr16:
+                    self.aoParamRefs.append(ThreadedParamRef('bRm',     'uint8_t',  oStmt));
+                    self.aoParamRefs.append(ThreadedParamRef('u16Disp', 'uint16_t', oStmt));
+                elif self.sVariation in (self.ksVariation_Addr32, self.ksVariation_Addr32Flat):
+                    self.aoParamRefs.append(ThreadedParamRef('bRm',     'uint8_t',  oStmt));
+                    self.aoParamRefs.append(ThreadedParamRef('bSib',    'uint8_t',  oStmt));
+                    self.aoParamRefs.append(ThreadedParamRef('u32Disp', 'uint32_t', oStmt));
+                else:
+                    assert self.sVariation in (self.ksVariation_Addr64, self.ksVariation_Addr64_32);
+                    self.aoParamRefs.append(ThreadedParamRef('bRmEx',   'uint8_t',  oStmt));
+                    self.aoParamRefs.append(ThreadedParamRef('bSib',    'uint8_t',  oStmt));
+                    self.aoParamRefs.append(ThreadedParamRef('u32Disp', 'uint32_t', oStmt));
+                    self.aoParamRefs.append(ThreadedParamRef('cbInstr', 'uint4_t',  oStmt));
 
             # Inspect the target of calls to see if we need to pass down a
             # function pointer or function table pointer for it to work.
-            aiSkipParams = {};
             if isinstance(oStmt, iai.McStmtCall):
                 if oStmt.sFn[0] == 'p':
                     self.aoParamRefs.append(ThreadedParamRef(oStmt.sFn, 'uintptr_t', oStmt, oStmt.idxFn));
@@ -366,7 +438,7 @@ class ThreadedFunction(object):
 
             # Check all the parameters for bogus references.
             for iParam, sParam in enumerate(oStmt.asParams):
-                if iParam not in aiSkipParams  and  sParam not in self.dVariables:
+                if iParam not in aiSkipParams  and  sParam not in self.oParent.dVariables:
                     # The parameter may contain a C expression, so we have to try
                     # extract the relevant bits, i.e. variables and fields while
                     # ignoring operators and parentheses.
@@ -408,7 +480,7 @@ class ThreadedFunction(object):
                                                                          oStmt, iParam, offStart));
 
                             # We can skip known variables.
-                            elif sRef in self.dVariables:
+                            elif sRef in self.oParent.dVariables:
                                 pass;
 
                             # Skip certain macro invocations.
@@ -428,17 +500,23 @@ class ThreadedFunction(object):
                             # Skip constants, globals, types (casts), sizeof and macros.
                             elif (   sRef.startswith('IEM_OP_PRF_')
                                   or sRef.startswith('IEM_ACCESS_')
+                                  or sRef.startswith('IEMINT_')
                                   or sRef.startswith('X86_GREG_')
                                   or sRef.startswith('X86_SREG_')
                                   or sRef.startswith('X86_EFL_')
                                   or sRef.startswith('X86_FSW_')
                                   or sRef.startswith('X86_FCW_')
+                                  or sRef.startswith('X86_XCPT_')
+                                  or sRef.startswith('IEMMODE_')
                                   or sRef.startswith('g_')
                                   or sRef in ( 'int8_t',    'int16_t',    'int32_t',
                                                'INT8_C',    'INT16_C',    'INT32_C',    'INT64_C',
                                                'UINT8_C',   'UINT16_C',   'UINT32_C',   'UINT64_C',
                                                'UINT8_MAX', 'UINT16_MAX', 'UINT32_MAX', 'UINT64_MAX',
-                                               'sizeof',    'NOREF',      'RT_NOREF',   'IEMMODE_64BIT' ) ):
+                                               'INT8_MAX',  'INT16_MAX',  'INT32_MAX',  'INT64_MAX',
+                                               'INT8_MIN',  'INT16_MIN',  'INT32_MIN',  'INT64_MIN',
+                                               'sizeof',    'NOREF',      'RT_NOREF',   'IEMMODE_64BIT',
+                                               'NIL_RTGCPTR' ) ):
                                 pass;
 
                             # Skip certain macro invocations.
@@ -471,6 +549,50 @@ class ThreadedFunction(object):
                 self.analyzeFindThreadedParamRefs(oStmt.aoElseBranch);
         return True;
 
+    def analyzeVariation(self, aoStmts):
+        """
+        2nd part of the analysis, done on each variation.
+
+        The variations may differ in parameter requirements and will end up with
+        slightly different MC sequences. Thus this is done on each individually.
+
+        Returns dummy True - raises exception on trouble.
+        """
+        # Now scan the code for variables and field references that needs to
+        # be passed to the threaded function because they are related to the
+        # instruction decoding.
+        self.analyzeFindThreadedParamRefs(aoStmts);
+        self.analyzeConsolidateThreadedParamRefs();
+
+        # Morph the statement stream for the block into what we'll be using in the threaded function.
+        (self.aoStmtsForThreadedFunction, iParamRef) = self.analyzeMorphStmtForThreaded(aoStmts);
+        if iParamRef != len(self.aoParamRefs):
+            raise Exception('iParamRef=%s, expected %s!' % (iParamRef, len(self.aoParamRefs),));
+
+        return True;
+
+
+class ThreadedFunction(object):
+    """
+    A threaded function.
+    """
+
+    def __init__(self, oMcBlock):
+        self.oMcBlock       = oMcBlock      # type: IEMAllInstructionsPython.McBlock
+        ## Variations for this block. There is at least one.
+        self.aoVariations   = []            # type: list(ThreadedFunctionVariation)
+        ## Dictionary of local variables (IEM_MC_LOCAL[_CONST]) and call arguments (IEM_MC_ARG*).
+        self.dVariables     = {}            # type: dict(str,McStmtVar)
+
+    @staticmethod
+    def dummyInstance():
+        """ Gets a dummy instance. """
+        return ThreadedFunction(iai.McBlock('null', 999999999, 999999999, 'nil', 999999999));
+
+    def raiseProblem(self, sMessage):
+        """ Raises a problem. """
+        raise Exception('%s:%s: error: %s' % (self.oMcBlock.sSrcFile, self.oMcBlock.iBeginLine, sMessage, ));
+
     def analyzeFindVariablesAndCallArgs(self, aoStmts):
         """ Scans the statements for MC variables and call arguments. """
         for oStmt in aoStmts:
@@ -492,7 +614,8 @@ class ThreadedFunction(object):
     def analyze(self):
         """
         Analyzes the code, identifying the number of parameters it requires and such.
-        May raise exceptions if we cannot grok the code.
+
+        Returns dummy True - raises exception on trouble.
         """
 
         # Decode the block into a list/tree of McStmt objects.
@@ -501,16 +624,16 @@ class ThreadedFunction(object):
         # Scan the statements for local variables and call arguments (self.dVariables).
         self.analyzeFindVariablesAndCallArgs(aoStmts);
 
-        # Now scan the code for variables and field references that needs to
-        # be passed to the threaded function because they are related to the
-        # instruction decoding.
-        self.analyzeFindThreadedParamRefs(aoStmts);
-        self.analyzeConsolidateThreadedParamRefs();
+        # Create variations if needed.
+        if iai.McStmt.findStmtByNames(aoStmts, {'IEM_MC_CALC_RM_EFF_ADDR' : True,}):
+            self.aoVariations = [ThreadedFunctionVariation(self, sVar)
+                                 for sVar in ThreadedFunctionVariation.kasVariations_EffAddr];
+        else:
+            self.aoVariations = [ThreadedFunctionVariation(self),];
 
-        # Morph the statement stream for the block into what we'll be using in the threaded function.
-        (self.aoStmtsForThreadedFunction, iParamRef) = self.analyzeMorphStmtForThreaded(aoStmts);
-        if iParamRef != len(self.aoParamRefs):
-            raise Exception('iParamRef=%s, expected %s!' % (iParamRef, len(self.aoParamRefs),));
+        # Continue the analysis on each variation.
+        for oVariation in self.aoVariations:
+            oVariation.analyzeVariation(aoStmts);
 
         return True;
 
@@ -545,14 +668,17 @@ class IEMThreadedGenerator(object):
         # Parse the files.
         self.aoParsers = iai.parseFiles(self.oOptions.asInFiles);
 
-        # Wrap MC blocks into threaded functions and analyze these.
+        # Create threaded functions for the MC blocks.
         self.aoThreadedFuncs = [ThreadedFunction(oMcBlock) for oMcBlock in iai.g_aoMcBlocks];
+
+        # Analyze the threaded functions.
         dRawParamCounts = {};
         dMinParamCounts = {};
         for oThreadedFunction in self.aoThreadedFuncs:
             oThreadedFunction.analyze();
-            dRawParamCounts[len(oThreadedFunction.dParamRefs)] = dRawParamCounts.get(len(oThreadedFunction.dParamRefs), 0) + 1;
-            dMinParamCounts[oThreadedFunction.cMinParams]      = dMinParamCounts.get(oThreadedFunction.cMinParams,      0) + 1;
+            for oVariation in oThreadedFunction.aoVariations:
+                dRawParamCounts[len(oVariation.dParamRefs)] = dRawParamCounts.get(len(oVariation.dParamRefs), 0) + 1;
+                dMinParamCounts[oVariation.cMinParams]      = dMinParamCounts.get(oVariation.cMinParams,      0) + 1;
         print('debug: param count distribution, raw and optimized:', file = sys.stderr);
         for cCount in sorted({cBits: True for cBits in list(dRawParamCounts.keys()) + list(dMinParamCounts.keys())}.keys()):
             print('debug:     %s params: %4s raw, %4s min'
@@ -625,8 +751,9 @@ class IEMThreadedGenerator(object):
             '{',
             '    kIemThreadedFunc_Invalid = 0,',
         ];
-        for oFunc in self.aoThreadedFuncs:
-            asLines.append('    ' + oFunc.getIndexName() + ',');
+        for oThreadedFunction in self.aoThreadedFuncs:
+            for oVariation in oThreadedFunction.aoVariations:
+                asLines.append('    ' + oVariation.getIndexName() + ',');
         asLines += [
             '    kIemThreadedFunc_End',
             '} IEMTHREADEDFUNCS;',
@@ -677,58 +804,66 @@ class IEMThreadedGenerator(object):
         #
         for oThreadedFunction in self.aoThreadedFuncs:
             oMcBlock = oThreadedFunction.oMcBlock;
-            # Function header
-            oOut.write(  '\n'
-                       + '\n'
-                       + '/**\n'
-                       + ' * %s at line %s offset %s in %s%s\n'
-                          % (oMcBlock.sFunction, oMcBlock.iBeginLine, oMcBlock.offBeginLine, os.path.split(oMcBlock.sSrcFile)[1],
-                             ' (macro expansion)' if oMcBlock.iBeginLine == oMcBlock.iEndLine else '')
-                       + ' */\n'
-                       + 'static IEM_DECL_IMPL_DEF(VBOXSTRICTRC, ' + oThreadedFunction.getFunctionName() + ',\n'
-                       + '                         ' + sParamList
-                       + '{\n');
+            for oVariation in oThreadedFunction.aoVariations:
+                # Function header
+                oOut.write(  '\n'
+                           + '\n'
+                           + '/**\n'
+                           + ' * %s at line %s offset %s in %s%s\n'
+                              % (oMcBlock.sFunction, oMcBlock.iBeginLine, oMcBlock.offBeginLine,
+                                 os.path.split(oMcBlock.sSrcFile)[1],
+                                 ' (macro expansion)' if oMcBlock.iBeginLine == oMcBlock.iEndLine else '')
+                           + ' */\n'
+                           + 'static IEM_DECL_IMPL_DEF(VBOXSTRICTRC, ' + oVariation.getFunctionName() + ',\n'
+                           + '                         ' + sParamList
+                           + '{\n');
 
-            aasVars = [];
-            for aoRefs in oThreadedFunction.dParamRefs.values():
-                oRef  = aoRefs[0];
-                cBits = g_kdTypeInfo[oRef.sType][0];
-
-                sTypeDecl = oRef.sType + ' const';
-
-                if cBits == 64:
-                    assert oRef.offNewParam == 0;
-                    if oRef.sType == 'uint64_t':
-                        sUnpack = 'uParam%s;' % (oRef.iNewParam,);
+                aasVars = [];
+                for aoRefs in oVariation.dParamRefs.values():
+                    oRef  = aoRefs[0];
+                    if oRef.sType[0] != 'P':
+                        cBits = g_kdTypeInfo[oRef.sType][0];
+                        sType = g_kdTypeInfo[oRef.sType][2];
                     else:
-                        sUnpack = '(%s)uParam%s;' % (oRef.sType, oRef.iNewParam,);
-                elif oRef.offNewParam == 0:
-                    sUnpack = '(%s)(uParam%s & %s);' % (oRef.sType, oRef.iNewParam, self.ksBitsToIntMask[cBits]);
-                else:
-                    sUnpack = '(%s)((uParam%s >> %s) & %s);' \
-                            % (oRef.sType, oRef.iNewParam, oRef.offNewParam, self.ksBitsToIntMask[cBits]);
+                        cBits = 64;
+                        sType = oRef.sType;
 
-                sComment = '/* %s - %s ref%s */' % (oRef.sOrgRef, len(aoRefs), 's' if len(aoRefs) != 1 else '',);
+                    sTypeDecl = sType + ' const';
 
-                aasVars.append([ '%s:%02u' % (oRef.iNewParam, oRef.offNewParam), sTypeDecl, oRef.sNewName, sUnpack, sComment ]);
-            acchVars = [0, 0, 0, 0, 0];
-            for asVar in aasVars:
-                for iCol, sStr in enumerate(asVar):
-                    acchVars[iCol] = max(acchVars[iCol], len(sStr));
-            sFmt = '    %%-%ss %%-%ss = %%-%ss %%s\n' % (acchVars[1], acchVars[2], acchVars[3]);
-            for asVar in sorted(aasVars):
-                oOut.write(sFmt % (asVar[1], asVar[2], asVar[3], asVar[4],));
+                    if cBits == 64:
+                        assert oRef.offNewParam == 0;
+                        if sType == 'uint64_t':
+                            sUnpack = 'uParam%s;' % (oRef.iNewParam,);
+                        else:
+                            sUnpack = '(%s)uParam%s;' % (sType, oRef.iNewParam,);
+                    elif oRef.offNewParam == 0:
+                        sUnpack = '(%s)(uParam%s & %s);' % (sType, oRef.iNewParam, self.ksBitsToIntMask[cBits]);
+                    else:
+                        sUnpack = '(%s)((uParam%s >> %s) & %s);' \
+                                % (sType, oRef.iNewParam, oRef.offNewParam, self.ksBitsToIntMask[cBits]);
 
-            # RT_NOREF for unused parameters.
-            if oThreadedFunction.cMinParams < g_kcThreadedParams:
-                oOut.write('    RT_NOREF('
-                           + ', '.join(['uParam%u' % (i,) for i in range(oThreadedFunction.cMinParams, g_kcThreadedParams)])
-                           + ');\n');
+                    sComment = '/* %s - %s ref%s */' % (oRef.sOrgRef, len(aoRefs), 's' if len(aoRefs) != 1 else '',);
 
-            # Now for the actual statements.
-            oOut.write(iai.McStmt.renderCodeForList(oThreadedFunction.aoStmtsForThreadedFunction, cchIndent = 4));
+                    aasVars.append([ '%s:%02u' % (oRef.iNewParam, oRef.offNewParam), sTypeDecl, oRef.sNewName, sUnpack, sComment ]);
+                acchVars = [0, 0, 0, 0, 0];
+                for asVar in aasVars:
+                    for iCol, sStr in enumerate(asVar):
+                        acchVars[iCol] = max(acchVars[iCol], len(sStr));
+                sFmt = '    %%-%ss %%-%ss = %%-%ss %%s\n' % (acchVars[1], acchVars[2], acchVars[3]);
+                for asVar in sorted(aasVars):
+                    oOut.write(sFmt % (asVar[1], asVar[2], asVar[3], asVar[4],));
 
-            oOut.write('}\n');
+                # RT_NOREF for unused parameters.
+                if oVariation.cMinParams < g_kcThreadedParams:
+                    oOut.write('    RT_NOREF('
+                               + ', '.join(['uParam%u' % (i,) for i in range(oVariation.cMinParams, g_kcThreadedParams)])
+                               + ');\n');
+
+                # Now for the actual statements.
+                oOut.write(iai.McStmt.renderCodeForList(oVariation.aoStmtsForThreadedFunction, cchIndent = 4));
+
+                oOut.write('}\n');
+
 
         #
         # Emit the function table.
@@ -741,8 +876,11 @@ class IEMThreadedGenerator(object):
                    + 'const PFNIEMTHREADEDFUNC g_apfnIemThreadedFunctions[kIemThreadedFunc_End] =\n'
                    + '{\n'
                    + '    /*Invalid*/ NULL, \n');
-        for iThreadedFunction, oThreadedFunction in enumerate(self.aoThreadedFuncs):
-            oOut.write('    /*%4u*/ %s,\n' % (iThreadedFunction + 1, oThreadedFunction.getFunctionName(),));
+        iThreadedFunction = 0;
+        for oThreadedFunction in self.aoThreadedFuncs:
+            for oVariation in oThreadedFunction.aoVariations:
+                iThreadedFunction += 1;
+                oOut.write('    /*%4u*/ %s,\n' % (iThreadedFunction, oVariation.getFunctionName(),));
         oOut.write('};\n');
 
         return True;
