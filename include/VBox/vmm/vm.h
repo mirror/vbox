@@ -136,13 +136,13 @@ typedef struct VMCPU
     /** IEM part.
      * @remarks This comes first as it allows the use of 8-bit immediates for the
      *          first 64 bytes of the structure, reducing code size a wee bit. */
-#ifdef VMM_INCLUDED_SRC_include_IEMInternal_h /* For PDB hacking. */
+#if defined(VMM_INCLUDED_SRC_include_IEMInternal_h) || defined(VMM_INCLUDED_SRC_include_IEMInternal_armv8_h) /* For PDB hacking. */
     union VMCPUUNIONIEMFULL
 #else
     union VMCPUUNIONIEMSTUB
 #endif
     {
-#ifdef VMM_INCLUDED_SRC_include_IEMInternal_h
+#if defined(VMM_INCLUDED_SRC_include_IEMInternal_h) || defined(VMM_INCLUDED_SRC_include_IEMInternal_armv8_h)
         struct IEMCPU       s;
 #endif
         uint8_t             padding[32832];     /* multiple of 64 */

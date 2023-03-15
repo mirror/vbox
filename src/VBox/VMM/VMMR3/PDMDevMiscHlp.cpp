@@ -170,7 +170,7 @@ static DECLCALLBACK(int) pdmR3IoApicHlp_IommuMsiRemap(PPDMDEVINS pDevIns, uint16
     if (pdmIommuIsPresent(pDevIns))
         return pdmIommuMsiRemap(pDevIns, idDevice, pMsiIn, pMsiOut);
 #else
-    RT_NOREF(pDevIns, idDevice);
+    RT_NOREF(pDevIns, idDevice, pMsiIn, pMsiOut);
 #endif
     return VERR_IOMMU_NOT_PRESENT;
 }

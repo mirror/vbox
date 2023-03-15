@@ -44,6 +44,17 @@ RT_C_DECLS_BEGIN
 /** @addtogroup grp_iem
  * @{ */
 
+/** @name Instruction mode.
+ * @{ */
+typedef uint8_t IEMMODE;
+/** AARCH64 instruction mode. */
+#define IEMMODE_AARCH64     0
+/** AARCH32 A32 instruction mode. */
+#define IEMMODE_AARCH32_A32 1
+/** AARCH32 T32 (aka Thumb) instruction mode. */
+#define IEMMODE_AARCH32_T32 1
+/** @} */
+
 
 /** The CPUMCTX_EXTRN_XXX mask required to be cleared when interpreting anything.
  * IEM will ASSUME the caller of IEM APIs has ensured these are already present. */

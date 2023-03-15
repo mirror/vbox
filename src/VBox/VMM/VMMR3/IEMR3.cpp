@@ -34,7 +34,11 @@
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/mm.h>
-#include "IEMInternal.h"
+#if defined(VBOX_VMM_TARGET_ARMV8)
+# include "IEMInternal-armv8.h"
+#else
+# include "IEMInternal.h"
+#endif
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/vmapi.h>
 #include <VBox/err.h>
