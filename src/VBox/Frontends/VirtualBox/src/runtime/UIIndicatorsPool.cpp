@@ -586,11 +586,12 @@ class UIIndicatorRecording : public UISessionStateStatusBarIndicator
     Q_PROPERTY(double rotationAngle READ rotationAngle WRITE setRotationAngle);
 
     /** Recording states. */
-    enum UIIndicatorStateRecording
+    enum RecordingState
     {
-        UIIndicatorStateRecording_Disabled = 0,
-        UIIndicatorStateRecording_Enabled  = 1,
-        UIIndicatorStateRecording_Paused   = 2
+        RecordingState_Unavailable = 0,
+        RecordingState_Disabled    = 1,
+        RecordingState_Enabled     = 2,
+        RecordingState_Paused      = 3
     };
 
 public:
@@ -602,13 +603,17 @@ public:
         , m_dRotationAngle(0)
     {
         /* Assign state-icons: */
-        setStateIcon(UIIndicatorStateRecording_Disabled, UIIconPool::iconSet(":/video_capture_16px.png"));
-        setStateIcon(UIIndicatorStateRecording_Enabled,  UIIconPool::iconSet(":/movie_reel_16px.png"));
-        setStateIcon(UIIndicatorStateRecording_Paused,   UIIconPool::iconSet(":/movie_reel_16px.png"));
+        setStateIcon(RecordingState_Unavailable, UIIconPool::iconSet(":/video_capture_disabled_16px.png"));
+        setStateIcon(RecordingState_Disabled,    UIIconPool::iconSet(":/video_capture_16px.png"));
+        setStateIcon(RecordingState_Enabled,     UIIconPool::iconSet(":/movie_reel_16px.png"));
+        setStateIcon(RecordingState_Paused,      UIIconPool::iconSet(":/movie_reel_16px.png"));
+        /* Configure connection: */
+        connect(pMachine, &UIMachine::sigInitialized,
+                this, &UIIndicatorRecording::updateAppearance);
         /* Create *enabled* state animation: */
         m_pAnimation = UIAnimationLoop::installAnimationLoop(this, "rotationAngle",
-                                                                   "rotationAngleStart", "rotationAngleFinal",
-                                                                   1000);
+                                                             "rotationAngleStart", "rotationAngleFinal",
+                                                             1000);
         /* Translate finally: */
         retranslateUi();
     }
@@ -624,7 +629,7 @@ protected:
         /* Create new painter: */
         QPainter painter(this);
         /* Configure painter for *enabled* state: */
-        if (state() == UIIndicatorStateRecording_Enabled)
+        if (state() == RecordingState_Enabled)
         {
             /* Configure painter for smooth animation: */
             painter.setRenderHint(QPainter::Antialiasing);
@@ -654,12 +659,17 @@ protected slots:
         if (!strFullData.isEmpty())
             setToolTip(s_strTable.arg(strFullData));
         /* Set initial indicator state: */
-        if (!fRecordingEnabled)
-            setState(UIIndicatorStateRecording_Disabled);
-        else if (!fMachinePaused)
-            setState(UIIndicatorStateRecording_Enabled);
-        else
-            setState(UIIndicatorStateRecording_Paused);
+        RecordingState enmState = RecordingState_Unavailable;
+        if (m_pMachine->isSessionValid())
+        {
+            if (!fRecordingEnabled)
+                enmState = RecordingState_Disabled;
+            else if (!fMachinePaused)
+                enmState = RecordingState_Enabled;
+            else
+                enmState = RecordingState_Paused;
+        }
+        setState(enmState);
     }
 
 private slots:
@@ -670,14 +680,14 @@ private slots:
         /* Update animation state: */
         switch (iState)
         {
-            case UIIndicatorStateRecording_Disabled:
+            case RecordingState_Disabled:
                 m_pAnimation->stop();
                 m_dRotationAngle = 0;
                 break;
-            case UIIndicatorStateRecording_Enabled:
+            case RecordingState_Enabled:
                 m_pAnimation->start();
                 break;
-            case UIIndicatorStateRecording_Paused:
+            case RecordingState_Paused:
                 m_pAnimation->stop();
                 break;
             default:
