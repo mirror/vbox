@@ -148,6 +148,8 @@ VBOX_HDRS_OMIT := \
 	VBox/vmm/cpumctx-armv8.h \
 	VBox/vmm/cpum-x86-amd64.h \
 	VBox/vmm/cpum-armv8.h \
+	VBox/vmm/iem-x86-amd64.h \
+	VBox/vmm/iem-armv8.h \
 	iprt/runtime-loader.h \
 	iprt/mangling.h \
 	$(subst $(PATH_SUB_CURRENT)/,,$(wildcard $(PATH_SUB_CURRENT)/iprt/asm*watcom*.h)) \
