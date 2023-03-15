@@ -551,9 +551,7 @@
       <topicref href="topics/vboxsvc-session-0.dita">
          <topicref href="topics/vboxsvc-session-0-known-issues.dita"/>
       </topicref>
-
-      <!-- <topicref href="topics/viso.dita"> -->
-
+      <topicref href="topics/user_isomakercmd-man.dita"/>
    </chapter>
    <chapter href="topics/TechnicalBackground.dita">
       <topicref href="topics/vboxconfigdata.dita">

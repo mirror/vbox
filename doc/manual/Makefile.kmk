@@ -856,13 +856,14 @@ man_vboximg-mount.xml \
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_REFENTRY_FILES) man_vboximg-mount.xml man_VBoxHeadless.xml \
 , $(evalcall2 def_vbox_refentry_to_dita,$(lang),$(file))))
 
- refentry-to-dita: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file, $(basename $(VBOX_MANUAL_XML_REFENTRY_FILES)) \
- 				man_vboximg-mount man_VBoxHeadless \
- 				,$$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/dita/topics/$(file).dita))
-
  VBOX_REFENTRY_DITA_FILES = $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file, $(basename $(VBOX_MANUAL_XML_REFENTRY_FILES)) \
- 	man_vboximg-mount man_VBoxHeadless \
+ 	man_vboximg-mount man_VBoxHeadless user_isomakercmd-man\
  	,$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/dita/topics/$(file).dita))
+
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/user_isomakercmd-man.dita: \
+	$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl \
+	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_isomakercmd-man.xml | $$$(dir $$$@)
+	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output $@ $(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl $(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_isomakercmd-man.xml
 
  ##########################################################################################
  #
