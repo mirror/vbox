@@ -528,14 +528,25 @@ class UIIndicatorDisplay : public UISessionStateStatusBarIndicator
 
 public:
 
+    /** Display states. */
+    enum DisplayState
+    {
+        DisplayState_Unavailable = 0,
+        DisplayState_Software = 1,
+        DisplayState_Hardware = 2
+    };
+
     /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorDisplay(UIMachine *pMachine)
         : UISessionStateStatusBarIndicator(IndicatorType_Display, pMachine)
     {
         /* Assign state-icons: */
-        setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/display_software_16px.png"));
-        setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/display_hardware_16px.png"));
-        setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/display_hardware_write_16px.png"));
+        setStateIcon(DisplayState_Unavailable, UIIconPool::iconSet(":/display_software_disabled_16px.png"));
+        setStateIcon(DisplayState_Software,    UIIconPool::iconSet(":/display_software_16px.png"));
+        setStateIcon(DisplayState_Hardware,    UIIconPool::iconSet(":/display_hardware_16px.png"));
+        /* Configure connection: */
+        connect(pMachine, &UIMachine::sigInitialized,
+                this, &UIIndicatorDisplay::updateAppearance);
         /* Translate finally: */
         retranslateUi();
     }
@@ -552,8 +563,16 @@ protected slots:
         /* Update tool-tip: */
         if (!strFullData.isEmpty())
             setToolTip(s_strTable.arg(strFullData));
-        /* Set initial indicator state: */
-        setState(fAcceleration3D ? KDeviceActivity_Idle : KDeviceActivity_Null);
+        /* Update indicator state: */
+        DisplayState enmState = DisplayState_Unavailable;
+        if (m_pMachine->isSessionValid())
+        {
+            if (!fAcceleration3D)
+                enmState = DisplayState_Software;
+            else
+                enmState = DisplayState_Hardware;
+        }
+        setState(enmState);
     }
 };
 

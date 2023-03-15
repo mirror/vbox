@@ -158,8 +158,8 @@
         <file alias="description_16px_x4.png">images/x4/description_16px_x4.png</file>
         <file alias="disk_size_16px_x4.png">images/x4/disk_size_16px_x4.png</file>
         <file alias="display_hardware_16px_x4.png">images/x4/display_hardware_16px_x4.png</file>
-        <file alias="display_hardware_write_16px_x4.png">images/x4/display_hardware_write_16px_x4.png</file>
         <file alias="display_software_16px_x4.png">images/x4/display_software_16px_x4.png</file>
+        <file alias="display_software_disabled_16px_x4.png">images/x4/display_software_disabled_16px_x4.png</file>
         <file alias="download_manager_16px_x4.png">images/x4/download_manager_16px_x4.png</file>
         <file alias="download_manager_32px_x4.png">images/x4/download_manager_32px_x4.png</file>
         <file alias="download_manager_error_16px_x4.png">images/x4/download_manager_error_16px_x4.png</file>

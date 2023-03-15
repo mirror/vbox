@@ -158,8 +158,8 @@
         <file alias="description_16px.png">images/description_16px.png</file>
         <file alias="disk_size_16px.png">images/disk_size_16px.png</file>
         <file alias="display_hardware_16px.png">images/display_hardware_16px.png</file>
-        <file alias="display_hardware_write_16px.png">images/display_hardware_write_16px.png</file>
         <file alias="display_software_16px.png">images/display_software_16px.png</file>
+        <file alias="display_software_disabled_16px.png">images/display_software_disabled_16px.png</file>
         <file alias="download_manager_16px.png">images/download_manager_16px.png</file>
         <file alias="download_manager_32px.png">images/download_manager_32px.png</file>
         <file alias="download_manager_error_16px.png">images/download_manager_error_16px.png</file>
