@@ -49,6 +49,14 @@ RT_C_DECLS_BEGIN
 /** @addtogroup grp_iem
  * @{ */
 
+/** @name Operand or addressing mode.
+ * @{ */
+typedef uint8_t IEMMODE;
+#define IEMMODE_16BIT 0
+#define IEMMODE_32BIT 1
+#define IEMMODE_64BIT 2
+/** @} */
+
 
 /** @name IEMTARGETCPU_XXX - IEM target CPU specification.
  *

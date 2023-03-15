@@ -115,15 +115,6 @@ typedef IEMXCPTRAISE *PIEMXCPTRAISE;
 /** @} */
 
 
-/** @name Operand or addressing mode.
- * @{ */
-typedef uint8_t IEMMODE;
-#define IEMMODE_16BIT 0
-#define IEMMODE_32BIT 1
-#define IEMMODE_64BIT 2
-/** @} */
-
-
 /** @name IEM_XCPT_FLAGS_XXX - flags for iemRaiseXcptOrInt.
  * @{ */
 /** CPU exception. */
