@@ -183,18 +183,10 @@ public:
         retranslateUi();
     }
 
-private slots:
-
-    /** Refreshes the tooltip if the device config changes at runtime (hotplugging, USB storage). */
-    void sltStorageDeviceChange()
-    {
-        updateAppearance();
-    }
-
-private:
+protected:
 
     /** Update routine. */
-    void updateAppearance()
+    virtual void updateAppearance() RT_OVERRIDE
     {
         /* Acquire data: */
         QString strFullData;
@@ -212,6 +204,14 @@ private:
             setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         setState(fAttachmentsPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
+    }
+
+private slots:
+
+    /** Refreshes the tooltip if the device config changes at runtime (hotplugging, USB storage). */
+    void sltStorageDeviceChange()
+    {
+        updateAppearance();
     }
 };
 
@@ -236,10 +236,10 @@ public:
         retranslateUi();
     }
 
-private:
+protected:
 
     /** Update routine. */
-    void updateAppearance()
+    virtual void updateAppearance() RT_OVERRIDE
     {
         QString strFullData;
         bool fAttachmentsPresent = false;
@@ -281,10 +281,10 @@ public:
         retranslateUi();
     }
 
-private:
+protected:
 
     /** Update routine. */
-    void updateAppearance()
+    virtual void updateAppearance() RT_OVERRIDE
     {
         QString strFullData;
         bool fAttachmentsPresent = false;
@@ -335,10 +335,10 @@ public:
         retranslateUi();
     }
 
-private:
+protected:
 
     /** Update routine. */
-    void updateAppearance()
+    virtual void updateAppearance() RT_OVERRIDE
     {
         QString strFullData;
         bool fAudioEnabled = false;
@@ -391,12 +391,36 @@ public:
         if (m_pTimerAutoUpdate)
         {
             /* Configure auto-update timer: */
-            connect(m_pTimerAutoUpdate, &QTimer::timeout, this, &UIIndicatorNetwork::sltUpdateNetworkIPs);
+            connect(m_pTimerAutoUpdate, &QTimer::timeout,
+                    this, &UIIndicatorNetwork::sltUpdateNetworkIPs);
             /* Start timer immediately if machine is running: */
             sltHandleMachineStateChange();
         }
         /* Translate finally: */
         retranslateUi();
+    }
+
+protected:
+
+    /** Update routine. */
+    virtual void updateAppearance() RT_OVERRIDE
+    {
+        QString strFullData;
+        bool fAdaptersPresent = false;
+        bool fCablesDisconnected = true;
+        m_pMachine->acquireNetworkStatusInfo(strFullData, fAdaptersPresent, fCablesDisconnected);
+
+        /* Show/hide indicator if there are no attachments
+         * and parent is visible already: */
+        if (   parentWidget()
+            && parentWidget()->isVisible())
+            setVisible(fAdaptersPresent);
+
+        /* Update tool-tip: */
+        if (!strFullData.isEmpty())
+            setToolTip(s_strTable.arg(strFullData));
+        /* Update indicator state: */
+        setState(fAdaptersPresent && !fCablesDisconnected ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
 
 private slots:
@@ -421,27 +445,6 @@ private slots:
     }
 
 private:
-
-    /** Update routine. */
-    void updateAppearance()
-    {
-        QString strFullData;
-        bool fAdaptersPresent = false;
-        bool fCablesDisconnected = true;
-        m_pMachine->acquireNetworkStatusInfo(strFullData, fAdaptersPresent, fCablesDisconnected);
-
-        /* Show/hide indicator if there are no attachments
-         * and parent is visible already: */
-        if (   parentWidget()
-            && parentWidget()->isVisible())
-            setVisible(fAdaptersPresent);
-
-        /* Update tool-tip: */
-        if (!strFullData.isEmpty())
-            setToolTip(s_strTable.arg(strFullData));
-        /* Update indicator state: */
-        setState(fAdaptersPresent && !fCablesDisconnected ? KDeviceActivity_Idle : KDeviceActivity_Null);
-    }
 
     /** Holds the auto-update timer instance. */
     QTimer *m_pTimerAutoUpdate;
@@ -468,10 +471,10 @@ public:
         retranslateUi();
     }
 
-private:
+protected:
 
     /** Update routine. */
-    void updateAppearance()
+    virtual void updateAppearance() RT_OVERRIDE
     {
         QString strFullData;
         bool fUsbEnabled = false;
@@ -512,10 +515,10 @@ public:
         retranslateUi();
     }
 
-private:
+protected:
 
     /** Update routine. */
-    void updateAppearance()
+    virtual void updateAppearance() RT_OVERRIDE
     {
         QString strFullData;
         bool fFoldersPresent = false;
@@ -549,10 +552,10 @@ public:
         retranslateUi();
     }
 
-private:
+protected:
 
     /** Update routine. */
-    void updateAppearance()
+    virtual void updateAppearance() RT_OVERRIDE
     {
         QString strFullData;
         bool fAcceleration3D = false;
@@ -603,6 +606,53 @@ public:
         retranslateUi();
     }
 
+protected:
+
+    /** Handles paint @a pEvent. */
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE
+    {
+        /* Call to base-class: */
+        UISessionStateStatusBarIndicator::paintEvent(pEvent);
+
+        /* Create new painter: */
+        QPainter painter(this);
+        /* Configure painter for *enabled* state: */
+        if (state() == UIIndicatorStateRecording_Enabled)
+        {
+            /* Configure painter for smooth animation: */
+            painter.setRenderHint(QPainter::Antialiasing);
+            painter.setRenderHint(QPainter::SmoothPixmapTransform);
+            /* Shift rotation origin according pixmap center: */
+            painter.translate(height() / 2, height() / 2);
+            /* Rotate painter: */
+            painter.rotate(rotationAngle());
+            /* Unshift rotation origin according pixmap center: */
+            painter.translate(- height() / 2, - height() / 2);
+        }
+        /* Draw contents: */
+        drawContents(&painter);
+    }
+
+    /** Update routine. */
+    virtual void updateAppearance() RT_OVERRIDE
+    {
+        QString strFullData;
+        bool fRecordingEnabled = false;
+        bool fMachinePaused = false;
+        m_pMachine->acquireRecordingStatusInfo(strFullData, fRecordingEnabled, fMachinePaused);
+
+        /* Update tool-tip: */
+        if (!strFullData.isEmpty())
+            setToolTip(s_strTable.arg(strFullData));
+        /* Set initial indicator state: */
+        if (!fRecordingEnabled)
+            setState(UIIndicatorStateRecording_Disabled);
+        else if (!fMachinePaused)
+            setState(UIIndicatorStateRecording_Enabled);
+        else
+            setState(UIIndicatorStateRecording_Paused);
+    }
+
 private slots:
 
     /** Handles state change. */
@@ -629,48 +679,6 @@ private slots:
     }
 
 private:
-
-    /** Paint-event handler. */
-    void paintEvent(QPaintEvent*)
-    {
-        /* Create new painter: */
-        QPainter painter(this);
-        /* Configure painter for *enabled* state: */
-        if (state() == UIIndicatorStateRecording_Enabled)
-        {
-            /* Configure painter for smooth animation: */
-            painter.setRenderHint(QPainter::Antialiasing);
-            painter.setRenderHint(QPainter::SmoothPixmapTransform);
-            /* Shift rotation origin according pixmap center: */
-            painter.translate(height() / 2, height() / 2);
-            /* Rotate painter: */
-            painter.rotate(rotationAngle());
-            /* Unshift rotation origin according pixmap center: */
-            painter.translate(- height() / 2, - height() / 2);
-        }
-        /* Draw contents: */
-        drawContents(&painter);
-    }
-
-    /** Update routine. */
-    void updateAppearance()
-    {
-        QString strFullData;
-        bool fRecordingEnabled = false;
-        bool fMachinePaused = false;
-        m_pMachine->acquireRecordingStatusInfo(strFullData, fRecordingEnabled, fMachinePaused);
-
-        /* Update tool-tip: */
-        if (!strFullData.isEmpty())
-            setToolTip(s_strTable.arg(strFullData));
-        /* Set initial indicator state: */
-        if (!fRecordingEnabled)
-            setState(UIIndicatorStateRecording_Disabled);
-        else if (!fMachinePaused)
-            setState(UIIndicatorStateRecording_Enabled);
-        else
-            setState(UIIndicatorStateRecording_Paused);
-    }
 
     /** Returns rotation start angle. */
     double rotationAngleStart() const { return 0; }
@@ -714,7 +722,8 @@ public:
         m_pTimerAutoUpdate = new QTimer(this);
         if (m_pTimerAutoUpdate)
         {
-            connect(m_pTimerAutoUpdate, &QTimer::timeout, this, &UIIndicatorFeatures::sltHandleTimeout);
+            connect(m_pTimerAutoUpdate, &QTimer::timeout,
+                    this, &UIIndicatorFeatures::sltHandleTimeout);
             /* Start the timer immediately if the machine is running: */
             sltHandleMachineStateChange();
         }
@@ -727,15 +736,16 @@ protected:
     /** Handles paint @a pEvent. */
     virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE
     {
+        /* Call to base-class: */
         UISessionStateStatusBarIndicator::paintEvent(pEvent);
-        QPainter painter(this);
 
+        /* Create new painter: */
+        QPainter painter(this);
         /* Draw a thin bar on th right hand side of the icon indication CPU load: */
         QLinearGradient gradient(0, 0, 0, height());
         gradient.setColorAt(1.0, Qt::green);
         gradient.setColorAt(0.5, Qt::yellow);
         gradient.setColorAt(0.0, Qt::red);
-
         painter.setPen(Qt::NoPen);
         painter.setBrush(gradient);
         /* Use 20% of the icon width to draw the indicator bar: */
@@ -748,6 +758,20 @@ protected:
         painter.setPen(QPen(Qt::black, 1));
         painter.setBrush(Qt::NoBrush);
         painter.drawRect(outRect);
+    }
+
+    /** Update routine. */
+    virtual void updateAppearance() RT_OVERRIDE
+    {
+        QString strFullData;
+        KVMExecutionEngine enmEngine = KVMExecutionEngine_NotSet;
+        m_pMachine->acquireFeaturesStatusInfo(strFullData, enmEngine);
+
+        /* Update tool-tip: */
+        if (!strFullData.isEmpty())
+            setToolTip(s_strTable.arg(strFullData));
+        /* Update indicator state: */
+        setState(enmEngine);
     }
 
 private slots:
@@ -773,20 +797,6 @@ private slots:
     }
 
 private:
-
-    /** Update routine. */
-    void updateAppearance()
-    {
-        QString strFullData;
-        KVMExecutionEngine enmEngine = KVMExecutionEngine_NotSet;
-        m_pMachine->acquireFeaturesStatusInfo(strFullData, enmEngine);
-
-        /* Update tool-tip: */
-        if (!strFullData.isEmpty())
-            setToolTip(s_strTable.arg(strFullData));
-        /* Update indicator state: */
-        setState(enmEngine);
-    }
 
     /** Holds the auto-update timer instance. */
     QTimer *m_pTimerAutoUpdate;
@@ -821,27 +831,10 @@ public:
         retranslateUi();
     }
 
-private slots:
-
-    /** Handles state change. */
-    void setState(int iState)
-    {
-        if ((iState & UIMouseStateType_MouseAbsoluteDisabled) &&
-            (iState & UIMouseStateType_MouseAbsolute) &&
-            !(iState & UIMouseStateType_MouseCaptured))
-        {
-            QIStateStatusBarIndicator::setState(4);
-        }
-        else
-        {
-            QIStateStatusBarIndicator::setState(iState & (UIMouseStateType_MouseAbsolute | UIMouseStateType_MouseCaptured));
-        }
-    }
-
-private:
+protected:
 
     /** Update routine. */
-    void updateAppearance()
+    virtual void updateAppearance() RT_OVERRIDE
     {
         const QString strToolTip = QApplication::translate("UIIndicatorsPool",
                                                            "Indicates whether the host mouse pointer is "
@@ -869,6 +862,23 @@ private:
 
         /* Update tool-tip: */
         setToolTip(strToolTip.arg(strFullData));
+    }
+
+private slots:
+
+    /** Handles state change. */
+    void setState(int iState)
+    {
+        if ((iState & UIMouseStateType_MouseAbsoluteDisabled) &&
+            (iState & UIMouseStateType_MouseAbsolute) &&
+            !(iState & UIMouseStateType_MouseCaptured))
+        {
+            QIStateStatusBarIndicator::setState(4);
+        }
+        else
+        {
+            QIStateStatusBarIndicator::setState(iState & (UIMouseStateType_MouseAbsolute | UIMouseStateType_MouseCaptured));
+        }
     }
 };
 
@@ -900,10 +910,10 @@ public:
         retranslateUi();
     }
 
-private:
+protected:
 
     /** Update routine. */
-    void updateAppearance()
+    virtual void updateAppearance() RT_OVERRIDE
     {
         const QString strToolTip = QApplication::translate("UIIndicatorsPool",
                                                            "Indicates whether the host keyboard is "
