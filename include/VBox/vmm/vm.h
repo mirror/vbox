@@ -305,7 +305,7 @@ typedef struct VMCPU
     /** CPUM part. */
     union VMCPUUNIONCPUM
     {
-#ifdef VMM_INCLUDED_SRC_include_CPUMInternal_h
+#if defined(VMM_INCLUDED_SRC_include_CPUMInternal_h) || defined(VMM_INCLUDED_SRC_include_CPUMInternal_armv8_h)
         struct CPUMCPU      s;
 #endif
 #ifdef VMCPU_INCL_CPUM_GST_CTX
@@ -1261,7 +1261,7 @@ typedef struct VM
     /** CPUM part. */
     union
     {
-#ifdef VMM_INCLUDED_SRC_include_CPUMInternal_h
+#if defined(VMM_INCLUDED_SRC_include_CPUMInternal_h) || defined(VMM_INCLUDED_SRC_include_CPUMInternal_armv8_h)
         struct CPUM s;
 #endif
 #ifdef VBOX_INCLUDED_vmm_cpum_h

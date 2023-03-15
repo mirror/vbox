@@ -161,6 +161,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGF
 #define VMCPU_INCL_CPUM_GST_CTX
+#include <VBox/vmm/cpum.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/iem.h>
@@ -1774,6 +1775,11 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpRegRecalcOnCpu(PVM pVM, PVMCPU pVCpu, 
 {
     RT_NOREF(pvUser);
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    RT_NOREF(pVM, pVCpu);
+    AssertReleaseFailed();
+    return VERR_NOT_IMPLEMENTED;
+#else
     /*
      * CPU 0 updates the enabled hardware breakpoint counts.
      */
@@ -1793,6 +1799,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpRegRecalcOnCpu(PVM pVM, PVMCPU pVCpu, 
     }
 
     return CPUMRecalcHyperDRx(pVCpu, UINT8_MAX);
+#endif
 }
 
 
@@ -1979,7 +1986,7 @@ static VBOXSTRICTRC dbgfR3BpHit(PVM pVM, PVMCPU pVCpu, DBGFBP hBp, PDBGFBPINT pB
             if (rcStrict == VINF_SUCCESS)
             {
                 uint8_t abInstr[DBGF_BP_INSN_MAX];
-                RTGCPTR const GCPtrInstr = pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base;
+                RTGCPTR const GCPtrInstr = CPUMGetGuestFlatPC(pVCpu);
                 int rc = PGMPhysSimpleReadGCPtr(pVCpu, &abInstr[0], GCPtrInstr, sizeof(abInstr));
                 AssertRC(rc);
                 if (RT_SUCCESS(rc))

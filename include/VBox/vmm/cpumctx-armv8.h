@@ -40,6 +40,7 @@
 #endif
 
 #ifndef VBOX_FOR_DTRACE_LIB
+# include <iprt/assertcompile.h>
 # include <VBox/types.h>
 #else
 # pragma D depends_on library arm.d
@@ -143,10 +144,16 @@ typedef struct CPUMCTX
     uint64_t        fpcr;
     /** Floating point status register. */
     uint64_t        fpsr;
+    /** The internal PSTATE value (accessible in CPSR with AARCH32 and through
+     * NZCV and DAIF special purpose registers. */
+    uint32_t        fPState;
+
+    uint32_t        fPadding0;
 
     /** Externalized state tracker, CPUMCTX_EXTRN_XXX. */
     uint64_t        fExtrn;
 
+    uint64_t        au64Padding1[6];
 } CPUMCTX;
 
 
