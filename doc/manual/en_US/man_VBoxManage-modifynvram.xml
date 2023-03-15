@@ -68,6 +68,13 @@
       <arg>--platform-key=<replaceable>filename</replaceable></arg>
       <arg>--owner-uuid=<replaceable>uuid</replaceable></arg>
     </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-modifynvram-enrollmok">
+      <command>VBoxManage modifynvram</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">enrollmok</arg>
+      <arg>--mok=<replaceable>filename</replaceable></arg>
+      <arg>--owner-uuid=<replaceable>uuid</replaceable></arg>
+    </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-modifynvram-listvars">
       <command>VBoxManage modifynvram</command>
       <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>

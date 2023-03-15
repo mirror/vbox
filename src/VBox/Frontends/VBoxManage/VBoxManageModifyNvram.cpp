@@ -89,10 +89,69 @@ static RTEXITCODE handleModifyNvramEnrollMsSignatures(HandlerArg *a, ComPtr<INvr
 
 
 /**
+ * Helper for handleModifyNvramEnrollPlatformKey() and handleModifyNvramEnrollMok().
+ *
+ * This function reads key from file and enrolls it either as a PK (Platform Key)
+ * or as a MOK (Machine Owner Key).
+ *
+ * @returns Exit code.
+ * @param   pszKey          Path to a file which contains the key.
+ * @param   pszOwnerUuid    Owner's UUID.
+ * @param   nvramStore      Reference to the NVRAM store interface.
+ * @param   fPk             If True, a key will be enrolled as a PK, otherwise as a MOK.
+ */
+static RTEXITCODE handleModifyNvramEnrollPlatformKeyOrMok(const char *pszKey, const char *pszOwnerUuid,
+                                                          ComPtr<INvramStore> &nvramStore, bool fPk)
+{
+    RTFILE hKeyFile;
+
+    int vrc = RTFileOpen(&hKeyFile, pszKey, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(vrc))
+    {
+        uint64_t cbSize;
+        vrc = RTFileQuerySize(hKeyFile, &cbSize);
+        if (RT_SUCCESS(vrc))
+        {
+            if (cbSize <= _32K)
+            {
+                SafeArray<BYTE> aKey((size_t)cbSize);
+                vrc = RTFileRead(hKeyFile, aKey.raw(), (size_t)cbSize, NULL);
+                if (RT_SUCCESS(vrc))
+                {
+                    RTFileClose(hKeyFile);
+
+                    ComPtr<IUefiVariableStore> uefiVarStore;
+                    CHECK_ERROR2I_RET(nvramStore, COMGETTER(UefiVariableStore)(uefiVarStore.asOutParam()), RTEXITCODE_FAILURE);
+                    if (fPk)
+                        CHECK_ERROR2I_RET(uefiVarStore, EnrollPlatformKey(ComSafeArrayAsInParam(aKey), Bstr(pszOwnerUuid).raw()), RTEXITCODE_FAILURE);
+                    else
+                        CHECK_ERROR2I_RET(uefiVarStore, AddSignatureToMok(ComSafeArrayAsInParam(aKey), Bstr(pszOwnerUuid).raw(), SignatureType_X509), RTEXITCODE_FAILURE);
+
+                    return RTEXITCODE_SUCCESS;
+                }
+                else
+                    RTMsgError(Nvram::tr("Cannot read contents of file \"%s\": %Rrc"), pszKey, vrc);
+            }
+            else
+                RTMsgError(Nvram::tr("File \"%s\" is bigger than 32KByte"), pszKey);
+        }
+        else
+            RTMsgError(Nvram::tr("Cannot get size of file \"%s\": %Rrc"), pszKey, vrc);
+
+        RTFileClose(hKeyFile);
+    }
+    else
+        RTMsgError(Nvram::tr("Cannot open file \"%s\": %Rrc"), pszKey, vrc);
+
+    return RTEXITCODE_FAILURE;
+}
+
+
+/**
  * Handles the 'modifynvram myvm enrollpk' sub-command.
  * @returns Exit code.
  * @param   a               The handler argument package.
- * @param   nvram           Reference to the NVRAM store interface.
+ * @param   nvramStore      Reference to the NVRAM store interface.
  */
 static RTEXITCODE handleModifyNvramEnrollPlatformKey(HandlerArg *a, ComPtr<INvramStore> &nvramStore)
 {
@@ -132,42 +191,55 @@ static RTEXITCODE handleModifyNvramEnrollPlatformKey(HandlerArg *a, ComPtr<INvra
     if (!pszOwnerUuid)
         return errorSyntax(Nvram::tr("No owner UUID was given to \"enrollpk\""));
 
-    RTFILE hPkFile;
-    vrc = RTFileOpen(&hPkFile, pszPlatformKey, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-    if (RT_SUCCESS(vrc))
+    return handleModifyNvramEnrollPlatformKeyOrMok(pszPlatformKey, pszOwnerUuid, nvramStore, true /* fPk */);
+}
+
+
+/**
+ * Handles the 'modifynvram myvm enrollmok' sub-command.
+ * @returns Exit code.
+ * @param   a               The handler argument package.
+ * @param   nvramStore      Reference to the NVRAM store interface.
+ */
+static RTEXITCODE handleModifyNvramEnrollMok(HandlerArg *a, ComPtr<INvramStore> &nvramStore)
+{
+    static const RTGETOPTDEF s_aOptions[] =
     {
-        uint64_t cbSize;
-        vrc = RTFileQuerySize(hPkFile, &cbSize);
-        if (RT_SUCCESS(vrc))
+        /* common options */
+        { "--mok",          'p', RTGETOPT_REQ_STRING },
+        { "--owner-uuid",   'f', RTGETOPT_REQ_STRING }
+    };
+
+    const char *pszMok = NULL;
+    const char *pszOwnerUuid = NULL;
+
+    RTGETOPTSTATE GetState;
+    int vrc = RTGetOptInit(&GetState, a->argc - 2, &a->argv[2], s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
         {
-            if (cbSize <= _32K)
-            {
-                SafeArray<BYTE> aPk((size_t)cbSize);
-                vrc = RTFileRead(hPkFile, aPk.raw(), (size_t)cbSize, NULL);
-                if (RT_SUCCESS(vrc))
-                {
-                    RTFileClose(hPkFile);
-
-                    ComPtr<IUefiVariableStore> uefiVarStore;
-                    CHECK_ERROR2I_RET(nvramStore, COMGETTER(UefiVariableStore)(uefiVarStore.asOutParam()), RTEXITCODE_FAILURE);
-                    CHECK_ERROR2I_RET(uefiVarStore, EnrollPlatformKey(ComSafeArrayAsInParam(aPk), Bstr(pszOwnerUuid).raw()), RTEXITCODE_FAILURE);
-                    return RTEXITCODE_SUCCESS;
-                }
-                else
-                    RTMsgError(Nvram::tr("Cannot read contents of file \"%s\": %Rrc"), pszPlatformKey, vrc);
-            }
-            else
-                RTMsgError(Nvram::tr("File \"%s\" is bigger than 32KByte"), pszPlatformKey);
+            case 'p':
+                pszMok = ValueUnion.psz;
+                break;
+            case 'f':
+                pszOwnerUuid = ValueUnion.psz;
+                break;
+            default:
+                return errorGetOpt(c, &ValueUnion);
         }
-        else
-            RTMsgError(Nvram::tr("Cannot get size of file \"%s\": %Rrc"), pszPlatformKey, vrc);
-
-        RTFileClose(hPkFile);
     }
-    else
-        RTMsgError(Nvram::tr("Cannot open file \"%s\": %Rrc"), pszPlatformKey, vrc);
 
-    return RTEXITCODE_FAILURE;
+    if (!pszMok)
+        return errorSyntax(Nvram::tr("No machine owner key file path was given to \"enrollpk\""));
+    if (!pszOwnerUuid)
+        return errorSyntax(Nvram::tr("No owner UUID was given to \"enrollpk\""));
+
+    return handleModifyNvramEnrollPlatformKeyOrMok(pszMok, pszOwnerUuid, nvramStore, false /* fPk */);
 }
 
 
@@ -464,6 +536,11 @@ RTEXITCODE handleModifyNvram(HandlerArg *a)
     {
         setCurrentSubcommand(HELP_SCOPE_MODIFYNVRAM_ENROLLPK);
         hrc = handleModifyNvramEnrollPlatformKey(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+    }
+    else if (!strcmp(a->argv[1], "enrollmok"))
+    {
+        setCurrentSubcommand(HELP_SCOPE_MODIFYNVRAM_ENROLLMOK);
+        hrc = handleModifyNvramEnrollMok(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     }
     else if (!strcmp(a->argv[1], "enrollorclpk"))
     {
