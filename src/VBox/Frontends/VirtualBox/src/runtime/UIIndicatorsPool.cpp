@@ -61,6 +61,8 @@ public:
     /** Returns the indicator description. */
     virtual QString description() const { return m_strDescription; }
 
+public slots:
+
     /** Abstract update routine. */
     virtual void updateAppearance() = 0;
 
@@ -178,12 +180,12 @@ public:
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/hd_disabled_16px.png"));
         /* Configure connection: */
         connect(pMachine, &UIMachine::sigStorageDeviceChange,
-                this, &UIIndicatorHardDrive::sltStorageDeviceChange);
+                this, &UIIndicatorHardDrive::updateAppearance);
         /* Translate finally: */
         retranslateUi();
     }
 
-protected:
+protected slots:
 
     /** Update routine. */
     virtual void updateAppearance() RT_OVERRIDE
@@ -204,14 +206,6 @@ protected:
             setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         setState(fAttachmentsPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
-    }
-
-private slots:
-
-    /** Refreshes the tooltip if the device config changes at runtime (hotplugging, USB storage). */
-    void sltStorageDeviceChange()
-    {
-        updateAppearance();
     }
 };
 
@@ -236,7 +230,7 @@ public:
         retranslateUi();
     }
 
-protected:
+protected slots:
 
     /** Update routine. */
     virtual void updateAppearance() RT_OVERRIDE
@@ -281,7 +275,7 @@ public:
         retranslateUi();
     }
 
-protected:
+protected slots:
 
     /** Update routine. */
     virtual void updateAppearance() RT_OVERRIDE
@@ -335,7 +329,7 @@ public:
         retranslateUi();
     }
 
-protected:
+protected slots:
 
     /** Update routine. */
     virtual void updateAppearance() RT_OVERRIDE
@@ -392,7 +386,7 @@ public:
         {
             /* Configure auto-update timer: */
             connect(m_pTimerAutoUpdate, &QTimer::timeout,
-                    this, &UIIndicatorNetwork::sltUpdateNetworkIPs);
+                    this, &UIIndicatorNetwork::updateAppearance);
             /* Start timer immediately if machine is running: */
             sltHandleMachineStateChange();
         }
@@ -400,7 +394,7 @@ public:
         retranslateUi();
     }
 
-protected:
+protected slots:
 
     /** Update routine. */
     virtual void updateAppearance() RT_OVERRIDE
@@ -438,12 +432,6 @@ private slots:
         m_pTimerAutoUpdate->stop();
     }
 
-    /** Updates network IP addresses. */
-    void sltUpdateNetworkIPs()
-    {
-        updateAppearance();
-    }
-
 private:
 
     /** Holds the auto-update timer instance. */
@@ -471,7 +459,7 @@ public:
         retranslateUi();
     }
 
-protected:
+protected slots:
 
     /** Update routine. */
     virtual void updateAppearance() RT_OVERRIDE
@@ -515,7 +503,7 @@ public:
         retranslateUi();
     }
 
-protected:
+protected slots:
 
     /** Update routine. */
     virtual void updateAppearance() RT_OVERRIDE
@@ -552,7 +540,7 @@ public:
         retranslateUi();
     }
 
-protected:
+protected slots:
 
     /** Update routine. */
     virtual void updateAppearance() RT_OVERRIDE
@@ -632,6 +620,8 @@ protected:
         /* Draw contents: */
         drawContents(&painter);
     }
+
+protected slots:
 
     /** Update routine. */
     virtual void updateAppearance() RT_OVERRIDE
@@ -760,6 +750,8 @@ protected:
         painter.drawRect(outRect);
     }
 
+protected slots:
+
     /** Update routine. */
     virtual void updateAppearance() RT_OVERRIDE
     {
@@ -831,7 +823,7 @@ public:
         retranslateUi();
     }
 
-protected:
+protected slots:
 
     /** Update routine. */
     virtual void updateAppearance() RT_OVERRIDE
@@ -910,7 +902,7 @@ public:
         retranslateUi();
     }
 
-protected:
+protected slots:
 
     /** Update routine. */
     virtual void updateAppearance() RT_OVERRIDE
