@@ -270,8 +270,10 @@ VMMR3_INT_DECL(int)             gimR3KvmEnableWallClock(PVM pVM, RTGCPHYS GCPhys
 VMM_INT_DECL(bool)              gimKvmIsParavirtTscEnabled(PVMCC pVM);
 VMM_INT_DECL(bool)              gimKvmAreHypercallsEnabled(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmHypercall(PVMCPUCC pVCpu, PCPUMCTX pCtx);
+#if !defined(VBOX_VMM_TARGET_ARMV8)
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmReadMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue);
+#endif
 VMM_INT_DECL(bool)              gimKvmShouldTrapXcptUD(PVM pVM);
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmXcptUD(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr);
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmHypercallEx(PVMCPUCC pVCpu, PCPUMCTX pCtx, unsigned uDisOpcode, uint8_t cbInstr);

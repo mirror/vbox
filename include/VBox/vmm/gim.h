@@ -206,8 +206,10 @@ VMM_INT_DECL(VBOXSTRICTRC)  GIMHypercallEx(PVMCPUCC pVCpu, PCPUMCTX pCtx, unsign
 VMM_INT_DECL(VBOXSTRICTRC)  GIMExecHypercallInstr(PVMCPUCC pVCpu, PCPUMCTX pCtx, uint8_t *pcbInstr);
 VMM_INT_DECL(VBOXSTRICTRC)  GIMXcptUD(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr);
 VMM_INT_DECL(bool)          GIMShouldTrapXcptUD(PVMCPUCC pVCpu);
+#if !defined(VBOX_VMM_TARGET_ARMV8)
 VMM_INT_DECL(VBOXSTRICTRC)  GIMReadMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
 VMM_INT_DECL(VBOXSTRICTRC)  GIMWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue);
+#endif
 VMM_INT_DECL(int)           GIMQueryHypercallOpcodeBytes(PVM pVM, void *pvBuf, size_t cbBuf,
                                                          size_t *pcbWritten, uint16_t *puDisOpcode);
 /** @} */

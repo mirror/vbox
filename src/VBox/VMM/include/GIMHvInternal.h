@@ -1369,8 +1369,10 @@ VMM_INT_DECL(bool)              gimHvShouldTrapXcptUD(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)      gimHvXcptUD(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr);
 VMM_INT_DECL(VBOXSTRICTRC)      gimHvHypercall(PVMCPUCC pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(VBOXSTRICTRC)      gimHvHypercallEx(PVMCPUCC pVCpu, PCPUMCTX pCtx, unsigned uDisOpcode, uint8_t cbInstr);
+#if !defined(VBOX_VMM_TARGET_ARMV8)
 VMM_INT_DECL(VBOXSTRICTRC)      gimHvReadMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
 VMM_INT_DECL(VBOXSTRICTRC)      gimHvWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue);
+#endif
 
 VMM_INT_DECL(void)              gimHvStartStimer(PVMCPUCC pVCpu, PCGIMHVSTIMER pHvStimer);
 

@@ -95,7 +95,11 @@ VBOXSTRICTRC emR3NemSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
     if (!NEMR3CanExecuteGuest(pVM, pVCpu))
         return VINF_EM_RESCHEDULE;
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    uint64_t const uOldPc = pVCpu->cpum.GstCtx.Pc.u64;
+#else
     uint64_t const uOldRip = pVCpu->cpum.GstCtx.rip;
+#endif
     for (;;)
     {
         /*
@@ -141,6 +145,20 @@ VBOXSTRICTRC emR3NemSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
         /*
          * Done?
          */
+#if defined(VBOX_VMM_TARGET_ARMV8)
+        CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_PC);
+        if (   (rcStrict != VINF_SUCCESS && rcStrict != VINF_EM_DBG_STEPPED)
+            || !(fFlags & EM_ONE_INS_FLAGS_RIP_CHANGE)
+            || pVCpu->cpum.GstCtx.Pc.u64 != uOldPc)
+        {
+            if (rcStrict == VINF_SUCCESS && pVCpu->cpum.GstCtx.Pc.u64 != uOldPc)
+                rcStrict = VINF_EM_DBG_STEPPED;
+            Log(("emR3NemSingleInstruction: returns %Rrc (pc %llx -> %llx)\n",
+                 VBOXSTRICTRC_VAL(rcStrict), uOldPc, pVCpu->cpum.GstCtx.Pc.u64));
+            CPUM_IMPORT_EXTRN_RET(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK);
+            return rcStrict;
+        }
+#else
         CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RIP);
         if (   (rcStrict != VINF_SUCCESS && rcStrict != VINF_EM_DBG_STEPPED)
             || !(fFlags & EM_ONE_INS_FLAGS_RIP_CHANGE)
@@ -153,6 +171,7 @@ VBOXSTRICTRC emR3NemSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
             CPUM_IMPORT_EXTRN_RET(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK);
             return rcStrict;
         }
+#endif
     }
 }
 
@@ -180,12 +199,23 @@ static int emR3NemExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
     /*
      * Log it.
      */
+#ifdef VBOX_VMM_TARGET_ARMV8
+    Log(("EMINS: %RGv SP_EL0=%RGv SP_EL1=%RGv\n", (RTGCPTR)pVCpu->cpum.GstCtx.Pc.u64,
+                                                  (RTGCPTR)pVCpu->cpum.GstCtx.aSpReg[0].u64,
+                                                  (RTGCPTR)pVCpu->cpum.GstCtx.aSpReg[1].u64));
+    if (pszPrefix)
+    {
+        DBGFR3_INFO_LOG(pVM, pVCpu, "cpumguest", pszPrefix);
+        DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, pszPrefix);
+    }
+# else
     Log(("EMINS: %04x:%RGv RSP=%RGv\n", pVCpu->cpum.GstCtx.cs.Sel, (RTGCPTR)pVCpu->cpum.GstCtx.rip, (RTGCPTR)pVCpu->cpum.GstCtx.rsp));
     if (pszPrefix)
     {
         DBGFR3_INFO_LOG(pVM, pVCpu, "cpumguest", pszPrefix);
         DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, pszPrefix);
     }
+# endif
 #endif
 
     /*
@@ -339,7 +369,11 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 {
     VBOXSTRICTRC rcStrict = VERR_IPE_UNINITIALIZED_STATUS;
 
+#ifdef VBOX_VMM_TARGET_ARMV8
+    LogFlow(("emR3NemExecute%d: (pc=%RGv)\n", pVCpu->idCpu, (RTGCPTR)pVCpu->cpum.GstCtx.Pc.u64));
+#else
     LogFlow(("emR3NemExecute%d: (cs:eip=%04x:%RGv)\n", pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, (RTGCPTR)pVCpu->cpum.GstCtx.rip));
+#endif
     *pfFFDone = false;
 
     STAM_REL_COUNTER_INC(&pVCpu->em.s.StatNEMExecuteCalled);
@@ -373,7 +407,7 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
                 break;
         }
 
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(VBOX_VMM_TARGET_ARMV8)
         /*
          * Log important stuff before entering GC.
          */

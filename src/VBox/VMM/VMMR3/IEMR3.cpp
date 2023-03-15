@@ -57,6 +57,7 @@ static void iemR3RegisterDebuggerCommands(void);
 #endif
 
 
+#if !defined(VBOX_VMM_TARGET_ARMV8)
 static const char *iemGetTargetCpuName(uint32_t enmTargetCpu)
 {
     switch (enmTargetCpu)
@@ -75,6 +76,7 @@ static const char *iemGetTargetCpuName(uint32_t enmTargetCpu)
         default: return "Unknown";
     }
 }
+#endif
 
 
 /**
@@ -88,21 +90,19 @@ static const char *iemGetTargetCpuName(uint32_t enmTargetCpu)
  */
 VMMR3DECL(int)      IEMR3Init(PVM pVM)
 {
-    int rc;
-
+#if !defined(VBOX_VMM_TARGET_ARMV8) && !defined(VBOX_WITHOUT_CPUID_HOST_CALL)
     /*
      * Read configuration.
      */
     PCFGMNODE pIem = CFGMR3GetChild(CFGMR3GetRoot(pVM), "IEM");
 
-#ifndef VBOX_WITHOUT_CPUID_HOST_CALL
     /** @cfgm{/IEM/CpuIdHostCall, boolean, false}
      * Controls whether the custom VBox specific CPUID host call interface is
      * enabled or not. */
 # ifdef DEBUG_bird
-    rc = CFGMR3QueryBoolDef(pIem, "CpuIdHostCall", &pVM->iem.s.fCpuIdHostCall, true);
+    int rc = CFGMR3QueryBoolDef(pIem, "CpuIdHostCall", &pVM->iem.s.fCpuIdHostCall, true);
 # else
-    rc = CFGMR3QueryBoolDef(pIem, "CpuIdHostCall", &pVM->iem.s.fCpuIdHostCall, false);
+    int rc = CFGMR3QueryBoolDef(pIem, "CpuIdHostCall", &pVM->iem.s.fCpuIdHostCall, false);
 # endif
     AssertLogRelRCReturn(rc, rc);
 #endif
@@ -169,7 +169,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
             STAMR3RegisterF(pVM, &pVCpu->iem.s.aStatInts[i], STAMTYPE_U32_RESET, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                             "", "/IEM/CPU%u/Interrupts/%02x", idCpu, i);
 
-#if defined(VBOX_WITH_STATISTICS) && !defined(DOXYGEN_RUNNING)
+#if !defined(VBOX_VMM_TARGET_ARMV8) && defined(VBOX_WITH_STATISTICS) && !defined(DOXYGEN_RUNNING)
         /* Instruction statistics: */
 # define IEM_DO_INSTR_STAT(a_Name, a_szDesc) \
             STAMR3RegisterF(pVM, &pVCpu->iem.s.StatsRZ.a_Name, STAMTYPE_U32_RESET, STAMVISIBILITY_USED, \
@@ -187,17 +187,22 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         {
             pVCpu->iem.s.enmCpuVendor                     = CPUMGetGuestCpuVendor(pVM);
             pVCpu->iem.s.enmHostCpuVendor                 = CPUMGetHostCpuVendor(pVM);
+#if !defined(VBOX_VMM_TARGET_ARMV8)
             pVCpu->iem.s.aidxTargetCpuEflFlavour[0]       =    pVCpu->iem.s.enmCpuVendor == CPUMCPUVENDOR_INTEL
                                                             || pVCpu->iem.s.enmCpuVendor == CPUMCPUVENDOR_VIA /*??*/
                                                           ? IEMTARGETCPU_EFL_BEHAVIOR_INTEL : IEMTARGETCPU_EFL_BEHAVIOR_AMD;
-#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+# if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
             if (pVCpu->iem.s.enmCpuVendor == pVCpu->iem.s.enmHostCpuVendor)
                 pVCpu->iem.s.aidxTargetCpuEflFlavour[1]   = IEMTARGETCPU_EFL_BEHAVIOR_NATIVE;
             else
-#endif
+# endif
                 pVCpu->iem.s.aidxTargetCpuEflFlavour[1]   = pVCpu->iem.s.aidxTargetCpuEflFlavour[0];
+#else
+            pVCpu->iem.s.aidxTargetCpuEflFlavour[0]   = IEMTARGETCPU_EFL_BEHAVIOR_NATIVE;
+            pVCpu->iem.s.aidxTargetCpuEflFlavour[1]   = pVCpu->iem.s.aidxTargetCpuEflFlavour[0];
+#endif
 
-#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
+#if !defined(VBOX_VMM_TARGET_ARMV8) && (IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC)
             switch (pVM->cpum.ro.GuestFeatures.enmMicroarch)
             {
                 case kCpumMicroarch_Intel_8086:     pVCpu->iem.s.uTargetCpu = IEMTARGETCPU_8086; break;
@@ -239,7 +244,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
             pVCpu->iem.s.aMemMappings[iMemMap].fAccess = IEM_ACCESS_INVALID;
     }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+#if !defined(VBOX_VMM_TARGET_ARMV8) && defined(VBOX_WITH_NESTED_HWVIRT_VMX)
     /*
      * Register the per-VM VMX APIC-access page handler type.
      */

@@ -369,13 +369,9 @@ ifdef VBOX_WITH_VIRT_ARMV8
  	VMMR3/DBGFR3Type.cpp \
  	VMMR3/EM.cpp \
  	VMMR3/EMR3Dbg.cpp \
- 	VMMR3/EMHM.cpp \
  	VMMR3/EMR3Nem.cpp \
  	VMMR3/GCM.cpp \
  	VMMR3/GIM.cpp \
- 	VMMR3/GIMHv.cpp \
- 	VMMR3/GIMKvm.cpp \
- 	VMMR3/GIMMinimal.cpp \
  	VMMR3/IEMR3.cpp \
  	VMMR3/IOM.cpp \
  	VMMR3/IOMR3Mmio.cpp \
