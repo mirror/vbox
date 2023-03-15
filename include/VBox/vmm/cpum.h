@@ -60,6 +60,9 @@ RT_C_DECLS_BEGIN
 
 #ifndef VBOX_FOR_DTRACE_LIB
 
+VMMDECL(PCPUMCTX)       CPUMQueryGuestCtxPtr(PVMCPU pVCpu);
+VMMDECL(CPUMMODE)       CPUMGetGuestMode(PVMCPU pVCpu);
+
 /** @name Guest Register Getters.
  * @{ */
 VMMDECL(uint64_t)       CPUMGetGuestFlatPC(PVMCPU pVCpu);

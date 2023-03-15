@@ -1189,12 +1189,18 @@ typedef enum CPUMMODE
 {
     /** The usual invalid zero entry. */
     CPUMMODE_INVALID = 0,
-    /** Real mode. */
+    /** Real mode - x86/amd64. */
     CPUMMODE_REAL,
-    /** Protected mode (32-bit). */
+    /** Protected mode (32-bit) - x86/amd64. */
     CPUMMODE_PROTECTED,
-    /** Long mode (64-bit). */
-    CPUMMODE_LONG
+    /** Long mode (64-bit) - x86/amd64. */
+    CPUMMODE_LONG,
+    /** ARMv8 - AARCH64 mode. */
+    CPUMMODE_ARMV8_AARCH64,
+    /** ARMv8 - AARCH32 mode. */
+    CPUMMODE_ARMV8_AARCH32,
+    /** hack forcing the size of the enum to 32-bits. */
+    CPUMMODE_32BIT_HACK = 0x7fffffff
 } CPUMMODE;
 
 

@@ -54,7 +54,11 @@ static DECLCALLBACK(int) dbgfR3CpuGetMode(PVM pVM, VMCPUID idCpu, CPUMMODE *penm
 {
     Assert(idCpu == VMMGetCpuId(pVM));
     PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    CPUM_IMPORT_EXTRN_RET(pVCpu, CPUMCTX_EXTRN_PSTATE);
+#else
     CPUM_IMPORT_EXTRN_RET(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_EFER);
+#endif
     *penmMode = CPUMGetGuestMode(pVCpu);
     return VINF_SUCCESS;
 }
@@ -93,7 +97,11 @@ static DECLCALLBACK(int) dbgfR3CpuIn64BitCode(PVM pVM, VMCPUID idCpu, bool *pfIn
 {
     Assert(idCpu == VMMGetCpuId(pVM));
     PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    CPUM_IMPORT_EXTRN_RET(pVCpu, CPUMCTX_EXTRN_PSTATE);
+#else
     CPUM_IMPORT_EXTRN_RET(pVCpu, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_EFER);
+#endif
     *pfIn64BitCode = CPUMIsGuestIn64BitCode(pVCpu);
     return VINF_SUCCESS;
 }
@@ -120,6 +128,7 @@ VMMR3DECL(bool) DBGFR3CpuIsIn64BitCode(PUVM pUVM, VMCPUID idCpu)
 }
 
 
+#if !defined(VBOX_VMM_TARGET_ARMV8)
 /**
  * Wrapper around CPUMIsGuestInV86Code.
  *
@@ -136,6 +145,7 @@ static DECLCALLBACK(int) dbgfR3CpuInV86Code(PVM pVM, VMCPUID idCpu, bool *pfInV8
     *pfInV86Code = CPUMIsGuestInV86ModeEx(CPUMQueryGuestCtxPtr(pVCpu));
     return VINF_SUCCESS;
 }
+#endif
 
 
 /**
@@ -151,11 +161,16 @@ VMMR3DECL(bool) DBGFR3CpuIsInV86Code(PUVM pUVM, VMCPUID idCpu)
     VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, false);
     AssertReturn(idCpu < pUVM->pVM->cCpus, false);
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    /* This is a public visible API, so we need to fill in a stub. */
+    return false;
+#else
     bool fInV86Code;
     int rc = VMR3ReqPriorityCallWaitU(pUVM, idCpu, (PFNRT)dbgfR3CpuInV86Code, 3, pUVM->pVM, idCpu, &fInV86Code);
     if (RT_FAILURE(rc))
         return false;
     return fInV86Code;
+#endif
 }
 
 

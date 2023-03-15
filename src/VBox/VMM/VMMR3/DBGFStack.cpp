@@ -81,6 +81,9 @@ typedef struct DBGFUNWINDCTX
         RT_ZERO(m_State.u);
         if (pInitialCtx)
         {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+            AssertReleaseFailed();
+#else
             m_State.u.x86.auRegs[X86_GREG_xAX] = pInitialCtx->rax;
             m_State.u.x86.auRegs[X86_GREG_xCX] = pInitialCtx->rcx;
             m_State.u.x86.auRegs[X86_GREG_xDX] = pInitialCtx->rdx;
@@ -106,6 +109,7 @@ typedef struct DBGFUNWINDCTX
             m_State.u.x86.auSegs[X86_SREG_GS]  = pInitialCtx->gs.Sel;
             m_State.u.x86.auSegs[X86_SREG_FS]  = pInitialCtx->fs.Sel;
             m_State.u.x86.fRealOrV86           = CPUMIsGuestInRealOrV86ModeEx(pInitialCtx);
+#endif
         }
         else if (hAs == DBGF_AS_R0)
             VMMR3InitR0StackUnwindState(pUVM, idCpu, &m_State);
@@ -815,12 +819,19 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUM
     pCur->pFirstInternal = pCur;
 
     int rc = VINF_SUCCESS;
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    if (pAddrPC)
+        pCur->AddrPC = *pAddrPC;
+    else
+        DBGFR3AddrFromFlat(pUVM, &pCur->AddrPC, pCtx->Pc.u64);
+#else
     if (pAddrPC)
         pCur->AddrPC = *pAddrPC;
     else if (enmCodeType != DBGFCODETYPE_GUEST)
         DBGFR3AddrFromFlat(pUVM, &pCur->AddrPC, pCtx->rip);
     else
         rc = DBGFR3AddrFromSelOff(pUVM, idCpu, &pCur->AddrPC, pCtx->cs.Sel, pCtx->rip);
+#endif
     if (RT_SUCCESS(rc))
     {
         uint64_t fAddrMask;
@@ -874,6 +885,11 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUM
             }
 
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+        RT_NOREF(pAddrFrame, pAddrStack);
+        AssertReleaseFailed();
+        rc = VERR_NOT_IMPLEMENTED;
+#else
         if (pAddrStack)
             pCur->AddrStack = *pAddrStack;
         else if (enmCodeType != DBGFCODETYPE_GUEST)
@@ -888,6 +904,7 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUM
             DBGFR3AddrFromFlat(pUVM, &pCur->AddrFrame, pCtx->rbp & fAddrMask);
         else if (RT_SUCCESS(rc))
             rc = DBGFR3AddrFromSelOff(pUVM, idCpu, &pCur->AddrFrame, pCtx->ss.Sel, pCtx->rbp & fAddrMask);
+#endif
 
         /*
          * Try unwind and get a better frame pointer and state.

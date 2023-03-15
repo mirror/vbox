@@ -185,23 +185,27 @@ AssertCompileSizeAlignment(CPUMCTX, 8);
 #define CPUMCTX_EXTRN_ELR                       UINT64_C(0x0000000000000010)
 /** The SP register values are kept externally. */
 #define CPUMCTX_EXTRN_SP                        UINT64_C(0x0000000000000020)
+/** The PSTATE value is kept externally. */
+#define CPUMCTX_EXTRN_PSTATE                    UINT64_C(0x0000000000000040)
+/** @todo RSVD. */
+#define CPUMCTX_EXTRN_RSVD                      UINT64_C(0x0000000000000080)
 
 /** The X0 register value is kept externally. */
-#define CPUMCTX_EXTRN_X0                        UINT64_C(0x0000000000000040)
-/** The X0 register value is kept externally. */
-#define CPUMCTX_EXTRN_X1                        UINT64_C(0x0000000000000080)
-/** The X0 register value is kept externally. */
-#define CPUMCTX_EXTRN_X2                        UINT64_C(0x0000000000000100)
-/** The X0 register value is kept externally. */
-#define CPUMCTX_EXTRN_X3                        UINT64_C(0x0000000000000200)
+#define CPUMCTX_EXTRN_X0                        UINT64_C(0x0000000000000100)
+/** The X1 register value is kept externally. */
+#define CPUMCTX_EXTRN_X1                        UINT64_C(0x0000000000000200)
+/** The X2 register value is kept externally. */
+#define CPUMCTX_EXTRN_X2                        UINT64_C(0x0000000000000400)
+/** The X3 register value is kept externally. */
+#define CPUMCTX_EXTRN_X3                        UINT64_C(0x0000000000000800)
 /** The LR (X30) register value is kept externally. */
-#define CPUMCTX_EXTRN_LR                        UINT64_C(0x0000000000000400)
+#define CPUMCTX_EXTRN_LR                        UINT64_C(0x0000000000001000)
 /** The FP (X29) register value is kept externally. */
-#define CPUMCTX_EXTRN_FP                        UINT64_C(0x0000000000000800)
+#define CPUMCTX_EXTRN_FP                        UINT64_C(0x0000000000002000)
 /** The X4 through X28 register values are kept externally. */
-#define CPUMCTX_EXTRN_X4_X28                    UINT64_C(0x0000000000001000)
+#define CPUMCTX_EXTRN_X4_X28                    UINT64_C(0x0000000000004000)
 /** General purpose registers mask. */
-#define CPUMCTX_EXTRN_GPRS_MASK                 UINT64_C(0x0000000000001fc0)
+#define CPUMCTX_EXTRN_GPRS_MASK                 UINT64_C(0x0000000000007f00)
 
 /** The NEON SIMD & FP registers V0 through V31 are kept externally. */
 #define CPUMCTX_EXTRN_V0_V31                    UINT64_C(0x0000000000002000)

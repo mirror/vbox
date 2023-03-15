@@ -585,6 +585,9 @@ static DECLCALLBACK(int) dbgfR3PagingDumpEx(PUVM pUVM, VMCPUID idCpu, uint32_t f
         }
         else
         {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+            AssertReleaseFailed();
+#else
             if (fFlags & DBGFPGDMP_FLAGS_CURRENT_CR3)
                 cr3 = CPUMGetGuestCR3(pVCpu);
             if (fFlags & DBGFPGDMP_FLAGS_CURRENT_MODE)
@@ -594,6 +597,7 @@ static DECLCALLBACK(int) dbgfR3PagingDumpEx(PUVM pUVM, VMCPUID idCpu, uint32_t f
                 AssertCompile(DBGFPGDMP_FLAGS_LME == MSR_K6_EFER_LME);  AssertCompile(DBGFPGDMP_FLAGS_NXE == MSR_K6_EFER_NXE);
                 fFlags |= CPUMGetGuestEFER(pVCpu) & (MSR_K6_EFER_LME | MSR_K6_EFER_NXE);
             }
+#endif
         }
     }
     fFlags &= ~(DBGFPGDMP_FLAGS_CURRENT_MODE | DBGFPGDMP_FLAGS_CURRENT_CR3);

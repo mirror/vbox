@@ -93,6 +93,7 @@ typedef struct
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+#if !defined(VBOX_VMM_TARGET_ARMV8)
 static FNDISREADBYTES dbgfR3DisasInstrRead;
 
 
@@ -351,6 +352,7 @@ static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pDis, uint32_t u32Se
     }
     return rc;
 }
+#endif /* VBOX_VMM_TARGET_ARMV8 */
 
 
 /**
@@ -379,6 +381,11 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
     RTGCPTR GCPtr = *pGCPtr;
     int     rc;
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    RT_NOREF(pVM, Sel, GCPtr, rc, fFlags, pszOutput, cbOutput, pcbInstr, pDisState);
+    AssertReleaseFailed(); /** @todo */
+    return VERR_NOT_IMPLEMENTED;
+#else
     /*
      * Get the Sel and GCPtr if fFlags requests that.
      */
@@ -609,6 +616,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
 
     dbgfR3DisasInstrDone(&State);
     return VINF_SUCCESS;
+#endif /* !VBOX_VMM_TARGET_ARMV8*/
 }
 
 
