@@ -11629,47 +11629,63 @@ FNIEMOP_DEF(iemOp_cmc)
 
 
 /**
- * Common implementation of 'inc/dec/not/neg Eb'.
- *
- * @param   bRm             The RM byte.
- * @param   pImpl           The instruction implementation.
+ * Body for of 'inc/dec/not/neg Eb'.
  */
-FNIEMOP_DEF_2(iemOpCommonUnaryEb, uint8_t, bRm, PCIEMOPUNARYSIZES, pImpl)
-{
-    if (IEM_IS_MODRM_REG_MODE(bRm))
-    {
-        /* register access */
-        IEM_MC_BEGIN(2, 0);
-        IEM_MC_ARG(uint8_t *,   pu8Dst, 0);
-        IEM_MC_ARG(uint32_t *,  pEFlags, 1);
-        IEM_MC_REF_GREG_U8(pu8Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
-        IEM_MC_REF_EFLAGS(pEFlags);
-        IEM_MC_CALL_VOID_AIMPL_2(pImpl->pfnNormalU8, pu8Dst, pEFlags);
-        IEM_MC_ADVANCE_RIP_AND_FINISH();
-        IEM_MC_END();
-    }
-    else
-    {
-        /* memory access. */
-        IEM_MC_BEGIN(2, 2);
-        IEM_MC_ARG(uint8_t *,       pu8Dst,          0);
-        IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags, 1);
-        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
-
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
-        IEM_MC_MEM_MAP(pu8Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
-        IEM_MC_FETCH_EFLAGS(EFlags);
-        if (!(pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK))
-            IEM_MC_CALL_VOID_AIMPL_2(pImpl->pfnNormalU8, pu8Dst, pEFlags);
-        else
-            IEM_MC_CALL_VOID_AIMPL_2(pImpl->pfnLockedU8, pu8Dst, pEFlags);
-
-        IEM_MC_MEM_COMMIT_AND_UNMAP(pu8Dst, IEM_ACCESS_DATA_RW);
-        IEM_MC_COMMIT_EFLAGS(EFlags);
-        IEM_MC_ADVANCE_RIP_AND_FINISH();
-        IEM_MC_END();
-    }
-}
+#define IEMOP_BODY_UNARY_Eb(a_bRm, a_fnNormalU8, a_fnLockedU8) \
+    if (IEM_IS_MODRM_REG_MODE(a_bRm)) \
+    { \
+        /* register access */ \
+        IEMOP_HLP_DONE_DECODING(); \
+        IEM_MC_BEGIN(2, 0); \
+        IEM_MC_ARG(uint8_t *,   pu8Dst, 0); \
+        IEM_MC_ARG(uint32_t *,  pEFlags, 1); \
+        IEM_MC_REF_GREG_U8(pu8Dst, IEM_GET_MODRM_RM(pVCpu, a_bRm)); \
+        IEM_MC_REF_EFLAGS(pEFlags); \
+        IEM_MC_CALL_VOID_AIMPL_2(a_fnNormalU8, pu8Dst, pEFlags); \
+        IEM_MC_ADVANCE_RIP_AND_FINISH(); \
+        IEM_MC_END(); \
+    } \
+    else \
+    { \
+        /* memory access. */ \
+        if (!(pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK)) \
+        { \
+            IEM_MC_BEGIN(2, 2); \
+            IEM_MC_ARG(uint8_t *,       pu8Dst,          0); \
+            IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags, 1); \
+            IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
+            \
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, a_bRm, 0); \
+            IEMOP_HLP_DONE_DECODING(); \
+            IEM_MC_MEM_MAP(pu8Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/); \
+            IEM_MC_FETCH_EFLAGS(EFlags); \
+            IEM_MC_CALL_VOID_AIMPL_2(a_fnNormalU8, pu8Dst, pEFlags); \
+            \
+            IEM_MC_MEM_COMMIT_AND_UNMAP(pu8Dst, IEM_ACCESS_DATA_RW); \
+            IEM_MC_COMMIT_EFLAGS(EFlags); \
+            IEM_MC_ADVANCE_RIP_AND_FINISH(); \
+            IEM_MC_END(); \
+        } \
+        else \
+        { \
+            IEM_MC_BEGIN(2, 2); \
+            IEM_MC_ARG(uint8_t *,       pu8Dst,          0); \
+            IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags, 1); \
+            IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
+            \
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, a_bRm, 0); \
+            IEMOP_HLP_DONE_DECODING(); \
+            IEM_MC_MEM_MAP(pu8Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/); \
+            IEM_MC_FETCH_EFLAGS(EFlags); \
+            IEM_MC_CALL_VOID_AIMPL_2(a_fnLockedU8, pu8Dst, pEFlags); \
+            \
+            IEM_MC_MEM_COMMIT_AND_UNMAP(pu8Dst, IEM_ACCESS_DATA_RW); \
+            IEM_MC_COMMIT_EFLAGS(EFlags); \
+            IEM_MC_ADVANCE_RIP_AND_FINISH(); \
+            IEM_MC_END(); \
+        } \
+    } \
+    (void)0
 
 
 /**
@@ -11752,7 +11768,11 @@ FNIEMOP_DEF_2(iemOpCommonUnaryEv, uint8_t, bRm, PCIEMOPUNARYSIZES, pImpl)
 }
 
 
-/** Opcode 0xf6 /0. */
+/**
+ * @opmaps  grp3_f6
+ * @opcode  /0
+ * @todo also /1
+ */
 FNIEMOP_DEF_1(iemOp_grp3_test_Eb, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(test_Eb_Ib, "test Eb,Ib");
@@ -12176,6 +12196,29 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEv, uint8_t, bRm, PCIEMOPMULDIVSIZES, pImpl)
     }
 }
 
+
+/**
+ * @opmaps  grp3_f6
+ * @opcode  /2
+ */
+FNIEMOP_DEF_1(iemOp_grp3_not_Eb, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC(not_Eb, "not Eb");
+    IEMOP_BODY_UNARY_Eb(bRm, iemAImpl_not_u8, iemAImpl_not_u8_locked);
+}
+
+
+/**
+ * @opmaps  grp3_f6
+ * @opcode  /3
+ */
+FNIEMOP_DEF_1(iemOp_grp3_neg_Eb, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC(net_Eb, "neg Eb");
+    IEMOP_BODY_UNARY_Eb(bRm, iemAImpl_neg_u8, iemAImpl_neg_u8_locked);
+}
+
+
 /**
  * @opcode      0xf6
  */
@@ -12184,17 +12227,10 @@ FNIEMOP_DEF(iemOp_Grp3_Eb)
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     switch (IEM_GET_MODRM_REG_8(bRm))
     {
-        case 0:
-            return FNIEMOP_CALL_1(iemOp_grp3_test_Eb, bRm);
-        case 1:
-/** @todo testcase: Present on <=386, most 486 (not early), Pentiums, and current CPUs too. CPUUNDOC.EXE */
-            return IEMOP_RAISE_INVALID_OPCODE();
-        case 2:
-            IEMOP_MNEMONIC(not_Eb, "not Eb");
-            return FNIEMOP_CALL_2(iemOpCommonUnaryEb, bRm, &g_iemAImpl_not);
-        case 3:
-            IEMOP_MNEMONIC(neg_Eb, "neg Eb");
-            return FNIEMOP_CALL_2(iemOpCommonUnaryEb, bRm, &g_iemAImpl_neg);
+        case 0: return FNIEMOP_CALL_1(iemOp_grp3_test_Eb, bRm);
+        case 1: return FNIEMOP_CALL_1(iemOp_grp3_test_Eb, bRm);
+        case 2: return FNIEMOP_CALL_1(iemOp_grp3_not_Eb, bRm);
+        case 3: return FNIEMOP_CALL_1(iemOp_grp3_neg_Eb, bRm);
         case 4:
             IEMOP_MNEMONIC(mul_Eb, "mul Eb");
             IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
@@ -12332,6 +12368,28 @@ FNIEMOP_DEF(iemOp_std)
 
 
 /**
+ * @opmaps  grp4
+ * @opcode  /0
+ */
+FNIEMOP_DEF_1(iemOp_Grp4_inc_Eb, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC(inc_Eb, "inc Eb");
+    IEMOP_BODY_UNARY_Eb(bRm, iemAImpl_inc_u8, iemAImpl_inc_u8_locked);
+}
+
+
+/**
+ * @opmaps  grp4
+ * @opcode  /1
+ */
+FNIEMOP_DEF_1(iemOp_Grp4_dec_Eb, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC(dec_Eb, "dec Eb");
+    IEMOP_BODY_UNARY_Eb(bRm, iemAImpl_dec_u8, iemAImpl_dec_u8_locked);
+}
+
+
+/**
  * @opcode      0xfe
  */
 FNIEMOP_DEF(iemOp_Grp4)
@@ -12339,13 +12397,10 @@ FNIEMOP_DEF(iemOp_Grp4)
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     switch (IEM_GET_MODRM_REG_8(bRm))
     {
-        case 0:
-            IEMOP_MNEMONIC(inc_Eb, "inc Eb");
-            return FNIEMOP_CALL_2(iemOpCommonUnaryEb, bRm, &g_iemAImpl_inc);
-        case 1:
-            IEMOP_MNEMONIC(dec_Eb, "dec Eb");
-            return FNIEMOP_CALL_2(iemOpCommonUnaryEb, bRm, &g_iemAImpl_dec);
+        case 0: return FNIEMOP_CALL_1(iemOp_Grp4_inc_Eb, bRm);
+        case 1: return FNIEMOP_CALL_1(iemOp_Grp4_dec_Eb, bRm);
         default:
+            /** @todo is the eff-addr decoded? */
             IEMOP_MNEMONIC(grp4_ud, "grp4-ud");
             return IEMOP_RAISE_INVALID_OPCODE();
     }
