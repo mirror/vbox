@@ -2,11 +2,11 @@
 <!DOCTYPE bookmap PUBLIC "-//OASIS//DTD DITA BookMap//EN" "bookmap.dtd">
 <!-- The bookmap ID is imperative and matched the Jarvis GUID required to build and pretty much do anything -->
 <bookmap id="EN-VBOX-7-0-USER" xml:lang="en-US">
-   <!-- 
-         booklibrary renders in bold and is equivalent to title in docbook; 
+   <!--
+         booklibrary renders in bold and is equivalent to title in docbook;
          mainbooktitle is not in bold and is equivalent to subtitle
-         
-         This information gets updated automatically to match the othermeta title value or PDB entry when you run: 
+
+         This information gets updated automatically to match the othermeta title value or PDB entry when you run:
          'DitaUtils.py title -d template.ditamap' or 'DitaUtils.py map-prep -d template.ditamap'
     -->
    <booktitle>
@@ -22,27 +22,27 @@
             </completed>
          </published>
       </publisherinformation>
-      
-      <!-- 
-         The othermeta title is used as the title for the book in Jarvis and in OHC search. 
+
+      <!--
+         The othermeta title is used as the title for the book in Jarvis and in OHC search.
          If you don't set this, the value in PDB is used.
          The booklibrary and mainbooktitle automatically get updated from this title!
-         
+
          Use a : character to distinguish booklibrary from mainbooktitle
          To make sure the title is correctly set run:
          'DitaUtils.py title -d template.ditamap'  or 'DitaUtils.py map-prep -d template.ditamap'
       -->
       <othermeta name="title" content="Oracle VM VirtualBox: User Guide for Release 7.0"/>
-      
-      <!-- 
-           Th othermeta pubAlias detemines what the final part of the URL for your book will be (the pubalias in Jarvis). 
+
+      <!--
+           Th othermeta pubAlias detemines what the final part of the URL for your book will be (the pubalias in Jarvis).
            If you don't set it, it will default to the docid in PDB.
       -->
          <othermeta name="pubAlias" content="user"/>
          <othermeta name="jarvis-url" content="https://docs.oracle.com/en/virtualization/virtualbox/7.0/user/"/>
-      <!-- 
-         For SVN Revision information, you *must* do: `svn propset svn:keywords "Date Author Rev" template.ditamap` 
-         on the ditamap when you first add it. You can automatically handle this by editing ~/.subversion/config 
+      <!--
+         For SVN Revision information, you *must* do: `svn propset svn:keywords "Date Author Rev" template.ditamap`
+         on the ditamap when you first add it. You can automatically handle this by editing ~/.subversion/config
          to add a line entry under [auto-props]:
          *.ditamap = svn:mime-type=text/xml;svn:keywords=Author Date Id Rev URL;
       -->
@@ -61,8 +61,8 @@
             </bookowner>
          </bookrights>
    </bookmeta>
-   <!-- 
-    Chunking at chapter level is handled automatically by running:  
+   <!--
+    Chunking at chapter level is handled automatically by running:
     DitaUtils.py chunk -d template.ditamap or 'DitaUtils.py map-prep -d template.ditamap'
   -->
     <frontmatter>
@@ -346,7 +346,7 @@
          <topicref href="topics/network_bandwidth_limit.dita"/>
          <topicref href="topics/network_performance.dita"/>
       </chapter>
-   
+
    <chapter href="topics/remotevm.dita">
       <topicref href="topics/vrde.dita">
          <topicref href="topics/rdp-viewers.dita"/>
@@ -361,17 +361,17 @@
          <topicref href="topics/vrde-customization.dita"/>
       </topicref>
       <topicref href="topics/teleporting.dita"/>
-      <!--<topicref href="topics/man_vboxheadless.dita"/> -->
-           
+      <topicref href="topics/man_VBoxHeadless.dita"/>
+
    </chapter>
-   
+
    <!-- VBoxManage Refentry command topics -->
    <chapter href="topics/vboxmanage.dita">
-      <topicref href="topics/vboxmanage-intro.dita"/> 
-      <!-- Commands Overview -->      
+      <topicref href="topics/vboxmanage-intro.dita"/>
+      <!-- Commands Overview -->
       <!--  <topicref href="topics/vboxmanage-cmd-overview.dita"/> -->
       <topicref href="topics/vboxmanage-general.dita"/>
-      <topicref href="topics/man_VBoxManage-common.dita"/>      
+      <topicref href="topics/man_VBoxManage-common.dita"/>
       <topicref href="topics/man_VBoxManage-adoptstate.dita"/>
       <topicref href="topics/man_VBoxManage-checkmediumpwd.dita"/>
       <topicref href="topics/man_VBoxManage-modifyvm.dita"/>
@@ -426,7 +426,7 @@
       <topicref href="topics/man_VBoxManage-modifynvram.dita"/>
       <topicref href="topics/man_vboximg-mount.dita"/>
    </chapter>
-   
+
    <chapter href="topics/AdvancedTopics.dita">
       <topicref href="topics/autologon.dita">
          <topicref href="topics/autologon_win.dita"/>
@@ -551,9 +551,9 @@
       <topicref href="topics/vboxsvc-session-0.dita">
          <topicref href="topics/vboxsvc-session-0-known-issues.dita"/>
       </topicref>
-      
+
       <!-- <topicref href="topics/viso.dita"> -->
-         
+
    </chapter>
    <chapter href="topics/TechnicalBackground.dita">
       <topicref href="topics/vboxconfigdata.dita">
@@ -568,9 +568,9 @@
       <topicref href="topics/gimproviders.dita"/>
       <topicref href="topics/nestedpaging.dita"/>
    </chapter>
-   
+
    <chapter href="topics/VirtualBoxAPI.dita"/>
-   
+
    <chapter href="topics/Troubleshooting.dita">
       <topicref href="topics/ts_procs-tools.dita">
          <topicref href="topics/ts_categorize-isolate.dita"/>
@@ -632,7 +632,7 @@
          <topicref href="topics/ts_sol-host-zfs.dita"/>
       </topicref>
    </chapter>
-   
+
    <chapter href="topics/Security.dita">
       <topicref href="topics/security-general.dita"/>
       <topicref href="topics/security-secure-install.dita">
@@ -664,18 +664,18 @@
          </topicref>
       </topicref>
    </chapter>
-   
+
    <chapter href="topics/KnownIssues.dita">
       <topicref href="topics/ExperimentalFeatures.dita"/>
       <topicref href="topics/KnownProblems.dita"/>
    </chapter>
-   
+
    <!-- Change Log-->
-   
+
    <!-- Third Party Licenses-->
-   
+
    <chapter href="topics/privacy.dita"/>
- 
+
 <chapter href="topics/Glossary.dita" chunk="to-content">
     <topicref href="topics/glossentry-acpi.dita"/>
     <topicref href="topics/glossentry-ahci.dita"/>
@@ -716,5 +716,5 @@
     <topicref href="topics/glossentry-xhci.dita"/>
     <topicref href="topics/glossentry-xml.dita"/>
     <topicref href="topics/glossentry-xpcom.dita"/>
-</chapter> 
+</chapter>
 </bookmap>
