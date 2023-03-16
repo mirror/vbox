@@ -66,6 +66,9 @@
     DitaUtils.py chunk -d template.ditamap or 'DitaUtils.py map-prep -d template.ditamap'
   -->
     <frontmatter>
+       <booklists>
+          <toc/>
+       </booklists>
       <preface href="topics/preface.dita">
          <topicref href="topics/preface-audience.dita"/>
          <topicref href="topics/preface-reldocs.dita"/>
