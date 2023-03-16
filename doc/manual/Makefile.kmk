@@ -818,7 +818,7 @@ man_vboximg-mount.xml \
 	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_USER_MANUAL_DITA_IMAGES) "$(@D)/topics/images"
 
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/man_VBoxManage-dhcpserver-dhcpoptions.xml:
-	$(QUIET)$(MKDIR) -p  $(notdir $@)
+	$(QUIET)$(MKDIR) -p  $(dir $@)
 	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_PATH_MANUAL_SRC)/en_US/$(notdir $@) "$(@D)"
 
  correct_reference_targets: \
