@@ -862,7 +862,7 @@ man_vboximg-mount.xml \
 
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/user_isomakercmd-man.dita: \
  		$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl \
- 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_isomakercmd-man.xml | $$$(dir $$$@)
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_isomakercmd-man.xml | $$(dir $$@)
 	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output $@ $(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl $(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_isomakercmd-man.xml
 
  ##########################################################################################
