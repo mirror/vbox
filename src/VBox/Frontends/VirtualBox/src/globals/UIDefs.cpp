@@ -37,3 +37,6 @@ const char* UIDefs::GUI_ExtPackName = "Oracle VM VirtualBox Extension Pack";
 QStringList UIDefs::VBoxFileExts = QStringList() << "xml" << "vbox";
 QStringList UIDefs::VBoxExtPackFileExts = QStringList() << "vbox-extpack";
 QStringList UIDefs::OVFFileExts = QStringList() << "ovf" << "ova";
+
+/** Environment variable names: */
+const char *UIDefs::VBox_DesktopWatchdogPolicy_SynthTest = "VBOX_DESKTOPWATCHDOGPOLICY_SYNTHTEST";

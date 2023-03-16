@@ -46,6 +46,7 @@ template<> bool canConvert<Qt::Alignment>() { return true; }
 template<> bool canConvert<Qt::SortOrder>() { return true; }
 template<> bool canConvert<SizeSuffix>() { return true; }
 template<> bool canConvert<StorageSlot>() { return true; }
+template<> bool canConvert<DesktopWatchdogPolicy_SynthTest>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::DialogType>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::MenuType>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::MenuApplicationActionType>() { return true; }
@@ -450,6 +451,20 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
 
     /* Return result: */
     return result;
+}
+
+/* DesktopWatchdogPolicy_SynthTest <= QString: */
+template<> DesktopWatchdogPolicy_SynthTest fromInternalString<DesktopWatchdogPolicy_SynthTest>(const QString &strPolicyType)
+{
+    if (strPolicyType.compare("Disabled", Qt::CaseInsensitive) == 0)
+        return DesktopWatchdogPolicy_SynthTest_Disabled;
+    if (strPolicyType.compare("ManagerOnly", Qt::CaseInsensitive) == 0)
+        return DesktopWatchdogPolicy_SynthTest_ManagerOnly;
+    if (strPolicyType.compare("MachineOnly", Qt::CaseInsensitive) == 0)
+        return DesktopWatchdogPolicy_SynthTest_MachineOnly;
+    if (strPolicyType.compare("Both", Qt::CaseInsensitive) == 0)
+        return DesktopWatchdogPolicy_SynthTest_Both;
+    return DesktopWatchdogPolicy_SynthTest_Both;
 }
 
 /* QString <= UIExtraDataMetaDefs::DialogType: */

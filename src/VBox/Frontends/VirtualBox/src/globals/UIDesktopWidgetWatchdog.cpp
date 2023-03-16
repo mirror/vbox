@@ -50,6 +50,9 @@
 #ifdef VBOX_WS_X11
 # include "UICommon.h"
 # include "VBoxUtils-x11.h"
+# ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
+#  include "UIConverter.h" 
+# endif
 #endif
 
 /* Other VBox includes: */
@@ -283,6 +286,9 @@ void UIDesktopWidgetWatchdog::destroy()
 }
 
 UIDesktopWidgetWatchdog::UIDesktopWidgetWatchdog()
+#if defined(VBOX_WS_X11) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
+    : m_enmSynthTestPolicy(DesktopWatchdogPolicy_SynthTest_Both)
+#endif
 {
     /* Initialize instance: */
     s_pInstance = this;
@@ -995,6 +1001,10 @@ void UIDesktopWidgetWatchdog::prepare()
     }
 
 #if defined(VBOX_WS_X11) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
+    /* Load Synthetic Test policy: */
+    const QString strSynthTestPolicy = qEnvironmentVariable(VBox_DesktopWatchdogPolicy_SynthTest);
+    m_enmSynthTestPolicy = gpConverter->fromInternalString<DesktopWatchdogPolicy_SynthTest>(strSynthTestPolicy);
+
     /* Update host-screen configuration: */
     updateHostScreenConfiguration();
 #endif /* VBOX_WS_X11 && !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
@@ -1050,8 +1060,21 @@ QRegion UIDesktopWidgetWatchdog::flip(const QRegion &region)
 }
 
 #if defined(VBOX_WS_X11) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
+bool UIDesktopWidgetWatchdog::isSynchTestRestricted() const
+{
+    return    m_enmSynthTestPolicy == DesktopWatchdogPolicy_SynthTest_Disabled
+           || (   m_enmSynthTestPolicy == DesktopWatchdogPolicy_SynthTest_ManagerOnly
+               && uiCommon().uiType() == UICommon::UIType_RuntimeUI)
+           || (   m_enmSynthTestPolicy == DesktopWatchdogPolicy_SynthTest_MachineOnly
+               && uiCommon().uiType() == UICommon::UIType_SelectorUI);
+}
+
 void UIDesktopWidgetWatchdog::updateHostScreenConfiguration(int cHostScreenCount /* = -1 */)
 {
+    /* Check the policy: */
+    if (isSynchTestRestricted())
+        return;
+
     /* Acquire new host-screen count: */
     if (cHostScreenCount == -1)
         cHostScreenCount = screenCount();
@@ -1070,6 +1093,10 @@ void UIDesktopWidgetWatchdog::updateHostScreenConfiguration(int cHostScreenCount
 
 void UIDesktopWidgetWatchdog::updateHostScreenAvailableGeometry(int iHostScreenIndex)
 {
+    /* Check the policy: */
+    if (isSynchTestRestricted())
+        return;
+
     /* Make sure index is valid: */
     if (iHostScreenIndex < 0 || iHostScreenIndex >= screenCount())
     {
@@ -1102,6 +1129,10 @@ void UIDesktopWidgetWatchdog::updateHostScreenAvailableGeometry(int iHostScreenI
 
 void UIDesktopWidgetWatchdog::cleanupExistingWorkers()
 {
+    /* Check the policy: */
+    if (isSynchTestRestricted())
+        return;
+
     /* Destroy existing workers: */
     qDeleteAll(m_availableGeometryWorkers);
     /* And clear their vector: */

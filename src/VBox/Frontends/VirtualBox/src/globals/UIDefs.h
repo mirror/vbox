@@ -93,6 +93,9 @@ namespace UIDefs
     SHARED_LIBRARY_STUFF extern QStringList VBoxExtPackFileExts;
     /** Allowed OVF file extensions. */
     SHARED_LIBRARY_STUFF extern QStringList OVFFileExts;
+
+    /** Holds environment variable name for Desktop Watchdog / Synthetic Test policy type. */
+    SHARED_LIBRARY_STUFF extern const char *VBox_DesktopWatchdogPolicy_SynthTest;
 }
 using namespace UIDefs /* if header included */;
 
@@ -151,6 +154,17 @@ struct ExactStorageSlot : public StorageSlot
     {}
     QString controller;
 };
+
+
+/** Desktop Watchdog / Synthetic Test policy type. */
+enum DesktopWatchdogPolicy_SynthTest
+{
+    DesktopWatchdogPolicy_SynthTest_Disabled,
+    DesktopWatchdogPolicy_SynthTest_ManagerOnly,
+    DesktopWatchdogPolicy_SynthTest_MachineOnly,
+    DesktopWatchdogPolicy_SynthTest_Both
+};
+Q_DECLARE_METATYPE(DesktopWatchdogPolicy_SynthTest);
 
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIDefs_h */
