@@ -72,7 +72,14 @@ ifeq ($(KBUILD_TARGET),darwin) # Relatively predictable, don't script.
   VBOX_PYTHON27_INC =
   VBOX_PYTHON27_LIB =
  endif
- # No Python 3.x yet as part of OSX versions including El Capitan, 10.11.
+ #
+ # Apple introduced python3 as part of the developer command tools starting with at least 10.15 (didn't go back further as it is not of interest to us).
+ # However the headers and libraries are now residing under /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions with 3.8 and 3.9
+ # being present on Monterey.
+ # For now we will only provide the module for 3.8 and the version agnostic variant using the limited API.
+ #
+ VBOX_PYTHON38_INC = /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.8/Headers
+ VBOX_PYTHON38_LIB = /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.8/lib/libpython3.8.dylib
 
 else
  # Use the script.
@@ -711,11 +718,14 @@ ifndef VBOX_ONLY_SDK
    VBoxPython3_EXTENDS   = VBoxPythonBase
    VBoxPython3_DEFS      = $(filter-out VBOX_PYXPCOM_VERSIONED,$(VBoxPythonBase_DEFS)) Py_LIMITED_API=0x03030000
    VBoxPython3_INCS      = $(VBoxPythonBase_INCS) $(VBOX_PYTHON$(VBOX_PYTHON_LIMITED_API_VER)_INC)
+   VBoxPython3_LDFLAGS.darwin = -undefined dynamic_lookup
 
-   DLLS += VBoxPython3m
-   VBoxPython3m_EXTENDS  = VBoxPythonBase_m
-   VBoxPython3m_DEFS     = $(filter-out VBOX_PYXPCOM_VERSIONED,$(VBoxPythonBase_m_DEFS)) Py_LIMITED_API=0x03030000
-   VBoxPython3m_INCS     = $(VBoxPythonBase_m_INCS) $(VBOX_PYTHON$(VBOX_PYTHON_LIMITED_API_VER)_INC)
+   ifneq ($(KBUILD_TARGET),darwin)
+    DLLS += VBoxPython3m
+    VBoxPython3m_EXTENDS  = VBoxPythonBase_m
+    VBoxPython3m_DEFS     = $(filter-out VBOX_PYXPCOM_VERSIONED,$(VBoxPythonBase_m_DEFS)) Py_LIMITED_API=0x03030000
+    VBoxPython3m_INCS     = $(VBoxPythonBase_m_INCS) $(VBOX_PYTHON$(VBOX_PYTHON_LIMITED_API_VER)_INC)
+   endif
   endif
  endif # VBOX_WITH_PYTHON_LIMITED_API
 
