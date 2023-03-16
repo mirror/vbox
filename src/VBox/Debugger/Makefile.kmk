@@ -66,6 +66,40 @@ Debugger_SOURCES   = \
 	DBGCIoProvIpc.cpp \
 	DBGCScreenAscii.cpp
 
+ifdef VBOX_WITH_VIRT_ARMV8
+ ifdef VBOX_WITH_DEBUGGER
+  LIBRARIES += Debugger-armv8
+ endif # VBOX_WITH_DEBUGGER
+
+ #
+ # Debugger library - linked into VBoxVMM, ARMv8 variant.
+ #
+ # @todo Can this be merged into one library later maybe?
+ Debugger-armv8_TEMPLATE  = VBoxR3Dll
+ Debugger-armv8_DEFS      = VBOX_VMM_TARGET_ARMV8 IN_VMM_R3 IN_DBG_R3 IN_DIS
+ ifneq ($(KBUILD_TYPE),release)
+  Debugger-armv8_DEFS    += VBOX_WITH_DEBUGGER_TCP_BY_DEFAULT
+ endif
+ Debugger-armv8_SOURCES   = \
+ 	DBGConsole.cpp \
+ 	DBGCEval.cpp \
+ 	DBGCBuiltInSymbols.cpp \
+ 	DBGCCmdHlp.cpp \
+ 	DBGCCmdWorkers.cpp \
+ 	DBGCCommands.cpp \
+ 	DBGCDumpImage.cpp \
+ 	DBGCFunctions.cpp \
+ 	DBGCEmulateCodeView.cpp \
+ 	DBGCOps.cpp \
+ 	DBGCGdbRemoteStub.cpp \
+ 	DBGCRemoteKd.cpp \
+ 	DBGCIo.cpp \
+ 	DBGCIoProvTcp.cpp \
+ 	DBGCIoProvUdp.cpp \
+ 	DBGCIoProvIpc.cpp \
+ 	DBGCScreenAscii.cpp
+endif
+
 #
 # The diggers plug-in.
 #

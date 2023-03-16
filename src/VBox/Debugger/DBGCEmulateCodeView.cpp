@@ -1342,6 +1342,9 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     {
         if (!DBGCVAR_ISPOINTER(pDbgc->DisasmPos.enmType))
         {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+            AssertReleaseFailed();
+#else
             /** @todo Batch query CS, RIP, CPU mode and flags. */
             PVMCPU pVCpu = VMMR3GetCpuByIdU(pUVM, pDbgc->idCpu);
             if (CPUMIsGuestIn64BitCode(pVCpu))
@@ -1361,6 +1364,7 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                     fFlags |= DBGF_DISAS_FLAGS_16BIT_REAL_MODE;
                 }
             }
+#endif
 
             fFlags |= DBGF_DISAS_FLAGS_CURRENT_GUEST;
         }
@@ -2107,6 +2111,9 @@ static DECLCALLBACK(int) dbgcCmdUnassembleCfg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
     {
         if (!DBGCVAR_ISPOINTER(pDbgc->DisasmPos.enmType))
         {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+            AssertReleaseFailed();
+#else
             /** @todo Batch query CS, RIP, CPU mode and flags. */
             PVMCPU pVCpu = VMMR3GetCpuByIdU(pUVM, pDbgc->idCpu);
             if (CPUMIsGuestIn64BitCode(pVCpu))
@@ -2126,6 +2133,7 @@ static DECLCALLBACK(int) dbgcCmdUnassembleCfg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
                     fFlags |= DBGF_DISAS_FLAGS_16BIT_REAL_MODE;
                 }
             }
+#endif
 
             fFlags |= DBGF_DISAS_FLAGS_CURRENT_GUEST;
         }
@@ -2243,10 +2251,14 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     {
         if (!DBGCVAR_ISPOINTER(pDbgc->SourcePos.enmType))
         {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+            AssertReleaseFailed();
+#else
             PVMCPU pVCpu = VMMR3GetCpuByIdU(pUVM, pDbgc->idCpu);
             pDbgc->SourcePos.enmType     = DBGCVAR_TYPE_GC_FAR;
             pDbgc->SourcePos.u.GCFar.off = CPUMGetGuestEIP(pVCpu);
             pDbgc->SourcePos.u.GCFar.sel = CPUMGetGuestCS(pVCpu);
+#endif
         }
         pDbgc->SourcePos.enmRangeType = DBGCVAR_RANGE_NONE;
     }
@@ -3690,6 +3702,11 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
  */
 static RTGCPHYS dbgcGetGuestPageMode(PDBGC pDbgc, bool *pfPAE, bool *pfLME, bool *pfPSE, bool *pfPGE, bool *pfNXE)
 {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    AssertReleaseFailed();
+    RT_NOREF(pDbgc, pfPAE, pfLME, pfPSE, pfPGE, pfNXE);
+    return ~(RTGCPHYS)0;
+#else
     PVMCPU      pVCpu = VMMR3GetCpuByIdU(pDbgc->pUVM, pDbgc->idCpu);
     RTGCUINTREG cr4   = CPUMGetGuestCR4(pVCpu);
     *pfPSE = !!(cr4 & X86_CR4_PSE);
@@ -3705,6 +3722,7 @@ static RTGCPHYS dbgcGetGuestPageMode(PDBGC pDbgc, bool *pfPAE, bool *pfLME, bool
     *pfLME = CPUMGetGuestMode(pVCpu) == CPUMMODE_LONG;
     *pfNXE = false; /* GUEST64 GUESTNX */
     return CPUMGetGuestCR3(pVCpu);
+#endif
 }
 
 
@@ -6441,6 +6459,9 @@ static DECLCALLBACK(int) dbgcCmdTraceFlowEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
     {
         if (!DBGCVAR_ISPOINTER(pDbgc->DisasmPos.enmType))
         {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+            AssertReleaseFailed();
+#else
             /** @todo Batch query CS, RIP, CPU mode and flags. */
             PVMCPU pVCpu = VMMR3GetCpuByIdU(pUVM, pDbgc->idCpu);
             if (CPUMIsGuestIn64BitCode(pVCpu))
@@ -6460,6 +6481,7 @@ static DECLCALLBACK(int) dbgcCmdTraceFlowEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
                     fFlags |= DBGF_DISAS_FLAGS_16BIT_REAL_MODE;
                 }
             }
+#endif
 
             fFlags |= DBGF_DISAS_FLAGS_CURRENT_GUEST;
         }
