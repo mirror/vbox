@@ -51,7 +51,7 @@
 # include "UICommon.h"
 # include "VBoxUtils-x11.h"
 # ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
-#  include "UIConverter.h" 
+#  include "UIConverter.h"
 # endif
 #endif
 
