@@ -523,7 +523,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             if self.fRebootAfterInstall:
                 iRc = self.getAdditionsInstallerResult(oTxsSession);
                 # Check for rc == 0 just for completeness.
-                if iRc in (0, 2): # Can happen if the GA installer has detected older VBox kernel modules running and needs a reboot.
+                if iRc in (0, 2): # Can happen if the GA installer has detected older VBox kernel modules running
+                                  # and needs a reboot.
                     reporter.log('Guest has old(er) VBox kernel modules still running; requires a reboot');
                     fRc = True;
 

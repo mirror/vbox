@@ -1248,8 +1248,10 @@ class SessionWrapper(TdTaskBase):
                     self.o.machine.nonVolatileStore.uefiVariableStore.enrollOraclePlatformKey();
                     if sUefiMokPathPrefix is not None:
                         sFullName = self.oTstDrv.getFullResourceName(sUefiMokPathPrefix) + '.der';
-                        with open(sFullName, "rb") as f:
-                            self.o.machine.nonVolatileStore.uefiVariableStore.addSignatureToMok(bytearray(f.read()), uuid.uuid4().hex, vboxcon.SignatureType_X509);
+                        with open(sFullName, "rb") as der_file:
+                            self.o.machine.nonVolatileStore.uefiVariableStore.addSignatureToMok(bytearray(der_file.read()), \
+                                                                                                uuid.uuid4().hex, \
+                                                                                                vboxcon.SignatureType_X509);
 
                 self.o.machine.nonVolatileStore.uefiVariableStore.secureBootEnabled = fEnable;
             except:
