@@ -84,7 +84,7 @@ ifeq ($(KBUILD_TARGET),darwin) # Relatively predictable, don't script.
  endif
  if exists "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.7"
   VBOX_PYTHON37_INC = /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.7/Headers
-  VBOX_PYTHON37_LIB = /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.7/lib/libpython3.8.dylib
+  VBOX_PYTHON37_LIB = /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.7/lib/libpython3.7.dylib
  endif
 
 else
