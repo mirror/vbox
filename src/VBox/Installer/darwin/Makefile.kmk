@@ -478,7 +478,7 @@ if defined(VBOX_WITH_PYTHON)
  VBOX_DI_VBAPP_DYLIBS += \
  	MacOS/VBoxPython2_7.so
 endif
-if defined(VBOX_WITH_PYTHON) && !defined(VBOX_WITHOUT_PYTHON_LIMITED_API)
+if defined(VBOX_WITH_PYTHON) && !defined(VBOX_WITHOUT_PYTHON_LIMITED_API) && $(KBUILD_TARGET_ARCH) == "arm64"
  VBOX_DI_VBAPP_DYLIBS += \
  	MacOS/VBoxPython3.so
 endif

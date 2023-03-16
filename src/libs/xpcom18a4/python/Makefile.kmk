@@ -78,8 +78,10 @@ ifeq ($(KBUILD_TARGET),darwin) # Relatively predictable, don't script.
  # being present on Monterey.
  # For now we will only provide the module for 3.8 and the version agnostic variant using the limited API.
  #
- VBOX_PYTHON38_INC = /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.8/Headers
- VBOX_PYTHON38_LIB = /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.8/lib/libpython3.8.dylib
+ if1of ($(KBUILD_TARGET_ARCH),arm64) # @todo Doesn't work on the mac2 build boxes
+  VBOX_PYTHON38_INC = /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.8/Headers
+  VBOX_PYTHON38_LIB = /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.8/lib/libpython3.8.dylib
+ endif
 
 else
  # Use the script.
