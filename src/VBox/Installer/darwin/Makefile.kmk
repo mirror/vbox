@@ -470,15 +470,11 @@ endif
 ifdef VBOX_WITH_HARDENING
  VBOX_DI_VBAPP_DYLIBS += $(addprefix MacOS/,$(addsuffix .dylib,$(notdir $(VBOX_DI_VBAPP_PROGS_HARDENED))))
 endif
-ifdef VBOX_WITH_HDDPARALLELS_INSTALL
- VBOX_DI_VBAPP_DYLIBS += \
- 	MacOS/VBoxHDDParallels.dylib
-endif
-if defined(VBOX_WITH_PYTHON) && !defined(VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6) && "$(VBOX_DEF_MACOSX_VERSION_MIN)" vlt "10.13"
+if defined(VBOX_WITH_PYTHON) && "$(VBOX_DEF_MACOSX_VERSION_MIN)" vlt "10.13"
  VBOX_DI_VBAPP_DYLIBS += \
  	MacOS/VBoxPython2_6.so
 endif
-if defined(VBOX_WITH_PYTHON) && !defined(VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_7)
+if defined(VBOX_WITH_PYTHON)
  VBOX_DI_VBAPP_DYLIBS += \
  	MacOS/VBoxPython2_7.so
 endif
@@ -491,18 +487,6 @@ ifdef VBOX_WITH_DXVK
  VBOX_DI_VBAPP_DYLIBS += \
  	MacOS/VBoxDxVk.dylib \
  	MacOS/libMoltenVK.dylib
-endif
-
-ifdef VBOX_WITH_PYTHON
- VBOX_DI_VBAPP_DYLIBS.x86 += \
- 	MacOS/VBoxPython2_5.so \
- 	$(if-expr defined(VBOX_WITH_MAC_OS_X_10_4_SUPPORT),MacOS/VBoxPython2_3.so,)
-endif
-
-VBOX_DI_VBAPP_DYLIBS.amd64 :=
-if defined(VBOX_WITH_PYTHON) && defined(VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6) && "$(VBOX_DEF_MACOSX_VERSION_MIN)" vlt "10.13"
- VBOX_DI_VBAPP_DYLIBS.amd64 += \
- 	MacOS/VBoxPython2_6.so
 endif
 
 if defined(VBOX_WITH_JXPCOM)

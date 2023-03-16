@@ -39,41 +39,38 @@ ifeq ($(KBUILD_TARGET),darwin) # Relatively predictable, don't script.
  else
   VBOX_PYTHON_SUFFTBD :=
  endif
- ifndef VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6
-  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.5 10.4)
-   VBOX_PYTHON26_INC = $(VBOX_PATH_MACOSX_SDK_10_6)/usr/include/python2.6
-   VBOX_PYTHON26_LIB = $(VBOX_PATH_MACOSX_SDK_10_6)/usr/lib/libpython2.6.dylib
-  else if "$(VBOX_DEF_MACOSX_VERSION_MIN)" == "10.9" && "$(VBOX_XCODE_VERSION)" == "6.2" # 'effing 10.9 SDK in Xcode 6.2 is missing python. Stupid, stupid Apple!!
-   VBOX_PYTHON26_INC = $(VBOX_PATH_MACOSX_SDK)/../MacOSX10.10.sdk/System/Library/Frameworks/Python.framework/Versions/2.6/Headers
-   VBOX_PYTHON26_LIB = $(VBOX_PATH_MACOSX_SDK)/../MacOSX10.10.sdk/System/Library/Frameworks/Python.framework/Versions/2.6/Python
-  else if "$(VBOX_DEF_MACOSX_VERSION_MIN)" vlt "10.13"
-   VBOX_PYTHON26_INC = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Versions/2.6/Headers
-   VBOX_PYTHON26_LIB = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Versions/2.6/Python$(VBOX_PYTHON_SUFFTBD)
-  endif
-  if !defined(VBOX_OSE) || "$(wildcard $(VBOX_PYTHON26_LIB))" != ""
-   VBOX_PYTHON26_LIB_X86 = $(VBOX_PYTHON26_LIB)
-  else
-   VBOX_PYTHON26_INC =
-   VBOX_PYTHON26_LIB =
-  endif
+ if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.5 10.4)
+  VBOX_PYTHON26_INC = $(VBOX_PATH_MACOSX_SDK_10_6)/usr/include/python2.6
+  VBOX_PYTHON26_LIB = $(VBOX_PATH_MACOSX_SDK_10_6)/usr/lib/libpython2.6.dylib
+ else if "$(VBOX_DEF_MACOSX_VERSION_MIN)" == "10.9" && "$(VBOX_XCODE_VERSION)" == "6.2" # 'effing 10.9 SDK in Xcode 6.2 is missing python. Stupid, stupid Apple!!
+  VBOX_PYTHON26_INC = $(VBOX_PATH_MACOSX_SDK)/../MacOSX10.10.sdk/System/Library/Frameworks/Python.framework/Versions/2.6/Headers
+  VBOX_PYTHON26_LIB = $(VBOX_PATH_MACOSX_SDK)/../MacOSX10.10.sdk/System/Library/Frameworks/Python.framework/Versions/2.6/Python
+ else if "$(VBOX_DEF_MACOSX_VERSION_MIN)" vlt "10.13"
+  VBOX_PYTHON26_INC = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Versions/2.6/Headers
+  VBOX_PYTHON26_LIB = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Versions/2.6/Python$(VBOX_PYTHON_SUFFTBD)
  endif
- ifndef VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_7
-  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.6 10.5 10.4)
-   VBOX_PYTHON27_INC = $(VBOX_PATH_MACOSX_SDK_10_7)/usr/include/python2.7
-   VBOX_PYTHON27_LIB = $(VBOX_PATH_MACOSX_SDK_10_7)/usr/lib/libpython2.7.dylib
-  else if "$(VBOX_DEF_MACOSX_VERSION_MIN)" == "10.9" && "$(VBOX_XCODE_VERSION)" == "6.2" # 'effing 10.9 SDK in Xcode 6.2 is missing python. Stupid, stupid Apple!!
-   VBOX_PYTHON27_INC = $(VBOX_PATH_MACOSX_SDK)/../MacOSX10.10.sdk/System/Library/Frameworks/Python.framework/Versions/2.7/Headers
-   VBOX_PYTHON27_LIB = $(VBOX_PATH_MACOSX_SDK)/../MacOSX10.10.sdk/System/Library/Frameworks/Python.framework/Versions/2.7/Python
-  else
-   VBOX_PYTHON27_INC = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Versions/2.7/Headers
-   VBOX_PYTHON27_LIB = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Versions/2.7/Python$(VBOX_PYTHON_SUFFTBD)
-  endif
-  if !defined(VBOX_OSE) || "$(wildcard $(VBOX_PYTHON27_LIB))" != ""
-   VBOX_PYTHON27_LIB_X86 = $(VBOX_PYTHON27_LIB)
-  else
-   VBOX_PYTHON27_INC =
-   VBOX_PYTHON27_LIB =
-  endif
+ if !defined(VBOX_OSE) || "$(wildcard $(VBOX_PYTHON26_LIB))" != ""
+  VBOX_PYTHON26_LIB_X86 = $(VBOX_PYTHON26_LIB)
+ else
+  VBOX_PYTHON26_INC =
+  VBOX_PYTHON26_LIB =
+ endif
+
+ if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.6 10.5 10.4)
+  VBOX_PYTHON27_INC = $(VBOX_PATH_MACOSX_SDK_10_7)/usr/include/python2.7
+  VBOX_PYTHON27_LIB = $(VBOX_PATH_MACOSX_SDK_10_7)/usr/lib/libpython2.7.dylib
+ else if "$(VBOX_DEF_MACOSX_VERSION_MIN)" == "10.9" && "$(VBOX_XCODE_VERSION)" == "6.2" # 'effing 10.9 SDK in Xcode 6.2 is missing python. Stupid, stupid Apple!!
+  VBOX_PYTHON27_INC = $(VBOX_PATH_MACOSX_SDK)/../MacOSX10.10.sdk/System/Library/Frameworks/Python.framework/Versions/2.7/Headers
+  VBOX_PYTHON27_LIB = $(VBOX_PATH_MACOSX_SDK)/../MacOSX10.10.sdk/System/Library/Frameworks/Python.framework/Versions/2.7/Python
+ else
+  VBOX_PYTHON27_INC = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Versions/2.7/Headers
+  VBOX_PYTHON27_LIB = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Versions/2.7/Python$(VBOX_PYTHON_SUFFTBD)
+ endif
+ if !defined(VBOX_OSE) || "$(wildcard $(VBOX_PYTHON27_LIB))" != ""
+  VBOX_PYTHON27_LIB_X86 = $(VBOX_PYTHON27_LIB)
+ else
+  VBOX_PYTHON27_INC =
+  VBOX_PYTHON27_LIB =
  endif
  # No Python 3.x yet as part of OSX versions including El Capitan, 10.11.
 
