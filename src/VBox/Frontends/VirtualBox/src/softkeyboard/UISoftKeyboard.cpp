@@ -690,7 +690,7 @@ public:
     QStringList colorsToStringList(const QString &strColorThemeName);
     void colorsFromStringList(const QString &strColorThemeName, const QStringList &colorStringList);
 
-    /** Unlike modifier and ordinary keys we update the state of the Lock keys thru event singals we receieve
+    /** Unlike modifier and ordinary keys we update the state of the Lock keys thru event signals we receieve
       * from the guest OS. Parameter f???State is true if the corresponding key is locked. */
     void updateLockKeyStates(bool fCapsLockState, bool fNumLockState, bool fScrollLockState);
     void reset();
