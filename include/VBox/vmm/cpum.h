@@ -326,7 +326,7 @@ typedef enum CPUMMICROARCH
 
 
 /*
- * Include the target specific header. 
+ * Include the target specific header.
  * This uses several of the above types, so it must be postponed till here.
  */
 #ifndef VBOX_VMM_TARGET_ARMV8
