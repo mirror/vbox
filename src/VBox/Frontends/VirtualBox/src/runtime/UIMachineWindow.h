@@ -188,7 +188,7 @@ protected:
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
     /* Helpers: */
-    const QString& defaultWindowTitle() const { return m_strWindowTitlePrefix; }
+    QString defaultWindowTitle() const { return m_strWindowTitlePrefix; }
     static Qt::Alignment viewAlignment(UIVisualStateType visualStateType);
 
 #ifdef VBOX_WS_MAC

@@ -254,38 +254,43 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
         /* Make sure machine state is one of valid: */
         const KMachineState enmState = uimachine()->machineState();
         if (enmState == KMachineState_Null)
-            return;
-
-        /* Prepare full name: */
-        QString strMachineName = machineName();
-
-        /* Append snapshot name: */
-        ulong uSnapshotCount = 0;
-        uimachine()->acquireSnapshotCount(uSnapshotCount);
-        if (uSnapshotCount > 0)
         {
-            QString strCurrentSnapshotName;
-            uimachine()->acquireCurrentSnapshotName(strCurrentSnapshotName);
-            strMachineName += " (" + strCurrentSnapshotName + ")";
+            /* Assign default window title: */
+            setWindowTitle(defaultWindowTitle());
         }
+        else
+        {
+            /* Prepare full name: */
+            QString strMachineName = machineName();
 
-        /* Append state name: */
-        strMachineName += " [" + gpConverter->toString(enmState) + "]";
+            /* Append snapshot name: */
+            ulong uSnapshotCount = 0;
+            uimachine()->acquireSnapshotCount(uSnapshotCount);
+            if (uSnapshotCount > 0)
+            {
+                QString strCurrentSnapshotName;
+                uimachine()->acquireCurrentSnapshotName(strCurrentSnapshotName);
+                strMachineName += " (" + strCurrentSnapshotName + ")";
+            }
+
+            /* Append state name: */
+            strMachineName += " [" + gpConverter->toString(enmState) + "]";
 
 #ifndef VBOX_WS_MAC
-        /* Append user product name (besides macOS): */
-        const QString strUserProductName = uimachine()->machineWindowNamePostfix();
-        strMachineName += " - " + (strUserProductName.isEmpty() ? defaultWindowTitle() : strUserProductName);
+            /* Append user product name (besides macOS): */
+            const QString strUserProductName = uimachine()->machineWindowNamePostfix();
+            strMachineName += " - " + (strUserProductName.isEmpty() ? defaultWindowTitle() : strUserProductName);
 #endif /* !VBOX_WS_MAC */
 
-        /* Append screen number only if there are more than one present: */
-        ulong cMonitorCount = 0;
-        uimachine()->acquireMonitorCount(cMonitorCount);
-        if (cMonitorCount > 1)
-            strMachineName += QString(" : %1").arg(m_uScreenId + 1);
+            /* Append screen number only if there are more than one present: */
+            ulong cMonitorCount = 0;
+            uimachine()->acquireMonitorCount(cMonitorCount);
+            if (cMonitorCount > 1)
+                strMachineName += QString(" : %1").arg(m_uScreenId + 1);
 
-        /* Assign title finally: */
-        setWindowTitle(strMachineName);
+            /* Assign title finally: */
+            setWindowTitle(strMachineName);
+        }
     }
 }
 
