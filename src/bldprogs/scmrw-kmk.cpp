@@ -2044,6 +2044,40 @@ static bool scmKmkHandleAssignKeyword(KMKPARSER *pParser, size_t offToken, KMKTO
 
 
 /**
+ * Handles a line with a recipe command.
+ */
+static void scmKmkHandleRecipeCommand(KMKPARSER *pParser, const char *pchLine, size_t cchLine)
+{
+    /* 
+     * Make sure there is only a single tab and no spaces following it.
+     * This helps tell prerequisites from the commands in the recipe. 
+     *  
+     * Iff the line starts with a '#' it is probably a Makefile comment line, 
+     * but it will be executed by the shell (kmk_ash) and waste time. So, we 
+     * expand the initial tab into spaces when seeing that.
+     */
+    Assert(*pchLine == '\t');
+    size_t offLine = 1;
+    while (offLine < cchLine && RT_C_IS_BLANK(pchLine[offLine]))
+        offLine++;
+
+    if (offLine < cchLine && pchLine[offLine] == '#')
+        ScmStreamWrite(pParser->pOut, g_szSpaces, pParser->pSettings->cchTab);
+    else
+        ScmStreamPutCh(pParser->pOut, '\t');
+
+    ScmStreamWrite(pParser->pOut, &pchLine[offLine], cchLine - offLine);
+    ScmStreamPutEol(pParser->pOut, pParser->enmEol);
+
+    /* 
+     * Any continuation lines are currently just passed thru as-is. 
+     * We could insist on these also starting with tabs, but later.
+     */
+    scmKmkPassThruLineContinuationLines(pParser);
+}
+
+
+/**
  * Rewrite a kBuild makefile.
  *
  * @returns kScmMaybeModified or kScmUnmodified.
@@ -2088,117 +2122,101 @@ SCMREWRITERRES rewrite_Makefile_kmk(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTRE
          */
         if (Parser.fInRecipe && *pchLine == '\t')
         {
-            /* Do we do anything here? */
+            scmKmkHandleRecipeCommand(&Parser, pchLine, cchLine);
+            continue;
         }
-        else
-        {
-            /*
-             * Skip leading whitespace and check for directives (simplified).
-             *
-             * This is simplified in the sense that GNU make first checks for variable
-             * assignments, so that directive can be used as variable names.  We don't
-             * want that, so we do the variable assignment check later.
-             */
-            size_t offLine = 0;
-            while (offLine < cchLine && RT_C_IS_BLANK(pchLine[offLine]))
-                offLine++;
 
-            /* Find end of word (if any) - only looking for keywords here: */
-            size_t cchWord = 0;
-            while (   offLine + cchWord < cchLine
-                   && (   RT_C_IS_ALNUM(pchLine[offLine + cchWord])
-                       || pchLine[offLine + cchWord] == '-'))
-                cchWord++;
-            if (cchWord > 0)
+        /*
+         * Skip leading whitespace and check for directives (simplified).
+         *
+         * This is simplified in the sense that GNU make first checks for variable
+         * assignments, so that directive can be used as variable names.  We don't
+         * want that, so we do the variable assignment check later.
+         */
+        size_t offLine = 0;
+        while (offLine < cchLine && RT_C_IS_BLANK(pchLine[offLine]))
+            offLine++;
+
+        /* Find end of word (if any) - only looking for keywords here: */
+        size_t cchWord = 0;
+        while (   offLine + cchWord < cchLine
+               && (   RT_C_IS_ALNUM(pchLine[offLine + cchWord])
+                   || pchLine[offLine + cchWord] == '-'))
+            cchWord++;
+        if (cchWord > 0)
+        {
+            /* If the line is just a line continuation slash, simply remove it
+               (this also makes the parsing a lot easier). */
+            if (cchWord == 1 && offLine == cchLine - 1 && pchLine[cchLine] == '\\')
+                continue;
+
+            /* Unlike the GNU make parser, we won't recognize 'if' or any other
+               directives as variable names, so we can  */
+            KMKTOKEN enmToken = scmKmkIdentifyToken(&pchLine[offLine], cchWord);
+            switch (enmToken)
             {
-                /* If the line is just a line continuation slash, simply remove it
-                   (this also makes the parsing a lot easier). */
-                if (cchWord == 1 && offLine == cchLine - 1 && pchLine[cchLine] == '\\')
+                case kKmkToken_ifeq:
+                case kKmkToken_ifneq:
+                case kKmkToken_if1of:
+                case kKmkToken_ifn1of:
+                    scmKmkHandleIfParentheses(&Parser, offLine, enmToken, cchWord, false /*fElse*/);
                     continue;
 
-                /* Unlike the GNU make parser, we won't recognize 'if' or any other
-                   directives as variable names, so we can  */
-                KMKTOKEN enmToken = scmKmkIdentifyToken(&pchLine[offLine], cchWord);
-                switch (enmToken)
-                {
-                    case kKmkToken_ifeq:
-                    case kKmkToken_ifneq:
-                    case kKmkToken_if1of:
-                    case kKmkToken_ifn1of:
-                        scmKmkHandleIfParentheses(&Parser, offLine, enmToken, cchWord, false /*fElse*/);
-                        continue;
+                case kKmkToken_ifdef:
+                case kKmkToken_ifndef:
+                case kKmkToken_if:
+                    scmKmkHandleIfSpace(&Parser, offLine, enmToken, cchWord, false /*fElse*/);
+                    continue;
 
-                    case kKmkToken_ifdef:
-                    case kKmkToken_ifndef:
-                    case kKmkToken_if:
-                        scmKmkHandleIfSpace(&Parser, offLine, enmToken, cchWord, false /*fElse*/);
-                        continue;
+                case kKmkToken_else:
+                    scmKmkHandleElse(&Parser, offLine);
+                    continue;
 
-                    case kKmkToken_else:
-                        scmKmkHandleElse(&Parser, offLine);
-                        continue;
+                case kKmkToken_endif:
+                    scmKmkHandleEndif(&Parser, offLine);
+                    continue;
 
-                    case kKmkToken_endif:
-                        scmKmkHandleEndif(&Parser, offLine);
-                        continue;
+                /* Includes: */
+                case kKmkToken_include:
+                case kKmkToken_sinclude:
+                case kKmkToken_dash_include:
+                case kKmkToken_includedep:
+                case kKmkToken_includedep_queue:
+                case kKmkToken_includedep_flush:
+                    scmKmkHandleSimple(&Parser, offLine);
+                    continue;
 
-                    /* Includes: */
-                    case kKmkToken_include:
-                    case kKmkToken_sinclude:
-                    case kKmkToken_dash_include:
-                    case kKmkToken_includedep:
-                    case kKmkToken_includedep_queue:
-                    case kKmkToken_includedep_flush:
-                        scmKmkHandleSimple(&Parser, offLine);
-                        continue;
+                /* Others: */
+                case kKmkToken_define:
+                    scmKmkHandleDefine(&Parser, offLine);
+                    continue;
+                case kKmkToken_endef:
+                    scmKmkHandleEndef(&Parser, offLine);
+                    continue;
 
-                    /* Others: */
-                    case kKmkToken_define:
-                        scmKmkHandleDefine(&Parser, offLine);
-                        continue;
-                    case kKmkToken_endef:
-                        scmKmkHandleEndef(&Parser, offLine);
-                        continue;
+                case kKmkToken_override:
+                case kKmkToken_local:
+                    scmKmkHandleAssignKeyword(&Parser, offLine, enmToken, cchWord, true /*fMustBeAssignment*/);
+                    continue;
 
-                    case kKmkToken_override:
-                    case kKmkToken_local:
-                        scmKmkHandleAssignKeyword(&Parser, offLine, enmToken, cchWord, true /*fMustBeAssignment*/);
-                        continue;
+                case kKmkToken_export:
+                    scmKmkHandleAssignKeyword(&Parser, offLine, enmToken, cchWord, false /*fMustBeAssignment*/);
+                    continue;
 
-                    case kKmkToken_export:
-                        scmKmkHandleAssignKeyword(&Parser, offLine, enmToken, cchWord, false /*fMustBeAssignment*/);
-                        continue;
+                case kKmkToken_unexport:
+                case kKmkToken_undefine:
+                    scmKmkHandleSimple(&Parser, offLine);
+                    continue;
 
-                    case kKmkToken_unexport:
-                    case kKmkToken_undefine:
-                        scmKmkHandleSimple(&Parser, offLine);
-                        continue;
+                case kKmkToken_Comment:
+                    AssertFailed(); /* not possible */
+                    break;
 
-                    case kKmkToken_Comment:
-                        AssertFailed(); /* not possible */
-                        break;
-
-                    /*
-                     * Check if it's perhaps an variable assignment or start of a rule.
-                     * We'll do this in a very simple fashion.
-                     */
-                    case kKmkToken_Word:
-                    {
-                        Parser.cLines       = 1;
-                        Parser.cchTotalLine = cchLine;
-                        if (scmKmkIsLineWithContinuation(pchLine, cchLine))
-                            Parser.cchTotalLine = scmKmkLineContinuationPeek(&Parser, &Parser.cLines, NULL);
-                        scmKmkHandleAssignmentOrRule(&Parser, offLine);
-                        continue;
-                    }
-                }
-            }
-            /*
-             * Not keyword, check for assignment, rule or comment:
-             */
-            else if (offLine < cchLine)
-            {
-                if (pchLine[offLine] != '#')
+                /*
+                 * Check if it's perhaps an variable assignment or start of a rule.
+                 * We'll do this in a very simple fashion.
+                 */
+                case kKmkToken_Word:
                 {
                     Parser.cLines       = 1;
                     Parser.cchTotalLine = cchLine;
@@ -2207,29 +2225,44 @@ SCMREWRITERRES rewrite_Makefile_kmk(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTRE
                     scmKmkHandleAssignmentOrRule(&Parser, offLine);
                     continue;
                 }
+            }
+        }
+        /*
+         * Not keyword, check for assignment, rule or comment:
+         */
+        else if (offLine < cchLine)
+        {
+            if (pchLine[offLine] != '#')
+            {
+                Parser.cLines       = 1;
+                Parser.cchTotalLine = cchLine;
+                if (scmKmkIsLineWithContinuation(pchLine, cchLine))
+                    Parser.cchTotalLine = scmKmkLineContinuationPeek(&Parser, &Parser.cLines, NULL);
+                scmKmkHandleAssignmentOrRule(&Parser, offLine);
+                continue;
+            }
 
-                /*
-                 * Indent comment lines, unless the comment is too far too the right.
-                 */
-                size_t const offEffLine = ScmCalcSpacesForSrcSpan(pchLine, 0, offLine, pSettings);
-                if (offEffLine <= Parser.iActualDepth + 7)
+            /*
+             * Indent comment lines, unless the comment is too far too the right.
+             */
+            size_t const offEffLine = ScmCalcSpacesForSrcSpan(pchLine, 0, offLine, pSettings);
+            if (offEffLine <= Parser.iActualDepth + 7)
+            {
+                ScmStreamWrite(pOut, g_szSpaces, Parser.iActualDepth);
+                ScmStreamWrite(pOut, &pchLine[offLine], cchLine - offLine);
+                ScmStreamPutEol(pOut, Parser.enmEol);
+
+                /* If line continuation is used, it's typically to disable
+                   a property variable, so we just pass it thru as-is */
+                while (scmKmkIsLineWithContinuation(pchLine, cchLine))
                 {
-                    ScmStreamWrite(pOut, g_szSpaces, Parser.iActualDepth);
-                    ScmStreamWrite(pOut, &pchLine[offLine], cchLine - offLine);
-                    ScmStreamPutEol(pOut, Parser.enmEol);
-
-                    /* If line continuation is used, it's typically to disable
-                       a property variable, so we just pass it thru as-is */
-                    while (scmKmkIsLineWithContinuation(pchLine, cchLine))
-                    {
-                        Parser.pchLine = pchLine = ScmStreamGetLine(pIn, &Parser.cchLine, &Parser.enmEol);
-                        if (!pchLine)
-                            break;
-                        cchLine = Parser.cchLine;
-                        ScmStreamPutLine(pOut, pchLine, cchLine, Parser.enmEol);
-                    }
-                    continue;
+                    Parser.pchLine = pchLine = ScmStreamGetLine(pIn, &Parser.cchLine, &Parser.enmEol);
+                    if (!pchLine)
+                        break;
+                    cchLine = Parser.cchLine;
+                    ScmStreamPutLine(pOut, pchLine, cchLine, Parser.enmEol);
                 }
+                continue;
             }
         }
 
