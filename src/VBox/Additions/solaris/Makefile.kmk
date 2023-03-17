@@ -308,8 +308,8 @@ $(PATH_STAGE_BIN)/additions/$(PKGFILENAME): \
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/preremove.sh                       $(SOLARIS_ADDINST_OUT_DIR)/preremove.sh
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.space                    $(SOLARIS_ADDINST_OUT_DIR)/vboxguest.space
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.depend                   $(SOLARIS_ADDINST_OUT_DIR)/vboxguest.depend
-	# don't display the license on package install, since 4.0
-	#$(QUIET)$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_TXT)                                                  $(SOLARIS_ADDINST_OUT_DIR)/vboxguest.copyright
+        # don't display the license on package install, since 4.0
+        #$(QUIET)$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_TXT)                                                  $(SOLARIS_ADDINST_OUT_DIR)/vboxguest.copyright
 	$(call MSG_L1,Creating install package: $@)
 	$(QUIET)$(MKDIR) -p $(SOLARIS_ADD_ETCFS_DIR)
 	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)

@@ -778,8 +778,8 @@ man_vboximg-mount.xml \
 
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
  		dita_common
-		$(call MSG_L1,Building html chunks $@)
-		$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
+	$(call MSG_L1,Building html chunks $@)
+	$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
 		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap \
 			/transtype:xhtml /ditadir:$(VBOX_DITA_PATH) /outdir:$(@D) /tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml
 
@@ -823,14 +823,14 @@ man_vboximg-mount.xml \
  		$$(VBOX_PATH_MANUAL_SRC)/correct_references.py \
  		$$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/ \
  		$$(VBOX_REFENTRY_DITA_FILES)
-		$(call MSG_L1,correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics)
-		$(QUIET)$(VBOX_BLD_PYTHON) $(VBOX_PATH_MANUAL_SRC)/correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics
+	$(call MSG_L1,correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics)
+	$(QUIET)$(VBOX_BLD_PYTHON) $(VBOX_PATH_MANUAL_SRC)/correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics
 
  dita_common: \
  		$$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap \
  		$$(VBOX_DITA_PATH) \
  		correct_reference_targets
-		$(call MSG_L1, Running common dita steps)
+	$(call MSG_L1, Running common dita steps)
 
  ##########################################################################################
  #
@@ -899,7 +899,7 @@ man_vboximg-mount.xml \
   		$$(VBOX_MANUAL_XML_FILES_COMMON) \
   		$$(VBOX_MANUAL_XML_FILES_GENERATED_$(lang)) \
   		dita_common
-		$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
+	$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
 		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
 			/transtype:pdf /ditadir:$(VBOX_DITA_PATH) /outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1) /tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf
 
@@ -1011,7 +1011,7 @@ ifdef VBOX_WITH_DOCS_QHELP
   ditamap-to-htmlhelp: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp/UserManual.hhp
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp/UserManual.hhp: \
   		dita_common
-		$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
+	$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
 		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
 			/transtype:htmlhelp /ditadir:$(VBOX_DITA_PATH) /outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp /tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_htmlhelp
 

@@ -2176,7 +2176,7 @@ include $(FILE_KBUILD_SUB_FOOTER)
 #
 #VirtualBox_QT_TRANSLATIONS = nls/VirtualBox_de.ts
 checknls::
-	# Check for missing :/ in image paths
+        # Check for missing :/ in image paths
 	grep -i "src=[^:%]" $(filter-out nls/qt_%.ts,$(VirtualBox_QT_TRANSLATIONS))
 
 updatenls:: makeallnls nls/VirtualBox_en.ts

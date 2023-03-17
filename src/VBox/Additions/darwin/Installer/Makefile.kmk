@@ -277,10 +277,10 @@ endif
 	sudo chown    root:admin $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root/Library
 	sudo chown -R root:wheel $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root/Library/Extensions
 
-	# Copy package internal files
+        # Copy package internal files
 	$(INSTALL) $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/PkgBuildComponent.plist $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.desc/PkgBuildComponent.plist
 
-	# Copy installer scripts
+        # Copy installer scripts
 	$(INSTALL) -m 0755 $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/postflight $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.res
 
 	@# Build the package.
@@ -356,7 +356,7 @@ else
 	$(foreach binary, $(VBOX_DI_VB_GA_BINARIES) \
 		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/additions/$(binary)           "$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/Application Support/VirtualBox Guest Additions/$(binary)-$(KBUILD_TARGET_ARCH)"$(NLTAB))
 endif
-	# Add Uninstall.tool
+        # Add Uninstall.tool
 	$(INSTALL) -m 0755 $(VBOX_ADD_PATH_DI_SRC)/DiskImage/Uninstall.tool  "$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/Application Support/VirtualBox Guest Additions/"
 ifdef VBOX_SIGNING_MODE
 	$(call VBOX_SIGN_FILE_FN,$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/Application Support/VirtualBox Guest Additions/Uninstall.tool,org.virtualbox.app.guestadditions.uninstaller)

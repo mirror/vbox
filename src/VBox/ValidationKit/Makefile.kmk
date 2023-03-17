@@ -116,8 +116,8 @@ ifndef VBOX_WITHOUT_VALIDATIONKIT_ZIP
  			$$(filter $(PATH_STAGE)/$(INST_VALIDATIONKIT)%, $$($$(inst)_2_STAGE_TARGETS)))
 	$(call MSG_L1,Packing the Test Suite $@)
 	$(QUIET)$(RM) -f $@
-	# Note: Exclude packing the testcase directory into .zip, as that directory only needs to be
-	#       included in VBoxValidationKit.iso.
+        # Note: Exclude packing the testcase directory into .zip, as that directory only needs to be
+        #       included in VBoxValidationKit.iso.
 	$(foreach os, darwin freebsd linux os2 solaris win,$(foreach arch, x86 amd64 arm64\
 	,$(if-expr defined(VBOX_WITH_VALIDATIONKIT_PACKING.$(os).$(arch))\
 		,$(NLTAB)$(QUIET)$(REDIRECT) -C $(PATH_OUT_BASE)/$(os).$(arch)/$(KBUILD_TYPE)/ \

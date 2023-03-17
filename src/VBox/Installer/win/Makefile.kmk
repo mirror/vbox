@@ -447,9 +447,9 @@ $(VBOX_WIN_INST_OUT_DIR)/Shortcuts_StartMenu.wxi: $(VBOX_WIN_INST_MAKEFILE_DEP) 
 	$(call MSG_GENERATE,,$@,$<)
 	$(APPEND) -t $@ '<?xml version="1.0" ?>'
 	$(APPEND) $@ '<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">'
-	#
-	# Documentation (PDF/CHM)
-	#
+        #
+        # Documentation (PDF/CHM)
+        #
 ifdef VBOX_WITH_DOCS_PACKING
 	$(APPEND) $@ '	<Shortcut Id="sc_StartMenu_ManualPDF_en_US" Directory="dir_StartMenuVBox" Name="!(loc.StartMenu_UserManual) (PDF, English)" Description="!(loc.StartMenu_UserManual)"' \
 	             '            Target="[INSTALLDIR]\doc\UserManual.pdf" WorkingDirectory="dir_Documents" Advertise="no"/>'
@@ -457,9 +457,9 @@ ifdef VBOX_WITH_DOCS_PACKING
 	             '	<Shortcut Id="sc_StartMenu_ManualPDF_$(lang)" Directory="dir_StartMenuVBox" Name="!(loc.StartMenu_UserManual) (PDF, $(VBOX_BRAND_$(lang)_LANG_NAME))"' \
 		     '            Description="!(loc.StartMenu_UserManual) ($(VBOX_BRAND_$(lang)_LANG_NAME))" Target="[INSTALLDIR]\doc\UserManual_$(lang).pdf" WorkingDirectory="dir_Documents"/>')
 endif
-	#
-	# License(s) (RTF)
-	#
+        #
+        # License(s) (RTF)
+        #
 	$(APPEND) $@ '	<Shortcut Id="sc_StartMenu_License_en_US" Directory="dir_StartMenuVBox" Name="!(loc.StartMenu_License) (English)" Description="!(loc.StartMenu_License)"' \
 	             '            Target="[INSTALLDIR]License_en_US.rtf" WorkingDirectory="INSTALLDIR" Advertise="no"/>'
 	$(APPEND) -n $@ $(foreach lang,$(VBOX_LICENSE_ADD_LANGUAGES), \

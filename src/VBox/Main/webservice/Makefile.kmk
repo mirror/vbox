@@ -374,7 +374,7 @@ ifdef VBOX_GSOAP_INSTALLED
 		-I/Volumes/ScratchHFS/bird/vbox/svn/trunk/out/darwin.x86/debug/obj/src/VBox/Main \
 		-I/Volumes/ScratchHFS/bird/vbox/svn/trunk/src/VBox/Main/webservice \
 		-I/Volumes/ScratchHFS/bird/vbox/svn/trunk/include -I/Volumes/ScratchHFS/bird/vbox/svn/trunk/out/darwin.x86/debug
-		\-DVBOX -DVBOX_WITH_DEBUGGER -DVBOX_WITH_DEBUGGER_GUI -DDEBUG -DDEBUG_bird -DDEBUG_USERNAME=bird -DRT_OS_DARWIN \
+	\-DVBOX -DVBOX_WITH_DEBUGGER -DVBOX_WITH_DEBUGGER_GUI -DDEBUG -DDEBUG_bird -DDEBUG_USERNAME=bird -DRT_OS_DARWIN \
 		-D__DARWIN__ -DRT_ARCH_X86 -D__X86__ -DVBOX_WITH_HYBRID_32BIT_KERNEL -DIN_RING3 -DHC_ARCH_BITS=32 -DGC_ARCH_BITS=32 \
 		-DMAC_OS_X_VERSION_MIN_REQUIRED=1040 -DMAC_OS_X_VERSION_MAX_ALLOWED=1040 \
 		$< -o $@
