@@ -156,15 +156,11 @@ int GuestFsObjData::FromGuestDirEntryEx(PCGSTCTLDIRENTRYEX pDirEntryEx, const Ut
  * @param   strGroups           Resolved user group(s) the object on the guest is associated with.
  *                              On Windows there can be multiple groups assigned. The groups are separated with ";"
  *                              The first group found is always the primary group.
- * @param   pvACL               ACL data associated with the object.
- * @param   cbACL               Size of ACL data (in bytes) associated with the object.
  */
 int GuestFsObjData::FromGuestFsObjInfo(PCGSTCTLFSOBJINFO pFsObjInfo,
-                                       const Utf8Str &strUser /* = "" */, const Utf8Str &strGroups /* = "" */, const void *pvACL /* = NULL */, size_t cbACL /* = 0 */)
+                                       const Utf8Str &strUser /* = "" */, const Utf8Str &strGroups /* = "" */)
 {
-    RT_NOREF(pvACL, cbACL);
-
-    int vrc;
+    int vrc = VINF_SUCCESS;
 
     mType = GuestBase::fileModeToFsObjType(pFsObjInfo->Attr.fMode);
 
@@ -242,7 +238,7 @@ int GuestFsObjData::FromGuestFsObjInfo(PCGSTCTLFSOBJINFO pFsObjInfo,
 
     mACL              = ""; /** @todo Implement ACL handling. */
 
-    return VINF_SUCCESS;
+    return vrc;
 }
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
 
