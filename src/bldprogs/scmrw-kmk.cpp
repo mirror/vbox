@@ -2048,12 +2048,12 @@ static bool scmKmkHandleAssignKeyword(KMKPARSER *pParser, size_t offToken, KMKTO
  */
 static void scmKmkHandleRecipeCommand(KMKPARSER *pParser, const char *pchLine, size_t cchLine)
 {
-    /* 
+    /*
      * Make sure there is only a single tab and no spaces following it.
-     * This helps tell prerequisites from the commands in the recipe. 
-     *  
-     * Iff the line starts with a '#' it is probably a Makefile comment line, 
-     * but it will be executed by the shell (kmk_ash) and waste time. So, we 
+     * This helps tell prerequisites from the commands in the recipe.
+     *
+     * Iff the line starts with a '#' it is probably a Makefile comment line,
+     * but it will be executed by the shell (kmk_ash) and waste time. So, we
      * expand the initial tab into spaces when seeing that.
      */
     Assert(*pchLine == '\t');
@@ -2069,8 +2069,8 @@ static void scmKmkHandleRecipeCommand(KMKPARSER *pParser, const char *pchLine, s
     ScmStreamWrite(pParser->pOut, &pchLine[offLine], cchLine - offLine);
     ScmStreamPutEol(pParser->pOut, pParser->enmEol);
 
-    /* 
-     * Any continuation lines are currently just passed thru as-is. 
+    /*
+     * Any continuation lines are currently just passed thru as-is.
      * We could insist on these also starting with tabs, but later.
      */
     scmKmkPassThruLineContinuationLines(pParser);
