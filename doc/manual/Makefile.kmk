@@ -149,8 +149,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  endif
 
  ifdef VBOX_WITH_DOCS_QHELP
-  INSTALLS += VBox-docs-usermanual-qhc
-  INSTALLS += VBox-docs-usermanual-qch
+  INSTALLS += VBox-docs-usermanual-qhelp
   ifdef VBOX_WITH_QT6
    USES += qt6
    QHELPGENERATOR = $(PATH_TOOL_QT6_LIBEXEC)/qhelpgenerator
@@ -161,14 +160,16 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   endif
  endif
  ifdef VBOX_WITH_DOCS_QHELP_PACKING
-  VBOX_PATH_BIN_QHELP = $(PATH_STAGE_BIN)/UserManual.qch
-  VBOX_PATH_BIN_QHELP += $(PATH_STAGE_BIN)/UserManual.qhc
+  VBOX_PATH_BIN_QHELP = \
+  	$(PATH_STAGE_BIN)/UserManual.qch \
+  	$(PATH_STAGE_BIN)/UserManual.qhc
  else  # Do not install/pack qhelp.
-  VBOX_PATH_BIN_QHELP =
+  VBOX_PATH_BIN_QHELP :=
  endif
 
- .NOTPARALLEL: \
- 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qch + $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.qhc \
+ ## @todo r=bird: Explanations for all of this is required!
+ .NOTPARALLEL: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qch  \
+		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.qhc \
  		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.pdf \
  		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
 
@@ -176,7 +177,6 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   VBOX_MANUAL_PACK += \
   	$(PATH_STAGE_BIN)/UserManual.pdf \
   	$(VBOX_PATH_BIN_HTML) \
-  	$(VBOX_PATH_BIN_CHM) \
   	$(VBOX_PATH_BIN_QHELP)
   INSTALLS += VBox-docs-usermanual
 
@@ -338,13 +338,11 @@ VBox-docs-usermanual_INST = $(INST_BIN)
 VBox-docs-usermanual_MODE = a+r,u+w
 VBox-docs-usermanual_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.pdf
 
-VBox-docs-usermanual-qhc_INST = $(INST_BIN)
-VBox-docs-usermanual-qhc_MODE = a+r,u+w
-VBox-docs-usermanual-qhc_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qhc
-
-VBox-docs-usermanual-qch_INST = $(INST_BIN)
-VBox-docs-usermanual-qch_MODE = a+r,u+w
-VBox-docs-usermanual-qch_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qch
+VBox-docs-usermanual-qhelp_INST = $(INST_BIN)
+VBox-docs-usermanual-qhelp_MODE = a+r,u+w
+VBox-docs-usermanual-qhelp_SOURCES = \
+	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qhc \
+	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qch
 
 #
 # target for installing translated UserManual_*.pdf
@@ -359,20 +357,6 @@ VBox-docs-usermanual-l10n_SOURCES = $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(V
 VBox-docs-usermanual-html_INST = $(INST_BIN)
 VBox-docs-usermanual-html_MODE = a+r,u+w
 VBox-docs-usermanual-html_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip=>UserManual-html.zip
-
-#
-# target for installing VirtualBox.chm
-#
-VBox-docs-usermanual-chm_INST = $(INST_BIN)
-VBox-docs-usermanual-chm_MODE = a+r,u+w
-VBox-docs-usermanual-chm_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/VirtualBox.chm
-
-#
-# target for installing translated VirtualBox_*.chm
-#
-VBox-docs-usermanual-l10n-chm_INST = $(INST_BIN)
-VBox-docs-usermanual-l10n-chm_MODE = a+r,u+w
-VBox-docs-usermanual-l10n-chm_SOURCES = $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$(f)/VirtualBox.chm=>VirtualBox_$(f).chm)
 
 #
 # target for installing SDKRef.pdf
@@ -448,7 +432,7 @@ man_vboximg-mount.xml \
  endif
 
  # copy the PNG files.
- # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
+ # Note: out_dir referenced with double $$ to delay expansion to the eval step when out_dir has been defined.
  define def_vbox_cp_images_pdf
   local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)
   $(addprefix $$(out_dir)/,$(VBOX_MANUAL_PNG_FILES_$(lang))): \
@@ -467,7 +451,7 @@ man_vboximg-mount.xml \
 
  ifdef TO_BE_REMOVED
   # Generate PDF from LaTeX
-  # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
+  # Note: out_dir referenced with double $$ to delay expansion to the eval step when out_dir has been defined.
   define def_vbox_usermanual_tex_to_pdf
    local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)
    $$(out_dir)/UserManual.pdf: \
@@ -489,7 +473,7 @@ man_vboximg-mount.xml \
   $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_usermanual_tex_to_pdf))
 
   # Generate LaTeX from XML
-  # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
+  # Note: out_dir referenced with double $$ to delay expansion to the eval step when out_dir has been defined.
   define def_vbox_usermanual_xml_to_tex
    local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)
    $$(out_dir)/UserManual.tex: \
@@ -777,11 +761,14 @@ man_vboximg-mount.xml \
 		-9 -r $@ html-chunks
 
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
- 		dita_common
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/dita_common
 	$(call MSG_L1,Building html chunks $@)
-	$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
-		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap \
-			/transtype:xhtml /ditadir:$(VBOX_DITA_PATH) /outdir:$(@D) /tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml
+	$(QUIET)$(call VBOX_DITA_ENV_SETUP) $(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar \
+		/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap \
+		/transtype:xhtml \
+		/ditadir:$(VBOX_DITA_PATH) \
+		/outdir:$(@D) \
+		/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml
 
  # disable for now
  #html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html
@@ -819,18 +806,21 @@ man_vboximg-mount.xml \
 	$(QUIET)$(MKDIR) -p  $(dir $@)
 	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_PATH_MANUAL_SRC)/en_US/$(notdir $@) "$(@D)"
 
- correct_reference_targets: \
+ $(VBOX_PATH_MANUAL_OUTBASE)/correct_reference_targets: \
  		$$(VBOX_PATH_MANUAL_SRC)/correct_references.py \
  		$$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/ \
  		$$(VBOX_REFENTRY_DITA_FILES)
 	$(call MSG_L1,correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics)
 	$(QUIET)$(VBOX_BLD_PYTHON) $(VBOX_PATH_MANUAL_SRC)/correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics
+	$(QUIET)$(TOUCH) -- "$@"
 
- dita_common: \
+ $(VBOX_PATH_MANUAL_OUTBASE)/dita_common: \
  		$$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap \
  		$$(VBOX_DITA_PATH) \
- 		correct_reference_targets
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/correct_reference_targets
 	$(call MSG_L1, Running common dita steps)
+	$(QUIET)$(TOUCH) -- "$@"
+
 
  ##########################################################################################
  #
@@ -898,10 +888,14 @@ man_vboximg-mount.xml \
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf: \
   		$$(VBOX_MANUAL_XML_FILES_COMMON) \
   		$$(VBOX_MANUAL_XML_FILES_GENERATED_$(lang)) \
-  		dita_common
-	$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
-		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
-			/transtype:pdf /ditadir:$(VBOX_DITA_PATH) /outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1) /tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf
+  		$(VBOX_PATH_MANUAL_OUTBASE)/dita_common
+	$(QUIET)$(call VBOX_DITA_ENV_SETUP) $(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar \
+		/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
+		/transtype:pdf \
+		/ditadir:$(VBOX_DITA_PATH) \
+		/outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1) \
+		/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf
+
 
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_ditamap_to_pdf,$(lang)))
@@ -976,11 +970,11 @@ ifdef VBOX_WITH_DOCS_QHELP
  # creating the suitable input for creating a QHelp collection file.
 
  # Generate QCH from QHelp source
- # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
+ # Note: out_dir referenced with double $$ to delay expansion to the eval step when out_dir has been defined.
  define def_vbox_usermanual_qhp_to_qch
   local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)
-  $$(out_dir)/qhelp/UserManual.qch + \
-  $$(out_dir)/qhelp/UserManual.qhc: \
+  $$(out_dir)/qhelp/UserManual.qch \
+  + $$(out_dir)/qhelp/UserManual.qhc: \
   		$$(out_dir)/qhelp/UserManual.qhcp \
   		$$(out_dir)/qhelp/UserManual.qhp \
   		$$(addprefix $$(out_dir)/qhelp/,$$(VBOX_MANUAL_PNG_FILES_$(lang))) \
@@ -993,7 +987,7 @@ ifdef VBOX_WITH_DOCS_QHELP
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_usermanual_qhp_to_qch))
 
  # Generate QHP from HHP for QHelp
- # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
+ # Note: out_dir referenced with double $$ to delay expansion to the eval step when out_dir has been defined.
  define def_vbox_usermanual_hhp_qhelp_to_qhp
   local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)
   $$(out_dir)/qhelp/UserManual.qhp: \
@@ -1010,10 +1004,13 @@ ifdef VBOX_WITH_DOCS_QHELP
  define def_ditamap_to_htmlhelp
   ditamap-to-htmlhelp: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp/UserManual.hhp
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp/UserManual.hhp: \
-  		dita_common
-	$(QUIET)$(call VBOX_DITA_ENV_SETUP) \
-		$(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar /i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
-			/transtype:htmlhelp /ditadir:$(VBOX_DITA_PATH) /outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp /tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_htmlhelp
+  		$(VBOX_PATH_MANUAL_OUTBASE)/dita_common
+	$(QUIET)$(call VBOX_DITA_ENV_SETUP) $(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar \
+		/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
+		/transtype:htmlhelp \
+		/ditadir:$(VBOX_DITA_PATH) \
+		/outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp \
+		/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_htmlhelp
 
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_ditamap_to_htmlhelp,$(lang)))
@@ -1028,7 +1025,7 @@ ifdef VBOX_WITH_DOCS_QHELP
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(eval $(def_vbox_cp_qhcp)))
 
  # copy the PNG files.
- # Note: out_dir needs to be referenced with an escaped $ so it doesn't expand as eval expands it input.
+ # Note: out_dir referenced with double $$ to delay expansion to the eval step when out_dir has been defined.
  define def_vbox_cp_images_qhelp
   local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/qhelp
   $(addprefix $$(out_dir)/,$(VBOX_MANUAL_PNG_FILES_$(lang))): \
