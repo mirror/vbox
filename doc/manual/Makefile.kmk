@@ -90,9 +90,7 @@ ifdef HHC
  $(error HHC was renamed to VBOX_HHC!)
 endif
 
-VBOX_DITA_CONVERTER_PATH = $(PATH_ROOT)/src/libs/dbdita-1.0
-VBOX_DITA_ORIGINAL_PATH = $(PATH_ROOT)/src/libs/dita-ot-1.8.5
-VBOX_DITA_PATH = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-1.8.5
+VBOX_DITA_PATH          = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-1.8.5
 
 VBOX_QHELP_OUTPUT_FILES = \
 	UserManual.qch \

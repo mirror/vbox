@@ -38,8 +38,13 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
  # Globals.
  #
 
+ # DITA stuff.
+ VBOX_DITA_CONVERTER_PATH ?= $(PATH_ROOT)/src/libs/dbdita-1.0
+ VBOX_DITA_ORIGINAL_PATH  ?= $(PATH_ROOT)/src/libs/dita-ot-1.8.5
+
+
  # Source location.
- VBOX_PATH_MANUAL_SRC    := $(PATH_ROOT)/doc/manual
+ VBOX_PATH_MANUAL_SRC     := $(PATH_ROOT)/doc/manual
  # Output location.
  VBOX_PATH_MANUAL_OUTBASE := $(PATH_OBJ)/manual
 
@@ -378,7 +383,11 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
   + $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat: \
   		$$(VBOX_PATH_MANUAL_SRC)/$(1)/docbook-refentry-link-replacement-xsl-gen.xsl \
   		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-link-replacement-xsl-gen.xsl \
-  		$$(addprefix $$(VBOX_PATH_MANUAL_SRC)/en_US/,$$(VBOX_MANUAL_XML_FILES)) \
+  		$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita-refentry-link-replacement-xsl-gen.xsl \
+  		$$(VBOX_PATH_MANUAL_SRC)/dita-refentry-link-replacement-xsl-gen.xsl \
+  		$$(VBOX_PATH_MANUAL_SRC)/ditamap-to-single-xml.xsl \
+               $$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/UserManual.ditamap \
+               $$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/topics/*.xml) \
   		$$(VBOX_MANUAL_XML_FILES_COMMON) \
   		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) $$(VBOX_XML_ENTITIES) \
   		| $$$$(dir $$$$@)
@@ -392,7 +401,20 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
 		'  <nextCatalog catalog="file://$$(VBOX_FILE_URL_MAYBE_SLASH)$$(VBOX_XML_CATALOG)"/>' \
 		'</catalog>'
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT,,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat) \
-		--stringparam 'g_sMode' 'first' --output "$$@" "$$<" $$(filter %UserManual.xml,$$^)
+		--output "$$@.tmp.xml" "$$(VBOX_PATH_MANUAL_SRC)/ditamap-to-single-xml.xsl" $$(filter %.ditamap,$$^)
+#	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT,,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat) \
+#		--path "$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/topics" \
+#		--path "$(VBOX_DITA_ORIGINAL_PATH)/dtd/bookmap/dtd" \
+#		--path "$(VBOX_DITA_ORIGINAL_PATH)/dtd/technicalContent/dtd" \
+#		--output "$$@.tmp2.xml" "$$(VBOX_PATH_MANUAL_SRC)/ditamap-to-single-xml.xsl" "$$@.tmp.xml"
+	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT,,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat) \
+		--path "$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/topics" \
+		--path "$(VBOX_DITA_ORIGINAL_PATH)/dtd/bookmap/dtd" \
+		--path "$(VBOX_DITA_ORIGINAL_PATH)/dtd/technicalContent/dtd" \
+		--stringparam 'g_sMode' 'first' \
+		--output "$$@" \
+		"$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita-refentry-link-replacement-xsl-gen.xsl" \
+		"$$@.tmp.xml"
 	# Using en-US version as section and chapter names until user manual is translated as well
 	$$(foreach x, $$(VBOX_MANUAL_XML_REFENTRY_FILES)\
 		,$$(NLTAB)$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT, -ato "$$@") --stringparam 'g_sMode' 'append' \
