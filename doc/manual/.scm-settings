@@ -28,6 +28,7 @@
 
 /string.xsl:             --external-copyright --no-convert-tabs
 /titlepage-htmlhelp.xml: --external-copyright --no-convert-tabs
+*.dita: --treat-as xml --no-update-license --no-update-copyright-year --no-strip-trailing-blanks
 
 --filter-out-dirs  /texfiles/.
 

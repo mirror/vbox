@@ -386,8 +386,8 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
   		$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita-refentry-link-replacement-xsl-gen.xsl \
   		$$(VBOX_PATH_MANUAL_SRC)/dita-refentry-link-replacement-xsl-gen.xsl \
   		$$(VBOX_PATH_MANUAL_SRC)/ditamap-to-single-xml.xsl \
-               $$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/UserManual.ditamap \
-               $$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/topics/*.xml) \
+  		$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/UserManual.ditamap \
+  		$$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/topics/*.xml) \
   		$$(VBOX_MANUAL_XML_FILES_COMMON) \
   		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) $$(VBOX_XML_ENTITIES) \
   		| $$$$(dir $$$$@)
@@ -402,7 +402,7 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
 		'</catalog>'
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT,,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat) \
 		--output "$$@.tmp.xml" "$$(VBOX_PATH_MANUAL_SRC)/ditamap-to-single-xml.xsl" $$(filter %.ditamap,$$^)
-#	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT,,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat) \
+  #	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT,,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat) \
 #		--path "$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/topics" \
 #		--path "$(VBOX_DITA_ORIGINAL_PATH)/dtd/bookmap/dtd" \
 #		--path "$(VBOX_DITA_ORIGINAL_PATH)/dtd/technicalContent/dtd" \
