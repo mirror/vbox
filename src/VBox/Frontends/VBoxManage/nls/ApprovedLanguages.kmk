@@ -26,8 +26,8 @@
 #
 
 # The list of approved VBoxManage languages.
-VBOX_APPROVED_VBOXMANAGE_LANGUAGES := \
-# dita conversion breaks this:	ru
+VBOX_APPROVED_VBOXMANAGE_LANGUAGES :=
+# dita conversion breaks this:	VBOX_APPROVED_VBOXMANAGE_LANGUAGES := ru
 
 # The list of approved VBoxManage language codes for built-in docbook
 # help. Order matters for codes in the case of a language used in
@@ -36,5 +36,5 @@ VBOX_APPROVED_VBOXMANAGE_LANGUAGES := \
 # For example: if en_US, en_UK and en_AU are approved the en_US should
 # be placed before others allowing en_US to be used when the user
 # specifies "en" as the desired language.
-VBOX_APPROVED_VBOXMANAGE_DOCBOOK_LANGUAGES := \
-# dita conversion breaks this:	ru_RU
+VBOX_APPROVED_VBOXMANAGE_DOCBOOK_LANGUAGES :=
+# dita conversion breaks this:	VBOX_APPROVED_VBOXMANAGE_DOCBOOK_LANGUAGES := ru_RU
