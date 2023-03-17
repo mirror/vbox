@@ -33,7 +33,7 @@
  * for running ARM guests. It might become complex iff we decide to implement our
  * own hypervisor.
  *
- * @section sec_cpum_logging        Logging Level Assignments.
+ * @section sec_cpum_logging_armv8      Logging Level Assignments.
  *
  * Following log level assignments:
  *      - @todo
@@ -66,11 +66,6 @@
 #include <iprt/mem.h>
 #include <iprt/mp.h>
 #include <iprt/string.h>
-
-
-/*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
 
 
 /*********************************************************************************************************************************
