@@ -9006,7 +9006,7 @@ ifndef VBOX_SVN_REV
 	$(QUIET)$(MKDIR) -p $(@D)
  ifneq ($(VBOX_SVN_DEP),)
 	-$(REDIRECT) -E 'LC_ALL=C' -wo $@.tmp -- $(SVN) info $(PATH_ROOT)
-	# Append fallback. Will be ignored if "svn info" provides meaningful data.
+  # Append fallback. Will be ignored if "svn info" provides meaningful data.
 	$(QUIET)$(APPEND) $@.tmp 'Last Changed Rev: $(VBOX_SVN_REV_FALLBACK)'
 	$(SED) -e '/^Last Changed Rev/!d'  -e 's/Last Changed Rev\: */export VBOX_SVN_REV=/; t a; :a q' --output $@ $@.tmp
 	$(QUIET)$(RM) -f $@.tmp
