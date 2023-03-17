@@ -127,7 +127,6 @@
  * @param   bRm                 The ModRM byte.
  * @param   u16Disp             The displacement byte/word, if any.
  *                              RIP relative addressing.
- * @param   pGCPtrEff           Where to return the effective address.
  */
 static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr16(PVMCPUCC pVCpu, uint8_t bRm, uint16_t u16Disp) RT_NOEXCEPT
 {
