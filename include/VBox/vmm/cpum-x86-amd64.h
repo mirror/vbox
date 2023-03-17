@@ -3101,16 +3101,6 @@ VMMR3DECL(uint32_t)         CPUMR3DeterminHostMxCsrMask(void);
 
 VMMR3DECL(int)              CPUMR3MsrRangesInsert(PVM pVM, PCCPUMMSRRANGE pNewRange);
 
-VMMR3DECL(uint32_t)         CPUMR3DbGetEntries(void);
-/** Pointer to CPUMR3DbGetEntries. */
-typedef DECLCALLBACKPTR(uint32_t, PFNCPUMDBGETENTRIES, (void));
-VMMR3DECL(PCCPUMDBENTRY)    CPUMR3DbGetEntryByIndex(uint32_t idxCpuDb);
-/** Pointer to CPUMR3DbGetEntryByIndex. */
-typedef DECLCALLBACKPTR(PCCPUMDBENTRY, PFNCPUMDBGETENTRYBYINDEX, (uint32_t idxCpuDb));
-VMMR3DECL(PCCPUMDBENTRY)    CPUMR3DbGetEntryByName(const char *pszName);
-/** Pointer to CPUMR3DbGetEntryByName. */
-typedef DECLCALLBACKPTR(PCCPUMDBENTRY, PFNCPUMDBGETENTRYBYNAME, (const char *pszName));
-
 VMMR3_INT_DECL(void)    CPUMR3NemActivateGuestDebugState(PVMCPUCC pVCpu);
 VMMR3_INT_DECL(void)    CPUMR3NemActivateHyperDebugState(PVMCPUCC pVCpu);
 /** @} */
