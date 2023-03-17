@@ -4603,6 +4603,7 @@ static const char *cpuVendorToString(CPUMCPUVENDOR enmCpuVendor)
         case CPUMCPUVENDOR_CYRIX:       return "Cyrix";
         case CPUMCPUVENDOR_SHANGHAI:    return "Shanghai";
         case CPUMCPUVENDOR_HYGON:       return "Hygon";
+        case CPUMCPUVENDOR_APPLE:       return "Apple";
         case CPUMCPUVENDOR_INVALID:
         case CPUMCPUVENDOR_UNKNOWN:
         case CPUMCPUVENDOR_32BIT_HACK:

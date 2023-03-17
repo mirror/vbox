@@ -49,41 +49,6 @@ RT_C_DECLS_BEGIN
  */
 
 /**
- * CPU Vendor.
- */
-typedef enum CPUMCPUVENDOR
-{
-    CPUMCPUVENDOR_INVALID = 0,
-    CPUMCPUVENDOR_APPLE,
-    CPUMCPUVENDOR_UNKNOWN,
-    /** 32bit hackishness. */
-    CPUMCPUVENDOR_32BIT_HACK = 0x7fffffff
-} CPUMCPUVENDOR;
-
-
-/**
- * ARM CPU microarchitectures and in processor generations.
- */
-typedef enum CPUMMICROARCH
-{
-    kCpumMicroarch_Invalid = 0,
-
-    kCpumMicroarch_Apple_First,
-
-    kCpumMicroarch_Apple_M1 = kCpumMicroarch_Apple_First,
-
-    kCpumMicroarch_Unknown,
-
-    kCpumMicroarch_32BitHack = 0x7fffffff
-} CPUMMICROARCH;
-
-
-/** Predicate macro for catching netburst CPUs. */
-#define CPUMMICROARCH_IS_APPLE(a_enmMicroarch) \
-    ((a_enmMicroarch) >= kCpumMicroarch_Apple_First && (a_enmMicroarch) <= kCpumMicroarch_Apple_End)
-
-
-/**
  * CPU features and quirks.
  * This is mostly exploded CPUID info.
  */

@@ -650,6 +650,9 @@ VMMDECL(const char *) CPUMMicroarchName(CPUMMICROARCH enmMicroarch)
         CASE_RET_STR(kCpumMicroarch_NEC_V20);
         CASE_RET_STR(kCpumMicroarch_NEC_V30);
 
+        CASE_RET_STR(kCpumMicroarch_Apple_M1);
+        CASE_RET_STR(kCpumMicroarch_Apple_M2);
+
         CASE_RET_STR(kCpumMicroarch_Unknown);
 
 #undef CASE_RET_STR
@@ -672,6 +675,7 @@ VMMDECL(const char *) CPUMMicroarchName(CPUMMICROARCH enmMicroarch)
         case kCpumMicroarch_Shanghai_End:
         case kCpumMicroarch_Cyrix_End:
         case kCpumMicroarch_NEC_End:
+        case kCpumMicroarch_Apple_End:
         case kCpumMicroarch_32BitHack:
             break;
         /* no default! */
@@ -1209,6 +1213,7 @@ VMMDECL(const char *) CPUMCpuVendorName(CPUMCPUVENDOR enmVendor)
         case CPUMCPUVENDOR_CYRIX:       return "CYRIX";
         case CPUMCPUVENDOR_SHANGHAI:    return "SHANGHAI";
         case CPUMCPUVENDOR_HYGON:       return "HYGON";
+        case CPUMCPUVENDOR_APPLE:       return "APPLE";
         case CPUMCPUVENDOR_UNKNOWN:     return "UNKNOWN";
 
         case CPUMCPUVENDOR_INVALID:
