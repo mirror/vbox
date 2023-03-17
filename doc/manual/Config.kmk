@@ -368,14 +368,17 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
  endif # VBOX_XML_ENTITIES
 
 
- ## Emit rules to produce stylesheet for translating cross references (xref)
+ ## Emit rules to produce a stylesheet for translating cross references (xref)
  # to user manual chapters and sections in the man pages and --help output.
  #
- # Note! This requires processing UserManual.xml as a single document in order
- #       to get the correct chapter and section numbering, so we use a catalog
- #       file to replace the generated XML documents it includes with a dummy
- #       one.  This reduces the dependencies and recipies we require to build
- #       VBoxManage and the RTIsoMaker (w/ derivatives).
+ # Note! This is a bit hackish, as it only processes the checked in .dita files
+ #       and not the processed result nor stuff we generated.  Seems like all
+ #       we generate is manpage related pages, so that's fine since these are
+ #       all currently at the tail of one chapter in the manual.
+ #
+ #       If it turns out we generate more stuff that this, we're in for lots of
+ #       dependency fun with VBoxManage and the RTIsoMaker (+ derivatives).
+ #
  # $(evalcall2 def_vbox_xref_to_text)
  # @param    1   Language code.
  define def_vbox_xref_to_text
@@ -402,11 +405,13 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
 		'</catalog>'
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT,,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat) \
 		--output "$$@.tmp.xml" "$$(VBOX_PATH_MANUAL_SRC)/ditamap-to-single-xml.xsl" $$(filter %.ditamap,$$^)
-  #	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT,,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat) \
-#		--path "$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/topics" \
-#		--path "$(VBOX_DITA_ORIGINAL_PATH)/dtd/bookmap/dtd" \
-#		--path "$(VBOX_DITA_ORIGINAL_PATH)/dtd/technicalContent/dtd" \
-#		--output "$$@.tmp2.xml" "$$(VBOX_PATH_MANUAL_SRC)/ditamap-to-single-xml.xsl" "$$@.tmp.xml"
+  if 0 # Enable to see the full combined document.
+	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT,,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat) \
+		--path "$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/topics" \
+		--path "$(VBOX_DITA_ORIGINAL_PATH)/dtd/bookmap/dtd" \
+		--path "$(VBOX_DITA_ORIGINAL_PATH)/dtd/technicalContent/dtd" \
+		--output "$$@.tmp2.xml" "$$(VBOX_PATH_MANUAL_SRC)/ditamap-to-single-xml.xsl" "$$@.tmp.xml"
+  endif
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT,,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat) \
 		--path "$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/topics" \
 		--path "$(VBOX_DITA_ORIGINAL_PATH)/dtd/bookmap/dtd" \
@@ -420,6 +425,7 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
 		,$$(NLTAB)$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT, -ato "$$@") --stringparam 'g_sMode' 'append' \
 			"$$<" "$$(VBOX_PATH_MANUAL_SRC)/en_US/$$(x)")
 	$$(QUIET)$$(APPEND) -n "$$@" '' '</xsl:stylesheet>'
+	$$(QUIET)$$(RM) -f -- "$$@.tmp.xml"
 
   BLDDIRS += $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/
  endef
