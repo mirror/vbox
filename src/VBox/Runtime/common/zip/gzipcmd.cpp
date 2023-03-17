@@ -192,7 +192,7 @@ static RTEXITCODE gzipPushFlushAndClose(PRTVFSIOSTREAM phVfsSrc, PCRTGZIPCMDOPTS
 static RTEXITCODE gzipCompressFile(PRTVFSIOSTREAM phVfsSrc, PCRTGZIPCMDOPTS pOpts, PRTVFSIOSTREAM phVfsDst)
 {
     /*
-     * Attach the ompressor to the output stream.
+     * Attach the compressor to the output stream.
      */
     RTVFSIOSTREAM hVfsGzip;
     int rc = RTZipGzipCompressIoStream(*phVfsDst, 0 /*fFlags*/, pOpts->uLevel, &hVfsGzip);
