@@ -1061,6 +1061,8 @@ typedef struct IEM
 /** @name Opcode Decoder Function Types.
  * @{ */
 
+# if 0 /** @todo r=bird: This upsets doxygen. Generally, these macros and types probably won't change with the target arch.
+        * Nor will probably the TLB definitions.  So, we need some better splitting of this code. */
 /** @typedef PFNIEMOP
  * Pointer to an opcode decoder function.
  */
@@ -1073,23 +1075,10 @@ typedef struct IEM
  *
  * @param   a_Name      The function name.
  */
-
-/** @typedef PFNIEMOPRM
- * Pointer to an opcode decoder function with RM byte.
- */
-
-/** @def FNIEMOPRM_DEF
- * Define an opcode decoder function with RM byte.
- *
- * We're using macors for this so that adding and removing parameters as well as
- * tweaking compiler specific attributes becomes easier.  See FNIEMOP_CALL_1
- *
- * @param   a_Name      The function name.
- */
+#endif
 
 #if defined(__GNUC__) && defined(RT_ARCH_X86)
 typedef VBOXSTRICTRC (__attribute__((__fastcall__)) * PFNIEMOP)(PVMCPUCC pVCpu);
-typedef VBOXSTRICTRC (__attribute__((__fastcall__)) * PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
 # define FNIEMOP_DEF(a_Name) \
     IEM_STATIC VBOXSTRICTRC __attribute__((__fastcall__, __nothrow__)) a_Name(PVMCPUCC pVCpu)
 # define FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) \
@@ -1099,7 +1088,6 @@ typedef VBOXSTRICTRC (__attribute__((__fastcall__)) * PFNIEMOPRM)(PVMCPUCC pVCpu
 
 #elif defined(_MSC_VER) && defined(RT_ARCH_X86)
 typedef VBOXSTRICTRC (__fastcall * PFNIEMOP)(PVMCPUCC pVCpu);
-typedef VBOXSTRICTRC (__fastcall * PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
 # define FNIEMOP_DEF(a_Name) \
     IEM_STATIC /*__declspec(naked)*/ VBOXSTRICTRC __fastcall a_Name(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 # define FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) \
@@ -1109,7 +1097,6 @@ typedef VBOXSTRICTRC (__fastcall * PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
 
 #elif defined(__GNUC__) && !defined(IEM_WITH_THROW_CATCH)
 typedef VBOXSTRICTRC (* PFNIEMOP)(PVMCPUCC pVCpu);
-typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
 # define FNIEMOP_DEF(a_Name) \
     IEM_STATIC VBOXSTRICTRC __attribute__((__nothrow__)) a_Name(PVMCPUCC pVCpu)
 # define FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) \
@@ -1119,7 +1106,6 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
 
 #else
 typedef VBOXSTRICTRC (* PFNIEMOP)(PVMCPUCC pVCpu);
-typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
 # define FNIEMOP_DEF(a_Name) \
     IEM_STATIC VBOXSTRICTRC a_Name(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 # define FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) \
@@ -1128,7 +1114,6 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
     IEM_STATIC VBOXSTRICTRC a_Name(PVMCPUCC pVCpu, a_Type0 a_Name0, a_Type1 a_Name1) IEM_NOEXCEPT_MAY_LONGJMP
 
 #endif
-#define FNIEMOPRM_DEF(a_Name) FNIEMOP_DEF_1(a_Name, uint8_t, bRm)
 
 /**
  * Call an opcode decoder function.
