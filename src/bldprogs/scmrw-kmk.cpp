@@ -1305,6 +1305,54 @@ static bool scmKmkGiveUpIfTrailingEscapedSlashed(KMKPARSER *pParser, const char 
     return false;
 }
 
+
+/**
+ * Scans the given line segment for variable expansion and updates the state
+ * accordingly.
+ *
+ * @returns New cExpandNesting value.
+ * @param   cExpandNesting              Current variable expansion nesting
+ *                                      level.
+ * @param   achExpandingNestingClose    String with the closing character for
+ *                                      each expansion level. 256 chars.
+ * @param   pchLine                     The string to scan.
+ * @param   cchLine                     Length to scan.
+ */
+static unsigned scmKmkScanStringForExpansions(unsigned cExpandNesting, char achExpandNestingClose[256],
+                                              const char *pchLine, size_t cchLine)
+{
+    while (cchLine-- > 0)
+    {
+        char ch = *pchLine++;
+        switch (ch)
+        {
+            case '$':
+            {
+                size_t cDollars = 1;
+                while (cchLine > 0 && (ch = *pchLine) == '$')
+                    cDollars++, pchLine++, cchLine--;
+                if ((cDollars & 1) && cchLine > 0 && (ch == '{' || ch == '('))
+                {
+                    if (cExpandNesting < 256)
+                        achExpandNestingClose[cExpandNesting] = ch == '(' ? ')' : '}';
+                    cExpandNesting++;
+                    pchLine++;
+                    cchLine--;
+                }
+                break;
+            }
+
+            case ')':
+            case '}':
+                if (cExpandNesting > 0 && (cExpandNesting > 256 || ch == achExpandNestingClose[cExpandNesting - 1]))
+                    cExpandNesting--;
+                break;
+        }
+    }
+    return cExpandNesting;
+}
+
+
 /**
  * @returns dummy (false) to facility return + call.
  */
@@ -1437,7 +1485,7 @@ static bool scmKmkHandleAssignment2(KMKPARSER *pParser, size_t offVarStart, size
         offLine++;
 
 /** @todo this block can probably be merged into the final loop below. */
-    unsigned cPendingEols = 0;
+    unsigned cPendingEols   = 0;
     while (iSubLine + 1 < cLines && offLine + 1 == cchLine && pchLine[offLine] == '\\')
     {
         pParser->pchLine = pchLine = ScmStreamGetLine(pParser->pIn, &pParser->cchLine, &pParser->enmEol);
@@ -1463,6 +1511,8 @@ static bool scmKmkHandleAssignment2(KMKPARSER *pParser, size_t offVarStart, size
     /*
      * Okay, we've gotten to the value / comment part.
      */
+    char     achExpandNestingClose[256];
+    unsigned cExpandNesting = 0;
     for (;;)
     {
         /*
@@ -1502,7 +1552,11 @@ static bool scmKmkHandleAssignment2(KMKPARSER *pParser, size_t offVarStart, size
                     pszDst = pParser->szBuf;
                     memset(pszDst, ' ', cchIndent);
                     pszDst += cchIndent;
-                    *pszDst++ = '\t';
+
+                    size_t cTabIndent = cExpandNesting + 1;
+                    while (cTabIndent-- > 0)
+                        *pszDst++ = '\t';
+
                     cPendingEols--;
                 } while (cPendingEols > 0);
             }
@@ -1516,6 +1570,8 @@ static bool scmKmkHandleAssignment2(KMKPARSER *pParser, size_t offVarStart, size
 
             /* Append the value part we found. */
             pszDst = (char *)mempcpy(pszDst, &pchLine[offLine], offValueEnd - offLine);
+            cExpandNesting = scmKmkScanStringForExpansions(cExpandNesting, achExpandNestingClose,
+                                                           &pchLine[offLine], offValueEnd - offLine);
             offLine = offValueEnd2;
         }
 
