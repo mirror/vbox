@@ -77,6 +77,10 @@ def correctHrefTargets(file_content):
             targets = extractHrefList(line)
             newline = line
             for target in targets:
+                ## @todo r=bird: This never works, os.path.basename is a function/method
+                ##               object and the dictionary value is a string. It is also
+                ##               very inefficient way of parsing the line via a string
+                ##               list. Just use extractHrefTarget directly.
                 if target in xref_dictionary and os.path.basename != xref_dictionary[target]:
                     old = "\"" + target + "\""
                     new = "\"" + xref_dictionary[target] + "#" + target + "\""
