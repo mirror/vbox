@@ -169,7 +169,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 
  ## @todo r=bird: Explanations for all of this is required!
  .NOTPARALLEL: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qch \
-		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.qhc \
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.qhc \
  		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.pdf \
  		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
 
@@ -188,8 +188,9 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  endif # !VBOX_ONLY_SDK
 
  ifdef VBOX_WITH_DOCS_ACCESSIBILITY
-  INSTALLS += VBox-docs-accessibility
-  INSTALLS += VBox-docs-accessibility-html
+  INSTALLS += \
+  	VBox-docs-accessibility
+  	VBox-docs-accessibility-html
  endif
 
  ifdef VBOX_ONLY_DOCS
@@ -652,42 +653,57 @@ man_vboximg-mount.xml \
  #     files are updated.
  #	- create dita/topic folder and copy all user manual dita files under that.
  #  - copy all images under dita/topics/images and UserManual.ditamap under dita folder
- #  - copy all man_VBox???.xml docbook files under dita/topic folder.
- #  - flatten refsect1/refsect2 hierarchy in man_VBox???.xml docbook files by
+ #  - copy all man_V*.xml docbook files under dita/topic folder.
+ #  - flatten refsect1/refsect2 hierarchy in man_V*.xml docbook files by
  #    using refsect2_to_refsect1.py.
- #  - convert man_VBox???.xml files into dita files
- #  - mark external link in the man_VBox????.dita files
+ #  - convert man_V*.xml files into dita files
+ #  - mark external link in the man_V*.dita files
  #  - correct all reference targets by calling correct_references.py.
+ #
+ #  Note! INSTALL_STAGING is likely to hardlink the files.
  #
  ##########################################################################################
 
- VBOX_USER_MANUAL_DITA_FILES = $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/*dita)
- VBOX_USER_MANUAL_DITA_IMAGES = $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/images/*)
+ BLDDIRS += \
+ 	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita \
+ 	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics \
+ 	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/images
 
- $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap:
-	$(QUIET)$(MKDIR) -p  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/images
-	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_PATH_MANUAL_SRC)/en_US/dita/UserManual.ditamap "$(@D)"
-	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_USER_MANUAL_DITA_FILES) "$(@D)/topics"
-	$(QUIET)touch -- "$(@D)/topics/reference.dtd"
-	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_USER_MANUAL_DITA_IMAGES) "$(@D)/topics/images"
+ VBOX_USER_MANUAL_DITA_FILES  := $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/*dita)
+ VBOX_USER_MANUAL_DITA_IMAGES := $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/images/*)
 
- $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/man_VBoxManage-dhcpserver-dhcpoptions.xml:
+ VBOX_USER_MANUAL_STAGED_DITA_FILES  := $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/,$(notdir $(VBOX_USER_MANUAL_DITA_FILES)))
+ VBOX_USER_MANUAL_STAGED_DITA_IMAGES := $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/images/,$(notdir $(VBOX_USER_MANUAL_DITA_IMAGES)))
+
+
+ ## @todo r=bird: This is still incredibly crude.
+ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/reference.dtd \
+ +| $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap \
+ +| $(VBOX_USER_MANUAL_STAGED_DITA_FILES) \
+ +| $(VBOX_USER_MANUAL_STAGED_IMAGE_FILES): \
+ 		$(VBOX_PATH_MANUAL_SRC)/en_US/dita/UserManual.ditamap \
+ 		$(VBOX_USER_MANUAL_DITA_FILES) \
+ 		$(VBOX_USER_MANUAL_DITA_IMAGES) \
+ 		| \
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/ \
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/ \
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/images/
+	$(call MSG_L1, Staging dita and image files for en_US)
+	$(QUIET)$(INSTALL_STAGING) -v -m0644 -- $(VBOX_PATH_MANUAL_SRC)/en_US/dita/UserManual.ditamap "$(@D)/"
+	$(QUIET)$(INSTALL_STAGING) -v -m0644 -- $(VBOX_USER_MANUAL_DITA_FILES)                        "$(@D)/topics/"
+	$(QUIET)$(INSTALL_STAGING) -v -m0644 -- $(VBOX_USER_MANUAL_DITA_IMAGES)                       "$(@D)/topics/images/"
+	$(QUIET)$(TOUCH) -- "$(@D)/topics/reference.dtd"
+
+ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/man_VBoxManage-dhcpserver-dhcpoptions.xml: \
+ 		$(VBOX_PATH_MANUAL_SRC)/en_US/man_VBoxManage-dhcpserver-dhcpoptions.xml
 	$(QUIET)$(MKDIR) -p  $(dir $@)
-	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_PATH_MANUAL_SRC)/en_US/$(notdir $@) "$(@D)"
-
- $(VBOX_PATH_MANUAL_OUTBASE)/correct_reference_targets: \
- 		$$(VBOX_PATH_MANUAL_SRC)/correct_references.py \
- 		$$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/ \
- 		$$(VBOX_REFENTRY_DITA_FILES)
-	$(call MSG_L1,correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics)
-	$(QUIET)$(VBOX_BLD_PYTHON) $(VBOX_PATH_MANUAL_SRC)/correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics
-	$(QUIET)$(TOUCH) -- "$@"
+	$(QUIET)$(INSTALL_STAGING) -m0644 -- "$<" "$(@D)/"
 
  $(VBOX_PATH_MANUAL_OUTBASE)/dita_common: \
- 		$$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap \
- 		$$(VBOX_DITA_PATH) \
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap \
+ 		$(VBOX_DITA_PATH) \
  		$(VBOX_PATH_MANUAL_OUTBASE)/correct_reference_targets
-	$(call MSG_L1, Running common dita steps)
+	$(call MSG_L1, Ran common dita steps)
 	$(QUIET)$(TOUCH) -- "$@"
 
 
@@ -696,31 +712,59 @@ man_vboximg-mount.xml \
  #  Docbook to Dita conversion of our refentry files
  #
  ##########################################################################################
- define def_vbox_refentry_to_dita
-  $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(addsuffix .dita,$(basename $(2))): \
-  		$$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl \
-  		$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2) \
-  		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/man_VBoxManage-dhcpserver-dhcpoptions.xml \
-  		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) \
-  		$$(VBOX_XML_ENTITIES) $$(VBOX_VERSION_STAMP) | $$$$(dir $$$$@)
-
-	$$(QUIET)$$(RM) -f "$$@"
-	$$(QUIET)$$(VBOX_BLD_PYTHON) $$(VBOX_PATH_MANUAL_SRC)/refsect2_to_refsect1.py -i $$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2) -o $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2)
-	$$(call MSG_TOOL,xsltproc $$(notdir $$(firstword $$(filter %.xsl,$$^))),,$$(firstword $$(filter %.xml,$$^)),$$@)
-	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output $$@ $$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2)
-	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output $$@ $(VBOX_PATH_MANUAL_SRC)/mark_external_urls.xsl $$@
- endef
- $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_REFENTRY_FILES) man_vboximg-mount.xml man_VBoxHeadless.xml \
-, $(evalcall2 def_vbox_refentry_to_dita,$(lang),$(file))))
-
- VBOX_REFENTRY_DITA_FILES = $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file, $(basename $(VBOX_MANUAL_XML_REFENTRY_FILES)) \
- 	man_vboximg-mount man_VBoxHeadless user_isomakercmd-man \
- 	,$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/dita/topics/$(file).dita))
+ VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES := $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/user_isomakercmd-man.dita
 
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/user_isomakercmd-man.dita: \
  		$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl \
  		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_isomakercmd-man.xml | $$(dir $$@)
-	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output $@ $(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl $(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_isomakercmd-man.xml
+	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT) \
+		--maxdepth 6000 \
+		--output "$@" \
+		"$<" \
+		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_isomakercmd-man.xml
+
+ define def_vbox_refentry_to_dita
+  VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES += $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(basename $(2)).dita
+  $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(basename $(2)).dita \
+  + $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2): \
+  		$$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl \
+		$$(qfirstfile , $$(qwildcard , $$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2)) $$(VBOX_PATH_MANUAL_SRC)/en_US/$(2)) \
+		$$(VBOX_PATH_MANUAL_SRC)/mark_external_urls.xsl \
+  		$$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/man_VBoxManage-dhcpserver-dhcpoptions.xml \
+  		$$(VBOX_XML_CATALOG) \
+  		$$(VBOX_XML_CATALOG_DOCBOOK) \
+  		$$(VBOX_XML_CATALOG_MANUAL) \
+  		$$(VBOX_XML_ENTITIES) \
+  		$$(VBOX_VERSION_STAMP) \
+  		| $$$$(dir $$$$@)
+	$$(call MSG_TOOL,xsltproc docbook2dita.xsl,,$$(firstword $$(filter %.xml,$$^)),$$@)
+	$$(QUIET)$$(RM) -f "$$@"
+	$$(QUIET)$$(VBOX_BLD_PYTHON) $$(VBOX_PATH_MANUAL_SRC)/refsect2_to_refsect1.py \
+		-i $$(qfirstfile , $$(qwildcard , $$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2)) $$(VBOX_PATH_MANUAL_SRC)/en_US/$(2)) \
+		-o "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2)"
+	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output "$$@" \
+		"$$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl" \
+		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2)"
+	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output "$$@" \
+		"$$(VBOX_PATH_MANUAL_SRC)/mark_external_urls.xsl" "$$@"
+ endef
+ $(foreach lang,$(VBOX_MANUAL_LANGUAGES) \
+ ,$(foreach file,$(VBOX_MANUAL_XML_REFENTRY_FILES) man_vboximg-mount.xml man_VBoxHeadless.xml \
+ ,$(evalcall2 def_vbox_refentry_to_dita,$(lang),$(file))))
+
+ # Corrects all reference to include the #id as well as the topic filename.
+ ## @todo r=bird: This is a totally unmaintainable rule, because it doesn't specify
+ ## what it modifies as those already have individual rules above and are listed as
+ ## dependencies (VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES) here.  Is there no
+ ## way to fix this at conversion time? This is _extremely_ ugly.
+ $(VBOX_PATH_MANUAL_OUTBASE)/correct_reference_targets: \
+ 		$(VBOX_PATH_MANUAL_SRC)/correct_references.py \
+ 		$(VBOX_USER_MANUAL_STAGED_DITA_FILES) \
+ 		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES)
+	$(call MSG_L1,correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics)
+	$(QUIET)$(VBOX_BLD_PYTHON) $(VBOX_PATH_MANUAL_SRC)/correct_references.py -d $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics
+	$(QUIET)$(TOUCH) -- "$@"
+
 
  ##########################################################################################
  #
@@ -729,10 +773,17 @@ man_vboximg-mount.xml \
  #
  ##########################################################################################
  # Copy the dita library under out folder since at each use the library modifies some
- # run-time configuation files.
+ # run-time configuation files and there seems to be no way to override this.
+ ## @todo r=bird: This is _incredibly_ crude.  But then, the tool is the worst with its inane
+ ##       desire to modify build.xml, catalog-dita.xml and lib/org.dita.dost.platform/plugin.properties
+ ##       with a fresh plugin setup (the differences seems to be down to hashing/map
+ ##       ordering difference).  Wonder if we can get away with a single copy
+ ##       as long as we do the plugin update right after duplicating it here...
+ ##       Also, I would _really_ like to symlink/hardlink as much as possible
+ ##       of it to save time and storage space.
  $(VBOX_DITA_PATH):
 	$(MKDIR) -p $(VBOX_DITA_PATH)
-	cp -R $(VBOX_DITA_ORIGINAL_PATH)/* $(VBOX_DITA_PATH)/
+	$(CP) -R -- $(VBOX_DITA_ORIGINAL_PATH)/* $(VBOX_DITA_PATH)/
 
  VBOX_DITA_PATH_LIB ?= $(VBOX_DITA_PATH)/lib
  VBOX_DITA_ENV_SETUP ?= $(REDIRECT) \
@@ -752,12 +803,18 @@ man_vboximg-mount.xml \
  	-A 'CLASSPATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH_LIB)/saxon/saxon9-dom.jar' \
  	--
 
+ # Note! The /tempdir is deleted, recreated, used and deleted again for each run. So, be careful where you point it.
+ # Note! This crappy utility may fail to find files (or fail to parse the
+ #       command line) and still return a successfully (0) exit code.
  define def_ditamap_to_pdf
-  ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf
-  $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf: \
+  $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf \
+  + $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_pdf.log \
+  +| $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita.list \
+  +| $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita.xml.properties: \
   		$$(VBOX_MANUAL_XML_FILES_COMMON) \
   		$$(VBOX_MANUAL_XML_FILES_GENERATED_$(lang)) \
-  		$(VBOX_PATH_MANUAL_OUTBASE)/dita_common
+  		$$(VBOX_PATH_MANUAL_OUTBASE)/dita_common
+	$(QUIET)$(RM) -f -- "$$@"
 	$(QUIET)$(call VBOX_DITA_ENV_SETUP) $(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar \
 		/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
 		/transtype:pdf \
@@ -765,7 +822,7 @@ man_vboximg-mount.xml \
 		/outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1) \
 		/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf
 
-
+  ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_ditamap_to_pdf,$(lang)))
 
@@ -778,7 +835,9 @@ man_vboximg-mount.xml \
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html: \
  		$(VBOX_PATH_MANUAL_SRC)/en_US/docbook-changelog-formatcfg.xsl \
  		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_ChangeLog.xml \
- 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(VBOX_XML_CATALOG_MANUAL) \
+ 		$(VBOX_XML_CATALOG) \
+ 		$(VBOX_XML_CATALOG_DOCBOOK) \
+ 		$(VBOX_XML_CATALOG_MANUAL) \
  		$(VBOX_XML_ENTITIES) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc $(notdir $(firstword $(filter %.xsl,$^))),,$(firstword $(filter %.xml,$^)),$@)
 	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT) --output "$@" "$<" $(filter %.xml,$^)
