@@ -642,7 +642,12 @@ man_vboximg-mount.xml \
 		/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml
 
  # disable for now
+ ## bird: Remove @chunk attrib from Glossary.dita topicref and add chunk="to-content" to bootmap for single html experiments.
+ ##       See https://docs.oasis-open.org/dita/v1.2/os/spec/archSpec/chunking.html
+ ##       and https://www.oxygenxml.com/forum/post25114.html?hilit=dita%20xhtml%20chunk#p25114
+ ##       for further clues.
  #html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html
+
  html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
  qhelp:: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/, $(VBOX_QHELP_OUTPUT_FILES))
  html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
@@ -785,6 +790,9 @@ man_vboximg-mount.xml \
  $(VBOX_DITA_PATH):
 	$(MKDIR) -p $(VBOX_DITA_PATH)
 	$(CP) -vR -- "$(VBOX_DITA_ORIGINAL_PATH)/" "$(VBOX_DITA_PATH)/"
+	$(RM) -vf -- "$(VBOX_DITA_PATH)/build.xml" \
+		"$(VBOX_DITA_PATH)/catalog-dita.xml" \
+		"$(VBOX_DITA_PATH)/lib/org.dita.dost.platform/plugin.properties"
 
  VBOX_DITA_PATH_LIB ?= $(VBOX_DITA_PATH)/lib
  VBOX_DITA_ENV_SETUP ?= $(REDIRECT) \
