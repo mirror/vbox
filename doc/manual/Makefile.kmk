@@ -660,7 +660,9 @@ man_vboximg-mount.xml \
  #  - mark external link in the man_V*.dita files
  #  - correct all reference targets by calling correct_references.py.
  #
- #  Note! INSTALL_STAGING is likely to hardlink the files.
+ #  Note! INSTALL_STAGING is likely to hardlink the files, thus we must use +| below
+ #        when copying files as much won't change timestamp.  It would in fact be a _lot_
+ #        better to copy the files individually.
  #
  ##########################################################################################
 
@@ -728,8 +730,8 @@ man_vboximg-mount.xml \
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(basename $(2)).dita \
   + $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2): \
   		$$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl \
-		$$(qfirstfile , $$(qwildcard , $$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2)) $$(VBOX_PATH_MANUAL_SRC)/en_US/$(2)) \
-		$$(VBOX_PATH_MANUAL_SRC)/mark_external_urls.xsl \
+  		$$(qfirstfile , $$(qwildcard , $$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2)) $$(VBOX_PATH_MANUAL_SRC)/en_US/$(2)) \
+  		$$(VBOX_PATH_MANUAL_SRC)/mark_external_urls.xsl \
   		$$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/man_VBoxManage-dhcpserver-dhcpoptions.xml \
   		$$(VBOX_XML_CATALOG) \
   		$$(VBOX_XML_CATALOG_DOCBOOK) \
