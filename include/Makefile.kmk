@@ -122,22 +122,22 @@ VBOX_HDRS_OMIT := \
 	VBox/HostServices/wglext.h \
 	VBox/VBoxGL2D.h \
 	$(if-expr "$(KBUILD_TARGET)" != "linux", \
-	VBox/GuestHost/SharedClipboard-x11.h \
-	,) \
+		VBox/GuestHost/SharedClipboard-x11.h \
+		,) \
 	$(if-expr "$(KBUILD_TARGET)" != "solaris", \
-	VBox/usblib-solaris.h \
-	,) \
+		VBox/usblib-solaris.h \
+		,) \
 	VBox/VDEPlug.h \
 	VBox/VDEPlugSymDefs.h \
 	VBox/VBoxNetCmn-win.h \
 	$(if-expr "$(KBUILD_TARGET)" != "win", \
-	VBox/com/microatl.h \
-	VBox/GuestHost/SharedClipboard-win.h \
-	VBox/usblib-win.h \
-	VBox/VBoxDrvCfg-win.h \
-	VBox/VBoxNetCfg-win.h \
-	iprt/sanitized/intrin.h \
-	,$(VBOX_HDRS_GCC_ONLY)) \
+		VBox/com/microatl.h \
+		VBox/GuestHost/SharedClipboard-win.h \
+		VBox/usblib-win.h \
+		VBox/VBoxDrvCfg-win.h \
+		VBox/VBoxNetCfg-win.h \
+		iprt/sanitized/intrin.h \
+		,$(VBOX_HDRS_GCC_ONLY)) \
 	\
 	VBox/dbus-calls.h \
 	VBox/xrandr-calls.h \
@@ -176,12 +176,12 @@ endif
 
 # We omit a few headers which have platform specific issues or are templates.
 VBOX_HDRS_ALL := $(filter-out $(VBOX_HDRS_OMIT), \
-	$(subst $(PATH_SUB_CURRENT)/,,$(wildcard \
-	$(PATH_SUB_CURRENT)/VBox/*.h \
-	$(PATH_SUB_CURRENT)/VBox/*/*.h \
-	$(PATH_SUB_CURRENT)/iprt/*.h \
-	$(PATH_SUB_CURRENT)/iprt/*/*.h \
-	)))
+		$(subst $(PATH_SUB_CURRENT)/,,$(wildcard \
+				$(PATH_SUB_CURRENT)/VBox/*.h \
+				$(PATH_SUB_CURRENT)/VBox/*/*.h \
+				$(PATH_SUB_CURRENT)/iprt/*.h \
+				$(PATH_SUB_CURRENT)/iprt/*/*.h \
+				)))
 
 # ring-3, ring-0 and raw-mode context specific exclusions.
 VBOX_HDRS_ALL_R3      := $(filter-out $(VBOX_HDRS_R0DRV_ONLY), $(VBOX_HDRS_ALL))
@@ -198,17 +198,17 @@ VBOX_HDRS_ALL_R0_C    := $(filter-out $(VBOX_HDRS_CPP_FEATURES), $(VBOX_HDRS_ALL
 VBOX_HDRS_ALL_R0DRV   := $(filter-out $(VBOX_HDRS_R3_CPP) $(VBOX_HDRS_R3_ONLY), $(VBOX_HDRS_ALL))
 VBOX_HDRS_ALL_R0DRV_C := $(filter-out $(VBOX_HDRS_CPP_FEATURES), $(VBOX_HDRS_ALL_R0DRV))
 VBOX_HDRS_ALL_RC      := $(filter-out \
-	VBox/VBoxGuestLib.h \
-	VBox/vmm/gvm.h \
-	iprt/thread.h \
-	iprt/mem.h \
-	iprt/memsafer.h \
-	iprt/alloc.h \
-	iprt/vector.h \
-	$(VBOX_HDRS_R3_CPP) \
-	$(VBOX_HDRS_R3_ONLY) \
-	$(VBOX_HDRS_R0DRV_ONLY) \
-	, $(VBOX_HDRS_ALL))
+		VBox/VBoxGuestLib.h \
+		VBox/vmm/gvm.h \
+		iprt/thread.h \
+		iprt/mem.h \
+		iprt/memsafer.h \
+		iprt/alloc.h \
+		iprt/vector.h \
+		$(VBOX_HDRS_R3_CPP) \
+		$(VBOX_HDRS_R3_ONLY) \
+		$(VBOX_HDRS_R0DRV_ONLY) \
+		, $(VBOX_HDRS_ALL))
 VBOX_HDRS_ALL_RC_C := $(filter-out $(VBOX_HDRS_CPP_FEATURES), $(VBOX_HDRS_ALL_RC))
 #$(error $(subst $(SP),$(NLTAB),$(strip $(sort $(VBOX_HDRS_ALL_RC_C)))))
 

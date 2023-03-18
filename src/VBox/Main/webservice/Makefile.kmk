@@ -224,7 +224,7 @@ TEMPLATE_VBoxWebR3Exe = Webservices without -fvisibility=hidden
 TEMPLATE_VBoxWebR3Exe_EXTENDS = VBoxR3Exe
 TEMPLATE_VBoxWebR3Exe_DEFS.win += WIN32_LEAN_AND_MEAN $(TEMPLATE_VBoxR3Exe_DEFS.win) # Makes the redefinition warnings go away.
 TEMPLATE_VBoxWebR3Exe_CXXFLAGS = $(filter-out $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden), \
-	$(TEMPLATE_VBoxR3Exe_CXXFLAGS))
+		$(TEMPLATE_VBoxR3Exe_CXXFLAGS))
 ifn1of ($(KBUILD_TARGET), win)
  TEMPLATE_VBoxWebR3Exe_CXXFLAGS += $(VBOX_GCC_Wno-misleading-indentation)
 endif
@@ -464,18 +464,18 @@ ifdef VBOX_GSOAP_INSTALLED
   	$(VBOX_JWS_GEN)/jwsglue.list \
   	$(VBOX_JWSDOC_JDEST)/package-list \
   	$(wildcard \
-  	$(VBOX_JWS_GEN)/java/*/*/*.java \
-  	$(VBOX_JWS_GEN)/java/*/*/*/*.java \
-  	$(VBOX_JWS_JDEST)/*.class \
-  	$(VBOX_JWS_JDEST)/*/*.class \
-  	$(VBOX_JWS_JDEST)/*/*/*.class \
-  	$(VBOX_JWS_JDEST)/*/*/*/*.class \
-  	$(VBOX_JWSDOC_JDEST)/*.html \
-  	$(VBOX_JWSDOC_JDEST)/*.css \
-  	$(VBOX_JWSDOC_JDEST)/*/*.gif \
-  	$(VBOX_JWSDOC_JDEST)/*/*/*.html \
-  	$(VBOX_JWSDOC_JDEST)/*/*/*/*.html \
-  	)
+  		$(VBOX_JWS_GEN)/java/*/*/*.java \
+  		$(VBOX_JWS_GEN)/java/*/*/*/*.java \
+  		$(VBOX_JWS_JDEST)/*.class \
+  		$(VBOX_JWS_JDEST)/*/*.class \
+  		$(VBOX_JWS_JDEST)/*/*/*.class \
+  		$(VBOX_JWS_JDEST)/*/*/*/*.class \
+  		$(VBOX_JWSDOC_JDEST)/*.html \
+  		$(VBOX_JWSDOC_JDEST)/*.css \
+  		$(VBOX_JWSDOC_JDEST)/*/*.gif \
+  		$(VBOX_JWSDOC_JDEST)/*/*/*.html \
+  		$(VBOX_JWSDOC_JDEST)/*/*/*/*.html \
+  		)
   VBoxJWs-inst-jar_BLDDIRS += $(VBOX_JWS_GEN)/java
   VBoxJWs-inst-jar_GENERATEDSOURCES = $(addprefix $(VBoxJWs-inst-jar_BLDDIRS)/,$(VBoxJWS_VBOX_JWSGLUEFILES))
 

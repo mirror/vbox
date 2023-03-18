@@ -189,7 +189,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 
  ifdef VBOX_WITH_DOCS_ACCESSIBILITY
   INSTALLS += \
-  	VBox-docs-accessibility
+  	VBox-docs-accessibility \
   	VBox-docs-accessibility-html
  endif
 
@@ -234,14 +234,14 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 
  BLDDIRS += \
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/, \
- 	$(addsuffix /images, $(VBOX_MANUAL_LANGUAGES)) \
- 	$(addsuffix /html-single, $(VBOX_MANUAL_LANGUAGES)) \
- 	$(addsuffix /html-chunks, $(VBOX_MANUAL_LANGUAGES)) \
- 	$(addsuffix /qhelp, $(VBOX_MANUAL_LANGUAGES)) \
- 	$(addsuffix /qhelp/images, $(VBOX_MANUAL_LANGUAGES)) \
- 	$(addsuffix /HTMLHelp, $(VBOX_MANUAL_LANGUAGES)) \
- 	$(addsuffix /HTMLHelp/images, $(VBOX_MANUAL_LANGUAGES)) \
- 	)
+ 		$(addsuffix /images, $(VBOX_MANUAL_LANGUAGES)) \
+ 		$(addsuffix /html-single, $(VBOX_MANUAL_LANGUAGES)) \
+ 		$(addsuffix /html-chunks, $(VBOX_MANUAL_LANGUAGES)) \
+ 		$(addsuffix /qhelp, $(VBOX_MANUAL_LANGUAGES)) \
+ 		$(addsuffix /qhelp/images, $(VBOX_MANUAL_LANGUAGES)) \
+ 		$(addsuffix /HTMLHelp, $(VBOX_MANUAL_LANGUAGES)) \
+ 		$(addsuffix /HTMLHelp/images, $(VBOX_MANUAL_LANGUAGES)) \
+ 		)
 
  # Explicit cleaning has some overlap with default cleaning rules, since this
  # Makefile is using very complex conditionals for selectively creating
@@ -251,61 +251,63 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  	$(VBOX_XML_CATALOG_DOCBOOK) \
  	$(VBOX_XML_CATALOG_MANUAL) \
  	$(VBOX_XML_ENTITIES) \
- 	$(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/, \
- 	$(VBOX_XML_XREF_TO_TEXT) \
- 	$(VBOX_XML_XREF_TO_TEXT).cat \
- 	$(addprefix user_,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
- 	$(VBOX_MANUAL_XML_REFENTRY_FILES) \
- 	$(patsubst man_%,%.1,$(basename $(VBOX_MANUAL_XML_REFENTRY_FILES))) \
- 	man_VBoxHeadless.xml \
- 	user_man_VBoxHeadless.xml \
- 	man_vboximg-mount.xml \
- 	user_man_vboximg-mount.xml \
- 	isomakercmd-man.xml \
- 	user_isomakercmd-man.xml \
- 	$(VBOX_MANUAL_LATEX_FILES_TARGET) \
- 	$(VBOX_MANUAL_PNG_FILES_$(lang)) \
- 	$(notdir $(VBOX_MANUAL_TEX_UNICODE_FILES)) \
- 	$(addprefix HTMLHelp/,$(VBOX_MANUAL_PNG_FILES_$(lang))) \
- 	$(addprefix qhelp/,   $(VBOX_MANUAL_PNG_FILES_$(lang))) \
- 	html-single/UserManual.html \
- 	$(addprefix qhelp/, UserManual.qhp UserManual.qhcp $(VBOX_QHELP_OUTPUT_FILES)) \
- 	$(addprefix HTMLHelp/,    index.html go01.html) \
- 	$(addprefix qhelp/,       index.html go01.html) \
- 	$(addprefix html-chunks/, index.html go01.html) \
- 	$(foreach n,01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 \
- 	,html-chunks/ch$(n).html \
- 	html-chunks/re$(n).html \
- 	HTMLHelp/ch$(n).html \
- 	HTMLHelp/re$(n).html \
- 	$(foreach d2,0 1 2 3 4 5 6 7 8 9,$(foreach d1,0 1 2 3 4 5 6 7 8 9,HTMLHelp/ch$(n)s$(d2)$(d1).html)) \
- 	qhelp/ch$(n).html \
- 	qhelp/re$(n).html \
- 	$(foreach d2,0 1 2 3 4 5 6 7 8 9,$(foreach d1,0 1 2 3 4 5 6 7 8 9,qhelp/ch$(n)s$(d2)$(d1).html)) ) \
- 	$(foreach n,a b c \
- 	,html-chunks/ap$(n).html \
- 	HTMLHelp/ap$(n).html \
- 	$(foreach s,01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20,HTMLHelp/ap$(n)s$(s).html) \
- 	qhelp/ap$(n).html \
- 	$(foreach s,01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20,qhelp/ap$(n)s$(s).html) ) \
- 	$(foreach n,01 02 03 04 05 \
- 	,html-chunks/pr$(n).html \
- 	HTMLHelp/pr$(n).html \
- 	$(foreach s,01 02 03 04 05 06 07 08,HTMLHelp/pr$(n)s$(s).html) \
- 	qhelp/pr$(n).html \
- 	$(foreach s,01 02 03 04 05 06 07 08,qhelp/pr$(n)s$(s).html) ) \
- 	HTMLHelp/toc.hhc \
- 	HTMLHelp/htmlhelp.hhp \
- 	qhelp/toc.hhc \
- 	qhelp/htmlhelp.hhp \
- 	UserManual.pdf \
- 	VirtualBox.chm \
- 	$(VBOX_QHELP_OUTPUT_FILES) \
- 	ChangeLog.html \
- 	validatemanual.run \
- 	validateaccessibility.run \
- 	validatesdkref.run \
- 	)) \
+ 	$(foreach lang, $(VBOX_MANUAL_LANGUAGES) \
+ 		,$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/, \
+ 			$(VBOX_XML_XREF_TO_TEXT) \
+ 			$(VBOX_XML_XREF_TO_TEXT).cat \
+ 			$(addprefix user_,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
+ 			$(VBOX_MANUAL_XML_REFENTRY_FILES) \
+ 			$(patsubst man_%,%.1,$(basename $(VBOX_MANUAL_XML_REFENTRY_FILES))) \
+ 			man_VBoxHeadless.xml \
+ 			user_man_VBoxHeadless.xml \
+ 			man_vboximg-mount.xml \
+ 			user_man_vboximg-mount.xml \
+ 			isomakercmd-man.xml \
+ 			user_isomakercmd-man.xml \
+ 			$(VBOX_MANUAL_LATEX_FILES_TARGET) \
+ 			$(VBOX_MANUAL_PNG_FILES_$(lang)) \
+ 			$(notdir $(VBOX_MANUAL_TEX_UNICODE_FILES)) \
+ 			$(addprefix HTMLHelp/,$(VBOX_MANUAL_PNG_FILES_$(lang))) \
+ 			$(addprefix qhelp/,   $(VBOX_MANUAL_PNG_FILES_$(lang))) \
+ 			html-single/UserManual.html \
+ 			$(addprefix qhelp/, UserManual.qhp UserManual.qhcp $(VBOX_QHELP_OUTPUT_FILES)) \
+ 			$(addprefix HTMLHelp/,    index.html go01.html) \
+ 			$(addprefix qhelp/,       index.html go01.html) \
+ 			$(addprefix html-chunks/, index.html go01.html) \
+ 			$(foreach n,01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 \
+ 				,html-chunks/ch$(n).html \
+ 				html-chunks/re$(n).html \
+ 				HTMLHelp/ch$(n).html \
+ 				HTMLHelp/re$(n).html \
+ 				$(foreach d2,0 1 2 3 4 5 6 7 8 9,$(foreach d1,0 1 2 3 4 5 6 7 8 9,HTMLHelp/ch$(n)s$(d2)$(d1).html)) \
+ 				qhelp/ch$(n).html \
+ 				qhelp/re$(n).html \
+ 				$(foreach d2,0 1 2 3 4 5 6 7 8 9,$(foreach d1,0 1 2 3 4 5 6 7 8 9,qhelp/ch$(n)s$(d2)$(d1).html)) ) \
+ 			$(foreach n,a b c \
+ 				,html-chunks/ap$(n).html \
+ 				HTMLHelp/ap$(n).html \
+ 				$(foreach s,01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20,HTMLHelp/ap$(n)s$(s).html) \
+ 				qhelp/ap$(n).html \
+ 				$(foreach s,01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20,qhelp/ap$(n)s$(s).html) ) \
+ 			$(foreach n,01 02 03 04 05 \
+ 				,html-chunks/pr$(n).html \
+ 				HTMLHelp/pr$(n).html \
+ 				$(foreach s,01 02 03 04 05 06 07 08,HTMLHelp/pr$(n)s$(s).html) \
+ 				qhelp/pr$(n).html \
+ 				$(foreach s,01 02 03 04 05 06 07 08,qhelp/pr$(n)s$(s).html) ) \
+ 			HTMLHelp/toc.hhc \
+ 			HTMLHelp/htmlhelp.hhp \
+ 			qhelp/toc.hhc \
+ 			qhelp/htmlhelp.hhp \
+ 			UserManual.pdf \
+ 			VirtualBox.chm \
+ 			$(VBOX_QHELP_OUTPUT_FILES) \
+ 			ChangeLog.html \
+ 			validatemanual.run \
+ 			validateaccessibility.run \
+ 			validatesdkref.run \
+ 			) \
+ 		) \
  	$(VBOX_PATH_MANUAL_OUTBASE)/titlepage-htmlhelp.xsl \
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/overview_,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
  	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf) \
@@ -314,16 +316,16 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  	$(PATH_STAGE_BIN)/VirtualBox.chm \
  	\
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/, \
- 	$(VBOX_SDKREF_LATEX_FILES_TARGET) \
- 	SDKRef.pdf \
- 	) \
+ 		$(VBOX_SDKREF_LATEX_FILES_TARGET) \
+ 		SDKRef.pdf \
+ 		) \
  	$(PATH_STAGE_BIN)/sdk/docs/SDKRef.pdf \
  	\
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/, \
- 	$(VBOX_ACCESSIBILITY_LATEX_FILES_TARGET) \
- 	html-single/Accessibility.html \
- 	Accessibility.pdf \
- 	) \
+ 		$(VBOX_ACCESSIBILITY_LATEX_FILES_TARGET) \
+ 		html-single/Accessibility.html \
+ 		Accessibility.pdf \
+ 		) \
  	$(PATH_STAGE_BIN)/Accessibility.html \
  	$(PATH_STAGE_BIN)/Accessibility.pdf \
  	\
@@ -672,9 +674,9 @@ man_vboximg-mount.xml \
  	$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/images
 
  VBOX_USER_MANUAL_STAGED_DITA_FILES  := $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/, \
- 	$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/*dita)))
+ 		$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/*dita)))
  VBOX_USER_MANUAL_STAGED_IMAGE_FILES := $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/images/, \
- 	$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/images/*)))
+ 		$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/images/*)))
 
  $(VBOX_USER_MANUAL_STAGED_DITA_FILES) \
  $(VBOX_USER_MANUAL_STAGED_IMAGE_FILES) \

@@ -138,7 +138,7 @@ solaris-drv-confs_SOURCES = \
 solaris-icons_INST = bin/icons/
 solaris-icons_MODE = a+r,u+w
 solaris-icons_SOURCES = $(foreach f,$(VBOX_SI_ICON_TYPES), $(foreach s,$(VBOX_SI_ICON_SIZES) \
-	,$(PATH_ROOT)/src/VBox/Artwork/other/virtualbox-$(f)-$(s)px.png=>$(s)x$(s)/mimetypes/virtualbox-$(f).png))
+			,$(PATH_ROOT)/src/VBox/Artwork/other/virtualbox-$(f)-$(s)px.png=>$(s)x$(s)/mimetypes/virtualbox-$(f).png))
 
 
 #
@@ -356,7 +356,7 @@ SOLARIS_STRIP_BINS = \
 	VBoxHostChannel.so \
 	$(if $(VBOX_WITH_JXPCOM),libvboxjxpcom.so,) \
 	$(if $(VBOX_WITH_QTGUI), \
-	VBoxKeyboard.so) \
+		VBoxKeyboard.so) \
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so DbgPlugInDiggers.so,) \
 	components/VBoxC.so \
 	components/VBoxSVCM.so \
@@ -444,7 +444,7 @@ ifdef VBOX_WITH_DOCS_PACKING
  	$(if-expr defined(VBOX_WITH_DOCS_QHELP_PACKING),UserManual.qch UserManual.qhc,) \
  	UserManual.pdf \
  	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES), \
- 	$(if-expr defined(VBOX_WITH_DOCS_QHELP_PACKING),UserManual_$(f).qch UserManual_$(f).qhc,) \
+ 		$(if-expr defined(VBOX_WITH_DOCS_QHELP_PACKING),UserManual_$(f).qch UserManual_$(f).qhc,) \
  	UserManual_$(f).pdf)
 endif
 

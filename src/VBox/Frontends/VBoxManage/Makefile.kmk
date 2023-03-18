@@ -137,8 +137,8 @@ ifndef VBOX_ONLY_DOCS
   VBoxManageNls_TEMPLATE = VBoxNLS
   VBoxManageNls_QT_TRANSLATIONS = $(addsuffix .ts,$(addprefix $(VBOX_PATH_VBOXMANAGE_SRC)/nls/VBoxManageNls_,$(VBOX_APPROVED_VBOXMANAGE_LANGUAGES)))
   VBoxManageNls_VBOX_ALL_NLS_SOURCES = $(wildcard \
-  	$(VBOX_PATH_VBOXMANAGE_SRC)/*.h \
-  	$(VBOX_PATH_VBOXMANAGE_SRC)/*.cpp )
+  		$(VBOX_PATH_VBOXMANAGE_SRC)/*.h \
+  		$(VBOX_PATH_VBOXMANAGE_SRC)/*.cpp )
 
   updatenls:: makeallnls $(VBOX_PATH_VBOXMANAGE_SRC)/nls/VBoxManageNls_en.ts
 
@@ -378,18 +378,18 @@ ifdef VBOX_WITH_VBOXMANAGE_NLS
 
  VBoxManage_SOURCES += \
  	$(foreach lang, $(VBOX_APPROVED_VBOXMANAGE_DOCBOOK_LANGUAGES) \
- 	, $(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp_$(lang).cpp)
+ 		, $(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp_$(lang).cpp)
 
  VBoxManage_CLEAN += \
  	$(foreach lang,$(VBOX_APPROVED_VBOXMANAGE_DOCBOOK_LANGUAGES), \
- 	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/, \
- 	$(VBOX_XML_XREF_TO_TEXT) \
- 	$(VBOX_XML_XREF_TO_TEXT).cat \
- 	)) \
+ 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/, \
+ 			$(VBOX_XML_XREF_TO_TEXT) \
+ 			$(VBOX_XML_XREF_TO_TEXT).cat \
+ 			)) \
  	$(addsuffix .cpp,$(addprefix $(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp_,$(VBOX_APPROVED_VBOXMANAGE_DOCBOOK_LANGUAGES))) \
  	$(addsuffix .cpp.ts,$(addprefix $(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp_,$(VBOX_APPROVED_VBOXMANAGE_DOCBOOK_LANGUAGES))) \
  	$(foreach file, $(filter man_VBoxManage-%,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
- 	, $(addsuffix /$(file),$(addprefix $(VBoxManage_0_OUTDIR)/,$(VBOX_APPROVED_VBOXMANAGE_DOCBOOK_LANGUAGES))))
+ 		, $(addsuffix /$(file),$(addprefix $(VBoxManage_0_OUTDIR)/,$(VBOX_APPROVED_VBOXMANAGE_DOCBOOK_LANGUAGES))))
 
  # Preprocess the xml files, applying remarks.
  $(foreach lang, $(VBOX_APPROVED_VBOXMANAGE_DOCBOOK_LANGUAGES) \

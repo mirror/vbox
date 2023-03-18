@@ -718,7 +718,7 @@ ifndef VBOX_ONLY_SDK
   #       ('m' builds < 3.8) and CRT malloc.
   #
   VBOX_PYTHON_LIMITED_API_VER := $(firstword $(foreach ver, 35 36 38 39 310   34 33 \
-  	,$(if-expr defined(VBOX_PYTHON$(ver)_INC),$(ver),)$(if-expr defined(VBOX_PYTHON$(ver)M_INC),$(ver)M,)))
+  			,$(if-expr defined(VBOX_PYTHON$(ver)_INC),$(ver),)$(if-expr defined(VBOX_PYTHON$(ver)M_INC),$(ver)M,)))
   ifneq ($(VBOX_PYTHON_LIMITED_API_VER),)
    DLLS += VBoxPython3
    VBoxPython3_EXTENDS   = VBoxPythonBase

@@ -252,12 +252,12 @@ ifdef env.VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST
 endif
 
 VBOX_WINDOWS_ADDITIONS_OTHER_FILES += $(addprefix $(PATH_STAGE_BIN)/additions/, \
-	$(VBOX_GA_CERT_ROOT_SHA1) \
-	$(VBOX_GA_CERT_ROOT_SHA1_TS) \
-	$(VBOX_GA_CERT_ROOT_SHA2) \
-	$(VBOX_GA_CERT_ROOT_SHA2_TS) \
-	$(VBOX_GA_CERT_ROOT_SHA2_R3) \
-	$(VBOX_GA_CERT_ROOT_SHA2_R3_TS))
+		$(VBOX_GA_CERT_ROOT_SHA1) \
+		$(VBOX_GA_CERT_ROOT_SHA1_TS) \
+		$(VBOX_GA_CERT_ROOT_SHA2) \
+		$(VBOX_GA_CERT_ROOT_SHA2_TS) \
+		$(VBOX_GA_CERT_ROOT_SHA2_R3) \
+		$(VBOX_GA_CERT_ROOT_SHA2_R3_TS))
 
 VB_WIN_ADD_NSIS_ENV := \
 	-E 'PATH_OUT=$(subst /,\,$(PATH_OUT))' \
@@ -288,7 +288,7 @@ VB_WIN_ADD_NSIS_ENV := \
 	-E 'KBUILD_TYPE=$(KBUILD_TYPE)' \
 	-E 'KBUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH)' \
 	$(foreach base, VBOX_GA_CERT_ROOT_SHA1 VBOX_GA_CERT_ROOT_SHA2 VBOX_GA_CERT_ROOT_SHA2_R3 \
-	,-E '$(base)=$(firstword $($(base)) none)' -E '$(base)_TS=$(firstword $($(base)_TS) none)')
+		,-E '$(base)=$(firstword $($(base)) none)' -E '$(base)_TS=$(firstword $($(base)_TS) none)')
 
 $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditions.nsi \

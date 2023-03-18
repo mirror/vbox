@@ -56,8 +56,8 @@ PACKING  += $(PATH_STAGE_BIN)/$(VBOX_FBSD_PACKAGE_NAME)
 
 OTHER_CLEAN   += \
 	$(addprefix $(VBOX_FBSD_INST_STAGE_DIR)/, \
-	pkg_plist \
-	LICENSE) \
+		pkg_plist \
+		LICENSE) \
 	$(wildcard $(VBOX_FBSD_INST_OUT_DIR)/VirtualBox-*)
 
 #
@@ -101,16 +101,16 @@ VBOX_FBSD_STRIP_BIN = \
 	$(if $(VBOX_WITH_GUEST_CONTROL),VBoxGuestControlSvc.so,) \
 	VBoxHostChannel.so \
 	$(if $(VBOX_WITH_MAIN), \
-	VBoxManage \
-	VBoxNetDHCP $(if $(VBOX_WITH_HARDENING),VBoxNetDHCP.so,) \
-	VBoxNetAdpCtl \
-	VBoxSVC \
-	VBoxXPCOM.so \
-	VBoxXPCOMC.so \
-	VBoxXPCOMIPCD \
-	components/VBoxXPCOMIPCC.so \
-	components/VBoxSVCM.so \
-	components/VBoxC.so,) \
+		VBoxManage \
+		VBoxNetDHCP $(if $(VBOX_WITH_HARDENING),VBoxNetDHCP.so,) \
+		VBoxNetAdpCtl \
+		VBoxSVC \
+		VBoxXPCOM.so \
+		VBoxXPCOMC.so \
+		VBoxXPCOMIPCD \
+		components/VBoxXPCOMIPCC.so \
+		components/VBoxSVCM.so \
+		components/VBoxC.so,) \
 	VBoxTestOGL \
 	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \
 	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,) \
@@ -127,8 +127,8 @@ VBOX_FBSD_STRIP_OBJ = \
 VBOX_FBSD_NO_STRIP = \
 	$(if $(VBOX_OSE),,LICENSE) \
 	$(if $(VBOX_WITH_MAIN), \
-	components/VBoxXPCOMBase.xpt \
-	components/VirtualBox_XPCOM.xpt) \
+		components/VBoxXPCOMBase.xpt \
+		components/VirtualBox_XPCOM.xpt) \
 	vboxdrv.tar.gz
 
 # EFI firmware
@@ -141,8 +141,8 @@ endif
 # Symlinks residing in bin/
 VBOX_FBSD_SYMLINKS = \
 	$(if $(VBOX_WITH_MAIN), \
-	VBoxManage \
-	VBoxSVC) \
+		VBoxManage \
+		VBoxSVC) \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
 	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,) \
 	$(if $(VBOX_WITH_HOST_SHIPPING_AUDIO_TEST),VBoxAudioTest,)

@@ -263,7 +263,7 @@ VBOX_FULL_VERSION_MAKE = $(expr ($1 << 24) | ($2 << 16) | $3)
 # build numbers given as parameters.
 # @returns 1 if true, 0 if false.  For use with 'if'.
 VBOX_VERSION_PREREQ = $(expr $(call VBOX_FULL_VERSION_MAKE,$(VBOX_VERSION_MAJOR),$(VBOX_VERSION_MINOR),$(VBOX_VERSION_BUILD)) \
-	>= $(call VBOX_FULL_VERSION_MAKE,$1,$2,$3))
+		>= $(call VBOX_FULL_VERSION_MAKE,$1,$2,$3))
 
 
 # Force the additions.sh script to get an exact additions build when we're doing the release.
@@ -350,7 +350,7 @@ endif
 
 # Indicate VBOX_ONLY build if any of the VBOX_ONLY_* variables are set.
 VBOX_ONLY_BUILD := $(strip $(foreach x, ADDITIONS DOCS EXTPACKS SDK VALIDATIONKIT \
-	, $(if-expr defined(VBOX_ONLY_$(x)),VBOX_ONLY_$(x))))
+			, $(if-expr defined(VBOX_ONLY_$(x)),VBOX_ONLY_$(x))))
 if $(words $(VBOX_ONLY_BUILD)) > 1
  $(error VBox: More than one VBOX_ONLY build enabled! $(VBOX_ONLY_BUILD))
 endif
@@ -1401,7 +1401,7 @@ endif
 # Indicate VBOX_ONLY build if any of the VBOX_ONLY_* variables are set.
 #
 VBOX_ONLY_BUILD_NEW := $(strip $(foreach x, ADDITIONS DOCS EXTPACKS SDK VALIDATIONKIT \
-	, $(if-expr defined(VBOX_ONLY_$(x)),VBOX_ONLY_$(x))))
+			, $(if-expr defined(VBOX_ONLY_$(x)),VBOX_ONLY_$(x))))
 ifneq ($(VBOX_ONLY_BUILD),$(VBOX_ONLY_BUILD_NEW))
  $(error VBox: LocalConfig.kmk changed the VBOX_ONLY_ build status, VBOX_ONLY_* must be on the kmk command line or in the environment: $(VBOX_ONLY_BUILD) -> $(VBOX_ONLY_BUILD_NEW))
 endif
@@ -2233,28 +2233,28 @@ endif
 ifndef VBOX_BLD_PYTHON
  if1of ($(KBUILD_HOST), win)
   VBOX_BLD_PYTHON := $(firstword $(rsort $(wildcard $(KBUILD_DEVTOOLS)/win.x86/python/v*/python$(HOSTSUFF_EXE))) \
-  	python-not-found.exe)
+  		python-not-found.exe)
  else ifndef VBOX_WITH_PYTHON2_PREFERENCE
   VBOX_BLD_PYTHON := $(firstword \
-  	$(which python3$(HOSTSUFF_EXE)) \
-  	$(which python3.10$(HOSTSUFF_EXE)) \
-  	$(which python3.9$(HOSTSUFF_EXE)) \
-  	$(which python3.8$(HOSTSUFF_EXE)) \
-  	$(which python3.7$(HOSTSUFF_EXE)) \
-  	$(which python3.6$(HOSTSUFF_EXE)) \
-  	$(which python3.5$(HOSTSUFF_EXE)) \
-  	$(which python3.4$(HOSTSUFF_EXE)) \
-  	$(which python2.7$(HOSTSUFF_EXE)) \
-  	$(which python$(HOSTSUFF_EXE)) \
-  	$(which python2.6$(HOSTSUFF_EXE)) \
-  	python-not-found$(HOSTSUFF_EXE) )
+  		$(which python3$(HOSTSUFF_EXE)) \
+  		$(which python3.10$(HOSTSUFF_EXE)) \
+  		$(which python3.9$(HOSTSUFF_EXE)) \
+  		$(which python3.8$(HOSTSUFF_EXE)) \
+  		$(which python3.7$(HOSTSUFF_EXE)) \
+  		$(which python3.6$(HOSTSUFF_EXE)) \
+  		$(which python3.5$(HOSTSUFF_EXE)) \
+  		$(which python3.4$(HOSTSUFF_EXE)) \
+  		$(which python2.7$(HOSTSUFF_EXE)) \
+  		$(which python$(HOSTSUFF_EXE)) \
+  		$(which python2.6$(HOSTSUFF_EXE)) \
+  		python-not-found$(HOSTSUFF_EXE) )
  else
   VBOX_BLD_PYTHON := $(firstword \
-  	$(which python2.7$(HOSTSUFF_EXE)) \
-  	$(which python2.6$(HOSTSUFF_EXE)) \
-  	$(which python$(HOSTSUFF_EXE)) \
-  	$(which python3$(HOSTSUFF_EXE)) \
-  	python-not-found$(HOSTSUFF_EXE) )
+  		$(which python2.7$(HOSTSUFF_EXE)) \
+  		$(which python2.6$(HOSTSUFF_EXE)) \
+  		$(which python$(HOSTSUFF_EXE)) \
+  		$(which python3$(HOSTSUFF_EXE)) \
+  		python-not-found$(HOSTSUFF_EXE) )
  endif
 endif
 ## For running python unittests in the validation kit.
@@ -2313,7 +2313,7 @@ if !defined(VBOX_WITH_PYLINT) && defined(VBOX_PYLINT)
 endif
 VBOX_PYLINT_FLAGS = $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--reports=n,--report=n) \
 	$(if-expr $(VBOX_PYLINT_VERSION) >= 10000 \
-	,--msg-template='{path}:{line}: <{msg_id}>({obj}:{symbol}): {msg}' \
+		,--msg-template='{path}:{line}: <{msg_id}>({obj}:{symbol}): {msg}' \
 	,--output-format=msvs --include-ids=y) \
 	--persistent=n \
 	--rcfile=$(PATH_ROOT)/tools/pylintrc \
@@ -2531,15 +2531,15 @@ endif
 
 # The Microsoft IDL compiler (the SDK build needs this on non-Windows).
 VBOX_WIN_MIDL ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(qfirstfile ,$(qwildcard ,$(qaddsuffix ,/[Mm][Ii][Dd][Ll].[Ee][Xx][Ee], \
-	$(PATH_SDK_$(VBOX_WINPSDK)_BIN) \
-	$(KBUILD_DEVTOOLS)/win.x86/sdk/v7.1/Bin$(if-expr "$(KBUILD_HOST).$(KBUILD_HOST_ARCH)" == "win.amd64",/x64,) \
-	$(KBUILD_DEVTOOLS)/win.x86/ddk/7600.16385.1/bin/x86 \
-	$(KBUILD_DEVTOOLS)/win.x86/bin \
-	$(PATH_SDK_$(VBOX_WINPSDK)_BIN) \
-	$(PATH_SDK_$(VBOX_WINPSDK)) \
-	$(PATH_SDK_WINPSDK_BIN) \
-	$(PATH_SDK_WINPSDK) \
-	)) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK))
+					$(PATH_SDK_$(VBOX_WINPSDK)_BIN) \
+					$(KBUILD_DEVTOOLS)/win.x86/sdk/v7.1/Bin$(if-expr "$(KBUILD_HOST).$(KBUILD_HOST_ARCH)" == "win.amd64",/x64,) \
+					$(KBUILD_DEVTOOLS)/win.x86/ddk/7600.16385.1/bin/x86 \
+					$(KBUILD_DEVTOOLS)/win.x86/bin \
+					$(PATH_SDK_$(VBOX_WINPSDK)_BIN) \
+					$(PATH_SDK_$(VBOX_WINPSDK)) \
+					$(PATH_SDK_WINPSDK_BIN) \
+					$(PATH_SDK_WINPSDK) \
+					)) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK))
 
 # Tricks to work around midl.exe problems with spaces in the /cpp_cmd value, it
 # forgets to quote it when creating the commandline and cl.exe gets very confused.
@@ -2669,20 +2669,20 @@ ifeq ($(KBUILD_TARGET),darwin)
   endif
   ifndef VBOX_PATH_MACOSX_SDK_ROOT
    VBOX_PATH_MACOSX_SDK_ROOT := $(firstword $(wildcard \
-   	$(PATH_TOOL_$(VBOX_GCC_TOOL)_SDKS) \
-   	$(VBOX_PATH_MACOSX_DEVEL_ROOT)/SDKs/. \
-   	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/. \
-   	/Developer/SDKs/. \
-   	/Library/Developer/CommandLineTools/SDKs/. ))
+   			$(PATH_TOOL_$(VBOX_GCC_TOOL)_SDKS) \
+   			$(VBOX_PATH_MACOSX_DEVEL_ROOT)/SDKs/. \
+   			/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/. \
+   			/Developer/SDKs/. \
+   			/Library/Developer/CommandLineTools/SDKs/. ))
   endif
   ifndef VBOX_PATH_MACOSX_TOOLCHAIN_ROOT
    VBOX_PATH_MACOSX_TOOLCHAIN_ROOT := $(firstword $(wildcard \
-   	$(PATH_TOOL_$(VBOX_GCC_TOOL)_TOOLCHAIN) \
-   	$(VBOX_PATH_MACOSX_DEVEL_ROOT)/Library/Developer/CommandLineTools/. \
-   	$(VBOX_PATH_MACOSX_DEVEL_ROOT)/Toolchains/XcodeDefault.xctoolchain/. \
-   	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/. \
-   	/Library/Developer/CommandLineTools/. \
-   	) /. )
+   			$(PATH_TOOL_$(VBOX_GCC_TOOL)_TOOLCHAIN) \
+   			$(VBOX_PATH_MACOSX_DEVEL_ROOT)/Library/Developer/CommandLineTools/. \
+   			$(VBOX_PATH_MACOSX_DEVEL_ROOT)/Toolchains/XcodeDefault.xctoolchain/. \
+   			/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/. \
+   			/Library/Developer/CommandLineTools/. \
+   			) /. )
   endif
  else
   # VBOX_WITH_EVEN_NEWER_XCODE ends up here.
@@ -2714,10 +2714,10 @@ ifeq ($(KBUILD_TARGET),darwin)
   	$(KBUILD_DEVTOOLS)/darwin.x86/xcode/v3.2.6/SDKs
   ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4)
    VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN)u.sdk, $(VBOX_PATH_MACOSX_SDK_ROOT_DIRS))) \
-   	$(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN)u.sdk )
+   		$(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN)u.sdk )
   else
    VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN).sdk, $(VBOX_PATH_MACOSX_SDK_ROOT_DIRS))) \
-   	$(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN).sdk )
+   		$(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN).sdk )
   endif
  endif
 
@@ -3113,18 +3113,18 @@ ifndef VBOX_NOINC_DYNAMIC_CONFIG_KMK
    CLOSEPAR := )
   endif
   VBOX_GCC_CHECK_EX_CC_CXX = $(shell \
-  	if $(1) $(subst -Wno-,-W,$(2)) -Werror -c -o /dev/null $(4) > /dev/null 2>&1; then \
-  	case "`LC_ALL=C $(1) $(subst -Wno-,-W,$(2)) -Werror -c -o /dev/null $(4) 2>&1`" in \
-  	"error: unknown warning option"*$(CLOSEPAR) echo "$(3)";; \
-  	*$(CLOSEPAR) echo "$(2)";; \
-  	esac; \
-  	else echo "$(3)"; fi; )
+  		if $(1) $(subst -Wno-,-W,$(2)) -Werror -c -o /dev/null $(4) > /dev/null 2>&1; then \
+  		case "`LC_ALL=C $(1) $(subst -Wno-,-W,$(2)) -Werror -c -o /dev/null $(4) 2>&1`" in \
+  		"error: unknown warning option"*$(CLOSEPAR) echo "$(3)";; \
+  		*$(CLOSEPAR) echo "$(2)";; \
+  		esac; \
+  		else echo "$(3)"; fi; )
   VBOX_GCC_CHECK_EX_CC = $(call VBOX_GCC_CHECK_EX_CC_CXX,$(1),$(2),$(3),-xc   $(PATH_OUT)/DynamicConfig.c)
   VBOX_GCC_CHECK_EX_CXX = $(call VBOX_GCC_CHECK_EX_CC_CXX,$(1),$(2),$(3),-xc++ $(PATH_OUT)/DynamicConfig.cpp)
   VBOX_GCC_CHECK_EX_LD = $(shell \
-  	if $(1) -Wl,$(2) $(if $(eq $(KBUILD_HOST),darwin),-Wl$(COMMA)-u$(COMMA)start -Wl$(COMMA)-undefined$(COMMA)dynamic_lookup,) \
-  	-nostdlib -o /dev/null -xc /dev/null > /dev/null 2>&1; \
-  	then echo "-Wl,$(2)"; else echo "$(3)"; fi; )
+  		if $(1) -Wl,$(2) $(if $(eq $(KBUILD_HOST),darwin),-Wl$(COMMA)-u$(COMMA)start -Wl$(COMMA)-undefined$(COMMA)dynamic_lookup,) \
+  		-nostdlib -o /dev/null -xc /dev/null > /dev/null 2>&1; \
+  		then echo "-Wl,$(2)"; else echo "$(3)"; fi; )
 
   VBOX_GCC_CHECK_CC   = $(call VBOX_GCC_CHECK_EX_CC,  $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) $(TOOL_$(VBOX_GCC_TOOL)_CC),$1,$2)
   VBOX_GCC_CHECK_CXX  = $(call VBOX_GCC_CHECK_EX_CXX, $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) $(TOOL_$(VBOX_GCC_TOOL)_CXX),$1,$2)
@@ -3144,7 +3144,7 @@ ifndef VBOX_NOINC_DYNAMIC_CONFIG_KMK
   	$(SED_EXT) 's|\([0-9][0-9]*\)\.\{0,1\}\([0-9]\{0,\}\)\.\{0,1\}\([0-9]\{0,\}\).*|$$(expr 10000 * \1 + 100 * $$(firstword \2 0) + $$(firstword \3 0))|' )
   ifeq ($(KBUILD_TARGET),darwin)
    VBOX_CLANG_VERSION = $(shell $(1) --version | \
-   	$(SED_EXT) -n 's|.*version \([0-9][0-9]*\)\.\{0,1\}\([0-9]\{0,\}\)\.\{0,1\}\([0-9]\{0,\}\).*|$$(expr 10000 * \1 + 100 * $$(firstword \2 0) + $$(firstword \3 0))|p' )
+   		$(SED_EXT) -n 's|.*version \([0-9][0-9]*\)\.\{0,1\}\([0-9]\{0,\}\)\.\{0,1\}\([0-9]\{0,\}\).*|$$(expr 10000 * \1 + 100 * $$(firstword \2 0) + $$(firstword \3 0))|p' )
   endif
  endif
 
@@ -3174,17 +3174,17 @@ ifndef VBOX_NOINC_DYNAMIC_CONFIG_KMK
 
  # Figures the pylint version.
  VBOX_PYLINT_FIGURE_VERSION = $(shell $(1) --version 2> /dev/null \
- 	| $(SED_EXT) -n -e 's/pylint-[^[:blank:]]*/pylint/' \
- 	-e 's|^ *pylint *\([0-9][0-9]*\).\([0-9][0-9]*\)\.\([0-9][0-9]*\).*$(DOLLAR)|$$(expr \1 * 10000 + \2 * 100 + \3)|p' )
+ 		| $(SED_EXT) -n -e 's/pylint-[^[:blank:]]*/pylint/' \
+ 		-e 's|^ *pylint *\([0-9][0-9]*\).\([0-9][0-9]*\)\.\([0-9][0-9]*\).*$(DOLLAR)|$$(expr \1 * 10000 + \2 * 100 + \3)|p' )
 
  # Java stuff.
  ifeq ($(KBUILD_TARGET),darwin)
   VBOX_JAVA_BIN_PATH = $(firstword $(wildcard \
-  	/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Commands \
-  	/System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Commands \
-  	$(if-expr $(VBOX_XCODE_VERSION_MAJOR) >= 4,/System/Library/Frameworks/JavaVM.framework/Versions/A/Commands,) \
-  	$(if-expr $(VBOX_XCODE_VERSION_MAJOR) >= 10,/Library/Java/JavaVirtualMachines/jdk1.8.*.jdk/Contents/Home/bin,) \
-  	) /usr/bin)
+  			/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Commands \
+  			/System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Commands \
+  			$(if-expr $(VBOX_XCODE_VERSION_MAJOR) >= 4,/System/Library/Frameworks/JavaVM.framework/Versions/A/Commands,) \
+  			$(if-expr $(VBOX_XCODE_VERSION_MAJOR) >= 10,/Library/Java/JavaVirtualMachines/jdk1.8.*.jdk/Contents/Home/bin,) \
+  			) /usr/bin)
   VBOX_JAVA     = $(VBOX_JAVA_BIN_PATH)/java
   VBOX_JAVAC    = $(VBOX_JAVA_BIN_PATH)/javac
   VBOX_JAVAH    = $(VBOX_JAVA_BIN_PATH)/javah
@@ -3193,9 +3193,9 @@ ifndef VBOX_NOINC_DYNAMIC_CONFIG_KMK
   VBOX_WSIMPORT = $(VBOX_JAVA_BIN_PATH)/wsimport
   if $(VBOX_XCODE_VERSION_MAJOR) >= 4 # Lion (4.1-preview 5) has a broken CurrentJDK link.  Blindly applying it to 4.0.
    VBOX_JAVA_INC = $(firstword $(wildcard \
-   	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers \
-   	/Library/Java/JavaVirtualMachines/jdk1.8.*.jdk/Contents/Home/include \
-   	) )
+   			$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers \
+   			/Library/Java/JavaVirtualMachines/jdk1.8.*.jdk/Contents/Home/include \
+   			) )
   else
    VBOX_JAVA_INC = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Headers
   endif
@@ -3206,30 +3206,30 @@ ifndef VBOX_NOINC_DYNAMIC_CONFIG_KMK
    ifeq ($(origin VBOX_JAVA_HOME),undefined)
     # Add correct detection for you distro after the /usr/../java-6-sun line.
     VBOX_JAVA_HOME := $(firstword $(wildcard \
-    	$(KBUILD_DEVTOOLS)/linux.x86/jdk1.6.0_27 \
-    	/usr/lib/jvm/java-6-sun \
-    	/usr/lib/jvm/java-6-openjdk \
-    	/usr/lib/jvm/java-6-openjdk-i386 \
-    	/usr/lib/jvm/java-6-openjdk-amd64 \
-    	/usr/lib/jvm/java-7-openjdk-i386 \
-    	/usr/lib/jvm/java-7-openjdk-amd64 \
-    	/usr/lib/jvm/default-java \
-    	/usr/lib/jvm/java \
-    	/usr/lib/jvm/jre \
-    	\
-    	/usr/lib/jvm/sun-jdk-1.6 \
-    	) /usr/lib/jvm/java-6-sun)
+    			$(KBUILD_DEVTOOLS)/linux.x86/jdk1.6.0_27 \
+    			/usr/lib/jvm/java-6-sun \
+    			/usr/lib/jvm/java-6-openjdk \
+    			/usr/lib/jvm/java-6-openjdk-i386 \
+    			/usr/lib/jvm/java-6-openjdk-amd64 \
+    			/usr/lib/jvm/java-7-openjdk-i386 \
+    			/usr/lib/jvm/java-7-openjdk-amd64 \
+    			/usr/lib/jvm/default-java \
+    			/usr/lib/jvm/java \
+    			/usr/lib/jvm/jre \
+    			\
+    			/usr/lib/jvm/sun-jdk-1.6 \
+    			) /usr/lib/jvm/java-6-sun)
    endif
   endif
 
   ifeq ($(KBUILD_TARGET),solaris)
    # VBOX_JAVA_HOME ?= /usr/jdk/jdk1.6.0
    VBOX_JAVA_HOME ?= $(firstword $(abspath $(wildcard \
-   	/usr/jdk/latest/include/.. \
-   	/usr/jdk/instances/jdk1.8*/include/.. \
-   	/usr/jdk/instances/jdk1.7*/include/.. \
-   	/usr/jdk/instances/jdk1.6*/include/.. \
-   	)) /usr/java)
+   				/usr/jdk/latest/include/.. \
+   				/usr/jdk/instances/jdk1.8*/include/.. \
+   				/usr/jdk/instances/jdk1.7*/include/.. \
+   				/usr/jdk/instances/jdk1.6*/include/.. \
+   				)) /usr/java)
   endif
 
   ifeq ($(KBUILD_TARGET),win)
@@ -3252,8 +3252,8 @@ ifndef VBOX_NOINC_DYNAMIC_CONFIG_KMK
  endif # !darwin
  # The first transform the almost usless openjdk versions like "javac 9-Ubuntu" into something the 2nd expression groks.
  VBOX_JAVA_FIGURE_VERSION = $(shell $(1) -version 2>&1 \
- 	| $(SED_EXT) -n \
- 	-e 's/ \([0-9][0-9]*\)\(-[[:alpha:]][[:alpha:]]\)/ \1.0.0\2/' \
+ 		| $(SED_EXT) -n \
+ 		-e 's/ \([0-9][0-9]*\)\(-[[:alpha:]][[:alpha:]]\)/ \1.0.0\2/' \
  	-e 's|^[^ ]* *\([0-9][0-9]*\)\.\([0-9][0-9]*\)\.\([0-9][0-9]*\).*$(DOLLAR)|$$(expr \1 * 10000 + \2 * 100 + \3)|p' )
 
  # Test C and C++ files.
@@ -4032,8 +4032,8 @@ ifdef VBOX_SIGNING_MODE
  VBOX_DIRX = $(subst ?,$(SP),$(dir $(subst $(SP),?,$1)))
  # Corp code signing client.
  VBOX_CCS_CLIENT_JAR := $(firstword $(rsort \
- 	$(wildcard $(KBUILD_DEVTOOLS)/common/ccs/v*/Client.jar)) \
- 	$(KBUILD_DEVTOOLS)/common/ccs/notfound/Client.jar )
+ 			$(wildcard $(KBUILD_DEVTOOLS)/common/ccs/v*/Client.jar)) \
+ 		$(KBUILD_DEVTOOLS)/common/ccs/notfound/Client.jar )
  VBOX_CCS_USER       ?= virtualbox_grp
  VBOX_CCS_GLOBAL_UID ?= non-of-your-business
  VBOX_CCS_SERVER     ?= UK
@@ -4065,10 +4065,10 @@ ifdef VBOX_SIGNING_MODE
     VBOX_PATH_SIGN_TOOLS = $(PATH_SDK_$(VBOX_WINPSDK)_BIN)
    else
     VBOX_PATH_SIGN_TOOLS := $(firstword $(rsort $(wildcard \
-    	$(addprefix $(KBUILD_DEVTOOLS)/win.x86/sdk/v8.1*/Bin/, x86 $(if-expr $(KBUILD_HOST_ARCH)=="amd64",x64,) ) )))
+    				$(addprefix $(KBUILD_DEVTOOLS)/win.x86/sdk/v8.1*/Bin/, x86 $(if-expr $(KBUILD_HOST_ARCH)=="amd64",x64,) ) )))
     ifeq ($(VBOX_PATH_SIGN_TOOLS),)
      VBOX_PATH_SIGN_TOOLS := $(firstword $(rsort $(wildcard \
-     	$(addprefix $(KBUILD_DEVTOOLS)/win.x86/sdk/v10*/Bin/, x86 $(if-expr $(KBUILD_HOST_ARCH)=="amd64",x64,) ) )))
+     				$(addprefix $(KBUILD_DEVTOOLS)/win.x86/sdk/v10*/Bin/, x86 $(if-expr $(KBUILD_HOST_ARCH)=="amd64",x64,) ) )))
      ifeq ($(VBOX_PATH_SIGN_TOOLS),)
       VBOX_PATH_SIGN_TOOLS := $(VBOX_PATH_SELFSIGN)
      endif
@@ -4108,7 +4108,7 @@ ifdef VBOX_SIGNING_MODE
   VBOX_CERTIFICATE_STORE ?= my
   VBOX_CERTIFICATE_STORE_ARGS ?= /s "$(VBOX_CERTIFICATE_STORE)"
   VBOX_CERTIFICATE_FINGERPRINT_ARGS := $(if-expr "$(VBOX_CERTIFICATE_FINGERPRINT)" != "" \
-  	,/sha1 "$(subst $(SP),,$(VBOX_CERTIFICATE_FINGERPRINT))",)
+  		,/sha1 "$(subst $(SP),,$(VBOX_CERTIFICATE_FINGERPRINT))",)
 
   ifeq ($(VBOX_SIGNING_MODE),test)
    #VBOX_CERTIFICATE_SHA2_SUBJECT_NAME ?= MyTestCertificateSha2
@@ -4133,14 +4133,14 @@ ifdef VBOX_SIGNING_MODE
   VBOX_CERTIFICATE_SHA2_STORE ?= my
   VBOX_CERTIFICATE_SHA2_STORE_ARGS ?= /s "$(VBOX_CERTIFICATE_SHA2_STORE)"
   VBOX_CERTIFICATE_SHA2_FINGERPRINT_ARGS := $(if-expr "$(VBOX_CERTIFICATE_SHA2_FINGERPRINT)" != "" \
-  	,/sha1 "$(subst $(SP),,$(VBOX_CERTIFICATE_SHA2_FINGERPRINT))",) # Still using SHA-1 for fingerprinting, it's good enough for that!
+  		,/sha1 "$(subst $(SP),,$(VBOX_CERTIFICATE_SHA2_FINGERPRINT))",) # Still using SHA-1 for fingerprinting, it's good enough for that!
   #VBOX_CERTIFICATE_EV_SUBJECT_NAME ?= MyEvCertificate
   VBOX_CERTIFICATE_EV_SUBJECT_NAME_ARGS ?= /n "$(VBOX_CERTIFICATE_EV_SUBJECT_NAME)"
   VBOX_CERTIFICATE_EV_STORE ?= my
   VBOX_CERTIFICATE_EV_STORE_ARGS ?= /s "$(VBOX_CERTIFICATE_EV_STORE)"
   #VBOX_CERTIFICATE_EV_FINGERPRINT ?= my ev cert fingerprint
   VBOX_CERTIFICATE_EV_FINGERPRINT_ARGS := $(if-expr "$(VBOX_CERTIFICATE_EV_FINGERPRINT)" != "" \
-  	,/sha1 "$(subst $(SP),,$(VBOX_CERTIFICATE_EV_FINGERPRINT))",) # Still using SHA-1 for fingerprinting, it's good enough for that!
+  		,/sha1 "$(subst $(SP),,$(VBOX_CERTIFICATE_EV_FINGERPRINT))",) # Still using SHA-1 for fingerprinting, it's good enough for that!
 
   ## Sign a file (generic).
   # @param 1  The file to sign.
@@ -4153,21 +4153,21 @@ ifdef VBOX_SIGNING_MODE
    if $(intersects win all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
     VBOX_SIGN_FILE_FN     = $(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1,,-digest_algo $(if-expr "$5" == "",SHA1,SHA2)) \
     	$(if-expr "$5" == "", \
-    	$(if-expr "$6" == "",$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB)),$6) \
+    		$(if-expr "$6" == "",$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB)),$6) \
     	$(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1,,-dual_sign -digest_algo SHA2))
    else ifdef VBOX_CERTIFICATE_SHA2_SUBJECT_NAME
     ifdef VBOX_CERTIFICATE_SUBJECT_NAME
      VBOX_SIGN_FILE_FN     = $(if-expr "$5" == "",$(VBOX_SIGNTOOL_SHA1) \
-     	sign /fd sha1 \
-     	$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
-     	$(VBOX_CERTIFICATE_STORE_ARGS) \
-     	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
-     	$(VBOX_CERTIFICATE_FINGERPRINT_ARGS) \
-     	$(VBOX_TSA_URL_ARGS) \
-     	$(if $(strip $(2)),/d "$(strip $(2))",) \
-     	$(3) \
-     	"$(1)" \
-     	$(if-expr "$6" == "",$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB)),$6))$(VBOX_SIGNTOOL_SHA2) \
+     		sign /fd sha1 \
+     		$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
+     		$(VBOX_CERTIFICATE_STORE_ARGS) \
+     		$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
+     		$(VBOX_CERTIFICATE_FINGERPRINT_ARGS) \
+     		$(VBOX_TSA_URL_ARGS) \
+     		$(if $(strip $(2)),/d "$(strip $(2))",) \
+     		$(3) \
+     		"$(1)" \
+     		$(if-expr "$6" == "",$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB)),$6))$(VBOX_SIGNTOOL_SHA2) \
      	sign $(if-expr "$5" == "",/as,) /fd sha256 \
      	$(VBOX_CROSS_CERTIFICATE_SHA2_FILE_ARGS) \
      	$(VBOX_CERTIFICATE_SHA2_STORE_ARGS) \
@@ -4243,7 +4243,7 @@ ifdef VBOX_SIGNING_MODE
   #
   # @remarks The parameters are the same as VBOX_SIGN_FILE_FN.
   VBOX_SIGN_IMAGE_WITH_EV_FN = $(call VBOX_SIGN_FILE_FN,$1,$2,$3,$4,$5)$(if-expr "$5" == "" && "$(target)" != "bldRTSignTool", \
-  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(RM) -f -- "$1.dual" \
+  		$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(RM) -f -- "$1.dual" \
   	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(CP) -- "$1" "$1.dual" \
   	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(call VBOX_CCS_SIGN_CMD,microsoftev,$1,,-digest_algo SHA2) \
   	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(VBOX_RTSIGNTOOL) add-nested-$(if-expr "$(suffix $1)" == ".cat",cat,exe)-signature -v "$1.dual" "$1" \
@@ -4279,7 +4279,7 @@ ifdef VBOX_SIGNING_MODE
   	$(3) \
   	"$(1)" \
   	$(if-expr "$5" == "", \
-  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(RM) -f -- "$1.ccs" \
+  		$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(RM) -f -- "$1.ccs" \
   	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(CP) -- "$1" "$1.ccs" \
   	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1.ccs,,-digest_algo SHA2) \
   	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(VBOX_RTSIGNTOOL) add-nested-$(if-expr "$(suffix $1)" == ".cat",cat,exe)-signature -v "$1" "$1.ccs" \
@@ -4357,7 +4357,7 @@ ifdef VBOX_SIGNING_MODE
     ## @todo cannot handle $(2), the identifier.
     VBOX_SIGN_IMAGE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB) \
     	$(call VBOX_CCS_SIGN_CMD,binary,$(1),,$(subst --entitlements=,-entitlement_file_path ,$(3)) \
-    	$(if $(VBOX_WITH_MACOS_HARDENED_RUNTIME),-hardened_runtime))
+    		$(if $(VBOX_WITH_MACOS_HARDENED_RUNTIME),-hardened_runtime))
    else
     VBOX_SIGN_IMAGE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
     	--verbose=9 \
@@ -4432,7 +4432,7 @@ ifdef VBOX_SIGNING_MODE
    VBOX_SIGN_BUNDLE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB) \
    	ditto -c -k --keepParent "$(1)" "$(1).zip"$(NLTAB) \
    	$(call VBOX_CCS_SIGN_CMD,apple,$(1).zip,,$(subst --entitlements=,-entitlement_file_path ,$(subst --deep,-deep,$(3))) \
-   	$(if $(VBOX_WITH_MACOS_HARDENED_RUNTIME),-hardened_runtime))$(NLTAB) \
+   		$(if $(VBOX_WITH_MACOS_HARDENED_RUNTIME),-hardened_runtime))$(NLTAB) \
    	ditto -x -k "$(1).zip" "$(1)/../"$(NLTAB) \
    	$(RM) -f -- "$(1).zip"
   else
@@ -4457,7 +4457,7 @@ ifdef VBOX_SIGNING_MODE
    ## @todo $(3) is hopefully either empty or --entitlements=...
    VBOX_SIGN_MACHO_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB) \
    	$(call VBOX_CCS_SIGN_CMD,binary,$(1),,$(subst --entitlements=,-entitlement_file_path ,$(3)) \
-   	$(if $(VBOX_WITH_MACOS_HARDENED_RUNTIME),-hardened_runtime))
+   		$(if $(VBOX_WITH_MACOS_HARDENED_RUNTIME),-hardened_runtime))
   else
    VBOX_SIGN_MACHO_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
    	--verbose=9 \
@@ -4475,17 +4475,17 @@ ifdef VBOX_SIGNING_MODE
   ## Commands for signing an extpack dylib file after link.
   if $(intersects darwin all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
    VBOX_SIGN_EXTPACK_DYLIB_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),, \
-   	$(call VBOX_CCS_SIGN_CMD,binary,$(out),, \
-   	$(if $(VBOX_WITH_MACOS_HARDENED_RUNTIME),-hardened_runtime)) )
+   		$(call VBOX_CCS_SIGN_CMD,binary,$(out),, \
+   			$(if $(VBOX_WITH_MACOS_HARDENED_RUNTIME),-hardened_runtime)) )
   else
    VBOX_SIGN_EXTPACK_DYLIB_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),, \
-   	$(VBOX_CODESIGN) \
-   	--verbose=9 \
-   	--force \
-   	$(if-expr $(KBUILD_HOST_VERSION_MAJOR) <= 14,--digest-algorithm sha256,) \
-   	$(if $(VBOX_WITH_MACOS_HARDENED_RUNTIME),$(if-expr $(KBUILD_HOST_VERSION_MAJOR) <= 16,--options 0x10000,--options runtime)) \
-   	--file-list - \
-   	$(if-expr defined(VBOX_TSA_URL),--timestamp="$(VBOX_TSA_URL)") \
+   		$(VBOX_CODESIGN) \
+   		--verbose=9 \
+   		--force \
+   		$(if-expr $(KBUILD_HOST_VERSION_MAJOR) <= 14,--digest-algorithm sha256,) \
+   		$(if $(VBOX_WITH_MACOS_HARDENED_RUNTIME),$(if-expr $(KBUILD_HOST_VERSION_MAJOR) <= 16,--options 0x10000,--options runtime)) \
+   		--file-list - \
+   		$(if-expr defined(VBOX_TSA_URL),--timestamp="$(VBOX_TSA_URL)") \
    	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
    	$(out) )
   endif
@@ -4563,7 +4563,7 @@ ifdef VBOX_SIGNING_MODE
 
     $1.kext_SOURCES += $$($1.kext_0_OUTDIR)/Contents/MacOS/$1=>MacOS/$1 \
     	$(foreach extfile, $(VBOX_DARWIN_KEXT_SIGN_FILES) \
-    	, $$($1.kext_0_OUTDIR)/Contents/_CodeSignature/$(extfile)=>_CodeSignature/$(extfile))
+    		, $$($1.kext_0_OUTDIR)/Contents/_CodeSignature/$(extfile)=>_CodeSignature/$(extfile))
     $1.kext_SYMLINKS += $(foreach symfile, $(VBOX_DARWIN_KEXT_SIGN_SYMLINKS), $(symfile)=>_CodeSignature/$(symfile))
     $1.kext_CLEAN  += \
     	$(foreach extfile, $(VBOX_DARWIN_KEXT_SIGN_FILES)   , $$($1.kext_0_OUTDIR)/Contents/_CodeSignature/$(extfile)) \
@@ -6867,10 +6867,10 @@ ifeq ($(KBUILD_TARGET),win)
 endif
 TEMPLATE_VBoxR3AutoTest_INST        = $(INST_TESTCASE)
 TEMPLATE_VBoxR3AutoTest_LIBS.$(KBUILD_TARGET_ARCH) = $(filter-out \
-	$(if-expr !defined(SDK_VBoxLibXml2_LIBS),$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB),) \
+		$(if-expr !defined(SDK_VBoxLibXml2_LIBS),$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB),) \
 	$(if-expr "$(KBUILD_TARGET)" == "win" || "$(KBUILD_TARGET)" == "os2" \
-	,$(SDK_VBoxLzf_STATIC_LIBS) $(SDK_VBoxZlibStatic_LIBS) $(SDK_VBoxLibLzmaStatic_LIBS) \
-	,$(SDK_VBoxLzf_LIBS) $(SDK_VBoxZlib_LIBS) $(SDK_VBoxLibLzma_LIBS)) \
+		,$(SDK_VBoxLzf_STATIC_LIBS) $(SDK_VBoxZlibStatic_LIBS) $(SDK_VBoxLibLzmaStatic_LIBS) \
+		,$(SDK_VBoxLzf_LIBS) $(SDK_VBoxZlib_LIBS) $(SDK_VBoxLibLzma_LIBS)) \
 	,$(TEMPLATE_$(TEMPLATE_VBoxR3AutoTest_EXTENDS)_LIBS.$(KBUILD_TARGET_ARCH)))
 
 #
@@ -7336,9 +7336,9 @@ TEMPLATE_VBoxMainComp-x86_DEFS = $(filter-out HC_ARCH_BITS%,$(TEMPLATE_VBoxMainC
 	VBOX_IN_32_ON_64_MAIN_API
 TEMPLATE_VBoxMainComp-x86_LIBS = \
 	$(subst $(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB),$(PATH_STAGE_LIB)/VBoxCOM-x86$(VBOX_SUFF_LIB), \
-	$(subst $(LIB_RUNTIME),$(VBOX_LIB_RUNTIME_X86), \
-	$(subst $(LIB_XPCOM),$(VBOX_LIB_XPCOM_X86), \
-	$(TEMPLATE_VBoxMainComp_LIBS))))
+		$(subst $(LIB_RUNTIME),$(VBOX_LIB_RUNTIME_X86), \
+			$(subst $(LIB_XPCOM),$(VBOX_LIB_XPCOM_X86), \
+				$(TEMPLATE_VBoxMainComp_LIBS))))
 
 
 #
@@ -7419,9 +7419,9 @@ TEMPLATE_VBoxMainClientDll-x86_DEFS          = $(filter-out HC_ARCH_BITS%,$(TEMP
 	HC_ARCH_BIT=32 ARCH_BITS=32 VBOX_IN_32_ON_64_MAIN_API
 TEMPLATE_VBoxMainClientDll-x86_LIBS = \
 	$(subst $(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB),$(PATH_STAGE_LIB)/VBoxCOM-x86$(VBOX_SUFF_LIB), \
-	$(subst $(LIB_RUNTIME),$(VBOX_LIB_RUNTIME_X86), \
-	$(subst $(LIB_XPCOM),$(VBOX_LIB_XPCOM_X86), \
-	$(TEMPLATE_VBoxMainClientDll_LIBS))))
+		$(subst $(LIB_RUNTIME),$(VBOX_LIB_RUNTIME_X86), \
+			$(subst $(LIB_XPCOM),$(VBOX_LIB_XPCOM_X86), \
+				$(TEMPLATE_VBoxMainClientDll_LIBS))))
 
 #
 # Template for building testcases which are API clients.
@@ -7601,7 +7601,7 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
   else if1of ($(KBUILD_TARGET), win)
    VBOX_PATH_QT := $(rsort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*))
    VBOX_PATH_QT := $(firstword $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(VBOX_PATH_QT)) \
-   	$(filter-out %-vcc100 %-vcc110 %-vcc120 %-vcc140 %-vcc141 %-vcc142 %-vcc143 %-vcc150, $(VBOX_PATH_QT)))
+   		$(filter-out %-vcc100 %-vcc110 %-vcc120 %-vcc140 %-vcc141 %-vcc142 %-vcc143 %-vcc150, $(VBOX_PATH_QT)))
    ifdef VBOX_PATH_QT
     PATH_SDK_QT5  := $(VBOX_PATH_QT)
     PATH_TOOL_QT5 := $(VBOX_PATH_QT)
@@ -7951,14 +7951,14 @@ ifdef VBOX_WITH_QTGUI
  ifeq ($(KBUILD_TARGET),darwin)
   ifndef VBOX_WITH_QT6
    TEMPLATE_VBoxQtGuiExe_POST_CMDS = $(QUIET)install_name_tool $(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
-   	$(foreach prefix, @executable_path/../Frameworks/ $(VBOX_PATH_QT)/Frameworks/ $(PATH_SDK_QT5)/, \
-   	-change "$(prefix)$(qtmod).framework/Versions/5/$(qtmod)" \
-   	"$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Frameworks,@rpath)/$(qtmod).framework/Versions/5/$(qtmod)" ) ) "$(out)"
+   		$(foreach prefix, @executable_path/../Frameworks/ $(VBOX_PATH_QT)/Frameworks/ $(PATH_SDK_QT5)/, \
+   			-change "$(prefix)$(qtmod).framework/Versions/5/$(qtmod)" \
+   			"$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Frameworks,@rpath)/$(qtmod).framework/Versions/5/$(qtmod)" ) ) "$(out)"
   else
    TEMPLATE_VBoxQtGuiExe_POST_CMDS = $(QUIET)install_name_tool $(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
-   	$(foreach prefix, @executable_path/../Frameworks/ $(VBOX_PATH_QT)/Frameworks/ $(PATH_SDK_QT6)/, \
-   	-change "$(prefix)$(qtmod).framework/Versions/A/$(qtmod)" \
-   	"$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Frameworks,@rpath)/$(qtmod).framework/Versions/A/$(qtmod)" ) ) "$(out)"
+   		$(foreach prefix, @executable_path/../Frameworks/ $(VBOX_PATH_QT)/Frameworks/ $(PATH_SDK_QT6)/, \
+   			-change "$(prefix)$(qtmod).framework/Versions/A/$(qtmod)" \
+   			"$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Frameworks,@rpath)/$(qtmod).framework/Versions/A/$(qtmod)" ) ) "$(out)"
   endif
  endif
 
@@ -8007,13 +8007,13 @@ ifdef VBOX_WITH_NLS
  TEMPLATE_VBoxNLS_SDKS.$(KBUILD_TARGET_ARCH)  = $(filter-out VBoxOpenSslStatic,$(TEMPLATE_VBoxR3Static_SDKS.$(KBUILD_TARGET_ARCH)))
  ifdef VBOX_WITH_NOCRT_STATIC
   TEMPLATE_VBoxNLS_LIBS.$(KBUILD_TARGET_ARCH) = $(filter-out \
-  	$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB), \
-  	$(TEMPLATE_VBoxR3Static_LIBS.$(KBUILD_TARGET_ARCH)))
+  		$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB), \
+  		$(TEMPLATE_VBoxR3Static_LIBS.$(KBUILD_TARGET_ARCH)))
  else
   TEMPLATE_VBoxNLS_LIBS.$(KBUILD_TARGET_ARCH) = $(filter-out \
-  	$(VBOX_LIB_RUNTIME_STATIC) \
-  	$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB), \
-  	$(TEMPLATE_VBoxR3Static_LIBS.$(KBUILD_TARGET_ARCH)))
+  		$(VBOX_LIB_RUNTIME_STATIC) \
+  		$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB), \
+  		$(TEMPLATE_VBoxR3Static_LIBS.$(KBUILD_TARGET_ARCH)))
  endif
 endif # !VBOX_WITH_NLS
 
@@ -8305,13 +8305,13 @@ ifneq ($(KBUILD_HOST),win)
  WIN32_MC = $(EXEC_X86_WIN32) $(KBUILD_DEVTOOLS)/win.x86/bin/mc.exe
 else
  WIN32_MC = $(EXEC_X86_WIN32) $(firstword $(wildcard \
- 	$(PATH_SDK_$(VBOX_WINPSDK)_BIN)/MC.Exe \
- 	$(PATH_SDK_WINPSDK_BIN)/MC.Exe \
- 	$(PATH_SDK_WINPSDK)/Bin/MC.Exe \
- 	$(PATH_SDK_WIN32SDK_BIN)/MC.Exe \
- 	$(PATH_SDK_WIN64SDK_BIN)/MC.Exe \
- 	$(KBUILD_DEVTOOLS)/win.x86/bin/mc.exe \
- 	) Sorry_Cannot_find_mc_in_the_PSDK)
+ 			$(PATH_SDK_$(VBOX_WINPSDK)_BIN)/MC.Exe \
+ 			$(PATH_SDK_WINPSDK_BIN)/MC.Exe \
+ 			$(PATH_SDK_WINPSDK)/Bin/MC.Exe \
+ 			$(PATH_SDK_WIN32SDK_BIN)/MC.Exe \
+ 			$(PATH_SDK_WIN64SDK_BIN)/MC.Exe \
+ 			$(KBUILD_DEVTOOLS)/win.x86/bin/mc.exe \
+ 			) Sorry_Cannot_find_mc_in_the_PSDK)
 endif
 
 

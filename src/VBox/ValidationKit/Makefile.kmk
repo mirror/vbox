@@ -324,11 +324,11 @@ ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
   # IPRT unit tests.
   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach whitelisted, $(VALKIT_UNITTESTS_WHITELIST_IPRT) $(VALKIT_UNITTESTS_WHITELIST_IPRT.$(os)), \
-  	$$(wildcard $(VBOX_PATH_VALIDATIONKIT_UNITTESTS.$(os).$(arch))/$(whitelisted)$(TMP_SUFF_EXE)))
+  		$$(wildcard $(VBOX_PATH_VALIDATIONKIT_UNITTESTS.$(os).$(arch))/$(whitelisted)$(TMP_SUFF_EXE)))
   # Unit tests which utilize parts of the Guest Additions.
   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += \
   	$(foreach whitelisted, $(VALKIT_UNITTESTS_WHITELIST_GUEST_ADDITIONS) $(VALKIT_UNITTESTS_WHITELIST_GUEST_ADDITIONS.$(os)), \
-  	$$(wildcard $(VBOX_PATH_VALIDATIONKIT_UNITTESTS.$(os).$(arch))/$(whitelisted)$(TMP_SUFF_EXE)))
+  		$$(wildcard $(VBOX_PATH_VALIDATIONKIT_UNITTESTS.$(os).$(arch))/$(whitelisted)$(TMP_SUFF_EXE)))
  endef
 
  TMP_SUFF_EXE = .exe

@@ -720,17 +720,17 @@ include $(FILE_KBUILD_SUB_FOOTER)
 #
 MY_ASA_ASM_STUFF = \
 	$(addprefix -D, \
-	$(DEFS) \
-	$(DEFS.$(KBUILD_TYPE)) \
-	$(DEFS.$(KBUILD_TARGET)) \
-	IN_RING3 $(ARCH_BITS_DEFS) \
-	$(DEFS.$(KBUILD_TARGET_ARCH)) \
-	$(DEFS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)) \
-	$(VMM_COMMON_DEFS) \
-	) \
+		$(DEFS) \
+		$(DEFS.$(KBUILD_TYPE)) \
+		$(DEFS.$(KBUILD_TARGET)) \
+		IN_RING3 $(ARCH_BITS_DEFS) \
+		$(DEFS.$(KBUILD_TARGET_ARCH)) \
+		$(DEFS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)) \
+		$(VMM_COMMON_DEFS) \
+		) \
 	-f $(if $(eq $(KBUILD_TARGET),darwin),macho,elf) \
 	$(foreach inc,$(INCS) $(VBOX_PATH_VMM_SRC)/testcase $(VBOX_PATH_VMM_SRC)/include $(VBOX_VMM_TESTCASE_OUT_DIR) \
-	,-I$(inc)/)
+		,-I$(inc)/)
 
 # 1a. make a header file which makes all the structures+members globals.
 $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac: \

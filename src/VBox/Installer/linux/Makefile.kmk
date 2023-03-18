@@ -45,7 +45,7 @@ endif
 #
 VBOX_LNX_APP_PRIVATE    := $(if $(VBOX_PATH_APP_PRIVATE),$(VBOX_PATH_APP_PRIVATE),/opt/VirtualBox)
 VBOX_LNX_APP_DOCS       := $(if $(VBOX_PATH_PACKAGE_DOCS),$(VBOX_PATH_PACKAGE_DOCS), \
-	$(if $(VBOX_PATH_APP_DOCS),$(VBOX_PATH_APP_DOCS),/opt/VirtualBox))
+		$(if $(VBOX_PATH_APP_DOCS),$(VBOX_PATH_APP_DOCS),/opt/VirtualBox))
 VBOX_PATH_LNX_INST_SRC  := $(PATH_SUB_CURRENT)
 VBOX_LNX_INST_OUT_DIR   := $(PATH_TARGET)/Installer/linux
 VBOX_LNX_INST_STAGE_DIR := $(PATH_TARGET)/Installer/linux/install
@@ -66,9 +66,9 @@ endif
 
 OTHER_CLEAN   += \
 	$(addprefix $(VBOX_LNX_INST_STAGE_DIR)/, \
-	install.sh \
-	VirtualBox.tar.bz2 \
-	LICENSE) \
+		install.sh \
+		VirtualBox.tar.bz2 \
+		LICENSE) \
 	$(wildcard $(VBOX_LNX_INST_OUT_DIR)/VirtualBox-*) \
 	$(VBOX_LNX_INST_OUT_DIR)/install.sh
 
@@ -118,7 +118,7 @@ linux-misc_SOURCES = \
 	$(if $(VBOX_WITH_QTGUI),$(linux-misc_0_OUTDIR)/virtualboxvm.desktop,)
 ifeq ($(KBUILD_TYPE),asan)
  linux-misc_SOURCES += $(foreach lib,$(VBOX_GCC_SANITIZER_SO_FILES) \
- 	,$(lib)=>$(notdir $(lib)) $(lib)=>testcase/$(notdir $(lib)) $(lib)=>tools/$(notdir $(lib)) )
+ 		,$(lib)=>$(notdir $(lib)) $(lib)=>testcase/$(notdir $(lib)) $(lib)=>tools/$(notdir $(lib)) )
 endif
 linux-misc_CLEAN = \
 	$(linux-misc_0_OUTDIR)/generated.sh \
@@ -169,29 +169,29 @@ VBOX_LNX_STRIP_BIN = \
 	VBoxHostChannel.so \
 	$(if $(VBOX_WITH_DRAG_AND_DROP),VBoxDragAndDropSvc.so,) \
 	$(if $(VBOX_WITH_MAIN), \
-	$(if $(VBOX_WITH_FE_AUTOSTART),VBoxAutostart,) \
-	$(if $(VBOX_WITH_FE_BALLOONCTRL),VBoxBalloonCtrl,) \
-	$(if $(VBOX_WITH_FE_BUGREPORT),VBoxBugReport,) \
-	VBoxManage \
-	VBoxNetDHCP $(if $(VBOX_WITH_HARDENING),VBoxNetDHCP.so,) \
-	$(if $(VBOX_WITH_LWIP_NAT),VBoxNetNAT $(if $(VBOX_WITH_HARDENING),VBoxNetNAT.so,),) \
-	VBoxNetAdpCtl \
-	$(if $(VBOX_WITH_DEVMAPPER),VBoxVolInfo,) \
-	VBoxSVC \
-	VBoxXPCOM.so \
-	VBoxXPCOMC.so \
-	VBoxXPCOMIPCD \
-	components/VBoxXPCOMIPCC.so \
-	components/VBoxSVCM.so \
-	components/VBoxC.so,) \
+		$(if $(VBOX_WITH_FE_AUTOSTART),VBoxAutostart,) \
+		$(if $(VBOX_WITH_FE_BALLOONCTRL),VBoxBalloonCtrl,) \
+		$(if $(VBOX_WITH_FE_BUGREPORT),VBoxBugReport,) \
+		VBoxManage \
+		VBoxNetDHCP $(if $(VBOX_WITH_HARDENING),VBoxNetDHCP.so,) \
+		$(if $(VBOX_WITH_LWIP_NAT),VBoxNetNAT $(if $(VBOX_WITH_HARDENING),VBoxNetNAT.so,),) \
+		VBoxNetAdpCtl \
+		$(if $(VBOX_WITH_DEVMAPPER),VBoxVolInfo,) \
+		VBoxSVC \
+		VBoxXPCOM.so \
+		VBoxXPCOMC.so \
+		VBoxXPCOMIPCD \
+		components/VBoxXPCOMIPCC.so \
+		components/VBoxSVCM.so \
+		components/VBoxC.so,) \
 	$(if $(VBOX_WITH_QTGUI),VBoxTestOGL,) \
 	$(if $(VBOX_WITH_VMSVGA3D),VBoxSVGA3D.so,) \
 	$(if $(VBOX_WITH_DXVK), VBoxDxVk.so,) \
 	$(if $(VBOX_WITH_PYTHON),$(notdir $(wildcard $(PATH_STAGE_BIN)/VBoxPython*.so)),) \
 	$(if $(VBOX_WITH_JXPCOM),libvboxjxpcom.so,) \
 	$(if $(and $(VBOX_WITH_EXTPACK_VNC),$(VBOX_WITHOUT_EXTPACK_VNC_PACKING)), \
-	ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/VBoxVNC.so \
-	ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/VBoxVNCMain.so,) \
+		ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/VBoxVNC.so \
+		ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/VBoxVNCMain.so,) \
 	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,) \
 	$(if $(VBOX_WITH_HOST_SHIPPING_AUDIO_TEST),VBoxAudioTest,)
 
@@ -228,14 +228,14 @@ endif
 VBOX_LNX_NO_STRIP = \
 	$(if $(VBOX_OSE),,LICENSE) \
 	$(if $(VBOX_WITH_MAIN), \
-	components/VBoxXPCOMBase.xpt \
-	components/VirtualBox_XPCOM.xpt) \
+		components/VBoxXPCOMBase.xpt \
+		components/VirtualBox_XPCOM.xpt) \
 	$(if $(VBOX_WITH_PYTHON),vboxshell.py,) \
 	$(if $(and $(VBOX_WITH_EXTPACK_VNC),$(VBOX_WITHOUT_EXTPACK_VNC_PACKING)), \
-	ExtensionPacks/VNC/ExtPack.xml \
-	ExtensionPacks/VNC/ExtPack-license.html \
-	ExtensionPacks/VNC/ExtPack-license.rtf \
-	ExtensionPacks/VNC/ExtPack-license.txt,) \
+		ExtensionPacks/VNC/ExtPack.xml \
+		ExtensionPacks/VNC/ExtPack-license.html \
+		ExtensionPacks/VNC/ExtPack-license.rtf \
+		ExtensionPacks/VNC/ExtPack-license.txt,) \
 	check_module_dependencies.sh \
 	postinst-common.sh \
 	prerm-common.sh \
@@ -371,15 +371,15 @@ endif
 # Icons
 VBOX_MIME_ICONS = \
 	$(addprefix $(PATH_ROOT)/src/VBox/Artwork/other/, \
-	$(foreach f,ova ovf vbox vbox-extpack vdi vmdk vhd hdd, \
-	$(foreach s,16 20 24 32 48 64 72 96 128 256, \
-	virtualbox-$(f)-$(s)px.png=>$(s)x$(s)/virtualbox-$(f).png)))
+		$(foreach f,ova ovf vbox vbox-extpack vdi vmdk vhd hdd, \
+			$(foreach s,16 20 24 32 48 64 72 96 128 256, \
+				virtualbox-$(f)-$(s)px.png=>$(s)x$(s)/virtualbox-$(f).png)))
 
 VBOX_DESKTOP_ICONS = \
 	$(addprefix $(PATH_ROOT)/src/VBox/Artwork/$(if $(VBOX_OSE),OSE,NonOSE)/, \
-	$(foreach s,16 20 32 40 48 64 128, \
-	virtualbox-$(s)px.png=>$(s)x$(s)/virtualbox.png) \
-	virtualbox.svg=>scalable/virtualbox.svg)
+		$(foreach s,16 20 32 40 48 64 128, \
+			virtualbox-$(s)px.png=>$(s)x$(s)/virtualbox.png) \
+		virtualbox.svg=>scalable/virtualbox.svg)
 
 #
 # All the bin files that goes into the archives.
@@ -389,7 +389,7 @@ VBOX_LNX_ARCH_FILES := $(VBOX_LNX_STRIP_BIN) $(VBOX_LNX_STRIP_OBJ) $(VBOX_LNX_NO
 # Cleanup of the files we copy/symlink from bin.
 OTHER_CLEAN += $(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive/,$(filter-out src,$(VBOX_LNX_ARCH_FILES)) src/vboxhost) \
 	$(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive-dbg/$(VBOX_LNX_DBG_PATH)/, \
-	$(VBOX_LNX_STRIP_BIN) $(VBOX_LNX_DBG_BIN))
+		$(VBOX_LNX_STRIP_BIN) $(VBOX_LNX_DBG_BIN))
 
 #
 # The generic installer.
@@ -521,37 +521,37 @@ $(VBOX_LNX_INST_OUT_DIR)/archive/src: $(PATH_STAGE_BIN)/src | $(dir $@)
 
 # rules for creating directories in archive (the pattern rules depends on these).
 BLDDIRS += $(foreach d, \
-	archive \
-	archive/components \
-	archive/nls \
-	$(if $(VBOX_WITH_UNATTENDED),archive/unattended_templates,) \
-	$(if $(VBOX_WITH_ORACLE_QT), \
-	archive/plugins/platforms \
-	archive/plugins/platformthemes \
-	archive/plugins/sqldrivers \
-	archive/plugins/styles \
-	archive/plugins/xcbglintegrations,) \
-	$(if $(VBOX_WITH_PYTHON), \
-	archive/sdk/installer \
-	archive/sdk/installer/vboxapi \
-	archive/sdk/bindings/xpcom/python/xpcom \
-	archive/sdk/bindings/xpcom/python/xpcom/client \
-	archive/sdk/bindings/xpcom/python/xpcom/server,) \
-	$(if $(VBOX_WITH_JXPCOM), \
-	archive/sdk/bindings/xpcom/java,) \
-	$(if $(and $(VBOX_WITH_EXTPACK_VNC),$(VBOX_WITHOUT_EXTPACK_VNC_PACKING)), \
-	archive/ExtensionPacks/VNC \
-	archive/ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),) \
-	archive/additions \
-	$(if-expr defined(VBOX_UNATTENDED_TEMPLATES),archive/UnattendedTemplates,) \
+		archive \
+		archive/components \
+		archive/nls \
+		$(if $(VBOX_WITH_UNATTENDED),archive/unattended_templates,) \
+		$(if $(VBOX_WITH_ORACLE_QT), \
+			archive/plugins/platforms \
+			archive/plugins/platformthemes \
+			archive/plugins/sqldrivers \
+			archive/plugins/styles \
+			archive/plugins/xcbglintegrations,) \
+		$(if $(VBOX_WITH_PYTHON), \
+			archive/sdk/installer \
+			archive/sdk/installer/vboxapi \
+			archive/sdk/bindings/xpcom/python/xpcom \
+			archive/sdk/bindings/xpcom/python/xpcom/client \
+			archive/sdk/bindings/xpcom/python/xpcom/server,) \
+		$(if $(VBOX_WITH_JXPCOM), \
+			archive/sdk/bindings/xpcom/java,) \
+		$(if $(and $(VBOX_WITH_EXTPACK_VNC),$(VBOX_WITHOUT_EXTPACK_VNC_PACKING)), \
+			archive/ExtensionPacks/VNC \
+			archive/ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),) \
+		archive/additions \
+		$(if-expr defined(VBOX_UNATTENDED_TEMPLATES),archive/UnattendedTemplates,) \
 	install \
 	$(if $(VBOX_WITH_DTRACE), \
-	archive/dtrace \
-	archive/dtrace/lib \
-	archive/dtrace/lib/$(KBUILD_TARGET_ARCH) \
-	archive/dtrace/testcase/ \
-	archive/dtrace/testcase/$(KBUILD_TARGET_ARCH) \
-	archive/dtrace/scripts,) \
+		archive/dtrace \
+		archive/dtrace/lib \
+		archive/dtrace/lib/$(KBUILD_TARGET_ARCH) \
+		archive/dtrace/testcase/ \
+		archive/dtrace/testcase/$(KBUILD_TARGET_ARCH) \
+		archive/dtrace/scripts,) \
 	,$(VBOX_LNX_INST_OUT_DIR)/$(d)/)
 
 
@@ -582,9 +582,9 @@ $(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive-dbg/$(VBOX_LNX_DBG_PATH)/,$(VBOX_LN
 
 # rules for creating directories in archive-dbg (the pattern rules depends on these).
 BLDDIRS += $(foreach d, \
-	$(VBOX_LNX_DBG_PATH) \
-	$(VBOX_LNX_DBG_PATH)/components \
-	,$(VBOX_LNX_INST_OUT_DIR)/archive-dbg/$(d)/)
+		$(VBOX_LNX_DBG_PATH) \
+		$(VBOX_LNX_DBG_PATH)/components \
+		,$(VBOX_LNX_INST_OUT_DIR)/archive-dbg/$(d)/)
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

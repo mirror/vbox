@@ -430,9 +430,9 @@ endif
 
 VirtualBoxVM_LDFLAGS.darwin = \
 	$(if $(VBOX_WITH_HARDENING) \
-	,-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VirtualBoxVM.dylib \
-	,-rpath @executable_path/../../../../MacOS \
-	-rpath @executable_path/../../../../Frameworks) \
+		,-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VirtualBoxVM.dylib \
+		,-rpath @executable_path/../../../../MacOS \
+		-rpath @executable_path/../../../../Frameworks) \
 	-framework AppKit -framework Carbon -framework IOKit
 
 ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
@@ -2067,55 +2067,55 @@ OTHER_CLEAN += \
 
 QTGUI_DOXYFILE_INPUT_DIRS := \
 	$(addprefix $(PATH_SUB_CURRENT)/src/, \
-	converter \
-	extensions \
-	extensions/graphics \
-	extradata \
-	globals \
-	manager \
-	manager/chooser \
-	manager/details \
-	manager/tools \
-	manager \
-	manager \
-	medium \
-	net \
-	objects \
-	platform \
-	platform/darwin \
-	platform/os2 \
-	platform/win \
-	platform/x11 \
-	runtime \
-	runtime/fullscreen \
-	runtime/information \
-	runtime/guestctrl \
-	runtime/normal \
-	runtime/scale \
-	runtime/seamless \
-	selector \
-	selector/graphics \
-	selector/graphics/chooser \
-	selector/graphics/details \
-	settings \
-	settings/global \
-	settings/machine \
-	widgets \
-	widgets/graphics \
-	wizards \
-	wizards/addcloudvm \
-	wizards/clonevd \
-	wizards/clonevm \
-	wizards/exportappliance \
-	wizards/importappliance \
-	wizards/newcloudvm \
-	wizards/newvd \
-	wizards/newvm)
+		converter \
+		extensions \
+		extensions/graphics \
+		extradata \
+		globals \
+		manager \
+		manager/chooser \
+		manager/details \
+		manager/tools \
+		manager \
+		manager \
+		medium \
+		net \
+		objects \
+		platform \
+		platform/darwin \
+		platform/os2 \
+		platform/win \
+		platform/x11 \
+		runtime \
+		runtime/fullscreen \
+		runtime/information \
+		runtime/guestctrl \
+		runtime/normal \
+		runtime/scale \
+		runtime/seamless \
+		selector \
+		selector/graphics \
+		selector/graphics/chooser \
+		selector/graphics/details \
+		settings \
+		settings/global \
+		settings/machine \
+		widgets \
+		widgets/graphics \
+		wizards \
+		wizards/addcloudvm \
+		wizards/clonevd \
+		wizards/clonevm \
+		wizards/exportappliance \
+		wizards/importappliance \
+		wizards/newcloudvm \
+		wizards/newvd \
+		wizards/newvm)
 
 QTGUI_DOXYFILE_INPUT := \
 	$(foreach dir, $(QTGUI_DOXYFILE_INPUT_DIRS), \
-	$(sort $(wildcard $(dir)/*.h)) \
-	$(sort $(wildcard $(dir)/*.cpp $(dir)/*.m $(dir)/*.mm)))
+		$(sort $(wildcard $(dir)/*.h)) \
+		$(sort $(wildcard $(dir)/*.cpp $(dir)/*.m $(dir)/*.mm)))
 
 includedep $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui.dep
 

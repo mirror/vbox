@@ -63,8 +63,8 @@ ifndef VBOX_OSE
 endif
 ValidationKitTestsApi_SOURCES := \
 	$(wildcard \
-	$(PATH_SUB_CURRENT)/*.ova \
-	)
+		$(PATH_SUB_CURRENT)/*.ova \
+		)
 
 VBOX_VALIDATIONKIT_PYTHON_SOURCES += $(ValidationKitTestsApi_EXEC_SOURCES)
 

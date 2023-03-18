@@ -336,12 +336,12 @@ ifndef VBOX_ONLY_SDK
  	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
  	$(if-expr defined(VBOX_ONLY_EXTPACKS) \
  	, $(addprefix $(VBoxAPIWrap_0_OUTDIR)/,$(filter \
- 	Cloud% \
- 	DataStreamWrap.cpp \
- 	%FormValueWrap.cpp \
- 	%FormWrap.cpp \
- 	StringArrayWrap.cpp \
- 	, $(notdir $(VBOX_MAIN_APIWRAPPER_GEN_SRCS)))) \
+ 			Cloud% \
+ 			DataStreamWrap.cpp \
+ 			%FormValueWrap.cpp \
+ 			%FormWrap.cpp \
+ 			StringArrayWrap.cpp \
+ 			, $(notdir $(VBOX_MAIN_APIWRAPPER_GEN_SRCS)))) \
  	, $(VBOX_MAIN_APIWRAPPER_GEN_SRCS))
  VBoxAPIWrap_INTERMEDIATES   = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
  VBoxAPIWrap_DEFS.win.x86   += _WIN32_WINNT=0x0500
@@ -654,8 +654,8 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	src-server/NetworkServiceRunner.cpp \
  	src-server/NATNetworkImpl.cpp \
  	$(if $(VBOX_WITH_CLOUD_NET), \
- 	src-server/CloudNetworkImpl.cpp \
- 	,) \
+ 		src-server/CloudNetworkImpl.cpp \
+ 		,) \
  	src-server/GuestDebugControlImpl.cpp \
  	src-server/GuestOSTypeImpl.cpp \
  	src-server/HostDnsService.cpp \
@@ -664,9 +664,9 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	src-server/HostNetworkInterfaceImpl.cpp \
  	src-server/HostPower.cpp \
  	$(if $(VBOX_WITH_LIBCURL), \
- 	$(if $(VBOX_WITH_UPDATE_AGENT), \
- 	src-server/UpdateAgentImpl.cpp,), \
- 	) \
+ 		$(if $(VBOX_WITH_UPDATE_AGENT), \
+ 			src-server/UpdateAgentImpl.cpp,), \
+ 		) \
  	src-server/HostVideoInputDeviceImpl.cpp \
  	src-server/HostDrivePartitionImpl.cpp \
  	src-server/HostDriveImpl.cpp \
@@ -692,12 +692,12 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	src-server/TrustedPlatformModuleImpl.cpp \
  	src-server/UefiVariableStoreImpl.cpp \
  	$(if $(VBOX_WITH_UNATTENDED), \
- 	src-server/UnattendedImpl.cpp \
- 	src-server/UnattendedInstaller.cpp \
- 	src-server/UnattendedOs2Installer.cpp \
- 	src-server/UnattendedScript.cpp \
- 	src-all/TextScript.cpp \
- 	,) \
+ 		src-server/UnattendedImpl.cpp \
+ 		src-server/UnattendedInstaller.cpp \
+ 		src-server/UnattendedOs2Installer.cpp \
+ 		src-server/UnattendedScript.cpp \
+ 		src-all/TextScript.cpp \
+ 		,) \
  	src-server/USBControllerImpl.cpp \
  	src-server/USBDeviceFiltersImpl.cpp \
  	src-server/VFSExplorerImpl.cpp \
@@ -1283,7 +1283,7 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
   VBoxClient-x86_SDKS = $(filter-out VBoxLibVpx,$(VBoxC_SDKS))
   VBoxClient-x86_DEFS = VBOX_COM_INPROC_API_CLIENT \
   	$(filter-out VBOX_WITH_RECORDING VBOX_WITH_AUDIO_RECORDING \
-  	VBOX_WITH_LIBVPX,$(VBoxC_DEFS))
+  		VBOX_WITH_LIBVPX,$(VBoxC_DEFS))
   VBoxClient-x86_INCS.win = \
   	$(VBoxClient-x86_0_OUTDIR) \
   	$(VBoxCOM-x86_0_OUTDIR) \
@@ -1552,13 +1552,13 @@ ifdef VBOX_WITH_MAIN_NLS
  VirtualBoxAPI_TEMPLATE = VBoxNLS
  VirtualBoxAPI_QT_TRANSLATIONS = $(addsuffix .ts,$(addprefix $(VBOX_PATH_MAIN_SRC)/nls/VirtualBoxAPI_,$(VBOX_APPROVED_MAIN_LANGUAGES)))
  VirtualBoxAPI_VBOX_ALL_NLS_SOURCES = $(wildcard \
- 	$(VBOX_PATH_MAIN_SRC)/include/*.h \
- 	$(VBOX_PATH_MAIN_SRC)/src-all/*.cpp \
- 	$(VBOX_PATH_MAIN_SRC)/src-all/*.h \
- 	$(VBOX_PATH_MAIN_SRC)/src-server/*.cpp \
- 	$(VBOX_PATH_MAIN_SRC)/src-server/*.h \
- 	$(VBOX_PATH_MAIN_SRC)/src-client/*.cpp \
- 	$(VBOX_PATH_MAIN_SRC)/src-client/*.h )
+ 		$(VBOX_PATH_MAIN_SRC)/include/*.h \
+ 		$(VBOX_PATH_MAIN_SRC)/src-all/*.cpp \
+ 		$(VBOX_PATH_MAIN_SRC)/src-all/*.h \
+ 		$(VBOX_PATH_MAIN_SRC)/src-server/*.cpp \
+ 		$(VBOX_PATH_MAIN_SRC)/src-server/*.h \
+ 		$(VBOX_PATH_MAIN_SRC)/src-client/*.cpp \
+ 		$(VBOX_PATH_MAIN_SRC)/src-client/*.h )
 
  updatenls:: makeallnls $(VBOX_PATH_MAIN_SRC)/nls/VirtualBoxAPI_en.ts
 
@@ -1770,12 +1770,12 @@ ifdef VBOX_WITH_JMSCOM
  	$(VBoxJMscom-inst-jar_0_OUTDIR)/vboxjmscom.jar \
  	$(VBOX_JMSCOM_GEN)/jmscomglue.list \
  	$(wildcard \
- 	$(VBOX_JMSCOM_GEN)/java/*.java \
- 	$(VBOX_JMSCOM_JDEST)/*.class \
- 	$(VBOX_JMSCOM_JDEST)/*/*.class \
- 	$(VBOX_JMSCOM_JDEST)/*/*/*.class \
- 	$(VBOX_JMSCOM_JDEST)/*/*/*/*.class \
- 	)
+ 		$(VBOX_JMSCOM_GEN)/java/*.java \
+ 		$(VBOX_JMSCOM_JDEST)/*.class \
+ 		$(VBOX_JMSCOM_JDEST)/*/*.class \
+ 		$(VBOX_JMSCOM_JDEST)/*/*/*.class \
+ 		$(VBOX_JMSCOM_JDEST)/*/*/*/*.class \
+ 		)
  VBoxJMscom-inst-jar_BLDDIRS += $(VBOX_JMSCOM_GEN)/java
  $(call KB_FN_DO_PASS0_ON_TARGET,VBoxJMscom-inst-jar) # Sets VBoxJMscom-inst-jar_0_OUTDIR
 

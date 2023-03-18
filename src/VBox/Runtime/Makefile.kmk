@@ -1803,15 +1803,15 @@ define def_unit_VBoxNoCrtAliases_target_pre
   $(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE := $(PATH_OUT)/nocrt-aliases-$(target).kmk
   include $($(target)_2_VBOX_NOCRT_ALIAS_KMK_FILE)
   $(target)_2_VBOX_NOCRT_ALIAS_FILES := $(foreach alias,$($(target)_2_VBOX_NOCRT_ALIASES) \
-  	$($(target)_VBOX_NOCRT_ALIASES) \
-  	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg)) \
-  	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_type)) \
-  	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_trg_arch)) \
-  	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_trg_arch).$(bld_type)) \
-  	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg_arch)) \
-  	$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg_cpu)) \
-  	$($(target)_VBOX_NOCRT_ALIASES.$(bld_type)) \
-  	, $($(target)_0_OUTDIR)/genalias/$(firstword $(subst =, $(SPACE),$(alias))).o)
+  		$($(target)_VBOX_NOCRT_ALIASES) \
+  		$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg)) \
+  		$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_type)) \
+  		$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_trg_arch)) \
+  		$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg).$(bld_trg_arch).$(bld_type)) \
+  		$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg_arch)) \
+  		$($(target)_VBOX_NOCRT_ALIASES.$(bld_trg_cpu)) \
+  		$($(target)_VBOX_NOCRT_ALIASES.$(bld_type)) \
+  		, $($(target)_0_OUTDIR)/genalias/$(firstword $(subst =, $(SPACE),$(alias))).o)
   $(eval $(def_unit_VBoxNoCrtAliases_double_expansion))
  endif
 endef
@@ -1836,14 +1836,14 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	RT_WITH_NOCRT_ALIASES RT_WITH_NOCRT_UNDERSCORE_ALIASES RT_WITH_GENALIAS_NOCRT_ALIASES
 
   RuntimeR3_SOURCES = $(filter-out \
-  	r3/alloc.cpp \
-  	r3/alloc-ef.cpp \
-  	r3/xml.cpp \
-  	common/zip/xarvfs.cpp \
-  	common/misc/json.cpp \
-  	generic/RTLogWriteStdErr-generic.cpp \
-  	generic/RTLogWriteStdOut-generic.cpp \
-  	,$(RuntimeBaseR3_SOURCES)) \
+  		r3/alloc.cpp \
+  		r3/alloc-ef.cpp \
+  		r3/xml.cpp \
+  		common/zip/xarvfs.cpp \
+  		common/misc/json.cpp \
+  		generic/RTLogWriteStdErr-generic.cpp \
+  		generic/RTLogWriteStdOut-generic.cpp \
+  		,$(RuntimeBaseR3_SOURCES)) \
   	\
   	common/err/nocrt-strerror.cpp \
   	common/file/nocrt-open.cpp \
@@ -2106,8 +2106,8 @@ ifdef VBOX_WITH_NOCRT_STATIC
   	common/string/wcslen.asm
 
   RuntimeR3_SOURCES.win = $(filter-out \
-  	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
-  	,$(RuntimeBaseR3_SOURCES.win)) \
+  		r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+  		,$(RuntimeBaseR3_SOURCES.win)) \
   	\
   	common/compiler/vcc/atexit-vcc.cpp \
   	common/compiler/vcc/loadcfg-vcc.c \
@@ -2158,7 +2158,7 @@ ifdef VBOX_WITH_NOCRT_STATIC
   RuntimeR3_VBOX_NOCRT_ALIASES.win := \
   	strtok_s=nocrt_strtok_r _strtok_s=nocrt_strtok_r nocrt_strtok_s=nocrt_strtok_r \
   	$(foreach fn, atan atan2 cos ceil exp fabs floor ldexp log lrint llrint remainder sin tan \
-  	,$(fn)l=nocrt_$(fn) _$(fn)l=nocrt_$(fn))
+  		,$(fn)l=nocrt_$(fn) _$(fn)l=nocrt_$(fn))
  endif
 endif
 
@@ -2175,7 +2175,7 @@ ifn1of ($(KBUILD_TARGET), os2) # breaks validationkit, figure out later.
 
  BLDDIRS += $(IPRT_OUT_DIR)/man/
  OTHER_CLEAN += $(foreach xml,$(basename $(notdir $(IPRT_XML_REFENTRY_FILES))), \
- 	$(IPRT_OUT_DIR)/man/$(xml).xml $(IPRT_OUT_DIR)/man/$(xml).h $(IPRT_OUT_DIR)/man/$(xml).h.ts)
+ 		$(IPRT_OUT_DIR)/man/$(xml).xml $(IPRT_OUT_DIR)/man/$(xml).h $(IPRT_OUT_DIR)/man/$(xml).h.ts)
 
 
  include $(PATH_ROOT)/doc/manual/Config.kmk
@@ -2532,33 +2532,33 @@ ifdef VBOX_WITH_LIBLZMA
 endif
 
 RuntimeBldProg_SOURCES.darwin = $(filter-out \
-	generic/cdrom-generic.cpp \
-	generic/RTFileMove-generic.cpp \
-	generic/RTProcDaemonize-generic.cpp \
-	generic/RTThreadGetAffinity-stub-generic.cpp \
-	generic/RTThreadSetAffinity-stub-generic.cpp \
-	generic/RTThreadSetAffinityToCpu-generic.cpp \
-	generic/RTTimerCreate-generic.cpp \
-	generic/mppresent-generic.cpp \
-	generic/RTSystemShutdown-generic.cpp \
-	generic/timer-generic.cpp \
-	generic/utf16locale-generic.cpp \
-	generic/RTProcIsRunningByName-generic.cpp \
-	generic/RTThreadGetNativeState-generic.cpp \
-	r3/darwin/filelock-darwin.cpp \
-	r3/darwin/systemmem-darwin.cpp \
-	r3/darwin/krnlmod-darwin.cpp \
-	r3/darwin/filelock-darwin.cpp \
-	r3/darwin/RTSystemQueryDmiString-darwin.cpp \
-	r3/darwin/RTPathUserDocuments-darwin.cpp \
-	r3/posix/RTTimeSet-posix.cpp \
-	r3/posix/serialport-posix.cpp \
-	r3/posix/localipc-posix.cpp \
-	r3/generic/allocex-r3-generic.cpp \
-	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
-	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
-	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
-	, $(RuntimeBaseR3_SOURCES.darwin))
+		generic/cdrom-generic.cpp \
+		generic/RTFileMove-generic.cpp \
+		generic/RTProcDaemonize-generic.cpp \
+		generic/RTThreadGetAffinity-stub-generic.cpp \
+		generic/RTThreadSetAffinity-stub-generic.cpp \
+		generic/RTThreadSetAffinityToCpu-generic.cpp \
+		generic/RTTimerCreate-generic.cpp \
+		generic/mppresent-generic.cpp \
+		generic/RTSystemShutdown-generic.cpp \
+		generic/timer-generic.cpp \
+		generic/utf16locale-generic.cpp \
+		generic/RTProcIsRunningByName-generic.cpp \
+		generic/RTThreadGetNativeState-generic.cpp \
+		r3/darwin/filelock-darwin.cpp \
+		r3/darwin/systemmem-darwin.cpp \
+		r3/darwin/krnlmod-darwin.cpp \
+		r3/darwin/filelock-darwin.cpp \
+		r3/darwin/RTSystemQueryDmiString-darwin.cpp \
+		r3/darwin/RTPathUserDocuments-darwin.cpp \
+		r3/posix/RTTimeSet-posix.cpp \
+		r3/posix/serialport-posix.cpp \
+		r3/posix/localipc-posix.cpp \
+		r3/generic/allocex-r3-generic.cpp \
+		r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+		r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
+		r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
+		, $(RuntimeBaseR3_SOURCES.darwin))
 
 RuntimeBldProg_SOURCES.win = \
 	common/dbg/dbgmoddbghelp.cpp \
@@ -2629,12 +2629,12 @@ RuntimeBldProg_SOURCES.win = \
 	win/RTErrConvertFromWin32.cpp
 
 RuntimeBldProg_SOURCES.amd64 = $(filter-out \
-	VBox/RTLogWriteVmm-amd64-x86.asm \
-	, $(RuntimeBaseR3_SOURCES.amd64))
+		VBox/RTLogWriteVmm-amd64-x86.asm \
+		, $(RuntimeBaseR3_SOURCES.amd64))
 
 RuntimeBldProg_SOURCES.x86 = $(filter-out \
-	VBox/RTLogWriteVmm-amd64-x86.asm \
-	, $(RuntimeBaseR3_SOURCES.x86))
+		VBox/RTLogWriteVmm-amd64-x86.asm \
+		, $(RuntimeBaseR3_SOURCES.x86))
 
 RuntimeBldProg_SOURCES.win.amd64 := \
 	$(RuntimeWin64ASM_SOURCES) \
@@ -2720,14 +2720,14 @@ RuntimeGuestR3_TEMPLATE                 := VBoxGuestR3Lib
 RuntimeGuestR3_EXTENDS                  := RuntimeR3
 RuntimeGuestR3_DEFS                      = $(filter-out RTCRITSECT_STRICT RT_NO_GIP IN_SUP_R3 IPRT_WITH_LZMA, $(RuntimeR3_DEFS))
 RuntimeGuestR3_SOURCES                   = $(filter-out \
-	common/time/timesupref.cpp \
-	common/time/timesupA.asm \
-	common/time/timesup.cpp \
-	common/zip/xarvfs.cpp \
-	common/zip/lzmavfs.cpp \
-	r3/xml.cpp \
-	generic/RTLogWriteUser-generic.cpp \
-	, $(RuntimeR3_SOURCES)) \
+		common/time/timesupref.cpp \
+		common/time/timesupA.asm \
+		common/time/timesup.cpp \
+		common/zip/xarvfs.cpp \
+		common/zip/lzmavfs.cpp \
+		r3/xml.cpp \
+		generic/RTLogWriteUser-generic.cpp \
+		, $(RuntimeR3_SOURCES)) \
 	\
 	common/time/timesysalias.cpp \
 	VBox/logbackdoor.cpp
@@ -2828,8 +2828,8 @@ VBoxRT_DEFS.$(KBUILD_TARGET)  := $(RuntimeBaseR3_DEFS.$(KBUILD_TARGET))
 VBoxRT_SOURCES                := \
 	VBox/VBoxRTDeps.cpp \
 	$(filter-out common/checksum/crc32.cpp, \
-	$(if-expr defined(VBOX_WITH_ALT_HASH_CODE), $(RuntimeBaseR3_SOURCES), \
-	$(patsubst common/checksum/alt-%,common/checksum/openssl-%,$(RuntimeBaseR3_SOURCES)) ) ) \
+		$(if-expr defined(VBOX_WITH_ALT_HASH_CODE), $(RuntimeBaseR3_SOURCES), \
+		$(patsubst common/checksum/alt-%,common/checksum/openssl-%,$(RuntimeBaseR3_SOURCES)) ) ) \
 	common/checksum/crc32-zlib.cpp \
 	common/dbg/dbgmodghidra.cpp \
 	common/fuzz/fuzz.cpp \
@@ -4610,18 +4610,18 @@ IPRT_DOXYFILE_INPUT_DIRS = \
 	$(VBOX_PATH_RUNTIME_SRC)/common/time \
 	$(VBOX_PATH_RUNTIME_SRC)/VBox \
 	$(foreach dir, $(VBOX_PATH_RUNTIME_SRC) $(VBOX_PATH_RUNTIME_SRC)/r3 $(VBOX_PATH_RUNTIME_SRC)/r0drv, \
-	$(dir) \
-	$(dir)/darwin \
-	$(dir)/haiku \
-	$(dir)/linux \
-	$(dir)/nt \
-	$(dir)/os2 \
-	$(dir)/solaris \
-	$(dir)/win \
-	$(dir)/win32 \
-	$(dir)/win64 \
-	$(dir)/generic \
-	)
+		$(dir) \
+		$(dir)/darwin \
+		$(dir)/haiku \
+		$(dir)/linux \
+		$(dir)/nt \
+		$(dir)/os2 \
+		$(dir)/solaris \
+		$(dir)/win \
+		$(dir)/win32 \
+		$(dir)/win64 \
+		$(dir)/generic \
+		)
 
 # These must come first in order to make things look nice.
 IPRT_DOXYFILE_INPUT_FIRST = \

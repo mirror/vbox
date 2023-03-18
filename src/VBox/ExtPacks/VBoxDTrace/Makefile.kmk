@@ -290,9 +290,9 @@ if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
  VBOX_VBOXDTRACE_FILES_MACRO = \
  	$(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)/$(1)/VBoxDTraceMain.$(3)=>$(1)/VBoxDTraceMain.$(3) \
  	$(if $(intersects $1, solaris.x86 solaris.amd64),, \
- 	$(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)/$(1)/VBoxDTraceCmd.$(3)=>$(1)/VBoxDTraceCmd.$(3) \
- 	$(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)/$(1)/VBoxDTraceR0.r0=>$(1)/VBoxDTraceR0.r0 \
- 	)
+ 		$(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)/$(1)/VBoxDTraceCmd.$(3)=>$(1)/VBoxDTraceCmd.$(3) \
+ 		$(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)/$(1)/VBoxDTraceR0.r0=>$(1)/VBoxDTraceR0.r0 \
+ 		)
 
  VBOX_VBOXDTRACE_FILES := \
  	$(VBOX_PATH_EXTPACK_VBOXDTRACE)/ExtPack.xml=>ExtPack.xml \

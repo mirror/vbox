@@ -94,21 +94,21 @@ BS3KIT_FN_GEN_CMN_NEARSTUB = $(evalcall2 def_Bs3KitGenNearStubSource,$1,_$2_c16,
 # @param    1   The target name.
 # @param    2   The mode function.
 BS3KIT_FN_GEN_MODE_NEARSTUB = $(foreach suff, \
-	_rm \
-	_pe16 \
-	_pe16_v86 \
-	_pe32_16 \
-	_pev86 \
-	_pp16 \
-	_pp16_v86 \
-	_pp32_16 \
-	_ppv86 \
-	_pae16 \
-	_pae16_v86 \
-	_pae32_16 \
-	_paev86 \
-	_lm16 \
-	,$(evalcall2 def_Bs3KitGenNearStubSource,$1,_$2$(suff),_$2$(suff)_far))
+		_rm \
+		_pe16 \
+		_pe16_v86 \
+		_pe32_16 \
+		_pev86 \
+		_pp16 \
+		_pp16_v86 \
+		_pp32_16 \
+		_ppv86 \
+		_pae16 \
+		_pae16_v86 \
+		_pae32_16 \
+		_paev86 \
+		_lm16 \
+		,$(evalcall2 def_Bs3KitGenNearStubSource,$1,_$2$(suff),_$2$(suff)_far))
 
 # @param    1   The target name.
 # @param    2   The near function name.
@@ -143,21 +143,21 @@ BS3KIT_FN_GEN_CMN_FARSTUB = $(evalcall2 def_Bs3KitGenFarStubSource,$1,$2,_f16,_c
 # @param    2   The mode function.
 # @param    3   The parameter size in bytes.
 BS3KIT_FN_GEN_MODE_FARSTUB = $(foreach suff, \
-	_rm \
-	_pe16 \
-	_pe16_v86 \
-	_pe32_16 \
-	_pev86 \
-	_pp16 \
-	_pp16_v86 \
-	_pp32_16 \
-	_ppv86 \
-	_pae16 \
-	_pae16_v86 \
-	_pae32_16 \
-	_paev86 \
-	_lm16 \
-	,$(evalcall2 def_Bs3KitGenFarStubSource,$1,$2,$(suff)_far,$(suff),$3))
+		_rm \
+		_pe16 \
+		_pe16_v86 \
+		_pe32_16 \
+		_pev86 \
+		_pp16 \
+		_pp16_v86 \
+		_pp32_16 \
+		_ppv86 \
+		_pae16 \
+		_pae16_v86 \
+		_pae32_16 \
+		_paev86 \
+		_lm16 \
+		,$(evalcall2 def_Bs3KitGenFarStubSource,$1,$2,$(suff)_far,$(suff),$3))
 
 # @param    1   The target name.
 # @param    2   The function name.
@@ -667,32 +667,32 @@ TEMPLATE_VBoxBS3KitImg_LDFLAGS  = system dos \
 	clname BS3SYSTEM16 segaddr=0x2000 \
 	segment BS3SYSTEM16 \
 	$(if-expr "$(BS3KIT_SEGNM_DATA16)" == "", \
-	clname DATA \
-	segment BS3DATA16 segaddr=0x2900 \
-	segment BS3DATA16_DATA \
-	segment DATA \
-	segment _DATA \
-	segment BS3DATA16CONST \
-	segment CONST \
-	segment BS3DATA16CONST2 \
-	segment CONST2 \
-	segment STRINGS \
-	segment BS3DATA16_END \
-	clname BSS \
-	segment BSS \
-	segment _BSS \
-	segment BS3DATA16_END \
-	clname FAR_DATA \
-	segment FAR_DATA \
-	, \
-	clname FAR_DATA \
-	segment BS3DATA16 segaddr=0x2900 \
-	segment FAR_DATA \
-	segment BS3DATA16CONST \
-	segment BS3DATA16CONST2 \
-	segment BS3DATA16_DATA \
-	segment BS3DATA16_END \
-	) \
+		clname DATA \
+		segment BS3DATA16 segaddr=0x2900 \
+		segment BS3DATA16_DATA \
+		segment DATA \
+		segment _DATA \
+		segment BS3DATA16CONST \
+		segment CONST \
+		segment BS3DATA16CONST2 \
+		segment CONST2 \
+		segment STRINGS \
+		segment BS3DATA16_END \
+		clname BSS \
+		segment BSS \
+		segment _BSS \
+		segment BS3DATA16_END \
+		clname FAR_DATA \
+		segment FAR_DATA \
+		, \
+		clname FAR_DATA \
+		segment BS3DATA16 segaddr=0x2900 \
+		segment FAR_DATA \
+		segment BS3DATA16CONST \
+		segment BS3DATA16CONST2 \
+		segment BS3DATA16_DATA \
+		segment BS3DATA16_END \
+		) \
 	segment BS3DATA32 \
 	segment BS3DATA32CONST \
 	segment BS3DATA32CONST2 \
@@ -732,8 +732,8 @@ TEMPLATE_VBoxBS3KitImg_LNK_DEPS = \
 	$(bs3-bootsector_1_TARGET) \
 	$(VBoxBs3Linker_1_TARGET)
 TEMPLATE_VBoxBS3KitImg_POST_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY) \
-	,,$(QUIET)$(MV_EXT) -f -- "$(out)" "$(out).tmp" \
-	$$(NLTAB)$(QUIET)$(VBoxBs3Linker_1_TARGET) -o $(out) $(bs3-bootsector_1_TARGET) $(out).tmp \
+		,,$(QUIET)$(MV_EXT) -f -- "$(out)" "$(out).tmp" \
+		$$(NLTAB)$(QUIET)$(VBoxBs3Linker_1_TARGET) -o $(out) $(bs3-bootsector_1_TARGET) $(out).tmp \
 	$$(NLTAB)$(QUIET)$(RM_EXT) -f -- "$(out).tmp") \
 	$(eval .PRECIOUS: $(outbase).map) # ugly hack!
 
@@ -872,15 +872,15 @@ TEMPLATE_VBoxBS3KitUtil_LDFLAGS  = system dos \
 	segment _AFTERNULL \
 	clname DATA \
 	$(if-expr "$(BS3KIT_SEGNM_DATA16)" == "", \
-	segment BS3DATA16 \
-	segment BS3DATA16CONST \
-	segment CONST \
-	segment BS3DATA16CONST2 \
-	segment CONST2 \
-	, \
-	segment CONST \
-	segment CONST2 \
-	) \
+		segment BS3DATA16 \
+		segment BS3DATA16CONST \
+		segment CONST \
+		segment BS3DATA16CONST2 \
+		segment CONST2 \
+		, \
+		segment CONST \
+		segment CONST2 \
+		) \
 	segment _DATA \
 	segment XIB \
 	segment XI \
@@ -890,8 +890,8 @@ TEMPLATE_VBoxBS3KitUtil_LDFLAGS  = system dos \
 	segment YIE \
 	segment STRINGS \
 	$(if-expr "$(BS3KIT_SEGNM_DATA16)" == "", \
-	segment BS3DATA16_DATA \
-	,) \
+		segment BS3DATA16_DATA \
+		,) \
 	segment DATA \
 	clname BSS \
 	segment _BSS \
@@ -902,15 +902,15 @@ TEMPLATE_VBoxBS3KitUtil_LDFLAGS  = system dos \
 	\
 	clname FAR_DATA \
 	$(if-expr "$(BS3KIT_SEGNM_DATA16)" != "", \
-	segment BS3DATA16 \
-	segment BS3DATA16_DATA \
-	segment BS3DATA16CONST \
-	segment BS3DATA16CONST2 \
-	segment FAR_DATA \
-	segment BS3DATA16_END \
-	, \
-	segment FAR_DATA \
-	) \
+		segment BS3DATA16 \
+		segment BS3DATA16_DATA \
+		segment BS3DATA16CONST \
+		segment BS3DATA16CONST2 \
+		segment FAR_DATA \
+		segment BS3DATA16_END \
+		, \
+		segment FAR_DATA \
+		) \
 	segment BS3DATA32 \
 	segment BS3DATA32CONST \
 	segment BS3DATA32CONST2 \

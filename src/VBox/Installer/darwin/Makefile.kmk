@@ -592,7 +592,7 @@ ifdef VBOX_WITH_QTGUI
  VBOX_DI_VBAPP_SYMLINKS += \
  	Resources/vmstarter.app/Contents/MacOS=>../../../MacOS/ \
  	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
- 	,Frameworks/$(qtmod).framework/Versions/Current=>$(VBOX_QT_VERSION_MAJOR) )
+ 		,Frameworks/$(qtmod).framework/Versions/Current=>$(VBOX_QT_VERSION_MAJOR) )
 endif
 ifdef VBOX_WITH_PYTHON
  # Python XPCOM glue

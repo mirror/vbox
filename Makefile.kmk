@@ -131,26 +131,26 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
   ifdef PATH_TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST
    InstallExternalLibs_SOURCES += \
    	$(foreachfile redistdll, $(qaddprefix ,$(requote unq,$(PATH_TOOL_$(VBOX_VCC_TOOL)_REDIST_CRT)/), \
-   	$(TOOL_$(VBOX_VCC_TOOL)_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL)_REDIST_CPP_DLLS)) \
-   	,$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll)) \
-   	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll))=>testcase/$(qnotdir ,$(redistdll)))
+   			$(TOOL_$(VBOX_VCC_TOOL)_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL)_REDIST_CPP_DLLS)) \
+   		,$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll)) \
+   		$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll))=>testcase/$(qnotdir ,$(redistdll)))
    ifdef VBOX_WITH_32_ON_64_MAIN_API
     InstallExternalLibs_SOURCES += \
     	$(foreachfile redistdll, $(qaddprefix ,$(requote unq,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CRT)/), \
-    	$(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CPP_DLLS)) \
-    	,$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll),x86)=>x86/$(qnotdir ,$(redistdll)))
+    			$(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CPP_DLLS)) \
+    		,$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll),x86)=>x86/$(qnotdir ,$(redistdll)))
    endif
    ifeq ($(VBOX_VCC_CRT_TYPE),d)
     InstallExternalLibs_SOURCES += \
     	$(foreachfile redistdll, $(qaddprefix ,$(requote unq,$(PATH_TOOL_$(VBOX_VCC_TOOL)_REDIST_DEBUG_CRT)/), \
-    	$(addsuffix d.dll,$(basename $(TOOL_$(VBOX_VCC_TOOL)_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL)_REDIST_CPP_DLLS)))) \
-    	,$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll)) \
-    	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll))=>testcase/$(qnotdir ,$(redistdll)))
+    			$(addsuffix d.dll,$(basename $(TOOL_$(VBOX_VCC_TOOL)_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL)_REDIST_CPP_DLLS)))) \
+    		,$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll)) \
+    		$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll))=>testcase/$(qnotdir ,$(redistdll)))
     ifdef VBOX_WITH_32_ON_64_MAIN_API
      InstallExternalLibs_SOURCES += \
      	$(foreachfile redistdll, $(qaddprefix ,$(requote unq,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_DEBUG_CRT)/), \
-     	$(addsuffix d.dll,$(basename $(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CPP_DLLS)))) \
-     	,$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll),x86)=>x86/$(qnotdir ,$(redistdll)))
+     			$(addsuffix d.dll,$(basename $(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CPP_DLLS)))) \
+     		,$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll),x86)=>x86/$(qnotdir ,$(redistdll)))
     endif
    endif
    ifeq ($(KBUILD_TYPE),asan)
@@ -238,13 +238,13 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
   endif
   qt5-bin_INST = $(INST_VIRTUALBOX)Contents/
   qt5-bin_EXEC_SOURCES = $(foreach qtmod,$(VBOX_QT_MOD_NAMES), \
-  	$(VBOX_QT_PATH_LIB)/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/$(qtmod)=>Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/$(qtmod))
+  		$(VBOX_QT_PATH_LIB)/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/$(qtmod)=>Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/$(qtmod))
   qt5-bin_SOURCES = $(foreach qtmod,$(VBOX_QT_MOD_NAMES), \
-  	$(VBOX_QT_PATH_LIB)/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/Resources/Info.plist=>Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/Resources/Info.plist)
+  		$(VBOX_QT_PATH_LIB)/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/Resources/Info.plist=>Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/Resources/Info.plist)
   ifdef VBOX_WITH_QT_DSYMS
    qt5-bin_SOURCES += $(foreach qtmod,$(VBOX_QT_MOD_NAMES), \
-   	$(VBOX_QT_PATH_LIB)/$(qtmod).framework.dSYM/Contents/Info.plist=>Frameworks/$(qtmod).framework.dSYM/Contents/Info.plist \
-   	$(VBOX_QT_PATH_LIB)/$(qtmod).framework.dSYM/Contents/Resources/DWARF/$(qtmod)=>Frameworks/$(qtmod).framework.dSYM/Contents/Resources/DWARF/$(qtmod))
+   		$(VBOX_QT_PATH_LIB)/$(qtmod).framework.dSYM/Contents/Info.plist=>Frameworks/$(qtmod).framework.dSYM/Contents/Info.plist \
+   		$(VBOX_QT_PATH_LIB)/$(qtmod).framework.dSYM/Contents/Resources/DWARF/$(qtmod)=>Frameworks/$(qtmod).framework.dSYM/Contents/Resources/DWARF/$(qtmod))
   endif
   qt5-bin_EXEC_SOURCES += \
   	$(VBOX_QT_PATH)/plugins/platforms/libqcocoa$(SUFF_DLL)=>plugins/platforms/libqcocoa$(SUFF_DLL) \
@@ -254,28 +254,28 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
   	$(VBOX_QT_PATH)/plugins/styles/libqmacstyle$(SUFF_DLL)=>plugins/styles/libqmacstyle$(SUFF_DLL)
   ifdef VBOX_WITH_QT_DSYMS
    qt5-bin_SOURCES += $(foreach qtplat, libqcocoa libqminimal libqoffscreen, \
-   	$(VBOX_QT_PATH)/plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Info.plist \
-   	$(VBOX_QT_PATH)/plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtplat)$(SUFF_DLL)=>plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtplat)$(SUFF_DLL))
+   		$(VBOX_QT_PATH)/plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Info.plist \
+   		$(VBOX_QT_PATH)/plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtplat)$(SUFF_DLL)=>plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtplat)$(SUFF_DLL))
    qt5-bin_SOURCES += $(foreach qtsqldrv, libqsqlite, \
-   	$(VBOX_QT_PATH)/plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Info.plist \
-   	$(VBOX_QT_PATH)/plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtsqldrv)$(SUFF_DLL)=>plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtsqldrv)$(SUFF_DLL))
+   		$(VBOX_QT_PATH)/plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Info.plist \
+   		$(VBOX_QT_PATH)/plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtsqldrv)$(SUFF_DLL)=>plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtsqldrv)$(SUFF_DLL))
    qt5-bin_SOURCES += $(foreach qtstyl, libqmacstyle, \
-   	$(VBOX_QT_PATH)/plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Info.plist \
-   	$(VBOX_QT_PATH)/plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtstyl)$(SUFF_DLL)=>plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtstyl)$(SUFF_DLL))
+   		$(VBOX_QT_PATH)/plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Info.plist \
+   		$(VBOX_QT_PATH)/plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtstyl)$(SUFF_DLL)=>plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtstyl)$(SUFF_DLL))
   endif
   qt5-bin_SYMLINKS = $(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
-  	Frameworks/$(qtmod).framework/Versions/Current=>$(VBOX_QT_FWRK_VER) \
-  	Frameworks/$(qtmod).framework/$(qtmod)=>Versions/$(VBOX_QT_FWRK_VER)/$(qtmod) \
-  	Frameworks/$(qtmod).framework/Resources=>Versions/$(VBOX_QT_FWRK_VER)/Resources)
+  		Frameworks/$(qtmod).framework/Versions/Current=>$(VBOX_QT_FWRK_VER) \
+  		Frameworks/$(qtmod).framework/$(qtmod)=>Versions/$(VBOX_QT_FWRK_VER)/$(qtmod) \
+  		Frameworks/$(qtmod).framework/Resources=>Versions/$(VBOX_QT_FWRK_VER)/Resources)
   qt5-bin_INSTALLER = $(INSTALL) $(if $(uid),-o $(uid)) $(if $(gid),-g $(gid)) $(if $(mode),-m $(mode)) $(4) -- \
   	"$(1)" "$(2)" $(if-expr "$(source_type_prefix)" == "EXEC_" \
-  	,$(NLTAB)install_name_tool \
-  	$(if-expr "$(suffix $2)" == "", -id "$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Framework,@rpath)/$(notdir $(2)).framework/Version/$(VBOX_QT_FWRK_VER)/$(notdir $(2))",) \
-  	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
-  	$(foreach prefix, @executable_path/../Frameworks/ $(VBOX_PATH_QT)/Frameworks/ $(VBOX_QT_PATH)/, \
-  	-change "$(prefix)$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/$(qtmod)" \
-  	"$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Frameworks,@rpath)/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/$(qtmod)" ) ) \
-  	"$(2)",)  # HACK ALERT! Using $(source_type_prefix) to detect EXEC_SOURCES.
+  		,$(NLTAB)install_name_tool \
+  		$(if-expr "$(suffix $2)" == "", -id "$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Framework,@rpath)/$(notdir $(2)).framework/Version/$(VBOX_QT_FWRK_VER)/$(notdir $(2))",) \
+  		$(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
+  			$(foreach prefix, @executable_path/../Frameworks/ $(VBOX_PATH_QT)/Frameworks/ $(VBOX_QT_PATH)/, \
+  				-change "$(prefix)$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/$(qtmod)" \
+  				"$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Frameworks,@rpath)/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/$(qtmod)" ) ) \
+  		"$(2)",) # HACK ALERT! Using $(source_type_prefix) to detect EXEC_SOURCES.
  else # win x11
   if1of ($(KBUILD_TARGET), linux solaris)
    if !defined(VBOX_ONLY_BUILD) && defined(VBOX_WITH_QTGUI)
@@ -407,21 +407,21 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
   buildserver-docs_MODE = 0644
   buildserver-docs_SOURCES = \
   	$(addprefix $(PATH_TARGET)/, \
-  	$(if-expr defined(VBOX_WITH_DOCS_QHELP_PACKING),UserManual.qch UserManual.qhc,) \
+  		$(if-expr defined(VBOX_WITH_DOCS_QHELP_PACKING),UserManual.qch UserManual.qhc,) \
   	UserManual.pdf \
   	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES), \
-  	$(if-expr defined(VBOX_WITH_DOCS_QHELP_PACKING),UserManual_$(f).qch UserManual_$(f).qhc,) \
+  		$(if-expr defined(VBOX_WITH_DOCS_QHELP_PACKING),UserManual_$(f).qch UserManual_$(f).qhc,) \
   	UserManual_$(f).pdf))
   buildserver-docs_CLEANS = \
   	$(buildserver-docs_0_OUTDIR)/unpacked.ts \
   	$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip \
   	$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip.tmp \
   	$(addprefix $(PATH_TARGET)/, \
-  	VirtualBox.chm UserManual.qch UserManual.qhc UserManual.pdf \
-  	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES), \
-  	VirtualBox_$(f).chm \
-  	UserManual_$(f).qch UserManual_$(f).qhc \
-  	UserManual_$(f).pdf))
+  		VirtualBox.chm UserManual.qch UserManual.qhc UserManual.pdf \
+  		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES), \
+  			VirtualBox_$(f).chm \
+  			UserManual_$(f).qch UserManual_$(f).qhc \
+  			UserManual_$(f).pdf))
 
   $$(buildserver-docs_0_OUTDIR)/unpacked.ts +| \
   $(if-expr defined(VBOX_WITH_DOCS_QHELP_PACKING),$(PATH_TARGET)/UserManual.qch $(PATH_TARGET)/UserManual.qhc,) \
@@ -944,7 +944,7 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST = \
 VBOX_CORE_DOXYFILE_INPUT := \
 	$(filter-out %.cpp.h, $(sort $(wildcard $(addsuffix /*.h, $(VBOX_CORE_DOXYFILE_INPUT_DIRS)))) ) \
 	$(foreach dir, $(VBOX_CORE_DOXYFILE_INPUT_DIRS) \
-	, $(wildcard $(dir)/*.cpp $(dir)/*.c $(dir)/*.m $(dir)/*.mm $(dir)/*.py $(dir)/.asm))
+		, $(wildcard $(dir)/*.cpp $(dir)/*.c $(dir)/*.m $(dir)/*.mm $(dir)/*.py $(dir)/.asm))
 VBOX_CORE_DOXYFILE_INPUT := \
 	$(VBOX_CORE_DOXYFILE_INPUT_FIRST) \
 	$(sort $(filter-out $(VBOX_CORE_DOXYFILE_INPUT_FIRST), $(VBOX_CORE_DOXYFILE_INPUT)))
@@ -1113,10 +1113,10 @@ VBOX_RSYNC_IN_FN = $(if-expr "$(3)" != "nossh",$(VBOX_RSYNC),$(VBOX_RSYNC_NOSSH)
 	--exclude=tools/common/plantuml/ \
 	$(if-expr "$1" == "solaris",--exclude=tools/common/openwatcom/,) \
 	$(foreach os,$(filter-out $(1), darwin freebsd linux solaris os2 win), \
-	--exclude=tools/$(os)/ \
-	--exclude=tools/$(os).x86/ \
-	--exclude=tools/$(os).amd64/ \
-	--exclude=tools/$(os).arm64/ )
+		--exclude=tools/$(os)/ \
+		--exclude=tools/$(os).x86/ \
+		--exclude=tools/$(os).amd64/ \
+		--exclude=tools/$(os).arm64/ )
 
 #
 # VM IP addresses.

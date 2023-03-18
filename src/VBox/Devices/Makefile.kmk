@@ -1197,9 +1197,9 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  	$(PATH_STAGE_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
  	$(PATH_STAGE_LIB)/VgaBiosBin$(VBOX_SUFF_LIB) \
  	$(if $(VBOX_WITH_PXE_ROM), \
- 	$(if $(VBOX_WITH_INTEL_PXE), \
- 	$(PATH_STAGE_LIB)/NetBiosBin$(VBOX_SUFF_LIB), \
- 	$(PATH_STAGE_LIB)/iPxeBiosBin$(VBOX_SUFF_LIB)),) \
+ 		$(if $(VBOX_WITH_INTEL_PXE), \
+ 			$(PATH_STAGE_LIB)/NetBiosBin$(VBOX_SUFF_LIB), \
+ 			$(PATH_STAGE_LIB)/iPxeBiosBin$(VBOX_SUFF_LIB)),) \
  	$(LIB_RUNTIME)
  VBoxDD2_LDFLAGS.darwin  = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD2.dylib
  VBoxDD2_LDFLAGS.linux   = $(VBOX_GCC_NO_UNDEFINED)

@@ -225,8 +225,8 @@ BLDDIRS += \
 	$(VBOX_WIN_INST_OUT_DIR) \
 	$(VBOX_WIN_INST_REPACK_DIR)/ \
 	$(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
-	$(VBOX_WIN_INST_OUT_DIR)/$(lang)/ \
-	$(VBOX_WIN_INST_REPACK_DIR)/files-VirtualBox_$(lang)/ ) \
+		$(VBOX_WIN_INST_OUT_DIR)/$(lang)/ \
+		$(VBOX_WIN_INST_REPACK_DIR)/files-VirtualBox_$(lang)/ ) \
 	$(VBOX_WIN_INST_OUT_DIR)/NLS/
 
 OTHER_CLEAN += \
@@ -241,19 +241,19 @@ OTHER_CLEAN += \
 	$(VBOX_WIN_INST_OUT_DIR)/VBoxKey.wxi \
 	$(VBOX_WIN_INST_OUT_DIR)/VBoxUnattendedTemplateComponent.wxi \
 	$(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
-	$(VBOX_WIN_INST_OUT_DIR)/NLS/Language_$(lang).wxl \
-	$(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl \
-	$(VBOX_WIN_INST_OUT_DIR)/$(lang)/$(lang).mst \
-	$(VBOX_WIN_INST_OUT_DIR)/$(lang)/$(PACKAGE_NAME_LANG)_$(lang).wixpdb \
-	$(VBOX_WIN_INST_OUT_DIR)/$(lang)/$(PACKAGE_NAME_LANG)_$(lang).msi \
-	$(VBOX_WIN_INST_OUT_DIR)/$(lang)/VirtualBox_$(lang).wix \
-	$(VBOX_WIN_INST_OUT_DIR)/$(lang)/VirtualBox_$(lang).wixobj \
-	$(VBOX_WIN_INST_OUT_DIR)/$(lang)/VirtualBox_$(lang).wixobj.dep \
-	$(VBOX_WIN_INST_REPACK_DIR)/VirtualBox_$(lang).wix \
-	$(VBOX_WIN_INST_REPACK_DIR)/VirtualBox_$(lang).files \
-	$(VBOX_WIN_INST_REPACK_DIR)/2-link-$(PACKAGE_NAME_LANG).cmd \
-	$(VBOX_WIN_INST_REPACK_DIR)/files-VirtualBox_$(lang)/Language_$(lang).wxl \
-	$(VBOX_WIN_INST_REPACK_DIR)/files-VirtualBox_$(lang)/License_$(lang).wxl ) \
+		$(VBOX_WIN_INST_OUT_DIR)/NLS/Language_$(lang).wxl \
+		$(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl \
+		$(VBOX_WIN_INST_OUT_DIR)/$(lang)/$(lang).mst \
+		$(VBOX_WIN_INST_OUT_DIR)/$(lang)/$(PACKAGE_NAME_LANG)_$(lang).wixpdb \
+		$(VBOX_WIN_INST_OUT_DIR)/$(lang)/$(PACKAGE_NAME_LANG)_$(lang).msi \
+		$(VBOX_WIN_INST_OUT_DIR)/$(lang)/VirtualBox_$(lang).wix \
+		$(VBOX_WIN_INST_OUT_DIR)/$(lang)/VirtualBox_$(lang).wixobj \
+		$(VBOX_WIN_INST_OUT_DIR)/$(lang)/VirtualBox_$(lang).wixobj.dep \
+		$(VBOX_WIN_INST_REPACK_DIR)/VirtualBox_$(lang).wix \
+		$(VBOX_WIN_INST_REPACK_DIR)/VirtualBox_$(lang).files \
+		$(VBOX_WIN_INST_REPACK_DIR)/2-link-$(PACKAGE_NAME_LANG).cmd \
+		$(VBOX_WIN_INST_REPACK_DIR)/files-VirtualBox_$(lang)/Language_$(lang).wxl \
+		$(VBOX_WIN_INST_REPACK_DIR)/files-VirtualBox_$(lang)/License_$(lang).wxl ) \
 	$(VBOX_WIN_INST_OUT_DIR)/DirComponentsAndFiles_DTrace.wxi \
 	$(VBOX_WIN_INST_OUT_DIR)/Files_Main.wxi \
 	$(VBOX_WIN_INST_OUT_DIR)/Files_Doc.wxi \
@@ -282,13 +282,13 @@ endif
 ifdef VBOX_WITH_MSM_INSTALL
  OTHER_CLEAN += \
  	$(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
- 	$(foreach lang,$(VBOX_INSTALLER_MERGE_LANGUAGES), \
- 	$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang)_$(KBUILD_TARGET_ARCH).msm \
- 	$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj \
- 	$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj.dep \
- 	$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixpdb \
- 	$(VBOX_WIN_INST_REPACK_DIR)/VBoxMerge$(module)_$(lang).wix \
- 	$(VBOX_WIN_INST_REPACK_DIR)/VBoxMerge$(module)_$(lang).files)
+ 		$(foreach lang,$(VBOX_INSTALLER_MERGE_LANGUAGES), \
+ 			$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang)_$(KBUILD_TARGET_ARCH).msm \
+ 			$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj \
+ 			$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj.dep \
+ 			$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixpdb \
+ 			$(VBOX_WIN_INST_REPACK_DIR)/VBoxMerge$(module)_$(lang).wix \
+ 			$(VBOX_WIN_INST_REPACK_DIR)/VBoxMerge$(module)_$(lang).files)
  BLDDIRS        += $foreach lang,$(VBOX_INSTALLER_MERGE_LANGUAGES), \
  	$(VBOX_WIN_INST_REPACK_DIR)/files-VBoxMerge$(module)_$(lang)/)
 endif

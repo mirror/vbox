@@ -109,9 +109,9 @@ ifdef VBOX_WITH_TESTCASES
  # Generate the rules for creating the .bin files.
  VBOX_DISAS_TESTS_BIN = $(VBOX_DISAS_TESTS_BUILD) $(VBOX_DISAS_TESTS_INVALID)
  VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, \
- 	$(VBOX_DISAS_TESTS_BIN:.asm=-16.bin) \
- 	$(VBOX_DISAS_TESTS_BIN:.asm=-32.bin) \
- 	$(VBOX_DISAS_TESTS_BIN:.asm=-64.bin))
+ 		$(VBOX_DISAS_TESTS_BIN:.asm=-16.bin) \
+ 		$(VBOX_DISAS_TESTS_BIN:.asm=-32.bin) \
+ 		$(VBOX_DISAS_TESTS_BIN:.asm=-64.bin))
 
  $(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, $(VBOX_DISAS_TESTS_BIN:.asm=-16.bin)): $(PATH_SUB_CURRENT)/$$(patsubst %-16.bin,%.asm,$$(notdir $$(@))) | $$(dir $$@)
 	@$(ECHO) "Assembling: $(<F) into $(@F)"
@@ -128,9 +128,9 @@ ifdef VBOX_WITH_TESTCASES
 
  # Generate the rules for the 'build' tests.
  VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, \
- 	$(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.asm) \
- 	$(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.asm) \
- 	$(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.asm))
+ 		$(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.asm) \
+ 		$(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.asm) \
+ 		$(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.asm))
 
  $(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.asm)): $$(subst -disas.asm,.bin,$$@) $$(tstDisasm-2_1_STAGE_TARGET) | $$(dir $$@)
 	@$(ECHO) "Generating: $(@F) from $(<F)"
@@ -146,9 +146,9 @@ ifdef VBOX_WITH_TESTCASES
 
 
  VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, \
- 	$(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.bin) \
- 	$(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.bin) \
- 	$(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.bin))
+ 		$(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.bin) \
+ 		$(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.bin) \
+ 		$(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.bin))
 
  $(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.bin)): $$(subst .bin,.asm,$$@) | $$(dir $$@)
 	@$(ECHO) "Re-assembling: $(<F) into $(@F)"

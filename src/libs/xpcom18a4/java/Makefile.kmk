@@ -105,15 +105,15 @@ VBoxJXpcom-inst-jar_CLEAN = \
 	$(VBOX_JXPCOM_GEN)/jxpcomgen.list \
 	$(VBOX_JXPCOM_GEN)/jxpcomglue.list \
 	$(wildcard \
-	$(VBOX_JXPCOM_GEN)/java/*.java \
-	$(VBOX_JXPCOM_GEN)/java/glue/*.java \
-	$(VBOX_JXPCOM_JDEST)/*.class \
-	$(VBOX_JXPCOM_JDEST)/*/*.class \
-	$(VBOX_JXPCOM_JDEST)/*/*/*.class \
-	$(VBOX_JXPCOM_JDEST)/*/*/*/*.class \
-	$(VBOX_JXPCOM_JDEST)/*/*/*/*/*.class \
-	$(VBOX_JXPCOM_JDEST)/*/*/*/*/*/*.class \
-	)
+		$(VBOX_JXPCOM_GEN)/java/*.java \
+		$(VBOX_JXPCOM_GEN)/java/glue/*.java \
+		$(VBOX_JXPCOM_JDEST)/*.class \
+		$(VBOX_JXPCOM_JDEST)/*/*.class \
+		$(VBOX_JXPCOM_JDEST)/*/*/*.class \
+		$(VBOX_JXPCOM_JDEST)/*/*/*/*.class \
+		$(VBOX_JXPCOM_JDEST)/*/*/*/*/*.class \
+		$(VBOX_JXPCOM_JDEST)/*/*/*/*/*/*.class \
+		)
 VBoxJXpcom-inst-jar_BLDDIRS += $(VBOX_JXPCOM_GEN)/java $(VBOX_JXPCOM_GEN)/java/glue $(VBOX_JXPCOM_GEN)/java/interfaces
 
 #
