@@ -91,7 +91,9 @@ CopyTree()
     MY_FILES=""
     for MY_FILE in *;
     do
-        if test -d "${MY_SRCTREE}/${MY_FILE}"; then
+        if test "${MY_FILE}" = "*"; then
+            # For empty directories we get '*' back. Ignore it.
+        elif test -d "${MY_SRCTREE}/${MY_FILE}"; then
             case "${MY_SRCTREE}/${MY_FILE}" in
                 *\ *)
                     echo "Unexpected space in dir/subdir: ${MY_SRCTREE}/${MY_FILE}" 1>&2;
