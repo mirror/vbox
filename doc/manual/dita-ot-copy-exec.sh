@@ -89,6 +89,7 @@ CopyTree()
     MY_DIRS=""
     MY_DIRS_PAIRS=""
     MY_FILES=""
+    MY_EXEC_FILES=""
     for MY_FILE in *;
     do
         if test "${MY_FILE}" = "*"; then
@@ -120,7 +121,11 @@ CopyTree()
                     MY_TEMPLATED_FILES="${MY_TEMPLATED_FILES} ${MY_DSTTREE}/${MY_FILE%_template.xsl}.xsl"
                     ;;
                 *)
-                    MY_FILES="${MY_FILES} ${MY_FILE}"
+                    if test -x "${MY_SRCTREE}/${MY_FILE}"; then
+                        MY_EXEC_FILES="${MY_EXEC_FILES} ${MY_FILE}"
+                    else
+                        MY_FILES="${MY_FILES} ${MY_FILE}"
+                    fi
                     ;;
             esac
         else
@@ -132,6 +137,9 @@ CopyTree()
     # Install all the files in one go.
     if test -n "${MY_FILES}"; then
         "${MY_INSTALL}" ${MY_DEBUG_INSTALL} --hard-link-files-when-possible -m644 -- ${MY_FILES} "${MY_DSTTREE}/"
+    fi
+    if test -n "${MY_EXEC_FILES}"; then
+        "${MY_INSTALL}" ${MY_DEBUG_INSTALL} --hard-link-files-when-possible -m755 -- ${MY_EXEC_FILES} "${MY_DSTTREE}/"
     fi
 
     # Create all subdirs and recurse into each.
