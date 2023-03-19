@@ -109,6 +109,7 @@ VMMDECL(bool) EMAreHypercallInstructionsEnabled(PVMCPU pVCpu)
 }
 
 
+#if !defined(VBOX_VMM_TARGET_ARMV8)
 /**
  * Prepare an MWAIT - essentials of the MONITOR instruction.
  *
@@ -250,6 +251,7 @@ VMM_INT_DECL(bool) EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx)
     }
     return false;
 }
+#endif
 
 
 /**
@@ -875,6 +877,9 @@ static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_
         }
         if (RT_FAILURE(rc))
         {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+            AssertReleaseFailed();
+#else
             /*
              * If we fail to find the page via the guest's page tables
              * we invalidate the page in the host TLB (pertaining to
@@ -886,6 +891,7 @@ static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_
                 if (((uSrcAddr + cbToRead - 1) >> GUEST_PAGE_SHIFT) != (uSrcAddr >> GUEST_PAGE_SHIFT))
                     HMInvalidatePage(pVCpu, uSrcAddr + cbToRead - 1);
             }
+#endif
         }
     }
 
@@ -906,20 +912,25 @@ static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_
  */
 VMM_INT_DECL(int) EMInterpretDisasCurrent(PVMCPUCC pVCpu, PDISCPUSTATE pDis, unsigned *pcbInstr)
 {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    return EMInterpretDisasOneEx(pVCpu, (RTGCUINTPTR)CPUMGetGuestFlatPC(pVCpu), pDis, pcbInstr);
+#else
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     RTGCPTR  GCPtrInstr;
-#if 0
+
+# if 0
     int rc = SELMToFlatEx(pVCpu, DISSELREG_CS, pCtx, pCtx->rip, 0, &GCPtrInstr);
-#else
+# else
 /** @todo Get the CPU mode as well while we're at it! */
     int rc = SELMValidateAndConvertCSAddr(pVCpu, pCtx->eflags.u, pCtx->ss.Sel, pCtx->cs.Sel, &pCtx->cs, pCtx->rip, &GCPtrInstr);
-#endif
+# endif
     if (RT_SUCCESS(rc))
         return EMInterpretDisasOneEx(pVCpu, (RTGCUINTPTR)GCPtrInstr, pDis, pcbInstr);
 
     Log(("EMInterpretDisasOne: Failed to convert %RTsel:%RGv (cpl=%d) - rc=%Rrc !!\n",
          pCtx->cs.Sel, (RTGCPTR)pCtx->rip, pCtx->ss.Sel & X86_SEL_RPL, rc));
     return rc;
+#endif
 }
 
 
@@ -964,7 +975,11 @@ VMM_INT_DECL(int) EMInterpretDisasOneEx(PVMCPUCC pVCpu, RTGCUINTPTR GCPtrInstr, 
  */
 VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPUCC pVCpu)
 {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    LogFlow(("EMInterpretInstruction %RGv\n", (RTGCPTR)CPUMGetGuestFlatPC(pVCpu)));
+#else
     LogFlow(("EMInterpretInstruction %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVCpu)));
+#endif
 
     VBOXSTRICTRC rc = IEMExecOneBypassEx(pVCpu, NULL /*pcbWritten*/);
     if (RT_UNLIKELY(   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED

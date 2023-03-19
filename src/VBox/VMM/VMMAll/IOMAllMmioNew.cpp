@@ -1087,6 +1087,10 @@ VMMDECL(int) IOMMmioMapMmio2Page(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hR
     AssertReturn(fPageFlags == (X86_PTE_RW | X86_PTE_P), VERR_INVALID_PARAMETER);
     AssertReturn(pDevIns, VERR_INVALID_POINTER);
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    /** @todo NEM: MMIO page aliasing. */
+    return VINF_SUCCESS;    /* ignore */ /** @todo return some indicator if we fail here */
+#else
 /** @todo Why is this restricted to protected mode???  Try it in all modes! */
     PVMCPUCC pVCpu = VMMGetCpu(pVM);
 
@@ -1101,7 +1105,7 @@ VMMDECL(int) IOMMmioMapMmio2Page(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hR
      * Translate the handle into an entry and check the region offset.
      */
     AssertReturn(hRegion < RT_MIN(pVM->iom.s.cMmioRegs, pVM->iom.s.cMmioAlloc), VERR_IOM_INVALID_MMIO_HANDLE);
-#ifdef IN_RING0
+# ifdef IN_RING0
     AssertReturn(hRegion < pVM->iomr0.s.cMmioAlloc, VERR_IOM_INVALID_MMIO_HANDLE);
     PIOMMMIOENTRYR3 const pRegEntry = &pVM->iomr0.s.paMmioRing3Regs[hRegion];
     AssertReturn(pRegEntry->cbRegion > 0, VERR_IOM_INVALID_MMIO_HANDLE);
@@ -1109,11 +1113,11 @@ VMMDECL(int) IOMMmioMapMmio2Page(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hR
     AssertReturn(   pVM->iomr0.s.paMmioRegs[hRegion].pDevIns == pDevIns
                  || (   pVM->iomr0.s.paMmioRegs[hRegion].pDevIns == NULL
                      && pRegEntry->pDevIns == pDevIns->pDevInsForR3), VERR_ACCESS_DENIED);
-#else
+# else
     PIOMMMIOENTRYR3 const pRegEntry = &pVM->iom.s.paMmioRegs[hRegion];
     AssertReturn(pRegEntry->cbRegion > 0, VERR_IOM_INVALID_MMIO_HANDLE);
     AssertReturn(pRegEntry->pDevIns == pDevIns, VERR_ACCESS_DENIED);
-#endif
+# endif
     AssertReturn(offRegion < pRegEntry->cbRegion, VERR_OUT_OF_RANGE);
     Assert((pRegEntry->cbRegion & GUEST_PAGE_OFFSET_MASK) == 0);
 
@@ -1143,25 +1147,26 @@ VMMDECL(int) IOMMmioMapMmio2Page(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hR
 
 /** @todo either ditch this or replace it with something that works in the
  *        nested case, since we really only care about nested paging! */
-#if 0
+# if 0
     /*
      * Modify the shadow page table. Since it's an MMIO page it won't be present and we
      * can simply prefetch it.
      *
      * Note: This is a NOP in the EPT case; we'll just let it fault again to resync the page.
      */
-# if 0 /* The assertion is wrong for the PGM_SYNC_CLEAR_PGM_POOL and VINF_PGM_HANDLER_ALREADY_ALIASED cases. */
-#  ifdef VBOX_STRICT
+#  if 0 /* The assertion is wrong for the PGM_SYNC_CLEAR_PGM_POOL and VINF_PGM_HANDLER_ALREADY_ALIASED cases. */
+#   ifdef VBOX_STRICT
     uint64_t fFlags;
     RTHCPHYS HCPhys;
     rc = PGMShwGetPage(pVCpu, (RTGCPTR)GCPhys, &fFlags, &HCPhys);
     Assert(rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
+#   endif
 #  endif
-# endif
     rc = PGMPrefetchPage(pVCpu, (RTGCPTR)GCPhys);
     Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
-#endif
+# endif
     return rc;
+#endif
 }
 
 
@@ -1252,6 +1257,10 @@ VMMDECL(int) IOMMmioResetRegion(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
     Log(("IOMMMIOResetRegion %#RX64\n", hRegion));
     AssertReturn(pDevIns, VERR_INVALID_POINTER);
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    /** @todo NEM: MMIO page aliasing. */
+    return VINF_SUCCESS;    /* ignore */ /** @todo return some indicator if we fail here */
+#else
 /** @todo Get rid of this this real/protected or nested paging restriction,
  *        it probably shouldn't be here and would be nasty when the CPU
  *        changes mode while we have the hack enabled... */
@@ -1269,18 +1278,18 @@ VMMDECL(int) IOMMmioResetRegion(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
      * We have to take the lock to safely access the mapping address here.
      */
     AssertReturn(hRegion < RT_MIN(pVM->iom.s.cMmioRegs, pVM->iom.s.cMmioAlloc), VERR_IOM_INVALID_MMIO_HANDLE);
-#ifdef IN_RING0
+# ifdef IN_RING0
     AssertReturn(hRegion < pVM->iomr0.s.cMmioAlloc, VERR_IOM_INVALID_MMIO_HANDLE);
     PIOMMMIOENTRYR3 const pRegEntry = &pVM->iomr0.s.paMmioRing3Regs[hRegion];
     AssertReturn(pRegEntry->cbRegion > 0, VERR_IOM_INVALID_MMIO_HANDLE);
     AssertReturn(   pVM->iomr0.s.paMmioRegs[hRegion].pDevIns == pDevIns
                  || (   pVM->iomr0.s.paMmioRegs[hRegion].pDevIns == NULL
                      && pRegEntry->pDevIns == pDevIns->pDevInsForR3), VERR_ACCESS_DENIED);
-#else
+# else
     PIOMMMIOENTRYR3 const pRegEntry = &pVM->iom.s.paMmioRegs[hRegion];
     AssertReturn(pRegEntry->cbRegion > 0, VERR_IOM_INVALID_MMIO_HANDLE);
     AssertReturn(pRegEntry->pDevIns == pDevIns, VERR_ACCESS_DENIED);
-#endif
+# endif
     Assert((pRegEntry->cbRegion & GUEST_PAGE_OFFSET_MASK) == 0);
 
     int rcSem = IOM_LOCK_SHARED(pVM);
@@ -1316,5 +1325,6 @@ VMMDECL(int) IOMMmioResetRegion(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
     }
 # endif
     return rc;
+#endif
 }
 

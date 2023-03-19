@@ -52,6 +52,7 @@ AssertCompileMembersSameSizeAndOffset(VM, dbgf.s.cSoftIntBreakpoints,   VM, dbgf
 AssertCompileMembersSameSizeAndOffset(VM, dbgf.s.cSelectedEvents,       VM, dbgf.ro.cSelectedEvents);
 
 
+#if !defined(VBOX_VMM_TARGET_ARMV8)
 /**
  * Gets the hardware breakpoint configuration as DR7.
  *
@@ -443,6 +444,7 @@ VMM_INT_DECL(uint32_t) DBGFBpCheckIo2(PVMCC pVM, PVMCPUCC pVCpu, RTIOPORT uIoPor
 
     return 0;
 }
+#endif /* VBOX_VMM_TARGET_ARMV8 */
 
 
 /**
@@ -523,7 +525,11 @@ VMM_INT_DECL(VBOXSTRICTRC) DBGFEventGenericWithArgs(PVM pVM, PVMCPU pVCpu, DBGFE
         /*
          * Any events on the stack. Should the incoming event be ignored?
          */
+#if defined(VBOX_VMM_TARGET_ARMV8)
+        uint64_t const rip = CPUMGetGuestFlatPC(pVCpu); /* rip is a misnomer but saves us #ifdef's later on. */
+#else
         uint64_t const rip = CPUMGetGuestRIP(pVCpu);
+#endif
         uint32_t i = pVCpu->dbgf.s.cEvents;
         if (i > 0)
         {

@@ -373,6 +373,7 @@ DECLINLINE(void) pgmPhysPageWriteMonitor(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCP
 }
 
 
+#ifndef VBOX_VMM_TARGET_ARMV8
 /**
  * Checks if the no-execute (NX) feature is active (EFER.NXE=1).
  *
@@ -977,6 +978,7 @@ DECLINLINE(PX86PML4E) pgmShwGetLongModePML4EPtr(PVMCPUCC pVCpu, unsigned int iPm
         return &pShwPml4->a[iPml4];
     return NULL;
 }
+#endif /* !VBOX_VMM_TARGET_ARMV8 */
 
 
 /**

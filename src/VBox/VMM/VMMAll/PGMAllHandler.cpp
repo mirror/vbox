@@ -756,7 +756,11 @@ void pgmHandlerPhysicalResetAliasedPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
     bool fFlushTLBs = false;
     int rc = pgmPoolTrackUpdateGCPhys(pVM, GCPhysPage, pPage, true /*fFlushPTEs*/, &fFlushTLBs);
     AssertLogRelRCReturnVoid(rc);
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    AssertReleaseFailed();
+#else
     HMFlushTlbOnAllVCpus(pVM);
+#endif
 
     /*
      * Make it an MMIO/Zero page.

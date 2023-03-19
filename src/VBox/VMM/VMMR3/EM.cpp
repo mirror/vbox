@@ -118,7 +118,7 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
     PCFGMNODE pCfgEM = CFGMR3GetChild(pCfgRoot, "EM");
 
     int rc = CFGMR3QueryBoolDef(pCfgEM, "IemExecutesAll", &pVM->em.s.fIemExecutesAll,
-#if defined(RT_ARCH_ARM64) && defined(RT_OS_DARWIN)
+#if defined(RT_ARCH_ARM64) && defined(RT_OS_DARWIN) && !defined(VBOX_VMM_TARGET_ARMV8)
                                 true
 #else
                                 false
@@ -868,8 +868,10 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
                 if (   pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_RAW
                     || pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER)
                     AssertLogRelMsgFailedStmt(("Bad EM state."), VERR_EM_INTERNAL_ERROR);
+#if !defined(VBOX_VMM_TARGET_ARMV8)
                 else if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HM)
                     rc = EMR3HmSingleInstruction(pVM, pVCpu, 0 /*fFlags*/);
+#endif
                 else if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_NEM)
                     rc = VBOXSTRICTRC_TODO(emR3NemSingleInstruction(pVM, pVCpu, 0 /*fFlags*/));
 #ifdef VBOX_WITH_REM /** @todo fix me? */
@@ -1323,12 +1325,15 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu)
         || VM_IS_EXEC_ENGINE_IEM(pVM))
         return EMSTATE_IEM;
 
+#if !defined(VBOX_VMM_TARGET_ARMV8)
     if (VM_IS_HM_ENABLED(pVM))
     {
         if (HMCanExecuteGuest(pVM, pVCpu, &pVCpu->cpum.GstCtx))
             return EMSTATE_HM;
     }
-    else if (NEMR3CanExecuteGuest(pVM, pVCpu))
+    else
+#endif
+    if (NEMR3CanExecuteGuest(pVM, pVCpu))
         return EMSTATE_NEM;
 
     /*
@@ -2273,6 +2278,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_RESCHEDULE_HM:
                     Assert(!pVM->em.s.fIemExecutesAll || pVCpu->em.s.enmState != EMSTATE_IEM);
+#if !defined(VBOX_VMM_TARGET_ARMV8)
                     if (VM_IS_HM_ENABLED(pVM))
                     {
                         if (HMCanExecuteGuest(pVM, pVCpu, &pVCpu->cpum.GstCtx))
@@ -2286,7 +2292,9 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                             pVCpu->em.s.enmState = EMSTATE_IEM_THEN_REM;
                         }
                     }
-                    else if (VM_IS_NEM_ENABLED(pVM))
+                    else
+#endif
+                    if (VM_IS_NEM_ENABLED(pVM))
                     {
                         Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HM: %d -> %d (EMSTATE_NEM)\n", enmOldState, EMSTATE_NEM));
                         pVCpu->em.s.enmState = EMSTATE_NEM;
@@ -2576,7 +2584,11 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Execute hardware accelerated raw.
                  */
                 case EMSTATE_HM:
+#if defined(VBOX_VMM_TARGET_ARMV8)
+                    AssertReleaseFailed(); /* Should never get here. */
+#else
                     rc = emR3HmExecute(pVM, pVCpu, &fFFDone);
+#endif
                     break;
 
                 /*
@@ -2660,8 +2672,12 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         rc = VMR3WaitHalted(pVM, pVCpu, false /*fIgnoreInterrupts*/);
                         if (rc == VINF_SUCCESS)
                         {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+                            AssertReleaseFailed();
+#else
                             if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
                                 APICUpdatePendingInterrupts(pVCpu);
+#endif
 
                             if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
                                                          | VMCPU_FF_INTERRUPT_NESTED_GUEST

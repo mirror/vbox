@@ -872,7 +872,9 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                         rc = VMMR3Init(pVM);
                         if (RT_SUCCESS(rc))
                         {
+#if !defined(VBOX_VMM_TARGET_ARMV8)
                             rc = SELMR3Init(pVM);
+#endif
                             if (RT_SUCCESS(rc))
                             {
                                 rc = TRPMR3Init(pVM);
@@ -901,7 +903,9 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                             rc = GIMR3Init(pVM);
                                                             if (RT_SUCCESS(rc))
                                                             {
+#if !defined(VBOX_VMM_TARGET_ARMV8)
                                                                 rc = GCMR3Init(pVM);
+#endif
                                                                 if (RT_SUCCESS(rc))
                                                                 {
                                                                     rc = PDMR3Init(pVM);
@@ -926,8 +930,10 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                         int rc2 = PDMR3Term(pVM);
                                                                         AssertRC(rc2);
                                                                     }
+#if !defined(VBOX_VMM_TARGET_ARMV8)
                                                                     int rc2 = GCMR3Term(pVM);
                                                                     AssertRC(rc2);
+#endif
                                                                 }
                                                                 int rc2 = GIMR3Term(pVM);
                                                                 AssertRC(rc2);
@@ -949,8 +955,10 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                     int rc2 = TRPMR3Term(pVM);
                                     AssertRC(rc2);
                                 }
+#if !defined(VBOX_VMM_TARGET_ARMV8)
                                 int rc2 = SELMR3Term(pVM);
                                 AssertRC(rc2);
+#endif
                             }
                             int rc2 = VMMR3Term(pVM);
                             AssertRC(rc2);
@@ -1070,9 +1078,13 @@ VMMR3_INT_DECL(void) VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     PGMR3Relocate(pVM, 0);              /* Repeat after PDM relocation. */
     CPUMR3Relocate(pVM);
     HMR3Relocate(pVM);
+#if !defined(VBOX_VMM_TARGET_ARMV8)
     SELMR3Relocate(pVM);
+#endif
     VMMR3Relocate(pVM, offDelta);
+#if !defined(VBOX_VMM_TARGET_ARMV8)
     SELMR3Relocate(pVM);                /* !hack! fix stack! */
+#endif
     TRPMR3Relocate(pVM, offDelta);
     IOMR3Relocate(pVM, offDelta);
     EMR3Relocate(pVM);
@@ -1081,7 +1093,9 @@ VMMR3_INT_DECL(void) VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     DBGFR3Relocate(pVM, offDelta);
     PDMR3Relocate(pVM, offDelta);
     GIMR3Relocate(pVM, offDelta);
+#if !defined(VBOX_VMM_TARGET_ARMV8)
     GCMR3Relocate(pVM, offDelta);
+#endif
 }
 
 
@@ -2223,8 +2237,10 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
         AssertRC(rc);
         rc = TRPMR3Term(pVM);
         AssertRC(rc);
+#if !defined(VBOX_VMM_TARGET_ARMV8)
         rc = SELMR3Term(pVM);
         AssertRC(rc);
+#endif
         rc = HMR3Term(pVM);
         AssertRC(rc);
         rc = NEMR3Term(pVM);
@@ -2605,7 +2621,9 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3HardReset(PVM pVM, PVMCPU pVCpu, void *pvU
         GIMR3Reset(pVM);                /* This must come *before* PDM and TM. */
         PDMR3Reset(pVM);
         PGMR3Reset(pVM);
+#if !defined(VBOX_VMM_TARGET_ARMV8)
         SELMR3Reset(pVM);
+#endif
         TRPMR3Reset(pVM);
         IOMR3Reset(pVM);
         CPUMR3Reset(pVM);               /* This must come *after* PDM (due to APIC base MSR caching). */
@@ -4223,8 +4241,10 @@ VMMR3_INT_DECL(bool) VMR3IsLongModeAllowed(PVM pVM)
 {
     switch (pVM->bMainExecutionEngine)
     {
+#if !defined(VBOX_VMM_TARGET_ARMV8)
         case VM_EXEC_ENGINE_HW_VIRT:
             return HMIsLongModeAllowed(pVM);
+#endif
 
         case VM_EXEC_ENGINE_NATIVE_API:
             return NEMHCIsLongModeAllowed(pVM);

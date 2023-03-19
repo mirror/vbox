@@ -364,6 +364,7 @@ VMMR3DECL(int) DBGFR3MemWrite(PUVM pUVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, 
 }
 
 
+#if !defined(VBOX_VMM_TARGET_ARMV8)
 /**
  * Worker for DBGFR3SelQueryInfo that calls into SELM.
  */
@@ -413,6 +414,7 @@ static DECLCALLBACK(int) dbgfR3SelQueryInfo(PUVM pUVM, VMCPUID idCpu, RTSEL Sel,
     }
     return rc;
 }
+#endif
 
 
 /**
@@ -450,10 +452,15 @@ VMMR3DECL(int) DBGFR3SelQueryInfo(PUVM pUVM, VMCPUID idCpu, RTSEL Sel, uint32_t 
     /* Clear the return data here on this thread. */
     memset(pSelInfo, 0, sizeof(*pSelInfo));
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    RT_NOREF(Sel);
+    return VERR_NOT_SUPPORTED;
+#else
     /*
      * Dispatch the request to a worker running on the target CPU.
      */
     return VMR3ReqPriorityCallWaitU(pUVM, idCpu, (PFNRT)dbgfR3SelQueryInfo, 5, pUVM, idCpu, Sel, fFlags, pSelInfo);
+#endif
 }
 
 
@@ -578,8 +585,10 @@ static DECLCALLBACK(int) dbgfR3PagingDumpEx(PUVM pUVM, VMCPUID idCpu, uint32_t f
                 return VINF_SUCCESS;
             }
 
+#if !defined(VBOX_VMM_TARGET_ARMV8)
             if (fFlags & DBGFPGDMP_FLAGS_CURRENT_CR3)
                 cr3 = PGMGetHyperCR3(pVCpu);
+#endif
             if (fFlags & DBGFPGDMP_FLAGS_CURRENT_MODE)
                 fFlags |= dbgfR3PagingDumpModeToFlags(PGMGetShadowMode(pVCpu));
         }

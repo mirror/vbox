@@ -144,9 +144,8 @@ typedef struct CPUMCTX
     uint64_t        fpcr;
     /** Floating point status register. */
     uint64_t        fpsr;
-    /** The internal PSTATE value (accessible in CPSR with AARCH32 and through
-     * NZCV and DAIF special purpose registers. */
-    uint32_t        fPState;
+    /** The internal PSTATE state (as given from SPSR_EL2). */
+    uint64_t        fPState;
 
     uint32_t        fPadding0;
 
@@ -212,7 +211,7 @@ AssertCompileSizeAlignment(CPUMCTX, 8);
 /** The FPCR (Floating Point Control Register) is kept externally. */
 #define CPUMCTX_EXTRN_FPCR                      UINT64_C(0x0000000000004000)
 /** The FPSR (Floating Point Status Register) is kept externally. */
-#define CPUMCTX_EXTRN_FCSR                      UINT64_C(0x0000000000008000)
+#define CPUMCTX_EXTRN_FPSR                      UINT64_C(0x0000000000008000)
 
 /** Mask of bits the keepers can use for state tracking. */
 #define CPUMCTX_EXTRN_KEEPER_STATE_MASK         UINT64_C(0xffff000000000000)

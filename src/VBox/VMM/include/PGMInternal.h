@@ -373,8 +373,8 @@
  * @param   pVM         The cross context VM structure.
  * @param   GCVirt      The virtual address of the page to invalidate.
  */
-#ifdef IN_RING0
-# define PGM_INVL_PG_ALL_VCPU(pVM, GCVirt)      HMInvalidatePageOnAllVCpus(pVM, (RTGCPTR)(GCVirt))
+#if defined(VBOX_VMM_TARGET_ARMV8)
+# define PGM_INVL_PG_ALL_VCPU(pVM, GCVirt)      do { } while(0)
 #else
 # define PGM_INVL_PG_ALL_VCPU(pVM, GCVirt)      HMInvalidatePageOnAllVCpus(pVM, (RTGCPTR)(GCVirt))
 #endif
@@ -385,8 +385,8 @@
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCVirt      The virtual address within the page directory to invalidate.
  */
-#ifdef IN_RING0
-# define PGM_INVL_BIG_PG(pVCpu, GCVirt)         HMFlushTlb(pVCpu)
+#if defined(VBOX_VMM_TARGET_ARMV8)
+# define PGM_INVL_BIG_PG(pVCpu, GCVirt)         do { } while(0)
 #else
 # define PGM_INVL_BIG_PG(pVCpu, GCVirt)         HMFlushTlb(pVCpu)
 #endif
@@ -396,8 +396,8 @@
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-#ifdef IN_RING0
-# define PGM_INVL_VCPU_TLBS(pVCpu)             HMFlushTlb(pVCpu)
+#if defined(VBOX_VMM_TARGET_ARMV8)
+# define PGM_INVL_VCPU_TLBS(pVCpu)             do { } while(0)
 #else
 # define PGM_INVL_VCPU_TLBS(pVCpu)             HMFlushTlb(pVCpu)
 #endif
@@ -407,8 +407,8 @@
  *
  * @param   pVM         The cross context VM structure.
  */
-#ifdef IN_RING0
-# define PGM_INVL_ALL_VCPU_TLBS(pVM)            HMFlushTlbOnAllVCpus(pVM)
+#if defined(VBOX_VMM_TARGET_ARMV8)
+# define PGM_INVL_ALL_VCPU_TLBS(pVM)            do { } while(0)
 #else
 # define PGM_INVL_ALL_VCPU_TLBS(pVM)            HMFlushTlbOnAllVCpus(pVM)
 #endif

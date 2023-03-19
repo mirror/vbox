@@ -41,7 +41,11 @@
 #include <iprt/nt/hyperv.h>
 #include <iprt/critsect.h>
 #elif defined(RT_OS_DARWIN)
-# include "VMXInternal.h"
+# if defined(VBOX_VMM_TARGET_ARMV8)
+#  include <Hypervisor/Hypervisor.h>
+# else
+#  include "VMXInternal.h"
+# endif
 #endif
 
 RT_C_DECLS_BEGIN
@@ -107,10 +111,12 @@ typedef struct NEMWINIOCTL
 
 
 #ifdef RT_OS_DARWIN
+# if !defined(VBOX_VMM_TARGET_ARMV8)
 /** vCPU ID declaration to avoid dragging in HV headers here. */
 typedef unsigned hv_vcpuid_t;
 /** The HV VM memory space ID (ASID). */
 typedef unsigned hv_vm_space_t;
+# endif
 
 
 /** @name Darwin: Our two-bit physical page state for PGMPAGE
@@ -121,9 +127,15 @@ typedef unsigned hv_vm_space_t;
 # define NEM_DARWIN_PAGE_STATE_WRITABLE    3
 /** @} */
 
+# if defined(VBOX_VMM_TARGET_ARMV8)
 /** The CPUMCTX_EXTRN_XXX mask for IEM. */
-# define NEM_DARWIN_CPUMCTX_EXTRN_MASK_FOR_IEM      (  IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_INHIBIT_INT \
-                                                     | CPUMCTX_EXTRN_INHIBIT_NMI )
+#  define NEM_DARWIN_CPUMCTX_EXTRN_MASK_FOR_IEM      (  IEM_CPUMCTX_EXTRN_MUST_MASK )
+# else
+/** The CPUMCTX_EXTRN_XXX mask for IEM. */
+#  define NEM_DARWIN_CPUMCTX_EXTRN_MASK_FOR_IEM      (  IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_INHIBIT_INT \
+                                                      | CPUMCTX_EXTRN_INHIBIT_NMI )
+#endif
+
 /** The CPUMCTX_EXTRN_XXX mask for IEM when raising exceptions. */
 # define NEM_DARWIN_CPUMCTX_EXTRN_MASK_FOR_IEM_XCPT (IEM_CPUMCTX_EXTRN_XCPT_MASK | NEM_DARWIN_CPUMCTX_EXTRN_MASK_FOR_IEM)
 
@@ -273,6 +285,9 @@ typedef struct NEM
     bool                        fCreatedEmts : 1;
     /** Set if hv_vm_create() was called successfully. */
     bool                        fCreatedVm   : 1;
+# if defined(VBOX_VMM_TARGET_ARMV8)
+    /** @todo */
+# else
     /** Set if hv_vm_space_create() was called successfully. */
     bool                        fCreatedAsid : 1;
     /** Set if Last Branch Record (LBR) is enabled. */
@@ -309,6 +324,7 @@ typedef struct NEM
     uint32_t                    idLbrInfoMsrFirst;
     /** The last valid host LBR info stack range. */
     uint32_t                    idLbrInfoMsrLast;
+# endif
 
     STAMCOUNTER                 StatMapPage;
     STAMCOUNTER                 StatUnmapPage;
@@ -459,6 +475,14 @@ typedef struct NEMCPU
     /** @} */
 
 #elif defined(RT_OS_DARWIN)
+# if defined(VBOX_VMM_TARGET_ARMV8)
+    /** The vCPU handle associated with the EMT executing this vCPU. */
+    hv_vcpu_t                   hVCpu;
+    /** Pointer to the exit information structure. */
+    hv_vcpu_exit_t              *pHvExit;
+    /** Flag whether an event is pending. */
+    bool                        fEventPending;
+# else
     /** The vCPU handle associated with the EMT executing this vCPU. */
     hv_vcpuid_t                 hVCpuId;
 
@@ -529,6 +553,7 @@ typedef struct NEMCPU
     X86PDPE                     aPdpes[4];
     /** Pointer to the VMX statistics. */
     PVMXSTATISTICS              pVmxStats;
+# endif
 
     /** @name Statistics
      * @{ */

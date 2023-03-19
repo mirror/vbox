@@ -140,6 +140,7 @@ static const char *emR3HistoryGetExitName(uint32_t uFlagsAndType, char *pszFallb
             pszExitName = EMR3GetExitTypeName((EMEXITTYPE)(uFlagsAndType & EMEXIT_F_TYPE_MASK));
             break;
 
+#if !defined(VBOX_VMM_TARGET_ARMV8)
         case EMEXIT_F_KIND_VMX:
             pszExitName = HMGetVmxExitName( uFlagsAndType & EMEXIT_F_TYPE_MASK);
             break;
@@ -147,12 +148,17 @@ static const char *emR3HistoryGetExitName(uint32_t uFlagsAndType, char *pszFallb
         case EMEXIT_F_KIND_SVM:
             pszExitName = HMGetSvmExitName( uFlagsAndType & EMEXIT_F_TYPE_MASK);
             break;
+#endif
 
         case EMEXIT_F_KIND_NEM:
             pszExitName = NEMR3GetExitName(   uFlagsAndType & EMEXIT_F_TYPE_MASK);
             break;
 
         case EMEXIT_F_KIND_XCPT:
+#if defined(VBOX_VMM_TARGET_ARMV8)
+            pszExitName = NULL;
+            AssertReleaseFailed();
+#else
             switch (uFlagsAndType & EMEXIT_F_TYPE_MASK)
             {
                 case X86_XCPT_DE:               return "Xcpt #DE";
@@ -180,6 +186,7 @@ static const char *emR3HistoryGetExitName(uint32_t uFlagsAndType, char *pszFallb
                     pszExitName = NULL;
                     break;
             }
+#endif
             break;
 
         default:

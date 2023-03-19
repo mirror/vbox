@@ -569,6 +569,7 @@ VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 
         case VMINITCOMPLETED_HM:
         {
+#if !defined(VBOX_VMM_TARGET_ARMV8)
             /*
              * Disable the periodic preemption timers if we can use the
              * VMX-preemption timer instead.
@@ -577,6 +578,7 @@ VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
                 && HMR3IsVmxPreemptionTimerUsed(pVM))
                 pVM->vmm.s.fUsePeriodicPreemptionTimers = false;
             LogRel(("VMM: fUsePeriodicPreemptionTimers=%RTbool\n", pVM->vmm.s.fUsePeriodicPreemptionTimers));
+#endif
 
             /*
              * Last chance for GIM to update its CPUID leaves if it requires
@@ -1209,30 +1211,36 @@ static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, TMTIMERHANDLE hTimer, void *pvU
  */
 VMMR3_INT_DECL(int) VMMR3HmRunGC(PVM pVM, PVMCPU pVCpu)
 {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    /* We should actually never get here as the only execution engine is NEM. */
+    RT_NOREF(pVM, pVCpu);
+    AssertReleaseFailed();
+    return VERR_NOT_SUPPORTED;
+#else
     Log2(("VMMR3HmRunGC: (cs:rip=%04x:%RX64)\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestRIP(pVCpu)));
 
     int rc;
     do
     {
-#ifdef NO_SUPCALLR0VMM
+# ifdef NO_SUPCALLR0VMM
         rc = VERR_GENERAL_FAILURE;
-#else
+# else
         rc = SUPR3CallVMMR0Fast(VMCC_GET_VMR0_FOR_CALL(pVM), VMMR0_DO_HM_RUN, pVCpu->idCpu);
         if (RT_LIKELY(rc == VINF_SUCCESS))
             rc = pVCpu->vmm.s.iLastGZRc;
-#endif
+# endif
     } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
-#if 0 /** @todo triggers too often */
+# if 0 /** @todo triggers too often */
     Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TO_R3));
-#endif
+# endif
 
     /*
      * Flush the logs
      */
-#ifdef LOG_ENABLED
+# ifdef LOG_ENABLED
     VMM_FLUSH_R0_LOG(pVM, pVCpu, &pVCpu->vmm.s.u.s.Logger, NULL);
-#endif
+# endif
     VMM_FLUSH_R0_LOG(pVM, pVCpu, &pVCpu->vmm.s.u.s.RelLogger, RTLogRelGetDefaultInstance());
     if (rc != VERR_VMM_RING0_ASSERTION)
     {
@@ -1240,6 +1248,7 @@ VMMR3_INT_DECL(int) VMMR3HmRunGC(PVM pVM, PVMCPU pVCpu)
         return rc;
     }
     return vmmR3HandleRing0Assert(pVM, pVCpu);
+#endif
 }
 
 
@@ -1300,8 +1309,11 @@ static DECLCALLBACK(int) vmmR3SendStarupIpi(PVM pVM, VMCPUID idCpu, uint32_t uVe
     if (EMGetState(pVCpu) != EMSTATE_WAIT_SIPI)
         return VINF_SUCCESS;
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    AssertReleaseFailed(); /** @todo */
+#else
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (CPUMIsGuestInVmxRootMode(pCtx))
     {
         /* If the CPU is in VMX non-root mode we must cause a VM-exit. */
@@ -1311,7 +1323,7 @@ static DECLCALLBACK(int) vmmR3SendStarupIpi(PVM pVM, VMCPUID idCpu, uint32_t uVe
         /* If the CPU is in VMX root mode (and not in VMX non-root mode) SIPIs are blocked. */
         return VINF_SUCCESS;
     }
-#endif
+# endif
 
     pCtx->cs.Sel        = uVector << 8;
     pCtx->cs.ValidSel   = uVector << 8;
@@ -1319,6 +1331,7 @@ static DECLCALLBACK(int) vmmR3SendStarupIpi(PVM pVM, VMCPUID idCpu, uint32_t uVe
     pCtx->cs.u64Base    = uVector << 12;
     pCtx->cs.u32Limit   = UINT32_C(0x0000ffff);
     pCtx->rip           = 0;
+#endif
 
     Log(("vmmR3SendSipi for VCPU %d with vector %x\n", idCpu, uVector));
 
@@ -1362,7 +1375,9 @@ static DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 
     PGMR3ResetCpu(pVM, pVCpu);
     PDMR3ResetCpu(pVCpu);   /* Only clears pending interrupts force flags */
+#if !defined(VBOX_VMM_TARGET_ARMV8)
     APICR3InitIpi(pVCpu);
+#endif
     TRPMR3ResetCpu(pVCpu);
     CPUMR3ResetCpu(pVM, pVCpu);
     EMR3ResetCpu(pVCpu);

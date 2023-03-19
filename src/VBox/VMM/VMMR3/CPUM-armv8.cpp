@@ -66,6 +66,7 @@
 #include <iprt/mem.h>
 #include <iprt/mp.h>
 #include <iprt/string.h>
+#include <iprt/armv8.h>
 
 
 /*********************************************************************************************************************************
@@ -297,6 +298,15 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
      * Initialize everything to ZERO first.
      */
     RT_BZERO(pCtx, sizeof(*pCtx));
+
+    /* Start in Supervisor mode. */
+    /** @todo Differentiate between Aarch64 and Aarch32 configuation. */
+    pCtx->fPState =   ARMV8_SPSR_EL2_AARCH64_SET_EL(ARMV8_AARCH64_EL_1)
+                    | ARMV8_SPSR_EL2_AARCH64_SP
+                    | ARMV8_SPSR_EL2_AARCH64_D
+                    | ARMV8_SPSR_EL2_AARCH64_A
+                    | ARMV8_SPSR_EL2_AARCH64_I
+                    | ARMV8_SPSR_EL2_AARCH64_F;
     /** @todo */
 }
 

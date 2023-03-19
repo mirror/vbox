@@ -373,6 +373,9 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
         case VERR_VMM_HYPER_CR3_MISMATCH:
         case VERR_VMM_LONG_JMP_ERROR:
         {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+            AssertReleaseFailed();
+#else
             /*
              * Active trap? This is only of partial interest when in hardware
              * assisted virtualization mode, thus the different messages.
@@ -584,6 +587,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                 pHlp->pfnPrintf(pHlp,
                                 "!! Skipping ring-0 registers and stack, rcErr=%Rrc\n", rcErr);
             }
+#endif /* !VBOX_VMM_TARGET_ARMV8 */
             break;
         }
 

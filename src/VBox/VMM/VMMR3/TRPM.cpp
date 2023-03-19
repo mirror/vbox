@@ -366,6 +366,11 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
  */
 VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool *pfInjected)
 {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    RT_NOREF(pVM, pVCpu, enmEvent, pfInjected);
+    AssertReleaseFailed();
+    return VERR_NOT_IMPLEMENTED;
+#else
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     Assert(!CPUMIsInInterruptShadow(pCtx));
     Assert(pfInjected);
@@ -381,7 +386,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool
     if (RT_SUCCESS(rc))
     {
         *pfInjected = true;
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX
         if (   CPUMIsGuestInVmxNonRootMode(pCtx)
             && CPUMIsGuestVmxInterceptEvents(pCtx)
             && CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
@@ -390,14 +395,14 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool
             Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
             return VBOXSTRICTRC_VAL(rcStrict);
         }
-#endif
-#ifdef RT_OS_WINDOWS
+# endif
+# ifdef RT_OS_WINDOWS
         if (!VM_IS_NEM_ENABLED(pVM))
         {
-#endif
+# endif
             rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
             AssertRC(rc);
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
         }
         else
         {
@@ -407,7 +412,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool
             if (rcStrict != VINF_SUCCESS)
                 return VBOXSTRICTRC_TODO(rcStrict);
         }
-#endif
+# endif
         STAM_REL_COUNTER_INC(&pVM->trpm.s.aStatForwardedIRQ[u8Interrupt]);
     }
     else
@@ -418,6 +423,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool
     return HMR3IsActive(pVCpu)    ? VINF_EM_RESCHEDULE_HM
          : VM_IS_NEM_ENABLED(pVM) ? VINF_EM_RESCHEDULE
          :                          VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
+#endif
 }
 
 

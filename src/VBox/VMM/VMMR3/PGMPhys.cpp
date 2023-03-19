@@ -5961,6 +5961,7 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
 *   Other Stuff                                                                                                                  *
 *********************************************************************************************************************************/
 
+#if !defined(VBOX_VMM_TARGET_ARMV8)
 /**
  * Sets the Address Gate 20 state.
  *
@@ -5999,4 +6000,5 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
         STAM_REL_COUNTER_INC(&pVCpu->pgm.s.cA20Changes);
     }
 }
+#endif
 

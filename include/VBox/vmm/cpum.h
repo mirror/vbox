@@ -340,8 +340,11 @@ RT_C_DECLS_BEGIN
 
 #ifndef VBOX_FOR_DTRACE_LIB
 
+VMMDECL(void)           CPUMSetChangedFlags(PVMCPU pVCpu, uint32_t fChangedAdd);
 VMMDECL(PCPUMCTX)       CPUMQueryGuestCtxPtr(PVMCPU pVCpu);
 VMMDECL(CPUMMODE)       CPUMGetGuestMode(PVMCPU pVCpu);
+VMMDECL(uint32_t)       CPUMGetGuestCodeBits(PVMCPU pVCpu);
+VMMDECL(DISCPUMODE)     CPUMGetGuestDisMode(PVMCPU pVCpu);
 
 /** @name Guest Register Getters.
  * @{ */

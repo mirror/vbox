@@ -674,11 +674,15 @@ static int pdmR3DevLoadModules(PVM pVM)
     RegCB.pVM              = pVM;
     RegCB.pCfgNode         = NULL;
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    int rc;
+#else
     /*
      * Register the internal VMM APIC device.
      */
     int rc = pdmR3DevReg_Register(&RegCB.Core, &g_DeviceAPIC);
     AssertRCReturn(rc, rc);
+#endif
 
     /*
      * Load the builtin module.

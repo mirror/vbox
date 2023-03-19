@@ -353,6 +353,7 @@ ifdef VBOX_WITH_VIRT_ARMV8
  	VMMR3/DBGFAddrSpace.cpp \
  	VMMR3/DBGFR3Bp.cpp \
  	VMMR3/DBGFR3BugCheck.cpp \
+ 	VMMR3/DBGFCoreWrite.cpp \
  	VMMR3/DBGFCpu.cpp \
  	VMMR3/DBGFDisas.cpp \
  	VMMR3/DBGFInfo.cpp \
@@ -364,13 +365,13 @@ ifdef VBOX_WITH_VIRT_ARMV8
  	VMMR3/DBGFReg.cpp \
  	VMMR3/DBGFStack.cpp \
  	VMMR3/DBGFR3Flow.cpp \
+ 	VMMR3/DBGFR3FlowTrace.cpp \
  	VMMR3/DBGFR3Trace.cpp \
  	VMMR3/DBGFR3SampleReport.cpp \
  	VMMR3/DBGFR3Type.cpp \
  	VMMR3/EM.cpp \
  	VMMR3/EMR3Dbg.cpp \
  	VMMR3/EMR3Nem.cpp \
- 	VMMR3/GCM.cpp \
  	VMMR3/GIM.cpp \
  	VMMR3/IEMR3.cpp \
  	VMMR3/IOM.cpp \
@@ -391,7 +392,7 @@ ifdef VBOX_WITH_VIRT_ARMV8
  	VMMR3/PDMQueue.cpp \
  	VMMR3/PDMR3Task.cpp \
  	VMMR3/PDMThread.cpp \
- 	VMMR3/PGM.cpp \
+ 	VMMR3/PGM-armv8.cpp \
  	VMMR3/PGMDbg.cpp \
  	VMMR3/PGMHandler.cpp \
  	VMMR3/PGMPhys.cpp \
@@ -408,14 +409,11 @@ ifdef VBOX_WITH_VIRT_ARMV8
  	VMMR3/VMM.cpp \
  	VMMR3/VMMGuruMeditation.cpp \
  	VMMR3/VMMTests.cpp \
- 	VMMR3/HM.cpp \
- 	VMMAll/APICAll.cpp \
- 	VMMAll/CPUMAllCpuId.cpp \
- 	VMMAll/CPUMAllRegs.cpp \
- 	VMMAll/CPUMAllMsrs.cpp \
+ 	VMMR3/HM-armv8.cpp \
+ 	VMMAll/CPUMAllRegs-armv8.cpp \
  	VMMAll/DBGFAll.cpp \
- 	VMMAll/DBGFAllBp.cpp \
  	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMAll/DBGFAllTracer.cpp,) \
+ 	VMMAll/IEMAll-armv8.cpp \
  	VMMAll/IOMAll.cpp \
  	VMMAll/IOMAllMmioNew.cpp \
  	VMMAll/MMAll.cpp \
@@ -426,15 +424,11 @@ ifdef VBOX_WITH_VIRT_ARMV8
  	VMMAll/PDMAllCritSectBoth.cpp \
  	VMMAll/PDMAllQueue.cpp \
  	VMMAll/PDMAllTask.cpp \
- 	VMMAll/PGMAll.cpp \
  	VMMAll/PGMAllHandler.cpp \
  	VMMAll/PGMAllPhys.cpp \
  	VMMAll/PGMAllPool.cpp \
  	VMMAll/EMAll.cpp \
- 	VMMAll/GCMAll.cpp \
  	VMMAll/GIMAll.cpp \
- 	VMMAll/GIMAllHv.cpp \
- 	VMMAll/GIMAllKvm.cpp \
  	VMMAll/TMAll.cpp \
  	VMMAll/TMAllCpu.cpp \
  	VMMAll/TMAllReal.cpp \
@@ -459,15 +453,16 @@ ifdef VBOX_WITH_VIRT_ARMV8
  endif
 
  VBoxVMMArm_SOURCES.darwin.arm64 += \
- 	VMMR3/NEMR3Native-darwin.cpp
+ 	VMMR3/NEMR3Native-darwin-armv8.cpp
  VBoxVMMArm_DEFS.darwin.arm64   += VBOX_WITH_NATIVE_NEM
+ VBoxVMMArm_LDFLAGS.darwin.arm64 = -framework Hypervisor
 
  VBoxVMMArm_LIBS = \
  	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB)
- #ifdef VBOX_WITH_DEBUGGER
- # VBoxVMMArm_LIBS += \
- # 	$(PATH_STAGE_LIB)/Debugger$(VBOX_SUFF_LIB)
- #endif
+ ifdef VBOX_WITH_DEBUGGER
+  VBoxVMMArm_LIBS += \
+  	$(PATH_STAGE_LIB)/Debugger-armv8$(VBOX_SUFF_LIB)
+ endif
  VBoxVMMArm_LIBS += \
  	$(LIB_RUNTIME)
 

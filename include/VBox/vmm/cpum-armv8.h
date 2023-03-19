@@ -140,6 +140,20 @@ typedef struct CPUMDBENTRY
 /** Pointer to a const CPU database entry. */
 typedef CPUMDBENTRY const *PCCPUMDBENTRY;
 
+
+/** @name Changed flags.
+ * These flags are used to keep track of which important register that
+ * have been changed since last they were reset. The only one allowed
+ * to clear them is REM!
+ *
+ * @todo This is obsolete, but remains as it will be refactored for coordinating
+ *       IEM and NEM/HM later. Probably.
+ * @{
+ */
+#define CPUM_CHANGED_GLOBAL_TLB_FLUSH           RT_BIT(0)
+#define CPUM_CHANGED_ALL                        ( CPUM_CHANGED_GLOBAL_TLB_FLUSH )
+/** @} */
+
 /** @} */
 RT_C_DECLS_END
 

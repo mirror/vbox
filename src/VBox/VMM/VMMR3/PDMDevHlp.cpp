@@ -89,8 +89,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_IoPortCreateEx(PPDMDEVINS pDevIns, RTIOPORT
     VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
     VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE);
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    int rc = VERR_NOT_SUPPORTED;
+    AssertReleaseFailed();
+#else
     int rc = IOMR3IoPortCreate(pVM, pDevIns, cPorts, fFlags, pPciDev, iPciRegion,
                                pfnOut, pfnIn, pfnOutStr, pfnInStr, pvUser, pszDesc, paExtDescs, phIoPorts);
+#endif
 
     LogFlow(("pdmR3DevHlp_IoPortCreateEx: caller='%s'/%d: returns %Rrc (*phIoPorts=%#x)\n",
              pDevIns->pReg->szName, pDevIns->iInstance, rc, *phIoPorts));
@@ -106,7 +111,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_IoPortMap(PPDMDEVINS pDevIns, IOMIOPORTHAND
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    int rc = VERR_NOT_SUPPORTED;
+    AssertReleaseFailed();
+#else
     int rc = IOMR3IoPortMap(pVM, pDevIns, hIoPorts, Port);
+#endif
 
     LogFlow(("pdmR3DevHlp_IoPortMap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -121,7 +131,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_IoPortUnmap(PPDMDEVINS pDevIns, IOMIOPORTHA
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    int rc = VERR_NOT_SUPPORTED;
+    AssertReleaseFailed();
+#else
     int rc = IOMR3IoPortUnmap(pVM, pDevIns, hIoPorts);
+#endif
 
     LogFlow(("pdmR3DevHlp_IoPortMap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -134,7 +149,12 @@ static DECLCALLBACK(uint32_t) pdmR3DevHlp_IoPortGetMappingAddress(PPDMDEVINS pDe
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_IoPortGetMappingAddress: caller='%s'/%d: hIoPorts=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, hIoPorts));
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    uint32_t uAddress = UINT32_MAX;
+    AssertReleaseFailed();
+#else
     uint32_t uAddress = IOMR3IoPortGetMappingAddress(pDevIns->Internal.s.pVMR3, pDevIns, hIoPorts);
+#endif
 
     LogFlow(("pdmR3DevHlp_IoPortGetMappingAddress: caller='%s'/%d: returns %#RX32\n", pDevIns->pReg->szName, pDevIns->iInstance, uAddress));
     return uAddress;
@@ -149,10 +169,16 @@ static DECLCALLBACK(VBOXSTRICTRC) pdmR3DevHlp_IoPortWrite(PPDMDEVINS pDevIns, RT
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    RT_NOREF(Port, u32Value, cbValue);
+    VBOXSTRICTRC rcStrict = VERR_NOT_SUPPORTED;
+    AssertReleaseFailed();
+#else
     PVMCPU pVCpu = VMMGetCpu(pVM);
     AssertPtrReturn(pVCpu, VERR_ACCESS_DENIED);
 
     VBOXSTRICTRC rcStrict = IOMIOPortWrite(pVM, pVCpu, Port, u32Value, cbValue);
+#endif
 
     LogFlow(("pdmR3DevHlp_IoPortWrite: caller='%s'/%d: returns %Rrc\n",
              pDevIns->pReg->szName, pDevIns->iInstance, VBOXSTRICTRC_VAL(rcStrict)));
@@ -2093,8 +2119,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPD
             break;
         case PDMPCIDEV_IORGN_F_IOPORT_HANDLE:
             AssertReturn(enmType == PCI_ADDRESS_SPACE_IO, VERR_INVALID_FLAGS);
+#if defined(VBOX_VMM_TARGET_ARMV8)
+            rc = VERR_NOT_SUPPORTED;
+            AssertReleaseFailed();
+            AssertRCReturn(rc, rc);
+#else
             rc = IOMR3IoPortValidateHandle(pVM, pDevIns, (IOMIOPORTHANDLE)hHandle);
             AssertRCReturn(rc, rc);
+#endif
             break;
         case PDMPCIDEV_IORGN_F_MMIO_HANDLE:
             AssertReturn(   (enmType & ~PCI_ADDRESS_SPACE_BAR64) == PCI_ADDRESS_SPACE_MEM
@@ -4615,7 +4647,11 @@ static DECLCALLBACK(void) pdmR3DevHlp_A20Set(PPDMDEVINS pDevIns, bool fEnable)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_A20Set: caller='%s'/%d: fEnable=%d\n", pDevIns->pReg->szName, pDevIns->iInstance, fEnable));
+#ifdef VBOX_VMM_TARGET_ARMV8
+    AssertReleaseFailed();
+#else
     PGMR3PhysSetA20(VMMGetCpu(pDevIns->Internal.s.pVMR3), fEnable);
+#endif
 }
 
 
