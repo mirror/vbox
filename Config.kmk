@@ -818,6 +818,8 @@ VBOX_WITH_VRDP_AUTHMOD = 1
 VBOX_WITH_VRDP_RDESKTOP = 1
 ## The Direct Framebuffer GUI.
 #VBOX_WITH_VBOXFB = 1
+# The basic frontend not using Main/COM/XPCOM.
+#VBOX_WITH_VBOXBFE = 1
 # Enables the Python<->XPCOM, Python<->COM and (WS enabled) Python<->WS bindings.
 VBOX_WITH_PYTHON ?= 1
 # Enables the PERL<->WS binding (if WS enabled).

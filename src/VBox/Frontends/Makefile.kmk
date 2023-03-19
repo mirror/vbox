@@ -44,6 +44,9 @@ ifndef VBOX_ONLY_DOCS
    include $(PATH_SUB_CURRENT)/VBoxBugReport/Makefile.kmk
   endif
  endif
+ ifdef VBOX_WITH_VBOXBFE
+  include $(PATH_SUB_CURRENT)/VBoxBFE/Makefile.kmk
+ endif
  ifdef VBOX_WITH_VBOXSDL
   include $(PATH_SUB_CURRENT)/VBoxSDL/Makefile.kmk
  endif
