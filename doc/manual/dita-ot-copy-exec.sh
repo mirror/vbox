@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env kmk_ash
+#!/usr/bin/env kmk_ash
 # $Id$
 ## @file
 # Helper Script for copying the DITA-OT toolkit from $1 to $2,
