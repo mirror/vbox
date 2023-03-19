@@ -30,7 +30,7 @@
  *
  * For now this is just a stub for bringing up the ARMv8 hypervisor. We'll see how
  * much we really need here later on and whether it makes sense to merge this with the original PGM.cpp
- * (avoiding #ifdef hell for with this as I'm not confident enough to fiddle around with PGM too much at this point).
+ * (avoiding \#ifdef hell for with this as I'm not confident enough to fiddle around with PGM too much at this point).
  */
 
 
