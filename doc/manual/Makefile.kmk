@@ -65,9 +65,6 @@ endif
 #
 
 # Error out if someone tries to override old globals.
-ifdef HTMLHELPOPTS
- $(error HTMLHELPOPTS was renamed to VBOX_HTMLHELP_OPTS!)
-endif
 ifdef DOCBOOKPATH
  $(error DOCBOOKPATH was renamed to VBOX_PATH_DOCBOOK!)
 endif
@@ -86,11 +83,6 @@ endif
 ifdef PDFLATEX
  $(error PDFLATEX was renamed to VBOX_PDFLATEX_CMD!)
 endif
-ifdef HHC
- $(error HHC was renamed to VBOX_HHC!)
-endif
-
-VBOX_DITA_PATH          = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-1.8.5
 
 VBOX_QHELP_OUTPUT_FILES = \
 	UserManual.qch \
@@ -116,13 +108,6 @@ else
  VBOX_PDFLATEX_HALT        = $(shell ( $(VBOX_PDFLATEX) -version | head -1 | grep 141592 > /dev/null ) && echo -halt-on-error )
  VBOX_PDFLATEX_CMD         = pdflatex $(VBOX_PDFLATEX_HALT) -interaction $(VBOX_PDFLATEX_INTERACTION)
 endif
-
-# Windows HTML Help Workshop compiler (stupid thing always returns an error!)
-VBOX_HHC = -$(EXEC_X86_WIN32) $(VBOX_PATH_HTML_HELP_WORKSHOP)/hhc.exe
-
-
-# Additional xsltproc options when generating
-VBOX_HTMLHELP_OPTS ?=
 
 # SDK related globals.
 VBOX_MANUAL_APIREF_TMP = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef_apiref.xml
@@ -166,12 +151,6 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  else  # Do not install/pack qhelp.
   VBOX_PATH_BIN_QHELP :=
  endif
-
- ## @todo r=bird: Explanations for all of this is required!
- .NOTPARALLEL: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/UserManual.qch \
- 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.qhc \
- 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.pdf \
- 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
 
  ifndef VBOX_ONLY_SDK
   VBOX_MANUAL_PACK += \
@@ -634,12 +613,12 @@ man_vboximg-mount.xml \
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
  		$(VBOX_PATH_MANUAL_OUTBASE)/dita_common
 	$(call MSG_L1,Building html chunks $@)
-	$(QUIET)$(call VBOX_DITA_ENV_SETUP) $(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar \
-		/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap \
-		/transtype:xhtml \
-		/ditadir:$(VBOX_DITA_PATH) \
-		/outdir:$(@D) \
-		/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml
+	$(QUIET)$(RM) -Rf -- "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks/"
+	$(QUIET)$(call VBOX_DITA_RUN_DOST,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks) \
+		"/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap" \
+		"/transtype:xhtml" \
+		"/outdir:$(@D)" \
+		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml"
 
  # disable for now
  ## bird: Remove @chunk attrib from Glossary.dita topicref and add chunk="to-content" to bootmap for single html experiments.
@@ -688,7 +667,7 @@ man_vboximg-mount.xml \
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap: \
  		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/% : \
  		$(VBOX_PATH_MANUAL_SRC)/en_US/dita/% | $$(dir $$@)
-	$(INSTALL_STAGING) -v -m 0644 -- "$<" "$(@D)/"
+	$(QUIET)$(INSTALL_STAGING) -m 0644 -- "$<" "$(@D)/"
 
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/reference.dtd: | $$(dir $$@)
 	$(QUIET)$(TOUCH) -- "$@"
@@ -702,8 +681,7 @@ man_vboximg-mount.xml \
  		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/topics/reference.dtd \
  		$(VBOX_USER_MANUAL_STAGED_DITA_FILES) \
  		$(VBOX_USER_MANUAL_STAGED_IMAGE_FILES) \
- 		$$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES) \
- 		$(VBOX_DITA_PATH)
+ 		$$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES)
 	$(call MSG_L1, Ran common dita steps)
 	$(QUIET)$(TOUCH) -- "$@"
 
@@ -764,7 +742,7 @@ man_vboximg-mount.xml \
 		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2)"
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --maxdepth 6000 --output "$$@" \
 		"$$(VBOX_PATH_MANUAL_SRC)/mark_external_urls.xsl" "$$@"
-	$$(QUIET)$$(VBOX_BLD_PYTHON) $$(VBOX_PATH_MANUAL_SRC)/add_file_to_id_only_references.py -v \
+	$$(QUIET)$$(VBOX_BLD_PYTHON) $$(VBOX_PATH_MANUAL_SRC)/add_file_to_id_only_references.py \
 		--mapping-file "$$(VBOX_USER_MANUAL_ID_MAPPING_FILE)" "$$@"
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES) \
@@ -778,39 +756,31 @@ man_vboximg-mount.xml \
  #  DITA-OT-xxxxx/doc folder for details.
  #
  ##########################################################################################
- # Copy the dita library under out folder since at each use the library modifies some
- # run-time configuation files and there seems to be no way to override this.
- ## @todo r=bird: This is _incredibly_ crude.  But then, the tool is the worst with its inane
- ##       desire to modify build.xml, catalog-dita.xml and lib/org.dita.dost.platform/plugin.properties
- ##       with a fresh plugin setup (the differences seems to be down to hashing/map
- ##       ordering difference).  Wonder if we can get away with a single copy
- ##       as long as we do the plugin update right after duplicating it here...
- ##       Also, I would _really_ like to symlink/hardlink as much as possible
- ##       of it to save time and storage space.
- $(VBOX_DITA_PATH):
-	$(MKDIR) -p $(VBOX_DITA_PATH)
-	$(CP) -vR -- "$(VBOX_DITA_ORIGINAL_PATH)/" "$(VBOX_DITA_PATH)/"
-	$(RM) -vf -- "$(VBOX_DITA_PATH)/build.xml" \
-		"$(VBOX_DITA_PATH)/catalog-dita.xml" \
-		"$(VBOX_DITA_PATH)/lib/org.dita.dost.platform/plugin.properties"
-
- VBOX_DITA_PATH_LIB ?= $(VBOX_DITA_PATH)/lib
- VBOX_DITA_ENV_SETUP ?= $(REDIRECT) \
+ ## Copies DITA-OT to $1, runs the dost.jar with /ditadir given and nukes $1 when done.
+ ##
+ ## Additional options for dost.jar can be specified following the call to VBOX_DITA_RUN_DOST
+ ##
+ ## @param 1    Temporary+unique DITA-OT path.
+ ## @param 2    Additional kmk_redirect options.
+ VBOX_DITA_RUN_DOST ?= $(REDIRECT) \
  	-E 'ANT_OPTS=-Xmx512m -Djavax.xml.transform.TransformerFactory=net.sf.saxon.TransformerFactoryImpl' \
- 	-E 'ANT_HOME=$(VBOX_DITA_PATH)/tools/ant' \
- 	-E 'DITA_DIR=$(VBOX_DITA_PATH)' \
+ 	-E 'ANT_HOME=$1/tools/ant' \
+ 	-E 'DITA_DIR=$1' \
  	-E 'JAVA_HOME=$(VBOX_JAVA_HOME)' \
- 	-A 'PATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH)/tools/ant/bin' \
- 	-E 'CLASSPATH=$(VBOX_DITA_PATH_LIB)/dost.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH_LIB)' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH_LIB)/commons-codec-1.4.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH_LIB)/resolver.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH_LIB)/icu4j.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH_LIB)/xercesImpl.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH_LIB)/xml-apis.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH_LIB)/saxon/saxon9.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$(VBOX_DITA_PATH_LIB)/saxon/saxon9-dom.jar' \
- 	--
+ 	-A 'PATH=$(HOST_PATH_SEP)$1/tools/ant/bin' \
+ 	-E 'CLASSPATH=$1/lib/dost.jar' \
+ 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib' \
+ 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/commons-codec-1.4.jar' \
+ 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/resolver.jar' \
+ 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/icu4j.jar' \
+ 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/xercesImpl.jar' \
+ 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/xml-apis.jar' \
+ 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/saxon/saxon9.jar' \
+ 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/saxon/saxon9-dom.jar' \
+ 	$2 \
+ 	-- $(SHELL) $(VBOX_PATH_MANUAL_SRC)/dita-ot-copy-exec.sh "$(VBOX_DITA_ORIGINAL_PATH)" "$1" \
+ 	-- $(VBOX_JAVA) -jar "$1/lib/dost.jar" "/ditadir:$1" # "/outercontrol:fail" ?
+
 
  # Note! The /tempdir is deleted, recreated, used and deleted again for each run. So, be careful where you point it.
  # Note! This crappy utility may fail to find files (or fail to parse the
@@ -823,13 +793,13 @@ man_vboximg-mount.xml \
   		$$(VBOX_MANUAL_XML_FILES_COMMON) \
   		$$(VBOX_MANUAL_XML_FILES_GENERATED_$(lang)) \
   		$$(VBOX_PATH_MANUAL_OUTBASE)/dita_common
-	$(QUIET)$(RM) -f -- "$$@"
-	$(QUIET)$(call VBOX_DITA_ENV_SETUP) $(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar \
-		/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
-		/transtype:pdf \
-		/ditadir:$(VBOX_DITA_PATH) \
-		/outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1) \
-		/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf
+	$$(QUIET)$(RM) -f -- "$$@"
+	$$(QUIET)$(RM) -Rf -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf/"
+	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf) \
+		"/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
+		"/transtype:pdf" \
+		"/outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)" \
+		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf"
 
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf
  endef
@@ -938,16 +908,19 @@ ifdef VBOX_WITH_DOCS_QHELP
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_usermanual_hhp_qhelp_to_qhp))
 
 
+ # Setting HHCDIR here so that it fails to locate hcc.exe and always skips the
+ # compilation step that produces the .chm-file, since we don't need it and it
+ # mangles the path so it always fails anyway.
  define def_ditamap_to_htmlhelp
   ditamap-to-htmlhelp: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp/UserManual.hhp
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp/UserManual.hhp: \
   		$(VBOX_PATH_MANUAL_OUTBASE)/dita_common
-	$(QUIET)$(call VBOX_DITA_ENV_SETUP) $(VBOX_JAVA) -jar $(VBOX_DITA_PATH_LIB)/dost.jar \
-		/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap \
-		/transtype:htmlhelp \
-		/ditadir:$(VBOX_DITA_PATH) \
-		/outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp \
-		/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_htmlhelp
+	$$(QUIET)$(RM) -Rf -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp/"
+	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp, -EHHCDIR="$$(@D)") \
+		"/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
+		"/transtype:htmlhelp" \
+		"/outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp" \
+		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_htmlhelp"
 
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_ditamap_to_htmlhelp,$(lang)))
