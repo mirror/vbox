@@ -164,7 +164,7 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 /** Exception Level 1 - Supervisor mode. */
 #define ARMV8_AARCH64_EL_1                          1
 /** Exception Level 2 - Hypervisor mode. */
-#define ARMV8_AARCH64_EL_0                          2
+#define ARMV8_AARCH64_EL_2                          2
 /** @} */
 
 
