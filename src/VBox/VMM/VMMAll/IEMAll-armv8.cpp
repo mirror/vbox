@@ -37,9 +37,9 @@
 #include "IEMInternal-armv8.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/vmapi.h>
-#include <VBox/err.h>
 
 #include <iprt/assert.h>
+#include <iprt/errcore.h>
 #include <iprt/getopt.h>
 #include <iprt/string.h>
 
