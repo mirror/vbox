@@ -115,6 +115,34 @@ VBOX_DOC_XIDL_SRC      = $(PATH_ROOT)/src/VBox/Main/idl/VirtualBox.xidl
 VBOX_DOC_XIDL_SRC_TMP  = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/VirtualBox.xidl.tmp
 
 
+##
+# Copies DITA-OT to $1, runs the dost.jar with /ditadir given and nukes $1 when done.
+#
+# Additional options for dost.jar can be specified following the call to VBOX_DITA_RUN_DOST
+#
+# @param 1    Temporary+unique DITA-OT path.
+# @param 2    Additional kmk_redirect options.
+#
+VBOX_DITA_RUN_DOST ?= $(REDIRECT) \
+	-E 'ANT_OPTS=-Xmx512m -Djavax.xml.transform.TransformerFactory=net.sf.saxon.TransformerFactoryImpl' \
+	-E 'ANT_HOME=$1/tools/ant' \
+	-E 'DITA_DIR=$1' \
+	-E 'JAVA_HOME=$(VBOX_JAVA_HOME)' \
+	-A 'PATH=$(HOST_PATH_SEP)$1/tools/ant/bin' \
+	-E 'CLASSPATH=$1/lib/dost.jar' \
+	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib' \
+	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/commons-codec-1.4.jar' \
+	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/resolver.jar' \
+	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/icu4j.jar' \
+	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/xercesImpl.jar' \
+	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/xml-apis.jar' \
+	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/saxon/saxon9.jar' \
+	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/saxon/saxon9-dom.jar' \
+	$2 \
+	-- $(ASH) $(VBOX_PATH_MANUAL_SRC)/dita-ot-copy-exec.sh "$(VBOX_DITA_ORIGINAL_PATH)" "$1" \
+	-- $(VBOX_JAVA) -jar "$1/lib/dost.jar" "/ditadir:$1" # "/outercontrol:fail" ?
+
+
 #
 # Targets
 #
@@ -331,7 +359,8 @@ VBox-docs-usermanual-qhelp_SOURCES = \
 #
 VBox-docs-usermanual-l10n_INST = $(INST_BIN)
 VBox-docs-usermanual-l10n_MODE = a+r,u+w
-VBox-docs-usermanual-l10n_SOURCES = $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$(f)/UserManual.pdf=>UserManual_$(f).pdf)
+VBox-docs-usermanual-l10n_SOURCES = \
+	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$(f)/UserManual.pdf=>UserManual_$(f).pdf)
 
 #
 # target for installing the chunked HTML docs
@@ -423,16 +452,6 @@ man_vboximg-mount.xml \
 	$$(QUIET)$$(INSTALL_STAGING) -m0644 -- '$$<' '$$(@D)'
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_cp_images_pdf))
-
-
- ##########################################################################################
- #
- #  UserManual.pdf
- #
- ##########################################################################################
-
- # Useful aliases
- usermanual UserManual.pdf:: $(PATH_STAGE_BIN)/UserManual.pdf
 
 
  #
@@ -599,41 +618,6 @@ man_vboximg-mount.xml \
 
  ##########################################################################################
  #
- #  UserManual.html
- #
- ##########################################################################################
-
- $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip: \
- 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
-	$(call MSG_L1,Packing documentation $@)
-	$(QUIET)$(RM) -f $@
-	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ -- $(VBOX_ZIP) \
-		-9 -r $@ html-chunks
-
- $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
- 		$(VBOX_PATH_MANUAL_OUTBASE)/dita_common
-	$(call MSG_L1,Building html chunks $@)
-	$(QUIET)$(RM) -Rf -- "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks/"
-	$(QUIET)$(call VBOX_DITA_RUN_DOST,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks) \
-		"/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap" \
-		"/transtype:xhtml" \
-		"/outdir:$(@D)" \
-		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml"
-
- # disable for now
- ## bird: Remove @chunk attrib from Glossary.dita topicref and add chunk="to-content" to bootmap for single html experiments.
- ##       See https://docs.oasis-open.org/dita/v1.2/os/spec/archSpec/chunking.html
- ##       and https://www.oxygenxml.com/forum/post25114.html?hilit=dita%20xhtml%20chunk#p25114
- ##       for further clues.
- #html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html
-
- html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
- qhelp:: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/, $(VBOX_QHELP_OUTPUT_FILES))
- html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
-
-
- ##########################################################################################
- #
  #  DITA stuff common to pdf, qhelp, and html outputs.
  #  - copy DITA-OT library (binaries etc) since at each run several run-time config
  #     files are updated.
@@ -752,34 +736,45 @@ man_vboximg-mount.xml \
 
  ##########################################################################################
  #
+ #  UserManual.html
+ #
+ ##########################################################################################
+
+ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip: \
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
+	$(call MSG_L1,Packing documentation $@)
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ -- $(VBOX_ZIP) \
+		-9 -r $@ html-chunks
+
+ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/dita_common
+	$(call MSG_L1,Building html chunks $@)
+	$(QUIET)$(RM) -Rf -- "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks/"
+	$(QUIET)$(call VBOX_DITA_RUN_DOST,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks) \
+		"/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap" \
+		"/transtype:xhtml" \
+		"/outdir:$(@D)" \
+		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml"
+
+ # disable for now
+ ## bird: Remove @chunk attrib from Glossary.dita topicref and add chunk="to-content" to bootmap for single html experiments.
+ ##       See https://docs.oasis-open.org/dita/v1.2/os/spec/archSpec/chunking.html
+ ##       and https://www.oxygenxml.com/forum/post25114.html?hilit=dita%20xhtml%20chunk#p25114
+ ##       for further clues.
+ #html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html
+
+ html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
+ qhelp:: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/, $(VBOX_QHELP_OUTPUT_FILES))
+ html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
+
+
+ ##########################################################################################
+ #
  #  Use DITA-OT to create pdf/hhp out of UserManual.ditamap. See usermanual.pdf under
  #  DITA-OT-xxxxx/doc folder for details.
  #
  ##########################################################################################
- ## Copies DITA-OT to $1, runs the dost.jar with /ditadir given and nukes $1 when done.
- ##
- ## Additional options for dost.jar can be specified following the call to VBOX_DITA_RUN_DOST
- ##
- ## @param 1    Temporary+unique DITA-OT path.
- ## @param 2    Additional kmk_redirect options.
- VBOX_DITA_RUN_DOST ?= $(REDIRECT) \
- 	-E 'ANT_OPTS=-Xmx512m -Djavax.xml.transform.TransformerFactory=net.sf.saxon.TransformerFactoryImpl' \
- 	-E 'ANT_HOME=$1/tools/ant' \
- 	-E 'DITA_DIR=$1' \
- 	-E 'JAVA_HOME=$(VBOX_JAVA_HOME)' \
- 	-A 'PATH=$(HOST_PATH_SEP)$1/tools/ant/bin' \
- 	-E 'CLASSPATH=$1/lib/dost.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/commons-codec-1.4.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/resolver.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/icu4j.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/xercesImpl.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/xml-apis.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/saxon/saxon9.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/saxon/saxon9-dom.jar' \
- 	$2 \
- 	-- $(ASH) $(VBOX_PATH_MANUAL_SRC)/dita-ot-copy-exec.sh "$(VBOX_DITA_ORIGINAL_PATH)" "$1" \
- 	-- $(VBOX_JAVA) -jar "$1/lib/dost.jar" "/ditadir:$1" # "/outercontrol:fail" ?
 
 
  # Note! The /tempdir is deleted, recreated, used and deleted again for each run. So, be careful where you point it.
@@ -804,6 +799,9 @@ man_vboximg-mount.xml \
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf
  endef
  $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_ditamap_to_pdf,$(lang)))
+
+ # Useful aliases
+ usermanual UserManual.pdf:: $(PATH_STAGE_BIN)/UserManual.pdf
 
  #
  # ChangeLog.html
