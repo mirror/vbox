@@ -392,7 +392,7 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
         {
             if (m_pLabelPort)
                 m_pLabelPort->setBuddy(m_pEditorPort);
-            m_pEditorPort->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9]*"), this));
+            m_pEditorPort->setValidator(new QRegularExpressionValidator(QRegularExpression("(0[xX])?[0-9a-fA-F]{0,4}"), this));
 
             pLayout->addWidget(m_pEditorPort, 7, 1);
         }
