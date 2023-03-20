@@ -114,7 +114,11 @@ def main(asArgs):
                 return syntax('Unknown option: %s' % (sArg,));
         else:
             # Input files.
-            asFiles = glob.glob(sArg);
+            if sArg[0] == '@':
+                with open(sArg[1:], 'r', encoding = 'utf-8') as oFile:
+                    asFiles = oFile.read().split();
+            else:
+                asFiles = glob.glob(sArg);
             if not asFiles:
                 return error('File not found: %s' % (sArg,));
             for sFile in asFiles:
