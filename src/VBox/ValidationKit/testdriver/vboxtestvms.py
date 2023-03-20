@@ -1965,9 +1965,11 @@ class TestVmManager(object):
         TestVm('tst-ubuntu-15_10-64-efi',   kfGrpStdSmoke,        sHd = '6.1/efi/ubuntu-15_10-efi-amd64-3.vdi',
                sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
                asParavirtModesSup = [g_ksParavirtProviderKVM,]),
-        TestVm('tst-ubuntu-15_10-64-efi-sb', kfGrpStdSmoke,       sHd = '6.1/efi/ubuntu-15_10-efi-amd64-3.vdi',
-               sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
-               asParavirtModesSup = [g_ksParavirtProviderKVM,], fSecureBoot = True, sUefiMokPathPrefix = '7.0/mok/vbox-test-MOK'),
+        # Note: Temporary disabled. Probably too old distro for Secure Boot experiments, insmod fails to
+        #       insert guest modules with ENOPKG (Package not Installed).
+        #TestVm('tst-ubuntu-15_10-64-efi-sb', kfGrpStdSmoke,       sHd = '6.1/efi/ubuntu-15_10-efi-amd64-3.vdi',
+        #       sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
+        #       asParavirtModesSup = [g_ksParavirtProviderKVM,], fSecureBoot = True, sUefiMokPathPrefix = '7.0/mok/vbox-test-MOK'),
         # Note: Deprecated / buggy; use the one in the 6.1 folder.
         #TestVm('tst-ubuntu-15_10-64-efi',   kfGrpStdSmoke,        sHd = '4.2/efi/ubuntu-15_10-efi-amd64.vdi',
         #       sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
