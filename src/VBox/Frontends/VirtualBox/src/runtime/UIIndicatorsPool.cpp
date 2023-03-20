@@ -850,7 +850,6 @@ public:
         /* Configure connection: */
         connect(m_pMachine, &UIMachine::sigMouseStateChange,
                 this, static_cast<void(UIIndicatorMouse::*)(int)>(&UIIndicatorMouse::setState));
-        setState(m_pMachine->mouseState());
         /* Translate finally: */
         retranslateUi();
     }

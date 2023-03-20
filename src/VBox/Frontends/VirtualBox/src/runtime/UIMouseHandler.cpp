@@ -252,7 +252,8 @@ void UIMouseHandler::setMouseIntegrationEnabled(bool fEnabled)
 /* Current mouse state: */
 int UIMouseHandler::state() const
 {
-    return (uimachine()->isMouseCaptured() ? UIMouseStateType_MouseCaptured : 0) |
+    return uimachine()->machineState() == KMachineState_Null ? 0 :
+           (uimachine()->isMouseCaptured() ? UIMouseStateType_MouseCaptured : 0) |
            (uimachine()->isMouseSupportsAbsolute() ? UIMouseStateType_MouseAbsolute : 0) |
            (uimachine()->isMouseIntegrated() ? 0 : UIMouseStateType_MouseAbsoluteDisabled);
 }
@@ -366,10 +367,11 @@ bool UIMouseHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
 /* Machine state-change handler: */
 void UIMouseHandler::sltMachineStateChanged()
 {
-    /* Get machine state: */
-    KMachineState machineState = uimachine()->machineState();
+    /* Get cached machine states: */
+    const KMachineState enmState = uimachine()->machineState();
+
     /* Handle particular machine states: */
-    switch (machineState)
+    switch (enmState)
     {
         case KMachineState_Paused:
         case KMachineState_TeleportingPausedVM:
@@ -386,8 +388,8 @@ void UIMouseHandler::sltMachineStateChanged()
     /* Recall reminder about paused VM input
      * if we are not in paused VM state already: */
     if (machineLogic()->activeMachineWindow() &&
-        machineState != KMachineState_Paused &&
-        machineState != KMachineState_TeleportingPausedVM)
+        enmState != KMachineState_Paused &&
+        enmState != KMachineState_TeleportingPausedVM)
         UINotificationMessage::forgetAboutPausedVMInput();
 
     /* Notify all the listeners: */
