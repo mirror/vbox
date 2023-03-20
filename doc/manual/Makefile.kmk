@@ -166,7 +166,6 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  # Targets
  #
 
- ## @todo r=bird:Why outside the big if statement? There should be no targets if not entered...
  BLDDIRS += $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/, $(VBOX_MANUAL_ALL_LANGUAGES))
 
  ifdef VBOX_ONLY_DOCS
@@ -301,6 +300,17 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
    VBOX_MANUAL_PACK += $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf)
   endif
 
+  ifdef VBOX_WITH_DOCS_HTML
+   #
+   # target for installing the chunked HTML docs
+   #
+   INSTALLS += VBox-docs-usermanual-html
+   VBox-docs-usermanual-html_INST = $(INST_BIN)
+   VBox-docs-usermanual-html_MODE = a+r,u+w
+   VBox-docs-usermanual-html_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip=>UserManual-html.zip
+   VBOX_MANUAL_PACK += $(PATH_STAGE_BIN)/UserManual-html.zip
+  endif
+
   ifdef VBOX_WITH_DOCS_QHELP
    #
    # Installs the qhelp version of the manual.
@@ -316,17 +326,6 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
     	$(PATH_STAGE_BIN)/UserManual.qch \
     	$(PATH_STAGE_BIN)/UserManual.qhc
    endif
-  endif
-
-  ifdef VBOX_WITH_DOCS_HTML
-   #
-   # target for installing the chunked HTML docs
-   #
-   INSTALLS += VBox-docs-usermanual-html
-   VBox-docs-usermanual-html_INST = $(INST_BIN)
-   VBox-docs-usermanual-html_MODE = a+r,u+w
-   VBox-docs-usermanual-html_SOURCES = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip=>UserManual-html.zip
-   VBOX_MANUAL_PACK += $(PATH_STAGE_BIN)/UserManual-html.zip
   endif
 
   ifdef VBOX_WITH_DOCS_ACCESSIBILITY
@@ -400,7 +399,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 
 
  #
- # Shared rules for LaTeX based PDF generation - Only used for SDK & Accessability.
+ # Shared rules for LaTeX based PDF generation - Only used for SDK & Accessibility.
  #
 
  ifndef VBOX_OSE
@@ -422,9 +421,10 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES),$(evalcall2 def_vbox_cp_images_pdf))
 
 
- #
- # SDKRef.pdf
- #
+ #################################################################################################################################
+ #      SDKRef.pdf - xidl => Docbook => LaTeX => PDF                                                                             #
+ #################################################################################################################################
+
  VBOX_SDKREF_XML_FILES = SDKRef.xml
 
  # Replace @a and @c with <tt> tags in VirtualBox.xidl.
@@ -500,10 +500,9 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  sdkref:: $(PATH_STAGE_BIN)/sdk/docs/SDKRef.pdf
 
 
-
- #
- # Accessibility.pdf
- #
+ #################################################################################################################################
+ #      Accessibility.pdf - Docbook => LaTeX => PDF                                                                              #
+ #################################################################################################################################
 
  # Turn Accessibility.xml into LaTeX.
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/Accessibility.tex: \
@@ -577,7 +576,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 
 
  #################################################################################################################################
- #      The UserManual in all its output variations (DITA-OT).                                                                   #
+ #      UserManual.* - The user manual in all its output variations (DITA-OT).                                                   #
  #################################################################################################################################
 
  #
@@ -789,7 +788,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		"/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap" \
 		"/transtype:xhtml" \
 		"/outdir:$(@D)" \
-		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml" # "/debug"
+		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml"
 
  # disable for now
  ## bird: Remove @chunk attrib from Glossary.dita topicref and add chunk="to-content" to bootmap for single html experiments.
@@ -803,7 +802,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 	$(call MSG_L1,Packing documentation $@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ -- $(VBOX_ZIP) \
-		-9 -r $@ html-chunks
+		-9 -r "$@" "html-chunks"
 
  html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
  html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
