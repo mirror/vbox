@@ -141,6 +141,9 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  #
  # @param 1    Temporary+unique DITA-OT path.
  # @param 2    Additional kmk_redirect options.
+ # @param 3    Parameters for the invoker.
+ # @param 4    Parameters only for 1.8.5.
+ # @param 5    Parameters only for 4.0.2.
  #
  VBOX_DITA_RUN_DOST ?= $(REDIRECT) \
  	-E 'ANT_OPTS=-Xmx512m -Djavax.xml.transform.TransformerFactory=net.sf.saxon.TransformerFactoryImpl' \
@@ -159,7 +162,42 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/saxon/saxon9-dom.jar' \
  	$2 \
  	-- $(ASH) $(VBOX_PATH_MANUAL_SRC)/dita-ot-copy-exec.sh "$(VBOX_DITA_ORIGINAL_PATH)" "$1" \
- 	-- $(VBOX_JAVA) -jar "$1/lib/dost.jar" "/ditadir:$1" # "/outercontrol:fail" ?
+ 	-- $(VBOX_JAVA) -jar "$1/lib/dost.jar" "/ditadir:$1" $3 $4 # "/outercontrol:fail" ?
+
+ if 0 # Experiments with dita-ot v4.0.2. Requires java 17.
+  VBOX_JAVA_HOME          := C:/Program Files/Java/jdk-17/
+  VBOX_DITA_ORIGINAL_PATH := D:/Tmp/dita/dita-ot-4.0.2
+  VBOX_DITA_CLASSPATH = \
+  	$(subst $(SP),;,$(strip \
+  			$(VBOX_DITA_ORIGINAL_PATH)/lib/ant-launcher.jar \
+  			$(VBOX_DITA_ORIGINAL_PATH)/config \
+  			$(VBOX_DITA_ORIGINAL_PATH)/lib \
+  			$(wildcard \
+  				$(VBOX_DITA_ORIGINAL_PATH)/lib/*.jar \
+  				$(VBOX_DITA_ORIGINAL_PATH)/plugins/*/lib/*.jar)))
+  VBOX_DITA_RUN_DOST = $(REDIRECT) \
+  	-E 'ANT_HOME=$(VBOX_DITA_ORIGINAL_PATH)' \
+  	-E 'DITA_DIR=$(VBOX_DITA_ORIGINAL_PATH)' \
+  	-E 'JAVA_HOME=$(VBOX_JAVA_HOME)' \
+  	-E 'CLASSPATH=$(VBOX_DITA_CLASSPATH)' \
+  	$2 \
+  	-- \
+  	$(VBOX_JAVA) \
+  	"-Djava.awt.headless=true" \
+  	"-Dsun.io.useCanonCaches=true" \
+  	"-Dant.home=$(VBOX_DITA_ORIGINAL_PATH)" \
+  	"-Ddita.dir=$(VBOX_DITA_ORIGINAL_PATH)" \
+  	org.apache.tools.ant.launch.Launcher \
+  	-cp "$(VBOX_DITA_CLASSPATH)" \
+  	-buildfile "$(VBOX_DITA_ORIGINAL_PATH)/build.xml" \
+  	-main "org.dita.dost.invoker.Main" \
+  	$(patsubst "/i:%,"--input=%, \
+  		$(patsubst "/transtype:%,"--format=%, \
+  			$(patsubst "/outdir:%,"--output=%, \
+  				$(patsubst "/tempdir:%,"--temp=%, \
+  					$(patsubst "/debug","--debug",$3))))) \
+  	$5 --verbose --debug
+ endif
 
 
  #
@@ -757,11 +795,12 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   		$$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(lang))
 	$$(QUIET)$(RM) -f -- "$$@"
 	$$(QUIET)$(RM) -Rf -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf/"
-	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf) \
+	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf,, \
 		"/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
 		"/transtype:pdf" \
 		"/outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)" \
-		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf"
+		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf", \
+		,,"--logfile=$$(@D)/UserManual_pdf.log")
 
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf
  endef
@@ -785,11 +824,12 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US)
 	$(call MSG_L1,Building html chunks $@)
 	$(QUIET)$(RM) -Rf -- "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks/"
-	$(QUIET)$(call VBOX_DITA_RUN_DOST,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks) \
+	$(QUIET)$(call VBOX_DITA_RUN_DOST,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks,, \
 		"/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap" \
 		"/transtype:xhtml" \
 		"/outdir:$(@D)" \
-		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml_chunks"
+		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml_chunks" \
+		,,"--logfile=$(@D)/UserManual_xhtml.log")
 
  html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
 
@@ -810,11 +850,12 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		--output "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual-Single.ditamap" \
 		"$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap"
 	$(QUIET)$(RM) -Rf -- "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-single/"
-	$(QUIET)$(call VBOX_DITA_RUN_DOST,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-single) \
+	$(QUIET)$(call VBOX_DITA_RUN_DOST,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-single,, \
 		"/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual-Single.ditamap" \
 		"/transtype:xhtml" \
 		"/outdir:$(@D)" \
-		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml_single"
+		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml_single" \
+		,,"--logfile=$(@D)/UserManual-Single_xhtml.log")
 	$(SED) -ne '1,/<body>/{p}' \
 		--output "$@" "$(@D)/UserManual-Single.html"
 	$(APPEND) -n "$@" "<!-- index inject: -->"
@@ -899,11 +940,13 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
    		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_$(1)) \
    		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(1))
 	$$(QUIET)$(RM) -Rf -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp/"
-	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp, -EHHCDIR="$$(@D)") \
+	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp, -EHHCDIR="$$(@D)", \
 		"/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
 		"/transtype:htmlhelp" \
 		"/outdir:$(2)" \
-		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_qhelp"
+		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_qhelp" \
+		,,"--logfile=$(2)/UserManual_htmlhelp.log")
+
 
    ditamap-to-htmlhelp: $(2)/UserManual.hhp
 
