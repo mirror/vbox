@@ -154,7 +154,7 @@ static const DBGCVARDESC    g_aArgBrkREM[] =
 static const DBGCVARDESC    g_aArgDumpMem[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  0,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "Address where to start dumping memory." },
+    {  0,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "Address where to start dumping memory. Tip: Use the L or LB operator to specify how may items or bytes to dump." },
 };
 
 
