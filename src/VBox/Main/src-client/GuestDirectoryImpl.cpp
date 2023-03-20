@@ -399,10 +399,12 @@ int GuestDirectory::i_openViaToolbox(int *pvrcGuest)
     procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
     /* We want the long output format which contains all the object details. */
     procInfo.mArguments.push_back(Utf8Str("-l"));
-# if 0 /* Flags are not supported yet. */
-    if (uFlags & DirectoryOpenFlag_NoSymlinks)
-        procInfo.mArguments.push_back(Utf8Str("--nosymlinks")); /** @todo What does GNU here? */
-# endif
+    /* Always dereference symlinks by default when opening directories, as we want to show its
+     * contents rather than working directly on the link.
+     *
+     * Newer Linux distros such as Ubuntu 22.10 symlink /bin to /usr/bin, for example. */
+    if (!(mData.mOpenInfo.mFlags & DirectoryOpenFlag_NoSymlinks)) /* Check if the caller explicitly forbids this. */
+        procInfo.mArguments.push_back(Utf8Str("--dereference"));
     /** @todo Recursion support? */
     procInfo.mArguments.push_back(mData.mOpenInfo.mPath); /* The directory we want to open. */
 
