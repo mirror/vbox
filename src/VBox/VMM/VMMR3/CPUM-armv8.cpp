@@ -184,20 +184,6 @@ static const SSMFIELD g_aCpumCtxFields[] =
 
 
 /**
- * Initializes the debug aids of CPUM.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- */
-static int cpumR3DbgInit(PVM pVM)
-{
-    RT_NOREF(pVM);
-    /** @todo */
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Initializes the CPUM.
  *
  * @returns VBox status code.

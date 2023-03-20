@@ -337,43 +337,26 @@ static void nemR3DarwinLogState(PVMCC pVM, PVMCPUCC pVCpu)
 {
     if (LogIs3Enabled())
     {
-#if 0
         char szRegs[4096];
         DBGFR3RegPrintf(pVM->pUVM, pVCpu->idCpu, &szRegs[0], sizeof(szRegs),
-                        "rax=%016VR{rax} rbx=%016VR{rbx} rcx=%016VR{rcx} rdx=%016VR{rdx}\n"
-                        "rsi=%016VR{rsi} rdi=%016VR{rdi} r8 =%016VR{r8} r9 =%016VR{r9}\n"
-                        "r10=%016VR{r10} r11=%016VR{r11} r12=%016VR{r12} r13=%016VR{r13}\n"
-                        "r14=%016VR{r14} r15=%016VR{r15} %VRF{rflags}\n"
-                        "rip=%016VR{rip} rsp=%016VR{rsp} rbp=%016VR{rbp}\n"
-                        "cs={%04VR{cs} base=%016VR{cs_base} limit=%08VR{cs_lim} flags=%04VR{cs_attr}} cr0=%016VR{cr0}\n"
-                        "ds={%04VR{ds} base=%016VR{ds_base} limit=%08VR{ds_lim} flags=%04VR{ds_attr}} cr2=%016VR{cr2}\n"
-                        "es={%04VR{es} base=%016VR{es_base} limit=%08VR{es_lim} flags=%04VR{es_attr}} cr3=%016VR{cr3}\n"
-                        "fs={%04VR{fs} base=%016VR{fs_base} limit=%08VR{fs_lim} flags=%04VR{fs_attr}} cr4=%016VR{cr4}\n"
-                        "gs={%04VR{gs} base=%016VR{gs_base} limit=%08VR{gs_lim} flags=%04VR{gs_attr}} cr8=%016VR{cr8}\n"
-                        "ss={%04VR{ss} base=%016VR{ss_base} limit=%08VR{ss_lim} flags=%04VR{ss_attr}}\n"
-                        "dr0=%016VR{dr0} dr1=%016VR{dr1} dr2=%016VR{dr2} dr3=%016VR{dr3}\n"
-                        "dr6=%016VR{dr6} dr7=%016VR{dr7}\n"
-                        "gdtr=%016VR{gdtr_base}:%04VR{gdtr_lim}  idtr=%016VR{idtr_base}:%04VR{idtr_lim}  rflags=%08VR{rflags}\n"
-                        "ldtr={%04VR{ldtr} base=%016VR{ldtr_base} limit=%08VR{ldtr_lim} flags=%08VR{ldtr_attr}}\n"
-                        "tr  ={%04VR{tr} base=%016VR{tr_base} limit=%08VR{tr_lim} flags=%08VR{tr_attr}}\n"
-                        "    sysenter={cs=%04VR{sysenter_cs} eip=%08VR{sysenter_eip} esp=%08VR{sysenter_esp}}\n"
-                        "        efer=%016VR{efer}\n"
-                        "         pat=%016VR{pat}\n"
-                        "     sf_mask=%016VR{sf_mask}\n"
-                        "krnl_gs_base=%016VR{krnl_gs_base}\n"
-                        "       lstar=%016VR{lstar}\n"
-                        "        star=%016VR{star} cstar=%016VR{cstar}\n"
-                        "fcw=%04VR{fcw} fsw=%04VR{fsw} ftw=%04VR{ftw} mxcsr=%04VR{mxcsr} mxcsr_mask=%04VR{mxcsr_mask}\n"
+                        "x0=%016VR{x0} x1=%016VR{x1} x2=%016VR{x2} x3=%016VR{x3}\n"
+                        "x4=%016VR{x4} x5=%016VR{x5} x6=%016VR{x6} x7=%016VR{x7}\n"
+                        "x8=%016VR{x8} x9=%016VR{x9} x10=%016VR{x10} x11=%016VR{x11}\n"
+                        "x12=%016VR{x12} x13=%016VR{x13} x14=%016VR{x14} x15=%016VR{x15}\n"
+                        "x16=%016VR{x16} x17=%016VR{x17} x18=%016VR{x18} x19=%016VR{x19}\n"
+                        "x20=%016VR{x20} x21=%016VR{x21} x22=%016VR{x22} x23=%016VR{x23}\n"
+                        "x24=%016VR{x24} x25=%016VR{x25} x26=%016VR{x26} x27=%016VR{x27}\n"
+                        "x28=%016VR{x28} x29=%016VR{x29} x30=%016VR{x30}\n"
+                        "pc=%016VR{pc} pstate=%016VR{pstate}\n"
+                        "sp_el0=%016VR{sp_el0} sp_el1=%016VR{sp_el1} elr_el1=%016VR{elr_el1}\n"
                         );
-
-        char szInstr[256];
+        char szInstr[256]; RT_ZERO(szInstr);
+#if 0
         DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, 0, 0,
                            DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
                            szInstr, sizeof(szInstr), NULL);
-        Log3(("%s%s\n", szRegs, szInstr));
-#else
-        RT_NOREF(pVM, pVCpu);
 #endif
+        Log3(("%s%s\n", szRegs, szInstr));
     }
 }
 #endif /* LOG_ENABLED */
@@ -830,6 +813,11 @@ static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu)
     int rc = nemR3DarwinCopyStateFromHv(pVM, pVCpu, CPUMCTX_EXTRN_ALL);
     if (RT_FAILURE(rc))
         return rc;
+
+#ifdef LOG_ENABLED
+    if (LogIs3Enabled())
+        nemR3DarwinLogState(pVM, pVCpu);
+#endif
 
     hv_vcpu_exit_t *pExit = pVCpu->nem.s.pHvExit;
     switch (pExit->reason)

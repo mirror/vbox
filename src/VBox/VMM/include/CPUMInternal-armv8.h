@@ -122,6 +122,10 @@ typedef CPUMCPU *PCPUMCPU;
 #ifndef VBOX_FOR_DTRACE_LIB
 RT_C_DECLS_BEGIN
 
+# ifdef IN_RING3
+DECLHIDDEN(int)       cpumR3DbgInit(PVM pVM);
+# endif
+
 RT_C_DECLS_END
 #endif /* !VBOX_FOR_DTRACE_LIB */
 
