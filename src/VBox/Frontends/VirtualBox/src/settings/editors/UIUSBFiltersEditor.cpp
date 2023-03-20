@@ -402,9 +402,7 @@ void UIUSBFiltersEditor::sltAddFilterConfirmed(QAction *pAction)
      * device itself; for this reason only a few people will want to use it
      * in the filter since the same device plugged into a different socket
      * will not match the filter in this case. */
-#if 0
-    newFilterData.m_strPort = QString().sprintf("%04hX", comUsb.GetPort());
-#endif
+    newFilterData.m_strPort = QString::asprintf("%#06hX", comUsb.GetPort());
     newFilterData.m_strManufacturer = comUsb.GetManufacturer();
     newFilterData.m_strProduct = comUsb.GetProduct();
     newFilterData.m_strSerialNumber = comUsb.GetSerialNumber();
