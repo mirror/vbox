@@ -580,27 +580,6 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  #      The UserManual in all its output variations (DITA-OT).                                                                   #
  #################################################################################################################################
 
-
- ##########################################################################################
- #
- #  DITA stuff common to pdf, qhelp, and html outputs.
- #  - copy DITA-OT library (binaries etc) since at each run several run-time config
- #     files are updated.
- #	- create dita/topic folder and copy all user manual dita files under that.
- #  - copy all images under dita/topics/images and UserManual.ditamap under dita folder
- #  - copy all man_V*.xml docbook files under dita/topic folder.
- #  - flatten refsect1/refsect2 hierarchy in man_V*.xml docbook files by
- #    using refsect2_to_refsect1.py.
- #  - convert man_V*.xml files into dita files
- #  - mark external link in the man_V*.dita files
- #  - correct all reference targets by calling correct_references.py.
- #
- #  Note! INSTALL_STAGING is likely to hardlink the files, thus we must use +| below
- #        when copying files as much won't change timestamp.  It would in fact be a _lot_
- #        better to copy the files individually.
- #
- ##########################################################################################
-
  #
  # 1. We copy/hardlink all the files under <lang>/dita/* to the corresponding
  #    VBOX_PATH_MANUAL_OUTBASE location.  This is mainly to deal with DITO-OT's
@@ -760,73 +739,14 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		,$(evalcall2 def_vbox_refentry_file_to_dita,$(lang),$(file))))
 
 
-
- ##########################################################################################
  #
- #  UserManual.html
+ # 3a. UserManual.pdf - Run dost.jar from DITA-OT to produce the PDF version.
  #
- ##########################################################################################
-
- $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip: \
- 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
-	$(call MSG_L1,Packing documentation $@)
-	$(QUIET)$(RM) -f $@
-	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ -- $(VBOX_ZIP) \
-		-9 -r $@ html-chunks
-
- $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
- 		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_en_US) \
- 		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US)
-	$(call MSG_L1,Building html chunks $@)
-	$(QUIET)$(RM) -Rf -- "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks/"
-	$(QUIET)$(call VBOX_DITA_RUN_DOST,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks) \
-		"/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap" \
-		"/transtype:xhtml" \
-		"/outdir:$(@D)" \
-		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml" "/debug"
-
- # disable for now
- ## bird: Remove @chunk attrib from Glossary.dita topicref and add chunk="to-content" to bootmap for single html experiments.
- ##       See https://docs.oasis-open.org/dita/v1.2/os/spec/archSpec/chunking.html
- ##       and https://www.oxygenxml.com/forum/post25114.html?hilit=dita%20xhtml%20chunk#p25114
- ##       for further clues.
- #html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html
-
- html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
- qhelp:: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/, $(VBOX_QHELP_OUTPUT_FILES))
- html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
-
- #
- # A few things which are shared between htmlhelp and qhelp docs.
- # TODO: This is Docbook related work.  Left here in case we can reuse some of
- #       the ideas from it for DITA-OT.
- #
-
- VBOX_DOCBOOK_HTMLHELP_FORMATCFG = \
- 	$(VBOX_PATH_MANUAL_SRC)/docbook-htmlhelp-formatcfg.xsl \
- 	$(VBOX_PATH_MANUAL_SRC)/common-formatcfg.xsl \
- 	$(VBOX_PATH_MANUAL_SRC)/common-html-formatcfg.xsl
-
- # Prepare the XSL file for our title page, htmlhelp and qhelp variant.
- $(VBOX_PATH_MANUAL_OUTBASE)/titlepage-htmlhelp.xsl: \
- 		$(VBOX_PATH_MANUAL_SRC)/titlepage-htmlhelp.xml $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_L1,xsltproc $<)
-	$(QUIET)$(RM) -f $@.tmp $@
-	$(QUIET)$(VBOX_XSLTPROC) --xinclude --nonet -o $@.tmp $(VBOX_PATH_DOCBOOK)/template/titlepage.xsl $<
-	$(QUIET)$(MV) -f $@.tmp $@
-
-
- ##########################################################################################
- #
- #  Use DITA-OT to create pdf/hhp out of UserManual.ditamap. See usermanual.pdf under
- #  DITA-OT-xxxxx/doc folder for details.
- #
- ##########################################################################################
-
-
- # Note! The /tempdir is deleted, recreated, used and deleted again for each run. So, be careful where you point it.
+ # Note! The /tempdir is deleted, recreated, used and deleted again for each
+ #       run. So, be careful where you point it.
  # Note! This crappy utility may fail to find files (or fail to parse the
  #       command line) and still return a successfully (0) exit code.
+ #
  define def_ditamap_to_pdf
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf \
   + $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_pdf.log \
@@ -851,6 +771,147 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  # Useful aliases
  usermanual UserManual.pdf:: $(PATH_STAGE_BIN)/UserManual.pdf
 
+
+ #
+ # 3b. UserManual.html - Run dost.jar from DITA-OT to produce the HTML versions.
+ #
+ # We produce both chunked and singled paged HTML versions of the en_US manual
+ # mainly for uploading to virtualbox.org.  The docs build box produces a zip
+ # including these.
+ #
+
+ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
+ 		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_en_US) \
+ 		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US)
+	$(call MSG_L1,Building html chunks $@)
+	$(QUIET)$(RM) -Rf -- "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks/"
+	$(QUIET)$(call VBOX_DITA_RUN_DOST,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks) \
+		"/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap" \
+		"/transtype:xhtml" \
+		"/outdir:$(@D)" \
+		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml" # "/debug"
+
+ # disable for now
+ ## bird: Remove @chunk attrib from Glossary.dita topicref and add chunk="to-content" to bootmap for single html experiments.
+ ##       See https://docs.oasis-open.org/dita/v1.2/os/spec/archSpec/chunking.html
+ ##       and https://www.oxygenxml.com/forum/post25114.html?hilit=dita%20xhtml%20chunk#p25114
+ ##       for further clues.
+ #html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html
+
+ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip: \
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
+	$(call MSG_L1,Packing documentation $@)
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ -- $(VBOX_ZIP) \
+		-9 -r $@ html-chunks
+
+ html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
+ html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
+
+
+ #
+ # A few things which are shared between htmlhelp and qhelp docs.
+ # TODO: This is Docbook related work.  Left here in case we can reuse some of
+ #       the ideas from it for DITA-OT.
+ #
+
+ VBOX_DOCBOOK_HTMLHELP_FORMATCFG = \
+ 	$(VBOX_PATH_MANUAL_SRC)/docbook-htmlhelp-formatcfg.xsl \
+ 	$(VBOX_PATH_MANUAL_SRC)/common-formatcfg.xsl \
+ 	$(VBOX_PATH_MANUAL_SRC)/common-html-formatcfg.xsl
+
+ # Prepare the XSL file for our title page, htmlhelp and qhelp variant.
+ $(VBOX_PATH_MANUAL_OUTBASE)/titlepage-htmlhelp.xsl: \
+ 		$(VBOX_PATH_MANUAL_SRC)/titlepage-htmlhelp.xml $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(call MSG_L1,xsltproc $<)
+	$(QUIET)$(RM) -f $@.tmp $@
+	$(QUIET)$(VBOX_XSLTPROC) --xinclude --nonet -o $@.tmp $(VBOX_PATH_DOCBOOK)/template/titlepage.xsl $<
+	$(QUIET)$(MV) -f $@.tmp $@
+
+ # end old stuff.
+
+ if defined(VBOX_WITH_DOCS_QHELP) && !defined(VBOX_ONLY_SDK)
+  #
+  # 3c. VirtualBox.qch + VirtualBox.qhc - Qt compressed help and collection file.
+  #
+  # See usermanual.pdf under DITA-OT-xxxxx/doc folder for details.
+  #
+
+  # Enable Qt and locate the Qt help generator.
+  ifdef VBOX_WITH_QT6
+   USES += qt6
+   VBOX_QHELPGENERATOR = $(PATH_TOOL_QT6_LIBEXEC)/qhelpgenerator
+  else
+   USES += qt5
+   VBOX_QHELPGENERATOR_VERSION_MINOR = $(shell $(REDIRECT) -E QT_QPA_PLATFORM_PLUGIN_PATH=$(PATH_SDK_QT5)/plugins -- $(PATH_TOOL_QT5_BIN)/qhelpgenerator -v 2>/dev/null | $(SED) -ne 's/.*(Qt [1-9][0-9]*\.\([1-9][0-9]*\)\.[1-9][0-9]*).*$$/\1/p')
+   VBOX_QHELPGENERATOR = $(PATH_TOOL_QT5_BIN)/$(if-expr $(VBOX_QHELPGENERATOR_VERSION_MINOR) >= 12,qhelpgenerator,qcollectiongenerator)
+  endif
+
+  ## Build QHelp version of manual for given language.
+  # @param 1   Language
+  # @param 2	The language specific qhelp output directory.
+  define def_vbox_usermanual_as_qhelp
+
+   # 1. Generate UserManual.hpp using DITA-OT.
+   #
+   # Setting HHCDIR here so that it fails to locate hcc.exe and always skips the
+   # compilation step that produces the .chm-file, since we don't need it and it
+   # mangles the path so it always fails anyway.
+   $(2)/UserManual.hhp: \
+   		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_$(1)) \
+   		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(1))
+	$$(QUIET)$(RM) -Rf -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp/"
+	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp, -EHHCDIR="$$(@D)") \
+		"/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
+		"/transtype:htmlhelp" \
+		"/outdir:$(2)" \
+		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_qhelp"
+
+   ditamap-to-htmlhelp: $(2)/UserManual.hhp
+
+   # 2. Generate a Qt Help Project file (QHP) using htmlhelp-qthelp.py.
+   $(2)/UserManual.qhp: \
+   		$(2)/UserManual.hhp \
+   		$$(VBOX_PATH_MANUAL_SRC)/htmlhelp-qthelp.py \
+   		| $$$$(dir $$$$@)
+	$$(call MSG_L1,htmlhelp-qthelp.py $$<,=> $$@)
+	$$(QUIET)$$(RM) -f -- "$$@"
+	$$(QUIET)$$(VBOX_BLD_PYTHON) $$(VBOX_PATH_MANUAL_SRC)/htmlhelp-qthelp.py \
+		-d "$$(<D)" -o "$$@" -f UserManual.hhp -t UserManual.hhc
+
+   # 3. Copy the Qt help configuration file from source to the output dir.
+   $(2)/UserManual.qhcp: $$(VBOX_PATH_MANUAL_SRC)/UserManual.qhcp | $$$$(dir $$$$@)
+	$$(QUIET)$$(INSTALL_STAGING) -m0644 -- '$$<' '$$(@D)'
+
+   # 4. Run the Qt help generator to produce the .qhp and .qch files.
+   $(2)/UserManual.qch \
+   + $(2)/UserManual.qhc: \
+   		$(2)/UserManual.qhcp \
+   		$(2)/UserManual.qhp \
+   		| $$$$(dir $$$$@)
+	$$(call MSG_L1,$$(notdir $$(VBOX_QHELPGENERATOR)) $$<,=> $$@)
+	$$(QUIET)$$(RM) -f $$@
+   ifdef VBOX_WITH_QT6
+	$$(QUIET)$$(REDIRECT) -- $$(VBOX_QHELPGENERATOR) $$<
+   else
+	$$(QUIET)$$(REDIRECT) -E QT_QPA_PLATFORM_PLUGIN_PATH=$$(PATH_SDK_QT5)/plugins -- $$(VBOX_QHELPGENERATOR) $$<
+   endif
+	$$(call MSG_L1,Fresh QCH is now at $$@)
+
+  endef # def_vbox_usermanual_as_qhelp
+
+  $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES) \
+  	,$(evalcall2 def_vbox_usermanual_as_qhelp,$(lang),$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/qhelp))
+
+  qhelp:: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/qhelp/, $(VBOX_QHELP_OUTPUT_FILES))
+
+ endif # VBOX_WITH_DOCS_QHELP && !VBOX_ONLY_SDK
+
+
+ #################################################################################################################################
+ #      Miscellaneous                                                                                                            #
+ #################################################################################################################################
+
  #
  # ChangeLog.html
  #
@@ -869,7 +930,6 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 	$(call MSG_L1,Fresh ChangeLog.html is now at $@)
 
  cl-html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html
-
 
 
  #
@@ -922,97 +982,6 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  dhcpoptions: $(PATH_ROOT)/doc/manual/en_US/man_VBoxManage-dhcpserver-dhcpoptions.xsl \
  		$(PATH_ROOT)/src/VBox/Main/idl/VirtualBox.xidl
 	$(call VBOX_XSLTPROC) --output "$(PATH_ROOT)/doc/manual/en_US/man_VBoxManage-dhcpserver-dhcpoptions.xml" $^
-
-
- if defined(VBOX_WITH_DOCS_QHELP) && !defined(VBOX_ONLY_SDK)
-  #
-  # VirtualBox.qch/VirtualBox.qhc
-  #
-  # We first generate a .hhp help source file from the preprocessed
-  # DocBook XML files, as defined above, then feed that into a converter
-  # creating the suitable input for creating a QHelp collection file.
-  #
-
-  # Enable Qt and locate the Qt help generator.
-  ifdef VBOX_WITH_QT6
-   USES += qt6
-   VBOX_QHELPGENERATOR = $(PATH_TOOL_QT6_LIBEXEC)/qhelpgenerator
-  else
-   USES += qt5
-   VBOX_QHELPGENERATOR_VERSION_MINOR = $(shell $(REDIRECT) -E QT_QPA_PLATFORM_PLUGIN_PATH=$(PATH_SDK_QT5)/plugins -- $(PATH_TOOL_QT5_BIN)/qhelpgenerator -v 2>/dev/null | $(SED) -ne 's/.*(Qt [1-9][0-9]*\.\([1-9][0-9]*\)\.[1-9][0-9]*).*$$/\1/p')
-   VBOX_QHELPGENERATOR = $(PATH_TOOL_QT5_BIN)/$(if-expr $(VBOX_QHELPGENERATOR_VERSION_MINOR) >= 12,qhelpgenerator,qcollectiongenerator)
-  endif
-
-  # Generate QCH from QHelp source
-  # Note: out_dir referenced with double $$ to delay expansion to the eval step when out_dir has been defined.
-  define def_vbox_usermanual_qhp_to_qch
-   local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)
-   $$(out_dir)/qhelp/UserManual.qch \
-   + $$(out_dir)/qhelp/UserManual.qhc: \
-   		$$(out_dir)/qhelp/UserManual.qhcp \
-   		$$(out_dir)/qhelp/UserManual.qhp \
-   		$$(addprefix $$(out_dir)/qhelp/,$$(VBOX_MANUAL_PNG_FILES_$(lang))) \
-   		| $$$$(dir $$$$@)
-	$$(call MSG_L1,$$(notdir $$(VBOX_QHELPGENERATOR)) $$<,=> $$@)
-	$$(QUIET)$$(RM) -f $$@
-	$$(QUIET)$$(REDIRECT) -E QT_QPA_PLATFORM_PLUGIN_PATH=$$(PATH_SDK_QT5)/plugins -- $$(VBOX_QHELPGENERATOR) $$<
-	$$(call MSG_L1,Fresh QCH is now at $$@)
-  endef
-  $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES),$(evalcall2 def_vbox_usermanual_qhp_to_qch))
-
-  # Generate QHP from HHP for QHelp
-  # Note: out_dir referenced with double $$ to delay expansion to the eval step when out_dir has been defined.
-  define def_vbox_usermanual_hhp_qhelp_to_qhp
-   local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)
-   $$(out_dir)/qhelp/UserManual.qhp: \
-   		$$(out_dir)/qhelp/UserManual.hhp \
-   		$$(addprefix $$(out_dir)/qhelp/,$$(VBOX_MANUAL_PNG_FILES_$(lang))) \
-   		| $$$$(dir $$$$@)
-	$$(call MSG_L1,htmlhelp-qthelp.py $$<,=> $$@)
-	$$(QUIET)$$(RM) -f $$@
-	$$(QUIET)$$(VBOX_BLD_PYTHON) $$(VBOX_PATH_MANUAL_SRC)/htmlhelp-qthelp.py -d $$(<D) -o $$@ -f UserManual.hhp -t UserManual.hhc
-  endef
-  $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES),$(evalcall2 def_vbox_usermanual_hhp_qhelp_to_qhp))
-
-  # Setting HHCDIR here so that it fails to locate hcc.exe and always skips the
-  # compilation step that produces the .chm-file, since we don't need it and it
-  # mangles the path so it always fails anyway.
-  define def_ditamap_to_htmlhelp
-   ditamap-to-htmlhelp: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp/UserManual.hhp
-   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp/UserManual.hhp: \
-   		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_$(1)) \
-   		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(1))
-	$$(QUIET)$(RM) -Rf -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp/"
-	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp, -EHHCDIR="$$(@D)") \
-		"/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
-		"/transtype:htmlhelp" \
-		"/outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/qhelp" \
-		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_htmlhelp"
-
-  endef
-  $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES),$(evalcall2 def_ditamap_to_htmlhelp,$(lang)))
-
-  # copy the qhcp file.
-  define def_vbox_cp_qhcp
-   local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/qhelp
-   $$(out_dir)/UserManual.qhcp: \
-   		$$(out_dir)/% : $(VBOX_PATH_MANUAL_SRC)/% | $$$$(dir $$$$@)
-	$$(QUIET)$$(INSTALL_STAGING) -m0644 -- '$$<' '$$(@D)'
-  endef
-  $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES),$(eval $(def_vbox_cp_qhcp)))
-
-  # copy the PNG files.
-  # Note: out_dir referenced with double $$ to delay expansion to the eval step when out_dir has been defined.
-  define def_vbox_cp_images_qhelp
-   local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/qhelp
-   $(addprefix $$(out_dir)/,$(VBOX_MANUAL_PNG_FILES_$(lang))): \
-   		$$(out_dir)/% : $(VBOX_PATH_MANUAL_SRC)/$(lang)/% | $$$$(dir $$$$@)
-	$$(call MSG_L1,Copying temporary $$< => $$@)
-	$$(QUIET)$$(INSTALL_STAGING) -m0644 -- '$$<' '$$(@D)'
-  endef
-  $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES),$(eval $(def_vbox_cp_images_qhelp)))
-
- endif # VBOX_WITH_DOCS_QHELP && !VBOX_ONLY_SDK
 
 
  #
