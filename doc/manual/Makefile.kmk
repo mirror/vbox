@@ -602,11 +602,11 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  ##########################################################################################
 
  #
- # We copy/hardlink all the files under <lang>/dita/* to the corresponding
- # VBOX_PATH_MANUAL_OUTBASE location.  This is mainly to deal with DITO-OT's
- # inability to search for topic files in more than one place, so we have to
- # gather generated and static topic sources + the .ditamap-file(s) in one
- # place.
+ # 1. We copy/hardlink all the files under <lang>/dita/* to the corresponding
+ #    VBOX_PATH_MANUAL_OUTBASE location.  This is mainly to deal with DITO-OT's
+ #    inability to search for topic files in more than one place, so we have to
+ #    gather generated and static topic sources + the .ditamap-file(s) in one
+ #    place.
  #
 
  # Determin the basic set of files as dictated by the en_US version of the
@@ -615,8 +615,8 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  # Note! This includes .png as well as .dita and .ditamap files.
  VBOX_USER_MANUAL_DITA_BASIC_SRC_FILES := \
  	$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/*.ditamap)) \
-	$(addprefix topics/,$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/*dita))) \
-	$(addprefix topics/images/,$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/images/*png)))
+ 	$(addprefix topics/,$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/*dita))) \
+ 	$(addprefix topics/images/,$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/images/*png)))
 
  ##
  # Produce copying rules for one language and defining the variable
@@ -626,29 +626,29 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  # @param 1 lang
  define def_vbox_copy_manual_dita_src_files
   VBOX_USER_MANUAL_DITA_SRC_FILES_$(1) := \
- 	$$(notdir $$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$1/dita/*.ditamap)) \
-	$$(addprefix topics/,$$(notdir $$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$1/dita/topics/*dita))) \
-	$$(addprefix topics/images/,$$(notdir $$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$1/dita/topics/images/*png)))
+  	$$(notdir $$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$1/dita/*.ditamap)) \
+  	$$(addprefix topics/,$$(notdir $$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$1/dita/topics/*dita))) \
+  	$$(addprefix topics/images/,$$(notdir $$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$1/dita/topics/images/*png)))
   VBOX_USER_MANUAL_DITA_SRC_FILES_$(1)_FALLBACK := \
   	$$(filter-out $$(VBOX_USER_MANUAL_DITA_SRC_FILES_$(1)), $$(VBOX_USER_MANUAL_DITA_BASIC_SRC_FILES))
 
   VBOX_USER_MANUAL_DITA_STAGED_FILES_$(1) = \
-  	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$1/dita/,\
-		$$(VBOX_USER_MANUAL_DITA_SRC_FILES_$(1)) \
-		$$(VBOX_USER_MANUAL_DITA_SRC_FILES_$(1)_FALLBACK) \
-		topics/reference.dtd)
+  	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$1/dita/, \
+  	$$(VBOX_USER_MANUAL_DITA_SRC_FILES_$(1)) \
+  	$$(VBOX_USER_MANUAL_DITA_SRC_FILES_$(1)_FALLBACK) \
+  	topics/reference.dtd)
 
   ifneq ($$(VBOX_USER_MANUAL_DITA_SRC_FILES_$(1)),)
    $$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$1/dita/,$$(VBOX_USER_MANUAL_DITA_SRC_FILES_$(1))): \
-       	 $$(VBOX_PATH_MANUAL_OUTBASE)/$1/dita/%: \
-		 $$(VBOX_PATH_MANUAL_SRC)/$1/dita/% | $$$$(dir $$$$@)
+   		$$(VBOX_PATH_MANUAL_OUTBASE)/$1/dita/% : \
+   		$$(VBOX_PATH_MANUAL_SRC)/$1/dita/% | $$$$(dir $$$$@)
 	$$(QUIET)$$(INSTALL_STAGING) -m 0644 -- "$$<" "$$(@D)/"
   endif
 
   ifneq ($$(VBOX_USER_MANUAL_DITA_SRC_FILES_$(1)_FALLBACK),)
    $$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$1/dita/,$$(VBOX_USER_MANUAL_DITA_SRC_FILES_$(1)_FALLBACK)): \
-       	 $$(VBOX_PATH_MANUAL_OUTBASE)/$1/dita/%: \
-       	 $$(VBOX_PATH_MANUAL_SRC)/en_US/dita/% | $$$$(dir $$$$@)
+   		$$(VBOX_PATH_MANUAL_OUTBASE)/$1/dita/% : \
+   		$$(VBOX_PATH_MANUAL_SRC)/en_US/dita/% | $$$$(dir $$$$@)
 	$$(QUIET)$$(INSTALL_STAGING) -m 0644 -- "$$<" "$$(@D)/"
   endif
 
@@ -671,6 +671,16 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		$$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES)
 	$(call MSG_L1, Ran common dita steps)
 	$(QUIET)$(TOUCH) -- "$@"
+
+
+ #
+ # 2. Convert the manpages from Docbook refentry files to DITA reference files.
+ #
+ #    In DITA links needs proper href values, with both file and ID.  Since the
+ #    source only has IDs, we scan all topics and refentry-files alike and
+ #    generate a mapping database before we start converting them.  This DB is
+ #    then used at the end of each conversion to fix the hrefs.
+ #
 
 
  ##########################################################################################
@@ -810,7 +820,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   +| $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita.xml.properties: \
   		$$(VBOX_MANUAL_XML_FILES_COMMON) \
   		$$(VBOX_MANUAL_XML_FILES_GENERATED_$(lang)) \
-		$$(VBOX_USER_MANUAL_DITA_STAGED_FILES_$(lang)) \
+  		$$(VBOX_USER_MANUAL_DITA_STAGED_FILES_$(lang)) \
   		$$(VBOX_PATH_MANUAL_OUTBASE)/dita_common
 	$$(QUIET)$(RM) -f -- "$$@"
 	$$(QUIET)$(RM) -Rf -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf/"
