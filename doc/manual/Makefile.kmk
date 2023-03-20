@@ -779,6 +779,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  # including these.
  #
 
+ ## @todo front page
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
  		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_en_US) \
  		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US)
@@ -788,23 +789,61 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		"/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap" \
 		"/transtype:xhtml" \
 		"/outdir:$(@D)" \
-		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml"
+		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml_chunks"
 
- # disable for now
- ## bird: Remove @chunk attrib from Glossary.dita topicref and add chunk="to-content" to bootmap for single html experiments.
- ##       See https://docs.oasis-open.org/dita/v1.2/os/spec/archSpec/chunking.html
- ##       and https://www.oxygenxml.com/forum/post25114.html?hilit=dita%20xhtml%20chunk#p25114
- ##       for further clues.
- #html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html
+ html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
+
+ # We must modify UserManual.ditamap here, removing all chunk attributes and put
+ # a chunk="to-content" on the root element (bookmap).  For clues see:
+ #     https://docs.oasis-open.org/dita/v1.2/os/spec/archSpec/chunking.html
+ #     https://www.oxygenxml.com/forum/post25114.html?hilit=dita%20xhtml%20chunk#p25114
+ # We stich the index.html and UserManual-Single.html files together using
+ # SED since we haven't been able to convince DITA-OT to combine them.
+ ## @todo front page
+ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html: \
+ 		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_en_US) \
+ 		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US)
+	$(call MSG_L1,Building html chunks $@)
+	$(QUIET)$(RM) -Rf -- "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/"
+	$(QUIET)$(RM) -f -- "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual-Single.ditamap"
+	$(SED) -r -e 's/ chunk=["][^"]+["]//g' -e 's/<bookmap /<bookmap chunk="to-content" /' \
+		--output "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual-Single.ditamap" \
+		"$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap"
+	$(QUIET)$(RM) -Rf -- "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-single/"
+	$(QUIET)$(call VBOX_DITA_RUN_DOST,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-single) \
+		"/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual-Single.ditamap" \
+		"/transtype:xhtml" \
+		"/outdir:$(@D)" \
+		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml_single"
+	$(SED) -ne '1,/<body>/{p}' \
+		--output "$@" "$(@D)/UserManual-Single.html"
+	$(APPEND) -n "$@" "<!-- index inject: -->"
+	$(SED) -ne '/<body>/,/<\/body>/{/<body>/d;/<\/body>/d;s/UserManual-Single.html/UserManual.html/g;p}' \
+		--append "$@" "$(@D)/index.html"
+	$(APPEND) -n "$@" "<!-- resuming main file: -->"
+	$(SED) -ne '/<body>/,99999999{/<body>/d;s/UserManual-Single.html/UserManual.html/g;p}' \
+		--append "$@" "$(@D)/UserManual-Single.html"
+
+ html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html
 
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip: \
- 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html \
+ 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html
 	$(call MSG_L1,Packing documentation $@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ -- $(VBOX_ZIP) \
-		-9 -r "$@" "html-chunks"
+		-9 -r "$@" \
+		"html-chunks" \
+		"html-single" \
+		-x "html-chunks/dita.list" \
+		-x "html-chunks/dita.xml.properties" \
+		-x "html-chunks/UserManual_xhtml.log" \
+		-x "html-single/dita.list" \
+		-x "html-single/dita.xml.properties" \
+		-x "html-single/UserManual-Single_xhtml.log" \
+		-x "html-single/index.html" \
+		-x "html-single/UserManual-Single.html"
 
- html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
  html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
 
 
