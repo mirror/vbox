@@ -907,13 +907,12 @@ bool UIKeyboardHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
 /* Machine state-change handler: */
 void UIKeyboardHandler::sltMachineStateChanged()
 {
-    /* Get previous and cached machine states: */
-    const KMachineState enmPreviousState = uimachine()->machineStatePrevious();
+    /* Get cached machine states: */
     const KMachineState enmState = uimachine()->machineState();
 
     /* Notify all the listeners that machine state was [de]initialized: */
-    if (   enmPreviousState == KMachineState_Null
-        || enmState == KMachineState_Null)
+    if (   enmState == KMachineState_Null
+        || enmState == KMachineState_Starting)
         emit sigStateChange(state());
 
     /* Handle particular machine states: */
