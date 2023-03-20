@@ -793,8 +793,8 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   		$$(VBOX_MANUAL_XML_FILES_GENERATED_$(lang)) \
   		$$(VBOX_USER_MANUAL_DITA_STAGED_FILES_$(lang)) \
   		$$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(lang))
-	$$(QUIET)$(RM) -f -- "$$@"
-	$$(QUIET)$(RM) -Rf -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf/"
+	$$(QUIET)$$(RM) -f -- "$$@" "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_pdf.log" \
+	$$(QUIET)$$(RM) -Rf -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf/"
 	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf,, \
 		"/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
 		"/transtype:pdf" \
@@ -823,7 +823,8 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_en_US) \
  		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US)
 	$(call MSG_L1,Building html chunks $@)
-	$(QUIET)$(RM) -Rf -- "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks/"
+	$(QUIET)$(RM) -Rf -- "$(@D)" "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks/"
+	$(QUIET)$(MKDIR) -- "$(@D)"
 	$(QUIET)$(call VBOX_DITA_RUN_DOST,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks,, \
 		"/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap" \
 		"/transtype:xhtml" \
@@ -844,12 +845,12 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_en_US) \
  		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US)
 	$(call MSG_L1,Building html chunks $@)
-	$(QUIET)$(RM) -Rf -- "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/"
 	$(QUIET)$(RM) -f -- "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual-Single.ditamap"
 	$(SED) -r -e 's/ chunk=["][^"]+["]//g' -e 's/<bookmap /<bookmap chunk="to-content" /' \
 		--output "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual-Single.ditamap" \
 		"$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap"
-	$(QUIET)$(RM) -Rf -- "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-single/"
+	$(QUIET)$(RM) -Rf -- "$(@D)" "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-single/"
+	$(QUIET)$(MKDIR) -- "$(@D)"
 	$(QUIET)$(call VBOX_DITA_RUN_DOST,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-single,, \
 		"/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual-Single.ditamap" \
 		"/transtype:xhtml" \
@@ -936,10 +937,12 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
    # Setting HHCDIR here so that it fails to locate hcc.exe and always skips the
    # compilation step that produces the .chm-file, since we don't need it and it
    # mangles the path so it always fails anyway.
+   ## @todo front page.
    $(2)/UserManual.hhp: \
    		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_$(1)) \
    		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(1))
-	$$(QUIET)$(RM) -Rf -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp/"
+	$$(QUIET)$$(RM) -Rf -- "$$(@D)" "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp/"
+	$$(QUIET)$$(MKDIR) -- "$$(@D)"
 	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp, -EHHCDIR="$$(@D)", \
 		"/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
 		"/transtype:htmlhelp" \
@@ -961,7 +964,9 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		-d "$$(<D)" -o "$$@" -f UserManual.hhp -t UserManual.hhc
 
    # 3. Copy the Qt help configuration file from source to the output dir.
-   $(2)/UserManual.qhcp: $$(VBOX_PATH_MANUAL_SRC)/UserManual.qhcp | $$$$(dir $$$$@)
+   $(2)/UserManual.qhcp: \
+   		$$(VBOX_PATH_MANUAL_SRC)/UserManual.qhcp \
+   		| $(2)/UserManual.hhp # (Must not run parallel to UserManual.hpp, so it can safely nuke the output dir.)
 	$$(QUIET)$$(INSTALL_STAGING) -m0644 -- '$$<' '$$(@D)'
 
    # 4. Run the Qt help generator to produce the .qhp and .qch files.
