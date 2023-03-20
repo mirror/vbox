@@ -668,6 +668,13 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  #    generate a mapping database before we start converting them.  This DB is
  #    then used at the end of each conversion to fix the hrefs.
  #
+ #    Steps taken converting individual Docbook refentry files:
+ #        1. refsect2_to_refsect1.py flattens the refsect1/refsect2 hierarchy,
+ #           creating a .xml version next to the final dita file.
+ #        2. docbook2dita.xsl takes that and produces a .dita-file.
+ #        3. mark_external_urls.xsl marks external links in the .dita-file.
+ #        4. add_file_to_id_only_references.py converts ID-only hrefs into
+ #           href="filename.dita#ID" using the mapping DB.
 
  ##
  # Do per-language stuff for the refentry -> dita file conversion.
@@ -712,7 +719,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		--output "$$@" \
 		"$$<" \
 		$$(VBOX_PATH_MANUAL_OUTBASE)/$1/user_isomakercmd-man.xml
- endef
+ endef # def_vbox_refentry_to_dita
 
  ## Convert a single refentry file to dita.
  # @param 1    Language
@@ -745,7 +752,8 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		"$$(VBOX_PATH_MANUAL_SRC)/mark_external_urls.xsl" "$$@"
 	$$(QUIET)$$(VBOX_BLD_PYTHON) $$(VBOX_PATH_MANUAL_SRC)/add_file_to_id_only_references.py \
 		--mapping-file "$$(VBOX_USER_MANUAL_ID_MAPPING_FILE_$1)" "$$@"
- endef
+ endef # def_vbox_refentry_file_to_dita
+
  $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES) \
  	,$(evalcall2 def_vbox_refentry_to_dita,$(lang)) \
  	$(foreach file, $(basename $(VBOX_MANUAL_XML_REFENTRY_FILES) man_vboximg-mount man_VBoxHeadless) \
