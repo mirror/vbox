@@ -616,6 +616,8 @@ public:
         /* Configure connection: */
         connect(pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorRecording::updateAppearance);
+        connect(pMachine, &UIMachine::sigRecordingChange,
+                this, &UIIndicatorRecording::updateAppearance);
         /* Create *enabled* state animation: */
         m_pAnimation = UIAnimationLoop::installAnimationLoop(this, "rotationAngle",
                                                              "rotationAngleStart", "rotationAngleFinal",

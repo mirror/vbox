@@ -79,13 +79,7 @@ void UIMachineWindowNormal::sltMachineStateChanged()
     UIMachineWindow::sltMachineStateChanged();
 
     /* Update indicator-pool and virtualization stuff: */
-    updateAppearanceOf(UIVisualElement_IndicatorPoolStuff | UIVisualElement_Recording | UIVisualElement_FeaturesStuff);
-}
-
-void UIMachineWindowNormal::sltRecordingChange()
-{
-    /* Update video-capture stuff: */
-    updateAppearanceOf(UIVisualElement_Recording);
+    updateAppearanceOf(UIVisualElement_IndicatorPoolStuff | UIVisualElement_FeaturesStuff);
 }
 
 void UIMachineWindowNormal::sltCPUExecutionCapChange()
@@ -209,8 +203,6 @@ void UIMachineWindowNormal::prepareSessionConnections()
     UIMachineWindow::prepareSessionConnections();
 
     /* Start watching for console events: */
-    connect(machineLogic()->uimachine(), &UIMachine::sigRecordingChange,
-            this, &UIMachineWindowNormal::sltRecordingChange);
     connect(machineLogic()->uimachine(), &UIMachine::sigCPUExecutionCapChange,
             this, &UIMachineWindowNormal::sltCPUExecutionCapChange);
 
@@ -401,8 +393,6 @@ void UIMachineWindowNormal::cleanupStatusBar()
 void UIMachineWindowNormal::cleanupSessionConnections()
 {
     /* Stop watching for console events: */
-    disconnect(machineLogic()->uimachine(), &UIMachine::sigRecordingChange,
-               this, &UIMachineWindowNormal::sltRecordingChange);
     disconnect(machineLogic()->uimachine(), &UIMachine::sigCPUExecutionCapChange,
                this, &UIMachineWindowNormal::sltCPUExecutionCapChange);
 
@@ -667,12 +657,6 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
         {
             if (iElement & UIVisualElement_FeaturesStuff)
                 m_pIndicatorsPool->updateAppearance(IndicatorType_Features);
-        }
-        /* If VM is running or paused: */
-        if (uimachine()->isRunning() || uimachine()->isPaused())
-        {
-            if (iElement & UIVisualElement_Recording)
-                m_pIndicatorsPool->updateAppearance(IndicatorType_Recording);
         }
     }
 }

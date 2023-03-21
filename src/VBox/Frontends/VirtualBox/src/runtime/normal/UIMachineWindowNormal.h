@@ -58,8 +58,6 @@ private slots:
 
     /** Handles machine state change event. */
     void sltMachineStateChanged();
-    /** Handles recording change event. */
-    void sltRecordingChange();
     /** Handles CPU execution cap change event. */
     void sltCPUExecutionCapChange();
     /** Handles Machine UI initialized event. */
