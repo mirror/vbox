@@ -527,38 +527,48 @@ void UIFileManagerGuestTable::readDirectory(const QString& strPath,
     parent->setIsOpened(true);
     if (directory.isOk())
     {
-        CFsObjInfo fsInfo = directory.Read();
+        int const cMaxEntries = _4K; /* Maximum number of entries to read at once per List() call. */
+
+        QVector<CFsObjInfo> vecFsInfo = directory.List(cMaxEntries);
         QMap<QString, UICustomFileSystemItem*> fileObjects;
 
-        while (fsInfo.isOk())
+        while (directory.isOk())
         {
-            if (fsInfo.GetName() != "." && fsInfo.GetName() != "..")
+            for (int i = 0; i < vecFsInfo.size(); i++)
             {
-                QVector<QVariant> data;
-                QDateTime changeTime = QDateTime::fromMSecsSinceEpoch(fsInfo.GetChangeTime()/RT_NS_1MS);
-                KFsObjType fsObjectType = fileType(fsInfo);
-                UICustomFileSystemItem *item = new UICustomFileSystemItem(fsInfo.GetName(), parent, fsObjectType);
-                if (!item)
-                    continue;
-                item->setData(static_cast<qulonglong>(fsInfo.GetObjectSize()), UICustomFileSystemModelColumn_Size);
-                item->setData(changeTime, UICustomFileSystemModelColumn_ChangeTime);
-                item->setData(fsInfo.GetUserName(), UICustomFileSystemModelColumn_Owner);
-                item->setData(permissionString(fsInfo), UICustomFileSystemModelColumn_Permissions);
-                item->setPath(UIPathOperations::removeTrailingDelimiters(UIPathOperations::mergePaths(strPath, fsInfo.GetName())));
-                item->setIsOpened(false);
-                item->setIsHidden(isFileObjectHidden(fsInfo));
-                fileObjects.insert(fsInfo.GetName(), item);
-                /* @todo. We will need to wait a fully implemented SymlinkRead function
-                 * to be able to handle sym links properly: */
-                // QString path = UIPathOperations::mergePaths(strPath, fsInfo.GetName());
-                // QVector<KSymlinkReadFlag> aFlags;
-                // printf("%s %s %s\n", qPrintable(fsInfo.GetName()), qPrintable(path),
-                //        qPrintable(m_comGuestSession.SymlinkRead(path, aFlags)));
+                CFsObjInfo const &fsInfo = vecFsInfo[i];
+
+                if (fsInfo.GetName() != "." && fsInfo.GetName() != "..")
+                {
+                    QVector<QVariant> data;
+                    QDateTime changeTime = QDateTime::fromMSecsSinceEpoch(fsInfo.GetChangeTime()/RT_NS_1MS);
+                    KFsObjType fsObjectType = fileType(fsInfo);
+                    UICustomFileSystemItem *item = new UICustomFileSystemItem(fsInfo.GetName(), parent, fsObjectType);
+                    if (!item)
+                        continue;
+                    item->setData(static_cast<qulonglong>(fsInfo.GetObjectSize()), UICustomFileSystemModelColumn_Size);
+                    item->setData(changeTime, UICustomFileSystemModelColumn_ChangeTime);
+                    item->setData(fsInfo.GetUserName(), UICustomFileSystemModelColumn_Owner);
+                    item->setData(permissionString(fsInfo), UICustomFileSystemModelColumn_Permissions);
+                    item->setPath(UIPathOperations::removeTrailingDelimiters(UIPathOperations::mergePaths(strPath, fsInfo.GetName())));
+                    item->setIsOpened(false);
+                    item->setIsHidden(isFileObjectHidden(fsInfo));
+                    fileObjects.insert(fsInfo.GetName(), item);
+                    /* @todo. We will need to wait a fully implemented SymlinkRead function
+                     * to be able to handle sym links properly: */
+                    // QString path = UIPathOperations::mergePaths(strPath, fsInfo.GetName());
+                    // QVector<KSymlinkReadFlag> aFlags;
+                    // printf("%s %s %s\n", qPrintable(fsInfo.GetName()), qPrintable(path),
+                    //        qPrintable(m_comGuestSession.SymlinkRead(path, aFlags)));
+                }
             }
-            fsInfo = directory.Read();
+
+            vecFsInfo = directory.List(cMaxEntries);
         }
+
         checkDotDot(fileObjects, parent, isStartDir);
     }
+
     directory.Close();
 }
 
