@@ -268,6 +268,80 @@ VMMR3DECL(int) MMR3Init(PVM pVM)
 }
 
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+/**
+ * This sets up the RAM ranges from the VM config.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pMMCfg      Pointer to the CFGM node holding the RAM config.
+ *
+ * @note On ARM there is no "standard" way to handle RAM like on x86.
+ *       Every SoC can have multiple RAM regions scattered across the whole
+ *       address space so we have to be much more flexible here.
+ */
+static int mmR3InitRamArmV8(PVM pVM, PCFGMNODE pMMCfg)
+{
+    int rc = VINF_SUCCESS;
+    PCFGMNODE pMemRegions = CFGMR3GetChild(pMMCfg, "MemRegions");
+
+    pVM->mm.s.cbRamBase     = 0;
+    pVM->mm.s.cbRamHole     = 0;
+    pVM->mm.s.cbRamBelow4GB = 0;
+    pVM->mm.s.cbRamAbove4GB = 0;
+
+    for (PCFGMNODE pCur = CFGMR3GetFirstChild(pMemRegions); pCur; pCur = CFGMR3GetNextChild(pCur))
+    {
+        char szMemRegion[512]; RT_ZERO(szMemRegion);
+        rc = CFGMR3GetName(pCur, &szMemRegion[0], sizeof(szMemRegion));
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("Failed to query memory region name -> %Rrc\n", rc));
+            break;
+        }
+
+        uint64_t u64GCPhysStart = 0;
+        rc = CFGMR3QueryU64(pCur, "GCPhysStart", &u64GCPhysStart);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("Failed to query \"GCPhysStart\" for memory region %s -> %Rrc\n", szMemRegion, rc));
+            break;
+        }
+
+        uint64_t u64MemSize = 0;
+        rc = CFGMR3QueryU64(pCur, "Size", &u64MemSize);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("Failed to query \"Size\" for memory region %s -> %Rrc\n", szMemRegion, rc));
+            break;
+        }
+
+        rc = PGMR3PhysRegisterRam(pVM, u64GCPhysStart, u64MemSize, "Conventional RAM");
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("Failed to register memory region '%s' GCPhysStart=%RGp Size=%#RX64 -> %Rrc\n",
+                    szMemRegion, u64GCPhysStart, u64MemSize));
+            break;
+        }
+
+        pVM->mm.s.cbRamBase += u64MemSize;
+        if (u64GCPhysStart >= _4G)
+            pVM->mm.s.cbRamAbove4GB += u64MemSize;
+        else if (u64GCPhysStart + u64MemSize > _4G)
+        {
+            uint64_t cbRamAbove4GB = (u64GCPhysStart + u64MemSize) - _4G;
+            pVM->mm.s.cbRamAbove4GB += cbRamAbove4GB;
+            pVM->mm.s.cbRamBelow4GB += (u64MemSize - cbRamAbove4GB);
+        }
+        else
+            pVM->mm.s.cbRamBelow4GB += (uint32_t)u64MemSize;
+    }
+
+    return rc;
+}
+#endif
+
+
 /**
  * Initializes the MM parts which depends on PGM being initialized.
  *
@@ -290,6 +364,9 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
         AssertRCReturn(rc, rc);
     }
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    rc = mmR3InitRamArmV8(pVM, pMMCfg);
+#else
     /** @cfgm{/RamSize, uint64_t, 0, 16TB, 0}
      * Specifies the size of the base RAM that is to be set up during
      * VM initialization.
@@ -404,9 +481,6 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     pVM->mm.s.cbRamBelow4GB = cbRam > offRamHole ? offRamHole         : cbRam;
     pVM->mm.s.cbRamAbove4GB = cbRam > offRamHole ? cbRam - offRamHole : 0;
 
-#if defined(VBOX_VMM_TARGET_ARMV8)
-    rc = PGMR3PhysRegisterRam(pVM, 0, cbRam, "Conventional RAM");
-#else
     /* First the conventional memory: */
     rc = PGMR3PhysRegisterRam(pVM, 0, RT_MIN(cbRam, 640*_1K), "Conventional RAM");
     if (RT_SUCCESS(rc) && cbRam >= _1M)
@@ -423,7 +497,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
                 rc = PGMR3PhysRegisterRam(pVM, _4G, cbRam - offRamHole, "Above 4GB Base RAM");
         }
     }
-#endif
+#endif /* !VBOX_VMM_TARGET_ARMV8 */
 
     /*
      * Enabled mmR3UpdateReservation here since we don't want the
