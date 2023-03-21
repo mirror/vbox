@@ -179,6 +179,8 @@ public:
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/hd_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/hd_disabled_16px.png"));
         /* Configure connection: */
+        connect(pMachine, &UIMachine::sigMachineStateChange,
+                this, &UIIndicatorHardDrive::updateAppearance);
         connect(pMachine, &UIMachine::sigStorageDeviceChange,
                 this, &UIIndicatorHardDrive::updateAppearance);
         /* Translate finally: */
@@ -226,6 +228,9 @@ public:
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/cd_read_16px.png"));
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/cd_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/cd_disabled_16px.png"));
+        /* Configure connection: */
+        connect(pMachine, &UIMachine::sigMachineStateChange,
+                this, &UIIndicatorOpticalDisks::updateAppearance);
         /* Translate finally: */
         retranslateUi();
     }
@@ -271,6 +276,9 @@ public:
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/fd_read_16px.png"));
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/fd_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/fd_disabled_16px.png"));
+        /* Configure connection: */
+        connect(pMachine, &UIMachine::sigMachineStateChange,
+                this, &UIIndicatorFloppyDisks::updateAppearance);
         /* Translate finally: */
         retranslateUi();
     }
@@ -325,6 +333,9 @@ public:
         setStateIcon(AudioState_OutputOn, UIIconPool::iconSet(":/audio_input_off_16px.png"));
         setStateIcon(AudioState_InputOn, UIIconPool::iconSet(":/audio_output_off_16px.png"));
         setStateIcon(AudioState_AllOn, UIIconPool::iconSet(":/audio_16px.png"));
+        /* Configure connection: */
+        connect(pMachine, &UIMachine::sigMachineStateChange,
+                this, &UIIndicatorAudio::updateAppearance);
         /* Translate finally: */
         retranslateUi();
     }
@@ -455,6 +466,9 @@ public:
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/usb_read_16px.png"));
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/usb_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/usb_disabled_16px.png"));
+        /* Configure connection: */
+        connect(pMachine, &UIMachine::sigMachineStateChange,
+                this, &UIIndicatorUSB::updateAppearance);
         /* Translate finally: */
         retranslateUi();
     }
@@ -499,6 +513,9 @@ public:
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/sf_read_16px.png"));
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/sf_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/sf_disabled_16px.png"));
+        /* Configure connection: */
+        connect(pMachine, &UIMachine::sigMachineStateChange,
+                this, &UIIndicatorSharedFolders::updateAppearance);
         /* Translate finally: */
         retranslateUi();
     }
@@ -545,7 +562,7 @@ public:
         setStateIcon(DisplayState_Software,    UIIconPool::iconSet(":/display_software_16px.png"));
         setStateIcon(DisplayState_Hardware,    UIIconPool::iconSet(":/display_hardware_16px.png"));
         /* Configure connection: */
-        connect(pMachine, &UIMachine::sigInitialized,
+        connect(pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorDisplay::updateAppearance);
         /* Translate finally: */
         retranslateUi();
@@ -565,7 +582,7 @@ protected slots:
             setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
         DisplayState enmState = DisplayState_Unavailable;
-        if (m_pMachine->isSessionValid())
+        if (m_pMachine->machineState() != KMachineState_Null)
         {
             if (!fAcceleration3D)
                 enmState = DisplayState_Software;
@@ -608,7 +625,7 @@ public:
         setStateIcon(RecordingState_Enabled,     UIIconPool::iconSet(":/movie_reel_16px.png"));
         setStateIcon(RecordingState_Paused,      UIIconPool::iconSet(":/movie_reel_16px.png"));
         /* Configure connection: */
-        connect(pMachine, &UIMachine::sigInitialized,
+        connect(pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorRecording::updateAppearance);
         /* Create *enabled* state animation: */
         m_pAnimation = UIAnimationLoop::installAnimationLoop(this, "rotationAngle",
@@ -660,7 +677,7 @@ protected slots:
             setToolTip(s_strTable.arg(strFullData));
         /* Set initial indicator state: */
         RecordingState enmState = RecordingState_Unavailable;
-        if (m_pMachine->isSessionValid())
+        if (m_pMachine->machineState() != KMachineState_Null)
         {
             if (!fRecordingEnabled)
                 enmState = RecordingState_Disabled;
