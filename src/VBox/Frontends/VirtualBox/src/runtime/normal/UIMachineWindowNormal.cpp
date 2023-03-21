@@ -82,18 +82,6 @@ void UIMachineWindowNormal::sltMachineStateChanged()
     updateAppearanceOf(UIVisualElement_IndicatorPoolStuff | UIVisualElement_Recording | UIVisualElement_FeaturesStuff);
 }
 
-void UIMachineWindowNormal::sltMediumChange(const CMediumAttachment &attachment)
-{
-    /* Update corresponding medium stuff: */
-    KDeviceType type = attachment.GetType();
-    if (type == KDeviceType_HardDisk)
-        updateAppearanceOf(UIVisualElement_HDStuff);
-    if (type == KDeviceType_DVD)
-        updateAppearanceOf(UIVisualElement_CDStuff);
-    if (type == KDeviceType_Floppy)
-        updateAppearanceOf(UIVisualElement_FDStuff);
-}
-
 void UIMachineWindowNormal::sltUSBControllerChange()
 {
     /* Update USB stuff: */
@@ -133,10 +121,7 @@ void UIMachineWindowNormal::sltCPUExecutionCapChange()
 void UIMachineWindowNormal::sltHandleMachineInitialized()
 {
     /* Update virtualization stuff: */
-    updateAppearanceOf(  UIVisualElement_FeaturesStuff
-                       | UIVisualElement_HDStuff
-                       | UIVisualElement_CDStuff
-                       | UIVisualElement_FDStuff);
+    updateAppearanceOf(UIVisualElement_FeaturesStuff);
 }
 
 #ifndef RT_OS_DARWIN
@@ -248,8 +233,6 @@ void UIMachineWindowNormal::prepareSessionConnections()
     UIMachineWindow::prepareSessionConnections();
 
     /* Start watching for console events: */
-    connect(machineLogic()->uimachine(), &UIMachine::sigMediumChange,
-        this, &UIMachineWindowNormal::sltMediumChange);
     connect(machineLogic()->uimachine(), &UIMachine::sigUSBControllerChange,
             this, &UIMachineWindowNormal::sltUSBControllerChange);
     connect(machineLogic()->uimachine(), &UIMachine::sigUSBDeviceStateChange,
@@ -450,8 +433,6 @@ void UIMachineWindowNormal::cleanupStatusBar()
 void UIMachineWindowNormal::cleanupSessionConnections()
 {
     /* Stop watching for console events: */
-    disconnect(machineLogic()->uimachine(), &UIMachine::sigMediumChange,
-               this, &UIMachineWindowNormal::sltMediumChange);
     disconnect(machineLogic()->uimachine(), &UIMachine::sigUSBControllerChange,
                this, &UIMachineWindowNormal::sltUSBControllerChange);
     disconnect(machineLogic()->uimachine(), &UIMachine::sigUSBDeviceStateChange,
@@ -724,12 +705,6 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
         /* If VM is running: */
         if (uimachine()->isRunning())
         {
-            if (iElement & UIVisualElement_HDStuff)
-                m_pIndicatorsPool->updateAppearance(IndicatorType_HardDisks);
-            if (iElement & UIVisualElement_CDStuff)
-                m_pIndicatorsPool->updateAppearance(IndicatorType_OpticalDisks);
-            if (iElement & UIVisualElement_FDStuff)
-                m_pIndicatorsPool->updateAppearance(IndicatorType_FloppyDisks);
             if (iElement & UIVisualElement_AudioStuff)
                 m_pIndicatorsPool->updateAppearance(IndicatorType_Audio);
             if (iElement & UIVisualElement_USBStuff)

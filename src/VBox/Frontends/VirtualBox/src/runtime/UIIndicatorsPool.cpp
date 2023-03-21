@@ -183,6 +183,8 @@ public:
                 this, &UIIndicatorHardDrive::updateAppearance);
         connect(pMachine, &UIMachine::sigStorageDeviceChange,
                 this, &UIIndicatorHardDrive::updateAppearance);
+        connect(pMachine, &UIMachine::sigMediumChange,
+                this, &UIIndicatorHardDrive::updateAppearance);
         /* Translate finally: */
         retranslateUi();
     }
@@ -231,6 +233,10 @@ public:
         /* Configure connection: */
         connect(pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorOpticalDisks::updateAppearance);
+        connect(pMachine, &UIMachine::sigStorageDeviceChange,
+                this, &UIIndicatorOpticalDisks::updateAppearance);
+        connect(pMachine, &UIMachine::sigMediumChange,
+                this, &UIIndicatorOpticalDisks::updateAppearance);
         /* Translate finally: */
         retranslateUi();
     }
@@ -278,6 +284,10 @@ public:
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/fd_disabled_16px.png"));
         /* Configure connection: */
         connect(pMachine, &UIMachine::sigMachineStateChange,
+                this, &UIIndicatorFloppyDisks::updateAppearance);
+        connect(pMachine, &UIMachine::sigStorageDeviceChange,
+                this, &UIIndicatorFloppyDisks::updateAppearance);
+        connect(pMachine, &UIMachine::sigMediumChange,
                 this, &UIIndicatorFloppyDisks::updateAppearance);
         /* Translate finally: */
         retranslateUi();

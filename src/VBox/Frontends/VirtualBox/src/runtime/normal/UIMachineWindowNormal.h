@@ -58,8 +58,6 @@ private slots:
 
     /** Handles machine state change event. */
     void sltMachineStateChanged();
-    /** Handles medium change event. */
-    void sltMediumChange(const CMediumAttachment &attachment);
     /** Handles USB controller change event. */
     void sltUSBControllerChange();
     /** Handles USB device state change event. */

@@ -1568,14 +1568,6 @@ void UIMachineLogic::sltCloseSettingsDialog()
 {
     /* Remove instance if exist: */
     delete m_settings.take(UISettingsDialog::DialogType_Machine);
-
-    /* We can't rely on MediumChange events as they are not yet properly implemented within Main.
-     * We can't watch for MachineData change events as well as they are of broadcast type
-     * and console event-handler do not processing broadcast events.
-     * But we still want to be updated after possible medium changes at least if they were
-     * originated from our side. */
-    foreach (UIMachineWindow *pMachineWindow, machineWindows())
-        pMachineWindow->updateAppearanceOf(UIVisualElement_HDStuff | UIVisualElement_CDStuff | UIVisualElement_FDStuff);
 }
 
 void UIMachineLogic::sltTakeSnapshot()
