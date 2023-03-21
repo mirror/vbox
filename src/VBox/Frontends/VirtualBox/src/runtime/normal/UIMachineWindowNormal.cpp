@@ -79,7 +79,7 @@ void UIMachineWindowNormal::sltMachineStateChanged()
     UIMachineWindow::sltMachineStateChanged();
 
     /* Update indicator-pool and virtualization stuff: */
-    updateAppearanceOf(UIVisualElement_IndicatorPoolStuff);
+    updateAppearanceOf(UIVisualElement_IndicatorPool);
 }
 
 #ifndef RT_OS_DARWIN
@@ -610,7 +610,7 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
 
     /* Set status-bar indicator-pool auto update timer: */
     if (   m_pIndicatorsPool
-        && iElement & UIVisualElement_IndicatorPoolStuff)
+        && iElement & UIVisualElement_IndicatorPool)
         m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uimachine()->isRunning());
 }
 

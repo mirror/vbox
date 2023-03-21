@@ -339,7 +339,7 @@ void UIMachineWindow::showEvent(QShowEvent *pEvent)
     windowManager().setMainWindowShown(this);
 
     /* Update appearance for indicator-pool: */
-    updateAppearanceOf(UIVisualElement_IndicatorPoolStuff);
+    updateAppearanceOf(UIVisualElement_IndicatorPool);
 }
 
 void UIMachineWindow::hideEvent(QHideEvent *pEvent)

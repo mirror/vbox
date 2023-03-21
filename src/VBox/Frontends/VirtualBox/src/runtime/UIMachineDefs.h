@@ -45,13 +45,12 @@
 /** Machine window visual element types. */
 enum UIVisualElement
 {
-    UIVisualElement_WindowTitle           = RT_BIT(0),
-    UIVisualElement_MouseIntegrationStuff = RT_BIT(1),
-    UIVisualElement_IndicatorPoolStuff    = RT_BIT(2),
+    UIVisualElement_WindowTitle   = RT_BIT(0),
+    UIVisualElement_IndicatorPool = RT_BIT(1),
 #ifndef VBOX_WS_MAC
-    UIVisualElement_MiniToolBar           = RT_BIT(13),
+    UIVisualElement_MiniToolBar   = RT_BIT(2),
 #endif
-    UIVisualElement_AllStuff              = 0xFFFF
+    UIVisualElement_AllStuff      = 0xFFFF
 };
 
 /** Mouse state types. */
