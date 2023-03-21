@@ -58,12 +58,6 @@ private slots:
 
     /** Handles machine state change event. */
     void sltMachineStateChanged();
-    /** Handles USB controller change event. */
-    void sltUSBControllerChange();
-    /** Handles USB device state change event. */
-    void sltUSBDeviceStateChange();
-    /** Handles shared folder change event. */
-    void sltSharedFolderChange();
     /** Handles recording change event. */
     void sltRecordingChange();
     /** Handles CPU execution cap change event. */
