@@ -1227,7 +1227,7 @@ static int vgsvcGstCtrlSessionHandleDirRead(const PVBOXSERVICECTRLSESSION pSessi
 
             int rc2;
             if (RT_SUCCESS(rc))
-                rc2 = VbglR3GuestCtrlDirCbReadEx(pHostCtx, rc, pDirEntryEx, cbDirEntryEx, pszUser, pszGroups);
+                rc2 = VbglR3GuestCtrlDirCbReadEx(pHostCtx, rc, pDirEntryEx, (uint32_t)cbDirEntryEx, pszUser, pszGroups);
             else
                 rc2 = VbglR3GuestCtrlDirCbRead(pHostCtx, rc, NULL /* pEntry */, 0 /* cbSize */);
             if (RT_FAILURE(rc2))
@@ -1413,9 +1413,9 @@ static int vgsvcGstCtrlSessionHandleDirList(const PVBOXSERVICECTRLSESSION pSessi
                         }
 
                         GSTCTLDIRENTRYLISTHDR Hdr;
-                        Hdr.cbDirEntryEx = cbDirEntryEx;
-                        Hdr.cbUser       = cbUser;
-                        Hdr.cbGroups     = cbGroups;
+                        Hdr.cbDirEntryEx = (uint32_t)cbDirEntryEx;
+                        Hdr.cbUser       = (uint32_t)cbUser;
+                        Hdr.cbGroups     = (uint32_t)cbGroups;
 
                         memcpy((uint8_t *)pvBuf + cbBufUsed, &Hdr, cbHdr);
                         cbBufUsed += cbHdr;
