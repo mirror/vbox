@@ -48,7 +48,7 @@
   <refsynopsisdiv>
     <cmdsynopsis id="synopsis-vboxmanage-vboxheadless">
       <command>VBoxHeadless</command>
-      <arg>--startvm=<group>
+      <arg>--startvm=<group choice="req">
           <arg choice="plain"><replaceable>uuid</replaceable></arg>
           <arg choice="plain"><replaceable>vmname</replaceable></arg>
         </group></arg>

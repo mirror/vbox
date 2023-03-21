@@ -220,8 +220,9 @@
   </xsl:element>
 </xsl:template>
 
-<!-- command in cmdsynopsis -> syntaxdiagram -->
-<xsl:template match="cmdsynopsis">
+<!-- command in cmdsynopsis -> syntaxdiagram
+     If sbr is used, this gets a bit more complicated... -->
+<xsl:template match="cmdsynopsis[not(sbr)]">
   <xsl:element name="syntaxdiagram">
     <xsl:attribute name="rev">cmdsynopsis</xsl:attribute>
     <xsl:if test="@id">
@@ -230,6 +231,49 @@
     <xsl:apply-templates />
   </xsl:element>
 </xsl:template>
+
+<!--  This isn't working.
+<xsl:key name="G_keyUpToNextSbr"
+  match="cmdsynopsis/node()[not(self::sbr)]"
+  use="generate-id((..|preceding-sibling::sbr[1])[last()])"/>
+
+<xsl:template match="cmdsynopsis[sbr]">
+  <xsl:element name="syntaxdiagram">
+    <xsl:attribute name="rev">cmdsynopsis</xsl:attribute>
+    <xsl:if test="@id">
+      <xsl:attribute name="id"><xsl:value-of select="@id"/></xsl:attribute>
+    </xsl:if>
+    <xsl:element name="groupcomp">
+      <xsl:attribute name="rev">sbr/0</xsl:attribute>
+      <xsl:apply-templates select="key('G_keyUpToNextSbr', generate-id())"/>
+    </xsl:element>
+    <xsl:apply-templates select="sbr"/>
+  </xsl:element>
+</xsl:template>
+
+<xsl:template match="cmdsynopsis/sbr">
+  <xsl:element name="groupcomp">
+    <xsl:attribute name="rev">sbr/n</xsl:attribute>
+    <xsl:apply-templates select="key('G_keyUpToNextSbr', generate-id())"/>
+  </xsl:element>
+</xsl:template>
+-->
+<xsl:template match="cmdsynopsis[sbr]">
+  <xsl:if test="count(sbr) != 1">
+    <xsl:message terminate="yes">Currently only support a single sbr element in a cmdsynopsis. Sorry.</xsl:message>
+  </xsl:if>
+  <xsl:element name="syntaxdiagram">
+    <xsl:attribute name="rev">cmdsynopsis</xsl:attribute>
+    <xsl:if test="@id">
+      <xsl:attribute name="id"><xsl:value-of select="@id"/></xsl:attribute>
+    </xsl:if>
+    <xsl:element name="groupcomp">
+      <xsl:apply-templates select="sbr[1]/preceding-sibling::node()"/>
+    </xsl:element>
+    <xsl:apply-templates select="sbr[1]/following-sibling::node()"/>
+  </xsl:element>
+</xsl:template>
+
 
 <!-- command in cmdsynopsis -> groupseq + kwd -->
 <xsl:template match="cmdsynopsis/command | cmdsynopsis/*/command" >
@@ -274,15 +318,56 @@
   </xsl:element>
 </xsl:template>
 
-<xsl:template match="arg[@choice='plain' and (not(@rep) or @rep='norepeat')]" >
+<xsl:template match="arg[not(*) and not(ancestor::group) and ancestor::cmdsynopsis and @choice='plain' and (not(@rep) or @rep='norepeat')]" >
+  <xsl:element name="kwd">
+    <xsl:attribute name="rev">arg[plain]</xsl:attribute>
+    <xsl:apply-templates />
+  </xsl:element>
+</xsl:template>
+
+<xsl:template match="group/arg[replaceable and @choice='plain' and (not(@rep) or @rep='norepeat')]" >
+  <xsl:if test="./*[not(self::replaceable)] or ./text()">
+    <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>
+      Did not expect group/arg[@choice=plain] to have children other than replaceable:
+      <xsl:for-each select="./*|./text()">
+        <xsl:value-of select="concat(', ', name(.))"/>
+      </xsl:for-each>
+    </xsl:message>
+  </xsl:if>
+  <xsl:element name="var">
+    <xsl:attribute name="rev">arg[plain]/replaceable</xsl:attribute>
+    <xsl:value-of select="."/>
+  </xsl:element>
+</xsl:template>
+
+<xsl:template match="group/arg[@choice='plain' and (not(@rep) or @rep='norepeat') and not(replaceable)]" >
   <xsl:if test="./*">
-    <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Expected only text under arg[choice=plain]</xsl:message>
+    <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Did not expect arg[@choice=plain] to have children
+      <xsl:for-each select="./*">
+        <xsl:text>
+        </xsl:text>
+        <xsl:value-of select="name()"/>
+      </xsl:for-each>
+    </xsl:message>
   </xsl:if>
   <xsl:element name="kwd">
     <xsl:attribute name="rev">arg[plain]</xsl:attribute>
     <xsl:value-of select="."/>
   </xsl:element>
 </xsl:template>
+
+<xsl:template match="arg[(not(@choice) or @choice='opt') and @rep='repeat' and not(ancestor::group) and not(group)]" >
+  <xsl:element name="groupseq">
+    <xsl:attribute name="rev">arg[opt,repeat]</xsl:attribute>
+    <xsl:attribute name="importance">optional</xsl:attribute>
+    <xsl:apply-templates />
+    <xsl:element name="repsep">
+      <xsl:attribute name="rev">arg[opt,repeat]</xsl:attribute>
+      <xsl:text>...</xsl:text>
+    </xsl:element>
+  </xsl:element>
+</xsl:template>
+
 
 <!-- replaceable under arg -> var -->
 <xsl:template match="arg/replaceable" >
@@ -293,7 +378,7 @@
 </xsl:template>
 
 <!-- replaceable in para or term -> synph+var -->
-<xsl:template match="para/replaceable | term/replaceable" >
+<xsl:template match="para/replaceable | term/replaceable | screen/replaceable" >
   <xsl:element name="synph">
     <xsl:attribute name="rev">replaceable</xsl:attribute>
     <xsl:element name="var">
@@ -311,7 +396,15 @@
   </xsl:element>
 </xsl:template>
 
-<!-- group under cmdsynopsis -> groupchoice -->
+<!-- replaceable in computeroutput -> varname -->
+<xsl:template match="computeroutput/replaceable" >
+  <xsl:element name="varname">
+    <xsl:attribute name="rev">computeroutput/replaceable</xsl:attribute>
+    <xsl:apply-templates />
+  </xsl:element>
+</xsl:template>
+
+<!-- group under arg and cmdsynopsis -> groupchoice -->
 <xsl:template match="arg/group[@choice='plain'] | cmdsynopsis/group[@choice='plain']">
   <xsl:element name="groupchoice">
     <xsl:attribute name="rev">group</xsl:attribute>
@@ -319,6 +412,26 @@
   </xsl:element>
 </xsl:template>
 
+<xsl:template match="arg/group[@choice='req'] | cmdsynopsis/group[@choice='req']">
+  <xsl:element name="groupchoice">
+    <xsl:attribute name="rev">group</xsl:attribute>
+    <xsl:attribute name="importance">required</xsl:attribute>
+    <xsl:apply-templates />
+  </xsl:element>
+</xsl:template>
+
+<xsl:template match="cmdsynopsis/group[(@choice='opt' or not(@choice)) and (not(@rep) or @rep='norepeat')]" >
+  <xsl:if test="not(./arg[@choice='plain'])">
+    <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Did not expect group[@choice=opt] to have children other than arg[@choice=plain]:
+      <xsl:for-each select="node()"><xsl:value-of select="concat(' ', name())"/>[@choice=<xsl:value-of select="@choice"/>]</xsl:for-each>
+    </xsl:message>
+  </xsl:if>
+  <xsl:element name="groupchoice">
+    <xsl:attribute name="rev">group[opt]</xsl:attribute>
+    <xsl:attribute name="importance">optional</xsl:attribute>
+    <xsl:value-of select="."/>
+  </xsl:element>
+</xsl:template>
 
 <!-- option -->
 <xsl:template match="option/text()" >
@@ -335,11 +448,40 @@
   </xsl:element>
 </xsl:template>
 
-<!-- literal -> codeph -->
-<xsl:template match="literal" >
+<!-- literal w/o sub-elements -> codeph -->
+<xsl:template match="literal[not(*)]" >
   <xsl:element name="codeph">
     <xsl:attribute name="rev">literal</xsl:attribute>
     <xsl:apply-templates />
+  </xsl:element>
+</xsl:template>
+
+<!-- literal with replaceable sub-elements -> synph -->
+<xsl:template match="literal[replaceable]" >
+  <xsl:element name="synph">
+    <xsl:attribute name="rev">literal/replaceable</xsl:attribute>
+    <xsl:for-each select="node()">
+      <xsl:choose>
+        <xsl:when test="self::text()">
+          <xsl:element name="kwd">
+            <xsl:value-of select="."/>
+          </xsl:element>
+        </xsl:when>
+        <xsl:when test="self::replaceable">
+          <xsl:if test="./*">
+            <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Unexpected literal/replaceable child</xsl:message>
+          </xsl:if>
+          <xsl:element name="var">
+            <xsl:value-of select="."/>
+          </xsl:element>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Unexpected literal child:
+            <xsl:value-of select="name(.)" />
+          </xsl:message>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:for-each>
   </xsl:element>
 </xsl:template>
 
@@ -358,7 +500,35 @@
   </xsl:copy>
 </xsl:template>
 
+<!-- computeroutput -> systemoutput-->
+<xsl:template match="computeroutput">
+  <xsl:element name="systemoutput">
+    <xsl:attribute name="rev">computeroutput</xsl:attribute>
+    <xsl:apply-templates />
+  </xsl:element>
+</xsl:template>
 
+<!-- xref -> xref, but attributes differ. -->
+<xsl:template match="xref">
+  <xsl:element name="xref">
+    <xsl:attribute name="href"><xsl:value-of select="@linkend"/></xsl:attribute>
+    <xsl:if test="contains(@linkend, 'http')">
+      <xsl:attribute name="scope">external</xsl:attribute>
+      <xsl:apply-templates />
+    </xsl:if>
+  </xsl:element>
+</xsl:template>
+
+<!-- emphasis -> i -->
+<xsl:template match="emphasis">
+  <xsl:if test="*">
+    <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Did not expect emphasis to have children!</xsl:message>
+  </xsl:if>
+  <xsl:element name="i">
+    <xsl:attribute name="rev">emphasis</xsl:attribute>
+    <xsl:apply-templates />
+  </xsl:element>
+</xsl:template>
 
 <!--
  remark extensions:
