@@ -44,6 +44,7 @@ __version__ = "$Revision$"
 import os
 import sys
 import random
+import time
 
 # Only the main script needs to modify the path.
 try:    __file__                            # pylint: disable=used-before-assignment
@@ -70,7 +71,84 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
         Execute the sub-testcase.
         """
         return  self.testMediumTreeDepth() \
-            and self.testSnapshotTreeDepth()
+            and self.testSnapshotTreeDepth();
+
+    def getNumOfAttachedHDs(self, oVM, sController):
+        """
+        Helper routine for counting the hard disks, including differencing disks,
+        attached to the specified countroller.
+        """
+        try:
+            aoMediumAttachments = oVM.getMediumAttachmentsOfController(sController);
+        except:
+            reporter.errorXcpt('oVM.getMediumAttachmentsOfController("%s") failed' % (sController));
+            return -1;
+
+        cDisks = 0;
+        for oAttachment in aoMediumAttachments:
+            oMedium = oAttachment.medium;
+            if oMedium.deviceType is vboxcon.DeviceType_HardDisk:
+                cDisks = cDisks + 1;
+                reporter.log2('base medium = %s cDisks = %d' % (oMedium.location, cDisks));
+                oParentMedium = oMedium.parent;
+                while oParentMedium is not None:
+                    cDisks = cDisks + 1;
+                    reporter.log2('parent medium = %s cDisks = %d' % (oParentMedium.location, cDisks));
+                    oParentMedium = oParentMedium.parent;
+        return cDisks;
+
+    def unregisterVM(self, oVM, enmCleanupMode):
+        """
+        Helper routine to unregister the VM using the CleanupMode specified.
+        """
+        reporter.log('unregistering VM using %s' % enmCleanupMode);
+        if enmCleanupMode == 'DetachAllReturnHardDisksOnly':
+            try:
+                aoHDs = oVM.unregister(vboxcon.CleanupMode_DetachAllReturnHardDisksOnly);
+            except:
+                return reporter.logXcpt('unregister(CleanupMode_DetachAllReturnHardDisksOnly) failed');
+            for oHD in aoHDs:
+                reporter.log2('closing medium = %s' % (oHD.location));
+                oHD.close();
+            aoHDs = None;
+        elif enmCleanupMode == 'UnregisterOnly':
+            try:
+                aoHDs = oVM.unregister(vboxcon.CleanupMode_UnregisterOnly);
+            except:
+                return reporter.logXcpt('unregister(CleanupMode_UnregisterOnly) failed');
+            if aoHDs:
+                return reporter.error('unregister(CleanupMode_UnregisterOnly) failed: returned %d disks' %
+                                      len(aoHDs));
+        else:
+            return reporter.error('unregisterVM: unexpected CleanupMode "%s"' % enmCleanupMode);
+
+        return True;
+
+    def openAndRegisterMachine(self, oVBox, sSettingsFile):
+        """
+        Helper routine which opens a VM and registers it.
+        """
+        reporter.log('opening VM using configuration file = %s, testing config reading' % (sSettingsFile));
+        try:
+            if self.oTstDrv.fpApiVer >= 7.0:
+                # Needs a password parameter since 7.0.
+                oVM = oVBox.openMachine(sSettingsFile, "");
+            else:
+                oVM = oVBox.openMachine(sSettingsFile);
+        except:
+            reporter.logXcpt('openMachine(%s) failed' % (sSettingsFile));
+            return None;
+
+        if not oVM:
+            return None;
+
+        try:
+            oVBox.registerMachine(oVM);
+        except:
+            reporter.logXcpt('registerMachine(%s) failed' % (sSettingsFile));
+            return None;
+
+        return oVM;
 
     #
     # Test execution helpers.
@@ -82,82 +160,97 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
         """
         reporter.testStart('mediumTreeDepth')
 
-        try:
-            oVBox = self.oTstDrv.oVBoxMgr.getVirtualBox()
-            oVM = self.oTstDrv.createTestVM('test-medium', 1, None, 4)
-            assert oVM is not None
+        oVM = self.oTstDrv.createTestVMOnly('test-medium', 'Other')
+        if oVM is None:
+            return False;
 
-            # create chain with up to 64 disk images (medium tree depth limit)
-            fRc = True
-            oSession = self.oTstDrv.openSession(oVM)
-            cImages = random.randrange(1, 64);
-            reporter.log('Creating chain with %d disk images' % (cImages))
-            for i in range(1, cImages + 1):
-                sHddPath = os.path.join(self.oTstDrv.sScratchPath, 'Test' + str(i) + '.vdi')
-                if i == 1:
-                    oHd = oSession.createBaseHd(sHddPath, cb=1024*1024)
-                else:
-                    oHd = oSession.createDiffHd(oHd, sHddPath)
-                if oHd is None:
-                    fRc = False
-                    break
+        # Save the path to the VM's settings file while oVM is valid (needed for
+        # openMachine() later when oVM is gone).
+        sSettingsFile = oVM.settingsFilePath
 
-            # modify the VM config, attach HDD
-            fRc = fRc and oSession.attachHd(sHddPath, sController='SATA Controller', fImmutable=False, fForceResource=False)
-            fRc = fRc and oSession.saveSettings()
-            fRc = oSession.close() and fRc
-            ## @todo r=klaus: count known hard disk images, should be cImages
+        oSession = self.oTstDrv.openSession(oVM)
+        if oSession is None:
+            return False;
 
-            # unregister, making sure the images are closed
-            sSettingsFile = oVM.settingsFilePath
-            fDetachAll = random.choice([False, True])
-            if fDetachAll:
-                reporter.log('unregistering VM, DetachAll style')
+        # create chain with up to 64 disk images (medium tree depth limit)
+        cImages = random.randrange(1, 64);
+        reporter.log('Creating chain with %d disk images' % (cImages))
+        for i in range(1, cImages + 1):
+            sHddPath = os.path.join(self.oTstDrv.sScratchPath, 'Test' + str(i) + '.vdi')
+            if i == 1:
+                oHd = oSession.createBaseHd(sHddPath, cb=1024*1024)
             else:
-                reporter.log('unregistering VM, UnregisterOnly style')
-            self.oTstDrv.forgetTestMachine(oVM)
-            if fDetachAll:
-                aoHDs = oVM.unregister(vboxcon.CleanupMode_DetachAllReturnHardDisksOnly)
-                for oHD in aoHDs:
-                    oHD.close()
-                aoHDs = None
-            else:
-                oVM.unregister(vboxcon.CleanupMode_UnregisterOnly)
-            oVM = None
+                oHd = oSession.createDiffHd(oHd, sHddPath)
+            if oHd is None:
+                return False;
 
-            # If there is no base image (expected) then there are no leftover
-            # child images either. Can be changed later once the todos above
-            # and below are resolved.
-            cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'))
-            reporter.log('API reports %i base images' % (cBaseImages))
-            fRc = fRc and cBaseImages == 0
-            if cBaseImages != 0:
-                reporter.error('Got %d initial base images, expected %d' % (cBaseImages, 0));
+        # modify the VM config, attach HDD
+        sController='SATA Controller';
+        fRc = oSession.attachHd(sHddPath, sController, fImmutable=False, fForceResource=False);
+        if fRc:
+            fRc = oSession.saveSettings(fClose=True);
+        oSession = None;
+        if not fRc:
+            return False;
 
-            # re-register to test loading of settings
-            reporter.log('opening VM %s, testing config reading' % (sSettingsFile))
-            if self.oTstDrv.fpApiVer >= 7.0:
-                # Needs a password parameter since 7.0.
-                oVM = oVBox.openMachine(sSettingsFile, "")
-            else:
-                oVM = oVBox.openMachine(sSettingsFile)
-            oVBox.registerMachine(oVM);
-            ## @todo r=klaus: count known hard disk images, should be cImages
+        # Verify that the number of hard disks attached to the VM's only storage
+        # controller equals the number of disks created above.
+        cDisks = self.getNumOfAttachedHDs(oVM, sController);
+        reporter.log('Initial state: Number of hard disks attached = %d (should equal disks created = %d)' % (cDisks, cImages));
+        if cImages != cDisks:
+            reporter.error('Created %d disk images but found %d disks attached' % (cImages, cDisks));
 
-            reporter.log('unregistering VM')
-            oVM.unregister(vboxcon.CleanupMode_UnregisterOnly)
-            oVM = None
+        # unregister the VM using "DetachAllReturnHardDisksOnly" and confirm all
+        # hard disks were returned and subsequently closed
+        fRc = self.unregisterVM(oVM, 'DetachAllReturnHardDisksOnly');
+        if not fRc:
+            return False;
+        oVM = None;
 
-            cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'))
-            reporter.log('API reports %i base images' % (cBaseImages))
-            fRc = fRc and cBaseImages == 0
-            if cBaseImages != 0:
-                reporter.error('Got %d base images after unregistering, expected %d' % (cBaseImages, 0));
+        # If there is no base image (expected) then there are no leftover
+        # child images either.
+        oVBox = self.oTstDrv.oVBoxMgr.getVirtualBox();
+        if oVBox is None:
+            return False;
 
-        except:
-            reporter.errorXcpt()
+        cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'))
+        reporter.log('After unregister(DetachAllReturnHardDisksOnly): API reports %d base images' % (cBaseImages));
+        if cBaseImages != 0:
+            reporter.error('Got %d initial base images, expected zero (0)' % (cBaseImages));
 
-        return reporter.testDone()[1] == 0
+        # re-register to test loading of settings
+        oVM = self.openAndRegisterMachine(oVBox, sSettingsFile);
+        if oVM is None:
+            return False;
+
+        # Verify that the number of hard disks attached to the VM's only storage
+        # controller equals the number of disks created above.
+        cDisks = self.getNumOfAttachedHDs(oVM, sController);
+        reporter.log('After openMachine()+registerMachine(): Number of hard disks attached = %d '
+                     '(should equal disks created = %d)' % (cDisks, cImages));
+        if cImages != cDisks:
+            reporter.error('Created %d disk images but after openMachine()+registerMachine() found %d disks attached' %
+                           (cImages, cDisks));
+
+        fRc = self.unregisterVM(oVM, 'UnregisterOnly');
+        if not fRc:
+            return False;
+        oVM = None;
+
+        # Fudge factor: When unregistering a VM with CleanupMode_UnregisterOnly the
+        # associated medium objects will be closed when the Machine object is
+        # uninitialized so wait for that to complete.  Otherwise the check for
+        # cBaseImages below will race with the VM uninitialization and depending on
+        # which one wins can cause a test failure.
+        reporter.log('Waiting five seconds for Machine::uninit() to be called to close the attached disks');
+        time.sleep(5);
+
+        cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'));
+        reporter.log('After unregister(UnregisterOnly): API reports %d base images' % (cBaseImages));
+        if cBaseImages != 0:
+            reporter.error('Got %d base images after unregistering, expected zero (0)' % (cBaseImages));
+
+        return reporter.testDone()[1] == 0;
 
     def testSnapshotTreeDepth(self):
         """
@@ -165,80 +258,87 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
         """
         reporter.testStart('snapshotTreeDepth')
 
-        try:
-            oVBox = self.oTstDrv.oVBoxMgr.getVirtualBox()
-            oVM = self.oTstDrv.createTestVM('test-snap', 1, None, 4)
-            assert oVM is not None
+        oVM = self.oTstDrv.createTestVMOnly('test-snap', 'Other');
+        if oVM is None:
+            return False;
 
-            # modify the VM config, create and attach empty HDD
-            oSession = self.oTstDrv.openSession(oVM)
-            sHddPath = os.path.join(self.oTstDrv.sScratchPath, 'TestSnapEmpty.vdi')
-            fRc = True
-            fRc = fRc and oSession.createAndAttachHd(sHddPath, cb=1024*1024, sController='SATA Controller', fImmutable=False)
-            fRc = fRc and oSession.saveSettings()
+        # Save the path to the VM's settings file while oVM is valid (needed for
+        # openMachine() later when oVM is gone).
+        sSettingsFile = oVM.settingsFilePath
 
-            # take up to 200 snapshots (250 is the snapshot tree depth limit (settings.h:SETTINGS_SNAPSHOT_DEPTH_MAX))
-            cSnapshots = random.randrange(1, 200);
-            reporter.log('Taking %d snapshots' % (cSnapshots))
-            for i in range(1, cSnapshots + 1):
-                fRc = fRc and oSession.takeSnapshot('Snapshot ' + str(i))
-            fRc = oSession.close() and fRc
-            oSession = None
-            reporter.log('API reports %i snapshots' % (oVM.snapshotCount))
-            fRc = fRc and oVM.snapshotCount == cSnapshots
-            if oVM.snapshotCount != cSnapshots:
-                reporter.error('Got %d initial snapshots, expected %d' % (oVM.snapshotCount, cSnapshots));
+        # modify the VM config, create and attach empty HDD
+        oSession = self.oTstDrv.openSession(oVM)
+        if oSession is None:
+            return False;
+        sHddPath = os.path.join(self.oTstDrv.sScratchPath, 'TestSnapEmpty.vdi')
+        sController='SATA Controller';
+        fRc = oSession.createAndAttachHd(sHddPath, cb=1024*1024, sController=sController, fImmutable=False);
+        fRc = fRc and oSession.saveSettings();
+        if not fRc:
+            return False;
 
-            # unregister, making sure the images are closed
-            sSettingsFile = oVM.settingsFilePath
-            fDetachAll = random.choice([False, True])
-            if fDetachAll:
-                reporter.log('unregistering VM, DetachAll style')
-            else:
-                reporter.log('unregistering VM, UnregisterOnly style')
-            self.oTstDrv.forgetTestMachine(oVM)
-            if fDetachAll:
-                aoHDs = oVM.unregister(vboxcon.CleanupMode_DetachAllReturnHardDisksOnly)
-                for oHD in aoHDs:
-                    oHD.close()
-                aoHDs = None
-            else:
-                oVM.unregister(vboxcon.CleanupMode_UnregisterOnly)
-            oVM = None
+        # take up to 200 snapshots (250 is the snapshot tree depth limit (settings.h:SETTINGS_SNAPSHOT_DEPTH_MAX))
+        cSnapshots = random.randrange(1, 200);
+        reporter.log('Taking %d snapshots' % (cSnapshots));
+        for i in range(1, cSnapshots + 1):
+            fRc = oSession.takeSnapshot('Snapshot ' + str(i));
+            if not fRc:
+                return False;
+        fRc = oSession.close() and fRc and True;
+        oSession = None;
+        reporter.log('API reports %d snapshots (should equal snapshots created = %d)' % (oVM.snapshotCount, cSnapshots));
+        if oVM.snapshotCount != cSnapshots:
+            reporter.error('Got %d initial snapshots, expected %d' % (oVM.snapshotCount, cSnapshots));
 
-            # If there is no base image (expected) then there are no leftover
-            # child images either. Can be changed later once the todos above
-            # and below are resolved.
-            cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'))
-            reporter.log('API reports %i base images' % (cBaseImages))
-            fRc = fRc and cBaseImages == 0
-            if cBaseImages != 0:
-                reporter.error('Got %d initial base images, expected %d' % (cBaseImages, 0));
+        # unregister the VM using "DetachAllReturnHardDisksOnly" and confirm all
+        # hard disks were returned and subsequently closed
+        fRc = self.unregisterVM(oVM, 'DetachAllReturnHardDisksOnly');
+        if not fRc:
+            return False;
+        oVM = None;
 
-            # re-register to test loading of settings
-            reporter.log('opening VM %s, testing config reading' % (sSettingsFile))
-            if self.oTstDrv.fpApiVer >= 7.0:
-                # Needs a password parameter since 7.0.
-                oVM = oVBox.openMachine(sSettingsFile, "")
-            else:
-                oVM = oVBox.openMachine(sSettingsFile)
-            oVBox.registerMachine(oVM);
-            reporter.log('API reports %i snapshots' % (oVM.snapshotCount))
-            fRc = fRc and oVM.snapshotCount == cSnapshots
-            if oVM.snapshotCount != cSnapshots:
-                reporter.error('Got %d snapshots after re-registering, expected %d' % (oVM.snapshotCount, cSnapshots));
+        # If there is no base image (expected) then there are no leftover
+        # child images either.
+        oVBox = self.oTstDrv.oVBoxMgr.getVirtualBox()
+        if oVBox is None:
+            return False;
 
-            reporter.log('unregistering VM')
-            oVM.unregister(vboxcon.CleanupMode_UnregisterOnly)
-            oVM = None
+        cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'))
+        reporter.log('After unregister(DetachAllReturnHardDisksOnly): API reports %d base images' % (cBaseImages));
+        fRc = fRc and cBaseImages == 0
+        if cBaseImages != 0:
+            reporter.error('Got %d initial base images, expected zero (0)' % (cBaseImages));
 
-            cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'))
-            reporter.log('API reports %i base images' % (cBaseImages))
-            fRc = fRc and cBaseImages == 0
-            if cBaseImages != 0:
-                reporter.error('Got %d base images after unregistering, expected %d' % (cBaseImages, 0));
-        except:
-            reporter.errorXcpt()
+        # re-register to test loading of settings
+        oVM = self.openAndRegisterMachine(oVBox, sSettingsFile);
+        if oVM is None:
+            return False;
+
+        # Verify that the number of hard disks attached to the VM's only storage
+        # controller equals the number of disks created above.
+        reporter.log('After openMachine()+registerMachine(): Number of snapshots of VM = %d '
+                     '(should equal snapshots created = %d)' % (oVM.snapshotCount, cSnapshots));
+        if oVM.snapshotCount != cSnapshots:
+            reporter.error('Created %d snapshots but after openMachine()+registerMachine() found %d snapshots' %
+                           (cSnapshots, oVM.snapshotCount));
+
+        fRc = self.unregisterVM(oVM, 'UnregisterOnly');
+        if not fRc:
+            return False;
+        oVM = None;
+
+        # Fudge factor: When unregistering a VM with CleanupMode_UnregisterOnly the
+        # associated medium objects will be closed when the Machine object is
+        # uninitialized so wait for that to complete.  Otherwise the check for
+        # cBaseImages below will race with the VM uninitialization and depending on
+        # which one wins can cause a test failure.
+        reporter.log('Waiting five seconds for Machine::uninit() to be called to close the attached disks');
+        time.sleep(5);
+
+        cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'))
+        reporter.log('After unregister(UnregisterOnly): API reports %d base images' % (cBaseImages));
+        if cBaseImages != 0:
+            reporter.error('Got %d base images after unregistering, expected zero (0)' % (cBaseImages));
 
         return reporter.testDone()[1] == 0
 
