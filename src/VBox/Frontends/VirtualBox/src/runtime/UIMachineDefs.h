@@ -52,7 +52,6 @@ enum UIVisualElement
     UIVisualElement_CDStuff               = RT_BIT(4),
     UIVisualElement_FDStuff               = RT_BIT(5),
     UIVisualElement_AudioStuff            = RT_BIT(6),
-    UIVisualElement_NetworkStuff          = RT_BIT(7),
     UIVisualElement_USBStuff              = RT_BIT(8),
     UIVisualElement_SharedFolderStuff     = RT_BIT(9),
     UIVisualElement_Display               = RT_BIT(10),

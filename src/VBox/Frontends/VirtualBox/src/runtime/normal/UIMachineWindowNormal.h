@@ -66,8 +66,6 @@ private slots:
     void sltUSBDeviceStateChange();
     /** Handles audio adapter change event. */
     void sltAudioAdapterChange();
-    /** Handles network adapter change event. */
-    void sltNetworkAdapterChange();
     /** Handles shared folder change event. */
     void sltSharedFolderChange();
     /** Handles recording change event. */
