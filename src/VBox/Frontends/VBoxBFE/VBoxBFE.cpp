@@ -62,6 +62,8 @@
         RTPrintf("%s\n", m); \
     } while (0)
 
+#define DTB_ADDR 0x40000000
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -80,6 +82,7 @@ static PUVM             g_pUVM              = NULL;
 static uint32_t         g_u32MemorySizeMB   = 512;
 static VMSTATE          g_enmVmState        = VMSTATE_CREATING;
 static const char       *g_pszLoadMem       = NULL;
+static const char       *g_pszLoadDtb       = NULL;
 
 /** @todo currently this is only set but never read. */
 static char szError[512];
@@ -236,10 +239,25 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTA
      * Root values.
      */
     PCFGMNODE pRoot = pVMM->pfnCFGMR3GetRoot(pVM);
-    rc = pVMM->pfnCFGMR3InsertString(pRoot,  "Name",           "Default VM");                UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pRoot, "RamSize",        g_u32MemorySizeMB * _1M);     UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pRoot, "RamHoleSize",    512U * _1M);                  UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pRoot, "TimerMillies",   1000);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertString(pRoot,  "Name",           "Default VM");                   UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pRoot, "TimerMillies",   1000);                           UPDATE_RC();
+
+    /*
+     * Memory setup.
+     */
+    PCFGMNODE pMem = NULL;
+    rc = pVMM->pfnCFGMR3InsertNode(pRoot, "MM", &pMem);                                         UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pMem, "MemRegions", &pMem);                                  UPDATE_RC();
+
+    PCFGMNODE pMemRegion = NULL;
+    rc = pVMM->pfnCFGMR3InsertNode(pMem, "Flash", &pMemRegion);                                 UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pMemRegion, "GCPhysStart",   0);                          UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pMemRegion, "Size", 128 * _1M);                           UPDATE_RC();
+
+    rc = pVMM->pfnCFGMR3InsertNode(pMem, "Conventional", &pMemRegion);                          UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pMemRegion, "GCPhysStart",   DTB_ADDR);                   UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pMemRegion, "Size", (uint64_t)g_u32MemorySizeMB * _1M);   UPDATE_RC();
+
 
     /*
      * PDM.
@@ -310,6 +328,47 @@ int vboxbfeLoadVMM(const char *pszVmmMod)
         LogRel(("Failed to load VBoxVMM: %#RTeic", &ErrInfo.Core));
 
     return vrc;
+}
+
+
+/**
+ * Loads the content of a given file into guest RAM starting at the given guest physical address.
+ *
+ * @returns VBox status code.
+ * @param   pszFile         The file to load.
+ * @param   GCPhysStart     The physical start address to load the file at.
+ */
+static int vboxbfeLoadFileAtGCPhys(const char *pszFile, RTGCPHYS GCPhysStart)
+{
+    RTFILE hFile = NIL_RTFILE;
+    int rc = RTFileOpen(&hFile, pszFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(rc))
+    {
+        uint8_t abRead[GUEST_PAGE_SIZE];
+        RTGCPHYS GCPhys = GCPhysStart;
+
+        for (;;)
+        {
+            size_t cbThisRead = 0;
+            rc = RTFileRead(hFile, &abRead[0], sizeof(abRead), &cbThisRead);
+            if (RT_FAILURE(rc))
+                break;
+
+            rc = g_pVMM->pfnPGMPhysSimpleWriteGCPhys(g_pVM, GCPhys, &abRead[0], cbThisRead);
+            if (RT_FAILURE(rc))
+                break;
+
+            GCPhys += cbThisRead;
+            if (cbThisRead < sizeof(abRead))
+                break;
+        }
+
+        RTFileClose(hFile);
+    }
+    else
+        RTPrintf("Loading file %s failed -> %Rrc\n", pszFile, rc);
+
+    return rc;
 }
 
 
@@ -385,34 +444,14 @@ DECLCALLBACK(int) vboxbfeVMPowerUpThread(RTTHREAD hThread, void *pvUser)
      */
     if (g_pszLoadMem)
     {
-        RTFILE hFile = NIL_RTFILE;
-        rc = RTFileOpen(&hFile, g_pszLoadMem, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-        if (RT_SUCCESS(rc))
-        {
-            uint8_t abRead[GUEST_PAGE_SIZE];
-            RTGCPHYS GCPhys = 0;
+        rc = vboxbfeLoadFileAtGCPhys(g_pszLoadMem, 0 /*GCPhysStart*/);
+        if (RT_FAILURE(rc))
+            goto failure;
+    }
 
-            for (;;)
-            {
-                size_t cbThisRead = 0;
-                rc = RTFileRead(hFile, &abRead[0], sizeof(abRead), &cbThisRead);
-                if (RT_FAILURE(rc))
-                    break;
-
-                rc = g_pVMM->pfnPGMPhysSimpleWriteGCPhys(g_pVM, GCPhys, &abRead[0], cbThisRead);
-                if (RT_FAILURE(rc))
-                    break;
-
-                GCPhys += cbThisRead;
-                if (cbThisRead < sizeof(abRead))
-                    break;
-            }
-
-            RTFileClose(hFile);
-        }
-        else
-            RTPrintf("Loading file %s failed -> %Rrc\n", g_pszLoadMem, rc);
-
+    if (g_pszLoadDtb)
+    {
+        rc = vboxbfeLoadFileAtGCPhys(g_pszLoadDtb, DTB_ADDR);
         if (RT_FAILURE(rc))
             goto failure;
     }
@@ -493,6 +532,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "--start-paused",       'p', 0                   },
         { "--memory-size-mib",    'm', RTGETOPT_REQ_UINT32 },
         { "--load-file-into-ram", 'l', RTGETOPT_REQ_STRING },
+        { "--load-dtb",           'd', RTGETOPT_REQ_STRING },
         { "--load-vmm",           'v', RTGETOPT_REQ_STRING },
     };
 
@@ -515,6 +555,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
             case 'l':
                 g_pszLoadMem = ValueUnion.psz;
+                break;
+            case 'd':
+                g_pszLoadDtb = ValueUnion.psz;
                 break;
             case 'v':
                 pszVmmMod = ValueUnion.psz;
