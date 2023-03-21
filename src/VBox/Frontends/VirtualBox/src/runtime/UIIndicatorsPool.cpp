@@ -381,26 +381,17 @@ public:
     /** Constructs indicator passing @a pMachine to the base-class. */
     UIIndicatorNetwork(UIMachine *pMachine)
         : UISessionStateStatusBarIndicator(IndicatorType_Network, pMachine)
-        , m_pTimerAutoUpdate(0)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/nw_16px.png"));
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/nw_read_16px.png"));
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/nw_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/nw_disabled_16px.png"));
-        /* Configure machine state-change listener: */
+        /* Configure connection: */
         connect(m_pMachine, &UIMachine::sigMachineStateChange,
-                this, &UIIndicatorNetwork::sltHandleMachineStateChange);
-        /* Create auto-update timer: */
-        m_pTimerAutoUpdate = new QTimer(this);
-        if (m_pTimerAutoUpdate)
-        {
-            /* Configure auto-update timer: */
-            connect(m_pTimerAutoUpdate, &QTimer::timeout,
-                    this, &UIIndicatorNetwork::updateAppearance);
-            /* Start timer immediately if machine is running: */
-            sltHandleMachineStateChange();
-        }
+                this, &UIIndicatorNetwork::updateAppearance);
+        connect(m_pMachine, &UIMachine::sigNetworkAdapterChange,
+                this, &UIIndicatorNetwork::updateAppearance);
         /* Translate finally: */
         retranslateUi();
     }
@@ -427,26 +418,6 @@ protected slots:
         /* Update indicator state: */
         setState(fAdaptersPresent && !fCablesDisconnected ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
-
-private slots:
-
-    /** Updates auto-update timer depending on machine state. */
-    void sltHandleMachineStateChange()
-    {
-        if (m_pMachine->machineState() == KMachineState_Running)
-        {
-            /* Start auto-update timer otherwise: */
-            m_pTimerAutoUpdate->start(5000);
-            return;
-        }
-        /* Stop auto-update timer otherwise: */
-        m_pTimerAutoUpdate->stop();
-    }
-
-private:
-
-    /** Holds the auto-update timer instance. */
-    QTimer *m_pTimerAutoUpdate;
 };
 
 
