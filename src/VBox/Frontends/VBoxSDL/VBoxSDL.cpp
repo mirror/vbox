@@ -493,14 +493,17 @@ public:
                 bool fCanShow = false;
                 Uint32 winId = 0;
                 VBoxSDLFB *fb = getFbFromWinId(winId);
-                SDL_SysWMinfo info;
-                SDL_VERSION(&info.version);
-                if (SDL_GetWindowWMInfo(fb->getWindow(), &info))
-                    fCanShow = true;
-                if (fCanShow)
-                    pCSWEv->AddApproval(NULL);
-                else
-                    pCSWEv->AddVeto(NULL);
+                if (fb) /* Framebuffer might not be around (yet). */
+                {
+                    SDL_SysWMinfo info;
+                    SDL_VERSION(&info.version);
+                    if (SDL_GetWindowWMInfo(fb->getWindow(), &info))
+                        fCanShow = true;
+                    if (fCanShow)
+                        pCSWEv->AddApproval(NULL);
+                    else
+                        pCSWEv->AddVeto(NULL);
+                }
 #endif
                 break;
             }
@@ -2476,20 +2479,18 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             {
                 if (gfGrabbed || UseAbsoluteMouse())
                 {
-                    VBoxSDLFB *fb;
-                    fb = getFbFromWinId(event.motion.windowID);
-                    AssertPtrBreak(fb);
-                    SendMouseEvent(fb, 0, 0, 0);
+                    VBoxSDLFB *fb = getFbFromWinId(event.motion.windowID);
+                    if (fb)
+                        SendMouseEvent(fb, 0, 0, 0);
                 }
                 break;
             }
 
             case SDL_MOUSEWHEEL:
             {
-                VBoxSDLFB *fb;
-                fb = getFbFromWinId(event.button.windowID);
-                AssertPtrBreak(fb);
-                SendMouseEvent(fb, -1 * event.wheel.y, 0, 0);
+                VBoxSDLFB *fb = getFbFromWinId(event.button.windowID);
+                if (fb)
+                    SendMouseEvent(fb, -1 * event.wheel.y, 0, 0);
                 break;
             }
             /*
@@ -2536,8 +2537,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
                     VBoxSDLFB *fb;
                     fb = getFbFromWinId(event.button.windowID);
-                    AssertPtrBreak(fb);
-                    SendMouseEvent(fb, 0 /*wheel vertical movement*/, event.type == SDL_MOUSEBUTTONDOWN, bev->button);
+                    if (fb)
+                        SendMouseEvent(fb, 0 /*wheel vertical movement*/, event.type == SDL_MOUSEBUTTONDOWN, bev->button);
                 }
                 break;
             }
@@ -2598,24 +2599,21 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                  * Decode event parameters.
                  */
                 ASMAtomicDecS32(&g_cNotifyUpdateEventsPending);
-                #define DECODEX(event) (int)((intptr_t)(event).user.data1 >> 16)
-                #define DECODEY(event) (int)((intptr_t)(event).user.data1 & 0xFFFF)
-                #define DECODEW(event) (int)((intptr_t)(event).user.data2 >> 16)
-                #define DECODEH(event) (int)((intptr_t)(event).user.data2 & 0xFFFF)
-                int x = DECODEX(event);
-                int y = DECODEY(event);
-                int w = DECODEW(event);
-                int h = DECODEH(event);
-                LogFlow(("SDL_USER_EVENT_UPDATERECT: x = %d, y = %d, w = %d, h = %d\n",
-                         x, y, w, h));
+
+                SDL_Rect *pUpdateRect = (SDL_Rect *)event.user.data1;
+                AssertPtrBreak(pUpdateRect);
+
+                int const x = pUpdateRect->x;
+                int const y = pUpdateRect->y;
+                int const w = pUpdateRect->w;
+                int const h = pUpdateRect->h;
+
+                RTMemFree(event.user.data1);
+
+                Log3Func(("SDL_USER_EVENT_UPDATERECT: x=%d y=%d, w=%d, h=%d\n", x, y, w, h));
 
                 Assert(gpFramebuffer[event.user.code]);
                 gpFramebuffer[event.user.code]->update(x, y, w, h, true /* fGuestRelative */);
-
-                #undef DECODEX
-                #undef DECODEY
-                #undef DECODEW
-                #undef DECODEH
                 break;
             }
 
