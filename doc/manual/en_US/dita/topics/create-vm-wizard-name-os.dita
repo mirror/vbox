@@ -6,7 +6,7 @@
   <body>
     <fig id="fig-create-vm-name">
       <title>Creating a Virtual Machine: Name and Operating System</title>
-      <image href="images/create-vm-1.png" placement="break"/>
+      <image href="images/create-vm-1.png" width="10cm" placement="break"/>
     </fig>
     <p>
         Use this page to specify a name and operating system (OS) for

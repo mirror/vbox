@@ -11,7 +11,7 @@
       </p>
     <fig id="fig-vbox-details-pane">
       <title>VirtualBox Manager Details Pane, Including Toolbar</title>
-      <image href="images/details-pane.png" placement="break"/>
+      <image href="images/details-pane.png" width="12cm" placement="break"/>
     </fig>
     <p>
         The Details pane includes the following:

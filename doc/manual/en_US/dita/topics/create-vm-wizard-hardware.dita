@@ -10,7 +10,7 @@
       </p>
     <fig id="fig-create-vm-hardware">
       <title>Creating a Virtual Machine: Hardware</title>
-      <image href="images/create-vm-3.png" placement="break"/>
+      <image href="images/create-vm-3.png" width="10cm" placement="break"/>
     </fig>
     <p>
         The following fields are available on this wizard page:

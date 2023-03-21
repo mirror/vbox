@@ -79,7 +79,7 @@
           </p>
                         <fig id="fig-snapshots-list">
                            <title>Snapshots List For a Virtual Machine</title>
-                           <image href="images/snapshots-2.png" placement="break"/>
+                           <image href="images/snapshots-2.png" width="10cm" placement="break"/>
                         </fig>
                         <p>
             Oracle VM VirtualBox imposes no limits on the number of snapshots

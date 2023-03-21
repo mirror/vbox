@@ -31,7 +31,7 @@
     </p>
     <fig id="fig-storage-settings">
       <title>Storage Settings for a Virtual Machine</title>
-      <image href="images/vm-settings-harddisk.png" placement="break"/>
+      <image href="images/vm-settings-harddisk.png" width="10cm" placement="break"/>
     </fig>
     <p>
       Depending on the guest OS type that you selected when you created

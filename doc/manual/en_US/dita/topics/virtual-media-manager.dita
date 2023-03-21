@@ -33,7 +33,7 @@
     </p>
                <fig id="fig-virtual-media-manager">
                   <title>The Virtual Media Manager, Showing Hard Disk Images</title>
-                  <image href="images/virtual-disk-manager.png" placement="break"/>
+                  <image href="images/virtual-disk-manager.png" width="12cm" placement="break"/>
                </fig>
                <p>
       The known media are conveniently grouped in separate tabs for the

@@ -21,7 +21,7 @@
     </p>
                <fig id="fig-snapshots-tool">
                   <title>Snapshots Tool, Showing Snapshot Properties</title>
-                  <image href="images/snapshots-1.png" placement="break"/>
+                  <image href="images/snapshots-1.png" width="10cm" placement="break"/>
                </fig>
                <p>
       If you select multiple VMs in the machine list, all snapshots are

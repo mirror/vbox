@@ -18,7 +18,7 @@
         </p>
     <fig id="fig-cloud-vm-oci-group">
       <title>OCI Group, Containing Cloud VMs</title>
-      <image href="images/cloudvm-oci-group.png" placement="break"/>
+      <image href="images/cloudvm-oci-group.png" width="10cm" placement="break"/>
     </fig>
     <p>
           All cloud profiles registered with Oracle VM VirtualBox are listed

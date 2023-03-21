@@ -23,7 +23,7 @@
     </note>
     <fig id="fig-cloud-vm-overview">
       <title>Cloud VMs, Shown in VirtualBox Manager</title>
-      <image href="images/cloudvm-overview.png" placement="break"/>
+      <image href="images/cloudvm-overview.png" width="12cm" placement="break"/>
     </fig>
     <p>
         Cloud VMs can be used to do the following tasks in Oracle Cloud Infrastructure:

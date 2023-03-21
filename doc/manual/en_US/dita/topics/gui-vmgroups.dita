@@ -15,7 +15,7 @@
     </p>
     <fig id="fig-vm-groups">
       <title>Groups of Virtual Machines</title>
-      <image href="images/vm-groups.png" placement="break"/>
+      <image href="images/vm-groups.png" width="10cm" placement="break"/>
     </fig>
     <p>
       The following features are available for groups:

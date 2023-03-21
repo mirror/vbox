@@ -22,7 +22,7 @@
       </p>
                   <fig id="fig-vm-activity-overview-widget">
                      <title>VM Activity Overview Tool</title>
-                     <image href="images/vm-activity-overview.png" placement="break"/>
+                     <image href="images/vm-activity-overview.png" width="12cm" placement="break"/>
                   </fig>
                   <p>
         To show metrics for <i>all</i> virtual machines,

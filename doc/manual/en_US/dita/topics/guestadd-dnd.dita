@@ -57,7 +57,7 @@
     </p>
     <fig id="fig-drag-drop-options">
       <title>Drag and Drop Menu Options</title>
-      <image href="images/dnd-modes.png" placement="break"/>
+      <image href="images/dnd-modes.png" width="10cm" placement="break"/>
     </fig>
     <p>
       The following drag and drop modes are available:

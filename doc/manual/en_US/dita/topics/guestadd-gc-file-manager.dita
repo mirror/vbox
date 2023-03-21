@@ -22,7 +22,7 @@
     </note>
     <fig id="fig-guest-control-fm">
       <title>Guest Control File Manager</title>
-      <image href="images/guest-fm.png" placement="break"/>
+      <image href="images/guest-fm.png" width="12cm" placement="break"/>
     </fig>
     <p>
       The Guest Control File Manager works by mounting the host file

@@ -32,7 +32,7 @@
     </p>
     <fig id="fig-seamless-windows">
       <title>Seamless Windows on a Host Desktop</title>
-      <image href="images/seamless.png" placement="break"/>
+      <image href="images/seamless.png" width="14cm" placement="break"/>
     </fig>
     <p>
       To enable seamless mode, after starting the virtual machine, press

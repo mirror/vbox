@@ -43,7 +43,7 @@
       </p>
     <fig id="fig-host-key">
       <title>Host Key Setting on the Virtual Machine Taskbar</title>
-      <image href="images/vm-hostkey.png" placement="break"/>
+      <image href="images/vm-hostkey.png" width="7cm" placement="break"/>
     </fig>
     <p>
         This means the following:

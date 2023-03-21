@@ -19,7 +19,7 @@
       </p>
     <fig id="fig-create-vm-hard-disk">
       <title>Creating a New Virtual Machine: Virtual Hard Disk</title>
-      <image href="images/create-vm-4.png" placement="break"/>
+      <image href="images/create-vm-4.png" width="10cm" placement="break"/>
     </fig>
     <p>
         The following fields are available on this wizard page:

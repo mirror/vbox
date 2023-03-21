@@ -22,7 +22,7 @@
                </note>
                <fig id="fig-soft-keyb">
                   <title>Soft Keyboard in a Guest Virtual Machine</title>
-                  <image href="images/softkeybd.png" placement="break"/>
+                  <image href="images/softkeybd.png" width="14cm" placement="break"/>
                </fig>
                <p>
       The soft keyboard can be used in the following scenarios:

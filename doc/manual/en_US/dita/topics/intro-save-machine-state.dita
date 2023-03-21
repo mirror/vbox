@@ -14,7 +14,7 @@
       </p>
     <fig id="fig-vm-close">
       <title>Closing Down a Virtual Machine</title>
-      <image href="images/vm-close.png" placement="break"/>
+      <image href="images/vm-close.png" width="10cm" placement="break"/>
     </fig>
     <p>
         The difference between the three options is crucial. They mean
