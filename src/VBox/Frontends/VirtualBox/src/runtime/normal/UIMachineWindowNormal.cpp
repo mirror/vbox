@@ -94,12 +94,6 @@ void UIMachineWindowNormal::sltUSBDeviceStateChange()
     updateAppearanceOf(UIVisualElement_USBStuff);
 }
 
-void UIMachineWindowNormal::sltAudioAdapterChange()
-{
-    /* Update audio stuff: */
-    updateAppearanceOf(UIVisualElement_AudioStuff);
-}
-
 void UIMachineWindowNormal::sltSharedFolderChange()
 {
     /* Update shared-folders stuff: */
@@ -237,8 +231,6 @@ void UIMachineWindowNormal::prepareSessionConnections()
             this, &UIMachineWindowNormal::sltUSBControllerChange);
     connect(machineLogic()->uimachine(), &UIMachine::sigUSBDeviceStateChange,
             this, &UIMachineWindowNormal::sltUSBDeviceStateChange);
-    connect(machineLogic()->uimachine(), &UIMachine::sigAudioAdapterChange,
-            this, &UIMachineWindowNormal::sltAudioAdapterChange);
     connect(machineLogic()->uimachine(), &UIMachine::sigSharedFolderChange,
             this, &UIMachineWindowNormal::sltSharedFolderChange);
     connect(machineLogic()->uimachine(), &UIMachine::sigRecordingChange,
@@ -437,8 +429,6 @@ void UIMachineWindowNormal::cleanupSessionConnections()
                this, &UIMachineWindowNormal::sltUSBControllerChange);
     disconnect(machineLogic()->uimachine(), &UIMachine::sigUSBDeviceStateChange,
                this, &UIMachineWindowNormal::sltUSBDeviceStateChange);
-    disconnect(machineLogic()->uimachine(), &UIMachine::sigAudioAdapterChange,
-               this, &UIMachineWindowNormal::sltAudioAdapterChange);
     disconnect(machineLogic()->uimachine(), &UIMachine::sigSharedFolderChange,
                this, &UIMachineWindowNormal::sltSharedFolderChange);
     disconnect(machineLogic()->uimachine(), &UIMachine::sigRecordingChange,
@@ -705,14 +695,10 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
         /* If VM is running: */
         if (uimachine()->isRunning())
         {
-            if (iElement & UIVisualElement_AudioStuff)
-                m_pIndicatorsPool->updateAppearance(IndicatorType_Audio);
             if (iElement & UIVisualElement_USBStuff)
                 m_pIndicatorsPool->updateAppearance(IndicatorType_USB);
             if (iElement & UIVisualElement_SharedFolderStuff)
                 m_pIndicatorsPool->updateAppearance(IndicatorType_SharedFolders);
-            if (iElement & UIVisualElement_Display)
-                m_pIndicatorsPool->updateAppearance(IndicatorType_Display);
             if (iElement & UIVisualElement_FeaturesStuff)
                 m_pIndicatorsPool->updateAppearance(IndicatorType_Features);
         }

@@ -48,10 +48,8 @@ enum UIVisualElement
     UIVisualElement_WindowTitle           = RT_BIT(0),
     UIVisualElement_MouseIntegrationStuff = RT_BIT(1),
     UIVisualElement_IndicatorPoolStuff    = RT_BIT(2),
-    UIVisualElement_AudioStuff            = RT_BIT(6),
     UIVisualElement_USBStuff              = RT_BIT(8),
     UIVisualElement_SharedFolderStuff     = RT_BIT(9),
-    UIVisualElement_Display               = RT_BIT(10),
     UIVisualElement_Recording             = RT_BIT(11),
     UIVisualElement_FeaturesStuff         = RT_BIT(12),
 #ifndef VBOX_WS_MAC

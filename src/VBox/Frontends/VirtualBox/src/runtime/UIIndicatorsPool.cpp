@@ -346,6 +346,8 @@ public:
         /* Configure connection: */
         connect(pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorAudio::updateAppearance);
+        connect(pMachine, &UIMachine::sigAudioAdapterChange,
+                this, &UIIndicatorAudio::updateAppearance);
         /* Translate finally: */
         retranslateUi();
     }
