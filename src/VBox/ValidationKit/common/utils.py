@@ -1459,8 +1459,7 @@ def processCollectCrashInfo(uPid, fnLog, fnCrashFile):
             pass;
         # Some other useful locations as fallback.
         asDmpDirs.extend([
-            u'/var/cores/',
-            u'/var/core/',
+            u'/var/cores/'
         ]);
         #
         # Solaris by default creates a core file in the directory of the crashing process with the name 'core'.
@@ -1468,9 +1467,9 @@ def processCollectCrashInfo(uPid, fnLog, fnCrashFile):
         # As we need to distinguish the core files correlating to their PIDs and have a persistent storage location,
         # the host needs to be tweaked via:
         #
-        # ```coreadm -g /path/to/cores/core.%f.%p```
+        # ```coreadm -g /var/cores/core.%f.%p```
         #
-        sMatchSuffix = '.%u.core' % (uPid,);
+        sMatchRegEx = r'core\..*\.%u' % (uPid);
         for sDir in asDmpDirs:
             sDir = os.path.expandvars(sDir);
             if not os.path.isdir(sDir):
@@ -1481,7 +1480,7 @@ def processCollectCrashInfo(uPid, fnLog, fnCrashFile):
                 continue;
             for sEntry in asDirEntries:
                 fnLog('Entry: %s' % (os.path.join(sDir, sEntry)));
-                if sEntry.endswith(sMatchSuffix):
+                if re.search(sMatchRegEx, sEntry):
                     sFull = os.path.join(sDir, sEntry);
                     fnLog('Found crash dump for %u: %s' % (uPid, sFull,));
                     fnCrashFile(sFull, True);
