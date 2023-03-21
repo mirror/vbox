@@ -668,7 +668,8 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 	$$(QUIET)$$(INSTALL_STAGING) -m 0644 -- "$$<" "$$(@D)/"
   endif
 
-  ## @todo r=bird: Dummy to shut up warnings?
+  # Create and empty reference.dtd file as docbook2dita converter mentions it in xml declaration and
+  # xlst parsing complains when it cannot find it.
   $$(VBOX_PATH_MANUAL_OUTBASE)/$1/dita/topics/reference.dtd: | $$$$(dir $$$$@)
 	$$(QUIET)$$(TOUCH) -- "$$@"
 
@@ -726,7 +727,10 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$1 := \
   	$$(VBOX_PATH_MANUAL_OUTBASE)/$1/dita/topics/user_isomakercmd-man.dita
 
-  ## @todo r=bird: quite not sure why this isn't treated like the rest...
+  # Unlike other refentry docbook files user_isomakercmd-man.xml is located
+  # in the output folder thus a special target for its conversion. Note that
+  # user_isomakercmd-man.xml does not have refsect hierarchy and hrefs to be pre/post
+  # processed. So we skip these steps for this file.
   $$(VBOX_PATH_MANUAL_OUTBASE)/$1/dita/topics/user_isomakercmd-man.dita: \
   		$$(VBOX_DITA_CONVERTER_PATH)/db2dita/docbook2dita.xsl \
   		$$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_isomakercmd-man.xml | $$$$(dir $$$$@)
