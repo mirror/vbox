@@ -1456,12 +1456,12 @@ public:
 };
 
 
-/*******************************************************************************
-* Callback data structures.                                                    *
-*                                                                              *
-* These structures make up the actual low level HGCM callback data sent from   *
-* the guest back to the host.                                                  *
-*******************************************************************************/
+/*********************************************************************************************************************************
+ * Callback data structures.                                                                                                     *
+ *                                                                                                                               *
+ * These structures make up the actual low level HGCM callback data sent from                                                    *
+ * the guest back to the host.                                                                                                   *
+ ********************************************************************************************************************************/
 
 /**
  * The guest control callback data header. Must come first
@@ -1635,6 +1635,28 @@ typedef struct CALLBACKDATA_FILE_NOTIFY
 typedef CALLBACKDATA_FILE_NOTIFY *PCALLBACKDATA_FILE_NOTIFY;
 
 /**
+ * Callback data for a single GSTCTLDIRENTRYEX entry.
+ */
+typedef struct CALLBACKDATA_DIR_ENTRY
+{
+    /** Pointer to directory entry information. */
+    PGSTCTLDIRENTRYEX pDirEntryEx;
+    /** Size (in bytes) of directory entry information. */
+    uint32_t          cbDirEntryEx;
+    /** Resolved user name.
+     *  This is the object owner for UNIX-y Oses. */
+    char             *pszUser;
+    /** Size (in bytes) of \a pszUser. */
+    uint32_t          cbUser;
+    /** Resolved user group(s). */
+    char             *pszGroups;
+    /** Size (in bytes) of \a pszGroups. */
+    uint32_t          cbGroups;
+} CALLBACKDATA_DIR_ENTRY;
+/** Pointer to a CALLBACKDATA_DIR_ENTRY struct. */
+typedef CALLBACKDATA_DIR_ENTRY *PCALLBACKDATA_DIR_ENTRY;
+
+/**
  * Callback data for guest directory operations.
  */
 typedef struct CALLBACKDATA_DIR_NOTIFY
@@ -1660,20 +1682,16 @@ typedef struct CALLBACKDATA_DIR_NOTIFY
         /** Note: Close does not have any additional data (yet). */
         struct
         {
-            /** Pointer to directory entry information. */
-            PGSTCTLDIRENTRYEX pEntry;
-            /** Size (in bytes) of directory entry information. */
-            uint32_t          cbEntry;
-            /** Resolved user name.
-             *  This is the object owner for UNIX-y Oses. */
-            char             *pszUser;
-            /** Size (in bytes) of \a pszUser. */
-            uint32_t          cbUser;
-            /** Resolved user group(s). */
-            char             *pszGroups;
-            /** Size (in bytes) of \a pszGroups. */
-            uint32_t          cbGroups;
+            /** Single entry read. */
+            CALLBACKDATA_DIR_ENTRY Entry;
         } read;
+        struct
+        {
+            /** Number of entries in \a paEntries. */
+            uint32_t                 cEntries;
+            /** Array of entries read. */
+            CALLBACKDATA_DIR_ENTRY **paEntries;
+        } list;
     } u;
 } CALLBACKDATA_DIR_NOTIFY;
 /** Pointer to a CALLBACKDATA_DIR_NOTIFY struct. */

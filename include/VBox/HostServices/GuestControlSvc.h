@@ -231,6 +231,12 @@ enum eHostMsg
      * Creates a directory on the guest.
      */
     HOST_MSG_DIR_CREATE = 314,
+    /**
+     * Lists one or multiple directory entries at once.
+     *
+     * @since   7.1
+     */
+    HOST_MSG_DIR_LIST = 315,
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
     /**
      * Removes a directory on the guest.
@@ -301,6 +307,7 @@ DECLINLINE(const char *) GstCtrlHostMsgtoStr(enum eHostMsg enmMsg)
         RT_CASE_RET_STR(HOST_MSG_DIR_READ);
         RT_CASE_RET_STR(HOST_MSG_DIR_REWIND);
         RT_CASE_RET_STR(HOST_MSG_DIR_CREATE);
+        RT_CASE_RET_STR(HOST_MSG_DIR_LIST);
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
         RT_CASE_RET_STR(HOST_MSG_DIR_REMOVE);
         RT_CASE_RET_STR(HOST_MSG_PATH_RENAME);
@@ -728,6 +735,8 @@ enum GUEST_DIR_NOTIFYTYPE
     GUEST_DIR_NOTIFYTYPE_READ = 21,
     /** Guest directory was rewind. */
     GUEST_DIR_NOTIFYTYPE_REWIND = 22,
+    /** Guest directory listing. */
+    GUEST_DIR_NOTIFYTYPE_LIST = 23,
 #endif
     /** Information about an open guest directory. */
     GUEST_DIR_NOTIFYTYPE_INFO = 40,
@@ -1091,6 +1100,23 @@ typedef struct HGCMMsgDirCreate
     /** Creation flags (GSTCTL_CREATEDIRECTORY_F_XXX). */
     HGCMFunctionParameter flags;
 } HGCMMsgDirCreate;
+
+/**
+ * Lists the entries of a directory on the guest.
+ */
+typedef struct HGCMMsgDirList
+{
+    VBGLIOCHGCMCALL hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** Handle of directory listing to list. */
+    HGCMFunctionParameter handle;
+    /** Number of entries to read at once.
+     *  Specify UINT32_MAX to read as much as possible. 0 is not allowed. */
+    HGCMFunctionParameter num_entries;
+    /** Listing flags (GSTCTL_DIRLIST_F_XXX). */
+    HGCMFunctionParameter flags;
+} HGCMMsgDirList;
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
 
 typedef struct HGCMMsgPathRename
@@ -1527,7 +1553,7 @@ typedef struct HGCMReplyDirNotify
     union
     {
         /**
-         * Parameters used for \a type GUEST_DIR_NOTIFYTYPE_OPEN.
+         * Parameters used for \a reply_hdr.type GUEST_DIR_NOTIFYTYPE_OPEN.
          *
          * @since 7.1
          */
@@ -1537,7 +1563,7 @@ typedef struct HGCMReplyDirNotify
             HGCMFunctionParameter handle;
         } open;
         /**
-         * Parameters used for \a type GUEST_DIR_NOTIFYTYPE_READ.
+         * Parameters used for \a reply_hdr.type GUEST_DIR_NOTIFYTYPE_READ.
          *
          * @since 7.1
          */
@@ -1549,10 +1575,25 @@ typedef struct HGCMReplyDirNotify
             HGCMFunctionParameter user;
             /** Resolved group IDs as a string.
              *
-             *  Multiple groups are delimited by "\r\n", whereas
+             *  Multiple groups are delimited by GSTCTL_DIRENTRY_GROUPS_DELIMITER_STR, whereas
              *  the first group always is the primary group. */
             HGCMFunctionParameter groups;
         } read;
+        /**
+         * Parameters used for \a reply_hdr.type GUEST_DIR_NOTIFYTYPE_LIST.
+         *
+         * @since 7.1
+         */
+        struct
+        {
+            /** Number of entries in \a buffer. */
+            HGCMFunctionParameter num_entries;
+            /** Buffer containing the GSTCTLDIRENTRYEX entries, immediately followed
+             *  by resolved user + groups as a string (empty strings if not resolved).
+             *
+             *  Only will be sent if \a num_entries > 0. */
+            HGCMFunctionParameter buffer;
+        } list;
     } u;
 } HGCMReplyDirNotify;
 
@@ -1581,7 +1622,7 @@ typedef struct HGCMReplyFsNotify
             HGCMFunctionParameter user;
             /** Resolved group IDs as a string.
              *
-             *  Multiple groups are delimited by "\r\n", whereas
+             *  Multiple groups are delimited by GSTCTL_DIRENTRY_GROUPS_DELIMITER_STR, whereas
              *  the first group always is the primary group. */
             HGCMFunctionParameter groups;
         } queryinfo;

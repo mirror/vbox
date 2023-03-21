@@ -466,7 +466,7 @@ int GuestDirectory::i_onDirNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
     HGCMSvcGetU32(&pSvcCbData->mpaParms[idx++], &dataCb.uType);
     HGCMSvcGetU32(&pSvcCbData->mpaParms[idx++], &dataCb.rc);
 
-    int vrcGuest = (int)dataCb.rc; /* uint32_t vs. int. */
+    int const vrcGuest = (int)dataCb.rc; /* uint32_t vs. int. */
 
     LogFlowThisFunc(("uType=%RU32, vrcGuest=%Rrc\n", dataCb.uType, vrcGuest));
 
@@ -522,36 +522,38 @@ int GuestDirectory::i_onDirNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
             ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mpaParms[idx].type == VBOX_HGCM_SVC_PARM_PTR,
                                         ("type=%u\n", pSvcCbData->mpaParms[idx].type),
                                         vrc = VERR_WRONG_PARAMETER_TYPE);
-            PGSTCTLDIRENTRYEX pEntry;
-            uint32_t          cbEntry;
-            vrc = HGCMSvcGetPv(&pSvcCbData->mpaParms[idx++], (void **)&pEntry, &cbEntry);
+            PGSTCTLDIRENTRYEX pDirEntryEx;
+            uint32_t          cbDirEntryEx;
+            vrc = HGCMSvcGetPv(&pSvcCbData->mpaParms[idx++], (void **)&pDirEntryEx, &cbDirEntryEx);
             AssertRCBreak(vrc);
-            AssertBreakStmt(   cbEntry >= RT_UOFFSETOF(GSTCTLDIRENTRYEX, szName[2])
-                            && cbEntry <= GSTCTL_DIRENTRY_MAX_SIZE, VERR_INVALID_PARAMETER);
-            dataCb.u.read.pEntry  = (PGSTCTLDIRENTRYEX)RTMemDup(pEntry, cbEntry);
-            AssertPtrBreakStmt(dataCb.u.read.pEntry, vrc = VERR_NO_MEMORY);
-            dataCb.u.read.cbEntry = cbEntry;
+            AssertBreakStmt(   cbDirEntryEx >= RT_UOFFSETOF(GSTCTLDIRENTRYEX, szName[2])
+                            && cbDirEntryEx <= GSTCTL_DIRENTRY_MAX_SIZE, vrc = VERR_INVALID_PARAMETER);
+            dataCb.u.read.Entry.pDirEntryEx  = (PGSTCTLDIRENTRYEX)RTMemDup(pDirEntryEx, cbDirEntryEx);
+            AssertPtrBreakStmt(dataCb.u.read.Entry.pDirEntryEx, vrc = VERR_NO_MEMORY);
+            dataCb.u.read.Entry.cbDirEntryEx = cbDirEntryEx;
 
             char    *pszUser;
             uint32_t cbUser;
             vrc = HGCMSvcGetStr(&pSvcCbData->mpaParms[idx++], &pszUser, &cbUser);
             AssertRCBreak(vrc);
-            dataCb.u.read.pszUser = RTStrDup(pszUser);
-            AssertPtrBreakStmt(dataCb.u.read.pszUser, vrc = VERR_NO_MEMORY);
-            dataCb.u.read.cbUser  = cbUser;
+            AssertBreakStmt(cbUser <= GSTCTL_DIRENTRY_MAX_USER_NAME, vrc = VERR_TOO_MUCH_DATA);
+            dataCb.u.read.Entry.pszUser = RTStrDup(pszUser);
+            AssertPtrBreakStmt(dataCb.u.read.Entry.pszUser, vrc = VERR_NO_MEMORY);
+            dataCb.u.read.Entry.cbUser  = cbUser;
 
             char    *pszGroups;
             uint32_t cbGroups;
             vrc = HGCMSvcGetStr(&pSvcCbData->mpaParms[idx++], &pszGroups, &cbGroups);
             AssertRCBreak(vrc);
-            dataCb.u.read.pszGroups = RTStrDup(pszGroups);
-            AssertPtrBreakStmt(dataCb.u.read.pszGroups, vrc = VERR_NO_MEMORY);
-            dataCb.u.read.cbGroups  = cbGroups;
+            AssertBreakStmt(cbGroups <= GSTCTL_DIRENTRY_MAX_USER_GROUPS, vrc = VERR_TOO_MUCH_DATA);
+            dataCb.u.read.Entry.pszGroups = RTStrDup(pszGroups);
+            AssertPtrBreakStmt(dataCb.u.read.Entry.pszGroups, vrc = VERR_NO_MEMORY);
+            dataCb.u.read.Entry.cbGroups  = cbGroups;
 
             /** @todo ACLs not implemented yet. */
 
-            GuestFsObjData fsObjData(dataCb.u.read.pEntry->szName);
-            vrc = fsObjData.FromGuestFsObjInfo(&dataCb.u.read.pEntry->Info);
+            GuestFsObjData fsObjData(dataCb.u.read.Entry.pDirEntryEx->szName);
+            vrc = fsObjData.FromGuestFsObjInfo(&dataCb.u.read.Entry.pDirEntryEx->Info);
             AssertRCBreak(vrc);
             ComObjPtr<GuestFsObjInfo> ptrFsObjInfo;
             hrc = ptrFsObjInfo.createObject();
@@ -560,7 +562,8 @@ int GuestDirectory::i_onDirNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
             AssertRCBreak(vrc);
 
             ::FireGuestDirectoryReadEvent(mEventSource, mSession, this,
-                                          dataCb.u.read.pEntry->szName, ptrFsObjInfo, dataCb.u.read.pszUser, dataCb.u.read.pszGroups);
+                                          dataCb.u.read.Entry.pDirEntryEx->szName, ptrFsObjInfo,
+                                          dataCb.u.read.Entry.pszUser, dataCb.u.read.Entry.pszGroups);
             break;
         }
 
@@ -568,6 +571,98 @@ int GuestDirectory::i_onDirNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
         {
             /* Note: This does not change the overall status of the directory (i.e. open). */
             ::FireGuestDirectoryStateChangedEvent(mEventSource, mSession, this, DirectoryStatus_Rewind, errorInfo);
+            break;
+        }
+
+        case GUEST_DIR_NOTIFYTYPE_LIST:
+        {
+            ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mParms >= 4, ("mParms=%u\n", pSvcCbData->mParms),
+                                        vrc = VERR_WRONG_PARAMETER_COUNT);
+            ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mpaParms[idx].type == VBOX_HGCM_SVC_PARM_32BIT,
+                                        ("type=%u\n", pSvcCbData->mpaParms[idx].type),
+                                        vrc = VERR_WRONG_PARAMETER_TYPE);
+
+            vrc = HGCMSvcGetU32(&pSvcCbData->mpaParms[idx++], &dataCb.u.list.cEntries);
+            AssertRCBreak(vrc);
+            /* We limit this for now to 64K entries max per call.
+             * The guest does not do this check, so we could de/increase this limit in the future. */
+            AssertBreakStmt(dataCb.u.list.cEntries <= _64K, vrc = VERR_TOO_MUCH_DATA);
+
+            if (!dataCb.u.list.cEntries) /* No entries sent? Bail out early. */
+                break;
+
+            /*
+             * Fetch buffer with packed directory entries.
+             */
+            ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mParms == 5, ("mParms=%u\n", pSvcCbData->mParms),
+                                        vrc = VERR_WRONG_PARAMETER_COUNT);
+            ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mpaParms[idx].type == VBOX_HGCM_SVC_PARM_PTR,
+                                        ("type=%u\n", pSvcCbData->mpaParms[idx].type),
+                                        vrc = VERR_WRONG_PARAMETER_TYPE);
+            void    *pvBuf;
+            uint32_t cbBuf;
+            vrc = HGCMSvcGetPv(&pSvcCbData->mpaParms[idx], &pvBuf, &cbBuf);
+            AssertRCBreak(vrc);
+            AssertBreakStmt(cbBuf >= sizeof(GSTCTLDIRENTRYEX), vrc = VERR_INVALID_PARAMETER);
+            dataCb.u.list.paEntries = (PCALLBACKDATA_DIR_ENTRY *)RTMemAllocZ(dataCb.u.list.cEntries * sizeof(PCALLBACKDATA_DIR_ENTRY));
+            AssertPtrBreakStmt(dataCb.u.list.paEntries, vrc = VERR_NO_MEMORY);
+
+            /*
+             * Unpack directory entries.
+             */
+            size_t offBuf = 0;
+            for (uint32_t i = 0; i < dataCb.u.list.cEntries; i++)
+            {
+                dataCb.u.list.paEntries[i] = (PCALLBACKDATA_DIR_ENTRY)RTMemAlloc(sizeof(CALLBACKDATA_DIR_ENTRY));
+                AssertPtrBreakStmt(dataCb.u.list.paEntries[i], vrc = VERR_NO_MEMORY);
+
+                PCALLBACKDATA_DIR_ENTRY pEntry = dataCb.u.list.paEntries[i];
+
+                PGSTCTLDIRENTRYLISTHDR  const pHdr   = (PGSTCTLDIRENTRYLISTHDR)((uint8_t *)pvBuf + offBuf);
+                AssertBreakStmt(pHdr->cbDirEntryEx <= GSTCTL_DIRENTRY_MAX_SIZE, vrc = VERR_TOO_MUCH_DATA);
+                AssertBreakStmt(pHdr->cbUser <= GSTCTL_DIRENTRY_MAX_USER_NAME, vrc = VERR_TOO_MUCH_DATA);
+                AssertBreakStmt(pHdr->cbGroups <= GSTCTL_DIRENTRY_MAX_USER_GROUPS, vrc = VERR_TOO_MUCH_DATA);
+                offBuf += sizeof(GSTCTLDIRENTRYLISTHDR);
+
+                AssertBreakStmt(   pHdr->cbDirEntryEx >= RT_UOFFSETOF(GSTCTLDIRENTRYEX, szName[2])
+                                && pHdr->cbDirEntryEx <= GSTCTL_DIRENTRY_MAX_SIZE, vrc = VERR_INVALID_PARAMETER);
+                pEntry->pDirEntryEx  = (PGSTCTLDIRENTRYEX)RTMemDup((uint8_t *)pvBuf + offBuf, pHdr->cbDirEntryEx);
+                AssertPtrBreakStmt(pEntry->pDirEntryEx, vrc = VERR_NO_MEMORY);
+                pEntry->cbDirEntryEx = pHdr->cbDirEntryEx;
+                offBuf += pHdr->cbDirEntryEx;
+
+                if (pHdr->cbUser)
+                {
+                    pEntry->pszUser = (char *)RTMemDup((uint8_t *)pvBuf + offBuf, pHdr->cbUser);
+                    AssertPtrBreakStmt(pEntry->pszUser, vrc = VERR_NO_MEMORY);
+                    pEntry->cbUser  = pHdr->cbUser;
+                    offBuf += pHdr->cbUser;
+                }
+
+                if (pHdr->cbGroups)
+                {
+                    pEntry->pszGroups = (char *)RTMemDup((uint8_t *)pvBuf + offBuf, pHdr->cbGroups);
+                    AssertPtrBreakStmt(pEntry->pszGroups, vrc = VERR_NO_MEMORY);
+                    pEntry->cbGroups  = pHdr->cbGroups;
+                    offBuf += pHdr->cbGroups;
+                }
+
+#ifdef DEBUG
+                GuestFsObjData obj;
+                AssertRC(obj.FromGuestFsObjInfo(&pEntry->pDirEntryEx->Info, pEntry->pszUser, pEntry->pszGroups));
+                AssertRC(RTStrValidateEncodingEx(pEntry->pszUser,   pHdr->cbUser,   RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED));
+                AssertRC(RTStrValidateEncodingEx(pEntry->pszGroups, pHdr->cbGroups, RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED));
+#endif
+            }
+
+            if (RT_SUCCESS(vrc))
+            {
+                Assert(offBuf == cbBuf);
+            }
+            else /* Roll back on error. */
+            {
+               GuestDirectory::i_dirNotifyDataDestroy(&dataCb);
+            }
             break;
         }
 
@@ -605,7 +700,7 @@ int GuestDirectory::i_onDirNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
 }
 
 /**
- * Converts a given guest directory error to a string.
+ * Static helper function to convert a given guest directory error to a string.
  *
  * @returns Error string.
  * @param   vrcGuest            Guest directory error to return string for.
@@ -626,6 +721,8 @@ Utf8Str GuestDirectory::i_guestErrorToString(int vrcGuest, const char *pcszWhat)
         CASE_MSG(VERR_ALREADY_EXISTS, tr("Guest directory \"%s\" already exists"), pcszWhat);
         CASE_MSG(VERR_CANT_CREATE,    tr("Guest directory \"%s\" cannot be created"), pcszWhat);
         CASE_MSG(VERR_DIR_NOT_EMPTY,  tr("Guest directory \"%s\" is not empty"), pcszWhat);
+        CASE_MSG(VERR_NO_MORE_FILES,  tr("Guest directory \"%s\" has no more entries"), pcszWhat);
+        CASE_MSG(VERR_PATH_NOT_FOUND, tr("Path of guest directory \"%s\" not found"), pcszWhat);
         default:
             strErr.printf(tr("Error %Rrc for guest directory \"%s\" occurred\n"), vrcGuest, pcszWhat);
             break;
@@ -634,6 +731,41 @@ Utf8Str GuestDirectory::i_guestErrorToString(int vrcGuest, const char *pcszWhat)
 #undef CASE_MSG
 
     return strErr;
+}
+
+/**
+ * Static helper function to destroy direction notification callback data.
+ *
+ * @param   pDirNotify          Pointer to direction notification callback data to destroy.
+ */
+/* static */
+void GuestDirectory::i_dirNotifyDataDestroy(PCALLBACKDATA_DIR_NOTIFY pDirNotify)
+{
+    if (!pDirNotify)
+        return;
+
+    switch (pDirNotify->uType)
+    {
+        case GUEST_DIR_NOTIFYTYPE_LIST:
+        {
+            for (uint32_t i = 0; i < pDirNotify->u.list.cEntries; i++)
+            {
+                PCALLBACKDATA_DIR_ENTRY const pEntry = pDirNotify->u.list.paEntries[i];
+                AssertPtrBreak(pEntry);
+                RTStrFree(pEntry->pszUser);
+                RTStrFree(pEntry->pszGroups);
+                RTMemFree(pEntry->pDirEntryEx);
+                RTMemFree(pEntry);
+            }
+            RTMemFree(pDirNotify->u.list.paEntries);
+            pDirNotify->u.list.paEntries = NULL;
+            pDirNotify->u.list.cEntries  = 0;
+            break;
+        }
+
+        default:
+            break;
+    }
 }
 
 /**
@@ -744,7 +876,8 @@ int GuestDirectory::i_closeViaToolbox(int *pvrcGuest)
 /**
  * Reads the next directory entry, internal version.
  *
- * @return VBox status code. Will return VERR_NO_MORE_FILES if no more entries are available.
+ * @return VBox status code.
+ * @retval VERR_GSTCTL_GUEST_ERROR / VERR_NO_MORE_FILES if no more entries are available.
  * @param  objData              Where to store the read directory entry as internal object data.
  * @param  pvrcGuest            Where to store the guest result code in case VERR_GSTCTL_GUEST_ERROR is returned.
  */
@@ -789,18 +922,17 @@ int GuestDirectory::i_readInternal(GuestFsObjData &objData, int *pvrcGuest)
                 if (RT_SUCCESS(vrcGuest))
                 {
                     AssertReturn(pDirNotify->uType == GUEST_DIR_NOTIFYTYPE_READ, VERR_INVALID_PARAMETER);
-                    AssertPtrReturn(pDirNotify->u.read.pEntry, VERR_INVALID_POINTER);
-                    objData.Init(pDirNotify->u.read.pEntry->szName);
-                    vrc = objData.FromGuestFsObjInfo(&pDirNotify->u.read.pEntry->Info,
-                                                     pDirNotify->u.read.pszUser, pDirNotify->u.read.pszGroups);
-                    RTMemFree(pDirNotify->u.read.pEntry);
-                    RTStrFree(pDirNotify->u.read.pszUser);
-                    RTStrFree(pDirNotify->u.read.pszGroups);
+                    AssertPtrReturn(pDirNotify->u.read.Entry.pDirEntryEx, VERR_INVALID_POINTER);
+                    objData.Init(pDirNotify->u.read.Entry.pDirEntryEx->szName);
+                    vrc = objData.FromGuestFsObjInfo(&pDirNotify->u.read.Entry.pDirEntryEx->Info,
+                                                     pDirNotify->u.read.Entry.pszUser, pDirNotify->u.read.Entry.pszGroups);
+                    RTMemFree(pDirNotify->u.read.Entry.pDirEntryEx);
+                    RTStrFree(pDirNotify->u.read.Entry.pszUser);
+                    RTStrFree(pDirNotify->u.read.Entry.pszGroups);
                 }
                 else
                 {
-                    if (pvrcGuest)
-                        *pvrcGuest = vrcGuest;
+                    *pvrcGuest = vrcGuest;
                     vrc = VERR_GSTCTL_GUEST_ERROR;
                 }
             }
@@ -850,7 +982,12 @@ int GuestDirectory::i_readInternalViaToolbox(GuestFsObjData &objData, int *pvrcG
                     vrc = objData.FromToolboxLs(curBlock, true /* fLong */);
                 }
                 else
+                {
+#ifdef DEBUG
+                    curBlock.DumpToLog();
+#endif
                     vrc = VERR_PATH_NOT_FOUND;
+                }
             }
             else
             {
@@ -865,9 +1002,172 @@ int GuestDirectory::i_readInternalViaToolbox(GuestFsObjData &objData, int *pvrcG
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT */
 
 /**
+ * Worker for listing the next directory entries.
+ *
+ * @return VBox status code.
+ * @retval VERR_GSTCTL_GUEST_ERROR / VERR_NO_MORE_FILES if no more entries are available after this iteration.
+ *         \a vecObjData will contain the rest of the entries then (if any).
+ * @param  cMaxEntries          How many directory entries to read at max.
+ * @param  fFlags               Flags of type GSTCTL_DIRLIST_F_XXX.
+ * @param  vecObjData           Where to store the read directory entries on success.
+ * @param  pvrcGuest            Where to store the guest result code in case VERR_GSTCTL_GUEST_ERROR is returned.
+ */
+int GuestDirectory::i_listInternal(uint32_t cMaxEntries, uint32_t fFlags, std::vector<GuestFsObjData> &vecObjData, int *pvrcGuest)
+{
+    int vrc;
+
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
+    if (mSession->i_getParent()->i_getGuestControlFeatures0() & VBOX_GUESTCTRL_GF_0_TOOLBOX_AS_CMDS)
+    {
+        GuestWaitEvent *pEvent = NULL;
+        GuestEventTypes eventTypes;
+        try
+        {
+            vrc = registerWaitEvent(eventTypes, &pEvent);
+        }
+        catch (std::bad_alloc &)
+        {
+            vrc = VERR_NO_MEMORY;
+        }
+
+        if (RT_FAILURE(vrc))
+            return vrc;
+
+        /* Prepare HGCM call. */
+        VBOXHGCMSVCPARM paParms[4];
+        int i = 0;
+        HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+        HGCMSvcSetU32(&paParms[i++], mObjectID /* Directory handle */);
+        HGCMSvcSetU32(&paParms[i++], cMaxEntries);
+        HGCMSvcSetU32(&paParms[i++], 0 /* Flags */);
+
+        vrc = sendMessage(HOST_MSG_DIR_LIST, i, paParms);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = pEvent->Wait(30 * 1000);
+            if (RT_SUCCESS(vrc))
+            {
+                PCALLBACKDATA_DIR_NOTIFY const pDirNotify = (PCALLBACKDATA_DIR_NOTIFY)pEvent->Payload().Raw();
+                AssertPtrReturn(pDirNotify, VERR_INVALID_POINTER);
+                int vrcGuest = (int)pDirNotify->rc;
+                if (   RT_SUCCESS(vrcGuest)
+                    /* Guest indicates that there are no more entries to read.
+                     * We still need to check if we have read something with this iteration though. */
+                    || vrcGuest == VERR_NO_MORE_FILES)
+                {
+                    AssertReturn(pDirNotify->uType == GUEST_DIR_NOTIFYTYPE_LIST, VERR_INVALID_PARAMETER);
+
+                    try
+                    {
+                        vecObjData.resize(pDirNotify->u.list.cEntries);
+                    }
+                    catch (std::bad_alloc &)
+                    {
+                        vrc = VERR_NO_MEMORY;
+                    }
+
+                    if (RT_SUCCESS(vrc))
+                    {
+                        for (size_t a = 0; a < pDirNotify->u.list.cEntries; a++)
+                        {
+                            PCALLBACKDATA_DIR_ENTRY const pEntry = pDirNotify->u.list.paEntries[a];
+                            AssertPtr(pEntry);
+
+                            AssertPtr(pEntry->pDirEntryEx);
+                            vecObjData[a].Init(pEntry->pDirEntryEx->szName);
+                            int vrc2 = vecObjData[a].FromGuestFsObjInfo(&pEntry->pDirEntryEx->Info, pEntry->pszUser, pEntry->pszGroups);
+                            if (RT_SUCCESS(vrc))
+                                vrc = vrc2;
+                        }
+                    }
+                }
+                else
+                {
+                    *pvrcGuest = vrcGuest;
+                    vrc = VERR_GSTCTL_GUEST_ERROR;
+                }
+
+                GuestDirectory::i_dirNotifyDataDestroy(pDirNotify);
+            }
+            else if (pEvent->HasGuestError())
+                *pvrcGuest = pEvent->GuestResult();
+        }
+    }
+    else
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
+    {
+        RT_NOREF(cMaxEntries, fFlags, vecObjData, pvrcGuest);
+        vrc = VERR_NOT_SUPPORTED;
+    }
+
+    return vrc;
+}
+
+/**
+ * Lists the next directory entries.
+ *
+ * @return VBox status code.
+ * @retval VERR_GSTCTL_GUEST_ERROR / VERR_NO_MORE_FILES if no more entries are available after this iteration.
+ *         \a vecObjData will contain the rest of the entries then (if any).
+ * @param  cMaxEntries          How many directory entries to read at max.
+ * @param  fFlags               Flags of type GSTCTL_DIRLIST_F_XXX.
+ * @param  vecObjInfo           Where to store the read directory entries on success.
+ * @param  pvrcGuest            Where to store the guest result code in case VERR_GSTCTL_GUEST_ERROR is returned.
+ */
+int GuestDirectory::i_listEx(uint32_t cMaxEntries, uint32_t fFlags, std::vector<ComObjPtr<GuestFsObjInfo>> &vecObjInfo,
+                             int *pvrcGuest)
+{
+    AssertPtrReturn(pvrcGuest, VERR_INVALID_POINTER);
+    AssertReturn(!(fFlags & ~GSTCTL_DIRLIST_F_VALID_MASK), VERR_INVALID_PARAMETER);
+
+    std::vector<GuestFsObjData> vecObjDataInt;
+    int vrc = i_listInternal(cMaxEntries, fFlags, vecObjDataInt, pvrcGuest);
+    if (   RT_SUCCESS(vrc)
+        || (     vrc       == VERR_GSTCTL_GUEST_ERROR
+             && *pvrcGuest == VERR_NO_MORE_FILES))
+    {
+        try
+        {
+            vecObjInfo.resize(vecObjDataInt.size());
+            for (size_t i = 0; i < vecObjDataInt.size(); i++)
+            {
+                HRESULT hrc = vecObjInfo[i].createObject();
+                ComAssertComRCBreak(hrc, vrc = VERR_COM_UNEXPECTED);
+
+                vrc = vecObjInfo[i]->init(vecObjDataInt[i]);
+                if (RT_FAILURE(vrc))
+                    break;
+            }
+        }
+        catch (std::bad_alloc &)
+        {
+            vrc = VERR_NO_MEMORY;
+        }
+    }
+
+    return vrc;
+}
+
+/**
+ * Lists the next directory entries.
+ *
+ * @return VBox status code.
+ * @retval VERR_GSTCTL_GUEST_ERROR / VERR_NO_MORE_FILES if no more entries are available after this iteration.
+ *         \a vecObjData will contain the rest of the entries then (if any).
+ * @param  cMaxEntries          How many directory entries to read at max.
+ * @param  vecObjInfo           Where to store the read directory entries on success.
+ * @param  pvrcGuest            Where to store the guest result code in case VERR_GSTCTL_GUEST_ERROR is returned.
+ */
+int GuestDirectory::i_list(uint32_t cMaxEntries, std::vector<ComObjPtr<GuestFsObjInfo>> &vecObjInfo, int *pvrcGuest)
+{
+    return i_listEx(cMaxEntries, GSTCTL_DIRLIST_F_NONE, vecObjInfo, pvrcGuest);
+}
+
+/**
  * Reads the next directory entry.
  *
- * @return VBox status code. Will return VERR_NO_MORE_FILES if no more entries are available.
+ * @return VBox status code.
+ * @retval VERR_GSTCTL_GUEST_ERROR / VERR_NO_MORE_FILES if no more entries are available.
  * @param  fsObjInfo            Where to store the read directory entry.
  * @param  pvrcGuest            Where to store the guest result code in case VERR_GSTCTL_GUEST_ERROR is returned.
  */
@@ -893,7 +1193,6 @@ int GuestDirectory::i_read(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *pvrcGuest)
     }
     else /* Otherwise ask the guest for the next object data. */
     {
-
         GuestFsObjData objData;
         vrc = i_readInternal(objData, pvrcGuest);
         if (RT_SUCCESS(vrc))
@@ -1123,6 +1422,70 @@ HRESULT GuestDirectory::close()
     return hrc;
 }
 
+HRESULT GuestDirectory::list(ULONG aMaxEntries, std::vector<ComPtr<IFsObjInfo> > &aObjInfos)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.hrc())) return autoCaller.hrc();
+
+    LogFlowThisFuncEnter();
+
+    HRESULT hrc = S_OK;
+
+    std::vector<ComObjPtr<GuestFsObjInfo> > vecObjInfo;
+    int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+    int vrc = i_list(aMaxEntries, vecObjInfo, &vrcGuest);
+
+    /* Don't propagate an error to API callers when this is the last listing (i.e. no more files).
+     * For subsequent reads the API caller gets an appropriate error then. */
+    if (    vrc      == VERR_GSTCTL_GUEST_ERROR
+         && vrcGuest == VERR_NO_MORE_FILES
+         && vecObjInfo.size())
+            vrc = VINF_SUCCESS;
+
+    if (RT_SUCCESS(vrc))
+    {
+        try
+        {
+            aObjInfos.resize(vecObjInfo.size());
+
+            for (size_t i = 0; i < vecObjInfo.size(); i++)
+            {
+                hrc = vecObjInfo[i].queryInterfaceTo(aObjInfos[i].asOutParam());
+                ComAssertComRCBreakRC(hrc);
+            }
+        }
+        catch (std::bad_alloc &)
+        {
+            hrc = E_OUTOFMEMORY;
+        }
+    }
+    else
+    {
+        switch (vrc)
+        {
+            case VERR_GSTCTL_GUEST_ERROR:
+            {
+                GuestErrorInfo ge(GuestErrorInfo::Type_Directory, vrcGuest, mData.mOpenInfo.mPath.c_str());
+                hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrcGuest, tr("Listing guest directory failed: %s"),
+                                   GuestBase::getErrorAsString(ge).c_str());
+
+                /* Return a dedicated error code when directory reading is done. See SDK reference. */
+                if (vrcGuest == VERR_NO_MORE_FILES)
+                    hrc = VBOX_E_OBJECT_NOT_FOUND;
+                break;
+            }
+
+            default:
+                hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Listing guest directory \"%s\" returned unhandled error: %Rrc\n"),
+                                   mData.mOpenInfo.mPath.c_str(), vrc);
+                break;
+        }
+    }
+
+    LogFlowThisFunc(("Returning hrc=%Rhrc / vrc=%Rrc\n", hrc, vrc));
+    return hrc;
+}
+
 HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
 {
     AutoCaller autoCaller(this);
@@ -1150,11 +1513,15 @@ HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_SUPPORT
                                   GuestErrorInfo::Type_ToolLs
 #else
-                                  GuestErrorInfo::Type_Fs
+                                  GuestErrorInfo::Type_Directory
 #endif
                 , vrcGuest, mData.mOpenInfo.mPath.c_str());
                 hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrcGuest, tr("Reading guest directory failed: %s"),
                                    GuestBase::getErrorAsString(ge).c_str());
+
+                /* Return a dedicated error code when directory reading is done. See SDK reference. */
+                if (vrcGuest == VERR_NO_MORE_FILES)
+                    hrc = VBOX_E_OBJECT_NOT_FOUND;
                 break;
             }
 
@@ -1163,7 +1530,7 @@ HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
                 hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading guest directory \"%s\" failed: %Rrc"),
                                    mData.mOpenInfo.mPath.c_str(), mData.mProcessTool.getRc());
                 break;
-#endif
+
             case VERR_PATH_NOT_FOUND:
                 hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading guest directory \"%s\" failed: Path not found"),
                                    mData.mOpenInfo.mPath.c_str());
@@ -1174,7 +1541,7 @@ HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
                 hrc = setErrorBoth(VBOX_E_OBJECT_NOT_FOUND, vrc, tr("Reading guest directory \"%s\" failed: No more entries"),
                                    mData.mOpenInfo.mPath.c_str());
                 break;
-
+#endif
             default:
                 hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading guest directory \"%s\" returned unhandled error: %Rrc\n"),
                                    mData.mOpenInfo.mPath.c_str(), vrc);

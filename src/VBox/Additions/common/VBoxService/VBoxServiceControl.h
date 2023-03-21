@@ -86,6 +86,11 @@ typedef struct VBOXSERVICECTRLDIR
     uint32_t                        fRead;
     /** Additional attributes enumeration to use for reading directory entries. */
     GSTCTLFSOBJATTRADD              enmReadAttrAdd;
+    /** Scratch buffer for holding the directory reading entry.
+     *  Currently NOT serialized, i.e. only can be used for one read at a time. */
+    PRTDIRENTRYEX                   pDirEntryEx;
+    /** Size (in bytes) of \a pDirEntryEx. */
+    size_t                          cbDirEntryEx;
 } VBOXSERVICECTRLDIR;
 /** Pointer to a guest directory. */
 typedef VBOXSERVICECTRLDIR *PVBOXSERVICECTRLDIR;
@@ -232,11 +237,6 @@ typedef struct VBOXSERVICECTRLSESSION
     VGSVCIDCACHE                    UidCache;
     /** The gid cache for this session. */
     VGSVCIDCACHE                    GidCache;
-    /** Scratch buffer for holding the directory reading entry.
-     *  Currently NOT serialized, i.e. only can be used for one read at a time. */
-    PRTDIRENTRYEX                   pDirEntryEx;
-    /** Size (in bytes) of \a pDirEntryEx. */
-    size_t                          cbDirEntryEx;
 #endif
 } VBOXSERVICECTRLSESSION;
 /** Pointer to guest session. */

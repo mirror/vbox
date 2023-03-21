@@ -16424,7 +16424,7 @@
 
   <interface
     name="IDirectory" extends="$unknown"
-    uuid="c7b24ad6-dba7-486c-b1ed-5f16d8d6da22"
+    uuid="a508e094-bf24-4eca-80c6-467766a1e4c0"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="8"
     >
@@ -16463,6 +16463,23 @@
         Closes this directory. After closing operations like reading the next
         directory entry will not be possible anymore.
       </desc>
+    </method>
+
+    <method name="list">
+      <desc>
+        Lists directory entries of this directory.
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          No more directory entries to read.
+        </result>
+      </desc>
+      <param name="maxEntries" type="unsigned long" dir="in">
+        <desc>Maximum entries to return per call. The guest might decide to return less than the given maximum, depending on
+          the guest OS.</desc>
+      </param>
+      <param name="objInfo" type="IFsObjInfo" safearray="yes" dir="return">
+        <desc>Array of object information of the current directory entry read. Also see
+          <link to="IFsObjInfo"/>.</desc>
+      </param>
     </method>
 
     <method name="read">

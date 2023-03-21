@@ -1128,6 +1128,47 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetRewind(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_
     } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
+
+
+/**
+ * Retrieves a HOST_MSG_DIR_LIST message.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Guest control command context to use.
+ * @param   puHandle            Where to return the directory handle to rewind.
+ * @param   pcEntries           Where to return the number of directory entries to read.
+ * @param   pfFlags             Where to return the directory listing flags.
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlDirGetList(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle, uint32_t *pcEntries, uint32_t *pfFlags)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(pCtx->uNumParms == 4, VERR_INVALID_PARAMETER);
+
+    AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcEntries, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
+
+    int rc;
+    do
+    {
+        HGCMMsgDirList Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_DIR_LIST);
+        VbglHGCMParmUInt32Set(&Msg.handle, 0);
+        VbglHGCMParmUInt32Set(&Msg.num_entries, 0);
+        VbglHGCMParmUInt32Set(&Msg.flags, 0);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.handle.GetUInt32(puHandle);
+            Msg.num_entries.GetUInt32(pcEntries);
+            Msg.flags.GetUInt32(pfFlags);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
+    return rc;
+}
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
 
 
@@ -2279,8 +2320,6 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirCbReadEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
                                            const char *pszUser, const char *pszGroups)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszGroups, VERR_INVALID_POINTER);
 
     HGCMReplyDirNotify Msg;
     VBGL_HGCM_HDR_INIT(&Msg.reply_hdr.hdr, pCtx->uClientID, GUEST_MSG_DIR_NOTIFY, GSTCTL_HGCM_REPLY_HDR_PARMS + 3);
@@ -2331,6 +2370,34 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirCbRewind(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.rc, uRc);
 
     return VbglR3HGCMCall(&Msg.reply_hdr.hdr, RT_UOFFSET_AFTER(HGCMReplyDirNotify, u));
+}
+
+
+/**
+ * Replies to a HOST_MSG_DIR_LIST message.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Guest control command context to use.
+ * @param   uRc                 Guest rc of operation (note: IPRT-style signed int).
+ * @þaram   cEntries            Number of directory entries to send.
+ * @param   pvBuf               Buffer of directory entries to send.
+ * @param   cbBuf               Size (in bytes) of \a pvBuf.
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlDirCbList(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc,
+                                         uint32_t cEntries, void *pvBuf, uint32_t cbBuf)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    HGCMReplyDirNotify Msg;
+    VBGL_HGCM_HDR_INIT(&Msg.reply_hdr.hdr, pCtx->uClientID, GUEST_MSG_DIR_NOTIFY, GSTCTL_HGCM_REPLY_HDR_PARMS + 2);
+    VbglHGCMParmUInt32Set(&Msg.reply_hdr.context, pCtx->uContextID);
+    VbglHGCMParmUInt32Set(&Msg.reply_hdr.type, GUEST_DIR_NOTIFYTYPE_LIST);
+    VbglHGCMParmUInt32Set(&Msg.reply_hdr.rc, uRc);
+
+    VbglHGCMParmUInt32Set(&Msg.u.list.num_entries, cEntries);
+    VbglHGCMParmPtrSet(&Msg.u.list.buffer, pvBuf, cbBuf);
+
+    return VbglR3HGCMCall(&Msg.reply_hdr.hdr, RT_UOFFSET_AFTER(HGCMReplyDirNotify, u.list));
 }
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
 

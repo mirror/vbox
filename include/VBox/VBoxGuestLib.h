@@ -1121,6 +1121,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx, char *psz
 VBGLR3DECL(int) VbglR3GuestCtrlDirGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle);
 VBGLR3DECL(int) VbglR3GuestCtrlDirGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle);
 VBGLR3DECL(int) VbglR3GuestCtrlDirGetRewind(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle);
+VBGLR3DECL(int) VbglR3GuestCtrlDirGetList(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle, uint32_t *pcEntries, uint32_t *pfFlags);
 /** @} */
 #  endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
 VBGLR3DECL(int) VbglR3GuestCtrlDirGetRemove(PVBGLR3GUESTCTRLCMDCTX pCtx, char *pszPath, uint32_t cbPath, uint32_t *pfFlags);
@@ -1154,6 +1155,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirCbClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t 
 VBGLR3DECL(int) VbglR3GuestCtrlDirCbReadEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLDIRENTRYEX pEntry, uint32_t cbSize, const char *pszUser, const char *pszGroups);
 VBGLR3DECL(int) VbglR3GuestCtrlDirCbRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLDIRENTRYEX pEntry, uint32_t cbSize);
 VBGLR3DECL(int) VbglR3GuestCtrlDirCbRewind(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc);
+VBGLR3DECL(int) VbglR3GuestCtrlDirCbList(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, uint32_t cEntries, void *pvBuf, uint32_t cbBuf);
 /** @} */
 #  endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
 

@@ -433,6 +433,14 @@ typedef const GSTCTLFSOBJATTR *PCGSTCTLFSOBJATTR;
 #define GSTCTL_PATH_F_VALID_MASK         UINT32_C(0x00000007)
 /** @} */
 
+/** @name GSTCTL_DIRLIST_F_XXX - Flags for guest directory listings.
+ * @{ */
+/** No guest listing flags specified. */
+#define GSTCTL_DIRLIST_F_NONE               UINT32_C(0)
+/** GSTCTL_DIRLIST_F_XXX valid mask. */
+#define GSTCTL_DIRLIST_F_VALID_MASK         UINT32_C(0x00000000)
+/** @} */
+
 /**
  * Filter option for HOST_MSG_DIR_OPEN.
  */
@@ -552,8 +560,39 @@ typedef GSTCTLDIRENTRYEX *PGSTCTLDIRENTRYEX;
 typedef GSTCTLDIRENTRYEX const *PCGSTCTLDIRENTRYEX;
 
 /** The maximum size (in bytes) of an entry file name (at least RT_UOFFSETOF(GSTCTLDIRENTRYEX, szName[2]). */
-#define GSTCTL_DIRENTRY_MAX_SIZE    4096
+#define GSTCTL_DIRENTRY_MAX_SIZE                4096
+/** Maximum characters of the resolved user name. Including terminator. */
+#define GSTCTL_DIRENTRY_MAX_USER_NAME           255
+/** Maximum characters of the resolved user groups list. Including terminator. */
+#define GSTCTL_DIRENTRY_MAX_USER_GROUPS         _1K
+/** The resolved user groups delimiter as a string. */
+#define GSTCTL_DIRENTRY_GROUPS_DELIMITER_STR    "\r\n"
 
+/**
+ * Guest directory entry header.
+ *
+ * This is needed for (un-)packing multiple directory entries with its resolved user name + groups
+ * with the HOST_MSG_DIR_LIST command.
+ *
+ * The order of the attributes also mark their packed order, so be careful when changing this!
+ *
+ * @since 7.1.
+ */
+#pragma pack(1)
+typedef struct GSTCTLDIRENTRYLISTHDR
+{
+    /** Size (in bytes) of the directory header). */
+    uint32_t          cbDirEntryEx;
+    /** Size (in bytes) of the resolved user name as a string
+     *  Includes terminator. */
+    uint32_t          cbUser;
+    /** Size (in bytes) of the resolved user groups as a string.
+     *  Delimited by GSTCTL_DIRENTRY_GROUPS_DELIMITER_STR. Includes terminator. */
+    uint32_t          cbGroups;
+} GSTCTLDIRENTRYBLOCK;
+/** Pointer to a guest directory header entry. */
+typedef GSTCTLDIRENTRYLISTHDR *PGSTCTLDIRENTRYLISTHDR;
+#pragma pack()
 } /* namespace guestControl */
 
 #endif /* !VBOX_INCLUDED_GuestHost_GuestControl_h */

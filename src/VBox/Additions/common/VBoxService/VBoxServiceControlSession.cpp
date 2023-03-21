@@ -113,6 +113,8 @@ static int vgsvcGstCtrlSessionDirFree(PVBOXSERVICECTRLDIR pDir)
     if (!pDir)
         return VINF_SUCCESS;
 
+    RTMemFree(pDir->pDirEntryEx);
+
     int rc;
     if (pDir->hDir != NIL_RTDIR)
     {
@@ -1037,6 +1039,10 @@ static int vgsvcGstCtrlSessionHandleDirOpen(const PVBOXSERVICECTRLSESSION pSessi
             pDir->fRead          = fReadFlags;
             pDir->enmReadAttrAdd = enmAttrAdd;
 
+            pDir->cbDirEntryEx = GSTCTL_DIRENTRY_MAX_SIZE;
+            pDir->pDirEntryEx  = (PRTDIRENTRYEX)RTMemAlloc(pDir->cbDirEntryEx);
+            AssertPtrReturn(pDir->pDirEntryEx, VERR_NO_MEMORY);
+
             if (RT_SUCCESS(rc))
             {
                 rc = RTDirOpenFiltered(&pDir->hDir, pDir->pszPathAbs, (RTDIRFILTER)enmFilter, fFlags);
@@ -1133,6 +1139,68 @@ static int vgsvcGstCtrlSessionHandleDirClose(const PVBOXSERVICECTRLSESSION pSess
 }
 
 
+/**
+ * Worker function for reading a next guest directory entry.
+ *
+ * @returns VBox status code.
+ * @param   pSession            Guest Control session to use.
+ * @param   pDir                Guest directory to read the next entry for.
+ * @param   ppDirEntryEx        Where to store the pointer to the next guest directory entry on success.
+ * @param   pcbDirEntryEx       Where to return the size (in bytes) of \a ppGstCtlDirEntryEx on success.
+ * @param   ppszUser            Where to return the resolved user name string.
+ * @param   ppszGroups          Where to return the resolved groups string.
+ */
+static int vgsvcGstCtrlSessionDirReadNext(const PVBOXSERVICECTRLSESSION pSession,
+                                          PVBOXSERVICECTRLDIR pDir,
+                                          PGSTCTLDIRENTRYEX *ppDirEntryEx, size_t *pcbDirEntryEx,
+                                          const char **ppszUser, const char **ppszGroups)
+{
+    PRTDIRENTRYEX pDirEntryEx = pDir->pDirEntryEx;
+
+    size_t cbDirEntryEx = pDir->cbDirEntryEx;
+    int rc = RTDirReadEx(pDir->hDir, pDir->pDirEntryEx, &cbDirEntryEx, (RTFSOBJATTRADD)pDir->enmReadAttrAdd, pDir->fRead);
+
+    VGSvcVerbose(2, "[Dir %s] Read next entry '%s' -> %Rrc (%zu bytes)\n",
+                 pDir->pszPathAbs, RT_SUCCESS(rc) ? pDirEntryEx->szName : "<None>", rc, cbDirEntryEx);
+
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* Paranoia. */
+    AssertReturn(cbDirEntryEx <= pDir->cbDirEntryEx, VERR_BUFFER_OVERFLOW);
+
+    *ppszUser   = VGSvcIdCacheGetUidName(&pSession->UidCache,
+                                         pDirEntryEx->Info.Attr.u.Unix.uid, pDirEntryEx->szName, pDir->pszPathAbs);
+    *ppszGroups = VGSvcIdCacheGetGidName(&pSession->GidCache,
+                                         pDirEntryEx->Info.Attr.u.Unix.gid, pDirEntryEx->szName, pDir->pszPathAbs);
+
+    VGSvcVerbose(2, "[Dir %s] Entry '%s': %zu bytes, uid=%s (%d), gid=%s (%d)\n",
+                 pDir->pszPathAbs, pDirEntryEx->szName, pDirEntryEx->Info.cbObject,
+                 *ppszUser, pDirEntryEx->Info.Attr.u.UnixOwner.uid,
+                 *ppszGroups, pDirEntryEx->Info.Attr.u.UnixGroup.gid);
+
+    /*
+     * For now we ASSUME that RTDIRENTRYEX == GSTCTLDIRENTRYEX, which implies that we simply can cast RTDIRENTRYEX
+     * to GSTCTLDIRENTRYEX. This might change in the future, however, so be extra cautious here.
+     *
+     * Ditto for RTFSOBJATTRADD == GSTCTLFSOBJATTRADD.
+     */
+    AssertCompile(sizeof(GSTCTLDIRENTRYEX)              == sizeof(RTDIRENTRYEX));
+    AssertCompile(RT_OFFSETOF(GSTCTLDIRENTRYEX, Info)   == RT_OFFSETOF(RTDIRENTRYEX, Info));
+    AssertCompile(RT_OFFSETOF(GSTCTLDIRENTRYEX, cbName) == RT_OFFSETOF(RTDIRENTRYEX, cbName));
+    AssertCompile(RT_OFFSETOF(GSTCTLDIRENTRYEX, szName) == RT_OFFSETOF(RTDIRENTRYEX, szName));
+    AssertCompile(RT_OFFSETOF(GSTCTLFSOBJINFO,  Attr)   == RT_OFFSETOF(RTFSOBJINFO,  Attr));
+
+    if (RT_SUCCESS(rc))
+    {
+        *ppDirEntryEx  = (PGSTCTLDIRENTRYEX)pDirEntryEx;
+        *pcbDirEntryEx = cbDirEntryEx;
+    }
+
+    return rc;
+}
+
+
 static int vgsvcGstCtrlSessionHandleDirRead(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
@@ -1148,44 +1216,24 @@ static int vgsvcGstCtrlSessionHandleDirRead(const PVBOXSERVICECTRLSESSION pSessi
         PVBOXSERVICECTRLDIR pDir = vgsvcGstCtrlSessionDirAcquire(pSession, uHandle);
         if (pDir)
         {
-            PRTDIRENTRYEX pDirEntryEx = pSession->pDirEntryEx;
+            PGSTCTLDIRENTRYEX pDirEntryEx;
+            size_t            cbDirEntryEx;
+            const char       *pszUser   = NULL;
+            const char       *pszGroups = NULL;
+            rc = vgsvcGstCtrlSessionDirReadNext(pSession, pDir,
+                                                &pDirEntryEx, &cbDirEntryEx, &pszUser, &pszGroups);
 
-            size_t cbDirEntry = pSession->cbDirEntryEx;
-            rc = RTDirReadEx(pDir->hDir, pDirEntryEx, &cbDirEntry, (RTFSOBJATTRADD)pDir->enmReadAttrAdd, pDir->fRead);
+            VGSvcVerbose(2, "[Dir %s] %Rrc\n", pDir->pszPathAbs, rc);
 
-            /* Paranoia. */
-            AssertStmt(cbDirEntry <= pSession->cbDirEntryEx, rc = VERR_BUFFER_OVERFLOW);
-
-            VGSvcVerbose(2, "[Dir %s] Read next entry '%s' -> %Rrc (%zu bytes)\n",
-                         pDir->pszPathAbs, RT_SUCCESS(rc) ? pDirEntryEx->szName : "<None>", rc, cbDirEntry);
-
-            const char *pszUser  = VGSvcIdCacheGetUidName(&pSession->UidCache,
-                                                          pDirEntryEx->Info.Attr.u.Unix.uid, pDirEntryEx->szName, pDir->pszPathAbs);
-            const char *pszGroup = VGSvcIdCacheGetGidName(&pSession->GidCache,
-                                                          pDirEntryEx->Info.Attr.u.Unix.gid, pDirEntryEx->szName, pDir->pszPathAbs);
-
-            VGSvcVerbose(2, "[Dir %s] Entry '%s': %zu bytes, uid=%s (%d), gid=%s (%d)\n",
-                         pDir->pszPathAbs, pDirEntryEx->szName, pDirEntryEx->Info.cbObject,
-                         pszUser ? pszUser : "", pDirEntryEx->Info.Attr.u.UnixOwner.uid,
-                         pszGroup ? pszGroup : "", pDirEntryEx->Info.Attr.u.UnixGroup.gid);
-
-            /*
-             * For now we ASSUME that RTDIRENTRYEX == GSTCTLDIRENTRYEX, which implies that we simply can cast RTDIRENTRYEX
-             * to GSTCTLDIRENTRYEX. This might change in the future, however, so be extra cautious here.
-             *
-             * Ditto for RTFSOBJATTRADD == GSTCTLFSOBJATTRADD.
-             */
-            AssertCompile(sizeof(GSTCTLDIRENTRYEX)              == sizeof(RTDIRENTRYEX));
-            AssertCompile(RT_OFFSETOF(GSTCTLDIRENTRYEX, Info)   == RT_OFFSETOF(RTDIRENTRYEX, Info));
-            AssertCompile(RT_OFFSETOF(GSTCTLDIRENTRYEX, cbName) == RT_OFFSETOF(RTDIRENTRYEX, cbName));
-            AssertCompile(RT_OFFSETOF(GSTCTLDIRENTRYEX, szName) == RT_OFFSETOF(RTDIRENTRYEX, szName));
-            AssertCompile(RT_OFFSETOF(GSTCTLFSOBJINFO,  Attr)   == RT_OFFSETOF(RTFSOBJINFO,  Attr));
-
-            PGSTCTLDIRENTRYEX pGstCtlDirEntryEx = (PGSTCTLDIRENTRYEX)pDirEntryEx;
-
-            int rc2 = VbglR3GuestCtrlDirCbReadEx(pHostCtx, rc, pGstCtlDirEntryEx, (uint32_t)cbDirEntry, pszUser, pszGroup);
+            int rc2;
+            if (RT_SUCCESS(rc))
+                rc2 = VbglR3GuestCtrlDirCbReadEx(pHostCtx, rc, pDirEntryEx, cbDirEntryEx, pszUser, pszGroups);
+            else
+                rc2 = VbglR3GuestCtrlDirCbRead(pHostCtx, rc, NULL /* pEntry */, 0 /* cbSize */);
             if (RT_FAILURE(rc2))
                 VGSvcError("Failed to report directory read status (%Rrc), rc=%Rrc\n", rc, rc2);
+
+            VGSvcVerbose(2, "[Dir %s] 2 %Rrc\n", pDir->pszPathAbs, rc);
 
             if (rc == VERR_NO_MORE_FILES) /* Directory reading done. */
                 rc = VINF_SUCCESS;
@@ -1307,6 +1355,119 @@ static int vgsvcGstCtrlSessionHandleDirCreate(const PVBOXSERVICECTRLSESSION pSes
         VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID, rc, UINT32_MAX);
     }
     VGSvcVerbose(5, "Creating directory returned rc=%Rrc\n", rc);
+    return rc;
+}
+
+static int vgsvcGstCtrlSessionHandleDirList(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx)
+{
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
+
+    /*
+     * Retrieve the request.
+     */
+    uint32_t uHandle;
+    uint32_t cEntries;
+    uint32_t cEntriesRead = 0;
+    uint32_t fFlags;
+    int rc = VbglR3GuestCtrlDirGetList(pHostCtx, &uHandle, &cEntries, &fFlags);
+    if (RT_SUCCESS(rc))
+    {
+        size_t cbGrowSize = _64K;
+        void  *pvBuf      = RTMemAlloc(cbGrowSize);
+        if (!pvBuf)
+            rc = VERR_NO_MEMORY;
+        size_t cbBufUsed  = 0;
+        if (RT_SUCCESS(rc))
+        {
+            if (!(fFlags & ~GSTCTL_DIRLIST_F_VALID_MASK))
+            {
+                size_t cbBufSize = cbGrowSize;
+
+                PVBOXSERVICECTRLDIR pDir = vgsvcGstCtrlSessionDirAcquire(pSession, uHandle);
+                if (pDir)
+                {
+                    PGSTCTLDIRENTRYEX pDirEntryEx;
+                    size_t            cbDirEntryEx;
+                    const char       *pszUser   = NULL;
+                    const char       *pszGroups = NULL;
+
+                    while (cEntries--)
+                    {
+                        rc = vgsvcGstCtrlSessionDirReadNext(pSession, pDir,
+                                                            &pDirEntryEx, &cbDirEntryEx, &pszUser, &pszGroups);
+                        if (RT_FAILURE(rc)) /* Might be VERR_NO_MORE_FILES. */
+                            break;
+
+                        size_t const cbHdr    = sizeof(GSTCTLDIRENTRYLISTHDR);
+                        size_t const cbUser   = strlen(pszUser)   + 1; /* Include terminator. */
+                        size_t const cbGroups = strlen(pszGroups) + 1; /* Ditto. */
+                        size_t const cbTotal  = cbHdr + cbDirEntryEx + cbUser + cbGroups;
+
+                        if (cbBufSize - cbBufUsed < cbTotal) /* Grow buffer, if needed. */
+                        {
+                            AssertBreakStmt(cbTotal <= cbGrowSize, VERR_BUFFER_OVERFLOW);
+                            pvBuf      = RTMemRealloc(pvBuf, cbBufSize + cbGrowSize);
+                            AssertPtrBreakStmt(pvBuf, VERR_NO_MEMORY);
+                            cbBufSize += cbGrowSize;
+                        }
+
+                        GSTCTLDIRENTRYLISTHDR Hdr;
+                        Hdr.cbDirEntryEx = cbDirEntryEx;
+                        Hdr.cbUser       = cbUser;
+                        Hdr.cbGroups     = cbGroups;
+
+                        memcpy((uint8_t *)pvBuf + cbBufUsed, &Hdr, cbHdr);
+                        cbBufUsed += cbHdr;
+                        memcpy((uint8_t *)pvBuf + cbBufUsed, pDirEntryEx, cbDirEntryEx);
+                        cbBufUsed += cbDirEntryEx;
+                        memcpy((uint8_t *)pvBuf + cbBufUsed, pszUser, cbUser);
+                        cbBufUsed += cbUser;
+                        memcpy((uint8_t *)pvBuf + cbBufUsed, pszGroups, cbGroups);
+                        cbBufUsed += cbGroups;
+
+                        Assert(cbBufUsed <= cbBufSize);
+                        cEntriesRead++;
+                    }
+
+                    vgsvcGstCtrlSessionDirRelease(pDir);
+                }
+
+                VGSvcVerbose(4, "Read %RU32 directory entries (requested %RU32 entries) -> %zu bytes, rc=%Rrc\n",
+                             cEntriesRead, cEntries, cbBufUsed, rc);
+
+                /* Directory reading done? */
+                if (   cEntriesRead
+                    && rc == VERR_NO_MORE_FILES)
+                    rc = VINF_SUCCESS;
+
+                /* Note: Subsequent calls will return VERR_NO_MORE_FILES to the host. */
+            }
+            else
+            {
+                VGSvcError("Unsupported directory listing flags: %#x (all %#x)\n", (fFlags & ~GSTCTL_DIRLIST_F_VALID_MASK), fFlags);
+                rc = VERR_NOT_SUPPORTED;
+            }
+        }
+
+        /*
+         * Report result back to host.
+         */
+        int rc2 = VbglR3GuestCtrlDirCbList(pHostCtx, rc, cEntriesRead, pvBuf, (uint32_t)cbBufUsed);
+        if (RT_FAILURE(rc2))
+            VGSvcError("Failed to report directory listing (%Rrc), rc=%Rrc\n", rc, rc2);
+
+        if (rc == VERR_NO_MORE_FILES) /* Directory reading done? */
+            rc = VINF_SUCCESS;
+
+        RTMemFree(pvBuf);
+    }
+    else
+    {
+        VGSvcError("Error fetching parameters for directory listing operation: %Rrc\n", rc);
+        VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID, rc, UINT32_MAX);
+    }
+    VGSvcVerbose(5, "Listing directory returned rc=%Rrc\n", rc);
     return rc;
 }
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
@@ -2122,6 +2283,11 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleDirCreate(pSession, pHostCtx);
             break;
+
+        case HOST_MSG_DIR_LIST:
+            if (fImpersonated)
+                rc = vgsvcGstCtrlSessionHandleDirList(pSession, pHostCtx);
+            break;
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
 
         case HOST_MSG_DIR_REMOVE:
@@ -2725,10 +2891,6 @@ int VGSvcGstCtrlSessionDestroy(PVBOXSERVICECTRLSESSION pSession)
 
     int rc = VGSvcGstCtrlSessionClose(pSession);
 
-#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
-    RTMemFree(pSession->pDirEntryEx);
-#endif
-
     /* Destroy critical section. */
     RTCritSectDelete(&pSession->CritSect);
 
@@ -2754,10 +2916,6 @@ int VGSvcGstCtrlSessionInit(PVBOXSERVICECTRLSESSION pSession, uint32_t fFlags)
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
     RT_ZERO(pSession->UidCache);
     RT_ZERO(pSession->GidCache);
-
-    pSession->cbDirEntryEx = GSTCTL_DIRENTRY_MAX_SIZE;
-    pSession->pDirEntryEx  = (PRTDIRENTRYEX)RTMemAlloc(pSession->cbDirEntryEx);
-    AssertPtrReturn(pSession->pDirEntryEx, VERR_NO_MEMORY);
 #endif
 
     /* Init critical section for protecting the thread lists. */
