@@ -58,10 +58,6 @@ private slots:
 
     /** Handles machine state change event. */
     void sltMachineStateChanged();
-    /** Handles CPU execution cap change event. */
-    void sltCPUExecutionCapChange();
-    /** Handles Machine UI initialized event. */
-    void sltHandleMachineInitialized();
 
 #ifndef RT_OS_DARWIN
     /** Handles menu-bar configuration-change. */
@@ -84,8 +80,6 @@ private slots:
 
 private:
 
-    /** Prepare session connections routine. */
-    void prepareSessionConnections();
 #ifndef VBOX_WS_MAC
     /** Prepare menu routine. */
     void prepareMenu();
@@ -105,8 +99,6 @@ private:
     void cleanupNotificationCenter();
     /** Cleanup status-bar routine. */
     void cleanupStatusBar();
-    /** Cleanup session connections routine. */
-    void cleanupSessionConnections();
 
     /** Updates visibility according to visual-state. */
     void showInNecessaryMode();

@@ -79,19 +79,7 @@ void UIMachineWindowNormal::sltMachineStateChanged()
     UIMachineWindow::sltMachineStateChanged();
 
     /* Update indicator-pool and virtualization stuff: */
-    updateAppearanceOf(UIVisualElement_IndicatorPoolStuff | UIVisualElement_FeaturesStuff);
-}
-
-void UIMachineWindowNormal::sltCPUExecutionCapChange()
-{
-    /* Update virtualization stuff: */
-    updateAppearanceOf(UIVisualElement_FeaturesStuff);
-}
-
-void UIMachineWindowNormal::sltHandleMachineInitialized()
-{
-    /* Update virtualization stuff: */
-    updateAppearanceOf(UIVisualElement_FeaturesStuff);
+    updateAppearanceOf(UIVisualElement_IndicatorPoolStuff);
 }
 
 #ifndef RT_OS_DARWIN
@@ -196,20 +184,6 @@ void UIMachineWindowNormal::sltActionHovered(UIAction *pAction)
     statusBar()->showMessage(pAction->statusTip(), 10000);
 }
 #endif /* VBOX_WS_MAC */
-
-void UIMachineWindowNormal::prepareSessionConnections()
-{
-    /* Call to base-class: */
-    UIMachineWindow::prepareSessionConnections();
-
-    /* Start watching for console events: */
-    connect(machineLogic()->uimachine(), &UIMachine::sigCPUExecutionCapChange,
-            this, &UIMachineWindowNormal::sltCPUExecutionCapChange);
-
-    /* Watch for machine UI signals: */
-    connect(machineLogic()->uimachine(), &UIMachine::sigInitialized,
-            this, &UIMachineWindowNormal::sltHandleMachineInitialized);
-}
 
 #ifndef VBOX_WS_MAC
 void UIMachineWindowNormal::prepareMenu()
@@ -388,16 +362,6 @@ void UIMachineWindowNormal::cleanupStatusBar()
 {
     delete m_pIndicatorsPool;
     m_pIndicatorsPool = 0;
-}
-
-void UIMachineWindowNormal::cleanupSessionConnections()
-{
-    /* Stop watching for console events: */
-    disconnect(machineLogic()->uimachine(), &UIMachine::sigCPUExecutionCapChange,
-               this, &UIMachineWindowNormal::sltCPUExecutionCapChange);
-
-    /* Call to base-class: */
-    UIMachineWindow::cleanupSessionConnections();
 }
 
 bool UIMachineWindowNormal::event(QEvent *pEvent)
@@ -648,17 +612,6 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
     if (   m_pIndicatorsPool
         && iElement & UIVisualElement_IndicatorPoolStuff)
         m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uimachine()->isRunning());
-    /* Update status-bar indicator-pool appearance only when status-bar is visible: */
-    if (   m_pIndicatorsPool
-        && statusBar()->isVisible())
-    {
-        /* If VM is running: */
-        if (uimachine()->isRunning())
-        {
-            if (iElement & UIVisualElement_FeaturesStuff)
-                m_pIndicatorsPool->updateAppearance(IndicatorType_Features);
-        }
-    }
 }
 
 #ifndef VBOX_WS_MAC

@@ -743,9 +743,12 @@ public:
         setStateIcon(KVMExecutionEngine_Emulated, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
         setStateIcon(KVMExecutionEngine_HwVirt, UIIconPool::iconSet(":/vtx_amdv_16px.png"));
         setStateIcon(KVMExecutionEngine_NativeApi, UIIconPool::iconSet(":/vm_execution_engine_native_api_16px.png"));
-        /* Configure machine state-change listener: */
+        /* Configure connection: */
         connect(m_pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorFeatures::sltHandleMachineStateChange);
+        connect(m_pMachine, &UIMachine::sigCPUExecutionCapChange,
+                this, &UIIndicatorFeatures::updateAppearance);
+        /* Configure CPU load update timer: */
         m_pTimerAutoUpdate = new QTimer(this);
         if (m_pTimerAutoUpdate)
         {
@@ -811,14 +814,14 @@ private slots:
     /** Updates auto-update timer depending on machine state. */
     void sltHandleMachineStateChange()
     {
+        /* Update appearance first of all: */
+        updateAppearance();
+
+        /* Start or stop CPU load update timer: */
         if (m_pMachine->machineState() == KMachineState_Running)
-        {
-            /* Start auto-update timer otherwise: */
             m_pTimerAutoUpdate->start(1000);
-            return;
-        }
-        /* Stop auto-update timer otherwise: */
-        m_pTimerAutoUpdate->stop();
+        else
+            m_pTimerAutoUpdate->stop();
     }
 
     /** Handles timer timeout with CPU load percentage update. */
