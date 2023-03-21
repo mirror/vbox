@@ -49,6 +49,7 @@
 #include <VBox/vmm/vmcc.h>
 #include "dtrace/VBoxVMM.h"
 
+#include <iprt/armv8.h>
 #include <iprt/asm.h>
 #include <iprt/ldr.h>
 #include <iprt/mem.h>
@@ -209,6 +210,71 @@ DECLINLINE(int) nemR3DarwinHvSts2Rc(hv_return_t hrc)
     }
 
     return VERR_IPE_UNEXPECTED_STATUS;
+}
+
+
+/**
+ * Returns a human readable string of the given exception class.
+ *
+ * @returns Pointer to the string matching the given EC.
+ * @param   u32Ec           The exception class to return the string for.
+ */
+static const char *nemR3DarwinEsrEl2EcStringify(uint32_t u32Ec)
+{
+    switch (u32Ec)
+    {
+#define ARMV8_EC_CASE(a_Ec) case a_Ec: return #a_Ec
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_UNKNOWN);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_TRAPPED_WFX);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH32_TRAPPED_MCR_MRC_COPROC_15);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH32_TRAPPED_MCRR_MRRC_COPROC15);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH32_TRAPPED_MCR_MRC_COPROC_14);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH32_TRAPPED_LDC_STC);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH32_TRAPPED_SME_SVE_NEON);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH32_TRAPPED_VMRS);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH32_TRAPPED_PA_INSN);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_LS64_EXCEPTION);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH32_TRAPPED_MRRC_COPROC14);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_BTI_BRANCH_TARGET_EXCEPTION);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_ILLEGAL_EXECUTION_STATE);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH32_SVC_INSN);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH32_HVC_INSN);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH32_SMC_INSN);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH64_SVC_INSN);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH64_HVC_INSN);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH64_SMC_INSN);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH64_TRAPPED_SYS_INSN);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_SVE_TRAPPED);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_PAUTH_NV_TRAPPED_ERET_ERETAA_ERETAB);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_TME_TSTART_INSN_EXCEPTION);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_FPAC_PA_INSN_FAILURE_EXCEPTION);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_SME_TRAPPED_SME_ACCESS);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_RME_GRANULE_PROT_CHECK_EXCEPTION);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_INSN_ABORT_FROM_LOWER_EL);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_INSN_ABORT_FROM_EL2);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_PC_ALIGNMENT_EXCEPTION);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_DATA_ABORT_FROM_LOWER_EL);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_DATA_ABORT_FROM_EL2);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_SP_ALIGNMENT_EXCEPTION);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_MOPS_EXCEPTION);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH32_TRAPPED_FP_EXCEPTION);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH64_TRAPPED_FP_EXCEPTION);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_SERROR_INTERRUPT);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_BKPT_EXCEPTION_FROM_LOWER_EL);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_BKPT_EXCEPTION_FROM_EL2);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_SS_EXCEPTION_FROM_LOWER_EL);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_SS_EXCEPTION_FROM_EL2);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_WATCHPOINT_EXCEPTION_FROM_LOWER_EL);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_WATCHPOINT_EXCEPTION_FROM_EL2);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH32_BKPT_INSN);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH32_VEC_CATCH_EXCEPTION);
+        ARMV8_EC_CASE(ARMV8_ESR_EL2_EC_AARCH64_BRK_INSN);
+#undef ARMV8_EC_CASE
+        default:
+            break;
+    }
+
+    return "<INVALID>";
 }
 
 
@@ -801,6 +867,184 @@ void nemR3NativeResetCpu(PVMCPU pVCpu, bool fInitIpi)
 
 
 /**
+ * Returns the byte size from the given access SAS value.
+ *
+ * @returns Number of bytes to transfer.
+ * @param   uSas            The SAS value to convert.
+ */
+DECLINLINE(size_t) nemR3DarwinGetByteCountFromSas(uint8_t uSas)
+{
+    switch (uSas)
+    {
+        case ARMV8_EC_ISS_DATA_ABRT_SAS_BYTE:     return sizeof(uint8_t);
+        case ARMV8_EC_ISS_DATA_ABRT_SAS_HALFWORD: return sizeof(uint16_t);
+        case ARMV8_EC_ISS_DATA_ABRT_SAS_WORD:     return sizeof(uint32_t);
+        case ARMV8_EC_ISS_DATA_ABRT_SAS_DWORD:    return sizeof(uint64_t);
+        default:
+            AssertReleaseFailed();
+    }
+
+    return 0;
+}
+
+
+/**
+ * Sets the given general purpose register to the given value.
+ *
+ * @returns nothing.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT.
+ * @param   uReg            The register index.
+ * @param   f64BitReg       Flag whether to operate on a 64-bit or 32-bit register.
+ * @param   fSignExtend     Flag whether to sign extend the value.
+ * @param   u64Val          The value.
+ */
+DECLINLINE(void) nemR3DarwinSetGReg(PVMCPU pVCpu, uint8_t uReg, bool f64BitReg, bool fSignExtend, uint64_t u64Val)
+{
+    AssertReturnVoid(uReg < 31);
+
+    if (f64BitReg)
+        pVCpu->cpum.GstCtx.aGRegs[uReg].x = fSignExtend ? (int64_t)u64Val : u64Val;
+    else
+        pVCpu->cpum.GstCtx.aGRegs[uReg].w = fSignExtend ? (int32_t)u64Val : u64Val; /** @todo Does this clear the upper half on real hardware? */
+
+    /* Mark the register as not extern anymore. */
+    switch (uReg)
+    {
+        case 0:
+            pVCpu->cpum.GstCtx.fExtrn &= ~CPUMCTX_EXTRN_X0;
+            break;
+        case 1:
+            pVCpu->cpum.GstCtx.fExtrn &= ~CPUMCTX_EXTRN_X1;
+            break;
+        case 2:
+            pVCpu->cpum.GstCtx.fExtrn &= ~CPUMCTX_EXTRN_X2;
+            break;
+        case 3:
+            pVCpu->cpum.GstCtx.fExtrn &= ~CPUMCTX_EXTRN_X3;
+            break;
+        default:
+            AssertRelease(!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_X4_X28));
+            /** @todo We need to import all missing registers in order to clear this flag (or just set it in HV from here). */
+    }
+}
+
+
+/**
+ * Gets the given general purpose register and returns the value.
+ *
+ * @returns Value from the given register.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT.
+ * @param   uReg            The register index.
+ */
+DECLINLINE(uint64_t) nemR3DarwinGetGReg(PVMCPU pVCpu, uint8_t uReg)
+{
+    AssertReturn(uReg < 31, 0);
+
+    /** @todo Import the register if extern. */
+    AssertRelease(!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_GPRS_MASK));
+
+    return pVCpu->cpum.GstCtx.aGRegs[uReg].x;
+}
+
+
+/**
+ * Works on the data abort exception (which will be a MMIO access most of the time).
+ *
+ * @returns VBox strict status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT.
+ * @param   uIss            The instruction specific syndrome value.
+ * @param   fInsn32Bit      Flag whether the exception was caused by a 32-bit or 16-bit instruction.
+ * @param   GCPtrDataAbrt   The virtual GC address causing the data abort.
+ * @param   GCPhysDataAbrt  The physical GC address which caused the data abort.
+ */
+static VBOXSTRICTRC nemR3DarwinHandleExitExceptionDataAbort(PVM pVM, PVMCPU pVCpu, uint32_t uIss, bool fInsn32Bit,
+                                                            RTGCPTR GCPtrDataAbrt, RTGCPHYS GCPhysDataAbrt)
+{
+    bool fIsv        = RT_BOOL(uIss & ARMV8_EC_ISS_DATA_ABRT_ISV);
+    bool fL2Fault    = RT_BOOL(uIss & ARMV8_EC_ISS_DATA_ABRT_S1PTW);
+    bool fWrite      = RT_BOOL(uIss & ARMV8_EC_ISS_DATA_ABRT_WNR);
+    bool f64BitReg   = RT_BOOL(uIss & ARMV8_EC_ISS_DATA_ABRT_SF);
+    bool fSignExtend = RT_BOOL(uIss & ARMV8_EC_ISS_DATA_ABRT_SSE);
+    uint8_t uReg     = ARMV8_EC_ISS_DATA_ABRT_SRT_GET(uIss);
+    uint8_t uAcc     = ARMV8_EC_ISS_DATA_ABRT_SAS_GET(uIss);
+    size_t cbAcc     = nemR3DarwinGetByteCountFromSas(uAcc);
+    LogFlowFunc(("fIsv=%RTbool fL2Fault=%RTbool fWrite=%RTbool f64BitReg=%RTbool fSignExtend=%RTbool uReg=%u uAcc=%u GCPtrDataAbrt=%RGv GCPhysDataAbrt=%RGp\n",
+                 fIsv, fL2Fault, fWrite, f64BitReg, fSignExtend, uReg, uAcc, GCPtrDataAbrt, GCPhysDataAbrt));
+
+    AssertReturn(fIsv, VERR_NOT_SUPPORTED); /** @todo Implement using IEM when this should occur. */
+
+    EMHistoryAddExit(pVCpu,
+                     fWrite
+                     ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_WRITE)
+                     : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_READ),
+                     pVCpu->cpum.GstCtx.Pc.u64, ASMReadTSC());
+
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
+    uint64_t u64Val;
+    if (fWrite)
+    {
+        u64Val = nemR3DarwinGetGReg(pVCpu, uReg);
+        rcStrict = PGMPhysWrite(pVM, GCPhysDataAbrt, &u64Val, cbAcc, PGMACCESSORIGIN_HM);
+        Log4(("MmioExit/%u: %08RX64: WRITE %#x LB %u, %.*Rhxs -> rcStrict=%Rrc\n",
+              pVCpu->idCpu, pVCpu->cpum.GstCtx.Pc.u64, GCPhysDataAbrt, cbAcc, cbAcc,
+              &u64Val, VBOXSTRICTRC_VAL(rcStrict) ));
+    }
+    else
+    {
+        rcStrict = PGMPhysRead(pVM, GCPhysDataAbrt, &u64Val, cbAcc, PGMACCESSORIGIN_HM);
+        Log4(("MmioExit/%u: %08RX64: READ %#x LB %u -> %.*Rhxs rcStrict=%Rrc\n",
+              pVCpu->idCpu, pVCpu->cpum.GstCtx.Pc.u64, GCPhysDataAbrt, cbAcc, cbAcc,
+              &u64Val, VBOXSTRICTRC_VAL(rcStrict) ));
+        if (rcStrict == VINF_SUCCESS)
+            nemR3DarwinSetGReg(pVCpu, uReg, f64BitReg, fSignExtend, u64Val);
+    }
+
+    if (rcStrict == VINF_SUCCESS)
+        pVCpu->cpum.GstCtx.Pc.u64 += fInsn32Bit ? sizeof(uint32_t) : sizeof(uint16_t);
+
+    return rcStrict;
+}
+
+
+/**
+ * Handles an exception VM exit.
+ *
+ * @returns VBox strict status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT.
+ * @param   pExit           Pointer to the exit information.
+ */
+static VBOXSTRICTRC nemR3DarwinHandleExitException(PVM pVM, PVMCPU pVCpu, const hv_vcpu_exit_t *pExit)
+{
+    uint32_t uEc = ARMV8_ESR_EL2_EC_GET(pExit->exception.syndrome);
+    uint32_t uIss = ARMV8_ESR_EL2_ISS_GET(pExit->exception.syndrome);
+    bool fInsn32Bit = ARMV8_ESR_EL2_IL_IS_32BIT(pExit->exception.syndrome);
+
+    LogFlowFunc(("pVM=%p pVCpu=%p{.idCpu=%u} uEc=%u{%s} uIss=%#RX32 fInsn32Bit=%RTbool\n",
+                 pVM, pVCpu, pVCpu->idCpu, uEc, nemR3DarwinEsrEl2EcStringify(uEc), uIss, fInsn32Bit));
+
+    switch (uEc)
+    {
+        case ARMV8_ESR_EL2_DATA_ABORT_FROM_LOWER_EL:
+            return nemR3DarwinHandleExitExceptionDataAbort(pVM, pVCpu, uIss, fInsn32Bit, pExit->exception.virtual_address,
+                                                           pExit->exception.physical_address);
+        case ARMV8_ESR_EL2_EC_UNKNOWN:
+        default:
+            LogRel(("NEM/Darwin: Unknown Exception Class in syndrome: uEc=%u{%s} uIss=%#RX32 fInsn32Bit=%RTbool\n",
+                    uEc, nemR3DarwinEsrEl2EcStringify(uEc), uIss, fInsn32Bit));
+            return VERR_NOT_IMPLEMENTED;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Handles an exit from hv_vcpu_run().
  *
  * @returns VBox strict status code.
@@ -824,6 +1068,8 @@ static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu)
     {
         case HV_EXIT_REASON_CANCELED:
             return VINF_EM_RAW_INTERRUPT;
+        case HV_EXIT_REASON_EXCEPTION:
+            return nemR3DarwinHandleExitException(pVM, pVCpu, pExit);
         default:
             AssertReleaseFailed();
             break;
@@ -862,6 +1108,11 @@ static hv_return_t nemR3DarwinRunGuest(PVM pVM, PVMCPU pVCpu)
  */
 static VBOXSTRICTRC nemR3DarwinPreRunGuest(PVM pVM, PVMCPU pVCpu, bool fSingleStepping)
 {
+#ifdef LOG_ENABLED
+    if (LogIs3Enabled())
+        nemR3DarwinLogState(pVM, pVCpu);
+#endif
+
     /** @todo */ RT_NOREF(fSingleStepping);
     int rc = nemR3DarwinExportGuestState(pVM, pVCpu);
     AssertRCReturn(rc, rc);
