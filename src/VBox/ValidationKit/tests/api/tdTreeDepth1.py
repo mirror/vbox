@@ -44,7 +44,7 @@ __version__ = "$Revision$"
 import os
 import sys
 import random
-import time
+import gc
 
 # Only the main script needs to modify the path.
 try:    __file__                            # pylint: disable=used-before-assignment
@@ -237,13 +237,16 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
             return False;
         oVM = None;
 
-        # Fudge factor: When unregistering a VM with CleanupMode_UnregisterOnly the
-        # associated medium objects will be closed when the Machine object is
-        # uninitialized so wait for that to complete.  Otherwise the check for
-        # cBaseImages below will race with the VM uninitialization and depending on
-        # which one wins can cause a test failure.
-        reporter.log('Waiting five seconds for Machine::uninit() to be called to close the attached disks');
-        time.sleep(5);
+        # When unregistering a VM with CleanupMode_UnregisterOnly the associated medium's
+        # objects will be closed when the corresponding Machine object ('oVM') is
+        # uninitialized.  Assigning the 'None' object to 'oVM' will cause Python to delete
+        # the object when the garbage collector runs however this can take several seconds
+        # so we invoke the Python garbage collector manually here so we don't have to wait.
+        reporter.log('Invoking python garbage collection to trigger Machine::uninit() which will close the attached disks');
+        try:
+            gc.collect();
+        except:
+            reporter.logXcpt();
 
         cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'));
         reporter.log('After unregister(UnregisterOnly): API reports %d base images' % (cBaseImages));
@@ -327,13 +330,16 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
             return False;
         oVM = None;
 
-        # Fudge factor: When unregistering a VM with CleanupMode_UnregisterOnly the
-        # associated medium objects will be closed when the Machine object is
-        # uninitialized so wait for that to complete.  Otherwise the check for
-        # cBaseImages below will race with the VM uninitialization and depending on
-        # which one wins can cause a test failure.
-        reporter.log('Waiting five seconds for Machine::uninit() to be called to close the attached disks');
-        time.sleep(5);
+        # When unregistering a VM with CleanupMode_UnregisterOnly the associated medium's
+        # objects will be closed when the corresponding Machine object ('oVM') is
+        # uninitialized.  Assigning the 'None' object to 'oVM' will cause Python to delete
+        # the object when the garbage collector runs however this can take several seconds
+        # so we invoke the Python garbage collector manually here so we don't have to wait.
+        reporter.log('Invoking python garbage collection to trigger Machine::uninit() which will close the attached disks');
+        try:
+            gc.collect();
+        except:
+            reporter.logXcpt();
 
         cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'))
         reporter.log('After unregister(UnregisterOnly): API reports %d base images' % (cBaseImages));
