@@ -1589,9 +1589,7 @@ typedef struct HGCMReplyDirNotify
             /** Number of entries in \a buffer. */
             HGCMFunctionParameter num_entries;
             /** Buffer containing the GSTCTLDIRENTRYEX entries, immediately followed
-             *  by resolved user + groups as a string (empty strings if not resolved).
-             *
-             *  Only will be sent if \a num_entries > 0. */
+             *  by resolved user + groups as a string (empty strings if not resolved). */
             HGCMFunctionParameter buffer;
         } list;
     } u;

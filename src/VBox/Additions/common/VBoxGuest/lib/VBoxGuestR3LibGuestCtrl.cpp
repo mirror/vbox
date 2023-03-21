@@ -2314,7 +2314,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirCbClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t 
  *                              See RTDirReadEx() for more information.
  * @param   pszUser             Associated user ID (owner, uid) as a string.
  * @param   pszGroups           Associated user groups as a string.
- *                              Multiple groups are delimited by "\r\n", whereas the first group always is the primary group.
+ *                              Multiple groups are delimited by GSTCTL_DIRENTRY_GROUPS_DELIMITER_STR,
+ *                              whereas the first group always is the primary group.
  */
 VBGLR3DECL(int) VbglR3GuestCtrlDirCbReadEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLDIRENTRYEX pEntry, uint32_t cbSize,
                                            const char *pszUser, const char *pszGroups)
@@ -2657,7 +2658,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbSetSize(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32
  * @param   pFsObjInfo          Guest file system object information to send.
  * @param   pszUser             Associated user ID (owner, uid) as a string.
  * @param   pszGroups           Associated user groups as a string.
- *                              Multiple groups are delimited by "\r\n", whereas the first group always is the primary group.
+ *                              Multiple groups are delimited by GSTCTL_DIRENTRY_GROUPS_DELIMITER_STR,
+ *                              whereas the first group always is the primary group.
  */
 VBGLR3DECL(int) VbglR3GuestCtrlFsCbQueryInfoEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLFSOBJINFO pFsObjInfo,
                                                const char *pszUser, const char *pszGroups)
