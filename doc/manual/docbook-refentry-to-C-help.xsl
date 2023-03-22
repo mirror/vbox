@@ -268,7 +268,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
       <xsl:choose>
         <xsl:when test="parent::group and ancestor::*[@role='compact']"><xsl:value-of select="$arg.or.sep.compact"/></xsl:when>
         <xsl:when test="parent::group"><xsl:value-of select="$arg.or.sep"/></xsl:when>
-        <xsl:when test="parent::arg"></xsl:when>
+        <xsl:when test="ancestor::*[@role='compact']"></xsl:when>
         <xsl:when test="ancestor::*/@sepchar"><xsl:value-of select="ancestor::*/@sepchar"/></xsl:when>
         <xsl:otherwise><xsl:text> </xsl:text></xsl:otherwise>
       </xsl:choose>
@@ -303,6 +303,12 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
         <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.close.str"/></xsl:when>
         <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.close.str"/></xsl:when>
       </xsl:choose>
+      <!-- Add a space padding if we're the last element in a repeating arg or group -->
+      <!-- 2023-03-22 bird: This is incorrectly written. Fix as needed...
+      <xsl:if test="(parent::arg or parent::group) and not(following-sibiling) and not(ancestor::*[@role='compact'])">
+        <xsl:text> </xsl:text>
+      </xsl:if>
+      -->
     </xsl:if>
   </xsl:template>
 

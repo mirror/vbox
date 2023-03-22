@@ -421,10 +421,19 @@
       <arg choice="req"><replaceable>xres</replaceable></arg>
       <arg choice="req"><replaceable>yres</replaceable></arg>
       <arg choice="req"><replaceable>bpp</replaceable></arg>
-      <arg><arg><replaceable>display</replaceable></arg><group>
-          <arg choice="plain">enabled:yes | no</arg>
-          <arg><replaceable>x-origin</replaceable>&nbsp;<replaceable>y-origin</replaceable></arg>
-        </group></arg>
+      <arg>
+        <replaceable>display</replaceable>
+        <arg>
+          <group choice="req">
+            <arg choice="plain">yes</arg>
+            <arg choice="plain">no</arg>
+          </group>
+          <arg>
+            <arg choice="plain"><replaceable>x-origin</replaceable></arg>
+            <arg choice="plain"><replaceable>y-origin</replaceable></arg>
+          </arg>
+        </arg>
+      </arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-setscreenlayout">

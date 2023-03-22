@@ -970,7 +970,7 @@
       <xsl:choose>
         <xsl:when test="parent::group and ancestor::*[@role='compact']"><xsl:text>\textrm{</xsl:text><xsl:value-of select="$arg.or.sep.compact.tex"/><xsl:text>}</xsl:text></xsl:when>
         <xsl:when test="parent::group"><xsl:text>\textrm{</xsl:text><xsl:value-of select="$arg.or.sep.tex"/><xsl:text>}</xsl:text></xsl:when>
-        <xsl:when test="parent::arg"></xsl:when>
+        <xsl:when test="ancestor::*[@role='compact']"></xsl:when>
         <xsl:when test="ancestor::*/@sepchar"><xsl:value-of select="ancestor::*/@sepchar"/></xsl:when>
         <xsl:otherwise><xsl:text> </xsl:text></xsl:otherwise>
       </xsl:choose>
@@ -1006,6 +1006,12 @@
       <xsl:when test="@choice = 'opt'">               <xsl:text>\textrm{</xsl:text><xsl:value-of select="$arg.choice.opt.close.str"/><xsl:text>}</xsl:text></xsl:when>
       <xsl:when test="@choice = 'req'">               <xsl:text>\textrm{</xsl:text><xsl:value-of select="$arg.choice.req.close.str"/><xsl:text>}</xsl:text></xsl:when>
     </xsl:choose>
+
+    <!-- add space padding if we're the last element in a nested arg -->
+    <!-- 2023-03-22 bird: This is incorrectly written. Fix as needed...
+    <xsl:if test="(parent::arg or parent::group) and not(following-sibling) and not(ancestor::*[@role='compact'])">
+      <xsl:text> </xsl:text>
+    </xsl:if> -->
   </xsl:template>
 
   <xsl:template match="replaceable">
