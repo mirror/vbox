@@ -10805,7 +10805,16 @@ HMVMX_EXIT_DECL vmxHCExitEptViolationNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
         Log7Func(("PGM (uExitQual=%#RX64, %RGp, %RGv) -> %Rrc (fFailed=%d)\n",
                   uExitQual, GCPhysNestedFault, GCPtrNestedFault, VBOXSTRICTRC_VAL(rcStrict), Walk.fFailed));
         if (RT_SUCCESS(rcStrict))
+        {
+            if (rcStrict == VINF_IOM_R3_MMIO_COMMIT_WRITE)
+            {
+                Assert(!fClearEventOnForward);
+                Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_IOM));
+                rcStrict = VINF_EM_RESCHEDULE_REM;
+            }
+            ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_ALL_GUEST);
             return rcStrict;
+        }
 
         if (fClearEventOnForward)
             VCPU_2_VMXSTATE(pVCpu).Event.fPending = false;
