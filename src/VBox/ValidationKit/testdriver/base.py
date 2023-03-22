@@ -719,7 +719,7 @@ class Process(TdTaskBase):
         sOs       = utils.getHostOs();
         if sOs == 'solaris':
             # Both 'coreadm -e ...' and 'svccfg apply' only work if running with all privileges.
-            fIsRoot = os.geteuid() == 0;
+            fIsRoot = os.geteuid() == 0; # pylint: disable=no-member
             if fIsRoot is False:
                 return True;
 
