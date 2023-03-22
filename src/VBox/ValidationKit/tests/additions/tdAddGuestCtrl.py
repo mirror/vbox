@@ -2126,7 +2126,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, cDirs, cFiles, cOthers);
 
-    def gctrlReadDirTree2(self, oGuestSession, oDir, fUseDirList = False, cEntriesPerRead = 0): # type: (testfileset.TestDir) -> bool
+    def gctrlReadDirTree2(self, oGuestSession, oDir, fUseDirList = False, cEntriesPerRead = 0):
+        # type: (testfileset.TestDir) -> bool
         """
         Helper function to recursively read a guest directory tree specified in the current test.
         """
@@ -2161,7 +2162,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             except Exception as oXcpt:
                 if vbox.ComError.notEqual(oXcpt, vbox.ComError.VBOX_E_OBJECT_NOT_FOUND):
                     if fUseDirList:
-                        fRc = reporter.errorXcpt('Error listing directory "%s" (cEntriesToRead=%d):' % (oDir.sPath, cEntriesToRead));
+                        fRc = reporter.errorXcpt('Error listing directory "%s" (cEntriesToRead=%d):' % \
+                            (oDir.sPath, cEntriesToRead));
                     else:
                         fRc = reporter.errorXcpt('Error reading directory "%s":' % (oDir.sPath));
                 else:
@@ -2210,11 +2212,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
                         # Check the name.
                         if oFsObj.sName != sName:
-                            fRc = reporter.error('%s: expected name "%s", got "%s" instead!' % (oFsObj.sPath, oFsObj.sName, sName,));
+                            fRc = reporter.error('%s: expected name "%s", got "%s" instead!' % \
+                                (oFsObj.sPath, oFsObj.sName, sName,));
 
                         # Check the size if a file.
                         if isinstance(oFsObj, testfileset.TestFile) and cbFile != oFsObj.cbContent:
-                            fRc = reporter.error('%s: expected size %s, got %s instead!' % (oFsObj.sPath, oFsObj.cbContent, cbFile,));
+                            fRc = reporter.error('%s: expected size %s, got %s instead!' % \
+                                (oFsObj.sPath, oFsObj.cbContent, cbFile,));
 
                         ## @todo check timestamps and attributes.
 
