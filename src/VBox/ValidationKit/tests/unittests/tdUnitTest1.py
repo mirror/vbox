@@ -129,7 +129,6 @@ class tdUnitTest1(vbox.TestDriver):
 
     kdTestCasesBuggy = {
         'testcase/tstGuestPropSvc': '',     # GET_NOTIFICATION fails on testboxlin5.de.oracle.com and others.
-        'testcase/tstRTProcCreateEx': '',   # Seen failing on wei01-b6ka-9.de.oracle.com.
         'testcase/tstTimer': '',            # Sometimes fails on linux, not important atm.
         'testcase/tstGIP-2': '',            # 2015-09-10: Fails regularly. E.g. TestSetID 2744205 (testboxsh2),
                                             #             2743961 (wei01-b6kc-6). The responsible engineer should reenable
