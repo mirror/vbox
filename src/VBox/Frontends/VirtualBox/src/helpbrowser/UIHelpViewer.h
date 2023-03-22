@@ -48,7 +48,7 @@ class UIFindInPageWidget;
 /** A QTextBrowser extension used as poor man's html viewer. Since we were not happy with the quality of QTextBrowser's image
   * rendering and didn't want to use WebKit module, this extension redraws the document images as overlays with improved QPainter
   * parameters. There is also a small hack to render clicked image 1:1 (and the rest of the document blurred)
-  * for a zoom-in-image functionality. This extension can also scale the images while scaling the document. In contrast
+  * for a zoom-in-image functionality. This extension can also scale the images while scaling the document. In contrast,
   * QTextBrowser scales only fonts. */
 class UIHelpViewer : public QIWithRetranslateUI<QTextBrowser>
 {
@@ -146,11 +146,9 @@ private:
     void iterateDocumentImages();
     void scaleFont();
     void scaleImages();
-    /** If there is image at @p globalPosition then its data is loaded to m_overlayPixmap. */
-    void loadImageAtPosition(const QPoint &globalPosition);
+    void loadImage(const QUrl &imageFileUrl);
     void clearOverlay();
     void enableOverlay();
-    void setImageOverCursor(QPoint globalPosition);
 
     const QHelpEngine* m_pHelpEngine;
     UIFindInPageWidget *m_pFindInPageWidget;
@@ -164,14 +162,10 @@ private:
     int m_iInitialFontPointSize;
     /** A container to store the original image sizes/positions in the document. key is image name value is DocumentImage. */
     QHash<QString, DocumentImage> m_imageMap;
-    /** Used to change th document cursor back from m_handCursor. */
-    QCursor m_defaultCursor;
-    QCursor m_handCursor;
     /** We need this list from th QHelp system to obtain information of images. */
     QList<QUrl> m_helpFileList;
     QPixmap m_overlayPixmap;
     bool m_fOverlayMode;
-    bool m_fCursorChanged;
     QLabel *m_pOverlayLabel;
     QGraphicsBlurEffect *m_pOverlayBlurEffect;
     int m_iZoomPercentage;

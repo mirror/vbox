@@ -41,6 +41,7 @@
 #include <QHBoxLayout>
 #include <QGraphicsBlurEffect>
 #include <QLabel>
+#include <QMimeDatabase>
 #include <QPainter>
 #include <QScrollBar>
 #include <QTextBlock>
@@ -409,7 +410,6 @@ UIHelpViewer::UIHelpViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* =
     , m_iSelectedMatchIndex(0)
     , m_iSearchTermLength(0)
     , m_fOverlayMode(false)
-    , m_fCursorChanged(false)
     , m_pOverlayLabel(0)
     , m_iZoomPercentage(100)
 {
@@ -426,9 +426,6 @@ UIHelpViewer::UIHelpViewer(const QHelpEngine *pHelpEngine, QWidget *pParent /* =
             this, &UIHelpViewer::sltSelectNextMatch);
     connect(m_pFindInPageWidget, &UIFindInPageWidget::sigClose,
             this, &UIHelpViewer::sltCloseFindInPageWidget);
-
-    m_defaultCursor = cursor();
-    m_handCursor = QCursor(Qt::PointingHandCursor);
 
     m_pFindInPageWidget->setVisible(false);
 
@@ -674,16 +671,25 @@ void UIHelpViewer::wheelEvent(QWheelEvent *pEvent)
 
 void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
 {
+    /* If overlay mode is active just clear it and return: */
     bool fOverlayMode = m_fOverlayMode;
     clearOverlay();
-
+    if (fOverlayMode)
+        return;
     QString strAnchor = anchorAt(pEvent->pos());
 
     if (!strAnchor.isEmpty())
     {
-
         QString strLink = source().resolved(strAnchor).toString();
-
+        QFileInfo fInfo(strLink);
+        QMimeDatabase base;
+        QMimeType type = base.mimeTypeForFile(fInfo);
+        if (type.isValid() && type.inherits("image/png"))
+        {
+            if (!fOverlayMode)
+                loadImage(source().resolved(strAnchor));
+            return;
+        }
         if (source().resolved(strAnchor).scheme() != "qthelp" && pEvent->button() == Qt::LeftButton)
         {
             uiCommon().openURL(strLink);
@@ -699,9 +705,6 @@ void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
         }
     }
     QIWithRetranslateUI<QTextBrowser>::mousePressEvent(pEvent);
-
-    if (!fOverlayMode)
-        loadImageAtPosition(pEvent->globalPos());
 }
 
 void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
@@ -709,29 +712,10 @@ void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
     QIWithRetranslateUI<QTextBrowser>::mousePressEvent(pEvent);
 }
 
-void UIHelpViewer::setImageOverCursor(QPoint globalPosition)
-{
-    QPoint viewportCoordinates = viewport()->mapFromGlobal(globalPosition);
-    QTextCursor cursor = cursorForPosition(viewportCoordinates);
-    if (!m_fCursorChanged && cursor.charFormat().isImageFormat())
-    {
-        m_fCursorChanged = true;
-        UICursor::setCursor(viewport(), m_handCursor);
-        emit sigMouseOverImage(cursor.charFormat().toImageFormat().name());
-    }
-    if (m_fCursorChanged && !cursor.charFormat().isImageFormat())
-    {
-        UICursor::setCursor(viewport(), m_defaultCursor);
-        m_fCursorChanged = false;
-    }
-
-}
-
 void UIHelpViewer::mouseMoveEvent(QMouseEvent *pEvent)
 {
-    if (m_fOverlayMode)
-        return;
-    setImageOverCursor(pEvent->globalPos());
+    /*if (m_fOverlayMode)
+        return;*/
     QIWithRetranslateUI<QTextBrowser>::mouseMoveEvent(pEvent);
 }
 
@@ -1020,7 +1004,6 @@ void UIHelpViewer::scaleImages()
 void UIHelpViewer::clearOverlay()
 {
     AssertReturnVoid(m_pOverlayLabel);
-    setImageOverCursor(cursor().pos());
 
     if (!m_fOverlayMode)
         return;
@@ -1037,8 +1020,6 @@ void UIHelpViewer::enableOverlay()
     m_fOverlayMode = true;
     if (m_pOverlayBlurEffect)
         m_pOverlayBlurEffect->setEnabled(true);
-    UICursor::setCursor(viewport(), m_defaultCursor);
-    m_fCursorChanged = false;
     toggleFindInPageWidget(false);
 
     /* Scale the image to 1:1 as long as it fits into avaible space (minus some margins and scrollbar sizes): */
@@ -1065,28 +1046,12 @@ void UIHelpViewer::enableOverlay()
     m_pOverlayLabel->move(x, y);
 }
 
-void UIHelpViewer::loadImageAtPosition(const QPoint &globalPosition)
+void UIHelpViewer::loadImage(const QUrl &imageFileUrl)
 {
     clearOverlay();
-    QPoint viewportCoordinates = viewport()->mapFromGlobal(globalPosition);
-    QTextCursor cursor = cursorForPosition(viewportCoordinates);
-    if (!cursor.charFormat().isImageFormat())
-        return;
     /* Dont zoom into image if mouse button released after a mouse drag: */
     if (textCursor().hasSelection())
         return;
-
-    QTextImageFormat imageFormat = cursor.charFormat().toImageFormat();
-    QUrl imageFileUrl;
-    foreach (const QUrl &fileUrl, m_helpFileList)
-    {
-        if (fileUrl.toString().contains(imageFormat.name(), Qt::CaseInsensitive))
-        {
-            imageFileUrl = fileUrl;
-            break;
-        }
-    }
-
     if (!imageFileUrl.isValid())
         return;
     QByteArray fileData = m_pHelpEngine->fileData(imageFileUrl);
