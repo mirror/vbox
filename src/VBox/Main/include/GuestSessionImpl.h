@@ -211,12 +211,14 @@ private:
                         const com::Utf8Str &aAcl,
                         ULONG aMode);
     HRESULT processCreate(const com::Utf8Str &aCommand,
+                          const com::Utf8Str &aCwd,
                           const std::vector<com::Utf8Str> &aArguments,
                           const std::vector<com::Utf8Str> &aEnvironment,
                           const std::vector<ProcessCreateFlag_T> &aFlags,
                           ULONG aTimeoutMS,
                           ComPtr<IGuestProcess> &aGuestProcess);
     HRESULT processCreateEx(const com::Utf8Str &aCommand,
+                            const com::Utf8Str &aCwd,
                             const std::vector<com::Utf8Str> &aArguments,
                             const std::vector<com::Utf8Str> &aEnvironment,
                             const std::vector<ProcessCreateFlag_T> &aFlags,

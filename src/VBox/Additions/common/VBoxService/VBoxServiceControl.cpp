@@ -257,6 +257,7 @@ static int vgsvcGstCtrlInvalidate(void)
         const uint64_t fGuestFeatures = VBOX_GUESTCTRL_GF_0_SET_SIZE
                                       | VBOX_GUESTCTRL_GF_0_PROCESS_ARGV0
                                       | VBOX_GUESTCTRL_GF_0_PROCESS_DYNAMIC_SIZES
+                                      | VBOX_GUESTCTRL_GF_0_PROCESS_CWD
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
                                       | VBOX_GUESTCTRL_GF_0_TOOLBOX_AS_CMDS
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */

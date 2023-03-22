@@ -4942,7 +4942,8 @@ HRESULT GuestSession::fsObjSetACL(const com::Utf8Str &aPath, BOOL aFollowSymlink
 }
 
 
-HRESULT GuestSession::processCreate(const com::Utf8Str &aExecutable, const std::vector<com::Utf8Str> &aArguments,
+HRESULT GuestSession::processCreate(const com::Utf8Str &aExecutable, const com::Utf8Str &aCwd,
+                                    const std::vector<com::Utf8Str> &aArguments,
                                     const std::vector<com::Utf8Str> &aEnvironment,
                                     const std::vector<ProcessCreateFlag_T> &aFlags,
                                     ULONG aTimeoutMS, ComPtr<IGuestProcess> &aGuestProcess)
@@ -4950,11 +4951,12 @@ HRESULT GuestSession::processCreate(const com::Utf8Str &aExecutable, const std::
     LogFlowThisFuncEnter();
 
     std::vector<LONG> affinityIgnored;
-    return processCreateEx(aExecutable, aArguments, aEnvironment, aFlags, aTimeoutMS, ProcessPriority_Default,
-                           affinityIgnored, aGuestProcess);
+    return processCreateEx(aExecutable, aCwd, aArguments, aEnvironment, aFlags, aTimeoutMS,
+                           ProcessPriority_Default, affinityIgnored, aGuestProcess);
 }
 
-HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std::vector<com::Utf8Str> &aArguments,
+HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const com::Utf8Str &aCwd,
+                                      const std::vector<com::Utf8Str> &aArguments,
                                       const std::vector<com::Utf8Str> &aEnvironment,
                                       const std::vector<ProcessCreateFlag_T> &aFlags, ULONG aTimeoutMS,
                                       ProcessPriority_T aPriority, const std::vector<LONG> &aAffinity,
@@ -4977,6 +4979,17 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
             return setError(E_INVALIDARG, tr("No command to execute specified"));
     }
 
+    uint32_t const uProtocol              = i_getProtocolVersion();
+    uint64_t const fGuestControlFeatures0 = mParent->i_getGuestControlFeatures0();
+
+    /* If a current working directory (CWD) is set, make sure that the installed Guest Additions actually 
+     * support this before doing anything else. */
+    if (   !aCwd.isEmpty()
+        && (   uProtocol < 2
+            || !(fGuestControlFeatures0 & VBOX_GUESTCTRL_GF_0_PROCESS_CWD)))
+        return setError(VBOX_E_NOT_SUPPORTED,
+                        tr("Setting the current working directory is not supported by the installed Guest Addtions!"));
+
     /* The rest of the input is being validated in i_processCreateEx(). */
 
     LogFlowThisFuncEnter();
@@ -4995,6 +5008,9 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
     }
     else /* If no arguments were given, add the executable as argv[0] by default. */
         procInfo.mArguments.push_back(procInfo.mExecutable);
+
+    /* Optional working directory */
+    procInfo.mCwd = aCwd;
 
     /* Combine the environment changes associated with the ones passed in by
        the caller, giving priority to the latter.  The changes are putenv style

@@ -193,6 +193,7 @@ enum eProcessStatus
  * @{
  */
 #define GUEST_PROC_DEF_CMD_LEN        _1K
+#define GUEST_PROC_DEF_CWD_LEN        _1K
 #define GUEST_PROC_DEF_ARGS_LEN       _1K
 #define GUEST_PROC_DEF_ENV_LEN        _1K
 #define GUEST_PROC_DEF_USER_LEN       128
@@ -204,6 +205,7 @@ enum eProcessStatus
  * @{
  */
 #define GUEST_PROC_MAX_CMD_LEN            _1M
+#define GUEST_PROC_MAX_CWD_LEN            RTPATH_MAX
 #define GUEST_PROC_MAX_ARGS_LEN           _2M
 #define GUEST_PROC_MAX_ENV_LEN            _4M
 #define GUEST_PROC_MAX_USER_LEN           _64K

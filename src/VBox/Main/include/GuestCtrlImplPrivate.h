@@ -944,6 +944,8 @@ public:
     Utf8Str                     mName;
     /** The executable. */
     Utf8Str                     mExecutable;
+    /** The working directory. Optional, can be empty if not used. */
+    Utf8Str                     mCwd;
     /** Arguments vector (starting with argument \#0). */
     ProcessArguments            mArguments;
     /** The process environment change record.  */

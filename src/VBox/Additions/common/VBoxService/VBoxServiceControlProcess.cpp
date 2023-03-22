@@ -1253,13 +1253,15 @@ static void vgsvcGstCtrlProcessFreeArgv(char **papszArgv)
  * @param   pszAsUser                   User name (account) to start the process under.
  * @param   pszPassword                 Password of the specified user.
  * @param   pszDomain                   Domain to use for authentication.
+ * @param   pszCwd                      Current working directory to use for the created process.
+ *                                      Set to NULL if not being used.
  * @param   phProcess                   Pointer which will receive the process handle after
  *                                      successful process start.
  */
 static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * const *papszArgs, RTENV hEnv, uint32_t fFlags,
                                             PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr,
                                             const char *pszAsUser, const char *pszPassword, const char *pszDomain,
-                                            PRTPROCESS phProcess)
+                                            const char *pszCwd, PRTPROCESS phProcess)
 {
 #ifndef RT_OS_WINDOWS
     RT_NOREF1(pszDomain);
@@ -1271,6 +1273,7 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
     /* phStdErr is optional. */
     /* pszPassword is optional. */
     /* pszDomain is optional. */
+    /* pszCwd is optional. */
     AssertPtrReturn(phProcess, VERR_INVALID_PARAMETER);
 
     int  rc = VINF_SUCCESS;
@@ -1410,6 +1413,10 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
                 if (fFlags & GUEST_PROC_CREATE_FLAG_UNQUOTED_ARGS)
                     fProcCreateFlags |= RTPROC_FLAGS_UNQUOTED_ARGS;
             }
+            if (pszCwd && *pszCwd)
+                fProcCreateFlags |= RTPROC_FLAGS_CWD;
+            else
+                pszCwd = NULL;
 
             /* If no user name specified run with current credentials (e.g.
              * full service/system rights). This is prohibited via official Main API!
@@ -1446,7 +1453,7 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
                                     phStdIn, phStdOut, phStdErr,
                                     pszAsUser,
                                     pszPassword && *pszPassword ? pszPassword : NULL,
-                                    NULL /*pvExtraData*/,
+                                    (void *)pszCwd /*pvExtraData*/,
                                     phProcess);
 
 #ifdef RT_OS_WINDOWS
@@ -1544,6 +1551,8 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
      */
     VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: fHostFeatures0       = %#x\n",     g_fControlHostFeatures0);
     VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: StartupInfo.szCmd    = '%s'\n",    pProcess->pStartupInfo->pszCmd);
+    VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: StartupInfo.szCwd    = '%s'\n",    pProcess->pStartupInfo->pszCwd
+                                                                                        ? pProcess->pStartupInfo->pszCwd : "<None>");
     VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: StartupInfo.uNumArgs = '%RU32'\n", pProcess->pStartupInfo->cArgs);
 #ifdef DEBUG /* Never log this stuff in release mode! */
     VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: StartupInfo.szArgs   = '%s'\n",    pProcess->pStartupInfo->pszArgs);
@@ -1677,7 +1686,7 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                                                                      fNeedsImpersonation ? pProcess->pStartupInfo->pszUser     : NULL,
                                                                      fNeedsImpersonation ? pProcess->pStartupInfo->pszPassword : NULL,
                                                                      fNeedsImpersonation ? pProcess->pStartupInfo->pszDomain   : NULL,
-                                                                     &pProcess->hProcess);
+                                                                     pProcess->pStartupInfo->pszCwd, &pProcess->hProcess);
                                     if (RT_FAILURE(rc))
                                         VGSvcError("Error starting process, rc=%Rrc\n", rc);
                                     /*

@@ -14813,7 +14813,7 @@
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="234f0627-866d-48c2-91a5-4c9d50f04928"
+    uuid="5591bead-9c1d-4cbd-9669-2d0b04fac0a8"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="12"
     >
@@ -15946,7 +15946,7 @@
 
           If ProcessCreateFlag_WaitForStdOut and/or ProcessCreateFlag_WaitForStdErr
           are set, the guest process will not enter the terminated state until
-          all data from the specified streams have been read read.
+          all data from the specified streams have been read.
         </note>
 
         <result name="VBOX_E_IPRT_ERROR">
@@ -15960,9 +15960,20 @@
       <param name="executable" type="wstring" dir="in">
         <desc>
           Full path to the file to execute in the guest.  The file has to
-          exists in the guest VM with executable right to the session user in
+          exist in the guest VM with executable right to the session user in
           order to succeed.  If empty/null, the first entry in the
           @a arguments array will be used instead (i.e. argv[0]).
+        </desc>
+      </param>
+      <param name="cwd" type="wstring" dir="in">
+        <desc>
+          Path to the directory in which to execute in the guest.  The
+          directory has to exist in the guest VM with search rights to the
+          session user in order to succeed.  If empty/null, the session
+          user's default (typically 'home') directory is used.  If not a
+          full path, it is interpreted relative to the default directory;
+          e.g. 'work' means '$HOME/work' (according to the guest's '$HOME'-
+          like concept).
         </desc>
       </param>
       <param name="arguments" type="wstring" dir="in" safearray="yes">
@@ -16016,10 +16027,21 @@
 
         See <link to="IGuestSession::processCreate"/> for more information.
       </desc>
+      <param name="cwd" type="wstring" dir="in">
+        <desc>
+          Path to the directory in which to execute in the guest.  The
+          directory has to exist in the guest VM with search rights to the
+          session user in order to succeed.  If empty/null, the session
+          user's default (typically 'home') directory is used.  If not a
+          full path, it is interpreted relative to the default directory;
+          e.g. 'work' means '$HOME/work' (according to the guest's '$HOME'-
+          like concept).
+        </desc>
+      </param>
       <param name="executable" type="wstring" dir="in">
         <desc>
           Full path to the file to execute in the guest.  The file has to
-          exists in the guest VM with executable right to the session user in
+          exist in the guest VM with executable right to the session user in
           order to succeed.  If empty/null, the first entry in the
           @a arguments array will be used instead (i.e. argv[0]).
         </desc>

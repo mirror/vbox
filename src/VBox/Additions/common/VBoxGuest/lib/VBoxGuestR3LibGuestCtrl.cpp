@@ -1390,6 +1390,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlGetShutdown(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
  * @returns VBox status code.
  * @param   pStartupInfo        Process startup info to initializes.
  * @param   cbCmd               Size (in bytes) to use for the command buffer.
+ * @param   cbCwd               Size (in bytes) to use for the current working directory.
  * @param   cbUser              Size (in bytes) to use for the user name buffer.
  * @param   cbPassword          Size (in bytes) to use for the password buffer.
  * @param   cbDomain            Size (in bytes) to use for the domain buffer.
@@ -1398,11 +1399,13 @@ VBGLR3DECL(int) VbglR3GuestCtrlGetShutdown(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
  */
 VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInitEx(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo,
                                                      size_t cbCmd,
+                                                     size_t cbCwd,
                                                      size_t cbUser, size_t cbPassword, size_t cbDomain,
                                                      size_t cbArgs, size_t cbEnv)
 {
     AssertPtrReturn(pStartupInfo, VERR_INVALID_POINTER);
     AssertReturn(cbCmd,           VERR_INVALID_PARAMETER);
+    AssertReturn(cbCwd,           VERR_INVALID_PARAMETER);
     AssertReturn(cbUser,          VERR_INVALID_PARAMETER);
     AssertReturn(cbPassword,      VERR_INVALID_PARAMETER);
     AssertReturn(cbDomain,        VERR_INVALID_PARAMETER);
@@ -1422,6 +1425,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInitEx(PVBGLR3GUESTCTRLPROCSTARTUP
     do
     {
         ALLOC_STR(Cmd,      cbCmd);
+        ALLOC_STR(Cwd,      cbCwd);
         ALLOC_STR(Args,     cbArgs);
         ALLOC_STR(Env,      cbEnv);
         ALLOC_STR(User,     cbUser);
@@ -1447,6 +1451,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInit(PVBGLR3GUESTCTRLPROCSTARTUPIN
 {
     return VbglR3GuestCtrlProcStartupInfoInitEx(pStartupInfo,
                                                 GUEST_PROC_DEF_CMD_LEN,
+                                                GUEST_PROC_DEF_CWD_LEN,
                                                 GUEST_PROC_DEF_USER_LEN     /* Deprecated, now handled via session creation. */,
                                                 GUEST_PROC_DEF_PASSWORD_LEN /* Ditto. */,
                                                 GUEST_PROC_DEF_DOMAIN_LEN   /* Ditto. */,
@@ -1464,6 +1469,7 @@ VBGLR3DECL(void) VbglR3GuestCtrlProcStartupInfoDestroy(PVBGLR3GUESTCTRLPROCSTART
         return;
 
     RTStrFree(pStartupInfo->pszCmd);
+    RTStrFree(pStartupInfo->pszCwd);
     RTStrFree(pStartupInfo->pszArgs);
     RTStrFree(pStartupInfo->pszEnv);
     RTStrFree(pStartupInfo->pszUser);
@@ -1604,13 +1610,16 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3
             VbglHGCMParmUInt32Set(&Msg.u.v2.priority, 0);
             VbglHGCMParmUInt32Set(&Msg.u.v2.num_affinity, 0);
             VbglHGCMParmPtrSet(&Msg.u.v2.affinity, pStartupInfo->uAffinity, sizeof(pStartupInfo->uAffinity));
+            /* v2.cwd was added in 7.1.  If the host is older, the Msg struct it sends is
+             * shorter and these fields are zero-filled, which equals 'no cwd requested'. */
+            VbglHGCMParmPtrSet(&Msg.u.v2.cwd, pStartupInfo->pszCwd, pStartupInfo->cbCwd);
         }
 
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
         if (RT_FAILURE(rc))
         {
-            LogRel(("VbglR3GuestCtrlProcGetStart: 1 - %Rrc (retry %u, cbCmd=%RU32, cbArgs=%RU32, cbEnv=%RU32)\n",
-                    rc, cRetries, pStartupInfo->cbCmd, pStartupInfo->cbArgs, pStartupInfo->cbEnv));
+            LogRel(("VbglR3GuestCtrlProcGetStart: 1 - %Rrc (retry %u, cbCmd=%RU32, cbCwd=%RU32, cbArgs=%RU32, cbEnv=%RU32)\n",
+                    rc, cRetries, pStartupInfo->cbCmd, pStartupInfo->cbCwd, pStartupInfo->cbArgs, pStartupInfo->cbEnv));
 
             if (   rc == VERR_BUFFER_OVERFLOW
                 && cRetries++ < cMaxRetries)
@@ -1623,12 +1632,13 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3
 
                 /* We can't tell which parameter doesn't fit, so we have to resize all. */
                 GROW_STR(Cmd , GUEST_PROC_MAX_CMD_LEN);
+                GROW_STR(Cwd,  GUEST_PROC_MAX_CWD_LEN);
                 GROW_STR(Args, GUEST_PROC_MAX_ARGS_LEN);
                 GROW_STR(Env,  GUEST_PROC_MAX_ENV_LEN);
 
 #undef GROW_STR
-                LogRel(("VbglR3GuestCtrlProcGetStart: 2 - %Rrc (retry %u, cbCmd=%RU32, cbArgs=%RU32, cbEnv=%RU32)\n",
-                        rc, cRetries, pStartupInfo->cbCmd, pStartupInfo->cbArgs, pStartupInfo->cbEnv));
+                LogRel(("VbglR3GuestCtrlProcGetStart: 2 - %Rrc (retry %u, cbCmd=%RU32, cbCwd=%RU32, cbArgs=%RU32, cbEnv=%RU32)\n",
+                        rc, cRetries, pStartupInfo->cbCmd, pStartupInfo->cbCwd, pStartupInfo->cbArgs, pStartupInfo->cbEnv));
                 LogRel(("g_fVbglR3GuestCtrlHavePeekGetCancel=%RTbool\n", RT_BOOL(g_fVbglR3GuestCtrlHavePeekGetCancel)));
             }
             else

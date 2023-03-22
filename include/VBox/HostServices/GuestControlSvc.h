@@ -813,7 +813,9 @@ enum GUEST_FILE_SEEKTYPE
  *
  * The toolbox commands now are being marked as deprecated.
  * @since 7.1 */
-# define VBOX_GUESTCTRL_GF_0_TOOLBOX_AS_CMDS        RT_BIT_64(4)
+#define VBOX_GUESTCTRL_GF_0_TOOLBOX_AS_CMDS         RT_BIT_64(4)
+/** Supports specifying the working directory for run / start. */
+#define VBOX_GUESTCTRL_GF_0_PROCESS_CWD             RT_BIT_64(5)
 /** Bit that must be set in the 2nd parameter, will be cleared if the host reponds
  * correctly (old hosts might not). */
 #define VBOX_GUESTCTRL_GF_1_MUST_BE_ONE             RT_BIT_64(63)
@@ -829,6 +831,10 @@ enum GUEST_FILE_SEEKTYPE
  * argv[1], when the guest additions reports VBOX_GUESTCTRL_GF_0_PROCESS_ARGV0.
  * @since 6.1.6  */
 #define VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0           RT_BIT_64(1)
+/** Host sends the working directory for run / start, if guest
+ * reports VBOX_GUESTCTRL_GF_0_PROCESS_CWD.
+ * @since 6.1.20 ??  */
+#define VBOX_GUESTCTRL_HF_0_PROCESS_CWD             RT_BIT_64(2)
 /** @} */
 
 
@@ -1209,6 +1215,9 @@ typedef struct HGCMMsgProcExec
             HGCMFunctionParameter num_affinity;
             /** Pointer to process affinity blocks (uint64_t). */
             HGCMFunctionParameter affinity;
+            /** Working directory request, filled if guest
+             *  reports VBOX_GUESTCTRL_GF_0_PROCESS_CWD. */
+            HGCMFunctionParameter cwd;
         } v2;
     } u;
 } HGCMMsgProcExec;

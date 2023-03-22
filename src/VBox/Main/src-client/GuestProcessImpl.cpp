@@ -1157,9 +1157,9 @@ int GuestProcess::i_setProcessStatus(ProcessStatus_T procStatus, int vrcProc)
  */
 int GuestProcess::i_startProcess(uint32_t cMsTimeout, int *pvrcGuest)
 {
-    LogFlowThisFunc(("cMsTimeout=%RU32, procExe=%s, procTimeoutMS=%RU32, procFlags=%x, sessionID=%RU32\n",
-                     cMsTimeout, mData.mProcess.mExecutable.c_str(), mData.mProcess.mTimeoutMS, mData.mProcess.mFlags,
-                     mSession->i_getId()));
+    LogFlowThisFunc(("cMsTimeout=%RU32, procExe=%s, cwd=%s, procTimeoutMS=%RU32, procFlags=%x, sessionID=%RU32\n",
+                     cMsTimeout, mData.mProcess.mExecutable.c_str(), mData.mProcess.mCwd.c_str(),
+                     mData.mProcess.mTimeoutMS, mData.mProcess.mFlags, mSession->i_getId()));
 
     /* Wait until the caller function (if kicked off by a thread)
      * has returned and continue operation. */
@@ -1214,9 +1214,25 @@ int GuestProcess::i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock,
     if (cArgs >= 128*1024)
         return VERR_BUFFER_OVERFLOW;
 
+    Guest *pGuest = mSession->i_getParent();
+    AssertPtr(pGuest);
+    const uint64_t fGuestControlFeatures0 = pGuest->i_getGuestControlFeatures0();
+
+    /* Check if the Guest Additions support setting the current working directory for the new process
+     * if the caller wants to set one, and bail out early if it doesn't. */
+    if (   !mData.mProcess.mCwd.isEmpty()
+        && (   uProtocol < 2
+            || !(fGuestControlFeatures0 & VBOX_GUESTCTRL_GF_0_PROCESS_CWD)))
+    {
+        LogRel2(("Guest Control: Installed Guest Addtions don't support setting the current working directory to '%s'!\n",
+                 mData.mProcess.mCwd.c_str()));
+        return VERR_NOT_SUPPORTED;
+    }
+
     size_t cbArgs = 0;
     char *pszArgs = NULL;
     int vrc = VINF_SUCCESS;
+
     if (cArgs)
     {
         char const **papszArgv = (char const **)RTMemAlloc((cArgs + 1) * sizeof(papszArgv[0]));
@@ -1228,11 +1244,6 @@ int GuestProcess::i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock,
             AssertPtr(papszArgv[i]);
         }
         papszArgv[cArgs] = NULL;
-
-        Guest *pGuest = mSession->i_getParent();
-        AssertPtr(pGuest);
-
-        const uint64_t fGuestControlFeatures0 = pGuest->i_getGuestControlFeatures0();
 
         /* If the Guest Additions don't support using argv[0] correctly (< 6.1.x), don't supply it. */
         if (!(fGuestControlFeatures0 & VBOX_GUESTCTRL_GF_0_PROCESS_ARGV0))
@@ -1298,6 +1309,9 @@ int GuestProcess::i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock,
             HGCMSvcSetU32(&paParms[i++], 1);
             /* The actual CPU affinity blocks. */
             HGCMSvcSetPv(&paParms[i++], (void *)&mData.mProcess.mAffinity, sizeof(mData.mProcess.mAffinity));
+            /* Supply working directory, if guest supports it. */
+            if (fGuestControlFeatures0 & VBOX_GUESTCTRL_GF_0_PROCESS_CWD)
+                HGCMSvcSetRTCStr(&paParms[i++], mData.mProcess.mCwd);
         }
 
         rLock.release(); /* Drop the write lock before sending. */

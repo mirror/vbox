@@ -1028,6 +1028,10 @@ typedef struct VBGLR3GUESTCTRLPROCSTARTUPINFO
     uint32_t cbEnv;
     /** Number of environment variables specified in pszEnv. */
     uint32_t cEnvVars;
+    /** Optional working directory. */
+    char *pszCwd;
+    /** Size (in bytes) of optional working directory string. */
+    uint32_t cbCwd;
     /** User name (account) to start the process under. */
     char *pszUser;
     /** Size (in bytes) of allocated pszUser. */

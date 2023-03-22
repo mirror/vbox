@@ -1169,6 +1169,7 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
     static const RTGETOPTDEF s_aOptions[] =
     {
         GCTLCMD_COMMON_OPTION_DEFS()
+        { "--cwd",                          'C',                                      RTGETOPT_REQ_STRING  },
         { "--putenv",                       'E',                                      RTGETOPT_REQ_STRING  },
         { "--exe",                          'e',                                      RTGETOPT_REQ_STRING  },
         { "--timeout",                      't',                                      RTGETOPT_REQ_UINT32  },
@@ -1199,6 +1200,7 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
     com::SafeArray<IN_BSTR>                 aArgs;
     com::SafeArray<IN_BSTR>                 aEnv;
     const char *                            pszImage            = NULL;
+    const char *                            pszCwd              = NULL;
     bool                                    fWaitForStdOut      = fRunCmd;
     bool                                    fWaitForStdErr      = fRunCmd;
     RTVFSIOSTREAM                           hVfsStdOut          = NIL_RTVFSIOSTREAM;
@@ -1238,6 +1240,10 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
 
                 case kGstCtrlRunOpt_Profile:
                     aCreateFlags.push_back(ProcessCreateFlag_Profile);
+                    break;
+
+                case 'C':
+                    pszCwd = ValueUnion.psz;
                     break;
 
                 case 'e':
@@ -1357,6 +1363,7 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
             }
             ComPtr<IGuestProcess> pProcess;
             CHECK_ERROR_BREAK(pCtx->pGuestSession, ProcessCreate(Bstr(pszImage).raw(),
+                                                                 Bstr(pszCwd).raw(),
                                                                  ComSafeArrayAsInParam(aArgs),
                                                                  ComSafeArrayAsInParam(aEnv),
                                                                  ComSafeArrayAsInParam(aCreateFlags),
