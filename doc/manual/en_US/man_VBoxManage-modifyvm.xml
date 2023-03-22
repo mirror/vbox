@@ -54,7 +54,7 @@
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg>--name=<replaceable>name</replaceable></arg>
-      <arg>--groups= <arg choice="plain"><replaceable>group</replaceable> [,<replaceable>group</replaceable>...]</arg></arg>
+      <arg>--groups=<replaceable>group</replaceable><arg rep="repeat">,<replaceable>group</replaceable></arg></arg>
       <arg>--description=<replaceable>description</replaceable></arg>
       <arg>--os-type=<replaceable>OS-type</replaceable></arg>
       <arg>--icon-file=<replaceable>filename</replaceable></arg>
@@ -511,7 +511,7 @@ actually is ready for users. -->
       <arg>--recording-opts= <arg choice="plain"><replaceable>key</replaceable>=<replaceable>value</replaceable>[,<replaceable>key</replaceable>=<replaceable>value</replaceable>...]</arg></arg>
       <arg>--recording-video-fps=<replaceable>fps</replaceable></arg>
       <arg>--recording-video-rate=<replaceable>rate</replaceable></arg>
-      <arg>--recording-video-res=<replaceable>width</replaceable> <replaceable>height</replaceable></arg>
+      <arg>--recording-video-res=<replaceable>width</replaceable> x <replaceable>height</replaceable></arg><!-- 'x' shouldn't need spaces around it... -->
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-modifyvm-vrde">
@@ -524,7 +524,7 @@ actually is ready for users. -->
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--vrde-property=<replaceable>property-name</replaceable>= <arg><replaceable>property-value</replaceable></arg></arg>
+      <arg>--vrde-property=<replaceable>property-name</replaceable>=<arg><replaceable>property-value</replaceable></arg></arg>
       <arg>--vrde-extpack=<group choice="plain">
           <arg choice="plain">default</arg>
           <arg choice="plain"><replaceable>name</replaceable></arg>
