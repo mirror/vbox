@@ -47,6 +47,7 @@
 #include <iprt/mem.h>
 #include <iprt/message.h>
 #include <iprt/param.h>
+#include <iprt/path.h> /* For CWD testing. */
 #include <iprt/pipe.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
@@ -91,6 +92,128 @@ static const char * const g_apszArgs4[] =
     NULL
 };
 
+
+static int tstRTCreateProcExCwdChild(int argc, char **argv)
+{
+    int rc = RTR3InitExeNoArguments(0);
+    if (RT_FAILURE(rc))
+        return RTMsgInitFailure(rc);
+
+    int cErrors = 0;
+
+    if (argc < 3)
+        return RTEXITCODE_FAILURE;
+
+    const char *pszCWD = argv[2];
+
+    /* Validate if we really are in the CWD the parent told us. */
+    char szCWD[RTPATH_MAX];
+    rc = RTPathGetCurrent(szCWD, sizeof(szCWD));
+    if (RT_FAILURE(rc))
+    {
+        RTStrmPrintf(g_pStdErr, "childcwd: Unabled retrieve CWD, rc = %Rrc\n", rc);
+        return RTEXITCODE_FAILURE;
+    }
+
+    if (RTStrCmp(szCWD, pszCWD))
+    {
+        RTStrmPrintf(g_pStdErr, "childcwd: CWD is '%s', but expected '%s'\n", pszCWD, pszCWD);
+        return RTEXITCODE_FAILURE;
+    }
+
+    /* Check if we can query information of the current CWD. */
+    char *pszUser = NULL;
+    if (   argc >= 4
+        && argv[3][0] != '\0')
+    {
+        pszUser = argv[3];
+    }
+
+    RTFSOBJINFO objInfo;
+    rc = RTPathQueryInfo(pszCWD, &objInfo, RTFSOBJATTRADD_NOTHING);
+    if (pszUser)
+        RTStrmPrintf(g_pStdOut, "childcwd: Accessing CWD '%s' via user '%s' -> %Rrc\n", pszCWD, pszUser, rc);
+    else
+        RTStrmPrintf(g_pStdOut, "childcwd: Accesing CWD '%s' -> %Rrc\n", pszCWD, rc);
+    if (RT_FAILURE(rc))
+        cErrors++;
+
+    return cErrors == 0 ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+static void tstRTCreateProcExCwd(const char *pszAsUser, const char *pszPassword)
+{
+    RTTestISub("Current working directory (CWD)");
+
+    const char *apszArgs[5] =
+    {
+        g_szExecName,
+        "--testcase-child-cwd",
+        "<invalid-cwd>",
+        pszAsUser,
+        NULL
+    };
+
+    bool const fMayPanic = RTAssertSetMayPanic(false);
+    bool const fQuiet    = RTAssertSetQuiet(true);
+
+    RTPROCESS hProc;
+    uint32_t  fFlags = 0;
+    /* Missing RTPROC_FLAGS_CWD. */
+    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, fFlags,
+                                         NULL, NULL, NULL, pszAsUser, pszPassword,
+                                         (void *)apszArgs[2] /* pvExtraData (CWD) */, &hProc),
+                          VERR_INVALID_PARAMETER);
+
+    /* RTPROC_FLAGS_CWD set, but CWD missing as pvExtradata. */
+    fFlags = RTPROC_FLAGS_CWD;
+    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, fFlags,
+                                         NULL, NULL, NULL, pszAsUser, pszPassword,
+                                         NULL, &hProc),
+                          VINF_SUCCESS);
+
+    /* CWD is "<invalid-cwd>" from above, should fail. */
+    RTPROCSTATUS ProcStatus = { -1, RTPROCEXITREASON_ABEND };
+    RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
+
+    char szCWD[RTPATH_MAX];
+
+    /* Try current CWD, whatever that is. */
+    RTTESTI_CHECK_RC_OK_RETV(RTPathGetCurrent(szCWD, sizeof(szCWD)));
+    apszArgs[2] = szCWD;
+    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, fFlags,
+                                         NULL, NULL, NULL, pszAsUser, pszPassword,
+                                         (void *)szCWD /* pvExtraData (CWD) */, &hProc),
+                          VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
+    if (ProcStatus.enmReason != RTPROCEXITREASON_NORMAL || ProcStatus.iStatus != 0)
+        RTTestIFailed("enmReason=%d iStatus=%d", ProcStatus.enmReason, ProcStatus.iStatus);
+
+    /* Try temporary directory. */
+    RTTESTI_CHECK_RC_OK_RETV(RTPathTemp(szCWD, sizeof(szCWD)));
+    apszArgs[2] = szCWD;
+    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, fFlags,
+                                         NULL, NULL, NULL, pszAsUser, pszPassword,
+                                         (void *)szCWD /* pvExtraData (CWD) */, &hProc),
+                          VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
+    if (ProcStatus.enmReason != RTPROCEXITREASON_NORMAL || ProcStatus.iStatus != 0)
+        RTTestIFailed("enmReason=%d iStatus=%d", ProcStatus.enmReason, ProcStatus.iStatus);
+
+    /* Try user home. */
+    RTTESTI_CHECK_RC_OK_RETV(RTPathUserHome(szCWD, sizeof(szCWD)));
+    apszArgs[2] = szCWD;
+    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, fFlags,
+                                         NULL, NULL, NULL, pszAsUser, pszPassword,
+                                         (void *)szCWD /* pvExtraData (CWD) */, &hProc),
+                          VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
+    if (ProcStatus.enmReason != RTPROCEXITREASON_NORMAL || ProcStatus.iStatus != 0)
+        RTTestIFailed("enmReason=%d iStatus=%d", ProcStatus.enmReason, ProcStatus.iStatus);
+
+    RTAssertSetMayPanic(fMayPanic);
+    RTAssertSetQuiet(fQuiet);
+}
 
 static int tstRTCreateProcEx6Child(int argc, char **argv)
 {
@@ -664,6 +787,8 @@ int main(int argc, char **argv)
         return tstRTCreateProcEx5Child(argc, argv);
     if (argc >= 2 && !strcmp(argv[1], "--testcase-child-6"))
         return tstRTCreateProcEx6Child(argc, argv);
+    if (argc >= 2 && !strcmp(argv[1], "--testcase-child-cwd"))
+        return tstRTCreateProcExCwdChild(argc, argv);
 
     /*
      * Main process.
@@ -701,6 +826,7 @@ int main(int argc, char **argv)
     if (pszAsUser)
         tstRTCreateProcEx5(pszAsUser, pszPassword);
     tstRTCreateProcEx6(pszAsUser, pszPassword);
+    tstRTCreateProcExCwd(pszAsUser, pszPassword);
 
     /** @todo Cover files, ++ */
 
