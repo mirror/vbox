@@ -179,11 +179,11 @@ public:
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/hd_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/hd_disabled_16px.png"));
         /* Configure connection: */
-        connect(pMachine, &UIMachine::sigMachineStateChange,
+        connect(m_pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorHardDrive::updateAppearance);
-        connect(pMachine, &UIMachine::sigStorageDeviceChange,
+        connect(m_pMachine, &UIMachine::sigStorageDeviceChange,
                 this, &UIIndicatorHardDrive::updateAppearance);
-        connect(pMachine, &UIMachine::sigMediumChange,
+        connect(m_pMachine, &UIMachine::sigMediumChange,
                 this, &UIIndicatorHardDrive::updateAppearance);
         /* Translate finally: */
         retranslateUi();
@@ -231,11 +231,11 @@ public:
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/cd_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/cd_disabled_16px.png"));
         /* Configure connection: */
-        connect(pMachine, &UIMachine::sigMachineStateChange,
+        connect(m_pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorOpticalDisks::updateAppearance);
-        connect(pMachine, &UIMachine::sigStorageDeviceChange,
+        connect(m_pMachine, &UIMachine::sigStorageDeviceChange,
                 this, &UIIndicatorOpticalDisks::updateAppearance);
-        connect(pMachine, &UIMachine::sigMediumChange,
+        connect(m_pMachine, &UIMachine::sigMediumChange,
                 this, &UIIndicatorOpticalDisks::updateAppearance);
         /* Translate finally: */
         retranslateUi();
@@ -283,11 +283,11 @@ public:
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/fd_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/fd_disabled_16px.png"));
         /* Configure connection: */
-        connect(pMachine, &UIMachine::sigMachineStateChange,
+        connect(m_pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorFloppyDisks::updateAppearance);
-        connect(pMachine, &UIMachine::sigStorageDeviceChange,
+        connect(m_pMachine, &UIMachine::sigStorageDeviceChange,
                 this, &UIIndicatorFloppyDisks::updateAppearance);
-        connect(pMachine, &UIMachine::sigMediumChange,
+        connect(m_pMachine, &UIMachine::sigMediumChange,
                 this, &UIIndicatorFloppyDisks::updateAppearance);
         /* Translate finally: */
         retranslateUi();
@@ -344,9 +344,11 @@ public:
         setStateIcon(AudioState_InputOn, UIIconPool::iconSet(":/audio_output_off_16px.png"));
         setStateIcon(AudioState_AllOn, UIIconPool::iconSet(":/audio_16px.png"));
         /* Configure connection: */
-        connect(pMachine, &UIMachine::sigMachineStateChange,
+        connect(m_pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorAudio::updateAppearance);
-        connect(pMachine, &UIMachine::sigAudioAdapterChange,
+        connect(m_pMachine, &UIMachine::sigInitialized,
+                this, &UIIndicatorAudio::updateAppearance);
+        connect(m_pMachine, &UIMachine::sigAudioAdapterChange,
                 this, &UIIndicatorAudio::updateAppearance);
         /* Translate finally: */
         retranslateUi();
@@ -450,11 +452,11 @@ public:
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/usb_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/usb_disabled_16px.png"));
         /* Configure connection: */
-        connect(pMachine, &UIMachine::sigMachineStateChange,
+        connect(m_pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorUSB::updateAppearance);
-        connect(pMachine, &UIMachine::sigUSBControllerChange,
+        connect(m_pMachine, &UIMachine::sigUSBControllerChange,
                 this, &UIIndicatorUSB::updateAppearance);
-        connect(pMachine, &UIMachine::sigUSBDeviceStateChange,
+        connect(m_pMachine, &UIMachine::sigUSBDeviceStateChange,
                 this, &UIIndicatorUSB::updateAppearance);
         /* Translate finally: */
         retranslateUi();
@@ -501,9 +503,9 @@ public:
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/sf_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/sf_disabled_16px.png"));
         /* Configure connection: */
-        connect(pMachine, &UIMachine::sigMachineStateChange,
+        connect(m_pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorSharedFolders::updateAppearance);
-        connect(pMachine, &UIMachine::sigSharedFolderChange,
+        connect(m_pMachine, &UIMachine::sigSharedFolderChange,
                 this, &UIIndicatorSharedFolders::updateAppearance);
         /* Translate finally: */
         retranslateUi();
@@ -551,7 +553,7 @@ public:
         setStateIcon(DisplayState_Software,    UIIconPool::iconSet(":/display_software_16px.png"));
         setStateIcon(DisplayState_Hardware,    UIIconPool::iconSet(":/display_hardware_16px.png"));
         /* Configure connection: */
-        connect(pMachine, &UIMachine::sigMachineStateChange,
+        connect(m_pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorDisplay::updateAppearance);
         /* Translate finally: */
         retranslateUi();
@@ -614,9 +616,9 @@ public:
         setStateIcon(RecordingState_Enabled,     UIIconPool::iconSet(":/movie_reel_16px.png"));
         setStateIcon(RecordingState_Paused,      UIIconPool::iconSet(":/movie_reel_16px.png"));
         /* Configure connection: */
-        connect(pMachine, &UIMachine::sigMachineStateChange,
+        connect(m_pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorRecording::updateAppearance);
-        connect(pMachine, &UIMachine::sigRecordingChange,
+        connect(m_pMachine, &UIMachine::sigRecordingChange,
                 this, &UIIndicatorRecording::updateAppearance);
         /* Create *enabled* state animation: */
         m_pAnimation = UIAnimationLoop::installAnimationLoop(this, "rotationAngle",
@@ -746,6 +748,8 @@ public:
         /* Configure connection: */
         connect(m_pMachine, &UIMachine::sigMachineStateChange,
                 this, &UIIndicatorFeatures::sltHandleMachineStateChange);
+        connect(m_pMachine, &UIMachine::sigInitialized,
+                this, &UIIndicatorFeatures::updateAppearance);
         connect(m_pMachine, &UIMachine::sigCPUExecutionCapChange,
                 this, &UIIndicatorFeatures::updateAppearance);
         /* Configure CPU load update timer: */
@@ -938,7 +942,7 @@ public:
         setStateIcon(13, UIIconPool::iconSet(":/hostkey_pressed_checked_16px.png"));
         setStateIcon(15, UIIconPool::iconSet(":/hostkey_captured_pressed_checked_16px.png"));
         /* Configure connection: */
-        connect(pMachine, &UIMachine::sigKeyboardStateChange,
+        connect(m_pMachine, &UIMachine::sigKeyboardStateChange,
                 this, static_cast<void(UIIndicatorKeyboard::*)(int)>(&UIIndicatorKeyboard::setState));
         /* Translate finally: */
         retranslateUi();
