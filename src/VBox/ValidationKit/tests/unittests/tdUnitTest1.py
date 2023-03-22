@@ -70,7 +70,16 @@ class tdUnitTest1(vbox.TestDriver):
     kdTestCasesBuggyPerOs = {
         'darwin': {
             'testcase/tstX86-1': '',                    # 'FSTP M32R, ST0' fails; no idea why.
+            'testcase/tstLow': '>=7.0.0',               # Driverless package.
+            'testcase/tstPin': '>=7.0.0',               # Driverless package.
+            'testcase/tstIntNet-1': '>=7.0.0',          # Driverless package.
         },
+        'darwin.arm64': {
+            'testcase/tstRTDarwinMachKernel': '',       # Not supported on arm64 right now (and not required due to driverless).
+            'testcase/tstAsmStructs': '',               # Fails on arm64 due to different sizes, also not required as there is no
+                                                        # assembly code which needs to match with structs.
+            'testcase/tstDarwinKeyboard': '',           # Fails for unknown reason.
+        }
         'linux': {
             'testcase/tstRTFileAio': '',                # See xTracker #8035.
         },
