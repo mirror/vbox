@@ -44,6 +44,7 @@ __version__ = "$Revision$"
 import os
 import sys
 import random
+import time
 import gc
 
 # Only the main script needs to modify the path.
@@ -124,7 +125,7 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
 
         return True;
 
-    def openAndRegisterMachine(self, oVBox, sSettingsFile):
+    def openAndRegisterMachine(self, sSettingsFile):
         """
         Helper routine which opens a VM and registers it.
         """
@@ -132,9 +133,9 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
         try:
             if self.oTstDrv.fpApiVer >= 7.0:
                 # Needs a password parameter since 7.0.
-                oVM = oVBox.openMachine(sSettingsFile, "");
+                oVM = self.oTstDrv.oVBox.openMachine(sSettingsFile, "");
             else:
-                oVM = oVBox.openMachine(sSettingsFile);
+                oVM = self.oTstDrv.oVBox.openMachine(sSettingsFile);
         except:
             reporter.logXcpt('openMachine(%s) failed' % (sSettingsFile));
             return None;
@@ -143,7 +144,7 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
             return None;
 
         try:
-            oVBox.registerMachine(oVM);
+            self.oTstDrv.oVBox.registerMachine(oVM);
         except:
             reporter.logXcpt('registerMachine(%s) failed' % (sSettingsFile));
             return None;
@@ -209,17 +210,13 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
 
         # If there is no base image (expected) then there are no leftover
         # child images either.
-        oVBox = self.oTstDrv.oVBoxMgr.getVirtualBox();
-        if oVBox is None:
-            return False;
-
-        cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'))
+        cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(self.oTstDrv.oVBox, 'hardDisks'))
         reporter.log('After unregister(DetachAllReturnHardDisksOnly): API reports %d base images' % (cBaseImages));
         if cBaseImages != 0:
             reporter.error('Got %d initial base images, expected zero (0)' % (cBaseImages));
 
         # re-register to test loading of settings
-        oVM = self.openAndRegisterMachine(oVBox, sSettingsFile);
+        oVM = self.openAndRegisterMachine(sSettingsFile);
         if oVM is None:
             return False;
 
@@ -242,13 +239,18 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
         # uninitialized.  Assigning the 'None' object to 'oVM' will cause Python to delete
         # the object when the garbage collector runs however this can take several seconds
         # so we invoke the Python garbage collector manually here so we don't have to wait.
-        reporter.log('Invoking python garbage collection to trigger Machine::uninit() which will close the attached disks');
         try:
             gc.collect();
         except:
             reporter.logXcpt();
 
-        cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'));
+        reporter.log('Waiting three seconds for Machine::uninit() to be called to close the attached disks');
+        # Fudge factor: Machine::uninit() will be invoked when the oVM object is processed
+        # by the garbage collector above but it may take a few moments to close up to 64
+        # disks.
+        time.sleep(3);
+
+        cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(self.oTstDrv.oVBox, 'hardDisks'))
         reporter.log('After unregister(UnregisterOnly): API reports %d base images' % (cBaseImages));
         if cBaseImages != 0:
             reporter.error('Got %d base images after unregistering, expected zero (0)' % (cBaseImages));
@@ -302,18 +304,14 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
 
         # If there is no base image (expected) then there are no leftover
         # child images either.
-        oVBox = self.oTstDrv.oVBoxMgr.getVirtualBox()
-        if oVBox is None:
-            return False;
-
-        cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'))
+        cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(self.oTstDrv.oVBox, 'hardDisks'))
         reporter.log('After unregister(DetachAllReturnHardDisksOnly): API reports %d base images' % (cBaseImages));
         fRc = fRc and cBaseImages == 0
         if cBaseImages != 0:
             reporter.error('Got %d initial base images, expected zero (0)' % (cBaseImages));
 
         # re-register to test loading of settings
-        oVM = self.openAndRegisterMachine(oVBox, sSettingsFile);
+        oVM = self.openAndRegisterMachine(sSettingsFile);
         if oVM is None:
             return False;
 
@@ -335,13 +333,18 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
         # uninitialized.  Assigning the 'None' object to 'oVM' will cause Python to delete
         # the object when the garbage collector runs however this can take several seconds
         # so we invoke the Python garbage collector manually here so we don't have to wait.
-        reporter.log('Invoking python garbage collection to trigger Machine::uninit() which will close the attached disks');
         try:
             gc.collect();
         except:
             reporter.logXcpt();
 
-        cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(oVBox, 'hardDisks'))
+        reporter.log('Waiting three seconds for Machine::uninit() to be called to close the attached disks');
+        # Fudge factor: Machine::uninit() will be invoked when the oVM object is processed
+        # by the garbage collector above but it may take a few moments to close up to 200
+        # snapshots.
+        time.sleep(3);
+
+        cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(self.oTstDrv.oVBox, 'hardDisks'))
         reporter.log('After unregister(UnregisterOnly): API reports %d base images' % (cBaseImages));
         if cBaseImages != 0:
             reporter.error('Got %d base images after unregistering, expected zero (0)' % (cBaseImages));
