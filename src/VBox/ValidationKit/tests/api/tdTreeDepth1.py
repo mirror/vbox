@@ -98,6 +98,31 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
                     oParentMedium = oParentMedium.parent;
         return cDisks;
 
+    def getNumOfHDsFromHardDisksArray(self):
+        """
+        Helper routine for counting the hard disks that belong to this VM which are
+        contained in the global IVirtualBox::hardDisks[] array (which contains base media
+        only).
+        """
+        cDisks = 0;
+        aoHDs = self.oTstDrv.oVBoxMgr.getArray(self.oTstDrv.oVBox, 'hardDisks');
+        # Walk the IVirtualBox::hardDisks[] array for hard disks belonging to this VM.
+        # The array may contain entries from other VMs created by previous API tessts
+        # which haven't unregistered and deleted their VM's configuration.  The location
+        # attribute of each disk looks similar to:
+        # /var/tmp/VBoxTestTmp/VBoxUserHome/Machines/vm 2/tdAppliance1-t2-disk1.vmdk
+        # So we compare the directory where the disk is located, i.e. the 'basefolder',
+        # with our VM's basefolder which looks similar to:
+        # /var/tmp/VBoxTestTmp/VBoxUserHome/Machines/test-medium
+        # to determine if the disk belongs to us.
+        for oHD in aoHDs:
+            sHDBaseFolder = os.path.dirname(oHD.location);
+            sVMBaseFolder = os.path.join(self.oTstDrv.oVBox.systemProperties.defaultMachineFolder, 'test-medium');
+            reporter.log2('HDBaseFolder = %s VMBaseFolder = %s' % (sHDBaseFolder, sVMBaseFolder));
+            if sHDBaseFolder== sVMBaseFolder:
+                cDisks = cDisks + 1;
+        return cDisks;
+
     def unregisterVM(self, oVM, enmCleanupMode):
         """
         Helper routine to unregister the VM using the CleanupMode specified.
@@ -208,12 +233,12 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
             return False;
         oVM = None;
 
-        # If there is no base image (expected) then there are no leftover
-        # child images either.
-        cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(self.oTstDrv.oVBox, 'hardDisks'))
-        reporter.log('After unregister(DetachAllReturnHardDisksOnly): API reports %d base images' % (cBaseImages));
-        if cBaseImages != 0:
-            reporter.error('Got %d initial base images, expected zero (0)' % (cBaseImages));
+        # If there are no base media belonging to this VM in the global IVirtualBox::hardDisks[]
+        # array (expected) then there are no leftover child images either.
+        cNumDisks = self.getNumOfHDsFromHardDisksArray();
+        reporter.log('After unregister(DetachAllReturnHardDisksOnly): API reports %d base images (should be zero)' % (cNumDisks));
+        if cNumDisks != 0:
+            reporter.error('Got %d initial base images, expected zero (0)' % (cNumDisks));
 
         # re-register to test loading of settings
         oVM = self.openAndRegisterMachine(sSettingsFile);
@@ -250,10 +275,12 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
         # disks.
         time.sleep(3);
 
-        cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(self.oTstDrv.oVBox, 'hardDisks'))
-        reporter.log('After unregister(UnregisterOnly): API reports %d base images' % (cBaseImages));
-        if cBaseImages != 0:
-            reporter.error('Got %d base images after unregistering, expected zero (0)' % (cBaseImages));
+        # If there are no base media belonging to this VM in the global IVirtualBox::hardDisks[]
+        # array (expected) then there are no leftover child images either.
+        cNumDisks = self.getNumOfHDsFromHardDisksArray();
+        reporter.log('After unregister(UnregisterOnly): API reports %d base images (should be zero)' % (cNumDisks));
+        if cNumDisks != 0:
+            reporter.error('Got %d base images after unregistering, expected zero (0)' % (cNumDisks));
 
         return reporter.testDone()[1] == 0;
 
@@ -302,13 +329,13 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
             return False;
         oVM = None;
 
-        # If there is no base image (expected) then there are no leftover
-        # child images either.
-        cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(self.oTstDrv.oVBox, 'hardDisks'))
-        reporter.log('After unregister(DetachAllReturnHardDisksOnly): API reports %d base images' % (cBaseImages));
-        fRc = fRc and cBaseImages == 0
-        if cBaseImages != 0:
-            reporter.error('Got %d initial base images, expected zero (0)' % (cBaseImages));
+        # If there are no base media belonging to this VM in the global IVirtualBox::hardDisks[]
+        # array (expected) then there are no leftover child images either.
+        cNumDisks = self.getNumOfHDsFromHardDisksArray();
+        reporter.log('After unregister(DetachAllReturnHardDisksOnly): API reports %d base images (should be zero)' % (cNumDisks));
+        fRc = fRc and cNumDisks == 0
+        if cNumDisks != 0:
+            reporter.error('Got %d initial base images, expected zero (0)' % (cNumDisks));
 
         # re-register to test loading of settings
         oVM = self.openAndRegisterMachine(sSettingsFile);
@@ -344,10 +371,12 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
         # snapshots.
         time.sleep(3);
 
-        cBaseImages = len(self.oTstDrv.oVBoxMgr.getArray(self.oTstDrv.oVBox, 'hardDisks'))
-        reporter.log('After unregister(UnregisterOnly): API reports %d base images' % (cBaseImages));
-        if cBaseImages != 0:
-            reporter.error('Got %d base images after unregistering, expected zero (0)' % (cBaseImages));
+        # If there are no base media belonging to this VM in the global IVirtualBox::hardDisks[]
+        # array (expected) then there are no leftover child images either.
+        cNumDisks = self.getNumOfHDsFromHardDisksArray();
+        reporter.log('After unregister(UnregisterOnly): API reports %d base images (should be zero)' % (cNumDisks));
+        if cNumDisks != 0:
+            reporter.error('Got %d base images after unregistering, expected zero (0)' % (cNumDisks));
 
         return reporter.testDone()[1] == 0
 
