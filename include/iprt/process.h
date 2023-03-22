@@ -192,6 +192,10 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
  * @param   pvExtraData Points to additional data as per @a fFlags:
  *                          - RTPROC_FLAGS_DESIRED_SESSION_ID: Pointing to a
  *                            uint32_t variable with the desired session ID.
+ *                          - RTPROC_FLAGS_CWD: Pointing to a string constant
+ *                            with the directory to chdir() to under the final
+ *                            execution ID, before starting the process.
+ *                          - These flags cannot be used in the same call.
  * @param   phProcess   Where to store the process handle on successful return.
  *                      The content is not changed on failure.  NULL is allowed.
  *
@@ -252,7 +256,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
 /** For use with RTPROC_FLAGS_SERVICE to specify a desired session ID
  * (Windows only, ignored elsewhere).  The @a pvExtraData argument points to
  * a uint32_t containing the session ID, UINT32_MAX means any session.
- * Can not be set with RTPROC_FLAGS_TOKEN_SUPPLIED */
+ * Cannot be set with RTPROC_FLAGS_TOKEN_SUPPLIED or RTPROC_FLAGS_CWD. */
 #define RTPROC_FLAGS_DESIRED_SESSION_ID     RT_BIT(11)
 /** This is a modifier to RTPROC_FLAGS_PROFILE on unix systems that makes it
  * skip trying to dump the environment of a login shell. */
@@ -262,12 +266,17 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
 #define RTPROC_FLAGS_UTF8_ARGV              RT_BIT_32(13)
 /** Create process using supplied token. The @a pvExtraData argument points to
  * a HANDLE containing the token used as user credentials for process creation.
- * Can not be set with RTPROC_FLAGS_DESIRED_SESSION_ID.
+ * Cannot be set with RTPROC_FLAGS_DESIRED_SESSION_ID or RTPROC_FLAGS_CWD.
  * Windows only flag, ignored everywhere else. */
 #define RTPROC_FLAGS_TOKEN_SUPPLIED         RT_BIT(14)
+/** The @a pvExtraData argument points to a string containing the directory
+ * to chdir() to, under the final execution ID, before starting the process.
+ * Cannot be set with RTPROC_FLAGS_DESIRED_SESSION_ID or
+ * RTPROC_FLAGS_TOKEN_SUPPLIED. */
+#define RTPROC_FLAGS_CWD                    RT_BIT(15)
 
 /** Valid flag mask. */
-#define RTPROC_FLAGS_VALID_MASK             UINT32_C(0x7fff)
+#define RTPROC_FLAGS_VALID_MASK             UINT32_C(0xffff)
 /** @}  */
 
 

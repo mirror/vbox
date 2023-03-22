@@ -1612,7 +1612,7 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                                   RTENV hEnv, DWORD dwCreationFlags,
                                   STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo,
                                   uint32_t fFlags, const char *pszExec, uint32_t idDesiredSession,
-                                  HANDLE hUserToken)
+                                  HANDLE hUserToken, PRTUTF16 pwszCwd)
 {
     /*
      * So if we want to start a process from a service (RTPROC_FLAGS_SERVICE),
@@ -1803,7 +1803,7 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                                                                     /** @todo Warn about exceeding 8192 bytes
                                                                      *        on XP and up. */
                                                                     pwszzBlock,   /* lpEnvironment */
-                                                                    NULL,         /* pCurrentDirectory */
+                                                                    pwszCwd,       /* pCurrentDirectory */
                                                                     pStartupInfo,
                                                                     pProcInfo);
                                     if (fRc)
@@ -1941,7 +1941,7 @@ static void rtProcWinDupStdHandleIntoChild(HANDLE hSrcHandle, HANDLE hDstProcess
 static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 *ppwszExec, PRTUTF16 pwszCmdLine,
                                   RTENV hEnv, DWORD dwCreationFlags,
                                   STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo,
-                                  uint32_t fFlags, const char *pszExec)
+                                  uint32_t fFlags, const char *pszExec, PRTUTF16 pwszCwd)
 {
     /* The CreateProcessWithLogonW API was introduced with W2K and later.  It uses a service
        for launching the process. */
@@ -2041,7 +2041,7 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                                                 pwszCmdLine,
                                                 dwCreationFlags | (fCreatedSuspended ? CREATE_SUSPENDED : 0),
                                                 pwszzBlock,
-                                                NULL,                       /* pCurrentDirectory */
+                                                pwszCwd,                     /* pCurrentDirectory */
                                                 pStartupInfo,
                                                 pProcInfo);
         if (fRc)
@@ -2092,7 +2092,7 @@ static int rtProcWinCreateAsUser(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                                  RTENV hEnv, DWORD dwCreationFlags,
                                  STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo,
                                  uint32_t fFlags, const char *pszExec, uint32_t idDesiredSession,
-                                 HANDLE hUserToken)
+                                 HANDLE hUserToken, PRTUTF16 pwszCwd)
 {
     /*
      * If we run as a service CreateProcessWithLogon will fail, so don't even
@@ -2104,12 +2104,12 @@ static int rtProcWinCreateAsUser(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
     {
         AssertPtr(pwszUser);
         int rc = rtProcWinCreateAsUser1(pwszUser, pwszPassword, ppwszExec, pwszCmdLine,
-                                        hEnv, dwCreationFlags, pStartupInfo, pProcInfo, fFlags, pszExec);
+                                        hEnv, dwCreationFlags, pStartupInfo, pProcInfo, fFlags, pszExec, pwszCwd);
         if (RT_SUCCESS(rc))
             return rc;
     }
     return rtProcWinCreateAsUser2(pwszUser, pwszPassword, ppwszExec, pwszCmdLine, hEnv, dwCreationFlags,
-                                  pStartupInfo, pProcInfo, fFlags, pszExec, idDesiredSession, hUserToken);
+                                  pStartupInfo, pProcInfo, fFlags, pszExec, idDesiredSession, hUserToken, pwszCwd);
 }
 
 
@@ -2261,6 +2261,8 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
                                const char *pszPassword, void *pvExtraData, PRTPROCESS phProcess)
 {
+    int rc;
+
     /*
      * Input validation
      */
@@ -2280,6 +2282,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     if (   (fFlags & (RTPROC_FLAGS_DESIRED_SESSION_ID | RTPROC_FLAGS_SERVICE))
         ==           (RTPROC_FLAGS_DESIRED_SESSION_ID | RTPROC_FLAGS_SERVICE))
     {
+        AssertReturn(!(fFlags & RTPROC_FLAGS_CWD), VERR_INVALID_PARAMETER);
         AssertPtrReturn(pvExtraData, VERR_INVALID_POINTER);
         idDesiredSession = *(uint32_t *)pvExtraData;
     }
@@ -2293,7 +2296,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     /*
      * Initialize the globals.
      */
-    int rc = RTOnce(&g_rtProcWinInitOnce, rtProcWinInitOnce, NULL);
+    rc = RTOnce(&g_rtProcWinInitOnce, rtProcWinInitOnce, NULL);
     AssertRCReturn(rc, rc);
     if (   pszAsUser
         || (fFlags & (RTPROC_FLAGS_PROFILE | RTPROC_FLAGS_SERVICE | RTPROC_FLAGS_AS_IMPERSONATED_TOKEN
@@ -2432,12 +2435,14 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
         rc = RTGetOptArgvToUtf16String(&pwszCmdLine, papszArgs,
                                        !(fFlags & RTPROC_FLAGS_UNQUOTED_ARGS)
                                        ? RTGETOPTARGV_CNV_QUOTE_MS_CRT : RTGETOPTARGV_CNV_UNQUOTED);
+    PRTUTF16 pwszExec = NULL;
+    if (RT_SUCCESS(rc))
+        rc = RTPathWinFromUtf8(&pwszExec, pszExec, 0 /*fFlags*/);
+    PRTUTF16 pwszCwd = NULL;
+    if (RT_SUCCESS(rc) && (fFlags & RTPROC_FLAGS_CWD))
+        rc = RTPathWinFromUtf8(&pwszCwd, (const char *)pvExtraData, 0);
     if (RT_SUCCESS(rc))
     {
-        PRTUTF16 pwszExec;
-        rc = RTPathWinFromUtf8(&pwszExec, pszExec, 0 /*fFlags*/);
-        if (RT_SUCCESS(rc))
-        {
             /*
              * Get going...
              */
@@ -2469,7 +2474,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                        TRUE,         /* fInheritHandles */
                                        dwCreationFlags,
                                        pwszzBlock,
-                                       NULL,         /* pCurrentDirectory */
+                                       pwszCwd,       /* pCurrentDirectory */
                                        &StartupInfo,
                                        &ProcInfo))
                         rc = VINF_SUCCESS;
@@ -2495,7 +2500,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                     {
                         rc = rtProcWinCreateAsUser(pwszUser, pwszPassword, &pwszExec, pwszCmdLine, hEnv, dwCreationFlags,
                                                    &StartupInfo, &ProcInfo, fFlags, pszExec, idDesiredSession,
-                                                   hUserToken);
+                                                   hUserToken, pwszCwd);
 
                         if (pwszPassword && *pwszPassword)
                             RTMemWipeThoroughly(pwszPassword, RTUtf16Len(pwszPassword), 5);
@@ -2523,10 +2528,10 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                     CloseHandle(ProcInfo.hProcess);
                 rc = VINF_SUCCESS;
             }
-            RTPathWinFree(pwszExec);
-        }
-        RTUtf16Free(pwszCmdLine);
     }
+    RTPathWinFree(pwszExec);
+    RTPathWinFree(pwszCwd);
+    RTUtf16Free(pwszCmdLine);
 
     if (g_pfnSetHandleInformation)
     {

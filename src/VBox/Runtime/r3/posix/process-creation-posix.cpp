@@ -215,7 +215,7 @@ static const char g_szEnvMarkerEnd[]   = "IPRT_EnvEnvEnv_End_EnvEnvEnv";
 *********************************************************************************************************************************/
 static int rtProcPosixCreateInner(const char *pszExec, const char * const *papszArgs, RTENV hEnv, RTENV hEnvToUse,
                                   uint32_t fFlags, const char *pszAsUser, uid_t uid, gid_t gid,
-                                  unsigned cRedirFds, int *paRedirFds, PRTPROCESS phProcess);
+                                  unsigned cRedirFds, int *paRedirFds, void *pvExtraData, PRTPROCESS phProcess);
 
 
 #ifdef IPRT_USE_PAM
@@ -1199,7 +1199,7 @@ static int rtProcPosixProfileEnvRunAndHarvest(RTENV hEnvToUse, const char *pszAs
                 LogFunc(("Executing '%s': '%s', '%s', '%s'\n", pszExec, apszArgs[0], apszArgs[1], apszArgs[2]));
                 RTPROCESS hProcess = NIL_RTPROCESS;
                 rc = rtProcPosixCreateInner(pszExec, apszArgs, hEnvToUse, hEnvToUse, 0 /*fFlags*/,
-                                            pszAsUser, uid, gid, RT_ELEMENTS(aRedirFds), aRedirFds, &hProcess);
+                                            pszAsUser, uid, gid, RT_ELEMENTS(aRedirFds), aRedirFds, NULL /*pvExtraData*/, &hProcess);
                 if (RT_SUCCESS(rc))
                 {
                     RTPipeClose(hPipeW);
@@ -1712,7 +1712,10 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     if (fFlags & RTPROC_FLAGS_DETACHED)
         return VERR_PROC_DETACH_NOT_SUPPORTED;
 #endif
-    AssertReturn(pvExtraData == NULL || (fFlags & RTPROC_FLAGS_DESIRED_SESSION_ID), VERR_INVALID_PARAMETER);
+    AssertReturn(pvExtraData == NULL || (fFlags & (RTPROC_FLAGS_DESIRED_SESSION_ID | RTPROC_FLAGS_CWD)),
+                 VERR_INVALID_PARAMETER);
+    AssertReturn((fFlags & (RTPROC_FLAGS_DESIRED_SESSION_ID | RTPROC_FLAGS_CWD)) != (RTPROC_FLAGS_DESIRED_SESSION_ID | RTPROC_FLAGS_CWD),
+                 VERR_INVALID_PARAMETER);
 
     /*
      * Get the file descriptors for the handles we've been passed.
@@ -1894,7 +1897,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                  * The rest of the process creation is reused internally by rtProcPosixCreateProfileEnv.
                  */
                 rc = rtProcPosixCreateInner(pszNativeExec, papszArgsConverted, hEnv, hEnvToUse, fFlags, pszAsUser, uid, gid,
-                                            RT_ELEMENTS(aStdFds), aStdFds, phProcess);
+                                            RT_ELEMENTS(aStdFds), aStdFds, pvExtraData, phProcess);
 
             }
 
@@ -1939,7 +1942,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
  */
 static int rtProcPosixCreateInner(const char *pszNativeExec, const char * const *papszArgs, RTENV hEnv, RTENV hEnvToUse,
                                   uint32_t fFlags, const char *pszAsUser, uid_t uid, gid_t gid,
-                                  unsigned cRedirFds, int *paRedirFds, PRTPROCESS phProcess)
+                                  unsigned cRedirFds, int *paRedirFds, void *pvExtraData, PRTPROCESS phProcess)
 {
     /*
      * Get the environment block.
@@ -2036,7 +2039,8 @@ static int rtProcPosixCreateInner(const char *pszNativeExec, const char * const 
 #ifdef HAVE_POSIX_SPAWN
     /** @todo OS/2: implement DETACHED (BACKGROUND stuff), see VbglR3Daemonize.  */
     if (   uid == ~(uid_t)0
-        && gid == ~(gid_t)0)
+        && gid == ~(gid_t)0
+        && !(fFlags & RTPROC_FLAGS_CWD))
     {
         /* Spawn attributes. */
         posix_spawnattr_t Attr;
@@ -2186,6 +2190,22 @@ static int rtProcPosixCreateInner(const char *pszNativeExec, const char * const 
                 }
             }
 #endif
+            if (fFlags & RTPROC_FLAGS_CWD)
+            {
+                const char *pszCwd = (const char *)pvExtraData;
+                if (pszCwd && *pszCwd)
+                {
+                    rc = RTPathSetCurrent(pszCwd);
+                    if (RT_FAILURE(rc))
+                    {
+                        /** @todo r=bela What is the right exit code here?? */
+                        if (fFlags & RTPROC_FLAGS_DETACHED)
+                            _Exit(126);
+                        else
+                            /*exit*/_Exit(126);
+                    }
+                }
+            }
 
             /*
              * Some final profile environment tweaks, if running as user.
