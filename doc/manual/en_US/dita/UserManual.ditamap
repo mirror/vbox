@@ -48,6 +48,7 @@
       -->
       <othermeta name="revision" content="$Rev$"/>
       <othermeta name="rev-date" content="$Date$"/>
+      <othermeta name="ditaval" content="ohc.ditaval"/>
       <!-- The bookpartno matches the part and revision in PDB  -->
          <bookid>
             <bookpartno>F43655-03</bookpartno>

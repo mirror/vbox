@@ -802,6 +802,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf,, \
 		"/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
 		"/transtype:pdf" \
+		"/filter:$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/htmlhelp.ditaval" \
 		"/outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)" \
 		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf", \
 		,,"--logfile=$$(@D)/UserManual_pdf.log")
@@ -832,6 +833,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 	$(QUIET)$(call VBOX_DITA_RUN_DOST,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks,, \
 		"/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap" \
 		"/transtype:xhtml" \
+        "/filter:$(VBOX_PATH_MANUAL_SRC)/en_US/dita/htmlhelp.ditaval" \
 		"/outdir:$(@D)" \
 		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml_chunks" \
 		,,"--logfile=$(@D)/UserManual_xhtml.log")
@@ -950,6 +952,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp, -EHHCDIR="$$(@D)", \
 		"/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
 		"/transtype:htmlhelp" \
+		"/filter:$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/htmlhelp.ditaval" \
 		"/outdir:$(2)" \
 		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_qhelp" \
 		,,"--logfile=$(2)/UserManual_htmlhelp.log")
