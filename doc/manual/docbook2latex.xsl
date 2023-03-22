@@ -96,6 +96,7 @@
 
   <!-- command synopsis -->
   <xsl:variable name="arg.rep.repeat.str.tex">\ldots{}</xsl:variable>
+  <xsl:variable name="arg.or.sep.compact.tex">|</xsl:variable>
   <xsl:variable name="arg.or.sep.tex"> |~</xsl:variable>
 
   <xsl:output method="text"/>
@@ -967,8 +968,10 @@
     <!-- separator char if we're not the first child -->
     <xsl:if test="position() > 1">
       <xsl:choose>
+        <xsl:when test="parent::group and ancestor::*[@role='compact']"><xsl:text>\textrm{</xsl:text><xsl:value-of select="$arg.or.sep.compact.tex"/><xsl:text>}</xsl:text></xsl:when>
         <xsl:when test="parent::group"><xsl:text>\textrm{</xsl:text><xsl:value-of select="$arg.or.sep.tex"/><xsl:text>}</xsl:text></xsl:when>
-        <xsl:when test="ancestor-or-self::*/@sepchar"><xsl:value-of select="ancestor-or-self::*/@sepchar"/></xsl:when>
+        <xsl:when test="parent::arg"></xsl:when>
+        <xsl:when test="ancestor::*/@sepchar"><xsl:value-of select="ancestor::*/@sepchar"/></xsl:when>
         <xsl:otherwise><xsl:text> </xsl:text></xsl:otherwise>
       </xsl:choose>
     </xsl:if>
@@ -1003,11 +1006,6 @@
       <xsl:when test="@choice = 'opt'">               <xsl:text>\textrm{</xsl:text><xsl:value-of select="$arg.choice.opt.close.str"/><xsl:text>}</xsl:text></xsl:when>
       <xsl:when test="@choice = 'req'">               <xsl:text>\textrm{</xsl:text><xsl:value-of select="$arg.choice.req.close.str"/><xsl:text>}</xsl:text></xsl:when>
     </xsl:choose>
-
-    <!-- add space padding if we're the last element in a nested arg -->
-    <xsl:if test="parent::arg and not(following-sibling)">
-      <xsl:text> </xsl:text>
-    </xsl:if>
   </xsl:template>
 
   <xsl:template match="replaceable">

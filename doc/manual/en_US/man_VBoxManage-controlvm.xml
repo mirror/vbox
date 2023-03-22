@@ -247,10 +247,8 @@
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="plain">natpf<replaceable>N</replaceable></arg>
-      <group choice="req">
-        <arg choice="plain">[<replaceable>rulename</replaceable>]<arg choice="plain">,tcp</arg></arg>
-        <arg choice="plain">udp,<arg><replaceable>host-IP</replaceable></arg>,<arg choice="plain"><replaceable>hostport</replaceable>,</arg><arg><replaceable>guest-IP</replaceable></arg>,<arg choice="plain"><replaceable>guestport</replaceable></arg></arg>
-      </group>
+
+      <arg choice="req" role="compact"><arg><replaceable>rulename</replaceable></arg>,<group choice="req"><arg choice="plain">tcp</arg><arg choice="plain">udp</arg></group>,<arg><replaceable>host-IP</replaceable></arg>,<arg choice="plain"><replaceable>hostport</replaceable></arg>,<arg><replaceable>guest-IP</replaceable></arg>,<arg choice="plain"><replaceable>guestport</replaceable></arg></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-natpf-delete">

@@ -264,9 +264,12 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
   <xsl:template match="arg|group">
     <!-- separator char if we're not the first child -->
     <xsl:if test="position() > 1">
+      <!--<xsl:value-of select="concat('*',name(),'=', position(),'#')"/>-->
       <xsl:choose>
+        <xsl:when test="parent::group and ancestor::*[@role='compact']"><xsl:value-of select="$arg.or.sep.compact"/></xsl:when>
         <xsl:when test="parent::group"><xsl:value-of select="$arg.or.sep"/></xsl:when>
-        <xsl:when test="ancestor-or-self::*/@sepchar"><xsl:value-of select="ancestor-or-self::*/@sepchar"/></xsl:when>
+        <xsl:when test="parent::arg"></xsl:when>
+        <xsl:when test="ancestor::*/@sepchar"><xsl:value-of select="ancestor::*/@sepchar"/></xsl:when>
         <xsl:otherwise><xsl:text> </xsl:text></xsl:otherwise>
       </xsl:choose>
     </xsl:if>
@@ -300,10 +303,6 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
         <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.close.str"/></xsl:when>
         <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.close.str"/></xsl:when>
       </xsl:choose>
-      <!-- Add a space padding if we're the last element in a repeating arg or group -->
-      <xsl:if test="(parent::arg or parent::group) and not(following-sibiling)">
-        <xsl:text> </xsl:text>
-      </xsl:if>
     </xsl:if>
   </xsl:template>
 

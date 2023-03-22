@@ -91,6 +91,7 @@
 <xsl:variable name="arg.rep.norepeat.str"></xsl:variable>
 <xsl:variable name="arg.rep.def.str"></xsl:variable>
 <xsl:variable name="arg.or.sep"> | </xsl:variable>
+<xsl:variable name="arg.or.sep.compact">|</xsl:variable>
 <xsl:variable name="cmdsynopsis.hanging.indent">4pi</xsl:variable>
 
 <!--
