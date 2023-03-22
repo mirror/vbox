@@ -557,6 +557,7 @@ bool UIGuestControlInterface::startProcess(const CommandData &commandData, CGues
     QVector<KProcessCreateFlag>  createFlags;
     createFlags.push_back(KProcessCreateFlag_WaitForProcessStartOnly);
     CGuestProcess process = guestSession.ProcessCreate(commandData.m_strExePath,
+                                                       NULL /* CWD */,
                                                        commandData.m_arguments,
                                                        commandData.m_environmentChanges,
                                                        createFlags,
