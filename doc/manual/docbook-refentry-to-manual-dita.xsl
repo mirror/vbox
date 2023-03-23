@@ -34,7 +34,7 @@
 
   <xsl:import href="string.xsl"/>
 
-  <xsl:output method="xml" version="1.0" encoding="utf-8" indent="yes"/>
+  <xsl:output method="xml" version="1.0" encoding="utf-8" indent="no"/>
   <xsl:strip-space elements="*"/>
 
 
@@ -60,7 +60,8 @@
 <!-- Rename refentry to reference.
      Also we need to wrap the refsync and refsect1 elements in a refbody. -->
 <xsl:template match="refentry">
-  <xsl:text disable-output-escaping='yes'>&lt;!DOCTYPE reference PUBLIC "-//OASIS//DTD DITA Reference//EN" "reference.dtd"&gt;</xsl:text>
+  <xsl:text disable-output-escaping='yes'>&lt;!DOCTYPE reference PUBLIC "-//OASIS//DTD DITA Reference//EN" "reference.dtd"&gt;
+</xsl:text>
 
   <xsl:element name="reference">
     <xsl:if test="not(@id)">
@@ -133,6 +134,7 @@
   <xsl:if test="not(title)"><xsl:message terminate="yes">refsect2 requires title</xsl:message></xsl:if>
   <xsl:element name="sectiondiv">
     <xsl:attribute name="rev">refsect2</xsl:attribute>
+    <xsl:attribute name="outputclass">refsect2</xsl:attribute>
     <xsl:if test="@id">
       <xsl:attribute name="id"><xsl:value-of select="@id"/></xsl:attribute>
     </xsl:if>
@@ -146,6 +148,7 @@
 <xsl:template match="refsect2/title">
   <xsl:element name="b">
     <xsl:attribute name="rev">refsect2/title</xsl:attribute>
+    <xsl:attribute name="outputclass">refsect2title</xsl:attribute>
     <xsl:apply-templates />
   </xsl:element>
 </xsl:template>
@@ -320,80 +323,76 @@
   </xsl:element>
 </xsl:template>
 
-<!-- arg -->
+<!--
+   arg -> groupseq; A bit complicated though...
+-->
+
+<!-- Plaintext within arg is generally translated to kwd, but value separators
+     like '=' and ',' should be wrapped in a sep element. -->
 <xsl:template match="arg/text()">
-  <xsl:element name="kwd">
-    <xsl:attribute name="rev">arg</xsl:attribute>
-    <xsl:value-of select="."/>
-  </xsl:element>
+  <xsl:choose>
+    <xsl:when test="substring(., string-length(.)) = '='">
+      <xsl:element name="kwd">
+        <xsl:attribute name="rev">arg=</xsl:attribute>
+        <xsl:value-of select="substring(., 1, string-length(.) - 1)"/>
+      </xsl:element>
+      <xsl:element name="sep">
+        <xsl:attribute name="rev">arg=</xsl:attribute>
+        <xsl:text>=</xsl:text>
+      </xsl:element>
+    </xsl:when>
+
+    <xsl:otherwise>
+      <xsl:element name="kwd">
+        <xsl:attribute name="rev">arg</xsl:attribute>
+        <xsl:value-of select="."/>
+      </xsl:element>
+    </xsl:otherwise>
+  </xsl:choose>
 </xsl:template>
 
-<xsl:template match="arg[not(@choice) or @choice='opt']" >
+<!-- arg -> groupseq and optionally a repsep element if repeatable. -->
+<xsl:template match="arg" >
   <xsl:element name="groupseq">
-    <xsl:attribute name="rev">arg[opt]</xsl:attribute>
-    <xsl:attribute name="importance">optional</xsl:attribute>
-
-    <xsl:apply-templates />
+    <xsl:attribute name="rev">arg[<xsl:value-of select="concat(@choice,',',@rep)"/>]</xsl:attribute>
+    <xsl:choose>
+      <xsl:when test="not(@choice) or @choice = 'opt'">
+        <xsl:attribute name="importance">optional</xsl:attribute>
+      </xsl:when>
+      <xsl:when test="@choice = 'req'">
+        <xsl:attribute name="importance">required</xsl:attribute>
+      </xsl:when>
+      <xsl:when test="@choice = 'plain'"/>
+      <xsl:otherwise>
+        <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Unexpected @choice value: <xsl:value-of select="@choice"/></xsl:message>
+      </xsl:otherwise>
+    </xsl:choose>
 
     <xsl:if test="@rep='repeat'">
       <xsl:element name="repsep">
-        <xsl:attribute name="rev">arg[opt,repeat]</xsl:attribute>
+        <xsl:attribute name="rev">arg[<xsl:value-of select="@choice"/>,repeat]</xsl:attribute>
         <xsl:text>...</xsl:text>
       </xsl:element>
     </xsl:if>
+
+    <xsl:apply-templates />
+
   </xsl:element>
 
-  <xsl:if test="parent::group">
+  <xsl:if test="parent::group and @choice != 'plain'">
     <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Expected arg in group to be plain, not optional.</xsl:message>
   </xsl:if>
 </xsl:template>
 
-<xsl:template match="arg[@choice='req']" >
-  <xsl:element name="groupseq">
-    <xsl:attribute name="rev">arg[req]</xsl:attribute>
-    <xsl:attribute name="importance">required</xsl:attribute>
-
-    <xsl:apply-templates />
-
-    <xsl:if test="@rep='repeat'">
-      <xsl:element name="repsep">
-        <xsl:attribute name="rev">arg[opt,repeat]</xsl:attribute>
-        <xsl:text>...</xsl:text>
-      </xsl:element>
-    </xsl:if>
-  </xsl:element>
-
-  <xsl:if test="parent::group">
-    <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Expected arg in group to be plain, not required.</xsl:message>
-  </xsl:if>
-</xsl:template>
-
-<xsl:template match="arg[not(ancestor::group) and ancestor::cmdsynopsis and @choice='plain' and (not(@rep) or @rep='norepeat')]" >
-  <xsl:element name="kwd">
-    <xsl:attribute name="rev">arg[plain]</xsl:attribute>
-    <xsl:apply-templates />
-  </xsl:element>
-</xsl:template>
-
-<xsl:template match="group/arg[replaceable and @choice='plain' and (not(@rep) or @rep='norepeat')]" >
-  <xsl:call-template name="check-children">
-    <xsl:with-param name="UnsupportedNodes" select="*[not(self::replaceable)]"/>
-    <xsl:with-param name="SupportedNames">replaceable or text()</xsl:with-param>
-  </xsl:call-template>
-  <xsl:element name="var">
-    <xsl:attribute name="rev">arg[plain]/replaceable</xsl:attribute>
-    <xsl:value-of select="."/>
-  </xsl:element>
-</xsl:template>
-
-<xsl:template match="group/arg[@choice='plain' and (not(@rep) or @rep='norepeat') and not(replaceable)]" >
+<!-- Plain (required) argument in group with only text() content -> kwd; -->
+<!--
+<xsl:template match="group/arg[@choice='plain' and (not(@rep) or @rep='norepeat') and not(replaceable) and not(arg) and not(group)]" >
   <xsl:call-template name="check-children" />
   <xsl:element name="kwd">
-    <xsl:attribute name="rev">arg[plain]</xsl:attribute>
+    <xsl:attribute name="rev">arg[plain#3]</xsl:attribute>
     <xsl:value-of select="."/>
   </xsl:element>
-</xsl:template>
-
+</xsl:template> -->
 
 <!-- replaceable under arg -> var -->
 <xsl:template match="arg/replaceable" >
@@ -430,33 +429,52 @@
   </xsl:element>
 </xsl:template>
 
-<!-- group under arg and cmdsynopsis -> groupchoice -->
+<!-- Plain group under arg or cmdsynopsis -> groupchoice w/o importance attrib -->
 <xsl:template match="arg/group[@choice='plain'] | cmdsynopsis/group[@choice='plain']">
   <xsl:element name="groupchoice">
-    <xsl:attribute name="rev">group</xsl:attribute>
+    <xsl:attribute name="rev">group[plain]</xsl:attribute>
     <xsl:apply-templates />
   </xsl:element>
+
+  <xsl:if test="@rep and @rep!='norepeat'">
+    <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Not implemented: Repeating plain group</xsl:message>
+  </xsl:if>
 </xsl:template>
 
+<!-- Required group under arg or cmdsynopsis -> groupchoice w/attrib -->
 <xsl:template match="arg/group[@choice='req'] | cmdsynopsis/group[@choice='req']">
   <xsl:element name="groupchoice">
-    <xsl:attribute name="rev">group</xsl:attribute>
+    <xsl:attribute name="rev">group[req]</xsl:attribute>
     <xsl:attribute name="importance">required</xsl:attribute>
+
+    <xsl:if test="@rep = 'repeat'">
+      <xsl:element name="repsep">
+        <xsl:attribute name="rev">group[req,repeat]</xsl:attribute>
+        <xsl:text>...</xsl:text>
+      </xsl:element>
+    </xsl:if>
+
     <xsl:apply-templates />
   </xsl:element>
 </xsl:template>
 
-<xsl:template match="cmdsynopsis/group[(@choice='opt' or not(@choice)) and (not(@rep) or @rep='norepeat')]" >
+<!-- Optional group under arg or cmdsynopsis -> groupchoice w/attrib -->
+<xsl:template match="cmdsynopsis/group[(@choice='opt' or not(@choice))]" >
   <xsl:if test="not(./arg[@choice='plain'])">
     <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Did not expect group[@choice=opt] to have children other than arg[@choice=plain]:
       <xsl:for-each select="node()"><xsl:value-of select="concat(' ', name())"/>[@choice=<xsl:value-of select="@choice"/>]</xsl:for-each>
     </xsl:message>
   </xsl:if>
+
   <xsl:element name="groupchoice">
     <xsl:attribute name="rev">group[opt]</xsl:attribute>
     <xsl:attribute name="importance">optional</xsl:attribute>
-    <xsl:value-of select="."/>
+    <xsl:apply-templates />
   </xsl:element>
+
+  <xsl:if test="@rep and @rep!='norepeat'">
+    <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Not implemented: Repeating optional group</xsl:message>
+  </xsl:if>
 </xsl:template>
 
 <!-- option -->
