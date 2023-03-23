@@ -90,8 +90,8 @@
        <arg choice="plain">create</arg>
        <arg choice="req">--domain-name=<replaceable>name</replaceable></arg>
        <group choice="req">
-           <arg choice="req">--image-id=<replaceable>id</replaceable></arg>
-           <arg choice="req">--boot-volume-id=<replaceable>id</replaceable></arg>
+           <arg choice="plain">--image-id=<replaceable>id</replaceable></arg>
+           <arg choice="plain">--boot-volume-id=<replaceable>id</replaceable></arg>
        </group>
        <arg choice="req">--display-name=<replaceable>name</replaceable></arg>
        <arg choice="req">--shape=<replaceable>type</replaceable></arg>

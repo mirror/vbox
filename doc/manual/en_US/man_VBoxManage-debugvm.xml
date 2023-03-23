@@ -68,21 +68,21 @@
       <command>VBoxManage debugvm</command>
       <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
       <arg choice="plain">log</arg>
-      <group><arg>--release</arg><arg>--debug</arg></group>
+      <group><arg choice="plain">--release</arg><arg choice="plain">--debug</arg></group>
       <arg rep="repeat"><replaceable>group-settings</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-logdest">
       <command>VBoxManage debugvm</command>
       <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
       <arg choice="plain">logdest</arg>
-      <group><arg>--release</arg><arg>--debug</arg></group>
+      <group><arg choice="plain">--release</arg><arg choice="plain">--debug</arg></group>
       <arg rep="repeat"><replaceable>destinations</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-logflags">
       <command>VBoxManage debugvm</command>
       <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
       <arg choice="plain">logflags</arg>
-      <group><arg>--release</arg><arg>--debug</arg></group>
+      <group><arg choice="plain">--release</arg><arg choice="plain">--debug</arg></group>
       <arg rep="repeat"><replaceable>flags</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-osdetect">
@@ -119,7 +119,7 @@
       <command>VBoxManage debugvm</command>
       <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
       <arg choice="plain">show</arg>
-      <group><arg>--human-readable</arg><arg>--sh-export</arg><arg>--sh-eval</arg><arg>--cmd-set</arg></group>
+      <group><arg choice="plain">--human-readable</arg><arg choice="plain">--sh-export</arg><arg choice="plain">--sh-eval</arg><arg choice="plain">--cmd-set</arg></group>
       <arg rep="repeat"><replaceable>settings-item</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-stack">

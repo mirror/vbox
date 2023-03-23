@@ -114,7 +114,10 @@
 
       <arg choice="plain">list</arg>
 
-      <group><arg>--details</arg><arg>--machinereadable</arg></group>
+      <group>
+        <arg choice="plain">--details</arg>
+        <arg choice="plain">--machinereadable</arg>
+        </group>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-showvminfo">

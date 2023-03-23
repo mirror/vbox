@@ -69,10 +69,8 @@
           <arg choice="plain"><replaceable>VHD</replaceable></arg>
         </group></arg>
       <arg>--variant Standard,Fixed,Split2G,Stream,ESX,Formatted,RawDisk</arg>
-      <arg choice="plain" rep="repeat">--property
-          <replaceable>name</replaceable>=<replaceable>value</replaceable></arg>
-      <arg choice="plain" rep="repeat">--property-file
-          <replaceable>name</replaceable>=<replaceable>/path/to/file/with/value</replaceable></arg>
+      <arg rep="repeat">--property <replaceable>name</replaceable>=<replaceable>value</replaceable></arg>
+      <arg rep="repeat">--property-file <replaceable>name</replaceable>=<replaceable>/path/to/file/with/value</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 

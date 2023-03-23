@@ -49,19 +49,19 @@
     <cmdsynopsis id="synopsis-vboxmanage-startvm">
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
       <command>VBoxManage startvm</command>
-      <group choice="req" rep="repeat">
-        <arg choice="plain"><replaceable>uuid</replaceable></arg>
-        <arg choice="plain"><replaceable>vmname</replaceable></arg>
-      </group>
       <arg>--putenv=<replaceable>name</replaceable>[=<replaceable>value</replaceable>]</arg>
-      <arg>--type=<group>
+      <arg role="compact">--type=<group choice="req">
           <arg choice="plain">gui</arg>
           <arg choice="plain">headless</arg>
           <arg choice="plain">sdl</arg>
           <arg choice="plain">separate</arg>
         </group></arg>
-      <arg choice="plain">--password <replaceable>file</replaceable></arg>
-      <arg choice="plain">--password-id <replaceable>password identifier</replaceable></arg>
+      <arg>--password=<replaceable>file</replaceable></arg>
+      <arg>--password-id=<replaceable>password-identifier</replaceable></arg>
+      <group choice="req" rep="repeat">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
     </cmdsynopsis>
   </refsynopsisdiv>
 

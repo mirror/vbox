@@ -61,7 +61,7 @@
         <arg choice="plain">--disable</arg>
       </group>
       <sbr/>
-      <group rep="repeat">
+      <arg rep="repeat">
         <arg>--global</arg>
         <arg rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
         <arg rep="repeat">--set-opt-hex=<replaceable>dhcp-opt-no hexstring</replaceable></arg>
@@ -70,9 +70,9 @@
         <arg>--min-lease-time=<replaceable>seconds</replaceable></arg>
         <arg>--default-lease-time=<replaceable>seconds</replaceable></arg>
         <arg>--max-lease-time=<replaceable>seconds</replaceable></arg>
-      </group>
+      </arg>
       <sbr/>
-      <group rep="repeat">
+      <arg rep="repeat">
         <arg choice="req">--group=<replaceable>name</replaceable></arg>
         <arg rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
         <arg rep="repeat">--set-opt-hex=<replaceable>dhcp-opt-no hexstring</replaceable></arg>
@@ -93,9 +93,9 @@
         <arg>--min-lease-time=<replaceable>seconds</replaceable></arg>
         <arg>--default-lease-time=<replaceable>seconds</replaceable></arg>
         <arg>--max-lease-time=<replaceable>seconds</replaceable></arg>
-      </group>
+      </arg>
       <sbr/>
-      <group rep="repeat">
+      <arg rep="repeat">
         <arg choice="req">--vm=<replaceable>name|uuid</replaceable></arg>
         <arg>--nic=<replaceable>1-N</replaceable></arg>
         <arg rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
@@ -106,9 +106,9 @@
         <arg>--default-lease-time=<replaceable>seconds</replaceable></arg>
         <arg>--max-lease-time=<replaceable>seconds</replaceable></arg>
         <arg>--fixed-address=<replaceable>address</replaceable></arg>
-      </group>
+      </arg>
       <sbr/>
-      <group rep="repeat">
+      <arg rep="repeat">
         <arg choice="req">--mac-address=<replaceable>address</replaceable></arg>
         <arg rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
         <arg rep="repeat">--set-opt-hex=<replaceable>dhcp-opt-no hexstring</replaceable></arg>
@@ -118,7 +118,7 @@
         <arg>--default-lease-time=<replaceable>seconds</replaceable></arg>
         <arg>--max-lease-time=<replaceable>seconds</replaceable></arg>
         <arg>--fixed-address=<replaceable>address</replaceable></arg>
-      </group>
+      </arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-dhcpserver-modify">
       <command>VBoxManage dhcpserver modify</command>
@@ -135,7 +135,7 @@
         <arg choice="plain">--disable</arg>
       </group>
       <sbr/>
-      <group rep="repeat">
+      <arg rep="repeat">
         <arg>--global</arg>
         <arg rep="repeat">--del-opt=<replaceable>dhcp-opt-no</replaceable></arg>
         <arg rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
@@ -148,9 +148,9 @@
         <arg>--default-lease-time=<replaceable>seconds</replaceable></arg>
         <arg>--max-lease-time=<replaceable>seconds</replaceable></arg>
         <arg>--remove-config</arg>
-      </group>
+      </arg>
       <sbr/>
-      <group rep="repeat">
+      <arg rep="repeat">
         <arg choice="req">--group=<replaceable>name</replaceable></arg>
         <arg rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
         <arg rep="repeat">--set-opt-hex=<replaceable>dhcp-opt-no hexstring</replaceable></arg>
@@ -181,9 +181,9 @@
         <arg>--default-lease-time=<replaceable>seconds</replaceable></arg>
         <arg>--max-lease-time=<replaceable>seconds</replaceable></arg>
         <arg>--remove-config</arg>
-      </group>
+      </arg>
       <sbr/>
-      <group rep="repeat">
+      <arg rep="repeat">
         <arg choice="req">--vm=<replaceable>name|uuid</replaceable></arg>
         <arg>--nic=<replaceable>1-N</replaceable></arg>
         <arg rep="repeat">--del-opt=<replaceable>dhcp-opt-no</replaceable></arg>
@@ -198,9 +198,9 @@
         <arg>--max-lease-time=<replaceable>seconds</replaceable></arg>
         <arg>--fixed-address=<replaceable>address</replaceable></arg>
         <arg>--remove-config</arg>
-      </group>
+      </arg>
       <sbr/>
-      <group rep="repeat">
+      <arg rep="repeat">
         <arg choice="req">--mac-address=<replaceable>address</replaceable></arg>
         <arg rep="repeat">--del-opt=<replaceable>dhcp-opt-no</replaceable></arg>
         <arg rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
@@ -214,7 +214,7 @@
         <arg>--max-lease-time=<replaceable>seconds</replaceable></arg>
         <arg>--fixed-address=<replaceable>address</replaceable></arg>
         <arg>--remove-config</arg>
-      </group>
+      </arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-dhcpserver-remove">
       <command>VBoxManage dhcpserver remove</command>

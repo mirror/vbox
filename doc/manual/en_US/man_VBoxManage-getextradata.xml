@@ -55,9 +55,9 @@
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
-      <group choice="plain">
-        <arg choice="req"><replaceable>keyword</replaceable></arg>
-        <arg>enumerate</arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>keyword</replaceable></arg>
+        <arg choice="plain">enumerate</arg>
       </group>
     </cmdsynopsis>
   </refsynopsisdiv>
