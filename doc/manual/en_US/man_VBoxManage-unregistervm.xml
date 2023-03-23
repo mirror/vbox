@@ -66,7 +66,7 @@
     </para>
     <variablelist>
       <varlistentry>
-        <term><replaceable>uuid</replaceable>|<replaceable>vmname</replaceable></term>
+        <term><option><replaceable>uuid</replaceable> | <replaceable>vmname</replaceable></option></term>
         <listitem><para>
             Specifies the name or Universally Unique Identifier (UUID)
             of the VM.

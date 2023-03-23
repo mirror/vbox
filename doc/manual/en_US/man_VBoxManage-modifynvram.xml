@@ -48,55 +48,82 @@
   <refsynopsisdiv>
     <cmdsynopsis id="synopsis-vboxmanage-modifynvram-inituefivarstore">
       <command>VBoxManage modifynvram</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">inituefivarstore</arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-modifynvram-enrollmssignatures">
       <command>VBoxManage modifynvram</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">enrollmssignatures</arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-modifynvram-enrollorclpk">
       <command>VBoxManage modifynvram</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">enrollorclpk</arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-modifynvram-enrollpk">
       <command>VBoxManage modifynvram</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">enrollpk</arg>
       <arg>--platform-key=<replaceable>filename</replaceable></arg>
       <arg>--owner-uuid=<replaceable>uuid</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-modifynvram-enrollmok">
       <command>VBoxManage modifynvram</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">enrollmok</arg>
       <arg>--mok=<replaceable>filename</replaceable></arg>
       <arg>--owner-uuid=<replaceable>uuid</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-modifynvram-listvars">
       <command>VBoxManage modifynvram</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">listvars</arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-modifynvram-queryvar">
       <command>VBoxManage modifynvram</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">queryvar</arg>
       <arg>--name=<replaceable>name</replaceable></arg>
       <arg>--filename=<replaceable>filename</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-modifynvram-deletevar">
       <command>VBoxManage modifynvram</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">deletevar</arg>
       <arg>--name=<replaceable>name</replaceable></arg>
       <arg>--owner-uuid=<replaceable>uuid</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-modifynvram-changevar">
       <command>VBoxManage modifynvram</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">changevar</arg>
       <arg>--name=<replaceable>name</replaceable></arg>
       <arg>--filename=<replaceable>filename</replaceable></arg>
@@ -117,7 +144,7 @@
       machine:</para>
       <variablelist>
         <varlistentry>
-          <term><replaceable>uuid|vmname</replaceable></term>
+          <term><option><replaceable>uuid</replaceable> | <replaceable>vmname</replaceable></option></term>
           <listitem><para>Either the UUID or the name (case sensitive) of a VM.</para></listitem>
         </varlistentry>
       </variablelist>

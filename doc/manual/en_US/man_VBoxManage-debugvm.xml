@@ -48,89 +48,131 @@
   <refsynopsisdiv>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-dumpvmcore">
       <command>VBoxManage debugvm</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">dumpvmcore</arg>
       <arg>--filename=<replaceable>name</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-info">
       <command>VBoxManage debugvm</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">info</arg>
       <arg choice="req"><replaceable>item</replaceable></arg>
       <arg rep="repeat"><replaceable>args</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-injectnmi">
       <command>VBoxManage debugvm</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">injectnmi</arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-log">
       <command>VBoxManage debugvm</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">log</arg>
       <group><arg choice="plain">--release</arg><arg choice="plain">--debug</arg></group>
       <arg rep="repeat"><replaceable>group-settings</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-logdest">
       <command>VBoxManage debugvm</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">logdest</arg>
       <group><arg choice="plain">--release</arg><arg choice="plain">--debug</arg></group>
       <arg rep="repeat"><replaceable>destinations</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-logflags">
       <command>VBoxManage debugvm</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">logflags</arg>
       <group><arg choice="plain">--release</arg><arg choice="plain">--debug</arg></group>
       <arg rep="repeat"><replaceable>flags</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-osdetect">
       <command>VBoxManage debugvm</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">osdetect</arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-osinfo">
       <command>VBoxManage debugvm</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">osinfo</arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-osdmesg">
       <command>VBoxManage debugvm</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">osdmesg</arg>
       <arg>--lines=<replaceable>lines</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-getregisters">
       <command>VBoxManage debugvm</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">getregisters</arg>
       <arg>--cpu=<replaceable>id</replaceable></arg>
       <arg rep="repeat"><replaceable>reg-set.reg-name</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-setregisters">
       <command>VBoxManage debugvm</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">setregisters</arg>
       <arg>--cpu=<replaceable>id</replaceable></arg>
       <arg rep="repeat"><replaceable>reg-set.reg-name</replaceable>=<replaceable>value</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-show">
       <command>VBoxManage debugvm</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">show</arg>
       <group><arg choice="plain">--human-readable</arg><arg choice="plain">--sh-export</arg><arg choice="plain">--sh-eval</arg><arg choice="plain">--cmd-set</arg></group>
       <arg rep="repeat"><replaceable>settings-item</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-stack">
       <command>VBoxManage debugvm</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">stack</arg>
       <arg>--cpu=<replaceable>id</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-statistics">
       <command>VBoxManage debugvm</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">statistics</arg>
       <arg>--reset</arg>
       <arg>--descriptions</arg>
@@ -138,7 +180,10 @@
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-guestsample">
       <command>VBoxManage debugvm</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="plain">guestsample</arg>
       <arg>--filename=<replaceable>filename</replaceable></arg>
       <arg>--sample-interval-us=<replaceable>interval</replaceable></arg>
@@ -161,7 +206,7 @@
       machine:</para>
       <variablelist>
         <varlistentry>
-          <term><replaceable>uuid|vmname</replaceable></term>
+          <term><option><replaceable>uuid</replaceable> | <replaceable>vmname</replaceable></option></term>
           <listitem><para>Either the UUID or the name (case sensitive) of a VM.</para></listitem>
         </varlistentry>
       </variablelist>

@@ -53,7 +53,10 @@
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-unattended-install"> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
       <command>VBoxManage unattended install</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
       <arg choice="req">--iso=<replaceable>install-iso</replaceable></arg>
       <arg>--user=<replaceable>login</replaceable></arg>
       <arg>--password=<replaceable>password</replaceable></arg>
@@ -114,7 +117,7 @@
       </para>
       <variablelist>
         <varlistentry>
-          <term><replaceable>uuid|vmname</replaceable></term>
+          <term><option><replaceable>uuid</replaceable> | <replaceable>vmname</replaceable></option></term>
           <listitem><para>Either the UUID or the name (case sensitive) of a VM.</para></listitem>
         </varlistentry>
         <varlistentry>

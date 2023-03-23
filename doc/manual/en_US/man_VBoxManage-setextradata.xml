@@ -75,7 +75,7 @@
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><replaceable>uuid</replaceable>|<replaceable>vmname</replaceable></term>
+        <term><option><replaceable>uuid</replaceable> | <replaceable>vmname</replaceable></option></term>
         <listitem><para>
             Specifies the Universally Unique Identifier (UUID) or name
             of the VM.
