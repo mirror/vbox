@@ -102,32 +102,6 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
  	man_VBoxManage-hostonlyif.xml \
  	man_VBoxManage-usbdevsource.xml
 
- ## List of user manual XML files.
- VBOX_MANUAL_XML_FILES = \
- 	UserManual.xml \
- 	user_Preface.xml \
- 	user_Introduction.xml \
- 	user_Installation.xml \
- 	user_BasicConcepts.xml \
- 	user_GuestAdditions.xml \
- 	user_Storage.xml \
- 	user_Networking.xml \
- 	user_Frontends.xml \
- 	user_VBoxManage.xml \
- 	user_AdvancedTopics.xml \
- 	user_Technical.xml \
- 	user_VirtualBoxAPI.xml \
- 	user_Troubleshooting.xml \
- 	user_Security.xml \
- 	user_KnownIssues.xml \
- 	user_ChangeLog.xml \
- 	user_ThirdParty.xml \
- 	user_PrivacyPolicy.xml \
- 	user_Glossary.xml \
- 	oracle-accessibility-ohc-en.xml \
- 	oracle-diversity.xml \
- 	oracle-support-en.xml
-
  ## List of user manual XML files common for all languages.
  VBOX_MANUAL_XML_FILES_COMMON = \
  	$(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml
