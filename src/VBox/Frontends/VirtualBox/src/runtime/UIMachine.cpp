@@ -1469,13 +1469,15 @@ bool UIMachine::prepare()
         return false;
 
     /* Prepare VM related stuff: */
-    prepareBranding();
     prepareActions();
     prepareHostScreenData();
-    prepareGuestScreenData();
     prepareKeyboard();
     prepareClose();
     prepareVisualState();
+
+    /* Update VM related stuff: */
+    updateBranding();
+    updateGuestScreenData();
     enterInitialVisualState();
 
     /* Try to initialize VM session: */
@@ -1560,19 +1562,6 @@ bool UIMachine::prepareSession()
 
     /* Make sure session prepared: */
     return uisession()->prepare();
-}
-
-void UIMachine::prepareBranding()
-{
-    /* Create the icon dynamically: */
-    m_pMachineWindowIcon = new QIcon;
-    acquireUserMachineIcon(*m_pMachineWindowIcon);
-
-#ifndef VBOX_WS_MAC
-    /* Load user's machine-window name postfix: */
-    const QUuid uMachineID = uiCommon().managedVMUuid();
-    m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(uMachineID);
-#endif /* !VBOX_WS_MAC */
 }
 
 void UIMachine::prepareActions()
@@ -1683,7 +1672,71 @@ void UIMachine::prepareHostScreenData()
 #endif /* !VBOX_WS_MAC */
 }
 
-void UIMachine::prepareGuestScreenData()
+void UIMachine::prepareKeyboard()
+{
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
+    /* Load extra-data value: */
+    m_fIsHidLedsSyncEnabled = gEDataManager->hidLedsSyncState(uiCommon().managedVMUuid());
+    /* Connect to extra-data changes to be able to enable/disable feature dynamically: */
+    connect(gEDataManager, &UIExtraDataManager::sigHidLedsSyncStateChange,
+            this, &UIMachine::sltHidLedsSyncStateChanged);
+#endif /* VBOX_WS_MAC || VBOX_WS_WIN */
+}
+
+void UIMachine::prepareClose()
+{
+    /* What is the default close action and the restricted are? */
+    const QUuid uMachineID = uiCommon().managedVMUuid();
+    m_defaultCloseAction = gEDataManager->defaultMachineCloseAction(uMachineID);
+    m_restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(uMachineID);
+}
+
+void UIMachine::prepareVisualState()
+{
+    /* Prepare async visual state type change handler: */
+    qRegisterMetaType<UIVisualStateType>();
+    connect(this, &UIMachine::sigRequestAsyncVisualStateChange,
+            this, &UIMachine::sltChangeVisualState,
+            Qt::QueuedConnection);
+
+    /* Load restricted visual states: */
+    UIVisualStateType enmRestrictedVisualStates = gEDataManager->restrictedVisualStates(uiCommon().managedVMUuid());
+    /* Acquire allowed visual states: */
+    m_enmAllowedVisualStates = static_cast<UIVisualStateType>(UIVisualStateType_All ^ enmRestrictedVisualStates);
+
+    /* Load requested visual state, it can override initial one: */
+    m_enmRequestedVisualState = gEDataManager->requestedVisualState(uiCommon().managedVMUuid());
+    /* Check if requested visual state is allowed: */
+    if (isVisualStateAllowed(m_enmRequestedVisualState))
+    {
+        switch (m_enmRequestedVisualState)
+        {
+            /* Direct transition allowed to scale/fullscreen modes only: */
+            case UIVisualStateType_Scale:
+            case UIVisualStateType_Fullscreen:
+                m_enmInitialVisualState = m_enmRequestedVisualState;
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+void UIMachine::updateBranding()
+{
+    /* Create the icon dynamically: */
+    delete m_pMachineWindowIcon;
+    m_pMachineWindowIcon = new QIcon;
+    acquireUserMachineIcon(*m_pMachineWindowIcon);
+
+#ifndef VBOX_WS_MAC
+    /* Load user's machine-window name postfix: */
+    const QUuid uMachineID = uiCommon().managedVMUuid();
+    m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(uMachineID);
+#endif /* !VBOX_WS_MAC */
+}
+
+void UIMachine::updateGuestScreenData()
 {
     /* Accquire guest-screen count: */
     ulong cMonitorCount = 0;
@@ -1739,56 +1792,6 @@ void UIMachine::prepareGuestScreenData()
         actionPool()->toRuntime()->setGuestScreenVisible(iScreenIndex, m_guestScreenVisibilityVector.at(iScreenIndex));
 }
 
-void UIMachine::prepareKeyboard()
-{
-#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
-    /* Load extra-data value: */
-    m_fIsHidLedsSyncEnabled = gEDataManager->hidLedsSyncState(uiCommon().managedVMUuid());
-    /* Connect to extra-data changes to be able to enable/disable feature dynamically: */
-    connect(gEDataManager, &UIExtraDataManager::sigHidLedsSyncStateChange,
-            this, &UIMachine::sltHidLedsSyncStateChanged);
-#endif /* VBOX_WS_MAC || VBOX_WS_WIN */
-}
-
-void UIMachine::prepareClose()
-{
-    /* What is the default close action and the restricted are? */
-    const QUuid uMachineID = uiCommon().managedVMUuid();
-    m_defaultCloseAction = gEDataManager->defaultMachineCloseAction(uMachineID);
-    m_restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(uMachineID);
-}
-
-void UIMachine::prepareVisualState()
-{
-    /* Prepare async visual state type change handler: */
-    qRegisterMetaType<UIVisualStateType>();
-    connect(this, &UIMachine::sigRequestAsyncVisualStateChange,
-            this, &UIMachine::sltChangeVisualState,
-            Qt::QueuedConnection);
-
-    /* Load restricted visual states: */
-    UIVisualStateType enmRestrictedVisualStates = gEDataManager->restrictedVisualStates(uiCommon().managedVMUuid());
-    /* Acquire allowed visual states: */
-    m_enmAllowedVisualStates = static_cast<UIVisualStateType>(UIVisualStateType_All ^ enmRestrictedVisualStates);
-
-    /* Load requested visual state, it can override initial one: */
-    m_enmRequestedVisualState = gEDataManager->requestedVisualState(uiCommon().managedVMUuid());
-    /* Check if requested visual state is allowed: */
-    if (isVisualStateAllowed(m_enmRequestedVisualState))
-    {
-        switch (m_enmRequestedVisualState)
-        {
-            /* Direct transition allowed to scale/fullscreen modes only: */
-            case UIVisualStateType_Scale:
-            case UIVisualStateType_Fullscreen:
-                m_enmInitialVisualState = m_enmRequestedVisualState;
-                break;
-            default:
-                break;
-        }
-    }
-}
-
 void UIMachine::enterInitialVisualState()
 {
     sltChangeVisualState(m_enmInitialVisualState);
@@ -1798,6 +1801,13 @@ void UIMachine::cleanupMachineLogic()
 {
     /* Delete machine-logic if any: */
     UIMachineLogic::destroy(m_pMachineLogic);
+}
+
+void UIMachine::cleanupBranding()
+{
+    /* Cleanup machine-window icon: */
+    delete m_pMachineWindowIcon;
+    m_pMachineWindowIcon = 0;
 }
 
 void UIMachine::cleanupHostScreenData()
@@ -1821,13 +1831,6 @@ void UIMachine::cleanupActions()
         UIActionPool::destroy(actionPool());
 }
 
-void UIMachine::cleanupBranding()
-{
-    /* Cleanup machine-window icon: */
-    delete m_pMachineWindowIcon;
-    m_pMachineWindowIcon = 0;
-}
-
 void UIMachine::cleanupSession()
 {
     /* Destroy session UI if exists: */
@@ -1847,9 +1850,9 @@ void UIMachine::cleanup()
 
     /* Cleanup stuff: */
     cleanupMachineLogic();
+    cleanupBranding();
     cleanupHostScreenData();
     cleanupActions();
-    cleanupBranding();
     cleanupSession();
     cleanupNotificationCenter();
 }
