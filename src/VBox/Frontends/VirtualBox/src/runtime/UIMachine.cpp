@@ -1475,7 +1475,8 @@ bool UIMachine::prepare()
     prepareGuestScreenData();
     prepareKeyboard();
     prepareClose();
-    prepareMachineLogic();
+    prepareVisualState();
+    enterInitialVisualState();
 
     /* Try to initialize VM session: */
     if (!uisession()->initialize())
@@ -1757,7 +1758,7 @@ void UIMachine::prepareClose()
     m_restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(uMachineID);
 }
 
-void UIMachine::prepareMachineLogic()
+void UIMachine::prepareVisualState()
 {
     /* Prepare async visual state type change handler: */
     qRegisterMetaType<UIVisualStateType>();
@@ -1786,9 +1787,11 @@ void UIMachine::prepareMachineLogic()
                 break;
         }
     }
+}
 
-    /* Enter initial visual state: */
-    enterInitialVisualState();
+void UIMachine::enterInitialVisualState()
+{
+    sltChangeVisualState(m_enmInitialVisualState);
 }
 
 void UIMachine::cleanupMachineLogic()
@@ -1849,11 +1852,6 @@ void UIMachine::cleanup()
     cleanupBranding();
     cleanupSession();
     cleanupNotificationCenter();
-}
-
-void UIMachine::enterInitialVisualState()
-{
-    sltChangeVisualState(m_enmInitialVisualState);
 }
 
 void UIMachine::updateActionRestrictions()

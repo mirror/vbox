@@ -857,8 +857,11 @@ private:
     void prepareKeyboard();
     /** Prepare routine: Close stuff. */
     void prepareClose();
-    /** Prepare routine: Machine-logic stuff. */
-    void prepareMachineLogic();
+    /** Prepare routine: Visual-state stuff. */
+    void prepareVisualState();
+
+    /** Moves VM to initial state. */
+    void enterInitialVisualState();
 
     /** Cleanup routine: Machine-logic stuff. */
     void cleanupMachineLogic();
@@ -874,9 +877,6 @@ private:
     void cleanupNotificationCenter();
     /** Cleanup routine. */
     void cleanup();
-
-    /** Moves VM to initial state. */
-    void enterInitialVisualState();
 
     /** @name Actions stuff.
      ** @{ */
