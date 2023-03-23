@@ -51,17 +51,29 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+/** @todo move to cdefs.h */
+#ifdef __GNUC__
+# define DECL_VAR_ALIGNED(a_Scope, a_Type, a_Name, a_Alignment) a_Scope a_Type a_Name __attribute__((__aligned__(a_Alignment)))
+#elif defined(_MSC_VER)
+# define DECL_VAR_ALIGNED(a_Scope, a_Type, a_Name, a_Alignment) a_Scope __declspec(align(a_Alignment)) a_Type a_Name
+#else
+# define DECL_VAR_ALIGNED(a_Scope, a_Type, a_Name, a_Alignment) a_Scope a_Type a_Name
+#endif
+
 /**
  * Array indexed by the quoting type and 7-bit ASCII character.
  *
  * We include some extra stuff here that the corresponding shell would normally
  * require quoting of.
+ *
+ * @note We 16-byte align this as ASMBitSet/ASMBitTest expects aligned data, and
+ *       with a uint8_t type the compiler/linker may use byte alignment.
  */
-static uint8_t
 #ifndef IPRT_REGENERATE_QUOTE_CHARS
-const
+DECL_VAR_ALIGNED(static, uint8_t const, g_abmQuoteChars[RTGETOPTARGV_CNV_QUOTE_MASK + 1][16], 16) =
+#else
+DECL_VAR_ALIGNED(static, uint8_t,       g_abmQuoteChars[RTGETOPTARGV_CNV_QUOTE_MASK + 1][16], 16) =
 #endif
-g_abmQuoteChars[RTGETOPTARGV_CNV_QUOTE_MASK + 1][16] =
 {
     { 0xfe, 0xff, 0xff, 0xff, 0x65, 0x00, 0x00, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 },
     { 0xfe, 0xff, 0xff, 0xff, 0xd7, 0x07, 0x00, 0xd8, 0x00, 0x00, 0x00, 0x18, 0x01, 0x00, 0x00, 0x50 },
