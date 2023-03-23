@@ -40,6 +40,7 @@
             <xsl:when test="contains(@href, 'http')">
                 <xsl:copy>
                     <xsl:attribute name="scope">external</xsl:attribute>
+                    <xsl:attribute name="format">html</xsl:attribute>
                     <xsl:apply-templates select="@*|node()"/>
                 </xsl:copy>
             </xsl:when>
