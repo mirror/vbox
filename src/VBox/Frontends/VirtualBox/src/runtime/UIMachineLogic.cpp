@@ -174,9 +174,13 @@ UIMachineLogic *UIMachineLogic::create(UIMachine *pMachine,
 }
 
 /* static */
-void UIMachineLogic::destroy(UIMachineLogic *pLogic)
+void UIMachineLogic::destroy(UIMachineLogic *&pLogic)
 {
+    if (!pLogic)
+        return;
+    pLogic->cleanup();
     delete pLogic;
+    pLogic = 0;
 }
 
 void UIMachineLogic::prepare()
