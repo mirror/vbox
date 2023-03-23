@@ -1262,6 +1262,8 @@ PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTX p
          * Microsoft Hyper-V enabled Windows guests. We must fall back to emulating
          * the instruction, see @bugref{10318#c7}.
          */
+        STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eHandlersInvalid);
+        STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2InvalidPhys; });
         return VINF_EM_RAW_EMULATE_INSTR;
     }
     /* Check if this is an MMIO page and NOT the VMX APIC-access page. */
