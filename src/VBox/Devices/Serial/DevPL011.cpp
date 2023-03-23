@@ -230,7 +230,7 @@ typedef DEVPL011R3 *PDEVPL011R3;
  */
 typedef struct DEVPL011R0
 {
-    /** Dummy .*/ 
+    /** Dummy .*/
     uint8_t                         bDummy;
 } DEVPL011R0;
 /** Pointer to the serial device state for ring-0. */
@@ -242,7 +242,7 @@ typedef DEVPL011R0 *PDEVPL011R0;
  */
 typedef struct DEVPL011RC
 {
-    /** Dummy .*/ 
+    /** Dummy .*/
     uint8_t                         bDummy;
 } DEVPL011RC;
 /** Pointer to the serial device state for raw-mode. */
