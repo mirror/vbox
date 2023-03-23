@@ -220,7 +220,23 @@
   </xsl:element>
 </xsl:template>
 
-<!-- command in cmdsynopsis -> syntaxdiagram
+<!-- orderedlist -> ol -->
+<xsl:template match="orderedlist">
+  <xsl:element name="ol">
+    <xsl:attribute name="rev">orderedlist</xsl:attribute>
+    <xsl:apply-templates />
+  </xsl:element>
+</xsl:template>
+
+<!-- listitem in orderedlist -> li -->
+<xsl:template match="orderedlist/listitem">
+  <xsl:element name="li">
+    <xsl:attribute name="rev">listitem</xsl:attribute>
+    <xsl:apply-templates />
+  </xsl:element>
+</xsl:template>
+
+<!-- cmdsynopsis -> syntaxdiagram
      If sbr is used, this gets a bit more complicated... -->
 <xsl:template match="cmdsynopsis[not(sbr)]">
   <xsl:element name="syntaxdiagram">
@@ -232,65 +248,75 @@
   </xsl:element>
 </xsl:template>
 
-<!--  This isn't working.
-<xsl:key name="G_keyUpToNextSbr"
-  match="cmdsynopsis/node()[not(self::sbr)]"
-  use="generate-id((..|preceding-sibling::sbr[1])[last()])"/>
-
 <xsl:template match="cmdsynopsis[sbr]">
   <xsl:element name="syntaxdiagram">
     <xsl:attribute name="rev">cmdsynopsis</xsl:attribute>
     <xsl:if test="@id">
       <xsl:attribute name="id"><xsl:value-of select="@id"/></xsl:attribute>
     </xsl:if>
-    <xsl:element name="groupcomp">
-      <xsl:attribute name="rev">sbr/0</xsl:attribute>
-      <xsl:apply-templates select="key('G_keyUpToNextSbr', generate-id())"/>
-    </xsl:element>
-    <xsl:apply-templates select="sbr"/>
+    <xsl:for-each select="sbr">
+      <xsl:variable name="idxSbr" select="position()"/>
+      <xsl:element name="groupcomp">
+        <xsl:attribute name="rev">sbr/<xsl:value-of select="position()"/></xsl:attribute>
+
+        <xsl:if test="$idxSbr = 1">
+          <xsl:apply-templates select="preceding-sibling::node()"/>
+        </xsl:if>
+        <xsl:if test="$idxSbr != 1">
+          <xsl:apply-templates select="preceding-sibling::node()[  count(. | ../sbr[$idxSbr - 1]/following-sibling::node())
+                                                                 =     count(../sbr[$idxSbr - 1]/following-sibling::node())]"/>
+        </xsl:if>
+        <xsl:if test="$idxSbr = last()">
+          <xsl:apply-templates select="following-sibling::node()"/>
+        </xsl:if>
+      </xsl:element>
+    </xsl:for-each>
   </xsl:element>
 </xsl:template>
 
-<xsl:template match="cmdsynopsis/sbr">
-  <xsl:element name="groupcomp">
-    <xsl:attribute name="rev">sbr/n</xsl:attribute>
-    <xsl:apply-templates select="key('G_keyUpToNextSbr', generate-id())"/>
-  </xsl:element>
-</xsl:template>
--->
-<xsl:template match="cmdsynopsis[sbr]">
-  <xsl:if test="count(sbr) != 1">
-    <xsl:message terminate="yes">Currently only support a single sbr element in a cmdsynopsis. Sorry.</xsl:message>
-  </xsl:if>
-  <xsl:element name="syntaxdiagram">
-    <xsl:attribute name="rev">cmdsynopsis</xsl:attribute>
-    <xsl:if test="@id">
-      <xsl:attribute name="id"><xsl:value-of select="@id"/></xsl:attribute>
-    </xsl:if>
-    <xsl:element name="groupcomp">
-      <xsl:apply-templates select="sbr[1]/preceding-sibling::node()"/>
-    </xsl:element>
-    <xsl:apply-templates select="sbr[1]/following-sibling::node()"/>
-  </xsl:element>
-</xsl:template>
-
-
-<!-- command in cmdsynopsis -> groupseq + kwd -->
+<!-- command with text and/or replaceable in cmdsynopsis -> groupseq + kwd -->
 <xsl:template match="cmdsynopsis/command | cmdsynopsis/*/command" >
   <xsl:element name="groupseq">
     <xsl:attribute name="rev">command</xsl:attribute>
-    <xsl:element name="kwd">
-      <xsl:attribute name="rev">command</xsl:attribute>
-      <xsl:apply-templates />
-    </xsl:element>
+    <xsl:apply-templates />
   </xsl:element>
 </xsl:template>
 
-<!-- command in not cmdsynopsis -> userinput -->
-<xsl:template match="command">
+<xsl:template match="cmdsynopsis/command/text() | cmdsynopsis/*/command/text()" >
+  <xsl:element name="kwd">
+    <xsl:attribute name="rev">command/text</xsl:attribute>
+    <xsl:value-of select="."/>
+  </xsl:element>
+</xsl:template>
+
+<xsl:template match="cmdsynopsis/command/replaceable | cmdsynopsis/*/command/replaceable" >
+  <xsl:call-template name="check-children"/>
+  <xsl:element name="var">
+    <xsl:attribute name="rev">command/replaceable</xsl:attribute>
+    <xsl:apply-templates />
+  </xsl:element>
+</xsl:template>
+
+<!-- command with text and/or replaceable in not cmdsynopsis -> userinput + cmdname -->
+<xsl:template match="command[not(ancestor::cmdsynopsis)]">
   <xsl:element name="userinput">
     <xsl:attribute name="rev">command</xsl:attribute>
     <xsl:apply-templates />
+  </xsl:element>
+</xsl:template>
+
+<xsl:template match="command[not(ancestor::cmdsynopsis)]/text()">
+  <xsl:element name="cmdname">
+    <xsl:attribute name="rev">command/text</xsl:attribute>
+    <xsl:value-of select="."/>
+  </xsl:element>
+</xsl:template>
+
+<xsl:template match="command[not(ancestor::cmdsynopsis)]/replaceable">
+  <xsl:call-template name="check-children"/>
+  <xsl:element name="varname">
+    <xsl:attribute name="rev">command/replaceable</xsl:attribute>
+    <xsl:value-of select="."/>
   </xsl:element>
 </xsl:template>
 
@@ -318,7 +344,7 @@
   </xsl:element>
 </xsl:template>
 
-<xsl:template match="arg[not(*) and not(ancestor::group) and ancestor::cmdsynopsis and @choice='plain' and (not(@rep) or @rep='norepeat')]" >
+<xsl:template match="arg[not(ancestor::group) and ancestor::cmdsynopsis and @choice='plain' and (not(@rep) or @rep='norepeat')]" >
   <xsl:element name="kwd">
     <xsl:attribute name="rev">arg[plain]</xsl:attribute>
     <xsl:apply-templates />
@@ -326,14 +352,10 @@
 </xsl:template>
 
 <xsl:template match="group/arg[replaceable and @choice='plain' and (not(@rep) or @rep='norepeat')]" >
-  <xsl:if test="./*[not(self::replaceable)] or ./text()">
-    <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>
-      Did not expect group/arg[@choice=plain] to have children other than replaceable:
-      <xsl:for-each select="./*|./text()">
-        <xsl:value-of select="concat(', ', name(.))"/>
-      </xsl:for-each>
-    </xsl:message>
-  </xsl:if>
+  <xsl:call-template name="check-children">
+    <xsl:with-param name="UnsupportedNodes" select="*[not(self::replaceable)]"/>
+    <xsl:with-param name="SupportedNames">replaceable or text()</xsl:with-param>
+  </xsl:call-template>
   <xsl:element name="var">
     <xsl:attribute name="rev">arg[plain]/replaceable</xsl:attribute>
     <xsl:value-of select="."/>
@@ -341,15 +363,7 @@
 </xsl:template>
 
 <xsl:template match="group/arg[@choice='plain' and (not(@rep) or @rep='norepeat') and not(replaceable)]" >
-  <xsl:if test="./*">
-    <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Did not expect arg[@choice=plain] to have children
-      <xsl:for-each select="./*">
-        <xsl:text>
-        </xsl:text>
-        <xsl:value-of select="name()"/>
-      </xsl:for-each>
-    </xsl:message>
-  </xsl:if>
+  <xsl:call-template name="check-children" />
   <xsl:element name="kwd">
     <xsl:attribute name="rev">arg[plain]</xsl:attribute>
     <xsl:value-of select="."/>
@@ -512,10 +526,16 @@
 <xsl:template match="xref">
   <xsl:element name="xref">
     <xsl:attribute name="href"><xsl:value-of select="@linkend"/></xsl:attribute>
-    <xsl:if test="contains(@linkend, 'http')">
-      <xsl:attribute name="scope">external</xsl:attribute>
-      <xsl:apply-templates />
-    </xsl:if>
+    <xsl:if test="contains(@linkend, 'http')"><xsl:message terminate="yes">xref/linkend with http</xsl:message></xsl:if>
+  </xsl:element>
+</xsl:template>
+
+<!-- ulink -> xref -->
+<xsl:template match="ulink">
+  <xsl:element name="xref">
+    <xsl:attribute name="rev">ulink</xsl:attribute>
+    <xsl:attribute name="scope">external</xsl:attribute> <!-- Just assumes this is external. -->
+    <xsl:attribute name="href"><xsl:value-of select="@url"/></xsl:attribute>
   </xsl:element>
 </xsl:template>
 
@@ -587,6 +607,51 @@
     <xsl:with-param name="Node" select="$Node"/>
   </xsl:call-template>
   <xsl:text>: </xsl:text>
+</xsl:template>
+
+<!--
+  Debug/Diagnostics: Print list of nodes (by default all children of current node).
+  -->
+<xsl:template name="list-nodes">
+  <xsl:param name="Nodes" select="node()"/>
+  <xsl:for-each select="$Nodes">
+    <xsl:if test="position() != 1">
+      <xsl:text>, </xsl:text>
+    </xsl:if>
+    <xsl:choose>
+      <xsl:when test="name(.) = ''">
+        <xsl:text>text:text()</xsl:text>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:value-of select="name(.)"/>
+        <xsl:if test="@id">
+          <xsl:text>[@id=</xsl:text>
+          <xsl:value-of select="@id"/>
+          <xsl:text>]</xsl:text>
+        </xsl:if>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:for-each>
+</xsl:template>
+
+<xsl:template name="check-children">
+  <xsl:param name="Node"             select="."/>
+  <xsl:param name="UnsupportedNodes" select="*"/>
+  <xsl:param name="SupportedNames"   select="'none'"/>
+  <xsl:if test="count($UnsupportedNodes) != 0">
+    <xsl:message terminate="yes">
+      <xsl:call-template name="get-node-path">
+        <xsl:with-param name="Node" select="$Node"/>
+      </xsl:call-template>
+      <!-- -->: error: Only <xsl:value-of select="$SupportedNames"/> are supported as children to <!-- -->
+      <xsl:value-of select="name($Node)"/>
+      <!-- -->
+Unsupported children: <!-- -->
+      <xsl:call-template name="list-nodes">
+        <xsl:with-param name="Nodes" select="$UnsupportedNodes"/>
+      </xsl:call-template>
+    </xsl:message>
+  </xsl:if>
 </xsl:template>
 
 </xsl:stylesheet>
