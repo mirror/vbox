@@ -70,7 +70,7 @@
     </para>
     <variablelist>
       <varlistentry>
-        <term><replaceable>uuid</replaceable>|<replaceable>filename</replaceable></term>
+        <term><replaceable>uuid</replaceable> | <replaceable>filename</replaceable></term>
         <listitem><para>
             Specifies the Universally Unique Identifier (UUID) or the
             absolute path name of the medium or image.

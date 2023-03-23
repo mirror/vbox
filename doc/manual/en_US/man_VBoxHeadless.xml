@@ -57,10 +57,10 @@
           <arg choice="plain">off</arg>
           <arg choice="plain">config</arg>
         </group></arg>
-      <arg>--vrdeproperty=<replaceable>prop-name</replaceable>=[<replaceable>prop-value</replaceable>]</arg>
-      <arg>--settingspw=[<replaceable>password</replaceable>]</arg>
+      <arg>--vrdeproperty=<replaceable>prop-name</replaceable>=<arg><replaceable>prop-value</replaceable></arg></arg>
+      <arg>--settingspw=<replaceable>password</replaceable></arg>
       <arg>--settingspwfile=<replaceable>password-file</replaceable></arg>
-      <arg>--start-paused=<replaceable>vmname</replaceable></arg>
+      <arg>--start-paused</arg>
       <arg>--capture</arg>
       <arg>--width=<replaceable>width</replaceable></arg>
       <arg>--height=<replaceable>height</replaceable></arg>
@@ -93,8 +93,7 @@
               Use the <command>VBoxManage list vms</command> command to
               obtain VM information.
             </para><para>
-              The short versions of this option are <option>-s</option>
-              and <option>-startvm</option>.
+              The short versions of this option is <option>-s</option>.
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -118,7 +117,7 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=<replaceable>prop-name</replaceable>=<replaceable>prop-value</replaceable></option></term>
+          <term><option>--vrdeproperty=<replaceable>prop-name</replaceable>=[<replaceable>prop-value</replaceable>]</option></term>
           <listitem><para>
               Specifies a value for one of the following properties:
             </para><itemizedlist>
@@ -136,7 +135,7 @@
             </itemizedlist></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--settingspw=[<replaceable>password</replaceable>]</option></term>
+          <term><option>--settingspw=<replaceable>password</replaceable></option></term>
           <listitem><para>
               Specifies a settings password to access encrypted
               settings. If you do not specify the password on the
@@ -156,7 +155,7 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--start-paused=<replaceable>vmname</replaceable></option></term>
+          <term><option>--start-paused</option></term>
           <listitem><para>
               Starts the specified VM in the paused state.
             </para></listitem>

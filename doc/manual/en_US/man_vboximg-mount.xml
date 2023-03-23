@@ -60,7 +60,7 @@
       <command>vboximg-mount</command>
       <arg choice="req">--image=<replaceable>image-UUID</replaceable></arg>
       <arg>--guest-filesystem</arg>
-      <arg>-o=<replaceable>FUSE-option</replaceable>[,<replaceable>FUSE-option</replaceable>]</arg>
+      <arg>-o=<replaceable>FUSE-option</replaceable><arg rep="repeat">,<replaceable>FUSE-option</replaceable></arg></arg>
       <arg>--root</arg>
       <arg>--rw</arg>
       <arg choice="req"><replaceable>mountpoint</replaceable></arg>

@@ -68,7 +68,15 @@
           <arg choice="plain"><replaceable>VMDK</replaceable></arg>
           <arg choice="plain"><replaceable>VHD</replaceable></arg>
         </group></arg>
-      <arg>--variant Standard,Fixed,Split2G,Stream,ESX,Formatted,RawDisk</arg>
+      <arg rep="repeat" role="compact">--variant=<group choice="plain">
+          <arg choice="plain">Standard</arg>
+          <arg choice="plain">Fixed</arg>
+          <arg choice="plain">Split2G</arg>
+          <arg choice="plain">Stream</arg>
+          <arg choice="plain">ESX</arg>
+          <arg choice="plain">Formatted</arg>
+          <arg choice="plain">RawDisk</arg>
+      </group></arg> <!-- Value can be repated with comma separator. Difficult to express with docbook. -->
       <arg rep="repeat">--property <replaceable>name</replaceable>=<replaceable>value</replaceable></arg>
       <arg rep="repeat">--property-file <replaceable>name</replaceable>=<replaceable>/path/to/file/with/value</replaceable></arg>
     </cmdsynopsis>
@@ -135,7 +143,7 @@
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--variant=Standard,Fixed,Split2G,Stream,ESX,Formatted,RawDisk</option></term>
+        <term><option>--variant=Standard | Fixed | Split2G | Stream | ESX | Formatted | RawDisk [,...]</option></term>
         <listitem><para>
             Specifies the file format variant for the target medium,
             which is a comma-separated list of variants. Following are

@@ -70,7 +70,13 @@
           <arg choice="plain">RAW</arg>
           <arg choice="plain"><replaceable>other</replaceable></arg>
         </group></arg>
-      <arg>--variant=Standard,Fixed,Split2G,Stream,ESX</arg>
+      <arg rep="repeat" role="compact">--variant=<group choice="plain">
+          <arg choice="plain">Standard</arg>
+          <arg choice="plain">Fixed</arg>
+          <arg choice="plain">Split2G</arg>
+          <arg choice="plain">Stream</arg>
+          <arg choice="plain">ESX</arg>
+      </group></arg> <!-- Value can be repated with comma separator. Difficult to express with docbook. -->
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -145,7 +151,7 @@
           </remark></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--variant=Standard,Fixed,Split2G,Stream,ESX</option></term>
+        <term><option>--variant=Standard | Fixed | Split2G | Stream | ESX [,...]</option></term>
         <listitem><para>
             Specifies the file format variant for the target medium,
             which is a comma-separated list of variants. Following are

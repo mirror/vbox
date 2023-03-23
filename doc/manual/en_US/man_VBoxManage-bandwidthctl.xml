@@ -56,7 +56,10 @@
       <arg choice="plain">add</arg>
       <arg choice="req"><replaceable>bandwidth-group-name</replaceable></arg>
       <arg choice="req">--limit=<replaceable>bandwidth-limit</replaceable>[k|m|g|K|M|G]</arg>
-      <arg choice="req">--type=disk|network</arg>
+      <arg choice="req">--type=<group choice="plain">
+          <arg choice="plain">disk</arg>
+          <arg choice="plain">network</arg>
+        </group></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-bandwidthctl-list">
