@@ -843,10 +843,10 @@ private:
     bool prepare();
     /** Prepares notification-center. */
     void prepareNotificationCenter();
+    /** Prepare routine: Session stuff. */
+    bool prepareSession();
     /** Prepare routine: Branding. */
     void prepareBranding();
-    /** Prepare routine: Session connection stuff. */
-    void prepareSessionConnections();
     /** Prepare routine: Actions stuff. */
     void prepareActions();
     /** Prepare routine: Screens stuff. */

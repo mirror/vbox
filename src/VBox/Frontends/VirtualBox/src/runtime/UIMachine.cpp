@@ -1461,24 +1461,22 @@ UIMachine::~UIMachine()
 
 bool UIMachine::prepare()
 {
-    /* Create session UI: */
-    m_pSession = new UISession(this);
-    AssertPtrReturn(uisession(), false);
-    /* And make sure it's prepared: */
-    if (!uisession()->prepare())
+    /* Prepare stuff unrelated to VM: */
+    prepareNotificationCenter();
+
+    /* Prepare VM session: */
+    if (!prepareSession())
         return false;
 
-    /* Prepare stuff: */
-    prepareNotificationCenter();
+    /* Prepare VM related stuff: */
     prepareBranding();
-    prepareSessionConnections();
     prepareActions();
     prepareScreens();
     prepareKeyboard();
     prepareClose();
     prepareMachineLogic();
 
-    /* Try to initialize session UI: */
+    /* Try to initialize VM session: */
     if (!uisession()->initialize())
         return false;
 
@@ -1500,21 +1498,12 @@ void UIMachine::prepareNotificationCenter()
     UINotificationCenter::create();
 }
 
-void UIMachine::prepareBranding()
+bool UIMachine::prepareSession()
 {
-    /* Create the icon dynamically: */
-    m_pMachineWindowIcon = new QIcon;
-    acquireUserMachineIcon(*m_pMachineWindowIcon);
+    /* Create session UI: */
+    m_pSession = new UISession(this);
+    AssertPtrReturn(uisession(), false);
 
-#ifndef VBOX_WS_MAC
-    /* Load user's machine-window name postfix: */
-    const QUuid uMachineID = uiCommon().managedVMUuid();
-    m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(uMachineID);
-#endif /* !VBOX_WS_MAC */
-}
-
-void UIMachine::prepareSessionConnections()
-{
     /* Console events stuff: */
     connect(uisession(), &UISession::sigAudioAdapterChange,
             this, &UIMachine::sltHandleAudioAdapterChange);
@@ -1566,6 +1555,22 @@ void UIMachine::prepareSessionConnections()
             this, &UIMachine::sltMouseCapabilityChange);
     connect(uisession(), &UISession::sigCursorPositionChange,
             this, &UIMachine::sltCursorPositionChange);
+
+    /* Make sure session prepared: */
+    return uisession()->prepare();
+}
+
+void UIMachine::prepareBranding()
+{
+    /* Create the icon dynamically: */
+    m_pMachineWindowIcon = new QIcon;
+    acquireUserMachineIcon(*m_pMachineWindowIcon);
+
+#ifndef VBOX_WS_MAC
+    /* Load user's machine-window name postfix: */
+    const QUuid uMachineID = uiCommon().managedVMUuid();
+    m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(uMachineID);
+#endif /* !VBOX_WS_MAC */
 }
 
 void UIMachine::prepareActions()
@@ -1841,10 +1846,8 @@ void UIMachine::cleanup()
     cleanupScreens();
     cleanupActions();
     cleanupBranding();
-    cleanupNotificationCenter();
-
-    /* Cleanup session UI: */
     cleanupSession();
+    cleanupNotificationCenter();
 }
 
 void UIMachine::enterInitialVisualState()
