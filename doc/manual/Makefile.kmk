@@ -92,10 +92,6 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  # XML
  $(foreach lang, $(VBOX_MANUAL_ALL_LANGUAGES), \
  $(eval VBOX_MANUAL_XML_FILES_GENERATED_$$(lang) := \
- 	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$$(lang)/user_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
- 	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/overview_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
- 	$$(VBOX_PATH_MANUAL_OUTBASE)/$$(lang)/user_man_VBoxHeadless.xml \
- 	$$(VBOX_PATH_MANUAL_OUTBASE)/$$(lang)/user_man_vboximg-mount.xml \
  	$$(VBOX_PATH_MANUAL_OUTBASE)/$$(lang)/user_isomakercmd-man.xml))
 
  # SDK related globals.
@@ -398,13 +394,11 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 
 
  ##
- # Morph man pages into Docbook manual sections.
- # $(evalcall2 def_vbox_refentry_to_user_sect1)
+ # Create user_isomakercmd-man.xml
  #
  # @param    1  Language.
  # @param    2  the refentry xml base file name.
  # @param    3  the full refentry xml file path.
- ## @todo r=bird: This is still Docbook, so unused now?
  define def_vbox_refentry_to_user_sect1
   $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/user_$(2): $(3) \
   		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-sect1.xsl \
@@ -414,26 +408,9 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 	$$(QUIET)$$(RM) -f -- "$$@"
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --output $$@ $$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-sect1.xsl $$<
  endef
- $(foreach lang, $(VBOX_MANUAL_ALL_LANGUAGES) \
- 	,$(foreach file, $(VBOX_MANUAL_XML_REFENTRY_FILES) man_VBoxHeadless.xml man_vboximg-mount.xml \
-		, $(evalcall2 def_vbox_refentry_to_user_sect1,$(lang),$(file),$(VBOX_PATH_MANUAL_SRC)/$(lang)/$(file))))
+
  $(foreach lang, $(VBOX_MANUAL_ALL_LANGUAGES) \
 	,$(evalcall2 def_vbox_refentry_to_user_sect1,$(lang),isomakercmd-man.xml,$(PATH_ROOT)/src/VBox/Runtime/common/fs/isomakercmd-man.xml))
-
-
- # Generates the VBoxManage command overview include file (shared between
- # languages) from the refsynopsisdiv section of the man pages.
- ## @todo r=bird: This is still Docbook, so unused now?
- $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/overview_,$(VBOX_MANUAL_XML_REFENTRY_FILES)): \
- 		$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-overview.xsl \
- 		$$(patsubst overview_%,$$(VBOX_PATH_MANUAL_SRC)/en_US/%,$$(notdir $$@)) \
- 		$(VBOX_XML_CATALOG) \
- 		$(VBOX_XML_CATALOG_DOCBOOK) \
- 		$(VBOX_XML_CATALOG_MANUAL) \
- 		$(VBOX_XML_ENTITIES) | $$(dir $$@)
-	$(call MSG_TOOL,xsltproc $(notdir $(filter %.xsl,$^)),,$(firstword $(filter %.xml,$^)),$@)
-	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT) --output "$@" $< $(filter %.xml,$^)
-
 
 
  #
