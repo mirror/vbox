@@ -1471,7 +1471,8 @@ bool UIMachine::prepare()
     /* Prepare VM related stuff: */
     prepareBranding();
     prepareActions();
-    prepareScreens();
+    prepareHostScreenData();
+    prepareGuestScreenData();
     prepareKeyboard();
     prepareClose();
     prepareMachineLogic();
@@ -1649,7 +1650,7 @@ void UIMachine::prepareActions()
     }
 }
 
-void UIMachine::prepareScreens()
+void UIMachine::prepareHostScreenData()
 {
     /* Recache display data: */
     updateHostScreenData();
@@ -1663,9 +1664,6 @@ void UIMachine::prepareScreens()
         connect(m_pWatchdogDisplayChange, &QTimer::timeout,
                 this, &UIMachine::sltCheckIfHostDisplayChanged);
     }
-#endif /* VBOX_WS_MAC */
-
-#ifdef VBOX_WS_MAC
     /* Install native display reconfiguration callback: */
     CGDisplayRegisterReconfigurationCallback(cgDisplayReconfigurationCallback, this);
 #else /* !VBOX_WS_MAC */
@@ -1682,7 +1680,10 @@ void UIMachine::prepareScreens()
             this, &UIMachine::sltHandleHostScreenAvailableAreaChange);
 # endif /* !VBOX_WS_X11 || VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 #endif /* !VBOX_WS_MAC */
+}
 
+void UIMachine::prepareGuestScreenData()
+{
     /* Accquire guest-screen count: */
     ulong cMonitorCount = 0;
     acquireMonitorCount(cMonitorCount);
@@ -1796,7 +1797,7 @@ void UIMachine::cleanupMachineLogic()
     UIMachineLogic::destroy(m_pMachineLogic);
 }
 
-void UIMachine::cleanupScreens()
+void UIMachine::cleanupHostScreenData()
 {
 #ifdef VBOX_WS_MAC
     /* Remove display reconfiguration callback: */
@@ -1843,7 +1844,7 @@ void UIMachine::cleanup()
 
     /* Cleanup stuff: */
     cleanupMachineLogic();
-    cleanupScreens();
+    cleanupHostScreenData();
     cleanupActions();
     cleanupBranding();
     cleanupSession();

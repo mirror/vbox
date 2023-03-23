@@ -849,8 +849,10 @@ private:
     void prepareBranding();
     /** Prepare routine: Actions stuff. */
     void prepareActions();
-    /** Prepare routine: Screens stuff. */
-    void prepareScreens();
+    /** Prepare routine: Host-screen data stuff. */
+    void prepareHostScreenData();
+    /** Prepare routine: Guest-screen data stuff. */
+    void prepareGuestScreenData();
     /** Prepare routine: Keyboard stuff. */
     void prepareKeyboard();
     /** Prepare routine: Close stuff. */
@@ -860,8 +862,8 @@ private:
 
     /** Cleanup routine: Machine-logic stuff. */
     void cleanupMachineLogic();
-    /** Cleanup routine: Screens stuff. */
-    void cleanupScreens();
+    /** Cleanup routine: Host-screen data stuff. */
+    void cleanupHostScreenData();
     /** Cleanup routine: Actions stuff. */
     void cleanupActions();
     /** Cleanup routine: Branding. */
