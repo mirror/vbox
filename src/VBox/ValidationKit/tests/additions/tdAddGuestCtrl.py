@@ -3060,7 +3060,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         sShell          = self.oTstDrv.getGuestSystemShell(oTestVm);
         sShellOpt       = '/C' if oTestVm.isWindows() or oTestVm.isOS2() else '-c';
         sSystemDir      = self.oTstDrv.getGuestSystemDir(oTestVm);
-        sTempDir        = self oTstDrv.getGuestTempDir(oTestVm);
+        sTempDir        = self.oTstDrv.getGuestTempDir(oTestVm);
         sFileForReading = self.oTstDrv.getGuestSystemFileForReading(oTestVm);
         if oTestVm.isWindows() or oTestVm.isOS2():
             sImageOut = self.oTstDrv.getGuestSystemShell(oTestVm);
