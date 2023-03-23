@@ -111,33 +111,38 @@ static int tstRTCreateProcExCwdChild(int argc, char **argv)
     rc = RTPathGetCurrent(szCWD, sizeof(szCWD));
     if (RT_FAILURE(rc))
     {
-        RTStrmPrintf(g_pStdErr, "childcwd: Unabled retrieve CWD, rc = %Rrc\n", rc);
-        return RTEXITCODE_FAILURE;
-    }
-
-    if (RTStrCmp(szCWD, pszCWD))
-    {
-        RTStrmPrintf(g_pStdErr, "childcwd: CWD is '%s', but expected '%s'\n", pszCWD, pszCWD);
-        return RTEXITCODE_FAILURE;
-    }
-
-    /* Check if we can query information of the current CWD. */
-    char *pszUser = NULL;
-    if (   argc >= 4
-        && argv[3][0] != '\0')
-    {
-        pszUser = argv[3];
-    }
-
-    RTFSOBJINFO objInfo;
-    rc = RTPathQueryInfo(pszCWD, &objInfo, RTFSOBJATTRADD_NOTHING);
-    if (pszUser)
-        RTStrmPrintf(g_pStdOut, "childcwd: Accessing CWD '%s' via user '%s' -> %Rrc\n", pszCWD, pszUser, rc);
-    else
-        RTStrmPrintf(g_pStdOut, "childcwd: Accesing CWD '%s' -> %Rrc\n", pszCWD, rc);
-    if (RT_FAILURE(rc))
+        RTStrmPrintf(g_pStdErr, "childcwd: Unable to retrieve CWD, rc=%Rrc\n", rc);
         cErrors++;
+    }
+    else
+    {
+        if (RTStrCmp(szCWD, pszCWD))
+        {
+            RTStrmPrintf(g_pStdErr, "childcwd: CWD is '%s', but expected '%s'\n", szCWD, pszCWD);
+            cErrors++;
+        }
+        else
+        {
+            /* Check if we can query information of the current CWD. */
+            char *pszUser = NULL;
+            if (   argc >= 4
+                && argv[3][0] != '\0')
+            {
+                pszUser = argv[3];
+            }
 
+            RTFSOBJINFO objInfo;
+            rc = RTPathQueryInfo(szCWD, &objInfo, RTFSOBJATTRADD_NOTHING);
+            if (pszUser)
+                RTStrmPrintf(g_pStdOut, "childcwd: Accessing CWD '%s' via user '%s' -> %Rrc\n", szCWD, pszUser, rc);
+            else
+                RTStrmPrintf(g_pStdOut, "childcwd: Accesing CWD '%s' -> %Rrc\n", szCWD, rc);
+            if (RT_FAILURE(rc))
+                cErrors++;
+        }
+    }
+
+    RTStrmPrintf(g_pStdOut, "childcwd: Exiting (%d errors)\n", cErrors);
     return cErrors == 0 ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
