@@ -1184,6 +1184,8 @@ PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTX p
     Assert(RT_BOOL(pWalk->fEffective & PGM_PTATTRS_NX_MASK) == !RT_BOOL(pWalk->fEffective & PGM_PTATTRS_EPT_X_SUPER_MASK));
 #  endif
 
+    Log7Func(("SLAT: GCPhysNestedFault=%RGp -> GCPhys=%#RGp\n", GCPhysNestedFault, pWalk->GCPhys));
+
     /*
      * Check page-access permissions.
      */
@@ -1252,7 +1254,17 @@ PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTX p
      */
     PPGMPAGE pPage;
     rc = pgmPhysGetPageEx(pVM, GCPhysPage, &pPage);
-    AssertRCReturn(rc, rc);
+    if (RT_FAILURE(rc))
+    {
+        /*
+         * We failed to get the physical page which means it's a reserved/invalid
+         * page address (not MMIO even). This can typically be observed with
+         * Microsoft Hyper-V enabled Windows guests. We must fall back to emulating
+         * the instruction, see @bugref{10318#c7}.
+         */
+        return VINF_EM_RAW_EMULATE_INSTR;
+    }
+    /* Check if this is an MMIO page and NOT the VMX APIC-access page. */
     if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) && !PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPage))
     {
         Log7Func(("MMIO: Calling NestedTrap0eHandlerDoAccessHandlers for GCPhys %RGp\n", GCPhysPage));
@@ -1295,9 +1307,6 @@ PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTX p
         if (PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
         {
             /* This is a read-only page. */
-            AssertMsgFailed(("Failed\n"));
-
-            Assert(!PGM_PAGE_IS_ZERO(pPage));
             AssertFatalMsg(!PGM_PAGE_IS_BALLOONED(pPage), ("Unexpected ballooned page at %RGp\n", GCPhysPage));
             STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2MakeWritable; });
 
@@ -2543,33 +2552,27 @@ static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTG
      */
     PPGMPAGE pPage;
     int rc = pgmPhysGetPageEx(pVCpu->CTX_SUFF(pVM), GCPhysPage, &pPage);
-    AssertRCReturnVoid(rc);
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else
+    {
+        /*
+         * This is a RAM hole/invalid/reserved address (not MMIO).
+         * Nested Microsoft Hyper-V maps addresses like 0xf0220000 as RW WB memory.
+         * Shadow a not-present page similar to MMIO, see @bugref{10318#c7}.
+         */
+        Assert(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS);
+        if (SHW_PTE_IS_P(*pPte))
+        {
+            Log2(("SyncPageWorker: deref! *pPte=%RX64\n", SHW_PTE_LOG64(*pPte)));
+            PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVCpu, pShwPage, SHW_PTE_GET_HCPHYS(*pPte), iPte, NIL_RTGCPHYS);
+        }
+        Log7Func(("RAM hole/reserved %RGp -> ShwPte=0\n", GCPhysPage));
+        SHW_PTE_ATOMIC_SET(*pPte, 0);
+        return;
+    }
 
     Assert(!PGM_PAGE_IS_BALLOONED(pPage));
-
-# ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
-    /* Make the page writable if necessary. */
-    /** @todo This needs to be applied to the regular case below, not here. And,
-     *        no we should *NOT* make the page writble, instead we need to write
-     *        protect them if necessary. */
-    if (    PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM
-        &&  (   PGM_PAGE_IS_ZERO(pPage)
-             || (   (pGstWalkAll->u.Ept.Pte.u & EPT_E_WRITE)
-                 && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
-#  ifdef VBOX_WITH_REAL_WRITE_MONITORED_PAGES
-                 && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED
-#  endif
-#  ifdef VBOX_WITH_PAGE_SHARING
-                 && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_SHARED
-#  endif
-                 && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_BALLOONED
-             )
-          )
-       )
-    {
-        AssertMsgFailed(("GCPhysPage=%RGp\n", GCPhysPage)); /** @todo Shouldn't happen but if it does deal with it later. */
-    }
-# endif
 
     /*
      * Make page table entry.
@@ -2578,9 +2581,33 @@ static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTG
     uint64_t const fGstShwPteFlags = pGstWalkAll->u.Ept.Pte.u & pVCpu->pgm.s.fGstEptShadowedPteMask;
     if (!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) || PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPage))
     {
-        /** @todo access bit. */
-        Pte.u = PGM_PAGE_GET_HCPHYS(pPage) | fGstShwPteFlags;
-        Log7Func(("regular page (%R[pgmpage]) at %RGp -> %RX64\n", pPage, GCPhysPage, Pte.u));
+# ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
+        /* Page wasn't allocated, write protect it. */
+        if (    PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM
+            &&  (   PGM_PAGE_IS_ZERO(pPage)
+                 || (   (pGstWalkAll->u.Ept.Pte.u & EPT_E_WRITE)
+                     && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
+#  ifdef VBOX_WITH_REAL_WRITE_MONITORED_PAGES
+                     && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED
+#  endif
+#  ifdef VBOX_WITH_PAGE_SHARING
+                     && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_SHARED
+#  endif
+                     && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_BALLOONED
+                 )
+              )
+           )
+        {
+            Pte.u = PGM_PAGE_GET_HCPHYS(pPage) | (fGstShwPteFlags & ~EPT_E_WRITE);
+            Log7Func(("zero page (%R[pgmpage]) at %RGp -> %RX64\n", pPage, GCPhysPage, Pte.u));
+        }
+        else
+# endif
+        {
+            /** @todo access bit. */
+            Pte.u = PGM_PAGE_GET_HCPHYS(pPage) | fGstShwPteFlags;
+            Log7Func(("regular page (%R[pgmpage]) at %RGp -> %RX64\n", pPage, GCPhysPage, Pte.u));
+        }
     }
     else if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
     {

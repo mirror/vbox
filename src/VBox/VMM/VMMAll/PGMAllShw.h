@@ -318,6 +318,69 @@ PGM_SHW_DECL(int, Exit)(PVMCPUCC pVCpu)
 }
 
 
+#if 0
+PGM_SHW_DECL(int, NestedGetPage)(PVMCPUCC pVCpu, PEPTPD pEptPd, PPGMPTWALK pWalk, uint64_t *pfFlags, PRTHCPHYS pHCPhys)
+{
+#if PGM_SHW_TYPE == PGM_TYPE_EPT
+    RTGCPHYS const GCPhysNested = pWalk->GCPhysNested;
+    unsigned const iEptPd = ((GCPhysNested >> SHW_PD_SHIFT) & SHW_PD_MASK);
+    Assert(iEptPd < EPT_PG_ENTRIES);
+    SHWPDE EptPde = pEptPd->a[iEptPd];
+    if (!SHW_PDE_IS_P(EptPde))
+    {
+        *pfFlags = 0;
+        *pHCPhys = NIL_RTHCPHYS;
+        return VERR_PAGE_TABLE_NOT_PRESENT;
+    }
+
+    if (SHW_PDE_IS_BIG(EptPde))
+    {
+        Assert(pWalk->fBigPage);
+        if (pfFlags)
+            *pfFlags = (EptPde.u & ~SHW_PDE_PG_MASK);
+        if (pHCPhys)
+            *pHCPhys = (EptPde.u & EPT_PDE2M_PG_MASK) + (pWalk->GCPhys & (RT_BIT(EPT_PD_SHIFT) - 1) & X86_PAGE_4K_BASE_MASK);
+        return VINF_SUCCESS;
+    }
+
+    PSHWPT pEptPt;
+    int const rc = PGM_HCPHYS_2_PTR(pVCpu->CTX_SUFF(pVM), pVCpu, EptPde.u & EPT_PDE_PG_MASK, &pEptPt);
+    if (RT_FAILURE(rc))
+    {
+        *pfFlags = 0;
+        *pHCPhys = NIL_RTHCPHYS;
+        return rc;
+    }
+
+    unsigned const iEptPt = (GCPhysNested >> SHW_PT_SHIFT) & SHW_PT_MASK;
+    Assert(iEptPt < EPT_PG_ENTRIES);
+    SHWPTE         EptPte = pEptPt->a[iEptPt];
+    if (!SHW_PTE_IS_P(EptPte))
+    {
+        *pfFlags = 0;
+        *pHCPhys = NIL_RTHCPHYS;
+        return VERR_PAGE_NOT_PRESENT;
+    }
+
+    if (pfFlags)
+    {
+        /* Read, Write and Execute bits (Present mask) are cumulative. */
+        *pfFlags = (SHW_PTE_GET_U(EptPte) & ~SHW_PTE_PG_MASK)
+                 & ((EptPde.u & EPT_PRESENT_MASK) | ~(uint64_t)EPT_PRESENT_MASK);
+    }
+    if (pHCPhys)
+        *pHCPhys = SHW_PTE_GET_HCPHYS(EptPte);
+    return VINF_SUCCESS;
+
+#else   /* PGM_SHW_TYPE != PGM_TYPE_EPT */
+    RT_NOREF(pVCpu, pEptPd, pWalk, *pfFlags, pHCPhys);
+    AssertFailed();
+    return VERR_PGM_SHW_NONE_IPE;
+#endif  /* PGM_SHW_TYPE != PGM_TYPE_EPT */
+}
+#endif
+
+
 /**
  * Gets effective page information (from the VMM page directory).
  *
@@ -384,6 +447,12 @@ PGM_SHW_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags,
     X86PDEPAE       Pde = pgmShwGetPaePDE(pVCpu, GCPtr);
 
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
+    /*
+     * We're currently ASSUMING that the SLAT mode here is always "direct".
+     * If a guest (e.g., nested Hyper-V) turns out to require this
+     * (probably while modifying shadow non-MMIO2 pages) then handle this
+     * by calling (NestedGetPage). Asserting for now.
+     */
     Assert(pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_DIRECT);
     PEPTPD          pPDDst;
     int rc = pgmShwGetEPTPDPtr(pVCpu, GCPtr, NULL, &pPDDst);
@@ -540,19 +609,67 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint
         X86PDEPAE       Pde = pgmShwGetPaePDE(pVCpu, GCPtr);
 
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
-        Assert(pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_DIRECT);
-        const unsigned  iPd = ((GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK);
-        PEPTPD          pPDDst;
-        EPTPDE          Pde;
-
-        rc = pgmShwGetEPTPDPtr(pVCpu, GCPtr, NULL, &pPDDst);
-        if (rc != VINF_SUCCESS)
+        EPTPDE Pde;
+        const unsigned iPd = ((GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK);
+        if (pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_DIRECT)
         {
-            AssertRC(rc);
-            return rc;
+            PEPTPD pPDDst;
+            rc = pgmShwGetEPTPDPtr(pVCpu, GCPtr, NULL, &pPDDst);
+            if (rc != VINF_SUCCESS)
+            {
+                AssertRC(rc);
+                return rc;
+            }
+            Assert(pPDDst);
+            Pde = pPDDst->a[iPd];
         }
-        Assert(pPDDst);
-        Pde = pPDDst->a[iPd];
+        else
+        {
+#  ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+            Assert(pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT);
+            Assert(!(GCPtr & GUEST_PAGE_OFFSET_MASK));
+            PGMPTWALK      Walk;
+            PGMPTWALKGST   GstWalkAll;
+            RTGCPHYS const GCPhysNestedPage = GCPtr;
+            rc = pgmGstSlatWalk(pVCpu, GCPhysNestedPage, false /*fIsLinearAddrValid*/, 0 /*GCPtrNestedFault*/, &Walk,
+                                &GstWalkAll);
+            if (RT_SUCCESS(rc))
+            {
+#   ifdef DEBUG_ramshankar
+                /* Paranoia. */
+                Assert(GstWalkAll.enmType == PGMPTWALKGSTTYPE_EPT);
+                Assert(Walk.fSucceeded);
+                Assert(Walk.fEffective & (PGM_PTATTRS_EPT_R_MASK | PGM_PTATTRS_EPT_W_MASK | PGM_PTATTRS_EPT_X_SUPER_MASK));
+                Assert(Walk.fIsSlat);
+                Assert(RT_BOOL(Walk.fEffective & PGM_PTATTRS_R_MASK)  ==  RT_BOOL(Walk.fEffective & PGM_PTATTRS_EPT_R_MASK));
+                Assert(RT_BOOL(Walk.fEffective & PGM_PTATTRS_W_MASK)  ==  RT_BOOL(Walk.fEffective & PGM_PTATTRS_EPT_W_MASK));
+                Assert(RT_BOOL(Walk.fEffective & PGM_PTATTRS_NX_MASK) == !RT_BOOL(Walk.fEffective & PGM_PTATTRS_EPT_X_SUPER_MASK));
+#   endif
+                PGM_A20_ASSERT_MASKED(pVCpu, Walk.GCPhys);
+                Assert(!(fFlags & X86_PTE_RW) || (Walk.fEffective & PGM_PTATTRS_W_MASK));
+
+                /* Update the nested-guest physical address with the translated guest-physical address. */
+                GCPtr = Walk.GCPhys;
+
+                /* Get the PD. */
+                PSHWPD pEptPd;
+                rc = pgmShwGetNestedEPTPDPtr(pVCpu, GCPhysNestedPage, NULL /*ppPdpt*/, &pEptPd, &GstWalkAll);
+                AssertRCReturn(rc, rc);
+                Assert(pEptPd);
+                Assert(iPd < EPT_PG_ENTRIES);
+                Pde = pEptPd->a[iPd];
+            }
+            else
+            {
+                Log(("Failed to translate nested-guest physical address %#RGp rc=%Rrc\n", GCPhysNestedPage, rc));
+                return rc;
+            }
+
+#  else  /* !VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
+            AssertFailed();
+            return VERR_PGM_SHW_NONE_IPE;
+#  endif /* !VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
+        }
 
 # else /* PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_NESTED_32BIT */
         X86PDE          Pde = pgmShwGet32BitPDE(pVCpu, GCPtr);

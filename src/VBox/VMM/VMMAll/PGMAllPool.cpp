@@ -3440,6 +3440,9 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
         case PGMPOOLKIND_EPT_PT_FOR_PHYS:   /* physical mask the same as PAE; RW bit as well; be careful! */
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
         case PGMPOOLKIND_EPT_PT_FOR_EPT_PT:
+# ifdef PGM_WITH_LARGE_PAGES
+        case PGMPOOLKIND_EPT_PT_FOR_EPT_2MB:
+# endif
 #endif
         {
             const uint64_t  u64 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PTE_P;
@@ -3512,9 +3515,6 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
 #ifdef PGM_WITH_LARGE_PAGES
         /* Large page case only. */
         case PGMPOOLKIND_EPT_PD_FOR_PHYS:
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-        case PGMPOOLKIND_EPT_PT_FOR_EPT_2MB:    /* X86_PDE4M_PS is same as leaf bit in EPT; be careful! */
-#endif
         {
             Assert(pVM->pgm.s.fNestedPaging);
 
