@@ -134,7 +134,7 @@
   <xsl:if test="not(title)"><xsl:message terminate="yes">refsect2 requires title</xsl:message></xsl:if>
   <xsl:element name="sectiondiv">
     <xsl:attribute name="rev">refsect2</xsl:attribute>
-    <xsl:attribute name="outputclass">refsect2</xsl:attribute>
+    <xsl:attribute name="outputclass">refsect2</xsl:attribute> <!-- how to make xhtml pass these thru... -->
     <xsl:if test="@id">
       <xsl:attribute name="id"><xsl:value-of select="@id"/></xsl:attribute>
     </xsl:if>
@@ -148,7 +148,7 @@
 <xsl:template match="refsect2/title">
   <xsl:element name="b">
     <xsl:attribute name="rev">refsect2/title</xsl:attribute>
-    <xsl:attribute name="outputclass">refsect2title</xsl:attribute>
+    <xsl:attribute name="outputclass">refsect2title</xsl:attribute> <!-- how to make xhtml pass these thru... -->
     <xsl:apply-templates />
   </xsl:element>
 </xsl:template>
@@ -368,14 +368,24 @@
       </xsl:otherwise>
     </xsl:choose>
 
-    <xsl:if test="@rep='repeat'">
-      <xsl:element name="repsep">
+    <xsl:apply-templates />
+
+    <xsl:if test="@rep = 'repeat'">
+      <!-- repsep can only be placed at the start of a groupseq/whatever and
+           the documenation and examples of the element is very sparse.  The
+           PDF output plugin will place the '...' where it finds it and do
+           nothing if it's empty.  The XHTML output plugin ignores it, it seems. -->
+      <xsl:text> </xsl:text>
+      <xsl:element name="groupseq">
+        <xsl:attribute name="importance">optional</xsl:attribute>
         <xsl:attribute name="rev">arg[<xsl:value-of select="@choice"/>,repeat]</xsl:attribute>
-        <xsl:text>...</xsl:text>
+        <xsl:attribute name="outputclass">repeatarg</xsl:attribute> <!-- how to make xhtml pass these thru... -->
+        <xsl:element name="repsep">
+          <xsl:attribute name="rev">arg[<xsl:value-of select="@choice"/>,repeat]</xsl:attribute>
+          <xsl:text>...</xsl:text>
+        </xsl:element>
       </xsl:element>
     </xsl:if>
-
-    <xsl:apply-templates />
 
   </xsl:element>
 
@@ -447,6 +457,7 @@
     <xsl:attribute name="rev">group[req]</xsl:attribute>
     <xsl:attribute name="importance">required</xsl:attribute>
 
+    <!-- This doesn't really work. Sigh. -->
     <xsl:if test="@rep = 'repeat'">
       <xsl:element name="repsep">
         <xsl:attribute name="rev">group[req,repeat]</xsl:attribute>
