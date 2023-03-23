@@ -25,7 +25,7 @@
     </note>
     <fig id="fig-soft-keyb">
       <title>Soft Keyboard in a Guest Virtual Machine</title>
-      <xref href="images/softkeybd.png" format="png" platform="htmhelp">
+      <xref href="images/softkeybd.png" format="png" platform="htmlhelp">
         <image href="images/softkeybd.png" width="14cm" placement="break" id="image_u5k_f4r_wwb"/>
       </xref>
       <image platform="ohc" href="images/softkeybd.png" width="14cm" placement="break" id="image_u5k_f4r_wwb"/>
