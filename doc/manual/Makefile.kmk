@@ -89,11 +89,6 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  	,$(eval VBOX_MANUAL_PNG_FILES_$$(lang) := $$(patsubst $$(VBOX_PATH_MANUAL_SRC)/$$(lang)/%,%, \
  		$$(wildcard $$(VBOX_PATH_MANUAL_SRC)/$$(lang)/images/*.png))))
 
- # XML
- $(foreach lang, $(VBOX_MANUAL_ALL_LANGUAGES), \
- $(eval VBOX_MANUAL_XML_FILES_GENERATED_$$(lang) := \
- 	$$(VBOX_PATH_MANUAL_OUTBASE)/$$(lang)/user_isomakercmd-man.xml))
-
  # SDK related globals.
  VBOX_MANUAL_APIREF_TMP = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef_apiref.xml
  VBOX_DOC_XIDL_SRC      = $(PATH_ROOT)/src/VBox/Main/idl/VirtualBox.xidl
