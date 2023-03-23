@@ -1363,8 +1363,8 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
             }
             ComPtr<IGuestProcess> pProcess;
             CHECK_ERROR_BREAK(pCtx->pGuestSession, ProcessCreate(Bstr(pszImage).raw(),
-                                                                 Bstr(pszCwd).raw(),
                                                                  ComSafeArrayAsInParam(aArgs),
+                                                                 Bstr(pszCwd).raw(),
                                                                  ComSafeArrayAsInParam(aEnv),
                                                                  ComSafeArrayAsInParam(aCreateFlags),
                                                                  gctlRunGetRemainingTime(msStart, cMsTimeout),

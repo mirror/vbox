@@ -4942,8 +4942,8 @@ HRESULT GuestSession::fsObjSetACL(const com::Utf8Str &aPath, BOOL aFollowSymlink
 }
 
 
-HRESULT GuestSession::processCreate(const com::Utf8Str &aExecutable, const com::Utf8Str &aCwd,
-                                    const std::vector<com::Utf8Str> &aArguments,
+HRESULT GuestSession::processCreate(const com::Utf8Str &aExecutable, const std::vector<com::Utf8Str> &aArguments,
+                                    const com::Utf8Str &aCwd,
                                     const std::vector<com::Utf8Str> &aEnvironment,
                                     const std::vector<ProcessCreateFlag_T> &aFlags,
                                     ULONG aTimeoutMS, ComPtr<IGuestProcess> &aGuestProcess)
@@ -4951,12 +4951,12 @@ HRESULT GuestSession::processCreate(const com::Utf8Str &aExecutable, const com::
     LogFlowThisFuncEnter();
 
     std::vector<LONG> affinityIgnored;
-    return processCreateEx(aExecutable, aCwd, aArguments, aEnvironment, aFlags, aTimeoutMS,
+    return processCreateEx(aExecutable, aArguments, aCwd, aEnvironment, aFlags, aTimeoutMS,
                            ProcessPriority_Default, affinityIgnored, aGuestProcess);
 }
 
-HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const com::Utf8Str &aCwd,
-                                      const std::vector<com::Utf8Str> &aArguments,
+HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std::vector<com::Utf8Str> &aArguments,
+                                      const com::Utf8Str &aCwd,
                                       const std::vector<com::Utf8Str> &aEnvironment,
                                       const std::vector<ProcessCreateFlag_T> &aFlags, ULONG aTimeoutMS,
                                       ProcessPriority_T aPriority, const std::vector<LONG> &aAffinity,

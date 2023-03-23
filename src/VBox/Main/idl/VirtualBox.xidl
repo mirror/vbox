@@ -14813,7 +14813,7 @@
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="5591bead-9c1d-4cbd-9669-2d0b04fac0a8"
+    uuid="5e54f60b-6dcd-4594-a6c9-cf968f004341"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="12"
     >
@@ -15965,17 +15965,6 @@
           @a arguments array will be used instead (i.e. argv[0]).
         </desc>
       </param>
-      <param name="cwd" type="wstring" dir="in">
-        <desc>
-          Path to the directory in which to execute in the guest.  The
-          directory has to exist in the guest VM with search rights to the
-          session user in order to succeed.  If empty/null, the session
-          user's default (typically 'home') directory is used.  If not a
-          full path, it is interpreted relative to the default directory;
-          e.g. 'work' means '$HOME/work' (according to the guest's '$HOME'-
-          like concept).
-        </desc>
-      </param>
       <param name="arguments" type="wstring" dir="in" safearray="yes">
         <desc>Array of arguments passed to the new process.
           <note>
@@ -15985,6 +15974,17 @@
             version running there.  If you depend on this, check that the
             <link to="IGuestSession::protocolVersion"/> is 3 or higher.
           </note>
+        </desc>
+      </param>
+      <param name="cwd" type="wstring" dir="in">
+        <desc>
+          Path to the directory in which to execute in the guest.  The
+          directory has to exist in the guest VM with search rights to the
+          session user in order to succeed.  If empty/null, the session
+          user's default (typically 'home') directory is used.  If not a
+          full path, it is interpreted relative to the default directory;
+          e.g. 'work' means '$HOME/work' (according to the guest's '$HOME'-
+          like concept).
         </desc>
       </param>
       <param name="environmentChanges" type="wstring" dir="in" safearray="yes">
@@ -16027,17 +16027,6 @@
 
         See <link to="IGuestSession::processCreate"/> for more information.
       </desc>
-      <param name="cwd" type="wstring" dir="in">
-        <desc>
-          Path to the directory in which to execute in the guest.  The
-          directory has to exist in the guest VM with search rights to the
-          session user in order to succeed.  If empty/null, the session
-          user's default (typically 'home') directory is used.  If not a
-          full path, it is interpreted relative to the default directory;
-          e.g. 'work' means '$HOME/work' (according to the guest's '$HOME'-
-          like concept).
-        </desc>
-      </param>
       <param name="executable" type="wstring" dir="in">
         <desc>
           Full path to the file to execute in the guest.  The file has to
@@ -16055,6 +16044,17 @@
             version running there.  If you depend on this, check that the
             <link to="IGuestSession::protocolVersion"/> is 3 or higher.
           </note>
+        </desc>
+      </param>
+      <param name="cwd" type="wstring" dir="in">
+        <desc>
+          Path to the directory in which to execute in the guest.  The
+          directory has to exist in the guest VM with search rights to the
+          session user in order to succeed.  If empty/null, the session
+          user's default (typically 'home') directory is used.  If not a
+          full path, it is interpreted relative to the default directory;
+          e.g. 'work' means '$HOME/work' (according to the guest's '$HOME'-
+          like concept).
         </desc>
       </param>
       <param name="environmentChanges" type="wstring" dir="in" safearray="yes">
