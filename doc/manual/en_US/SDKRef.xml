@@ -4161,6 +4161,20 @@ AuthResult AUTHCALL AuthEntry(
     existing client code.</para>
 
     <sect1>
+      <title>Incompatible API changes with version 7.1</title>
+
+      <itemizedlist>
+
+        <listitem><para>Guest process creation requires a new parameter for specifying the current working directory for the new
+          guest process. This is optional and can be empty.
+          See <link linkend="IGuestSession__processCreate">IGuestSession::processCreate</link> and
+          <link linkend="IGuestSession__processCreateEx">IGuestSession::processCreateEx</link> for more information.</para>
+        </listitem>
+
+      </itemizedlist>
+    </sect1>
+
+    <sect1>
       <title>Incompatible API changes with version 7.0</title>
 
       <itemizedlist>
