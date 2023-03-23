@@ -140,7 +140,7 @@ static int vgsvcGstCtrlSessionDirFree(PVBOXSERVICECTRLDIR pDir)
  *
  * Must be released via vgsvcGstCtrlSessionDirRelease().
  *
- * @returns VBox status code.
+ * @returns Guest directory entry on success, or NULL if not found.
  * @param   pSession            Guest control session to acquire guest directory for.
  * @param   uHandle             Handle of directory to acquire.
  *
@@ -174,6 +174,13 @@ static void vgsvcGstCtrlSessionDirRelease(PVBOXSERVICECTRLDIR pDir)
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
 
 
+/**
+ * Free's a guest file entry.
+ *
+ * @returns VBox status code.
+ * @param   pFile               Guest file entry to free.
+ *                              The pointer wil be invalid on success.
+ */
 static int vgsvcGstCtrlSessionFileFree(PVBOXSERVICECTRLFILE pFile)
 {
     AssertPtrReturn(pFile, VERR_INVALID_POINTER);
@@ -193,8 +200,18 @@ static int vgsvcGstCtrlSessionFileFree(PVBOXSERVICECTRLFILE pFile)
 }
 
 
-/** @todo No locking done yet! */
-static PVBOXSERVICECTRLFILE vgsvcGstCtrlSessionFileGetLocked(const PVBOXSERVICECTRLSESSION pSession, uint32_t uHandle)
+/**
+ * Acquires an internal guest file entry.
+ *
+ * Must be released via vgsvcGstCtrlSessionFileRelease().
+ *
+ * @returns Guest file entry on success, or NULL if not found.
+ * @param   pSession            Guest session to use.
+ * @param   uHandle             Handle of guest file entry to acquire.
+ *
+ * @note    No locking done yet.
+ */
+static PVBOXSERVICECTRLFILE vgsvcGstCtrlSessionFileAcquire(const PVBOXSERVICECTRLSESSION pSession, uint32_t uHandle)
 {
     AssertPtrReturn(pSession, NULL);
 
@@ -207,6 +224,17 @@ static PVBOXSERVICECTRLFILE vgsvcGstCtrlSessionFileGetLocked(const PVBOXSERVICEC
     }
 
     return NULL;
+}
+
+
+/**
+ * Releases a formerly acquired guest file.
+ *
+ * @param   pFile               File to release.
+ */
+static void vgsvcGstCtrlSessionFileRelease(PVBOXSERVICECTRLFILE pFile)
+{
+    RT_NOREF(pFile);
 }
 
 
@@ -513,7 +541,7 @@ static int vgsvcGstCtrlSessionHandleFileClose(const PVBOXSERVICECTRLSESSION pSes
     int rc = VbglR3GuestCtrlFileGetClose(pHostCtx, &uHandle /* File handle to close */);
     if (RT_SUCCESS(rc))
     {
-        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
+        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileAcquire(pSession, uHandle);
         if (pFile)
         {
             VGSvcVerbose(2, "[File %s] Closing (handle=%RU32)\n", pFile ? pFile->pszName : "<Not found>", uHandle);
@@ -567,7 +595,7 @@ static int vgsvcGstCtrlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSess
          */
         uint32_t offNew = 0;
         size_t   cbRead = 0;
-        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
+        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileAcquire(pSession, uHandle);
         if (pFile)
         {
             if (*pcbScratchBuf < cbToRead)
@@ -576,6 +604,7 @@ static int vgsvcGstCtrlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSess
             rc = RTFileRead(pFile->hFile, *ppvScratchBuf, RT_MIN(cbToRead, *pcbScratchBuf), &cbRead);
             offNew = (int64_t)RTFileTell(pFile->hFile);
             VGSvcVerbose(5, "[File %s] Read %zu/%RU32 bytes, rc=%Rrc, offNew=%RI64\n", pFile->pszName, cbRead, cbToRead, rc, offNew);
+            vgsvcGstCtrlSessionFileRelease(pFile);
         }
         else
         {
@@ -630,7 +659,7 @@ static int vgsvcGstCtrlSessionHandleFileReadAt(const PVBOXSERVICECTRLSESSION pSe
          */
         int64_t offNew = 0;
         size_t  cbRead = 0;
-        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
+        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileAcquire(pSession, uHandle);
         if (pFile)
         {
             if (*pcbScratchBuf < cbToRead)
@@ -645,6 +674,7 @@ static int vgsvcGstCtrlSessionHandleFileReadAt(const PVBOXSERVICECTRLSESSION pSe
             else
                 offNew = (int64_t)RTFileTell(pFile->hFile);
             VGSvcVerbose(5, "[File %s] Read %zu bytes @ %RU64, rc=%Rrc, offNew=%RI64\n", pFile->pszName, cbRead, offReadAt, rc, offNew);
+            vgsvcGstCtrlSessionFileRelease(pFile);
         }
         else
         {
@@ -698,13 +728,14 @@ static int vgsvcGstCtrlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSes
          */
         int64_t offNew    = 0;
         size_t  cbWritten = 0;
-        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
+        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileAcquire(pSession, uHandle);
         if (pFile)
         {
             rc = RTFileWrite(pFile->hFile, *ppvScratchBuf, RT_MIN(cbToWrite, *pcbScratchBuf), &cbWritten);
             offNew = (int64_t)RTFileTell(pFile->hFile);
             VGSvcVerbose(5, "[File %s] Writing %p LB %RU32 =>  %Rrc, cbWritten=%zu, offNew=%RI64\n",
                          pFile->pszName, *ppvScratchBuf, RT_MIN(cbToWrite, *pcbScratchBuf), rc, cbWritten, offNew);
+            vgsvcGstCtrlSessionFileRelease(pFile);
         }
         else
         {
@@ -759,7 +790,7 @@ static int vgsvcGstCtrlSessionHandleFileWriteAt(const PVBOXSERVICECTRLSESSION pS
          */
         int64_t offNew    = 0;
         size_t  cbWritten = 0;
-        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
+        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileAcquire(pSession, uHandle);
         if (pFile)
         {
             rc = RTFileWriteAt(pFile->hFile, (RTFOFF)offWriteAt, *ppvScratchBuf, RT_MIN(cbToWrite, *pcbScratchBuf), &cbWritten);
@@ -777,6 +808,7 @@ static int vgsvcGstCtrlSessionHandleFileWriteAt(const PVBOXSERVICECTRLSESSION pS
                 offNew = (int64_t)RTFileTell(pFile->hFile);
             VGSvcVerbose(5, "[File %s] Writing %p LB %RU32 @ %RU64 =>  %Rrc, cbWritten=%zu, offNew=%RI64\n",
                          pFile->pszName, *ppvScratchBuf, RT_MIN(cbToWrite, *pcbScratchBuf), offWriteAt, rc, cbWritten, offNew);
+            vgsvcGstCtrlSessionFileRelease(pFile);
         }
         else
         {
@@ -838,12 +870,13 @@ static int vgsvcGstCtrlSessionHandleFileSeek(const PVBOXSERVICECTRLSESSION pSess
             /*
              * Locate the file and do the seek.
              */
-            PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
+            PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileAcquire(pSession, uHandle);
             if (pFile)
             {
                 rc = RTFileSeek(pFile->hFile, (int64_t)offSeek, s_abMethods[uSeekMethod], &offActual);
                 VGSvcVerbose(5, "[File %s]: Seeking to offSeek=%RI64, uSeekMethodIPRT=%u, rc=%Rrc\n",
                              pFile->pszName, offSeek, s_abMethods[uSeekMethod], rc);
+                vgsvcGstCtrlSessionFileRelease(pFile);
             }
             else
             {
@@ -893,11 +926,12 @@ static int vgsvcGstCtrlSessionHandleFileTell(const PVBOXSERVICECTRLSESSION pSess
          * Locate the file and ask for the current position.
          */
         uint64_t offCurrent = 0;
-        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
+        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileAcquire(pSession, uHandle);
         if (pFile)
         {
             offCurrent = RTFileTell(pFile->hFile);
             VGSvcVerbose(5, "[File %s]: Telling offCurrent=%RU64\n", pFile->pszName, offCurrent);
+            vgsvcGstCtrlSessionFileRelease(pFile);
         }
         else
         {
@@ -941,11 +975,12 @@ static int vgsvcGstCtrlSessionHandleFileSetSize(const PVBOXSERVICECTRLSESSION pS
         /*
          * Locate the file and ask for the current position.
          */
-        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
+        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileAcquire(pSession, uHandle);
         if (pFile)
         {
             rc = RTFileSetSize(pFile->hFile, cbNew);
             VGSvcVerbose(5, "[File %s]: Changing size to %RU64 (%#RX64), rc=%Rrc\n", pFile->pszName, cbNew, cbNew, rc);
+            vgsvcGstCtrlSessionFileRelease(pFile);
         }
         else
         {
@@ -1110,8 +1145,6 @@ static int vgsvcGstCtrlSessionHandleDirClose(const PVBOXSERVICECTRLSESSION pSess
         {
             VGSvcVerbose(2, "[Dir %s] Closing (handle=%RU32)\n", pDir ? pDir->pszPathAbs : "<Not found>", uHandle);
             rc = vgsvcGstCtrlSessionDirFree(pDir);
-
-            vgsvcGstCtrlSessionDirRelease(pDir);
         }
         else
         {
