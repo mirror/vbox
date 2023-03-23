@@ -182,10 +182,12 @@ static void tstRTCreateProcExCwd(const char *pszAsUser, const char *pszPassword)
     RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
 
     char szCWD[RTPATH_MAX];
+    char szResolved[RTPATH_MAX];
 
     /* Try current CWD, whatever that is. */
     RTTESTI_CHECK_RC_OK_RETV(RTPathGetCurrent(szCWD, sizeof(szCWD)));
-    apszArgs[2] = szCWD;
+    RTTESTI_CHECK_RC_OK_RETV(RTPathReal(szCWD, szResolved, sizeof(szResolved)));
+    apszArgs[2] = szResolved;
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, fFlags,
                                          NULL, NULL, NULL, pszAsUser, pszPassword,
                                          (void *)szCWD /* pvExtraData (CWD) */, &hProc),
@@ -196,7 +198,8 @@ static void tstRTCreateProcExCwd(const char *pszAsUser, const char *pszPassword)
 
     /* Try temporary directory. */
     RTTESTI_CHECK_RC_OK_RETV(RTPathTemp(szCWD, sizeof(szCWD)));
-    apszArgs[2] = szCWD;
+    RTTESTI_CHECK_RC_OK_RETV(RTPathReal(szCWD, szResolved, sizeof(szResolved)));
+    apszArgs[2] = szResolved;
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, fFlags,
                                          NULL, NULL, NULL, pszAsUser, pszPassword,
                                          (void *)szCWD /* pvExtraData (CWD) */, &hProc),
@@ -207,7 +210,8 @@ static void tstRTCreateProcExCwd(const char *pszAsUser, const char *pszPassword)
 
     /* Try user home. */
     RTTESTI_CHECK_RC_OK_RETV(RTPathUserHome(szCWD, sizeof(szCWD)));
-    apszArgs[2] = szCWD;
+    RTTESTI_CHECK_RC_OK_RETV(RTPathReal(szCWD, szResolved, sizeof(szResolved)));
+    apszArgs[2] = szResolved;
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, fFlags,
                                          NULL, NULL, NULL, pszAsUser, pszPassword,
                                          (void *)szCWD /* pvExtraData (CWD) */, &hProc),
