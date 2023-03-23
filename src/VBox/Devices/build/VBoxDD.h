@@ -228,6 +228,10 @@ extern const PDMDEVREG g_DeviceIommuAmd;
 extern const PDMDEVREG g_DeviceIommuIntel;
 #endif
 
+#ifdef VBOX_VMM_TARGET_ARMV8
+extern const PDMDEVREG g_DevicePl011;
+#endif
+
 /* VBoxAcpi.cpp */
 int acpiPrepareDsdt(PPDMDEVINS pDevIns, void **ppvPtr, size_t *pcbDsdt);
 int acpiCleanupDsdt(PPDMDEVINS pDevIns, void *pvPtr);
