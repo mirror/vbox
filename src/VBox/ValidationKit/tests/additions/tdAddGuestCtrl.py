@@ -380,10 +380,11 @@ class tdTestExec(tdTestGuestCtrlBase):
     Specifies exactly one guest control execution test.
     Has a default timeout of 5 minutes (for safety).
     """
-    def __init__(self, sCmd = "", asArgs = None, aEnv = None, afFlags = None,             # pylint: disable=too-many-arguments
+    def __init__(self, sCmd = "", sCwd = "", asArgs = None, aEnv = None, afFlags = None,             # pylint: disable=too-many-arguments
                  timeoutMS = 5 * 60 * 1000, oCreds = None, fWaitForExit = True):
         tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sCmd = sCmd;
+        self.sCwd = sCwd;
         self.asArgs = asArgs if asArgs is not None else [sCmd,];
         self.aEnv = aEnv;
         self.afFlags = afFlags or [];
@@ -2163,7 +2164,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 if vbox.ComError.notEqual(oXcpt, vbox.ComError.VBOX_E_OBJECT_NOT_FOUND):
                     if fUseDirList:
                         fRc = reporter.errorXcpt('Error listing directory "%s" (cEntriesToRead=%d):' % \
-                            (oDir.sPath, cEntriesToRead));
+                                                 (oDir.sPath, cEntriesToRead));
                     else:
                         fRc = reporter.errorXcpt('Error reading directory "%s":' % (oDir.sPath));
                 else:
@@ -2213,12 +2214,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         # Check the name.
                         if oFsObj.sName != sName:
                             fRc = reporter.error('%s: expected name "%s", got "%s" instead!' % \
-                                (oFsObj.sPath, oFsObj.sName, sName,));
+                                                 (oFsObj.sPath, oFsObj.sName, sName,));
 
                         # Check the size if a file.
                         if isinstance(oFsObj, testfileset.TestFile) and cbFile != oFsObj.cbContent:
                             fRc = reporter.error('%s: expected size %s, got %s instead!' % \
-                                (oFsObj.sPath, oFsObj.cbContent, cbFile,));
+                                                 (oFsObj.sPath, oFsObj.cbContent, cbFile,));
 
                         ## @todo check timestamps and attributes.
 
@@ -2317,9 +2318,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         reporter.log2('Executing sCmd=%s, afFlags=%s, timeoutMS=%d, asArgs=%s, asEnv=%s'
                       % (oTest.sCmd, oTest.afFlags, oTest.timeoutMS, limitString(oTest.asArgs), limitString(oTest.aEnv),));
         try:
-            oProcess = oGuestSession.processCreate(oTest.sCmd,
-                                                   oTest.asArgs if self.oTstDrv.fpApiVer >= 5.0 else oTest.asArgs[1:],
-                                                   oTest.aEnv, oTest.afFlags, oTest.timeoutMS);
+            if self.oTstDrv.fpApiVer >= 7.1:
+                oProcess = oGuestSession.processCreate(oTest.sCmd, oTest.sCwd,
+                                                       oTest.asArgs if self.oTstDrv.fpApiVer >= 5.0 else oTest.asArgs[1:],
+                                                       oTest.aEnv, oTest.afFlags, oTest.timeoutMS);
+            else:
+                oProcess = oGuestSession.processCreate(oTest.sCmd,
+                                                       oTest.asArgs if self.oTstDrv.fpApiVer >= 5.0 else oTest.asArgs[1:],
+                                                       oTest.aEnv, oTest.afFlags, oTest.timeoutMS);
         except:
             reporter.maybeErrXcpt(fIsError, 'type=%s, asArgs=%s' % (type(oTest.asArgs), oTest.asArgs,));
             return False;
@@ -2880,9 +2886,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         for i in xrange(0, cProcsPerGroup):
             try:
                 reporter.log2('Starting stale process #%d...' % (i));
-                oGuestSession.processCreate(sShell,
-                                            asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:], [],
-                                            [ vboxcon.ProcessCreateFlag_WaitForStdOut ], 30 * 1000);
+                if self.oTstDrv.fpApiVer >= 7.1:
+                    oGuestSession.processCreate(sShell, "",
+                                                asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:], [],
+                                                [ vboxcon.ProcessCreateFlag_WaitForStdOut ], 30 * 1000);
+                else:
+                    oGuestSession.processCreate(sShell,
+                                                asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:], [],
+                                                [ vboxcon.ProcessCreateFlag_WaitForStdOut ], 30 * 1000);
                 # Note: Not keeping a process reference from the created process above is intentional and part of the test!
 
                 # Note: Use a timeout in the call above for not letting the stale processes
@@ -2914,8 +2925,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             for i in xrange(0, cProcsPerGroup):
                 try:
                     reporter.log2('Starting non-stale process #%d...' % (i));
-                    oCurProc = oGuestSession.processCreate(sShell, asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
-                                                           [], [], 0); # Infinite timeout.
+                    if self.oTstDrv.fpApiVer >= 7.1:
+                        oCurProc = oGuestSession.processCreate(sShell, "", asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
+                                                               [], [], 0); # Infinite timeout.
+                    else:
+                        oCurProc = oGuestSession.processCreate(sShell, asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
+                                                               [], [], 0); # Infinite timeout.
                     aoProcs.append(oCurProc);
                 except:
                     fRc = reporter.errorXcpt('Creating non-stale process #%d failed:' % (i,));
@@ -2967,8 +2982,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             for i in xrange(0, cProcsPerGroup):
                 try:
                     reporter.log2('Starting blocking process #%d...' % (i));
-                    oCurProc = oGuestSession.processCreate(sCmd, asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
-                                                           [],  [], 30 * 1000);
+                    if self.oTstDrv.fpApiVer >= 7.1:
+                        oCurProc = oGuestSession.processCreate(sCmd, "", asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
+                                                               [],  [], 30 * 1000);
+                    else:
+                        oCurProc = oGuestSession.processCreate(sCmd, asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
+                                                               [],  [], 30 * 1000);
                     # Note: Use a timeout in the call above for not letting the stale processes
                     #       hanging around forever.  This can happen if the installed Guest Additions
                     #       do not support terminating guest processes.
@@ -3041,6 +3060,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         sShell          = self.oTstDrv.getGuestSystemShell(oTestVm);
         sShellOpt       = '/C' if oTestVm.isWindows() or oTestVm.isOS2() else '-c';
         sSystemDir      = self.oTstDrv.getGuestSystemDir(oTestVm);
+        sTempDir        = self oTstDrv.getGuestTempDir(oTestVm);
         sFileForReading = self.oTstDrv.getGuestSystemFileForReading(oTestVm);
         if oTestVm.isWindows() or oTestVm.isOS2():
             sImageOut = self.oTstDrv.getGuestSystemShell(oTestVm);
@@ -3100,6 +3120,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                   tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', 'stdouterr-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
+                # Current working directory set (VBox >= 7.1).
+                [ tdTestExec(sCmd = sImageOut, sCwd = sTempDir, asArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir ]),
+                  tdTestResultExec(fRc = True) ],
             ];
             # atExec.extend([
                 # FIXME: Failing tests.
@@ -3149,6 +3172,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                   tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, 'stdouterr-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 2) ],
+                # Current working directory set (VBox >= 7.1).
+                [ tdTestExec(sCmd = sImageOut, sCwd = sTempDir, asArgs = [ sImageOut, '-R', sSystemDir ]),
+                  tdTestResultExec(fRc = True) ],
             ];
             # atExec.extend([
                 # FIXME: Failing tests.
@@ -3391,9 +3417,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         aEnv    = [];
         afFlags = [];
         try:
-            oGuestProcess = oGuestSession.processCreate(sImage,
-                                                        asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:], aEnv, afFlags,
-                                                        30 * 1000);
+            if self.oTstDrv.fpApiVer >= 7.1:
+                oGuestProcess = oGuestSession.processCreate(sImage, "",
+                                                            asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:], aEnv, afFlags,
+                                                            30 * 1000);
+            else:
+                oGuestProcess = oGuestSession.processCreate(sImage,
+                                                            asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:], aEnv, afFlags,
+                                                            30 * 1000);
         except:
             fRc = reporter.error('Failed to start shell process (%s)' % (sImage,));
         else:
@@ -3507,8 +3538,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         fRc = True;
         try:
-            oCurProcess = oGuestSession.processCreate(sShell, [sShell,] if self.oTstDrv.fpApiVer >= 5.0 else [],
-                                                      [], [], 30 * 1000);
+            if self.oTstDrv.fpApiVer >= 7.1:
+                oCurProcess = oGuestSession.processCreate(sShell, "", [sShell,] if self.oTstDrv.fpApiVer >= 5.0 else [],
+                                                          [], [], 30 * 1000);
+            else:
+                oCurProcess = oGuestSession.processCreate(sShell, [sShell,] if self.oTstDrv.fpApiVer >= 5.0 else [],
+                                                          [], [], 30 * 1000);
         except:
             fRc = reporter.errorXcpt();
         else:
@@ -3545,8 +3580,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # because it ran out of execution time (3 seconds).
             #
             try:
-                oCurProcess = oGuestSession.processCreate(sShell, [sShell,] if self.oTstDrv.fpApiVer >= 5.0 else [],
+                if self.oTstDrv.fpApiVer >= 7.1:
+                    oCurProcess = oGuestSession.processCreate(sShell, "", [sShell,] if self.oTstDrv.fpApiVer >= 5.0 else [],
                                                           [], [], 3 * 1000);
+                else:
+                    oCurProcess = oGuestSession.processCreate(sShell, [sShell,] if self.oTstDrv.fpApiVer >= 5.0 else [],
+                                                              [], [], 3 * 1000);
             except:
                 fRc = reporter.errorXcpt();
             else:
@@ -5537,7 +5576,7 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
         afFlags = [];
 
         for _ in xrange(100):
-            oProc = oGuestSession.processCreate(sCmd, asArgs if self.fpApiVer >= 5.0 else asArgs[1:],
+            oProc = oGuestSession.processCreate(sCmd, "", asArgs if self.fpApiVer >= 5.0 else asArgs[1:],
                                                 aEnv, afFlags, 30 * 1000);
 
             aWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate ];
