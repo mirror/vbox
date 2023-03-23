@@ -328,20 +328,44 @@
   </xsl:element>
 </xsl:template>
 
-<xsl:template match="arg[(not(@choice) or @choice='opt') and (not(@rep) or @rep='norepeat')]" >
+<xsl:template match="arg[not(@choice) or @choice='opt']" >
   <xsl:element name="groupseq">
-    <xsl:attribute name="rev">arg[opt,norepeat]</xsl:attribute>
+    <xsl:attribute name="rev">arg[opt]</xsl:attribute>
     <xsl:attribute name="importance">optional</xsl:attribute>
+
     <xsl:apply-templates />
+
+    <xsl:if test="@rep='repeat'">
+      <xsl:element name="repsep">
+        <xsl:attribute name="rev">arg[opt,repeat]</xsl:attribute>
+        <xsl:text>...</xsl:text>
+      </xsl:element>
+    </xsl:if>
   </xsl:element>
+
+  <xsl:if test="parent::group">
+    <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Expected arg in group to be plain, not optional.</xsl:message>
+  </xsl:if>
 </xsl:template>
 
-<xsl:template match="arg[@choice='req' and (not(@rep) or @rep='norepeat')]" >
+<xsl:template match="arg[@choice='req']" >
   <xsl:element name="groupseq">
-    <xsl:attribute name="rev">arg[req,norepeat]</xsl:attribute>
+    <xsl:attribute name="rev">arg[req]</xsl:attribute>
     <xsl:attribute name="importance">required</xsl:attribute>
+
     <xsl:apply-templates />
+
+    <xsl:if test="@rep='repeat'">
+      <xsl:element name="repsep">
+        <xsl:attribute name="rev">arg[opt,repeat]</xsl:attribute>
+        <xsl:text>...</xsl:text>
+      </xsl:element>
+    </xsl:if>
   </xsl:element>
+
+  <xsl:if test="parent::group">
+    <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Expected arg in group to be plain, not required.</xsl:message>
+  </xsl:if>
 </xsl:template>
 
 <xsl:template match="arg[not(ancestor::group) and ancestor::cmdsynopsis and @choice='plain' and (not(@rep) or @rep='norepeat')]" >
@@ -367,18 +391,6 @@
   <xsl:element name="kwd">
     <xsl:attribute name="rev">arg[plain]</xsl:attribute>
     <xsl:value-of select="."/>
-  </xsl:element>
-</xsl:template>
-
-<xsl:template match="arg[(not(@choice) or @choice='opt') and @rep='repeat' and not(ancestor::group) and not(group)]" >
-  <xsl:element name="groupseq">
-    <xsl:attribute name="rev">arg[opt,repeat]</xsl:attribute>
-    <xsl:attribute name="importance">optional</xsl:attribute>
-    <xsl:apply-templates />
-    <xsl:element name="repsep">
-      <xsl:attribute name="rev">arg[opt,repeat]</xsl:attribute>
-      <xsl:text>...</xsl:text>
-    </xsl:element>
   </xsl:element>
 </xsl:template>
 
@@ -410,8 +422,8 @@
   </xsl:element>
 </xsl:template>
 
-<!-- replaceable in computeroutput -> varname -->
-<xsl:template match="computeroutput/replaceable" >
+<!-- replaceable in computeroutput or filename -> varname -->
+<xsl:template match="computeroutput/replaceable | filename/replaceable" >
   <xsl:element name="varname">
     <xsl:attribute name="rev">computeroutput/replaceable</xsl:attribute>
     <xsl:apply-templates />
@@ -550,6 +562,21 @@
   </xsl:element>
 </xsl:template>
 
+<!-- note -> note -->
+<xsl:template match="note">
+  <xsl:copy>
+    <xsl:apply-templates />
+  </xsl:copy>
+</xsl:template>
+
+<!-- citetitle -> cite -->
+<xsl:template match="citetitle">
+  <xsl:element name="cite">
+    <xsl:attribute name="rev">citetitle</xsl:attribute>
+    <xsl:apply-templates />
+  </xsl:element>
+</xsl:template>
+
 <!--
  remark extensions:
  -->
@@ -577,7 +604,7 @@
     <xsl:for-each select="ancestor-or-self::node()">
       <xsl:choose>
         <xsl:when test="name(.) = ''">
-          <xsl:text>text()</xsl:text>
+          <xsl:value-of select="concat('/text(',')')"/>
         </xsl:when>
         <xsl:otherwise>
           <xsl:value-of select="concat('/', name(.))"/>
@@ -587,9 +614,15 @@
               <xsl:value-of select="@id"/>
               <xsl:text>]</xsl:text>
             </xsl:when>
-            <xsl:when test="position() > 1">
-              <xsl:text>[</xsl:text><xsl:value-of select="position()"/><xsl:text>]</xsl:text>
-            </xsl:when>
+            <xsl:otherwise>
+              <!-- Use generate-id() to find the current node position among its siblings. -->
+              <xsl:variable name="id" select="generate-id(.)"/>
+              <xsl:for-each select="../node()">
+                <xsl:if test="generate-id(.) = $id">
+                  <xsl:text>[</xsl:text><xsl:value-of select="position()"/><xsl:text>]</xsl:text>
+                </xsl:if>
+              </xsl:for-each>
+            </xsl:otherwise>
           </xsl:choose>
         </xsl:otherwise>
       </xsl:choose>
