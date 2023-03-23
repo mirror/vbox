@@ -178,7 +178,7 @@ public:
     bool isSessionValid() const;
 
     /** Returns whether requested visual @a state allowed. */
-    bool isVisualStateAllowed(UIVisualStateType state) const { return m_allowedVisualStates & state; }
+    bool isVisualStateAllowed(UIVisualStateType state) const { return m_enmAllowedVisualStates & state; }
 
     /** Requests async visual-state change. */
     void asyncChangeVisualState(UIVisualStateType enmVisualStateType);
@@ -941,11 +941,11 @@ private:
     UISession *m_pSession;
 
     /** Holds allowed visual states. */
-    UIVisualStateType m_allowedVisualStates;
+    UIVisualStateType m_enmAllowedVisualStates;
     /** Holds initial visual state. */
-    UIVisualStateType m_initialVisualState;
+    UIVisualStateType m_enmInitialVisualState;
     /** Holds current visual state. */
-    UIVisualStateType m_visualState;
+    UIVisualStateType m_enmVisualState;
     /** Holds visual state which should be entered when possible. */
     UIVisualStateType m_enmRequestedVisualState;
     /** Holds current machine-logic. */
@@ -987,9 +987,9 @@ private:
     /** @name Guest-screen stuff.
      ** @{ */
         /** Holds the list of desired guest-screen visibility flags. */
-        QVector<bool>  m_monitorVisibilityVectorHostDesires;
+        QVector<bool>  m_guestScreenVisibilityVectorHostDesires;
         /** Holds the list of actual guest-screen visibility flags. */
-        QVector<bool>  m_monitorVisibilityVector;
+        QVector<bool>  m_guestScreenVisibilityVector;
 
         /** Holds the list of guest-screen full-screen sizes. */
         QVector<QSize>  m_monitorLastFullScreenSizeVector;

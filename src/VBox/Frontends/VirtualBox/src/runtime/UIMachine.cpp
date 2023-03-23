@@ -458,19 +458,19 @@ bool UIMachine::setAudioAdapterInputEnabled(bool fEnabled)
 bool UIMachine::isScreenVisibleHostDesires(ulong uScreenId) const
 {
     /* Make sure index feats the bounds: */
-    AssertReturn(uScreenId < (ulong)m_monitorVisibilityVectorHostDesires.size(), false);
+    AssertReturn(uScreenId < (ulong)m_guestScreenVisibilityVectorHostDesires.size(), false);
 
     /* Return 'actual' (host-desire) visibility status: */
-    return m_monitorVisibilityVectorHostDesires.value((int)uScreenId);
+    return m_guestScreenVisibilityVectorHostDesires.value((int)uScreenId);
 }
 
 void UIMachine::setScreenVisibleHostDesires(ulong uScreenId, bool fIsMonitorVisible)
 {
     /* Make sure index feats the bounds: */
-    AssertReturnVoid(uScreenId < (ulong)m_monitorVisibilityVectorHostDesires.size());
+    AssertReturnVoid(uScreenId < (ulong)m_guestScreenVisibilityVectorHostDesires.size());
 
     /* Remember 'actual' (host-desire) visibility status: */
-    m_monitorVisibilityVectorHostDesires[(int)uScreenId] = fIsMonitorVisible;
+    m_guestScreenVisibilityVectorHostDesires[(int)uScreenId] = fIsMonitorVisible;
 
     /* And remember the request in extra data for guests with VMSVGA: */
     /* This should be done before the actual hint is sent in case the guest overrides it. */
@@ -480,19 +480,19 @@ void UIMachine::setScreenVisibleHostDesires(ulong uScreenId, bool fIsMonitorVisi
 bool UIMachine::isScreenVisible(ulong uScreenId) const
 {
     /* Make sure index feats the bounds: */
-    AssertReturn(uScreenId < (ulong)m_monitorVisibilityVector.size(), false);
+    AssertReturn(uScreenId < (ulong)m_guestScreenVisibilityVector.size(), false);
 
     /* Return 'actual' visibility status: */
-    return m_monitorVisibilityVector.value((int)uScreenId);
+    return m_guestScreenVisibilityVector.value((int)uScreenId);
 }
 
 void UIMachine::setScreenVisible(ulong uScreenId, bool fIsMonitorVisible)
 {
     /* Make sure index feats the bounds: */
-    AssertReturnVoid(uScreenId < (ulong)m_monitorVisibilityVector.size());
+    AssertReturnVoid(uScreenId < (ulong)m_guestScreenVisibilityVector.size());
 
     /* Remember 'actual' visibility status: */
-    m_monitorVisibilityVector[(int)uScreenId] = fIsMonitorVisible;
+    m_guestScreenVisibilityVector[(int)uScreenId] = fIsMonitorVisible;
     /* Remember 'desired' visibility status: */
     // See note in UIMachineView::sltHandleNotifyChange() regarding the graphics controller check. */
     KGraphicsControllerType enmType = KGraphicsControllerType_Null;
@@ -507,8 +507,8 @@ void UIMachine::setScreenVisible(ulong uScreenId, bool fIsMonitorVisible)
 int UIMachine::countOfVisibleWindows()
 {
     int cCountOfVisibleWindows = 0;
-    for (int i = 0; i < m_monitorVisibilityVector.size(); ++i)
-        if (m_monitorVisibilityVector[i])
+    for (int i = 0; i < m_guestScreenVisibilityVector.size(); ++i)
+        if (m_guestScreenVisibilityVector[i])
             ++cCountOfVisibleWindows;
     return cCountOfVisibleWindows;
 }
@@ -516,8 +516,8 @@ int UIMachine::countOfVisibleWindows()
 QList<int> UIMachine::listOfVisibleWindows() const
 {
     QList<int> visibleWindows;
-    for (int i = 0; i < m_monitorVisibilityVector.size(); ++i)
-        if (m_monitorVisibilityVector.at(i))
+    for (int i = 0; i < m_guestScreenVisibilityVector.size(); ++i)
+        if (m_guestScreenVisibilityVector.at(i))
             visibleWindows.push_back(i);
     return visibleWindows;
 }
@@ -1120,10 +1120,10 @@ void UIMachine::sltChangeVisualState(UIVisualStateType visualState)
         m_pMachineLogic->prepare();
 
         /* Remember new visual state: */
-        m_visualState = visualState;
+        m_enmVisualState = visualState;
 
         /* Save requested visual state: */
-        gEDataManager->setRequestedVisualState(m_visualState, uiCommon().managedVMUuid());
+        gEDataManager->setRequestedVisualState(m_enmVisualState, uiCommon().managedVMUuid());
     }
     else
     {
@@ -1134,8 +1134,8 @@ void UIMachine::sltChangeVisualState(UIVisualStateType visualState)
     /* Make sure machine-logic exists: */
     if (!m_pMachineLogic)
     {
-        /* Reset initial visual state  to normal: */
-        m_initialVisualState = UIVisualStateType_Normal;
+        /* Reset initial visual state to normal: */
+        m_enmInitialVisualState = UIVisualStateType_Normal;
         /* Enter initial visual state again: */
         enterInitialVisualState();
     }
@@ -1410,9 +1410,9 @@ UIMachine::UIMachine()
     : QObject(0)
     , m_fInitialized(false)
     , m_pSession(0)
-    , m_allowedVisualStates(UIVisualStateType_Invalid)
-    , m_initialVisualState(UIVisualStateType_Normal)
-    , m_visualState(UIVisualStateType_Invalid)
+    , m_enmAllowedVisualStates(UIVisualStateType_Invalid)
+    , m_enmInitialVisualState(UIVisualStateType_Normal)
+    , m_enmVisualState(UIVisualStateType_Invalid)
     , m_enmRequestedVisualState(UIVisualStateType_Invalid)
     , m_pMachineLogic(0)
     , m_pMachineWindowIcon(0)
@@ -1678,60 +1678,58 @@ void UIMachine::prepareScreens()
 # endif /* !VBOX_WS_X11 || VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 #endif /* !VBOX_WS_MAC */
 
-    /* Accquire monitor count: */
+    /* Accquire guest-screen count: */
     ulong cMonitorCount = 0;
     acquireMonitorCount(cMonitorCount);
 
     /* Prepare initial screen visibility status: */
-    m_monitorVisibilityVector.resize(cMonitorCount);
-    m_monitorVisibilityVector.fill(false);
-    m_monitorVisibilityVector[0] = true;
+    m_guestScreenVisibilityVector.fill(false, cMonitorCount);
+    m_guestScreenVisibilityVector[0] = true;
 
     /* Prepare empty last full-screen size vector: */
-    m_monitorLastFullScreenSizeVector.resize(cMonitorCount);
-    m_monitorLastFullScreenSizeVector.fill(QSize(-1, -1));
+    m_monitorLastFullScreenSizeVector.fill(QSize(-1, -1), cMonitorCount);
 
     /* If machine is in 'saved' state: */
     if (uisession()->isSaved())
     {
         /* Update screen visibility status from saved-state: */
-        for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
+        for (int iScreenIndex = 0; iScreenIndex < m_guestScreenVisibilityVector.size(); ++iScreenIndex)
         {
             long iDummy = 0;
             ulong uDummy = 0;
             bool fEnabled = true;
             acquireSavedGuestScreenInfo(iScreenIndex, iDummy, iDummy, uDummy, uDummy, fEnabled);
-            m_monitorVisibilityVector[iScreenIndex] = fEnabled;
+            m_guestScreenVisibilityVector[iScreenIndex] = fEnabled;
         }
         /* And make sure at least one of them is visible (primary if others are hidden): */
         if (countOfVisibleWindows() < 1)
-            m_monitorVisibilityVector[0] = true;
+            m_guestScreenVisibilityVector[0] = true;
     }
     else if (uiCommon().isSeparateProcess())
     {
         /* Update screen visibility status from display directly: */
-        for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
+        for (int iScreenIndex = 0; iScreenIndex < m_guestScreenVisibilityVector.size(); ++iScreenIndex)
         {
-            KGuestMonitorStatus enmMonitorStatus = KGuestMonitorStatus_Disabled;
             ulong uDummy = 0;
             long iDummy = 0;
+            KGuestMonitorStatus enmMonitorStatus = KGuestMonitorStatus_Disabled;
             acquireGuestScreenParameters(iScreenIndex, uDummy, uDummy, uDummy, iDummy, iDummy, enmMonitorStatus);
-            m_monitorVisibilityVector[iScreenIndex] = (   enmMonitorStatus == KGuestMonitorStatus_Enabled
-                                                       || enmMonitorStatus == KGuestMonitorStatus_Blank);
+            m_guestScreenVisibilityVector[iScreenIndex] = (   enmMonitorStatus == KGuestMonitorStatus_Enabled
+                                                           || enmMonitorStatus == KGuestMonitorStatus_Blank);
         }
         /* And make sure at least one of them is visible (primary if others are hidden): */
         if (countOfVisibleWindows() < 1)
-            m_monitorVisibilityVector[0] = true;
+            m_guestScreenVisibilityVector[0] = true;
     }
 
     /* Prepare initial screen visibility status of host-desires (same as facts): */
-    m_monitorVisibilityVectorHostDesires.resize(cMonitorCount);
-    for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
-        m_monitorVisibilityVectorHostDesires[iScreenIndex] = m_monitorVisibilityVector[iScreenIndex];
+    m_guestScreenVisibilityVectorHostDesires.resize(cMonitorCount);
+    for (int iScreenIndex = 0; iScreenIndex < m_guestScreenVisibilityVector.size(); ++iScreenIndex)
+        m_guestScreenVisibilityVectorHostDesires[iScreenIndex] = m_guestScreenVisibilityVector[iScreenIndex];
 
     /* Make sure action-pool knows guest-screen visibility status: */
-    for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
-        actionPool()->toRuntime()->setGuestScreenVisible(iScreenIndex, m_monitorVisibilityVector.at(iScreenIndex));
+    for (int iScreenIndex = 0; iScreenIndex < m_guestScreenVisibilityVector.size(); ++iScreenIndex)
+        actionPool()->toRuntime()->setGuestScreenVisible(iScreenIndex, m_guestScreenVisibilityVector.at(iScreenIndex));
 }
 
 void UIMachine::prepareKeyboard()
@@ -1762,9 +1760,9 @@ void UIMachine::prepareMachineLogic()
             Qt::QueuedConnection);
 
     /* Load restricted visual states: */
-    UIVisualStateType restrictedVisualStates = gEDataManager->restrictedVisualStates(uiCommon().managedVMUuid());
+    UIVisualStateType enmRestrictedVisualStates = gEDataManager->restrictedVisualStates(uiCommon().managedVMUuid());
     /* Acquire allowed visual states: */
-    m_allowedVisualStates = static_cast<UIVisualStateType>(UIVisualStateType_All ^ restrictedVisualStates);
+    m_enmAllowedVisualStates = static_cast<UIVisualStateType>(UIVisualStateType_All ^ enmRestrictedVisualStates);
 
     /* Load requested visual state, it can override initial one: */
     m_enmRequestedVisualState = gEDataManager->requestedVisualState(uiCommon().managedVMUuid());
@@ -1774,9 +1772,12 @@ void UIMachine::prepareMachineLogic()
         switch (m_enmRequestedVisualState)
         {
             /* Direct transition allowed to scale/fullscreen modes only: */
-            case UIVisualStateType_Scale:      m_initialVisualState = UIVisualStateType_Scale; break;
-            case UIVisualStateType_Fullscreen: m_initialVisualState = UIVisualStateType_Fullscreen; break;
-            default: break;
+            case UIVisualStateType_Scale:
+            case UIVisualStateType_Fullscreen:
+                m_enmInitialVisualState = m_enmRequestedVisualState;
+                break;
+            default:
+                break;
         }
     }
 
@@ -1848,7 +1849,7 @@ void UIMachine::cleanup()
 
 void UIMachine::enterInitialVisualState()
 {
-    sltChangeVisualState(m_initialVisualState);
+    sltChangeVisualState(m_enmInitialVisualState);
 }
 
 void UIMachine::updateActionRestrictions()
