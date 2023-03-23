@@ -58,7 +58,7 @@
         <arg choice="plain">--ovf20</arg>
       </group>
       <arg>--manifest</arg>
-      <arg>--options=<group choice="plain" rep="repeat">
+      <arg rep="repeat">--options=<group choice="plain"> <!-- group can be repeated with comma separator - hard to do in docbook. -->
           <arg choice="plain">manifest</arg>
           <arg choice="plain">iso</arg>
           <arg choice="plain">nomacs</arg>

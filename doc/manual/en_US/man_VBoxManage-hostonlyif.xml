@@ -52,8 +52,14 @@
       <arg choice="req"><replaceable>ifname</replaceable></arg>
       <group>
         <arg choice="plain">--dhcp</arg>
-        <arg choice="plain">--ip=<replaceable>IPv4-address</replaceable> <arg>--netmask=<replaceable>IPv4-netmask</replaceable></arg></arg>
-        <arg choice="plain">--ipv6=<replaceable>IPv6-address</replaceable> <arg>--netmasklengthv6=<replaceable>length</replaceable></arg></arg>
+        <arg choice="plain">
+          <arg choice="req">--ip=<replaceable>IPv4-address</replaceable></arg>
+          <arg>--netmask=<replaceable>IPv4-netmask</replaceable></arg>
+        </arg>
+        <arg choice="plain">
+          <arg choice="req">--ipv6=<replaceable>IPv6-address</replaceable></arg>
+          <arg>--netmasklengthv6=<replaceable>length</replaceable></arg>
+        </arg>
       </group>
     </cmdsynopsis>
 
