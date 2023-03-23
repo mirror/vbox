@@ -53,6 +53,8 @@
 
 /** PL011 MMIO region size in bytes. */
 #define PL011_MMIO_SIZE                         _4K
+/** Maximum size of a FIFO. */
+#define PL011_FIFO_LENGTH_MAX                   32
 
 /** The offset of the UARTDR register from the beginning of the region. */
 #define PL011_REG_UARTDR_INDEX                  0x0
@@ -135,13 +137,47 @@
 
 /** The offset of the UARTCR register from the beginning of the region. */
 #define PL011_REG_UARTCR_INDEX                  0x30
+/** UART enable. */
+# define PL011_REG_UARTCR_UARTEN                RT_BIT(0)
+/** SIR enable. */
+# define PL011_REG_UARTCR_SIREN                 RT_BIT(1)
+/** SIR low-power IrDA mode. */
+# define PL011_REG_UARTCR_SIRLP                 RT_BIT(2)
+/** Loopback enable. */
+# define PL011_REG_UARTCR_LBE                   RT_BIT(7)
 /** UART transmit enable flag. */
 # define PL011_REG_UARTCR_TXE                   RT_BIT(8)
 /** UART receive enable flag. */
 # define PL011_REG_UARTCR_RXE                   RT_BIT(9)
+/** Data transmit ready. */
+# define PL011_REG_UARTCR_DTR                   RT_BIT(10)
+/** Request to send. */
+# define PL011_REG_UARTCR_RTS                   RT_BIT(11)
+/** UART Out1 modem status output (DCD). */
+# define PL011_REG_UARTCR_OUT1_DCD              RT_BIT(12)
+/** UART Out2 modem status output (RI). */
+# define PL011_REG_UARTCR_OUT2_RI               RT_BIT(13)
+/** RTS hardware flow control enable. */
+# define PL011_REG_UARTCR_OUT1_RTSEn            RT_BIT(14)
+/** CTS hardware flow control enable. */
+# define PL011_REG_UARTCR_OUT1_CTSEn            RT_BIT(15)
 
 /** The offset of the UARTIFLS register from the beginning of the region. */
 #define PL011_REG_UARTIFLS_INDEX                0x34
+/** Returns the Transmit Interrupt FIFO level. */
+# define PL011_REG_UARTIFLS_TXFIFO_GET(a_Ifls)  ((a_Ifls) & 0x7)
+/** Returns the Receive Interrupt FIFO level. */
+# define PL011_REG_UARTIFLS_RXFIFO_GET(a_Ifls)  (((a_Ifls) >> 3) & 0x7)
+/** 1/8 Fifo level. */
+# define PL011_REG_UARTIFLS_LVL_1_8             0x0
+/** 1/4 Fifo level. */
+# define PL011_REG_UARTIFLS_LVL_1_4             0x1
+/** 1/2 Fifo level. */
+# define PL011_REG_UARTIFLS_LVL_1_2             0x2
+/** 3/4 Fifo level. */
+# define PL011_REG_UARTIFLS_LVL_3_4             0x3
+/** 7/8 Fifo level. */
+# define PL011_REG_UARTIFLS_LVL_7_8             0x4
 
 /** The offset of the UARTIMSC register from the beginning of the region. */
 #define PL011_REG_UARTIMSC_INDEX                0x38
@@ -175,10 +211,39 @@
 /** The offset of the UARTPCellID3 register from the beginning of the region. */
 #define PL011_REG_UART_PCELL_ID3_INDEX          0xffc
 
+/** Set the specified bits in the given register. */
+#define PL011_REG_SET(a_Reg, a_Set)             ((a_Reg) |= (a_Set))
+/** Clear the specified bits in the given register. */
+#define PL011_REG_CLR(a_Reg, a_Clr)             ((a_Reg) &= ~(a_Clr))
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+
+/**
+ * UART FIFO.
+ */
+typedef struct PL011FIFO
+{
+    /** Fifo size configured. */
+    uint8_t                         cbMax;
+    /** Current amount of bytes used. */
+    uint8_t                         cbUsed;
+    /** Next index to write to. */
+    uint8_t                         offWrite;
+    /** Next index to read from. */
+    uint8_t                         offRead;
+    /** The interrupt trigger level (only used for the receive FIFO). */
+    uint8_t                         cbItl;
+    /** The data in the FIFO. */
+    uint8_t                         abBuf[PL011_FIFO_LENGTH_MAX];
+    /** Alignment to a 4 byte boundary. */
+    uint8_t                         au8Alignment0[3];
+} PL011FIFO;
+/** Pointer to a FIFO. */
+typedef PL011FIFO *PPL011FIFO;
+
 
 /**
  * Shared serial device state.
@@ -194,11 +259,28 @@ typedef struct DEVPL011
 
     /** @name Registers.
      * @{ */
+    uint8_t                         uRegDr;
     /** UART control register. */
-    uint32_t                        uRegCr;
+    uint16_t                        uRegCr;
     /** UART flag register. */
-    uint32_t                        uRegFr;
+    uint16_t                        uRegFr;
+    /** UART integer baud rate register. */
+    uint16_t                        uRegIbrd;
+    /** UART fractional baud rate register. */
+    uint16_t                        uRegFbrd;
+    /** UART line control register. */
+    uint16_t                        uRegLcrH;
     /** @} */
+
+    /** Time it takes to transmit/receive a single symbol in timer ticks. */
+    uint64_t                        cSymbolXferTicks;
+    /** Number of bytes available for reading from the layer below. */
+    volatile uint32_t               cbAvailRdr;
+
+    /** The transmit FIFO. */
+    PL011FIFO                       FifoXmit;
+    /** The receive FIFO. */
+    PL011FIFO                       FifoRecv;
 } DEVPL011;
 /** Pointer to the shared serial device state. */
 typedef DEVPL011 *PDEVPL011;
@@ -254,8 +336,275 @@ typedef CTX_SUFF(DEVPL011) DEVPL011CC;
 typedef CTX_SUFF(PDEVPL011) PDEVPL011CC;
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+
+#ifdef IN_RING3
+/**
+ * String versions of the parity enum.
+ */
+static const char *s_aszParity[] =
+{
+    "INVALID",
+    "NONE",
+    "EVEN",
+    "ODD",
+    "MARK",
+    "SPACE",
+    "INVALID"
+};
+
+
+/**
+ * String versions of the stop bits enum.
+ */
+static const char *s_aszStopBits[] =
+{
+    "INVALID",
+    "1",
+    "INVALID",
+    "2",
+    "INVALID"
+};
+#endif
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
+/**
+ * Updates the IRQ state based on the current device state.
+ *
+ * @returns nothing.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
+ */
+static void pl011IrqUpdate(PPDMDEVINS pDevIns, PDEVPL011 pThis, PDEVPL011CC pThisCC)
+{
+    LogFlowFunc(("pThis=%#p\n", pThis));
+    RT_NOREF(pDevIns, pThis, pThisCC);
+}
+
+
+/**
+ * Transmits the given byte.
+ *
+ * @returns Strict VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
+ * @param   bVal                Byte to transmit.
+ */
+static VBOXSTRICTRC pl011Xmit(PPDMDEVINS pDevIns, PDEVPL011CC pThisCC, PDEVPL011 pThis, uint8_t bVal)
+{
+    int rc = VINF_SUCCESS;
+#ifdef IN_RING3
+    bool fNotifyDrv = false;
+#endif
+
+    if (pThis->uRegLcrH & PL011_REG_UARTLCR_H_FEN)
+    {
+        AssertReleaseFailed(); /** @todo */
+    }
+    else
+    {
+        /* Notify the lower driver about available data only if the register was empty before. */
+        if (!(pThis->uRegFr & PL011_REG_UARTFR_BUSY))
+        {
+#ifndef IN_RING3
+            rc = VINF_IOM_R3_IOPORT_WRITE;
+#else
+            pThis->uRegDr = bVal;
+            pThis->uRegFr |= PL011_REG_UARTFR_BUSY;
+            pl011IrqUpdate(pDevIns, pThis, pThisCC);
+            fNotifyDrv = true;
+#endif
+        }
+        else
+            pThis->uRegDr = bVal;
+    }
+
+#ifdef IN_RING3
+    if (fNotifyDrv)
+    {
+        /* Leave the device critical section before calling into the lower driver. */
+        PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
+
+        if (   pThisCC->pDrvSerial
+            && !(pThis->uRegCr & PL011_REG_UARTCR_LBE))
+        {
+            int rc2 = pThisCC->pDrvSerial->pfnDataAvailWrNotify(pThisCC->pDrvSerial);
+            if (RT_FAILURE(rc2))
+                LogRelMax(10, ("PL011#%d: Failed to send data with %Rrc\n", pDevIns->iInstance, rc2));
+        }
+        else
+        {
+            AssertReleaseFailed(); /** @todo */
+            //PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
+        }
+
+        rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VINF_SUCCESS);
+    }
+#endif
+
+    return rc;
+}
+
+
+#ifdef IN_RING3
+/**
+ * Updates the serial port parameters of the attached driver with the current configuration.
+ *
+ * @returns nothing.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
+ */
+static void pl011R3ParamsUpdate(PPDMDEVINS pDevIns, PDEVPL011 pThis, PDEVPL011CC pThisCC)
+{
+    if (   pThis->uRegIbrd != 0
+        && pThisCC->pDrvSerial)
+    {
+        uint32_t uBps = 460800 / pThis->uRegIbrd; /** @todo This is for a 7.3728MHz clock. */
+        unsigned cDataBits = PL011_REG_UARTLCR_H_WLEN_GET(pThis->uRegLcrH) + 5;
+        uint32_t cFrameBits = cDataBits;
+        PDMSERIALSTOPBITS enmStopBits = PDMSERIALSTOPBITS_ONE;
+        PDMSERIALPARITY enmParity = PDMSERIALPARITY_NONE;
+
+        if (pThis->uRegLcrH & PL011_REG_UARTLCR_H_STP2)
+        {
+            enmStopBits = PDMSERIALSTOPBITS_TWO;
+            cFrameBits += 2;
+        }
+        else
+            cFrameBits++;
+
+        if (pThis->uRegLcrH & PL011_REG_UARTLCR_H_PEN)
+        {
+            /* Select the correct parity mode based on the even and stick parity bits. */
+            switch (pThis->uRegLcrH & (PL011_REG_UARTLCR_H_EPS | PL011_REG_UARTLCR_H_SPS))
+            {
+                case 0:
+                    enmParity = PDMSERIALPARITY_ODD;
+                    break;
+                case PL011_REG_UARTLCR_H_EPS:
+                    enmParity = PDMSERIALPARITY_EVEN;
+                    break;
+                case PL011_REG_UARTLCR_H_EPS | PL011_REG_UARTLCR_H_SPS:
+                    enmParity = PDMSERIALPARITY_SPACE;
+                    break;
+                case PL011_REG_UARTLCR_H_SPS:
+                    enmParity = PDMSERIALPARITY_MARK;
+                    break;
+                default:
+                    /* We should never get here as all cases where caught earlier. */
+                    AssertMsgFailed(("This shouldn't happen at all: %#x\n",
+                                     pThis->uRegLcrH & (PL011_REG_UARTLCR_H_EPS | PL011_REG_UARTLCR_H_SPS)));
+            }
+
+            cFrameBits++;
+        }
+
+        //uint64_t uTimerFreq = PDMDevHlpTimerGetFreq(pDevIns, pThis->hTimerRcvFifoTimeout);
+        //pThis->cSymbolXferTicks = (uTimerFreq / uBps) * cFrameBits;
+
+        LogFlowFunc(("Changing parameters to: %u,%s,%u,%s\n",
+                     uBps, s_aszParity[enmParity], cDataBits, s_aszStopBits[enmStopBits]));
+
+        int rc = pThisCC->pDrvSerial->pfnChgParams(pThisCC->pDrvSerial, uBps, enmParity, cDataBits, enmStopBits);
+        if (RT_FAILURE(rc))
+            LogRelMax(10, ("Serial#%d: Failed to change parameters to %u,%s,%u,%s -> %Rrc\n",
+                           pDevIns->iInstance, uBps, s_aszParity[enmParity], cDataBits, s_aszStopBits[enmStopBits], rc));
+
+        /* Changed parameters will flush all receive queues, so there won't be any data to read even if indicated. */
+        pThisCC->pDrvSerial->pfnQueuesFlush(pThisCC->pDrvSerial, true /*fQueueRecv*/, false /*fQueueXmit*/);
+        ASMAtomicWriteU32(&pThis->cbAvailRdr, 0);
+        PL011_REG_CLR(pThis->uRegFr, PL011_REG_UARTFR_BUSY);
+    }
+}
+
+
+/**
+ * Reset the transmit/receive related bits to the standard values
+ * (after a detach/attach/reset event).
+ *
+ * @returns nothing.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
+ */
+static void pl011R3XferReset(PPDMDEVINS pDevIns, PDEVPL011 pThis, PDEVPL011CC pThisCC)
+{
+    //PDMDevHlpTimerStop(pDevIns, pThis->hTimerRcvFifoTimeout);
+    //PDMDevHlpTimerStop(pDevIns, pThis->hTimerTxUnconnected);
+    //pThis->uRegLsr = UART_REG_LSR_THRE | UART_REG_LSR_TEMT;
+
+    //uartFifoClear(&pThis->FifoXmit);
+    //uartFifoClear(&pThis->FifoRecv);
+    pl011R3ParamsUpdate(pDevIns, pThis, pThisCC);
+    pl011IrqUpdate(pDevIns, pThis, pThisCC);
+
+    if (pThisCC->pDrvSerial)
+    {
+        /* Set the modem lines to reflect the current state. */
+        int rc = pThisCC->pDrvSerial->pfnChgModemLines(pThisCC->pDrvSerial, false /*fRts*/, false /*fDtr*/);
+        if (RT_FAILURE(rc))
+            LogRel(("PL011#%d: Failed to set modem lines with %Rrc during reset\n",
+                    pDevIns->iInstance, rc));
+
+        uint32_t fStsLines = 0;
+        rc = pThisCC->pDrvSerial->pfnQueryStsLines(pThisCC->pDrvSerial, &fStsLines);
+        if (RT_SUCCESS(rc))
+        {} //uartR3StsLinesUpdate(pDevIns, pThis, pThisCC, fStsLines);
+        else
+            LogRel(("PL011#%d: Failed to query status line status with %Rrc during reset\n",
+                    pDevIns->iInstance, rc));
+    }
+
+}
+
+
+/**
+ * Tries to copy the specified amount of data from the active TX queue (register or FIFO).
+ *
+ * @returns nothing.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
+ * @param   pvBuf               Where to store the data.
+ * @param   cbRead              How much to read from the TX queue.
+ * @param   pcbRead             Where to store the amount of data read.
+ */
+static void pl011R3TxQueueCopyFrom(PPDMDEVINS pDevIns, PDEVPL011 pThis, PDEVPL011CC pThisCC,
+                                   void *pvBuf, size_t cbRead, size_t *pcbRead)
+{
+    if (pThis->uRegLcrH & PL011_REG_UARTLCR_H_FEN)
+    {
+        RT_NOREF(cbRead);
+        AssertReleaseFailed();
+    }
+    else if (pThis->uRegFr & PL011_REG_UARTFR_BUSY)
+    {
+        *(uint8_t *)pvBuf = pThis->uRegDr;
+        *pcbRead = 1;
+        PL011_REG_CLR(pThis->uRegFr, PL011_REG_UARTFR_BUSY);
+        pl011IrqUpdate(pDevIns, pThis, pThisCC);
+    }
+    else
+    {
+        /*
+         * This can happen if there was data in the FIFO when the connection was closed,
+         * indicate this condition to the lower driver by returning 0 bytes.
+         */
+        *pcbRead = 0;
+    }
+}
+#endif
 
 
 /* -=-=-=-=-=- MMIO callbacks -=-=-=-=-=- */
@@ -323,14 +672,27 @@ static DECLCALLBACK(VBOXSTRICTRC) pl011MmioRead(PPDMDEVINS pDevIns, void *pvUser
  */
 static DECLCALLBACK(VBOXSTRICTRC) pl011MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
-    PDEVPL011 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPL011);
+    PDEVPL011   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVPL011);
+    PDEVPL011CC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVPL011CC);
     LogFlowFunc(("cb=%u reg=%RGp val=%llx\n", cb, off, cb == 4 ? *(uint32_t *)pv : cb == 8 ? *(uint64_t *)pv : 0xdeadbeef));
     RT_NOREF(pvUser);
     Assert(cb == 4 || cb == 8);
     Assert(!(off & (cb - 1)));
 
-    int rc = VINF_SUCCESS;
-    return rc;
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
+    uint32_t u32Val = *(uint32_t *)pv;
+    switch (off)
+    {
+        case PL011_REG_UARTDR_INDEX:
+            if (   (pThis->uRegCr & PL011_REG_UARTCR_UARTEN)
+                && (pThis->uRegCr & PL011_REG_UARTCR_TXE))
+                rcStrict = pl011Xmit(pDevIns, pThisCC, pThis, (uint8_t)u32Val);
+            break;
+        default:
+            break;
+
+    }
+    return rcStrict;
 }
 
 
@@ -399,8 +761,7 @@ static DECLCALLBACK(int) pl011R3ReadWr(PPDMISERIALPORT pInterface, void *pvBuf, 
     int const rcLock = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
     PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
 
-    /** @todo */
-    RT_NOREF(pThis);
+    pl011R3TxQueueCopyFrom(pDevIns, pThis, pThisCC, pvBuf, cbRead, pcbRead);
 
     PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
     LogFlowFunc(("-> VINF_SUCCESS{*pcbRead=%zu}\n", *pcbRead));
@@ -562,10 +923,16 @@ static DECLCALLBACK(void) pl011R3Reset(PPDMDEVINS pDevIns)
     PDEVPL011   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVPL011);
     PDEVPL011CC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVPL011CC);
 
-    pThis->uRegCr = PL011_REG_UARTCR_TXE | PL011_REG_UARTCR_RXE;
-    pThis->uRegFr = PL011_REG_UARTFR_TXFE | PL011_REG_UARTFR_RXFE;
+    pThis->uRegDr   = 0;
+    /* UARTEN is normally 0 on reset but UEFI doesn't set it causing the serial port to not log anything. */
+    pThis->uRegCr   = PL011_REG_UARTCR_TXE | PL011_REG_UARTCR_RXE | PL011_REG_UARTCR_UARTEN;
+    pThis->uRegFr   = PL011_REG_UARTFR_TXFE | PL011_REG_UARTFR_RXFE;
+    pThis->uRegIbrd = 0;
+    pThis->uRegFbrd = 0;
+    pThis->uRegLcrH = 0;
     /** @todo */
-    RT_NOREF(pThisCC);
+
+    pl011R3XferReset(pDevIns, pThis, pThisCC);
 }
 
 
@@ -574,6 +941,7 @@ static DECLCALLBACK(void) pl011R3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) pl011R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
+    PDEVPL011   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVPL011);
     PDEVPL011CC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVPL011CC);
     RT_NOREF(fFlags);
     AssertReturn(iLUN == 0, VERR_PDM_LUN_NOT_FOUND);
@@ -587,11 +955,23 @@ static DECLCALLBACK(int) pl011R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
             AssertLogRelMsgFailed(("Configuration error: instance %d has no serial interface!\n", pDevIns->iInstance));
             return VERR_PDM_MISSING_INTERFACE;
         }
+        rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+        if (RT_SUCCESS(rc))
+        {
+            pl011R3XferReset(pDevIns, pThis, pThisCC);
+            PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
+        }
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
         pThisCC->pDrvBase = NULL;
         pThisCC->pDrvSerial = NULL;
+        rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+        if (RT_SUCCESS(rc))
+        {
+            pl011R3XferReset(pDevIns, pThis, pThisCC);
+            PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
+        }
         LogRel(("PL011#%d: no unit\n", pDevIns->iInstance));
     }
     else /* Don't call VMSetError here as we assume that the driver already set an appropriate error */
@@ -606,6 +986,7 @@ static DECLCALLBACK(int) pl011R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
  */
 static DECLCALLBACK(void) pl011R3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
+    PDEVPL011   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVPL011);
     PDEVPL011CC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVPL011CC);
     RT_NOREF(fFlags);
     AssertReturnVoid(iLUN == 0);
@@ -613,6 +994,13 @@ static DECLCALLBACK(void) pl011R3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint3
     /* Zero out important members. */
     pThisCC->pDrvBase   = NULL;
     pThisCC->pDrvSerial = NULL;
+
+    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
+
+    pl011R3XferReset(pDevIns, pThis, pThisCC);
+
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
 }
 
 
