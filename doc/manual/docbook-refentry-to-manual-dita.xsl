@@ -566,6 +566,8 @@
     <xsl:attribute name="rev">ulink</xsl:attribute>
     <xsl:attribute name="scope">external</xsl:attribute> <!-- Just assumes this is external. -->
     <xsl:attribute name="href"><xsl:value-of select="@url"/></xsl:attribute>
+    <xsl:attribute name="format">html</xsl:attribute>
+    <xsl:if test="not(starts-with(@url, 'http'))"><xsl:message terminate="yes">ulink url is not http: <xsl:value-of select="@url"/></xsl:message></xsl:if>
   </xsl:element>
 </xsl:template>
 
