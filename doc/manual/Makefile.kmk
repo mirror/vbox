@@ -261,7 +261,6 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  			qhelp/toc.hhc \
  			qhelp/htmlhelp.hhp \
  			UserManual.pdf \
- 			VirtualBox.chm \
  			$(VBOX_QHELP_OUTPUT_FILES) \
  			ChangeLog.html \
  			validatemanual.run \
@@ -272,9 +271,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  	$(VBOX_PATH_MANUAL_OUTBASE)/titlepage-htmlhelp.xsl \
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/overview_,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
  	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf) \
- 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm) \
  	$(PATH_STAGE_BIN)/UserManual.pdf \
- 	$(PATH_STAGE_BIN)/VirtualBox.chm \
  	\
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/, \
  		$(VBOX_SDKREF_LATEX_FILES_TARGET) \

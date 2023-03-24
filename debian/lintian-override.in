@@ -94,7 +94,6 @@
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/components/VBoxC.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/components/VBoxSVCM.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/components/VBoxXPCOMIPCC.so /usr/lib/virtualbox
-%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/kchmviewer /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxBalloonCtrl /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/vboxwebsrv /usr/lib/virtualbox
 %VERPKG%: postrm-contains-additional-updaterc.d-calls /etc/init.d/vboxnet
