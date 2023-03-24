@@ -272,7 +272,10 @@
       <!-- TODO: sbr cannot be translated, it seems. Whether we wrap things in
            synblk, groupcomp or groupseq elements, the result is always the same:
               - HTML: ignored.
-              - PDF: condensed arguments w/o spaces between  -->
+              - PDF: condensed arguments w/o spaces between.  4.0.2 doesn't seem
+                to condense stuff any more inside synblk elements, but then the
+                rending isn't much changed for PDFs anyway since its one element
+                per line.    -->
       <!-- <xsl:element name="synblk">
         <xsl:attribute name="rev">sbr/<xsl:value-of select="position()"/></xsl:attribute> -->
 

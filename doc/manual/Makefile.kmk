@@ -186,7 +186,8 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   		$(patsubst "/transtype:%,"--format=%, \
   			$(patsubst "/outdir:%,"--output=%, \
   				$(patsubst "/tempdir:%,"--temp=%, \
-  					$(patsubst "/debug","--debug",$3))))) \
+  					$(patsubst "/filter:%,"--filter=%, \
+  						$(patsubst "/debug","--debug",$3)))))) \
   	$5 --verbose --debug
  endif
 
