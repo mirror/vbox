@@ -476,7 +476,10 @@ void UIHelpViewer::setSource(const QUrl &url)
 #endif
     QTextDocument *pDocument = document();
     if (!pDocument || pDocument->isEmpty())
-        setText(UIHelpBrowserWidget::tr("<div><p><h3>404. Not found.</h3>The page <b>%1</b> could not be found.</p></div>").arg(url.toString()));
+    {
+        setText(UIHelpBrowserWidget::tr("<div><p><h3>Not found.</h3>The page <b>%1</b> could not be found.</p></div>").arg(url.toString()));
+        setDocumentTitle(UIHelpBrowserWidget::tr("Not Found"));
+    }
     if (m_pFindInPageWidget && m_pFindInPageWidget->isVisible())
     {
         document()->undo();
