@@ -1390,27 +1390,26 @@ VBGLR3DECL(int) VbglR3GuestCtrlGetShutdown(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
  * @returns VBox status code.
  * @param   pStartupInfo        Process startup info to initializes.
  * @param   cbCmd               Size (in bytes) to use for the command buffer.
+ * @param   cbArgs              Size (in bytes) to use for the arguments buffer.
+ * @param   cbEnv               Size (in bytes) to use for the environment buffer.
  * @param   cbCwd               Size (in bytes) to use for the current working directory.
  * @param   cbUser              Size (in bytes) to use for the user name buffer.
  * @param   cbPassword          Size (in bytes) to use for the password buffer.
  * @param   cbDomain            Size (in bytes) to use for the domain buffer.
- * @param   cbArgs              Size (in bytes) to use for the arguments buffer.
- * @param   cbEnv               Size (in bytes) to use for the environment buffer.
  */
 VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInitEx(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo,
-                                                     size_t cbCmd,
+                                                     size_t cbCmd, size_t cbArgs, size_t cbEnv,
                                                      size_t cbCwd,
-                                                     size_t cbUser, size_t cbPassword, size_t cbDomain,
-                                                     size_t cbArgs, size_t cbEnv)
+                                                     size_t cbUser, size_t cbPassword, size_t cbDomain)
 {
     AssertPtrReturn(pStartupInfo, VERR_INVALID_POINTER);
     AssertReturn(cbCmd,           VERR_INVALID_PARAMETER);
+    AssertReturn(cbArgs,          VERR_INVALID_PARAMETER);
+    AssertReturn(cbEnv,           VERR_INVALID_PARAMETER);
     AssertReturn(cbCwd,           VERR_INVALID_PARAMETER);
     AssertReturn(cbUser,          VERR_INVALID_PARAMETER);
     AssertReturn(cbPassword,      VERR_INVALID_PARAMETER);
     AssertReturn(cbDomain,        VERR_INVALID_PARAMETER);
-    AssertReturn(cbArgs,          VERR_INVALID_PARAMETER);
-    AssertReturn(cbEnv,           VERR_INVALID_PARAMETER);
 
     RT_BZERO(pStartupInfo, sizeof(VBGLR3GUESTCTRLPROCSTARTUPINFO));
 
@@ -1425,9 +1424,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInitEx(PVBGLR3GUESTCTRLPROCSTARTUP
     do
     {
         ALLOC_STR(Cmd,      cbCmd);
-        ALLOC_STR(Cwd,      cbCwd);
         ALLOC_STR(Args,     cbArgs);
         ALLOC_STR(Env,      cbEnv);
+        ALLOC_STR(Cwd,      cbCwd);
         ALLOC_STR(User,     cbUser);
         ALLOC_STR(Password, cbPassword);
         ALLOC_STR(Domain,   cbDomain);
@@ -1445,17 +1444,16 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInitEx(PVBGLR3GUESTCTRLPROCSTARTUP
 /**
  * Initializes a process startup info with default values.
  *
- * @param   pStartupInfo        Process startup info to initializes.
+ * @param   pStartupInfo        Process startup info to initialize.
  */
 VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInit(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo)
 {
     return VbglR3GuestCtrlProcStartupInfoInitEx(pStartupInfo,
-                                                GUEST_PROC_DEF_CMD_LEN,
+                                                GUEST_PROC_DEF_CMD_LEN, GUEST_PROC_DEF_ARGS_LEN, GUEST_PROC_DEF_ENV_LEN,
                                                 GUEST_PROC_DEF_CWD_LEN,
                                                 GUEST_PROC_DEF_USER_LEN     /* Deprecated, now handled via session creation. */,
                                                 GUEST_PROC_DEF_PASSWORD_LEN /* Ditto. */,
-                                                GUEST_PROC_DEF_DOMAIN_LEN   /* Ditto. */,
-                                                GUEST_PROC_DEF_ARGS_LEN, GUEST_PROC_DEF_ENV_LEN);
+                                                GUEST_PROC_DEF_DOMAIN_LEN   /* Ditto. */);
 }
 
 /**
@@ -1469,9 +1467,9 @@ VBGLR3DECL(void) VbglR3GuestCtrlProcStartupInfoDestroy(PVBGLR3GUESTCTRLPROCSTART
         return;
 
     RTStrFree(pStartupInfo->pszCmd);
-    RTStrFree(pStartupInfo->pszCwd);
     RTStrFree(pStartupInfo->pszArgs);
     RTStrFree(pStartupInfo->pszEnv);
+    RTStrFree(pStartupInfo->pszCwd);
     RTStrFree(pStartupInfo->pszUser);
     RTStrFree(pStartupInfo->pszPassword);
     RTStrFree(pStartupInfo->pszDomain);
@@ -1515,6 +1513,7 @@ VBGLR3DECL(PVBGLR3GUESTCTRLPROCSTARTUPINFO) VbglR3GuestCtrlProcStartupInfoDup(PV
             pStartupInfoDup->pszCmd      = NULL;
             pStartupInfoDup->pszArgs     = NULL;
             pStartupInfoDup->pszEnv      = NULL;
+            pStartupInfoDup->pszCwd      = NULL;
             pStartupInfoDup->pszUser     = NULL;
             pStartupInfoDup->pszPassword = NULL;
             pStartupInfoDup->pszDomain   = NULL;
@@ -1538,6 +1537,7 @@ VBGLR3DECL(PVBGLR3GUESTCTRLPROCSTARTUPINFO) VbglR3GuestCtrlProcStartupInfoDup(PV
             DUP_STR(Cmd);
             DUP_MEM(Args);
             DUP_MEM(Env);
+            DUP_MEM(Cwd);
             DUP_STR(User);
             DUP_STR(Password);
             DUP_STR(Domain);
@@ -1632,10 +1632,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3
 
                 /* We can't tell which parameter doesn't fit, so we have to resize all. */
                 GROW_STR(Cmd , GUEST_PROC_MAX_CMD_LEN);
-                GROW_STR(Cwd,  GUEST_PROC_MAX_CWD_LEN);
                 GROW_STR(Args, GUEST_PROC_MAX_ARGS_LEN);
                 GROW_STR(Env,  GUEST_PROC_MAX_ENV_LEN);
-
+                GROW_STR(Cwd,  GUEST_PROC_MAX_CWD_LEN);
 #undef GROW_STR
                 LogRel(("VbglR3GuestCtrlProcGetStart: 2 - %Rrc (retry %u, cbCmd=%RU32, cbCwd=%RU32, cbArgs=%RU32, cbEnv=%RU32)\n",
                         rc, cRetries, pStartupInfo->cbCmd, pStartupInfo->cbCwd, pStartupInfo->cbArgs, pStartupInfo->cbEnv));
