@@ -83,7 +83,7 @@ private:
     void prepare();
 
     /** Calculates suitable @a strText size. */
-    QSize featTextWidth(const QString &strText) const;
+    QSize fitTextWidth(const QString &strText) const;
 
     /** Holds whether this is allowed to copy contents when disabled. */
     bool     m_fAllowToCopyContentsWhenDisabled;

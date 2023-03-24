@@ -29,11 +29,11 @@
 #include <QComboBox>
 #include <QGridLayout>
 #include <QLabel>
-#include <QLineEdit>
 #include <QRegularExpressionValidator>
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
+#include "QILineEdit.h"
 #include "UIConverter.h"
 #include "UIUSBFilterDetailsEditor.h"
 
@@ -244,11 +244,6 @@ void UIUSBFilterDetailsEditor::prepare()
 
     /* Adjust dialog size: */
     adjustSize();
-
-#ifdef VBOX_WS_MAC
-    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    setFixedSize(minimumSize());
-#endif /* VBOX_WS_MAC */
 }
 
 void UIUSBFilterDetailsEditor::prepareWidgets()
@@ -267,13 +262,13 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
             pLayout->addWidget(m_pLabelName, 0, 0);
         }
         /* Prepare name editor: */
-        m_pEditorName = new QLineEdit(this);
+        m_pEditorName = new QILineEdit(this);
         if (m_pEditorName)
         {
             if (m_pLabelName)
                 m_pLabelName->setBuddy(m_pEditorName);
+            m_pEditorName->setMinimumWidthByText(QString().fill('0', 32));
             m_pEditorName->setValidator(new QRegularExpressionValidator(QRegularExpression(".+"), this));
-
             pLayout->addWidget(m_pEditorName, 0, 1);
         }
 
@@ -285,13 +280,13 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
             pLayout->addWidget(m_pLabelVendorID, 1, 0);
         }
         /* Prepare vendor ID editor: */
-        m_pEditorVendorID = new QLineEdit(this);
+        m_pEditorVendorID = new QILineEdit(this);
         if (m_pEditorVendorID)
         {
             if (m_pLabelVendorID)
                 m_pLabelVendorID->setBuddy(m_pEditorVendorID);
+            m_pEditorVendorID->setMinimumWidthByText(QString().fill('0', 8));
             m_pEditorVendorID->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9a-fA-F]{0,4}"), this));
-
             pLayout->addWidget(m_pEditorVendorID, 1, 1);
         }
 
@@ -303,13 +298,13 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
             pLayout->addWidget(m_pLabelProductID, 2, 0);
         }
         /* Prepare product ID editor: */
-        m_pEditorProductID = new QLineEdit(this);
+        m_pEditorProductID = new QILineEdit(this);
         if (m_pEditorProductID)
         {
             if (m_pLabelProductID)
                 m_pLabelProductID->setBuddy(m_pEditorProductID);
+            m_pEditorProductID->setMinimumWidthByText(QString().fill('0', 8));
             m_pEditorProductID->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9a-fA-F]{0,4}"), this));
-
             pLayout->addWidget(m_pEditorProductID, 2, 1);
         }
 
@@ -321,13 +316,13 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
             pLayout->addWidget(m_pLabelRevision, 3, 0);
         }
         /* Prepare revision editor: */
-        m_pEditorRevision = new QLineEdit(this);
+        m_pEditorRevision = new QILineEdit(this);
         if (m_pEditorRevision)
         {
             if (m_pLabelRevision)
                 m_pLabelRevision->setBuddy(m_pEditorRevision);
+            m_pEditorRevision->setMinimumWidthByText(QString().fill('0', 8));
             m_pEditorRevision->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9a-fA-F]{0,4}"), this));
-
             pLayout->addWidget(m_pEditorRevision, 3, 1);
         }
 
@@ -339,11 +334,12 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
             pLayout->addWidget(m_pLabelManufacturer, 4, 0);
         }
         /* Prepare manufacturer editor: */
-        m_pEditorManufacturer = new QLineEdit(this);
+        m_pEditorManufacturer = new QILineEdit(this);
         if (m_pEditorManufacturer)
         {
             if (m_pLabelManufacturer)
                 m_pLabelManufacturer->setBuddy(m_pEditorManufacturer);
+            m_pEditorManufacturer->setMinimumWidthByText(QString().fill('0', 8));
             pLayout->addWidget(m_pEditorManufacturer, 4, 1);
         }
 
@@ -355,11 +351,12 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
             pLayout->addWidget(m_pLabelProduct, 5, 0);
         }
         /* Prepare product editor: */
-        m_pEditorProduct = new QLineEdit(this);
+        m_pEditorProduct = new QILineEdit(this);
         if (m_pEditorProduct)
         {
             if (m_pLabelProduct)
                 m_pLabelProduct->setBuddy(m_pEditorProduct);
+            m_pEditorProduct->setMinimumWidthByText(QString().fill('0', 8));
             pLayout->addWidget(m_pEditorProduct, 5, 1);
         }
 
@@ -371,11 +368,12 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
             pLayout->addWidget(m_pLabelSerialNo, 6, 0);
         }
         /* Prepare serial NO editor: */
-        m_pEditorSerialNo = new QLineEdit(this);
+        m_pEditorSerialNo = new QILineEdit(this);
         if (m_pEditorSerialNo)
         {
             if (m_pLabelSerialNo)
                 m_pLabelSerialNo->setBuddy(m_pEditorSerialNo);
+            m_pEditorSerialNo->setMinimumWidthByText(QString().fill('0', 8));
             pLayout->addWidget(m_pEditorSerialNo, 6, 1);
         }
 
@@ -387,13 +385,13 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
             pLayout->addWidget(m_pLabelPort, 7, 0);
         }
         /* Prepare port editor: */
-        m_pEditorPort = new QLineEdit(this);
+        m_pEditorPort = new QILineEdit(this);
         if (m_pEditorPort)
         {
             if (m_pLabelPort)
                 m_pLabelPort->setBuddy(m_pEditorPort);
+            m_pEditorPort->setMinimumWidthByText(QString().fill('0', 8));
             m_pEditorPort->setValidator(new QRegularExpressionValidator(QRegularExpression("(0[xX])?[0-9a-fA-F]{0,4}"), this));
-
             pLayout->addWidget(m_pEditorPort, 7, 1);
         }
 
@@ -413,7 +411,6 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
             m_pComboRemote->addItem(QString(), QVariant::fromValue(UIRemoteMode_Any)); /* Any */
             m_pComboRemote->addItem(QString(), QVariant::fromValue(UIRemoteMode_On));  /* Yes */
             m_pComboRemote->addItem(QString(), QVariant::fromValue(UIRemoteMode_Off)); /* No */
-
             pLayout->addWidget(m_pComboRemote, 8, 1);
         }
 
