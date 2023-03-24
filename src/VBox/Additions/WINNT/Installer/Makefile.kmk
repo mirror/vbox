@@ -42,7 +42,7 @@ VBOX_PATH_WIN_ADD_INS_SRC := $(PATH_SUB_CURRENT)
 VBOX_WITH_GUEST_INSTALL_HELPER := 1 # Use our guest install helper DLL.
 ## @todo VBOX_WIN_ADD_INS_OUT_DIR := $(PATH_TARGET)/Additions/Installer/win
 
-ifdef VBOX_GA_ATTESTATION_SIGNING
+ifdef VBOX_WIN_ATTESTATION_SIGNING
  VBOX_DRIVERS_PACK_NAME := VBoxDrivers-$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)r$(VBOX_SVN_REV)-$(KBUILD_TARGET_ARCH).cab
  VBOX_SIGNED_DRIVERS_ZIP_NAME := $(VBOX_DRIVERS_PACK_NAME).Signed.zip
  include $(KBUILD_PATH)/tools/ZIP.kmk
@@ -313,11 +313,11 @@ $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
 		$(VBOX_WINDOWS_ADDITIONS_ICON_FILE) \
 		$(VBOX_NSIS_ICON_FILE) \
 		$(if $(VBOX_SIGNING_MODE),$(PATH_TARGET)/uninst.exe) \
-		$(if $(VBOX_GA_ATTESTATION_SIGNING),$(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME)) \
+		$(if $(VBOX_WIN_ATTESTATION_SIGNING),$(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME)) \
 		$(VBOX_VERSION_STAMP) \
 		$$(VBoxDrvInst_1_STAGE_TARGET)
 	$(call MSG_L1,Creating $@, from $<)
-ifdef VBOX_GA_ATTESTATION_SIGNING # Unpack the attestation signed drivers - this is an ugly has 'ing heck hack!
+ifdef VBOX_WIN_ATTESTATION_SIGNING # Unpack the attestation signed drivers - this is an ugly has 'ing heck hack!
 	$(TOOL_ZIP_UNPACK) -oj $(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME) -d $(PATH_STAGE_BIN)/additions/
 endif
 	$(REDIRECT) -C $(VBOX_PATH_WIN_ADD_INS_SRC) \
@@ -387,14 +387,14 @@ ifdef VBOX_SIGNING_MODE
 endif # VBOX_SIGNING_MODE
 
 
-if defined(VBOX_GA_ATTESTATION_SIGNING) && defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
+if defined(VBOX_WIN_ATTESTATION_SIGNING) && defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
  #
  # This automagically attestation signs the GA drivers.
  #
  $(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME): \
  		$(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME)
 	$(RM_EXT) -f $(PATH_OUT)/repackadd/*.zip
-	cd $(PATH_OUT)/repackadd && $(VBOX_RETRY) $(VBOX_GA_ATTESTATION_SIGNING_EXE) "Oracle VM VirtualBox GA drivers $(KBUILD_TARGET_ARCH) $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)r$(VBOX_SVN_REV)" "$(KBUILD_TARGET_ARCH)" "r$(VBOX_SVN_REV)" "$(VBOX_DRIVERS_PACK_NAME)"
+	cd $(PATH_OUT)/repackadd && $(VBOX_RETRY) $(VBOX_WIN_ATTESTATION_SIGNING_EXE) "Oracle VM VirtualBox GA drivers $(KBUILD_TARGET_ARCH) $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)r$(VBOX_SVN_REV)" "$(KBUILD_TARGET_ARCH)" "r$(VBOX_SVN_REV)" "$(VBOX_DRIVERS_PACK_NAME)"
 
  #
  # This creates a .CAB file of the driver files that should be attestation signed.
@@ -409,7 +409,7 @@ if defined(VBOX_GA_ATTESTATION_SIGNING) && defined(VBOX_SIGNING_MODE) && defined
 	$(EXEC_X86_WIN32) cmd /c $(PATH_OUT)/repackadd/PackDriversForSubmission.cmd -b $(PATH_STAGE_BIN) -a $(KBUILD_TARGET_ARCH) \
 		-x -n --no-main --ga -o $(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME)
 	$(call VBOX_SIGN_EV_FILE_FN,$@)
-endif # VBOX_GA_ATTESTATION_SIGNING && VBOX_SIGNING_MODE && VBOX_SIGN_ADDITIONS
+endif # VBOX_WIN_ATTESTATION_SIGNING && VBOX_SIGNING_MODE && VBOX_SIGN_ADDITIONS
 
 
 #
