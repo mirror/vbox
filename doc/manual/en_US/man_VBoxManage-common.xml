@@ -50,18 +50,30 @@
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
       <command>VBoxManage</command>
       <group>
-        <arg choice="plain">-V</arg>
-        <arg choice="plain">--version</arg>
-      </group>
-      <arg>--dump-build-type</arg>
-      <group>
         <arg choice="plain">-q</arg>
         <arg choice="plain">--nologo</arg>
       </group>
       <arg>--settingspw=<replaceable>password</replaceable></arg>
       <arg>--settingspwfile=<replaceable>pw-file</replaceable></arg>
       <arg>@<replaceable>response-file</replaceable></arg>
-      <arg><arg>help</arg> <replaceable>subcommand</replaceable></arg>
+      <arg><replaceable>subcommand</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis  id="synopsis-vboxmanage-common-help">
+      <command>VBoxManage help</command>
+      <arg><replaceable>subcommand</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-common-commands">
+      <command>VBoxManage commands</command>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-common-version">
+      <command>VBoxManage</command>
+      <group>
+        <arg choice="plain">-V</arg>
+        <arg choice="plain">--version</arg>
+      </group>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-common-dump-build-type">
+      <command>VBoxManage</command> <arg>--dump-build-type</arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 

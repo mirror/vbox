@@ -77,8 +77,8 @@
           <arg choice="plain">Formatted</arg>
           <arg choice="plain">RawDisk</arg>
       </group></arg> <!-- Value can be repated with comma separator. Difficult to express with docbook. -->
-      <arg rep="repeat">--property <replaceable>name</replaceable>=<replaceable>value</replaceable></arg>
-      <arg rep="repeat">--property-file <replaceable>name</replaceable>=<replaceable>/path/to/file/with/value</replaceable></arg>
+      <arg rep="repeat">--property=<replaceable>name</replaceable>=<replaceable>value</replaceable></arg>
+      <arg rep="repeat">--property-file=<replaceable>name</replaceable>=<replaceable>/path/to/file/with/value</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -189,7 +189,7 @@
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--property <replaceable>name</replaceable>=<replaceable>value</replaceable></option></term>
+        <term><option>--property=<replaceable>name</replaceable>=<replaceable>value</replaceable></option></term>
         <listitem><para>
             Specifies any required file format dependent parameters in
             <literal>key=value</literal> form. Optional.
@@ -197,8 +197,7 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--property-file <replaceable>name
-          </replaceable>=<replaceable>/path/to/file/with/value</replaceable></option></term>
+        <term><option>--property-file=<replaceable>name</replaceable>=<replaceable>/path/to/file/with/value</replaceable></option></term>
         <listitem><para>
             Specifies any required file format dependent parameters in
             <literal>key=file/with/value</literal> form. The value is

@@ -446,7 +446,13 @@
       <arg choice="req"><replaceable>display</replaceable></arg>
       <group choice="req">
         <arg choice="plain">on</arg>
-        <arg choice="plain">primary <replaceable>x-origin</replaceable>&nbsp;<replaceable>y-origin</replaceable>&nbsp;<replaceable>x-resolution</replaceable>&nbsp;<replaceable>y-resolution</replaceable>&nbsp;<replaceable>bpp</replaceable></arg>
+        <arg choice="plain">primary
+          <arg choice="req"><replaceable>x-origin</replaceable></arg>
+          <arg choice="req"><replaceable>y-origin</replaceable></arg>
+          <arg choice="req"><replaceable>x-resolution</replaceable></arg>
+          <arg choice="req"><replaceable>y-resolution</replaceable></arg>
+          <arg choice="req"><replaceable>bpp</replaceable></arg>
+        </arg>
         <arg choice="plain">off</arg>
       </group>
     </cmdsynopsis>
@@ -485,7 +491,7 @@
       <group choice="req">
         <arg choice="plain">all</arg>
         <arg choice="plain">none</arg>
-        <arg choice="plain"><replaceable>screen-ID</replaceable>[,<replaceable>screen-ID</replaceable>...]</arg>
+        <arg choice="plain"><replaceable>screen-ID</replaceable><arg rep="repeat">,<replaceable>screen-ID</replaceable></arg></arg>
       </group>
     </cmdsynopsis>
 
@@ -506,7 +512,7 @@
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="plain">recording videores</arg>
-      <arg choice="req"><replaceable>width</replaceable>x<replaceable>height</replaceable></arg>
+      <arg choice="req"><arg choice="req"><replaceable>width</replaceable></arg>x<arg choice="req"><replaceable>height</replaceable></arg></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-videorate">
@@ -649,7 +655,7 @@
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="plain">webcam attach</arg>
-      <arg><replaceable>pathname</replaceable><arg><replaceable>settings</replaceable></arg></arg>
+      <arg><replaceable>pathname</replaceable> <arg><replaceable>settings</replaceable></arg></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-webcam-detach">
@@ -717,11 +723,11 @@
       <arg choice="plain">changeuartmode<replaceable>N</replaceable></arg>
       <group choice="plain">
         <arg choice="plain">disconnected</arg>
-        <arg choice="plain">server <replaceable>pipe-name</replaceable></arg>
-        <arg choice="plain">client <replaceable>pipe-name</replaceable></arg>
-        <arg choice="plain">tcpserver <replaceable>port</replaceable></arg>
-        <arg choice="plain">tcpclient <replaceable>hostname</replaceable>:<replaceable>port</replaceable></arg>
-        <arg choice="plain">file <replaceable>filename</replaceable></arg>
+        <arg choice="plain"><arg choice="plain">server</arg> <arg choice="req"><replaceable>pipe-name</replaceable></arg></arg>
+        <arg choice="plain"><arg choice="plain">client</arg> <arg choice="req"><replaceable>pipe-name</replaceable></arg></arg>
+        <arg choice="plain"><arg choice="plain">tcpserver</arg> <arg choice="req"><replaceable>port</replaceable></arg></arg>
+        <arg choice="plain"><arg choice="plain">tcpclient</arg> <arg choice="req"><replaceable>hostname</replaceable>:<replaceable>port</replaceable></arg></arg>
+        <arg choice="plain"><arg choice="plain">file</arg> <arg choice="req"><replaceable>filename</replaceable></arg></arg>
         <arg choice="plain"><replaceable>device-name</replaceable></arg>
       </group>
     </cmdsynopsis>
@@ -745,7 +751,8 @@
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
-      <arg choice="plain">autostart-delay<replaceable>seconds</replaceable></arg>
+      <arg choice="plain">autostart-delay</arg>
+      <arg choice="req"><replaceable>seconds</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 

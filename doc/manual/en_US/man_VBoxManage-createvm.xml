@@ -52,13 +52,13 @@
       <arg choice="req">--name=<replaceable>name</replaceable></arg>
       <arg>--basefolder=<replaceable>basefolder</replaceable></arg>
       <arg>--default</arg>
-      <arg>--group=<replaceable>group-ID</replaceable>,...</arg>
+      <arg>--group=<replaceable>group-ID</replaceable><arg rep="repeat">,</arg></arg>
       <arg>--ostype=<replaceable>ostype</replaceable></arg>
       <arg>--register</arg>
       <arg>--uuid=<replaceable>uuid</replaceable></arg>
-      <arg>--cipher <replaceable>cipher</replaceable></arg>
-      <arg>--password-id <replaceable>password-id</replaceable></arg>
-      <arg>--password <replaceable>file</replaceable></arg>
+      <arg>--cipher=<replaceable>cipher</replaceable></arg>
+      <arg>--password-id=<replaceable>password-id</replaceable></arg>
+      <arg>--password=<replaceable>file</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -112,7 +112,7 @@
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--group=<replaceable>group-ID</replaceable>,...</option></term>
+        <term><option>--group=<replaceable>group-ID</replaceable>[,...]</option></term>
         <listitem><para>
             Assigns the VM to the specified groups. If you specify more
             than one group, separate each group name with a comma.
@@ -153,7 +153,7 @@
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--cipher <replaceable>cipher</replaceable></option></term>
+        <term><option>--cipher=<replaceable>cipher</replaceable></option></term>
         <listitem><para>
             Specifies the cipher to use for encryption. Valid values are
             <literal>AES-128</literal> or
@@ -163,7 +163,7 @@
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--password-id <replaceable>password-id</replaceable></option></term>
+        <term><option>--password-id=<replaceable>password-id</replaceable></option></term>
         <listitem><para>
             Specifies a new password identifier that is used for correct
             identification when supplying multiple passwords for the VM.
@@ -172,7 +172,7 @@
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--password <replaceable>file</replaceable></option></term>
+        <term><option>--password=<replaceable>file</replaceable></option></term>
         <listitem><para>
             Use the <option>--password</option> to supply the encryption
             password of the VM. Either specify the absolute pathname of a
