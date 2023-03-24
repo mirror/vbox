@@ -259,6 +259,14 @@ void UIUSBFilterDetailsEditor::prepare()
 
 void UIUSBFilterDetailsEditor::prepareWidgets()
 {
+    /* Name field validation: */
+    const QRegularExpression re1(".+");
+    /* Integer field validation, supports hex ranges: */
+    const QString strHexValue("((0[xX])?[0-9a-fA-F]{1,4})");
+    const QString strRange = QString("(%1|-%1|%1-|%1-%1)").arg(strHexValue);
+    const QString strRanges = QString("(%1(,%1)*)?").arg(strRange);
+    const QRegularExpression re2(strRanges);
+
     /* Prepare main layout: */
     QGridLayout *pLayout = new QGridLayout(this);
     if (pLayout)
@@ -279,7 +287,7 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
             if (m_pLabelName)
                 m_pLabelName->setBuddy(m_pEditorName);
             m_pEditorName->setMinimumWidthByText(QString().fill('0', 32));
-            m_pEditorName->setValidator(new QRegularExpressionValidator(QRegularExpression(".+"), this));
+            m_pEditorName->setValidator(new QRegularExpressionValidator(re1, this));
             connect(m_pEditorName, &QLineEdit::textChanged,
                     this, &UIUSBFilterDetailsEditor::sltRevalidate);
             pLayout->addWidget(m_pEditorName, 0, 1);
@@ -299,7 +307,7 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
             if (m_pLabelVendorID)
                 m_pLabelVendorID->setBuddy(m_pEditorVendorID);
             m_pEditorVendorID->setMinimumWidthByText(QString().fill('0', 8));
-            m_pEditorVendorID->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9a-fA-F]{0,4}"), this));
+            m_pEditorVendorID->setValidator(new QRegularExpressionValidator(re2, this));
             connect(m_pEditorVendorID, &QLineEdit::textChanged,
                     this, &UIUSBFilterDetailsEditor::sltRevalidate);
             pLayout->addWidget(m_pEditorVendorID, 1, 1);
@@ -319,7 +327,7 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
             if (m_pLabelProductID)
                 m_pLabelProductID->setBuddy(m_pEditorProductID);
             m_pEditorProductID->setMinimumWidthByText(QString().fill('0', 8));
-            m_pEditorProductID->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9a-fA-F]{0,4}"), this));
+            m_pEditorProductID->setValidator(new QRegularExpressionValidator(re2, this));
             connect(m_pEditorProductID, &QLineEdit::textChanged,
                     this, &UIUSBFilterDetailsEditor::sltRevalidate);
             pLayout->addWidget(m_pEditorProductID, 2, 1);
@@ -339,7 +347,7 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
             if (m_pLabelRevision)
                 m_pLabelRevision->setBuddy(m_pEditorRevision);
             m_pEditorRevision->setMinimumWidthByText(QString().fill('0', 8));
-            m_pEditorRevision->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9a-fA-F]{0,4}"), this));
+            m_pEditorRevision->setValidator(new QRegularExpressionValidator(re2, this));
             connect(m_pEditorRevision, &QLineEdit::textChanged,
                     this, &UIUSBFilterDetailsEditor::sltRevalidate);
             pLayout->addWidget(m_pEditorRevision, 3, 1);
@@ -410,7 +418,7 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
             if (m_pLabelPort)
                 m_pLabelPort->setBuddy(m_pEditorPort);
             m_pEditorPort->setMinimumWidthByText(QString().fill('0', 8));
-            m_pEditorPort->setValidator(new QRegularExpressionValidator(QRegularExpression("(0[xX])?[0-9a-fA-F]{0,4}"), this));
+            m_pEditorPort->setValidator(new QRegularExpressionValidator(re2, this));
             connect(m_pEditorPort, &QLineEdit::textChanged,
                     this, &UIUSBFilterDetailsEditor::sltRevalidate);
             pLayout->addWidget(m_pEditorPort, 7, 1);
