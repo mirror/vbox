@@ -54,8 +54,7 @@
         <arg choice="req">--provider=<replaceable>name</replaceable></arg>
         <arg choice="req">--profile=<replaceable>name</replaceable></arg>
         <sbr/>
-        <arg choice="plain">list</arg>
-        <arg choice="plain">instances</arg>
+        <arg choice="plain">list instances</arg>
         <arg>--state=<replaceable>string</replaceable></arg>
         <arg>--compartment-id=<replaceable>string</replaceable></arg>
     </cmdsynopsis>
@@ -64,8 +63,7 @@
       <arg choice="req">--provider=<replaceable>name</replaceable></arg>
       <arg choice="req">--profile=<replaceable>name</replaceable></arg>
       <sbr/>
-      <arg choice="plain">list</arg>
-      <arg choice="plain">images</arg>
+      <arg choice="plain">list images</arg>
       <arg choice="req">--compartment-id=<replaceable>string</replaceable></arg>
       <arg>--state=<replaceable>string</replaceable></arg>
     </cmdsynopsis>
@@ -74,10 +72,13 @@
       <arg choice="req">--provider=<replaceable>name</replaceable></arg>
       <arg choice="req">--profile=<replaceable>name</replaceable></arg>
       <sbr/>
-      <arg choice="plain">list</arg>
-      <arg choice="plain">vnicattachments</arg>
+      <arg choice="plain">list vnicattachments</arg>
       <arg choice="req">--compartment-id=<replaceable>string</replaceable></arg>
-      <arg>--filter=<replaceable>string</replaceable></arg>
+      <arg rep="repeat">--filter=<group choice="plain">
+          <arg choice="plain">instanceId</arg>
+          <arg choice="plain">vnicId</arg>
+          <arg choice="plain">availabilityDomain</arg>
+          </group>=<replaceable>value</replaceable></arg>
     </cmdsynopsis>
 
     <!-- Cloud instance commands -->
@@ -86,8 +87,7 @@
        <arg choice="req">--provider=<replaceable>name</replaceable></arg>
        <arg choice="req">--profile=<replaceable>name</replaceable></arg>
        <sbr/>
-       <arg choice="plain">instance</arg>
-       <arg choice="plain">create</arg>
+       <arg choice="plain">instance create</arg>
        <arg choice="req">--domain-name=<replaceable>name</replaceable></arg>
        <group choice="req">
            <arg choice="plain">--image-id=<replaceable>id</replaceable></arg>
@@ -97,10 +97,14 @@
        <arg choice="req">--shape=<replaceable>type</replaceable></arg>
        <arg choice="req">--subnet=<replaceable>id</replaceable></arg>
        <arg>--boot-disk-size=<replaceable>size in GB</replaceable></arg>
-       <arg>--publicip=<replaceable>true/false</replaceable></arg>
+       <arg>--publicip=<group choice="plain"><arg choice="plain">true</arg><arg choice="plain">false</arg></group></arg>
        <arg>--privateip=<replaceable>IP address</replaceable></arg>
        <arg rep="repeat">--public-ssh-key=<replaceable>key string</replaceable></arg>
-       <arg>--launch-mode=<replaceable>NATIVE/EMULATED/PARAVIRTUALIZED</replaceable></arg>
+       <arg>--launch-mode=<group choice="plain">
+           <arg choice="plain">NATIVE</arg>
+           <arg choice="plain">EMULATED</arg>
+           <arg choice="plain">PARAVIRTUALIZED</arg>
+         </group></arg>
        <arg>--cloud-init-script-path=<replaceable>path to a script</replaceable></arg>
      </cmdsynopsis>
      <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-info" sepchar=" ">
@@ -108,8 +112,7 @@
        <arg choice="req">--provider=<replaceable>name</replaceable></arg>
        <arg choice="req">--profile=<replaceable>name</replaceable></arg>
        <sbr/>
-       <arg choice="plain">instance</arg>
-       <arg choice="plain">info</arg>
+       <arg choice="plain">instance info</arg>
        <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
      </cmdsynopsis>
      <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-terminate" sepchar=" ">
@@ -117,8 +120,7 @@
        <arg choice="req">--provider=<replaceable>name</replaceable></arg>
        <arg choice="req">--profile=<replaceable>name</replaceable></arg>
        <sbr/>
-       <arg choice="plain">instance</arg>
-       <arg choice="plain">terminate</arg>
+       <arg choice="plain">instance terminate</arg>
        <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
      </cmdsynopsis>
      <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-start" sepchar=" ">
@@ -126,8 +128,7 @@
        <arg choice="req">--provider=<replaceable>name</replaceable></arg>
        <arg choice="req">--profile=<replaceable>name</replaceable></arg>
        <sbr/>
-       <arg choice="plain">instance</arg>
-       <arg choice="plain">start</arg>
+       <arg choice="plain">instance start</arg>
        <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
      </cmdsynopsis>
      <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-pause" sepchar=" ">
@@ -135,8 +136,7 @@
        <arg choice="req">--provider=<replaceable>name</replaceable></arg>
        <arg choice="req">--profile=<replaceable>name</replaceable></arg>
        <sbr/>
-       <arg choice="plain">instance</arg>
-       <arg choice="plain">pause</arg>
+       <arg choice="plain">instance pause</arg>
        <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
      </cmdsynopsis>
      <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-reset" sepchar=" ">
@@ -144,8 +144,7 @@
        <arg choice="req">--provider=<replaceable>name</replaceable></arg>
        <arg choice="req">--profile=<replaceable>name</replaceable></arg>
        <sbr/>
-       <arg choice="plain">instance</arg>
-       <arg choice="plain">reset</arg>
+       <arg choice="plain">instance reset</arg>
        <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
      </cmdsynopsis>
 
@@ -155,8 +154,7 @@
           <arg choice="req">--provider=<replaceable>name</replaceable></arg>
           <arg choice="req">--profile=<replaceable>name</replaceable></arg>
           <sbr/>
-          <arg choice="plain">image</arg>
-          <arg choice="plain">create</arg>
+          <arg choice="plain">image create</arg>
           <arg choice="req">--display-name=<replaceable>name</replaceable></arg>
           <arg>--bucket-name=<replaceable>name</replaceable></arg>
           <arg>--object-name=<replaceable>name</replaceable></arg>
@@ -167,8 +165,7 @@
         <arg choice="req">--provider=<replaceable>name</replaceable></arg>
         <arg choice="req">--profile=<replaceable>name</replaceable></arg>
         <sbr/>
-        <arg choice="plain">image</arg>
-        <arg choice="plain">info</arg>
+        <arg choice="plain">image info</arg>
         <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
       </cmdsynopsis>
       <cmdsynopsis id="synopsis-vboxmanage-cloudimage-delete" sepchar=" ">
@@ -176,8 +173,7 @@
         <arg choice="req">--provider=<replaceable>name</replaceable></arg>
         <arg choice="req">--profile=<replaceable>name</replaceable></arg>
         <sbr/>
-        <arg choice="plain">image</arg>
-        <arg choice="plain">delete</arg>
+        <arg choice="plain">image delete</arg>
         <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
       </cmdsynopsis>
       <cmdsynopsis id="synopsis-vboxmanage-cloudimage-import" sepchar=" ">
@@ -185,8 +181,7 @@
         <arg choice="req">--provider=<replaceable>name</replaceable></arg>
         <arg choice="req">--profile=<replaceable>name</replaceable></arg>
         <sbr/>
-        <arg choice="plain">image</arg>
-        <arg choice="plain">import</arg>
+        <arg choice="plain">image import</arg>
         <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
         <arg>--bucket-name=<replaceable>name</replaceable></arg>
         <arg>--object-name=<replaceable>name</replaceable></arg>
@@ -196,8 +191,7 @@
         <arg choice="req">--provider=<replaceable>name</replaceable></arg>
         <arg choice="req">--profile=<replaceable>name</replaceable></arg>
         <sbr/>
-        <arg choice="plain">image</arg>
-        <arg choice="plain">export</arg>
+        <arg choice="plain">image export</arg>
         <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
         <arg choice="req">--display-name=<replaceable>name</replaceable></arg>
         <arg>--bucket-name=<replaceable>name</replaceable></arg>
@@ -242,13 +236,11 @@
       </group>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-cloud-network-delete">
-      <command>VBoxManage cloud</command>
-      <arg choice="plain">network delete</arg>
+      <command>VBoxManage cloud network delete</command>
       <arg choice="req">--name=<replaceable>string</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-cloud-network-info">
-      <command>VBoxManage cloud</command>
-      <arg choice="plain">network info</arg>
+      <command>VBoxManage cloud >network info</command>
       <arg choice="req">--name=<replaceable>string</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -309,9 +301,10 @@
       </para>
       <variablelist>
         <varlistentry>
-          <term>--state<replaceable>"available/disabled/deleted"</replaceable></term>
+          <term>--state=available|disabled|deleted</term>
           <listitem>
-            <para>The state of cloud image. The possible states are "available/disabled/deleted" at moment.
+            <para>The state of cloud image. The possible states are <literal>available</literal>,
+            <literal>disabled</literal> and <literal>deleted</literal> at moment.
             If the state isn't provided the list of images with all possible states is returned.
             </para>
           </listitem>
@@ -335,12 +328,13 @@
       </para>
       <variablelist>
         <varlistentry>
-          <term>--filter<replaceable>"instanceId/vnicId/domainName=string"</replaceable></term>
+          <term>--filter={instanceId|vnicId|domainName}=<replaceable>string</replaceable></term>
           <listitem>
+<!-- @todo r=bird: Use more markup. This'll all be put jumbled together into a single paragraph -->
             <para>Filters are used to narrow down the set of Vnic attachments of interest.
             This parameter is repeatible.
-            The possible filters are "instanceId" or "vnicId" or "availabilityDomain" at moment.
-            The form is "instanceId/vnicId/domainName=[string value]" and can be repeated.
+            The possible filter types are "instanceId" or "vnicId" or "availabilityDomain" at moment.
+            The form is "type=[value]" and can be repeated.
             In instance, "--filter instanceId=ocid1.instance.oc1.iad.anuwcl...js6
                           --filter vnicId=ocid1.vnic.oc1.iad.abuwcl...jsm
                           --filter domainName=ergw:US-ASHBURN-AD-2".
@@ -365,6 +359,7 @@
       <title>cloud instance create</title>
       <remark role="help-copy-synopsis"/>
       <para>
+<!-- @todo r=bird: Use more markup. This'll all be put jumbled together into a single paragraph -->
         Creates new instance in the Cloud.
         There are two standard ways to create an instance in the Cloud:
          1. Create an instance from an existing custom image.
@@ -407,6 +402,7 @@
             <listitem>
               <para>Public SSH key used to connect to the instance via SSH.
                 This parameter may be repeated if you plan to use more than one key as:
+<!-- @todo r=bird: Markup rather than quoting -->
                 "--public-ssh-key=firstSSHKey --public-ssh-key=secondSSHKey".
               </para>
             </listitem>
