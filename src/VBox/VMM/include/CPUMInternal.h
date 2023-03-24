@@ -105,7 +105,10 @@ typedef uint64_t STAMCOUNTER;
 /** @name CPUM Saved State Version.
  * @{ */
 /** The current saved state version. */
-#define CPUM_SAVED_STATE_VERSION                CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_3
+#define CPUM_SAVED_STATE_VERSION                CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_4
+/** The saved state version with u32RestoreProcCtls2 for Nested Microsoft
+ *  Hyper-V. */
+#define CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_4   23
 /** The saved state version with more virtual VMCS fields (HLAT prefix size,
  *  PCONFIG-exiting bitmap, HLAT ptr, VM-exit ctls2) and a CPUMCTX field (VM-exit
  *  ctls2 MSR). */

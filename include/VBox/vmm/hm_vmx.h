@@ -4016,7 +4016,8 @@ typedef struct
     VMXABORT        enmVmxAbort;                 /**< 0x004 - VMX-abort indicator. */
     uint8_t         fVmcsState;                  /**< 0x008 - VMCS launch state, see VMX_V_VMCS_LAUNCH_STATE_XXX. */
     uint8_t         au8Padding0[3];              /**< 0x009 - Reserved for future. */
-    uint32_t        au32Reserved0[12];           /**< 0x00c - Reserved for future. */
+    uint32_t        u32RestoreProcCtls2;         /**< 0x00c - Secondary VM-execution controls to restore, see iemVmxVmentryCheckCtls(). */
+    uint32_t        au32Reserved0[11];           /**< 0x010 - Reserved for future. */
     /** @} */
 
     /** @name Read-only fields.

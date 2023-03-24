@@ -357,6 +357,7 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, enmVmxAbort),
     SSMFIELD_ENTRY(       VMXVVMCS, fVmcsState),
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au8Padding0),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u32RestoreProcCtls2,         CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_4),
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au32Reserved0),
 
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, u16Reserved0),
@@ -2691,7 +2692,8 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
     /*
      * Validate version.
      */
-    if (    uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_3
+    if (    uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_4
+        &&  uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_3
         &&  uVersion != CPUM_SAVED_STATE_VERSION_PAE_PDPES
         &&  uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2
         &&  uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_VMX
