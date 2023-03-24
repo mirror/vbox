@@ -29,6 +29,7 @@
 #include <QComboBox>
 #include <QGridLayout>
 #include <QLabel>
+#include <QPushButton>
 #include <QRegularExpressionValidator>
 
 /* GUI includes: */
@@ -233,6 +234,16 @@ void UIUSBFilterDetailsEditor::retranslateUi()
     }
 }
 
+void UIUSBFilterDetailsEditor::sltRevalidate()
+{
+    /* Cast sender to editor: */
+    QILineEdit *pEditor = qobject_cast<QILineEdit*>(sender());
+    AssertPtrReturnVoid(pEditor);
+
+    /* Performs sender's validation: */
+    revalidate(pEditor);
+}
+
 void UIUSBFilterDetailsEditor::prepare()
 {
     /* Prepare everything: */
@@ -269,6 +280,8 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
                 m_pLabelName->setBuddy(m_pEditorName);
             m_pEditorName->setMinimumWidthByText(QString().fill('0', 32));
             m_pEditorName->setValidator(new QRegularExpressionValidator(QRegularExpression(".+"), this));
+            connect(m_pEditorName, &QLineEdit::textChanged,
+                    this, &UIUSBFilterDetailsEditor::sltRevalidate);
             pLayout->addWidget(m_pEditorName, 0, 1);
         }
 
@@ -287,6 +300,8 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
                 m_pLabelVendorID->setBuddy(m_pEditorVendorID);
             m_pEditorVendorID->setMinimumWidthByText(QString().fill('0', 8));
             m_pEditorVendorID->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9a-fA-F]{0,4}"), this));
+            connect(m_pEditorVendorID, &QLineEdit::textChanged,
+                    this, &UIUSBFilterDetailsEditor::sltRevalidate);
             pLayout->addWidget(m_pEditorVendorID, 1, 1);
         }
 
@@ -305,6 +320,8 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
                 m_pLabelProductID->setBuddy(m_pEditorProductID);
             m_pEditorProductID->setMinimumWidthByText(QString().fill('0', 8));
             m_pEditorProductID->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9a-fA-F]{0,4}"), this));
+            connect(m_pEditorProductID, &QLineEdit::textChanged,
+                    this, &UIUSBFilterDetailsEditor::sltRevalidate);
             pLayout->addWidget(m_pEditorProductID, 2, 1);
         }
 
@@ -323,6 +340,8 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
                 m_pLabelRevision->setBuddy(m_pEditorRevision);
             m_pEditorRevision->setMinimumWidthByText(QString().fill('0', 8));
             m_pEditorRevision->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9a-fA-F]{0,4}"), this));
+            connect(m_pEditorRevision, &QLineEdit::textChanged,
+                    this, &UIUSBFilterDetailsEditor::sltRevalidate);
             pLayout->addWidget(m_pEditorRevision, 3, 1);
         }
 
@@ -392,6 +411,8 @@ void UIUSBFilterDetailsEditor::prepareWidgets()
                 m_pLabelPort->setBuddy(m_pEditorPort);
             m_pEditorPort->setMinimumWidthByText(QString().fill('0', 8));
             m_pEditorPort->setValidator(new QRegularExpressionValidator(QRegularExpression("(0[xX])?[0-9a-fA-F]{0,4}"), this));
+            connect(m_pEditorPort, &QLineEdit::textChanged,
+                    this, &UIUSBFilterDetailsEditor::sltRevalidate);
             pLayout->addWidget(m_pEditorPort, 7, 1);
         }
 
@@ -433,6 +454,33 @@ void UIUSBFilterDetailsEditor::prepareConnections()
         connect(m_pButtonBox, &QIDialogButtonBox::rejected,
                 this, &UIUSBFilterDetailsEditor::reject);
     }
+}
+
+void UIUSBFilterDetailsEditor::revalidate(QILineEdit *pEditor)
+{
+    /* Acquire current validator: */
+    const QValidator *pValidator = pEditor->validator();
+    AssertPtrReturnVoid(pValidator);
+
+    /* Validate current text: */
+    QString strText = pEditor->text();
+    int iPos = 0;
+    const QValidator::State enmState = pValidator->validate(strText, iPos);
+
+    /* Store current validation verdict: */
+    m_valid[pEditor] = enmState == QValidator::Acceptable;
+
+    /* Calculate overall validation result: */
+    bool fValid = true;
+    foreach (bool fValidOne, m_valid.values())
+        if (!fValidOne)
+        {
+            fValid = false;
+            break;
+        }
+
+    /* Enable/disable button-box Ok button accordingly: */
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(fValid);
 }
 
 /* static */

@@ -101,6 +101,11 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
 
+private slots:
+
+    /** Performs validation for connected sender. */
+    void sltRevalidate();
+
 private:
 
     /** Prepares all. */
@@ -110,8 +115,14 @@ private:
     /** Prepares connections. */
     void prepareConnections();
 
+    /** Performs validation for @a pEditor. */
+    void revalidate(QILineEdit *pEditor);
+
     /** Wipes out @a strString if it's empty. */
     static QString wiped(const QString &strString);
+
+    /** Holds whether editors currently valid. */
+    QMap<QILineEdit*, bool>  m_valid;
 
     /** @name Widgets
      * @{ */
