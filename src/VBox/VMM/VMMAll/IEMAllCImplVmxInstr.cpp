@@ -2636,6 +2636,17 @@ VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint64_t u64Exit
     else
         Log(("vmexit: Loading host-state failed. uExitReason=%u rc=%Rrc\n", uExitReason, VBOXSTRICTRC_VAL(rcStrict)));
 
+    /*
+     * Restore non-zero Secondary-processor based VM-execution controls
+     * when the "activate secondary controls" bit was not set.
+     */
+    if (pVmcs->u32RestoreProcCtls2)
+    {
+        Assert(!(pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_SECONDARY_CTLS));
+        pVmcs->u32ProcCtls2        = pVmcs->u32RestoreProcCtls2;
+        pVmcs->u32RestoreProcCtls2 = 0;
+    }
+
     if (VM_IS_HM_ENABLED(pVCpu->CTX_SUFF(pVM)))
     {
         /* Notify HM that the current VMCS fields have been modified. */
@@ -6393,15 +6404,22 @@ static int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr) RT_NOEXC
             else
                 IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ProcCtls2Allowed1);
         }
-        else
+        else if (pVmcs->u32ProcCtls2)
         {
             /*
              * If the "activate secondary controls" is clear, then the secondary processor-based VM-execution controls
-             * is treated as 0. We must not fail/assert here. Microsoft Hyper-V relies on this behavior.
+             * is treated as 0.
              *
              * See Intel spec. 26.2.1.1 "VM-Execution Control Fields".
+             *
+             * Since this is a rather rare occurrence (only observed for a few VM-entries with Microsoft Hyper-V
+             * enabled Windows Server 2008 R2 guest), it's not worth changing every place that reads this control to
+             * also check the "activate secondary controls" bit. Instead, we temporarily save the guest programmed
+             * control here, zero out the value the rest of our code uses and restore the guest programmed value
+             * on VM-exit.
              */
-            pVmcs->u32ProcCtls2 = 0;
+            pVmcs->u32RestoreProcCtls2 = pVmcs->u32ProcCtls2;
+            pVmcs->u32ProcCtls2        = 0;
         }
 
         /* CR3-target count. */
@@ -7811,8 +7829,6 @@ static VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, VMXI
      *
      * See Intel spec. 24.11.4 "Software Access to Related Structures".
      */
-    PVMXVVMCS const pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
-    Assert(pVmcs);
     Assert(IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
 
     int rc = iemVmxVmentryCheckCtls(pVCpu, pszInstr);
@@ -7835,6 +7851,9 @@ static VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, VMXI
              * See Intel spec. 26.7 "VM-entry Failures During or After Loading Guest State"
              */
             iemVmxVmentrySaveNmiBlockingFF(pVCpu);
+
+            PVMXVVMCS pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
+            Assert(pVmcs);
 
             rc = iemVmxVmentryCheckGuestState(pVCpu, pszInstr);
             if (RT_SUCCESS(rc))
