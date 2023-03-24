@@ -69,6 +69,8 @@
     <frontmatter>
        <booklists>
           <toc/>
+          <figurelist/>
+          <tablelist/>
        </booklists>
       <preface href="topics/preface.dita">
          <topicref href="topics/preface-audience.dita"/>
@@ -78,7 +80,7 @@
          <topicref href="topics/preface-accessibility.dita"/>
          <topicref href="topics/preface-diversity.dita"/>
       </preface>
-</frontmatter>
+    </frontmatter>
       <chapter href="topics/Introduction.dita">
          <topicref href="topics/virt-why-useful.dita"/>
          <topicref href="topics/virtintro.dita"/>
@@ -366,7 +368,6 @@
       </topicref>
       <topicref href="topics/teleporting.dita"/>
       <topicref href="topics/man_VBoxHeadless.dita"/>
-
    </chapter>
 
    <!-- VBoxManage Refentry command topics -->
@@ -376,58 +377,60 @@
       <!--  <topicref href="topics/vboxmanage-cmd-overview.dita"/> -->
       <topicref href="topics/vboxmanage-general.dita"/>
       <topicref href="topics/man_VBoxManage-common.dita"/>
+      <!-- Note! We sort these alphabetical unless someone can define a
+                 maintainable ordering (previously it seemed to be total
+                 random and included several duplicates). -->
       <topicref href="topics/man_VBoxManage-adoptstate.dita"/>
-      <topicref href="topics/man_VBoxManage-checkmediumpwd.dita"/>
-      <topicref href="topics/man_VBoxManage-modifyvm.dita"/>
-      <topicref href="topics/man_VBoxManage-hostonlynet.dita"/>
-      <topicref href="topics/man_VBoxManage-convertfromraw.dita"/>
-      <topicref href="topics/man_VBoxManage-usbdevsource.dita"/>
-      <topicref href="topics/man_VBoxManage-natnetwork.dita"/>
-      <topicref href="topics/man_VBoxManage-setproperty.dita"/>
-      <topicref href="topics/man_VBoxManage-getextradata.dita"/>
-      <topicref href="topics/man_VBoxManage-storageattach.dita"/>
-      <topicref href="topics/man_VBoxManage-unattended.dita"/>
-      <topicref href="topics/man_VBoxManage-usbfilter.dita"/>
-      <topicref href="topics/man_VBoxManage-storagectl.dita"/>
-      <topicref href="topics/man_VBoxManage-guestcontrol.dita"/>
       <topicref href="topics/man_VBoxManage-bandwidthctl.dita"/>
-      <topicref href="topics/man_VBoxManage-encryptvm.dita"/>
-      <topicref href="topics/man_VBoxManage-mediumproperty.dita"/>
-      <topicref href="topics/man_VBoxManage-showvminfo.dita"/>
-      <topicref href="topics/man_VBoxManage-clonemedium.dita"/>
-      <topicref href="topics/man_VBoxManage-export.dita"/>
-      <topicref href="topics/man_VBoxManage-startvm.dita"/>
-      <topicref href="topics/man_VBoxManage-cloudprofile.dita"/>
-      <topicref href="topics/man_VBoxManage-discardstate.dita"/>
-      <topicref href="topics/man_VBoxManage-controlvm.dita"/>
-      <topicref href="topics/man_VBoxManage-hostonlyif.dita"/>
-      <topicref href="topics/man_VBoxManage-updatecheck.dita"/>
-      <topicref href="topics/man_VBoxManage-encryptmedium.dita"/>
-      <topicref href="topics/man_VBoxManage-signova.dita"/>
-      <topicref href="topics/man_VBoxManage-unregistervm.dita"/>
-      <topicref href="topics/man_VBoxManage-closemedium.dita"/>
-      <topicref href="topics/man_VBoxManage-registervm.dita"/>
-      <topicref href="topics/man_VBoxManage-clonevm.dita"/>
-      <topicref href="topics/man_VBoxManage-mediumio.dita"/>
-      <topicref href="topics/man_VBoxManage-setextradata.dita"/>
-      <topicref href="topics/man_VBoxManage-showmediuminfo.dita"/>
-      <topicref href="topics/man_VBoxManage-metrics.dita"/>
-      <topicref href="topics/man_VBoxManage-cloud.dita"/>
-      <topicref href="topics/man_VBoxManage-import.dita"/>
-      <topicref href="topics/man_VBoxManage-debugvm.dita"/>
-      <topicref href="topics/man_VBoxManage-createvm.dita"/>
-      <topicref href="topics/man_VBoxManage-guestproperty.dita"/>
-      <topicref href="topics/man_VBoxManage-extpack.dita"/>
-      <topicref href="topics/man_VBoxManage-sharedfolder.dita"/>
-      <topicref href="topics/man_VBoxManage-snapshot.dita"/>
-      <topicref href="topics/man_VBoxManage-movevm.dita"/>
-      <topicref href="topics/man_VBoxManage-createmedium.dita"/>
-      <topicref href="topics/man_VBoxManage-dhcpserver.dita"/>
-      <topicref href="topics/man_VBoxManage-modifymedium.dita"/>
-      <topicref href="topics/man_VBoxManage-adoptstate.dita"/>
       <topicref href="topics/man_VBoxManage-checkmediumpwd.dita"/>
+      <topicref href="topics/man_VBoxManage-clonemedium.dita"/>
+      <topicref href="topics/man_VBoxManage-clonevm.dita"/>
+      <topicref href="topics/man_VBoxManage-closemedium.dita"/>
+      <topicref href="topics/man_VBoxManage-cloud.dita"/>
+      <topicref href="topics/man_VBoxManage-cloudprofile.dita"/>
+      <topicref href="topics/man_VBoxManage-controlvm.dita"/>
+      <topicref href="topics/man_VBoxManage-convertfromraw.dita"/>
+      <topicref href="topics/man_VBoxManage-createmedium.dita"/>
+      <topicref href="topics/man_VBoxManage-createvm.dita"/>
+      <topicref href="topics/man_VBoxManage-debugvm.dita"/>
+      <topicref href="topics/man_VBoxManage-dhcpserver.dita"/>
+      <topicref href="topics/man_VBoxManage-discardstate.dita"/>
+      <topicref href="topics/man_VBoxManage-encryptmedium.dita"/>
+      <topicref href="topics/man_VBoxManage-encryptvm.dita"/>
+      <topicref href="topics/man_VBoxManage-export.dita"/>
+      <topicref href="topics/man_VBoxManage-extpack.dita"/>
+      <topicref href="topics/man_VBoxManage-getextradata.dita"/>
+      <topicref href="topics/man_VBoxManage-guestcontrol.dita"/>
+      <topicref href="topics/man_VBoxManage-guestproperty.dita"/>
+      <topicref href="topics/man_VBoxManage-hostonlyif.dita"/>
+      <topicref href="topics/man_VBoxManage-hostonlynet.dita"/>
+      <topicref href="topics/man_VBoxManage-import.dita"/>
       <topicref href="topics/man_VBoxManage-list.dita"/>
+      <topicref href="topics/man_VBoxManage-mediumio.dita"/>
+      <topicref href="topics/man_VBoxManage-mediumproperty.dita"/>
+      <topicref href="topics/man_VBoxManage-metrics.dita"/>
+      <topicref href="topics/man_VBoxManage-modifymedium.dita"/>
       <topicref href="topics/man_VBoxManage-modifynvram.dita"/>
+      <topicref href="topics/man_VBoxManage-modifyvm.dita"/>
+      <topicref href="topics/man_VBoxManage-movevm.dita"/>
+      <topicref href="topics/man_VBoxManage-natnetwork.dita"/>
+      <topicref href="topics/man_VBoxManage-registervm.dita"/>
+      <topicref href="topics/man_VBoxManage-setextradata.dita"/>
+      <topicref href="topics/man_VBoxManage-setproperty.dita"/>
+      <topicref href="topics/man_VBoxManage-sharedfolder.dita"/>
+      <topicref href="topics/man_VBoxManage-showmediuminfo.dita"/>
+      <topicref href="topics/man_VBoxManage-showvminfo.dita"/>
+      <topicref href="topics/man_VBoxManage-signova.dita"/>
+      <topicref href="topics/man_VBoxManage-snapshot.dita"/>
+      <topicref href="topics/man_VBoxManage-startvm.dita"/>
+      <topicref href="topics/man_VBoxManage-storageattach.dita"/>
+      <topicref href="topics/man_VBoxManage-storagectl.dita"/>
+      <topicref href="topics/man_VBoxManage-unattended.dita"/>
+      <topicref href="topics/man_VBoxManage-unregistervm.dita"/>
+      <topicref href="topics/man_VBoxManage-updatecheck.dita"/>
+      <topicref href="topics/man_VBoxManage-usbdevsource.dita"/>
+      <topicref href="topics/man_VBoxManage-usbfilter.dita"/>
+      <!-- End sorted manpage topics. -->
       <topicref href="topics/man_vboximg-mount.dita"/>
    </chapter>
 
@@ -719,4 +722,5 @@
     <topicref href="topics/glossentry-xml.dita"/>
     <topicref href="topics/glossentry-xpcom.dita"/>
 </chapter>
+
 </bookmap>
