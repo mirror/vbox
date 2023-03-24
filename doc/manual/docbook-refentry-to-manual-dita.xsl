@@ -249,6 +249,16 @@
     </xsl:if>
     <xsl:apply-templates />
   </xsl:element>
+
+  <!-- HACK ALERT! Add an empty paragraph to keep syntax diagrams apart in the
+       PDF output, otherwise the commands becomes hard to tell apart. -->
+  <xsl:if test="position() &lt; last()">
+    <xsl:element name="p">
+      <xsl:attribute name="platform">ohc</xsl:attribute> <!-- 'och', so it gets filtered out from the html(help) docs. -->
+      <xsl:attribute name="rev">pdf space hack</xsl:attribute>
+      <xsl:text> </xsl:text>
+    </xsl:element>
+  </xsl:if>
 </xsl:template>
 
 <xsl:template match="cmdsynopsis[sbr]">
@@ -259,8 +269,12 @@
     </xsl:if>
     <xsl:for-each select="sbr">
       <xsl:variable name="idxSbr" select="position()"/>
-      <xsl:element name="groupcomp">
-        <xsl:attribute name="rev">sbr/<xsl:value-of select="position()"/></xsl:attribute>
+      <!-- TODO: sbr cannot be translated, it seems. Whether we wrap things in
+           synblk, groupcomp or groupseq elements, the result is always the same:
+              - HTML: ignored.
+              - PDF: condensed arguments w/o spaces between  -->
+      <!-- <xsl:element name="synblk">
+        <xsl:attribute name="rev">sbr/<xsl:value-of select="position()"/></xsl:attribute> -->
 
         <xsl:if test="$idxSbr = 1">
           <xsl:apply-templates select="preceding-sibling::node()"/>
@@ -269,12 +283,28 @@
           <xsl:apply-templates select="preceding-sibling::node()[  count(. | ../sbr[$idxSbr - 1]/following-sibling::node())
                                                                  =     count(../sbr[$idxSbr - 1]/following-sibling::node())]"/>
         </xsl:if>
+      <!-- </xsl:element> -->
+      <!-- Ensure some space between these.-->
+      <xsl:text>
+ </xsl:text>
         <xsl:if test="$idxSbr = last()">
-          <xsl:apply-templates select="following-sibling::node()"/>
+          <!-- <xsl:element name="synblk">
+            <xsl:attribute name="rev">sbr/<xsl:value-of select="position()"/></xsl:attribute> -->
+            <xsl:apply-templates select="following-sibling::node()"/>
+          <!-- </xsl:element> -->
         </xsl:if>
-      </xsl:element>
     </xsl:for-each>
   </xsl:element>
+
+  <!-- HACK ALERT! Add an empty paragraph to keep syntax diagrams apart in the
+       PDF output, otherwise the commands becomes hard to tell apart. -->
+  <xsl:if test="position() &lt; last()">
+    <xsl:element name="p">
+      <xsl:attribute name="platform">ohc</xsl:attribute> <!-- 'och', so it gets filtered out from the html(help) docs. -->
+      <xsl:attribute name="rev">pdf space hack</xsl:attribute>
+      <xsl:text> </xsl:text>
+    </xsl:element>
+  </xsl:if>
 </xsl:template>
 
 <!-- command with text and/or replaceable in cmdsynopsis -> groupseq + kwd -->

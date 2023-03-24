@@ -732,7 +732,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf,, \
 		"/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
 		"/transtype:pdf" \
-		"/filter:$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/htmlhelp.ditaval" \
+		"/filter:$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/ohc.ditaval" \
 		"/outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)" \
 		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf", \
 		,,"--logfile=$$(@D)/UserManual_pdf.log")
