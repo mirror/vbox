@@ -2315,8 +2315,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         # Start the process:
         #
-        reporter.log2('Executing sCmd=%s, afFlags=%s, timeoutMS=%d, asArgs=%s, asEnv=%s'
-                      % (oTest.sCmd, oTest.afFlags, oTest.timeoutMS, limitString(oTest.asArgs), limitString(oTest.aEnv),));
+        reporter.log2('Executing sCmd=%s, cCwd=%s, afFlags=%s, timeoutMS=%d, asArgs=%s, asEnv=%s'
+                      % (oTest.sCmd, oTest.sCwd, oTest.afFlags, oTest.timeoutMS, limitString(oTest.asArgs), limitString(oTest.aEnv),));
         try:
             if self.oTstDrv.fpApiVer >= 7.1:
                 oProcess = oGuestSession.processCreate(oTest.sCmd,
@@ -3250,7 +3250,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
                 ## @todo Check limits; on Ubuntu with 256KB IPRT returns VERR_NOT_IMPLEMENTED.
                 # Use a higher timeout (15 min) than usual for these long checks.
-                atExec.append([ tdTestExec(sCmd, asArgs,
+                atExec.append([ tdTestExec(sCmd = sCmd, asArgs = asArgs,
                                            afFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut,
                                                        vboxcon.ProcessCreateFlag_WaitForStdErr ],
                                            timeoutMS = 15 * 60 * 1000),
