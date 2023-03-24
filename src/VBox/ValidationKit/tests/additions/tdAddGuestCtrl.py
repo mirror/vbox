@@ -2316,7 +2316,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Start the process:
         #
         reporter.log2('Executing sCmd=%s, cCwd=%s, afFlags=%s, timeoutMS=%d, asArgs=%s, asEnv=%s'
-                      % (oTest.sCmd, oTest.sCwd, oTest.afFlags, oTest.timeoutMS, limitString(oTest.asArgs), limitString(oTest.aEnv),));
+                      % (oTest.sCmd, oTest.sCwd, oTest.afFlags, oTest.timeoutMS, limitString(oTest.asArgs),
+                         limitString(oTest.aEnv),));
         try:
             if self.oTstDrv.fpApiVer >= 7.1:
                 oProcess = oGuestSession.processCreate(oTest.sCmd,
