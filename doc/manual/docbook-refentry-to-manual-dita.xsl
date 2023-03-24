@@ -175,33 +175,33 @@
   </xsl:copy>
 </xsl:template>
 
-<!-- variablelist -> dl -->
+<!-- variablelist -> parml -->
 <xsl:template match="variablelist">
-  <xsl:element name="dl">
+  <xsl:element name="parml">
     <xsl:attribute name="rev">variablelist</xsl:attribute>
     <xsl:apply-templates />
   </xsl:element>
 </xsl:template>
 
-<!-- varlistentry -> dlentry -->
+<!-- varlistentry -> plentry -->
 <xsl:template match="varlistentry">
-  <xsl:element name="dlentry">
+  <xsl:element name="plentry">
     <xsl:attribute name="rev">varlistentry</xsl:attribute>
     <xsl:apply-templates />
   </xsl:element>
 </xsl:template>
 
-<!-- term (in varlistentry) -> dt -->
+<!-- term (in varlistentry) -> pt -->
 <xsl:template match="varlistentry/term">
-  <xsl:element name="dt">
+  <xsl:element name="pt">
     <xsl:attribute name="rev">term</xsl:attribute>
     <xsl:apply-templates />
   </xsl:element>
 </xsl:template>
 
-<!-- listitem (in varlistentry) -> dd -->
+<!-- listitem (in varlistentry) -> pd -->
 <xsl:template match="varlistentry/listitem">
-  <xsl:element name="dd">
+  <xsl:element name="pd">
     <xsl:attribute name="rev">listitem</xsl:attribute>
     <xsl:apply-templates />
   </xsl:element>
