@@ -1246,7 +1246,8 @@ class SessionWrapper(TdTaskBase):
                 if fEnable:
                     self.o.machine.nonVolatileStore.uefiVariableStore.enrollDefaultMsSignatures();
                     self.o.machine.nonVolatileStore.uefiVariableStore.enrollOraclePlatformKey();
-                    if sUefiMokPathPrefix is not None:
+                    if   sUefiMokPathPrefix is not None \
+                    and  self.fpApiVer >= 7.1:
                         sFullName = self.oTstDrv.getFullResourceName(sUefiMokPathPrefix) + '.der';
                         with open(sFullName, "rb") as der_file:
                             self.o.machine.nonVolatileStore.uefiVariableStore.addSignatureToMok(bytearray(der_file.read()), \
@@ -3698,4 +3699,3 @@ class AdditionsStatusTask(TdTaskBase):
         """
         self._deregisterEventHandler();
         return True;
-
