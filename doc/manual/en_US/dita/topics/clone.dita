@@ -46,7 +46,14 @@
     </p>
     <fig id="fig-clone-wizard-name-path">
       <title>Clone Virtual Machine Wizard: New Machine Name and Path</title>
-      <image href="images/clone-vm-1.png" width="10cm" placement="break"/>
+      <xref href="images/clone-vm-1.png" format="png" platform="htmlhelp">
+        <image href="images/clone-vm-1.png" width="10cm" placement="break">
+          <alt>Clone Virtual Machine Wizard: New Machine Name and Path</alt>
+        </image>
+      </xref>
+        <image href="images/clone-vm-1.png" width="10cm" placement="break" platform="ohc">
+          <alt>Clone Virtual Machine Wizard: New Machine Name and Path</alt>
+        </image>
     </fig>
     <p>
       The following clone options are available:
@@ -94,9 +101,16 @@
       Click <b outputclass="bold">Next</b>. The
       <b outputclass="bold">Clone Type</b> page is displayed.
     </p>
-    <fig id="fig-clone-wizard-clone-type">
+    <fig id="fig-clone-type">
       <title>Clone Virtual Machine Wizard: Clone Type</title>
-      <image href="images/clone-vm-2.png" width="10cm" placement="break"/>
+      <xref href="images/clone-vm-2.png" format="png" platform="htmlhelp">
+        <image href="images/clone-vm-2.png" width="10cm" placement="break">
+          <alt>Clone Virtual Machine Wizard: Clone Type</alt>
+        </image>
+      </xref>
+      <image href="images/clone-vm-2.png" width="10cm" placement="break" platform="ohc">
+        <alt>Clone Virtual Machine Wizard: Clone Type</alt>
+      </image>
     </fig>
     <p>
       The <b outputclass="bold">Clone Type</b> option specifies
@@ -131,7 +145,14 @@
     </note>
     <fig id="fig-clone-wizard-snapshots">
       <title>Clone Virtual Machine Wizard: Snapshots</title>
-      <image href="images/clone-vm-3.png" width="10cm" placement="break"/>
+      <xref href="images/clone-vm-3.png" format="png" platform="htmlhelp">
+        <image href="images/clone-vm-3.png" width="10cm" placement="break">
+          <alt>Clone Virtual Machine Wizard: Snapshots</alt>
+        </image>
+      </xref>
+      <image href="images/clone-vm-3.png" width="10cm" placement="break" platform="ohc">
+        <alt>Clone Virtual Machine Wizard: Snapshots</alt>
+      </image>
     </fig>
     <p>
       You use this page to select which parts of the snapshot tree to

@@ -77,10 +77,17 @@
             and that each subsequent snapshot is derived from an earlier
             one.
           </p>
-                        <fig id="fig-snapshots-list">
-                           <title>Snapshots List For a Virtual Machine</title>
-                           <image href="images/snapshots-2.png" width="10cm" placement="break"/>
-                        </fig>
+                       <fig id="fig-snapshots-list">
+                         <title>Snapshots List For a Virtual Machine</title>
+                         <xref href="images/snapshots-2.png" format="png" platform="htmlhelp">
+                           <image href="images/snapshots-2.png" width="10cm" placement="break">
+                             <alt>Snapshots List For a Virtual Machine</alt>
+                           </image>
+                         </xref>
+                         <image platform="ohc" href="images/snapshots-2.png" width="10cm" placement="break">
+                           <alt>Snapshots List For a Virtual Machine</alt>
+                         </image>
+                       </fig>
                         <p>
             Oracle VM VirtualBox imposes no limits on the number of snapshots
             you can take. The only practical limitation is disk space on

@@ -24,7 +24,14 @@
           </p>
         <fig id="fig-import-appliance">
           <title>Import Virtual Appliance Wizard: Appliance Settings</title>
-          <image href="images/ovf-import.png" width="12cm" placement="break"/>
+          <xref href="images/ovf-import.png" format="png" platform="htmlhelp">
+            <image href="images/ovf-import.png" width="12cm" placement="break">
+              <alt>Import Virtual Appliance Wizard: Appliance Settings</alt>
+            </image>
+          </xref>
+          <image platform="ohc" href="images/ovf-import.png" width="12cm" placement="break">
+            <alt>Import Virtual Appliance Wizard: Appliance Settings</alt>
+          </image>
         </fig>
       </li>
       <li>

@@ -43,7 +43,14 @@
           </p>
         <fig id="fig-import-instance-oci">
           <title>Import Cloud Instance Wizard: Appliance Settings</title>
-          <image href="images/import-instance.png" width="12cm" placement="break"/>
+          <xref href="images/import-instance.png" format="png" platform="htmlhelp">
+            <image href="images/import-instance.png" width="12cm" placement="break">
+              <alt>Import Cloud Instance Wizard: Appliance Settings</alt>
+            </image>
+          </xref>
+          <image href="images/import-instance.png" width="12cm" placement="break" platform="ohc">
+            <alt>Import Cloud Instance Wizard: Appliance Settings</alt>
+          </image>
         </fig>
         <p>
             Click <b outputclass="bold">Finish</b> to import the

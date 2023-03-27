@@ -24,7 +24,14 @@
       </p>
     <fig id="fig-create-vm-unattended-install">
       <title>Creating a Virtual Machine: Unattended Guest OS Installation</title>
-      <image href="images/create-vm-2.png" width="10cm" placement="break"/>
+      <xref href="images/create-vm-2.png" format="png" platform="htmlhelp">
+        <image href="images/create-vm-2.png" width="10cm" placement="break">
+          <alt>Creating a Virtual Machine: Unattended Guest OS Installation</alt>
+        </image>
+      </xref>
+      <image platform="ohc" href="images/create-vm-2.png" width="10cm" placement="break">
+        <alt>Creating a Virtual Machine: Unattended Guest OS Installation</alt>
+      </image>
     </fig>
     <p>
         The following fields are available on this wizard page:

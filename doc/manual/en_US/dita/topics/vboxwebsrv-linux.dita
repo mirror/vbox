@@ -17,6 +17,7 @@
       </p>
     <table id="table-websrv-config-params">
       <title>Web Service Configuration Parameters</title>
+      <desc>Web Service Configuration Parameters</desc>
       <tgroup cols="3">       
         <thead>
           <row>

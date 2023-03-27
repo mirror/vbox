@@ -10,6 +10,7 @@
       </p>
     <table id="table-config-summary">
       <title>Configuration File Locations</title>
+      <desc>Configuration File Locations</desc>
       <tgroup cols="2">
         <thead>
           <row>

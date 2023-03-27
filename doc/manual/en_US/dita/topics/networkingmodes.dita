@@ -102,6 +102,7 @@
     </p>
     <table id="table-networking-modes">
       <title>Overview of Networking Modes</title>
+      <desc>Overview of Networking Modes</desc>
       <tgroup cols="6">
         <colspec align="left"/>
         <colspec align="center"/>

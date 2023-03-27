@@ -15,7 +15,14 @@
     </p>
     <fig id="fig-vm-groups">
       <title>Groups of Virtual Machines</title>
-      <image href="images/vm-groups.png" width="10cm" placement="break"/>
+      <xref href="images/vm-groups.png" format="png" platform="htmlhelp">
+        <image href="images/vm-groups.png" width="10cm" placement="break">
+          <alt>Groups of Virtual Machines</alt>
+        </image>
+      </xref>
+      <image platform="ohc" href="images/vm-groups.png" width="10cm" placement="break">
+        <alt>Groups of Virtual Machines</alt>
+      </image>
     </fig>
     <p>
       The following features are available for groups:

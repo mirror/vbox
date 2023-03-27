@@ -21,7 +21,14 @@
           </p>
         <fig id="fig-virtual-hard-disk-wizard">
           <title>Create Virtual Hard Disk Wizard</title>
-          <image href="images/virtual-hard-disk-wizard.png" width="12cm" placement="break"/>
+          <xref href="images/virtual-hard-disk-wizard.png" format="png" platform="htmlhelp">
+            <image href="images/virtual-hard-disk-wizard.png" width="12cm" placement="break">
+              <alt>Create Virtual Hard Disk Wizard</alt>
+            </image>
+          </xref>
+          <image platform="ohc" href="images/virtual-hard-disk-wizard.png" width="12cm" placement="break">
+            <alt>Create Virtual Hard Disk Wizard</alt>
+          </image>
         </fig>
       </li>
       <li>

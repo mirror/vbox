@@ -45,7 +45,14 @@
           </p>
         <fig id="fig-upload-key-oci">
           <title>Upload Public Key Dialog in Oracle Cloud Infrastructure Console</title>
-          <image href="images/upload-key.png" width="12cm" placement="break"/>
+          <xref href="images/upload-key.png" format="png" platform="htmlhelp">
+            <image href="images/upload-key.png" width="12cm" placement="break">
+              <alt>Upload Public Key Dialog in Oracle Cloud Infrastructure Console</alt>
+            </image>
+          </xref>
+          <image href="images/upload-key.png" width="12cm" placement="break" platform="ohc">
+            <alt>Upload Public Key Dialog in Oracle Cloud Infrastructure Console</alt>
+          </image>
         </fig>
         <p>
             Select one of the following options:

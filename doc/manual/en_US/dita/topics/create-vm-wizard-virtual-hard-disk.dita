@@ -19,7 +19,14 @@
       </p>
     <fig id="fig-create-vm-hard-disk">
       <title>Creating a New Virtual Machine: Virtual Hard Disk</title>
-      <image href="images/create-vm-4.png" width="10cm" placement="break"/>
+      <xref href="images/create-vm-4.png" format="png" platform="htmlhelp">
+        <image href="images/create-vm-4.png" width="10cm" placement="break">
+          <alt>Creating a New Virtual Machine: Virtual Hard Disk</alt>
+        </image>
+      </xref>
+      <image platform="ohc" href="images/create-vm-4.png" width="10cm" placement="break">
+        <alt>Creating a New Virtual Machine: Virtual Hard Disk</alt>
+      </image>
     </fig>
     <p>
         The following fields are available on this wizard page:

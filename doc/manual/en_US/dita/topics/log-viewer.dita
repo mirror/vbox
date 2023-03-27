@@ -12,7 +12,14 @@
     </p>
     <fig id="fig-log-viewer-tool">
       <title>Log Viewer Tool, Showing System Events</title>
-      <image href="images/log-viewer.png" width="10cm" placement="break"/>
+      <xref href="images/log-viewer.png" format="png" platform="htmlhelp">
+        <image href="images/log-viewer.png" width="10cm" placement="break">
+          <alt>Log Viewer Tool, Showing System Events</alt>
+        </image>
+      </xref>
+      <image platform="ohc" href="images/log-viewer.png" width="10cm" placement="break">
+        <alt>Log Viewer Tool, Showing System Events</alt>
+      </image>
     </fig>
     <p>
       To display the Log Viewer, do either of the following:

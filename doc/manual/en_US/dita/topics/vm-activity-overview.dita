@@ -19,11 +19,18 @@
         click <b outputclass="bold">Activities</b>. The
         <b outputclass="bold">VM Activity Overview</b> window is
         shown.
-      </p>
-                  <fig id="fig-vm-activity-overview-widget">
-                     <title>VM Activity Overview Tool</title>
-                     <image href="images/vm-activity-overview.png" width="12cm" placement="break"/>
-                  </fig>
+      </p>   
+                 <fig id="fig-vm-activity-overview-widget">
+                   <title>VM Activity Overview Tool</title>
+                   <xref href="images/vm-activity-overview.png" format="png" platform="htmlhelp">
+                     <image href="images/vm-activity-overview.png" width="12cm" placement="break">
+                       <alt>VM Activity Overview Tool</alt>
+                     </image>
+                   </xref>
+                   <image platform="ohc" href="images/vm-activity-overview.png" width="12cm" placement="break">
+                     <alt>VM Activity Overview Tool</alt>
+                   </image>
+                 </fig>
                   <p>
         To show metrics for <i>all</i> virtual machines,
         including those that are not running, right-click on the list of

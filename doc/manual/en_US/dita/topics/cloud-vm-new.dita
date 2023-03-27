@@ -33,7 +33,14 @@
             </p>
         <fig id="fig-cloudvm-new">
           <title>Create Cloud Virtual Machine Wizard</title>
-          <image href="images/cloudvm-new.png" width="12cm" placement="break"/>
+          <xref href="images/cloudvm-new.png" format="png" platform="htmlhelp">
+            <image href="images/cloudvm-new.png" width="12cm" placement="break">
+              <alt>Create Cloud Virtual Machine Wizard</alt>
+            </image>
+          </xref>
+          <image href="images/cloudvm-new.png" width="12cm" placement="break" platform="ohc">
+            <alt>Create Cloud Virtual Machine Wizard</alt>
+          </image>
         </fig>
       </li>
       <li>

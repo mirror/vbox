@@ -10,7 +10,14 @@
       </p>
     <fig id="fig-create-vm-hardware">
       <title>Creating a Virtual Machine: Hardware</title>
-      <image href="images/create-vm-3.png" width="10cm" placement="break"/>
+      <xref href="images/create-vm-3.png" format="png" platform="htmlhelp">
+        <image href="images/create-vm-3.png" width="10cm" placement="break">
+          <alt>Creating a Virtual Machine: Hardware</alt>
+        </image>
+      </xref>
+      <image platform="ohc" href="images/create-vm-3.png" width="10cm" placement="break">
+        <alt>Creating a Virtual Machine: Hardware</alt>
+      </image>
     </fig>
     <p>
         The following fields are available on this wizard page:

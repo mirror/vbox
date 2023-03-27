@@ -26,6 +26,7 @@
     </p>
     <table id="table-pcspeaker-config">
       <title>PC Speaker Configuration Options</title>
+      <desc>PC Speaker Configuration Options</desc>
       <tgroup cols="3">      
         <thead>
           <row>

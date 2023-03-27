@@ -23,14 +23,28 @@
     </p>
     <fig id="fig-vbox-manager-initial">
       <title>VirtualBox Manager, Showing Welcome Screen After Initial Startup</title>
-      <image href="images/virtualbox-main-empty.png" width="12cm" placement="break"/>
+      <xref href="images/virtualbox-main-empty.png" format="png" platform="htmlhelp">
+        <image href="images/virtualbox-main-empty.png" width="12cm" placement="break">
+          <alt>VirtualBox Manager, Showing Welcome Screen After Initial Startup</alt>
+        </image>
+      </xref>
+      <image platform="ohc" href="images/virtualbox-main-empty.png" width="12cm" placement="break">
+        <alt>VirtualBox Manager, Showing Welcome Screen After Initial Startup</alt>
+      </image>
     </fig>
     <p><xref href="#gui-virtualboxmanager/fig-vbox-manager-populated"/> shows how VirtualBox Manager
       might look after you have created some virtual machines.
     </p>
     <fig id="fig-vbox-manager-populated">
       <title>VirtualBox Manager Window, After Creating Virtual Machines</title>
-      <image href="images/virtualbox-main.png" width="12cm" placement="break"/>
+      <xref href="images/virtualbox-main.png" format="png" platform="htmlhelp">
+        <image href="images/virtualbox-main.png" width="12cm" placement="break">
+          <alt>VirtualBox Manager Window, After Creating Virtual Machines</alt>
+        </image>
+      </xref>
+      <image platform="ohc" href="images/virtualbox-main.png" width="12cm" placement="break">
+        <alt>VirtualBox Manager Window, After Creating Virtual Machines</alt>
+      </image>
     </fig>
     <p>
       The main components of the VirtualBox Manager window are as follows:

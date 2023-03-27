@@ -16,7 +16,14 @@
       </p>
     <fig id="fig-cloud-profile-manager">
       <title>The Cloud Profile Manager</title>
-      <image href="images/cloud-profile-manager.png" width="12cm" placement="break"/>
+      <xref href="images/cloud-profile-manager.png" format="png" platform="htmlhelp">
+        <image href="images/cloud-profile-manager.png" width="12cm" placement="break">
+          <alt>The Cloud Profile Manager</alt>
+        </image>
+      </xref>
+      <image href="images/cloud-profile-manager.png" width="12cm" placement="break" platform="ohc">
+        <alt>The Cloud Profile Manager</alt>
+      </image>
     </fig>
     <p>
         You can use the Cloud Profile Manager in the following ways:

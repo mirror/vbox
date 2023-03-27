@@ -33,7 +33,14 @@
   </p>
     <fig id="fig-win2016-intro">
       <title>Windows Server 2016 Virtual Machine, Displayed on a macOS Host</title>
-      <image href="images/vm-vista-running.png" width="12cm" placement="break"/>
+      <xref href="images/vm-vista-running.png" format="png" platform="htmlhelp">
+        <image href="images/vm-vista-running.png" width="14cm" placement="break">
+          <alt>Windows Server 2016 Virtual Machine, Displayed on a macOS Host</alt>
+        </image>
+      </xref>
+      <image platform="ohc" href="images/vm-vista-running.png" width="14cm" placement="break">
+        <alt>Windows Server 2016 Virtual Machine, Displayed on a macOS Host</alt>
+      </image>
     </fig>
     <p>
     In this User Manual, we will begin simply with a quick introduction

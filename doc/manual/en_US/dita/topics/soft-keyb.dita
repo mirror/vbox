@@ -26,9 +26,13 @@
     <fig id="fig-soft-keyb">
       <title>Soft Keyboard in a Guest Virtual Machine</title>
       <xref href="images/softkeybd.png" format="png" platform="htmlhelp">
-        <image href="images/softkeybd.png" width="14cm" placement="break" id="image_u5k_f4r_wwb"/>
+        <image href="images/softkeybd.png" width="14cm" placement="break">
+          <alt>Soft Keyboard in a Guest Virtual Machine</alt>
+        </image>
       </xref>
-      <image platform="ohc" href="images/softkeybd.png" width="14cm" placement="break" id="image_u5k_f4r_wwb"/>
+      <image platform="ohc" href="images/softkeybd.png" width="14cm" placement="break">
+        <alt>Soft Keyboard in a Guest Virtual Machine</alt>
+      </image>
     </fig>
     <p>
       The soft keyboard can be used in the following scenarios:

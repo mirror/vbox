@@ -22,7 +22,14 @@
     </note>
     <fig id="fig-guest-control-fm">
       <title>Guest Control File Manager</title>
-      <image href="images/guest-fm.png" width="12cm" placement="break"/>
+      <xref href="images/guest-fm.png" format="png" platform="htmlhelp">
+        <image href="images/guest-fm.png" width="12cm" placement="break">
+          <alt>Guest Control File Manager</alt>
+        </image>
+      </xref>
+      <image platform="ohc" href="images/guest-fm.png" width="12cm" placement="break">
+        <alt>Guest Control File Manager</alt>
+      </image>
     </fig>
     <p>
       The Guest Control File Manager works by mounting the host file

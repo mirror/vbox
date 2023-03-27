@@ -51,10 +51,17 @@
         <b outputclass="bold">Session Information</b> in the
         guest VM.
       </p>
-                  <fig id="fig-vm-session-information">
-                     <title>Session Information Dialog, Showing VM Activity Tab</title>
-                     <image href="images/session-information.png" width="12cm" placement="break"/>
-                  </fig>
+                 <fig id="fig-vm-session-information">
+                   <title>Session Information Dialog, Showing VM Activity Tab</title>
+                   <xref href="images/session-information.png" format="png" platform="htmlhelp">
+                     <image href="images/session-information.png" width="12cm" placement="break">
+                       <alt>Session Information Dialog, Showing VM Activity Tab</alt>
+                     </image>
+                   </xref>
+                   <image platform="ohc" href="images/session-information.png" width="12cm" placement="break">
+                     <alt>Session Information Dialog, Showing VM Activity Tab</alt>
+                   </image>
+                 </fig>
                </body>
                
             </topic>

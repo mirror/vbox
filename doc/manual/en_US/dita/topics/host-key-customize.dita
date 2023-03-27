@@ -21,6 +21,7 @@
       </p>
     <table id="table-host-key-customize">
       <title>Host Key Customization</title>
+      <desc>Host Key Customization</desc>
       <tgroup cols="3">
         <thead>
           <row>

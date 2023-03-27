@@ -31,10 +31,17 @@
       the global <b outputclass="bold">Tools</b> menu in
       VirtualBox Manager.
     </p>
-               <fig id="fig-virtual-media-manager">
-                  <title>The Virtual Media Manager, Showing Hard Disk Images</title>
-                  <image href="images/virtual-disk-manager.png" width="12cm" placement="break"/>
-               </fig>
+              <fig id="fig-virtual-media-manager">
+                <title>The Virtual Media Manager, Showing Hard Disk Images</title>
+                <xref href="images/virtual-disk-manager.png" format="png" platform="htmlhelp">
+                  <image href="images/virtual-disk-manager.png" width="12cm" placement="break">
+                    <alt>The Virtual Media Manager, Showing Hard Disk Images</alt>
+                  </image>
+                </xref>
+                <image platform="ohc" href="images/virtual-disk-manager.png" width="12cm" placement="break">
+                  <alt>The Virtual Media Manager, Showing Hard Disk Images</alt>
+                </image>
+              </fig>
                <p>
       The known media are conveniently grouped in separate tabs for the
       supported formats. These formats are:

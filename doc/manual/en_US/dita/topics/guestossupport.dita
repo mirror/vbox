@@ -31,6 +31,7 @@
     </ul>
     <table id="table-premier-support">
       <title>Guest Operating Systems With Full Support</title>
+      <desc>Guest Operating Systems With Full Support</desc>
       <tgroup cols="2">
         <thead>
           <row>
@@ -234,6 +235,7 @@
     </table>
     <table id="table-limited-support">
       <title>Legacy Guest Operating Systems With Limited Support</title>
+      <desc>Legacy Guest Operating Systems With Limited Support</desc>
       <tgroup cols="2">
         <thead>
           <row>

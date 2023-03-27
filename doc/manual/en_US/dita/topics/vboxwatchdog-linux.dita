@@ -23,6 +23,7 @@
       </p>
     <table id="table-vboxwatchdog-config-params">
       <title>Oracle VM VirtualBox Watchdog Configuration Parameters</title>
+      <desc>Oracle VM VirtualBox Watchdog Configuration Parameters</desc>
       <tgroup cols="3">       
         <thead>
           <row>

@@ -14,7 +14,14 @@
       </p>
     <fig id="fig-vm-close">
       <title>Closing Down a Virtual Machine</title>
-      <image href="images/vm-close.png" width="10cm" placement="break"/>
+      <xref href="images/vm-close.png" format="png" platform="htmlhelp">
+        <image href="images/vm-close.png" width="10cm" placement="break">
+          <alt>Closing Down a Virtual Machine</alt>
+        </image>
+      </xref>
+      <image platform="ohc" href="images/vm-close.png" width="10cm" placement="break">
+        <alt>Closing Down a Virtual Machine</alt>
+      </image>
     </fig>
     <p>
         The difference between the three options is crucial. They mean

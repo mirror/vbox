@@ -16,7 +16,14 @@
         </p>
     <fig id="fig-machine-tools-menu">
       <title>Machine Tools Menu</title>
-      <image href="images/machine-tools-menu.png" width="10cm" placement="break"/>
+      <xref href="images/machine-tools-menu.png" format="png" platform="htmlhelp">
+        <image href="images/machine-tools-menu.png" width="10cm" placement="break">
+          <alt>Machine Tools Menu</alt>
+        </image>
+      </xref>
+      <image platform="ohc" href="images/machine-tools-menu.png" width="10cm" placement="break">
+        <alt>Machine Tools Menu</alt>
+      </image>
     </fig>
     <p>
           A drop-down list enables you to select from the following

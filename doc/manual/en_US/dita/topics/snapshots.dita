@@ -19,10 +19,17 @@
       <b outputclass="bold">Snapshots</b>. The Snapshots tool is
       displayed.
     </p>
-               <fig id="fig-snapshots-tool">
-                  <title>Snapshots Tool, Showing Snapshot Properties</title>
-                  <image href="images/snapshots-1.png" width="10cm" placement="break"/>
-               </fig>
+              <fig id="fig-snapshots-tool">
+                <title>Snapshots Tool, Showing Snapshot Properties</title>
+                <xref href="images/snapshots-1.png" format="png" platform="htmlhelp">
+                  <image href="images/snapshots-1.png" width="10cm" placement="break">
+                    <alt>Snapshots Tool, Showing Snapshot Properties</alt>
+                  </image>
+                </xref>
+                <image platform="ohc" href="images/snapshots-1.png" width="10cm" placement="break">
+                  <alt>Snapshots Tool, Showing Snapshot Properties</alt>
+                </image>
+              </fig>
                <p>
       If you select multiple VMs in the machine list, all snapshots are
       listed for each VM.

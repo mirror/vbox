@@ -54,7 +54,14 @@
     </p>
     <fig id="fig-diff-images">
       <title>Differencing Images, Shown in Virtual Media Manager</title>
-      <image href="images/virtual-disk-manager-2.png" width="12cm" placement="break"/>
+      <xref href="images/virtual-disk-manager-2.png" format="png" platform="htmlhelp">
+        <image href="images/virtual-disk-manager-2.png" width="12cm" placement="break">
+          <alt>Differencing Images, Shown in Virtual Media Manager</alt>
+        </image>
+      </xref>
+      <image platform="ohc" href="images/virtual-disk-manager-2.png" width="12cm" placement="break">
+        <alt>Differencing Images, Shown in Virtual Media Manager</alt>
+      </image>
     </fig>
     <p>
       In all of these situations, from the point of view of the virtual

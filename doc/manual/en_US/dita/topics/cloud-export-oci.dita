@@ -44,7 +44,14 @@
           </p>
         <fig id="fig-export-appliance-oci">
           <title>Export Virtual Appliance Wizard: Format Settings</title>
-          <image href="images/export-appliance-oci.png" width="12cm" placement="break"/>
+          <xref href="images/export-appliance-oci.png" format="png" platform="htmlhelp">
+            <image href="images/export-appliance-oci.png" width="12cm" placement="break">
+              <alt>Export Virtual Appliance Wizard: Format Settings</alt>
+            </image>
+          </xref>
+          <image href="images/export-appliance-oci.png" width="12cm" placement="break" platform="ohc">
+            <alt>Export Virtual Appliance Wizard: Format Settings</alt>
+          </image>
         </fig>
         <p>
             In the <b outputclass="bold">Machine Creation</b>
