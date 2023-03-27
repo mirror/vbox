@@ -80,6 +80,10 @@ CProgress UIProgressTaskReadCloudMachineList::createProgress()
 
 void UIProgressTaskReadCloudMachineList::handleProgressFinished(CProgress &comProgress)
 {
+    /* Check if we already have error-mesage: */
+    if (!m_strErrorMessage.isEmpty())
+        return;
+
     /* Handle progress-wrapper errors: */
     if (comProgress.isNotNull() && !comProgress.GetCanceled() && (!comProgress.isOk() || comProgress.GetResultCode() != 0))
     {
