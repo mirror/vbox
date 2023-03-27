@@ -214,7 +214,10 @@ void UINotificationProgress::sltHandleProgressFinished()
 
     /* If there was no error and no reason to keep progress alive, - finish him! */
     if (   error().isEmpty()
-        && !gEDataManager->keepSuccessfullNotificationProgresses())
+#ifdef VBOX_NOTIFICATION_CENTER_WITH_KEEP_BUTTON
+        && !gEDataManager->keepSuccessfullNotificationProgresses()
+#endif
+        )
         close();
 }
 

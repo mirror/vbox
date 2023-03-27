@@ -1914,13 +1914,15 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << QString()
            << GUI_RestrictedDialogs
            << GUI_SuppressMessages << GUI_InvertMessageOption
+#ifdef VBOX_NOTIFICATION_CENTER_WITH_KEEP_BUTTON
            << GUI_NotificationCenter_KeepSuccessfullProgresses
+#endif
            << GUI_NotificationCenter_Alignment
            << GUI_NotificationCenter_Order
            << GUI_PreventBetaLabel
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
            << GUI_PreventApplicationUpdate << GUI_UpdateDate << GUI_UpdateCheckCount
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+#endif
            << GUI_Progress_LegacyMode
            << GUI_Customizations
            << GUI_RestrictedGlobalSettingsPages << GUI_RestrictedMachineSettingsPages
@@ -1953,7 +1955,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_PreventReconfiguration << GUI_PreventSnapshotOperations
 #ifndef VBOX_WS_MAC
            << GUI_MachineWindowIcons << GUI_MachineWindowNamePostfix
-#endif /* !VBOX_WS_MAC */
+#endif
            << GUI_LastNormalWindowPosition << GUI_LastScaleWindowPosition
 #ifndef VBOX_WS_MAC
            << GUI_MenuBar_Enabled
@@ -1967,26 +1969,26 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_RestrictedRuntimeDevicesMenuActions
 #ifdef VBOX_WITH_DEBUGGER_GUI
            << GUI_RestrictedRuntimeDebuggerMenuActions
-#endif /* VBOX_WITH_DEBUGGER_GUI */
+#endif
 #ifdef VBOX_WS_MAC
            << GUI_RestrictedRuntimeWindowMenuActions
-#endif /* VBOX_WS_MAC */
+#endif
            << GUI_RestrictedRuntimeHelpMenuActions
            << GUI_RestrictedVisualStates
            << GUI_Fullscreen << GUI_Seamless << GUI_Scale
 #ifdef VBOX_WS_X11
            << GUI_Fullscreen_LegacyMode
            << GUI_DistinguishMachineWindowGroups
-#endif /* VBOX_WS_X11 */
+#endif
            << GUI_AutoresizeGuest << GUI_LastVisibilityStatusForGuestScreen << GUI_LastGuestSizeHint
            << GUI_VirtualScreenToHostScreen << GUI_AutomountGuestScreens
 #ifndef VBOX_WS_MAC
            << GUI_ShowMiniToolBar << GUI_MiniToolBarAutoHide << GUI_MiniToolBarAlignment
-#endif /* !VBOX_WS_MAC */
+#endif
            << GUI_StatusBar_Enabled << GUI_StatusBar_ContextMenu_Enabled << GUI_RestrictedStatusBarIndicators << GUI_StatusBar_IndicatorOrder
 #ifdef VBOX_WS_MAC
            << GUI_RealtimeDockIconUpdateEnabled << GUI_RealtimeDockIconUpdateMonitor << GUI_DockIconDisableOverlay
-#endif /* VBOX_WS_MAC */
+#endif
            << GUI_PassCAD
            << GUI_MouseCapturePolicy
            << GUI_GuruMeditationHandler
@@ -2001,7 +2003,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_LastCloseAction << GUI_CloseActionHook << GUI_DiscardStateOnPowerOff
 #ifdef VBOX_WITH_DEBUGGER_GUI
            << GUI_Dbg_Enabled << GUI_Dbg_AutoShow
-#endif /* VBOX_WITH_DEBUGGER_GUI */
+#endif
            << GUI_ExtraDataManager_Geometry << GUI_ExtraDataManager_SplitterHints
            << GUI_LogWindowGeometry
            << GUI_HelpBrowser_LastURLList
@@ -2365,6 +2367,7 @@ QStringList UIExtraDataManager::messagesWithInvertedOption()
     return extraDataStringList(GUI_InvertMessageOption);
 }
 
+#ifdef VBOX_NOTIFICATION_CENTER_WITH_KEEP_BUTTON
 bool UIExtraDataManager::keepSuccessfullNotificationProgresses()
 {
     /* 'False' unless feature allowed: */
@@ -2376,6 +2379,7 @@ void UIExtraDataManager::setKeepSuccessfullNotificationProgresses(bool fKeep)
     /* 'True' if feature allowed, null-string otherwise: */
     setExtraDataString(GUI_NotificationCenter_KeepSuccessfullProgresses, toFeatureAllowed(fKeep));
 }
+#endif /* VBOX_NOTIFICATION_CENTER_WITH_KEEP_BUTTON */
 
 Qt::Alignment UIExtraDataManager::notificationCenterAlignment()
 {

@@ -66,8 +66,10 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_SuppressMessages;
         /** Holds the list of messages for the Message/Popup center frameworks with inverted check-box state. */
         SHARED_LIBRARY_STUFF extern const char *GUI_InvertMessageOption;
+#ifdef VBOX_NOTIFICATION_CENTER_WITH_KEEP_BUTTON
         /** Holds whether successfull notification-progresses should NOT close automatically. */
         SHARED_LIBRARY_STUFF extern const char *GUI_NotificationCenter_KeepSuccessfullProgresses;
+#endif
         /** Holds notification-center alignment. */
         SHARED_LIBRARY_STUFF extern const char *GUI_NotificationCenter_Alignment;
         /** Holds notification-center order. */
