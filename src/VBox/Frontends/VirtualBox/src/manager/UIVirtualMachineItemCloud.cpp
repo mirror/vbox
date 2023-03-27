@@ -99,7 +99,7 @@ CProgress UIProgressTaskRefreshCloudMachine::createProgress()
 void UIProgressTaskRefreshCloudMachine::handleProgressFinished(CProgress &comProgress)
 {
     /* Handle progress-wrapper errors: */
-    if (!comProgress.GetCanceled() && (!comProgress.isOk() || comProgress.GetResultCode() != 0))
+    if (comProgress.isNotNull() && !comProgress.GetCanceled() && (!comProgress.isOk() || comProgress.GetResultCode() != 0))
         UINotificationMessage::cannotRefreshCloudMachine(comProgress);
 }
 
