@@ -470,6 +470,7 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     , m_pWidget(0)
     , m_iGeometrySaveTimerId(-1)
     , m_fImportFromOCI(false)
+    , m_fExportToOCI(false)
 {
     s_pInstance = this;
     setAcceptDrops(true);
@@ -926,34 +927,19 @@ void UIVirtualBoxManager::sltCloseManagerWindow(UIToolType enmType /* = UIToolTy
 
 void UIVirtualBoxManager::sltOpenExportApplianceWizard()
 {
-    /* Get selected items: */
-    QList<UIVirtualMachineItem*> items = currentItems();
-
-    /* Populate the list of VM names: */
-    QStringList names;
-    for (int i = 0; i < items.size(); ++i)
-        names << items.at(i)->name();
-
-    /* Lock the actions preventing cascade calls: */
-    UIQObjectPropertySetter guardBlock(QList<QObject*>() << actionPool()->action(UIActionIndexMN_M_File_S_ExportAppliance)
-                                                         << actionPool()->action(UIActionIndexMN_M_Machine_S_ExportToOCI),
-                                       "opened", true);
-    connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
-            this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
-    updateActionsAppearance();
-
     /* Check what was the action invoked us: */
     UIAction *pAction = qobject_cast<UIAction*>(sender());
 
-    /* Use the "safe way" to open stack of Mac OS X Sheets: */
-    QWidget *pWizardParent = windowManager().realParentWindow(this);
-    UINativeWizardPointer pWizard = new UIWizardExportApp(pWizardParent,
-                                                          names,
-                                                          pAction &&
-                                                          pAction == actionPool()->action(UIActionIndexMN_M_Machine_S_ExportToOCI));
-    windowManager().registerNewParent(pWizard, pWizardParent);
-    pWizard->exec();
-    delete pWizard;
+    /* Export to OCI action invokes wizard directly in OCI mode: */
+    m_fExportToOCI =    pAction
+                     && pAction == actionPool()->action(UIActionIndexMN_M_Machine_S_ExportToOCI);
+    /* Populate the list of VM names: */
+    m_names.clear();
+    foreach (UIVirtualMachineItem *pItem, currentItems())
+        m_names << pItem->name();
+
+    /* Open Export Appliance Wizard: */
+    sltOpenWizard(WizardType_ExportAppliance);
 }
 
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
@@ -1000,6 +986,9 @@ void UIVirtualBoxManager::sltOpenWizard(WizardType enmType)
     {
         switch (enmType)
         {
+            case WizardType_ExportAppliance:
+                m_wizards[enmType] = new UIWizardExportApp(this, m_names, m_fExportToOCI);
+                break;
             case WizardType_ImportAppliance:
                 m_wizards[enmType] = new UIWizardImportApp(this, m_fImportFromOCI, m_strFileName);
                 break;
