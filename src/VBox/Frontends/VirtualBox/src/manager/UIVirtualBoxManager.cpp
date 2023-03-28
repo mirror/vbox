@@ -2251,7 +2251,7 @@ void UIVirtualBoxManager::prepareConnections()
 
     /* 'File' menu connections: */
     connect(actionPool()->action(UIActionIndexMN_M_File_S_ImportAppliance), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenImportApplianceWizardDefault);
+            this, &UIVirtualBoxManager::sltOpenImportApplianceWizard);
     connect(actionPool()->action(UIActionIndexMN_M_File_S_ExportAppliance), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenExportApplianceWizard);
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI

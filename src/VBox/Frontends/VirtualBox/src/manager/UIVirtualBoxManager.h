@@ -185,8 +185,8 @@ private slots:
         /** Handles call to close Manager window by default. */
         void sltCloseManagerWindowDefault() { sltCloseManagerWindow(); }
 
-        /** Handles call to open Import Appliance wizard the default way. */
-        void sltOpenImportApplianceWizardDefault() { openImportApplianceWizard(); }
+        /** Handles call to open Import Appliance wizard. */
+        void sltOpenImportApplianceWizard() { openImportApplianceWizard(); }
         /** Handles call to open Export Appliance wizard. */
         void sltOpenExportApplianceWizard();
 
