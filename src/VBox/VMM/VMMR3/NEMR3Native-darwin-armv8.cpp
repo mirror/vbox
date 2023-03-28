@@ -1045,7 +1045,7 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedSysInsn(PVM pVM, PVMCPU
     if (fRead)
     {
         RT_NOREF(pVM);
-        /** @todo */
+        rcStrict = CPUMQueryGuestSysReg(pVCpu, idSysReg, &u64Val);
         Log4(("SysInsnExit/%u: %08RX64: READ %u:%u:%u:%u:%u -> %#RX64 rcStrict=%Rrc\n",
               pVCpu->idCpu, pVCpu->cpum.GstCtx.Pc.u64, uOp0, uOp1, uCRn, uCRm, uOp2, u64Val,
               VBOXSTRICTRC_VAL(rcStrict) ));
@@ -1055,7 +1055,7 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedSysInsn(PVM pVM, PVMCPU
     else
     {
         u64Val = nemR3DarwinGetGReg(pVCpu, uReg);
-        /** @todo */
+        rcStrict = CPUMSetGuestSysReg(pVCpu, idSysReg, u64Val);
         Log4(("SysInsnExit/%u: %08RX64: WRITE %u:%u:%u:%u:%u %#RX64 -> rcStrict=%Rrc\n",
               pVCpu->idCpu, pVCpu->cpum.GstCtx.Pc.u64, uOp0, uOp1, uCRn, uCRm, uOp2, u64Val,
               VBOXSTRICTRC_VAL(rcStrict) ));
