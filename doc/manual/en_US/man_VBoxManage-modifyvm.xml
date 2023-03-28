@@ -151,7 +151,7 @@
           <arg choice="plain">hyperv</arg>
           <arg choice="plain">kvm</arg>
         </group></arg>
-      <arg>--paravirt-debug= <arg choice="plain"><replaceable>key</replaceable>=<replaceable>value</replaceable> [,<replaceable>key</replaceable>=<replaceable>value</replaceable>...]</arg></arg>
+      <arg>--paravirt-debug=<arg choice="plain"><replaceable>key</replaceable>=<replaceable>value</replaceable> [,<replaceable>key</replaceable>=<replaceable>value</replaceable>...]</arg></arg>
       <arg>--nested-paging=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
@@ -201,9 +201,7 @@
         <arg choice="plain">host</arg>
         <arg choice="plain">swtpm</arg>
       </group></arg>
-      <arg>--tpm-location=<group choice="plain">
-          <arg choice="plain"><replaceable>location</replaceable></arg>
-        </group></arg>
+      <arg>--tpm-location=<replaceable>location</replaceable></arg>
       <arg>--bios-logo-fade-in=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>

@@ -61,7 +61,7 @@
         <arg choice="plain">--disable</arg>
       </group>
       <sbr/>
-      <arg rep="repeat">
+      <arg rep="repeat" role="wrapper">
         <arg>--global</arg>
         <arg rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
         <arg rep="repeat">--set-opt-hex=<replaceable>dhcp-opt-no hexstring</replaceable></arg>
@@ -72,7 +72,7 @@
         <arg>--max-lease-time=<replaceable>seconds</replaceable></arg>
       </arg>
       <sbr/>
-      <arg rep="repeat">
+      <arg rep="repeat" role="wrapper">
         <arg choice="req">--group=<replaceable>name</replaceable></arg>
         <arg rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
         <arg rep="repeat">--set-opt-hex=<replaceable>dhcp-opt-no hexstring</replaceable></arg>
@@ -95,7 +95,7 @@
         <arg>--max-lease-time=<replaceable>seconds</replaceable></arg>
       </arg>
       <sbr/>
-      <arg rep="repeat">
+      <arg rep="repeat" role="wrapper">
         <arg choice="req">--vm=<replaceable>name|uuid</replaceable></arg>
         <arg>--nic=<replaceable>1-N</replaceable></arg>
         <arg rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
@@ -108,7 +108,7 @@
         <arg>--fixed-address=<replaceable>address</replaceable></arg>
       </arg>
       <sbr/>
-      <arg rep="repeat">
+      <arg rep="repeat" role="wrapper">
         <arg choice="req">--mac-address=<replaceable>address</replaceable></arg>
         <arg rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
         <arg rep="repeat">--set-opt-hex=<replaceable>dhcp-opt-no hexstring</replaceable></arg>
