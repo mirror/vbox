@@ -1011,6 +1011,64 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionDataAbort(PVM pVM, PVMCPU pVCp
 
 
 /**
+ * Works on the trapped MRS, MSR and system instruction exception.
+ *
+ * @returns VBox strict status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT.
+ * @param   uIss            The instruction specific syndrome value.
+ * @param   fInsn32Bit      Flag whether the exception was caused by a 32-bit or 16-bit instruction.
+ */
+static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedSysInsn(PVM pVM, PVMCPU pVCpu, uint32_t uIss, bool fInsn32Bit)
+{
+    bool fRead   = ARMV8_EC_ISS_AARCH64_TRAPPED_SYS_INSN_DIRECTION_IS_READ(uIss);
+    uint8_t uCRm = ARMV8_EC_ISS_AARCH64_TRAPPED_SYS_INSN_CRM_GET(uIss);
+    uint8_t uReg = ARMV8_EC_ISS_AARCH64_TRAPPED_SYS_INSN_RT_GET(uIss);
+    uint8_t uCRn = ARMV8_EC_ISS_AARCH64_TRAPPED_SYS_INSN_CRN_GET(uIss);
+    uint8_t uOp1 = ARMV8_EC_ISS_AARCH64_TRAPPED_SYS_INSN_OP1_GET(uIss);
+    uint8_t uOp2 = ARMV8_EC_ISS_AARCH64_TRAPPED_SYS_INSN_OP2_GET(uIss);
+    uint8_t uOp0 = ARMV8_EC_ISS_AARCH64_TRAPPED_SYS_INSN_OP0_GET(uIss);
+    uint16_t idSysReg = ARMV8_AARCH64_SYSREG_ID_CREATE(uOp0, uOp1, uCRn, uCRm, uOp2);
+    LogFlowFunc(("fRead=%RTbool uCRm=%u uReg=%u uCRn=%u uOp1=%u uOp2=%u uOp0=%u idSysReg=%#x\n",
+                 fRead, uCRm, uReg, uCRn, uOp1, uOp2, uOp0, idSysReg));
+
+    /** @todo EMEXITTYPE_MSR_READ/EMEXITTYPE_MSR_WRITE are misnomers. */
+    EMHistoryAddExit(pVCpu,
+                     fRead
+                     ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_READ)
+                     : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_WRITE),
+                     pVCpu->cpum.GstCtx.Pc.u64, ASMReadTSC());
+
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
+    uint64_t u64Val = 0;
+    if (fRead)
+    {
+        RT_NOREF(pVM);
+        /** @todo */
+        Log4(("SysInsnExit/%u: %08RX64: READ %u:%u:%u:%u:%u -> %#RX64 rcStrict=%Rrc\n",
+              pVCpu->idCpu, pVCpu->cpum.GstCtx.Pc.u64, uOp0, uOp1, uCRn, uCRm, uOp2, u64Val,
+              VBOXSTRICTRC_VAL(rcStrict) ));
+        if (rcStrict == VINF_SUCCESS)
+            nemR3DarwinSetGReg(pVCpu, uReg, true /*f64BitReg*/, false /*fSignExtend*/, u64Val);
+    }
+    else
+    {
+        u64Val = nemR3DarwinGetGReg(pVCpu, uReg);
+        /** @todo */
+        Log4(("SysInsnExit/%u: %08RX64: WRITE %u:%u:%u:%u:%u %#RX64 -> rcStrict=%Rrc\n",
+              pVCpu->idCpu, pVCpu->cpum.GstCtx.Pc.u64, uOp0, uOp1, uCRn, uCRm, uOp2, u64Val,
+              VBOXSTRICTRC_VAL(rcStrict) ));
+    }
+
+    if (rcStrict == VINF_SUCCESS)
+        pVCpu->cpum.GstCtx.Pc.u64 += fInsn32Bit ? sizeof(uint32_t) : sizeof(uint16_t);
+
+    return rcStrict;
+}
+
+
+/**
  * Handles an exception VM exit.
  *
  * @returns VBox strict status code.
@@ -1033,6 +1091,8 @@ static VBOXSTRICTRC nemR3DarwinHandleExitException(PVM pVM, PVMCPU pVCpu, const 
         case ARMV8_ESR_EL2_DATA_ABORT_FROM_LOWER_EL:
             return nemR3DarwinHandleExitExceptionDataAbort(pVM, pVCpu, uIss, fInsn32Bit, pExit->exception.virtual_address,
                                                            pExit->exception.physical_address);
+        case ARMV8_ESR_EL2_EC_AARCH64_TRAPPED_SYS_INSN:
+            return nemR3DarwinHandleExitExceptionTrappedSysInsn(pVM, pVCpu, uIss, fInsn32Bit);
         case ARMV8_ESR_EL2_EC_UNKNOWN:
         default:
             LogRel(("NEM/Darwin: Unknown Exception Class in syndrome: uEc=%u{%s} uIss=%#RX32 fInsn32Bit=%RTbool\n",
