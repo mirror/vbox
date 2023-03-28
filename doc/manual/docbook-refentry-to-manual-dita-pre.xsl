@@ -37,11 +37,11 @@
   <xsl:import href="string.xsl"/>
 
   <xsl:output method="xml" version="1.0" encoding="utf-8" indent="yes"/>
-  <xsl:strip-space elements="*"/>
+  <xsl:preserve-space elements="*"/>
 
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
-  base operation is to copy.
+  base operation is to copy everything except for comments.
  - - - - - - - - - - - - - - - - - - - - - - -->
 
 <xsl:template match="node()|@*">
@@ -50,6 +50,7 @@
   </xsl:copy>
 </xsl:template>
 
+<xsl:template match="comment()"/>
 
 <!--
  remark extensions:
