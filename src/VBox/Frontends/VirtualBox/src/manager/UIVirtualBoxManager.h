@@ -185,11 +185,8 @@ private slots:
         /** Handles call to close Manager window by default. */
         void sltCloseManagerWindowDefault() { sltCloseManagerWindow(); }
 
-        /** Handles call to open Import Appliance wizard.
-          * @param strFileName can bring the name of file to import appliance from. */
-        void sltOpenImportApplianceWizard(const QString &strFileName = QString());
         /** Handles call to open Import Appliance wizard the default way. */
-        void sltOpenImportApplianceWizardDefault() { sltOpenImportApplianceWizard(); }
+        void sltOpenImportApplianceWizardDefault() { openImportApplianceWizard(); }
         /** Handles call to open Export Appliance wizard. */
         void sltOpenExportApplianceWizard();
 
@@ -402,6 +399,11 @@ private:
         void openAddMachineDialog(const QString &strFileName = QString());
         /** Opens new machine dialog specifying initial name with @a strFileName. */
         void openNewMachineWizard(const QString &strISOFilePath = QString());
+
+        /** Opens Import Appliance wizard.
+          * @param strFileName can bring the name of file to import appliance from. */
+        void openImportApplianceWizard(const QString &strFileName = QString());
+
         /** Launches certain @a comMachine in specified @a enmLaunchMode. */
         static void launchMachine(CMachine &comMachine, UILaunchMode enmLaunchMode = UILaunchMode_Default);
         /** Launches certain @a comMachine. */
@@ -517,7 +519,11 @@ private:
     UIVirtualBoxManagerWidget *m_pWidget;
 
     /** Holds the geometry save timer ID. */
-    int  m_iGeometrySaveTimerId;
+    int      m_iGeometrySaveTimerId;
+    /** Holds whether OCI importing should be started by default. */
+    bool     m_fImportFromOCI;
+    /** Holds the file-name used by import wizard. */
+    QString  m_strFileName;
 };
 
 #define gpManager UIVirtualBoxManager::instance()

@@ -469,6 +469,7 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     , m_pLogViewerDialog(0)
     , m_pWidget(0)
     , m_iGeometrySaveTimerId(-1)
+    , m_fImportFromOCI(false)
 {
     s_pInstance = this;
     setAcceptDrops(true);
@@ -709,7 +710,7 @@ void UIVirtualBoxManager::sltHandleOpenUrlCall(QList<QUrl> list /* = QList<QUrl>
             else if (UICommon::hasAllowedExtension(strFile, OVFFileExts))
             {
                 /* Allow only one file at the time: */
-                sltOpenImportApplianceWizard(strFile);
+                openImportApplianceWizard(strFile);
                 break;
             }
             /* And has allowed VBox extension pack file extension: */
@@ -923,42 +924,6 @@ void UIVirtualBoxManager::sltCloseManagerWindow(UIToolType enmType /* = UIToolTy
     }
 }
 
-void UIVirtualBoxManager::sltOpenImportApplianceWizard(const QString &strFileName /* = QString() */)
-{
-    /* Initialize variables: */
-#ifdef VBOX_WS_MAC
-    QString strTmpFile = ::darwinResolveAlias(strFileName);
-#else
-    QString strTmpFile = strFileName;
-#endif
-
-    /* If there is no file-name passed,
-     * check if cloud stuff focused currently: */
-    bool fOCIByDefault = false;
-    if (   strTmpFile.isEmpty()
-        && (   m_pWidget->isSingleCloudProviderGroupSelected()
-            || m_pWidget->isSingleCloudProfileGroupSelected()
-            || m_pWidget->isCloudMachineItemSelected()))
-    {
-        /* We can generate cloud hints as well: */
-        fOCIByDefault = true;
-        strTmpFile = m_pWidget->fullGroupName();
-    }
-
-    /* Lock the action preventing cascade calls: */
-    UIQObjectPropertySetter guardBlock(actionPool()->action(UIActionIndexMN_M_File_S_ImportAppliance), "opened", true);
-    connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
-            this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
-    updateActionsAppearance();
-
-    /* Use the "safe way" to open stack of Mac OS X Sheets: */
-    QWidget *pWizardParent = windowManager().realParentWindow(this);
-    UINativeWizardPointer pWizard = new UIWizardImportApp(pWizardParent, fOCIByDefault, strTmpFile);
-    windowManager().registerNewParent(pWizard, pWizardParent);
-    pWizard->exec();
-    delete pWizard;
-}
-
 void UIVirtualBoxManager::sltOpenExportApplianceWizard()
 {
     /* Get selected items: */
@@ -1035,6 +1000,9 @@ void UIVirtualBoxManager::sltOpenWizard(WizardType enmType)
     {
         switch (enmType)
         {
+            case WizardType_ImportAppliance:
+                m_wizards[enmType] = new UIWizardImportApp(this, m_fImportFromOCI, m_strFileName);
+                break;
             case WizardType_NewCloudVM:
                 m_wizards[enmType] = new UIWizardNewCloudVM(this, m_pWidget->fullGroupName());
                 break;
@@ -2657,6 +2625,32 @@ void UIVirtualBoxManager::openNewMachineWizard(const QString &strISOFilePath /* 
     /* Handle unattended install stuff: */
     if (fUnattendedEnabled)
         startUnattendedInstall(comUnattendedInstaller, fStartHeadless, strMachineId);
+}
+
+void UIVirtualBoxManager::openImportApplianceWizard(const QString &strFileName /* = QString() */)
+{
+    /* Configure wizard variables: */
+    m_fImportFromOCI = false;
+#ifdef VBOX_WS_MAC
+    m_strFileName = ::darwinResolveAlias(strFileName);
+#else
+    m_strFileName = strFileName;
+#endif
+
+    /* If there is no file-name passed,
+     * check if cloud stuff focused currently: */
+    if (   m_strFileName.isEmpty()
+        && (   m_pWidget->isSingleCloudProviderGroupSelected()
+            || m_pWidget->isSingleCloudProfileGroupSelected()
+            || m_pWidget->isCloudMachineItemSelected()))
+    {
+        m_fImportFromOCI = true;
+        /* We can generate cloud hints as well: */
+        m_strFileName = m_pWidget->fullGroupName();
+    }
+
+    /* Open Import Appliance Wizard: */
+    sltOpenWizard(WizardType_ImportAppliance);
 }
 
 /* static */
