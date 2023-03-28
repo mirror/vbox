@@ -100,6 +100,17 @@
 #define QEMU_FW_CFG_OFF_DMA_LOW                     8
 
 
+/** @name MMIO register offsets.
+ * @{ */
+/** Data register offset. */
+#define QEU_FW_CFG_MMIO_OFF_DATA                    0
+/** Selector register offset. */
+#define QEU_FW_CFG_MMIO_OFF_SELECTOR                8
+/** DMA base address register offset. */
+#define QEU_FW_CFG_MMIO_OFF_DMA                     16
+/** @} */
+
+
 /** Set if legacy interface is supported (always set).*/
 #define QEMU_FW_CFG_VERSION_LEGACY                  RT_BIT_32(0)
 /** Set if DMA is supported.*/
@@ -571,6 +582,8 @@ static void qemuFwCfgR3ItemReset(PDEVQEMUFWCFG pThis)
  */
 static int qemuFwCfgItemSelect(PDEVQEMUFWCFG pThis, uint16_t uCfgItem)
 {
+    LogFlowFunc(("uCfgItem=%#x\n", uCfgItem));
+
     qemuFwCfgR3ItemReset(pThis);
 
     for (uint32_t i = 0; i < RT_ELEMENTS(g_aQemuFwCfgItems); i++)
@@ -787,6 +800,100 @@ static DECLCALLBACK(VBOXSTRICTRC) qemuFwCfgIoPortRead(PPDMDEVINS pDevIns, void *
 
     LogFlowFunc(("offPort=%RTiop cb=%u -> rc=%Rrc u32=%#x\n", offPort, cb, rc, *pu32));
 
+    return rc;
+}
+
+
+/* -=-=-=-=-=- MMIO callbacks -=-=-=-=-=- */
+
+
+/**
+ * @callback_method_impl{FNIOMMMIONEWREAD}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) qemuFwCfgMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
+{
+    PDEVQEMUFWCFG pThis = PDMDEVINS_2_DATA(pDevIns, PDEVQEMUFWCFG);
+    RT_NOREF(pvUser);
+
+    LogFlowFunc(("%RGp cb=%u\n", off, cb));
+
+    AssertReturn(cb <= sizeof(uint64_t), VERR_INVALID_PARAMETER);
+
+    VBOXSTRICTRC rc = VINF_SUCCESS;
+    switch (off)
+    {
+        case QEU_FW_CFG_MMIO_OFF_DATA:
+        {
+            if (   pThis->cbCfgItemLeft
+                && pThis->pCfgItem)
+            {
+                uint32_t cbRead = 0;
+                int rc2 = pThis->pCfgItem->pfnRead(pThis, pThis->pCfgItem, pThis->offCfgItemNext, pv,
+                                                   cb, &cbRead);
+                if (RT_SUCCESS(rc2))
+                {
+                    pThis->offCfgItemNext += cbRead;
+                    pThis->cbCfgItemLeft  -= cbRead;
+                }
+            }
+            else
+                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "offMmio=%#x cb=%d\n", off, cb);
+            break;
+        }
+        case QEU_FW_CFG_MMIO_OFF_SELECTOR:
+        case QEU_FW_CFG_MMIO_OFF_DMA:
+            /* Writeonly, ignore. */
+            break;
+        default:
+            rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "offMmio=%#x cb=%d\n", off, cb);
+            break;
+    }
+
+    return rc;
+}
+
+
+/**
+ * @callback_method_impl{FNIOMMMIONEWWRITE}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) qemuFwCfgMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
+{
+    int rc = VINF_SUCCESS;
+    PDEVQEMUFWCFG pThis = PDMDEVINS_2_DATA(pDevIns, PDEVQEMUFWCFG);
+    RT_NOREF(pvUser);
+
+    LogFlowFunc(("off=%RGp cb=%u\n", off, cb));
+
+    switch (off)
+    {
+        case QEU_FW_CFG_MMIO_OFF_DATA: /* Readonly, ignore */
+            break;
+        case QEU_FW_CFG_MMIO_OFF_SELECTOR:
+        {
+            if (cb == sizeof(uint16_t))
+                qemuFwCfgItemSelect(pThis, *(uint16_t *)pv);
+            else
+                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "offMmio=%#x cb=%d\n", off, cb);
+            break;
+        }
+        case QEU_FW_CFG_MMIO_OFF_DMA:
+        {
+            if (cb == sizeof(uint64_t))
+            {
+                pThis->GCPhysDma |= ((RTGCPHYS)RT_BE2H_U64(*(uint64_t *)pv));
+                qemuFwCfgDmaXfer(pThis, pThis->GCPhysDma);
+                pThis->GCPhysDma = 0;
+            }
+            else
+                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "offMmio=%#x cb=%d\n", off, cb);
+            break;
+        }
+        default:
+            rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "offMmio=%#x cb=%d\n", off, cb);
+            break;
+    }
+
+    LogFlowFunc((" -> rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -1172,6 +1279,8 @@ static DECLCALLBACK(int) qemuFwCfgConstruct(PPDMDEVINS pDevIns, int iInstance, P
      * Validate configuration.
      */
     PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "DmaEnabled"
+                                           "|MmioBase"
+                                           "|MmioSize"
                                            "|KernelImage"
                                            "|InitrdImage"
                                            "|SetupImage"
@@ -1192,20 +1301,44 @@ static DECLCALLBACK(int) qemuFwCfgConstruct(PPDMDEVINS pDevIns, int iInstance, P
     pThis->GCPhysDma      = 0;
     pThis->hVfsFileInitrd = NIL_RTVFSFILE;
 
+    RTGCPHYS GCPhysMmioBase = 0;
+    rc = pHlp->pfnCFGMQueryU64(pCfg, "MmioBase", &GCPhysMmioBase);
+    if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"MmioBase\" value"));
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        /*
+         * Register standard I/O Ports
+         */
+        IOMIOPORTHANDLE hIoPorts;
+        rc = PDMDevHlpIoPortCreateFlagsAndMap(pDevIns, QEMU_FW_CFG_IO_PORT_START, QEMU_FW_CFG_IO_PORT_SIZE, 0 /*fFlags*/,
+                                              qemuFwCfgIoPortWrite, qemuFwCfgIoPortRead,
+                                              "QEMU firmware configuration", NULL /*paExtDescs*/, &hIoPorts);
+        AssertRCReturn(rc, rc);
+    }
+    else
+    {
+        uint32_t cbMmio = 0;
+        rc = pHlp->pfnCFGMQueryU32(pCfg, "MmioSize", &cbMmio);
+        if (RT_FAILURE(rc))
+            return PDMDEV_SET_ERROR(pDevIns, rc,
+                                    N_("Configuration error: Failed to get the \"MmioSize\" value"));
+
+        /*
+         * Register and map the MMIO region.
+         */
+        IOMMMIOHANDLE hMmio;
+        rc = PDMDevHlpMmioCreateAndMap(pDevIns, GCPhysMmioBase, cbMmio, qemuFwCfgMmioWrite, qemuFwCfgMmioRead,
+                                       IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, "QemuFwCfg", &hMmio);
+        AssertRCReturn(rc, rc);
+    }
+
     qemuFwCfgR3ItemReset(pThis);
 
     rc = qemuFwCfgInitrdMaybeCreate(pThis);
     if (RT_FAILURE(rc))
         return rc; /* Error set. */
-
-    /*
-     * Register I/O Ports
-     */
-    IOMIOPORTHANDLE hIoPorts;
-    rc = PDMDevHlpIoPortCreateFlagsAndMap(pDevIns, QEMU_FW_CFG_IO_PORT_START, QEMU_FW_CFG_IO_PORT_SIZE, 0 /*fFlags*/,
-                                          qemuFwCfgIoPortWrite, qemuFwCfgIoPortRead,
-                                          "QEMU firmware configuration", NULL /*paExtDescs*/, &hIoPorts);
-    AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }
