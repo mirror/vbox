@@ -2890,8 +2890,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 reporter.log2('Starting stale process #%d...' % (i));
                 if self.oTstDrv.fpApiVer >= 7.1:
                     oGuestSession.processCreate(sShell,
-                                                asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:], [],
+                                                asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
                                                 "", # Working directory.
+                                                [], # Environment changes.
                                                 [ vboxcon.ProcessCreateFlag_WaitForStdOut ], 30 * 1000);
                 else:
                     oGuestSession.processCreate(sShell,
@@ -3424,8 +3425,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         try:
             if self.oTstDrv.fpApiVer >= 7.1:
                 oGuestProcess = oGuestSession.processCreate(sImage,
-                                                            asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:], aEnv, afFlags,
+                                                            asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
                                                             "", # Working directory.
+                                                            aEnv, afFlags,
                                                             30 * 1000);
             else:
                 oGuestProcess = oGuestSession.processCreate(sImage,
