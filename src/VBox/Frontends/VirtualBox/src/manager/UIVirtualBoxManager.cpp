@@ -1038,6 +1038,9 @@ void UIVirtualBoxManager::sltOpenWizard(WizardType enmType)
             case WizardType_NewCloudVM:
                 m_wizards[enmType] = new UIWizardNewCloudVM(this, m_pWidget->fullGroupName());
                 break;
+            case WizardType_AddCloudVM:
+                m_wizards[enmType] = new UIWizardAddCloudVM(this, m_pWidget->fullGroupName());
+                break;
             default:
                 break;
         }
@@ -1074,37 +1077,16 @@ void UIVirtualBoxManager::sltOpenNewMachineWizard()
 
 void UIVirtualBoxManager::sltOpenAddMachineDialog()
 {
-    /* Lock the actions preventing cascade calls: */
-    UIQObjectPropertySetter guardBlock(QList<QObject*>() << actionPool()->action(UIActionIndexMN_M_Welcome_S_Add)
-                                                         << actionPool()->action(UIActionIndexMN_M_Machine_S_Add)
-                                                         << actionPool()->action(UIActionIndexMN_M_Group_S_Add),
-                                       "opened", true);
-    connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
-            this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
-    updateActionsAppearance();
-
     /* Get first selected item: */
     UIVirtualMachineItem *pItem = currentItem();
 
     /* For global item or local machine: */
     if (   !pItem
         || pItem->itemType() == UIVirtualMachineItemType_Local)
-    {
-        /* Open add machine dialog: */
         openAddMachineDialog();
-    }
     /* For cloud machine: */
     else
-    {
-        /* Use the "safe way" to open stack of Mac OS X Sheets: */
-        QWidget *pWizardParent = windowManager().realParentWindow(this);
-        UISafePointerWizardAddCloudVM pWizard = new UIWizardAddCloudVM(pWizardParent, m_pWidget->fullGroupName());
-        windowManager().registerNewParent(pWizard, pWizardParent);
-
-        /* Execute wizard: */
-        pWizard->exec();
-        delete pWizard;
-    }
+        sltOpenWizard(WizardType_AddCloudVM);
 }
 
 void UIVirtualBoxManager::sltOpenGroupNameEditor()
@@ -2580,6 +2562,15 @@ bool UIVirtualBoxManager::checkUnattendedInstallError(const CUnattended &comUnat
 
 void UIVirtualBoxManager::openAddMachineDialog(const QString &strFileName /* = QString() */)
 {
+    /* Lock the actions preventing cascade calls: */
+    UIQObjectPropertySetter guardBlock(QList<QObject*>() << actionPool()->action(UIActionIndexMN_M_Welcome_S_Add)
+                                                         << actionPool()->action(UIActionIndexMN_M_Machine_S_Add)
+                                                         << actionPool()->action(UIActionIndexMN_M_Group_S_Add),
+                                       "opened", true);
+    connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
+            this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
+    updateActionsAppearance();
+
     /* Initialize variables: */
 #ifdef VBOX_WS_MAC
     QString strTmpFile = ::darwinResolveAlias(strFileName);
