@@ -201,6 +201,10 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     AssertCompileSizeAlignment(CPUMCTX, 64);
     AssertCompileMemberAlignment(VM, cpum, 64);
     AssertCompileMemberAlignment(VMCPU, cpum.s, 64);
+#ifdef VBOX_STRICT
+    int rc2 = cpumR3SysRegStrictInitChecks();
+    AssertRCReturn(rc2, rc2);
+#endif
 
     /*
      * Register saved state data item.

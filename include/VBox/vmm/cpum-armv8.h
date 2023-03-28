@@ -48,6 +48,103 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+
+/**
+ * System register read functions.
+ */
+typedef enum CPUMSYSREGRDFN
+{
+    /** Invalid zero value. */
+    kCpumSysRegRdFn_Invalid = 0,
+    /** Return the CPUMMSRRANGE::uValue. */
+    kCpumSysRegRdFn_FixedValue,
+    /** Alias to the system register range starting at the system register given by
+     * CPUMSYSREGRANGE::uValue.  Must be used in pair with
+     * kCpumSysRegWrFn_Alias. */
+    kCpumSysRegRdFn_Alias,
+    /** Write only register, all read attempts cause an exception. */
+    kCpumSysRegRdFn_WriteOnly,
+
+    /** End of valid system register read function indexes. */
+    kCpumSysRegRdFn_End
+} CPUMSYSREGRDFN;
+
+
+/**
+ * System register write functions.
+ */
+typedef enum CPUMSYSREGWRFN
+{
+    /** Invalid zero value. */
+    kCpumSysRegWrFn_Invalid = 0,
+    /** Writes are ignored. */
+    kCpumSysRegWrFn_IgnoreWrite,
+    /** Writes cause an exception. */
+    kCpumSysRegWrFn_ReadOnly,
+    /** Alias to the system register range starting at the system register given by
+     * CPUMSYSREGRANGE::uValue.  Must be used in pair with
+     * kCpumSysRegRdFn_Alias. */
+    kCpumSysRegWrFn_Alias,
+
+    /** End of valid system register write function indexes. */
+    kCpumSysRegWrFn_End
+} CPUMSYSREGWRFN;
+
+
+/**
+ * System register range.
+ *
+ * @note This is very similar to how x86/amd64 MSRs are handled.
+ */
+typedef struct CPUMSYSREGRANGE
+{
+    /** The first system register. [0] */
+    uint16_t    uFirst;
+    /** The last system register. [2] */
+    uint16_t    uLast;
+    /** The read function (CPUMMSRRDFN). [4] */
+    uint16_t    enmRdFn;
+    /** The write function (CPUMMSRWRFN). [6] */
+    uint16_t    enmWrFn;
+    /** The offset of the 64-bit system register value relative to the start of CPUMCPU.
+     * UINT16_MAX if not used by the read and write functions.  [8] */
+    uint32_t    offCpumCpu : 24;
+    /** Reserved for future hacks. [11] */
+    uint32_t    fReserved : 8;
+    /** Padding/Reserved. [12] */
+    uint32_t    u32Padding;
+    /** The init/read value. [16]
+     * When enmRdFn is kCpumMsrRdFn_INIT_VALUE, this is the value returned on RDMSR.
+     * offCpumCpu must be UINT16_MAX in that case, otherwise it must be a valid
+     * offset into CPUM. */
+    uint64_t    uValue;
+    /** The bits to ignore when writing. [24]   */
+    uint64_t    fWrIgnMask;
+    /** The bits that will cause an exception when writing. [32]
+     * This is always checked prior to calling the write function.  Using
+     * UINT64_MAX effectively marks the MSR as read-only. */
+    uint64_t    fWrExcpMask;
+    /** The register name, if applicable. [32] */
+    char        szName[56];
+
+    /** The number of reads. */
+    STAMCOUNTER cReads;
+    /** The number of writes. */
+    STAMCOUNTER cWrites;
+    /** The number of times ignored bits were written. */
+    STAMCOUNTER cIgnoredBits;
+    /** The number of exceptions generated. */
+    STAMCOUNTER cExcp;
+} CPUMSYSREGRANGE;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(CPUMSYSREGRANGE, 128);
+#endif
+/** Pointer to an system register range. */
+typedef CPUMSYSREGRANGE *PCPUMSYSREGRANGE;
+/** Pointer to a const system register range. */
+typedef CPUMSYSREGRANGE const *PCCPUMSYSREGRANGE;
+
+
 /**
  * CPU features and quirks.
  * This is mostly exploded CPUID info.
@@ -153,6 +250,17 @@ typedef CPUMDBENTRY const *PCCPUMDBENTRY;
 #define CPUM_CHANGED_GLOBAL_TLB_FLUSH           RT_BIT(0)
 #define CPUM_CHANGED_ALL                        ( CPUM_CHANGED_GLOBAL_TLB_FLUSH )
 /** @} */
+
+
+#ifndef VBOX_FOR_DTRACE_LIB
+
+/** @name Guest Register Getters.
+ * @{ */
+VMMDECL(VBOXSTRICTRC)   CPUMQueryGuestSysReg(PVMCPUCC pVCpu, uint32_t idSysReg, uint64_t *puValue);
+VMMDECL(VBOXSTRICTRC)   CPUMSetGuestSysReg(PVMCPUCC pVCpu, uint32_t idSysReg, uint64_t uValue);
+/** @} */
+
+#endif
 
 /** @} */
 RT_C_DECLS_END

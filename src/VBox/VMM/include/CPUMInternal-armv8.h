@@ -75,6 +75,25 @@ typedef uint64_t STAMCOUNTER;
 
 
 /**
+ * CPU info
+ */
+typedef struct CPUMINFO
+{
+    /** The number of system register ranges (CPUMSSREGRANGE) in the array pointed to below. */
+    uint32_t                    cSysRegRanges;
+
+    /** MSR ranges.
+     * @todo This is insane, so might want to move this into a separate
+     *       allocation.  The insanity is mainly for more recent AMD CPUs. */
+    CPUMSYSREGRANGE             aSysRegRanges[1024];
+} CPUMINFO;
+/** Pointer to a CPU info structure. */
+typedef CPUMINFO *PCPUMINFO;
+/** Pointer to a const CPU info structure. */
+typedef CPUMINFO const *CPCPUMINFO;
+
+
+/**
  * CPUM Data (part of VM)
  */
 typedef struct CPUM
@@ -84,7 +103,20 @@ typedef struct CPUM
     bool                    fPendingRestore;
     uint8_t                 abPadding0[7];
 
+    /** Guest CPU info. */
+    CPUMINFO                GuestInfo;
     /** @todo */
+
+    /** @name System register statistics.
+     * @{ */
+    STAMCOUNTER             cSysRegWrites;
+    STAMCOUNTER             cSysRegWritesToIgnoredBits;
+    STAMCOUNTER             cSysRegWritesRaiseExcp;
+    STAMCOUNTER             cSysRegWritesUnknown;
+    STAMCOUNTER             cSysRegReads;
+    STAMCOUNTER             cSysRegReadsRaiseExcp;
+    STAMCOUNTER             cSysRegReadsUnknown;
+    /** @} */
 } CPUM;
 #ifndef VBOX_FOR_DTRACE_LIB
 /** @todo Compile time size/alignment assertions. */
@@ -124,6 +156,7 @@ RT_C_DECLS_BEGIN
 
 # ifdef IN_RING3
 DECLHIDDEN(int)       cpumR3DbgInit(PVM pVM);
+DECLHIDDEN(int)       cpumR3SysRegStrictInitChecks(void);
 # endif
 
 RT_C_DECLS_END
