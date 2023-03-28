@@ -1028,9 +1028,48 @@ void UIVirtualBoxManager::sltPerformExit()
     close();
 }
 
+void UIVirtualBoxManager::sltOpenWizard(WizardType enmType)
+{
+    /* Create instance if not yet created: */
+    if (!m_wizards.contains(enmType))
+    {
+        switch (enmType)
+        {
+            case WizardType_NewCloudVM:
+                m_wizards[enmType] = new UIWizardNewCloudVM(this, m_pWidget->fullGroupName());
+                break;
+            default:
+                break;
+        }
+
+        connect(m_wizards.value(enmType), &UINativeWizard::sigClose,
+                this, &UIVirtualBoxManager::sltCloseWizard);
+    }
+
+    /* Expose instance: */
+    m_wizards.value(enmType)->show();
+    m_wizards.value(enmType)->setWindowState(m_wizards.value(enmType)->windowState() & ~Qt::WindowMinimized);
+    m_wizards.value(enmType)->activateWindow();
+    m_wizards.value(enmType)->raise();
+}
+
+void UIVirtualBoxManager::sltCloseWizard(WizardType enmType)
+{
+    delete m_wizards.take(enmType);
+}
+
 void UIVirtualBoxManager::sltOpenNewMachineWizard()
 {
-    openNewMachineWizard();
+    /* Get first selected item: */
+    UIVirtualMachineItem *pItem = currentItem();
+
+    /* For global item or local machine: */
+    if (   !pItem
+        || pItem->itemType() == UIVirtualMachineItemType_Local)
+        openNewMachineWizard();
+    /* For cloud machine: */
+    else
+        sltOpenWizard(WizardType_NewCloudVM);
 }
 
 void UIVirtualBoxManager::sltOpenAddMachineDialog()
@@ -2607,46 +2646,26 @@ void UIVirtualBoxManager::openNewMachineWizard(const QString &strISOFilePath /* 
             this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
     updateActionsAppearance();
 
-    /* Get first selected item: */
-    UIVirtualMachineItem *pItem = currentItem();
+    CUnattended comUnattendedInstaller = uiCommon().virtualBox().CreateUnattendedInstaller();
+    AssertMsg(!comUnattendedInstaller.isNull(), ("Could not create unattended installer!\n"));
 
-    /* For global item or local machine: */
-    if (   !pItem
-        || pItem->itemType() == UIVirtualMachineItemType_Local)
-    {
-        CUnattended comUnattendedInstaller = uiCommon().virtualBox().CreateUnattendedInstaller();
-        AssertMsg(!comUnattendedInstaller.isNull(), ("Could not create unattended installer!\n"));
+    /* Use the "safe way" to open stack of Mac OS X Sheets: */
+    QWidget *pWizardParent = windowManager().realParentWindow(this);
+    UISafePointerWizardNewVM pWizard = new UIWizardNewVM(pWizardParent, actionPool(),
+                                                         m_pWidget->fullGroupName(),
+                                                         comUnattendedInstaller, strISOFilePath);
+    windowManager().registerNewParent(pWizard, pWizardParent);
 
-        /* Use the "safe way" to open stack of Mac OS X Sheets: */
-        QWidget *pWizardParent = windowManager().realParentWindow(this);
-        UISafePointerWizardNewVM pWizard = new UIWizardNewVM(pWizardParent, actionPool(),
-                                                             m_pWidget->fullGroupName(),
-                                                             comUnattendedInstaller, strISOFilePath);
-        windowManager().registerNewParent(pWizard, pWizardParent);
+    /* Execute wizard: */
+    pWizard->exec();
 
-        /* Execute wizard: */
-        pWizard->exec();
-
-        bool fStartHeadless = pWizard->startHeadless();
-        bool fUnattendedEnabled = pWizard->isUnattendedEnabled();
-        QString strMachineId = pWizard->createdMachineId().toString();
-        delete pWizard;
-        /* Handle unattended install stuff: */
-        if (fUnattendedEnabled)
-            startUnattendedInstall(comUnattendedInstaller, fStartHeadless, strMachineId);
-    }
-    /* For cloud machine: */
-    else
-    {
-        /* Use the "safe way" to open stack of Mac OS X Sheets: */
-        QWidget *pWizardParent = windowManager().realParentWindow(this);
-        UISafePointerWizardNewCloudVM pWizard = new UIWizardNewCloudVM(pWizardParent, m_pWidget->fullGroupName());
-        windowManager().registerNewParent(pWizard, pWizardParent);
-
-        /* Execute wizard: */
-        pWizard->exec();
-        delete pWizard;
-    }
+    bool fStartHeadless = pWizard->startHeadless();
+    bool fUnattendedEnabled = pWizard->isUnattendedEnabled();
+    QString strMachineId = pWizard->createdMachineId().toString();
+    delete pWizard;
+    /* Handle unattended install stuff: */
+    if (fUnattendedEnabled)
+        startUnattendedInstall(comUnattendedInstaller, fStartHeadless, strMachineId);
 }
 
 /* static */

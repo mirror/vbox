@@ -48,6 +48,7 @@ class QMenu;
 class QIManagerDialog;
 class UIAction;
 class UIActionPool;
+class UINativeWizard;
 struct UIUnattendedInstallData;
 class UIVirtualBoxManagerWidget;
 class UIVirtualMachineItem;
@@ -208,6 +209,11 @@ private slots:
 
     /** @name Machine menu stuff.
       * @{ */
+        /** Handles call to open wizard of specified @a enmType. */
+        void sltOpenWizard(WizardType enmType);
+        /** Handles call to close wizard of specified @a enmType. */
+        void sltCloseWizard(WizardType enmType);
+
         /** Handles call to open new machine wizard. */
         void sltOpenNewMachineWizard();
         /** Handles call to open add machine dialog. */
@@ -500,6 +506,9 @@ private:
     QMap<UISettingsDialog::DialogType, UISettingsDialog*>  m_settings;
     /** Holds the cloud settings dialog instance. */
     UISafePointerCloudMachineSettingsDialog                m_pCloudSettings;
+
+    /** Holds the map of various wizards. */
+    QMap<WizardType, UINativeWizard*>  m_wizards;
 
     /** Holds the instance of UIVMLogViewerDialog. */
     QIManagerDialog *m_pLogViewerDialog;
