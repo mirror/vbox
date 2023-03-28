@@ -40,6 +40,16 @@
 
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
+  parameters
+ - - - - - - - - - - - - - - - - - - - - - - -->
+<!-- Replace dashes with non-breaking dashes.
+     Note! If the monospace font used in the PDF doesn't support it,
+           then '#' shows up instead for instance.  This is currently
+           the case, so it's disabled by default. -->
+<xsl:param name="g_fReplaceHypens">false</xsl:param>
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - -
   global XSLT variables
  - - - - - - - - - - - - - - - - - - - - - - -->
 
@@ -324,7 +334,7 @@
 <xsl:template match="cmdsynopsis/command/text() | cmdsynopsis/*/command/text()" >
   <xsl:element name="kwd">
     <xsl:attribute name="rev">command/text</xsl:attribute>
-    <xsl:value-of select="."/>
+    <xsl:call-template name="emit-text-with-replacements"/>
   </xsl:element>
 </xsl:template>
 
@@ -384,7 +394,9 @@
     <xsl:when test="substring(., string-length(.)) = '='">
       <xsl:element name="kwd">
         <xsl:attribute name="rev">arg=</xsl:attribute>
-        <xsl:value-of select="substring(., 1, string-length(.) - 1)"/>
+        <xsl:call-template name="emit-text-with-replacements">
+          <xsl:with-param name="a_sText" select="substring(., 1, string-length(.) - 1)"/>
+        </xsl:call-template>
       </xsl:element>
       <xsl:element name="delim">
         <xsl:attribute name="rev">arg=</xsl:attribute>
@@ -396,7 +408,7 @@
     <xsl:when test=". = ' '">
       <xsl:element name="sep">
         <xsl:attribute name="rev">arg-space</xsl:attribute>
-        <xsl:value-of select="."/>
+        <xsl:text> </xsl:text>
       </xsl:element>
     </xsl:when>
 
@@ -420,7 +432,9 @@
     <xsl:otherwise>
       <xsl:element name="kwd">
         <xsl:attribute name="rev">arg</xsl:attribute>
-        <xsl:value-of select="normalize-space(.)"/>
+        <xsl:call-template name="emit-text-with-replacements">
+          <xsl:with-param name="a_sText" select="normalize-space(.)"/>
+        </xsl:call-template>
       </xsl:element>
       <xsl:if test="normalize-space(substring(., string-length(.), 1)) = ''
                 and following::*[position() = 1 and (self::arg or self::group)]
@@ -744,6 +758,28 @@
   </xsl:call-template>
   <xsl:value-of select="substring($text,2)"/>
 </xsl:template>
+
+
+<!--
+ Maybe replace hypens (dashes) with non-breaking ones.
+ -->
+<xsl:template name="emit-text-with-replacements">
+  <xsl:param name="a_sText" select="."/>
+  <xsl:choose>
+    <xsl:when test="$g_fReplaceHypens = 'true' or $g_fReplaceHypens = 'yes'">
+      <xsl:message terminate="yes">wtf?</xsl:message>
+      <xsl:call-template name="str:subst">
+          <xsl:with-param name="text"    select="$a_sText"/>
+          <xsl:with-param name="replace">-</xsl:with-param>
+          <xsl:with-param name="with">‑</xsl:with-param> <!-- U+2011 / &#8209; -->
+      </xsl:call-template>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:value-of select="$a_sText"/>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
+
 
 <!--
   Debug/Diagnostics: Return the path to the specified node (by default the current).
