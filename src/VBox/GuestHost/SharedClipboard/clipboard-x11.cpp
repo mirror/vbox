@@ -2019,9 +2019,10 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
     void  *pvDst = NULL;
     size_t cbDst = 0;
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY
     PSHCLX11CTX pCtx = pReq->pCtx;
     AssertPtr(pReq->pCtx);
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY
     clipSetXtBusy(pCtx, false);
     if (clipGetXtNeedsUpdate(pCtx))
         clipQueryX11Targets(pCtx);
