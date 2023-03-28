@@ -82,9 +82,14 @@ protected:
 #endif /* VBOX_WS_MAC */
 
 /** QDialog extension with advanced functionality emulating QWizard behavior. */
-class SHARED_LIBRARY_STUFF UINativeWizard : public QIWithRetranslateUI<QDialog>
+class SHARED_LIBRARY_STUFF UINativeWizard : public QIWithRetranslateUI2<QDialog>
 {
     Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about dialog should be closed. */
+    void sigClose(WizardType enmType);
 
 public:
 
@@ -112,6 +117,9 @@ public slots:
     /** Executes wizard in window modal mode.
       * @note You shouldn't have to override it! */
     virtual int exec() /* final */;
+    /** Shows wizard in non-mode.
+      * @note You shouldn't have to override it! */
+    virtual void show() /* final */;
 
 protected:
 
@@ -140,6 +148,11 @@ protected:
 
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
+
+    /** Handles key-press @a pEvent. */
+    virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
+    /** Handles close @a pEvent. */
+    virtual void closeEvent(QCloseEvent *pEvent) RT_OVERRIDE;
 
     /** Performs wizard-specific cleanup in case of wizard-mode change
       * such as folder deletion in New VM wizard etc. */
@@ -198,6 +211,8 @@ private:
     int         m_iLastIndex;
     /** Holds the set of invisible pages. */
     QSet<int>   m_invisiblePages;
+    /** Holds whether the dialod had emitted signal to be closed. */
+    bool        m_fClosed;
 
     /** Holds the pixmap label instance. */
     QLabel                               *m_pLabelPixmap;

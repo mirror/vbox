@@ -92,11 +92,12 @@ UINativeWizard::UINativeWizard(QWidget *pParent,
                                WizardType enmType,
                                WizardMode enmMode /* = WizardMode_Auto */,
                                const QString &strHelpTag /* = QString() */)
-    : QIWithRetranslateUI<QDialog>(pParent)
+    : QIWithRetranslateUI2<QDialog>(pParent, Qt::Window)
     , m_enmType(enmType)
     , m_enmMode(enmMode == WizardMode_Auto ? gEDataManager->modeForWizardType(m_enmType) : enmMode)
     , m_strHelpHashtag(strHelpTag)
     , m_iLastIndex(-1)
+    , m_fClosed(false)
     , m_pLabelPixmap(0)
     , m_pLayoutRight(0)
     , m_pLabelPageTitle(0)
@@ -135,7 +136,16 @@ int UINativeWizard::exec()
     init();
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QDialog>::exec();
+    return QIWithRetranslateUI2<QDialog>::exec();
+}
+
+void UINativeWizard::show()
+{
+    /* Init wizard: */
+    init();
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI2<QDialog>::show();
 }
 
 void UINativeWizard::setPixmapName(const QString &strName)
@@ -240,6 +250,56 @@ void UINativeWizard::retranslateUi()
     AssertMsgReturnVoid(pButtonCancel, ("No Cancel wizard button found!\n"));
     pButtonCancel->setText(tr("&Cancel"));
     pButtonCancel->setToolTip(tr("Cancel wizard execution."));
+}
+
+void UINativeWizard::keyPressEvent(QKeyEvent *pEvent)
+{
+    /* Different handling depending on current modality: */
+    const Qt::WindowModality enmModality = windowHandle()->modality();
+
+    /* For non-modal case: */
+    if (enmModality == Qt::NonModal)
+    {
+        /* Special pre-processing for some keys: */
+        switch (pEvent->key())
+        {
+            case Qt::Key_Escape:
+            {
+                close();
+                return;
+            }
+            default:
+                break;
+        }
+    }
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI2<QDialog>::keyPressEvent(pEvent);
+}
+
+void UINativeWizard::closeEvent(QCloseEvent *pEvent)
+{
+    /* Different handling depending on current modality: */
+    const Qt::WindowModality enmModality = windowHandle()->modality();
+
+    /* For non-modal case: */
+    if (enmModality == Qt::NonModal)
+    {
+        /* Ignore event initially: */
+        pEvent->ignore();
+
+        /* Tell the listener to close us (once): */
+        if (!m_fClosed)
+        {
+            m_fClosed = true;
+            emit sigClose(m_enmType);
+        }
+
+        return;
+    }
+
+    /* Call to base-class: */
+    QIWithRetranslateUI2<QDialog>::closeEvent(pEvent);
 }
 
 void UINativeWizard::sltCurrentIndexChanged(int iIndex /* = -1 */)
@@ -512,7 +572,7 @@ void UINativeWizard::prepare()
                 connect(wizardButton(WizardButtonType_Next), &QPushButton::clicked,
                         this, &UINativeWizard::sltNext);
                 connect(wizardButton(WizardButtonType_Cancel), &QPushButton::clicked,
-                        this, &UINativeWizard::reject);
+                        this, &UINativeWizard::close);
             }
 
             /* Add to layout: */
