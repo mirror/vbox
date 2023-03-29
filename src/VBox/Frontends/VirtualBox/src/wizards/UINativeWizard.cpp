@@ -413,7 +413,13 @@ void UINativeWizard::sltNext()
         m_pWidgetStack->setCurrentIndex(iIteratedIndex);
     /* For last one we just accept the wizard: */
     else
-        accept();
+    {
+        /* Different handling depending on current modality: */
+        if (windowHandle()->modality() == Qt::NonModal)
+            close();
+        else
+            accept();
+    }
 }
 
 void UINativeWizard::prepare()
