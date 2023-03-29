@@ -60,7 +60,7 @@
 typedef struct
 {
     /** The core structure. */
-    DISCPUSTATE     Cpu;
+    DISSTATE        Dis;
     /** The cross context VM structure. */
     PVM             pVM;
     /** The cross context virtual CPU structure. */
@@ -154,8 +154,8 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PVMCPU pVCpu, PDBGFSELINFO pSelInfo, P
     int rc = DISInstrWithReader(GCPtr,
                                 enmCpuMode,
                                 dbgfR3DisasInstrRead,
-                                &pState->Cpu,
-                                &pState->Cpu,
+                                &pState->Dis,
+                                &pState->Dis,
                                 &cbInstr);
     if (RT_SUCCESS(rc))
     {
@@ -215,7 +215,7 @@ static void dbgfR3DisasInstrDone(PDBGFDISASSTATE pState)
  * @remarks The source is relative to the base address indicated by
  *          DBGFDISASSTATE::GCPtrSegBase.
  */
-static DECLCALLBACK(int) dbgfR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
+static DECLCALLBACK(int) dbgfR3DisasInstrRead(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
     PDBGFDISASSTATE pState = (PDBGFDISASSTATE)pDis;
     for (;;)
@@ -286,7 +286,7 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInst
 /**
  * @callback_method_impl{FNDISGETSYMBOL}
  */
-static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pDis, uint32_t u32Sel, RTUINTPTR uAddress,
+static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISSTATE pDis, uint32_t u32Sel, RTUINTPTR uAddress,
                                               char *pszBuf, size_t cchBuf, RTINTPTR *poff, void *pvUser)
 {
     PDBGFDISASSTATE pState   = (PDBGFDISASSTATE)pDis;
@@ -303,7 +303,7 @@ static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pDis, uint32_t u32Se
         :  pSelInfo->Sel == DIS_FMT_SEL_GET_VALUE(u32Sel))
         rc = DBGFR3AddrFromSelInfoOff(pState->pVM->pUVM, &Addr, pSelInfo, uAddress);
     /* In long mode everything but FS and GS is easy. */
-    else if (   pState->Cpu.uCpuMode == DISCPUMODE_64BIT
+    else if (   pState->Dis.uCpuMode == DISCPUMODE_64BIT
              && DIS_FMT_SEL_IS_REG(u32Sel)
              && DIS_FMT_SEL_GET_REG(u32Sel) != DISSELREG_GS
              && DIS_FMT_SEL_GET_REG(u32Sel) != DISSELREG_FS)
@@ -519,8 +519,8 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
     rc = dbgfR3DisasInstrFirst(pVM, pVCpu, &SelInfo, enmMode, GCPtr, fFlags, &State);
     if (RT_FAILURE(rc))
     {
-        if (State.Cpu.cbCachedInstr)
-            RTStrPrintf(pszOutput, cbOutput, "Disas -> %Rrc; %.*Rhxs\n", rc, (size_t)State.Cpu.cbCachedInstr, State.Cpu.abInstr);
+        if (State.Dis.cbCachedInstr)
+            RTStrPrintf(pszOutput, cbOutput, "Disas -> %Rrc; %.*Rhxs\n", rc, (size_t)State.Dis.cbCachedInstr, State.Dis.abInstr);
         else
             RTStrPrintf(pszOutput, cbOutput, "Disas -> %Rrc\n", rc);
         return rc;
@@ -530,7 +530,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
      * Format it.
      */
     char szBuf[512];
-    DISFormatYasmEx(&State.Cpu, szBuf, sizeof(szBuf),
+    DISFormatYasmEx(&State.Dis, szBuf, sizeof(szBuf),
                     DIS_FMT_FLAGS_RELATIVE_BRANCH,
                     fFlags & DBGF_DISAS_FLAGS_NO_SYMBOLS ? NULL : dbgfR3DisasGetSymbol,
                     &SelInfo);
@@ -562,8 +562,8 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
     }
     else
     {
-        uint32_t        cbInstr  = State.Cpu.cbInstr;
-        uint8_t const  *pabInstr = State.Cpu.abInstr;
+        uint32_t        cbInstr  = State.Dis.cbInstr;
+        uint8_t const  *pabInstr = State.Dis.abInstr;
         if (fFlags & DBGF_DISAS_FLAGS_NO_ADDRESS)
             cch = RTStrPrintf(pszOutput, cbOutput, "%.*Rhxs%*s %s",
                               cbInstr, pabInstr, cbInstr < 8 ? (8 - cbInstr) * 3 : 0, "",
@@ -602,16 +602,16 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
     }
 
     if (pcbInstr)
-        *pcbInstr = State.Cpu.cbInstr;
+        *pcbInstr = State.Dis.cbInstr;
 
     if (pDisState)
     {
-        pDisState->pCurInstr = State.Cpu.pCurInstr;
-        pDisState->cbInstr   = State.Cpu.cbInstr;
-        pDisState->Param1    = State.Cpu.Param1;
-        pDisState->Param2    = State.Cpu.Param2;
-        pDisState->Param3    = State.Cpu.Param3;
-        pDisState->Param4    = State.Cpu.Param4;
+        pDisState->pCurInstr = State.Dis.pCurInstr;
+        pDisState->cbInstr   = State.Dis.cbInstr;
+        pDisState->Param1    = State.Dis.Param1;
+        pDisState->Param2    = State.Dis.Param2;
+        pDisState->Param3    = State.Dis.Param3;
+        pDisState->Param4    = State.Dis.Param4;
     }
 
     dbgfR3DisasInstrDone(&State);
