@@ -410,7 +410,7 @@ private:
         static void launchMachine(CCloudMachine &comMachine);
 
         /** Creates an unattended installer and uses it to install guest os to newly created vm. */
-        void startUnattendedInstall(CUnattended &comUnattendedInstaller, bool fStartHeadless, const QString &strMachineId);
+        void startUnattendedInstall(const CUnattended &comUnattended, bool fStartHeadless, const QString &strMachineId);
 
         /** Launches or shows virtual machines represented by passed @a items in corresponding @a enmLaunchMode (for launch). */
         void performStartOrShowVirtualMachines(const QList<UIVirtualMachineItem*> &items, UILaunchMode enmLaunchMode);
@@ -520,6 +520,9 @@ private:
 
     /** Holds the geometry save timer ID. */
     int  m_iGeometrySaveTimerId;
+
+    /** Holds the ISO file path used by new VM wizard. */
+    QString  m_strISOFilePath;
 
     /** Holds whether OCI importing should be started by default. */
     bool     m_fImportFromOCI;

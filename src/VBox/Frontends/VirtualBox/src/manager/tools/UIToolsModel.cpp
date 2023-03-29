@@ -49,7 +49,6 @@
 #include "UIModalWindowManager.h"
 #include "UIVirtualBoxManagerWidget.h"
 #include "UIVirtualBoxEventHandler.h"
-#include "UIWizardNewVM.h"
 
 /* COM includes: */
 #include "CExtPack.h"

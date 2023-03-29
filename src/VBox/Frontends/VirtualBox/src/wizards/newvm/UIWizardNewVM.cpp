@@ -51,7 +51,6 @@
 #include "CStorageController.h"
 #include "CUSBController.h"
 #include "CUSBDeviceFilters.h"
-#include "CUnattended.h"
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;
@@ -60,7 +59,6 @@ using namespace UIExtraDataDefs;
 UIWizardNewVM::UIWizardNewVM(QWidget *pParent,
                              UIActionPool *pActionPool,
                              const QString &strMachineGroup,
-                             CUnattended &comUnattended,
                              const QString &strISOFilePath /* = QString() */)
     : UINativeWizard(pParent, WizardType_NewVM, WizardMode_Auto, "create-vm-wizard" /* help keyword */)
     , m_strMachineGroup(strMachineGroup)
@@ -81,7 +79,6 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent,
     , m_enmDiskSource(SelectedDiskSource_New)
     , m_fEmptyDiskRecommended(false)
     , m_pActionPool(pActionPool)
-    , m_comUnattended(comUnattended)
     , m_fStartHeadless(false)
     , m_strInitialISOFilePath(strISOFilePath)
 {
@@ -96,6 +93,10 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent,
     qRegisterMetaType<CGuestOSType>();
 
     connect(this, &UIWizardNewVM::rejected, this, &UIWizardNewVM::sltHandleWizardCancel);
+
+    /* Create installer: */
+    m_comUnattended = uiCommon().virtualBox().CreateUnattendedInstaller();
+    AssertMsg(!m_comUnattended.isNull(), ("Could not create unattended installer!\n"));
 }
 
 void UIWizardNewVM::populatePages()

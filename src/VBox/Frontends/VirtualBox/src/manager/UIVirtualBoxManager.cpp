@@ -986,6 +986,9 @@ void UIVirtualBoxManager::sltOpenWizard(WizardType enmType)
     {
         switch (enmType)
         {
+            case WizardType_NewVM:
+                m_wizards[enmType] = new UIWizardNewVM(this, actionPool(), m_pWidget->fullGroupName(), m_strISOFilePath);
+                break;
             case WizardType_ExportAppliance:
                 m_wizards[enmType] = new UIWizardExportApp(this, m_names, m_fExportToOCI);
                 break;
@@ -1015,6 +1018,26 @@ void UIVirtualBoxManager::sltOpenWizard(WizardType enmType)
 
 void UIVirtualBoxManager::sltCloseWizard(WizardType enmType)
 {
+    /* Postprocess wizard if still exists: */
+    if (m_wizards.contains(enmType))
+    {
+        switch (enmType)
+        {
+            case WizardType_NewVM:
+            {
+                UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(m_wizards.value(enmType));
+                if (pWizard->isUnattendedEnabled())
+                    startUnattendedInstall(pWizard->installer(),
+                                           pWizard->startHeadless(),
+                                           pWizard->createdMachineId().toString());
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    /* Cleanup instance: */
     delete m_wizards.take(enmType);
 }
 
@@ -2585,35 +2608,11 @@ void UIVirtualBoxManager::openAddMachineDialog(const QString &strFileName /* = Q
 
 void UIVirtualBoxManager::openNewMachineWizard(const QString &strISOFilePath /* = QString() */)
 {
-    /* Lock the actions preventing cascade calls: */
-    UIQObjectPropertySetter guardBlock(QList<QObject*>() << actionPool()->action(UIActionIndexMN_M_Welcome_S_New)
-                                                         << actionPool()->action(UIActionIndexMN_M_Machine_S_New)
-                                                         << actionPool()->action(UIActionIndexMN_M_Group_S_New),
-                                       "opened", true);
-    connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
-            this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
-    updateActionsAppearance();
+    /* Configure wizard variables: */
+    m_strISOFilePath = strISOFilePath;
 
-    CUnattended comUnattendedInstaller = uiCommon().virtualBox().CreateUnattendedInstaller();
-    AssertMsg(!comUnattendedInstaller.isNull(), ("Could not create unattended installer!\n"));
-
-    /* Use the "safe way" to open stack of Mac OS X Sheets: */
-    QWidget *pWizardParent = windowManager().realParentWindow(this);
-    UISafePointerWizardNewVM pWizard = new UIWizardNewVM(pWizardParent, actionPool(),
-                                                         m_pWidget->fullGroupName(),
-                                                         comUnattendedInstaller, strISOFilePath);
-    windowManager().registerNewParent(pWizard, pWizardParent);
-
-    /* Execute wizard: */
-    pWizard->exec();
-
-    bool fStartHeadless = pWizard->startHeadless();
-    bool fUnattendedEnabled = pWizard->isUnattendedEnabled();
-    QString strMachineId = pWizard->createdMachineId().toString();
-    delete pWizard;
-    /* Handle unattended install stuff: */
-    if (fUnattendedEnabled)
-        startUnattendedInstall(comUnattendedInstaller, fStartHeadless, strMachineId);
+    /* Open New VM Wizard: */
+    sltOpenWizard(WizardType_NewVM);
 }
 
 void UIVirtualBoxManager::openImportApplianceWizard(const QString &strFileName /* = QString() */)
@@ -2682,7 +2681,7 @@ void UIVirtualBoxManager::launchMachine(CCloudMachine &comMachine)
     gpNotificationCenter->append(pNotification);
 }
 
-void UIVirtualBoxManager::startUnattendedInstall(CUnattended &comUnattendedInstaller,
+void UIVirtualBoxManager::startUnattendedInstall(const CUnattended &comUnattendedRef,
                                                  bool fStartHeadless, const QString &strMachineId)
 {
     CVirtualBox comVBox = uiCommon().virtualBox();
@@ -2690,12 +2689,13 @@ void UIVirtualBoxManager::startUnattendedInstall(CUnattended &comUnattendedInsta
     if (comMachine.isNull())
         return;
 
-    comUnattendedInstaller.Prepare();
-    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
-    comUnattendedInstaller.ConstructMedia();
-    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
-    comUnattendedInstaller.ReconfigureVM();
-    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
+    CUnattended comUnattended = comUnattendedRef;
+    comUnattended.Prepare();
+    AssertReturnVoid(checkUnattendedInstallError(comUnattended));
+    comUnattended.ConstructMedia();
+    AssertReturnVoid(checkUnattendedInstallError(comUnattended));
+    comUnattended.ReconfigureVM();
+    AssertReturnVoid(checkUnattendedInstallError(comUnattended));
 
     launchMachine(comMachine, fStartHeadless ? UILaunchMode_Headless : UILaunchMode_Default);
 }

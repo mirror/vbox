@@ -40,8 +40,6 @@
 #include "UICommon.h"
 #include "UIIconPool.h"
 #include "UIHostnameDomainNameEditor.h"
-#include "UIWizardNewVM.h"
-
 
 
 UIHostnameDomainNameEditor::UIHostnameDomainNameEditor(QWidget *pParent /*  = 0 */)

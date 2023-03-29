@@ -38,7 +38,6 @@
 #include "UICommon.h"
 #include "UIIconPool.h"
 #include "UIToolBox.h"
-#include "UIWizardNewVM.h"
 
 
 /*********************************************************************************************************************************

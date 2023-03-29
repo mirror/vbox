@@ -38,7 +38,9 @@
 #include "UICursor.h"
 #include "UIIconPool.h"
 #include "UIUserNamePasswordEditor.h"
-#include "UIWizardNewVM.h"
+
+/* Other VBox includes: */
+#include "iprt/assert.h"
 
 
 UIPasswordLineEdit::UIPasswordLineEdit(QWidget *pParent /*= 0 */)

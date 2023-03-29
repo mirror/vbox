@@ -40,6 +40,7 @@
 #include "CMedium.h"
 #include "CMediumFormat.h"
 #include "CGuestOSType.h"
+#include "CUnattended.h"
 
 /* Forward declarations: */
 class UIActionPool;
@@ -62,7 +63,6 @@ public:
     UIWizardNewVM(QWidget *pParent,
                   UIActionPool *pActionPool,
                   const QString &strMachineGroup,
-                  CUnattended &comUnattended,
                   const QString &strISOFilePath = QString());
 
     bool isUnattendedEnabled() const;
@@ -78,6 +78,8 @@ public:
 
     const QString &machineGroup() const;
     QUuid createdMachineId() const;
+
+    CUnattended installer() const { return m_comUnattended; }
 
     /** @name Setter/getters for vm parameters
       * @{ */
@@ -236,7 +238,7 @@ private:
        bool m_fEmptyDiskRecommended;
        QVector<KMediumVariant> m_mediumVariants;
        UIActionPool *m_pActionPool;
-       CUnattended &m_comUnattended;
+       CUnattended m_comUnattended;
        bool m_fStartHeadless;
        QString m_strInitialISOFilePath;
     /** @} */

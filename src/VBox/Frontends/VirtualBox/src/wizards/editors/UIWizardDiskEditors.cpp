@@ -46,7 +46,6 @@
 #include "UIMediumSizeEditor.h"
 #include "UIUserNamePasswordEditor.h"
 #include "UIWizardDiskEditors.h"
-#include "UIWizardNewVM.h"
 #include "UIWizardNewVMDiskPage.h"
 
 /* Other VBox includes: */
