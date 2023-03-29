@@ -243,7 +243,7 @@ struc HMR0CPUSVM
     .u64HostTscAux                  resq    1
 
     alignb 8
-    .DisState                       resb    0d8h
+    .Dis                            resb    0d8h
 endstruc
 
 struc HMR0PERVCPU
