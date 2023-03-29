@@ -2112,6 +2112,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             Bstr bstrPwId(a->argv[2]);
             CHECK_ERROR_BREAK(console, RemoveEncryptionPassword(bstrPwId.raw()));
         }
+        /** @todo r=bird: 'removeallencpasswords' is very much unreadable carp. Use
+         *        dashes as word separators to make it less fishy. */
         else if (!strcmp(a->argv[1], "removeallencpasswords"))
         {
             setCurrentSubcommand(HELP_SCOPE_CONTROLVM_REMOVEALLENCPASSWORDS);

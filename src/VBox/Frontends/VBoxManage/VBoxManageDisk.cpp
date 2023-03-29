@@ -77,7 +77,7 @@ static DECLCALLBACK(void) handleVDError(void *pvUser, int vrc, RT_SRC_POS_DECL, 
 static int parseMediumVariant(const char *psz, MediumVariant_T *pMediumVariant)
 {
     int vrc = VINF_SUCCESS;
-    unsigned uMediumVariant = (unsigned)(*pMediumVariant);
+    unsigned uMediumVariant = (unsigned)*pMediumVariant;
     while (psz && *psz && RT_SUCCESS(vrc))
     {
         size_t len;
