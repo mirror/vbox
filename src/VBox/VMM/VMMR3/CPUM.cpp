@@ -4439,7 +4439,7 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
     uint32_t cbInstr;
 #ifndef LOG_ENABLED
     RT_NOREF_PV(pszPrefix);
-    rc = DISInstrWithReader(GCPtrPC, enmDisCpuMode, cpumR3DisasInstrRead, &State, pCpu, &cbInstr);
+    rc = DISInstrWithReader(GCPtrPC, enmDisCpuMode, cpumR3DisasInstrRead, &State, pDis, &cbInstr);
     if (RT_SUCCESS(rc))
     {
 #else
