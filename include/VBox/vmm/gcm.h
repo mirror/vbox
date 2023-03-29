@@ -86,7 +86,7 @@ VMMR3_INT_DECL(void)        GCMR3Reset(PVM pVM);
 
 VMMDECL(bool)               GCMIsEnabled(PVM pVM);
 VMM_INT_DECL(bool)          GCMShouldTrapXcptDE(PVMCPUCC pVCpu);
-VMM_INT_DECL(VBOXSTRICTRC)  GCMXcptDE(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr);
+VMM_INT_DECL(VBOXSTRICTRC)  GCMXcptDE(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISSTATE pDis, uint8_t *pcbInstr);
 /** @} */
 
 RT_C_DECLS_END

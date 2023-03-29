@@ -102,11 +102,11 @@ extern "C" DECLEXPORT(char *) SomeExportFunction3(void *pvBuf)
 extern "C" DECLEXPORT(void *) SomeExportFunction4(void)
 {
     static unsigned cb;
-    DISCPUSTATE Cpu;
+    DISSTATE Dis;
 
-    memset(&Cpu, 0, sizeof(Cpu));
+    memset(&Dis, 0, sizeof(Dis));
 
-    DISInstr((void *)(uintptr_t)SomeExportFunction3, DISCPUMODE_32BIT, &Cpu, &cb);
+    DISInstr((void *)(uintptr_t)SomeExportFunction3, DISCPUMODE_32BIT, &Dis, &cb);
     return (void *)(uintptr_t)&SomeExportFunction1;
 }
 

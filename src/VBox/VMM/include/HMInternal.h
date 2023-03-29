@@ -1144,7 +1144,7 @@ typedef struct HMR0PERVCPU
 
         /** For saving stack space, the disassembler state is allocated here
          * instead of on the stack. */
-        DISCPUSTATE                 DisState;
+        DISSTATE                    Dis;
     } svm;
 } HMR0PERVCPU;
 /** Pointer to HM ring-0 VMCPU instance data. */

@@ -210,7 +210,7 @@ typedef struct EMCPU
 
     /** For saving stack space, the disassembler state is allocated here instead of
      * on the stack. */
-    DISCPUSTATE             DisState;
+    DISSTATE                Dis;
 
     /** @name Execution profiling.
      * @{ */

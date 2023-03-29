@@ -50,7 +50,7 @@ RT_C_DECLS_BEGIN
  */
 
 #ifdef IN_RING3
-VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDISCPUSTATE pCpu, const char *pszPrefix);
+VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDISSTATE pDis, const char *pszPrefix);
 #endif
 
 /** @} */

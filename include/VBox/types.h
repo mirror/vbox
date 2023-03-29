@@ -1222,11 +1222,6 @@ typedef struct DISSTATE *PDISSTATE;
 /** Pointer to a const disassembler state. */
 typedef struct DISSTATE const *PCDISSTATE;
 
-/** @deprecated  PDISSTATE and change pCpu and pDisState to pDis. */
-typedef PDISSTATE PDISCPUSTATE;
-/** @deprecated  PCDISSTATE and change pCpu and pDisState to pDis. */
-typedef PCDISSTATE PCDISCPUSTATE;
-
 
 /**
  * Shared region description (needed by GMM and others, thus global).

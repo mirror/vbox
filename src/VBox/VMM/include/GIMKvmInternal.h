@@ -275,7 +275,7 @@ VMM_INT_DECL(VBOXSTRICTRC)      gimKvmReadMsr(PVMCPUCC pVCpu, uint32_t idMsr, PC
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue);
 #endif
 VMM_INT_DECL(bool)              gimKvmShouldTrapXcptUD(PVM pVM);
-VMM_INT_DECL(VBOXSTRICTRC)      gimKvmXcptUD(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr);
+VMM_INT_DECL(VBOXSTRICTRC)      gimKvmXcptUD(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISSTATE pDis, uint8_t *pcbInstr);
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmHypercallEx(PVMCPUCC pVCpu, PCPUMCTX pCtx, unsigned uDisOpcode, uint8_t cbInstr);
 
 RT_C_DECLS_END

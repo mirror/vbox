@@ -3593,7 +3593,7 @@ typedef struct PGMCPU
 
     /** For saving stack space, the disassembler state is allocated here instead of
      * on the stack. */
-    DISCPUSTATE                     DisState;
+    DISSTATE                        Dis;
 
     /** Counts the number of times the netware WP0+RO+US hack has been applied. */
     uint64_t                        cNetwareWp0Hacks;

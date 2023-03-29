@@ -35,7 +35,7 @@
 #include "GIMInternal.h"
 #include <VBox/vmm/vmcc.h>
 
-#include <VBox/dis.h>       /* For DISCPUSTATE */
+#include <VBox/dis.h>       /* For DISSTATE */
 #include <VBox/err.h>
 #include <iprt/string.h>
 
@@ -248,8 +248,8 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMExecHypercallInstr(PVMCPUCC pVCpu, PCPUMCTX pCtx, 
     if (RT_UNLIKELY(!GIMIsEnabled(pVM)))
         return VERR_GIM_NOT_ENABLED;
 
-    unsigned    cbInstr;
-    DISCPUSTATE Dis;
+    unsigned cbInstr;
+    DISSTATE Dis;
     int rc = EMInterpretDisasCurrent(pVCpu, &Dis, &cbInstr);
     if (RT_SUCCESS(rc))
     {
@@ -362,7 +362,7 @@ VMM_INT_DECL(bool) GIMShouldTrapXcptUD(PVMCPUCC pVCpu)
  *
  * @thread  EMT(pVCpu).
  */
-VMM_INT_DECL(VBOXSTRICTRC) GIMXcptUD(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr)
+VMM_INT_DECL(VBOXSTRICTRC) GIMXcptUD(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISSTATE pDis, uint8_t *pcbInstr)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     Assert(GIMIsEnabled(pVM));

@@ -726,7 +726,7 @@ static void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPA
  * @param   pDis        The disassembled instruction.
  * @param   offFault    The access offset.
  */
-DECLINLINE(bool) pgmRZPoolMonitorIsForking(PPGMPOOL pPool, PDISCPUSTATE pDis, unsigned offFault)
+DECLINLINE(bool) pgmRZPoolMonitorIsForking(PPGMPOOL pPool, PDISSTATE pDis, unsigned offFault)
 {
     /*
      * i386 linux is using btr to clear X86_PTE_RW.
@@ -770,7 +770,7 @@ DECLINLINE(bool) pgmRZPoolMonitorIsForking(PPGMPOOL pPool, PDISCPUSTATE pDis, un
  *
  * @remark  The REP prefix check is left to the caller because of STOSD/W.
  */
-DECLINLINE(bool) pgmRZPoolMonitorIsReused(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, RTGCPTR pvFault,
+DECLINLINE(bool) pgmRZPoolMonitorIsReused(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISSTATE pDis, RTGCPTR pvFault,
                                           PPGMPOOLPAGE pPage)
 {
     /* Locked (CR3, PDPTR*4) should not be reusable.  Considering them as
@@ -884,7 +884,7 @@ DECLINLINE(bool) pgmRZPoolMonitorIsReused(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pC
  * @param   GCPhysFault The fault address as guest physical address.
  * @todo VBOXSTRICTRC
  */
-static int pgmRZPoolAccessPfHandlerFlush(PVMCC pVM, PVMCPUCC pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISCPUSTATE pDis,
+static int pgmRZPoolAccessPfHandlerFlush(PVMCC pVM, PVMCPUCC pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISSTATE pDis,
                                          PCPUMCTX pCtx, RTGCPHYS GCPhysFault)
 {
     NOREF(pVM); NOREF(GCPhysFault);
@@ -936,7 +936,7 @@ static int pgmRZPoolAccessPfHandlerFlush(PVMCC pVM, PVMCPUCC pVCpu, PPGMPOOL pPo
  * @param   GCPhysFault The fault address as guest physical address.
  * @param   pvFault     The fault address.
  */
-DECLINLINE(int) pgmRZPoolAccessPfHandlerSTOSD(PVMCC pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISCPUSTATE pDis,
+DECLINLINE(int) pgmRZPoolAccessPfHandlerSTOSD(PVMCC pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISSTATE pDis,
                                               PCPUMCTX pCtx, RTGCPHYS GCPhysFault, RTGCPTR pvFault)
 {
     unsigned uIncrement = pDis->Param1.cb;
@@ -998,7 +998,7 @@ DECLINLINE(int) pgmRZPoolAccessPfHandlerSTOSD(PVMCC pVM, PPGMPOOL pPool, PPGMPOO
  * @param   GCPhysFault The fault address as guest physical address.
  * @param   pfReused    Reused state (in/out)
  */
-DECLINLINE(int) pgmRZPoolAccessPfHandlerSimple(PVMCC pVM, PVMCPUCC pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISCPUSTATE pDis,
+DECLINLINE(int) pgmRZPoolAccessPfHandlerSimple(PVMCC pVM, PVMCPUCC pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISSTATE pDis,
                                                PCPUMCTX pCtx, RTGCPHYS GCPhysFault, bool *pfReused)
 {
     Log3(("pgmRZPoolAccessPfHandlerSimple\n"));
@@ -1149,7 +1149,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, R
     /*
      * Disassemble the faulting instruction.
      */
-    PDISCPUSTATE pDis = &pVCpu->pgm.s.DisState;
+    PDISSTATE pDis = &pVCpu->pgm.s.Dis;
     int rc = EMInterpretDisasCurrent(pVCpu, pDis, NULL);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {

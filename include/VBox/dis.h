@@ -699,9 +699,6 @@ typedef struct DISSTATE
 } DISSTATE;
 AssertCompileSize(DISSTATE, 0xd8);
 
-/** @deprecated  Use DISSTATE and change Cpu and DisState to Dis. */
-typedef DISSTATE DISCPUSTATE;
-
 
 
 DISDECL(int) DISInstrToStr(void const *pvInstr, DISCPUMODE enmCpuMode,

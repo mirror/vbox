@@ -4286,7 +4286,7 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
 typedef struct CPUMDISASSTATE
 {
     /** Pointer to the CPU structure. */
-    PDISCPUSTATE    pCpu;
+    PDISSTATE       pDis;
     /** Pointer to the VM. */
     PVM             pVM;
     /** Pointer to the VMCPU. */
@@ -4313,7 +4313,7 @@ typedef struct CPUMDISASSTATE
 /**
  * @callback_method_impl{FNDISREADBYTES}
  */
-static DECLCALLBACK(int) cpumR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
+static DECLCALLBACK(int) cpumR3DisasInstrRead(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
     PCPUMDISASSTATE pState = (PCPUMDISASSTATE)pDis->pvUser;
     for (;;)
@@ -4386,18 +4386,18 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInst
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest CPU context.
  * @param   GCPtrPC     Program counter (relative to CS) to disassemble from.
- * @param   pCpu        Disassembly state.
+ * @param   pDis        Disassembly state.
  * @param   pszPrefix   String prefix for logging (debug only).
  *
  */
-VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDISCPUSTATE pCpu,
+VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDISSTATE pDis,
                                     const char *pszPrefix)
 {
     CPUMDISASSTATE  State;
     int             rc;
 
     const PGMMODE enmMode = PGMGetGuestMode(pVCpu);
-    State.pCpu            = pCpu;
+    State.pDis            = pDis;
     State.pvPageGC        = 0;
     State.pvPageR3        = NULL;
     State.pVM             = pVM;
@@ -4445,7 +4445,7 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
 #else
     char szOutput[160];
     rc = DISInstrToStrWithReader(GCPtrPC, enmDisCpuMode, cpumR3DisasInstrRead, &State,
-                                 pCpu, &cbInstr, szOutput, sizeof(szOutput));
+                                 pDis, &cbInstr, szOutput, sizeof(szOutput));
     if (RT_SUCCESS(rc))
     {
         /* log it */

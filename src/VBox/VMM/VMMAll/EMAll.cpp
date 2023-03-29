@@ -853,7 +853,7 @@ VMM_INT_DECL(PCEMEXITREC) EMHistoryUpdateFlagsAndTypeAndPC(PVMCPUCC pVCpu, uint3
 /**
  * @callback_method_impl{FNDISREADBYTES}
  */
-static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
+static DECLCALLBACK(int) emReadBytes(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
     PVMCPUCC    pVCpu    = (PVMCPUCC)pDis->pvUser;
     RTUINTPTR   uSrcAddr = pDis->uInstrAddr + offInstr;
@@ -910,7 +910,7 @@ static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_
  * @param   pDis            Where to return the parsed instruction info.
  * @param   pcbInstr        Where to return the instruction size. (optional)
  */
-VMM_INT_DECL(int) EMInterpretDisasCurrent(PVMCPUCC pVCpu, PDISCPUSTATE pDis, unsigned *pcbInstr)
+VMM_INT_DECL(int) EMInterpretDisasCurrent(PVMCPUCC pVCpu, PDISSTATE pDis, unsigned *pcbInstr)
 {
 #if defined(VBOX_VMM_TARGET_ARMV8)
     return EMInterpretDisasOneEx(pVCpu, (RTGCUINTPTR)CPUMGetGuestFlatPC(pVCpu), pDis, pcbInstr);
@@ -946,7 +946,7 @@ VMM_INT_DECL(int) EMInterpretDisasCurrent(PVMCPUCC pVCpu, PDISCPUSTATE pDis, uns
  * @param   pDis            Where to return the parsed instruction info.
  * @param   pcbInstr        Where to return the instruction size. (optional)
  */
-VMM_INT_DECL(int) EMInterpretDisasOneEx(PVMCPUCC pVCpu, RTGCUINTPTR GCPtrInstr, PDISCPUSTATE pDis, unsigned *pcbInstr)
+VMM_INT_DECL(int) EMInterpretDisasOneEx(PVMCPUCC pVCpu, RTGCUINTPTR GCPtrInstr, PDISSTATE pDis, unsigned *pcbInstr)
 {
     DISCPUMODE enmCpuMode = CPUMGetGuestDisMode(pVCpu);
     /** @todo Deal with too long instruction (=> \#GP), opcode read errors (=>
@@ -993,7 +993,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPUCC pVCpu)
 
 
 /**
- * Interprets the current instruction using the supplied DISCPUSTATE structure.
+ * Interprets the current instruction using the supplied DISSTATE structure.
  *
  * IP/EIP/RIP *IS* updated!
  *
@@ -1016,7 +1016,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPUCC pVCpu)
  * @todo    At this time we do NOT check if the instruction overwrites vital information.
  *          Make sure this can't happen!! (will add some assertions/checks later)
  */
-VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstructionDisasState(PVMCPUCC pVCpu, PDISCPUSTATE pDis, uint64_t rip)
+VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstructionDisasState(PVMCPUCC pVCpu, PDISSTATE pDis, uint64_t rip)
 {
     LogFlow(("EMInterpretInstructionDisasState %RGv\n", (RTGCPTR)rip));
 

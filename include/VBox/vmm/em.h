@@ -267,11 +267,11 @@ VMM_INT_DECL(VBOXSTRICTRC)      EMHistoryExec(PVMCPUCC pVCpu, PCEMEXITREC pExitR
 
 /** @name Deprecated interpretation related APIs (use IEM).
  * @{ */
-VMM_INT_DECL(int)               EMInterpretDisasCurrent(PVMCPUCC pVCpu, PDISCPUSTATE pCpu, unsigned *pcbInstr);
+VMM_INT_DECL(int)               EMInterpretDisasCurrent(PVMCPUCC pVCpu, PDISSTATE pDis, unsigned *pcbInstr);
 VMM_INT_DECL(int)               EMInterpretDisasOneEx(PVMCPUCC pVCpu, RTGCUINTPTR GCPtrInstr,
-                                                      PDISCPUSTATE pDISState, unsigned *pcbInstr);
+                                                      PDISSTATE pDis, unsigned *pcbInstr);
 VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstruction(PVMCPUCC pVCpu);
-VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstructionDisasState(PVMCPUCC pVCpu, PDISCPUSTATE pDis, uint64_t rip);
+VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstructionDisasState(PVMCPUCC pVCpu, PDISSTATE pDis, uint64_t rip);
 /** @} */
 
 

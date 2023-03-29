@@ -34,7 +34,7 @@
 #include "GCMInternal.h"
 #include <VBox/vmm/vmcc.h>
 
-#include <VBox/dis.h>       /* For DISCPUSTATE */
+#include <VBox/dis.h>       /* For DISSTATE */
 #include <iprt/errcore.h>
 #include <iprt/string.h>
 
@@ -112,7 +112,7 @@ VMM_INT_DECL(bool) GCMShouldTrapXcptDE(PVMCPUCC pVCpu)
  *
  * @thread  EMT(pVCpu).
  */
-VMM_INT_DECL(VBOXSTRICTRC) GCMXcptDE(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr)
+VMM_INT_DECL(VBOXSTRICTRC) GCMXcptDE(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISSTATE pDis, uint8_t *pcbInstr)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     Assert(GCMIsEnabled(pVM));

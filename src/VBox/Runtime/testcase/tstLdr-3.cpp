@@ -136,11 +136,11 @@ static int FindNearSymbol(RTUINTPTR uAddr, PTESTNEARSYM pNearSym)
     return rc;
 }
 
-static DECLCALLBACK(int) MyGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Sel, RTUINTPTR uAddress,
+static DECLCALLBACK(int) MyGetSymbol(PCDISSTATE pDis, uint32_t u32Sel, RTUINTPTR uAddress,
                                      char *pszBuf, size_t cchBuf, RTINTPTR *poff,
                                      void *pvUser)
 {
-    RT_NOREF3(pCpu, u32Sel, pvUser);
+    RT_NOREF3(pDis, u32Sel, pvUser);
 
     if (   uAddress > RTLdrSize(g_hLdrMod) + g_uLoadAddr
         || uAddress < g_uLoadAddr)
@@ -160,7 +160,7 @@ static DECLCALLBACK(int) MyGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Sel, RTUINT
 /**
  * @callback_method_impl{FNDISREADBYTES}
  */
-static DECLCALLBACK(int) MyReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
+static DECLCALLBACK(int) MyReadBytes(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
     RT_NOREF1(cbMaxRead);
     uint8_t const *pbSrc = (uint8_t const *)((uintptr_t)pDis->uInstrAddr + (uintptr_t)pDis->pvUser + offInstr);
@@ -173,8 +173,8 @@ static DECLCALLBACK(int) MyReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_
 static bool MyDisBlock(DISCPUMODE enmCpuMode, RTHCUINTPTR pvCodeBlock, int32_t cbMax, RTUINTPTR off,
                        RTUINTPTR uNearAddr, RTUINTPTR uSearchAddr)
 {
-    DISCPUSTATE Cpu;
-    int32_t     i = 0;
+    DISSTATE Dis;
+    int32_t  i = 0;
     while (i < cbMax)
     {
         bool        fQuiet    = RTAssertSetQuiet(true);
@@ -183,7 +183,7 @@ static bool MyDisBlock(DISCPUMODE enmCpuMode, RTHCUINTPTR pvCodeBlock, int32_t c
         unsigned    cbInstr;
         int rc = DISInstrWithReader(uNearAddr + i, enmCpuMode,
                                     MyReadBytes, (uint8_t *)pvCodeBlock - (uintptr_t)uNearAddr,
-                                    &Cpu, &cbInstr);
+                                    &Dis, &cbInstr);
         RTAssertSetMayPanic(fMayPanic);
         RTAssertSetQuiet(fQuiet);
         if (RT_FAILURE(rc))
@@ -194,7 +194,7 @@ static bool MyDisBlock(DISCPUMODE enmCpuMode, RTHCUINTPTR pvCodeBlock, int32_t c
         if (RT_SUCCESS(rc) && NearSym.aSyms[0].Value == NearSym.Addr)
             RTPrintf("%s:\n", NearSym.aSyms[0].szName);
 
-        DISFormatYasmEx(&Cpu, szOutput, sizeof(szOutput),
+        DISFormatYasmEx(&Dis, szOutput, sizeof(szOutput),
                         DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_BYTES_RIGHT | DIS_FMT_FLAGS_ADDR_LEFT  | DIS_FMT_FLAGS_BYTES_SPACED,
                         MyGetSymbol, NULL);
 

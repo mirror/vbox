@@ -419,7 +419,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmHypercallEx(PVMCPUCC pVCpu, PCPUMCTX pCtx, unsi
  *
  * @thread  EMT(pVCpu).
  */
-VMM_INT_DECL(VBOXSTRICTRC) gimKvmXcptUD(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr)
+VMM_INT_DECL(VBOXSTRICTRC) gimKvmXcptUD(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISSTATE pDis, uint8_t *pcbInstr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -431,8 +431,8 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmXcptUD(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx
 
     if (!pDis)
     {
-        unsigned    cbInstr;
-        DISCPUSTATE Dis;
+        unsigned cbInstr;
+        DISSTATE Dis;
         int rc = EMInterpretDisasCurrent(pVCpu, &Dis, &cbInstr);
         if (RT_SUCCESS(rc))
         {
