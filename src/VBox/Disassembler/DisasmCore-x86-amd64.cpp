@@ -2458,8 +2458,6 @@ DECLHIDDEN(int) disInstrWorkerX86(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint
  */
 DECLHIDDEN(PCDISOPCODE) disInitializeStateX86(PDISSTATE pDis, DISCPUMODE enmCpuMode, uint32_t fFilter)
 {
-    RT_ZERO(*pDis);
-
 #ifdef VBOX_STRICT /* poison */
     pDis->Param1.arch.x86.Base.idxGenReg    = 0xc1;
     pDis->Param2.arch.x86.Base.idxGenReg    = 0xc2;
