@@ -226,9 +226,9 @@ DECLCALLBACK(VBOXSTRICTRC) pgmPhysRomWritePfHandler(PVMCC pVM, PVMCPUCC pVCpu, R
             rc = EMInterpretDisasCurrent(pVCpu, pDis, &cbOp);
             if (     RT_SUCCESS(rc)
                 &&   pDis->uCpuMode == DISCPUMODE_32BIT  /** @todo why does this matter? */
-                &&  !(pDis->fPrefix & (DISPREFIX_REPNE | DISPREFIX_REP | DISPREFIX_SEG)))
+                &&  !(pDis->arch.x86.fPrefix & (DISPREFIX_REPNE | DISPREFIX_REP | DISPREFIX_SEG)))
             {
-                switch (pDis->bOpCode)
+                switch (pDis->arch.x86.bOpCode)
                 {
                     /** @todo Find other instructions we can safely skip, possibly
                      * adding this kind of detection to DIS or EM. */
