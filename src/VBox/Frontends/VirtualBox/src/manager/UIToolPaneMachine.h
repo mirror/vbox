@@ -32,6 +32,7 @@
 #endif
 
 /* Qt includes: */
+#include <QUuid>
 #include <QWidget>
 
 /* GUI includes: */
@@ -106,6 +107,9 @@ public:
 
     /** Returns whether current-state item of Snapshot pane is selected. */
     bool isCurrentStateItemSelected() const;
+
+    /** Returns currently selected snapshot ID if any. */
+    QUuid currentSnapshotId();
 
     /** Returns the help keyword of the current tool's widget. */
     QString currentHelpKeyword() const;

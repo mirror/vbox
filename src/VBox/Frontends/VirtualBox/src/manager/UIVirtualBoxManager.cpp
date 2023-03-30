@@ -469,6 +469,7 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     , m_pLogViewerDialog(0)
     , m_pWidget(0)
     , m_iGeometrySaveTimerId(-1)
+    , m_fSnapshotCloneByDefault(false)
     , m_fImportFromOCI(false)
     , m_fExportToOCI(false)
 {
@@ -989,6 +990,34 @@ void UIVirtualBoxManager::sltOpenWizard(WizardType enmType)
             case WizardType_NewVM:
                 m_wizards[enmType] = new UIWizardNewVM(this, actionPool(), m_pWidget->fullGroupName(), m_strISOFilePath);
                 break;
+            case WizardType_CloneVM:
+            {
+                UIVirtualMachineItem *pItem = currentItem();
+                UIVirtualMachineItemLocal *pItemLocal = pItem ? pItem->toLocal() : 0;
+                CMachine comMachine = pItemLocal ? pItemLocal->machine() : CMachine();
+                CSnapshot comSnapshot;
+                if (m_fSnapshotCloneByDefault)
+                {
+                    const QUuid uId = m_pWidget->currentSnapshotId();
+                    if (!uId.isNull() && comMachine.isNotNull())
+                    {
+                        printf("Looking for snapshot with ID = {%s}\n", uId.toString().toUtf8().constData());
+                        comSnapshot = comMachine.FindSnapshot(uId.toString());
+                        if (comSnapshot.isNotNull())
+                        {
+                            printf("Snapshot found, acquiring machine ..\n");
+                            const CMachine comSnapshotMachine = comSnapshot.GetMachine();
+                            if (comSnapshotMachine.isNotNull())
+                                comMachine = comSnapshotMachine;
+                        }
+                    }
+                }
+                m_wizards[enmType] = new UIWizardCloneVM(this,
+                                                         comMachine,
+                                                         pItemLocal->groups().value(0),
+                                                         comSnapshot);
+                break;
+            }
             case WizardType_ExportAppliance:
                 m_wizards[enmType] = new UIWizardExportApp(this, m_names, m_fExportToOCI);
                 break;
@@ -1168,21 +1197,15 @@ void UIVirtualBoxManager::sltCloseSettingsDialog()
 
 void UIVirtualBoxManager::sltOpenCloneMachineWizard()
 {
-    /* Get current item: */
-    UIVirtualMachineItem *pItem = currentItem();
-    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
-    /* Make sure current item is local one: */
-    UIVirtualMachineItemLocal *pItemLocal = pItem->toLocal();
-    AssertMsgReturnVoid(pItemLocal, ("Current item should be local one!\n"));
+    /* Configure wizard variables: */
+    m_fSnapshotCloneByDefault = false;
+    QAction *pAction = qobject_cast<QAction*>(sender());
+    if (   pAction
+        && pAction == actionPool()->action(UIActionIndexMN_M_Snapshot_S_Clone))
+        m_fSnapshotCloneByDefault = true;
 
-    /* Use the "safe way" to open stack of Mac OS X Sheets: */
-    QWidget *pWizardParent = windowManager().realParentWindow(this);
-    const QStringList &machineGroupNames = pItemLocal->groups();
-    const QString strGroup = !machineGroupNames.isEmpty() ? machineGroupNames.at(0) : QString();
-    QPointer<UINativeWizard> pWizard = new UIWizardCloneVM(pWizardParent, pItemLocal->machine(), strGroup, CSnapshot());
-    windowManager().registerNewParent(pWizard, pWizardParent);
-    pWizard->exec();
-    delete pWizard;
+    /* Open Clone VM Wizard: */
+    sltOpenWizard(WizardType_CloneVM);
 }
 
 void UIVirtualBoxManager::sltPerformMachineMove()
@@ -2325,6 +2348,8 @@ void UIVirtualBoxManager::prepareConnections()
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenSettingsDialogDefault);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Clone), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenCloneMachineWizard);
+    connect(actionPool()->action(UIActionIndexMN_M_Snapshot_S_Clone), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenCloneMachineWizard);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Move), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformMachineMove);

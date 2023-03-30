@@ -524,6 +524,9 @@ private:
     /** Holds the ISO file path used by new VM wizard. */
     QString  m_strISOFilePath;
 
+    /** Holds whether snapshot clone should be done by clone VM wizard. */
+    bool  m_fSnapshotCloneByDefault;
+
     /** Holds whether OCI importing should be started by default. */
     bool     m_fImportFromOCI;
     /** Holds the file-name used by import wizard. */

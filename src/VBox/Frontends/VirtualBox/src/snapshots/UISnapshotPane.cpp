@@ -62,6 +62,7 @@
 
 /* COM includes: */
 #include "CConsole.h"
+#include "CSnapshot.h"
 
 
 /** Snapshot tree column tags. */
@@ -584,6 +585,13 @@ bool UISnapshotPane::isCurrentStateItemSelected() const
 {
     UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
     return m_currentStateItems.values().contains(pSnapshotItem);
+}
+
+QUuid UISnapshotPane::currentSnapshotId()
+{
+    UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
+    CSnapshot comSnapshot = pSnapshotItem ? pSnapshotItem->snapshot() : CSnapshot();
+    return comSnapshot.isNotNull() ? comSnapshot.GetId() : QUuid();
 }
 
 void UISnapshotPane::retranslateUi()
@@ -1302,8 +1310,6 @@ void UISnapshotPane::prepareActions()
             this, &UISnapshotPane::sltRestoreSnapshot);
     connect(m_pActionPool->action(UIActionIndexMN_M_Snapshot_T_Properties), &UIAction::toggled,
             this, &UISnapshotPane::sltToggleSnapshotDetailsVisibility);
-    connect(m_pActionPool->action(UIActionIndexMN_M_Snapshot_S_Clone), &UIAction::triggered,
-            this, &UISnapshotPane::sltCloneSnapshot);
 }
 
 void UISnapshotPane::prepareWidgets()
@@ -1736,32 +1742,6 @@ bool UISnapshotPane::restoreSnapshot(bool fAutomatically /* = false */)
 
     /* Return result: */
     return true;
-}
-
-void UISnapshotPane::cloneSnapshot()
-{
-    /* Acquire "current snapshot" item: */
-    const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
-    AssertReturnVoid(pSnapshotItem);
-
-    /* Get desired machine/snapshot: */
-    CMachine comMachine;
-    CSnapshot comSnapshot;
-    if (pSnapshotItem->isCurrentStateItem())
-        comMachine = pSnapshotItem->machine();
-    else
-    {
-        comSnapshot = pSnapshotItem->snapshot();
-        AssertReturnVoid(!comSnapshot.isNull());
-        comMachine = comSnapshot.GetMachine();
-    }
-    AssertReturnVoid(!comMachine.isNull());
-
-    /* Show Clone VM wizard: */
-    QPointer<UINativeWizard> pWizard = new UIWizardCloneVM(this, comMachine, QString(), comSnapshot);
-    pWizard->exec();
-    if (pWizard)
-        delete pWizard;
 }
 
 void UISnapshotPane::adjustTreeWidget()

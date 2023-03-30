@@ -32,6 +32,7 @@
 #endif
 
 /* Qt includes: */
+#include <QUuid>
 #include <QWidget>
 
 /* GUI includes: */
@@ -213,6 +214,9 @@ public:
       * @{ */
         /** Returns whether current-state item of Snapshot pane is selected. */
         bool isCurrentStateItemSelected() const;
+
+        /** Returns currently selected snapshot ID if any. */
+        QUuid currentSnapshotId();
     /** @} */
 
     /** @name Tool-bar stuff.

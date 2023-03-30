@@ -275,6 +275,11 @@ bool UIVirtualBoxManagerWidget::isCurrentStateItemSelected() const
     return m_pPaneToolsMachine->isCurrentStateItemSelected();
 }
 
+QUuid UIVirtualBoxManagerWidget::currentSnapshotId()
+{
+    return m_pPaneToolsMachine->currentSnapshotId();
+}
+
 void UIVirtualBoxManagerWidget::updateToolBarMenuButtons(bool fSeparateMenuSection)
 {
     QToolButton *pButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)));
