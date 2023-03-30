@@ -246,11 +246,11 @@ static void *supR3HardenedMainPosixGetStartBySymbol(const char *pszSymbol, PFNSU
     int rc = DISInstr(pbSym, DISCPUMODE_64BIT, &Dis, &cbInstr);
     if (   RT_FAILURE(rc)
         || Dis.pCurInstr->uOpcode != OP_JMP
-        || !(Dis.ModRM.Bits.Mod == 0 && Dis.ModRM.Bits.Rm == 5 /* wrt RIP */))
+        || !(Dis.arch.x86.ModRM.Bits.Mod == 0 && Dis.arch.x86.ModRM.Bits.Rm == 5 /* wrt RIP */))
         return NULL;
 
     /* Extract start address. */
-    pbSym = (pbSym + cbInstr + Dis.Param1.uDisp.i32);
+    pbSym = (pbSym + cbInstr + Dis.Param1.arch.x86.uDisp.i32);
     pbSym = (uint8_t *)*((uintptr_t *)pbSym);
 # else
 #  error "Unsupported architecture"
