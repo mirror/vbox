@@ -202,9 +202,11 @@ DECL_FORCE_INLINE(void) disPrefetchBytes(PDISSTATE pDis)
 }
 
 
+#if defined(VBOX_DIS_WITH_X86_AMD64)
 /* x86/amd64 */
 DECLHIDDEN(PCDISOPCODE) disInitializeStateX86(PDISSTATE pDis, DISCPUMODE enmCpuMode, uint32_t fFilter);
 DECLHIDDEN(int)         disInstrWorkerX86(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pcbInstr);
+#endif
 
 size_t disFormatBytes(PCDISSTATE pDis, char *pszDst, size_t cchDst, uint32_t fFlags);
 

@@ -36,7 +36,7 @@ endif
 
 LIBRARIES              += DisasmR3
 DisasmR3_TEMPLATE       = VBoxR3Dll
-DisasmR3_DEFS           = IN_DIS
+DisasmR3_DEFS           = IN_DIS VBOX_DIS_WITH_X86_AMD64
 DisasmR3_SOURCES        = \
 	Disasm.cpp \
 	DisasmCore-x86-amd64.cpp \
@@ -58,7 +58,7 @@ ifndef VBOX_ONLY_VALIDATIONKIT
 
  LIBRARIES              += DisasmCoreR3
  DisasmCoreR3_TEMPLATE   = VBoxR3Dll
- DisasmCoreR3_DEFS       = IN_DIS DIS_CORE_ONLY
+ DisasmCoreR3_DEFS       = IN_DIS DIS_CORE_ONLY VBOX_DIS_WITH_X86_AMD64
  DisasmCoreR3_SOURCES    = \
  	Disasm.cpp \
  	DisasmCore-x86-amd64.cpp \
@@ -69,7 +69,7 @@ ifndef VBOX_ONLY_VALIDATIONKIT
  ifdef VBOX_WITH_RAW_MODE
   LIBRARIES              += DisasmRC
   DisasmRC_TEMPLATE       = VBoxRc
-  DisasmRC_DEFS           = IN_DIS IN_RT_RC DIS_CORE_ONLY
+  DisasmRC_DEFS           = IN_DIS IN_RT_RC DIS_CORE_ONLY VBOX_DIS_WITH_X86_AMD64
   DisasmRC_SOURCES        = \
   	Disasm.cpp \
   	DisasmCore-x86-amd64.cpp \
@@ -80,7 +80,7 @@ ifndef VBOX_ONLY_VALIDATIONKIT
 
  LIBRARIES              += DisasmR0
  DisasmR0_TEMPLATE       = VBoxR0
- DisasmR0_DEFS           = IN_DIS IN_RT_R0 DIS_CORE_ONLY
+ DisasmR0_DEFS           = IN_DIS IN_RT_R0 DIS_CORE_ONLY VBOX_DIS_WITH_X86_AMD64
  DisasmR0_SOURCES        = \
  	Disasm.cpp \
  	DisasmCore-x86-amd64.cpp \
