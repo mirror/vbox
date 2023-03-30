@@ -529,43 +529,43 @@ g_kdCpuIdFlags = {
 
 ## \@ophints values.
 g_kdHints = {
-    'invalid':               'DISOPTYPE_INVALID',                   ##<
-    'harmless':              'DISOPTYPE_HARMLESS',                  ##<
-    'controlflow':           'DISOPTYPE_CONTROLFLOW',               ##<
-    'potentially_dangerous': 'DISOPTYPE_POTENTIALLY_DANGEROUS',     ##<
-    'dangerous':             'DISOPTYPE_DANGEROUS',                 ##<
-    'portio':                'DISOPTYPE_PORTIO',                    ##<
-    'privileged':            'DISOPTYPE_PRIVILEGED',                ##<
-    'privileged_notrap':     'DISOPTYPE_PRIVILEGED_NOTRAP',         ##<
-    'uncond_controlflow':    'DISOPTYPE_UNCOND_CONTROLFLOW',        ##<
-    'relative_controlflow':  'DISOPTYPE_RELATIVE_CONTROLFLOW',      ##<
-    'cond_controlflow':      'DISOPTYPE_COND_CONTROLFLOW',          ##<
-    'interrupt':             'DISOPTYPE_INTERRUPT',                 ##<
-    'illegal':               'DISOPTYPE_ILLEGAL',                   ##<
-    'rrm_dangerous':         'DISOPTYPE_RRM_DANGEROUS',             ##< Some additional dangerous ones when recompiling raw r0.
-    'rrm_dangerous_16':      'DISOPTYPE_RRM_DANGEROUS_16',          ##< Some additional dangerous ones when recompiling 16-bit raw r0.
-    'inhibit_irqs':          'DISOPTYPE_INHIBIT_IRQS',              ##< Will or can inhibit irqs (sti, pop ss, mov ss) */
-    'portio_read':           'DISOPTYPE_X86_PORTIO_READ',           ##<
-    'portio_write':          'DISOPTYPE_X86_PORTIO_WRITE',          ##<
-    'invalid_64':            'DISOPTYPE_X86_INVALID_64',            ##< Invalid in 64 bits mode
-    'only_64':               'DISOPTYPE_X86_ONLY_64',               ##< Only valid in 64 bits mode
-    'default_64_op_size':    'DISOPTYPE_X86_DEFAULT_64_OP_SIZE',    ##< Default 64 bits operand size
-    'forced_64_op_size':     'DISOPTYPE_X86_FORCED_64_OP_SIZE',     ##< Forced 64 bits operand size; regardless of prefix bytes
-    'rexb_extends_opreg':    'DISOPTYPE_X86_REXB_EXTENDS_OPREG',    ##< REX.B extends the register field in the opcode byte
-    'mod_fixed_11':          'DISOPTYPE_X86_MOD_FIXED_11',          ##< modrm.mod is always 11b
-    'forced_32_op_size_x86': 'DISOPTYPE_X86_FORCED_32_OP_SIZE_X86', ##< Forced 32 bits operand size; regardless of prefix bytes
-                                                                    ##  (only in 16 & 32 bits mode!)
-    'avx':                   'DISOPTYPE_X86_AVX',                   ##< AVX,AVX2,++ instruction. Not implemented yet!
-    'sse':                   'DISOPTYPE_X86_SSE',                   ##< SSE,SSE2,SSE3,++ instruction. Not implemented yet!
-    'mmx':                   'DISOPTYPE_X86_MMX',                   ##< MMX,MMXExt,3DNow,++ instruction. Not implemented yet!
-    'fpu':                   'DISOPTYPE_X86_FPU',                   ##< FPU instruction. Not implemented yet!
-    'ignores_oz_pfx':        '',                                    ##< Ignores operand size prefix 66h.
-    'ignores_rexw':          '',                                    ##< Ignores REX.W.
-    'ignores_op_sizes':      '',                                    ##< Shorthand for "ignores_oz_pfx | ignores_op_sizes".
-    'vex_l_zero':            '',                                    ##< VEX.L must be 0.
-    'vex_l_ignored':         '',                                    ##< VEX.L is ignored.
-    'vex_v_zero':            '',                                    ##< VEX.V must be 0. (generate sub-table?)
-    'lock_allowed':          '',                                    ##< Lock prefix allowed.
+    'invalid':                   'DISOPTYPE_INVALID',                   ##<
+    'harmless':                  'DISOPTYPE_HARMLESS',                  ##<
+    'controlflow':               'DISOPTYPE_CONTROLFLOW',               ##<
+    'potentially_dangerous':     'DISOPTYPE_POTENTIALLY_DANGEROUS',     ##<
+    'dangerous':                 'DISOPTYPE_DANGEROUS',                 ##<
+    'portio':                    'DISOPTYPE_PORTIO',                    ##<
+    'privileged':                'DISOPTYPE_PRIVILEGED',                ##<
+    'privileged_notrap':         'DISOPTYPE_PRIVILEGED_NOTRAP',         ##<
+    'uncond_controlflow':        'DISOPTYPE_UNCOND_CONTROLFLOW',        ##<
+    'relative_controlflow':      'DISOPTYPE_RELATIVE_CONTROLFLOW',      ##<
+    'cond_controlflow':          'DISOPTYPE_COND_CONTROLFLOW',          ##<
+    'interrupt':                 'DISOPTYPE_INTERRUPT',                 ##<
+    'illegal':                   'DISOPTYPE_ILLEGAL',                   ##<
+    'rrm_dangerous':             'DISOPTYPE_RRM_DANGEROUS',             ##< Some additional dangerous ones when recompiling raw r0.
+    'rrm_dangerous_16':          'DISOPTYPE_RRM_DANGEROUS_16',          ##< Some additional dangerous ones when recompiling 16-bit raw r0.
+    'inhibit_irqs':              'DISOPTYPE_INHIBIT_IRQS',              ##< Will or can inhibit irqs (sti, pop ss, mov ss) */
+    'x86_portio_read':           'DISOPTYPE_X86_PORTIO_READ',           ##<
+    'x86_portio_write':          'DISOPTYPE_X86_PORTIO_WRITE',          ##<
+    'x86_invalid_64':            'DISOPTYPE_X86_INVALID_64',            ##< Invalid in 64 bits mode
+    'x86_only_64':               'DISOPTYPE_X86_ONLY_64',               ##< Only valid in 64 bits mode
+    'x86_default_64_op_size':    'DISOPTYPE_X86_DEFAULT_64_OP_SIZE',    ##< Default 64 bits operand size
+    'x86_forced_64_op_size':     'DISOPTYPE_X86_FORCED_64_OP_SIZE',     ##< Forced 64 bits operand size; regardless of prefix bytes
+    'x86_rexb_extends_opreg':    'DISOPTYPE_X86_REXB_EXTENDS_OPREG',    ##< REX.B extends the register field in the opcode byte
+    'x86_mod_fixed_11':          'DISOPTYPE_X86_MOD_FIXED_11',          ##< modrm.mod is always 11b
+    'x86_forced_32_op_size_x86': 'DISOPTYPE_X86_FORCED_32_OP_SIZE_X86', ##< Forced 32 bits operand size; regardless of prefix bytes
+                                                                        ##  (only in 16 & 32 bits mode!)
+    'x86_avx':                   'DISOPTYPE_X86_AVX',                   ##< AVX,AVX2,++ instruction. Not implemented yet!
+    'x86_sse':                   'DISOPTYPE_X86_SSE',                   ##< SSE,SSE2,SSE3,++ instruction. Not implemented yet!
+    'x86_mmx':                   'DISOPTYPE_X86_MMX',                   ##< MMX,MMXExt,3DNow,++ instruction. Not implemented yet!
+    'x86_fpu':                   'DISOPTYPE_X86_FPU',                   ##< FPU instruction. Not implemented yet!
+    'ignores_oz_pfx':        '',                                        ##< Ignores operand size prefix 66h.
+    'ignores_rexw':          '',                                        ##< Ignores REX.W.
+    'ignores_op_sizes':      '',                                        ##< Shorthand for "ignores_oz_pfx | ignores_op_sizes".
+    'vex_l_zero':            '',                                        ##< VEX.L must be 0.
+    'vex_l_ignored':         '',                                        ##< VEX.L is ignored.
+    'vex_v_zero':            '',                                        ##< VEX.V must be 0. (generate sub-table?)
+    'lock_allowed':          '',                                        ##< Lock prefix allowed.
 };
 
 ## \@opxcpttype values (see SDMv2 2.4, 2.7).
