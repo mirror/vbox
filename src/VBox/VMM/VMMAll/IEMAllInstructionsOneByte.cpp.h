@@ -2326,7 +2326,7 @@ FNIEMOP_DEF(iemOp_popa__mvex)
  * @op1         Gv_RO
  * @op2         Ma
  * @opmincpu    80186
- * @ophints     harmless invalid_64
+ * @ophints     harmless x86_invalid_64
  * @optest      op1=0 op2=0 ->
  * @optest      op1=1 op2=0 -> value.xcpt=5
  * @optest      o16 / op1=0xffff op2=0x0000fffe ->
