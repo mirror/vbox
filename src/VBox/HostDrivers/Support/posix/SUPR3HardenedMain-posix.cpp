@@ -364,7 +364,7 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, u
                 && Dis.pCurInstr->uOpcode != OP_MOV))
             return VERR_SUPLIB_UNEXPECTED_INSTRUCTION;
 
-        if (Dis.arch.x86.ModRM.Bits.Mod == 0 && Dis.ModRM.Bits.Rm == 5 /* wrt RIP */)
+        if (Dis.arch.x86.ModRM.Bits.Mod == 0 && Dis.arch.x86.ModRM.Bits.Rm == 5 /* wrt RIP */)
             cRipRelMovs++;
         if (   Dis.pCurInstr->uOpcode == OP_CALL
             && (Dis.pCurInstr->fOpType & DISOPTYPE_RELATIVE_CONTROLFLOW))
@@ -426,7 +426,7 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, u
                               && (Dis.Param2.fUse & DISUSE_RIPDISPLACEMENT32))))
                 return VERR_SUPLIB_UNEXPECTED_INSTRUCTION;
 
-            uintptr_t uAddr = (uintptr_t)&pbTarget[offInsn + cbInstr] + (intptr_t)Dis.Param2.uDisp.i32;
+            uintptr_t uAddr = (uintptr_t)&pbTarget[offInsn + cbInstr] + (intptr_t)Dis.Param2.arch.x86.uDisp.i32;
 
             if (fConvRipRelMovs)
             {
@@ -442,7 +442,7 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, u
 
                 *pbPatchMem++ = 0x48;
                 *pbPatchMem++ = 0x8b;
-                *pbPatchMem++ = (Dis.Param1.Base.arch.x86.idxGenReg << X86_MODRM_REG_SHIFT) | Dis.Param1.Base.arch.x86.idxGenReg;
+                *pbPatchMem++ = (Dis.Param1.arch.x86.Base.idxGenReg << X86_MODRM_REG_SHIFT) | Dis.Param1.Base.arch.x86.idxGenReg;
             }
             else
             {
