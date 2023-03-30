@@ -48,7 +48,6 @@
 # error "not IN_RING0!"
 #endif
 #include <VBox/dis.h>
-#include <VBox/disopcode.h>
 #include <iprt/string.h>
 
 
