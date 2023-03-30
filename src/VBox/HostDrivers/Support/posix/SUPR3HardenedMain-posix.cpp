@@ -442,7 +442,7 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, u
 
                 *pbPatchMem++ = 0x48;
                 *pbPatchMem++ = 0x8b;
-                *pbPatchMem++ = (Dis.Param1.arch.x86.Base.idxGenReg << X86_MODRM_REG_SHIFT) | Dis.Param1.Base.arch.x86.idxGenReg;
+                *pbPatchMem++ = (Dis.Param1.arch.x86.Base.idxGenReg << X86_MODRM_REG_SHIFT) | Dis.Param1.arch.x86.Base.idxGenReg;
             }
             else
             {
