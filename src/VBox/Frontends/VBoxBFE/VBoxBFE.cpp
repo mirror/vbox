@@ -83,6 +83,7 @@ static uint32_t         g_u32MemorySizeMB   = 512;
 static VMSTATE          g_enmVmState        = VMSTATE_CREATING;
 static const char       *g_pszLoadMem       = NULL;
 static const char       *g_pszLoadDtb       = NULL;
+static const char       *g_pszSerialLog     = NULL;
 
 /** @todo currently this is only set but never read. */
 static char szError[512];
@@ -268,7 +269,37 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTA
      * Devices
      */
     PCFGMNODE pDevices = NULL;
+    PCFGMNODE pDev = NULL;          /* /Devices/Dev/ */
+    PCFGMNODE pInst = NULL;         /* /Devices/Dev/0/ */
+    PCFGMNODE pCfg = NULL;          /* /Devices/Dev/.../Config/ */
+    PCFGMNODE pLunL0 = NULL;        /* /Devices/Dev/0/LUN#0/ */
+    PCFGMNODE pLunL1 = NULL;        /* /Devices/Dev/0/LUN#0/AttachedDriver/ */
+    PCFGMNODE pLunL1Cfg = NULL;     /* /Devices/Dev/0/LUN#0/AttachedDriver/Config */
+
     rc = pVMM->pfnCFGMR3InsertNode(pRoot, "Devices", &pDevices);                             UPDATE_RC();
+
+    rc = pVMM->pfnCFGMR3InsertNode(pDevices, "qemu-fw-cfg",   &pDev);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pDev,     "0",            &pInst);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pInst,    "Config",        &pCfg);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "MmioSize",       4096);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "MmioBase", 0x09020000);                        UPDATE_RC();
+
+    rc = pVMM->pfnCFGMR3InsertNode(pDevices, "arm-pl011",     &pDev);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pDev,     "0",            &pInst);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pInst,    "Config",        &pCfg);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "Irq",               1);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "MmioBase", 0x09000000);                        UPDATE_RC();
+
+    if (g_pszSerialLog)
+    {
+        rc = pVMM->pfnCFGMR3InsertNode(pInst,    "LUN#0",           &pLunL0);                UPDATE_RC();
+        rc = pVMM->pfnCFGMR3InsertString(pLunL0, "Driver",          "Char");                 UPDATE_RC();
+        rc = pVMM->pfnCFGMR3InsertNode(pLunL0,   "AttachedDriver",  &pLunL1);                UPDATE_RC();
+        rc = pVMM->pfnCFGMR3InsertString(pLunL1, "Driver",          "RawFile");              UPDATE_RC();
+        rc = pVMM->pfnCFGMR3InsertNode(pLunL1,    "Config",         &pLunL1Cfg);             UPDATE_RC();
+        rc = pVMM->pfnCFGMR3InsertString(pLunL1Cfg, "Location",     g_pszSerialLog);         UPDATE_RC();
+    }
+
 
 #undef UPDATE_RC
 #undef UPDATE_RC
@@ -534,6 +565,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "--load-file-into-ram", 'l', RTGETOPT_REQ_STRING },
         { "--load-dtb",           'd', RTGETOPT_REQ_STRING },
         { "--load-vmm",           'v', RTGETOPT_REQ_STRING },
+        { "--serial-log",         's', RTGETOPT_REQ_STRING },
     };
 
     const char *pszVmmMod = "VBoxVMM";
@@ -561,6 +593,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
             case 'v':
                 pszVmmMod = ValueUnion.psz;
+                break;
+            case 's':
+                g_pszSerialLog = ValueUnion.psz;
                 break;
             case 'h':
                 show_usage();
