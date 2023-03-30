@@ -71,9 +71,9 @@ ifndef VBOX_ONLY_VALIDATIONKIT
   DisasmRC_TEMPLATE       = VBoxRc
   DisasmRC_DEFS           = IN_DIS IN_RT_RC DIS_CORE_ONLY
   DisasmRC_SOURCES        = \
- 	Disasm.cpp \
- 	DisasmCore-x86-amd64.cpp \
- 	DisasmTables-x86-amd64.cpp \
+  	Disasm.cpp \
+  	DisasmCore-x86-amd64.cpp \
+  	DisasmTables-x86-amd64.cpp \
   	DisasmTablesX64.cpp \
   	DisasmMisc.cpp
  endif # VBOX_WITH_RAW_MODE
