@@ -41,7 +41,7 @@
 
 #include <iprt/assert.h>
 
-/** @defgroup grp_dis_opcodes Opcodes (DISOPCODE::uOpCode)
+/** @defgroup grp_dis_opcodes_armv8 Opcodes (DISOPCODE::uOpCode)
  * @ingroup grp_dis
  * @{
  */
