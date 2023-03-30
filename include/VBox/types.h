@@ -1222,6 +1222,12 @@ typedef struct DISSTATE *PDISSTATE;
 /** Pointer to a const disassembler state. */
 typedef struct DISSTATE const *PCDISSTATE;
 
+/** Forward declaration of pointer to const opcode. */
+typedef const struct DISOPCODE *PCDISOPCODE;
+
+/** Forward declaration of pointer to opcode parameter. */
+typedef struct DISOPPARAM *PDISOPPARAM;
+
 
 /**
  * Shared region description (needed by GMM and others, thus global).

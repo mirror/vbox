@@ -46,14 +46,8 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_dis   VBox Disassembler
+/** @addtogroup grp_dis   VBox Disassembler
  * @{ */
-
-/** Forward declaration of pointer to const opcode. */
-typedef const struct DISOPCODE *PCDISOPCODE;
-/** Forward declaration of pointer to opcode parameter. */
-typedef struct DISOPPARAM *PDISOPPARAM;
-
 
 /** @name Prefix byte flags (DISSTATE::fPrefix).
  * @{
