@@ -1213,6 +1213,17 @@ typedef enum DISCPUMODE
     DISCPUMODE_16BIT,
     DISCPUMODE_32BIT,
     DISCPUMODE_64BIT,
+
+    /** @name ARMv8 modes.
+     * @{ */
+    /** AArch64 A64 instruction set. */
+    DISCPUMODE_ARMV8_A64,
+    /** AArch32 A32 instruction set. */
+    DISCPUMODE_ARMV8_A32,
+    /** AArch32 T32 (aka Thumb) instruction set. */
+    DISCPUMODE_ARMV8_T32,
+    /** @} */
+
     /** hack forcing the size of the enum to 32-bits. */
     DISCPUMODE_MAKE_32BIT_HACK = 0x7fffffff
 } DISCPUMODE;

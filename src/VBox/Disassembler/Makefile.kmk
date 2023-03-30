@@ -50,6 +50,16 @@ LIBRARIES              += DisasmR3Static
 DisasmR3Static_TEMPLATE = VBoxR3Static
 DisasmR3Static_EXTENDS  = DisasmR3
 
+ifdef VBOX_WITH_VIRT_ARMV8
+ LIBRARIES              += DisasmR3-armv8
+ DisasmR3-armv8_TEMPLATE       = VBoxR3Dll
+ DisasmR3-armv8_DEFS           = IN_DIS VBOX_DIS_WITH_ARMV8
+ DisasmR3-armv8_SOURCES        = \
+ 	Disasm.cpp \
+ 	DisasmCore-armv8.cpp \
+ 	DisasmFormatBytes.cpp
+endif
+
 ifndef VBOX_ONLY_VALIDATIONKIT
 
  LIBRARIES              += DisasmBldProg

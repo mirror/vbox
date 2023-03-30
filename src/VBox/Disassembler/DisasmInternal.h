@@ -207,6 +207,11 @@ DECL_FORCE_INLINE(void) disPrefetchBytes(PDISSTATE pDis)
 DECLHIDDEN(PCDISOPCODE) disInitializeStateX86(PDISSTATE pDis, DISCPUMODE enmCpuMode, uint32_t fFilter);
 DECLHIDDEN(int)         disInstrWorkerX86(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pcbInstr);
 #endif
+#if defined(VBOX_DIS_WITH_ARMV8)
+/* x86/amd64 */
+DECLHIDDEN(PCDISOPCODE) disInitializeStateArmV8(PDISSTATE pDis, DISCPUMODE enmCpuMode, uint32_t fFilter);
+DECLHIDDEN(int)         disInstrWorkerArmV8(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pcbInstr);
+#endif
 
 size_t disFormatBytes(PCDISSTATE pDis, char *pszDst, size_t cchDst, uint32_t fFlags);
 

@@ -41,6 +41,9 @@
 
 #include <VBox/types.h>
 #include <VBox/dis-x86-amd64.h>
+#if defined(VBOX_DIS_WITH_ARMV8)
+# include <VBox/dis-armv8.h>
+#endif
 #include <iprt/assert.h>
 
 
@@ -244,6 +247,10 @@ typedef struct DISOPPARAM
     {
         /** x86/amd64 specific state. */
         DISOPPARAMX86   x86;
+#if defined(VBOX_DIS_WITH_ARMV8)
+        /** ARMv8 specific state. */
+        DISOPPARAMARMV8 armv8;
+#endif
     } arch;
 
 } DISOPPARAM;
@@ -337,6 +344,10 @@ typedef struct DISSTATE
     {
         /** x86/amd64 specific state. */
         DISSTATEX86     x86;
+#if defined(VBOX_DIS_WITH_ARMV8)
+        /** ARMv8 specific state. */
+        DISSTATEARMV8   armv8;
+#endif
     } arch;
 
 } DISSTATE;

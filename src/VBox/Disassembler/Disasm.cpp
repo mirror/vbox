@@ -306,16 +306,42 @@ disInitializeState(PDISSTATE pDis, RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, 
 {
     RT_ZERO(*pDis);
 
+#ifdef VBOX_STRICT
+    pDis->Param1.uValue     = UINT64_C(0xb1b1b1b1b1b1b1b1);
+    pDis->Param2.uValue     = UINT64_C(0xb2b2b2b2b2b2b2b2);
+    pDis->Param3.uValue     = UINT64_C(0xb3b3b3b3b3b3b3b3);
+#endif
+
     pDis->rc                = VINF_SUCCESS;
     pDis->uInstrAddr        = uInstrAddr;
     pDis->pfnReadBytes      = pfnReadBytes ? pfnReadBytes : disReadBytesDefault;
     pDis->pvUser            = pvUser;
     pDis->uCpuMode          = (uint8_t)enmCpuMode;
+
+    switch (enmCpuMode)
+    {
+        case DISCPUMODE_16BIT:
+        case DISCPUMODE_32BIT:
+        case DISCPUMODE_64BIT:
 #if defined(VBOX_DIS_WITH_X86_AMD64)
-    return disInitializeStateX86(pDis, enmCpuMode, fFilter);
+            return disInitializeStateX86(pDis, enmCpuMode, fFilter);
 #else
-    return VERR_NOT_SUPPORTED;
+            return NULL;
 #endif
+        case DISCPUMODE_ARMV8_A64:
+        case DISCPUMODE_ARMV8_A32:
+        case DISCPUMODE_ARMV8_T32:
+#if defined(VBOX_DIS_WITH_ARMV8)
+            return disInitializeStateArmV8(pDis, enmCpuMode, fFilter);
+#else
+            return NULL;
+#endif
+        default:
+            break;
+    }
+
+    AssertReleaseFailed(); /* Should never get here. */
+    return NULL;
 }
 
 
@@ -340,11 +366,31 @@ DISDECL(int) DISInstrEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, uint32_t fF
 
     PCDISOPCODE paOneByteMap = disInitializeState(pDis, uInstrAddr, enmCpuMode, fFilter, pfnReadBytes, pvUser);
     disPrefetchBytes(pDis);
+
+    switch (enmCpuMode)
+    {
+        case DISCPUMODE_16BIT:
+        case DISCPUMODE_32BIT:
+        case DISCPUMODE_64BIT:
 #if defined(VBOX_DIS_WITH_X86_AMD64)
-    return disInstrWorkerX86(pDis, paOneByteMap, pcbInstr);
+            return disInstrWorkerX86(pDis, paOneByteMap, pcbInstr);
 #else
-    return VERR_NOT_SUPPORTED;
+            return VERR_NOT_SUPPORTED;
 #endif
+        case DISCPUMODE_ARMV8_A64:
+        case DISCPUMODE_ARMV8_A32:
+        case DISCPUMODE_ARMV8_T32:
+#if defined(VBOX_DIS_WITH_ARMV8)
+            return disInstrWorkerArmV8(pDis, paOneByteMap, pcbInstr);
+#else
+            return VERR_NOT_SUPPORTED;
+#endif
+        default:
+            break;
+    }
+
+    AssertReleaseFailed(); /* Should never get here. */
+    return VERR_INTERNAL_ERROR;
 }
 
 
@@ -389,11 +435,30 @@ DISDECL(int) DISInstrWithPrefetchedBytes(RTUINTPTR uInstrAddr, DISCPUMODE enmCpu
         }
     }
 
+    switch (enmCpuMode)
+    {
+        case DISCPUMODE_16BIT:
+        case DISCPUMODE_32BIT:
+        case DISCPUMODE_64BIT:
 #if defined(VBOX_DIS_WITH_X86_AMD64)
-    return disInstrWorkerX86(pDis, paOneByteMap, pcbInstr);
+            return disInstrWorkerX86(pDis, paOneByteMap, pcbInstr);
 #else
-    return VERR_NOT_SUPPORTED;
+            return VERR_NOT_SUPPORTED;
 #endif
+        case DISCPUMODE_ARMV8_A64:
+        case DISCPUMODE_ARMV8_A32:
+        case DISCPUMODE_ARMV8_T32:
+#if defined(VBOX_DIS_WITH_ARMV8)
+            return disInstrWorkerArmV8(pDis, paOneByteMap, pcbInstr);
+#else
+            return VERR_NOT_SUPPORTED;
+#endif
+        default:
+            break;
+    }
+
+    AssertReleaseFailed(); /* Should never get here. */
+    return VERR_INTERNAL_ERROR;
 }
 
 
