@@ -427,8 +427,9 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) && !defined(VBOX_
  	$(VBOX_PATH_RUNTIME_SRC)/generic/memsafer-generic.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/generic/uuid-generic.cpp \
  	\
- 	../../Disassembler/DisasmCore.cpp \
- 	../../Disassembler/DisasmTables.cpp \
+ 	../../Disassembler/Disasm.cpp \
+ 	../../Disassembler/DisasmCore-x86-amd64.cpp \
+ 	../../Disassembler/DisasmTables-x86-amd64.cpp \
  	../../Disassembler/DisasmTablesX64.cpp \
  	../../Disassembler/DisasmMisc.cpp
 
@@ -533,8 +534,9 @@ if1of ($(KBUILD_TARGET), linux solaris)
  	$(VBOX_PATH_RUNTIME_SRC)/common/misc/RTAssertMsg2WeakV.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/generic/RTAssertShouldPanic-generic.cpp \
  	\
- 	../../Disassembler/DisasmCore.cpp \
- 	../../Disassembler/DisasmTables.cpp \
+ 	../../Disassembler/Disasm.cpp \
+ 	../../Disassembler/DisasmCore-x86-amd64.cpp \
+ 	../../Disassembler/DisasmTables-x86-amd64.cpp \
  	../../Disassembler/DisasmTablesX64.cpp \
  	../../Disassembler/DisasmMisc.cpp
 endif
