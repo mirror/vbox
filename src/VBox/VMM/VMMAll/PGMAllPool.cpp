@@ -38,7 +38,6 @@
 #include "PGMInternal.h"
 #include <VBox/vmm/vmcc.h>
 #include "PGMInline.h"
-#include <VBox/disopcode.h>
 #include <VBox/vmm/hm_vmx.h>
 
 #include <VBox/log.h>

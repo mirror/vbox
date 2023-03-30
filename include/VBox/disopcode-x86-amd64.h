@@ -33,8 +33,8 @@
  * SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
  */
 
-#ifndef VBOX_INCLUDED_disopcode_h
-#define VBOX_INCLUDED_disopcode_h
+#ifndef VBOX_INCLUDED_disopcode_x86_amd64_h
+#define VBOX_INCLUDED_disopcode_x86_amd64_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -51,11 +51,11 @@
 #define SIB_BASE(a)     (a&0x7)
 
 
-/** @defgroup grp_dis_opcodes Opcodes (DISOPCODE::uOpCode)
+/** @defgroup grp_dis_opcodes Opcodes (DISOPCODEX86::uOpCode)
  * @ingroup grp_dis
  * @{
  */
-enum OPCODES
+enum OPCODESX86
 {
 /** @name  Full Intel X86 opcode list
  * @{ */
@@ -1472,5 +1472,5 @@ enum OP_PARM
 
 /** @} */
 
-#endif /* !VBOX_INCLUDED_disopcode_h */
+#endif /* !VBOX_INCLUDED_disopcode_x86_amd64_h */
 

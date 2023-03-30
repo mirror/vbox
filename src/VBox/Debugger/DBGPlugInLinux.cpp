@@ -437,7 +437,7 @@ static int dbgDiggerLinuxDisassembleSimpleGetter(PDBGDIGGERLINUX pThis, PUVM pUV
                                         && cbVal == sizeof(uint32_t))
                                     || (    (DisState.Param1.fUse & (DISUSE_BASE | DISUSE_REG_GEN64))
                                          && cbVal == sizeof(uint64_t)))
-                                && DisState.Param1.Base.idxGenReg == DISGREG_RAX)
+                                && DisState.Param1.arch.x86.Base.idxGenReg == DISGREG_RAX)
                             {
                                 /* Parse the source. */
                                 if (DisState.Param2.fUse & (DISUSE_IMMEDIATE32 | DISUSE_IMMEDIATE64))
@@ -447,11 +447,11 @@ static int dbgDiggerLinuxDisassembleSimpleGetter(PDBGDIGGERLINUX pThis, PUVM pUV
                                     RTGCPTR GCPtrVal = 0;
 
                                     if (DisState.Param2.fUse & DISUSE_RIPDISPLACEMENT32)
-                                        GCPtrVal = GCPtrCur + DisState.Param2.uDisp.i32 + cbInstr;
+                                        GCPtrVal = GCPtrCur + DisState.Param2.arch.x86.uDisp.i32 + cbInstr;
                                     else if (DisState.Param2.fUse & DISUSE_DISPLACEMENT32)
-                                        GCPtrVal = (RTGCPTR)DisState.Param2.uDisp.u32;
+                                        GCPtrVal = (RTGCPTR)DisState.Param2.arch.x86.uDisp.u32;
                                     else if (DisState.Param2.fUse & DISUSE_DISPLACEMENT64)
-                                        GCPtrVal = (RTGCPTR)DisState.Param2.uDisp.u64;
+                                        GCPtrVal = (RTGCPTR)DisState.Param2.arch.x86.uDisp.u64;
                                     else
                                         AssertMsgFailedBreakStmt(("Invalid displacement\n"), rc = VERR_INVALID_STATE);
 
@@ -570,8 +570,8 @@ static int dbgDiggerLinuxQueryAsciiLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUV
                              * the source addresses.
                              */
                             if (   (DisState.Param2.fUse & DISUSE_REG_GEN8)
-                                && (   (DisState.Param2.Base.idxGenReg == DISGREG_AL && !pThis->f64Bit)
-                                    || (DisState.Param2.Base.idxGenReg == DISGREG_DIL && pThis->f64Bit))
+                                && (   (DisState.Param2.arch.x86.Base.idxGenReg == DISGREG_AL && !pThis->f64Bit)
+                                    || (DisState.Param2.arch.x86.Base.idxGenReg == DISGREG_DIL && pThis->f64Bit))
                                 && DISUSE_IS_EFFECTIVE_ADDR(DisState.Param1.fUse))
                             {
                                 RTGCPTR GCPtrLogBuf = 0;
@@ -656,17 +656,17 @@ static int dbgDiggerLinuxQueryAsciiLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUV
                                  * source address in the relation table for later processing.
                                  */
                                 if (   (DisState.Param1.fUse & (DISUSE_BASE | DISUSE_REG_GEN32 | DISUSE_REG_GEN64))
-                                    && (DisState.Param2.cb == sizeof(uint32_t) || DisState.Param2.cb == sizeof(uint64_t))
+                                    && (DisState.Param2.arch.x86.cb == sizeof(uint32_t) || DisState.Param2.arch.x86.cb == sizeof(uint64_t))
                                     && (DisState.Param2.fUse & (DISUSE_RIPDISPLACEMENT32|DISUSE_DISPLACEMENT32|DISUSE_DISPLACEMENT64)))
                                 {
                                     RTGCPTR GCPtrVal = 0;
 
                                     if (DisState.Param2.fUse & DISUSE_RIPDISPLACEMENT32)
-                                        GCPtrVal = GCPtrCur + DisState.Param2.uDisp.i32 + cbInstr;
+                                        GCPtrVal = GCPtrCur + DisState.Param2.arch.x86.uDisp.i32 + cbInstr;
                                     else if (DisState.Param2.fUse & DISUSE_DISPLACEMENT32)
-                                        GCPtrVal = (RTGCPTR)DisState.Param2.uDisp.u32;
+                                        GCPtrVal = (RTGCPTR)DisState.Param2.arch.x86.uDisp.u32;
                                     else if (DisState.Param2.fUse & DISUSE_DISPLACEMENT64)
-                                        GCPtrVal = (RTGCPTR)DisState.Param2.uDisp.u64;
+                                        GCPtrVal = (RTGCPTR)DisState.Param2.arch.x86.uDisp.u64;
                                     else
                                         AssertMsgFailedBreakStmt(("Invalid displacement\n"), rc = VERR_INVALID_STATE);
 
@@ -676,7 +676,7 @@ static int dbgDiggerLinuxQueryAsciiLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUV
                                         if (DisState.pCurInstr->uOpcode == OP_MOVSXD)
                                             aAddresses[cAddressesUsed].cb = sizeof(uint32_t);
                                         else
-                                            aAddresses[cAddressesUsed].cb = DisState.Param2.cb;
+                                            aAddresses[cAddressesUsed].cb = DisState.Param2.arch.x86.cb;
                                         aAddresses[cAddressesUsed].GCPtrOrigSrc = GCPtrVal;
                                         cAddressesUsed++;
                                     }

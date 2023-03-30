@@ -39,7 +39,7 @@
 #include "GIMInternal.h"
 #include <VBox/vmm/vm.h>
 
-#include <VBox/disopcode.h>
+#include <VBox/disopcode-x86-amd64.h>
 #include <VBox/err.h>
 #include <VBox/version.h>
 

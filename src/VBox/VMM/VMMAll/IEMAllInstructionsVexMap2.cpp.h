@@ -545,7 +545,7 @@ FNIEMOP_DEF(iemOp_vmovntdqa_Vx_Mx)
              */
             /* 128-bit: Memory, register. */
             IEMOP_MNEMONIC2EX(vmovntdqa_Vdq_WO_Mdq_L0, "vmovntdqa, Vdq_WO, Mdq", VEX_RM_MEM, VMOVNTDQA, vmovntdqa, Vx_WO, Mx,
-                              DISOPTYPE_HARMLESS | DISOPTYPE_AVX, IEMOPHINT_IGNORES_OP_SIZES);
+                              DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, IEMOPHINT_IGNORES_OP_SIZES);
             IEM_MC_BEGIN(0, 2);
             IEM_MC_LOCAL(RTUINT128U,                uSrc);
             IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
@@ -576,7 +576,7 @@ FNIEMOP_DEF(iemOp_vmovntdqa_Vx_Mx)
              */
             /* 256-bit: Memory, register. */
             IEMOP_MNEMONIC2EX(vmovntdqa_Vqq_WO_Mqq_L1, "vmovntdqa, Vqq_WO,Mqq", VEX_RM_MEM, VMOVNTDQA, vmovntdqa, Vx_WO, Mx,
-                              DISOPTYPE_HARMLESS | DISOPTYPE_AVX, IEMOPHINT_IGNORES_OP_SIZES);
+                              DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, IEMOPHINT_IGNORES_OP_SIZES);
             IEM_MC_BEGIN(0, 2);
             IEM_MC_LOCAL(RTUINT256U,                uSrc);
             IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
@@ -612,7 +612,7 @@ FNIEMOP_DEF(iemOp_vmovntdqa_Vx_Mx)
 /** Opcode VEX.66.0F38 0x2b. */
 FNIEMOP_DEF(iemOp_vpackusdw_Vx_Hx_Wx)
 {
-    IEMOP_MNEMONIC3(VEX_RVM, VPACKUSDW, vpackusdw, Vx, Hx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_AVX, 0);
+    IEMOP_MNEMONIC3(VEX_RVM, VPACKUSDW, vpackusdw, Vx, Hx, Wx, DISOPTYPE_HARMLESS | DISOPTYPE_X86_AVX, 0);
     IEMOPMEDIAOPTF3_INIT_VARS(          vpackusdw);
     return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
 }

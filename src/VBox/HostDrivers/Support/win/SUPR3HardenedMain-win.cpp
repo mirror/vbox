@@ -3076,7 +3076,7 @@ static void supR3HardenedWinInstallHooks(void)
         int rc = DISInstr(pbLdrLoadDll + offJmpBack, DISCPUMODE_64BIT, &Dis, &cbInstr);
         if (   RT_FAILURE(rc)
             || (Dis.pCurInstr->fOpType & (DISOPTYPE_CONTROLFLOW))
-            || (Dis.ModRM.Bits.Mod == 0 && Dis.ModRM.Bits.Rm == 5 /* wrt RIP */) )
+            || (Dis.arch.x86.ModRM.Bits.Mod == 0 && Dis.arch.x86.ModRM.Bits.Rm == 5 /* wrt RIP */) )
             supR3HardenedWinHookFailed("LdrLoadDll", pbLdrLoadDll);
         offJmpBack += cbInstr;
     }
@@ -3163,7 +3163,7 @@ static void supR3HardenedWinInstallHooks(void)
         int rc = DISInstr(pbKiUserApcDispatcher + offJmpBack, DISCPUMODE_64BIT, &Dis, &cbInstr);
         if (   RT_FAILURE(rc)
             || (Dis.pCurInstr->fOpType & (DISOPTYPE_CONTROLFLOW))
-            || (Dis.ModRM.Bits.Mod == 0 && Dis.ModRM.Bits.Rm == 5 /* wrt RIP */) )
+            || (Dis.arch.x86.ModRM.Bits.Mod == 0 && Dis.arch.x86.ModRM.Bits.Rm == 5 /* wrt RIP */) )
             supR3HardenedWinHookFailed("KiUserApcDispatcher", pbKiUserApcDispatcher);
         offJmpBack += cbInstr;
     }

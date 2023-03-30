@@ -237,19 +237,19 @@ extern const PCDISOPCODE g_apMapX86_FP_High[8];
 # define OP(pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype) \
     { pszOpcode, idxParse1, idxParse2, idxParse3, 0, opcode, param1, param2, param3, 0, 0, optype }
 # define OPVEX(pszOpcode, idxParse1, idxParse2, idxParse3, idxParse4, opcode, param1, param2, param3, param4, optype) \
-    { pszOpcode, idxParse1, idxParse2, idxParse3, idxParse4, opcode, param1, param2, param3, param4, 0, optype | DISOPTYPE_SSE }
+    { pszOpcode, idxParse1, idxParse2, idxParse3, idxParse4, opcode, param1, param2, param3, param4, 0, optype | DISOPTYPE_X86_SSE }
 
 #elif DISOPCODE_FORMAT == 16
 # define OP(pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype) \
     { optype,                 opcode, idxParse1, idxParse2, param1, param2, idxParse3, param3, 0,      0         }
 # define OPVEX(pszOpcode, idxParse1, idxParse2, idxParse3, idxParse4, opcode, param1, param2, param3, param4, optype) \
-    { optype | DISOPTYPE_SSE, opcode, idxParse1, idxParse2, param1, param2, idxParse3, param3, param4, idxParse4 }
+    { optype | DISOPTYPE_X86_SSE, opcode, idxParse1, idxParse2, param1, param2, idxParse3, param3, param4, idxParse4 }
 
 #elif DISOPCODE_FORMAT == 15
 # define OP(pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype) \
     { opcode, idxParse1, idxParse2, idxParse3, param1, param2, param3, optype,                 0,      0         }
 # define OPVEX(pszOpcode, idxParse1, idxParse2, idxParse3, idxParse4, opcode, param1, param2, param3, param4, optype) \
-    { opcode, idxParse1, idxParse2, idxParse3, param1, param2, param3, optype | DISOPTYPE_SSE, param4, idxParse4 }
+    { opcode, idxParse1, idxParse2, idxParse3, param1, param2, param3, optype | DISOPTYPE_X86_SSE, param4, idxParse4 }
 #else
 # error Unsupported DISOPCODE_FORMAT value
 #endif

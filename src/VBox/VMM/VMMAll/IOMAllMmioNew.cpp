@@ -46,8 +46,6 @@
 #include <VBox/vmm/hm.h>
 #include "IOMInline.h"
 
-#include <VBox/dis.h>
-#include <VBox/disopcode.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/param.h>
 #include <VBox/err.h>

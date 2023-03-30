@@ -4365,7 +4365,7 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(PDISSTATE pDis, uint8_t offInstr, 
         /*
          * Read and advance or exit.
          */
-        memcpy(&pDis->abInstr[offInstr], (uint8_t *)pState->pvPageR3 + (GCPtr & GUEST_PAGE_OFFSET_MASK), cb);
+        memcpy(&pDis->u.abInstr[offInstr], (uint8_t *)pState->pvPageR3 + (GCPtr & GUEST_PAGE_OFFSET_MASK), cb);
         offInstr  += (uint8_t)cb;
         if (cb >= cbMinRead)
         {

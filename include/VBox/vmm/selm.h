@@ -41,7 +41,6 @@
 
 #include <VBox/types.h>
 #include <iprt/x86.h>
-#include <VBox/dis.h>
 #include <VBox/vmm/dbgfsel.h>
 
 

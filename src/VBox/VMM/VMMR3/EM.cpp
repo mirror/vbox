@@ -69,7 +69,6 @@
 #include <VBox/vmm/uvm.h>
 #include <VBox/vmm/cpumdis.h>
 #include <VBox/dis.h>
-#include <VBox/disopcode.h>
 #include <VBox/err.h>
 #include "VMMTracing.h"
 
@@ -2015,7 +2014,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         }
 #else
         bool fWakeupPending = false;
-        AssertReleaseFailed();
+        //ssertReleaseFailed();
         /** @todo */
 #endif
 

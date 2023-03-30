@@ -45,7 +45,6 @@
 #include <VBox/param.h>
 #include <VBox/err.h>
 #include <VBox/dis.h>
-#include <VBox/disopcode.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
@@ -867,13 +866,13 @@ static DECLCALLBACK(int) emReadBytes(PDISSTATE pDis, uint8_t offInstr, uint8_t c
     else if (cbToRead < cbMinRead)
         cbToRead = cbMinRead;
 
-    int rc = PGMPhysSimpleReadGCPtr(pVCpu, &pDis->abInstr[offInstr], uSrcAddr, cbToRead);
+    int rc = PGMPhysSimpleReadGCPtr(pVCpu, &pDis->u.abInstr[offInstr], uSrcAddr, cbToRead);
     if (RT_FAILURE(rc))
     {
         if (cbToRead > cbMinRead)
         {
             cbToRead = cbMinRead;
-            rc = PGMPhysSimpleReadGCPtr(pVCpu, &pDis->abInstr[offInstr], uSrcAddr, cbToRead);
+            rc = PGMPhysSimpleReadGCPtr(pVCpu, &pDis->u.abInstr[offInstr], uSrcAddr, cbToRead);
         }
         if (RT_FAILURE(rc))
         {
@@ -1020,7 +1019,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstructionDisasState(PVMCPUCC pVCpu, PDIS
 {
     LogFlow(("EMInterpretInstructionDisasState %RGv\n", (RTGCPTR)rip));
 
-    VBOXSTRICTRC rc = IEMExecOneBypassWithPrefetchedByPC(pVCpu, rip, pDis->abInstr, pDis->cbCachedInstr);
+    VBOXSTRICTRC rc = IEMExecOneBypassWithPrefetchedByPC(pVCpu, rip, pDis->u.abInstr, pDis->cbCachedInstr);
     if (RT_UNLIKELY(   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
                     || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED))
         rc = VERR_EM_INTERPRETER;

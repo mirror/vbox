@@ -46,7 +46,7 @@
 #include "IEMInternal.h"
 #include <VBox/vmm/vmcc.h>
 #include <VBox/log.h>
-#include <VBox/disopcode.h> /* for OP_VMMCALL */
+#include <VBox/disopcode-x86-amd64.h> /* for OP_VMMCALL */
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <iprt/assert.h>

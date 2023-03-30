@@ -31,7 +31,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DIS
 #include <VBox/dis.h>
-#include <VBox/disopcode.h>
+#include <VBox/disopcode-x86-amd64.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
@@ -44,7 +44,7 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** This must be less or equal to DISSTATE::abInstr.
+/** This must be less or equal to DISSTATE::u.abInstr.
  * See Vol3A/Table 6-2 and Vol3B/Section22.25 for instance.  */
 #define DIS_MAX_INSTR_LENGTH    15
 
@@ -59,69 +59,69 @@
 *********************************************************************************************************************************/
 /** @name Parsers
  * @{ */
-static FNDISPARSE ParseIllegal;
-static FNDISPARSE ParseModRM;
-static FNDISPARSE ParseModRM_SizeOnly;
-static FNDISPARSE UseModRM;
-static FNDISPARSE ParseImmByte;
-static FNDISPARSE ParseImmByte_SizeOnly;
-static FNDISPARSE ParseImmByteSX;
-static FNDISPARSE ParseImmByteSX_SizeOnly;
-static FNDISPARSE ParseImmBRel;
-static FNDISPARSE ParseImmBRel_SizeOnly;
-static FNDISPARSE ParseImmUshort;
-static FNDISPARSE ParseImmUshort_SizeOnly;
-static FNDISPARSE ParseImmV;
-static FNDISPARSE ParseImmV_SizeOnly;
-static FNDISPARSE ParseImmVRel;
-static FNDISPARSE ParseImmVRel_SizeOnly;
-static FNDISPARSE ParseImmZ;
-static FNDISPARSE ParseImmZ_SizeOnly;
+static FNDISPARSEX86 ParseIllegal;
+static FNDISPARSEX86 ParseModRM;
+static FNDISPARSEX86 ParseModRM_SizeOnly;
+static FNDISPARSEX86 UseModRM;
+static FNDISPARSEX86 ParseImmByte;
+static FNDISPARSEX86 ParseImmByte_SizeOnly;
+static FNDISPARSEX86 ParseImmByteSX;
+static FNDISPARSEX86 ParseImmByteSX_SizeOnly;
+static FNDISPARSEX86 ParseImmBRel;
+static FNDISPARSEX86 ParseImmBRel_SizeOnly;
+static FNDISPARSEX86 ParseImmUshort;
+static FNDISPARSEX86 ParseImmUshort_SizeOnly;
+static FNDISPARSEX86 ParseImmV;
+static FNDISPARSEX86 ParseImmV_SizeOnly;
+static FNDISPARSEX86 ParseImmVRel;
+static FNDISPARSEX86 ParseImmVRel_SizeOnly;
+static FNDISPARSEX86 ParseImmZ;
+static FNDISPARSEX86 ParseImmZ_SizeOnly;
 
-static FNDISPARSE ParseImmAddr;
-static FNDISPARSE ParseImmAddr_SizeOnly;
-static FNDISPARSE ParseImmAddrF;
-static FNDISPARSE ParseImmAddrF_SizeOnly;
-static FNDISPARSE ParseFixedReg;
-static FNDISPARSE ParseImmUlong;
-static FNDISPARSE ParseImmUlong_SizeOnly;
-static FNDISPARSE ParseImmQword;
-static FNDISPARSE ParseImmQword_SizeOnly;
-static FNDISPARSE ParseInvOpModRm;
+static FNDISPARSEX86 ParseImmAddr;
+static FNDISPARSEX86 ParseImmAddr_SizeOnly;
+static FNDISPARSEX86 ParseImmAddrF;
+static FNDISPARSEX86 ParseImmAddrF_SizeOnly;
+static FNDISPARSEX86 ParseFixedReg;
+static FNDISPARSEX86 ParseImmUlong;
+static FNDISPARSEX86 ParseImmUlong_SizeOnly;
+static FNDISPARSEX86 ParseImmQword;
+static FNDISPARSEX86 ParseImmQword_SizeOnly;
+static FNDISPARSEX86 ParseInvOpModRm;
 
-static FNDISPARSE ParseTwoByteEsc;
-static FNDISPARSE ParseThreeByteEsc4;
-static FNDISPARSE ParseThreeByteEsc5;
-static FNDISPARSE ParseGrp1;
-static FNDISPARSE ParseShiftGrp2;
-static FNDISPARSE ParseGrp3;
-static FNDISPARSE ParseGrp4;
-static FNDISPARSE ParseGrp5;
-static FNDISPARSE Parse3DNow;
-static FNDISPARSE ParseGrp6;
-static FNDISPARSE ParseGrp7;
-static FNDISPARSE ParseGrp8;
-static FNDISPARSE ParseGrp9;
-static FNDISPARSE ParseGrp10;
-static FNDISPARSE ParseGrp12;
-static FNDISPARSE ParseGrp13;
-static FNDISPARSE ParseGrp14;
-static FNDISPARSE ParseGrp15;
-static FNDISPARSE ParseGrp16;
-static FNDISPARSE ParseGrp17;
-static FNDISPARSE ParseModFence;
-static FNDISPARSE ParseNopPause;
-static FNDISPARSE ParseVex2b;
-static FNDISPARSE ParseVex3b;
-static FNDISPARSE ParseVexDest;
+static FNDISPARSEX86 ParseTwoByteEsc;
+static FNDISPARSEX86 ParseThreeByteEsc4;
+static FNDISPARSEX86 ParseThreeByteEsc5;
+static FNDISPARSEX86 ParseGrp1;
+static FNDISPARSEX86 ParseShiftGrp2;
+static FNDISPARSEX86 ParseGrp3;
+static FNDISPARSEX86 ParseGrp4;
+static FNDISPARSEX86 ParseGrp5;
+static FNDISPARSEX86 Parse3DNow;
+static FNDISPARSEX86 ParseGrp6;
+static FNDISPARSEX86 ParseGrp7;
+static FNDISPARSEX86 ParseGrp8;
+static FNDISPARSEX86 ParseGrp9;
+static FNDISPARSEX86 ParseGrp10;
+static FNDISPARSEX86 ParseGrp12;
+static FNDISPARSEX86 ParseGrp13;
+static FNDISPARSEX86 ParseGrp14;
+static FNDISPARSEX86 ParseGrp15;
+static FNDISPARSEX86 ParseGrp16;
+static FNDISPARSEX86 ParseGrp17;
+static FNDISPARSEX86 ParseModFence;
+static FNDISPARSEX86 ParseNopPause;
+static FNDISPARSEX86 ParseVex2b;
+static FNDISPARSEX86 ParseVex3b;
+static FNDISPARSEX86 ParseVexDest;
 
-static FNDISPARSE ParseYv;
-static FNDISPARSE ParseYb;
-static FNDISPARSE ParseXv;
-static FNDISPARSE ParseXb;
+static FNDISPARSEX86 ParseYv;
+static FNDISPARSEX86 ParseYb;
+static FNDISPARSEX86 ParseXv;
+static FNDISPARSEX86 ParseXb;
 
 /** Floating point parsing */
-static FNDISPARSE ParseEscFP;
+static FNDISPARSEX86 ParseEscFP;
 /** @}  */
 
 
@@ -129,7 +129,7 @@ static FNDISPARSE ParseEscFP;
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** Parser opcode table for full disassembly. */
-static PFNDISPARSE const g_apfnFullDisasm[IDX_ParseMax] =
+static PFNDISPARSEX86 const g_apfnFullDisasm[IDX_ParseMax] =
 {
     ParseIllegal,
     ParseModRM,
@@ -180,7 +180,7 @@ static PFNDISPARSE const g_apfnFullDisasm[IDX_ParseMax] =
 };
 
 /** Parser opcode table for only calculating instruction size. */
-static PFNDISPARSE const g_apfnCalcSize[IDX_ParseMax] =
+static PFNDISPARSEX86 const g_apfnCalcSize[IDX_ParseMax] =
 {
     ParseIllegal,
     ParseModRM_SizeOnly,
@@ -250,7 +250,7 @@ static DECLCALLBACK(int) disReadBytesDefault(PDISSTATE pDis, uint8_t offInstr, u
 #if 0 /*def IN_RING0 - why? */
     RT_NOREF_PV(cbMinRead);
     AssertMsgFailed(("disReadWord with no read callback in ring 0!!\n"));
-    RT_BZERO(&pDis->abInstr[offInstr], cbMaxRead);
+    RT_BZERO(&pDis->u.abInstr[offInstr], cbMaxRead);
     pDis->cbCachedInstr = offInstr + cbMaxRead;
     return VERR_DIS_NO_READ_CALLBACK;
 #else
@@ -261,7 +261,7 @@ static DECLCALLBACK(int) disReadBytesDefault(PDISSTATE pDis, uint8_t offInstr, u
                                  : cbLeftOnPage <= cbMinRead
                                  ? cbMinRead
                                  : (uint8_t)cbLeftOnPage;
-    memcpy(&pDis->abInstr[offInstr], pbSrc, cbToRead);
+    memcpy(&pDis->u.abInstr[offInstr], pbSrc, cbToRead);
     pDis->cbCachedInstr = offInstr + cbToRead;
     return VINF_SUCCESS;
 #endif
@@ -269,12 +269,12 @@ static DECLCALLBACK(int) disReadBytesDefault(PDISSTATE pDis, uint8_t offInstr, u
 
 
 /**
- * Read more bytes into the DISSTATE::abInstr buffer, advance
+ * Read more bytes into the DISSTATE::u.abInstr buffer, advance
  * DISSTATE::cbCachedInstr.
  *
  * Will set DISSTATE::rc on failure, but still advance cbCachedInstr.
  *
- * The caller shall fend off reads beyond the DISSTATE::abInstr buffer.
+ * The caller shall fend off reads beyond the DISSTATE::u.abInstr buffer.
  *
  * @param   pDis                The disassembler state.
  * @param   offInstr            The offset of the read request.
@@ -283,7 +283,7 @@ static DECLCALLBACK(int) disReadBytesDefault(PDISSTATE pDis, uint8_t offInstr, u
  */
 DECL_NO_INLINE(static, void) disReadMore(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMin)
 {
-    Assert(cbMin + offInstr <= sizeof(pDis->abInstr));
+    Assert(cbMin + offInstr <= sizeof(pDis->u.abInstr));
 
     /*
      * Adjust the incoming request to not overlap with bytes that has already
@@ -303,14 +303,14 @@ DECL_NO_INLINE(static, void) disReadMore(PDISSTATE pDis, uint8_t offInstr, uint8
 
     /*
      * Do the read.
-     * (No need to zero anything on failure as abInstr is already zeroed by the
+     * (No need to zero anything on failure as u.abInstr is already zeroed by the
      * DISInstrEx API.)
      */
-    int rc = pDis->pfnReadBytes(pDis, offInstr, cbMin, sizeof(pDis->abInstr) - offInstr);
+    int rc = pDis->pfnReadBytes(pDis, offInstr, cbMin, sizeof(pDis->u.abInstr) - offInstr);
     if (RT_SUCCESS(rc))
     {
         Assert(pDis->cbCachedInstr >= offInstr + cbMin);
-        Assert(pDis->cbCachedInstr <= sizeof(pDis->abInstr));
+        Assert(pDis->cbCachedInstr <= sizeof(pDis->u.abInstr));
     }
     else
     {
@@ -333,14 +333,14 @@ DECL_NO_INLINE(static, uint8_t) disReadByteSlow(PDISSTATE pDis, size_t offInstr)
     if (RT_LIKELY(offInstr < DIS_MAX_INSTR_LENGTH))
     {
         disReadMore(pDis, (uint8_t)offInstr, 1);
-        return pDis->abInstr[offInstr];
+        return pDis->u.abInstr[offInstr];
     }
 
     Log(("disReadByte: too long instruction...\n"));
     pDis->rc = VERR_DIS_TOO_LONG_INSTR;
-    ssize_t cbLeft = (ssize_t)(sizeof(pDis->abInstr) - offInstr);
+    ssize_t cbLeft = (ssize_t)(sizeof(pDis->u.abInstr) - offInstr);
     if (cbLeft > 0)
-        return pDis->abInstr[offInstr];
+        return pDis->u.abInstr[offInstr];
     return 0;
 }
 
@@ -356,7 +356,7 @@ DECLINLINE(uint8_t) disReadByte(PDISSTATE pDis, size_t offInstr)
 {
     if (offInstr >= pDis->cbCachedInstr)
         return disReadByteSlow(pDis, offInstr);
-    return pDis->abInstr[offInstr];
+    return pDis->u.abInstr[offInstr];
 }
 
 
@@ -374,22 +374,22 @@ DECL_NO_INLINE(static, uint16_t) disReadWordSlow(PDISSTATE pDis, size_t offInstr
     {
         disReadMore(pDis, (uint8_t)offInstr, 2);
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
-        return *(uint16_t const *)&pDis->abInstr[offInstr];
+        return *(uint16_t const *)&pDis->u.abInstr[offInstr];
 #else
-        return RT_MAKE_U16(pDis->abInstr[offInstr], pDis->abInstr[offInstr + 1]);
+        return RT_MAKE_U16(pDis->u.abInstr[offInstr], pDis->u.abInstr[offInstr + 1]);
 #endif
     }
 
     Log(("disReadWord: too long instruction...\n"));
     pDis->rc = VERR_DIS_TOO_LONG_INSTR;
-    ssize_t cbLeft = (ssize_t)(sizeof(pDis->abInstr) - offInstr);
+    ssize_t cbLeft = (ssize_t)(sizeof(pDis->u.abInstr) - offInstr);
     switch (cbLeft)
     {
         case 1:
-            return pDis->abInstr[offInstr];
+            return pDis->u.abInstr[offInstr];
         default:
             if (cbLeft >= 2)
-                return RT_MAKE_U16(pDis->abInstr[offInstr], pDis->abInstr[offInstr + 1]);
+                return RT_MAKE_U16(pDis->u.abInstr[offInstr], pDis->u.abInstr[offInstr + 1]);
             return 0;
     }
 }
@@ -409,9 +409,9 @@ DECLINLINE(uint16_t) disReadWord(PDISSTATE pDis, size_t offInstr)
         return disReadWordSlow(pDis, offInstr);
 
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
-    return *(uint16_t const *)&pDis->abInstr[offInstr];
+    return *(uint16_t const *)&pDis->u.abInstr[offInstr];
 #else
-    return RT_MAKE_U16(pDis->abInstr[offInstr], pDis->abInstr[offInstr + 1]);
+    return RT_MAKE_U16(pDis->u.abInstr[offInstr], pDis->u.abInstr[offInstr + 1]);
 #endif
 }
 
@@ -430,28 +430,28 @@ DECL_NO_INLINE(static, uint32_t) disReadDWordSlow(PDISSTATE pDis, size_t offInst
     {
         disReadMore(pDis, (uint8_t)offInstr, 4);
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
-        return *(uint32_t const *)&pDis->abInstr[offInstr];
+        return *(uint32_t const *)&pDis->u.abInstr[offInstr];
 #else
-        return RT_MAKE_U32_FROM_U8(pDis->abInstr[offInstr    ], pDis->abInstr[offInstr + 1],
-                                   pDis->abInstr[offInstr + 2], pDis->abInstr[offInstr + 3]);
+        return RT_MAKE_U32_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
+                                   pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3]);
 #endif
     }
 
     Log(("disReadDWord: too long instruction...\n"));
     pDis->rc = VERR_DIS_TOO_LONG_INSTR;
-    ssize_t cbLeft = (ssize_t)(sizeof(pDis->abInstr) - offInstr);
+    ssize_t cbLeft = (ssize_t)(sizeof(pDis->u.abInstr) - offInstr);
     switch (cbLeft)
     {
         case 1:
-            return RT_MAKE_U32_FROM_U8(pDis->abInstr[offInstr], 0, 0, 0);
+            return RT_MAKE_U32_FROM_U8(pDis->u.abInstr[offInstr], 0, 0, 0);
         case 2:
-            return RT_MAKE_U32_FROM_U8(pDis->abInstr[offInstr], pDis->abInstr[offInstr + 1], 0, 0);
+            return RT_MAKE_U32_FROM_U8(pDis->u.abInstr[offInstr], pDis->u.abInstr[offInstr + 1], 0, 0);
         case 3:
-            return RT_MAKE_U32_FROM_U8(pDis->abInstr[offInstr], pDis->abInstr[offInstr + 1], pDis->abInstr[offInstr + 2], 0);
+            return RT_MAKE_U32_FROM_U8(pDis->u.abInstr[offInstr], pDis->u.abInstr[offInstr + 1], pDis->u.abInstr[offInstr + 2], 0);
         default:
             if (cbLeft >= 4)
-                return RT_MAKE_U32_FROM_U8(pDis->abInstr[offInstr    ], pDis->abInstr[offInstr + 1],
-                                           pDis->abInstr[offInstr + 2], pDis->abInstr[offInstr + 3]);
+                return RT_MAKE_U32_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
+                                           pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3]);
             return 0;
     }
 }
@@ -471,10 +471,10 @@ DECLINLINE(uint32_t) disReadDWord(PDISSTATE pDis, size_t offInstr)
         return disReadDWordSlow(pDis, offInstr);
 
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
-    return *(uint32_t const *)&pDis->abInstr[offInstr];
+    return *(uint32_t const *)&pDis->u.abInstr[offInstr];
 #else
-    return RT_MAKE_U32_FROM_U8(pDis->abInstr[offInstr    ], pDis->abInstr[offInstr + 1],
-                               pDis->abInstr[offInstr + 2], pDis->abInstr[offInstr + 3]);
+    return RT_MAKE_U32_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
+                               pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3]);
 #endif
 }
 
@@ -493,51 +493,51 @@ DECL_NO_INLINE(static, uint64_t) disReadQWordSlow(PDISSTATE pDis, size_t offInst
     {
         disReadMore(pDis, (uint8_t)offInstr, 8);
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
-        return *(uint64_t const *)&pDis->abInstr[offInstr];
+        return *(uint64_t const *)&pDis->u.abInstr[offInstr];
 #else
-        return RT_MAKE_U64_FROM_U8(pDis->abInstr[offInstr    ], pDis->abInstr[offInstr + 1],
-                                   pDis->abInstr[offInstr + 2], pDis->abInstr[offInstr + 3],
-                                   pDis->abInstr[offInstr + 4], pDis->abInstr[offInstr + 5],
-                                   pDis->abInstr[offInstr + 6], pDis->abInstr[offInstr + 7]);
+        return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
+                                   pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3],
+                                   pDis->u.abInstr[offInstr + 4], pDis->u.abInstr[offInstr + 5],
+                                   pDis->u.abInstr[offInstr + 6], pDis->u.abInstr[offInstr + 7]);
 #endif
     }
 
     Log(("disReadQWord: too long instruction...\n"));
     pDis->rc = VERR_DIS_TOO_LONG_INSTR;
-    ssize_t cbLeft = (ssize_t)(sizeof(pDis->abInstr) - offInstr);
+    ssize_t cbLeft = (ssize_t)(sizeof(pDis->u.abInstr) - offInstr);
     switch (cbLeft)
     {
         case 1:
-            return RT_MAKE_U64_FROM_U8(pDis->abInstr[offInstr], 0, 0, 0,   0, 0, 0, 0);
+            return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr], 0, 0, 0,   0, 0, 0, 0);
         case 2:
-            return RT_MAKE_U64_FROM_U8(pDis->abInstr[offInstr], pDis->abInstr[offInstr + 1], 0, 0,   0, 0, 0, 0);
+            return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr], pDis->u.abInstr[offInstr + 1], 0, 0,   0, 0, 0, 0);
         case 3:
-            return RT_MAKE_U64_FROM_U8(pDis->abInstr[offInstr    ], pDis->abInstr[offInstr + 1],
-                                       pDis->abInstr[offInstr + 2], 0,   0, 0, 0, 0);
+            return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
+                                       pDis->u.abInstr[offInstr + 2], 0,   0, 0, 0, 0);
         case 4:
-            return RT_MAKE_U64_FROM_U8(pDis->abInstr[offInstr    ], pDis->abInstr[offInstr + 1],
-                                       pDis->abInstr[offInstr + 2], pDis->abInstr[offInstr + 3],
+            return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
+                                       pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3],
                                        0, 0, 0, 0);
         case 5:
-            return RT_MAKE_U64_FROM_U8(pDis->abInstr[offInstr    ], pDis->abInstr[offInstr + 1],
-                                       pDis->abInstr[offInstr + 2], pDis->abInstr[offInstr + 3],
-                                       pDis->abInstr[offInstr + 4], 0, 0, 0);
+            return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
+                                       pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3],
+                                       pDis->u.abInstr[offInstr + 4], 0, 0, 0);
         case 6:
-            return RT_MAKE_U64_FROM_U8(pDis->abInstr[offInstr    ], pDis->abInstr[offInstr + 1],
-                                       pDis->abInstr[offInstr + 2], pDis->abInstr[offInstr + 3],
-                                       pDis->abInstr[offInstr + 4], pDis->abInstr[offInstr + 5],
+            return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
+                                       pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3],
+                                       pDis->u.abInstr[offInstr + 4], pDis->u.abInstr[offInstr + 5],
                                        0, 0);
         case 7:
-            return RT_MAKE_U64_FROM_U8(pDis->abInstr[offInstr    ], pDis->abInstr[offInstr + 1],
-                                       pDis->abInstr[offInstr + 2], pDis->abInstr[offInstr + 3],
-                                       pDis->abInstr[offInstr + 4], pDis->abInstr[offInstr + 5],
-                                       pDis->abInstr[offInstr + 6], 0);
+            return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
+                                       pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3],
+                                       pDis->u.abInstr[offInstr + 4], pDis->u.abInstr[offInstr + 5],
+                                       pDis->u.abInstr[offInstr + 6], 0);
         default:
             if (cbLeft >= 8)
-                return RT_MAKE_U64_FROM_U8(pDis->abInstr[offInstr    ], pDis->abInstr[offInstr + 1],
-                                           pDis->abInstr[offInstr + 2], pDis->abInstr[offInstr + 3],
-                                           pDis->abInstr[offInstr + 4], pDis->abInstr[offInstr + 5],
-                                           pDis->abInstr[offInstr + 6], pDis->abInstr[offInstr + 7]);
+                return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
+                                           pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3],
+                                           pDis->u.abInstr[offInstr + 4], pDis->u.abInstr[offInstr + 5],
+                                           pDis->u.abInstr[offInstr + 6], pDis->u.abInstr[offInstr + 7]);
             return 0;
     }
 }
@@ -556,12 +556,12 @@ DECLINLINE(uint64_t) disReadQWord(PDISSTATE pDis, size_t offInstr)
         return disReadQWordSlow(pDis, offInstr);
 
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
-    return *(uint64_t const *)&pDis->abInstr[offInstr];
+    return *(uint64_t const *)&pDis->u.abInstr[offInstr];
 #else
-    return RT_MAKE_U64_FROM_U8(pDis->abInstr[offInstr    ], pDis->abInstr[offInstr + 1],
-                               pDis->abInstr[offInstr + 2], pDis->abInstr[offInstr + 3],
-                               pDis->abInstr[offInstr + 4], pDis->abInstr[offInstr + 5],
-                               pDis->abInstr[offInstr + 6], pDis->abInstr[offInstr + 7]);
+    return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
+                               pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3],
+                               pDis->u.abInstr[offInstr + 4], pDis->u.abInstr[offInstr + 5],
+                               pDis->u.abInstr[offInstr + 6], pDis->u.abInstr[offInstr + 7]);
 #endif
 }
 
@@ -581,67 +581,67 @@ static size_t disParseInstruction(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pD
      * Note! Multibyte opcodes are always marked harmless until the final byte.
      */
     bool fFiltered;
-    if ((pOp->fOpType & pDis->fFilter) == 0)
+    if ((pOp->fOpType & pDis->arch.x86.fFilter) == 0)
     {
         fFiltered = true;
-        pDis->pfnDisasmFnTable = g_apfnCalcSize;
+        pDis->arch.x86.pfnDisasmFnTable = g_apfnCalcSize;
     }
     else
     {
         /* Not filtered out -> full disassembly */
         fFiltered = false;
-        pDis->pfnDisasmFnTable = g_apfnFullDisasm;
+        pDis->arch.x86.pfnDisasmFnTable = g_apfnFullDisasm;
     }
 
     // Should contain the parameter type on input
-    pDis->Param1.fParam = pOp->fParam1;
-    pDis->Param2.fParam = pOp->fParam2;
-    pDis->Param3.fParam = pOp->fParam3;
-    pDis->Param4.fParam = pOp->fParam4;
+    pDis->Param1.arch.x86.fParam = pOp->fParam1;
+    pDis->Param2.arch.x86.fParam = pOp->fParam2;
+    pDis->Param3.arch.x86.fParam = pOp->fParam3;
+    pDis->Param4.arch.x86.fParam = pOp->fParam4;
 
     /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    if (!(pOp->fOpType & (DISOPTYPE_FORCED_64_OP_SIZE | DISOPTYPE_DEFAULT_64_OP_SIZE | DISOPTYPE_FORCED_32_OP_SIZE_X86)))
+    if (!(pOp->fOpType & (DISOPTYPE_X86_FORCED_64_OP_SIZE | DISOPTYPE_X86_DEFAULT_64_OP_SIZE | DISOPTYPE_X86_FORCED_32_OP_SIZE_X86)))
     { /* probably likely */ }
     else
     {
         if (pDis->uCpuMode == DISCPUMODE_64BIT)
         {
-            if (pOp->fOpType & DISOPTYPE_FORCED_64_OP_SIZE)
-                pDis->uOpMode = DISCPUMODE_64BIT;
-            else if (   (pOp->fOpType & DISOPTYPE_DEFAULT_64_OP_SIZE)
-                     && !(pDis->fPrefix & DISPREFIX_OPSIZE))
-                pDis->uOpMode = DISCPUMODE_64BIT;
+            if (pOp->fOpType & DISOPTYPE_X86_FORCED_64_OP_SIZE)
+                pDis->arch.x86.uOpMode = DISCPUMODE_64BIT;
+            else if (   (pOp->fOpType & DISOPTYPE_X86_DEFAULT_64_OP_SIZE)
+                     && !(pDis->arch.x86.fPrefix & DISPREFIX_OPSIZE))
+                pDis->arch.x86.uOpMode = DISCPUMODE_64BIT;
         }
-        else if (pOp->fOpType & DISOPTYPE_FORCED_32_OP_SIZE_X86)
+        else if (pOp->fOpType & DISOPTYPE_X86_FORCED_32_OP_SIZE_X86)
         {
             /* Forced 32 bits operand size for certain instructions (mov crx, mov drx). */
             Assert(pDis->uCpuMode != DISCPUMODE_64BIT);
-            pDis->uOpMode = DISCPUMODE_32BIT;
+            pDis->arch.x86.uOpMode = DISCPUMODE_32BIT;
         }
     }
 
     if (pOp->idxParse1 != IDX_ParseNop)
     {
-        offInstr = pDis->pfnDisasmFnTable[pOp->idxParse1](offInstr, pOp, pDis, &pDis->Param1);
-        if (fFiltered == false) pDis->Param1.cb = DISGetParamSize(pDis, &pDis->Param1);
+        offInstr = pDis->arch.x86.pfnDisasmFnTable[pOp->idxParse1](offInstr, pOp, pDis, &pDis->Param1);
+        if (fFiltered == false) pDis->Param1.arch.x86.cb = DISGetParamSize(pDis, &pDis->Param1);
     }
 
     if (pOp->idxParse2 != IDX_ParseNop)
     {
-        offInstr = pDis->pfnDisasmFnTable[pOp->idxParse2](offInstr, pOp, pDis, &pDis->Param2);
-        if (fFiltered == false) pDis->Param2.cb = DISGetParamSize(pDis, &pDis->Param2);
+        offInstr = pDis->arch.x86.pfnDisasmFnTable[pOp->idxParse2](offInstr, pOp, pDis, &pDis->Param2);
+        if (fFiltered == false) pDis->Param2.arch.x86.cb = DISGetParamSize(pDis, &pDis->Param2);
     }
 
     if (pOp->idxParse3 != IDX_ParseNop)
     {
-        offInstr = pDis->pfnDisasmFnTable[pOp->idxParse3](offInstr, pOp, pDis, &pDis->Param3);
-        if (fFiltered == false) pDis->Param3.cb = DISGetParamSize(pDis, &pDis->Param3);
+        offInstr = pDis->arch.x86.pfnDisasmFnTable[pOp->idxParse3](offInstr, pOp, pDis, &pDis->Param3);
+        if (fFiltered == false) pDis->Param3.arch.x86.cb = DISGetParamSize(pDis, &pDis->Param3);
     }
 
     if (pOp->idxParse4 != IDX_ParseNop)
     {
-        offInstr = pDis->pfnDisasmFnTable[pOp->idxParse4](offInstr, pOp, pDis, &pDis->Param4);
-        if (fFiltered == false) pDis->Param4.cb = DISGetParamSize(pDis, &pDis->Param4);
+        offInstr = pDis->arch.x86.pfnDisasmFnTable[pOp->idxParse4](offInstr, pOp, pDis, &pDis->Param4);
+        if (fFiltered == false) pDis->Param4.arch.x86.cb = DISGetParamSize(pDis, &pDis->Param4);
     }
     // else simple one byte instruction
 
@@ -656,15 +656,15 @@ static size_t ParseEscFP(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     RT_NOREF_PV(pOp);
 
     uint8_t    ModRM = disReadByte(pDis, offInstr);
-    uint8_t    index = pDis->bOpCode - 0xD8;
+    uint8_t    index = pDis->arch.x86.bOpCode - 0xD8;
     if (ModRM <= 0xBF)
     {
         fpop            = &(g_apMapX86_FP_Low[index])[MODRM_REG(ModRM)];
         pDis->pCurInstr = fpop;
 
         // Should contain the parameter type on input
-        pDis->Param1.fParam = fpop->fParam1;
-        pDis->Param2.fParam = fpop->fParam2;
+        pDis->Param1.arch.x86.fParam = fpop->fParam1;
+        pDis->Param2.arch.x86.fParam = fpop->fParam2;
     }
     else
     {
@@ -676,24 +676,24 @@ static size_t ParseEscFP(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
      * Apply filter to instruction type to determine if a full disassembly is required.
      * @note Multibyte opcodes are always marked harmless until the final byte.
      */
-    if ((fpop->fOpType & pDis->fFilter) == 0)
-        pDis->pfnDisasmFnTable = g_apfnCalcSize;
+    if ((fpop->fOpType & pDis->arch.x86.fFilter) == 0)
+        pDis->arch.x86.pfnDisasmFnTable = g_apfnCalcSize;
     else
         /* Not filtered out -> full disassembly */
-        pDis->pfnDisasmFnTable = g_apfnFullDisasm;
+        pDis->arch.x86.pfnDisasmFnTable = g_apfnFullDisasm;
 
     /* Correct the operand size if the instruction is marked as forced or default 64 bits */
     if (  pDis->uCpuMode != DISCPUMODE_64BIT
-        || !(fpop->fOpType & (DISOPTYPE_FORCED_64_OP_SIZE | DISOPTYPE_DEFAULT_64_OP_SIZE)))
+        || !(fpop->fOpType & (DISOPTYPE_X86_FORCED_64_OP_SIZE | DISOPTYPE_X86_DEFAULT_64_OP_SIZE)))
     { /* probably likely */ }
     else
     {
         /* Note: redundant, but just in case this ever changes */
-        if (fpop->fOpType & DISOPTYPE_FORCED_64_OP_SIZE)
-            pDis->uOpMode = DISCPUMODE_64BIT;
-        else if (    (fpop->fOpType & DISOPTYPE_DEFAULT_64_OP_SIZE)
-                 &&  !(pDis->fPrefix & DISPREFIX_OPSIZE))
-            pDis->uOpMode = DISCPUMODE_64BIT;
+        if (fpop->fOpType & DISOPTYPE_X86_FORCED_64_OP_SIZE)
+            pDis->arch.x86.uOpMode = DISCPUMODE_64BIT;
+        else if (    (fpop->fOpType & DISOPTYPE_X86_DEFAULT_64_OP_SIZE)
+                 &&  !(pDis->arch.x86.fPrefix & DISPREFIX_OPSIZE))
+            pDis->arch.x86.uOpMode = DISCPUMODE_64BIT;
     }
 
     // Little hack to make sure the ModRM byte is included in the returned size
@@ -701,10 +701,10 @@ static size_t ParseEscFP(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
         offInstr++; //ModRM byte
 
     if (fpop->idxParse1 != IDX_ParseNop)
-        offInstr = pDis->pfnDisasmFnTable[fpop->idxParse1](offInstr, fpop, pDis, pParam);
+        offInstr = pDis->arch.x86.pfnDisasmFnTable[fpop->idxParse1](offInstr, fpop, pDis, pParam);
 
     if (fpop->idxParse2 != IDX_ParseNop)
-        offInstr = pDis->pfnDisasmFnTable[fpop->idxParse2](offInstr, fpop, pDis, pParam);
+        offInstr = pDis->arch.x86.pfnDisasmFnTable[fpop->idxParse2](offInstr, fpop, pDis, pParam);
 
     return offInstr;
 }
@@ -721,54 +721,54 @@ static size_t ParseEscFP(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
  ********************************************************************************************************************************/
 static void UseSIB(PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    unsigned scale = pDis->SIB.Bits.Scale;
-    uint8_t  base  = pDis->SIB.Bits.Base;
-    uint8_t  index = pDis->SIB.Bits.Index;
+    unsigned scale = pDis->arch.x86.SIB.Bits.Scale;
+    uint8_t  base  = pDis->arch.x86.SIB.Bits.Base;
+    uint8_t  index = pDis->arch.x86.SIB.Bits.Index;
 
     unsigned regtype, vregtype;
     /* There's no way to distinguish between SIB and VSIB
      * and having special parameter to parse explicitly VSIB
      * is not an options since only one instruction (gather)
      * supports it currently. May be changed in the future. */
-        if (pDis->uAddrMode == DISCPUMODE_32BIT)
+        if (pDis->arch.x86.uAddrMode == DISCPUMODE_32BIT)
             regtype    = DISUSE_REG_GEN32;
         else
             regtype    = DISUSE_REG_GEN64;
     if (pDis->pCurInstr->uOpcode == OP_GATHER)
-        vregtype = (VEXREG_IS256B(pDis->bVexDestReg) ? DISUSE_REG_YMM : DISUSE_REG_XMM);
+        vregtype = (VEXREG_IS256B(pDis->arch.x86.bVexDestReg) ? DISUSE_REG_YMM : DISUSE_REG_XMM);
     else
         vregtype = regtype;
 
     if (index != 4)
     {
         pParam->fUse |= DISUSE_INDEX | vregtype;
-        pParam->Index.idxGenReg = index;
+        pParam->arch.x86.Index.idxGenReg = index;
 
         if (scale != 0)
         {
             pParam->fUse  |= DISUSE_SCALE;
-            pParam->uScale = (uint8_t)(1 << scale);
+            pParam->arch.x86.uScale = (uint8_t)(1 << scale);
         }
     }
 
-    if (base == 5 && pDis->ModRM.Bits.Mod == 0)
+    if (base == 5 && pDis->arch.x86.ModRM.Bits.Mod == 0)
     {
         // [scaled index] + disp32
-        if (pDis->uAddrMode == DISCPUMODE_32BIT)
+        if (pDis->arch.x86.uAddrMode == DISCPUMODE_32BIT)
         {
             pParam->fUse |= DISUSE_DISPLACEMENT32;
-            pParam->uDisp.i32 = pDis->i32SibDisp;
+            pParam->arch.x86.uDisp.i32 = pDis->arch.x86.i32SibDisp;
         }
         else
         {   /* sign-extend to 64 bits */
             pParam->fUse |= DISUSE_DISPLACEMENT64;
-            pParam->uDisp.i64 = pDis->i32SibDisp;
+            pParam->arch.x86.uDisp.i64 = pDis->arch.x86.i32SibDisp;
         }
     }
     else
     {
         pParam->fUse |= DISUSE_BASE | regtype;
-        pParam->Base.idxGenReg = base;
+        pParam->arch.x86.Base.idxGenReg = base;
     }
     return;   /* Already fetched everything in ParseSIB; no size returned */
 }
@@ -781,24 +781,24 @@ static size_t ParseSIB(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPP
     uint8_t SIB = disReadByte(pDis, offInstr);
     offInstr++;
 
-    pDis->SIB.Bits.Base  = SIB_BASE(SIB);
-    pDis->SIB.Bits.Index = SIB_INDEX(SIB);
-    pDis->SIB.Bits.Scale = SIB_SCALE(SIB);
+    pDis->arch.x86.SIB.Bits.Base  = SIB_BASE(SIB);
+    pDis->arch.x86.SIB.Bits.Index = SIB_INDEX(SIB);
+    pDis->arch.x86.SIB.Bits.Scale = SIB_SCALE(SIB);
 
-    if (pDis->fPrefix & DISPREFIX_REX)
+    if (pDis->arch.x86.fPrefix & DISPREFIX_REX)
     {
         /* REX.B extends the Base field if not scaled index + disp32 */
-        if (!(pDis->SIB.Bits.Base == 5 && pDis->ModRM.Bits.Mod == 0))
-            pDis->SIB.Bits.Base  |= (!!(pDis->fRexPrefix & DISPREFIX_REX_FLAGS_B)) << 3;
+        if (!(pDis->arch.x86.SIB.Bits.Base == 5 && pDis->arch.x86.ModRM.Bits.Mod == 0))
+            pDis->arch.x86.SIB.Bits.Base  |= (!!(pDis->arch.x86.fRexPrefix & DISPREFIX_REX_FLAGS_B)) << 3;
 
-        pDis->SIB.Bits.Index |= (!!(pDis->fRexPrefix & DISPREFIX_REX_FLAGS_X)) << 3;
+        pDis->arch.x86.SIB.Bits.Index |= (!!(pDis->arch.x86.fRexPrefix & DISPREFIX_REX_FLAGS_X)) << 3;
     }
 
-    if (    pDis->SIB.Bits.Base == 5
-        &&  pDis->ModRM.Bits.Mod == 0)
+    if (    pDis->arch.x86.SIB.Bits.Base == 5
+        &&  pDis->arch.x86.ModRM.Bits.Mod == 0)
     {
         /* Additional 32 bits displacement. No change in long mode. */
-        pDis->i32SibDisp = (int32_t)disReadDWord(pDis, offInstr);
+        pDis->arch.x86.i32SibDisp = (int32_t)disReadDWord(pDis, offInstr);
         offInstr += 4;
     }
     return offInstr;
@@ -812,20 +812,20 @@ static size_t ParseSIB_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis
     uint8_t SIB = disReadByte(pDis, offInstr);
     offInstr++;
 
-    pDis->SIB.Bits.Base  = SIB_BASE(SIB);
-    pDis->SIB.Bits.Index = SIB_INDEX(SIB);
-    pDis->SIB.Bits.Scale = SIB_SCALE(SIB);
+    pDis->arch.x86.SIB.Bits.Base  = SIB_BASE(SIB);
+    pDis->arch.x86.SIB.Bits.Index = SIB_INDEX(SIB);
+    pDis->arch.x86.SIB.Bits.Scale = SIB_SCALE(SIB);
 
-    if (pDis->fPrefix & DISPREFIX_REX)
+    if (pDis->arch.x86.fPrefix & DISPREFIX_REX)
     {
         /* REX.B extends the Base field. */
-        pDis->SIB.Bits.Base  |= ((!!(pDis->fRexPrefix & DISPREFIX_REX_FLAGS_B)) << 3);
+        pDis->arch.x86.SIB.Bits.Base  |= ((!!(pDis->arch.x86.fRexPrefix & DISPREFIX_REX_FLAGS_B)) << 3);
         /* REX.X extends the Index field. */
-        pDis->SIB.Bits.Index |= ((!!(pDis->fRexPrefix & DISPREFIX_REX_FLAGS_X)) << 3);
+        pDis->arch.x86.SIB.Bits.Index |= ((!!(pDis->arch.x86.fRexPrefix & DISPREFIX_REX_FLAGS_X)) << 3);
     }
 
-    if (    pDis->SIB.Bits.Base == 5
-        &&  pDis->ModRM.Bits.Mod == 0)
+    if (    pDis->arch.x86.SIB.Bits.Base == 5
+        &&  pDis->arch.x86.ModRM.Bits.Mod == 0)
     {
         /* Additional 32 bits displacement. No change in long mode. */
         offInstr += 4;
@@ -849,14 +849,14 @@ static void disasmModRMReg(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
     RT_NOREF_PV(pOp); RT_NOREF_PV(pDis);
 
 #ifdef LOG_ENABLED
-    unsigned type    = OP_PARM_VTYPE(pParam->fParam);
+    unsigned type    = OP_PARM_VTYPE(pParam->arch.x86.fParam);
 #endif
-    unsigned subtype = OP_PARM_VSUBTYPE(pParam->fParam);
+    unsigned subtype = OP_PARM_VSUBTYPE(pParam->arch.x86.fParam);
     if (fRegAddr)
-        subtype = (pDis->uAddrMode == DISCPUMODE_64BIT) ? OP_PARM_q : OP_PARM_d;
+        subtype = (pDis->arch.x86.uAddrMode == DISCPUMODE_64BIT) ? OP_PARM_q : OP_PARM_d;
     else if (subtype == OP_PARM_v || subtype == OP_PARM_NONE || subtype == OP_PARM_y)
     {
-        switch (pDis->uOpMode)
+        switch (pDis->arch.x86.uOpMode)
         {
         case DISCPUMODE_32BIT:
             subtype = OP_PARM_d;
@@ -877,11 +877,11 @@ static void disasmModRMReg(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
     switch (subtype)
     {
     case OP_PARM_b:
-        Assert(idx < (pDis->fPrefix & DISPREFIX_REX ? 16U : 8U));
+        Assert(idx < (pDis->arch.x86.fPrefix & DISPREFIX_REX ? 16U : 8U));
 
         /* AH, BH, CH & DH map to DIL, SIL, EBL & SPL when a rex prefix is present. */
         /* Intel 64 and IA-32 Architectures Software Developer's Manual: 3.4.1.1 */
-        if (    (pDis->fPrefix & DISPREFIX_REX)
+        if (    (pDis->arch.x86.fPrefix & DISPREFIX_REX)
             &&  idx >= DISGREG_AH
             &&  idx <= DISGREG_BH)
         {
@@ -889,30 +889,30 @@ static void disasmModRMReg(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
         }
 
         pParam->fUse |= DISUSE_REG_GEN8;
-        pParam->Base.idxGenReg = (uint8_t)idx;
+        pParam->arch.x86.Base.idxGenReg = (uint8_t)idx;
         break;
 
     case OP_PARM_w:
-        Assert(idx < (pDis->fPrefix & DISPREFIX_REX ? 16U : 8U));
+        Assert(idx < (pDis->arch.x86.fPrefix & DISPREFIX_REX ? 16U : 8U));
 
         pParam->fUse |= DISUSE_REG_GEN16;
-        pParam->Base.idxGenReg = (uint8_t)idx;
+        pParam->arch.x86.Base.idxGenReg = (uint8_t)idx;
         break;
 
     case OP_PARM_d:
-        Assert(idx < (pDis->fPrefix & DISPREFIX_REX ? 16U : 8U));
+        Assert(idx < (pDis->arch.x86.fPrefix & DISPREFIX_REX ? 16U : 8U));
 
-        if (   !(pOp->fOpType & DISOPTYPE_DEFAULT_64_OP_SIZE) /* Tweak for vpmovmskb & pmovmskb. */
-            || pDis->uOpMode != DISCPUMODE_64BIT)
+        if (   !(pOp->fOpType & DISOPTYPE_X86_DEFAULT_64_OP_SIZE) /* Tweak for vpmovmskb & pmovmskb. */
+            || pDis->arch.x86.uOpMode != DISCPUMODE_64BIT)
             pParam->fUse |= DISUSE_REG_GEN32;
         else
             pParam->fUse |= DISUSE_REG_GEN64;
-        pParam->Base.idxGenReg = (uint8_t)idx;
+        pParam->arch.x86.Base.idxGenReg = (uint8_t)idx;
         break;
 
     case OP_PARM_q:
         pParam->fUse |= DISUSE_REG_GEN64;
-        pParam->Base.idxGenReg = (uint8_t)idx;
+        pParam->arch.x86.Base.idxGenReg = (uint8_t)idx;
         break;
 
     default:
@@ -930,12 +930,12 @@ static void disasmModRMReg16(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDIS
 
     RT_NOREF_PV(pDis); RT_NOREF_PV(pOp);
     pParam->fUse |= DISUSE_REG_GEN16;
-    pParam->Base.idxGenReg = s_auBaseModRMReg16[idx];
+    pParam->arch.x86.Base.idxGenReg = s_auBaseModRMReg16[idx];
     if (idx < 4)
     {
         static const uint8_t s_auIndexModRMReg16[4] = { DISGREG_SI, DISGREG_DI, DISGREG_SI, DISGREG_DI };
         pParam->fUse |= DISUSE_INDEX;
-        pParam->Index.idxGenReg = s_auIndexModRMReg16[idx];
+        pParam->arch.x86.Index.idxGenReg = s_auIndexModRMReg16[idx];
     }
 }
 
@@ -951,16 +951,16 @@ static void disasmModRMSReg(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     }
 
     pParam->fUse |= DISUSE_REG_SEG;
-    pParam->Base.idxSegReg = (uint8_t)idx;
+    pParam->arch.x86.Base.idxSegReg = (uint8_t)idx;
 }
 
 
 static size_t UseModRM(size_t const offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    unsigned vtype = OP_PARM_VTYPE(pParam->fParam);
-    uint8_t  reg = pDis->ModRM.Bits.Reg;
-    uint8_t  mod = pDis->ModRM.Bits.Mod;
-    uint8_t  rm  = pDis->ModRM.Bits.Rm;
+    unsigned vtype = OP_PARM_VTYPE(pParam->arch.x86.fParam);
+    uint8_t  reg = pDis->arch.x86.ModRM.Bits.Reg;
+    uint8_t  mod = pDis->arch.x86.ModRM.Bits.Mod;
+    uint8_t  rm  = pDis->arch.x86.ModRM.Bits.Rm;
 
     switch (vtype)
     {
@@ -977,19 +977,19 @@ static size_t UseModRM(size_t const offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
                 pParam->fUse |= DISUSE_REG_CR;
 
                 if (    pDis->pCurInstr->uOpcode == OP_MOV_CR
-                    &&  pDis->uOpMode == DISCPUMODE_32BIT
-                    &&  (pDis->fPrefix & DISPREFIX_LOCK))
+                    &&  pDis->arch.x86.uOpMode == DISCPUMODE_32BIT
+                    &&  (pDis->arch.x86.fPrefix & DISPREFIX_LOCK))
                 {
-                    pDis->fPrefix &= ~DISPREFIX_LOCK;
-                    pParam->Base.idxCtrlReg = DISCREG_CR8;
+                    pDis->arch.x86.fPrefix &= ~DISPREFIX_LOCK;
+                    pParam->arch.x86.Base.idxCtrlReg = DISCREG_CR8;
                 }
                 else
-                    pParam->Base.idxCtrlReg = reg;
+                    pParam->arch.x86.Base.idxCtrlReg = reg;
                 return offInstr;
 
             case OP_PARM_D: //debug register
                 pParam->fUse |= DISUSE_REG_DBG;
-                pParam->Base.idxDbgReg = reg;
+                pParam->arch.x86.Base.idxDbgReg = reg;
                 return offInstr;
 
             case OP_PARM_Q: //MMX or memory operand
@@ -1001,7 +1001,7 @@ static size_t UseModRM(size_t const offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
             case OP_PARM_P: //MMX register
                 reg &= 7;   /* REX.R has no effect here */
                 pParam->fUse |= DISUSE_REG_MMX;
-                pParam->Base.idxMmxReg = reg;
+                pParam->arch.x86.Base.idxMmxReg = reg;
                 return offInstr;
 
             case OP_PARM_S: //segment register
@@ -1013,7 +1013,7 @@ static size_t UseModRM(size_t const offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
             case OP_PARM_T: //test register
                 reg &= 7;   /* REX.R has no effect here */
                 pParam->fUse |= DISUSE_REG_TEST;
-                pParam->Base.idxTestReg = reg;
+                pParam->arch.x86.Base.idxTestReg = reg;
                 return offInstr;
 
             case OP_PARM_W: //XMM register or memory operand
@@ -1026,20 +1026,20 @@ static size_t UseModRM(size_t const offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
                 RT_FALL_THRU();
 
             case OP_PARM_V: //XMM register
-                if (VEXREG_IS256B(pDis->bVexDestReg)
-                    && OP_PARM_VSUBTYPE(pParam->fParam) != OP_PARM_dq
-                    && OP_PARM_VSUBTYPE(pParam->fParam) != OP_PARM_q
-                    && OP_PARM_VSUBTYPE(pParam->fParam) != OP_PARM_d
-                    && OP_PARM_VSUBTYPE(pParam->fParam) != OP_PARM_w)
+                if (VEXREG_IS256B(pDis->arch.x86.bVexDestReg)
+                    && OP_PARM_VSUBTYPE(pParam->arch.x86.fParam) != OP_PARM_dq
+                    && OP_PARM_VSUBTYPE(pParam->arch.x86.fParam) != OP_PARM_q
+                    && OP_PARM_VSUBTYPE(pParam->arch.x86.fParam) != OP_PARM_d
+                    && OP_PARM_VSUBTYPE(pParam->arch.x86.fParam) != OP_PARM_w)
                 {
                     // Use YMM register if VEX.L is set.
                     pParam->fUse |= DISUSE_REG_YMM;
-                    pParam->Base.idxYmmReg = reg;
+                    pParam->arch.x86.Base.idxYmmReg = reg;
                 }
                 else
                 {
                     pParam->fUse |= DISUSE_REG_XMM;
-                    pParam->Base.idxXmmReg = reg;
+                    pParam->arch.x86.Base.idxXmmReg = reg;
                 }
                 return offInstr;
             }
@@ -1048,9 +1048,9 @@ static size_t UseModRM(size_t const offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
 
     /** @todo bound */
 
-    if (pDis->uAddrMode != DISCPUMODE_16BIT)
+    if (pDis->arch.x86.uAddrMode != DISCPUMODE_16BIT)
     {
-        Assert(pDis->uAddrMode == DISCPUMODE_32BIT || pDis->uAddrMode == DISCPUMODE_64BIT);
+        Assert(pDis->arch.x86.uAddrMode == DISCPUMODE_32BIT || pDis->arch.x86.uAddrMode == DISCPUMODE_64BIT);
 
         /*
          * Note: displacements in long mode are 8 or 32 bits and sign-extended to 64 bits
@@ -1067,12 +1067,12 @@ static size_t UseModRM(size_t const offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
                 if (pDis->uCpuMode != DISCPUMODE_64BIT)
                 {
                     pParam->fUse |= DISUSE_DISPLACEMENT32;
-                    pParam->uDisp.i32 = pDis->i32SibDisp;
+                    pParam->arch.x86.uDisp.i32 = pDis->arch.x86.i32SibDisp;
                 }
                 else
                 {
                     pParam->fUse |= DISUSE_RIPDISPLACEMENT32;
-                    pParam->uDisp.i32 = pDis->i32SibDisp;
+                    pParam->arch.x86.uDisp.i32 = pDis->arch.x86.i32SibDisp;
                 }
             }
             else
@@ -1090,7 +1090,7 @@ static size_t UseModRM(size_t const offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
                 pParam->fUse |= DISUSE_BASE;
                 disasmModRMReg(rm, pOp, pDis, pParam, 1);
             }
-            pParam->uDisp.i8 = pDis->i32SibDisp;
+            pParam->arch.x86.uDisp.i8 = pDis->arch.x86.i32SibDisp;
             pParam->fUse |= DISUSE_DISPLACEMENT8;
             break;
 
@@ -1102,7 +1102,7 @@ static size_t UseModRM(size_t const offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
                 pParam->fUse |= DISUSE_BASE;
                 disasmModRMReg(rm, pOp, pDis, pParam, 1);
             }
-            pParam->uDisp.i32 = pDis->i32SibDisp;
+            pParam->arch.x86.uDisp.i32 = pDis->arch.x86.i32SibDisp;
             pParam->fUse |= DISUSE_DISPLACEMENT32;
             break;
 
@@ -1118,7 +1118,7 @@ static size_t UseModRM(size_t const offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
         case 0: //effective address
             if (rm == 6)
             {//16 bits displacement
-                pParam->uDisp.i16 = pDis->i32SibDisp;
+                pParam->arch.x86.uDisp.i16 = pDis->arch.x86.i32SibDisp;
                 pParam->fUse |= DISUSE_DISPLACEMENT16;
             }
             else
@@ -1130,13 +1130,13 @@ static size_t UseModRM(size_t const offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
 
         case 1: //effective address + 8 bits displacement
             disasmModRMReg16(rm, pOp, pDis, pParam);
-            pParam->uDisp.i8 = pDis->i32SibDisp;
+            pParam->arch.x86.uDisp.i8 = pDis->arch.x86.i32SibDisp;
             pParam->fUse |= DISUSE_BASE | DISUSE_DISPLACEMENT8;
             break;
 
         case 2: //effective address + 16 bits displacement
             disasmModRMReg16(rm, pOp, pDis, pParam);
-            pParam->uDisp.i16 = pDis->i32SibDisp;
+            pParam->arch.x86.uDisp.i16 = pDis->arch.x86.i32SibDisp;
             pParam->fUse |= DISUSE_BASE | DISUSE_DISPLACEMENT16;
             break;
 
@@ -1152,12 +1152,12 @@ static size_t UseModRM(size_t const offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
 //*****************************************************************************
 static size_t QueryModRM(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    uint8_t mod = pDis->ModRM.Bits.Mod;
-    uint8_t rm  = pDis->ModRM.Bits.Rm;
+    uint8_t mod = pDis->arch.x86.ModRM.Bits.Mod;
+    uint8_t rm  = pDis->arch.x86.ModRM.Bits.Rm;
 
-    if (pDis->uAddrMode != DISCPUMODE_16BIT)
+    if (pDis->arch.x86.uAddrMode != DISCPUMODE_16BIT)
     {
-        Assert(pDis->uAddrMode == DISCPUMODE_32BIT || pDis->uAddrMode == DISCPUMODE_64BIT);
+        Assert(pDis->arch.x86.uAddrMode == DISCPUMODE_32BIT || pDis->arch.x86.uAddrMode == DISCPUMODE_64BIT);
 
         /*
          * Note: displacements in long mode are 8 or 32 bits and sign-extended to 64 bits
@@ -1170,19 +1170,19 @@ static size_t QueryModRM(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
         case 0: /* Effective address */
             if (rm == 5)    /* 32 bits displacement */
             {
-                pDis->i32SibDisp = (int32_t)disReadDWord(pDis, offInstr);
+                pDis->arch.x86.i32SibDisp = (int32_t)disReadDWord(pDis, offInstr);
                 offInstr += 4;
             }
             /* else register address */
             break;
 
         case 1: /* Effective address + 8 bits displacement */
-            pDis->i32SibDisp = (int8_t)disReadByte(pDis, offInstr);
+            pDis->arch.x86.i32SibDisp = (int8_t)disReadByte(pDis, offInstr);
             offInstr++;
             break;
 
         case 2: /* Effective address + 32 bits displacement */
-            pDis->i32SibDisp = (int32_t)disReadDWord(pDis, offInstr);
+            pDis->arch.x86.i32SibDisp = (int32_t)disReadDWord(pDis, offInstr);
             offInstr += 4;
             break;
 
@@ -1198,19 +1198,19 @@ static size_t QueryModRM(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
         case 0: /* Effective address */
             if (rm == 6)
             {
-                pDis->i32SibDisp = disReadWord(pDis, offInstr);
+                pDis->arch.x86.i32SibDisp = disReadWord(pDis, offInstr);
                 offInstr += 2;
             }
             /* else register address */
             break;
 
         case 1: /* Effective address + 8 bits displacement */
-            pDis->i32SibDisp = (int8_t)disReadByte(pDis, offInstr);
+            pDis->arch.x86.i32SibDisp = (int8_t)disReadByte(pDis, offInstr);
             offInstr++;
             break;
 
         case 2: /* Effective address + 32 bits displacement */
-            pDis->i32SibDisp = (int16_t)disReadWord(pDis, offInstr);
+            pDis->arch.x86.i32SibDisp = (int16_t)disReadWord(pDis, offInstr);
             offInstr += 2;
             break;
 
@@ -1225,12 +1225,12 @@ static size_t QueryModRM(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 //*****************************************************************************
 static size_t QueryModRM_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    uint8_t mod = pDis->ModRM.Bits.Mod;
-    uint8_t rm  = pDis->ModRM.Bits.Rm;
+    uint8_t mod = pDis->arch.x86.ModRM.Bits.Mod;
+    uint8_t rm  = pDis->arch.x86.ModRM.Bits.Rm;
 
-    if (pDis->uAddrMode != DISCPUMODE_16BIT)
+    if (pDis->arch.x86.uAddrMode != DISCPUMODE_16BIT)
     {
-        Assert(pDis->uAddrMode == DISCPUMODE_32BIT || pDis->uAddrMode == DISCPUMODE_64BIT);
+        Assert(pDis->arch.x86.uAddrMode == DISCPUMODE_32BIT || pDis->arch.x86.uAddrMode == DISCPUMODE_64BIT);
         /*
          * Note: displacements in long mode are 8 or 32 bits and sign-extended to 64 bits
          */
@@ -1299,9 +1299,9 @@ static size_t ParseModRM(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     uint8_t ModRM = disReadByte(pDis, offInstr);
     offInstr++;
 
-    pDis->ModRM.Bits.Rm  = MODRM_RM(ModRM);
-    pDis->ModRM.Bits.Mod = MODRM_MOD(ModRM);
-    pDis->ModRM.Bits.Reg = MODRM_REG(ModRM);
+    pDis->arch.x86.ModRM.Bits.Rm  = MODRM_RM(ModRM);
+    pDis->arch.x86.ModRM.Bits.Mod = MODRM_MOD(ModRM);
+    pDis->arch.x86.ModRM.Bits.Reg = MODRM_REG(ModRM);
 
     /* Disregard the mod bits for certain instructions (mov crx, mov drx).
      *
@@ -1309,24 +1309,24 @@ static size_t ParseModRM(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
      * This instruction is always treated as a register-to-register (MOD = 11) instruction, regardless of the
      * encoding of the MOD field in the MODR/M byte.
      */
-    if (pOp->fOpType & DISOPTYPE_MOD_FIXED_11)
-        pDis->ModRM.Bits.Mod = 3;
+    if (pOp->fOpType & DISOPTYPE_X86_MOD_FIXED_11)
+        pDis->arch.x86.ModRM.Bits.Mod = 3;
 
-    if (pDis->fPrefix & DISPREFIX_REX)
+    if (pDis->arch.x86.fPrefix & DISPREFIX_REX)
     {
         Assert(pDis->uCpuMode == DISCPUMODE_64BIT);
 
         /* REX.R extends the Reg field. */
-        pDis->ModRM.Bits.Reg |= ((!!(pDis->fRexPrefix & DISPREFIX_REX_FLAGS_R)) << 3);
+        pDis->arch.x86.ModRM.Bits.Reg |= ((!!(pDis->arch.x86.fRexPrefix & DISPREFIX_REX_FLAGS_R)) << 3);
 
         /* REX.B extends the Rm field if there is no SIB byte nor a 32 bits displacement */
-        if (!(    pDis->ModRM.Bits.Mod != 3
-              &&  pDis->ModRM.Bits.Rm  == 4)
+        if (!(    pDis->arch.x86.ModRM.Bits.Mod != 3
+              &&  pDis->arch.x86.ModRM.Bits.Rm  == 4)
             &&
-            !(    pDis->ModRM.Bits.Mod == 0
-              &&  pDis->ModRM.Bits.Rm  == 5))
+            !(    pDis->arch.x86.ModRM.Bits.Mod == 0
+              &&  pDis->arch.x86.ModRM.Bits.Rm  == 5))
         {
-            pDis->ModRM.Bits.Rm |= ((!!(pDis->fRexPrefix & DISPREFIX_REX_FLAGS_B)) << 3);
+            pDis->arch.x86.ModRM.Bits.Rm |= ((!!(pDis->arch.x86.fRexPrefix & DISPREFIX_REX_FLAGS_B)) << 3);
         }
     }
     offInstr = QueryModRM(offInstr, pOp, pDis, pParam);
@@ -1340,9 +1340,9 @@ static size_t ParseModRM_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pD
     uint8_t ModRM = disReadByte(pDis, offInstr);
     offInstr++;
 
-    pDis->ModRM.Bits.Rm  = MODRM_RM(ModRM);
-    pDis->ModRM.Bits.Mod = MODRM_MOD(ModRM);
-    pDis->ModRM.Bits.Reg = MODRM_REG(ModRM);
+    pDis->arch.x86.ModRM.Bits.Rm  = MODRM_RM(ModRM);
+    pDis->arch.x86.ModRM.Bits.Mod = MODRM_MOD(ModRM);
+    pDis->arch.x86.ModRM.Bits.Reg = MODRM_REG(ModRM);
 
     /* Disregard the mod bits for certain instructions (mov crx, mov drx).
      *
@@ -1350,24 +1350,24 @@ static size_t ParseModRM_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pD
      * This instruction is always treated as a register-to-register (MOD = 11) instruction, regardless of the
      * encoding of the MOD field in the MODR/M byte.
      */
-    if (pOp->fOpType & DISOPTYPE_MOD_FIXED_11)
-        pDis->ModRM.Bits.Mod = 3;
+    if (pOp->fOpType & DISOPTYPE_X86_MOD_FIXED_11)
+        pDis->arch.x86.ModRM.Bits.Mod = 3;
 
-    if (pDis->fPrefix & DISPREFIX_REX)
+    if (pDis->arch.x86.fPrefix & DISPREFIX_REX)
     {
         Assert(pDis->uCpuMode == DISCPUMODE_64BIT);
 
         /* REX.R extends the Reg field. */
-        pDis->ModRM.Bits.Reg |= ((!!(pDis->fRexPrefix & DISPREFIX_REX_FLAGS_R)) << 3);
+        pDis->arch.x86.ModRM.Bits.Reg |= ((!!(pDis->arch.x86.fRexPrefix & DISPREFIX_REX_FLAGS_R)) << 3);
 
         /* REX.B extends the Rm field if there is no SIB byte nor a 32 bits displacement */
-        if (!(    pDis->ModRM.Bits.Mod != 3
-              &&  pDis->ModRM.Bits.Rm  == 4)
+        if (!(    pDis->arch.x86.ModRM.Bits.Mod != 3
+              &&  pDis->arch.x86.ModRM.Bits.Rm  == 4)
             &&
-            !(    pDis->ModRM.Bits.Mod == 0
-              &&  pDis->ModRM.Bits.Rm  == 5))
+            !(    pDis->arch.x86.ModRM.Bits.Mod == 0
+              &&  pDis->arch.x86.ModRM.Bits.Rm  == 5))
         {
-            pDis->ModRM.Bits.Rm |= ((!!(pDis->fRexPrefix & DISPREFIX_REX_FLAGS_B)) << 3);
+            pDis->arch.x86.ModRM.Bits.Rm |= ((!!(pDis->arch.x86.fRexPrefix & DISPREFIX_REX_FLAGS_B)) << 3);
         }
     }
 
@@ -1390,21 +1390,21 @@ static size_t ParseImmByte(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
 {
     RT_NOREF_PV(pOp);
     uint8_t byte = disReadByte(pDis, offInstr);
-    if (pParam->fParam == OP_PARM_Lx)
+    if (pParam->arch.x86.fParam == OP_PARM_Lx)
     {
-        pParam->fUse  |= (VEXREG_IS256B(pDis->bVexDestReg) ? DISUSE_REG_YMM : DISUSE_REG_XMM);
+        pParam->fUse  |= (VEXREG_IS256B(pDis->arch.x86.bVexDestReg) ? DISUSE_REG_YMM : DISUSE_REG_XMM);
 
         // Ignore MSB in 32-bit mode.
         if (pDis->uCpuMode == DISCPUMODE_32BIT)
             byte &= 0x7f;
 
-        pParam->Base.idxXmmReg = byte >> 4;
+        pParam->arch.x86.Base.idxXmmReg = byte >> 4;
     }
     else
     {
         pParam->uValue = byte;
         pParam->fUse  |= DISUSE_IMMEDIATE8;
-        pParam->cb     = sizeof(uint8_t);
+        pParam->arch.x86.cb     = sizeof(uint8_t);
     }
     return offInstr + 1;
 }
@@ -1420,24 +1420,24 @@ static size_t ParseImmByte_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE 
 static size_t ParseImmByteSX(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     RT_NOREF_PV(pOp);
-    if (pDis->uOpMode == DISCPUMODE_32BIT)
+    if (pDis->arch.x86.uOpMode == DISCPUMODE_32BIT)
     {
         pParam->uValue = (uint32_t)(int8_t)disReadByte(pDis, offInstr);
         pParam->fUse  |= DISUSE_IMMEDIATE32_SX8;
-        pParam->cb     = sizeof(uint32_t);
+        pParam->arch.x86.cb     = sizeof(uint32_t);
     }
     else
-    if (pDis->uOpMode == DISCPUMODE_64BIT)
+    if (pDis->arch.x86.uOpMode == DISCPUMODE_64BIT)
     {
         pParam->uValue = (uint64_t)(int8_t)disReadByte(pDis, offInstr);
         pParam->fUse  |= DISUSE_IMMEDIATE64_SX8;
-        pParam->cb     = sizeof(uint64_t);
+        pParam->arch.x86.cb     = sizeof(uint64_t);
     }
     else
     {
         pParam->uValue = (uint16_t)(int8_t)disReadByte(pDis, offInstr);
         pParam->fUse  |= DISUSE_IMMEDIATE16_SX8;
-        pParam->cb     = sizeof(uint16_t);
+        pParam->arch.x86.cb     = sizeof(uint16_t);
     }
     return offInstr + 1;
 }
@@ -1455,7 +1455,7 @@ static size_t ParseImmUshort(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
     RT_NOREF_PV(pOp);
     pParam->uValue = disReadWord(pDis, offInstr);
     pParam->fUse  |= DISUSE_IMMEDIATE16;
-    pParam->cb     = sizeof(uint16_t);
+    pParam->arch.x86.cb     = sizeof(uint16_t);
     return offInstr + 2;
 }
 //*****************************************************************************
@@ -1472,7 +1472,7 @@ static size_t ParseImmUlong(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
     RT_NOREF_PV(pOp);
     pParam->uValue = disReadDWord(pDis, offInstr);
     pParam->fUse  |= DISUSE_IMMEDIATE32;
-    pParam->cb     = sizeof(uint32_t);
+    pParam->arch.x86.cb     = sizeof(uint32_t);
     return offInstr + 4;
 }
 //*****************************************************************************
@@ -1489,7 +1489,7 @@ static size_t ParseImmQword(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
     RT_NOREF_PV(pOp);
     pParam->uValue = disReadQWord(pDis, offInstr);
     pParam->fUse  |= DISUSE_IMMEDIATE64;
-    pParam->cb     = sizeof(uint64_t);
+    pParam->arch.x86.cb     = sizeof(uint64_t);
     return offInstr + 8;
 }
 //*****************************************************************************
@@ -1504,25 +1504,25 @@ static size_t ParseImmQword_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE
 static size_t ParseImmV(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     RT_NOREF_PV(pOp);
-    if (pDis->uOpMode == DISCPUMODE_32BIT)
+    if (pDis->arch.x86.uOpMode == DISCPUMODE_32BIT)
     {
         pParam->uValue = disReadDWord(pDis, offInstr);
         pParam->fUse  |= DISUSE_IMMEDIATE32;
-        pParam->cb     = sizeof(uint32_t);
+        pParam->arch.x86.cb     = sizeof(uint32_t);
         return offInstr + 4;
     }
 
-    if (pDis->uOpMode == DISCPUMODE_64BIT)
+    if (pDis->arch.x86.uOpMode == DISCPUMODE_64BIT)
     {
         pParam->uValue = disReadQWord(pDis, offInstr);
         pParam->fUse  |= DISUSE_IMMEDIATE64;
-        pParam->cb     = sizeof(uint64_t);
+        pParam->arch.x86.cb     = sizeof(uint64_t);
         return offInstr + 8;
     }
 
     pParam->uValue = disReadWord(pDis, offInstr);
     pParam->fUse  |= DISUSE_IMMEDIATE16;
-    pParam->cb     = sizeof(uint16_t);
+    pParam->arch.x86.cb     = sizeof(uint16_t);
     return offInstr + 2;
 }
 //*****************************************************************************
@@ -1530,9 +1530,9 @@ static size_t ParseImmV(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 static size_t ParseImmV_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     RT_NOREF_PV(offInstr); RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
-    if (pDis->uOpMode == DISCPUMODE_32BIT)
+    if (pDis->arch.x86.uOpMode == DISCPUMODE_32BIT)
         return offInstr + 4;
-    if (pDis->uOpMode == DISCPUMODE_64BIT)
+    if (pDis->arch.x86.uOpMode == DISCPUMODE_64BIT)
         return offInstr + 8;
     return offInstr + 2;
 }
@@ -1542,26 +1542,26 @@ static size_t ParseImmZ(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 {
     RT_NOREF_PV(pOp);
     /* Word for 16-bit operand-size or doubleword for 32 or 64-bit operand-size. */
-    if (pDis->uOpMode == DISCPUMODE_16BIT)
+    if (pDis->arch.x86.uOpMode == DISCPUMODE_16BIT)
     {
         pParam->uValue = disReadWord(pDis, offInstr);
         pParam->fUse  |= DISUSE_IMMEDIATE16;
-        pParam->cb     = sizeof(uint16_t);
+        pParam->arch.x86.cb     = sizeof(uint16_t);
         return offInstr + 2;
     }
 
     /* 64 bits op mode means *sign* extend to 64 bits. */
-    if (pDis->uOpMode == DISCPUMODE_64BIT)
+    if (pDis->arch.x86.uOpMode == DISCPUMODE_64BIT)
     {
         pParam->uValue = (uint64_t)(int32_t)disReadDWord(pDis, offInstr);
         pParam->fUse  |= DISUSE_IMMEDIATE64;
-        pParam->cb     = sizeof(uint64_t);
+        pParam->arch.x86.cb     = sizeof(uint64_t);
     }
     else
     {
         pParam->uValue = disReadDWord(pDis, offInstr);
         pParam->fUse  |= DISUSE_IMMEDIATE32;
-        pParam->cb     = sizeof(uint32_t);
+        pParam->arch.x86.cb     = sizeof(uint32_t);
     }
     return offInstr + 4;
 }
@@ -1571,7 +1571,7 @@ static size_t ParseImmZ_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDi
 {
     RT_NOREF_PV(offInstr); RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
     /* Word for 16-bit operand-size or doubleword for 32 or 64-bit operand-size. */
-    if (pDis->uOpMode == DISCPUMODE_16BIT)
+    if (pDis->arch.x86.uOpMode == DISCPUMODE_16BIT)
         return offInstr + 2;
     return offInstr + 4;
 }
@@ -1584,7 +1584,7 @@ static size_t ParseImmBRel(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
     RT_NOREF_PV(pOp);
     pParam->uValue = disReadByte(pDis, offInstr);
     pParam->fUse  |= DISUSE_IMMEDIATE8_REL;
-    pParam->cb     = sizeof(uint8_t);
+    pParam->arch.x86.cb     = sizeof(uint8_t);
     return offInstr + 1;
 }
 //*****************************************************************************
@@ -1601,26 +1601,26 @@ static size_t ParseImmBRel_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE 
 static size_t ParseImmVRel(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     RT_NOREF_PV(pOp);
-    if (pDis->uOpMode == DISCPUMODE_32BIT)
+    if (pDis->arch.x86.uOpMode == DISCPUMODE_32BIT)
     {
         pParam->uValue = disReadDWord(pDis, offInstr);
         pParam->fUse  |= DISUSE_IMMEDIATE32_REL;
-        pParam->cb     = sizeof(int32_t);
+        pParam->arch.x86.cb     = sizeof(int32_t);
         return offInstr + 4;
     }
 
-    if (pDis->uOpMode == DISCPUMODE_64BIT)
+    if (pDis->arch.x86.uOpMode == DISCPUMODE_64BIT)
     {
         /* 32 bits relative immediate sign extended to 64 bits. */
         pParam->uValue = (uint64_t)(int32_t)disReadDWord(pDis, offInstr);
         pParam->fUse  |= DISUSE_IMMEDIATE64_REL;
-        pParam->cb     = sizeof(int64_t);
+        pParam->arch.x86.cb     = sizeof(int64_t);
         return offInstr + 4;
     }
 
     pParam->uValue = disReadWord(pDis, offInstr);
     pParam->fUse  |= DISUSE_IMMEDIATE16_REL;
-    pParam->cb     = sizeof(int16_t);
+    pParam->arch.x86.cb     = sizeof(int16_t);
     return offInstr + 2;
 }
 //*****************************************************************************
@@ -1629,7 +1629,7 @@ static size_t ParseImmVRel(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
 static size_t ParseImmVRel_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     RT_NOREF_PV(offInstr); RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
-    if (pDis->uOpMode == DISCPUMODE_16BIT)
+    if (pDis->arch.x86.uOpMode == DISCPUMODE_16BIT)
         return offInstr + 2;
     /* Both 32 & 64 bits mode use 32 bits relative immediates. */
     return offInstr + 4;
@@ -1639,15 +1639,15 @@ static size_t ParseImmVRel_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE 
 static size_t ParseImmAddr(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     RT_NOREF_PV(pOp);
-    if (pDis->uAddrMode == DISCPUMODE_32BIT)
+    if (pDis->arch.x86.uAddrMode == DISCPUMODE_32BIT)
     {
-        if (OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p)
+        if (OP_PARM_VSUBTYPE(pParam->arch.x86.fParam) == OP_PARM_p)
         {
             /* far 16:32 pointer */
             pParam->uValue = disReadDWord(pDis, offInstr);
             *((uint32_t*)&pParam->uValue+1) = disReadWord(pDis, offInstr+sizeof(uint32_t));
             pParam->fUse   |= DISUSE_IMMEDIATE_ADDR_16_32;
-            pParam->cb     = sizeof(uint16_t) + sizeof(uint32_t);
+            pParam->arch.x86.cb     = sizeof(uint16_t) + sizeof(uint32_t);
             return offInstr + 4 + 2;
         }
 
@@ -1657,13 +1657,13 @@ static size_t ParseImmAddr(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
          * Note: used only in "mov al|ax|eax, [Addr]" and "mov [Addr], al|ax|eax"
          * so we treat it like displacement.
          */
-        pParam->uDisp.u32 = disReadDWord(pDis, offInstr);
+        pParam->arch.x86.uDisp.u32 = disReadDWord(pDis, offInstr);
         pParam->fUse  |= DISUSE_DISPLACEMENT32;
-        pParam->cb     = sizeof(uint32_t);
+        pParam->arch.x86.cb     = sizeof(uint32_t);
         return offInstr + 4;
     }
 
-    if (pDis->uAddrMode == DISCPUMODE_64BIT)
+    if (pDis->arch.x86.uAddrMode == DISCPUMODE_64BIT)
     {
         /*
          * near 64 bits pointer
@@ -1671,18 +1671,18 @@ static size_t ParseImmAddr(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
          * Note: used only in "mov al|ax|eax, [Addr]" and "mov [Addr], al|ax|eax"
          * so we treat it like displacement.
          */
-        Assert(OP_PARM_VSUBTYPE(pParam->fParam) != OP_PARM_p);
-        pParam->uDisp.u64 = disReadQWord(pDis, offInstr);
+        Assert(OP_PARM_VSUBTYPE(pParam->arch.x86.fParam) != OP_PARM_p);
+        pParam->arch.x86.uDisp.u64 = disReadQWord(pDis, offInstr);
         pParam->fUse  |= DISUSE_DISPLACEMENT64;
-        pParam->cb     = sizeof(uint64_t);
+        pParam->arch.x86.cb     = sizeof(uint64_t);
         return offInstr + 8;
     }
-    if (OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p)
+    if (OP_PARM_VSUBTYPE(pParam->arch.x86.fParam) == OP_PARM_p)
     {
         /* far 16:16 pointer */
         pParam->uValue = disReadDWord(pDis, offInstr);
         pParam->fUse  |= DISUSE_IMMEDIATE_ADDR_16_16;
-        pParam->cb     = 2*sizeof(uint16_t);
+        pParam->arch.x86.cb     = 2*sizeof(uint16_t);
         return offInstr + 4;
     }
 
@@ -1692,9 +1692,9 @@ static size_t ParseImmAddr(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
      * Note: used only in "mov al|ax|eax, [Addr]" and "mov [Addr], al|ax|eax"
      * so we treat it like displacement.
      */
-    pParam->uDisp.i16 = disReadWord(pDis, offInstr);
+    pParam->arch.x86.uDisp.i16 = disReadWord(pDis, offInstr);
     pParam->fUse  |= DISUSE_DISPLACEMENT16;
-    pParam->cb     = sizeof(uint16_t);
+    pParam->arch.x86.cb     = sizeof(uint16_t);
     return offInstr + 2;
 }
 //*****************************************************************************
@@ -1702,18 +1702,18 @@ static size_t ParseImmAddr(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
 static size_t ParseImmAddr_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     RT_NOREF_PV(offInstr); RT_NOREF_PV(pOp);
-    if (pDis->uAddrMode == DISCPUMODE_32BIT)
+    if (pDis->arch.x86.uAddrMode == DISCPUMODE_32BIT)
     {
-        if (OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p)
+        if (OP_PARM_VSUBTYPE(pParam->arch.x86.fParam) == OP_PARM_p)
             return offInstr + 4 + 2; /* far 16:32 pointer */
         return offInstr + 4;         /* near 32 bits pointer */
     }
-    if (pDis->uAddrMode == DISCPUMODE_64BIT)
+    if (pDis->arch.x86.uAddrMode == DISCPUMODE_64BIT)
     {
-        Assert(OP_PARM_VSUBTYPE(pParam->fParam) != OP_PARM_p);
+        Assert(OP_PARM_VSUBTYPE(pParam->arch.x86.fParam) != OP_PARM_p);
         return offInstr + 8;
     }
-    if (OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p)
+    if (OP_PARM_VSUBTYPE(pParam->arch.x86.fParam) == OP_PARM_p)
         return offInstr + 4;        /* far 16:16 pointer */
     return offInstr + 2;            /* near 16 bits pointer */
 }
@@ -1723,22 +1723,22 @@ static size_t ParseImmAddrF(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
 {
     RT_NOREF_PV(pOp);
     // immediate far pointers - only 16:16 or 16:32; determined by operand, *not* address size!
-    Assert(pDis->uOpMode == DISCPUMODE_16BIT || pDis->uOpMode == DISCPUMODE_32BIT);
-    Assert(OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p);
-    if (pDis->uOpMode == DISCPUMODE_32BIT)
+    Assert(pDis->arch.x86.uOpMode == DISCPUMODE_16BIT || pDis->arch.x86.uOpMode == DISCPUMODE_32BIT);
+    Assert(OP_PARM_VSUBTYPE(pParam->arch.x86.fParam) == OP_PARM_p);
+    if (pDis->arch.x86.uOpMode == DISCPUMODE_32BIT)
     {
         // far 16:32 pointer
         pParam->uValue = disReadDWord(pDis, offInstr);
         *((uint32_t*)&pParam->uValue+1) = disReadWord(pDis, offInstr+sizeof(uint32_t));
         pParam->fUse   |= DISUSE_IMMEDIATE_ADDR_16_32;
-        pParam->cb     = sizeof(uint16_t) + sizeof(uint32_t);
+        pParam->arch.x86.cb     = sizeof(uint16_t) + sizeof(uint32_t);
         return offInstr + 4 + 2;
     }
 
     // far 16:16 pointer
     pParam->uValue = disReadDWord(pDis, offInstr);
     pParam->fUse  |= DISUSE_IMMEDIATE_ADDR_16_16;
-    pParam->cb     = 2*sizeof(uint16_t);
+    pParam->arch.x86.cb     = 2*sizeof(uint16_t);
     return offInstr + 2 + 2;
 }
 //*****************************************************************************
@@ -1747,9 +1747,9 @@ static size_t ParseImmAddrF_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE
 {
     RT_NOREF_PV(offInstr); RT_NOREF_PV(pOp);
     // immediate far pointers - only 16:16 or 16:32
-    Assert(pDis->uOpMode == DISCPUMODE_16BIT || pDis->uOpMode == DISCPUMODE_32BIT);
-    Assert(OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p); RT_NOREF_PV(pParam);
-    if (pDis->uOpMode == DISCPUMODE_32BIT)
+    Assert(pDis->arch.x86.uOpMode == DISCPUMODE_16BIT || pDis->arch.x86.uOpMode == DISCPUMODE_32BIT);
+    Assert(OP_PARM_VSUBTYPE(pParam->arch.x86.fParam) == OP_PARM_p); RT_NOREF_PV(pParam);
+    if (pDis->arch.x86.uOpMode == DISCPUMODE_32BIT)
         return offInstr + 4 + 2;    /* far 16:32 pointer */
     return offInstr + 2 + 2;        /* far 16:16 pointer */
 }
@@ -1763,7 +1763,7 @@ static size_t ParseFixedReg(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
      * Sets up flags for stored in OPC fixed registers.
      */
 
-    if (pParam->fParam == OP_PARM_NONE)
+    if (pParam->arch.x86.fParam == OP_PARM_NONE)
     {
         /* No parameter at all. */
         return offInstr;
@@ -1774,82 +1774,82 @@ static size_t ParseFixedReg(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
     AssertCompile(OP_PARM_REG_GEN16_END < OP_PARM_REG_GEN8_END);
     AssertCompile(OP_PARM_REG_GEN8_END < OP_PARM_REG_FP_END);
 
-    if (pParam->fParam <= OP_PARM_REG_GEN32_END)
+    if (pParam->arch.x86.fParam <= OP_PARM_REG_GEN32_END)
     {
         /* 32-bit EAX..EDI registers. */
-        if (pDis->uOpMode == DISCPUMODE_32BIT)
+        if (pDis->arch.x86.uOpMode == DISCPUMODE_32BIT)
         {
             /* Use 32-bit registers. */
-            pParam->Base.idxGenReg = (uint8_t)(pParam->fParam - OP_PARM_REG_GEN32_START);
+            pParam->arch.x86.Base.idxGenReg = (uint8_t)(pParam->arch.x86.fParam - OP_PARM_REG_GEN32_START);
             pParam->fUse  |= DISUSE_REG_GEN32;
-            pParam->cb     = 4;
+            pParam->arch.x86.cb     = 4;
         }
-        else if (pDis->uOpMode == DISCPUMODE_64BIT)
+        else if (pDis->arch.x86.uOpMode == DISCPUMODE_64BIT)
         {
             /* Use 64-bit registers. */
-            pParam->Base.idxGenReg = (uint8_t)(pParam->fParam - OP_PARM_REG_GEN32_START);
+            pParam->arch.x86.Base.idxGenReg = (uint8_t)(pParam->arch.x86.fParam - OP_PARM_REG_GEN32_START);
             pParam->fUse  |= DISUSE_REG_GEN64;
-            pParam->cb     = 8;
+            pParam->arch.x86.cb     = 8;
         }
         else
         {
             /* Use 16-bit registers. */
-            pParam->Base.idxGenReg = (uint8_t)(pParam->fParam - OP_PARM_REG_GEN32_START);
+            pParam->arch.x86.Base.idxGenReg = (uint8_t)(pParam->arch.x86.fParam - OP_PARM_REG_GEN32_START);
             pParam->fUse  |= DISUSE_REG_GEN16;
-            pParam->cb     = 2;
-            pParam->fParam = pParam->fParam - OP_PARM_REG_GEN32_START + OP_PARM_REG_GEN16_START;
+            pParam->arch.x86.cb     = 2;
+            pParam->arch.x86.fParam = pParam->arch.x86.fParam - OP_PARM_REG_GEN32_START + OP_PARM_REG_GEN16_START;
         }
 
-        if (    (pOp->fOpType & DISOPTYPE_REXB_EXTENDS_OPREG)
+        if (    (pOp->fOpType & DISOPTYPE_X86_REXB_EXTENDS_OPREG)
             &&  pParam == &pDis->Param1             /* ugly assumption that it only applies to the first parameter */
-            &&  (pDis->fPrefix & DISPREFIX_REX)
-            &&  (pDis->fRexPrefix & DISPREFIX_REX_FLAGS_B))
+            &&  (pDis->arch.x86.fPrefix & DISPREFIX_REX)
+            &&  (pDis->arch.x86.fRexPrefix & DISPREFIX_REX_FLAGS_B))
         {
             Assert(pDis->uCpuMode == DISCPUMODE_64BIT);
-            pParam->Base.idxGenReg += 8;
+            pParam->arch.x86.Base.idxGenReg += 8;
         }
     }
-    else if (pParam->fParam <= OP_PARM_REG_SEG_END)
+    else if (pParam->arch.x86.fParam <= OP_PARM_REG_SEG_END)
     {
         /* Segment ES..GS registers. */
-        pParam->Base.idxSegReg = (uint8_t)(pParam->fParam - OP_PARM_REG_SEG_START);
+        pParam->arch.x86.Base.idxSegReg = (uint8_t)(pParam->arch.x86.fParam - OP_PARM_REG_SEG_START);
         pParam->fUse  |= DISUSE_REG_SEG;
-        pParam->cb     = 2;
+        pParam->arch.x86.cb     = 2;
     }
-    else if (pParam->fParam <= OP_PARM_REG_GEN16_END)
+    else if (pParam->arch.x86.fParam <= OP_PARM_REG_GEN16_END)
     {
         /* 16-bit AX..DI registers. */
-        pParam->Base.idxGenReg = (uint8_t)(pParam->fParam - OP_PARM_REG_GEN16_START);
+        pParam->arch.x86.Base.idxGenReg = (uint8_t)(pParam->arch.x86.fParam - OP_PARM_REG_GEN16_START);
         pParam->fUse  |= DISUSE_REG_GEN16;
-        pParam->cb     = 2;
+        pParam->arch.x86.cb     = 2;
     }
-    else if (pParam->fParam <= OP_PARM_REG_GEN8_END)
+    else if (pParam->arch.x86.fParam <= OP_PARM_REG_GEN8_END)
     {
         /* 8-bit AL..DL, AH..DH registers. */
-        pParam->Base.idxGenReg = (uint8_t)(pParam->fParam - OP_PARM_REG_GEN8_START);
+        pParam->arch.x86.Base.idxGenReg = (uint8_t)(pParam->arch.x86.fParam - OP_PARM_REG_GEN8_START);
         pParam->fUse  |= DISUSE_REG_GEN8;
-        pParam->cb     = 1;
+        pParam->arch.x86.cb     = 1;
 
         if (   pDis->uCpuMode == DISCPUMODE_64BIT
-            && (pOp->fOpType & DISOPTYPE_REXB_EXTENDS_OPREG)
+            && (pOp->fOpType & DISOPTYPE_X86_REXB_EXTENDS_OPREG)
             &&  pParam == &pDis->Param1             /* ugly assumption that it only applies to the first parameter */
-            &&  (pDis->fPrefix & DISPREFIX_REX))
+            &&  (pDis->arch.x86.fPrefix & DISPREFIX_REX))
         {
-            if (pDis->fRexPrefix & DISPREFIX_REX_FLAGS_B)
-                pParam->Base.idxGenReg += 8;              /* least significant byte of R8-R15 */
-            else if (   pParam->Base.idxGenReg >= DISGREG_AH
-                     && pParam->Base.idxGenReg <= DISGREG_BH)
-                pParam->Base.idxGenReg += DISGREG_SPL - DISGREG_AH;
+            if (pDis->arch.x86.fRexPrefix & DISPREFIX_REX_FLAGS_B)
+                pParam->arch.x86.Base.idxGenReg += 8;              /* least significant byte of R8-R15 */
+            else if (   pParam->arch.x86.Base.idxGenReg >= DISGREG_AH
+                     && pParam->arch.x86.Base.idxGenReg <= DISGREG_BH)
+                pParam->arch.x86.Base.idxGenReg += DISGREG_SPL - DISGREG_AH;
         }
     }
-    else if (pParam->fParam <= OP_PARM_REG_FP_END)
+    else if (pParam->arch.x86.fParam <= OP_PARM_REG_FP_END)
     {
         /* FPU registers. */
-        pParam->Base.idxFpuReg = (uint8_t)(pParam->fParam - OP_PARM_REG_FP_START);
+        pParam->arch.x86.Base.idxFpuReg = (uint8_t)(pParam->arch.x86.fParam - OP_PARM_REG_FP_START);
         pParam->fUse  |= DISUSE_REG_FP;
-        pParam->cb     = 10;
+        pParam->arch.x86.cb     = 10;
     }
-    Assert(!(pParam->fParam >= OP_PARM_REG_GEN64_START && pParam->fParam <= OP_PARM_REG_GEN64_END));
+    Assert(!(pParam->arch.x86.fParam >= OP_PARM_REG_GEN64_START && pParam->arch.x86.fParam <= OP_PARM_REG_GEN64_END));
 
     /* else - not supported for now registers. */
 
@@ -1862,20 +1862,20 @@ static size_t ParseXv(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPA
     RT_NOREF_PV(pOp);
 
     pParam->fUse |= DISUSE_POINTER_DS_BASED;
-    if (pDis->uAddrMode == DISCPUMODE_32BIT)
+    if (pDis->arch.x86.uAddrMode == DISCPUMODE_32BIT)
     {
-        pParam->Base.idxGenReg = DISGREG_ESI;
+        pParam->arch.x86.Base.idxGenReg = DISGREG_ESI;
         pParam->fUse |= DISUSE_REG_GEN32;
     }
     else
-    if (pDis->uAddrMode == DISCPUMODE_64BIT)
+    if (pDis->arch.x86.uAddrMode == DISCPUMODE_64BIT)
     {
-        pParam->Base.idxGenReg = DISGREG_RSI;
+        pParam->arch.x86.Base.idxGenReg = DISGREG_RSI;
         pParam->fUse |= DISUSE_REG_GEN64;
     }
     else
     {
-        pParam->Base.idxGenReg = DISGREG_SI;
+        pParam->arch.x86.Base.idxGenReg = DISGREG_SI;
         pParam->fUse |= DISUSE_REG_GEN16;
     }
     return offInstr;
@@ -1887,20 +1887,20 @@ static size_t ParseXb(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPA
     RT_NOREF_PV(pOp);
 
     pParam->fUse |= DISUSE_POINTER_DS_BASED;
-    if (pDis->uAddrMode == DISCPUMODE_32BIT)
+    if (pDis->arch.x86.uAddrMode == DISCPUMODE_32BIT)
     {
-        pParam->Base.idxGenReg = DISGREG_ESI;
+        pParam->arch.x86.Base.idxGenReg = DISGREG_ESI;
         pParam->fUse |= DISUSE_REG_GEN32;
     }
     else
-    if (pDis->uAddrMode == DISCPUMODE_64BIT)
+    if (pDis->arch.x86.uAddrMode == DISCPUMODE_64BIT)
     {
-        pParam->Base.idxGenReg = DISGREG_RSI;
+        pParam->arch.x86.Base.idxGenReg = DISGREG_RSI;
         pParam->fUse |= DISUSE_REG_GEN64;
     }
     else
     {
-        pParam->Base.idxGenReg = DISGREG_SI;
+        pParam->arch.x86.Base.idxGenReg = DISGREG_SI;
         pParam->fUse |= DISUSE_REG_GEN16;
     }
     return offInstr;
@@ -1912,20 +1912,20 @@ static size_t ParseYv(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPA
     RT_NOREF_PV(pOp);
 
     pParam->fUse |= DISUSE_POINTER_ES_BASED;
-    if (pDis->uAddrMode == DISCPUMODE_32BIT)
+    if (pDis->arch.x86.uAddrMode == DISCPUMODE_32BIT)
     {
-        pParam->Base.idxGenReg = DISGREG_EDI;
+        pParam->arch.x86.Base.idxGenReg = DISGREG_EDI;
         pParam->fUse |= DISUSE_REG_GEN32;
     }
     else
-    if (pDis->uAddrMode == DISCPUMODE_64BIT)
+    if (pDis->arch.x86.uAddrMode == DISCPUMODE_64BIT)
     {
-        pParam->Base.idxGenReg = DISGREG_RDI;
+        pParam->arch.x86.Base.idxGenReg = DISGREG_RDI;
         pParam->fUse |= DISUSE_REG_GEN64;
     }
     else
     {
-        pParam->Base.idxGenReg = DISGREG_DI;
+        pParam->arch.x86.Base.idxGenReg = DISGREG_DI;
         pParam->fUse |= DISUSE_REG_GEN16;
     }
     return offInstr;
@@ -1937,20 +1937,20 @@ static size_t ParseYb(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPA
     RT_NOREF_PV(pOp);
 
     pParam->fUse |= DISUSE_POINTER_ES_BASED;
-    if (pDis->uAddrMode == DISCPUMODE_32BIT)
+    if (pDis->arch.x86.uAddrMode == DISCPUMODE_32BIT)
     {
-        pParam->Base.idxGenReg = DISGREG_EDI;
+        pParam->arch.x86.Base.idxGenReg = DISGREG_EDI;
         pParam->fUse |= DISUSE_REG_GEN32;
     }
     else
-    if (pDis->uAddrMode == DISCPUMODE_64BIT)
+    if (pDis->arch.x86.uAddrMode == DISCPUMODE_64BIT)
     {
-        pParam->Base.idxGenReg = DISGREG_RDI;
+        pParam->arch.x86.Base.idxGenReg = DISGREG_RDI;
         pParam->fUse |= DISUSE_REG_GEN64;
     }
     else
     {
-        pParam->Base.idxGenReg = DISGREG_DI;
+        pParam->arch.x86.Base.idxGenReg = DISGREG_DI;
         pParam->fUse |= DISUSE_REG_GEN16;
     }
     return offInstr;
@@ -1970,29 +1970,29 @@ static size_t ParseVexDest(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
 {
     RT_NOREF_PV(pOp);
 
-    unsigned type = OP_PARM_VTYPE(pParam->fParam);
+    unsigned type = OP_PARM_VTYPE(pParam->arch.x86.fParam);
     switch (type)
     {
         case OP_PARM_H: //XMM or YMM register
-            if (VEXREG_IS256B(pDis->bVexDestReg))
+            if (VEXREG_IS256B(pDis->arch.x86.bVexDestReg))
             {
                 pParam->fUse |= DISUSE_REG_YMM;
-                pParam->Base.idxYmmReg = (pDis->bVexDestReg >> 1) ^ 0xf;
+                pParam->arch.x86.Base.idxYmmReg = (pDis->arch.x86.bVexDestReg >> 1) ^ 0xf;
             }
             else
             {
                 pParam->fUse |= DISUSE_REG_XMM;
-                pParam->Base.idxXmmReg = (pDis->bVexDestReg >> 1) ^ 0xf;
+                pParam->arch.x86.Base.idxXmmReg = (pDis->arch.x86.bVexDestReg >> 1) ^ 0xf;
             }
             break;
 
         case OP_PARM_B: // Always OP_PARM_By. Change if it is not so.
-            if (pDis->bVexWFlag && pDis->uCpuMode == DISCPUMODE_64BIT)
+            if (pDis->arch.x86.bVexWFlag && pDis->uCpuMode == DISCPUMODE_64BIT)
                 pParam->fUse |= DISUSE_REG_GEN64;
             else
                 pParam->fUse |= DISUSE_REG_GEN32;
             /// @todo Check if the register number is correct
-            pParam->Base.idxGenReg = (pDis->bVexDestReg >> 1) ^ 0xf;
+            pParam->arch.x86.Base.idxGenReg = (pDis->arch.x86.bVexDestReg >> 1) ^ 0xf;
             break;
     }
 
@@ -2005,55 +2005,55 @@ static size_t ParseTwoByteEsc(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, 
     RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
 
     /* 2nd byte */
-    pDis->bOpCode = disReadByte(pDis, offInstr);
+    pDis->arch.x86.bOpCode = disReadByte(pDis, offInstr);
     offInstr++;
 
     /* default to the non-prefixed table. */
-    PCDISOPCODE pOpcode = &g_aTwoByteMapX86[pDis->bOpCode];
+    PCDISOPCODE pOpcode = &g_aTwoByteMapX86[pDis->arch.x86.bOpCode];
 
     /* Handle opcode table extensions that rely on the opsize, repe or repne prefix byte.  */
     /** @todo Should we take the first or last prefix byte in case of multiple prefix bytes??? */
-    if (pDis->bLastPrefix)
+    if (pDis->arch.x86.bLastPrefix)
     {
-        switch (pDis->bLastPrefix)
+        switch (pDis->arch.x86.bLastPrefix)
         {
         case OP_OPSIZE: /* 0x66 */
-            if (g_aTwoByteMapX86_PF66[pDis->bOpCode].uOpcode != OP_INVALID)
+            if (g_aTwoByteMapX86_PF66[pDis->arch.x86.bOpCode].uOpcode != OP_INVALID)
             {
                 /* Table entry is valid, so use the extension table. */
-                pOpcode = &g_aTwoByteMapX86_PF66[pDis->bOpCode];
+                pOpcode = &g_aTwoByteMapX86_PF66[pDis->arch.x86.bOpCode];
 
                 /* Cancel prefix changes. */
-                pDis->fPrefix &= ~DISPREFIX_OPSIZE;
+                pDis->arch.x86.fPrefix &= ~DISPREFIX_OPSIZE;
 
                 if (pDis->uCpuMode == DISCPUMODE_64BIT)
                 {
-                    pDis->uOpMode = (pDis->fRexPrefix & DISPREFIX_REX_FLAGS_W ? DISCPUMODE_64BIT : DISCPUMODE_32BIT);
+                    pDis->arch.x86.uOpMode = (pDis->arch.x86.fRexPrefix & DISPREFIX_REX_FLAGS_W ? DISCPUMODE_64BIT : DISCPUMODE_32BIT);
                 }
                 else
-                    pDis->uOpMode  = pDis->uCpuMode;
+                    pDis->arch.x86.uOpMode  = pDis->uCpuMode;
             }
             break;
 
         case OP_REPNE:   /* 0xF2 */
-            if (g_aTwoByteMapX86_PFF2[pDis->bOpCode].uOpcode != OP_INVALID)
+            if (g_aTwoByteMapX86_PFF2[pDis->arch.x86.bOpCode].uOpcode != OP_INVALID)
             {
                 /* Table entry is valid, so use the extension table. */
-                pOpcode = &g_aTwoByteMapX86_PFF2[pDis->bOpCode];
+                pOpcode = &g_aTwoByteMapX86_PFF2[pDis->arch.x86.bOpCode];
 
                 /* Cancel prefix changes. */
-                pDis->fPrefix &= ~DISPREFIX_REPNE;
+                pDis->arch.x86.fPrefix &= ~DISPREFIX_REPNE;
             }
             break;
 
         case OP_REPE:  /* 0xF3 */
-            if (g_aTwoByteMapX86_PFF3[pDis->bOpCode].uOpcode != OP_INVALID)
+            if (g_aTwoByteMapX86_PFF3[pDis->arch.x86.bOpCode].uOpcode != OP_INVALID)
             {
                 /* Table entry is valid, so use the extension table. */
-                pOpcode = &g_aTwoByteMapX86_PFF3[pDis->bOpCode];
+                pOpcode = &g_aTwoByteMapX86_PFF3[pDis->arch.x86.bOpCode];
 
                 /* Cancel prefix changes. */
-                pDis->fPrefix &= ~DISPREFIX_REP;
+                pDis->arch.x86.fPrefix &= ~DISPREFIX_REP;
             }
             break;
         }
@@ -2068,95 +2068,95 @@ static size_t ParseThreeByteEsc4(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDi
     RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
 
     /* 3rd byte */
-    pDis->bOpCode = disReadByte(pDis, offInstr);
+    pDis->arch.x86.bOpCode = disReadByte(pDis, offInstr);
     offInstr++;
 
     /* default to the non-prefixed table. */
     PCDISOPCODE pOpcode;
-    if (g_apThreeByteMapX86_0F38[pDis->bOpCode >> 4])
+    if (g_apThreeByteMapX86_0F38[pDis->arch.x86.bOpCode >> 4])
     {
-        pOpcode = g_apThreeByteMapX86_0F38[pDis->bOpCode >> 4];
-        pOpcode = &pOpcode[pDis->bOpCode & 0xf];
+        pOpcode = g_apThreeByteMapX86_0F38[pDis->arch.x86.bOpCode >> 4];
+        pOpcode = &pOpcode[pDis->arch.x86.bOpCode & 0xf];
     }
     else
         pOpcode = &g_InvalidOpcode[0];
 
     /* Handle opcode table extensions that rely on the address, repne prefix byte.  */
     /** @todo Should we take the first or last prefix byte in case of multiple prefix bytes??? */
-    switch (pDis->bLastPrefix)
+    switch (pDis->arch.x86.bLastPrefix)
     {
     case OP_OPSIZE: /* 0x66 */
-        if (g_apThreeByteMapX86_660F38[pDis->bOpCode >> 4])
+        if (g_apThreeByteMapX86_660F38[pDis->arch.x86.bOpCode >> 4])
         {
-            pOpcode = g_apThreeByteMapX86_660F38[pDis->bOpCode >> 4];
-            pOpcode = &pOpcode[pDis->bOpCode & 0xf];
+            pOpcode = g_apThreeByteMapX86_660F38[pDis->arch.x86.bOpCode >> 4];
+            pOpcode = &pOpcode[pDis->arch.x86.bOpCode & 0xf];
 
             if (pOpcode->uOpcode != OP_INVALID)
             {
                 /* Table entry is valid, so use the extension table. */
 
                 /* Cancel prefix changes. */
-                pDis->fPrefix &= ~DISPREFIX_OPSIZE;
+                pDis->arch.x86.fPrefix &= ~DISPREFIX_OPSIZE;
                 if (pDis->uCpuMode == DISCPUMODE_64BIT)
                 {
-                    pDis->uOpMode = (pDis->fRexPrefix & DISPREFIX_REX_FLAGS_W ? DISCPUMODE_64BIT : DISCPUMODE_32BIT);
+                    pDis->arch.x86.uOpMode = (pDis->arch.x86.fRexPrefix & DISPREFIX_REX_FLAGS_W ? DISCPUMODE_64BIT : DISCPUMODE_32BIT);
                 }
                 else
-                    pDis->uOpMode  = pDis->uCpuMode;
+                    pDis->arch.x86.uOpMode  = pDis->uCpuMode;
 
             }
         }
         break;
 
     case OP_REPNE:   /* 0xF2 */
-        if ((pDis->fPrefix & DISPREFIX_OPSIZE) && g_apThreeByteMapX86_66F20F38[pDis->bOpCode >> 4])
+        if ((pDis->arch.x86.fPrefix & DISPREFIX_OPSIZE) && g_apThreeByteMapX86_66F20F38[pDis->arch.x86.bOpCode >> 4])
         {
         /* 0x66F2 */
-            pOpcode = g_apThreeByteMapX86_66F20F38[pDis->bOpCode >> 4];
-            pOpcode = &pOpcode[pDis->bOpCode & 0xf];
+            pOpcode = g_apThreeByteMapX86_66F20F38[pDis->arch.x86.bOpCode >> 4];
+            pOpcode = &pOpcode[pDis->arch.x86.bOpCode & 0xf];
 
             if (pOpcode->uOpcode != OP_INVALID)
             {
                 /* Table entry is valid, so use the extension table. */
 
                 /* Cancel prefix changes. */
-                pDis->fPrefix &= ~DISPREFIX_REPNE;
-                pDis->fPrefix &= ~DISPREFIX_OPSIZE;
+                pDis->arch.x86.fPrefix &= ~DISPREFIX_REPNE;
+                pDis->arch.x86.fPrefix &= ~DISPREFIX_OPSIZE;
                 if (pDis->uCpuMode == DISCPUMODE_64BIT)
                 {
-                    pDis->uOpMode = (pDis->fRexPrefix & DISPREFIX_REX_FLAGS_W ? DISCPUMODE_64BIT : DISCPUMODE_32BIT);
+                    pDis->arch.x86.uOpMode = (pDis->arch.x86.fRexPrefix & DISPREFIX_REX_FLAGS_W ? DISCPUMODE_64BIT : DISCPUMODE_32BIT);
                 }
                 else
-                    pDis->uOpMode  = pDis->uCpuMode;
+                    pDis->arch.x86.uOpMode  = pDis->uCpuMode;
             }
         }
-        else if (g_apThreeByteMapX86_F20F38[pDis->bOpCode >> 4])
+        else if (g_apThreeByteMapX86_F20F38[pDis->arch.x86.bOpCode >> 4])
         {
-            pOpcode = g_apThreeByteMapX86_F20F38[pDis->bOpCode >> 4];
-            pOpcode = &pOpcode[pDis->bOpCode & 0xf];
+            pOpcode = g_apThreeByteMapX86_F20F38[pDis->arch.x86.bOpCode >> 4];
+            pOpcode = &pOpcode[pDis->arch.x86.bOpCode & 0xf];
 
             if (pOpcode->uOpcode != OP_INVALID)
             {
                 /* Table entry is valid, so use the extension table. */
 
                 /* Cancel prefix changes. */
-                pDis->fPrefix &= ~DISPREFIX_REPNE;
+                pDis->arch.x86.fPrefix &= ~DISPREFIX_REPNE;
             }
         }
         break;
 
     case OP_REPE:    /* 0xF3 */
-        if (g_apThreeByteMapX86_F30F38[pDis->bOpCode >> 4])
+        if (g_apThreeByteMapX86_F30F38[pDis->arch.x86.bOpCode >> 4])
         {
-            pOpcode = g_apThreeByteMapX86_F30F38[pDis->bOpCode >> 4];
-            pOpcode = &pOpcode[pDis->bOpCode & 0xf];
+            pOpcode = g_apThreeByteMapX86_F30F38[pDis->arch.x86.bOpCode >> 4];
+            pOpcode = &pOpcode[pDis->arch.x86.bOpCode & 0xf];
 
             if (pOpcode->uOpcode != OP_INVALID)
             {
                 /* Table entry is valid, so use the extension table. */
 
                 /* Cancel prefix changes. */
-                pDis->fPrefix &= ~DISPREFIX_REP;
+                pDis->arch.x86.fPrefix &= ~DISPREFIX_REP;
             }
         }
     }
@@ -2170,37 +2170,37 @@ static size_t ParseThreeByteEsc5(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDi
     RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
 
     /* 3rd byte */
-    pDis->bOpCode = disReadByte(pDis, offInstr);
+    pDis->arch.x86.bOpCode = disReadByte(pDis, offInstr);
     offInstr++;
 
     /* default to the non-prefixed table. */
     PCDISOPCODE pOpcode;
-    if (g_apThreeByteMapX86_0F3A[pDis->bOpCode >> 4])
+    if (g_apThreeByteMapX86_0F3A[pDis->arch.x86.bOpCode >> 4])
     {
-        pOpcode = g_apThreeByteMapX86_0F3A[pDis->bOpCode >> 4];
-        pOpcode = &pOpcode[pDis->bOpCode & 0xf];
+        pOpcode = g_apThreeByteMapX86_0F3A[pDis->arch.x86.bOpCode >> 4];
+        pOpcode = &pOpcode[pDis->arch.x86.bOpCode & 0xf];
     }
     else
         pOpcode = &g_InvalidOpcode[0];
 
     /** @todo Should we take the first or last prefix byte in case of multiple prefix bytes??? */
-    if (pDis->bLastPrefix == OP_OPSIZE && g_apThreeByteMapX86_660F3A[pDis->bOpCode >> 4])
+    if (pDis->arch.x86.bLastPrefix == OP_OPSIZE && g_apThreeByteMapX86_660F3A[pDis->arch.x86.bOpCode >> 4])
     {
-        pOpcode = g_apThreeByteMapX86_660F3A[pDis->bOpCode >> 4];
-        pOpcode = &pOpcode[pDis->bOpCode & 0xf];
+        pOpcode = g_apThreeByteMapX86_660F3A[pDis->arch.x86.bOpCode >> 4];
+        pOpcode = &pOpcode[pDis->arch.x86.bOpCode & 0xf];
 
         if (pOpcode->uOpcode != OP_INVALID)
         {
             /* Table entry is valid, so use the extension table. */
 
             /* Cancel prefix changes. */
-            pDis->fPrefix &= ~DISPREFIX_OPSIZE;
+            pDis->arch.x86.fPrefix &= ~DISPREFIX_OPSIZE;
             if (pDis->uCpuMode == DISCPUMODE_64BIT)
             {
-                pDis->uOpMode = (pDis->fRexPrefix & DISPREFIX_REX_FLAGS_W ? DISCPUMODE_64BIT : DISCPUMODE_32BIT);
+                pDis->arch.x86.uOpMode = (pDis->arch.x86.fRexPrefix & DISPREFIX_REX_FLAGS_W ? DISCPUMODE_64BIT : DISCPUMODE_32BIT);
             }
             else
-                pDis->uOpMode  = pDis->uCpuMode;
+                pDis->arch.x86.uOpMode  = pDis->uCpuMode;
 
         }
     }
@@ -2213,10 +2213,10 @@ static size_t ParseNopPause(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
 {
     RT_NOREF_PV(pParam);
 
-    if (pDis->fPrefix & DISPREFIX_REP)
+    if (pDis->arch.x86.fPrefix & DISPREFIX_REP)
     {
         pOp = &g_aMapX86_NopPause[1]; /* PAUSE */
-        pDis->fPrefix &= ~DISPREFIX_REP;
+        pDis->arch.x86.fPrefix &= ~DISPREFIX_REP;
     }
     else
         pOp = &g_aMapX86_NopPause[0]; /* NOP */
@@ -2231,7 +2231,7 @@ static size_t ParseGrp1(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 
     uint8_t  modrm = disReadByte(pDis, offInstr);
     uint8_t  reg   = MODRM_REG(modrm);
-    unsigned idx   = (pDis->bOpCode - 0x80) * 8;
+    unsigned idx   = (pDis->arch.x86.bOpCode - 0x80) * 8;
 
     pOp = &g_aMapX86_Group1[idx+reg];
 
@@ -2244,22 +2244,22 @@ static size_t ParseShiftGrp2(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
     RT_NOREF_PV(pParam);
 
     unsigned idx;
-    switch (pDis->bOpCode)
+    switch (pDis->arch.x86.bOpCode)
     {
     case 0xC0:
     case 0xC1:
-        idx = (pDis->bOpCode - 0xC0)*8;
+        idx = (pDis->arch.x86.bOpCode - 0xC0)*8;
         break;
 
     case 0xD0:
     case 0xD1:
     case 0xD2:
     case 0xD3:
-        idx = (pDis->bOpCode - 0xD0 + 2)*8;
+        idx = (pDis->arch.x86.bOpCode - 0xD0 + 2)*8;
         break;
 
     default:
-        Log(("ParseShiftGrp2: bOpCode=%#x\n", pDis->bOpCode));
+        Log(("ParseShiftGrp2: bOpCode=%#x\n", pDis->arch.x86.bOpCode));
         pDis->rc = VERR_DIS_INVALID_OPCODE;
         return offInstr;
     }
@@ -2275,7 +2275,7 @@ static size_t ParseShiftGrp2(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
 //*****************************************************************************
 static size_t ParseGrp3(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    unsigned idx = (pDis->bOpCode - 0xF6) * 8;
+    unsigned idx = (pDis->arch.x86.bOpCode - 0xF6) * 8;
     RT_NOREF_PV(pParam);
 
     uint8_t modrm = disReadByte(pDis, offInstr);
@@ -2322,9 +2322,9 @@ static size_t Parse3DNow(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     /** @todo This code needs testing!  Esp. wrt invalid opcodes. */
 
     uint8_t ModRM = disReadByte(pDis, offInstr);
-    pDis->ModRM.Bits.Rm  = MODRM_RM(ModRM);
-    pDis->ModRM.Bits.Mod = MODRM_MOD(ModRM);
-    pDis->ModRM.Bits.Reg = MODRM_REG(ModRM);
+    pDis->arch.x86.ModRM.Bits.Rm  = MODRM_RM(ModRM);
+    pDis->arch.x86.ModRM.Bits.Mod = MODRM_MOD(ModRM);
+    pDis->arch.x86.ModRM.Bits.Reg = MODRM_REG(ModRM);
 
     size_t offRet = QueryModRM(offInstr + 1, pOp, pDis, pParam);
 
@@ -2427,7 +2427,7 @@ static size_t ParseGrp12(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t reg   = MODRM_REG(modrm);
 
-    if (pDis->fPrefix & DISPREFIX_OPSIZE)
+    if (pDis->arch.x86.fPrefix & DISPREFIX_OPSIZE)
         reg += 8;   /* 2nd table */
 
     pOp = &g_aMapX86_Group12[reg];
@@ -2442,7 +2442,7 @@ static size_t ParseGrp13(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t reg   = MODRM_REG(modrm);
-    if (pDis->fPrefix & DISPREFIX_OPSIZE)
+    if (pDis->arch.x86.fPrefix & DISPREFIX_OPSIZE)
         reg += 8;   /* 2nd table */
 
     pOp = &g_aMapX86_Group13[reg];
@@ -2457,7 +2457,7 @@ static size_t ParseGrp14(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t reg   = MODRM_REG(modrm);
-    if (pDis->fPrefix & DISPREFIX_OPSIZE)
+    if (pDis->arch.x86.fPrefix & DISPREFIX_OPSIZE)
         reg += 8;   /* 2nd table */
 
     pOp = &g_aMapX86_Group14[reg];
@@ -2503,7 +2503,7 @@ static size_t ParseGrp17(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     RT_NOREF_PV(pParam);
 
     uint8_t const bRm = disReadByte(pDis, offInstr);
-    pOp = &g_aMapX86_Group17[(MODRM_REG(bRm) << 1) | (pDis->bVexDestReg & 1)];
+    pOp = &g_aMapX86_Group17[(MODRM_REG(bRm) << 1) | (pDis->arch.x86.bVexDestReg & 1)];
 
     return disParseInstruction(offInstr, pOp, pDis);
 }
@@ -2516,20 +2516,20 @@ static size_t ParseVex2b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
 
     uint8_t byte = disReadByte(pDis, offInstr++);
-    pDis->bOpCode = disReadByte(pDis, offInstr++);
+    pDis->arch.x86.bOpCode = disReadByte(pDis, offInstr++);
 
-    pDis->bVexDestReg = VEX_2B2INT(byte);
+    pDis->arch.x86.bVexDestReg = VEX_2B2INT(byte);
 
     // VEX.R (equivalent to REX.R)
     if (pDis->uCpuMode == DISCPUMODE_64BIT && !(byte & 0x80))
     {
         /* REX prefix byte */
-        pDis->fPrefix   |= DISPREFIX_REX;
-        pDis->fRexPrefix = DISPREFIX_REX_FLAGS_R;
+        pDis->arch.x86.fPrefix   |= DISPREFIX_REX;
+        pDis->arch.x86.fRexPrefix = DISPREFIX_REX_FLAGS_R;
     }
 
     PCDISOPMAPDESC const pRange    = g_aapVexOpcodesMapRanges[byte & 3][1];
-    unsigned  const      idxOpcode = pDis->bOpCode - pRange->idxFirst;
+    unsigned  const      idxOpcode = pDis->arch.x86.bOpCode - pRange->idxFirst;
     PCDISOPCODE          pOpCode;
     if (idxOpcode < pRange->cOpcodes)
         pOpCode = &pRange->papOpcodes[idxOpcode];
@@ -2546,22 +2546,22 @@ static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 
     uint8_t byte1 = disReadByte(pDis, offInstr++);
     uint8_t byte2 = disReadByte(pDis, offInstr++);
-    pDis->bOpCode = disReadByte(pDis, offInstr++);
-    pDis->bVexDestReg = VEX_2B2INT(byte2); /** @todo r=bird: why on earth ~vvvv + L; this is obfuscation non-sense. Either split the shit up or just store byte2 raw here! */
+    pDis->arch.x86.bOpCode = disReadByte(pDis, offInstr++);
+    pDis->arch.x86.bVexDestReg = VEX_2B2INT(byte2); /** @todo r=bird: why on earth ~vvvv + L; this is obfuscation non-sense. Either split the shit up or just store byte2 raw here! */
 
     // VEX.W
-    pDis->bVexWFlag = !!(byte2 & 0x80); /** @todo r=bird: why a whole byte for this one flag? bVexWFlag and bVexDestReg makes little sense. */
+    pDis->arch.x86.bVexWFlag = !!(byte2 & 0x80); /** @todo r=bird: why a whole byte for this one flag? arch.x86.bVexWFlag and bVexDestReg makes little sense. */
 
     /* Hack alert! Assume VEX.W rules over any 66h prefix and that no VEX
-       encoded instructions ever uses the regular uOpMode w/o VEX.W. */
-    pDis->uOpMode = (byte2 & 0x80) && pDis->uCpuMode == DISCPUMODE_64BIT ? DISCPUMODE_64BIT : DISCPUMODE_32BIT;
+       encoded instructions ever uses the regular arch.x86.uOpMode w/o VEX.W. */
+    pDis->arch.x86.uOpMode = (byte2 & 0x80) && pDis->uCpuMode == DISCPUMODE_64BIT ? DISCPUMODE_64BIT : DISCPUMODE_32BIT;
 
     // VEX.~R~X~B => REX.RXB
     if (pDis->uCpuMode == DISCPUMODE_64BIT)
     {
-        pDis->fRexPrefix |= (byte1 >> 5) ^ 7;
-        if (pDis->fRexPrefix)
-            pDis->fPrefix |= DISPREFIX_REX;
+        pDis->arch.x86.fRexPrefix |= (byte1 >> 5) ^ 7;
+        if (pDis->arch.x86.fRexPrefix)
+            pDis->arch.x86.fPrefix |= DISPREFIX_REX;
     }
 
     PCDISOPCODE pOpCode;
@@ -2569,7 +2569,7 @@ static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     if (idxVexMap < RT_ELEMENTS(g_aapVexOpcodesMapRanges[byte2 & 3]))
     {
         PCDISOPMAPDESC const pRange    = g_aapVexOpcodesMapRanges[byte2 & 3][idxVexMap];
-        unsigned  const      idxOpcode = pDis->bOpCode - pRange->idxFirst;
+        unsigned  const      idxOpcode = pDis->arch.x86.bOpCode - pRange->idxFirst;
         if (idxOpcode < pRange->cOpcodes)
             pOpCode = &pRange->papOpcodes[idxOpcode];
         else
@@ -2610,7 +2610,7 @@ static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
  */
 static void disValidateLockSequence(PDISSTATE pDis)
 {
-    Assert(pDis->fPrefix & DISPREFIX_LOCK);
+    Assert(pDis->arch.x86.fPrefix & DISPREFIX_LOCK);
 
     /*
      * Filter out the valid lock sequences.
@@ -2627,7 +2627,7 @@ static void disValidateLockSequence(PDISSTATE pDis)
         case OP_BTS:
         case OP_CMPXCHG:
         case OP_XADD:
-            if (pDis->ModRM.Bits.Mod == 3)
+            if (pDis->arch.x86.ModRM.Bits.Mod == 3)
                 break;
             return;
 
@@ -2680,7 +2680,7 @@ static int disInstrWorker(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pc
     for (;;)
     {
         uint8_t  const     bCode     = disReadByte(pDis, offInstr++);
-        enum OPCODES const enmOpcode = (enum OPCODES)paOneByteMap[bCode].uOpcode;
+        enum OPCODESX86 const enmOpcode = (enum OPCODESX86)paOneByteMap[bCode].uOpcode;
 
         /* Hardcoded assumption about OP_* values!! */
         if (enmOpcode <= OP_LAST_PREFIX)
@@ -2689,8 +2689,8 @@ static int disInstrWorker(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pc
             if (enmOpcode != OP_REX)
             {
                 /* Last prefix byte (for SSE2 extension tables); don't include the REX prefix */
-                pDis->bLastPrefix = (uint8_t)enmOpcode;
-                pDis->fPrefix    &= ~DISPREFIX_REX;
+                pDis->arch.x86.bLastPrefix = (uint8_t)enmOpcode;
+                pDis->arch.x86.fPrefix    &= ~DISPREFIX_REX;
             }
 
             switch (enmOpcode)
@@ -2702,59 +2702,59 @@ static int disInstrWorker(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pc
 
             // segment override prefix byte
             case OP_SEG:
-                pDis->idxSegPrefix = (uint8_t)(paOneByteMap[bCode].fParam1 - OP_PARM_REG_SEG_START);
+                pDis->arch.x86.idxSegPrefix = (uint8_t)(paOneByteMap[bCode].fParam1 - OP_PARM_REG_SEG_START);
 #if 0  /* Try be accurate in our reporting, shouldn't break anything... :-) */
                 /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
                 if (   pDis->uCpuMode != DISCPUMODE_64BIT
                     || pDis->idxSegPrefix >= DISSELREG_FS)
-                    pDis->fPrefix   |= DISPREFIX_SEG;
+                    pDis->arch.x86.fPrefix   |= DISPREFIX_SEG;
 #else
-                pDis->fPrefix |= DISPREFIX_SEG;
+                pDis->arch.x86.fPrefix |= DISPREFIX_SEG;
 #endif
                 continue;   //fetch the next byte
 
             // lock prefix byte
             case OP_LOCK:
-                pDis->fPrefix |= DISPREFIX_LOCK;
+                pDis->arch.x86.fPrefix |= DISPREFIX_LOCK;
                 continue;   //fetch the next byte
 
             // address size override prefix byte
             case OP_ADDRSIZE:
-                pDis->fPrefix |= DISPREFIX_ADDRSIZE;
+                pDis->arch.x86.fPrefix |= DISPREFIX_ADDRSIZE;
                 if (pDis->uCpuMode == DISCPUMODE_16BIT)
-                    pDis->uAddrMode = DISCPUMODE_32BIT;
+                    pDis->arch.x86.uAddrMode = DISCPUMODE_32BIT;
                 else
                 if (pDis->uCpuMode == DISCPUMODE_32BIT)
-                    pDis->uAddrMode = DISCPUMODE_16BIT;
+                    pDis->arch.x86.uAddrMode = DISCPUMODE_16BIT;
                 else
-                    pDis->uAddrMode = DISCPUMODE_32BIT;     /* 64 bits */
+                    pDis->arch.x86.uAddrMode = DISCPUMODE_32BIT;     /* 64 bits */
                 continue;   //fetch the next byte
 
             // operand size override prefix byte
             case OP_OPSIZE:
-                pDis->fPrefix |= DISPREFIX_OPSIZE;
+                pDis->arch.x86.fPrefix |= DISPREFIX_OPSIZE;
                 if (pDis->uCpuMode == DISCPUMODE_16BIT)
-                    pDis->uOpMode = DISCPUMODE_32BIT;
+                    pDis->arch.x86.uOpMode = DISCPUMODE_32BIT;
                 else
-                    pDis->uOpMode = DISCPUMODE_16BIT;  /* for 32 and 64 bits mode (there is no 32 bits operand size override prefix) */
+                    pDis->arch.x86.uOpMode = DISCPUMODE_16BIT;  /* for 32 and 64 bits mode (there is no 32 bits operand size override prefix) */
                 continue;   //fetch the next byte
 
             // rep and repne are not really prefixes, but we'll treat them as such
             case OP_REPE:
-                pDis->fPrefix |= DISPREFIX_REP;
+                pDis->arch.x86.fPrefix |= DISPREFIX_REP;
                 continue;   //fetch the next byte
 
             case OP_REPNE:
-                pDis->fPrefix |= DISPREFIX_REPNE;
+                pDis->arch.x86.fPrefix |= DISPREFIX_REPNE;
                 continue;   //fetch the next byte
 
             case OP_REX:
                 Assert(pDis->uCpuMode == DISCPUMODE_64BIT);
                 /* REX prefix byte */
-                pDis->fPrefix   |= DISPREFIX_REX;
-                pDis->fRexPrefix = (uint8_t)DISPREFIX_REX_OP_2_FLAGS(paOneByteMap[bCode].fParam1);
-                if (pDis->fRexPrefix & DISPREFIX_REX_FLAGS_W)
-                    pDis->uOpMode = DISCPUMODE_64BIT;  /* overrides size prefix byte */
+                pDis->arch.x86.fPrefix   |= DISPREFIX_REX;
+                pDis->arch.x86.fRexPrefix = (uint8_t)DISPREFIX_REX_OP_2_FLAGS(paOneByteMap[bCode].fParam1);
+                if (pDis->arch.x86.fRexPrefix & DISPREFIX_REX_FLAGS_W)
+                    pDis->arch.x86.uOpMode = DISCPUMODE_64BIT;  /* overrides size prefix byte */
                 continue;   //fetch the next byte
             default:
                 AssertFailed();
@@ -2771,8 +2771,8 @@ static int disInstrWorker(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pc
         }
 
         /* first opcode byte. */
-        pDis->bOpCode  = bCode;
-        pDis->cbPrefix = (uint8_t)offInstr - 1;
+        pDis->arch.x86.bOpCode  = bCode;
+        pDis->arch.x86.cbPrefix = (uint8_t)offInstr - 1;
 
         offInstr = disParseInstruction(offInstr, &paOneByteMap[bCode], pDis);
         break;
@@ -2782,7 +2782,7 @@ static int disInstrWorker(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pc
     if (pcbInstr)
         *pcbInstr = (uint32_t)offInstr;
 
-    if (pDis->fPrefix & DISPREFIX_LOCK)
+    if (pDis->arch.x86.fPrefix & DISPREFIX_LOCK)
         disValidateLockSequence(pDis);
 
     return pDis->rc;
@@ -2807,44 +2807,44 @@ disInitializeState(PDISSTATE pDis, RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode, 
     RT_ZERO(*pDis);
 
 #ifdef VBOX_STRICT /* poison */
-    pDis->Param1.Base.idxGenReg  = 0xc1;
-    pDis->Param2.Base.idxGenReg  = 0xc2;
-    pDis->Param3.Base.idxGenReg  = 0xc3;
-    pDis->Param1.Index.idxGenReg = 0xc4;
-    pDis->Param2.Index.idxGenReg = 0xc5;
-    pDis->Param3.Index.idxGenReg = 0xc6;
-    pDis->Param1.uDisp.u64 = UINT64_C(0xd1d1d1d1d1d1d1d1);
-    pDis->Param2.uDisp.u64 = UINT64_C(0xd2d2d2d2d2d2d2d2);
-    pDis->Param3.uDisp.u64 = UINT64_C(0xd3d3d3d3d3d3d3d3);
-    pDis->Param1.uValue    = UINT64_C(0xb1b1b1b1b1b1b1b1);
-    pDis->Param2.uValue    = UINT64_C(0xb2b2b2b2b2b2b2b2);
-    pDis->Param3.uValue    = UINT64_C(0xb3b3b3b3b3b3b3b3);
-    pDis->Param1.uScale    = 28;
-    pDis->Param2.uScale    = 29;
-    pDis->Param3.uScale    = 30;
+    pDis->Param1.arch.x86.Base.idxGenReg    = 0xc1;
+    pDis->Param2.arch.x86.Base.idxGenReg    = 0xc2;
+    pDis->Param3.arch.x86.Base.idxGenReg    = 0xc3;
+    pDis->Param1.arch.x86.Index.idxGenReg   = 0xc4;
+    pDis->Param2.arch.x86.Index.idxGenReg   = 0xc5;
+    pDis->Param3.arch.x86.Index.idxGenReg   = 0xc6;
+    pDis->Param1.arch.x86.uDisp.u64         = UINT64_C(0xd1d1d1d1d1d1d1d1);
+    pDis->Param2.arch.x86.uDisp.u64         = UINT64_C(0xd2d2d2d2d2d2d2d2);
+    pDis->Param3.arch.x86.uDisp.u64         = UINT64_C(0xd3d3d3d3d3d3d3d3);
+    pDis->Param1.uValue                     = UINT64_C(0xb1b1b1b1b1b1b1b1);
+    pDis->Param2.uValue                     = UINT64_C(0xb2b2b2b2b2b2b2b2);
+    pDis->Param3.uValue                     = UINT64_C(0xb3b3b3b3b3b3b3b3);
+    pDis->Param1.arch.x86.uScale            = 28;
+    pDis->Param2.arch.x86.uScale            = 29;
+    pDis->Param3.arch.x86.uScale            = 30;
 #endif
 
-    pDis->fPrefix           = DISPREFIX_NONE;
-    pDis->idxSegPrefix      = DISSELREG_DS;
-    pDis->rc                = VINF_SUCCESS;
-    pDis->pfnDisasmFnTable  = g_apfnFullDisasm;
+    pDis->arch.x86.fPrefix           = DISPREFIX_NONE;
+    pDis->arch.x86.idxSegPrefix      = DISSELREG_DS;
+    pDis->arch.x86.pfnDisasmFnTable  = g_apfnFullDisasm;
+    pDis->arch.x86.fFilter           = fFilter;
 
+    pDis->rc                = VINF_SUCCESS;
     pDis->uInstrAddr        = uInstrAddr;
-    pDis->fFilter           = fFilter;
     pDis->pfnReadBytes      = pfnReadBytes ? pfnReadBytes : disReadBytesDefault;
     pDis->pvUser            = pvUser;
     pDis->uCpuMode          = (uint8_t)enmCpuMode;
     PCDISOPCODE paOneByteMap;
     if (enmCpuMode == DISCPUMODE_64BIT)
     {
-        pDis->uAddrMode     = DISCPUMODE_64BIT;
-        pDis->uOpMode       = DISCPUMODE_32BIT;
+        pDis->arch.x86.uAddrMode     = DISCPUMODE_64BIT;
+        pDis->arch.x86.uOpMode       = DISCPUMODE_32BIT;
         paOneByteMap        = g_aOneByteMapX64;
     }
     else
     {
-        pDis->uAddrMode     = (uint8_t)enmCpuMode;
-        pDis->uOpMode       = (uint8_t)enmCpuMode;
+        pDis->arch.x86.uAddrMode     = (uint8_t)enmCpuMode;
+        pDis->arch.x86.uOpMode       = (uint8_t)enmCpuMode;
         paOneByteMap        = g_aOneByteMapX86;
     }
     return paOneByteMap;
@@ -2867,11 +2867,11 @@ DECL_FORCE_INLINE(void) disPrefetchBytes(PDISSTATE pDis)
      * has gone wrong since this is what would happen if we didn't precharge
      * the cache here.)
      */
-    int rc = pDis->pfnReadBytes(pDis, 0, 1, sizeof(pDis->abInstr));
+    int rc = pDis->pfnReadBytes(pDis, 0, 1, sizeof(pDis->u.abInstr));
     if (RT_SUCCESS(rc))
     {
         Assert(pDis->cbCachedInstr >= 1);
-        Assert(pDis->cbCachedInstr <= sizeof(pDis->abInstr));
+        Assert(pDis->cbCachedInstr <= sizeof(pDis->u.abInstr));
     }
     else
     {
@@ -2935,14 +2935,14 @@ DISDECL(int) DISInstrWithPrefetchedBytes(RTUINTPTR uInstrAddr, DISCPUMODE enmCpu
         disPrefetchBytes(pDis);
     else
     {
-        if (cbPretched >= sizeof(pDis->abInstr))
+        if (cbPretched >= sizeof(pDis->u.abInstr))
         {
-            memcpy(pDis->abInstr, pvPrefetched, sizeof(pDis->abInstr));
-            pDis->cbCachedInstr = (uint8_t)sizeof(pDis->abInstr);
+            memcpy(pDis->u.abInstr, pvPrefetched, sizeof(pDis->u.abInstr));
+            pDis->cbCachedInstr = (uint8_t)sizeof(pDis->u.abInstr);
         }
         else
         {
-            memcpy(pDis->abInstr, pvPrefetched, cbPretched);
+            memcpy(pDis->u.abInstr, pvPrefetched, cbPretched);
             pDis->cbCachedInstr = (uint8_t)cbPretched;
         }
     }

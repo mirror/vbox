@@ -359,12 +359,12 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, u
         if (   RT_FAILURE(rc)
             || (   Dis.pCurInstr->fOpType & DISOPTYPE_CONTROLFLOW
                 && Dis.pCurInstr->uOpcode != OP_CALL)
-            || (   Dis.ModRM.Bits.Mod == 0
-                && Dis.ModRM.Bits.Rm  == 5 /* wrt RIP */
+            || (   Dis.arch.x86.ModRM.Bits.Mod == 0
+                && Dis.arch.x86.ModRM.Bits.Rm  == 5 /* wrt RIP */
                 && Dis.pCurInstr->uOpcode != OP_MOV))
             return VERR_SUPLIB_UNEXPECTED_INSTRUCTION;
 
-        if (Dis.ModRM.Bits.Mod == 0 && Dis.ModRM.Bits.Rm == 5 /* wrt RIP */)
+        if (Dis.arch.x86.ModRM.Bits.Mod == 0 && Dis.ModRM.Bits.Rm == 5 /* wrt RIP */)
             cRipRelMovs++;
         if (   Dis.pCurInstr->uOpcode == OP_CALL
             && (Dis.pCurInstr->fOpType & DISOPTYPE_RELATIVE_CONTROLFLOW))
@@ -417,8 +417,8 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, u
                 && Dis.pCurInstr->uOpcode != OP_CALL))
             return VERR_SUPLIB_UNEXPECTED_INSTRUCTION;
 
-        if (   Dis.ModRM.Bits.Mod == 0
-            && Dis.ModRM.Bits.Rm  == 5 /* wrt RIP */
+        if (   Dis.arch.x86.ModRM.Bits.Mod == 0
+            && Dis.arch.x86.ModRM.Bits.Rm  == 5 /* wrt RIP */
             && Dis.pCurInstr->uOpcode == OP_MOV)
         {
             /* Deduce destination register and write out new instruction. */
@@ -436,13 +436,13 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, u
                  */
 
                 *pbPatchMem++ = 0x48;
-                *pbPatchMem++ = 0xb8 + Dis.Param1.Base.idxGenReg;
+                *pbPatchMem++ = 0xb8 + Dis.Param1.arch.x86.Base.idxGenReg;
                 *(uintptr_t *)pbPatchMem = uAddr;
                 pbPatchMem   += sizeof(uintptr_t);
 
                 *pbPatchMem++ = 0x48;
                 *pbPatchMem++ = 0x8b;
-                *pbPatchMem++ = (Dis.Param1.Base.idxGenReg << X86_MODRM_REG_SHIFT) | Dis.Param1.Base.idxGenReg;
+                *pbPatchMem++ = (Dis.Param1.Base.arch.x86.idxGenReg << X86_MODRM_REG_SHIFT) | Dis.Param1.Base.arch.x86.idxGenReg;
             }
             else
             {
@@ -452,7 +452,7 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, u
                 /* Assemble the mov to register instruction with the updated rip relative displacement. */
                 *pbPatchMem++ = 0x48;
                 *pbPatchMem++ = 0x8b;
-                *pbPatchMem++ = (Dis.Param1.Base.idxGenReg << X86_MODRM_REG_SHIFT) | 5;
+                *pbPatchMem++ = (Dis.Param1.arch.x86.Base.idxGenReg << X86_MODRM_REG_SHIFT) | 5;
                 *(int32_t *)pbPatchMem = (int32_t)iDispNew;
                 pbPatchMem   += sizeof(int32_t);
             }
