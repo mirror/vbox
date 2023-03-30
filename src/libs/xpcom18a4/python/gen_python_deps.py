@@ -24,7 +24,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
 from __future__ import print_function
 import os,sys
-if sys.version_info >= (3, 10)
+if sys.version_info >= (3, 10):
     from packaging.version import Version
 else:
     from distutils.version import StrictVersion as Version
