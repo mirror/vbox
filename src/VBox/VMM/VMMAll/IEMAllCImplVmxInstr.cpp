@@ -1492,15 +1492,13 @@ static void iemVmxVmexitSaveGuestNonRegState(PVMCPUCC pVCpu, uint32_t uExitReaso
             pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI;
     }
 
-    /* Blocking-by-STI. */
+    /* Blocking-by-STI or blocking-by-MovSS. */
     if (!CPUMIsInInterruptShadowWithUpdate(&pVCpu->cpum.GstCtx))
     { /* probable */}
     else
     {
-        /** @todo NSTVMX: We can't distinguish between blocking-by-MovSS and blocking-by-STI
-         *        currently. */
         if (pVCpu->cpum.GstCtx.rip == pVCpu->cpum.GstCtx.uRipInhibitInt)
-            pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_STI; /** @todo r=bird: Why the STI one? MOVSS seems to block more and the one to use. */
+            pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS;
 
         /* Clear inhibition unconditionally since we've ensured it isn't set prior to executing VMLAUNCH/VMRESUME. */
         CPUMClearInterruptShadow(&pVCpu->cpum.GstCtx);
