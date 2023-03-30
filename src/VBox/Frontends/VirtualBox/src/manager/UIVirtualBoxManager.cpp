@@ -1001,11 +1001,9 @@ void UIVirtualBoxManager::sltOpenWizard(WizardType enmType)
                     const QUuid uId = m_pWidget->currentSnapshotId();
                     if (!uId.isNull() && comMachine.isNotNull())
                     {
-                        printf("Looking for snapshot with ID = {%s}\n", uId.toString().toUtf8().constData());
                         comSnapshot = comMachine.FindSnapshot(uId.toString());
                         if (comSnapshot.isNotNull())
                         {
-                            printf("Snapshot found, acquiring machine ..\n");
                             const CMachine comSnapshotMachine = comSnapshot.GetMachine();
                             if (comSnapshotMachine.isNotNull())
                                 comMachine = comSnapshotMachine;
