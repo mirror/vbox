@@ -108,7 +108,7 @@ static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uE
 static DECLCALLBACK(int) testReadBytes(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
     RT_NOREF1(cbMinRead);
-    memcpy(&pDis->abInstr[offInstr], (void *)((uintptr_t)pDis->uInstrAddr + offInstr), cbMaxRead);
+    memcpy(&pDis->u.abInstr[offInstr], (void *)((uintptr_t)pDis->uInstrAddr + offInstr), cbMaxRead);
     pDis->cbCachedInstr = offInstr + cbMaxRead;
     return VINF_SUCCESS;
 }
