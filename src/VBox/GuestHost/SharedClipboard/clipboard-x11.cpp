@@ -1688,13 +1688,11 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
     LogFlowFunc(("vboxFormats=0x%x, idxFmtX11=%u ('%s'), fmtX11=%u\n",
                  pCtx->vboxFormats, idxFmtX11, g_aFormats[idxFmtX11].pcszAtom, fmtX11));
 
-#ifdef LOG_ENABLED
     char *pszFmts = ShClFormatsToStrA(pCtx->vboxFormats);
     AssertPtrReturn(pszFmts, VERR_NO_MEMORY);
     LogRel2(("Shared Clipboard: Converting VBox formats '%s' to '%s' for X11\n",
-             pszFmts, g_aFormats[idxFmtX11].pcszAtom));
+             pszFmts, fmtX11 == SHCLX11FMT_INVALID ? "<invalid>" : g_aFormats[idxFmtX11].pcszAtom));
     RTStrFree(pszFmts);
-#endif
 
     void    *pv = NULL;
     uint32_t cb = 0;
@@ -2006,7 +2004,7 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
     CLIPREADX11CBREQ *pReq = (CLIPREADX11CBREQ *)pClient;
     AssertPtrReturnVoid(pReq);
 
-    LogFlowFunc(("pReq->uFmtVBox=%#x, pReq->idxFmtX11=%u, pReq->pCtx=%p\n", pReq->uFmtVBox, pReq->idxFmtX11, pReq->pCtx));
+    LogFlowFunc(("uFmtVBox=%#x, idxFmtX11=%u, pvSrc=%p, cbSrc=%u\n", pReq->uFmtVBox, pReq->idxFmtX11, pvSrc, cbSrc));
 
     LogRel2(("Shared Clipboard: Converting X11 format '%s' to VBox format %#x\n",
              g_aFormats[pReq->idxFmtX11].pcszAtom, pReq->uFmtVBox));
@@ -2252,37 +2250,74 @@ SHCL_X11_DECL(void) clipConvertDataFromX11(Widget widget, XtPointer pClient,
                                            int *piFormat)
 {
     RT_NOREF(widget);
+
+    int rc = VINF_SUCCESS;
+
+    CLIPREADX11CBREQ *pReq = (CLIPREADX11CBREQ *)pClient;
+    if (pReq) /* Give some more clues, if available. */
+    {
+        char *pszFmts = ShClFormatsToStrA(pReq->uFmtVBox);
+        AssertPtrReturnVoid(pszFmts);
+        AssertReturnVoid(pReq->idxFmtX11 <= SHCL_MAX_X11_FORMATS); /* Paranoia, should be checked already by the caller. */
+        LogRel2(("Shared Clipboard: Converting X11 format '%s' -> VBox format(s) '%s'\n", g_aFormats[pReq->idxFmtX11].pcszAtom, pszFmts));
+        RTStrFree(pszFmts);
+    }
+
     if (*atomType == XT_CONVERT_FAIL) /* Xt timeout */
-        clipConvertDataFromX11Worker(pClient, NULL, 0);
+    {
+        LogRel(("Shared Clipboard: Reading clipboard data from X11 timed out\n"));
+        rc = VERR_TIMEOUT;
+    }
     else
     {
-        CLIPREADX11CBREQ *pReq = (CLIPREADX11CBREQ *)pClient;
-        if (pReq->pCtx->Callbacks.pfnOnClipboardRead)
+        if (   pReq
+            && pReq->pCtx->Callbacks.pfnOnClipboardRead)
         {
             void  *pvData = NULL;
             size_t cbData = 0;
-            int rc = pReq->pCtx->Callbacks.pfnOnClipboardRead(pReq->pCtx->pFrontend, pReq->uFmtVBox, &pvData, &cbData, NULL);
+            rc = pReq->pCtx->Callbacks.pfnOnClipboardRead(pReq->pCtx->pFrontend, pReq->uFmtVBox, &pvData, &cbData, NULL);
             if (RT_SUCCESS(rc))
             {
                 /* Feed to conversion worker. */
                 clipConvertDataFromX11Worker(pClient, pvData, cbData);
                 RTMemFree(pvData);
             }
-            else
-                clipConvertDataFromX11Worker(pClient, NULL, 0);
         }
         else /* Call with current data provided by X (default). */
             clipConvertDataFromX11Worker(pClient, pvSrc, (*pcLen) * (*piFormat) / 8);
     }
 
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("Shared Clipboard: Reading clipboard data from X11 failed with %Rrc\n", rc));
+        /* Make sure to complete the request in any case. */
+        clipConvertDataFromX11Worker(pClient, NULL, 0);
+    }
+
     XtFree((char *)pvSrc);
 }
 
-static int clipGetSelectionValue(PSHCLX11CTX pCtx, SHCLX11FMTIDX idxFmt,
-                                 CLIPREADX11CBREQ *pReq)
+/**
+ * Requests the current clipboard data from a specific selection.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                The X11 clipboard context to use.
+ * @param   pszWhere            Clipboard selection to request the data from.
+ * @param   idxFmt              The X11 format to request the data in.
+ * @param   pReq                Where to store the requested data on success.
+ */
+static int clipGetSelectionValueEx(PSHCLX11CTX pCtx, const char *pszWhere, SHCLX11FMTIDX idxFmt,
+                                   CLIPREADX11CBREQ *pReq)
 {
+    AssertPtrReturn(pszWhere, VERR_INVALID_POINTER);
+    AssertReturn(idxFmt <= SHCL_MAX_X11_FORMATS, VERR_INVALID_PARAMETER);
+    AssertReturn(clipIsSupportedSelectionType(pCtx, clipGetAtom(pCtx, pszWhere)), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+
+    LogRel2(("Shared Clipboard: Requesting X11 selection value in %s for format '%s'\n", pszWhere, g_aFormats[idxFmt].pcszAtom));
+
 #ifndef TESTCASE
-    XtGetSelectionValue(pCtx->pWidget, clipGetAtom(pCtx, "CLIPBOARD"),
+    XtGetSelectionValue(pCtx->pWidget, clipGetAtom(pCtx, pszWhere),
                         clipAtomForX11Format(pCtx, idxFmt),
                         clipConvertDataFromX11,
                         reinterpret_cast<XtPointer>(pReq),
@@ -2292,6 +2327,21 @@ static int clipGetSelectionValue(PSHCLX11CTX pCtx, SHCLX11FMTIDX idxFmt,
 #endif
 
     return VINF_SUCCESS; /** @todo Return real rc. */
+}
+
+/**
+ * Requests the current clipboard data from the CLIPBOARD selection.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                The X11 clipboard context to use.
+ * @param   idxFmt              The X11 format to request the data in.
+ * @param   pReq                Where to store the requested data on success.
+ *
+ * @sa clipGetSelectionValueEx() for requesting data for a specific selection.
+ */
+static int clipGetSelectionValue(PSHCLX11CTX pCtx, SHCLX11FMTIDX idxFmt, CLIPREADX11CBREQ *pReq)
+{
+    return clipGetSelectionValueEx(pCtx, "CLIPBOARD", idxFmt, pReq);
 }
 
 /**
