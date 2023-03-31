@@ -36,6 +36,12 @@
 #include <iprt/types.h>
 #include <iprt/x86.h>
 
+/** The log2e constant as 128-bit floating point value.
+ * base-10: 1.44269504088896340735992468100189185
+ * base-16: 1.71547652b82fe1777d0ffda0d239
+ * base-2 : 1.0111000101010100011101100101001010111000001011111110000101110111011111010000111111111101101000001101001000111001 */
+const RTFLOAT128U g_r128Log2e = RTFLOAT128U_INIT_C(0, 0x71547652b82f, 0xe1777d0ffda0d239, 0x3fff);
+
 extFloat80_t extF80_ylog2x(extFloat80_t y, extFloat80_t x SOFTFLOAT_STATE_DECL_COMMA)
 {
     union { struct extFloat80M s; extFloat80_t f; } uX, uXM;
@@ -44,7 +50,7 @@ extFloat80_t extF80_ylog2x(extFloat80_t y, extFloat80_t x SOFTFLOAT_STATE_DECL_C
     bool signX;
     int_fast32_t expX;
     uint_fast64_t sigX;
-    extFloat80_t v;
+    extFloat80_t v, log2e, log2m;
 
     uX.f = x;
     uiX64 = uX.s.signExp;
@@ -53,21 +59,22 @@ extFloat80_t extF80_ylog2x(extFloat80_t y, extFloat80_t x SOFTFLOAT_STATE_DECL_C
     expX  = expExtF80UI64( uiX64 );
     sigX  = uiX0;
 
+    /* Linear approximation of log2x in the range [1, 2.0) (to be improved) */
     uXM.s.signExp = RTFLOAT80U_EXP_BIAS;
     uXM.s.signif = sigX;
 
-    v = ui32_to_extF80(expX - RTFLOAT80U_EXP_BIAS - 1, pState);
-    v = extF80_add(v, uXM.f, pState);
+    v = i32_to_extF80(1, pState);
+    v = extF80_sub(uXM.f, v, pState);
+
+    log2e = f128_to_extF80(*(float128_t *)&g_r128Log2e, pState);
+    log2m = extF80_mul(v, log2e, pState);
+
+    v = i32_to_extF80(expX - RTFLOAT80U_EXP_BIAS, pState);
+    v = extF80_add(v, log2m, pState);
     v = extF80_mul(y, v, pState);
 
     return v;
 }
-
-/** The log2e constant as 128-bit floating point value.
- * base-10: 1.44269504088896340735992468100189185
- * base-16: 1.71547652b82fe1777d0ffda0d239
- * base-2 : 1.0111000101010100011101100101001010111000001011111110000101110111011111010000111111111101101000001101001000111001 */
-const RTFLOAT128U g_r128Log2e = RTFLOAT128U_INIT_C(0, 0x71547652b82f, 0xe1777d0ffda0d239, 0x3fff);
 
 extFloat80_t extF80_ylog2xp1(extFloat80_t y, extFloat80_t x SOFTFLOAT_STATE_DECL_COMMA)
 {
