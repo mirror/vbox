@@ -1259,7 +1259,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserHome(PVBGLR3GUESTCTRLCMDCTX pCtx)
 
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
 /**
- * Retrieves a HOST_MSG_FS_QUERY_INFO message.
+ * Retrieves a HOST_MSG_FS_OBJ_QUERY_INFO message.
  *
  * @returns VBox status code.
  * @param   pCtx                Guest control command context to use.
@@ -1268,8 +1268,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserHome(PVBGLR3GUESTCTRLCMDCTX pCtx)
  * @param   penmAddAttrib       Where to return the additional attributes enumeration.
  * @param   pfFlags             Where to return the flags for .
  */
-VBGLR3DECL(int) VbglR3GuestCtrlFsGetQueryInfo(PVBGLR3GUESTCTRLCMDCTX pCtx,
-                                              char *pszPath, uint32_t cbPath, GSTCTLFSOBJATTRADD *penmAddAttrib, uint32_t *pfFlags)
+VBGLR3DECL(int) VbglR3GuestCtrlFsGetQueryObjInfo(PVBGLR3GUESTCTRLCMDCTX pCtx,
+                                                 char *pszPath, uint32_t cbPath, GSTCTLFSOBJATTRADD *penmAddAttrib,
+                                                 uint32_t *pfFlags)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertReturn(pCtx->uNumParms == 4, VERR_INVALID_PARAMETER);
@@ -1284,7 +1285,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFsGetQueryInfo(PVBGLR3GUESTCTRLCMDCTX pCtx,
     {
         HGCMMsgFsQueryInfo Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
-        VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_FS_QUERY_INFO);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_FS_OBJ_QUERY_INFO);
         VbglHGCMParmPtrSet(&Msg.path, pszPath, cbPath);
         VbglHGCMParmUInt32Set(&Msg.add_attributes, 0);
         VbglHGCMParmUInt32Set(&Msg.flags, 0);

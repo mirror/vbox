@@ -2107,7 +2107,7 @@ int GuestSession::i_fsObjQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks,
 
         alock.release(); /* Drop lock before sending. */
 
-        vrc = i_sendMessage(HOST_MSG_FS_QUERY_INFO, i, paParms);
+        vrc = i_sendMessage(HOST_MSG_FS_OBJ_QUERY_INFO, i, paParms);
         if (RT_SUCCESS(vrc))
         {
             vrc = pEvent->Wait(30 * 1000);

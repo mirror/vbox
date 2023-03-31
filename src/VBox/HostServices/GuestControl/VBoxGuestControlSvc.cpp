@@ -1660,7 +1660,7 @@ int GstCtrlService::clientMsgSkip(ClientState *pClient, VBOXHGCMCALLHANDLE hCall
                         hostCallback(GUEST_MSG_FILE_NOTIFY, 4, aReplyParams);
                         break;
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
-                    case HOST_MSG_FS_QUERY_INFO:
+                    case HOST_MSG_FS_OBJ_QUERY_INFO:
                         RT_FALL_THROUGH();
                     case HOST_MSG_FS_CREATE_TEMP:
                         RT_FALL_THROUGH();

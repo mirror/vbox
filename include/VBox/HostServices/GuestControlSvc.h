@@ -262,7 +262,7 @@ enum eHostMsg
     /**
      * Retrieves information about a file system object.
      */
-    HOST_MSG_FS_QUERY_INFO = 334,
+    HOST_MSG_FS_OBJ_QUERY_INFO = 334,
     /**
      * Creates a temporary file or directory.
      */
@@ -315,8 +315,9 @@ DECLINLINE(const char *) GstCtrlHostMsgtoStr(enum eHostMsg enmMsg)
         RT_CASE_RET_STR(HOST_MSG_PATH_USER_HOME);
         RT_CASE_RET_STR(HOST_MSG_SHUTDOWN);
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
-        RT_CASE_RET_STR(HOST_MSG_FS_QUERY_INFO);
+        RT_CASE_RET_STR(HOST_MSG_FS_OBJ_QUERY_INFO);
         RT_CASE_RET_STR(HOST_MSG_FS_CREATE_TEMP);
+        RT_CASE_RET_STR(HOST_MSG_FS_OBJ_MOVE);
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
         RT_CASE_RET_STR(HOST_MSG_32BIT_HACK);
     }
