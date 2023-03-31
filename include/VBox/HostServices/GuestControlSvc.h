@@ -971,7 +971,7 @@ typedef struct HGCMMsgFsCreateTemp
 /**
  * Queries information for a file system object on the guest.
  */
-typedef struct HGCMMsgFsQueryInfo
+typedef struct HGCMMsgFsObjQueryInfo
 {
     VBGLIOCHGCMCALL hdr;
     /** Context ID. */
@@ -982,7 +982,7 @@ typedef struct HGCMMsgFsQueryInfo
     HGCMFunctionParameter add_attributes;
     /** Flags (GSTCTL_PATH_F_XXX). */
     HGCMFunctionParameter flags;
-} HGCMMsgFsQueryInfo;
+} HGCMMsgFsObjQueryInfo;
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
 
 /**

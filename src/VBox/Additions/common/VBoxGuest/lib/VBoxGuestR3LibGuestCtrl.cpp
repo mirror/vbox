@@ -1268,7 +1268,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserHome(PVBGLR3GUESTCTRLCMDCTX pCtx)
  * @param   penmAddAttrib       Where to return the additional attributes enumeration.
  * @param   pfFlags             Where to return the flags for .
  */
-VBGLR3DECL(int) VbglR3GuestCtrlFsGetQueryObjInfo(PVBGLR3GUESTCTRLCMDCTX pCtx,
+VBGLR3DECL(int) VbglR3GuestCtrlFsObjGetQueryInfo(PVBGLR3GUESTCTRLCMDCTX pCtx,
                                                  char *pszPath, uint32_t cbPath, GSTCTLFSOBJATTRADD *penmAddAttrib,
                                                  uint32_t *pfFlags)
 {
@@ -1283,7 +1283,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFsGetQueryObjInfo(PVBGLR3GUESTCTRLCMDCTX pCtx,
     int rc;
     do
     {
-        HGCMMsgFsQueryInfo Msg;
+        HGCMMsgFsObjQueryInfo Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
         VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_FS_OBJ_QUERY_INFO);
         VbglHGCMParmPtrSet(&Msg.path, pszPath, cbPath);

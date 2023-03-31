@@ -1097,7 +1097,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserHome(PVBGLR3GUESTCTRLCMDCTX pCtx);
 /** @name Guest Control file system functions.
  * @{
  */
-VBGLR3DECL(int) VbglR3GuestCtrlFsGetQueryObjInfo(PVBGLR3GUESTCTRLCMDCTX pCtx, char *pszPath, uint32_t cbPath, GSTCTLFSOBJATTRADD *penmAddAttrib, uint32_t *pfFlags);
+VBGLR3DECL(int) VbglR3GuestCtrlFsObjGetQueryInfo(PVBGLR3GUESTCTRLCMDCTX pCtx, char *pszPath, uint32_t cbPath, GSTCTLFSOBJATTRADD *penmAddAttrib, uint32_t *pfFlags);
 VBGLR3DECL(int) VbglR3GuestCtrlFsGetCreateTemp(PVBGLR3GUESTCTRLCMDCTX pCtx, char *pszTemplate, uint32_t cbTemplate, char *pszPath, uint32_t cbPath, uint32_t *pfFlags, uint32_t *pfMode);
 /** @} */
 #  endif

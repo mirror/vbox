@@ -1974,7 +1974,7 @@ static int vgsvcGstCtrlSessionHandleProcWaitFor(const PVBOXSERVICECTRLSESSION pS
 
 
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
-static int vgsvcGstCtrlSessionHandleFsQueryObjInfo(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx)
+static int vgsvcGstCtrlSessionHandleFsObjQueryInfo(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
@@ -1987,7 +1987,7 @@ static int vgsvcGstCtrlSessionHandleFsQueryObjInfo(const PVBOXSERVICECTRLSESSION
     uint32_t           fFlags;
     RTFSOBJINFO        objInfoRuntime;
 
-    int rc = VbglR3GuestCtrlFsGetQueryObjInfo(pHostCtx, szPath, sizeof(szPath), &enmAttrAdd, &fFlags);
+    int rc = VbglR3GuestCtrlFsObjGetQueryInfo(pHostCtx, szPath, sizeof(szPath), &enmAttrAdd, &fFlags);
     if (RT_SUCCESS(rc))
     {
         uint32_t fFlagsRuntime = 0;
@@ -2008,7 +2008,7 @@ static int vgsvcGstCtrlSessionHandleFsQueryObjInfo(const PVBOXSERVICECTRLSESSION
             rc = VERR_INVALID_PARAMETER;
 
         if (RT_FAILURE(rc))
-            VGSvcError("Invalid fsqueryinfo flags: %#x (%#x)\n", fFlags, fFlagsRuntime);
+            VGSvcError("Invalid fsobjqueryinfo flags: %#x (%#x)\n", fFlags, fFlagsRuntime);
 
         if (RT_SUCCESS(rc))
         {
@@ -2052,14 +2052,14 @@ static int vgsvcGstCtrlSessionHandleFsQueryObjInfo(const PVBOXSERVICECTRLSESSION
         int rc2 = VbglR3GuestCtrlFsCbQueryInfoEx(pHostCtx, rc, pObjInfo, pszUser, pszGroup);
         if (RT_FAILURE(rc2))
         {
-            VGSvcError("Failed to reply to fsqueryinfo request %Rrc, rc=%Rrc\n", rc, rc2);
+            VGSvcError("Failed to reply to fsobjquerinfo request %Rrc, rc=%Rrc\n", rc, rc2);
             if (RT_SUCCESS(rc))
                 rc = rc2;
         }
     }
     else
     {
-        VGSvcError("Error fetching parameters for fsqueryinfo operation: %Rrc\n", rc);
+        VGSvcError("Error fetching parameters for fsobjqueryinfo operation: %Rrc\n", rc);
         VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID, rc, UINT32_MAX);
     }
     return rc;
@@ -2233,7 +2233,7 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
         case HOST_MSG_FS_OBJ_QUERY_INFO:
             if (fImpersonated)
-                rc = vgsvcGstCtrlSessionHandleFsQueryObjInfo(pSession, pHostCtx);
+                rc = vgsvcGstCtrlSessionHandleFsObjQueryInfo(pSession, pHostCtx);
             break;
 
         case HOST_MSG_FS_CREATE_TEMP:
