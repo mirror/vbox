@@ -2660,7 +2660,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbSetSize(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32
 
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
 /**
- * Replies to a HOST_MSG_FS_QUERY_INFO message, extended version.
+ * Replies to a HOST_MSG_FS_OBJ_QUERY_INFO message, extended version.
  *
  * @returns VBox status code.
  * @param   pCtx                Guest control command context to use.
@@ -2671,8 +2671,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbSetSize(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32
  *                              Multiple groups are delimited by GSTCTL_DIRENTRY_GROUPS_DELIMITER_STR,
  *                              whereas the first group always is the primary group.
  */
-VBGLR3DECL(int) VbglR3GuestCtrlFsCbQueryInfoEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLFSOBJINFO pFsObjInfo,
-                                               const char *pszUser, const char *pszGroups)
+VBGLR3DECL(int) VbglR3GuestCtrlFsObjCbQueryInfoEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLFSOBJINFO pFsObjInfo,
+                                                  const char *pszUser, const char *pszGroups)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pFsObjInfo, VERR_INVALID_POINTER);
@@ -2694,17 +2694,17 @@ VBGLR3DECL(int) VbglR3GuestCtrlFsCbQueryInfoEx(PVBGLR3GUESTCTRLCMDCTX pCtx, uint
 
 
 /**
- * Replies to a HOST_MSG_FS_QUERY_INFO message.
+ * Replies to a HOST_MSG_FS_OBJ_QUERY_INFO message.
  *
  * @returns VBox status code.
  * @param   pCtx                Guest control command context to use.
  * @param   uRc                 Guest rc of operation (note: IPRT-style signed int).
  * @param   pFsObjInfo          Guest file system object information to send.
  */
-VBGLR3DECL(int) VbglR3GuestCtrlFsCbQueryInfo(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLFSOBJINFO pFsObjInfo)
+VBGLR3DECL(int) VbglR3GuestCtrlFsObjCbQueryInfo(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLFSOBJINFO pFsObjInfo)
 {
     char szIgnored[1] = { 0 };
-    return VbglR3GuestCtrlFsCbQueryInfoEx(pCtx, uRc, pFsObjInfo, szIgnored /* pszUser */, szIgnored /* pszGroups */);
+    return VbglR3GuestCtrlFsObjCbQueryInfoEx(pCtx, uRc, pFsObjInfo, szIgnored /* pszUser */, szIgnored /* pszGroups */);
 }
 
 
