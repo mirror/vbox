@@ -900,7 +900,7 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
 int GuestFile::i_queryInfo(GuestFsObjData &objData, int *prcGuest)
 {
     AssertPtrReturn(mSession, VERR_OBJECT_DESTROYED);
-    return mSession->i_fsQueryInfo(mData.mOpenInfo.mFilename, FALSE /* fFollowSymlinks */, objData, prcGuest);
+    return mSession->i_fsObjQueryInfo(mData.mOpenInfo.mFilename, FALSE /* fFollowSymlinks */, objData, prcGuest);
 }
 
 /**

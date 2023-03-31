@@ -1105,7 +1105,7 @@ int GuestSession::i_directoryQueryInfo(const Utf8Str &strPath, bool fFollowSymli
 
     LogFlowThisFunc(("strPath=%s, fFollowSymlinks=%RTbool\n", strPath.c_str(), fFollowSymlinks));
 
-    int vrc = i_fsQueryInfo(strPath, fFollowSymlinks, objData, pvrcGuest);
+    int vrc = i_fsObjQueryInfo(strPath, fFollowSymlinks, objData, pvrcGuest);
     if (RT_SUCCESS(vrc))
     {
         vrc = objData.mType == FsObjType_Directory
@@ -1980,7 +1980,7 @@ int GuestSession::i_fileQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, 
 {
     LogFlowThisFunc(("strPath=%s fFollowSymlinks=%RTbool\n", strPath.c_str(), fFollowSymlinks));
 
-    int vrc = i_fsQueryInfo(strPath, fFollowSymlinks, objData, pvrcGuest);
+    int vrc = i_fsObjQueryInfo(strPath, fFollowSymlinks, objData, pvrcGuest);
     if (RT_SUCCESS(vrc))
         vrc = objData.mType == FsObjType_File ? VINF_SUCCESS : VERR_NOT_A_FILE;
 
@@ -2080,7 +2080,7 @@ int GuestSession::i_fsQueryInfoViaToolbox(const Utf8Str &strPath, bool fFollowSy
  *                              VERR_GSTCTL_GUEST_ERROR. Any other return code
  *                              indicates some host side error.
  */
-int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pvrcGuest)
+int GuestSession::i_fsObjQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pvrcGuest)
 {
     LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
 
@@ -3906,7 +3906,7 @@ HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, c
     {
         GuestFsObjData objData;
         int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-        int vrc = i_fsQueryInfo(*(itSource), fFollowSymlinks, objData, &vrcGuest);
+        int vrc = i_fsObjQueryInfo(*(itSource), fFollowSymlinks, objData, &vrcGuest);
         if (   RT_FAILURE(vrc)
             && !fContinueOnErrors)
         {
@@ -4748,7 +4748,7 @@ HRESULT GuestSession::fsObjExists(const com::Utf8Str &aPath, BOOL aFollowSymlink
 
     GuestFsObjData objData;
     int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    int vrc = i_fsQueryInfo(aPath, aFollowSymlinks != FALSE, objData, &vrcGuest);
+    int vrc = i_fsObjQueryInfo(aPath, aFollowSymlinks != FALSE, objData, &vrcGuest);
     if (RT_SUCCESS(vrc))
         *aExists = TRUE;
     else
@@ -4787,7 +4787,7 @@ HRESULT GuestSession::fsObjQueryInfo(const com::Utf8Str &aPath, BOOL aFollowSyml
 
     GuestFsObjData objData;
     int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    int vrc = i_fsQueryInfo(aPath, aFollowSymlinks != FALSE, objData, &vrcGuest);
+    int vrc = i_fsObjQueryInfo(aPath, aFollowSymlinks != FALSE, objData, &vrcGuest);
     if (RT_SUCCESS(vrc))
     {
         ComObjPtr<GuestFsObjInfo> ptrFsObjInfo;

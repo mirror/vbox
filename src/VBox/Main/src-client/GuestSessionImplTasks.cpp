@@ -544,7 +544,7 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
 
     GuestFsObjData srcObjData;
     int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    int vrc = mSession->i_fsQueryInfo(strSrc, TRUE /* fFollowSymlinks */, srcObjData, &vrcGuest);
+    int vrc = mSession->i_fsObjQueryInfo(strSrc, TRUE /* fFollowSymlinks */, srcObjData, &vrcGuest);
     if (RT_FAILURE(vrc))
     {
         if (vrc == VERR_GSTCTL_GUEST_ERROR)
@@ -1539,7 +1539,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
 
             GuestFsObjData srcObjData;
             int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-            vrc = mSession->i_fsQueryInfo(strSrc, fFollowSymlinks, srcObjData, &vrcGuest);
+            vrc = mSession->i_fsObjQueryInfo(strSrc, fFollowSymlinks, srcObjData, &vrcGuest);
             if (RT_FAILURE(vrc))
             {
                 if (vrc == VERR_GSTCTL_GUEST_ERROR)
@@ -2253,7 +2253,7 @@ int GuestSessionTaskCopyTo::Run(void)
 
         GuestFsObjData dstObjData;
         int vrcGuest;
-        vrc = mSession->i_fsQueryInfo(strDstRootAbs, fFollowSymlinks, dstObjData, &vrcGuest);
+        vrc = mSession->i_fsObjQueryInfo(strDstRootAbs, fFollowSymlinks, dstObjData, &vrcGuest);
         if (RT_FAILURE(vrc))
         {
             if (vrc == VERR_GSTCTL_GUEST_ERROR)
