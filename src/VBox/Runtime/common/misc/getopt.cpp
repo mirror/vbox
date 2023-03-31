@@ -357,7 +357,7 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
                     }
                 }
             }
-            else if (rtGetOptLongStrEquals(pszOption, pOpt->pszLong, RTSTR_MAX, fOptFlags, NULL))
+            else if (rtGetOptLongStrEquals(pszOption, pOpt->pszLong, RTSTR_MAX, fOptFlags, pcchMatch))
                 return pOpt;
         }
         pOpt++;
