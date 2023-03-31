@@ -1242,7 +1242,8 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
             }
         }
 
-        if (vrc == VERR_NO_MORE_FILES) /* End of listing reached? */
+        if (   vrc      == VERR_GSTCTL_GUEST_ERROR
+            && vrcGuest == VERR_NO_MORE_FILES) /* End of listing reached? */
             vrc = VINF_SUCCESS;
     }
 
