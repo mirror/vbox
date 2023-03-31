@@ -366,12 +366,8 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
     if (!(fFlags & RTGETOPTINIT_FLAGS_NO_STD_OPTS))
         for (uint32_t i = 0; i < RT_ELEMENTS(g_aStdOptions); i++)
         {
-            size_t cchMatch = 0;
-            if (rtGetOptLongStrEquals(pszOption, g_aStdOptions[i].pszLong, RTSTR_MAX, g_aStdOptions[i].fFlags, &cchMatch))
-            {
-                *pcchMatch = cchMatch;
+            if (rtGetOptLongStrEquals(pszOption, g_aStdOptions[i].pszLong, RTSTR_MAX, g_aStdOptions[i].fFlags, pcchMatch))
                 return &g_aStdOptions[i];
-            }
         }
 
     *pcchMatch = 0;
