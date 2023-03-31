@@ -374,6 +374,7 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
             }
         }
 
+    *pcchMatch = 0;
     return NULL;
 }
 
