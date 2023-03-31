@@ -364,7 +364,7 @@ public:
     int                     i_fileRemoveViaToolbox(const Utf8Str &strPath, int *pvrcGuest);
     int                     i_fsCreateTempViaToolbox(const Utf8Str &strTemplate, const Utf8Str &strPath, bool fDirectory, Utf8Str &strName,
                                                      uint32_t fMode, bool fSecure, int *pvrcGuest);
-    int                     i_fsQueryInfoViaToolbox(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pvrcGuest);
+    int                     i_fsObjQueryInfoViaToolbox(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pvrcGuest);
     /** @}  */
 
 public:
