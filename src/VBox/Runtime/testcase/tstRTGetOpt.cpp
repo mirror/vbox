@@ -221,6 +221,22 @@ int main()
         "--optpair64", "0x128 :0x42",
         "--optpair64", "0x128",
 
+        /* various utf-8 dashes: */
+#define DASH_HYPHEN             "\xE2\x80\x90"  // U+2010
+#define DASH_NON_BREAKING       "\xE2\x80\x91"  // U+2011
+#define DASH_FIGURE             "\xE2\x80\x92"  // U+2012
+#define DASH_EN                 "\xE2\x80\x93"  // U+2013
+#define DASH_EM                 "\xE2\x80\x94"  // U+2014
+#define DASH_MINUS_SIGN         "\xE2\x88\x92"  // U+2212
+#define DASH_SMALL_EM           "\xEF\xB9\x98"  // U+fe58
+#define DASH_SMALL_HYPEN_MINUS  "\xEF\xB9\xA3"  // U+fe63
+#define DASH_FULLWIDTH          "\xEF\xBC\x8D"  // U+ff0d
+        DASH_HYPHEN DASH_NON_BREAKING "quiet",
+        DASH_FIGURE DASH_EN "boolean" DASH_EM "dash" DASH_MINUS_SIGN "idx" DASH_FULLWIDTH "2", "off",
+        DASH_NON_BREAKING "qV",
+        DASH_SMALL_EM DASH_SMALL_HYPEN_MINUS "boolean1index42",    "on",
+        DASH_NON_BREAKING DASH_FULLWIDTH "indexnovalue2",
+
         /* done */
         NULL
     };
@@ -513,6 +529,25 @@ int main()
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 412, 2);
     CHECK(Val.PairU64.uFirst == 0x128);
     CHECK(Val.PairU64.uSecond == UINT64_MAX);
+
+    /* various utf-8 dashes: */
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 384, 1);
+    CHECK_pDef(s_aOpts2, 4);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 415, 2);
+    CHECK(!Val.f);
+    CHECK(GetState.uIndex == 2);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'q', 0);
+    CHECK_pDef(s_aOpts2, 3);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'V', 1);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 414, 2);
+    CHECK(Val.f);
+    CHECK(GetState.uIndex == 42);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 403, 1);
+    CHECK(GetState.uIndex == 2);
 
     /* the end */
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 0, 0);

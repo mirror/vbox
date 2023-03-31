@@ -48,15 +48,16 @@
 #include <iprt/err.h>
 #include <iprt/message.h>
 #include <iprt/string.h>
+#include <iprt/uni.h>
 #include <iprt/uuid.h>
 
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#ifdef IN_RT_STATIC  /* We don't need full unicode case insensitive if we ASSUME basic latin only. */
-# define RTStrICmp  RTStrICmpAscii
-# define RTStrNICmp RTStrNICmpAscii
+#ifdef IN_RT_STATIC /* We don't need full unicode case insensitive if we ASSUME basic latin only. */
+# define RTUniCpToLower(a_uc)   ((RTUNICP)RT_C_TO_LOWER(a_uc))
+# define RTUniCpToUpper(a_uc)   ((RTUNICP)RT_C_TO_UPPER(a_uc))
 #endif
 
 
@@ -111,7 +112,8 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
             const char   *psz = paOptions[i].pszLong;
             unsigned char ch;
             while ((ch = *psz++) != '\0')
-                Assert(ch <= 0x7f); /* ASSUMPTION that we can use RTStrICmpAscii and RTStrNICmpAscii. */
+                Assert(ch <= 0x7f); /* ASSUMPTION that we can use also RTStrICmpAscii and RTStrNICmpAscii for static builds
+                                       and that we don't need to use RTStrGetCp on pszLong strings. */
         }
     }
 #endif
@@ -160,6 +162,129 @@ static int rtgetoptConvertMacAddr(const char *pszValue, PRTMAC pAddr)
 
 #endif /* IPRT_GETOPT_WITHOUT_NETWORK_ADDRESSES */
 
+
+/**
+ * Checks if the given unicode codepoint is an alternative dash or not.
+ *
+ * ASSUMES caller checks for the ascii hypen-minus.
+ *
+ * @returns true / false.
+ * @param   uc      The codepoint to check.
+ */
+DECLINLINE(bool) rtGetOptIsAlternativeDash(RTUNICP uc)
+{
+    return uc == 0x2011 /* non-breaking hypen */
+        || uc == 0x2010 /* hypen */
+        || uc == 0x2012 /* figure dash */
+        || uc == 0x2013 /* en dash */
+        || uc == 0x2014 /* em dash */
+        || uc == 0x2212 /* minus sign */
+        || uc == 0xfe58 /* small em dash */
+        || uc == 0xfe63 /* small em hypen-minus */
+        || uc == 0xff0d /* fullwidth hypen-minus */
+        ;
+}
+
+
+/**
+ * Checks if the given unicode codepoint is an any kind of dash.
+ *
+ * @returns true / false.
+ * @param   uc      The codepoint to check.
+ */
+DECLINLINE(bool) rtGetOptIsDash(RTUNICP uc)
+{
+    return uc == (RTUNICP)'-' || rtGetOptIsAlternativeDash(uc);
+}
+
+
+/**
+ * Compares a user specific argument with a RTGETOPTDEF long string, taking
+ * RTGETOPT_FLAG_ICASE into account.
+ *
+ * This differs from strcmp/RTStrICmp in that it matches the minus-hyphen
+ * (U+002D) codepoint in a RTGETOPTDEF string with non-breaking hyphen (U+2011)
+ * and some others.  This allows copy & paste from manuals, documentation and
+ * similar that needs to use the non-breaking variant for typographical reasons.
+ *
+ * @returns true if matches, false if not.
+ * @param   pszUserArg          Ther user specified argument string.
+ * @param   pszOption           The RTGETOPTDEF::pszLong string.
+ * @param   fOptFlags           The RTGETOPTDEF::fFlags.
+ * @param   cchMax              RT_STR_MAX if full string compare, otherwise
+ *                              number of @a pszOption characters to compare.
+ * @param   poffUserArgNext     Where to return offset of the first character
+ *                              after the match in @a pszUserArg. Optional.
+ */
+static bool rtGetOptLongStrEquals(const char *pszUserArg, const char *pszOption, size_t cchMax, uint32_t fOptFlags,
+                                  size_t *poffUserArgNext)
+{
+    const char * const pszUserArgStart = pszUserArg;
+    while (cchMax-- > 0)
+    {
+        char const ch1 = *pszUserArg++;
+        char const ch2 = *pszOption++;
+        if (ch1 == ch2)
+        {
+            if (!ch1)
+                break;
+        }
+        /* If the long option contains a dash, consider alternative unicode dashes
+           like non-breaking and such. */
+        else if (ch2 == '-')
+        {
+            if (!((unsigned char)ch1 & 0x80))
+                return false;
+
+            pszUserArg--;
+            RTUNICP uc;
+            int rc = RTStrGetCpEx(&pszUserArg, &uc);
+            AssertRCReturn(rc, false);
+
+            if (!rtGetOptIsAlternativeDash(uc))
+                return false;
+        }
+        /* Do case folding if configured for this option. */
+        else if (!(fOptFlags & RTGETOPT_FLAG_ICASE))
+            return false;
+        else
+        {
+            pszUserArg--;
+            RTUNICP uc;
+            int rc = RTStrGetCpEx(&pszUserArg, &uc);
+            AssertRCReturn(rc, false);
+
+            if (   RTUniCpToLower(uc) != (RTUNICP)RT_C_TO_LOWER(ch2)
+                && RTUniCpToUpper(uc) != (RTUNICP)RT_C_TO_UPPER(ch2))
+                return false;
+        }
+    }
+    if (poffUserArgNext)
+        *poffUserArgNext = (size_t)(pszUserArg - pszUserArgStart);
+    return true;
+}
+
+
+/**
+ * Skips the optional dash for options with the RTGETOPT_FLAG_INDEX_DEF_DASH
+ * flag.
+ */
+static size_t rtGetOptSkipIndexDefDash(const char *pszOption, size_t cchLong)
+{
+    const char *pszNext = &pszOption[cchLong];
+    RTUNICP     uc;
+    int rc = RTStrGetCpEx(&pszNext, &uc);
+    AssertRCReturn(rc, cchLong);
+
+    /* given "--long" we match "--long-1" but not "--long-". */
+    if (   rtGetOptIsDash(uc)
+        && RT_C_IS_DIGIT(*pszNext))
+        return (size_t)(pszNext - pszOption);
+
+    return cchLong;
+}
+
+
 /**
  * Searches for a long option.
  *
@@ -168,8 +293,12 @@ static int rtgetoptConvertMacAddr(const char *pszValue, PRTMAC pAddr)
  * @param   paOptions       Option array.
  * @param   cOptions        Number of items in the array.
  * @param   fFlags          Init flags.
+ * @param   pcchMatch       Where to return the length of the matching option
+ *                          section, including any RTGETOPT_FLAG_INDEX_DEF_DASH
+ *                          dash, but _not_ the actual index or value separator.
  */
-static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paOptions, size_t cOptions, uint32_t fFlags)
+static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paOptions, size_t cOptions, uint32_t fFlags,
+                                        size_t *pcchMatch)
 {
     PCRTGETOPTDEF pOpt = paOptions;
     while (cOptions-- > 0)
@@ -190,21 +319,21 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
                  * there is no index.
                  */
                 size_t cchLong = strlen(pOpt->pszLong);
-                if (   !strncmp(pszOption, pOpt->pszLong, cchLong)
-                    || (   (fOptFlags & RTGETOPT_FLAG_ICASE)
-                        && !RTStrNICmp(pszOption, pOpt->pszLong, cchLong)))
+                if (rtGetOptLongStrEquals(pszOption, pOpt->pszLong, cchLong, fOptFlags, &cchLong))
                 {
-                    if (   (fOptFlags & RTGETOPT_FLAG_INDEX_DEF_DASH)
-                        && pszOption[cchLong] == '-'
-                        && RT_C_IS_DIGIT(pszOption[cchLong + 1])) /* given "--long" we match "--long-1" but not "--long-". */
-                        cchLong++;
+                    if (fOptFlags & RTGETOPT_FLAG_INDEX_DEF_DASH)
+                        cchLong = rtGetOptSkipIndexDefDash(pszOption, cchLong);
+                    size_t const cchMatch = cchLong;
                     if (fOptFlags & RTGETOPT_FLAG_INDEX)
                         while (RT_C_IS_DIGIT(pszOption[cchLong]))
                             cchLong++;
                     if (   pszOption[cchLong] == '\0'
                         || pszOption[cchLong] == ':'
                         || pszOption[cchLong] == '=')
+                    {
+                        *pcchMatch = cchMatch;
                         return pOpt;
+                    }
                 }
             }
             else if (fOptFlags & RTGETOPT_FLAG_INDEX)
@@ -214,23 +343,21 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
                  * As above, we also match where there is no index.
                  */
                 size_t cchLong = strlen(pOpt->pszLong);
-                if (   !strncmp(pszOption, pOpt->pszLong, cchLong)
-                    || (   (fOptFlags & RTGETOPT_FLAG_ICASE)
-                        && !RTStrNICmp(pszOption, pOpt->pszLong, cchLong)))
+                if (rtGetOptLongStrEquals(pszOption, pOpt->pszLong, cchLong, fOptFlags, &cchLong))
                 {
-                    if (   (fOptFlags & RTGETOPT_FLAG_INDEX_DEF_DASH)
-                        && pszOption[cchLong] == '-'
-                        && RT_C_IS_DIGIT(pszOption[cchLong + 1]))
-                        cchLong++;
+                    if (fOptFlags & RTGETOPT_FLAG_INDEX_DEF_DASH)
+                        cchLong = rtGetOptSkipIndexDefDash(pszOption, cchLong);
+                    size_t const cchMatch = cchLong;
                     while (RT_C_IS_DIGIT(pszOption[cchLong]))
                         cchLong++;
                     if (pszOption[cchLong] == '\0')
+                    {
+                        *pcchMatch = cchMatch;
                         return pOpt;
+                    }
                 }
             }
-            else if (   !strcmp(pszOption, pOpt->pszLong)
-                     || (   (fOptFlags & RTGETOPT_FLAG_ICASE)
-                         && !RTStrICmp(pszOption, pOpt->pszLong)))
+            else if (rtGetOptLongStrEquals(pszOption, pOpt->pszLong, RTSTR_MAX, fOptFlags, NULL))
                 return pOpt;
         }
         pOpt++;
@@ -238,10 +365,14 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
 
     if (!(fFlags & RTGETOPTINIT_FLAGS_NO_STD_OPTS))
         for (uint32_t i = 0; i < RT_ELEMENTS(g_aStdOptions); i++)
-            if (   !strcmp(pszOption, g_aStdOptions[i].pszLong)
-                || (   g_aStdOptions[i].fFlags & RTGETOPT_FLAG_ICASE
-                    && !RTStrICmp(pszOption, g_aStdOptions[i].pszLong)))
+        {
+            size_t cchMatch = 0;
+            if (rtGetOptLongStrEquals(pszOption, g_aStdOptions[i].pszLong, RTSTR_MAX, g_aStdOptions[i].fFlags, &cchMatch))
+            {
+                *pcchMatch = cchMatch;
                 return &g_aStdOptions[i];
+            }
+        }
 
     return NULL;
 }
@@ -305,41 +436,56 @@ static int rtGetOptProcessValue(uint32_t fFlags, const char *pszValue, PRTGETOPT
             break;
 
         case RTGETOPT_REQ_BOOL:
-            if (   !RTStrICmp(pszValue, "true")
-                || !RTStrICmp(pszValue, "t")
-                || !RTStrICmp(pszValue, "yes")
-                || !RTStrICmp(pszValue, "y")
-                || !RTStrICmp(pszValue, "enabled")
-                || !RTStrICmp(pszValue, "enable")
-                || !RTStrICmp(pszValue, "en")
-                || !RTStrICmp(pszValue, "e")
-                || !RTStrICmp(pszValue, "on")
-                || !RTStrCmp(pszValue, "1")
-                )
-                pValueUnion->f = true;
-            else if (   !RTStrICmp(pszValue, "false")
-                     || !RTStrICmp(pszValue, "f")
-                     || !RTStrICmp(pszValue, "no")
-                     || !RTStrICmp(pszValue, "n")
-                     || !RTStrICmp(pszValue, "disabled")
-                     || !RTStrICmp(pszValue, "disable")
-                     || !RTStrICmp(pszValue, "dis")
-                     || !RTStrICmp(pszValue, "d")
-                     || !RTStrICmp(pszValue, "off")
-                     || !RTStrCmp(pszValue, "0")
-                     )
-                pValueUnion->f = false;
-            else
+        {
+            static struct RTGETOPTUPPERLOWERBOOL
             {
-                pValueUnion->psz = pszValue;
-                return VERR_GETOPT_UNKNOWN_OPTION;
-            }
-            break;
+                bool        f;
+                const char *pszLower;
+                const char *pszUpper;
+                const char *pszMarkers; /**< characters with '+' are okay to stop after, '-' aren't.*/
+            } const s_aKeywords[] =
+            {
+                { true,  "true",      "TRUE",       "+--+"     },
+                { true,  "yes",       "YES",        "+-+"      },
+                { true,  "enabled",   "ENABLED",    "++---++"  },
+                { true,  "on",        "ON",         "-+"       },
+                { true,  "1",         "1",          "+"        },
+                { false, "false",     "FALSE",      "+---+"    },
+                { false, "no",        "NO",         "++"       },
+                { false, "disabled",  "DISABLED",   "+-+---++" },
+                { false, "off",       "OFF",        "--+"      },
+                { false, "0",         "0",          "+"        },
+            };
+            for (size_t i = 0; i < RT_ELEMENTS(s_aKeywords); i++)
+                for (size_t off = 0;; off++)
+                {
+                    char const ch = pszValue[off];
+                    if (!ch)
+                    {
+                        if (off > 0 && s_aKeywords[i].pszMarkers[off - 1] == '+')
+                        {
+                            pValueUnion->f = s_aKeywords[i].f;
+                            return VINF_SUCCESS;
+                        }
+                        break;
+                    }
+                    if (   s_aKeywords[i].pszLower[off] != ch
+                        && s_aKeywords[i].pszUpper[off] != ch)
+                        break;
+                }
+            pValueUnion->psz = pszValue;
+            return VERR_GETOPT_UNKNOWN_OPTION;
+        }
 
         case RTGETOPT_REQ_BOOL_ONOFF:
-            if (!RTStrICmp(pszValue, "on"))
+            if (   (pszValue[0] == 'o' || pszValue[0] == 'O')
+                && (pszValue[1] == 'n' || pszValue[1] == 'N')
+                &&  pszValue[2] == '\0')
                 pValueUnion->f = true;
-            else if (!RTStrICmp(pszValue, "off"))
+            else if (   (pszValue[0] == 'o' || pszValue[0] == 'O')
+                     && (pszValue[1] == 'f' || pszValue[1] == 'F')
+                     && (pszValue[2] == 'f' || pszValue[2] == 'F')
+                     &&  pszValue[3] == '\0')
                 pValueUnion->f = false;
             else
             {
@@ -566,6 +712,7 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
     bool            fShort;
     int             iThis;
     const char     *pszArgThis;
+    size_t          cchMatch;
     PCRTGETOPTDEF   pOpt;
 
     if (pState->pszNextShort)
@@ -579,8 +726,8 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
             pValueUnion->psz = pState->pszNextShort;
             return VERR_GETOPT_UNKNOWN_OPTION;
         }
-        pState->pszNextShort++;
-        pszArgThis = pState->pszNextShort - 2;
+        pszArgThis = pState->pszNextShort++;
+        cchMatch = 1;
         iThis = pState->iNext;
         fShort = true;
     }
@@ -618,20 +765,31 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
              * This way we can make sure single dash long options doesn't
              * get mixed up with short ones.
              */
-            pOpt = rtGetOptSearchLong(pszArgThis, pState->paOptions, pState->cOptions, pState->fFlags);
-            if (    !pOpt
-                &&  pszArgThis[0] == '-'
-                &&  pszArgThis[1] != '-'
-                &&  pszArgThis[1] != '\0')
+            pOpt = rtGetOptSearchLong(pszArgThis, pState->paOptions, pState->cOptions, pState->fFlags, &cchMatch);
+            fShort = false;
+            if (!pOpt)
             {
-                pOpt = rtGetOptSearchShort(pszArgThis[1], pState->paOptions, pState->cOptions, pState->fFlags);
-                fShort = pOpt != NULL;
+                const char *pszNext = pszArgThis;
+                RTUNICP     uc;
+                int         vrc = RTStrGetCpEx(&pszNext, &uc);
+                AssertRCReturn(vrc, vrc);
+                char        chNext;
+                if (   rtGetOptIsDash(uc)
+                    && (chNext = *pszNext) != '-'
+                    && chNext != '\0'
+                    && !((unsigned char)chNext & 0x80))
+                {
+                    pOpt = rtGetOptSearchShort(chNext, pState->paOptions, pState->cOptions, pState->fFlags);
+                    if (pOpt)
+                    {
+                        cchMatch = (size_t)(&pszNext[1] - pszArgThis);
+                        fShort  = true;
+                    }
+                }
             }
-            else
-                fShort = false;
 
             /* Look for dash-dash. */
-            if (!pOpt && !strcmp(pszArgThis, "--"))
+            if (!pOpt && rtGetOptLongStrEquals(pszArgThis, "--", RTSTR_MAX, 0, NULL))
             {
                 rtGetOptMoveArgvEntries(&pState->argv[iThis], &pState->argv[iThis + pState->cNonOptions]);
                 pState->cNonOptions = INT32_MAX;
@@ -643,7 +801,7 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
             {
                 if (pOpt)
                     rtGetOptMoveArgvEntries(&pState->argv[iThis], &pState->argv[iThis + pState->cNonOptions]);
-                else if (*pszArgThis == '-')
+                else if (rtGetOptIsDash(RTStrGetCp(pszArgThis)))
                 {
                     pValueUnion->psz = pszArgThis;
                     return VERR_GETOPT_UNKNOWN_OPTION;
@@ -684,7 +842,7 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
             const char *pszValue;
             if (fShort)
             {
-                if (pszArgThis[2] == '\0')
+                if (pszArgThis[cchMatch] == '\0')
                 {
                     if (iThis + 1 >= pState->argc)
                         return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
@@ -693,7 +851,7 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
                     pState->iNext++;
                 }
                 else /* same argument. */
-                    pszValue = &pszArgThis[2  + (pszArgThis[2] == ':' || pszArgThis[2] == '=')];
+                    pszValue = &pszArgThis[cchMatch + (pszArgThis[cchMatch] == ':' || pszArgThis[cchMatch] == '=')];
                 if (pState->pszNextShort)
                 {
                     pState->pszNextShort = NULL;
@@ -702,32 +860,27 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
             }
             else
             {
-                size_t cchLong = strlen(pOpt->pszLong);
                 if (fOptFlags & RTGETOPT_FLAG_INDEX)
                 {
-                    if (   pszArgThis[cchLong] != '\0'
+                    if (   pszArgThis[cchMatch] != '\0'
                         || (fOptFlags & RTGETOPT_FLAG_INDEX_DEF_MASK))
                     {
-                        if (   (fOptFlags & RTGETOPT_FLAG_INDEX_DEF_DASH)
-                            && pszArgThis[cchLong] == '-')
-                            cchLong++;
-
-                        uint32_t uIndex;
-                        char *pszRet = NULL;
-                        int rc = RTStrToUInt32Ex(&pszArgThis[cchLong], &pszRet, 10, &uIndex);
+                        const char *pszNext = &pszArgThis[cchMatch];
+                        uint32_t    uIndex;
+                        int rc = RTStrToUInt32Ex(pszNext, (char **)&pszNext, 10, &uIndex);
                         if (   rc == VERR_NO_DIGITS
                             && (fOptFlags & RTGETOPT_FLAG_INDEX_DEF_MASK))
                         {
                             uIndex = ((fOptFlags & RTGETOPT_FLAG_INDEX_DEF_MASK) >> RTGETOPT_FLAG_INDEX_DEF_SHIFT) - 1;
-                            rc = pszRet[0] == '\0' ? VINF_SUCCESS : VWRN_TRAILING_CHARS;
+                            rc = pszNext[0] == '\0' ? VINF_SUCCESS : VWRN_TRAILING_CHARS;
                         }
                         if (rc == VWRN_TRAILING_CHARS)
                         {
-                            if (   pszRet[0] != ':'
-                                && pszRet[0] != '=')
+                            if (   pszNext[0] != ':'
+                                && pszNext[0] != '=')
                                 return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
                             pState->uIndex = uIndex;
-                            pszValue = pszRet + 1;
+                            pszValue = pszNext + 1;
                         }
                         else if (rc == VINF_SUCCESS)
                         {
@@ -746,7 +899,7 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
                 }
                 else
                 {
-                    if (pszArgThis[cchLong] == '\0')
+                    if (pszArgThis[cchMatch] == '\0')
                     {
                         if (iThis + 1 + pState->cNonOptions >= pState->argc)
                             return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
@@ -755,7 +908,7 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
                         pState->iNext++;
                     }
                     else /* same argument. */
-                        pszValue = &pszArgThis[cchLong + 1];
+                        pszValue = &pszArgThis[cchMatch + 1];
                 }
             }
 
@@ -772,12 +925,12 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
              * Deal with "compressed" short option lists, correcting the next
              * state variables for the start and end cases.
              */
-            if (pszArgThis[2])
+            if (pszArgThis[cchMatch])
             {
                 if (!pState->pszNextShort)
                 {
                     /* start */
-                    pState->pszNextShort = &pszArgThis[2];
+                    pState->pszNextShort = &pszArgThis[cchMatch];
                     pState->iNext--;
                 }
             }
@@ -790,14 +943,10 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
         }
         else if (fOptFlags & RTGETOPT_FLAG_INDEX)
         {
-            size_t   cchLong = strlen(pOpt->pszLong);
             uint32_t uIndex;
-            if (pszArgThis[cchLong] != '\0')
+            if (pszArgThis[cchMatch] != '\0')
             {
-                if (   (fOptFlags & RTGETOPT_FLAG_INDEX_DEF_DASH)
-                    && pszArgThis[cchLong] == '-')
-                    cchLong++;
-                if (RTStrToUInt32Full(&pszArgThis[cchLong], 10, &uIndex) == VINF_SUCCESS)
+                if (RTStrToUInt32Full(&pszArgThis[cchMatch], 10, &uIndex) == VINF_SUCCESS)
                     pState->uIndex = uIndex;
                 else
                     AssertMsgFailedReturn(("%s\n", pszArgThis), VERR_GETOPT_INVALID_ARGUMENT_FORMAT); /* search bug */
