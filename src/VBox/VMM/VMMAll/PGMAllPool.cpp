@@ -3581,7 +3581,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
 #endif /* PGM_WITH_LARGE_PAGES */
 
         default:
-            AssertFatalMsgFailed(("enmKind=%d (%s) iShw=%d\n", pPage->enmKind, pgmPoolPoolKindToStr(pPage->enmKind), iShw));
+            AssertFatalMsgFailed(("enmKind=%d iShw=%d\n", pPage->enmKind, iShw));
     }
 
     /* not reached. */
