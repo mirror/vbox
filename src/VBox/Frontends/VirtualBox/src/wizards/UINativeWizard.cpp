@@ -288,6 +288,10 @@ void UINativeWizard::closeEvent(QCloseEvent *pEvent)
         /* Ignore event initially: */
         pEvent->ignore();
 
+        /* Let the notification-center abort blocking operations: */
+        if (m_pNotificationCenter->hasOperationsPending())
+            m_pNotificationCenter->abortOperations();
+        else
         /* Tell the listener to close us (once): */
         if (!m_fClosed)
         {
@@ -588,6 +592,9 @@ void UINativeWizard::prepare()
 
     /* Prepare local notification-center: */
     m_pNotificationCenter = new UINotificationCenter(this);
+    if (m_pNotificationCenter)
+        connect(m_pNotificationCenter, &UINotificationCenter::sigOperationsAborted,
+                this, &UINativeWizard::close, Qt::QueuedConnection);
 }
 
 void UINativeWizard::cleanup()

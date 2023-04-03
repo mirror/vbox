@@ -289,6 +289,17 @@ bool UINotificationCenter::handleNow(UINotificationProgress *pProgress)
     return m_fLastResult;
 }
 
+bool UINotificationCenter::hasOperationsPending() const
+{
+    return m_pEventLoop;
+}
+
+void UINotificationCenter::abortOperations()
+{
+    m_pEventLoop->exit();
+    emit sigOperationsAborted();
+}
+
 void UINotificationCenter::retranslateUi()
 {
     if (m_pButtonOpen)
