@@ -1493,15 +1493,30 @@ static void iemVmxVmexitSaveGuestNonRegState(PVMCPUCC pVCpu, uint32_t uExitReaso
     }
 
     /* Blocking-by-STI or blocking-by-MovSS. */
-    if (!CPUMIsInInterruptShadowWithUpdate(&pVCpu->cpum.GstCtx))
+    uint32_t fInhibitShw;
+    if (!CPUMIsInInterruptShadowWithUpdateEx(&pVCpu->cpum.GstCtx, &fInhibitShw))
     { /* probable */}
     else
     {
         if (pVCpu->cpum.GstCtx.rip == pVCpu->cpum.GstCtx.uRipInhibitInt)
-            pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS;
-
-        /* Clear inhibition unconditionally since we've ensured it isn't set prior to executing VMLAUNCH/VMRESUME. */
-        CPUMClearInterruptShadow(&pVCpu->cpum.GstCtx);
+        {
+            /*
+             * We must take care to ensure only one of these bits are set.
+             * Our emulation can have both set perhaps because AMD doesn't distinguish
+             * between the two? Hence the 'else' with blocking-by-MovSS taking priority
+             * since it blocks more. Nested Ubuntu running inside a Hyper-V enabled
+             * Windows Server 2008 R2 guest runs into this issue.
+             *
+             * See Intel spec. 26.3.1.5 "Checks on Guest Non-Register State".
+             */
+            if (fInhibitShw & CPUMCTX_INHIBIT_SHADOW_SS)
+                pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS;
+            else
+            {
+                Assert(fInhibitShw & CPUMCTX_INHIBIT_SHADOW_STI);
+                pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_STI;
+            }
+        }
     }
     /* Nothing to do for SMI/enclave. We don't support enclaves or SMM yet. */
 
