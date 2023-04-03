@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<refentry id="testcase1" lang="en">
+  <refentryinfo>
+    <pubdate>$Date$</pubdate>
+    <title>testcase1</title>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>testcase1</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>testcase1</refname>
+    <refpurpose>testcase1 purpose</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+
+    <cmdsynopsis id="synopsis-testcase1-cmd1">
+      <command>testcase1 cmd1</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg>--switch1</arg>
+      <arg>--name=<replaceable>value</replaceable></arg>
+      <arg>--groups=<replaceable>group</replaceable><arg rep="repeat">,<replaceable>group</replaceable></arg></arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis id="synopsis-testcase1-cmd2">
+      <command>testcase1 cmd2</command>
+      <arg choice="req">--required</arg>
+      <arg choice="req">--required-with-value=<replaceable>value</replaceable></arg>
+      <arg>-A <arg>-B  <arg>-C</arg></arg></arg>
+      <arg>--recursive2
+        <group>
+          <arg choice="plain">--follow-all-symlinks-2</arg>
+          <arg choice="plain">--follow-arg-symlinks-2</arg>
+          <arg choice="plain">--follow-no-symlinks-2</arg>
+        </group>
+      </arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis id="synopsis-testcase1-cmd3">
+      <command>testcase1 cmd3</command>
+      <arg choice="plain">--plain</arg>
+      <arg choice="plain">--plain-with-value=<replaceable>value</replaceable></arg>
+      <arg><arg choice="plain">-A</arg> <arg><arg choice="plain">-B</arg>  <arg>-C</arg></arg></arg>
+      <arg><arg choice="plain">--recursive3</arg>
+        <group>
+          <arg choice="plain">--follow-all-symlinks-3</arg>
+          <arg choice="plain">--follow-arg-symlinks-3</arg>
+          <arg choice="plain">--follow-no-symlinks-3</arg>
+        </group>
+      </arg>
+    </cmdsynopsis>
+
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Title 1</title>
+    <para>blah blah</para>
+  </refsect1>
+</refentry>
+

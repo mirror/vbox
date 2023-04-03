@@ -33,6 +33,7 @@
   >
 
   <xsl:import href="string.xsl"/>
+  <xsl:import href="common-formatcfg.xsl"/>
 
   <xsl:output method="xml" version="1.0" encoding="utf-8" indent="no"/>
   <xsl:preserve-space elements="*"/>
@@ -45,8 +46,13 @@
 <!-- Replace dashes with non-breaking dashes.
      Note! If the monospace font used in the PDF doesn't support it,
            then '#' shows up instead for instance.  This is currently
-           the case, so it's disabled by default. -->
+           the case, so it's disabled by default.  When we switch to
+           4.0.x with the latest com.elovirta.pdf plugin (2023-03-xx
+           or later), we can enable this by default again. -->
 <xsl:param name="g_fReplaceHypens">false</xsl:param>
+
+<!-- Render the syntax diagram more as text than as proper markup. -->
+<xsl:param name="g_fRenderSyntaxAsText">true</xsl:param>
 
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
@@ -258,7 +264,17 @@
     <xsl:if test="@id">
       <xsl:attribute name="id"><xsl:value-of select="@id"/></xsl:attribute>
     </xsl:if>
-    <xsl:apply-templates />
+    <xsl:choose>
+      <xsl:when test="$g_fRenderSyntaxAsText = 'true'">
+        <xsl:element name="groupseq">
+          <xsl:apply-templates />
+        </xsl:element>
+      </xsl:when>
+
+      <xsl:otherwise>
+        <xsl:apply-templates />
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:element>
 
   <!-- HACK ALERT! Add an empty paragraph to keep syntax diagrams apart in the
@@ -272,7 +288,23 @@
   </xsl:if>
 </xsl:template>
 
+<!-- TODO: sbr cannot be translated, it seems. Whether we wrap things in
+     synblk, groupcomp or groupseq elements, the result is always the same:
+        - HTML: ignored.
+        - PDF: condensed arguments w/o spaces between.  4.0.2 doesn't seem
+          to condense stuff any more inside synblk elements, but then the
+          rending isn't much changed for PDFs anyway since its one element
+          per line.
+     Update: Turns out the condensing was because we stripped element
+             whitespace instead of preserving it. svn copy. sigh. -->
 <xsl:template match="cmdsynopsis[sbr]">
+  <xsl:variable name="sWrapperElement">
+    <xsl:choose>
+      <xsl:when test="$g_fRenderSyntaxAsText = 'true'"><xsl:text>groupseq</xsl:text></xsl:when>
+      <xsl:otherwise><!--synblk--></xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
+
   <xsl:element name="syntaxdiagram">
     <xsl:attribute name="rev">cmdsynopsis</xsl:attribute>
     <xsl:if test="@id">
@@ -280,35 +312,51 @@
     </xsl:if>
     <xsl:for-each select="sbr">
       <xsl:variable name="idxSbr" select="position()"/>
-      <!-- TODO: sbr cannot be translated, it seems. Whether we wrap things in
-           synblk, groupcomp or groupseq elements, the result is always the same:
-              - HTML: ignored.
-              - PDF: condensed arguments w/o spaces between.  4.0.2 doesn't seem
-                to condense stuff any more inside synblk elements, but then the
-                rending isn't much changed for PDFs anyway since its one element
-                per line.
-           Update: Turns out the condensing was because we stripped element
-                   whitespace instead of preserving it. svn copy. sigh. -->
-      <!-- <xsl:element name="synblk">
-        <xsl:attribute name="rev">sbr/<xsl:value-of select="position()"/></xsl:attribute> -->
 
-        <xsl:if test="$idxSbr = 1">
-          <xsl:apply-templates select="preceding-sibling::node()"/>
-        </xsl:if>
-        <xsl:if test="$idxSbr != 1">
-          <xsl:apply-templates select="preceding-sibling::node()[  count(. | ../sbr[$idxSbr - 1]/following-sibling::node())
-                                                                 =     count(../sbr[$idxSbr - 1]/following-sibling::node())]"/>
-        </xsl:if>
-      <!-- </xsl:element> -->
+      <xsl:choose>
+        <xsl:when test="$sWrapperElement != ''">
+          <xsl:element name="{$sWrapperElement}">
+            <xsl:attribute name="rev">sbr/<xsl:value-of select="position()"/></xsl:attribute>
+
+            <xsl:if test="$idxSbr = 1">
+              <xsl:apply-templates select="preceding-sibling::node()"/>
+            </xsl:if>
+            <xsl:if test="$idxSbr != 1">
+              <xsl:apply-templates select="preceding-sibling::node()[  count(. | ../sbr[$idxSbr - 1]/following-sibling::node())
+                                                                     =     count(../sbr[$idxSbr - 1]/following-sibling::node())]"/>
+            </xsl:if>
+          </xsl:element>
+        </xsl:when>
+
+        <xsl:otherwise>
+          <xsl:if test="$idxSbr = 1">
+            <xsl:apply-templates select="preceding-sibling::node()"/>
+          </xsl:if>
+          <xsl:if test="$idxSbr != 1">
+            <xsl:apply-templates select="preceding-sibling::node()[  count(. | ../sbr[$idxSbr - 1]/following-sibling::node())
+                                                                   =     count(../sbr[$idxSbr - 1]/following-sibling::node())]"/>
+          </xsl:if>
+        </xsl:otherwise>
+      </xsl:choose>
+
       <!-- Ensure some space between these.-->
       <xsl:text>
  </xsl:text>
-        <xsl:if test="$idxSbr = last()">
-          <!-- <xsl:element name="synblk">
-            <xsl:attribute name="rev">sbr/<xsl:value-of select="position()"/></xsl:attribute> -->
+
+      <xsl:if test="$idxSbr = last()">
+        <xsl:choose>
+          <xsl:when test="$sWrapperElement != ''">
+            <xsl:element name="{$sWrapperElement}">
+              <xsl:attribute name="rev">sbr/<xsl:value-of select="position()"/></xsl:attribute>
+              <xsl:apply-templates select="following-sibling::node()"/>
+            </xsl:element>
+          </xsl:when>
+
+          <xsl:otherwise>
             <xsl:apply-templates select="following-sibling::node()"/>
-          <!-- </xsl:element> -->
-        </xsl:if>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:if>
     </xsl:for-each>
   </xsl:element>
 
@@ -322,6 +370,23 @@
     </xsl:element>
   </xsl:if>
 </xsl:template>
+
+<!-- text (whitespace) under synopsis may need removing. -->
+<xsl:template match="cmdsynopsis/text()">
+  <xsl:if test="normalize-space(.) != ''">
+    <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>text in cmdsynopsis '<xsl:value-of select="."/>'</xsl:message>
+  </xsl:if>
+
+  <xsl:choose>
+    <xsl:when test="$g_fRenderSyntaxAsText = 'true'">
+    </xsl:when>
+
+    <xsl:otherwise>
+      <xsl:value-of select="."/>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
+
 
 <!-- command with text and/or replaceable in cmdsynopsis -> groupseq + kwd -->
 <xsl:template match="cmdsynopsis/command | cmdsynopsis/*/command" >
@@ -423,7 +488,7 @@
           <xsl:text> </xsl:text>
         </xsl:element>
       </xsl:if>
-      <xsl:if test="contains(., '&#10;')">
+      <xsl:if test="contains(., '&#10;') and $g_fRenderSyntaxAsText != 'true'">
         <xsl:value-of select="."/>
       </xsl:if>
     </xsl:when>
@@ -450,49 +515,57 @@
 
 <!-- arg -> groupseq or groupcomp and optionally a repsep element if repeatable. -->
 <xsl:template match="arg" >
-  <!-- If it's a tighly packed arg, we use groupcomp instead of groupseq to try
-       avoid it being split in the middle. -->
-  <xsl:variable name="sGroupType">
-    <xsl:call-template name="determine_arg_wrapper_element"/>
-  </xsl:variable>
-  <xsl:element name="{$sGroupType}">
-    <xsl:attribute name="rev">arg[<xsl:value-of select="concat(@choice,',',@rep)"/>]</xsl:attribute>
-    <xsl:choose>
-      <xsl:when test="not(@choice) or @choice = 'opt'">
-        <xsl:attribute name="importance">optional</xsl:attribute>
-      </xsl:when>
-      <xsl:when test="@choice = 'req'">
-        <xsl:attribute name="importance">required</xsl:attribute>
-      </xsl:when>
-      <xsl:when test="@choice = 'plain'"/>
-      <xsl:otherwise>
-        <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Unexpected @choice value: <xsl:value-of select="@choice"/></xsl:message>
-      </xsl:otherwise>
-    </xsl:choose>
+  <xsl:choose>
+    <xsl:when test="$g_fRenderSyntaxAsText = 'true'">
+      <xsl:call-template name="arg_or_group_as_text"/>
+    </xsl:when>
 
-    <xsl:apply-templates />
+    <xsl:otherwise>
+      <!-- If it's a tighly packed arg, we use groupcomp instead of groupseq to try
+           avoid it being split in the middle. -->
+      <xsl:variable name="sGroupType">
+        <xsl:call-template name="determine_arg_wrapper_element"/>
+      </xsl:variable>
+      <xsl:element name="{$sGroupType}">
+        <xsl:attribute name="rev">arg[<xsl:value-of select="concat(@choice,',',@rep)"/>]</xsl:attribute>
+        <xsl:choose>
+          <xsl:when test="not(@choice) or @choice = 'opt'">
+            <xsl:attribute name="importance">optional</xsl:attribute>
+          </xsl:when>
+          <xsl:when test="@choice = 'req'">
+            <xsl:attribute name="importance">required</xsl:attribute>
+          </xsl:when>
+          <xsl:when test="@choice = 'plain'"/>
+          <xsl:otherwise>
+            <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Unexpected @choice value: <xsl:value-of select="@choice"/></xsl:message>
+          </xsl:otherwise>
+        </xsl:choose>
 
-    <xsl:if test="@rep = 'repeat'">
-      <!-- repsep can only be placed at the start of a groupseq/whatever and
-           the documenation and examples of the element is very sparse.  The
-           PDF output plugin will place the '...' where it finds it and do
-           nothing if it's empty.  The XHTML output plugin ignores it, it seems. -->
-      <xsl:element name="sep">
-        <xsl:attribute name="rev">arg[<xsl:value-of select="@choice"/>,repeat]</xsl:attribute>
-        <xsl:text> </xsl:text>
+        <xsl:apply-templates />
+
+        <xsl:if test="@rep = 'repeat'">
+          <!-- repsep can only be placed at the start of a groupseq/whatever and
+               the documenation and examples of the element is very sparse.  The
+               PDF output plugin will place the '...' where it finds it and do
+               nothing if it's empty.  The XHTML output plugin ignores it, it seems. -->
+          <xsl:element name="sep">
+            <xsl:attribute name="rev">arg[<xsl:value-of select="@choice"/>,repeat]</xsl:attribute>
+            <xsl:text> </xsl:text>
+          </xsl:element>
+          <xsl:element name="groupcomp">
+            <xsl:attribute name="importance">optional</xsl:attribute>
+            <xsl:attribute name="rev">arg[<xsl:value-of select="@choice"/>,repeat]</xsl:attribute>
+            <xsl:attribute name="outputclass">repeatarg</xsl:attribute> <!-- how to make xhtml pass these thru... -->
+            <xsl:element name="repsep">
+              <xsl:attribute name="rev">arg[<xsl:value-of select="@choice"/>,repeat]</xsl:attribute>
+              <xsl:text>...</xsl:text>
+            </xsl:element>
+          </xsl:element>
+        </xsl:if>
+
       </xsl:element>
-      <xsl:element name="groupcomp">
-        <xsl:attribute name="importance">optional</xsl:attribute>
-        <xsl:attribute name="rev">arg[<xsl:value-of select="@choice"/>,repeat]</xsl:attribute>
-        <xsl:attribute name="outputclass">repeatarg</xsl:attribute> <!-- how to make xhtml pass these thru... -->
-        <xsl:element name="repsep">
-          <xsl:attribute name="rev">arg[<xsl:value-of select="@choice"/>,repeat]</xsl:attribute>
-          <xsl:text>...</xsl:text>
-        </xsl:element>
-      </xsl:element>
-    </xsl:if>
-
-  </xsl:element>
+    </xsl:otherwise>
+  </xsl:choose>
 
   <xsl:if test="parent::group and @choice != 'plain'">
     <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Expected arg in group to be plain, not optional.</xsl:message>
@@ -509,16 +582,6 @@
     </xsl:otherwise>
   </xsl:choose>
 </xsl:template>
-
-<!-- Plain (required) argument in group with only text() content -> kwd; -->
-<!--
-<xsl:template match="group/arg[@choice='plain' and (not(@rep) or @rep='norepeat') and not(replaceable) and not(arg) and not(group)]" >
-  <xsl:call-template name="check-children" />
-  <xsl:element name="kwd">
-    <xsl:attribute name="rev">arg[plain#3]</xsl:attribute>
-    <xsl:value-of select="."/>
-  </xsl:element>
-</xsl:template> -->
 
 <!-- replaceable under arg -> var -->
 <xsl:template match="arg/replaceable" >
@@ -578,48 +641,151 @@
   </xsl:message>
 </xsl:template>
 
-<!-- Required group under arg or cmdsynopsis -> groupchoice w/attrib -->
-<xsl:template match="arg/group | cmdsynopsis/group">
-  <xsl:element name="groupchoice">
-    <xsl:choose>
-      <xsl:when test="@choice = 'req'">
-        <xsl:attribute name="rev">group[req]</xsl:attribute>
-        <xsl:attribute name="importance">required</xsl:attribute>
-      </xsl:when>
-      <xsl:when test="@choice = 'plain'">
-        <xsl:attribute name="rev">group[plain]</xsl:attribute>
-        <!-- We don't set the importance here. @todo Check what it does to the output formatting -->
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:attribute name="rev">group[opt]</xsl:attribute>
-        <xsl:attribute name="importance">optional</xsl:attribute>
-      </xsl:otherwise>
-    </xsl:choose>
+<!-- group -> groupchoice w/attrib -->
+<xsl:template match="group">
+  <xsl:choose>
+    <xsl:when test="$g_fRenderSyntaxAsText = 'true'">
+      <xsl:call-template name="arg_or_group_as_text"/>
+    </xsl:when>
+    <xsl:otherwise>
 
-    <xsl:apply-templates />
+      <xsl:element name="groupchoice">
+        <xsl:choose>
+          <xsl:when test="@choice = 'req'">
+            <xsl:attribute name="rev">group[req]</xsl:attribute>
+            <xsl:attribute name="importance">required</xsl:attribute>
+          </xsl:when>
+          <xsl:when test="@choice = 'plain'">
+            <xsl:attribute name="rev">group[plain]</xsl:attribute>
+            <!-- We don't set the importance here. @todo Check what it does to the output formatting -->
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:attribute name="rev">group[opt]</xsl:attribute>
+            <xsl:attribute name="importance">optional</xsl:attribute>
+          </xsl:otherwise>
+        </xsl:choose>
 
-    <xsl:if test="@rep = 'repeat'">
-      <!-- repsep can only be placed at the start of a groupseq/whatever and
-           the documenation and examples of the element is very sparse.  The
-           PDF output plugin will place the '...' where it finds it and do
-           nothing if it's empty.  The XHTML output plugin ignores it, it seems. -->
-      <xsl:message terminate="no"><xsl:call-template name="error-prefix"/>Repeating group is not a good idea...</xsl:message>
-      <xsl:element name="sep">
-        <xsl:attribute name="rev">arg[<xsl:value-of select="@choice"/>,repeat]</xsl:attribute>
-        <xsl:text> </xsl:text>
+        <xsl:apply-templates />
+
+        <xsl:if test="@rep = 'repeat'">
+          <!-- repsep can only be placed at the start of a groupseq/whatever and
+               the documenation and examples of the element is very sparse.  The
+               PDF output plugin will place the '...' where it finds it and do
+               nothing if it's empty.  The XHTML output plugin ignores it, it seems. -->
+          <xsl:message terminate="no"><xsl:call-template name="error-prefix"/>Repeating group is not a good idea...</xsl:message>
+          <xsl:element name="sep">
+            <xsl:attribute name="rev">arg[<xsl:value-of select="@choice"/>,repeat]</xsl:attribute>
+            <xsl:text> </xsl:text>
+          </xsl:element>
+          <xsl:element name="groupcomp">
+            <xsl:attribute name="importance">optional</xsl:attribute>
+            <xsl:attribute name="rev">arg[<xsl:value-of select="@choice"/>,repeat]</xsl:attribute>
+            <xsl:attribute name="outputclass">repeatarg</xsl:attribute> <!-- how to make xhtml pass these thru... -->
+            <xsl:element name="repsep">
+              <xsl:attribute name="rev">arg[<xsl:value-of select="@choice"/>,repeat]</xsl:attribute>
+              <xsl:text>...</xsl:text>
+            </xsl:element>
+          </xsl:element>
+        </xsl:if>
       </xsl:element>
-      <xsl:element name="groupcomp">
-        <xsl:attribute name="importance">optional</xsl:attribute>
-        <xsl:attribute name="rev">arg[<xsl:value-of select="@choice"/>,repeat]</xsl:attribute>
-        <xsl:attribute name="outputclass">repeatarg</xsl:attribute> <!-- how to make xhtml pass these thru... -->
-        <xsl:element name="repsep">
-          <xsl:attribute name="rev">arg[<xsl:value-of select="@choice"/>,repeat]</xsl:attribute>
-          <xsl:text>...</xsl:text>
-        </xsl:element>
-      </xsl:element>
-    </xsl:if>
-  </xsl:element>
+
+    </xsl:otherwise>
+  </xsl:choose>
 </xsl:template>
+
+<!-- text under a group may need removing. -->
+<xsl:template match="group/text()">
+  <xsl:if test="normalize-space(.) != ''">
+    <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>text in group: '<xsl:value-of select="."/>'</xsl:message>
+  </xsl:if>
+
+  <xsl:choose>
+    <xsl:when test="$g_fRenderSyntaxAsText = 'true'">
+    </xsl:when>
+
+    <xsl:otherwise>
+      <xsl:value-of select="."/>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
+
+
+<!--
+   arg or group -> kwd + text
+  (Code duplicated in docbook-refentry-to-C-help.xsl & docbook2latex.xsl, with local differences.)
+-->
+<xsl:template name="arg_or_group_as_text" >
+  <xsl:variable name="fWrappers" select="not(ancestor::group)"/>
+
+  <!-- lead separators -->
+  <xsl:variable name="sLeadSeps">
+    <xsl:call-template name="arg_or_group_as_text_calc_lead_seps">
+      <xsl:with-param name="a_fWrappers" select="$fWrappers"/>
+    </xsl:call-template>
+  </xsl:variable>
+  <xsl:if test="$sLeadSeps != ''">
+    <xsl:element name="sep">
+      <xsl:value-of select="$sLeadSeps"/>
+    </xsl:element>
+  </xsl:if>
+
+  <!-- render the arg (TODO: may need to do more work here) -->
+  <xsl:apply-templates />
+
+  <!-- repeat wrapping -->
+  <xsl:choose>
+    <xsl:when test="@rep = 'norepeat' or not(@rep) or @rep = ''"/>
+    <xsl:when test="@rep = 'repeat'">                 <xsl:element name="sep"><xsl:value-of select="$arg.rep.repeat.str"/></xsl:element></xsl:when>
+    <xsl:otherwise><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Invalid rep choice: "<xsl:value-of select="@rep"/>"</xsl:message></xsl:otherwise>
+  </xsl:choose>
+
+  <!-- close wrapping -->
+  <xsl:if test="$fWrappers">
+    <xsl:choose>
+      <xsl:when test="not(@choice) or @choice = ''">  <xsl:element name="sep"><xsl:value-of select="$arg.choice.def.close.str"/></xsl:element></xsl:when>
+      <xsl:when test="@choice = 'opt'">               <xsl:element name="sep"><xsl:value-of select="$arg.choice.opt.close.str"/></xsl:element></xsl:when>
+      <xsl:when test="@choice = 'req'">               <xsl:element name="sep"><xsl:value-of select="$arg.choice.req.close.str"/></xsl:element></xsl:when>
+    </xsl:choose>
+    <!-- Add a space padding if we're the last element in a repeating arg or group -->
+    <!-- 2023-03-22 bird: This is incorrectly written. Fix as needed...
+    <xsl:if test="(parent::arg or parent::group) and not(following-sibiling) and not(ancestor::*[@role='compact'])">
+      <xsl:text> </xsl:text>
+    </xsl:if>
+    -->
+  </xsl:if>
+
+</xsl:template>
+
+<!-- Helper for arg_or_group_as_text. -->
+<xsl:template name="arg_or_group_as_text_calc_lead_seps">
+  <xsl:param name="a_fWrappers"/>
+  <xsl:variable name="idSelf" select="generate-id(.)"/>
+
+  <!-- separator char if we're not the first child -->
+  <xsl:if test="../*[generate-id(.) = $idSelf and position() > 1]">
+    <!--<xsl:value-of select="concat('*',name(),'=', position(),'#')"/>-->
+    <xsl:choose>
+      <xsl:when test="parent::group and ancestor::*[@role='compact']"><xsl:value-of select="$arg.or.sep.compact"/></xsl:when>
+      <xsl:when test="parent::group"><xsl:value-of select="$arg.or.sep"/></xsl:when>
+      <xsl:when test="ancestor::*[@role='compact']"></xsl:when>
+      <xsl:when test="ancestor::*/@sepchar"><xsl:value-of select="ancestor::*/@sepchar"/></xsl:when>
+      <xsl:otherwise><xsl:text> </xsl:text></xsl:otherwise>
+    </xsl:choose>
+  </xsl:if>
+
+  <!-- open wrapping -->
+  <xsl:if test="$a_fWrappers">
+    <xsl:choose>
+      <xsl:when test="not(@choice) or @choice = ''">  <xsl:value-of select="$arg.choice.def.open.str"/></xsl:when>
+      <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.open.str"/></xsl:when>
+      <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.open.str"/></xsl:when>
+      <xsl:when test="@choice = 'plain'"/>
+      <xsl:otherwise><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Invalid arg choice: "<xsl:value-of select="@choice"/>"</xsl:message></xsl:otherwise>
+    </xsl:choose>
+  </xsl:if>
+
+</xsl:template>
+
 
 <!-- option -->
 <xsl:template match="option/text()" >
@@ -766,10 +932,9 @@
 <xsl:template name="emit-text-with-replacements">
   <xsl:param name="a_sText" select="."/>
   <xsl:choose>
-    <xsl:when test="$g_fReplaceHypens = 'true' or $g_fReplaceHypens = 'yes'">
-      <xsl:message terminate="yes">wtf?</xsl:message>
+    <xsl:when test="$g_fReplaceHypens = 'true'">
       <xsl:call-template name="str:subst">
-          <xsl:with-param name="text"    select="$a_sText"/>
+          <xsl:with-param name="text" select="$a_sText"/>
           <xsl:with-param name="replace">-</xsl:with-param>
           <xsl:with-param name="with">‑</xsl:with-param> <!-- U+2011 / &#8209; -->
       </xsl:call-template>
