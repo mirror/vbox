@@ -618,6 +618,11 @@
   </xsl:element>
 </xsl:template>
 
+<!-- replaceable/text() in a cmdsynopsis should have hypens replaced. -->
+<xsl:template match="cmdsynopsis/*/replaceable/text()" >
+  <xsl:call-template name="emit-text-with-replacements"/>
+</xsl:template>
+
 <!--
     DocBook 'group' elements are only ever used for multiple choice options
     in our refentry XML, it is never used for argument groupings.  For

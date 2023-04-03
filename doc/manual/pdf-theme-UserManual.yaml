@@ -241,7 +241,6 @@ style:
         start-indent:       '1cm + from-parent(start-indent)'
         text-indent:        -1cm
         keep-together.within-page: always
-
-
     var:
         font-family:        $pdf2-font-monospaced
+
