@@ -255,6 +255,25 @@
       <arg choice="req"><replaceable>template-name</replaceable></arg>
     </cmdsynopsis>
 
+    <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-fsinfo">
+      <command>VBoxManage guestcontrol</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg choice="plain">fsinfo</arg>
+      <arg>--domain=<replaceable>domainname</replaceable></arg>
+      <group>
+        <arg choice="plain">--passwordfile=<replaceable>password-file</replaceable></arg>
+        <arg choice="plain">--password=<replaceable>password</replaceable></arg>
+      </group>
+      <arg>--human-readable</arg>
+      <arg>--quiet</arg>
+      <arg>--username=<replaceable>username</replaceable></arg>
+      <arg>--verbose</arg>
+      <arg choice="req"><replaceable>path</replaceable></arg>
+    </cmdsynopsis>
+
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-stat">
       <command>VBoxManage guestcontrol</command>
       <group choice="req">
@@ -391,6 +410,7 @@
         subcommands require that you provide guest credentials for
         authentication. The subcommands are:
         <command>copyfrom</command>, <command>copyto</command>,
+        <command>fsinfo</command>,
         <command>mkdir</command>, <command>mktemp</command>,
         <command>mv</command>, <command>rmdir</command>,
         <command>rm</command>, <command>run</command>,
@@ -772,6 +792,34 @@
               <filename>C:\Windows\System32\calc.exe</filename>. You can
               use wildcards to specify multiple files. For example,
               <filename>C:\Windows\System*\*.dll</filename>.
+            </para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2 id="vboxmanage-guestcontrol-fsinfo">
+      <title>Show guest filesystem information.</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        The <command>VBoxManage guestcontrol
+        <replaceable>vmname</replaceable> fsinfo</command> command
+        enables you to show filesystem information of the guest VM.
+      </para>
+      <para>
+        An alternate form of this subcommand is <command>df</command>.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--human-readable</option></term>
+          <listitem><para>
+              Shows the disk sizes in a human readable form.
+            </para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal><replaceable>guest-path</replaceable> [<replaceable>guest-path</replaceable>...]</literal></term>
+          <listitem><para>
+              Specifies an absolute path to show guest filesystem
+              information for.
             </para></listitem>
         </varlistentry>
       </variablelist>

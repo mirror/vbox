@@ -2384,6 +2384,108 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMkTemp(PGCTLCMDCTX pCtx, int argc, cha
     return FAILED(hrc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
 }
 
+static DECLCALLBACK(RTEXITCODE) gctlHandleFsInfo(PGCTLCMDCTX pCtx, int argc, char **argv)
+{
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        GCTLCMD_COMMON_OPTION_DEFS()
+        { "--human-readable",           'h',                RTGETOPT_REQ_NOTHING }
+    };
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+
+    bool fHumanReadable = false;
+
+    while (  (ch = RTGetOpt(&GetState, &ValueUnion)) != 0
+           && ch != VINF_GETOPT_NOT_OPTION)
+    {
+        /* For options that require an argument, ValueUnion has received the value. */
+        switch (ch)
+        {
+            GCTLCMD_COMMON_OPTION_CASES(pCtx, ch, &ValueUnion);
+
+            case 'h':
+                fHumanReadable = true;
+                break;
+
+            default:
+                return errorGetOpt(ch, &ValueUnion);
+        }
+    }
+
+    if (ch != VINF_GETOPT_NOT_OPTION)
+        return errorSyntax(GuestCtrl::tr("No path specified to query information for!"));
+
+    RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+
+    /* Stay within 80 characters width by default. */
+    unsigned const cwFileSys     = 12;
+    unsigned const cwSize        = 16;
+    unsigned const cwSizeTotal   = cwSize;
+    unsigned const cwSizeUsed    = cwSize;
+    unsigned const cwSizeAvail   = cwSize;
+    unsigned const cwPathSpacing = 6; /* Spacing between last value and actual path. */
+
+    RTPrintf("%-*s%*s%*s%*s%*s%s\n",
+             cwFileSys, GuestCtrl::tr("Filesystem"),
+             cwSizeTotal, GuestCtrl::tr("Total"), cwSizeUsed, GuestCtrl::tr("Used"), cwSizeAvail, GuestCtrl::tr("Available"),
+             cwPathSpacing, "",
+             GuestCtrl::tr("Path"));
+
+    while (ch == VINF_GETOPT_NOT_OPTION)
+    {
+        ComPtr<IGuestFsInfo> pFsInfo;
+        HRESULT hrc;
+        CHECK_ERROR(pCtx->pGuestSession, FsQueryInfo(Bstr(ValueUnion.psz).raw(), pFsInfo.asOutParam()));
+        if (FAILED(hrc))
+        {
+            rcExit = RTEXITCODE_FAILURE;
+        }
+        else
+        {
+            Bstr bstr;
+            CHECK_ERROR2I(pFsInfo, COMGETTER(Type)(bstr.asOutParam()));
+            /** @todo Add label and mount point once we return this. */
+            LONG64 u64, u64_2;
+            CHECK_ERROR2I(pFsInfo, COMGETTER(TotalSize)(&u64));
+            CHECK_ERROR2I(pFsInfo, COMGETTER(FreeSize)(&u64_2));
+            if (fHumanReadable)
+            {
+                RTPrintf("%-*ls%*Rhcb%*Rhcb%*Rhcb%*s%s",
+                         cwFileSys, bstr.raw(),               /* Filesystem */
+                         cwSizeTotal, u64,                    /* Total */
+                         cwSizeUsed,  u64 - u64_2,            /* Used */
+                         cwSizeAvail, u64_2,                  /* Available */
+                         cwPathSpacing, "",
+                         ValueUnion.psz);                     /* Path */
+            }
+            else
+            {
+                RTPrintf("%-*ls%*RU64%*RU64%*RU64%*s%s",
+                         cwFileSys, bstr.raw(),               /* Filesystem */
+                         cwSizeTotal, u64,                    /* Total */
+                         cwSizeUsed,  u64 - u64_2,            /* Used */
+                         cwSizeAvail, u64_2,                  /* Available */
+                         cwPathSpacing, "",
+                         ValueUnion.psz);                     /* Path */
+            }
+            RTPrintf("\n");
+        }
+
+        /* Next path. */
+        ch = RTGetOpt(&GetState, &ValueUnion);
+    }
+
+    return rcExit;
+}
+
 static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
@@ -3608,6 +3710,9 @@ RTEXITCODE handleGuestControl(HandlerArg *pArg)
         { "mktemp",             gctlHandleMkTemp,           HELP_SCOPE_GUESTCONTROL_MKTEMP,    0 },
         { "createtemp",         gctlHandleMkTemp,           HELP_SCOPE_GUESTCONTROL_MKTEMP,    0 },
         { "createtemporary",    gctlHandleMkTemp,           HELP_SCOPE_GUESTCONTROL_MKTEMP,    0 },
+
+        { "df",                 gctlHandleFsInfo,           HELP_SCOPE_GUESTCONTROL_FSINFO,    0 },
+        { "fsinfo",             gctlHandleFsInfo,           HELP_SCOPE_GUESTCONTROL_FSINFO,    0 },
 
         { "stat",               gctlHandleStat,             HELP_SCOPE_GUESTCONTROL_STAT,      0 },
 
