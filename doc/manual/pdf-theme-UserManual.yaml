@@ -1,0 +1,247 @@
+# $Id$
+
+brand:
+    color:
+        primary:    '#1a3355'
+        secondary:  '#6d767e'
+        tertiary:   '#b9c7d0'
+        inverse:    '#e5ebeb'
+        links:      '#4169e1'
+        note:
+            background:
+                attention:  '#fff3ce'
+                caution:    '#f8d8db'
+                info:       '#dbe5f1'
+                tip:        '#d0e8de'
+
+pdf2:
+  font:
+    sans:           'Helvetica, Arial Unicode MS, Tahoma, Batang, SimSun'
+    serif:          'Times New Roman, Times, Arial Unicode MS, Tahoma, Batang, SimSun'
+    monospaced:     'DejaVu Sans Mono, Arial Unicode MS, Consolas, Cascadia Mono'
+    # ^^^ - Important to have proper unicode monospace font so we can use non-breaking hypen (U+2011)
+    #       in syntax diagrams.
+
+page:
+    size:               PA4
+    mirror-margins:     true
+
+header:
+    color:              $brand-color-secondary
+    display-align:      before
+    end-indent:         10mm
+    font-family:        $pdf2-font-sans
+    padding-after:      6pt
+    padding-before:     12pt
+    start-indent:       10mm
+    odd:
+        content:        '{chapter}'
+        text-align:     end
+    even:
+        content:        '{title}'
+        text-align:     start
+
+footer:
+    color:              $brand-color-secondary
+    end-indent:         10mm
+    font-family:        $pdf2-font-sans
+    padding-after:      12pt
+    padding-before:     6pt
+    start-indent:       10mm
+    odd:
+        content:        '{folio}'
+        font-weight:    bold
+        text-align:     end
+    even:
+        content:        '{folio}'
+        font-weight:    bold
+        text-align:     start
+
+style:
+    body:
+        font-family:        $pdf2-font-serif
+        font-size:          11pt
+        line-height:        1.3
+        start-indent:       48pt
+
+    cmdname:
+        color:              $brand-color-primary
+        font-weight:        bold
+
+    codeblock:
+        background-color:   $brand-color-inverse
+        border:             solid 1pt $brand-color-tertiary
+        font-family:        $pdf2-font-monospaced
+        font-size:          8pt
+        keep-together.within-page: always
+        space-after:        8pt
+
+    codeph:
+        color:              $brand-color-secondary
+        font-size:          '0.9 * from-parent(font-size)'
+
+    cover:
+        # TODO: Could we get an SVG logo? Or at least a higher resolution one (this is 512x512, I think).
+        background-image:   en_US/images/vboxlogo.png
+        background-repeat:  no-repeat
+
+    cover-title:
+        color:              $brand-color-primary
+        font-size:          36pt
+        font-weight:        bold
+        line-height:        1.5
+        space-before:       195mm
+
+    example-title:
+        color:              $brand-color-secondary
+
+    fig:
+        caption:
+            color:          $brand-color-secondary
+            font-size:      9pt
+            font-style:     italic
+            font-weight:    normal
+
+    filepath:
+        color:              $brand-color-secondary
+
+    h1:
+        border-after:       solid 2pt $brand-color-inverse
+        color:              $brand-color-primary
+        font-size:          18pt
+        space-before:       0pt
+        padding-top:        0pt
+        space-after:        9pt
+        font-weight:        bold
+        title-numbering:    true
+
+    h2:
+        border-after:       solid 1pt $brand-color-inverse
+        color:              $brand-color-primary
+        font-size:          16pt
+        font-style:         italic
+        space-before:       16pt
+        space-after:        8pt
+        title-numbering:    true
+
+    h3:
+        color:              $brand-color-primary
+        font-size:          14pt
+        font-weight:        bold
+        space-before:       21pt
+        space-after:        7pt
+        title-numbering:    true
+
+    h4:
+        font-size:          12pt
+        font-style:         italic
+        space-before:       12pt
+        title-numbering:    false
+
+    link:
+        color:              $brand-color-links
+        font-style:         italic
+
+    note:
+        background-color:   $brand-color-note-background-info
+        border:             solid 1pt $brand-color-tertiary
+        keep-together.within-page: always
+        label:
+            font-family:    $pdf2-font-sans
+            space-end:      2pt
+        padding-start:      6pt
+        start-indent:       '6pt + from-parent(start-indent)'
+        padding-end:        6pt
+        end-indent:         '6pt + from-parent(end-indent)'
+        space-before:       6pt
+        space-after:        12pt
+        attention:
+            background-color:   $brand-color-note-background-attention
+        caution:
+            background-color:   $brand-color-note-background-caution
+        important:
+            background-color:   $brand-color-note-background-attention
+        notice:
+            background-color:   $brand-color-note-background-attention
+        restriction:
+            background-color:   $brand-color-note-background-attention
+        tip:
+            background-color:   $brand-color-note-background-tip
+        warning:
+            background-color:   $brand-color-note-background-caution
+
+    section-title:
+        color:              $brand-color-secondary
+
+    shortdesc:
+        color:              $brand-color-secondary
+        font-size:          13pt
+        line-height:        1.3
+
+    table:
+        caption:
+            color:          $brand-color-secondary
+            font-size:      9pt
+            font-style:     italic
+            font-weight:    normal
+        font-family:        $pdf2-font-sans
+        font-size:          9pt
+        header:
+            background-color:   $brand-color-inverse
+
+    toc-1:
+        color:          $brand-color-primary
+        font-family:    $pdf2-font-sans
+        start-indent:   0
+
+    toc-2:
+        color:          black
+        space-before:   4pt
+        start-indent:   5pt
+
+    toc-3:
+        color:          black
+        space-before:   2pt
+        start-indent:   24pt
+
+    toc-4:
+        color:          black
+        space-before:   2pt
+        start-indent:   40pt
+
+    varname:
+        color:          $brand-color-secondary
+        font-style:     italic
+
+
+    # The following properties requires an pdf-generator git newer than February 2023,
+    # or version 0.6.2+ (unreleased).
+    #
+    # We need to specify the font for each of these elements, so we get a monospace
+    # font capable of doing non-breaking hypen glyps. The default "Courier" does do
+    # that, at least not on Windows.
+    delim:
+        font-family:        $pdf2-font-monospaced
+    groupchoice:
+        font-family:        $pdf2-font-monospaced
+    groupcomp:
+        font-family:        $pdf2-font-monospaced
+    groupseq:
+        font-family:        $pdf2-font-monospaced
+    kwd:
+        font-family:        $pdf2-font-monospaced
+    oper:
+        font-family:        $pdf2-font-monospaced
+    repsep:
+        font-family:        $pdf2-font-monospaced
+    sep:
+        font-family:        $pdf2-font-monospaced
+    syntaxdiagram:
+        font-family:        $pdf2-font-monospaced
+        start-indent:       '1cm + from-parent(start-indent)'
+        text-indent:        -1cm
+        keep-together.within-page: always
+
+
+    var:
+        font-family:        $pdf2-font-monospaced

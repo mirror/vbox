@@ -141,7 +141,8 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  	-- $(ASH) $(VBOX_PATH_MANUAL_SRC)/dita-ot-copy-exec.sh "$(VBOX_DITA_ORIGINAL_PATH)" "$1" \
  	-- $(VBOX_JAVA) -jar "$1/lib/dost.jar" "/ditadir:$1" $3 $4 # "/outercontrol:fail" ?
 
- if 0 # Experiments with dita-ot v4.0.2. Requires java 17.
+ ifdef VBOX_DITA_USING_LATEST # Experiments with dita-ot v4.0.2. Requires java 17.
+  VBOX_DITA_USING_LATEST  := 1
   VBOX_JAVA_HOME          := C:/Program Files/Java/jdk-17/
   VBOX_DITA_ORIGINAL_PATH := D:/Tmp/dita/dita-ot-4.0.2
   VBOX_DITA_CLASSPATH = \
@@ -670,8 +671,9 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-dita-pre.xsl \
 		$$(qfirstfile , $$(qwildcard , $$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2).xml) $(3) $$(VBOX_PATH_MANUAL_SRC)/en_US/$(2).xml)
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) \
+		$(if-expr defined(VBOX_DITA_USING_LATEST),--stringparam "g_fReplaceHypens" "true",) \
 		--output "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2).dita" \
- 		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-dita.xsl \
+		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-dita.xsl \
 		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2).xml"
 	$$(QUIET)$$(VBOX_BLD_PYTHON) $$(VBOX_PATH_MANUAL_SRC)/add_file_to_id_only_references.py \
 		--mapping-file "$$(VBOX_USER_MANUAL_ID_MAPPING_FILE_$1)" "$$@"
@@ -683,6 +685,21 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		,$(evalcall2 def_vbox_refentry_file_to_dita,$(lang),$(file))) \
  	$(evalcall2 def_vbox_refentry_file_to_dita,$(lang),user_isomakercmd-man, \
 		$(PATH_ROOT)/src/VBox/Runtime/common/fs/isomakercmd-man.xml))
+
+ # Run conversion testcase.
+ refentry-to-dita-test:
+	$(RM) -f -- \
+		"$(VBOX_PATH_MANUAL_OUTBASE)/testcase-refentry1.xml" \
+		"$(VBOX_PATH_MANUAL_OUTBASE)/testcase-refentry1.dita"
+	$(call VBOX_XSLTPROC_WITH_CAT) \
+		--output "$(VBOX_PATH_MANUAL_OUTBASE)/testcase-refentry1.xml" \
+ 		$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-dita-pre.xsl \
+		$(VBOX_PATH_MANUAL_SRC)/testcase/refentry1.xml
+	$(call VBOX_XSLTPROC_WITH_CAT) \
+		--output "$(VBOX_PATH_MANUAL_OUTBASE)/testcase-refentry1.dita" \
+ 		$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-dita.xsl \
+		"$(VBOX_PATH_MANUAL_OUTBASE)/testcase-refentry1.xml"
+
 
  ## @todo Make use of docbook-refentry-to-manual-overview.xsl again (after dita conversion)?
 
@@ -703,7 +720,9 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   		$$(VBOX_MANUAL_XML_FILES_COMMON) \
   		$$(VBOX_MANUAL_XML_FILES_GENERATED_$(lang)) \
   		$$(VBOX_USER_MANUAL_DITA_STAGED_FILES_$(lang)) \
-  		$$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(lang))
+  		$$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(lang)) \
+  		$$(VBOX_PATH_MANUAL_SRC)/pdf-theme-UserManual.yaml \
+  		$$(VBOX_PATH_MANUAL_SRC)/en_US/images/vboxlogo.png
 	$$(QUIET)$$(RM) -f -- "$$@" "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_pdf.log"
 	$$(QUIET)$$(RM) -Rf -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf/"
 	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf,, \
@@ -711,8 +730,14 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		"/transtype:pdf" \
 		"/filter:$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/ohc.ditaval" \
 		"/outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)" \
-		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf", \
-		,,"--logfile=$$(@D)/UserManual_pdf.log")
+		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf" \
+		, \
+               $(if-expr defined(VBOX_DITA_DEBUG),"/cleantemp:no",) \
+		, \
+		"--theme=$$(VBOX_PATH_MANUAL_SRC)/pdf-theme-UserManual.yaml" \
+		"--logfile=$$(@D)/UserManual_pdf.log" \
+		$(if-expr defined(VBOX_DITA_DEBUG),"--clean.temp=no",) \
+		)
 
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf
  endef
@@ -993,6 +1018,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(REDIRECT) -C $(PATH_STAGE_BIN) -- $(VBOX_ZIP) -9 $@ $(notdir $^)
  endif
+
 
 endif # if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK))
 
