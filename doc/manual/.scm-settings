@@ -28,6 +28,7 @@
 
 /string.xsl:             --external-copyright --no-convert-tabs
 /titlepage-htmlhelp.xml: --external-copyright --no-convert-tabs
+/testcase/*.xml:         --external-copyright
 *.dita:    --treat-as xml --no-update-license --no-update-copyright-year --no-strip-trailing-blanks
 *.ditamap: --treat-as xml --no-update-license --no-update-copyright-year --no-strip-trailing-blanks
 
