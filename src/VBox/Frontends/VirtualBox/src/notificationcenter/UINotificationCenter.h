@@ -51,6 +51,7 @@ class QVBoxLayout;
 class QIToolButton;
 class UINotificationModel;
 class UINotificationObject;
+class UINotificationObjectItem;
 
 /** QWidget-based notification-center overlay. */
 class SHARED_LIBRARY_STUFF UINotificationCenter : public QIWithRetranslateUI<QWidget>
@@ -201,7 +202,7 @@ private:
     QVBoxLayout  *m_pLayoutItems;
 
     /** Holds the map of item instances. */
-    QMap<QUuid, QWidget*>  m_items;
+    QMap<QUuid, UINotificationObjectItem*>  m_items;
 
     /** Holds the sliding state-machine instance. */
     QStateMachine *m_pStateMachineSliding;

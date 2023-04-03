@@ -494,9 +494,9 @@ void UINotificationCenter::sltHandleModelItemAdded(const QUuid &uId)
 
 void UINotificationCenter::sltHandleModelItemRemoved(const QUuid &uId)
 {
-    /* Remove corresponding model item representation: */
-    AssertReturnVoid(m_items.contains(uId));
-    delete m_items.take(uId);
+    /* Remove corresponding model item representation if present: */
+    if (m_items.contains(uId))
+        delete m_items.take(uId);
 
     /* Hide and slide away if there are no notifications to show: */
     setHidden(m_pModel->ids().isEmpty());
