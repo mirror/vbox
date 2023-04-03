@@ -1640,6 +1640,27 @@ DECLINLINE(bool) CPUMIsInInterruptShadowWithUpdate(PCPUMCTX pCtx)
 }
 
 /**
+ * Checks if we're in an "interrupt shadow", i.e. after a STI, POP SS or MOV SS,
+ * updating the state if stale while also returning the reason for the interrupt
+ * inhibition.
+ *
+ * This also inhibit NMIs, except perhaps for nested guests.
+ *
+ * @retval  true if interrupts are inhibited by interrupt shadow.
+ * @retval  false if not.
+ * @param   pCtx            Current guest CPU context.
+ * @param   pfInhibitShw    Where to store which type of interrupt inhibition was
+ *                          active (see CPUMCTX_INHIBIT_XXX).
+ * @note    Requires pCtx->rip to be up to date.
+ */
+DECLINLINE(bool) CPUMIsInInterruptShadowWithUpdateEx(PCPUMCTX pCtx, uint32_t *pfInhibitShw)
+{
+    Assert(pfInhibitShw);
+    *pfInhibitShw = pCtx->eflags.uBoth & CPUMCTX_INHIBIT_SHADOW;
+    return CPUMIsInInterruptShadowWithUpdate(pCtx);
+}
+
+/**
  * Checks if we're in an "interrupt shadow" due to a POP SS or MOV SS
  * instruction.
  *
