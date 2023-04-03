@@ -269,6 +269,7 @@
       </group>
       <arg>--human-readable</arg>
       <arg>--quiet</arg>
+      <arg>--total</arg>
       <arg>--username=<replaceable>username</replaceable></arg>
       <arg>--verbose</arg>
       <arg choice="req"><replaceable>path</replaceable></arg>
@@ -812,6 +813,13 @@
           <term><option>--human-readable</option></term>
           <listitem><para>
               Shows the disk sizes in a human readable form.
+            </para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--total</option></term>
+          <listitem><para>
+              Produces a grand total of all disk sizes.
             </para>
           </listitem>
         </varlistentry>

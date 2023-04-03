@@ -2388,10 +2388,19 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleFsInfo(PGCTLCMDCTX pCtx, int argc, cha
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
+    /*
+     * Parse arguments.
+     */
+    enum GCTLCMD_FSINFO_OPT
+    {
+        GCTLCMD_FSINFO_OPT_TOTAL = 1000
+    };
+
     static const RTGETOPTDEF s_aOptions[] =
     {
         GCTLCMD_COMMON_OPTION_DEFS()
-        { "--human-readable",           'h',                RTGETOPT_REQ_NOTHING }
+        { "--human-readable",           'h',                            RTGETOPT_REQ_NOTHING },
+        { "--total",                    GCTLCMD_FSINFO_OPT_TOTAL,       RTGETOPT_REQ_NOTHING }
     };
 
     int ch;
@@ -2400,6 +2409,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleFsInfo(PGCTLCMDCTX pCtx, int argc, cha
     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     bool fHumanReadable = false;
+    bool fShowTotal = false;
 
     while (  (ch = RTGetOpt(&GetState, &ValueUnion)) != 0
            && ch != VINF_GETOPT_NOT_OPTION)
@@ -2411,6 +2421,10 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleFsInfo(PGCTLCMDCTX pCtx, int argc, cha
 
             case 'h':
                 fHumanReadable = true;
+                break;
+
+            case GCTLCMD_FSINFO_OPT_TOTAL:
+                fShowTotal = true;
                 break;
 
             default:
@@ -2438,6 +2452,9 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleFsInfo(PGCTLCMDCTX pCtx, int argc, cha
              cwSizeTotal, GuestCtrl::tr("Total"), cwSizeUsed, GuestCtrl::tr("Used"), cwSizeAvail, GuestCtrl::tr("Available"),
              cwPathSpacing, "",
              GuestCtrl::tr("Path"));
+
+    uint64_t cbTotalSize = 0;
+    uint64_t cbTotalFree = 0;
 
     while (ch == VINF_GETOPT_NOT_OPTION)
     {
@@ -2476,11 +2493,43 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleFsInfo(PGCTLCMDCTX pCtx, int argc, cha
                          cwPathSpacing, "",
                          ValueUnion.psz);                     /* Path */
             }
+
+            if (fShowTotal)
+            {
+                cbTotalSize += u64;
+                cbTotalFree += u64_2;
+            }
+
             RTPrintf("\n");
         }
 
         /* Next path. */
         ch = RTGetOpt(&GetState, &ValueUnion);
+    }
+
+    if (fShowTotal)
+    {
+        if (fHumanReadable)
+        {
+            RTPrintf("%-*s%*Rhcb%*Rhcb%*Rhcb%*s%s",
+                     cwFileSys, "total",
+                     cwSizeTotal, cbTotalSize,                /* Total */
+                     cwSizeUsed,  cbTotalSize - cbTotalFree,  /* Used */
+                     cwSizeAvail, cbTotalFree,                /* Available */
+                     cwPathSpacing, "",
+                     "-");                                    /* Path */
+        }
+        else
+        {
+            RTPrintf("%-*s%*RU64%*RU64%*RU64%*s%s",
+                     cwFileSys, "total",                      /* Filesystem */
+                     cwSizeTotal, cbTotalSize,                /* Total */
+                     cwSizeUsed,  cbTotalSize - cbTotalFree,  /* Used */
+                     cwSizeAvail, cbTotalFree,                /* Available */
+                     cwPathSpacing, "",
+                     "-");                                    /* Path */
+        }
+        RTPrintf("\n");
     }
 
     return rcExit;
