@@ -15898,10 +15898,6 @@
     <method name="fsQueryFreeSpace">
       <desc>
         Returns the free space (in bytes) of a given path.
-
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
       </desc>
       <param name="path" type="wstring" dir="in">
         <desc>Full path to return the free space for.</desc>
@@ -15914,10 +15910,6 @@
     <method name="fsQueryInfo">
       <desc>
         Returns file system information for a given path.
-
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
       </desc>
 
       <param name="path" type="wstring" dir="in">

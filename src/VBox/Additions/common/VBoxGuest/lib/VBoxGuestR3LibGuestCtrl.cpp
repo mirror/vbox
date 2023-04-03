@@ -1259,6 +1259,37 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserHome(PVBGLR3GUESTCTRLCMDCTX pCtx)
 
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
 /**
+ * Retrieves a HOST_MSG_FS_QUERY_INFO message.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Guest control command context to use.
+ * @param   pszPath             Where to return the path of the file system object to query.
+ * @param   cbPath              Size (in bytes) of \a pszPath.
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlFsGetQueryInfo(PVBGLR3GUESTCTRLCMDCTX pCtx, char *pszPath, uint32_t cbPath)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(cbPath, VERR_INVALID_PARAMETER);
+
+    int rc;
+    do
+    {
+        HGCMMsgFsQueryInfo Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_FS_QUERY_INFO);
+        VbglHGCMParmPtrSet(&Msg.path, pszPath, cbPath);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+            Msg.context.GetUInt32(&pCtx->uContextID);
+
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
+    return rc;
+}
+
+/**
  * Retrieves a HOST_MSG_FS_OBJ_QUERY_INFO message.
  *
  * @returns VBox status code.
@@ -2682,12 +2713,12 @@ VBGLR3DECL(int) VbglR3GuestCtrlFsObjCbQueryInfoEx(PVBGLR3GUESTCTRLCMDCTX pCtx, u
     HGCMReplyFsNotify Msg;
     VBGL_HGCM_HDR_INIT(&Msg.reply_hdr.hdr, pCtx->uClientID, GUEST_MSG_FS_NOTIFY, GSTCTL_HGCM_REPLY_HDR_PARMS + 3);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.context, pCtx->uContextID);
-    VbglHGCMParmUInt32Set(&Msg.reply_hdr.type, GUEST_FS_NOTIFYTYPE_QUERY_INFO);
+    VbglHGCMParmUInt32Set(&Msg.reply_hdr.type, GUEST_FS_NOTIFYTYPE_QUERY_OBJ_INFO);
     VbglHGCMParmUInt32Set(&Msg.reply_hdr.rc, uRc);
 
-    VbglHGCMParmPtrSet      (&Msg.u.queryinfo.obj_info, pFsObjInfo, sizeof(GSTCTLFSOBJINFO));
-    VbglHGCMParmPtrSetString(&Msg.u.queryinfo.user,   pszUser);
-    VbglHGCMParmPtrSetString(&Msg.u.queryinfo.groups, pszGroups);
+    VbglHGCMParmPtrSet      (&Msg.u.queryobjinfo.obj_info, pFsObjInfo, sizeof(GSTCTLFSOBJINFO));
+    VbglHGCMParmPtrSetString(&Msg.u.queryobjinfo.user,   pszUser);
+    VbglHGCMParmPtrSetString(&Msg.u.queryobjinfo.groups, pszGroups);
 
     return VbglR3HGCMCall(&Msg.reply_hdr.hdr, RT_UOFFSET_AFTER(HGCMReplyFsNotify, u.queryinfo));
 }
@@ -2731,6 +2762,32 @@ VBGLR3DECL(int) VbglR3GuestCtrlFsCbCreateTemp(PVBGLR3GUESTCTRLCMDCTX pCtx, uint3
     VbglHGCMParmPtrSetString(&Msg.u.createtemp.path, pszPath);
 
     return VbglR3HGCMCall(&Msg.reply_hdr.hdr, RT_UOFFSET_AFTER(HGCMReplyFsNotify, u.createtemp));
+}
+
+/**
+ * Replies to a HOST_MSG_FS_QUERY_INFO message.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Guest control command context to use.
+ * @param   uRc                 Guest rc of operation (note: IPRT-style signed int).
+ * @param   pFsInfo             File system information to return.
+ * @param   cbFsInfo            Size (in bytes) of \a pFsInfo.
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlFsCbQueryInfo(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, PGSTCTLFSINFO pFsInfo, uint32_t cbFsInfo)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pFsInfo, VERR_INVALID_POINTER);
+    AssertReturn(cbFsInfo, VERR_INVALID_PARAMETER);
+
+    HGCMReplyFsNotify Msg;
+    VBGL_HGCM_HDR_INIT(&Msg.reply_hdr.hdr, pCtx->uClientID, GUEST_MSG_FS_NOTIFY, GSTCTL_HGCM_REPLY_HDR_PARMS + 1);
+    VbglHGCMParmUInt32Set(&Msg.reply_hdr.context, pCtx->uContextID);
+    VbglHGCMParmUInt32Set(&Msg.reply_hdr.type, GUEST_FS_NOTIFYTYPE_QUERY_INFO);
+    VbglHGCMParmUInt32Set(&Msg.reply_hdr.rc, uRc);
+
+    VbglHGCMParmPtrSet(&Msg.u.queryinfo.fs_info, pFsInfo, cbFsInfo);
+
+    return VbglR3HGCMCall(&Msg.reply_hdr.hdr, RT_UOFFSET_AFTER(HGCMReplyFsNotify, u.queryinfo));
 }
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
 

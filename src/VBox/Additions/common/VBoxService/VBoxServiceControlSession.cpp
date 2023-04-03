@@ -1974,6 +1974,108 @@ static int vgsvcGstCtrlSessionHandleProcWaitFor(const PVBOXSERVICECTRLSESSION pS
 
 
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
+static int vgsvcGstCtrlSessionHandleFsQueryInfo(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx)
+{
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
+
+    /*
+     * Retrieve the request.
+     */
+    char szPath[RTPATH_MAX];
+    int rc = VbglR3GuestCtrlFsGetQueryInfo(pHostCtx, szPath, sizeof(szPath));
+    if (RT_SUCCESS(rc))
+    {
+        GSTCTLFSINFO fsInfo;
+        RT_ZERO(fsInfo);
+
+        /* Query as much as we can; ignore any errors and continue. */
+        int rc2 = RTFsQuerySizes(szPath, (RTFOFF *)&fsInfo.cbTotalSize, (RTFOFF *)&fsInfo.cbFree,
+                                 &fsInfo.cbBlockSize, &fsInfo.cbSectorSize);
+        if (RT_FAILURE(rc2))
+            VGSvcError("Error calling RTFsQuerySizes() for fsqueryinfo operation: %Rrc\n", rc2);
+
+        RTFSPROPERTIES fsProps;
+        rc2 = RTFsQueryProperties(szPath, &fsProps);
+        if (RT_SUCCESS(rc2))
+        {
+            /* Regular (status) flags. */
+            fsInfo.cMaxComponent = fsProps.cbMaxComponent;
+            if (fsProps.fRemote)
+                fsInfo.fFlags |= GSTCTLFSINFO_F_IS_REMOTE;
+            if (fsProps.fCaseSensitive)
+                fsInfo.fFlags |= GSTCTLFSINFO_F_IS_CASE_SENSITIVE;
+            if (fsProps.fReadOnly)
+                fsInfo.fFlags |= GSTCTLFSINFO_F_IS_READ_ONLY;
+            if (fsProps.fCompressed)
+                fsInfo.fFlags |= GSTCTLFSINFO_F_IS_COMPRESSED;
+
+            /* Feature flags. */
+            if (fsProps.fSupportsUnicode)
+                fsInfo.fFeatures |= GSTCTLFSINFO_FEATURE_F_UNICODE;
+            if (fsProps.fFileCompression)
+                fsInfo.fFeatures |= GSTCTLFSINFO_FEATURE_F_FILE_COMPRESSION;
+        }
+        else
+            VGSvcError("Error calling RTFsQueryProperties() for fsqueryinfo operation: %Rrc\n", rc2);
+
+        rc2 = RTFsQuerySerial(szPath, &fsInfo.uSerialNumber);
+        if (RT_FAILURE(rc2))
+            VGSvcError("Error calling RTFsQuerySerial() for fsqueryinfo operation: %Rrc\n", rc2);
+
+#if 0 /** @todo Enable as soon as RTFsQueryLabel() is implemented. */
+        rc2 = RTFsQueryLabel(szPath, fsInfo.szLabel, sizeof(fsInfo.szLabel));
+        if (RT_FAILURE(rc2))
+            VGSvcError("Error calling RTFsQueryLabel() for fsqueryinfo operation: %Rrc\n", rc2);
+#endif
+
+        RTFSTYPE enmFsType;
+        rc2 = RTFsQueryType(szPath, &enmFsType);
+        if (RT_SUCCESS(rc2))
+        {
+            if (RTStrPrintf2(fsInfo.szName, sizeof(fsInfo.szName), "%s", RTFsTypeName(enmFsType)) <= 0)
+                VGSvcError("Error printing type returned by RTFsQueryType()\n");
+        }
+        else
+            VGSvcError("Error calling RTFsQueryType() for fsqueryinfo operation: %Rrc\n", rc2);
+
+#if 0 /** @todo Enable as soon as RTFsQueryMountpoint() is implemented. */
+        char szMountpoint[RTPATH_MAX];
+        rc2 = RTFsQueryMountpoint(szPath, szMountpoint, sizeof(szMountpoint));
+        if (RT_SUCCESS(rc2))
+        {
+            #error "Implement me"
+        }
+        else
+            VGSvcError("Error calling RTFsQueryMountpoint() for fsqueryinfo operation: %Rrc\n", rc2);
+#endif
+
+        if (RT_SUCCESS(rc))
+        {
+            VGSvcVerbose(3, "cbTotalSize=%RU64, cbFree=%RU64, cbBlockSize=%RU32, cbSectorSize=%RU32, fFlags=%#x, fFeatures=%#x\n",
+                         fsInfo.cbTotalSize, fsInfo.cbFree, fsInfo.cbBlockSize, fsInfo.cbSectorSize,
+                         fsInfo.fFlags, fsInfo.fFeatures);
+            VGSvcVerbose(3, "szName=%s, szLabel=%s\n", fsInfo.szName, fsInfo.szLabel);
+        }
+
+        uint32_t const cbFsInfo = sizeof(GSTCTLFSINFO); /** @todo Needs tweaking as soon as we resolve the mountpoint above. */
+
+        rc2 = VbglR3GuestCtrlFsCbQueryInfo(pHostCtx, rc, &fsInfo, cbFsInfo);
+        if (RT_FAILURE(rc2))
+        {
+            VGSvcError("Failed to reply to fsobjquerinfo request %Rrc, rc=%Rrc\n", rc, rc2);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
+    }
+    else
+    {
+        VGSvcError("Error fetching parameters for fsqueryinfo operation: %Rrc\n", rc);
+        VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID, rc, UINT32_MAX);
+    }
+    return rc;
+}
+
 static int vgsvcGstCtrlSessionHandleFsObjQueryInfo(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
@@ -2239,6 +2341,11 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
         case HOST_MSG_FS_CREATE_TEMP:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFsCreateTemp(pSession, pHostCtx);
+            break;
+
+        case HOST_MSG_FS_QUERY_INFO:
+            if (fImpersonated)
+                rc = vgsvcGstCtrlSessionHandleFsQueryInfo(pSession, pHostCtx);
             break;
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
 

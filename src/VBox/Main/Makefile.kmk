@@ -1202,6 +1202,7 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
   	src-client/GuestCtrlPrivate.cpp \
   	src-client/GuestDirectoryImpl.cpp \
   	src-client/GuestFileImpl.cpp \
+  	src-client/GuestFsInfoImpl.cpp \
   	src-client/GuestFsObjInfoImpl.cpp \
   	src-client/GuestProcessImpl.cpp \
   	src-client/GuestSessionImpl.cpp

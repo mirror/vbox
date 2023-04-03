@@ -43,6 +43,7 @@
 #endif
 
 #include <iprt/time.h>
+#include <iprt/path.h>
 #include <iprt/types.h>
 
 /* Everything defined in this file lives in this namespace. */
@@ -265,6 +266,86 @@ enum eInputStatus
     /** Too much input data. */
     INPUT_STS_OVERFLOW = 30
 };
+
+/** @name Guest filesystem flags.
+ *
+ * @{
+ */
+/** No guest file system flags set. */
+#define GSTCTLFSINFO_F_NONE                         UINT32_C(0)
+/** If the filesystem is remote or not. */
+#define GSTCTLFSINFO_F_IS_REMOTE                    RT_BIT(0)
+/** If the filesystem is case sensitive or not. */
+#define GSTCTLFSINFO_F_IS_CASE_SENSITIVE            RT_BIT(1)
+/** If the filesystem is mounted read only or not. */
+#define GSTCTLFSINFO_F_IS_READ_ONLY                 RT_BIT(2)
+/** If the filesystem is compressed or not. */
+#define GSTCTLFSINFO_F_IS_COMPRESSED                RT_BIT(3)
+/** Valid mask. */
+#define GSTCTLFSINFO_F_VALID_MASK                   0xF
+/** @} */
+
+/** @name Guest filesystem feature flags.
+ *
+ * @{
+ */
+/** No guest file system feature flags set. */
+#define GSTCTLFSINFO_FEATURE_F_NONE                 UINT32_C(0)
+/** If the filesystem can handle Unicode or not. */
+#define GSTCTLFSINFO_FEATURE_F_UNICODE              RT_BIT(0)
+/** If the filesystem supports sparse files or not. */
+#define GSTCTLFSINFO_FEATURE_F_SPARSE_FILES         RT_BIT(1)
+/** If the filesystem features compression of individual files or not. */
+#define GSTCTLFSINFO_FEATURE_F_FILE_COMPRESSION     RT_BIT(2)
+/** Valid mask. */
+#define GSTCTLFSINFO_FEATURE_F_VALID_MASK           0x7
+/** @} */
+
+/** Maximum length (in characters) of a guest file name. */
+#define GSTCTL_FS_NAME_MAX                          255
+/** Maximum length (in characters) of a guest file label. */
+#define GSTCTL_FS_LABEL_MAX                         255
+/** Maximum length (in characters) of a guest filesystem mount point. */
+#define GSTCTL_FS_MOUNTPOINT_MAX                    RTPATH_MAX
+
+/**
+ * Guest filesystem information.
+ */
+#pragma pack(1)
+typedef struct GSTCTLFSINFO
+{
+    /** Remaining free space (in bytes) of the filesystem. */
+    uint64_t cbFree;
+    /** Total space (in bytes) of the filesystem. */
+    uint64_t cbTotalSize;
+    /** Block size (in bytes) of the filesystem. */
+    uint32_t cbBlockSize;
+    /** Sector size (in bytes) of the filesystem. */
+    uint32_t cbSectorSize;
+    /** Serial number of the filesystem. */
+    uint32_t uSerialNumber;
+    /** Flags (of type GSTCTLFSINFO_F_XXX). */
+    uint32_t fFlags;
+    /** Feature flags (of type GSTCTLFSINFO_FEATURE_F_XXX). */
+    uint32_t fFeatures;
+    /** The maximum size (in characters) of a filesystem object name. */
+    uint32_t cMaxComponent;
+    /** Name of the filesystem type. */
+    char     szName[GSTCTL_FS_NAME_MAX];
+    /** Label of the filesystem. */
+    char     szLabel[GSTCTL_FS_LABEL_MAX];
+    /** Size (in bytes) of \a szMountpoint. */
+    uint16_t cbMountpoint;
+    /** Mount point of the filesystem.
+     *  Will be dynamically allocated, based on \a cbMountpoint. */
+    char     szMountpoint[1];
+} GSTCTLFSINFO;
+#pragma pack()
+AssertCompileSize(GSTCTLFSINFO, 553);
+/** Pointer to a guest filesystem structure. */
+typedef GSTCTLFSINFO *PGSTCTLFSINFO;
+/** Pointer to a const guest filesystem structure. */
+typedef const GSTCTLFSINFO *PCGSTCTLFSINFO;
 
 /**
  * Guest file system object -- additional information in a GSTCTLFSOBJATTR object.

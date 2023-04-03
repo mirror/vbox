@@ -38,6 +38,7 @@
 #endif
 #include "GuestSessionImpl.h"
 #include "GuestSessionImplTasks.h"
+#include "GuestFsInfoImpl.h"
 #include "GuestCtrlImplPrivate.h"
 #include "VirtualBoxErrorInfoImpl.h"
 
@@ -2070,6 +2071,78 @@ int GuestSession::i_fsObjQueryInfoViaToolbox(const Utf8Str &strPath, bool fFollo
 }
 
 /**
+ * Queries information of a guest file system.
+ *
+ * @return  IPRT status code.
+ * @param   strPath             Path to file system object to query information for.
+ * @param   pFsInfo             Where to return the file system information on success.
+ * @param   pvrcGuest           Guest VBox status code, when returning
+ *                              VERR_GSTCTL_GUEST_ERROR. Any other return code
+ *                              indicates some host side error.
+ */
+int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, PGSTCTLFSINFO pFsInfo, int *pvrcGuest)
+{
+    LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
+
+    int vrc;
+#ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
+    if (mParent->i_getGuestControlFeatures0() & VBOX_GUESTCTRL_GF_0_TOOLBOX_AS_CMDS)
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        GuestWaitEvent *pEvent = NULL;
+        vrc = registerWaitEvent(mData.mSession.mID, mData.mObjectID, &pEvent);
+        if (RT_FAILURE(vrc))
+            return vrc;
+
+        /* Prepare HGCM call. */
+        VBOXHGCMSVCPARM paParms[2];
+        int i = 0;
+        HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+        HGCMSvcSetStr(&paParms[i++], strPath.c_str());
+
+        alock.release(); /* Drop lock before sending. */
+
+        vrc = i_sendMessage(HOST_MSG_FS_QUERY_INFO, i, paParms);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = pEvent->Wait(30 * 1000);
+            if (RT_SUCCESS(vrc))
+            {
+                PCALLBACKDATA_FS_NOTIFY const pFsNotify = (PCALLBACKDATA_FS_NOTIFY)pEvent->Payload().Raw();
+                AssertPtrReturn(pFsNotify, VERR_INVALID_POINTER);
+                int vrcGuest = (int)pFsNotify->rc;
+                if (RT_SUCCESS(vrcGuest))
+                {
+                    AssertReturn(pFsNotify->uType == GUEST_FS_NOTIFYTYPE_QUERY_INFO, VERR_INVALID_PARAMETER);
+                    memcpy(pFsInfo, &pFsNotify->u.QueryInfo.fsInfo, sizeof(GSTCTLFSINFO));
+                }
+                else
+                {
+                    if (pvrcGuest)
+                        *pvrcGuest = vrcGuest;
+                    vrc = VERR_GSTCTL_GUEST_ERROR;
+                }
+            }
+            else
+            {
+                if (pEvent->HasGuestError() && pvrcGuest)
+                    *pvrcGuest = pEvent->GuestResult();
+            }
+        }
+        unregisterWaitEvent(pEvent);
+    }
+    else
+#endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
+    {
+        vrc = VERR_NOT_SUPPORTED;
+    }
+
+    LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, pvrcGuest ? *pvrcGuest : VERR_IPE_UNINITIALIZED_STATUS));
+    return vrc;
+}
+
+/**
  * Queries information of a file system object (file, directory, ...).
  *
  * @return  IPRT status code.
@@ -2118,11 +2191,11 @@ int GuestSession::i_fsObjQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks,
                 int vrcGuest = (int)pFsNotify->rc;
                 if (RT_SUCCESS(vrcGuest))
                 {
-                    AssertReturn(pFsNotify->uType == GUEST_FS_NOTIFYTYPE_QUERY_INFO, VERR_INVALID_PARAMETER);
+                    AssertReturn(pFsNotify->uType == GUEST_FS_NOTIFYTYPE_QUERY_OBJ_INFO, VERR_INVALID_PARAMETER);
                     objData.Init(strPath);
-                    vrc = objData.FromGuestFsObjInfo(&pFsNotify->u.QueryInfo.objInfo);
-                    RTStrFree(pFsNotify->u.QueryInfo.pszUser);
-                    RTStrFree(pFsNotify->u.QueryInfo.pszGroups);
+                    vrc = objData.FromGuestFsObjInfo(&pFsNotify->u.QueryObjInfo.objInfo);
+                    RTStrFree(pFsNotify->u.QueryObjInfo.pszUser);
+                    RTStrFree(pFsNotify->u.QueryObjInfo.pszGroups);
                 }
                 else
                 {
@@ -2347,34 +2420,6 @@ int GuestSession::i_onFsNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOS
     {
         switch (dataCb.uType)
         {
-            case GUEST_FS_NOTIFYTYPE_QUERY_INFO:
-            {
-                AssertBreakStmt(pSvcCbData->mParms >= 6, vrc = VERR_INVALID_PARAMETER);
-                PGSTCTLFSOBJINFO pObjInfo;
-                uint32_t         cbObjInfo;
-                vrc = HGCMSvcGetPv(&pSvcCbData->mpaParms[3], (void **)&pObjInfo, &cbObjInfo);
-                AssertRCBreak(vrc);
-                AssertBreakStmt(cbObjInfo == sizeof(GSTCTLFSOBJINFO), vrc = VERR_INVALID_PARAMETER);
-                memcpy(&dataCb.u.QueryInfo.objInfo, pObjInfo, sizeof(GSTCTLFSOBJINFO));
-
-                char    *pszUser;
-                uint32_t cbUser;
-                vrc = HGCMSvcGetStr(&pSvcCbData->mpaParms[4], &pszUser, &cbUser);
-                AssertRCBreak(vrc);
-                dataCb.u.QueryInfo.pszUser = RTStrDup(pszUser);
-                AssertPtrBreakStmt(dataCb.u.QueryInfo.pszUser, vrc = VERR_NO_MEMORY);
-                dataCb.u.QueryInfo.cbUser  = cbUser;
-
-                char    *pszGroups;
-                uint32_t cbGroups;
-                vrc = HGCMSvcGetStr(&pSvcCbData->mpaParms[5], &pszGroups, &cbGroups);
-                AssertRCBreak(vrc);
-                dataCb.u.QueryInfo.pszGroups = RTStrDup(pszGroups);
-                AssertPtrBreakStmt(dataCb.u.QueryInfo.pszGroups, vrc = VERR_NO_MEMORY);
-                dataCb.u.QueryInfo.cbGroups  = cbGroups;
-                break;
-            }
-
             case GUEST_FS_NOTIFYTYPE_CREATE_TEMP:
             {
                 char    *pszPath;
@@ -2384,6 +2429,46 @@ int GuestSession::i_onFsNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOS
                 dataCb.u.CreateTemp.pszPath = RTStrDup(pszPath);
                 AssertPtrBreakStmt(dataCb.u.CreateTemp.pszPath, vrc = VERR_NO_MEMORY);
                 dataCb.u.CreateTemp.cbPath  = cbPath;
+                break;
+            }
+
+            case GUEST_FS_NOTIFYTYPE_QUERY_OBJ_INFO:
+            {
+                AssertBreakStmt(pSvcCbData->mParms >= 6, vrc = VERR_INVALID_PARAMETER);
+                PGSTCTLFSOBJINFO pObjInfo;
+                uint32_t         cbObjInfo;
+                vrc = HGCMSvcGetPv(&pSvcCbData->mpaParms[3], (void **)&pObjInfo, &cbObjInfo);
+                AssertRCBreak(vrc);
+                AssertBreakStmt(cbObjInfo == sizeof(GSTCTLFSOBJINFO), vrc = VERR_INVALID_PARAMETER);
+                memcpy(&dataCb.u.QueryObjInfo.objInfo, pObjInfo, sizeof(GSTCTLFSOBJINFO));
+
+                char    *pszUser;
+                uint32_t cbUser;
+                vrc = HGCMSvcGetStr(&pSvcCbData->mpaParms[4], &pszUser, &cbUser);
+                AssertRCBreak(vrc);
+                dataCb.u.QueryObjInfo.pszUser = RTStrDup(pszUser);
+                AssertPtrBreakStmt(dataCb.u.QueryObjInfo.pszUser, vrc = VERR_NO_MEMORY);
+                dataCb.u.QueryObjInfo.cbUser  = cbUser;
+
+                char    *pszGroups;
+                uint32_t cbGroups;
+                vrc = HGCMSvcGetStr(&pSvcCbData->mpaParms[5], &pszGroups, &cbGroups);
+                AssertRCBreak(vrc);
+                dataCb.u.QueryObjInfo.pszGroups = RTStrDup(pszGroups);
+                AssertPtrBreakStmt(dataCb.u.QueryObjInfo.pszGroups, vrc = VERR_NO_MEMORY);
+                dataCb.u.QueryObjInfo.cbGroups  = cbGroups;
+                break;
+            }
+
+            case GUEST_FS_NOTIFYTYPE_QUERY_INFO:
+            {
+                AssertBreakStmt(pSvcCbData->mParms >= 2, vrc = VERR_INVALID_PARAMETER);
+                PGSTCTLFSINFO pFsInfo;
+                uint32_t      cbFsInfo;
+                vrc = HGCMSvcGetPv(&pSvcCbData->mpaParms[3], (void **)&pFsInfo, &cbFsInfo);
+                AssertRCBreak(vrc);
+                AssertBreakStmt(cbFsInfo == sizeof(GSTCTLFSINFO), vrc = VERR_INVALID_PARAMETER);
+                memcpy(&dataCb.u.QueryInfo.fsInfo, pFsInfo, sizeof(GSTCTLFSINFO));
                 break;
             }
 
@@ -4721,16 +4806,52 @@ HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, BOOL aFollowSymli
 
 HRESULT GuestSession::fsQueryFreeSpace(const com::Utf8Str &aPath, LONG64 *aFreeSpace)
 {
-    RT_NOREF(aPath, aFreeSpace);
+    ComPtr<IGuestFsInfo> pFsInfo;
+    HRESULT hrc = fsQueryInfo(aPath, pFsInfo);
+    if (SUCCEEDED(hrc))
+        hrc = pFsInfo->COMGETTER(FreeSize)(aFreeSpace);
 
-    return E_NOTIMPL;
+    return hrc;
 }
 
 HRESULT GuestSession::fsQueryInfo(const com::Utf8Str &aPath, ComPtr<IGuestFsInfo> &aInfo)
 {
-    RT_NOREF(aPath, aInfo);
+    if (aPath.isEmpty())
+        return setError(E_INVALIDARG, tr("No path specified"));
 
-    return E_NOTIMPL;
+    HRESULT hrc = i_isStartedExternal();
+    if (FAILED(hrc))
+        return hrc;
+
+    GSTCTLFSINFO fsInfo;
+    int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+    int vrc = i_fsQueryInfo(aPath, &fsInfo, &vrcGuest);
+    if (RT_SUCCESS(vrc))
+    {
+        ComObjPtr<GuestFsInfo> ptrFsInfo;
+        hrc = ptrFsInfo.createObject();
+        if (SUCCEEDED(hrc))
+        {
+            vrc = ptrFsInfo->init(&fsInfo);
+            if (RT_SUCCESS(vrc))
+                hrc = ptrFsInfo.queryInterfaceTo(aInfo.asOutParam());
+            else
+                hrc = setErrorVrc(vrc);
+        }
+    }
+    else
+    {
+        if (GuestProcess::i_isGuestError(vrc))
+        {
+            GuestErrorInfo ge(GuestErrorInfo::Type_Fs, vrcGuest, aPath.c_str());
+            hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrcGuest, tr("Querying guest filesystem information failed: %s"),
+                               GuestBase::getErrorAsString(ge).c_str());
+        }
+        else
+            hrc = setErrorVrc(vrc, tr("Querying guest filesystem information for \"%s\" failed: %Rrc"), aPath.c_str(), vrc);
+    }
+
+    return hrc;
 }
 
 HRESULT GuestSession::fsObjExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
@@ -4806,11 +4927,11 @@ HRESULT GuestSession::fsObjQueryInfo(const com::Utf8Str &aPath, BOOL aFollowSyml
         if (GuestProcess::i_isGuestError(vrc))
         {
             GuestErrorInfo ge(GuestErrorInfo::Type_Fs, vrcGuest, aPath.c_str());
-            hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrcGuest, tr("Querying guest file information failed: %s"),
+            hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrcGuest, tr("Querying guest filesystem object information failed: %s"),
                                GuestBase::getErrorAsString(ge).c_str());
         }
         else
-            hrc = setErrorVrc(vrc, tr("Querying guest file information for \"%s\" failed: %Rrc"), aPath.c_str(), vrc);
+            hrc = setErrorVrc(vrc, tr("Querying guest filesystem object information for \"%s\" failed: %Rrc"), aPath.c_str(), vrc);
     }
 
     return hrc;

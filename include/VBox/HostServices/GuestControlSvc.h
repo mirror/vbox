@@ -267,6 +267,10 @@ enum eHostMsg
      * Creates a temporary file or directory.
      */
     HOST_MSG_FS_CREATE_TEMP = 335,
+    /**
+     * Retrieves information about a guest file system.
+     */
+    HOST_MSG_FS_QUERY_INFO = 336,
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
     /** Blow the type up to 32-bits. */
     HOST_MSG_32BIT_HACK = 0x7fffffff
@@ -317,6 +321,7 @@ DECLINLINE(const char *) GstCtrlHostMsgtoStr(enum eHostMsg enmMsg)
 #ifdef VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS
         RT_CASE_RET_STR(HOST_MSG_FS_OBJ_QUERY_INFO);
         RT_CASE_RET_STR(HOST_MSG_FS_CREATE_TEMP);
+        RT_CASE_RET_STR(HOST_MSG_FS_QUERY_INFO);
 #endif /* VBOX_WITH_GSTCTL_TOOLBOX_AS_CMDS */
         RT_CASE_RET_STR(HOST_MSG_32BIT_HACK);
     }
@@ -771,13 +776,16 @@ enum GUEST_FILE_NOTIFYTYPE
 enum GUEST_FS_NOTIFYTYPE
 {
     /** Unknown fs notification type; do not use. */
-    GUEST_FS_NOTIFYTYPE_UNKNOWN     = 0,
-    /** File system query information notification from the guest.
-     *  @since 7.1 */
-    GUEST_FS_NOTIFYTYPE_QUERY_INFO  = 2,
+    GUEST_FS_NOTIFYTYPE_UNKNOWN        = 0,
     /** Temporary directory creation notification from the guest.
      *  @since 7.1 */
-    GUEST_FS_NOTIFYTYPE_CREATE_TEMP = 1
+    GUEST_FS_NOTIFYTYPE_CREATE_TEMP    = 1,
+    /** File system object query information notification from the guest.
+     *  @since 7.1 */
+    GUEST_FS_NOTIFYTYPE_QUERY_OBJ_INFO = 2,
+    /** File system query information notification from the guest.
+     *  @since 7.1 */
+    GUEST_FS_NOTIFYTYPE_QUERY_INFO     = 3
 };
 
 /**
@@ -967,6 +975,18 @@ typedef struct HGCMMsgFsCreateTemp
      *  See GSTCTL_CREATETEMP_F_XXX. */
     HGCMFunctionParameter mode;
 } HGCMMsgFsCreateTemp;
+
+/**
+ * Queries information of a file system on the guest.
+ */
+typedef struct HGCMMsgFsQueryInfo
+{
+    VBGLIOCHGCMCALL hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** Path to query file system information for. */
+    HGCMFunctionParameter path;
+} HGCMMsgFsQueryInfo;
 
 /**
  * Queries information for a file system object on the guest.
@@ -1617,7 +1637,18 @@ typedef struct HGCMReplyFsNotify
     union
     {
         /**
-         * Parameters used for \a type GUEST_FS_NOTIFYTYPE_QUERY_INFO.
+         * Parameters used for \a type GUEST_FS_NOTIFYTYPE_CREATE_TEMP.
+         *
+         * @since 7.1
+         */
+        struct
+        {
+            /** The create temporary file / directory when \a rc
+             *  indicates success. */
+            HGCMFunctionParameter path;
+        } createtemp;
+        /**
+         * Parameters used for \a type GUEST_FS_NOTIFYTYPE_QUERY_OBJ_INFO.
          *
          * @since 7.1
          */
@@ -1632,18 +1663,17 @@ typedef struct HGCMReplyFsNotify
              *  Multiple groups are delimited by GSTCTL_DIRENTRY_GROUPS_DELIMITER_STR, whereas
              *  the first group always is the primary group. */
             HGCMFunctionParameter groups;
-        } queryinfo;
+        } queryobjinfo;
         /**
-         * Parameters used for \a type GUEST_FS_NOTIFYTYPE_CREATE_TEMP.
+         * Parameters used for \a type GUEST_FS_NOTIFYTYPE_QUERY_INFO.
          *
          * @since 7.1
          */
         struct
         {
-            /** The create temporary file / directory when \a rc
-             *  indicates success. */
-            HGCMFunctionParameter path;
-        } createtemp;
+            /** File system object information (GSTCTLFSINFO). */
+            HGCMFunctionParameter fs_info;
+        } queryinfo;
     } u;
 } HGCMReplyFsNotify;
 #pragma pack ()

@@ -1712,6 +1712,15 @@ typedef struct CALLBACKDATA_FS_NOTIFY
     uint32_t rc;
     union
     {
+        /** Holds information for GUEST_FS_NOTIFYTYPE_CREATE_TEMP. */
+        struct
+        {
+            /** Path of created temporary file / directory. */
+            char    *pszPath;
+            /** Size (in bytes) of \a pszPath. */
+            uint32_t cbPath;
+        } CreateTemp;
+        /** Holds information for GUEST_FS_NOTIFYTYPE_QUERY_OBJ_INFO. */
         struct
         {
             GSTCTLFSOBJINFO objInfo;
@@ -1723,14 +1732,13 @@ typedef struct CALLBACKDATA_FS_NOTIFY
             char           *pszGroups;
             /** Size (in bytes) of \a pszGroups. */
             uint32_t        cbGroups;
-        } QueryInfo;
+        } QueryObjInfo;
+        /** Holds information for GUEST_FS_NOTIFYTYPE_QUERY_INFO. */
         struct
         {
-            /** Path of created temporary file / directory. */
-            char    *pszPath;
-            /** Size (in bytes) of \a pszPath. */
-            uint32_t cbPath;
-        } CreateTemp;
+            /** The actual filesystem information. */
+            GSTCTLFSINFO    fsInfo;
+        } QueryInfo;
     } u;
 } CALLBACKDATA_FS_NOTIFY;
 /** Pointer to a CALLBACKDATA_FS_NOTIFY struct. */

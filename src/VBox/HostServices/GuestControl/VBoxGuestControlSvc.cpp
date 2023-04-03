@@ -1664,6 +1664,8 @@ int GstCtrlService::clientMsgSkip(ClientState *pClient, VBOXHGCMCALLHANDLE hCall
                         RT_FALL_THROUGH();
                     case HOST_MSG_FS_CREATE_TEMP:
                         RT_FALL_THROUGH();
+                    case HOST_MSG_FS_QUERY_INFO:
+                        RT_FALL_THROUGH();
                     case HOST_MSG_FILE_REMOVE:
                         RT_FALL_THROUGH();
                     case HOST_MSG_DIR_OPEN:
