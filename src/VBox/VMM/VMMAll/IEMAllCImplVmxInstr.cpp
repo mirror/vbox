@@ -1501,10 +1501,10 @@ static void iemVmxVmexitSaveGuestNonRegState(PVMCPUCC pVCpu, uint32_t uExitReaso
         if (pVCpu->cpum.GstCtx.rip == pVCpu->cpum.GstCtx.uRipInhibitInt)
         {
             /*
-             * We must take care to ensure only one of these bits are set.
-             * Our emulation can have both set perhaps because AMD doesn't distinguish
-             * between the two? Hence the 'else' with blocking-by-MovSS taking priority
-             * since it blocks more. Nested Ubuntu running inside a Hyper-V enabled
+             * We must ensure only one of these bits is set.
+             * Our emulation can have both set (perhaps because AMD doesn't distinguish
+             * between the two?). Hence, the 'else' with blocking-by-MovSS taking priority
+             * since it blocks more. Nested Ubuntu 22.04.2 running inside a Hyper-V enabled
              * Windows Server 2008 R2 guest runs into this issue.
              *
              * See Intel spec. 26.3.1.5 "Checks on Guest Non-Register State".
@@ -3685,7 +3685,7 @@ static VBOXSTRICTRC iemVmxVmexitExtInt(PVMCPUCC pVCpu, uint8_t uVector, bool fIn
  * @param   uVector         The external interrupt vector (pass 0 if the external
  *                          interrupt is still pending).
  * @param   fIntPending     Whether the external interrupt is pending or
- *                          acknowdledged in the interrupt controller.
+ *                          acknowledged in the interrupt controller.
  * @thread  EMT(pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitExtInt(PVMCPUCC pVCpu, uint8_t uVector, bool fIntPending)
@@ -3997,7 +3997,7 @@ static VBOXSTRICTRC iemVmxVmexitEptViolation(PVMCPUCC pVCpu, uint32_t fAccess, u
     /*
      * If the linear address isn't valid (can happen when loading PDPTEs
      * as part of MOV CR execution) the linear address field is undefined.
-     * While we can leave it this way, it's preferrable to zero it for consistency.
+     * While we can leave it this way, it's preferable to zero it for consistency.
      */
     Assert(fIsLinearAddrValid || GCPtrAddr == 0);
 
