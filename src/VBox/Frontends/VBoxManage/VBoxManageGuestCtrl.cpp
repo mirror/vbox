@@ -2536,7 +2536,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleFsInfo(PGCTLCMDCTX pCtx, int argc, cha
                      cwSizeAvail, cbTotalFree,                                  /* Available */
                      cwUsePercent - 1 /* For percent sign */, uPercentUsed,     /* Percent */
                      cwPathSpacing, "",
-                     "-");                                    /* Path */
+                     "-");                                                      /* Path */
         }
         RTPrintf("\n");
     }
