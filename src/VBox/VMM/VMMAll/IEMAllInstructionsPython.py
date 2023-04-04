@@ -528,6 +528,7 @@ g_kdCpuIdFlags = {
 };
 
 ## \@ophints values.
+# pylint: disable=line-too-long
 g_kdHints = {
     'invalid':                   'DISOPTYPE_INVALID',                   ##<
     'harmless':                  'DISOPTYPE_HARMLESS',                  ##<
@@ -567,6 +568,7 @@ g_kdHints = {
     'vex_v_zero':            '',                                        ##< VEX.V must be 0. (generate sub-table?)
     'lock_allowed':          '',                                        ##< Lock prefix allowed.
 };
+# pylint: enable=line-too-long
 
 ## \@opxcpttype values (see SDMv2 2.4, 2.7).
 g_kdXcptTypes = {
@@ -1740,6 +1742,34 @@ g_dInstructionMapsByIemName = { oMap.sIemName: oMap for oMap in g_aoInstructionM
 
 
 #
+# Decoder functions.
+#
+
+class DecoderFunction(object):
+    """
+    Decoder function.
+
+    This is mainly for searching for scoping searches for variables used in
+    microcode blocks.
+    """
+    def __init__(self, sSrcFile, iBeginLine, sName, asDefArgs):
+        self.sName        = sName;                  ##< The function name.
+        self.asDefArgs    = asDefArgs;              ##< The FNIEMOP*DEF/STUB* macro argument list, 0th element is the macro name.
+        self.sSrcFile     = sSrcFile;               ##< The source file the function is defined in.
+        self.iBeginLine   = iBeginLine;             ##< The start line.
+        self.iEndLine     = -1;                     ##< The line the function (probably) ends on.
+        self.asLines      = [] # type: list(str)    ##< The raw lines the function is made up of.
+
+    def complete(self, iEndLine, asLines):
+        """
+        Completes the function.
+        """
+        assert self.iEndLine == -1;
+        self.iEndLine     = iEndLine;
+        self.asLines      = asLines;
+
+
+#
 # "Microcode" statements and blocks
 #
 
@@ -1886,13 +1916,14 @@ class McBlock(object):
     Microcode block (IEM_MC_BEGIN ... IEM_MC_END).
     """
 
-    def __init__(self, sSrcFile, iBeginLine, offBeginLine, sFunction, iInFunction, cchIndent = None):
+    def __init__(self, sSrcFile, iBeginLine, offBeginLine, oFunction, iInFunction, cchIndent = None):
         self.sSrcFile     = sSrcFile;                           ##< The source file containing the block.
         self.iBeginLine   = iBeginLine;                         ##< The line with the IEM_MC_BEGIN statement.
         self.offBeginLine = offBeginLine;                       ##< The offset of the IEM_MC_BEGIN statement within the line.
         self.iEndLine     = -1;                                 ##< The line with the IEM_MC_END statement.
         self.offEndLine   = 0;                                  ##< The offset of the IEM_MC_END statement within the line.
-        self.sFunction    = sFunction;                          ##< The function the block resides in.
+        self.oFunction    = oFunction;                          ##< The function the block resides in.
+        self.sFunction    = oFunction.sName;                    ##< The name of the function the block resides in. DEPRECATED.
         self.iInFunction  = iInFunction;                        ##< The block number wihtin the function.
         self.cchIndent    = cchIndent if cchIndent else offBeginLine;
         self.asLines      = []              # type: list(str)   ##< The raw lines the block is made up of.
@@ -2859,7 +2890,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         self.sComment       = '';
         self.iCommentLine   = 0;
         self.aoCurInstrs    = []    # type: list(Instruction)
-        self.sCurFunction   = None  # type: str
+        self.oCurFunction   = None  # type: DecoderFunction
         self.iMcBlockInFunc = 0;
         self.oCurMcBlock    = None  # type: McBlock
         self.dMacros        = {}    # type: Dict[str,SimpleParser.Macro]
@@ -3251,8 +3282,10 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         self.sComment     = '';
         self.aoCurInstrs  = [];
         if fEndOfFunction:
-            #self.debug('%s: sCurFunction=None' % (self.iLine, ));
-            self.sCurFunction   = None;
+            #self.debug('%s: oCurFunction=None' % (self.iLine, ));
+            if self.oCurFunction:
+                self.oCurFunction.complete(self.iLine, self.asLines[self.oCurFunction.iBeginLine - 1 : self.iLine]);
+            self.oCurFunction   = None;
             self.iMcBlockInFunc = 0;
         return True;
 
@@ -4509,7 +4542,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
             #self.debug('%s<eos>' % (sCode,));
 
         # Check preconditions.
-        if not self.sCurFunction:
+        if not self.oCurFunction:
             self.raiseError('IEM_MC_BEGIN w/o current function (%s)' % (sCode,));
         if self.oCurMcBlock:
             self.raiseError('IEM_MC_BEGIN before IEM_MC_END.  Previous IEM_MC_BEGIN at line %u' % (self.oCurMcBlock.iBeginLine,));
@@ -4519,11 +4552,11 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         offPrevNewline = sCode.rfind('\n', 0, offBeginStatementInCodeStr);
         if offPrevNewline >= 0:
             cchIndent -= offPrevNewline + 1;
-        #self.debug('cchIndent=%s offPrevNewline=%s sFunc=%s' % (cchIndent, offPrevNewline, self.sCurFunction));
+        #self.debug('cchIndent=%s offPrevNewline=%s sFunc=%s' % (cchIndent, offPrevNewline, self.oCurFunction.sName));
 
         # Start a new block.
         self.oCurMcBlock = McBlock(self.sSrcFile, self.iLine, offBeginStatementInLine,
-                                   self.sCurFunction, self.iMcBlockInFunc, cchIndent);
+                                   self.oCurFunction, self.iMcBlockInFunc, cchIndent);
         g_aoMcBlocks.append(self.oCurMcBlock);
         self.cTotalMcBlocks += 1;
         self.iMcBlockInFunc += 1;
@@ -4571,6 +4604,22 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         self.oCurMcBlock = None;
         return True;
 
+    def workerStartFunction(self, asArgs):
+        """
+        Deals with the start of a decoder function.
+
+        These are all defined using one of the FNIEMOP*_DEF* and FNIEMOP_*STUB*
+        macros, so we get a argument list for these where the 0th argument is the
+        macro name.
+        """
+        # Complete any existing function.
+        if self.oCurFunction:
+            self.oCurFunction.complete(self.iLine - 1, self.asLines[self.oCurFunction.iBeginLine - 1 : self.iLine - 1]);
+
+        # Create the new function.
+        self.oCurFunction = DecoderFunction(self.sSrcFile, self.iLine, asArgs[1], asArgs);
+        return True;
+
     def checkCodeForMacro(self, sCode, offLine):
         """
         Checks code for relevant macro invocation.
@@ -4589,8 +4638,8 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
                                                              'FNIEMOP_UD_STUB',
                                                              'FNIEMOP_UD_STUB_1' ]);
             if asArgs is not None:
-                self.sCurFunction = asArgs[1];
-                #self.debug('%s: sCurFunction=%s' % (self.iLine, self.sCurFunction,));
+                self.workerStartFunction(asArgs);
+                #self.debug('%s: oCurFunction=%s' % (self.iLine, self.oCurFunction.sName,));
 
                 if not self.aoCurInstrs:
                     self.addInstruction();
@@ -4611,8 +4660,8 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
                                                            [ 'FNIEMOP_DEF_1',
                                                              'FNIEMOP_DEF_2', ]);
             if asArgs is not None:
-                self.sCurFunction = asArgs[1];
-                #self.debug('%s: sCurFunction=%s (%s)' % (self.iLine, self.sCurFunction, asArgs[0]));
+                self.workerStartFunction(asArgs);
+                #self.debug('%s: oCurFunction=%s (%s)' % (self.iLine, self.oCurFunction.sName, asArgs[0]));
                 return True;
 
             # IEMOP_HLP_DONE_VEX_DECODING_*

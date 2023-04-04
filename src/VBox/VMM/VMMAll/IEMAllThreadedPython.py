@@ -37,6 +37,7 @@ __version__ = "$Revision$"
 import copy;
 import datetime;
 import os;
+import re;
 import sys;
 import argparse;
 
@@ -219,6 +220,57 @@ class ThreadedFunctionVariation(object):
             return 'uint8_t';
 
         self.raiseProblem('Unknown reference: %s' % (sRef,));
+        return None; # Shut up pylint 2.16.2.
+
+    def analyzeCallToType(self, sFnRef):
+        """
+        Determins the type of an indirect function call.
+        """
+        assert sFnRef[0] == 'p';
+
+        #
+        # Simple?
+        #
+        if sFnRef.find('-') < 0:
+            oDecoderFunction = self.oParent.oMcBlock.oFunction;
+
+            # Try the argument list of the function defintion macro invocation first.
+            iArg = 2;
+            while iArg < len(oDecoderFunction.asDefArgs):
+                if sFnRef == oDecoderFunction.asDefArgs[iArg]:
+                    return oDecoderFunction.asDefArgs[iArg - 1];
+                iArg += 1;
+
+            # Then check out line that includes the word and looks like a variable declaration.
+            oRe = re.compile(' +(P[A-Z0-9_]+|const +IEMOP[A-Z0-9_]+ *[*]) +(const |) *' + sFnRef + ' *(;|=)');
+            for sLine in oDecoderFunction.asLines:
+                oMatch = oRe.match(sLine);
+                if oMatch:
+                    if not oMatch.group(1).startswith('const'):
+                        return oMatch.group(1);
+                    return 'PC' + oMatch.group(1)[len('const ') : -1].strip();
+
+        #
+        # Deal with the pImpl->pfnXxx:
+        #
+        elif sFnRef.startswith('pImpl->pfn'):
+            sMember   = sFnRef[len('pImpl->') : ];
+            sBaseType = self.analyzeCallToType('pImpl');
+            offBits   = sMember.rfind('U') + 1;
+            if sBaseType == 'PCIEMOPBINSIZES':          return 'PFNIEMAIMPLBIN'         + sMember[offBits:];
+            if sBaseType == 'PCIEMOPUNARYSIZES':        return 'PFNIEMAIMPLBIN'         + sMember[offBits:];
+            if sBaseType == 'PCIEMOPSHIFTSIZES':        return 'PFNIEMAIMPLSHIFT'       + sMember[offBits:];
+            if sBaseType == 'PCIEMOPSHIFTDBLSIZES':     return 'PFNIEMAIMPLSHIFTDBLU'   + sMember[offBits:];
+            if sBaseType == 'PCIEMOPMULDIVSIZES':       return 'PFNIEMAIMPLMULDIVU'     + sMember[offBits:];
+            if sBaseType == 'PCIEMOPMEDIAF3':           return 'PFNIEMAIMPLMEDIAF3U'    + sMember[offBits:];
+            if sBaseType == 'PCIEMOPMEDIAOPTF3':        return 'PFNIEMAIMPLMEDIAOPTF3U' + sMember[offBits:];
+            if sBaseType == 'PCIEMOPMEDIAOPTF2':        return 'PFNIEMAIMPLMEDIAOPTF2U' + sMember[offBits:];
+            if sBaseType == 'PCIEMOPMEDIAOPTF3IMM8':    return 'PFNIEMAIMPLMEDIAOPTF3U' + sMember[offBits:] + 'IMM8';
+            if sBaseType == 'PCIEMOPBLENDOP':           return 'PFNIEMAIMPLAVXBLENDU'   + sMember[offBits:];
+
+            self.raiseProblem('Unknown call reference: %s::%s (%s)' % (sBaseType, sMember, sFnRef,));
+
+        self.raiseProblem('Unknown call reference: %s' % (sFnRef,));
         return None; # Shut up pylint 2.16.2.
 
     def analyzeMorphStmtForThreaded(self, aoStmts, iParamRef = 0):
@@ -429,7 +481,7 @@ class ThreadedFunctionVariation(object):
             # function pointer or function table pointer for it to work.
             if isinstance(oStmt, iai.McStmtCall):
                 if oStmt.sFn[0] == 'p':
-                    self.aoParamRefs.append(ThreadedParamRef(oStmt.sFn, 'uintptr_t', oStmt, oStmt.idxFn));
+                    self.aoParamRefs.append(ThreadedParamRef(oStmt.sFn, self.analyzeCallToType(oStmt.sFn), oStmt, oStmt.idxFn));
                 elif (    oStmt.sFn[0] != 'i'
                       and not oStmt.sFn.startswith('IEMTARGETCPU_EFL_BEHAVIOR_SELECT')
                       and not oStmt.sFn.startswith('IEM_SELECT_HOST_OR_FALLBACK') ):
@@ -587,7 +639,8 @@ class ThreadedFunction(object):
     @staticmethod
     def dummyInstance():
         """ Gets a dummy instance. """
-        return ThreadedFunction(iai.McBlock('null', 999999999, 999999999, 'nil', 999999999));
+        return ThreadedFunction(iai.McBlock('null', 999999999, 999999999,
+                                            iai.DecoderFunction('null', 999999999, 'nil', ('','')), 999999999));
 
     def raiseProblem(self, sMessage):
         """ Raises a problem. """
