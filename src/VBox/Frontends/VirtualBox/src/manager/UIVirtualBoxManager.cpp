@@ -3432,9 +3432,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexMN_M_Group_S_New:
         case UIActionIndexMN_M_Group_S_Add:
         {
-            return !isGroupSavingInProgress() &&
-                   (isSingleLocalGroupSelected() ||
-                    isSingleCloudProfileGroupSelected());
+            return !isGroupSavingInProgress();
         }
         case UIActionIndexMN_M_Group_S_Sort:
         {
