@@ -4171,6 +4171,12 @@ AuthResult AUTHCALL AuthEntry(
           <link linkend="IGuestSession__processCreateEx">IGuestSession::processCreateEx</link> for more information.</para>
         </listitem>
 
+        <listitem><para>The APIs <link linkend="IGuestSession__fsQueryInfo">IGuestSession::fsQueryInfo</link> and
+          <link linkend="IGuestSession__fsQueryFreeSpace">IGuestSession::fsQueryFreeSpace</link> are now implemented.
+          See <link linkend="IGuestSession__fsQueryInfo">IGuestSession::fsQueryInfo</link> and
+          <link linkend="IGuestSession__fsQueryFreeSpace">IGuestSession::fsQueryFreeSpace</link> for more information.</para>
+        </listitem>
+
       </itemizedlist>
     </sect1>
 
