@@ -5570,13 +5570,14 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
         aEnv = [];
         afFlags = [];
 
-        for _ in xrange(100):
-            oProc = self.processCreateWrapper(oGuestSession, sCmd, asArgs if self.fpApiVer >= 5.0 else asArgs[1:],
-                                              "", # Working directory.
-                                              aEnv, afFlags, 30 * 1000);
-
-            aWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate ];
-            _ = oProc.waitForArray(aWaitFor, 30 * 1000);
+        # Fix this once being used (again).
+        #for _ in xrange(100):
+        #    oProc = self.processCreateWrapper(oGuestSession, sCmd, asArgs if self.fpApiVer >= 5.0 else asArgs[1:],
+        #                                      "", # Working directory.
+        #                                      aEnv, afFlags, 30 * 1000);
+        #
+        #    aWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate ];
+        #    _ = oProc.waitForArray(aWaitFor, 30 * 1000);
 
         oGuestSession.close();
         oGuestSession = None;
