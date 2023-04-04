@@ -2319,7 +2319,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                       % (oTest.sCmd, oTest.sCwd, oTest.afFlags, oTest.timeoutMS, limitString(oTest.asArgs),
                          limitString(oTest.aEnv),));
         try:
-            if self.oTstDrv.fpApiVer >= 7.1:
+            if self.oTstDrv.fpApiVer >= 7.1 and self.oTstDrv.uRevision >= 156485:
                 oProcess = oGuestSession.processCreate(oTest.sCmd,
                                                        oTest.asArgs if self.oTstDrv.fpApiVer >= 5.0 else oTest.asArgs[1:],
                                                        oTest.sCwd,
@@ -2888,7 +2888,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         for i in xrange(0, cProcsPerGroup):
             try:
                 reporter.log2('Starting stale process #%d...' % (i));
-                if self.oTstDrv.fpApiVer >= 7.1:
+                if self.oTstDrv.fpApiVer >= 7.1 and self.oTstDrv.uRevision >= 156485:
                     oGuestSession.processCreate(sShell,
                                                 asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
                                                 "", # Working directory.
@@ -2929,7 +2929,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             for i in xrange(0, cProcsPerGroup):
                 try:
                     reporter.log2('Starting non-stale process #%d...' % (i));
-                    if self.oTstDrv.fpApiVer >= 7.1:
+                    if self.oTstDrv.fpApiVer >= 7.1 and self.oTstDrv.uRevision >= 156485:
                         oCurProc = oGuestSession.processCreate(sShell, asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
                                                                "",         # Working directory.
                                                                [], [], 0); # Infinite timeout.
@@ -2987,7 +2987,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             for i in xrange(0, cProcsPerGroup):
                 try:
                     reporter.log2('Starting blocking process #%d...' % (i));
-                    if self.oTstDrv.fpApiVer >= 7.1:
+                    if self.oTstDrv.fpApiVer >= 7.1 and self.oTstDrv.uRevision >= 156485:
                         oCurProc = oGuestSession.processCreate(sCmd, asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
                                                                "", # Working directory.
                                                                [],  [], 30 * 1000);
@@ -3423,7 +3423,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         aEnv    = [];
         afFlags = [];
         try:
-            if self.oTstDrv.fpApiVer >= 7.1:
+            if self.oTstDrv.fpApiVer >= 7.1 and self.oTstDrv.uRevision >= 156485:
                 oGuestProcess = oGuestSession.processCreate(sImage,
                                                             asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
                                                             "", # Working directory.
@@ -3546,7 +3546,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         fRc = True;
         try:
-            if self.oTstDrv.fpApiVer >= 7.1:
+            if self.oTstDrv.fpApiVer >= 7.1 and self.oTstDrv.uRevision >= 156485:
                 oCurProcess = oGuestSession.processCreate(sShell, [sShell,] if self.oTstDrv.fpApiVer >= 5.0 else [],
                                                           "", # Working directory.
                                                           [], [], 30 * 1000);
@@ -3589,7 +3589,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # because it ran out of execution time (3 seconds).
             #
             try:
-                if self.oTstDrv.fpApiVer >= 7.1:
+                if self.oTstDrv.fpApiVer >= 7.1 and self.oTstDrv.uRevision >= 156485:
                     oCurProcess = oGuestSession.processCreate(sShell, [sShell,] if self.oTstDrv.fpApiVer >= 5.0 else [],
                                                               "", # Working directory.
                                                               [], [], 3 * 1000);
@@ -3915,7 +3915,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 break;
             fUseDirList = False;
             cEntriesPerRead = random.randrange(1, 32768);
-            if self.oTstDrv.fpApiVer >= 7.1: # Listing directories only is available for >= VBox 7.1.
+            if self.oTstDrv.fpApiVer >= 7.1 and self.oTstDrv.uRevision >= 156485:
+                 # Listing directories only is available for >= VBox 7.1.
                 fUseDirList = random.choice( [True, False] );
             (fRc2, cDirs, cFiles, cOthers) = self.gctrlReadDirTree(oCurTest, oCurGuestSession, oCurRes.fRc,
                                                                    fUseDirList, cEntriesPerRead);
@@ -3964,7 +3965,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     reporter.log('Checking "%s" ...' % (oDir.sPath,));
                     fUseDirList = False;
                     cEntriesPerRead = random.randrange(1, 32768);
-                    if self.oTstDrv.fpApiVer >= 7.1: # Listing directories only is available for >= VBox 7.1.
+                    if self.oTstDrv.fpApiVer >= 7.1 and self.oTstDrv.uRevision >= 156485:
+                        # Listing directories only is available for >= VBox 7.1.
                         fUseDirList = random.choice( [True, False] );
                     fRc = self.gctrlReadDirTree2(oCurGuestSession, oDir, fUseDirList, cEntriesPerRead) and fRc;
                 fRc = oCurTest.closeSession() and fRc;
