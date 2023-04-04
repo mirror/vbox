@@ -54,6 +54,9 @@
 <!-- Render the syntax diagram more as text than as proper markup. -->
 <xsl:param name="g_fRenderSyntaxAsText">true</xsl:param>
 
+<!-- Convert to reference if true, to topic structure if not.  -->
+<xsl:param name="g_fToReference">false</xsl:param>
+
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
   global XSLT variables
@@ -77,10 +80,27 @@
 <!-- Rename refentry to reference.
      Also we need to wrap the refsync and refsect1 elements in a refbody. -->
 <xsl:template match="refentry">
-  <xsl:text disable-output-escaping='yes'>&lt;!DOCTYPE reference PUBLIC "-//OASIS//DTD DITA Reference//EN" "reference.dtd"&gt;
-</xsl:text>
+  <xsl:variable name="sRootElement">
+    <xsl:choose>
+      <xsl:when test="$g_fToReference = 'true'">reference</xsl:when>
+      <xsl:otherwise>topic</xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
 
-  <xsl:element name="reference">
+  <!-- !DOCTYPE -->
+  <xsl:choose>
+    <xsl:when test="$g_fToReference = 'true'">
+      <xsl:text disable-output-escaping='yes'>&lt;!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd"&gt;
+</xsl:text>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:text disable-output-escaping='yes'>&lt;!DOCTYPE reference PUBLIC "-//OASIS//DTD DITA Reference//EN" "reference.dtd"&gt;
+</xsl:text>
+    </xsl:otherwise>
+  </xsl:choose>
+
+  <!-- Root element -->
+  <xsl:element name="{$sRootElement}">
     <xsl:if test="not(@id)">
       <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>refentry must have an id attribute!</xsl:message>
     </xsl:if>
@@ -102,10 +122,18 @@
       </xsl:element>
     </xsl:if>
 
-    <!-- Put everything else side a refbody element -->
-    <xsl:element name="refbody">
-      <xsl:apply-templates />
-    </xsl:element>
+    <!-- Put everything else side a refbody element if in 'reference' mode, otherwise no body. -->
+    <xsl:choose>
+      <xsl:when test="$g_fToReference = 'true'">
+        <xsl:element name="refbody">
+          <xsl:apply-templates />
+        </xsl:element>
+      </xsl:when>
+
+      <xsl:otherwise>
+        <xsl:apply-templates />
+      </xsl:otherwise>
+    </xsl:choose>
 
   </xsl:element>
 </xsl:template>
@@ -124,50 +152,150 @@
   <xsl:if test="name(*[1]) != 'cmdsynopsis'"><xsl:message terminate="yes">Expected refsynopsisdiv to start with cmdsynopsis</xsl:message></xsl:if>
   <xsl:if test="title"><xsl:message terminate="yes">No title element supported in refsynopsisdiv</xsl:message></xsl:if>
 
-  <xsl:element name="refsyn">
-    <xsl:attribute name="rev">refsynopsisdiv</xsl:attribute>
-    <xsl:element name="title">
-      <xsl:text>Synopsis</xsl:text>
-    </xsl:element>
-    <xsl:apply-templates />
-  </xsl:element>
+  <xsl:choose>
+    <xsl:when test="$g_fToReference = 'true'">
+      <xsl:element name="refsyn">
+        <xsl:attribute name="rev">refsynopsisdiv</xsl:attribute>
+        <xsl:element name="title">
+          <xsl:text>Synopsis</xsl:text>
+        </xsl:element>
+        <xsl:apply-templates />
+      </xsl:element>
+    </xsl:when>
 
+    <xsl:otherwise>
+      <xsl:element name="topic">
+        <xsl:attribute name="rev">refsynopsisdiv</xsl:attribute>
+        <xsl:attribute name="toc">no</xsl:attribute>
+        <xsl:element name="title">
+          <xsl:text>Synopsis</xsl:text>
+        </xsl:element>
+
+        <xsl:element name="body">
+          <xsl:apply-templates />
+        </xsl:element>
+      </xsl:element>
+    </xsl:otherwise>
+
+  </xsl:choose>
 </xsl:template>
 
-<!-- refsect1 -> section -->
+<!-- refsect1 -> section or topic -->
 <xsl:template match="refsect1">
   <xsl:if test="not(title)"><xsl:message terminate="yes">refsect1 requires title</xsl:message></xsl:if>
-  <xsl:element name="section">
-    <xsl:attribute name="rev">refsect1</xsl:attribute>
-    <xsl:if test="@id">
-      <xsl:attribute name="id"><xsl:value-of select="@id"/></xsl:attribute>
-    </xsl:if>
-    <xsl:apply-templates />
-  </xsl:element>
+
+  <xsl:choose>
+    <xsl:when test="$g_fToReference = 'true'">
+      <xsl:element name="section">
+        <xsl:attribute name="rev">refsect1</xsl:attribute>
+        <xsl:if test="@id">
+          <xsl:attribute name="id"><xsl:value-of select="@id"/></xsl:attribute>
+        </xsl:if>
+        <xsl:apply-templates />
+      </xsl:element>
+    </xsl:when>
+
+    <xsl:otherwise>
+      <xsl:element name="topic">
+        <xsl:attribute name="rev">refsect1</xsl:attribute>
+        <xsl:attribute name="toc">no</xsl:attribute>
+        <xsl:attribute name="id">
+          <xsl:choose>
+            <xsl:when test="@id"><xsl:value-of select="@id"/></xsl:when>
+            <xsl:otherwise><xsl:value-of select="generate-id()"/></xsl:otherwise>
+          </xsl:choose>
+        </xsl:attribute>
+
+        <xsl:apply-templates select="title"/>
+
+        <!-- Must put cmdsynopsis in a paragraph or it'll get too close to any preceeding section title -->
+        <xsl:element name="body">
+          <xsl:for-each select="node()">
+            <xsl:choose>
+              <xsl:when test="self::title"/>
+              <xsl:when test="self::refentry2"/>
+              <xsl:when test="self::cmdsynopsis">
+                <xsl:element name="p">
+                  <xsl:attribute name="rev">refsect1/cmdsynopsis</xsl:attribute>
+                  <xsl:apply-templates select="." />
+                </xsl:element>
+              </xsl:when>
+              <xsl:otherwise>
+                <xsl:apply-templates select="." />
+              </xsl:otherwise>
+            </xsl:choose>
+          </xsl:for-each>
+
+          <!-- xsl:apply-templates select="node()[not(self::title) and not(self::refentry2)]" / -->
+        </xsl:element>
+
+        <xsl:apply-templates select="refentry2"/>
+      </xsl:element>
+    </xsl:otherwise>
+
+  </xsl:choose>
 </xsl:template>
 
-<!-- refsect2 -> sectiondiv. -->
+<!-- refsect2 -> sectiondiv or topic. -->
 <xsl:template match="refsect2">
   <xsl:if test="not(title)"><xsl:message terminate="yes">refsect2 requires title</xsl:message></xsl:if>
-  <xsl:element name="sectiondiv">
-    <xsl:attribute name="rev">refsect2</xsl:attribute>
-    <xsl:attribute name="outputclass">refsect2</xsl:attribute> <!-- how to make xhtml pass these thru... -->
-    <xsl:if test="@id">
-      <xsl:attribute name="id"><xsl:value-of select="@id"/></xsl:attribute>
-    </xsl:if>
 
-    <xsl:apply-templates />
+  <xsl:choose>
+    <xsl:when test="$g_fToReference = 'true'">
+      <xsl:element name="sectiondiv">
+        <xsl:attribute name="rev">refsect2</xsl:attribute>
+        <xsl:attribute name="outputclass">refsect2</xsl:attribute> <!-- how to make xhtml pass these thru... -->
+        <xsl:if test="@id">
+          <xsl:attribute name="id"><xsl:value-of select="@id"/></xsl:attribute>
+        </xsl:if>
 
-  </xsl:element>
-</xsl:template>
+        <xsl:apply-templates />
 
-<!-- refsect2/title -> b -->
-<xsl:template match="refsect2/title">
-  <xsl:element name="b">
-    <xsl:attribute name="rev">refsect2/title</xsl:attribute>
-    <xsl:attribute name="outputclass">refsect2title</xsl:attribute> <!-- how to make xhtml pass these thru... -->
-    <xsl:apply-templates />
-  </xsl:element>
+      </xsl:element>
+    </xsl:when>
+
+    <xsl:otherwise>
+      <xsl:element name="topic">
+        <xsl:attribute name="rev">refsect2</xsl:attribute>
+        <xsl:attribute name="toc">no</xsl:attribute>
+        <xsl:attribute name="id">
+          <xsl:choose>
+            <xsl:when test="@id"><xsl:value-of select="@id"/></xsl:when>
+            <xsl:otherwise><xsl:value-of select="generate-id()"/></xsl:otherwise>
+          </xsl:choose>
+        </xsl:attribute>
+
+        <xsl:apply-templates select="title"/>
+
+        <xsl:element name="body">
+          <xsl:for-each select="node()">
+            <xsl:choose>
+              <xsl:when test="self::title"/>
+              <xsl:when test="self::refentry3"/>
+              <xsl:when test="self::cmdsynopsis">
+                <xsl:element name="p">
+                  <xsl:attribute name="rev">refsect2/cmdsynopsis</xsl:attribute>
+                  <xsl:apply-templates select="." />
+                </xsl:element>
+                <xsl:element name="p">
+                  <xsl:attribute name="rev">space hack</xsl:attribute>
+                  <xsl:text> </xsl:text>
+                </xsl:element>
+              </xsl:when>
+              <xsl:otherwise>
+                <xsl:apply-templates select="." />
+              </xsl:otherwise>
+            </xsl:choose>
+          </xsl:for-each>
+
+          <!-- xsl:apply-templates select="node()[not(self::title) and not(self::refentry3)]"/ -->
+        </xsl:element>
+
+        <xsl:apply-templates select="refentry3"/>
+      </xsl:element>
+    </xsl:otherwise>
+
+  </xsl:choose>
 </xsl:template>
 
 <!-- refsect1/title -> title -->
@@ -175,6 +303,26 @@
   <xsl:copy>
     <xsl:apply-templates />
   </xsl:copy>
+</xsl:template>
+
+<!-- refsect2/title -> b or title -->
+<xsl:template match="refsect2/title">
+  <xsl:choose>
+    <xsl:when test="$g_fToReference = 'true'">
+      <xsl:element name="b">
+        <xsl:attribute name="rev">refsect2/title</xsl:attribute>
+        <xsl:attribute name="outputclass">refsect2title</xsl:attribute> <!-- how to make xhtml pass these thru... -->
+        <xsl:apply-templates />
+      </xsl:element>
+    </xsl:when>
+
+    <xsl:otherwise>
+      <xsl:copy>
+        <xsl:apply-templates />
+      </xsl:copy>
+    </xsl:otherwise>
+
+  </xsl:choose>
 </xsl:template>
 
 <!-- para -> p -->
@@ -619,7 +767,7 @@
 </xsl:template>
 
 <!-- replaceable/text() in a cmdsynopsis should have hypens replaced. -->
-<xsl:template match="cmdsynopsis/*/replaceable/text()" >
+<xsl:template match="replaceable/text()[ancestor::cmdsynopsis]" >
   <xsl:call-template name="emit-text-with-replacements"/>
 </xsl:template>
 

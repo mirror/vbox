@@ -214,9 +214,11 @@ style:
         font-style:     italic
 
 
+    #
     # The following properties requires an pdf-generator git newer than February 2023,
     # or version 0.6.2+ (unreleased).
     #
+
     # We need to specify the font for each of these elements, so we get a monospace
     # font capable of doing non-breaking hypen glyps. The default "Courier" does do
     # that, at least not on Windows.
@@ -243,4 +245,9 @@ style:
         keep-together.within-page: always
     var:
         font-family:        $pdf2-font-monospaced
+
+
+    # Prevent a parameter and it's definition from ending up on different pages.
+    plentry:
+        keep-together.within-page: always
 
