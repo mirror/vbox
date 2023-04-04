@@ -5565,10 +5565,10 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
         aWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
         _ = oGuestSession.waitForArray(aWaitFor, 30 * 1000);
 
-        sCmd = self.getGuestSystemShell(oTestVm);
-        asArgs = [ sCmd, '/C', 'dir', '/S', 'c:\\windows' ];
-        aEnv = [];
-        afFlags = [];
+        #sCmd = self.getGuestSystemShell(oTestVm);
+        #asArgs = [ sCmd, '/C', 'dir', '/S', 'c:\\windows' ];
+        #aEnv = [];
+        #afFlags = [];
 
         # Fix this once being used (again).
         #for _ in xrange(100):
