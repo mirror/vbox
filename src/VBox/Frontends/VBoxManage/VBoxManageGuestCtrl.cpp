@@ -2440,16 +2440,19 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleFsInfo(PGCTLCMDCTX pCtx, int argc, cha
         return rcExit;
 
     /* Stay within 80 characters width by default. */
-    unsigned const cwFileSys     = 12;
-    unsigned const cwSize        = 16;
+    unsigned const cwFileSys     = 10;
+    /* When displaying human-readable sizes, we need less space for a column. */
+    unsigned const cwSize        = fHumanReadable ? 10 : 14;
     unsigned const cwSizeTotal   = cwSize;
     unsigned const cwSizeUsed    = cwSize;
     unsigned const cwSizeAvail   = cwSize;
-    unsigned const cwPathSpacing = 6; /* Spacing between last value and actual path. */
+    unsigned const cwUsePercent  = 6;
+    unsigned const cwPathSpacing = 3; /* Spacing between last value and actual path. */
 
-    RTPrintf("%-*s%*s%*s%*s%*s%s\n",
+    RTPrintf("%-*s%*s%*s%*s%*s%*s%s\n",
              cwFileSys, GuestCtrl::tr("Filesystem"),
-             cwSizeTotal, GuestCtrl::tr("Total"), cwSizeUsed, GuestCtrl::tr("Used"), cwSizeAvail, GuestCtrl::tr("Available"),
+             cwSizeTotal, GuestCtrl::tr("Total"), cwSizeUsed, GuestCtrl::tr("Used"), cwSizeAvail, GuestCtrl::tr("Avail"),
+             cwUsePercent, GuestCtrl::tr("Use%"),
              cwPathSpacing, "",
              GuestCtrl::tr("Path"));
 
@@ -2470,36 +2473,38 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleFsInfo(PGCTLCMDCTX pCtx, int argc, cha
             Bstr bstr;
             CHECK_ERROR2I(pFsInfo, COMGETTER(Type)(bstr.asOutParam()));
             /** @todo Add label and mount point once we return this. */
-            LONG64 u64, u64_2;
-            CHECK_ERROR2I(pFsInfo, COMGETTER(TotalSize)(&u64));
-            CHECK_ERROR2I(pFsInfo, COMGETTER(FreeSize)(&u64_2));
+            LONG64 cbTotal, cbFree;
+            CHECK_ERROR2I(pFsInfo, COMGETTER(TotalSize)(&cbTotal));
+            CHECK_ERROR2I(pFsInfo, COMGETTER(FreeSize)(&cbFree));
+            uint8_t const uPercentUsed = (cbTotal - cbFree) * 100 / cbTotal;
             if (fHumanReadable)
             {
-                RTPrintf("%-*ls%*Rhcb%*Rhcb%*Rhcb%*s%s",
-                         cwFileSys, bstr.raw(),               /* Filesystem */
-                         cwSizeTotal, u64,                    /* Total */
-                         cwSizeUsed,  u64 - u64_2,            /* Used */
-                         cwSizeAvail, u64_2,                  /* Available */
+                RTPrintf("%-*ls%*Rhcb%*Rhcb%*Rhcb%*RU8%%%*s%s",
+                         cwFileSys, bstr.raw(),                                 /* Filesystem */
+                         cwSizeTotal, cbTotal,                                  /* Total */
+                         cwSizeUsed,  cbTotal - cbFree,                         /* Used */
+                         cwSizeAvail, cbFree,                                   /* Available */
+                         cwUsePercent - 1 /* For percent sign */, uPercentUsed, /* Percent */
                          cwPathSpacing, "",
-                         ValueUnion.psz);                     /* Path */
+                         ValueUnion.psz);                                       /* Path */
             }
             else
             {
-                RTPrintf("%-*ls%*RU64%*RU64%*RU64%*s%s",
-                         cwFileSys, bstr.raw(),               /* Filesystem */
-                         cwSizeTotal, u64,                    /* Total */
-                         cwSizeUsed,  u64 - u64_2,            /* Used */
-                         cwSizeAvail, u64_2,                  /* Available */
+                RTPrintf("%-*ls%*RU64%*RU64%*RU64%*RU8%%%*s%s",
+                         cwFileSys, bstr.raw(),                                 /* Filesystem */
+                         cwSizeTotal, cbTotal,                                  /* Total */
+                         cwSizeUsed,  cbTotal - cbFree,                         /* Used */
+                         cwSizeAvail, cbFree,                                   /* Available */
+                         cwUsePercent - 1 /* For percent sign */, uPercentUsed, /* Percent */
                          cwPathSpacing, "",
-                         ValueUnion.psz);                     /* Path */
+                         ValueUnion.psz);                                       /* Path */
             }
 
             if (fShowTotal)
             {
-                cbTotalSize += u64;
-                cbTotalFree += u64_2;
+                cbTotalSize += cbTotal;
+                cbTotalFree += cbFree;
             }
-
             RTPrintf("\n");
         }
 
@@ -2509,23 +2514,27 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleFsInfo(PGCTLCMDCTX pCtx, int argc, cha
 
     if (fShowTotal)
     {
+        uint8_t const uPercentUsed = (cbTotalSize - cbTotalFree) * 100 / cbTotalSize;
+
         if (fHumanReadable)
         {
-            RTPrintf("%-*s%*Rhcb%*Rhcb%*Rhcb%*s%s",
+            RTPrintf("%-*s%*Rhcb%*Rhcb%*Rhcb%*RU8%%%*s%s",
                      cwFileSys, "total",
-                     cwSizeTotal, cbTotalSize,                /* Total */
-                     cwSizeUsed,  cbTotalSize - cbTotalFree,  /* Used */
-                     cwSizeAvail, cbTotalFree,                /* Available */
+                     cwSizeTotal, cbTotalSize,                                  /* Total */
+                     cwSizeUsed,  cbTotalSize - cbTotalFree,                    /* Used */
+                     cwSizeAvail, cbTotalFree,                                  /* Available */
+                     cwUsePercent - 1 /* For percent sign */, uPercentUsed,     /* Percent */
                      cwPathSpacing, "",
-                     "-");                                    /* Path */
+                     "-");                                                      /* Path */
         }
         else
         {
-            RTPrintf("%-*s%*RU64%*RU64%*RU64%*s%s",
-                     cwFileSys, "total",                      /* Filesystem */
-                     cwSizeTotal, cbTotalSize,                /* Total */
-                     cwSizeUsed,  cbTotalSize - cbTotalFree,  /* Used */
-                     cwSizeAvail, cbTotalFree,                /* Available */
+            RTPrintf("%-*s%*RU64%*RU64%*RU64%*RU8%%%*s%s",
+                     cwFileSys, "total",                                        /* Filesystem */
+                     cwSizeTotal, cbTotalSize,                                  /* Total */
+                     cwSizeUsed,  cbTotalSize - cbTotalFree,                    /* Used */
+                     cwSizeAvail, cbTotalFree,                                  /* Available */
+                     cwUsePercent - 1 /* For percent sign */, uPercentUsed,     /* Percent */
                      cwPathSpacing, "",
                      "-");                                    /* Path */
         }
