@@ -43,6 +43,7 @@
 #include "UICloudNetworkingStuff.h"
 #include "UICommon.h"
 #include "UIEmptyFilePathSelector.h"
+#include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UINotificationCenter.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -396,20 +397,50 @@ void UIWizardExportAppFormat::refreshProfileCombo(QIComboBox *pCombo,
         /* Clear combo initially: */
         pCombo->clear();
 
+        /* Acquire restricted accounts: */
+        const QStringList restrictedProfiles = gEDataManager->cloudProfileManagerRestrictions();
+
         /* Iterate through existing profile names: */
+        QStringList allowedProfileNames;
+        QStringList restrictedProfileNames;
         foreach (const CCloudProfile &comProfile, listCloudProfiles(comProvider, pCenter))
         {
             /* Skip if we have nothing to populate (wtf happened?): */
             if (comProfile.isNull())
                 continue;
             /* Acquire profile name: */
-            QString strProfileName;
-            if (!cloudProfileName(comProfile, strProfileName, pCenter))
+            QString strCurrentProfileName;
+            if (!cloudProfileName(comProfile, strCurrentProfileName, pCenter))
                 continue;
 
+            /* Compose full profile name: */
+            const QString strFullProfileName = QString("/%1/%2").arg(strFormat).arg(strCurrentProfileName);
+            /* Append to appropriate list: */
+            if (restrictedProfiles.contains(strFullProfileName))
+                restrictedProfileNames.append(strCurrentProfileName);
+            else
+                allowedProfileNames.append(strCurrentProfileName);
+        }
+
+        /* Add allowed items: */
+        foreach (const QString &strAllowedProfileName, allowedProfileNames)
+        {
             /* Compose item, fill it's data: */
-            pCombo->addItem(strProfileName);
-            pCombo->setItemData(pCombo->count() - 1, strProfileName, ProfileData_Name);
+            pCombo->addItem(strAllowedProfileName);
+            pCombo->setItemData(pCombo->count() - 1, strAllowedProfileName, ProfileData_Name);
+            QFont fnt = pCombo->font();
+            fnt.setBold(true);
+            pCombo->setItemData(pCombo->count() - 1, fnt, Qt::FontRole);
+        }
+        /* Add restricted items: */
+        foreach (const QString &strRestrictedProfileName, restrictedProfileNames)
+        {
+            /* Compose item, fill it's data: */
+            pCombo->addItem(strRestrictedProfileName);
+            pCombo->setItemData(pCombo->count() - 1, strRestrictedProfileName, ProfileData_Name);
+            QBrush brsh;
+            brsh.setColor(Qt::gray);
+            pCombo->setItemData(pCombo->count() - 1, brsh, Qt::ForegroundRole);
         }
 
         /* Set previous/default item if possible: */
