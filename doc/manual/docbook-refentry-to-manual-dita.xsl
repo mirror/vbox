@@ -90,14 +90,14 @@
   <!-- !DOCTYPE -->
   <xsl:choose>
     <xsl:when test="$g_fToReference = 'true'">
-      <xsl:text disable-output-escaping='yes'>&lt;!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd"&gt;
-</xsl:text>
+      <xsl:text disable-output-escaping='yes'>&lt;!DOCTYPE reference PUBLIC "-//OASIS//DTD DITA Reference//EN" "reference.dtd"&gt;</xsl:text>
     </xsl:when>
     <xsl:otherwise>
-      <xsl:text disable-output-escaping='yes'>&lt;!DOCTYPE reference PUBLIC "-//OASIS//DTD DITA Reference//EN" "reference.dtd"&gt;
-</xsl:text>
+      <xsl:text disable-output-escaping='yes'>&lt;!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd"&gt;</xsl:text>
     </xsl:otherwise>
   </xsl:choose>
+  <xsl:text>
+</xsl:text>
 
   <!-- Root element -->
   <xsl:element name="{$sRootElement}">
@@ -166,7 +166,8 @@
     <xsl:otherwise>
       <xsl:element name="topic">
         <xsl:attribute name="rev">refsynopsisdiv</xsl:attribute>
-        <xsl:attribute name="toc">no</xsl:attribute>
+        <!-- <xsl:attribute name="toc">no</xsl:attribute> - topicref only. sigh -->
+        <xsl:attribute name="id"><xsl:value-of select="concat(../@id,'-synopsis')"/></xsl:attribute>
         <xsl:element name="title">
           <xsl:text>Synopsis</xsl:text>
         </xsl:element>
@@ -198,11 +199,11 @@
     <xsl:otherwise>
       <xsl:element name="topic">
         <xsl:attribute name="rev">refsect1</xsl:attribute>
-        <xsl:attribute name="toc">no</xsl:attribute>
+        <!-- <xsl:attribute name="toc">no</xsl:attribute> - topicref only. sigh -->
         <xsl:attribute name="id">
           <xsl:choose>
             <xsl:when test="@id"><xsl:value-of select="@id"/></xsl:when>
-            <xsl:otherwise><xsl:value-of select="generate-id()"/></xsl:otherwise>
+            <xsl:otherwise><xsl:value-of select="concat(generate-id(),'-',/@id)"/></xsl:otherwise>
           </xsl:choose>
         </xsl:attribute>
 
@@ -213,7 +214,7 @@
           <xsl:for-each select="node()">
             <xsl:choose>
               <xsl:when test="self::title"/>
-              <xsl:when test="self::refentry2"/>
+              <xsl:when test="self::refsect2"/>
               <xsl:when test="self::cmdsynopsis">
                 <xsl:element name="p">
                   <xsl:attribute name="rev">refsect1/cmdsynopsis</xsl:attribute>
@@ -225,11 +226,9 @@
               </xsl:otherwise>
             </xsl:choose>
           </xsl:for-each>
-
-          <!-- xsl:apply-templates select="node()[not(self::title) and not(self::refentry2)]" / -->
         </xsl:element>
 
-        <xsl:apply-templates select="refentry2"/>
+        <xsl:apply-templates select="refsect2"/>
       </xsl:element>
     </xsl:otherwise>
 
@@ -257,11 +256,11 @@
     <xsl:otherwise>
       <xsl:element name="topic">
         <xsl:attribute name="rev">refsect2</xsl:attribute>
-        <xsl:attribute name="toc">no</xsl:attribute>
+        <!-- <xsl:attribute name="toc">no</xsl:attribute> - topicref only. sigh -->
         <xsl:attribute name="id">
           <xsl:choose>
             <xsl:when test="@id"><xsl:value-of select="@id"/></xsl:when>
-            <xsl:otherwise><xsl:value-of select="generate-id()"/></xsl:otherwise>
+            <xsl:otherwise><xsl:value-of select="concat(generate-id(),'-',/@id)"/></xsl:otherwise>
           </xsl:choose>
         </xsl:attribute>
 
@@ -271,7 +270,7 @@
           <xsl:for-each select="node()">
             <xsl:choose>
               <xsl:when test="self::title"/>
-              <xsl:when test="self::refentry3"/>
+              <xsl:when test="self::refsect3"/>
               <xsl:when test="self::cmdsynopsis">
                 <xsl:element name="p">
                   <xsl:attribute name="rev">refsect2/cmdsynopsis</xsl:attribute>
@@ -287,11 +286,9 @@
               </xsl:otherwise>
             </xsl:choose>
           </xsl:for-each>
-
-          <!-- xsl:apply-templates select="node()[not(self::title) and not(self::refentry3)]"/ -->
         </xsl:element>
 
-        <xsl:apply-templates select="refentry3"/>
+        <xsl:apply-templates select="refsect3"/>
       </xsl:element>
     </xsl:otherwise>
 
