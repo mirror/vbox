@@ -161,7 +161,7 @@ FNIEMOP_DEF_1(iemOpCommonSse41_FullFullImm8_To_Full, PFNIEMAIMPLMEDIAOPTF2U128IM
  *
  * @sa  iemOpCommonSse41_FullFullImm8_To_Full
  */
-FNIEMOP_DEF_1(iemOpCommonSse41Fp_FullFullImm8_To_Full, FNIEMAIMPLMXCSRF2XMMIMM8, pfnU128)
+FNIEMOP_DEF_1(iemOpCommonSse41Fp_FullFullImm8_To_Full, PFNIEMAIMPLMXCSRF2XMMIMM8, pfnU128)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))

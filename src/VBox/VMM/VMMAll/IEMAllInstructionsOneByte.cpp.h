@@ -12493,8 +12493,9 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
 }
 
 typedef IEM_CIMPL_DECL_TYPE_3(FNIEMCIMPLFARBRANCH, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmOpSize);
+typedef FNIEMCIMPLFARBRANCH *PFNIEMCIMPLFARBRANCH;
 
-FNIEMOP_DEF_2(iemOpHlp_Grp5_far_Ep, uint8_t, bRm, FNIEMCIMPLFARBRANCH *, pfnCImpl)
+FNIEMOP_DEF_2(iemOpHlp_Grp5_far_Ep, uint8_t, bRm, PFNIEMCIMPLFARBRANCH, pfnCImpl)
 {
     /* Registers? How?? */
     if (RT_LIKELY(IEM_IS_MODRM_MEM_MODE(bRm)))
