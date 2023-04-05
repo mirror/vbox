@@ -1007,6 +1007,7 @@ int GuestDirectory::i_readInternalViaToolbox(GuestFsObjData &objData, int *pvrcG
  * @return VBox status code.
  * @retval VERR_GSTCTL_GUEST_ERROR / VERR_NO_MORE_FILES if no more entries are available after this iteration.
  *         \a vecObjData will contain the rest of the entries then (if any).
+ * @retval VERR_NOT_SUPPORTED if the installed Guest Additions do not support this method.
  * @param  cMaxEntries          How many directory entries to read at max.
  * @param  fFlags               Flags of type GSTCTL_DIRLIST_F_XXX.
  * @param  vecObjData           Where to store the read directory entries on success.
@@ -1109,6 +1110,7 @@ int GuestDirectory::i_listInternal(uint32_t cMaxEntries, uint32_t fFlags, std::v
  * @return VBox status code.
  * @retval VERR_GSTCTL_GUEST_ERROR / VERR_NO_MORE_FILES if no more entries are available after this iteration.
  *         \a vecObjData will contain the rest of the entries then (if any).
+ * @retval VERR_NOT_SUPPORTED if the installed Guest Additions do not support this method.
  * @param  cMaxEntries          How many directory entries to read at max.
  * @param  fFlags               Flags of type GSTCTL_DIRLIST_F_XXX.
  * @param  vecObjInfo           Where to store the read directory entries on success.
@@ -1154,6 +1156,7 @@ int GuestDirectory::i_listEx(uint32_t cMaxEntries, uint32_t fFlags, std::vector<
  * @return VBox status code.
  * @retval VERR_GSTCTL_GUEST_ERROR / VERR_NO_MORE_FILES if no more entries are available after this iteration.
  *         \a vecObjData will contain the rest of the entries then (if any).
+ * @retval VERR_NOT_SUPPORTED if the installed Guest Additions do not support this method.
  * @param  cMaxEntries          How many directory entries to read at max.
  * @param  vecObjInfo           Where to store the read directory entries on success.
  * @param  pvrcGuest            Where to store the guest result code in case VERR_GSTCTL_GUEST_ERROR is returned.
@@ -1474,6 +1477,10 @@ HRESULT GuestDirectory::list(ULONG aMaxEntries, std::vector<ComPtr<IFsObjInfo> >
                     hrc = VBOX_E_OBJECT_NOT_FOUND;
                 break;
             }
+
+            case VERR_NOT_SUPPORTED: /* Returned from i_list(). */
+                hrc = VBOX_E_NOT_SUPPORTED;
+                break;
 
             default:
                 hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Listing guest directory \"%s\" returned unhandled error: %Rrc\n"),

@@ -16485,6 +16485,9 @@
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           No more directory entries to read.
         </result>
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Method not supported by installed Guest Additions.
+        </result>
       </desc>
       <param name="maxEntries" type="unsigned long" dir="in">
         <desc>Maximum entries to return per call. The guest might decide to return less than the given maximum, depending on
