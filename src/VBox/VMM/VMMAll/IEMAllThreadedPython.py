@@ -49,7 +49,7 @@ if sys.version_info[0] >= 3:
     long = int;     # pylint: disable=redefined-builtin,invalid-name
 
 ## Number of generic parameters for the thread functions.
-g_kcThreadedParams = 3;
+g_kcThreadedParams = 4; ## @todo 3
 
 g_kdTypeInfo = {
     # type name:    (cBits, fSigned, C-type       )
@@ -100,17 +100,28 @@ class ThreadedParamRef(object):
     A parameter reference for a threaded function.
     """
 
-    def __init__(self, sOrgRef, sType, oStmt, iParam = None, offParam = 0):
-        self.sOrgRef  = sOrgRef;                    ##< The name / reference in the original code.
-        self.sStdRef  = ''.join(sOrgRef.split());   ##< Normalized name to deal with spaces in macro invocations and such.
-        self.sType    = sType;                      ##< The type (typically derived).
-        self.oStmt    = oStmt;                      ##< The statement making the reference.
-        self.iParam   = iParam;                     ##< The parameter containing the references. None if implicit.
-        self.offParam = offParam;                   ##< The offset in the parameter of the reference.
+    def __init__(self, sOrgRef, sType, oStmt, iParam = None, offParam = 0, sStdRef = None):
+        ## The name / reference in the original code.
+        self.sOrgRef    = sOrgRef;
+        ## Normalized name to deal with spaces in macro invocations and such.
+        self.sStdRef    = sStdRef if sStdRef else ''.join(sOrgRef.split());
+        ## Indicates that sOrgRef may not match the parameter.
+        self.fCustomRef = sStdRef is not None;
+        ## The type (typically derived).
+        self.sType      = sType;
+        ## The statement making the reference.
+        self.oStmt      = oStmt;
+        ## The parameter containing the references. None if implicit.
+        self.iParam     = iParam;
+        ## The offset in the parameter of the reference.
+        self.offParam   = offParam;
 
-        self.sNewName     = 'x';                    ##< The variable name in the threaded function.
-        self.iNewParam    = 99;                     ##< The this is packed into.
-        self.offNewParam  = 1024                    ##< The bit offset in iNewParam.
+        ## The variable name in the threaded function.
+        self.sNewName     = 'x';
+        ## The this is packed into.
+        self.iNewParam    = 99;
+        ## The bit offset in iNewParam.
+        self.offNewParam  = 1024
 
 
 class ThreadedFunctionVariation(object):
@@ -257,9 +268,9 @@ class ThreadedFunctionVariation(object):
             sMember   = sFnRef[len('pImpl->') : ];
             sBaseType = self.analyzeCallToType('pImpl');
             offBits   = sMember.rfind('U') + 1;
-            if sBaseType == 'PCIEMOPBINSIZES':          return 'PFNIEMAIMPLBIN'         + sMember[offBits:];
-            if sBaseType == 'PCIEMOPUNARYSIZES':        return 'PFNIEMAIMPLBIN'         + sMember[offBits:];
-            if sBaseType == 'PCIEMOPSHIFTSIZES':        return 'PFNIEMAIMPLSHIFT'       + sMember[offBits:];
+            if sBaseType == 'PCIEMOPBINSIZES':          return 'PFNIEMAIMPLBINU'        + sMember[offBits:];
+            if sBaseType == 'PCIEMOPUNARYSIZES':        return 'PFNIEMAIMPLBINU'        + sMember[offBits:];
+            if sBaseType == 'PCIEMOPSHIFTSIZES':        return 'PFNIEMAIMPLSHIFTU'      + sMember[offBits:];
             if sBaseType == 'PCIEMOPSHIFTDBLSIZES':     return 'PFNIEMAIMPLSHIFTDBLU'   + sMember[offBits:];
             if sBaseType == 'PCIEMOPMULDIVSIZES':       return 'PFNIEMAIMPLMULDIVU'     + sMember[offBits:];
             if sBaseType == 'PCIEMOPMEDIAF3':           return 'PFNIEMAIMPLMEDIAF3U'    + sMember[offBits:];
@@ -272,6 +283,27 @@ class ThreadedFunctionVariation(object):
 
         self.raiseProblem('Unknown call reference: %s' % (sFnRef,));
         return None; # Shut up pylint 2.16.2.
+
+    def analyze8BitGRegStmt(self, oStmt):
+        """
+        Gets the 8-bit general purpose register access details of the given statement.
+        ASSUMES the statement is one accessing an 8-bit GREG.
+        """
+        idxReg = 0;
+        if (   oStmt.sName.find('_STORE_') > 0
+            or oStmt.sName.find('_REF_') > 0
+            or oStmt.sName.find('_TO_LOCAL') > 0):
+            idxReg = 1;
+
+        sRegRef = oStmt.asParams[idxReg];
+        sOrgExpr = '((%s) < 4 || (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REX) ? (%s) : (%s) | 16)' % (sRegRef, sRegRef, sRegRef);
+
+        if sRegRef.find('IEM_GET_MODRM_RM') > 0:    sStdRef = 'bRmRm8Ex';
+        elif sRegRef.find('IEM_GET_MODRM_REG') > 0: sStdRef = 'bRmReg8Ex';
+        else:                                       sStdRef = 'bOther8Ex';
+
+        return (idxReg, sOrgExpr, sStdRef);
+
 
     def analyzeMorphStmtForThreaded(self, aoStmts, iParamRef = 0):
         """
@@ -311,7 +343,8 @@ class ThreadedFunctionVariation(object):
                             assert oCurRef.oStmt == oStmt;
                             #print('iCurRef=%s iParam=%s sOrgRef=%s' % (iCurRef, oCurRef.iParam, oCurRef.sOrgRef));
                             sSrcParam = oNewStmt.asParams[oCurRef.iParam];
-                            assert sSrcParam[oCurRef.offParam : oCurRef.offParam + len(oCurRef.sOrgRef)] == oCurRef.sOrgRef, \
+                            assert (   sSrcParam[oCurRef.offParam : oCurRef.offParam + len(oCurRef.sOrgRef)] == oCurRef.sOrgRef
+                                    or oCurRef.fCustomRef), \
                                    'offParam=%s sOrgRef=%s sSrcParam=%s<eos>' % (oCurRef.offParam, oCurRef.sOrgRef, sSrcParam);
                             oNewStmt.asParams[oCurRef.iParam] = sSrcParam[0 : oCurRef.offParam] \
                                                               + oCurRef.sNewName \
@@ -342,6 +375,12 @@ class ThreadedFunctionVariation(object):
                     oNewStmt.asParams.append(self.dParamRefs['cbInstr'][0].sNewName);
                     if oNewStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH',  'IEM_MC_REL_JMP_S32_AND_FINISH'):
                         oNewStmt.asParams.append(self.dParamRefs['pVCpu->iem.s.enmEffOpSize'][0].sNewName);
+                    oNewStmt.sName += '_THREADED';
+
+                # ... and IEM_MC_*_GREG_U8 into *_THREADED w/ reworked index taking REX into account
+                elif oNewStmt.sName.startswith('IEM_MC_') and oNewStmt.sName.find('_GREG_U8') > 0:
+                    (idxReg, sOrgRef, sStdRef) = self.analyze8BitGRegStmt(oNewStmt);
+                    oNewStmt.asParams[idxReg] = self.dParamRefs[sStdRef][0].sNewName;
                     oNewStmt.sName += '_THREADED';
 
                 # ... and IEM_MC_CALL_CIMPL_[0-5] into *_THREADED ...
@@ -482,6 +521,12 @@ class ThreadedFunctionVariation(object):
                     self.aoParamRefs.append(ThreadedParamRef('bSib',    'uint8_t',  oStmt));
                     self.aoParamRefs.append(ThreadedParamRef('u32Disp', 'uint32_t', oStmt));
                     self.aoParamRefs.append(ThreadedParamRef('cbInstr', 'uint4_t',  oStmt));
+
+            # 8-bit register accesses needs to have their index argument reworked to take REX into account.
+                # ... and IEM_MC_*_GREG_U8 into *_THREADED w/ reworked index taking REX into account
+            if oStmt.sName.startswith('IEM_MC_') and oStmt.sName.find('_GREG_U8') > 0:
+                (idxReg, sOrgRef, sStdRef) = self.analyze8BitGRegStmt(oStmt);
+                self.aoParamRefs.append(ThreadedParamRef(sOrgRef, 'uint4_t', oStmt, idxReg, sStdRef = sStdRef));
 
             # Inspect the target of calls to see if we need to pass down a
             # function pointer or function table pointer for it to work.

@@ -1999,8 +1999,8 @@ class McBlock(object):
         oSelf.checkStmtParamCount(sName, asParams, 3);
         # Note! We split this one up into IEM_MC_LOCAL_VAR and IEM_MC_ARG_LOCAL_REF.
         return (
-            McStmtVar('IEM_MC_LOCAL_VAR', ['uint32_t', asParams[1],], 'uint32_t', asParams[1]),
-            McStmtArg('IEM_MC_ARG_LOCAL_REF', ['uint32_t *', asParams[0], asParams[2], asParams[1]],
+            McStmtVar('IEM_MC_LOCAL', ['uint32_t', asParams[1],], 'uint32_t', asParams[1]),
+            McStmtArg('IEM_MC_ARG_LOCAL_REF', ['uint32_t *', asParams[0], asParams[1], asParams[2]],
                       'uint32_t *', asParams[0], int(asParams[2]), sRef = asParams[1], sRefType = 'local'),
         );
 
