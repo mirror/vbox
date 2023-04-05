@@ -1756,14 +1756,14 @@ class TestDriver(base.TestDriver):                                              
         return self.oBuild.sGuestAdditionsIso;
 
     @staticmethod
-    def versionToTuple(sVer, fIgnoreErrors = False): # pylint: disable=line-too-long
+    def versionToTuple(sVer, fIgnoreErrors = False):
         """
         Returns a semantic versioning string as a tuple.
         """
         try:
             # Regular expression taken from semver.org (recommended regular expression for semantic version strings).
             # Creative Commons ― CC BY 3.0
-            oRegEx = re.compile('^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$');
+            oRegEx = re.compile(r'^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'); # pylint: disable=line-too-long
             oMatch = oRegEx.search(sVer);
             return oMatch.groups();
         except:
@@ -1807,7 +1807,7 @@ class TestDriver(base.TestDriver):                                              
 
         Returns True if version 1 is equal or bigger than version 2, False if not.
         """
-        return False if TestDriver.compareVersion(sVer1, sVer2, fIgnoreErrors) is 1 else True;
+        return not TestDriver.compareVersion(sVer1, sVer2, fIgnoreErrors);
 
     def getGuestAdditionsVersion(self, oSession, fIgnoreErrors = False):
         """
