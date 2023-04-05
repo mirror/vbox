@@ -269,7 +269,7 @@ class ThreadedFunctionVariation(object):
             sBaseType = self.analyzeCallToType('pImpl');
             offBits   = sMember.rfind('U') + 1;
             if sBaseType == 'PCIEMOPBINSIZES':          return 'PFNIEMAIMPLBINU'        + sMember[offBits:];
-            if sBaseType == 'PCIEMOPUNARYSIZES':        return 'PFNIEMAIMPLBINU'        + sMember[offBits:];
+            if sBaseType == 'PCIEMOPUNARYSIZES':        return 'PFNIEMAIMPLUNARYU'      + sMember[offBits:];
             if sBaseType == 'PCIEMOPSHIFTSIZES':        return 'PFNIEMAIMPLSHIFTU'      + sMember[offBits:];
             if sBaseType == 'PCIEMOPSHIFTDBLSIZES':     return 'PFNIEMAIMPLSHIFTDBLU'   + sMember[offBits:];
             if sBaseType == 'PCIEMOPMULDIVSIZES':       return 'PFNIEMAIMPLMULDIVU'     + sMember[offBits:];
@@ -290,7 +290,7 @@ class ThreadedFunctionVariation(object):
         ASSUMES the statement is one accessing an 8-bit GREG.
         """
         idxReg = 0;
-        if (   oStmt.sName.find('_STORE_') > 0
+        if (   oStmt.sName.find('_FETCH_') > 0
             or oStmt.sName.find('_REF_') > 0
             or oStmt.sName.find('_TO_LOCAL') > 0):
             idxReg = 1;

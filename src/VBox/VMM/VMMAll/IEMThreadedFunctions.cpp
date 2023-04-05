@@ -132,6 +132,69 @@
 # define IEM_MC_CALL_CIMPL_4_THREADED(a_cbInstr, a_pfnCImpl, a0, a1, a2, a3) \
     return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1, a2, a3)
 
+/** Variant of IEM_MC_CALL_CIMPL_5 with explicit instruction length parameter. */
+# define IEM_MC_CALL_CIMPL_5_THREADED(a_cbInstr, a_pfnCImpl, a0, a1, a2, a3, a4) \
+    return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1, a2, a3, a4)
+
+/** Variant of IEM_MC_FETCH_GREG_U8 with extended (20) register index. */
+#define IEM_MC_FETCH_GREG_U8_THREADED(a_u8Dst, a_iGRegEx) \
+    (a_u8Dst) = iemGRegFetchU8Ex(pVCpu, (a_iGRegEx))
+
+/** Variant of IEM_MC_FETCH_GREG_U8_ZX_U16 with extended (20) register index. */
+#define IEM_MC_FETCH_GREG_U8_ZX_U16_THREADED(a_u16Dst, a_iGRegEx) \
+    (a_u16Dst) = iemGRegFetchU8Ex(pVCpu, (a_iGRegEx))
+
+/** Variant of IEM_MC_FETCH_GREG_U8_ZX_U32 with extended (20) register index. */
+#define IEM_MC_FETCH_GREG_U8_ZX_U32_THREADED(a_u32Dst, a_iGRegEx) \
+    (a_u32Dst) = iemGRegFetchU8Ex(pVCpu, (a_iGRegEx))
+
+/** Variant of IEM_MC_FETCH_GREG_U8_ZX_U64 with extended (20) register index. */
+#define IEM_MC_FETCH_GREG_U8_ZX_U64_THREADED(a_u64Dst, a_iGRegEx) \
+    (a_u64Dst) = iemGRegFetchU8Ex(pVCpu, (a_iGRegEx))
+
+/** Variant of IEM_MC_FETCH_GREG_U8_SX_U16 with extended (20) register index. */
+#define IEM_MC_FETCH_GREG_U8_SX_U16_THREADED(a_u16Dst, a_iGRegEx) \
+    (a_u16Dst) = (int8_t)iemGRegFetchU8Ex(pVCpu, (a_iGRegEx))
+
+/** Variant of IEM_MC_FETCH_GREG_U8_SX_U32 with extended (20) register index. */
+#define IEM_MC_FETCH_GREG_U8_SX_U32_THREADED(a_u32Dst, a_iGRegEx) \
+    (a_u32Dst) = (int8_t)iemGRegFetchU8Ex(pVCpu, (a_iGRegEx))
+
+/** Variant of IEM_MC_FETCH_GREG_U8_SX_U64 with extended (20) register index. */
+#define IEM_MC_FETCH_GREG_U8_SX_U64_THREADED(a_u64Dst, a_iGRegEx) \
+    (a_u64Dst) = (int8_t)iemGRegFetchU8Ex(pVCpu, (a_iGRegEx))
+
+/** Variant of IEM_MC_STORE_GREG_U8 with extended (20) register index. */
+#define IEM_MC_STORE_GREG_U8_THREADED(a_iGRegEx, a_u8Value) \
+    *iemGRegRefU8Ex(pVCpu, (a_iGRegEx)) = (a_u8Value)
+
+/** Variant of IEM_MC_STORE_GREG_U8 with extended (20) register index. */
+#define IEM_MC_STORE_GREG_U8_CONST_THREADED(a_iGRegEx, a_u8Value) \
+    *iemGRegRefU8Ex(pVCpu, (a_iGRegEx)) = (a_u8Value)
+
+/** Variant of IEM_MC_REF_GREG_U8 with extended (20) register index. */
+#define IEM_MC_REF_GREG_U8_THREADED(a_pu8Dst, a_iGRegEx) \
+    (a_pu8Dst) = iemGRegRefU8Ex(pVCpu, (a_iGRegEx))
+
+/** Variant of IEM_MC_ADD_GREG_U8 with extended (20) register index. */
+#define IEM_MC_ADD_GREG_U8_THREADED(a_iGRegEx, a_u8Value) \
+    *iemGRegRefU8Ex(pVCpu, (a_iGRegEx)) += (a_u8Value)
+
+/** Variant of IEM_MC_SUB_GREG_U8 with extended (20) register index. */
+#define IEM_MC_SUB_GREG_U8_THREADED(a_iGRegEx,  a_u8Value) \
+    *iemGRegRefU8Ex(pVCpu, (a_iGRegEx)) -= (a_u8Value)
+
+/** Variant of IEM_MC_ADD_GREG_U8_TO_LOCAL with extended (20) register index. */
+#define IEM_MC_ADD_GREG_U8_TO_LOCAL_THREADED(a_u8Value, a_iGRegEx) \
+    do { (a_u8Value)  += iemGRegFetchU8Ex(pVCpu, (a_iGRegEx)); } while (0)
+
+/** Variant of IEM_MC_AND_GREG_U8 with extended (20) register index. */
+#define IEM_MC_AND_GREG_U8_THREADED(a_iGRegEx, a_u8Value) \
+    *iemGRegRefU8Ex(pVCpu, (a_iGRegEx)) &= (a_u8Value)
+
+/** Variant of IEM_MC_OR_GREG_U8 with extended (20) register index. */
+#define IEM_MC_OR_GREG_U8_THREADED(a_iGRegEx, a_u8Value) \
+    *iemGRegRefU8Ex(pVCpu, (a_iGRegEx)) |= (a_u8Value)
 
 /**
  * Calculates the effective address of a ModR/M memory operand, 16-bit
