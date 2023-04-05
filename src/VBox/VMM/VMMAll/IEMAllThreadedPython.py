@@ -546,8 +546,14 @@ class ThreadedFunctionVariation(object):
                                 if asMacroParams is None:
                                     self.raiseProblem('Unable to find ")" for %s in "%s"' % (sRef, oStmt.renderCode(),));
                                 offParam = offCloseParam + 1;
-                                while offParam < len(sParam) and (sParam[offParam].isalnum() or sParam[offParam] in '_.'):
-                                    offParam += 1;
+
+                                # Skip any dereference following it, unless it's a predicate like IEM_IS_GUEST_CPU_AMD.
+                                if sRef not in ('IEM_IS_GUEST_CPU_AMD', ):
+                                    offParam = iai.McBlock.skipSpacesAt(sParam, offParam, len(sParam));
+                                    if offParam + 2 <= len(sParam) and sParam[offParam : offParam + 2] == '->':
+                                        offParam = iai.McBlock.skipSpacesAt(sParam, offParam + 2, len(sParam));
+                                        while offParam < len(sParam) and (sParam[offParam].isalnum() or sParam[offParam] in '_.'):
+                                            offParam += 1;
 
                             # Skip constants, globals, types (casts), sizeof and macros.
                             elif (   sRef.startswith('IEM_OP_PRF_')
