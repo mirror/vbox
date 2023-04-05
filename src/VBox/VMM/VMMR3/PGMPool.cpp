@@ -1058,6 +1058,8 @@ static void pgmR3PoolCheckError(PPGMPOOLCHECKERSTATE pState, const char *pszForm
         pState->fFirstMsg = false;
     }
 
+    ++pState->cErrors;
+
     va_list va;
     va_start(va, pszFormat);
     pState->pCmdHlp->pfnPrintfV(pState->pCmdHlp, NULL, pszFormat, va);
@@ -1337,8 +1339,8 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     PGM_UNLOCK(pVM);
 
     if (State.cErrors > 0)
-        return DBGCCmdHlpFail(pCmdHlp, pCmd, "Found %#x errors", State.cErrors);
-    DBGCCmdHlpPrintf(pCmdHlp, "no errors found\n");
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "Found %u error(s)", State.cErrors);
+    DBGCCmdHlpPrintf(pCmdHlp, "No errors found\n");
     return VINF_SUCCESS;
 }
 
