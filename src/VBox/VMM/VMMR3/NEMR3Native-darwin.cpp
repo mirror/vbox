@@ -4443,7 +4443,15 @@ VMM_INT_DECL(void) NEMHCNotifyPhysPageChanged(PVMCC pVM, RTGCPHYS GCPhys, RTHCPH
           GCPhys, HCPhysPrev, HCPhysNew, fPageProt, enmType, *pu2State));
     RT_NOREF(HCPhysPrev, HCPhysNew, pvNewR3, fPageProt, enmType);
 
-    nemR3DarwinUnmap(pVM, GCPhys, X86_PAGE_SIZE, pu2State);
+    int rc = nemR3DarwinUnmap(pVM, GCPhys, X86_PAGE_SIZE, pu2State);
+    if (RT_SUCCESS(rc))
+    {
+        rc = nemR3DarwinMap(pVM, GCPhys, pvNewR3, X86_PAGE_SIZE, fPageProt, pu2State);
+        AssertLogRelMsgRC(rc, ("NEMHCNotifyPhysPageChanged: nemR3DarwinMap(,%p,%RGp,%RGp,) -> %Rrc\n",
+                          pvNewR3, GCPhys, X86_PAGE_SIZE, rc));
+    }
+    else
+        AssertReleaseFailed();
 }
 
 
