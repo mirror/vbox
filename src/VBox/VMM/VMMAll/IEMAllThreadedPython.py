@@ -339,8 +339,11 @@ class ThreadedFunctionVariation(object):
                 # ... and IEM_MC_ADVANCE_RIP_AND_FINISH into *_THREADED ...
                 elif oNewStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH', 'IEM_MC_REL_JMP_S8_AND_FINISH',
                                         'IEM_MC_REL_JMP_S16_AND_FINISH', 'IEM_MC_REL_JMP_S32_AND_FINISH'):
-                    oNewStmt.sName += '_THREADED';
                     oNewStmt.asParams.append(self.dParamRefs['cbInstr'][0].sNewName);
+                    if oNewStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH',  'IEM_MC_REL_JMP_S32_AND_FINISH'):
+                        oNewStmt.asParams.append(self.dParamRefs['pVCpu->iem.s.enmEffOpSize'][0].sNewName);
+                    oNewStmt.sName += '_THREADED';
+
                 # ... and IEM_MC_CALL_CIMPL_[0-5] into *_THREADED ...
                 elif oNewStmt.sName.startswith('IEM_MC_CALL_CIMPL_'):
                     oNewStmt.sName += '_THREADED';
@@ -460,6 +463,9 @@ class ThreadedFunctionVariation(object):
                                'IEM_MC_REL_JMP_S32_AND_FINISH', 'IEM_MC_CALL_CIMPL_0', 'IEM_MC_CALL_CIMPL_1',
                                'IEM_MC_CALL_CIMPL_2', 'IEM_MC_CALL_CIMPL_3', 'IEM_MC_CALL_CIMPL_4', 'IEM_MC_CALL_CIMPL_5', ):
                 self.aoParamRefs.append(ThreadedParamRef('cbInstr', 'uint4_t', oStmt));
+
+            if oStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH',  'IEM_MC_REL_JMP_S32_AND_FINISH'):
+                self.aoParamRefs.append(ThreadedParamRef('pVCpu->iem.s.enmEffOpSize', 'IEMMODE', oStmt));
 
             if oStmt.sName == 'IEM_MC_CALC_RM_EFF_ADDR':
                 ## @todo figure out how to do this in the input part...

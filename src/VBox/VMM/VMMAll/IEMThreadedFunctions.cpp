@@ -82,8 +82,8 @@
 #undef IEM_MC_ADVANCE_RIP_AND_FINISH
 
 /** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length as param. */
-#define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED(a_i8, a_cbInstr) \
-    return iemRegRipRelativeJumpS8AndFinishClearingRF(pVCpu, a_cbInstr, (a_i8), pVCpu->iem.s.enmEffOpSize)
+#define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED(a_i8, a_cbInstr, a_enmEffOpSize) \
+    return iemRegRipRelativeJumpS8AndFinishClearingRF(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize)
 #undef IEM_MC_REL_JMP_S8_AND_FINISH
 
 /** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as param. */
@@ -92,8 +92,8 @@
 #undef IEM_MC_REL_JMP_S16_AND_FINISH
 
 /** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as param. */
-#define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED(a_i32, a_cbInstr) \
-    return iemRegRipRelativeJumpS32AndFinishClearingRF(pVCpu, a_cbInstr, (a_i32), pVCpu->iem.s.enmEffOpSize)
+#define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED(a_i32, a_cbInstr, a_enmEffOpSize) \
+    return iemRegRipRelativeJumpS32AndFinishClearingRF(pVCpu, a_cbInstr, (a_i32), a_enmEffOpSize)
 #undef IEM_MC_REL_JMP_S32_AND_FINISH
 
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters. */
@@ -115,6 +115,23 @@
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters. */
 # define IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR6432(a_GCPtrEff, a_bRmEx, a_bSib, a_u32Disp, a_cbImm) \
     (a_GCPtrEff) = (uint32_t)iemOpHlpCalcRmEffAddrThreadedAddr64(pVCpu, a_bRmEx, a_bSib, a_u32Disp, a_cbImm)
+
+/** Variant of IEM_MC_CALL_CIMPL_1 with explicit instruction length parameter. */
+# define IEM_MC_CALL_CIMPL_1_THREADED(a_cbInstr, a_pfnCImpl, a0) \
+    return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0)
+
+/** Variant of IEM_MC_CALL_CIMPL_2 with explicit instruction length parameter. */
+# define IEM_MC_CALL_CIMPL_2_THREADED(a_cbInstr, a_pfnCImpl, a0, a1) \
+    return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1)
+
+/** Variant of IEM_MC_CALL_CIMPL_3 with explicit instruction length parameter. */
+# define IEM_MC_CALL_CIMPL_3_THREADED(a_cbInstr, a_pfnCImpl, a0, a1, a2) \
+    return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1, a2)
+
+/** Variant of IEM_MC_CALL_CIMPL_4 with explicit instruction length parameter. */
+# define IEM_MC_CALL_CIMPL_4_THREADED(a_cbInstr, a_pfnCImpl, a0, a1, a2, a3) \
+    return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1, a2, a3)
+
 
 /**
  * Calculates the effective address of a ModR/M memory operand, 16-bit
