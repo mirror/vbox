@@ -1755,6 +1755,74 @@ class TestDriver(base.TestDriver):                                              
             return None;
         return self.oBuild.sGuestAdditionsIso;
 
+    @staticmethod
+    def versionToTuple(sVer, fIgnoreErrors = False): # pylint: disable=line-too-long
+        """
+        Returns a semantic versioning string as a tuple.
+        """
+        try:
+            # Regular expression taken from semver.org (recommended regular expression for semantic version strings).
+            # Creative Commons ― CC BY 3.0
+            oRegEx = re.compile('^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$');
+            oMatch = oRegEx.search(sVer);
+            return oMatch.groups();
+        except:
+            if not fIgnoreErrors:
+                reporter.logXcpt('Handling regex for "%s" failed' % (sVer,));
+        return None;
+
+    @staticmethod
+    def compareVersion(sVer1, sVer2, fIgnoreErrors = False):
+        """
+        Compares two version numbers and returns the result.
+
+        Takes either strings or version tuples as input.
+
+        Returns 0 if both versions match.
+        Return -1 if version 1 is bigger than version 2.
+        Return  1 if version 2 is bigger than version 1.
+        Returns None on error.
+        """
+        assert sVer1 is not None;
+        assert sVer2 is not None;
+        try:
+            tpVer1 = TestDriver.versionToTuple(sVer1, fIgnoreErrors);
+            if tpVer1 is None:
+                return None;
+            tpVer2 = TestDriver.versionToTuple(sVer2, fIgnoreErrors);
+            if tpVer2 is None:
+                return None;
+            if tpVer1 == tpVer2:
+                return 0;
+            return 1 if tuple(map(str, tpVer2)) > tuple(map(str, tpVer1)) else -1;
+        except:
+            if not fIgnoreErrors:
+                reporter.logXcpt();
+        return None;
+
+    @staticmethod
+    def isVersionEqualOrBigger(sVer1, sVer2, fIgnoreErrors = False):
+        """
+        Checks whether version 1 is equal or bigger than version 2.
+
+        Returns True if version 1 is equal or bigger than version 2, False if not.
+        """
+        return False if TestDriver.compareVersion(sVer1, sVer2, fIgnoreErrors) is 1 else True;
+
+    def getGuestAdditionsVersion(self, oSession, fIgnoreErrors = False):
+        """
+        Returns the installed Guest Additions version.
+
+        Returns version as a string (e.g. "7.0.6-beta2-whatever"), or None if not found / on error.
+        """
+        assert oSession is not None;
+        try:
+            return oSession.o.console.guest.additionsVersion;
+        except:
+            if not fIgnoreErrors:
+                reporter.errorXcpt('Getting the Guest Additions version failed');
+        return None;
+
     #
     # Override everything from the base class so the testdrivers don't have to
     # check whether we have overridden a method or not.
