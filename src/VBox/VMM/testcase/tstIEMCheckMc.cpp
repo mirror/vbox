@@ -233,27 +233,6 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 
 #define iemRecalEffOpSize(a_pVCpu)                          do { } while (0)
 
-IEMOPBINSIZES g_iemAImpl_add;
-IEMOPBINSIZES g_iemAImpl_adc;
-IEMOPBINSIZES g_iemAImpl_sub;
-IEMOPBINSIZES g_iemAImpl_sbb;
-IEMOPBINSIZES g_iemAImpl_or;
-IEMOPBINSIZES g_iemAImpl_xor;
-IEMOPBINSIZES g_iemAImpl_and;
-IEMOPBINSIZES g_iemAImpl_cmp;
-IEMOPBINSIZES g_iemAImpl_test;
-IEMOPBINSIZES g_iemAImpl_bt;
-IEMOPBINSIZES g_iemAImpl_btc;
-IEMOPBINSIZES g_iemAImpl_btr;
-IEMOPBINSIZES g_iemAImpl_bts;
-IEMOPBINSIZES g_iemAImpl_bsf;
-IEMOPBINSIZES g_iemAImpl_bsr;
-PCIEMOPBINSIZES g_apIemImplGrp1[8];
-IEMOPUNARYSIZES g_iemAImpl_inc;
-IEMOPUNARYSIZES g_iemAImpl_dec;
-IEMOPUNARYSIZES g_iemAImpl_neg;
-IEMOPUNARYSIZES g_iemAImpl_not;
-
 #undef  IEMTARGETCPU_EFL_BEHAVIOR_SELECT
 #define IEMTARGETCPU_EFL_BEHAVIOR_SELECT(a_aArray)                  NULL
 #undef  IEMTARGETCPU_EFL_BEHAVIOR_SELECT_NON_NATIVE
