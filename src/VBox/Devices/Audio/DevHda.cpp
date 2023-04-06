@@ -783,27 +783,42 @@ static int hdaRegLookup(uint32_t offReg)
 }
 
 #ifdef IN_RING3
-
 /**
  * Looks up a register covering the offset given by @a offReg.
  *
  * @returns Register index on success, -1 if not found.
- * @param   offReg              The register offset.
+ * @param   offReg      The register offset.
+ * @param   pcbBefore   Where to return the number of bytes in the matching
+ *                      register preceeding @a offReg.
  */
-static int hdaR3RegLookupWithin(uint32_t offReg)
+static int hdaR3RegLookupWithin(uint32_t offReg, uint32_t *pcbBefore)
 {
     /*
      * Aliases.
+     *
+     * We ASSUME the aliases are for whole registers and that they have the
+     * same alignment (release-asserted in the constructor), so we don't need
+     * to calculate the within-register-offset twice here.
      */
     if (offReg >= g_aHdaRegAliases[0].offReg)
     {
         for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegAliases); i++)
         {
-            uint32_t off = offReg - g_aHdaRegAliases[i].offReg;
-            if (off < 4 && off < g_aHdaRegMap[g_aHdaRegAliases[i].idxAlias].cb)
-                return g_aHdaRegAliases[i].idxAlias;
+            uint32_t const off = offReg - g_aHdaRegAliases[i].offReg;
+            if (off < 4)  /* No register is wider than 4 bytes (release-asserted in constructor). */
+            {
+                const uint32_t idxAlias = g_aHdaRegAliases[i].idxAlias;
+                if (off < g_aHdaRegMap[idxAlias].cb)
+                {
+                    Assert(off > 0); /* ASSUMES the caller already did a hdaRegLookup which failed. */
+                    Assert((g_aHdaRegAliases[i].offReg & 3) == (g_aHdaRegMap[idxAlias].off & 3));
+                    *pcbBefore = off;
+                    return idxAlias;
+                }
+            }
         }
         Assert(g_aHdaRegMap[RT_ELEMENTS(g_aHdaRegMap) - 1].off < offReg);
+        *pcbBefore = 0;
         return -1;
     }
 
@@ -828,16 +843,22 @@ static int hdaR3RegLookupWithin(uint32_t offReg)
                 break;
         }
         else
+        {
+            offReg -= g_aHdaRegMap[idxMiddle].off;
+            *pcbBefore = offReg;
+            Assert(offReg > 0); /* ASSUMES the caller already did a hdaRegLookup which failed. */
+            Assert(g_aHdaRegMap[idxMiddle].cb <= 4); /* This is release-asserted in the constructor. */
             return idxMiddle;
+        }
     }
 
 # ifdef RT_STRICT
     for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegMap); i++)
         Assert(offReg - g_aHdaRegMap[i].off >= g_aHdaRegMap[i].cb);
 # endif
+    *pcbBefore = 0;
     return -1;
 }
-
 #endif /* IN_RING3 */
 
 #ifdef IN_RING3 /* Codec is not yet kosher enough for ring-0.  @bugref{9890c64} */
@@ -3410,11 +3431,11 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
          */
         if (idxRegDsc < 0)
         {
-            idxRegDsc = hdaR3RegLookupWithin(off);
+            uint32_t cbBefore;
+            idxRegDsc = hdaR3RegLookupWithin(off, &cbBefore);
             if (idxRegDsc != -1)
             {
-                uint32_t const cbBefore = (uint32_t)off - g_aHdaRegMap[idxRegDsc].off;
-                Assert(cbBefore > 0 && cbBefore < 4);
+                Assert(cbBefore > 0 && cbBefore < 4 /* no register is wider than 4 bytes, we check in the constructor */);
                 off      -= cbBefore;
                 idxRegMem = g_aHdaRegMap[idxRegDsc].idxReg;
                 u64Value <<= cbBefore * 8;
@@ -3471,6 +3492,13 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
                 idxRegDsc = hdaRegLookup(off);
             else
             {
+                /** @todo r=bird: This doesn't work for aliased registers, since the incremented
+                 * offset won't match as it's still the aliased one.  Only scenario, though
+                 * would be misaligned accesses (2, 4 or 8 bytes), and the result would be that
+                 * only the first part will be written.  Given that the aliases we have are lone
+                 * registers, that seems like they shouldn't have anything else around them,
+                 * this is probably the correct behaviour, though real hw may of course
+                 * disagree.  Only look into it if we have a sane guest running into this. */
                 idxRegDsc++;
                 if (   (unsigned)idxRegDsc >= RT_ELEMENTS(g_aHdaRegMap)
                     || g_aHdaRegMap[idxRegDsc].off != off)
@@ -5219,6 +5247,18 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         /* The final entry is a full DWORD, no gaps! Allows shortcuts. */
         AssertReleaseMsg(pNextReg || ((pReg->off + pReg->cb) & 3) == 0,
                          ("[%#x] = {%#x LB %#x}\n", i, pReg->off, pReg->cb));
+    }
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegAliases); i++)
+    {
+        /* Valid alias index. */
+        uint32_t const idxAlias = g_aHdaRegAliases[i].idxAlias;
+        AssertReleaseMsg(g_aHdaRegAliases[i].idxAlias < (int)RT_ELEMENTS(g_aHdaRegMap), ("[%#x] idxAlias=%#x\n", i, idxAlias));
+        /* Same register alignment. */
+        AssertReleaseMsg((g_aHdaRegAliases[i].offReg & 3) == (g_aHdaRegMap[idxAlias].off & 3),
+                         ("[%#x] idxAlias=%#x offReg=%#x vs off=%#x\n",
+                          i, idxAlias, g_aHdaRegAliases[i].offReg, g_aHdaRegMap[idxAlias].off));
+        /* Register is four or fewer bytes wide (already checked above). */
+        AssertReleaseMsg(g_aHdaRegMap[idxAlias].cb <= 4, ("[%#x] idxAlias=%#x cb=%d\n", i, idxAlias, g_aHdaRegMap[idxAlias].cb));
     }
     Assert(strcmp(g_aHdaRegMap[HDA_REG_SSYNC].pszName, "SSYNC") == 0);
     Assert(strcmp(g_aHdaRegMap[HDA_REG_DPUBASE].pszName, "DPUBASE") == 0);
