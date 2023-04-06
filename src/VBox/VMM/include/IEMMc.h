@@ -75,33 +75,33 @@
 #define IEM_MC_RAISE_DIVIDE_ERROR()                     return iemRaiseDivideError(pVCpu)
 #define IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE()       \
     do { \
-        if (pVCpu->cpum.GstCtx.cr0 & (X86_CR0_EM | X86_CR0_TS)) \
-            return iemRaiseDeviceNotAvailable(pVCpu); \
+        if (!(pVCpu->cpum.GstCtx.cr0 & (X86_CR0_EM | X86_CR0_TS))) \
+        { } else return iemRaiseDeviceNotAvailable(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_WAIT_DEVICE_NOT_AVAILABLE()  \
     do { \
-        if ((pVCpu->cpum.GstCtx.cr0 & (X86_CR0_MP | X86_CR0_TS)) == (X86_CR0_MP | X86_CR0_TS)) \
-            return iemRaiseDeviceNotAvailable(pVCpu); \
+        if (!((pVCpu->cpum.GstCtx.cr0 & (X86_CR0_MP | X86_CR0_TS)) == (X86_CR0_MP | X86_CR0_TS))) \
+        { } else return iemRaiseDeviceNotAvailable(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_FPU_XCPT() \
     do { \
-        if (pVCpu->cpum.GstCtx.XState.x87.FSW & X86_FSW_ES) \
-            return iemRaiseMathFault(pVCpu); \
-    } while (0)
-#define IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT() \
-    do { \
-        if (   (pVCpu->cpum.GstCtx.aXcr[0] & (XSAVE_C_YMM | XSAVE_C_SSE)) != (XSAVE_C_YMM | XSAVE_C_SSE) \
-            || !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXSAVE) \
-            || !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx2) \
-            return iemRaiseUndefinedOpcode(pVCpu); \
-        if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS) \
-            return iemRaiseDeviceNotAvailable(pVCpu); \
+        if (!(pVCpu->cpum.GstCtx.XState.x87.FSW & X86_FSW_ES)) \
+        { } else return iemRaiseMathFault(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() \
     do { \
         if (   (pVCpu->cpum.GstCtx.aXcr[0] & (XSAVE_C_YMM | XSAVE_C_SSE)) != (XSAVE_C_YMM | XSAVE_C_SSE) \
             || !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXSAVE) \
             || !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx) \
+            return iemRaiseUndefinedOpcode(pVCpu); \
+        if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS) \
+            return iemRaiseDeviceNotAvailable(pVCpu); \
+    } while (0)
+#define IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT() \
+    do { \
+        if (   (pVCpu->cpum.GstCtx.aXcr[0] & (XSAVE_C_YMM | XSAVE_C_SSE)) != (XSAVE_C_YMM | XSAVE_C_SSE) \
+            || !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXSAVE) \
+            || !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx2) \
             return iemRaiseUndefinedOpcode(pVCpu); \
         if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS) \
             return iemRaiseDeviceNotAvailable(pVCpu); \

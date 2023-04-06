@@ -390,7 +390,7 @@ FNIEMOP_DEF(iemOp_vpabsd_Vx_Wx)
             IEM_MC_BEGIN(2, 0); \
             IEM_MC_ARG(PRTUINT128U,          puDst,  0); \
             IEM_MC_ARG(uint64_t,             uSrc,   1); \
-            IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT(); \
+            IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT(); \
             IEM_MC_PREPARE_AVX_USAGE(); \
             IEM_MC_REF_XREG_U128(puDst,  IEM_GET_MODRM_REG(pVCpu, bRm)); \
             IEM_MC_FETCH_XREG_U64(uSrc,  IEM_GET_MODRM_RM(pVCpu, bRm), 0 /* a_iQword*/); \
@@ -435,7 +435,7 @@ FNIEMOP_DEF(iemOp_vpabsd_Vx_Wx)
             IEM_MC_ARG(uint ## a_SrcWidth ##_t,     uSrc,        1); \
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
             IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx); \
-            IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT(); \
+            IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT(); \
             IEM_MC_PREPARE_AVX_USAGE(); \
             IEM_MC_REF_XREG_U128(puDst,  IEM_GET_MODRM_REG(pVCpu, bRm)); \
             IEM_MC_FETCH_MEM_U ## a_SrcWidth (uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
@@ -551,7 +551,7 @@ FNIEMOP_DEF(iemOp_vmovntdqa_Vx_Mx)
             IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV();
+            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx);
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
             IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE();
 
@@ -582,7 +582,7 @@ FNIEMOP_DEF(iemOp_vmovntdqa_Vx_Mx)
             IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV();
+            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx2);
             IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT();
             IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE();
 
@@ -790,7 +790,7 @@ FNIEMOP_DEF(iemOp_vphminposuw_Vdq_Wdq)
         IEM_MC_BEGIN(2, 0);
         IEM_MC_ARG(PRTUINT128U,          puDst,  0);
         IEM_MC_ARG(PCRTUINT128U,         puSrc,  1);
-        IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT();
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
         IEM_MC_PREPARE_AVX_USAGE();
         IEM_MC_REF_XREG_U128(puDst,        IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_REF_XREG_U128_CONST(puSrc,  IEM_GET_MODRM_RM(pVCpu, bRm));
