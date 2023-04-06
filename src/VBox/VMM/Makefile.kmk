@@ -247,7 +247,7 @@ endif
 ifdef VBOX_WITH_IEM_RECOMPILER
  VBoxVMM_SOURCES += \
  	VMMAll/IEMAllInstructionsThreadedRecompiler.cpp \
- 	VMMAll/IEMThreadedFunctions.cpp
+ 	VMMAll/IEMAllThreadedFunctions.cpp
 endif
 
 ifdef VBOX_WITH_NATIVE_NEM
