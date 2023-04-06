@@ -511,5 +511,3 @@ DISDECL(size_t) DISFormatArmV8(PCDISSTATE pDis, char *pszBuf, size_t cchBuf)
 {
     return DISFormatArmV8Ex(pDis, pszBuf, cchBuf, 0 /* fFlags */, NULL /* pfnGetSymbol */, NULL /* pvUser */);
 }
-
-
