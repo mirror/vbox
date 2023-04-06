@@ -1142,7 +1142,7 @@ FNIEMOP_DEF_1(iemOpCommonSse3Fp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU12
         /*
          * XMM, XMM.
          */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse3);
         IEM_MC_BEGIN(3, 1);
         IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
         IEM_MC_ARG_LOCAL_REF(PIEMSSERESULT, pSseRes,        SseRes,     0);
@@ -1173,7 +1173,7 @@ FNIEMOP_DEF_1(iemOpCommonSse3Fp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU12
         IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse3);
         IEM_MC_MAYBE_RAISE_SSE3_RELATED_XCPT();
         IEM_MC_FETCH_MEM_XMM_ALIGN_SSE(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
@@ -2622,7 +2622,7 @@ FNIEMOP_DEF(iemOp_movsldup_Vdq_Wdq)
         /*
          * XMM, XMM.
          */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse3);
         IEM_MC_BEGIN(0, 1);
         IEM_MC_LOCAL(RTUINT128U,                uSrc);
 
@@ -2648,7 +2648,7 @@ FNIEMOP_DEF(iemOp_movsldup_Vdq_Wdq)
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse3);
         IEM_MC_MAYBE_RAISE_SSE3_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
 
@@ -2682,7 +2682,7 @@ FNIEMOP_DEF(iemOp_movddup_Vdq_Wdq)
         /*
          * XMM128, XMM64.
          */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse3);
         IEM_MC_BEGIN(1, 0);
         IEM_MC_ARG(uint64_t,                    uSrc, 0);
 
@@ -2706,7 +2706,7 @@ FNIEMOP_DEF(iemOp_movddup_Vdq_Wdq)
         IEM_MC_ARG(uint64_t,                    uSrc, 0);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse3);
         IEM_MC_MAYBE_RAISE_SSE3_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
 
@@ -3040,7 +3040,7 @@ FNIEMOP_DEF(iemOp_movshdup_Vdq_Wdq)
         /*
          * XMM128, XMM128.
          */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse3);
         IEM_MC_BEGIN(0, 1);
         IEM_MC_LOCAL(RTUINT128U,                uSrc);
 
@@ -3066,7 +3066,7 @@ FNIEMOP_DEF(iemOp_movshdup_Vdq_Wdq)
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse3);
         IEM_MC_MAYBE_RAISE_SSE3_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
 
@@ -13555,7 +13555,7 @@ FNIEMOP_DEF(iemOp_lddqu_Vx_Mx)
         IEM_MC_LOCAL(RTGCPTR,    GCPtrEffSrc);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse3);
         IEM_MC_MAYBE_RAISE_SSE3_RELATED_XCPT();
         IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
         IEM_MC_FETCH_MEM_U128(u128Tmp, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
