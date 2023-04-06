@@ -156,7 +156,7 @@ typedef const DISARMV8INSNCLASS *PCDISARMV8INSNCLASS;
 #define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS(a_Name, a_fClass, a_enmOpcDecode, a_fMask, a_cShift) \
     }; \
     static const DISARMV8INSNCLASS a_Name = { { kDisArmV8DecodeType_InsnClass, RT_ELEMENTS(a_Name ## Opcodes) }, &a_Name ## Opcodes[0],\
-                                              a_fClass, a_enmOpcDecode, a_fMask, a_cShift, { 
+                                              a_fClass, a_enmOpcDecode, a_fMask, a_cShift, {
 #define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END } }
 
 /**
