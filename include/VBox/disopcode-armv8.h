@@ -528,7 +528,7 @@ enum OPCODESARMV8
 
 enum OP_ARMV8_PARM
 {
-    OP_ARMV8_PARM_NONE,
+    OP_ARMV8_PARM_NONE
 };
 
 /** @} */
