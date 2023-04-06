@@ -2639,7 +2639,8 @@ VMMDECL(VBOXSTRICTRC) PGMPhysRead(PVMCC pVM, RTGCPHYS GCPhys, void *pvBuf, size_
                         PGM_PHYS_RW_DO_UPDATE_STRICT_RC(rcStrict, rcStrict2);
                     else
                     {
-                        memset(pvBuf, 0xff, cb);
+                        /* Set the remaining buffer to a known value. */
+                        memset(pvBuf, 0xff, cbRead);
                         PGM_UNLOCK(pVM);
                         return rcStrict2;
                     }
