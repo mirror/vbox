@@ -10647,6 +10647,10 @@ FNIEMOP_DEF(iemOp_Grp10)
     return FNIEMOP_CALL(iemOp_InvalidNeedRM);
 }
 
+
+/**
+ * Body for group 8 bit instruction.
+ */
 #define IEMOP_BODY_BIT_Ev_Ib(a_fnNormalU16, a_fnNormalU32, a_fnNormalU64, a_fRW) \
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF); \
     \
