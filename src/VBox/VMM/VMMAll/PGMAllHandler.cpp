@@ -154,6 +154,7 @@ DECL_FORCE_INLINE(PPGMPHYSHANDLER) pgmHandlerPhysicalExCreateWorker(PVMCC pVM, P
                             : pType->pszDesc;
 #else
                             : pVM->pgm.s.aPhysHandlerTypes[hType & PGMPHYSHANDLERTYPE_IDX_MASK].pszDesc;
+        NOREF(pType);
 #endif
     }
     return pNew;
