@@ -49,7 +49,7 @@ if sys.version_info[0] >= 3:
     long = int;     # pylint: disable=redefined-builtin,invalid-name
 
 ## Number of generic parameters for the thread functions.
-g_kcThreadedParams = 4; ## @todo 3
+g_kcThreadedParams = 3;
 
 g_kdTypeInfo = {
     # type name:    (cBits, fSigned, C-type       )
