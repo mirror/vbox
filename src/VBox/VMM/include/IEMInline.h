@@ -1899,7 +1899,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRF(PVMCPUCC pV
 /**
  * Updates the RIP to point to the next instruction and clears EFLAGS.RF
  * and CPUMCTX_INHIBIT_SHADOW.
- * 
+ *
  * Only called from 64-code code.
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
@@ -1914,7 +1914,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToRip64AndFinishingClearingRF(PVMCPUCC 
 
 /**
  * Updates the EIP to point to the next instruction and clears EFLAGS.RF and
- * CPUMCTX_INHIBIT_SHADOW. 
+ * CPUMCTX_INHIBIT_SHADOW.
  *
  * This is never from 64-code code.
  *
