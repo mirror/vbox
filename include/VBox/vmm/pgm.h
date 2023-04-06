@@ -668,6 +668,7 @@ typedef PGMPHYSHANDLERTYPE *PPGMPHYSHANDLERTYPE;
 #define NIL_PGMPHYSHANDLERTYPE  UINT64_MAX
 VMMDECL(int)        PGMHandlerPhysicalRegister(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast, PGMPHYSHANDLERTYPE hType,
                                                uint64_t uUser, R3PTRTYPE(const char *) pszDesc);
+VMMDECL(int)        PGMHandlerPhysicalRegisterVmxApicAccessPage(PVMCC pVM, RTGCPHYS GCPhys, PGMPHYSHANDLERTYPE hType);
 VMMDECL(int)        PGMHandlerPhysicalModify(PVMCC pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast);
 VMMDECL(int)        PGMHandlerPhysicalDeregister(PVMCC pVM, RTGCPHYS GCPhys);
 VMMDECL(int)        PGMHandlerPhysicalChangeUserArg(PVMCC pVM, RTGCPHYS GCPhys, uint64_t uUser);
