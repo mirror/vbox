@@ -54,6 +54,14 @@ RT_C_DECLS_BEGIN
  */
 typedef struct DISOPPARAMARMV8
 {
+    /** The register operand. */
+    union
+    {
+        /** General register index (DISGREG_XXX), applicable if DISUSE_REG_GEN32
+         * or DISUSE_REG_GEN64 is set in fUse. */
+        uint8_t     idxGenReg;
+    } Reg;
+    /** Scale factor. */
     uint8_t           uScale;
     /** Parameter size. */
     uint8_t           cb;
@@ -66,14 +74,6 @@ typedef struct DISOPPARAMARMV8
 typedef DISOPPARAMARMV8 *PDISOPPARAMARMV8;
 /** Pointer to opcode parameter. */
 typedef const DISOPPARAMARMV8 *PCDISOPPARAMARMV8;
-
-
-/** Parser callback.
- * @remark no DECLCALLBACK() here because it's considered to be internal and
- *         there is no point in enforcing CDECL. */
-typedef size_t FNDISPARSEARMV8(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam, uint8_t cBitStart, uint8_t cBits);
-/** Pointer to a disassembler parser function. */
-typedef FNDISPARSEARMV8 *PFNDISPARSEARMV8;
 
 
 /**

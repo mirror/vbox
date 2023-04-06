@@ -519,6 +519,22 @@ enum OPCODESARMV8
     OP_ARMV8_END_OF_OPCODES
 };
 
+
+/** @defgroup grp_dis_opparam Opcode parameters (DISOPCODE::fParam1,
+ *            DISOPCODE::fParam2, DISOPCODE::fParam3)
+ * @ingroup grp_dis
+ * @{
+ */
+
+enum OP_ARMV8_PARM
+{
+    OP_ARMV8_PARM_NONE,
+};
+
+
+/** Immediate (the instruction class gives the range of the immediate). */
+#define OP_ARMV8_PARM_Imm               1
+
 /** @} */
 
 #endif /* !VBOX_INCLUDED_disopcode_armv8_h */

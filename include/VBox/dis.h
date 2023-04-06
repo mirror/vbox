@@ -551,6 +551,9 @@ DISDECL(size_t) DISFormatMasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
 DISDECL(size_t) DISFormatGas(   PCDISSTATE pDis, char *pszBuf, size_t cchBuf);
 DISDECL(size_t) DISFormatGasEx( PCDISSTATE pDis, char *pszBuf, size_t cchBuf, uint32_t fFlags, PFNDISGETSYMBOL pfnGetSymbol, void *pvUser);
 
+DISDECL(size_t) DISFormatArmV8(  PCDISSTATE pDis, char *pszBuf, size_t cchBuf);
+DISDECL(size_t) DISFormatArmV8Ex(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, uint32_t fFlags, PFNDISGETSYMBOL pfnGetSymbol, void *pvUser);
+
 /** @todo DISAnnotate(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, register
  *        reader, memory reader); */
 

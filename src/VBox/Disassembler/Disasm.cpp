@@ -585,10 +585,38 @@ DISDECL(int) DISInstrToStrEx(RTUINTPTR uInstrAddr, DISCPUMODE enmCpuMode,
     int rc = DISInstrEx(uInstrAddr, enmCpuMode, uFilter, pfnReadBytes, pvUser, pDis, pcbInstr);
     if (RT_SUCCESS(rc) && pszOutput && cbOutput)
     {
-        size_t cch = DISFormatYasmEx(pDis, pszOutput, cbOutput,
-                                     DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_BYTES_BRACKETS | DIS_FMT_FLAGS_BYTES_SPACED
-                                     | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_ADDR_LEFT,
-                                     NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
+        size_t cch = 0;
+
+        switch (enmCpuMode)
+        {
+            case DISCPUMODE_16BIT:
+            case DISCPUMODE_32BIT:
+            case DISCPUMODE_64BIT:
+#if defined(VBOX_DIS_WITH_X86_AMD64)
+                cch = DISFormatYasmEx(pDis, pszOutput, cbOutput,
+                                        DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_BYTES_BRACKETS | DIS_FMT_FLAGS_BYTES_SPACED
+                                      | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_ADDR_LEFT,
+                                      NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
+#else
+                AssertReleaseFailed(); /* Shouldn't ever get here (DISInstrEx() returning VERR_NOT_SUPPORTED). */
+#endif
+                break;
+            case DISCPUMODE_ARMV8_A64:
+            case DISCPUMODE_ARMV8_A32:
+            case DISCPUMODE_ARMV8_T32:
+#if defined(VBOX_DIS_WITH_ARMV8)
+                cch = DISFormatArmV8Ex(pDis, pszOutput, cbOutput,
+                                         DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_BYTES_BRACKETS | DIS_FMT_FLAGS_BYTES_SPACED
+                                       | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_ADDR_LEFT,
+                                       NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
+#else
+               AssertReleaseFailed(); /* Shouldn't ever get here (DISInstrEx() returning VERR_NOT_SUPPORTED). */
+#endif
+                break;
+            default:
+                break;
+        }
+
         if (cch + 2 <= cbOutput)
         {
             pszOutput[cch++] = '\n';
