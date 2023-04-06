@@ -1343,6 +1343,8 @@ static DECLCALLBACK(VBOXSTRICTRC) tpmMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
     PDEVTPM pThis  = PDMDEVINS_2_DATA(pDevIns, PDEVTPM);
     RT_NOREF(pvUser);
 
+    AssertReturn(cb <= sizeof(uint64_t), VERR_INTERNAL_ERROR);
+
     RTGCPHYS offAligned = off & ~UINT64_C(0x3);
     uint8_t cBitsShift  = (off & 0x3) * 8;
 
