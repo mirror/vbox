@@ -520,7 +520,7 @@ enum OPCODESARMV8
 };
 
 
-/** @defgroup grp_dis_opparam Opcode parameters (DISOPCODE::fParam1,
+/** @defgroup grp_dis_opparam_armv8 Opcode parameters (DISOPCODE::fParam1,
  *            DISOPCODE::fParam2, DISOPCODE::fParam3)
  * @ingroup grp_dis
  * @{
@@ -530,6 +530,8 @@ enum OP_ARMV8_PARM
 {
     OP_ARMV8_PARM_NONE,
 };
+
+/** @} */
 
 
 /** Immediate (the instruction class gives the range of the immediate). */
