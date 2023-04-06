@@ -2476,6 +2476,8 @@ g_dMcStmtParsers = {
     'IEM_MC_ARG_LOCAL_REF':                                      McBlock.parseMcArgLocalRef,
     'IEM_MC_ASSIGN':                                             McBlock.parseMcGeneric,
     'IEM_MC_ASSIGN_TO_SMALLER':                                  McBlock.parseMcGeneric,
+    'IEM_MC_ASSIGN_U8_SX_U64':                                   McBlock.parseMcGeneric,
+    'IEM_MC_ASSIGN_U32_SX_U64':                                  McBlock.parseMcGeneric,
     'IEM_MC_BEGIN':                                              McBlock.parseMcGeneric,
     'IEM_MC_BSWAP_LOCAL_U16':                                    McBlock.parseMcGeneric,
     'IEM_MC_BSWAP_LOCAL_U32':                                    McBlock.parseMcGeneric,

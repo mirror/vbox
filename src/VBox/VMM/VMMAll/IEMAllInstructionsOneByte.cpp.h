@@ -2833,8 +2833,8 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Iz)
                 IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst);
 
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 4);
-                uint64_t u64Imm; IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64Imm);
-                IEM_MC_ASSIGN(u64Src, u64Imm);
+                uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm); /* Not using IEM_OPCODE_GET_NEXT_S32_SX_U64 to reduce the */
+                IEM_MC_ASSIGN_U32_SX_U64(u64Src, u32Imm);          /* parameter count for the threaded function for this block. */
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_FETCH_MEM_U64(u64Tmp, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
                 IEM_MC_REF_LOCAL(pu64Dst, u64Tmp);
@@ -3036,8 +3036,8 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Ib)
                 IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst);
 
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 1);
-                uint64_t u64Imm; IEM_OPCODE_GET_NEXT_S8_SX_U64(&u64Imm);
-                IEM_MC_ASSIGN(u64Src, u64Imm);
+                uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm); /* Not using IEM_OPCODE_GET_NEXT_S8_SX_U64 to reduce the */
+                IEM_MC_ASSIGN_U8_SX_U64(u64Src, u8Imm);        /* parameter count for the threaded function for this block. */
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_FETCH_MEM_U64(u64Tmp, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
                 IEM_MC_REF_LOCAL(pu64Dst, u64Tmp);
