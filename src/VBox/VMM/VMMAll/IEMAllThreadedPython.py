@@ -131,6 +131,8 @@ class ThreadedFunctionVariation(object):
     ## These variations will match translation block selection/distinctions as well.
     ## @note Effective operand size is generally handled in the decoder, at present
     ##       we only do variations on addressing and memory accessing.
+    ## @todo Blocks without addressing should have 64-bit and 32-bit PC update
+    ##       variations to reduce code size (see iemRegAddToRip).
     ## @{
     ksVariation_Default     = '';               ##< No variations.
     ksVariation_Addr16      = '_Addr16';        ##< 16-bit addressing mode.
@@ -369,13 +371,17 @@ class ThreadedFunctionVariation(object):
                             oNewStmt.asParams[0], self.dParamRefs['bRmEx'][0].sNewName, self.dParamRefs['bSib'][0].sNewName,
                             self.dParamRefs['u32Disp'][0].sNewName, self.dParamRefs['cbInstr'][0].sNewName,
                         ];
-                # ... and IEM_MC_ADVANCE_RIP_AND_FINISH into *_THREADED ...
+                # ... and IEM_MC_ADVANCE_RIP_AND_FINISH into *_THREADED and maybe *_LM64/_NOT64 ...
                 elif oNewStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH', 'IEM_MC_REL_JMP_S8_AND_FINISH',
                                         'IEM_MC_REL_JMP_S16_AND_FINISH', 'IEM_MC_REL_JMP_S32_AND_FINISH'):
                     oNewStmt.asParams.append(self.dParamRefs['cbInstr'][0].sNewName);
                     if oNewStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH',  'IEM_MC_REL_JMP_S32_AND_FINISH'):
                         oNewStmt.asParams.append(self.dParamRefs['pVCpu->iem.s.enmEffOpSize'][0].sNewName);
                     oNewStmt.sName += '_THREADED';
+                    if self.sVariation in (self.ksVariation_Addr64, self.ksVariation_Addr64_32):
+                        oNewStmt.sName += '_LM64';
+                    elif self.sVariation != self.ksVariation_Default:
+                        oNewStmt.sName += '_NOT64';
 
                 # ... and IEM_MC_*_GREG_U8 into *_THREADED w/ reworked index taking REX into account
                 elif oNewStmt.sName.startswith('IEM_MC_') and oNewStmt.sName.find('_GREG_U8') > 0:

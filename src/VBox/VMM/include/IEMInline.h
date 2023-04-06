@@ -1770,6 +1770,25 @@ DECL_FORCE_INLINE(void) iemRegAddToRip(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXC
 
 
 /**
+ * Updates the EIP/IP to point to the next instruction - only for 32-bit and
+ * 16-bit code.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The number of bytes to add.
+ */
+DECL_FORCE_INLINE(void) iemRegAddToEip32(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
+{
+    /* See comment in iemRegAddToRip. */
+    uint32_t const uEipPrev = pVCpu->cpum.GstCtx.eip;
+    uint32_t const uEipNext = uEipPrev + cbInstr;
+    if (IEM_GET_TARGET_CPU(pVCpu) >= IEMTARGETCPU_386)
+        pVCpu->cpum.GstCtx.rip = (uint32_t)uEipNext;
+    else
+        pVCpu->cpum.GstCtx.rip = (uint16_t)uEipNext;
+}
+
+
+/**
  * Called by iemRegAddToRipAndFinishingClearingRF and others when any of the
  * following EFLAGS bits are set:
  *      - X86_EFL_RF - clear it.
@@ -1870,9 +1889,41 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegFinishClearingRF(PVMCPUCC pVCpu) RT_NOEXCE
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   cbInstr             The number of bytes to add.
  */
-DECLINLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToRipAndFinishingClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
 {
     iemRegAddToRip(pVCpu, cbInstr);
+    return iemRegFinishClearingRF(pVCpu);
+}
+
+
+/**
+ * Updates the RIP to point to the next instruction and clears EFLAGS.RF
+ * and CPUMCTX_INHIBIT_SHADOW.
+ * 
+ * Only called from 64-code code.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The number of bytes to add.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToRip64AndFinishingClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
+{
+    pVCpu->cpum.GstCtx.rip = pVCpu->cpum.GstCtx.rip + cbInstr;
+    return iemRegFinishClearingRF(pVCpu);
+}
+
+
+/**
+ * Updates the EIP to point to the next instruction and clears EFLAGS.RF and
+ * CPUMCTX_INHIBIT_SHADOW. 
+ *
+ * This is never from 64-code code.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The number of bytes to add.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToEip32AndFinishingClearingRF(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
+{
+    iemRegAddToEip32(pVCpu, cbInstr);
     return iemRegFinishClearingRF(pVCpu);
 }
 

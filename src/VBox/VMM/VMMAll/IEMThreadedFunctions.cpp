@@ -79,62 +79,84 @@
 /** Variant of IEM_MC_ADVANCE_RIP_AND_FINISH with instruction length as param. */
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED(a_cbInstr) \
     return iemRegAddToRipAndFinishingClearingRF(pVCpu, a_cbInstr)
-#undef IEM_MC_ADVANCE_RIP_AND_FINISH
+#undef  IEM_MC_ADVANCE_RIP_AND_FINISH
+
+/** Variant of IEM_MC_ADVANCE_RIP_AND_FINISH with instruction length as param
+ *  and only used when we're in 64-bit code. */
+#define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_LM64(a_cbInstr) \
+    return iemRegAddToRip64AndFinishingClearingRF(pVCpu, a_cbInstr)
+#undef  IEM_MC_ADVANCE_RIP_AND_FINISH
+
+/** Variant of IEM_MC_ADVANCE_RIP_AND_FINISH with instruction length as param
+ *  and never used in 64-bit code. */
+#define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_NOT64(a_cbInstr) \
+    return iemRegAddToEip32AndFinishingClearingRF(pVCpu, a_cbInstr)
+#undef  IEM_MC_ADVANCE_RIP_AND_FINISH
 
 /** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length as param. */
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED(a_i8, a_cbInstr, a_enmEffOpSize) \
     return iemRegRipRelativeJumpS8AndFinishClearingRF(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize)
-#undef IEM_MC_REL_JMP_S8_AND_FINISH
+#undef  IEM_MC_REL_JMP_S8_AND_FINISH
 
 /** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as param. */
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED(a_i16, a_cbInstr) \
     return iemRegRipRelativeJumpS16AndFinishClearingRF(pVCpu, a_cbInstr, (a_i16))
-#undef IEM_MC_REL_JMP_S16_AND_FINISH
+#undef  IEM_MC_REL_JMP_S16_AND_FINISH
 
 /** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as param. */
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED(a_i32, a_cbInstr, a_enmEffOpSize) \
     return iemRegRipRelativeJumpS32AndFinishClearingRF(pVCpu, a_cbInstr, (a_i32), a_enmEffOpSize)
-#undef IEM_MC_REL_JMP_S32_AND_FINISH
+#undef  IEM_MC_REL_JMP_S32_AND_FINISH
 
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters. */
-# define IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR16(a_GCPtrEff, a_bRm, a_u16Disp) \
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR16(a_GCPtrEff, a_bRm, a_u16Disp) \
     (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr16(pVCpu, a_bRm, a_u16Disp)
+#undef  IEM_MC_CALC_RM_EFF_ADDR
 
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters. */
-# define IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR32(a_GCPtrEff, a_bRm, a_bSib, a_u32Disp) \
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR32(a_GCPtrEff, a_bRm, a_bSib, a_u32Disp) \
     (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr32(pVCpu, a_bRm, a_bSib, a_u32Disp)
+#undef  IEM_MC_CALC_RM_EFF_ADDR
 
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters. */
-# define IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR32FLAT(a_GCPtrEff, a_bRm, a_bSib, a_u32Disp) \
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR32FLAT(a_GCPtrEff, a_bRm, a_bSib, a_u32Disp) \
     (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr32(pVCpu, a_bRm, a_bSib, a_u32Disp)
+#undef  IEM_MC_CALC_RM_EFF_ADDR
 
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters. */
-# define IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR64(a_GCPtrEff, a_bRmEx, a_bSib, a_u32Disp, a_cbImm) \
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR64(a_GCPtrEff, a_bRmEx, a_bSib, a_u32Disp, a_cbImm) \
     (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr64(pVCpu, a_bRmEx, a_bSib, a_u32Disp, a_cbImm)
+#undef  IEM_MC_CALC_RM_EFF_ADDR
 
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters. */
-# define IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR6432(a_GCPtrEff, a_bRmEx, a_bSib, a_u32Disp, a_cbImm) \
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR6432(a_GCPtrEff, a_bRmEx, a_bSib, a_u32Disp, a_cbImm) \
     (a_GCPtrEff) = (uint32_t)iemOpHlpCalcRmEffAddrThreadedAddr64(pVCpu, a_bRmEx, a_bSib, a_u32Disp, a_cbImm)
+#undef  IEM_MC_CALC_RM_EFF_ADDR
 
 /** Variant of IEM_MC_CALL_CIMPL_1 with explicit instruction length parameter. */
-# define IEM_MC_CALL_CIMPL_1_THREADED(a_cbInstr, a_pfnCImpl, a0) \
+#define IEM_MC_CALL_CIMPL_1_THREADED(a_cbInstr, a_pfnCImpl, a0) \
     return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0)
+#undef  IEM_MC_CALL_CIMPL_1
 
 /** Variant of IEM_MC_CALL_CIMPL_2 with explicit instruction length parameter. */
-# define IEM_MC_CALL_CIMPL_2_THREADED(a_cbInstr, a_pfnCImpl, a0, a1) \
+#define IEM_MC_CALL_CIMPL_2_THREADED(a_cbInstr, a_pfnCImpl, a0, a1) \
     return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1)
+#undef  IEM_MC_CALL_CIMPL_2
 
 /** Variant of IEM_MC_CALL_CIMPL_3 with explicit instruction length parameter. */
-# define IEM_MC_CALL_CIMPL_3_THREADED(a_cbInstr, a_pfnCImpl, a0, a1, a2) \
+#define IEM_MC_CALL_CIMPL_3_THREADED(a_cbInstr, a_pfnCImpl, a0, a1, a2) \
     return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1, a2)
+#undef  IEM_MC_CALL_CIMPL_3
 
 /** Variant of IEM_MC_CALL_CIMPL_4 with explicit instruction length parameter. */
-# define IEM_MC_CALL_CIMPL_4_THREADED(a_cbInstr, a_pfnCImpl, a0, a1, a2, a3) \
+#define IEM_MC_CALL_CIMPL_4_THREADED(a_cbInstr, a_pfnCImpl, a0, a1, a2, a3) \
     return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1, a2, a3)
+#undef  IEM_MC_CALL_CIMPL_4
 
 /** Variant of IEM_MC_CALL_CIMPL_5 with explicit instruction length parameter. */
-# define IEM_MC_CALL_CIMPL_5_THREADED(a_cbInstr, a_pfnCImpl, a0, a1, a2, a3, a4) \
+#define IEM_MC_CALL_CIMPL_5_THREADED(a_cbInstr, a_pfnCImpl, a0, a1, a2, a3, a4) \
     return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1, a2, a3, a4)
+#undef  IEM_MC_CALL_CIMPL_5
 
 /** Variant of IEM_MC_FETCH_GREG_U8 with extended (20) register index. */
 #define IEM_MC_FETCH_GREG_U8_THREADED(a_u8Dst, a_iGRegEx) \
@@ -159,42 +181,52 @@
 /** Variant of IEM_MC_FETCH_GREG_U8_SX_U32 with extended (20) register index. */
 #define IEM_MC_FETCH_GREG_U8_SX_U32_THREADED(a_u32Dst, a_iGRegEx) \
     (a_u32Dst) = (int8_t)iemGRegFetchU8Ex(pVCpu, (a_iGRegEx))
+#undef IEM_MC_FETCH_GREG_U8_SX_U32
 
 /** Variant of IEM_MC_FETCH_GREG_U8_SX_U64 with extended (20) register index. */
 #define IEM_MC_FETCH_GREG_U8_SX_U64_THREADED(a_u64Dst, a_iGRegEx) \
     (a_u64Dst) = (int8_t)iemGRegFetchU8Ex(pVCpu, (a_iGRegEx))
+#undef IEM_MC_FETCH_GREG_U8_SX_U64
 
 /** Variant of IEM_MC_STORE_GREG_U8 with extended (20) register index. */
 #define IEM_MC_STORE_GREG_U8_THREADED(a_iGRegEx, a_u8Value) \
     *iemGRegRefU8Ex(pVCpu, (a_iGRegEx)) = (a_u8Value)
+#undef IEM_MC_STORE_GREG_U8
 
 /** Variant of IEM_MC_STORE_GREG_U8 with extended (20) register index. */
 #define IEM_MC_STORE_GREG_U8_CONST_THREADED(a_iGRegEx, a_u8Value) \
     *iemGRegRefU8Ex(pVCpu, (a_iGRegEx)) = (a_u8Value)
+#undef IEM_MC_STORE_GREG_U8
 
 /** Variant of IEM_MC_REF_GREG_U8 with extended (20) register index. */
 #define IEM_MC_REF_GREG_U8_THREADED(a_pu8Dst, a_iGRegEx) \
     (a_pu8Dst) = iemGRegRefU8Ex(pVCpu, (a_iGRegEx))
+#undef IEM_MC_REF_GREG_U8
 
 /** Variant of IEM_MC_ADD_GREG_U8 with extended (20) register index. */
 #define IEM_MC_ADD_GREG_U8_THREADED(a_iGRegEx, a_u8Value) \
     *iemGRegRefU8Ex(pVCpu, (a_iGRegEx)) += (a_u8Value)
+#undef IEM_MC_ADD_GREG_U8
 
 /** Variant of IEM_MC_SUB_GREG_U8 with extended (20) register index. */
 #define IEM_MC_SUB_GREG_U8_THREADED(a_iGRegEx,  a_u8Value) \
     *iemGRegRefU8Ex(pVCpu, (a_iGRegEx)) -= (a_u8Value)
+#undef IEM_MC_SUB_GREG_U8
 
 /** Variant of IEM_MC_ADD_GREG_U8_TO_LOCAL with extended (20) register index. */
 #define IEM_MC_ADD_GREG_U8_TO_LOCAL_THREADED(a_u8Value, a_iGRegEx) \
-    do { (a_u8Value)  += iemGRegFetchU8Ex(pVCpu, (a_iGRegEx)); } while (0)
+    do { (a_u8Value) += iemGRegFetchU8Ex(pVCpu, (a_iGRegEx)); } while (0)
+#undef IEM_MC_ADD_GREG_U8_TO_LOCAL
 
 /** Variant of IEM_MC_AND_GREG_U8 with extended (20) register index. */
 #define IEM_MC_AND_GREG_U8_THREADED(a_iGRegEx, a_u8Value) \
     *iemGRegRefU8Ex(pVCpu, (a_iGRegEx)) &= (a_u8Value)
+#undef IEM_MC_AND_GREG_U8
 
 /** Variant of IEM_MC_OR_GREG_U8 with extended (20) register index. */
 #define IEM_MC_OR_GREG_U8_THREADED(a_iGRegEx, a_u8Value) \
     *iemGRegRefU8Ex(pVCpu, (a_iGRegEx)) |= (a_u8Value)
+#undef IEM_MC_OR_GREG_U8
 
 /**
  * Calculates the effective address of a ModR/M memory operand, 16-bit
@@ -277,6 +309,9 @@ static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr32(PVMCPUCC pVCpu, uint8_t bRm, 
 
     /* Get the register (or SIB) value. */
     uint32_t u32EffAddr;
+#ifdef _MSC_VER
+    u32EffAddr = 0;/* MSC uninitialized variable analysis is too simple, it seems. */
+#endif
     switch (bRm & X86_MODRM_RM_MASK)
     {
         case 0: u32EffAddr = pVCpu->cpum.GstCtx.eax; break;
@@ -371,8 +406,12 @@ static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr64(PVMCPUCC pVCpu, uint8_t bRmEx
     else
     {
         /* Get the register (or SIB) value. */
+#ifdef _MSC_VER
+        u64EffAddr = 0; /* MSC uninitialized variable analysis is too simple, it seems. */
+#endif
         switch (bRmEx & (X86_MODRM_RM_MASK | 0x8)) /* bRmEx[bit 3] = REX.B */
         {
+            default:
             case  0: u64EffAddr = pVCpu->cpum.GstCtx.rax; break;
             case  1: u64EffAddr = pVCpu->cpum.GstCtx.rcx; break;
             case  2: u64EffAddr = pVCpu->cpum.GstCtx.rdx; break;
