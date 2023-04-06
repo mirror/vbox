@@ -2029,6 +2029,11 @@ static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATE
             AssertMsgFailedReturn(("u8SD=%d\n", pStream->u8SD), VERR_INTERNAL_ERROR_3);
     }
 
+    /** Validate locks -- see @bugref{10350}. */
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
+    Assert(RTCritSectIsOwned(&pStreamCC->State.CritSect));
+    Assert(AudioMixerSinkLockIsOwned(pMixSink));
+
     /*
      * Don't continue if the frequency is out of range (the rest of the
      * properties should be okay).
@@ -2272,6 +2277,11 @@ static void ichac97R3StreamTearDown(PAC97STREAM pStream)
  * @param   pStreamCC   The AC'97 stream to re-open (ring-3).
  * @param   fForce      Whether to force re-opening the stream or not.
  *                      Otherwise re-opening only will happen if the PCM properties have changed.
+ *
+ * @remarks This is called holding:
+ *              -# The AC'97 device lock.
+ *
+ *          Will acquire the stream and mixer sink locks. See @bugref{10350}
  */
 static int ichac97R3StreamReSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATER3 pThisCC,
                                   PAC97STREAM pStream, PAC97STREAMR3 pStreamCC, bool fForce)
@@ -2282,12 +2292,22 @@ static int ichac97R3StreamReSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STA
     Assert(pStream   - &pThis->aStreams[0]   == pStream->u8SD);
     Assert(pStreamCC - &pThisCC->aStreams[0] == pStream->u8SD);
 
+    ichac97R3StreamLock(pStreamCC);
+    PAUDMIXSINK const pSink = ichac97R3IndexToSink(pThisCC, pStream->u8SD);
+    if (pSink)
+        AudioMixerSinkLock(pSink);
+
     ichac97R3StreamTearDown(pStream);
     int rc = ichac97R3StreamSetUp(pDevIns, pThis, pThisCC, pStream, pStreamCC, fForce);
     if (rc == VINF_NO_CHANGE)
         STAM_REL_PROFILE_STOP_NS(&pStreamCC->State.StatReSetUpSame, r);
     else
         STAM_REL_PROFILE_STOP_NS(&pStreamCC->State.StatReSetUpChanged, r);
+
+    if (pSink)
+        AudioMixerSinkUnlock(pSink);
+    ichac97R3StreamUnlock(pStreamCC);
+
     return rc;
 }
 
@@ -2309,7 +2329,8 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
 {
     ichac97R3StreamLock(pStreamCC);
     PAUDMIXSINK const pSink = ichac97R3IndexToSink(pThisCC, pStream->u8SD);
-    AudioMixerSinkLock(pSink);
+    if (pSink)
+        AudioMixerSinkLock(pSink);
 
     int rc = VINF_SUCCESS;
     /*
@@ -2339,7 +2360,8 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
             }
 
             /* Do the actual enabling (won't fail as long as pSink is valid). */
-            rc = AudioMixerSinkStart(pSink);
+            if (pSink)
+                rc = AudioMixerSinkStart(pSink);
         }
     }
     /*
@@ -2352,7 +2374,8 @@ static int ichac97R3StreamEnable(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STAT
     }
 
     /* Make sure to leave the lock before (eventually) starting the timer. */
-    AudioMixerSinkUnlock(pSink);
+    if (pSink)
+        AudioMixerSinkUnlock(pSink);
     ichac97R3StreamUnlock(pStreamCC);
     LogFunc(("[SD%RU8] fEnable=%RTbool, rc=%Rrc\n", pStream->u8SD, fEnable, rc));
     return rc;
