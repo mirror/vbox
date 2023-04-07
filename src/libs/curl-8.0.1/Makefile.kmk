@@ -27,8 +27,7 @@
 
 SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
-
-VBOX_PATH_LIBCURL = $(PATH_ROOT)/src/libs/curl-7.87.0
+VBOX_PATH_LIBCURL = $(PATH_ROOT)/src/libs/curl-8.0.1
 
 LIBRARIES += VBox-libcurl
 VBox-libcurl_TEMPLATE       = VBoxR3RuntimeDllNonPedantic
