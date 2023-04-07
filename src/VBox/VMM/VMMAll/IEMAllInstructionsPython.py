@@ -2649,7 +2649,6 @@ g_dMcStmtParsers = {
     'IEM_MC_INT_CLEAR_ZMM_256_UP':                               McBlock.parseMcGeneric,
     'IEM_MC_LOCAL':                                              McBlock.parseMcLocal,
     'IEM_MC_LOCAL_CONST':                                        McBlock.parseMcLocalConst,
-    'IEM_MC_MAYBE_RAISE_AESNI_RELATED_XCPT':                     McBlock.parseMcGeneric,
     'IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT':                       McBlock.parseMcGeneric,
     'IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE':                   McBlock.parseMcGeneric,
     'IEM_MC_MAYBE_RAISE_FPU_XCPT':                               McBlock.parseMcGeneric,
