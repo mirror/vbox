@@ -180,29 +180,7 @@
     } while (0)
 #define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT() \
     do { \
-        if (   (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM) \
-            || !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fMmx) \
-            return iemRaiseUndefinedOpcode(pVCpu); \
-        if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS) \
-            return iemRaiseDeviceNotAvailable(pVCpu); \
-        if (pVCpu->cpum.GstCtx.XState.x87.FSW & X86_FSW_ES) \
-            return iemRaiseMathFault(pVCpu); \
-    } while (0)
-#define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_EX(a_fSupported) \
-    do { \
-        if (   (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM) \
-            || !(a_fSupported)) \
-            return iemRaiseUndefinedOpcode(pVCpu); \
-        if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS) \
-            return iemRaiseDeviceNotAvailable(pVCpu); \
-        if (pVCpu->cpum.GstCtx.XState.x87.FSW & X86_FSW_ES) \
-            return iemRaiseMathFault(pVCpu); \
-    } while (0)
-#define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT() \
-    do { \
-        if (   (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM) \
-            || (   !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSse \
-                && !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAmdMmxExts) ) \
+        if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM) \
             return iemRaiseUndefinedOpcode(pVCpu); \
         if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS) \
             return iemRaiseDeviceNotAvailable(pVCpu); \

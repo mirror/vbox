@@ -480,12 +480,12 @@ FNIEMOP_DEF(iemOp_palignr_Pq_Qq_Ib)
         /** @todo testcase: REX.B / REX.R and MMX register indexing. Ignored? */
         /** @todo testcase: REX.B / REX.R and segment register indexing. Ignored? */
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSsse3);
         IEM_MC_BEGIN(3, 0);
         IEM_MC_ARG(uint64_t *,          pDst, 0);
         IEM_MC_ARG(uint64_t,            uSrc, 1);
         IEM_MC_ARG_CONST(uint8_t,       bImmArg, /*=*/ bImm, 2);
-        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_EX(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSsse3);
+        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
         IEM_MC_PREPARE_FPU_USAGE();
         IEM_MC_FPU_TO_MMX_MODE();
         IEM_MC_REF_MREG_U64(pDst, IEM_GET_MODRM_REG_8(bRm));
@@ -509,8 +509,8 @@ FNIEMOP_DEF(iemOp_palignr_Pq_Qq_Ib)
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
         IEM_MC_ARG_CONST(uint8_t,               bImmArg, /*=*/ bImm, 2);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_EX(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSsse3);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSsse3);
+        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
         IEM_MC_FETCH_MEM_U64(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
         IEM_MC_PREPARE_FPU_USAGE();

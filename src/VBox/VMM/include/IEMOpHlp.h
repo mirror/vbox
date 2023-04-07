@@ -434,6 +434,21 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
             return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
     } while (0)
 
+/**
+ * Done decoding, raise \#UD exception if lock prefix present, or if the
+ * a_fFeature is present in the guest CPU.
+ */
+#define IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX_2_OR(a_fFeature1, a_fFeature2) \
+    do \
+    { \
+        if (RT_LIKELY(   !(pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK) \
+                      && (   IEM_GET_GUEST_CPU_FEATURES(pVCpu)->a_fFeature1 \
+                          || IEM_GET_GUEST_CPU_FEATURES(pVCpu)->a_fFeature2) )) \
+        { /* likely */ } \
+        else \
+            return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
+    } while (0)
+
 
 /**
  * Done decoding VEX instruction, raise \#UD exception if any lock, rex, repz,

@@ -2656,8 +2656,6 @@ g_dMcStmtParsers = {
     'IEM_MC_MAYBE_RAISE_FPU_XCPT':                               McBlock.parseMcGeneric,
     'IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT':                          McBlock.parseMcGeneric,
     'IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT':                       McBlock.parseMcGeneric,
-    'IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT':   McBlock.parseMcGeneric,
-    'IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_EX':                    McBlock.parseMcGeneric,
     'IEM_MC_MAYBE_RAISE_NON_CANONICAL_ADDR_GP0':                 McBlock.parseMcGeneric,
     'IEM_MC_MAYBE_RAISE_PCLMUL_RELATED_XCPT':                    McBlock.parseMcGeneric,
     'IEM_MC_MAYBE_RAISE_SHA_RELATED_XCPT':                       McBlock.parseMcGeneric,
