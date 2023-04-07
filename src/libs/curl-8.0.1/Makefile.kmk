@@ -67,10 +67,13 @@ VBox-libcurl_SOURCES        = \
 	lib/connect.c \
 	lib/content_encoding.c \
 	lib/cookie.c \
+	lib/cf-https-connect.c \
+	lib/cf-socket.c \
 	lib/cfilters.c \
 	lib/curl_addrinfo.c \
 	lib/curl_get_line.c \
 	lib/curl_fnmatch.c \
+	lib/curl_log.c \
 	lib/curl_memrchr.c \
 	lib/curl_sasl.c \
 	lib/curl_range.c \
@@ -138,10 +141,10 @@ VBox-libcurl_SOURCES        = \
 	lib/vtls/openssl.c \
 	lib/vtls/vtls.c \
 	lib/warnless.c \
-	lib/wildcard.c \
 	lib/version.c \
 	lib/vauth/digest.c \
 	lib/vauth/vauth.c \
+	lib/vquic/vquic.c \
 	lib/vtls/hostcheck.c \
 	lib/vtls/keylog.c
 VBox-libcurl_SOURCES.win = \
