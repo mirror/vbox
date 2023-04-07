@@ -4888,12 +4888,12 @@ endif
 
 ifdef VBOX_WITH_LIBCURL
  SDK_VBoxLibCurl              := libcurl for dll linking.
- SDK_VBoxLibCurl_INCS         ?= $(PATH_ROOT)/src/libs/curl-7.87.0/include
+ SDK_VBoxLibCurl_INCS         ?= $(PATH_ROOT)/src/libs/curl-8.0.1/include
  SDK_VBoxLibCurl_LIBS         ?= $(PATH_STAGE_LIB)/VBox-libcurl$(VBOX_SUFF_LIB)
  SDK_VBoxLibCurl_DEFS         ?= BUILDING_LIBCURL
 
  SDK_VBoxLibCurl-x86           = libcurl/x86 for dll linking.
- SDK_VBoxLibCurl-x86_INCS     ?= $(PATH_ROOT)/src/libs/curl-7.87.0/include
+ SDK_VBoxLibCurl-x86_INCS     ?= $(PATH_ROOT)/src/libs/curl-8.0.1/include
  SDK_VBoxLibCurl-x86_LIBS.x86 ?= $(PATH_STAGE_LIB)/VBox-libcurl-x86$(VBOX_SUFF_LIB)
  SDK_VBoxLibCurl-x86_DEFS     ?= BUILDING_LIBCURL
 endif
