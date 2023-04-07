@@ -150,14 +150,6 @@
             return iemRaiseSimdFpException(pVCpu); \
         return iemRaiseUndefinedOpcode(pVCpu); \
     } while (0)
-#define IEM_MC_MAYBE_RAISE_PCLMUL_RELATED_XCPT() \
-    do { \
-        if (   (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM) \
-            || !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSFXSR)) \
-            return iemRaiseUndefinedOpcode(pVCpu); \
-        if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS) \
-            return iemRaiseDeviceNotAvailable(pVCpu); \
-    } while (0)
 
 
 #define IEM_MC_LOCAL(a_Type, a_Name)                    a_Type a_Name
