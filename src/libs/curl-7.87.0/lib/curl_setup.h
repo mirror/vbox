@@ -82,6 +82,15 @@
 
 #include "curl_config.h"
 
+# ifdef VBOX
+#  ifdef WIN32
+     /* Fixing an issue with following #if (SIZEOF_CURL_OFF_T < 4) */
+     /* Define to the size of `curl_off_t', as computed by sizeof. */
+#    undef SIZEOF_CURL_OFF_T
+#    define SIZEOF_CURL_OFF_T 8
+#  endif
+# endif
+
 #else /* HAVE_CONFIG_H */
 
 #ifdef _WIN32_WCE
