@@ -57,9 +57,26 @@ typedef enum DISPARMPARSEIDX
     kDisParmParseImmsImmrN,
     kDisParmParseHw,
     kDisParmParseCond,
+    kDisParmParsePState,
     kDisParmParseMax
 } DISPARMPARSEIDX;
 /** @}  */
+
+
+/**
+ * Opcode structure.
+ */
+typedef struct DISARMV8OPCODE
+{
+    /** The mask defining the static bits of the opcode. */
+    uint32_t            fMask;
+    /** The value of masked bits of the isntruction. */
+    uint32_t            fValue;
+    /** The generic opcode structure. */
+    DISOPCODE           Opc;
+} DISARMV8OPCODE;
+/** Pointer to a const opcode. */
+typedef const DISARMV8OPCODE *PCDISARMV8OPCODE;
 
 
 typedef struct DISARMV8INSNPARAM
@@ -85,6 +102,7 @@ typedef const DISARMV8INSNPARAM *PCDISARMV8INSNPARAM;
 typedef enum DISARMV8OPCDECODE
 {
     kDisArmV8OpcDecodeNop = 0,
+    kDisArmV8OpcDecodeLookup,
     kDisArmV8OpcDecodeMax
 } DISARMV8OPCDECODE;
 
@@ -128,7 +146,7 @@ typedef struct DISARMV8INSNCLASS
     /** Decoder header. */
     DISARMV8DECODEHDR       Hdr;
     /** Pointer to the arry of opcodes. */
-    PCDISOPCODE             paOpcodes;
+    PCDISARMV8OPCODE        paOpcodes;
     /** Some flags for this instruction class. */
     uint32_t                fClass;
     /** Opcode decoder function. */
@@ -152,7 +170,7 @@ typedef const DISARMV8INSNCLASS *PCDISARMV8INSNCLASS;
 
 
 #define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(a_Name) \
-    static const DISOPCODE a_Name ## Opcodes[] = {
+    static const DISARMV8OPCODE a_Name ## Opcodes[] = {
 #define DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS(a_Name, a_fClass, a_enmOpcDecode, a_fMask, a_cShift) \
     }; \
     static const DISARMV8INSNCLASS a_Name = { { kDisArmV8DecodeType_InsnClass, RT_ELEMENTS(a_Name ## Opcodes) }, &a_Name ## Opcodes[0],\

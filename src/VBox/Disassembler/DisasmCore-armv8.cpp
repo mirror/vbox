@@ -78,12 +78,14 @@ static FNDISPARSEARMV8 disArmV8ParseReg;
 static FNDISPARSEARMV8 disArmV8ParseImmsImmrN;
 static FNDISPARSEARMV8 disArmV8ParseHw;
 static FNDISPARSEARMV8 disArmV8ParseCond;
+static FNDISPARSEARMV8 disArmV8ParsePState;
 /** @}  */
 
 
 /** @name Decoders
  * @{ */
 static FNDISDECODEARMV8 disArmV8DecodeIllegal;
+static FNDISDECODEARMV8 disArmV8DecodeLookup;
 /** @} */
 
 
@@ -100,7 +102,8 @@ static PFNDISPARSEARMV8 const g_apfnDisasm[kDisParmParseMax] =
     disArmV8ParseReg,
     disArmV8ParseImmsImmrN,
     disArmV8ParseHw,
-    disArmV8ParseCond
+    disArmV8ParseCond,
+    disArmV8ParsePState,
 };
 
 
@@ -108,6 +111,7 @@ static PFNDISPARSEARMV8 const g_apfnDisasm[kDisParmParseMax] =
 static PFNDISDECODEARMV8 const g_apfnOpcDecode[kDisArmV8OpcDecodeMax] =
 {
     disArmV8DecodeIllegal,
+    disArmV8DecodeLookup,
 };
 
 
@@ -257,6 +261,15 @@ static int disArmV8ParseCond(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLA
 }
 
 
+static int disArmV8ParsePState(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLASS pInsnClass, PDISOPPARAM pParam, PCDISARMV8INSNPARAM pInsnParm, bool f64Bit)
+{
+    RT_NOREF(pDis, u32Insn, pInsnClass, pParam, pInsnParm, f64Bit);
+    //AssertFailed();
+    /** @todo */
+    return VINF_SUCCESS;
+}
+
+
 static uint32_t disArmV8DecodeIllegal(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLASS pInsnClass)
 {
     RT_NOREF(pDis, u32Insn, pInsnClass);
@@ -265,19 +278,35 @@ static uint32_t disArmV8DecodeIllegal(PDISSTATE pDis, uint32_t u32Insn, PCDISARM
 }
 
 
-static int disArmV8A64ParseInstruction(PDISSTATE pDis, uint32_t u32Insn, PCDISOPCODE pOp, PCDISARMV8INSNCLASS pInsnClass)
+static uint32_t disArmV8DecodeLookup(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLASS pInsnClass)
+{
+    RT_NOREF(pDis);
+
+    for (uint32_t i = 0; i < pInsnClass->Hdr.cDecode; i++)
+    {
+        PCDISARMV8OPCODE pOp = &pInsnClass->paOpcodes[i];
+        if (u32Insn == pOp->fValue)
+            return i;
+    }
+
+    return UINT32_MAX;
+}
+
+
+static int disArmV8A64ParseInstruction(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8OPCODE pOp, PCDISARMV8INSNCLASS pInsnClass)
 {
     AssertPtr(pOp);
     AssertPtr(pDis);
+    Assert((u32Insn & pOp->fMask) == pOp->fValue);
 
     /* Should contain the parameter type on input. */
-    pDis->Param1.arch.armv8.fParam = pOp->fParam1;
-    pDis->Param2.arch.armv8.fParam = pOp->fParam2;
-    pDis->Param3.arch.armv8.fParam = pOp->fParam3;
-    pDis->Param4.arch.armv8.fParam = pOp->fParam4;
+    pDis->Param1.arch.armv8.fParam = pOp->Opc.fParam1;
+    pDis->Param2.arch.armv8.fParam = pOp->Opc.fParam2;
+    pDis->Param3.arch.armv8.fParam = pOp->Opc.fParam3;
+    pDis->Param4.arch.armv8.fParam = pOp->Opc.fParam4;
 
-    pDis->pCurInstr = pOp;
-    Assert(pOp != &g_ArmV8A64InvalidOpcode[0]);
+    pDis->pCurInstr = &pOp->Opc;
+    Assert(&pOp->Opc != &g_ArmV8A64InvalidOpcode[0]);
 
     bool f64Bit = false;
 
@@ -368,13 +397,17 @@ static int disInstrArmV8DecodeWorker(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV
         PCDISARMV8INSNCLASS pInsnClass = (PCDISARMV8INSNCLASS)pHdr;
 
         /* Decode the opcode from the instruction class. */
-        uint32_t uOpcRaw = (u32Insn & pInsnClass->fMask) >> pInsnClass->cShift;
-        if (pInsnClass->enmOpcDecode != kDisArmV8OpcDecodeNop)
-            uOpcRaw = g_apfnOpcDecode[pInsnClass->enmOpcDecode](pDis, u32Insn, pInsnClass);
+        uint32_t uOpcRaw = 0;
+        if (pInsnClass->Hdr.cDecode > 1)
+        {
+            uOpcRaw = (u32Insn & pInsnClass->fMask) >> pInsnClass->cShift;
+            if (pInsnClass->enmOpcDecode != kDisArmV8OpcDecodeNop)
+                uOpcRaw = g_apfnOpcDecode[pInsnClass->enmOpcDecode](pDis, uOpcRaw, pInsnClass);
+        }
 
         if (uOpcRaw < pInsnClass->Hdr.cDecode)
         {
-            PCDISOPCODE pOp = &pInsnClass->paOpcodes[uOpcRaw];
+            PCDISARMV8OPCODE pOp = &pInsnClass->paOpcodes[uOpcRaw];
             return disArmV8A64ParseInstruction(pDis, u32Insn, pOp, pInsnClass);
         }
     }
