@@ -2660,7 +2660,6 @@ g_dMcStmtParsers = {
     'IEM_MC_MAYBE_RAISE_SHA_RELATED_XCPT':                       McBlock.parseMcGeneric,
     'IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT':             McBlock.parseMcGeneric,
     'IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT':                       McBlock.parseMcGeneric,
-    'IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT':                      McBlock.parseMcGeneric,
     'IEM_MC_MAYBE_RAISE_SSE3_RELATED_XCPT':                      McBlock.parseMcGeneric,
     'IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT':                     McBlock.parseMcGeneric,
     'IEM_MC_MAYBE_RAISE_SSE42_RELATED_XCPT':                     McBlock.parseMcGeneric,

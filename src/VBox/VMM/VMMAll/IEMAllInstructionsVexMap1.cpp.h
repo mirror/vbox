@@ -3020,11 +3020,11 @@ FNIEMOP_DEF(iemOp_vpackuswb_Vx_Hx_W)
 //        /*
 //         * Register, register.
 //         */
-//        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+//        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse2);
 //        IEM_MC_BEGIN(2, 0);
 //        IEM_MC_ARG(PRTUINT128U,          pDst, 0);
 //        IEM_MC_ARG(PCRTUINT128U,         pSrc, 1);
-//        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+//        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
 //        IEM_MC_PREPARE_SSE_USAGE();
 //        IEM_MC_REF_XREG_U128(pDst, IEM_GET_MODRM_REG(pVCpu, bRm));
 //        IEM_MC_REF_XREG_U128_CONST(pSrc, IEM_GET_MODRM_RM(pVCpu, bRm));
@@ -3044,8 +3044,8 @@ FNIEMOP_DEF(iemOp_vpackuswb_Vx_Hx_W)
 //        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 //
 //        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-//        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-//        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+//        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse2);
+//        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
 //        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); /* Most CPUs probably only right high qword */
 //
 //        IEM_MC_PREPARE_SSE_USAGE();
