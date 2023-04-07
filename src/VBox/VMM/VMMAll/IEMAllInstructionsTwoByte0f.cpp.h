@@ -49,7 +49,7 @@ FNIEMOP_DEF_1(iemOpCommonMmx_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U64, pfnU64)
          */
         /** @todo testcase: REX.B / REX.R and MMX register indexing. Ignored? */
         /** @todo testcase: REX.B / REX.R and segment register indexing. Ignored? */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
         IEM_MC_BEGIN(2, 0);
         IEM_MC_ARG(uint64_t *,          pDst, 0);
         IEM_MC_ARG(uint64_t const *,    pSrc, 1);
@@ -77,7 +77,7 @@ FNIEMOP_DEF_1(iemOpCommonMmx_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U64, pfnU64)
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
         IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
         IEM_MC_FETCH_MEM_U64(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
@@ -111,7 +111,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxOpt_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U64, pfnU
          */
         /** @todo testcase: REX.B / REX.R and MMX register indexing. Ignored? */
         /** @todo testcase: REX.B / REX.R and segment register indexing. Ignored? */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
         IEM_MC_BEGIN(2, 0);
         IEM_MC_ARG(uint64_t *,          pDst, 0);
         IEM_MC_ARG(uint64_t const *,    pSrc, 1);
@@ -139,7 +139,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxOpt_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U64, pfnU
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
         IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
         IEM_MC_FETCH_MEM_U64(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
@@ -522,7 +522,7 @@ FNIEMOP_DEF_1(iemOpCommonMmx_LowLow_To_Full, PFNIEMAIMPLMEDIAOPTF2U64, pfnU64)
         /*
          * MMX, MMX.
          */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
         IEM_MC_BEGIN(2, 0);
         IEM_MC_ARG(uint64_t *,              puDst, 0);
         IEM_MC_ARG(uint64_t const *,        puSrc, 1);
@@ -550,7 +550,7 @@ FNIEMOP_DEF_1(iemOpCommonMmx_LowLow_To_Full, PFNIEMAIMPLMEDIAOPTF2U64, pfnU64)
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
         IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
         IEM_MC_FETCH_MEM_U32_ZX_U64(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
 
@@ -704,7 +704,7 @@ FNIEMOP_DEF_1(iemOpCommonMmx_HighHigh_To_Full, PFNIEMAIMPLMEDIAOPTF2U64, pfnU64)
          */
         /** @todo testcase: REX.B / REX.R and MMX register indexing. Ignored? */
         /** @todo testcase: REX.B / REX.R and segment register indexing. Ignored? */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
         IEM_MC_BEGIN(2, 0);
         IEM_MC_ARG(uint64_t *,              puDst, 0);
         IEM_MC_ARG(uint64_t const *,        puSrc, 1);
@@ -732,7 +732,7 @@ FNIEMOP_DEF_1(iemOpCommonMmx_HighHigh_To_Full, PFNIEMAIMPLMEDIAOPTF2U64, pfnU64)
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
         IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
         IEM_MC_FETCH_MEM_U64(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); /* intel docs this to be full 64-bit read */
 
@@ -6188,7 +6188,7 @@ FNIEMOP_DEF(iemOp_movd_q_Pd_Ey)
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* MMX, greg64 */
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
             IEM_MC_BEGIN(0, 1);
             IEM_MC_LOCAL(uint64_t, u64Tmp);
 
@@ -6210,7 +6210,7 @@ FNIEMOP_DEF(iemOp_movd_q_Pd_Ey)
             IEM_MC_LOCAL(uint64_t, u64Tmp);
 
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
             IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
             IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
             IEM_MC_FPU_TO_MMX_MODE();
@@ -6240,7 +6240,7 @@ FNIEMOP_DEF(iemOp_movd_q_Pd_Ey)
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* MMX, greg32 */
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
             IEM_MC_BEGIN(0, 1);
             IEM_MC_LOCAL(uint32_t, u32Tmp);
 
@@ -6262,7 +6262,7 @@ FNIEMOP_DEF(iemOp_movd_q_Pd_Ey)
             IEM_MC_LOCAL(uint32_t, u32Tmp);
 
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
             IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
             IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
             IEM_MC_FPU_TO_MMX_MODE();
@@ -6400,7 +6400,7 @@ FNIEMOP_DEF(iemOp_movq_Pq_Qq)
         /*
          * Register, register.
          */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
         IEM_MC_BEGIN(0, 1);
         IEM_MC_LOCAL(uint64_t, u64Tmp);
 
@@ -6424,7 +6424,7 @@ FNIEMOP_DEF(iemOp_movq_Pq_Qq)
         IEM_MC_LOCAL(RTGCPTR,  GCPtrEffSrc);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
         IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
         IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
         IEM_MC_FPU_TO_MMX_MODE();
@@ -6701,7 +6701,7 @@ FNIEMOP_DEF_2(iemOpCommonMmx_Shift_Imm, uint8_t, bRm, PFNIEMAIMPLMEDIAPSHIFTU64,
          * Register, immediate.
          */
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
 
         IEM_MC_BEGIN(2, 0);
         IEM_MC_ARG(uint64_t *,          pDst, 0);
@@ -7308,7 +7308,7 @@ FNIEMOP_DEF(iemOp_movd_q_Ey_Pd)
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* greg64, MMX */
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
             IEM_MC_BEGIN(0, 1);
             IEM_MC_LOCAL(uint64_t, u64Tmp);
 
@@ -7330,7 +7330,7 @@ FNIEMOP_DEF(iemOp_movd_q_Ey_Pd)
             IEM_MC_LOCAL(uint64_t, u64Tmp);
 
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
             IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
             IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
             IEM_MC_FPU_TO_MMX_MODE();
@@ -7360,7 +7360,7 @@ FNIEMOP_DEF(iemOp_movd_q_Ey_Pd)
         if (IEM_IS_MODRM_REG_MODE(bRm))
         {
             /* greg32, MMX */
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
             IEM_MC_BEGIN(0, 1);
             IEM_MC_LOCAL(uint32_t, u32Tmp);
 
@@ -7382,7 +7382,7 @@ FNIEMOP_DEF(iemOp_movd_q_Ey_Pd)
             IEM_MC_LOCAL(uint32_t, u32Tmp);
 
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
             IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
             IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
             IEM_MC_FPU_TO_MMX_MODE();
@@ -7568,7 +7568,7 @@ FNIEMOP_DEF(iemOp_movq_Qq_Pq)
          */
         /** @todo testcase: REX.B / REX.R and MMX register indexing. Ignored? */
         /** @todo testcase: REX.B / REX.R and segment register indexing. Ignored? */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
         IEM_MC_BEGIN(0, 1);
         IEM_MC_LOCAL(uint64_t, u64Tmp);
         IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
@@ -7591,7 +7591,7 @@ FNIEMOP_DEF(iemOp_movq_Qq_Pq)
         IEM_MC_LOCAL(RTGCPTR,  GCPtrEffSrc);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
         IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
         IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
         IEM_MC_FPU_TO_MMX_MODE();
@@ -13299,7 +13299,7 @@ FNIEMOP_DEF(iemOp_movntq_Mq_Pq)
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
         IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
         IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
         IEM_MC_FPU_TO_MMX_MODE();
