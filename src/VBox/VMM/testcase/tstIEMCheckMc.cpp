@@ -577,7 +577,6 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_MAYBE_RAISE_FPU_XCPT()                   do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT()           do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT()           do { (void)fMcBegin; } while (0)
-#define IEM_MC_MAYBE_RAISE_SSE42_RELATED_XCPT()         do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_AESNI_RELATED_XCPT()         do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_SHA_RELATED_XCPT()           do { (void)fMcBegin; } while (0)
 #define IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT()           do { (void)fMcBegin; } while (0)
