@@ -190,7 +190,6 @@
 #define IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT() \
     do { \
         if (   pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT \
-            || !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fFsGsBase \
             || !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_FSGSBASE)) \
             return iemRaiseUndefinedOpcode(pVCpu); \
     } while (0)
