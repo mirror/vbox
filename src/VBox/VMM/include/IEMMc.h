@@ -93,18 +93,26 @@
     } while (0)
 #define IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() \
     do { \
-        if (   (pVCpu->cpum.GstCtx.aXcr[0] & (XSAVE_C_YMM | XSAVE_C_SSE)) == (XSAVE_C_YMM | XSAVE_C_SSE) \
-            && (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXSAVE)) { /* probable */ } \
-        else return iemRaiseUndefinedOpcode(pVCpu); \
-        \
-        if (!(pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS)) { /* probable */ } \
-        else return iemRaiseDeviceNotAvailable(pVCpu); \
+        /* Since none of the bits we compare from XCR0, CR4 and CR0 overlap, it can \
+           be reduced to a single compare branch in the more probably code path. */ \
+        if (RT_LIKELY(   (  (pVCpu->cpum.GstCtx.aXcr[0] & (XSAVE_C_YMM | XSAVE_C_SSE)) \
+                          | (pVCpu->cpum.GstCtx.cr4     & X86_CR4_OSXSAVE) \
+                          | (pVCpu->cpum.GstCtx.cr0     & X86_CR0_TS)) \
+                      == (XSAVE_C_YMM | XSAVE_C_SSE | X86_CR4_OSXSAVE))) \
+        { /* probable */ } \
+        else if (   (pVCpu->cpum.GstCtx.aXcr[0] & (XSAVE_C_YMM | XSAVE_C_SSE)) != (XSAVE_C_YMM | XSAVE_C_SSE) \
+                 || !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXSAVE)) \
+            return iemRaiseUndefinedOpcode(pVCpu); \
+        else \
+            return iemRaiseDeviceNotAvailable(pVCpu); \
     } while (0)
+AssertCompile(!((XSAVE_C_YMM | XSAVE_C_SSE) & X86_CR4_OSXSAVE));
+AssertCompile(!((XSAVE_C_YMM | XSAVE_C_SSE) & X86_CR0_TS));
+AssertCompile(!(X86_CR4_OSXSAVE & X86_CR0_TS));
 #define IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT() \
     do { \
         /* Since the CR4 and CR0 bits doesn't overlap, it can be reduced to a
            single compare branch in the more probable code path. */ \
-        AssertCompile(!((X86_CR0_EM | X86_CR0_TS) & X86_CR4_OSFXSR)); \
         if (RT_LIKELY(  (  (pVCpu->cpum.GstCtx.cr0 & (X86_CR0_EM | X86_CR0_TS)) \
                          | (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSFXSR)) \
                       ==                             X86_CR4_OSFXSR)) \
@@ -115,6 +123,7 @@
         else \
             return iemRaiseDeviceNotAvailable(pVCpu); \
     } while (0)
+AssertCompile(!((X86_CR0_EM | X86_CR0_TS) & X86_CR4_OSFXSR));
 #define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT() \
     do { \
         if (RT_LIKELY(!(pVCpu->cpum.GstCtx.cr0 & (X86_CR0_EM | X86_CR0_TS)))) \
