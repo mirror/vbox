@@ -75,17 +75,20 @@
 #define IEM_MC_RAISE_DIVIDE_ERROR()                     return iemRaiseDivideError(pVCpu)
 #define IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE()       \
     do { \
-        if (!(pVCpu->cpum.GstCtx.cr0 & (X86_CR0_EM | X86_CR0_TS))) { /* probable */ } \
+        if (RT_LIKELY(!(pVCpu->cpum.GstCtx.cr0 & (X86_CR0_EM | X86_CR0_TS)))) \
+        { /* probable */ } \
         else return iemRaiseDeviceNotAvailable(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_WAIT_DEVICE_NOT_AVAILABLE()  \
     do { \
-        if (!((pVCpu->cpum.GstCtx.cr0 & (X86_CR0_MP | X86_CR0_TS)) == (X86_CR0_MP | X86_CR0_TS))) { /* probable */ } \
+        if (RT_LIKELY(!((pVCpu->cpum.GstCtx.cr0 & (X86_CR0_MP | X86_CR0_TS)) == (X86_CR0_MP | X86_CR0_TS)))) \
+        { /* probable */ } \
         else return iemRaiseDeviceNotAvailable(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_FPU_XCPT() \
     do { \
-        if (!(pVCpu->cpum.GstCtx.XState.x87.FSW & X86_FSW_ES)) { /* probable */ } \
+        if (RT_LIKELY(!(pVCpu->cpum.GstCtx.XState.x87.FSW & X86_FSW_ES))) \
+        { /* probable */ } \
         else return iemRaiseMathFault(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() \
@@ -99,16 +102,22 @@
     } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT() \
     do { \
-        if (   !(pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM) \
-            && (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSFXSR)) { /* probable */ } \
-        else return iemRaiseUndefinedOpcode(pVCpu); \
-        \
-        if (!(pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS)) { /* probable */ } \
-        else return iemRaiseDeviceNotAvailable(pVCpu); \
+        /* Since the CR4 and CR0 bits doesn't overlap, it can be reduced to a
+           single compare branch in the more probable code path. */ \
+        AssertCompile(!((X86_CR0_EM | X86_CR0_TS) & X86_CR4_OSFXSR)); \
+        if (RT_LIKELY(  (  (pVCpu->cpum.GstCtx.cr0 & (X86_CR0_EM | X86_CR0_TS)) \
+                         | (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSFXSR)) \
+                      ==                             X86_CR4_OSFXSR)) \
+        { /* likely */ } \
+        else if (   (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM) \
+                 || !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSFXSR)) \
+            return iemRaiseUndefinedOpcode(pVCpu); \
+        else \
+            return iemRaiseDeviceNotAvailable(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT() \
     do { \
-        if (!(pVCpu->cpum.GstCtx.cr0 & (X86_CR0_EM | X86_CR0_TS))) \
+        if (RT_LIKELY(!(pVCpu->cpum.GstCtx.cr0 & (X86_CR0_EM | X86_CR0_TS)))) \
         { /* probable */ } \
         else if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM) \
             return iemRaiseUndefinedOpcode(pVCpu); \
@@ -120,7 +129,7 @@
     } while (0)
 #define IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO() \
     do { \
-        if (pVCpu->iem.s.uCpl == 0) { /* probable */ } \
+        if (RT_LIKELY(pVCpu->iem.s.uCpl == 0)) { /* probable */ } \
         else return iemRaiseGeneralProtectionFault0(pVCpu); \
     } while (0)
 #define IEM_MC_RAISE_GP0_IF_EFF_ADDR_UNALIGNED(a_EffAddr, a_cbAlign) \
@@ -130,8 +139,9 @@
     } while (0)
 #define IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT() \
     do { \
-        if (   pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT \
-            && (pVCpu->cpum.GstCtx.cr4 & X86_CR4_FSGSBASE)) { /* probable */ } \
+        if (RT_LIKELY(   pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT \
+                      && (pVCpu->cpum.GstCtx.cr4 & X86_CR4_FSGSBASE))) \
+        { /* probable */ } \
         else return iemRaiseUndefinedOpcode(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_NON_CANONICAL_ADDR_GP0(a_u64Addr) \
@@ -141,8 +151,8 @@
     } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT() \
     do { \
-        if ((  ~((pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT) \
-             & (pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_FLAGS)) == 0) \
+        if (RT_LIKELY((  ~((pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT) \
+                       & (pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_FLAGS)) == 0)) \
         { /* probable */ } \
         else \
         { \
