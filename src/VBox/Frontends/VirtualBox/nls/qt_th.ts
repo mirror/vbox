@@ -2,21 +2,6 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="th_TH">
 <context>
-    <name>AudioOutput</name>
-    <message>
-        <source>&lt;html&gt;The audio playback device &lt;b&gt;%1&lt;/b&gt; does not work.&lt;br/&gt;Falling back to &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</source>
-        <translation type="vanished">&lt;html&gt;อุปกรณ์สำหรับเล่นเสียง &lt;b&gt;%1&lt;/b&gt; ไม่ทำงาน&lt;br/&gt;กำลังกลับไปใช้ &lt;b&gt;%2&lt;/b&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;html&gt;Switching to the audio playback device &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;which just became available and has higher preference.&lt;/html&gt;</source>
-        <translation type="vanished">&lt;html&gt;กำลังสลับไปใช้อุปกรณ์สำหรับเล่นเสียง &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;ซึ่งเพิ่งพร้อมใช้งานและมีค่าความพอใจที่ตั้งไว้สูงกว่า&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>Revert back to device &apos;%1&apos;</source>
-        <translation type="vanished">กลับไปใช้อุปกรณ์ &apos;%1&apos;</translation>
-    </message>
-</context>
-<context>
     <name>CloseButton</name>
     <message>
         <source>Close Tab</source>
@@ -27,665 +12,64 @@
     <name>MAC_APPLICATION_MENU</name>
     <message>
         <source>Services</source>
-        <translation>บริการ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Hide %1</source>
-        <translation>ซ่อน %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Hide Others</source>
-        <translation>ซ่อนอื่น ๆ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show All</source>
-        <translation>แสดงทั้งหมด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Preferences...</source>
-        <translation>ค่าตั้งพึงใจ...</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Quit %1</source>
-        <translation>ออกจาก %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>About %1</source>
-        <translation>เกี่ยวกับ %1</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>Phonon::</name>
+    <name>Print Device Input Slot</name>
     <message>
-        <source>Notifications</source>
-        <translation type="vanished">การเตือน</translation>
-    </message>
-    <message>
-        <source>Music</source>
-        <translation type="vanished">ดนตรี</translation>
-    </message>
-    <message>
-        <source>Video</source>
-        <translation type="vanished">วิดีโอ</translation>
-    </message>
-    <message>
-        <source>Communication</source>
-        <translation type="vanished">การสื่อสาร</translation>
-    </message>
-    <message>
-        <source>Games</source>
-        <translation type="vanished">เกม</translation>
-    </message>
-    <message>
-        <source>Accessibility</source>
-        <translation type="vanished">การเข้าถึง</translation>
+        <source>Automatic</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>Phonon::Gstreamer::Backend</name>
+    <name>Print Device Output Bin</name>
     <message>
-        <source>Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.
-          Some video features have been disabled.</source>
-        <translation type="vanished">คำเตือน: ดูเหมือนว่าคุณไม่ได้ติดตั้งแพคเกจ gstreamer0.10-plugins-good ไว้
-          คุณสมบัติด้านวิดีโอบางส่วนจะถูกปิดไว้</translation>
-    </message>
-    <message>
-        <source>Warning: You do not seem to have the base GStreamer plugins installed.
-          All audio and video support has been disabled</source>
-        <translation type="vanished">คำเตือน: ดูเหมือนว่าคุณไม่ได้ติดตั้งปลั๊กอินพื้นฐาน GStreamer ไว้
-          การทำงานด้านเสียงและวิดีโอทั้งหมดจะถูกปิดไว้</translation>
-    </message>
-</context>
-<context>
-    <name>Phonon::Gstreamer::MediaObject</name>
-    <message>
-        <source>Cannot start playback. 
-
-Check your Gstreamer installation and make sure you 
-have libgstreamer-plugins-base installed.</source>
-        <translation type="vanished">ไม่สามารถเริ่มเล่นได้
-
-โปรดตรวจสอบการติดตั้ง Gstreamer ของคุณให้แน่ใจว่า
-มีปลั๊กอิน libgstreamer-plugins-base ติดตั้งไว้</translation>
-    </message>
-    <message numerus="yes">
-        <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
-        <translation type="vanished">
-            <numerusform>โคเดกที่จำเป็นขาดหายไป คุณจำเป็นต้องติดตั้งโคเดกต่อไปนี้เพื่อเล่นสื่อนี้: %0</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Could not open media source.</source>
-        <translation type="vanished">ไม่สามารถเปิดต้นฉบับของมีเดียได้</translation>
-    </message>
-    <message>
-        <source>Invalid source type.</source>
-        <translation type="vanished">ชนิดของต้นฉบับไม่ถูกต้อง</translation>
-    </message>
-    <message>
-        <source>Could not locate media source.</source>
-        <translation type="vanished">ไม่พบต้นฉบับของมีเดีย</translation>
-    </message>
-    <message>
-        <source>Could not open audio device. The device is already in use.</source>
-        <translation type="vanished">ไม่สามารถเปิดอุปกรณ์เสียงได้เนื่องจากอุปกรณ์กำลังถูกใช้งานอยู่</translation>
-    </message>
-    <message>
-        <source>Could not decode media source.</source>
-        <translation type="vanished">ไม่สามารถถอดรหัสต้นฉบับมีเดียได้</translation>
-    </message>
-</context>
-<context>
-    <name>Phonon::VolumeSlider</name>
-    <message>
-        <source>Volume: %1%</source>
-        <translation type="vanished">เสียง: %1%</translation>
-    </message>
-    <message>
-        <source>Use this slider to adjust the volume. The leftmost position is 0%, the rightmost is %1%</source>
-        <translation type="vanished">ใช้ตัวเลื่อนนี้เพื่อปรับระดับเสียง ตำแหน่งซ้ายสุดคือ 0% และทางด้านขวาสุดคือ %1%</translation>
-    </message>
-</context>
-<context>
-    <name>Q3Accel</name>
-    <message>
-        <source>%1, %2 not defined</source>
-        <translation type="vanished">%1, %2 ไม่ได้กำหนดไว้</translation>
-    </message>
-    <message>
-        <source>Ambiguous %1 not handled</source>
-        <translation type="vanished">ค่ากำกวม %1 ไม่ได้ถูกจัดการไว้</translation>
-    </message>
-</context>
-<context>
-    <name>Q3DataTable</name>
-    <message>
-        <source>True</source>
-        <translation type="vanished">จริง</translation>
-    </message>
-    <message>
-        <source>False</source>
-        <translation type="vanished">เท็จ</translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <translation type="vanished">แทรก</translation>
-    </message>
-    <message>
-        <source>Update</source>
-        <translation type="vanished">อัพเดต</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">ลบ</translation>
-    </message>
-</context>
-<context>
-    <name>Q3FileDialog</name>
-    <message>
-        <source>Copy or Move a File</source>
-        <translation type="vanished">ทำสำเนาหรือย้ายไฟล์</translation>
-    </message>
-    <message>
-        <source>Read: %1</source>
-        <translation type="vanished">อ่าน: %1</translation>
-    </message>
-    <message>
-        <source>Write: %1</source>
-        <translation type="vanished">เขียน: %1</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">ยกเลิก</translation>
-    </message>
-    <message>
-        <source>All Files (*)</source>
-        <translation type="vanished">ไฟล์ทั้งหมด (*)</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">ชื่อ</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation type="vanished">ขนาด</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <translation type="vanished">ชนิด</translation>
-    </message>
-    <message>
-        <source>Date</source>
-        <translation type="vanished">วันที่</translation>
-    </message>
-    <message>
-        <source>Attributes</source>
-        <translation type="vanished">ลักษณะเฉพาะ</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="vanished">&amp;ตกลง</translation>
-    </message>
-    <message>
-        <source>Look &amp;in:</source>
-        <translation type="vanished">ดูใ&amp;น:</translation>
-    </message>
-    <message>
-        <source>File &amp;name:</source>
-        <translation type="vanished">&amp;ชื่อไฟล์:</translation>
-    </message>
-    <message>
-        <source>File &amp;type:</source>
-        <translation type="vanished">ช&amp;นิดของไฟล์:</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation type="vanished">ย้อนกลับ</translation>
-    </message>
-    <message>
-        <source>One directory up</source>
-        <translation type="vanished">ขึ้นไปหนึ่งไดเรกทอรี</translation>
-    </message>
-    <message>
-        <source>Create New Folder</source>
-        <translation type="vanished">สร้างโฟลเดอร์ใหม่</translation>
-    </message>
-    <message>
-        <source>List View</source>
-        <translation type="vanished">มุมมองรายการ</translation>
-    </message>
-    <message>
-        <source>Detail View</source>
-        <translation type="vanished">มุมมองรายละเอียด</translation>
-    </message>
-    <message>
-        <source>Preview File Info</source>
-        <translation type="vanished">แสดงตัวอย่างข้อมูลไฟล์</translation>
-    </message>
-    <message>
-        <source>Preview File Contents</source>
-        <translation type="vanished">แสดงตัวอย่างเนื้อหาของไฟล์</translation>
-    </message>
-    <message>
-        <source>Read-write</source>
-        <translation type="vanished">อ่าน-เขียน</translation>
-    </message>
-    <message>
-        <source>Read-only</source>
-        <translation type="vanished">อ่านอย่างเดียว</translation>
-    </message>
-    <message>
-        <source>Write-only</source>
-        <translation type="vanished">เขียนอย่างเดียว</translation>
-    </message>
-    <message>
-        <source>Inaccessible</source>
-        <translation type="vanished">ไม่สามารถเข้าถึงได้</translation>
-    </message>
-    <message>
-        <source>Symlink to File</source>
-        <translation type="vanished">สัญลักษณ์เชื่อมโยงไปยังไฟล์</translation>
-    </message>
-    <message>
-        <source>Symlink to Directory</source>
-        <translation type="vanished">สัญลักษณ์เชื่อมโยงไปไดเรกทอรี</translation>
-    </message>
-    <message>
-        <source>Symlink to Special</source>
-        <translation type="vanished">สัญลักษณ์เชื่อมโยงไปไฟล์พิเศษ</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation type="vanished">ไฟล์</translation>
-    </message>
-    <message>
-        <source>Dir</source>
-        <translation type="vanished">ไดเรกทอรี</translation>
-    </message>
-    <message>
-        <source>Special</source>
-        <translation type="vanished">ไฟล์พิเศษ</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">เปิด</translation>
-    </message>
-    <message>
-        <source>Save As</source>
-        <translation type="vanished">บันทึกเป็น</translation>
-    </message>
-    <message>
-        <source>&amp;Open</source>
-        <translation type="vanished">เ&amp;ปิด</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <translation type="vanished">&amp;บันทึก</translation>
-    </message>
-    <message>
-        <source>&amp;Rename</source>
-        <translation type="vanished">เ&amp;ปลี่ยนชื่อ</translation>
-    </message>
-    <message>
-        <source>&amp;Delete</source>
-        <translation type="vanished">&amp;ลบ</translation>
-    </message>
-    <message>
-        <source>R&amp;eload</source>
-        <translation type="vanished">เรียก&amp;ซ้ำ</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Name</source>
-        <translation type="vanished">เรียงลำดับตาม&amp;ชื่อ</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Size</source>
-        <translation type="vanished">เรียงลำดับตาม&amp;ขนาด</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Date</source>
-        <translation type="vanished">เรียงลำดับตาม&amp;วันที่</translation>
-    </message>
-    <message>
-        <source>&amp;Unsorted</source>
-        <translation type="vanished">ไ&amp;ม่เรียงลำดับ</translation>
-    </message>
-    <message>
-        <source>Sort</source>
-        <translation type="vanished">เรียงลำดับ</translation>
-    </message>
-    <message>
-        <source>Show &amp;hidden files</source>
-        <translation type="vanished">แสดงไฟล์&amp;ซ่อน</translation>
-    </message>
-    <message>
-        <source>the file</source>
-        <translation type="vanished">ไฟล์</translation>
-    </message>
-    <message>
-        <source>the directory</source>
-        <translation type="vanished">ไดเรกทอรี</translation>
-    </message>
-    <message>
-        <source>the symlink</source>
-        <translation type="vanished">สัญลักษณ์เชื่อมโยง</translation>
-    </message>
-    <message>
-        <source>Delete %1</source>
-        <translation type="vanished">ลบ %1</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Are you sure you wish to delete %1 &quot;%2&quot;?&lt;/qt&gt;</source>
-        <translation type="vanished">&lt;qt&gt;แน่ใจหรือไม่ว่าคุณต้องการลบ %1 &quot;%2&quot;?&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Yes</source>
-        <translation type="vanished">ใ&amp;ช่</translation>
-    </message>
-    <message>
-        <source>&amp;No</source>
-        <translation type="vanished">ไ&amp;ม่ใช่</translation>
-    </message>
-    <message>
-        <source>New Folder 1</source>
-        <translation type="vanished">โฟลเดอร์ใหม่ 1</translation>
-    </message>
-    <message>
-        <source>New Folder</source>
-        <translation type="vanished">โฟลเดอร์ใหม่</translation>
-    </message>
-    <message>
-        <source>New Folder %1</source>
-        <translation type="vanished">โฟลเดอร์ใหม่ %1</translation>
-    </message>
-    <message>
-        <source>Find Directory</source>
-        <translation type="vanished">ค้นหาไดเรกทอรี</translation>
-    </message>
-    <message>
-        <source>Directories</source>
-        <translation type="vanished">ไดเรกทอรี</translation>
-    </message>
-    <message>
-        <source>Directory:</source>
-        <translation type="vanished">ไดเรกทอรี:</translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <translation type="vanished">ข้อผิดพลาด</translation>
-    </message>
-    <message>
-        <source>%1
-File not found.
-Check path and filename.</source>
-        <translation type="vanished">%1
-ไม่พบไฟล์
-ตรวจสอบเส้นทางและชื่อไฟล์</translation>
-    </message>
-</context>
-<context>
-    <name>Q3LocalFs</name>
-    <message>
-        <source>Could not read directory
-%1</source>
-        <translation type="vanished">ไม่สามารถอ่านไดเรกทอรี
-%1</translation>
-    </message>
-    <message>
-        <source>Could not create directory
-%1</source>
-        <translation type="vanished">ไม่สามารถสร้างไดเรกทอรี
-%1</translation>
-    </message>
-    <message>
-        <source>Could not remove file or directory
-%1</source>
-        <translation type="vanished">ไม่สามารถลบไฟล์หรือไดเรกทอรี
-%1</translation>
-    </message>
-    <message>
-        <source>Could not rename
-%1
-to
-%2</source>
-        <translation type="vanished">ไม่สามารถเปลี่ยนชื่อ
-%1
-เป็น
-%2</translation>
-    </message>
-    <message>
-        <source>Could not open
-%1</source>
-        <translation type="vanished">ไม่สามารถเปิด
-%1</translation>
-    </message>
-    <message>
-        <source>Could not write
-%1</source>
-        <translation type="vanished">ไม่สามารถเขียน
-%1</translation>
-    </message>
-</context>
-<context>
-    <name>Q3MainWindow</name>
-    <message>
-        <source>Line up</source>
-        <translation type="vanished">จัดเรียง</translation>
-    </message>
-    <message>
-        <source>Customize...</source>
-        <translation type="vanished">ปรับแต่ง...</translation>
-    </message>
-</context>
-<context>
-    <name>Q3NetworkProtocol</name>
-    <message>
-        <source>Operation stopped by the user</source>
-        <translation type="vanished">หยุดดำเนินการโดยผู้ใช้</translation>
-    </message>
-</context>
-<context>
-    <name>Q3ProgressDialog</name>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">ยกเลิก</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TabDialog</name>
-    <message>
-        <source>OK</source>
-        <translation type="vanished">ตกลง</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="vanished">นำไปใช้</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="vanished">ช่วยเหลือ</translation>
-    </message>
-    <message>
-        <source>Defaults</source>
-        <translation type="vanished">ค่าตั้งต้น</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">ยกเลิก</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TextEdit</name>
-    <message>
-        <source>&amp;Undo</source>
-        <translation type="vanished">เ&amp;ลิกทำ</translation>
-    </message>
-    <message>
-        <source>&amp;Redo</source>
-        <translation type="vanished">ทำ&amp;ซ้ำ</translation>
-    </message>
-    <message>
-        <source>Cu&amp;t</source>
-        <translation type="vanished">&amp;ตัด</translation>
-    </message>
-    <message>
-        <source>&amp;Copy</source>
-        <translation type="vanished">&amp;คัดลอก</translation>
-    </message>
-    <message>
-        <source>&amp;Paste</source>
-        <translation type="vanished">&amp;วาง</translation>
-    </message>
-    <message>
-        <source>Clear</source>
-        <translation type="vanished">ล้าง</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation type="vanished">เลือกทั้งหมด</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TitleBar</name>
-    <message>
-        <source>System</source>
-        <translation type="vanished">ระบบ</translation>
-    </message>
-    <message>
-        <source>Restore up</source>
-        <translation type="vanished">คืนขนาดขึ้น</translation>
-    </message>
-    <message>
-        <source>Minimize</source>
-        <translation type="vanished">ย่อให้เล็กสุด</translation>
-    </message>
-    <message>
-        <source>Restore down</source>
-        <translation type="vanished">คืนขนาดลง</translation>
-    </message>
-    <message>
-        <source>Maximize</source>
-        <translation type="vanished">ขยายให้ใหญ่สุด</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">ปิด</translation>
-    </message>
-    <message>
-        <source>Contains commands to manipulate the window</source>
-        <translation type="vanished">เก็บคำสั่งเพื่อจัดการกับหน้าต่าง</translation>
-    </message>
-    <message>
-        <source>Puts a minimized back to normal</source>
-        <translation type="vanished">ทำให้หน้าต่างที่ย่อเล็กสุดกลับเป็นปกติ</translation>
-    </message>
-    <message>
-        <source>Moves the window out of the way</source>
-        <translation type="vanished">ย้ายหน้าต่างออกให้พ้นทาง</translation>
-    </message>
-    <message>
-        <source>Puts a maximized window back to normal</source>
-        <translation type="vanished">ทำให้หน้าต่างที่ขยายใหญ่สุดกลับเป็นปกติ</translation>
-    </message>
-    <message>
-        <source>Makes the window full screen</source>
-        <translation type="vanished">ทำให้หน้าต่างเป็นขนาดเต็มจอ</translation>
-    </message>
-    <message>
-        <source>Closes the window</source>
-        <translation type="vanished">ปิดหน้าต่าง</translation>
-    </message>
-    <message>
-        <source>Holds the name of the window and contains controls to manipulate it</source>
-        <translation type="vanished">เก็บชื่อของหน้าต่างและส่วนควบคุมเพื่อจัดการหน้าต่าง</translation>
-    </message>
-</context>
-<context>
-    <name>Q3ToolBar</name>
-    <message>
-        <source>More...</source>
-        <translation type="vanished">เพิ่มเติม...</translation>
-    </message>
-</context>
-<context>
-    <name>Q3UrlOperator</name>
-    <message>
-        <source>The protocol `%1&apos; is not supported</source>
-        <translation type="vanished">ไม่รองรับโพรโทคอล `%1&apos;</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support listing directories</source>
-        <translation type="vanished">โพรโทคอล `%1&apos; ไม่รองรับการแสดงรายการไดเรกทอรี</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support creating new directories</source>
-        <translation type="vanished">โพรโทคอล `%1&apos; ไม่รองรับการสร้างไดเรกทอรีใหม่</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support removing files or directories</source>
-        <translation type="vanished">โพรโทคอล `%1&apos; ไม่รองรับการลบไฟล์หรือไดเรกทอรี</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support renaming files or directories</source>
-        <translation type="vanished">โพรโทคอล `%1&apos; ไม่รองรับการเปลี่ยนชื่อไฟล์หรือไดเรกทอรี</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support getting files</source>
-        <translation type="vanished">โพรโทคอล `%1&apos; ไม่รองรับการรับไฟล์</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support putting files</source>
-        <translation type="vanished">โพรโทคอล `%1&apos; ไม่รองรับการส่งไฟล์</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support copying or moving files or directories</source>
-        <translation type="vanished">โพรโทคอล `%1&apos; ไม่รองรับการทำสำเนาหรือย้ายไฟล์หรือไดเรกทอรี</translation>
-    </message>
-    <message>
-        <source>(unknown)</source>
-        <translation type="vanished">(ไม่รู้จัก)</translation>
-    </message>
-</context>
-<context>
-    <name>Q3Wizard</name>
-    <message>
-        <source>&amp;Cancel</source>
-        <translation type="vanished">&amp;ยกเลิก</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation type="vanished">&lt; &amp;ย้อนกลับ</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation type="vanished">&amp;ถัดไป &gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation type="vanished">เ&amp;สร็จสิ้น</translation>
-    </message>
-    <message>
-        <source>&amp;Help</source>
-        <translation type="vanished">&amp;ช่วยเหลือ</translation>
+        <source>Automatic</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QAbstractSocket</name>
     <message>
         <source>Host not found</source>
-        <translation>ไม่พบโฮสต์</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection refused</source>
-        <translation>การเชื่อมต่อถูกปฏิเสธ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Socket operation timed out</source>
-        <translation>หมดเวลากระบวนการซ็อคเก็ต</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Socket is not connected</source>
-        <translation>ไม่ได้เชื่อมต่อซ็อคเก็ตไว้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Operation on socket is not supported</source>
@@ -693,7 +77,7 @@ to
     </message>
     <message>
         <source>Connection timed out</source>
-        <translation type="unfinished">หมดเวลาการเชื่อมต่อ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Trying to connect while connection is in progress</source>
@@ -701,29 +85,29 @@ to
     </message>
     <message>
         <source>Network unreachable</source>
-        <translation type="unfinished">ไม่สามารถเข้าถึงเครือข่ายได้</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QAbstractSpinBox</name>
     <message>
         <source>&amp;Step up</source>
-        <translation>เพิ่ม&amp;ขึ้น</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Step &amp;down</source>
-        <translation>&amp;ลดลง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Select All</source>
-        <translation>&amp;เลือกทั้งหมด</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QAccessibleActionInterface</name>
     <message>
         <source>Press</source>
-        <translation type="unfinished">กด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Increase</source>
@@ -743,15 +127,15 @@ to
     </message>
     <message>
         <source>Toggle</source>
-        <translation type="unfinished">สลับค่า</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll Left</source>
-        <translation type="unfinished">เลื่อนซ้าย</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll Right</source>
-        <translation type="unfinished">เลื่อนขวา</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll Up</source>
@@ -822,7 +206,7 @@ to
     <name>QAndroidPlatformTheme</name>
     <message>
         <source>Yes</source>
-        <translation type="unfinished">ใช่</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Yes to All</source>
@@ -830,7 +214,7 @@ to
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished">ไม่ใช่</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No to All</source>
@@ -840,47 +224,19 @@ to
 <context>
     <name>QApplication</name>
     <message>
-        <source>Activate</source>
-        <translation type="vanished">เรียกใช้</translation>
-    </message>
-    <message>
         <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
-        <translation>โปรแกรม &apos;%1&apos; ต้องการ Qt %2 แต่พบ Qt %3</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
-        <translation>เกิดความผิดพลาดไลบรารี Qt เข้ากันไม่ได้</translation>
-    </message>
-    <message>
-        <source>QT_LAYOUT_DIRECTION</source>
-        <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
-        <translation type="vanished">QT_LAYOUT_DIRECTION</translation>
-    </message>
-    <message>
-        <source>Activates the program&apos;s main window</source>
-        <translation type="vanished">เรียกใช้หน้าต่างหลักของโปรแกรม</translation>
-    </message>
-</context>
-<context>
-    <name>QCheckBox</name>
-    <message>
-        <source>Uncheck</source>
-        <translation type="vanished">ไม่เลือก</translation>
-    </message>
-    <message>
-        <source>Check</source>
-        <translation type="vanished">เลือก</translation>
-    </message>
-    <message>
-        <source>Toggle</source>
-        <translation type="vanished">สลับค่า</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QCocoaMenuItem</name>
     <message>
         <source>About Qt</source>
-        <translation type="unfinished">เกี่ยวกับ Qt</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>About</source>
@@ -896,7 +252,7 @@ to
     </message>
     <message>
         <source>Options</source>
-        <translation type="unfinished">ตัวเลือก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Setting</source>
@@ -908,7 +264,7 @@ to
     </message>
     <message>
         <source>Quit</source>
-        <translation type="unfinished">ออก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Exit</source>
@@ -916,73 +272,69 @@ to
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished">ตัด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">คัดลอก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished">วาง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation type="unfinished">เลือกทั้งหมด</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QCocoaTheme</name>
     <message>
         <source>Don&apos;t Save</source>
-        <translation type="unfinished">ไม่บันทึก</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QColorDialog</name>
     <message>
         <source>Hu&amp;e:</source>
-        <translation>&amp;สี:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Sat:</source>
-        <translation>ความ&amp;อิ่มตัว:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Val:</source>
-        <translation>&amp;ค่าสี:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Red:</source>
-        <translation>แ&amp;ดง:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Green:</source>
-        <translation>เ&amp;ขียว:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bl&amp;ue:</source>
-        <translation>&amp;น้ำเงิน:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>A&amp;lpha channel:</source>
-        <translation>ช่องสี&amp;อัลฟ่า:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Basic colors</source>
-        <translation>สี&amp;พื้นฐาน</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Custom colors</source>
-        <translation>สีที่&amp;กำหนดเอง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Add to Custom Colors</source>
-        <translation>เ&amp;พิ่มไปยังสีที่กำหนดเอง</translation>
-    </message>
-    <message>
-        <source>Select color</source>
-        <translation type="vanished">เลือกสี</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;HTML:</source>
@@ -1005,20 +357,12 @@ Press ESC to cancel</source>
 <context>
     <name>QComboBox</name>
     <message>
-        <source>Open</source>
-        <translation type="vanished">เปิด</translation>
-    </message>
-    <message>
         <source>False</source>
-        <translation>เท็จ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>True</source>
-        <translation>จริง</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">ปิด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open the combo box selection popup</source>
@@ -1029,10 +373,6 @@ Press ESC to cancel</source>
     <name>QCommandLineParser</name>
     <message>
         <source>Displays version information.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays this help.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1067,48 +407,31 @@ Press ESC to cancel</source>
         <source>Arguments:</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Displays help on commandline options.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays help including Qt specific options.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QCoreApplication</name>
     <message>
-        <source>%1: permission denied</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: คำขออนุญาตถูกปฏิเสธ</translation>
-    </message>
-    <message>
-        <source>%1: already exists</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: มีอยู่แล้ว</translation>
-    </message>
-    <message>
-        <source>%1: doesn&apos;t exists</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: ไม่พบ</translation>
-    </message>
-    <message>
-        <source>%1: out of resources</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: ทรัพยากรไม่พอ</translation>
-    </message>
-    <message>
-        <source>%1: unknown error %2</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: ข้อผิดพลาดที่ไม่รู้จัก %2</translation>
-    </message>
-    <message>
         <source>%1: key is empty</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: คีย์ว่างอยู่</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: unable to make key</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: ไม่สามารถสร้างคีย์</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: ftok ล้มเหลว</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1216,49 +539,72 @@ Press ESC to cancel</source>
     </message>
 </context>
 <context>
+    <name>QCupsPrinterSupport</name>
+    <message>
+        <source>Authentication Needed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authentication needed to use %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authentication needed to use %1 on %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Username:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QDB2Driver</name>
     <message>
         <source>Unable to connect</source>
-        <translation>ไม่สามารถเชื่อมต่อได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>ไม่สามารถคอมมิทรายการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>ไม่สามารถย้อนรายการกลับได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to set autocommit</source>
-        <translation>ไม่สามารถกำหนดให้คอมมิทอัตโนมัติได้</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QDB2Result</name>
     <message>
         <source>Unable to execute statement</source>
-        <translation>ไม่สามารถประมวลผลข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation>ไม่สามารถเตรียมข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to bind variable</source>
-        <translation>ไม่สามารถเชื่อมโยงตัวแปรได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch record %1</source>
-        <translation>ไม่สามารถเรียกระเบียน %1 ได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch next</source>
-        <translation>ไม่สามารถเรียกระเบียนถัดไปได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch first</source>
-        <translation>ไม่สามารถเรียกระเบียนแรกได้</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1291,123 +637,39 @@ Press ESC to cancel</source>
     <name>QDialog</name>
     <message>
         <source>What&apos;s This?</source>
-        <translation>นี่คืออะไร?</translation>
-    </message>
-    <message>
-        <source>Done</source>
-        <translation type="vanished">เสร็จสิ้น</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QDialogButtonBox</name>
     <message>
         <source>OK</source>
-        <translation>ตกลง</translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation type="vanished">บันทึก</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">เปิด</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">ยกเลิก</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">ปิด</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="vanished">นำไปใช้</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="vanished">รีเซ็ต</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="vanished">ช่วยเหลือ</translation>
-    </message>
-    <message>
-        <source>Don&apos;t Save</source>
-        <translation type="vanished">ไม่บันทึก</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation type="vanished">ละทิ้ง</translation>
-    </message>
-    <message>
-        <source>&amp;Yes</source>
-        <translation type="vanished">ใ&amp;ช่</translation>
-    </message>
-    <message>
-        <source>Yes to &amp;All</source>
-        <translation type="vanished">ใช่&amp;ทั้งหมด</translation>
-    </message>
-    <message>
-        <source>&amp;No</source>
-        <translation type="vanished">ไ&amp;ม่ใช่</translation>
-    </message>
-    <message>
-        <source>N&amp;o to All</source>
-        <translation type="vanished">ไม่ใช่ทั้ง&amp;หมด</translation>
-    </message>
-    <message>
-        <source>Save All</source>
-        <translation type="vanished">บันทึกทั้งหมด</translation>
-    </message>
-    <message>
-        <source>Abort</source>
-        <translation type="vanished">ยกเลิก</translation>
-    </message>
-    <message>
-        <source>Retry</source>
-        <translation type="vanished">ลองใหม่</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <translation type="vanished">ละเว้น</translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation type="vanished">คืนค่าตั้งต้น</translation>
-    </message>
-    <message>
-        <source>Close without Saving</source>
-        <translation type="vanished">ปิดโดยไม่บันทึก</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="vanished">&amp;ตกลง</translation>
+        <translation type="unfinished">ตกลง</translation>
     </message>
 </context>
 <context>
     <name>QDirModel</name>
     <message>
         <source>Name</source>
-        <translation>ชื่อ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Size</source>
-        <translation>ขนาด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Kind</source>
         <comment>Match OS X Finder</comment>
-        <translation>ชนิด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Type</source>
         <comment>All other platforms</comment>
-        <translation>ชนิด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Date Modified</source>
-        <translation>วันที่แก้ไข</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1521,16 +783,12 @@ Press ESC to cancel</source>
     <message>
         <source>Close</source>
         <extracomment>Accessible name for button closing a dock widget</extracomment>
-        <translation>ปิด</translation>
-    </message>
-    <message>
-        <source>Dock</source>
-        <translation type="vanished">ด็อค</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Float</source>
         <extracomment>Accessible name for button undocking a dock widget (floating state)</extracomment>
-        <translation>ลอย</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Undocks and re-attaches the dock widget</source>
@@ -1542,37 +800,224 @@ Press ESC to cancel</source>
     </message>
 </context>
 <context>
-    <name>QDoubleSpinBox</name>
+    <name>QDomParser</name>
     <message>
-        <source>More</source>
-        <translation type="vanished">เพิ่มขึ้น</translation>
+        <source>Error occurred while processing XML declaration</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Less</source>
-        <translation type="vanished">ลดลง</translation>
+        <source>Multiple DTD sections are not allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing document type declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing comment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing a processing instruction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing a start element</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected end element &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing an end element</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing the element content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing comments</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing an entity reference</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected token</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tag mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing entity declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing notation declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QDtls</name>
+    <message>
+        <source>Invalid (empty) secret</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Multicast and broadcast addresses are not supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot set peer after handshake started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid address</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot set verification name after handshake started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot set configuration after handshake started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start/continue handshake, invalid handshake state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid (nullptr) socket</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>To start a handshake you must set peer&apos;s address and port first</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>To start a handshake, DTLS server requires non-empty datagram (client hello)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start handshake, already done/in progress</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A valid QUdpSocket and non-empty datagram are needed to continue the handshake</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot continue handshake, not in InProgress state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot resume, not in VerificationError state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No handshake in progress, nothing to abort</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot send shutdown alert, not encrypted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot write a datagram, not in encrypted state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot read a datagram, not in encrypted state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 failed</source>
+        <extracomment>%1: Some function</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid SslMode, SslServerMode or SslClientMode expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid protocol version, DTLS protocol expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>BIO_ADD_new failed, cannot start handshake</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start the handshake, verified client hello expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Peer verification failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The DTLS connection has been closed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while writing: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The DTLS connection has been shutdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while reading: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QDtlsClientVerifier</name>
+    <message>
+        <source>A valid UDP socket, non-empty datagram, valid address/port were expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>BIO_ADDR_new failed, ignoring client hello</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QErrorMessage</name>
     <message>
         <source>Debug Message:</source>
-        <translation>ข้อความดีบัก:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Warning:</source>
-        <translation>คำเตือน:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Fatal Error:</source>
-        <translation>ข้อผิดพลาดร้ายแรง:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Show this message again</source>
-        <translation>แ&amp;สดงข้อความนี้อีกครั้ง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>&amp;ตกลง</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Critical Error:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Information:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1587,10 +1032,6 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Destination file exists</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Error while renaming.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1610,15 +1051,23 @@ Press ESC to cancel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cannot open for output</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failure to write block</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cannot create %1 for output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while renaming: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot open destination file: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot open for output: %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1628,42 +1077,43 @@ Press ESC to cancel</source>
         <source>No file engine available or engine does not support UnMapExtension</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>No file engine available</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QFileDialog</name>
     <message>
         <source>All Files (*)</source>
-        <translation>ไฟล์ทั้งหมด (*)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Directories</source>
-        <translation>ไดเรกทอรี</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Open</source>
-        <translation>เ&amp;ปิด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation>&amp;บันทึก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>เปิด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1 already exists.
 Do you want to replace it?</source>
-        <translation>%1 มีอยู่แล้ว
-คุณต้องการแทนที่หรือไม่?</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1
 File not found.
 Please verify the correct file name was given.</source>
-        <translation>%1
-ไม่พบไฟล์
-โปรดตรวจสอบว่าชื่อไฟล์ที่ให้ไว้ถูกต้อง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>My Computer</source>
@@ -1671,117 +1121,110 @@ Please verify the correct file name was given.</source>
     </message>
     <message>
         <source>&amp;Rename</source>
-        <translation>เ&amp;ปลี่ยนชื่อ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation>&amp;ลบ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show &amp;hidden files</source>
-        <translation>แสดงไฟล์&amp;ซ่อน</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Back</source>
-        <translation>ย้อนกลับ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Parent Directory</source>
-        <translation>ไดเรกทอรีชั้นก่อนหน้า</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>List View</source>
-        <translation>มุมมองรายการ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Detail View</source>
-        <translation>มุมมองรายละเอียด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Files of type:</source>
-        <translation>ชนิดของไฟล์:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Directory:</source>
-        <translation>ไดเรกทอรี:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1
 Directory not found.
 Please verify the correct directory name was given.</source>
-        <translation>%1
-ไม่พบไดเรกทอรี
-โปรดตรวจสอบว่าชื่อไดเรกทอรีที่ให้ไว้ถูกต้อง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&apos;%1&apos; is write protected.
 Do you want to delete it anyway?</source>
-        <translation>&apos;%1&apos; ถูกป้องกันการเขียนไว้
-คุณยังต้องการลบอยู่หรือไม่?</translation>
-    </message>
-    <message>
-        <source>Are sure you want to delete &apos;%1&apos;?</source>
-        <translation type="vanished">แน่ใจหรือไม่ว่าคุณต้องการลบ &apos;%1&apos;?</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not delete directory.</source>
-        <translation>ไม่สามารถลบไดเรกทอรีได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Save As</source>
-        <translation>บันทึกเป็น</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Drive</source>
-        <translation>ไดรฟ์</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>File</source>
-        <translation>ไฟล์</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown</source>
-        <translation>ไม่รู้จัก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Find Directory</source>
-        <translation>ค้นหาไดเรกทอรี</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show </source>
-        <translation>แสดง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation>ถัดไป</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>New Folder</source>
-        <translation>โฟลเดอร์ใหม่</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;New Folder</source>
-        <translation>โฟลเดอร์ให&amp;ม่</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Choose</source>
-        <translation>เ&amp;ลือก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation>ลบ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>File &amp;name:</source>
-        <translation>&amp;ชื่อไฟล์:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Look in:</source>
-        <translation>ดูใน:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Create New Folder</source>
-        <translation>สร้างโฟลเดอร์ใหม่</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Go back</source>
@@ -1837,7 +1280,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished">ลบ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Are you sure you want to delete &apos;%1&apos;?</source>
@@ -1877,33 +1320,29 @@ Do you want to delete it anyway?</source>
     <name>QFileSystemModel</name>
     <message>
         <source>Invalid filename</source>
-        <translation>ชื่อไฟล์ไม่ถูกต้อง</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;The name &quot;%1&quot; can not be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuations marks.</source>
-        <translation>&lt;b&gt;ไม่สามาถใช้ชื่อ &quot;%1&quot; ได้&lt;/b&gt;&lt;p&gt;โปรดลองใช้ชื่ออื่นที่มีตัวอักษรน้อยลงหรืองดใช้เครื่องหมายวรรคตอน</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>ชื่อ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Size</source>
-        <translation>ขนาด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Kind</source>
         <comment>Match OS X Finder</comment>
-        <translation>ชนิด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Type</source>
         <comment>All other platforms</comment>
-        <translation>ชนิด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Date Modified</source>
-        <translation>วันที่แก้ไข</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>My Computer</source>
@@ -1911,30 +1350,10 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Computer</source>
-        <translation>คอมพิวเตอร์</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 TB</source>
-        <translation>%1 TB</translation>
-    </message>
-    <message>
-        <source>%1 GB</source>
-        <translation>%1 GB</translation>
-    </message>
-    <message>
-        <source>%1 MB</source>
-        <translation>%1 MB</translation>
-    </message>
-    <message>
-        <source>%1 KB</source>
-        <translation>%1 KB</translation>
-    </message>
-    <message>
-        <source>%1 bytes</source>
-        <translation>%1 ไบต์</translation>
-    </message>
-    <message>
-        <source>%1 byte(s)</source>
+        <source>&lt;b&gt;The name &quot;%1&quot; cannot be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuation marks.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2145,7 +1564,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation type="unfinished">&amp;ขนาด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Effects</source>
@@ -2176,100 +1595,72 @@ Do you want to delete it anyway?</source>
     <name>QFtp</name>
     <message>
         <source>Not connected</source>
-        <translation>ไม่ได้เชื่อมต่อไว้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host %1 not found</source>
-        <translation>ไม่พบโฮสต์ %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection refused to host %1</source>
-        <translation>ถูกปฏิเสธการเชื่อมต่อไปยังโฮสต์ %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connected to host %1</source>
-        <translation>เชื่อมต่อกับโฮสต์ %1</translation>
-    </message>
-    <message>
-        <source>Connection refused for data connection</source>
-        <translation type="vanished">การเชื่อมต่อเพื่อส่งข้อมูลถูกปฏิเสธ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation>ข้อผิดพลาดที่ไม่รู้จัก</translation>
+        <translation type="unfinished">ข้อผิดพลาดที่ไม่รู้จัก</translation>
     </message>
     <message>
         <source>Connecting to host failed:
 %1</source>
-        <translation>การเชื่อมต่อไปยังโฮสต์ %1 ล้มเหลว</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Login failed:
 %1</source>
-        <translation>การล็อกอินล้มเหลว:
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Listing directory failed:
 %1</source>
-        <translation>การแสดงไดเรกทอรีล้มเหลว:
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Changing directory failed:
 %1</source>
-        <translation>การเปลี่ยนไดเรกทอรีล้มเหลว:
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Downloading file failed:
 %1</source>
-        <translation>การดาวน์โหลดไฟล์ล้มเหลว:
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Uploading file failed:
 %1</source>
-        <translation>การอัพโหลดไฟล์ล้มเหลว:
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Removing file failed:
 %1</source>
-        <translation>การลบไฟล์ล้มเหลว:
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Creating directory failed:
 %1</source>
-        <translation>การสร้างไดเรกทอรีล้มเหลว:
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Removing directory failed:
 %1</source>
-        <translation>การลบไดเรกทอรีล้มเหลว:
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection closed</source>
-        <translation>การเชื่อมต่อถูกปิดแล้ว</translation>
-    </message>
-    <message>
-        <source>Host %1 found</source>
-        <translation type="vanished">พบโฮสต์ %1</translation>
-    </message>
-    <message>
-        <source>Connection to %1 closed</source>
-        <translation type="vanished">การเชื่อมต่อไปยัง %1 ถูกปิดแล้ว</translation>
-    </message>
-    <message>
-        <source>Host found</source>
-        <translation type="vanished">พบโฮสต์</translation>
-    </message>
-    <message>
-        <source>Connected to host</source>
-        <translation type="vanished">เชื่อมต่อกับโฮสต์แล้ว</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection timed out to host %1</source>
@@ -2284,23 +1675,23 @@ Do you want to delete it anyway?</source>
     <name>QGnomeTheme</name>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished">&amp;ตกลง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation type="unfinished">&amp;บันทึก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished">&amp;ยกเลิก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="unfinished">&amp;ปิด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Close without Saving</source>
-        <translation type="unfinished">ปิดโดยไม่บันทึก</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2308,14 +1699,82 @@ Do you want to delete it anyway?</source>
     <message>
         <source>QT_LAYOUT_DIRECTION</source>
         <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
-        <translation type="unfinished">QT_LAYOUT_DIRECTION</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>QPA plugin. See QGuiApplication documentation for available options for each plugin.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path to the platform plugins.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Platform theme.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Additional plugins to load, can be specified multiple times.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Window geometry for the main window, using the X11-syntax, like 100x100+50+50.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default window icon.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Title of the first window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sets the application&apos;s layout direction to Qt::RightToLeft (debugging helper).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restores the application from an earlier session.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display name, overrides $DISPLAY.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Instance name according to ICCCM 4.1.2.5.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable mouse grabbing (useful in debuggers).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Force mouse grabbing (even when running in a debugger).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ID of the X11 Visual to use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowgeometry.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowicon.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowtitle.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QHostInfo</name>
     <message>
         <source>Unknown error</source>
-        <translation>ข้อผิดพลาดที่ไม่รู้จัก</translation>
+        <translation type="unfinished">ข้อผิดพลาดที่ไม่รู้จัก</translation>
     </message>
     <message>
         <source>No host name given</source>
@@ -2326,15 +1785,11 @@ Do you want to delete it anyway?</source>
     <name>QHostInfoAgent</name>
     <message>
         <source>Host not found</source>
-        <translation>ไม่พบโฮสต์</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown address type</source>
-        <translation>ไม่รู้จักชนิดของแอดเดรส</translation>
-    </message>
-    <message>
-        <source>Unknown error</source>
-        <translation>ข้อผิดพลาดที่ไม่รู้จัก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No host name given</source>
@@ -2344,100 +1799,40 @@ Do you want to delete it anyway?</source>
         <source>Invalid hostname</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Unknown error (%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>QHttp</name>
     <message>
-        <source>Unknown error</source>
-        <translation type="vanished">ข้อผิดพลาดที่ไม่รู้จัก</translation>
-    </message>
-    <message>
-        <source>Request aborted</source>
-        <translation type="vanished">คำขอถูกยกเลิก</translation>
-    </message>
-    <message>
-        <source>No server set to connect to</source>
-        <translation type="vanished">ไม่ได้กำหนดเซอร์ฟเวอร์เพื่อเชื่อมต่อ</translation>
-    </message>
-    <message>
-        <source>Wrong content length</source>
-        <translation type="vanished">ความยาวเนื้อหาไม่ถูกต้อง</translation>
-    </message>
-    <message>
         <source>Connection refused</source>
-        <translation>การเชื่อมต่อถูกปฏิเสธ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host %1 not found</source>
-        <translation>ไม่พบโฮสต์ %1</translation>
-    </message>
-    <message>
-        <source>HTTP request failed</source>
-        <translation type="vanished">คำขอ HTTP ล้มเหลว</translation>
-    </message>
-    <message>
-        <source>Host %1 found</source>
-        <translation type="vanished">พบโฮสต์ %1</translation>
-    </message>
-    <message>
-        <source>Connected to host %1</source>
-        <translation type="vanished">เชื่อมต่อกับโฮสต์ %1</translation>
-    </message>
-    <message>
-        <source>Connection to %1 closed</source>
-        <translation type="vanished">การเชื่อมต่อไปยัง %1 ถูกปิดแล้ว</translation>
-    </message>
-    <message>
-        <source>Host found</source>
-        <translation type="vanished">พบโฮสต์</translation>
-    </message>
-    <message>
-        <source>Connected to host</source>
-        <translation type="vanished">เชื่อมต่อกับโฮสต์แล้ว</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection closed</source>
-        <translation>การเชื่อมต่อถูกปิดแล้ว</translation>
-    </message>
-    <message>
-        <source>Proxy authentication required</source>
-        <translation type="vanished">จำเป็นต้องพิสูจน์ตัวจริงสำหรับพรอกซี</translation>
-    </message>
-    <message>
-        <source>Authentication required</source>
-        <translation type="vanished">จำเป็นต้องพิสูจน์ตัวจริง</translation>
-    </message>
-    <message>
-        <source>Connection refused (or timed out)</source>
-        <translation type="vanished">การเชื่อมต่อถูกปฏิเสธ (หรือหมดเวลา)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Proxy requires authentication</source>
-        <translation>พรอกซีต้องใช้การพิสูจน์ตัวจริง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host requires authentication</source>
-        <translation>โฮสต์ต้องใช้การพิสูจน์ตัวจริง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Data corrupted</source>
-        <translation>ข้อมูลผิดพลาด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown protocol specified</source>
-        <translation>ไม่รู้จักโพรโทคอลที่ระบุ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>SSL handshake failed</source>
-        <translation>การเชื่อมต่อ SSL ล้มเหลว</translation>
-    </message>
-    <message>
-        <source>HTTPS connection requested but SSL support not compiled in</source>
-        <translation type="vanished">เกิดการขอเชื่อมต่อ HTTPS แต่การรองรับ SSL ไม่ได้ถูกคอมไพล์ไว้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Too many redirects</source>
@@ -2452,7 +1847,7 @@ Do you want to delete it anyway?</source>
     <name>QHttpSocketEngine</name>
     <message>
         <source>Authentication required</source>
-        <translation>จำเป็นต้องพิสูจน์ตัวจริง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Did not receive HTTP response from proxy</source>
@@ -2491,113 +1886,113 @@ Do you want to delete it anyway?</source>
     <name>QIBaseDriver</name>
     <message>
         <source>Error opening database</source>
-        <translation>ไม่สามารถเปิดฐานข้อมูลได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not start transaction</source>
-        <translation>ไม่สามารถเริ่มรายการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>ไม่สามารถคอมมิทรายการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>ไม่สามารถย้อนรายการกลับได้</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QIBaseResult</name>
     <message>
         <source>Unable to create BLOB</source>
-        <translation>ไม่สามารถสร้างบล็อบได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to write BLOB</source>
-        <translation>ไม่สามารถเขียนบล็อบได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to open BLOB</source>
-        <translation>ไม่สามารถเปิดบล็อบได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to read BLOB</source>
-        <translation>ไม่สามารถอ่านบล็อบได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not find array</source>
-        <translation>ไม่พบแถวลำดับ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not get array data</source>
-        <translation>ไม่สามารถรับข้อมูลแถวลำดับได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not get query info</source>
-        <translation>ไม่สามารถรับข้อมูลคิวรีได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not start transaction</source>
-        <translation>ไม่สามารถเริ่มรายการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>ไม่สามารถคอมมิทรายการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not allocate statement</source>
-        <translation>ไม่สามารถจองข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not prepare statement</source>
-        <translation>ไม่สามารถเตรียมข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not describe input statement</source>
-        <translation>ไม่สามารถอธิบายข้อความสั่งการรับเข้าได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not describe statement</source>
-        <translation>ไม่สามารถอธิบายข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to close statement</source>
-        <translation>ไม่สามารถปิดข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute query</source>
-        <translation>ไม่สามารถประมวลผลคิวรีได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not fetch next item</source>
-        <translation>ไม่สามารถเรียกรายการถัดไปได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not get statement info</source>
-        <translation>ไม่สามารถรับข้อมูลข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QIODevice</name>
     <message>
         <source>Permission denied</source>
-        <translation>คำขออนุญาตถูกปฏิเสธ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Too many open files</source>
-        <translation>มีไฟล์ถูกเปิดมากเกินไป</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No such file or directory</source>
-        <translation>ไม่พบไฟล์หรือไดเรกทอรี</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No space left on device</source>
-        <translation>ไม่มีพื้นที่เหลือบนอุปกรณ์</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation>ข้อผิดพลาดที่ไม่รู้จัก</translation>
+        <translation type="unfinished">ข้อผิดพลาดที่ไม่รู้จัก</translation>
     </message>
     <message>
         <source>file to open is a directory</source>
@@ -2643,6 +2038,14 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unsupported image format</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot open device for writing: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Image is empty</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2736,7 +2139,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation>ข้อผิดพลาดที่ไม่รู้จัก</translation>
+        <translation type="unfinished">ข้อผิดพลาดที่ไม่รู้จัก</translation>
     </message>
     <message>
         <source>The shared library was not found.</source>
@@ -2744,7 +2147,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>The file &apos;%1&apos; is not a valid Qt plugin.</source>
-        <translation>ไฟล์ &apos;%1&apos; ไม่ใช่ปลั๊กอิน Qt</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
@@ -2772,10 +2175,6 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Cannot unload library %1: %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cannot resolve symbol &quot;%1&quot; in %2: %3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2810,36 +2209,82 @@ Do you want to delete it anyway?</source>
         <source>&apos;%1&apos; is not a Qt plugin</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>odd cpu architecture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>wrong cpu architecture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>odd endianness</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unexpected e_shsize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unexpected e_shentsize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>announced %n section(s), each %1 byte(s), exceed file size</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>shstrtab section header seems to be at %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>string table seems to be at %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>section name %1 of %2 behind end of file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>empty .rodata. not a library.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing section data. This is not a library.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QLineEdit</name>
     <message>
         <source>&amp;Undo</source>
-        <translation>เ&amp;ลิกทำ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation>ทำ&amp;ซ้ำ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation>&amp;ตัด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation>&amp;คัดลอก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation>&amp;วาง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>ลบ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation>เลือกทั้งหมด</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2850,7 +2295,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>%1: Permission denied</source>
-        <translation>%1: คำขออนุญาตถูกปฏิเสธ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: Address in use</source>
@@ -2858,14 +2303,14 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
-        <translation>%1: ข้อผิดพลาดที่ไม่รู้จัก %2</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QLocalSocket</name>
     <message>
         <source>%1: Connection refused</source>
-        <translation>%1: การเชื่อมต่อถูกปฏิเสธ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: Remote closed</source>
@@ -2873,7 +2318,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>%1: Invalid name</source>
-        <translation>%1: ชื่อไม่ถูกต้อง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: Socket access error</source>
@@ -2889,7 +2334,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>%1: Datagram too large</source>
-        <translation>%1: เดทาแกรมใหญ่เกินไป</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: Connection error</source>
@@ -2901,7 +2346,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
-        <translation>%1: ข้อผิดพลาดที่ไม่รู้จัก %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: Operation not permitted when socket is in this state</source>
@@ -2919,28 +2364,28 @@ Do you want to delete it anyway?</source>
         <source>%1: Access denied</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Socket is not connected</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QMYSQLDriver</name>
     <message>
-        <source>Unable to open database &apos;</source>
-        <translation type="vanished">ไม่สามารถเปิดฐานข้อมูล &apos;</translation>
-    </message>
-    <message>
         <source>Unable to connect</source>
-        <translation>ไม่สามารถเชื่อมต่อได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
-        <translation>ไม่สามารถเริ่มรายการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>ไม่สามารถคอมมิทรายการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>ไม่สามารถย้อนรายการกลับได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to allocate a MYSQL object</source>
@@ -2955,31 +2400,31 @@ Do you want to delete it anyway?</source>
     <name>QMYSQLResult</name>
     <message>
         <source>Unable to fetch data</source>
-        <translation>ไม่สามารถเรียกข้อมูลได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute query</source>
-        <translation>ไม่สามารถประมวลผลคิวรีได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to store result</source>
-        <translation>ไม่สามารถเก็บผลลัพธ์ได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation>ไม่สามารถเตรียมข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to reset statement</source>
-        <translation>ไม่สามารถรีเซ็ตข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to bind value</source>
-        <translation>ไม่สามารถเชื่อมโยงค่าได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>ไม่สามารถประมวลผลข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to bind outvalues</source>
@@ -2987,77 +2432,77 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to store statement results</source>
-        <translation>ไม่สามารถเก็บผลลัพธ์ของข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute next query</source>
-        <translation>ไม่สามารถประมวลผลคิวรีถัดไปได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to store next result</source>
-        <translation>ไม่สามารถเก็บผลลัพธ์ถัดไปได้</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QMdiArea</name>
     <message>
         <source>(Untitled)</source>
-        <translation>(ไม่มีชื่อ)</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QMdiSubWindow</name>
     <message>
         <source>%1 - [%2]</source>
-        <translation>%1 - [%2]</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>ปิด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Minimize</source>
-        <translation>ย่อให้เล็กสุด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Restore Down</source>
-        <translation>คืนขนาดลง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Restore</source>
-        <translation>&amp;คืนค่า</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Move</source>
-        <translation>&amp;ย้าย</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation>&amp;ขนาด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Mi&amp;nimize</source>
-        <translation>ย่อให้เ&amp;ล็กสุด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Ma&amp;ximize</source>
-        <translation>ขยายให้ให&amp;ญ่สุด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Stay on &amp;Top</source>
-        <translation>แสดงไว้&amp;บนสุด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>&amp;ปิด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>- [%1]</source>
-        <translation>- [%1]</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Maximize</source>
-        <translation>ขยายให้ใหญ่สุด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unshade</source>
@@ -3069,175 +2514,134 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Restore</source>
-        <translation>คืนค่า</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>ช่วยเหลือ</translation>
+        <translation type="unfinished">ช่วยเหลือ</translation>
     </message>
     <message>
         <source>Menu</source>
-        <translation>เมนู</translation>
-    </message>
-</context>
-<context>
-    <name>QMenu</name>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">ปิด</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">เปิด</translation>
-    </message>
-    <message>
-        <source>Execute</source>
-        <translation type="vanished">ประมวลผล</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QMessageBox</name>
     <message>
-        <source>Help</source>
-        <translation>ช่วยเหลือ</translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation>ตกลง</translation>
-    </message>
-    <message>
         <source>About Qt</source>
-        <translation>เกี่ยวกับ Qt</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;โปรแกรมนี้ใช้ Qt รุ่น %1&lt;/p&gt;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show Details...</source>
-        <translation>แสดงรายละเอียด...</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Hide Details...</source>
-        <translation>ซ่อนรายละเอียด...</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;โปรแกรมนี้ใช้ Qt แบบโอเพนซอร์สรุ่น %1.&lt;/p&gt;&lt;p&gt;Qt แบบโอเพนซอร์สมีวัตถุประสงค์เพื่อใช้สำหรับการพัฒนาแอพพลิเคชันแบบโอเพนซอร์ส คุณต้องการไลเซนส์ Qt เชิงพาณิชย์สำหรับการพัฒนาแอพพลิเคชันแบบมีกรรมสิทธิ (โคลสซอร์ส)&lt;/p&gt;&lt;p&gt;โปรดดูรายละเอียดเพิ่มเติมเกี่ยวกับการใช้ไลเซนส์ Qt ได้ที่ &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;h3&gt;เกี่ยวกับ Qt&lt;/h3&gt;%1&lt;p&gt;Qt เป็นชุดเครื่องมือสำหรับการพัฒนาแอพพลิเคชัน C++ แบบข้ามแพลตฟอร์ม&lt;/p&gt;&lt;p&gt;Qt ช่วยให้สามารถใช้ซอร์สโค๊ดร่วมกันข้ามแพลตฟอร์มตั้งแต่ไมโครซอฟต์วินโดวส์, แมคโอเอส&amp;nbsp;X, ลินุกซ์ และระบบปฏิบัติการในกลุ่มยูนิกส์เชิงพาณิชย์ที่ใช้อย่างแพร่หลาย และ Qt ยังมีรุ่นสำหรับใช้กับระบบคอมพิวเตอร์ฝังตัวได้แก่ Qt สำหรับลินุกส์แบบฝังตัว และ Qt สำหรับวินโดวส์ CE&lt;/p&gt;&lt;p&gt;Qt เป็นผลิตภัณฑ์ของโนเกีย โปรดดูรายละเอียดเพิ่มเติมได้ที่ &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 3 or GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 3 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 3.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under multiple licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of GNU (L)GPL.&lt;/p&gt;&lt;p&gt;Qt licensed under GNU (L)GPL is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the respective licenses.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <extracomment>Leave this text untranslated or include a verbatim copy of it below and note that it is the authoritative version in case of doubt.</extracomment>
         <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>QMultiInputContext</name>
-    <message>
-        <source>Select IM</source>
-        <translation type="vanished">เลือก IM</translation>
     </message>
 </context>
 <context>
     <name>QNativeSocketEngine</name>
     <message>
         <source>The remote host closed the connection</source>
-        <translation>โฮสต์ปลายทางปิดการเชื่อมต่อ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Network operation timed out</source>
-        <translation>หมดเวลากระบวนการทางเครือข่าย</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Out of resources</source>
-        <translation>ทรัพยากรไม่พอ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unsupported socket operation</source>
-        <translation>ไม่รองรับกระบวนการซ็อคเก็ตนี้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Protocol type not supported</source>
-        <translation>ไม่รองรับโพรโทคอลชนิดนี้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid socket descriptor</source>
-        <translation>ตัวอธิบายซ็อคเก็ตไม่ถูกต้อง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Network unreachable</source>
-        <translation>ไม่สามารถเข้าถึงเครือข่ายได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Permission denied</source>
-        <translation>คำขออนุญาตถูกปฏิเสธ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection timed out</source>
-        <translation>หมดเวลาการเชื่อมต่อ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection refused</source>
-        <translation>การเชื่อมต่อถูกปฏิเสธ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The bound address is already in use</source>
-        <translation>แอดเดรสที่ผูกไว้ถูกใช้งานอยู่แล้ว</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The address is not available</source>
-        <translation>ไม่สามารถใช้งานแอดเดรสได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The address is protected</source>
-        <translation>แอดเดรสถูกป้องกันไว้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to send a message</source>
-        <translation>ไม่สามารถส่งข้อความได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to receive a message</source>
-        <translation>ไม่สามารถรับข้อความได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to write</source>
-        <translation>ไม่สามารถเขียนได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Network error</source>
-        <translation>เครือข่ายผิดพลาด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Another socket is already listening on the same port</source>
-        <translation>มีซ็อคเก็ตอื่นกำลังใช้งานพอร์ตเดียวกันอยู่แล้ว</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to initialize non-blocking socket</source>
-        <translation>ไม่สามารถเริ่มซ็อคเก็ตแบบไม่บล็อกได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to initialize broadcast socket</source>
-        <translation>ไม่สามารถเริ่มซ็อคเก็ตบรอดคาสต์ได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Attempt to use IPv6 socket on a platform with no IPv6 support</source>
-        <translation>พยายามใช้ซ็อคเก็ต IPv6 บนแพลตฟอร์มที่ไม่รองรับ IPv6</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host unreachable</source>
-        <translation>ไม่สามารถเข้าถึงโฮสต์ได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Datagram was too large to send</source>
-        <translation>เดทาแกรมใหญ่เกินกว่าจะส่งได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Operation on non-socket</source>
@@ -3245,11 +2649,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation>ข้อผิดพลาดที่ไม่รู้จัก</translation>
+        <translation type="unfinished">ข้อผิดพลาดที่ไม่รู้จัก</translation>
     </message>
     <message>
         <source>The proxy type is invalid for this operation</source>
-        <translation>ชนิดของพรอกซีใช้ไม่ได้สำหรับกระบวนการนี้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Temporary error</source>
@@ -3275,18 +2679,18 @@ Do you want to delete it anyway?</source>
     <name>QNetworkAccessDataBackend</name>
     <message>
         <source>Invalid URI: %1</source>
-        <translation type="unfinished">URI ไม่ถูกต้อง: %1</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessDebugPipeBackend</name>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation type="unfinished">เกิดความผิดพลาดขณะเขียนไปยัง %1: %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Socket error on %1: %2</source>
-        <translation type="unfinished">เกิดความผิดพลาดซ็อคเก็ตบน %1: %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Remote host closed the connection prematurely on %1</source>
@@ -3301,38 +2705,38 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Error opening %1: %2</source>
-        <translation>ความผิดพลาดขณะเปิด %1: %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation>เกิดความผิดพลาดขณะเขียนไปยัง %1: %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cannot open %1: Path is a directory</source>
-        <translation>ไม่สามารถเปิด %1: เส้นทางเป็นไดเรกทอรี</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Read error reading from %1: %2</source>
-        <translation>เกิดความผิดพลาดขณะอ่านจาก %1: %2</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessFtpBackend</name>
     <message>
         <source>Cannot open %1: is a directory</source>
-        <translation>ไม่สามารถเปิด %1: เป็นไดเรกทอรี</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Logging in to %1 failed: authentication required</source>
-        <translation>การลงชื่อเข้า %1 ล้มเหลว: จำเป็นต้องพิสูจน์ตัวจริง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error while downloading %1: %2</source>
-        <translation>เกิดความผิดพลาดขณะดาวน์โหลด %1: %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error while uploading %1: %2</source>
-        <translation>เกิดความผิดพลาดขณะอัพโหลด %1: %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No suitable proxy found</source>
@@ -3340,21 +2744,10 @@ Do you want to delete it anyway?</source>
     </message>
 </context>
 <context>
-    <name>QNetworkAccessManager</name>
-    <message>
-        <source>Network access is disabled.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>QNetworkReply</name>
     <message>
-        <source>Error downloading %1 - server replied: %2</source>
-        <translation type="vanished">การดาวน์โหลด %1 ผิดพลาด - เซอร์ฟเวอร์ตอบว่า: %2</translation>
-    </message>
-    <message>
         <source>Protocol &quot;%1&quot; is unknown</source>
-        <translation>ไม่รู้จักโพรโทคอล `%1&apos;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error transferring %1 - server replied: %2</source>
@@ -3381,7 +2774,7 @@ Do you want to delete it anyway?</source>
     <name>QNetworkReplyHttpImpl</name>
     <message>
         <source>Operation canceled</source>
-        <translation type="unfinished">การดำเนินการถูกยกเลิก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No suitable proxy found</source>
@@ -3392,7 +2785,7 @@ Do you want to delete it anyway?</source>
     <name>QNetworkReplyImpl</name>
     <message>
         <source>Operation canceled</source>
-        <translation>การดำเนินการถูกยกเลิก</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3429,24 +2822,24 @@ Do you want to delete it anyway?</source>
     <name>QOCIDriver</name>
     <message>
         <source>Unable to logon</source>
-        <translation>ไม่สามารถลงบันทึกเปิดได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to initialize</source>
         <comment>QOCIDriver</comment>
-        <translation>ไม่สามารถเริ่มได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
-        <translation>ไม่สามารถเริ่มรายการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>ไม่สามารถคอมมิทรายการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>ไม่สามารถย้อนรายการกลับได้</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3469,15 +2862,15 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation type="unfinished">ไม่สามารถเตรียมข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to bind value</source>
-        <translation type="unfinished">ไม่สามารถเชื่อมโยงค่าได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation type="unfinished">ไม่สามารถประมวลผลข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to get statement type</source>
@@ -3488,7 +2881,7 @@ Do you want to delete it anyway?</source>
     <name>QODBCDriver</name>
     <message>
         <source>Unable to connect</source>
-        <translation type="unfinished">ไม่สามารถเชื่อมต่อได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to disable autocommit</source>
@@ -3496,11 +2889,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation type="unfinished">ไม่สามารถคอมมิทรายการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation type="unfinished">ไม่สามารถย้อนรายการกลับได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to enable autocommit</source>
@@ -3519,19 +2912,19 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation type="unfinished">ไม่สามารถประมวลผลข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch next</source>
-        <translation type="unfinished">ไม่สามารถเรียกระเบียนถัดไปได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation type="unfinished">ไม่สามารถเตรียมข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to bind variable</source>
-        <translation type="unfinished">ไม่สามารถเชื่อมโยงตัวแปรได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch last</source>
@@ -3543,7 +2936,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to fetch first</source>
-        <translation type="unfinished">ไม่สามารถเรียกระเบียนแรกได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch previous</source>
@@ -3551,60 +2944,22 @@ Do you want to delete it anyway?</source>
     </message>
 </context>
 <context>
-    <name>QObject</name>
-    <message>
-        <source>Operation not supported on %1</source>
-        <translation type="vanished">กระบวนการที่ไม่รองรับบน %1</translation>
-    </message>
-    <message>
-        <source>Invalid URI: %1</source>
-        <translation type="vanished">URI ไม่ถูกต้อง: %1</translation>
-    </message>
-    <message>
-        <source>Write error writing to %1: %2</source>
-        <translation type="vanished">เกิดความผิดพลาดขณะเขียนไปยัง %1: %2</translation>
-    </message>
-    <message>
-        <source>Read error reading from %1: %2</source>
-        <translation type="vanished">เกิดความผิดพลาดขณะอ่านจาก %1: %2</translation>
-    </message>
-    <message>
-        <source>Socket error on %1: %2</source>
-        <translation type="vanished">เกิดความผิดพลาดซ็อคเก็ตบน %1: %2</translation>
-    </message>
-    <message>
-        <source>Protocol error: packet of size 0 received</source>
-        <translation type="vanished">ข้อผิดพลาดโพรโทคอล: ได้รับแพคเก็ตขนาดเป็น 0</translation>
-    </message>
-</context>
-<context>
-    <name>QPPDOptionsModel</name>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">ชื่อ</translation>
-    </message>
-    <message>
-        <source>Value</source>
-        <translation type="vanished">ค่า</translation>
-    </message>
-</context>
-<context>
     <name>QPSQLDriver</name>
     <message>
         <source>Unable to connect</source>
-        <translation>ไม่สามารถเชื่อมต่อได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not begin transaction</source>
-        <translation>ไม่สามารถเริ่มรายการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not commit transaction</source>
-        <translation>ไม่สามารถคอมมิทรายการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not rollback transaction</source>
-        <translation>ไม่สามารถย้อนรายการกลับได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to subscribe</source>
@@ -3619,11 +2974,23 @@ Do you want to delete it anyway?</source>
     <name>QPSQLResult</name>
     <message>
         <source>Unable to create query</source>
-        <translation>ไม่สามารถสร้างคิวรีได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation>ไม่สามารถเตรียมข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Query results lost - probably discarded on executing another SQL query.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to get result</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to send query</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3642,7 +3009,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Form</source>
-        <translation type="unfinished">ฟอร์ม</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Paper</source>
@@ -3670,11 +3037,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Portrait</source>
-        <translation type="unfinished">แนวตั้ง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Landscape</source>
-        <translation type="unfinished">แนวนอน</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reverse landscape</source>
@@ -4249,55 +3616,55 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished">บันทึก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Save All</source>
-        <translation type="unfinished">บันทึกทั้งหมด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished">เปิด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation type="unfinished">ใ&amp;ช่</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Yes to &amp;All</source>
-        <translation type="unfinished">ใช่&amp;ทั้งหมด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;No</source>
-        <translation type="unfinished">ไ&amp;ม่ใช่</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>N&amp;o to All</source>
-        <translation type="unfinished">ไม่ใช่ทั้ง&amp;หมด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Abort</source>
-        <translation type="unfinished">ยกเลิก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Retry</source>
-        <translation type="unfinished">ลองใหม่</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Ignore</source>
-        <translation type="unfinished">ละเว้น</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">ปิด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">ยกเลิก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished">ละทิ้ง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Help</source>
@@ -4305,26 +3672,26 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">นำไปใช้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">รีเซ็ต</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished">คืนค่าตั้งต้น</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPluginLoader</name>
     <message>
         <source>Unknown error</source>
-        <translation>ข้อผิดพลาดที่ไม่รู้จัก</translation>
+        <translation type="unfinished">ข้อผิดพลาดที่ไม่รู้จัก</translation>
     </message>
     <message>
         <source>The plugin was not loaded.</source>
-        <translation>ไม่ได้โหลดปลั๊กอิน</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4370,7 +3737,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished">พิมพ์</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Left to Right, Top to Bottom</source>
@@ -4458,7 +3825,19 @@ Please turn one of those options off.</source>
         <translation type="unfinished">ตกลง</translation>
     </message>
     <message>
-        <source>Automatic</source>
+        <source>Invalid Pages Definition</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 does not follow the correct syntax. Please use &apos;,&apos; to separate ranges and pages, &apos;-&apos; to define ranges and make sure ranges do not intersect with each other.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplex Settings Conflicts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in duplex settings. Do you want to fix them?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4466,75 +3845,71 @@ Please turn one of those options off.</source>
     <name>QPrintPreviewDialog</name>
     <message>
         <source>Page Setup</source>
-        <translation>ตั้งค่าหน้ากระดาษ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Print Preview</source>
-        <translation>ตัวอย่างก่อนพิมพ์</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Next page</source>
-        <translation>หน้าถัดไป</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Previous page</source>
-        <translation>หน้าก่อน</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>First page</source>
-        <translation>หน้าแรก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Last page</source>
-        <translation>หน้าสุดท้าย</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Fit width</source>
-        <translation>เต็มความกว้าง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Fit page</source>
-        <translation>เต็มหน้า</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Zoom in</source>
-        <translation>ซูมเข้า</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Zoom out</source>
-        <translation>ซูมออก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Portrait</source>
-        <translation>แนวตั้ง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Landscape</source>
-        <translation>แนวนอน</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show single page</source>
-        <translation>แสดงหน้าเดียว</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show facing pages</source>
-        <translation>แสดงหน้าคู่กัน</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show overview of all pages</source>
-        <translation>แสดงภาพรวมของทุกหน้า</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Print</source>
-        <translation>พิมพ์</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page setup</source>
-        <translation>ตั้งค่าหน้ากระดาษ</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">ปิด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1%</source>
@@ -4555,99 +3930,103 @@ Please turn one of those options off.</source>
         <source>Job Options</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Page Setup Conflicts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in page setup options. Do you want to fix them?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Advanced Option Conflicts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in some advanced options. Do you want to fix them?</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QPrintPropertiesWidget</name>
     <message>
         <source>Form</source>
-        <translation>ฟอร์ม</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page</source>
-        <translation>หน้า</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Advanced</source>
-        <translation type="vanished">ขั้นสูง</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in some options. Please fix them.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPrintSettingsOutput</name>
     <message>
         <source>Form</source>
-        <translation>ฟอร์ม</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copies</source>
-        <translation>สำเนา</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Print range</source>
-        <translation>ช่วงที่พิมพ์</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Print all</source>
-        <translation>พิมพ์ทั้งหมด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Pages from</source>
-        <translation>ตั้งแต่หน้า</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>to</source>
-        <translation>ถึง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Selection</source>
-        <translation>ส่วนที่เลือก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Output Settings</source>
-        <translation>ตั้งค่าการพิมพ์</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copies:</source>
-        <translation>สำเนา:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Collate</source>
-        <translation>ทีละชุด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reverse</source>
-        <translation>หลังไปหน้า</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Options</source>
-        <translation>ตัวเลือก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Color Mode</source>
-        <translation>โหมดสี</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Color</source>
-        <translation>สี</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Grayscale</source>
-        <translation>ระดับสีเทา</translation>
-    </message>
-    <message>
-        <source>Duplex Printing</source>
-        <translation>กลับด้านพิมพ์</translation>
-    </message>
-    <message>
-        <source>None</source>
-        <translation>ไม่มี</translation>
-    </message>
-    <message>
-        <source>Long side</source>
-        <translation>ด้านยาว</translation>
-    </message>
-    <message>
-        <source>Short side</source>
-        <translation>ด้านกว้าง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Current Page</source>
@@ -4657,44 +4036,68 @@ Please turn one of those options off.</source>
         <source>Page Set:</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Pages</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specify pages or ranges separated by commas. Ranges are specified by two numbers separated by a hyphen. E.g: 3,5-7,9 prints pages 3, 5, 6, 7 and 9.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Double Sided Printing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Long side binding</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Short side binding</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QPrintWidget</name>
     <message>
         <source>Form</source>
-        <translation>ฟอร์ม</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Printer</source>
-        <translation>เครื่องพิมพ์</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation>&amp;ชื่อ:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>P&amp;roperties</source>
-        <translation>&amp;คุณสมบัติ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Location:</source>
-        <translation>ที่ตั้ง:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Preview</source>
-        <translation>แสดงตัวอย่าง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Type:</source>
-        <translation>ชนิด:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Output &amp;file:</source>
-        <translation>ไ&amp;ฟล์ที่ส่งออก:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>...</source>
-        <translation>...</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4744,35 +4147,7 @@ Please turn one of those options off.</source>
     <name>QProgressDialog</name>
     <message>
         <source>Cancel</source>
-        <translation>ยกเลิก</translation>
-    </message>
-</context>
-<context>
-    <name>QPushButton</name>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">เปิด</translation>
-    </message>
-</context>
-<context>
-    <name>QQnxFileDialogHelper</name>
-    <message>
-        <source>All files (*.*)</source>
         <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>QQnxFilePicker</name>
-    <message>
-        <source>Pick a file</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>QRadioButton</name>
-    <message>
-        <source>Check</source>
-        <translation type="vanished">ตรวจสอบ</translation>
     </message>
 </context>
 <context>
@@ -4857,15 +4232,7 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>invalid escape sequence in character class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>range out of order in character class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>nothing to repeat</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4881,23 +4248,7 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>missing )</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>reference to non-existent subpattern</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>erroffset passed as NULL</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>unknown option bit(s) set</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>missing ) after comment</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4905,39 +4256,11 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>failed to get memory</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>unmatched parentheses</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>internal error: code overflow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>unrecognized character after (?&lt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>lookbehind assertion is not fixed length</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>malformed number or name after (?(</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>conditional group contains more than two branches</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>assertion expected after (?(</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>(?R or (?[+-]digits must be followed by )</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4949,55 +4272,7 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>this version of PCRE is not compiled with PCRE_UTF8 support</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>character value in \x{...} sequence is too large</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>invalid condition (?(0)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>\C not allowed in lookbehind assertion</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>PCRE does not support \L, \l, \N{name}, \U, or \u</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>number after (?C is &gt; 255</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>closing ) for (?C expected</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>recursive call could loop indefinitely</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>unrecognized character after (?P</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>syntax error in subpattern name (missing terminator)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>two named subpatterns have the same name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>invalid UTF-8 string</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>support for \P, \p, and \X has not been compiled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5009,15 +4284,7 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>subpattern name is too long (maximum 32 characters)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>too many named subpatterns (maximum 10000)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>octal value is greater than \377 (not in UTF-8 mode)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5029,47 +4296,11 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>DEFINE group contains more than one branch</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>repeating a DEFINE group is not allowed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>inconsistent NEWLINE options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>\g is not followed by a braced, angle-bracketed, or quoted name/number or by a plain number</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>a numbered reference must not be zero</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>an argument is not allowed for (*ACCEPT), (*FAIL), or (*COMMIT)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>(*VERB) not recognized</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>number is too big</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>subpattern name expected</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>digit expected after (?+</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>] is an invalid data character in JavaScript compatibility mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5081,19 +4312,7 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>this version of PCRE is not compiled with PCRE_UCP support</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>\c must be followed by an ASCII character</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>\k is not followed by a braced, angle-bracketed, or quoted name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>internal error: unknown opcode in find_fixedlength()</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5101,31 +4320,11 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>too many forward references</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>disallowed Unicode code point (&gt;= 0xd800 &amp;&amp; &lt;= 0xdfff)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>invalid UTF-16 string</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>name is too long in (*MARK), (*PRUNE), (*SKIP), or (*THEN)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>character value in \u.... sequence is too large</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>invalid UTF-32 string</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>setting UTF is disabled by the application</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5149,104 +4348,604 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>group name must start with a non-digit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>parentheses are too deeply nested (stack check)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>digits missing in \x{} or \o{}</source>
+        <source>escape sequence is invalid in character class</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>quantifier does not follow a repeatable item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing closing parenthesis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern passed as NULL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unrecognised compile-time option bit(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing ) after (?# comment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>failed to allocate heap memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unmatched closing parenthesis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing closing parenthesis for condition</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>a relative value of zero is not allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>conditional subpattern contains more than two branches</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>assertion expected after (?( or (?(?C)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>digit expected after (?+ or (?-</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error in pcre2_study(): should not occur</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>this version of PCRE2 does not have Unicode support</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>character code point value in \x{} or \o{} is too large</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>lookbehind is too complicated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\C is not allowed in a lookbehind assertion in UTF-16 mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCRE2 does not support \F, \L, \l, \N{name}, \U, or \u</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>number after (?C is greater than 255</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>closing parenthesis for (?C expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid escape sequence in (*VERB) name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>syntax error in subpattern name (missing terminator?)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>two named subpatterns have the same name (PCRE2_DUPNAMES not set)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>subpattern name must start with a non-digit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>this version of PCRE2 does not have support for \P, \p, or \X</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>subpattern name is too long (maximum 32 code units)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>octal value is greater than \377 in 8-bit non-UTF-8 mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DEFINE subpattern contains more than one branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: unknown newline setting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(?R (recursive pattern call) must be followed by a closing parenthesis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>obsolete error (should not occur)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(*VERB) not recognized or malformed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>subpattern number is too big</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: parsed pattern overflow</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\c must be followed by a printable ASCII character</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\c must be followed by a letter or one of [\]^_?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: unknown meta code in check_lookbehinds()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>callout string is too long</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>using UTF is disabled by the application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>using UCP is disabled by the application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>character code point value in \u.... sequence is too large</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>digits missing in \x{} or \o{} or \N{U+}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>syntax error or number too big in (?(VERSION condition</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: unknown opcode in auto_possessify()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing terminating delimiter for callout with string argument</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unrecognized string delimiter follows (?C</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>using \C is disabled by the application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(?| and/or (?J: or (?x: parentheses are too deeply nested</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>using \C is disabled in this PCRE2 library</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>regular expression is too complicated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>lookbehind assertion is too long</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern string is longer than the limit set by the application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: unknown code in parsed pattern</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: bad code value in parsed_skip()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCRE2_EXTRA_ALLOW_SURROGATE_ESCAPES is not allowed in UTF-16 mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid option bits with PCRE2_LITERAL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\N{U+dddd} is supported only in Unicode (UTF) mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid hyphen in option setting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(*alpha_assertion) not recognized</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>script runs require Unicode support, which this version of PCRE2 does not have</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>too many capturing groups (maximum 65535)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>atomic assertion expected after (?( or (?(?C)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no match</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>partial match</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 1 byte missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 2 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 3 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 4 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 5 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 2 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 3 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 4 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 5 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 6 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 5-byte character is not allowed (RFC 3629)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 6-byte character is not allowed (RFC 3629)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: code points greater than 0x10ffff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: code points 0xd800-0xdfff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 2-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 3-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 4-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 5-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 6-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: isolated byte with 0x80 bit set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: illegal byte (0xfe or 0xff)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-16 error: missing low surrogate at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-16 error: invalid low surrogate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-16 error: isolated low surrogate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-32 error: code points 0xd800-0xdfff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-32 error: code points greater than 0x10ffff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad data value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>patterns do not all use the same character tables</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>magic number missing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern compiled in wrong mode: 8/16/32-bit error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad offset value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad option value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad offset into UTF string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>callout error code</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid data in workspace for DFA restart</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>too much recursion for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>backreference condition or recursion test is not supported for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>function is not supported for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern contains an item that is not supported for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>workspace size exceeded in DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error - pattern overwritten?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad JIT option</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>JIT stack limit reached</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>match limit exceeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no more memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unknown substring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>non-unique substring name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NULL argument passed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>nested recursion at the same subject position</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>matching depth limit exceeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>requested value is not available</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>requested value is not set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>offset limit set without PCRE2_USE_OFFSET_LIMIT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad escape sequence in replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>expected closing curly bracket in replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad substitution in replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>match with end before start or start moved backwards is not supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>too many replacements (more than INT_MAX)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad serialized data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>heap limit exceeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid syntax</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error - duplicate substitution match</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCRE2_MATCH_INVALID_UTF is not supported for DFA matching</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSQLite2Driver</name>
     <message>
-        <source>Error to open database</source>
-        <translation type="vanished">ไม่สามารถเปิดฐานข้อมูลได้</translation>
-    </message>
-    <message>
         <source>Unable to begin transaction</source>
-        <translation>ไม่สามารถเริ่มรายการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>ไม่สามารถคอมมิทรายการได้</translation>
-    </message>
-    <message>
-        <source>Unable to rollback Transaction</source>
-        <translation type="vanished">ไม่สามารถย้อนรายการกลับได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error opening database</source>
-        <translation type="unfinished">ไม่สามารถเปิดฐานข้อมูลได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation type="unfinished">ไม่สามารถย้อนรายการกลับได้</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSQLite2Result</name>
     <message>
         <source>Unable to fetch results</source>
-        <translation>ไม่สามารถเรียกผลลัพธ์ได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>ไม่สามารถประมวลผลข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSQLiteDriver</name>
     <message>
         <source>Error opening database</source>
-        <translation>ไม่สามารถเปิดฐานข้อมูลได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error closing database</source>
-        <translation>ไม่สามารถปิดฐานข้อมูลได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
-        <translation>ไม่สามารถเริ่มรายการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>ไม่สามารถคอมมิทรายการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>ไม่สามารถย้อนรายการกลับได้</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSQLiteResult</name>
     <message>
         <source>Unable to fetch row</source>
-        <translation>ไม่สามารถเรียกแถวได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>ไม่สามารถประมวลผลข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to reset statement</source>
-        <translation>ไม่สามารถรีเซ็ตข้อความสั่งการได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to bind parameters</source>
-        <translation>ไม่สามารถเชื่อมโยงพารามิเตอร์ได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Parameter count mismatch</source>
-        <translation>จำนวนพารามิเตอร์ไม่เข้ากัน</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No query</source>
-        <translation>ไม่มีคิวรี</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute multiple statements at a time</source>
@@ -5267,123 +4966,118 @@ Please turn one of those options off.</source>
         <source>Writing canceled by application</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>QSaveFile cannot open &apos;%1&apos; without direct write fallback enabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QScrollBar</name>
     <message>
         <source>Scroll here</source>
-        <translation>เลื่อนมาที่นี่</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Left edge</source>
-        <translation>ขอบซ้าย</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Top</source>
-        <translation>ด้านบน</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Right edge</source>
-        <translation>ขอบขวา</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bottom</source>
-        <translation>ด้านล่าง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page left</source>
-        <translation>เลื่อนหน้าซ้าย</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation>เลื่อนหน้าขึ้น</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation>เลื่อนหน้าขวา</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation>เลื่อนหน้าลง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll left</source>
-        <translation>เลื่อนซ้าย</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll up</source>
-        <translation>เลื่อนขึ้น</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll right</source>
-        <translation>เลื่อนขวา</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll down</source>
-        <translation>เลื่อนลง</translation>
+        <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>QSctpSocket</name>
     <message>
-        <source>Line up</source>
-        <translation type="vanished">เลื่อนบรรทัดขึ้น</translation>
-    </message>
-    <message>
-        <source>Position</source>
-        <translation type="vanished">ตำแหน่ง</translation>
-    </message>
-    <message>
-        <source>Line down</source>
-        <translation type="vanished">เลื่อนบรรทัดลง</translation>
+        <source>The remote host closed the connection</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSharedMemory</name>
     <message>
         <source>%1: unable to set key on lock</source>
-        <translation>%1: ไม่สามารถตั้งคีย์ขณะล็อค</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: create size is less then 0</source>
-        <translation>%1: ขนาดที่สร้างขึ้นมีค่าน้อยกว่า 0</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: unable to lock</source>
-        <translation>%1: ไม่สามารถล็อคได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: unable to unlock</source>
-        <translation>%1: ไม่สามารถปลดล็อคได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: permission denied</source>
-        <translation>%1: คำขออนุญาตถูกปฏิเสธ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: already exists</source>
-        <translation>%1: มีอยู่แล้ว</translation>
-    </message>
-    <message>
-        <source>%1: doesn&apos;t exists</source>
-        <translation type="vanished">%1: ไม่พบ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: out of resources</source>
-        <translation>%1: ทรัพยากรไม่พอ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
-        <translation>%1: ข้อผิดพลาดที่ไม่รู้จัก %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: key is empty</source>
-        <translation>%1: คีย์ว่างอยู่</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
-        <translation>%1: ftok ล้มเหลว</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: unable to make key</source>
-        <translation>%1: ไม่สามารถสร้างคีย์</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: system-imposed size restrictions</source>
@@ -5391,7 +5085,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>%1: not attached</source>
-        <translation>%1: ไม่ได้เชื่อมต่อไว้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: bad name</source>
@@ -5463,7 +5157,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished">พิมพ์</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>SysReq</source>
@@ -5515,7 +5209,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Menu</source>
-        <translation type="unfinished">เมนู</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Help</source>
@@ -5523,31 +5217,31 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Back</source>
-        <translation>ย้อนกลับ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation>ถัดไป</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation>หยุด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation>เรียกซ้ำ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Volume Down</source>
-        <translation>ลดเสียง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Volume Mute</source>
-        <translation>ปิดเสียง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Volume Up</source>
-        <translation>เพิ่มเสียง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bass Boost</source>
@@ -5595,7 +5289,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Search</source>
-        <translation>ค้นหา</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Standby</source>
@@ -5707,11 +5401,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Insert</source>
-        <translation type="unfinished">แทรก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished">ลบ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Escape</source>
@@ -5727,11 +5421,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished">ใช่</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished">ไม่ใช่</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Context1</source>
@@ -5781,6 +5475,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>+</source>
+        <extracomment>Key separator in shortcut string</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5907,7 +5602,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished">ล้าง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Clear Grab</source>
@@ -5915,15 +5610,15 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">ปิด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">คัดลอก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished">ตัด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Display</source>
@@ -5995,7 +5690,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished">วาง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Phone</source>
@@ -6007,7 +5702,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished">เรียกซ้ำ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Rotate Windows</source>
@@ -6023,7 +5718,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished">บันทึก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Send</source>
@@ -6059,7 +5754,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Video</source>
-        <translation type="unfinished">วิดีโอ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Word Processor</source>
@@ -6099,7 +5794,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Music</source>
-        <translation type="unfinished">ดนตรี</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Battery</source>
@@ -6215,7 +5910,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished">เปิด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Find</source>
@@ -6223,11 +5918,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Undo</source>
-        <translation type="unfinished">เลิกทำ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation type="unfinished">ทำซ้ำ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Toggle Call/Hangup</source>
@@ -6376,15 +6071,15 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">ยกเลิก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Printer</source>
-        <translation type="unfinished">เครื่องพิมพ์</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Execute</source>
-        <translation type="unfinished">ประมวลผล</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Play</source>
@@ -6414,35 +6109,36 @@ Please turn one of those options off.</source>
         <source>Num</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>QSlider</name>
     <message>
-        <source>Page left</source>
-        <translation type="vanished">เลื่อนหน้าซ้าย</translation>
+        <source>Launch (G)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Page up</source>
-        <translation type="vanished">เลื่อนหน้าขึ้น</translation>
+        <source>Launch (H)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Position</source>
-        <translation type="vanished">ตำแหน่ง</translation>
+        <source>Calendar</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Page right</source>
-        <translation type="vanished">เลื่อนหน้าขวา</translation>
+        <source>Adjust contrast</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Page down</source>
-        <translation type="vanished">เลื่อนหน้าลง</translation>
+        <source>Memo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>To-do list</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSocks5SocketEngine</name>
     <message>
         <source>Network operation timed out</source>
-        <translation>หมดเวลากระบวนการทางเครือข่าย</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection to proxy refused</source>
@@ -6856,90 +6552,66 @@ Role of an accessible object</extracomment>
         <extracomment>Role of an accessible object</extracomment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>terminal</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>desktop</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>notification</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
-    <name>QSpinBox</name>
+    <name>QSslDiffieHellmanParameter</name>
     <message>
-        <source>More</source>
-        <translation type="vanished">เพิ่มขึ้น</translation>
+        <source>No error</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Less</source>
-        <translation type="vanished">ลดลง</translation>
-    </message>
-</context>
-<context>
-    <name>QSql</name>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">ลบ</translation>
+        <source>Invalid input data</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Delete this record?</source>
-        <translation type="vanished">ลบระเบียนนี้?</translation>
-    </message>
-    <message>
-        <source>Yes</source>
-        <translation type="vanished">ใช่</translation>
-    </message>
-    <message>
-        <source>No</source>
-        <translation type="vanished">ไม่ใช่</translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <translation type="vanished">แทรก</translation>
-    </message>
-    <message>
-        <source>Update</source>
-        <translation type="vanished">อัพเดต</translation>
-    </message>
-    <message>
-        <source>Save edits?</source>
-        <translation type="vanished">บันทึกการแก้ไข?</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">ยกเลิก</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation type="vanished">ยืนยัน</translation>
-    </message>
-    <message>
-        <source>Cancel your edits?</source>
-        <translation type="vanished">ยกเลิกการแก้ไขของคุณ?</translation>
+        <source>The given Diffie-Hellman parameters are deemed unsafe</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSslSocket</name>
     <message>
         <source>Unable to write data: %1</source>
-        <translation>ไม่สามารถเขียนข้อมูล: %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error while reading: %1</source>
-        <translation>เกิดความผิดพลาดขณะอ่าน: %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error during SSL handshake: %1</source>
-        <translation>เกิดความผิดพลาดขณะเชื่อมต่อ SSL: %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error creating SSL context (%1)</source>
-        <translation>เกิดความผิดพลาดขณะสร้างบริบท SSL (%1)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid or empty cipher list (%1)</source>
-        <translation>รายการไซเฟอร์ว่างอยู่หรือไม่ถูกต้อง (%1)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error creating SSL session, %1</source>
-        <translation>เกิดความผิดพลาดขณะสร้างเซสชั่น SSL, %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error creating SSL session: %1</source>
-        <translation>เกิดความผิดพลาดขณะสร้างเซสชั่น SSL: %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cannot provide a certificate with no key, %1</source>
@@ -6963,10 +6635,6 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Private key does not certify public key, %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>OpenSSL version too old, need at least v1.0.2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7077,6 +6745,254 @@ Role of an accessible object</extracomment>
         <source>Unable to decrypt data: %1</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Error when setting the OpenSSL configuration (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while setting the minimal protocol version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while setting the maximum protocol version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Diffie-Hellman parameters are not valid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OpenSSL version with disabled elliptic curves</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expecting QByteArray for %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An error occurred attempting to set %1 to %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wrong value for %1 (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unrecognized command %1 = %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SSL_CONF_finish() failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SSL_CONF_CTX_new() failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No OCSP status response found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The OCSP status request had invalid syntax</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP response contains an unexpected number of SingleResponse structures</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder reached an inconsistent internal state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder was unable to return a status for the requested certificate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The server requires the client to sign the OCSP request in order to construct a response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The client is not authorized to request OCSP status from this server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder&apos;s identity cannot be verified</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The identity of a certificate in an OCSP response cannot be established</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate status response has expired</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate&apos;s status is unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TLS initialization failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attempted to use an unsupported protocol.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server-side QSslSocket does not support OCSP stapling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to enable OCSP stapling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Client-side sockets do not send OCSP responses</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to decode OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to extract basic OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No certificate verification store, cannot verify OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to decode a SingleResponse from OCSP status response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to extract &apos;this update time&apos; from the SingleResponse</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insufficient memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Internal error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An internal handle was invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An internal token was invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Access denied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No authority could be contacted for authorization</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No credentials</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The target is unknown or unreachable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An unsupported function was requested</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hostname provided does not match the one received from the peer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No common protocol exists between the client and the server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected or badly-formatted message received</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The data could not be encrypted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No cipher suites in common</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The credentials were not recognized / Invalid argument</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The message was tampered with, damaged or out of sequence.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A message was received out of sequence.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown error occurred: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid protocol chosen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate provided cannot be used for a client.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate provided cannot be used for a server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server did not accept any certificate we could present.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Algorithm mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Handshake failed: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to query the TLS context: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Did not get the required attributes for the connection.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unwanted protocol was negotiated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Renegotiation was unsuccessful: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Schannel failed to encrypt data: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot provide a certificate with no key</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QStandardPaths</name>
@@ -7098,7 +7014,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Music</source>
-        <translation type="unfinished">ดนตรี</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Movies</source>
@@ -7171,16 +7087,20 @@ Role of an accessible object</extracomment>
         <source>Unknown error</source>
         <translation type="unfinished">ข้อผิดพลาดที่ไม่รู้จัก</translation>
     </message>
+    <message>
+        <source>Child mode of state machine &apos;%1&apos; is not &apos;ExclusiveStates&apos;.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QSystemSemaphore</name>
     <message>
         <source>%1: permission denied</source>
-        <translation type="unfinished">%1: คำขออนุญาตถูกปฏิเสธ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: already exists</source>
-        <translation type="unfinished">%1: มีอยู่แล้ว</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: does not exist</source>
@@ -7188,33 +7108,33 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>%1: out of resources</source>
-        <translation type="unfinished">%1: ทรัพยากรไม่พอ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
-        <translation type="unfinished">%1: ข้อผิดพลาดที่ไม่รู้จัก %2</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QTDSDriver</name>
     <message>
         <source>Unable to open connection</source>
-        <translation>ไม่สามารถเปิดการเชื่อมต่อได้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to use database</source>
-        <translation>ไม่สามารถใช้ฐานข้อมูลได้</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QTabBar</name>
     <message>
         <source>Scroll Left</source>
-        <translation>เลื่อนซ้าย</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll Right</source>
-        <translation>เลื่อนขวา</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7225,68 +7145,18 @@ Role of an accessible object</extracomment>
     </message>
 </context>
 <context>
-    <name>QTextControl</name>
-    <message>
-        <source>&amp;Undo</source>
-        <translation type="vanished">เ&amp;ลิกทำ</translation>
-    </message>
-    <message>
-        <source>&amp;Redo</source>
-        <translation type="vanished">ทำ&amp;ซ้ำ</translation>
-    </message>
-    <message>
-        <source>Cu&amp;t</source>
-        <translation type="vanished">&amp;ตัด</translation>
-    </message>
-    <message>
-        <source>&amp;Copy</source>
-        <translation type="vanished">&amp;คัดลอก</translation>
-    </message>
-    <message>
-        <source>Copy &amp;Link Location</source>
-        <translation type="vanished">คัดลอก&amp;ที่ตั้งลิงค์</translation>
-    </message>
-    <message>
-        <source>&amp;Paste</source>
-        <translation type="vanished">&amp;วาง</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">ลบ</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation type="vanished">เลือกทั้งหมด</translation>
-    </message>
-</context>
-<context>
-    <name>QToolButton</name>
-    <message>
-        <source>Press</source>
-        <translation type="vanished">กด</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">เปิด</translation>
-    </message>
-</context>
-<context>
     <name>QUdpSocket</name>
     <message>
-        <source>This platform does not support IPv6</source>
-        <translation type="vanished">แพลตฟอร์มนี้ไม่รองรับ IPv6</translation>
+        <source>Unable to send a datagram</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No datagram available for reading</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QUndoGroup</name>
-    <message>
-        <source>Undo</source>
-        <translation type="vanished">เลิกทำ</translation>
-    </message>
-    <message>
-        <source>Redo</source>
-        <translation type="vanished">ทำซ้ำ</translation>
-    </message>
     <message>
         <source>Undo %1</source>
         <translation type="unfinished"></translation>
@@ -7294,7 +7164,7 @@ Role of an accessible object</extracomment>
     <message>
         <source>Undo</source>
         <comment>Default text for undo action</comment>
-        <translation type="unfinished">เลิกทำ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Redo %1</source>
@@ -7303,26 +7173,18 @@ Role of an accessible object</extracomment>
     <message>
         <source>Redo</source>
         <comment>Default text for redo action</comment>
-        <translation type="unfinished">ทำซ้ำ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QUndoModel</name>
     <message>
         <source>&lt;empty&gt;</source>
-        <translation>&lt;ว่าง&gt;</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QUndoStack</name>
-    <message>
-        <source>Undo</source>
-        <translation type="vanished">เลิกทำ</translation>
-    </message>
-    <message>
-        <source>Redo</source>
-        <translation type="vanished">ทำซ้ำ</translation>
-    </message>
     <message>
         <source>Undo %1</source>
         <translation type="unfinished"></translation>
@@ -7330,7 +7192,7 @@ Role of an accessible object</extracomment>
     <message>
         <source>Undo</source>
         <comment>Default text for undo action</comment>
-        <translation type="unfinished">เลิกทำ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Redo %1</source>
@@ -7339,7 +7201,7 @@ Role of an accessible object</extracomment>
     <message>
         <source>Redo</source>
         <comment>Default text for redo action</comment>
-        <translation type="unfinished">ทำซ้ำ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7406,268 +7268,64 @@ Role of an accessible object</extracomment>
     </message>
 </context>
 <context>
-    <name>QWebFrame</name>
-    <message>
-        <source>Request cancelled</source>
-        <translation type="vanished">คำขอถูกยกเลิก</translation>
-    </message>
-    <message>
-        <source>Request blocked</source>
-        <translation type="vanished">คำขอถูกบล็อก</translation>
-    </message>
-    <message>
-        <source>Cannot show URL</source>
-        <translation type="vanished">ไม่สามารถแสดง URL</translation>
-    </message>
-    <message>
-        <source>Frame load interruped by policy change</source>
-        <translation type="vanished">การโหลดเฟรมถูกขัดจังหวะจากการเปลี่ยนนโยบาย</translation>
-    </message>
-    <message>
-        <source>Cannot show mimetype</source>
-        <translation type="vanished">ไม่สามารถแสดงชนิดไมม์</translation>
-    </message>
-    <message>
-        <source>File does not exist</source>
-        <translation type="vanished">ไม่มีไฟล์นี้อยู่</translation>
-    </message>
-</context>
-<context>
-    <name>QWebPage</name>
-    <message>
-        <source>Bad HTTP request</source>
-        <translation type="vanished">คำขอ HTTP ไม่ถูกต้อง</translation>
-    </message>
-    <message>
-        <source>Submit</source>
-        <comment>default label for Submit buttons in forms on web pages</comment>
-        <translation type="vanished">ส่ง</translation>
-    </message>
-    <message>
-        <source>Submit</source>
-        <comment>Submit (input element) alt text for &lt;input&gt; elements with no alt, title, or value</comment>
-        <translation type="vanished">ส่ง</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <comment>default label for Reset buttons in forms on web pages</comment>
-        <translation type="vanished">รีเซ็ต</translation>
-    </message>
-    <message>
-        <source>Choose File</source>
-        <comment>title for file button used in HTML forms</comment>
-        <translation type="vanished">เลือกไฟล์</translation>
-    </message>
-    <message>
-        <source>No file selected</source>
-        <comment>text to display in file button used in HTML forms when no file is selected</comment>
-        <translation type="vanished">ไม่มีไฟล์ที่ถูกเลือก</translation>
-    </message>
-    <message>
-        <source>Open in New Window</source>
-        <comment>Open in New Window context menu item</comment>
-        <translation type="vanished">เปิดในหน้าต่างใหม่</translation>
-    </message>
-    <message>
-        <source>Save Link...</source>
-        <comment>Download Linked File context menu item</comment>
-        <translation type="vanished">บันทึกลิงค์...</translation>
-    </message>
-    <message>
-        <source>Copy Link</source>
-        <comment>Copy Link context menu item</comment>
-        <translation type="vanished">คัดลอกลิงค์</translation>
-    </message>
-    <message>
-        <source>Open Image</source>
-        <comment>Open Image in New Window context menu item</comment>
-        <translation type="vanished">เปิดรูปภาพ</translation>
-    </message>
-    <message>
-        <source>Save Image</source>
-        <comment>Download Image context menu item</comment>
-        <translation type="vanished">บันทึกรูปภาพ</translation>
-    </message>
-    <message>
-        <source>Copy Image</source>
-        <comment>Copy Link context menu item</comment>
-        <translation type="vanished">สำเนารูปภาพ</translation>
-    </message>
-    <message>
-        <source>Open Frame</source>
-        <comment>Open Frame in New Window context menu item</comment>
-        <translation type="vanished">เปิดเฟรม</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <comment>Copy context menu item</comment>
-        <translation type="vanished">คัดลอก</translation>
-    </message>
-    <message>
-        <source>Go Back</source>
-        <comment>Back context menu item</comment>
-        <translation type="vanished">กลับไป</translation>
-    </message>
-    <message>
-        <source>Go Forward</source>
-        <comment>Forward context menu item</comment>
-        <translation type="vanished">ถัดไป</translation>
-    </message>
-    <message>
-        <source>Stop</source>
-        <comment>Stop context menu item</comment>
-        <translation type="vanished">หยุด</translation>
-    </message>
-    <message>
-        <source>Reload</source>
-        <comment>Reload context menu item</comment>
-        <translation type="vanished">เรียกซ้ำ</translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <comment>Cut context menu item</comment>
-        <translation type="vanished">ตัด</translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <comment>Paste context menu item</comment>
-        <translation type="vanished">วาง</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <comment>Ignore Spelling context menu item</comment>
-        <translation type="vanished">ละเว้น</translation>
-    </message>
-    <message>
-        <source>Add To Dictionary</source>
-        <comment>Learn Spelling context menu item</comment>
-        <translation type="vanished">เพิ่มไปยังพจนานุกรม</translation>
-    </message>
-    <message>
-        <source>Search The Web</source>
-        <comment>Search The Web context menu item</comment>
-        <translation type="vanished">ค้นหาจากเว็บ</translation>
-    </message>
-    <message>
-        <source>Look Up In Dictionary</source>
-        <comment>Look Up in Dictionary context menu item</comment>
-        <translation type="vanished">ค้นหาในพจนานุกรม</translation>
-    </message>
-    <message>
-        <source>Open Link</source>
-        <comment>Open Link context menu item</comment>
-        <translation type="vanished">เปิดลิงค์</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <comment>Ignore Grammar context menu item</comment>
-        <translation type="vanished">ละเว้น</translation>
-    </message>
-    <message>
-        <source>Spelling</source>
-        <comment>Spelling and Grammar context sub-menu item</comment>
-        <translation type="vanished">การสะกด</translation>
-    </message>
-    <message>
-        <source>Show Spelling and Grammar</source>
-        <comment>menu item title</comment>
-        <translation type="vanished">แสดงการสะกดและไวยากรณ์</translation>
-    </message>
-    <message>
-        <source>Hide Spelling and Grammar</source>
-        <comment>menu item title</comment>
-        <translation type="vanished">ซ่อนการสะกดและไวยากรณ์</translation>
-    </message>
-    <message>
-        <source>Check Spelling</source>
-        <comment>Check spelling context menu item</comment>
-        <translation type="vanished">ตรวจสอบการสะกด</translation>
-    </message>
-    <message>
-        <source>Check Spelling While Typing</source>
-        <comment>Check spelling while typing context menu item</comment>
-        <translation type="vanished">ตรวจสอบการสะกดขณะพิมพ์</translation>
-    </message>
-    <message>
-        <source>Check Grammar With Spelling</source>
-        <comment>Check grammar with spelling context menu item</comment>
-        <translation type="vanished">ตรวจสอบไวยากรณ์พร้อมการสะกด</translation>
-    </message>
-    <message>
-        <source>Direction</source>
-        <comment>Writing direction context sub-menu item</comment>
-        <translation type="vanished">ทิศทาง</translation>
-    </message>
-    <message>
-        <source>Default</source>
-        <comment>Default writing direction context menu item</comment>
-        <translation type="vanished">ค่าตั้งต้น</translation>
-    </message>
-    <message>
-        <source>Unknown</source>
-        <comment>Unknown filesize FTP directory listing item</comment>
-        <translation type="vanished">ไม่รู้จัก</translation>
-    </message>
-</context>
-<context>
     <name>QWhatsThisAction</name>
     <message>
         <source>What&apos;s This?</source>
-        <translation>นี่คืออะไร?</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QWidget</name>
     <message>
         <source>*</source>
-        <translation>*</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QWidgetTextControl</name>
     <message>
         <source>&amp;Undo</source>
-        <translation type="unfinished">เ&amp;ลิกทำ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation type="unfinished">ทำ&amp;ซ้ำ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation type="unfinished">&amp;ตัด</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation type="unfinished">&amp;คัดลอก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copy &amp;Link Location</source>
-        <translation type="unfinished">คัดลอก&amp;ที่ตั้งลิงค์</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation type="unfinished">&amp;วาง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished">ลบ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation type="unfinished">เลือกทั้งหมด</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QWindowsDirect2DIntegration</name>
     <message>
-        <source>Qt cannot load the direct2d platform plugin because the Direct2D version on this system is too old. The minimum system requirement for this platform plugin is Windows 7 SP1 with Platform Update.
-
-The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on this system is %5.%6.%7.%8.</source>
+        <source>Cannot load direct2d platform plugin</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cannot load direct2d platform plugin</source>
+        <source>Qt cannot load the direct2d platform plugin because the Direct2D version on this system is too old. The minimum system requirement for this platform plugin is Windows 7 SP1 with Platform Update.
+
+The minimum Direct2D version required is %1. The Direct2D version on this system is %2.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7675,98 +7333,47 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <name>QWizard</name>
     <message>
         <source>Go Back</source>
-        <translation>กลับไป</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation>ทำต่อ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Commit</source>
-        <translation>คอมมิท</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Done</source>
-        <translation>เสร็จ</translation>
-    </message>
-    <message>
-        <source>Quit</source>
-        <translation type="vanished">ออก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>ช่วยเหลือ</translation>
+        <translation type="unfinished">ช่วยเหลือ</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;ย้อนกลับ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Finish</source>
-        <translation>เ&amp;สร็จสิ้น</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>ยกเลิก</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;ช่วยเหลือ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>&amp;ถัดไป</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation>&amp;ถัดไป &gt;</translation>
-    </message>
-</context>
-<context>
-    <name>QWorkspace</name>
-    <message>
-        <source>&amp;Restore</source>
-        <translation type="vanished">&amp;คืนค่า</translation>
-    </message>
-    <message>
-        <source>&amp;Move</source>
-        <translation type="vanished">&amp;ย้าย</translation>
-    </message>
-    <message>
-        <source>&amp;Size</source>
-        <translation type="vanished">&amp;ขนาด</translation>
-    </message>
-    <message>
-        <source>Mi&amp;nimize</source>
-        <translation type="vanished">ย่อให้เ&amp;ล็กสุด</translation>
-    </message>
-    <message>
-        <source>Ma&amp;ximize</source>
-        <translation type="vanished">ขยายให้ให&amp;ญ่สุด</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation type="vanished">&amp;ปิด</translation>
-    </message>
-    <message>
-        <source>Stay on &amp;Top</source>
-        <translation type="vanished">แสดงไว้&amp;บนสุด</translation>
-    </message>
-    <message>
-        <source>%1 - [%2]</source>
-        <translation type="vanished">%1 - [%2]</translation>
-    </message>
-    <message>
-        <source>Minimize</source>
-        <translation type="vanished">ย่อให้เล็กสุด</translation>
-    </message>
-    <message>
-        <source>Restore Down</source>
-        <translation type="vanished">คืนขนาดลง</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">ปิด</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7868,19 +7475,19 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <name>QXmlStream</name>
     <message>
         <source>Extra content at end of document.</source>
-        <translation>มีเนื้อหาเพิ่มเติมที่ส่วนท้ายเอกสาร</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid entity value.</source>
-        <translation>ค่าเอนทิตีไม่ถูกต้อง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid XML character.</source>
-        <translation>อักขระ XML ไม่ถูกต้อง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Sequence &apos;]]&gt;&apos; not allowed in content.</source>
-        <translation>ไม่อนุญาตให้ใช้ลำดับ &apos;]]&gt;&apos; ในเนื้อหา</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Namespace prefix &apos;%1&apos; not declared</source>
@@ -7920,27 +7527,11 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Invalid document.</source>
-        <translation>เอกสารไม่ถูกต้อง</translation>
-    </message>
-    <message>
-        <source>Expected </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>, but got &apos;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unexpected &apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Expected character data.</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recursive entity detected.</source>
-        <translation>ตรวจพบเอนทิตีเรียกซ้ำ</translation>
     </message>
     <message>
         <source>Start tag expected.</source>
@@ -7968,7 +7559,7 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Invalid XML name.</source>
-        <translation>ชื่อ XML ไม่ถูกต้อง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Opening and ending tag mismatch.</source>
@@ -7980,7 +7571,7 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Entity &apos;%1&apos; not declared.</source>
-        <translation>ไม่ได้ประกาศเอนทิตี &apos;%1&apos; ไว้</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reference to external entity &apos;%1&apos; in attribute value.</source>
@@ -7988,7 +7579,7 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Invalid character reference.</source>
-        <translation>อ้างอิงอักขระที่ไม่ถูกต้อง</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Encountered incorrectly encoded content.</source>
@@ -8006,106 +7597,45 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <source>Attribute &apos;%1&apos; redefined.</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>QtXmlPatterns</name>
     <message>
-        <source>Network timeout.</source>
-        <translation type="vanished">หมดเวลาเครือข่าย</translation>
+        <source>&apos;%1&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&apos;&lt;first option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>A comment cannot contain %1</source>
-        <translation type="vanished">คอมเมนต์ไม่สามารถมี %1 ได้</translation>
+        <source>%1 or &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;first option&gt;, &apos;&lt;second option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>A comment cannot end with a %1.</source>
-        <translation type="vanished">คอมเมนต์ไม่สามารถจบด้วย %1 ได้</translation>
+        <source>%1, &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;options so far&gt;, &apos;&lt;next option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>empty</source>
-        <translation type="vanished">ว่าง</translation>
+        <source>%1, or &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;options so far&gt;, or &apos;&lt;final option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>zero or one</source>
-        <translation type="vanished">ศูนย์หรือหนึ่ง</translation>
+        <source>Expected %1, but got &apos;%2&apos;.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>exactly one</source>
-        <translation type="vanished">หนึ่งเท่านั้น</translation>
+        <source>Unexpected &apos;%1&apos;.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>one or more</source>
-        <translation type="vanished">หนึ่งหรือมากกว่า</translation>
+        <source>Self-referencing entity detected.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>zero or more</source>
-        <translation type="vanished">ศูนย์หรือมากกว่า</translation>
-    </message>
-</context>
-<context>
-    <name>VolumeSlider</name>
-    <message>
-        <source>Muted</source>
-        <translation type="vanished">ปิดเสียง</translation>
-    </message>
-    <message>
-        <source>Volume: %1%</source>
-        <translation type="vanished">ระดับเสียง: %1%</translation>
-    </message>
-</context>
-<context>
-    <name>WebCore::PlatformScrollbar</name>
-    <message>
-        <source>Scroll here</source>
-        <translation type="vanished">เลื่อนมาที่นี่</translation>
-    </message>
-    <message>
-        <source>Left edge</source>
-        <translation type="vanished">ขอบซ้าย</translation>
-    </message>
-    <message>
-        <source>Top</source>
-        <translation type="vanished">ด้านบน</translation>
-    </message>
-    <message>
-        <source>Right edge</source>
-        <translation type="vanished">ขอบขวา</translation>
-    </message>
-    <message>
-        <source>Bottom</source>
-        <translation type="vanished">ด้านล่าง</translation>
-    </message>
-    <message>
-        <source>Page left</source>
-        <translation type="vanished">เลื่อนหน้าซ้าย</translation>
-    </message>
-    <message>
-        <source>Page up</source>
-        <translation type="vanished">เลื่อนหน้าขึ้น</translation>
-    </message>
-    <message>
-        <source>Page right</source>
-        <translation type="vanished">เลื่อนหน้าขวา</translation>
-    </message>
-    <message>
-        <source>Page down</source>
-        <translation type="vanished">เลื่อนหน้าลง</translation>
-    </message>
-    <message>
-        <source>Scroll left</source>
-        <translation type="vanished">เลื่อนซ้าย</translation>
-    </message>
-    <message>
-        <source>Scroll up</source>
-        <translation type="vanished">เลื่อนขึ้น</translation>
-    </message>
-    <message>
-        <source>Scroll right</source>
-        <translation type="vanished">เลื่อนขวา</translation>
-    </message>
-    <message>
-        <source>Scroll down</source>
-        <translation type="vanished">เลื่อนลง</translation>
+        <source>Entity expands to more characters than the entity expansion limit.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

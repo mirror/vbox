@@ -11,6 +11,14 @@
 <context>
     <name>MAC_APPLICATION_MENU</name>
     <message>
+        <source>About %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preferences...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Services</source>
         <translation type="unfinished"></translation>
     </message>
@@ -27,617 +35,79 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Preferences...</source>
+        <source>Quit %1</source>
         <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>Print Device Input Slot</name>
     <message>
-        <source>Quit %1</source>
-        <translation type="unfinished">ចេញ %1</translation>
-    </message>
-    <message>
-        <source>About %1</source>
-        <translation type="unfinished">អំពី %1</translation>
+        <source>Automatic</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>PPDOptionsModel</name>
+    <name>Print Device Output Bin</name>
     <message>
-        <source>Name</source>
-        <translation type="vanished">ឈ្មោះ</translation>
-    </message>
-    <message>
-        <source>Value</source>
-        <translation type="vanished">តម្លៃ</translation>
-    </message>
-</context>
-<context>
-    <name>Q3Accel</name>
-    <message>
-        <source>%1, %2 not defined</source>
-        <translation type="vanished">មិន​បាន​កំណត់ %1, %2</translation>
-    </message>
-    <message>
-        <source>Ambiguous %1 not handled</source>
-        <translation type="vanished">មិនបានគ្រប់គ្រង %1 ពិតប្រាកដ​ទេ</translation>
-    </message>
-</context>
-<context>
-    <name>Q3DataTable</name>
-    <message>
-        <source>True</source>
-        <translation type="vanished">ពិត</translation>
-    </message>
-    <message>
-        <source>False</source>
-        <translation type="vanished">មិនពិតប្រាកដ</translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <translation type="vanished">បញ្ចូល</translation>
-    </message>
-    <message>
-        <source>Update</source>
-        <translation type="vanished">ធ្វើ​ឲ្យ​ទាន់សម័យ</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">លុប</translation>
-    </message>
-</context>
-<context>
-    <name>Q3FileDialog</name>
-    <message>
-        <source>Copy or Move a File</source>
-        <translation type="vanished">ចម្លង​ ឬ​ផ្លាស់ទី​ឯកសារ</translation>
-    </message>
-    <message>
-        <source>Read: %1</source>
-        <translation type="vanished">អាន&amp;nbsp;៖ %1</translation>
-    </message>
-    <message>
-        <source>Write: %1</source>
-        <translation type="vanished">សរសេរ&amp;nbsp;៖ %1</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">បោះបង់</translation>
-    </message>
-    <message>
-        <source>All Files (*)</source>
-        <translation type="vanished">ឯកសារ​ទាំង​អស់ (*)</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">ឈ្មោះ</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation type="vanished">ទំហំ</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <translation type="vanished">ប្រភេទ</translation>
-    </message>
-    <message>
-        <source>Date</source>
-        <translation type="vanished">កាលបរិច្ឆេទ</translation>
-    </message>
-    <message>
-        <source>Attributes</source>
-        <translation type="vanished">គុណលក្ខណៈ</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="vanished">យល់ព្រម</translation>
-    </message>
-    <message>
-        <source>Look &amp;in:</source>
-        <translation type="vanished">មើល​ក្នុង&amp;nbsp;៖</translation>
-    </message>
-    <message>
-        <source>File &amp;name:</source>
-        <translation type="vanished">ឈ្មោះ​ឯកសារ&amp;nbsp;៖</translation>
-    </message>
-    <message>
-        <source>File &amp;type:</source>
-        <translation type="vanished">ប្រភេទ​ឯកសារ&amp;nbsp;៖</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation type="vanished">ថយក្រោយ</translation>
-    </message>
-    <message>
-        <source>One directory up</source>
-        <translation type="vanished">មួយ​ថត​ឡើង​លើ</translation>
-    </message>
-    <message>
-        <source>Create New Folder</source>
-        <translation type="vanished">បង្កើត​ថត​ថ្មី</translation>
-    </message>
-    <message>
-        <source>List View</source>
-        <translation type="vanished">ទិដ្ឋភាព​បញ្ជី</translation>
-    </message>
-    <message>
-        <source>Detail View</source>
-        <translation type="vanished">ទិដ្ឋភាព​លម្អិត</translation>
-    </message>
-    <message>
-        <source>Preview File Info</source>
-        <translation type="vanished">ព័ត៌មាន​ឯកសារ​​​មើល​ជា​មុន</translation>
-    </message>
-    <message>
-        <source>Preview File Contents</source>
-        <translation type="vanished">មាតិកា​ឯកសារ​មើល​ជា​មុន</translation>
-    </message>
-    <message>
-        <source>Read-write</source>
-        <translation type="vanished">អាន-សរសេរ</translation>
-    </message>
-    <message>
-        <source>Read-only</source>
-        <translation type="vanished">បាន​តែ​អាន</translation>
-    </message>
-    <message>
-        <source>Write-only</source>
-        <translation type="vanished">បាន​តែ​សរសេរ</translation>
-    </message>
-    <message>
-        <source>Inaccessible</source>
-        <translation type="vanished">មិនអាច​ចូលដំណើរការ</translation>
-    </message>
-    <message>
-        <source>Symlink to File</source>
-        <translation type="vanished">តំណ​និមិត្តសញ្ញា​ទៅ​កាន់​ឯកសារ</translation>
-    </message>
-    <message>
-        <source>Symlink to Directory</source>
-        <translation type="vanished">តំណ​និមិត្តសញ្ញា​ទៅ​កាន់ថត</translation>
-    </message>
-    <message>
-        <source>Symlink to Special</source>
-        <translation type="vanished">តំណ​និមិត្តសញ្ញា​ទៅ​កាន់​ឯកសារ​ពិសេស</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation type="vanished">ឯកសារ</translation>
-    </message>
-    <message>
-        <source>Dir</source>
-        <translation type="vanished">ថត</translation>
-    </message>
-    <message>
-        <source>Special</source>
-        <translation type="vanished">ពិសេស</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">បើក</translation>
-    </message>
-    <message>
-        <source>Save As</source>
-        <translation type="vanished">រក្សាទុក​ជា</translation>
-    </message>
-    <message>
-        <source>&amp;Open</source>
-        <translation type="vanished">បើក</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <translation type="vanished">រក្សាទុក</translation>
-    </message>
-    <message>
-        <source>&amp;Rename</source>
-        <translation type="vanished">ប្ដូរ​ឈ្មោះ</translation>
-    </message>
-    <message>
-        <source>&amp;Delete</source>
-        <translation type="vanished">លុប</translation>
-    </message>
-    <message>
-        <source>R&amp;eload</source>
-        <translation type="vanished">ផ្ទុក​ឡើងវិញ</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Name</source>
-        <translation type="vanished">តម្រៀប​តាម​ឈ្មោះ</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Size</source>
-        <translation type="vanished">តម្រៀប​តាម​ទំហំ</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Date</source>
-        <translation type="vanished">តម្រៀប​តាម​កាលបរិច្ឆេទ</translation>
-    </message>
-    <message>
-        <source>&amp;Unsorted</source>
-        <translation type="vanished">មិន​បាន​តម្រៀប​ទេ</translation>
-    </message>
-    <message>
-        <source>Sort</source>
-        <translation type="vanished">តម្រៀប</translation>
-    </message>
-    <message>
-        <source>Show &amp;hidden files</source>
-        <translation type="vanished">បង្ហាញ​ឯកសារ​​ដែល​លាក់</translation>
-    </message>
-    <message>
-        <source>the file</source>
-        <translation type="vanished">ឯកសារ</translation>
-    </message>
-    <message>
-        <source>the directory</source>
-        <translation type="vanished">ថត</translation>
-    </message>
-    <message>
-        <source>the symlink</source>
-        <translation type="vanished">តំណនិមិត្តសញ្ញា</translation>
-    </message>
-    <message>
-        <source>Delete %1</source>
-        <translation type="vanished">លុប %1</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Are you sure you wish to delete %1 &quot;%2&quot;?&lt;/qt&gt;</source>
-        <translation type="vanished">&lt;qt&gt;តើ​អ្នក​ប្រាកដ​ជា​ចង់​លុប %1 &quot;%2&quot; មែនឬ&amp;nbsp;?&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Yes</source>
-        <translation type="vanished">បាទ/ចាស</translation>
-    </message>
-    <message>
-        <source>&amp;No</source>
-        <translation type="vanished">ទេ</translation>
-    </message>
-    <message>
-        <source>New Folder 1</source>
-        <translation type="vanished">ថត​ថ្មី ១</translation>
-    </message>
-    <message>
-        <source>New Folder</source>
-        <translation type="vanished">ថត​ថ្មី</translation>
-    </message>
-    <message>
-        <source>New Folder %1</source>
-        <translation type="vanished">ថត​ថ្មី %1</translation>
-    </message>
-    <message>
-        <source>Find Directory</source>
-        <translation type="vanished">រក​ថត</translation>
-    </message>
-    <message>
-        <source>Directories</source>
-        <translation type="vanished">ថត</translation>
-    </message>
-    <message>
-        <source>Directory:</source>
-        <translation type="vanished">ថត&amp;nbsp;៖</translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <translation type="vanished">កំហុស</translation>
-    </message>
-    <message>
-        <source>%1
-File not found.
-Check path and filename.</source>
-        <translation type="vanished">%1 រក​មិនឃើញ​ទេ&amp;nbsp;។ សូម​ពិនិត្យ​មើល​ផ្លូវ និង​ឈ្មោះ​ឯកសារ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>All Files (*.*)</source>
-        <translation type="vanished">ឯកសារ​ទាំង​អស់ (*.*)</translation>
-    </message>
-    <message>
-        <source>Open </source>
-        <translation type="vanished">បើក</translation>
-    </message>
-    <message>
-        <source>Select a Directory</source>
-        <translation type="vanished">ជ្រើស​ថត</translation>
-    </message>
-</context>
-<context>
-    <name>Q3LocalFs</name>
-    <message>
-        <source>Could not read directory
-%1</source>
-        <translation type="vanished">មិនអាច​អាន​ថត
-%1 បានទេ</translation>
-    </message>
-    <message>
-        <source>Could not create directory
-%1</source>
-        <translation type="vanished">មិនអាច​បង្កើត​ថត
-%1 បានទេ</translation>
-    </message>
-    <message>
-        <source>Could not remove file or directory
-%1</source>
-        <translation type="vanished">មិនអាច​យក​ឯកសារ ឬ​ថត​ចេញ​ទេ
-%1</translation>
-    </message>
-    <message>
-        <source>Could not rename
-%1
-to
-%2</source>
-        <translation type="vanished">មិនអាច​ប្ដូរ​ឈ្មោះ
-%1
-ទៅជា
-%2 បានទេ</translation>
-    </message>
-    <message>
-        <source>Could not open
-%1</source>
-        <translation type="vanished">មិនអាច​បើក
-%1 បានទេ</translation>
-    </message>
-    <message>
-        <source>Could not write
-%1</source>
-        <translation type="vanished">មិនអាច​សរសេរ​ទៅកាន់
-%1 បានទេ</translation>
-    </message>
-</context>
-<context>
-    <name>Q3MainWindow</name>
-    <message>
-        <source>Line up</source>
-        <translation type="vanished">រៀប​ជា​ជួរ</translation>
-    </message>
-    <message>
-        <source>Customize...</source>
-        <translation type="vanished">ប្ដូរ​តាមបំណង...</translation>
-    </message>
-</context>
-<context>
-    <name>Q3NetworkProtocol</name>
-    <message>
-        <source>Operation stopped by the user</source>
-        <translation type="vanished">ប្រតិបត្តិការ​បាន​បញ្ឈប់​ដោយ​អ្នកប្រើ</translation>
-    </message>
-</context>
-<context>
-    <name>Q3ProgressDialog</name>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">បោះបង់</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TabDialog</name>
-    <message>
-        <source>OK</source>
-        <translation type="vanished">យល់ព្រម</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="vanished">អនុវត្ត</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="vanished">ជំនួយ</translation>
-    </message>
-    <message>
-        <source>Defaults</source>
-        <translation type="vanished">លំនាំដើម</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">បោះបង់</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TextEdit</name>
-    <message>
-        <source>&amp;Undo</source>
-        <translation type="vanished">មិនធ្វើ​វិញ</translation>
-    </message>
-    <message>
-        <source>&amp;Redo</source>
-        <translation type="vanished">ធ្វើ​វិញ</translation>
-    </message>
-    <message>
-        <source>Cu&amp;t</source>
-        <translation type="vanished">កាត់</translation>
-    </message>
-    <message>
-        <source>&amp;Copy</source>
-        <translation type="vanished">ចម្លង</translation>
-    </message>
-    <message>
-        <source>&amp;Paste</source>
-        <translation type="vanished">បិទភ្ជាប់</translation>
-    </message>
-    <message>
-        <source>Clear</source>
-        <translation type="vanished">ជម្រះ</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation type="vanished">ជ្រើស​ទាំង​អស់</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TitleBar</name>
-    <message>
-        <source>System</source>
-        <translation type="vanished">ប្រព័ន្ធ</translation>
-    </message>
-    <message>
-        <source>Restore up</source>
-        <translation type="vanished">ស្ដារឡើង​វិញ​ទៅ​លើ</translation>
-    </message>
-    <message>
-        <source>Minimize</source>
-        <translation type="vanished">បង្រួម​អប្បបរមា</translation>
-    </message>
-    <message>
-        <source>Restore down</source>
-        <translation type="vanished">ស្ដារ​ឡើង​វិញ​ចុះក្រោម</translation>
-    </message>
-    <message>
-        <source>Maximize</source>
-        <translation type="vanished">ពង្រីក​អតិបរមា</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">បិទ</translation>
-    </message>
-    <message>
-        <source>Contains commands to manipulate the window</source>
-        <translation type="vanished">មាន​ពាក្យ​បញ្ជា​ដើម្បី​គណនា​បង្អួច</translation>
-    </message>
-    <message>
-        <source>Puts a minimized back to normal</source>
-        <translation type="vanished">ដាក់​ការ​​​ថយក្រោយ​ដែល​បានបង្រួម​អប្បបរមា​ទៅ​ធម្មតា​វិញ</translation>
-    </message>
-    <message>
-        <source>Moves the window out of the way</source>
-        <translation type="vanished">ផ្លាស់ទី​បង្អួច​ចេញ​ពី​ផ្លូវ</translation>
-    </message>
-    <message>
-        <source>Puts a maximized window back to normal</source>
-        <translation type="vanished">ដាក់​បង្អួច​ថយក្រោយ​ដែល​បានបង្រួម​អប្បបរមា​ទៅ​ធម្មតា​វិញ</translation>
-    </message>
-    <message>
-        <source>Makes the window full screen</source>
-        <translation type="vanished">ធ្វើ​ឲ្យ​បង្អួច​ពេញអេក្រង់</translation>
-    </message>
-    <message>
-        <source>Closes the window</source>
-        <translation type="vanished">បិទ​បង្អួច</translation>
-    </message>
-    <message>
-        <source>Holds the name of the window and contains controls to manipulate it</source>
-        <translation type="vanished">បង្ហាញ​ឈ្មោះបង្អួច​ និង​មាន​វត្ថុ​បញ្ជា​ដើម្បី​គណនា​វា​ផងដែរ</translation>
-    </message>
-</context>
-<context>
-    <name>Q3ToolBar</name>
-    <message>
-        <source>More...</source>
-        <translation type="vanished">ច្រើនទៀត...</translation>
-    </message>
-</context>
-<context>
-    <name>Q3UrlOperator</name>
-    <message>
-        <source>The protocol `%1&apos; is not supported</source>
-        <translation type="vanished">ពិធីការ `%1&apos; មិន​ត្រូវ​បានគាំទ្រ​ទេ</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support listing directories</source>
-        <translation type="vanished">ពិធីការ `%1&apos; មិនគាំទ្រ​ថត​ដែល​រាយ​ទេ</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support creating new directories</source>
-        <translation type="vanished">ពិធីការ `%1&apos; មិនគាំទ្រ​ការ​បង្កើត​ថត​ថ្មីទេ</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support removing files or directories</source>
-        <translation type="vanished">ពិធីការ `%1&apos; មិន​គាំទ្រ​ការ​យកឯកសារ ឬ​ថត​ចេញ​ទេ</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support renaming files or directories</source>
-        <translation type="vanished">ពិធីការ `%1&apos; មិន​គាំទ្រ​ការ​ប្ដូរ​ឈ្មោះ​ឯកសារ ឬ​ថត​ទេ</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support getting files</source>
-        <translation type="vanished">ពិធីការ `%1&apos; មិនគាំទ្រ​នឹង​ការ​ទទួល​ឯកសារ​ទេ</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support putting files</source>
-        <translation type="vanished">ពិធីការ `%1&apos; មិន​គាំទ្រ​នឹង​ការ​ដាក់​ឯកសារ​ទេ</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support copying or moving files or directories</source>
-        <translation type="vanished">ពិធីការ `%1&apos; មិន​គាំត្រ​នឹង​ការ​ចម្លង ឬ​ផ្លាស់ទី​ឯកសារ ឬ​ថត​ទេ</translation>
-    </message>
-    <message>
-        <source>(unknown)</source>
-        <translation type="vanished">(មិនស្គាល់)</translation>
-    </message>
-</context>
-<context>
-    <name>Q3Wizard</name>
-    <message>
-        <source>&amp;Cancel</source>
-        <translation type="vanished">បោះបង់</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation type="vanished">&lt; ថយក្រោយ</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation type="vanished">បន្ទាប់ &gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation type="vanished">បញ្ចប់</translation>
-    </message>
-    <message>
-        <source>&amp;Help</source>
-        <translation type="vanished">ជំនួយ</translation>
+        <source>Automatic</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QAbstractSocket</name>
     <message>
-        <source>Host not found</source>
-        <translation>រក​មិនឃើញ​ម៉ាស៊ីន</translation>
-    </message>
-    <message>
-        <source>Connection refused</source>
-        <translation>បានបដិសេធ​ការ​តភ្ជាប់</translation>
-    </message>
-    <message>
         <source>Socket operation timed out</source>
-        <translation>អស់ពេល​ប្រតិបត្តិ​រន្ធ</translation>
-    </message>
-    <message>
-        <source>Socket is not connected</source>
-        <translation>រន្ធ​មិន​ត្រូវ​បាន​តភ្ជាប់​ទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Operation on socket is not supported</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Host not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connection refused</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Connection timed out</source>
-        <translation type="unfinished">អស់ពេល​ក្នុងការ​តភ្ជាប់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Trying to connect while connection is in progress</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Socket is not connected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Network unreachable</source>
-        <translation type="unfinished">មិនអាច​ចូល​បណ្ដាញ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QAbstractSpinBox</name>
     <message>
+        <source>&amp;Select All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&amp;Step up</source>
-        <translation>រៀបចំ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Step &amp;down</source>
-        <translation>ជំហាន​ចុះក្រោម</translation>
-    </message>
-    <message>
-        <source>&amp;Select All</source>
-        <translation>ជ្រើស​ទាំង​អស់</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QAccessibleActionInterface</name>
     <message>
         <source>Press</source>
-        <translation type="unfinished">ចុច</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Increase</source>
@@ -657,15 +127,15 @@ to
     </message>
     <message>
         <source>Toggle</source>
-        <translation type="unfinished">បិទ/បើក</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll Left</source>
-        <translation type="unfinished">រមូរ​ទៅ​ឆ្វេង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll Right</source>
-        <translation type="unfinished">រមូរ​ទៅ​ស្ដាំ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll Up</source>
@@ -736,7 +206,7 @@ to
     <name>QAndroidPlatformTheme</name>
     <message>
         <source>Yes</source>
-        <translation type="unfinished">បាទ/ចាស</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Yes to All</source>
@@ -744,7 +214,7 @@ to
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished">ទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No to All</source>
@@ -754,98 +224,47 @@ to
 <context>
     <name>QApplication</name>
     <message>
-        <source>Activate</source>
-        <translation type="vanished">ធ្វើ​ឲ្យ​សកម្ម</translation>
-    </message>
-    <message>
         <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
-        <translation>&apos;%1&apos; អាច​ប្រតិបត្តិ​បាន ទាមទារ Qt %2 រកឃើញ Qt %3&amp;nbsp;។</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
-        <translation>កំហុស​បណ្ណាល័យ Qt ដែល​មិន​ឆបគ្នា</translation>
-    </message>
-    <message>
-        <source>QT_LAYOUT_DIRECTION</source>
-        <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
-        <translation type="vanished">QT_LAYOUT_DIRECTION</translation>
-    </message>
-    <message>
-        <source>Activates the program&apos;s main window</source>
-        <translation type="vanished">ធ្វើ​ឲ្យ​បង្អួច​មេ​របស់​កម្មវិធី​សកម្ម</translation>
-    </message>
-</context>
-<context>
-    <name>QAxSelect</name>
-    <message>
-        <source>Select ActiveX Control</source>
-        <translation type="vanished">ជ្រើស​វត្ថុ​បញ្ជា ActiveX</translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation type="vanished">យល់ព្រម</translation>
-    </message>
-    <message>
-        <source>&amp;Cancel</source>
-        <translation type="vanished">បោះបង់</translation>
-    </message>
-    <message>
-        <source>COM &amp;Object:</source>
-        <translation type="vanished">វត្ថុ COM&amp;nbsp;៖</translation>
-    </message>
-</context>
-<context>
-    <name>QCheckBox</name>
-    <message>
-        <source>Uncheck</source>
-        <translation type="vanished">មិន​ធូសធីគ</translation>
-    </message>
-    <message>
-        <source>Check</source>
-        <translation type="vanished">ពិនិត្យ​មើល</translation>
-    </message>
-    <message>
-        <source>Toggle</source>
-        <translation type="vanished">បិទ/បើក</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QCocoaMenuItem</name>
     <message>
-        <source>About Qt</source>
-        <translation type="unfinished">អំពី Qt</translation>
-    </message>
-    <message>
         <source>About</source>
-        <translation type="unfinished">អំពី</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Config</source>
-        <translation type="unfinished">កំណត់​រចនាសម្ព័ន្ធ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Preference</source>
-        <translation type="unfinished">ចំណូល​ចិត្ត</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Options</source>
-        <translation type="unfinished">ជម្រើស</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Setting</source>
-        <translation type="unfinished">ការ​កំណត់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Setup</source>
-        <translation type="unfinished">រៀបចំ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Quit</source>
-        <translation type="unfinished">ចេញ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation type="unfinished">ចេញ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cut</source>
@@ -863,71 +282,47 @@ to
         <source>Select All</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>About Qt</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QCocoaTheme</name>
     <message>
         <source>Don&apos;t Save</source>
-        <translation type="unfinished">កុំ​រក្សាទុក</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QColorDialog</name>
     <message>
         <source>Hu&amp;e:</source>
-        <translation>ភាព​លាំៗ​នៃ​ពណ៌&amp;nbsp;៖</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Sat:</source>
-        <translation>តិត្ថិភាព&amp;nbsp;៖</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Val:</source>
-        <translation>តម្លៃ&amp;nbsp;៖</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Red:</source>
-        <translation>ក្រហម&amp;nbsp;៖</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Green:</source>
-        <translation>បៃតង&amp;nbsp;៖</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bl&amp;ue:</source>
-        <translation>ខៀវ&amp;nbsp;៖</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>A&amp;lpha channel:</source>
-        <translation>ឆានែល​អាល់ហ្វា&amp;nbsp;៖</translation>
-    </message>
-    <message>
-        <source>&amp;Basic colors</source>
-        <translation>ពណ៌​មូលដ្ឋាន</translation>
-    </message>
-    <message>
-        <source>&amp;Custom colors</source>
-        <translation>ពណ៌​ផ្ទាល់ខ្លួន</translation>
-    </message>
-    <message>
-        <source>&amp;Define Custom Colors &gt;&gt;</source>
-        <translation type="vanished">កំណត់​ពណ៌​ផ្ទាល់ខ្លួន &gt;&gt;</translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation type="vanished">យល់ព្រម</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">បោះបង់</translation>
-    </message>
-    <message>
-        <source>&amp;Add to Custom Colors</source>
-        <translation>បន្ថែម​ពណ៌​ផ្ទាល់ខ្លួន</translation>
-    </message>
-    <message>
-        <source>Select color</source>
-        <translation type="vanished">ជ្រើស​ពណ៌</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;HTML:</source>
@@ -943,6 +338,18 @@ Press ESC to cancel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&amp;Basic colors</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Custom colors</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add to Custom Colors</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&amp;Pick Screen Color</source>
         <translation type="unfinished"></translation>
     </message>
@@ -950,23 +357,15 @@ Press ESC to cancel</source>
 <context>
     <name>QComboBox</name>
     <message>
-        <source>Open</source>
-        <translation type="vanished">បើក</translation>
+        <source>Open the combo box selection popup</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>False</source>
-        <translation>ខុស</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>True</source>
-        <translation>ត្រូវ</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">បិទ</translation>
-    </message>
-    <message>
-        <source>Open the combo box selection popup</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -977,7 +376,11 @@ Press ESC to cancel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays this help.</source>
+        <source>Displays help on commandline options.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays help including Qt specific options.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1136,224 +539,137 @@ Press ESC to cancel</source>
     </message>
 </context>
 <context>
+    <name>QCupsPrinterSupport</name>
+    <message>
+        <source>Authentication Needed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authentication needed to use %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authentication needed to use %1 on %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Username:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QDB2Driver</name>
     <message>
         <source>Unable to connect</source>
-        <translation>មិនអាច​តភ្ជាប់​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>មិនអាច​តភ្ជាប់​ទៅកាក់​ការ​បញ្ចូន​ដំណើរការ​ផ្លាស់ប្ដូរ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>មិនអាច​ជម្រះ​ដំណើរការ​ផ្លាស់ប្ដូរ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to set autocommit</source>
-        <translation>មិនអាច​កំណត់​ការ​បញ្ជូន​ដោយ​ស្វ័យ​ប្រវត្តិ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QDB2Result</name>
     <message>
         <source>Unable to execute statement</source>
-        <translation>មិនអាច​ប្រតិបត្តិ​​សេចក្ដីថ្លែងការ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation>មិនអាច​រៀបចំ​សេចក្ដី​ថ្លែងការ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to bind variable</source>
-        <translation>មិនអាច​ចង​អថេរ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch record %1</source>
-        <translation>មិនអាច​ទៅ​យក​កំណត់​ត្រា %1 បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch next</source>
-        <translation>មិនអាច​ទៅយក​អ្វី​នៅ​បន្ទាប់​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch first</source>
-        <translation>មិនអាច​ទៅ​យក​អ្វី​ដំបូង​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QDBusTrayIcon</name>
     <message>
         <source>OK</source>
-        <translation type="unfinished">យល់ព្រម</translation>
-    </message>
-</context>
-<context>
-    <name>QDateTimeEdit</name>
-    <message>
-        <source>AM</source>
-        <translation type="vanished">AM</translation>
-    </message>
-    <message>
-        <source>am</source>
-        <translation type="vanished">am</translation>
-    </message>
-    <message>
-        <source>PM</source>
-        <translation type="vanished">PM</translation>
-    </message>
-    <message>
-        <source>pm</source>
-        <translation type="vanished">pm</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QDateTimeParser</name>
     <message>
         <source>AM</source>
-        <translation type="unfinished">AM</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>am</source>
-        <translation type="unfinished">am</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>PM</source>
-        <translation type="unfinished">PM</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>pm</source>
-        <translation type="unfinished">pm</translation>
-    </message>
-</context>
-<context>
-    <name>QDial</name>
-    <message>
-        <source>QDial</source>
-        <translation type="vanished">QDial</translation>
-    </message>
-    <message>
-        <source>SpeedoMeter</source>
-        <translation type="vanished">SpeedoMeter</translation>
-    </message>
-    <message>
-        <source>SliderHandle</source>
-        <translation type="vanished">SliderHandle</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QDialog</name>
     <message>
         <source>What&apos;s This?</source>
-        <translation>តើ​នេះជា​អ្វី&amp;nbsp;?</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QDialogButtonBox</name>
     <message>
         <source>OK</source>
-        <translation>យល់ព្រម</translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation type="vanished">រក្សាទុក</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">បើក</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">បោះបង់</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">បិទ</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="vanished">អនុវត្ត</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="vanished">កំណត់​ឡើង​វិញ</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="vanished">ជំនួយ</translation>
-    </message>
-    <message>
-        <source>Don&apos;t Save</source>
-        <translation type="vanished">កុំ​រក្សាទុក</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation type="vanished">បោះបង់</translation>
-    </message>
-    <message>
-        <source>&amp;Yes</source>
-        <translation type="vanished">បាទ/ចាស</translation>
-    </message>
-    <message>
-        <source>Yes to &amp;All</source>
-        <translation type="vanished">បាទ/ចាស​ទៅ​ទាំង​អស់</translation>
-    </message>
-    <message>
-        <source>&amp;No</source>
-        <translation type="vanished">ទេ</translation>
-    </message>
-    <message>
-        <source>N&amp;o to All</source>
-        <translation type="vanished">ទេ​ទៅ​ទាំង​អស់</translation>
-    </message>
-    <message>
-        <source>Save All</source>
-        <translation type="vanished">រក្សាទុកទាំង​អស់</translation>
-    </message>
-    <message>
-        <source>Abort</source>
-        <translation type="vanished">បោះបង់</translation>
-    </message>
-    <message>
-        <source>Retry</source>
-        <translation type="vanished">ព្យាយាម​ម្ដង​ទៀត</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <translation type="vanished">មិនអើពើ</translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation type="vanished">ស្ដារ​លំនាំដើម​ឡើងវិញ</translation>
-    </message>
-    <message>
-        <source>Close without Saving</source>
-        <translation type="vanished">បិទ​ដោយ​មិន​រក្សាទុក</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QDirModel</name>
     <message>
         <source>Name</source>
-        <translation>ឈ្មោះ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Size</source>
-        <translation>ទំហំ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Kind</source>
         <comment>Match OS X Finder</comment>
-        <translation>ប្រភេទ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Type</source>
         <comment>All other platforms</comment>
-        <translation>ប្រភេទ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Date Modified</source>
-        <translation>កាលបរិច្ឆេទ​កែប្រែ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1465,21 +781,17 @@ Press ESC to cancel</source>
 <context>
     <name>QDockWidget</name>
     <message>
-        <source>Close</source>
-        <extracomment>Accessible name for button closing a dock widget</extracomment>
-        <translation>បិទ</translation>
-    </message>
-    <message>
-        <source>Dock</source>
-        <translation type="vanished">ចូលផែ</translation>
-    </message>
-    <message>
         <source>Float</source>
         <extracomment>Accessible name for button undocking a dock widget (floating state)</extracomment>
-        <translation>អណ្ដែត</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Undocks and re-attaches the dock widget</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <extracomment>Accessible name for button closing a dock widget</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1488,37 +800,224 @@ Press ESC to cancel</source>
     </message>
 </context>
 <context>
-    <name>QDoubleSpinBox</name>
+    <name>QDomParser</name>
     <message>
-        <source>More</source>
-        <translation type="vanished">ច្រើន​ជាង</translation>
+        <source>Error occurred while processing XML declaration</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Less</source>
-        <translation type="vanished">តិច​ជាង</translation>
+        <source>Multiple DTD sections are not allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing document type declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing comment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing a processing instruction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing a start element</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected end element &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing an end element</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing the element content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing comments</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing an entity reference</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected token</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tag mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing entity declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing notation declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QDtls</name>
+    <message>
+        <source>Invalid (empty) secret</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Multicast and broadcast addresses are not supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot set peer after handshake started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid address</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot set verification name after handshake started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot set configuration after handshake started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start/continue handshake, invalid handshake state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid (nullptr) socket</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>To start a handshake you must set peer&apos;s address and port first</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>To start a handshake, DTLS server requires non-empty datagram (client hello)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start handshake, already done/in progress</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A valid QUdpSocket and non-empty datagram are needed to continue the handshake</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot continue handshake, not in InProgress state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot resume, not in VerificationError state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No handshake in progress, nothing to abort</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot send shutdown alert, not encrypted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot write a datagram, not in encrypted state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot read a datagram, not in encrypted state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 failed</source>
+        <extracomment>%1: Some function</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid SslMode, SslServerMode or SslClientMode expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid protocol version, DTLS protocol expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>BIO_ADD_new failed, cannot start handshake</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start the handshake, verified client hello expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Peer verification failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The DTLS connection has been closed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while writing: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The DTLS connection has been shutdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while reading: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QDtlsClientVerifier</name>
+    <message>
+        <source>A valid UDP socket, non-empty datagram, valid address/port were expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>BIO_ADDR_new failed, ignoring client hello</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QErrorMessage</name>
     <message>
         <source>Debug Message:</source>
-        <translation>សារ​បំបាត់​កំហុស&amp;nbsp;៖</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Warning:</source>
-        <translation>ការ​ព្រមាន&amp;nbsp;៖</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Critical Error:</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Fatal Error:</source>
-        <translation>កំហុស​ធ្ងន់ធ្ងរ&amp;nbsp;៖</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Information:</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Show this message again</source>
-        <translation>បង្ហសារ​សារ​នេះ​ម្ដង​ទៀត</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>យល់ព្រម</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1536,7 +1035,7 @@ Press ESC to cancel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Error while renaming.</source>
+        <source>Error while renaming: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1552,11 +1051,15 @@ Press ESC to cancel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Cannot open destination file: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Cannot open %1 for input</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cannot open for output</source>
+        <source>Cannot open for output: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1574,170 +1077,24 @@ Press ESC to cancel</source>
         <source>No file engine available or engine does not support UnMapExtension</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>No file engine available</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QFileDialog</name>
     <message>
         <source>All Files (*)</source>
-        <translation>ឯកសារទាំង​អស់ (*)</translation>
-    </message>
-    <message>
-        <source>Directories</source>
-        <translation>ថត</translation>
-    </message>
-    <message>
-        <source>&amp;Open</source>
-        <translation>បើក</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <translation>រក្សាទុក</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation>បើក</translation>
-    </message>
-    <message>
-        <source>%1 already exists.
-Do you want to replace it?</source>
-        <translation>មាន %1 រួច​ហើយ&amp;nbsp;។
-តើ​អ្នក​ចង់​ជំនួស​វា​ទេ&amp;nbsp;?</translation>
-    </message>
-    <message>
-        <source>%1
-File not found.
-Please verify the correct file name was given.</source>
-        <translation>រក​មិនឃើញ​ឯកសារ %1
-ទេ&amp;nbsp;។សូម​ផ្ទៀងផ្ទាត់​ឈ្មោះ​ឯកសារ​ដែល​ត្រឹមត្រូវ​ត្រូ​វបាន​ផ្ដល់&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>My Computer</source>
-        <translation>កុំព្យូទ័រ​របស់​ខ្ញុំ</translation>
-    </message>
-    <message>
-        <source>&amp;Rename</source>
-        <translation>ប្ដូរ​ឈ្មោះ</translation>
-    </message>
-    <message>
-        <source>&amp;Delete</source>
-        <translation>លុប</translation>
-    </message>
-    <message>
-        <source>Show &amp;hidden files</source>
-        <translation>បង្ហាញ​ឯកសារ​ដែល​លាក់</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>ថយក្រោយ</translation>
-    </message>
-    <message>
-        <source>Parent Directory</source>
-        <translation>ថត​មេ</translation>
-    </message>
-    <message>
-        <source>List View</source>
-        <translation>ទិដ្ឋភាព​បញ្ជី</translation>
-    </message>
-    <message>
-        <source>Detail View</source>
-        <translation>ទិដ្ឋភាព​លម្អិត</translation>
-    </message>
-    <message>
-        <source>Files of type:</source>
-        <translation>ឯកសារ​ប្រភេទ&amp;nbsp;៖</translation>
-    </message>
-    <message>
-        <source>Directory:</source>
-        <translation>ថត&amp;nbsp;៖</translation>
-    </message>
-    <message>
-        <source>
-File not found.
-Please verify the correct file name was given</source>
-        <translation type="vanished">
-រក​មិនឃើញឯកសារ&amp;nbsp;។
-សូម​ផ្ទៀងផ្ទាត់​ឈ្មោះ​ឯកសារ​ដែល​ត្រឹមត្រូវ​ដែល​ត្រូវ​ផ្ដល់</translation>
-    </message>
-    <message>
-        <source>%1
-Directory not found.
-Please verify the correct directory name was given.</source>
-        <translation>រក​មិនឃើញ​ថត %1 ទេ&amp;nbsp;។
-សូម​ផ្ទៀងផ្ទាត់​ឈ្មោះ​ថត​ដែល​​ត្រឹមត្រូវ​ដែលបានផ្ដល់&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>&apos;%1&apos; is write protected.
-Do you want to delete it anyway?</source>
-        <translation>&apos;%1&apos; &apos;%1&apos; ការ​ពារ​មិន​ឲ្យ​សរសេរ​ចូល ។
-បើ​អញ្ចឹង តើ​អ្នក​ចង់​លុប​វា​ដែរ​ឬទេ&amp;nbsp;?</translation>
-    </message>
-    <message>
-        <source>Are sure you want to delete &apos;%1&apos;?</source>
-        <translation type="vanished">តើ​អ្នក​ប្រាកដ​ជា​ចង់​លុប &apos;%1&apos;?</translation>
-    </message>
-    <message>
-        <source>Could not delete directory.</source>
-        <translation>មិនអាច​លុប​ថត​បានទេ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>All Files (*.*)</source>
-        <translation type="vanished">ឯកសារ​ទាំង​អស់ (*.*)</translation>
-    </message>
-    <message>
-        <source>Save As</source>
-        <translation>រក្សាទុក​ជា</translation>
-    </message>
-    <message>
-        <source>Drive</source>
-        <translation>ចូល</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation>ឯកសារ</translation>
-    </message>
-    <message>
-        <source>Unknown</source>
-        <translation>មិនស្គាល់</translation>
-    </message>
-    <message>
-        <source>Find Directory</source>
-        <translation>រក​ថត</translation>
-    </message>
-    <message>
-        <source>Show </source>
-        <translation>បង្ហាញ </translation>
-    </message>
-    <message>
-        <source>Forward</source>
-        <translation>បញ្ជូន​បន្ត</translation>
-    </message>
-    <message>
-        <source>New Folder</source>
-        <translation>ថត​ថ្មី</translation>
-    </message>
-    <message>
-        <source>&amp;New Folder</source>
-        <translation>ថត​ថ្មី</translation>
-    </message>
-    <message>
-        <source>&amp;Choose</source>
-        <translation>ជ្រើស</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation>យកចេញ</translation>
-    </message>
-    <message>
-        <source>File &amp;name:</source>
-        <translation>ឈ្មោះ​ឯកសារ&amp;nbsp;៖</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Look in:</source>
-        <translation>រក​​ក្នុង&amp;nbsp;៖</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Create New Folder</source>
-        <translation>បង្កើត​ថត​ថ្មី</translation>
+        <source>Back</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Go back</source>
@@ -1745,6 +1102,10 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Alt+Left</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forward</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1756,6 +1117,10 @@ Do you want to delete it anyway?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Parent Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Go to the parent directory</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1764,11 +1129,23 @@ Do you want to delete it anyway?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Create New Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Create a New Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>List View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Change to list view mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Detail View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1788,15 +1165,105 @@ Do you want to delete it anyway?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Files of type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save As</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Directory:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File &amp;name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Choose</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Delete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show &amp;hidden files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;New Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>All files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Directories</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1
+Directory not found.
+Please verify the correct directory name was given.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 already exists.
+Do you want to replace it?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1
+File not found.
+Please verify the correct file name was given.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Delete</source>
-        <translation type="unfinished">លុប</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&apos;%1&apos; is write protected.
+Do you want to delete it anyway?</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Are you sure you want to delete &apos;%1&apos;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not delete directory.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1804,8 +1271,24 @@ Do you want to delete it anyway?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>My Computer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>%1 File</source>
         <extracomment>%1 is a file name suffix, for example txt</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1828,69 +1311,49 @@ Do you want to delete it anyway?</source>
         <comment>All other platforms</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QFileSystemModel</name>
     <message>
-        <source>Invalid filename</source>
-        <translation>ឈ្មោះ​ឯកសារ​មិន​ត្រឹមត្រូវ</translation>
+        <source>&lt;b&gt;The name &quot;%1&quot; cannot be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuation marks.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;The name &quot;%1&quot; can not be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuations marks.</source>
-        <translation>&lt;b&gt;ឈ្មោះ &quot;%1&quot; មិនអាច​ត្រូវ​បាន​ប្រើ​ទេ&amp;nbsp;។&lt;/b&gt;&lt;p&gt;ព្យាយាម​ប្រើ​ឈ្មោះ​ផ្សេង ដែលមាន​តួអក្សរ​ពីរ​បី ឬ​គ្មាន​សញ្ញា​វណ្ណយុទ្ធ&amp;nbsp;។</translation>
+        <source>Invalid filename</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>ឈ្មោះ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Size</source>
-        <translation>ទំហំ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Kind</source>
         <comment>Match OS X Finder</comment>
-        <translation>ប្រភេទ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Type</source>
         <comment>All other platforms</comment>
-        <translation>ប្រភេទ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Date Modified</source>
-        <translation>កាលបរិច្ឆេទ​បានកែប្រែ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>My Computer</source>
-        <translation>កុំព្យូទ័រ​របស់​ខ្ញុំ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Computer</source>
-        <translation>កុំព្យូទ័រ</translation>
-    </message>
-    <message>
-        <source>%1 TB</source>
-        <translation>%1 តេរ៉ាបៃ</translation>
-    </message>
-    <message>
-        <source>%1 GB</source>
-        <translation>%1 ជីកាបៃ</translation>
-    </message>
-    <message>
-        <source>%1 MB</source>
-        <translation>%1 មេកាបៃ</translation>
-    </message>
-    <message>
-        <source>%1 KB</source>
-        <translation>%1 គីឡូបៃ</translation>
-    </message>
-    <message>
-        <source>%1 bytes</source>
-        <translation>%1 បៃ</translation>
-    </message>
-    <message>
-        <source>%1 byte(s)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2092,148 +1555,119 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QFontDialog</name>
     <message>
+        <source>Select Font</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&amp;Font</source>
-        <translation>ពុម្ពអក្សរ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Font st&amp;yle</source>
-        <translation>រចនាប័ទ្ម​ពុម្ពអក្សរ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation>ទំហំ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Effects</source>
-        <translation>បែបផែន</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Stri&amp;keout</source>
-        <translation>លុបចោល</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Underline</source>
-        <translation>គូស​បន្ទាត់​ពី​ក្រោម</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Sample</source>
-        <translation>គំរូ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Wr&amp;iting System</source>
-        <translation>ប្រព័ន្ធ​សរសេរ</translation>
-    </message>
-    <message>
-        <source>Select Font</source>
-        <translation>ជ្រើស​ពុម្ពអក្សរ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QFtp</name>
     <message>
         <source>Not connected</source>
-        <translation>មិនបាន​តភ្ជាប់​ទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host %1 not found</source>
-        <translation>រក​មិនឃើញ​ម៉ាស៊ីន %1 ទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection refused to host %1</source>
-        <translation>ការ​តភ្ជាប់​បានបដិសេធ​ទៅ​ម៉ាស៊ីន %1</translation>
-    </message>
-    <message>
-        <source>Connected to host %1</source>
-        <translation>បាន​តភ្ជាប់​ទៅ​កាន់​ម៉ាស៊ីន %1</translation>
-    </message>
-    <message>
-        <source>Connection refused for data connection</source>
-        <translation type="vanished">ការ​តភ្ជាប់​បាន​បដិសេធ​សម្រាប់​ការ​តភ្ជាប់​ទិន្នន័យ</translation>
-    </message>
-    <message>
-        <source>Unknown error</source>
-        <translation>មិនស្គាល់​កំហុស</translation>
-    </message>
-    <message>
-        <source>Connecting to host failed:
-%1</source>
-        <translation>បានបរាជ័យ​ក្នុងការ​តភ្ជាប់​ទៅ​កាន់&amp;nbsp;៖
-%1</translation>
-    </message>
-    <message>
-        <source>Login failed:
-%1</source>
-        <translation>បានបរាជ័យ​ក្នុងកា​រ&amp;nbsp;៖
-%1</translation>
-    </message>
-    <message>
-        <source>Listing directory failed:
-%1</source>
-        <translation>បាន​បរាជ័យ​ក្នុង​រក​ថត&amp;nbsp;៖
-%1</translation>
-    </message>
-    <message>
-        <source>Changing directory failed:
-%1</source>
-        <translation>បានបរាជ័យ​ក្នុងកា​រផ្លាស់ប្ដូរ​ថត&amp;nbsp;៖
-%1</translation>
-    </message>
-    <message>
-        <source>Downloading file failed:
-%1</source>
-        <translation>បានបរាជ័យ​ក្នុងកា​រទាញ​យក​ឯកសារ&amp;nbsp;៖
-%1</translation>
-    </message>
-    <message>
-        <source>Uploading file failed:
-%1</source>
-        <translation>បានបរាជ័យ​ក្នុងការ​ផ្ទុក​ឯកសារ​ឡើង&amp;nbsp;៖
-%1</translation>
-    </message>
-    <message>
-        <source>Removing file failed:
-%1</source>
-        <translation>បានបរាជ័យ​ក្នុងការ​យក​ឯកសារ​ចេញ&amp;nbsp;៖
-%1</translation>
-    </message>
-    <message>
-        <source>Creating directory failed:
-%1</source>
-        <translation>បានបរាជ័យ​ក្នុងការ​បង្កើត​ថត&amp;nbsp;៖
-%1</translation>
-    </message>
-    <message>
-        <source>Removing directory failed:
-%1</source>
-        <translation>បានបរាជ័យ​ក្នុងការ​យក​​ថត​ចេញ&amp;nbsp;៖
-%1</translation>
-    </message>
-    <message>
-        <source>Connection closed</source>
-        <translation>បានបិទ​ការ​តភ្ជាប់</translation>
-    </message>
-    <message>
-        <source>Host %1 found</source>
-        <translation type="vanished">រក​ឃើញ​ម៉ាស៊ីន %1</translation>
-    </message>
-    <message>
-        <source>Connection to %1 closed</source>
-        <translation type="vanished">បាន​បិទ​ការ​តភ្ជាប់​ទៅ​កាន់ %1</translation>
-    </message>
-    <message>
-        <source>Host found</source>
-        <translation type="vanished">រក​ឃើញ​ម៉ាស៊ីន</translation>
-    </message>
-    <message>
-        <source>Connected to host</source>
-        <translation type="vanished">បានតភ្ជាប់​ទៅ​កាន់​ម៉ាស៊ីន</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection timed out to host %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Connected to host %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Data Connection refused</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connecting to host failed:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Login failed:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Listing directory failed:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Changing directory failed:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading file failed:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Uploading file failed:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing file failed:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creating directory failed:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing directory failed:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connection closed</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2241,23 +1675,23 @@ Do you want to delete it anyway?</source>
     <name>QGnomeTheme</name>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished">យល់ព្រម</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation type="unfinished">រក្សាទុក</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished">បោះបង់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="unfinished">បិទ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Close without Saving</source>
-        <translation type="unfinished">បិទ​ដោយ​មិន​រក្សាទុក</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2265,34 +1699,90 @@ Do you want to delete it anyway?</source>
     <message>
         <source>QT_LAYOUT_DIRECTION</source>
         <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
-        <translation type="unfinished">QT_LAYOUT_DIRECTION</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>QPA plugin. See QGuiApplication documentation for available options for each plugin.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path to the platform plugins.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Platform theme.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Additional plugins to load, can be specified multiple times.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Window geometry for the main window, using the X11-syntax, like 100x100+50+50.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default window icon.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Title of the first window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sets the application&apos;s layout direction to Qt::RightToLeft (debugging helper).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restores the application from an earlier session.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display name, overrides $DISPLAY.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Instance name according to ICCCM 4.1.2.5.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable mouse grabbing (useful in debuggers).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Force mouse grabbing (even when running in a debugger).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ID of the X11 Visual to use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowgeometry.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowicon.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowtitle.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QHostInfo</name>
     <message>
-        <source>Unknown error</source>
-        <translation>មិន​ស្គាល់កំហុស</translation>
+        <source>No host name given</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>No host name given</source>
+        <source>Unknown error</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QHostInfoAgent</name>
-    <message>
-        <source>Host not found</source>
-        <translation>រក​មិនឃើញ​កំហុស</translation>
-    </message>
-    <message>
-        <source>Unknown address type</source>
-        <translation>មិនស្គាល់​ប្រភេទ​អាសយដ្ឋាន</translation>
-    </message>
-    <message>
-        <source>Unknown error</source>
-        <translation>មិន​ស្គាល់​កំហុស</translation>
-    </message>
     <message>
         <source>No host name given</source>
         <translation type="unfinished"></translation>
@@ -2302,83 +1792,27 @@ Do you want to delete it anyway?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Unknown error (%1)</source>
+        <source>Unknown address type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host not found</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QHttp</name>
     <message>
-        <source>Unknown error</source>
-        <translation type="vanished">មិនស្គាល់​កំហុស</translation>
-    </message>
-    <message>
-        <source>Request aborted</source>
-        <translation type="vanished">បាន​បោះបង់​សំណើ</translation>
-    </message>
-    <message>
-        <source>No server set to connect to</source>
-        <translation type="vanished">គ្មានម៉ាស៊ីន​បម្រើ​បានកំណត់​ដើម្បី​តភ្ជាប់​ទៅ</translation>
-    </message>
-    <message>
-        <source>Wrong content length</source>
-        <translation type="vanished">ប្រវែង​មាតិកា​មិន​ត្រឹមត្រូវ</translation>
-    </message>
-    <message>
-        <source>Server closed connection unexpectedly</source>
-        <translation type="vanished">ម៉ាស៊ីនបម្រើ​បានបិទ​ការ​តភ្ជាប់​ដោយ​មិន​រំពឹង​ទុក</translation>
-    </message>
-    <message>
-        <source>Connection refused</source>
-        <translation>បានបដិសេធ​ការ​តភ្ជាប់</translation>
+        <source>Connection closed</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host %1 not found</source>
-        <translation>រក​មិនឃើញ​ម៉ាស៊ីន %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>HTTP request failed</source>
-        <translation type="vanished">បាន​បរាជ័យ​ក្នុងការ​ស្នើ HTTP</translation>
-    </message>
-    <message>
-        <source>Invalid HTTP response header</source>
-        <translation type="vanished">បឋមកថាការ​ឆ្លើយតប​របស់ HTTP</translation>
-    </message>
-    <message>
-        <source>Invalid HTTP chunked body</source>
-        <translation type="vanished">តួ HTTP មិន​ត្រឹមត្រូវ</translation>
-    </message>
-    <message>
-        <source>Host %1 found</source>
-        <translation type="vanished">រក​ឃើញ​ម៉ាស៊ីន %1</translation>
-    </message>
-    <message>
-        <source>Connected to host %1</source>
-        <translation type="vanished">បានតភ្ជាប់​ទៅកាន់​ម៉ាស៊ីន %1</translation>
-    </message>
-    <message>
-        <source>Connection to %1 closed</source>
-        <translation type="vanished">បានបិទ​ការ​តភ្ជាប់​ទៅកាន់ %1</translation>
-    </message>
-    <message>
-        <source>Host found</source>
-        <translation type="vanished">រក​ឃើញ​ម៉ាស៊ីន</translation>
-    </message>
-    <message>
-        <source>Connected to host</source>
-        <translation type="vanished">បានតភ្ជាប់​ទៅ​កាន់​ម៉ាស៊ីន</translation>
-    </message>
-    <message>
-        <source>Connection closed</source>
-        <translation>បានបិទ​ការ​តភ្ជាប់</translation>
-    </message>
-    <message>
-        <source>Proxy authentication required</source>
-        <translation type="vanished">ត្រូវការ​ការ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​របស់​ប្រូកស៊ី</translation>
-    </message>
-    <message>
-        <source>Authentication required</source>
-        <translation type="vanished">ត្រូវការ​ការ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ</translation>
+        <source>Connection refused</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Proxy requires authentication</source>
@@ -2412,15 +1846,15 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QHttpSocketEngine</name>
     <message>
-        <source>Authentication required</source>
-        <translation>ត្រូវការ​ការ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ</translation>
-    </message>
-    <message>
         <source>Did not receive HTTP response from proxy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error parsing authentication request from proxy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authentication required</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2452,116 +1886,116 @@ Do you want to delete it anyway?</source>
     <name>QIBaseDriver</name>
     <message>
         <source>Error opening database</source>
-        <translation>កំហុស​ក្នុងការ​បើក​មូលដ្ឋាន​ទិន្នន័យ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not start transaction</source>
-        <translation>មិនអាច​ចាប់ផ្ដើម​ដំណើរការ​ផ្លាស់ប្ដូរ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>មិន​អាច​បញ្ជូនដំណើរការ​ផ្លាស់ប្ដូរ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>មិនអាច​ជម្រះ​ដំណើរការ​ផ្លាស់ប្ដូរ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QIBaseResult</name>
     <message>
         <source>Unable to create BLOB</source>
-        <translation>មិនអាច​បង្កើត​ប្លុក​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to write BLOB</source>
-        <translation>មិនអាច​សរសេរ​ប្លុក​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to open BLOB</source>
-        <translation>មិនអាច​បើក​ប្លុក​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to read BLOB</source>
-        <translation>មិនអាច​អាន​ប្លុក​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not find array</source>
-        <translation>មិនអាច​រក​អារ៉េ​ឃើញទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not get array data</source>
-        <translation>មិនអាច​យក​ទិន្នន័យ​អារ៉េ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not get query info</source>
-        <translation>មិនអាច​យក​ព័ត៌មាន​សំណួរ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not start transaction</source>
-        <translation>មិន​អាច​ចាប់ផ្ដើម​ដំណើរការ​ផ្លាស់ប្ដូរ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>មិនអាច​បញ្ជូន​ដំណើរការ​ផ្លាស់ប្ដូរ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not allocate statement</source>
-        <translation>មិនអាច​​បម្រុង​ទុក​សេចក្ដី​ថ្លែងការណ៍​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not prepare statement</source>
-        <translation>មិន​អាច​រៀបចំ​សេចក្ដី​ថ្លែងការណ៍</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not describe input statement</source>
-        <translation>មិនអាច​ពិពណ៌នា​សេចក្ដី​ថ្លែងការណ៍​បញ្ចូល</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not describe statement</source>
-        <translation>មិនអាច​ពិពណ៌នា​សេចក្ដីថ្លែងការណ៍​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to close statement</source>
-        <translation>មិនអាច​បិទ​សេចក្ដី​ថ្លែងការណ៍​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute query</source>
-        <translation>មិនអាច​ប្រតិបត្តិ​សំណួរ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not fetch next item</source>
-        <translation>មិន​អាច​ទៅយក​ធាតុ​បន្ទាប់​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not get statement info</source>
-        <translation>មិន​អាច​យក​ព័ត៌មាន​សេចក្ដី​ថ្លែងការណ៍​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QIODevice</name>
     <message>
-        <source>Permission denied</source>
-        <translation>គ្មាន​សិទ្ធិ</translation>
-    </message>
-    <message>
-        <source>Too many open files</source>
-        <translation>មាន​ឯកសារ​បើក​ច្រើនពេក</translation>
-    </message>
-    <message>
-        <source>No such file or directory</source>
-        <translation>គ្មាន​ឯកសារ ឬ​ថត​បែប​នេះ​ទេ</translation>
-    </message>
-    <message>
-        <source>No space left on device</source>
-        <translation>គ្មាន​ទំហំ​នៅសល់​​នៅ​ក្នុង​ឧបករណ៍​នេះទេ</translation>
+        <source>file to open is a directory</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation>មិនស្គាល់​កំហុស</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>file to open is a directory</source>
+        <source>Permission denied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Too many open files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No such file or directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No space left on device</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2599,6 +2033,10 @@ Do you want to delete it anyway?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Cannot open device for writing: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Device not writable</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2606,24 +2044,9 @@ Do you want to delete it anyway?</source>
         <source>Unsupported image format</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>QInputContext</name>
     <message>
-        <source>XIM</source>
-        <translation type="vanished">XIM</translation>
-    </message>
-    <message>
-        <source>XIM input method</source>
-        <translation type="vanished">វិធីសាស្ត្រ​បញ្ចូល XIM</translation>
-    </message>
-    <message>
-        <source>Windows input method</source>
-        <translation type="vanished">វិធី​សាស្ត្រ​បញ្ចូល​វីនដូ</translation>
-    </message>
-    <message>
-        <source>Mac OS X input method</source>
-        <translation type="vanished">វិធីសាស្ត្រ​បញ្ចូល​របស់ Mac OS X</translation>
+        <source>Image is empty</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2711,55 +2134,11 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QLibrary</name>
     <message>
-        <source>QLibrary::load_sys: Cannot load %1 (%2)</source>
-        <translation type="vanished">QLibrary::load_sys&amp;nbsp;៖ មិន​អាច​ផ្ទុក %1 (%2) បានទេ</translation>
-    </message>
-    <message>
-        <source>QLibrary::unload_sys: Cannot unload %1 (%2)</source>
-        <translation type="vanished">QLibrary::unload_sys&amp;nbsp;៖ មិន​អាច​មិនផ្ទុក​បានទេ %1 (%2)</translation>
-    </message>
-    <message>
-        <source>QLibrary::resolve_sys: Symbol &quot;%1&quot; undefined in %2 (%3)</source>
-        <translation type="vanished">QLibrary::resolve_sys: Symbol &quot;%1&quot; មិន​បាន​កំណត់​នៅ​ក្នុង %2 (%3)</translation>
-    </message>
-    <message>
-        <source>Could not mmap &apos;%1&apos;: %2</source>
-        <translation type="vanished">មិនអាច mmap &apos;%1&apos;&amp;nbsp;៖ %2 បានទេ</translation>
-    </message>
-    <message>
-        <source>Plugin verification data mismatch in &apos;%1&apos;</source>
-        <translation type="vanished">ទិន្នន័យ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​របស់​កម្មវិធី​ជំនួយ​មិន​ផ្គូផ្គង​នៅ​ក្នុង &apos;%1&apos; ទេ</translation>
-    </message>
-    <message>
-        <source>Could not unmap &apos;%1&apos;: %2</source>
-        <translation type="vanished">មិន​អាច unmap &apos;%1&apos;: %2</translation>
-    </message>
-    <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
-        <translation>កម្មវិធី​ជំនួយ &apos;%1&apos; ប្រើ​បណ្ណាល័យ Qt មិន​ឆបគ្នា&amp;nbsp;។ (%2.%3.%4) [%5]</translation>
-    </message>
-    <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. Expected build key &quot;%2&quot;, got &quot;%3&quot;</source>
-        <translation type="vanished">កម្មវិធី​ជំនួយ &apos;%1&apos; ប្រើ​បណ្ណាល័យ Qt មិន​ឆបគ្នា&amp;nbsp;។ សោ​ស្ថាបនា​ដែល​បាន​រំពឹង​ទុកគឺ &quot;%2&quot; បាន​ទទួល &quot;%3&quot;</translation>
-    </message>
-    <message>
-        <source>Unknown error</source>
-        <translation>មិន​ស្គាល់​កំហុស</translation>
-    </message>
-    <message>
-        <source>The shared library was not found.</source>
-        <translation>រក​មិនឃើញ​បណ្ណាល័យ​រួម&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>The file &apos;%1&apos; is not a valid Qt plugin.</source>
-        <translation>ឯកសារ &apos;%1&apos; មិនមែន​ជា​កម្មវិធី Qt ត្រឹមត្រូវ​ទេ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
-        <translation>កម្មវិធី​ជំនួយ &apos;%1&apos; ប្រើ​បណ្ណាល័យ Qt មិន​ឆប​គ្នា&amp;nbsp;។ (មិនអាច​បញ្ចូល​បណ្ណាល័យ​បំបាត់​កំហុស និង​ចេញផ្សាយ​បានទេ&amp;nbsp;។)</translation>
-    </message>
-    <message>
         <source>&apos;%1&apos; is not an ELF object (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>file too small</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2771,7 +2150,74 @@ Do you want to delete it anyway?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>odd cpu architecture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>wrong cpu architecture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>odd endianness</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unexpected e_shsize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unexpected e_shentsize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>announced %n section(s), each %1 byte(s), exceed file size</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>shstrtab section header seems to be at %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>string table seems to be at %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>section name %1 of %2 behind end of file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>empty .rodata. not a library.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing section data. This is not a library.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Failed to extract plugin meta data from &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The shared library was not found.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The file &apos;%1&apos; is not a valid Qt plugin.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2783,19 +2229,11 @@ Do you want to delete it anyway?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cannot resolve symbol &quot;%1&quot; in %2: %3</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&apos;%1&apos; is not a valid Mach-O binary (%2)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>file is corrupt</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>file too small</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2823,31 +2261,31 @@ Do you want to delete it anyway?</source>
     <name>QLineEdit</name>
     <message>
         <source>&amp;Undo</source>
-        <translation>មិន​ធ្វើ​វិញ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation>ធ្វើវិញ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation>កាត់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation>ចម្លង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation>បិទភ្ជាប់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>លុប</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation>ជ្រើស​ទាំងអស់</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2927,29 +2365,13 @@ Do you want to delete it anyway?</source>
         <source>%1: Access denied</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Socket is not connected</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QMYSQLDriver</name>
-    <message>
-        <source>Unable to open database &apos;</source>
-        <translation type="vanished">មិនអាច​បើក​មូលដ្ឋាន​ទិន្នន័យ​បានទេ &apos;</translation>
-    </message>
-    <message>
-        <source>Unable to connect</source>
-        <translation>មិនអាច​តភ្ជាប់​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to begin transaction</source>
-        <translation>មិនអាច​ចាប់ផ្ដើម​ដំណើរការ​ផ្លាស់ប្ដូរ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to commit transaction</source>
-        <translation>មិនអាច​បញ្ជូន​ដំណើរការផ្លាស់ប្ដូរ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to rollback transaction</source>
-        <translation>មិន​អាច​ជម្រះ​ដំណើរផ្លាស់ប្ដូរ</translation>
-    </message>
     <message>
         <source>Unable to allocate a MYSQL object</source>
         <translation type="unfinished"></translation>
@@ -2958,44 +2380,36 @@ Do you want to delete it anyway?</source>
         <source>Unable to open database &apos;%1&apos;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Unable to connect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to begin transaction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to commit transaction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to rollback transaction</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QMYSQLResult</name>
     <message>
         <source>Unable to fetch data</source>
-        <translation>មិន​អាច​ទៅ​យក​​ទិន្នន័យ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute query</source>
-        <translation>មិន​អាច​ប្រតិបត្តិ​សំណួរ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to store result</source>
-        <translation>មិនអាច​ផ្ទុក​លទ្ធផលបានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to prepare statement</source>
-        <translation>មិន​អាច​រៀបចំ​សេចក្ដី​ថ្លែងការណ៍​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to reset statement</source>
-        <translation>មិន​អាច​កំណត់​សេចក្ដី​ថ្លែងការណ៍​ឡើង​វិញ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to bind value</source>
-        <translation>មិន​អាច​ចង​តម្លៃ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to execute statement</source>
-        <translation>មិនអាច​ប្រតិបត្តិ​សេចក្ដី​ថ្លែងការណ៍​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to bind outvalues</source>
-        <translation>មិន​អាច​ចង​តម្លៃ​ខាងក្រៅ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to store statement results</source>
-        <translation>មិនអាច​ផ្ទុក​លទ្ធផល​សេចក្ដី​ថ្លែងការណ៍​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute next query</source>
@@ -3003,6 +2417,30 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to store next result</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to prepare statement</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to reset statement</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to bind value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to execute statement</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to bind outvalues</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to store statement results</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3016,56 +2454,20 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QMdiSubWindow</name>
     <message>
-        <source>%1 - [%2]</source>
-        <translation>%1 - [%2]</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation>បិទ</translation>
-    </message>
-    <message>
-        <source>Minimize</source>
-        <translation>បង្រួម​អប្បបរមា</translation>
-    </message>
-    <message>
-        <source>Restore Down</source>
-        <translation>ស្ដារឡើងវិញ​ចុះក្រោម</translation>
-    </message>
-    <message>
-        <source>&amp;Restore</source>
-        <translation>ស្ដារឡើងវិញ</translation>
-    </message>
-    <message>
-        <source>&amp;Move</source>
-        <translation>ផ្លាស់ទី</translation>
-    </message>
-    <message>
-        <source>&amp;Size</source>
-        <translation>ទំហំ</translation>
-    </message>
-    <message>
-        <source>Mi&amp;nimize</source>
-        <translation>បង្រួម​អប្បបរមា</translation>
-    </message>
-    <message>
-        <source>Ma&amp;ximize</source>
-        <translation>ពង្រីក​អតិបរមា</translation>
-    </message>
-    <message>
-        <source>Stay on &amp;Top</source>
-        <translation>នៅ​ខាង​លើ</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation>បិទ</translation>
-    </message>
-    <message>
         <source>- [%1]</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>%1 - [%2]</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Maximize</source>
-        <translation type="unfinished">ពង្រីក​អតិបរមា</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unshade</source>
@@ -3076,246 +2478,175 @@ Do you want to delete it anyway?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Restore Down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Restore</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Help</source>
-        <translation type="unfinished">ជំនួយ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Menu</source>
-        <translation type="unfinished">ម៉ឺនុយ</translation>
-    </message>
-</context>
-<context>
-    <name>QMenu</name>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">បិទ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open</source>
-        <translation type="vanished">បើក</translation>
+        <source>&amp;Restore</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Execute</source>
-        <translation type="vanished">ប្រតិបត្តិ</translation>
-    </message>
-</context>
-<context>
-    <name>QMenuBar</name>
-    <message>
-        <source>About</source>
-        <translation type="vanished">អំពី</translation>
+        <source>&amp;Move</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Config</source>
-        <translation type="vanished">កំណត់​រចនាសម្ព័ន្ធ</translation>
+        <source>&amp;Size</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Preference</source>
-        <translation type="vanished">ចំណូល​ចិត្ត</translation>
+        <source>Mi&amp;nimize</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Options</source>
-        <translation type="vanished">ជម្រើស</translation>
+        <source>Ma&amp;ximize</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Setting</source>
-        <translation type="vanished">ការ​កំណត់</translation>
+        <source>Stay on &amp;Top</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Setup</source>
-        <translation type="vanished">រៀបចំ</translation>
-    </message>
-    <message>
-        <source>Quit</source>
-        <translation type="vanished">ចេញ</translation>
-    </message>
-    <message>
-        <source>Exit</source>
-        <translation type="vanished">ចេញ</translation>
-    </message>
-    <message>
-        <source>About %1</source>
-        <translation type="vanished">អំពី %1</translation>
-    </message>
-    <message>
-        <source>About Qt</source>
-        <translation type="vanished">អំពី Qt</translation>
-    </message>
-    <message>
-        <source>Preferences</source>
-        <translation type="vanished">ចំណូលចិត្ត</translation>
-    </message>
-    <message>
-        <source>Quit %1</source>
-        <translation type="vanished">ចេញ %1</translation>
+        <source>&amp;Close</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QMessageBox</name>
     <message>
-        <source>Help</source>
-        <translation>ជំនួយ</translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation>យល់ព្រម</translation>
-    </message>
-    <message>
-        <source>About Qt</source>
-        <translation>អំពី Qt</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;កម្មវិធី​នេះ​ប្រើ​កំណែ Qt %1&amp;nbsp;។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qtopia Core.&lt;/p&gt;&lt;p&gt;Qt is a Trolltech product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;h3&gt;អំពី Qt&lt;/h3&gt;%1&lt;p&gt;Qt គឺ​ជា​ព័ត៌មាន​ជំនួយ​ C++ សម្រាប់​កា​រអភិវឌ្ឍ​កម្មវិធី​​សម្រាប់​ប្រព័ន្ធ​ប្រតិបត្តិការ​ខុសគ្នា&amp;nbsp;។&lt;/p&gt;&lt;p&gt;Qt ផ្ដល់​នូវ​ភាព​ឆប​គ្នា​ដែល​បាន​ប្រភព​តែ​មួយ​ដែល​ប្រើបានទាំង MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux និង​ Unix ផ្នែក​ជំនួញ​ជា​ច្រើន​ទេ&amp;nbsp;។ Qt ក៏អាច​ប្រើ​បាន​សម្រាប់​ឧបករណ៍​ដែលបាន​បង្កប់​ដូចជា Qtopia ។ &lt;/p&gt;&lt;p&gt;Qt គឺជា​ផលិតផល​របស់ Trolltech ចំពោះ​ព័ត៌មាន​បន្ថែម​សូមមើល &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; ។&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>Show Details...</source>
-        <translation>បង្ហាញ​សេចក្ដី​លម្អិត...</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Hide Details...</source>
-        <translation>លាក់​សេចក្ដី​លម្អិត...</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;កម្មវិធី​នេះ​ប្រើកំណែ​កម្មវិធី​ប្រភព​កូដ​ចំហ​ Qt %1&amp;nbsp;។&lt;/p&gt;&lt;p&gt;កំណែ​កម្មវិធី​ប្រភព​កូដ​ចំហ Qt សម្រាប់​ការ​អភិវឌ្ឍ​កម្មវិធី​ប្រភព​កូដ​ចំហ&amp;nbsp;។ អ្នក​ត្រូវការ​អាជ្ញាប័ណ្ណ Qt ផ្នែក​ជំនួញ​សម្រាប់​កម្មវិធី​មាន​​កម្មសិទ្ធិ (ប្រភព​បិទ)&amp;nbsp;។&lt;/p&gt;&lt;p&gt;ចំពោះ​ទិដ្ឋភាពទូទៅនៃ​អាជ្ញាប័ណ្ណ​របស់ Qt សូម​មើល &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt;&amp;nbsp;។&lt;/p&gt;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 3 or GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 3 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 3.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under multiple licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of GNU (L)GPL.&lt;/p&gt;&lt;p&gt;Qt licensed under GNU (L)GPL is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the respective licenses.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <extracomment>Leave this text untranslated or include a verbatim copy of it below and note that it is the authoritative version in case of doubt.</extracomment>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>QMultiInputContext</name>
     <message>
-        <source>Select IM</source>
-        <translation type="vanished">ជ្រើស IM</translation>
-    </message>
-</context>
-<context>
-    <name>QMultiInputContextPlugin</name>
-    <message>
-        <source>Multiple input method switcher</source>
-        <translation type="vanished">កម្មវិធីប្ដូរ​វិធីសាស្ត្រ​បញ្ចូល​ជា​ច្រើន</translation>
-    </message>
-    <message>
-        <source>Multiple input method switcher that uses the context menu of the text widgets</source>
-        <translation type="vanished">កម្មវិធី​ប្ដូរ​វិធីសាស្ត្រ​ជា​ច្រើន​ដែល​ប្រើ​ម៉ឺនុយ​បរិបទ​របស់​ធាតុ​ក្រាហ្វិក​អត្ថបទ</translation>
+        <source>About Qt</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QNativeSocketEngine</name>
     <message>
-        <source>The remote host closed the connection</source>
-        <translation>បានបិទ​កា​រតភ្ជាប់​ម៉ាស៊ីន​ពីចម្ងាយ</translation>
-    </message>
-    <message>
-        <source>Network operation timed out</source>
-        <translation>អស់ពេល​ប្រតិបត្តិការ​បណ្ដាញ</translation>
-    </message>
-    <message>
-        <source>Out of resources</source>
-        <translation>អស់​ធនធាន</translation>
-    </message>
-    <message>
-        <source>Unsupported socket operation</source>
-        <translation>ប្រតិបត្តិការ​រន្ធ​មិនបាន​គាំទ្រទេ</translation>
-    </message>
-    <message>
-        <source>Protocol type not supported</source>
-        <translation>ប្រភេទ​ពិធីការ​មិនបានគាំទ្រ​ទេ</translation>
-    </message>
-    <message>
-        <source>Invalid socket descriptor</source>
-        <translation>អ្នកពិពណ៌នា​រន្ធ​មិន​ត្រឹមត្រូវ</translation>
-    </message>
-    <message>
-        <source>Network unreachable</source>
-        <translation>មិនអាច​ចូល​បណ្ដាញ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Permission denied</source>
-        <translation>គ្មាន​សិទ្ធិ</translation>
-    </message>
-    <message>
-        <source>Connection timed out</source>
-        <translation>អស់ពេល​ក្នុងការ​តភ្ជាប់</translation>
-    </message>
-    <message>
-        <source>Connection refused</source>
-        <translation>បាន​បដិសេធ​ការ​តភ្ជាប់</translation>
-    </message>
-    <message>
-        <source>The bound address is already in use</source>
-        <translation>អាសយដ្ឋាន​ដែល​បានចង​កំពុង​ប្រើ​រួច​ហើយ</translation>
-    </message>
-    <message>
-        <source>The address is not available</source>
-        <translation>អាសយដ្ឋាន​មិនអាច​ប្រើបានទេ</translation>
-    </message>
-    <message>
-        <source>The address is protected</source>
-        <translation>អាសយដ្ឋាន​ត្រូវ​បានការពារ</translation>
-    </message>
-    <message>
-        <source>Unable to send a message</source>
-        <translation>មិនអាច​ផ្ញើសារ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to receive a message</source>
-        <translation>មិនអាច​ទទួល​សារ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to write</source>
-        <translation>មិនអាច​សរសេរ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Network error</source>
-        <translation>កំហុស​បណ្ដាញ</translation>
-    </message>
-    <message>
-        <source>Another socket is already listening on the same port</source>
-        <translation>រន្ធ​ផ្សេង​ទៀត​កំពុង​ស្ដាប់​នៅលើ​ច្រក​ដូច​គ្នា</translation>
-    </message>
-    <message>
         <source>Unable to initialize non-blocking socket</source>
-        <translation>មិនអាច​ចាប់ផ្ដើម​រន្ធ​ដែល​មិនទប់ស្កាត់​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to initialize broadcast socket</source>
-        <translation>មិន​អាច​ចាប់ផ្ដើម​រន្ធ​ប្រកាស​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Attempt to use IPv6 socket on a platform with no IPv6 support</source>
-        <translation>ប៉ុនប៉ង​ប្រើ​រន្ធ IPv6 នៅ​លើ​វេទិកា​ដែលគ្មាន​ការ​គាំទ្រ IPv6</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The remote host closed the connection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network operation timed out</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Out of resources</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unsupported socket operation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Protocol type not supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid socket descriptor</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host unreachable</source>
-        <translation>មិនអាច​ចូល​ម៉ាស៊ីនបានទេ</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network unreachable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Permission denied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connection timed out</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connection refused</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The bound address is already in use</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The address is not available</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The address is protected</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Datagram was too large to send</source>
-        <translation>ទិន្នន័យ​ធំពេក​មិនអាច​ផ្ញើ​បានទេ</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to send a message</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to receive a message</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to write</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Another socket is already listening on the same port</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Operation on non-socket</source>
-        <translation>ប្រតិបត្តិការ​មិននៅលើ​រន្ធ</translation>
-    </message>
-    <message>
-        <source>Unknown error</source>
-        <translation>មិន​ស្គាល់​កំហុស</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The proxy type is invalid for this operation</source>
@@ -3331,6 +2662,10 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Connection reset by peer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown error</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3410,24 +2745,17 @@ Do you want to delete it anyway?</source>
     </message>
 </context>
 <context>
-    <name>QNetworkAccessManager</name>
-    <message>
-        <source>Network access is disabled.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>QNetworkReply</name>
     <message>
         <source>Error transferring %1 - server replied: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Background request not allowed.</source>
+        <source>Network session error.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Network session error.</source>
+        <source>Background request not allowed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3494,13 +2822,13 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QOCIDriver</name>
     <message>
-        <source>Unable to logon</source>
-        <translation>មិនអាច​ចូលបានទេ</translation>
-    </message>
-    <message>
         <source>Unable to initialize</source>
         <comment>QOCIDriver</comment>
-        <translation>មិន​អាច​ចាប់ផ្ដើម​បានទេ</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to logon</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
@@ -3519,38 +2847,34 @@ Do you want to delete it anyway?</source>
     <name>QOCIResult</name>
     <message>
         <source>Unable to bind column for batch execute</source>
-        <translation>មិន​អាច​ចង​ជួរឈរ​សម្រាប់​ប្រតិបត្តិ​បាច់​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute batch statement</source>
-        <translation>មិនអាច​ប្រតិបត្តិ​សេចក្ដី​ថ្លែងការណ៍​បាច់​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to goto next</source>
-        <translation>មិន​អាច​ទៅ​កាន់​បន្ទាប់​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to alloc statement</source>
-        <translation>មិនអាច​បម្រុង​ទុក​សេចក្ដី​ថ្លែងការ​ណ៍​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation>មិនអាច​រៀបចំ​សេចក្ដី​ថ្លែងការណ៍​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to bind value</source>
-        <translation>មិន​អាច​ចង​តម្លៃ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to execute select statement</source>
-        <translation type="vanished">មិន​អាច​ប្រតិបត្តិ​ជ្រើស​សេចក្ដី​ថ្លែងការណ៍​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to execute statement</source>
-        <translation>មិន​អាច​ប្រតិបត្តិ​សេចក្ដី​ថ្លែងការណ៍</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to get statement type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to bind value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to execute statement</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3558,30 +2882,26 @@ Do you want to delete it anyway?</source>
     <name>QODBCDriver</name>
     <message>
         <source>Unable to connect</source>
-        <translation>មិនអាច​តភ្ជាប់​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to connect - Driver doesn&apos;t support all needed functionality</source>
-        <translation type="vanished">មិនអាច​តភ្ជាប់​បានទេ - កម្មវិធី​បញ្ជា​មិនគាំទ្រ​មុខងារ​ដែល​ត្រូវការ​ទាំង​អស់​ទេ</translation>
-    </message>
-    <message>
-        <source>Unable to disable autocommit</source>
-        <translation>មិន​អាច​បិទ​ការ​បញ្ជូន​ដោយ​ស្វ័យ​ប្រវត្តិ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to commit transaction</source>
-        <translation>មិនអាច​បញ្ជូន​ដំណើរផ្លាស់ប្ដូរ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to rollback transaction</source>
-        <translation>មិនអាច​ជម្រះ​ដំណើរ​ផ្លាស់ប្ដូរ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to enable autocommit</source>
-        <translation>មិនអាច​បើក​ការ​បញ្ជូន​ដោយ​ស្វ័យ​ប្រវត្តិ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to connect - Driver doesn&apos;t support all functionality required</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to disable autocommit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to commit transaction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to rollback transaction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to enable autocommit</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3589,26 +2909,10 @@ Do you want to delete it anyway?</source>
     <name>QODBCResult</name>
     <message>
         <source>QODBCResult::reset: Unable to set &apos;SQL_CURSOR_STATIC&apos; as statement attribute. Please check your ODBC driver configuration</source>
-        <translation>QODBCResult::reset: Unable to set &apos;SQL_CURSOR_STATIC&apos; ជា​គុណលក្ខណៈ​សេចក្ដី​ថ្លែង​ការណ៍&amp;nbsp;។ សូម​ពិនិត្យ​មើល​ការ​កំណត់​រចនាសម្ព័ន្ធ​កម្មវិធី​បញ្ជា​នៃ ODBC របស់​អ្នក</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>មិនអាច​ប្រតិបត្តិ​សេចក្ដី​ថ្លែងការណ៍​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to fetch next</source>
-        <translation>មិនអាច​ទៅយក​បន្ទាប់​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to prepare statement</source>
-        <translation>មិនអាច​រៀបចំ​សេចក្ដីថ្លែង​ការណ៍​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to bind variable</source>
-        <translation>មិន​អាច​ចង​អថេរ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to fetch last</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3616,38 +2920,47 @@ Do you want to delete it anyway?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Unable to fetch next</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unable to fetch first</source>
-        <translation type="unfinished">មិនអាច​ទៅ​យក​អ្វី​ដំបូង​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch previous</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>QObject</name>
     <message>
-        <source>Home</source>
-        <translation type="vanished">ផ្ទះ</translation>
+        <source>Unable to fetch last</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to prepare statement</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to bind variable</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPSQLDriver</name>
     <message>
         <source>Unable to connect</source>
-        <translation>មិនអាច​តភ្ជាប់​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not begin transaction</source>
-        <translation>មិនអាច​ចាប់ផ្ដើម​ដំណើរ​ផ្លាស់ប្ដូ​របានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not commit transaction</source>
-        <translation>មិនអាច​បញ្ជូន​ដំណើរផ្លាស់ប្ដូរ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not rollback transaction</source>
-        <translation>មិនអាច​ជម្រះ​ដំណើរផ្លាស់ប្ដូរ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to subscribe</source>
@@ -3661,8 +2974,20 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QPSQLResult</name>
     <message>
+        <source>Query results lost - probably discarded on executing another SQL query.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unable to create query</source>
-        <translation>មិនអាច​បង្កើត​សំណួរ​បានទេ</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to get result</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to send query</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
@@ -3681,7 +3006,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Page size:</source>
-        <translation type="unfinished">ទំហំ​ទំព័រ&amp;nbsp;៖</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Width:</source>
@@ -3693,7 +3018,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Paper source:</source>
-        <translation type="unfinished">ប្រភព​ក្រដាស&amp;nbsp;៖</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Orientation</source>
@@ -3701,11 +3026,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Portrait</source>
-        <translation type="unfinished">បញ្ឈរ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Landscape</source>
-        <translation type="unfinished">ផ្ដេក</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reverse landscape</source>
@@ -4288,371 +3613,93 @@ Do you want to delete it anyway?</source>
     <name>QPlatformTheme</name>
     <message>
         <source>OK</source>
-        <translation type="unfinished">យល់ព្រម</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished">រក្សាទុក</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Save All</source>
-        <translation type="unfinished">រក្សាទុកទាំង​អស់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished">បើក</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation type="unfinished">បាទ/ចាស</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Yes to &amp;All</source>
-        <translation type="unfinished">បាទ/ចាស​ទៅ​ទាំង​អស់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;No</source>
-        <translation type="unfinished">ទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>N&amp;o to All</source>
-        <translation type="unfinished">ទេ​ទៅ​ទាំង​អស់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Abort</source>
-        <translation type="unfinished">បោះបង់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Retry</source>
-        <translation type="unfinished">ព្យាយាម​ម្ដង​ទៀត</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Ignore</source>
-        <translation type="unfinished">មិនអើពើ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">បិទ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">បោះបង់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished">បោះបង់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">ជំនួយ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">អនុវត្ត</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">កំណត់​ឡើង​វិញ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished">ស្ដារ​លំនាំដើម​ឡើងវិញ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPluginLoader</name>
     <message>
-        <source>Unknown error</source>
-        <translation>មិនស្គាល់កំហុស</translation>
+        <source>The plugin was not loaded.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The plugin was not loaded.</source>
-        <translation>កម្មវិធី​ជំនួយ​មិនត្រូវ​បានផ្ទុក​ទេ&amp;nbsp;។</translation>
+        <source>Unknown error</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPrintDialog</name>
     <message>
-        <source>locally connected</source>
-        <translation type="vanished">បាន​តភ្ជាប់​មូលដ្ឋាន</translation>
-    </message>
-    <message>
-        <source>Aliases: %1</source>
-        <translation type="vanished">ឈ្មោះ​ក្លែងក្លាយ&amp;nbsp;៖ %1</translation>
-    </message>
-    <message>
-        <source>unknown</source>
-        <translation type="vanished">មិនស្គាល់</translation>
-    </message>
-    <message>
-        <source>Portrait</source>
-        <translation type="vanished">បញ្ឈរ</translation>
-    </message>
-    <message>
-        <source>Landscape</source>
-        <translation type="vanished">ផ្ដេក</translation>
-    </message>
-    <message>
-        <source>A0 (841 x 1189 mm)</source>
-        <translation type="vanished">A0 (841 x 1189 mm)</translation>
-    </message>
-    <message>
-        <source>A1 (594 x 841 mm)</source>
-        <translation type="vanished">A1 (594 x 841 mm)</translation>
-    </message>
-    <message>
-        <source>A2 (420 x 594 mm)</source>
-        <translation type="vanished">A2 (420 x 594 mm)</translation>
-    </message>
-    <message>
-        <source>A3 (297 x 420 mm)</source>
-        <translation type="vanished">A3 (297 x 420 mm)</translation>
-    </message>
-    <message>
-        <source>A4 (210 x 297 mm, 8.26 x 11.7 inches)</source>
-        <translation type="vanished">A4 (210 x 297 mm, 8.26 x 11.7 inches)</translation>
-    </message>
-    <message>
-        <source>A5 (148 x 210 mm)</source>
-        <translation type="vanished">A5 (148 x 210 mm)</translation>
-    </message>
-    <message>
-        <source>A6 (105 x 148 mm)</source>
-        <translation type="vanished">A6 (105 x 148 mm)</translation>
-    </message>
-    <message>
-        <source>A7 (74 x 105 mm)</source>
-        <translation type="vanished">A7 (74 x 105 mm)</translation>
-    </message>
-    <message>
-        <source>A8 (52 x 74 mm)</source>
-        <translation type="vanished">A8 (52 x 74 mm)</translation>
-    </message>
-    <message>
-        <source>A9 (37 x 52 mm)</source>
-        <translation type="vanished">A9 (37 x 52 mm)</translation>
-    </message>
-    <message>
-        <source>B0 (1000 x 1414 mm)</source>
-        <translation type="vanished">B0 (1000 x 1414 mm)</translation>
-    </message>
-    <message>
-        <source>B1 (707 x 1000 mm)</source>
-        <translation type="vanished">B1 (707 x 1000 mm)</translation>
-    </message>
-    <message>
-        <source>B2 (500 x 707 mm)</source>
-        <translation type="vanished">B2 (500 x 707 mm)</translation>
-    </message>
-    <message>
-        <source>B3 (353 x 500 mm)</source>
-        <translation type="vanished">B3 (353 x 500 mm)</translation>
-    </message>
-    <message>
-        <source>B4 (250 x 353 mm)</source>
-        <translation type="vanished">B4 (250 x 353 mm)</translation>
-    </message>
-    <message>
-        <source>B5 (176 x 250 mm, 6.93 x 9.84 inches)</source>
-        <translation type="vanished">B5 (176 x 250 mm, 6.93 x 9.84 inches)</translation>
-    </message>
-    <message>
-        <source>B6 (125 x 176 mm)</source>
-        <translation type="vanished">B6 (125 x 176 mm)</translation>
-    </message>
-    <message>
-        <source>B7 (88 x 125 mm)</source>
-        <translation type="vanished">B7 (88 x 125 mm)</translation>
-    </message>
-    <message>
-        <source>B8 (62 x 88 mm)</source>
-        <translation type="vanished">B8 (62 x 88 mm)</translation>
-    </message>
-    <message>
-        <source>B9 (44 x 62 mm)</source>
-        <translation type="vanished">B9 (44 x 62 mm)</translation>
-    </message>
-    <message>
-        <source>B10 (31 x 44 mm)</source>
-        <translation type="vanished">B10 (31 x 44 mm)</translation>
-    </message>
-    <message>
-        <source>C5E (163 x 229 mm)</source>
-        <translation type="vanished">C5E (163 x 229 mm)</translation>
-    </message>
-    <message>
-        <source>DLE (110 x 220 mm)</source>
-        <translation type="vanished">DLE (110 x 220 mm)</translation>
-    </message>
-    <message>
-        <source>Executive (7.5 x 10 inches, 191 x 254 mm)</source>
-        <translation type="vanished">Executive (7.5 x 10 inches, 191 x 254 mm)</translation>
-    </message>
-    <message>
-        <source>Folio (210 x 330 mm)</source>
-        <translation type="vanished">Folio (210 x 330 mm)</translation>
-    </message>
-    <message>
-        <source>Ledger (432 x 279 mm)</source>
-        <translation type="vanished">Ledger (432 x 279 mm)</translation>
-    </message>
-    <message>
-        <source>Legal (8.5 x 14 inches, 216 x 356 mm)</source>
-        <translation type="vanished">Legal (8.5 x 14 inches, 216 x 356 mm)</translation>
-    </message>
-    <message>
-        <source>Letter (8.5 x 11 inches, 216 x 279 mm)</source>
-        <translation type="vanished">Letter (8.5 x 11 inches, 216 x 279 mm)</translation>
-    </message>
-    <message>
-        <source>Tabloid (279 x 432 mm)</source>
-        <translation type="vanished">Tabloid (279 x 432 mm)</translation>
-    </message>
-    <message>
-        <source>US Common #10 Envelope (105 x 241 mm)</source>
-        <translation type="vanished">US Common #10 Envelope (105 x 241 mm)</translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation>យល់ព្រម</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">បោះបង់</translation>
-    </message>
-    <message>
-        <source>Page size:</source>
-        <translation type="vanished">ទំហំ​ទំព័រ&amp;nbsp;៖</translation>
-    </message>
-    <message>
-        <source>Orientation:</source>
-        <translation type="vanished">ទិស&amp;nbsp;៖</translation>
-    </message>
-    <message>
-        <source>Paper source:</source>
-        <translation type="vanished">ប្រភព​ក្រដាស&amp;nbsp;៖</translation>
-    </message>
-    <message>
         <source>Print</source>
-        <translation>បោះពុម្ព</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation type="vanished">ឯកសារ</translation>
-    </message>
-    <message>
-        <source>Printer</source>
-        <translation type="vanished">ម៉ាស៊ីន​បោះពុម្ព</translation>
-    </message>
-    <message>
-        <source>Print To File ...</source>
-        <translation>បោះពុម្ព​ទៅ​ឯកសារ...</translation>
-    </message>
-    <message>
-        <source>Print dialog</source>
-        <translation type="vanished">ប្រអប់​បោះពុម្ព</translation>
-    </message>
-    <message>
-        <source>Paper format</source>
-        <translation type="vanished">ទ្រង់ទ្រាយ​ក្រដាស</translation>
-    </message>
-    <message>
-        <source>Size:</source>
-        <translation type="vanished">ទំហំ&amp;nbsp;៖</translation>
-    </message>
-    <message>
-        <source>Properties</source>
-        <translation type="vanished">លក្ខណៈសម្បត្តិ</translation>
-    </message>
-    <message>
-        <source>Printer info:</source>
-        <translation type="vanished">ព័ត៌មាន​របស់​ម៉ាស៊ីន​បោះពុម្ព&amp;nbsp;៖</translation>
-    </message>
-    <message>
-        <source>Browse</source>
-        <translation type="vanished">រក​មើល</translation>
-    </message>
-    <message>
-        <source>Print to file</source>
-        <translation type="vanished">បោះពុម្ព​ទៅ​ឯកសារ</translation>
-    </message>
-    <message>
-        <source>Print range</source>
-        <translation type="vanished">ជួរ​បោះពុម្ព</translation>
-    </message>
-    <message>
-        <source>Print all</source>
-        <translation type="vanished">បោះពុម្ព​ទាំង​អស់</translation>
-    </message>
-    <message>
-        <source>Pages from</source>
-        <translation type="vanished">ទំព័រ​ពី</translation>
-    </message>
-    <message>
-        <source>to</source>
-        <translation type="vanished">ដល់</translation>
-    </message>
-    <message>
-        <source>Selection</source>
-        <translation type="vanished">ជម្រើស</translation>
-    </message>
-    <message>
-        <source>Copies</source>
-        <translation type="vanished">ច្បាប់ចម្លង</translation>
-    </message>
-    <message>
-        <source>Number of copies:</source>
-        <translation type="vanished">ចំនួន​ច្បាប់ចម្លង&amp;nbsp;៖</translation>
-    </message>
-    <message>
-        <source>Collate</source>
-        <translation type="vanished">តម្រៀប​តាម​លំដាប់</translation>
-    </message>
-    <message>
-        <source>Print last page first</source>
-        <translation type="vanished">បោះពុម្ព​ទំព័រ​ចុងក្រោយ​មុន</translation>
-    </message>
-    <message>
-        <source>Other</source>
-        <translation type="vanished">ផ្សេងៗ​ទៀត</translation>
-    </message>
-    <message>
-        <source>Print in color if available</source>
-        <translation type="vanished">បោះពុម្ព​តែ​ពណ៌ ប្រសិន​បើ​មាន</translation>
-    </message>
-    <message>
-        <source>Double side printing</source>
-        <translation type="vanished">បោះពុម្ព​ទាំងសង​ខាង</translation>
-    </message>
-    <message>
-        <source>File %1 is not writable.
-Please choose a different file name.</source>
-        <translation>ឯកសារ %1 មិន​អាច​សរសេរ​បាន&amp;nbsp;។
-សូម​ជ្រើស​ឈ្មោះ​ឯកសារ​ផ្សេង&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>%1 already exists.
-Do you want to overwrite it?</source>
-        <translation>មាន %1 រួច​ហើយ&amp;nbsp;។
-តើ​អ្នក​ចង់​សរសេរ​ជាន់លើ​វា​ដែរឬទេ&amp;nbsp;?</translation>
-    </message>
-    <message>
-        <source>File exists</source>
-        <translation type="vanished">មាន​ឯកសារ​រួច​ហើយ</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Do you want to overwrite it?&lt;/qt&gt;</source>
-        <translation type="vanished">&lt;qt&gt;តើ​អ្នក​ចង់​សរសេរ​ជាន់​លើ​វា​ដែរឬទេ&amp;nbsp;?&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>Print selection</source>
-        <translation type="vanished">បោះពុម្ព​ជម្រើស</translation>
-    </message>
-    <message>
-        <source>%1 is a directory.
-Please choose a different file name.</source>
-        <translation>%1 គឺ​ជា​ថត&amp;nbsp;។
-សូម​ជ្រើស​ឈ្មោះ​ឯកសារ​ផ្សេង&amp;nbsp;។</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Left to Right, Top to Bottom</source>
@@ -4735,6 +3782,22 @@ Please choose a different file name.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Invalid Pages Definition</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 does not follow the correct syntax. Please use &apos;,&apos; to separate ranges and pages, &apos;-&apos; to define ranges and make sure ranges do not intersect with each other.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplex Settings Conflicts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in duplex settings. Do you want to fix them?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Print to File (PDF)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4747,6 +3810,25 @@ Please choose a different file name.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Print To File ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 is a directory.
+Please choose a different file name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File %1 is not writable.
+Please choose a different file name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 already exists.
+Do you want to overwrite it?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Options &apos;Pages Per Sheet&apos; and &apos;Page Set&apos; cannot be used together.
 Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
@@ -4756,7 +3838,7 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Automatic</source>
+        <source>OK</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4808,11 +3890,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Portrait</source>
-        <translation type="unfinished">បញ្ឈរ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Landscape</source>
-        <translation type="unfinished">ផ្ដេក</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show single page</source>
@@ -4828,7 +3910,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished">បោះពុម្ព</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page setup</source>
@@ -4842,23 +3924,27 @@ Please turn one of those options off.</source>
 <context>
     <name>QPrintPropertiesDialog</name>
     <message>
-        <source>PPD Properties</source>
-        <translation type="vanished">លក្ខណៈសម្បត្តិ PPD</translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation type="vanished">រក្សាទុក</translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation type="vanished">យល់ព្រម</translation>
-    </message>
-    <message>
         <source>Printer Properties</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Job Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Page Setup Conflicts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in page setup options. Do you want to fix them?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Advanced Option Conflicts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in some advanced options. Do you want to fix them?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4872,6 +3958,14 @@ Please turn one of those options off.</source>
         <source>Page</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Advanced</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in some options. Please fix them.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QPrintSettingsOutput</name>
@@ -4881,23 +3975,31 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Copies</source>
-        <translation type="unfinished">ច្បាប់ចម្លង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Print range</source>
-        <translation type="unfinished">ជួរ​បោះពុម្ព</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Print all</source>
-        <translation type="unfinished">បោះពុម្ព​ទាំង​អស់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Pages from</source>
-        <translation type="unfinished">ទំព័រ​ពី</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>to</source>
-        <translation type="unfinished">ដល់</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pages</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specify pages or ranges separated by commas. Ranges are specified by two numbers separated by a hyphen. E.g: 3,5-7,9 prints pages 3, 5, 6, 7 and 9.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Current Page</source>
@@ -4905,7 +4007,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Selection</source>
-        <translation type="unfinished">ជម្រើស</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page Set:</source>
@@ -4921,7 +4023,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Collate</source>
-        <translation type="unfinished">តម្រៀប​តាម​លំដាប់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reverse</source>
@@ -4929,7 +4031,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Options</source>
-        <translation type="unfinished">ជម្រើស</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Color Mode</source>
@@ -4944,19 +4046,19 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Duplex Printing</source>
+        <source>Double Sided Printing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>None</source>
+        <source>Off</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Long side</source>
+        <source>Long side binding</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Short side</source>
+        <source>Short side binding</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4968,7 +4070,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Printer</source>
-        <translation type="unfinished">ម៉ាស៊ីន​បោះពុម្ព</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -5046,77 +4148,49 @@ Please turn one of those options off.</source>
     <name>QProgressDialog</name>
     <message>
         <source>Cancel</source>
-        <translation>បោះបង់</translation>
-    </message>
-</context>
-<context>
-    <name>QPushButton</name>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">បើក</translation>
-    </message>
-</context>
-<context>
-    <name>QQnxFileDialogHelper</name>
-    <message>
-        <source>All files (*.*)</source>
         <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>QQnxFilePicker</name>
-    <message>
-        <source>Pick a file</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>QRadioButton</name>
-    <message>
-        <source>Check</source>
-        <translation type="vanished">ពិនិត្យ​មើល</translation>
     </message>
 </context>
 <context>
     <name>QRegExp</name>
     <message>
         <source>no error occurred</source>
-        <translation>គ្មាន​កំហុស​បានកើត​ឡើង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>disabled feature used</source>
-        <translation>លក្ខណៈពិសេស​ដែលបាន​ប្រើ​ដែល​បាន​បិទ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>bad char class syntax</source>
-        <translation>វាក្យសម្ព័ន្ធថ្នាក់​តួអក្សរ​មិនល្អ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>bad lookahead syntax</source>
-        <translation>វាក្យសម្ព័ន្ធ lookahead មិន​ល្អ</translation>
-    </message>
-    <message>
-        <source>bad repetition syntax</source>
-        <translation>វាក្យសម្ព័ន្ធ​ធ្វើ​ឡើង​វិញ​មិនល្អ</translation>
-    </message>
-    <message>
-        <source>invalid octal value</source>
-        <translation>តម្លៃ​គោលដប់​មិន​ត្រឹមត្រូវ</translation>
-    </message>
-    <message>
-        <source>missing left delim</source>
-        <translation>បាត់ delim ដែល​នៅ​សល់​</translation>
-    </message>
-    <message>
-        <source>unexpected end</source>
-        <translation>បញ្ចប់​ដោយ​មិន​រំពឹង​ទុក</translation>
-    </message>
-    <message>
-        <source>met internal limit</source>
-        <translation>ដល់​​ដែន​កំណត់​ខាង​ក្នុង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>lookbehinds not supported, see QTBUG-2371</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad repetition syntax</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid octal value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing left delim</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unexpected end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>met internal limit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5159,7 +4233,7 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>invalid escape sequence in character class</source>
+        <source>escape sequence is invalid in character class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5167,7 +4241,7 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>nothing to repeat</source>
+        <source>quantifier does not follow a repeatable item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5183,7 +4257,11 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>missing )</source>
+        <source>POSIX collating elements are not supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing closing parenthesis</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5191,15 +4269,19 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>erroffset passed as NULL</source>
+        <source>pattern passed as NULL</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>unknown option bit(s) set</source>
+        <source>unrecognised compile-time option bit(s)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>missing ) after comment</source>
+        <source>missing ) after (?# comment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>parentheses are too deeply nested</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5207,11 +4289,11 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>failed to get memory</source>
+        <source>failed to allocate heap memory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>unmatched parentheses</source>
+        <source>unmatched closing parenthesis</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5219,7 +4301,7 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>unrecognized character after (?&lt;</source>
+        <source>missing closing parenthesis for condition</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5227,19 +4309,19 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>malformed number or name after (?(</source>
+        <source>a relative value of zero is not allowed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>conditional group contains more than two branches</source>
+        <source>conditional subpattern contains more than two branches</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>assertion expected after (?(</source>
+        <source>assertion expected after (?( or (?(?C)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>(?R or (?[+-]digits must be followed by )</source>
+        <source>digit expected after (?+ or (?-</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5247,39 +4329,43 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>POSIX collating elements are not supported</source>
+        <source>internal error in pcre2_study(): should not occur</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>this version of PCRE is not compiled with PCRE_UTF8 support</source>
+        <source>this version of PCRE2 does not have Unicode support</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>character value in \x{...} sequence is too large</source>
+        <source>parentheses are too deeply nested (stack check)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>invalid condition (?(0)</source>
+        <source>character code point value in \x{} or \o{} is too large</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>\C not allowed in lookbehind assertion</source>
+        <source>lookbehind is too complicated</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>PCRE does not support \L, \l, \N{name}, \U, or \u</source>
+        <source>\C is not allowed in a lookbehind assertion in UTF-16 mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>number after (?C is &gt; 255</source>
+        <source>PCRE2 does not support \F, \L, \l, \N{name}, \U, or \u</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>closing ) for (?C expected</source>
+        <source>number after (?C is greater than 255</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>recursive call could loop indefinitely</source>
+        <source>closing parenthesis for (?C expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid escape sequence in (*VERB) name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5287,19 +4373,19 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>syntax error in subpattern name (missing terminator)</source>
+        <source>syntax error in subpattern name (missing terminator?)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>two named subpatterns have the same name</source>
+        <source>two named subpatterns have the same name (PCRE2_DUPNAMES not set)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>invalid UTF-8 string</source>
+        <source>subpattern name must start with a non-digit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>support for \P, \p, and \X has not been compiled</source>
+        <source>this version of PCRE2 does not have support for \P, \p, or \X</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5311,7 +4397,7 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>subpattern name is too long (maximum 32 characters)</source>
+        <source>subpattern name is too long (maximum 32 code units)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5319,7 +4405,11 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>octal value is greater than \377 (not in UTF-8 mode)</source>
+        <source>invalid range in character class</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>octal value is greater than \377 in 8-bit non-UTF-8 mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5331,15 +4421,15 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>DEFINE group contains more than one branch</source>
+        <source>DEFINE subpattern contains more than one branch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>repeating a DEFINE group is not allowed</source>
+        <source>missing opening brace after \o</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>inconsistent NEWLINE options</source>
+        <source>internal error: unknown newline setting</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5347,19 +4437,19 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>a numbered reference must not be zero</source>
+        <source>(?R (recursive pattern call) must be followed by a closing parenthesis</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>an argument is not allowed for (*ACCEPT), (*FAIL), or (*COMMIT)</source>
+        <source>obsolete error (should not occur)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>(*VERB) not recognized</source>
+        <source>(*VERB) not recognized or malformed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>number is too big</source>
+        <source>subpattern number is too big</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5367,11 +4457,11 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>digit expected after (?+</source>
+        <source>internal error: parsed pattern overflow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>] is an invalid data character in JavaScript compatibility mode</source>
+        <source>non-octal character in \o{} (closing brace missing?)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5383,11 +4473,15 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>this version of PCRE is not compiled with PCRE_UCP support</source>
+        <source>non-hex character in \x{} (closing brace missing?)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>\c must be followed by an ASCII character</source>
+        <source>\c must be followed by a printable ASCII character</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\c must be followed by a letter or one of [\]^_?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5395,7 +4489,7 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>internal error: unknown opcode in find_fixedlength()</source>
+        <source>internal error: unknown meta code in check_lookbehinds()</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5403,7 +4497,7 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>too many forward references</source>
+        <source>callout string is too long</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5411,7 +4505,11 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>invalid UTF-16 string</source>
+        <source>using UTF is disabled by the application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>using UCP is disabled by the application</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5419,70 +4517,370 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>character value in \u.... sequence is too large</source>
+        <source>character code point value in \u.... sequence is too large</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>invalid UTF-32 string</source>
+        <source>digits missing in \x{} or \o{} or \N{U+}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>setting UTF is disabled by the application</source>
+        <source>syntax error or number too big in (?(VERSION condition</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>non-hex character in \x{} (closing brace missing?)</source>
+        <source>internal error: unknown opcode in auto_possessify()</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>non-octal character in \o{} (closing brace missing?)</source>
+        <source>missing terminating delimiter for callout with string argument</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>missing opening brace after \o</source>
+        <source>unrecognized string delimiter follows (?C</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>parentheses are too deeply nested</source>
+        <source>using \C is disabled by the application</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>invalid range in character class</source>
+        <source>(?| and/or (?J: or (?x: parentheses are too deeply nested</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>group name must start with a non-digit</source>
+        <source>using \C is disabled in this PCRE2 library</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>parentheses are too deeply nested (stack check)</source>
+        <source>regular expression is too complicated</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>digits missing in \x{} or \o{}</source>
+        <source>lookbehind assertion is too long</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern string is longer than the limit set by the application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: unknown code in parsed pattern</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: bad code value in parsed_skip()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCRE2_EXTRA_ALLOW_SURROGATE_ESCAPES is not allowed in UTF-16 mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid option bits with PCRE2_LITERAL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\N{U+dddd} is supported only in Unicode (UTF) mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid hyphen in option setting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(*alpha_assertion) not recognized</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>script runs require Unicode support, which this version of PCRE2 does not have</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>too many capturing groups (maximum 65535)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>atomic assertion expected after (?( or (?(?C)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no match</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>partial match</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 1 byte missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 2 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 3 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 4 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 5 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 2 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 3 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 4 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 5 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 6 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 5-byte character is not allowed (RFC 3629)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 6-byte character is not allowed (RFC 3629)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: code points greater than 0x10ffff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: code points 0xd800-0xdfff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 2-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 3-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 4-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 5-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 6-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: isolated byte with 0x80 bit set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: illegal byte (0xfe or 0xff)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-16 error: missing low surrogate at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-16 error: invalid low surrogate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-16 error: isolated low surrogate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-32 error: code points 0xd800-0xdfff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-32 error: code points greater than 0x10ffff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad data value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>patterns do not all use the same character tables</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>magic number missing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern compiled in wrong mode: 8/16/32-bit error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad offset value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad option value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad offset into UTF string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>callout error code</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid data in workspace for DFA restart</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>too much recursion for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>backreference condition or recursion test is not supported for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>function is not supported for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern contains an item that is not supported for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>workspace size exceeded in DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error - pattern overwritten?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad JIT option</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>JIT stack limit reached</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>match limit exceeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no more memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unknown substring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>non-unique substring name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NULL argument passed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>nested recursion at the same subject position</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>matching depth limit exceeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>requested value is not available</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>requested value is not set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>offset limit set without PCRE2_USE_OFFSET_LIMIT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad escape sequence in replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>expected closing curly bracket in replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad substitution in replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>match with end before start or start moved backwards is not supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>too many replacements (more than INT_MAX)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad serialized data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>heap limit exceeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid syntax</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error - duplicate substitution match</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCRE2_MATCH_INVALID_UTF is not supported for DFA matching</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSQLite2Driver</name>
     <message>
-        <source>Error to open database</source>
-        <translation type="vanished">កំហុស​ក្នុងការ​បើក​មូលដ្ឋាន​ទិន្នន័យ</translation>
+        <source>Error opening database</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
-        <translation>មិនអាច​ចាប់ផ្ដើម​ដំណើរ​ផ្លាស់ប្ដូរ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>មិនអាច​បញ្ជូន​ដំណើរ​ផ្លាស់ប្ដូរ</translation>
-    </message>
-    <message>
-        <source>Unable to rollback Transaction</source>
-        <translation type="vanished">មិនអាច​ជម្រះ​ដំណើរ​ផ្លាស់ប្ដូរ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Error opening database</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5494,34 +4892,30 @@ Please turn one of those options off.</source>
     <name>QSQLite2Result</name>
     <message>
         <source>Unable to fetch results</source>
-        <translation>មិនអាច​ទៅ​យក​លទ្ធផល​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>មិនអាច​ប្រតិបត្តិ​សេចក្ដី​ថ្លែងការណ៍​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSQLiteDriver</name>
     <message>
         <source>Error opening database</source>
-        <translation>កំហុសក្នុងកា​របើក​មូលដ្ឋាន​ទិន្នន័យ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error closing database</source>
-        <translation>កំហុស​ក្នុងការ​បិទ​មូលដ្ឋាន​ទិន្នន័យ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
-        <translation>មិនអាច​ចាប់ផ្ដើម​ដំណើរ​ផ្លាស់ប្ដូរ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>មិនអាច​បញ្ជូន​ដំណើរ​ផ្លាស់ប្ដូរ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to roll back transaction</source>
-        <translation type="vanished">មិនអាច​ជម្រះ​ដំណើរ​ផ្លាស់ប្ដូរ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
@@ -5532,30 +4926,30 @@ Please turn one of those options off.</source>
     <name>QSQLiteResult</name>
     <message>
         <source>Unable to fetch row</source>
-        <translation>មិនអាច​ទៅ​យក​ឥឡូវ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to execute statement</source>
-        <translation>មិនអាច​ប្រតិបត្តិ​សេចក្ដី​ថ្លែងការណ៍​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to reset statement</source>
-        <translation>មិនអាច​កំណត់​សេចក្ដី​ថ្លែងការណ៍​ឡើង​វិញ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Unable to bind parameters</source>
-        <translation>មិនអាច​ចង​ប៉ារ៉ាម៉ែត្រ​បានទេ</translation>
-    </message>
-    <message>
-        <source>Parameter count mismatch</source>
-        <translation>ចំនួន​ប៉ារ៉ាម៉ែត្រ​មិន​ផ្គូផ្គង​ទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No query</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Unable to execute statement</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unable to execute multiple statements at a time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to reset statement</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to bind parameters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Parameter count mismatch</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5570,6 +4964,10 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>QSaveFile cannot open &apos;%1&apos; without direct write fallback enabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Writing canceled by application</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5578,67 +4976,62 @@ Please turn one of those options off.</source>
     <name>QScrollBar</name>
     <message>
         <source>Scroll here</source>
-        <translation>រមូរ​នៅ​ទីនេះ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Left edge</source>
-        <translation>គែម​ឆ្វេង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Top</source>
-        <translation>កំពូល</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Right edge</source>
-        <translation>គែម​ស្ដាំ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bottom</source>
-        <translation>បាត</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page left</source>
-        <translation>ទំព័រ​ឆ្វេង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation>ទំព័រ​លើ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation>ទំព័រ​ស្ដាំ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation>ទំព័រ​ក្រោម</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll left</source>
-        <translation>រមូរ​​ឆ្វេង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll up</source>
-        <translation>រមូរ​ឡើង​លើ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll right</source>
-        <translation>រមូរ​ទៅ​ស្ដាំ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll down</source>
-        <translation>រមូរ​ចុះក្រោម</translation>
+        <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>QSctpSocket</name>
     <message>
-        <source>Line up</source>
-        <translation type="vanished">បន្ទាត់​ឡើង​លើ</translation>
-    </message>
-    <message>
-        <source>Position</source>
-        <translation type="vanished">ទីតាំង</translation>
-    </message>
-    <message>
-        <source>Line down</source>
-        <translation type="vanished">បន្ទាត់​ចុះក្រោម</translation>
+        <source>The remote host closed the connection</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5725,373 +5118,171 @@ Please turn one of those options off.</source>
     <message>
         <source>Space</source>
         <extracomment>This and all following &quot;incomprehensible&quot; strings in QShortcut context are key names. Please use the localized names appearing on actual keyboards or whatever is commonly used.</extracomment>
-        <translation>ចន្លោះ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Esc</source>
-        <translation>គេច (Esc)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Tab</source>
-        <translation>ថេប (Tab)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Backtab</source>
-        <translation>ថេប​ថយក្រោយ (Backtab)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Backspace</source>
-        <translation>លុបថយក្រោយ (Backspace)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Return</source>
-        <translation>Return</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enter</source>
-        <translation>បញ្ចូល (Enter)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Ins</source>
-        <translation>បញ្ចូល (Ins)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Del</source>
-        <translation>លុប (Del)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation>ផ្អាក</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Print</source>
-        <translation>បោះពុម្ព</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>SysReq</source>
-        <translation>SysReq</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Home</source>
-        <translation>ដើម (Home)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>End</source>
-        <translation>ចុង (End)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Left</source>
-        <translation>ឆ្វេង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Up</source>
-        <translation>ឡើង​លើ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Right</source>
-        <translation>ស្ដាំ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Down</source>
-        <translation>ក្រោម</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>PgUp</source>
-        <translation>ទំព័រ​លើ (PgUp)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>PgDown</source>
-        <translation>ទំព័រ​ក្រោម (PgDown)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>CapsLock</source>
-        <translation>ប្ដូរ​ជាប់ (CapsLock)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>NumLock</source>
-        <translation>លេខ (NumLock)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>ScrollLock</source>
-        <translation>ScrollLock</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Menu</source>
-        <translation>ម៉ឺនុយ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>ជំនួយ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Back</source>
-        <translation>ថយក្រោយ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation>ទៅមុខ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation>បញ្ឈប់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation>ធ្វើ​ឲ្យ​ស្រស់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Volume Down</source>
-        <translation>បន្ថយ​កម្រិត​សំឡេង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Volume Mute</source>
-        <translation>ស្ងាត់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Volume Up</source>
-        <translation>បង្កើន​កម្រិត​សំឡេង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bass Boost</source>
-        <translation>ការ​ដំឡើង​បាស</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bass Up</source>
-        <translation>បង្កើន​បាស</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bass Down</source>
-        <translation>បន្ថយ​បាស</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Treble Up</source>
-        <translation>បង្កើន​​​សំឡេង​បំពង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Treble Down</source>
-        <translation>បន្ថែម​សំឡេង​បំពង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Media Play</source>
-        <translation>ចាក់​មេឌៀ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Media Stop</source>
-        <translation>បញ្ឈប់​មេឌៀ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Media Previous</source>
-        <translation>មេឌៀ​មុន</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Media Next</source>
-        <translation>មេឌៀ​ក្រោយ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Media Record</source>
-        <translation>ថត​មេឌៀ</translation>
-    </message>
-    <message>
-        <source>Favorites</source>
-        <translation>សំណព្វ</translation>
-    </message>
-    <message>
-        <source>Search</source>
-        <translation>ស្វែងរក</translation>
-    </message>
-    <message>
-        <source>Standby</source>
-        <translation>រង់ចាំ</translation>
-    </message>
-    <message>
-        <source>Open URL</source>
-        <translation>បើក URL</translation>
-    </message>
-    <message>
-        <source>Launch Mail</source>
-        <translation>ចាប់ផ្ដើម​សំបុត្រ</translation>
-    </message>
-    <message>
-        <source>Launch Media</source>
-        <translation>ចាប់ផ្ដើម​មេឌៀ</translation>
-    </message>
-    <message>
-        <source>Launch (0)</source>
-        <translation>ចាប់ផ្ដើម (០)</translation>
-    </message>
-    <message>
-        <source>Launch (1)</source>
-        <translation>ចាប់ផ្ដើម (១)</translation>
-    </message>
-    <message>
-        <source>Launch (2)</source>
-        <translation>ចាប់ផ្ដើម (២)</translation>
-    </message>
-    <message>
-        <source>Launch (3)</source>
-        <translation>ចាប់ផ្ដើម (៣)</translation>
-    </message>
-    <message>
-        <source>Launch (4)</source>
-        <translation>ចាប់ផ្ដើម (៤)</translation>
-    </message>
-    <message>
-        <source>Launch (5)</source>
-        <translation>ចាប់ផ្ដើម (៥)</translation>
-    </message>
-    <message>
-        <source>Launch (6)</source>
-        <translation>ចាប់ផ្ដើម (៦)</translation>
-    </message>
-    <message>
-        <source>Launch (7)</source>
-        <translation>ចាប់ផ្ដើម (៧)</translation>
-    </message>
-    <message>
-        <source>Launch (8)</source>
-        <translation>ចាប់ផ្ដើម (៨)</translation>
-    </message>
-    <message>
-        <source>Launch (9)</source>
-        <translation>ចាប់ផ្ដើម (៩)</translation>
-    </message>
-    <message>
-        <source>Launch (A)</source>
-        <translation>ចាប់ផ្ដើម (A)</translation>
-    </message>
-    <message>
-        <source>Launch (B)</source>
-        <translation>ចាប់ផ្ដើម (B)</translation>
-    </message>
-    <message>
-        <source>Launch (C)</source>
-        <translation>ចាប់ផ្ដើម (C)</translation>
-    </message>
-    <message>
-        <source>Launch (D)</source>
-        <translation>ចាប់ផ្ដើម (D)</translation>
-    </message>
-    <message>
-        <source>Launch (E)</source>
-        <translation>ចាប់ផ្ដើម (E)</translation>
-    </message>
-    <message>
-        <source>Launch (F)</source>
-        <translation>ចាប់ផ្ដើម (F)</translation>
-    </message>
-    <message>
-        <source>Print Screen</source>
-        <translation>បោះពុម្ព​អេក្រង់</translation>
-    </message>
-    <message>
-        <source>Page Up</source>
-        <translation>ទំព័រ​លើ</translation>
-    </message>
-    <message>
-        <source>Page Down</source>
-        <translation>ទំព័រ​ក្រោម</translation>
-    </message>
-    <message>
-        <source>Caps Lock</source>
-        <translation>ប្ដូរជាប់</translation>
-    </message>
-    <message>
-        <source>Num Lock</source>
-        <translation>លេខ</translation>
-    </message>
-    <message>
-        <source>Number Lock</source>
-        <translation>លេខ</translation>
-    </message>
-    <message>
-        <source>Scroll Lock</source>
-        <translation>Scroll Lock</translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <translation>បញ្ជាន់ (Insert)</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation>លុប</translation>
-    </message>
-    <message>
-        <source>Escape</source>
-        <translation>គេច (Escape)</translation>
-    </message>
-    <message>
-        <source>System Request</source>
-        <translation>សំណើ​ប្រព័ន្ធ</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <translation>ជ្រើស</translation>
-    </message>
-    <message>
-        <source>Yes</source>
-        <translation>បាទ/ចាស</translation>
-    </message>
-    <message>
-        <source>No</source>
-        <translation>ទេ</translation>
-    </message>
-    <message>
-        <source>Context1</source>
-        <translation>បរិបទ ១</translation>
-    </message>
-    <message>
-        <source>Context2</source>
-        <translation>បរិបទ ២</translation>
-    </message>
-    <message>
-        <source>Context3</source>
-        <translation>បរិបទ ៣</translation>
-    </message>
-    <message>
-        <source>Context4</source>
-        <translation>បរិបទ ៤</translation>
-    </message>
-    <message>
-        <source>Call</source>
-        <extracomment>Button to start a call (note: a separate button is used to end the call)</extracomment>
-        <translation>ហៅ</translation>
-    </message>
-    <message>
-        <source>Hangup</source>
-        <extracomment>Button to end a call (note: a separate button is used to start the call)</extracomment>
-        <translation>ព្យួរ</translation>
-    </message>
-    <message>
-        <source>Flip</source>
-        <translation>ត្រឡប់</translation>
-    </message>
-    <message>
-        <source>Ctrl</source>
-        <translation>បញ្ជា​ (Ctrl)</translation>
-    </message>
-    <message>
-        <source>Shift</source>
-        <translation>ប្ដូរ (Shift)</translation>
-    </message>
-    <message>
-        <source>Alt</source>
-        <translation>ជំនួស (Alt)</translation>
-    </message>
-    <message>
-        <source>Meta</source>
-        <translation>មេតា</translation>
-    </message>
-    <message>
-        <source>+</source>
-        <translation>+</translation>
-    </message>
-    <message>
-        <source>F%1</source>
-        <translation>F%1</translation>
-    </message>
-    <message>
-        <source>Home Page</source>
-        <translation>គេហទំព័រ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Media Pause</source>
@@ -6101,6 +5292,106 @@ Please turn one of those options off.</source>
     <message>
         <source>Toggle Media Play/Pause</source>
         <extracomment>Media player button to toggle between playing and paused</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Home Page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Favorites</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standby</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open URL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch Mail</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch Media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (4)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (5)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (6)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (7)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (8)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (9)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (A)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (B)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (C)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (D)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (E)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (F)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (G)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch (H)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6208,8 +5499,12 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Calendar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Clear</source>
-        <translation type="unfinished">ជម្រះ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Clear Grab</source>
@@ -6217,7 +5512,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">បិទ</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adjust contrast</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copy</source>
@@ -6269,6 +5568,10 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Meeting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Memo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6325,7 +5628,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished">រក្សាទុក</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Send</source>
@@ -6349,6 +5652,10 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Terminal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>To-do list</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6517,7 +5824,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished">បើក</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Find</source>
@@ -6532,8 +5839,94 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Print Screen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Page Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Page Down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Caps Lock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Num Lock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Number Lock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scroll Lock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insert</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Escape</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System Request</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Context1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Context2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Context3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Context4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Call</source>
+        <extracomment>Button to start a call (note: a separate button is used to end the call)</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hangup</source>
+        <extracomment>Button to end a call (note: a separate button is used to start the call)</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Toggle Call/Hangup</source>
         <extracomment>Button that will hang up if we&apos;re in call, or make a call if we&apos;re not.</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Flip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6678,15 +6071,15 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">បោះបង់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Printer</source>
-        <translation type="unfinished">ម៉ាស៊ីន​បោះពុម្ព</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Execute</source>
-        <translation type="unfinished">ប្រតិបត្តិ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Play</source>
@@ -6698,7 +6091,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Exit</source>
-        <translation type="unfinished">ចេញ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Touchpad Toggle</source>
@@ -6713,39 +6106,37 @@ Please turn one of those options off.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Ctrl</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shift</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Meta</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Num</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>+</source>
+        <extracomment>Key separator in shortcut string</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F%1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>QSlider</name>
-    <message>
-        <source>Page left</source>
-        <translation type="vanished">ទំព័រ​ឆ្វេង</translation>
-    </message>
-    <message>
-        <source>Page up</source>
-        <translation type="vanished">ទំព័រ​លើ</translation>
-    </message>
-    <message>
-        <source>Position</source>
-        <translation type="vanished">ទីតាំង</translation>
-    </message>
-    <message>
-        <source>Page right</source>
-        <translation type="vanished">ទំព័រ​ស្ដាំ</translation>
-    </message>
-    <message>
-        <source>Page down</source>
-        <translation type="vanished">ទំព័រ​ក្រោម</translation>
-    </message>
-</context>
-<context>
     <name>QSocks5SocketEngine</name>
-    <message>
-        <source>Socks5 timeout error connecting to socks server</source>
-        <translation type="vanished">កំហុស​ក្នុងការ​អស់ពេល​រន្ធ ៥ ក្នុងការ​តភ្ជាប់​ទៅកាន់ម៉ាស៊ីន​បម្រើ​រន្ធ</translation>
-    </message>
     <message>
         <source>Connection to proxy refused</source>
         <translation type="unfinished"></translation>
@@ -6800,7 +6191,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Network operation timed out</source>
-        <translation type="unfinished">អស់ពេល​ប្រតិបត្តិការ​បណ្ដាញ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7158,113 +6549,53 @@ Role of an accessible object</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>terminal</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>desktop</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>notification</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>unknown</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished">មិនស្គាល់</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>QSpinBox</name>
+    <name>QSslDiffieHellmanParameter</name>
     <message>
-        <source>More</source>
-        <translation type="vanished">ច្រើនជាង</translation>
+        <source>No error</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Less</source>
-        <translation type="vanished">តិចជាង</translation>
-    </message>
-</context>
-<context>
-    <name>QSql</name>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">លុប</translation>
+        <source>Invalid input data</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Delete this record?</source>
-        <translation type="vanished">លុប​កំណត់​ត្រា​នេះ​ឬ&amp;nbsp;?</translation>
-    </message>
-    <message>
-        <source>Yes</source>
-        <translation type="vanished">បាទ/ចាស</translation>
-    </message>
-    <message>
-        <source>No</source>
-        <translation type="vanished">ទេ</translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <translation type="vanished">បញ្ចូល</translation>
-    </message>
-    <message>
-        <source>Update</source>
-        <translation type="vanished">ធ្វើ​ឲ្យ​ទាន់សម័យ</translation>
-    </message>
-    <message>
-        <source>Save edits?</source>
-        <translation type="vanished">រក្សាទុក​ការ​កែសម្រួល&amp;nbsp;?</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">បោះបង់</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation type="vanished">អះអាង</translation>
-    </message>
-    <message>
-        <source>Cancel your edits?</source>
-        <translation type="vanished">បោះបង់​ការ​កែសម្រួល​របស់​អ្នកឬ&amp;nbsp;?</translation>
+        <source>The given Diffie-Hellman parameters are deemed unsafe</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSslSocket</name>
     <message>
-        <source>Unable to write data: %1</source>
-        <translation>មិនអាច​សរសេរ​ទិន្នន័យ&amp;nbsp;៖ %1</translation>
-    </message>
-    <message>
-        <source>Error while reading: %1</source>
-        <translation>កំហុស​ខណៈពេល​អាន&amp;nbsp;៖ %1</translation>
-    </message>
-    <message>
-        <source>Error during SSL handshake: %1</source>
-        <translation>កំហុស​កំឡុង​ពេល​ភ្ជាប់ SSL&amp;nbsp;៖ %1</translation>
-    </message>
-    <message>
-        <source>Error creating SSL context (%1)</source>
-        <translation>កំហុស​ក្នុងកា​របង្កើត​បរិបទ SSL (%1)</translation>
-    </message>
-    <message>
-        <source>Invalid or empty cipher list (%1)</source>
-        <translation>បញ្ជី​អក្សរ​សម្ងាត់​ទទេ ឬ​មិន​ត្រឹមត្រូវ (%1)</translation>
-    </message>
-    <message>
-        <source>Error creating SSL session, %1</source>
-        <translation>កំហុស​ក្នុងកា​របង្កើត​សម័យ SSL %1</translation>
-    </message>
-    <message>
-        <source>Error creating SSL session: %1</source>
-        <translation>កំហុស​ក្នុងការ​បង្កើត​សម័យ SSL&amp;nbsp;៖ %1</translation>
-    </message>
-    <message>
-        <source>Cannot provide a certificate with no key, %1</source>
-        <translation>មិនអាច​ផ្ដល់​វិញ្ញាបនបត្រ​ដែល​គ្មាន​សោ %1 បានទេ</translation>
-    </message>
-    <message>
-        <source>Error loading local certificate, %1</source>
-        <translation>កំហុស​ក្នុងការ​ផ្ទុក​វិញ្ញាបនបត្រ %1</translation>
-    </message>
-    <message>
-        <source>Error loading private key, %1</source>
-        <translation>កំហុស​ក្នុងការ​ផ្ទុក​សោ​ឯកជន %1</translation>
-    </message>
-    <message>
-        <source>Private key do not certificate public key, %1</source>
-        <translation type="vanished">សោ​ឯកជន​មិន​មែនជា​សោ​សាធារណៈ​របស់​វិញ្ញាបនបត្រ %1</translation>
+        <source>Error when setting the OpenSSL configuration (%1)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error when setting the elliptic curves (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error creating SSL context (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7272,11 +6603,63 @@ Role of an accessible object</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Error while setting the minimal protocol version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while setting the maximum protocol version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid or empty cipher list (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot provide a certificate with no key, %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error loading local certificate, %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error loading private key, %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Private key does not certify public key, %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>OpenSSL version too old, need at least v1.0.2</source>
+        <source>Diffie-Hellman parameters are not valid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OpenSSL version with disabled elliptic curves</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expecting QByteArray for %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An error occurred attempting to set %1 to %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wrong value for %1 (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unrecognized command %1 = %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SSL_CONF_finish() failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SSL_CONF_CTX_new() failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7372,7 +6755,59 @@ Role of an accessible object</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>No OCSP status response found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The OCSP status request had invalid syntax</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP response contains an unexpected number of SingleResponse structures</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder reached an inconsistent internal state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder was unable to return a status for the requested certificate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The server requires the client to sign the OCSP request in order to construct a response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The client is not authorized to request OCSP status from this server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder&apos;s identity cannot be verified</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The identity of a certificate in an OCSP response cannot be established</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate status response has expired</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate&apos;s status is unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unknown error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TLS initialization failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attempted to use an unsupported protocol.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7380,11 +6815,183 @@ Role of an accessible object</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Error creating SSL session, %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error creating SSL session: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server-side QSslSocket does not support OCSP stapling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to enable OCSP stapling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Client-side sockets do not send OCSP responses</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unable to init SSL Context: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Unable to write data: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unable to decrypt data: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while reading: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error during SSL handshake: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to decode OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to extract basic OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No certificate verification store, cannot verify OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to decode a SingleResponse from OCSP status response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to extract &apos;this update time&apos; from the SingleResponse</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insufficient memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Internal error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An internal handle was invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An internal token was invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Access denied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No authority could be contacted for authorization</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No credentials</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The target is unknown or unreachable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An unsupported function was requested</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hostname provided does not match the one received from the peer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No common protocol exists between the client and the server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected or badly-formatted message received</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The data could not be encrypted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No cipher suites in common</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The credentials were not recognized / Invalid argument</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The message was tampered with, damaged or out of sequence.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A message was received out of sequence.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown error occurred: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid protocol chosen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate provided cannot be used for a client.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate provided cannot be used for a server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server did not accept any certificate we could present.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Algorithm mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Handshake failed: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to query the TLS context: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Did not get the required attributes for the connection.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unwanted protocol was negotiated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Renegotiation was unsuccessful: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Schannel failed to encrypt data: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot provide a certificate with no key</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7478,6 +7085,10 @@ Role of an accessible object</extracomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Child mode of state machine &apos;%1&apos; is not &apos;ExclusiveStates&apos;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unknown error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7509,98 +7120,44 @@ Role of an accessible object</extracomment>
     <name>QTDSDriver</name>
     <message>
         <source>Unable to open connection</source>
-        <translation>មិនអាច​បើក​ការ​តភ្ជាប់​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to use database</source>
-        <translation>មិនអាច​ប្រើ​មូលដ្ឋាន​ទិន្នន័យ​បានទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QTabBar</name>
     <message>
         <source>Scroll Left</source>
-        <translation>រមូរ​ទៅ​ឆ្វេង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll Right</source>
-        <translation>រមូរ​ទៅ​ស្ដាំ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QTcpServer</name>
-    <message>
-        <source>Socket operation unsupported</source>
-        <translation type="vanished">មិនគាំទ្រ​ប្រតិបត្តិការ​រន្ធ​ទេ</translation>
-    </message>
     <message>
         <source>Operation on socket is not supported</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>QTextControl</name>
-    <message>
-        <source>&amp;Undo</source>
-        <translation type="vanished">មិនធ្វើវិញ</translation>
-    </message>
-    <message>
-        <source>&amp;Redo</source>
-        <translation type="vanished">ធ្វើវិញ</translation>
-    </message>
-    <message>
-        <source>Cu&amp;t</source>
-        <translation type="vanished">កាត់</translation>
-    </message>
-    <message>
-        <source>&amp;Copy</source>
-        <translation type="vanished">ចម្លង</translation>
-    </message>
-    <message>
-        <source>Copy &amp;Link Location</source>
-        <translation type="vanished">ចម្លង​ទីតាំង​តំណ</translation>
-    </message>
-    <message>
-        <source>&amp;Paste</source>
-        <translation type="vanished">បិទភ្ជាប់</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">លុប</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation type="vanished">ជ្រើស​ទាំង​អស់</translation>
-    </message>
-</context>
-<context>
-    <name>QToolButton</name>
-    <message>
-        <source>Press</source>
-        <translation type="vanished">ចុច</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">បើក</translation>
-    </message>
-</context>
-<context>
     <name>QUdpSocket</name>
     <message>
-        <source>This platform does not support IPv6</source>
-        <translation type="vanished">វេទិកា​នេះ​មិនគាំទ្រ IPv6 នោះទេ</translation>
+        <source>Unable to send a datagram</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No datagram available for reading</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QUndoGroup</name>
-    <message>
-        <source>Undo</source>
-        <translation type="vanished">មិនធ្វើ​វិញ</translation>
-    </message>
-    <message>
-        <source>Redo</source>
-        <translation type="vanished">ធ្វើវិញ</translation>
-    </message>
     <message>
         <source>Undo %1</source>
         <translation type="unfinished"></translation>
@@ -7624,19 +7181,11 @@ Role of an accessible object</extracomment>
     <name>QUndoModel</name>
     <message>
         <source>&lt;empty&gt;</source>
-        <translation>&lt;ទទេ&gt;</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QUndoStack</name>
-    <message>
-        <source>Undo</source>
-        <translation type="vanished">មិនធ្វើវិញ</translation>
-    </message>
-    <message>
-        <source>Redo</source>
-        <translation type="vanished">ធ្វើ​វិញ</translation>
-    </message>
     <message>
         <source>Undo %1</source>
         <translation type="unfinished"></translation>
@@ -7660,47 +7209,43 @@ Role of an accessible object</extracomment>
     <name>QUnicodeControlCharacterMenu</name>
     <message>
         <source>LRM Left-to-right mark</source>
-        <translation>សញ្ញា​ពី​ឆ្វេង​ទៅ​ស្ដាំ LRM</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>RLM Right-to-left mark</source>
-        <translation>សញ្ញា​សម្គាល់​ពី​ស្ដាំ​ទៅ​ឆ្វេង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>ZWJ Zero width joiner</source>
-        <translation>ZWJ (Zero width joiner)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>ZWNJ Zero width non-joiner</source>
-        <translation>ZWNJ (Zero width non-joiner)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>ZWSP Zero width space</source>
-        <translation>ZWSP (Zero width space)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>LRE Start of left-to-right embedding</source>
-        <translation>LRE ចាប់ផ្ដើម​បង្កើត​ពី​ឆ្វេង​ទៅ​ស្ដាំ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>RLE Start of right-to-left embedding</source>
-        <translation>RLE ចាប់ផ្ដើម​បង្កប់​ពី​ស្ដាំ​ទៅ​ឆ្វេង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>LRO Start of left-to-right override</source>
-        <translation>LRO ចាប់ផ្ដើម​បដិសេធ​ពី​ឆ្វេង​ទៅ​ស្ដាំ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>RLO Start of right-to-left override</source>
-        <translation>RLO ចាប់ផ្ដើម​បដិសេធ​ពី​ស្ដាំ​ទៅ​ឆ្វេង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>PDF Pop directional formatting</source>
-        <translation>PDF (Pop directional formatting)</translation>
-    </message>
-    <message>
-        <source>Insert Unicode control character</source>
-        <translation>បញ្ចូល​តួអក្សរ​បញ្ជា​យូនីកូដ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>LRI Left-to-right isolate</source>
@@ -7718,19 +7263,23 @@ Role of an accessible object</extracomment>
         <source>PDI Pop directional isolate</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Insert Unicode control character</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QWhatsThisAction</name>
     <message>
         <source>What&apos;s This?</source>
-        <translation>តើ​នេះជា​អ្វី&amp;nbsp;?</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QWidget</name>
     <message>
         <source>*</source>
-        <translation>*</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7745,23 +7294,23 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation type="unfinished">កាត់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation type="unfinished">ចម្លង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copy &amp;Link Location</source>
-        <translation type="unfinished">ចម្លង​ទីតាំង​តំណ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation type="unfinished">បិទភ្ជាប់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished">លុប</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Select All</source>
@@ -7773,7 +7322,7 @@ Role of an accessible object</extracomment>
     <message>
         <source>Qt cannot load the direct2d platform plugin because the Direct2D version on this system is too old. The minimum system requirement for this platform plugin is Windows 7 SP1 with Platform Update.
 
-The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on this system is %5.%6.%7.%8.</source>
+The minimum Direct2D version required is %1. The Direct2D version on this system is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7785,43 +7334,15 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <name>QWizard</name>
     <message>
         <source>Go Back</source>
-        <translation>ទៅ​ក្រោយ</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation>បន្ត</translation>
-    </message>
-    <message>
-        <source>Commit</source>
-        <translation>បញ្ជូន</translation>
-    </message>
-    <message>
-        <source>Done</source>
-        <translation>ធ្វើ​រួច</translation>
-    </message>
-    <message>
-        <source>Quit</source>
-        <translation type="vanished">ចេញ</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation>ជំនួយ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation>&lt;ថយក្រោយ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Finish</source>
-        <translation>បញ្ចប់</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>បោះបង់</translation>
-    </message>
-    <message>
-        <source>&amp;Help</source>
-        <translation>ជំនួយ</translation>
+        <source>Continue</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Next</source>
@@ -7829,307 +7350,292 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">បន្ទាប់ &gt;</translation>
-    </message>
-</context>
-<context>
-    <name>QWorkspace</name>
-    <message>
-        <source>&amp;Restore</source>
-        <translation type="vanished">ស្ដារឡើងវិញ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Move</source>
-        <translation type="vanished">ផ្លាស់ទី</translation>
+        <source>Commit</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Size</source>
-        <translation type="vanished">ទំហំ</translation>
+        <source>Done</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Mi&amp;nimize</source>
-        <translation type="vanished">បង្រួម​អប្បបរមា</translation>
+        <source>&amp;Finish</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Ma&amp;ximize</source>
-        <translation type="vanished">ពង្រីក​អតិបរមា</translation>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Close</source>
-        <translation type="vanished">បិទ</translation>
+        <source>Help</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Stay on &amp;Top</source>
-        <translation type="vanished">នៅ​កំពូល</translation>
-    </message>
-    <message>
-        <source>Sh&amp;ade</source>
-        <translation type="vanished">ស្រមោល</translation>
-    </message>
-    <message>
-        <source>%1 - [%2]</source>
-        <translation type="vanished">%1 - [%2]</translation>
-    </message>
-    <message>
-        <source>Minimize</source>
-        <translation type="vanished">បង្រួម​អប្បបរមា</translation>
-    </message>
-    <message>
-        <source>Restore Down</source>
-        <translation type="vanished">ស្ដារ​ចុះក្រោម​ឡើង​វិញ</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">បិទ</translation>
-    </message>
-    <message>
-        <source>&amp;Unshade</source>
-        <translation type="vanished">មិនដាក់​ស្រមោល</translation>
+        <source>&amp;Help</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QXml</name>
     <message>
         <source>no error occurred</source>
-        <translation>គ្មានកំហុស​បានកើត​ឡើង​ទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>error triggered by consumer</source>
-        <translation>កំហុស​បានកេះ​ដោយ​​អ្នក​ប្រើប្រាស់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>unexpected end of file</source>
-        <translation>ចុងឯកសារ​ដែល​មិនបាន​រំពឹង​ទុក</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>more than one document type definition</source>
-        <translation>មាន​ការ​កំណត់​ប្រភេទ​ឯកសារ​​ច្រើន​ជាង​មួយ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>error occurred while parsing element</source>
-        <translation>កំហុស​បានកើត​ឡើង​ខណៈពេល​ញែកធាតុ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>tag mismatch</source>
-        <translation>មិនផ្គូផ្គង​ស្លាក</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>error occurred while parsing content</source>
-        <translation>កំហុស​បាន​កើតឡើង​ខណៈពេល​ញែក​មាតិកា</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>unexpected character</source>
-        <translation>តួអក្សរ​ដែល​មិនបាន​រំពឹង​ទុក</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>invalid name for processing instruction</source>
-        <translation>ឈ្មោះ​មិន​ត្រឹមត្រូវ​សម្រាប់​ដំណើរការ​សេចក្ដីណែនាំ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>version expected while reading the XML declaration</source>
-        <translation>កំណែ​បាន​រំពឹង​ទុក​ខណៈពេល​អាន​ការ​ប្រកាស XML</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>wrong value for standalone declaration</source>
-        <translation>តម្លៃ​មិន​ត្រឹមត្រូវ​សម្រាប់​កា​រប្រកាស​តែ​ម្នាក់ឯង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>encoding declaration or standalone declaration expected while reading the XML declaration</source>
-        <translation>កា​រប្រកាស​អ៊ីនកូដ ឬ​ការប្រកាស​តែ​ឯង​បាន​រំពឹង​ទុក​ខណៈពេល​អាន​ការ​ប្រកាស XML</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>standalone declaration expected while reading the XML declaration</source>
-        <translation>ការ​ប្រកាស​តែ​ឯង​បាន​រំពឹង​ទុក​ខណៈពេល​អាន​ការ​ប្រកាស​ XML</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>error occurred while parsing document type definition</source>
-        <translation>កំហុស​បានកើត​ឡើង​ខណៈពេល​ញែក​ការ​កំណត់​ប្រភេទ​ឯកសារ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>letter is expected</source>
-        <translation>អក្ស​រត្រូវ​បាន​រំពឹង​ទុក</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>error occurred while parsing comment</source>
-        <translation>កំហុស​បានកើត​ឡើង​ខណៈពេល​ញែក​មតិយោបល់</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>error occurred while parsing reference</source>
-        <translation>កំហុស​បានកើត​ឡើង​ខណៈពេល​ញែក​សេចក្ដី​យោង</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>internal general entity reference not allowed in DTD</source>
-        <translation>មិនអនុញ្ញាត​ធាតុ​​ទូទៅ​ខាងក្នុង​នៅ​ក្នុង DTD ទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in attribute value</source>
-        <translation>សេចក្ដីយោង​ធាតុទូទៅ​​បានញែក​ខាង​ក្រៅ មិន​អនុញ្ញាត​នៅ​ក្នុង​តម្លៃ​គុណលក្ខណៈ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in DTD</source>
-        <translation>សេចក្ដីយោង​ធាតុ​ទូទៅ​បាន​ញែក​ខាង​ក្រៅ​មិន​អនុញ្ញាត​នៅ​ក្នុង DTD នោះ​ទេ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>unparsed entity reference in wrong context</source>
-        <translation>សេចក្ដី​យោង​ធាតុ​ដែល​មិន​បានញែក​នៅ​ក្នុង​បរិបទ​មិន​ត្រឹមត្រូវ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>recursive entities</source>
-        <translation>ការ​ហៅ​ធាតុ​ឡើង​វិញ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>error in the text declaration of an external entity</source>
-        <translation>កំហុស​នៅ​ក្នុងកា​រប្រកាស​អត្ថបទ​របស់​ធាតុ​ខាងក្រៅ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QXmlStream</name>
     <message>
         <source>Extra content at end of document.</source>
-        <translation>បរិបទ​បន្ថែម​នៅ​ចុង​ឯកសារ&amp;nbsp;.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid entity value.</source>
-        <translation>តម្លៃ​ធាតុ​មិន​ត្រឹមត្រូវ&amp;nbsp;។</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid XML character.</source>
-        <translation>តួអក្សរ XML មិន​ត្រឹមត្រូវ&amp;nbsp;។</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Sequence &apos;]]&gt;&apos; not allowed in content.</source>
-        <translation>លំដាប់ &apos;]]&gt;&apos; មិន​បាន​អនុញ្ញាត​នៅ​ក្នុង​មាតិកា​ទេ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Namespace prefix &apos;%1&apos; not declared</source>
-        <translation>បុព្វបទ​ចន្លោះ​ឈ្មោះ &apos;%1&apos; មិន​បាន​ប្រកាស​ទេ</translation>
-    </message>
-    <message>
-        <source>Attribute redefined.</source>
-        <translation type="vanished">បានកំណត់​គុណលក្ខណៈ​ឡើង​វិញ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Unexpected character &apos;%1&apos; in public id literal.</source>
-        <translation>តួអក្សរ​ដែល​មិនបាន​រំពឹង​ទុក &apos;%1&apos; នៅ​ក្នុង​លេខសម្គាល់សាធារណៈ​​ត្រង់ៗ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Invalid XML version string.</source>
-        <translation>ខ្សែអក្សរ​កំណែ XML មិន​ត្រឹមត្រូវ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Unsupported XML version.</source>
-        <translation>មិនគាំទ្រ​កំណែ XML នោះ​ទេ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>%1 is an invalid encoding name.</source>
-        <translation>%1 គឺជា​ឈ្មោះ​អ៊ីន​កូដ​មិន​ត្រឹមត្រូវ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Encoding %1 is unsupported</source>
-        <translation>ការ​អ៊ីនកូដ %1 មិន​ត្រូវ​បានគាំទ្រទេ</translation>
-    </message>
-    <message>
-        <source>Invalid XML encoding name.</source>
-        <translation type="vanished">ឈ្មោះ​អ៊ីនកូដ​ XML មិន​ត្រឹមត្រូវ​ទេ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Standalone accepts only yes or no.</source>
-        <translation>ព្រម​ទទួល​យក​តែ​ឯង​ប្រសិនបើ​ បាទ/ចាស ឬ​ទេ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Invalid attribute in XML declaration.</source>
-        <translation>គុណលក្ខណៈ​មិន​ត្រឹមត្រូវ​នៅ​ក្នុងកា​រប្រកាស XML​&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Premature end of document.</source>
-        <translation>មុន​ដល់​ចុង​ឯកសារ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Invalid document.</source>
-        <translation>ឯកសារ​មិន​ត្រឹមត្រូវ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Expected </source>
-        <translation>បាន​រំពឹង​ទុក </translation>
-    </message>
-    <message>
-        <source>, but got &apos;</source>
-        <translation> ប៉ុន្តែ​បានទទួល &apos;</translation>
-    </message>
-    <message>
-        <source>Unexpected &apos;</source>
-        <translation>មិន​រំពឹង​ទុក &apos;</translation>
-    </message>
-    <message>
-        <source>Expected character data.</source>
-        <translation>ទិន្នន័យ​តួអក្សរ​មិន​រំពឹង​ទុក&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Recursive entity detected.</source>
-        <translation>បានលុប​ធាតុ​ម្ដង​ទៀង&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Start tag expected.</source>
-        <translation>ចាប់ផ្ដើម​ស្លាក​ដែល​រំពឹង​ទុក&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>XML declaration not at start of document.</source>
-        <translation>កា​រប្រកាស XML មិននៅ​ដើម​​ឯកសា​រទេ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>NDATA in parameter entity declaration.</source>
-        <translation>កា​រប្រកាស​ធាតុ​ប៉ារ៉ាម៉ែត្រ​​នៅ​ក្នុង NDATA&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>%1 is an invalid processing instruction name.</source>
-        <translation>%1 មិន​មែនជា​ឈ្មោះ​សេចក្ដីណែនាំ​ដំណើរការ​ត្រឹមត្រូវ​ទេ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Invalid processing instruction name.</source>
-        <translation>ឈ្មោះ​សេចក្ដី​ណែនាំ​ដំណើរការ​មិន​ត្រឹមត្រូវ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Illegal namespace declaration.</source>
-        <translation>ការ​ប្រកាស​ចន្លោះឈ្មោះ​មិន​ត្រឹមត្រូវ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Invalid XML name.</source>
-        <translation>ឈ្មោះ XML មិន​ត្រឹមត្រូវ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Opening and ending tag mismatch.</source>
-        <translation>ការ​បើក និង​បិទ​ស្លាក​មិន​ផ្គូផ្គង​គ្នាទេ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Reference to unparsed entity &apos;%1&apos;.</source>
-        <translation>សេចក្ដី​យោង​ទៅ​កាន់​ធាតុ​ដែល​មិនបានញែក &apos;%1&apos;&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Entity &apos;%1&apos; not declared.</source>
-        <translation>ធាតុ &apos;%1&apos; មិនបានប្រកាស​ទេ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Reference to external entity &apos;%1&apos; in attribute value.</source>
-        <translation>សេចក្ដី​យោង​ទៅ​កាន់​ធាតុ​ខាង​ក្រៅ &apos;%1&apos; នៅ​ក្នុង​តម្លៃ​គុណលក្ខណៈ&amp;nbsp;។</translation>
-    </message>
-    <message>
-        <source>Invalid character reference.</source>
-        <translation>សេចក្ដី​យោង​តួអក្សរ​មិន​ត្រឹមត្រូវ​ទេ&amp;nbsp;។</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Encountered incorrectly encoded content.</source>
-        <translation>បាន​ជួប​មាតិកា​ដែល​បានអ៊ីនកូដ​មិន​ត្រឹមត្រូវ&amp;nbsp;។</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The standalone pseudo attribute must appear after the encoding.</source>
-        <translation>គុណលក្ខណៈ pseudo តែ​ឯង​ត្រូវ​តែ​បង្ហាញ​បន្ទាប់​ពី​កា​រអ៊ីនកូដ&amp;nbsp;។</translation>
+        <source>Namespace prefix &apos;%1&apos; not declared</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 is an invalid PUBLIC identifier.</source>
-        <translation>%1 គឺ​ជា​ឧបករណ៍​កំណត់​អត្តសញ្ញាណ PUBLIC មិន​ត្រឹមត្រូវ​ទេ&amp;nbsp;។</translation>
+        <source>Illegal namespace declaration.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Attribute &apos;%1&apos; redefined.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected character &apos;%1&apos; in public id literal.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid XML version string.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unsupported XML version.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The standalone pseudo attribute must appear after the encoding.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 is an invalid encoding name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encoding %1 is unsupported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standalone accepts only yes or no.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid attribute in XML declaration.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Premature end of document.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid document.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&apos;%1&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&apos;&lt;first option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 or &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;first option&gt;, &apos;&lt;second option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1, &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;options so far&gt;, &apos;&lt;next option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1, or &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;options so far&gt;, or &apos;&lt;final option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expected %1, but got &apos;%2&apos;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected &apos;%1&apos;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expected character data.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Self-referencing entity detected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Entity expands to more characters than the entity expansion limit.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start tag expected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NDATA in parameter entity declaration.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>XML declaration not at start of document.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 is an invalid processing instruction name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid processing instruction name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 is an invalid PUBLIC identifier.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid XML name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opening and ending tag mismatch.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Entity &apos;%1&apos; not declared.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reference to unparsed entity &apos;%1&apos;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reference to external entity &apos;%1&apos; in attribute value.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid character reference.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

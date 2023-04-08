@@ -40,526 +40,17 @@
     </message>
 </context>
 <context>
-    <name>Q3Accel</name>
+    <name>Print Device Input Slot</name>
     <message>
-        <source>%1, %2 not defined</source>
-        <translation type="vanished">%1, %2 は定義されていません</translation>
-    </message>
-    <message>
-        <source>Ambiguous %1 not handled</source>
-        <translation type="vanished">曖昧な %1 は扱えません</translation>
+        <source>Automatic</source>
+        <translation type="unfinished">自動</translation>
     </message>
 </context>
 <context>
-    <name>Q3DataTable</name>
+    <name>Print Device Output Bin</name>
     <message>
-        <source>True</source>
-        <translation type="vanished">True</translation>
-    </message>
-    <message>
-        <source>False</source>
-        <translation type="vanished">False</translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <translation type="vanished">挿入</translation>
-    </message>
-    <message>
-        <source>Update</source>
-        <translation type="vanished">アップデート</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">削除</translation>
-    </message>
-</context>
-<context>
-    <name>Q3FileDialog</name>
-    <message>
-        <source>Copy or Move a File</source>
-        <translation type="vanished">ファイルをコピーまたは移動</translation>
-    </message>
-    <message>
-        <source>Read: %1</source>
-        <translation type="vanished">読み込み: %1</translation>
-    </message>
-    <message>
-        <source>Write: %1</source>
-        <translation type="vanished">書き込み: %1</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">キャンセル</translation>
-    </message>
-    <message>
-        <source>All Files (*)</source>
-        <translation type="vanished">すべてのファイル(*)</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">名前</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation type="vanished">サイズ</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <translation type="vanished">タイプ</translation>
-    </message>
-    <message>
-        <source>Date</source>
-        <translation type="vanished">日付</translation>
-    </message>
-    <message>
-        <source>Attributes</source>
-        <translation type="vanished">属性</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="vanished">OK(&amp;O)</translation>
-    </message>
-    <message>
-        <source>Look &amp;in:</source>
-        <translation type="vanished">検索する場所(&amp;I):</translation>
-    </message>
-    <message>
-        <source>File &amp;name:</source>
-        <translation type="vanished">ファイル名(&amp;N):</translation>
-    </message>
-    <message>
-        <source>File &amp;type:</source>
-        <translation type="vanished">ファイルタイプ(&amp;T):</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation type="vanished">戻る</translation>
-    </message>
-    <message>
-        <source>One directory up</source>
-        <translation type="vanished">1つ上のディレクトリへ移動</translation>
-    </message>
-    <message>
-        <source>Create New Folder</source>
-        <translation type="vanished">新しいフォルダの作成</translation>
-    </message>
-    <message>
-        <source>List View</source>
-        <translation type="vanished">一覧表示</translation>
-    </message>
-    <message>
-        <source>Detail View</source>
-        <translation type="vanished">詳細表示</translation>
-    </message>
-    <message>
-        <source>Preview File Info</source>
-        <translation type="vanished">ファイル情報のプレビュー</translation>
-    </message>
-    <message>
-        <source>Preview File Contents</source>
-        <translation type="vanished">ファイルの内容のプレビュー</translation>
-    </message>
-    <message>
-        <source>Read-write</source>
-        <translation type="vanished">読み込み/書き込み</translation>
-    </message>
-    <message>
-        <source>Read-only</source>
-        <translation type="vanished">読み込み専用</translation>
-    </message>
-    <message>
-        <source>Write-only</source>
-        <translation type="vanished">書き込み専用</translation>
-    </message>
-    <message>
-        <source>Inaccessible</source>
-        <translation type="vanished">アクセス不可</translation>
-    </message>
-    <message>
-        <source>Symlink to File</source>
-        <translation type="vanished">ファイルへのSymlink</translation>
-    </message>
-    <message>
-        <source>Symlink to Directory</source>
-        <translation type="vanished">ディレクトリへのSymlink</translation>
-    </message>
-    <message>
-        <source>Symlink to Special</source>
-        <translation type="vanished">スペシャルへのSymlink</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation type="vanished">ファイル</translation>
-    </message>
-    <message>
-        <source>Dir</source>
-        <translation type="vanished">ディレクトリ</translation>
-    </message>
-    <message>
-        <source>Special</source>
-        <translation type="vanished">スペシャル</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">開く</translation>
-    </message>
-    <message>
-        <source>Save As</source>
-        <translation type="vanished">名前を付けて保存</translation>
-    </message>
-    <message>
-        <source>&amp;Open</source>
-        <translation type="vanished">開く(&amp;O)</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <translation type="vanished">保存(&amp;S)</translation>
-    </message>
-    <message>
-        <source>&amp;Rename</source>
-        <translation type="vanished">名前の変更(&amp;R)</translation>
-    </message>
-    <message>
-        <source>&amp;Delete</source>
-        <translation type="vanished">削除(&amp;D)</translation>
-    </message>
-    <message>
-        <source>R&amp;eload</source>
-        <translation type="vanished">リロード(&amp;E)</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Name</source>
-        <translation type="vanished">名前順にソート(&amp;N)</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Size</source>
-        <translation type="vanished">サイズ順にソート(&amp;S)</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Date</source>
-        <translation type="vanished">日付順にソート(&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Unsorted</source>
-        <translation type="vanished">ソート解除(&amp;U)</translation>
-    </message>
-    <message>
-        <source>Sort</source>
-        <translation type="vanished">ソート</translation>
-    </message>
-    <message>
-        <source>Show &amp;hidden files</source>
-        <translation type="vanished">隠しファイルの表示(&amp;H)</translation>
-    </message>
-    <message>
-        <source>the file</source>
-        <translation type="vanished">ファイル</translation>
-    </message>
-    <message>
-        <source>the directory</source>
-        <translation type="vanished">ディレクトリ</translation>
-    </message>
-    <message>
-        <source>the symlink</source>
-        <translation type="vanished">Symlink</translation>
-    </message>
-    <message>
-        <source>Delete %1</source>
-        <translation type="vanished">%1 の削除</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Are you sure you wish to delete %1 &quot;%2&quot;?&lt;/qt&gt;</source>
-        <translation type="vanished">&lt;qt&gt;%1「%2」を削除しますか?&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Yes</source>
-        <translation type="vanished">はい(&amp;Y)</translation>
-    </message>
-    <message>
-        <source>&amp;No</source>
-        <translation type="vanished">いいえ(&amp;N)</translation>
-    </message>
-    <message>
-        <source>New Folder 1</source>
-        <translation type="vanished">新しいフォルダ1</translation>
-    </message>
-    <message>
-        <source>New Folder</source>
-        <translation type="vanished">新しいフォルダ</translation>
-    </message>
-    <message>
-        <source>New Folder %1</source>
-        <translation type="vanished">新しいフォルダ %1</translation>
-    </message>
-    <message>
-        <source>Find Directory</source>
-        <translation type="vanished">ディレクトリの検索</translation>
-    </message>
-    <message>
-        <source>Directories</source>
-        <translation type="vanished">ディレクトリ</translation>
-    </message>
-    <message>
-        <source>Directory:</source>
-        <translation type="vanished">ディレクトリ:</translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <translation type="vanished">エラー</translation>
-    </message>
-    <message>
-        <source>%1
-File not found.
-Check path and filename.</source>
-        <translation type="vanished">%1
-ファイルが見つかりませんでした。
-パスおよびファイル名を確認してください。</translation>
-    </message>
-</context>
-<context>
-    <name>Q3LocalFs</name>
-    <message>
-        <source>Could not read directory
-%1</source>
-        <translation type="vanished">ディレクトリを読み込めませんでした
-%1</translation>
-    </message>
-    <message>
-        <source>Could not create directory
-%1</source>
-        <translation type="vanished">ディレクトリを作成できませんでした
-%1</translation>
-    </message>
-    <message>
-        <source>Could not remove file or directory
-%1</source>
-        <translation type="vanished">ファイルまたはディレクトリを削除できませんでした
-%1</translation>
-    </message>
-    <message>
-        <source>Could not rename
-%1
-to
-%2</source>
-        <translation type="vanished">名前を変更できませんでした
-%1
-へ
-%2</translation>
-    </message>
-    <message>
-        <source>Could not open
-%1</source>
-        <translation type="vanished">開けませんでした
-%1</translation>
-    </message>
-    <message>
-        <source>Could not write
-%1</source>
-        <translation type="vanished">書き込めませんでした
-%1</translation>
-    </message>
-</context>
-<context>
-    <name>Q3MainWindow</name>
-    <message>
-        <source>Line up</source>
-        <translation type="vanished">整列</translation>
-    </message>
-    <message>
-        <source>Customize...</source>
-        <translation type="vanished">カスタマイズ...</translation>
-    </message>
-</context>
-<context>
-    <name>Q3NetworkProtocol</name>
-    <message>
-        <source>Operation stopped by the user</source>
-        <translation type="vanished">操作がユーザによって停止されました</translation>
-    </message>
-</context>
-<context>
-    <name>Q3ProgressDialog</name>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">キャンセル</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TabDialog</name>
-    <message>
-        <source>OK</source>
-        <translation type="vanished">OK</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="vanished">適用</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="vanished">ヘルプ</translation>
-    </message>
-    <message>
-        <source>Defaults</source>
-        <translation type="vanished">デフォルト</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">キャンセル</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TextEdit</name>
-    <message>
-        <source>&amp;Undo</source>
-        <translation type="vanished">元に戻す(&amp;U)</translation>
-    </message>
-    <message>
-        <source>&amp;Redo</source>
-        <translation type="vanished">やり直す(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Cu&amp;t</source>
-        <translation type="vanished">切り取り(&amp;T)</translation>
-    </message>
-    <message>
-        <source>&amp;Copy</source>
-        <translation type="vanished">コピー(&amp;C)</translation>
-    </message>
-    <message>
-        <source>&amp;Paste</source>
-        <translation type="vanished">貼り付け(&amp;P)</translation>
-    </message>
-    <message>
-        <source>Clear</source>
-        <translation type="vanished">消去</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation type="vanished">すべてを選択</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TitleBar</name>
-    <message>
-        <source>System</source>
-        <translation type="vanished">システム</translation>
-    </message>
-    <message>
-        <source>Restore up</source>
-        <translation type="vanished">元に戻す</translation>
-    </message>
-    <message>
-        <source>Minimize</source>
-        <translation type="vanished">最小化</translation>
-    </message>
-    <message>
-        <source>Restore down</source>
-        <translation type="vanished">元に戻す</translation>
-    </message>
-    <message>
-        <source>Maximize</source>
-        <translation type="vanished">最大化</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">閉じる</translation>
-    </message>
-    <message>
-        <source>Contains commands to manipulate the window</source>
-        <translation type="vanished">ウィンドウを操作するコマンドを含みます</translation>
-    </message>
-    <message>
-        <source>Puts a minimized back to normal</source>
-        <translation type="vanished">最小化されたウィンドウを元のサイズに戻します</translation>
-    </message>
-    <message>
-        <source>Moves the window out of the way</source>
-        <translation type="vanished">ウィンドウを隠します</translation>
-    </message>
-    <message>
-        <source>Puts a maximized window back to normal</source>
-        <translation type="vanished">最大化されたウィンドウを元のサイズに戻します</translation>
-    </message>
-    <message>
-        <source>Makes the window full screen</source>
-        <translation type="vanished">ウィンドウをフルスクリーンにします</translation>
-    </message>
-    <message>
-        <source>Closes the window</source>
-        <translation type="vanished">ウィンドウを閉じます</translation>
-    </message>
-    <message>
-        <source>Holds the name of the window and contains controls to manipulate it</source>
-        <translation type="vanished">ウィンドウの名前を表示し、ウィンドウを操作するコントロールを含みます</translation>
-    </message>
-</context>
-<context>
-    <name>Q3ToolBar</name>
-    <message>
-        <source>More...</source>
-        <translation type="vanished">その他...</translation>
-    </message>
-</context>
-<context>
-    <name>Q3UrlOperator</name>
-    <message>
-        <source>The protocol `%1&apos; is not supported</source>
-        <translation type="vanished">プロトコル「%1」はサポートされていません</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support listing directories</source>
-        <translation type="vanished">プロトコル「%1」ではディレクトリのリストをサポートしていません</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support creating new directories</source>
-        <translation type="vanished">プロトコル「%1」では新しいディレクトリの作成をサポートしていません</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support removing files or directories</source>
-        <translation type="vanished">プロトコル「%1」ではファイルまたはディレクトリの削除をサポートしていません</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support renaming files or directories</source>
-        <translation type="vanished">プロトコル「%1」ではファイルまたはディレクトリの名前の変更をサポートしていません</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support getting files</source>
-        <translation type="vanished">プロトコル「%1」ではファイルの取得をサポートしていません</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support putting files</source>
-        <translation type="vanished">プロトコル「%1」ではファイルの送信をサポートしていません</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support copying or moving files or directories</source>
-        <translation type="vanished">プロトコル「%1」ではファイルまたはディレクトリのコピーまたは移動をサポートしていません</translation>
-    </message>
-    <message>
-        <source>(unknown)</source>
-        <translation type="vanished">(不明)</translation>
-    </message>
-</context>
-<context>
-    <name>Q3Wizard</name>
-    <message>
-        <source>&amp;Cancel</source>
-        <translation type="vanished">キャンセル(&amp;C)</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation type="vanished">&lt; 戻る(&amp;B)</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation type="vanished">次へ(&amp;N) &gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation type="vanished">完了(&amp;F)</translation>
-    </message>
-    <message>
-        <source>&amp;Help</source>
-        <translation type="vanished">ヘルプ(&amp;H)</translation>
+        <source>Automatic</source>
+        <translation type="unfinished">自動</translation>
     </message>
 </context>
 <context>
@@ -733,40 +224,12 @@ to
 <context>
     <name>QApplication</name>
     <message>
-        <source>Activate</source>
-        <translation type="vanished">アクティブに</translation>
-    </message>
-    <message>
-        <source>Activates the program&apos;s main window</source>
-        <translation type="vanished">メインウィンドウをアクティブにする</translation>
-    </message>
-    <message>
         <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
         <translation>実行可能ファイル &apos;%1&apos; には Qt %2 が必要ですが Qt %3 が見つかりました。</translation>
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
         <translation>互換性のない Qt ライブラリエラー</translation>
-    </message>
-    <message>
-        <source>QT_LAYOUT_DIRECTION</source>
-        <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
-        <translation type="vanished">LTR</translation>
-    </message>
-</context>
-<context>
-    <name>QCheckBox</name>
-    <message>
-        <source>Uncheck</source>
-        <translation type="vanished">選択解除</translation>
-    </message>
-    <message>
-        <source>Check</source>
-        <translation type="vanished">選択</translation>
-    </message>
-    <message>
-        <source>Toggle</source>
-        <translation type="vanished">反転</translation>
     </message>
 </context>
 <context>
@@ -874,10 +337,6 @@ to
         <translation>カスタムカラーに追加(&amp;A)</translation>
     </message>
     <message>
-        <source>Select color</source>
-        <translation type="vanished">カラーの選択</translation>
-    </message>
-    <message>
         <source>&amp;HTML:</source>
         <translation>&amp;HTML:</translation>
     </message>
@@ -899,20 +358,12 @@ Press ESC to cancel</source>
 <context>
     <name>QComboBox</name>
     <message>
-        <source>Open</source>
-        <translation type="vanished">開く</translation>
-    </message>
-    <message>
         <source>False</source>
         <translation>偽</translation>
     </message>
     <message>
         <source>True</source>
         <translation>真</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">閉じる</translation>
     </message>
     <message>
         <source>Open the combo box selection popup</source>
@@ -924,10 +375,6 @@ Press ESC to cancel</source>
     <message>
         <source>Displays version information.</source>
         <translation>バージョン情報を表示する。</translation>
-    </message>
-    <message>
-        <source>Displays this help.</source>
-        <translation>このヘルプを表示する。</translation>
     </message>
     <message>
         <source>Unknown option &apos;%1&apos;.</source>
@@ -960,6 +407,14 @@ Press ESC to cancel</source>
     <message>
         <source>Arguments:</source>
         <translation>引数:</translation>
+    </message>
+    <message>
+        <source>Displays help on commandline options.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays help including Qt specific options.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1085,6 +540,29 @@ Press ESC to cancel</source>
     </message>
 </context>
 <context>
+    <name>QCupsPrinterSupport</name>
+    <message>
+        <source>Authentication Needed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authentication needed to use %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authentication needed to use %1 on %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Username:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QDB2Driver</name>
     <message>
         <source>Unable to connect</source>
@@ -1138,25 +616,6 @@ Press ESC to cancel</source>
     </message>
 </context>
 <context>
-    <name>QDateTimeEdit</name>
-    <message>
-        <source>AM</source>
-        <translation type="vanished">AM</translation>
-    </message>
-    <message>
-        <source>am</source>
-        <translation type="vanished">am</translation>
-    </message>
-    <message>
-        <source>PM</source>
-        <translation type="vanished">PM</translation>
-    </message>
-    <message>
-        <source>pm</source>
-        <translation type="vanished">pm</translation>
-    </message>
-</context>
-<context>
     <name>QDateTimeParser</name>
     <message>
         <source>AM</source>
@@ -1181,96 +640,12 @@ Press ESC to cancel</source>
         <source>What&apos;s This?</source>
         <translation>ヒント</translation>
     </message>
-    <message>
-        <source>Done</source>
-        <translation type="vanished">終了</translation>
-    </message>
 </context>
 <context>
     <name>QDialogButtonBox</name>
     <message>
         <source>OK</source>
         <translation>OK</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">キャンセル</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="vanished">適用</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <translation type="vanished">無視</translation>
-    </message>
-    <message>
-        <source>Retry</source>
-        <translation type="vanished">再試行</translation>
-    </message>
-    <message>
-        <source>Abort</source>
-        <translation type="vanished">中止</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="vanished">ヘルプ</translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation type="vanished">保存</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">開く</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">閉じる</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="vanished">リセット</translation>
-    </message>
-    <message>
-        <source>Don&apos;t Save</source>
-        <translation type="vanished">保存しない</translation>
-    </message>
-    <message>
-        <source>Close without Saving</source>
-        <translation type="vanished">保存せずに閉じる</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation type="vanished">変更を破棄</translation>
-    </message>
-    <message>
-        <source>&amp;Yes</source>
-        <translation type="vanished">はい(&amp;Y)</translation>
-    </message>
-    <message>
-        <source>Yes to &amp;All</source>
-        <translation type="vanished">全てにはい(&amp;A)</translation>
-    </message>
-    <message>
-        <source>&amp;No</source>
-        <translation type="vanished">いいえ(&amp;N)</translation>
-    </message>
-    <message>
-        <source>N&amp;o to All</source>
-        <translation type="vanished">全てにいいえ(&amp;O)</translation>
-    </message>
-    <message>
-        <source>Save All</source>
-        <translation type="vanished">すべて保存</translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation type="vanished">デフォルトに戻す</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="vanished">OK(&amp;O)</translation>
     </message>
 </context>
 <context>
@@ -1426,14 +801,193 @@ Press ESC to cancel</source>
     </message>
 </context>
 <context>
-    <name>QDoubleSpinBox</name>
+    <name>QDomParser</name>
     <message>
-        <source>More</source>
-        <translation type="vanished">増やす</translation>
+        <source>Error occurred while processing XML declaration</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Less</source>
-        <translation type="vanished">減らす</translation>
+        <source>Multiple DTD sections are not allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing document type declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing comment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing a processing instruction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing a start element</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected end element &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing an end element</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing the element content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing comments</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing an entity reference</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected token</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tag mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing entity declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing notation declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QDtls</name>
+    <message>
+        <source>Invalid (empty) secret</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Multicast and broadcast addresses are not supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot set peer after handshake started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid address</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot set verification name after handshake started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot set configuration after handshake started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start/continue handshake, invalid handshake state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid (nullptr) socket</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>To start a handshake you must set peer&apos;s address and port first</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>To start a handshake, DTLS server requires non-empty datagram (client hello)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start handshake, already done/in progress</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A valid QUdpSocket and non-empty datagram are needed to continue the handshake</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot continue handshake, not in InProgress state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot resume, not in VerificationError state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No handshake in progress, nothing to abort</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot send shutdown alert, not encrypted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot write a datagram, not in encrypted state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot read a datagram, not in encrypted state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 failed</source>
+        <extracomment>%1: Some function</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid SslMode, SslServerMode or SslClientMode expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid protocol version, DTLS protocol expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>BIO_ADD_new failed, cannot start handshake</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start the handshake, verified client hello expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Peer verification failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The DTLS connection has been closed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while writing: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The DTLS connection has been shutdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while reading: %1</source>
+        <translation type="unfinished">読み込み時にエラーが発生しました: %1</translation>
+    </message>
+</context>
+<context>
+    <name>QDtlsClientVerifier</name>
+    <message>
+        <source>A valid UDP socket, non-empty datagram, valid address/port were expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>BIO_ADDR_new failed, ignoring client hello</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1458,6 +1012,14 @@ Press ESC to cancel</source>
         <source>&amp;OK</source>
         <translation>&amp;OK</translation>
     </message>
+    <message>
+        <source>Critical Error:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Information:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QFile</name>
@@ -1472,10 +1034,6 @@ Press ESC to cancel</source>
     <message>
         <source>Destination file exists</source>
         <translation>コピー先のファイルは既に存在しています</translation>
-    </message>
-    <message>
-        <source>Error while renaming.</source>
-        <translation>名前の変更中にエラーが発生しました。</translation>
     </message>
     <message>
         <source>Unable to restore from %1: %2</source>
@@ -1494,10 +1052,6 @@ Press ESC to cancel</source>
         <translation>コピー元ファイル %1 を読み込み用に開けません</translation>
     </message>
     <message>
-        <source>Cannot open for output</source>
-        <translation>コピー先のファイルを開けません</translation>
-    </message>
-    <message>
         <source>Failure to write block</source>
         <translation>書き込みに失敗しました</translation>
     </message>
@@ -1505,12 +1059,28 @@ Press ESC to cancel</source>
         <source>Cannot create %1 for output</source>
         <translation>コピー先として %1 を作成できません</translation>
     </message>
+    <message>
+        <source>Error while renaming: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot open destination file: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot open for output: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QFileDevice</name>
     <message>
         <source>No file engine available or engine does not support UnMapExtension</source>
         <translation>ファイルエンジンが見つからないか、UnMapExtension をサポートしていません</translation>
+    </message>
+    <message>
+        <source>No file engine available</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1630,10 +1200,6 @@ Please verify the correct directory name was given.</source>
 Do you want to delete it anyway?</source>
         <translation>&apos;%1&apos; は書き込みが禁止されています。
 本当に削除しますか?</translation>
-    </message>
-    <message>
-        <source>Are sure you want to delete &apos;%1&apos;?</source>
-        <translation type="vanished">&apos;%1&apos; を本当に削除しますか？</translation>
     </message>
     <message>
         <source>Could not delete directory.</source>
@@ -1782,32 +1348,8 @@ Do you want to delete it anyway?</source>
         <translation>タイプ</translation>
     </message>
     <message>
-        <source>%1 TB</source>
-        <translation>%1 TB</translation>
-    </message>
-    <message>
-        <source>%1 GB</source>
-        <translation>%1 GB</translation>
-    </message>
-    <message>
-        <source>%1 MB</source>
-        <translation>%1 MB</translation>
-    </message>
-    <message>
-        <source>%1 KB</source>
-        <translation>%1 KB</translation>
-    </message>
-    <message>
-        <source>%1 bytes</source>
-        <translation>%1 バイト</translation>
-    </message>
-    <message>
         <source>Invalid filename</source>
         <translation>無効なファイル名</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;The name &quot;%1&quot; can not be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuations marks.</source>
-        <translation>&lt;b&gt;ファイル名 &quot;%1&quot; は使用できません。&lt;/b&gt;&lt;p&gt;名前を短くしたり、アクセント記号などを削除して再度試してください。</translation>
     </message>
     <message>
         <source>My Computer</source>
@@ -1818,8 +1360,8 @@ Do you want to delete it anyway?</source>
         <translation>コンピュータ</translation>
     </message>
     <message>
-        <source>%1 byte(s)</source>
-        <translation>%1 バイト</translation>
+        <source>&lt;b&gt;The name &quot;%1&quot; cannot be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuation marks.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2075,10 +1617,6 @@ Do you want to delete it anyway?</source>
         <translation>ホスト %1 に接続しました</translation>
     </message>
     <message>
-        <source>Connection refused for data connection</source>
-        <translation type="vanished">データ接続のための接続が拒否されました</translation>
-    </message>
-    <message>
         <source>Unknown error</source>
         <translation>未知のエラー</translation>
     </message>
@@ -2141,22 +1679,6 @@ Do you want to delete it anyway?</source>
         <translation>接続が閉じられました</translation>
     </message>
     <message>
-        <source>Host %1 found</source>
-        <translation type="vanished">ホスト %1 が見つかりました</translation>
-    </message>
-    <message>
-        <source>Connection to %1 closed</source>
-        <translation type="vanished">%1 への接続が閉じられました</translation>
-    </message>
-    <message>
-        <source>Host found</source>
-        <translation type="vanished">ホストが見つかりました</translation>
-    </message>
-    <message>
-        <source>Connected to host</source>
-        <translation type="vanished">ホストに接続しました</translation>
-    </message>
-    <message>
         <source>Connection timed out to host %1</source>
         <translation>ホスト %1 への接続がタイムアウトしました</translation>
     </message>
@@ -2195,6 +1717,74 @@ Do you want to delete it anyway?</source>
         <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
         <translation>LTR</translation>
     </message>
+    <message>
+        <source>QPA plugin. See QGuiApplication documentation for available options for each plugin.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path to the platform plugins.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Platform theme.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Additional plugins to load, can be specified multiple times.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Window geometry for the main window, using the X11-syntax, like 100x100+50+50.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default window icon.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Title of the first window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sets the application&apos;s layout direction to Qt::RightToLeft (debugging helper).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restores the application from an earlier session.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display name, overrides $DISPLAY.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Instance name according to ICCCM 4.1.2.5.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable mouse grabbing (useful in debuggers).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Force mouse grabbing (even when running in a debugger).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ID of the X11 Visual to use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowgeometry.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowicon.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowtitle.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QHostInfo</name>
@@ -2218,10 +1808,6 @@ Do you want to delete it anyway?</source>
         <translation>未知のアドレス型です</translation>
     </message>
     <message>
-        <source>Unknown error</source>
-        <translation>未知のエラー</translation>
-    </message>
-    <message>
         <source>No host name given</source>
         <translation>ホストネームが与えられていません</translation>
     </message>
@@ -2229,33 +1815,9 @@ Do you want to delete it anyway?</source>
         <source>Invalid hostname</source>
         <translation>無効なホスト名</translation>
     </message>
-    <message>
-        <source>Unknown error (%1)</source>
-        <translation>未知のエラー (%1)</translation>
-    </message>
 </context>
 <context>
     <name>QHttp</name>
-    <message>
-        <source>Unknown error</source>
-        <translation type="vanished">不明なエラー</translation>
-    </message>
-    <message>
-        <source>Request aborted</source>
-        <translation type="vanished">要求が中止されました</translation>
-    </message>
-    <message>
-        <source>No server set to connect to</source>
-        <translation type="vanished">接続が設定されているサーバがありません</translation>
-    </message>
-    <message>
-        <source>Wrong content length</source>
-        <translation type="vanished">コンテンツの長さが正しくありません</translation>
-    </message>
-    <message>
-        <source>Server closed connection unexpectedly</source>
-        <translation type="vanished">サーバの接続が予期せず閉じられました</translation>
-    </message>
     <message>
         <source>Connection refused</source>
         <translation>接続が拒否されました</translation>
@@ -2263,38 +1825,6 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Host %1 not found</source>
         <translation>ホスト %1 が見つかりません</translation>
-    </message>
-    <message>
-        <source>HTTP request failed</source>
-        <translation type="vanished">HTTP要求に失敗しました</translation>
-    </message>
-    <message>
-        <source>Invalid HTTP response header</source>
-        <translation type="vanished">無効なHTTP応答ヘッダです</translation>
-    </message>
-    <message>
-        <source>Invalid HTTP chunked body</source>
-        <translation type="vanished">無効なHTTPチャンクドボディです</translation>
-    </message>
-    <message>
-        <source>Host %1 found</source>
-        <translation type="vanished">ホスト %1 が見つかりました</translation>
-    </message>
-    <message>
-        <source>Connected to host %1</source>
-        <translation type="vanished">ホスト %1 に接続しました</translation>
-    </message>
-    <message>
-        <source>Connection to %1 closed</source>
-        <translation type="vanished">%1 への接続が閉じられました</translation>
-    </message>
-    <message>
-        <source>Host found</source>
-        <translation type="vanished">ホストが見つかりました</translation>
-    </message>
-    <message>
-        <source>Connected to host</source>
-        <translation type="vanished">ホストに接続しました</translation>
     </message>
     <message>
         <source>Connection closed</source>
@@ -2526,24 +2056,13 @@ Do you want to delete it anyway?</source>
         <source>Unsupported image format</source>
         <translation>サポートされていない画像形式です</translation>
     </message>
-</context>
-<context>
-    <name>QInputContext</name>
     <message>
-        <source>XIM</source>
-        <translation type="vanished">XIM</translation>
+        <source>Cannot open device for writing: %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>XIM input method</source>
-        <translation type="vanished">XIM 入力メソッド</translation>
-    </message>
-    <message>
-        <source>Windows input method</source>
-        <translation type="vanished">Windows 入力メソッド</translation>
-    </message>
-    <message>
-        <source>Mac OS X input method</source>
-        <translation type="vanished">Mac OS X 入力メソッド</translation>
+        <source>Image is empty</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2631,40 +2150,12 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QLibrary</name>
     <message>
-        <source>Could not mmap &apos;%1&apos;: %2</source>
-        <translation type="vanished">&apos;%1&apos; をメモリにマッピングできませんでした: %2</translation>
-    </message>
-    <message>
-        <source>Plugin verification data mismatch in &apos;%1&apos;</source>
-        <translation type="vanished">&apos;%1&apos; でプラグイン検証データが一致しません</translation>
-    </message>
-    <message>
-        <source>Could not unmap &apos;%1&apos;: %2</source>
-        <translation type="vanished">&apos;%1&apos; のマッピングを解除できませんでした: %2</translation>
-    </message>
-    <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
         <translation>プラグイン &apos;%1&apos; は、互換性のない Qt ライブラリを使用しています。(%2.%3.%4) [%5]</translation>
     </message>
     <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. Expected build key &quot;%2&quot;, got &quot;%3&quot;</source>
-        <translation type="vanished">プラグイン &apos;%1&apos; は、互換性のない Qt ライブラリを使用しています。ビルドキー&amp;nbsp;&quot;%2&quot;&amp;nbsp;が必要ですが、&quot;%3&quot; しかありません </translation>
-    </message>
-    <message>
         <source>Unknown error</source>
         <translation>未知のエラー</translation>
-    </message>
-    <message>
-        <source>QLibrary::load_sys: Cannot load %1 (%2)</source>
-        <translation type="vanished">QLibrary::load_sys: %1 をロードできません (%2)</translation>
-    </message>
-    <message>
-        <source>QLibrary::unload_sys: Cannot unload %1 (%2)</source>
-        <translation type="vanished">QLibrary::unload_sys: %1 をアンロードできません (%2)</translation>
-    </message>
-    <message>
-        <source>QLibrary::resolve_sys: Symbol &quot;%1&quot; undefined in %2 (%3)</source>
-        <translation type="vanished">QLibrary::resolve_sys: シンボル &quot;%1&quot; は %2 で定義されていません (%3)</translation>
     </message>
     <message>
         <source>The shared library was not found.</source>
@@ -2697,10 +2188,6 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Cannot unload library %1: %2</source>
         <translation>ライブラリ %1 を解放できません: %2</translation>
-    </message>
-    <message>
-        <source>Cannot resolve symbol &quot;%1&quot; in %2: %3</source>
-        <translation>%2 に含まれる識別子 &quot;%1&quot; を解決できません: %3</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is not a valid Mach-O binary (%2)</source>
@@ -2736,6 +2223,52 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Failed to extract plugin meta data from &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>odd cpu architecture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>wrong cpu architecture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>odd endianness</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unexpected e_shsize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unexpected e_shentsize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>announced %n section(s), each %1 byte(s), exceed file size</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>shstrtab section header seems to be at %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>string table seems to be at %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>section name %1 of %2 behind end of file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>empty .rodata. not a library.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing section data. This is not a library.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2847,13 +2380,13 @@ Do you want to delete it anyway?</source>
         <source>%1: Access denied</source>
         <translation>%1: アクセスが拒否されました</translation>
     </message>
+    <message>
+        <source>Socket is not connected</source>
+        <translation type="unfinished">ソケットが接続されていません</translation>
+    </message>
 </context>
 <context>
     <name>QMYSQLDriver</name>
-    <message>
-        <source>Unable to open database &apos;</source>
-        <translation type="vanished">データベースを開くことができません &apos;</translation>
-    </message>
     <message>
         <source>Unable to connect</source>
         <translation>接続できません</translation>
@@ -3009,39 +2542,7 @@ Do you want to delete it anyway?</source>
     </message>
 </context>
 <context>
-    <name>QMenu</name>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">閉じる</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">開く</translation>
-    </message>
-    <message>
-        <source>Execute</source>
-        <translation type="vanished">実行</translation>
-    </message>
-</context>
-<context>
     <name>QMessageBox</name>
-    <message>
-        <source>Help</source>
-        <translation>ヘルプ</translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation>OK</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;このプログラムは Qt バージョン %1 を使用しています。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;このプログラムは Qt オープンソース版バージョン %1 を使用しています。&lt;/p&gt;
-&lt;p&gt;Qt オープンソース版はオープンソースのアプリケーションの開発用です。ソースコードを公開しない商用アプリケーションを開発するには商用版のライセンスが必要です。&lt;/p&gt;&lt;p&gt;Qtのライセンスについては&lt;tt&gt;http://www.trolltech.com/company/model.html&lt;/tt&gt;を参照してください。&lt;/p&gt;</translation>
-    </message>
     <message>
         <source>About Qt</source>
         <translation>Qt について</translation>
@@ -3059,26 +2560,9 @@ Do you want to delete it anyway?</source>
         <translation>&lt;h3&gt;Qt について&lt;/h3&gt;&lt;p&gt;このプログラムは Qt バージョン %1 を使用しています。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 3 or GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 3 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 3.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Qt はクロスプラットフォームアプリケーション開発用の C++ ツールキットです。&lt;/p&gt;&lt;p&gt;Qt はすべての主なデスクトップオペレーティングシステムにまたがってシングルソースポータビリティを提供します。また、組込み Linux やその他の組込み・モバイルオペレーティングシステムにも対応しています。&lt;/p&gt;&lt;p&gt;Qt はさまざまなユーザの需要に応えるために、3つの異なるライセンスで提供されています。&lt;/p&gt;&lt;p&gt;いかなるソースも第三者と共有したくない場合や GNU LGPL v3 や GNU LGPL v2.1 の条件に従うことができないようなプロプライエタリ/商用ソフトウェアの開発には商用ライセンス版の Qt の利用が適切です。&lt;/p&gt;&lt;p&gt;GNU LGPL v3 の条件に応じることができるのであれば GNU LGPL v3 版の Qt の利用が適切です。&lt;/p&gt;&lt;p&gt;GNU LGPL v2.1 の条件に応じることができるのであれば GNU LGPL v2.1 版の Qt の利用が適切です。&lt;/p&gt;&lt;p&gt;Qt のライセンスについての概要は &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; をご覧ください。&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt および Qt のロゴは The Qt Company Ltd の商標です。&lt;/p&gt;&lt;p&gt;Qt はオープンソースプロジェクトとして開発されている The Qt Company Ltd の製品です。詳細は &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; をご覧ください。&lt;/p&gt;</translation>
-    </message>
-</context>
-<context>
-    <name>QMultiInputContext</name>
-    <message>
-        <source>Select IM</source>
-        <translation type="vanished">入力メソッドを選択</translation>
-    </message>
-</context>
-<context>
-    <name>QMultiInputContextPlugin</name>
-    <message>
-        <source>Multiple input method switcher</source>
-        <translation type="vanished">複数の入力メソッドを切り替え</translation>
-    </message>
-    <message>
-        <source>Multiple input method switcher that uses the context menu of the text widgets</source>
-        <translation type="vanished">テキストウィジェットのコンテキストメニューを使った複数の入力メソッドの切り替えです</translation>
+        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under multiple licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of GNU (L)GPL.&lt;/p&gt;&lt;p&gt;Qt licensed under GNU (L)GPL is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the respective licenses.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <extracomment>Leave this text untranslated or include a verbatim copy of it below and note that it is the authoritative version in case of doubt.</extracomment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3276,13 +2760,6 @@ Do you want to delete it anyway?</source>
     </message>
 </context>
 <context>
-    <name>QNetworkAccessManager</name>
-    <message>
-        <source>Network access is disabled.</source>
-        <translation>ネットワークへのアクセスが無効になっています。</translation>
-    </message>
-</context>
-<context>
     <name>QNetworkReply</name>
     <message>
         <source>Protocol &quot;%1&quot; is unknown</source>
@@ -3408,10 +2885,6 @@ Do you want to delete it anyway?</source>
         <translation>値をバインドできません</translation>
     </message>
     <message>
-        <source>Unable to execute select statement</source>
-        <translation type="vanished">SELECT ステートメントを実行できません</translation>
-    </message>
-    <message>
         <source>Unable to execute statement</source>
         <translation>ステートメントを実行できません</translation>
     </message>
@@ -3425,10 +2898,6 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Unable to connect</source>
         <translation>接続できません</translation>
-    </message>
-    <message>
-        <source>Unable to connect - Driver doesn&apos;t support all needed functionality</source>
-        <translation type="vanished">接続できません - ドライバは全ての必要な機能をサポートしていません</translation>
     </message>
     <message>
         <source>Unable to disable autocommit</source>
@@ -3491,17 +2960,6 @@ Do you want to delete it anyway?</source>
     </message>
 </context>
 <context>
-    <name>QPPDOptionsModel</name>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">名前</translation>
-    </message>
-    <message>
-        <source>Value</source>
-        <translation type="vanished">値</translation>
-    </message>
-</context>
-<context>
     <name>QPSQLDriver</name>
     <message>
         <source>Unable to connect</source>
@@ -3537,6 +2995,18 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Unable to prepare statement</source>
         <translation>プリペアドステートメントを作成できません</translation>
+    </message>
+    <message>
+        <source>Query results lost - probably discarded on executing another SQL query.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to get result</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to send query</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4243,18 +3713,6 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QPrintDialog</name>
     <message>
-        <source>locally connected</source>
-        <translation type="vanished">ローカルに接続しています</translation>
-    </message>
-    <message>
-        <source>Aliases: %1</source>
-        <translation type="vanished">エイリアス: %1</translation>
-    </message>
-    <message>
-        <source>unknown</source>
-        <translation type="vanished">不明</translation>
-    </message>
-    <message>
         <source>Print To File ...</source>
         <translation>ファイルへ出力...</translation>
     </message>
@@ -4387,8 +3845,20 @@ Please turn one of those options off.</source>
         <translation>OK</translation>
     </message>
     <message>
-        <source>Automatic</source>
-        <translation>自動</translation>
+        <source>Invalid Pages Definition</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 does not follow the correct syntax. Please use &apos;,&apos; to separate ranges and pages, &apos;-&apos; to define ranges and make sure ranges do not intersect with each other.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplex Settings Conflicts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in duplex settings. Do you want to fix them?</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4462,10 +3932,6 @@ Please turn one of those options off.</source>
         <translation>ページ設定</translation>
     </message>
     <message>
-        <source>Close</source>
-        <translation type="vanished">閉じる</translation>
-    </message>
-    <message>
         <source>%1%</source>
         <translation>%1%</translation>
     </message>
@@ -4484,6 +3950,22 @@ Please turn one of those options off.</source>
         <source>Job Options</source>
         <translation>ジョブオプション</translation>
     </message>
+    <message>
+        <source>Page Setup Conflicts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in page setup options. Do you want to fix them?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Advanced Option Conflicts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in some advanced options. Do you want to fix them?</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QPrintPropertiesWidget</name>
@@ -4494,6 +3976,14 @@ Please turn one of those options off.</source>
     <message>
         <source>Page</source>
         <translation>ページ</translation>
+    </message>
+    <message>
+        <source>Advanced</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in some options. Please fix them.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4559,28 +4049,36 @@ Please turn one of those options off.</source>
         <translation>グレースケール</translation>
     </message>
     <message>
-        <source>Duplex Printing</source>
-        <translation>両面印刷</translation>
-    </message>
-    <message>
-        <source>None</source>
-        <translation>なし</translation>
-    </message>
-    <message>
-        <source>Long side</source>
-        <translation>長辺綴じ</translation>
-    </message>
-    <message>
-        <source>Short side</source>
-        <translation>短辺綴じ</translation>
-    </message>
-    <message>
         <source>Current Page</source>
         <translation>現在のページ</translation>
     </message>
     <message>
         <source>Page Set:</source>
         <translation>ページセット:</translation>
+    </message>
+    <message>
+        <source>Pages</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specify pages or ranges separated by commas. Ranges are specified by two numbers separated by a hyphen. E.g: 3,5-7,9 prints pages 3, 5, 6, 7 and 9.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Double Sided Printing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Long side binding</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Short side binding</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4641,10 +4139,6 @@ Please turn one of those options off.</source>
         <translation>プロセスの起動に失敗しました</translation>
     </message>
     <message>
-        <source>Process failed to start (spawned process exited with code 127)</source>
-        <translation type="vanished">プロセスの起動に失敗しました(子プロセスはエラーコード 127 で終了しました)</translation>
-    </message>
-    <message>
         <source>No program defined</source>
         <translation>プログラムが指定されていません</translation>
     </message>
@@ -4674,34 +4168,6 @@ Please turn one of those options off.</source>
     <message>
         <source>Cancel</source>
         <translation>キャンセル</translation>
-    </message>
-</context>
-<context>
-    <name>QPushButton</name>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">開く</translation>
-    </message>
-</context>
-<context>
-    <name>QQnxFileDialogHelper</name>
-    <message>
-        <source>All files (*.*)</source>
-        <translation>すべてのファイル(*.*)</translation>
-    </message>
-</context>
-<context>
-    <name>QQnxFilePicker</name>
-    <message>
-        <source>Pick a file</source>
-        <translation>ファイルの選択</translation>
-    </message>
-</context>
-<context>
-    <name>QRadioButton</name>
-    <message>
-        <source>Check</source>
-        <translation type="vanished">選択</translation>
     </message>
 </context>
 <context>
@@ -4786,16 +4252,8 @@ Please turn one of those options off.</source>
         <translation>文字クラスを閉じる ] がありません</translation>
     </message>
     <message>
-        <source>invalid escape sequence in character class</source>
-        <translation>文字クラス内に無効なエスケープシーケンスがあります</translation>
-    </message>
-    <message>
         <source>range out of order in character class</source>
         <translation>文字クラスの範囲の順番が間違っています</translation>
-    </message>
-    <message>
-        <source>nothing to repeat</source>
-        <translation>繰り返すものがありません</translation>
     </message>
     <message>
         <source>internal error: unexpected repeat</source>
@@ -4810,64 +4268,20 @@ Please turn one of those options off.</source>
         <translation>POSIX の名前付きクラスは文字クラスの中でだけサポートされています</translation>
     </message>
     <message>
-        <source>missing )</source>
-        <translation>) がありません</translation>
-    </message>
-    <message>
         <source>reference to non-existent subpattern</source>
         <translation>存在しないサブパターンを参照しています</translation>
-    </message>
-    <message>
-        <source>erroffset passed as NULL</source>
-        <translation>erroffset に NULL が渡されました</translation>
-    </message>
-    <message>
-        <source>unknown option bit(s) set</source>
-        <translation>未知のオプションビットセットです</translation>
-    </message>
-    <message>
-        <source>missing ) after comment</source>
-        <translation>コメントの後に ) がありません</translation>
     </message>
     <message>
         <source>regular expression is too large</source>
         <translation>正規表現が大きすぎます</translation>
     </message>
     <message>
-        <source>failed to get memory</source>
-        <translation>メモリの確保に失敗しました</translation>
-    </message>
-    <message>
-        <source>unmatched parentheses</source>
-        <translation>括弧の対応が取れていません</translation>
-    </message>
-    <message>
         <source>internal error: code overflow</source>
         <translation>内部エラー: コードオーバーフロー</translation>
     </message>
     <message>
-        <source>unrecognized character after (?&lt;</source>
-        <translation>認識できない文字が (?&lt; の後にあります</translation>
-    </message>
-    <message>
         <source>lookbehind assertion is not fixed length</source>
         <translation>戻り読み(lookbehind)アサーションが固定長ではありません</translation>
-    </message>
-    <message>
-        <source>malformed number or name after (?(</source>
-        <translation>不正な数値あるいは名前が (?( の後にあります</translation>
-    </message>
-    <message>
-        <source>conditional group contains more than two branches</source>
-        <translation>条件付きグループに3つ以上の枝があります</translation>
-    </message>
-    <message>
-        <source>assertion expected after (?(</source>
-        <translation>(?( の後にアサーションがありません</translation>
-    </message>
-    <message>
-        <source>(?R or (?[+-]digits must be followed by )</source>
-        <translation>(?R や (?[+-]数字 の後には ) が必要です</translation>
     </message>
     <message>
         <source>unknown POSIX class name</source>
@@ -4878,56 +4292,8 @@ Please turn one of those options off.</source>
         <translation>POSIX の照合順序の要素はサポートされていません</translation>
     </message>
     <message>
-        <source>this version of PCRE is not compiled with PCRE_UTF8 support</source>
-        <translation>このバージョンの PCRE は PCRE_UTF8 サポート込みでコンパイルされていません</translation>
-    </message>
-    <message>
-        <source>character value in \x{...} sequence is too large</source>
-        <translation>\x{...} シーケンス内の文字の値が大きすぎます</translation>
-    </message>
-    <message>
-        <source>invalid condition (?(0)</source>
-        <translation>無効な条件です (?(0)</translation>
-    </message>
-    <message>
-        <source>\C not allowed in lookbehind assertion</source>
-        <translation>戻り読み(lookbehind)アサーションで \c は許可されていません</translation>
-    </message>
-    <message>
-        <source>PCRE does not support \L, \l, \N{name}, \U, or \u</source>
-        <translation>PCRE は \L, \l, \N{name}, \U, \u をサポートしていません</translation>
-    </message>
-    <message>
-        <source>number after (?C is &gt; 255</source>
-        <translation>(?C の後の数値が 255 よりも大きいです</translation>
-    </message>
-    <message>
-        <source>closing ) for (?C expected</source>
-        <translation>(?C を閉じる ) がありません</translation>
-    </message>
-    <message>
-        <source>recursive call could loop indefinitely</source>
-        <translation>再起呼び出しが無限ループとなる可能性があります</translation>
-    </message>
-    <message>
         <source>unrecognized character after (?P</source>
         <translation>認識できない文字が (?P の後にあります</translation>
-    </message>
-    <message>
-        <source>syntax error in subpattern name (missing terminator)</source>
-        <translation>サブパターン名に構文エラーがあります(終端文字がありません)</translation>
-    </message>
-    <message>
-        <source>two named subpatterns have the same name</source>
-        <translation>二つの名前付きサブパターンの名前が同じです</translation>
-    </message>
-    <message>
-        <source>invalid UTF-8 string</source>
-        <translation>無効な UTF-8 文字列です</translation>
-    </message>
-    <message>
-        <source>support for \P, \p, and \X has not been compiled</source>
-        <translation>\P, \p, \X のサポートはコンパイル時に外されています</translation>
     </message>
     <message>
         <source>malformed \P or \p sequence</source>
@@ -4938,16 +4304,8 @@ Please turn one of those options off.</source>
         <translation>\P あるいは \p の後に未知のプロパティ名があります</translation>
     </message>
     <message>
-        <source>subpattern name is too long (maximum 32 characters)</source>
-        <translation>サブパターン名が長すぎます(最長32文字です)</translation>
-    </message>
-    <message>
         <source>too many named subpatterns (maximum 10000)</source>
         <translation>名前付きサブパターンが多すぎます(10000個以下にしてください)</translation>
-    </message>
-    <message>
-        <source>octal value is greater than \377 (not in UTF-8 mode)</source>
-        <translation>8進数の値が \377 よりも大きいです(非 UTF-8 モード時)</translation>
     </message>
     <message>
         <source>internal error: overran compiling workspace</source>
@@ -4958,48 +4316,12 @@ Please turn one of those options off.</source>
         <translation>内部エラー: 直前にチェックしたサブパターンへのリファレンスが見つかりません</translation>
     </message>
     <message>
-        <source>DEFINE group contains more than one branch</source>
-        <translation>DEFINE グループが2つ以上の枝があります</translation>
-    </message>
-    <message>
-        <source>repeating a DEFINE group is not allowed</source>
-        <translation>DEFINE グループの繰り返しは許可されていません</translation>
-    </message>
-    <message>
-        <source>inconsistent NEWLINE options</source>
-        <translation>NEWLINE オプションが矛盾しています</translation>
-    </message>
-    <message>
         <source>\g is not followed by a braced, angle-bracketed, or quoted name/number or by a plain number</source>
         <translation>\g の後に波括弧 {} や山括弧 &lt;&gt; や引用符 &apos; でくくられた名前や数値、あるいはただの数字がありません</translation>
     </message>
     <message>
-        <source>a numbered reference must not be zero</source>
-        <translation>数値での参照に 0 は使用できません</translation>
-    </message>
-    <message>
-        <source>an argument is not allowed for (*ACCEPT), (*FAIL), or (*COMMIT)</source>
-        <translation>(*ACCEPT), (*FAIL), (*COMMIT) の引数は一つではありません</translation>
-    </message>
-    <message>
-        <source>(*VERB) not recognized</source>
-        <translation>(*VERB) を認識できません</translation>
-    </message>
-    <message>
-        <source>number is too big</source>
-        <translation>数値が大きすぎます</translation>
-    </message>
-    <message>
         <source>subpattern name expected</source>
         <translation>サブパターンに名前が必要です</translation>
-    </message>
-    <message>
-        <source>digit expected after (?+</source>
-        <translation>(?+ の後に数字が必要です</translation>
-    </message>
-    <message>
-        <source>] is an invalid data character in JavaScript compatibility mode</source>
-        <translation>JavaScript 互換モードでは ] は無効なデータ文字です</translation>
     </message>
     <message>
         <source>different names for subpatterns of the same number are not allowed</source>
@@ -5010,52 +4332,20 @@ Please turn one of those options off.</source>
         <translation>(*MARK) には引数が一つ必要です</translation>
     </message>
     <message>
-        <source>this version of PCRE is not compiled with PCRE_UCP support</source>
-        <translation>このバージョンの PCRE は PCRE_UCP サポート込みでコンパイルされていません</translation>
-    </message>
-    <message>
-        <source>\c must be followed by an ASCII character</source>
-        <translation>\c の後には ASCII 文字が必要です</translation>
-    </message>
-    <message>
         <source>\k is not followed by a braced, angle-bracketed, or quoted name</source>
         <translation>\g の後に波括弧 {} や山括弧 &lt;&gt; や引用符 &apos; でくくられた名前がありません</translation>
-    </message>
-    <message>
-        <source>internal error: unknown opcode in find_fixedlength()</source>
-        <translation>内部エラー: find_fixedlength() で未知のオペコード</translation>
     </message>
     <message>
         <source>\N is not supported in a class</source>
         <translation>文字クラスで \N はサポートされていません</translation>
     </message>
     <message>
-        <source>too many forward references</source>
-        <translation>前方参照が多すぎます</translation>
-    </message>
-    <message>
         <source>disallowed Unicode code point (&gt;= 0xd800 &amp;&amp; &lt;= 0xdfff)</source>
         <translation>許可されていないコードの Unicode です(&gt;= 0xd800 &amp;&amp; &lt;= 0xdfff)</translation>
     </message>
     <message>
-        <source>invalid UTF-16 string</source>
-        <translation>無効な UTF-16 文字列です</translation>
-    </message>
-    <message>
         <source>name is too long in (*MARK), (*PRUNE), (*SKIP), or (*THEN)</source>
         <translation>(*MARK), (*PRUNE), (*SKIP), (*THEN) の名前が長すぎます</translation>
-    </message>
-    <message>
-        <source>character value in \u.... sequence is too large</source>
-        <translation>\u... シーケンスの文字の値が大きすぎます</translation>
-    </message>
-    <message>
-        <source>invalid UTF-32 string</source>
-        <translation>無効な UTF-32 文字列です</translation>
-    </message>
-    <message>
-        <source>setting UTF is disabled by the application</source>
-        <translation>UTF の設定はアプリケーションにより禁止されています</translation>
     </message>
     <message>
         <source>non-hex character in \x{} (closing brace missing?)</source>
@@ -5078,24 +4368,528 @@ Please turn one of those options off.</source>
         <translation>文字クラス内に無効な範囲があります</translation>
     </message>
     <message>
-        <source>group name must start with a non-digit</source>
-        <translation>グループ名を数字で始めることはできません</translation>
-    </message>
-    <message>
         <source>parentheses are too deeply nested (stack check)</source>
         <translation>括弧のネストが深すぎます (スタックチェック)</translation>
     </message>
     <message>
-        <source>digits missing in \x{} or \o{}</source>
-        <translation>\x{} または \o{} 内に数字がありません</translation>
+        <source>escape sequence is invalid in character class</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>quantifier does not follow a repeatable item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing closing parenthesis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern passed as NULL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unrecognised compile-time option bit(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing ) after (?# comment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>failed to allocate heap memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unmatched closing parenthesis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing closing parenthesis for condition</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>a relative value of zero is not allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>conditional subpattern contains more than two branches</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>assertion expected after (?( or (?(?C)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>digit expected after (?+ or (?-</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error in pcre2_study(): should not occur</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>this version of PCRE2 does not have Unicode support</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>character code point value in \x{} or \o{} is too large</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>lookbehind is too complicated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\C is not allowed in a lookbehind assertion in UTF-16 mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCRE2 does not support \F, \L, \l, \N{name}, \U, or \u</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>number after (?C is greater than 255</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>closing parenthesis for (?C expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid escape sequence in (*VERB) name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>syntax error in subpattern name (missing terminator?)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>two named subpatterns have the same name (PCRE2_DUPNAMES not set)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>subpattern name must start with a non-digit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>this version of PCRE2 does not have support for \P, \p, or \X</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>subpattern name is too long (maximum 32 code units)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>octal value is greater than \377 in 8-bit non-UTF-8 mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DEFINE subpattern contains more than one branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: unknown newline setting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(?R (recursive pattern call) must be followed by a closing parenthesis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>obsolete error (should not occur)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(*VERB) not recognized or malformed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>subpattern number is too big</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: parsed pattern overflow</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\c must be followed by a printable ASCII character</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\c must be followed by a letter or one of [\]^_?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: unknown meta code in check_lookbehinds()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>callout string is too long</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>using UTF is disabled by the application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>using UCP is disabled by the application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>character code point value in \u.... sequence is too large</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>digits missing in \x{} or \o{} or \N{U+}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>syntax error or number too big in (?(VERSION condition</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: unknown opcode in auto_possessify()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing terminating delimiter for callout with string argument</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unrecognized string delimiter follows (?C</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>using \C is disabled by the application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(?| and/or (?J: or (?x: parentheses are too deeply nested</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>using \C is disabled in this PCRE2 library</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>regular expression is too complicated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>lookbehind assertion is too long</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern string is longer than the limit set by the application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: unknown code in parsed pattern</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: bad code value in parsed_skip()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCRE2_EXTRA_ALLOW_SURROGATE_ESCAPES is not allowed in UTF-16 mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid option bits with PCRE2_LITERAL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\N{U+dddd} is supported only in Unicode (UTF) mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid hyphen in option setting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(*alpha_assertion) not recognized</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>script runs require Unicode support, which this version of PCRE2 does not have</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>too many capturing groups (maximum 65535)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>atomic assertion expected after (?( or (?(?C)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no match</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>partial match</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 1 byte missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 2 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 3 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 4 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 5 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 2 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 3 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 4 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 5 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 6 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 5-byte character is not allowed (RFC 3629)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 6-byte character is not allowed (RFC 3629)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: code points greater than 0x10ffff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: code points 0xd800-0xdfff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 2-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 3-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 4-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 5-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 6-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: isolated byte with 0x80 bit set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: illegal byte (0xfe or 0xff)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-16 error: missing low surrogate at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-16 error: invalid low surrogate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-16 error: isolated low surrogate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-32 error: code points 0xd800-0xdfff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-32 error: code points greater than 0x10ffff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad data value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>patterns do not all use the same character tables</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>magic number missing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern compiled in wrong mode: 8/16/32-bit error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad offset value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad option value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad offset into UTF string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>callout error code</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid data in workspace for DFA restart</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>too much recursion for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>backreference condition or recursion test is not supported for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>function is not supported for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern contains an item that is not supported for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>workspace size exceeded in DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error - pattern overwritten?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad JIT option</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>JIT stack limit reached</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>match limit exceeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no more memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unknown substring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>non-unique substring name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NULL argument passed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>nested recursion at the same subject position</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>matching depth limit exceeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>requested value is not available</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>requested value is not set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>offset limit set without PCRE2_USE_OFFSET_LIMIT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad escape sequence in replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>expected closing curly bracket in replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad substitution in replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>match with end before start or start moved backwards is not supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>too many replacements (more than INT_MAX)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad serialized data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>heap limit exceeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid syntax</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error - duplicate substitution match</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCRE2_MATCH_INVALID_UTF is not supported for DFA matching</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSQLite2Driver</name>
-    <message>
-        <source>Error to open database</source>
-        <translation type="obsolete">データベースを開く際にエラーが発生しました</translation>
-    </message>
     <message>
         <source>Unable to begin transaction</source>
         <translation>トランザクションを開始できません</translation>
@@ -5103,10 +4897,6 @@ Please turn one of those options off.</source>
     <message>
         <source>Unable to commit transaction</source>
         <translation>トランザクションをコミットできません</translation>
-    </message>
-    <message>
-        <source>Unable to rollback Transaction</source>
-        <translation type="vanished">トランザクションをロールバックできません</translation>
     </message>
     <message>
         <source>Error opening database</source>
@@ -5196,6 +4986,10 @@ Please turn one of those options off.</source>
         <source>Writing canceled by application</source>
         <translation>アプリケーションによって書き込みがキャンセルされました</translation>
     </message>
+    <message>
+        <source>QSaveFile cannot open &apos;%1&apos; without direct write fallback enabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QScrollBar</name>
@@ -5251,17 +5045,12 @@ Please turn one of those options off.</source>
         <source>Scroll down</source>
         <translation>下へスクロール</translation>
     </message>
+</context>
+<context>
+    <name>QSctpSocket</name>
     <message>
-        <source>Line up</source>
-        <translation type="vanished">１行上へ</translation>
-    </message>
-    <message>
-        <source>Position</source>
-        <translation type="vanished">位置</translation>
-    </message>
-    <message>
-        <source>Line down</source>
-        <translation type="vanished">１行下へ</translation>
+        <source>The remote host closed the connection</source>
+        <translation type="unfinished">リモートホストは接続を閉じました</translation>
     </message>
 </context>
 <context>
@@ -5710,6 +5499,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>+</source>
+        <extracomment>Key separator in shortcut string</extracomment>
         <translation>+</translation>
     </message>
     <message>
@@ -6339,37 +6129,33 @@ Please turn one of those options off.</source>
         <source>Num</source>
         <translation>Num</translation>
     </message>
-</context>
-<context>
-    <name>QSlider</name>
     <message>
-        <source>Page left</source>
-        <translation type="vanished">１ページ左へスクロール</translation>
+        <source>Launch (G)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Page up</source>
-        <translation type="vanished">１ページ戻る</translation>
+        <source>Launch (H)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Position</source>
-        <translation type="vanished">位置</translation>
+        <source>Calendar</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Page right</source>
-        <translation type="vanished">1ページ右へスクロール
-</translation>
+        <source>Adjust contrast</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Page down</source>
-        <translation type="vanished">１ページ進む</translation>
+        <source>Memo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>To-do list</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSocks5SocketEngine</name>
-    <message>
-        <source>Socks5 timeout error connecting to socks server</source>
-        <translation type="vanished">Socks5 はソックスサーバ接続しようとしてタイムアウトになりました</translation>
-    </message>
     <message>
         <source>Network operation timed out</source>
         <translation>ネットワーク操作がタイムアウトしました</translation>
@@ -6786,59 +6572,35 @@ Role of an accessible object</extracomment>
         <extracomment>Role of an accessible object</extracomment>
         <translation>不明</translation>
     </message>
+    <message>
+        <source>terminal</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>desktop</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>notification</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
-    <name>QSpinBox</name>
+    <name>QSslDiffieHellmanParameter</name>
     <message>
-        <source>More</source>
-        <translation type="vanished">増やす</translation>
+        <source>No error</source>
+        <translation type="unfinished">エラーはありません</translation>
     </message>
     <message>
-        <source>Less</source>
-        <translation type="vanished">減らす</translation>
-    </message>
-</context>
-<context>
-    <name>QSql</name>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">削除</translation>
+        <source>Invalid input data</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Delete this record?</source>
-        <translation type="vanished">このレコードを削除しますか?</translation>
-    </message>
-    <message>
-        <source>Yes</source>
-        <translation type="vanished">はい</translation>
-    </message>
-    <message>
-        <source>No</source>
-        <translation type="vanished">いいえ</translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <translation type="vanished">挿入</translation>
-    </message>
-    <message>
-        <source>Update</source>
-        <translation type="vanished">アップデート</translation>
-    </message>
-    <message>
-        <source>Save edits?</source>
-        <translation type="vanished">編集内容を保存しますか?</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">キャンセル</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation type="vanished">確認</translation>
-    </message>
-    <message>
-        <source>Cancel your edits?</source>
-        <translation type="vanished">編集をキャンセルしますか?</translation>
+        <source>The given Diffie-Hellman parameters are deemed unsafe</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6894,10 +6656,6 @@ Role of an accessible object</extracomment>
     <message>
         <source>Private key does not certify public key, %1</source>
         <translation>秘密鍵が公開鍵を認証していません。 %1</translation>
-    </message>
-    <message>
-        <source>OpenSSL version too old, need at least v1.0.2</source>
-        <translation>OpenSSL のバージョンが古すぎます。v1.0.2 以上が必要です</translation>
     </message>
     <message>
         <source>No error</source>
@@ -7007,6 +6765,254 @@ Role of an accessible object</extracomment>
         <source>The TLS/SSL connection has been closed</source>
         <translation>TLS/SSL 接続が閉じられました</translation>
     </message>
+    <message>
+        <source>Error when setting the OpenSSL configuration (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while setting the minimal protocol version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while setting the maximum protocol version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Diffie-Hellman parameters are not valid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OpenSSL version with disabled elliptic curves</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expecting QByteArray for %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An error occurred attempting to set %1 to %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wrong value for %1 (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unrecognized command %1 = %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SSL_CONF_finish() failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SSL_CONF_CTX_new() failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No OCSP status response found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The OCSP status request had invalid syntax</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP response contains an unexpected number of SingleResponse structures</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder reached an inconsistent internal state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder was unable to return a status for the requested certificate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The server requires the client to sign the OCSP request in order to construct a response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The client is not authorized to request OCSP status from this server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder&apos;s identity cannot be verified</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The identity of a certificate in an OCSP response cannot be established</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate status response has expired</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate&apos;s status is unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TLS initialization failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attempted to use an unsupported protocol.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server-side QSslSocket does not support OCSP stapling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to enable OCSP stapling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Client-side sockets do not send OCSP responses</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to decode OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to extract basic OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No certificate verification store, cannot verify OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to decode a SingleResponse from OCSP status response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to extract &apos;this update time&apos; from the SingleResponse</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insufficient memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Internal error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An internal handle was invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An internal token was invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Access denied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No authority could be contacted for authorization</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No credentials</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The target is unknown or unreachable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An unsupported function was requested</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hostname provided does not match the one received from the peer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No common protocol exists between the client and the server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected or badly-formatted message received</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The data could not be encrypted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No cipher suites in common</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The credentials were not recognized / Invalid argument</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The message was tampered with, damaged or out of sequence.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A message was received out of sequence.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown error occurred: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid protocol chosen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate provided cannot be used for a client.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate provided cannot be used for a server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server did not accept any certificate we could present.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Algorithm mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Handshake failed: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to query the TLS context: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Did not get the required attributes for the connection.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unwanted protocol was negotiated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Renegotiation was unsuccessful: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Schannel failed to encrypt data: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot provide a certificate with no key</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QStandardPaths</name>
@@ -7101,6 +7107,10 @@ Role of an accessible object</extracomment>
         <source>Unknown error</source>
         <translation>未知のエラー</translation>
     </message>
+    <message>
+        <source>Child mode of state machine &apos;%1&apos; is not &apos;ExclusiveStates&apos;.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QSystemSemaphore</name>
@@ -7155,111 +7165,18 @@ Role of an accessible object</extracomment>
     </message>
 </context>
 <context>
-    <name>QTextControl</name>
-    <message>
-        <source>&amp;Undo</source>
-        <translation type="vanished">元に戻す(&amp;U)</translation>
-    </message>
-    <message>
-        <source>&amp;Redo</source>
-        <translation type="vanished">やり直す(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Cu&amp;t</source>
-        <translation type="vanished">切り取り(&amp;T)</translation>
-    </message>
-    <message>
-        <source>&amp;Copy</source>
-        <translation type="vanished">コピー(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Copy &amp;Link Location</source>
-        <translation type="vanished">リンクの場所をコピー(&amp;L)</translation>
-    </message>
-    <message>
-        <source>&amp;Paste</source>
-        <translation type="vanished">貼り付け(&amp;P)</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">削除</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation type="vanished">すべてを選択</translation>
-    </message>
-</context>
-<context>
-    <name>QTgaFile</name>
-    <message>
-        <source>Could not read image data</source>
-        <translation type="vanished">画像データを読み込めません</translation>
-    </message>
-    <message>
-        <source>Sequential device (eg socket) for image read not supported</source>
-        <translation type="vanished">(ソケットなどの)シーケンシャルデバイスからの画像の読み込みはサポートしていません</translation>
-    </message>
-    <message>
-        <source>Seek file/device for image read failed</source>
-        <translation type="vanished">画像読み込み中にファイル/デバイスのシークに失敗しました</translation>
-    </message>
-    <message>
-        <source>Image header read failed</source>
-        <translation type="vanished">画像ヘッダの読み込みに失敗しました</translation>
-    </message>
-    <message>
-        <source>Image type not supported</source>
-        <translation type="vanished">サポートされていない型の画像です</translation>
-    </message>
-    <message>
-        <source>Image depth not valid</source>
-        <translation type="vanished">画像のデプスが不正です</translation>
-    </message>
-    <message>
-        <source>Could not seek to image read footer</source>
-        <translation type="vanished">画像のフッタ読み込み時にシークできませんでした</translation>
-    </message>
-    <message>
-        <source>Could not read footer</source>
-        <translation type="vanished">フッタを読み込めませんでした</translation>
-    </message>
-    <message>
-        <source>Image type (non-TrueVision 2.0) not supported</source>
-        <translation type="vanished">(TrueVision 2.0 ではない)型の画像はサポートされていません</translation>
-    </message>
-    <message>
-        <source>Could not reset to read data</source>
-        <translation type="vanished">読み込んだデータをリセットできませんでした</translation>
-    </message>
-</context>
-<context>
-    <name>QToolButton</name>
-    <message>
-        <source>Press</source>
-        <translation type="vanished">押す</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">開く</translation>
-    </message>
-</context>
-<context>
     <name>QUdpSocket</name>
     <message>
-        <source>This platform does not support IPv6</source>
-        <translation type="vanished">このプラットフォームは IPv6 をサポートしていません</translation>
+        <source>Unable to send a datagram</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No datagram available for reading</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QUndoGroup</name>
-    <message>
-        <source>Undo</source>
-        <translation type="vanished">元に戻す</translation>
-    </message>
-    <message>
-        <source>Redo</source>
-        <translation type="vanished">やり直す</translation>
-    </message>
     <message>
         <source>Undo %1</source>
         <translation>%1 を元に戻す</translation>
@@ -7288,14 +7205,6 @@ Role of an accessible object</extracomment>
 </context>
 <context>
     <name>QUndoStack</name>
-    <message>
-        <source>Undo</source>
-        <translation type="vanished">元に戻す</translation>
-    </message>
-    <message>
-        <source>Redo</source>
-        <translation type="vanished">やり直す</translation>
-    </message>
     <message>
         <source>Undo %1</source>
         <translation>%1 を元に戻す</translation>
@@ -7379,34 +7288,6 @@ Role of an accessible object</extracomment>
     </message>
 </context>
 <context>
-    <name>QWebPage</name>
-    <message>
-        <source>Reset</source>
-        <comment>default label for Reset buttons in forms on web pages</comment>
-        <translation type="obsolete">リセット</translation>
-    </message>
-    <message>
-        <source>Stop</source>
-        <comment>Stop context menu item</comment>
-        <translation type="obsolete">停止</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <comment>Ignore Spelling context menu item</comment>
-        <translation type="obsolete">無視</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <comment>Ignore Grammar context menu item</comment>
-        <translation type="obsolete">無視</translation>
-    </message>
-    <message>
-        <source>Unknown</source>
-        <comment>Unknown filesize FTP directory listing item</comment>
-        <translation type="obsolete">不明</translation>
-    </message>
-</context>
-<context>
     <name>QWhatsThisAction</name>
     <message>
         <source>What&apos;s This?</source>
@@ -7458,16 +7339,16 @@ Role of an accessible object</extracomment>
 <context>
     <name>QWindowsDirect2DIntegration</name>
     <message>
-        <source>Qt cannot load the direct2d platform plugin because the Direct2D version on this system is too old. The minimum system requirement for this platform plugin is Windows 7 SP1 with Platform Update.
-
-The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on this system is %5.%6.%7.%8.</source>
-        <translation>システムの Direct2D のバージョンが古すぎるため、direct2d プラットフォームプラグインを読み込めません。このプラットフォームプラグインにはプラットフォーム更新プログラムを適用した Windows 7 SP1 以降が必要です。
-
-最低動作環境となる Direct2D のバージョン: %1.%2.%3.%4、システムの Direct2D のバージョン: %5.%6.%7.%8。</translation>
-    </message>
-    <message>
         <source>Cannot load direct2d platform plugin</source>
         <translation>direct2d プラットフォームプラグインをロードできません</translation>
+    </message>
+    <message>
+        <source>Qt cannot load the direct2d platform plugin because the Direct2D version on this system is too old. The minimum system requirement for this platform plugin is Windows 7 SP1 with Platform Update.
+
+The minimum Direct2D version required is %1. The Direct2D version on this system is %2.</source>
+        <translation type="unfinished">システムの Direct2D のバージョンが古すぎるため、direct2d プラットフォームプラグインを読み込めません。このプラットフォームプラグインにはプラットフォーム更新プログラムを適用した Windows 7 SP1 以降が必要です。
+
+最低動作環境となる Direct2D のバージョン: %1.%2.%3.%4、システムの Direct2D のバージョン: %5.%6.%7.%8。 {2d?} {2D?} {7 ?} {1 ?} {2D?} {1.?} {2D?} {2.?}</translation>
     </message>
 </context>
 <context>
@@ -7487,10 +7368,6 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <message>
         <source>Done</source>
         <translation>終了</translation>
-    </message>
-    <message>
-        <source>Quit</source>
-        <translation type="vanished">終了</translation>
     </message>
     <message>
         <source>Help</source>
@@ -7519,61 +7396,6 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <message>
         <source>&amp;Next &gt;</source>
         <translation>次へ(&amp;N) &gt;</translation>
-    </message>
-</context>
-<context>
-    <name>QWorkspace</name>
-    <message>
-        <source>&amp;Restore</source>
-        <translation type="vanished">元に戻す(&amp;R)</translation>
-    </message>
-    <message>
-        <source>&amp;Move</source>
-        <translation type="vanished">移動(&amp;M)</translation>
-    </message>
-    <message>
-        <source>&amp;Size</source>
-        <translation type="vanished">サイズを変更(&amp;S)</translation>
-    </message>
-    <message>
-        <source>Mi&amp;nimize</source>
-        <translation type="vanished">最小化(&amp;N)</translation>
-    </message>
-    <message>
-        <source>Ma&amp;ximize</source>
-        <translation type="vanished">最大化(&amp;X)</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation type="vanished">閉じる(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Stay on &amp;Top</source>
-        <translation type="vanished">常に手前に表示(&amp;T)</translation>
-    </message>
-    <message>
-        <source>Sh&amp;ade</source>
-        <translation type="vanished">シェード(&amp;A)</translation>
-    </message>
-    <message>
-        <source>%1 - [%2]</source>
-        <translation type="vanished">%1 - [%2]</translation>
-    </message>
-    <message>
-        <source>Minimize</source>
-        <translation type="vanished">最小化</translation>
-    </message>
-    <message>
-        <source>Restore Down</source>
-        <translation type="vanished">元に戻す</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">閉じる</translation>
-    </message>
-    <message>
-        <source>&amp;Unshade</source>
-        <translation type="vanished">シェードを解除(&amp;U)</translation>
     </message>
 </context>
 <context>
@@ -7738,24 +7560,8 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation>無効なドキュメントです。</translation>
     </message>
     <message>
-        <source>Expected </source>
-        <translation>予期していた表現は、</translation>
-    </message>
-    <message>
-        <source>, but got &apos;</source>
-        <translation>ですが、取得した表現は以下のものでした &apos;</translation>
-    </message>
-    <message>
-        <source>Unexpected &apos;</source>
-        <translation>予期していなかった表現 &apos;</translation>
-    </message>
-    <message>
         <source>Expected character data.</source>
         <translation>予期していた文字列。</translation>
-    </message>
-    <message>
-        <source>Recursive entity detected.</source>
-        <translation>再帰しているエンティティを発見しました。</translation>
     </message>
     <message>
         <source>Start tag expected.</source>
@@ -7813,60 +7619,45 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <source>Attribute &apos;%1&apos; redefined.</source>
         <translation>属性 &apos;%1&apos; が再度定義されています。</translation>
     </message>
-</context>
-<context>
-    <name>WebCore::PlatformScrollbar</name>
     <message>
-        <source>Scroll here</source>
-        <translation type="vanished">ここにスクロール</translation>
+        <source>&apos;%1&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&apos;&lt;first option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Left edge</source>
-        <translation type="vanished">左端</translation>
+        <source>%1 or &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;first option&gt;, &apos;&lt;second option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Top</source>
-        <translation type="vanished">上端</translation>
+        <source>%1, &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;options so far&gt;, &apos;&lt;next option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Right edge</source>
-        <translation type="vanished">右端</translation>
+        <source>%1, or &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;options so far&gt;, or &apos;&lt;final option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Bottom</source>
-        <translation type="vanished">下端</translation>
+        <source>Expected %1, but got &apos;%2&apos;.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Page left</source>
-        <translation type="vanished">1ページ左へスクロール</translation>
+        <source>Unexpected &apos;%1&apos;.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Page up</source>
-        <translation type="vanished">1ページ戻る</translation>
+        <source>Self-referencing entity detected.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Page right</source>
-        <translation type="vanished">1ページ右へスクロール</translation>
-    </message>
-    <message>
-        <source>Page down</source>
-        <translation type="vanished">1ページ進む</translation>
-    </message>
-    <message>
-        <source>Scroll left</source>
-        <translation type="vanished">左へスクロール</translation>
-    </message>
-    <message>
-        <source>Scroll up</source>
-        <translation type="vanished">上へスクロール</translation>
-    </message>
-    <message>
-        <source>Scroll right</source>
-        <translation type="vanished">右へスクロール</translation>
-    </message>
-    <message>
-        <source>Scroll down</source>
-        <translation type="vanished">下へスクロール</translation>
+        <source>Entity expands to more characters than the entity expansion limit.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

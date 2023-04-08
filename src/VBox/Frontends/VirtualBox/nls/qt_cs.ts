@@ -2,43 +2,10 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="cs_CZ">
 <context>
-    <name>AudioEqualizer</name>
-    <message>
-        <source>Frequency band, %1 Hz</source>
-        <translation type="obsolete">Kmitočtové pásmo, %1 Hz</translation>
-    </message>
-</context>
-<context>
-    <name>AudioOutput</name>
-    <message>
-        <source>&lt;html&gt;The audio playback device &lt;b&gt;%1&lt;/b&gt; does not work.&lt;br/&gt;Falling back to &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</source>
-        <translation type="obsolete">&lt;html&gt;Zařízení pro přehrávání zvuku &lt;b&gt;%1&lt;/b&gt; nepracuje.&lt;br/&gt;Místo něj &lt;b&gt;%2&lt;/b&gt; se používá.&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>Revert back to device &apos;%1&apos;</source>
-        <translation type="obsolete">Přepnout zpět na zařízení &apos;%1&apos;</translation>
-    </message>
-    <message>
-        <source>&lt;html&gt;Switching to the audio playback device &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;which just became available and has higher preference.&lt;/html&gt;</source>
-        <translation type="obsolete">&lt;html&gt;Zařízení pro přehrávání zvuku &lt;b&gt;%1&lt;/b&gt; bylo spuštěno,&lt;br/&gt;protože je právě dostupné a má větší přednost.&lt;/html&gt;</translation>
-    </message>
-</context>
-<context>
     <name>CloseButton</name>
     <message>
         <source>Close Tab</source>
         <translation>Zavřít kartu</translation>
-    </message>
-</context>
-<context>
-    <name>FakeReply</name>
-    <message>
-        <source>Fake error !</source>
-        <translation type="vanished">Napodobená chyba!</translation>
-    </message>
-    <message>
-        <source>Invalid URL</source>
-        <translation type="vanished">Neplátné URL</translation>
     </message>
 </context>
 <context>
@@ -73,700 +40,17 @@
     </message>
 </context>
 <context>
-    <name>Phonon::</name>
+    <name>Print Device Input Slot</name>
     <message>
-        <source>Games</source>
-        <translation type="vanished">Hry</translation>
-    </message>
-    <message>
-        <source>Music</source>
-        <translation type="vanished">Hudba</translation>
-    </message>
-    <message>
-        <source>Video</source>
-        <translation type="vanished">Video</translation>
-    </message>
-    <message>
-        <source>Communication</source>
-        <translation type="vanished">Spojení</translation>
-    </message>
-    <message>
-        <source>Accessibility</source>
-        <translation type="vanished">Dostupnost</translation>
-    </message>
-    <message>
-        <source>Notifications</source>
-        <translation type="vanished">Oznámení</translation>
+        <source>Automatic</source>
+        <translation type="unfinished">Automaticky</translation>
     </message>
 </context>
 <context>
-    <name>Phonon::AudioOutput</name>
+    <name>Print Device Output Bin</name>
     <message>
-        <source>&lt;html&gt;The audio playback device &lt;b&gt;%1&lt;/b&gt; does not work.&lt;br/&gt;Falling back to &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</source>
-        <translation type="vanished">&lt;html&gt;Zařízení pro přehrávání zvuku &lt;b&gt;%1&lt;/b&gt; nepracuje.&lt;br/&gt;Místo něj &lt;b&gt;%2&lt;/b&gt; se používá.&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;html&gt;Switching to the audio playback device &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;which just became available and has higher preference.&lt;/html&gt;</source>
-        <translation type="vanished">&lt;html&gt;Zařízení pro přehrávání zvuku &lt;b&gt;%1&lt;/b&gt; bylo spuštěno,&lt;br/&gt;protože je právě dostupné a má větší přednost.&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>Revert back to device &apos;%1&apos;</source>
-        <translation type="vanished">Přepnout zpět na zařízení &apos;%1&apos;</translation>
-    </message>
-</context>
-<context>
-    <name>Phonon::Gstreamer::Backend</name>
-    <message>
-        <source>Warning: You do not seem to have the base GStreamer plugins installed.
-          All audio and video support has been disabled</source>
-        <translation type="vanished">Upozornění: Zdá se, že zákládní přídavné moduly pro GStreamer nejsou nainstalovány.￼
-Podpora audia a videa byla vypnuta</translation>
-    </message>
-    <message>
-        <source>Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.
-          Some video features have been disabled.</source>
-        <translation type="vanished">Varování: Balíček gstreamer0.10-plugins-good není nainstalován.
-Některé vlastnosti videa nejsou dostupné.</translation>
-    </message>
-</context>
-<context>
-    <name>Phonon::Gstreamer::MediaObject</name>
-    <message>
-        <source>Could not open media source.</source>
-        <translation type="vanished">Zdroj s médii se nepodařilo otevřít.</translation>
-    </message>
-    <message>
-        <source>Could not decode media source.</source>
-        <translation type="vanished">Zdroj s médii se nepodařilo rozluštit.</translation>
-    </message>
-    <message>
-        <source>Invalid source type.</source>
-        <translation type="vanished">Neplatný typ zdroje s médii.</translation>
-    </message>
-    <message>
-        <source>Cannot start playback. 
-
-Check your Gstreamer installation and make sure you 
-have libgstreamer-plugins-base installed.</source>
-        <translation type="vanished">Přehrávání nelze spustit.
-
-Ověřte, prosím, instalaci Gstreamer a ujistěte se,
-že je nainstalován balíček libgstreamer-plugins-base.</translation>
-    </message>
-    <message>
-        <source>Could not open audio device. The device is already in use.</source>
-        <translation type="vanished">Zvukové zařízení se nepodařilo otevřít, protože se již používá.</translation>
-    </message>
-    <message>
-        <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
-        <translation type="vanished">Všechny vyžadované kodeky nejsou nainstalovány. Kvůli přehrání tohoto obsahu je potřeba nainstalovat následující kodek(y): %0</translation>
-    </message>
-    <message>
-        <source>Could not locate media source.</source>
-        <translation type="vanished">Zdroj s médii se nepodařilo nalézt.</translation>
-    </message>
-</context>
-<context>
-    <name>Phonon::MMF</name>
-    <message>
-        <source>Audio Output</source>
-        <translation type="vanished">Výstup zvuku</translation>
-    </message>
-    <message>
-        <source>The audio output device</source>
-        <translation type="vanished">Zařízení pro výstup zvuku</translation>
-    </message>
-</context>
-<context>
-    <name>Phonon::MMF::AudioEqualizer</name>
-    <message>
-        <source>Frequency band, %1 Hz</source>
-        <translation type="vanished">Kmitočtové pásmo, %1 Hz</translation>
-    </message>
-</context>
-<context>
-    <name>Phonon::MMF::EffectFactory</name>
-    <message>
-        <source>audio equalizer</source>
-        <translation type="vanished">zvukový ekvalizér</translation>
-    </message>
-    <message>
-        <source>Bass boost</source>
-        <translation type="vanished">Zdůraznění basů</translation>
-    </message>
-    <message>
-        <source>Distance Attenuation</source>
-        <translation type="vanished">Zeslabení v závislosti na vzdálenosti</translation>
-    </message>
-    <message>
-        <source>Environmental Reverb</source>
-        <translation type="vanished">Vnější ozvěna</translation>
-    </message>
-    <message>
-        <source>Loudness</source>
-        <translation type="vanished">Hlasitost</translation>
-    </message>
-    <message>
-        <source>Source Orientation</source>
-        <translation type="vanished">Zaměření zdroje</translation>
-    </message>
-    <message>
-        <source>Stereo Widening</source>
-        <translation type="vanished">Rozšíření sterea</translation>
-    </message>
-</context>
-<context>
-    <name>Phonon::VolumeSlider</name>
-    <message>
-        <source>Volume: %1%</source>
-        <translation type="vanished">Hlasitost: %1%</translation>
-    </message>
-    <message>
-        <source>Use this slider to adjust the volume. The leftmost position is 0%, the rightmost is %1%</source>
-        <translation type="vanished">Posuvník se používá k nastavení hlasitosti. Poloha nejvíce vlevo odpovídá 0%; poloha nejvíce vpravo odpovídá %1%</translation>
-    </message>
-    <message>
-        <source>Muted</source>
-        <translation type="vanished">Ztlumení</translation>
-    </message>
-</context>
-<context>
-    <name>Q3Accel</name>
-    <message>
-        <source>%1, %2 not defined</source>
-        <translation type="vanished">%1, %2 nejsou stanoveny</translation>
-    </message>
-    <message>
-        <source>Ambiguous %1 not handled</source>
-        <translation type="vanished">Nejednoznačné %1 nemohou být zpracovány</translation>
-    </message>
-</context>
-<context>
-    <name>Q3DataTable</name>
-    <message>
-        <source>True</source>
-        <translation type="vanished">Pravdivý</translation>
-    </message>
-    <message>
-        <source>False</source>
-        <translation type="vanished">Nesprávný</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">Smazat</translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <translation type="vanished">Vložit</translation>
-    </message>
-    <message>
-        <source>Update</source>
-        <translation type="vanished">Obnovit</translation>
-    </message>
-</context>
-<context>
-    <name>Q3FileDialog</name>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="vanished">&amp;OK</translation>
-    </message>
-    <message>
-        <source>&amp;No</source>
-        <translation type="vanished">&amp;Ne</translation>
-    </message>
-    <message>
-        <source>Dir</source>
-        <translation type="vanished">Adresář</translation>
-    </message>
-    <message>
-        <source>&amp;Yes</source>
-        <translation type="vanished">&amp;Ano</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation type="vanished">Zpět</translation>
-    </message>
-    <message>
-        <source>Date</source>
-        <translation type="vanished">Datum</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation type="vanished">Soubor</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">Název</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">Otevřít</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation type="vanished">Velikost</translation>
-    </message>
-    <message>
-        <source>Sort</source>
-        <translation type="vanished">Roztřídit</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <translation type="vanished">Typ</translation>
-    </message>
-    <message>
-        <source>&amp;Open</source>
-        <translation type="vanished">&amp;Otevřít</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <translation type="vanished">&amp;Uložit</translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <translation type="vanished">Chyba</translation>
-    </message>
-    <message>
-        <source>Open </source>
-        <translation type="vanished">Otevřít</translation>
-    </message>
-    <message>
-        <source>Write: %1</source>
-        <translation type="vanished">Zapsat: %1</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Size</source>
-        <translation type="vanished">Roztřídit podle &amp;velikosti</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Date</source>
-        <translation type="vanished">Roztřídit podle &amp;data</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Name</source>
-        <translation type="vanished">Roztřídit podle &amp;názvu</translation>
-    </message>
-    <message>
-        <source>New Folder 1</source>
-        <translation type="vanished">Nová složka 1</translation>
-    </message>
-    <message>
-        <source>the directory</source>
-        <translation type="vanished">Adresář</translation>
-    </message>
-    <message>
-        <source>File &amp;type:</source>
-        <translation type="vanished">Typ &amp;souboru:</translation>
-    </message>
-    <message>
-        <source>File &amp;name:</source>
-        <translation type="vanished">Název &amp;souboru:</translation>
-    </message>
-    <message>
-        <source>Delete %1</source>
-        <translation type="vanished">Smazat %1</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">Zrušit</translation>
-    </message>
-    <message>
-        <source>R&amp;eload</source>
-        <translation type="vanished">Nahrát &amp;znovu</translation>
-    </message>
-    <message>
-        <source>New Folder</source>
-        <translation type="vanished">Nová složka</translation>
-    </message>
-    <message>
-        <source>&amp;Unsorted</source>
-        <translation type="vanished">&amp;Neroztříděné</translation>
-    </message>
-    <message>
-        <source>Look &amp;in:</source>
-        <translation type="vanished">Hle&amp;dat v:</translation>
-    </message>
-    <message>
-        <source>Preview File Contents</source>
-        <translation type="vanished">Náhled obsahu souboru</translation>
-    </message>
-    <message>
-        <source>New Folder %1</source>
-        <translation type="vanished">Nová složka %1</translation>
-    </message>
-    <message>
-        <source>Read-write</source>
-        <translation type="vanished">Číst/Zapisovat</translation>
-    </message>
-    <message>
-        <source>Read-only</source>
-        <translation type="vanished">Pouze číst</translation>
-    </message>
-    <message>
-        <source>Copy or Move a File</source>
-        <translation type="vanished">Soubor kopírovat nebo posunout</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Are you sure you wish to delete %1 &quot;%2&quot;?&lt;/qt&gt;</source>
-        <translation type="vanished">&lt;qt&gt;Jste si jistý, že chcete smazat %1 &quot;%2&quot;?&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>Find Directory</source>
-        <translation type="vanished">Najít adresář</translation>
-    </message>
-    <message>
-        <source>Attributes</source>
-        <translation type="vanished">Vlastnosti</translation>
-    </message>
-    <message>
-        <source>Show &amp;hidden files</source>
-        <translation type="vanished">&amp;Ukázat skryté soubory</translation>
-    </message>
-    <message>
-        <source>Save As</source>
-        <translation type="vanished">Uložit jako</translation>
-    </message>
-    <message>
-        <source>Inaccessible</source>
-        <translation type="vanished">Nepřístupné</translation>
-    </message>
-    <message>
-        <source>%1
-File not found.
-Check path and filename.</source>
-        <translation type="vanished">%1
-Soubor se nepodařilo nalézt.
-Ověřte cestu a název souboru.</translation>
-    </message>
-    <message>
-        <source>List View</source>
-        <translation type="vanished">Pohled se seznamem</translation>
-    </message>
-    <message>
-        <source>Special</source>
-        <translation type="vanished">Zvláštní vlastnost</translation>
-    </message>
-    <message>
-        <source>Write-only</source>
-        <translation type="vanished">Pouze zápis</translation>
-    </message>
-    <message>
-        <source>the symlink</source>
-        <translation type="vanished">Symbolický odkaz</translation>
-    </message>
-    <message>
-        <source>&amp;Delete</source>
-        <translation type="vanished">&amp;Smazat</translation>
-    </message>
-    <message>
-        <source>All Files (*)</source>
-        <translation type="vanished">Všechny soubory (*)</translation>
-    </message>
-    <message>
-        <source>Directories</source>
-        <translation type="vanished">Adresáře</translation>
-    </message>
-    <message>
-        <source>Symlink to Special</source>
-        <translation type="vanished">Symbolický odkaz k zvláštnímu souboru</translation>
-    </message>
-    <message>
-        <source>Select a Directory</source>
-        <translation type="vanished">Vyberte adresář</translation>
-    </message>
-    <message>
-        <source>All Files (*.*)</source>
-        <translation type="vanished">Všechny soubory (*.*)</translation>
-    </message>
-    <message>
-        <source>Read: %1</source>
-        <translation type="vanished">Číst: %1</translation>
-    </message>
-    <message>
-        <source>&amp;Rename</source>
-        <translation type="vanished">&amp;Přejmenovat</translation>
-    </message>
-    <message>
-        <source>Directory:</source>
-        <translation type="vanished">Adresář:</translation>
-    </message>
-    <message>
-        <source>One directory up</source>
-        <translation type="vanished">O jeden adresář nahoru</translation>
-    </message>
-    <message>
-        <source>Preview File Info</source>
-        <translation type="vanished">Náhled informace o souboru</translation>
-    </message>
-    <message>
-        <source>the file</source>
-        <translation type="vanished">Soubor</translation>
-    </message>
-    <message>
-        <source>Create New Folder</source>
-        <translation type="vanished">Vytvořit novou složku</translation>
-    </message>
-    <message>
-        <source>Symlink to File</source>
-        <translation type="vanished">Symbolický odkaz k souboru</translation>
-    </message>
-    <message>
-        <source>Symlink to Directory</source>
-        <translation type="vanished">Symbolický odkaz k adresáři</translation>
-    </message>
-    <message>
-        <source>Detail View</source>
-        <translation type="vanished">Podrobný pohled</translation>
-    </message>
-</context>
-<context>
-    <name>Q3LocalFs</name>
-    <message>
-        <source>Could not open
-%1</source>
-        <translation type="vanished">Nepodařilo se otevřít:
-%1</translation>
-    </message>
-    <message>
-        <source>Could not remove file or directory
-%1</source>
-        <translation type="vanished">Nepodařilo se odstranit soubor nebo adresář
-%1</translation>
-    </message>
-    <message>
-        <source>Could not create directory
-%1</source>
-        <translation type="vanished">Nepodařilo se vytvořit adresář
-%1</translation>
-    </message>
-    <message>
-        <source>Could not read directory
-%1</source>
-        <translation type="vanished">Nepodařilo se přečíst adresář
-%1</translation>
-    </message>
-    <message>
-        <source>Could not rename
-%1
-to
-%2</source>
-        <translation type="vanished">Nepodařilo se přejmenovat:
-%1
-na
-%2</translation>
-    </message>
-    <message>
-        <source>Could not write
-%1</source>
-        <translation type="vanished">Nepodařilo se zapsat:
-%1</translation>
-    </message>
-</context>
-<context>
-    <name>Q3MainWindow</name>
-    <message>
-        <source>Line up</source>
-        <translation type="vanished">Uspořádat</translation>
-    </message>
-    <message>
-        <source>Customize...</source>
-        <translation type="vanished">Přizpůsobit...</translation>
-    </message>
-</context>
-<context>
-    <name>Q3NetworkProtocol</name>
-    <message>
-        <source>Operation stopped by the user</source>
-        <translation type="vanished">Operace byla zastavena uživatelem</translation>
-    </message>
-</context>
-<context>
-    <name>Q3ProgressDialog</name>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">Zrušit</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TabDialog</name>
-    <message>
-        <source>OK</source>
-        <translation type="vanished">OK</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="vanished">Nápověda</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="vanished">Použít</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">Zrušit</translation>
-    </message>
-    <message>
-        <source>Defaults</source>
-        <translation type="vanished">Výchozí</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TextEdit</name>
-    <message>
-        <source>Cu&amp;t</source>
-        <translation type="vanished">Vyj&amp;mout</translation>
-    </message>
-    <message>
-        <source>&amp;Copy</source>
-        <translation type="vanished">&amp;Kopírovat</translation>
-    </message>
-    <message>
-        <source>&amp;Redo</source>
-        <translation type="vanished">&amp;Znovu</translation>
-    </message>
-    <message>
-        <source>&amp;Undo</source>
-        <translation type="vanished">&amp;Zpět</translation>
-    </message>
-    <message>
-        <source>Clear</source>
-        <translation type="vanished">Smazat</translation>
-    </message>
-    <message>
-        <source>&amp;Paste</source>
-        <translation type="vanished">&amp;Vložit</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation type="vanished">Vybrat vše</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TitleBar</name>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">Zavřít</translation>
-    </message>
-    <message>
-        <source>Minimize</source>
-        <translation type="vanished">Zmenšit</translation>
-    </message>
-    <message>
-        <source>Puts a minimized back to normal</source>
-        <translation type="obsolete">Dá velikost zmenšeného okna zpátky do obvyklého stavu</translation>
-    </message>
-    <message>
-        <source>Holds the name of the window and contains controls to manipulate it</source>
-        <translation type="vanished">Zobrazí název okna a obsahuje příkazy pro zacházení s ním</translation>
-    </message>
-    <message>
-        <source>Makes the window full screen</source>
-        <translation type="vanished">Dá okno na celou obrazovku</translation>
-    </message>
-    <message>
-        <source>System</source>
-        <translation type="vanished">Systém</translation>
-    </message>
-    <message>
-        <source>Maximize</source>
-        <translation type="vanished">Zvětšit</translation>
-    </message>
-    <message>
-        <source>Contains commands to manipulate the window</source>
-        <translation type="vanished">Obsahuje příkazy pro zacházení s velikostí okna</translation>
-    </message>
-    <message>
-        <source>Restore up</source>
-        <translation type="vanished">Obnovit</translation>
-    </message>
-    <message>
-        <source>Puts a minimized window back to normal</source>
-        <translation type="vanished">Dá velikost zmenšeného okna zpátky do obvyklého stavu</translation>
-    </message>
-    <message>
-        <source>Closes the window</source>
-        <translation type="vanished">Zavře okno</translation>
-    </message>
-    <message>
-        <source>Puts a maximized window back to normal</source>
-        <translation type="vanished">Dá velikost zvětšeného okna zpátky do obvyklého stavu</translation>
-    </message>
-    <message>
-        <source>Moves the window out of the way</source>
-        <translation type="vanished">Zmenší okno</translation>
-    </message>
-    <message>
-        <source>Restore down</source>
-        <translation type="vanished">Obnovit</translation>
-    </message>
-</context>
-<context>
-    <name>Q3ToolBar</name>
-    <message>
-        <source>More...</source>
-        <translation type="vanished">Více...</translation>
-    </message>
-</context>
-<context>
-    <name>Q3UrlOperator</name>
-    <message>
-        <source>The protocol `%1&apos; does not support getting files</source>
-        <translation type="vanished">Protokol `%1&apos; nepodporuje nahrávání souborů</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support renaming files or directories</source>
-        <translation type="vanished">Protokol `%1&apos; nepodporuje přejmenovávání souborů nebo adresářů</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support listing directories</source>
-        <translation type="vanished">Protokol `%1&apos; nepodporuje sestavování seznamu adresářů</translation>
-    </message>
-    <message>
-        <source>(unknown)</source>
-        <translation type="vanished">(neznámý)</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support removing files or directories</source>
-        <translation type="vanished">Protokol `%1&apos; nepodporuje odstraňování souborů nebo adresářů</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support putting files</source>
-        <translation type="vanished">Protokol `%1&apos; nepodporuje ukládání souborů</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; is not supported</source>
-        <translation type="vanished">Protokol `%1&apos; není podporován</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support copying or moving files or directories</source>
-        <translation type="vanished">Protokol `%1&apos; nepodporuje kopírování či přesun souborů nebo adresářů</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support creating new directories</source>
-        <translation type="vanished">Protokol `%1&apos; nepodporuje vytváření nových adresářů</translation>
-    </message>
-</context>
-<context>
-    <name>Q3Wizard</name>
-    <message>
-        <source>&amp;Help</source>
-        <translation type="vanished">&amp;Nápověda</translation>
-    </message>
-    <message>
-        <source>&amp;Cancel</source>
-        <translation type="vanished">&amp;Zrušit</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation type="vanished">Do&amp;končit</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation type="vanished">&amp;Další &gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation type="vanished">&lt; &amp;Zpět</translation>
+        <source>Automatic</source>
+        <translation type="unfinished">Automaticky</translation>
     </message>
 </context>
 <context>
@@ -871,58 +155,51 @@ na
     </message>
     <message>
         <source>Scroll Left</source>
-        <translation type="unfinished">Projíždět doleva</translation>
+        <translation>Projíždět doleva</translation>
     </message>
     <message>
         <source>Scroll Right</source>
-        <translation type="unfinished">Projíždět doprava</translation>
+        <translation>Projíždět doprava</translation>
     </message>
     <message>
         <source>Scroll Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Projíždět nahoru</translation>
     </message>
     <message>
         <source>Scroll Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Projíždět dolů</translation>
     </message>
     <message>
         <source>Previous Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Předchozí strana</translation>
     </message>
     <message>
         <source>Next Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Další strana</translation>
     </message>
     <message>
         <source>Scrolls to the left</source>
-        <translation type="unfinished"></translation>
+        <translation>Projíždí doleva</translation>
     </message>
     <message>
         <source>Scrolls to the right</source>
-        <translation type="unfinished"></translation>
+        <translation>Projíždí doprava</translation>
     </message>
     <message>
         <source>Scrolls up</source>
-        <translation type="unfinished"></translation>
+        <translation>Projíždí nahoru</translation>
     </message>
     <message>
         <source>Scrolls down</source>
-        <translation type="unfinished"></translation>
+        <translation>Projíždí dolů</translation>
     </message>
     <message>
         <source>Goes back a page</source>
-        <translation type="unfinished"></translation>
+        <translation>Jde zpět o stranu</translation>
     </message>
     <message>
         <source>Goes to the next page</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>QAccessibleButton</name>
-    <message>
-        <source>Press</source>
-        <translation type="vanished">Stisknout</translation>
+        <translation>Jde na další stranu</translation>
     </message>
 </context>
 <context>
@@ -947,63 +224,12 @@ na
 <context>
     <name>QApplication</name>
     <message>
-        <source>Activates the program&apos;s main window</source>
-        <translation type="vanished">Spustí hlavní okno programu</translation>
-    </message>
-    <message>
-        <source>QT_LAYOUT_DIRECTION</source>
-        <translation type="obsolete">LTR</translation>
-    </message>
-    <message>
-        <source>Activate</source>
-        <translation type="vanished">Spustit</translation>
-    </message>
-    <message>
         <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
         <translation>Použití &apos;%1&apos; vyžaduje Qt %2; bylo ale nalezeno Qt %3.</translation>
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
         <translation>Nekompatibilní knihovna Qt</translation>
-    </message>
-    <message>
-        <source>QT_LAYOUT_DIRECTION</source>
-        <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
-        <translation type="vanished">LTR</translation>
-    </message>
-</context>
-<context>
-    <name>QAxSelect</name>
-    <message>
-        <source>OK</source>
-        <translation type="vanished">OK</translation>
-    </message>
-    <message>
-        <source>COM &amp;Object:</source>
-        <translation type="vanished">COM-&amp;Objekt:</translation>
-    </message>
-    <message>
-        <source>&amp;Cancel</source>
-        <translation type="vanished">&amp;Zrušit</translation>
-    </message>
-    <message>
-        <source>Select ActiveX Control</source>
-        <translation type="vanished">Vybrat prvek ActiveX</translation>
-    </message>
-</context>
-<context>
-    <name>QCheckBox</name>
-    <message>
-        <source>Check</source>
-        <translation type="vanished">Označit křížkem</translation>
-    </message>
-    <message>
-        <source>Toggle</source>
-        <translation type="vanished">Přepnout</translation>
-    </message>
-    <message>
-        <source>Uncheck</source>
-        <translation type="vanished">Zrušit označení křížkem</translation>
     </message>
 </context>
 <context>
@@ -1046,19 +272,19 @@ na
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished">Vyjmout</translation>
+        <translation>Vyjmout</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">Kopírovat</translation>
+        <translation>Kopírovat</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished">Vložit</translation>
+        <translation>Vložit</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation type="unfinished">Vybrat vše</translation>
+        <translation>Vybrat vše</translation>
     </message>
 </context>
 <context>
@@ -1119,38 +345,21 @@ na
         <translation>&amp;HTML:</translation>
     </message>
     <message>
-        <source>Cursor at %1, %2, color: %3
+        <source>Cursor at %1, %2
 Press ESC to cancel</source>
-        <translation type="vanished">Ukazatel na %1, %2, barva: %3
+        <translation>Ukazovátko na %1, %2
 Stiskněte Esc pro zrušení</translation>
     </message>
     <message>
-        <source>Pick Screen Color</source>
-        <translation type="vanished">Zvolit barvu obrazovky</translation>
-    </message>
-    <message>
-        <source>Cursor at %1, %2
-Press ESC to cancel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Pick Screen Color</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Zvolit barvu obrazovky</translation>
     </message>
 </context>
 <context>
     <name>QComboBox</name>
     <message>
-        <source>Open</source>
-        <translation type="vanished">Otevřít</translation>
-    </message>
-    <message>
         <source>True</source>
         <translation>Pravdivý</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">Zavřít</translation>
     </message>
     <message>
         <source>False</source>
@@ -1166,10 +375,6 @@ Press ESC to cancel</source>
     <message>
         <source>Displays version information.</source>
         <translation>Zobrazit informace o verzi.</translation>
-    </message>
-    <message>
-        <source>Displays this help.</source>
-        <translation>Zobrazit tuto nápovědu.</translation>
     </message>
     <message>
         <source>Unknown option &apos;%1&apos;.</source>
@@ -1203,6 +408,14 @@ Press ESC to cancel</source>
         <source>Arguments:</source>
         <translation>Argumenty:</translation>
     </message>
+    <message>
+        <source>Displays help on commandline options.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays help including Qt specific options.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QCoreApplication</name>
@@ -1220,38 +433,6 @@ Press ESC to cancel</source>
         <source>%1: ftok failed</source>
         <comment>QSystemSemaphore</comment>
         <translation>%1: Vyvolání ftok se nezdařilo</translation>
-    </message>
-    <message>
-        <source>%1: key is empty</source>
-        <translation type="obsolete">%1: Neplatný údaj u klíče (prázdný)</translation>
-    </message>
-    <message>
-        <source>%1: unable to make key</source>
-        <translation type="obsolete">%1: Nepodařilo se vytvořit klíč</translation>
-    </message>
-    <message>
-        <source>%1: ftok failed</source>
-        <translation type="obsolete">%1: Vyvolání ftok se nezdařilo</translation>
-    </message>
-    <message>
-        <source>%1: already exists</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: Již existuje</translation>
-    </message>
-    <message>
-        <source>%1: does not exist</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: Neexistuje</translation>
-    </message>
-    <message>
-        <source>%1: out of resources</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: Nejsou již použitelné zdroje</translation>
-    </message>
-    <message>
-        <source>%1: unknown error %2</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: Neznámá chyba %2</translation>
     </message>
 </context>
 <context>
@@ -1359,6 +540,29 @@ Press ESC to cancel</source>
     </message>
 </context>
 <context>
+    <name>QCupsPrinterSupport</name>
+    <message>
+        <source>Authentication Needed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authentication needed to use %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authentication needed to use %1 on %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Username:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QDB2Driver</name>
     <message>
         <source>Unable to commit transaction</source>
@@ -1408,68 +612,30 @@ Press ESC to cancel</source>
     <name>QDBusTrayIcon</name>
     <message>
         <source>OK</source>
-        <translation type="unfinished">OK</translation>
-    </message>
-</context>
-<context>
-    <name>QDateTimeEdit</name>
-    <message>
-        <source>AM</source>
-        <translation type="vanished">AM</translation>
-    </message>
-    <message>
-        <source>PM</source>
-        <translation type="vanished">PM</translation>
-    </message>
-    <message>
-        <source>am</source>
-        <translation type="vanished">am</translation>
-    </message>
-    <message>
-        <source>pm</source>
-        <translation type="vanished">pm</translation>
+        <translation>OK</translation>
     </message>
 </context>
 <context>
     <name>QDateTimeParser</name>
     <message>
         <source>AM</source>
-        <translation type="unfinished">AM</translation>
+        <translation>AM</translation>
     </message>
     <message>
         <source>am</source>
-        <translation type="unfinished">am</translation>
+        <translation>am</translation>
     </message>
     <message>
         <source>PM</source>
-        <translation type="unfinished">PM</translation>
+        <translation>PM</translation>
     </message>
     <message>
         <source>pm</source>
-        <translation type="unfinished">pm</translation>
-    </message>
-</context>
-<context>
-    <name>QDial</name>
-    <message>
-        <source>QDial</source>
-        <translation type="vanished">QDial</translation>
-    </message>
-    <message>
-        <source>SliderHandle</source>
-        <translation type="vanished">Posuvník</translation>
-    </message>
-    <message>
-        <source>SpeedoMeter</source>
-        <translation type="vanished">Rychloměr</translation>
+        <translation>pm</translation>
     </message>
 </context>
 <context>
     <name>QDialog</name>
-    <message>
-        <source>Done</source>
-        <translation type="vanished">Hotovo</translation>
-    </message>
     <message>
         <source>What&apos;s This?</source>
         <translation>Co je toto?</translation>
@@ -1481,105 +647,9 @@ Press ESC to cancel</source>
         <source>OK</source>
         <translation>OK</translation>
     </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="vanished">&amp;OK</translation>
-    </message>
-    <message>
-        <source>&amp;No</source>
-        <translation type="vanished">&amp;Ne</translation>
-    </message>
-    <message>
-        <source>&amp;Yes</source>
-        <translation type="vanished">&amp;Ano</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="vanished">Nápověda</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">Otevřít</translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation type="vanished">Uložit</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <translation type="vanished">&amp;Uložit</translation>
-    </message>
-    <message>
-        <source>Abort</source>
-        <translation type="vanished">Zrušit</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="vanished">Použít</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">Zavřít</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="vanished">Vrátit</translation>
-    </message>
-    <message>
-        <source>Retry</source>
-        <translation type="vanished">Opakovat</translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation type="vanished">Obnovit výchozí</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation type="vanished">&amp;Zavřít</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">Zrušit</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <translation type="vanished">Ignorovat</translation>
-    </message>
-    <message>
-        <source>Close without Saving</source>
-        <translation type="vanished">Zavřít bez uložení</translation>
-    </message>
-    <message>
-        <source>N&amp;o to All</source>
-        <translation type="vanished">N&amp;e, žádné</translation>
-    </message>
-    <message>
-        <source>Save All</source>
-        <translation type="vanished">Uložit vše</translation>
-    </message>
-    <message>
-        <source>&amp;Cancel</source>
-        <translation type="vanished">&amp;Zrušit</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation type="vanished">Zahodit</translation>
-    </message>
-    <message>
-        <source>Yes to &amp;All</source>
-        <translation type="vanished">Ano, &amp;vše</translation>
-    </message>
-    <message>
-        <source>Don&apos;t Save</source>
-        <translation type="vanished">Neukládat</translation>
-    </message>
 </context>
 <context>
     <name>QDirModel</name>
-    <message>
-        <source>Kind</source>
-        <translation type="obsolete">Druh</translation>
-    </message>
     <message>
         <source>Name</source>
         <translation>Název</translation>
@@ -1597,10 +667,6 @@ Press ESC to cancel</source>
         <source>Type</source>
         <comment>All other platforms</comment>
         <translation>Typ</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <translation type="obsolete">Typ</translation>
     </message>
     <message>
         <source>Date Modified</source>
@@ -1631,10 +697,6 @@ Press ESC to cancel</source>
     <message>
         <source>Resolver initialization failed</source>
         <translation>Inicializace překladače adres se nezdařila</translation>
-    </message>
-    <message>
-        <source>IPv6 addresses for nameservers is currently not supported</source>
-        <translation type="vanished">Adresy IPv6 pro DNS servery nejsou v současnosti podporovány</translation>
     </message>
     <message>
         <source>Server could not process query</source>
@@ -1707,23 +769,19 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>IPv6 addresses for nameservers are currently not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresy IPv6 pro DNS servery nejsou v současnosti podporovány</translation>
     </message>
     <message>
         <source>Host %1 could not be found.</source>
-        <translation type="unfinished"></translation>
+        <translation>Počítač %1 se nepodařilo nalézt.</translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation type="unfinished">Neznámá chyba</translation>
+        <translation>Neznámá chyba</translation>
     </message>
 </context>
 <context>
     <name>QDockWidget</name>
-    <message>
-        <source>Dock</source>
-        <translation type="vanished">Vplout do panelu</translation>
-    </message>
     <message>
         <source>Close</source>
         <extracomment>Accessible name for button closing a dock widget</extracomment>
@@ -1744,14 +802,193 @@ Press ESC to cancel</source>
     </message>
 </context>
 <context>
-    <name>QDoubleSpinBox</name>
+    <name>QDomParser</name>
     <message>
-        <source>Less</source>
-        <translation type="vanished">Méně</translation>
+        <source>Error occurred while processing XML declaration</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>More</source>
-        <translation type="vanished">Více</translation>
+        <source>Multiple DTD sections are not allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing document type declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing comment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing a processing instruction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing a start element</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected end element &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing an end element</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing the element content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing comments</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing an entity reference</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected token</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tag mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing entity declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing notation declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QDtls</name>
+    <message>
+        <source>Invalid (empty) secret</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Multicast and broadcast addresses are not supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot set peer after handshake started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid address</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot set verification name after handshake started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot set configuration after handshake started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start/continue handshake, invalid handshake state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid (nullptr) socket</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>To start a handshake you must set peer&apos;s address and port first</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>To start a handshake, DTLS server requires non-empty datagram (client hello)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start handshake, already done/in progress</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A valid QUdpSocket and non-empty datagram are needed to continue the handshake</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot continue handshake, not in InProgress state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot resume, not in VerificationError state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No handshake in progress, nothing to abort</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot send shutdown alert, not encrypted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot write a datagram, not in encrypted state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot read a datagram, not in encrypted state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 failed</source>
+        <extracomment>%1: Some function</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid SslMode, SslServerMode or SslClientMode expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid protocol version, DTLS protocol expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>BIO_ADD_new failed, cannot start handshake</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start the handshake, verified client hello expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Peer verification failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The DTLS connection has been closed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while writing: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The DTLS connection has been shutdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while reading: %1</source>
+        <translation type="unfinished">Při čtení se vyskytla chyba: %1</translation>
+    </message>
+</context>
+<context>
+    <name>QDtlsClientVerifier</name>
+    <message>
+        <source>A valid UDP socket, non-empty datagram, valid address/port were expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>BIO_ADDR_new failed, ignoring client hello</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1775,6 +1012,14 @@ Press ESC to cancel</source>
     <message>
         <source>Warning:</source>
         <translation>Varování:</translation>
+    </message>
+    <message>
+        <source>Critical Error:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Information:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1804,10 +1049,6 @@ Press ESC to cancel</source>
         <translation>Cílový soubor již existuje</translation>
     </message>
     <message>
-        <source>Cannot open for output</source>
-        <translation>Nepodařilo se otevřít pro zápis</translation>
-    </message>
-    <message>
         <source>Destination file is the same file.</source>
         <translation>Cílový soubor je týž soubor.</translation>
     </message>
@@ -1816,12 +1057,20 @@ Press ESC to cancel</source>
         <translation>Zdrojový soubor neexistuje.</translation>
     </message>
     <message>
-        <source>Error while renaming.</source>
-        <translation>Chyba při přejmenovávání.</translation>
-    </message>
-    <message>
         <source>Unable to restore from %1: %2</source>
         <translation>Nelze obnovit z %1: %2</translation>
+    </message>
+    <message>
+        <source>Error while renaming: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot open destination file: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot open for output: %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1829,6 +1078,10 @@ Press ESC to cancel</source>
     <message>
         <source>No file engine available or engine does not support UnMapExtension</source>
         <translation>Není dostupný žádný souborový stroj nebo stroj nepodporuje UnMapExtension</translation>
+    </message>
+    <message>
+        <source>No file engine available</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1850,11 +1103,6 @@ Press ESC to cancel</source>
         <source>Folder</source>
         <comment>All other platforms</comment>
         <translation>Složka</translation>
-    </message>
-    <message>
-        <source>Alias</source>
-        <comment>Mac OS X Finder</comment>
-        <translation type="vanished">Přezdívka</translation>
     </message>
     <message>
         <source>Shortcut</source>
@@ -1928,10 +1176,6 @@ Přesto chcete soubor smazat?</translation>
         <translation>&amp;Ukázat skryté soubory</translation>
     </message>
     <message>
-        <source>Are sure you want to delete &apos;%1&apos;?</source>
-        <translation type="vanished">Jste si jistý, že %1 chcete smazat?</translation>
-    </message>
-    <message>
         <source>Save As</source>
         <translation>Uložit jako</translation>
     </message>
@@ -1962,10 +1206,6 @@ Ověřte, prosím, že byl zadán správný název adresáře.</translation>
     <message>
         <source>Directories</source>
         <translation>Adresáře</translation>
-    </message>
-    <message>
-        <source>All Files (*.*)</source>
-        <translation type="vanished">Všechny soubory (*.*)</translation>
     </message>
     <message>
         <source>&amp;Rename</source>
@@ -2076,20 +1316,16 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
     <message>
         <source>%1 File</source>
         <extracomment>%1 is a file name suffix, for example txt</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Soubor %1</translation>
     </message>
     <message>
         <source>Alias</source>
         <comment>OS X Finder</comment>
-        <translation type="unfinished">Přezdívka</translation>
+        <translation>Přezdívka</translation>
     </message>
 </context>
 <context>
     <name>QFileSystemModel</name>
-    <message>
-        <source>Kind</source>
-        <translation type="obsolete">Druh</translation>
-    </message>
     <message>
         <source>Name</source>
         <translation>Název</translation>
@@ -2097,34 +1333,6 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
     <message>
         <source>Size</source>
         <translation>Velikost</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <translation type="obsolete">Typ</translation>
-    </message>
-    <message>
-        <source>%1 GB</source>
-        <translation>%1 GB</translation>
-    </message>
-    <message>
-        <source>%1 KB</source>
-        <translation>%1 KB</translation>
-    </message>
-    <message>
-        <source>%1 MB</source>
-        <translation>%1 MB</translation>
-    </message>
-    <message>
-        <source>%1 TB</source>
-        <translation>%1 TB</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;The name &quot;%1&quot; can not be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuations marks.</source>
-        <translation>&lt;b&gt;Název &quot;%1&quot; nelze použít.&lt;/b&gt;&lt;p&gt;Zkuste použít jiný název, s menším počtem znaků nebo bez zvláštních znaků.</translation>
-    </message>
-    <message>
-        <source>%1 bytes</source>
-        <translation>%1 bytů</translation>
     </message>
     <message>
         <source>My Computer</source>
@@ -2153,8 +1361,8 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
         <translation>Datum změny</translation>
     </message>
     <message>
-        <source>%1 byte(s)</source>
-        <translation>%1 byt(ů)</translation>
+        <source>&lt;b&gt;The name &quot;%1&quot; cannot be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuation marks.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2257,10 +1465,6 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
         <translation>Korejské</translation>
     </message>
     <message>
-        <source>Normal</source>
-        <translation type="vanished">Normální</translation>
-    </message>
-    <message>
         <source>Oblique</source>
         <translation>Skloněné</translation>
     </message>
@@ -2331,29 +1535,29 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
     <message>
         <source>Normal</source>
         <comment>The Normal or Regular font weight</comment>
-        <translation type="unfinished">Normální</translation>
+        <translation>Normální</translation>
     </message>
     <message>
         <source>Medium</source>
         <comment>The Medium font weight</comment>
-        <translation type="unfinished"></translation>
+        <translation>Střední</translation>
     </message>
     <message>
         <source>Thin</source>
-        <translation type="unfinished"></translation>
+        <translation>Tenké</translation>
     </message>
     <message>
         <source>Extra Light</source>
-        <translation type="unfinished"></translation>
+        <translation>Velice lehké</translation>
     </message>
     <message>
         <source>Extra Bold</source>
-        <translation type="unfinished"></translation>
+        <translation>Velice tučné</translation>
     </message>
     <message>
         <source>Extra</source>
         <extracomment>The word for &quot;Extra&quot; as in &quot;Extra Bold, Extra Thin&quot; used as a pattern for string searches</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Velice</translation>
     </message>
 </context>
 <context>
@@ -2414,10 +1618,6 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
         <translation>Žádné spojení</translation>
     </message>
     <message>
-        <source>Connection refused for data connection</source>
-        <translation type="vanished">Odmítnuto spojení spojení pro data</translation>
-    </message>
-    <message>
         <source>Login failed:
 %1</source>
         <translation>Přihlášení se nezdařilo:
@@ -2428,10 +1628,6 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
 %1</source>
         <translation>Stažení souboru se nezdařilo:
 %1</translation>
-    </message>
-    <message>
-        <source>Connected to host</source>
-        <translation type="vanished">Spojení s počítačem navázáno</translation>
     </message>
     <message>
         <source>Connection timed out to host %1</source>
@@ -2464,10 +1660,6 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
 %1</translation>
     </message>
     <message>
-        <source>Host found</source>
-        <translation type="vanished">Počítač byl nalezen</translation>
-    </message>
-    <message>
         <source>Removing directory failed:
 %1</source>
         <translation>Odstranění adresáře se nezdařilo:
@@ -2478,18 +1670,10 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
         <translation>Spojení s počítačem %1 odmítnuto</translation>
     </message>
     <message>
-        <source>Connection to %1 closed</source>
-        <translation type="vanished">Spojení s %1 ukončeno</translation>
-    </message>
-    <message>
         <source>Removing file failed:
 %1</source>
         <translation>Odstranění souboru se nezdařilo:
 %1</translation>
-    </message>
-    <message>
-        <source>Host %1 found</source>
-        <translation type="vanished">Počítač %1 byl nalezen</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -2534,6 +1718,74 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
         <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
         <translation>LTR</translation>
     </message>
+    <message>
+        <source>QPA plugin. See QGuiApplication documentation for available options for each plugin.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path to the platform plugins.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Platform theme.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Additional plugins to load, can be specified multiple times.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Window geometry for the main window, using the X11-syntax, like 100x100+50+50.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default window icon.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Title of the first window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sets the application&apos;s layout direction to Qt::RightToLeft (debugging helper).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restores the application from an earlier session.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display name, overrides $DISPLAY.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Instance name according to ICCCM 4.1.2.5.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable mouse grabbing (useful in debuggers).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Force mouse grabbing (even when running in a debugger).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ID of the X11 Visual to use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowgeometry.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowicon.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowtitle.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QHostInfo</name>
@@ -2557,10 +1809,6 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
         <translation>Neznámý typ adresy</translation>
     </message>
     <message>
-        <source>Unknown error</source>
-        <translation>Neznámá chyba</translation>
-    </message>
-    <message>
         <source>No host name given</source>
         <translation>Nebyl zadán název pro hostitelský počítač</translation>
     </message>
@@ -2568,28 +1816,12 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
         <source>Invalid hostname</source>
         <translation>Neplatný název pro hostitelský počítač</translation>
     </message>
-    <message>
-        <source>Unknown error (%1)</source>
-        <translation>Neznámá chyba (%1)</translation>
-    </message>
 </context>
 <context>
     <name>QHttp</name>
     <message>
-        <source>Connection refused (or timed out)</source>
-        <translation type="vanished">Spojení bylo odmítnuto (nebo byl překročen časový limit)</translation>
-    </message>
-    <message>
         <source>Data corrupted</source>
         <translation>Data jsou poškozena</translation>
-    </message>
-    <message>
-        <source>Connected to host</source>
-        <translation type="vanished">Spojení s počítačem navázáno</translation>
-    </message>
-    <message>
-        <source>Connected to host %1</source>
-        <translation type="vanished">Spojeno s počítačem %1</translation>
     </message>
     <message>
         <source>Host %1 not found</source>
@@ -2600,96 +1832,32 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
         <translation>Hostitelský počítač požaduje autentizaci</translation>
     </message>
     <message>
-        <source>Error writing response to device</source>
-        <translation type="vanished">Při psaní odpovědi výstupnímu zařízení se vyskytla chyba</translation>
-    </message>
-    <message>
-        <source>HTTPS connection requested but SSL support not compiled in</source>
-        <translation type="vanished">Požadované HTTPS spojení nelze vytvořit, protože neexistuje žádná SSL podpora</translation>
-    </message>
-    <message>
-        <source>Host found</source>
-        <translation type="vanished">Počítač byl nalezen</translation>
-    </message>
-    <message>
         <source>Connection refused</source>
         <translation>Spojení bylo odmítnuto</translation>
-    </message>
-    <message>
-        <source>Proxy authentication required</source>
-        <translation type="vanished">Požadována proxy autentizace</translation>
     </message>
     <message>
         <source>Unknown protocol specified</source>
         <translation>Byl zadán neznámý protokol</translation>
     </message>
     <message>
-        <source>HTTP request failed</source>
-        <translation type="vanished">HTTP dotaz se nezdařil</translation>
-    </message>
-    <message>
         <source>Proxy requires authentication</source>
         <translation>Proxy server požaduje autentizaci</translation>
-    </message>
-    <message>
-        <source>Authentication required</source>
-        <translation type="vanished">Požadována autentizace</translation>
     </message>
     <message>
         <source>SSL handshake failed</source>
         <translation>Během startu SSL protokolu se vyskytla chyba</translation>
     </message>
     <message>
-        <source>Connection to %1 closed</source>
-        <translation type="vanished">Spojení s %1 ukončeno</translation>
-    </message>
-    <message>
-        <source>Invalid HTTP chunked body</source>
-        <translation type="vanished">Obsah (chunked body - rozkouskované tělo) HTTP je neplatný</translation>
-    </message>
-    <message>
-        <source>Host %1 found</source>
-        <translation type="vanished">Počítač %1 byl nalezen</translation>
-    </message>
-    <message>
-        <source>Wrong content length</source>
-        <translation type="vanished">Neplatný údaj o délce obsahu</translation>
-    </message>
-    <message>
-        <source>Unknown error</source>
-        <translation type="vanished">Neznámá chyba</translation>
-    </message>
-    <message>
-        <source>Invalid HTTP response header</source>
-        <translation type="vanished">Hlavička HTTP odpovědi není platná</translation>
-    </message>
-    <message>
-        <source>Unknown authentication method</source>
-        <translation type="vanished">Neznámý způsob autentizace</translation>
-    </message>
-    <message>
         <source>Connection closed</source>
         <translation>Spojení ukončeno</translation>
     </message>
     <message>
-        <source>No server set to connect to</source>
-        <translation type="vanished">Pro spojení nebyl nastaven žádný počítač - server</translation>
-    </message>
-    <message>
-        <source>Server closed connection unexpectedly</source>
-        <translation type="vanished">Server neočekávaně uzavřel spojení</translation>
-    </message>
-    <message>
-        <source>Request aborted</source>
-        <translation type="vanished">Požadavek byl zrušen</translation>
-    </message>
-    <message>
         <source>Too many redirects</source>
-        <translation type="unfinished"></translation>
+        <translation>Příliš mnoho přesměrování</translation>
     </message>
     <message>
         <source>Insecure redirect</source>
-        <translation type="unfinished"></translation>
+        <translation>Nezabezpečené přesměrování</translation>
     </message>
 </context>
 <context>
@@ -2852,69 +2020,50 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
     <name>QImageReader</name>
     <message>
         <source>Invalid device</source>
-        <translation type="unfinished"></translation>
+        <translation>Neplatné zařízení</translation>
     </message>
     <message>
         <source>File not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Soubor nebyl nalezen</translation>
     </message>
     <message>
         <source>Unsupported image format</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepodporovaný formát obrázku</translation>
     </message>
     <message>
         <source>Unable to read image data</source>
-        <translation type="unfinished"></translation>
+        <translation>Nelze přečíst data obrazu</translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation type="unfinished">Neznámá chyba</translation>
+        <translation>Neznámá chyba</translation>
     </message>
 </context>
 <context>
     <name>QImageWriter</name>
     <message>
         <source>Unknown error</source>
-        <translation type="unfinished">Neznámá chyba</translation>
+        <translation>Neznámá chyba</translation>
     </message>
     <message>
         <source>Device is not set</source>
-        <translation type="unfinished"></translation>
+        <translation>Zařízení není nastaveno</translation>
     </message>
     <message>
         <source>Device not writable</source>
-        <translation type="unfinished"></translation>
+        <translation>Zařízení není zapisovatelné</translation>
     </message>
     <message>
         <source>Unsupported image format</source>
+        <translation>Nepodporovaný formát obrázku</translation>
+    </message>
+    <message>
+        <source>Cannot open device for writing: %1</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>QInputContext</name>
     <message>
-        <source>XIM</source>
-        <translation type="vanished">XIM</translation>
-    </message>
-    <message>
-        <source>FEP</source>
-        <translation type="vanished">FEP</translation>
-    </message>
-    <message>
-        <source>Windows input method</source>
-        <translation type="vanished">Windows-vstupní metoda</translation>
-    </message>
-    <message>
-        <source>S60 FEP input method</source>
-        <translation type="vanished">S60 FEP-vstupní metoda</translation>
-    </message>
-    <message>
-        <source>XIM input method</source>
-        <translation type="vanished">XIM-vstupní metoda</translation>
-    </message>
-    <message>
-        <source>Mac OS X input method</source>
-        <translation type="vanished">Mac OS X-vstupní metoda</translation>
+        <source>Image is empty</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2984,7 +2133,7 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
     </message>
     <message>
         <source>garbage at the end of the document</source>
-        <translation type="unfinished"></translation>
+        <translation>Neplatná/chybná data za koncem dokumentu</translation>
     </message>
 </context>
 <context>
@@ -3002,10 +2151,6 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
 <context>
     <name>QLibrary</name>
     <message>
-        <source>Could not unmap &apos;%1&apos;: %2</source>
-        <translation type="vanished">Operace unmap, zrušit zobrazení, se nezdařila u &apos;%1&apos;: %2</translation>
-    </message>
-    <message>
         <source>Cannot unload library %1: %2</source>
         <translation>Knihovnu %1 nelze vyjmout: %2</translation>
     </message>
@@ -3016,14 +2161,6 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
         <translation>Přídavný modul &apos;%1&apos; používá neslučitelnou Qt knihovnu. (%2.%3.%4) [%5]</translation>
-    </message>
-    <message>
-        <source>Cannot resolve symbol &quot;%1&quot; in %2: %3</source>
-        <translation>Symbol &quot;%1&quot; nelze v %2 vyřešit: %3</translation>
-    </message>
-    <message>
-        <source>Plugin verification data mismatch in &apos;%1&apos;</source>
-        <translation type="vanished">Ověřovací data přídavného modulu nesouhlasí v &apos;%1&apos;</translation>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
@@ -3040,14 +2177,6 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
     <message>
         <source>Unknown error</source>
         <translation>Neznámá chyba</translation>
-    </message>
-    <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. Expected build key &quot;%2&quot;, got &quot;%3&quot;</source>
-        <translation type="vanished">Přídavný modul &apos;%1&apos; používá neslučitelnou Qt knihovnu. Potřebný byl zvláštní klíč pro sestavení &quot;%2&quot;, obdržen &quot;%3&quot;</translation>
-    </message>
-    <message>
-        <source>Could not mmap &apos;%1&apos;: %2</source>
-        <translation type="vanished">Operace mmap se nezdařila u &apos;%1&apos;: %2</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is not an ELF object (%2)</source>
@@ -3095,6 +2224,54 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
     </message>
     <message>
         <source>Failed to extract plugin meta data from &apos;%1&apos;</source>
+        <translation>Nepodařilo se získat popisná data přídavného modulu z &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>odd cpu architecture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>wrong cpu architecture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>odd endianness</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unexpected e_shsize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unexpected e_shentsize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>announced %n section(s), each %1 byte(s), exceed file size</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>shstrtab section header seems to be at %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>string table seems to be at %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>section name %1 of %2 behind end of file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>empty .rodata. not a library.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing section data. This is not a library.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3206,16 +2383,16 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
         <source>Trying to connect while connection is in progress</source>
         <translation>Při navázaném spojení došlo k dalšímu pokusu o spojení</translation>
     </message>
+    <message>
+        <source>Socket is not connected</source>
+        <translation type="unfinished">Socket není spojen</translation>
+    </message>
 </context>
 <context>
     <name>QMYSQLDriver</name>
     <message>
         <source>Unable to commit transaction</source>
         <translation>Transakci se nepodařilo zapsat</translation>
-    </message>
-    <message>
-        <source>Unable to open database &apos;</source>
-        <translation type="vanished">Nepodařilo se otevřít spojení s databází &apos;</translation>
     </message>
     <message>
         <source>Unable to connect</source>
@@ -3235,7 +2412,7 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
     </message>
     <message>
         <source>Unable to allocate a MYSQL object</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepodařilo se přidělit objekt MYSQL</translation>
     </message>
 </context>
 <context>
@@ -3368,41 +2545,7 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
     </message>
 </context>
 <context>
-    <name>QMenu</name>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">Otevřít</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">Zavřít</translation>
-    </message>
-    <message>
-        <source>Execute</source>
-        <translation type="vanished">Provést</translation>
-    </message>
-</context>
-<context>
-    <name>QMenuBar</name>
-    <message>
-        <source>Actions</source>
-        <translation type="vanished">Činnosti</translation>
-    </message>
-</context>
-<context>
     <name>QMessageBox</name>
-    <message>
-        <source>OK</source>
-        <translation>OK</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation>Nápověda</translation>
-    </message>
-    <message>
-        <source>&lt;h3&gt;About Qt&lt;/h3&gt;&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 2.1 or GNU GPL version 3.0.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt applications (proprietary or open source) provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU General Public License version 3.0 is appropriate for the development of Qt applications where you wish to use such applications in combination with software subject to the terms of the GNU GPL version 3.0 or where you are otherwise willing to comply with the terms of the GNU GPL version 3.0.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://qt.nokia.com/products/licensing&quot;&gt;qt.nokia.com/products/licensing&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://qt.nokia.com/&quot;&gt;qt.nokia.com&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;h3&gt;O Qt&lt;/h3&gt;&lt;p&gt;Tento program používá Qt ve verzi %1.&lt;/p&gt;&lt;p&gt;Qt je sadou softwarových nástrojů C++ určených pro vývoj aplikací napříč platformami.&lt;/p&gt;&lt;p&gt;Qt poskytuje jednoduchou přenositelnost přes MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, a všechny hlavní obchodní varianty systému Unix. Qt je rovněž dostupný pro vložená zařízení jako Qt pro Embedded Linux a Qt pro Windows CE.&lt;/p&gt;&lt;p&gt;Qt je dostupné pod třemi rozdílnými licenčními volbami navrženými pro přizpůsobení se potřebám našich různých uživatelů.&lt;/p&gt;Qt licencované pod naší obchodní licenční smlouvou je vhodné pro vývoj soukromého/obchodního software, kde si nepřejete sdílet jakýkoli zdrojový kód se třetími stranami, nebo jinak řečeno, když nemůžete vyhovět podmínkám GNU LGPL ve verzi 2.1 nebo GNU GPL ve verzi 3.0.&lt;/p&gt;&lt;p&gt;Qt licencované pod GNU LGPL ve verzi 2.1 je vhodné pro vývoj Qt aplikací (soukromých nebo s otevřeným zdrojovým kódem), za předpokladu že můžete souhlasit s požadavky a podmínkami GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licencované pod GNU General Public License ve verzi 3.0 je vhodné pro vývoj aplikací Qt, u nichž si přejete použít takovou aplikaci ve spojení se software, který podléhá požadavkům GNU GPL ve verzi 3.0, nebo kde jste jinak ochoten souhlasit s podmínkami GNU GPL ve verzi 3.0.&lt;/p&gt;&lt;p&gt;Podívejte se, prosím, na &lt;a href=&quot;http://qt.nokia.com/products/licensing&quot;&gt;qt.nokia.com/products/licensing&lt;/a&gt; kvůli přehledu licencování Qt.&lt;/p&gt;&lt;p&gt;Copyright (C) 2009 Nokia Corporation a/nebo její dceřinná(é) společnost(i).&lt;/p&gt;&lt;p&gt;Qt je výrobkem společnosti Nokia. Podívejte se na &lt;a href=&quot;http://qt.nokia.com/&quot;&gt;qt.nokia.com&lt;/a&gt;kvůli více informacím.&lt;/p&gt;</translation>
-    </message>
     <message>
         <source>Show Details...</source>
         <translation>Ukázat podrobnosti...</translation>
@@ -3412,50 +2555,17 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
         <translation>&lt;h3&gt;O Qt&lt;/h3&gt;&lt;p&gt;Tento program používá Qt-verze %1.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 2.1 or GNU GPL version 3.0.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt applications (proprietary or open source) provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU General Public License version 3.0 is appropriate for the development of Qt applications where you wish to use such applications in combination with software subject to the terms of the GNU GPL version 3.0 or where you are otherwise willing to comply with the terms of the GNU GPL version 3.0.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://qt.nokia.com/products/licensing&quot;&gt;qt.nokia.com/products/licensing&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://qt.nokia.com/&quot;&gt;qt.nokia.com&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Qt je sadou softwarových nástrojů C++ určených pro vývoj aplikací napříč platformami.&lt;/p&gt;&lt;p&gt;Qt poskytuje jednoduchou přenositelnost přes MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, a všechny hlavní obchodní varianty systému Unix. Qt je rovněž dostupný pro vložená zařízení jako Qt pro Embedded Linux a Qt pro Windows CE.&lt;/p&gt;&lt;p&gt;Qt je dostupné pod třemi rozdílnými licenčními volbami navrženými pro přizpůsobení se potřebám našich různých uživatelů.&lt;/p&gt;Qt licencované pod naší obchodní licenční smlouvou je vhodné pro vývoj soukromého/obchodního software, kde si nepřejete sdílet jakýkoli zdrojový kód se třetími stranami, nebo jinak řečeno, když nemůžete vyhovět podmínkám GNU LGPL ve verzi 2.1 nebo GNU GPL ve verzi 3.0.&lt;/p&gt;&lt;p&gt;Qt licencované pod GNU LGPL ve verzi 2.1 je vhodné pro vývoj Qt aplikací (soukromých nebo s otevřeným zdrojovým kódem), za předpokladu že můžete souhlasit s požadavky a podmínkami GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licencované pod GNU General Public License ve verzi 3.0 je vhodné pro vývoj aplikací Qt, u nichž si přejete použít takovou aplikaci ve spojení se software, který podléhá požadavkům GNU GPL ve verzi 3.0, nebo kde jste jinak ochoten souhlasit s podmínkami GNU GPL ve verzi 3.0.&lt;/p&gt;&lt;p&gt;Podívejte se, prosím, na &lt;a href=&quot;http://qt.nokia.com/products/licensing&quot;&gt;qt.nokia.com/products/licensing&lt;/a&gt; kvůli přehledu licencování Qt.&lt;/p&gt;&lt;p&gt;Copyright (C) 2009 Nokia Corporation a/nebo její dceřinná(é) společnost(i).&lt;/p&gt;&lt;p&gt;Qt je výrobkem společnosti Nokia. Podívejte se na &lt;a href=&quot;http://qt.nokia.com/&quot;&gt;qt.nokia.com&lt;/a&gt;kvůli více informacím.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>About Qt</source>
         <translation>O Qt</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Tento program používá Qt Open Source Edition verze %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition je zamýšlena pro vývoj Open Source aplikací. Pro vývoj vlastnických aplikací (uzavřené zdrojové kódy) potřebujete Qt licenci.&lt;/p&gt;&lt;p&gt;Podívejte se, prosím, na &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; kvůli přehledu licencování Qt.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Hide Details...</source>
         <translation>Skrýt podrobnosti...</translation>
     </message>
     <message>
-        <source>&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Tento program používá Qt-verze %1.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 2.1 or GNU GPL version 3.0.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt applications provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU General Public License version 3.0 is appropriate for the development of Qt applications where you wish to use such applications in combination with software subject to the terms of the GNU GPL version 3.0 or where you are otherwise willing to comply with the terms of the GNU GPL version 3.0.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://qt.io/licensing/&quot;&gt;qt.io/licensing&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) 2015 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of Digia Plc and/or its subsidiary(-ies).&lt;/p&gt;&lt;p&gt;Qt is developed as an open source project on &lt;a href=&quot;http://qt-project.org/&quot;&gt;qt-project.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Qt is a Digia product. See &lt;a href=&quot;http://qt.io/&quot;&gt;qt.io&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Qt je sadou softwarových nástrojů C++ určených pro víceplatformní vývoj aplikací.&lt;/p&gt;&lt;p&gt;Qt poskytuje snadnou přenositelnost a jednotný zdrojový kód pro MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux a všechny hlavní prodejní varianty systému Unix. Qt je rovněž dostupné pro vestavěná zařízení jako Qt pro Embedded Linux a Qt pro Windows CE.&lt;/p&gt;&lt;p&gt;Qt je dostupné s třemi rozdílnými licencemi, aby vyhovělo širokým řadám našich uživatelů.&lt;/p&gt;Qt s naší obchodní licenční smlouvou je vhodné pro vývoj soukromého/obchodního software, u kterého si nepřejete sdílet jakýkoli zdrojový kód se třetími stranami anebo z jiného důvodu nemůžete vyhovět podmínkám GNU LGPL ve verzi 2.1 nebo GNU GPL ve verzi 3.0.&lt;/p&gt;&lt;p&gt;Qt s licencí GNU LGPL ve verzi 2.1 je vhodné pro vývoj Qt aplikací (soukromých nebo s otevřeným zdrojovým kódem) za předpokladu, že můžete souhlasit s požadavky a podmínkami GNU LGPL verze 2.1.&lt;/p&gt;&lt;p&gt;Qt s licencí GNU General Public License ve verzi 3.0 je vhodné pro vývoj aplikací Qt, u nichž si přejete použít takovou aplikaci ve spojení se software, který podléhá požadavkům GNU GPL ve verzi 3.0, nebo kde jste jinak ochotni souhlasit s podmínkami GNU GPL ve verzi 3.0.&lt;/p&gt;&lt;p&gt;Více informací najdete na &lt;a href=&quot;http://qt.io/licensing/&quot;&gt;qt.nokia.com/products/licensing&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Autorské právo (C) 2015 The Qt Company Ltd a/nebo její dceřinná(é) společnost(i) a další přispěvatelé.&lt;/p&gt;&lt;p&gt;Qt a logo Qt jsou obchodní značky Digia Plc a/nebo její dceřinná(é) společnost(i).&lt;/p&gt;&lt;p&gt;Qt je vyvíjeno jako projekt s otevřeným zdrojovým kódem na &lt;a href=&quot;http://qt-project.org/&quot;&gt;qt-project.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Qt je výrobkem společnosti Digia. Další informace najdete na &lt;a href=&quot;http://qt.io/&quot;&gt;qt.io&lt;/a&gt;. href=&quot;http://qt.io/&quot;&gt;qt.nokia.com&lt;/a&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 3 or GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 3 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 3.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under multiple licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of GNU (L)GPL.&lt;/p&gt;&lt;p&gt;Qt licensed under GNU (L)GPL is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the respective licenses.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <extracomment>Leave this text untranslated or include a verbatim copy of it below and note that it is the authoritative version in case of doubt.</extracomment>
         <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>QMultiInputContext</name>
-    <message>
-        <source>Select IM</source>
-        <translation type="vanished">Zvolit způsob vstupu</translation>
-    </message>
-</context>
-<context>
-    <name>QMultiInputContextPlugin</name>
-    <message>
-        <source>Multiple input method switcher that uses the context menu of the text widgets</source>
-        <translation type="vanished">Přepínač pro více způsobů vstupu, který používá související nabídku textového prvku</translation>
-    </message>
-    <message>
-        <source>Multiple input method switcher</source>
-        <translation type="vanished">Přepínač pro více způsobů vstupu</translation>
     </message>
 </context>
 <context>
@@ -3570,11 +2680,11 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
     </message>
     <message>
         <source>Network dropped connection on reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Při restartování bylo síťové spojení přerušeno</translation>
     </message>
     <message>
         <source>Connection reset by peer</source>
-        <translation type="unfinished"></translation>
+        <translation>Spojení restartováno protějškem</translation>
     </message>
 </context>
 <context>
@@ -3653,25 +2763,7 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
     </message>
 </context>
 <context>
-    <name>QNetworkAccessHttpBackend</name>
-    <message>
-        <source>No suitable proxy found</source>
-        <translation type="vanished">Nepodařilo se najít žádný vhodný proxy server</translation>
-    </message>
-</context>
-<context>
-    <name>QNetworkAccessManager</name>
-    <message>
-        <source>Network access is disabled.</source>
-        <translation>Přístup k síti není dovolen.</translation>
-    </message>
-</context>
-<context>
     <name>QNetworkReply</name>
-    <message>
-        <source>Error downloading %1 - server replied: %2</source>
-        <translation type="vanished">Při stahování %1 se vyskytla chyba - Odpověď serveru je: %2</translation>
-    </message>
     <message>
         <source>Protocol &quot;%1&quot; is unknown</source>
         <translation>Protokol &quot;%1&quot; není znám</translation>
@@ -3694,7 +2786,7 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
     </message>
     <message>
         <source>Error transferring %1 - server replied: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Při přenosu %1 se vyskytla chyba - Odpověď serveru je: %2</translation>
     </message>
 </context>
 <context>
@@ -3706,13 +2798,6 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
     <message>
         <source>No suitable proxy found</source>
         <translation>Nepodařilo se najít žádný vhodný proxy server</translation>
-    </message>
-</context>
-<context>
-    <name>QNetworkReplyHttpImplPrivate</name>
-    <message>
-        <source>No suitable proxy found</source>
-        <translation type="vanished">Nepodařilo se najít žádný vhodný proxy server</translation>
     </message>
 </context>
 <context>
@@ -3759,10 +2844,6 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
         <translation>Transakci se nepodařilo zapsat</translation>
     </message>
     <message>
-        <source>Unable to initialize</source>
-        <translation type="obsolete">Inicializace se nezdařila</translation>
-    </message>
-    <message>
         <source>Unable to logon</source>
         <translation>Přihlášení se nezdařilo</translation>
     </message>
@@ -3803,10 +2884,6 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
         <translation>Nepodařilo se spojit sloupec pro provedení příkazu dávkového zpracování</translation>
     </message>
     <message>
-        <source>Unable to execute select statement</source>
-        <translation type="obsolete">Výběrové vyhledávání se nepodařilo provést</translation>
-    </message>
-    <message>
         <source>Unable to prepare statement</source>
         <translation>Příkaz se nepodařilo připravit</translation>
     </message>
@@ -3828,10 +2905,6 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
     <message>
         <source>Unable to enable autocommit</source>
         <translation>&apos;autocommit&apos; se nepodařilo povolit</translation>
-    </message>
-    <message>
-        <source>Unable to connect - Driver doesn&apos;t support all needed functionality</source>
-        <translation type="obsolete">Nepodařilo se navázat spojení, protože ovladač nutnou funkcionalitu plně nepodporuje</translation>
     </message>
     <message>
         <source>Unable to disable autocommit</source>
@@ -3890,100 +2963,6 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
     </message>
 </context>
 <context>
-    <name>QObject</name>
-    <message>
-        <source>Invalid hostname</source>
-        <translation type="vanished">Neplatný název pro hostitelský počítač</translation>
-    </message>
-    <message>
-        <source>Home</source>
-        <translation type="obsolete">Home</translation>
-    </message>
-    <message>
-        <source>Protocol error: packet of size 0 received</source>
-        <translation type="obsolete">Chyba v zápisu: Byl přijat paket o nulové velikosti</translation>
-    </message>
-    <message>
-        <source>Invalid URI: %1</source>
-        <translation type="vanished">Neplátná URI: %1</translation>
-    </message>
-    <message>
-        <source>Socket error on %1: %2</source>
-        <translation type="vanished">Chyba zásuvky (socketu) u %1: %2</translation>
-    </message>
-    <message>
-        <source>No host name given</source>
-        <translation type="vanished">Nebyl zadán název pro hostitelský počítač</translation>
-    </message>
-    <message>
-        <source>Read error reading from %1: %2</source>
-        <translation type="obsolete">Při čtení ze souboru %1 nastala chyba: %2</translation>
-    </message>
-    <message>
-        <source>Remote host closed the connection prematurely on %1</source>
-        <translation type="vanished">Vzdálený počítač předčasně ukončil spojení s %1</translation>
-    </message>
-    <message>
-        <source>Operation not supported on %1</source>
-        <translation type="vanished">Tato operace není %1 podporována</translation>
-    </message>
-    <message>
-        <source>Write error writing to %1: %2</source>
-        <translation type="obsolete">Při zápisu do souboru %1: %2 nastala chyba</translation>
-    </message>
-    <message>
-        <source>Could not read image data</source>
-        <translation type="vanished">Nepodařilo se přečíst data obrazu</translation>
-    </message>
-    <message>
-        <source>Sequential device (eg socket) for image read not supported</source>
-        <translation type="vanished">Postupné zařízení (např. socket - komunikační kanál) pro čtení obrazu nepodporováno</translation>
-    </message>
-    <message>
-        <source>Seek file/device for image read failed</source>
-        <translation type="vanished">Vyhledání souboru/zařízení pro čtení obrazu se nezdařilo</translation>
-    </message>
-    <message>
-        <source>Image mHeader read failed</source>
-        <translation type="vanished">Čtení mHeader obrazu se nezdařilo</translation>
-    </message>
-    <message>
-        <source>Image type not supported</source>
-        <translation type="vanished">Typ obrazu nepodporován</translation>
-    </message>
-    <message>
-        <source>Image dpeth not valid</source>
-        <translation type="vanished">Hloubka obrazu neplatná</translation>
-    </message>
-    <message>
-        <source>Could not seek to image read footer</source>
-        <translation type="vanished">Nepodařilo se vyhledat zápatí čtení obrazu</translation>
-    </message>
-    <message>
-        <source>Could not read footer</source>
-        <translation type="vanished">Nepodařilo se přečíst zápatí</translation>
-    </message>
-    <message>
-        <source>Image type (non-TrueVision 2.0) not supported</source>
-        <translation type="vanished">Typ obrazu (non-TrueVision 2.0) nepodporován</translation>
-    </message>
-    <message>
-        <source>Could not reset to read data</source>
-        <translation type="vanished">Nepodařilo se nastavit znovu na čtení dat</translation>
-    </message>
-</context>
-<context>
-    <name>QPPDOptionsModel</name>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">Název</translation>
-    </message>
-    <message>
-        <source>Value</source>
-        <translation type="vanished">Hodnota</translation>
-    </message>
-</context>
-<context>
     <name>QPSQLDriver</name>
     <message>
         <source>Unable to subscribe</source>
@@ -4020,6 +2999,18 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
         <source>Unable to create query</source>
         <translation>Nepodařilo se vytvořit žádný dotaz</translation>
     </message>
+    <message>
+        <source>Query results lost - probably discarded on executing another SQL query.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to get result</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to send query</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QPageSetupWidget</name>
@@ -4038,10 +3029,6 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
     <message>
         <source>Paper source:</source>
         <translation>Zdroj papíru:</translation>
-    </message>
-    <message>
-        <source>Centimeters (cm)</source>
-        <translation type="vanished">Centimetry (cm)</translation>
     </message>
     <message>
         <source>right margin</source>
@@ -4729,120 +3716,8 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
 <context>
     <name>QPrintDialog</name>
     <message>
-        <source>A0</source>
-        <translation type="vanished">A0</translation>
-    </message>
-    <message>
-        <source>A1</source>
-        <translation type="vanished">A1</translation>
-    </message>
-    <message>
-        <source>A2</source>
-        <translation type="vanished">A2</translation>
-    </message>
-    <message>
-        <source>A3</source>
-        <translation type="vanished">A3</translation>
-    </message>
-    <message>
-        <source>A4</source>
-        <translation type="vanished">A4</translation>
-    </message>
-    <message>
-        <source>A5</source>
-        <translation type="vanished">A5</translation>
-    </message>
-    <message>
-        <source>A6</source>
-        <translation type="vanished">A6</translation>
-    </message>
-    <message>
-        <source>A7</source>
-        <translation type="vanished">A7</translation>
-    </message>
-    <message>
-        <source>A8</source>
-        <translation type="vanished">A8</translation>
-    </message>
-    <message>
-        <source>A9</source>
-        <translation type="vanished">A9</translation>
-    </message>
-    <message>
-        <source>B0</source>
-        <translation type="vanished">B0</translation>
-    </message>
-    <message>
-        <source>B1</source>
-        <translation type="vanished">B1</translation>
-    </message>
-    <message>
-        <source>B2</source>
-        <translation type="vanished">B2</translation>
-    </message>
-    <message>
-        <source>B3</source>
-        <translation type="vanished">B3</translation>
-    </message>
-    <message>
-        <source>B4</source>
-        <translation type="vanished">B4</translation>
-    </message>
-    <message>
-        <source>B5</source>
-        <translation type="vanished">B5</translation>
-    </message>
-    <message>
-        <source>B6</source>
-        <translation type="vanished">B6</translation>
-    </message>
-    <message>
-        <source>B7</source>
-        <translation type="vanished">B7</translation>
-    </message>
-    <message>
-        <source>B8</source>
-        <translation type="vanished">B8</translation>
-    </message>
-    <message>
-        <source>B9</source>
-        <translation type="vanished">B9</translation>
-    </message>
-    <message>
         <source>OK</source>
         <translation>OK</translation>
-    </message>
-    <message>
-        <source>B10</source>
-        <translation type="vanished">B10</translation>
-    </message>
-    <message>
-        <source>C5E</source>
-        <translation type="vanished">C5E</translation>
-    </message>
-    <message>
-        <source>DLE</source>
-        <translation type="vanished">DLE</translation>
-    </message>
-    <message>
-        <source>A6 (105 x 148 mm)</source>
-        <translation type="vanished">A6 (105 x 148 mm)</translation>
-    </message>
-    <message>
-        <source>Legal (8.5 x 14 inches, 216 x 356 mm)</source>
-        <translation type="vanished">Právní (8,5 x 14 palců, 216 x 356 mm)</translation>
-    </message>
-    <message>
-        <source>Folio</source>
-        <translation type="vanished">Folio</translation>
-    </message>
-    <message>
-        <source>Legal</source>
-        <translation type="vanished">US Legal</translation>
-    </message>
-    <message>
-        <source>Print all</source>
-        <translation type="vanished">Tisknout vše</translation>
     </message>
     <message>
         <source>Print</source>
@@ -4857,64 +3732,8 @@ Ověřte, prosím, že byl zadán správný název souboru.</translation>
         <translation>&amp;Nastavení &gt;&gt;</translation>
     </message>
     <message>
-        <source>B6 (125 x 176 mm)</source>
-        <translation type="vanished">B6 (125 x 176 mm)</translation>
-    </message>
-    <message>
-        <source>B8 (62 x 88 mm)</source>
-        <translation type="vanished">B8 (62 x 88 mm)</translation>
-    </message>
-    <message>
-        <source>A8 (52 x 74 mm)</source>
-        <translation type="vanished">A8 (52 x 74 mm)</translation>
-    </message>
-    <message>
-        <source>B9 (44 x 62 mm)</source>
-        <translation type="vanished">B9 (44 x 62 mm)</translation>
-    </message>
-    <message>
-        <source>A9 (37 x 52 mm)</source>
-        <translation type="vanished">A9 (37 x 52 mm)</translation>
-    </message>
-    <message>
-        <source>B0 (1000 x 1414 mm)</source>
-        <translation type="vanished">B0 (1000 x 1414 mm)</translation>
-    </message>
-    <message>
-        <source>A5 (148 x 210 mm)</source>
-        <translation type="vanished">A5 (148 x 210 mm)</translation>
-    </message>
-    <message>
-        <source>Tabloid (279 x 432 mm)</source>
-        <translation type="vanished">Bulvární noviny/tisk (279 x 432 mm)</translation>
-    </message>
-    <message>
-        <source>B10 (31 x 44 mm)</source>
-        <translation type="vanished">B10 (31 x 44 mm)</translation>
-    </message>
-    <message>
-        <source>B2 (500 x 707 mm)</source>
-        <translation type="vanished">B2 (500 x 707 mm)</translation>
-    </message>
-    <message>
         <source>&amp;Print</source>
         <translation>&amp;Tisk</translation>
-    </message>
-    <message>
-        <source>A3 (297 x 420 mm)</source>
-        <translation type="vanished">A3 (297 x 420 mm)</translation>
-    </message>
-    <message>
-        <source>Print selection</source>
-        <translation type="vanished">Tisk výběru</translation>
-    </message>
-    <message>
-        <source>Print to File (Postscript)</source>
-        <translation type="vanished">Tisk do souboru (Postscript)</translation>
-    </message>
-    <message>
-        <source>B4 (250 x 353 mm)</source>
-        <translation type="vanished">B4 (250 x 353 mm)</translation>
     </message>
     <message>
         <source>%1 already exists.
@@ -4923,72 +3742,8 @@ Do you want to overwrite it?</source>
 Má se přepsat?</translation>
     </message>
     <message>
-        <source>A1 (594 x 841 mm)</source>
-        <translation type="vanished">A1 (594 x 841 mm)</translation>
-    </message>
-    <message>
-        <source>Custom</source>
-        <translation type="vanished">Stanovený uživatelem</translation>
-    </message>
-    <message>
-        <source>B1 (707 x 1000 mm)</source>
-        <translation type="vanished">B1 (707 x 1000 mm)</translation>
-    </message>
-    <message>
-        <source>Folio (210 x 330 mm)</source>
-        <translation type="vanished">Folio (210 x 330 mm)</translation>
-    </message>
-    <message>
-        <source>Ledger</source>
-        <translation type="vanished">US Ledger</translation>
-    </message>
-    <message>
-        <source>Letter</source>
-        <translation type="vanished">US Letter</translation>
-    </message>
-    <message>
-        <source>DLE (110 x 220 mm)</source>
-        <translation type="vanished">DLE (110 x 220 mm)</translation>
-    </message>
-    <message>
-        <source>C5E (163 x 229 mm)</source>
-        <translation type="vanished">C5E (163 x 229 mm)</translation>
-    </message>
-    <message>
-        <source>B5 (176 x 250 mm, 6.93 x 9.84 inches)</source>
-        <translation type="vanished">B5 (176 x 250 mm, 6.93 x 9.84 palců</translation>
-    </message>
-    <message>
-        <source>Print range</source>
-        <translation type="vanished">Tisková oblast</translation>
-    </message>
-    <message>
-        <source>File exists</source>
-        <translation type="vanished">Soubor již existuje</translation>
-    </message>
-    <message>
-        <source>Write %1 file</source>
-        <translation type="vanished">Zapsat %1 soubor</translation>
-    </message>
-    <message>
-        <source>A0 (841 x 1189 mm)</source>
-        <translation type="vanished">A0 (841 x 1189 mm)</translation>
-    </message>
-    <message>
         <source>Local file</source>
         <translation>Místní soubor</translation>
-    </message>
-    <message>
-        <source>locally connected</source>
-        <translation type="vanished">přímo spojeno</translation>
-    </message>
-    <message>
-        <source>Ledger (432 x 279 mm)</source>
-        <translation type="vanished">Hlavní (účetní) kniha (432 x 279 mm)</translation>
-    </message>
-    <message>
-        <source>Aliases: %1</source>
-        <translation type="vanished">Přezdívka: %1</translation>
     </message>
     <message>
         <source>Print to File (PDF)</source>
@@ -4999,44 +3754,8 @@ Má se přepsat?</translation>
         <translation>Tisk do souboru...</translation>
     </message>
     <message>
-        <source>US Common #10 Envelope (105 x 241 mm)</source>
-        <translation type="vanished">US běžná #10 obálka (105 x 241 mm)</translation>
-    </message>
-    <message>
-        <source>Tabloid</source>
-        <translation type="vanished">US Tabloid</translation>
-    </message>
-    <message>
-        <source>A4 (210 x 297 mm, 8.26 x 11.7 inches)</source>
-        <translation type="vanished">A4 (210 x 297 mm, 8.26 x 11.7 palců)</translation>
-    </message>
-    <message>
-        <source>Executive</source>
-        <translation type="vanished">US Executive</translation>
-    </message>
-    <message>
-        <source>unknown</source>
-        <translation type="vanished">Neznámý</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Do you want to overwrite it?&lt;/qt&gt;</source>
-        <translation type="vanished">&lt;qt&gt;Chcete jej přepsat?&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>Executive (7.5 x 10 inches, 191 x 254 mm)</source>
-        <translation type="vanished">Prováděcí (7,5 x 10 palců, 191 x 254 mm)</translation>
-    </message>
-    <message>
-        <source>Letter (8.5 x 11 inches, 216 x 279 mm)</source>
-        <translation type="vanished">Dopis (8,5 x 11 palců, 216 x 279 mm)</translation>
-    </message>
-    <message>
         <source>The &apos;From&apos; value cannot be greater than the &apos;To&apos; value.</source>
         <translation>Údaj pro první stranu nesmí být větší než údaj pro poslední stranu.</translation>
-    </message>
-    <message>
-        <source>US Common #10 Envelope</source>
-        <translation type="vanished">US běžná #10 obálka</translation>
     </message>
     <message>
         <source>%1 is a directory.
@@ -5049,22 +3768,6 @@ Zvolte, prosím, pro soubor jiný název.</translation>
 Please choose a different file name.</source>
         <translation>Soubor %1 je chráněn proti zápisu.
 Zvolte, prosím, pro soubor jiný název.</translation>
-    </message>
-    <message>
-        <source>B3 (353 x 500 mm)</source>
-        <translation type="vanished">B3 (353 x 500 mm)</translation>
-    </message>
-    <message>
-        <source>A7 (74 x 105 mm)</source>
-        <translation type="vanished">A7 (74 x 105 mm)</translation>
-    </message>
-    <message>
-        <source>A2 (420 x 594 mm)</source>
-        <translation type="vanished">A2 (420 x 594 mm)</translation>
-    </message>
-    <message>
-        <source>B7 (88 x 125 mm)</source>
-        <translation type="vanished">B7 (88 x 125 mm)</translation>
     </message>
     <message>
         <source>Left to Right, Top to Bottom</source>
@@ -5145,8 +3848,20 @@ Please turn one of those options off.</source>
 Vypněte, prosím, jednu z voleb.</translation>
     </message>
     <message>
-        <source>Automatic</source>
-        <translation>Automaticky</translation>
+        <source>Invalid Pages Definition</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 does not follow the correct syntax. Please use &apos;,&apos; to separate ranges and pages, &apos;-&apos; to define ranges and make sure ranges do not intersect with each other.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplex Settings Conflicts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in duplex settings. Do you want to fix them?</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5158,10 +3873,6 @@ Vypněte, prosím, jednu z voleb.</translation>
     <message>
         <source>Print Preview</source>
         <translation>Náhled tisku</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="obsolete">Zavřít</translation>
     </message>
     <message>
         <source>Print</source>
@@ -5231,10 +3942,6 @@ Vypněte, prosím, jednu z voleb.</translation>
         <source>Show facing pages</source>
         <translation>Ukázat strany ležící naproti</translation>
     </message>
-    <message>
-        <source>Export to PostScript</source>
-        <translation type="vanished">Exportovat do PostScriptu</translation>
-    </message>
 </context>
 <context>
     <name>QPrintPropertiesDialog</name>
@@ -5244,6 +3951,22 @@ Vypněte, prosím, jednu z voleb.</translation>
     </message>
     <message>
         <source>Printer Properties</source>
+        <translation>Vlastnosti tiskárny</translation>
+    </message>
+    <message>
+        <source>Page Setup Conflicts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in page setup options. Do you want to fix them?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Advanced Option Conflicts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in some advanced options. Do you want to fix them?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5259,7 +3982,11 @@ Vypněte, prosím, jednu z voleb.</translation>
     </message>
     <message>
         <source>Advanced</source>
-        <translation type="vanished">Rozšířené</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in some options. Please fix them.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5273,10 +4000,6 @@ Vypněte, prosím, jednu z voleb.</translation>
         <translation>Formulář</translation>
     </message>
     <message>
-        <source>None</source>
-        <translation>Žádný</translation>
-    </message>
-    <message>
         <source>Color</source>
         <translation>Barva</translation>
     </message>
@@ -5287,10 +4010,6 @@ Vypněte, prosím, jednu z voleb.</translation>
     <message>
         <source>Selection</source>
         <translation>Výběr</translation>
-    </message>
-    <message>
-        <source>Long side</source>
-        <translation>Dlouhá strana</translation>
     </message>
     <message>
         <source>Copies</source>
@@ -5321,10 +4040,6 @@ Vypněte, prosím, jednu z voleb.</translation>
         <translation>Odstíny šedi</translation>
     </message>
     <message>
-        <source>Short side</source>
-        <translation>Krátká strana</translation>
-    </message>
-    <message>
         <source>Collate</source>
         <translation>Srovnat</translation>
     </message>
@@ -5337,16 +4052,36 @@ Vypněte, prosím, jednu z voleb.</translation>
         <translation>Strany od</translation>
     </message>
     <message>
-        <source>Duplex Printing</source>
-        <translation>Oboustranný tisk</translation>
-    </message>
-    <message>
         <source>Current Page</source>
         <translation>Nynější strana</translation>
     </message>
     <message>
         <source>Page Set:</source>
         <translation>Sada stran:</translation>
+    </message>
+    <message>
+        <source>Pages</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specify pages or ranges separated by commas. Ranges are specified by two numbers separated by a hyphen. E.g: 3,5-7,9 prints pages 3, 5, 6, 7 and 9.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Double Sided Printing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Long side binding</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Short side binding</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5408,7 +4143,7 @@ Vypněte, prosím, jednu z voleb.</translation>
     </message>
     <message>
         <source>Process failed to start</source>
-        <translation type="unfinished">Spuštění procesu se nezdařilo</translation>
+        <translation>Spuštění procesu se nezdařilo</translation>
     </message>
     <message>
         <source>Could not open input redirection for reading</source>
@@ -5436,42 +4171,6 @@ Vypněte, prosím, jednu z voleb.</translation>
     <message>
         <source>Cancel</source>
         <translation>Zrušit</translation>
-    </message>
-</context>
-<context>
-    <name>QPushButton</name>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">Otevřít</translation>
-    </message>
-</context>
-<context>
-    <name>QQnxFileDialogHelper</name>
-    <message>
-        <source>CANCEL</source>
-        <translation type="vanished">ZRUŠIT</translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation type="vanished">OK</translation>
-    </message>
-    <message>
-        <source>All files (*.*)</source>
-        <translation>Všechny soubory (*.*)</translation>
-    </message>
-</context>
-<context>
-    <name>QQnxFilePicker</name>
-    <message>
-        <source>Pick a file</source>
-        <translation>Zvolte soubor</translation>
-    </message>
-</context>
-<context>
-    <name>QRadioButton</name>
-    <message>
-        <source>Check</source>
-        <translation type="vanished">Označit křížkem</translation>
     </message>
 </context>
 <context>
@@ -5557,16 +4256,8 @@ Vypněte, prosím, jednu z voleb.</translation>
         <translation>Chybějící ukončení ] pro třídu znaků</translation>
     </message>
     <message>
-        <source>invalid escape sequence in character class</source>
-        <translation>Neplatná úniková posloupnost ve třídě znaků</translation>
-    </message>
-    <message>
         <source>range out of order in character class</source>
         <translation>Nesprávné pořadí mezí rozsahu ve třídě znaků</translation>
-    </message>
-    <message>
-        <source>nothing to repeat</source>
-        <translation>Nic k opakování</translation>
     </message>
     <message>
         <source>internal error: unexpected repeat</source>
@@ -5581,64 +4272,20 @@ Vypněte, prosím, jednu z voleb.</translation>
         <translation>Pojmenované třídy POSIX jsou podporovány jen uvnitř třídy</translation>
     </message>
     <message>
-        <source>missing )</source>
-        <translation>Chybí )</translation>
-    </message>
-    <message>
         <source>reference to non-existent subpattern</source>
         <translation>Odkaz na neexistující podvzor</translation>
-    </message>
-    <message>
-        <source>erroffset passed as NULL</source>
-        <translation>erroffset by předán jako NULL</translation>
-    </message>
-    <message>
-        <source>unknown option bit(s) set</source>
-        <translation>Nastavena neznámá volba</translation>
-    </message>
-    <message>
-        <source>missing ) after comment</source>
-        <translation>Chybí ) po poznámce</translation>
     </message>
     <message>
         <source>regular expression is too large</source>
         <translation>Regulární výraz je příliš velký</translation>
     </message>
     <message>
-        <source>failed to get memory</source>
-        <translation>Nepodařilo se získat paměť</translation>
-    </message>
-    <message>
-        <source>unmatched parentheses</source>
-        <translation>Nespářené závorky</translation>
-    </message>
-    <message>
         <source>internal error: code overflow</source>
         <translation>Vnitřní chyba: přetečení kódu</translation>
     </message>
     <message>
-        <source>unrecognized character after (?&lt;</source>
-        <translation>Nerozpoznaný znak po (?&lt;</translation>
-    </message>
-    <message>
         <source>lookbehind assertion is not fixed length</source>
         <translation>Zpětný výrok (lookbehind) není pevné délky</translation>
-    </message>
-    <message>
-        <source>malformed number or name after (?(</source>
-        <translation>Chybné číslo nebo název po (?(</translation>
-    </message>
-    <message>
-        <source>conditional group contains more than two branches</source>
-        <translation>Závislá skupina obsahuje více než dvě větve</translation>
-    </message>
-    <message>
-        <source>assertion expected after (?(</source>
-        <translation>Výrok očekáván po (?(</translation>
-    </message>
-    <message>
-        <source>(?R or (?[+-]digits must be followed by )</source>
-        <translation>Číslice (?R nebo (?[+-] musí následovat )</translation>
     </message>
     <message>
         <source>unknown POSIX class name</source>
@@ -5650,56 +4297,8 @@ Vypněte, prosím, jednu z voleb.</translation>
         <translation>Prvky řazení POSIXu nejsou podporovány</translation>
     </message>
     <message>
-        <source>this version of PCRE is not compiled with PCRE_UTF8 support</source>
-        <translation>Tato verze PCRE není sestavena s podporou PCRE_UTF8</translation>
-    </message>
-    <message>
-        <source>character value in \x{...} sequence is too large</source>
-        <translation>Hodnota znaku v sekvenci \x{...}  je příliš velká</translation>
-    </message>
-    <message>
-        <source>invalid condition (?(0)</source>
-        <translation>Neplatná podmínka (?(0)</translation>
-    </message>
-    <message>
-        <source>\C not allowed in lookbehind assertion</source>
-        <translation>\C nepovoleno v tvrzení zpětného výroku (lookbehind)</translation>
-    </message>
-    <message>
-        <source>PCRE does not support \L, \l, \N{name}, \U, or \u</source>
-        <translation>PCRE nepodporuje \L, \l, \N{name}, \U, nebo \u</translation>
-    </message>
-    <message>
-        <source>number after (?C is &gt; 255</source>
-        <translation>Číslo po (?C je &gt; 255</translation>
-    </message>
-    <message>
-        <source>closing ) for (?C expected</source>
-        <translation>Očekávána uzavírající ) pro (?C</translation>
-    </message>
-    <message>
-        <source>recursive call could loop indefinitely</source>
-        <translation>Rekurzivní volání by mohlo zůstat ve smyčce neurčitě dlouho</translation>
-    </message>
-    <message>
         <source>unrecognized character after (?P</source>
         <translation>Nerozpoznaný znak po (?P</translation>
-    </message>
-    <message>
-        <source>syntax error in subpattern name (missing terminator)</source>
-        <translation>Chyba ve skladbě názvu podvzoru (chybějící ukončení)</translation>
-    </message>
-    <message>
-        <source>two named subpatterns have the same name</source>
-        <translation>Dva pojmenované podvzory mají stejný název</translation>
-    </message>
-    <message>
-        <source>invalid UTF-8 string</source>
-        <translation>Neplatný řetězec UTF-8</translation>
-    </message>
-    <message>
-        <source>support for \P, \p, and \X has not been compiled</source>
-        <translation>Qt bylo sestaveno bez podpory pro \P, \p a \X</translation>
     </message>
     <message>
         <source>malformed \P or \p sequence</source>
@@ -5710,16 +4309,8 @@ Vypněte, prosím, jednu z voleb.</translation>
         <translation>Neznámý název vlastnosti po \P nebo \p</translation>
     </message>
     <message>
-        <source>subpattern name is too long (maximum 32 characters)</source>
-        <translation>Název podvzoru je příliš dlouhý (nejvíce může mít 32 znaků)</translation>
-    </message>
-    <message>
         <source>too many named subpatterns (maximum 10000)</source>
         <translation>Příliš mnoho pojmenovaných podvzorů (nejvíce je 10000)</translation>
-    </message>
-    <message>
-        <source>octal value is greater than \377 (not in UTF-8 mode)</source>
-        <translation>Osmičková hodnota je větší než \377 (ne v režimu UTF-8)</translation>
     </message>
     <message>
         <source>internal error: overran compiling workspace</source>
@@ -5730,48 +4321,12 @@ Vypněte, prosím, jednu z voleb.</translation>
         <translation>Vnitřní chyba: Předtím načtený odkazovaný podvzor nenalezen</translation>
     </message>
     <message>
-        <source>DEFINE group contains more than one branch</source>
-        <translation>Skupina DEFINE obsahuje více než jednu větev</translation>
-    </message>
-    <message>
-        <source>repeating a DEFINE group is not allowed</source>
-        <translation>Opakování skupiny DEFINE není povoleno</translation>
-    </message>
-    <message>
-        <source>inconsistent NEWLINE options</source>
-        <translation>Nekonzistentní volby NEWLINE</translation>
-    </message>
-    <message>
         <source>\g is not followed by a braced, angle-bracketed, or quoted name/number or by a plain number</source>
         <translation>\g není následováno názvem/číslem ve složených či špičatých závorkách anebo uvozovkách, ani prostým číslem</translation>
     </message>
     <message>
-        <source>a numbered reference must not be zero</source>
-        <translation>Číslovaný odkaz nesmí být nulový</translation>
-    </message>
-    <message>
-        <source>an argument is not allowed for (*ACCEPT), (*FAIL), or (*COMMIT)</source>
-        <translation>Argument není povolen pro (*ACCEPT), (*FAIL), nebo (*COMMIT)</translation>
-    </message>
-    <message>
-        <source>(*VERB) not recognized</source>
-        <translation>(*VERB) nerozpoznán</translation>
-    </message>
-    <message>
-        <source>number is too big</source>
-        <translation>Číslo je příliš velké</translation>
-    </message>
-    <message>
         <source>subpattern name expected</source>
         <translation>Očekáván název podvzoru</translation>
-    </message>
-    <message>
-        <source>digit expected after (?+</source>
-        <translation>Po (?+ očekávána číslice</translation>
-    </message>
-    <message>
-        <source>] is an invalid data character in JavaScript compatibility mode</source>
-        <translation>] je neplatný datový znak v režimu kompatibility JavaScriptu</translation>
     </message>
     <message>
         <source>different names for subpatterns of the same number are not allowed</source>
@@ -5782,83 +4337,559 @@ Vypněte, prosím, jednu z voleb.</translation>
         <translation>(*MARK) musí mít argument</translation>
     </message>
     <message>
-        <source>this version of PCRE is not compiled with PCRE_UCP support</source>
-        <translation>Tato verze PCRE není sestavena s podporou PCRE_UCP</translation>
-    </message>
-    <message>
-        <source>\c must be followed by an ASCII character</source>
-        <translation>\c musí být následováno znakem ASCII</translation>
-    </message>
-    <message>
         <source>\k is not followed by a braced, angle-bracketed, or quoted name</source>
         <translation>\k není následováno názvem ve složených či špičatých závorkách anebo uvozovkách</translation>
-    </message>
-    <message>
-        <source>internal error: unknown opcode in find_fixedlength()</source>
-        <translation>Vnitřní chyba: neznámý opcode v find_fixedlength()</translation>
     </message>
     <message>
         <source>\N is not supported in a class</source>
         <translation>\N není ve třídě podporováno</translation>
     </message>
     <message>
-        <source>too many forward references</source>
-        <translation>Příliš mnoho dopředných odkazů</translation>
-    </message>
-    <message>
         <source>disallowed Unicode code point (&gt;= 0xd800 &amp;&amp; &lt;= 0xdfff)</source>
         <translation>Nedovolený kódový bod Unicode (&gt;= 0xd800 &amp;&amp; &lt;= 0xdfff)</translation>
-    </message>
-    <message>
-        <source>invalid UTF-16 string</source>
-        <translation>Neplatný řetězec UTF-16</translation>
     </message>
     <message>
         <source>name is too long in (*MARK), (*PRUNE), (*SKIP), or (*THEN)</source>
         <translation>Název je příliš dlouhý v (*MARK), (*PRUNE), (*SKIP), nebo (*THEN)</translation>
     </message>
     <message>
-        <source>character value in \u.... sequence is too large</source>
-        <translation>Hodnota znaku v sekvenci \u....  je příliš velká</translation>
-    </message>
-    <message>
-        <source>invalid UTF-32 string</source>
-        <translation type="unfinished">Neplatný řetězec UTF-16 {32 ?}</translation>
-    </message>
-    <message>
-        <source>setting UTF is disabled by the application</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>non-hex character in \x{} (closing brace missing?)</source>
-        <translation type="unfinished"></translation>
+        <translation>\x{} obsahuje znak, který není šestnáctkovým (hexadecimálním) číslem (chybí uzavírající závorky?)</translation>
     </message>
     <message>
         <source>non-octal character in \o{} (closing brace missing?)</source>
-        <translation type="unfinished"></translation>
+        <translation>\x{} obsahuje znak, který není osmičkovým (oktalovým) číslem (chybí uzavírající závorky?)</translation>
     </message>
     <message>
         <source>missing opening brace after \o</source>
-        <translation type="unfinished"></translation>
+        <translation>Chybí otevírající závorka po \o</translation>
     </message>
     <message>
         <source>parentheses are too deeply nested</source>
-        <translation type="unfinished"></translation>
+        <translation>Příliš hluboko zanořené závorky</translation>
     </message>
     <message>
         <source>invalid range in character class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>group name must start with a non-digit</source>
-        <translation type="unfinished"></translation>
+        <translation>Neplatný rozsah ve třídě znaků</translation>
     </message>
     <message>
         <source>parentheses are too deeply nested (stack check)</source>
+        <translation>Příliš hluboko zanořené závorky(kontrola zásobníku)</translation>
+    </message>
+    <message>
+        <source>escape sequence is invalid in character class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>digits missing in \x{} or \o{}</source>
+        <source>quantifier does not follow a repeatable item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing closing parenthesis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern passed as NULL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unrecognised compile-time option bit(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing ) after (?# comment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>failed to allocate heap memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unmatched closing parenthesis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing closing parenthesis for condition</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>a relative value of zero is not allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>conditional subpattern contains more than two branches</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>assertion expected after (?( or (?(?C)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>digit expected after (?+ or (?-</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error in pcre2_study(): should not occur</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>this version of PCRE2 does not have Unicode support</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>character code point value in \x{} or \o{} is too large</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>lookbehind is too complicated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\C is not allowed in a lookbehind assertion in UTF-16 mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCRE2 does not support \F, \L, \l, \N{name}, \U, or \u</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>number after (?C is greater than 255</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>closing parenthesis for (?C expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid escape sequence in (*VERB) name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>syntax error in subpattern name (missing terminator?)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>two named subpatterns have the same name (PCRE2_DUPNAMES not set)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>subpattern name must start with a non-digit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>this version of PCRE2 does not have support for \P, \p, or \X</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>subpattern name is too long (maximum 32 code units)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>octal value is greater than \377 in 8-bit non-UTF-8 mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DEFINE subpattern contains more than one branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: unknown newline setting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(?R (recursive pattern call) must be followed by a closing parenthesis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>obsolete error (should not occur)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(*VERB) not recognized or malformed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>subpattern number is too big</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: parsed pattern overflow</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\c must be followed by a printable ASCII character</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\c must be followed by a letter or one of [\]^_?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: unknown meta code in check_lookbehinds()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>callout string is too long</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>using UTF is disabled by the application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>using UCP is disabled by the application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>character code point value in \u.... sequence is too large</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>digits missing in \x{} or \o{} or \N{U+}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>syntax error or number too big in (?(VERSION condition</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: unknown opcode in auto_possessify()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing terminating delimiter for callout with string argument</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unrecognized string delimiter follows (?C</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>using \C is disabled by the application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(?| and/or (?J: or (?x: parentheses are too deeply nested</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>using \C is disabled in this PCRE2 library</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>regular expression is too complicated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>lookbehind assertion is too long</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern string is longer than the limit set by the application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: unknown code in parsed pattern</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: bad code value in parsed_skip()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCRE2_EXTRA_ALLOW_SURROGATE_ESCAPES is not allowed in UTF-16 mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid option bits with PCRE2_LITERAL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\N{U+dddd} is supported only in Unicode (UTF) mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid hyphen in option setting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(*alpha_assertion) not recognized</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>script runs require Unicode support, which this version of PCRE2 does not have</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>too many capturing groups (maximum 65535)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>atomic assertion expected after (?( or (?(?C)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no match</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>partial match</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 1 byte missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 2 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 3 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 4 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 5 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 2 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 3 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 4 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 5 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 6 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 5-byte character is not allowed (RFC 3629)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 6-byte character is not allowed (RFC 3629)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: code points greater than 0x10ffff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: code points 0xd800-0xdfff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 2-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 3-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 4-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 5-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 6-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: isolated byte with 0x80 bit set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: illegal byte (0xfe or 0xff)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-16 error: missing low surrogate at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-16 error: invalid low surrogate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-16 error: isolated low surrogate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-32 error: code points 0xd800-0xdfff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-32 error: code points greater than 0x10ffff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad data value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>patterns do not all use the same character tables</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>magic number missing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern compiled in wrong mode: 8/16/32-bit error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad offset value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad option value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad offset into UTF string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>callout error code</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid data in workspace for DFA restart</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>too much recursion for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>backreference condition or recursion test is not supported for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>function is not supported for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern contains an item that is not supported for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>workspace size exceeded in DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error - pattern overwritten?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad JIT option</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>JIT stack limit reached</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>match limit exceeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no more memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unknown substring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>non-unique substring name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NULL argument passed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>nested recursion at the same subject position</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>matching depth limit exceeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>requested value is not available</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>requested value is not set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>offset limit set without PCRE2_USE_OFFSET_LIMIT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad escape sequence in replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>expected closing curly bracket in replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad substitution in replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>match with end before start or start moved backwards is not supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>too many replacements (more than INT_MAX)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad serialized data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>heap limit exceeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid syntax</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error - duplicate substitution match</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCRE2_MATCH_INVALID_UTF is not supported for DFA matching</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5867,14 +4898,6 @@ Vypněte, prosím, jednu z voleb.</translation>
     <message>
         <source>Unable to commit transaction</source>
         <translation>Transakci se nepodařilo zapsat</translation>
-    </message>
-    <message>
-        <source>Error to open database</source>
-        <translation type="obsolete">Nepodařilo se otevřít spojení s datatabází</translation>
-    </message>
-    <message>
-        <source>Unable to rollback Transaction</source>
-        <translation type="obsolete">Transakci se nepodařilo zvrátit (operace &apos;rollback&apos;, zvrácení, se nezdařila)</translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
@@ -5966,282 +4989,11 @@ Vypněte, prosím, jednu z voleb.</translation>
     </message>
     <message>
         <source>Filename refers to a directory</source>
+        <translation>Název souboru označuje adresář</translation>
+    </message>
+    <message>
+        <source>QSaveFile cannot open &apos;%1&apos; without direct write fallback enabled.</source>
         <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>QScriptBreakpointsModel</name>
-    <message>
-        <source>ID</source>
-        <translation type="vanished">ID</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="vanished">Umístění</translation>
-    </message>
-    <message>
-        <source>Condition</source>
-        <translation type="vanished">Podmínka</translation>
-    </message>
-    <message>
-        <source>Ignore-count</source>
-        <translation type="vanished">Spustit po</translation>
-    </message>
-    <message>
-        <source>Single-shot</source>
-        <translation type="vanished">Spustit jednou</translation>
-    </message>
-    <message>
-        <source>Hit-count</source>
-        <translation type="vanished">Spuštěný</translation>
-    </message>
-</context>
-<context>
-    <name>QScriptBreakpointsWidget</name>
-    <message>
-        <source>New</source>
-        <translation type="vanished">Nový</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">Smazat</translation>
-    </message>
-</context>
-<context>
-    <name>QScriptDebugger</name>
-    <message>
-        <source>Go to Line</source>
-        <translation type="vanished">Jít na řádek</translation>
-    </message>
-    <message>
-        <source>Line:</source>
-        <translation type="vanished">Řádek:</translation>
-    </message>
-    <message>
-        <source>Interrupt</source>
-        <translation type="vanished">Přerušit</translation>
-    </message>
-    <message>
-        <source>Shift+F5</source>
-        <translation type="vanished">Shift+F5</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation type="vanished">Pokračovat</translation>
-    </message>
-    <message>
-        <source>F5</source>
-        <translation type="vanished">F5</translation>
-    </message>
-    <message>
-        <source>Step Into</source>
-        <translation type="vanished">Krok do</translation>
-    </message>
-    <message>
-        <source>F11</source>
-        <translation type="vanished">F11</translation>
-    </message>
-    <message>
-        <source>Step Over</source>
-        <translation type="vanished">Krok přes</translation>
-    </message>
-    <message>
-        <source>F10</source>
-        <translation type="vanished">F10</translation>
-    </message>
-    <message>
-        <source>Step Out</source>
-        <translation type="vanished">Krok ven</translation>
-    </message>
-    <message>
-        <source>Shift+F11</source>
-        <translation type="vanished">Shift+F11</translation>
-    </message>
-    <message>
-        <source>Run to Cursor</source>
-        <translation type="vanished">Provést po kurzor</translation>
-    </message>
-    <message>
-        <source>Ctrl+F10</source>
-        <translation type="vanished">Ctrl+F10</translation>
-    </message>
-    <message>
-        <source>Run to New Script</source>
-        <translation type="vanished">Provést po nový skript</translation>
-    </message>
-    <message>
-        <source>Toggle Breakpoint</source>
-        <translation type="vanished">Přepnout bod přerušení (zastavení)</translation>
-    </message>
-    <message>
-        <source>F9</source>
-        <translation type="vanished">F9</translation>
-    </message>
-    <message>
-        <source>Clear Debug Output</source>
-        <translation type="vanished">Smazat výstup ladění</translation>
-    </message>
-    <message>
-        <source>Clear Error Log</source>
-        <translation type="vanished">Smazat výstupní zápis s chybami</translation>
-    </message>
-    <message>
-        <source>Clear Console</source>
-        <translation type="vanished">Smazat konzoli</translation>
-    </message>
-    <message>
-        <source>&amp;Find in Script...</source>
-        <translation type="vanished">&amp;Hledat ve skriptu...</translation>
-    </message>
-    <message>
-        <source>Ctrl+F</source>
-        <translation type="vanished">Ctrl+F</translation>
-    </message>
-    <message>
-        <source>Find &amp;Next</source>
-        <translation type="vanished">Najít &amp;další</translation>
-    </message>
-    <message>
-        <source>F3</source>
-        <translation type="vanished">F3</translation>
-    </message>
-    <message>
-        <source>Find &amp;Previous</source>
-        <translation type="vanished">Najít &amp;předchozí</translation>
-    </message>
-    <message>
-        <source>Shift+F3</source>
-        <translation type="vanished">Shift+F3</translation>
-    </message>
-    <message>
-        <source>Ctrl+G</source>
-        <translation type="vanished">Ctrl+G</translation>
-    </message>
-    <message>
-        <source>Debug</source>
-        <translation type="vanished">Ladit</translation>
-    </message>
-</context>
-<context>
-    <name>QScriptDebuggerCodeFinderWidget</name>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">Zavřít</translation>
-    </message>
-    <message>
-        <source>Previous</source>
-        <translation type="vanished">Předchozí</translation>
-    </message>
-    <message>
-        <source>Next</source>
-        <translation type="vanished">Další</translation>
-    </message>
-    <message>
-        <source>Case Sensitive</source>
-        <translation type="vanished">Rozlišující velká a malá písmena</translation>
-    </message>
-    <message>
-        <source>Whole words</source>
-        <translation type="vanished">Celá slova</translation>
-    </message>
-    <message>
-        <source>&lt;img src=&quot;:/qt/scripttools/debugging/images/wrap.png&quot;&gt;&amp;nbsp;Search wrapped</source>
-        <translation type="vanished">&lt;img src=&quot;:/qt/scripttools/debugging/images/wrap.png&quot;&gt;&amp;nbsp;Hledání dosáhlo konce</translation>
-    </message>
-</context>
-<context>
-    <name>QScriptDebuggerLocalsModel</name>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">Název</translation>
-    </message>
-    <message>
-        <source>Value</source>
-        <translation type="vanished">Hodnota</translation>
-    </message>
-</context>
-<context>
-    <name>QScriptDebuggerStackModel</name>
-    <message>
-        <source>Level</source>
-        <translation type="vanished">Úroveň</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">Název</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="vanished">Umístění</translation>
-    </message>
-</context>
-<context>
-    <name>QScriptEdit</name>
-    <message>
-        <source>Toggle Breakpoint</source>
-        <translation type="vanished">Přepnout bod zastavení</translation>
-    </message>
-    <message>
-        <source>Disable Breakpoint</source>
-        <translation type="vanished">Vypnout bod zastavení</translation>
-    </message>
-    <message>
-        <source>Enable Breakpoint</source>
-        <translation type="vanished">Zapnout bod zastavení</translation>
-    </message>
-    <message>
-        <source>Breakpoint Condition:</source>
-        <translation type="vanished">Podmínka zastavení:</translation>
-    </message>
-</context>
-<context>
-    <name>QScriptEngineDebugger</name>
-    <message>
-        <source>Loaded Scripts</source>
-        <translation type="vanished">Nahrané skripty</translation>
-    </message>
-    <message>
-        <source>Breakpoints</source>
-        <translation type="vanished">Body zastavení</translation>
-    </message>
-    <message>
-        <source>Stack</source>
-        <translation type="vanished">Zásobník</translation>
-    </message>
-    <message>
-        <source>Locals</source>
-        <translation type="vanished">Místní proměnné</translation>
-    </message>
-    <message>
-        <source>Console</source>
-        <translation type="vanished">Konzole</translation>
-    </message>
-    <message>
-        <source>Debug Output</source>
-        <translation type="vanished">Výstup ladění</translation>
-    </message>
-    <message>
-        <source>Error Log</source>
-        <translation type="vanished">Výstupní zápis s chybami</translation>
-    </message>
-    <message>
-        <source>Search</source>
-        <translation type="vanished">Hledat</translation>
-    </message>
-    <message>
-        <source>View</source>
-        <translation type="vanished">Pohled</translation>
-    </message>
-    <message>
-        <source>Qt Script Debugger</source>
-        <translation type="vanished">Qt ladění skriptů</translation>
-    </message>
-</context>
-<context>
-    <name>QScriptNewBreakpointWidget</name>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">Zavřít</translation>
     </message>
 </context>
 <context>
@@ -6263,24 +5015,12 @@ Vypněte, prosím, jednu z voleb.</translation>
         <translation>Projíždět doleva</translation>
     </message>
     <message>
-        <source>Line up</source>
-        <translation type="vanished">O jeden řádek nahoru</translation>
-    </message>
-    <message>
-        <source>Line down</source>
-        <translation type="vanished">O jeden řádek dolů</translation>
-    </message>
-    <message>
         <source>Bottom</source>
         <translation>Konec</translation>
     </message>
     <message>
         <source>Page up</source>
         <translation>O stranu nahoru</translation>
-    </message>
-    <message>
-        <source>Position</source>
-        <translation type="vanished">Poloha</translation>
     </message>
     <message>
         <source>Page right</source>
@@ -6312,6 +5052,13 @@ Vypněte, prosím, jednu z voleb.</translation>
     </message>
 </context>
 <context>
+    <name>QSctpSocket</name>
+    <message>
+        <source>The remote host closed the connection</source>
+        <translation>Vzdálený počítač uzavřel spojení</translation>
+    </message>
+</context>
+<context>
     <name>QSharedMemory</name>
     <message>
         <source>%1: doesn&apos;t exist</source>
@@ -6324,14 +5071,6 @@ Vypněte, prosím, jednu z voleb.</translation>
     <message>
         <source>%1: system-imposed size restrictions</source>
         <translation>%1: Bylo dosaženo systémem podmíněné meze velikosti</translation>
-    </message>
-    <message>
-        <source>%1: unix key file doesn&apos;t exists</source>
-        <translation type="obsolete">%1: Soubor s unixovým klíčem neexistuje</translation>
-    </message>
-    <message>
-        <source>%1: doesn&apos;t exists</source>
-        <translation type="vanished">%1: Neexistuje</translation>
     </message>
     <message>
         <source>%1: key is empty</source>
@@ -6395,13 +5134,14 @@ Vypněte, prosím, jednu z voleb.</translation>
     </message>
     <message>
         <source>%1: bad name</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Neplatný název</translation>
     </message>
 </context>
 <context>
     <name>QShortcut</name>
     <message>
         <source>+</source>
+        <extracomment>Key separator in shortcut string</extracomment>
         <translation>+</translation>
     </message>
     <message>
@@ -6858,10 +5598,6 @@ Vypněte, prosím, jednu z voleb.</translation>
         <translation>Společenství</translation>
     </message>
     <message>
-        <source>Audio Rewind</source>
-        <translation type="vanished">Zvuk přetočit zpět</translation>
-    </message>
-    <message>
         <source>Back Forward</source>
         <translation>Zpět dopředu</translation>
     </message>
@@ -7098,10 +5834,6 @@ Vypněte, prosím, jednu z voleb.</translation>
         <translation>Ultra široké pásmo</translation>
     </message>
     <message>
-        <source>Audio Forward</source>
-        <translation type="vanished">Zvuk přetočit dopředu</translation>
-    </message>
-    <message>
         <source>Audio Repeat</source>
         <translation>Opakovat zvuk</translation>
     </message>
@@ -7308,122 +6040,123 @@ Vypněte, prosím, jednu z voleb.</translation>
     </message>
     <message>
         <source>Media Rewind</source>
-        <translation type="unfinished"></translation>
+        <translation>Přetočit médium zpět</translation>
     </message>
     <message>
         <source>Media Fast Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Přetočit médium vpřed</translation>
     </message>
     <message>
         <source>Power Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Vypnout</translation>
     </message>
     <message>
         <source>Microphone Mute</source>
-        <translation type="unfinished"></translation>
+        <translation>Ztlumit mikrofon</translation>
     </message>
     <message>
         <source>Red</source>
-        <translation type="unfinished"></translation>
+        <translation>Červená</translation>
     </message>
     <message>
         <source>Green</source>
-        <translation type="unfinished"></translation>
+        <translation>Zelená</translation>
     </message>
     <message>
         <source>Yellow</source>
-        <translation type="unfinished"></translation>
+        <translation>Žlutá</translation>
     </message>
     <message>
         <source>Blue</source>
-        <translation type="unfinished"></translation>
+        <translation>Modrá</translation>
     </message>
     <message>
         <source>Channel Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Další kanál</translation>
     </message>
     <message>
         <source>Channel Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Předchozí kanál</translation>
     </message>
     <message>
         <source>Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>Návod</translation>
     </message>
     <message>
         <source>Info</source>
-        <translation type="unfinished"></translation>
+        <translation>Informace</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Nastavení</translation>
     </message>
     <message>
         <source>Microphone Volume Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Mikrofon hlasitěji</translation>
     </message>
     <message>
         <source>Microphone Volume Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Mikrofon slaběji</translation>
     </message>
     <message>
         <source>New</source>
-        <translation type="unfinished">Nový</translation>
+        <translation>Nový</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished">Otevřít</translation>
+        <translation>Otevřít</translation>
     </message>
     <message>
         <source>Find</source>
-        <translation type="unfinished"></translation>
+        <translation>Najít</translation>
     </message>
     <message>
         <source>Undo</source>
-        <translation type="unfinished">Zpět</translation>
+        <translation>Zpět</translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation type="unfinished">Znovu</translation>
+        <translation>Znovu</translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation type="unfinished">Ukončit</translation>
+        <translation>Ukončit</translation>
     </message>
     <message>
         <source>Touchpad Toggle</source>
-        <translation type="unfinished"></translation>
+        <translation>Přepínač vstupního zařízení (touchpad)</translation>
     </message>
     <message>
         <source>Touchpad On</source>
-        <translation type="unfinished"></translation>
+        <translation>Vstupní zařízení (touchpad) zapnuto</translation>
     </message>
     <message>
         <source>Touchpad Off</source>
+        <translation>Vstupní zařízení (touchpad) vypnuto</translation>
+    </message>
+    <message>
+        <source>Launch (G)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>QSlider</name>
     <message>
-        <source>Page up</source>
-        <translation type="vanished">O stranu nahoru</translation>
+        <source>Launch (H)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Position</source>
-        <translation type="vanished">Poloha</translation>
+        <source>Calendar</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Page right</source>
-        <translation type="vanished">O stranu doprava</translation>
+        <source>Adjust contrast</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Page down</source>
-        <translation type="vanished">O stranu dolů</translation>
+        <source>Memo</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Page left</source>
-        <translation type="vanished">O stranu doleva</translation>
+        <source>To-do list</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7486,33 +6219,6 @@ Vypněte, prosím, jednu z voleb.</translation>
     </message>
 </context>
 <context>
-    <name>QSoftKeyManager</name>
-    <message>
-        <source>Ok</source>
-        <translation type="vanished">OK</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <translation type="vanished">Vybrat</translation>
-    </message>
-    <message>
-        <source>Done</source>
-        <translation type="vanished">Hotovo</translation>
-    </message>
-    <message>
-        <source>Options</source>
-        <translation type="vanished">Volby</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">Zrušit</translation>
-    </message>
-    <message>
-        <source>Exit</source>
-        <translation type="vanished">Ukončit</translation>
-    </message>
-</context>
-<context>
     <name>QSpiAccessibleBridge</name>
     <message>
         <source>invalid role</source>
@@ -7558,11 +6264,6 @@ Vypněte, prosím, jednu z voleb.</translation>
         <source>alert message</source>
         <extracomment>Role of an accessible object</extracomment>
         <translation>Oznámení</translation>
-    </message>
-    <message>
-        <source>window</source>
-        <extracomment>Role of an accessible object</extracomment>
-        <translation type="vanished">Okno</translation>
     </message>
     <message>
         <source>filler</source>
@@ -7834,101 +6535,77 @@ Role of an accessible object</extracomment>
     <message>
         <source>web document</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Webový dokument</translation>
     </message>
     <message>
         <source>paragraph</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Odstavec</translation>
     </message>
     <message>
         <source>section</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Část</translation>
     </message>
     <message>
         <source>color chooser</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Výběr barvy</translation>
     </message>
     <message>
         <source>footer</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Zápatí</translation>
     </message>
     <message>
         <source>form</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Formulář</translation>
     </message>
     <message>
         <source>heading</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Nadpis</translation>
     </message>
     <message>
         <source>note</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Poznámka</translation>
     </message>
     <message>
         <source>complementary content</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation>Doplňující obsah</translation>
+    </message>
+    <message>
+        <source>terminal</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>desktop</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>notification</source>
         <extracomment>Role of an accessible object</extracomment>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>QSpinBox</name>
+    <name>QSslDiffieHellmanParameter</name>
     <message>
-        <source>Less</source>
-        <translation type="vanished">Méně</translation>
+        <source>No error</source>
+        <translation>Žádná chyba</translation>
     </message>
     <message>
-        <source>More</source>
-        <translation type="vanished">Více</translation>
-    </message>
-</context>
-<context>
-    <name>QSql</name>
-    <message>
-        <source>No</source>
-        <translation type="vanished">Ne</translation>
+        <source>Invalid input data</source>
+        <translation>Neplatná vstupní data</translation>
     </message>
     <message>
-        <source>Yes</source>
-        <translation type="vanished">Ano</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">Zrušit</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">Delete</translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <translation type="vanished">Vložit</translation>
-    </message>
-    <message>
-        <source>Update</source>
-        <translation type="vanished">Obnovit</translation>
-    </message>
-    <message>
-        <source>Delete this record?</source>
-        <translation type="vanished">Smazat tento zápis?</translation>
-    </message>
-    <message>
-        <source>Save edits?</source>
-        <translation type="vanished">Uložit změny?</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation type="vanished">Potvrdit</translation>
-    </message>
-    <message>
-        <source>Cancel your edits?</source>
-        <translation type="vanished">Zrušit změny?</translation>
+        <source>The given Diffie-Hellman parameters are deemed unsafe</source>
+        <translation>Zadané parametry Diffie-Hellman jsou považovány za nebezpečné</translation>
     </message>
 </context>
 <context>
@@ -7960,10 +6637,6 @@ Role of an accessible object</extracomment>
     <message>
         <source>Invalid or empty cipher list (%1)</source>
         <translation>Neplatný či prázdný seznam se šifrovacími klíči (%1)</translation>
-    </message>
-    <message>
-        <source>Private key does not certificate public key, %1</source>
-        <translation type="vanished">Vystavení osvědčení k veřejnému klíči přes soukromý klíč se nezdařilo, %1</translation>
     </message>
     <message>
         <source>Error creating SSL context (%1)</source>
@@ -8091,14 +6764,258 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Error when setting the elliptic curves (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Chyba při nastavování elipsovitých křivek (%1)</translation>
     </message>
     <message>
         <source>unsupported protocol</source>
+        <translation>Nepodporovaný protokol</translation>
+    </message>
+    <message>
+        <source>Diffie-Hellman parameters are not valid</source>
+        <translation>Parametry Diffie-Hellman nejsou platné</translation>
+    </message>
+    <message>
+        <source>Error when setting the OpenSSL configuration (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>OpenSSL version too old, need at least v1.0.2</source>
+        <source>Error while setting the minimal protocol version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while setting the maximum protocol version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OpenSSL version with disabled elliptic curves</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expecting QByteArray for %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An error occurred attempting to set %1 to %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wrong value for %1 (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unrecognized command %1 = %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SSL_CONF_finish() failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SSL_CONF_CTX_new() failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No OCSP status response found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The OCSP status request had invalid syntax</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP response contains an unexpected number of SingleResponse structures</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder reached an inconsistent internal state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder was unable to return a status for the requested certificate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The server requires the client to sign the OCSP request in order to construct a response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The client is not authorized to request OCSP status from this server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder&apos;s identity cannot be verified</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The identity of a certificate in an OCSP response cannot be established</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate status response has expired</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate&apos;s status is unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TLS initialization failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attempted to use an unsupported protocol.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server-side QSslSocket does not support OCSP stapling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to enable OCSP stapling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Client-side sockets do not send OCSP responses</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to decode OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to extract basic OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No certificate verification store, cannot verify OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to decode a SingleResponse from OCSP status response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to extract &apos;this update time&apos; from the SingleResponse</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insufficient memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Internal error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An internal handle was invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An internal token was invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Access denied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No authority could be contacted for authorization</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No credentials</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The target is unknown or unreachable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An unsupported function was requested</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hostname provided does not match the one received from the peer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No common protocol exists between the client and the server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected or badly-formatted message received</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The data could not be encrypted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No cipher suites in common</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The credentials were not recognized / Invalid argument</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The message was tampered with, damaged or out of sequence.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A message was received out of sequence.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown error occurred: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid protocol chosen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate provided cannot be used for a client.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate provided cannot be used for a server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server did not accept any certificate we could present.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Algorithm mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Handshake failed: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to query the TLS context: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Did not get the required attributes for the connection.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unwanted protocol was negotiated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Renegotiation was unsuccessful: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Schannel failed to encrypt data: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot provide a certificate with no key</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8174,7 +7091,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Application Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Nastavení programu</translation>
     </message>
 </context>
 <context>
@@ -8194,6 +7111,10 @@ Role of an accessible object</extracomment>
     <message>
         <source>Unknown error</source>
         <translation>Neznámá chyba</translation>
+    </message>
+    <message>
+        <source>Child mode of state machine &apos;%1&apos; is not &apos;ExclusiveStates&apos;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8249,111 +7170,18 @@ Role of an accessible object</extracomment>
     </message>
 </context>
 <context>
-    <name>QTextControl</name>
-    <message>
-        <source>Cu&amp;t</source>
-        <translation type="vanished">Vyj&amp;mout</translation>
-    </message>
-    <message>
-        <source>&amp;Copy</source>
-        <translation type="vanished">&amp;Kopírovat</translation>
-    </message>
-    <message>
-        <source>&amp;Redo</source>
-        <translation type="vanished">&amp;Znovu</translation>
-    </message>
-    <message>
-        <source>&amp;Undo</source>
-        <translation type="vanished">&amp;Zpět</translation>
-    </message>
-    <message>
-        <source>&amp;Paste</source>
-        <translation type="vanished">&amp;Vložit</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">Smazat</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation type="vanished">Vybrat vše</translation>
-    </message>
-    <message>
-        <source>Copy &amp;Link Location</source>
-        <translation type="vanished">&amp;Kopírovat adresu odkazu</translation>
-    </message>
-</context>
-<context>
-    <name>QTgaFile</name>
-    <message>
-        <source>Could not read image data</source>
-        <translation type="vanished">Nepodařilo se přečíst data obrazu</translation>
-    </message>
-    <message>
-        <source>Sequential device (eg socket) for image read not supported</source>
-        <translation type="vanished">Postupné zařízení (např. socket - komunikační kanál) pro čtení obrazu nepodporováno</translation>
-    </message>
-    <message>
-        <source>Seek file/device for image read failed</source>
-        <translation type="vanished">Vyhledání souboru/zařízení pro čtení obrazu se nezdařilo</translation>
-    </message>
-    <message>
-        <source>Image header read failed</source>
-        <translation type="vanished">Nepodařilo se přečíst hlavičku obrazu</translation>
-    </message>
-    <message>
-        <source>Image type not supported</source>
-        <translation type="vanished">Typ obrazu nepodporován</translation>
-    </message>
-    <message>
-        <source>Image depth not valid</source>
-        <translation type="vanished">Hloubka obrazu nepodporována</translation>
-    </message>
-    <message>
-        <source>Could not seek to image read footer</source>
-        <translation type="vanished">Nepodařilo se vyhledat zápatí čtení obrazu</translation>
-    </message>
-    <message>
-        <source>Could not read footer</source>
-        <translation type="vanished">Nepodařilo se přečíst zápatí</translation>
-    </message>
-    <message>
-        <source>Image type (non-TrueVision 2.0) not supported</source>
-        <translation type="vanished">Typ obrazu (non-TrueVision 2.0) nepodporován</translation>
-    </message>
-    <message>
-        <source>Could not reset to read data</source>
-        <translation type="vanished">Nepodařilo se nastavit znovu na čtení dat</translation>
-    </message>
-</context>
-<context>
-    <name>QToolButton</name>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">Otevřít</translation>
-    </message>
-    <message>
-        <source>Press</source>
-        <translation type="vanished">Stisknout</translation>
-    </message>
-</context>
-<context>
     <name>QUdpSocket</name>
     <message>
-        <source>This platform does not support IPv6</source>
-        <translation type="vanished">Tato patforma nepodpotuje IPv6</translation>
+        <source>Unable to send a datagram</source>
+        <translation>Nepodařilo se odeslat datové schéma</translation>
+    </message>
+    <message>
+        <source>No datagram available for reading</source>
+        <translation>Žádné datové schéma dostupné pro čtení</translation>
     </message>
 </context>
 <context>
     <name>QUndoGroup</name>
-    <message>
-        <source>Redo</source>
-        <translation type="vanished">Znovu</translation>
-    </message>
-    <message>
-        <source>Undo</source>
-        <translation type="vanished">Zpět</translation>
-    </message>
     <message>
         <source>Undo %1</source>
         <translation>Zpět %1</translation>
@@ -8382,14 +7210,6 @@ Role of an accessible object</extracomment>
 </context>
 <context>
     <name>QUndoStack</name>
-    <message>
-        <source>Redo</source>
-        <translation type="vanished">Znovu</translation>
-    </message>
-    <message>
-        <source>Undo</source>
-        <translation type="vanished">Zpět</translation>
-    </message>
     <message>
         <source>Undo %1</source>
         <translation>Zpět %1</translation>
@@ -8473,939 +7293,6 @@ Role of an accessible object</extracomment>
     </message>
 </context>
 <context>
-    <name>QWebFrame</name>
-    <message>
-        <source>Request blocked</source>
-        <translation type="vanished">Požadavek byl odmítnut</translation>
-    </message>
-    <message>
-        <source>Request cancelled</source>
-        <translation type="vanished">Požadavek byl zrušen</translation>
-    </message>
-    <message>
-        <source>Cannot show URL</source>
-        <translation type="vanished">Adresu (URL) nelze ukázat</translation>
-    </message>
-    <message>
-        <source>Frame load interrupted by policy change</source>
-        <translation type="vanished">Nahrání rámce bylo přerušeno změnou směrnice</translation>
-    </message>
-    <message>
-        <source>Frame load interruped by policy change</source>
-        <translation type="obsolete">Nahrání rámce bylo přerušeno změnou směrnice</translation>
-    </message>
-    <message>
-        <source>File does not exist</source>
-        <translation type="vanished">Soubor neexistuje</translation>
-    </message>
-    <message>
-        <source>Cannot show mimetype</source>
-        <translation type="vanished">Tento mime typ nelze ukázat</translation>
-    </message>
-</context>
-<context>
-    <name>QWebPage</name>
-    <message>
-        <source>Cut</source>
-        <translation type="obsolete">Vyjmout</translation>
-    </message>
-    <message>
-        <source>LTR</source>
-        <translation type="obsolete">Zleva doprava</translation>
-    </message>
-    <message>
-        <source>RTL</source>
-        <translation type="obsolete">Zprava doleva</translation>
-    </message>
-    <message>
-        <source>Top</source>
-        <translation type="vanished">Začátek</translation>
-    </message>
-    <message>
-        <source>Bold</source>
-        <translation type="obsolete">Tučné</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation type="obsolete">Kopírovat</translation>
-    </message>
-    <message>
-        <source>Stop</source>
-        <translation type="obsolete">Ukončit</translation>
-    </message>
-    <message>
-        <source>Open Frame</source>
-        <translation type="obsolete">Otevřít rámec</translation>
-    </message>
-    <message>
-        <source>Open Image</source>
-        <translation type="obsolete">Vyobrazení otevřít v novém okně</translation>
-    </message>
-    <message>
-        <source>Fonts</source>
-        <translation type="obsolete">Písma</translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <translation type="obsolete">Vložit</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="obsolete">Vrátit</translation>
-    </message>
-    <message>
-        <source>Inspect</source>
-        <translation type="obsolete">Provést prohlídku</translation>
-    </message>
-    <message>
-        <source>Select to the start of the block</source>
-        <translation type="vanished">Vybrat až po začátek bloku</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the end of the block</source>
-        <translation type="vanished">Ukazatel polohy posunout až na konec bloku</translation>
-    </message>
-    <message>
-        <source>JavaScript Alert - %1</source>
-        <translation type="vanished">Upozornění od JavaScriptu - %1</translation>
-    </message>
-    <message>
-        <source>JavaScript Confirm - %1</source>
-        <translation type="vanished">Potvrzení od JavaScriptu - %1</translation>
-    </message>
-    <message>
-        <source>JavaScript Prompt - %1</source>
-        <translation type="vanished">Výzva od JavaScriptu - %1</translation>
-    </message>
-    <message>
-        <source>JavaScript Problem - %1</source>
-        <translation type="vanished">Potíže s JavaScriptem - %1</translation>
-    </message>
-    <message>
-        <source>The script on this page appears to have a problem. Do you want to stop the script?</source>
-        <translation type="vanished">Vypadá to na to, že skript na této straně má potíže. Chcete tento skript zastavit?</translation>
-    </message>
-    <message>
-        <source>Select all</source>
-        <translation type="vanished">Vybrat vše</translation>
-    </message>
-    <message>
-        <source>Select to the start of the line</source>
-        <translation type="vanished">Vybrat až po začátek řádku</translation>
-    </message>
-    <message>
-        <source>Insert a new paragraph</source>
-        <translation type="vanished">Vložit nový odstavec</translation>
-    </message>
-    <message>
-        <source>Insert a new line</source>
-        <translation type="vanished">Vložit nový řádek</translation>
-    </message>
-    <message>
-        <source>Paste and Match Style</source>
-        <translation type="vanished">Vložit a odpovídat stylu</translation>
-    </message>
-    <message>
-        <source>Remove formatting</source>
-        <translation type="vanished">Odstranit formátování</translation>
-    </message>
-    <message>
-        <source>Strikethrough</source>
-        <translation type="vanished">Přeškrtnuto</translation>
-    </message>
-    <message>
-        <source>Subscript</source>
-        <translation type="vanished">Dolní index</translation>
-    </message>
-    <message>
-        <source>Superscript</source>
-        <translation type="vanished">Horní index</translation>
-    </message>
-    <message>
-        <source>Insert Bulleted List</source>
-        <translation type="vanished">Vložit seznam s odrážkami</translation>
-    </message>
-    <message>
-        <source>Insert Numbered List</source>
-        <translation type="vanished">Vložit číslovaný seznam</translation>
-    </message>
-    <message>
-        <source>Indent</source>
-        <translation type="vanished">Odsadit</translation>
-    </message>
-    <message>
-        <source>Outdent</source>
-        <translation type="vanished">Zrušit odsazení</translation>
-    </message>
-    <message>
-        <source>Center</source>
-        <translation type="vanished">Na střed</translation>
-    </message>
-    <message>
-        <source>Justify</source>
-        <translation type="vanished">Do bloku</translation>
-    </message>
-    <message>
-        <source>Align Left</source>
-        <translation type="vanished">Zarovnat vlevo</translation>
-    </message>
-    <message>
-        <source>Align Right</source>
-        <translation type="vanished">Zarovnat vpravo</translation>
-    </message>
-    <message>
-        <source>Look Up In Dictionary</source>
-        <translation type="obsolete">Podívat se do slovníku</translation>
-    </message>
-    <message>
-        <source>Search The Web</source>
-        <translation type="obsolete">Hledat na síti</translation>
-    </message>
-    <message>
-        <source>Check Spelling While Typing</source>
-        <translation type="obsolete">Kontrolovat pravopis během psaní</translation>
-    </message>
-    <message>
-        <source>Add To Dictionary</source>
-        <translation type="obsolete">Přidat do slovníku</translation>
-    </message>
-    <message>
-        <source>Delete to the start of the word</source>
-        <translation type="vanished">Smazat až po začátek slova</translation>
-    </message>
-    <message>
-        <source>Recent searches</source>
-        <translation type="obsolete">Dosavadní hledané výrazy</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the next word</source>
-        <translation type="vanished">Ukazatel polohy posunout k následujícímu slovu</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the next line</source>
-        <translation type="vanished">Ukazatel polohy posunout k následujícímu řádku</translation>
-    </message>
-    <message>
-        <source>Scroll down</source>
-        <translation type="vanished">Projíždět dolů</translation>
-    </message>
-    <message>
-        <source>Scroll here</source>
-        <translation type="vanished">Projíždět až sem</translation>
-    </message>
-    <message>
-        <source>Scroll left</source>
-        <translation type="vanished">Projíždět doleva</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the start of the block</source>
-        <translation type="vanished">Ukazatel polohy posunout na začátek bloku</translation>
-    </message>
-    <message>
-        <source>Text Direction</source>
-        <translation type="obsolete">Směr psaní</translation>
-    </message>
-    <message>
-        <source>Bottom</source>
-        <translation type="vanished">Konec</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <translation type="obsolete">Nevšímat si</translation>
-    </message>
-    <message>
-        <source>Italic</source>
-        <translation type="obsolete">Kurzívní</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the end of the line</source>
-        <translation type="vanished">Ukazatel polohy posunout na konec řádku</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the start of the line</source>
-        <translation type="vanished">Ukazatel polohy posunout na začátek řádku</translation>
-    </message>
-    <message>
-        <source>Reload</source>
-        <translation type="obsolete">Nahrát znovu</translation>
-    </message>
-    <message>
-        <source>Submit</source>
-        <translation type="obsolete">Poslat</translation>
-    </message>
-    <message>
-        <source>Web Inspector - %2</source>
-        <translation type="vanished">Web Inspektor - %2</translation>
-    </message>
-    <message>
-        <source>Page up</source>
-        <translation type="vanished">O stranu nahoru</translation>
-    </message>
-    <message>
-        <source>Spelling</source>
-        <translation type="obsolete">Pravopis</translation>
-    </message>
-    <message>
-        <source>Outline</source>
-        <translation type="obsolete">Obrys</translation>
-    </message>
-    <message>
-        <source>Check Grammar With Spelling</source>
-        <translation type="obsolete">Kontrolovat mluvnici společně s pravopisem</translation>
-    </message>
-    <message>
-        <source>No file selected</source>
-        <translation type="obsolete">Nebyl vybrán žádný soubor</translation>
-    </message>
-    <message>
-        <source>Submit</source>
-        <comment>default label for Submit buttons in forms on web pages</comment>
-        <translation type="vanished">Poslat</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <comment>default label for Reset buttons in forms on web pages</comment>
-        <translation type="vanished">Vrátit</translation>
-    </message>
-    <message>
-        <source>This is a searchable index. Enter search keywords: </source>
-        <comment>text that appears at the start of nearly-obsolete web pages in the form of a &apos;searchable index&apos;</comment>
-        <translation type="vanished">Tento rejstřík má funkci hledání. Zadejte nějaký hledaný výraz:</translation>
-    </message>
-    <message>
-        <source>Choose File</source>
-        <comment>title for file button used in HTML forms</comment>
-        <translation type="vanished">Vybrat soubor</translation>
-    </message>
-    <message>
-        <source>No file selected</source>
-        <comment>text to display in file button used in HTML forms when no file is selected</comment>
-        <translation type="vanished">Nebyl vybrán žádný soubor</translation>
-    </message>
-    <message>
-        <source>Open in New Window</source>
-        <comment>Open in New Window context menu item</comment>
-        <translation type="vanished">Otevřít v novém okně</translation>
-    </message>
-    <message>
-        <source>Save Link...</source>
-        <comment>Download Linked File context menu item</comment>
-        <translation type="vanished">Uložit odkaz...</translation>
-    </message>
-    <message>
-        <source>Copy Link</source>
-        <comment>Copy Link context menu item</comment>
-        <translation type="vanished">Kopírovat adresu odkazu</translation>
-    </message>
-    <message>
-        <source>Open Image</source>
-        <comment>Open Image in New Window context menu item</comment>
-        <translation type="vanished">Vyobrazení otevřít v novém okně</translation>
-    </message>
-    <message>
-        <source>Save Image</source>
-        <comment>Download Image context menu item</comment>
-        <translation type="vanished">Uložit vyobrazení</translation>
-    </message>
-    <message>
-        <source>Copy Image</source>
-        <comment>Copy Link context menu item</comment>
-        <translation type="vanished">Kopírovat vyobrazení</translation>
-    </message>
-    <message>
-        <source>Open Frame</source>
-        <comment>Open Frame in New Window context menu item</comment>
-        <translation type="vanished">Otevřít rámec</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <comment>Copy context menu item</comment>
-        <translation type="vanished">Kopírovat</translation>
-    </message>
-    <message>
-        <source>Go Back</source>
-        <comment>Back context menu item</comment>
-        <translation type="vanished">Jít zpět</translation>
-    </message>
-    <message>
-        <source>Go Forward</source>
-        <comment>Forward context menu item</comment>
-        <translation type="vanished">Jít dopředu</translation>
-    </message>
-    <message>
-        <source>Stop</source>
-        <comment>Stop context menu item</comment>
-        <translation type="vanished">Zastavit</translation>
-    </message>
-    <message>
-        <source>Reload</source>
-        <comment>Reload context menu item</comment>
-        <translation type="vanished">Nahrát znovu</translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <comment>Cut context menu item</comment>
-        <translation type="vanished">Vyjmout</translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <comment>Paste context menu item</comment>
-        <translation type="vanished">Vložit</translation>
-    </message>
-    <message>
-        <source>No Guesses Found</source>
-        <comment>No Guesses Found context menu item</comment>
-        <translation type="vanished">Nebyly nalezeny žádné návrhy</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <comment>Ignore Spelling context menu item</comment>
-        <translation type="vanished">Přehlížet</translation>
-    </message>
-    <message>
-        <source>Add To Dictionary</source>
-        <comment>Learn Spelling context menu item</comment>
-        <translation type="vanished">Přidat do slovníku</translation>
-    </message>
-    <message>
-        <source>Search The Web</source>
-        <comment>Search The Web context menu item</comment>
-        <translation type="vanished">Hledat na síti</translation>
-    </message>
-    <message>
-        <source>Look Up In Dictionary</source>
-        <comment>Look Up in Dictionary context menu item</comment>
-        <translation type="vanished">Podívat se do slovníku</translation>
-    </message>
-    <message>
-        <source>Open Link</source>
-        <comment>Open Link context menu item</comment>
-        <translation type="vanished">Otevřít adresu odkazu</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <comment>Ignore Grammar context menu item</comment>
-        <translation type="vanished">Přehlížet</translation>
-    </message>
-    <message>
-        <source>Spelling</source>
-        <comment>Spelling and Grammar context sub-menu item</comment>
-        <translation type="vanished">Pravopis</translation>
-    </message>
-    <message>
-        <source>Show Spelling and Grammar</source>
-        <comment>menu item title</comment>
-        <translation type="vanished">Ukázat pravopis a mluvnici</translation>
-    </message>
-    <message>
-        <source>Hide Spelling and Grammar</source>
-        <comment>menu item title</comment>
-        <translation type="vanished">Skrýt pravopis a mluvnici</translation>
-    </message>
-    <message>
-        <source>Check Spelling</source>
-        <comment>Check spelling context menu item</comment>
-        <translation type="vanished">Ověření pravopisu</translation>
-    </message>
-    <message>
-        <source>Check Spelling While Typing</source>
-        <comment>Check spelling while typing context menu item</comment>
-        <translation type="vanished">Ověřovat pravopis během psaní</translation>
-    </message>
-    <message>
-        <source>Check Grammar With Spelling</source>
-        <comment>Check grammar with spelling context menu item</comment>
-        <translation type="vanished">Ověřovat mluvnici společně s pravopisem</translation>
-    </message>
-    <message>
-        <source>Fonts</source>
-        <comment>Font context sub-menu item</comment>
-        <translation type="vanished">Písma</translation>
-    </message>
-    <message>
-        <source>Bold</source>
-        <comment>Bold context menu item</comment>
-        <translation type="vanished">Tučné</translation>
-    </message>
-    <message>
-        <source>Italic</source>
-        <comment>Italic context menu item</comment>
-        <translation type="vanished">Kurzíva</translation>
-    </message>
-    <message>
-        <source>Underline</source>
-        <comment>Underline context menu item</comment>
-        <translation type="vanished">Podtržení</translation>
-    </message>
-    <message>
-        <source>Outline</source>
-        <comment>Outline context menu item</comment>
-        <translation type="vanished">Obrys</translation>
-    </message>
-    <message>
-        <source>Direction</source>
-        <comment>Writing direction context sub-menu item</comment>
-        <translation type="vanished">Směr</translation>
-    </message>
-    <message>
-        <source>Text Direction</source>
-        <comment>Text direction context sub-menu item</comment>
-        <translation type="vanished">Směr psaní</translation>
-    </message>
-    <message>
-        <source>Default</source>
-        <comment>Default writing direction context menu item</comment>
-        <translation type="vanished">Výchozí</translation>
-    </message>
-    <message>
-        <source>Left to Right</source>
-        <comment>Left to Right context menu item</comment>
-        <translation type="vanished">Zleva doprava</translation>
-    </message>
-    <message>
-        <source>Right to Left</source>
-        <comment>Right to Left context menu item</comment>
-        <translation type="vanished">Zprava doleva</translation>
-    </message>
-    <message>
-        <source>Loading...</source>
-        <comment>Media controller status message when the media is loading</comment>
-        <translation type="vanished">Nahrává se...</translation>
-    </message>
-    <message>
-        <source>Live Broadcast</source>
-        <comment>Media controller status message when watching a live broadcast</comment>
-        <translation type="vanished">Živý přenos</translation>
-    </message>
-    <message>
-        <source>Audio Element</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Zvukový prvek</translation>
-    </message>
-    <message>
-        <source>Video Element</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Videoprvek</translation>
-    </message>
-    <message>
-        <source>Mute Button</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Tlačítko pro ztlumení</translation>
-    </message>
-    <message>
-        <source>Unmute Button</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Tlačítko pro zrušení ztlumení</translation>
-    </message>
-    <message>
-        <source>Play Button</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Tlačítko pro přehrávání</translation>
-    </message>
-    <message>
-        <source>Pause Button</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Tlačítko pro pozastavení</translation>
-    </message>
-    <message>
-        <source>Slider</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Posuvník</translation>
-    </message>
-    <message>
-        <source>Slider Thumb</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Palec posuvníku</translation>
-    </message>
-    <message>
-        <source>Rewind Button</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Tlačítko pro přetočení</translation>
-    </message>
-    <message>
-        <source>Return to Real-time Button</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Tlačítko pro návrat ke skutečnému času</translation>
-    </message>
-    <message>
-        <source>Elapsed Time</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Uplynulý čas</translation>
-    </message>
-    <message>
-        <source>Remaining Time</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Zbývající čas</translation>
-    </message>
-    <message>
-        <source>Status Display</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Údaj o stavu</translation>
-    </message>
-    <message>
-        <source>Fullscreen Button</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Tlačítko pro zobrazení na celou obrazovku</translation>
-    </message>
-    <message>
-        <source>Seek Forward Button</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Tlačítko pro hledání dopředu</translation>
-    </message>
-    <message>
-        <source>Seek Back Button</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Tlačítko pro hledání dozadu</translation>
-    </message>
-    <message>
-        <source>Audio element playback controls and status display</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Řízení přehrávání zvuku a zobrazení stavu</translation>
-    </message>
-    <message>
-        <source>Video element playback controls and status display</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Řízení přehrávání videa a zobrazení stavu</translation>
-    </message>
-    <message>
-        <source>Mute audio tracks</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Ztlumit zvukové stopy</translation>
-    </message>
-    <message>
-        <source>Unmute audio tracks</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Zrušit ztlumení zvukových stop</translation>
-    </message>
-    <message>
-        <source>Begin playback</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Začít přehrávání</translation>
-    </message>
-    <message>
-        <source>Pause playback</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Pozastavit přehrávání</translation>
-    </message>
-    <message>
-        <source>Movie time scrubber</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Čas přehrávání</translation>
-    </message>
-    <message>
-        <source>Movie time scrubber thumb</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Palec pro nastavení času přehrávání</translation>
-    </message>
-    <message>
-        <source>Rewind movie</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Přetočit film zpět</translation>
-    </message>
-    <message>
-        <source>Return streaming movie to real-time</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Vrátit film na skutečný čas</translation>
-    </message>
-    <message>
-        <source>Current movie time</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Čas přehrávání filmu</translation>
-    </message>
-    <message>
-        <source>Remaining movie time</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Zbývající čas z přehrávání filmu</translation>
-    </message>
-    <message>
-        <source>Current movie status</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Stav filmu</translation>
-    </message>
-    <message>
-        <source>Play movie in full-screen mode</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Přehrávat film v režimu zobrazení na celou obrazovku</translation>
-    </message>
-    <message>
-        <source>Seek quickly back</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Rychlé zpětné hledání</translation>
-    </message>
-    <message>
-        <source>Seek quickly forward</source>
-        <comment>Media controller element</comment>
-        <translation type="vanished">Rychlé dopředné hledání</translation>
-    </message>
-    <message>
-        <source>Indefinite time</source>
-        <comment>Media time description</comment>
-        <translation type="vanished">Neomezený čas</translation>
-    </message>
-    <message>
-        <source>%1 days %2 hours %3 minutes %4 seconds</source>
-        <comment>Media time description</comment>
-        <translation type="vanished">%1 dny %2 hodiny %3 minuty %4 sekundy</translation>
-    </message>
-    <message>
-        <source>%1 hours %2 minutes %3 seconds</source>
-        <comment>Media time description</comment>
-        <translation type="vanished">%1 hodiny %2 minuty %3 sekundy</translation>
-    </message>
-    <message>
-        <source>%1 minutes %2 seconds</source>
-        <comment>Media time description</comment>
-        <translation type="vanished">%1 minuty %2 sekundy</translation>
-    </message>
-    <message>
-        <source>%1 seconds</source>
-        <comment>Media time description</comment>
-        <translation type="vanished">%1 sekundy</translation>
-    </message>
-    <message>
-        <source>LTR</source>
-        <comment>Left to Right context menu item</comment>
-        <translation type="obsolete">Zleva doprava</translation>
-    </message>
-    <message>
-        <source>RTL</source>
-        <comment>Right to Left context menu item</comment>
-        <translation type="obsolete">Zprava doleva</translation>
-    </message>
-    <message>
-        <source>Inspect</source>
-        <comment>Inspect Element context menu item</comment>
-        <translation type="vanished">Provést prohlídku</translation>
-    </message>
-    <message>
-        <source>No recent searches</source>
-        <comment>Label for only item in menu that appears when clicking on the search field image, when no searches have been performed</comment>
-        <translation type="vanished">Neexistují žádné naposledy hledané výrazy</translation>
-    </message>
-    <message>
-        <source>Recent searches</source>
-        <comment>label for first item in the menu that appears when clicking on the search field image, used as embedded menu title</comment>
-        <translation type="vanished">Dosavadní hledané výrazy</translation>
-    </message>
-    <message>
-        <source>Clear recent searches</source>
-        <comment>menu item in Recent Searches menu that empties menu&apos;s contents</comment>
-        <translation type="vanished">Smazat naposledy hledané výrazy</translation>
-    </message>
-    <message>
-        <source>Unknown</source>
-        <comment>Unknown filesize FTP directory listing item</comment>
-        <translation type="vanished">Neznámý</translation>
-    </message>
-    <message>
-        <source>%1 (%2x%3 pixels)</source>
-        <comment>Title string for images</comment>
-        <translation type="vanished">%1 (%2x%3 pixelů)</translation>
-    </message>
-    <message>
-        <source>Save Image</source>
-        <translation type="obsolete">Uložit vyobrazení</translation>
-    </message>
-    <message>
-        <source>Save Link...</source>
-        <translation type="obsolete">Uložit odkaz...</translation>
-    </message>
-    <message>
-        <source>No recent searches</source>
-        <translation type="obsolete">Neexistují žádné naposledy hledané výrazy</translation>
-    </message>
-    <message>
-        <source>Page right</source>
-        <translation type="vanished">O stranu doprava</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the start of the document</source>
-        <translation type="vanished">Ukazatel polohy posunout na začátek dokumentu</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the next character</source>
-        <translation type="vanished">Ukazatel polohy posunout k následujícímu znaku</translation>
-    </message>
-    <message>
-        <source>Copy Link</source>
-        <translation type="obsolete">Kopírovat adresu odkazu</translation>
-    </message>
-    <message>
-        <source>Select to the previous line</source>
-        <translation type="vanished">Vybrat až po předchozí řádek</translation>
-    </message>
-    <message>
-        <source>Select to the previous word</source>
-        <translation type="vanished">Vybrat až po předchozí slovo</translation>
-    </message>
-    <message>
-        <source>Check Spelling</source>
-        <translation type="obsolete">Kontrola pravopisu</translation>
-    </message>
-    <message>
-        <source>Select to the next character</source>
-        <translation type="vanished">Vybrat až po následující znak</translation>
-    </message>
-    <message>
-        <source>Show Spelling and Grammar</source>
-        <translation type="obsolete">Ukázat pravopis a mluvnici</translation>
-    </message>
-    <message>
-        <source>Delete to the end of the word</source>
-        <translation type="vanished">Smazat až po konec slova</translation>
-    </message>
-    <message>
-        <source>Direction</source>
-        <translation type="obsolete">Směr</translation>
-    </message>
-    <message>
-        <source>Select to the end of the line</source>
-        <translation type="vanished">Vybrat až po začátek řádku</translation>
-    </message>
-    <message>
-        <source>Submit</source>
-        <comment>Submit (input element) alt text for &lt;input&gt; elements with no alt, title, or value</comment>
-        <translation type="vanished">Poslat</translation>
-    </message>
-    <message>
-        <source>Choose File</source>
-        <translation type="obsolete">Vybrat soubor</translation>
-    </message>
-    <message>
-        <source>Scroll up</source>
-        <translation type="vanished">Projíždět nahoru</translation>
-    </message>
-    <message>
-        <source>Clear recent searches</source>
-        <translation type="obsolete">Smazat naposledy hledané výrazy</translation>
-    </message>
-    <message>
-        <source>Select to the start of the document</source>
-        <translation type="vanished">Vybrat až po začátek dokumentu</translation>
-    </message>
-    <message>
-        <source>Default</source>
-        <translation type="obsolete">Výchozí</translation>
-    </message>
-    <message>
-        <source>Underline</source>
-        <translation type="obsolete">Podtrhnout</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the previous character</source>
-        <translation type="vanished">Ukazatel polohy posunout k předchozímu znaku</translation>
-    </message>
-    <message>
-        <source>Copy Image</source>
-        <translation type="obsolete">Kopírovat vyobrazení</translation>
-    </message>
-    <message>
-        <source>Select to the end of the document</source>
-        <translation type="vanished">Vybrat až po konec dokumentu</translation>
-    </message>
-    <message>
-        <source>Select to the end of the block</source>
-        <translation type="vanished">Vybrat až po konec bloku</translation>
-    </message>
-    <message>
-        <source>Scroll right</source>
-        <translation type="vanished">Projíždět doprava</translation>
-    </message>
-    <message>
-        <source>No Guesses Found</source>
-        <translation type="obsolete">Nebyly nalezeny žádné návrhy</translation>
-    </message>
-    <message>
-        <source>Open Link</source>
-        <translation type="obsolete">Otevřít adresu odkazu</translation>
-    </message>
-    <message>
-        <source>Bad HTTP request</source>
-        <translation type="vanished">Neplatný požadavek HTTP</translation>
-    </message>
-    <message>
-        <source>Unknown</source>
-        <translation type="obsolete">Neznámý</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the previous word</source>
-        <translation type="vanished">Ukazatel polohy posunout k předchozímu slovu</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the previous line</source>
-        <translation type="vanished">Ukazatel polohy posunout na předchozí řádku</translation>
-    </message>
-    <message>
-        <source>%n file(s)</source>
-        <translation type="obsolete">%n soubor(ů)</translation>
-    </message>
-    <message>
-        <source>Left edge</source>
-        <translation type="vanished">Levý okraj</translation>
-    </message>
-    <message>
-        <source>Go Forward</source>
-        <translation type="obsolete">Jít dopředu</translation>
-    </message>
-    <message>
-        <source>Page down</source>
-        <translation type="vanished">O stranu dolů</translation>
-    </message>
-    <message>
-        <source>Page left</source>
-        <translation type="vanished">O stranu doleva</translation>
-    </message>
-    <message>
-        <source>This is a searchable index. Enter search keywords: </source>
-        <translation type="obsolete">Tento index má funkci hledání. Zadejte nějaký hledaný výraz:</translation>
-    </message>
-    <message>
-        <source>Select to the previous character</source>
-        <translation type="vanished">Vybrat až po předchozí znak</translation>
-    </message>
-    <message>
-        <source>Go Back</source>
-        <translation type="obsolete">Jít zpět</translation>
-    </message>
-    <message>
-        <source>Open in New Window</source>
-        <translation type="obsolete">Otevřít v novém okně</translation>
-    </message>
-    <message>
-        <source>Right edge</source>
-        <translation type="vanished">Pravý okraj</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the end of the document</source>
-        <translation type="vanished">Ukazatel polohy posunout na konec dokumentu</translation>
-    </message>
-    <message>
-        <source>Hide Spelling and Grammar</source>
-        <translation type="obsolete">Skrýt pravopis a mluvnici</translation>
-    </message>
-    <message>
-        <source>%1 (%2x%3 pixels)</source>
-        <translation type="obsolete">%1 (%2x%3 pixelů)</translation>
-    </message>
-    <message>
-        <source>Select to the next word</source>
-        <translation type="vanished">Vybrat až po následující slovo</translation>
-    </message>
-    <message>
-        <source>Select to the next line</source>
-        <translation type="vanished">Vybrat až po následující řádek</translation>
-    </message>
-    <message numerus="yes">
-        <source>%n file(s)</source>
-        <comment>number of chosen file</comment>
-        <translation type="vanished">
-            <numerusform>%n soubor(ů)</numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-        </translation>
-    </message>
-</context>
-<context>
     <name>QWhatsThisAction</name>
     <message>
         <source>What&apos;s This?</source>
@@ -9457,14 +7344,16 @@ Role of an accessible object</extracomment>
 <context>
     <name>QWindowsDirect2DIntegration</name>
     <message>
-        <source>Qt cannot load the direct2d platform plugin because the Direct2D version on this system is too old. The minimum system requirement for this platform plugin is Windows 7 SP1 with Platform Update.
-
-The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on this system is %5.%6.%7.%8.</source>
-        <translation type="unfinished"></translation>
+        <source>Cannot load direct2d platform plugin</source>
+        <translation>Nelze nahrát přídavný modul platformy direct2d</translation>
     </message>
     <message>
-        <source>Cannot load direct2d platform plugin</source>
-        <translation type="unfinished"></translation>
+        <source>Qt cannot load the direct2d platform plugin because the Direct2D version on this system is too old. The minimum system requirement for this platform plugin is Windows 7 SP1 with Platform Update.
+
+The minimum Direct2D version required is %1. The Direct2D version on this system is %2.</source>
+        <translation type="unfinished">Qt nemůže nahrát přídavný modul platformy direct2d, protože verze Direct2D na tomto systému je příliš stará. Nejmenší systémový požadavek na přídavný modul pro tuto platformu je Windows 7 SP1 s Platform Update.
+
+Nejnižší požadovaná verze Direct2D je %1.%2.%3.%4. Verze Direct2D nainstalovaná na tomto systému je %5.%6.%7.%8. {2d?} {2D?} {7 ?} {1 ?} {2D?} {1.?} {2D?} {2.?}</translation>
     </message>
 </context>
 <context>
@@ -9512,61 +7401,6 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <message>
         <source>&lt; &amp;Back</source>
         <translation>&lt; &amp;Zpět</translation>
-    </message>
-</context>
-<context>
-    <name>QWorkspace</name>
-    <message>
-        <source>&amp;Move</source>
-        <translation type="vanished">Po&amp;sunout</translation>
-    </message>
-    <message>
-        <source>&amp;Size</source>
-        <translation type="vanished">Změnit &amp;velikost</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">Zavřít</translation>
-    </message>
-    <message>
-        <source>Minimize</source>
-        <translation type="vanished">Zmenšit</translation>
-    </message>
-    <message>
-        <source>Stay on &amp;Top</source>
-        <translation type="vanished">Zůstat v &amp;popředí</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation type="vanished">&amp;Zavřít</translation>
-    </message>
-    <message>
-        <source>%1 - [%2]</source>
-        <translation type="vanished">%1 - [%2]</translation>
-    </message>
-    <message>
-        <source>Sh&amp;ade</source>
-        <translation type="vanished">&amp;Navinout</translation>
-    </message>
-    <message>
-        <source>&amp;Restore</source>
-        <translation type="vanished">&amp;Obnovit</translation>
-    </message>
-    <message>
-        <source>&amp;Unshade</source>
-        <translation type="vanished">&amp;Odvinout</translation>
-    </message>
-    <message>
-        <source>Mi&amp;nimize</source>
-        <translation type="vanished">&amp;Zmenšit</translation>
-    </message>
-    <message>
-        <source>Ma&amp;ximize</source>
-        <translation type="vanished">Zvě&amp;tšit</translation>
-    </message>
-    <message>
-        <source>Restore Down</source>
-        <translation type="vanished">Obnovit</translation>
     </message>
 </context>
 <context>
@@ -9723,10 +7557,6 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation>%1 není platným názvem pro kódování.</translation>
     </message>
     <message>
-        <source>, but got &apos;</source>
-        <translation>očekáváno, namísto toho obdrženo &apos;</translation>
-    </message>
-    <message>
         <source>Start tag expected.</source>
         <translation>Očekáván otevírající prvek.</translation>
     </message>
@@ -9737,10 +7567,6 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <message>
         <source>Reference to external entity &apos;%1&apos; in attribute value.</source>
         <translation>V hodnotě vlastnosti byla odkazována entita &apos;%1&apos;.</translation>
-    </message>
-    <message>
-        <source>Expected </source>
-        <translation>Bylo </translation>
     </message>
     <message>
         <source>Invalid document.</source>
@@ -9757,10 +7583,6 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <message>
         <source>Invalid attribute in XML declaration.</source>
         <translation>Deklarace XML obsahuje neplatnou vlastnost.</translation>
-    </message>
-    <message>
-        <source>Attribute redefined.</source>
-        <translation type="vanished">Vlastnost byla nově vymezena.</translation>
     </message>
     <message>
         <source>%1 is an invalid PUBLIC identifier.</source>
@@ -9783,16 +7605,8 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation>Deklarace XML se nenachází na začátku dokumentu.</translation>
     </message>
     <message>
-        <source>Recursive entity detected.</source>
-        <translation>Byla zjištěna rekurzivní entita.</translation>
-    </message>
-    <message>
         <source>Unsupported XML version.</source>
         <translation>Tato verze XML není podporována.</translation>
-    </message>
-    <message>
-        <source>Unexpected &apos;</source>
-        <translation>Na tomto místě neplatný &apos; </translation>
     </message>
     <message>
         <source>Invalid entity value.</source>
@@ -9808,2012 +7622,47 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Attribute &apos;%1&apos; redefined.</source>
+        <translation>Vlastnost &apos;%1&apos; nově vymezena.</translation>
+    </message>
+    <message>
+        <source>&apos;%1&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&apos;&lt;first option&gt;&apos;</extracomment>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>QtAndroidDialogHelpers::QAndroidPlatformMessageDialogHelper</name>
     <message>
-        <source>OK</source>
-        <translation type="vanished">OK</translation>
+        <source>%1 or &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;first option&gt;, &apos;&lt;second option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save</source>
-        <translation type="vanished">Uložit</translation>
+        <source>%1, &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;options so far&gt;, &apos;&lt;next option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open</source>
-        <translation type="vanished">Otevřít</translation>
+        <source>%1, or &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;options so far&gt;, or &apos;&lt;final option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cancel</source>
-        <translation type="vanished">Zrušit</translation>
+        <source>Expected %1, but got &apos;%2&apos;.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Close</source>
-        <translation type="vanished">Zavřít</translation>
+        <source>Unexpected &apos;%1&apos;.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Apply</source>
-        <translation type="vanished">Použít</translation>
+        <source>Self-referencing entity detected.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Reset</source>
-        <translation type="vanished">Nastavit znovu</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="vanished">Nápověda</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation type="vanished">Zahodit změny</translation>
-    </message>
-    <message>
-        <source>Yes</source>
-        <translation type="vanished">Ano</translation>
-    </message>
-    <message>
-        <source>Yes to All</source>
-        <translation type="vanished">Ano, vše</translation>
-    </message>
-    <message>
-        <source>No</source>
-        <translation type="vanished">Ne</translation>
-    </message>
-    <message>
-        <source>No to All</source>
-        <translation type="vanished">Ne, žádné</translation>
-    </message>
-    <message>
-        <source>Save All</source>
-        <translation type="vanished">Uložit vše</translation>
-    </message>
-    <message>
-        <source>Abort</source>
-        <translation type="vanished">Zrušit</translation>
-    </message>
-    <message>
-        <source>Retry</source>
-        <translation type="vanished">Opakovat</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <translation type="vanished">Ignorovat</translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation type="vanished">Obnovit výchozí</translation>
-    </message>
-</context>
-<context>
-    <name>QtXmlPatterns</name>
-    <message>
-        <source>A comment cannot contain %1</source>
-        <translation type="vanished">Poznámka nesmí obsahovat %1</translation>
-    </message>
-    <message>
-        <source>Version %1 is not supported. The supported XQuery version is 1.0.</source>
-        <translation type="vanished">Verze %1 není podporována. Podporovanou verzí XQuery je 1.0.</translation>
-    </message>
-    <message>
-        <source>The root node of the second argument to function %1 must be a document node. %2 is not a document node.</source>
-        <translation type="vanished">Nadřízený uzel druhého agumentu funkce %1 musí být uzlem dokumentu, což není případ %2.</translation>
-    </message>
-    <message>
-        <source>The parameter %1 is required, but no corresponding %2 is supplied.</source>
-        <translation type="vanished">Nebyl zadán žádný odpovídající %2 pro potřebný parametr %1.</translation>
-    </message>
-    <message>
-        <source>Namespace declarations must occur before function, variable, and option declarations.</source>
-        <translation type="vanished">Prohlášení jmenných prostorů musí stát před prohlášeními funkcí-, proměnných- nebo prohlášeními voleb.</translation>
-    </message>
-    <message>
-        <source>empty</source>
-        <translation type="vanished">prázdný</translation>
-    </message>
-    <message>
-        <source>The namespace URI cannot be the empty string when binding to a prefix, %1.</source>
-        <translation type="vanished">Jmenný prostor-URI nesmí být prázdný, když je spojen s prefixem %1.</translation>
-    </message>
-    <message>
-        <source>A comment cannot end with a %1.</source>
-        <translation type="vanished">Poznámka nesmí končit na %1.</translation>
-    </message>
-    <message>
-        <source>Top level stylesheet elements must be in a non-null namespace, which %1 isn&apos;t.</source>
-        <translation type="vanished">Úplně nahoře stojící prvky prováděcího listu se nesmí nacházet v nulovém jmenném prostoru, což je případ %1.</translation>
-    </message>
-    <message>
-        <source>Integer division (%1) by zero (%2) is undefined.</source>
-        <translation type="vanished">Celočíselné dělení (%1) nulou (%2) není stanoveno.</translation>
-    </message>
-    <message>
-        <source>A library module cannot be evaluated directly. It must be imported from a main module.</source>
-        <translation type="vanished">Knihovní modul nemůže být posouzen přímo, musí být zaveden z hlavního modulu.</translation>
-    </message>
-    <message>
-        <source>Time %1:%2:%3.%4 is invalid.</source>
-        <translation type="vanished">Časový údaj %1:%2:%3.%4 je neplatný.</translation>
-    </message>
-    <message>
-        <source>Attribute %1 cannot appear on the element %2. Only the standard attributes can appear.</source>
-        <translation type="obsolete">Prvek %2 může mít pouze obvyklé vlastnosti, ne však %1.</translation>
-    </message>
-    <message>
-        <source>A value of type %1 must contain an even number of digits. The value %2 does not.</source>
-        <translation type="vanished">Počet míst hodnoty typu %1 musí být stejný. To není případ %2.</translation>
-    </message>
-    <message>
-        <source>Modulus division (%1) by zero (%2) is undefined.</source>
-        <translation type="vanished">Dělení absolutní hodnoty (%1) nulou(%2) není stanoveno.</translation>
-    </message>
-    <message>
-        <source>No function with signature %1 is available</source>
-        <translation type="vanished">Neexistuje žádná funkce označená jako %1</translation>
-    </message>
-    <message>
-        <source>None of the pragma expressions are supported. Therefore, a fallback expression must be present</source>
-        <translation type="vanished">Musí být přítomen záložní výraz, neboť nejsou podporovány žádné věcné výrazy</translation>
-    </message>
-    <message>
-        <source>In the replacement string, %1 can only be used to escape itself or %2, not %3</source>
-        <translation type="vanished">V nahrazení může být použit pouze %1, aby se chránil sám, nebo %2, ne však pro %3</translation>
-    </message>
-    <message>
-        <source>The codepoint %1, occurring in %2 using encoding %3, is an invalid XML character.</source>
-        <translation type="vanished">Kódovací bod %1 z %2 s kódováním %3 není platným znakem XML.</translation>
-    </message>
-    <message>
-        <source>Network timeout.</source>
-        <translation type="vanished">Časový limit síťové operace byl překročen.</translation>
-    </message>
-    <message>
-        <source>No casting is possible with %1 as the target type.</source>
-        <translation type="obsolete">Nelze provádět žádné výběrové (&quot;cast&quot;) operace s typem %1.</translation>
-    </message>
-    <message>
-        <source>The Schema Import feature is not supported, and therefore %1 declarations cannot occur.</source>
-        <translation type="vanished">Prohlášení %1 je nepřípustné, protože není podporováno zavedení schémat.</translation>
-    </message>
-    <message>
-        <source>Attribute %1 and %2 are mutually exclusive.</source>
-        <translation type="vanished">Vlastnosti %1 a %2 se vzájemně vylučující.</translation>
-    </message>
-    <message>
-        <source>Parse error: %1</source>
-        <translation type="vanished">Chyba vyhodnocení: %1</translation>
-    </message>
-    <message>
-        <source>If the first argument is the empty sequence or a zero-length string (no namespace), a prefix cannot be specified. Prefix %1 was specified.</source>
-        <translation type="vanished">Nelze zadat žádnou předponu, jestliže je první argument prázdný nebo je prázdný řetězec znaků (žádný jmenný prostor). Byla zadána předpona %1.</translation>
-    </message>
-    <message>
-        <source>In an XSL-T pattern, the first argument to function %1 must be a literal or a variable reference, when used for matching.</source>
-        <translation type="vanished">V XSL-T vyhledávacím vzoru musí být první argument k funkci %1 při použití k hledání odkaz tvořený písmeny nebo proměnný.</translation>
-    </message>
-    <message>
-        <source>At least one component must be present.</source>
-        <translation type="vanished">Alespoň jedna součást musí být přítomna.</translation>
-    </message>
-    <message>
-        <source>In a namespace constructor, the value for a namespace value cannot be an empty string.</source>
-        <translation type="obsolete">Ve staviteli jmenného prostoru nesmí mýt hodnota jmenného prostoru prázdným řetězcem.</translation>
-    </message>
-    <message>
-        <source>An attribute by name %1 has already been created.</source>
-        <translation type="vanished">Již byla vytvořena jedna vlastnost s názvem %1.</translation>
-    </message>
-    <message>
-        <source>An argument by name %1 has already been declared. Every argument name must be unique.</source>
-        <translation type="vanished">Již existuje jeden argument s názvem %1. Názvy argumentů musí být jednoznačné.</translation>
-    </message>
-    <message>
-        <source>%1 is an invalid flag for regular expressions. Valid flags are:</source>
-        <translation type="vanished">%1 není pro regulérní výrazy platným příznakem. Platnými příznaky jsou:</translation>
-    </message>
-    <message>
-        <source>At least one %1-element must occur inside %2.</source>
-        <translation type="vanished">V %2 se musí vyskytovat alespoň jeden %1-prvek.</translation>
-    </message>
-    <message>
-        <source>Only the Unicode Codepoint Collation is supported(%1). %2 is unsupported.</source>
-        <translation type="vanished">Je podporován pouze Unicode Codepoint Collation (%1). %2 není podporován.</translation>
-    </message>
-    <message>
-        <source>Matches are case insensitive</source>
-        <translation type="vanished">Na psaní velkých/malých písmen není brán zřetel</translation>
-    </message>
-    <message>
-        <source>The name of an extension expression must be in a namespace.</source>
-        <translation type="vanished">Název výrazu rozšíření se musí nacházet ve jmenném prostoru.</translation>
-    </message>
-    <message>
-        <source>Each name of a template parameter must be unique; %1 is duplicated.</source>
-        <translation type="vanished">Názvy parametrů předloh musí být jednoznačné, %1 již existuje.</translation>
-    </message>
-    <message>
-        <source>At least one mode must be specified in the %1-attribute on element %2.</source>
-        <translation type="vanished">Ve %1-vlastnosti prvku %2 musí být zadán alespoň jeden způsob.</translation>
-    </message>
-    <message>
-        <source>%1 matches newline characters</source>
-        <translation type="vanished">Výraz &apos;%1&apos; odpovídá znakům pro nový řádek</translation>
-    </message>
-    <message>
-        <source>Year %1 is invalid because it begins with %2.</source>
-        <translation type="vanished">%1 není platným údajem pro rok, protože začíná %2.</translation>
-    </message>
-    <message>
-        <source>The second argument to %1 cannot be of type %2. It must be of type %3, %4, or %5.</source>
-        <translation type="vanished">Druhý argument %1 nemůže být typ %2. Musí to být typ %3, %4 nebo %5.</translation>
-    </message>
-    <message>
-        <source>Element %1 cannot have children.</source>
-        <translation type="vanished">Prvek %1 nemůže mít podprvky.</translation>
-    </message>
-    <message>
-        <source>Attribute %1 cannot appear on the element %2. Only %3 is allowed, and the standard attributes.</source>
-        <translation type="obsolete">Prvek %2 může mít jen vlastnost %3 nebo vlastnosti, které jsou obvyklé, ne však %1.</translation>
-    </message>
-    <message>
-        <source>Only one %1-element can appear.</source>
-        <translation type="vanished">Může být jen jeden jediný %1-prvek.</translation>
-    </message>
-    <message>
-        <source>The name for a computed attribute cannot have the namespace URI %1 with the local name %2.</source>
-        <translation type="vanished">Název počítané vlastnosti nesmí mít jmenný prostor-URI %1 s místním názvem %2.</translation>
-    </message>
-    <message>
-        <source>A positional predicate must evaluate to a single numeric value.</source>
-        <translation type="vanished">Poziční přísudek se musí vyhodnotit jako jednoduchá, číselná hodnota.</translation>
-    </message>
-    <message>
-        <source>Element %1 can&apos;t be serialized because it appears outside the document element.</source>
-        <translation type="vanished">Prvek %1 nemůže být vydáván na pokračování, protože se objevuje mimo prvky dokumentu.</translation>
-    </message>
-    <message>
-        <source>%1 and %2 match the start and end of a line.</source>
-        <translation type="vanished">Výrazy %1 a %2 vždy odpovídají začátku nebo konci libovolného řádku.</translation>
-    </message>
-    <message>
-        <source>Running an XSL-T 1.0 stylesheet with a 2.0 processor.</source>
-        <translation type="vanished">Je zpracováván jeden XSL-T 1.0 stylový list jedním procesorem verze 2.0.</translation>
-    </message>
-    <message>
-        <source>A stylesheet function must have a prefixed name.</source>
-        <translation type="vanished">Název funkce stylového listu musí mít předponu.</translation>
-    </message>
-    <message>
-        <source>%1 cannot be retrieved</source>
-        <translation type="vanished">%1 nelze určit</translation>
-    </message>
-    <message>
-        <source>It&apos;s not possible to cast the value %1 of type %2 to %3</source>
-        <translation type="obsolete">Nelze provést operaci předvedení hodnoty %1 typu %2 k %3</translation>
-    </message>
-    <message>
-        <source>The value of the XSL-T version attribute must be a value of type %1, which %2 isn&apos;t.</source>
-        <translation type="vanished">Hodnota XSL-T vlastnosti verze musí být hodnotou typu %1, což není případ %2.</translation>
-    </message>
-    <message>
-        <source>In a namespace constructor, the value for a namespace cannot be an empty string.</source>
-        <translation type="vanished">Ve staviteli jmenného prostoru nesmí mýt hodnota jmenného prostoru prázdným řetězcem.</translation>
-    </message>
-    <message>
-        <source>The prefix %1 cannot be bound.</source>
-        <translation type="vanished">Předponu %1 nelze spojit.</translation>
-    </message>
-    <message>
-        <source>The prefix must be a valid %1, which %2 is not.</source>
-        <translation type="vanished">Předpona musí být platný %1, což není případ %2.</translation>
-    </message>
-    <message>
-        <source>The keyword %1 cannot occur with any other mode name.</source>
-        <translation type="vanished">Klíčové slovo %1 se nemůže používat dohromady s jiným názvem způsobu.</translation>
-    </message>
-    <message>
-        <source>Type error in cast, expected %1, received %2.</source>
-        <translation type="vanished">Chyba psaní u operace předvedení, bylo očekáváno %1, ale přijato %2.</translation>
-    </message>
-    <message>
-        <source>%1 is not a valid numeric literal.</source>
-        <translation type="vanished">%1 není platný číselný údaj tvořený písmeny.</translation>
-    </message>
-    <message numerus="yes">
-        <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
-        <translation type="vanished">
-            <numerusform>%1 má jen %n argument; údaj %2 z tohoto důvodu neplatný.</numerusform>
-            <numerusform>%1 má jen %n argumenty; údaj %2 z tohoto důvodu neplatný.</numerusform>
-            <numerusform>%1 má jen %n argumenty; údaj %2 z tohoto důvodu neplatný.</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Circularity detected</source>
-        <translation type="obsolete">byla zjištěna cirkulární závislost</translation>
-    </message>
-    <message>
-        <source>A variable by name %1 has already been declared.</source>
-        <translation type="vanished">Proměnná s názvem %1 již byla prohlášena.</translation>
-    </message>
-    <message>
-        <source>The prefix %1 can not be bound. By default, it is already bound to the namespace %2.</source>
-        <translation type="vanished">Předpona %1 nemůže být spojena. Ve výchozím nastavení je již spojena se jmenným prostorem %2.</translation>
-    </message>
-    <message>
-        <source>An %1-attribute must have a valid %2 as value, which %3 isn&apos;t.</source>
-        <translation type="obsolete">Vlastnost s názvem %1 musí mít platnou %2-hodnotu. %3 není platnou hodnotou.</translation>
-    </message>
-    <message>
-        <source>If element %1 has no attribute %2, it cannot have attribute %3 or %4.</source>
-        <translation type="vanished">Prvek %1 nesmí mít vlastnost %3 nebo %4, pokud nemá vlastnost %2.</translation>
-    </message>
-    <message>
-        <source>A function already exists with the signature %1.</source>
-        <translation type="vanished">Již existuje funkce s podpisem %1.</translation>
-    </message>
-    <message>
-        <source>When casting to %1 from %2, the source value cannot be %3.</source>
-        <translation type="vanished">U operace předvedení z %1 do %2 nesmí být zdrojová hodnota %3.</translation>
-    </message>
-    <message>
-        <source>Attribute %1 can&apos;t be serialized because it appears at the top level.</source>
-        <translation type="vanished">Vlastnost %1 nemůže být vydáván na pokračování, protože se objevuje na nejvyšší rovině.</translation>
-    </message>
-    <message>
-        <source>No comparisons can be done involving the type %1.</source>
-        <translation type="obsolete">S typem %1 nemohou být prováděny žádné srovnávací operace.</translation>
-    </message>
-    <message>
-        <source>No value is available for the external variable by name %1.</source>
-        <translation type="vanished">Pro vnější proměnnou s názvem %1 není dostupná žádná hodnota.</translation>
-    </message>
-    <message>
-        <source>The value of attribute %1 must of type %2, which %3 isn&apos;t.</source>
-        <translation type="vanished">Hodnota vlastnosti %1 musí být typu %2. %3 není platnou hodnotou.</translation>
-    </message>
-    <message>
-        <source>The item %1 did not match the required type %2.</source>
-        <translation type="vanished">Prvek %1 neodpovídá požadovanému typu %2.</translation>
-    </message>
-    <message>
-        <source>Element %1 cannot have a sequence constructor.</source>
-        <translation type="vanished">Prvek %1 nemůže mít stavitele posloupnosti.</translation>
-    </message>
-    <message>
-        <source>When attribute %1 is present on %2, a sequence constructor cannot be used.</source>
-        <translation type="vanished">Nelze používat žádného stavitele posloupnosti, když %2 má vlastnost %1.</translation>
-    </message>
-    <message>
-        <source>one or more</source>
-        <translation type="vanished">jeden nebo více</translation>
-    </message>
-    <message>
-        <source>The encoding %1 is invalid. It must contain Latin characters only, must not contain whitespace, and must match the regular expression %2.</source>
-        <translation type="vanished">Kódování %1 je neplatné; smí sestávat pouze z latinských písmen a musí odpovídat pravidelnéu výrazu %2.</translation>
-    </message>
-    <message numerus="yes">
-        <source>%1 requires at least %n argument(s). %2 is therefore invalid.</source>
-        <translation type="vanished">
-            <numerusform>%1 vyžaduje alespoň %n argument; údaj %2 je z toho důvodu neplatný.</numerusform>
-            <numerusform>%1 vyžaduje alespoň %n argumenty; údaj %2 je z toho důvodu neplatný.</numerusform>
-            <numerusform>%1 vyžaduje alespoň %n argumenty; údaj %2 je z toho důvodu neplatný.</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>The target name in a processing instruction cannot be %1 in any combination of upper and lower case. Therefore, is %2 invalid.</source>
-        <translation type="vanished">%2 není platným cílovým názvem pokynu pro zpracování, protože tento nesmí být %1 (nehledě na psaní velkých/malých písmen).</translation>
-    </message>
-    <message>
-        <source>The focus is undefined.</source>
-        <translation type="vanished">Není stanoveno ohnisko.</translation>
-    </message>
-    <message>
-        <source>%1 is an unknown schema type.</source>
-        <translation type="vanished">%1 je neznámým typem schematu.</translation>
-    </message>
-    <message>
-        <source>The value for attribute %1 on element %2 must either be %3 or %4, not %5.</source>
-        <translation type="vanished">Hodnota vlastnosti %1 prvku %2 může být jen %3 nebo %4, ne však %5.</translation>
-    </message>
-    <message>
-        <source>In the replacement string, %1 must be followed by at least one digit when not escaped.</source>
-        <translation type="vanished">V nahrazovacím řetězci musí po %1 následovat alespoň jedna číslice, když není chráněn znakem Escape.</translation>
-    </message>
-    <message>
-        <source>In an XSL-T pattern, axis %1 cannot be used, only axis %2 or %3 can.</source>
-        <translation type="vanished">V XSL-T vyhledávacím vzoru se smějí používat jen osy %2 nebo %3, ne však %1.</translation>
-    </message>
-    <message>
-        <source>The namespace for a user defined function cannot be empty (try the predefined prefix %1 which exists for cases like this)</source>
-        <translation type="vanished">Jmenný prostor uživatelem stanovené funkce nesmí být prázdný (pro tento účel je předstanovená předpona %1)</translation>
-    </message>
-    <message>
-        <source>The first operand in an integer division, %1, cannot be infinity (%2).</source>
-        <translation type="obsolete">První veličina, operand, celočíselného dělení %1 nesmí být nekonečno (%2).</translation>
-    </message>
-    <message>
-        <source>%1 is not a valid value of type %2.</source>
-        <translation type="vanished">%1 není platnou hodnotou typu %2.</translation>
-    </message>
-    <message>
-        <source>Multiplication of a value of type %1 by %2 or %3 (plus or minus infinity) is not allowed.</source>
-        <translation type="vanished">Násobení hodnoty typu %1 s %2 nebo %3 (kladné nebo záporné nekonečno) není přípustné.</translation>
-    </message>
-    <message>
-        <source>The variable %1 is unused</source>
-        <translation type="vanished">Proměnná %1 se nepoužívá</translation>
-    </message>
-    <message>
-        <source>The %1-axis is unsupported in XQuery</source>
-        <translation type="vanished">Osa %1 není v XQuery podporována</translation>
-    </message>
-    <message>
-        <source>A direct element constructor is not well-formed. %1 is ended with %2.</source>
-        <translation type="vanished">Byl nalezen chybný stavitel přímého prvku. %1 končí %2.</translation>
-    </message>
-    <message>
-        <source>Dividing a value of type %1 by %2 or %3 (plus or minus zero) is not allowed.</source>
-        <translation type="vanished">Dělení hodnoty typu %1 prostřednictvím %2 nebo %3 (kladná nebo záporná nula) není přípustné.</translation>
-    </message>
-    <message>
-        <source>Attribute %1 cannot have the value %2.</source>
-        <translation type="vanished">Vlastnost %1 nesmí mít hodnotu %2.</translation>
-    </message>
-    <message>
-        <source>It will not be possible to retrieve %1.</source>
-        <translation type="vanished">%1 nelze určit.</translation>
-    </message>
-    <message>
-        <source>In an XSL-T pattern, function %1 cannot have a third argument.</source>
-        <translation type="vanished">V XSL-T vyhledávacím vzoru nesmí mít funkce %1 třetí argument.</translation>
-    </message>
-    <message>
-        <source>The namespace URI in the name for a computed attribute cannot be %1.</source>
-        <translation type="vanished">URI jmenného prostoru v názvu vypočítané vlastnosti nesmí být %1.</translation>
-    </message>
-    <message>
-        <source>%1 is not a valid target name in a processing instruction. It must be a %2 value, e.g. %3.</source>
-        <translation type="vanished">%1 není platným cílovým názvem pokynu pro zpracování. Musí to být hodnota %2 jakou je například %3.</translation>
-    </message>
-    <message>
-        <source>%1 is an complex type. Casting to complex types is not possible. However, casting to atomic types such as %2 works.</source>
-        <translation type="vanished">%1 je složeným typem. Operace předvedení u složených typů není možná. Mohou se ovšem provádět operace obsazení u atomárních typů jako %2.</translation>
-    </message>
-    <message>
-        <source>zero or one</source>
-        <translation type="vanished">žádný nebo jeden</translation>
-    </message>
-    <message>
-        <source>No operand in an integer division, %1, can be %2.</source>
-        <translation type="obsolete">U celočíselného dělení %1 nesmí být veličina, operand, %2.</translation>
-    </message>
-    <message>
-        <source>The element with local name %1 does not exist in XSL-T.</source>
-        <translation type="obsolete">V XSL-T neexistuje žádný prvek s místním názvem %1.</translation>
-    </message>
-    <message>
-        <source>Two namespace declaration attributes have the same name: %1.</source>
-        <translation type="vanished">Byly nalezeny dvě vlastnosti prohlášení jmenného prostoru se stejným názvem (%1).</translation>
-    </message>
-    <message>
-        <source>Effective Boolean Value cannot be calculated for a sequence containing two or more atomic values.</source>
-        <translation type="vanished">Skutečná Booleanská hodnota nemůže být vypočítána pro posloupnost ze dvou nebo více atomárních hodnot.</translation>
-    </message>
-    <message>
-        <source>%1 is an invalid %2</source>
-        <translation type="vanished">%1 je neplatný %2</translation>
-    </message>
-    <message>
-        <source>The first argument to %1 cannot be of type %2. It must be a numeric type, xs:yearMonthDuration or xs:dayTimeDuration.</source>
-        <translation type="vanished">První argument k %1 nesmí být typu %2; musí to být číselný typ, xs:yearMonthDuration nebo xs:dayTimeDuration.</translation>
-    </message>
-    <message>
-        <source>Division (%1) by zero (%2) is undefined.</source>
-        <translation type="vanished">Dělení (%1) nulou (%2) není stanoveno.</translation>
-    </message>
-    <message>
-        <source>No template by name %1 exists.</source>
-        <translation type="vanished">Neexistuje žádná předloha s názvem %1.</translation>
-    </message>
-    <message>
-        <source>The attribute %1 must appear on element %2.</source>
-        <translation type="obsolete">Prvek %2 musí mít vlastnost %1.</translation>
-    </message>
-    <message>
-        <source>An attribute by name %1 has already appeared on this element.</source>
-        <translation type="vanished">Prvek má již vlastnost s názvem %1.</translation>
-    </message>
-    <message>
-        <source>The default collection is undefined</source>
-        <translation type="vanished">Pro sbírku není stanovena žádná předloha</translation>
-    </message>
-    <message>
-        <source>Only the prefix %1 can be bound to %2 and vice versa.</source>
-        <translation type="vanished">S %2 může být spojena pouze předpona %1 (a obráceně).</translation>
-    </message>
-    <message>
-        <source>Value %1 of type %2 exceeds maximum (%3).</source>
-        <translation type="vanished">Hodnota %1 typu %2 překračuje maximum (%3).</translation>
-    </message>
-    <message>
-        <source>Whitespace characters are removed, except when they appear in character classes</source>
-        <translation type="vanished">Prázdné znaky jsou odstraněny v případě, že se neobjeví ve znakových třídách</translation>
-    </message>
-    <message>
-        <source>Casting to %1 is not possible because it is an abstract type, and can therefore never be instantiated.</source>
-        <translation type="obsolete">Nemohou se provádět žádné operace předvedení k typu %1, protože je to abstraktní typ ist a nelze je doložit příkladem.</translation>
-    </message>
-    <message>
-        <source>Operator %1 cannot be used on type %2.</source>
-        <translation type="vanished">Operátor %1 nelze použít na typ %2.</translation>
-    </message>
-    <message>
-        <source>The namespace %1 is reserved; therefore user defined functions may not use it. Try the predefined prefix %2, which exists for these cases.</source>
-        <translation type="vanished">Jmenný prostor %1 je vyhrazen a z toho důvodu jej nemohou používat uživatelem stanovené funkce (pro tento účel je tu předstanovená předpona %2).</translation>
-    </message>
-    <message>
-        <source>The target namespace of a %1 cannot be empty.</source>
-        <translation type="vanished">Cílový jmenný prostor %1 nesmí být prázdný.</translation>
-    </message>
-    <message>
-        <source>%1 must be followed by %2 or %3, not at the end of the replacement string.</source>
-        <translation type="vanished">Po %1 musí následovat %2 nebo %3; nesmí se objevit na konci nahrazovacího řetězce.</translation>
-    </message>
-    <message>
-        <source>%1 is an invalid namespace URI.</source>
-        <translation type="vanished">%1 není platným jmenným prostorem-URI.</translation>
-    </message>
-    <message>
-        <source>The attribute %1 cannot appear on %2, when it is a child of %3.</source>
-        <translation type="vanished">%2 nesmí mít vlastnost %1 v případě, že je potomkem %3.</translation>
-    </message>
-    <message>
-        <source>The attribute %1 can only appear on the first %2 element.</source>
-        <translation type="vanished">Pouze první %2-prvek smí mít vlastnost %1.</translation>
-    </message>
-    <message>
-        <source>Element %1 must have either a %2-attribute or a sequence constructor.</source>
-        <translation type="vanished">Prvek %1 musí mít buď jednu %2-vlastnost nebo se musí používat stavitel posloupnosti.</translation>
-    </message>
-    <message>
-        <source>Module imports must occur before function, variable, and option declarations.</source>
-        <translation type="vanished">Zavedení modulů musí nastat před prohlášeními funkcí, proměnných a voleb.</translation>
-    </message>
-    <message>
-        <source>Day %1 is outside the range %2..%3.</source>
-        <translation type="vanished">Údaj dne %1 je mimo rozsah %2..%3.</translation>
-    </message>
-    <message>
-        <source>%1 contains octets which are disallowed in the requested encoding %2.</source>
-        <translation type="vanished">%1 obsahuje oktety, které v kódování %2 nejsou přípustné.</translation>
-    </message>
-    <message>
-        <source>When a parameter is required, a default value cannot be supplied through a %1-attribute or a sequence constructor.</source>
-        <translation type="vanished">Výchozí hodnota požadovaného parametru nemůže být zadána ani prostřednictvím %1-vlastnosti ani přes stavitele posloupnosti.</translation>
-    </message>
-    <message>
-        <source>In an XSL-T pattern, the first argument to function %1 must be a string literal, when used for matching.</source>
-        <translation type="vanished">V XSL-T vyhledávacím vzoru musí být první argument k funkci %1 při použití k hledání řetězec tvořený písmeny.</translation>
-    </message>
-    <message>
-        <source>Text nodes are not allowed at this location.</source>
-        <translation type="vanished">Na tomto místě nesmí stát žádné textové uzly.</translation>
-    </message>
-    <message>
-        <source>A value of type %1 cannot be a predicate. A predicate must have either a numeric type or an Effective Boolean Value type.</source>
-        <translation type="vanished">Hodnoty typu %1 nesmí ýt přísudkem. Pro přísudky jsou přípustné pouze typ číselný nebo účinný booleánský.</translation>
-    </message>
-    <message>
-        <source>%1 is not a valid name for a processing-instruction.</source>
-        <translation type="vanished">%1 není platným názvem pokynu pro zpracování.</translation>
-    </message>
-    <message>
-        <source>%1 was called.</source>
-        <translation type="vanished">%1 byl volán.</translation>
-    </message>
-    <message>
-        <source>It&apos;s not possible to add attributes after any other kind of node.</source>
-        <translation type="vanished">Vlastnosti nesmí následovat za jinými druhy uzlů.</translation>
-    </message>
-    <message>
-        <source>At least one %1-element must occur before %2.</source>
-        <translation type="vanished">Před %2 musí stát alespoň jeden %1-prvek.</translation>
-    </message>
-    <message>
-        <source>The normalization form %1 is unsupported. The supported forms are %2, %3, %4, and %5, and none, i.e. the empty string (no normalization).</source>
-        <translation type="vanished">Tato forma normalizování %1 není podporována. Podporovanými formami normalizování jsou %2, %3, %4 a %5, a &quot;žádný&quot; (prázdný znakový řetězec zastupuje &quot;žádné normalizování&quot;).</translation>
-    </message>
-    <message>
-        <source>When casting to %1 or types derived from it, the source value must be of the same type, or it must be a string literal. Type %2 is not allowed.</source>
-        <translation type="vanished">U operace představení k typu %1 nebo odvozených typů musí být zdrojovou hodnotou řetězec znaků tvořený písmeny nebo hodnota stejného typu. Typ %2 je neplatný.</translation>
-    </message>
-    <message>
-        <source>A parameter in a function cannot be declared to be a tunnel.</source>
-        <translation type="vanished">Parameter funkce nelze prohlásit za tunel.</translation>
-    </message>
-    <message>
-        <source>XSL-T attributes on XSL-T elements must be in the null namespace, not in the XSL-T namespace which %1 is.</source>
-        <translation type="obsolete">XSL-T vlastnosti XSL-T prvku musí být v nulovém jmenném prostoru, nikoli v XSL-T jmenném prostoru, jako %1.</translation>
-    </message>
-    <message>
-        <source>The namespace of a user defined function in a library module must be equivalent to the module namespace. In other words, it should be %1 instead of %2</source>
-        <translation type="vanished">Jmenný prostor uživatelem stanovené funkce v modulu knihovny musí odpovídat jmennému prostoru modulu (Jinými slovy by měl být %1 namísto %2) </translation>
-    </message>
-    <message>
-        <source>Day %1 is invalid for month %2.</source>
-        <translation type="vanished">Ǔdaj o dni %1 je neplatným pro měsíc %2.</translation>
-    </message>
-    <message>
-        <source>Overflow: Can&apos;t represent date %1.</source>
-        <translation type="vanished">Nelze představit datum %1 (Přetečení).</translation>
-    </message>
-    <message>
-        <source>In a simplified stylesheet module, attribute %1 must be present.</source>
-        <translation type="vanished">Ve zjednodušeném modulu stylového listu musí být přítomna vlastnost %1.</translation>
-    </message>
-    <message>
-        <source>Unknown XSL-T attribute %1.</source>
-        <translation type="vanished">Neznámá XSL-T vlastnost: %1.</translation>
-    </message>
-    <message>
-        <source>It is not possible to redeclare prefix %1.</source>
-        <translation type="vanished">Předponu %1 nelze prohlásit.</translation>
-    </message>
-    <message>
-        <source>exactly one</source>
-        <translation type="vanished">přesně jeden</translation>
-    </message>
-    <message>
-        <source>%1 is an invalid regular expression pattern: %2</source>
-        <translation type="vanished">%1 není platným pravidelným výrazem: %2</translation>
-    </message>
-    <message>
-        <source>Element %1 is not allowed at this location.</source>
-        <translation type="vanished">Prvek %1 nesmí stát na tomto místě.</translation>
-    </message>
-    <message>
-        <source>The Schema Validation Feature is not supported. Hence, %1-expressions may not be used.</source>
-        <translation type="vanished">%1-výrazy se nemohou používat, protože funkce prohlášení schématu platným není podporována.</translation>
-    </message>
-    <message>
-        <source>At least one %1 element must appear as child of %2.</source>
-        <translation type="vanished">Alespoň jeden %1-prvek musí být potomkem %2.</translation>
-    </message>
-    <message>
-        <source>This processor is not Schema-aware and therefore %1 cannot be used.</source>
-        <translation type="vanished">%1 se nemůže používat, protože tento procesor nepodporuje žádné schéma.</translation>
-    </message>
-    <message>
-        <source>Attribute %1 cannot appear on the element %2. Allowed is %3, and the standard attributes.</source>
-        <translation type="obsolete">Prvek %2 může mít jen %3 nebo obvyklé vlastnosti, ne však %1.</translation>
-    </message>
-    <message>
-        <source>Dividing a value of type %1 by %2 (not-a-number) is not allowed.</source>
-        <translation type="vanished">Dělení hodnoty typu %1 prostřednictvím %2 (není číselnou hodnotou) není přípustné.</translation>
-    </message>
-    <message>
-        <source>Required cardinality is %1; got cardinality %2.</source>
-        <translation type="vanished">Požadované kardinální číslo (mohutnost množiny) je %1 (v současnosti %2).</translation>
-    </message>
-    <message>
-        <source>A construct was encountered which only is allowed in XQuery.</source>
-        <translation type="obsolete">Tento výtvor je přípustný pouze v XQuery.</translation>
-    </message>
-    <message>
-        <source>No function by name %1 is available.</source>
-        <translation type="vanished">Neexistuje žádná funkce s názvem %1.</translation>
-    </message>
-    <message>
-        <source>The URI cannot have a fragment</source>
-        <translation type="vanished">URI nesmí obsahovat kousek</translation>
-    </message>
-    <message>
-        <source>%1 is not an atomic type. Casting is only possible to atomic types.</source>
-        <translation type="vanished">%1 není atomárním typem. Operace představení se dají provádět pouze s atomárními typy.</translation>
-    </message>
-    <message>
-        <source>The first argument to %1 cannot be of type %2.</source>
-        <translation type="obsolete">První argument %1 nemůže být typu %2.</translation>
-    </message>
-    <message>
-        <source>The namespace URI must be a constant and cannot use enclosed expressions.</source>
-        <translation type="vanished">Jmenný prostor-URI musí být konstantou a nesmí používat vložené výrazy.</translation>
-    </message>
-    <message>
-        <source>Prefix %1 is already declared in the prolog.</source>
-        <translation type="vanished">Předpona %1 byla prohlášena již v předmluvě (prologu).</translation>
-    </message>
-    <message>
-        <source>Ambiguous rule match.</source>
-        <translation type="vanished">Víceznačné pravidlo.</translation>
-    </message>
-    <message>
-        <source>Promoting %1 to %2 may cause loss of precision.</source>
-        <translation type="vanished">Postoupení od %1 k %2 může vést ke ztrátě přesnosti.</translation>
-    </message>
-    <message>
-        <source>In an XSL-T pattern, only function %1 and %2, not %3, can be used for matching.</source>
-        <translation type="vanished">V XSL-T vyhledávacím vzoru se smějí pro srovnávání používat jen funkce %1 a %2, ne však %3.</translation>
-    </message>
-    <message>
-        <source>A default namespace declaration must occur before function, variable, and option declarations.</source>
-        <translation type="vanished">Prohlášení výchozích jmenných prostorů musí stát před prohlášeními funkcí-, proměnných- nebo prohlášeními voleb.</translation>
-    </message>
-    <message>
-        <source>Operator %1 cannot be used on atomic values of type %2 and %3.</source>
-        <translation type="vanished">Operátor %1 se nemůže používat u atomárních hodnot typů %2 a %3.</translation>
-    </message>
-    <message>
-        <source>The module import feature is not supported</source>
-        <translation type="vanished">Funkce zavedení modulu není podporována</translation>
-    </message>
-    <message>
-        <source>The parameter %1 is passed, but no corresponding %2 exists.</source>
-        <translation type="vanished">Neexistuje žádný odpovídající %2 pro předaný parameter %1.</translation>
-    </message>
-    <message>
-        <source>A value of type %1 cannot have an Effective Boolean Value.</source>
-        <translation type="vanished">Hodnota typu %1 nemůže mít žádnou účinnou booleánskou hodnotu.</translation>
-    </message>
-    <message>
-        <source>The data of a processing instruction cannot contain the string %1</source>
-        <translation type="vanished">Data pokynu pro zpracování nesmí obsahovat řetězec znaků %1</translation>
-    </message>
-    <message>
-        <source>Time 24:%1:%2.%3 is invalid. Hour is 24, but minutes, seconds, and milliseconds are not all 0; </source>
-        <translation type="vanished">Časový údaj 24:%1:%2.%3 je neplatný. U hodinového údaje je 24, ale minuty, sekundy a milisekundy musí být všechny 0; </translation>
-    </message>
-    <message>
-        <source>A template by name %1 has already been declared.</source>
-        <translation type="vanished">Předloha s názvem %1 už byla prohlášena.</translation>
-    </message>
-    <message>
-        <source>It is not possible to bind to the prefix %1</source>
-        <translation type="vanished">Předponu %1 nelze spojit</translation>
-    </message>
-    <message>
-        <source>Value %1 of type %2 is below minimum (%3).</source>
-        <translation type="vanished">Hodnota %1 typu %2 zůstává pod minimem (%3).</translation>
-    </message>
-    <message>
-        <source>Required type is %1, but %2 was found.</source>
-        <translation type="vanished">Požadovaný typ je %1, byl ale zadán %2.</translation>
-    </message>
-    <message>
-        <source>%1 is an unsupported encoding.</source>
-        <translation type="vanished">Kódování %1 není podporováno.</translation>
-    </message>
-    <message>
-        <source>The name of an option must have a prefix. There is no default namespace for options.</source>
-        <translation type="vanished">Název volby musí mít předponu. Pro volby není žádná předloha pro jmenný prostor.</translation>
-    </message>
-    <message>
-        <source>Element %1 must come last.</source>
-        <translation type="vanished">Prvek %1 musí stát jako poslední.</translation>
-    </message>
-    <message>
-        <source>Attribute %1 cannot appear on the element %2. Allowed is %3, %4, and the standard attributes.</source>
-        <translation type="obsolete">Prvek %2 může mít jen vlastnost %3, %4 nebo vlastnosti, které jsou obvyklé, ne však %1.</translation>
-    </message>
-    <message>
-        <source>No namespace binding exists for the prefix %1 in %2</source>
-        <translation type="vanished">Neexistuje žádné svázání jmenného prostoru pro předponu %1 v %2</translation>
-    </message>
-    <message>
-        <source>The name %1 does not refer to any schema type.</source>
-        <translation type="vanished">Název %1 nemá žádnou spojitost s jakýmkoli typem schématu.</translation>
-    </message>
-    <message>
-        <source>Prefix %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
-        <translation type="vanished">Předponu %1 lze spojit pouze s %2. Toto je prohlášeno již dopředu..</translation>
-    </message>
-    <message>
-        <source>W3C XML Schema identity constraint selector</source>
-        <translation type="vanished">Přepínač omezení totožnosti W3C XML schéma</translation>
-    </message>
-    <message>
-        <source>W3C XML Schema identity constraint field</source>
-        <translation type="vanished">Pole omezení totožnosti W3C XML schéma</translation>
-    </message>
-    <message>
-        <source>A construct was encountered which is disallowed in the current language(%1).</source>
-        <translation type="vanished">Narazilo se na výtvor, který v nynějším jazyce není povolen (%1).</translation>
-    </message>
-    <message>
-        <source>The initialization of variable %1 depends on itself</source>
-        <translation type="vanished">Inicializace proměnné %1 je závislá na její vlastní hodnotě</translation>
-    </message>
-    <message>
-        <source>An attribute node cannot be a child of a document node. Therefore, the attribute %1 is out of place.</source>
-        <translation type="vanished">Uzel vlastnosti se nesmí objevit jako potomek uzlu dokumentu. Objevil se uzel vlastnosti s názvem %1, který je proto nevhodný.</translation>
-    </message>
-    <message>
-        <source>Month %1 is outside the range %2..%3.</source>
-        <translation type="vanished">Údaj o měsíci %1 je mimo rozsah %2..%3.</translation>
-    </message>
-    <message>
-        <source>The name of a variable bound in a for-expression must be different from the positional variable. Hence, the two variables named %1 collide.</source>
-        <translation type="vanished">Název proměnné úzce spojené s pro-výrazem se musí lišit od poziční proměnné. Dvě proměnné s názvem %1 se z tohoto důvodu střetávají.</translation>
-    </message>
-    <message>
-        <source>No namespace binding exists for the prefix %1</source>
-        <translation type="vanished">Neexistuje žádné svázání jmenného prostoru pro předponu %1</translation>
-    </message>
-    <message>
-        <source>An %1-attribute with value %2 has already been declared.</source>
-        <translation type="obsolete">Prvek má již jednu vlastnost s názvem %1 s hodnotou %2.</translation>
-    </message>
-    <message>
-        <source>%1 is not valid as a value of type %2.</source>
-        <translation type="vanished">%1 není platný jako hodnota typu %2.</translation>
-    </message>
-    <message>
-        <source>zero or more</source>
-        <translation type="vanished">žádný nebo více</translation>
-    </message>
-    <message>
-        <source>%1 is not in the in-scope attribute declarations. Note that the schema import feature is not supported.</source>
-        <translation type="vanished">%1 se nenachází v oblasti pod prohlášením vlastností. Všimněte si, že funkce zavedení schématu není podporována.</translation>
-    </message>
-    <message>
-        <source>When function %1 is used for matching inside a pattern, the argument must be a variable reference or a string literal.</source>
-        <translation type="vanished">Při použití funkce %1 k vyhodnocování uvnitř vyhledávacího vzoru musí být argumentem odkaz na proměnnou nebo řetězec tvořený písmeny.</translation>
-    </message>
-    <message>
-        <source>%1 is an invalid template mode name.</source>
-        <translation type="vanished">%1 není platným názvem pro řežim předlohy.</translation>
-    </message>
-    <message>
-        <source>At least one time component must appear after the %1-delimiter.</source>
-        <translation type="vanished">Po %1-oddělovači se musí objevit alespoň jedna složka času.</translation>
-    </message>
-    <message>
-        <source>Overflow: Date can&apos;t be represented.</source>
-        <translation type="vanished">Nelze představit datum (Přetečení).</translation>
-    </message>
-    <message>
-        <source>Operator %1 is not available between atomic values of type %2 and %3.</source>
-        <translation type="obsolete">Operátor %1 se nemůže používat u atomárních hodnot typů %2 a %3.</translation>
-    </message>
-    <message>
-        <source>A zone offset must be in the range %1..%2 inclusive. %3 is out of range.</source>
-        <translation type="vanished">Rozdíl v časové zóně musí ležet v oblasti %1..%2 (včetně). %3 leží mimo oblast.</translation>
-    </message>
-    <message>
-        <source>%1 is not a valid XML 1.0 character.</source>
-        <translation type="vanished">%1 není platný znak XML 1.0.</translation>
-    </message>
-    <message>
-        <source>The first argument to %1 cannot be of type %2. It must be of type %3, %4, or %5.</source>
-        <translation type="vanished">První argument %1 nemůže být typu %2. Musí to být typ %3, %4 nebo %5.</translation>
-    </message>
-    <message>
-        <source>%1 is not a whole number of minutes.</source>
-        <translation type="vanished">%1 není celočíselným údajem o minutách.</translation>
-    </message>
-    <message>
-        <source>Failure when casting from %1 to %2: %3</source>
-        <translation type="obsolete">Operace předvedení od %1 do %2 se nepodařila: %3</translation>
-    </message>
-    <message>
-        <source>It is not possible to cast from %1 to %2.</source>
-        <translation type="obsolete">Nelze provádět žádnou operaci předvedení od %1 do %2.</translation>
-    </message>
-    <message>
-        <source>No variable by name %1 exists</source>
-        <translation type="vanished">Neexistuje žádná proměnná s názvem %1</translation>
-    </message>
-    <message>
-        <source>Namespace %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
-        <translation type="vanished">Jmenný prostor %1 lze spojit pouze s %2. Toto je stanoveno již dopředu.</translation>
-    </message>
-    <message>
-        <source>The second operand in a division, %1, cannot be zero (%2).</source>
-        <translation type="obsolete">Druhá veličina, operand, dělení %1 nesmí být nula (%2).</translation>
-    </message>
-    <message>
-        <source>Only one %1 declaration can occur in the query prolog.</source>
-        <translation type="vanished">Předmluva k dotazu (prolog) smí obsahovat pouze jedno %1-prohlášení.</translation>
-    </message>
-    <message>
-        <source>Element %1 must have at least one of the attributes %2 or %3.</source>
-        <translation type="vanished">Prvek %1 musí mít alespoň jednu z vlastností %2 nebo %3.</translation>
-    </message>
-    <message>
-        <source>If both values have zone offsets, they must have the same zone offset. %1 and %2 are not the same.</source>
-        <translation type="vanished">Když jsou zadány obě hodnoty s časovými zónami, musí mít ten samý rozdíl v časové zóně. %1 a %2 nejsou to samé a jsou tím pádem nepřípustné.</translation>
-    </message>
-    <message>
-        <source>No external functions are supported. All supported functions can be used directly, without first declaring them as external</source>
-        <translation type="vanished">Nejsou podporovány vnější funkce. Všechny podporované funkce se dají používat přímo, bez toho, že by byly nejprve prohlášeny za vnější</translation>
-    </message>
-    <message>
-        <source>The last step in a path must contain either nodes or atomic values. It cannot be a mixture between the two.</source>
-        <translation type="vanished">Poslední krok cesty musí obsahovat buď jen uzly nebo jen atomární hodnoty. Nesmí se vyskytovat společně.</translation>
-    </message>
-    <message>
-        <source>Empty particle cannot be derived from non-empty particle.</source>
-        <translation type="vanished">Prázdnou částici nelze odvodit z částice, která není prázdná.</translation>
-    </message>
-    <message>
-        <source>Derived particle is missing element %1.</source>
-        <translation type="vanished">V odvozené částici chybí prvek %1.</translation>
-    </message>
-    <message>
-        <source>Derived element %1 is missing value constraint as defined in base particle.</source>
-        <translation type="vanished">V odvozeném prvku %1 chybí omezení hodnoty, jak je to stanoveno v základní částici.</translation>
-    </message>
-    <message>
-        <source>Derived element %1 has weaker value constraint than base particle.</source>
-        <translation type="vanished">Odvozený prvek %1 má slabší omezení hodnoty než má základní částice.</translation>
-    </message>
-    <message>
-        <source>Fixed value constraint of element %1 differs from value constraint in base particle.</source>
-        <translation type="vanished">Pevné omezení hodnoty prvku %1 se liší od omezení hodnoty základní částici.</translation>
-    </message>
-    <message>
-        <source>Derived element %1 cannot be nillable as base element is not nillable.</source>
-        <translation type="vanished">Odvozený prvek %1 nemůže mít žádnou vlastnost &apos;nillable&apos;, neboť základní prvek žádnou nestanovuje.</translation>
-    </message>
-    <message>
-        <source>Block constraints of derived element %1 must not be more weaker than in the base element.</source>
-        <translation type="vanished">Omezení bloku odvozeného prvku %1 nesmí být slabší než v základním prvku.</translation>
-    </message>
-    <message>
-        <source>Simple type of derived element %1 cannot be validly derived from base element.</source>
-        <translation type="vanished">Jednoduchý typ odvozeného prvku %1 nemůže být platně odvozen ze základního prvku.</translation>
-    </message>
-    <message>
-        <source>Complex type of derived element %1 cannot be validly derived from base element.</source>
-        <translation type="vanished">Složitý typ odvozeného prvku %1 nemůže být platně odvozen ze základního prvku.</translation>
-    </message>
-    <message>
-        <source>Element %1 is missing in derived particle.</source>
-        <translation type="vanished">Prvek %1 chybí v odvozené částici.</translation>
-    </message>
-    <message>
-        <source>Element %1 does not match namespace constraint of wildcard in base particle.</source>
-        <translation type="vanished">Prvek %1 neodpovídá omezení jmenného prostoru zástupného symbolu (vzor hledání) v základní částici.</translation>
-    </message>
-    <message>
-        <source>Wildcard in derived particle is not a valid subset of wildcard in base particle.</source>
-        <translation type="vanished">Zástupný symbol (vzor hledání) v odvozené částici není platnou dílčí množinou zástupného symbolu v základní částici.</translation>
-    </message>
-    <message>
-        <source>processContent of wildcard in derived particle is weaker than wildcard in base particle.</source>
-        <translation type="vanished">Vlastnost processContent zástupného symbolu (vzor hledání) odvozené částice je slabší než zástupný symbol (vzor hledání) v základní částici.</translation>
-    </message>
-    <message>
-        <source>Derived particle allows content that is not allowed in the base particle.</source>
-        <translation type="vanished">Odvozená částice dovoluje obsah, který není přípustný pro základní částici.</translation>
-    </message>
-    <message>
-        <source>%1 has inheritance loop in its base type %2.</source>
-        <translation type="vanished">%1 má ve svém základním typu  %2 v kruzích prováděnou dědičnost.</translation>
-    </message>
-    <message>
-        <source>Circular inheritance of base type %1.</source>
-        <translation type="vanished">V kruzích prováděná dědičnost v základním typu %1.</translation>
-    </message>
-    <message>
-        <source>Circular inheritance of union %1.</source>
-        <translation type="vanished">V kruzích prováděná dědičnost při sjednocení %1.</translation>
-    </message>
-    <message>
-        <source>%1 is not allowed to derive from %2 by restriction as the latter defines it as final.</source>
-        <translation type="vanished">%1 není dovoleno odvodit z %2 pomocí omezení, neboť posledně uvedený ji určuje jako konečnou.</translation>
-    </message>
-    <message>
-        <source>%1 is not allowed to derive from %2 by extension as the latter defines it as final.</source>
-        <translation type="vanished">%1 není dovoleno odvodit z %2 pomocí rozšíření, neboť posledně uvedený ji určuje jako konečnou.</translation>
-    </message>
-    <message>
-        <source>Base type of simple type %1 cannot be complex type %2.</source>
-        <translation type="vanished">Složitý typ %2 nemůže být základním typem jednoduchého typu %1.</translation>
-    </message>
-    <message>
-        <source>Simple type %1 cannot have direct base type %2.</source>
-        <translation type="vanished">Jednoduchý typ %1 nemůže mít přímý základní typ %2.</translation>
-    </message>
-    <message>
-        <source>Simple type %1 is not allowed to have base type %2.</source>
-        <translation type="vanished">Jednoduchý typ %1 nesmí mít základní typ %2.</translation>
-    </message>
-    <message>
-        <source>Simple type %1 can only have simple atomic type as base type.</source>
-        <translation type="vanished">Jednoduchý typ %1 může mít jen jednoduchý malinký základní typ.</translation>
-    </message>
-    <message>
-        <source>Simple type %1 cannot derive from %2 as the latter defines restriction as final.</source>
-        <translation type="vanished">Jednoduchý typ %1 nesmí být odvozen z %2 , neboť poslední určuje omezení jako konečné.</translation>
-    </message>
-    <message>
-        <source>Variety of item type of %1 must be either atomic or union.</source>
-        <translation type="vanished">Rozmanitost složkových typů %1 musí být buď malinká nebo sjednocení.</translation>
-    </message>
-    <message>
-        <source>Variety of member types of %1 must be atomic.</source>
-        <translation type="vanished">Rozmanitost členských typů %1 musí být malinká.</translation>
-    </message>
-    <message>
-        <source>%1 is not allowed to derive from %2 by list as the latter defines it as final.</source>
-        <translation type="vanished">%1 není dovoleno odvodit z %2 pomocí seznamu, neboť posledně uvedený ji určuje jako konečnou.</translation>
-    </message>
-    <message>
-        <source>Simple type %1 is only allowed to have %2 facet.</source>
-        <translation type="vanished">Jednoduchý typ %1 může mít jen stránky %2.</translation>
-    </message>
-    <message>
-        <source>Base type of simple type %1 must have variety of type list.</source>
-        <translation type="vanished">Základní typ jednoduchého typu %1 musí mít rozmanitost seznamu typů.</translation>
-    </message>
-    <message>
-        <source>Base type of simple type %1 has defined derivation by restriction as final.</source>
-        <translation type="vanished">Základní typ jednoduchého typu %1 určuje sjednocení pomocí omezení jako konečné.</translation>
-    </message>
-    <message>
-        <source>Item type of base type does not match item type of %1.</source>
-        <translation type="vanished">Složkový typ základního typu neodpovídá složkovému typu %1.</translation>
-    </message>
-    <message>
-        <source>Simple type %1 contains not allowed facet type %2.</source>
-        <translation type="vanished">Jednoduchý typ %1 obsahuje nedovolený typ stránky %2.</translation>
-    </message>
-    <message>
-        <source>%1 is not allowed to derive from %2 by union as the latter defines it as final.</source>
-        <translation type="vanished">%1 není dovoleno odvodit z %2 pomocí sjednocení, neboť posledně uvedený ji určuje jako konečnou.</translation>
-    </message>
-    <message>
-        <source>%1 is not allowed to have any facets.</source>
-        <translation type="vanished">%1 nesmí mít žádné stránky.</translation>
-    </message>
-    <message>
-        <source>Base type %1 of simple type %2 must have variety of union.</source>
-        <translation type="vanished">Základní typ %1 jednoduchého typu %2 musí mít rozmanitost sjednocení typů.</translation>
-    </message>
-    <message>
-        <source>Base type %1 of simple type %2 is not allowed to have restriction in %3 attribute.</source>
-        <translation type="vanished">Základní typ %1 jednoduchého typu %2 nesmí mít žádné omezení vlastnosti %3.</translation>
-    </message>
-    <message>
-        <source>Member type %1 cannot be derived from member type %2 of %3&apos;s base type %4.</source>
-        <translation type="vanished">Členský typ %1 nemůže být odvozen z členského typu %2 ze základního typu %4 %3.</translation>
-    </message>
-    <message>
-        <source>Derivation method of %1 must be extension because the base type %2 is a simple type.</source>
-        <translation type="vanished">Rozšíření s musí používat jako způsob dědičnosti (odvození) pro %1, neboť základní typ %2 je jednoduchým typem.</translation>
-    </message>
-    <message>
-        <source>Complex type %1 has duplicated element %2 in its content model.</source>
-        <translation type="vanished">Složitý typ %1 má zdvojený prvek %2 ve svém modelu obsahu.</translation>
-    </message>
-    <message>
-        <source>Complex type %1 has non-deterministic content.</source>
-        <translation type="vanished">Složitý typ %1 má ne-neměnný obsah.</translation>
-    </message>
-    <message>
-        <source>Attributes of complex type %1 are not a valid extension of the attributes of base type %2: %3.</source>
-        <translation type="vanished">Vlastnosti složitého typu %1 nejsou žádným platným rozšířením vlastností základního typu %2: %3.</translation>
-    </message>
-    <message>
-        <source>Content model of complex type %1 is not a valid extension of content model of %2.</source>
-        <translation type="vanished">Model obsahu složitého typu %1 není žádným platným rozšířením modelu obsahu %2.</translation>
-    </message>
-    <message>
-        <source>Complex type %1 must have simple content.</source>
-        <translation type="vanished">Složitý typ %1 musí mít jednoduchý obsah.</translation>
-    </message>
-    <message>
-        <source>Complex type %1 must have the same simple type as its base class %2.</source>
-        <translation type="vanished">Složitý typ %1 musí mít jednoduchý obsah.</translation>
-    </message>
-    <message>
-        <source>Complex type %1 cannot be derived from base type %2%3.</source>
-        <translation type="vanished">Složitý typ %2 nemůže být odvozen ze základního typu %2%3.</translation>
-    </message>
-    <message>
-        <source>Attributes of complex type %1 are not a valid restriction from the attributes of base type %2: %3.</source>
-        <translation type="vanished">Vlastnosti složitého typu %1  nejsou žádným platným omezením vlastností základního typu %2: %3.</translation>
-    </message>
-    <message>
-        <source>Complex type %1 with simple content cannot be derived from complex base type %2.</source>
-        <translation type="vanished">Složitý typ %1 s jednoduchým obsahem nemůže být odvozen ze složitého základního typu %2.</translation>
-    </message>
-    <message>
-        <source>Item type of simple type %1 cannot be a complex type.</source>
-        <translation type="vanished">Složkový typ jednoduchého typu %1 nemůže být složitým typem.</translation>
-    </message>
-    <message>
-        <source>Member type of simple type %1 cannot be a complex type.</source>
-        <translation type="vanished">Členský typ jednoduchého typu %1 nemůže být složitým typem.</translation>
-    </message>
-    <message>
-        <source>%1 is not allowed to have a member type with the same name as itself.</source>
-        <translation type="vanished">%1 nesmí mít členský typ se stejným názvem, jaký má sám.</translation>
-    </message>
-    <message>
-        <source>%1 facet collides with %2 facet.</source>
-        <translation type="vanished">Stránka %1 se střetává se stránkou %2.</translation>
-    </message>
-    <message>
-        <source>%1 facet must have the same value as %2 facet of base type.</source>
-        <translation type="vanished">Stránka %1 musí mít tutéž hodnotu, jakou má stránka %2 základního typu.</translation>
-    </message>
-    <message>
-        <source>%1 facet must be equal or greater than %2 facet of base type.</source>
-        <translation type="vanished">Stránka %1 musí být stejná nebo větší než stránka %2 základního typu.</translation>
-    </message>
-    <message>
-        <source>%1 facet must be less than or equal to %2 facet of base type.</source>
-        <translation type="vanished">Stránka %1 musí být menší nebo stejná jako stránka %2 základního typu.</translation>
-    </message>
-    <message>
-        <source>%1 facet contains invalid regular expression</source>
-        <translation type="vanished">Stránka %1 obsahuje neplatný pravidelný výraz</translation>
-    </message>
-    <message>
-        <source>Unknown notation %1 used in %2 facet.</source>
-        <translation type="vanished">Stránka %2 obsahuje neplatné zaznamenání %1.</translation>
-    </message>
-    <message>
-        <source>%1 facet contains invalid value %2: %3.</source>
-        <translation type="vanished">Stránka %1 obsahuje neplatnou hodnotu %2: %3.</translation>
-    </message>
-    <message>
-        <source>%1 facet cannot be %2 or %3 if %4 facet of base type is %5.</source>
-        <translation type="vanished">Stránka %1 nesmí být %2 nebo %3, pokud je stránka %4 základního typu %5.</translation>
-    </message>
-    <message>
-        <source>%1 facet cannot be %2 if %3 facet of base type is %4.</source>
-        <translation type="vanished">Stránka %1 nesmí být %2, pokud je stránka %3 základního typu %4.</translation>
-    </message>
-    <message>
-        <source>%1 facet must be less than or equal to %2 facet.</source>
-        <translation type="vanished">Stránka %1 musí být menší nebo stejná jako stránka %2.</translation>
-    </message>
-    <message>
-        <source>%1 facet must be less than %2 facet of base type.</source>
-        <translation type="vanished">Stránka %1 musí být menší než stránka %2 základního typu.</translation>
-    </message>
-    <message>
-        <source>%1 facet and %2 facet cannot appear together.</source>
-        <translation type="vanished">Stránky %1 a %2 se nemohou objevit spolu.</translation>
-    </message>
-    <message>
-        <source>%1 facet must be greater than %2 facet of base type.</source>
-        <translation type="vanished">Stránka %1 musí být větší než stránka %2 základního typu.</translation>
-    </message>
-    <message>
-        <source>%1 facet must be less than %2 facet.</source>
-        <translation type="vanished">Stránka %1 musí být menší než stránka %2.</translation>
-    </message>
-    <message>
-        <source>%1 facet must be greater than or equal to %2 facet of base type.</source>
-        <translation type="vanished">Stránka %1 musí být větší nebo stejná jako stránka %2 základního typu.</translation>
-    </message>
-    <message>
-        <source>Simple type contains not allowed facet %1.</source>
-        <translation type="vanished">Jednoduchý typ obsahuje nedovolenou stránku %1.</translation>
-    </message>
-    <message>
-        <source>%1, %2, %3, %4, %5 and %6 facets are not allowed when derived by list.</source>
-        <translation type="vanished">Stránky %1, %2, %3, %4, %5 a %6 nejsou při odvození (dědičnosti) pomocí seznamu dovoleny.</translation>
-    </message>
-    <message>
-        <source>Only %1 and %2 facets are allowed when derived by union.</source>
-        <translation type="vanished">Při odvození (dědičnosti) pomocí sjednocení jsou dovoleny pouze stránky %1 a %2.</translation>
-    </message>
-    <message>
-        <source>%1 contains %2 facet with invalid data: %3.</source>
-        <translation type="vanished">%1 obsahuje stránku %2 s neplatnými daty: %3.</translation>
-    </message>
-    <message>
-        <source>Attribute group %1 contains attribute %2 twice.</source>
-        <translation type="vanished">Skupina vlastností %1 obsahuje vlastnost %2 dvakrát.</translation>
-    </message>
-    <message>
-        <source>Attribute group %1 contains two different attributes that both have types derived from %2.</source>
-        <translation type="vanished">Skupina vlastností %1 obsahuje dvě rozdílné vlastnosti, obě s typy, které jsou odvozeny z %2.</translation>
-    </message>
-    <message>
-        <source>Attribute group %1 contains attribute %2 that has value constraint but type that inherits from %3.</source>
-        <translation type="vanished">Skupina vlastností %1 obsahuje vlastnost %2 s omezením hodnoty, typ je ale odvozen z %3.</translation>
-    </message>
-    <message>
-        <source>Complex type %1 contains attribute %2 twice.</source>
-        <translation type="vanished">Složitý typ %1 obsahuje vlastnost %2 dvakrát.</translation>
-    </message>
-    <message>
-        <source>Complex type %1 contains two different attributes that both have types derived from %2.</source>
-        <translation type="vanished">Složitý typ %1 obsahuje dvě rozdílné vlastnosti, obě s typy, které jsou odvozeny z %2.</translation>
-    </message>
-    <message>
-        <source>Complex type %1 contains attribute %2 that has value constraint but type that inherits from %3.</source>
-        <translation type="vanished">Složitý typ %1 obsahuje vlastnost %2 s omezením hodnoty, typ je ale odvozen z %3.</translation>
-    </message>
-    <message>
-        <source>Element %1 is not allowed to have a value constraint if its base type is complex.</source>
-        <translation type="vanished">Prvek %1 nesmí mít omezení hodnoty, když je základní typ složitý.</translation>
-    </message>
-    <message>
-        <source>Element %1 is not allowed to have a value constraint if its type is derived from %2.</source>
-        <translation type="vanished">Prvek %1 nesmí mít omezení hodnoty, když je jeho typ odvozen z %2.</translation>
-    </message>
-    <message>
-        <source>Value constraint of element %1 is not of elements type: %2.</source>
-        <translation type="vanished">Omezení hodnoty prvku %1 není z typu prvku: %2.</translation>
-    </message>
-    <message>
-        <source>Element %1 is not allowed to have substitution group affiliation as it is no global element.</source>
-        <translation type="vanished">Prvek %1 nesmí patřit k skupině nahrazení, neboť není celkovým prvkem.</translation>
-    </message>
-    <message>
-        <source>Type of element %1 cannot be derived from type of substitution group affiliation.</source>
-        <translation type="vanished">Typ prvku %1 nemůže být odvozen z typu příslušné skupiny nahrazení.</translation>
-    </message>
-    <message>
-        <source>Value constraint of attribute %1 is not of attributes type: %2.</source>
-        <translation type="vanished">Omezení hodnoty vlastnosti %1 není z typu vlastnosti: %2.</translation>
-    </message>
-    <message>
-        <source>Attribute %1 has value constraint but has type derived from %2.</source>
-        <translation type="vanished">Vlastnost %1 má mezení hodnoty, ale její typ je odvozen z %2.</translation>
-    </message>
-    <message>
-        <source>%1 attribute in derived complex type must be %2 like in base type.</source>
-        <translation type="vanished">Vlastnost %1 v odvozeném složitém typu musí být jako v základním typu %2.</translation>
-    </message>
-    <message>
-        <source>Attribute %1 in derived complex type must have %2 value constraint like in base type.</source>
-        <translation type="vanished">Vlastnost %1 v odvozeném složitém typu musí mít omezení hodnoty jako v základním typu %2.</translation>
-    </message>
-    <message>
-        <source>Attribute %1 in derived complex type must have the same %2 value constraint like in base type.</source>
-        <translation type="vanished">Vlastnost %1 v odvozeném složitém typu musí mít stejné omezení hodnoty %2 jako v základním typu.</translation>
-    </message>
-    <message>
-        <source>Attribute %1 in derived complex type must have %2 value constraint.</source>
-        <translation type="vanished">Vlastnost %1 v odvozeném složitém typu musí omezení hodnoty %2.</translation>
-    </message>
-    <message>
-        <source>processContent of base wildcard must be weaker than derived wildcard.</source>
-        <translation type="vanished">Vlastnost &apos;processContent&apos; základního zástupného symbolu (vzor hledání) musí být slabší než odvozený zástupný symbol (vzor hledání).</translation>
-    </message>
-    <message>
-        <source>Element %1 exists twice with different types.</source>
-        <translation type="vanished">Prvek %1 existuje dvakrát s rozdílnými typy.</translation>
-    </message>
-    <message>
-        <source>Particle contains non-deterministic wildcards.</source>
-        <translation type="vanished">Částice obsahuje ne-neměnné zástupné symboly (vzory hledání).</translation>
-    </message>
-    <message>
-        <source>Base attribute %1 is required but derived attribute is not.</source>
-        <translation type="vanished">Základní vlastnost %1 je vyžadována, ale odvozená vlastnost není.</translation>
-    </message>
-    <message>
-        <source>Type of derived attribute %1 cannot be validly derived from type of base attribute.</source>
-        <translation type="vanished">Typ odvozené vlastnosti %1 nemůže být platně odvozen z typu základní vlastnosti.</translation>
-    </message>
-    <message>
-        <source>Value constraint of derived attribute %1 does not match value constraint of base attribute.</source>
-        <translation type="vanished">Omezení hodnoty odvozené vlastnosti %1 neodpovídá omezení hodnoty základní vlastnosti.</translation>
-    </message>
-    <message>
-        <source>Derived attribute %1 does not exists in the base definition.</source>
-        <translation type="vanished">Odvozená vlastnost %1 neexistuje v základním vymezení.</translation>
-    </message>
-    <message>
-        <source>Derived attribute %1 does not match the wildcard in the base definition.</source>
-        <translation type="vanished">Odvozená vlastnost %1 neodpovídá zástupnému symbolu (vzoru hledání) v základním vymezení.</translation>
-    </message>
-    <message>
-        <source>Base attribute %1 is required but missing in derived definition.</source>
-        <translation type="vanished">Základní vlastnost %1 je vyžadována, ale chybí v odvozeném vymezení.</translation>
-    </message>
-    <message>
-        <source>Derived definition contains an %1 element that does not exists in the base definition</source>
-        <translation type="vanished">Odvozené vymezení obsahuje prvek %1, který v základním vymezení neexistuje</translation>
-    </message>
-    <message>
-        <source>Derived wildcard is not a subset of the base wildcard.</source>
-        <translation type="vanished">Odvozený zástupný symbol (vzor hledání) není žádnou dílčí množinou základního zástupného symbolu (vzoru hledání).</translation>
-    </message>
-    <message>
-        <source>%1 of derived wildcard is not a valid restriction of %2 of base wildcard</source>
-        <translation type="vanished">Vlastnost %1 odvozeného zástupného symbolu (vzoru hledání) není platným omezením %2 základního zástupného symbolu (vzoru hledání)</translation>
-    </message>
-    <message>
-        <source>Attribute %1 from base type is missing in derived type.</source>
-        <translation type="vanished">Vlastnost %1 základního typu chybí v odvozeném typu.</translation>
-    </message>
-    <message>
-        <source>Type of derived attribute %1 differs from type of base attribute.</source>
-        <translation type="vanished">Typ odvozené vlastnosti %1 se liší od typu základní vlastnosti.</translation>
-    </message>
-    <message>
-        <source>Base definition contains an %1 element that is missing in the derived definition</source>
-        <translation type="vanished">Základní vymezení obsahuje prvek %1, který v odvozeném vymezení chybí</translation>
-    </message>
-    <message>
-        <source>Can not process unknown element %1, expected elements are: %2.</source>
-        <translation type="vanished">Nelze zpracovat neznámý prvek %1, očekávanými prvky jsou: %2.</translation>
-    </message>
-    <message>
-        <source>Element %1 is not allowed in this scope, possible elements are: %2.</source>
-        <translation type="vanished">Prvek %1 není v této oblasti dovolen; možnými prvky jsou: %2.</translation>
-    </message>
-    <message>
-        <source>Child element is missing in that scope, possible child elements are: %1.</source>
-        <translation type="vanished">Podprvek v oblasti chybí; možnými podprvky jsou: %1.</translation>
-    </message>
-    <message>
-        <source>Document is not a XML schema.</source>
-        <translation type="vanished">Dokument není schématem XML.</translation>
-    </message>
-    <message>
-        <source>%1 attribute of %2 element contains invalid content: {%3} is not a value of type %4.</source>
-        <translation type="vanished">Vlastnost %1 prvku %2 obsahuje neplatný obsah: {%3} není hodnotou typu %4.</translation>
-    </message>
-    <message>
-        <source>%1 attribute of %2 element contains invalid content: {%3}.</source>
-        <translation type="vanished">Vlastnost %1 prvku %2 obsahuje neplatný obsah: {%3}.</translation>
-    </message>
-    <message>
-        <source>Target namespace %1 of included schema is different from the target namespace %2 as defined by the including schema.</source>
-        <translation type="vanished">Cílový jmenný prostor %1 zahrnutého schématu se liší od jím vymezeného cílového jmenného prostoru %2.</translation>
-    </message>
-    <message>
-        <source>Target namespace %1 of imported schema is different from the target namespace %2 as defined by the importing schema.</source>
-        <translation type="vanished">Cílový jmenný prostor %1 zavedeného schématu se liší od jím vymezeného cílového jmenného prostoru %2.</translation>
-    </message>
-    <message>
-        <source>%1 element is not allowed to have the same %2 attribute value as the target namespace %3.</source>
-        <translation type="vanished">Prvek %1 nemůže stanovit cílový jmenný prostor %3 jako hodnotu vlastnosti %2.</translation>
-    </message>
-    <message>
-        <source>%1 element without %2 attribute is not allowed inside schema without target namespace.</source>
-        <translation type="vanished">Ve schématu bez jmenného prostoru musí mít prvek %1 vlastnost %2.</translation>
-    </message>
-    <message>
-        <source>%1 element is not allowed inside %2 element if %3 attribute is present.</source>
-        <translation type="vanished">Když je přítomna vlastnost %3, nesmí se vyskytovat prvek %1 v prvku %2.</translation>
-    </message>
-    <message>
-        <source>%1 element has neither %2 attribute nor %3 child element.</source>
-        <translation type="vanished">Prvek %1 nemá ani vlastnost %2 ani podprvek %3.</translation>
-    </message>
-    <message>
-        <source>%1 element with %2 child element must not have a %3 attribute.</source>
-        <translation type="vanished">Prvek %1 nesmí mít vlastnost %3, když existuje podprvek %2.</translation>
-    </message>
-    <message>
-        <source>%1 attribute of %2 element must be %3 or %4.</source>
-        <translation type="vanished">Vlastnost %1 prvku %2 může být jen %3 nebo %4.</translation>
-    </message>
-    <message>
-        <source>%1 attribute of %2 element must have a value of %3.</source>
-        <translation type="vanished">Vlastnost %1 prvku %2 musí mít hodnotu %3.</translation>
-    </message>
-    <message>
-        <source>%1 attribute of %2 element must have a value of %3 or %4.</source>
-        <translation type="vanished">Vlastnost %1 prvku %2 může mít jen jednu z hodnot %3 nebo %4.</translation>
-    </message>
-    <message>
-        <source>%1 element must not have %2 and %3 attribute together.</source>
-        <translation type="vanished">Vlastnosti %2 a %3 se v prvku %1 nemohou objevit společně.</translation>
-    </message>
-    <message>
-        <source>Content of %1 attribute of %2 element must not be from namespace %3.</source>
-        <translation type="vanished">Obsah vlastnosti %1 prvku %2 nemůže pocházet ze jmenného prostoru %3.</translation>
-    </message>
-    <message>
-        <source>%1 attribute of %2 element must not be %3.</source>
-        <translation type="vanished">Vlastnost %1 prvku %2 nemůže být %3.</translation>
-    </message>
-    <message>
-        <source>%1 attribute of %2 element must have the value %3 because the %4 attribute is set.</source>
-        <translation type="vanished">Vlastnost %1 prvku %2 musí mít hodnotu %3, protože je nastavena vlastnost %4.</translation>
-    </message>
-    <message>
-        <source>Specifying use=&apos;prohibited&apos; inside an attribute group has no effect.</source>
-        <translation type="vanished">Zadání use=&apos;prohibited&apos; ve skupině vlastností nemá naprosto žádný účinek.</translation>
-    </message>
-    <message>
-        <source>%1 element must have either %2 or %3 attribute.</source>
-        <translation type="vanished">Prvek %1 musí mít buď vlastnost %2 nebo %3.</translation>
-    </message>
-    <message>
-        <source>%1 element must have either %2 attribute or %3 or %4 as child element.</source>
-        <translation type="vanished">Prvek %1 musí mít buď vlastnost %2, nebo mít %3 nebo %4 jako podprvek.</translation>
-    </message>
-    <message>
-        <source>%1 element requires either %2 or %3 attribute.</source>
-        <translation type="vanished">Prvek %1 vyžaduje buď vlastnost %2 nebo %3.</translation>
-    </message>
-    <message>
-        <source>Text or entity references not allowed inside %1 element</source>
-        <translation type="vanished">Text nebo odkazy na entitu nejsou v prvku %1 dovoleny</translation>
-    </message>
-    <message>
-        <source>%1 attribute of %2 element must contain %3, %4 or a list of URIs.</source>
-        <translation type="vanished">Vlastnost %1 prvku %2 musí obsahovat %3, %4 nebo seznam adres (URL).</translation>
-    </message>
-    <message>
-        <source>%1 element is not allowed in this context.</source>
-        <translation type="vanished">Prvek %1 není v této souvislosti dovolen.</translation>
-    </message>
-    <message>
-        <source>%1 attribute of %2 element has larger value than %3 attribute.</source>
-        <translation type="vanished">Hodnota vlastnosti %1 prvku %2 je větší než hodnota vlastnosti %3.</translation>
-    </message>
-    <message>
-        <source>Prefix of qualified name %1 is not defined.</source>
-        <translation type="vanished">Předpona způsobilého názvu %1 není stanovena.</translation>
-    </message>
-    <message>
-        <source>%1 attribute of %2 element must either contain %3 or the other values.</source>
-        <translation type="vanished">Hodnota vlastnosti %1 prvku %2 musí obsahovat buď %3 nebo jiné hodnoty.</translation>
-    </message>
-    <message>
-        <source>Component with the identifier %1 has been defined previously.</source>
-        <translation type="vanished">Součást s ID %1 je již stanovena.</translation>
-    </message>
-    <message>
-        <source>Element %1 already defined.</source>
-        <translation type="vanished">Prvek %1 je již stanoven.</translation>
-    </message>
-    <message>
-        <source>Attribute %1 already defined.</source>
-        <translation type="vanished">Vlastnost %1 je již stanovena.</translation>
-    </message>
-    <message>
-        <source>Type %1 already defined.</source>
-        <translation type="vanished">Typ %1 je již stanoven.</translation>
-    </message>
-    <message>
-        <source>Attribute group %1 already defined.</source>
-        <translation type="vanished">Skupina vlastností %1 je již stanovena.</translation>
-    </message>
-    <message>
-        <source>Element group %1 already defined.</source>
-        <translation type="vanished">Skupina prvků %1 je již stanovena.</translation>
-    </message>
-    <message>
-        <source>Notation %1 already defined.</source>
-        <translation type="vanished">Zápis %1 je již stanoven.</translation>
-    </message>
-    <message>
-        <source>Identity constraint %1 already defined.</source>
-        <translation type="vanished">Omezení totožnosti %1 je již stanoveno.</translation>
-    </message>
-    <message>
-        <source>Duplicated facets in simple type %1.</source>
-        <translation type="vanished">Zdvojené stránky v jednoduchém typu %1.</translation>
-    </message>
-    <message>
-        <source>%1 references unknown %2 or %3 element %4.</source>
-        <translation type="vanished">%1 odkazuje na neznámý prvek %4 (%2 nebo %3).</translation>
-    </message>
-    <message>
-        <source>%1 references identity constraint %2 that is no %3 or %4 element.</source>
-        <translation type="vanished">%1 odkazuje na omezení totožnosti %2, které není ani prvek &apos;%3&apos; ani &apos;%4&apos;.</translation>
-    </message>
-    <message>
-        <source>%1 has a different number of fields from the identity constraint %2 that it references.</source>
-        <translation type="vanished">U %1 se liší počet polí od omezení totožnosti %2, na kterou odkazuje.</translation>
-    </message>
-    <message>
-        <source>Base type %1 of %2 element cannot be resolved.</source>
-        <translation type="vanished">Základní typ %1 prvku %2 nemůže být vyřešen.</translation>
-    </message>
-    <message>
-        <source>Item type %1 of %2 element cannot be resolved.</source>
-        <translation type="vanished">Složkový typ %1 prvku %2 nemůže být vyřešen.</translation>
-    </message>
-    <message>
-        <source>Member type %1 of %2 element cannot be resolved.</source>
-        <translation type="vanished">Členský typ %1 prvku %2 nemůže být vyřešen.</translation>
-    </message>
-    <message>
-        <source>Type %1 of %2 element cannot be resolved.</source>
-        <translation type="vanished">Typ %1 prvku %2 nemůže být vyřešen.</translation>
-    </message>
-    <message>
-        <source>Base type %1 of complex type cannot be resolved.</source>
-        <translation type="vanished">Základní typ %1 složitého typu nemůže být vyřešen.</translation>
-    </message>
-    <message>
-        <source>%1 cannot have complex base type that has a %2.</source>
-        <translation type="vanished">%1 nelze mít žádný složitý základní typ, který má %2.</translation>
-    </message>
-    <message>
-        <source>Content model of complex type %1 contains %2 element so it cannot be derived by extension from a non-empty type.</source>
-        <translation type="vanished">Model obsahu složitého typu %1 obsahuje prvek %2; nelze jej proto odvodit pomocí rozšíření z ne-prázdného typu.</translation>
-    </message>
-    <message>
-        <source>Complex type %1 cannot be derived by extension from %2 as the latter contains %3 element in its content model.</source>
-        <translation type="vanished">Složitý typ %1 nemůže být odvozen pomocí rozšíření z %2, neboť poslední obsahuje prvek &apos;%3&apos; ve svém modelu obsahu.</translation>
-    </message>
-    <message>
-        <source>Type of %1 element must be a simple type, %2 is not.</source>
-        <translation type="vanished">Typ prvku %1 musí být jednoduchým prvkem, což %2 není.</translation>
-    </message>
-    <message>
-        <source>Substitution group %1 of %2 element cannot be resolved.</source>
-        <translation type="vanished">Skupina nahrazení %1 prvku %2 nemůže být vyřešena.</translation>
-    </message>
-    <message>
-        <source>Substitution group %1 has circular definition.</source>
-        <translation type="vanished">Skupina nahrazení %1 má v kruzích prováděné vymezení.</translation>
-    </message>
-    <message>
-        <source>Duplicated element names %1 in %2 element.</source>
-        <translation type="vanished">Název prvku %1 se vyskytuje v prvku %2 vícekrát.</translation>
-    </message>
-    <message>
-        <source>Reference %1 of %2 element cannot be resolved.</source>
-        <translation type="vanished">Odkaz %1 prvku %2 nemůže být vyřešen.</translation>
-    </message>
-    <message>
-        <source>Circular group reference for %1.</source>
-        <translation type="vanished">V kruzích prováděný skupinový odkaz pro %1.</translation>
-    </message>
-    <message>
-        <source>%1 element is not allowed in this scope</source>
-        <translation type="vanished">Prvek %1 není v této oblasti dovolen</translation>
-    </message>
-    <message>
-        <source>%1 element cannot have %2 attribute with value other than %3.</source>
-        <translation type="vanished">Hodnota vlastnosti %2 prvku %1 může být pouze %3.</translation>
-    </message>
-    <message>
-        <source>%1 element cannot have %2 attribute with value other than %3 or %4.</source>
-        <translation type="vanished">Hodnota vlastnosti %2 prvku %1 může být pouze %3 nebo %4.</translation>
-    </message>
-    <message>
-        <source>%1 or %2 attribute of reference %3 does not match with the attribute declaration %4.</source>
-        <translation type="vanished">Vlastnost %1 nebo %2 odkazu %3 neodpovídá prohlášení vlastnosti %4.</translation>
-    </message>
-    <message>
-        <source>Attribute group %1 has circular reference.</source>
-        <translation type="vanished">Skupina vlastnosti %1 má kruzích prováděný odkaz.</translation>
-    </message>
-    <message>
-        <source>%1 attribute in %2 must have %3 use like in base type %4.</source>
-        <translation type="vanished">Vlastnost %1 v %2 musí mít použití &apos;%3&apos; jako v základním typu %4.</translation>
-    </message>
-    <message>
-        <source>Attribute wildcard of %1 is not a valid restriction of attribute wildcard of base type %2.</source>
-        <translation type="vanished">Zástupný symbol vlastnosti (vzor hledání) %1není platným omezením zástupného symbolu vlastnosti (vzoru hledání) základního typu %2.</translation>
-    </message>
-    <message>
-        <source>%1 has attribute wildcard but its base type %2 has not.</source>
-        <translation type="vanished">%1 má zástupný symbol vlastnosti (vzor hledání), ale jeho základní typ %2 nemá.</translation>
-    </message>
-    <message>
-        <source>Union of attribute wildcard of type %1 and attribute wildcard of its base type %2 is not expressible.</source>
-        <translation type="vanished">Sjednocení zástupného symbolu vlastnosti (vzoru hledání) typu %1 a zástupného symbolu vlastnosti (vzoru hledání) jeho základního typu %2 není vyjádřitelné.</translation>
-    </message>
-    <message>
-        <source>Enumeration facet contains invalid content: {%1} is not a value of type %2.</source>
-        <translation type="vanished">Výčtová stránka obsahuje neplatný obsah: {%1} není hodnotou typu %2.</translation>
-    </message>
-    <message>
-        <source>Namespace prefix of qualified name %1 is not defined.</source>
-        <translation type="vanished">Předpona jmenného prostoru způsobilého názvu %1 není stanovena.</translation>
-    </message>
-    <message>
-        <source>%1 element %2 is not a valid restriction of the %3 element it redefines: %4.</source>
-        <translation type="vanished">Prvek %2 (%1) není platným omezením přepisovaného prvku (%3): %4.</translation>
-    </message>
-    <message>
-        <source>%1 is not valid according to %2.</source>
-        <translation type="vanished">%1 je podle %2 neplatné.</translation>
-    </message>
-    <message>
-        <source>String content does not match the length facet.</source>
-        <translation type="vanished">Obsah řetězce znaků neodpovídá stránce délky.</translation>
-    </message>
-    <message>
-        <source>String content does not match the minLength facet.</source>
-        <translation type="vanished">Obsah řetězce znaků neodpovídá stránce délky (nejmenší údaj, &apos;minLength&apos;).</translation>
-    </message>
-    <message>
-        <source>String content does not match the maxLength facet.</source>
-        <translation type="vanished">Obsah řetězce znaků neodpovídá stránce délky (největší údaj; &apos;maxLength&apos;).</translation>
-    </message>
-    <message>
-        <source>String content does not match pattern facet.</source>
-        <translation type="vanished">Obsah řetězce znaků neodpovídá stránce vzoru pro hledání.</translation>
-    </message>
-    <message>
-        <source>String content is not listed in the enumeration facet.</source>
-        <translation type="vanished">Obsah řetězce znaků není obsažen ve výčtové stránce.</translation>
-    </message>
-    <message>
-        <source>Signed integer content does not match the maxInclusive facet.</source>
-        <translation type="vanished">Celočíselná hodnota označená znaménkem neodpovídá stránce &apos;maxInclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Signed integer content does not match the maxExclusive facet.</source>
-        <translation type="vanished">Celočíselná hodnota označená znaménkem neodpovídá stránce &apos;maxExclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Signed integer content does not match the minInclusive facet.</source>
-        <translation type="vanished">Celočíselná hodnota označená znaménkem neodpovídá stránce &apos;minInclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Signed integer content does not match the minExclusive facet.</source>
-        <translation type="vanished">Celočíselná hodnota označená znaménkem neodpovídá stránce &apos;minExclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Signed integer content is not listed in the enumeration facet.</source>
-        <translation type="vanished">Celočíselná hodnota označená znaménkem není obsažena ve výčtové stránce.</translation>
-    </message>
-    <message>
-        <source>Signed integer content does not match pattern facet.</source>
-        <translation type="vanished">Celočíselná hodnota označená znaménkem neodpovídá stránce vzoru pro hledání.</translation>
-    </message>
-    <message>
-        <source>Signed integer content does not match in the totalDigits facet.</source>
-        <translation type="vanished">Celočíselná hodnota označená znaménkem neodpovídá stránce &apos;totalDigits&apos;.</translation>
-    </message>
-    <message>
-        <source>Unsigned integer content does not match the maxInclusive facet.</source>
-        <translation type="vanished">Celočíselná hodnota jsoucí bez znaménka neodpovídá stránce &apos;maxInclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Unsigned integer content does not match the maxExclusive facet.</source>
-        <translation type="vanished">Celočíselná hodnota jsoucí bez znaménka neodpovídá stránce &apos;maxExclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Unsigned integer content does not match the minInclusive facet.</source>
-        <translation type="vanished">Celočíselná hodnota jsoucí bez znaménka neodpovídá stránce &apos;minInclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Unsigned integer content does not match the minExclusive facet.</source>
-        <translation type="vanished">Celočíselná hodnota jsoucí bez znaménka neodpovídá stránce &apos;minExclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Unsigned integer content is not listed in the enumeration facet.</source>
-        <translation type="vanished">Celočíselná hodnota jsoucí bez znaménka není obsažena ve výčtové stránce.</translation>
-    </message>
-    <message>
-        <source>Unsigned integer content does not match pattern facet.</source>
-        <translation type="vanished">Celočíselná hodnota jsoucí bez znaménka neodpovídá stránce vzoru pro hledání.</translation>
-    </message>
-    <message>
-        <source>Unsigned integer content does not match in the totalDigits facet.</source>
-        <translation type="vanished">Celočíselná hodnota jsoucí bez znaménka neodpovídá stránce &apos;totalDigits&apos;.</translation>
-    </message>
-    <message>
-        <source>Double content does not match the maxInclusive facet.</source>
-        <translation type="vanished">Číslo s pohyblivou čárkou neodpovídá stránce &apos;maxInclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Double content does not match the maxExclusive facet.</source>
-        <translation type="vanished">Číslo s pohyblivou čárkou neodpovídá stránce &apos;maxExclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Double content does not match the minInclusive facet.</source>
-        <translation type="vanished">Číslo s pohyblivou čárkou neodpovídá stránce &apos;minInclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Double content does not match the minExclusive facet.</source>
-        <translation type="vanished">Číslo s pohyblivou čárkou neodpovídá stránce &apos;minExclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Double content is not listed in the enumeration facet.</source>
-        <translation type="vanished">Číslo s pohyblivou čárkou není obsaženo ve výčtové stránce.</translation>
-    </message>
-    <message>
-        <source>Double content does not match pattern facet.</source>
-        <translation type="vanished">Číslo s pohyblivou čárkou neodpovídá stránce vzoru pro hledání.</translation>
-    </message>
-    <message>
-        <source>Decimal content does not match in the fractionDigits facet.</source>
-        <translation type="vanished">Desetinné číslo neodpovídá stránce &apos;fractionDigits&apos;.</translation>
-    </message>
-    <message>
-        <source>Decimal content does not match in the totalDigits facet.</source>
-        <translation type="vanished">Desetinné číslo neodpovídá stránce &apos;totalDigits&apos;.</translation>
-    </message>
-    <message>
-        <source>Date time content does not match the maxInclusive facet.</source>
-        <translation type="vanished">Údaj o datu neodpovídá stránce &apos;maxInclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Date time content does not match the maxExclusive facet.</source>
-        <translation type="vanished">Údaj o datu neodpovídá stránce &apos;maxExclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Date time content does not match the minInclusive facet.</source>
-        <translation type="vanished">Údaj o datu neodpovídá stránce &apos;minInclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Date time content does not match the minExclusive facet.</source>
-        <translation type="vanished">Údaj o datu neodpovídá stránce &apos;minExclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Date time content is not listed in the enumeration facet.</source>
-        <translation type="vanished">Údaj o datu není obsažen ve výčtové stránce.</translation>
-    </message>
-    <message>
-        <source>Date time content does not match pattern facet.</source>
-        <translation type="vanished">Údaj o datu neodpovídá stránce vzoru pro hledání.</translation>
-    </message>
-    <message>
-        <source>Duration content does not match the maxInclusive facet.</source>
-        <translation type="vanished">Údaj o době trvání neodpovídá stránce &apos;maxInclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Duration content does not match the maxExclusive facet.</source>
-        <translation type="vanished">Údaj o době trvání neodpovídá stránce &apos;maxExclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Duration content does not match the minInclusive facet.</source>
-        <translation type="vanished">Údaj o době trvání neodpovídá stránce &apos;minInclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Duration content does not match the minExclusive facet.</source>
-        <translation type="vanished">Údaj o době trvání neodpovídá stránce &apos;minExclusive&apos;.</translation>
-    </message>
-    <message>
-        <source>Duration content is not listed in the enumeration facet.</source>
-        <translation type="vanished">Údaj o době trvání není obsažen ve výčtové stránce.</translation>
-    </message>
-    <message>
-        <source>Duration content does not match pattern facet.</source>
-        <translation type="vanished">Údaj o době trvání neodpovídá stránce vzoru pro hledání.</translation>
-    </message>
-    <message>
-        <source>Boolean content does not match pattern facet.</source>
-        <translation type="vanished">Booleánská hodnota neodpovídá stránce vzoru pro hledání.</translation>
-    </message>
-    <message>
-        <source>Binary content does not match the length facet.</source>
-        <translation type="vanished">Binární obsah neodpovídá stránce délky.</translation>
-    </message>
-    <message>
-        <source>Binary content does not match the minLength facet.</source>
-        <translation type="vanished">Binární obsah neodpovídá stránce &apos;minLength&apos;.</translation>
-    </message>
-    <message>
-        <source>Binary content does not match the maxLength facet.</source>
-        <translation type="vanished">Binární obsah neodpovídá stránce &apos;maxLength&apos;.</translation>
-    </message>
-    <message>
-        <source>Binary content is not listed in the enumeration facet.</source>
-        <translation type="vanished">Binární obsah není obsažen ve výčtové stránce.</translation>
-    </message>
-    <message>
-        <source>Invalid QName content: %1.</source>
-        <translation type="vanished">Obsah způsobilého názvu (&apos;QName&apos;) je neplatný: %1.</translation>
-    </message>
-    <message>
-        <source>QName content is not listed in the enumeration facet.</source>
-        <translation type="vanished">Obsah způsobilého názvu (&apos;QName&apos;) není obsažen ve výčtové stránce.</translation>
-    </message>
-    <message>
-        <source>QName content does not match pattern facet.</source>
-        <translation type="vanished">Obsah způsobilého názvu (&apos;QName&apos;) neodpovídá stránce vzoru pro hledání.</translation>
-    </message>
-    <message>
-        <source>Notation content is not listed in the enumeration facet.</source>
-        <translation type="vanished">Obsah zápisu není obsažen ve výčtové stránce.</translation>
-    </message>
-    <message>
-        <source>List content does not match length facet.</source>
-        <translation type="vanished">Obsah seznamu neodpovídá stránce délky.</translation>
-    </message>
-    <message>
-        <source>List content does not match minLength facet.</source>
-        <translation type="vanished">Obsah seznamu neodpovídá stránce &apos;minLength&apos;.</translation>
-    </message>
-    <message>
-        <source>List content does not match maxLength facet.</source>
-        <translation type="vanished">Obsah seznamu neodpovídá stránce &apos;maxLength&apos;.</translation>
-    </message>
-    <message>
-        <source>List content is not listed in the enumeration facet.</source>
-        <translation type="vanished">Obsah seznamu není obsažen ve výčtové stránce.</translation>
-    </message>
-    <message>
-        <source>List content does not match pattern facet.</source>
-        <translation type="vanished">Obsah seznamu neodpovídá stránce vzoru pro hledání.</translation>
-    </message>
-    <message>
-        <source>Union content is not listed in the enumeration facet.</source>
-        <translation type="vanished">Obsah sjednocení není obsažen ve výčtové stránce.</translation>
-    </message>
-    <message>
-        <source>Union content does not match pattern facet.</source>
-        <translation type="vanished">Obsah sjednocení neodpovídá stránce vzoru pro hledání.</translation>
-    </message>
-    <message>
-        <source>Data of type %1 are not allowed to be empty.</source>
-        <translation type="vanished">Data typu %1 nemohou být prázdná.</translation>
-    </message>
-    <message>
-        <source>Element %1 is missing child element.</source>
-        <translation type="vanished">U prvku %1 chybí podprvek.</translation>
-    </message>
-    <message>
-        <source>There is one IDREF value with no corresponding ID: %1.</source>
-        <translation type="vanished">Existuje hodnota IDREF, pro kterou neexistuje příslušné ID: %1.</translation>
-    </message>
-    <message>
-        <source>Loaded schema file is invalid.</source>
-        <translation type="vanished">Nahraný soubor se schématem je neplatný.</translation>
-    </message>
-    <message>
-        <source>%1 contains invalid data.</source>
-        <translation type="vanished">%1 obsahuje neplatná data.</translation>
-    </message>
-    <message>
-        <source>xsi:schemaLocation namespace %1 has already appeared earlier in the instance document.</source>
-        <translation type="vanished">Jmenný prostor xsi:schemaLocation %1 byl již dříve v případovém dokumentu stanoven.</translation>
-    </message>
-    <message>
-        <source>xsi:noNamespaceSchemaLocation cannot appear after the first no-namespace element or attribute.</source>
-        <translation type="vanished">xsi:noNamespaceSchemaLocation se nemůže objevit po prvním prvku nebo vlastnosti bez jmenného prostoru.</translation>
-    </message>
-    <message>
-        <source>No schema defined for validation.</source>
-        <translation type="vanished">Pro schválení není stanoveno žádné schéma.</translation>
-    </message>
-    <message>
-        <source>No definition for element %1 available.</source>
-        <translation type="vanished">Pro prvek %1 není dostupné žádné vymezení.</translation>
-    </message>
-    <message>
-        <source>Specified type %1 is not known to the schema.</source>
-        <translation type="vanished">Zadaný typ %1 není ve schématu stanoven.</translation>
-    </message>
-    <message>
-        <source>Element %1 is not defined in this scope.</source>
-        <translation type="vanished">Prvek %1 není v této oblasti stanoven.</translation>
-    </message>
-    <message>
-        <source>Declaration for element %1 does not exist.</source>
-        <translation type="vanished">Pro prvek %1 není dostupné žádné prohlášení.</translation>
-    </message>
-    <message>
-        <source>Element %1 contains invalid content.</source>
-        <translation type="vanished">Prvek %1 obsahuje neplatný obsah.</translation>
-    </message>
-    <message>
-        <source>Element %1 is declared as abstract.</source>
-        <translation type="vanished">Prvek %1 je prohlášen jako abstraktní.</translation>
-    </message>
-    <message>
-        <source>Element %1 is not nillable.</source>
-        <translation type="vanished">Prvek %1 nemá zadánu vlastnost &apos;nillable&apos;.</translation>
-    </message>
-    <message>
-        <source>Attribute %1 contains invalid data: %2</source>
-        <translation type="vanished">Vlastnost %1 obsahuje neplatná data: %2</translation>
-    </message>
-    <message>
-        <source>Element contains content although it is nillable.</source>
-        <translation type="vanished">Prvek má obsah, ačkoli je &apos;nillable&apos;.</translation>
-    </message>
-    <message>
-        <source>Fixed value constrained not allowed if element is nillable.</source>
-        <translation type="vanished">Pevné omezení hodnoty není dovoleno, pokud je prvek &apos;nillable&apos;.</translation>
-    </message>
-    <message>
-        <source>Specified type %1 is not validly substitutable with element type %2.</source>
-        <translation type="vanished">Zadaný typ %1 není platně nahraditelný typem prvku %2.</translation>
-    </message>
-    <message>
-        <source>Complex type %1 is not allowed to be abstract.</source>
-        <translation type="vanished">Složitý typ %1 nemůže být abstraktní.</translation>
-    </message>
-    <message>
-        <source>Element %1 contains not allowed attributes.</source>
-        <translation type="vanished">Prvek %1 obsahuje nepřípustné vlastnosti.</translation>
-    </message>
-    <message>
-        <source>Element %1 contains not allowed child element.</source>
-        <translation type="vanished">Prvek %1 obsahuje nepřípustný podprvek.</translation>
-    </message>
-    <message>
-        <source>Content of element %1 does not match its type definition: %2.</source>
-        <translation type="vanished">Obsah prvku %1 neodpovídá vymezení svého typu: %2.</translation>
-    </message>
-    <message>
-        <source>Content of element %1 does not match defined value constraint.</source>
-        <translation type="vanished">Obsah prvku %1 neodpovídá stanovenému omezení hodnoty.</translation>
-    </message>
-    <message>
-        <source>Element %1 contains not allowed child content.</source>
-        <translation type="vanished">Prvek %1 obsahuje nepřípustný podobsah.</translation>
-    </message>
-    <message>
-        <source>Element %1 contains not allowed text content.</source>
-        <translation type="vanished">Prvek %1 obsahuje nepřípustný textový obsah.</translation>
-    </message>
-    <message>
-        <source>Element %1 can not contain other elements, as it has a fixed content.</source>
-        <translation type="vanished">Prvek %1 nesmí obsahovat žádné podprvky, protože má pevný obsah.</translation>
-    </message>
-    <message>
-        <source>Element %1 is missing required attribute %2.</source>
-        <translation type="vanished">U prvkuk %1 chybí vyžadovaná vlastnost %2.</translation>
-    </message>
-    <message>
-        <source>Attribute %1 does not match the attribute wildcard.</source>
-        <translation type="vanished">Vlastnost %1 neodpovídá zástupnému symbolu (vzoru hledání) vlastnosti.</translation>
-    </message>
-    <message>
-        <source>Declaration for attribute %1 does not exist.</source>
-        <translation type="vanished">Pro vlastnost %1 není dostupné žádné prohlášení.</translation>
-    </message>
-    <message>
-        <source>Element %1 contains two attributes of type %2.</source>
-        <translation type="vanished">Prvek %1 obsahuje dvě vlastnosti typu %2.</translation>
-    </message>
-    <message>
-        <source>Attribute %1 contains invalid content.</source>
-        <translation type="vanished">Vlastnost %1 obsahuje neplatný obsah.</translation>
-    </message>
-    <message>
-        <source>Element %1 contains unknown attribute %2.</source>
-        <translation type="vanished">Prvek %1 obsahuje neznámou vlastnost %2.</translation>
-    </message>
-    <message>
-        <source>Content of attribute %1 does not match its type definition: %2.</source>
-        <translation type="vanished">Obsah vlastnosti %1 neodpovídá vymezení svého typu: %2.</translation>
-    </message>
-    <message>
-        <source>Content of attribute %1 does not match defined value constraint.</source>
-        <translation type="vanished">Obsah vlastnosti %1 neodpovídá stanovenému omezení hodnoty.</translation>
-    </message>
-    <message>
-        <source>Non-unique value found for constraint %1.</source>
-        <translation type="vanished">Pro omezení %1 byla nalezena ne jednoznačně stanovená hodnota.</translation>
-    </message>
-    <message>
-        <source>Key constraint %1 contains absent fields.</source>
-        <translation type="vanished">Omezení klíče %1 obsahuje nepřítomná pole.</translation>
-    </message>
-    <message>
-        <source>Key constraint %1 contains references nillable element %2.</source>
-        <translation type="vanished">Omezení klíče %1 obsahuje odkazy na prvek %2, který je &apos;nillable&apos;.</translation>
-    </message>
-    <message>
-        <source>No referenced value found for key reference %1.</source>
-        <translation type="vanished">Odkazovanou hodnotu odkazu na klíč %1 se nepodařilo najít.</translation>
-    </message>
-    <message>
-        <source>More than one value found for field %1.</source>
-        <translation type="vanished">Pro pole %1 bylo nalezeno více hodnot.</translation>
-    </message>
-    <message>
-        <source>Field %1 has no simple type.</source>
-        <translation type="vanished">Pole %1 nemá žádný jednoduchý typ.</translation>
-    </message>
-    <message>
-        <source>ID value &apos;%1&apos; is not unique.</source>
-        <translation type="vanished">Hodnota ID %1 není jednoznačná.</translation>
-    </message>
-    <message>
-        <source>&apos;%1&apos; attribute contains invalid QName content: %2.</source>
-        <translation type="vanished">Vlastnost %1 obsahuje neplatný způsobilý název: %2.</translation>
-    </message>
-</context>
-<context>
-    <name>VolumeSlider</name>
-    <message>
-        <source>Muted</source>
-        <translation type="obsolete">Ztlumení</translation>
-    </message>
-    <message>
-        <source>Volume: %1%</source>
-        <translation type="obsolete">Hlasitost: %1%</translation>
+        <source>Entity expands to more characters than the entity expansion limit.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

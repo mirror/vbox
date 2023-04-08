@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="hr_HR" sourcelanguage="en">
+<TS version="2.1" language="hr_HR">
 <context>
     <name>CloseButton</name>
     <message>
@@ -10,6 +10,14 @@
 </context>
 <context>
     <name>MAC_APPLICATION_MENU</name>
+    <message>
+        <source>About %1</source>
+        <translation>O %1</translation>
+    </message>
+    <message>
+        <source>Preferences...</source>
+        <translation>Mogućnosti...</translation>
+    </message>
     <message>
         <source>Services</source>
         <translation>Servisi</translation>
@@ -27,20 +35,34 @@
         <translation>Prikaži Sve</translation>
     </message>
     <message>
-        <source>Preferences...</source>
-        <translation>Mogućnosti...</translation>
-    </message>
-    <message>
         <source>Quit %1</source>
         <translation>Izađi %1</translation>
     </message>
+</context>
+<context>
+    <name>Print Device Input Slot</name>
     <message>
-        <source>About %1</source>
-        <translation>O %1</translation>
+        <source>Automatic</source>
+        <translation type="unfinished">Automatski</translation>
+    </message>
+</context>
+<context>
+    <name>Print Device Output Bin</name>
+    <message>
+        <source>Automatic</source>
+        <translation type="unfinished">Automatski</translation>
     </message>
 </context>
 <context>
     <name>QAbstractSocket</name>
+    <message>
+        <source>Socket operation timed out</source>
+        <translation>Vrijeme postupka utičnice je isteklo</translation>
+    </message>
+    <message>
+        <source>Operation on socket is not supported</source>
+        <translation>Postupak na utičnici nije podržan</translation>
+    </message>
     <message>
         <source>Host not found</source>
         <translation>Domaćin nije pronađen</translation>
@@ -48,18 +70,6 @@
     <message>
         <source>Connection refused</source>
         <translation>Veza odbijena</translation>
-    </message>
-    <message>
-        <source>Socket operation timed out</source>
-        <translation>Vrijeme postupka utičnice je isteklo</translation>
-    </message>
-    <message>
-        <source>Socket is not connected</source>
-        <translation>Utičnica nije spojena</translation>
-    </message>
-    <message>
-        <source>Operation on socket is not supported</source>
-        <translation>Postupak na utičnici nije podržan</translation>
     </message>
     <message>
         <source>Connection timed out</source>
@@ -70,6 +80,10 @@
         <translation>Pokušavati spojiti dok veza traje</translation>
     </message>
     <message>
+        <source>Socket is not connected</source>
+        <translation>Utičnica nije spojena</translation>
+    </message>
+    <message>
         <source>Network unreachable</source>
         <translation>Mreža nedostupna</translation>
     </message>
@@ -77,16 +91,16 @@
 <context>
     <name>QAbstractSpinBox</name>
     <message>
+        <source>&amp;Select All</source>
+        <translation>&amp;Odaberi Sve</translation>
+    </message>
+    <message>
         <source>&amp;Step up</source>
         <translation>Korak &amp;naprijed</translation>
     </message>
     <message>
         <source>Step &amp;down</source>
         <translation>Korak &amp;iza</translation>
-    </message>
-    <message>
-        <source>&amp;Select All</source>
-        <translation>&amp;Odaberi Sve</translation>
     </message>
 </context>
 <context>
@@ -221,10 +235,6 @@
 <context>
     <name>QCocoaMenuItem</name>
     <message>
-        <source>About Qt</source>
-        <translation>O Qt</translation>
-    </message>
-    <message>
         <source>About</source>
         <translation>O</translation>
     </message>
@@ -272,6 +282,10 @@
         <source>Select All</source>
         <translation>Odaberi Sve</translation>
     </message>
+    <message>
+        <source>About Qt</source>
+        <translation>O Qt</translation>
+    </message>
 </context>
 <context>
     <name>QCocoaTheme</name>
@@ -311,18 +325,6 @@
         <translation>&amp;Alpha kanal:</translation>
     </message>
     <message>
-        <source>&amp;Basic colors</source>
-        <translation>&amp;Osnovne boje</translation>
-    </message>
-    <message>
-        <source>&amp;Custom colors</source>
-        <translation>&amp;Prilagođene boje</translation>
-    </message>
-    <message>
-        <source>&amp;Add to Custom Colors</source>
-        <translation>&amp;Dodaj Prilagođnim Bojama</translation>
-    </message>
-    <message>
         <source>&amp;HTML:</source>
         <translation>&amp;HTML:</translation>
     </message>
@@ -337,6 +339,18 @@ Pritisni ESC za odustajanje</translation>
         <translation>Odaberite Boju</translation>
     </message>
     <message>
+        <source>&amp;Basic colors</source>
+        <translation>&amp;Osnovne boje</translation>
+    </message>
+    <message>
+        <source>&amp;Custom colors</source>
+        <translation>&amp;Prilagođene boje</translation>
+    </message>
+    <message>
+        <source>&amp;Add to Custom Colors</source>
+        <translation>&amp;Dodaj Prilagođnim Bojama</translation>
+    </message>
+    <message>
         <source>&amp;Pick Screen Color</source>
         <translation>&amp;Odaberi Boju Zaslona</translation>
     </message>
@@ -344,16 +358,16 @@ Pritisni ESC za odustajanje</translation>
 <context>
     <name>QComboBox</name>
     <message>
+        <source>Open the combo box selection popup</source>
+        <translation>Otvori skočni okvir kombinacijskog izbornika</translation>
+    </message>
+    <message>
         <source>False</source>
         <translation>Laž</translation>
     </message>
     <message>
         <source>True</source>
         <translation>Istina</translation>
-    </message>
-    <message>
-        <source>Open the combo box selection popup</source>
-        <translation>Otvori skočni okvir kombinacijskog izbornika</translation>
     </message>
 </context>
 <context>
@@ -363,8 +377,12 @@ Pritisni ESC za odustajanje</translation>
         <translation>Prikazuje informaciju verzije.</translation>
     </message>
     <message>
-        <source>Displays this help.</source>
-        <translation>Prikazuje ovu pomoć.</translation>
+        <source>Displays help on commandline options.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays help including Qt specific options.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown option &apos;%1&apos;.</source>
@@ -519,6 +537,29 @@ Pritisni ESC za odustajanje</translation>
         <source>Top Secret</source>
         <comment>CUPS Banner page</comment>
         <translation>Strogo Tajno</translation>
+    </message>
+</context>
+<context>
+    <name>QCupsPrinterSupport</name>
+    <message>
+        <source>Authentication Needed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authentication needed to use %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authentication needed to use %1 on %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Username:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -741,11 +782,6 @@ Pritisni ESC za odustajanje</translation>
 <context>
     <name>QDockWidget</name>
     <message>
-        <source>Close</source>
-        <extracomment>Accessible name for button closing a dock widget</extracomment>
-        <translation>Zatvori</translation>
-    </message>
-    <message>
         <source>Float</source>
         <extracomment>Accessible name for button undocking a dock widget (floating state)</extracomment>
         <translation>Plutaj</translation>
@@ -755,8 +791,203 @@ Pritisni ESC za odustajanje</translation>
         <translation>Izdockira i ponovno pričvrsti widget docka</translation>
     </message>
     <message>
+        <source>Close</source>
+        <extracomment>Accessible name for button closing a dock widget</extracomment>
+        <translation>Zatvori</translation>
+    </message>
+    <message>
         <source>Closes the dock widget</source>
         <translation>Zatvara widget docka</translation>
+    </message>
+</context>
+<context>
+    <name>QDomParser</name>
+    <message>
+        <source>Error occurred while processing XML declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Multiple DTD sections are not allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing document type declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing comment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing a processing instruction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing a start element</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected end element &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing an end element</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing the element content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing comments</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing an entity reference</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected token</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tag mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing entity declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing notation declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QDtls</name>
+    <message>
+        <source>Invalid (empty) secret</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Multicast and broadcast addresses are not supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot set peer after handshake started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid address</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot set verification name after handshake started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot set configuration after handshake started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start/continue handshake, invalid handshake state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid (nullptr) socket</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>To start a handshake you must set peer&apos;s address and port first</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>To start a handshake, DTLS server requires non-empty datagram (client hello)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start handshake, already done/in progress</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A valid QUdpSocket and non-empty datagram are needed to continue the handshake</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot continue handshake, not in InProgress state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot resume, not in VerificationError state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No handshake in progress, nothing to abort</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot send shutdown alert, not encrypted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot write a datagram, not in encrypted state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot read a datagram, not in encrypted state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 failed</source>
+        <extracomment>%1: Some function</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid SslMode, SslServerMode or SslClientMode expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid protocol version, DTLS protocol expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>BIO_ADD_new failed, cannot start handshake</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start the handshake, verified client hello expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Peer verification failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The DTLS connection has been closed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while writing: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The DTLS connection has been shutdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while reading: %1</source>
+        <translation type="unfinished">Greška prilikom čitanja: %1</translation>
+    </message>
+</context>
+<context>
+    <name>QDtlsClientVerifier</name>
+    <message>
+        <source>A valid UDP socket, non-empty datagram, valid address/port were expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>BIO_ADDR_new failed, ignoring client hello</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -770,8 +1001,16 @@ Pritisni ESC za odustajanje</translation>
         <translation>Upozorenje:</translation>
     </message>
     <message>
+        <source>Critical Error:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Fatal Error:</source>
         <translation>Kobna Greška:</translation>
+    </message>
+    <message>
+        <source>Information:</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Show this message again</source>
@@ -797,8 +1036,8 @@ Pritisni ESC za odustajanje</translation>
         <translation>Datoteka odredišta postoji</translation>
     </message>
     <message>
-        <source>Error while renaming.</source>
-        <translation>Greška tijekom preimenovanja.</translation>
+        <source>Error while renaming: %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to restore from %1: %2</source>
@@ -813,12 +1052,16 @@ Pritisni ESC za odustajanje</translation>
         <translation>Ne mogu obrisati datoteku izvora</translation>
     </message>
     <message>
+        <source>Cannot open destination file: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Cannot open %1 for input</source>
         <translation>Ne mogu otvoriti %1 za ulaz</translation>
     </message>
     <message>
-        <source>Cannot open for output</source>
-        <translation>Ne mogu otvoriti za izlaz</translation>
+        <source>Cannot open for output: %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Failure to write block</source>
@@ -835,6 +1078,10 @@ Pritisni ESC za odustajanje</translation>
         <source>No file engine available or engine does not support UnMapExtension</source>
         <translation>Datoteka engine-a nedostupna ili engine nepodržava UnMapExtension</translation>
     </message>
+    <message>
+        <source>No file engine available</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QFileDialog</name>
@@ -843,148 +1090,12 @@ Pritisni ESC za odustajanje</translation>
         <translation>Sve Datoteke (*)</translation>
     </message>
     <message>
-        <source>Directories</source>
-        <translation>Direktoriji</translation>
-    </message>
-    <message>
-        <source>&amp;Open</source>
-        <translation>&amp;Otvori</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <translation>&amp;Spremi</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation>Otvori</translation>
-    </message>
-    <message>
-        <source>%1 already exists.
-Do you want to replace it?</source>
-        <translation>%1 već postoji.
-Želite li zamijeniti?</translation>
-    </message>
-    <message>
-        <source>%1
-File not found.
-Please verify the correct file name was given.</source>
-        <translation>%1
-Datoteka ne postoji.
-Provjerite je li dan točan naziv datoteke.</translation>
-    </message>
-    <message>
-        <source>My Computer</source>
-        <translation>Moje Računalo</translation>
-    </message>
-    <message>
-        <source>&amp;Rename</source>
-        <translation>&amp;Preimenuj</translation>
-    </message>
-    <message>
-        <source>&amp;Delete</source>
-        <translation>&amp;Obriši</translation>
-    </message>
-    <message>
-        <source>Show &amp;hidden files</source>
-        <translation>Pokaži skrivene &amp;datoteke</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>Natrag</translation>
-    </message>
-    <message>
-        <source>Parent Directory</source>
-        <translation>Direktorij Roditelja</translation>
-    </message>
-    <message>
-        <source>List View</source>
-        <translation>Pogled Popisa</translation>
-    </message>
-    <message>
-        <source>Detail View</source>
-        <translation>Pogled Detalja</translation>
-    </message>
-    <message>
-        <source>Files of type:</source>
-        <translation>Datoteke vrsta:</translation>
-    </message>
-    <message>
-        <source>Directory:</source>
-        <translation>Direktorij:</translation>
-    </message>
-    <message>
-        <source>%1
-Directory not found.
-Please verify the correct directory name was given.</source>
-        <translation>%1
-Direktorij nije pronađen.
-Provjerite je li dan točan naziv direktorija.</translation>
-    </message>
-    <message>
-        <source>&apos;%1&apos; is write protected.
-Do you want to delete it anyway?</source>
-        <translation>&apos;%1&apos; je zaštićeno pisanja.
-Želite li svejedno obrisati?</translation>
-    </message>
-    <message>
-        <source>Could not delete directory.</source>
-        <translation>Ne mogu obrisati direktorij.</translation>
-    </message>
-    <message>
-        <source>Save As</source>
-        <translation>Spremi Kao</translation>
-    </message>
-    <message>
-        <source>Drive</source>
-        <translation>Pogon</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation>Datoteka</translation>
-    </message>
-    <message>
-        <source>Unknown</source>
-        <translation>Nepoznat</translation>
-    </message>
-    <message>
-        <source>Find Directory</source>
-        <translation>Pronađi Direktorij</translation>
-    </message>
-    <message>
-        <source>Show </source>
-        <translation>Pokaži </translation>
-    </message>
-    <message>
-        <source>Forward</source>
-        <translation>Naprijed</translation>
-    </message>
-    <message>
-        <source>New Folder</source>
-        <translation>Nova Mapa</translation>
-    </message>
-    <message>
-        <source>&amp;New Folder</source>
-        <translation>&amp;Nova Mapa</translation>
-    </message>
-    <message>
-        <source>&amp;Choose</source>
-        <translation>&amp;Odaberi</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation>Obriši</translation>
-    </message>
-    <message>
-        <source>File &amp;name:</source>
-        <translation>Naziv &amp;datoteke:</translation>
-    </message>
-    <message>
         <source>Look in:</source>
         <translation>Gledaj u:</translation>
     </message>
     <message>
-        <source>Create New Folder</source>
-        <translation>Napravi Novu Mapu</translation>
+        <source>Back</source>
+        <translation>Natrag</translation>
     </message>
     <message>
         <source>Go back</source>
@@ -995,12 +1106,20 @@ Do you want to delete it anyway?</source>
         <translation>Alt+Lijevo</translation>
     </message>
     <message>
+        <source>Forward</source>
+        <translation>Naprijed</translation>
+    </message>
+    <message>
         <source>Go forward</source>
         <translation>Idi naprijed</translation>
     </message>
     <message>
         <source>Alt+Right</source>
         <translation>Alt+Desno</translation>
+    </message>
+    <message>
+        <source>Parent Directory</source>
+        <translation>Direktorij Roditelja</translation>
     </message>
     <message>
         <source>Go to the parent directory</source>
@@ -1011,12 +1130,24 @@ Do you want to delete it anyway?</source>
         <translation>Alt+Gore</translation>
     </message>
     <message>
+        <source>Create New Folder</source>
+        <translation>Napravi Novu Mapu</translation>
+    </message>
+    <message>
         <source>Create a New Folder</source>
         <translation>Napravi Novu Mapu</translation>
     </message>
     <message>
+        <source>List View</source>
+        <translation>Pogled Popisa</translation>
+    </message>
+    <message>
         <source>Change to list view mode</source>
         <translation>Promijeni u način pogleda popisa</translation>
+    </message>
+    <message>
+        <source>Detail View</source>
+        <translation>Pogled Detalja</translation>
     </message>
     <message>
         <source>Change to detail view mode</source>
@@ -1035,25 +1166,137 @@ Do you want to delete it anyway?</source>
         <translation>Datoteke</translation>
     </message>
     <message>
+        <source>Files of type:</source>
+        <translation>Datoteke vrsta:</translation>
+    </message>
+    <message>
+        <source>Find Directory</source>
+        <translation>Pronađi Direktorij</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>Otvori</translation>
+    </message>
+    <message>
+        <source>Save As</source>
+        <translation>Spremi Kao</translation>
+    </message>
+    <message>
+        <source>Directory:</source>
+        <translation>Direktorij:</translation>
+    </message>
+    <message>
+        <source>File &amp;name:</source>
+        <translation>Naziv &amp;datoteke:</translation>
+    </message>
+    <message>
+        <source>&amp;Open</source>
+        <translation>&amp;Otvori</translation>
+    </message>
+    <message>
+        <source>&amp;Choose</source>
+        <translation>&amp;Odaberi</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation>&amp;Spremi</translation>
+    </message>
+    <message>
+        <source>Show </source>
+        <translation>Pokaži </translation>
+    </message>
+    <message>
+        <source>&amp;Rename</source>
+        <translation>&amp;Preimenuj</translation>
+    </message>
+    <message>
+        <source>&amp;Delete</source>
+        <translation>&amp;Obriši</translation>
+    </message>
+    <message>
+        <source>Show &amp;hidden files</source>
+        <translation>Pokaži skrivene &amp;datoteke</translation>
+    </message>
+    <message>
+        <source>&amp;New Folder</source>
+        <translation>&amp;Nova Mapa</translation>
+    </message>
+    <message>
         <source>All files (*)</source>
         <translation>Sve datoteke (*)</translation>
+    </message>
+    <message>
+        <source>Directories</source>
+        <translation>Direktoriji</translation>
+    </message>
+    <message>
+        <source>%1
+Directory not found.
+Please verify the correct directory name was given.</source>
+        <translation>%1
+Direktorij nije pronađen.
+Provjerite je li dan točan naziv direktorija.</translation>
+    </message>
+    <message>
+        <source>%1 already exists.
+Do you want to replace it?</source>
+        <translation>%1 već postoji.
+Želite li zamijeniti?</translation>
+    </message>
+    <message>
+        <source>%1
+File not found.
+Please verify the correct file name was given.</source>
+        <translation>%1
+Datoteka ne postoji.
+Provjerite je li dan točan naziv datoteke.</translation>
+    </message>
+    <message>
+        <source>New Folder</source>
+        <translation>Nova Mapa</translation>
     </message>
     <message>
         <source>Delete</source>
         <translation>Obriši</translation>
     </message>
     <message>
+        <source>&apos;%1&apos; is write protected.
+Do you want to delete it anyway?</source>
+        <translation>&apos;%1&apos; je zaštićeno pisanja.
+Želite li svejedno obrisati?</translation>
+    </message>
+    <message>
         <source>Are you sure you want to delete &apos;%1&apos;?</source>
         <translation>Jeste li sigurni da želite obrisati &apos;%1&apos;?</translation>
+    </message>
+    <message>
+        <source>Could not delete directory.</source>
+        <translation>Ne mogu obrisati direktorij.</translation>
     </message>
     <message>
         <source>Recent Places</source>
         <translation>Nedavna Mjesta</translation>
     </message>
     <message>
+        <source>Remove</source>
+        <translation>Obriši</translation>
+    </message>
+    <message>
+        <source>My Computer</source>
+        <translation>Moje Računalo</translation>
+    </message>
+    <message>
+        <source>Drive</source>
+        <translation>Pogon</translation>
+    </message>
+    <message>
         <source>%1 File</source>
         <extracomment>%1 is a file name suffix, for example txt</extracomment>
         <translation>%1 Datoteka</translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation>Datoteka</translation>
     </message>
     <message>
         <source>File Folder</source>
@@ -1075,16 +1318,20 @@ Do you want to delete it anyway?</source>
         <comment>All other platforms</comment>
         <translation>Prečac</translation>
     </message>
+    <message>
+        <source>Unknown</source>
+        <translation>Nepoznat</translation>
+    </message>
 </context>
 <context>
     <name>QFileSystemModel</name>
     <message>
-        <source>Invalid filename</source>
-        <translation>Nevažeći naziv datoteke</translation>
+        <source>&lt;b&gt;The name &quot;%1&quot; cannot be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuation marks.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;The name &quot;%1&quot; can not be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuations marks.</source>
-        <translation>&lt;b&gt; Naziv &quot;%1&quot; ne može biti korišten.&lt;/b&gt;&lt;p&gt;Pokušajte koristiti drugi naziv, s manjim znakovima ili bez interpunkcijskih znakova.</translation>
+        <source>Invalid filename</source>
+        <translation>Nevažeći naziv datoteke</translation>
     </message>
     <message>
         <source>Name</source>
@@ -1116,33 +1363,14 @@ Do you want to delete it anyway?</source>
         <source>Computer</source>
         <translation>Računalo</translation>
     </message>
-    <message>
-        <source>%1 TB</source>
-        <translation>%1 TB</translation>
-    </message>
-    <message>
-        <source>%1 GB</source>
-        <translation>%1 GB</translation>
-    </message>
-    <message>
-        <source>%1 MB</source>
-        <translation>%1 MB</translation>
-    </message>
-    <message>
-        <source>%1 KB</source>
-        <translation>%1 KB</translation>
-    </message>
-    <message>
-        <source>%1 bytes</source>
-        <translation>%1 bajtova</translation>
-    </message>
-    <message>
-        <source>%1 byte(s)</source>
-        <translation>%1 bajtova</translation>
-    </message>
 </context>
 <context>
     <name>QFontDatabase</name>
+    <message>
+        <source>Normal</source>
+        <comment>The Normal or Regular font weight</comment>
+        <translation>Normalno</translation>
+    </message>
     <message>
         <source>Bold</source>
         <translation>Podebljano</translation>
@@ -1152,17 +1380,39 @@ Do you want to delete it anyway?</source>
         <translation>Demi Podebljano</translation>
     </message>
     <message>
+        <source>Medium</source>
+        <comment>The Medium font weight</comment>
+        <translation>Srednje</translation>
+    </message>
+    <message>
         <source>Black</source>
         <translation>Crno</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Svjetlo</translation>
+    </message>
+    <message>
+        <source>Thin</source>
+        <translation>Tanko</translation>
+    </message>
+    <message>
+        <source>Extra Light</source>
+        <translation>Dodatno Svjetlo</translation>
+    </message>
+    <message>
+        <source>Extra Bold</source>
+        <translation>Dodatno Podebljano</translation>
+    </message>
+    <message>
+        <source>Extra</source>
+        <extracomment>The word for &quot;Extra&quot; as in &quot;Extra Bold, Extra Thin&quot; used as a pattern for string searches</extracomment>
+        <translation>Dodatno</translation>
     </message>
     <message>
         <source>Demi</source>
         <extracomment>The word for &quot;Demi&quot; as in &quot;Demi Bold&quot; used as a pattern for string searches</extracomment>
         <translation>Demi</translation>
-    </message>
-    <message>
-        <source>Light</source>
-        <translation>Svjetlo</translation>
     </message>
     <message>
         <source>Italic</source>
@@ -1305,39 +1555,16 @@ Do you want to delete it anyway?</source>
         <translation>Runski</translation>
     </message>
     <message>
-        <source>Normal</source>
-        <comment>The Normal or Regular font weight</comment>
-        <translation>Normalno</translation>
-    </message>
-    <message>
-        <source>Medium</source>
-        <comment>The Medium font weight</comment>
-        <translation>Srednje</translation>
-    </message>
-    <message>
-        <source>Thin</source>
-        <translation>Tanko</translation>
-    </message>
-    <message>
-        <source>Extra Light</source>
-        <translation>Dodatno Svjetlo</translation>
-    </message>
-    <message>
-        <source>Extra Bold</source>
-        <translation>Dodatno Podebljano</translation>
-    </message>
-    <message>
-        <source>Extra</source>
-        <extracomment>The word for &quot;Extra&quot; as in &quot;Extra Bold, Extra Thin&quot; used as a pattern for string searches</extracomment>
-        <translation>Dodatno</translation>
-    </message>
-    <message>
         <source>N&apos;Ko</source>
         <translation>N&apos;Ko</translation>
     </message>
 </context>
 <context>
     <name>QFontDialog</name>
+    <message>
+        <source>Select Font</source>
+        <translation>Odaberi Font</translation>
+    </message>
     <message>
         <source>&amp;Font</source>
         <translation>&amp;Font</translation>
@@ -1370,10 +1597,6 @@ Do you want to delete it anyway?</source>
         <source>Wr&amp;iting System</source>
         <translation>Sustav Pis&amp;anja</translation>
     </message>
-    <message>
-        <source>Select Font</source>
-        <translation>Odaberi Font</translation>
-    </message>
 </context>
 <context>
     <name>QFtp</name>
@@ -1390,8 +1613,16 @@ Do you want to delete it anyway?</source>
         <translation>Veza odbijena na domaćina %1</translation>
     </message>
     <message>
+        <source>Connection timed out to host %1</source>
+        <translation>Isteklo je vrijeme veze na domaćin %1</translation>
+    </message>
+    <message>
         <source>Connected to host %1</source>
         <translation>Spojen na domaćina %1</translation>
+    </message>
+    <message>
+        <source>Data Connection refused</source>
+        <translation>Podatkovna veza odbijena</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -1455,14 +1686,6 @@ Do you want to delete it anyway?</source>
         <source>Connection closed</source>
         <translation>Veza zatvorena</translation>
     </message>
-    <message>
-        <source>Connection timed out to host %1</source>
-        <translation>Isteklo je vrijeme veze na domaćin %1</translation>
-    </message>
-    <message>
-        <source>Data Connection refused</source>
-        <translation>Podatkovna veza odbijena</translation>
-    </message>
 </context>
 <context>
     <name>QGnomeTheme</name>
@@ -1494,32 +1717,88 @@ Do you want to delete it anyway?</source>
         <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
         <translation>LTR</translation>
     </message>
+    <message>
+        <source>QPA plugin. See QGuiApplication documentation for available options for each plugin.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path to the platform plugins.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Platform theme.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Additional plugins to load, can be specified multiple times.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Window geometry for the main window, using the X11-syntax, like 100x100+50+50.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default window icon.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Title of the first window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sets the application&apos;s layout direction to Qt::RightToLeft (debugging helper).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restores the application from an earlier session.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display name, overrides $DISPLAY.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Instance name according to ICCCM 4.1.2.5.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable mouse grabbing (useful in debuggers).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Force mouse grabbing (even when running in a debugger).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ID of the X11 Visual to use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowgeometry.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowicon.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowtitle.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QHostInfo</name>
     <message>
-        <source>Unknown error</source>
-        <translation>Nepoznata greška</translation>
-    </message>
-    <message>
         <source>No host name given</source>
         <translation>Nije dan naziv domaćina</translation>
+    </message>
+    <message>
+        <source>Unknown error</source>
+        <translation>Nepoznata greška</translation>
     </message>
 </context>
 <context>
     <name>QHostInfoAgent</name>
-    <message>
-        <source>Host not found</source>
-        <translation>Domaćin nije pronađen</translation>
-    </message>
-    <message>
-        <source>Unknown address type</source>
-        <translation>Nepoznata vrsta adrese</translation>
-    </message>
-    <message>
-        <source>Unknown error</source>
-        <translation>Nepoznata greška</translation>
-    </message>
     <message>
         <source>No host name given</source>
         <translation>Nije dan naziv domaćina</translation>
@@ -1529,23 +1808,27 @@ Do you want to delete it anyway?</source>
         <translation>Nevažeći naziv domaćina</translation>
     </message>
     <message>
-        <source>Unknown error (%1)</source>
-        <translation>Nepoznata greška (%1)</translation>
+        <source>Unknown address type</source>
+        <translation>Nepoznata vrsta adrese</translation>
+    </message>
+    <message>
+        <source>Host not found</source>
+        <translation>Domaćin nije pronađen</translation>
     </message>
 </context>
 <context>
     <name>QHttp</name>
     <message>
-        <source>Connection refused</source>
-        <translation>Veza odbijena</translation>
+        <source>Connection closed</source>
+        <translation>Veza zatvorena</translation>
     </message>
     <message>
         <source>Host %1 not found</source>
         <translation>Domaćin %1 nije pronađen</translation>
     </message>
     <message>
-        <source>Connection closed</source>
-        <translation>Veza zatvorena</translation>
+        <source>Connection refused</source>
+        <translation>Veza odbijena</translation>
     </message>
     <message>
         <source>Proxy requires authentication</source>
@@ -1579,16 +1862,16 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QHttpSocketEngine</name>
     <message>
-        <source>Authentication required</source>
-        <translation>Zahtijevana ovjera</translation>
-    </message>
-    <message>
         <source>Did not receive HTTP response from proxy</source>
         <translation>Nije dobijen odgovor HTTP-a od proxy-a</translation>
     </message>
     <message>
         <source>Error parsing authentication request from proxy</source>
         <translation>Greška prilikom parsiranja ovjernog zahtjeva od proxy-a</translation>
+    </message>
+    <message>
+        <source>Authentication required</source>
+        <translation>Zahtijevana ovjera</translation>
     </message>
     <message>
         <source>Proxy denied connection</source>
@@ -1708,6 +1991,14 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QIODevice</name>
     <message>
+        <source>file to open is a directory</source>
+        <translation>datoteka za otvaranje je direktorij</translation>
+    </message>
+    <message>
+        <source>Unknown error</source>
+        <translation>Nepoznata greška</translation>
+    </message>
+    <message>
         <source>Permission denied</source>
         <translation>Dopuštenje odbijeno</translation>
     </message>
@@ -1722,14 +2013,6 @@ Do you want to delete it anyway?</source>
     <message>
         <source>No space left on device</source>
         <translation>Nema mjesta na uređaju</translation>
-    </message>
-    <message>
-        <source>Unknown error</source>
-        <translation>Nepoznata greška</translation>
-    </message>
-    <message>
-        <source>file to open is a directory</source>
-        <translation>datoteka za otvaranje je direktorij</translation>
     </message>
 </context>
 <context>
@@ -1766,12 +2049,20 @@ Do you want to delete it anyway?</source>
         <translation>Uređaj nije postavljen</translation>
     </message>
     <message>
+        <source>Cannot open device for writing: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Device not writable</source>
         <translation>Uređaj nije za pisanje</translation>
     </message>
     <message>
         <source>Unsupported image format</source>
         <translation>Nepodržani format slike</translation>
+    </message>
+    <message>
+        <source>Image is empty</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1859,28 +2150,12 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QLibrary</name>
     <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
-        <translation>Dodatak &apos;%1&apos; koristi nekompatibilnu Qt biblioteku (%2.%3.%4) [%5]</translation>
-    </message>
-    <message>
-        <source>Unknown error</source>
-        <translation>Nepoznata greška</translation>
-    </message>
-    <message>
-        <source>The shared library was not found.</source>
-        <translation>Dijeljena biblioteka nije pronađena.</translation>
-    </message>
-    <message>
-        <source>The file &apos;%1&apos; is not a valid Qt plugin.</source>
-        <translation>Datoteka &apos;%1&apos; nije važeći Qt dodatak.</translation>
-    </message>
-    <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
-        <translation>Dodatak &apos;%1&apos; koristi nekompatibilnu Qt biblioteku. (Ne može miješati debug i release biblioteke.)</translation>
-    </message>
-    <message>
         <source>&apos;%1&apos; is not an ELF object (%2)</source>
         <translation>&apos;%1&apos; nije ELF objekt (%2)</translation>
+    </message>
+    <message>
+        <source>file too small</source>
+        <translation>datoteka je premala</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is not an ELF object</source>
@@ -1891,8 +2166,76 @@ Do you want to delete it anyway?</source>
         <translation>&apos;%1&apos; je nevažeći ELF objekt (%2)</translation>
     </message>
     <message>
+        <source>odd cpu architecture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>wrong cpu architecture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>odd endianness</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unexpected e_shsize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unexpected e_shentsize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>announced %n section(s), each %1 byte(s), exceed file size</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>shstrtab section header seems to be at %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>string table seems to be at %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>section name %1 of %2 behind end of file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>empty .rodata. not a library.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>missing section data. This is not a library.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Failed to extract plugin meta data from &apos;%1&apos;</source>
         <translation>Neuspjeh prilikom izvoda meta podataka dodatka iz &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>The shared library was not found.</source>
+        <translation>Dijeljena biblioteka nije pronađena.</translation>
+    </message>
+    <message>
+        <source>The file &apos;%1&apos; is not a valid Qt plugin.</source>
+        <translation>Datoteka &apos;%1&apos; nije važeći Qt dodatak.</translation>
+    </message>
+    <message>
+        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
+        <translation>Dodatak &apos;%1&apos; koristi nekompatibilnu Qt biblioteku (%2.%3.%4) [%5]</translation>
+    </message>
+    <message>
+        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
+        <translation>Dodatak &apos;%1&apos; koristi nekompatibilnu Qt biblioteku. (Ne može miješati debug i release biblioteke.)</translation>
+    </message>
+    <message>
+        <source>Unknown error</source>
+        <translation>Nepoznata greška</translation>
     </message>
     <message>
         <source>Cannot load library %1: %2</source>
@@ -1903,20 +2246,12 @@ Do you want to delete it anyway?</source>
         <translation>Ne mogu de-čitati biblioteku %1: %2</translation>
     </message>
     <message>
-        <source>Cannot resolve symbol &quot;%1&quot; in %2: %3</source>
-        <translation>Ne mogu riješiti simbol &quot;%1&quot; u %2: %3</translation>
-    </message>
-    <message>
         <source>&apos;%1&apos; is not a valid Mach-O binary (%2)</source>
         <translation>&apos;%1&apos; nije važeći Mach-O binary (%2)</translation>
     </message>
     <message>
         <source>file is corrupt</source>
         <translation>datoteka je pokvarena</translation>
-    </message>
-    <message>
-        <source>file too small</source>
-        <translation>datoteka je premala</translation>
     </message>
     <message>
         <source>no suitable architecture in fat binary</source>
@@ -2028,10 +2363,6 @@ Do you want to delete it anyway?</source>
         <translation>%1: Postupak utičnice nije podržan</translation>
     </message>
     <message>
-        <source>%1: Unknown error %2</source>
-        <translation>%1: Nepoznata greška %2</translation>
-    </message>
-    <message>
         <source>%1: Operation not permitted when socket is in this state</source>
         <translation>%1: Postupak nije dopušten kad je utičnica u ovom stanju</translation>
     </message>
@@ -2044,12 +2375,28 @@ Do you want to delete it anyway?</source>
         <translation>Pokušavati spojiti dok veza traje</translation>
     </message>
     <message>
+        <source>%1: Unknown error %2</source>
+        <translation>%1: Nepoznata greška %2</translation>
+    </message>
+    <message>
         <source>%1: Access denied</source>
         <translation>%1: Pristup odbijen</translation>
+    </message>
+    <message>
+        <source>Socket is not connected</source>
+        <translation type="unfinished">Utičnica nije spojena</translation>
     </message>
 </context>
 <context>
     <name>QMYSQLDriver</name>
+    <message>
+        <source>Unable to allocate a MYSQL object</source>
+        <translation>Nije moguće dodijeliti MYSQL objekt</translation>
+    </message>
+    <message>
+        <source>Unable to open database &apos;%1&apos;</source>
+        <translation>Nije moguće otvoriti bazu podataka &apos;%1&apos;</translation>
+    </message>
     <message>
         <source>Unable to connect</source>
         <translation>Nije moguće uspostaviti vezu</translation>
@@ -2066,14 +2413,6 @@ Do you want to delete it anyway?</source>
         <source>Unable to rollback transaction</source>
         <translation>Nije moguće vratiti transakciju na staro</translation>
     </message>
-    <message>
-        <source>Unable to allocate a MYSQL object</source>
-        <translation>Nije moguće dodijeliti MYSQL objekt</translation>
-    </message>
-    <message>
-        <source>Unable to open database &apos;%1&apos;</source>
-        <translation>Nije moguće otvoriti bazu podataka &apos;%1&apos;</translation>
-    </message>
 </context>
 <context>
     <name>QMYSQLResult</name>
@@ -2088,6 +2427,14 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Unable to store result</source>
         <translation>Nije moguće pohraniti rezultate</translation>
+    </message>
+    <message>
+        <source>Unable to execute next query</source>
+        <translation>Nije moguće izvršiti sljedeći upit</translation>
+    </message>
+    <message>
+        <source>Unable to store next result</source>
+        <translation>Nije moguće pohraniti sljedeće rezultate</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
@@ -2113,14 +2460,6 @@ Do you want to delete it anyway?</source>
         <source>Unable to store statement results</source>
         <translation>Nije moguće pohraniti rezultate izjave</translation>
     </message>
-    <message>
-        <source>Unable to execute next query</source>
-        <translation>Nije moguće izvršiti sljedeći upit</translation>
-    </message>
-    <message>
-        <source>Unable to store next result</source>
-        <translation>Nije moguće pohraniti sljedeće rezultate</translation>
-    </message>
 </context>
 <context>
     <name>QMdiArea</name>
@@ -2132,20 +2471,48 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QMdiSubWindow</name>
     <message>
-        <source>%1 - [%2]</source>
-        <translation>%1 - [%2]</translation>
+        <source>- [%1]</source>
+        <translation>- [%1]</translation>
     </message>
     <message>
-        <source>Close</source>
-        <translation>Zatvori</translation>
+        <source>%1 - [%2]</source>
+        <translation>%1 - [%2]</translation>
     </message>
     <message>
         <source>Minimize</source>
         <translation>Minimiziraj</translation>
     </message>
     <message>
+        <source>Maximize</source>
+        <translation>Maksimiziraj</translation>
+    </message>
+    <message>
+        <source>Unshade</source>
+        <translation>Makni sjenu</translation>
+    </message>
+    <message>
+        <source>Shade</source>
+        <translation>Sjena</translation>
+    </message>
+    <message>
         <source>Restore Down</source>
         <translation>Vrati Dolje</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>Vrati</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Zatvori</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation>Pomoć</translation>
+    </message>
+    <message>
+        <source>Menu</source>
+        <translation>Izbornik</translation>
     </message>
     <message>
         <source>&amp;Restore</source>
@@ -2175,49 +2542,9 @@ Do you want to delete it anyway?</source>
         <source>&amp;Close</source>
         <translation>&amp;Zatvori</translation>
     </message>
-    <message>
-        <source>- [%1]</source>
-        <translation>- [%1]</translation>
-    </message>
-    <message>
-        <source>Maximize</source>
-        <translation>Maksimiziraj</translation>
-    </message>
-    <message>
-        <source>Unshade</source>
-        <translation>Makni sjenu</translation>
-    </message>
-    <message>
-        <source>Shade</source>
-        <translation>Sjena</translation>
-    </message>
-    <message>
-        <source>Restore</source>
-        <translation>Vrati</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation>Pomoć</translation>
-    </message>
-    <message>
-        <source>Menu</source>
-        <translation>Izbornik</translation>
-    </message>
 </context>
 <context>
     <name>QMessageBox</name>
-    <message>
-        <source>Help</source>
-        <translation>Pomoć</translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation>U redu</translation>
-    </message>
-    <message>
-        <source>About Qt</source>
-        <translation>O Qt-u</translation>
-    </message>
     <message>
         <source>Show Details...</source>
         <translation>Pokaži Detalje...</translation>
@@ -2231,12 +2558,29 @@ Do you want to delete it anyway?</source>
         <translation>&lt;h3&gt;O Qt-u&lt;/h3&gt;&lt;p&gt;Ovaj program koristi Qt verzije %1.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 3 or GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 3 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 3.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Qt je C++ alat za cross-platform razvijanje aplikacija.&lt;/p&gt;&lt;p&gt;Qt pruža single-source portabilnost preko svih glavnih stolnih operativnih sustava. Također je dostupno za ugrađeni Linux i ostale ugrađene i mobilne operativne sustave.&lt;/p&gt;&lt;p&gt;Qt je dostupan pod tri različita opcija licenciranja dizajnirana prilagođavanju potrebama naših različitih korisnika.&lt;/p&gt;&lt;p&gt;Qt licenciran pod našom komercijalnom licencnom sporazumu je prikladan za razvijanje vlasničkih/komerijalnih softvera gdje ne želite dijeliti nikakav source-code s trećim osobama ili drugačije ne u skladu s pojmovima GNU LGPL verzije 3 ili GNU LGPL verzije 2.1.&lt;/p&gt;&lt;p&gt;Qt licenciran pod GNU LGPL verzije 3 je prikladan za razvoj Qt&amp;nbsp;aplikacija ako je u skladu s uvjetima i odredbama GNU LGPL verzije 3.&lt;/p&gt;&lt;p&gt;Qt licenciran pod GNU LGPL verzija 2.1 je prikladan za razvoj Qt&amp;nbsp;aplikacija ako je u skladu s uvjetima i odredbama GNU LGPL verzije 2.1.&lt;/p&gt;&lt;p&gt;Vidite &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; za pregled Qt licenciranja.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under multiple licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of GNU (L)GPL.&lt;/p&gt;&lt;p&gt;Qt licensed under GNU (L)GPL is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the respective licenses.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <extracomment>Leave this text untranslated or include a verbatim copy of it below and note that it is the authoritative version in case of doubt.</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>About Qt</source>
+        <translation>O Qt-u</translation>
     </message>
 </context>
 <context>
     <name>QNativeSocketEngine</name>
+    <message>
+        <source>Unable to initialize non-blocking socket</source>
+        <translation>Inicijalizacija ne-blokiranu utičnicu nije moguća</translation>
+    </message>
+    <message>
+        <source>Unable to initialize broadcast socket</source>
+        <translation>Inicijalizacija odašiljenu utičnicu nije moguća</translation>
+    </message>
+    <message>
+        <source>Attempt to use IPv6 socket on a platform with no IPv6 support</source>
+        <translation>Pokušaj za korištenje IPv6 utičnice na platofrmi bez IPv6 podrške</translation>
+    </message>
     <message>
         <source>The remote host closed the connection</source>
         <translation>Udaljeni domaćin je zatvorio vezu</translation>
@@ -2260,6 +2604,10 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Invalid socket descriptor</source>
         <translation>Nevažeći deskriptor utičnice</translation>
+    </message>
+    <message>
+        <source>Host unreachable</source>
+        <translation>Domaćin nedostupan</translation>
     </message>
     <message>
         <source>Network unreachable</source>
@@ -2290,6 +2638,10 @@ Do you want to delete it anyway?</source>
         <translation>Adresa je zaštićena</translation>
     </message>
     <message>
+        <source>Datagram was too large to send</source>
+        <translation>Datagram je prevelik za slanje</translation>
+    </message>
+    <message>
         <source>Unable to send a message</source>
         <translation>Nije moguće poslati poruku</translation>
     </message>
@@ -2310,32 +2662,8 @@ Do you want to delete it anyway?</source>
         <translation>Druga utičnica već sluša na isti priključak</translation>
     </message>
     <message>
-        <source>Unable to initialize non-blocking socket</source>
-        <translation>Inicijalizacija ne-blokiranu utičnicu nije moguća</translation>
-    </message>
-    <message>
-        <source>Unable to initialize broadcast socket</source>
-        <translation>Inicijalizacija odašiljenu utičnicu nije moguća</translation>
-    </message>
-    <message>
-        <source>Attempt to use IPv6 socket on a platform with no IPv6 support</source>
-        <translation>Pokušaj za korištenje IPv6 utičnice na platofrmi bez IPv6 podrške</translation>
-    </message>
-    <message>
-        <source>Host unreachable</source>
-        <translation>Domaćin nedostupan</translation>
-    </message>
-    <message>
-        <source>Datagram was too large to send</source>
-        <translation>Datagram je prevelik za slanje</translation>
-    </message>
-    <message>
         <source>Operation on non-socket</source>
         <translation>Postupak na ne-utičnici</translation>
-    </message>
-    <message>
-        <source>Unknown error</source>
-        <translation>Nepoznata greška</translation>
     </message>
     <message>
         <source>The proxy type is invalid for this operation</source>
@@ -2352,6 +2680,10 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Connection reset by peer</source>
         <translation>Veza resetirana od strane klijenta</translation>
+    </message>
+    <message>
+        <source>Unknown error</source>
+        <translation>Nepoznata greška</translation>
     </message>
 </context>
 <context>
@@ -2409,6 +2741,10 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QNetworkAccessFtpBackend</name>
     <message>
+        <source>No suitable proxy found</source>
+        <translation>Nijedan pogodan proxy pronađen</translation>
+    </message>
+    <message>
         <source>Cannot open %1: is a directory</source>
         <translation>Ne mogu otvoriti %1: je direktorij</translation>
     </message>
@@ -2424,35 +2760,20 @@ Do you want to delete it anyway?</source>
         <source>Error while uploading %1: %2</source>
         <translation>Greška prilikom stavljanja %1: %2</translation>
     </message>
-    <message>
-        <source>No suitable proxy found</source>
-        <translation>Nijedan pogodan proxy pronađen</translation>
-    </message>
-</context>
-<context>
-    <name>QNetworkAccessManager</name>
-    <message>
-        <source>Network access is disabled.</source>
-        <translation>Mrežni pristup je onemogućen.</translation>
-    </message>
 </context>
 <context>
     <name>QNetworkReply</name>
-    <message>
-        <source>Protocol &quot;%1&quot; is unknown</source>
-        <translation>Protokol &quot;%1&quot; je nepoznat</translation>
-    </message>
     <message>
         <source>Error transferring %1 - server replied: %2</source>
         <translation>Greška prilikom prijenosa %1 - server odgovorio: %2</translation>
     </message>
     <message>
-        <source>Background request not allowed.</source>
-        <translation>Pozadinski zahtjev nije dopušten.</translation>
-    </message>
-    <message>
         <source>Network session error.</source>
         <translation>Greška u mrežnoj sesiji.</translation>
+    </message>
+    <message>
+        <source>Background request not allowed.</source>
+        <translation>Pozadinski zahtjev nije dopušten.</translation>
     </message>
     <message>
         <source>backend start error.</source>
@@ -2461,6 +2782,10 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Temporary network failure.</source>
         <translation>Privremena mrežna pogreška.</translation>
+    </message>
+    <message>
+        <source>Protocol &quot;%1&quot; is unknown</source>
+        <translation>Protokol &quot;%1&quot; je nepoznat</translation>
     </message>
 </context>
 <context>
@@ -2514,13 +2839,13 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QOCIDriver</name>
     <message>
-        <source>Unable to logon</source>
-        <translation>Prijava nije moguća</translation>
-    </message>
-    <message>
         <source>Unable to initialize</source>
         <comment>QOCIDriver</comment>
         <translation>Inicijalizacija nije moguća</translation>
+    </message>
+    <message>
+        <source>Unable to logon</source>
+        <translation>Prijava nije moguća</translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
@@ -2558,6 +2883,10 @@ Do you want to delete it anyway?</source>
         <translation>Nije moguće pripremiti izjavu</translation>
     </message>
     <message>
+        <source>Unable to get statement type</source>
+        <translation>Nije moguće dobiti vrstu izjave</translation>
+    </message>
+    <message>
         <source>Unable to bind value</source>
         <translation>Nije moguće pridružiti vrijednost</translation>
     </message>
@@ -2565,16 +2894,16 @@ Do you want to delete it anyway?</source>
         <source>Unable to execute statement</source>
         <translation>Nije moguće izvršiti izjavu</translation>
     </message>
-    <message>
-        <source>Unable to get statement type</source>
-        <translation>Nije moguće dobiti vrstu izjave</translation>
-    </message>
 </context>
 <context>
     <name>QODBCDriver</name>
     <message>
         <source>Unable to connect</source>
         <translation>Nije moguće uspostaviti vezu</translation>
+    </message>
+    <message>
+        <source>Unable to connect - Driver doesn&apos;t support all functionality required</source>
+        <translation>Nije moguće uspostaviti vezu - Driver ne podržava sve potrebne funkcije</translation>
     </message>
     <message>
         <source>Unable to disable autocommit</source>
@@ -2592,10 +2921,6 @@ Do you want to delete it anyway?</source>
         <source>Unable to enable autocommit</source>
         <translation>Nije moguće omogućiti auto-počinjavanje</translation>
     </message>
-    <message>
-        <source>Unable to connect - Driver doesn&apos;t support all functionality required</source>
-        <translation>Nije moguće uspostaviti vezu - Driver ne podržava sve potrebne funkcije</translation>
-    </message>
 </context>
 <context>
     <name>QODBCResult</name>
@@ -2608,24 +2933,12 @@ Do you want to delete it anyway?</source>
         <translation>Nije moguće izvršiti izjavu</translation>
     </message>
     <message>
-        <source>Unable to fetch next</source>
-        <translation>Nije moguće dohvatiti sljedeće</translation>
-    </message>
-    <message>
-        <source>Unable to prepare statement</source>
-        <translation>Nije moguće pripremiti izjavu</translation>
-    </message>
-    <message>
-        <source>Unable to bind variable</source>
-        <translation>Nije moguće pridružiti varijablu</translation>
-    </message>
-    <message>
-        <source>Unable to fetch last</source>
-        <translation>Nije moguće dohvatiti zadnje</translation>
-    </message>
-    <message>
         <source>Unable to fetch</source>
         <translation>Nije moguće dohvatiti</translation>
+    </message>
+    <message>
+        <source>Unable to fetch next</source>
+        <translation>Nije moguće dohvatiti sljedeće</translation>
     </message>
     <message>
         <source>Unable to fetch first</source>
@@ -2634,6 +2947,18 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Unable to fetch previous</source>
         <translation>Nije moguće dohvatiti prethodno</translation>
+    </message>
+    <message>
+        <source>Unable to fetch last</source>
+        <translation>Nije moguće dohvatiti zadnje</translation>
+    </message>
+    <message>
+        <source>Unable to prepare statement</source>
+        <translation>Nije moguće pripremiti izjavu</translation>
+    </message>
+    <message>
+        <source>Unable to bind variable</source>
+        <translation>Nije moguće pridružiti varijablu</translation>
     </message>
 </context>
 <context>
@@ -2666,8 +2991,20 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QPSQLResult</name>
     <message>
+        <source>Query results lost - probably discarded on executing another SQL query.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unable to create query</source>
         <translation>Nije moguće napraviti upit</translation>
+    </message>
+    <message>
+        <source>Unable to get result</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to send query</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
@@ -2676,18 +3013,6 @@ Do you want to delete it anyway?</source>
 </context>
 <context>
     <name>QPageSetupWidget</name>
-    <message>
-        <source>Millimeters (mm)</source>
-        <translation>Milimetara (mm)</translation>
-    </message>
-    <message>
-        <source>Inches (in)</source>
-        <translation>Inča (in)</translation>
-    </message>
-    <message>
-        <source>Points (pt)</source>
-        <translation>Točka (tč)</translation>
-    </message>
     <message>
         <source>Form</source>
         <translation>Forma</translation>
@@ -2763,6 +3088,18 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Pages per sheet:</source>
         <translation>Stranica po listu:</translation>
+    </message>
+    <message>
+        <source>Millimeters (mm)</source>
+        <translation>Milimetara (mm)</translation>
+    </message>
+    <message>
+        <source>Inches (in)</source>
+        <translation>Inča (in)</translation>
+    </message>
+    <message>
+        <source>Points (pt)</source>
+        <translation>Točka (tč)</translation>
     </message>
     <message>
         <source>Pica (P̸)</source>
@@ -3367,58 +3704,16 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QPluginLoader</name>
     <message>
-        <source>Unknown error</source>
-        <translation>Nepoznata greška</translation>
-    </message>
-    <message>
         <source>The plugin was not loaded.</source>
         <translation>Dodatak nije učitan.</translation>
+    </message>
+    <message>
+        <source>Unknown error</source>
+        <translation>Nepoznata greška</translation>
     </message>
 </context>
 <context>
     <name>QPrintDialog</name>
-    <message>
-        <source>Print To File ...</source>
-        <translation>Printaj U Datoteku...</translation>
-    </message>
-    <message>
-        <source>File %1 is not writable.
-Please choose a different file name.</source>
-        <translation>Datoteka %1 nije za pisanje.
-Odaberite drugačije ime datoteke.</translation>
-    </message>
-    <message>
-        <source>%1 already exists.
-Do you want to overwrite it?</source>
-        <translation>%1 već postoji.
-Želite li pisati preko?</translation>
-    </message>
-    <message>
-        <source>%1 is a directory.
-Please choose a different file name.</source>
-        <translation>%1 je direktorij.
-Odaberite drugačije ime datoteke.</translation>
-    </message>
-    <message>
-        <source>&amp;Options &gt;&gt;</source>
-        <translation>&amp;Opcije &gt;&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Print</source>
-        <translation>&amp;Printaj</translation>
-    </message>
-    <message>
-        <source>&amp;Options &lt;&lt;</source>
-        <translation>&amp;Opcije &lt;&lt;</translation>
-    </message>
-    <message>
-        <source>Print to File (PDF)</source>
-        <translation>Printaj u Datoteku (PDF)</translation>
-    </message>
-    <message>
-        <source>Local file</source>
-        <translation>Lokalna datoteka</translation>
-    </message>
     <message>
         <source>Print</source>
         <translation>Printaj</translation>
@@ -3492,8 +3787,66 @@ Odaberite drugačije ime datoteke.</translation>
         <translation>Parne Stranice</translation>
     </message>
     <message>
+        <source>&amp;Options &gt;&gt;</source>
+        <translation>&amp;Opcije &gt;&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Print</source>
+        <translation>&amp;Printaj</translation>
+    </message>
+    <message>
+        <source>&amp;Options &lt;&lt;</source>
+        <translation>&amp;Opcije &lt;&lt;</translation>
+    </message>
+    <message>
+        <source>Invalid Pages Definition</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 does not follow the correct syntax. Please use &apos;,&apos; to separate ranges and pages, &apos;-&apos; to define ranges and make sure ranges do not intersect with each other.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplex Settings Conflicts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in duplex settings. Do you want to fix them?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Print to File (PDF)</source>
+        <translation>Printaj u Datoteku (PDF)</translation>
+    </message>
+    <message>
+        <source>Local file</source>
+        <translation>Lokalna datoteka</translation>
+    </message>
+    <message>
         <source>Write PDF file</source>
         <translation>Napravi PDF datoteku</translation>
+    </message>
+    <message>
+        <source>Print To File ...</source>
+        <translation>Printaj U Datoteku...</translation>
+    </message>
+    <message>
+        <source>%1 is a directory.
+Please choose a different file name.</source>
+        <translation>%1 je direktorij.
+Odaberite drugačije ime datoteke.</translation>
+    </message>
+    <message>
+        <source>File %1 is not writable.
+Please choose a different file name.</source>
+        <translation>Datoteka %1 nije za pisanje.
+Odaberite drugačije ime datoteke.</translation>
+    </message>
+    <message>
+        <source>%1 already exists.
+Do you want to overwrite it?</source>
+        <translation>%1 već postoji.
+Želite li pisati preko?</translation>
     </message>
     <message>
         <source>Options &apos;Pages Per Sheet&apos; and &apos;Page Set&apos; cannot be used together.
@@ -3509,16 +3862,16 @@ Isključite jednu od opcija.</translation>
         <source>OK</source>
         <translation>U redu</translation>
     </message>
-    <message>
-        <source>Automatic</source>
-        <translation>Automatski</translation>
-    </message>
 </context>
 <context>
     <name>QPrintPreviewDialog</name>
     <message>
         <source>Page Setup</source>
         <translation>Postavljanje Stranice</translation>
+    </message>
+    <message>
+        <source>%1%</source>
+        <translation>%1%</translation>
     </message>
     <message>
         <source>Print Preview</source>
@@ -3585,10 +3938,6 @@ Isključite jednu od opcija.</translation>
         <translation>Postavljanje stranice</translation>
     </message>
     <message>
-        <source>%1%</source>
-        <translation>%1%</translation>
-    </message>
-    <message>
         <source>Export to PDF</source>
         <translation>Izvezi u PDF</translation>
     </message>
@@ -3603,6 +3952,22 @@ Isključite jednu od opcija.</translation>
         <source>Job Options</source>
         <translation>Opcije Posla</translation>
     </message>
+    <message>
+        <source>Page Setup Conflicts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in page setup options. Do you want to fix them?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Advanced Option Conflicts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in some advanced options. Do you want to fix them?</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QPrintPropertiesWidget</name>
@@ -3613,6 +3978,14 @@ Isključite jednu od opcija.</translation>
     <message>
         <source>Page</source>
         <translation>Stranica</translation>
+    </message>
+    <message>
+        <source>Advanced</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are conflicts in some options. Please fix them.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3642,8 +4015,24 @@ Isključite jednu od opcija.</translation>
         <translation>do</translation>
     </message>
     <message>
+        <source>Pages</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specify pages or ranges separated by commas. Ranges are specified by two numbers separated by a hyphen. E.g: 3,5-7,9 prints pages 3, 5, 6, 7 and 9.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current Page</source>
+        <translation>Trenutna Stranica</translation>
+    </message>
+    <message>
         <source>Selection</source>
         <translation>Odabir</translation>
+    </message>
+    <message>
+        <source>Page Set:</source>
+        <translation>Postavljanje Stranice:</translation>
     </message>
     <message>
         <source>Output Settings</source>
@@ -3678,28 +4067,20 @@ Isključite jednu od opcija.</translation>
         <translation>Sivo</translation>
     </message>
     <message>
-        <source>Duplex Printing</source>
-        <translation>Printanje Duplexom</translation>
+        <source>Double Sided Printing</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>None</source>
-        <translation>Nema</translation>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Long side</source>
-        <translation>Duža strana</translation>
+        <source>Long side binding</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Short side</source>
-        <translation>Kraća strana</translation>
-    </message>
-    <message>
-        <source>Current Page</source>
-        <translation>Trenutna Stranica</translation>
-    </message>
-    <message>
-        <source>Page Set:</source>
-        <translation>Postavljanje Stranice:</translation>
+        <source>Short side binding</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3792,20 +4173,6 @@ Isključite jednu od opcija.</translation>
     </message>
 </context>
 <context>
-    <name>QQnxFileDialogHelper</name>
-    <message>
-        <source>All files (*.*)</source>
-        <translation>Sve datoteke (*.*)</translation>
-    </message>
-</context>
-<context>
-    <name>QQnxFilePicker</name>
-    <message>
-        <source>Pick a file</source>
-        <translation>Odaberi datoteku</translation>
-    </message>
-</context>
-<context>
     <name>QRegExp</name>
     <message>
         <source>no error occurred</source>
@@ -3822,6 +4189,10 @@ Isključite jednu od opcija.</translation>
     <message>
         <source>bad lookahead syntax</source>
         <translation>bad lookahead syntax</translation>
+    </message>
+    <message>
+        <source>lookbehinds not supported, see QTBUG-2371</source>
+        <translation>lookbehindovi nisu podržani, vidi QTBUG-2371</translation>
     </message>
     <message>
         <source>bad repetition syntax</source>
@@ -3842,10 +4213,6 @@ Isključite jednu od opcija.</translation>
     <message>
         <source>met internal limit</source>
         <translation>zadovoljeno unutarnje ograničenje</translation>
-    </message>
-    <message>
-        <source>lookbehinds not supported, see QTBUG-2371</source>
-        <translation>lookbehindovi nisu podržani, vidi QTBUG-2371</translation>
     </message>
     <message>
         <source>invalid interval</source>
@@ -3887,16 +4254,16 @@ Isključite jednu od opcija.</translation>
         <translation>nedostaje terminirajući ] za znakovnu klasu</translation>
     </message>
     <message>
-        <source>invalid escape sequence in character class</source>
-        <translation>nevažeći escape slijed u znakovnoj klasi</translation>
+        <source>escape sequence is invalid in character class</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>range out of order in character class</source>
         <translation>opseg izvan reda u znakovnoj klasi</translation>
     </message>
     <message>
-        <source>nothing to repeat</source>
-        <translation>ništa za ponavljanje</translation>
+        <source>quantifier does not follow a repeatable item</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>internal error: unexpected repeat</source>
@@ -3911,124 +4278,136 @@ Isključite jednu od opcija.</translation>
         <translation>POSIX nazvane klase su podržane samo unutar klase</translation>
     </message>
     <message>
-        <source>missing )</source>
-        <translation>nedostaje )</translation>
+        <source>POSIX collating elements are not supported</source>
+        <translation>POSIX sređivati elemente nije podržano</translation>
+    </message>
+    <message>
+        <source>missing closing parenthesis</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>reference to non-existent subpattern</source>
         <translation>referenca na nepostojeći sub-uzorak</translation>
     </message>
     <message>
-        <source>erroffset passed as NULL</source>
-        <translation>errofset passed as NULL</translation>
+        <source>pattern passed as NULL</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>unknown option bit(s) set</source>
-        <translation>nepoznata opcija bit(ova) postavljeno</translation>
+        <source>unrecognised compile-time option bit(s)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>missing ) after comment</source>
-        <translation>nedostaje ) nakon komentara</translation>
+        <source>missing ) after (?# comment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>parentheses are too deeply nested</source>
+        <translation>zagrade su previše ugniježđene</translation>
     </message>
     <message>
         <source>regular expression is too large</source>
         <translation>redovni izraz je prevelik</translation>
     </message>
     <message>
-        <source>failed to get memory</source>
-        <translation>nije uspjelo uzimanje memorije</translation>
+        <source>failed to allocate heap memory</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>unmatched parentheses</source>
-        <translation>neusklađene zagrade</translation>
+        <source>unmatched closing parenthesis</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>internal error: code overflow</source>
         <translation>unutarnja greška: prelijevanje koda</translation>
     </message>
     <message>
-        <source>unrecognized character after (?&lt;</source>
-        <translation>neprepoznat znak nakon (?&lt;</translation>
+        <source>missing closing parenthesis for condition</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>lookbehind assertion is not fixed length</source>
         <translation>lookbehind assertion nije fiksne duljine</translation>
     </message>
     <message>
-        <source>malformed number or name after (?(</source>
-        <translation>malformed broj ili ime nakon (?(</translation>
+        <source>a relative value of zero is not allowed</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>conditional group contains more than two branches</source>
-        <translation>kondicijalna grupa sadržava više od dvije grane</translation>
+        <source>conditional subpattern contains more than two branches</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>assertion expected after (?(</source>
-        <translation>assertion očekivan nakon (?(</translation>
+        <source>assertion expected after (?( or (?(?C)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>(?R or (?[+-]digits must be followed by )</source>
-        <translation>(?R ili (?[+-]znamenke moraju slijediti )</translation>
+        <source>digit expected after (?+ or (?-</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>unknown POSIX class name</source>
         <translation>nepoznato ime POSIX klase</translation>
     </message>
     <message>
-        <source>POSIX collating elements are not supported</source>
-        <translation>POSIX sređivati elemente nije podržano</translation>
+        <source>internal error in pcre2_study(): should not occur</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>this version of PCRE is not compiled with PCRE_UTF8 support</source>
-        <translation>ova verzija PCRE nije u skladu s PCRE_UTF8 podrškom</translation>
+        <source>this version of PCRE2 does not have Unicode support</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>character value in \x{...} sequence is too large</source>
-        <translation>vrijednost znaka u \x{...} slijedu je prevelika</translation>
+        <source>parentheses are too deeply nested (stack check)</source>
+        <translation>zagrade su previše ugniježđene (stack check)</translation>
     </message>
     <message>
-        <source>invalid condition (?(0)</source>
-        <translation>nevažeći uvjet (?(0)</translation>
+        <source>character code point value in \x{} or \o{} is too large</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>\C not allowed in lookbehind assertion</source>
-        <translation>\C nije dopušten u lookbehind assertion</translation>
+        <source>lookbehind is too complicated</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>PCRE does not support \L, \l, \N{name}, \U, or \u</source>
-        <translation>PCRE ne podržava \L, \l, \N{ime}, \U, ili \u</translation>
+        <source>\C is not allowed in a lookbehind assertion in UTF-16 mode</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>number after (?C is &gt; 255</source>
-        <translation>broj nakon (?C je &gt; 255</translation>
+        <source>PCRE2 does not support \F, \L, \l, \N{name}, \U, or \u</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>closing ) for (?C expected</source>
-        <translation>zatvorena ) za (?C očekivana</translation>
+        <source>number after (?C is greater than 255</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>recursive call could loop indefinitely</source>
-        <translation>rekurzivan poziv se može vrtjeti neodređeno</translation>
+        <source>closing parenthesis for (?C expected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid escape sequence in (*VERB) name</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>unrecognized character after (?P</source>
         <translation>neprepoznat znak nakon (?P</translation>
     </message>
     <message>
-        <source>syntax error in subpattern name (missing terminator)</source>
-        <translation>sintaksna greška u imenu sub-uzorka (nedostaje terminator)</translation>
+        <source>syntax error in subpattern name (missing terminator?)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>two named subpatterns have the same name</source>
-        <translation>dva imenovana sub-uzoraka imaju isto ime</translation>
+        <source>two named subpatterns have the same name (PCRE2_DUPNAMES not set)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>invalid UTF-8 string</source>
-        <translation>nevažeći UTF-8 niz znakova</translation>
+        <source>subpattern name must start with a non-digit</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>support for \P, \p, and \X has not been compiled</source>
-        <translation>podrška za \P, \p i \X nije bila kompajlirana</translation>
+        <source>this version of PCRE2 does not have support for \P, \p, or \X</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>malformed \P or \p sequence</source>
@@ -4039,16 +4418,20 @@ Isključite jednu od opcija.</translation>
         <translation>nepoznato ime svojstva nakon \P ili \p</translation>
     </message>
     <message>
-        <source>subpattern name is too long (maximum 32 characters)</source>
-        <translation>ime sub-uzorka je predugo (maksimalno 32 znakova)</translation>
+        <source>subpattern name is too long (maximum 32 code units)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>too many named subpatterns (maximum 10000)</source>
         <translation>previše imenovana sub-uzoraka (maksimalno 1000)</translation>
     </message>
     <message>
-        <source>octal value is greater than \377 (not in UTF-8 mode)</source>
-        <translation>oktalna vrijednost je veća od \377 (ne u UTF-8 načinu)</translation>
+        <source>invalid range in character class</source>
+        <translation>nevažeći opseg u klasi znakova</translation>
+    </message>
+    <message>
+        <source>octal value is greater than \377 in 8-bit non-UTF-8 mode</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>internal error: overran compiling workspace</source>
@@ -4059,48 +4442,48 @@ Isključite jednu od opcija.</translation>
         <translation>unutarnja greška: prijašnje provjereni upućeni sub-uzorak nije pronađen</translation>
     </message>
     <message>
-        <source>DEFINE group contains more than one branch</source>
-        <translation>DEFINE grupe sadržava više od jedne grane</translation>
+        <source>DEFINE subpattern contains more than one branch</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>repeating a DEFINE group is not allowed</source>
-        <translation>ponavljanje DEFINE grupe nije dopušteno</translation>
+        <source>missing opening brace after \o</source>
+        <translation>nedostaje otvorena zagrada nakon \o</translation>
     </message>
     <message>
-        <source>inconsistent NEWLINE options</source>
-        <translation>nedosljedne NEWLINE opcije</translation>
+        <source>internal error: unknown newline setting</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>\g is not followed by a braced, angle-bracketed, or quoted name/number or by a plain number</source>
         <translation>\g ne slijedi vitičasto, uglato ili citirano ime/broj ili ne slijedi običan broj</translation>
     </message>
     <message>
-        <source>a numbered reference must not be zero</source>
-        <translation>brojčana referenca ne smije biti nula</translation>
+        <source>(?R (recursive pattern call) must be followed by a closing parenthesis</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>an argument is not allowed for (*ACCEPT), (*FAIL), or (*COMMIT)</source>
-        <translation>argument nije dopušten za (*ACCEPT), (*FAIL) ili (*COMMIT)</translation>
+        <source>obsolete error (should not occur)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>(*VERB) not recognized</source>
-        <translation>(*VERB) nije prepoznat</translation>
+        <source>(*VERB) not recognized or malformed</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>number is too big</source>
-        <translation>broj je prevelik</translation>
+        <source>subpattern number is too big</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>subpattern name expected</source>
         <translation>očekivano ime sub-uzorka</translation>
     </message>
     <message>
-        <source>digit expected after (?+</source>
-        <translation>znamenka očekivana nakon (?+</translation>
+        <source>internal error: parsed pattern overflow</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>] is an invalid data character in JavaScript compatibility mode</source>
-        <translation>] nije važeći podatkovni znak u JavaScriptovom načinu kompatibilnosti</translation>
+        <source>non-octal character in \o{} (closing brace missing?)</source>
+        <translation>ne-oktalni znak u \o{} (zatvorena zagrada nedostaje?)</translation>
     </message>
     <message>
         <source>different names for subpatterns of the same number are not allowed</source>
@@ -4111,88 +4494,408 @@ Isključite jednu od opcija.</translation>
         <translation>(*MARK) mora imati argument</translation>
     </message>
     <message>
-        <source>this version of PCRE is not compiled with PCRE_UCP support</source>
-        <translation>ova verzija PCRE nije u skladu s PCRE_UCP podrškom</translation>
+        <source>non-hex character in \x{} (closing brace missing?)</source>
+        <translation>ne-heksadecimalni znak u \x{} (zatvorena zagrada nedostaje?)</translation>
     </message>
     <message>
-        <source>\c must be followed by an ASCII character</source>
-        <translation>\c mora slijediti ASCII znak</translation>
+        <source>\c must be followed by a printable ASCII character</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\c must be followed by a letter or one of [\]^_?</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>\k is not followed by a braced, angle-bracketed, or quoted name</source>
         <translation>\k ne slijedi vitičasto, uglato ili citirano ime</translation>
     </message>
     <message>
-        <source>internal error: unknown opcode in find_fixedlength()</source>
-        <translation>unutarnja greška: nepoznati opcode u find_fixedlength()</translation>
+        <source>internal error: unknown meta code in check_lookbehinds()</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>\N is not supported in a class</source>
         <translation>\N nije podržano u klasi</translation>
     </message>
     <message>
-        <source>too many forward references</source>
-        <translation>previše prednjih referenca</translation>
+        <source>callout string is too long</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>disallowed Unicode code point (&gt;= 0xd800 &amp;&amp; &lt;= 0xdfff)</source>
         <translation>odbijena točka Unicode koda (&gt;= 0xd800 &amp;&amp; &lt;= 0xdfff)</translation>
     </message>
     <message>
-        <source>invalid UTF-16 string</source>
-        <translation>nevažeći UTF-16 niz znakova</translation>
+        <source>using UTF is disabled by the application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>using UCP is disabled by the application</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>name is too long in (*MARK), (*PRUNE), (*SKIP), or (*THEN)</source>
         <translation>ime je predugo u (*MARK), (*PRUNE), (*SKIP) ili (*THEN)</translation>
     </message>
     <message>
-        <source>character value in \u.... sequence is too large</source>
-        <translation>vrijednost znaka u \u.... slijedu je prevelika</translation>
+        <source>character code point value in \u.... sequence is too large</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>invalid UTF-32 string</source>
-        <translation>nevažeći UTF-32 niz znakova</translation>
+        <source>digits missing in \x{} or \o{} or \N{U+}</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>setting UTF is disabled by the application</source>
-        <translation>UTF postavka onemogućena od strane aplikacije</translation>
+        <source>syntax error or number too big in (?(VERSION condition</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>non-hex character in \x{} (closing brace missing?)</source>
-        <translation>ne-heksadecimalni znak u \x{} (zatvorena zagrada nedostaje?)</translation>
+        <source>internal error: unknown opcode in auto_possessify()</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>non-octal character in \o{} (closing brace missing?)</source>
-        <translation>ne-oktalni znak u \o{} (zatvorena zagrada nedostaje?)</translation>
+        <source>missing terminating delimiter for callout with string argument</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>missing opening brace after \o</source>
-        <translation>nedostaje otvorena zagrada nakon \o</translation>
+        <source>unrecognized string delimiter follows (?C</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>parentheses are too deeply nested</source>
-        <translation>zagrade su previše ugniježđene</translation>
+        <source>using \C is disabled by the application</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>invalid range in character class</source>
-        <translation>nevažeći opseg u klasi znakova</translation>
+        <source>(?| and/or (?J: or (?x: parentheses are too deeply nested</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>group name must start with a non-digit</source>
-        <translation>ime grupe mora početi s ne-znamenkom</translation>
+        <source>using \C is disabled in this PCRE2 library</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>parentheses are too deeply nested (stack check)</source>
-        <translation>zagrade su previše ugniježđene (stack check)</translation>
+        <source>regular expression is too complicated</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>digits missing in \x{} or \o{}</source>
-        <translation>znamenke nedostaju u \x{} ili \o{}</translation>
+        <source>lookbehind assertion is too long</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern string is longer than the limit set by the application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: unknown code in parsed pattern</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: bad code value in parsed_skip()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCRE2_EXTRA_ALLOW_SURROGATE_ESCAPES is not allowed in UTF-16 mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid option bits with PCRE2_LITERAL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\N{U+dddd} is supported only in Unicode (UTF) mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid hyphen in option setting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(*alpha_assertion) not recognized</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>script runs require Unicode support, which this version of PCRE2 does not have</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>too many capturing groups (maximum 65535)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>atomic assertion expected after (?( or (?(?C)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no match</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>partial match</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 1 byte missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 2 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 3 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 4 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 5 bytes missing at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 2 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 3 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 4 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 5 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 6 top bits not 0x80</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 5-byte character is not allowed (RFC 3629)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 6-byte character is not allowed (RFC 3629)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: code points greater than 0x10ffff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: code points 0xd800-0xdfff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 2-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 3-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 4-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 5-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 6-byte sequence</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: isolated byte with 0x80 bit set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-8 error: illegal byte (0xfe or 0xff)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-16 error: missing low surrogate at end</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-16 error: invalid low surrogate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-16 error: isolated low surrogate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-32 error: code points 0xd800-0xdfff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UTF-32 error: code points greater than 0x10ffff are not defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad data value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>patterns do not all use the same character tables</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>magic number missing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern compiled in wrong mode: 8/16/32-bit error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad offset value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad option value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad offset into UTF string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>callout error code</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid data in workspace for DFA restart</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>too much recursion for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>backreference condition or recursion test is not supported for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>function is not supported for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pattern contains an item that is not supported for DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>workspace size exceeded in DFA matching</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error - pattern overwritten?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad JIT option</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>JIT stack limit reached</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>match limit exceeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no more memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unknown substring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>non-unique substring name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NULL argument passed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>nested recursion at the same subject position</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>matching depth limit exceeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>requested value is not available</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>requested value is not set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>offset limit set without PCRE2_USE_OFFSET_LIMIT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad escape sequence in replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>expected closing curly bracket in replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad substitution in replacement string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>match with end before start or start moved backwards is not supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>too many replacements (more than INT_MAX)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad serialized data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>heap limit exceeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid syntax</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error - duplicate substitution match</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCRE2_MATCH_INVALID_UTF is not supported for DFA matching</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSQLite2Driver</name>
+    <message>
+        <source>Error opening database</source>
+        <translation>Greška prilikom otvaranja baze podataka</translation>
+    </message>
     <message>
         <source>Unable to begin transaction</source>
         <translation>Nije moguće početi transakciju</translation>
@@ -4200,10 +4903,6 @@ Isključite jednu od opcija.</translation>
     <message>
         <source>Unable to commit transaction</source>
         <translation>Nije moguće počiniti transakciju</translation>
-    </message>
-    <message>
-        <source>Error opening database</source>
-        <translation>Greška prilikom otvaranja baze podataka</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
@@ -4251,8 +4950,16 @@ Isključite jednu od opcija.</translation>
         <translation>Nije moguće dohvatiti red</translation>
     </message>
     <message>
+        <source>No query</source>
+        <translation>Nema upita</translation>
+    </message>
+    <message>
         <source>Unable to execute statement</source>
         <translation>Nije moguće izvršiti izjavu</translation>
+    </message>
+    <message>
+        <source>Unable to execute multiple statements at a time</source>
+        <translation>Nije moguće izvršiti više izjava u isto vrijeme</translation>
     </message>
     <message>
         <source>Unable to reset statement</source>
@@ -4266,14 +4973,6 @@ Isključite jednu od opcija.</translation>
         <source>Parameter count mismatch</source>
         <translation>Broj parametra nije u skladu</translation>
     </message>
-    <message>
-        <source>No query</source>
-        <translation>Nema upita</translation>
-    </message>
-    <message>
-        <source>Unable to execute multiple statements at a time</source>
-        <translation>Nije moguće izvršiti više izjava u isto vrijeme</translation>
-    </message>
 </context>
 <context>
     <name>QSaveFile</name>
@@ -4284,6 +4983,10 @@ Isključite jednu od opcija.</translation>
     <message>
         <source>Filename refers to a directory</source>
         <translation>Ime datoteke se odnosi na direktorij</translation>
+    </message>
+    <message>
+        <source>QSaveFile cannot open &apos;%1&apos; without direct write fallback enabled.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Writing canceled by application</source>
@@ -4346,6 +5049,13 @@ Isključite jednu od opcija.</translation>
     </message>
 </context>
 <context>
+    <name>QSctpSocket</name>
+    <message>
+        <source>The remote host closed the connection</source>
+        <translation type="unfinished">Udaljeni domaćin je zatvorio vezu</translation>
+    </message>
+</context>
+<context>
     <name>QSharedMemory</name>
     <message>
         <source>%1: unable to set key on lock</source>
@@ -4364,24 +5074,16 @@ Isključite jednu od opcija.</translation>
         <translation>%1: nije moguće otključati</translation>
     </message>
     <message>
-        <source>%1: permission denied</source>
-        <translation>%1: dopuštenje odbijeno</translation>
-    </message>
-    <message>
-        <source>%1: already exists</source>
-        <translation>%1: već postoji</translation>
-    </message>
-    <message>
-        <source>%1: out of resources</source>
-        <translation>%1: nema resursa</translation>
-    </message>
-    <message>
-        <source>%1: unknown error %2</source>
-        <translation>%1: nepoznata greška %2</translation>
-    </message>
-    <message>
         <source>%1: key is empty</source>
         <translation>%1: tipka je prazna</translation>
+    </message>
+    <message>
+        <source>%1: bad name</source>
+        <translation>%1: loše ime</translation>
+    </message>
+    <message>
+        <source>%1: UNIX key file doesn&apos;t exist</source>
+        <translation>%1: UNIX ključna datoteka ne postoji</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
@@ -4400,16 +5102,24 @@ Isključite jednu od opcija.</translation>
         <translation>%1: nije pričvršćeno</translation>
     </message>
     <message>
-        <source>%1: bad name</source>
-        <translation>%1: loše ime</translation>
+        <source>%1: permission denied</source>
+        <translation>%1: dopuštenje odbijeno</translation>
     </message>
     <message>
-        <source>%1: UNIX key file doesn&apos;t exist</source>
-        <translation>%1: UNIX ključna datoteka ne postoji</translation>
+        <source>%1: already exists</source>
+        <translation>%1: već postoji</translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exist</source>
         <translation>%1: ne postoji</translation>
+    </message>
+    <message>
+        <source>%1: out of resources</source>
+        <translation>%1: nema resursa</translation>
+    </message>
+    <message>
+        <source>%1: unknown error %2</source>
+        <translation>%1: nepoznata greška %2</translation>
     </message>
     <message>
         <source>%1: invalid size</source>
@@ -4598,6 +5308,20 @@ Isključite jednu od opcija.</translation>
         <translation>Snimaj Medij</translation>
     </message>
     <message>
+        <source>Media Pause</source>
+        <extracomment>Media player pause button</extracomment>
+        <translation>Pauziraj Medij</translation>
+    </message>
+    <message>
+        <source>Toggle Media Play/Pause</source>
+        <extracomment>Media player button to toggle between playing and paused</extracomment>
+        <translation>Pusti/Pauziraj Medij</translation>
+    </message>
+    <message>
+        <source>Home Page</source>
+        <translation>Home Page</translation>
+    </message>
+    <message>
         <source>Favorites</source>
         <translation>Favoriti</translation>
     </message>
@@ -4686,128 +5410,12 @@ Isključite jednu od opcija.</translation>
         <translation>Pokreni (F)</translation>
     </message>
     <message>
-        <source>Print Screen</source>
-        <translation>Print Screen</translation>
+        <source>Launch (G)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Page Up</source>
-        <translation>Page Up</translation>
-    </message>
-    <message>
-        <source>Page Down</source>
-        <translation>Page Down</translation>
-    </message>
-    <message>
-        <source>Caps Lock</source>
-        <translation>Caps Lock</translation>
-    </message>
-    <message>
-        <source>Num Lock</source>
-        <translation>Num Lock</translation>
-    </message>
-    <message>
-        <source>Number Lock</source>
-        <translation>Number Lock</translation>
-    </message>
-    <message>
-        <source>Scroll Lock</source>
-        <translation>Scroll Lock</translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <translation>Insert</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation>Delete</translation>
-    </message>
-    <message>
-        <source>Escape</source>
-        <translation>Escape</translation>
-    </message>
-    <message>
-        <source>System Request</source>
-        <translation>System Request</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <translation>Select</translation>
-    </message>
-    <message>
-        <source>Yes</source>
-        <translation>Da</translation>
-    </message>
-    <message>
-        <source>No</source>
-        <translation>Ne</translation>
-    </message>
-    <message>
-        <source>Context1</source>
-        <translation>Kontekst1</translation>
-    </message>
-    <message>
-        <source>Context2</source>
-        <translation>Kontekst2</translation>
-    </message>
-    <message>
-        <source>Context3</source>
-        <translation>Kontekst3</translation>
-    </message>
-    <message>
-        <source>Context4</source>
-        <translation>Kontekst4</translation>
-    </message>
-    <message>
-        <source>Call</source>
-        <extracomment>Button to start a call (note: a separate button is used to end the call)</extracomment>
-        <translation>Zovi</translation>
-    </message>
-    <message>
-        <source>Hangup</source>
-        <extracomment>Button to end a call (note: a separate button is used to start the call)</extracomment>
-        <translation>Poklopi</translation>
-    </message>
-    <message>
-        <source>Flip</source>
-        <translation>Okreni</translation>
-    </message>
-    <message>
-        <source>Ctrl</source>
-        <translation>Ctrl</translation>
-    </message>
-    <message>
-        <source>Shift</source>
-        <translation>Shift</translation>
-    </message>
-    <message>
-        <source>Alt</source>
-        <translation>Alt</translation>
-    </message>
-    <message>
-        <source>Meta</source>
-        <translation>Meta</translation>
-    </message>
-    <message>
-        <source>+</source>
-        <translation>+</translation>
-    </message>
-    <message>
-        <source>F%1</source>
-        <translation>F%1</translation>
-    </message>
-    <message>
-        <source>Home Page</source>
-        <translation>Home Page</translation>
-    </message>
-    <message>
-        <source>Media Pause</source>
-        <extracomment>Media player pause button</extracomment>
-        <translation>Pauziraj Medij</translation>
-    </message>
-    <message>
-        <source>Toggle Media Play/Pause</source>
-        <extracomment>Media player button to toggle between playing and paused</extracomment>
-        <translation>Pusti/Pauziraj Medij</translation>
+        <source>Launch (H)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Monitor Brightness Up</source>
@@ -4914,6 +5522,10 @@ Isključite jednu od opcija.</translation>
         <translation>Kalkulator</translation>
     </message>
     <message>
+        <source>Calendar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Clear</source>
         <translation>Očisti</translation>
     </message>
@@ -4924,6 +5536,10 @@ Isključite jednu od opcija.</translation>
     <message>
         <source>Close</source>
         <translation>Zatvori</translation>
+    </message>
+    <message>
+        <source>Adjust contrast</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copy</source>
@@ -4976,6 +5592,10 @@ Isključite jednu od opcija.</translation>
     <message>
         <source>Meeting</source>
         <translation>Sastanak</translation>
+    </message>
+    <message>
+        <source>Memo</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Keyboard Menu</source>
@@ -5056,6 +5676,10 @@ Isključite jednu od opcija.</translation>
     <message>
         <source>Terminal</source>
         <translation>Terminal</translation>
+    </message>
+    <message>
+        <source>To-do list</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Tools</source>
@@ -5238,9 +5862,95 @@ Isključite jednu od opcija.</translation>
         <translation>Povrati</translation>
     </message>
     <message>
+        <source>Print Screen</source>
+        <translation>Print Screen</translation>
+    </message>
+    <message>
+        <source>Page Up</source>
+        <translation>Page Up</translation>
+    </message>
+    <message>
+        <source>Page Down</source>
+        <translation>Page Down</translation>
+    </message>
+    <message>
+        <source>Caps Lock</source>
+        <translation>Caps Lock</translation>
+    </message>
+    <message>
+        <source>Num Lock</source>
+        <translation>Num Lock</translation>
+    </message>
+    <message>
+        <source>Number Lock</source>
+        <translation>Number Lock</translation>
+    </message>
+    <message>
+        <source>Scroll Lock</source>
+        <translation>Scroll Lock</translation>
+    </message>
+    <message>
+        <source>Insert</source>
+        <translation>Insert</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Delete</translation>
+    </message>
+    <message>
+        <source>Escape</source>
+        <translation>Escape</translation>
+    </message>
+    <message>
+        <source>System Request</source>
+        <translation>System Request</translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation>Select</translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <translation>Da</translation>
+    </message>
+    <message>
+        <source>No</source>
+        <translation>Ne</translation>
+    </message>
+    <message>
+        <source>Context1</source>
+        <translation>Kontekst1</translation>
+    </message>
+    <message>
+        <source>Context2</source>
+        <translation>Kontekst2</translation>
+    </message>
+    <message>
+        <source>Context3</source>
+        <translation>Kontekst3</translation>
+    </message>
+    <message>
+        <source>Context4</source>
+        <translation>Kontekst4</translation>
+    </message>
+    <message>
+        <source>Call</source>
+        <extracomment>Button to start a call (note: a separate button is used to end the call)</extracomment>
+        <translation>Zovi</translation>
+    </message>
+    <message>
+        <source>Hangup</source>
+        <extracomment>Button to end a call (note: a separate button is used to start the call)</extracomment>
+        <translation>Poklopi</translation>
+    </message>
+    <message>
         <source>Toggle Call/Hangup</source>
         <extracomment>Button that will hang up if we&apos;re in call, or make a call if we&apos;re not.</extracomment>
         <translation>Zovi/Poklopi</translation>
+    </message>
+    <message>
+        <source>Flip</source>
+        <translation>Okreni</translation>
     </message>
     <message>
         <source>Voice Dial</source>
@@ -5419,16 +6129,37 @@ Isključite jednu od opcija.</translation>
         <translation>Touchpad Ugašen</translation>
     </message>
     <message>
+        <source>Ctrl</source>
+        <translation>Ctrl</translation>
+    </message>
+    <message>
+        <source>Shift</source>
+        <translation>Shift</translation>
+    </message>
+    <message>
+        <source>Alt</source>
+        <translation>Alt</translation>
+    </message>
+    <message>
+        <source>Meta</source>
+        <translation>Meta</translation>
+    </message>
+    <message>
         <source>Num</source>
         <translation>Num</translation>
+    </message>
+    <message>
+        <source>+</source>
+        <extracomment>Key separator in shortcut string</extracomment>
+        <translation>+</translation>
+    </message>
+    <message>
+        <source>F%1</source>
+        <translation>F%1</translation>
     </message>
 </context>
 <context>
     <name>QSocks5SocketEngine</name>
-    <message>
-        <source>Network operation timed out</source>
-        <translation>Mrežnom postupku je isteklo vrijeme</translation>
-    </message>
     <message>
         <source>Connection to proxy refused</source>
         <translation>Veza na proxy odbijena</translation>
@@ -5480,6 +6211,10 @@ Isključite jednu od opcija.</translation>
     <message>
         <source>Unknown SOCKSv5 proxy error code 0x%1</source>
         <translation>Nepoznata SOCKSv5 proxy greška kod 0x%1</translation>
+    </message>
+    <message>
+        <source>Network operation timed out</source>
+        <translation>Mrežnom postupku je isteklo vrijeme</translation>
     </message>
 </context>
 <context>
@@ -5837,40 +6572,70 @@ Role of an accessible object</extracomment>
         <translation>dopunski sadržaj</translation>
     </message>
     <message>
+        <source>terminal</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>desktop</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>notification</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>unknown</source>
         <extracomment>Role of an accessible object</extracomment>
         <translation>nepoznato</translation>
     </message>
 </context>
 <context>
+    <name>QSslDiffieHellmanParameter</name>
+    <message>
+        <source>No error</source>
+        <translation type="unfinished">Nema greške</translation>
+    </message>
+    <message>
+        <source>Invalid input data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The given Diffie-Hellman parameters are deemed unsafe</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QSslSocket</name>
     <message>
-        <source>Unable to write data: %1</source>
-        <translation>Nije moguće pisati podatke: %1</translation>
+        <source>Error when setting the OpenSSL configuration (%1)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Error while reading: %1</source>
-        <translation>Greška prilikom čitanja: %1</translation>
-    </message>
-    <message>
-        <source>Error during SSL handshake: %1</source>
-        <translation>Greška prilikom rukovanja SSL-om: %1</translation>
+        <source>Error when setting the elliptic curves (%1)</source>
+        <translation>Greška prilikom postavljanja eliptičnih krivina (%1)</translation>
     </message>
     <message>
         <source>Error creating SSL context (%1)</source>
         <translation>Greška prilikom pravljenja SSL konteksta (%1)</translation>
     </message>
     <message>
+        <source>unsupported protocol</source>
+        <translation>nepodržani protokol</translation>
+    </message>
+    <message>
+        <source>Error while setting the minimal protocol version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error while setting the maximum protocol version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Invalid or empty cipher list (%1)</source>
         <translation>Nevažeći ili prazan popis šifri (%1)</translation>
-    </message>
-    <message>
-        <source>Error creating SSL session, %1</source>
-        <translation>Greška prilikom pravljenja SSL sesije, %1</translation>
-    </message>
-    <message>
-        <source>Error creating SSL session: %1</source>
-        <translation>Greška prilikom pravljenja SSL sesije: %1</translation>
     </message>
     <message>
         <source>Cannot provide a certificate with no key, %1</source>
@@ -5885,20 +6650,40 @@ Role of an accessible object</extracomment>
         <translation>Greška prilikom učitavanja privatnog ključa, %1</translation>
     </message>
     <message>
-        <source>Error when setting the elliptic curves (%1)</source>
-        <translation>Greška prilikom postavljanja eliptičnih krivina (%1)</translation>
-    </message>
-    <message>
-        <source>unsupported protocol</source>
-        <translation>nepodržani protokol</translation>
-    </message>
-    <message>
         <source>Private key does not certify public key, %1</source>
         <translation>Privatni ključ ne certificira javni ključ, %1</translation>
     </message>
     <message>
-        <source>OpenSSL version too old, need at least v1.0.2</source>
-        <translation>OpenSSL verzija prestara, treba minimalno v1.0.2</translation>
+        <source>Diffie-Hellman parameters are not valid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OpenSSL version with disabled elliptic curves</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expecting QByteArray for %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An error occurred attempting to set %1 to %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wrong value for %1 (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unrecognized command %1 = %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SSL_CONF_finish() failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SSL_CONF_CTX_new() failed</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No error</source>
@@ -5993,20 +6778,244 @@ Role of an accessible object</extracomment>
         <translation>Certifikat klijenta je na crnoj listi</translation>
     </message>
     <message>
+        <source>No OCSP status response found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The OCSP status request had invalid syntax</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP response contains an unexpected number of SingleResponse structures</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder reached an inconsistent internal state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder was unable to return a status for the requested certificate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The server requires the client to sign the OCSP request in order to construct a response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The client is not authorized to request OCSP status from this server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder&apos;s identity cannot be verified</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The identity of a certificate in an OCSP response cannot be established</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate status response has expired</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate&apos;s status is unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unknown error</source>
         <translation>Nepoznata greška</translation>
+    </message>
+    <message>
+        <source>TLS initialization failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attempted to use an unsupported protocol.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The TLS/SSL connection has been closed</source>
         <translation>TLS/SSL veza je zatvorena</translation>
     </message>
     <message>
+        <source>Error creating SSL session, %1</source>
+        <translation>Greška prilikom pravljenja SSL sesije, %1</translation>
+    </message>
+    <message>
+        <source>Error creating SSL session: %1</source>
+        <translation>Greška prilikom pravljenja SSL sesije: %1</translation>
+    </message>
+    <message>
+        <source>Server-side QSslSocket does not support OCSP stapling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to enable OCSP stapling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Client-side sockets do not send OCSP responses</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unable to init SSL Context: %1</source>
         <translation>Nije moguće inicijalizirati SSL kontekst: %1</translation>
     </message>
     <message>
+        <source>Unable to write data: %1</source>
+        <translation>Nije moguće pisati podatke: %1</translation>
+    </message>
+    <message>
         <source>Unable to decrypt data: %1</source>
         <translation>Nije moguće dešifrirati podatke: %1</translation>
+    </message>
+    <message>
+        <source>Error while reading: %1</source>
+        <translation>Greška prilikom čitanja: %1</translation>
+    </message>
+    <message>
+        <source>Error during SSL handshake: %1</source>
+        <translation>Greška prilikom rukovanja SSL-om: %1</translation>
+    </message>
+    <message>
+        <source>Failed to decode OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to extract basic OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No certificate verification store, cannot verify OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to decode a SingleResponse from OCSP status response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to extract &apos;this update time&apos; from the SingleResponse</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insufficient memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Internal error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An internal handle was invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An internal token was invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Access denied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No authority could be contacted for authorization</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No credentials</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The target is unknown or unreachable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An unsupported function was requested</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hostname provided does not match the one received from the peer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No common protocol exists between the client and the server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected or badly-formatted message received</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The data could not be encrypted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No cipher suites in common</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The credentials were not recognized / Invalid argument</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The message was tampered with, damaged or out of sequence.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A message was received out of sequence.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown error occurred: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid protocol chosen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate provided cannot be used for a client.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate provided cannot be used for a server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server did not accept any certificate we could present.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Algorithm mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Handshake failed: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to query the TLS context: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Did not get the required attributes for the connection.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unwanted protocol was negotiated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Renegotiation was unsuccessful: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Schannel failed to encrypt data: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot provide a certificate with no key</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6099,6 +7108,10 @@ Role of an accessible object</extracomment>
         <translation>Nema zajedničkog pretka za ciljeve i izvor prijelaza iz stanja &apos;%1&apos;</translation>
     </message>
     <message>
+        <source>Child mode of state machine &apos;%1&apos; is not &apos;ExclusiveStates&apos;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unknown error</source>
         <translation>Nepoznata greška</translation>
     </message>
@@ -6153,6 +7166,17 @@ Role of an accessible object</extracomment>
     <message>
         <source>Operation on socket is not supported</source>
         <translation>Postupak na utičnici nije podržan</translation>
+    </message>
+</context>
+<context>
+    <name>QUdpSocket</name>
+    <message>
+        <source>Unable to send a datagram</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No datagram available for reading</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6247,10 +7271,6 @@ Role of an accessible object</extracomment>
         <translation>PDF Pop directional formatting</translation>
     </message>
     <message>
-        <source>Insert Unicode control character</source>
-        <translation>Ubaci Unicode kontrolni znak</translation>
-    </message>
-    <message>
         <source>LRI Left-to-right isolate</source>
         <translation>LDI Lijevo-prema-desno izolacija</translation>
     </message>
@@ -6265,6 +7285,10 @@ Role of an accessible object</extracomment>
     <message>
         <source>PDI Pop directional isolate</source>
         <translation>PDI Pop directional isolate</translation>
+    </message>
+    <message>
+        <source>Insert Unicode control character</source>
+        <translation>Ubaci Unicode kontrolni znak</translation>
     </message>
 </context>
 <context>
@@ -6321,10 +7345,10 @@ Role of an accessible object</extracomment>
     <message>
         <source>Qt cannot load the direct2d platform plugin because the Direct2D version on this system is too old. The minimum system requirement for this platform plugin is Windows 7 SP1 with Platform Update.
 
-The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on this system is %5.%6.%7.%8.</source>
-        <translation>Qt ne može učitati direct2d platform dodatak jer Direct2D verzija na ovom sustavu je prestara. Minimalni preduvjet za ovaj platform dodatak je Windows 7 SP1 s Platform Update-om.
+The minimum Direct2D version required is %1. The Direct2D version on this system is %2.</source>
+        <translation type="unfinished">Qt ne može učitati direct2d platform dodatak jer Direct2D verzija na ovom sustavu je prestara. Minimalni preduvjet za ovaj platform dodatak je Windows 7 SP1 s Platform Update-om.
 
-Minimalna potrebna Direct2D verzija %1.%2.%3.%4. Direct2D verzija na ovom sustavu je %5.%6.%7.%8.</translation>
+Minimalna potrebna Direct2D verzija %1.%2.%3.%4. Direct2D verzija na ovom sustavu je %5.%6.%7.%8. {2d?} {2D?} {7 ?} {1 ?} {2D?} {1.?} {2D?} {2.?}</translation>
     </message>
     <message>
         <source>Cannot load direct2d platform plugin</source>
@@ -6338,8 +7362,20 @@ Minimalna potrebna Direct2D verzija %1.%2.%3.%4. Direct2D verzija na ovom sustav
         <translation>Idi Natrag</translation>
     </message>
     <message>
+        <source>&lt; &amp;Back</source>
+        <translation>&lt; &amp;Natrag</translation>
+    </message>
+    <message>
         <source>Continue</source>
         <translation>Nastavi</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Sljedeće</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation>&amp;Sljedeće &gt;</translation>
     </message>
     <message>
         <source>Commit</source>
@@ -6350,14 +7386,6 @@ Minimalna potrebna Direct2D verzija %1.%2.%3.%4. Direct2D verzija na ovom sustav
         <translation>Izvršeno</translation>
     </message>
     <message>
-        <source>Help</source>
-        <translation>Pomoć</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Natrag</translation>
-    </message>
-    <message>
         <source>&amp;Finish</source>
         <translation>&amp;Završeno</translation>
     </message>
@@ -6366,16 +7394,12 @@ Minimalna potrebna Direct2D verzija %1.%2.%3.%4. Direct2D verzija na ovom sustav
         <translation>Odustani</translation>
     </message>
     <message>
+        <source>Help</source>
+        <translation>Pomoć</translation>
+    </message>
+    <message>
         <source>&amp;Help</source>
         <translation>&amp;Pomoć</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Sljedeće</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>&amp;Sljedeće &gt;</translation>
     </message>
 </context>
 <context>
@@ -6492,8 +7516,20 @@ Minimalna potrebna Direct2D verzija %1.%2.%3.%4. Direct2D verzija na ovom sustav
         <translation>Slijed &apos;]]&gt;&apos; nije dopušten u kontekstu.</translation>
     </message>
     <message>
+        <source>Encountered incorrectly encoded content.</source>
+        <translation>Naiđen nepravilno šifriran sadržaj.</translation>
+    </message>
+    <message>
         <source>Namespace prefix &apos;%1&apos; not declared</source>
         <translation>Namespace prefiks &apos;%1&apos; nije deklariran</translation>
+    </message>
+    <message>
+        <source>Illegal namespace declaration.</source>
+        <translation>Ilegalna deklaracija namespace-a.</translation>
+    </message>
+    <message>
+        <source>Attribute &apos;%1&apos; redefined.</source>
+        <translation>Atribut &apos;%1&apos; redefiniran.</translation>
     </message>
     <message>
         <source>Unexpected character &apos;%1&apos; in public id literal.</source>
@@ -6506,6 +7542,10 @@ Minimalna potrebna Direct2D verzija %1.%2.%3.%4. Direct2D verzija na ovom sustav
     <message>
         <source>Unsupported XML version.</source>
         <translation>Nepodržana XML verzija.</translation>
+    </message>
+    <message>
+        <source>The standalone pseudo attribute must appear after the encoding.</source>
+        <translation>Samostalan pseudo atribut mora se pojaviti nakon šifriranja.</translation>
     </message>
     <message>
         <source>%1 is an invalid encoding name.</source>
@@ -6532,36 +7572,60 @@ Minimalna potrebna Direct2D verzija %1.%2.%3.%4. Direct2D verzija na ovom sustav
         <translation>Nevažeći dokument.</translation>
     </message>
     <message>
-        <source>Expected </source>
-        <translation>Očekivano </translation>
+        <source>&apos;%1&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&apos;&lt;first option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>, but got &apos;</source>
-        <translation>, ali je dobijeno &apos;</translation>
+        <source>%1 or &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;first option&gt;, &apos;&lt;second option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Unexpected &apos;</source>
-        <translation>Neočekivano &apos;</translation>
+        <source>%1, &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;options so far&gt;, &apos;&lt;next option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1, or &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;options so far&gt;, or &apos;&lt;final option&gt;&apos;</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expected %1, but got &apos;%2&apos;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected &apos;%1&apos;.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Expected character data.</source>
         <translation>Očekivani znakovni podaci.</translation>
     </message>
     <message>
-        <source>Recursive entity detected.</source>
-        <translation>Otkrivena rekurzivna osoba.</translation>
+        <source>Self-referencing entity detected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Entity expands to more characters than the entity expansion limit.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Start tag expected.</source>
         <translation>Početna oznaka očekivana.</translation>
     </message>
     <message>
-        <source>XML declaration not at start of document.</source>
-        <translation>XML deklaracija nije na početku dokumenta.</translation>
-    </message>
-    <message>
         <source>NDATA in parameter entity declaration.</source>
         <translation>NDATA u deklaraciji parametra osobe.</translation>
+    </message>
+    <message>
+        <source>XML declaration not at start of document.</source>
+        <translation>XML deklaracija nije na početku dokumenta.</translation>
     </message>
     <message>
         <source>%1 is an invalid processing instruction name.</source>
@@ -6572,8 +7636,8 @@ Minimalna potrebna Direct2D verzija %1.%2.%3.%4. Direct2D verzija na ovom sustav
         <translation>Nevažeće ime za procesnu naredbu.</translation>
     </message>
     <message>
-        <source>Illegal namespace declaration.</source>
-        <translation>Ilegalna deklaracija namespace-a.</translation>
+        <source>%1 is an invalid PUBLIC identifier.</source>
+        <translation>%1 je nevažeći PUBLIC identifikator.</translation>
     </message>
     <message>
         <source>Invalid XML name.</source>
@@ -6584,12 +7648,12 @@ Minimalna potrebna Direct2D verzija %1.%2.%3.%4. Direct2D verzija na ovom sustav
         <translation>Otvoreni i zatvorene oznake nisu u skladu.</translation>
     </message>
     <message>
-        <source>Reference to unparsed entity &apos;%1&apos;.</source>
-        <translation>Referenca na neparsiranu osobu &apos;%1&apos;.</translation>
-    </message>
-    <message>
         <source>Entity &apos;%1&apos; not declared.</source>
         <translation>Osoba &apos;%1&apos; nije deklarirana.</translation>
+    </message>
+    <message>
+        <source>Reference to unparsed entity &apos;%1&apos;.</source>
+        <translation>Referenca na neparsiranu osobu &apos;%1&apos;.</translation>
     </message>
     <message>
         <source>Reference to external entity &apos;%1&apos; in attribute value.</source>
@@ -6598,22 +7662,6 @@ Minimalna potrebna Direct2D verzija %1.%2.%3.%4. Direct2D verzija na ovom sustav
     <message>
         <source>Invalid character reference.</source>
         <translation>Nevažeća znakovna referenca.</translation>
-    </message>
-    <message>
-        <source>Encountered incorrectly encoded content.</source>
-        <translation>Naiđen nepravilno šifriran sadržaj.</translation>
-    </message>
-    <message>
-        <source>The standalone pseudo attribute must appear after the encoding.</source>
-        <translation>Samostalan pseudo atribut mora se pojaviti nakon šifriranja.</translation>
-    </message>
-    <message>
-        <source>%1 is an invalid PUBLIC identifier.</source>
-        <translation>%1 je nevažeći PUBLIC identifikator.</translation>
-    </message>
-    <message>
-        <source>Attribute &apos;%1&apos; redefined.</source>
-        <translation>Atribut &apos;%1&apos; redefiniran.</translation>
     </message>
 </context>
 </TS>

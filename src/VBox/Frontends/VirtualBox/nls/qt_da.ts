@@ -1,26 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="da_DK">
-<context>
-    <name>AudioOutput</name>
-    <message>
-        <source>&lt;html&gt;The audio playback device &lt;b&gt;%1&lt;/b&gt; does not work.&lt;br/&gt;Falling back to &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</source>
-        <translation type="vanished">&lt;html&gt;Audio-playback-enheden&lt;b&gt;%1&lt;/b&gt; virker ikke.&lt;br/&gt;Falder tilbage til &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;html&gt;Switching to the audio playback device &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;which just became available and has higher preference.&lt;/html&gt;</source>
-        <translation type="vanished">&lt;html&gt;Skifter til audio-playback-enheden, &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;der lige er blevet tilgængelig og har en højere præference.&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>Revert back to device &apos;%1&apos;</source>
-        <translation type="vanished">Gå tilbage til enheden &apos;%1&apos;</translation>
-    </message>
-</context>
+<TS version="2.1" language="da">
 <context>
     <name>CloseButton</name>
     <message>
         <source>Close Tab</source>
-        <translation>Luk fane</translation>
+        <translation>Luk faneblad</translation>
     </message>
 </context>
 <context>
@@ -43,11 +28,11 @@
     </message>
     <message>
         <source>Preferences...</source>
-        <translation>Indstillinger…</translation>
+        <translation>Præferencer...</translation>
     </message>
     <message>
         <source>Quit %1</source>
-        <translation>Slut %1</translation>
+        <translation>Afslut %1</translation>
     </message>
     <message>
         <source>About %1</source>
@@ -55,647 +40,52 @@
     </message>
 </context>
 <context>
-    <name>Phonon::</name>
+    <name>Print Device Input Slot</name>
     <message>
-        <source>Notifications</source>
-        <translation type="vanished">Meddelelser</translation>
-    </message>
-    <message>
-        <source>Music</source>
-        <translation type="vanished">Musik</translation>
-    </message>
-    <message>
-        <source>Communication</source>
-        <translation type="vanished">Kommunikation</translation>
-    </message>
-    <message>
-        <source>Games</source>
-        <translation type="vanished">Spil</translation>
-    </message>
-    <message>
-        <source>Accessibility</source>
-        <translation type="vanished">Tilgængelighed</translation>
+        <source>Automatic</source>
+        <translation type="unfinished">Automatisk</translation>
     </message>
 </context>
 <context>
-    <name>Phonon::Gstreamer::Backend</name>
+    <name>Print Device Output Bin</name>
     <message>
-        <source>Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.
-          Some video features have been disabled.</source>
-        <translation type="vanished">Advarsel: Det ser ikke ud til, at gstreamer0.10-plugins-good pakken er installeret.
-	Nogle videofunktioner er deaktiveret.</translation>
-    </message>
-    <message>
-        <source>Warning: You do not seem to have the base GStreamer plugins installed.
-          All audio and video support has been disabled</source>
-        <translation type="vanished">Advarsel: Det ser ikke ud til, at base GStreamer plugins er installeret.
-	Al audio- og videosupport er deaktiveret</translation>
-    </message>
-</context>
-<context>
-    <name>Phonon::Gstreamer::MediaObject</name>
-    <message>
-        <source>Cannot start playback. 
-
-Check your Gstreamer installation and make sure you 
-have libgstreamer-plugins-base installed.</source>
-        <translation type="vanished">Kan ikke starte playback.
-
-Tjek Gstreamer-installationen og kontrollér, at 
-libgstreamer-plugins-base er installeret.</translation>
-    </message>
-    <message>
-        <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
-        <translation type="vanished">Der mangler et codec. Følgende codecs skal installeres for at afspille dette indhold: %0</translation>
-    </message>
-    <message>
-        <source>Could not open media source.</source>
-        <translation type="vanished">Kunne ikke åbne mediekilden.</translation>
-    </message>
-    <message>
-        <source>Invalid source type.</source>
-        <translation type="vanished">Ugyldig kilde.</translation>
-    </message>
-    <message>
-        <source>Could not locate media source.</source>
-        <translation type="vanished">Kunne ikke lokalisere mediekilden.</translation>
-    </message>
-    <message>
-        <source>Could not open audio device. The device is already in use.</source>
-        <translation type="vanished">Kunne ikke åbne lydenheden. Enheden er allerede i brug.</translation>
-    </message>
-    <message>
-        <source>Could not decode media source.</source>
-        <translation type="vanished">Kunne ikke afkode mediekilden.</translation>
-    </message>
-</context>
-<context>
-    <name>Phonon::VolumeSlider</name>
-    <message>
-        <source>Use this slider to adjust the volume. The leftmost position is 0%, the rightmost is %1%</source>
-        <translation type="vanished">Anvend denne skyder til at indstille lydstyrken. Længst til venstre er 0% og længst til højre er %1%</translation>
-    </message>
-</context>
-<context>
-    <name>Q3Accel</name>
-    <message>
-        <source>%1, %2 not defined</source>
-        <translation type="vanished">%1, %2 ikke definerede</translation>
-    </message>
-    <message>
-        <source>Ambiguous %1 not handled</source>
-        <translation type="vanished">Tvetydig %1 ikke behandlet</translation>
-    </message>
-</context>
-<context>
-    <name>Q3DataTable</name>
-    <message>
-        <source>True</source>
-        <translation type="vanished">Sandt</translation>
-    </message>
-    <message>
-        <source>False</source>
-        <translation type="vanished">Falsk</translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <translation type="vanished">Indsæt</translation>
-    </message>
-    <message>
-        <source>Update</source>
-        <translation type="vanished">Opdater</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">Slet</translation>
-    </message>
-</context>
-<context>
-    <name>Q3FileDialog</name>
-    <message>
-        <source>Copy or Move a File</source>
-        <translation type="vanished">Kopiér eller flyt en fil</translation>
-    </message>
-    <message>
-        <source>Read: %1</source>
-        <translation type="vanished">Læs: %1</translation>
-    </message>
-    <message>
-        <source>Write: %1</source>
-        <translation type="vanished">Skriv: %1</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">Annuller</translation>
-    </message>
-    <message>
-        <source>All Files (*)</source>
-        <translation type="vanished">Alle filer (*)</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">Navn</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation type="vanished">Størrelse</translation>
-    </message>
-    <message>
-        <source>Date</source>
-        <translation type="vanished">Dato</translation>
-    </message>
-    <message>
-        <source>Attributes</source>
-        <translation type="vanished">Attributter</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="vanished">&amp;OK</translation>
-    </message>
-    <message>
-        <source>Look &amp;in:</source>
-        <translation type="vanished">Kig &amp;i:</translation>
-    </message>
-    <message>
-        <source>File &amp;name:</source>
-        <translation type="vanished">Fil&amp;navn:</translation>
-    </message>
-    <message>
-        <source>File &amp;type:</source>
-        <translation type="vanished">Fil&amp;type:</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation type="vanished">Tilbage</translation>
-    </message>
-    <message>
-        <source>One directory up</source>
-        <translation type="vanished">En mappe op</translation>
-    </message>
-    <message>
-        <source>Create New Folder</source>
-        <translation type="vanished">Opret ny folder</translation>
-    </message>
-    <message>
-        <source>List View</source>
-        <translation type="vanished">Listevisning</translation>
-    </message>
-    <message>
-        <source>Detail View</source>
-        <translation type="vanished">Detaljevisning</translation>
-    </message>
-    <message>
-        <source>Preview File Info</source>
-        <translation type="vanished">Vis filinformation</translation>
-    </message>
-    <message>
-        <source>Preview File Contents</source>
-        <translation type="vanished">Vis filindhold</translation>
-    </message>
-    <message>
-        <source>Read-write</source>
-        <translation type="vanished">Læs-skriv</translation>
-    </message>
-    <message>
-        <source>Read-only</source>
-        <translation type="vanished">Skrivebeskyttet</translation>
-    </message>
-    <message>
-        <source>Write-only</source>
-        <translation type="vanished">Write-only</translation>
-    </message>
-    <message>
-        <source>Inaccessible</source>
-        <translation type="vanished">Utilgængelig</translation>
-    </message>
-    <message>
-        <source>Symlink to File</source>
-        <translation type="vanished">Symlink til Fil</translation>
-    </message>
-    <message>
-        <source>Symlink to Directory</source>
-        <translation type="vanished">Symlink til katalog</translation>
-    </message>
-    <message>
-        <source>Symlink to Special</source>
-        <translation type="vanished">Symlink til Speciel</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation type="vanished">Fil</translation>
-    </message>
-    <message>
-        <source>Dir</source>
-        <translation type="vanished">Katalog</translation>
-    </message>
-    <message>
-        <source>Special</source>
-        <translation type="vanished">Speciel</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">Åbn</translation>
-    </message>
-    <message>
-        <source>Save As</source>
-        <translation type="vanished">Gem som</translation>
-    </message>
-    <message>
-        <source>&amp;Open</source>
-        <translation type="vanished">&amp;Åbn</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <translation type="vanished">&amp;Gem</translation>
-    </message>
-    <message>
-        <source>&amp;Rename</source>
-        <translation type="vanished">&amp;Omdøb</translation>
-    </message>
-    <message>
-        <source>&amp;Delete</source>
-        <translation type="vanished">&amp;Slet</translation>
-    </message>
-    <message>
-        <source>R&amp;eload</source>
-        <translation type="vanished">Gen&amp;indlæs</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Name</source>
-        <translation type="vanished">Sortér efter n&amp;avn</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Size</source>
-        <translation type="vanished">Sortér efter s&amp;tørrelse</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Date</source>
-        <translation type="vanished">Sortér efter &amp;dato</translation>
-    </message>
-    <message>
-        <source>&amp;Unsorted</source>
-        <translation type="vanished">&amp;Usorteret</translation>
-    </message>
-    <message>
-        <source>Sort</source>
-        <translation type="vanished">Sortér</translation>
-    </message>
-    <message>
-        <source>Show &amp;hidden files</source>
-        <translation type="vanished">Vis s&amp;kjulte filer</translation>
-    </message>
-    <message>
-        <source>the file</source>
-        <translation type="vanished">filen</translation>
-    </message>
-    <message>
-        <source>the directory</source>
-        <translation type="vanished">kataloget</translation>
-    </message>
-    <message>
-        <source>the symlink</source>
-        <translation type="vanished">symlinket</translation>
-    </message>
-    <message>
-        <source>Delete %1</source>
-        <translation type="vanished">Slet %1</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Are you sure you wish to delete %1 &quot;%2&quot;?&lt;/qt&gt;</source>
-        <translation type="vanished">&lt;qt&gt;Er du sikker på, at du vil slette %1 &quot;%2&quot;?&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Yes</source>
-        <translation type="vanished">&amp;Ja</translation>
-    </message>
-    <message>
-        <source>&amp;No</source>
-        <translation type="vanished">&amp;Nej</translation>
-    </message>
-    <message>
-        <source>New Folder 1</source>
-        <translation type="vanished">Ny folder 1</translation>
-    </message>
-    <message>
-        <source>New Folder</source>
-        <translation type="vanished">Ny folder</translation>
-    </message>
-    <message>
-        <source>New Folder %1</source>
-        <translation type="vanished">Ny folder %1</translation>
-    </message>
-    <message>
-        <source>Find Directory</source>
-        <translation type="vanished">Find katalog</translation>
-    </message>
-    <message>
-        <source>Directories</source>
-        <translation type="vanished">Kataloger</translation>
-    </message>
-    <message>
-        <source>Directory:</source>
-        <translation type="vanished">Katalog:</translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <translation type="vanished">Fejl</translation>
-    </message>
-    <message>
-        <source>%1
-File not found.
-Check path and filename.</source>
-        <translation type="vanished">%1
-Filen blev ikke fundet.
-Kontrollér sti og filnavn.</translation>
-    </message>
-    <message>
-        <source>All Files (*.*)</source>
-        <translation type="vanished">Alle filer (*.*)</translation>
-    </message>
-    <message>
-        <source>Open </source>
-        <translation type="vanished">Åbn</translation>
-    </message>
-    <message>
-        <source>Select a Directory</source>
-        <translation type="vanished">Vælg et katalog</translation>
-    </message>
-</context>
-<context>
-    <name>Q3LocalFs</name>
-    <message>
-        <source>Could not read directory
-%1</source>
-        <translation type="vanished">Kunne ikke læse katalog
-%1</translation>
-    </message>
-    <message>
-        <source>Could not create directory
-%1</source>
-        <translation type="vanished">Kunne ikke oprette katalog
-%1</translation>
-    </message>
-    <message>
-        <source>Could not remove file or directory
-%1</source>
-        <translation type="vanished">Kunne ikke fjerne fil eller katalog
-%1</translation>
-    </message>
-    <message>
-        <source>Could not rename
-%1
-to
-%2</source>
-        <translation type="vanished">Kunne ikke omdøbe
-%1
-to
-%2</translation>
-    </message>
-    <message>
-        <source>Could not open
-%1</source>
-        <translation type="vanished">Kunne ikke åbne
-%1</translation>
-    </message>
-    <message>
-        <source>Could not write
-%1</source>
-        <translation type="vanished">Kunne ikke skrive
-%1</translation>
-    </message>
-</context>
-<context>
-    <name>Q3MainWindow</name>
-    <message>
-        <source>Line up</source>
-        <translation type="vanished">Linie op</translation>
-    </message>
-    <message>
-        <source>Customize...</source>
-        <translation type="vanished">Tilpas...</translation>
-    </message>
-</context>
-<context>
-    <name>Q3NetworkProtocol</name>
-    <message>
-        <source>Operation stopped by the user</source>
-        <translation type="vanished">Brugeren stoppede handlingen</translation>
-    </message>
-</context>
-<context>
-    <name>Q3ProgressDialog</name>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">Annuller</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TabDialog</name>
-    <message>
-        <source>Apply</source>
-        <translation type="vanished">Udfør</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="vanished">Hjælp</translation>
-    </message>
-    <message>
-        <source>Defaults</source>
-        <translation type="vanished">Standarder</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">Annuller</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TextEdit</name>
-    <message>
-        <source>&amp;Undo</source>
-        <translation type="vanished">&amp;Fortryd</translation>
-    </message>
-    <message>
-        <source>&amp;Redo</source>
-        <translation type="vanished">&amp;Gendan</translation>
-    </message>
-    <message>
-        <source>Cu&amp;t</source>
-        <translation type="vanished">&amp;Klip</translation>
-    </message>
-    <message>
-        <source>&amp;Copy</source>
-        <translation type="vanished">K&amp;opiér</translation>
-    </message>
-    <message>
-        <source>&amp;Paste</source>
-        <translation type="vanished">&amp;Sæt ind</translation>
-    </message>
-    <message>
-        <source>Clear</source>
-        <translation type="vanished">Ryd</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation type="vanished">Markér alt</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TitleBar</name>
-    <message>
-        <source>Restore up</source>
-        <translation type="vanished">Gendan op</translation>
-    </message>
-    <message>
-        <source>Minimize</source>
-        <translation type="vanished">Minimer</translation>
-    </message>
-    <message>
-        <source>Restore down</source>
-        <translation type="vanished">Gendan ned</translation>
-    </message>
-    <message>
-        <source>Maximize</source>
-        <translation type="vanished">Maksimér</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">Luk</translation>
-    </message>
-    <message>
-        <source>Contains commands to manipulate the window</source>
-        <translation type="vanished">Indeholder kommandoer til indstilling af vinduet</translation>
-    </message>
-    <message>
-        <source>Puts a minimized back to normal</source>
-        <translation type="vanished">Sætter et minimeret vindue til normal størrelse</translation>
-    </message>
-    <message>
-        <source>Moves the window out of the way</source>
-        <translation type="vanished">Flytter vinduet væk</translation>
-    </message>
-    <message>
-        <source>Puts a maximized window back to normal</source>
-        <translation type="vanished">Sætter et maksimeret vindue til normal størrelse</translation>
-    </message>
-    <message>
-        <source>Makes the window full screen</source>
-        <translation type="vanished">Gør vinduet til fuld skærm</translation>
-    </message>
-    <message>
-        <source>Closes the window</source>
-        <translation type="vanished">Lukker vinduet</translation>
-    </message>
-    <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
-        <translation type="vanished">Viser vinduets navn og indeholder kontroller til indstilling af vinduet</translation>
-    </message>
-    <message>
-        <source>Holds the name of the window and contains controls to manipulate it</source>
-        <translation type="vanished">Viser vinduets navn og indeholder kontroller til indstilling af vinduet</translation>
-    </message>
-</context>
-<context>
-    <name>Q3ToolBar</name>
-    <message>
-        <source>More...</source>
-        <translation type="vanished">Mere...</translation>
-    </message>
-</context>
-<context>
-    <name>Q3UrlOperator</name>
-    <message>
-        <source>The protocol `%1&apos; is not supported</source>
-        <translation type="vanished">Protokollen &apos;%1&apos; understøttes ikke</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support listing directories</source>
-        <translation type="vanished">Protokollen &apos;%1&apos; understøtter ikke opremsning af kataloger</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support creating new directories</source>
-        <translation type="vanished">Protokollen &apos;%1&apos; understøtter ikke oprettelse af nye kataloger</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support removing files or directories</source>
-        <translation type="vanished">Protokollen &apos;%1&apos; understøtter ikke, at filer eller kataloger fjernes</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support renaming files or directories</source>
-        <translation type="vanished">Protokollen &apos;%1&apos; understøtter ikke, at filer eller kataloger omdøbes</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support getting files</source>
-        <translation type="vanished">Protokollen &apos;%1&apos; understøtter ikke hentning af filer</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support putting files</source>
-        <translation type="vanished">Protokollen &apos;%1&apos; understøtter ikke upload af filer</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support copying or moving files or directories</source>
-        <translation type="vanished">Protokollen &apos;%1&apos; understøtter ikke kopiering eller flytning af filer eller kataloger</translation>
-    </message>
-    <message>
-        <source>(unknown)</source>
-        <translation type="vanished">(ukendt)</translation>
-    </message>
-</context>
-<context>
-    <name>Q3Wizard</name>
-    <message>
-        <source>&amp;Cancel</source>
-        <translation type="vanished">&amp;Annuller</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation type="vanished">&lt; &amp;Tilbage</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation type="vanished">&amp;Næste &gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation type="vanished">&amp;Udfør</translation>
-    </message>
-    <message>
-        <source>&amp;Help</source>
-        <translation type="vanished">&amp;Hjælp</translation>
+        <source>Automatic</source>
+        <translation type="unfinished">Automatisk</translation>
     </message>
 </context>
 <context>
     <name>QAbstractSocket</name>
     <message>
         <source>Operation on socket is not supported</source>
-        <translation>Socket-operation ikke understøttet</translation>
+        <translation>Handling på socket understøttes ikke</translation>
     </message>
     <message>
         <source>Host not found</source>
-        <translation>Host blev ikke fundet</translation>
+        <translation>Værten blev ikke fundet</translation>
     </message>
     <message>
         <source>Connection refused</source>
-        <translation>Forbindelse afvist</translation>
+        <translation>Forbindelsen blev afvist</translation>
     </message>
     <message>
         <source>Connection timed out</source>
-        <translation>Forbindelsen timed out</translation>
+        <translation>Forbindelsen fik timeout</translation>
     </message>
     <message>
         <source>Socket operation timed out</source>
-        <translation>Socket-operation timed out</translation>
+        <translation>Socket-handlingen fik timeout</translation>
     </message>
     <message>
         <source>Socket is not connected</source>
-        <translation>Socket ikke forbundet</translation>
+        <translation>Socket er ikke forbundet</translation>
     </message>
     <message>
         <source>Network unreachable</source>
-        <translation>Netværket er ikke tilgængeligt</translation>
+        <translation>Netværket kan ikke tilgås</translation>
     </message>
     <message>
         <source>Trying to connect while connection is in progress</source>
-        <translation type="unfinished"></translation>
+        <translation>Prøver at oprette forbindelse mens forbindelse er under oprettelse</translation>
     </message>
 </context>
 <context>
@@ -710,256 +100,213 @@ to
     </message>
     <message>
         <source>&amp;Select All</source>
-        <translation>&amp;Vælg alle</translation>
+        <translation>&amp;Markér alt</translation>
     </message>
 </context>
 <context>
     <name>QAccessibleActionInterface</name>
     <message>
         <source>Press</source>
-        <translation type="unfinished">Tryk på</translation>
+        <translation>Tryk på</translation>
     </message>
     <message>
         <source>Increase</source>
-        <translation type="unfinished"></translation>
+        <translation>Forøg</translation>
     </message>
     <message>
         <source>Decrease</source>
-        <translation type="unfinished"></translation>
+        <translation>Formindsk</translation>
     </message>
     <message>
         <source>ShowMenu</source>
-        <translation type="unfinished"></translation>
+        <translation>Vis menu</translation>
     </message>
     <message>
         <source>SetFocus</source>
-        <translation type="unfinished"></translation>
+        <translation>SætFokus</translation>
     </message>
     <message>
         <source>Toggle</source>
-        <translation type="unfinished">Slå til/fra</translation>
+        <translation>Til/fra</translation>
     </message>
     <message>
         <source>Scroll Left</source>
-        <translation type="unfinished">Scroll til venstre</translation>
+        <translation>Rul til venstre</translation>
     </message>
     <message>
         <source>Scroll Right</source>
-        <translation type="unfinished">Scroll til højre</translation>
+        <translation>Rul til højre</translation>
     </message>
     <message>
         <source>Scroll Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Rul op</translation>
     </message>
     <message>
         <source>Scroll Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Rul ned</translation>
     </message>
     <message>
         <source>Previous Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Forrige side</translation>
     </message>
     <message>
         <source>Next Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Næste side</translation>
     </message>
     <message>
         <source>Triggers the action</source>
-        <translation type="unfinished"></translation>
+        <translation>Udløser handlingen</translation>
     </message>
     <message>
         <source>Increase the value</source>
-        <translation type="unfinished"></translation>
+        <translation>Forøg værdien</translation>
     </message>
     <message>
         <source>Decrease the value</source>
-        <translation type="unfinished"></translation>
+        <translation>Formindsk værdien</translation>
     </message>
     <message>
         <source>Shows the menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Viser menuen</translation>
     </message>
     <message>
         <source>Sets the focus</source>
-        <translation type="unfinished"></translation>
+        <translation>Sæt fokussen</translation>
     </message>
     <message>
         <source>Toggles the state</source>
-        <translation type="unfinished"></translation>
+        <translation>Slår tilstanden til/fra</translation>
     </message>
     <message>
         <source>Scrolls to the left</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruller til venstre</translation>
     </message>
     <message>
         <source>Scrolls to the right</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruller til højre</translation>
     </message>
     <message>
         <source>Scrolls up</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruller op</translation>
     </message>
     <message>
         <source>Scrolls down</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruller ned</translation>
     </message>
     <message>
         <source>Goes back a page</source>
-        <translation type="unfinished"></translation>
+        <translation>Går en side tilbage</translation>
     </message>
     <message>
         <source>Goes to the next page</source>
-        <translation type="unfinished"></translation>
+        <translation>Går til den næste side</translation>
     </message>
 </context>
 <context>
     <name>QAndroidPlatformTheme</name>
     <message>
         <source>Yes</source>
-        <translation type="unfinished">Ja</translation>
+        <translation>Ja</translation>
     </message>
     <message>
         <source>Yes to All</source>
-        <translation type="unfinished"></translation>
+        <translation>Ja til alle</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished">Nej</translation>
+        <translation>Nej</translation>
     </message>
     <message>
         <source>No to All</source>
-        <translation type="unfinished"></translation>
+        <translation>Nej til alle</translation>
     </message>
 </context>
 <context>
     <name>QApplication</name>
     <message>
-        <source>Activate</source>
-        <translation type="vanished">Aktivér</translation>
-    </message>
-    <message>
         <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
-        <translation>Eksekverbar &apos;%1&apos; kræver Qt %2, ikke fundet Qt %3.</translation>
+        <translation>Eksekverbar &apos;%1&apos; kræver Qt %2, fandt Qt %3.</translation>
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
-        <translation>Inkompatibel Qt Library fejl</translation>
-    </message>
-    <message>
-        <source>QT_LAYOUT_DIRECTION</source>
-        <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
-        <translation type="vanished">LTR</translation>
-    </message>
-    <message>
-        <source>Activates the program&apos;s main window</source>
-        <translation type="vanished">Aktiverer programmets hovedvindue</translation>
-    </message>
-</context>
-<context>
-    <name>QAxSelect</name>
-    <message>
-        <source>Select ActiveX Control</source>
-        <translation type="vanished">Vælg ActiveX-kontrol</translation>
-    </message>
-    <message>
-        <source>&amp;Cancel</source>
-        <translation type="vanished">&amp;Annuller</translation>
-    </message>
-    <message>
-        <source>COM &amp;Object:</source>
-        <translation type="vanished">COM &amp;Objekt:</translation>
-    </message>
-</context>
-<context>
-    <name>QCheckBox</name>
-    <message>
-        <source>Uncheck</source>
-        <translation type="vanished">Fjern markering</translation>
-    </message>
-    <message>
-        <source>Check</source>
-        <translation type="vanished">Kryds af</translation>
-    </message>
-    <message>
-        <source>Toggle</source>
-        <translation type="vanished">Slå til/fra</translation>
+        <translation>Fejl om inkompatibelt Qt-bibliotek</translation>
     </message>
 </context>
 <context>
     <name>QCocoaMenuItem</name>
     <message>
         <source>About Qt</source>
-        <translation type="unfinished">Om Qt</translation>
+        <translation>Om Qt</translation>
     </message>
     <message>
         <source>About</source>
-        <translation type="unfinished"></translation>
+        <translation>Om</translation>
     </message>
     <message>
         <source>Config</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfig</translation>
     </message>
     <message>
         <source>Preference</source>
-        <translation type="unfinished"></translation>
+        <translation>Præference</translation>
     </message>
     <message>
         <source>Options</source>
-        <translation type="unfinished">Valgmuligheder</translation>
+        <translation>Valgmuligheder</translation>
     </message>
     <message>
         <source>Setting</source>
-        <translation type="unfinished"></translation>
+        <translation>Indstilling</translation>
     </message>
     <message>
         <source>Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Opsætning</translation>
     </message>
     <message>
         <source>Quit</source>
-        <translation type="unfinished">Afslut</translation>
+        <translation>Afslut</translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation type="unfinished"></translation>
+        <translation>Afslut</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished">Klip</translation>
+        <translation>Klip</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">Kopiér</translation>
+        <translation>Kopiér</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished">Sæt ind</translation>
+        <translation>Sæt ind</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation type="unfinished">Markér alt</translation>
+        <translation>Markér alt</translation>
     </message>
 </context>
 <context>
     <name>QCocoaTheme</name>
     <message>
         <source>Don&apos;t Save</source>
-        <translation type="unfinished">Gem ikke</translation>
+        <translation>Gem ikke</translation>
     </message>
 </context>
 <context>
     <name>QColorDialog</name>
     <message>
         <source>Hu&amp;e:</source>
-        <translation>Ton&amp;e:</translation>
+        <translation>Farveton&amp;e:</translation>
     </message>
     <message>
         <source>&amp;Sat:</source>
-        <translation>&amp;Mæt:</translation>
+        <translation>&amp;Mætning:</translation>
     </message>
     <message>
         <source>&amp;Val:</source>
-        <translation>&amp;Vær:</translation>
+        <translation>&amp;Værdi:</translation>
     </message>
     <message>
         <source>&amp;Red:</source>
@@ -983,271 +330,262 @@ to
     </message>
     <message>
         <source>&amp;Basic colors</source>
-        <translation>&amp;Basisfarver</translation>
+        <translation>&amp;Grundlæggende farver</translation>
     </message>
     <message>
         <source>&amp;Custom colors</source>
-        <translation>&amp;Egne farver</translation>
+        <translation>&amp;Brugerdefineret farver</translation>
     </message>
     <message>
         <source>&amp;Add to Custom Colors</source>
-        <translation>&amp;Føj til egne farver</translation>
-    </message>
-    <message>
-        <source>Select color</source>
-        <translation type="vanished">Vælg farve</translation>
+        <translation>&amp;Føj til brugerdefineret farver</translation>
     </message>
     <message>
         <source>&amp;HTML:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;HTML:</translation>
     </message>
     <message>
         <source>Cursor at %1, %2
 Press ESC to cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Markør ved %1, %2
+Tryk på ESC for at annullere</translation>
     </message>
     <message>
         <source>&amp;Pick Screen Color</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Vælg farve på skærmen</translation>
     </message>
 </context>
 <context>
     <name>QComboBox</name>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">Åbn</translation>
-    </message>
     <message>
         <source>False</source>
         <translation>Falsk</translation>
     </message>
     <message>
         <source>True</source>
-        <translation>Sandt</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">Luk</translation>
+        <translation>Sand</translation>
     </message>
     <message>
         <source>Open the combo box selection popup</source>
-        <translation type="unfinished"></translation>
+        <translation>Åbn komboboksens valg-pop op</translation>
     </message>
 </context>
 <context>
     <name>QCommandLineParser</name>
     <message>
         <source>Displays version information.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays this help.</source>
-        <translation type="unfinished"></translation>
+        <translation>Viser versionsinformation.</translation>
     </message>
     <message>
         <source>Unknown option &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukendt valgmulighed &apos;%1&apos;.</translation>
     </message>
     <message>
         <source>Unknown options: %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukendte valgmuligheder: %1.</translation>
     </message>
     <message>
         <source>Missing value after &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Manglende værdi efter &apos;%1&apos;.</translation>
     </message>
     <message>
         <source>Unexpected value after &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uventet værdi efter &apos;%1&apos;.</translation>
     </message>
     <message>
         <source>[options]</source>
-        <translation type="unfinished"></translation>
+        <translation>[valgmuligheder]</translation>
     </message>
     <message>
         <source>Usage: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Brug: %1</translation>
     </message>
     <message>
         <source>Options:</source>
-        <translation type="unfinished"></translation>
+        <translation>Valgmuligheder:</translation>
     </message>
     <message>
         <source>Arguments:</source>
+        <translation>Argumenter:</translation>
+    </message>
+    <message>
+        <source>Displays help on commandline options.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays help including Qt specific options.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QCoreApplication</name>
     <message>
-        <source>%1: permission denied</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: ikke tilladt</translation>
-    </message>
-    <message>
-        <source>%1: already exists</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: eksisterer allerede</translation>
-    </message>
-    <message>
-        <source>%1: doesn&apos;t exists</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: eksisterer ikke</translation>
-    </message>
-    <message>
-        <source>%1: out of resources</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: mangler ressourcer</translation>
-    </message>
-    <message>
-        <source>%1: unknown error %2</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: ukendt fejl %2</translation>
-    </message>
-    <message>
         <source>%1: key is empty</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: nøgle er tom</translation>
+        <translation>%1: nøglen er tom</translation>
     </message>
     <message>
         <source>%1: unable to make key</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: kunne ikke lave nøgle</translation>
+        <translation>%1: kunne ikke lave nøglen</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: ftok mislykkedes</translation>
+        <translation>%1: ftok fejlede</translation>
     </message>
 </context>
 <context>
     <name>QCupsJobWidget</name>
     <message>
         <source>Job</source>
-        <translation type="unfinished"></translation>
+        <translation>Job</translation>
     </message>
     <message>
         <source>Job Control</source>
-        <translation type="unfinished"></translation>
+        <translation>Jobstyring</translation>
     </message>
     <message>
         <source>Scheduled printing:</source>
-        <translation type="unfinished"></translation>
+        <translation>Planlagt udskrivning:</translation>
     </message>
     <message>
         <source>Billing information:</source>
-        <translation type="unfinished"></translation>
+        <translation>Betalingsinformation:</translation>
     </message>
     <message>
         <source>Job priority:</source>
-        <translation type="unfinished"></translation>
+        <translation>Jobprioritet:</translation>
     </message>
     <message>
         <source>Banner Pages</source>
-        <translation type="unfinished"></translation>
+        <translation>Bannersider</translation>
     </message>
     <message>
         <source>End:</source>
         <comment>Banner page at end</comment>
-        <translation type="unfinished"></translation>
+        <translation>Slut:</translation>
     </message>
     <message>
         <source>Start:</source>
         <comment>Banner page at start</comment>
-        <translation type="unfinished"></translation>
+        <translation>Start:</translation>
     </message>
     <message>
         <source>Print Immediately</source>
-        <translation type="unfinished"></translation>
+        <translation>Udskriv med det samme</translation>
     </message>
     <message>
         <source>Hold Indefinitely</source>
-        <translation type="unfinished"></translation>
+        <translation>Hold på ubestemt tid</translation>
     </message>
     <message>
         <source>Day (06:00 to 17:59)</source>
-        <translation type="unfinished"></translation>
+        <translation>Dag (06:00 til 17:59)</translation>
     </message>
     <message>
         <source>Night (18:00 to 05:59)</source>
-        <translation type="unfinished"></translation>
+        <translation>Nat (18:00 til 05:59)</translation>
     </message>
     <message>
         <source>Second Shift (16:00 to 23:59)</source>
-        <translation type="unfinished"></translation>
+        <translation>Andet skiftehold (16:00 til 23:59)</translation>
     </message>
     <message>
         <source>Third Shift (00:00 to 07:59)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tredje skiftehold (00:00 til 07:59)</translation>
     </message>
     <message>
         <source>Weekend (Saturday to Sunday)</source>
-        <translation type="unfinished"></translation>
+        <translation>Weekend (lørdag til søndag)</translation>
     </message>
     <message>
         <source>Specific Time</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestemt tid</translation>
     </message>
     <message>
         <source>None</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished">Ingen</translation>
+        <translation>Intet</translation>
     </message>
     <message>
         <source>Standard</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation>Standard</translation>
     </message>
     <message>
         <source>Unclassified</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation>Uklassificeret</translation>
     </message>
     <message>
         <source>Confidential</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation>Fortroligt</translation>
     </message>
     <message>
         <source>Classified</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation>Klassificeret</translation>
     </message>
     <message>
         <source>Secret</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation>Hemmeligt</translation>
     </message>
     <message>
         <source>Top Secret</source>
         <comment>CUPS Banner page</comment>
-        <translation type="unfinished"></translation>
+        <translation>Top hemmeligt</translation>
+    </message>
+</context>
+<context>
+    <name>QCupsPrinterSupport</name>
+    <message>
+        <source>Authentication Needed</source>
+        <translation>Der kræves autentifikation</translation>
+    </message>
+    <message>
+        <source>Authentication needed to use %1.</source>
+        <translation>Der kræves autentifikation for at bruge %1.</translation>
+    </message>
+    <message>
+        <source>Authentication needed to use %1 on %2.</source>
+        <translation>Der kræves autentifikation for at bruge %1 på %2.</translation>
+    </message>
+    <message>
+        <source>Username:</source>
+        <translation>Brugernavn:</translation>
+    </message>
+    <message>
+        <source>Password:</source>
+        <translation>Adgangskode:</translation>
     </message>
 </context>
 <context>
     <name>QDB2Driver</name>
     <message>
         <source>Unable to connect</source>
-        <translation>Kunne ikke skabe forbindelse</translation>
+        <translation>Kunne ikke oprette forbindelse</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>Kunne ikke gennemføre transaktion</translation>
+        <translation>Kunne ikke gennemføre transaktionen</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>Kunne ikke tilbagetrække transaktion</translation>
+        <translation>Kunne ikke tilbagetrække transaktionen</translation>
     </message>
     <message>
         <source>Unable to set autocommit</source>
-        <translation>Kunne ikke aktivere autocommit</translation>
+        <translation>Kunne ikke sætte auto-gennemfør</translation>
     </message>
 </context>
 <context>
     <name>QDB2Result</name>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Kunne ikke udføre statement</translation>
+        <translation>Kunne ikke eksekvere udsagn</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
@@ -1255,11 +593,11 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Unable to bind variable</source>
-        <translation>Kunne ikke binde variabel</translation>
+        <translation>Kunne ikke binde variablen</translation>
     </message>
     <message>
         <source>Unable to fetch record %1</source>
-        <translation>Kunne ikke hente post %1</translation>
+        <translation>Kunne ikke hente record&apos;en %1</translation>
     </message>
     <message>
         <source>Unable to fetch next</source>
@@ -1274,139 +612,40 @@ Press ESC to cancel</source>
     <name>QDBusTrayIcon</name>
     <message>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
 </context>
 <context>
     <name>QDateTimeParser</name>
     <message>
         <source>AM</source>
-        <translation type="unfinished"></translation>
+        <translation>AM</translation>
     </message>
     <message>
         <source>am</source>
-        <translation type="unfinished"></translation>
+        <translation>am</translation>
     </message>
     <message>
         <source>PM</source>
-        <translation type="unfinished"></translation>
+        <translation>PM</translation>
     </message>
     <message>
         <source>pm</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>QDial</name>
-    <message>
-        <source>SpeedoMeter</source>
-        <translation type="vanished">Speedometer</translation>
+        <translation>pm</translation>
     </message>
 </context>
 <context>
     <name>QDialog</name>
     <message>
         <source>What&apos;s This?</source>
-        <translation>Hvad er dette?</translation>
-    </message>
-    <message>
-        <source>Done</source>
-        <translation type="vanished">Udført</translation>
+        <translation>Hvad er det?</translation>
     </message>
 </context>
 <context>
     <name>QDialogButtonBox</name>
     <message>
         <source>OK</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation type="vanished">Gem</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">Åbn</translation>
-    </message>
-    <message>
-        <source>&amp;Cancel</source>
-        <translation type="vanished">&amp;Annuller</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">Annuller</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation type="vanished">&amp;Luk</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">Luk</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="vanished">Udfør</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="vanished">Nulstil</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="vanished">Hjælp</translation>
-    </message>
-    <message>
-        <source>Don&apos;t Save</source>
-        <translation type="vanished">Gem ikke</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation type="vanished">Kassér</translation>
-    </message>
-    <message>
-        <source>&amp;Yes</source>
-        <translation type="vanished">&amp;Ja</translation>
-    </message>
-    <message>
-        <source>Yes to &amp;All</source>
-        <translation type="vanished">Ja til &amp;alle</translation>
-    </message>
-    <message>
-        <source>&amp;No</source>
-        <translation type="vanished">&amp;Nej</translation>
-    </message>
-    <message>
-        <source>N&amp;o to All</source>
-        <translation type="vanished">Ne&amp;j til alle</translation>
-    </message>
-    <message>
-        <source>Save All</source>
-        <translation type="vanished">Gem alle</translation>
-    </message>
-    <message>
-        <source>Abort</source>
-        <translation type="vanished">Afbryd</translation>
-    </message>
-    <message>
-        <source>Retry</source>
-        <translation type="vanished">Prøv igen</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <translation type="vanished">Ignorer</translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation type="vanished">Gendan standardværdier</translation>
-    </message>
-    <message>
-        <source>Close without Saving</source>
-        <translation type="vanished">Luk uden at gemme</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <translation type="vanished">&amp;Gem</translation>
+        <translation>OK</translation>
     </message>
 </context>
 <context>
@@ -1427,7 +666,7 @@ Press ESC to cancel</source>
     <message>
         <source>Type</source>
         <comment>All other platforms</comment>
-        <translation></translation>
+        <translation>Type</translation>
     </message>
     <message>
         <source>Date Modified</source>
@@ -1438,106 +677,106 @@ Press ESC to cancel</source>
     <name>QDnsLookup</name>
     <message>
         <source>Operation cancelled</source>
-        <translation type="unfinished"></translation>
+        <translation>Handlingen blev annulleret</translation>
     </message>
 </context>
 <context>
     <name>QDnsLookupRunnable</name>
     <message>
         <source>IPv6 addresses for nameservers are currently not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6-adresser for navneservere understøttes ikke på nuværende tidspunkt</translation>
     </message>
     <message>
         <source>Invalid domain name</source>
-        <translation type="unfinished"></translation>
+        <translation>Ugyldigt domænenavn</translation>
     </message>
     <message>
         <source>Not yet supported on Android</source>
-        <translation type="unfinished"></translation>
+        <translation>Endnu ikke understøttet på Android</translation>
     </message>
     <message>
         <source>Resolver functions not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Løser-funktioner ikke fundet</translation>
     </message>
     <message>
         <source>Resolver initialization failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Løser-initialisering fejlede</translation>
     </message>
     <message>
         <source>Server could not process query</source>
-        <translation type="unfinished"></translation>
+        <translation>Serveren kunne ikke behandle forespørgsel</translation>
     </message>
     <message>
         <source>Server failure</source>
-        <translation type="unfinished"></translation>
+        <translation>Serverfejl</translation>
     </message>
     <message>
         <source>Non existent domain</source>
-        <translation type="unfinished"></translation>
+        <translation>Ikke eksisterende domæne</translation>
     </message>
     <message>
         <source>Server refused to answer</source>
-        <translation type="unfinished"></translation>
+        <translation>Serveren nægtede at svare</translation>
     </message>
     <message>
         <source>Invalid reply received</source>
-        <translation type="unfinished"></translation>
+        <translation>Ugyldigt svar modtaget</translation>
     </message>
     <message>
         <source>Could not expand domain name</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunne ikke udvide domænenavn</translation>
     </message>
     <message>
         <source>Invalid IPv4 address record</source>
-        <translation type="unfinished"></translation>
+        <translation>Ugyldig IPv4-adresse-record</translation>
     </message>
     <message>
         <source>Invalid IPv6 address record</source>
-        <translation type="unfinished"></translation>
+        <translation>Ugyldig IPv6-adresse-record</translation>
     </message>
     <message>
         <source>Invalid canonical name record</source>
-        <translation type="unfinished"></translation>
+        <translation>Ugyldig kanonisk navn-record</translation>
     </message>
     <message>
         <source>Invalid name server record</source>
-        <translation type="unfinished"></translation>
+        <translation>Ugyldig navneserver-record</translation>
     </message>
     <message>
         <source>Invalid pointer record</source>
-        <translation type="unfinished"></translation>
+        <translation>Ugyldig pointer-record</translation>
     </message>
     <message>
         <source>Invalid mail exchange record</source>
-        <translation type="unfinished"></translation>
+        <translation>Ugyldig mail exchange-record</translation>
     </message>
     <message>
         <source>Invalid service record</source>
-        <translation type="unfinished"></translation>
+        <translation>Ugyldig service-record</translation>
     </message>
     <message>
         <source>Invalid text record</source>
-        <translation type="unfinished"></translation>
+        <translation>Ugyldig tekst-record</translation>
     </message>
     <message>
         <source>Resolver library can&apos;t be loaded: No runtime library loading support</source>
-        <translation type="unfinished"></translation>
+        <translation>Løser-bibliotek kan ikke indlæses: ingen understøttelse af rumtime-bibliotek indlæsning</translation>
     </message>
     <message>
         <source>No hostname given</source>
-        <translation type="unfinished"></translation>
+        <translation>Intet værtsnavn givet</translation>
     </message>
     <message>
         <source>Invalid hostname</source>
-        <translation type="unfinished"></translation>
+        <translation>Ugyldigt værtsnavn</translation>
     </message>
     <message>
         <source>Host %1 could not be found.</source>
-        <translation type="unfinished"></translation>
+        <translation>Værten %1 kunne ikke findes.</translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukendt fejl</translation>
     </message>
 </context>
 <context>
@@ -1548,39 +787,214 @@ Press ESC to cancel</source>
         <translation>Luk</translation>
     </message>
     <message>
-        <source>Dock</source>
-        <translation type="vanished">Låst</translation>
-    </message>
-    <message>
         <source>Float</source>
         <extracomment>Accessible name for button undocking a dock widget (floating state)</extracomment>
-        <translation>Flydende</translation>
+        <translation>Flyd</translation>
     </message>
     <message>
         <source>Undocks and re-attaches the dock widget</source>
-        <translation type="unfinished"></translation>
+        <translation>Frigør og gentilkobler dok-widget&apos;en</translation>
     </message>
     <message>
         <source>Closes the dock widget</source>
+        <translation>Lukker dok-widget&apos;en</translation>
+    </message>
+</context>
+<context>
+    <name>QDomParser</name>
+    <message>
+        <source>Error occurred while processing XML declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Multiple DTD sections are not allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing document type declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing comment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing a processing instruction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing a start element</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected end element &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing an end element</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing the element content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing comments</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing an entity reference</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected token</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tag mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing entity declaration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error occurred while processing notation declaration</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>QDoubleSpinBox</name>
+    <name>QDtls</name>
     <message>
-        <source>More</source>
-        <translation type="vanished">Mere</translation>
+        <source>Invalid (empty) secret</source>
+        <translation>Ugyldig (tom) hemmelighed</translation>
     </message>
     <message>
-        <source>Less</source>
-        <translation type="vanished">Mindre</translation>
+        <source>Multicast and broadcast addresses are not supported</source>
+        <translation>Multicast- og broadcast-adresser understøttes ikke</translation>
+    </message>
+    <message>
+        <source>Cannot set peer after handshake started</source>
+        <translation>Kan ikke sætte peer efter håndtryk er startet</translation>
+    </message>
+    <message>
+        <source>Invalid address</source>
+        <translation>Ugyldig adresse</translation>
+    </message>
+    <message>
+        <source>Cannot set verification name after handshake started</source>
+        <translation>Kan ikke sætte verifikationsnavn efter håndtryk er startet</translation>
+    </message>
+    <message>
+        <source>Cannot set configuration after handshake started</source>
+        <translation>Kan ikke sætte konfiguration efter håndtryk er startet</translation>
+    </message>
+    <message>
+        <source>Cannot start/continue handshake, invalid handshake state</source>
+        <translation>Kan ikke starte/fortsætte håndtryk, ugyldig håndtryk-tilstand</translation>
+    </message>
+    <message>
+        <source>Invalid (nullptr) socket</source>
+        <translation>Ugyldig (nullptr) socket</translation>
+    </message>
+    <message>
+        <source>To start a handshake you must set peer&apos;s address and port first</source>
+        <translation>For at starte et håndtryk skal du først sætte peer&apos;ens adresse og port</translation>
+    </message>
+    <message>
+        <source>To start a handshake, DTLS server requires non-empty datagram (client hello)</source>
+        <translation>For at starte et håndtryk kræver DTLS-serveren ikke-tomt datagram (klient hello)</translation>
+    </message>
+    <message>
+        <source>Cannot start handshake, already done/in progress</source>
+        <translation>Kan ikke starte håndtryk, allerede færdig/under oprettelse</translation>
+    </message>
+    <message>
+        <source>A valid QUdpSocket and non-empty datagram are needed to continue the handshake</source>
+        <translation>Der behøves en gyldig QUdpSocket og ikke-tomt datagram for at fortsætte håndtrykket</translation>
+    </message>
+    <message>
+        <source>Cannot continue handshake, not in InProgress state</source>
+        <translation>Kan ikke fortsætte håndtryk, ikke i InProgress-tilstand</translation>
+    </message>
+    <message>
+        <source>Cannot resume, not in VerificationError state</source>
+        <translation>Kan ikke genoptage, ikke i VerificationError-tilstand</translation>
+    </message>
+    <message>
+        <source>No handshake in progress, nothing to abort</source>
+        <translation>Intet håndtryk under oprettelse, intet at afbryde</translation>
+    </message>
+    <message>
+        <source>Cannot send shutdown alert, not encrypted</source>
+        <translation>Kan ikke send nedlukningsbesked, ikke krypteret</translation>
+    </message>
+    <message>
+        <source>Cannot write a datagram, not in encrypted state</source>
+        <translation>Kan ikke skrive et datagram, ikke i krypteret tilstand</translation>
+    </message>
+    <message>
+        <source>Cannot read a datagram, not in encrypted state</source>
+        <translation>Kan ikke læse et datagram, ikke i krypteret tilstand</translation>
+    </message>
+    <message>
+        <source>%1 failed</source>
+        <extracomment>%1: Some function</extracomment>
+        <translation>%1 fejlede</translation>
+    </message>
+    <message>
+        <source>Invalid SslMode, SslServerMode or SslClientMode expected</source>
+        <translation>Ugyldig SslMode, SslServerMode eller SslClientMode ventet</translation>
+    </message>
+    <message>
+        <source>Invalid protocol version, DTLS protocol expected</source>
+        <translation>Ugyldig protokolversion, DTLS-protokol ventet</translation>
+    </message>
+    <message>
+        <source>BIO_ADD_new failed, cannot start handshake</source>
+        <translation>BIO_ADD_new fejlede, kan ikke starte håndtryk</translation>
+    </message>
+    <message>
+        <source>Cannot start the handshake, verified client hello expected</source>
+        <translation>Kan ikke starte et håndtryk, verificeret klient hello ventet</translation>
+    </message>
+    <message>
+        <source>Peer verification failed</source>
+        <translation>Peer-verifikation fejlede</translation>
+    </message>
+    <message>
+        <source>The DTLS connection has been closed</source>
+        <translation>DTLS-forbindelsen er blevet lukket</translation>
+    </message>
+    <message>
+        <source>Error while writing: %1</source>
+        <translation>Fejl under skrivning: %1</translation>
+    </message>
+    <message>
+        <source>The DTLS connection has been shutdown</source>
+        <translation>DTLS-forbindelsen er blevet lukket ned</translation>
+    </message>
+    <message>
+        <source>Error while reading: %1</source>
+        <translation>Fejl under læsning: %1</translation>
+    </message>
+</context>
+<context>
+    <name>QDtlsClientVerifier</name>
+    <message>
+        <source>A valid UDP socket, non-empty datagram, valid address/port were expected</source>
+        <translation>En gyldig UDP-socket, ikke-tomt datagram, gyldig adresse/port blev ventet</translation>
+    </message>
+    <message>
+        <source>BIO_ADDR_new failed, ignoring client hello</source>
+        <translation>BIO_ADDR_new fejlede, ignorerer klient hello</translation>
     </message>
 </context>
 <context>
     <name>QErrorMessage</name>
     <message>
         <source>Debug Message:</source>
-        <translation>Debug-besked:</translation>
+        <translation>Fejlretningsmeddelelse:</translation>
     </message>
     <message>
         <source>Warning:</source>
@@ -1592,30 +1006,34 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>&amp;Show this message again</source>
-        <translation>&amp;Vis denne besked igen</translation>
+        <translation>&amp;Vis denne meddelelse igen</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation></translation>
+        <translation>&amp;OK</translation>
+    </message>
+    <message>
+        <source>Critical Error:</source>
+        <translation>Kritisk fejl:</translation>
+    </message>
+    <message>
+        <source>Information:</source>
+        <translation>Information:</translation>
     </message>
 </context>
 <context>
     <name>QFile</name>
     <message>
         <source>Destination file exists</source>
-        <translation>Destinationsfil findes</translation>
+        <translation>Destinationsfilen findes</translation>
     </message>
     <message>
         <source>Cannot remove source file</source>
-        <translation>Kan ikke fjerne kildefil</translation>
+        <translation>Kan ikke fjerne kildefilen</translation>
     </message>
     <message>
         <source>Cannot open %1 for input</source>
-        <translation>Kan ikke åbne %1 til input</translation>
-    </message>
-    <message>
-        <source>Cannot open for output</source>
-        <translation>Kan ikke åbne til output</translation>
+        <translation>Kan ikke åbne %1 for input</translation>
     </message>
     <message>
         <source>Failure to write block</source>
@@ -1623,26 +1041,34 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Cannot create %1 for output</source>
-        <translation>Kunne ikke oprette %1 til output</translation>
+        <translation>Kan ikke oprette %1 for output</translation>
     </message>
     <message>
         <source>Destination file is the same file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Destinationsfilen er den samme fil.</translation>
     </message>
     <message>
         <source>Source file does not exist.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Error while renaming.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kildefilen findes ikke.</translation>
     </message>
     <message>
         <source>Unable to restore from %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunne ikke genskabe fra %1: %2</translation>
     </message>
     <message>
         <source>Will not rename sequential file using block copy</source>
+        <translation>Vil ikke omdøbe fortløbende fil ved brug af blokkopiering</translation>
+    </message>
+    <message>
+        <source>Error while renaming: %1</source>
+        <translation>Fejl under omdøbning: %1</translation>
+    </message>
+    <message>
+        <source>Cannot open destination file: %1</source>
+        <translation>Kan ikke åbne destinationsfilen: %1</translation>
+    </message>
+    <message>
+        <source>Cannot open for output: %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1650,7 +1076,11 @@ Press ESC to cancel</source>
     <name>QFileDevice</name>
     <message>
         <source>No file engine available or engine does not support UnMapExtension</source>
-        <translation type="unfinished"></translation>
+        <translation>Ingen tilgængelig fil-motor eller motor understøtter ikke UnMapExtension</translation>
+    </message>
+    <message>
+        <source>No file engine available</source>
+        <translation>Ingen tilgængelig fil-motor</translation>
     </message>
 </context>
 <context>
@@ -1661,7 +1091,7 @@ Press ESC to cancel</source>
     </message>
     <message>
         <source>Directories</source>
-        <translation>Kataloger</translation>
+        <translation>Mapper</translation>
     </message>
     <message>
         <source>&amp;Open</source>
@@ -1679,19 +1109,19 @@ Press ESC to cancel</source>
         <source>%1 already exists.
 Do you want to replace it?</source>
         <translation>%1 findes allerede.
-Ønsker du at erstatte den?</translation>
+Vil du erstatte den?</translation>
     </message>
     <message>
         <source>%1
 File not found.
 Please verify the correct file name was given.</source>
         <translation>%1
-Filen kunne ikke findes.
-Kontrollér, at det rigtige filnavn er indtastet.</translation>
+Filen blev ikke fundet.
+Kontrollér, at det korrekte filnavn blev givet.</translation>
     </message>
     <message>
         <source>My Computer</source>
-        <translation>Min computer</translation>
+        <translation>Denne Computer</translation>
     </message>
     <message>
         <source>&amp;Rename</source>
@@ -1711,7 +1141,7 @@ Kontrollér, at det rigtige filnavn er indtastet.</translation>
     </message>
     <message>
         <source>Parent Directory</source>
-        <translation>Ovenliggende katalog</translation>
+        <translation>Ovenliggende mappe</translation>
     </message>
     <message>
         <source>List View</source>
@@ -1719,41 +1149,37 @@ Kontrollér, at det rigtige filnavn er indtastet.</translation>
     </message>
     <message>
         <source>Detail View</source>
-        <translation>Detaljevisning</translation>
+        <translation>Detaljeret visning</translation>
     </message>
     <message>
         <source>Files of type:</source>
-        <translation>Filer af typen:</translation>
+        <translation>Filer af type:</translation>
     </message>
     <message>
         <source>Directory:</source>
-        <translation>Katalog:</translation>
+        <translation>Mappe:</translation>
     </message>
     <message>
         <source>%1
 Directory not found.
 Please verify the correct directory name was given.</source>
         <translation>%1
-Katalog kunne ikke findes.
-Kontrollér, at det rigtige katalognavn er indtastet.</translation>
+Mappen blev ikke fundet.
+Kontrollér, at det korrekte mappenavn blev givet.</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is write protected.
 Do you want to delete it anyway?</source>
         <translation>&apos;%1&apos; er skrivebeskyttet.
-Ønsker du alligevel at slette?</translation>
-    </message>
-    <message>
-        <source>Are sure you want to delete &apos;%1&apos;?</source>
-        <translation type="vanished">Er du sikker på, at &apos;%1&apos; skal slettes?</translation>
+Vil du slette den alligevel?</translation>
     </message>
     <message>
         <source>Could not delete directory.</source>
-        <translation>Kunne ikke slette kataloget.</translation>
+        <translation>Kunne ikke slette mappen.</translation>
     </message>
     <message>
         <source>Recent Places</source>
-        <translation>Aktuelle steder</translation>
+        <translation>Nylige steder</translation>
     </message>
     <message>
         <source>Save As</source>
@@ -1773,11 +1199,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Find Directory</source>
-        <translation>Find katalog</translation>
+        <translation>Find mappe</translation>
     </message>
     <message>
         <source>Show </source>
-        <translation>Vis</translation>
+        <translation>Vis </translation>
     </message>
     <message>
         <source>Forward</source>
@@ -1785,11 +1211,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>New Folder</source>
-        <translation>Ny folder</translation>
+        <translation>Ny mappe</translation>
     </message>
     <message>
         <source>&amp;New Folder</source>
-        <translation>&amp;Ny folder</translation>
+        <translation>&amp;Ny mappe</translation>
     </message>
     <message>
         <source>&amp;Choose</source>
@@ -1805,100 +1231,96 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Look in:</source>
-        <translation>Søg i:</translation>
+        <translation>Kig i:</translation>
     </message>
     <message>
         <source>Create New Folder</source>
-        <translation>Opret ny folder</translation>
-    </message>
-    <message>
-        <source>All Files (*.*)</source>
-        <translation type="vanished">Alle filer (*.*)</translation>
+        <translation>Opret ny mappe</translation>
     </message>
     <message>
         <source>Go back</source>
-        <translation type="unfinished"></translation>
+        <translation>Gå tilbage</translation>
     </message>
     <message>
         <source>Alt+Left</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+Venstre</translation>
     </message>
     <message>
         <source>Go forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Gå fremad</translation>
     </message>
     <message>
         <source>Alt+Right</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+Højre</translation>
     </message>
     <message>
         <source>Go to the parent directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Gå til den overliggende mappe</translation>
     </message>
     <message>
         <source>Alt+Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+Op</translation>
     </message>
     <message>
         <source>Create a New Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Opret en ny mappe</translation>
     </message>
     <message>
         <source>Change to list view mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Skift til listevisningstilstand</translation>
     </message>
     <message>
         <source>Change to detail view mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Skift til detaljeret visningstilstand</translation>
     </message>
     <message>
         <source>Sidebar</source>
-        <translation type="unfinished"></translation>
+        <translation>Sidebjælke</translation>
     </message>
     <message>
         <source>List of places and bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>Liste med steder og bogmærker</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>Filer</translation>
     </message>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle filer (*)</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished">Slet</translation>
+        <translation>Slet</translation>
     </message>
     <message>
         <source>Are you sure you want to delete &apos;%1&apos;?</source>
-        <translation type="unfinished"></translation>
+        <translation>Er du sikker på, at du vil slette &apos;%1&apos;?</translation>
     </message>
     <message>
         <source>%1 File</source>
         <extracomment>%1 is a file name suffix, for example txt</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1-fil</translation>
     </message>
     <message>
         <source>File Folder</source>
         <comment>Match Windows Explorer</comment>
-        <translation type="unfinished"></translation>
+        <translation>Filmappe</translation>
     </message>
     <message>
         <source>Folder</source>
         <comment>All other platforms</comment>
-        <translation type="unfinished"></translation>
+        <translation>Mappe</translation>
     </message>
     <message>
         <source>Alias</source>
         <comment>OS X Finder</comment>
-        <translation type="unfinished"></translation>
+        <translation>Alias</translation>
     </message>
     <message>
         <source>Shortcut</source>
         <comment>All other platforms</comment>
-        <translation type="unfinished"></translation>
+        <translation>Genvej</translation>
     </message>
 </context>
 <context>
@@ -1906,10 +1328,6 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Invalid filename</source>
         <translation>Ugyldigt filnavn</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;The name &quot;%1&quot; can not be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuations marks.</source>
-        <translation>&lt;b&gt;Navnet, %1, kan ikke benyttes.&lt;/b&gt;&lt;p&gt;Brug et andet navn med færre tegn og ingen kommatering.</translation>
     </message>
     <message>
         <source>Name</source>
@@ -1927,7 +1345,7 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Type</source>
         <comment>All other platforms</comment>
-        <translation></translation>
+        <translation>Type</translation>
     </message>
     <message>
         <source>Date Modified</source>
@@ -1935,35 +1353,15 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>My Computer</source>
-        <translation>Min computer</translation>
+        <translation>Denne Computer</translation>
     </message>
     <message>
         <source>Computer</source>
-        <translation></translation>
+        <translation>Computer</translation>
     </message>
     <message>
-        <source>%1 TB</source>
-        <translation>%1 TB</translation>
-    </message>
-    <message>
-        <source>%1 GB</source>
-        <translation>%1 GB</translation>
-    </message>
-    <message>
-        <source>%1 MB</source>
-        <translation>%1 MB</translation>
-    </message>
-    <message>
-        <source>%1 KB</source>
-        <translation>%1 KB&apos;</translation>
-    </message>
-    <message>
-        <source>%1 bytes</source>
-        <translation>%1 bytes</translation>
-    </message>
-    <message>
-        <source>%1 byte(s)</source>
-        <translation type="unfinished"></translation>
+        <source>&lt;b&gt;The name &quot;%1&quot; cannot be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuation marks.</source>
+        <translation>&lt;b&gt;Navnet &quot;%1&quot; kan ikke bruges.&lt;/b&gt;&lt;p&gt;Prøv et andet navn, med færre tegn eller ingen tegnsætningstegn.</translation>
     </message>
 </context>
 <context>
@@ -1974,7 +1372,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Demi Bold</source>
-        <translation></translation>
+        <translation>Semi fed</translation>
     </message>
     <message>
         <source>Black</source>
@@ -1983,11 +1381,11 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Demi</source>
         <extracomment>The word for &quot;Demi&quot; as in &quot;Demi Bold&quot; used as a pattern for string searches</extracomment>
-        <translation></translation>
+        <translation>Semi</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation>Lys</translation>
+        <translation>Let</translation>
     </message>
     <message>
         <source>Italic</source>
@@ -1995,15 +1393,15 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Oblique</source>
-        <translation>Skråt</translation>
+        <translation>Skæv</translation>
     </message>
     <message>
         <source>Any</source>
-        <translation>Alle</translation>
+        <translation>Vilkårligt</translation>
     </message>
     <message>
         <source>Latin</source>
-        <translation></translation>
+        <translation>Latinsk</translation>
     </message>
     <message>
         <source>Greek</source>
@@ -2019,7 +1417,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Hebrew</source>
-        <translation>Hebræisk</translation>
+        <translation>Hebraisk</translation>
     </message>
     <message>
         <source>Arabic</source>
@@ -2031,11 +1429,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Thaana</source>
-        <translation></translation>
+        <translation>Thaana</translation>
     </message>
     <message>
         <source>Devanagari</source>
-        <translation></translation>
+        <translation>Devanagari</translation>
     </message>
     <message>
         <source>Bengali</source>
@@ -2043,35 +1441,35 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Gurmukhi</source>
-        <translation></translation>
+        <translation>Gurmukhi</translation>
     </message>
     <message>
         <source>Gujarati</source>
-        <translation></translation>
+        <translation>Gujarati</translation>
     </message>
     <message>
         <source>Oriya</source>
-        <translation></translation>
+        <translation>Orija</translation>
     </message>
     <message>
         <source>Tamil</source>
-        <translation></translation>
+        <translation>Tamilsk</translation>
     </message>
     <message>
         <source>Telugu</source>
-        <translation></translation>
+        <translation>Telugu</translation>
     </message>
     <message>
         <source>Kannada</source>
-        <translation></translation>
+        <translation>Kannaresisk</translation>
     </message>
     <message>
         <source>Malayalam</source>
-        <translation></translation>
+        <translation>Malayalam</translation>
     </message>
     <message>
         <source>Sinhala</source>
-        <translation></translation>
+        <translation>Sinhala</translation>
     </message>
     <message>
         <source>Thai</source>
@@ -2079,7 +1477,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Lao</source>
-        <translation></translation>
+        <translation>Laotisk</translation>
     </message>
     <message>
         <source>Tibetan</source>
@@ -2087,23 +1485,23 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Myanmar</source>
-        <translation></translation>
+        <translation>Myanmar</translation>
     </message>
     <message>
         <source>Georgian</source>
-        <translation>georgisk </translation>
+        <translation>Georgisk</translation>
     </message>
     <message>
         <source>Khmer</source>
-        <translation></translation>
+        <translation>Khmer</translation>
     </message>
     <message>
         <source>Simplified Chinese</source>
-        <translation>Forenklet kinesisk</translation>
+        <translation>Kinesisk (forenklet)</translation>
     </message>
     <message>
         <source>Traditional Chinese</source>
-        <translation>Traditionelt kinesisk</translation>
+        <translation>Kinesisk (traditionelt)</translation>
     </message>
     <message>
         <source>Japanese</source>
@@ -2119,46 +1517,46 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Symbol</source>
-        <translation></translation>
+        <translation>Symboler</translation>
     </message>
     <message>
         <source>Ogham</source>
-        <translation></translation>
+        <translation>Ogham</translation>
     </message>
     <message>
         <source>Runic</source>
-        <translation></translation>
+        <translation>Runer</translation>
     </message>
     <message>
         <source>Normal</source>
         <comment>The Normal or Regular font weight</comment>
-        <translation type="unfinished"></translation>
+        <translation>Normal</translation>
     </message>
     <message>
         <source>Medium</source>
         <comment>The Medium font weight</comment>
-        <translation type="unfinished"></translation>
+        <translation>Medium</translation>
     </message>
     <message>
         <source>Thin</source>
-        <translation type="unfinished"></translation>
+        <translation>Tynd</translation>
     </message>
     <message>
         <source>Extra Light</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekstra let</translation>
     </message>
     <message>
         <source>Extra Bold</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekstra fed</translation>
     </message>
     <message>
         <source>Extra</source>
         <extracomment>The word for &quot;Extra&quot; as in &quot;Extra Bold, Extra Thin&quot; used as a pattern for string searches</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ekstra</translation>
     </message>
     <message>
         <source>N&apos;Ko</source>
-        <translation type="unfinished"></translation>
+        <translation>N&apos;Ko</translation>
     </message>
 </context>
 <context>
@@ -2169,7 +1567,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Font st&amp;yle</source>
-        <translation>S&amp;til</translation>
+        <translation>Skrifts&amp;til</translation>
     </message>
     <message>
         <source>&amp;Size</source>
@@ -2181,15 +1579,15 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Stri&amp;keout</source>
-        <translation>&amp;Overstreget</translation>
+        <translation>&amp;Gennemstreget</translation>
     </message>
     <message>
         <source>&amp;Underline</source>
-        <translation>&amp;Understreg</translation>
+        <translation>&amp;Understreget</translation>
     </message>
     <message>
         <source>Sample</source>
-        <translation>Eksempel</translation>
+        <translation>Prøve</translation>
     </message>
     <message>
         <source>Wr&amp;iting System</source>
@@ -2204,27 +1602,23 @@ Do you want to delete it anyway?</source>
     <name>QFtp</name>
     <message>
         <source>Not connected</source>
-        <translation>Ingen forbindelse</translation>
+        <translation>Ikke forbundet</translation>
     </message>
     <message>
         <source>Host %1 not found</source>
-        <translation>Vært %1 ikke fundet</translation>
+        <translation>Værten %1 blev ikke fundet</translation>
     </message>
     <message>
         <source>Connection refused to host %1</source>
-        <translation>Forbindelse til vært %1 afvist</translation>
+        <translation>Forbindelse til værten %1 afvist</translation>
     </message>
     <message>
         <source>Connection timed out to host %1</source>
-        <translation>Forbindelsen timed out til host %1</translation>
+        <translation>Forbindelsen fik timeout til værten %1</translation>
     </message>
     <message>
         <source>Connected to host %1</source>
-        <translation>Tilsluttet vært %1</translation>
-    </message>
-    <message>
-        <source>Connection refused for data connection</source>
-        <translation type="vanished">Dataforbindelse afvist</translation>
+        <translation>Forbundet til værten %1</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -2233,103 +1627,87 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Connecting to host failed:
 %1</source>
-        <translation>Forbindelse til vært mislykkedes:
+        <translation>Forbindelsen til værten fejlede:
 %1</translation>
     </message>
     <message>
         <source>Login failed:
 %1</source>
-        <translation>Login mislykkedes:
+        <translation>Login fejlede:
 %1</translation>
     </message>
     <message>
         <source>Listing directory failed:
 %1</source>
-        <translation>Opremsning af katalogindhold mislykkedes:
+        <translation>Mappevisning fejlede:
 %1</translation>
     </message>
     <message>
         <source>Changing directory failed:
 %1</source>
-        <translation>Ændring af katalog mislykkedes:
+        <translation>Ændring af mappe fejlede:
 %1</translation>
     </message>
     <message>
         <source>Downloading file failed:
 %1</source>
-        <translation>Downloading af fil mislykkedes:
+        <translation>Download af fil fejlede:
 %1</translation>
     </message>
     <message>
         <source>Uploading file failed:
 %1</source>
-        <translation>Uploading af fil mislykkedes:
+        <translation>Upload af fil fejlede:
 %1</translation>
     </message>
     <message>
         <source>Removing file failed:
 %1</source>
-        <translation>Det mislykkedes at fjerne fil:
+        <translation>Fjernelse af fil fejlede:
 %1</translation>
     </message>
     <message>
         <source>Creating directory failed:
 %1</source>
-        <translation>Oprettelse af katalog mislykkedes:
+        <translation>Oprettelse af mappe fejlede:
 %1</translation>
     </message>
     <message>
         <source>Removing directory failed:
 %1</source>
-        <translation>Det mislykkedes at fjerne katalog:
+        <translation>Fjernelse af mappe fejlede:
 %1</translation>
     </message>
     <message>
         <source>Connection closed</source>
-        <translation>Forbindelse lukket</translation>
-    </message>
-    <message>
-        <source>Host %1 found</source>
-        <translation type="vanished">Vært %1 fundet</translation>
-    </message>
-    <message>
-        <source>Connection to %1 closed</source>
-        <translation type="vanished">Forbindelse til %1 lukket</translation>
-    </message>
-    <message>
-        <source>Host found</source>
-        <translation type="vanished">Vært fundet</translation>
-    </message>
-    <message>
-        <source>Connected to host</source>
-        <translation type="vanished">Tilsluttet vært</translation>
+        <translation>Forbindelsen lukket</translation>
     </message>
     <message>
         <source>Data Connection refused</source>
-        <translation type="unfinished"></translation>
+        <translation>Dataforbindelsen blev afvist</translation>
     </message>
 </context>
 <context>
     <name>QGnomeTheme</name>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished">&amp;OK</translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation type="unfinished">&amp;Gem</translation>
+        <translation>&amp;Gem</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished">&amp;Annuller</translation>
+        <translation>&amp;Annuller</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="unfinished">&amp;Luk</translation>
+        <translation>&amp;Luk</translation>
     </message>
     <message>
         <source>Close without Saving</source>
-        <translation type="unfinished">Luk uden at gemme</translation>
+        <translation>Luk uden at gemme</translation>
     </message>
 </context>
 <context>
@@ -2337,7 +1715,75 @@ Do you want to delete it anyway?</source>
     <message>
         <source>QT_LAYOUT_DIRECTION</source>
         <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
-        <translation></translation>
+        <translation>LTR</translation>
+    </message>
+    <message>
+        <source>QPA plugin. See QGuiApplication documentation for available options for each plugin.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path to the platform plugins.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Platform theme.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Additional plugins to load, can be specified multiple times.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Window geometry for the main window, using the X11-syntax, like 100x100+50+50.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default window icon.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Title of the first window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sets the application&apos;s layout direction to Qt::RightToLeft (debugging helper).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restores the application from an earlier session.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display name, overrides $DISPLAY.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Instance name according to ICCCM 4.1.2.5.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable mouse grabbing (useful in debuggers).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Force mouse grabbing (even when running in a debugger).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ID of the X11 Visual to use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowgeometry.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowicon.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alias for --windowtitle.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2348,129 +1794,49 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>No host name given</source>
-        <translation type="unfinished">Hostnavn mangler</translation>
+        <translation>Intet værtsnavn givet</translation>
     </message>
 </context>
 <context>
     <name>QHostInfoAgent</name>
     <message>
         <source>Host not found</source>
-        <translation>Vært ikke fundet</translation>
+        <translation>Værten blev ikke fundet</translation>
     </message>
     <message>
         <source>Unknown address type</source>
         <translation>Ukendt adressetype</translation>
     </message>
     <message>
-        <source>Unknown error</source>
-        <translation>Ukendt fejl</translation>
-    </message>
-    <message>
         <source>No host name given</source>
-        <translation type="unfinished">Hostnavn mangler</translation>
+        <translation>Intet værtsnavn givet</translation>
     </message>
     <message>
         <source>Invalid hostname</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unknown error (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ugyldigt værtsnavn</translation>
     </message>
 </context>
 <context>
     <name>QHttp</name>
     <message>
-        <source>Unknown error</source>
-        <translation type="vanished">Ukendt fejl</translation>
-    </message>
-    <message>
-        <source>Request aborted</source>
-        <translation type="vanished">Forespørgsel blev annulleret</translation>
-    </message>
-    <message>
-        <source>No server set to connect to</source>
-        <translation type="vanished">Ingen server at forbinde til</translation>
-    </message>
-    <message>
-        <source>Wrong content length</source>
-        <translation type="vanished">Forkert indholdslængde</translation>
-    </message>
-    <message>
-        <source>Server closed connection unexpectedly</source>
-        <translation type="vanished">Serveren afsluttede uventet forbindelsen</translation>
-    </message>
-    <message>
-        <source>Unknown authentication method</source>
-        <translation type="vanished">Ukendt autentifikationsmetode</translation>
-    </message>
-    <message>
-        <source>Error writing response to device</source>
-        <translation type="vanished">Skrivefejl mens der blev skrevet til enheden</translation>
-    </message>
-    <message>
         <source>Connection refused</source>
-        <translation>Forbindelse afvist</translation>
+        <translation>Forbindelsen blev afvist</translation>
     </message>
     <message>
         <source>Host %1 not found</source>
-        <translation>Vært %1 ikke fundet</translation>
-    </message>
-    <message>
-        <source>HTTP request failed</source>
-        <translation type="vanished">HTTP anmodning mislykkedes</translation>
-    </message>
-    <message>
-        <source>Invalid HTTP response header</source>
-        <translation type="vanished">Ugyldig HTTP-svar-header</translation>
-    </message>
-    <message>
-        <source>Invalid HTTP chunked body</source>
-        <translation type="vanished">Ugyldig HTTP chunked body</translation>
-    </message>
-    <message>
-        <source>Host %1 found</source>
-        <translation type="vanished">Vært %1 fundet</translation>
-    </message>
-    <message>
-        <source>Connected to host %1</source>
-        <translation type="vanished">Tilsluttet vært %1</translation>
-    </message>
-    <message>
-        <source>Connection to %1 closed</source>
-        <translation type="vanished">Forbindelse til %1 lukket</translation>
-    </message>
-    <message>
-        <source>Host found</source>
-        <translation type="vanished">Vært fundet</translation>
-    </message>
-    <message>
-        <source>Connected to host</source>
-        <translation type="vanished">Tilsluttet vært</translation>
+        <translation>Værten %1 blev ikke fundet</translation>
     </message>
     <message>
         <source>Connection closed</source>
-        <translation>Forbindelse lukket</translation>
-    </message>
-    <message>
-        <source>Proxy authentication required</source>
-        <translation type="vanished">Kræver proxy-autentificering</translation>
-    </message>
-    <message>
-        <source>Authentication required</source>
-        <translation type="vanished">Autentificering påkrævet</translation>
-    </message>
-    <message>
-        <source>Connection refused (or timed out)</source>
-        <translation type="vanished">Forbindelse blev afvist (eller tid udløb)</translation>
+        <translation>Forbindelsen blev lukket</translation>
     </message>
     <message>
         <source>Proxy requires authentication</source>
-        <translation>Proxy kræver autentificering</translation>
+        <translation>Proxyen kræver autentifikation</translation>
     </message>
     <message>
         <source>Host requires authentication</source>
-        <translation>Vært kræver autentificering</translation>
+        <translation>Værten kræver autentifikation</translation>
     </message>
     <message>
         <source>Data corrupted</source>
@@ -2478,69 +1844,65 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unknown protocol specified</source>
-        <translation>En ukendt protokol blev angivet</translation>
+        <translation>Ukendt protokol angivet</translation>
     </message>
     <message>
         <source>SSL handshake failed</source>
-        <translation>SSL handshake mislykkedes</translation>
-    </message>
-    <message>
-        <source>HTTPS connection requested but SSL support not compiled in</source>
-        <translation type="vanished">Der blevet anmodet om en HTTPS-forbindelse, men SSL understøttelse er ikke kompileret ind</translation>
+        <translation>SSL-håndtryk fejlede</translation>
     </message>
     <message>
         <source>Too many redirects</source>
-        <translation type="unfinished"></translation>
+        <translation>For mange omdirigeringer</translation>
     </message>
     <message>
         <source>Insecure redirect</source>
-        <translation type="unfinished"></translation>
+        <translation>Usikker omdirigering</translation>
     </message>
 </context>
 <context>
     <name>QHttpSocketEngine</name>
     <message>
         <source>Authentication required</source>
-        <translation>Autentificering påkrævet</translation>
+        <translation>Autentifikation kræves</translation>
     </message>
     <message>
         <source>Did not receive HTTP response from proxy</source>
-        <translation>Modtog ikke HTTP-svar fra proxy</translation>
+        <translation>Modtog ikke HTTP-svar fra proxyen</translation>
     </message>
     <message>
         <source>Error parsing authentication request from proxy</source>
-        <translation>Fejl under fortolking af autentificeringsanmodning fra proxy</translation>
+        <translation>Fejl under fortolkning af autentifikationsanmodning fra proxyen</translation>
     </message>
     <message>
         <source>Proxy denied connection</source>
-        <translation>Proxy nægtede forbindelse</translation>
+        <translation>Proxyen nægtede forbindelsen</translation>
     </message>
     <message>
         <source>Error communicating with HTTP proxy</source>
-        <translation>Fejl under kommunikation med HTTP-proxy</translation>
+        <translation>Fejl under kommunikation med HTTP-proxyen</translation>
     </message>
     <message>
         <source>Proxy server not found</source>
-        <translation>Proxy-server kunne ikke findes</translation>
+        <translation>Proxy-serveren blev ikke fundet</translation>
     </message>
     <message>
         <source>Proxy connection refused</source>
-        <translation>Proxy-forbindelse nægtede</translation>
+        <translation>Proxy-forbindelsen blev afvist</translation>
     </message>
     <message>
         <source>Proxy server connection timed out</source>
-        <translation>Proxy-serverforbindelse timed out</translation>
+        <translation>Proxy-serverforbindelsen fik timeout</translation>
     </message>
     <message>
         <source>Proxy connection closed prematurely</source>
-        <translation>Proxy-forbindelse afsluttede i utide</translation>
+        <translation>Proxy-forbindelsen lukkede i utide</translation>
     </message>
 </context>
 <context>
     <name>QIBaseDriver</name>
     <message>
         <source>Error opening database</source>
-        <translation>Der opstod fejl ved åbning af database</translation>
+        <translation>Fejl ved åbning af databasen</translation>
     </message>
     <message>
         <source>Could not start transaction</source>
@@ -2579,7 +1941,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Could not get array data</source>
-        <translation>Kunne ikke hente arraydata</translation>
+        <translation>Kunne ikke hente array-data</translation>
     </message>
     <message>
         <source>Could not get query info</source>
@@ -2587,7 +1949,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Could not start transaction</source>
-        <translation>Kunne ikke påbegynde transaktionen</translation>
+        <translation>Kunne ikke påbegynde transaktion</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
@@ -2595,7 +1957,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Could not allocate statement</source>
-        <translation>Kunne ikke allokere statement</translation>
+        <translation>Kunne ikke allokere udsagn</translation>
     </message>
     <message>
         <source>Could not prepare statement</source>
@@ -2603,11 +1965,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Could not describe input statement</source>
-        <translation>Kunne ikke beskrive input-statement</translation>
+        <translation>Kunne ikke beskrive input-udsagn</translation>
     </message>
     <message>
         <source>Could not describe statement</source>
-        <translation>Kunne ikke beskrive statement</translation>
+        <translation>Kunne ikke beskrive udsagn</translation>
     </message>
     <message>
         <source>Unable to close statement</source>
@@ -2615,11 +1977,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to execute query</source>
-        <translation>Kunne ikke udføre forespørgsel</translation>
+        <translation>Kunne ikke eksekvere forespørgsel</translation>
     </message>
     <message>
         <source>Could not fetch next item</source>
-        <translation>Kunne ikke hente næste element</translation>
+        <translation>Kunne ikke hente næste punkt</translation>
     </message>
     <message>
         <source>Could not get statement info</source>
@@ -2634,15 +1996,15 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Too many open files</source>
-        <translation>Der er for mange åbne filer</translation>
+        <translation>For mange åbne filer</translation>
     </message>
     <message>
         <source>No such file or directory</source>
-        <translation>Fil eller katalog findes ikke</translation>
+        <translation>Filen eller mappen findes ikke</translation>
     </message>
     <message>
         <source>No space left on device</source>
-        <translation>Ingen plads tilbage på enheden</translation>
+        <translation>Ingen ledig plads på enheden</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -2650,64 +2012,57 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>file to open is a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>filen der skal åbnes er en mappe</translation>
     </message>
 </context>
 <context>
     <name>QImageReader</name>
     <message>
         <source>Invalid device</source>
-        <translation type="unfinished"></translation>
+        <translation>Ugyldig enhed</translation>
     </message>
     <message>
         <source>File not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Filen blev ikke fundet</translation>
     </message>
     <message>
         <source>Unsupported image format</source>
-        <translation type="unfinished"></translation>
+        <translation>Billedformatet understøttes ikke</translation>
     </message>
     <message>
         <source>Unable to read image data</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunne ikke læse billeddata</translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukendt fejl</translation>
     </message>
 </context>
 <context>
     <name>QImageWriter</name>
     <message>
         <source>Unknown error</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukendt fejl</translation>
     </message>
     <message>
         <source>Device is not set</source>
-        <translation type="unfinished"></translation>
+        <translation>Enheden er ikke sat</translation>
     </message>
     <message>
         <source>Device not writable</source>
-        <translation type="unfinished"></translation>
+        <translation>Der kan ikke skrives til enheden</translation>
     </message>
     <message>
         <source>Unsupported image format</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>QInputContext</name>
-    <message>
-        <source>XIM input method</source>
-        <translation type="vanished">XIM input-metode</translation>
+        <translation>Billedformatet understøttes ikke</translation>
     </message>
     <message>
-        <source>Windows input method</source>
-        <translation type="vanished">Windows input-metode</translation>
+        <source>Cannot open device for writing: %1</source>
+        <translation>Kan ikke åbne enhed til skrivning: %1</translation>
     </message>
     <message>
-        <source>Mac OS X input method</source>
-        <translation type="vanished">Mac OS X input-metode</translation>
+        <source>Image is empty</source>
+        <translation>Billedet er tomt</translation>
     </message>
 </context>
 <context>
@@ -2721,114 +2076,90 @@ Do you want to delete it anyway?</source>
     <name>QJsonParseError</name>
     <message>
         <source>no error occurred</source>
-        <translation type="unfinished">der opstod ingen fejl</translation>
+        <translation>der opstod ingen fejl</translation>
     </message>
     <message>
         <source>unterminated object</source>
-        <translation type="unfinished"></translation>
+        <translation>utermineret objekt</translation>
     </message>
     <message>
         <source>missing name separator</source>
-        <translation type="unfinished"></translation>
+        <translation>manglende navneseparator</translation>
     </message>
     <message>
         <source>unterminated array</source>
-        <translation type="unfinished"></translation>
+        <translation>utermineret array</translation>
     </message>
     <message>
         <source>missing value separator</source>
-        <translation type="unfinished"></translation>
+        <translation>manglende værdiseparator</translation>
     </message>
     <message>
         <source>illegal value</source>
-        <translation type="unfinished"></translation>
+        <translation>forbudt værdi</translation>
     </message>
     <message>
         <source>invalid termination by number</source>
-        <translation type="unfinished"></translation>
+        <translation>ugyldig terminering af nummer</translation>
     </message>
     <message>
         <source>illegal number</source>
-        <translation type="unfinished"></translation>
+        <translation>forbudt nummer</translation>
     </message>
     <message>
         <source>invalid escape sequence</source>
-        <translation type="unfinished"></translation>
+        <translation>ugyldig undvigesekvens</translation>
     </message>
     <message>
         <source>invalid UTF8 string</source>
-        <translation type="unfinished"></translation>
+        <translation>ugyldig UTF8-streng</translation>
     </message>
     <message>
         <source>unterminated string</source>
-        <translation type="unfinished"></translation>
+        <translation>utermineret streng</translation>
     </message>
     <message>
         <source>object is missing after a comma</source>
-        <translation type="unfinished"></translation>
+        <translation>objekt mangler efter et komma</translation>
     </message>
     <message>
         <source>too deeply nested document</source>
-        <translation type="unfinished"></translation>
+        <translation>dokument er indlejret for dybt</translation>
     </message>
     <message>
         <source>too large document</source>
-        <translation type="unfinished"></translation>
+        <translation>for stort dokument</translation>
     </message>
     <message>
         <source>garbage at the end of the document</source>
-        <translation type="unfinished"></translation>
+        <translation>affald ved slutningen af dokumentet</translation>
     </message>
 </context>
 <context>
     <name>QKeySequenceEdit</name>
     <message>
         <source>Press shortcut</source>
-        <translation type="unfinished"></translation>
+        <translation>Tryk på genvej</translation>
     </message>
     <message>
         <source>%1, ...</source>
         <extracomment>This text is an &quot;unfinished&quot; shortcut, expands like &quot;Ctrl+A, ...&quot;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1, ...</translation>
     </message>
 </context>
 <context>
     <name>QLibrary</name>
     <message>
-        <source>QLibrary::load_sys: Cannot load %1 (%2)</source>
-        <translation type="vanished">QLibrary::load_sys: Kan ikke indlæse %1 (%2)</translation>
-    </message>
-    <message>
-        <source>QLibrary::unload_sys: Cannot unload %1 (%2)</source>
-        <translation type="vanished">QLibrary::unload_sys: Kan ikke udlæse %1 (%2)</translation>
-    </message>
-    <message>
-        <source>QLibrary::resolve_sys: Symbol &quot;%1&quot; undefined in %2 (%3)</source>
-        <translation type="vanished">QLibrary::resolve_sys: Symbol &quot;%1&quot; ikke defineret i %2 (%3)</translation>
-    </message>
-    <message>
-        <source>Plugin verification data mismatch in &apos;%1&apos;</source>
-        <translation type="vanished">Plugin-verifikationsdata er sat forkert sammen i &apos;%1&apos;</translation>
-    </message>
-    <message>
-        <source>Could not unmap &apos;%1&apos;: %2</source>
-        <translation type="vanished">Der var ikke muligt at lave unmap på &apos;%1&apos;: %2 </translation>
-    </message>
-    <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
-        <translation>Plugin &apos;%1&apos; bruger inkompatibelt Qt-bibliotek. (%2.%3.%4) [%5]</translation>
-    </message>
-    <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. Expected build key &quot;%2&quot;, got &quot;%3&quot;</source>
-        <translation type="vanished">Plugin &apos;%1&apos; bruger inkompatibelt Qt-bibliotek. Forventet build key &quot;%2&quot;, hentede &quot;%3&quot;&apos;</translation>
+        <translation>Pluginet &apos;%1&apos; bruger inkompatibelt Qt-bibliotek. (%2.%3.%4) [%5]</translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation>Ukendt fejl&apos;</translation>
+        <translation>Ukendt fejl</translation>
     </message>
     <message>
         <source>The shared library was not found.</source>
-        <translation>DSO blev ikke fundet.</translation>
+        <translation>Det delte bibliotek blev ikke fundet.</translation>
     </message>
     <message>
         <source>The file &apos;%1&apos; is not a valid Qt plugin.</source>
@@ -2836,67 +2167,110 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
-        <translation>Plugin &apos;%1&apos; bruger inkompatibelt Qt-bibliotek. (Ikke muligt at mikse debug og release-biblioteker)</translation>
+        <translation>Pluginet &apos;%1&apos; bruger inkompatibelt Qt-bibliotek. (kan ikke blande debug- og release-biblioteker).</translation>
     </message>
     <message>
         <source>Cannot load library %1: %2</source>
-        <translation>Kan ikke indlæse bibliotek %1: %2</translation>
+        <translation>Kan ikke indlæse biblioteket %1: %2</translation>
     </message>
     <message>
         <source>Cannot unload library %1: %2</source>
-        <translation>Kan ikke afregistrere bibliotek %1: %2</translation>
-    </message>
-    <message>
-        <source>Cannot resolve symbol &quot;%1&quot; in %2: %3</source>
-        <translation>Kan ikke løse symbol &quot;%1&quot; i %2: %3</translation>
+        <translation>Kan ikke afregistrere biblioteket %1: %2</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is not an ELF object (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; er ikke et ELF-objekt (%2)</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is not an ELF object</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; er ikke et ELF-objekt</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is an invalid ELF object (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; er et ugyldigt ELF-objekt (%2)</translation>
     </message>
     <message>
         <source>Failed to extract plugin meta data from &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunne ikke udtrække plugin-metadata fra &apos;%1&apos;</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is not a valid Mach-O binary (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; er ikke en gyldig Mach-O-binær (%2)</translation>
     </message>
     <message>
         <source>file is corrupt</source>
-        <translation type="unfinished"></translation>
+        <translation>filen er ødelagt</translation>
     </message>
     <message>
         <source>file too small</source>
-        <translation type="unfinished"></translation>
+        <translation>filen er for lille</translation>
     </message>
     <message>
         <source>no suitable architecture in fat binary</source>
-        <translation type="unfinished"></translation>
+        <translation>ingen egnede arkitektur i fat-binær</translation>
     </message>
     <message>
         <source>invalid magic %1</source>
-        <translation type="unfinished"></translation>
+        <translation>ugyldig magisk %1</translation>
     </message>
     <message>
         <source>wrong architecture</source>
-        <translation type="unfinished"></translation>
+        <translation>forkert arkitektur</translation>
     </message>
     <message>
         <source>not a dynamic library</source>
-        <translation type="unfinished"></translation>
+        <translation>ikke et dynamisk bibliotek</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is not a Qt plugin</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; er ikke et Qt-plugin</translation>
+    </message>
+    <message>
+        <source>odd cpu architecture</source>
+        <translation>besynderlig cpu-arkitektur</translation>
+    </message>
+    <message>
+        <source>wrong cpu architecture</source>
+        <translation>forkert cpu-arkitektur</translation>
+    </message>
+    <message>
+        <source>odd endianness</source>
+        <translation>besynderlig byterækkefølge</translation>
+    </message>
+    <message>
+        <source>unexpected e_shsize</source>
+        <translation>uventet e_shsize</translation>
+    </message>
+    <message>
+        <source>unexpected e_shentsize</source>
+        <translation>uventet e_shentsize</translation>
+    </message>
+    <message numerus="yes">
+        <source>announced %n section(s), each %1 byte(s), exceed file size</source>
+        <translation>
+            <numerusform>annocerede %n sektion, på hver %1 byte(s), overskredet filstørrelse</numerusform>
+            <numerusform>annocerede %n sektioner, på hver %1 byte(s), overskredet filstørrelse</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>shstrtab section header seems to be at %1</source>
+        <translation>shstrtab-sektionshoved ser ud til at være ved %1</translation>
+    </message>
+    <message>
+        <source>string table seems to be at %1</source>
+        <translation>strengtabel ser ud til at være ved %1</translation>
+    </message>
+    <message>
+        <source>section name %1 of %2 behind end of file</source>
+        <translation>sektionsnavn %1 af %2 efter filens slutning</translation>
+    </message>
+    <message>
+        <source>empty .rodata. not a library.</source>
+        <translation>tom .rodata. ikke et bibliotek.</translation>
+    </message>
+    <message>
+        <source>missing section data. This is not a library.</source>
+        <translation>manglende sektionsdata. Dette er ikke et bibliotek.</translation>
     </message>
 </context>
 <context>
@@ -2907,7 +2281,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation>&amp;Gendan</translation>
+        <translation>&amp;Omgør</translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
@@ -2934,89 +2308,89 @@ Do you want to delete it anyway?</source>
     <name>QLocalServer</name>
     <message>
         <source>%1: Name error</source>
-        <translation>%1: Navnefejl</translation>
+        <translation>%1: navnefejl</translation>
     </message>
     <message>
         <source>%1: Permission denied</source>
-        <translation>%1: Tilladelse nægtet</translation>
+        <translation>%1: tilladelse nægtet</translation>
     </message>
     <message>
         <source>%1: Address in use</source>
-        <translation>%1: Adresse i brug</translation>
+        <translation>%1: adresse i brug</translation>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
-        <translation>%1: Ukendt fejl %2</translation>
+        <translation>%1: ukendt fejl %2</translation>
     </message>
 </context>
 <context>
     <name>QLocalSocket</name>
     <message>
         <source>%1: Connection refused</source>
-        <translation>%1: Forbindelse afvist</translation>
+        <translation>%1: forbindelsen blev afvist</translation>
     </message>
     <message>
         <source>%1: Remote closed</source>
-        <translation>%1: Den anden ende lukkede</translation>
+        <translation>%1: fjern lukkede</translation>
     </message>
     <message>
         <source>%1: Invalid name</source>
-        <translation>%1: Ugyldigt navn</translation>
+        <translation>%1: ugyldigt navn</translation>
     </message>
     <message>
         <source>%1: Socket access error</source>
-        <translation>%1: Fejl i socket-adgang</translation>
+        <translation>%1: socket adgangsfejl</translation>
     </message>
     <message>
         <source>%1: Socket resource error</source>
-        <translation>%1: Fejl i socket-ressource</translation>
+        <translation>%1: socket ressourcefejl</translation>
     </message>
     <message>
         <source>%1: Socket operation timed out</source>
-        <translation>%1: Socket-handling timed out</translation>
+        <translation>%1: socket-handlingen fik timeout</translation>
     </message>
     <message>
         <source>%1: Datagram too large</source>
-        <translation>%1: Datagram er for stort</translation>
+        <translation>%1: datagram er for stort</translation>
     </message>
     <message>
         <source>%1: Connection error</source>
-        <translation>%1: Forbindelsesfejl</translation>
+        <translation>%1: forbindelsesfejl</translation>
     </message>
     <message>
         <source>%1: The socket operation is not supported</source>
-        <translation>%1: Socket-handlingen understøttes ikke</translation>
+        <translation>%1: socket-handlingen understøttes ikke</translation>
     </message>
     <message>
         <source>%1: Unknown error</source>
-        <translation>%1: Ukendt fejl</translation>
+        <translation>%1: ukendt fejl</translation>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
-        <translation>%1: Ukendt fejl %2</translation>
+        <translation>%1: ukendt fejl %2</translation>
     </message>
     <message>
         <source>%1: Operation not permitted when socket is in this state</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: handlingen er ikke tilladt når socket er i denne tilstand</translation>
     </message>
     <message>
         <source>Trying to connect while connection is in progress</source>
-        <translation type="unfinished"></translation>
+        <translation>Prøver at oprette forbindelse mens forbindelse er under oprettelse</translation>
     </message>
     <message>
         <source>%1: Access denied</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: adgang nægtet</translation>
+    </message>
+    <message>
+        <source>Socket is not connected</source>
+        <translation type="unfinished">Socket er ikke forbundet</translation>
     </message>
 </context>
 <context>
     <name>QMYSQLDriver</name>
     <message>
-        <source>Unable to open database &apos;</source>
-        <translation type="vanished">Kunne ikke åbne databasen &apos;</translation>
-    </message>
-    <message>
         <source>Unable to connect</source>
-        <translation>Kunne ikke forbinde</translation>
+        <translation>Kunne ikke oprette forbindelse</translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
@@ -3032,11 +2406,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to allocate a MYSQL object</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunne ikke allokere et MYSQL-objekt</translation>
     </message>
     <message>
         <source>Unable to open database &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunne ikke åbne databasen &apos;%1&apos;</translation>
     </message>
 </context>
 <context>
@@ -3047,11 +2421,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to execute query</source>
-        <translation>Kunne ikke udføre forespørgsel</translation>
+        <translation>Kunne ikke eksekvere forespørgsel</translation>
     </message>
     <message>
         <source>Unable to store result</source>
-        <translation>Kunne ikke gemme resultatet</translation>
+        <translation>Kunne ikke lagre resultatet</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
@@ -3063,41 +2437,41 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to bind value</source>
-        <translation>Kunne ikke tildele værdi</translation>
+        <translation>Kunne ikke binde værdi</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Kunne ikke udføre udsagn</translation>
+        <translation>Kunne ikke eksekvere udsagn</translation>
     </message>
     <message>
         <source>Unable to bind outvalues</source>
-        <translation>Kunne ikke binde udværdier</translation>
+        <translation>Kunne ikke binde ud-værdier</translation>
     </message>
     <message>
         <source>Unable to store statement results</source>
-        <translation>Kunne ikke gemme udsagnsresultater</translation>
+        <translation>Kunne ikke lagre udsagnsresultater</translation>
     </message>
     <message>
         <source>Unable to execute next query</source>
-        <translation>Kunne ikke udføre næste forespørgsel</translation>
+        <translation>Kunne ikke eksekvere næste forespørgsel</translation>
     </message>
     <message>
         <source>Unable to store next result</source>
-        <translation>Kunne ikke gemme næste resultat</translation>
+        <translation>Kunne ikke lagre næste resultat</translation>
     </message>
 </context>
 <context>
     <name>QMdiArea</name>
     <message>
         <source>(Untitled)</source>
-        <translation>(Uden titel)</translation>
+        <translation>(unavngivet)</translation>
     </message>
 </context>
 <context>
     <name>QMdiSubWindow</name>
     <message>
         <source>%1 - [%2]</source>
-        <translation></translation>
+        <translation>%1 - [%2]</translation>
     </message>
     <message>
         <source>Close</source>
@@ -3105,15 +2479,15 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Minimize</source>
-        <translation>Minimér</translation>
+        <translation>Minimer</translation>
     </message>
     <message>
         <source>Restore Down</source>
-        <translation>Gendan Ned</translation>
+        <translation>Genskab ned</translation>
     </message>
     <message>
         <source>&amp;Restore</source>
-        <translation>&amp;Gendan</translation>
+        <translation>&amp;Genskab</translation>
     </message>
     <message>
         <source>&amp;Move</source>
@@ -3125,15 +2499,15 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Mi&amp;nimize</source>
-        <translation>Mi&amp;nimér</translation>
+        <translation>Mi&amp;nimer</translation>
     </message>
     <message>
         <source>Ma&amp;ximize</source>
-        <translation>Ma&amp;ksimér</translation>
+        <translation>Ma&amp;ksimer</translation>
     </message>
     <message>
         <source>Stay on &amp;Top</source>
-        <translation>Bliv &amp;oppe</translation>
+        <translation>Altid &amp;øverst</translation>
     </message>
     <message>
         <source>&amp;Close</source>
@@ -3141,23 +2515,23 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>- [%1]</source>
-        <translation></translation>
+        <translation>- [%1]</translation>
     </message>
     <message>
         <source>Maximize</source>
-        <translation>Maksimér</translation>
+        <translation>Maksimer</translation>
     </message>
     <message>
         <source>Unshade</source>
-        <translation>Fjern skygge</translation>
+        <translation>Rul ud</translation>
     </message>
     <message>
         <source>Shade</source>
-        <translation>Skygge</translation>
+        <translation>Rul sammen</translation>
     </message>
     <message>
         <source>Restore</source>
-        <translation>Gendan</translation>
+        <translation>Genskab</translation>
     </message>
     <message>
         <source>Help</source>
@@ -3165,45 +2539,14 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Menu</source>
-        <translation></translation>
-    </message>
-</context>
-<context>
-    <name>QMenu</name>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">Luk</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">Åbn</translation>
-    </message>
-    <message>
-        <source>Execute</source>
-        <translation type="vanished">Udfør</translation>
+        <translation>Menu</translation>
     </message>
 </context>
 <context>
     <name>QMessageBox</name>
     <message>
-        <source>Help</source>
-        <translation>Hjælp</translation>
-    </message>
-    <message>
-        <source>&lt;h3&gt;About Qt&lt;/h3&gt;&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 2.1 or GNU GPL version 3.0.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt applications (proprietary or open source) provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU General Public License version 3.0 is appropriate for the development of Qt applications where you wish to use such applications in combination with software subject to the terms of the GNU GPL version 3.0 or where you are otherwise willing to comply with the terms of the GNU GPL version 3.0.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://qt.nokia.com/products/licensing&quot;&gt;qt.nokia.com/products/licensing&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) 2012 Nokia Corporation and/or its subsidiary(-ies).&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://qt.nokia.com/&quot;&gt;qt.nokia.com&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;h3&gt;Om Qt&lt;/h3&gt;&lt;p&gt;Dette program anvender Qt version %1.&lt;/p&gt;&lt;p&gt;Qt er et C++ toolkit til cross-platform applikationsudvikling.&lt;/p&gt;&lt;p&gt;Qt tilbyder single-source portabilitet til MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, og alle større kommercielle Unix-varianter. Qt er også tilgængeligt til indlejrede systemer som Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;Qt er tilgængeligt under tre forskellige licenser skabt med henblik på at imødekomme forskellige brugeres behov.&lt;/p&gt;&lt;p&gt;Qt licenseret under vores kommercielle licensaftale er passende for udvikling af proprietær/kommerciel software, hvor du ikke ønsker at dele sourcekode med tredie part, eller på anden vis ikke kan tiltræde vilkårerne i GNU LGPL version 2.1 eller GNU GPL version 3.0&lt;/p&gt;&lt;p&gt;Qt licenseret under GLU General Public License version 3.0 er passende for udvikling af Qt applikationer, hvor du ønsker at bruge softwaren i kombination med software under vilkårerne i GNU GPL version 3.0, eller hvor du ellers er villig til at overholde vilkårerne i GNU GPL version 3.0&lt;/p&gt;&lt;p&gt;See venligst &lt;a href=&quot;http://qt.nokia.com/products/licensing&quot;&gt;qt.nokia.com/products/licensing&lt;/a&gt; for et overblik over Qt licensforhold.&lt;/p&gt;&lt;p&gt;Qt er et Nokia produkt. Se &lt;a href=&quot;http://qt.nokia.com/&quot;&gt;qt.nokia.com&lt;/a&gt; for yderligere information.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>About Qt</source>
         <translation>Om Qt</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Dette program bruger Qt-version %1.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Show Details...</source>
@@ -3214,57 +2557,24 @@ Do you want to delete it anyway?</source>
         <translation>Skjul detaljer...</translation>
     </message>
     <message>
-        <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Dette program bruger Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition er tiltænkt udvikling af applikationer med åben kildekode. Du skal bruge en kommerciel Qt licens for at udvikle proprietære (lukket kildekode) applikationer.&lt;/p&gt;&lt;p&gt;Gå til &lt;a href=&quot;http://qt.nokia.com/company/model/&quot;&gt;qt.nokia.com/company/model/&lt;/a&gt; for et overblik over Qt-licenser.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;h3&gt;Om Qt&lt;/h3&gt;&lt;p&gt;Dette program anvender Qt version %1.&lt;/p&gt;&lt;p&gt;Qt er et C++ toolkit til cross-platform applikationsudvikling.&lt;/p&gt;&lt;p&gt;Qt tilbyder single-source portabilitet til MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, og alle større kommercielle Unix-varianter. Qt er også tilgængeligt til indlejrede systemer som Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;Qt er tilgængeligt under tre forskellige licenser skabt med henblik på at imødekomme forskellige brugeres behov.&lt;/p&gt;&lt;p&gt;Qt licenseret under vores kommercielle licensaftale er passende for udvikling af proprietær/kommerciel software, hvor du ikke ønsker at dele sourcekode med tredie part, eller på anden vis ikke kan tiltræde vilkårerne i GNU LGPL version 2.1 eller GNU GPL version 3.0&lt;/p&gt;&lt;p&gt;Qt licenseret under GLU General Public License version 3.0 er passende for udvikling af Qt applikationer, hvor du ønsker at bruge softwaren i kombination med software under vilkårerne i GNU GPL version 3.0, eller hvor du ellers er villig til at overholde vilkårerne i GNU GPL version 3.0&lt;/p&gt;&lt;p&gt;See venligst &lt;a href=&quot;http://qt.nokia.com/products/licensing&quot;&gt;qt.nokia.com/products/licensing&lt;/a&gt; for et overblik over Qt licensforhold.&lt;/p&gt;&lt;p&gt;Qt er et Nokia produkt. Se &lt;a href=&quot;http://qt.nokia.com/&quot;&gt;qt.nokia.com&lt;/a&gt; for yderligere information.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://qt.nokia.com/&quot;&gt;qt.nokia.com&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;h3&gt;Om Qt&lt;/h3&gt;%1&lt;p&gt;Qt er et C++ toolkit til cross-platform applikationsudvikling.&lt;/p&gt;&lt;p&gt;Qt tilbyder single-source portabilitet til MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, og alle større kommercielle Unix-varianter. Qt er også tilgængeligt til indlejrede systemer som Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt er et Nokia produkt. Se &lt;a href=&quot;http://qt.nokia.com/&quot;&gt;qt.nokia.com&lt;/a&gt; for yderligere information.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://qt.nokia.com/company/model/&quot;&gt;qt.nokia.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Dette program bruger Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition er beregnet til udvikling af Open Source applikationer. En kommerciel Qt licens er nødvendig til udvikling af proprietære (lukket sourcekode) applikationer.&lt;/p&gt;&lt;p&gt;Se venligst &lt;a href=&quot;http://qt.nokia.com/company/model/&quot;&gt;qt.nokia.com/company/model/&lt;/a&gt; for et overblik over Qt licensforhold.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;Om Qt&lt;/h3&gt;&lt;p&gt;Programmet bruger Qt version %1.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 3 or GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 3 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 3.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>QMultiInputContext</name>
-    <message>
-        <source>Select IM</source>
-        <translation type="vanished">Markér IM</translation>
-    </message>
-</context>
-<context>
-    <name>QMultiInputContextPlugin</name>
-    <message>
-        <source>Multiple input method switcher</source>
-        <translation type="vanished">Multiple input metode-switcher</translation>
-    </message>
-    <message>
-        <source>Multiple input method switcher that uses the context menu of the text widgets</source>
-        <translation type="vanished">Multiple input metode-switcher, der benytter tekstkontrollernes kontekstmenuer</translation>
+        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under multiple licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of GNU (L)GPL.&lt;/p&gt;&lt;p&gt;Qt licensed under GNU (L)GPL is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the respective licenses.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <extracomment>Leave this text untranslated or include a verbatim copy of it below and note that it is the authoritative version in case of doubt.</extracomment>
+        <translation>&lt;p&gt;Qt er et C++-værktøjskit til programudvikling på tværs af platforme.&lt;/p&gt;&lt;p&gt;Qt giver enkelt-kilde portability på tværs af alle større skrivebordsstyresystemer. Det er også tilgængeligt til Embedded Linux og andre indlejrede og mobile styresystemer.&lt;/p&gt;&lt;p&gt;Qt er tilgængelig under flere licenseringsmuligheder, designet til at rumme behovene af vores forskellige brugere.&lt;/p&gt;&lt;p&gt;Qt licenseret under vores kommercielle licensaftale er passende til udvikling af proprietær/kommerciel software, hvor du ikke vil dele kildekode med tredjeparter eller på anden måde ikke kan efterleve vilkårene i GNU LGPL version 3.&lt;/p&gt;&lt;p&gt;Qt licenseret under GNU (L)GPL er passende til udvikling af Qt-programmer, på forudsætning af at du kan efterleve vilkårene og betingelserne i de enkelte licenser.&lt;/p&gt;&lt;p&gt;Se venligst &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for en oversigt af Qt-licensering.&lt;/p&gt;&lt;p&gt;Ophavsret (C) %1 Qt Company Ltd og andre bidragydere.&lt;/p&gt;&lt;p&gt;Qt og Qt-logoet er varemærker tilhørende Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt er Qt Company Ltd-produktet, udviklet som et open source projekt. Se &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for mere information.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>QNativeSocketEngine</name>
     <message>
         <source>The remote host closed the connection</source>
-        <translation>Fjern-hosten lukkede forbindelsen</translation>
+        <translation>Fjern-værten lukkede forbindelsen</translation>
     </message>
     <message>
         <source>Network operation timed out</source>
-        <translation>Netværksoperationen timed out</translation>
+        <translation>Netværkshandlingen fik timeout</translation>
     </message>
     <message>
         <source>Out of resources</source>
@@ -3272,7 +2582,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unsupported socket operation</source>
-        <translation>Socket-operation ikke understøttet</translation>
+        <translation>Socket-handlingen understøttes ikke</translation>
     </message>
     <message>
         <source>Protocol type not supported</source>
@@ -3284,7 +2594,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Network unreachable</source>
-        <translation>Netværket er ikke tilgængeligt</translation>
+        <translation>Netværket kan ikke tilgås</translation>
     </message>
     <message>
         <source>Permission denied</source>
@@ -3292,11 +2602,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Connection timed out</source>
-        <translation>Forbindelsen timed out</translation>
+        <translation>Forbindelsen fik timeout</translation>
     </message>
     <message>
         <source>Connection refused</source>
-        <translation>Forbindelse afvist</translation>
+        <translation>Forbindelsen blev afvist</translation>
     </message>
     <message>
         <source>The bound address is already in use</source>
@@ -3312,11 +2622,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to send a message</source>
-        <translation>Kunne ikke sende en besked</translation>
+        <translation>Kunne ikke sende en meddelelse</translation>
     </message>
     <message>
         <source>Unable to receive a message</source>
-        <translation>Kunne ikke modtage en besked</translation>
+        <translation>Kunne ikke modtage en meddelelse</translation>
     </message>
     <message>
         <source>Unable to write</source>
@@ -3328,11 +2638,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Another socket is already listening on the same port</source>
-        <translation>En anden socket lytter allerede på samme port</translation>
+        <translation>En anden socket lytter allerede på den samme port</translation>
     </message>
     <message>
         <source>Unable to initialize non-blocking socket</source>
-        <translation>Kunne ikke initialisere non-blocking socket</translation>
+        <translation>Kunne ikke initialisere ikke-blokerende socket</translation>
     </message>
     <message>
         <source>Unable to initialize broadcast socket</source>
@@ -3340,11 +2650,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Attempt to use IPv6 socket on a platform with no IPv6 support</source>
-        <translation>Forsøg på at bruge IPv6-socket på en platform uden IPv6-support</translation>
+        <translation>Forsøg på at bruge IPv6-socket på en platform uden IPv6-understøttelse</translation>
     </message>
     <message>
         <source>Host unreachable</source>
-        <translation>Vært er ikke tilgængelig</translation>
+        <translation>Værten kan ikke tilgås</translation>
     </message>
     <message>
         <source>Datagram was too large to send</source>
@@ -3352,7 +2662,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Operation on non-socket</source>
-        <translation>Handling på non-socket</translation>
+        <translation>Handling på ikke-socket</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -3360,48 +2670,48 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>The proxy type is invalid for this operation</source>
-        <translation>Proxytypen er ugyldig til denne handling</translation>
+        <translation>Proxytypen er ugyldig for denne handling</translation>
     </message>
     <message>
         <source>Temporary error</source>
-        <translation type="unfinished"></translation>
+        <translation>Midlertidig fejl</translation>
     </message>
     <message>
         <source>Network dropped connection on reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Netværket droppede forbindelsen ved nulstilling</translation>
     </message>
     <message>
         <source>Connection reset by peer</source>
-        <translation type="unfinished"></translation>
+        <translation>Forbindelsen blev nulstillet af peer</translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessCacheBackend</name>
     <message>
         <source>Error opening %1</source>
-        <translation>Der opstod fejl i at åbne %1</translation>
+        <translation>Fejl under åbning af %1</translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessDataBackend</name>
     <message>
         <source>Invalid URI: %1</source>
-        <translation type="unfinished">Ugyldig URI: %1</translation>
+        <translation>Ugyldig URI: %1</translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessDebugPipeBackend</name>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation type="unfinished">Skrivefejl mens der blev skrevet til %1: %2</translation>
+        <translation>Skrivefejl ved skrivning til %1: %2</translation>
     </message>
     <message>
         <source>Socket error on %1: %2</source>
-        <translation type="unfinished">Socket-fejl på %1: %2</translation>
+        <translation>Socket-fejl på %1: %2</translation>
     </message>
     <message>
         <source>Remote host closed the connection prematurely on %1</source>
-        <translation type="unfinished">Fjern-host lukkede forbindelsen for tidligt på %1</translation>
+        <translation>Fjern-værten lukkede forbindelsen i utide på %1</translation>
     </message>
 </context>
 <context>
@@ -3412,142 +2722,124 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Error opening %1: %2</source>
-        <translation>Der opstod fejl i at åbne %1: %2</translation>
+        <translation>Fejl ved åbning af %1: %2</translation>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation>Skrivefejl mens der blev skrevet til %1: %2</translation>
+        <translation>Skrivefejl ved skrivning til %1: %2</translation>
     </message>
     <message>
         <source>Cannot open %1: Path is a directory</source>
-        <translation>Kan ikke åbne %1: Stien er et katalog</translation>
+        <translation>Kan ikke åbne %1: stien er en mappe</translation>
     </message>
     <message>
         <source>Read error reading from %1: %2</source>
-        <translation>Læsefejl mens der blev læst fra %1: %2</translation>
+        <translation>Læsefejl ved læsning fra %1: %2</translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessFtpBackend</name>
     <message>
         <source>Cannot open %1: is a directory</source>
-        <translation>Kan ikke åbne %1: Er et katalog</translation>
+        <translation>Kan ikke åbne %1: er en mappe</translation>
     </message>
     <message>
         <source>Logging in to %1 failed: authentication required</source>
-        <translation>Der opstod fejl i at logge på %1: Autentificering kræves</translation>
+        <translation>Logning til %1 fejlede: autentifikation kræves</translation>
     </message>
     <message>
         <source>Error while downloading %1: %2</source>
-        <translation>Der opstod fejl i at downloade %1: %2</translation>
+        <translation>Fejl under download af %1: %2</translation>
     </message>
     <message>
         <source>Error while uploading %1: %2</source>
-        <translation>Der opstod fejl i at uploade %1: %2</translation>
+        <translation>Fejl under upload af %1: %2</translation>
     </message>
     <message>
         <source>No suitable proxy found</source>
-        <translation>Ingen passende proxy blev fundet</translation>
-    </message>
-</context>
-<context>
-    <name>QNetworkAccessHttpBackend</name>
-    <message>
-        <source>No suitable proxy found</source>
-        <translation type="vanished">Ingen passende proxy blev fundet</translation>
-    </message>
-</context>
-<context>
-    <name>QNetworkAccessManager</name>
-    <message>
-        <source>Network access is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der blev ikke fundet en egnet proxy</translation>
     </message>
 </context>
 <context>
     <name>QNetworkReply</name>
-    <message>
-        <source>Error downloading %1 - server replied: %2</source>
-        <translation type="vanished">Der opstod fejl i at downloade %1 - serveren svarede: %2</translation>
-    </message>
     <message>
         <source>Protocol &quot;%1&quot; is unknown</source>
         <translation>Protokollen &quot;%1&quot; er ukendt</translation>
     </message>
     <message>
         <source>Error transferring %1 - server replied: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Fejl ved overførsel af %1 - serveren svarede: %2</translation>
     </message>
     <message>
         <source>Background request not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Baggrundsanmodning ikke tilladt.</translation>
     </message>
     <message>
         <source>Network session error.</source>
-        <translation type="unfinished"></translation>
+        <translation>Netværkssessionsfejl.</translation>
     </message>
     <message>
         <source>backend start error.</source>
-        <translation type="unfinished"></translation>
+        <translation>backend startfejl.</translation>
     </message>
     <message>
         <source>Temporary network failure.</source>
-        <translation type="unfinished"></translation>
+        <translation>Midlertidig netværksfejl.</translation>
     </message>
 </context>
 <context>
     <name>QNetworkReplyHttpImpl</name>
     <message>
         <source>Operation canceled</source>
-        <translation type="unfinished">Handling blev annulleret</translation>
+        <translation>Handlingen blev annulleret</translation>
     </message>
     <message>
         <source>No suitable proxy found</source>
-        <translation type="unfinished">Ingen passende proxy blev fundet</translation>
+        <translation>Der blev ikke fundet en egnet proxy</translation>
     </message>
 </context>
 <context>
     <name>QNetworkReplyImpl</name>
     <message>
         <source>Operation canceled</source>
-        <translation>Handling blev annulleret</translation>
+        <translation>Handlingen blev annulleret</translation>
     </message>
 </context>
 <context>
     <name>QNetworkSession</name>
     <message>
         <source>Invalid configuration.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ugyldig konfiguration.</translation>
     </message>
 </context>
 <context>
     <name>QNetworkSessionPrivateImpl</name>
     <message>
         <source>Unknown session error.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukendt sessionsfejl.</translation>
     </message>
     <message>
         <source>The session was aborted by the user or system.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sessionen blev afbrudt af brugeren eller systemet.</translation>
     </message>
     <message>
         <source>The requested operation is not supported by the system.</source>
-        <translation type="unfinished"></translation>
+        <translation>Den anmodede handling understøttes ikke af systemet.</translation>
     </message>
     <message>
         <source>The specified configuration cannot be used.</source>
-        <translation type="unfinished"></translation>
+        <translation>Den angivne konfiguration kan ikke bruges.</translation>
     </message>
     <message>
         <source>Roaming was aborted or is not possible.</source>
-        <translation type="unfinished"></translation>
+        <translation>Roaming blev afbrudt eller er ikke mulig.</translation>
     </message>
 </context>
 <context>
     <name>QOCIDriver</name>
     <message>
         <source>Unable to logon</source>
-        <translation>Kunne ikke logge på</translation>
+        <translation>Kunne ikke logge ind</translation>
     </message>
     <message>
         <source>Unable to initialize</source>
@@ -3571,15 +2863,15 @@ Do you want to delete it anyway?</source>
     <name>QOCIResult</name>
     <message>
         <source>Unable to bind column for batch execute</source>
-        <translation>Kunne ikke tildele kolonne til batch-udførsel</translation>
+        <translation>Kunne ikke binde kolonne til batch-eksekvering</translation>
     </message>
     <message>
         <source>Unable to execute batch statement</source>
-        <translation>Kunne ikke udføre batch-udsagn</translation>
+        <translation>Kunne ikke eksekvere batch-udsagn</translation>
     </message>
     <message>
         <source>Unable to goto next</source>
-        <translation>Kunne ikke gå til den næste</translation>
+        <translation>Kunne ikke gå til næste</translation>
     </message>
     <message>
         <source>Unable to alloc statement</source>
@@ -3591,34 +2883,26 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to bind value</source>
-        <translation>Kunne ikke tildele værdi</translation>
-    </message>
-    <message>
-        <source>Unable to execute select statement</source>
-        <translation type="obsolete">Kunne ikke udføre det valgte udsagn</translation>
+        <translation>Kunne ikke binde værdi</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Kunne ikke udføre udsagn</translation>
+        <translation>Kunne ikke eksekvere udsagn</translation>
     </message>
     <message>
         <source>Unable to get statement type</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunne ikke hente udsagnstype</translation>
     </message>
 </context>
 <context>
     <name>QODBCDriver</name>
     <message>
         <source>Unable to connect</source>
-        <translation>Kunne ikke forbinde</translation>
-    </message>
-    <message>
-        <source>Unable to connect - Driver doesn&apos;t support all needed functionality</source>
-        <translation type="vanished">Kunne ikke forbinde. Driveren understøtter ikke alle de nødvendige funktionaliteter</translation>
+        <translation>Kunne ikke oprette forbindelsen</translation>
     </message>
     <message>
         <source>Unable to disable autocommit</source>
-        <translation>Kunne ikke slå auto-udfør fra</translation>
+        <translation>Kunne ikke deaktivere auto-gennemfør</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
@@ -3630,26 +2914,26 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to enable autocommit</source>
-        <translation>Kunne ikke slå auto-udfør til</translation>
+        <translation>Kunne ikke aktivere auto-gennemfør</translation>
     </message>
     <message>
         <source>Unable to connect - Driver doesn&apos;t support all functionality required</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunne ikke oprette forbindelsen - driveren understøtter ikke alle de krævede funktionaliteter</translation>
     </message>
 </context>
 <context>
     <name>QODBCResult</name>
     <message>
         <source>QODBCResult::reset: Unable to set &apos;SQL_CURSOR_STATIC&apos; as statement attribute. Please check your ODBC driver configuration</source>
-        <translation>QODBCResult::reset: Kunne ikke indstille &apos;SQL_CURSOR_STATIC&apos; til udsagnsattribut. Kontrollér ODBC-driver-konfigurationen</translation>
+        <translation>QODBCResult::reset: kunne ikke sætte &apos;SQL_CURSOR_STATIC&apos; som udsagnsattribut. Tjek venligst din ODBC-driverkonfiguration</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Kunne ikke udføre udsagn</translation>
+        <translation>Kunne ikke eksekvere udsagn</translation>
     </message>
     <message>
         <source>Unable to fetch next</source>
-        <translation>Kunne ikke hente den næste</translation>
+        <translation>Kunne ikke hente næste</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
@@ -3657,11 +2941,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to bind variable</source>
-        <translation>Kunne ikke tildele variabel</translation>
+        <translation>Kunne ikke binde variablen</translation>
     </message>
     <message>
         <source>Unable to fetch last</source>
-        <translation>Kunne ikke hente den sidste</translation>
+        <translation>Kunne ikke hente sidste</translation>
     </message>
     <message>
         <source>Unable to fetch</source>
@@ -3669,80 +2953,30 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to fetch first</source>
-        <translation>Kunne ikke hente den første</translation>
+        <translation>Kunne ikke hente første</translation>
     </message>
     <message>
         <source>Unable to fetch previous</source>
-        <translation>Kunne ikke hente den forrige</translation>
-    </message>
-</context>
-<context>
-    <name>QObject</name>
-    <message>
-        <source>Operation not supported on %1</source>
-        <translation type="vanished">Handling blev ikke understøttet på %1</translation>
-    </message>
-    <message>
-        <source>Invalid URI: %1</source>
-        <translation type="vanished">Ugyldig URI: %1</translation>
-    </message>
-    <message>
-        <source>Write error writing to %1: %2</source>
-        <translation type="vanished">Skrivefejl mens der blev skrevet til %1: %2</translation>
-    </message>
-    <message>
-        <source>Read error reading from %1: %2</source>
-        <translation type="vanished">Læsefejl mens der blev læst fra %1: %2</translation>
-    </message>
-    <message>
-        <source>Socket error on %1: %2</source>
-        <translation type="vanished">Socket-fejl på %1: %2</translation>
-    </message>
-    <message>
-        <source>Remote host closed the connection prematurely on %1</source>
-        <translation type="vanished">Fjern-host lukkede forbindelsen for tidligt på %1</translation>
-    </message>
-    <message>
-        <source>Protocol error: packet of size 0 received</source>
-        <translation type="vanished">Protokolfejl: Pakke på størrelsen 0 modtaget</translation>
-    </message>
-    <message>
-        <source>Home</source>
-        <translation type="vanished">Hjem</translation>
-    </message>
-    <message>
-        <source>No host name given</source>
-        <translation type="vanished">Hostnavn mangler</translation>
-    </message>
-</context>
-<context>
-    <name>QPPDOptionsModel</name>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">Navn</translation>
-    </message>
-    <message>
-        <source>Value</source>
-        <translation type="vanished">Værdi</translation>
+        <translation>Kunne ikke hente forrige</translation>
     </message>
 </context>
 <context>
     <name>QPSQLDriver</name>
     <message>
         <source>Unable to connect</source>
-        <translation>Kunne ikke skabe forbindelse</translation>
+        <translation>Kunne ikke oprette forbindelse</translation>
     </message>
     <message>
         <source>Could not begin transaction</source>
-        <translation>Kunne ikke påbegynde transaktion</translation>
+        <translation>Kunne ikke påbegynde transaktionen</translation>
     </message>
     <message>
         <source>Could not commit transaction</source>
-        <translation>Kunne ikke gennemføre transaktion</translation>
+        <translation>Kunne ikke gennemføre transaktionen</translation>
     </message>
     <message>
         <source>Could not rollback transaction</source>
-        <translation>Kunne ikke tilbagetrække transaktion</translation>
+        <translation>Kunne ikke tilbagetrække transaktionen</translation>
     </message>
     <message>
         <source>Unable to subscribe</source>
@@ -3763,28 +2997,36 @@ Do you want to delete it anyway?</source>
         <source>Unable to prepare statement</source>
         <translation>Kunne ikke forberede udsagn</translation>
     </message>
+    <message>
+        <source>Query results lost - probably discarded on executing another SQL query.</source>
+        <translation>Forespørgselsresultater tabt - formodentligt forkastet ved eksekvering af en anden SQL-forespørgsel.</translation>
+    </message>
+    <message>
+        <source>Unable to get result</source>
+        <translation>Kunne ikke hente resultat</translation>
+    </message>
+    <message>
+        <source>Unable to send query</source>
+        <translation>Kunne ikke sende forespørgsel</translation>
+    </message>
 </context>
 <context>
     <name>QPageSetupWidget</name>
-    <message>
-        <source>Centimeters (cm)</source>
-        <translation type="vanished">Centimeter (cm)</translation>
-    </message>
     <message>
         <source>Millimeters (mm)</source>
         <translation>Millimeter (mm)</translation>
     </message>
     <message>
         <source>Inches (in)</source>
-        <translation></translation>
+        <translation>Tommer (tommer)</translation>
     </message>
     <message>
         <source>Points (pt)</source>
-        <translation>Point (pt)</translation>
+        <translation>Punkter (pt)</translation>
     </message>
     <message>
         <source>Form</source>
-        <translation></translation>
+        <translation>Form</translation>
     </message>
     <message>
         <source>Paper</source>
@@ -3796,7 +3038,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Width:</source>
-        <translation>Vidde:</translation>
+        <translation>Bredde:</translation>
     </message>
     <message>
         <source>Height:</source>
@@ -3808,7 +3050,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Orientation</source>
-        <translation></translation>
+        <translation>Orientering</translation>
     </message>
     <message>
         <source>Portrait</source>
@@ -3832,77 +3074,77 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>top margin</source>
-        <translation>Margen - øverst</translation>
+        <translation>øverste margen</translation>
     </message>
     <message>
         <source>left margin</source>
-        <translation>Margen - venstre</translation>
+        <translation>venstre margen</translation>
     </message>
     <message>
         <source>right margin</source>
-        <translation>Margen - højre</translation>
+        <translation>højre margen</translation>
     </message>
     <message>
         <source>bottom margin</source>
-        <translation>Margen - bund</translation>
+        <translation>nederste margen</translation>
     </message>
     <message>
         <source>Page Layout</source>
-        <translation type="unfinished"></translation>
+        <translation>Sidelayout</translation>
     </message>
     <message>
         <source>Page order:</source>
-        <translation type="unfinished"></translation>
+        <translation>Sideorden:</translation>
     </message>
     <message>
         <source>Pages per sheet:</source>
-        <translation type="unfinished"></translation>
+        <translation>Sider pr. ark:</translation>
     </message>
     <message>
         <source>Pica (P̸)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pica (P̸)</translation>
     </message>
     <message>
         <source>Didot (DD)</source>
-        <translation type="unfinished"></translation>
+        <translation>Didot (DD)</translation>
     </message>
     <message>
         <source>Cicero (CC)</source>
-        <translation type="unfinished"></translation>
+        <translation>Cicero (CC)</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation type="unfinished">Brugerdefineret</translation>
+        <translation>Brugerdefineret</translation>
     </message>
     <message>
         <source>mm</source>
         <extracomment>Unit &apos;Millimeter&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>mm</translation>
     </message>
     <message>
         <source>pt</source>
         <extracomment>Unit &apos;Points&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>pt</translation>
     </message>
     <message>
         <source>in</source>
         <extracomment>Unit &apos;Inch&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>tommer</translation>
     </message>
     <message>
         <source>P̸</source>
         <extracomment>Unit &apos;Pica&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>P̸</translation>
     </message>
     <message>
         <source>DD</source>
         <extracomment>Unit &apos;Didot&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>DD</translation>
     </message>
     <message>
         <source>CC</source>
         <extracomment>Unit &apos;Cicero&apos;</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>CC</translation>
     </message>
 </context>
 <context>
@@ -3910,552 +3152,552 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Custom (%1mm x %2mm)</source>
         <extracomment>Custom size name in millimeters</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Brugerdefineret (%1 mm x %2 mm)</translation>
     </message>
     <message>
         <source>Custom (%1pt x %2pt)</source>
         <extracomment>Custom size name in points</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Brugerdefineret (%1 pt x %2 pt)</translation>
     </message>
     <message>
         <source>Custom (%1in x %2in)</source>
         <extracomment>Custom size name in inches</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Brugerdefineret (%1 tommer x %2 tommer)</translation>
     </message>
     <message>
         <source>Custom (%1pc x %2pc)</source>
         <extracomment>Custom size name in picas</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Brugerdefineret (%1 pc x %2 pc)</translation>
     </message>
     <message>
         <source>Custom (%1DD x %2DD)</source>
         <extracomment>Custom size name in didots</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Brugerdefineret (%1 DD x %2 DD)</translation>
     </message>
     <message>
         <source>Custom (%1CC x %2CC)</source>
         <extracomment>Custom size name in ciceros</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Brugerdefineret (%1 CC x %2 CC)</translation>
     </message>
     <message>
         <source>%1 x %2 in</source>
         <extracomment>Page size in &apos;Inch&apos;.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>%1 x %2 tommer</translation>
     </message>
     <message>
         <source>A0</source>
-        <translation type="unfinished"></translation>
+        <translation>A0</translation>
     </message>
     <message>
         <source>A1</source>
-        <translation type="unfinished"></translation>
+        <translation>A1</translation>
     </message>
     <message>
         <source>A2</source>
-        <translation type="unfinished"></translation>
+        <translation>A2</translation>
     </message>
     <message>
         <source>A3</source>
-        <translation type="unfinished"></translation>
+        <translation>A3</translation>
     </message>
     <message>
         <source>A4</source>
-        <translation type="unfinished"></translation>
+        <translation>A4</translation>
     </message>
     <message>
         <source>A5</source>
-        <translation type="unfinished"></translation>
+        <translation>A5</translation>
     </message>
     <message>
         <source>A6</source>
-        <translation type="unfinished"></translation>
+        <translation>A6</translation>
     </message>
     <message>
         <source>A7</source>
-        <translation type="unfinished"></translation>
+        <translation>A7</translation>
     </message>
     <message>
         <source>A8</source>
-        <translation type="unfinished"></translation>
+        <translation>A8</translation>
     </message>
     <message>
         <source>A9</source>
-        <translation type="unfinished"></translation>
+        <translation>A9</translation>
     </message>
     <message>
         <source>A10</source>
-        <translation type="unfinished"></translation>
+        <translation>A10</translation>
     </message>
     <message>
         <source>B0</source>
-        <translation type="unfinished"></translation>
+        <translation>B0</translation>
     </message>
     <message>
         <source>B1</source>
-        <translation type="unfinished"></translation>
+        <translation>B1</translation>
     </message>
     <message>
         <source>B2</source>
-        <translation type="unfinished"></translation>
+        <translation>B2</translation>
     </message>
     <message>
         <source>B3</source>
-        <translation type="unfinished"></translation>
+        <translation>B3</translation>
     </message>
     <message>
         <source>B4</source>
-        <translation type="unfinished"></translation>
+        <translation>B4</translation>
     </message>
     <message>
         <source>B5</source>
-        <translation type="unfinished"></translation>
+        <translation>B5</translation>
     </message>
     <message>
         <source>B6</source>
-        <translation type="unfinished"></translation>
+        <translation>B6</translation>
     </message>
     <message>
         <source>B7</source>
-        <translation type="unfinished"></translation>
+        <translation>B7</translation>
     </message>
     <message>
         <source>B8</source>
-        <translation type="unfinished"></translation>
+        <translation>B8</translation>
     </message>
     <message>
         <source>B9</source>
-        <translation type="unfinished"></translation>
+        <translation>B9</translation>
     </message>
     <message>
         <source>B10</source>
-        <translation type="unfinished"></translation>
+        <translation>B10</translation>
     </message>
     <message>
         <source>Executive (7.5 x 10 in)</source>
-        <translation type="unfinished"></translation>
+        <translation>Executive (7,5 x 10 tommer)</translation>
     </message>
     <message>
         <source>Executive (7.25 x 10.5 in)</source>
-        <translation type="unfinished"></translation>
+        <translation>Executive (7,25 x 10,5 tommer)</translation>
     </message>
     <message>
         <source>Folio (8.27 x 13 in)</source>
-        <translation type="unfinished"></translation>
+        <translation>Folio (8,27 x 13 tommer)</translation>
     </message>
     <message>
         <source>Legal</source>
-        <translation type="unfinished"></translation>
+        <translation>Juridisk</translation>
     </message>
     <message>
         <source>Letter / ANSI A</source>
-        <translation type="unfinished"></translation>
+        <translation>Brev/ANSI A</translation>
     </message>
     <message>
         <source>Tabloid / ANSI B</source>
-        <translation type="unfinished"></translation>
+        <translation>Tabloid/ANSI B</translation>
     </message>
     <message>
         <source>Ledger / ANSI B</source>
-        <translation type="unfinished"></translation>
+        <translation>Ledger/ANSI B</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation type="unfinished">Brugerdefineret</translation>
+        <translation>Brugerdefineret</translation>
     </message>
     <message>
         <source>A3 Extra</source>
-        <translation type="unfinished"></translation>
+        <translation>A3 ekstra</translation>
     </message>
     <message>
         <source>A4 Extra</source>
-        <translation type="unfinished"></translation>
+        <translation>A4 ekstra</translation>
     </message>
     <message>
         <source>A4 Plus</source>
-        <translation type="unfinished"></translation>
+        <translation>A4 plus</translation>
     </message>
     <message>
         <source>A4 Small</source>
-        <translation type="unfinished"></translation>
+        <translation>A4 lille</translation>
     </message>
     <message>
         <source>A5 Extra</source>
-        <translation type="unfinished"></translation>
+        <translation>A5 ekstra</translation>
     </message>
     <message>
         <source>B5 Extra</source>
-        <translation type="unfinished"></translation>
+        <translation>B5 ekstra</translation>
     </message>
     <message>
         <source>JIS B0</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B0</translation>
     </message>
     <message>
         <source>JIS B1</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B1</translation>
     </message>
     <message>
         <source>JIS B2</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B2</translation>
     </message>
     <message>
         <source>JIS B3</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B3</translation>
     </message>
     <message>
         <source>JIS B4</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B4</translation>
     </message>
     <message>
         <source>JIS B5</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B5</translation>
     </message>
     <message>
         <source>JIS B6</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B6</translation>
     </message>
     <message>
         <source>JIS B7</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B7</translation>
     </message>
     <message>
         <source>JIS B8</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B8</translation>
     </message>
     <message>
         <source>JIS B9</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B9</translation>
     </message>
     <message>
         <source>JIS B10</source>
-        <translation type="unfinished"></translation>
+        <translation>JIS B10</translation>
     </message>
     <message>
         <source>ANSI C</source>
-        <translation type="unfinished"></translation>
+        <translation>ANSI C</translation>
     </message>
     <message>
         <source>ANSI D</source>
-        <translation type="unfinished"></translation>
+        <translation>ANSI D</translation>
     </message>
     <message>
         <source>ANSI E</source>
-        <translation type="unfinished"></translation>
+        <translation>ANSI E</translation>
     </message>
     <message>
         <source>Legal Extra</source>
-        <translation type="unfinished"></translation>
+        <translation>Juridisk ekstra</translation>
     </message>
     <message>
         <source>Letter Extra</source>
-        <translation type="unfinished"></translation>
+        <translation>Brev ekstra</translation>
     </message>
     <message>
         <source>Letter Plus</source>
-        <translation type="unfinished"></translation>
+        <translation>Brev plus</translation>
     </message>
     <message>
         <source>Letter Small</source>
-        <translation type="unfinished"></translation>
+        <translation>Brev lille</translation>
     </message>
     <message>
         <source>Tabloid Extra</source>
-        <translation type="unfinished"></translation>
+        <translation>Tabloid ekstra</translation>
     </message>
     <message>
         <source>Architect A</source>
-        <translation type="unfinished"></translation>
+        <translation>Arkitekt A</translation>
     </message>
     <message>
         <source>Architect B</source>
-        <translation type="unfinished"></translation>
+        <translation>Arkitekt B</translation>
     </message>
     <message>
         <source>Architect C</source>
-        <translation type="unfinished"></translation>
+        <translation>Arkitekt C</translation>
     </message>
     <message>
         <source>Architect D</source>
-        <translation type="unfinished"></translation>
+        <translation>Arkitekt D</translation>
     </message>
     <message>
         <source>Architect E</source>
-        <translation type="unfinished"></translation>
+        <translation>Arkitekt E</translation>
     </message>
     <message>
         <source>Note</source>
-        <translation type="unfinished"></translation>
+        <translation>Notits</translation>
     </message>
     <message>
         <source>Quarto</source>
-        <translation type="unfinished"></translation>
+        <translation>Quarto</translation>
     </message>
     <message>
         <source>Statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Erklæring</translation>
     </message>
     <message>
         <source>Super A</source>
-        <translation type="unfinished"></translation>
+        <translation>Super A</translation>
     </message>
     <message>
         <source>Super B</source>
-        <translation type="unfinished"></translation>
+        <translation>Super B</translation>
     </message>
     <message>
         <source>Postcard</source>
-        <translation type="unfinished"></translation>
+        <translation>Postkort</translation>
     </message>
     <message>
         <source>Double Postcard</source>
-        <translation type="unfinished"></translation>
+        <translation>Dobbelt postkort</translation>
     </message>
     <message>
         <source>PRC 16K</source>
-        <translation type="unfinished"></translation>
+        <translation>PRC 16K</translation>
     </message>
     <message>
         <source>PRC 32K</source>
-        <translation type="unfinished"></translation>
+        <translation>PRC 32K</translation>
     </message>
     <message>
         <source>PRC 32K Big</source>
-        <translation type="unfinished"></translation>
+        <translation>PRC 32K stor</translation>
     </message>
     <message>
         <source>Fan-fold US (14.875 x 11 in)</source>
-        <translation type="unfinished"></translation>
+        <translation>Fan-fold US (14,875 x 11 tommer)</translation>
     </message>
     <message>
         <source>Fan-fold German (8.5 x 12 in)</source>
-        <translation type="unfinished"></translation>
+        <translation>Fan-fold tysk (8,5 x 12 tommer)</translation>
     </message>
     <message>
         <source>Fan-fold German Legal (8.5 x 13 in)</source>
-        <translation type="unfinished"></translation>
+        <translation>Fan-fold tysk juridisk (8,5 x 13 tommer)</translation>
     </message>
     <message>
         <source>Envelope B4</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut B4</translation>
     </message>
     <message>
         <source>Envelope B5</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut B5</translation>
     </message>
     <message>
         <source>Envelope B6</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut B6</translation>
     </message>
     <message>
         <source>Envelope C0</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut C0</translation>
     </message>
     <message>
         <source>Envelope C1</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut C1</translation>
     </message>
     <message>
         <source>Envelope C2</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut C2</translation>
     </message>
     <message>
         <source>Envelope C3</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut C3</translation>
     </message>
     <message>
         <source>Envelope C4</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut C4</translation>
     </message>
     <message>
         <source>Envelope C5</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut C5</translation>
     </message>
     <message>
         <source>Envelope C6</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut C6</translation>
     </message>
     <message>
         <source>Envelope C65</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut C65</translation>
     </message>
     <message>
         <source>Envelope C7</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut C7</translation>
     </message>
     <message>
         <source>Envelope DL</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut DL</translation>
     </message>
     <message>
         <source>Envelope US 9</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut US 9</translation>
     </message>
     <message>
         <source>Envelope US 10</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut US 10</translation>
     </message>
     <message>
         <source>Envelope US 11</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut US 11</translation>
     </message>
     <message>
         <source>Envelope US 12</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut US 12</translation>
     </message>
     <message>
         <source>Envelope US 14</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut US 14</translation>
     </message>
     <message>
         <source>Envelope Monarch</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut monark</translation>
     </message>
     <message>
         <source>Envelope Personal</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut personlig</translation>
     </message>
     <message>
         <source>Envelope Chou 3</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut chou 3</translation>
     </message>
     <message>
         <source>Envelope Chou 4</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut chou 4</translation>
     </message>
     <message>
         <source>Envelope Invite</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut invitation</translation>
     </message>
     <message>
         <source>Envelope Italian</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut italiensk</translation>
     </message>
     <message>
         <source>Envelope Kaku 2</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut kaku 2</translation>
     </message>
     <message>
         <source>Envelope Kaku 3</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut kaku 3</translation>
     </message>
     <message>
         <source>Envelope PRC 1</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut PRC 1</translation>
     </message>
     <message>
         <source>Envelope PRC 2</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut PRC 2</translation>
     </message>
     <message>
         <source>Envelope PRC 3</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut PRC 3</translation>
     </message>
     <message>
         <source>Envelope PRC 4</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut PRC 4</translation>
     </message>
     <message>
         <source>Envelope PRC 5</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut PRC 5</translation>
     </message>
     <message>
         <source>Envelope PRC 6</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut PRC 6</translation>
     </message>
     <message>
         <source>Envelope PRC 7</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut PRC 7</translation>
     </message>
     <message>
         <source>Envelope PRC 8</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut PRC 8</translation>
     </message>
     <message>
         <source>Envelope PRC 9</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut PRC 9</translation>
     </message>
     <message>
         <source>Envelope PRC 10</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut PRC 10</translation>
     </message>
     <message>
         <source>Envelope You 4</source>
-        <translation type="unfinished"></translation>
+        <translation>Konvolut you 4</translation>
     </message>
 </context>
 <context>
     <name>QPlatformTheme</name>
     <message>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished">Gem</translation>
+        <translation>Gem</translation>
     </message>
     <message>
         <source>Save All</source>
-        <translation type="unfinished">Gem alle</translation>
+        <translation>Gem alle</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished">Åbn</translation>
+        <translation>Åbn</translation>
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation type="unfinished">&amp;Ja</translation>
+        <translation>&amp;Ja</translation>
     </message>
     <message>
         <source>Yes to &amp;All</source>
-        <translation type="unfinished">Ja til &amp;alle</translation>
+        <translation>Ja til &amp;alle</translation>
     </message>
     <message>
         <source>&amp;No</source>
-        <translation type="unfinished">&amp;Nej</translation>
+        <translation>&amp;Nej</translation>
     </message>
     <message>
         <source>N&amp;o to All</source>
-        <translation type="unfinished">Ne&amp;j til alle</translation>
+        <translation>Ne&amp;j til alle</translation>
     </message>
     <message>
         <source>Abort</source>
-        <translation type="unfinished">Afbryd</translation>
+        <translation>Afbryd</translation>
     </message>
     <message>
         <source>Retry</source>
-        <translation type="unfinished">Prøv igen</translation>
+        <translation>Prøv igen</translation>
     </message>
     <message>
         <source>Ignore</source>
-        <translation type="unfinished"></translation>
+        <translation>Ignorer</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Luk</translation>
+        <translation>Luk</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Annuller</translation>
+        <translation>Annuller</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished">Kassér</translation>
+        <translation>Forkast</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Hjælp</translation>
+        <translation>Hjælp</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Udfør</translation>
+        <translation>Anvend</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">Nulstil</translation>
+        <translation>Nulstil</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished">Gendan standardværdier</translation>
+        <translation>Genskab standarder</translation>
     </message>
 </context>
 <context>
@@ -4466,23 +3708,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>The plugin was not loaded.</source>
-        <translation>Plugin blev ikke indlæst.</translation>
+        <translation>Pluginet blev ikke indlæst.</translation>
     </message>
 </context>
 <context>
     <name>QPrintDialog</name>
-    <message>
-        <source>locally connected</source>
-        <translation type="vanished">lokalt forbundet</translation>
-    </message>
-    <message>
-        <source>Aliases: %1</source>
-        <translation type="vanished">Aliasser: %1</translation>
-    </message>
-    <message>
-        <source>unknown</source>
-        <translation type="vanished">Ukendt</translation>
-    </message>
     <message>
         <source>Print To File ...</source>
         <translation>Udskriv til fil...</translation>
@@ -4490,28 +3720,24 @@ Do you want to delete it anyway?</source>
     <message>
         <source>File %1 is not writable.
 Please choose a different file name.</source>
-        <translation>Filen %1 kan ikke skrives.
-Vælg et andet filnavn.</translation>
+        <translation>Der kan ikke skrives til filen %1.
+Vælg venligst et andet filnavn.</translation>
     </message>
     <message>
         <source>%1 already exists.
 Do you want to overwrite it?</source>
         <translation>%1 findes allerede.
-Ønsker du at overskrive?</translation>
+Vil du overskrive den?</translation>
     </message>
     <message>
         <source>%1 is a directory.
 Please choose a different file name.</source>
-        <translation>%1 er et katalog.
-Vælg et andet filnavn.</translation>
-    </message>
-    <message>
-        <source>Custom</source>
-        <translation type="vanished">Brugerdefineret</translation>
+        <translation>%1 er en mappe.
+Vælg venligst et andet filnavn.</translation>
     </message>
     <message>
         <source>&amp;Options &gt;&gt;</source>
-        <translation>&amp;Indstillinger&gt;&gt;</translation>
+        <translation>&amp;Valgmuligheder &gt;&gt;</translation>
     </message>
     <message>
         <source>&amp;Print</source>
@@ -4519,51 +3745,23 @@ Vælg et andet filnavn.</translation>
     </message>
     <message>
         <source>&amp;Options &lt;&lt;</source>
-        <translation>&amp;Indstillinger&lt;&lt;</translation>
+        <translation>&amp;Valgmuligheder &lt;&lt;</translation>
     </message>
     <message>
         <source>Print to File (PDF)</source>
         <translation>Udskriv til fil (PDF)</translation>
     </message>
     <message>
-        <source>Print to File (Postscript)</source>
-        <translation type="vanished">Udskriv til fil (Postscript)</translation>
-    </message>
-    <message>
         <source>Local file</source>
         <translation>Lokal fil</translation>
     </message>
     <message>
-        <source>Write %1 file</source>
-        <translation type="vanished">Skriv %1 fil</translation>
-    </message>
-    <message>
-        <source>File exists</source>
-        <translation type="vanished">Fil findes</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Do you want to overwrite it?&lt;/qt&gt;</source>
-        <translation type="vanished">&lt;qt&gt;Ønsker du at overskrive?&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>Print all</source>
-        <translation type="vanished">Udskriv alle</translation>
-    </message>
-    <message>
-        <source>Print selection</source>
-        <translation type="vanished">Udskriv markerede</translation>
-    </message>
-    <message>
-        <source>Print range</source>
-        <translation type="vanished">Udskriftsområde</translation>
-    </message>
-    <message>
         <source>The &apos;From&apos; value cannot be greater than the &apos;To&apos; value.</source>
-        <translation>&apos;Fra&apos;-værdien kan ikke være større end &apos;til&apos;-værdien.</translation>
+        <translation>&apos;Fra&apos;-værdien kan ikke være større end &apos;Til&apos;-værdien.</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Print</source>
@@ -4571,84 +3769,97 @@ Vælg et andet filnavn.</translation>
     </message>
     <message>
         <source>Left to Right, Top to Bottom</source>
-        <translation type="unfinished"></translation>
+        <translation>Venstre til højre, øverst til nederst</translation>
     </message>
     <message>
         <source>Left to Right, Bottom to Top</source>
-        <translation type="unfinished"></translation>
+        <translation>Venstre til højre, nederst til øverst</translation>
     </message>
     <message>
         <source>Right to Left, Bottom to Top</source>
-        <translation type="unfinished"></translation>
+        <translation>Højre til venstre, nederst til øverst</translation>
     </message>
     <message>
         <source>Right to Left, Top to Bottom</source>
-        <translation type="unfinished"></translation>
+        <translation>Højre til venstre, øverst til nederst</translation>
     </message>
     <message>
         <source>Bottom to Top, Left to Right</source>
-        <translation type="unfinished"></translation>
+        <translation>Nederst til øverst, venstre til højre</translation>
     </message>
     <message>
         <source>Bottom to Top, Right to Left</source>
-        <translation type="unfinished"></translation>
+        <translation>Nederst til øverst, højre til venstre</translation>
     </message>
     <message>
         <source>Top to Bottom, Left to Right</source>
-        <translation type="unfinished"></translation>
+        <translation>Øverst til nederst, venstre til højre</translation>
     </message>
     <message>
         <source>Top to Bottom, Right to Left</source>
-        <translation type="unfinished"></translation>
+        <translation>Øverst til nederst, højre til venstre</translation>
     </message>
     <message>
         <source>1 (1x1)</source>
-        <translation type="unfinished"></translation>
+        <translation>1 (1x1)</translation>
     </message>
     <message>
         <source>2 (2x1)</source>
-        <translation type="unfinished"></translation>
+        <translation>2 (2x1)</translation>
     </message>
     <message>
         <source>4 (2x2)</source>
-        <translation type="unfinished"></translation>
+        <translation>4 (2x2)</translation>
     </message>
     <message>
         <source>6 (2x3)</source>
-        <translation type="unfinished"></translation>
+        <translation>6 (2x3)</translation>
     </message>
     <message>
         <source>9 (3x3)</source>
-        <translation type="unfinished"></translation>
+        <translation>9 (3x3)</translation>
     </message>
     <message>
         <source>16 (4x4)</source>
-        <translation type="unfinished"></translation>
+        <translation>16 (4x4)</translation>
     </message>
     <message>
         <source>All Pages</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle sider</translation>
     </message>
     <message>
         <source>Odd Pages</source>
-        <translation type="unfinished"></translation>
+        <translation>Ulige sider</translation>
     </message>
     <message>
         <source>Even Pages</source>
-        <translation type="unfinished"></translation>
+        <translation>Lige sider</translation>
     </message>
     <message>
         <source>Write PDF file</source>
-        <translation type="unfinished"></translation>
+        <translation>Skriv PDF-fil</translation>
     </message>
     <message>
         <source>Options &apos;Pages Per Sheet&apos; and &apos;Page Set&apos; cannot be used together.
 Please turn one of those options off.</source>
-        <translation type="unfinished"></translation>
+        <translation>Valgmuligheder &apos;Sider pr. ark&apos; og &apos;Sidesæt&apos; kan ikke bruges sammen.
+Slå venligst en at disse valgmuligheder fra.</translation>
     </message>
     <message>
-        <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <source>Invalid Pages Definition</source>
+        <translation>Ugyldig sider-definition</translation>
+    </message>
+    <message>
+        <source>%1 does not follow the correct syntax. Please use &apos;,&apos; to separate ranges and pages, &apos;-&apos; to define ranges and make sure ranges do not intersect with each other.</source>
+        <translation>%1 følger ikke den korrekte syntaks. Brug venligst &apos;,&apos; til at separere områder og sider, &apos;-&apos; til at angive områder og sørge for at områder ikke krydser hinanden.</translation>
+    </message>
+    <message>
+        <source>Duplex Settings Conflicts</source>
+        <translation>Konflikt i dupleksindstillinger</translation>
+    </message>
+    <message>
+        <source>There are conflicts in duplex settings. Do you want to fix them?</source>
+        <translation>Der er konflikter i dupleksindstillingerne. Vil du rette dem?</translation>
     </message>
 </context>
 <context>
@@ -4659,7 +3870,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Print Preview</source>
-        <translation>Vis udskrift</translation>
+        <translation>Forhåndsvis udskrift</translation>
     </message>
     <message>
         <source>Next page</source>
@@ -4683,7 +3894,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Fit page</source>
-        <translation>Tilpas siden</translation>
+        <translation>Tilpas side</translation>
     </message>
     <message>
         <source>Zoom in</source>
@@ -4722,38 +3933,46 @@ Please turn one of those options off.</source>
         <translation>Sideopsætning</translation>
     </message>
     <message>
-        <source>Close</source>
-        <translation type="vanished">Luk</translation>
-    </message>
-    <message>
         <source>Export to PDF</source>
         <translation>Eksportér til PDF</translation>
     </message>
     <message>
-        <source>Export to PostScript</source>
-        <translation type="vanished">Eksportér til PostScript</translation>
-    </message>
-    <message>
         <source>%1%</source>
-        <translation></translation>
+        <translation>%1%</translation>
     </message>
 </context>
 <context>
     <name>QPrintPropertiesDialog</name>
     <message>
         <source>Printer Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Printeregenskaber</translation>
     </message>
     <message>
         <source>Job Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Job-valgmuligheder</translation>
+    </message>
+    <message>
+        <source>Page Setup Conflicts</source>
+        <translation>Konflikt i sideopsætning</translation>
+    </message>
+    <message>
+        <source>There are conflicts in page setup options. Do you want to fix them?</source>
+        <translation>Der er konflikter i valgmulighederne for sideopsætning. Vil du rette dem?</translation>
+    </message>
+    <message>
+        <source>Advanced Option Conflicts</source>
+        <translation>Konflikter i avancerede valgmuligheder</translation>
+    </message>
+    <message>
+        <source>There are conflicts in some advanced options. Do you want to fix them?</source>
+        <translation>Der er konflikter i nogle avancerede valgmuligheder. Vil du rette dem?</translation>
     </message>
 </context>
 <context>
     <name>QPrintPropertiesWidget</name>
     <message>
         <source>Form</source>
-        <translation>Form</translation>
+        <translation>Udformning</translation>
     </message>
     <message>
         <source>Page</source>
@@ -4761,14 +3980,18 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Advanced</source>
-        <translation type="vanished">Avanceret</translation>
+        <translation>Avanceret</translation>
+    </message>
+    <message>
+        <source>There are conflicts in some options. Please fix them.</source>
+        <translation>Der er konflikter i nogle valgmuligheder. Ret dem venligst.</translation>
     </message>
 </context>
 <context>
     <name>QPrintSettingsOutput</name>
     <message>
         <source>Form</source>
-        <translation></translation>
+        <translation>Form</translation>
     </message>
     <message>
         <source>Copies</source>
@@ -4776,7 +3999,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Print range</source>
-        <translation>Udskriv sider</translation>
+        <translation>Udskriftsområde</translation>
     </message>
     <message>
         <source>Print all</source>
@@ -4796,7 +4019,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Output Settings</source>
-        <translation>Udskriftsindstillinger</translation>
+        <translation>Outputindstillinger</translation>
     </message>
     <message>
         <source>Copies:</source>
@@ -4804,7 +4027,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Collate</source>
-        <translation>Samordne</translation>
+        <translation>Sætvis</translation>
     </message>
     <message>
         <source>Reverse</source>
@@ -4824,30 +4047,38 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Grayscale</source>
-        <translation>Gråskala</translation>
-    </message>
-    <message>
-        <source>Duplex Printing</source>
-        <translation>Dobbelsidet</translation>
-    </message>
-    <message>
-        <source>None</source>
-        <translation>Ingen</translation>
-    </message>
-    <message>
-        <source>Long side</source>
-        <translation>Bog</translation>
-    </message>
-    <message>
-        <source>Short side</source>
-        <translation>Tavle</translation>
+        <translation>Gråtone</translation>
     </message>
     <message>
         <source>Current Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuværende side</translation>
     </message>
     <message>
         <source>Page Set:</source>
+        <translation>Sidesæt:</translation>
+    </message>
+    <message>
+        <source>Pages</source>
+        <translation>Sider</translation>
+    </message>
+    <message>
+        <source>Specify pages or ranges separated by commas. Ranges are specified by two numbers separated by a hyphen. E.g: 3,5-7,9 prints pages 3, 5, 6, 7 and 9.</source>
+        <translation>Angiv sider eller områder separeret med kommaer. Områder angives med to tal separeret med en bindestreg. F.eks.: 3,5-7,9 udskriver siderne 3, 5, 6, 7 og 9.</translation>
+    </message>
+    <message>
+        <source>Double Sided Printing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Long side binding</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Short side binding</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4855,11 +4086,11 @@ Please turn one of those options off.</source>
     <name>QPrintWidget</name>
     <message>
         <source>Form</source>
-        <translation></translation>
+        <translation>Udformning</translation>
     </message>
     <message>
         <source>Printer</source>
-        <translation>&apos;</translation>
+        <translation>Printer</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -4875,38 +4106,38 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Preview</source>
-        <translation>Vis udskrift</translation>
+        <translation>Forhåndsvis</translation>
     </message>
     <message>
         <source>Type:</source>
-        <translation></translation>
+        <translation>Type:</translation>
     </message>
     <message>
         <source>Output &amp;file:</source>
-        <translation>Udskrifts&amp;fil:</translation>
+        <translation>Output&amp;fil:</translation>
     </message>
     <message>
         <source>...</source>
-        <translation></translation>
+        <translation>...</translation>
     </message>
 </context>
 <context>
     <name>QProcess</name>
     <message>
         <source>Could not open input redirection for reading</source>
-        <translation>Kunne ikke åbne input redirection for læsning</translation>
+        <translation>Kunne ikke åbne input-omdirigering for læsning</translation>
     </message>
     <message>
         <source>Could not open output redirection for writing</source>
-        <translation>Kunne ikke åbne output redirection for skrivning</translation>
+        <translation>Kunne ikke åbne output-omdirigering for skrivning</translation>
     </message>
     <message>
         <source>Resource error (fork failure): %1</source>
-        <translation>Ressource fejl (fork fejl): %1</translation>
+        <translation>Ressourcefejl (fork fejl): %1</translation>
     </message>
     <message>
         <source>Process operation timed out</source>
-        <translation>Proces-operation time out</translation>
+        <translation>Proceshandlingen fik timeout</translation>
     </message>
     <message>
         <source>Error reading from process</source>
@@ -4918,7 +4149,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Process crashed</source>
-        <translation>Proces crashede</translation>
+        <translation>Processen holdt op med at virke</translation>
     </message>
     <message>
         <source>No program defined</source>
@@ -4930,7 +4161,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Process failed to start: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Processen kunne ikke starte: %1</translation>
     </message>
 </context>
 <context>
@@ -4941,34 +4172,6 @@ Please turn one of those options off.</source>
     </message>
 </context>
 <context>
-    <name>QPushButton</name>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">Åbn</translation>
-    </message>
-</context>
-<context>
-    <name>QQnxFileDialogHelper</name>
-    <message>
-        <source>All files (*.*)</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>QQnxFilePicker</name>
-    <message>
-        <source>Pick a file</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>QRadioButton</name>
-    <message>
-        <source>Check</source>
-        <translation type="vanished">Kontrollér</translation>
-    </message>
-</context>
-<context>
     <name>QRegExp</name>
     <message>
         <source>no error occurred</source>
@@ -4976,15 +4179,15 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>disabled feature used</source>
-        <translation>deaktiveret funktion blev brugt</translation>
+        <translation>deaktiveret facilitet blev brugt</translation>
     </message>
     <message>
         <source>bad char class syntax</source>
-        <translation>dårlig char class syntaks</translation>
+        <translation>dårlig tegnklasse-syntaks</translation>
     </message>
     <message>
         <source>bad lookahead syntax</source>
-        <translation>dårlig lookahead syntaks</translation>
+        <translation>dårlig fremadseende syntaks</translation>
     </message>
     <message>
         <source>bad repetition syntax</source>
@@ -4992,11 +4195,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>invalid octal value</source>
-        <translation>ugyldigt oktal-tal</translation>
+        <translation>ugyldigt oktal-værdi</translation>
     </message>
     <message>
         <source>missing left delim</source>
-        <translation>Manglende venstre delimiter</translation>
+        <translation>manglende venstre afgrænser</translation>
     </message>
     <message>
         <source>unexpected end</source>
@@ -5004,362 +4207,690 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>met internal limit</source>
-        <translation>nåede interne grænse</translation>
+        <translation>mødte intern grænse</translation>
     </message>
     <message>
         <source>lookbehinds not supported, see QTBUG-2371</source>
-        <translation type="unfinished"></translation>
+        <translation>lookbehinds understøttes ikke, se QTBUG-2371</translation>
     </message>
     <message>
         <source>invalid interval</source>
-        <translation type="unfinished"></translation>
+        <translation>ugyldigt interval</translation>
     </message>
     <message>
         <source>invalid category</source>
-        <translation type="unfinished"></translation>
+        <translation>ugyldig kategori</translation>
     </message>
 </context>
 <context>
     <name>QRegularExpression</name>
     <message>
         <source>no error</source>
-        <translation type="unfinished"></translation>
+        <translation>ingen fejl</translation>
     </message>
     <message>
         <source>\ at end of pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>\ i slutningen af mønster</translation>
     </message>
     <message>
         <source>\c at end of pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>\c i slutningen af mønster</translation>
     </message>
     <message>
         <source>unrecognized character follows \</source>
-        <translation type="unfinished"></translation>
+        <translation>ikke-genkendt tegn efterfølger \</translation>
     </message>
     <message>
         <source>numbers out of order in {} quantifier</source>
-        <translation type="unfinished"></translation>
+        <translation>numre udenfor rækkefølge i {}-kvantor</translation>
     </message>
     <message>
         <source>number too big in {} quantifier</source>
-        <translation type="unfinished"></translation>
+        <translation>nummer for stort i {}-kvantor</translation>
     </message>
     <message>
         <source>missing terminating ] for character class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>invalid escape sequence in character class</source>
-        <translation type="unfinished"></translation>
+        <translation>manglende afsluttende ] for tegnklasse</translation>
     </message>
     <message>
         <source>range out of order in character class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>nothing to repeat</source>
-        <translation type="unfinished"></translation>
+        <translation>område udenfor rækkefølge i tegnklasse</translation>
     </message>
     <message>
         <source>internal error: unexpected repeat</source>
-        <translation type="unfinished"></translation>
+        <translation>intern fejl: uventet gentag</translation>
     </message>
     <message>
         <source>unrecognized character after (? or (?-</source>
-        <translation type="unfinished"></translation>
+        <translation>ikke genkendt tegn efter (? eller (?-</translation>
     </message>
     <message>
         <source>POSIX named classes are supported only within a class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>missing )</source>
-        <translation type="unfinished"></translation>
+        <translation>POSIX-navngivne klasser understøttes kun inden i en klasse</translation>
     </message>
     <message>
         <source>reference to non-existent subpattern</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>erroffset passed as NULL</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>unknown option bit(s) set</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>missing ) after comment</source>
-        <translation type="unfinished"></translation>
+        <translation>reference til ikke-eksisterende undermønster</translation>
     </message>
     <message>
         <source>regular expression is too large</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>failed to get memory</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>unmatched parentheses</source>
-        <translation type="unfinished"></translation>
+        <translation>regulært udtryk er for stort</translation>
     </message>
     <message>
         <source>internal error: code overflow</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>unrecognized character after (?&lt;</source>
-        <translation type="unfinished"></translation>
+        <translation>intern fejl: kodeoverløb</translation>
     </message>
     <message>
         <source>lookbehind assertion is not fixed length</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>malformed number or name after (?(</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>conditional group contains more than two branches</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>assertion expected after (?(</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>(?R or (?[+-]digits must be followed by )</source>
-        <translation type="unfinished"></translation>
+        <translation>lookbehind-påstand er ikke fast længde</translation>
     </message>
     <message>
         <source>unknown POSIX class name</source>
-        <translation type="unfinished"></translation>
+        <translation>ukendt POSIX-klassenavn</translation>
     </message>
     <message>
         <source>POSIX collating elements are not supported</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>this version of PCRE is not compiled with PCRE_UTF8 support</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>character value in \x{...} sequence is too large</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>invalid condition (?(0)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>\C not allowed in lookbehind assertion</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>PCRE does not support \L, \l, \N{name}, \U, or \u</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>number after (?C is &gt; 255</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>closing ) for (?C expected</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>recursive call could loop indefinitely</source>
-        <translation type="unfinished"></translation>
+        <translation>POSIX-arrangerende elementer understøttes ikke</translation>
     </message>
     <message>
         <source>unrecognized character after (?P</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>syntax error in subpattern name (missing terminator)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>two named subpatterns have the same name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>invalid UTF-8 string</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>support for \P, \p, and \X has not been compiled</source>
-        <translation type="unfinished"></translation>
+        <translation>ikke genkendt tegn efter (?P</translation>
     </message>
     <message>
         <source>malformed \P or \p sequence</source>
-        <translation type="unfinished"></translation>
+        <translation>forkert udformet \P- eller \p-sekvens</translation>
     </message>
     <message>
         <source>unknown property name after \P or \p</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>subpattern name is too long (maximum 32 characters)</source>
-        <translation type="unfinished"></translation>
+        <translation>ukendt egenskabsnavn efter \P eller \p</translation>
     </message>
     <message>
         <source>too many named subpatterns (maximum 10000)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>octal value is greater than \377 (not in UTF-8 mode)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">for mange navngivne undermønstre (maksimum 256) {10000)?}</translation>
     </message>
     <message>
         <source>internal error: overran compiling workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>intern fejl: overløb kompileringsarbejdsområde</translation>
     </message>
     <message>
         <source>internal error: previously-checked referenced subpattern not found</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>DEFINE group contains more than one branch</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>repeating a DEFINE group is not allowed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>inconsistent NEWLINE options</source>
-        <translation type="unfinished"></translation>
+        <translation>intern fejl: tidligere tjekket, refereret undermønster ikke fundet</translation>
     </message>
     <message>
         <source>\g is not followed by a braced, angle-bracketed, or quoted name/number or by a plain number</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>a numbered reference must not be zero</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>an argument is not allowed for (*ACCEPT), (*FAIL), or (*COMMIT)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>(*VERB) not recognized</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>number is too big</source>
-        <translation type="unfinished"></translation>
+        <translation>\g efterfølges ikke af et navn/nummer i klammer, vinkelklammer, citationstegn eller af et almindeligt nummer</translation>
     </message>
     <message>
         <source>subpattern name expected</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>digit expected after (?+</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>] is an invalid data character in JavaScript compatibility mode</source>
-        <translation type="unfinished"></translation>
+        <translation>undermønsternavn ventet</translation>
     </message>
     <message>
         <source>different names for subpatterns of the same number are not allowed</source>
-        <translation type="unfinished"></translation>
+        <translation>forskellige navne til undermønstre af det samme nummer er ikke tilladt</translation>
     </message>
     <message>
         <source>(*MARK) must have an argument</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>this version of PCRE is not compiled with PCRE_UCP support</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>\c must be followed by an ASCII character</source>
-        <translation type="unfinished"></translation>
+        <translation>(*MARK) skal have et argument</translation>
     </message>
     <message>
         <source>\k is not followed by a braced, angle-bracketed, or quoted name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>internal error: unknown opcode in find_fixedlength()</source>
-        <translation type="unfinished"></translation>
+        <translation>\k efterfølges ikke af et navn i klammer, vinkelklammer eller citationstegn</translation>
     </message>
     <message>
         <source>\N is not supported in a class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>too many forward references</source>
-        <translation type="unfinished"></translation>
+        <translation>\N understøttes ikke i en klasse</translation>
     </message>
     <message>
         <source>disallowed Unicode code point (&gt;= 0xd800 &amp;&amp; &lt;= 0xdfff)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>invalid UTF-16 string</source>
-        <translation type="unfinished"></translation>
+        <translation>ikke tilladt unicode-kodepunkt (&gt;= 0xd800 &amp;&amp; &lt;= 0xdfff)</translation>
     </message>
     <message>
         <source>name is too long in (*MARK), (*PRUNE), (*SKIP), or (*THEN)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>character value in \u.... sequence is too large</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>invalid UTF-32 string</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>setting UTF is disabled by the application</source>
-        <translation type="unfinished"></translation>
+        <translation>navn er for langt i (*MARK), (*PRUNE), (*SKIP) eller (*THEN)</translation>
     </message>
     <message>
         <source>non-hex character in \x{} (closing brace missing?)</source>
-        <translation type="unfinished"></translation>
+        <translation>ikke-heksadecimal-tegn i \x{} (lukkende klamme mangler?)</translation>
     </message>
     <message>
         <source>non-octal character in \o{} (closing brace missing?)</source>
-        <translation type="unfinished"></translation>
+        <translation>ikke-oktal-tegn i \o{} (lukkende klamme mangler?)</translation>
     </message>
     <message>
         <source>missing opening brace after \o</source>
-        <translation type="unfinished"></translation>
+        <translation>manglende åbningsklamme efter \o</translation>
     </message>
     <message>
         <source>parentheses are too deeply nested</source>
-        <translation type="unfinished"></translation>
+        <translation>parenteser er indlejret for dybt</translation>
     </message>
     <message>
         <source>invalid range in character class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>group name must start with a non-digit</source>
-        <translation type="unfinished"></translation>
+        <translation>ugyldigt område i tegnklasse</translation>
     </message>
     <message>
         <source>parentheses are too deeply nested (stack check)</source>
+        <translation>parenteser er indlejret for dybt (staktjek)</translation>
+    </message>
+    <message>
+        <source>quantifier does not follow a repeatable item</source>
+        <translation>kvantor følger ikke punktum der kan gentages</translation>
+    </message>
+    <message>
+        <source>missing closing parenthesis</source>
+        <translation>manglende lukkende parenteser</translation>
+    </message>
+    <message>
+        <source>pattern passed as NULL</source>
+        <translation>mønster givet som NULL</translation>
+    </message>
+    <message>
+        <source>unrecognised compile-time option bit(s)</source>
+        <translation>Ikke-genkendt kompileringstid-valgmulighedsbit</translation>
+    </message>
+    <message>
+        <source>missing ) after (?# comment</source>
+        <translation>manglende ) efter (?#-kommentar</translation>
+    </message>
+    <message>
+        <source>failed to allocate heap memory</source>
+        <translation>kunne ikke allokere heap-hukommelse</translation>
+    </message>
+    <message>
+        <source>unmatched closing parenthesis</source>
+        <translation>umatchede lukkende parenteser</translation>
+    </message>
+    <message>
+        <source>assertion expected after (?( or (?(?C)</source>
+        <translation>påstand ventet efter (?( eller (?(?C)</translation>
+    </message>
+    <message>
+        <source>internal error in pcre2_study(): should not occur</source>
+        <translation>intern fejl i pcre2_study(): burde ikke ske</translation>
+    </message>
+    <message>
+        <source>this version of PCRE2 does not have Unicode support</source>
+        <translation>denne version af PCRE2 har ikke Unicode-understøttelse</translation>
+    </message>
+    <message>
+        <source>character code point value in \x{} or \o{} is too large</source>
+        <translation>tegn-kodepunktsværdi i \x{} eller \o{} er for stor</translation>
+    </message>
+    <message>
+        <source>number after (?C is greater than 255</source>
+        <translation>nummer efter (?C er større end 255</translation>
+    </message>
+    <message>
+        <source>closing parenthesis for (?C expected</source>
+        <translation>lukkende parentes for (?C ventet</translation>
+    </message>
+    <message>
+        <source>invalid escape sequence in (*VERB) name</source>
+        <translation>ugyldig undvigesekvens i (*VERB)-navn</translation>
+    </message>
+    <message>
+        <source>two named subpatterns have the same name (PCRE2_DUPNAMES not set)</source>
+        <translation>to navngivne undermønstre har det samme navn (PCRE2_DUPNAMES ikke sat)</translation>
+    </message>
+    <message>
+        <source>this version of PCRE2 does not have support for \P, \p, or \X</source>
+        <translation>denne version af PCRE2 har ikke understøttelse af \P, \p eller \X</translation>
+    </message>
+    <message>
+        <source>octal value is greater than \377 in 8-bit non-UTF-8 mode</source>
+        <translation>oktal-værdi er større end \377 i 8-bit ikke-UTF-8-tilstand</translation>
+    </message>
+    <message>
+        <source>internal error: unknown newline setting</source>
+        <translation>intern fejl: ukendt newline-indstilling</translation>
+    </message>
+    <message>
+        <source>(*VERB) not recognized or malformed</source>
+        <translation>(*VERB) ikke genkendt eller forkert udformet</translation>
+    </message>
+    <message>
+        <source>\c must be followed by a printable ASCII character</source>
+        <translation>\c skal efterfølges af et udskrivningsbart ASCII-tegn</translation>
+    </message>
+    <message>
+        <source>\c must be followed by a letter or one of [\]^_?</source>
+        <translation>\c skal efterfølges af et bogstav eller en af [\]^_?</translation>
+    </message>
+    <message>
+        <source>using UTF is disabled by the application</source>
+        <translation>brug af UTF er deaktiveret af programmet</translation>
+    </message>
+    <message>
+        <source>using UCP is disabled by the application</source>
+        <translation>brug af UCP er deaktiveret af programmet</translation>
+    </message>
+    <message>
+        <source>character code point value in \u.... sequence is too large</source>
+        <translation>tegn-kodepunktsværdi i \u....-sekvens er for lang</translation>
+    </message>
+    <message>
+        <source>internal error: unknown opcode in auto_possessify()</source>
+        <translation>intern fejl: ukendt opcode i auto_possessify()</translation>
+    </message>
+    <message>
+        <source>missing terminating delimiter for callout with string argument</source>
+        <translation>manglende terminerende afgrænser for callout med streng-argument</translation>
+    </message>
+    <message>
+        <source>unrecognized string delimiter follows (?C</source>
+        <translation>ikke-genkendt strengafgrænser efterfølger (?C</translation>
+    </message>
+    <message>
+        <source>using \C is disabled by the application</source>
+        <translation>brug af \C er deaktiveret af programmet</translation>
+    </message>
+    <message>
+        <source>(?| and/or (?J: or (?x: parentheses are too deeply nested</source>
+        <translation>(?|- og/eller (?J:- eller (?x:-parenteser er indlejret for dybt</translation>
+    </message>
+    <message>
+        <source>using \C is disabled in this PCRE2 library</source>
+        <translation>brug af \C er deaktiveret i dette PCRE2-bibliotek</translation>
+    </message>
+    <message>
+        <source>regular expression is too complicated</source>
+        <translation>regulært udtryk er for komplikeret</translation>
+    </message>
+    <message>
+        <source>lookbehind assertion is too long</source>
+        <translation>lookbehind-påstand er for lang</translation>
+    </message>
+    <message>
+        <source>pattern string is longer than the limit set by the application</source>
+        <translation>mønsterstreng er længere end grænsen som er sat af programmet</translation>
+    </message>
+    <message>
+        <source>no match</source>
+        <translation>ingen match</translation>
+    </message>
+    <message>
+        <source>partial match</source>
+        <translation>delvist match</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 1 byte missing at end</source>
+        <translation>UTF-8-fejl: 1 byte mangler ved slutningen</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 2 bytes missing at end</source>
+        <translation>UTF-8-fejl: 2 bytes mangler ved slutningen</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 3 bytes missing at end</source>
+        <translation>UTF-8-fejl: 3 bytes mangler ved slutningen</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 4 bytes missing at end</source>
+        <translation>UTF-8-fejl: 4 bytes mangler ved slutningen</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 5 bytes missing at end</source>
+        <translation>UTF-8-fejl: 5 bytes mangler ved slutningen</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 2 top bits not 0x80</source>
+        <translation>UTF-8-fejl: byte 2 top-bit ikke 0x80</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 3 top bits not 0x80</source>
+        <translation>UTF-8-fejl: byte 3 top-bit ikke 0x80</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 4 top bits not 0x80</source>
+        <translation>UTF-8-fejl: byte 4 top-bit ikke 0x80</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 5 top bits not 0x80</source>
+        <translation>UTF-8-fejl: byte 5 top-bit ikke 0x80</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 6 top bits not 0x80</source>
+        <translation>UTF-8-fejl: byte 6 top-bit ikke 0x80</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 5-byte character is not allowed (RFC 3629)</source>
+        <translation>UTF-8-fejl: 5-byte-tegn er ikke tilladt (RFC 3629)</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 6-byte character is not allowed (RFC 3629)</source>
+        <translation>UTF-8-fejl: 6-byte-tegn er ikke tilladt (RFC 3629)</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: code points greater than 0x10ffff are not defined</source>
+        <translation>UTF-8-fejl: kodepunkter større end 0x10ffff er ikke defineret</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: code points 0xd800-0xdfff are not defined</source>
+        <translation>UTF-8-fejl: kodepunkter 0xd800-0xdfff er ikke defineret</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 2-byte sequence</source>
+        <translation>UTF-8-fejl: for lang 2-byte-sekvens</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 3-byte sequence</source>
+        <translation>UTF-8-fejl: for lang 3-byte-sekvens</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 4-byte sequence</source>
+        <translation>UTF-8-fejl: for lang 4-byte-sekvens</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 5-byte sequence</source>
+        <translation>UTF-8-fejl: for lang 5-byte-sekvens</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 6-byte sequence</source>
+        <translation>UTF-8-fejl: for lang 6-byte-sekvens</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: isolated byte with 0x80 bit set</source>
+        <translation>UTF-8-fejl: isoleret byte med 0x80 bit sat</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: illegal byte (0xfe or 0xff)</source>
+        <translation>UTF-8-fejl: ulovlig byte (0xfe eller 0xff)</translation>
+    </message>
+    <message>
+        <source>UTF-16 error: missing low surrogate at end</source>
+        <translation>UTF-16-fejl: manglende lav surrogat ved slutning</translation>
+    </message>
+    <message>
+        <source>UTF-16 error: invalid low surrogate</source>
+        <translation>UTF-16-fejl: ugyldig lav surrogat</translation>
+    </message>
+    <message>
+        <source>UTF-16 error: isolated low surrogate</source>
+        <translation>UTF-16-fejl: isoleret lav surrogat</translation>
+    </message>
+    <message>
+        <source>UTF-32 error: code points 0xd800-0xdfff are not defined</source>
+        <translation>UTF-32-fejl: kodepunkter 0xd800-0xdfff er ikke defineret</translation>
+    </message>
+    <message>
+        <source>UTF-32 error: code points greater than 0x10ffff are not defined</source>
+        <translation>UTF-32-fejl: kodepunkter større end 0x10ffff er ikke defineret</translation>
+    </message>
+    <message>
+        <source>bad data value</source>
+        <translation>dårlig dataværdi</translation>
+    </message>
+    <message>
+        <source>patterns do not all use the same character tables</source>
+        <translation>mønstre bruger ikke allesammen de samme tegntabeller</translation>
+    </message>
+    <message>
+        <source>magic number missing</source>
+        <translation>magisk nummer mangler</translation>
+    </message>
+    <message>
+        <source>pattern compiled in wrong mode: 8/16/32-bit error</source>
+        <translation>mønster kompileret i forkert tilstand: 8/16/32-bit-fejl</translation>
+    </message>
+    <message>
+        <source>bad offset value</source>
+        <translation>dårlig offset-værdi</translation>
+    </message>
+    <message>
+        <source>bad option value</source>
+        <translation>dårlig valgmulighed-værdi</translation>
+    </message>
+    <message>
+        <source>invalid replacement string</source>
+        <translation>ugyldig erstatningsstreng</translation>
+    </message>
+    <message>
+        <source>bad offset into UTF string</source>
+        <translation>dårlig offset ind i UTF-streng</translation>
+    </message>
+    <message>
+        <source>callout error code</source>
+        <translation>callout-fejlkode</translation>
+    </message>
+    <message>
+        <source>invalid data in workspace for DFA restart</source>
+        <translation>ugyldig data i arbejdsområde for DFA-genstart</translation>
+    </message>
+    <message>
+        <source>too much recursion for DFA matching</source>
+        <translation>for meget rekursion for DFA-matching</translation>
+    </message>
+    <message>
+        <source>backreference condition or recursion test is not supported for DFA matching</source>
+        <translation>tilbagereference-betingelse eller rekursionstest understøttes ikke for DFA-matching</translation>
+    </message>
+    <message>
+        <source>function is not supported for DFA matching</source>
+        <translation>funktion understøttes ikke for DFA-matching</translation>
+    </message>
+    <message>
+        <source>pattern contains an item that is not supported for DFA matching</source>
+        <translation>mønster indeholder et punkt som ikke understøttes for DFA-matching</translation>
+    </message>
+    <message>
+        <source>workspace size exceeded in DFA matching</source>
+        <translation>arbejdsområdestørrelse overskredet i DFA-matching</translation>
+    </message>
+    <message>
+        <source>internal error - pattern overwritten?</source>
+        <translation>intern fejl - mønster overskrevet?</translation>
+    </message>
+    <message>
+        <source>bad JIT option</source>
+        <translation>dårlig JIT-valgmulighed</translation>
+    </message>
+    <message>
+        <source>JIT stack limit reached</source>
+        <translation>JIT-stakgrænse nået</translation>
+    </message>
+    <message>
+        <source>match limit exceeded</source>
+        <translation>matchgrænse overskredet</translation>
+    </message>
+    <message>
+        <source>no more memory</source>
+        <translation>ikke mere hukommelse</translation>
+    </message>
+    <message>
+        <source>unknown substring</source>
+        <translation>ukendt understreng</translation>
+    </message>
+    <message>
+        <source>non-unique substring name</source>
+        <translation>ikke-unik understrengsnavn</translation>
+    </message>
+    <message>
+        <source>NULL argument passed</source>
+        <translation>NULL-argument givet</translation>
+    </message>
+    <message>
+        <source>nested recursion at the same subject position</source>
+        <translation>indlejret rekursion ved den samme subjektplacering</translation>
+    </message>
+    <message>
+        <source>requested value is not available</source>
+        <translation>anmodet værdi er ikke tilgængelig</translation>
+    </message>
+    <message>
+        <source>requested value is not set</source>
+        <translation>anmodet værdi er ikke sat</translation>
+    </message>
+    <message>
+        <source>offset limit set without PCRE2_USE_OFFSET_LIMIT</source>
+        <translation>offset-grænse sat uden PCRE2_USE_OFFSET_LIMIT</translation>
+    </message>
+    <message>
+        <source>bad escape sequence in replacement string</source>
+        <translation>dårlig undvigesekvens i erstatningsstreng</translation>
+    </message>
+    <message>
+        <source>expected closing curly bracket in replacement string</source>
+        <translation>ventede lukkende krøllet parentes i erstatningsstreng</translation>
+    </message>
+    <message>
+        <source>bad substitution in replacement string</source>
+        <translation>dårlig udskiftning i erstatningsstreng</translation>
+    </message>
+    <message>
+        <source>too many replacements (more than INT_MAX)</source>
+        <translation>for mange erstatninger (flere end INT_MAX)</translation>
+    </message>
+    <message>
+        <source>escape sequence is invalid in character class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>digits missing in \x{} or \o{}</source>
+        <source>missing closing parenthesis for condition</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>a relative value of zero is not allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>conditional subpattern contains more than two branches</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>digit expected after (?+ or (?-</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>lookbehind is too complicated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\C is not allowed in a lookbehind assertion in UTF-16 mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCRE2 does not support \F, \L, \l, \N{name}, \U, or \u</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>syntax error in subpattern name (missing terminator?)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>subpattern name must start with a non-digit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>subpattern name is too long (maximum 32 code units)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DEFINE subpattern contains more than one branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(?R (recursive pattern call) must be followed by a closing parenthesis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>obsolete error (should not occur)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>subpattern number is too big</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: parsed pattern overflow</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: unknown meta code in check_lookbehinds()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>callout string is too long</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>digits missing in \x{} or \o{} or \N{U+}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>syntax error or number too big in (?(VERSION condition</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: unknown code in parsed pattern</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error: bad code value in parsed_skip()</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCRE2_EXTRA_ALLOW_SURROGATE_ESCAPES is not allowed in UTF-16 mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid option bits with PCRE2_LITERAL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>\N{U+dddd} is supported only in Unicode (UTF) mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid hyphen in option setting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(*alpha_assertion) not recognized</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>script runs require Unicode support, which this version of PCRE2 does not have</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>too many capturing groups (maximum 65535)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>atomic assertion expected after (?( or (?(?C)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>matching depth limit exceeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>match with end before start or start moved backwards is not supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>bad serialized data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>heap limit exceeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid syntax</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>internal error - duplicate substitution match</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCRE2_MATCH_INVALID_UTF is not supported for DFA matching</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSQLite2Driver</name>
-    <message>
-        <source>Error to open database</source>
-        <translation type="vanished">Der opstod fejl ved åbning af database</translation>
-    </message>
     <message>
         <source>Unable to begin transaction</source>
         <translation>Kunne ikke påbegynde transaktionen</translation>
@@ -5369,16 +4900,12 @@ Please turn one of those options off.</source>
         <translation>Kunne ikke gennemføre transaktionen</translation>
     </message>
     <message>
-        <source>Unable to rollback Transaction</source>
-        <translation type="vanished">Kunne ikke tilbagetrække transaktion</translation>
-    </message>
-    <message>
         <source>Error opening database</source>
-        <translation type="unfinished">Der opstod fejl ved åbning af database</translation>
+        <translation>Fejl ved åbning af databasen</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunne ikke tilbagetrække transaktionen</translation>
     </message>
 </context>
 <context>
@@ -5389,18 +4916,18 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Kunne ikke udføre statement</translation>
+        <translation>Kunne ikke eksekvere udsagn</translation>
     </message>
 </context>
 <context>
     <name>QSQLiteDriver</name>
     <message>
         <source>Error opening database</source>
-        <translation>Der opstod fejl ved åbning af database</translation>
+        <translation>Fejl ved åbning af databasen</translation>
     </message>
     <message>
         <source>Error closing database</source>
-        <translation>Der opstod fejl ved lukning af database</translation>
+        <translation>Fejl ved lukning af databasen</translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
@@ -5408,11 +4935,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>Kunne ikke gennemføre transaktion</translation>
+        <translation>Kunne ikke gennemføre transaktionen</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>Kunne ikke tilbagetrække transaktion</translation>
+        <translation>Kunne ikke tilbagetrække transaktionen</translation>
     </message>
 </context>
 <context>
@@ -5423,7 +4950,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Kunne ikke udføre udsagn</translation>
+        <translation>Kunne ikke eksekvere udsagn</translation>
     </message>
     <message>
         <source>Unable to reset statement</source>
@@ -5431,33 +4958,37 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Unable to bind parameters</source>
-        <translation>Unable to bind parameters</translation>
+        <translation>Kunne ikke binde parametre</translation>
     </message>
     <message>
         <source>Parameter count mismatch</source>
-        <translation>Misforhold i parametertælling</translation>
+        <translation>Uoverensstemmende parameter antal</translation>
     </message>
     <message>
         <source>No query</source>
-        <translation>Ingen forespørgesel</translation>
+        <translation>Ingen forespørgsel</translation>
     </message>
     <message>
         <source>Unable to execute multiple statements at a time</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunne ikke eksekvere flere udsagn på samme tid</translation>
     </message>
 </context>
 <context>
     <name>QSaveFile</name>
     <message>
         <source>Existing file %1 is not writable</source>
-        <translation type="unfinished"></translation>
+        <translation>Der kan ikke skrives til den eksisterende fil %1</translation>
     </message>
     <message>
         <source>Filename refers to a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Filnavnet refererer til en mappe</translation>
     </message>
     <message>
         <source>Writing canceled by application</source>
+        <translation>Skrivning annulleret af program</translation>
+    </message>
+    <message>
+        <source>QSaveFile cannot open &apos;%1&apos; without direct write fallback enabled.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5465,7 +4996,7 @@ Please turn one of those options off.</source>
     <name>QScrollBar</name>
     <message>
         <source>Scroll here</source>
-        <translation>Scroll her</translation>
+        <translation>Rul her</translation>
     </message>
     <message>
         <source>Left edge</source>
@@ -5481,19 +5012,19 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Bottom</source>
-        <translation>Bund</translation>
+        <translation>Nederst</translation>
     </message>
     <message>
         <source>Page left</source>
-        <translation>Side venstre</translation>
+        <translation>Side til venstre</translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation>Side øverst</translation>
+        <translation>Side op</translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation>Side højre</translation>
+        <translation>Side til højre</translation>
     </message>
     <message>
         <source>Page down</source>
@@ -5501,66 +5032,57 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Scroll left</source>
-        <translation>Scroll til venstre</translation>
+        <translation>Rul til venstre</translation>
     </message>
     <message>
         <source>Scroll up</source>
-        <translation>Scroll op</translation>
+        <translation>Rul op</translation>
     </message>
     <message>
         <source>Scroll right</source>
-        <translation>Scroll til højre</translation>
+        <translation>Rul til højre</translation>
     </message>
     <message>
         <source>Scroll down</source>
-        <translation>Scroll ned</translation>
+        <translation>Rul ned</translation>
     </message>
+</context>
+<context>
+    <name>QSctpSocket</name>
     <message>
-        <source>Line up</source>
-        <translation type="vanished">Linie op</translation>
-    </message>
-    <message>
-        <source>Position</source>
-        <translation type="vanished">Placering</translation>
-    </message>
-    <message>
-        <source>Line down</source>
-        <translation type="vanished">Linie ned</translation>
+        <source>The remote host closed the connection</source>
+        <translation>Fjern-værten lukkede forbindelsen</translation>
     </message>
 </context>
 <context>
     <name>QSharedMemory</name>
     <message>
         <source>%1: unable to set key on lock</source>
-        <translation>%1: Kunne ikke oprette nøgle</translation>
+        <translation>%1: kunne ikke sætte nøgle på lås</translation>
     </message>
     <message>
         <source>%1: create size is less then 0</source>
-        <translation>%1: create size is less then 0</translation>
+        <translation>%1: oprettelsesstørrelse er mindre end 0</translation>
     </message>
     <message>
         <source>%1: unable to lock</source>
-        <translation>%1: Kunne ikke låse</translation>
+        <translation>%1: kunne ikke låse</translation>
     </message>
     <message>
         <source>%1: unable to unlock</source>
-        <translation>%1: Kunne ikke oprette nøgle</translation>
+        <translation>%1: kunne ikke låse op</translation>
     </message>
     <message>
         <source>%1: permission denied</source>
-        <translation>%1: Tilladelse nægtet</translation>
+        <translation>%1: tilladelse nægtet</translation>
     </message>
     <message>
         <source>%1: already exists</source>
-        <translation>%1: Findes allerede</translation>
-    </message>
-    <message>
-        <source>%1: doesn&apos;t exists</source>
-        <translation type="vanished">%1: Findes ikke</translation>
+        <translation>%1: findes allerede</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
-        <translation>%1: Ikke flere ressourcer</translation>
+        <translation>%1: ikke flere ressourcer</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
@@ -5568,51 +5090,47 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>%1: key is empty</source>
-        <translation>%1: nøgle er tom</translation>
-    </message>
-    <message>
-        <source>%1: unix key file doesn&apos;t exists</source>
-        <translation type="vanished">%1: Kunne ikke oprette nøgle</translation>
+        <translation>%1: nøglen er tom</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
-        <translation>%1: ftok mislykkedes</translation>
+        <translation>%1: ftok fejlede</translation>
     </message>
     <message>
         <source>%1: unable to make key</source>
-        <translation>%1: Kunne ikke oprette nøgle</translation>
+        <translation>%1: kunne ikke lave nøgle</translation>
     </message>
     <message>
         <source>%1: system-imposed size restrictions</source>
-        <translation>%1: System-pålagte størrelsesrestriktioner</translation>
+        <translation>%1: system-pålagte størrelsesrestriktioner</translation>
     </message>
     <message>
         <source>%1: not attached</source>
-        <translation>%1: Ikke vedhæftet</translation>
+        <translation>%1: ikke tilkoblet</translation>
     </message>
     <message>
         <source>%1: invalid size</source>
-        <translation>%1: Ugyldig størrelse</translation>
+        <translation>%1: ugyldig størrelse</translation>
     </message>
     <message>
         <source>%1: key error</source>
-        <translation>%1: Nøglefejl</translation>
+        <translation>%1: nøglefejl</translation>
     </message>
     <message>
         <source>%1: size query failed</source>
-        <translation>%1: Størrelsesforespørgsel mislykkedes</translation>
+        <translation>%1: størrelsesforespørgsel fejlede</translation>
     </message>
     <message>
         <source>%1: bad name</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: dårligt navn</translation>
     </message>
     <message>
         <source>%1: UNIX key file doesn&apos;t exist</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: UNIX-nøglefil findes ikke</translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exist</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: findes ikke</translation>
     </message>
 </context>
 <context>
@@ -5620,15 +5138,15 @@ Please turn one of those options off.</source>
     <message>
         <source>Space</source>
         <extracomment>This and all following &quot;incomprehensible&quot; strings in QShortcut context are key names. Please use the localized names appearing on actual keyboards or whatever is commonly used.</extracomment>
-        <translation></translation>
+        <translation>Mellemrum</translation>
     </message>
     <message>
         <source>Esc</source>
-        <translation></translation>
+        <translation>Esc</translation>
     </message>
     <message>
         <source>Tab</source>
-        <translation></translation>
+        <translation>Tabulator</translation>
     </message>
     <message>
         <source>Backtab</source>
@@ -5640,23 +5158,23 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Return</source>
-        <translation></translation>
+        <translation>Retur</translation>
     </message>
     <message>
         <source>Enter</source>
-        <translation></translation>
+        <translation>Enter</translation>
     </message>
     <message>
         <source>Ins</source>
-        <translation></translation>
+        <translation>Ins</translation>
     </message>
     <message>
         <source>Del</source>
-        <translation></translation>
+        <translation>Del</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation></translation>
+        <translation>Pause</translation>
     </message>
     <message>
         <source>Print</source>
@@ -5664,15 +5182,15 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>SysReq</source>
-        <translation></translation>
+        <translation>SysReq</translation>
     </message>
     <message>
         <source>Home</source>
-        <translation></translation>
+        <translation>Home</translation>
     </message>
     <message>
         <source>End</source>
-        <translation></translation>
+        <translation>End</translation>
     </message>
     <message>
         <source>Left</source>
@@ -5692,27 +5210,27 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>PgUp</source>
-        <translation></translation>
+        <translation>PgUp</translation>
     </message>
     <message>
         <source>PgDown</source>
-        <translation></translation>
+        <translation>PgDown</translation>
     </message>
     <message>
         <source>CapsLock</source>
-        <translation>&apos;</translation>
+        <translation>CapsLock</translation>
     </message>
     <message>
         <source>NumLock</source>
-        <translation></translation>
+        <translation>NumLock</translation>
     </message>
     <message>
         <source>ScrollLock</source>
-        <translation></translation>
+        <translation>ScrollLock</translation>
     </message>
     <message>
         <source>Menu</source>
-        <translation></translation>
+        <translation>Menu</translation>
     </message>
     <message>
         <source>Help</source>
@@ -5724,11 +5242,11 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Forward</source>
-        <translation>Frem</translation>
+        <translation>Fremad</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation></translation>
+        <translation>Stop</translation>
     </message>
     <message>
         <source>Refresh</source>
@@ -5748,15 +5266,15 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Bass Boost</source>
-        <translation></translation>
+        <translation>Bas boost</translation>
     </message>
     <message>
         <source>Bass Up</source>
-        <translation>Bass op</translation>
+        <translation>Bas op</translation>
     </message>
     <message>
         <source>Bass Down</source>
-        <translation>Bass ned</translation>
+        <translation>Bas ned</translation>
     </message>
     <message>
         <source>Treble Up</source>
@@ -5768,27 +5286,27 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Media Play</source>
-        <translation></translation>
+        <translation>Medie afspil</translation>
     </message>
     <message>
         <source>Media Stop</source>
-        <translation></translation>
+        <translation>Medie stop</translation>
     </message>
     <message>
         <source>Media Previous</source>
-        <translation>Media forrige</translation>
+        <translation>Medie forrige</translation>
     </message>
     <message>
         <source>Media Next</source>
-        <translation>Media næste</translation>
+        <translation>Medie næste</translation>
     </message>
     <message>
         <source>Media Record</source>
-        <translation></translation>
+        <translation>Medie optag</translation>
     </message>
     <message>
         <source>Favorites</source>
-        <translation></translation>
+        <translation>Favoritter</translation>
     </message>
     <message>
         <source>Search</source>
@@ -5796,7 +5314,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Standby</source>
-        <translation></translation>
+        <translation>Standby</translation>
     </message>
     <message>
         <source>Open URL</source>
@@ -5808,7 +5326,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Launch Media</source>
-        <translation>Start Media</translation>
+        <translation>Start medie</translation>
     </message>
     <message>
         <source>Launch (0)</source>
@@ -5876,51 +5394,51 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Print Screen</source>
-        <translation></translation>
+        <translation>Print Screen</translation>
     </message>
     <message>
         <source>Page Up</source>
-        <translation></translation>
+        <translation>Side op</translation>
     </message>
     <message>
         <source>Page Down</source>
-        <translation></translation>
+        <translation>Side ned</translation>
     </message>
     <message>
         <source>Caps Lock</source>
-        <translation></translation>
+        <translation>Caps Lock</translation>
     </message>
     <message>
         <source>Num Lock</source>
-        <translation></translation>
+        <translation>Num Lock</translation>
     </message>
     <message>
         <source>Number Lock</source>
-        <translation></translation>
+        <translation>Number Lock</translation>
     </message>
     <message>
         <source>Scroll Lock</source>
-        <translation></translation>
+        <translation>Scroll Lock</translation>
     </message>
     <message>
         <source>Insert</source>
-        <translation></translation>
+        <translation>Indsæt</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation></translation>
+        <translation>Slet</translation>
     </message>
     <message>
         <source>Escape</source>
-        <translation></translation>
+        <translation>Escape</translation>
     </message>
     <message>
         <source>System Request</source>
-        <translation></translation>
+        <translation>System Request</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation>Væg</translation>
+        <translation>Vælg</translation>
     </message>
     <message>
         <source>Yes</source>
@@ -5949,7 +5467,7 @@ Please turn one of those options off.</source>
     <message>
         <source>Call</source>
         <extracomment>Button to start a call (note: a separate button is used to end the call)</extracomment>
-        <translation>Ring til</translation>
+        <translation>Ring op</translation>
     </message>
     <message>
         <source>Hangup</source>
@@ -5962,27 +5480,28 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Shift</source>
-        <translation></translation>
+        <translation>Skift</translation>
     </message>
     <message>
         <source>Alt</source>
-        <translation></translation>
+        <translation>Alt</translation>
     </message>
     <message>
         <source>Meta</source>
-        <translation></translation>
+        <translation>Meta</translation>
     </message>
     <message>
         <source>+</source>
-        <translation></translation>
+        <extracomment>Key separator in shortcut string</extracomment>
+        <translation>+</translation>
     </message>
     <message>
         <source>F%1</source>
-        <translation></translation>
+        <translation>F%1</translation>
     </message>
     <message>
         <source>Home Page</source>
@@ -5991,683 +5510,680 @@ Please turn one of those options off.</source>
     <message>
         <source>Media Pause</source>
         <extracomment>Media player pause button</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Medie pause</translation>
     </message>
     <message>
         <source>Toggle Media Play/Pause</source>
         <extracomment>Media player button to toggle between playing and paused</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Medie afspil/pause til/fra</translation>
     </message>
     <message>
         <source>Monitor Brightness Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Skærm lysstyrke op</translation>
     </message>
     <message>
         <source>Monitor Brightness Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Skærm lysstyrke ned</translation>
     </message>
     <message>
         <source>Keyboard Light On/Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Tastaturlys til/fra</translation>
     </message>
     <message>
         <source>Keyboard Brightness Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Tastatur lysstyrke op</translation>
     </message>
     <message>
         <source>Keyboard Brightness Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Tastatur lysstyrke ned</translation>
     </message>
     <message>
         <source>Power Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Sluk computer</translation>
     </message>
     <message>
         <source>Wake Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Vågn op</translation>
     </message>
     <message>
         <source>Eject</source>
-        <translation type="unfinished"></translation>
+        <translation>Skub ud</translation>
     </message>
     <message>
         <source>Screensaver</source>
-        <translation type="unfinished"></translation>
+        <translation>Pauseskærm</translation>
     </message>
     <message>
         <source>WWW</source>
-        <translation type="unfinished"></translation>
+        <translation>WWW</translation>
     </message>
     <message>
         <source>Sleep</source>
-        <translation type="unfinished"></translation>
+        <translation>Sov</translation>
     </message>
     <message>
         <source>LightBulb</source>
-        <translation type="unfinished"></translation>
+        <translation>Pære</translation>
     </message>
     <message>
         <source>Shop</source>
-        <translation type="unfinished"></translation>
+        <translation>Shop</translation>
     </message>
     <message>
         <source>History</source>
-        <translation type="unfinished"></translation>
+        <translation>Historik</translation>
     </message>
     <message>
         <source>Add Favorite</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilføj favorit</translation>
     </message>
     <message>
         <source>Hot Links</source>
-        <translation type="unfinished"></translation>
+        <translation>Hotte links</translation>
     </message>
     <message>
         <source>Adjust Brightness</source>
-        <translation type="unfinished"></translation>
+        <translation>Juster lysstyrke</translation>
     </message>
     <message>
         <source>Finance</source>
-        <translation type="unfinished"></translation>
+        <translation>Finans</translation>
     </message>
     <message>
         <source>Community</source>
-        <translation type="unfinished"></translation>
+        <translation>Fællesskab</translation>
     </message>
     <message>
         <source>Media Rewind</source>
-        <translation type="unfinished"></translation>
+        <translation>Medie spol tilbage</translation>
     </message>
     <message>
         <source>Back Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilbage fremad</translation>
     </message>
     <message>
         <source>Application Left</source>
-        <translation type="unfinished"></translation>
+        <translation>Program venstre</translation>
     </message>
     <message>
         <source>Application Right</source>
-        <translation type="unfinished"></translation>
+        <translation>Program højre</translation>
     </message>
     <message>
         <source>Book</source>
-        <translation type="unfinished"></translation>
+        <translation>Bog</translation>
     </message>
     <message>
         <source>CD</source>
-        <translation type="unfinished"></translation>
+        <translation>CD</translation>
     </message>
     <message>
         <source>Calculator</source>
-        <translation type="unfinished"></translation>
+        <translation>Lommeregner</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished">Ryd</translation>
+        <translation>Ryd</translation>
     </message>
     <message>
         <source>Clear Grab</source>
-        <translation type="unfinished"></translation>
+        <translation>Clear Grab</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Luk</translation>
+        <translation>Luk</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">Kopiér</translation>
+        <translation>Kopiér</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished">Klip</translation>
+        <translation>Klip</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="unfinished"></translation>
+        <translation>Skærm</translation>
     </message>
     <message>
         <source>DOS</source>
-        <translation type="unfinished"></translation>
+        <translation>DOS</translation>
     </message>
     <message>
         <source>Documents</source>
-        <translation type="unfinished"></translation>
+        <translation>Dokumenter</translation>
     </message>
     <message>
         <source>Spreadsheet</source>
-        <translation type="unfinished"></translation>
+        <translation>Regneark</translation>
     </message>
     <message>
         <source>Browser</source>
-        <translation type="unfinished"></translation>
+        <translation>Browser</translation>
     </message>
     <message>
         <source>Game</source>
-        <translation type="unfinished"></translation>
+        <translation>Spil</translation>
     </message>
     <message>
         <source>Go</source>
-        <translation type="unfinished"></translation>
+        <translation>Gå</translation>
     </message>
     <message>
         <source>iTouch</source>
-        <translation type="unfinished"></translation>
+        <translation>iTouch</translation>
     </message>
     <message>
         <source>Logoff</source>
-        <translation type="unfinished"></translation>
+        <translation>Log af</translation>
     </message>
     <message>
         <source>Market</source>
-        <translation type="unfinished"></translation>
+        <translation>Marked</translation>
     </message>
     <message>
         <source>Meeting</source>
-        <translation type="unfinished"></translation>
+        <translation>Møde</translation>
     </message>
     <message>
         <source>Keyboard Menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Tastaturmenu</translation>
     </message>
     <message>
         <source>Menu PB</source>
-        <translation type="unfinished"></translation>
+        <translation>Menu PB</translation>
     </message>
     <message>
         <source>My Sites</source>
-        <translation type="unfinished"></translation>
+        <translation>Mine steder</translation>
     </message>
     <message>
         <source>News</source>
-        <translation type="unfinished"></translation>
+        <translation>Nyheder</translation>
     </message>
     <message>
         <source>Home Office</source>
-        <translation type="unfinished"></translation>
+        <translation>Hjemmekontor</translation>
     </message>
     <message>
         <source>Option</source>
-        <translation type="unfinished"></translation>
+        <translation>Valgmulighed</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished">Sæt ind</translation>
+        <translation>Sæt ind</translation>
     </message>
     <message>
         <source>Phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Telefon</translation>
     </message>
     <message>
         <source>Reply</source>
-        <translation type="unfinished"></translation>
+        <translation>Svar</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished">Genindlæs</translation>
+        <translation>Genindlæs</translation>
     </message>
     <message>
         <source>Rotate Windows</source>
-        <translation type="unfinished"></translation>
+        <translation>Roter vinduer</translation>
     </message>
     <message>
         <source>Rotation PB</source>
-        <translation type="unfinished"></translation>
+        <translation>Rotation PB</translation>
     </message>
     <message>
         <source>Rotation KB</source>
-        <translation type="unfinished"></translation>
+        <translation>Rotation KB</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished">Gem</translation>
+        <translation>Gem</translation>
     </message>
     <message>
         <source>Send</source>
-        <translation type="unfinished"></translation>
+        <translation>Send</translation>
     </message>
     <message>
         <source>Spellchecker</source>
-        <translation type="unfinished"></translation>
+        <translation>Stavekontrol</translation>
     </message>
     <message>
         <source>Split Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Opdel skærm</translation>
     </message>
     <message>
         <source>Support</source>
-        <translation type="unfinished"></translation>
+        <translation>Support</translation>
     </message>
     <message>
         <source>Task Panel</source>
-        <translation type="unfinished"></translation>
+        <translation>Opgavepanel</translation>
     </message>
     <message>
         <source>Terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>Terminal</translation>
     </message>
     <message>
         <source>Tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Værktøjer</translation>
     </message>
     <message>
         <source>Travel</source>
-        <translation type="unfinished"></translation>
+        <translation>Rejse</translation>
     </message>
     <message>
         <source>Video</source>
-        <translation type="unfinished"></translation>
+        <translation>Video</translation>
     </message>
     <message>
         <source>Word Processor</source>
-        <translation type="unfinished"></translation>
+        <translation>Tekstbehandling</translation>
     </message>
     <message>
         <source>XFer</source>
-        <translation type="unfinished"></translation>
+        <translation>XFer</translation>
     </message>
     <message>
         <source>Zoom In</source>
-        <translation type="unfinished"></translation>
+        <translation>Zoom ind</translation>
     </message>
     <message>
         <source>Zoom Out</source>
-        <translation type="unfinished"></translation>
+        <translation>Zoom ud</translation>
     </message>
     <message>
         <source>Away</source>
-        <translation type="unfinished"></translation>
+        <translation>Væk</translation>
     </message>
     <message>
         <source>Messenger</source>
-        <translation type="unfinished"></translation>
+        <translation>Messenger</translation>
     </message>
     <message>
         <source>WebCam</source>
-        <translation type="unfinished"></translation>
+        <translation>Webcam</translation>
     </message>
     <message>
         <source>Mail Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Mail Forward</translation>
     </message>
     <message>
         <source>Pictures</source>
-        <translation type="unfinished"></translation>
+        <translation>Billeder</translation>
     </message>
     <message>
         <source>Music</source>
-        <translation type="unfinished">Musik</translation>
+        <translation>Musik</translation>
     </message>
     <message>
         <source>Battery</source>
-        <translation type="unfinished"></translation>
+        <translation>Batteri</translation>
     </message>
     <message>
         <source>Bluetooth</source>
-        <translation type="unfinished"></translation>
+        <translation>Bluetooth</translation>
     </message>
     <message>
         <source>Wireless</source>
-        <translation type="unfinished"></translation>
+        <translation>Trådlås</translation>
     </message>
     <message>
         <source>Ultra Wide Band</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultra Wide Band</translation>
     </message>
     <message>
         <source>Media Fast Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Medie spol fremad</translation>
     </message>
     <message>
         <source>Audio Repeat</source>
-        <translation type="unfinished"></translation>
+        <translation>Lyd gentag</translation>
     </message>
     <message>
         <source>Audio Random Play</source>
-        <translation type="unfinished"></translation>
+        <translation>Lyd tilfældig afspil</translation>
     </message>
     <message>
         <source>Subtitle</source>
-        <translation type="unfinished"></translation>
+        <translation>Undertekst</translation>
     </message>
     <message>
         <source>Audio Cycle Track</source>
-        <translation type="unfinished"></translation>
+        <translation>Lyd gennemløb spor</translation>
     </message>
     <message>
         <source>Time</source>
-        <translation type="unfinished"></translation>
+        <translation>Tid</translation>
     </message>
     <message>
         <source>Hibernate</source>
-        <translation type="unfinished"></translation>
+        <translation>Dvale</translation>
     </message>
     <message>
         <source>View</source>
-        <translation type="unfinished"></translation>
+        <translation>Vis</translation>
     </message>
     <message>
         <source>Top Menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Topmenu</translation>
     </message>
     <message>
         <source>Power Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Sluk</translation>
     </message>
     <message>
         <source>Suspend</source>
-        <translation type="unfinished"></translation>
+        <translation>Hvile</translation>
     </message>
     <message>
         <source>Microphone Mute</source>
-        <translation type="unfinished"></translation>
+        <translation>Mikrofon mute</translation>
     </message>
     <message>
         <source>Red</source>
-        <translation type="unfinished"></translation>
+        <translation>Rød</translation>
     </message>
     <message>
         <source>Green</source>
-        <translation type="unfinished"></translation>
+        <translation>Grøn</translation>
     </message>
     <message>
         <source>Yellow</source>
-        <translation type="unfinished"></translation>
+        <translation>Gul</translation>
     </message>
     <message>
         <source>Blue</source>
-        <translation type="unfinished"></translation>
+        <translation>Blå</translation>
     </message>
     <message>
         <source>Channel Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Kanal op</translation>
     </message>
     <message>
         <source>Channel Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Kanal ned</translation>
     </message>
     <message>
         <source>Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>Guide</translation>
     </message>
     <message>
         <source>Info</source>
-        <translation type="unfinished"></translation>
+        <translation>Info</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Indstillinger</translation>
     </message>
     <message>
         <source>Microphone Volume Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Mikrofon lydstyrke op</translation>
     </message>
     <message>
         <source>Microphone Volume Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Mikrofon lydstyrke ned</translation>
     </message>
     <message>
         <source>New</source>
-        <translation type="unfinished"></translation>
+        <translation>Ny</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished">Åbn</translation>
+        <translation>Åbn</translation>
     </message>
     <message>
         <source>Find</source>
-        <translation type="unfinished"></translation>
+        <translation>Find</translation>
     </message>
     <message>
         <source>Undo</source>
-        <translation type="unfinished">Fortryd</translation>
+        <translation>Fortryd</translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation type="unfinished">Gendan</translation>
+        <translation>Omgør</translation>
     </message>
     <message>
         <source>Toggle Call/Hangup</source>
         <extracomment>Button that will hang up if we&apos;re in call, or make a call if we&apos;re not.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Ring op/læg på til/fra</translation>
     </message>
     <message>
         <source>Voice Dial</source>
         <extracomment>Button to trigger voice dialing</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Stemmeopkald</translation>
     </message>
     <message>
         <source>Last Number Redial</source>
         <extracomment>Button to redial the last number called</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Sidste kaldte nummer</translation>
     </message>
     <message>
         <source>Camera Shutter</source>
         <extracomment>Button to trigger the camera shutter (take a picture)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kameralukker</translation>
     </message>
     <message>
         <source>Camera Focus</source>
         <extracomment>Button to focus the camera</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Kamerafokus</translation>
     </message>
     <message>
         <source>Kanji</source>
-        <translation type="unfinished"></translation>
+        <translation>Kanji</translation>
     </message>
     <message>
         <source>Muhenkan</source>
-        <translation type="unfinished"></translation>
+        <translation>Muhenkan</translation>
     </message>
     <message>
         <source>Henkan</source>
-        <translation type="unfinished"></translation>
+        <translation>Henkan</translation>
     </message>
     <message>
         <source>Romaji</source>
-        <translation type="unfinished"></translation>
+        <translation>Romaji</translation>
     </message>
     <message>
         <source>Hiragana</source>
-        <translation type="unfinished"></translation>
+        <translation>Hiragana</translation>
     </message>
     <message>
         <source>Katakana</source>
-        <translation type="unfinished"></translation>
+        <translation>Katakana</translation>
     </message>
     <message>
         <source>Hiragana Katakana</source>
-        <translation type="unfinished"></translation>
+        <translation>Hiragana Katakana</translation>
     </message>
     <message>
         <source>Zenkaku</source>
-        <translation type="unfinished"></translation>
+        <translation>Zenkaku</translation>
     </message>
     <message>
         <source>Hankaku</source>
-        <translation type="unfinished"></translation>
+        <translation>Hankaku</translation>
     </message>
     <message>
         <source>Zenkaku Hankaku</source>
-        <translation type="unfinished"></translation>
+        <translation>Zenkaku Hankaku</translation>
     </message>
     <message>
         <source>Touroku</source>
-        <translation type="unfinished"></translation>
+        <translation>Touroku</translation>
     </message>
     <message>
         <source>Massyo</source>
-        <translation type="unfinished"></translation>
+        <translation>Massyo</translation>
     </message>
     <message>
         <source>Kana Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>Kana lås</translation>
     </message>
     <message>
         <source>Kana Shift</source>
-        <translation type="unfinished"></translation>
+        <translation>Kana skift</translation>
     </message>
     <message>
         <source>Eisu Shift</source>
-        <translation type="unfinished"></translation>
+        <translation>Eisu skift</translation>
     </message>
     <message>
         <source>Eisu toggle</source>
-        <translation type="unfinished"></translation>
+        <translation>Eisu til/fra</translation>
     </message>
     <message>
         <source>Code input</source>
-        <translation type="unfinished"></translation>
+        <translation>Kodeinput</translation>
     </message>
     <message>
         <source>Multiple Candidate</source>
-        <translation type="unfinished"></translation>
+        <translation>Flere kandidat</translation>
     </message>
     <message>
         <source>Previous Candidate</source>
-        <translation type="unfinished"></translation>
+        <translation>Forrige kandidat</translation>
     </message>
     <message>
         <source>Hangul</source>
-        <translation type="unfinished"></translation>
+        <translation>Hangul</translation>
     </message>
     <message>
         <source>Hangul Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Hangul start</translation>
     </message>
     <message>
         <source>Hangul End</source>
-        <translation type="unfinished"></translation>
+        <translation>Hangul slut</translation>
     </message>
     <message>
         <source>Hangul Hanja</source>
-        <translation type="unfinished"></translation>
+        <translation>Hangul Hanja</translation>
     </message>
     <message>
         <source>Hangul Jamo</source>
-        <translation type="unfinished"></translation>
+        <translation>Hangul Jamo</translation>
     </message>
     <message>
         <source>Hangul Romaja</source>
-        <translation type="unfinished"></translation>
+        <translation>Hangul Romaja</translation>
     </message>
     <message>
         <source>Hangul Jeonja</source>
-        <translation type="unfinished"></translation>
+        <translation>Hangul Jeonja</translation>
     </message>
     <message>
         <source>Hangul Banja</source>
-        <translation type="unfinished"></translation>
+        <translation>Hangul Banja</translation>
     </message>
     <message>
         <source>Hangul PreHanja</source>
-        <translation type="unfinished"></translation>
+        <translation>Hangul præ-Hanja</translation>
     </message>
     <message>
         <source>Hangul PostHanja</source>
-        <translation type="unfinished"></translation>
+        <translation>Hangul post-Hanja</translation>
     </message>
     <message>
         <source>Hangul Special</source>
-        <translation type="unfinished"></translation>
+        <translation>Hangul speciel</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Annuller</translation>
+        <translation>Annuller</translation>
     </message>
     <message>
         <source>Printer</source>
-        <translation type="unfinished">&apos;</translation>
+        <translation>Printer</translation>
     </message>
     <message>
         <source>Execute</source>
-        <translation type="unfinished">Udfør</translation>
+        <translation>Eksekver</translation>
     </message>
     <message>
         <source>Play</source>
-        <translation type="unfinished"></translation>
+        <translation>Afspil</translation>
     </message>
     <message>
         <source>Zoom</source>
-        <translation type="unfinished"></translation>
+        <translation>Zoom</translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation type="unfinished"></translation>
+        <translation>Afslut</translation>
     </message>
     <message>
         <source>Touchpad Toggle</source>
-        <translation type="unfinished"></translation>
+        <translation>Pegeplade til/fra</translation>
     </message>
     <message>
         <source>Touchpad On</source>
-        <translation type="unfinished"></translation>
+        <translation>Pegeplade til</translation>
     </message>
     <message>
         <source>Touchpad Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Pegeplade fra</translation>
     </message>
     <message>
         <source>Num</source>
+        <translation>Num</translation>
+    </message>
+    <message>
+        <source>Launch (G)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>QSlider</name>
     <message>
-        <source>Page left</source>
-        <translation type="vanished">Side venstre</translation>
+        <source>Launch (H)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Page up</source>
-        <translation type="vanished">Side op</translation>
+        <source>Calendar</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Position</source>
-        <translation type="vanished">Placering</translation>
+        <source>Adjust contrast</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Page right</source>
-        <translation type="vanished">Side højre</translation>
+        <source>Memo</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Page down</source>
-        <translation type="vanished">Side ned</translation>
+        <source>To-do list</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSocks5SocketEngine</name>
     <message>
-        <source>Socks5 timeout error connecting to socks server</source>
-        <translation type="vanished">Socks5 - Tidsfristen udløb for forbindelse til Socks server</translation>
-    </message>
-    <message>
         <source>Network operation timed out</source>
-        <translation>Netværksoperationen timed out</translation>
+        <translation>Netværkshandlingen fik timeout</translation>
     </message>
     <message>
         <source>Connection to proxy refused</source>
-        <translation>Proxy-forbindelse nægtede</translation>
+        <translation>Proxy-forbindelsen blev nægtet</translation>
     </message>
     <message>
         <source>Connection to proxy closed prematurely</source>
-        <translation>Proxy-forbindelse afsluttede i utide</translation>
+        <translation>Proxy-forbindelsen lukkede i utide</translation>
     </message>
     <message>
         <source>Proxy host not found</source>
-        <translation>Proxy-host kunne ikke findes</translation>
+        <translation>Proxy-værten blev ikke fundet</translation>
     </message>
     <message>
         <source>Connection to proxy timed out</source>
-        <translation>Proxy-serverforbindelse timed out</translation>
+        <translation>Proxy-forbindelsen fik timeout</translation>
     </message>
     <message>
         <source>Proxy authentication failed</source>
-        <translation>Proxy autentificering mislykkedes</translation>
+        <translation>Proxy-autentifikation fejlede</translation>
     </message>
     <message>
         <source>Proxy authentication failed: %1</source>
-        <translation>Proxy autentificering mislykkedes: %1</translation>
+        <translation>Proxy-autentifikation fejlede: %1</translation>
     </message>
     <message>
         <source>SOCKS version 5 protocol error</source>
@@ -6687,15 +6203,15 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>SOCKSv5 command not supported</source>
-        <translation>SOCKSv5-kommando ikke understøttet</translation>
+        <translation>SOCKSv5-kommando understøttes ikke</translation>
     </message>
     <message>
         <source>Address type not supported</source>
-        <translation>Adressetype understøttes ikke</translation>
+        <translation>Adressetypen understøttes ikke</translation>
     </message>
     <message>
         <source>Unknown SOCKSv5 proxy error code 0x%1</source>
-        <translation>Ukendt SOCKSv5 proxy fejlkode 0x%1</translation>
+        <translation>Ukendt SOCKSv5-proxy fejlkode 0x%1</translation>
     </message>
 </context>
 <context>
@@ -6703,413 +6219,389 @@ Please turn one of those options off.</source>
     <message>
         <source>invalid role</source>
         <extracomment>Role of an accessible object - the object is in an invalid state or could not be constructed</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ugyldig rolle</translation>
     </message>
     <message>
         <source>title bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>titellinje</translation>
     </message>
     <message>
         <source>menu bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>menulinje</translation>
     </message>
     <message>
         <source>scroll bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>rullebjælke</translation>
     </message>
     <message>
         <source>grip</source>
         <extracomment>Role of an accessible object - the grip is usually used for resizing another object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>greb</translation>
     </message>
     <message>
         <source>sound</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>lyd</translation>
     </message>
     <message>
         <source>cursor</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>markør</translation>
     </message>
     <message>
         <source>text caret</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>tekstmarkør</translation>
     </message>
     <message>
         <source>alert message</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>beskedmeddelelse</translation>
     </message>
     <message>
         <source>frame</source>
         <extracomment>Role of an accessible object: a window with frame and title
 ----------
 Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ramme</translation>
     </message>
     <message>
         <source>filler</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>udfylder</translation>
     </message>
     <message>
         <source>popup menu</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>pop op-menu</translation>
     </message>
     <message>
         <source>menu item</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>menupunkt</translation>
     </message>
     <message>
         <source>tool tip</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>værktøjstip</translation>
     </message>
     <message>
         <source>application</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>program</translation>
     </message>
     <message>
         <source>document</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>dokument</translation>
     </message>
     <message>
         <source>panel</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>panel</translation>
     </message>
     <message>
         <source>chart</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>graf</translation>
     </message>
     <message>
         <source>dialog</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>dialog</translation>
     </message>
     <message>
         <source>separator</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>separator</translation>
     </message>
     <message>
         <source>tool bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>værktøjslinje</translation>
     </message>
     <message>
         <source>status bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>statuslinje</translation>
     </message>
     <message>
         <source>table</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>tabel</translation>
     </message>
     <message>
         <source>column header</source>
         <extracomment>Role of an accessible object - part of a table</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>kolonnehoved</translation>
     </message>
     <message>
         <source>row header</source>
         <extracomment>Role of an accessible object - part of a table</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>rækkehoved</translation>
     </message>
     <message>
         <source>column</source>
         <extracomment>Role of an accessible object - part of a table</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>kolonne</translation>
     </message>
     <message>
         <source>row</source>
         <extracomment>Role of an accessible object - part of a table</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>række</translation>
     </message>
     <message>
         <source>cell</source>
         <extracomment>Role of an accessible object - part of a table</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>celle</translation>
     </message>
     <message>
         <source>link</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>link</translation>
     </message>
     <message>
         <source>help balloon</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>hjælp-ballon</translation>
     </message>
     <message>
         <source>assistant</source>
         <extracomment>Role of an accessible object - a helper dialog</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>assistent</translation>
     </message>
     <message>
         <source>list</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>liste</translation>
     </message>
     <message>
         <source>list item</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>listepunkt</translation>
     </message>
     <message>
         <source>tree</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>træ</translation>
     </message>
     <message>
         <source>tree item</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>træpunkt</translation>
     </message>
     <message>
         <source>page tab</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>sidefaneblad</translation>
     </message>
     <message>
         <source>property page</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>egenskabsside</translation>
     </message>
     <message>
         <source>indicator</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>indikator</translation>
     </message>
     <message>
         <source>graphic</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>grafik</translation>
     </message>
     <message>
         <source>label</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>etiket</translation>
     </message>
     <message>
         <source>text</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>tekst</translation>
     </message>
     <message>
         <source>push button</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>trykknap</translation>
     </message>
     <message>
         <source>check box</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>afkrydsningsboks</translation>
     </message>
     <message>
         <source>radio button</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>radioknap</translation>
     </message>
     <message>
         <source>combo box</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>komboboks</translation>
     </message>
     <message>
         <source>progress bar</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>fremgangslinje</translation>
     </message>
     <message>
         <source>dial</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>drejeskive</translation>
     </message>
     <message>
         <source>hotkey field</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>genvejstastfelt</translation>
     </message>
     <message>
         <source>slider</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>skyder</translation>
     </message>
     <message>
         <source>spin box</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>rotationsboks</translation>
     </message>
     <message>
         <source>canvas</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>lærred</translation>
     </message>
     <message>
         <source>animation</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>animation</translation>
     </message>
     <message>
         <source>equation</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ligning</translation>
     </message>
     <message>
         <source>button with drop down</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>knap med rullegardin</translation>
     </message>
     <message>
         <source>button menu</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>knapmenu</translation>
     </message>
     <message>
         <source>button with drop down grid</source>
         <extracomment>Role of an accessible object - a button that expands a grid.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>knap med rullegardinsgitter</translation>
     </message>
     <message>
         <source>space</source>
         <extracomment>Role of an accessible object - blank space between other objects.</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>mellemrum</translation>
     </message>
     <message>
         <source>page tab list</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>sidefanebladsliste</translation>
     </message>
     <message>
         <source>clock</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>ur</translation>
     </message>
     <message>
         <source>splitter</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>adskiller</translation>
     </message>
     <message>
         <source>layered pane</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>laglagt rude</translation>
     </message>
     <message>
         <source>web document</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>webdokument</translation>
     </message>
     <message>
         <source>paragraph</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>afsnit</translation>
     </message>
     <message>
         <source>section</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>sektion</translation>
     </message>
     <message>
         <source>color chooser</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>farvevælger</translation>
     </message>
     <message>
         <source>footer</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>sidefod</translation>
     </message>
     <message>
         <source>form</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>formular</translation>
     </message>
     <message>
         <source>heading</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>overskrift</translation>
     </message>
     <message>
         <source>note</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>bemærkning</translation>
     </message>
     <message>
         <source>complementary content</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>supplerende indhold</translation>
     </message>
     <message>
         <source>unknown</source>
         <extracomment>Role of an accessible object</extracomment>
-        <translation type="unfinished">Ukendt</translation>
+        <translation>ukendt</translation>
+    </message>
+    <message>
+        <source>terminal</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation>terminal</translation>
+    </message>
+    <message>
+        <source>desktop</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation>skrivebord</translation>
+    </message>
+    <message>
+        <source>notification</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation>underretning</translation>
     </message>
 </context>
 <context>
-    <name>QSpinBox</name>
+    <name>QSslDiffieHellmanParameter</name>
     <message>
-        <source>More</source>
-        <translation type="vanished">Mere</translation>
+        <source>No error</source>
+        <translation>Ingen fejl</translation>
     </message>
     <message>
-        <source>Less</source>
-        <translation type="vanished">Mindre</translation>
-    </message>
-</context>
-<context>
-    <name>QSql</name>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">Slet</translation>
+        <source>Invalid input data</source>
+        <translation>Ugyldig inputdata</translation>
     </message>
     <message>
-        <source>Delete this record?</source>
-        <translation type="vanished">Slet denne post?</translation>
-    </message>
-    <message>
-        <source>Yes</source>
-        <translation type="vanished">Ja</translation>
-    </message>
-    <message>
-        <source>No</source>
-        <translation type="vanished">Nej</translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <translation type="vanished">Indsæt</translation>
-    </message>
-    <message>
-        <source>Update</source>
-        <translation type="vanished">Opdater</translation>
-    </message>
-    <message>
-        <source>Save edits?</source>
-        <translation type="vanished">Gem ændringer?</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">Annuller</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation type="vanished">Bekræft</translation>
-    </message>
-    <message>
-        <source>Cancel your edits?</source>
-        <translation type="vanished">Skal dine ændringer annulleres?</translation>
+        <source>The given Diffie-Hellman parameters are deemed unsafe</source>
+        <translation>De givne Diffie-Hellman-parametre skønnes usikre</translation>
     </message>
 </context>
 <context>
@@ -7120,15 +6612,15 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Error while reading: %1</source>
-        <translation>Der opstod en fejl under læsning af: %1</translation>
+        <translation>Fejl under læsning: %1</translation>
     </message>
     <message>
         <source>Error during SSL handshake: %1</source>
-        <translation>Der opstod en fejl under SSL handshake: %1</translation>
+        <translation>Fejl under SSL-håndtryk: %1</translation>
     </message>
     <message>
         <source>Error creating SSL context (%1)</source>
-        <translation>Der opstod fejl under oprettelse af SSL-kontekst (%1)</translation>
+        <translation>Fejl under oprettelse af SSL-kontekst (%1)</translation>
     </message>
     <message>
         <source>Invalid or empty cipher list (%1)</source>
@@ -7136,11 +6628,11 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Error creating SSL session, %1</source>
-        <translation>Der opstod fejl under oprettelse af SSL-session, %1</translation>
+        <translation>Fejl under oprettelse af SSL-session, %1</translation>
     </message>
     <message>
         <source>Error creating SSL session: %1</source>
-        <translation>Der opstod fejl under oprettelse af SSL-session, %1</translation>
+        <translation>Fejl under oprettelse af SSL-session: %1</translation>
     </message>
     <message>
         <source>Cannot provide a certificate with no key, %1</source>
@@ -7148,138 +6640,378 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Error loading local certificate, %1</source>
-        <translation>Der opstod fejl under indlæsning af lokalt certifikat, %1</translation>
+        <translation>Fejl under indlæsning af lokalt certifikat, %1</translation>
     </message>
     <message>
         <source>Error loading private key, %1</source>
-        <translation>Der opstod fejl under indlæsning af privat nøgle, %1</translation>
-    </message>
-    <message>
-        <source>Private key does not certificate public key, %1</source>
-        <translation type="vanished">Privat-nøgle autoriserer ikke offentlig-nøgle, %1</translation>
+        <translation>Fejl under indlæsning af privat nøgle, %1</translation>
     </message>
     <message>
         <source>Error when setting the elliptic curves (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Fejl under indstilling af de elliptiske kurver (%1)</translation>
     </message>
     <message>
         <source>unsupported protocol</source>
-        <translation type="unfinished"></translation>
+        <translation>protokollen understøttes ikke</translation>
     </message>
     <message>
         <source>Private key does not certify public key, %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>OpenSSL version too old, need at least v1.0.2</source>
-        <translation type="unfinished"></translation>
+        <translation>Privat nøgle certificere ikke offentlig nøgle, %1</translation>
     </message>
     <message>
         <source>No error</source>
-        <translation type="unfinished"></translation>
+        <translation>Ingen fejl</translation>
     </message>
     <message>
         <source>The issuer certificate could not be found</source>
-        <translation type="unfinished"></translation>
+        <translation>Udstedercertifikatet kunne ikke findes</translation>
     </message>
     <message>
         <source>The certificate signature could not be decrypted</source>
-        <translation type="unfinished"></translation>
+        <translation>Certifikatsignaturen kunne ikke dekrypteres</translation>
     </message>
     <message>
         <source>The public key in the certificate could not be read</source>
-        <translation type="unfinished"></translation>
+        <translation>Den offentlige nøgle i certifikatet kunne ikke læses</translation>
     </message>
     <message>
         <source>The signature of the certificate is invalid</source>
-        <translation type="unfinished"></translation>
+        <translation>Signaturen på certifikatet er ugyldigt</translation>
     </message>
     <message>
         <source>The certificate is not yet valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Certifikatet er endnu ikke gyldigt</translation>
     </message>
     <message>
         <source>The certificate has expired</source>
-        <translation type="unfinished"></translation>
+        <translation>Certifikatet er udløbet</translation>
     </message>
     <message>
         <source>The certificate&apos;s notBefore field contains an invalid time</source>
-        <translation type="unfinished"></translation>
+        <translation>Certifikatets notBefore-felt indeholder en ugyldig tid</translation>
     </message>
     <message>
         <source>The certificate&apos;s notAfter field contains an invalid time</source>
-        <translation type="unfinished"></translation>
+        <translation>Certifikatets notAfter-felt indeholder en ugyldig tid</translation>
     </message>
     <message>
         <source>The certificate is self-signed, and untrusted</source>
-        <translation type="unfinished"></translation>
+        <translation>Certifikatet er selv-signeret, og ikke betroet</translation>
     </message>
     <message>
         <source>The root certificate of the certificate chain is self-signed, and untrusted</source>
-        <translation type="unfinished"></translation>
+        <translation>Rod-certifikatet af certifikatskæden er selv-signeret, og ikke betroet</translation>
     </message>
     <message>
         <source>The issuer certificate of a locally looked up certificate could not be found</source>
-        <translation type="unfinished"></translation>
+        <translation>Udstedercertifikatet af en lokalt opslået certifikat kunne ikke findes</translation>
     </message>
     <message>
         <source>No certificates could be verified</source>
-        <translation type="unfinished"></translation>
+        <translation>Ingen certifikater kunne verificeres</translation>
     </message>
     <message>
         <source>One of the CA certificates is invalid</source>
-        <translation type="unfinished"></translation>
+        <translation>Et af CA-certifikaterne er ugyldigt</translation>
     </message>
     <message>
         <source>The basicConstraints path length parameter has been exceeded</source>
-        <translation type="unfinished"></translation>
+        <translation>Stilængde-parameteren basicConstraints er blevet overskredet</translation>
     </message>
     <message>
         <source>The supplied certificate is unsuitable for this purpose</source>
-        <translation type="unfinished"></translation>
+        <translation>Det givet certifikat er uegnet til dette formål</translation>
     </message>
     <message>
         <source>The root CA certificate is not trusted for this purpose</source>
-        <translation type="unfinished"></translation>
+        <translation>Rod-CA-certifikatet er ikke betroet til dette formål</translation>
     </message>
     <message>
         <source>The root CA certificate is marked to reject the specified purpose</source>
-        <translation type="unfinished"></translation>
+        <translation>Rod-CA-certifikatet er markeret til at afvise det specifikke formål</translation>
     </message>
     <message>
         <source>The current candidate issuer certificate was rejected because its subject name did not match the issuer name of the current certificate</source>
-        <translation type="unfinished"></translation>
+        <translation>Det nuværende kandidat-udstedercertifikat blev afvist fordi dets subjektnavn ikke matchede udstedernavnet på det nuværende certifikat</translation>
     </message>
     <message>
         <source>The current candidate issuer certificate was rejected because its issuer name and serial number was present and did not match the authority key identifier of the current certificate</source>
-        <translation type="unfinished"></translation>
+        <translation>Det nuværende kandidat-udstedercertifikat blev afvist fordi dets udstedernavn og serienummer var tilstede og ikke matchede myndighedsnøgle-identifikatoren på det nuværende certifikat</translation>
     </message>
     <message>
         <source>The peer did not present any certificate</source>
-        <translation type="unfinished"></translation>
+        <translation>Peer&apos;en præsenterede ikke noget certifikat</translation>
     </message>
     <message>
         <source>The host name did not match any of the valid hosts for this certificate</source>
-        <translation type="unfinished"></translation>
+        <translation>Værtsnavnet matchede ikke nogen af de gyldige værter for dette certifikat</translation>
     </message>
     <message>
         <source>The peer certificate is blacklisted</source>
-        <translation type="unfinished"></translation>
+        <translation>Peer-certifikatet er sortlistet</translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukendt fejl</translation>
     </message>
     <message>
         <source>The TLS/SSL connection has been closed</source>
-        <translation type="unfinished"></translation>
+        <translation>TLS-/SSL-forbindelsen er blevet lukket</translation>
     </message>
     <message>
         <source>Unable to init SSL Context: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunne ikke initialisere SSL-kontekst: %1</translation>
     </message>
     <message>
         <source>Unable to decrypt data: %1</source>
+        <translation>Kunne ikke dekryptere data: %1</translation>
+    </message>
+    <message>
+        <source>Error while setting the minimal protocol version</source>
+        <translation>Fejl under indstilling af den laveste protokolversion</translation>
+    </message>
+    <message>
+        <source>Error while setting the maximum protocol version</source>
+        <translation>Fejl under indstilling af den højeste protokolversion</translation>
+    </message>
+    <message>
+        <source>Diffie-Hellman parameters are not valid</source>
+        <translation>Diffie-Hellman-parametre er ikke gyldige</translation>
+    </message>
+    <message>
+        <source>OpenSSL version with disabled elliptic curves</source>
+        <translation>OpenSSL-version med deaktiveret elliptiske kurver</translation>
+    </message>
+    <message>
+        <source>Error when setting the OpenSSL configuration (%1)</source>
+        <translation>Fejl under indstilling af OpenSSL-konfigurationen (%1)</translation>
+    </message>
+    <message>
+        <source>Expecting QByteArray for %1</source>
+        <translation>Forventer QByteArray for %1</translation>
+    </message>
+    <message>
+        <source>An error occurred attempting to set %1 to %2</source>
+        <translation>Der opstod en fejl under forsøg på at sætte %1 til %2</translation>
+    </message>
+    <message>
+        <source>Wrong value for %1 (%2)</source>
+        <translation>Forkert værdi til %1 (%2)</translation>
+    </message>
+    <message>
+        <source>Unrecognized command %1 = %2</source>
+        <translation>Ikke-genkendt kommando %1 = %2</translation>
+    </message>
+    <message>
+        <source>SSL_CONF_finish() failed</source>
+        <translation>SSL_CONF_finish() fejlede</translation>
+    </message>
+    <message>
+        <source>SSL_CONF_CTX_new() failed</source>
+        <translation>SSL_CONF_CTX_new() fejlede</translation>
+    </message>
+    <message>
+        <source>TLS initialization failed</source>
+        <translation>TLS-initialisering fejlede</translation>
+    </message>
+    <message>
+        <source>No OCSP status response found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The OCSP status request had invalid syntax</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP response contains an unexpected number of SingleResponse structures</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder reached an inconsistent internal state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder was unable to return a status for the requested certificate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The server requires the client to sign the OCSP request in order to construct a response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The client is not authorized to request OCSP status from this server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OCSP responder&apos;s identity cannot be verified</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The identity of a certificate in an OCSP response cannot be established</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate status response has expired</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate&apos;s status is unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attempted to use an unsupported protocol.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server-side QSslSocket does not support OCSP stapling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to enable OCSP stapling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Client-side sockets do not send OCSP responses</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to decode OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to extract basic OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No certificate verification store, cannot verify OCSP response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to decode a SingleResponse from OCSP status response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to extract &apos;this update time&apos; from the SingleResponse</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insufficient memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Internal error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An internal handle was invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An internal token was invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Access denied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No authority could be contacted for authorization</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No credentials</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The target is unknown or unreachable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An unsupported function was requested</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hostname provided does not match the one received from the peer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No common protocol exists between the client and the server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unexpected or badly-formatted message received</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The data could not be encrypted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No cipher suites in common</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The credentials were not recognized / Invalid argument</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The message was tampered with, damaged or out of sequence.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A message was received out of sequence.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown error occurred: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid protocol chosen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate provided cannot be used for a client.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The certificate provided cannot be used for a server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server did not accept any certificate we could present.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Algorithm mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Handshake failed: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to query the TLS context: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Did not get the required attributes for the connection.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unwanted protocol was negotiated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Renegotiation was unsuccessful: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Schannel failed to encrypt data: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot provide a certificate with no key</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7287,93 +7019,97 @@ Role of an accessible object</extracomment>
     <name>QStandardPaths</name>
     <message>
         <source>Desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Skrivebord</translation>
     </message>
     <message>
         <source>Documents</source>
-        <translation type="unfinished"></translation>
+        <translation>Dokumenter</translation>
     </message>
     <message>
         <source>Fonts</source>
-        <translation type="unfinished">Skrifttyper</translation>
+        <translation>Skrifttyper</translation>
     </message>
     <message>
         <source>Applications</source>
-        <translation type="unfinished"></translation>
+        <translation>Programmer</translation>
     </message>
     <message>
         <source>Music</source>
-        <translation type="unfinished">Musik</translation>
+        <translation>Musik</translation>
     </message>
     <message>
         <source>Movies</source>
-        <translation type="unfinished"></translation>
+        <translation>Film</translation>
     </message>
     <message>
         <source>Pictures</source>
-        <translation type="unfinished"></translation>
+        <translation>Billeder</translation>
     </message>
     <message>
         <source>Temporary Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Midlertidig mappe</translation>
     </message>
     <message>
         <source>Home</source>
-        <translation type="unfinished">Hjem</translation>
+        <translation>Hjem</translation>
     </message>
     <message>
         <source>Cache</source>
-        <translation type="unfinished"></translation>
+        <translation>Mellemlager</translation>
     </message>
     <message>
         <source>Shared Data</source>
-        <translation type="unfinished"></translation>
+        <translation>Delte data</translation>
     </message>
     <message>
         <source>Runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Runtime</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfiguration</translation>
     </message>
     <message>
         <source>Shared Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Delte konfiguration</translation>
     </message>
     <message>
         <source>Shared Cache</source>
-        <translation type="unfinished"></translation>
+        <translation>Delte mellemlager</translation>
     </message>
     <message>
         <source>Download</source>
-        <translation type="unfinished"></translation>
+        <translation>Download</translation>
     </message>
     <message>
         <source>Application Data</source>
-        <translation type="unfinished"></translation>
+        <translation>Programdata</translation>
     </message>
     <message>
         <source>Application Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Programkonfiguration</translation>
     </message>
 </context>
 <context>
     <name>QStateMachine</name>
     <message>
         <source>Missing initial state in compound state &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Manglende indledende tilstand i den sammensatte tilstand &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Missing default state in history state &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Manglende standardtilstand i historiktilstanden &apos;%1&apos;</translation>
     </message>
     <message>
         <source>No common ancestor for targets and source of transition from state &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Ingen fælles forfader for mål og kilde af overgang fra tilstanden &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Unknown error</source>
+        <translation>Ukendt fejl</translation>
+    </message>
+    <message>
+        <source>Child mode of state machine &apos;%1&apos; is not &apos;ExclusiveStates&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7381,30 +7117,30 @@ Role of an accessible object</extracomment>
     <name>QSystemSemaphore</name>
     <message>
         <source>%1: permission denied</source>
-        <translation>%1: Tilladelse nægtet</translation>
+        <translation>%1: tilladelse nægtet</translation>
     </message>
     <message>
         <source>%1: already exists</source>
-        <translation>%1: Findes allerede</translation>
+        <translation>%1: findes allerede</translation>
     </message>
     <message>
         <source>%1: does not exist</source>
-        <translation>%1: Findes ikke</translation>
+        <translation>%1: findes ikke</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
-        <translation>%1: Ikke flere ressourcer</translation>
+        <translation>%1: ikke flere ressourcer</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
-        <translation>%1: Ukendt fejl %2</translation>
+        <translation>%1: ukendt fejl %2</translation>
     </message>
 </context>
 <context>
     <name>QTDSDriver</name>
     <message>
         <source>Unable to open connection</source>
-        <translation>Kunne ikke etablere forbindelsen</translation>
+        <translation>Kunne ikke åbne forbindelsen</translation>
     </message>
     <message>
         <source>Unable to use database</source>
@@ -7415,100 +7151,50 @@ Role of an accessible object</extracomment>
     <name>QTabBar</name>
     <message>
         <source>Scroll Left</source>
-        <translation>Scroll til venstre</translation>
+        <translation>Rul til venstre</translation>
     </message>
     <message>
         <source>Scroll Right</source>
-        <translation>Scroll til højre</translation>
+        <translation>Rul til højre</translation>
     </message>
 </context>
 <context>
     <name>QTcpServer</name>
     <message>
         <source>Operation on socket is not supported</source>
-        <translation>Socket-operation ikke understøttet</translation>
-    </message>
-</context>
-<context>
-    <name>QTextControl</name>
-    <message>
-        <source>&amp;Undo</source>
-        <translation type="vanished">&amp;Fortryd</translation>
-    </message>
-    <message>
-        <source>&amp;Redo</source>
-        <translation type="vanished">&amp;Gendan</translation>
-    </message>
-    <message>
-        <source>Cu&amp;t</source>
-        <translation type="vanished">K&amp;lip</translation>
-    </message>
-    <message>
-        <source>&amp;Copy</source>
-        <translation type="vanished">&amp;Kopiér</translation>
-    </message>
-    <message>
-        <source>Copy &amp;Link Location</source>
-        <translation type="vanished">Kopiér l&amp;ink</translation>
-    </message>
-    <message>
-        <source>&amp;Paste</source>
-        <translation type="vanished">&amp;Sæt ind</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">Slet</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation type="vanished">Markér alt</translation>
-    </message>
-</context>
-<context>
-    <name>QToolButton</name>
-    <message>
-        <source>Press</source>
-        <translation type="vanished">Tryk på</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">Åbn</translation>
+        <translation>Handling på socket understøttes ikke</translation>
     </message>
 </context>
 <context>
     <name>QUdpSocket</name>
     <message>
-        <source>This platform does not support IPv6</source>
-        <translation type="vanished">Denne platform understøtter ikke IPv6</translation>
+        <source>Unable to send a datagram</source>
+        <translation>Kunne ikke sende et datagram</translation>
+    </message>
+    <message>
+        <source>No datagram available for reading</source>
+        <translation>Intet tilgængeligt datagram til læsning</translation>
     </message>
 </context>
 <context>
     <name>QUndoGroup</name>
     <message>
-        <source>Undo</source>
-        <translation type="vanished">Fortryd</translation>
-    </message>
-    <message>
-        <source>Redo</source>
-        <translation type="vanished">Gendan</translation>
-    </message>
-    <message>
         <source>Undo %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Fortryd %1</translation>
     </message>
     <message>
         <source>Undo</source>
         <comment>Default text for undo action</comment>
-        <translation type="unfinished">Fortryd</translation>
+        <translation>Fortryd</translation>
     </message>
     <message>
         <source>Redo %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Omgør %1</translation>
     </message>
     <message>
         <source>Redo</source>
         <comment>Default text for redo action</comment>
-        <translation type="unfinished">Gendan</translation>
+        <translation>Omgør</translation>
     </message>
 </context>
 <context>
@@ -7521,612 +7207,149 @@ Role of an accessible object</extracomment>
 <context>
     <name>QUndoStack</name>
     <message>
-        <source>Undo</source>
-        <translation type="vanished">Fortryd</translation>
-    </message>
-    <message>
-        <source>Redo</source>
-        <translation type="vanished">Gendan</translation>
-    </message>
-    <message>
         <source>Undo %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Fortryd %1</translation>
     </message>
     <message>
         <source>Undo</source>
         <comment>Default text for undo action</comment>
-        <translation type="unfinished">Fortryd</translation>
+        <translation>Fortryd</translation>
     </message>
     <message>
         <source>Redo %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Omgør %1</translation>
     </message>
     <message>
         <source>Redo</source>
         <comment>Default text for redo action</comment>
-        <translation type="unfinished">Gendan</translation>
+        <translation>Omgør</translation>
     </message>
 </context>
 <context>
     <name>QUnicodeControlCharacterMenu</name>
     <message>
         <source>LRM Left-to-right mark</source>
-        <translation></translation>
+        <translation>LRM Left-to-right mark (venstre-til-højre-mærkat)</translation>
     </message>
     <message>
         <source>RLM Right-to-left mark</source>
-        <translation></translation>
+        <translation>RLM Right-to-left mark (højre-til-venstre-mærkat)</translation>
     </message>
     <message>
         <source>ZWJ Zero width joiner</source>
-        <translation></translation>
+        <translation>ZWJ Zero width joiner (nul-bredde-sammenslutter)</translation>
     </message>
     <message>
         <source>ZWNJ Zero width non-joiner</source>
-        <translation></translation>
+        <translation>ZWNJ Zero width non-joiner (nul-bredde-ikke-sammenslutter)</translation>
     </message>
     <message>
         <source>ZWSP Zero width space</source>
-        <translation></translation>
+        <translation>ZWSP Zero width space (nul med mellemrum)</translation>
     </message>
     <message>
         <source>LRE Start of left-to-right embedding</source>
-        <translation></translation>
+        <translation>LRE Start of left-to-right embedding (start på venstre-til-højre-indlejring)</translation>
     </message>
     <message>
         <source>RLE Start of right-to-left embedding</source>
-        <translation></translation>
+        <translation>RLE Start of right-to-left embedding (start på højre-til-venstre-indlejring)</translation>
     </message>
     <message>
         <source>LRO Start of left-to-right override</source>
-        <translation></translation>
+        <translation>LRO Start of left-to-right override (start på venstre-til-højre-tilsidesætning)</translation>
     </message>
     <message>
         <source>RLO Start of right-to-left override</source>
-        <translation></translation>
+        <translation>RLO Start of right-to-left override (start på højre-til-venstre-tilsidesætning)</translation>
     </message>
     <message>
         <source>PDF Pop directional formatting</source>
-        <translation></translation>
+        <translation>PDF Pop directional formatting (glem retningsformatering)</translation>
     </message>
     <message>
         <source>Insert Unicode control character</source>
-        <translation></translation>
+        <translation>Indsæt unicode-kontroltegn</translation>
     </message>
     <message>
         <source>LRI Left-to-right isolate</source>
-        <translation type="unfinished"></translation>
+        <translation>LRI Left-to-right isolate (venstre-til-højre-isolering)</translation>
     </message>
     <message>
         <source>RLI Right-to-left isolate</source>
-        <translation type="unfinished"></translation>
+        <translation>RLI Right-to-left isolate (højre-til-venstre-indlejring)</translation>
     </message>
     <message>
         <source>FSI First strong isolate</source>
-        <translation type="unfinished"></translation>
+        <translation>FSI First strong isolate (første stærke isolering)</translation>
     </message>
     <message>
         <source>PDI Pop directional isolate</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>QWebFrame</name>
-    <message>
-        <source>Request cancelled</source>
-        <translation type="vanished">Anmodning annulleret</translation>
-    </message>
-    <message>
-        <source>Request blocked</source>
-        <translation type="vanished">Anmodning blokeret</translation>
-    </message>
-    <message>
-        <source>Cannot show URL</source>
-        <translation type="vanished">Kan ikke vise URL</translation>
-    </message>
-    <message>
-        <source>Frame load interruped by policy change</source>
-        <translation type="vanished">Billedindlæsning afbrudt af ændringer i retningslinier</translation>
-    </message>
-    <message>
-        <source>Cannot show mimetype</source>
-        <translation type="vanished">Kan ikke vise MIME-type</translation>
-    </message>
-    <message>
-        <source>File does not exist</source>
-        <translation type="vanished">Filen findes ikke</translation>
-    </message>
-</context>
-<context>
-    <name>QWebPage</name>
-    <message>
-        <source>Bad HTTP request</source>
-        <translation type="vanished">Dårlig HTTP-anmodning</translation>
-    </message>
-    <message>
-        <source>Submit</source>
-        <comment>default label for Submit buttons in forms on web pages</comment>
-        <translation type="vanished">Send</translation>
-    </message>
-    <message>
-        <source>Submit</source>
-        <comment>Submit (input element) alt text for &lt;input&gt; elements with no alt, title, or value</comment>
-        <translation type="vanished">Send</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <comment>default label for Reset buttons in forms on web pages</comment>
-        <translation type="vanished">Nulstil</translation>
-    </message>
-    <message>
-        <source>This is a searchable index. Enter search keywords: </source>
-        <comment>text that appears at the start of nearly-obsolete web pages in the form of a &apos;searchable index&apos;</comment>
-        <translation type="vanished">Dette er et søgeindeks. Indtast søgeord:</translation>
-    </message>
-    <message>
-        <source>Choose File</source>
-        <comment>title for file button used in HTML forms</comment>
-        <translation type="vanished">Vælg fil</translation>
-    </message>
-    <message>
-        <source>No file selected</source>
-        <comment>text to display in file button used in HTML forms when no file is selected</comment>
-        <translation type="vanished">Der er ikke valgt en fil</translation>
-    </message>
-    <message>
-        <source>Open in New Window</source>
-        <comment>Open in New Window context menu item</comment>
-        <translation type="vanished">Åbn i nyt vindue</translation>
-    </message>
-    <message>
-        <source>Save Link...</source>
-        <comment>Download Linked File context menu item</comment>
-        <translation type="vanished">Gem link...</translation>
-    </message>
-    <message>
-        <source>Copy Link</source>
-        <comment>Copy Link context menu item</comment>
-        <translation type="vanished">Kopiér link</translation>
-    </message>
-    <message>
-        <source>Open Image</source>
-        <comment>Open Image in New Window context menu item</comment>
-        <translation type="vanished">Åbn billede</translation>
-    </message>
-    <message>
-        <source>Save Image</source>
-        <comment>Download Image context menu item</comment>
-        <translation type="vanished">Gem billede</translation>
-    </message>
-    <message>
-        <source>Copy Image</source>
-        <comment>Copy Link context menu item</comment>
-        <translation type="vanished">Kopiér billede</translation>
-    </message>
-    <message>
-        <source>Open Frame</source>
-        <comment>Open Frame in New Window context menu item</comment>
-        <translation type="vanished">Åbn faneblad</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <comment>Copy context menu item</comment>
-        <translation type="vanished">Kopiér</translation>
-    </message>
-    <message>
-        <source>Go Back</source>
-        <comment>Back context menu item</comment>
-        <translation type="vanished">Gå tilbage</translation>
-    </message>
-    <message>
-        <source>Go Forward</source>
-        <comment>Forward context menu item</comment>
-        <translation type="vanished">Gå frem</translation>
-    </message>
-    <message>
-        <source>Stop</source>
-        <comment>Stop context menu item</comment>
-        <translation type="vanished">Stop</translation>
-    </message>
-    <message>
-        <source>Reload</source>
-        <comment>Reload context menu item</comment>
-        <translation type="vanished">Genindlæs</translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <comment>Cut context menu item</comment>
-        <translation type="vanished">Klip</translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <comment>Paste context menu item</comment>
-        <translation type="vanished">Sæt ind</translation>
-    </message>
-    <message>
-        <source>No Guesses Found</source>
-        <comment>No Guesses Found context menu item</comment>
-        <translation type="vanished">Der er ikke fundet nogen gæt</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <comment>Ignore Spelling context menu item</comment>
-        <translation type="vanished">Ignorér</translation>
-    </message>
-    <message>
-        <source>Add To Dictionary</source>
-        <comment>Learn Spelling context menu item</comment>
-        <translation type="vanished">Tilføj til ordbog</translation>
-    </message>
-    <message>
-        <source>Search The Web</source>
-        <comment>Search The Web context menu item</comment>
-        <translation type="vanished">Søg på nettet</translation>
-    </message>
-    <message>
-        <source>Look Up In Dictionary</source>
-        <comment>Look Up in Dictionary context menu item</comment>
-        <translation type="vanished">Slå op i ordbog</translation>
-    </message>
-    <message>
-        <source>Open Link</source>
-        <comment>Open Link context menu item</comment>
-        <translation type="vanished">Åbn link</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <comment>Ignore Grammar context menu item</comment>
-        <translation type="vanished">Ignorér</translation>
-    </message>
-    <message>
-        <source>Spelling</source>
-        <comment>Spelling and Grammar context sub-menu item</comment>
-        <translation type="vanished">Stavekontrol</translation>
-    </message>
-    <message>
-        <source>Show Spelling and Grammar</source>
-        <comment>menu item title</comment>
-        <translation type="vanished">Vis stave- og grammatikkontrol</translation>
-    </message>
-    <message>
-        <source>Hide Spelling and Grammar</source>
-        <comment>menu item title</comment>
-        <translation type="vanished">Skjul stave- og grammatikkontrol</translation>
-    </message>
-    <message>
-        <source>Check Spelling</source>
-        <comment>Check spelling context menu item</comment>
-        <translation type="vanished">Kør stavekontrol</translation>
-    </message>
-    <message>
-        <source>Check Spelling While Typing</source>
-        <comment>Check spelling while typing context menu item</comment>
-        <translation type="vanished">Kør stavekontrol mens der tastes</translation>
-    </message>
-    <message>
-        <source>Check Grammar With Spelling</source>
-        <comment>Check grammar with spelling context menu item</comment>
-        <translation type="vanished">Kør grammatikkontrol sammen med stavekontrol</translation>
-    </message>
-    <message>
-        <source>Fonts</source>
-        <comment>Font context sub-menu item</comment>
-        <translation type="vanished">Skrifttyper</translation>
-    </message>
-    <message>
-        <source>Bold</source>
-        <comment>Bold context menu item</comment>
-        <translation type="vanished">Fed</translation>
-    </message>
-    <message>
-        <source>Italic</source>
-        <comment>Italic context menu item</comment>
-        <translation type="vanished">Kursiv</translation>
-    </message>
-    <message>
-        <source>Underline</source>
-        <comment>Underline context menu item</comment>
-        <translation type="vanished">Understreget</translation>
-    </message>
-    <message>
-        <source>Outline</source>
-        <comment>Outline context menu item</comment>
-        <translation type="vanished">Kontur</translation>
-    </message>
-    <message>
-        <source>Direction</source>
-        <comment>Writing direction context sub-menu item</comment>
-        <translation type="vanished">Retning</translation>
-    </message>
-    <message>
-        <source>Text Direction</source>
-        <comment>Text direction context sub-menu item</comment>
-        <translation type="vanished">Tekstretning</translation>
-    </message>
-    <message>
-        <source>Default</source>
-        <comment>Default writing direction context menu item</comment>
-        <translation type="vanished">Standard</translation>
-    </message>
-    <message>
-        <source>Inspect</source>
-        <comment>Inspect Element context menu item</comment>
-        <translation type="vanished">Inspicér</translation>
-    </message>
-    <message>
-        <source>No recent searches</source>
-        <comment>Label for only item in menu that appears when clicking on the search field image, when no searches have been performed</comment>
-        <translation type="vanished">Ingen aktuelle søgninger</translation>
-    </message>
-    <message>
-        <source>Recent searches</source>
-        <comment>label for first item in the menu that appears when clicking on the search field image, used as embedded menu title</comment>
-        <translation type="vanished">Aktuelle søgninger</translation>
-    </message>
-    <message>
-        <source>Clear recent searches</source>
-        <comment>menu item in Recent Searches menu that empties menu&apos;s contents</comment>
-        <translation type="vanished">Ryd aktuelle søgninger</translation>
-    </message>
-    <message>
-        <source>Unknown</source>
-        <comment>Unknown filesize FTP directory listing item</comment>
-        <translation type="vanished">Ukendt</translation>
-    </message>
-    <message>
-        <source>%1 (%2x%3 pixels)</source>
-        <comment>Title string for images</comment>
-        <translation type="vanished">%1 (%2x%3 pixels)</translation>
-    </message>
-    <message>
-        <source>Web Inspector - %2</source>
-        <translation type="vanished">Web-inspektør - %2</translation>
-    </message>
-    <message>
-        <source>Scroll here</source>
-        <translation type="vanished">Scroll her</translation>
-    </message>
-    <message>
-        <source>Left edge</source>
-        <translation type="vanished">Venstre kant</translation>
-    </message>
-    <message>
-        <source>Right edge</source>
-        <translation type="vanished">Højre kant</translation>
-    </message>
-    <message>
-        <source>Bottom</source>
-        <translation type="vanished">Bund</translation>
-    </message>
-    <message>
-        <source>Page left</source>
-        <translation type="vanished">Side venstre</translation>
-    </message>
-    <message>
-        <source>Page up</source>
-        <translation type="vanished">Side øverst</translation>
-    </message>
-    <message>
-        <source>Page right</source>
-        <translation type="vanished">Side højre</translation>
-    </message>
-    <message>
-        <source>Page down</source>
-        <translation type="vanished">Side ned</translation>
-    </message>
-    <message>
-        <source>Scroll left</source>
-        <translation type="vanished">Scroll til venstre</translation>
-    </message>
-    <message>
-        <source>Scroll up</source>
-        <translation type="vanished">Scroll op</translation>
-    </message>
-    <message>
-        <source>Scroll right</source>
-        <translation type="vanished">Scroll til højre</translation>
-    </message>
-    <message>
-        <source>Scroll down</source>
-        <translation type="vanished">Scroll ned</translation>
-    </message>
-    <message numerus="yes">
-        <source>%n file(s)</source>
-        <comment>number of chosen file</comment>
-        <translation type="vanished">
-            <numerusform>%n fil</numerusform>
-            <numerusform>%n filer</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>JavaScript Alert - %1</source>
-        <translation type="vanished">JavaScript alert - %1</translation>
-    </message>
-    <message>
-        <source>JavaScript Confirm - %1</source>
-        <translation type="vanished">JavaScript Bekræft - %1</translation>
-    </message>
-    <message>
-        <source>JavaScript Prompt - %1</source>
-        <translation type="vanished">JavaScript Prompt - %1</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the next character</source>
-        <translation type="vanished">Flyt markør til næste tegn</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the previous character</source>
-        <translation type="vanished">Flyt markør til forrige tegn</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the next word</source>
-        <translation type="vanished">Flyt markør til næste ord</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the previous word</source>
-        <translation type="vanished">Flyt markør til forrige ord</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the next line</source>
-        <translation type="vanished">Flyt markør til næste linie</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the previous line</source>
-        <translation type="vanished">Flyt markør til forrige linie</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the start of the line</source>
-        <translation type="vanished">Flyt markør til starten af linien</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the end of the line</source>
-        <translation type="vanished">Flyt markør til slutningen af linien</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the start of the block</source>
-        <translation type="vanished">Flyt markør til starten af sektionen</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the end of the block</source>
-        <translation type="vanished">Flyt markør til slutningen af sektionen</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the start of the document</source>
-        <translation type="vanished">Flyt markør til starten af dokumentet</translation>
-    </message>
-    <message>
-        <source>Move the cursor to the end of the document</source>
-        <translation type="vanished">Flyt markør til slutningen af dokumentet</translation>
-    </message>
-    <message>
-        <source>Select all</source>
-        <translation type="vanished">Markér alt</translation>
-    </message>
-    <message>
-        <source>Select to the next character</source>
-        <translation type="vanished">Vælg til næste tegn</translation>
-    </message>
-    <message>
-        <source>Select to the previous character</source>
-        <translation type="vanished">Vælg til forrige tegn</translation>
-    </message>
-    <message>
-        <source>Select to the next word</source>
-        <translation type="vanished">Vælg til næste ord</translation>
-    </message>
-    <message>
-        <source>Select to the previous word</source>
-        <translation type="vanished">Vælg til forrige ord</translation>
-    </message>
-    <message>
-        <source>Select to the next line</source>
-        <translation type="vanished">Vælg til næste linie</translation>
-    </message>
-    <message>
-        <source>Select to the previous line</source>
-        <translation type="vanished">Vælg til forrige linie</translation>
-    </message>
-    <message>
-        <source>Select to the start of the line</source>
-        <translation type="vanished">Vælg til starten af linien</translation>
-    </message>
-    <message>
-        <source>Select to the end of the line</source>
-        <translation type="vanished">Vælg til slutningen af linien</translation>
-    </message>
-    <message>
-        <source>Select to the start of the block</source>
-        <translation type="vanished">Vælg til starten af sektionen</translation>
-    </message>
-    <message>
-        <source>Select to the end of the block</source>
-        <translation type="vanished">Vælg til slutningen af sektionen</translation>
-    </message>
-    <message>
-        <source>Select to the start of the document</source>
-        <translation type="vanished">Vælg til starten af dokumentet</translation>
-    </message>
-    <message>
-        <source>Select to the end of the document</source>
-        <translation type="vanished">Vælg til slutningen af dokumentet</translation>
-    </message>
-    <message>
-        <source>Delete to the start of the word</source>
-        <translation type="vanished">Slet til starten af ordet</translation>
-    </message>
-    <message>
-        <source>Delete to the end of the word</source>
-        <translation type="vanished">Slet til slutningen af ordet</translation>
-    </message>
-    <message>
-        <source>Insert a new paragraph</source>
-        <translation type="vanished">Indsæt et nyt afsnit</translation>
-    </message>
-    <message>
-        <source>Insert a new line</source>
-        <translation type="vanished">Insert ny linie</translation>
+        <translation>PDI Pop directional isolate (glem retningsisolering)</translation>
     </message>
 </context>
 <context>
     <name>QWhatsThisAction</name>
     <message>
         <source>What&apos;s This?</source>
-        <translation>Hvad er dette?</translation>
+        <translation>Hvad er det?</translation>
     </message>
 </context>
 <context>
     <name>QWidget</name>
     <message>
         <source>*</source>
-        <translation></translation>
+        <translation>*</translation>
     </message>
 </context>
 <context>
     <name>QWidgetTextControl</name>
     <message>
         <source>&amp;Undo</source>
-        <translation type="unfinished">&amp;Fortryd</translation>
+        <translation>&amp;Fortryd</translation>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation type="unfinished">&amp;Gendan</translation>
+        <translation>&amp;Omgør</translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation type="unfinished"></translation>
+        <translation>K&amp;lip</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kopiér</translation>
     </message>
     <message>
         <source>Copy &amp;Link Location</source>
-        <translation type="unfinished">Kopiér l&amp;ink</translation>
+        <translation>Kopiér l&amp;inkplacering</translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation type="unfinished">&amp;Sæt ind</translation>
+        <translation>&amp;Sæt ind</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished">Slet</translation>
+        <translation>Slet</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation type="unfinished">Markér alt</translation>
+        <translation>Markér alt</translation>
     </message>
 </context>
 <context>
     <name>QWindowsDirect2DIntegration</name>
     <message>
-        <source>Qt cannot load the direct2d platform plugin because the Direct2D version on this system is too old. The minimum system requirement for this platform plugin is Windows 7 SP1 with Platform Update.
-
-The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on this system is %5.%6.%7.%8.</source>
-        <translation type="unfinished"></translation>
+        <source>Cannot load direct2d platform plugin</source>
+        <translation>Kan ikke indlæse direct2d-platform-plugin</translation>
     </message>
     <message>
-        <source>Cannot load direct2d platform plugin</source>
-        <translation type="unfinished"></translation>
+        <source>Qt cannot load the direct2d platform plugin because the Direct2D version on this system is too old. The minimum system requirement for this platform plugin is Windows 7 SP1 with Platform Update.
+
+The minimum Direct2D version required is %1. The Direct2D version on this system is %2.</source>
+        <translation>Qt kan ikke indlæse direct2d-platform-pluginet fordi Direct2D-versionen på dette system er for gammel. Minimum systemkrav for dette platform-plugin er Windows 7 SP1 med platformsopdatering.
+
+Direct2D-versionen skal minimum være %1. Direct2D-versionen på dette system er %2.</translation>
     </message>
 </context>
 <context>
@@ -8141,15 +7364,11 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Commit</source>
-        <translation>Udfør</translation>
+        <translation>Gennemfør</translation>
     </message>
     <message>
         <source>Done</source>
         <translation>Færdig</translation>
-    </message>
-    <message>
-        <source>Quit</source>
-        <translation type="vanished">Afslut</translation>
     </message>
     <message>
         <source>Help</source>
@@ -8161,7 +7380,7 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>&amp;Finish</source>
-        <translation>&amp;Afslut</translation>
+        <translation>&amp;Slut</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -8181,57 +7400,6 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
 </context>
 <context>
-    <name>QWorkspace</name>
-    <message>
-        <source>&amp;Restore</source>
-        <translation type="vanished">&amp;Gendan</translation>
-    </message>
-    <message>
-        <source>&amp;Move</source>
-        <translation type="vanished">&amp;Flyt</translation>
-    </message>
-    <message>
-        <source>&amp;Size</source>
-        <translation type="vanished">&amp;Størrelse</translation>
-    </message>
-    <message>
-        <source>Mi&amp;nimize</source>
-        <translation type="vanished">Mi&amp;nimér</translation>
-    </message>
-    <message>
-        <source>Ma&amp;ximize</source>
-        <translation type="vanished">Ma&amp;ksimér</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation type="vanished">&amp;Luk</translation>
-    </message>
-    <message>
-        <source>Stay on &amp;Top</source>
-        <translation type="vanished">Bliv på &amp;toppen</translation>
-    </message>
-    <message>
-        <source>Sh&amp;ade</source>
-        <translation type="vanished">Sk&amp;ygge</translation>
-    </message>
-    <message>
-        <source>Minimize</source>
-        <translation type="vanished">Minimer</translation>
-    </message>
-    <message>
-        <source>Restore Down</source>
-        <translation type="vanished">Gendan ned</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">Luk</translation>
-    </message>
-    <message>
-        <source>&amp;Unshade</source>
-        <translation type="vanished">&amp;Fjern skygge</translation>
-    </message>
-</context>
-<context>
     <name>QXml</name>
     <message>
         <source>no error occurred</source>
@@ -8239,7 +7407,7 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>error triggered by consumer</source>
-        <translation>Fejltilstand rejst af datamodtager</translation>
+        <translation>fejl udløst af forbruger</translation>
     </message>
     <message>
         <source>unexpected end of file</source>
@@ -8247,19 +7415,19 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>more than one document type definition</source>
-        <translation>mere end én definition på dokumenttype</translation>
+        <translation>mere end én dokumenttypedefinition</translation>
     </message>
     <message>
         <source>error occurred while parsing element</source>
-        <translation>der opstod fejl under fortolking af element</translation>
+        <translation>fejl under fortolkning af element</translation>
     </message>
     <message>
         <source>tag mismatch</source>
-        <translation></translation>
+        <translation>uoverensstemmende tag</translation>
     </message>
     <message>
         <source>error occurred while parsing content</source>
-        <translation>der opstod fejl under fortolking af indhold</translation>
+        <translation>fejl under fortolkning af indhold</translation>
     </message>
     <message>
         <source>unexpected character</source>
@@ -8267,39 +7435,39 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>invalid name for processing instruction</source>
-        <translation>Ugyldigt navn for processing instruction</translation>
+        <translation>ugyldigt navn for behandlende instruktion</translation>
     </message>
     <message>
         <source>version expected while reading the XML declaration</source>
-        <translation>version forventet under læsning af XML-deklaration</translation>
+        <translation>version ventet under læsning af XML-deklarationen</translation>
     </message>
     <message>
         <source>wrong value for standalone declaration</source>
-        <translation>Forkert værdi for fri deklaration</translation>
+        <translation>forkert værdi for selvstændig deklaration</translation>
     </message>
     <message>
         <source>encoding declaration or standalone declaration expected while reading the XML declaration</source>
-        <translation>Enkodningsdeklaration eller fri deklaration forventet ved læsning af XML-deklaration</translation>
+        <translation>kodningsdeklaration eller selvstændig deklaration ventet ved læsning af XML-deklarationen</translation>
     </message>
     <message>
         <source>standalone declaration expected while reading the XML declaration</source>
-        <translation>fri deklaration forventet ved læsning af XML-deklaration</translation>
+        <translation>selvstændig deklaration ventet ved læsning af XML-deklarationen</translation>
     </message>
     <message>
         <source>error occurred while parsing document type definition</source>
-        <translation>der opstod fejl under fortolking af dokumenttypedefinition</translation>
+        <translation>fejl under fortolkning af dokumenttypedefinition</translation>
     </message>
     <message>
         <source>letter is expected</source>
-        <translation>bogstav forventet</translation>
+        <translation>bogstav er ventet</translation>
     </message>
     <message>
         <source>error occurred while parsing comment</source>
-        <translation>der opstod fejl under fortolking af kommentar</translation>
+        <translation>fejl under fortolkning af kommentar</translation>
     </message>
     <message>
         <source>error occurred while parsing reference</source>
-        <translation>der opstod fejl under fortolking af reference</translation>
+        <translation>fejl under fortolkning af reference</translation>
     </message>
     <message>
         <source>internal general entity reference not allowed in DTD</source>
@@ -8307,11 +7475,11 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>external parsed general entity reference not allowed in attribute value</source>
-        <translation>Eksternt parset generel entitetsreference ikke tilladt i attributværdi</translation>
+        <translation>eksternt fortolket generel entitetsreference ikke tilladt i attributværdi</translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in DTD</source>
-        <translation>Eksternt parset generel entitetsreference ikke tilladt i DTD</translation>
+        <translation>eksternt fortolket generel entitetsreference ikke tilladt i DTD</translation>
     </message>
     <message>
         <source>unparsed entity reference in wrong context</source>
@@ -8323,7 +7491,7 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>error in the text declaration of an external entity</source>
-        <translation>fejl i tekstdeklaration på en ekstern enhed</translation>
+        <translation>fejl i tekstdeklaration på en ekstern entitet</translation>
     </message>
 </context>
 <context>
@@ -8334,7 +7502,7 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Invalid entity value.</source>
-        <translation>Ugyldig enhedsværdi.</translation>
+        <translation>Ugyldig entitetværdi.</translation>
     </message>
     <message>
         <source>Invalid XML character.</source>
@@ -8342,39 +7510,35 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Sequence &apos;]]&gt;&apos; not allowed in content.</source>
-        <translation>Sekvens &apos;]]&gt;&apos; ikke tilladt i indhold.</translation>
+        <translation>Sekvensen &apos;]]&gt;&apos; ikke tilladt i indhold.</translation>
     </message>
     <message>
         <source>Namespace prefix &apos;%1&apos; not declared</source>
-        <translation>Navnerumspræfiks &apos;%1&apos; ikke deklareret</translation>
-    </message>
-    <message>
-        <source>Attribute redefined.</source>
-        <translation type="vanished">Attribut redefineret.</translation>
+        <translation>Navnerumspræfikset &apos;%1&apos; ikke deklareret</translation>
     </message>
     <message>
         <source>Unexpected character &apos;%1&apos; in public id literal.</source>
-        <translation>Uventet tegn &apos;%1&apos; i public id værdi.</translation>
+        <translation>Uventet tegn &apos;%1&apos; i offentlig id-literal.</translation>
     </message>
     <message>
         <source>Invalid XML version string.</source>
-        <translation>Ugyldigt XML-versionsstreng.</translation>
+        <translation>Ugyldig XML-versionsstreng.</translation>
     </message>
     <message>
         <source>Unsupported XML version.</source>
-        <translation>XML-version understøttes ikke.</translation>
+        <translation>XML-versionen understøttes ikke.</translation>
     </message>
     <message>
         <source>%1 is an invalid encoding name.</source>
-        <translation>%1 er et ugyldigt enkodningsnavn.</translation>
+        <translation>%1 er et ugyldigt kodningsnavn.</translation>
     </message>
     <message>
         <source>Encoding %1 is unsupported</source>
-        <translation>Enkodning %1 er ikke understøttet</translation>
+        <translation>Kodningen %1 understøttes ikke</translation>
     </message>
     <message>
         <source>Standalone accepts only yes or no.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selvstændig accepterer kun ja eller nej.</translation>
     </message>
     <message>
         <source>Invalid attribute in XML declaration.</source>
@@ -8382,39 +7546,23 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Premature end of document.</source>
-        <translation>Dokument sluttede for tidligt.</translation>
+        <translation>For tidlig slutning på dokument.</translation>
     </message>
     <message>
         <source>Invalid document.</source>
         <translation>Ugyldigt dokument.</translation>
     </message>
     <message>
-        <source>Expected </source>
-        <translation>Forventet</translation>
-    </message>
-    <message>
-        <source>, but got &apos;</source>
-        <translation>, men fik &apos;</translation>
-    </message>
-    <message>
-        <source>Unexpected &apos;</source>
-        <translation>Uventet &apos;</translation>
-    </message>
-    <message>
         <source>Expected character data.</source>
-        <translation>Forventet tegndata.</translation>
-    </message>
-    <message>
-        <source>Recursive entity detected.</source>
-        <translation>Rekursiv entitet opdaget.</translation>
+        <translation>Ventet tegndata.</translation>
     </message>
     <message>
         <source>Start tag expected.</source>
-        <translation>Start-tag forventet.</translation>
+        <translation>Start-tag ventet.</translation>
     </message>
     <message>
         <source>XML declaration not at start of document.</source>
-        <translation>XML-deklaration ikke i starten af dokumentet.</translation>
+        <translation>XML-deklaration ikke i start af dokument.</translation>
     </message>
     <message>
         <source>NDATA in parameter entity declaration.</source>
@@ -8422,11 +7570,11 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>%1 is an invalid processing instruction name.</source>
-        <translation>%1 er et ugyldigt processing-instruction-navn.</translation>
+        <translation>%1 er et ugyldigt behandlende instruktionsnavn.</translation>
     </message>
     <message>
         <source>Invalid processing instruction name.</source>
-        <translation>Ugyldigt processing-instruction-navn.</translation>
+        <translation>Ugyldigt behandlende instruktionsnavn.</translation>
     </message>
     <message>
         <source>Illegal namespace declaration.</source>
@@ -8438,15 +7586,15 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Opening and ending tag mismatch.</source>
-        <translation>Åbner og afslutter tag-mismatch.</translation>
+        <translation>Uoverensstemmende åbnende og afsluttende tag.</translation>
     </message>
     <message>
         <source>Reference to unparsed entity &apos;%1&apos;.</source>
-        <translation>Reference to ufortolket enhed &apos;%1&apos;.</translation>
+        <translation>Reference to ufortolket entitet &apos;%1&apos;.</translation>
     </message>
     <message>
         <source>Entity &apos;%1&apos; not declared.</source>
-        <translation>Enheden &apos;%1&apos; ikke deklareret.</translation>
+        <translation>Entiteten &apos;%1&apos; ikke deklareret.</translation>
     </message>
     <message>
         <source>Reference to external entity &apos;%1&apos; in attribute value.</source>
@@ -8458,176 +7606,59 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     </message>
     <message>
         <source>Encountered incorrectly encoded content.</source>
-        <translation>Indhold med forkert enkodning læst.</translation>
+        <translation>Mødte forkert kodet indhold.</translation>
     </message>
     <message>
         <source>The standalone pseudo attribute must appear after the encoding.</source>
-        <translation>Den frie pseudo-attribut skal optræde efter enkodningen.</translation>
+        <translation>Den selvstændige pseudo-attribut skal optræde efter kodningen.</translation>
     </message>
     <message>
         <source>%1 is an invalid PUBLIC identifier.</source>
-        <translation>%1 er en ugyldig PUBLIC identifier.</translation>
+        <translation>%1 er en ugyldig PUBLIC-identifikator.</translation>
     </message>
     <message>
         <source>Attribute &apos;%1&apos; redefined.</source>
+        <translation>Attributten &apos;%1&apos; redefineret.</translation>
+    </message>
+    <message>
+        <source>&apos;%1&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&apos;&lt;first option&gt;&apos;</extracomment>
+        <translation>&apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>%1 or &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;first option&gt;, &apos;&lt;second option&gt;&apos;</extracomment>
+        <translation>%1 eller &apos;%2&apos;</translation>
+    </message>
+    <message>
+        <source>%1, &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;options so far&gt;, &apos;&lt;next option&gt;&apos;</extracomment>
+        <translation>%1, &apos;%2&apos;</translation>
+    </message>
+    <message>
+        <source>%1, or &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;options so far&gt;, or &apos;&lt;final option&gt;&apos;</extracomment>
+        <translation>%1 eller &apos;%2&apos;</translation>
+    </message>
+    <message>
+        <source>Expected %1, but got &apos;%2&apos;.</source>
+        <translation>Ventede %1, men fik &apos;%2&apos;.</translation>
+    </message>
+    <message>
+        <source>Unexpected &apos;%1&apos;.</source>
+        <translation>Uventet &apos;%1&apos;.</translation>
+    </message>
+    <message>
+        <source>Self-referencing entity detected.</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>QtXmlPatterns</name>
     <message>
-        <source>An %1-attribute with value %2 has already been declared.</source>
-        <translation type="vanished">En %1-attribut med værdi %2 er allerede erklæret.</translation>
-    </message>
-    <message>
-        <source>An %1-attribute must have a valid %2 as value, which %3 isn&apos;t.</source>
-        <translation type="vanished">En %1-attribut skal have en gyldig %2 som værdi, hvilket %3 ikke er.</translation>
-    </message>
-    <message>
-        <source>Network timeout.</source>
-        <translation type="vanished">Netværk timeout.</translation>
-    </message>
-    <message>
-        <source>Element %1 can&apos;t be serialized because it appears outside the document element.</source>
-        <translation type="vanished">Element %1 kan ikke serialiseres fordi det optræder udenfor dokument-elementet.</translation>
-    </message>
-    <message>
-        <source>Year %1 is invalid because it begins with %2.</source>
-        <translation type="vanished">År %1 er ugyldigt da det begynder med %2.</translation>
-    </message>
-    <message>
-        <source>Day %1 is outside the range %2..%3.</source>
-        <translation type="vanished">Dag %1 er udenfor intervallet %2..%3.</translation>
-    </message>
-    <message>
-        <source>Month %1 is outside the range %2..%3.</source>
-        <translation type="vanished">Måned %1 er udenfor intervallet %2..%3.</translation>
-    </message>
-    <message>
-        <source>Overflow: Can&apos;t represent date %1.</source>
-        <translation type="vanished">Overflow: Kan ikke repræsentere dato %1.</translation>
-    </message>
-    <message>
-        <source>Day %1 is invalid for month %2.</source>
-        <translation type="vanished">Dag %1 er ugyldig for månet %2.</translation>
-    </message>
-    <message>
-        <source>Time 24:%1:%2.%3 is invalid. Hour is 24, but minutes, seconds, and milliseconds are not all 0; </source>
-        <translation type="vanished">Tidspunkt 24:%1:%2.%3 er ugyldigt. Timetal er 24, men minutter, sekunder og millisekunder er ikke alle 0; </translation>
-    </message>
-    <message>
-        <source>Time %1:%2:%3.%4 is invalid.</source>
-        <translation type="vanished">Tidspunkt %1:%2:%3.%4 er ugyldigt.</translation>
-    </message>
-    <message>
-        <source>Overflow: Date can&apos;t be represented.</source>
-        <translation type="vanished">Overflow: Dato kan ikke repræsenteres.</translation>
-    </message>
-    <message>
-        <source>At least one component must be present.</source>
-        <translation type="vanished">Mindst en komponent skal være tilstede.</translation>
-    </message>
-    <message>
-        <source>At least one time component must appear after the %1-delimiter.</source>
-        <translation type="vanished">Mindst en tidskomponent skal optræde efter %1-skillemærket.</translation>
-    </message>
-    <message>
-        <source>No operand in an integer division, %1, can be %2.</source>
-        <translation type="vanished">Ingen operand i en heltalsdivision, %1, kan være %2.</translation>
-    </message>
-    <message>
-        <source>The first operand in an integer division, %1, cannot be infinity (%2).</source>
-        <translation type="vanished">Den første operand i en heltalsdivision, %1, kan ikke være uendeligt (%2).</translation>
-    </message>
-    <message>
-        <source>The second operand in a division, %1, cannot be zero (%2).</source>
-        <translation type="vanished">Den anden operand i en division, %1, kan ikke være nul (%2).</translation>
-    </message>
-    <message>
-        <source>%1 is not a valid value of type %2.</source>
-        <translation type="vanished">%1 er ikke en gyldig værdi af typen %2.</translation>
-    </message>
-    <message>
-        <source>When casting to %1 from %2, the source value cannot be %3.</source>
-        <translation type="vanished">Ved cast til %1 fra %2, kan kildeværdien ikke være %3.</translation>
-    </message>
-    <message>
-        <source>Integer division (%1) by zero (%2) is undefined.</source>
-        <translation type="vanished">Heltalsdivision (%1) med nul (%2) er udefineret.</translation>
-    </message>
-    <message>
-        <source>Division (%1) by zero (%2) is undefined.</source>
-        <translation type="vanished">Division (%1) med nul (%2) er udefineret.</translation>
-    </message>
-    <message>
-        <source>Modulus division (%1) by zero (%2) is undefined.</source>
-        <translation type="vanished">Modulusdivision (%1) med nul (%2) er udefineret.</translation>
-    </message>
-    <message>
-        <source>Dividing a value of type %1 by %2 (not-a-number) is not allowed.</source>
-        <translation type="vanished">Division af værdi af typen %1 med %2 (ikke et tal) er ikke tilladt.</translation>
-    </message>
-</context>
-<context>
-    <name>VolumeSlider</name>
-    <message>
-        <source>Volume: %1%</source>
-        <translation type="vanished">Lydstyrke: %1%</translation>
-    </message>
-</context>
-<context>
-    <name>WebCore::PlatformScrollbar</name>
-    <message>
-        <source>Scroll here</source>
-        <translation type="vanished">Rul her</translation>
-    </message>
-    <message>
-        <source>Left edge</source>
-        <translation type="vanished">Venstre kant</translation>
-    </message>
-    <message>
-        <source>Top</source>
-        <translation type="vanished">Top</translation>
-    </message>
-    <message>
-        <source>Right edge</source>
-        <translation type="vanished">Højre kant</translation>
-    </message>
-    <message>
-        <source>Bottom</source>
-        <translation type="vanished">Bund</translation>
-    </message>
-    <message>
-        <source>Page left</source>
-        <translation type="vanished">Side venstre</translation>
-    </message>
-    <message>
-        <source>Page up</source>
-        <translation type="vanished">Side øverst</translation>
-    </message>
-    <message>
-        <source>Page right</source>
-        <translation type="vanished">Side højre</translation>
-    </message>
-    <message>
-        <source>Page down</source>
-        <translation type="vanished">Side ned</translation>
-    </message>
-    <message>
-        <source>Scroll left</source>
-        <translation type="vanished">Rul til venstre</translation>
-    </message>
-    <message>
-        <source>Scroll up</source>
-        <translation type="vanished">Rul op</translation>
-    </message>
-    <message>
-        <source>Scroll right</source>
-        <translation type="vanished">Rul til højre</translation>
-    </message>
-    <message>
-        <source>Scroll down</source>
-        <translation type="vanished">Rul ned</translation>
+        <source>Entity expands to more characters than the entity expansion limit.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

@@ -2,21 +2,6 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="ko">
 <context>
-    <name>AudioOutput</name>
-    <message>
-        <source>&lt;html&gt;The audio playback device &lt;b&gt;%1&lt;/b&gt; does not work.&lt;br/&gt;Falling back to &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</source>
-        <translation type="vanished">&lt;html&gt;오디오 재생 장치 &lt;b&gt;%1&lt;/b&gt;이(가) 작동하지 않습니다.&lt;br/&gt;다음 장치로 전환합니다: &lt;b&gt;%2&lt;/b&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;html&gt;Switching to the audio playback device &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;which just became available and has higher preference.&lt;/html&gt;</source>
-        <translation type="vanished">&lt;html&gt;지금 사용할 수 있게 된 우선 순위가 높은 오디오 장치&lt;br /&gt;&lt;b&gt;%1&lt;/b&gt;(으)로 전환합니다.&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>Revert back to device &apos;%1&apos;</source>
-        <translation type="vanished">장치 &apos;%1&apos;(으)로 되돌아감</translation>
-    </message>
-</context>
-<context>
     <name>CloseButton</name>
     <message>
         <source>Close Tab</source>
@@ -55,622 +40,29 @@
     </message>
 </context>
 <context>
-    <name>Phonon::</name>
+    <name>Print Device Input Slot</name>
     <message>
-        <source>Notifications</source>
-        <translation type="vanished">알림</translation>
-    </message>
-    <message>
-        <source>Music</source>
-        <translation type="vanished">음악</translation>
-    </message>
-    <message>
-        <source>Video</source>
-        <translation type="vanished">비디오</translation>
-    </message>
-    <message>
-        <source>Communication</source>
-        <translation type="vanished">대화</translation>
-    </message>
-    <message>
-        <source>Games</source>
-        <translation type="vanished">게임</translation>
-    </message>
-    <message>
-        <source>Accessibility</source>
-        <translation type="vanished">접근성</translation>
+        <source>Automatic</source>
+        <translation>자동</translation>
     </message>
 </context>
 <context>
-    <name>Phonon::Gstreamer::Backend</name>
+    <name>Print Device Output Bin</name>
     <message>
-        <source>Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.
-          Some video features have been disabled.</source>
-        <translation type="vanished">경고: gstreamer0.10-plugins-good 패키지가 없는 것 같습니다.
-          일부 비디오 기능을 사용할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Warning: You do not seem to have the base GStreamer plugins installed.
-          All audio and video support has been disabled</source>
-        <translation type="vanished">경고: GStreamer 기본 플러그인이 없는 것 같습니다.
-          모든 오디오 및 비디오 지원을 사용할 수 없습니다</translation>
-    </message>
-</context>
-<context>
-    <name>Phonon::Gstreamer::MediaObject</name>
-    <message>
-        <source>Cannot start playback. 
-
-Check your Gstreamer installation and make sure you 
-have libgstreamer-plugins-base installed.</source>
-        <translation type="vanished">재생을 시작할 수 없습니다.
-
-Gstreamer 설치 상태를 확인해 보시고
-libgstreamer-plugins-base 패키지의 설치 상태를 확인해 보십시오.</translation>
-    </message>
-    <message numerus="yes">
-        <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
-        <translation type="vanished">
-            <numerusform>필요한 코덱이 없습니다. 이 컨텐츠를 재생하려면 다음 코덱이 필요합니다: %0</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Could not open media source.</source>
-        <translation type="vanished">미디어 원본을 열 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Invalid source type.</source>
-        <translation type="vanished">원본 종류가 잘못되었습니다.</translation>
-    </message>
-    <message>
-        <source>Could not locate media source.</source>
-        <translation type="vanished">미디어 원본을 찾을 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Could not open audio device. The device is already in use.</source>
-        <translation type="vanished">오디오 장치를 열 수 없습니다. 장치가 사용 중입니다.</translation>
-    </message>
-    <message>
-        <source>Could not decode media source.</source>
-        <translation type="vanished">미디어 원본을 디코딩할 수 없습니다.</translation>
-    </message>
-</context>
-<context>
-    <name>Phonon::VolumeSlider</name>
-    <message>
-        <source>Volume: %1%</source>
-        <translation type="vanished">음량: %1%</translation>
-    </message>
-    <message>
-        <source>Use this slider to adjust the volume. The leftmost position is 0%, the rightmost is %1%</source>
-        <translation type="vanished">이 슬라이더를 사용하여 음량을 조정하십시오. 맨 왼쪽은 0%, 맨 오른쪽은 %1%입니다</translation>
-    </message>
-</context>
-<context>
-    <name>Q3Accel</name>
-    <message>
-        <source>%1, %2 not defined</source>
-        <translation type="vanished">%1, %2이(가) 정의되지 않았습니다</translation>
-    </message>
-    <message>
-        <source>Ambiguous %1 not handled</source>
-        <translation type="vanished">모호한 %1이(가) 처리되지 않았습니다</translation>
-    </message>
-</context>
-<context>
-    <name>Q3DataTable</name>
-    <message>
-        <source>True</source>
-        <translation type="vanished">참</translation>
-    </message>
-    <message>
-        <source>False</source>
-        <translation type="vanished">거짓</translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <translation type="vanished">삽입</translation>
-    </message>
-    <message>
-        <source>Update</source>
-        <translation type="vanished">삭제</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">업데이트</translation>
-    </message>
-</context>
-<context>
-    <name>Q3FileDialog</name>
-    <message>
-        <source>Copy or Move a File</source>
-        <translation type="vanished">파일 복사 또는 이동</translation>
-    </message>
-    <message>
-        <source>Read: %1</source>
-        <translation type="vanished">읽기: %1</translation>
-    </message>
-    <message>
-        <source>Write: %1</source>
-        <translation type="vanished">쓰기: %1</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">취소</translation>
-    </message>
-    <message>
-        <source>All Files (*)</source>
-        <translation type="vanished">모든 파일 (*)</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">이름</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation type="vanished">크기</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <translation type="vanished">종류</translation>
-    </message>
-    <message>
-        <source>Date</source>
-        <translation type="vanished">날짜</translation>
-    </message>
-    <message>
-        <source>Attributes</source>
-        <translation type="vanished">속성</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="vanished">확인(&amp;O)</translation>
-    </message>
-    <message>
-        <source>Look &amp;in:</source>
-        <translation type="vanished">다음에서 찾기(&amp;I):</translation>
-    </message>
-    <message>
-        <source>File &amp;name:</source>
-        <translation type="vanished">파일 이름(&amp;N):</translation>
-    </message>
-    <message>
-        <source>File &amp;type:</source>
-        <translation type="vanished">파일 형식(&amp;T):</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation type="vanished">뒤로</translation>
-    </message>
-    <message>
-        <source>One directory up</source>
-        <translation type="vanished">한 단계 위로</translation>
-    </message>
-    <message>
-        <source>Create New Folder</source>
-        <translation type="vanished">새 폴더 만들기</translation>
-    </message>
-    <message>
-        <source>List View</source>
-        <translation type="vanished">목록으로 보기</translation>
-    </message>
-    <message>
-        <source>Detail View</source>
-        <translation type="vanished">자세히 보기</translation>
-    </message>
-    <message>
-        <source>Preview File Info</source>
-        <translation type="vanished">파일 정보 미리 보기</translation>
-    </message>
-    <message>
-        <source>Preview File Contents</source>
-        <translation type="vanished">파일 내용 미리 보기</translation>
-    </message>
-    <message>
-        <source>Read-write</source>
-        <translation type="vanished">읽기-쓰기</translation>
-    </message>
-    <message>
-        <source>Read-only</source>
-        <translation type="vanished">읽기 전용</translation>
-    </message>
-    <message>
-        <source>Write-only</source>
-        <translation type="vanished">쓰기 전용</translation>
-    </message>
-    <message>
-        <source>Inaccessible</source>
-        <translation type="vanished">접근할 수 없음</translation>
-    </message>
-    <message>
-        <source>Symlink to File</source>
-        <translation type="vanished">파일로 향한 링크</translation>
-    </message>
-    <message>
-        <source>Symlink to Directory</source>
-        <translation type="vanished">디렉터리로 향한 링크</translation>
-    </message>
-    <message>
-        <source>Symlink to Special</source>
-        <translation type="vanished">특수 파일로 향한 링크</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation type="vanished">파일</translation>
-    </message>
-    <message>
-        <source>Dir</source>
-        <translation type="vanished">디렉터리</translation>
-    </message>
-    <message>
-        <source>Special</source>
-        <translation type="vanished">특수 파일</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">열기</translation>
-    </message>
-    <message>
-        <source>Save As</source>
-        <translation type="vanished">다른 이름으로 저장</translation>
-    </message>
-    <message>
-        <source>&amp;Open</source>
-        <translation type="vanished">열기(&amp;O)</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <translation type="vanished">저장(&amp;S)</translation>
-    </message>
-    <message>
-        <source>&amp;Rename</source>
-        <translation type="vanished">이름 바꾸기(&amp;R)</translation>
-    </message>
-    <message>
-        <source>&amp;Delete</source>
-        <translation type="vanished">삭제(&amp;D)</translation>
-    </message>
-    <message>
-        <source>R&amp;eload</source>
-        <translation type="vanished">새로 고침(&amp;E)</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Name</source>
-        <translation type="vanished">이름으로 정렬(&amp;N)</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Size</source>
-        <translation type="vanished">크기로 정렬(&amp;S)</translation>
-    </message>
-    <message>
-        <source>Sort by &amp;Date</source>
-        <translation type="vanished">날짜로 정렬(&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Unsorted</source>
-        <translation type="vanished">정렬하지 않음(&amp;U)</translation>
-    </message>
-    <message>
-        <source>Sort</source>
-        <translation type="vanished">정렬</translation>
-    </message>
-    <message>
-        <source>Show &amp;hidden files</source>
-        <translation type="vanished">숨김 파일 보이기(&amp;H)</translation>
-    </message>
-    <message>
-        <source>the file</source>
-        <translation type="vanished">파일</translation>
-    </message>
-    <message>
-        <source>the directory</source>
-        <translation type="vanished">디렉터리</translation>
-    </message>
-    <message>
-        <source>the symlink</source>
-        <translation type="vanished">링크</translation>
-    </message>
-    <message>
-        <source>Delete %1</source>
-        <translation type="vanished">%1 삭제</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Are you sure you wish to delete %1 &quot;%2&quot;?&lt;/qt&gt;</source>
-        <translation type="vanished">&lt;qt&gt;%1 &quot;%2&quot;을(를) 삭제하시겠습까?&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Yes</source>
-        <translation type="vanished">예(&amp;Y)</translation>
-    </message>
-    <message>
-        <source>&amp;No</source>
-        <translation type="vanished">아니오(&amp;N)</translation>
-    </message>
-    <message>
-        <source>New Folder 1</source>
-        <translation type="vanished">새 폴더 1</translation>
-    </message>
-    <message>
-        <source>New Folder</source>
-        <translation type="vanished">새 폴더</translation>
-    </message>
-    <message>
-        <source>New Folder %1</source>
-        <translation type="vanished">새 폴더 %1</translation>
-    </message>
-    <message>
-        <source>Find Directory</source>
-        <translation type="vanished">디렉터리 찾기</translation>
-    </message>
-    <message>
-        <source>Directories</source>
-        <translation type="vanished">디렉터리</translation>
-    </message>
-    <message>
-        <source>Directory:</source>
-        <translation type="vanished">디렉터리:</translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <translation type="vanished">오류</translation>
-    </message>
-    <message>
-        <source>%1
-File not found.
-Check path and filename.</source>
-        <translation type="vanished">%1
-파일을 찾을 수 없습니다.
-경로와 파일 이름을 확인하십시오.</translation>
-    </message>
-</context>
-<context>
-    <name>Q3LocalFs</name>
-    <message>
-        <source>Could not read directory
-%1</source>
-        <translation type="vanished">다음 디렉터리를 읽을 수 없음
-%1</translation>
-    </message>
-    <message>
-        <source>Could not create directory
-%1</source>
-        <translation type="vanished">다음 디렉터리를 만들 수 없음
-%1</translation>
-    </message>
-    <message>
-        <source>Could not remove file or directory
-%1</source>
-        <translation type="vanished">파일이나 디렉터리를 삭제할 수 없음
-%1</translation>
-    </message>
-    <message>
-        <source>Could not rename
-%1
-to
-%2</source>
-        <translation type="vanished">%1
-의 이름을
-%2
-(으)로 바꿀 수 없음</translation>
-    </message>
-    <message>
-        <source>Could not open
-%1</source>
-        <translation type="vanished">다음을 열 수 없음
-%1</translation>
-    </message>
-    <message>
-        <source>Could not write
-%1</source>
-        <translation type="vanished">다음에 쓸 수 없음
-%1</translation>
-    </message>
-</context>
-<context>
-    <name>Q3MainWindow</name>
-    <message>
-        <source>Line up</source>
-        <translation type="vanished">정렬하기</translation>
-    </message>
-    <message>
-        <source>Customize...</source>
-        <translation type="vanished">사용자 정의...</translation>
-    </message>
-</context>
-<context>
-    <name>Q3NetworkProtocol</name>
-    <message>
-        <source>Operation stopped by the user</source>
-        <translation type="vanished">사용자가 동작을 중지함</translation>
-    </message>
-</context>
-<context>
-    <name>Q3ProgressDialog</name>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">취소</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TabDialog</name>
-    <message>
-        <source>OK</source>
-        <translation type="vanished">확인</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="vanished">적용</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="vanished">도움말</translation>
-    </message>
-    <message>
-        <source>Defaults</source>
-        <translation type="vanished">기본값 복원</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">취소</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TextEdit</name>
-    <message>
-        <source>&amp;Undo</source>
-        <translation type="vanished">실행 취소(&amp;U)</translation>
-    </message>
-    <message>
-        <source>&amp;Redo</source>
-        <translation type="vanished">다시 실행(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Cu&amp;t</source>
-        <translation type="vanished">잘라내기(&amp;T)</translation>
-    </message>
-    <message>
-        <source>&amp;Copy</source>
-        <translation type="vanished">복사(&amp;C)</translation>
-    </message>
-    <message>
-        <source>&amp;Paste</source>
-        <translation type="vanished">붙여넣기(&amp;P)</translation>
-    </message>
-    <message>
-        <source>Clear</source>
-        <translation type="vanished">지우기</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation type="vanished">모두 선택</translation>
-    </message>
-</context>
-<context>
-    <name>Q3TitleBar</name>
-    <message>
-        <source>System</source>
-        <translation type="vanished">시스템</translation>
-    </message>
-    <message>
-        <source>Restore up</source>
-        <translation type="vanished">복원</translation>
-    </message>
-    <message>
-        <source>Minimize</source>
-        <translation type="vanished">최소화</translation>
-    </message>
-    <message>
-        <source>Restore down</source>
-        <translation type="vanished">복원</translation>
-    </message>
-    <message>
-        <source>Maximize</source>
-        <translation type="vanished">최대화</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">닫기</translation>
-    </message>
-    <message>
-        <source>Contains commands to manipulate the window</source>
-        <translation type="vanished">창을 조작하는 명령을 포함합니다</translation>
-    </message>
-    <message>
-        <source>Puts a minimized back to normal</source>
-        <translation type="vanished">최소화된 창을 되돌립니다</translation>
-    </message>
-    <message>
-        <source>Moves the window out of the way</source>
-        <translation type="vanished">창을 이동시킵니다</translation>
-    </message>
-    <message>
-        <source>Puts a maximized window back to normal</source>
-        <translation type="vanished">최대화된 창을 되돌립니다</translation>
-    </message>
-    <message>
-        <source>Makes the window full screen</source>
-        <translation type="vanished">창을 전체 화면으로 만듭니다</translation>
-    </message>
-    <message>
-        <source>Closes the window</source>
-        <translation type="vanished">창을 닫습니다</translation>
-    </message>
-    <message>
-        <source>Holds the name of the window and contains controls to manipulate it</source>
-        <translation type="vanished">창의 이름을 보여주고 조작하기 위한 컨트롤을 포함합니다</translation>
-    </message>
-</context>
-<context>
-    <name>Q3ToolBar</name>
-    <message>
-        <source>More...</source>
-        <translation type="vanished">더 보기...</translation>
-    </message>
-</context>
-<context>
-    <name>Q3UrlOperator</name>
-    <message>
-        <source>The protocol `%1&apos; is not supported</source>
-        <translation type="vanished">프로토콜 `%1&apos;은(는) 지원하지 않습니다</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support listing directories</source>
-        <translation type="vanished">프로토콜 `%1&apos;에서 디렉터리 목록을 볼 수 없습니다</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support creating new directories</source>
-        <translation type="vanished">프로토콜 `%1&apos;에서 새 디렉터리를 만들 수 없습니다</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support removing files or directories</source>
-        <translation type="vanished">프로토콜 `%1&apos;에서 파일이나 디렉터리를 삭제할 수 없습니다</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support renaming files or directories</source>
-        <translation type="vanished">프로토콜 `%1&apos;에서 파일이나 디렉터리의 이름을 바꿀 수 없습니다</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support getting files</source>
-        <translation type="vanished">프로토콜 `%1&apos;에서 파일을 가져올 수 없습니다</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support putting files</source>
-        <translation type="vanished">프로토콜 `%1&apos;에서 파일을 올릴 수 없습니다</translation>
-    </message>
-    <message>
-        <source>The protocol `%1&apos; does not support copying or moving files or directories</source>
-        <translation type="vanished">프로토콜 `%1&apos;에서 파일이나 디렉터리를 복사하거나 이동할 수 없습니다</translation>
-    </message>
-    <message>
-        <source>(unknown)</source>
-        <translation type="vanished">(알 수 없음)</translation>
-    </message>
-</context>
-<context>
-    <name>Q3Wizard</name>
-    <message>
-        <source>&amp;Cancel</source>
-        <translation type="vanished">취소(&amp;C)</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation type="vanished">&lt; 이전(&amp;B)</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation type="vanished">다음 (&amp;N) &gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation type="vanished">완료(&amp;F)</translation>
-    </message>
-    <message>
-        <source>&amp;Help</source>
-        <translation type="vanished">도움말(&amp;H)</translation>
+        <source>Automatic</source>
+        <translation>자동</translation>
     </message>
 </context>
 <context>
     <name>QAbstractSocket</name>
+    <message>
+        <source>Socket operation timed out</source>
+        <translation>소켓 작업 시간 초과</translation>
+    </message>
+    <message>
+        <source>Operation on socket is not supported</source>
+        <translation>소켓 작업이 지원되지 않음</translation>
+    </message>
     <message>
         <source>Host not found</source>
         <translation>호스트를 찾을 수 없음</translation>
@@ -678,18 +70,6 @@ to
     <message>
         <source>Connection refused</source>
         <translation>연결이 거부됨</translation>
-    </message>
-    <message>
-        <source>Socket operation timed out</source>
-        <translation>소켓 작업 시간 초과</translation>
-    </message>
-    <message>
-        <source>Socket is not connected</source>
-        <translation>소켓이 연결되지 않음</translation>
-    </message>
-    <message>
-        <source>Operation on socket is not supported</source>
-        <translation>소켓 작업이 지원되지 않음</translation>
     </message>
     <message>
         <source>Connection timed out</source>
@@ -700,6 +80,10 @@ to
         <translation>연결이 진행 중일 때 연결하려고 함</translation>
     </message>
     <message>
+        <source>Socket is not connected</source>
+        <translation>소켓이 연결되지 않음</translation>
+    </message>
+    <message>
         <source>Network unreachable</source>
         <translation>네트워크에 접근할 수 없음</translation>
     </message>
@@ -707,16 +91,16 @@ to
 <context>
     <name>QAbstractSpinBox</name>
     <message>
+        <source>&amp;Select All</source>
+        <translation>모두 선택(&amp;S)</translation>
+    </message>
+    <message>
         <source>&amp;Step up</source>
         <translation>한 단계 위로(&amp;S)</translation>
     </message>
     <message>
         <source>Step &amp;down</source>
         <translation>한 단계 아래로(&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Select All</source>
-        <translation>모두 선택(&amp;S)</translation>
     </message>
 </context>
 <context>
@@ -746,6 +130,30 @@ to
         <translation>전환</translation>
     </message>
     <message>
+        <source>Scroll Left</source>
+        <translation type="unfinished">왼쪽으로 스크롤</translation>
+    </message>
+    <message>
+        <source>Scroll Right</source>
+        <translation type="unfinished">오른쪽으로 스크롤</translation>
+    </message>
+    <message>
+        <source>Scroll Up</source>
+        <translation>위로 스크롤</translation>
+    </message>
+    <message>
+        <source>Scroll Down</source>
+        <translation>아래로 스크롤</translation>
+    </message>
+    <message>
+        <source>Previous Page</source>
+        <translation>이전 쪽</translation>
+    </message>
+    <message>
+        <source>Next Page</source>
+        <translation>다음 쪽</translation>
+    </message>
+    <message>
         <source>Triggers the action</source>
         <translation>동작을 실행함</translation>
     </message>
@@ -770,52 +178,28 @@ to
         <translation>상태를 전환함</translation>
     </message>
     <message>
-        <source>Scroll Left</source>
-        <translation type="unfinished">왼쪽으로 스크롤</translation>
-    </message>
-    <message>
-        <source>Scroll Right</source>
-        <translation type="unfinished">오른쪽으로 스크롤</translation>
-    </message>
-    <message>
-        <source>Scroll Up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Scroll Down</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Previous Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Next Page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Scrolls to the left</source>
-        <translation type="unfinished"></translation>
+        <translation>왼쪽으로 스크롤</translation>
     </message>
     <message>
         <source>Scrolls to the right</source>
-        <translation type="unfinished"></translation>
+        <translation>오른쪽으로 스크롤</translation>
     </message>
     <message>
         <source>Scrolls up</source>
-        <translation type="unfinished"></translation>
+        <translation>위로 스크롤</translation>
     </message>
     <message>
         <source>Scrolls down</source>
-        <translation type="unfinished"></translation>
+        <translation>아래로 스크롤</translation>
     </message>
     <message>
         <source>Goes back a page</source>
-        <translation type="unfinished"></translation>
+        <translation>이전 쪽으로 이동</translation>
     </message>
     <message>
         <source>Goes to the next page</source>
-        <translation type="unfinished"></translation>
+        <translation>다음 쪽으로 이동</translation>
     </message>
 </context>
 <context>
@@ -840,40 +224,12 @@ to
 <context>
     <name>QApplication</name>
     <message>
-        <source>Activate</source>
-        <translation type="vanished">활성화</translation>
-    </message>
-    <message>
         <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
         <translation>실행 파일 &apos;%1&apos;은(는) Qt %2을(를) 필요로 하지만 현재 Qt %3이(가) 설치되어 있습니다.</translation>
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
         <translation>Qt 라이브러리 호환성 오류</translation>
-    </message>
-    <message>
-        <source>QT_LAYOUT_DIRECTION</source>
-        <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
-        <translation type="vanished">LTR</translation>
-    </message>
-    <message>
-        <source>Activates the program&apos;s main window</source>
-        <translation type="vanished">프로그램의 주 창 활성화</translation>
-    </message>
-</context>
-<context>
-    <name>QCheckBox</name>
-    <message>
-        <source>Uncheck</source>
-        <translation type="vanished">선택 해제</translation>
-    </message>
-    <message>
-        <source>Check</source>
-        <translation type="vanished">선택</translation>
-    </message>
-    <message>
-        <source>Toggle</source>
-        <translation type="vanished">선택 반전</translation>
     </message>
 </context>
 <context>
@@ -969,6 +325,24 @@ to
         <translation>투명도(&amp;L):</translation>
     </message>
     <message>
+        <source>&amp;HTML:</source>
+        <translation>HTML(&amp;H):</translation>
+    </message>
+    <message>
+        <source>Cursor at %1, %2
+Press ESC to cancel</source>
+        <translation>커서 위치: %1, %2
+ESC 키를 누르면 취소합니다</translation>
+    </message>
+    <message>
+        <source>&amp;Pick Screen Color</source>
+        <translation>화면 색상 선택(&amp;P)</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>색 선택</translation>
+    </message>
+    <message>
         <source>&amp;Basic colors</source>
         <translation>기본 색상(&amp;B)</translation>
     </message>
@@ -980,43 +354,12 @@ to
         <source>&amp;Add to Custom Colors</source>
         <translation>사용자 정의 색상에 추가(&amp;A)</translation>
     </message>
-    <message>
-        <source>Select color</source>
-        <translation type="vanished">색 선택</translation>
-    </message>
-    <message>
-        <source>&amp;HTML:</source>
-        <translation>HTML(&amp;H):</translation>
-    </message>
-    <message>
-        <source>Cursor at %1, %2, color: %3
-Press ESC to cancel</source>
-        <translation type="vanished">커서 위치: %1, %2, 색: %3
-ESC 키를 누르면 취소합니다</translation>
-    </message>
-    <message>
-        <source>Select Color</source>
-        <translation>색 선택</translation>
-    </message>
-    <message>
-        <source>Pick Screen Color</source>
-        <translation type="vanished">화면 색상 선택</translation>
-    </message>
-    <message>
-        <source>Cursor at %1, %2
-Press ESC to cancel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Pick Screen Color</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>QComboBox</name>
     <message>
-        <source>Open</source>
-        <translation type="vanished">열기</translation>
+        <source>Open the combo box selection popup</source>
+        <translation>콤보 상자 선택 팝업 열기</translation>
     </message>
     <message>
         <source>False</source>
@@ -1026,14 +369,6 @@ Press ESC to cancel</source>
         <source>True</source>
         <translation>참</translation>
     </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">닫기</translation>
-    </message>
-    <message>
-        <source>Open the combo box selection popup</source>
-        <translation>콤보 상자 선택 팝업 열기</translation>
-    </message>
 </context>
 <context>
     <name>QCommandLineParser</name>
@@ -1042,8 +377,12 @@ Press ESC to cancel</source>
         <translation>버전 정보를 표시합니다.</translation>
     </message>
     <message>
-        <source>Displays this help.</source>
-        <translation>이 도움말을 표시합니다.</translation>
+        <source>Displays help on commandline options.</source>
+        <translation>명령행 옵션 도움말을 표시합니다.</translation>
+    </message>
+    <message>
+        <source>Displays help including Qt specific options.</source>
+        <translation>Qt 지정 옵션을 포함한 도움말을 표시합니다.</translation>
     </message>
     <message>
         <source>Unknown option &apos;%1&apos;.</source>
@@ -1080,31 +419,6 @@ Press ESC to cancel</source>
 </context>
 <context>
     <name>QCoreApplication</name>
-    <message>
-        <source>%1: permission denied</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: 권한이 거부됨</translation>
-    </message>
-    <message>
-        <source>%1: already exists</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: 이미 존재함</translation>
-    </message>
-    <message>
-        <source>%1: doesn&apos;t exists</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: 존재하지 않음</translation>
-    </message>
-    <message>
-        <source>%1: out of resources</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: 자원 부족</translation>
-    </message>
-    <message>
-        <source>%1: unknown error %2</source>
-        <comment>QSystemSemaphore</comment>
-        <translation type="vanished">%1: 알 수 없는 오류 %2</translation>
-    </message>
     <message>
         <source>%1: key is empty</source>
         <comment>QSystemSemaphore</comment>
@@ -1226,6 +540,29 @@ Press ESC to cancel</source>
     </message>
 </context>
 <context>
+    <name>QCupsPrinterSupport</name>
+    <message>
+        <source>Authentication Needed</source>
+        <translation>인증이 필요함</translation>
+    </message>
+    <message>
+        <source>Authentication needed to use %1.</source>
+        <translation>%1을(를) 사용하려면 인증해야 합니다.</translation>
+    </message>
+    <message>
+        <source>Authentication needed to use %1 on %2.</source>
+        <translation>%2의 %1을(를) 사용하려면 인증해야 합니다.</translation>
+    </message>
+    <message>
+        <source>Username:</source>
+        <translation>사용자 이름:</translation>
+    </message>
+    <message>
+        <source>Password:</source>
+        <translation>암호:</translation>
+    </message>
+</context>
+<context>
     <name>QDB2Driver</name>
     <message>
         <source>Unable to connect</source>
@@ -1279,25 +616,6 @@ Press ESC to cancel</source>
     </message>
 </context>
 <context>
-    <name>QDateTimeEdit</name>
-    <message>
-        <source>AM</source>
-        <translation type="vanished">오전</translation>
-    </message>
-    <message>
-        <source>am</source>
-        <translation type="vanished">오전</translation>
-    </message>
-    <message>
-        <source>PM</source>
-        <translation type="vanished">오후</translation>
-    </message>
-    <message>
-        <source>pm</source>
-        <translation type="vanished">오후</translation>
-    </message>
-</context>
-<context>
     <name>QDateTimeParser</name>
     <message>
         <source>AM</source>
@@ -1317,29 +635,10 @@ Press ESC to cancel</source>
     </message>
 </context>
 <context>
-    <name>QDial</name>
-    <message>
-        <source>QDial</source>
-        <translation type="vanished">QDial</translation>
-    </message>
-    <message>
-        <source>SpeedoMeter</source>
-        <translation type="vanished">속도계</translation>
-    </message>
-    <message>
-        <source>SliderHandle</source>
-        <translation type="vanished">슬라이더 핸들</translation>
-    </message>
-</context>
-<context>
     <name>QDialog</name>
     <message>
         <source>What&apos;s This?</source>
         <translation>이것에 대한 설명</translation>
-    </message>
-    <message>
-        <source>Done</source>
-        <translation type="vanished">완료</translation>
     </message>
 </context>
 <context>
@@ -1347,86 +646,6 @@ Press ESC to cancel</source>
     <message>
         <source>OK</source>
         <translation>확인</translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation type="vanished">저장</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">열기</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">취소</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">닫기</translation>
-    </message>
-    <message>
-        <source>Apply</source>
-        <translation type="vanished">적용</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <translation type="vanished">초기화</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="vanished">도움말</translation>
-    </message>
-    <message>
-        <source>Don&apos;t Save</source>
-        <translation type="vanished">저장하지 않음</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation type="vanished">무시</translation>
-    </message>
-    <message>
-        <source>&amp;Yes</source>
-        <translation type="vanished">예(&amp;Y)</translation>
-    </message>
-    <message>
-        <source>Yes to &amp;All</source>
-        <translation type="vanished">모두 예(&amp;A)</translation>
-    </message>
-    <message>
-        <source>&amp;No</source>
-        <translation type="vanished">아니오(&amp;N)</translation>
-    </message>
-    <message>
-        <source>N&amp;o to All</source>
-        <translation type="vanished">모두 아니오(&amp;O)</translation>
-    </message>
-    <message>
-        <source>Save All</source>
-        <translation type="vanished">모두 저장</translation>
-    </message>
-    <message>
-        <source>Abort</source>
-        <translation type="vanished">중단</translation>
-    </message>
-    <message>
-        <source>Retry</source>
-        <translation type="vanished">다시 시도</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <translation type="vanished">무시</translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation type="vanished">기본값 복원</translation>
-    </message>
-    <message>
-        <source>Close without Saving</source>
-        <translation type="vanished">저장하지 않고 닫기</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="vanished">확인(&amp;O)</translation>
     </message>
 </context>
 <context>
@@ -1464,6 +683,10 @@ Press ESC to cancel</source>
 <context>
     <name>QDnsLookupRunnable</name>
     <message>
+        <source>IPv6 addresses for nameservers are currently not supported</source>
+        <translation>네임 서버 IPv6 주소는 아직 지원하지 않음</translation>
+    </message>
+    <message>
         <source>Invalid domain name</source>
         <translation>잘못된 도메인 이름</translation>
     </message>
@@ -1478,10 +701,6 @@ Press ESC to cancel</source>
     <message>
         <source>Resolver initialization failed</source>
         <translation>리졸버를 초기화할 수 없음</translation>
-    </message>
-    <message>
-        <source>IPv6 addresses for nameservers is currently not supported</source>
-        <translation type="vanished">네임 서버 IPv6 주소는 아직 지원되지 않음</translation>
     </message>
     <message>
         <source>Server could not process query</source>
@@ -1552,12 +771,8 @@ Press ESC to cancel</source>
         <translation>호스트 이름이 잘못됨</translation>
     </message>
     <message>
-        <source>IPv6 addresses for nameservers are currently not supported</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Host %1 could not be found.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 %1을(를) 찾을 수 없습니다.</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -1566,15 +781,6 @@ Press ESC to cancel</source>
 </context>
 <context>
     <name>QDockWidget</name>
-    <message>
-        <source>Close</source>
-        <extracomment>Accessible name for button closing a dock widget</extracomment>
-        <translation>닫기</translation>
-    </message>
-    <message>
-        <source>Dock</source>
-        <translation type="vanished">붙이기</translation>
-    </message>
     <message>
         <source>Float</source>
         <extracomment>Accessible name for button undocking a dock widget (floating state)</extracomment>
@@ -1585,19 +791,203 @@ Press ESC to cancel</source>
         <translation>독 위젯의 도킹을 해제하고 다시 붙임</translation>
     </message>
     <message>
+        <source>Close</source>
+        <extracomment>Accessible name for button closing a dock widget</extracomment>
+        <translation>닫기</translation>
+    </message>
+    <message>
         <source>Closes the dock widget</source>
         <translation>독 위젯을 닫음</translation>
     </message>
 </context>
 <context>
-    <name>QDoubleSpinBox</name>
+    <name>QDomParser</name>
     <message>
-        <source>More</source>
-        <translation type="vanished">더 보기</translation>
+        <source>Error occurred while processing XML declaration</source>
+        <translation>XML 선언을 처리하는 중 오류 발생</translation>
     </message>
     <message>
-        <source>Less</source>
-        <translation type="vanished">덜 보기</translation>
+        <source>Multiple DTD sections are not allowed</source>
+        <translation>다중 DTD 섹션은 허용되지 않음</translation>
+    </message>
+    <message>
+        <source>Error occurred while processing document type declaration</source>
+        <translation>문서 형식 정의(DTD)를 처리하는 중 오류 발생</translation>
+    </message>
+    <message>
+        <source>Error occurred while processing comment</source>
+        <translation>주석을 처리하는 중 오류 발생</translation>
+    </message>
+    <message>
+        <source>Error occurred while processing a processing instruction</source>
+        <translation>처리 명령을 처리하는 중 오류 발생</translation>
+    </message>
+    <message>
+        <source>Error occurred while processing a start element</source>
+        <translation>시작 원소를 처리하는 중 오류 발생</translation>
+    </message>
+    <message>
+        <source>Unexpected end element &apos;%1&apos;</source>
+        <translation>예상하지 못한 끝 원소 &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Error occurred while processing an end element</source>
+        <translation>끝 원소를 처리하는 중 오류 발생</translation>
+    </message>
+    <message>
+        <source>Error occurred while processing the element content</source>
+        <translation>원소 내용을 처리하는 중 오류 발생</translation>
+    </message>
+    <message>
+        <source>Error occurred while processing comments</source>
+        <translation>주석을 처리하는 중 오류 발생</translation>
+    </message>
+    <message>
+        <source>Error occurred while processing an entity reference</source>
+        <translation>엔티티 참조를 처리하는 중 오류 발생</translation>
+    </message>
+    <message>
+        <source>Unexpected token</source>
+        <translation>예상하지 못한 토큰</translation>
+    </message>
+    <message>
+        <source>Tag mismatch</source>
+        <translation>태그가 일치하지 않음</translation>
+    </message>
+    <message>
+        <source>Error occurred while processing entity declaration</source>
+        <translation>엔티티 선언을 처리하는 중 오류 발생</translation>
+    </message>
+    <message>
+        <source>Error occurred while processing notation declaration</source>
+        <translation>표기법 선언을 처리하는 중 오류 발생</translation>
+    </message>
+</context>
+<context>
+    <name>QDtls</name>
+    <message>
+        <source>Invalid (empty) secret</source>
+        <translation>잘못된(빈) 비밀</translation>
+    </message>
+    <message>
+        <source>Multicast and broadcast addresses are not supported</source>
+        <translation>멀티캐스트 및 브로드캐스트 주소는 지원하지 않음</translation>
+    </message>
+    <message>
+        <source>Cannot set peer after handshake started</source>
+        <translation>악수가 시작된 후 동료를 설정할 수 없음</translation>
+    </message>
+    <message>
+        <source>Invalid address</source>
+        <translation>잘못된 주소</translation>
+    </message>
+    <message>
+        <source>Cannot set verification name after handshake started</source>
+        <translation>악수가 시작된 후 검증 이름을 설정할 수 없음</translation>
+    </message>
+    <message>
+        <source>Cannot set configuration after handshake started</source>
+        <translation>악수가 시작된 후 설정을 지정할 수 없음</translation>
+    </message>
+    <message>
+        <source>Cannot start/continue handshake, invalid handshake state</source>
+        <translation>악수를 시작하거나 계속할 수 없음, 잘못된 악수 상태</translation>
+    </message>
+    <message>
+        <source>Invalid (nullptr) socket</source>
+        <translation>잘못된(빈 포인터) 소켓</translation>
+    </message>
+    <message>
+        <source>To start a handshake you must set peer&apos;s address and port first</source>
+        <translation>악수를 시작하려면 상대방의 주소와 포트를 지정해야 함</translation>
+    </message>
+    <message>
+        <source>To start a handshake, DTLS server requires non-empty datagram (client hello)</source>
+        <translation>악수를 시작하려면 DTLS 서버에서 비어 있지 않은 다이어그램이 필요함(클라이언트 hello)</translation>
+    </message>
+    <message>
+        <source>Cannot start handshake, already done/in progress</source>
+        <translation>악수를 시작할 수 없음, 이미 완료되었거나 진행 중</translation>
+    </message>
+    <message>
+        <source>A valid QUdpSocket and non-empty datagram are needed to continue the handshake</source>
+        <translation>악수를 진행하려면 올바른 QUdpSocket과 비어 있지 않은 다이어그램이 필요함</translation>
+    </message>
+    <message>
+        <source>Cannot continue handshake, not in InProgress state</source>
+        <translation>악수를 진행할 수 없음, InProgress 상태가 아님</translation>
+    </message>
+    <message>
+        <source>Cannot resume, not in VerificationError state</source>
+        <translation>다시 시작할 수 없음, VerificationError 상태가 아님</translation>
+    </message>
+    <message>
+        <source>No handshake in progress, nothing to abort</source>
+        <translation>진행 중인 악수가 없음, 중단할 항목 없음</translation>
+    </message>
+    <message>
+        <source>Cannot send shutdown alert, not encrypted</source>
+        <translation>종료 경고를 보낼 수 없음, 암호화되지 않음</translation>
+    </message>
+    <message>
+        <source>Cannot write a datagram, not in encrypted state</source>
+        <translation>데이터그램을 쓸 수 없음, 암호화된 상태가 아님</translation>
+    </message>
+    <message>
+        <source>Cannot read a datagram, not in encrypted state</source>
+        <translation>데이터그램을 읽을 수 없음, 암호화된 상태가 아님</translation>
+    </message>
+    <message>
+        <source>%1 failed</source>
+        <extracomment>%1: Some function</extracomment>
+        <translation>%1 실패</translation>
+    </message>
+    <message>
+        <source>Invalid SslMode, SslServerMode or SslClientMode expected</source>
+        <translation>잘못된 SslMode, SslServerMode 또는 SslClientMode를 예상함</translation>
+    </message>
+    <message>
+        <source>Invalid protocol version, DTLS protocol expected</source>
+        <translation>잘못된 프로토콜 버전, DTLS 프로토콜을 예상함</translation>
+    </message>
+    <message>
+        <source>BIO_ADD_new failed, cannot start handshake</source>
+        <translation>BIO_ADD_new 실패, 악수를 시작할 수 없음</translation>
+    </message>
+    <message>
+        <source>Cannot start the handshake, verified client hello expected</source>
+        <translation>악수를 시작할 수 없음, 검증된 클라이언트 hello를 예상함</translation>
+    </message>
+    <message>
+        <source>Peer verification failed</source>
+        <translation>동료 검증 실패</translation>
+    </message>
+    <message>
+        <source>The DTLS connection has been closed</source>
+        <translation>DTLS 연결이 종료됨</translation>
+    </message>
+    <message>
+        <source>Error while writing: %1</source>
+        <translation>쓰는 중 오류 발생: %1</translation>
+    </message>
+    <message>
+        <source>The DTLS connection has been shutdown</source>
+        <translation>DTLS 연결이 끊어짐</translation>
+    </message>
+    <message>
+        <source>Error while reading: %1</source>
+        <translation>읽는 중 오류 발생: %1</translation>
+    </message>
+</context>
+<context>
+    <name>QDtlsClientVerifier</name>
+    <message>
+        <source>A valid UDP socket, non-empty datagram, valid address/port were expected</source>
+        <translation>올바른 UDP 소켓, 비어 있지 않은 다이어그램, 올바른 주소/포트를 예상함</translation>
+    </message>
+    <message>
+        <source>BIO_ADDR_new failed, ignoring client hello</source>
+        <translation>BIO_ADD_new 실패, 클라이언트 hello를 무시함</translation>
     </message>
 </context>
 <context>
@@ -1611,8 +1001,16 @@ Press ESC to cancel</source>
         <translation>경고:</translation>
     </message>
     <message>
+        <source>Critical Error:</source>
+        <translation>심각한 오류:</translation>
+    </message>
+    <message>
         <source>Fatal Error:</source>
         <translation>치명적 오류:</translation>
+    </message>
+    <message>
+        <source>Information:</source>
+        <translation>정보:</translation>
     </message>
     <message>
         <source>&amp;Show this message again</source>
@@ -1638,8 +1036,8 @@ Press ESC to cancel</source>
         <translation>대상 파일이 존재함</translation>
     </message>
     <message>
-        <source>Error while renaming.</source>
-        <translation>이름을 변경하는 중 오류가 발생하였습니다.</translation>
+        <source>Error while renaming: %1</source>
+        <translation>이름을 바꾸는 중 오류 발생: %1</translation>
     </message>
     <message>
         <source>Unable to restore from %1: %2</source>
@@ -1654,12 +1052,16 @@ Press ESC to cancel</source>
         <translation>원본 파일을 삭제할 수 없음</translation>
     </message>
     <message>
+        <source>Cannot open destination file: %1</source>
+        <translation>대상 파일을 열 수 없음: %1</translation>
+    </message>
+    <message>
         <source>Cannot open %1 for input</source>
         <translation>%1에서 입력을 받기 위하여 열 수 없음</translation>
     </message>
     <message>
-        <source>Cannot open for output</source>
-        <translation>출력을 위하여 열 수 없음</translation>
+        <source>Cannot open for output: %1</source>
+        <translation>출력하려고 열 수 없음: %1</translation>
     </message>
     <message>
         <source>Failure to write block</source>
@@ -1676,160 +1078,20 @@ Press ESC to cancel</source>
         <source>No file engine available or engine does not support UnMapExtension</source>
         <translation>파일 엔진을 사용할 수 없거나 파일 엔진이 UnMapExtension을 지원하지 않음</translation>
     </message>
+    <message>
+        <source>No file engine available</source>
+        <translation>파일 엔진을 사용할 수 없음</translation>
+    </message>
 </context>
 <context>
     <name>QFileDialog</name>
-    <message>
-        <source>All Files (*)</source>
-        <translation>모든 파일 (*)</translation>
-    </message>
-    <message>
-        <source>Directories</source>
-        <translation>디렉터리</translation>
-    </message>
-    <message>
-        <source>&amp;Open</source>
-        <translation>열기(&amp;O)</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <translation>저장(&amp;S)</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation>열기</translation>
-    </message>
-    <message>
-        <source>%1 already exists.
-Do you want to replace it?</source>
-        <translation>%1이(가) 이미 존재합니다.
-바꾸시겠습니까?</translation>
-    </message>
-    <message>
-        <source>%1
-File not found.
-Please verify the correct file name was given.</source>
-        <translation>%1
-파일을 찾을 수 없습니다.
-경로와 파일 이름을 확인하십시오.</translation>
-    </message>
-    <message>
-        <source>My Computer</source>
-        <translation>내 컴퓨터</translation>
-    </message>
-    <message>
-        <source>&amp;Rename</source>
-        <translation>이름 바꾸기(&amp;R)</translation>
-    </message>
-    <message>
-        <source>&amp;Delete</source>
-        <translation>삭제(&amp;D)</translation>
-    </message>
-    <message>
-        <source>Show &amp;hidden files</source>
-        <translation>숨김 파일 보이기(&amp;H)</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>뒤로</translation>
-    </message>
-    <message>
-        <source>Parent Directory</source>
-        <translation>부모 디렉터리</translation>
-    </message>
-    <message>
-        <source>List View</source>
-        <translation>목록으로 보기</translation>
-    </message>
-    <message>
-        <source>Detail View</source>
-        <translation>자세히 보기</translation>
-    </message>
-    <message>
-        <source>Files of type:</source>
-        <translation>파일 형식:</translation>
-    </message>
-    <message>
-        <source>Directory:</source>
-        <translation>디렉터리:</translation>
-    </message>
-    <message>
-        <source>%1
-Directory not found.
-Please verify the correct directory name was given.</source>
-        <translation>%1
-디렉터리를 찾을 수 없습니다.
-경로와 파일 이름을 확인하십시오.</translation>
-    </message>
-    <message>
-        <source>&apos;%1&apos; is write protected.
-Do you want to delete it anyway?</source>
-        <translation>&apos;%1&apos;이(가) 쓰기 금지되어 있습니다.
-그래도 삭제하시겠습니까?</translation>
-    </message>
-    <message>
-        <source>Are sure you want to delete &apos;%1&apos;?</source>
-        <translation type="vanished">&apos;%1&apos;을(를) 삭제하시겠습니까?</translation>
-    </message>
-    <message>
-        <source>Could not delete directory.</source>
-        <translation>디렉터리를 삭제할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Save As</source>
-        <translation>다른 이름으로 저장</translation>
-    </message>
-    <message>
-        <source>Drive</source>
-        <translation>드라이브</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation>파일</translation>
-    </message>
-    <message>
-        <source>Unknown</source>
-        <translation>알 수 없음</translation>
-    </message>
-    <message>
-        <source>Find Directory</source>
-        <translation>디렉터리 찾기</translation>
-    </message>
-    <message>
-        <source>Show </source>
-        <translation>보이기</translation>
-    </message>
-    <message>
-        <source>Forward</source>
-        <translation>앞으로</translation>
-    </message>
-    <message>
-        <source>New Folder</source>
-        <translation>새 폴더</translation>
-    </message>
-    <message>
-        <source>&amp;New Folder</source>
-        <translation>새 폴더(&amp;N)</translation>
-    </message>
-    <message>
-        <source>&amp;Choose</source>
-        <translation>선택(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation>삭제</translation>
-    </message>
-    <message>
-        <source>File &amp;name:</source>
-        <translation>파일 이름(&amp;N):</translation>
-    </message>
     <message>
         <source>Look in:</source>
         <translation>다음에서 찾기:</translation>
     </message>
     <message>
-        <source>Create New Folder</source>
-        <translation>새 폴더 만들기</translation>
+        <source>Back</source>
+        <translation>뒤로</translation>
     </message>
     <message>
         <source>Go back</source>
@@ -1840,12 +1102,20 @@ Do you want to delete it anyway?</source>
         <translation>Alt+Left</translation>
     </message>
     <message>
+        <source>Forward</source>
+        <translation>앞으로</translation>
+    </message>
+    <message>
         <source>Go forward</source>
         <translation>앞으로 가기</translation>
     </message>
     <message>
         <source>Alt+Right</source>
         <translation>Alt+Right</translation>
+    </message>
+    <message>
+        <source>Parent Directory</source>
+        <translation>부모 디렉터리</translation>
     </message>
     <message>
         <source>Go to the parent directory</source>
@@ -1856,12 +1126,24 @@ Do you want to delete it anyway?</source>
         <translation>Alt+Up</translation>
     </message>
     <message>
+        <source>Create New Folder</source>
+        <translation>새 폴더 만들기</translation>
+    </message>
+    <message>
         <source>Create a New Folder</source>
         <translation>새 폴더 만들기</translation>
     </message>
     <message>
+        <source>List View</source>
+        <translation>목록으로 보기</translation>
+    </message>
+    <message>
         <source>Change to list view mode</source>
         <translation>목록 보기 모드로 전환</translation>
+    </message>
+    <message>
+        <source>Detail View</source>
+        <translation>자세히 보기</translation>
     </message>
     <message>
         <source>Change to detail view mode</source>
@@ -1880,25 +1162,141 @@ Do you want to delete it anyway?</source>
         <translation>파일</translation>
     </message>
     <message>
+        <source>Files of type:</source>
+        <translation>파일 형식:</translation>
+    </message>
+    <message>
+        <source>Find Directory</source>
+        <translation>디렉터리 찾기</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>열기</translation>
+    </message>
+    <message>
+        <source>Save As</source>
+        <translation>다른 이름으로 저장</translation>
+    </message>
+    <message>
+        <source>Directory:</source>
+        <translation>디렉터리:</translation>
+    </message>
+    <message>
+        <source>File &amp;name:</source>
+        <translation>파일 이름(&amp;N):</translation>
+    </message>
+    <message>
+        <source>&amp;Open</source>
+        <translation>열기(&amp;O)</translation>
+    </message>
+    <message>
+        <source>&amp;Choose</source>
+        <translation>선택(&amp;C)</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation>저장(&amp;S)</translation>
+    </message>
+    <message>
+        <source>All Files (*)</source>
+        <translation>모든 파일 (*)</translation>
+    </message>
+    <message>
+        <source>Show </source>
+        <translation>보이기</translation>
+    </message>
+    <message>
+        <source>&amp;Rename</source>
+        <translation>이름 바꾸기(&amp;R)</translation>
+    </message>
+    <message>
+        <source>&amp;Delete</source>
+        <translation>삭제(&amp;D)</translation>
+    </message>
+    <message>
+        <source>Show &amp;hidden files</source>
+        <translation>숨김 파일 보이기(&amp;H)</translation>
+    </message>
+    <message>
+        <source>&amp;New Folder</source>
+        <translation>새 폴더(&amp;N)</translation>
+    </message>
+    <message>
         <source>All files (*)</source>
         <translation>모든 파일 (*)</translation>
+    </message>
+    <message>
+        <source>Directories</source>
+        <translation>디렉터리</translation>
+    </message>
+    <message>
+        <source>%1
+Directory not found.
+Please verify the correct directory name was given.</source>
+        <translation>%1
+디렉터리를 찾을 수 없습니다.
+경로와 파일 이름을 확인하십시오.</translation>
+    </message>
+    <message>
+        <source>%1 already exists.
+Do you want to replace it?</source>
+        <translation>%1이(가) 이미 존재합니다.
+바꾸시겠습니까?</translation>
+    </message>
+    <message>
+        <source>%1
+File not found.
+Please verify the correct file name was given.</source>
+        <translation>%1
+파일을 찾을 수 없습니다.
+경로와 파일 이름을 확인하십시오.</translation>
+    </message>
+    <message>
+        <source>New Folder</source>
+        <translation>새 폴더</translation>
     </message>
     <message>
         <source>Delete</source>
         <translation>삭제</translation>
     </message>
     <message>
+        <source>&apos;%1&apos; is write protected.
+Do you want to delete it anyway?</source>
+        <translation>&apos;%1&apos;이(가) 쓰기 금지되어 있습니다.
+그래도 삭제하시겠습니까?</translation>
+    </message>
+    <message>
         <source>Are you sure you want to delete &apos;%1&apos;?</source>
         <translation>&apos;%1&apos;을(를) 삭제하시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Could not delete directory.</source>
+        <translation>디렉터리를 삭제할 수 없습니다.</translation>
     </message>
     <message>
         <source>Recent Places</source>
         <translation>최근 장소</translation>
     </message>
     <message>
+        <source>Remove</source>
+        <translation>삭제</translation>
+    </message>
+    <message>
+        <source>My Computer</source>
+        <translation>내 컴퓨터</translation>
+    </message>
+    <message>
+        <source>Drive</source>
+        <translation>드라이브</translation>
+    </message>
+    <message>
         <source>%1 File</source>
         <extracomment>%1 is a file name suffix, for example txt</extracomment>
         <translation>%1 파일</translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation>파일</translation>
     </message>
     <message>
         <source>File Folder</source>
@@ -1912,8 +1310,8 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Alias</source>
-        <comment>Mac OS X Finder</comment>
-        <translation type="vanished">별명</translation>
+        <comment>OS X Finder</comment>
+        <translation type="unfinished">별명</translation>
     </message>
     <message>
         <source>Shortcut</source>
@@ -1921,9 +1319,8 @@ Do you want to delete it anyway?</source>
         <translation>바로 가기</translation>
     </message>
     <message>
-        <source>Alias</source>
-        <comment>OS X Finder</comment>
-        <translation type="unfinished">별명</translation>
+        <source>Unknown</source>
+        <translation>알 수 없음</translation>
     </message>
 </context>
 <context>
@@ -1933,7 +1330,7 @@ Do you want to delete it anyway?</source>
         <translation>잘못된 파일 이름</translation>
     </message>
     <message>
-        <source>&lt;b&gt;The name &quot;%1&quot; can not be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuations marks.</source>
+        <source>&lt;b&gt;The name &quot;%1&quot; cannot be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuation marks.</source>
         <translation>&lt;b&gt;&quot;%1&quot; 이름을 사용할 수 없습니다.&lt;/b&gt;&lt;p&gt;다른 이름을 사용하거나, 글자 수를 줄이거나, 구두점을 사용하지 마십시오.</translation>
     </message>
     <message>
@@ -1966,37 +1363,9 @@ Do you want to delete it anyway?</source>
         <source>Computer</source>
         <translation>컴퓨터</translation>
     </message>
-    <message>
-        <source>%1 TB</source>
-        <translation>%1TB</translation>
-    </message>
-    <message>
-        <source>%1 GB</source>
-        <translation>%1GB</translation>
-    </message>
-    <message>
-        <source>%1 MB</source>
-        <translation>%1MB</translation>
-    </message>
-    <message>
-        <source>%1 KB</source>
-        <translation>%1KB</translation>
-    </message>
-    <message>
-        <source>%1 bytes</source>
-        <translation>%1바이트</translation>
-    </message>
-    <message>
-        <source>%1 byte(s)</source>
-        <translation>%1바이트</translation>
-    </message>
 </context>
 <context>
     <name>QFontDatabase</name>
-    <message>
-        <source>Normal</source>
-        <translation type="vanished">일반</translation>
-    </message>
     <message>
         <source>Bold</source>
         <translation>굵게</translation>
@@ -2017,6 +1386,33 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Light</source>
         <translation>라이트</translation>
+    </message>
+    <message>
+        <source>Normal</source>
+        <comment>The Normal or Regular font weight</comment>
+        <translation type="unfinished">일반</translation>
+    </message>
+    <message>
+        <source>Medium</source>
+        <comment>The Medium font weight</comment>
+        <translation>중간</translation>
+    </message>
+    <message>
+        <source>Thin</source>
+        <translation>얇게</translation>
+    </message>
+    <message>
+        <source>Extra Light</source>
+        <translation>매우 얇게</translation>
+    </message>
+    <message>
+        <source>Extra Bold</source>
+        <translation>매우 굵게</translation>
+    </message>
+    <message>
+        <source>Extra</source>
+        <extracomment>The word for &quot;Extra&quot; as in &quot;Extra Bold, Extra Thin&quot; used as a pattern for string searches</extracomment>
+        <translation>매우</translation>
     </message>
     <message>
         <source>Italic</source>
@@ -2162,36 +1558,13 @@ Do you want to delete it anyway?</source>
         <source>N&apos;Ko</source>
         <translation>은코</translation>
     </message>
-    <message>
-        <source>Normal</source>
-        <comment>The Normal or Regular font weight</comment>
-        <translation type="unfinished">일반</translation>
-    </message>
-    <message>
-        <source>Medium</source>
-        <comment>The Medium font weight</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Thin</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Extra Light</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Extra Bold</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Extra</source>
-        <extracomment>The word for &quot;Extra&quot; as in &quot;Extra Bold, Extra Thin&quot; used as a pattern for string searches</extracomment>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>QFontDialog</name>
+    <message>
+        <source>Select Font</source>
+        <translation>글꼴 선택</translation>
+    </message>
     <message>
         <source>&amp;Font</source>
         <translation>글꼴(&amp;F)</translation>
@@ -2224,10 +1597,6 @@ Do you want to delete it anyway?</source>
         <source>Wr&amp;iting System</source>
         <translation>문자 체계(&amp;I)</translation>
     </message>
-    <message>
-        <source>Select Font</source>
-        <translation>글꼴 선택</translation>
-    </message>
 </context>
 <context>
     <name>QFtp</name>
@@ -2244,12 +1613,16 @@ Do you want to delete it anyway?</source>
         <translation>호스트 %1와(과)의 연결이 거부됨</translation>
     </message>
     <message>
+        <source>Connection timed out to host %1</source>
+        <translation>호스트 %1와(과)의 연결 시간이 초과됨</translation>
+    </message>
+    <message>
         <source>Connected to host %1</source>
         <translation>호스트 %1에 연결이 거부됨</translation>
     </message>
     <message>
-        <source>Connection refused for data connection</source>
-        <translation type="vanished">데이터 연결이 거부됨</translation>
+        <source>Data Connection refused</source>
+        <translation>데이터 연결 거부됨</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -2313,30 +1686,6 @@ Do you want to delete it anyway?</source>
         <source>Connection closed</source>
         <translation>연결이 종료됨</translation>
     </message>
-    <message>
-        <source>Host %1 found</source>
-        <translation type="vanished">호스트 %1을(를) 찾았음</translation>
-    </message>
-    <message>
-        <source>Connection to %1 closed</source>
-        <translation type="vanished">%1와(과)의 연결이 종료됨</translation>
-    </message>
-    <message>
-        <source>Host found</source>
-        <translation type="vanished">호스트를 찾았음</translation>
-    </message>
-    <message>
-        <source>Connected to host</source>
-        <translation type="vanished">호스트에 연결됨</translation>
-    </message>
-    <message>
-        <source>Connection timed out to host %1</source>
-        <translation>호스트 %1와(과)의 연결 시간이 초과됨</translation>
-    </message>
-    <message>
-        <source>Data Connection refused</source>
-        <translation>데이터 연결 거부됨</translation>
-    </message>
 </context>
 <context>
     <name>QGnomeTheme</name>
@@ -2368,32 +1717,88 @@ Do you want to delete it anyway?</source>
         <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
         <translation>LTR</translation>
     </message>
+    <message>
+        <source>QPA plugin. See QGuiApplication documentation for available options for each plugin.</source>
+        <translation>QPA 플러그인입니다. 각각 플러그인의 옵션을 보려면 QGuiApplication 문서를 참조하십시오.</translation>
+    </message>
+    <message>
+        <source>Path to the platform plugins.</source>
+        <translation>플랫폼 플러그인 경로입니다.</translation>
+    </message>
+    <message>
+        <source>Platform theme.</source>
+        <translation>플랫폼 테마입니다.</translation>
+    </message>
+    <message>
+        <source>Additional plugins to load, can be specified multiple times.</source>
+        <translation>추가로 불러올 플러그인입니다. 여러 번 지정할 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>Window geometry for the main window, using the X11-syntax, like 100x100+50+50.</source>
+        <translation>주 창의 창 크기와 위치입니다. X11 문법을 사용하십시오. 예: 100x100+50+50.</translation>
+    </message>
+    <message>
+        <source>Default window icon.</source>
+        <translation>기본 창 아이콘입니다.</translation>
+    </message>
+    <message>
+        <source>Title of the first window.</source>
+        <translation>첫 창의 제목입니다.</translation>
+    </message>
+    <message>
+        <source>Sets the application&apos;s layout direction to Qt::RightToLeft (debugging helper).</source>
+        <translation>프로그램의 레이아웃 방향을 Qt::RightToLeft로 설정합니다(디버깅 도우미).</translation>
+    </message>
+    <message>
+        <source>Restores the application from an earlier session.</source>
+        <translation>프로그램을 이전 세션에서 복원합니다.</translation>
+    </message>
+    <message>
+        <source>Display name, overrides $DISPLAY.</source>
+        <translation>디스플레이 이름입니다. $DISPLAY를 재정의합니다.</translation>
+    </message>
+    <message>
+        <source>Instance name according to ICCCM 4.1.2.5.</source>
+        <translation>ICCCM 4.1.2.5에 의한 인스턴스 이름입니다.</translation>
+    </message>
+    <message>
+        <source>Disable mouse grabbing (useful in debuggers).</source>
+        <translation>마우스 잡기를 비활성화합니다(디버거에서 유용함).</translation>
+    </message>
+    <message>
+        <source>Force mouse grabbing (even when running in a debugger).</source>
+        <translation>마우스 잡기를 강제로 사용합니다(디버거에서 실행 중일 때에도).</translation>
+    </message>
+    <message>
+        <source>ID of the X11 Visual to use.</source>
+        <translation>사용할 X11 Visual의 ID입니다.</translation>
+    </message>
+    <message>
+        <source>Alias for --windowgeometry.</source>
+        <translation>--windowgeometry의 별칭입니다.</translation>
+    </message>
+    <message>
+        <source>Alias for --windowicon.</source>
+        <translation>--windowicon의 별칭입니다.</translation>
+    </message>
+    <message>
+        <source>Alias for --windowtitle.</source>
+        <translation>--windowtitle의 별칭입니다.</translation>
+    </message>
 </context>
 <context>
     <name>QHostInfo</name>
     <message>
-        <source>Unknown error</source>
-        <translation>알 수 없는 오류</translation>
-    </message>
-    <message>
         <source>No host name given</source>
         <translation>호스트 이름이 지정되지 않음</translation>
+    </message>
+    <message>
+        <source>Unknown error</source>
+        <translation>알 수 없는 오류</translation>
     </message>
 </context>
 <context>
     <name>QHostInfoAgent</name>
-    <message>
-        <source>Host not found</source>
-        <translation>호스트를 찾을 수 없음</translation>
-    </message>
-    <message>
-        <source>Unknown address type</source>
-        <translation>알 수 없는 주소 형식</translation>
-    </message>
-    <message>
-        <source>Unknown error</source>
-        <translation>알 수 없는 오류</translation>
-    </message>
     <message>
         <source>No host name given</source>
         <translation>호스트 이름이 지정되지 않았음</translation>
@@ -2403,91 +1808,27 @@ Do you want to delete it anyway?</source>
         <translation>호스트 이름이 잘못됨</translation>
     </message>
     <message>
-        <source>Unknown error (%1)</source>
-        <translation>알 수 없는 오류 (%1)</translation>
+        <source>Unknown address type</source>
+        <translation>알 수 없는 주소 형식</translation>
+    </message>
+    <message>
+        <source>Host not found</source>
+        <translation>호스트를 찾을 수 없음</translation>
     </message>
 </context>
 <context>
     <name>QHttp</name>
     <message>
-        <source>Unknown error</source>
-        <translation type="vanished">알 수 없는 오류</translation>
-    </message>
-    <message>
-        <source>Request aborted</source>
-        <translation type="vanished">요청이 중단됨</translation>
-    </message>
-    <message>
-        <source>No server set to connect to</source>
-        <translation type="vanished">연결할 서버가 설정되지 않음</translation>
-    </message>
-    <message>
-        <source>Wrong content length</source>
-        <translation type="vanished">내용 길이가 잘못됨</translation>
-    </message>
-    <message>
-        <source>Server closed connection unexpectedly</source>
-        <translation type="vanished">서버에서 예상하지 못하게 연결을 종료함</translation>
+        <source>Host %1 not found</source>
+        <translation>호스트 %1을(를) 찾을 수 없음</translation>
     </message>
     <message>
         <source>Connection refused</source>
         <translation>연결이 거부됨</translation>
     </message>
     <message>
-        <source>Host %1 not found</source>
-        <translation>호스트 %1을(를) 찾을 수 없음</translation>
-    </message>
-    <message>
-        <source>HTTP request failed</source>
-        <translation type="vanished">HTTP 요청이 실패함</translation>
-    </message>
-    <message>
-        <source>Invalid HTTP response header</source>
-        <translation type="vanished">HTTP 응답 헤더가 잘못됨</translation>
-    </message>
-    <message>
-        <source>Invalid HTTP chunked body</source>
-        <translation type="vanished">HTTP 조각난 본문이 잘못됨</translation>
-    </message>
-    <message>
-        <source>Host %1 found</source>
-        <translation type="vanished">호스트 %1을(를) 찾았음</translation>
-    </message>
-    <message>
-        <source>Connected to host %1</source>
-        <translation type="vanished">호스트 %1에 연결됨</translation>
-    </message>
-    <message>
-        <source>Connection to %1 closed</source>
-        <translation type="vanished">%1와(과)의 연결이 종료됨</translation>
-    </message>
-    <message>
-        <source>Host found</source>
-        <translation type="vanished">호스트를 찾았음</translation>
-    </message>
-    <message>
-        <source>Connected to host</source>
-        <translation type="vanished">호스트에 연결됨</translation>
-    </message>
-    <message>
         <source>Connection closed</source>
         <translation>연결이 종료됨</translation>
-    </message>
-    <message>
-        <source>Proxy authentication required</source>
-        <translation type="vanished">프록시 인증이 필요함</translation>
-    </message>
-    <message>
-        <source>Authentication required</source>
-        <translation type="vanished">인증이 필요함</translation>
-    </message>
-    <message>
-        <source>HTTPS connection requested but SSL support not compiled in</source>
-        <translation type="vanished">HTTPS 연결을 요청했지만 SSL 지원을 사용할 수 없음</translation>
-    </message>
-    <message>
-        <source>Connection refused (or timed out)</source>
-        <translation type="vanished">연결이 거부됨 (또는 시간 초과됨)</translation>
     </message>
     <message>
         <source>Proxy requires authentication</source>
@@ -2511,19 +1852,15 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Too many redirects</source>
-        <translation type="unfinished"></translation>
+        <translation>리디렉트가 너무 많음</translation>
     </message>
     <message>
         <source>Insecure redirect</source>
-        <translation type="unfinished"></translation>
+        <translation>안전하지 않은 리디렉트</translation>
     </message>
 </context>
 <context>
     <name>QHttpSocketEngine</name>
-    <message>
-        <source>Authentication required</source>
-        <translation>인증이 필요함</translation>
-    </message>
     <message>
         <source>Did not receive HTTP response from proxy</source>
         <translation>프록시에서 HTTP 응답을 받지 못함</translation>
@@ -2531,6 +1868,10 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Error parsing authentication request from proxy</source>
         <translation>프록시 인증을 처리하는 중 오류 발생</translation>
+    </message>
+    <message>
+        <source>Authentication required</source>
+        <translation>인증이 필요함</translation>
     </message>
     <message>
         <source>Proxy denied connection</source>
@@ -2666,12 +2007,12 @@ Do you want to delete it anyway?</source>
         <translation>장치에 공간이 부족함</translation>
     </message>
     <message>
-        <source>Unknown error</source>
-        <translation>알 수 없는 오류</translation>
-    </message>
-    <message>
         <source>file to open is a directory</source>
         <translation>열 파일이 디렉터리임</translation>
+    </message>
+    <message>
+        <source>Unknown error</source>
+        <translation>알 수 없는 오류</translation>
     </message>
 </context>
 <context>
@@ -2708,6 +2049,10 @@ Do you want to delete it anyway?</source>
         <translation>장치가 설정되지 않았음</translation>
     </message>
     <message>
+        <source>Cannot open device for writing: %1</source>
+        <translation>장치에 쓰려고 열 수 없음: %1</translation>
+    </message>
+    <message>
         <source>Device not writable</source>
         <translation>장치에 쓸 수 없음</translation>
     </message>
@@ -2715,24 +2060,9 @@ Do you want to delete it anyway?</source>
         <source>Unsupported image format</source>
         <translation>지원하지 않는 그림 형식</translation>
     </message>
-</context>
-<context>
-    <name>QInputContext</name>
     <message>
-        <source>XIM</source>
-        <translation type="vanished">XIM</translation>
-    </message>
-    <message>
-        <source>XIM input method</source>
-        <translation type="vanished">XIM 입력기</translation>
-    </message>
-    <message>
-        <source>Windows input method</source>
-        <translation type="vanished">윈도 입력기</translation>
-    </message>
-    <message>
-        <source>Mac OS X input method</source>
-        <translation type="vanished">Mac OS X 입력기</translation>
+        <source>Image is empty</source>
+        <translation>그림이 비어 있음</translation>
     </message>
 </context>
 <context>
@@ -2820,54 +2150,6 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QLibrary</name>
     <message>
-        <source>QLibrary::load_sys: Cannot load %1 (%2)</source>
-        <translation type="vanished">QLibrary::load_sys: %1을(를) 불러올 수 없음 (%2)</translation>
-    </message>
-    <message>
-        <source>QLibrary::unload_sys: Cannot unload %1 (%2)</source>
-        <translation type="vanished">QLibrary::unload_sys: %1을(를) 닫을 수 없음 (%2)</translation>
-    </message>
-    <message>
-        <source>QLibrary::resolve_sys: Symbol &quot;%1&quot; undefined in %2 (%3)</source>
-        <translation type="vanished">QLibrary::resolve_sys: 심볼 &quot;%1&quot;이(가) %2에 정의되지 않음 (%3)</translation>
-    </message>
-    <message>
-        <source>Could not mmap &apos;%1&apos;: %2</source>
-        <translation type="vanished">&apos;%1&apos;에서 mmap을 실행할 수 없음: %2</translation>
-    </message>
-    <message>
-        <source>Plugin verification data mismatch in &apos;%1&apos;</source>
-        <translation type="vanished">&apos;%1&apos;의 플러그인 확인 데이터가 일치하지 않음</translation>
-    </message>
-    <message>
-        <source>Could not unmap &apos;%1&apos;: %2</source>
-        <translation type="vanished">&apos;%1&apos;의 매핑을 해제할 수 없음: %2</translation>
-    </message>
-    <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
-        <translation>플러그인 &apos;%1&apos;은(는) 호환되지 않는 Qt 라이브러리를 사용합니다.(%2.%3.%4) [%5]</translation>
-    </message>
-    <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. Expected build key &quot;%2&quot;, got &quot;%3&quot;</source>
-        <translation type="vanished">플러그인 &apos;%1&apos;은(는) 호환되지 않는 Qt 라이브러리를 사용합니다. 빌드 키 &quot;%2&quot;을(를) 예상했지만 &quot;%3&quot;이 돌아왔습니다</translation>
-    </message>
-    <message>
-        <source>Unknown error</source>
-        <translation>알 수 없는 오류</translation>
-    </message>
-    <message>
-        <source>The shared library was not found.</source>
-        <translation>공유 라이브러리를 찾을 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>The file &apos;%1&apos; is not a valid Qt plugin.</source>
-        <translation>파일 &apos;%1&apos;은(는) 올바른 Qt 플러그인이 아닙니다.</translation>
-    </message>
-    <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
-        <translation>플러그인 &apos;%1&apos;은(는) 호환되지 않는 Qt 라이브러리를 사용합니다.(디버그와 릴리즈 라이브러리를 섞을 수 없습니다.)</translation>
-    </message>
-    <message>
         <source>&apos;%1&apos; is not an ELF object (%2)</source>
         <translation>&apos;%1&apos;은(는) ELF 객체가 아님(%2)</translation>
     </message>
@@ -2880,16 +2162,82 @@ Do you want to delete it anyway?</source>
         <translation>&apos;%1&apos;은(는) 잘못된 ELF 객체임 (%2)</translation>
     </message>
     <message>
+        <source>odd cpu architecture</source>
+        <translation>예상하지 못한 CPU 아키텍처</translation>
+    </message>
+    <message>
+        <source>wrong cpu architecture</source>
+        <translation>잘못된 CPU 아키텍처</translation>
+    </message>
+    <message>
+        <source>odd endianness</source>
+        <translation>예상하지 못한 엔디언</translation>
+    </message>
+    <message>
+        <source>unexpected e_shsize</source>
+        <translation>예상하지 못한 e_shsize</translation>
+    </message>
+    <message>
+        <source>unexpected e_shentsize</source>
+        <translation>예상하지 못한 e_shentsize</translation>
+    </message>
+    <message numerus="yes">
+        <source>announced %n section(s), each %1 byte(s), exceed file size</source>
+        <translation>
+            <numerusform>각각 %1바이트 크기의 섹션 %n개를 보고했으며 파일 크기를 초과함</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>shstrtab section header seems to be at %1</source>
+        <translation>shstrtab 섹션 헤더가 %1에 있는 것 같음</translation>
+    </message>
+    <message>
+        <source>string table seems to be at %1</source>
+        <translation>문자열 테이블이 %1에 있는 것 같음</translation>
+    </message>
+    <message>
+        <source>section name %1 of %2 behind end of file</source>
+        <translation>%2의 섹션 이름 %1이(가) 파일 끝 이후에 있음</translation>
+    </message>
+    <message>
+        <source>empty .rodata. not a library.</source>
+        <translation>.rodata가 비어 있습니다. 라이브러리가 아닙니다.</translation>
+    </message>
+    <message>
+        <source>missing section data. This is not a library.</source>
+        <translation>섹션 데이터가 없습니다. 라이브러리가 아닙니다.</translation>
+    </message>
+    <message>
+        <source>Failed to extract plugin meta data from &apos;%1&apos;</source>
+        <translation>&apos;%1&apos;에서 플러그인 메타데이터를 추출할 수 없음</translation>
+    </message>
+    <message>
+        <source>The shared library was not found.</source>
+        <translation>공유 라이브러리를 찾을 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>The file &apos;%1&apos; is not a valid Qt plugin.</source>
+        <translation>파일 &apos;%1&apos;은(는) 올바른 Qt 플러그인이 아닙니다.</translation>
+    </message>
+    <message>
+        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
+        <translation>플러그인 &apos;%1&apos;은(는) 호환되지 않는 Qt 라이브러리를 사용합니다.(%2.%3.%4) [%5]</translation>
+    </message>
+    <message>
+        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
+        <translation>플러그인 &apos;%1&apos;은(는) 호환되지 않는 Qt 라이브러리를 사용합니다.(디버그와 릴리즈 라이브러리를 섞을 수 없습니다.)</translation>
+    </message>
+    <message>
+        <source>Unknown error</source>
+        <translation>알 수 없는 오류</translation>
+    </message>
+    <message>
         <source>Cannot load library %1: %2</source>
         <translation>라이브러리 %1을(를) 불러올 수 없음: %2</translation>
     </message>
     <message>
         <source>Cannot unload library %1: %2</source>
         <translation>라이브러리 %1을(를) 닫을 수 없음: %2</translation>
-    </message>
-    <message>
-        <source>Cannot resolve symbol &quot;%1&quot; in %2: %3</source>
-        <translation>%2의 심볼 &quot;%1&quot;을(를) 불러올 수 없음: %3</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is not a valid Mach-O binary (%2)</source>
@@ -2922,10 +2270,6 @@ Do you want to delete it anyway?</source>
     <message>
         <source>&apos;%1&apos; is not a Qt plugin</source>
         <translation>&apos;%1&apos;은(는) Qt 플러그인이 아님</translation>
-    </message>
-    <message>
-        <source>Failed to extract plugin meta data from &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3017,10 +2361,6 @@ Do you want to delete it anyway?</source>
         <translation>%1: 소켓 작업이 지원되지 않음</translation>
     </message>
     <message>
-        <source>%1: Unknown error %2</source>
-        <translation>%1: 알 수 없는 오류 %2</translation>
-    </message>
-    <message>
         <source>%1: Operation not permitted when socket is in this state</source>
         <translation>%1: 현재 상태에서 소켓 작업이 허용되지 않음</translation>
     </message>
@@ -3033,15 +2373,27 @@ Do you want to delete it anyway?</source>
         <translation>연결이 진행 중일 때 연결하려고 함</translation>
     </message>
     <message>
+        <source>%1: Unknown error %2</source>
+        <translation>%1: 알 수 없는 오류 %2</translation>
+    </message>
+    <message>
         <source>%1: Access denied</source>
         <translation>%1: 접근이 거부됨</translation>
+    </message>
+    <message>
+        <source>Socket is not connected</source>
+        <translation type="unfinished">소켓이 연결되지 않음</translation>
     </message>
 </context>
 <context>
     <name>QMYSQLDriver</name>
     <message>
-        <source>Unable to open database &apos;</source>
-        <translation type="vanished">다음 데이터베이스를 열 수 없음: &apos;</translation>
+        <source>Unable to allocate a MYSQL object</source>
+        <translation>MySQL 객체를 할당할 수 없음</translation>
+    </message>
+    <message>
+        <source>Unable to open database &apos;%1&apos;</source>
+        <translation>데이터베이스 &apos;%1&apos;을(를) 열 수 없음</translation>
     </message>
     <message>
         <source>Unable to connect</source>
@@ -3059,14 +2411,6 @@ Do you want to delete it anyway?</source>
         <source>Unable to rollback transaction</source>
         <translation>트랜잭션을 되돌릴 수 없음</translation>
     </message>
-    <message>
-        <source>Unable to open database &apos;%1&apos;</source>
-        <translation>데이터베이스 &apos;%1&apos;을(를) 열 수 없음</translation>
-    </message>
-    <message>
-        <source>Unable to allocate a MYSQL object</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>QMYSQLResult</name>
@@ -3081,6 +2425,14 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Unable to store result</source>
         <translation>결과를 저장할 수 없음</translation>
+    </message>
+    <message>
+        <source>Unable to execute next query</source>
+        <translation>다음 쿼리를 실행할 수 없음</translation>
+    </message>
+    <message>
+        <source>Unable to store next result</source>
+        <translation>다음 결과를 저장할 수 없음</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
@@ -3106,14 +2458,6 @@ Do you want to delete it anyway?</source>
         <source>Unable to store statement results</source>
         <translation>구문 실행 결과를 저장할 수 없음</translation>
     </message>
-    <message>
-        <source>Unable to execute next query</source>
-        <translation>다음 쿼리를 실행할 수 없음</translation>
-    </message>
-    <message>
-        <source>Unable to store next result</source>
-        <translation>다음 결과를 저장할 수 없음</translation>
-    </message>
 </context>
 <context>
     <name>QMdiArea</name>
@@ -3125,20 +2469,48 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QMdiSubWindow</name>
     <message>
-        <source>%1 - [%2]</source>
-        <translation>%1 - [%2]</translation>
+        <source>- [%1]</source>
+        <translation>- [%1]</translation>
     </message>
     <message>
-        <source>Close</source>
-        <translation>닫기</translation>
+        <source>%1 - [%2]</source>
+        <translation>%1 - [%2]</translation>
     </message>
     <message>
         <source>Minimize</source>
         <translation>최소화</translation>
     </message>
     <message>
+        <source>Maximize</source>
+        <translation>최대화</translation>
+    </message>
+    <message>
+        <source>Unshade</source>
+        <translation>풀어 내리기</translation>
+    </message>
+    <message>
+        <source>Shade</source>
+        <translation>말아 올리기</translation>
+    </message>
+    <message>
         <source>Restore Down</source>
         <translation>복원</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>복원</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>닫기</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation>도움말</translation>
+    </message>
+    <message>
+        <source>Menu</source>
+        <translation>메뉴</translation>
     </message>
     <message>
         <source>&amp;Restore</source>
@@ -3168,68 +2540,9 @@ Do you want to delete it anyway?</source>
         <source>&amp;Close</source>
         <translation>닫기(&amp;C)</translation>
     </message>
-    <message>
-        <source>- [%1]</source>
-        <translation>- [%1]</translation>
-    </message>
-    <message>
-        <source>Maximize</source>
-        <translation>최대화</translation>
-    </message>
-    <message>
-        <source>Unshade</source>
-        <translation>풀어 내리기</translation>
-    </message>
-    <message>
-        <source>Shade</source>
-        <translation>말아 올리기</translation>
-    </message>
-    <message>
-        <source>Restore</source>
-        <translation>복원</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation>도움말</translation>
-    </message>
-    <message>
-        <source>Menu</source>
-        <translation>메뉴</translation>
-    </message>
-</context>
-<context>
-    <name>QMenu</name>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">닫기</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">열기</translation>
-    </message>
-    <message>
-        <source>Execute</source>
-        <translation type="vanished">실행</translation>
-    </message>
 </context>
 <context>
     <name>QMessageBox</name>
-    <message>
-        <source>Help</source>
-        <translation>도움말</translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation>확인</translation>
-    </message>
-    <message>
-        <source>About Qt</source>
-        <translation>Qt 정보</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;이 프로그램은 Qt 버전 %1을(를) 사용합니다.&lt;/p&gt;</translation>
-    </message>
     <message>
         <source>Show Details...</source>
         <translation>자세한 정보 보기...</translation>
@@ -3239,46 +2552,33 @@ Do you want to delete it anyway?</source>
         <translation>자세한 정보 숨기기...</translation>
     </message>
     <message>
-        <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;이 프로그램은 Qt 오픈소스 에디션 버전 %1을(를) 사용합니다.&lt;/p&gt;&lt;p&gt;Qt 오픈소스 에디션은 오픈소스 프로그램의 개발을 위한 것입니다. 상용(비공개 소스) 프로그램을 개발하고 싶다면 상용 Qt 라이선스를 구입하십시오.&lt;/p&gt;&lt;p&gt;&lt;a href=&quot;http://www.trolltech.com/company/model&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; 페이지를 방문하셔서 Qt 라이선스 정책에 대해서 알아보십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;h3&gt;Qt 정보&lt;/h3&gt;%1&lt;p&gt;Qt는 크로스 플랫폼 프로그램 개발을 위한 C++ 툴킷입니다.&lt;/p&gt;&lt;p&gt;Qt는 마이크로소프트&amp;nbsp;윈도, Mac&amp;nbsp;OS&amp;nbsp;X, 리눅스, 여러 상용 유닉스에서 소스 호환성을 제공합니다. Qt는 임베디드 리눅스, 윈도 CE와 같은 임베디드 장치도 지원합니다.&lt;/p&gt;&lt;p&gt;Qt는 노키아의 제품입니다. 더 많은 정보를 보려면 &lt;a href=&quot;http://www.trolltech.com/qt&quot;&gt;www.trolltech.com/qt&lt;/a&gt;를 참고하십시오.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under multiple licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of GNU (L)GPL.&lt;/p&gt;&lt;p&gt;Qt licensed under GNU (L)GPL is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the respective licenses.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <extracomment>Leave this text untranslated or include a verbatim copy of it below and note that it is the authoritative version in case of doubt.</extracomment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;Qt 정보&lt;/h3&gt;&lt;p&gt;이 프로그램은 Qt 버전 %1을(를) 사용합니다.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 3 or GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 3 is appropriate for the development of Qt applications provided you can comply with the terms and conditions of the GNU LGPL version 3.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt applications provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 Digia Plc and/or its subsidiary(-ies) and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of Digia Plc and/or its subsidiary(-ies).&lt;/p&gt;&lt;p&gt;Qt is a Digia product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Qt는 크로스 플랫폼 프로그램 개발을 위한 C++ 툴킷입니다.&lt;/p&gt;&lt;p&gt;Qt는 모든 주요 데스크톱 운영 체제에서 단일 소스 코드 호환성을 제공합니다.임베디드 리눅스 및 다른 임베디드 및 모바일 운영 체제에서도 사용할 수 있습니다.&lt;/p&gt;&lt;p&gt;다양한 사용자의 요구에 부응하기 위하여, Qt는 세 종류의 라이선스 옵션으로 제공됩니다.&lt;/p&gt;&lt;p&gt;상용 소프트웨어를 개발하면서 제 3자와 소스 코드를 공유하고 싶지 않거나, GNU LGPL 3 또는 GNU LGPL 2.1의 조건을 만족할 수 없으면 상용 라이선스 Qt를 사용하십시오.&lt;/p&gt;&lt;p&gt;GNU LGPL 3의 조건을 만족하는 Qt 기반 프로그램을 개발하려면 GNU LGPL 3 라이선스 Qt를 사용하십시오.&lt;/p&gt;&lt;p&gt;GNU LGPL 2.1의 조건을 만족하는 Qt 기반 프로그램을 개발하려면 GNU LGPL 2.1 라이선스 Qt를 사용하십시오.&lt;/p&gt;&lt;p&gt;Qt 라이선스에 관한 정보를 보려면 &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; 페이지를 참조하십시오.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 Digia Plc and/or its subsidiary(-ies) and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of Digia Plc and/or its subsidiary(-ies).&lt;/p&gt;&lt;p&gt;Qt는 오픈 소스 프로젝트로 개발되는 Digia의 제품입니다. 더 많은 정보를 보려면 &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; 사이트를 방문하십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across all major desktop operating systems. It is also available for embedded Linux and other embedded and mobile operating systems.&lt;/p&gt;&lt;p&gt;Qt is available under three different licensing options designed to accommodate the needs of our various users.&lt;/p&gt;&lt;p&gt;Qt licensed under our commercial license agreement is appropriate for development of proprietary/commercial software where you do not want to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL version 3 or GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 3 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 3.&lt;/p&gt;&lt;p&gt;Qt licensed under the GNU LGPL version 2.1 is appropriate for the development of Qt&amp;nbsp;applications provided you can comply with the terms and conditions of the GNU LGPL version 2.1.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://%2/&quot;&gt;%2&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;&lt;p&gt;Copyright (C) %1 The Qt Company Ltd and other contributors.&lt;/p&gt;&lt;p&gt;Qt and the Qt logo are trademarks of The Qt Company Ltd.&lt;/p&gt;&lt;p&gt;Qt is The Qt Company Ltd product developed as an open source project. See &lt;a href=&quot;http://%3/&quot;&gt;%3&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>QMultiInputContext</name>
-    <message>
-        <source>Select IM</source>
-        <translation type="vanished">입력기 선택</translation>
-    </message>
-</context>
-<context>
-    <name>QMultiInputContextPlugin</name>
-    <message>
-        <source>Multiple input method switcher</source>
-        <translation type="vanished">다중 입력기 전환기</translation>
-    </message>
-    <message>
-        <source>Multiple input method switcher that uses the context menu of the text widgets</source>
-        <translation type="vanished">텍스트 위젯의 컨텍스트 메뉴를 사용하는 다중 입력기 전환기</translation>
+        <source>About Qt</source>
+        <translation>Qt 정보</translation>
     </message>
 </context>
 <context>
     <name>QNativeSocketEngine</name>
+    <message>
+        <source>Unable to initialize non-blocking socket</source>
+        <translation>논블러킹 소켓을 초기화할 수 없음</translation>
+    </message>
+    <message>
+        <source>Unable to initialize broadcast socket</source>
+        <translation>브로드캐스트 소켓을 초기화할 수 없음</translation>
+    </message>
+    <message>
+        <source>Attempt to use IPv6 socket on a platform with no IPv6 support</source>
+        <translation>IPv6을 지원하지 않는 플랫폼에서 IPv6 소켓을 사용하려고 시도함</translation>
+    </message>
     <message>
         <source>The remote host closed the connection</source>
         <translation>원격 호스트에서 연결을 닫음</translation>
@@ -3302,6 +2602,10 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Invalid socket descriptor</source>
         <translation>잘못된 소켓 설명자</translation>
+    </message>
+    <message>
+        <source>Host unreachable</source>
+        <translation>호스트에 접근할 수 없음</translation>
     </message>
     <message>
         <source>Network unreachable</source>
@@ -3332,6 +2636,10 @@ Do you want to delete it anyway?</source>
         <translation>주소가 보호되어 있음</translation>
     </message>
     <message>
+        <source>Datagram was too large to send</source>
+        <translation>한 번에 보낼 데이터그램이 너무 큼</translation>
+    </message>
+    <message>
         <source>Unable to send a message</source>
         <translation>메시지를 보낼 수 없음</translation>
     </message>
@@ -3352,32 +2660,8 @@ Do you want to delete it anyway?</source>
         <translation>다른 소켓이 지정한 포트에서 듣고 있음</translation>
     </message>
     <message>
-        <source>Unable to initialize non-blocking socket</source>
-        <translation>논블러킹 소켓을 초기화할 수 없음</translation>
-    </message>
-    <message>
-        <source>Unable to initialize broadcast socket</source>
-        <translation>브로드캐스트 소켓을 초기화할 수 없음</translation>
-    </message>
-    <message>
-        <source>Attempt to use IPv6 socket on a platform with no IPv6 support</source>
-        <translation>IPv6을 지원하지 않는 플랫폼에서 IPv6 소켓을 사용하려고 시도함</translation>
-    </message>
-    <message>
-        <source>Host unreachable</source>
-        <translation>호스트에 접근할 수 없음</translation>
-    </message>
-    <message>
-        <source>Datagram was too large to send</source>
-        <translation>한 번에 보낼 데이터그램이 너무 큼</translation>
-    </message>
-    <message>
         <source>Operation on non-socket</source>
         <translation>비 소켓에서 작업 실행됨</translation>
-    </message>
-    <message>
-        <source>Unknown error</source>
-        <translation>알 수 없는 오류</translation>
     </message>
     <message>
         <source>The proxy type is invalid for this operation</source>
@@ -3389,11 +2673,15 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Network dropped connection on reset</source>
-        <translation type="unfinished"></translation>
+        <translation>초기화 중 네트워크에서 연결 끊음</translation>
     </message>
     <message>
         <source>Connection reset by peer</source>
-        <translation type="unfinished"></translation>
+        <translation>원격지에서 연결을 초기화함</translation>
+    </message>
+    <message>
+        <source>Unknown error</source>
+        <translation>알 수 없는 오류</translation>
     </message>
 </context>
 <context>
@@ -3451,6 +2739,10 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QNetworkAccessFtpBackend</name>
     <message>
+        <source>No suitable proxy found</source>
+        <translation>적합한 프록시를 찾을 수 없음</translation>
+    </message>
+    <message>
         <source>Cannot open %1: is a directory</source>
         <translation>%1을(를) 열 수 없음: 디렉터리임</translation>
     </message>
@@ -3466,28 +2758,9 @@ Do you want to delete it anyway?</source>
         <source>Error while uploading %1: %2</source>
         <translation>%1 업로드 중 오류 발생: %2</translation>
     </message>
-    <message>
-        <source>No suitable proxy found</source>
-        <translation>적합한 프록시를 찾을 수 없음</translation>
-    </message>
-</context>
-<context>
-    <name>QNetworkAccessManager</name>
-    <message>
-        <source>Network access is disabled.</source>
-        <translation>네트워크 접근이 비활성화되었습니다.</translation>
-    </message>
 </context>
 <context>
     <name>QNetworkReply</name>
-    <message>
-        <source>Error downloading %1 - server replied: %2</source>
-        <translation type="vanished">%1을(를) 다운로드하는 중 오류 발생 - 서버 응답: %2</translation>
-    </message>
-    <message>
-        <source>Protocol &quot;%1&quot; is unknown</source>
-        <translation>알 수 없는 프로토콜 &quot;%1&quot;</translation>
-    </message>
     <message>
         <source>Background request not allowed.</source>
         <translation>백그라운드 요청이 허용되지 않았습니다.</translation>
@@ -3505,8 +2778,12 @@ Do you want to delete it anyway?</source>
         <translation>일시적인 네트워크 실패.</translation>
     </message>
     <message>
+        <source>Protocol &quot;%1&quot; is unknown</source>
+        <translation>알 수 없는 프로토콜 &quot;%1&quot;</translation>
+    </message>
+    <message>
         <source>Error transferring %1 - server replied: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1을(를) 전송하는 중 오류 발생 - 서버 응답: %2</translation>
     </message>
 </context>
 <context>
@@ -3560,13 +2837,13 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QOCIDriver</name>
     <message>
-        <source>Unable to logon</source>
-        <translation>로그온할 수 없음</translation>
-    </message>
-    <message>
         <source>Unable to initialize</source>
         <comment>QOCIDriver</comment>
         <translation>초기화할 수 없음</translation>
+    </message>
+    <message>
+        <source>Unable to logon</source>
+        <translation>로그온할 수 없음</translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
@@ -3604,20 +2881,16 @@ Do you want to delete it anyway?</source>
         <translation>구문을 준비할 수 없음</translation>
     </message>
     <message>
+        <source>Unable to get statement type</source>
+        <translation>구문 형식을 가져올 수 없음</translation>
+    </message>
+    <message>
         <source>Unable to bind value</source>
         <translation>값을 바인딩할 수 없음</translation>
     </message>
     <message>
-        <source>Unable to execute select statement</source>
-        <translation type="vanished">SELECT 구문을 실행할 수 없음</translation>
-    </message>
-    <message>
         <source>Unable to execute statement</source>
         <translation>구문을 실행할 수 없음</translation>
-    </message>
-    <message>
-        <source>Unable to get statement type</source>
-        <translation>구문 형식을 가져올 수 없음</translation>
     </message>
 </context>
 <context>
@@ -3627,8 +2900,8 @@ Do you want to delete it anyway?</source>
         <translation>연결할 수 없음</translation>
     </message>
     <message>
-        <source>Unable to connect - Driver doesn&apos;t support all needed functionality</source>
-        <translation type="vanished">연결할 수 없음 - 드라이버가 모든 필요한 기능을 제공하지 않습니다</translation>
+        <source>Unable to connect - Driver doesn&apos;t support all functionality required</source>
+        <translation>연결할 수 없음 - 드라이버가 모든 필요한 기능을 제공하지 않습니다</translation>
     </message>
     <message>
         <source>Unable to disable autocommit</source>
@@ -3646,13 +2919,13 @@ Do you want to delete it anyway?</source>
         <source>Unable to enable autocommit</source>
         <translation>자동 커밋을 설정할 수 없음</translation>
     </message>
-    <message>
-        <source>Unable to connect - Driver doesn&apos;t support all functionality required</source>
-        <translation>연결할 수 없음 - 드라이버가 모든 필요한 기능을 제공하지 않습니다</translation>
-    </message>
 </context>
 <context>
     <name>QODBCResult</name>
+    <message>
+        <source>Unable to fetch last</source>
+        <translation>마지막 항목을 가져올 수 없음</translation>
+    </message>
     <message>
         <source>QODBCResult::reset: Unable to set &apos;SQL_CURSOR_STATIC&apos; as statement attribute. Please check your ODBC driver configuration</source>
         <translation>QODBCResult::reset: &apos;SQL_CURSOR_STATIC&apos;을 구문 속성으로 설정할 수 없음. ODBC 드라이버의 설정을 확인하십시오</translation>
@@ -3662,24 +2935,12 @@ Do you want to delete it anyway?</source>
         <translation>구문을 실행할 수 없음</translation>
     </message>
     <message>
-        <source>Unable to fetch next</source>
-        <translation>다음 항목을 가져올 수 없음</translation>
-    </message>
-    <message>
-        <source>Unable to prepare statement</source>
-        <translation>구문을 준비할 수 없음</translation>
-    </message>
-    <message>
-        <source>Unable to bind variable</source>
-        <translation>변수를 바인딩할 수 없음</translation>
-    </message>
-    <message>
-        <source>Unable to fetch last</source>
-        <translation>마지막 항목을 가져올 수 없음</translation>
-    </message>
-    <message>
         <source>Unable to fetch</source>
         <translation>항목을 가져올 수 없음</translation>
+    </message>
+    <message>
+        <source>Unable to fetch next</source>
+        <translation>다음 항목을 가져올 수 없음</translation>
     </message>
     <message>
         <source>Unable to fetch first</source>
@@ -3689,47 +2950,13 @@ Do you want to delete it anyway?</source>
         <source>Unable to fetch previous</source>
         <translation>이전 항목을 가져올 수 없음</translation>
     </message>
-</context>
-<context>
-    <name>QObject</name>
     <message>
-        <source>Operation not supported on %1</source>
-        <translation type="vanished">%1에는 작업이 지원되지 않음</translation>
+        <source>Unable to prepare statement</source>
+        <translation>구문을 준비할 수 없음</translation>
     </message>
     <message>
-        <source>Invalid URI: %1</source>
-        <translation type="vanished">잘못된 URI: %1</translation>
-    </message>
-    <message>
-        <source>Write error writing to %1: %2</source>
-        <translation type="vanished">%1에 쓰는 중 오류 발생: %2</translation>
-    </message>
-    <message>
-        <source>Read error reading from %1: %2</source>
-        <translation type="vanished">%1에서 읽는 중 오류 발생: %2</translation>
-    </message>
-    <message>
-        <source>Socket error on %1: %2</source>
-        <translation type="vanished">%1에서 소켓 오류 발생: %2</translation>
-    </message>
-    <message>
-        <source>Remote host closed the connection prematurely on %1</source>
-        <translation type="vanished">%1에서 원격 호스트가 일찍 연결을 닫음</translation>
-    </message>
-    <message>
-        <source>Protocol error: packet of size 0 received</source>
-        <translation type="vanished">프로토콜 오류: 크기가 0인 패킷 받음</translation>
-    </message>
-</context>
-<context>
-    <name>QPPDOptionsModel</name>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">이름</translation>
-    </message>
-    <message>
-        <source>Value</source>
-        <translation type="vanished">값</translation>
+        <source>Unable to bind variable</source>
+        <translation>변수를 바인딩할 수 없음</translation>
     </message>
 </context>
 <context>
@@ -3762,8 +2989,20 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QPSQLResult</name>
     <message>
+        <source>Query results lost - probably discarded on executing another SQL query.</source>
+        <translation>쿼리 결과가 사라졌습니다 - 다른 SQL 쿼리를 실행하는 중 삭제되었을 수 있습니다.</translation>
+    </message>
+    <message>
         <source>Unable to create query</source>
         <translation>쿼리를 만들 수 없음</translation>
+    </message>
+    <message>
+        <source>Unable to get result</source>
+        <translation>결과를 가져올 수 없음</translation>
+    </message>
+    <message>
+        <source>Unable to send query</source>
+        <translation>쿼리를 전송할 수 없음</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
@@ -3772,22 +3011,6 @@ Do you want to delete it anyway?</source>
 </context>
 <context>
     <name>QPageSetupWidget</name>
-    <message>
-        <source>Centimeters (cm)</source>
-        <translation type="vanished">센티미터 (cm)</translation>
-    </message>
-    <message>
-        <source>Millimeters (mm)</source>
-        <translation>밀리미터(mm)</translation>
-    </message>
-    <message>
-        <source>Inches (in)</source>
-        <translation>인치(in)</translation>
-    </message>
-    <message>
-        <source>Points (pt)</source>
-        <translation>포인트(pt)</translation>
-    </message>
     <message>
         <source>Form</source>
         <translation>폼</translation>
@@ -3863,6 +3086,18 @@ Do you want to delete it anyway?</source>
     <message>
         <source>Pages per sheet:</source>
         <translation>장당 쪽 수:</translation>
+    </message>
+    <message>
+        <source>Millimeters (mm)</source>
+        <translation>밀리미터(mm)</translation>
+    </message>
+    <message>
+        <source>Inches (in)</source>
+        <translation>인치(in)</translation>
+    </message>
+    <message>
+        <source>Points (pt)</source>
+        <translation>포인트(pt)</translation>
     </message>
     <message>
         <source>Pica (P̸)</source>
@@ -4467,202 +3702,16 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QPluginLoader</name>
     <message>
-        <source>Unknown error</source>
-        <translation>알 수 없는 오류</translation>
-    </message>
-    <message>
         <source>The plugin was not loaded.</source>
         <translation>플러그인을 불러오지 못했습니다.</translation>
+    </message>
+    <message>
+        <source>Unknown error</source>
+        <translation>알 수 없는 오류</translation>
     </message>
 </context>
 <context>
     <name>QPrintDialog</name>
-    <message>
-        <source>locally connected</source>
-        <translation type="vanished">지역적으로 연결됨</translation>
-    </message>
-    <message>
-        <source>Aliases: %1</source>
-        <translation type="vanished">별명: %1</translation>
-    </message>
-    <message>
-        <source>unknown</source>
-        <translation type="vanished">알 수 없음</translation>
-    </message>
-    <message>
-        <source>Print To File ...</source>
-        <translation>파일로 인쇄...</translation>
-    </message>
-    <message>
-        <source>File %1 is not writable.
-Please choose a different file name.</source>
-        <translation>파일 %1에 쓸 수 없습니다.
-다른 파일 이름을 선택하십시오.</translation>
-    </message>
-    <message>
-        <source>%1 already exists.
-Do you want to overwrite it?</source>
-        <translation>%1이(가) 이미 존재합니다.
-덮어쓰시겠습니까?</translation>
-    </message>
-    <message>
-        <source>%1 is a directory.
-Please choose a different file name.</source>
-        <translation>%1은(는) 디렉터리입니다.
-다른 파일 이름을 선택하십시오.</translation>
-    </message>
-    <message>
-        <source>A0</source>
-        <translation type="vanished">A0</translation>
-    </message>
-    <message>
-        <source>A1</source>
-        <translation type="vanished">A1</translation>
-    </message>
-    <message>
-        <source>A2</source>
-        <translation type="vanished">A2</translation>
-    </message>
-    <message>
-        <source>A3</source>
-        <translation type="vanished">A3</translation>
-    </message>
-    <message>
-        <source>A4</source>
-        <translation type="vanished">A4</translation>
-    </message>
-    <message>
-        <source>A5</source>
-        <translation type="vanished">A5</translation>
-    </message>
-    <message>
-        <source>A6</source>
-        <translation type="vanished">A6</translation>
-    </message>
-    <message>
-        <source>A7</source>
-        <translation type="vanished">A7</translation>
-    </message>
-    <message>
-        <source>A8</source>
-        <translation type="vanished">A8</translation>
-    </message>
-    <message>
-        <source>A9</source>
-        <translation type="vanished">A9</translation>
-    </message>
-    <message>
-        <source>B0</source>
-        <translation type="vanished">B0</translation>
-    </message>
-    <message>
-        <source>B1</source>
-        <translation type="vanished">B1</translation>
-    </message>
-    <message>
-        <source>B2</source>
-        <translation type="vanished">B2</translation>
-    </message>
-    <message>
-        <source>B3</source>
-        <translation type="vanished">B3</translation>
-    </message>
-    <message>
-        <source>B4</source>
-        <translation type="vanished">B4</translation>
-    </message>
-    <message>
-        <source>B5</source>
-        <translation type="vanished">B5</translation>
-    </message>
-    <message>
-        <source>B6</source>
-        <translation type="vanished">B6</translation>
-    </message>
-    <message>
-        <source>B7</source>
-        <translation type="vanished">B7</translation>
-    </message>
-    <message>
-        <source>B8</source>
-        <translation type="vanished">B8</translation>
-    </message>
-    <message>
-        <source>B9</source>
-        <translation type="vanished">B9</translation>
-    </message>
-    <message>
-        <source>B10</source>
-        <translation type="vanished">B10</translation>
-    </message>
-    <message>
-        <source>C5E</source>
-        <translation type="vanished">C5E</translation>
-    </message>
-    <message>
-        <source>DLE</source>
-        <translation type="vanished">DLE</translation>
-    </message>
-    <message>
-        <source>Executive</source>
-        <translation type="vanished">Executive</translation>
-    </message>
-    <message>
-        <source>Folio</source>
-        <translation type="vanished">폴리오</translation>
-    </message>
-    <message>
-        <source>Ledger</source>
-        <translation type="vanished">레저</translation>
-    </message>
-    <message>
-        <source>Legal</source>
-        <translation type="vanished">리갈</translation>
-    </message>
-    <message>
-        <source>Letter</source>
-        <translation type="vanished">레터</translation>
-    </message>
-    <message>
-        <source>Tabloid</source>
-        <translation type="vanished">타블로이드</translation>
-    </message>
-    <message>
-        <source>US Common #10 Envelope</source>
-        <translation type="vanished">미국 공용 봉투 #10</translation>
-    </message>
-    <message>
-        <source>Custom</source>
-        <translation type="vanished">사용자 정의</translation>
-    </message>
-    <message>
-        <source>&amp;Options &gt;&gt;</source>
-        <translation>설정(&amp;O) &gt;&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Print</source>
-        <translation>인쇄(&amp;P)</translation>
-    </message>
-    <message>
-        <source>&amp;Options &lt;&lt;</source>
-        <translation>설정(&amp;O) &lt;&lt;</translation>
-    </message>
-    <message>
-        <source>Print to File (PDF)</source>
-        <translation>파일로 인쇄 (PDF)</translation>
-    </message>
-    <message>
-        <source>Print to File (Postscript)</source>
-        <translation type="vanished">파일로 인쇄 (포스트스크립트)</translation>
-    </message>
-    <message>
-        <source>Local file</source>
-        <translation>로컬 파일</translation>
-    </message>
-    <message>
-        <source>Write %1 file</source>
-        <translation type="vanished">%1 파일로 쓰기</translation>
-    </message>
     <message>
         <source>Print</source>
         <translation>인쇄</translation>
@@ -4736,8 +3785,66 @@ Please choose a different file name.</source>
         <translation>짝수 쪽</translation>
     </message>
     <message>
+        <source>&amp;Options &gt;&gt;</source>
+        <translation>설정(&amp;O) &gt;&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Print</source>
+        <translation>인쇄(&amp;P)</translation>
+    </message>
+    <message>
+        <source>&amp;Options &lt;&lt;</source>
+        <translation>설정(&amp;O) &lt;&lt;</translation>
+    </message>
+    <message>
+        <source>Invalid Pages Definition</source>
+        <translation>잘못된 쪽 선언</translation>
+    </message>
+    <message>
+        <source>%1 does not follow the correct syntax. Please use &apos;,&apos; to separate ranges and pages, &apos;-&apos; to define ranges and make sure ranges do not intersect with each other.</source>
+        <translation>%1의 문법이 잘못되었습니다. &apos;,&apos;를 사용하여 범위와 쪽을 구분하고, &apos;-&apos;를 사용하여 범위를 선언하고, 범위가 겹치지 않는지 확인하십시오.</translation>
+    </message>
+    <message>
+        <source>Duplex Settings Conflicts</source>
+        <translation>양면 인쇄 설정 충돌</translation>
+    </message>
+    <message>
+        <source>There are conflicts in duplex settings. Do you want to fix them?</source>
+        <translation>양면 인쇄 설정이 충돌합니다. 해결하시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Print to File (PDF)</source>
+        <translation>파일로 인쇄 (PDF)</translation>
+    </message>
+    <message>
+        <source>Local file</source>
+        <translation>로컬 파일</translation>
+    </message>
+    <message>
         <source>Write PDF file</source>
         <translation>PDF 파일 작성</translation>
+    </message>
+    <message>
+        <source>Print To File ...</source>
+        <translation>파일로 인쇄...</translation>
+    </message>
+    <message>
+        <source>%1 is a directory.
+Please choose a different file name.</source>
+        <translation>%1은(는) 디렉터리입니다.
+다른 파일 이름을 선택하십시오.</translation>
+    </message>
+    <message>
+        <source>File %1 is not writable.
+Please choose a different file name.</source>
+        <translation>파일 %1에 쓸 수 없습니다.
+다른 파일 이름을 선택하십시오.</translation>
+    </message>
+    <message>
+        <source>%1 already exists.
+Do you want to overwrite it?</source>
+        <translation>%1이(가) 이미 존재합니다.
+덮어쓰시겠습니까?</translation>
     </message>
     <message>
         <source>Options &apos;Pages Per Sheet&apos; and &apos;Page Set&apos; cannot be used together.
@@ -4753,16 +3860,16 @@ Please turn one of those options off.</source>
         <source>OK</source>
         <translation>확인</translation>
     </message>
-    <message>
-        <source>Automatic</source>
-        <translation>자동</translation>
-    </message>
 </context>
 <context>
     <name>QPrintPreviewDialog</name>
     <message>
         <source>Page Setup</source>
         <translation>쪽 설정</translation>
+    </message>
+    <message>
+        <source>%1%</source>
+        <translation>%1%</translation>
     </message>
     <message>
         <source>Print Preview</source>
@@ -4829,14 +3936,6 @@ Please turn one of those options off.</source>
         <translation>쪽 설정</translation>
     </message>
     <message>
-        <source>Close</source>
-        <translation type="vanished">닫기</translation>
-    </message>
-    <message>
-        <source>%1%</source>
-        <translation>%1%</translation>
-    </message>
-    <message>
         <source>Export to PDF</source>
         <translation>PDF로 내보내기</translation>
     </message>
@@ -4844,12 +3943,28 @@ Please turn one of those options off.</source>
 <context>
     <name>QPrintPropertiesDialog</name>
     <message>
+        <source>Printer Properties</source>
+        <translation>프린터 속성</translation>
+    </message>
+    <message>
         <source>Job Options</source>
         <translation>작업 설정</translation>
     </message>
     <message>
-        <source>Printer Properties</source>
-        <translation type="unfinished"></translation>
+        <source>Page Setup Conflicts</source>
+        <translation>쪽 설정 충돌</translation>
+    </message>
+    <message>
+        <source>There are conflicts in page setup options. Do you want to fix them?</source>
+        <translation>쪽 설정이 충돌합니다. 해결하시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Advanced Option Conflicts</source>
+        <translation>고급 설정 충돌</translation>
+    </message>
+    <message>
+        <source>There are conflicts in some advanced options. Do you want to fix them?</source>
+        <translation>고급 설정이 충돌합니다. 해결하시겠습니까?</translation>
     </message>
 </context>
 <context>
@@ -4863,8 +3978,12 @@ Please turn one of those options off.</source>
         <translation>쪽</translation>
     </message>
     <message>
+        <source>There are conflicts in some options. Please fix them.</source>
+        <translation>일부 설정이 충돌합니다. 해결하십시오.</translation>
+    </message>
+    <message>
         <source>Advanced</source>
-        <translation type="vanished">고급</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4894,8 +4013,16 @@ Please turn one of those options off.</source>
         <translation>끝 쪽</translation>
     </message>
     <message>
+        <source>Current Page</source>
+        <translation>현재 쪽</translation>
+    </message>
+    <message>
         <source>Selection</source>
         <translation>선택</translation>
+    </message>
+    <message>
+        <source>Page Set:</source>
+        <translation>쪽 집합:</translation>
     </message>
     <message>
         <source>Output Settings</source>
@@ -4930,28 +4057,28 @@ Please turn one of those options off.</source>
         <translation>그레이스케일</translation>
     </message>
     <message>
-        <source>Duplex Printing</source>
+        <source>Pages</source>
+        <translation>쪽</translation>
+    </message>
+    <message>
+        <source>Specify pages or ranges separated by commas. Ranges are specified by two numbers separated by a hyphen. E.g: 3,5-7,9 prints pages 3, 5, 6, 7 and 9.</source>
+        <translation>쪽이나 범위를 쉼표로 구분하여 입력하십시오. 범위는 두 개의 숫자를 줄표로 구분하여 입력하십시오. 예: 3,5-7,9를 입력하면 3, 5, 6, 7, 9쪽을 인쇄합니다.</translation>
+    </message>
+    <message>
+        <source>Double Sided Printing</source>
         <translation>양면 인쇄</translation>
     </message>
     <message>
-        <source>None</source>
-        <translation>없음</translation>
+        <source>Off</source>
+        <translation>끔</translation>
     </message>
     <message>
-        <source>Long side</source>
-        <translation>긴 쪽</translation>
+        <source>Long side binding</source>
+        <translation>긴 쪽으로 제본</translation>
     </message>
     <message>
-        <source>Short side</source>
-        <translation>짧은 쪽</translation>
-    </message>
-    <message>
-        <source>Current Page</source>
-        <translation>현재 쪽</translation>
-    </message>
-    <message>
-        <source>Page Set:</source>
-        <translation>쪽 집합:</translation>
+        <source>Short side binding</source>
+        <translation>짧은 쪽으로 제본</translation>
     </message>
 </context>
 <context>
@@ -5008,6 +4135,10 @@ Please turn one of those options off.</source>
         <translation>프로세스가 충돌함</translation>
     </message>
     <message>
+        <source>Process failed to start</source>
+        <translation>프로세스를 시작할 수 없음</translation>
+    </message>
+    <message>
         <source>No program defined</source>
         <translation>프로그램이 지정되지 않음</translation>
     </message>
@@ -5031,52 +4162,12 @@ Please turn one of those options off.</source>
         <source>Process failed to start: %1</source>
         <translation>프로세스를 시작할 수 없음: %1</translation>
     </message>
-    <message>
-        <source>Process failed to start</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>QProgressDialog</name>
     <message>
         <source>Cancel</source>
         <translation>취소</translation>
-    </message>
-</context>
-<context>
-    <name>QPushButton</name>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">열기</translation>
-    </message>
-</context>
-<context>
-    <name>QQnxFileDialogHelper</name>
-    <message>
-        <source>All files (*.*)</source>
-        <translation>모든 파일 (*.*)</translation>
-    </message>
-    <message>
-        <source>CANCEL</source>
-        <translation type="vanished">취소</translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation type="vanished">확인</translation>
-    </message>
-</context>
-<context>
-    <name>QQnxFilePicker</name>
-    <message>
-        <source>Pick a file</source>
-        <translation>파일 선택</translation>
-    </message>
-</context>
-<context>
-    <name>QRadioButton</name>
-    <message>
-        <source>Check</source>
-        <translation type="vanished">선택</translation>
     </message>
 </context>
 <context>
@@ -5098,6 +4189,10 @@ Please turn one of those options off.</source>
         <translation>잘못된 룩어헤드 문법</translation>
     </message>
     <message>
+        <source>lookbehinds not supported, see QTBUG-2371</source>
+        <translation>룩비하인드를 지원하지 않음, QTBUG-2371 참조</translation>
+    </message>
+    <message>
         <source>bad repetition syntax</source>
         <translation>잘못된 반복 문법</translation>
     </message>
@@ -5116,10 +4211,6 @@ Please turn one of those options off.</source>
     <message>
         <source>met internal limit</source>
         <translation>내부 한계에 도달함</translation>
-    </message>
-    <message>
-        <source>lookbehinds not supported, see QTBUG-2371</source>
-        <translation>룩비하인드를 지원하지 않음, QTBUG-2371 참조</translation>
     </message>
     <message>
         <source>invalid interval</source>
@@ -5161,16 +4252,8 @@ Please turn one of those options off.</source>
         <translation>문자 클래스 끝에 ] 기호가 없음</translation>
     </message>
     <message>
-        <source>invalid escape sequence in character class</source>
-        <translation>문자 클래스에 잘못된 탈출 시퀀스가 있음</translation>
-    </message>
-    <message>
         <source>range out of order in character class</source>
         <translation>문자 클래스의 범위가 올바르지 않음</translation>
-    </message>
-    <message>
-        <source>nothing to repeat</source>
-        <translation>반복할 항목 없음</translation>
     </message>
     <message>
         <source>internal error: unexpected repeat</source>
@@ -5185,64 +4268,20 @@ Please turn one of those options off.</source>
         <translation>POSIX 이름이 있는 클래스는 클래스 내부에서만 사용 가능</translation>
     </message>
     <message>
-        <source>missing )</source>
-        <translation>) 없음</translation>
-    </message>
-    <message>
         <source>reference to non-existent subpattern</source>
         <translation>존재하지 않는 하위 패턴 참조</translation>
-    </message>
-    <message>
-        <source>erroffset passed as NULL</source>
-        <translation>erroffset이 NULL로 전달됨</translation>
-    </message>
-    <message>
-        <source>unknown option bit(s) set</source>
-        <translation>알 수 없는 옵션 비트 설정됨</translation>
-    </message>
-    <message>
-        <source>missing ) after comment</source>
-        <translation>주석 뒤에 ) 없음</translation>
     </message>
     <message>
         <source>regular expression is too large</source>
         <translation>정규 표현식이 너무 큼</translation>
     </message>
     <message>
-        <source>failed to get memory</source>
-        <translation>메모리를 할당할 수 없음</translation>
-    </message>
-    <message>
-        <source>unmatched parentheses</source>
-        <translation>괄호가 맞지 않음</translation>
-    </message>
-    <message>
         <source>internal error: code overflow</source>
         <translation>내부 오류: 코드 넘침</translation>
     </message>
     <message>
-        <source>unrecognized character after (?&lt;</source>
-        <translation>(?&lt; 다음에 예상하지 못한 글자가 옴</translation>
-    </message>
-    <message>
         <source>lookbehind assertion is not fixed length</source>
         <translation>룩비하인드 조건이 고정 길이가 아님</translation>
-    </message>
-    <message>
-        <source>malformed number or name after (?(</source>
-        <translation>(?( 다음에 잘못된 숫자나 이름이 옴</translation>
-    </message>
-    <message>
-        <source>conditional group contains more than two branches</source>
-        <translation>조건 그룹에 두 개를 초과하는 브랜치가 있음</translation>
-    </message>
-    <message>
-        <source>assertion expected after (?(</source>
-        <translation>(?( 다음에 조건을 예상함</translation>
-    </message>
-    <message>
-        <source>(?R or (?[+-]digits must be followed by )</source>
-        <translation>(?R 또는 (?[+-]digits 다음에 ) 문자가 와야 함</translation>
     </message>
     <message>
         <source>unknown POSIX class name</source>
@@ -5253,56 +4292,8 @@ Please turn one of those options off.</source>
         <translation>POSIX 정렬 순서 원소를 지원하지 않음</translation>
     </message>
     <message>
-        <source>this version of PCRE is not compiled with PCRE_UTF8 support</source>
-        <translation>사용 중인 PCRE가 PCRE_UTF8 지원을 추가하여 컴파일되지 않았음</translation>
-    </message>
-    <message>
-        <source>character value in \x{...} sequence is too large</source>
-        <translation>\x{...} 시퀀스 내의 문자 값이 너무 큼</translation>
-    </message>
-    <message>
-        <source>invalid condition (?(0)</source>
-        <translation>잘못된 조건 (?(0)</translation>
-    </message>
-    <message>
-        <source>\C not allowed in lookbehind assertion</source>
-        <translation>룩비하인드 조건에 \C를 사용할 수 없음</translation>
-    </message>
-    <message>
-        <source>PCRE does not support \L, \l, \N{name}, \U, or \u</source>
-        <translation>PCRE에서 \L, \l, \N{name}, \U, \u를 지원하지 않음</translation>
-    </message>
-    <message>
-        <source>number after (?C is &gt; 255</source>
-        <translation>(?C 다음의 숫자가 255보다 큼</translation>
-    </message>
-    <message>
-        <source>closing ) for (?C expected</source>
-        <translation>(?C에 대한 닫는 ) 기호가 필요함</translation>
-    </message>
-    <message>
-        <source>recursive call could loop indefinitely</source>
-        <translation>재귀 호출이 무한히 반복될 수 있음</translation>
-    </message>
-    <message>
         <source>unrecognized character after (?P</source>
         <translation>(?P 다음에 알 수 없는 글자가 옴</translation>
-    </message>
-    <message>
-        <source>syntax error in subpattern name (missing terminator)</source>
-        <translation>하위 패턴 이름에 구문 오류(종결자 없음)</translation>
-    </message>
-    <message>
-        <source>two named subpatterns have the same name</source>
-        <translation>두 개 이상의 이름이 있는 하위 패턴의 이름이 동일함</translation>
-    </message>
-    <message>
-        <source>invalid UTF-8 string</source>
-        <translation>잘못된 UTF-8 문자열</translation>
-    </message>
-    <message>
-        <source>support for \P, \p, and \X has not been compiled</source>
-        <translation>\P, \p, \X 지원이 컴파일되지 않았음</translation>
     </message>
     <message>
         <source>malformed \P or \p sequence</source>
@@ -5313,16 +4304,8 @@ Please turn one of those options off.</source>
         <translation>\P 또는 \p 다음에 알 수 없는 속성 이름이 옴</translation>
     </message>
     <message>
-        <source>subpattern name is too long (maximum 32 characters)</source>
-        <translation>하위 패턴 이름이 너무 김(최대 32글자)</translation>
-    </message>
-    <message>
         <source>too many named subpatterns (maximum 10000)</source>
         <translation>이름 있는 하위 패턴이 너무 많음(최대 10000개)</translation>
-    </message>
-    <message>
-        <source>octal value is greater than \377 (not in UTF-8 mode)</source>
-        <translation>8진수 값이 \377보다 큼(UTF-8 모드 제외)</translation>
     </message>
     <message>
         <source>internal error: overran compiling workspace</source>
@@ -5333,48 +4316,12 @@ Please turn one of those options off.</source>
         <translation>내부 오류: 이전에 확인된 참조된 하위 패턴을 찾을 수 없음</translation>
     </message>
     <message>
-        <source>DEFINE group contains more than one branch</source>
-        <translation>DEFINE 그룹에 하나 이상의 브랜치가 포함됨</translation>
-    </message>
-    <message>
-        <source>repeating a DEFINE group is not allowed</source>
-        <translation>DEFINE 그룹을 반복해서 사용할 수 없음</translation>
-    </message>
-    <message>
-        <source>inconsistent NEWLINE options</source>
-        <translation>일관성 없는 NEWLINE 옵션</translation>
-    </message>
-    <message>
         <source>\g is not followed by a braced, angle-bracketed, or quoted name/number or by a plain number</source>
         <translation>\g 다음에 중괄호, 부등호, 따옴표로 둘러싸인 이름/숫자 또는 둘러싸는 부호 없는 숫자가 오지 않음</translation>
     </message>
     <message>
-        <source>a numbered reference must not be zero</source>
-        <translation>참조 번호가 0일 수 없음</translation>
-    </message>
-    <message>
-        <source>an argument is not allowed for (*ACCEPT), (*FAIL), or (*COMMIT)</source>
-        <translation>(*ACCEPT), (*FAIL), (*COMMIT)에는 인자를 사용할 수 없음</translation>
-    </message>
-    <message>
-        <source>(*VERB) not recognized</source>
-        <translation>(*VERB)가 인식되지 않음</translation>
-    </message>
-    <message>
-        <source>number is too big</source>
-        <translation>숫자가 너무 큼</translation>
-    </message>
-    <message>
         <source>subpattern name expected</source>
         <translation>하위 패턴 이름이 필요함</translation>
-    </message>
-    <message>
-        <source>digit expected after (?+</source>
-        <translation>(?+ 다음에 숫자가 필요함</translation>
-    </message>
-    <message>
-        <source>] is an invalid data character in JavaScript compatibility mode</source>
-        <translation>자바스크립트 호환 모드에서 ] 글자는 잘못된 데이터 글자임</translation>
     </message>
     <message>
         <source>different names for subpatterns of the same number are not allowed</source>
@@ -5385,52 +4332,20 @@ Please turn one of those options off.</source>
         <translation>(*MARK)에 인자가 필요함</translation>
     </message>
     <message>
-        <source>this version of PCRE is not compiled with PCRE_UCP support</source>
-        <translation>사용 중인 PCRE가 PCRE_UCP 지원을 추가하여 컴파일되지 않았음</translation>
-    </message>
-    <message>
-        <source>\c must be followed by an ASCII character</source>
-        <translation>\c 다음에 ASCII 글자가 와야 함</translation>
-    </message>
-    <message>
         <source>\k is not followed by a braced, angle-bracketed, or quoted name</source>
         <translation>\k 다음에 중괄호, 부등호, 따옴표로 둘러싸인 이름이 와야 함</translation>
-    </message>
-    <message>
-        <source>internal error: unknown opcode in find_fixedlength()</source>
-        <translation>내부 오류: find_fixedlength()의 알 수 없는 opcode</translation>
     </message>
     <message>
         <source>\N is not supported in a class</source>
         <translation>클래스 내에서 \N을 사용할 수 없음</translation>
     </message>
     <message>
-        <source>too many forward references</source>
-        <translation>너무 많은 사전 참조</translation>
-    </message>
-    <message>
         <source>disallowed Unicode code point (&gt;= 0xd800 &amp;&amp; &lt;= 0xdfff)</source>
         <translation>사용할 수 없는 유니코드 코드 포인트 (&gt;= 0xd800 &amp;&amp; &lt;= 0xdfff)</translation>
     </message>
     <message>
-        <source>invalid UTF-16 string</source>
-        <translation>잘못된 UTF-16 문자열</translation>
-    </message>
-    <message>
         <source>name is too long in (*MARK), (*PRUNE), (*SKIP), or (*THEN)</source>
         <translation>(*MARK), (*PRUNE), (*SKIP), (*THEN)의 이름이 너무 김</translation>
-    </message>
-    <message>
-        <source>character value in \u.... sequence is too large</source>
-        <translation>\u.... 시퀀스의 문자 값이 너무 큼</translation>
-    </message>
-    <message>
-        <source>invalid UTF-32 string</source>
-        <translation>잘못된 UTF-32 문자열</translation>
-    </message>
-    <message>
-        <source>setting UTF is disabled by the application</source>
-        <translation>프로그램에서 UTF 설정을 허용하지 않음</translation>
     </message>
     <message>
         <source>non-hex character in \x{} (closing brace missing?)</source>
@@ -5441,8 +4356,524 @@ Please turn one of those options off.</source>
         <translation>\o{}에 8진수 숫자가 아닌 것이 옴(닫는 괄호가 없을 수도 있음)</translation>
     </message>
     <message>
+        <source>escape sequence is invalid in character class</source>
+        <translation>탈출 시퀀스가 문자 클래스에서 잘못됨</translation>
+    </message>
+    <message>
+        <source>quantifier does not follow a repeatable item</source>
+        <translation>한정자가 반복 가능한 항목을 따르지 않음</translation>
+    </message>
+    <message>
+        <source>missing closing parenthesis</source>
+        <translation>닫는 괄호가 없음</translation>
+    </message>
+    <message>
+        <source>pattern passed as NULL</source>
+        <translation>pattern이 NULL로 전달됨</translation>
+    </message>
+    <message>
+        <source>unrecognised compile-time option bit(s)</source>
+        <translation>인식할 수 없는 컴파일 시간 옵션 비트</translation>
+    </message>
+    <message>
+        <source>missing ) after (?# comment</source>
+        <translation>(?# 주석 뒤에 ) 없음</translation>
+    </message>
+    <message>
+        <source>failed to allocate heap memory</source>
+        <translation>힙 메모리를 할당할 수 없음</translation>
+    </message>
+    <message>
+        <source>unmatched closing parenthesis</source>
+        <translation>닫는 괄호가 맞지 않음</translation>
+    </message>
+    <message>
+        <source>missing closing parenthesis for condition</source>
+        <translation>조건문을 닫는 괄호가 없음</translation>
+    </message>
+    <message>
+        <source>a relative value of zero is not allowed</source>
+        <translation>상대값으로 0을 사용할 수 없음</translation>
+    </message>
+    <message>
+        <source>conditional subpattern contains more than two branches</source>
+        <translation>조건 그룹에 두 개를 초과하는 브랜치가 있음</translation>
+    </message>
+    <message>
+        <source>assertion expected after (?( or (?(?C)</source>
+        <translation>(?( 또는 (?(?C) 다음에 조건이 필요함</translation>
+    </message>
+    <message>
+        <source>digit expected after (?+ or (?-</source>
+        <translation>(?+ 또는 (?- 다음에 숫자가 필요함</translation>
+    </message>
+    <message>
+        <source>internal error in pcre2_study(): should not occur</source>
+        <translation>pcre2_study() 내부 오류: 일어나면 안 됨</translation>
+    </message>
+    <message>
+        <source>this version of PCRE2 does not have Unicode support</source>
+        <translation>이 PCRE2 버전에서 유니코드를 지원하지 않음</translation>
+    </message>
+    <message>
+        <source>character code point value in \x{} or \o{} is too large</source>
+        <translation>\x{} 또는 \o{}에 있는 문자 코드 포인트 값이 너무 큼</translation>
+    </message>
+    <message>
+        <source>lookbehind is too complicated</source>
+        <translation>룩비하인드가 너무 복잡함</translation>
+    </message>
+    <message>
+        <source>\C is not allowed in a lookbehind assertion in UTF-16 mode</source>
+        <translation>UTF-16 모드에서 룩비하인드 조건에 \C를 사용할 수 없음</translation>
+    </message>
+    <message>
+        <source>PCRE2 does not support \F, \L, \l, \N{name}, \U, or \u</source>
+        <translation>PCRE2에서 \F, \L, \l, \N{name}, \U, \u를 지원하지 않음</translation>
+    </message>
+    <message>
+        <source>number after (?C is greater than 255</source>
+        <translation>(?C 다음의 숫자가 255보다 큼</translation>
+    </message>
+    <message>
+        <source>closing parenthesis for (?C expected</source>
+        <translation>(?C에 대한 닫는 ) 기호가 필요함</translation>
+    </message>
+    <message>
+        <source>invalid escape sequence in (*VERB) name</source>
+        <translation>(*VERB) 이름에 잘못된 탈출 시퀀스가 있음</translation>
+    </message>
+    <message>
+        <source>syntax error in subpattern name (missing terminator?)</source>
+        <translation>하위 패턴 이름에 구문 오류(종결자 없음)</translation>
+    </message>
+    <message>
+        <source>two named subpatterns have the same name (PCRE2_DUPNAMES not set)</source>
+        <translation>두 개 이상의 이름이 있는 하위 패턴의 이름이 동일함(PCRE2_DUPNAMES 설정되지 않음)</translation>
+    </message>
+    <message>
+        <source>subpattern name must start with a non-digit</source>
+        <translation>하위 패턴 이름이 숫자로 시작할 수 없음</translation>
+    </message>
+    <message>
+        <source>this version of PCRE2 does not have support for \P, \p, or \X</source>
+        <translation>이 PCRE2 버전에서 \P, \p, \X를 지원하지 않음</translation>
+    </message>
+    <message>
+        <source>subpattern name is too long (maximum 32 code units)</source>
+        <translation>하위 패턴 이름이 너무 김(최대 32개 코드 단위)</translation>
+    </message>
+    <message>
+        <source>octal value is greater than \377 in 8-bit non-UTF-8 mode</source>
+        <translation>비 UTF-8 모드에서 8진수 값이 \377보다 큼</translation>
+    </message>
+    <message>
+        <source>DEFINE subpattern contains more than one branch</source>
+        <translation>DEFINE 하위 패턴에 하나 이상의 브랜치가 포함됨</translation>
+    </message>
+    <message>
         <source>missing opening brace after \o</source>
         <translation>\o 다음에 여는 중괄호가 없음</translation>
+    </message>
+    <message>
+        <source>internal error: unknown newline setting</source>
+        <translation>내부 오류: 예상하지 못한 새로운 줄 설정</translation>
+    </message>
+    <message>
+        <source>(?R (recursive pattern call) must be followed by a closing parenthesis</source>
+        <translation>(?R (재귀적 패턴 호출) 다음에는 닫는 괄호가 와야 함</translation>
+    </message>
+    <message>
+        <source>obsolete error (should not occur)</source>
+        <translation>오래된 오류(일어나면 안 됨)</translation>
+    </message>
+    <message>
+        <source>(*VERB) not recognized or malformed</source>
+        <translation>(*VERB)가 인식되지 않거나 잘못됨</translation>
+    </message>
+    <message>
+        <source>subpattern number is too big</source>
+        <translation>하위 패턴 숫자가 너무 큼</translation>
+    </message>
+    <message>
+        <source>internal error: parsed pattern overflow</source>
+        <translation>내부 오류: 처리된 패턴 넘침</translation>
+    </message>
+    <message>
+        <source>\c must be followed by a printable ASCII character</source>
+        <translation>\c 다음에 출력 가능한 ASCII 글자가 와야 함</translation>
+    </message>
+    <message>
+        <source>\c must be followed by a letter or one of [\]^_?</source>
+        <translation>\c 다음에 [\]^_? 중 한 글자가 와야 함</translation>
+    </message>
+    <message>
+        <source>internal error: unknown meta code in check_lookbehinds()</source>
+        <translation>내부 오류: check_lookbehinds()의 알 수 없는 opcode</translation>
+    </message>
+    <message>
+        <source>callout string is too long</source>
+        <translation>외부 호출 문자열이 너무 김</translation>
+    </message>
+    <message>
+        <source>using UTF is disabled by the application</source>
+        <translation>프로그램에서 UTF 사용을 허용하지 않음</translation>
+    </message>
+    <message>
+        <source>using UCP is disabled by the application</source>
+        <translation>프로그램에서 UCP 사용을 허용하지 않음</translation>
+    </message>
+    <message>
+        <source>character code point value in \u.... sequence is too large</source>
+        <translation>\u....에 있는 문자 코드 포인트 값이 너무 큼</translation>
+    </message>
+    <message>
+        <source>digits missing in \x{} or \o{} or \N{U+}</source>
+        <translation>\x{}, \o{}, \N{U+}에 숫자가 없음</translation>
+    </message>
+    <message>
+        <source>syntax error or number too big in (?(VERSION condition</source>
+        <translation>(?(VERSION 조건의 구문 오류 또는 숫자가 너무 큼</translation>
+    </message>
+    <message>
+        <source>internal error: unknown opcode in auto_possessify()</source>
+        <translation>내부 오류: auto_possessify()에서 예상하지 못한 작업 코드</translation>
+    </message>
+    <message>
+        <source>missing terminating delimiter for callout with string argument</source>
+        <translation>문자열 인자가 있는 외부 호출에 끝 구분자 없음</translation>
+    </message>
+    <message>
+        <source>unrecognized string delimiter follows (?C</source>
+        <translation>(?C 다음에 알 수 없는 글자가 옴</translation>
+    </message>
+    <message>
+        <source>using \C is disabled by the application</source>
+        <translation>프로그램에서 \C 사용을 허용하지 않음</translation>
+    </message>
+    <message>
+        <source>(?| and/or (?J: or (?x: parentheses are too deeply nested</source>
+        <translation>(?|, (?J:, (?x: 괄호 깊이가 너무 깊음</translation>
+    </message>
+    <message>
+        <source>using \C is disabled in this PCRE2 library</source>
+        <translation>이 PCRE2 라이브러리에서 \C 사용을 허용하지 않음</translation>
+    </message>
+    <message>
+        <source>regular expression is too complicated</source>
+        <translation>정규 표현식이 너무 복잡함</translation>
+    </message>
+    <message>
+        <source>lookbehind assertion is too long</source>
+        <translation>룩비하인드 조건이 너무 김</translation>
+    </message>
+    <message>
+        <source>pattern string is longer than the limit set by the application</source>
+        <translation>패턴 문자열이 프로그램에서 설정한 한계보다 더 김</translation>
+    </message>
+    <message>
+        <source>internal error: unknown code in parsed pattern</source>
+        <translation>내부 오류: 처리된 패턴에 알 수 없는 코드</translation>
+    </message>
+    <message>
+        <source>internal error: bad code value in parsed_skip()</source>
+        <translation>내부 오류: parsed_skip()에 잘못된 코드 값</translation>
+    </message>
+    <message>
+        <source>PCRE2_EXTRA_ALLOW_SURROGATE_ESCAPES is not allowed in UTF-16 mode</source>
+        <translation>UTF-16 모드에서 PCRE2_EXTRA_ALLOW_SURROGATE_ESCAPES가 허용되지 않음</translation>
+    </message>
+    <message>
+        <source>invalid option bits with PCRE2_LITERAL</source>
+        <translation>PCRE2_LITERAL에 잘못된 옵션 비트</translation>
+    </message>
+    <message>
+        <source>\N{U+dddd} is supported only in Unicode (UTF) mode</source>
+        <translation>\N{U+dddd}는 유니코드(UTF) 모드에서만 지원함</translation>
+    </message>
+    <message>
+        <source>invalid hyphen in option setting</source>
+        <translation>옵션 설정에 잘못된 하이픈</translation>
+    </message>
+    <message>
+        <source>(*alpha_assertion) not recognized</source>
+        <translation>(*alpha_assertion)이 인식되지 않음</translation>
+    </message>
+    <message>
+        <source>script runs require Unicode support, which this version of PCRE2 does not have</source>
+        <translation>스크립트를 실행하려면 유니코드 지원이 필요하지만 이 PCRE2 버전에서 지원하지 않음</translation>
+    </message>
+    <message>
+        <source>too many capturing groups (maximum 65535)</source>
+        <translation>캡처 그룹이 너무 많음(최대 65535개)</translation>
+    </message>
+    <message>
+        <source>atomic assertion expected after (?( or (?(?C)</source>
+        <translation>(?( 또는 (?(?C) 다음에 원자적 조건이 필요함</translation>
+    </message>
+    <message>
+        <source>no match</source>
+        <translation>일치하는 것 없음</translation>
+    </message>
+    <message>
+        <source>partial match</source>
+        <translation>부분적 일치</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 1 byte missing at end</source>
+        <translation>UTF-8 오류: 끝에 1바이트가 없음</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 2 bytes missing at end</source>
+        <translation>UTF-8 오류: 끝에 2바이트가 없음</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 3 bytes missing at end</source>
+        <translation>UTF-8 오류: 끝에 3바이트가 없음</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 4 bytes missing at end</source>
+        <translation>UTF-8 오류: 끝에 4바이트가 없음</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 5 bytes missing at end</source>
+        <translation>UTF-8 오류: 끝에 5바이트가 없음</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 2 top bits not 0x80</source>
+        <translation>UTF-8 오류: 두 번째 바이트의 최상위 비트가 0x80이 아님</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 3 top bits not 0x80</source>
+        <translation>UTF-8 오류: 세 번째 바이트의 최상위 비트가 0x80이 아님</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 4 top bits not 0x80</source>
+        <translation>UTF-8 오류: 네 번째 바이트의 최상위 비트가 0x80이 아님</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 5 top bits not 0x80</source>
+        <translation>UTF-8 오류: 다섯 번째 바이트의 최상위 비트가 0x80이 아님</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: byte 6 top bits not 0x80</source>
+        <translation>UTF-8 오류: 여섯 번째 바이트의 최상위 비트가 0x80이 아님</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 5-byte character is not allowed (RFC 3629)</source>
+        <translation>UTF-8 오류: 5바이트 문자는 사용할 수 없음(RFC 3629)</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: 6-byte character is not allowed (RFC 3629)</source>
+        <translation>UTF-8 오류: 6바이트 문자는 사용할 수 없음(RFC 3629)</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: code points greater than 0x10ffff are not defined</source>
+        <translation>UTF-8 오류: 0x10ffff 이상의 코드 포인트는 정의되지 않았음</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: code points 0xd800-0xdfff are not defined</source>
+        <translation>UTF-8 오류: 0xd800-0xdfff 코드 포인트는 정의되지 않았음</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 2-byte sequence</source>
+        <translation>UTF-8 오류: 불필요하게 긴 2바이트 시퀀스</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 3-byte sequence</source>
+        <translation>UTF-8 오류: 불필요하게 긴 3바이트 시퀀스</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 4-byte sequence</source>
+        <translation>UTF-8 오류: 불필요하게 긴 4바이트 시퀀스</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 5-byte sequence</source>
+        <translation>UTF-8 오류: 불필요하게 긴 5바이트 시퀀스</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: overlong 6-byte sequence</source>
+        <translation>UTF-8 오류: 불필요하게 긴 6바이트 시퀀스</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: isolated byte with 0x80 bit set</source>
+        <translation>UTF-8 오류: 단독 바이트에 0x80 비트가 설정됨</translation>
+    </message>
+    <message>
+        <source>UTF-8 error: illegal byte (0xfe or 0xff)</source>
+        <translation>UTF-8 오류: 잘못된 바이트(0xfe 또는 0xff)</translation>
+    </message>
+    <message>
+        <source>UTF-16 error: missing low surrogate at end</source>
+        <translation>UTF-16 오류: 끝에 하위 서로게이트가 없음</translation>
+    </message>
+    <message>
+        <source>UTF-16 error: invalid low surrogate</source>
+        <translation>UTF-16 오류: 잘못된 하위 서로게이트</translation>
+    </message>
+    <message>
+        <source>UTF-16 error: isolated low surrogate</source>
+        <translation>UTF-16 오류: 단독 하위 서로게이트</translation>
+    </message>
+    <message>
+        <source>UTF-32 error: code points 0xd800-0xdfff are not defined</source>
+        <translation>UTF-32 오류: 0xd800-0xdfff 코드 포인트는 정의되지 않았음</translation>
+    </message>
+    <message>
+        <source>UTF-32 error: code points greater than 0x10ffff are not defined</source>
+        <translation>UTF-32 오류: 0x10ffff 이상의 코드 포인트는 정의되지 않았음</translation>
+    </message>
+    <message>
+        <source>bad data value</source>
+        <translation>잘못된 데이터 값</translation>
+    </message>
+    <message>
+        <source>patterns do not all use the same character tables</source>
+        <translation>패턴에서 모두 같은 문자 테이블을 사용하지 않음</translation>
+    </message>
+    <message>
+        <source>magic number missing</source>
+        <translation>매직 넘버가 없음</translation>
+    </message>
+    <message>
+        <source>pattern compiled in wrong mode: 8/16/32-bit error</source>
+        <translation>패턴이 잘못된 모드로 컴파일됨: 8/16/32비트 오류</translation>
+    </message>
+    <message>
+        <source>bad offset value</source>
+        <translation>잘못된 오프셋 값</translation>
+    </message>
+    <message>
+        <source>bad option value</source>
+        <translation>잘못된 옵션 값</translation>
+    </message>
+    <message>
+        <source>invalid replacement string</source>
+        <translation>잘못된 대체 문자열</translation>
+    </message>
+    <message>
+        <source>bad offset into UTF string</source>
+        <translation>잘못된 UTF 문자열 위치 지정됨</translation>
+    </message>
+    <message>
+        <source>callout error code</source>
+        <translation>외부 호출 오류 코드</translation>
+    </message>
+    <message>
+        <source>invalid data in workspace for DFA restart</source>
+        <translation>DFA 다시 시작 작업 공간에 잘못된 데이터</translation>
+    </message>
+    <message>
+        <source>too much recursion for DFA matching</source>
+        <translation>DFA 일치에 재귀 단계가 너무 깊음</translation>
+    </message>
+    <message>
+        <source>backreference condition or recursion test is not supported for DFA matching</source>
+        <translation>DFA 일치에서는 역참조 조건이나 재귀 테스트를 지원하지 않음</translation>
+    </message>
+    <message>
+        <source>function is not supported for DFA matching</source>
+        <translation>DFA 일치에서는 함수를 지원하지 않음</translation>
+    </message>
+    <message>
+        <source>pattern contains an item that is not supported for DFA matching</source>
+        <translation>패턴에 DFA 일치에서 사용할 수 없는 항목이 포함됨</translation>
+    </message>
+    <message>
+        <source>workspace size exceeded in DFA matching</source>
+        <translation>DFA 일치 작업 공간 크기 초과</translation>
+    </message>
+    <message>
+        <source>internal error - pattern overwritten?</source>
+        <translation>내부 오류: 패턴이 덮어씌워졌습니까?</translation>
+    </message>
+    <message>
+        <source>bad JIT option</source>
+        <translation>잘못된 JIT 옵션</translation>
+    </message>
+    <message>
+        <source>JIT stack limit reached</source>
+        <translation>JIT 스택 제한에 도달함</translation>
+    </message>
+    <message>
+        <source>match limit exceeded</source>
+        <translation>일치 한계에 도달함</translation>
+    </message>
+    <message>
+        <source>no more memory</source>
+        <translation>메모리 부족</translation>
+    </message>
+    <message>
+        <source>unknown substring</source>
+        <translation>알 수 없는 부 문자열</translation>
+    </message>
+    <message>
+        <source>non-unique substring name</source>
+        <translation>부 문자열 이름이 중복됨</translation>
+    </message>
+    <message>
+        <source>NULL argument passed</source>
+        <translation>NULL 인자가 전달됨</translation>
+    </message>
+    <message>
+        <source>nested recursion at the same subject position</source>
+        <translation>같은 위치에 재귀 중첩됨</translation>
+    </message>
+    <message>
+        <source>matching depth limit exceeded</source>
+        <translation>일치 깊이 한계에 도달함</translation>
+    </message>
+    <message>
+        <source>requested value is not available</source>
+        <translation>요청한 값을 사용할 수 없음</translation>
+    </message>
+    <message>
+        <source>requested value is not set</source>
+        <translation>요청한 값이 설정되지 않았음</translation>
+    </message>
+    <message>
+        <source>offset limit set without PCRE2_USE_OFFSET_LIMIT</source>
+        <translation>PCRE2_USE_OFFSET_LIMIT이 지정되지 않고 오프셋 제한이 설정됨</translation>
+    </message>
+    <message>
+        <source>bad escape sequence in replacement string</source>
+        <translation>대체 문자열에 잘못된 탈출 시퀀스가 있음</translation>
+    </message>
+    <message>
+        <source>expected closing curly bracket in replacement string</source>
+        <translation>대체 문자열에 닫는 중괄호가 필요함</translation>
+    </message>
+    <message>
+        <source>bad substitution in replacement string</source>
+        <translation>대체 문자열에 잘못된 대체가 있음</translation>
+    </message>
+    <message>
+        <source>match with end before start or start moved backwards is not supported</source>
+        <translation>끝이 시작 이전에 있거나 시작이 뒤로 이동하는 일치는 지원하지 않음</translation>
+    </message>
+    <message>
+        <source>too many replacements (more than INT_MAX)</source>
+        <translation>대체 작업이 너무 많음(INT_MAX 초과)</translation>
+    </message>
+    <message>
+        <source>bad serialized data</source>
+        <translation>잘못된 직렬화된 값</translation>
+    </message>
+    <message>
+        <source>heap limit exceeded</source>
+        <translation>힙 한계에 도달함</translation>
+    </message>
+    <message>
+        <source>invalid syntax</source>
+        <translation>잘못된 문법</translation>
+    </message>
+    <message>
+        <source>internal error - duplicate substitution match</source>
+        <translation>내부 오류 - 복제 대체 일치</translation>
+    </message>
+    <message>
+        <source>PCRE2_MATCH_INVALID_UTF is not supported for DFA matching</source>
+        <translation>PCRE2_MATCH_INVALID_UTF는 DFA 일치에서 사용할 수 없음</translation>
     </message>
     <message>
         <source>parentheses are too deeply nested</source>
@@ -5453,23 +4884,15 @@ Please turn one of those options off.</source>
         <translation>문자 클래스에 잘못된 범위가 있음</translation>
     </message>
     <message>
-        <source>group name must start with a non-digit</source>
-        <translation>그룹 이름이 숫자로 시작할 수 없음</translation>
-    </message>
-    <message>
         <source>parentheses are too deeply nested (stack check)</source>
         <translation>괄호 깊이가 너무 깊음(스택 확인)</translation>
-    </message>
-    <message>
-        <source>digits missing in \x{} or \o{}</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSQLite2Driver</name>
     <message>
-        <source>Error to open database</source>
-        <translation type="vanished">데이터베이스를 여는 중 오류 발생</translation>
+        <source>Error opening database</source>
+        <translation>데이터베이스를 여는 중 오류 발생</translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
@@ -5478,14 +4901,6 @@ Please turn one of those options off.</source>
     <message>
         <source>Unable to commit transaction</source>
         <translation>트랜잭션을 커밋할 수 없음</translation>
-    </message>
-    <message>
-        <source>Unable to rollback Transaction</source>
-        <translation type="vanished">트랜잭션을 되돌릴 수 없음</translation>
-    </message>
-    <message>
-        <source>Error opening database</source>
-        <translation>데이터베이스를 여는 중 오류 발생</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
@@ -5533,8 +4948,16 @@ Please turn one of those options off.</source>
         <translation>열을 가져올 수 없음</translation>
     </message>
     <message>
+        <source>No query</source>
+        <translation>쿼리 없음</translation>
+    </message>
+    <message>
         <source>Unable to execute statement</source>
         <translation>구문을 실행할 수 없음</translation>
+    </message>
+    <message>
+        <source>Unable to execute multiple statements at a time</source>
+        <translation>동시에 여러 구문을 실행할 수 없음</translation>
     </message>
     <message>
         <source>Unable to reset statement</source>
@@ -5548,14 +4971,6 @@ Please turn one of those options off.</source>
         <source>Parameter count mismatch</source>
         <translation>인자 수가 일치하지 않음</translation>
     </message>
-    <message>
-        <source>No query</source>
-        <translation>쿼리 없음</translation>
-    </message>
-    <message>
-        <source>Unable to execute multiple statements at a time</source>
-        <translation>동시에 여러 구문을 실행할 수 없음</translation>
-    </message>
 </context>
 <context>
     <name>QSaveFile</name>
@@ -5566,6 +4981,10 @@ Please turn one of those options off.</source>
     <message>
         <source>Filename refers to a directory</source>
         <translation>파일 이름이 디렉터리를 가리킴</translation>
+    </message>
+    <message>
+        <source>QSaveFile cannot open &apos;%1&apos; without direct write fallback enabled.</source>
+        <translation>QSaveFile에서 직접 쓰기 폴백을 활성화하지 않고 &apos;%1&apos;을(를) 열 수 없습니다.</translation>
     </message>
     <message>
         <source>Writing canceled by application</source>
@@ -5626,17 +5045,12 @@ Please turn one of those options off.</source>
         <source>Scroll down</source>
         <translation>아래로 스크롤</translation>
     </message>
+</context>
+<context>
+    <name>QSctpSocket</name>
     <message>
-        <source>Line up</source>
-        <translation type="vanished">한 줄 위로</translation>
-    </message>
-    <message>
-        <source>Position</source>
-        <translation type="vanished">위치</translation>
-    </message>
-    <message>
-        <source>Line down</source>
-        <translation type="vanished">한 줄 아래로</translation>
+        <source>The remote host closed the connection</source>
+        <translation>원격 호스트에서 연결을 닫음</translation>
     </message>
 </context>
 <context>
@@ -5666,8 +5080,8 @@ Please turn one of those options off.</source>
         <translation>%1: 이미 존재함</translation>
     </message>
     <message>
-        <source>%1: doesn&apos;t exists</source>
-        <translation type="vanished">%1: 존재하지 않음</translation>
+        <source>%1: doesn&apos;t exist</source>
+        <translation>%1: 존재하지 않음</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
@@ -5682,8 +5096,12 @@ Please turn one of those options off.</source>
         <translation>%1: 키가 비어 있음</translation>
     </message>
     <message>
-        <source>%1: unix key file doesn&apos;t exists</source>
-        <translation type="vanished">%1: 유닉스 키 파일이 없음</translation>
+        <source>%1: bad name</source>
+        <translation>%1: 잘못된 이름</translation>
+    </message>
+    <message>
+        <source>%1: UNIX key file doesn&apos;t exist</source>
+        <translation>%1: 유닉스 키 파일이 없음</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
@@ -5702,14 +5120,6 @@ Please turn one of those options off.</source>
         <translation>%1: 연결되지 않음</translation>
     </message>
     <message>
-        <source>%1: doesn&apos;t exist</source>
-        <translation>%1: 존재하지 않음</translation>
-    </message>
-    <message>
-        <source>%1: UNIX key file doesn&apos;t exist</source>
-        <translation>%1: 유닉스 키 파일이 없음</translation>
-    </message>
-    <message>
         <source>%1: invalid size</source>
         <translation>%1: 잘못된 크기</translation>
     </message>
@@ -5720,10 +5130,6 @@ Please turn one of those options off.</source>
     <message>
         <source>%1: size query failed</source>
         <translation>%1: 크기 조회 실패</translation>
-    </message>
-    <message>
-        <source>%1: bad name</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5898,6 +5304,20 @@ Please turn one of those options off.</source>
         <translation>미디어 녹음</translation>
     </message>
     <message>
+        <source>Media Pause</source>
+        <extracomment>Media player pause button</extracomment>
+        <translation>미디어 일시 정지</translation>
+    </message>
+    <message>
+        <source>Toggle Media Play/Pause</source>
+        <extracomment>Media player button to toggle between playing and paused</extracomment>
+        <translation>미디어 재생/일시 정지</translation>
+    </message>
+    <message>
+        <source>Home Page</source>
+        <translation>홈 페이지</translation>
+    </message>
+    <message>
         <source>Favorites</source>
         <translation>즐겨찾기</translation>
     </message>
@@ -5986,128 +5406,12 @@ Please turn one of those options off.</source>
         <translation>(F) 실행</translation>
     </message>
     <message>
-        <source>Print Screen</source>
-        <translation>Print Screen</translation>
+        <source>Launch (G)</source>
+        <translation>(G) 실행</translation>
     </message>
     <message>
-        <source>Page Up</source>
-        <translation>Page Up</translation>
-    </message>
-    <message>
-        <source>Page Down</source>
-        <translation>Page Down</translation>
-    </message>
-    <message>
-        <source>Caps Lock</source>
-        <translation>Caps Lock</translation>
-    </message>
-    <message>
-        <source>Num Lock</source>
-        <translation>Num Lock</translation>
-    </message>
-    <message>
-        <source>Number Lock</source>
-        <translation>Number Lock</translation>
-    </message>
-    <message>
-        <source>Scroll Lock</source>
-        <translation>Scroll Lock</translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <translation>Insert</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation>Delete</translation>
-    </message>
-    <message>
-        <source>Escape</source>
-        <translation>Escape</translation>
-    </message>
-    <message>
-        <source>System Request</source>
-        <translation>System Request</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <translation>선택</translation>
-    </message>
-    <message>
-        <source>Yes</source>
-        <translation>예</translation>
-    </message>
-    <message>
-        <source>No</source>
-        <translation>아니요</translation>
-    </message>
-    <message>
-        <source>Context1</source>
-        <translation>Context1</translation>
-    </message>
-    <message>
-        <source>Context2</source>
-        <translation>Context2</translation>
-    </message>
-    <message>
-        <source>Context3</source>
-        <translation>Context3</translation>
-    </message>
-    <message>
-        <source>Context4</source>
-        <translation>Context4</translation>
-    </message>
-    <message>
-        <source>Call</source>
-        <extracomment>Button to start a call (note: a separate button is used to end the call)</extracomment>
-        <translation>통화</translation>
-    </message>
-    <message>
-        <source>Hangup</source>
-        <extracomment>Button to end a call (note: a separate button is used to start the call)</extracomment>
-        <translation>끊기</translation>
-    </message>
-    <message>
-        <source>Flip</source>
-        <translation>뒤집기</translation>
-    </message>
-    <message>
-        <source>Ctrl</source>
-        <translation>Ctrl</translation>
-    </message>
-    <message>
-        <source>Shift</source>
-        <translation>Shift</translation>
-    </message>
-    <message>
-        <source>Alt</source>
-        <translation>Alt</translation>
-    </message>
-    <message>
-        <source>Meta</source>
-        <translation>Meta</translation>
-    </message>
-    <message>
-        <source>+</source>
-        <translation>+</translation>
-    </message>
-    <message>
-        <source>F%1</source>
-        <translation>F%1</translation>
-    </message>
-    <message>
-        <source>Home Page</source>
-        <translation>홈 페이지</translation>
-    </message>
-    <message>
-        <source>Media Pause</source>
-        <extracomment>Media player pause button</extracomment>
-        <translation>미디어 일시 정지</translation>
-    </message>
-    <message>
-        <source>Toggle Media Play/Pause</source>
-        <extracomment>Media player button to toggle between playing and paused</extracomment>
-        <translation>미디어 재생/일시 정지</translation>
+        <source>Launch (H)</source>
+        <translation>(H) 실행</translation>
     </message>
     <message>
         <source>Monitor Brightness Up</source>
@@ -6214,6 +5518,10 @@ Please turn one of those options off.</source>
         <translation>계산기</translation>
     </message>
     <message>
+        <source>Calendar</source>
+        <translation>달력</translation>
+    </message>
+    <message>
         <source>Clear</source>
         <translation>지우기</translation>
     </message>
@@ -6224,6 +5532,10 @@ Please turn one of those options off.</source>
     <message>
         <source>Close</source>
         <translation>닫기</translation>
+    </message>
+    <message>
+        <source>Adjust contrast</source>
+        <translation>명암 조정</translation>
     </message>
     <message>
         <source>Copy</source>
@@ -6276,6 +5588,10 @@ Please turn one of those options off.</source>
     <message>
         <source>Meeting</source>
         <translation>미팅</translation>
+    </message>
+    <message>
+        <source>Memo</source>
+        <translation>메모</translation>
     </message>
     <message>
         <source>Keyboard Menu</source>
@@ -6356,6 +5672,10 @@ Please turn one of those options off.</source>
     <message>
         <source>Terminal</source>
         <translation>터미널</translation>
+    </message>
+    <message>
+        <source>To-do list</source>
+        <translation>할 일 목록</translation>
     </message>
     <message>
         <source>Tools</source>
@@ -6538,9 +5858,95 @@ Please turn one of those options off.</source>
         <translation>다시 실행</translation>
     </message>
     <message>
+        <source>Print Screen</source>
+        <translation>Print Screen</translation>
+    </message>
+    <message>
+        <source>Page Up</source>
+        <translation>Page Up</translation>
+    </message>
+    <message>
+        <source>Page Down</source>
+        <translation>Page Down</translation>
+    </message>
+    <message>
+        <source>Caps Lock</source>
+        <translation>Caps Lock</translation>
+    </message>
+    <message>
+        <source>Num Lock</source>
+        <translation>Num Lock</translation>
+    </message>
+    <message>
+        <source>Number Lock</source>
+        <translation>Number Lock</translation>
+    </message>
+    <message>
+        <source>Scroll Lock</source>
+        <translation>Scroll Lock</translation>
+    </message>
+    <message>
+        <source>Insert</source>
+        <translation>Insert</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Delete</translation>
+    </message>
+    <message>
+        <source>Escape</source>
+        <translation>Escape</translation>
+    </message>
+    <message>
+        <source>System Request</source>
+        <translation>System Request</translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation>선택</translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <translation>예</translation>
+    </message>
+    <message>
+        <source>No</source>
+        <translation>아니요</translation>
+    </message>
+    <message>
+        <source>Context1</source>
+        <translation>Context1</translation>
+    </message>
+    <message>
+        <source>Context2</source>
+        <translation>Context2</translation>
+    </message>
+    <message>
+        <source>Context3</source>
+        <translation>Context3</translation>
+    </message>
+    <message>
+        <source>Context4</source>
+        <translation>Context4</translation>
+    </message>
+    <message>
+        <source>Call</source>
+        <extracomment>Button to start a call (note: a separate button is used to end the call)</extracomment>
+        <translation>통화</translation>
+    </message>
+    <message>
+        <source>Hangup</source>
+        <extracomment>Button to end a call (note: a separate button is used to start the call)</extracomment>
+        <translation>끊기</translation>
+    </message>
+    <message>
         <source>Toggle Call/Hangup</source>
         <extracomment>Button that will hang up if we&apos;re in call, or make a call if we&apos;re not.</extracomment>
         <translation>전화 걸기/끊기</translation>
+    </message>
+    <message>
+        <source>Flip</source>
+        <translation>뒤집기</translation>
     </message>
     <message>
         <source>Voice Dial</source>
@@ -6707,55 +6113,49 @@ Please turn one of those options off.</source>
         <translation>끝내기</translation>
     </message>
     <message>
+        <source>Touchpad Toggle</source>
+        <translation>터치패드 전환</translation>
+    </message>
+    <message>
+        <source>Touchpad On</source>
+        <translation>터치패드 켜기</translation>
+    </message>
+    <message>
+        <source>Touchpad Off</source>
+        <translation>터치패드 끄기</translation>
+    </message>
+    <message>
+        <source>Ctrl</source>
+        <translation>Ctrl</translation>
+    </message>
+    <message>
+        <source>Shift</source>
+        <translation>Shift</translation>
+    </message>
+    <message>
+        <source>Alt</source>
+        <translation>Alt</translation>
+    </message>
+    <message>
+        <source>Meta</source>
+        <translation>Meta</translation>
+    </message>
+    <message>
         <source>Num</source>
         <translation>Num</translation>
     </message>
     <message>
-        <source>Touchpad Toggle</source>
-        <translation type="unfinished"></translation>
+        <source>+</source>
+        <extracomment>Key separator in shortcut string</extracomment>
+        <translation>+</translation>
     </message>
     <message>
-        <source>Touchpad On</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Touchpad Off</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>QSlider</name>
-    <message>
-        <source>Page left</source>
-        <translation type="vanished">왼쪽 페이지</translation>
-    </message>
-    <message>
-        <source>Page up</source>
-        <translation type="vanished">위쪽 페이지</translation>
-    </message>
-    <message>
-        <source>Position</source>
-        <translation type="vanished">위치</translation>
-    </message>
-    <message>
-        <source>Page right</source>
-        <translation type="vanished">오른쪽 페이지</translation>
-    </message>
-    <message>
-        <source>Page down</source>
-        <translation type="vanished">아래쪽 페이지</translation>
+        <source>F%1</source>
+        <translation>F%1</translation>
     </message>
 </context>
 <context>
     <name>QSocks5SocketEngine</name>
-    <message>
-        <source>Socks5 timeout error connecting to socks server</source>
-        <translation type="vanished">SOCKS 서버에 연결하는 중 SOCKS5 시간 초과 오류</translation>
-    </message>
-    <message>
-        <source>Network operation timed out</source>
-        <translation>네트워크 작업 시간 초과</translation>
-    </message>
     <message>
         <source>Connection to proxy refused</source>
         <translation>프록시 연결이 거부됨</translation>
@@ -6807,6 +6207,10 @@ Please turn one of those options off.</source>
     <message>
         <source>Unknown SOCKSv5 proxy error code 0x%1</source>
         <translation>알 수 없는 SOCKSv5 프록시 오류 코드 0x%1</translation>
+    </message>
+    <message>
+        <source>Network operation timed out</source>
+        <translation>네트워크 작업 시간 초과</translation>
     </message>
 </context>
 <context>
@@ -7164,94 +6568,70 @@ Role of an accessible object</extracomment>
         <translation>보조 내용</translation>
     </message>
     <message>
+        <source>terminal</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation>터미널</translation>
+    </message>
+    <message>
+        <source>desktop</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation>바탕 화면</translation>
+    </message>
+    <message>
+        <source>notification</source>
+        <extracomment>Role of an accessible object</extracomment>
+        <translation>알림</translation>
+    </message>
+    <message>
         <source>unknown</source>
         <extracomment>Role of an accessible object</extracomment>
         <translation>알 수 없음</translation>
     </message>
 </context>
 <context>
-    <name>QSpinBox</name>
+    <name>QSslDiffieHellmanParameter</name>
     <message>
-        <source>More</source>
-        <translation type="vanished">더 보기</translation>
+        <source>No error</source>
+        <translation>오류 없음</translation>
     </message>
     <message>
-        <source>Less</source>
-        <translation type="vanished">덜 보기</translation>
-    </message>
-</context>
-<context>
-    <name>QSql</name>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">삭제</translation>
+        <source>Invalid input data</source>
+        <translation>잘못된 입력 데이터</translation>
     </message>
     <message>
-        <source>Delete this record?</source>
-        <translation type="vanished">이 레코드를 삭제하시겠습니까?</translation>
-    </message>
-    <message>
-        <source>Yes</source>
-        <translation type="vanished">예</translation>
-    </message>
-    <message>
-        <source>No</source>
-        <translation type="vanished">아니오</translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <translation type="vanished">삽입</translation>
-    </message>
-    <message>
-        <source>Update</source>
-        <translation type="vanished">업데이트</translation>
-    </message>
-    <message>
-        <source>Save edits?</source>
-        <translation type="vanished">편집을 저장하시겠습니까?</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">취소</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation type="vanished">확인</translation>
-    </message>
-    <message>
-        <source>Cancel your edits?</source>
-        <translation type="vanished">편집을 취소하시겠습니까?</translation>
+        <source>The given Diffie-Hellman parameters are deemed unsafe</source>
+        <translation>지정한 디피-헬먼 인자가 안전하지 않음</translation>
     </message>
 </context>
 <context>
     <name>QSslSocket</name>
     <message>
-        <source>Unable to write data: %1</source>
-        <translation>데이터를 쓸 수 없음: %1</translation>
+        <source>Error when setting the OpenSSL configuration (%1)</source>
+        <translation>OpenSSL 설정을 지정하는 중 오류 발생(%1)</translation>
     </message>
     <message>
-        <source>Error while reading: %1</source>
-        <translation>읽는 중 오류 발생: %1</translation>
-    </message>
-    <message>
-        <source>Error during SSL handshake: %1</source>
-        <translation>SSL 악수 중 오류 발생: %1</translation>
+        <source>Error when setting the elliptic curves (%1)</source>
+        <translation>타원 곡선을 설정하는 중 오류 발생(%1)</translation>
     </message>
     <message>
         <source>Error creating SSL context (%1)</source>
         <translation>SSL 컨텍스트를 만드는 중 오류 발생(%1)</translation>
     </message>
     <message>
+        <source>unsupported protocol</source>
+        <translation>지원하지 않는 프로토콜</translation>
+    </message>
+    <message>
+        <source>Error while setting the minimal protocol version</source>
+        <translation>최소 프로토콜 버전을 설정하는 중 오류 발생</translation>
+    </message>
+    <message>
+        <source>Error while setting the maximum protocol version</source>
+        <translation>최대 프로토콜 버전을 설정하는 중 오류 발생</translation>
+    </message>
+    <message>
         <source>Invalid or empty cipher list (%1)</source>
         <translation>잘못되거나 비어 있는 암호화 키 목록 (%1)</translation>
-    </message>
-    <message>
-        <source>Error creating SSL session, %1</source>
-        <translation>SSL 세션을 만드는 중 오류 발생, %1</translation>
-    </message>
-    <message>
-        <source>Error creating SSL session: %1</source>
-        <translation>SSL 세션을 만드는 중 오류 발생: %1</translation>
     </message>
     <message>
         <source>Cannot provide a certificate with no key, %1</source>
@@ -7266,16 +6646,40 @@ Role of an accessible object</extracomment>
         <translation>개인 키를 불러올 수 없음, %1</translation>
     </message>
     <message>
-        <source>Private key does not certificate public key, %1</source>
-        <translation type="vanished">개인 키가 공개 키를 인증하지 않음, %1</translation>
-    </message>
-    <message>
-        <source>unsupported protocol</source>
-        <translation>지원하지 않는 프로토콜</translation>
-    </message>
-    <message>
         <source>Private key does not certify public key, %1</source>
         <translation>개인 키가 공개 키를 인증하지 않음, %1</translation>
+    </message>
+    <message>
+        <source>Diffie-Hellman parameters are not valid</source>
+        <translation>디피-헬먼 인자가 올바르지 않음</translation>
+    </message>
+    <message>
+        <source>OpenSSL version with disabled elliptic curves</source>
+        <translation>타원 곡선이 비활성화된 OpenSSL 버전</translation>
+    </message>
+    <message>
+        <source>Expecting QByteArray for %1</source>
+        <translation>%1의 QByteArray를 예상함</translation>
+    </message>
+    <message>
+        <source>An error occurred attempting to set %1 to %2</source>
+        <translation>%1을(를) %2(으)로 설정하는 중 오류 발생</translation>
+    </message>
+    <message>
+        <source>Wrong value for %1 (%2)</source>
+        <translation>%1의 값이 잘못됨(%2)</translation>
+    </message>
+    <message>
+        <source>Unrecognized command %1 = %2</source>
+        <translation>알 수 없는 명령 %1 = %2</translation>
+    </message>
+    <message>
+        <source>SSL_CONF_finish() failed</source>
+        <translation>SSL_CONF_finish() 실패</translation>
+    </message>
+    <message>
+        <source>SSL_CONF_CTX_new() failed</source>
+        <translation>SSL_CONF_CTX_new() 실패</translation>
     </message>
     <message>
         <source>No error</source>
@@ -7370,28 +6774,244 @@ Role of an accessible object</extracomment>
         <translation>동료 인증서가 블랙리스트에 포함됨</translation>
     </message>
     <message>
+        <source>No OCSP status response found</source>
+        <translation>OCSP 상태 응답을 찾을 수 없음</translation>
+    </message>
+    <message>
+        <source>The OCSP status request had invalid syntax</source>
+        <translation>OCSP 상태 요청에 잘못된 문법이 있음</translation>
+    </message>
+    <message>
+        <source>OCSP response contains an unexpected number of SingleResponse structures</source>
+        <translation>OCSP 응답에 예상하지 못한 개수의 SingleResponse 구조체가 있음</translation>
+    </message>
+    <message>
+        <source>OCSP responder reached an inconsistent internal state</source>
+        <translation>OCSP 응답기의 내부 상태가 잘못됨</translation>
+    </message>
+    <message>
+        <source>OCSP responder was unable to return a status for the requested certificate</source>
+        <translation>OCSP 응답기에서 요청한 인증서의 상태를 반환할 수 없음</translation>
+    </message>
+    <message>
+        <source>The server requires the client to sign the OCSP request in order to construct a response</source>
+        <translation>서버에서 응답을 구축하려면 클라이언트에서 OCSP 요청을 서명해야 함</translation>
+    </message>
+    <message>
+        <source>The client is not authorized to request OCSP status from this server</source>
+        <translation>클라이언트가 이 서버에서 OCSP 상태를 조회하도록 인증받지 않았음</translation>
+    </message>
+    <message>
+        <source>OCSP responder&apos;s identity cannot be verified</source>
+        <translation>OCSP 응답기의 자격 증명을 검증할 수 없음</translation>
+    </message>
+    <message>
+        <source>The identity of a certificate in an OCSP response cannot be established</source>
+        <translation>OCSP 응답의 인증서의 식별자를 확인할 수 없음</translation>
+    </message>
+    <message>
+        <source>The certificate status response has expired</source>
+        <translation>인증서 상태 응답이 만료됨</translation>
+    </message>
+    <message>
+        <source>The certificate&apos;s status is unknown</source>
+        <translation>인증서 상태를 알 수 없음</translation>
+    </message>
+    <message>
         <source>Unknown error</source>
         <translation>알 수 없는 오류</translation>
+    </message>
+    <message>
+        <source>Error creating SSL session, %1</source>
+        <translation>SSL 세션을 만드는 중 오류 발생, %1</translation>
+    </message>
+    <message>
+        <source>Error creating SSL session: %1</source>
+        <translation>SSL 세션을 만드는 중 오류 발생: %1</translation>
+    </message>
+    <message>
+        <source>Server-side QSslSocket does not support OCSP stapling</source>
+        <translation>서버 측 QSslSocket에서 OCSP 스테이플링을 지원하지 않음</translation>
+    </message>
+    <message>
+        <source>Failed to enable OCSP stapling</source>
+        <translation>OCSP 스테이플링을 활성화할 수 없음</translation>
+    </message>
+    <message>
+        <source>Client-side sockets do not send OCSP responses</source>
+        <translation>클라이언트 측 소켓에서 OCSP 응답을 보내지 않음</translation>
     </message>
     <message>
         <source>Unable to init SSL Context: %1</source>
         <translation>SSL 컨텍스트를 초기화할 수 없음: %1</translation>
     </message>
     <message>
+        <source>Unable to write data: %1</source>
+        <translation>데이터를 쓸 수 없음: %1</translation>
+    </message>
+    <message>
         <source>Unable to decrypt data: %1</source>
         <translation>데이터를 복호화할 수 없음: %1</translation>
+    </message>
+    <message>
+        <source>Failed to decode OCSP response</source>
+        <translation>OCSP 응답을 디코드할 수 없음</translation>
+    </message>
+    <message>
+        <source>Failed to extract basic OCSP response</source>
+        <translation>기본 OCSP 응답을 추출할 수 없음</translation>
+    </message>
+    <message>
+        <source>No certificate verification store, cannot verify OCSP response</source>
+        <translation>인증서 검증 저장소가 없음, OCSP 응답을 검증할 수 없음</translation>
+    </message>
+    <message>
+        <source>Failed to decode a SingleResponse from OCSP status response</source>
+        <translation>OCSP 상태 응답에서 SingleResponse를 디코드할 수 없음</translation>
+    </message>
+    <message>
+        <source>Failed to extract &apos;this update time&apos; from the SingleResponse</source>
+        <translation>SingleResponse에서 &apos;this update time&apos;을 추출할 수 없음</translation>
     </message>
     <message>
         <source>The TLS/SSL connection has been closed</source>
         <translation>TLS/SSL 연결이 종료됨</translation>
     </message>
     <message>
-        <source>Error when setting the elliptic curves (%1)</source>
-        <translation type="unfinished"></translation>
+        <source>Error while reading: %1</source>
+        <translation>읽는 중 오류 발생: %1</translation>
     </message>
     <message>
-        <source>OpenSSL version too old, need at least v1.0.2</source>
-        <translation type="unfinished"></translation>
+        <source>Error during SSL handshake: %1</source>
+        <translation>SSL 악수 중 오류 발생: %1</translation>
+    </message>
+    <message>
+        <source>TLS initialization failed</source>
+        <translation>TLS 초기화 실패</translation>
+    </message>
+    <message>
+        <source>Attempted to use an unsupported protocol.</source>
+        <translation>지원하지 않는 프로토콜 사용을 시도했습니다.</translation>
+    </message>
+    <message>
+        <source>Insufficient memory</source>
+        <translation>메모리 부족</translation>
+    </message>
+    <message>
+        <source>Internal error</source>
+        <translation>내부 오류</translation>
+    </message>
+    <message>
+        <source>An internal handle was invalid</source>
+        <translation>내부 핸들이 잘못됨</translation>
+    </message>
+    <message>
+        <source>An internal token was invalid</source>
+        <translation>내부 토큰이 잘못됨</translation>
+    </message>
+    <message>
+        <source>Access denied</source>
+        <translation>접근이 거부됨</translation>
+    </message>
+    <message>
+        <source>No authority could be contacted for authorization</source>
+        <translation>인증 기관에 연락할 수 없음</translation>
+    </message>
+    <message>
+        <source>No credentials</source>
+        <translation>인증 정보 없음</translation>
+    </message>
+    <message>
+        <source>The target is unknown or unreachable</source>
+        <translation>대상을 알 수 없거나 접근할 수 없음</translation>
+    </message>
+    <message>
+        <source>An unsupported function was requested</source>
+        <translation>지원하지 않는 기능을 요청함</translation>
+    </message>
+    <message>
+        <source>The hostname provided does not match the one received from the peer</source>
+        <translation>지정한 호스트 이름이 동료에게서 받은 호스트 이름과 일치하지 않음</translation>
+    </message>
+    <message>
+        <source>No common protocol exists between the client and the server</source>
+        <translation>클라이언트와 서버 사이에 공통된 프로토콜이 없음</translation>
+    </message>
+    <message>
+        <source>Unexpected or badly-formatted message received</source>
+        <translation>예상하지 못했거나 형식이 잘못된 메시지를 받음</translation>
+    </message>
+    <message>
+        <source>The data could not be encrypted</source>
+        <translation>데이터를 암호화할 수 없음</translation>
+    </message>
+    <message>
+        <source>No cipher suites in common</source>
+        <translation>공통 암호화 스위트가 없음</translation>
+    </message>
+    <message>
+        <source>The credentials were not recognized / Invalid argument</source>
+        <translation>인증 정보가 인식되지 않음 / 인자가 잘못됨</translation>
+    </message>
+    <message>
+        <source>The message was tampered with, damaged or out of sequence.</source>
+        <translation>메시지가 중간에서 변조되었거나, 손상되었거나, 순서가 잘못되었습니다.</translation>
+    </message>
+    <message>
+        <source>A message was received out of sequence.</source>
+        <translation>메시지 수신 순서가 잘못되었습니다.</translation>
+    </message>
+    <message>
+        <source>Unknown error occurred: %1</source>
+        <translation>알 수 없는 오류 발생: %1</translation>
+    </message>
+    <message>
+        <source>Invalid protocol chosen</source>
+        <translation>잘못된 프로토콜 선택함</translation>
+    </message>
+    <message>
+        <source>The certificate provided cannot be used for a client.</source>
+        <translation>지정한 인증서를 클라이언트에 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>The certificate provided cannot be used for a server.</source>
+        <translation>지정한 인증서를 서버에 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Server did not accept any certificate we could present.</source>
+        <translation>서버에서 제시한 인증서를 받아들이지 않았습니다.</translation>
+    </message>
+    <message>
+        <source>Algorithm mismatch</source>
+        <translation>알고리즘이 일치하지 않음</translation>
+    </message>
+    <message>
+        <source>Handshake failed: %1</source>
+        <translation>악수 실패: %1</translation>
+    </message>
+    <message>
+        <source>Failed to query the TLS context: %1</source>
+        <translation>TLS 콘텍스트를 질의할 수 없음: %1</translation>
+    </message>
+    <message>
+        <source>Did not get the required attributes for the connection.</source>
+        <translation>연결에 필요한 속성을 가져올 수 없었습니다.</translation>
+    </message>
+    <message>
+        <source>Unwanted protocol was negotiated</source>
+        <translation>원하지 않는 프로토콜로 협상함</translation>
+    </message>
+    <message>
+        <source>Renegotiation was unsuccessful: %1</source>
+        <translation>재협상 실패: %1</translation>
+    </message>
+    <message>
+        <source>Schannel failed to encrypt data: %1</source>
+        <translation>Schannel에서 데이터를 암호화할 수 없음: %1</translation>
+    </message>
+    <message>
+        <source>Cannot provide a certificate with no key</source>
+        <translation>키가 없는 인증서를 제공할 수 없음</translation>
     </message>
 </context>
 <context>
@@ -7466,7 +7086,7 @@ Role of an accessible object</extracomment>
     </message>
     <message>
         <source>Application Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>프로그램 설정</translation>
     </message>
 </context>
 <context>
@@ -7482,6 +7102,10 @@ Role of an accessible object</extracomment>
     <message>
         <source>No common ancestor for targets and source of transition from state &apos;%1&apos;</source>
         <translation>상태 &apos;%1&apos;에서 전환되는 원본과 대상에 공통된 조상이 없음</translation>
+    </message>
+    <message>
+        <source>Child mode of state machine &apos;%1&apos; is not &apos;ExclusiveStates&apos;.</source>
+        <translation>상태 머신 &apos;%1&apos;의 자식 모드가 &apos;ExclusiveStates&apos;가 아닙니다.</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -7541,111 +7165,18 @@ Role of an accessible object</extracomment>
     </message>
 </context>
 <context>
-    <name>QTextControl</name>
-    <message>
-        <source>&amp;Undo</source>
-        <translation type="vanished">실행 취소(&amp;U)</translation>
-    </message>
-    <message>
-        <source>&amp;Redo</source>
-        <translation type="vanished">다시 실행(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Cu&amp;t</source>
-        <translation type="vanished">잘라내기(&amp;T)</translation>
-    </message>
-    <message>
-        <source>&amp;Copy</source>
-        <translation type="vanished">복사(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Copy &amp;Link Location</source>
-        <translation type="vanished">링크 주소 복사(&amp;L)</translation>
-    </message>
-    <message>
-        <source>&amp;Paste</source>
-        <translation type="vanished">붙여넣기(&amp;P)</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation type="vanished">삭제</translation>
-    </message>
-    <message>
-        <source>Select All</source>
-        <translation type="vanished">모두 선택</translation>
-    </message>
-</context>
-<context>
-    <name>QTgaFile</name>
-    <message>
-        <source>Could not read image data</source>
-        <translation type="vanished">그림 데이터를 읽을 수 없음</translation>
-    </message>
-    <message>
-        <source>Sequential device (eg socket) for image read not supported</source>
-        <translation type="vanished">시퀀스 장치(소켓 등)에서 그림을 읽어올 수 없음</translation>
-    </message>
-    <message>
-        <source>Seek file/device for image read failed</source>
-        <translation type="vanished">그림을 읽기 위해서 파일/장치 내부에서 검색할 수 없음</translation>
-    </message>
-    <message>
-        <source>Image header read failed</source>
-        <translation type="vanished">그림 헤더를 읽을 수 없음</translation>
-    </message>
-    <message>
-        <source>Image type not supported</source>
-        <translation type="vanished">그림 형식이 지원되지 않음</translation>
-    </message>
-    <message>
-        <source>Image depth not valid</source>
-        <translation type="vanished">그림 색 농도가 올바르지 않음</translation>
-    </message>
-    <message>
-        <source>Could not seek to image read footer</source>
-        <translation type="vanished">그림을 읽는 중 끝 부분으로 검색할 수 없음</translation>
-    </message>
-    <message>
-        <source>Could not read footer</source>
-        <translation type="vanished">끝 부분을 읽을 수 없음</translation>
-    </message>
-    <message>
-        <source>Image type (non-TrueVision 2.0) not supported</source>
-        <translation type="vanished">그림 형식(비 TrueVision 2.0)을 지원하지 않음</translation>
-    </message>
-    <message>
-        <source>Could not reset to read data</source>
-        <translation type="vanished">데이터를 읽기 위하여 초기화할 수 없음</translation>
-    </message>
-</context>
-<context>
-    <name>QToolButton</name>
-    <message>
-        <source>Press</source>
-        <translation type="vanished">누름</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="vanished">열기</translation>
-    </message>
-</context>
-<context>
     <name>QUdpSocket</name>
     <message>
-        <source>This platform does not support IPv6</source>
-        <translation type="vanished">이 플랫폼에서는 IPv6을 지원하지 않습니다</translation>
+        <source>Unable to send a datagram</source>
+        <translation>데이터그램을 보낼 수 없음</translation>
+    </message>
+    <message>
+        <source>No datagram available for reading</source>
+        <translation>읽어 올 데이터그램이 없음</translation>
     </message>
 </context>
 <context>
     <name>QUndoGroup</name>
-    <message>
-        <source>Undo</source>
-        <translation type="vanished">실행 취소</translation>
-    </message>
-    <message>
-        <source>Redo</source>
-        <translation type="vanished">다시 실행</translation>
-    </message>
     <message>
         <source>Undo %1</source>
         <translation>%1 실행 취소</translation>
@@ -7674,14 +7205,6 @@ Role of an accessible object</extracomment>
 </context>
 <context>
     <name>QUndoStack</name>
-    <message>
-        <source>Undo</source>
-        <translation type="vanished">실행 취소</translation>
-    </message>
-    <message>
-        <source>Redo</source>
-        <translation type="vanished">다시 실행</translation>
-    </message>
     <message>
         <source>Undo %1</source>
         <translation>%1 실행 취소</translation>
@@ -7744,10 +7267,6 @@ Role of an accessible object</extracomment>
         <translation>PDF Pop 방향 포매팅</translation>
     </message>
     <message>
-        <source>Insert Unicode control character</source>
-        <translation>유니코드 제어 문자 삽입</translation>
-    </message>
-    <message>
         <source>LRI Left-to-right isolate</source>
         <translation>LRI 왼쪽에서 오른쪽 격리</translation>
     </message>
@@ -7763,283 +7282,9 @@ Role of an accessible object</extracomment>
         <source>PDI Pop directional isolate</source>
         <translation>PDI 방향 격리 끝</translation>
     </message>
-</context>
-<context>
-    <name>QWebFrame</name>
     <message>
-        <source>Request cancelled</source>
-        <translation type="vanished">요청 취소됨</translation>
-    </message>
-    <message>
-        <source>Request blocked</source>
-        <translation type="vanished">요청 거부됨</translation>
-    </message>
-    <message>
-        <source>Cannot show URL</source>
-        <translation type="vanished">URL을 표시할 수 없음</translation>
-    </message>
-    <message>
-        <source>Frame load interruped by policy change</source>
-        <translation type="vanished">정책 변경으로 프레임 불러오기 취소됨</translation>
-    </message>
-    <message>
-        <source>Cannot show mimetype</source>
-        <translation type="vanished">MIME 형식을 표시할 수 없음</translation>
-    </message>
-    <message>
-        <source>File does not exist</source>
-        <translation type="vanished">파일이 존재하지 않음</translation>
-    </message>
-</context>
-<context>
-    <name>QWebPage</name>
-    <message>
-        <source>Bad HTTP request</source>
-        <translation type="vanished">잘못된 HTTP 요청</translation>
-    </message>
-    <message>
-        <source>Submit</source>
-        <comment>default label for Submit buttons in forms on web pages</comment>
-        <translation type="vanished">보내기</translation>
-    </message>
-    <message>
-        <source>Submit</source>
-        <comment>Submit (input element) alt text for &lt;input&gt; elements with no alt, title, or value</comment>
-        <translation type="vanished">보내기</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <comment>default label for Reset buttons in forms on web pages</comment>
-        <translation type="vanished">초기화</translation>
-    </message>
-    <message>
-        <source>This is a searchable index. Enter search keywords: </source>
-        <comment>text that appears at the start of nearly-obsolete web pages in the form of a &apos;searchable index&apos;</comment>
-        <translation type="vanished">검색 가능한 인덱스입니다. 검색할 단어를 입력하십시오: </translation>
-    </message>
-    <message>
-        <source>Choose File</source>
-        <comment>title for file button used in HTML forms</comment>
-        <translation type="vanished">파일 선택</translation>
-    </message>
-    <message>
-        <source>No file selected</source>
-        <comment>text to display in file button used in HTML forms when no file is selected</comment>
-        <translation type="vanished">파일이 선택되지 않음</translation>
-    </message>
-    <message>
-        <source>Open in New Window</source>
-        <comment>Open in New Window context menu item</comment>
-        <translation type="vanished">새 창으로 열기</translation>
-    </message>
-    <message>
-        <source>Save Link...</source>
-        <comment>Download Linked File context menu item</comment>
-        <translation type="vanished">링크 저장...</translation>
-    </message>
-    <message>
-        <source>Copy Link</source>
-        <comment>Copy Link context menu item</comment>
-        <translation type="vanished">링크 복사</translation>
-    </message>
-    <message>
-        <source>Open Image</source>
-        <comment>Open Image in New Window context menu item</comment>
-        <translation type="vanished">그림 열기</translation>
-    </message>
-    <message>
-        <source>Save Image</source>
-        <comment>Download Image context menu item</comment>
-        <translation type="vanished">그림 저장</translation>
-    </message>
-    <message>
-        <source>Copy Image</source>
-        <comment>Copy Link context menu item</comment>
-        <translation type="vanished">그림 복사</translation>
-    </message>
-    <message>
-        <source>Open Frame</source>
-        <comment>Open Frame in New Window context menu item</comment>
-        <translation type="vanished">프레임 열기</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <comment>Copy context menu item</comment>
-        <translation type="vanished">복사</translation>
-    </message>
-    <message>
-        <source>Go Back</source>
-        <comment>Back context menu item</comment>
-        <translation type="vanished">뒤로 가기</translation>
-    </message>
-    <message>
-        <source>Go Forward</source>
-        <comment>Forward context menu item</comment>
-        <translation type="vanished">앞으로 가기</translation>
-    </message>
-    <message>
-        <source>Stop</source>
-        <comment>Stop context menu item</comment>
-        <translation type="vanished">정지</translation>
-    </message>
-    <message>
-        <source>Reload</source>
-        <comment>Reload context menu item</comment>
-        <translation type="vanished">새로 고침</translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <comment>Cut context menu item</comment>
-        <translation type="vanished">잘라내기</translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <comment>Paste context menu item</comment>
-        <translation type="vanished">붙여넣기</translation>
-    </message>
-    <message>
-        <source>No Guesses Found</source>
-        <comment>No Guesses Found context menu item</comment>
-        <translation type="vanished">추천 단어 없음</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <comment>Ignore Spelling context menu item</comment>
-        <translation type="vanished">무시</translation>
-    </message>
-    <message>
-        <source>Add To Dictionary</source>
-        <comment>Learn Spelling context menu item</comment>
-        <translation type="vanished">사전에 추가하기</translation>
-    </message>
-    <message>
-        <source>Search The Web</source>
-        <comment>Search The Web context menu item</comment>
-        <translation type="vanished">웹 검색하기</translation>
-    </message>
-    <message>
-        <source>Look Up In Dictionary</source>
-        <comment>Look Up in Dictionary context menu item</comment>
-        <translation type="vanished">사전 찾기</translation>
-    </message>
-    <message>
-        <source>Open Link</source>
-        <comment>Open Link context menu item</comment>
-        <translation type="vanished">링크 열기</translation>
-    </message>
-    <message>
-        <source>Ignore</source>
-        <comment>Ignore Grammar context menu item</comment>
-        <translation type="vanished">무시</translation>
-    </message>
-    <message>
-        <source>Spelling</source>
-        <comment>Spelling and Grammar context sub-menu item</comment>
-        <translation type="vanished">맞춤법</translation>
-    </message>
-    <message>
-        <source>Show Spelling and Grammar</source>
-        <comment>menu item title</comment>
-        <translation type="vanished">맞춤법 오류 보이기</translation>
-    </message>
-    <message>
-        <source>Hide Spelling and Grammar</source>
-        <comment>menu item title</comment>
-        <translation type="vanished">맞춤법 오류 숨기기</translation>
-    </message>
-    <message>
-        <source>Check Spelling</source>
-        <comment>Check spelling context menu item</comment>
-        <translation type="vanished">맞춤법 검사</translation>
-    </message>
-    <message>
-        <source>Check Spelling While Typing</source>
-        <comment>Check spelling while typing context menu item</comment>
-        <translation type="vanished">입력하는 동안 맞춤법 검사</translation>
-    </message>
-    <message>
-        <source>Check Grammar With Spelling</source>
-        <comment>Check grammar with spelling context menu item</comment>
-        <translation type="vanished">문법 오류 검사하기</translation>
-    </message>
-    <message>
-        <source>Fonts</source>
-        <comment>Font context sub-menu item</comment>
-        <translation type="vanished">글꼴</translation>
-    </message>
-    <message>
-        <source>Bold</source>
-        <comment>Bold context menu item</comment>
-        <translation type="vanished">굵게</translation>
-    </message>
-    <message>
-        <source>Italic</source>
-        <comment>Italic context menu item</comment>
-        <translation type="vanished">이탤릭</translation>
-    </message>
-    <message>
-        <source>Underline</source>
-        <comment>Underline context menu item</comment>
-        <translation type="vanished">밑줄</translation>
-    </message>
-    <message>
-        <source>Outline</source>
-        <comment>Outline context menu item</comment>
-        <translation type="vanished">외곽선</translation>
-    </message>
-    <message>
-        <source>Direction</source>
-        <comment>Writing direction context sub-menu item</comment>
-        <translation type="vanished">방향</translation>
-    </message>
-    <message>
-        <source>Default</source>
-        <comment>Default writing direction context menu item</comment>
-        <translation type="vanished">기본</translation>
-    </message>
-    <message>
-        <source>LTR</source>
-        <comment>Left to Right context menu item</comment>
-        <translation type="vanished">왼쪽에서 오른쪽</translation>
-    </message>
-    <message>
-        <source>RTL</source>
-        <comment>Right to Left context menu item</comment>
-        <translation type="vanished">오른쪽에서 왼쪽</translation>
-    </message>
-    <message>
-        <source>Inspect</source>
-        <comment>Inspect Element context menu item</comment>
-        <translation type="vanished">들여다 보기</translation>
-    </message>
-    <message>
-        <source>No recent searches</source>
-        <comment>Label for only item in menu that appears when clicking on the search field image, when no searches have been performed</comment>
-        <translation type="vanished">최근 검색 없음</translation>
-    </message>
-    <message>
-        <source>Recent searches</source>
-        <comment>label for first item in the menu that appears when clicking on the search field image, used as embedded menu title</comment>
-        <translation type="vanished">최근 검색</translation>
-    </message>
-    <message>
-        <source>Clear recent searches</source>
-        <comment>menu item in Recent Searches menu that empties menu&apos;s contents</comment>
-        <translation type="vanished">최근 검색 지우기</translation>
-    </message>
-    <message>
-        <source>Unknown</source>
-        <comment>Unknown filesize FTP directory listing item</comment>
-        <translation type="vanished">알 수 없음</translation>
-    </message>
-    <message>
-        <source>%1 (%2x%3 pixels)</source>
-        <comment>Title string for images</comment>
-        <translation type="vanished">%1 (%2x%3 픽셀)</translation>
-    </message>
-    <message>
-        <source>Web Inspector - %2</source>
-        <translation type="vanished">웹 들여다보기 - %2</translation>
+        <source>Insert Unicode control character</source>
+        <translation>유니코드 제어 문자 삽입</translation>
     </message>
 </context>
 <context>
@@ -8096,10 +7341,10 @@ Role of an accessible object</extracomment>
     <message>
         <source>Qt cannot load the direct2d platform plugin because the Direct2D version on this system is too old. The minimum system requirement for this platform plugin is Windows 7 SP1 with Platform Update.
 
-The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on this system is %5.%6.%7.%8.</source>
+The minimum Direct2D version required is %1. The Direct2D version on this system is %2.</source>
         <translation>시스템에 설치된 Direct2D 버전이 너무 오래 되어서 direct2d 플랫폼 플러그인을 불러올 수 없습니다. 이 플랫폼 플러그인의 최소 사양은 Windows 7 SP1 및 플랫폼 업데이트 설치입니다.
 
-필요한 최소 Direct2D 버전은 %1.%2.%3.%4이며, 이 시스템의 Direct2D 버전은 %5.%6.%7.%8입니다.</translation>
+필요한 최소 Direct2D 버전은 %1이며, 이 시스템의 Direct2D 버전은 %2입니다.</translation>
     </message>
     <message>
         <source>Cannot load direct2d platform plugin</source>
@@ -8113,8 +7358,20 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation>뒤로 가기</translation>
     </message>
     <message>
+        <source>&lt; &amp;Back</source>
+        <translation>&lt; 뒤로(&amp;B)</translation>
+    </message>
+    <message>
         <source>Continue</source>
         <translation>계속</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>다음(&amp;N)</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation>다음 (&amp;N) &gt;</translation>
     </message>
     <message>
         <source>Commit</source>
@@ -8125,18 +7382,6 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation>완료</translation>
     </message>
     <message>
-        <source>Quit</source>
-        <translation type="vanished">종료</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation>도움말</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; 뒤로(&amp;B)</translation>
-    </message>
-    <message>
         <source>&amp;Finish</source>
         <translation>완료(&amp;F)</translation>
     </message>
@@ -8145,71 +7390,12 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation>취소</translation>
     </message>
     <message>
+        <source>Help</source>
+        <translation>도움말</translation>
+    </message>
+    <message>
         <source>&amp;Help</source>
         <translation>도움말(&amp;H)</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>다음(&amp;N)</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>다음 (&amp;N) &gt;</translation>
-    </message>
-</context>
-<context>
-    <name>QWorkspace</name>
-    <message>
-        <source>&amp;Restore</source>
-        <translation type="vanished">복원(&amp;R)</translation>
-    </message>
-    <message>
-        <source>&amp;Move</source>
-        <translation type="vanished">이동(&amp;M)</translation>
-    </message>
-    <message>
-        <source>&amp;Size</source>
-        <translation type="vanished">크기 조정(&amp;S)</translation>
-    </message>
-    <message>
-        <source>Mi&amp;nimize</source>
-        <translation type="vanished">최소화(&amp;N)</translation>
-    </message>
-    <message>
-        <source>Ma&amp;ximize</source>
-        <translation type="vanished">최대화(&amp;N)</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation type="vanished">닫기(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Stay on &amp;Top</source>
-        <translation type="vanished">항상 위(&amp;T)</translation>
-    </message>
-    <message>
-        <source>Sh&amp;ade</source>
-        <translation type="vanished">말아 올리기(&amp;A)</translation>
-    </message>
-    <message>
-        <source>%1 - [%2]</source>
-        <translation type="vanished">%1 - [%2]</translation>
-    </message>
-    <message>
-        <source>Minimize</source>
-        <translation type="vanished">최소화</translation>
-    </message>
-    <message>
-        <source>Restore Down</source>
-        <translation type="vanished">복원</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">닫기</translation>
-    </message>
-    <message>
-        <source>&amp;Unshade</source>
-        <translation type="vanished">풀어 내리기(&amp;U)</translation>
     </message>
 </context>
 <context>
@@ -8326,12 +7512,20 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation>내용에 문자열 &apos;]]&gt;&apos;가 올 수 없습니다.</translation>
     </message>
     <message>
+        <source>Encountered incorrectly encoded content.</source>
+        <translation>잘못 인코딩된 내용을 발견하였습니다.</translation>
+    </message>
+    <message>
         <source>Namespace prefix &apos;%1&apos; not declared</source>
         <translation>네임스페이스 접두사 &apos;%1&apos;이(가) 선언되지 않았음</translation>
     </message>
     <message>
-        <source>Attribute redefined.</source>
-        <translation type="vanished">속성이 재정의되었습니다.</translation>
+        <source>Illegal namespace declaration.</source>
+        <translation>네임스페이스 선언이 잘못되었습니다.</translation>
+    </message>
+    <message>
+        <source>Attribute &apos;%1&apos; redefined.</source>
+        <translation>속성 &apos;%1&apos;이(가) 재정의되었습니다.</translation>
     </message>
     <message>
         <source>Unexpected character &apos;%1&apos; in public id literal.</source>
@@ -8344,6 +7538,10 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <message>
         <source>Unsupported XML version.</source>
         <translation>지원하지 않는 XML 버전입니다.</translation>
+    </message>
+    <message>
+        <source>The standalone pseudo attribute must appear after the encoding.</source>
+        <translation>standalone 의사 속성은 인코딩 다음에 와야 합니다.</translation>
     </message>
     <message>
         <source>%1 is an invalid encoding name.</source>
@@ -8370,36 +7568,60 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation>문서가 잘못되었습니다.</translation>
     </message>
     <message>
-        <source>Expected </source>
-        <translation>다음을 예상했지만</translation>
+        <source>&apos;%1&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&apos;&lt;first option&gt;&apos;</extracomment>
+        <translation>&apos;%1&apos;</translation>
     </message>
     <message>
-        <source>, but got &apos;</source>
-        <translation>, 돌아온 것은 &apos;</translation>
+        <source>%1 or &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;first option&gt;, &apos;&lt;second option&gt;&apos;</extracomment>
+        <translation>%1 또는 &apos;%2&apos;</translation>
     </message>
     <message>
-        <source>Unexpected &apos;</source>
-        <translation>예상하지 못한 &apos;</translation>
+        <source>%1, &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;options so far&gt;, &apos;&lt;next option&gt;&apos;</extracomment>
+        <translation>%1, &apos;%2&apos;</translation>
+    </message>
+    <message>
+        <source>%1, or &apos;%2&apos;</source>
+        <comment>expected</comment>
+        <extracomment>&lt;options so far&gt;, or &apos;&lt;final option&gt;&apos;</extracomment>
+        <translation>%1, 또는 &apos;%2&apos;</translation>
+    </message>
+    <message>
+        <source>Expected %1, but got &apos;%2&apos;.</source>
+        <translation>&apos;%1&apos;을(를) 예상했지만 &apos;%2&apos;을(를) 받았습니다.</translation>
+    </message>
+    <message>
+        <source>Unexpected &apos;%1&apos;.</source>
+        <translation>예상하지 못한 &apos;%1&apos;.</translation>
     </message>
     <message>
         <source>Expected character data.</source>
         <translation>예상하지 못한 문자열 데이터입니다.</translation>
     </message>
     <message>
-        <source>Recursive entity detected.</source>
-        <translation>재귀적 엔티티가 감지되었습니다.</translation>
+        <source>Self-referencing entity detected.</source>
+        <translation>자기 자신을 참조하는 엔티티가 감지되었습니다.</translation>
+    </message>
+    <message>
+        <source>Entity expands to more characters than the entity expansion limit.</source>
+        <translation>엔티티가 엔티티 확장 제한에 설정한 것보다 더 많은 글자로 확장됩니다.</translation>
     </message>
     <message>
         <source>Start tag expected.</source>
         <translation>시작 태그가 필요합니다.</translation>
     </message>
     <message>
-        <source>XML declaration not at start of document.</source>
-        <translation>XML 선언이 문서 시작에 없습니다.</translation>
-    </message>
-    <message>
         <source>NDATA in parameter entity declaration.</source>
         <translation>인자 엔티티 선언에 NDATA가 있습니다.</translation>
+    </message>
+    <message>
+        <source>XML declaration not at start of document.</source>
+        <translation>XML 선언이 문서 시작에 없습니다.</translation>
     </message>
     <message>
         <source>%1 is an invalid processing instruction name.</source>
@@ -8410,8 +7632,8 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation>잘못된 처리 방법 이름입니다.</translation>
     </message>
     <message>
-        <source>Illegal namespace declaration.</source>
-        <translation>네임스페이스 선언이 잘못되었습니다.</translation>
+        <source>%1 is an invalid PUBLIC identifier.</source>
+        <translation>%1은(는) 잘못된 PUBLIC 식별자입니다.</translation>
     </message>
     <message>
         <source>Invalid XML name.</source>
@@ -8422,12 +7644,12 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
         <translation>여는 태그와 닫는 태그가 일치하지 않습니다.</translation>
     </message>
     <message>
-        <source>Reference to unparsed entity &apos;%1&apos;.</source>
-        <translation>처리되지 않은 엔티티 &apos;%1&apos;을(를) 참고합니다.</translation>
-    </message>
-    <message>
         <source>Entity &apos;%1&apos; not declared.</source>
         <translation>엔티티 &apos;%1&apos;이(가) 선언되지 않았습니다.</translation>
+    </message>
+    <message>
+        <source>Reference to unparsed entity &apos;%1&apos;.</source>
+        <translation>처리되지 않은 엔티티 &apos;%1&apos;을(를) 참고합니다.</translation>
     </message>
     <message>
         <source>Reference to external entity &apos;%1&apos; in attribute value.</source>
@@ -8436,88 +7658,6 @@ The minimum Direct2D version required is %1.%2.%3.%4. The Direct2D version on th
     <message>
         <source>Invalid character reference.</source>
         <translation>잘못된 문자 참조입니다.</translation>
-    </message>
-    <message>
-        <source>Encountered incorrectly encoded content.</source>
-        <translation>잘못 인코딩된 내용을 발견하였습니다.</translation>
-    </message>
-    <message>
-        <source>The standalone pseudo attribute must appear after the encoding.</source>
-        <translation>standalone 의사 속성은 인코딩 다음에 와야 합니다.</translation>
-    </message>
-    <message>
-        <source>%1 is an invalid PUBLIC identifier.</source>
-        <translation>%1은(는) 잘못된 PUBLIC 식별자입니다.</translation>
-    </message>
-    <message>
-        <source>Attribute &apos;%1&apos; redefined.</source>
-        <translation>속성 &apos;%1&apos;이(가) 재정의되었습니다.</translation>
-    </message>
-</context>
-<context>
-    <name>VolumeSlider</name>
-    <message>
-        <source>Muted</source>
-        <translation type="vanished">음소거</translation>
-    </message>
-    <message>
-        <source>Volume: %1%</source>
-        <translation type="vanished">음량: %1%</translation>
-    </message>
-</context>
-<context>
-    <name>WebCore::PlatformScrollbar</name>
-    <message>
-        <source>Scroll here</source>
-        <translation type="vanished">여기로 스크롤</translation>
-    </message>
-    <message>
-        <source>Left edge</source>
-        <translation type="vanished">왼쪽 경계</translation>
-    </message>
-    <message>
-        <source>Top</source>
-        <translation type="vanished">맨 위</translation>
-    </message>
-    <message>
-        <source>Right edge</source>
-        <translation type="vanished">오른쪽 경계</translation>
-    </message>
-    <message>
-        <source>Bottom</source>
-        <translation type="vanished">맨 아래</translation>
-    </message>
-    <message>
-        <source>Page left</source>
-        <translation type="vanished">왼쪽 페이지</translation>
-    </message>
-    <message>
-        <source>Page up</source>
-        <translation type="vanished">위쪽 페이지</translation>
-    </message>
-    <message>
-        <source>Page right</source>
-        <translation type="vanished">오른쪽 페이지</translation>
-    </message>
-    <message>
-        <source>Page down</source>
-        <translation type="vanished">아래쪽 페이지</translation>
-    </message>
-    <message>
-        <source>Scroll left</source>
-        <translation type="vanished">왼쪽으로 스크롤</translation>
-    </message>
-    <message>
-        <source>Scroll up</source>
-        <translation type="vanished">위로 스크롤</translation>
-    </message>
-    <message>
-        <source>Scroll right</source>
-        <translation type="vanished">오른쪽으로 스크롤</translation>
-    </message>
-    <message>
-        <source>Scroll down</source>
-        <translation type="vanished">아래로 스크롤</translation>
     </message>
 </context>
 </TS>
