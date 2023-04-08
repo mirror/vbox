@@ -75,48 +75,53 @@
 #define IEM_MC_RAISE_DIVIDE_ERROR()                     return iemRaiseDivideError(pVCpu)
 #define IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE()       \
     do { \
-        if (!(pVCpu->cpum.GstCtx.cr0 & (X86_CR0_EM | X86_CR0_TS))) \
-        { } else return iemRaiseDeviceNotAvailable(pVCpu); \
+        if (!(pVCpu->cpum.GstCtx.cr0 & (X86_CR0_EM | X86_CR0_TS))) { /* probable */ } \
+        else return iemRaiseDeviceNotAvailable(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_WAIT_DEVICE_NOT_AVAILABLE()  \
     do { \
-        if (!((pVCpu->cpum.GstCtx.cr0 & (X86_CR0_MP | X86_CR0_TS)) == (X86_CR0_MP | X86_CR0_TS))) \
-        { } else return iemRaiseDeviceNotAvailable(pVCpu); \
+        if (!((pVCpu->cpum.GstCtx.cr0 & (X86_CR0_MP | X86_CR0_TS)) == (X86_CR0_MP | X86_CR0_TS))) { /* probable */ } \
+        else return iemRaiseDeviceNotAvailable(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_FPU_XCPT() \
     do { \
-        if (!(pVCpu->cpum.GstCtx.XState.x87.FSW & X86_FSW_ES)) \
-        { } else return iemRaiseMathFault(pVCpu); \
+        if (!(pVCpu->cpum.GstCtx.XState.x87.FSW & X86_FSW_ES)) { /* probable */ } \
+        else return iemRaiseMathFault(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() \
     do { \
-        if (   (pVCpu->cpum.GstCtx.aXcr[0] & (XSAVE_C_YMM | XSAVE_C_SSE)) != (XSAVE_C_YMM | XSAVE_C_SSE) \
-            || !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXSAVE)) \
-            return iemRaiseUndefinedOpcode(pVCpu); \
-        if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS) \
-            return iemRaiseDeviceNotAvailable(pVCpu); \
+        if (   (pVCpu->cpum.GstCtx.aXcr[0] & (XSAVE_C_YMM | XSAVE_C_SSE)) == (XSAVE_C_YMM | XSAVE_C_SSE) \
+            && (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXSAVE)) { /* probable */ } \
+        else return iemRaiseUndefinedOpcode(pVCpu); \
+        \
+        if (!(pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS)) { /* probable */ } \
+        else return iemRaiseDeviceNotAvailable(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT() \
     do { \
-        if (   (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM) \
-            || !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSFXSR)) \
-            return iemRaiseUndefinedOpcode(pVCpu); \
-        if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS) \
-            return iemRaiseDeviceNotAvailable(pVCpu); \
+        if (   !(pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM) \
+            && (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSFXSR)) { /* probable */ } \
+        else return iemRaiseUndefinedOpcode(pVCpu); \
+        \
+        if (!(pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS)) { /* probable */ } \
+        else return iemRaiseDeviceNotAvailable(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT() \
     do { \
-        if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM) \
+        if (!(pVCpu->cpum.GstCtx.cr0 & (X86_CR0_EM | X86_CR0_TS))) \
+        { /* probable */ } \
+        else if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM) \
             return iemRaiseUndefinedOpcode(pVCpu); \
-        if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS) \
+        else \
             return iemRaiseDeviceNotAvailable(pVCpu); \
-        if (pVCpu->cpum.GstCtx.XState.x87.FSW & X86_FSW_ES) \
-            return iemRaiseMathFault(pVCpu); \
+        \
+        if (!(pVCpu->cpum.GstCtx.XState.x87.FSW & X86_FSW_ES)) { /* probable */ } \
+        else return iemRaiseMathFault(pVCpu); \
     } while (0)
 #define IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO() \
     do { \
-        if (pVCpu->iem.s.uCpl != 0) \
-            return iemRaiseGeneralProtectionFault0(pVCpu); \
+        if (pVCpu->iem.s.uCpl == 0) { /* probable */ } \
+        else return iemRaiseGeneralProtectionFault0(pVCpu); \
     } while (0)
 #define IEM_MC_RAISE_GP0_IF_EFF_ADDR_UNALIGNED(a_EffAddr, a_cbAlign) \
     do { \
@@ -125,21 +130,23 @@
     } while (0)
 #define IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT() \
     do { \
-        if (   pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT \
-            || !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_FSGSBASE)) \
-            return iemRaiseUndefinedOpcode(pVCpu); \
+        if (   pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT \
+            && (pVCpu->cpum.GstCtx.cr4 & X86_CR4_FSGSBASE)) { /* probable */ } \
+        else return iemRaiseUndefinedOpcode(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_NON_CANONICAL_ADDR_GP0(a_u64Addr) \
     do { \
-        if (!IEM_IS_CANONICAL(a_u64Addr)) \
-            return iemRaiseGeneralProtectionFault0(pVCpu); \
+        if (RT_LIKELY(IEM_IS_CANONICAL(a_u64Addr))) { /* likely */ } \
+        else return iemRaiseGeneralProtectionFault0(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE_AVX_SIMD_FP_OR_UD_XCPT() \
     do { \
         if ((  ~((pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_MASK) >> X86_MXCSR_XCPT_MASK_SHIFT) \
-             & (pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_FLAGS)) != 0) \
+             & (pVCpu->cpum.GstCtx.XState.x87.MXCSR & X86_MXCSR_XCPT_FLAGS)) == 0) \
+        { /* probable */ } \
+        else \
         { \
-            if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXMMEEXCPT)\
+            if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXMMEEXCPT) \
                 return iemRaiseSimdFpException(pVCpu); \
             return iemRaiseUndefinedOpcode(pVCpu); \
         } \
