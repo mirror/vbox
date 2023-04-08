@@ -126,16 +126,19 @@ AssertCompile(!(X86_CR4_OSXSAVE & X86_CR0_TS));
 AssertCompile(!((X86_CR0_EM | X86_CR0_TS) & X86_CR4_OSFXSR));
 #define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT() \
     do { \
-        if (RT_LIKELY(!(pVCpu->cpum.GstCtx.cr0 & (X86_CR0_EM | X86_CR0_TS)))) \
+        /* Since the two CR0 bits doesn't overlap with FSW.ES, this can be reduced to a
+           single compare branch in the more probable code path. */ \
+        if (RT_LIKELY(!(  (pVCpu->cpum.GstCtx.cr0 & (X86_CR0_EM | X86_CR0_TS)) \
+                        | (pVCpu->cpum.GstCtx.XState.x87.FSW & X86_FSW_ES)))) \
         { /* probable */ } \
         else if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_EM) \
             return iemRaiseUndefinedOpcode(pVCpu); \
-        else \
+        else if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_TS) \
             return iemRaiseDeviceNotAvailable(pVCpu); \
-        \
-        if (!(pVCpu->cpum.GstCtx.XState.x87.FSW & X86_FSW_ES)) { /* probable */ } \
-        else return iemRaiseMathFault(pVCpu); \
+        else \
+            return iemRaiseMathFault(pVCpu); \
     } while (0)
+AssertCompile(!((X86_CR0_EM | X86_CR0_TS) & X86_FSW_ES));
 #define IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO() \
     do { \
         if (RT_LIKELY(pVCpu->iem.s.uCpl == 0)) { /* probable */ } \
