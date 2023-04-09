@@ -347,7 +347,8 @@ class ThreadedFunctionVariation(object):
                             sSrcParam = oNewStmt.asParams[oCurRef.iParam];
                             assert (   sSrcParam[oCurRef.offParam : oCurRef.offParam + len(oCurRef.sOrgRef)] == oCurRef.sOrgRef
                                     or oCurRef.fCustomRef), \
-                                   'offParam=%s sOrgRef=%s sSrcParam=%s<eos>' % (oCurRef.offParam, oCurRef.sOrgRef, sSrcParam);
+                                   'offParam=%s sOrgRef=%s iParam=%s oStmt.sName=%s sSrcParam=%s<eos>' \
+                                   % (oCurRef.offParam, oCurRef.sOrgRef, oCurRef.iParam, oStmt.sName, sSrcParam);
                             oNewStmt.asParams[oCurRef.iParam] = sSrcParam[0 : oCurRef.offParam] \
                                                               + oCurRef.sNewName \
                                                               + sSrcParam[oCurRef.offParam + len(oCurRef.sOrgRef) : ];
@@ -503,7 +504,7 @@ class ThreadedFunctionVariation(object):
             else:
                 aiSkipParams = {};
 
-            # Several statements have implicit parameters.
+            # Several statements have implicit parameters and some have different parameters.
             if oStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH', 'IEM_MC_REL_JMP_S8_AND_FINISH', 'IEM_MC_REL_JMP_S16_AND_FINISH',
                                'IEM_MC_REL_JMP_S32_AND_FINISH', 'IEM_MC_CALL_CIMPL_0', 'IEM_MC_CALL_CIMPL_1',
                                'IEM_MC_CALL_CIMPL_2', 'IEM_MC_CALL_CIMPL_3', 'IEM_MC_CALL_CIMPL_4', 'IEM_MC_CALL_CIMPL_5', ):
@@ -527,12 +528,15 @@ class ThreadedFunctionVariation(object):
                     self.aoParamRefs.append(ThreadedParamRef('bSib',    'uint8_t',  oStmt));
                     self.aoParamRefs.append(ThreadedParamRef('u32Disp', 'uint32_t', oStmt));
                     self.aoParamRefs.append(ThreadedParamRef('cbInstr', 'uint4_t',  oStmt));
+                    assert len(oStmt.asParams) == 3;
+                    assert oStmt.asParams[1].startswith('bRm');
+                    aiSkipParams[1] = True; # Skip the bRm parameter
 
             # 8-bit register accesses needs to have their index argument reworked to take REX into account.
-                # ... and IEM_MC_*_GREG_U8 into *_THREADED w/ reworked index taking REX into account
             if oStmt.sName.startswith('IEM_MC_') and oStmt.sName.find('_GREG_U8') > 0:
                 (idxReg, sOrgRef, sStdRef) = self.analyze8BitGRegStmt(oStmt);
                 self.aoParamRefs.append(ThreadedParamRef(sOrgRef, 'uint4_t', oStmt, idxReg, sStdRef = sStdRef));
+                aiSkipParams[idxReg] = True; # Skip the parameter below.
 
             # Inspect the target of calls to see if we need to pass down a
             # function pointer or function table pointer for it to work.
