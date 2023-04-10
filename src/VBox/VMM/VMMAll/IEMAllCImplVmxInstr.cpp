@@ -7191,6 +7191,12 @@ static int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *pszIns
          *
          * See Intel spec. 24.11.4 "Software Access to Related Structures".
          */
+        /** @todo r=bird: The lazy deregistration of the page is potentially slightly
+         *        problematic, as the guest may cause us to create lots of access
+         *        handler entries.  However, any slowdown or similar effects should
+         *        only ever affect the guest itself, so not a big issue.  Though, I
+         *        wish there was most recently used approach or something to tracking
+         *        these... */
         PVMCC pVM = pVCpu->CTX_SUFF(pVM);
         int rc = PGMHandlerPhysicalRegisterVmxApicAccessPage(pVM, GCPhysApicAccess, pVM->iem.s.hVmxApicAccessPage);
         if (RT_SUCCESS(rc))
