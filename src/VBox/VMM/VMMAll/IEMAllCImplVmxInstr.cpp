@@ -165,6 +165,17 @@
         return VERR_VMX_VMENTRY_FAILED; \
     } while (0)
 
+/** Marks a VM-entry failure with an return code, diagnostic reason, logs and
+ *  returns. */
+# define IEM_VMX_VMENTRY_FAILED_RET_2(a_pVCpu, a_pszInstr, a_pszFailure, a_VmxDiag, a_rc) \
+    do \
+    { \
+        LogRel(("%s: VM-entry failed! rc=%Rrc enmDiag=%u (%s) -> %s\n", (a_pszInstr), (a_rc), (a_VmxDiag), \
+               HMGetVmxDiagDesc(a_VmxDiag), (a_pszFailure))); \
+        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag = (a_VmxDiag); \
+        return VERR_VMX_VMENTRY_FAILED; \
+    } while (0)
+
 /** Marks a VM-exit failure with a diagnostic reason and logs. */
 # define IEM_VMX_VMEXIT_FAILED(a_pVCpu, a_uExitReason, a_pszFailure, a_VmxDiag) \
     do \
@@ -7185,7 +7196,7 @@ static int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *pszIns
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccessHandlerReg);
+            IEM_VMX_VMENTRY_FAILED_RET_2(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccessHandlerReg, rc);
     }
 
     /*
