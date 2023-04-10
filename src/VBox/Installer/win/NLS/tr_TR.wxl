@@ -69,7 +69,7 @@
     <!---->
 
     <String Id="NeedAdmin">[ProductName] uygulamasını yüklemek(kaldırmak) için yönetici haklarına sahip olmanız gerekir! Bu kur şimdi iptal edilecek.</String>
-    <String Id="NeedMSCRT">[ProductName] needs the Microsoft Visual C++ 2019 Redistributable Package being installed first. Please install and restart the installation of [ProductName].</String>
+    <String Id="NeedMSCRT">[ProductName] uygulamasının öncelikle Microsoft Visual C++ 2019 Yeniden Dağıtılabilir Paketinin yüklenmesine ihtiyacı var. Lütfen [ProductName] uygulamasının kurulumunu yeniden başlatın ve yükleyin.</String>
     <String Id="WrongOS">Bu uygulama yalnızca Windows XP veya üzerinde çalışır.</String>
     <String Id="Only32Bit">Bu uygulama yalnızca 32-bit Windows sistemlerinde çalışır. Lütfen [ProductName] 64-bit sürümünü yükleyin!</String>
     <String Id="Only64Bit">Bu uygulama yalnızca 64-bit Windows sistemlerinde çalışır. Lütfen [ProductName] 32-bit sürümünü yükleyin!</String>
@@ -159,11 +159,11 @@ Bu, Windows'un (Vista ve daha yenisi) daha yeni sürümleri için varsayılandı
 
     <!---->
 
-    <String Id="WarnPythonDlg_Title">Missing Dependencies</String>
-    <String Id="WarnPythonDlg_Title2">Python Core / win32api</String>
-    <String Id="WarnPythonDlg_Desc">Installing the [ProductName] Python bindings requires the Python Core package and the win32api bindings to be installed first.</String>
-    <String Id="WarnPythonDlg_Desc2">When continuing the installation of the [ProductName] Python bindings now, those need to be set up manually later. Refer to the [ProductName] SDK manual for more information.</String>
-    <String Id="WarnPythonDlg_Question">Proceed with installation now?</String>
+    <String Id="WarnPythonDlg_Title">Eksik Bağımlılıklar</String>
+    <String Id="WarnPythonDlg_Title2">Python Çekirdeği / win32api</String>
+    <String Id="WarnPythonDlg_Desc">[ProductName] Python bağlamalarının yüklenmesi, önce Python Çekirdek paketinin ve win32api bağlamalarının yüklenmesini gerektirir.</String>
+    <String Id="WarnPythonDlg_Desc2">[ProductName] Python bağlamalarının kurulumuna şimdi devam ederken, bunların daha sonra el ile ayarlanması gerekir. Daha fazla bilgi için [ProductName] SDK kılavuzuna bakın.</String>
+    <String Id="WarnPythonDlg_Question">Kuruluma şimdi devam edilsin mi?</String>
 
     <!---->
 
