@@ -338,7 +338,8 @@ int pgmHandlerPhysicalExRegister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler, RTGCPH
  *
  * @param   pVM             The cross context VM structure.
  * @param   pPhysHandler    The physical handler.
- * @param   GCPhys          The address of the virtual VMX APIC-access page.
+ * @param   GCPhys          The address of the virtual VMX APIC-access page. Must be
+ *                          page aligned.
  */
 static int pgmHandlerPhysicalRegisterVmxApicAccessPage(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler, RTGCPHYS GCPhys)
 {
@@ -453,20 +454,20 @@ VMMDECL(int) PGMHandlerPhysicalRegister(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
  *          one. A debug assertion is raised.
  *
  * @param   pVM             The cross context VM structure.
- * @param   GCPhys          Start physical address.
+ * @param   GCPhys          The address of the VMX virtual-APIC access page. Must be
+ *                          page aligned.
  * @param   hType           The handler type registration handle.
  */
 VMMDECL(int) PGMHandlerPhysicalRegisterVmxApicAccessPage(PVMCC pVM, RTGCPHYS GCPhys, PGMPHYSHANDLERTYPE hType)
 {
     PCPGMPHYSHANDLERTYPEINT const pType = pgmHandlerPhysicalTypeHandleToPtr(pVM, hType);
     AssertReturn(pType, VERR_INVALID_HANDLE);
-    AssertReturn(pType->enmKind == PGMPHYSHANDLERKIND_ALL, VERR_INVALID_HANDLE);
-    AssertMsgReturn(!(GCPhys & GUEST_PAGE_OFFSET_MASK), ("%RGp\n", GCPhys), VERR_INVALID_PARAMETER);
+    AssertMsg(!(GCPhys & GUEST_PAGE_OFFSET_MASK), ("%RGp\n", GCPhys));
 
     /*
      * Find if the VMX APIC access page has already been registered at this address.
      */
-    int rc = PGM_LOCK_VOID(pVM);
+    int rc = PGM_LOCK(pVM);
     AssertRCReturn(rc, rc);
 
     PPGMPHYSHANDLER pHandler;
@@ -480,9 +481,11 @@ VMMDECL(int) PGMHandlerPhysicalRegisterVmxApicAccessPage(PVMCC pVM, RTGCPHYS GCP
                || pHandlerType->enmKind == PGMPHYSHANDLERKIND_MMIO);
 
         /* Check it's the virtual VMX APIC-access page. */
-        if (   pHandlerType->fNotInHm
-            && pHandlerType->enmKind == PGMPHYSHANDLERKIND_ALL)
+        if (pHandlerType->fNotInHm)
+        {
+            Assert(pHandlerType->enmKind == PGMPHYSHANDLERKIND_ALL);
             rc = VINF_SUCCESS;
+        }
         else
         {
             rc = VERR_PGM_HANDLER_PHYSICAL_CONFLICT;
@@ -493,6 +496,12 @@ VMMDECL(int) PGMHandlerPhysicalRegisterVmxApicAccessPage(PVMCC pVM, RTGCPHYS GCP
         PGM_UNLOCK(pVM);
         return rc;
     }
+
+    /*
+     * Validate the page handler parameters before registering the virtual VMX APIC-access page.
+     */
+    AssertReturn(pType->enmKind == PGMPHYSHANDLERKIND_ALL, VERR_INVALID_HANDLE);
+    AssertReturn(pType->fNotInHm, VERR_PGM_HANDLER_IPE_1);
 
     /*
      * Create and register a physical handler for the virtual VMX APIC-access page.
