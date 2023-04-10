@@ -2647,7 +2647,7 @@ static uint32_t vgdrvNtCalcRequestorFlags(void)
             if ((fRequestor & VMMDEV_REQUESTOR_USR_MASK) == VMMDEV_REQUESTOR_USR_NOT_GIVEN)
             {
                 if (fUsersMember)
-                    fRequestor = (fRequestor & ~VMMDEV_REQUESTOR_USR_MASK) | VMMDEV_REQUESTOR_USR_GUEST;
+                    fRequestor = (fRequestor & ~VMMDEV_REQUESTOR_USR_MASK) | VMMDEV_REQUESTOR_USR_USER;
                 else if (fGuestsMember)
                     fRequestor = (fRequestor & ~VMMDEV_REQUESTOR_USR_MASK) | VMMDEV_REQUESTOR_USR_GUEST;
             }
@@ -2657,9 +2657,31 @@ static uint32_t vgdrvNtCalcRequestorFlags(void)
 
         RTMemTmpFree(pCurGroupsFree);
         ZwClose(hToken);
+
+        /*
+         * Determine whether we should set VMMDEV_REQUESTOR_USER_DEVICE or not.
+         *
+         * The purpose here is to differentiate VBoxService accesses
+         * from VBoxTray and VBoxControl, as VBoxService should be allowed to
+         * do more than the latter two.  VBoxService normally runs under the
+         * system account which is easily detected, but for debugging and
+         * similar purposes we also allow an elevated admin to run it as well.
+         */
+        if (   (fRequestor & VMMDEV_REQUESTOR_TRUST_MASK) == VMMDEV_REQUESTOR_TRUST_UNTRUSTED /* general paranoia wrt system account */
+            || (fRequestor & VMMDEV_REQUESTOR_TRUST_MASK) == VMMDEV_REQUESTOR_TRUST_LOW       /* ditto */
+            || (fRequestor & VMMDEV_REQUESTOR_TRUST_MASK) == VMMDEV_REQUESTOR_TRUST_MEDIUM    /* ditto */
+            || !(   (fRequestor & VMMDEV_REQUESTOR_USR_MASK) == VMMDEV_REQUESTOR_USR_SYSTEM
+                 || (   (   (fRequestor & VMMDEV_REQUESTOR_GRP_WHEEL)
+                         || (fRequestor & VMMDEV_REQUESTOR_USR_MASK) == VMMDEV_REQUESTOR_USR_ROOT)
+                     && (   (fRequestor & VMMDEV_REQUESTOR_TRUST_MASK) >= VMMDEV_REQUESTOR_TRUST_HIGH
+                         || (fRequestor & VMMDEV_REQUESTOR_TRUST_MASK) == VMMDEV_REQUESTOR_TRUST_NOT_GIVEN)) ))
+            fRequestor |= VMMDEV_REQUESTOR_USER_DEVICE;
     }
     else
+    {
         LogRel(("vgdrvNtCalcRequestorFlags: NtOpenProcessToken query failed: %#x\n", rcNt));
+        fRequestor |= VMMDEV_REQUESTOR_USER_DEVICE;
+    }
 
     Log5(("vgdrvNtCalcRequestorFlags: returns %#x\n", fRequestor));
     return fRequestor;
