@@ -6595,7 +6595,7 @@ static int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr) RT_NOEXC
             if (RT_SUCCESS(rc))
             { /* likely */ }
             else
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, enmVmxDiag);
+                IEM_VMX_VMENTRY_FAILED_RET_2(pVCpu, pszInstr, pszFailure, enmVmxDiag, rc);
         }
 #else
         Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));
@@ -7039,7 +7039,7 @@ static int iemVmxVmentryLoadGuestAutoMsrs(PVMCPUCC pVCpu, const char *pszInstr) 
     else
     {
         AssertMsgFailed(("%s: Failed to read MSR auto-load area at %#RGp, rc=%Rrc\n", pszInstr, GCPhysVmEntryMsrLoadArea, rc));
-        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_MsrLoadPtrReadPhys);
+        IEM_VMX_VMENTRY_FAILED_RET_2(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_MsrLoadPtrReadPhys, rc);
     }
 
     NOREF(pszInstr);
@@ -7143,7 +7143,7 @@ static int iemVmxVmentryLoadGuestNonRegState(PVMCPUCC pVCpu, const char *pszInst
         else
         {
             iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_PDPTE);
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPdpte);
+            IEM_VMX_VMENTRY_FAILED_RET_2(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPdpte, rc);
         }
     }
 
@@ -7211,7 +7211,7 @@ static int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *pszIns
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmreadBitmapPtrReadPhys);
+            IEM_VMX_VMENTRY_FAILED_RET_2(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmreadBitmapPtrReadPhys, rc);
 
         /* Read the VMWRITE-bitmap. */
         RTGCPHYS const GCPhysVmwriteBitmap = pVmcs->u64AddrVmwriteBitmap.u;
@@ -7220,7 +7220,7 @@ static int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *pszIns
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmwriteBitmapPtrReadPhys);
+            IEM_VMX_VMENTRY_FAILED_RET_2(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmwriteBitmapPtrReadPhys, rc);
     }
 
     /*
@@ -7235,7 +7235,7 @@ static int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *pszIns
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_IoBitmapAPtrReadPhys);
+            IEM_VMX_VMENTRY_FAILED_RET_2(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_IoBitmapAPtrReadPhys, rc);
 
         /* Read the IO bitmap B. */
         RTGCPHYS const GCPhysIoBitmapB = pVmcs->u64AddrIoBitmapB.u;
@@ -7244,7 +7244,7 @@ static int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *pszIns
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_IoBitmapBPtrReadPhys);
+            IEM_VMX_VMENTRY_FAILED_RET_2(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_IoBitmapBPtrReadPhys, rc);
     }
 
     /*
@@ -7263,7 +7263,7 @@ static int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *pszIns
             if (RT_SUCCESS(rc))
             { /* likely */ }
             else
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtApicPagePtrReadPhys);
+                IEM_VMX_VMENTRY_FAILED_RET_2(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtApicPagePtrReadPhys, rc);
 
             /* Bits 3:0 of the TPR-threshold must not be greater than bits 7:4 of VTPR. */
             if ((uint8_t)RT_BF_GET(pVmcs->u32TprThreshold, VMX_BF_TPR_THRESHOLD_TPR) <= (u8VTpr & 0xf0))
@@ -7287,7 +7287,7 @@ static int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *pszIns
         else
         {
             iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR);
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmcsLinkPtrReadPhys);
+            IEM_VMX_VMENTRY_FAILED_RET_2(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmcsLinkPtrReadPhys, rc);
         }
 
         /* Verify the VMCS revision specified by the guest matches what we reported to the guest. */
@@ -7325,7 +7325,7 @@ static int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *pszIns
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_MsrBitmapPtrReadPhys);
+            IEM_VMX_VMENTRY_FAILED_RET_2(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_MsrBitmapPtrReadPhys, rc);
     }
 
     NOREF(pszFailure);
