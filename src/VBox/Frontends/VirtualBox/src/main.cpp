@@ -74,6 +74,7 @@
 # include <dlfcn.h>
 # include <unistd.h>
 # include <X11/Xlib.h>
+# include "VBoxUtils-x11.h"
 # if defined(RT_OS_LINUX) && defined(DEBUG)
 #  include <signal.h>
 #  include <execinfo.h>
@@ -394,9 +395,13 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         /* Make sure multi-threaded environment is safe: */
         if (!MakeSureMultiThreadingIsSafe())
             break;
-
-        /* Force using Qt platform module 'xcb', we have X11 specific code: */
-        RTEnvSet("QT_QPA_PLATFORM", "xcb");
+        DisplayServerType enmDisplayServerType = NativeWindowSubsystem::X11DetectDisplayServerType();
+        if (NativeWindowSubsystem::X11XServerAvailable(enmDisplayServerType))
+            /* Force using Qt platform plugin 'xcb', we have X11 specific code: */
+            RTEnvSet("QT_QPA_PLATFORM", "xcb");
+        else
+            /* Assume pure Wayland (without a X server):*/
+            RTEnvSet("QT_QPA_PLATFORM", "wayland");
 #endif /* VBOX_WS_X11 */
 
         /* Console help preprocessing: */

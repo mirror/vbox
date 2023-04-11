@@ -51,6 +51,17 @@ enum X11WMType
     X11WMType_Xfwm4,
 };
 
+/** Display server types for Unix like systems. */
+enum DisplayServerType
+{
+    DisplayServerType_Unknown = 0,
+    DisplayServerType_XOrg,
+    DisplayServerType_XWayland,
+    DisplayServerType_PureWayland,
+    DisplayServerType_None,
+    DisplayServerType_Max
+};
+
 /** X11: Screen-saver inhibit methods. */
 struct SHARED_LIBRARY_STUFF X11ScreenSaverInhibitMethod
 {
@@ -135,6 +146,10 @@ namespace NativeWindowSubsystem
     SHARED_LIBRARY_STUFF struct xcb_connection_t *X11GetConnection();
     /** X11: Gets the X11 root (desktop) window. */
     SHARED_LIBRARY_STUFF uint32_t X11GetAppRootWindow();
+    /** Detects and returns display server type. */
+    SHARED_LIBRARY_STUFF DisplayServerType X11DetectDisplayServerType();
+    /** Returns true if @a enmDisplayServerType is either xorg or xwayland. */
+    SHARED_LIBRARY_STUFF bool X11XServerAvailable(DisplayServerType enmDisplayServerType);
 }
 
 #endif /* !FEQT_INCLUDED_SRC_platform_x11_VBoxUtils_x11_h */

@@ -44,6 +44,9 @@
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
+#include <iprt/env.h>
+#include <iprt/process.h>
+#include <iprt/string.h>
 #include <VBox/log.h>
 
 /* Other includes: */
@@ -661,4 +664,28 @@ uint32_t NativeWindowSubsystem::X11GetAppRootWindow()
 #else
     return QX11Info::appRootWindow();
 #endif
+}
+
+DisplayServerType NativeWindowSubsystem::X11DetectDisplayServerType()
+{
+    const char *pSessionType = RTEnvGet("XDG_SESSION_TYPE");
+    if (pSessionType != NULL)
+    {
+        if (RTStrIStr(pSessionType, "wayland"))
+        {
+            if (RTProcIsRunningByName("Xwayland"))
+                return DisplayServerType_XWayland;
+            else
+                return DisplayServerType_PureWayland;
+        }
+        else if (RTStrIStr(pSessionType, "x11"))
+            return DisplayServerType_XOrg;
+    }
+    return DisplayServerType_Unknown;
+}
+
+bool NativeWindowSubsystem::X11XServerAvailable(DisplayServerType enmDisplayServerType)
+{
+    return enmDisplayServerType == DisplayServerType_XWayland
+        || enmDisplayServerType == DisplayServerType_XOrg;
 }
