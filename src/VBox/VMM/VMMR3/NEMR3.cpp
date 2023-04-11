@@ -49,6 +49,7 @@
 #include <VBox/err.h>
 
 #include <iprt/asm.h>
+#include <iprt/string.h>
 
 
 
@@ -534,3 +535,72 @@ VMMR3_INT_DECL(void) NEMR3NotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu)
     RT_NOREF(pVM, pVCpu);
 #endif
 }
+
+
+/**
+ * Disables a CPU ISA extension, like MONITOR/MWAIT.
+ *
+ * @returns VBox status code
+ * @param   pVM             The cross context VM structure.
+ * @param   pszIsaExt       The ISA extension name in the config tree.
+ */
+int nemR3DisableCpuIsaExt(PVM pVM, const char *pszIsaExt)
+{
+    /*
+     * Get IsaExts config node under CPUM.
+     */
+    PCFGMNODE pIsaExts = CFGMR3GetChild(CFGMR3GetRoot(pVM), "/CPUM/IsaExts");
+    if (!pIsaExts)
+    {
+        int rc = CFGMR3InsertNode(CFGMR3GetRoot(pVM), "/CPUM/IsaExts", &pIsaExts);
+        AssertLogRelMsgReturn(RT_SUCCESS(rc), ("CFGMR3InsertNode: rc=%Rrc pszIsaExt=%s\n", rc, pszIsaExt), rc);
+    }
+
+    /*
+     * Look for a value by the given name (pszIsaExt).
+     */
+    /* Integer values 1 (CPUMISAEXTCFG_ENABLED_SUPPORTED) and 9 (CPUMISAEXTCFG_ENABLED_PORTABLE) will be replaced. */
+    uint64_t u64Value;
+    int rc = CFGMR3QueryInteger(pIsaExts, pszIsaExt, &u64Value);
+    if (RT_SUCCESS(rc))
+    {
+        if (u64Value != 1 && u64Value != 9)
+        {
+            LogRel(("NEM: Not disabling IsaExt '%s', already configured with int value %lld\n", pszIsaExt, u64Value));
+            return VINF_SUCCESS;
+        }
+        CFGMR3RemoveValue(pIsaExts, pszIsaExt);
+    }
+    /* String value 'default', 'enabled' and 'portable' will be replaced. */
+    else if (rc == VERR_CFGM_NOT_INTEGER)
+    {
+        char szValue[32];
+        rc = CFGMR3QueryString(pIsaExts, pszIsaExt, szValue, sizeof(szValue));
+        AssertRCReturn(rc, VINF_SUCCESS);
+
+        if (   RTStrICmpAscii(szValue, "default")  != 0
+            && RTStrICmpAscii(szValue, "def")      != 0
+            && RTStrICmpAscii(szValue, "enabled")  != 0
+            && RTStrICmpAscii(szValue, "enable")   != 0
+            && RTStrICmpAscii(szValue, "on")       != 0
+            && RTStrICmpAscii(szValue, "yes")      != 0
+            && RTStrICmpAscii(szValue, "portable") != 0)
+        {
+            LogRel(("NEM: Not disabling IsaExt '%s', already configured with string value '%s'\n", pszIsaExt, szValue));
+            return VINF_SUCCESS;
+        }
+        CFGMR3RemoveValue(pIsaExts, pszIsaExt);
+    }
+    else
+        AssertLogRelMsgReturn(rc == VERR_CFGM_VALUE_NOT_FOUND, ("CFGMR3QueryInteger: rc=%Rrc pszIsaExt=%s\n", rc, pszIsaExt),
+                              VERR_NEM_IPE_8);
+
+    /*
+     * Insert the disabling value.
+     */
+    rc = CFGMR3InsertInteger(pIsaExts, pszIsaExt, 0 /* disabled */);
+    AssertLogRelMsgReturn(RT_SUCCESS(rc), ("CFGMR3InsertInteger: rc=%Rrc pszIsaExt=%s\n", rc, pszIsaExt), rc);
+
+    return VINF_SUCCESS;
+}
+

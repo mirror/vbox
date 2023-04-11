@@ -622,6 +622,9 @@ typedef struct NEMR0PERVM
 
 
 #ifdef IN_RING3
+
+int     nemR3DisableCpuIsaExt(PVM pVM, const char *pszIsaExt);
+
 int     nemR3NativeInit(PVM pVM, bool fFallback, bool fForced);
 int     nemR3NativeInitAfterCPUM(PVM pVM);
 int     nemR3NativeInitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
@@ -666,7 +669,8 @@ DECLHIDDEN(bool) nemR3NativeNotifyDebugEventChanged(PVM pVM, bool fUseDebugLoop)
  * @param   fUseDebugLoop   The current value determined by NEMR3NotifyDebugEventChangedPerCpu().
  */
 DECLHIDDEN(bool) nemR3NativeNotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu, bool fUseDebugLoop);
-#endif
+
+#endif /* IN_RING3 */
 
 void    nemHCNativeNotifyHandlerPhysicalRegister(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb);
 void    nemHCNativeNotifyHandlerPhysicalModify(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhysOld,
