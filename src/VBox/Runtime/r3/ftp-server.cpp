@@ -2267,7 +2267,7 @@ static int rtFtpServerCmdArgsParse(const char *pszCmdParms, uint8_t *pcArgs, cha
     /** @todo Anything else to do here? */
     /** @todo Check if quoting is correct. */
 
-    signed int cArgs = 0;
+    unsigned int cArgs = 0;
     int rc = RTGetOptArgvFromString(ppapszArgs, &cArgs, pszCmdParms, RTGETOPTARGV_CNV_QUOTE_MS_CRT, " " /* Separators */);
     if (RT_SUCCESS(rc))
     {
