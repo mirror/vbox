@@ -93,7 +93,6 @@ recreate-bn-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
 		$(VBOX_PATH_CRYPTO_BN)/asm/x86-mont.pl \
 		$(VBOX_PATH_CRYPTO_BN)/asm/x86-gf2m.pl \
 		$(VBOX_PATH_CRYPTO_BN)/asm/rsaz-avx2.pl \
-		$(VBOX_PATH_CRYPTO_BN)/asm/rsaz-avx512.pl \
 		$(VBOX_PATH_CRYPTO_BN)/asm/rsaz-x86_64.pl \
 		$(VBOX_PATH_CRYPTO_BN)/asm/x86_64-gf2m.pl \
 		$(VBOX_PATH_CRYPTO_BN)/asm/x86_64-mont.pl \
@@ -103,7 +102,6 @@ recreate-bn-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/x86-mont.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/x86-mont.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/x86-gf2m.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/x86-gf2m.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/rsaz-avx2.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/rsaz-avx2.S
-	perl $(VBOX_PATH_CRYPTO_BN)/asm/rsaz-avx512.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/rsaz-avx512.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/rsaz-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/rsaz-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/x86_64-gf2m.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/x86_64-gf2m.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/x86_64-mont.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/x86_64-mont.S
@@ -113,7 +111,6 @@ recreate-bn-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/x86-mont.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/x86-mont.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/x86-gf2m.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/x86-gf2m.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/rsaz-avx2.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/rsaz-avx2.S
-	perl $(VBOX_PATH_CRYPTO_BN)/asm/rsaz-avx512.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/rsaz-avx512.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/rsaz-x86_64.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/rsaz-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/x86_64-gf2m.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/x86_64-gf2m.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/x86_64-mont.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/x86_64-mont.S
@@ -123,7 +120,6 @@ recreate-bn-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/x86-mont.pl win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/x86-mont.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/x86-gf2m.pl win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/x86-gf2m.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/rsaz-avx2.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/rsaz-avx2.S
-	perl $(VBOX_PATH_CRYPTO_BN)/asm/rsaz-avx512.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/rsaz-avx512.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/rsaz-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/rsaz-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/x86_64-gf2m.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/x86_64-gf2m.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/x86_64-mont.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/x86_64-mont.S
