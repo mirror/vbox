@@ -191,7 +191,7 @@ AssertCompileSizeAlignment(CPUMCTX, 8);
 #define CPUMCTX_EXTRN_SP                        UINT64_C(0x0000000000000020)
 /** The PSTATE value is kept externally. */
 #define CPUMCTX_EXTRN_PSTATE                    UINT64_C(0x0000000000000040)
-/** The SCTRL_EL1/TTBR<x>_EL1 system registers are kept externally. */
+/** The SCTRL_EL1/TTBR{0,1}_EL1 system registers are kept externally. */
 #define CPUMCTX_EXTRN_SCTLR_TTBR                UINT64_C(0x0000000000000080)
 
 /** The X0 register value is kept externally. */
