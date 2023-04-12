@@ -103,10 +103,19 @@ struct _XDisplay;
 /* Namespace for native window sub-system functions: */
 namespace NativeWindowSubsystem
 {
+    /** Wrapper function for X11IsCompositingManagerRunning and WaylandIsCompositingManagerRunning. */
+    bool IsCompositingManagerRunning(bool fIsXServerAvailable);
     /** X11: Determines and returns whether the compositing manager is running. */
     bool X11IsCompositingManagerRunning();
+    /** Wayland: Determines and returns whether the compositing manager is running. */
+    bool WaylandIsCompositingManagerRunning();
+
+    /** Wrapper for window manager type functions. */
+    X11WMType WindowManagerType(bool fIsXServerAvailable);
     /** X11: Determines and returns current Window Manager type. */
     X11WMType X11WindowManagerType();
+    /** Wayland: Determines and returns current Window Manager type. */
+    X11WMType WaylandWindowManagerType();
 
     /** X11: Returns true if XLib extension with name @p extensionName is avaible, false otherwise. */
     bool X11CheckExtension(const char *extensionName);
@@ -131,8 +140,12 @@ namespace NativeWindowSubsystem
     /** X11: Sets _NET_WM_STATE_SKIP_PAGER flag for passed @a pWidget. */
     SHARED_LIBRARY_STUFF void X11SetSkipPagerFlag(QWidget *pWidget);
 
+    /** Wrapper function for WMClass setters. */
+    SHARED_LIBRARY_STUFF void SetWMClass(bool fIsXServerAvailable, QWidget *pWidget, const QString &strNameString, const QString &strClassString);
     /** X11: Assigns WM_CLASS property for passed @a pWidget. */
     SHARED_LIBRARY_STUFF void X11SetWMClass(QWidget *pWidget, const QString &strNameString, const QString &strClassString);
+    /** Wayland: Assigns WM_CLASS property for passed @a pWidget. */
+    SHARED_LIBRARY_STUFF void WaylandSetWMClass(QWidget *pWidget, const QString &strNameString, const QString &strClassString);
 
     /** X11: Tell the WM we are well behaved wrt Xwayland keyboard-grabs. This will
       *      make the WM turn our grab into a Wayland shortcut inhibition request,

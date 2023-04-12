@@ -59,6 +59,12 @@
 #define BOOL PRBool
 
 
+bool NativeWindowSubsystem::IsCompositingManagerRunning(bool fIsXServerAvailable)
+{
+    if (fIsXServerAvailable)
+        return X11IsCompositingManagerRunning();
+    return WaylandIsCompositingManagerRunning();
+}
 bool NativeWindowSubsystem::X11IsCompositingManagerRunning()
 {
     /* For each screen it manage, compositing manager MUST acquire ownership
@@ -66,6 +72,25 @@ bool NativeWindowSubsystem::X11IsCompositingManagerRunning()
     Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
     Atom atom_property_name = XInternAtom(pDisplay, "_NET_WM_CM_S0", True);
     return XGetSelectionOwner(pDisplay, atom_property_name);
+}
+
+bool NativeWindowSubsystem::WaylandIsCompositingManagerRunning()
+{
+    /// @todo implement
+    return true;
+}
+
+X11WMType NativeWindowSubsystem::WindowManagerType(bool fIsXServerAvailable)
+{
+    if (fIsXServerAvailable)
+        return X11WindowManagerType();
+    return WaylandWindowManagerType();
+}
+
+X11WMType NativeWindowSubsystem::WaylandWindowManagerType()
+{
+    /// @todo implement
+    return X11WMType_Unknown;
 }
 
 X11WMType NativeWindowSubsystem::X11WindowManagerType()
@@ -589,6 +614,14 @@ void NativeWindowSubsystem::X11SetSkipPagerFlag(QWidget *pWidget)
     }
 }
 
+void NativeWindowSubsystem::SetWMClass(bool fIsXServerAvailable, QWidget *pWidget, const QString &strNameString, const QString &strClassString)
+{
+    if (fIsXServerAvailable)
+        X11SetWMClass(pWidget, strNameString, strClassString);
+    else
+        WaylandSetWMClass(pWidget, strNameString, strClassString);
+}
+
 void NativeWindowSubsystem::X11SetWMClass(QWidget *pWidget, const QString &strNameString, const QString &strClassString)
 {
     /* Make sure all arguments set: */
@@ -611,6 +644,14 @@ void NativeWindowSubsystem::X11SetWMClass(QWidget *pWidget, const QString &strNa
     windowClass.res_class = classByteArray.data();
     /* Set WM_CLASS of the window to passed name and class strings: */
     XSetClassHint(NativeWindowSubsystem::X11GetDisplay(), pWidget->window()->winId(), &windowClass);
+}
+
+void NativeWindowSubsystem::WaylandSetWMClass(QWidget *pWidget, const QString &strNameString, const QString &strClassString)
+{
+    Q_UNUSED(pWidget);
+    Q_UNUSED(strNameString);
+    Q_UNUSED(strClassString);
+    /// @todo implement
 }
 
 void NativeWindowSubsystem::X11SetXwaylandMayGrabKeyboardFlag(QWidget *pWidget)

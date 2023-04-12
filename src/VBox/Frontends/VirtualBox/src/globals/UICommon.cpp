@@ -330,10 +330,10 @@ void UICommon::prepare()
 
 #ifdef VBOX_WS_X11
     /* Check whether we have compositing manager running: */
-    m_fCompositingManagerRunning = NativeWindowSubsystem::X11IsCompositingManagerRunning();
+    m_fCompositingManagerRunning = NativeWindowSubsystem::IsCompositingManagerRunning(X11XServerAvailable());
 
     /* Acquire current Window Manager type: */
-    m_enmWindowManagerType = NativeWindowSubsystem::X11WindowManagerType();
+    m_enmWindowManagerType = NativeWindowSubsystem::WindowManagerType(X11XServerAvailable());
 #endif /* VBOX_WS_X11 */
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -3026,6 +3026,6 @@ void UICommon::comWrappersReinit()
 bool UICommon::X11XServerAvailable() const
 {
     return m_enmDisplayServerType == DisplayServerType_XWayland
-                                  || DisplayServerType_XOrg;
+        || m_enmDisplayServerType == DisplayServerType_XOrg;
 }
 #endif
