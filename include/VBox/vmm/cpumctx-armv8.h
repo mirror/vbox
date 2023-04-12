@@ -138,7 +138,12 @@ typedef struct CPUMCTX
     CPUMCTXSYSREG   Spsr;
     /** The ELR (Exception Link Register) (EL1 only). */
     CPUMCTXSYSREG   Elr;
-
+    /** The SCTLR_EL1 register. */
+    CPUMCTXSYSREG   Sctlr;
+    /** The TTBR0_EL1 register. */
+    CPUMCTXSYSREG   Ttbr0;
+    /** The TTBR1_EL1 register. */
+    CPUMCTXSYSREG   Ttbr1;
 
     /** Floating point control register. */
     uint64_t        fpcr;
@@ -152,7 +157,7 @@ typedef struct CPUMCTX
     /** Externalized state tracker, CPUMCTX_EXTRN_XXX. */
     uint64_t        fExtrn;
 
-    uint64_t        au64Padding1[6];
+    uint64_t        au64Padding1[3];
 } CPUMCTX;
 
 
@@ -186,8 +191,8 @@ AssertCompileSizeAlignment(CPUMCTX, 8);
 #define CPUMCTX_EXTRN_SP                        UINT64_C(0x0000000000000020)
 /** The PSTATE value is kept externally. */
 #define CPUMCTX_EXTRN_PSTATE                    UINT64_C(0x0000000000000040)
-/** @todo RSVD. */
-#define CPUMCTX_EXTRN_RSVD                      UINT64_C(0x0000000000000080)
+/** The SCTRL_EL1/TTBR<x>_EL1 system registers are kept externally. */
+#define CPUMCTX_EXTRN_SCTLR_TTBR                UINT64_C(0x0000000000000080)
 
 /** The X0 register value is kept externally. */
 #define CPUMCTX_EXTRN_X0                        UINT64_C(0x0000000000000100)

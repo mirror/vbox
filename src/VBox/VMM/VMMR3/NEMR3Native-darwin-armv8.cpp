@@ -176,10 +176,13 @@ static const struct
     uint32_t        offCpumCtx;
 } s_aCpumSysRegs[] =
 {
-    { HV_SYS_REG_SP_EL0,   CPUMCTX_EXTRN_SP,   RT_UOFFSETOF(CPUMCTX, aSpReg[0].u64) },
-    { HV_SYS_REG_SP_EL1,   CPUMCTX_EXTRN_SP,   RT_UOFFSETOF(CPUMCTX, aSpReg[1].u64) },
-    { HV_SYS_REG_SPSR_EL1, CPUMCTX_EXTRN_SPSR, RT_UOFFSETOF(CPUMCTX, Spsr.u64)      },
-    { HV_SYS_REG_ELR_EL1,  CPUMCTX_EXTRN_ELR,  RT_UOFFSETOF(CPUMCTX, Elr.u64)       },
+    { HV_SYS_REG_SP_EL0,    CPUMCTX_EXTRN_SP,            RT_UOFFSETOF(CPUMCTX, aSpReg[0].u64)    },
+    { HV_SYS_REG_SP_EL1,    CPUMCTX_EXTRN_SP,            RT_UOFFSETOF(CPUMCTX, aSpReg[1].u64)    },
+    { HV_SYS_REG_SPSR_EL1,  CPUMCTX_EXTRN_SPSR,          RT_UOFFSETOF(CPUMCTX, Spsr.u64)         }, 
+    { HV_SYS_REG_ELR_EL1,   CPUMCTX_EXTRN_ELR,           RT_UOFFSETOF(CPUMCTX, Elr.u64)          },
+    { HV_SYS_REG_SCTLR_EL1, CPUMCTX_EXTRN_SCTLR_TTBR,    RT_UOFFSETOF(CPUMCTX, Sctlr.u64)        },
+    { HV_SYS_REG_TTBR0_EL1, CPUMCTX_EXTRN_SCTLR_TTBR,    RT_UOFFSETOF(CPUMCTX, Ttbr0.u64)        },
+    { HV_SYS_REG_TTBR1_EL1, CPUMCTX_EXTRN_SCTLR_TTBR,    RT_UOFFSETOF(CPUMCTX, Ttbr1.u64)        },
 };
 
 
@@ -415,6 +418,7 @@ static void nemR3DarwinLogState(PVMCC pVM, PVMCPUCC pVCpu)
                         "x28=%016VR{x28} x29=%016VR{x29} x30=%016VR{x30}\n"
                         "pc=%016VR{pc} pstate=%016VR{pstate}\n"
                         "sp_el0=%016VR{sp_el0} sp_el1=%016VR{sp_el1} elr_el1=%016VR{elr_el1}\n"
+                        "sctlr_el1=%016VR{sctlr_el1} ttbr0_el1=%016VR{ttbr0_el1} ttbr1_el1=%016VR{ttbr1_el1}\n"
                         );
         char szInstr[256]; RT_ZERO(szInstr);
 #if 0
@@ -457,7 +461,7 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
     }
 
     if (   hrc == HV_SUCCESS
-        && (fWhat & (CPUMCTX_EXTRN_SPSR | CPUMCTX_EXTRN_ELR | CPUMCTX_EXTRN_SP)))
+        && (fWhat & (CPUMCTX_EXTRN_SPSR | CPUMCTX_EXTRN_ELR | CPUMCTX_EXTRN_SP | CPUMCTX_EXTRN_SCTLR_TTBR)))
     {
         /* System registers. */
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumSysRegs); i++)
