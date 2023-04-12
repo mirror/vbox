@@ -682,7 +682,7 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 /** Bit 1 - 4 - CRm value from the instruction. */
 #define ARMV8_EC_ISS_AARCH64_TRAPPED_SYS_INSN_CRM               (  RT_BIT_32(1) | RT_BIT_32(2) | RT_BIT_32(3) \
                                                                  | RT_BIT_32(4))
-#define ARMV8_EC_ISS_AARCH64_TRAPPED_SYS_INSN_CRM_GET(a_Iss)    (((a_Iss) & ARMV8_EC_ISS_AARCH64_TRAPPED_SYS_INSN_CRM) >> 10)
+#define ARMV8_EC_ISS_AARCH64_TRAPPED_SYS_INSN_CRM_GET(a_Iss)    (((a_Iss) & ARMV8_EC_ISS_AARCH64_TRAPPED_SYS_INSN_CRM) >> 1)
 /** Bit 5 - 9 - Rt value from the instruction. */
 #define ARMV8_EC_ISS_AARCH64_TRAPPED_SYS_INSN_RT                (  RT_BIT_32(5) | RT_BIT_32(6) | RT_BIT_32(7) \
                                                                  | RT_BIT_32(8) | RT_BIT_32(9))
