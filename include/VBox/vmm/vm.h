@@ -268,14 +268,25 @@ typedef struct VMCPU
         uint8_t             padding[512];       /* multiple of 64 */
     } gim;
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    /** GIC part. */
+    union VMCPUUNIONGIC
+    {
+# ifdef VMM_INCLUDED_SRC_include_GICInternal_h
+        struct GICCPU       s;
+# endif
+        uint8_t             padding[3840];      /* multiple of 64 */
+    } gic;
+#else
     /** APIC part. */
     union VMCPUUNIONAPIC
     {
-#ifdef VMM_INCLUDED_SRC_include_APICInternal_h
+# ifdef VMM_INCLUDED_SRC_include_APICInternal_h
         struct APICCPU      s;
-#endif
+# endif
         uint8_t             padding[3840];      /* multiple of 64 */
     } apic;
+#endif
 
     /*
      * Some less frequently used global members that doesn't need to take up
@@ -1432,13 +1443,23 @@ typedef struct VM
         uint8_t     padding[448];       /* multiple of 64 */
     } gim;
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
     union
     {
-#ifdef VMM_INCLUDED_SRC_include_APICInternal_h
+# ifdef VMM_INCLUDED_SRC_include_GICInternal_h
+        struct GIC  s;
+# endif
+        uint8_t     padding[128];       /* multiple of 8 */
+    } gic;
+#else
+    union
+    {
+# ifdef VMM_INCLUDED_SRC_include_APICInternal_h
         struct APIC s;
-#endif
+# endif
         uint8_t     padding[128];       /* multiple of 8 */
     } apic;
+#endif
 
     /* ---- begin small stuff ---- */
 

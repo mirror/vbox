@@ -129,7 +129,11 @@
 #include <VBox/vmm/em.h>
 #include <VBox/sup.h>
 #include <VBox/vmm/dbgf.h>
-#include <VBox/vmm/apic.h>
+#if defined(VBOX_VMM_TARGET_ARMV8)
+# include <VBox/vmm/gic.h>
+#else
+# include <VBox/vmm/apic.h>
+#endif
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/tm.h>
 #include "VMMInternal.h"

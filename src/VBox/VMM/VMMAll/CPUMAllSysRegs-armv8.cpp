@@ -32,6 +32,7 @@
 #define LOG_GROUP LOG_GROUP_CPUM
 #include <VBox/vmm/cpum.h>
 #include "CPUMInternal-armv8.h"
+#include <VBox/vmm/gic.h>
 #include <VBox/vmm/vmcc.h>
 #include <VBox/err.h>
 
@@ -142,6 +143,21 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumSysRegWr_ReadOnly(PVMCPUCC pVCpu, uint32_t
 
 
 
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(VBOXSTRICTRC) cpumSysRegRd_GicV3Icc(PVMCPUCC pVCpu, uint32_t idSysReg, PCCPUMSYSREGRANGE pRange, uint64_t *puValue)
+{
+    RT_NOREF_PV(pRange);
+    return GICReadSysReg(pVCpu, idSysReg, puValue);
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(VBOXSTRICTRC) cpumSysRegWr_GicV3Icc(PVMCPUCC pVCpu, uint32_t idSysReg, PCCPUMSYSREGRANGE pRange, uint64_t uValue, uint64_t uRawValue)
+{
+    RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
+    return GICWriteSysReg(pVCpu, idSysReg, uValue);
+}
+
 
 /**
  * System register read function table.
@@ -152,6 +168,7 @@ static const struct READSYSREGCLANG11WEIRDNOTHROW { PFNCPUMRDSYSREG pfnRdSysReg;
     { cpumSysRegRd_FixedValue },
     { NULL }, /* Alias */
     { cpumSysRegRd_WriteOnly },
+    { cpumSysRegRd_GicV3Icc  },
 };
 
 
@@ -164,6 +181,7 @@ static const struct WRITESYSREGCLANG11WEIRDNOTHROW { PFNCPUMWRSYSREG pfnWrSysReg
     { cpumSysRegWr_IgnoreWrite },
     { cpumSysRegWr_ReadOnly },
     { NULL }, /* Alias */
+    { cpumSysRegWr_GicV3Icc },
 };
 
 
@@ -395,7 +413,7 @@ VMMDECL(VBOXSTRICTRC) CPUMSetGuestSysReg(PVMCPUCC pVCpu, uint32_t idSysReg, uint
  *
  * @returns VINF_SUCCESS on success, error on failure.
  */
-int cpumR3SysRegStrictInitChecks(void)
+DECLHIDDEN(int) cpumR3SysRegStrictInitChecks(void)
 {
 #define CPUM_ASSERT_RD_SYSREG_FN(a_Register) \
         AssertReturn(g_aCpumRdSysRegFns[kCpumSysRegRdFn_##a_Register].pfnRdSysReg == cpumSysRegRd_##a_Register, VERR_CPUM_IPE_2);
@@ -405,8 +423,12 @@ int cpumR3SysRegStrictInitChecks(void)
     AssertReturn(g_aCpumRdSysRegFns[kCpumSysRegRdFn_Invalid].pfnRdSysReg == NULL, VERR_CPUM_IPE_2);
     CPUM_ASSERT_RD_SYSREG_FN(FixedValue);
     CPUM_ASSERT_RD_SYSREG_FN(WriteOnly);
+    CPUM_ASSERT_RD_SYSREG_FN(GicV3Icc);
 
     AssertReturn(g_aCpumWrSysRegFns[kCpumSysRegWrFn_Invalid].pfnWrSysReg == NULL, VERR_CPUM_IPE_2);
+    CPUM_ASSERT_WR_SYSREG_FN(IgnoreWrite);
+    CPUM_ASSERT_WR_SYSREG_FN(ReadOnly);
+    CPUM_ASSERT_WR_SYSREG_FN(GicV3Icc);
 
     return VINF_SUCCESS;
 }

@@ -88,7 +88,11 @@ struc VMCPU
     alignb 64
     .gim                    resb 512
     alignb 64
+%ifdef VBOX_VMM_TARGET_ARMV8
+    .gic                    resb 3840
+%else
     .apic                   resb 3840
+%endif
 
     alignb 64
     .fTraceGroups           resd 1
@@ -168,7 +172,11 @@ struc VM
     alignb 64
     .gim                    resb 448
     alignb 64
+%ifdef VBOX_VMM_TARGET_ARMV8
+    .gic                    resb 128
+%else
     .apic                   resb 128
+%endif
     alignb 64
     .vm                     resb 32
     .cfgm                   resb 8

@@ -65,6 +65,9 @@ typedef enum CPUMSYSREGRDFN
     /** Write only register, all read attempts cause an exception. */
     kCpumSysRegRdFn_WriteOnly,
 
+    /** Read from a GICv3 PE ICC system register. */
+    kCpumSysRegRdFn_GicV3Icc,
+
     /** End of valid system register read function indexes. */
     kCpumSysRegRdFn_End
 } CPUMSYSREGRDFN;
@@ -85,6 +88,9 @@ typedef enum CPUMSYSREGWRFN
      * CPUMSYSREGRANGE::uValue.  Must be used in pair with
      * kCpumSysRegRdFn_Alias. */
     kCpumSysRegWrFn_Alias,
+
+    /** Write to a GICv3 PE ICC system register. */
+    kCpumSysRegWrFn_GicV3Icc,
 
     /** End of valid system register write function indexes. */
     kCpumSysRegWrFn_End
