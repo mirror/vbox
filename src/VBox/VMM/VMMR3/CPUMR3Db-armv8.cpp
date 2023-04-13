@@ -35,7 +35,7 @@
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/mm.h>
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <iprt/armv8.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
