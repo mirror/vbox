@@ -34,6 +34,7 @@
 /* Qt includes: */
 #include <QMainWindow>
 #include <QUrl>
+#include <QUuid>
 
 /* GUI includes: */
 #include "QIWithRestorableGeometry.h"
@@ -154,6 +155,9 @@ private slots:
 
         /** Handles signal about Tool type change.  */
         void sltHandleToolTypeChange();
+
+        /** Handles copy medium request. */
+        void sltCopyMedium(const QUuid &uMediumId);
 
         /** Handles current snapshot item change. */
         void sltCurrentSnapshotItemChange();
@@ -536,6 +540,9 @@ private:
     bool         m_fExportToOCI;
     /** Holds the list of VMs used by export wizard. */
     QStringList  m_names;
+
+    /** Holds the ID of medium used by clone VD wizard. */
+    QUuid  m_uMediumId;
 };
 
 #define gpManager UIVirtualBoxManager::instance()

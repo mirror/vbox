@@ -73,6 +73,7 @@
 #include "UIVMLogViewerDialog.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIWizardAddCloudVM.h"
+#include "UIWizardCloneVD.h"
 #include "UIWizardCloneVM.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardImportApp.h"
@@ -823,6 +824,15 @@ void UIVirtualBoxManager::sltHandleToolTypeChange()
     }
 }
 
+void UIVirtualBoxManager::sltCopyMedium(const QUuid &uMediumId)
+{
+    /* Configure wizard variables: */
+    m_uMediumId = uMediumId;
+
+    /* Open Clone VD Wizard: */
+    sltOpenWizard(WizardType_CloneVD);
+}
+
 void UIVirtualBoxManager::sltCurrentSnapshotItemChange()
 {
     updateActionsAppearance();
@@ -1027,6 +1037,9 @@ void UIVirtualBoxManager::sltOpenWizard(WizardType enmType)
                 break;
             case WizardType_AddCloudVM:
                 m_wizards[enmType] = new UIWizardAddCloudVM(this, m_pWidget->fullGroupName());
+                break;
+            case WizardType_CloneVD:
+                m_wizards[enmType] = new UIWizardCloneVD(this, m_uMediumId);
                 break;
             default:
                 break;
@@ -2265,6 +2278,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltHandleCloudMachineStateChange);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigToolTypeChange,
             this, &UIVirtualBoxManager::sltHandleToolTypeChange);
+    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCopyMedium,
+            this, &UIVirtualBoxManager::sltCopyMedium);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigMachineSettingsLinkClicked,
             this, &UIVirtualBoxManager::sltOpenSettingsDialog);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCurrentSnapshotItemChange,

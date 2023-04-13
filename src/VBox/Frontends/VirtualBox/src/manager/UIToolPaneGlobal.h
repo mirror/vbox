@@ -40,6 +40,7 @@
 /* Forward declarations: */
 class QHBoxLayout;
 class QStackedLayout;
+class QUuid;
 class QVBoxLayout;
 class UIActionPool;
 class UICloudProfileManagerWidget;
@@ -58,6 +59,9 @@ class UIToolPaneGlobal : public QWidget
     Q_OBJECT;
 
 signals:
+
+    /** Notifies listeners about copy procedure was requested for medium with specified @a uMediumId. */
+    void sigCopyMedium(const QUuid &uMediumId);
 
     /** Notifies listeners about request to switch to Activity pane of machine with @a uMachineId. */
     void sigSwitchToMachineActivityPane(const QUuid &uMachineId);

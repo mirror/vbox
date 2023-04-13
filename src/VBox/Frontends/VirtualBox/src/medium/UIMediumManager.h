@@ -31,6 +31,9 @@
 # pragma once
 #endif
 
+/* Qt includes: */
+#include <QUuid>
+
 /* GUI includes: */
 #include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
@@ -108,6 +111,9 @@ class UIMediumManagerWidget : public QIWithRetranslateUI<QWidget>
     enum Action { Action_Add, Action_Edit, Action_Copy, Action_Remove, Action_Release };
 
 signals:
+
+    /** Notifies listeners about copy procedure was requested for medium with specified @a uMediumId. */
+    void sigCopyMedium(const QUuid &uMediumId);
 
     /** Notifies listeners about medium details-widget @a fVisible. */
     void sigMediumDetailsVisibilityChanged(bool fVisible);

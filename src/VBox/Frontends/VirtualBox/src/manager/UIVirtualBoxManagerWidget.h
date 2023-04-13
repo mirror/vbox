@@ -101,6 +101,12 @@ signals:
         void sigToolTypeChange();
     /** @} */
 
+    /** @name Tools / Media pane stuff.
+      * @{ */
+        /** Notifies listeners about copy procedure was requested for medium with specified @a uMediumId. */
+        void sigCopyMedium(const QUuid &uMediumId);
+    /** @} */
+
     /** @name Tools / Details pane stuff.
       * @{ */
         /** Notifies aboud Details-pane link clicked. */
