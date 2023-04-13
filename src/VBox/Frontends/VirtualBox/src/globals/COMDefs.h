@@ -819,6 +819,11 @@ public:
      */
     bool isReallyOk() const { return !isNull() && B::mRC == S_OK; }
 
+    /**
+     * Returns the last result code of this interface.
+     */
+    HRESULT rc() const { return B::mRC; }
+
     // utility operators
 
     CInterface &operator=(const CInterface &that)

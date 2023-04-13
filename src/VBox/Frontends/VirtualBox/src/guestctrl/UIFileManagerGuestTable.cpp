@@ -527,9 +527,21 @@ void UIFileManagerGuestTable::readDirectory(const QString& strPath,
     parent->setIsOpened(true);
     if (directory.isOk())
     {
-        int const cMaxEntries = _4K; /* Maximum number of entries to read at once per List() call. */
+        int const cMaxEntries = _4K;   /* Maximum number of entries to read at once per List() call. */
+        bool      fUseRead    = false; /* Whether to use the Read() API or the newer (faster) List() call. */
 
         QVector<CFsObjInfo> vecFsInfo = directory.List(cMaxEntries);
+        /* IGuestDirectory::List() will return VBOX_E_NOT_SUPPORTED if older Guest Additions are installed. */
+        if (directory.rc() == VBOX_E_NOT_SUPPORTED)
+        {
+            CFsObjInfo fsInfo = directory.Read();
+            if (directory.isOk())
+            {
+                vecFsInfo.push_back(fsInfo);
+                fUseRead = true;
+            }
+        }
+
         QMap<QString, UICustomFileSystemItem*> fileObjects;
 
         while (directory.isOk())
@@ -563,7 +575,17 @@ void UIFileManagerGuestTable::readDirectory(const QString& strPath,
                 }
             }
 
-            vecFsInfo = directory.List(cMaxEntries);
+            if (fUseRead)
+            {
+                CFsObjInfo fsInfo = directory.Read();
+                if (directory.isOk())
+                {
+                    vecFsInfo.clear();
+                    vecFsInfo.push_back(fsInfo);
+                }
+            }
+            else
+                vecFsInfo = directory.List(cMaxEntries);
         }
 
         checkDotDot(fileObjects, parent, isStartDir);
