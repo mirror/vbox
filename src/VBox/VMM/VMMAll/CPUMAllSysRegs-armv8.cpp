@@ -143,7 +143,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumSysRegWr_ReadOnly(PVMCPUCC pVCpu, uint32_t
 
 
 
-/** @callback_method_impl{FNCPUMRDMSR} */
+/** @callback_method_impl{FNCPUMRDSYSREG} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumSysRegRd_GicV3Icc(PVMCPUCC pVCpu, uint32_t idSysReg, PCCPUMSYSREGRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(pRange);
@@ -151,7 +151,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumSysRegRd_GicV3Icc(PVMCPUCC pVCpu, uint32_t
 }
 
 
-/** @callback_method_impl{FNCPUMWRMSR} */
+/** @callback_method_impl{FNCPUMWRSYSREG} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumSysRegWr_GicV3Icc(PVMCPUCC pVCpu, uint32_t idSysReg, PCCPUMSYSREGRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
     RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
