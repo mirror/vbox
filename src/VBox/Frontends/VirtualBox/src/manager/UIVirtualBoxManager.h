@@ -156,6 +156,8 @@ private slots:
         /** Handles signal about Tool type change.  */
         void sltHandleToolTypeChange();
 
+        /** Handles create medium request. */
+        void sltCreateMedium();
         /** Handles copy medium request. */
         void sltCopyMedium(const QUuid &uMediumId);
 

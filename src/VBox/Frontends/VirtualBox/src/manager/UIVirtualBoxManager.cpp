@@ -78,6 +78,7 @@
 #include "UIWizardExportApp.h"
 #include "UIWizardImportApp.h"
 #include "UIWizardNewCloudVM.h"
+#include "UIWizardNewVD.h"
 #include "UIWizardNewVM.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UIUpdateManager.h"
@@ -824,6 +825,12 @@ void UIVirtualBoxManager::sltHandleToolTypeChange()
     }
 }
 
+void UIVirtualBoxManager::sltCreateMedium()
+{
+    /* Open Create VD Wizard: */
+    sltOpenWizard(WizardType_NewVD);
+}
+
 void UIVirtualBoxManager::sltCopyMedium(const QUuid &uMediumId)
 {
     /* Configure wizard variables: */
@@ -1038,6 +1045,18 @@ void UIVirtualBoxManager::sltOpenWizard(WizardType enmType)
             case WizardType_AddCloudVM:
                 m_wizards[enmType] = new UIWizardAddCloudVM(this, m_pWidget->fullGroupName());
                 break;
+            case WizardType_NewVD:
+            {
+                const QString strFolder = uiCommon().defaultFolderPathForType(UIMediumDeviceType_HardDisk);
+                const QString strDiskName = uiCommon().findUniqueFileName(strFolder, "NewVirtualDisk");
+                const CGuestOSType comGuestOSType = uiCommon().virtualBox().GetGuestOSType("Other");
+                const qulonglong uDiskSize = comGuestOSType.GetRecommendedHDD();
+                m_wizards[enmType] = new UIWizardNewVD(this,
+                                                       strDiskName,
+                                                       strFolder,
+                                                       uDiskSize);
+                break;
+            }
             case WizardType_CloneVD:
                 m_wizards[enmType] = new UIWizardCloneVD(this, m_uMediumId);
                 break;
@@ -2278,6 +2297,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltHandleCloudMachineStateChange);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigToolTypeChange,
             this, &UIVirtualBoxManager::sltHandleToolTypeChange);
+    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCreateMedium,
+            this, &UIVirtualBoxManager::sltCreateMedium);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCopyMedium,
             this, &UIVirtualBoxManager::sltCopyMedium);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigMachineSettingsLinkClicked,

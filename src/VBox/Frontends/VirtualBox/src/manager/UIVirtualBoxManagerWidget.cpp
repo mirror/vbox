@@ -671,6 +671,8 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                         {
                             if (m_pPaneChooser->isGlobalItemSelected())
                                 m_pPaneToolsGlobal->setActive(true);
+                            connect(m_pPaneToolsGlobal, &UIToolPaneGlobal::sigCreateMedium,
+                                    this, &UIVirtualBoxManagerWidget::sigCreateMedium);
                             connect(m_pPaneToolsGlobal, &UIToolPaneGlobal::sigCopyMedium,
                                     this, &UIVirtualBoxManagerWidget::sigCopyMedium);
                             connect(m_pPaneToolsGlobal, &UIToolPaneGlobal::sigSwitchToMachineActivityPane,

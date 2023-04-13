@@ -38,9 +38,8 @@
 UIWizardNewVD::UIWizardNewVD(QWidget *pParent,
                              const QString &strDefaultName,
                              const QString &strDefaultPath,
-                             qulonglong uDefaultSize,
-                             WizardMode mode)
-    : UINativeWizard(pParent, WizardType_NewVD, mode, "create-virtual-hard-disk-image" /* help keyword */)
+                             qulonglong uDefaultSize)
+    : UINativeWizard(pParent, WizardType_NewVD, WizardMode_Auto, "create-virtual-hard-disk-image" /* help keyword */)
     , m_strDefaultName(strDefaultName)
     , m_strDefaultPath(strDefaultPath)
     , m_uDefaultSize(uDefaultSize)

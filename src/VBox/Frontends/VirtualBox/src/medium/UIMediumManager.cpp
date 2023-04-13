@@ -471,7 +471,14 @@ void UIMediumManagerWidget::sltAddMedium()
 
 void UIMediumManagerWidget::sltCreateMedium()
 {
-    uiCommon().openMediumCreatorDialog(m_pActionPool, this, currentMediumType());
+    /* What's with current medium type? */
+    const UIMediumDeviceType enmMediumType = currentMediumType();
+
+    /* Ask listener to start hard-disk creation: */
+    if (enmMediumType == UIMediumDeviceType_HardDisk)
+        emit sigCreateMedium();
+    else
+        uiCommon().openMediumCreatorDialog(m_pActionPool, this, currentMediumType());
 }
 
 void UIMediumManagerWidget::sltCopyMedium()

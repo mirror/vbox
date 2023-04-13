@@ -47,8 +47,9 @@ class SHARED_LIBRARY_STUFF UIWizardNewVD : public UINativeWizard
 public:
 
     UIWizardNewVD(QWidget *pParent,
-                  const QString &strDefaultName, const QString &strDefaultPath,
-                  qulonglong uDefaultSize, WizardMode mode = WizardMode_Auto);
+                  const QString &strDefaultName,
+                  const QString &strDefaultPath,
+                  qulonglong uDefaultSize);
 
     bool createVirtualDisk();
 

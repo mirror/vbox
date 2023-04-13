@@ -165,6 +165,8 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
 
                     /* Configure pane: */
                     m_pPaneMedia->setProperty("ToolType", QVariant::fromValue(UIToolType_Media));
+                    connect(m_pPaneMedia, &UIMediumManagerWidget::sigCreateMedium,
+                            this, &UIToolPaneGlobal::sigCreateMedium);
                     connect(m_pPaneMedia, &UIMediumManagerWidget::sigCopyMedium,
                             this, &UIToolPaneGlobal::sigCopyMedium);
 

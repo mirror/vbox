@@ -112,6 +112,8 @@ class UIMediumManagerWidget : public QIWithRetranslateUI<QWidget>
 
 signals:
 
+    /** Notifies listeners about creation procedure was requested. */
+    void sigCreateMedium();
     /** Notifies listeners about copy procedure was requested for medium with specified @a uMediumId. */
     void sigCopyMedium(const QUuid &uMediumId);
 
