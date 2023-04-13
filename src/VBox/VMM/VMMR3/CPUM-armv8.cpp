@@ -206,6 +206,8 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     AssertRCReturn(rc2, rc2);
 #endif
 
+    pVM->cpum.s.GuestInfo.paSysRegRangesR3 = &pVM->cpum.s.GuestInfo.aSysRegRanges[0];
+
     /*
      * Register saved state data item.
      */

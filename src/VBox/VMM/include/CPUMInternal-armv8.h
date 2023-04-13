@@ -82,10 +82,11 @@ typedef struct CPUMINFO
     /** The number of system register ranges (CPUMSSREGRANGE) in the array pointed to below. */
     uint32_t                    cSysRegRanges;
 
-    /** MSR ranges.
-     * @todo This is insane, so might want to move this into a separate
-     *       allocation.  The insanity is mainly for more recent AMD CPUs. */
-    CPUMSYSREGRANGE             aSysRegRanges[1024];
+    /** Pointer to the sysrem register ranges. */
+    R3PTRTYPE(PCPUMSYSREGRANGE) paSysRegRangesR3;
+
+    /** System register ranges. */
+    CPUMSYSREGRANGE             aSysRegRanges[128];
 } CPUMINFO;
 /** Pointer to a CPU info structure. */
 typedef CPUMINFO *PCPUMINFO;

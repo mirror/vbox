@@ -254,6 +254,17 @@ typedef CPUMDBENTRY const *PCCPUMDBENTRY;
 
 #ifndef VBOX_FOR_DTRACE_LIB
 
+#ifdef IN_RING3
+/** @defgroup grp_cpum_armv8_r3    The CPUM ARMv8 ring-3 API
+ * @{
+ */
+
+VMMR3DECL(int)          CPUMR3SysRegRangesInsert(PVM pVM, PCCPUMSYSREGRANGE pNewRange);
+
+/** @} */
+#endif /* IN_RING3 */
+
+
 /** @name Guest Register Getters.
  * @{ */
 VMMDECL(VBOXSTRICTRC)   CPUMQueryGuestSysReg(PVMCPUCC pVCpu, uint32_t idSysReg, uint64_t *puValue);
