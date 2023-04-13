@@ -205,7 +205,7 @@ static int tstReadFromFile(const char *pszFile)
     int rc = RTFileOpen(&fh, pszFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
-    size_t cbFileSize;
+    uint64_t cbFileSize;
     rc = RTFileQuerySize(fh, &cbFileSize);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
@@ -218,7 +218,7 @@ static int tstReadFromFile(const char *pszFile)
     unsigned aToRead[] = { 256, 23, 13 };
     unsigned i = 0;
 
-    size_t cbToRead = cbFileSize;
+    uint64_t cbToRead = cbFileSize;
 
     for (unsigned a = 0; a < 32; a++)
     {
@@ -319,7 +319,7 @@ int main(int argc, char **argv)
 
     for (unsigned iTest = 0; iTest < RT_ELEMENTS(g_aTestBlocks); iTest++)
     {
-        RTTestIPrintf(RTTESTLVL_DEBUG, "=> Block test #%u:\n'%.*RhXd\n", iTest, g_aTestBlocks[iTest].cbData, g_aTestBlocks[iTest].pbData);
+        RTTestIPrintf(RTTESTLVL_DEBUG, "=> Block test #%u:\n'%.*Rhxd\n", iTest, g_aTestBlocks[iTest].cbData, g_aTestBlocks[iTest].pbData);
 
         GuestToolboxStream stream;
         int iResult = stream.AddData((BYTE *)g_aTestBlocks[iTest].pbData, g_aTestBlocks[iTest].cbData);
@@ -364,7 +364,7 @@ int main(int argc, char **argv)
 
     for (unsigned iTest = 0; iTest < RT_ELEMENTS(g_aTestStream); iTest++)
     {
-        RTTestIPrintf(RTTESTLVL_DEBUG, "=> Stream test #%u\n%.*RhXd\n",
+        RTTestIPrintf(RTTESTLVL_DEBUG, "=> Stream test #%u\n%.*Rhxd\n",
                       iTest, g_aTestStream[iTest].cbData, g_aTestStream[iTest].pbData);
 
         GuestToolboxStream stream;

@@ -938,7 +938,7 @@ int GuestToolboxStream::ParseBlock(GuestToolboxStreamBlock &streamBlock)
     char         *pszLookAhead = pszStart; /* Look ahead pointer to count terminators. */
     char         *pszParsed    = pszStart; /* Points to data considered as being parsed already. */
 
-    Log4Func(("Current @ %zu/%zu:\n%.*RhXd\n", m_offBuf, m_cbUsed, RT_MIN(cbLeftParsed, _1K), pszStart));
+    Log4Func(("Current @ %zu/%zu:\n%.*Rhxd\n", m_offBuf, m_cbUsed, RT_MIN(cbLeftParsed, _1K), pszStart));
 
     size_t cTerm = 0;
 
@@ -1008,11 +1008,11 @@ int GuestToolboxStream::ParseBlock(GuestToolboxStreamBlock &streamBlock)
         cbLeftLookAhead = cbLeftParsed;
 
         if (cbLeftParsed)
-            Log4Func(("Next iteration @ %zu:\n%.*RhXd\n", pszParsed - pszStart, cbLeftParsed, pszParsed));
+            Log4Func(("Next iteration @ %zu:\n%.*Rhxd\n", pszParsed - pszStart, cbLeftParsed, pszParsed));
     }
 
     if (cbLeftParsed)
-        Log4Func(("Done @ %zu:\n%.*RhXd\n", pszParsed - pszStart, cbLeftParsed, pszParsed));
+        Log4Func(("Done @ %zu:\n%.*Rhxd\n", pszParsed - pszStart, cbLeftParsed, pszParsed));
 
     m_offBuf += pszParsed - pszStart; /* Only account really parsed content. */
     Assert(m_offBuf <= m_cbUsed);
