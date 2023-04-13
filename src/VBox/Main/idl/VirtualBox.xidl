@@ -26249,7 +26249,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </desc>
     <const name="None"      value="0">
       <desc>No connection available (only useful with
-        <link to="GuestDebugProvider::None"/>).
+        <link to="GuestDebugProvider_None"/>).
       </desc>
     </const>
     <const name="TCP"       value="1">
