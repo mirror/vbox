@@ -534,9 +534,7 @@ RTFMODE GuestFsObjData::GetFileMode(void) const
 /** @todo Add exception handling for STL stuff! */
 
 GuestToolboxStreamBlock::GuestToolboxStreamBlock(void)
-{
-
-}
+    : m_fComplete(false) { }
 
 GuestToolboxStreamBlock::~GuestToolboxStreamBlock()
 {
@@ -548,7 +546,8 @@ GuestToolboxStreamBlock::~GuestToolboxStreamBlock()
  */
 void GuestToolboxStreamBlock::Clear(void)
 {
-    mPairs.clear();
+    m_fComplete = false;
+    m_mapPairs.clear();
 }
 
 #ifdef DEBUG
@@ -557,11 +556,11 @@ void GuestToolboxStreamBlock::Clear(void)
  */
 void GuestToolboxStreamBlock::DumpToLog(void) const
 {
-    LogFlowFunc(("Dumping contents of stream block=0x%p (%ld items):\n",
-                 this, mPairs.size()));
+    LogFlowFunc(("Dumping contents of stream block=0x%p (%ld items, fComplete=%RTbool):\n",
+                 this, m_mapPairs.size(), m_fComplete));
 
-    for (GuestCtrlStreamPairMapIterConst it = mPairs.begin();
-         it != mPairs.end(); ++it)
+    for (GuestCtrlStreamPairMapIterConst it = m_mapPairs.begin();
+         it != m_mapPairs.end(); ++it)
     {
         LogFlowFunc(("\t%s=%s\n", it->first.c_str(), it->second.mValue.c_str()));
     }
@@ -609,7 +608,7 @@ int64_t GuestToolboxStreamBlock::GetInt64(const char *pszKey) const
  */
 size_t GuestToolboxStreamBlock::GetCount(void) const
 {
-    return mPairs.size();
+    return m_mapPairs.size();
 }
 
 /**
@@ -644,8 +643,8 @@ const char *GuestToolboxStreamBlock::GetString(const char *pszKey) const
 
     try
     {
-        GuestCtrlStreamPairMapIterConst itPairs = mPairs.find(pszKey);
-        if (itPairs != mPairs.end())
+        GuestCtrlStreamPairMapIterConst itPairs = m_mapPairs.find(pszKey);
+        if (itPairs != m_mapPairs.end())
             return itPairs->second.mValue.c_str();
     }
     catch (const std::exception &ex)
@@ -710,34 +709,46 @@ uint32_t GuestToolboxStreamBlock::GetUInt32(const char *pszKey, uint32_t uDefaul
 }
 
 /**
- * Sets a value to a key or deletes a key by setting a NULL value.
+ * Sets a value to a key or deletes a key by setting a NULL value. Extended version.
  *
  * @return  VBox status code.
  * @param   pszKey              Key name to process.
+ * @param   cwcKey              Maximum characters of \a pszKey to process.
  * @param   pszValue            Value to set. Set NULL for deleting the key.
+ * @param   cwcValue            Maximum characters of \a pszValue to process.
+ * @param   fOverwrite          Whether a key can be overwritten with a new value if it already exists. Will assert otherwise.
  */
-int GuestToolboxStreamBlock::SetValue(const char *pszKey, const char *pszValue)
+int GuestToolboxStreamBlock::SetValueEx(const char *pszKey, size_t cwcKey, const char *pszValue, size_t cwcValue,
+                                        bool fOverwrite /* = false */)
 {
     AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
+    AssertReturn(cwcKey, VERR_INVALID_PARAMETER);
 
     int vrc = VINF_SUCCESS;
     try
     {
-        Utf8Str const strKey(pszKey);
+        Utf8Str const strKey(pszKey, cwcKey);
 
         /* Take a shortcut and prevent crashes on some funny versions
          * of STL if map is empty initially. */
-        if (!mPairs.empty())
+        if (!m_mapPairs.empty())
         {
-            GuestCtrlStreamPairMapIter it = mPairs.find(strKey);
-            if (it != mPairs.end())
-                 mPairs.erase(it);
+            GuestCtrlStreamPairMapIter it = m_mapPairs.find(strKey);
+            if (it != m_mapPairs.end())
+            {
+                if (pszValue == NULL)
+                    m_mapPairs.erase(it);
+                else if (!fOverwrite)
+                    AssertMsgFailedReturn(("Key '%*s' already exists! Value is '%s'\n", cwcKey, pszKey, m_mapPairs[strKey].mValue.c_str()),
+                                          VERR_ALREADY_EXISTS);
+            }
         }
 
         if (pszValue)
         {
-            GuestToolboxStreamValue val(pszValue);
-            mPairs[strKey] = val;
+            GuestToolboxStreamValue val(pszValue, cwcValue);
+            Log3Func(("strKey='%s', strValue='%s'\n", strKey.c_str(), val.mValue.c_str()));
+            m_mapPairs[strKey] = val;
         }
     }
     catch (const std::exception &)
@@ -747,14 +758,27 @@ int GuestToolboxStreamBlock::SetValue(const char *pszKey, const char *pszValue)
     return vrc;
 }
 
+/**
+ * Sets a value to a key or deletes a key by setting a NULL value.
+ *
+ * @return  VBox status code.
+ * @param   pszKey              Key name to process.
+ * @param   pszValue            Value to set. Set NULL for deleting the key.
+ */
+int GuestToolboxStreamBlock::SetValue(const char *pszKey, const char *pszValue)
+{
+    return SetValueEx(pszKey, RTSTR_MAX, pszValue, RTSTR_MAX);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 GuestToolboxStream::GuestToolboxStream(void)
     : m_cbMax(_32M)
     , m_cbAllocated(0)
     , m_cbUsed(0)
-    , m_offBuffer(0)
-    , m_pbBuffer(NULL) { }
+    , m_offBuf(0)
+    , m_pbBuffer(NULL)
+    , m_cBlocks(0) { }
 
 GuestToolboxStream::~GuestToolboxStream(void)
 {
@@ -777,10 +801,10 @@ int GuestToolboxStream::AddData(const BYTE *pbData, size_t cbData)
     int vrc = VINF_SUCCESS;
 
     /* Rewind the buffer if it's empty. */
-    size_t     cbInBuf   = m_cbUsed - m_offBuffer;
+    size_t     cbInBuf   = m_cbUsed - m_offBuf;
     bool const fAddToSet = cbInBuf == 0;
     if (fAddToSet)
-        m_cbUsed = m_offBuffer = 0;
+        m_cbUsed = m_offBuf = 0;
 
     /* Try and see if we can simply append the data. */
     if (cbData + m_cbUsed <= m_cbAllocated)
@@ -791,14 +815,14 @@ int GuestToolboxStream::AddData(const BYTE *pbData, size_t cbData)
     else
     {
         /* Move any buffered data to the front. */
-        cbInBuf = m_cbUsed - m_offBuffer;
+        cbInBuf = m_cbUsed - m_offBuf;
         if (cbInBuf == 0)
-            m_cbUsed = m_offBuffer = 0;
-        else if (m_offBuffer) /* Do we have something to move? */
+            m_cbUsed = m_offBuf = 0;
+        else if (m_offBuf) /* Do we have something to move? */
         {
-            memmove(m_pbBuffer, &m_pbBuffer[m_offBuffer], cbInBuf);
+            memmove(m_pbBuffer, &m_pbBuffer[m_offBuf], cbInBuf);
             m_cbUsed = cbInBuf;
-            m_offBuffer = 0;
+            m_offBuf = 0;
         }
 
         /* Do we need to grow the buffer? */
@@ -850,7 +874,8 @@ void GuestToolboxStream::Destroy(void)
 
     m_cbAllocated = 0;
     m_cbUsed = 0;
-    m_offBuffer = 0;
+    m_offBuf = 0;
+    m_cBlocks = 0;
 }
 
 #ifdef DEBUG
@@ -863,7 +888,7 @@ void GuestToolboxStream::Destroy(void)
 void GuestToolboxStream::Dump(const char *pszFile)
 {
     LogFlowFunc(("Dumping contents of stream=0x%p (cbAlloc=%u, cbSize=%u, cbOff=%u) to %s\n",
-                 m_pbBuffer, m_cbAllocated, m_cbUsed, m_offBuffer, pszFile));
+                 m_pbBuffer, m_cbAllocated, m_cbUsed, m_offBuf, pszFile));
 
     RTFILE hFile;
     int vrc = RTFileOpen(&hFile, pszFile, RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
@@ -873,77 +898,146 @@ void GuestToolboxStream::Dump(const char *pszFile)
         RTFileClose(hFile);
     }
 }
-#endif
+#endif /* DEBUG */
 
 /**
- * Tries to parse the next upcoming pair block within the internal
- * buffer.
+ * Tries to parse the next upcoming pair block within the internal buffer.
  *
- * Returns VERR_NO_DATA is no data is in internal buffer or buffer has been
- * completely parsed already.
+ * Parsing behavior:
+ * - A stream can contain one or multiple blocks and is terminated by four (4) "\0".
+ * - A block (or "object") contains one or multiple key=value pairs and is terminated with two (2) "\0".
+ * - Each key=value pair is terminated by a single (1) "\0".
  *
- * Returns VERR_MORE_DATA if current block was parsed (with zero or more pairs
- * stored in stream block) but still contains incomplete (unterminated)
- * data.
+ * As new data can arrive at a later time eventually completing a pair / block / stream,
+ * the algorithm needs to be careful not intepreting its current data too early. So only skip termination
+ * sequences if we really know that the termination sequence is complete. See comments down below.
  *
- * Returns VINF_SUCCESS if current block was parsed until the next upcoming
- * block (with zero or more pairs stored in stream block).
+ * No locking done.
  *
  * @return VBox status code.
- * @param streamBlock               Reference to guest stream block to fill.
+ * @retval VINF_EOF if the stream reached its end.
+ * @param  streamBlock              Reference to guest stream block to fill
  */
 int GuestToolboxStream::ParseBlock(GuestToolboxStreamBlock &streamBlock)
 {
+    AssertMsgReturn(streamBlock.m_fComplete == false, ("Block object already marked as being completed\n"), VERR_WRONG_ORDER);
+
     if (   !m_pbBuffer
         || !m_cbUsed)
-        return VERR_NO_DATA;
+        return VINF_EOF;
 
-    AssertReturn(m_offBuffer <= m_cbUsed, VERR_INVALID_PARAMETER);
-    if (m_offBuffer == m_cbUsed)
-        return VERR_NO_DATA;
+    AssertReturn(m_offBuf <= m_cbUsed, VERR_INVALID_PARAMETER);
+    if (m_offBuf == m_cbUsed)
+        return VINF_EOF;
 
-    int          vrc       = VINF_SUCCESS;
-    char * const pszOff    = (char *)&m_pbBuffer[m_offBuffer];
-    size_t       cbLeft    = m_offBuffer < m_cbUsed ? m_cbUsed - m_offBuffer : 0;
-    char        *pszStart  = pszOff;
-    while (cbLeft > 0 && *pszStart != '\0')
+    char * const  pszStart = (char *)&m_pbBuffer[m_offBuf];
+
+    size_t        cbLeftParsed    = m_offBuf < m_cbUsed ? m_cbUsed - m_offBuf : 0;
+    size_t        cbLeftLookAhead = cbLeftParsed;
+
+    char         *pszLookAhead = pszStart; /* Look ahead pointer to count terminators. */
+    char         *pszParsed    = pszStart; /* Points to data considered as being parsed already. */
+
+    Log4Func(("Current @ %zu/%zu:\n%.*RhXd\n", m_offBuf, m_cbUsed, RT_MIN(cbLeftParsed, _1K), pszStart));
+
+    size_t cTerm = 0;
+
+    /*
+     * We have to be careful when handling single terminators ('\0') here, as we might not know yet
+     * if it's part of a multi-terminator seqeuence.
+     *
+     * So handle and skip those *only* when we hit a non-terminator char again.
+     */
+    int vrc = VINF_SUCCESS;
+    while (cbLeftLookAhead)
     {
-        char * const pszPairEnd = RTStrEnd(pszStart, cbLeft);
-        if (!pszPairEnd)
+        /* Count consequtive terminators. */
+        if (*pszLookAhead == GUESTTOOLBOX_STRM_TERM)
         {
-            vrc = VERR_MORE_DATA;
-            break;
+            cTerm++;
+            pszLookAhead++;
+            cbLeftLookAhead--;
+            continue;
         }
-        size_t const cchPair = (size_t)(pszPairEnd - pszStart);
-        char *pszSep = (char *)memchr(pszStart, '=', cchPair);
-        if (pszSep)
-            *pszSep = '\0'; /* Terminate the separator so that we can  use pszStart as our key from now on. */
-        else
-        {
-            vrc = VERR_MORE_DATA; /** @todo r=bird: This is BOGUS because we'll be stuck here if the guest feeds us bad data! */
-            break;
-        }
-        char const * const pszVal = pszSep + 1;
 
-        vrc = streamBlock.SetValue(pszStart, pszVal);
+        pszParsed    = pszLookAhead;
+        cbLeftParsed = cbLeftLookAhead;
+
+        /* We hit a non-terminator (again); now interpret where we are, and
+         * bail out if we need to. */
+        if (cTerm >= 2)
+        {
+            Log2Func(("Hit end of termination sequence (%zu)\n", cTerm));
+            break;
+        }
+
+        cTerm = 0; /* Reset consequtive counter. */
+
+        char * const pszPairEnd = RTStrEnd(pszParsed, cbLeftParsed);
+        if (!pszPairEnd) /* No zero terminator found (yet), try next time. */
+            break;
+
+        Log3Func(("Pair '%s' (%u)\n", pszParsed, strlen(pszParsed)));
+
+        Assert(pszPairEnd != pszParsed);
+        size_t const cbPair = (size_t)(pszPairEnd - pszParsed);
+        Assert(cbPair);
+        const char  *pszSep = (const char *)memchr(pszParsed, '=', cbPair);
+        if (!pszSep) /* No separator found (yet), try next time. */
+            break;
+
+        /* Skip the separator so that pszSep points to the actual value. */
+        pszSep++;
+
+        char const * const pszKey = pszParsed;
+        char const * const pszVal = pszSep;
+
+        vrc = streamBlock.SetValueEx(pszKey, pszSep - pszKey - 1, pszVal, pszPairEnd - pszVal);
         if (RT_FAILURE(vrc))
             return vrc;
 
-        /* Next pair. */
-        pszStart = pszPairEnd + 1;
-        cbLeft  -= cchPair    + 1;
+        if (cbPair >= cbLeftParsed)
+            break;
+
+        /* Accounting for next iteration. */
+        pszParsed       = pszPairEnd;
+        Assert(cbLeftParsed >= cbPair);
+        cbLeftParsed   -= cbPair;
+
+        pszLookAhead    = pszPairEnd;
+        cbLeftLookAhead = cbLeftParsed;
+
+        if (cbLeftParsed)
+            Log4Func(("Next iteration @ %zu:\n%.*RhXd\n", pszParsed - pszStart, cbLeftParsed, pszParsed));
     }
 
-    /* If we did not do any movement but we have stuff left
-     * in our buffer just skip the current termination so that
-     * we can try next time. */
-    size_t cbDistance = (pszStart - pszOff);
-    if (   !cbDistance
-        && cbLeft > 0
-        && *pszStart == '\0'
-        && m_offBuffer < m_cbUsed)
-        cbDistance++;
-    m_offBuffer += cbDistance;
+    if (cbLeftParsed)
+        Log4Func(("Done @ %zu:\n%.*RhXd\n", pszParsed - pszStart, cbLeftParsed, pszParsed));
+
+    m_offBuf += pszParsed - pszStart; /* Only account really parsed content. */
+    Assert(m_offBuf <= m_cbUsed);
+
+    /* Did we hit a block or stream termination sequence? */
+    if (cTerm >= GUESTTOOLBOX_STRM_BLK_TERM_CNT)
+    {
+        if (!streamBlock.IsEmpty()) /* Only account and complete blocks which have values in it. */
+        {
+            m_cBlocks++;
+            streamBlock.m_fComplete = true;
+#ifdef DEBUG
+            streamBlock.DumpToLog();
+#endif
+        }
+
+        if (cTerm >= GUESTTOOLBOX_STRM_TERM_CNT)
+        {
+            m_offBuf = m_cbUsed;
+            vrc = VINF_EOF;
+        }
+    }
+
+    LogFlowThisFunc(("cbLeft=%zu, offBuffer=%zu / cbUsed=%zu, cBlocks=%zu, cTerm=%zu -> current block has %RU64 pairs (complete = %RTbool), rc=%Rrc\n",
+                     cbLeftParsed, m_offBuf, m_cbUsed, m_cBlocks, cTerm, streamBlock.GetCount(), streamBlock.IsComplete(), vrc));
 
     return vrc;
 }
