@@ -1246,13 +1246,16 @@ class SessionWrapper(TdTaskBase):
                 if fEnable:
                     self.o.machine.nonVolatileStore.uefiVariableStore.enrollDefaultMsSignatures();
                     self.o.machine.nonVolatileStore.uefiVariableStore.enrollOraclePlatformKey();
-                    if   sUefiMokPathPrefix is not None \
-                    and  self.fpApiVer >= 7.1:
-                        sFullName = self.oTstDrv.getFullResourceName(sUefiMokPathPrefix) + '.der';
-                        with open(sFullName, "rb") as der_file:
-                            self.o.machine.nonVolatileStore.uefiVariableStore.addSignatureToMok(bytearray(der_file.read()), \
-                                                                                                uuid.uuid4().hex, \
-                                                                                                vboxcon.SignatureType_X509);
+                    if sUefiMokPathPrefix:
+                        if self.oTstDrv.uRevision >= 156314: # Backported IUefiVariableStore::addSignatureToMok() to 7.0.
+                            sFullName = self.oTstDrv.getFullResourceName(sUefiMokPathPrefix) + '.der';
+                            with open(sFullName, "rb") as der_file:
+                                self.o.machine.nonVolatileStore.uefiVariableStore.addSignatureToMok(bytearray(der_file.read()), \
+                                                                                                    uuid.uuid4().hex, \
+                                                                                                    vboxcon.SignatureType_X509);
+                        else:
+                            reporter.log('Warning: Enrolling own keys / signatures only available for 7.0 >= r156314. ' \
+                                         'Guest Additions installation might fail!');
 
                 self.o.machine.nonVolatileStore.uefiVariableStore.secureBootEnabled = fEnable;
             except:
