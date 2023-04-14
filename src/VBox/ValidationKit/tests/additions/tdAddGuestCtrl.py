@@ -1429,6 +1429,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         self.oTestFiles             = None # type: vboxtestfileset.TestFileSet
         self.oDebug                 = tdDebugSettings();
         self.sPathVBoxServiceExeGst = '';
+        self.tpAdditionsVer         = ();
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--add-guest-ctrl-tests':
