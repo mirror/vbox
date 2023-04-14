@@ -3,6 +3,6 @@
 <glossentry xml:lang="en-us" id="glossentry-pic">
   <glossterm>PIC</glossterm>
   <glossdef>
-    See APIC.
+    See <xref href="glossentry-apic.dita">APIC</xref>.
   </glossdef>
 </glossentry>

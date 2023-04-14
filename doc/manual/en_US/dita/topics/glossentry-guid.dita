@@ -3,6 +3,6 @@
 <glossentry xml:lang="en-us" id="glossentry-guid">
   <glossterm>GUID</glossterm>
   <glossdef>
-    See UUID.
+    See <xref href="glossentry-uuid.dita">UUID</xref>.
   </glossdef>
 </glossentry>

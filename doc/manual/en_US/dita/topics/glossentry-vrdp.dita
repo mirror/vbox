@@ -3,6 +3,6 @@
 <glossentry xml:lang="en-us" id="glossentry-vrdp">
   <glossterm>VRDP</glossterm>
   <glossdef>
-    See RDP.
+    See <xref href="glossentry-rdp.dita">RDP</xref>.
   </glossdef>
 </glossentry>

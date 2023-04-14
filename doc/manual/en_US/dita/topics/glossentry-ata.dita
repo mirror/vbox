@@ -4,6 +4,7 @@
   <glossterm>ATA</glossterm>
   <glossdef>
     Advanced Technology Attachment, an industry standard for hard disk interfaces
-    which is synonymous with IDE. See <xref href="harddiskcontrollers.dita#harddiskcontrollers"/>.
+    which is synonymous with <xref href="glossentry-ide.dita">IDE</xref>. See
+    <xref href="harddiskcontrollers.dita#harddiskcontrollers"/>.
   </glossdef>
 </glossentry>
