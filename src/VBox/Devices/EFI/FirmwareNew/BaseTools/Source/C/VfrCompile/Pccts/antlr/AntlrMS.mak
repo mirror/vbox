@@ -16,7 +16,7 @@ SET=$(PCCTS_HOME)\support\set
 # Compiler stuff
 CC = cl
 CFLAGS = /nologo -I "." -I "$(PCCTS_H)" -I "$(SET)" -D "USER_ZZSYN" -D "PC" \
-        -D "ZZLEXBUFSIZE=65536"  /D "LONGFILENAMES" /Zi /W3 -D__USE_PROTOS /wd4700 \
+        -D "ZZLEXBUFSIZE=65536"  /D "LONGFILENAMES" /Z7 /W3 -D__USE_PROTOS /wd4700 \
          /D _CRT_SECURE_NO_DEPRECATE /D _CRT_NONSTDC_NO_DEPRECATE
 
 ANTLR_OBJS = antlr.obj scan.obj err.obj bits.obj build.obj fset2.obj \

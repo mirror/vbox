@@ -13,7 +13,6 @@
 #include <Uefi/UefiBaseType.h>
 #include <Base.h>
 
-
 /**
   Connect devices based on the boot order retrieved from QEMU.
 
@@ -48,6 +47,19 @@ ConnectDevicesFromQemu (
   VOID
   );
 
+/**
+  Write qemu boot order to uefi variables.
+
+  Attempt to retrieve the "bootorder" fw_cfg file from QEMU. Translate
+  the OpenFirmware device paths therein to UEFI device path fragments.
+
+  On Success store the device path in QemuBootOrderNNNN variables.
+**/
+VOID
+EFIAPI
+StoreQemuBootOrder (
+  VOID
+  );
 
 /**
 
@@ -82,7 +94,6 @@ EFIAPI
 SetBootOrderFromQemu (
   VOID
   );
-
 
 /**
   Calculate the number of seconds we should be showing the FrontPage progress

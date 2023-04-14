@@ -35,7 +35,7 @@ TlsInitialize (
 VOID
 EFIAPI
 TlsCtxFree (
-  IN   VOID                  *TlsCtx
+  IN   VOID  *TlsCtx
   );
 
 /**
@@ -52,8 +52,8 @@ TlsCtxFree (
 VOID *
 EFIAPI
 TlsCtxNew (
-  IN     UINT8                    MajorVer,
-  IN     UINT8                    MinorVer
+  IN     UINT8  MajorVer,
+  IN     UINT8  MinorVer
   );
 
 /**
@@ -68,7 +68,7 @@ TlsCtxNew (
 VOID
 EFIAPI
 TlsFree (
-  IN     VOID                     *Tls
+  IN     VOID  *Tls
   );
 
 /**
@@ -87,7 +87,7 @@ TlsFree (
 VOID *
 EFIAPI
 TlsNew (
-  IN     VOID                     *TlsCtx
+  IN     VOID  *TlsCtx
   );
 
 /**
@@ -104,7 +104,7 @@ TlsNew (
 BOOLEAN
 EFIAPI
 TlsInHandshake (
-  IN     VOID                     *Tls
+  IN     VOID  *Tls
   );
 
 /**
@@ -136,11 +136,11 @@ TlsInHandshake (
 EFI_STATUS
 EFIAPI
 TlsDoHandshake (
-  IN     VOID                     *Tls,
-  IN     UINT8                    *BufferIn, OPTIONAL
-  IN     UINTN                    BufferInSize, OPTIONAL
-     OUT UINT8                    *BufferOut, OPTIONAL
-  IN OUT UINTN                    *BufferOutSize
+  IN     VOID   *Tls,
+  IN     UINT8  *BufferIn  OPTIONAL,
+  IN     UINTN  BufferInSize  OPTIONAL,
+  OUT UINT8     *BufferOut  OPTIONAL,
+  IN OUT UINTN  *BufferOutSize
   );
 
 /**
@@ -171,11 +171,11 @@ TlsDoHandshake (
 EFI_STATUS
 EFIAPI
 TlsHandleAlert (
-  IN     VOID                     *Tls,
-  IN     UINT8                    *BufferIn, OPTIONAL
-  IN     UINTN                    BufferInSize, OPTIONAL
-     OUT UINT8                    *BufferOut, OPTIONAL
-  IN OUT UINTN                    *BufferOutSize
+  IN     VOID   *Tls,
+  IN     UINT8  *BufferIn  OPTIONAL,
+  IN     UINTN  BufferInSize  OPTIONAL,
+  OUT UINT8     *BufferOut  OPTIONAL,
+  IN OUT UINTN  *BufferOutSize
   );
 
 /**
@@ -199,9 +199,9 @@ TlsHandleAlert (
 EFI_STATUS
 EFIAPI
 TlsCloseNotify (
-  IN     VOID                     *Tls,
-  IN OUT UINT8                    *Buffer,
-  IN OUT UINTN                    *BufferSize
+  IN     VOID   *Tls,
+  IN OUT UINT8  *Buffer,
+  IN OUT UINTN  *BufferSize
   );
 
 /**
@@ -221,9 +221,9 @@ TlsCloseNotify (
 INTN
 EFIAPI
 TlsCtrlTrafficOut (
-  IN     VOID                     *Tls,
-  IN OUT VOID                     *Buffer,
-  IN     UINTN                    BufferSize
+  IN     VOID   *Tls,
+  IN OUT VOID   *Buffer,
+  IN     UINTN  BufferSize
   );
 
 /**
@@ -243,9 +243,9 @@ TlsCtrlTrafficOut (
 INTN
 EFIAPI
 TlsCtrlTrafficIn (
-  IN     VOID                     *Tls,
-  IN     VOID                     *Buffer,
-  IN     UINTN                    BufferSize
+  IN     VOID   *Tls,
+  IN     VOID   *Buffer,
+  IN     UINTN  BufferSize
   );
 
 /**
@@ -266,9 +266,9 @@ TlsCtrlTrafficIn (
 INTN
 EFIAPI
 TlsRead (
-  IN     VOID                     *Tls,
-  IN OUT VOID                     *Buffer,
-  IN     UINTN                    BufferSize
+  IN     VOID   *Tls,
+  IN OUT VOID   *Buffer,
+  IN     UINTN  BufferSize
   );
 
 /**
@@ -289,9 +289,28 @@ TlsRead (
 INTN
 EFIAPI
 TlsWrite (
-  IN     VOID                     *Tls,
-  IN     VOID                     *Buffer,
-  IN     UINTN                    BufferSize
+  IN     VOID   *Tls,
+  IN     VOID   *Buffer,
+  IN     UINTN  BufferSize
+  );
+
+/**
+  Shutdown a TLS connection.
+
+  Shutdown the TLS connection without releasing the resources, meaning a new
+  connection can be started without calling TlsNew() and without setting
+  certificates etc.
+
+  @param[in]       Tls            Pointer to the TLS object to shutdown.
+
+  @retval EFI_SUCCESS             The TLS is shutdown successfully.
+  @retval EFI_INVALID_PARAMETER   Tls is NULL.
+  @retval EFI_PROTOCOL_ERROR      Some other error occurred.
+**/
+EFI_STATUS
+EFIAPI
+TlsShutdown (
+  IN     VOID  *Tls
   );
 
 /**
@@ -311,9 +330,9 @@ TlsWrite (
 EFI_STATUS
 EFIAPI
 TlsSetVersion (
-  IN     VOID                     *Tls,
-  IN     UINT8                    MajorVer,
-  IN     UINT8                    MinorVer
+  IN     VOID   *Tls,
+  IN     UINT8  MajorVer,
+  IN     UINT8  MinorVer
   );
 
 /**
@@ -332,8 +351,8 @@ TlsSetVersion (
 EFI_STATUS
 EFIAPI
 TlsSetConnectionEnd (
-  IN     VOID                     *Tls,
-  IN     BOOLEAN                  IsServer
+  IN     VOID     *Tls,
+  IN     BOOLEAN  IsServer
   );
 
 /**
@@ -357,9 +376,9 @@ TlsSetConnectionEnd (
 EFI_STATUS
 EFIAPI
 TlsSetCipherList (
-  IN     VOID                     *Tls,
-  IN     UINT16                   *CipherId,
-  IN     UINTN                    CipherNum
+  IN     VOID    *Tls,
+  IN     UINT16  *CipherId,
+  IN     UINTN   CipherNum
   );
 
 /**
@@ -377,7 +396,7 @@ TlsSetCipherList (
 EFI_STATUS
 EFIAPI
 TlsSetCompressionMethod (
-  IN     UINT8                    CompMethod
+  IN     UINT8  CompMethod
   );
 
 /**
@@ -392,8 +411,8 @@ TlsSetCompressionMethod (
 VOID
 EFIAPI
 TlsSetVerify (
-  IN     VOID                     *Tls,
-  IN     UINT32                   VerifyMode
+  IN     VOID    *Tls,
+  IN     UINT32  VerifyMode
   );
 
 /**
@@ -411,9 +430,9 @@ TlsSetVerify (
 EFI_STATUS
 EFIAPI
 TlsSetVerifyHost (
-  IN     VOID                     *Tls,
-  IN     UINT32                   Flags,
-  IN     CHAR8                    *HostName
+  IN     VOID    *Tls,
+  IN     UINT32  Flags,
+  IN     CHAR8   *HostName
   );
 
 /**
@@ -434,9 +453,9 @@ TlsSetVerifyHost (
 EFI_STATUS
 EFIAPI
 TlsSetSessionId (
-  IN     VOID                     *Tls,
-  IN     UINT8                    *SessionId,
-  IN     UINT16                   SessionIdLen
+  IN     VOID    *Tls,
+  IN     UINT8   *SessionId,
+  IN     UINT16  SessionIdLen
   );
 
 /**
@@ -459,9 +478,9 @@ TlsSetSessionId (
 EFI_STATUS
 EFIAPI
 TlsSetCaCertificate (
-  IN     VOID                     *Tls,
-  IN     VOID                     *Data,
-  IN     UINTN                    DataSize
+  IN     VOID   *Tls,
+  IN     VOID   *Data,
+  IN     UINTN  DataSize
   );
 
 /**
@@ -484,19 +503,46 @@ TlsSetCaCertificate (
 EFI_STATUS
 EFIAPI
 TlsSetHostPublicCert (
-  IN     VOID                     *Tls,
-  IN     VOID                     *Data,
-  IN     UINTN                    DataSize
+  IN     VOID   *Tls,
+  IN     VOID   *Data,
+  IN     UINTN  DataSize
   );
 
 /**
   Adds the local private key to the specified TLS object.
 
-  This function adds the local private key (PEM-encoded RSA or PKCS#8 private
+  This function adds the local private key (DER-encoded or PEM-encoded or PKCS#8 private
   key) into the specified TLS object for TLS negotiation.
 
   @param[in]  Tls         Pointer to the TLS object.
-  @param[in]  Data        Pointer to the data buffer of a PEM-encoded RSA
+  @param[in]  Data        Pointer to the data buffer of a DER-encoded or PEM-encoded
+                          or PKCS#8 private key.
+  @param[in]  DataSize    The size of data buffer in bytes.
+  @param[in]  Password    Pointer to NULL-terminated private key password, set it to NULL
+                          if private key not encrypted.
+
+  @retval  EFI_SUCCESS     The operation succeeded.
+  @retval  EFI_UNSUPPORTED This function is not supported.
+  @retval  EFI_ABORTED     Invalid private key data.
+
+**/
+EFI_STATUS
+EFIAPI
+TlsSetHostPrivateKeyEx (
+  IN     VOID   *Tls,
+  IN     VOID   *Data,
+  IN     UINTN  DataSize,
+  IN     VOID   *Password  OPTIONAL
+  );
+
+/**
+  Adds the local private key to the specified TLS object.
+
+  This function adds the local private key (DER-encoded or PEM-encoded or PKCS#8 private
+  key) into the specified TLS object for TLS negotiation.
+
+  @param[in]  Tls         Pointer to the TLS object.
+  @param[in]  Data        Pointer to the data buffer of a DER-encoded or PEM-encoded
                           or PKCS#8 private key.
   @param[in]  DataSize    The size of data buffer in bytes.
 
@@ -508,9 +554,9 @@ TlsSetHostPublicCert (
 EFI_STATUS
 EFIAPI
 TlsSetHostPrivateKey (
-  IN     VOID                     *Tls,
-  IN     VOID                     *Data,
-  IN     UINTN                    DataSize
+  IN     VOID   *Tls,
+  IN     VOID   *Data,
+  IN     UINTN  DataSize
   );
 
 /**
@@ -530,8 +576,55 @@ TlsSetHostPrivateKey (
 EFI_STATUS
 EFIAPI
 TlsSetCertRevocationList (
-  IN     VOID                     *Data,
-  IN     UINTN                    DataSize
+  IN     VOID   *Data,
+  IN     UINTN  DataSize
+  );
+
+/**
+  Set the signature algorithm list to used by the TLS object.
+
+  This function sets the signature algorithms for use by a specified TLS object.
+
+  @param[in]  Tls                Pointer to a TLS object.
+  @param[in]  Data               Array of UINT8 of signature algorithms. The array consists of
+                                 pairs of the hash algorithm and the signature algorithm as defined
+                                 in RFC 5246
+  @param[in]  DataSize           The length the SignatureAlgoList. Must be divisible by 2.
+
+  @retval  EFI_SUCCESS           The signature algorithm list was set successfully.
+  @retval  EFI_INVALID_PARAMETER The parameters are invalid.
+  @retval  EFI_UNSUPPORTED       No supported TLS signature algorithm was found in SignatureAlgoList
+  @retval  EFI_OUT_OF_RESOURCES  Memory allocation failed.
+
+**/
+EFI_STATUS
+EFIAPI
+TlsSetSignatureAlgoList (
+  IN     VOID   *Tls,
+  IN     UINT8  *Data,
+  IN     UINTN  DataSize
+  );
+
+/**
+  Set the EC curve to be used for TLS flows
+
+  This function sets the EC curve to be used for TLS flows.
+
+  @param[in]  Tls                Pointer to a TLS object.
+  @param[in]  Data               An EC named curve as defined in section 5.1.1 of RFC 4492.
+  @param[in]  DataSize           Size of Data, it should be sizeof (UINT32)
+
+  @retval  EFI_SUCCESS           The EC curve was set successfully.
+  @retval  EFI_INVALID_PARAMETER The parameters are invalid.
+  @retval  EFI_UNSUPPORTED       The requested TLS EC curve is not supported
+
+**/
+EFI_STATUS
+EFIAPI
+TlsSetEcCurve (
+  IN     VOID   *Tls,
+  IN     UINT8  *Data,
+  IN     UINTN  DataSize
   );
 
 /**
@@ -550,7 +643,7 @@ TlsSetCertRevocationList (
 UINT16
 EFIAPI
 TlsGetVersion (
-  IN     VOID                     *Tls
+  IN     VOID  *Tls
   );
 
 /**
@@ -569,7 +662,7 @@ TlsGetVersion (
 UINT8
 EFIAPI
 TlsGetConnectionEnd (
-  IN     VOID                     *Tls
+  IN     VOID  *Tls
   );
 
 /**
@@ -589,8 +682,8 @@ TlsGetConnectionEnd (
 EFI_STATUS
 EFIAPI
 TlsGetCurrentCipher (
-  IN     VOID                     *Tls,
-  IN OUT UINT16                   *CipherId
+  IN     VOID    *Tls,
+  IN OUT UINT16  *CipherId
   );
 
 /**
@@ -612,8 +705,8 @@ TlsGetCurrentCipher (
 EFI_STATUS
 EFIAPI
 TlsGetCurrentCompressionId (
-  IN     VOID                     *Tls,
-  IN OUT UINT8                    *CompressionId
+  IN     VOID   *Tls,
+  IN OUT UINT8  *CompressionId
   );
 
 /**
@@ -632,7 +725,7 @@ TlsGetCurrentCompressionId (
 UINT32
 EFIAPI
 TlsGetVerify (
-  IN     VOID                     *Tls
+  IN     VOID  *Tls
   );
 
 /**
@@ -653,9 +746,9 @@ TlsGetVerify (
 EFI_STATUS
 EFIAPI
 TlsGetSessionId (
-  IN     VOID                     *Tls,
-  IN OUT UINT8                    *SessionId,
-  IN OUT UINT16                   *SessionIdLen
+  IN     VOID    *Tls,
+  IN OUT UINT8   *SessionId,
+  IN OUT UINT16  *SessionIdLen
   );
 
 /**
@@ -672,8 +765,8 @@ TlsGetSessionId (
 VOID
 EFIAPI
 TlsGetClientRandom (
-  IN     VOID                     *Tls,
-  IN OUT UINT8                    *ClientRandom
+  IN     VOID   *Tls,
+  IN OUT UINT8  *ClientRandom
   );
 
 /**
@@ -690,8 +783,8 @@ TlsGetClientRandom (
 VOID
 EFIAPI
 TlsGetServerRandom (
-  IN     VOID                     *Tls,
-  IN OUT UINT8                    *ServerRandom
+  IN     VOID   *Tls,
+  IN OUT UINT8  *ServerRandom
   );
 
 /**
@@ -711,8 +804,8 @@ TlsGetServerRandom (
 EFI_STATUS
 EFIAPI
 TlsGetKeyMaterial (
-  IN     VOID                     *Tls,
-  IN OUT UINT8                    *KeyMaterial
+  IN     VOID   *Tls,
+  IN OUT UINT8  *KeyMaterial
   );
 
 /**
@@ -734,9 +827,9 @@ TlsGetKeyMaterial (
 EFI_STATUS
 EFIAPI
 TlsGetCaCertificate (
-  IN     VOID                     *Tls,
-  OUT    VOID                     *Data,
-  IN OUT UINTN                    *DataSize
+  IN     VOID   *Tls,
+  OUT    VOID   *Data,
+  IN OUT UINTN  *DataSize
   );
 
 /**
@@ -759,9 +852,9 @@ TlsGetCaCertificate (
 EFI_STATUS
 EFIAPI
 TlsGetHostPublicCert (
-  IN     VOID                     *Tls,
-  OUT    VOID                     *Data,
-  IN OUT UINTN                    *DataSize
+  IN     VOID   *Tls,
+  OUT    VOID   *Data,
+  IN OUT UINTN  *DataSize
   );
 
 /**
@@ -783,9 +876,9 @@ TlsGetHostPublicCert (
 EFI_STATUS
 EFIAPI
 TlsGetHostPrivateKey (
-  IN     VOID                     *Tls,
-  OUT    VOID                     *Data,
-  IN OUT UINTN                    *DataSize
+  IN     VOID   *Tls,
+  OUT    VOID   *Data,
+  IN OUT UINTN  *DataSize
   );
 
 /**
@@ -806,9 +899,37 @@ TlsGetHostPrivateKey (
 EFI_STATUS
 EFIAPI
 TlsGetCertRevocationList (
-  OUT    VOID                     *Data,
-  IN OUT UINTN                    *DataSize
+  OUT    VOID   *Data,
+  IN OUT UINTN  *DataSize
+  );
+
+/**
+  Derive keying material from a TLS connection.
+
+  This function exports keying material using the mechanism described in RFC
+  5705.
+
+  @param[in]      Tls          Pointer to the TLS object
+  @param[in]      Label        Description of the key for the PRF function
+  @param[in]      Context      Optional context
+  @param[in]      ContextLen   The length of the context value in bytes
+  @param[out]     KeyBuffer    Buffer to hold the output of the TLS-PRF
+  @param[in]      KeyBufferLen The length of the KeyBuffer
+
+  @retval  EFI_SUCCESS             The operation succeeded.
+  @retval  EFI_INVALID_PARAMETER   The TLS object is invalid.
+  @retval  EFI_PROTOCOL_ERROR      Some other error occurred.
+
+**/
+EFI_STATUS
+EFIAPI
+TlsGetExportKey (
+  IN     VOID        *Tls,
+  IN     CONST VOID  *Label,
+  IN     CONST VOID  *Context,
+  IN     UINTN       ContextLen,
+  OUT    VOID        *KeyBuffer,
+  IN     UINTN       KeyBufferLen
   );
 
 #endif // __TLS_LIB_H__
-

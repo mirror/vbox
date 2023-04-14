@@ -27,12 +27,12 @@ AcpiTimerLibConstructor (
   VOID
   )
 {
-  UINT16 HostBridgeDevId;
-  UINTN Pmba;
-  UINT32 PmbaAndVal;
-  UINT32 PmbaOrVal;
-  UINTN AcpiCtlReg;
-  UINT8 AcpiEnBit;
+  UINT16  HostBridgeDevId;
+  UINTN   Pmba;
+  UINT32  PmbaAndVal;
+  UINT32  PmbaOrVal;
+  UINTN   AcpiCtlReg;
+  UINT8   AcpiEnBit;
 
   //
   // Query Host Bridge DID to determine platform type
@@ -58,10 +58,16 @@ AcpiTimerLibConstructor (
       AcpiCtlReg = POWER_MGMT_REGISTER_Q35 (ICH9_ACPI_CNTL);
       AcpiEnBit  = ICH9_ACPI_CNTL_ACPI_EN;
       break;
+    case CLOUDHV_DEVICE_ID:
+      return RETURN_SUCCESS;
 #ifndef VBOX
     default:
-      DEBUG ((DEBUG_ERROR, "%a: Unknown Host Bridge Device ID: 0x%04x\n",
-        __FUNCTION__, HostBridgeDevId));
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: Unknown Host Bridge Device ID: 0x%04x\n",
+        __FUNCTION__,
+        HostBridgeDevId
+        ));
       ASSERT (FALSE);
       return RETURN_UNSUPPORTED;
 #endif
@@ -100,8 +106,8 @@ InternalAcpiGetTimerTick (
   VOID
   )
 {
-  UINT16 HostBridgeDevId;
-  UINTN Pmba;
+  UINT16  HostBridgeDevId;
+  UINTN   Pmba;
 
   //
   // Query Host Bridge DID to determine platform type
@@ -114,9 +120,15 @@ InternalAcpiGetTimerTick (
     case INTEL_Q35_MCH_DEVICE_ID:
       Pmba = POWER_MGMT_REGISTER_Q35 (ICH9_PMBASE);
       break;
+    case CLOUDHV_DEVICE_ID:
+      return IoRead32 (CLOUDHV_ACPI_TIMER_IO_ADDRESS);
     default:
-      DEBUG ((DEBUG_ERROR, "%a: Unknown Host Bridge Device ID: 0x%04x\n",
-        __FUNCTION__, HostBridgeDevId));
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: Unknown Host Bridge Device ID: 0x%04x\n",
+        __FUNCTION__,
+        HostBridgeDevId
+        ));
       ASSERT (FALSE);
       return 0;
   }

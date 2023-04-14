@@ -15,13 +15,21 @@
         ##     "<ErrorID>", "<KeyWord>"
         ## ]
         "ExceptionList": [
+            "8005", "gRT",
         ],
         ## Both file path and directory path are accepted.
         "IgnoreFiles": [
+            "Library/TcgStorageCoreLib/TcgStorageUtil.c",
+            "Library/TcgStorageCoreLib/TcgStorageCore.c",
+            "Library/Tpm2CommandLib/Tpm2NVStorage.c"
         ]
     },
     "CompilerPlugin": {
         "DscPath": "SecurityPkg.dsc"
+    },
+    ## options defined .pytool/Plugin/HostUnitTestCompilerPlugin
+    "HostUnitTestCompilerPlugin": {
+        "DscPath": "Test/SecurityPkgHostTest.dsc"
     },
     "CharEncodingCheck": {
         "IgnoreFiles": []
@@ -30,6 +38,7 @@
         "AcceptableDependencies": [
             "MdePkg/MdePkg.dec",
             "MdeModulePkg/MdeModulePkg.dec",
+            "UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec",
             "SecurityPkg/SecurityPkg.dec",
             "StandaloneMmPkg/StandaloneMmPkg.dec",
             "CryptoPkg/CryptoPkg.dec"
@@ -43,6 +52,11 @@
     "DscCompleteCheck": {
         "DscPath": "SecurityPkg.dsc",
         "IgnoreInf": []
+    },
+    ## options defined .pytool/Plugin/HostUnitTestDscCompleteCheck
+    "HostUnitTestDscCompleteCheck": {
+        "IgnoreInf": [""],
+        "DscPath": "Test/SecurityPkgHostTest.dsc"
     },
     "GuidCheck": {
         "IgnoreGuidName": [],

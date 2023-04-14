@@ -13,7 +13,7 @@
 ///
 ///  EFI_DRIVER_BINDING_PROTOCOL instance
 ///
-EFI_DRIVER_BINDING_PROTOCOL gIdeControllerDriverBinding = {
+EFI_DRIVER_BINDING_PROTOCOL  gIdeControllerDriverBinding = {
   IdeControllerSupported,
   IdeControllerStart,
   IdeControllerStop,
@@ -118,8 +118,8 @@ static EFI_STATUS GetPciIo(EFI_DRIVER_BINDING_PROTOCOL *This, EFI_HANDLE hContro
 EFI_STATUS
 EFIAPI
 InitializeIdeControllerDriver (
-  IN EFI_HANDLE       ImageHandle,
-  IN EFI_SYSTEM_TABLE *SystemTable
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
   EFI_STATUS  Status;
@@ -154,15 +154,15 @@ InitializeIdeControllerDriver (
 EFI_STATUS
 EFIAPI
 IdeControllerSupported (
-  IN EFI_DRIVER_BINDING_PROTOCOL *This,
-  IN EFI_HANDLE                  Controller,
-  IN EFI_DEVICE_PATH_PROTOCOL    *RemainingDevicePath
+  IN EFI_DRIVER_BINDING_PROTOCOL  *This,
+  IN EFI_HANDLE                   Controller,
+  IN EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath
   )
 {
-  EFI_STATUS                Status;
-  EFI_PCI_IO_PROTOCOL       *PciIo;
-  UINT8                     PciClass;
-  UINT8                     PciSubClass;
+  EFI_STATUS           Status;
+  EFI_PCI_IO_PROTOCOL  *PciIo;
+  UINT8                PciClass;
+  UINT8                PciSubClass;
 
   //
   // Attempt to Open PCI I/O Protocol
@@ -171,7 +171,7 @@ IdeControllerSupported (
   Status = gBS->OpenProtocol (
                   Controller,
                   &gEfiPciIoProtocolGuid,
-                  (VOID **) &PciIo,
+                  (VOID **)&PciIo,
                   This->DriverBindingHandle,
                   Controller,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
@@ -224,11 +224,11 @@ IdeControllerSupported (
 
 Done:
   gBS->CloseProtocol (
-        Controller,
-        &gEfiPciIoProtocolGuid,
-        This->DriverBindingHandle,
-        Controller
-        );
+         Controller,
+         &gEfiPciIoProtocolGuid,
+         This->DriverBindingHandle,
+         Controller
+         );
 
   return Status;
 }
@@ -249,9 +249,9 @@ Done:
 EFI_STATUS
 EFIAPI
 IdeControllerStart (
-  IN EFI_DRIVER_BINDING_PROTOCOL    *This,
-  IN EFI_HANDLE                     Controller,
-  IN EFI_DEVICE_PATH_PROTOCOL       *RemainingDevicePath
+  IN EFI_DRIVER_BINDING_PROTOCOL  *This,
+  IN EFI_HANDLE                   Controller,
+  IN EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath
   )
 {
   EFI_STATUS           Status;
@@ -264,7 +264,7 @@ IdeControllerStart (
   Status = gBS->OpenProtocol (
                   Controller,
                   &gEfiPciIoProtocolGuid,
-                  (VOID **) &PciIo,
+                  (VOID **)&PciIo,
                   This->DriverBindingHandle,
                   Controller,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
@@ -289,7 +289,8 @@ IdeControllerStart (
   //
   return gBS->InstallMultipleProtocolInterfaces (
                 &Controller,
-                &gEfiIdeControllerInitProtocolGuid, &gEfiIdeControllerInit.Core, /* VBox: We added .Core, probably for warnings. */
+                &gEfiIdeControllerInitProtocolGuid,
+                &gEfiIdeControllerInit.Core, /* VBox: We added .Core, probably for warnings. */
                 NULL
                 );
 }
@@ -308,10 +309,10 @@ IdeControllerStart (
 EFI_STATUS
 EFIAPI
 IdeControllerStop (
-  IN  EFI_DRIVER_BINDING_PROTOCOL     *This,
-  IN  EFI_HANDLE                      Controller,
-  IN  UINTN                           NumberOfChildren,
-  IN  EFI_HANDLE                      *ChildHandleBuffer
+  IN  EFI_DRIVER_BINDING_PROTOCOL  *This,
+  IN  EFI_HANDLE                   Controller,
+  IN  UINTN                        NumberOfChildren,
+  IN  EFI_HANDLE                   *ChildHandleBuffer
   )
 {
   EFI_STATUS                        Status;
@@ -323,13 +324,13 @@ IdeControllerStop (
   Status = gBS->OpenProtocol (
                   Controller,
                   &gEfiIdeControllerInitProtocolGuid,
-                  (VOID **) &IdeControllerInit,
+                  (VOID **)&IdeControllerInit,
                   This->DriverBindingHandle,
                   Controller,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
-     return EFI_UNSUPPORTED;
+    return EFI_UNSUPPORTED;
   }
 
   //
@@ -344,7 +345,8 @@ IdeControllerStop (
   //
   Status = gBS->UninstallMultipleProtocolInterfaces (
                   Controller,
-                  &gEfiIdeControllerInitProtocolGuid, &gEfiIdeControllerInit.Core, /* VBox: We added .Core, probably for warnings. */
+                  &gEfiIdeControllerInitProtocolGuid,
+                  &gEfiIdeControllerInit.Core, /* VBox: We added .Core, probably for warnings. */
                   NULL
                   );
   if (EFI_ERROR (Status)) {
@@ -365,6 +367,7 @@ IdeControllerStop (
 //
 // Interface functions of IDE_CONTROLLER_INIT protocol
 //
+
 /**
   Returns the information about the specified IDE channel.
 
@@ -404,10 +407,10 @@ IdeControllerStop (
 EFI_STATUS
 EFIAPI
 IdeInitGetChannelInfo (
-  IN   EFI_IDE_CONTROLLER_INIT_PROTOCOL *This,
-  IN   UINT8                            Channel,
-  OUT  BOOLEAN                          *Enabled,
-  OUT  UINT8                            *MaxDevices
+  IN   EFI_IDE_CONTROLLER_INIT_PROTOCOL  *This,
+  IN   UINT8                             Channel,
+  OUT  BOOLEAN                           *Enabled,
+  OUT  UINT8                             *MaxDevices
   )
 {
   //
@@ -526,9 +529,9 @@ IdeInitGetChannelInfo (
 EFI_STATUS
 EFIAPI
 IdeInitNotifyPhase (
-  IN  EFI_IDE_CONTROLLER_INIT_PROTOCOL   *This,
-  IN  EFI_IDE_CONTROLLER_ENUM_PHASE      Phase,
-  IN  UINT8                              Channel
+  IN  EFI_IDE_CONTROLLER_INIT_PROTOCOL  *This,
+  IN  EFI_IDE_CONTROLLER_ENUM_PHASE     Phase,
+  IN  UINT8                             Channel
   )
 {
   return EFI_SUCCESS;
@@ -576,10 +579,10 @@ IdeInitNotifyPhase (
 EFI_STATUS
 EFIAPI
 IdeInitSubmitData (
-  IN  EFI_IDE_CONTROLLER_INIT_PROTOCOL    *This,
-  IN  UINT8                               Channel,
-  IN  UINT8                               Device,
-  IN  EFI_IDENTIFY_DATA                   *IdentifyData
+  IN  EFI_IDE_CONTROLLER_INIT_PROTOCOL  *This,
+  IN  UINT8                             Channel,
+  IN  UINT8                             Device,
+  IN  EFI_IDENTIFY_DATA                 *IdentifyData
   )
 {
   return EFI_SUCCESS;
@@ -628,10 +631,10 @@ IdeInitSubmitData (
 EFI_STATUS
 EFIAPI
 IdeInitDisqualifyMode (
-  IN  EFI_IDE_CONTROLLER_INIT_PROTOCOL    *This,
-  IN  UINT8                               Channel,
-  IN  UINT8                               Device,
-  IN  EFI_ATA_COLLECTIVE_MODE             *BadModes
+  IN  EFI_IDE_CONTROLLER_INIT_PROTOCOL  *This,
+  IN  UINT8                             Channel,
+  IN  UINT8                             Device,
+  IN  EFI_ATA_COLLECTIVE_MODE           *BadModes
   )
 {
   return EFI_SUCCESS;
@@ -694,14 +697,14 @@ IdeInitDisqualifyMode (
 EFI_STATUS
 EFIAPI
 IdeInitCalculateMode (
-  IN  EFI_IDE_CONTROLLER_INIT_PROTOCOL       *This,
-  IN  UINT8                                  Channel,
-  IN  UINT8                                  Device,
-  OUT EFI_ATA_COLLECTIVE_MODE                **SupportedModes
+  IN  EFI_IDE_CONTROLLER_INIT_PROTOCOL  *This,
+  IN  UINT8                             Channel,
+  IN  UINT8                             Device,
+  OUT EFI_ATA_COLLECTIVE_MODE           **SupportedModes
   )
 {
 #ifndef VBOX
-  if (Channel >= ICH_IDE_MAX_CHANNEL || Device >= ICH_IDE_MAX_DEVICES) {
+  if ((Channel >= ICH_IDE_MAX_CHANNEL) || (Device >= ICH_IDE_MAX_DEVICES)) {
     return EFI_INVALID_PARAMETER;
   }
 #endif
@@ -740,10 +743,10 @@ IdeInitCalculateMode (
 EFI_STATUS
 EFIAPI
 IdeInitSetTiming (
-  IN  EFI_IDE_CONTROLLER_INIT_PROTOCOL    *This,
-  IN  UINT8                               Channel,
-  IN  UINT8                               Device,
-  IN  EFI_ATA_COLLECTIVE_MODE             *Modes
+  IN  EFI_IDE_CONTROLLER_INIT_PROTOCOL  *This,
+  IN  UINT8                             Channel,
+  IN  UINT8                             Device,
+  IN  EFI_ATA_COLLECTIVE_MODE           *Modes
   )
 {
   return EFI_SUCCESS;

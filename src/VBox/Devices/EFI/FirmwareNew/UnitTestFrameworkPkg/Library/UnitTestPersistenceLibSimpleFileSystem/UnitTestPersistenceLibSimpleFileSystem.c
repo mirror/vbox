@@ -4,6 +4,7 @@
   version of the internal test state in case the test needs to quit and restore.
 
   Copyright (c) Microsoft Corporation.<BR>
+  Copyright (c) 2022, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
@@ -16,6 +17,7 @@
 #include <Library/DevicePathLib.h>
 #include <Library/ShellLib.h>
 #include <Protocol/LoadedImage.h>
+#include <UnitTestFrameworkTypes.h>
 
 #define CACHE_FILE_SUFFIX  L"_Cache.dat"
 
@@ -29,7 +31,7 @@
 
 **/
 STATIC
-EFI_DEVICE_PATH_PROTOCOL*
+EFI_DEVICE_PATH_PROTOCOL *
 GetCacheFileDevicePath (
   IN UNIT_TEST_FRAMEWORK_HANDLE  FrameworkHandle
   )
@@ -44,7 +46,7 @@ GetCacheFileDevicePath (
   UINTN                      CacheFilePathLength;
   EFI_DEVICE_PATH_PROTOCOL   *CacheFileDevicePath;
 
-  Framework           = (UNIT_TEST_FRAMEWORK*)FrameworkHandle;
+  Framework           = (UNIT_TEST_FRAMEWORK *)FrameworkHandle;
   AppPath             = NULL;
   CacheFilePath       = NULL;
   TestName            = NULL;
@@ -56,7 +58,7 @@ GetCacheFileDevicePath (
   Status = gBS->HandleProtocol (
                   gImageHandle,
                   &gEfiLoadedImageProtocolGuid,
-                  (VOID**)&LoadedImage
+                  (VOID **)&LoadedImage
                   );
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_WARN, "%a - Failed to locate DevicePath for loaded image. %r\n", __FUNCTION__, Status));
@@ -67,10 +69,11 @@ GetCacheFileDevicePath (
   // Before we can start, change test name from ASCII to Unicode.
   //
   CacheFilePathLength = AsciiStrLen (Framework->ShortTitle) + 1;
-  TestName = AllocatePool (CacheFilePathLength * sizeof(CHAR16));
+  TestName            = AllocatePool (CacheFilePathLength * sizeof (CHAR16));
   if (!TestName) {
     goto Exit;
   }
+
   AsciiStrToUnicodeStrS (Framework->ShortTitle, TestName, CacheFilePathLength);
 
   //
@@ -82,7 +85,7 @@ GetCacheFileDevicePath (
   // PathCleanUpDirectories (FileNameCopy);
   //     if (PathRemoveLastItem (FileNameCopy)) {
   //
-  AppPath = ConvertDevicePathToText (LoadedImage->FilePath, TRUE, TRUE);    // NOTE: This must be freed.
+  AppPath              = ConvertDevicePathToText (LoadedImage->FilePath, TRUE, TRUE); // NOTE: This must be freed.
   DirectorySlashOffset = StrLen (AppPath);
   //
   // Make sure we didn't get any weird data.
@@ -99,6 +102,7 @@ GetCacheFileDevicePath (
     if (AppPath[DirectorySlashOffset] == L'\\') {
       break;
     }
+
     DirectorySlashOffset--;
   } while (DirectorySlashOffset > 0);
 
@@ -115,11 +119,11 @@ GetCacheFileDevicePath (
   //
   // Now we know some things, we're ready to produce our output string, I think.
   //
-  CacheFilePathLength = DirectorySlashOffset + 1;
+  CacheFilePathLength  = DirectorySlashOffset + 1;
   CacheFilePathLength += StrLen (TestName);
   CacheFilePathLength += StrLen (CACHE_FILE_SUFFIX);
   CacheFilePathLength += 1;   // Don't forget the NULL terminator.
-  CacheFilePath       = AllocateZeroPool (CacheFilePathLength * sizeof (CHAR16));
+  CacheFilePath        = AllocateZeroPool (CacheFilePathLength * sizeof (CHAR16));
   if (!CacheFilePath) {
     goto Exit;
   }
@@ -129,7 +133,7 @@ GetCacheFileDevicePath (
   //
   StrnCpyS (CacheFilePath, CacheFilePathLength, AppPath, DirectorySlashOffset + 1);  // Copy the path for the parent directory.
   StrCatS (CacheFilePath, CacheFilePathLength, TestName);                            // Copy the base name for the test cache.
-  StrCatS (CacheFilePath, CacheFilePathLength, CACHE_FILE_SUFFIX);                          // Copy the file suffix.
+  StrCatS (CacheFilePath, CacheFilePathLength, CACHE_FILE_SUFFIX);                   // Copy the file suffix.
 
   //
   // Finally, try to create the device path for the thing thing.
@@ -143,9 +147,11 @@ Exit:
   if (AppPath != NULL) {
     FreePool (AppPath);
   }
+
   if (CacheFilePath != NULL) {
     FreePool (CacheFilePath);
   }
+
   if (TestName != NULL) {
     FreePool (TestName);
   }
@@ -209,6 +215,7 @@ DoesCacheExist (
   @param[in]  FrameworkHandle  A pointer to the framework that is being persisted.
   @param[in]  SaveData         A pointer to the buffer containing the serialized
                                framework internal state.
+  @param[in]  SaveStateSize    The size of SaveData in bytes.
 
   @retval  EFI_SUCCESS  Data is persisted and the test can be safely quit.
   @retval  Others       Data is not persisted and test cannot be resumed upon exit.
@@ -218,7 +225,8 @@ EFI_STATUS
 EFIAPI
 SaveUnitTestCache (
   IN UNIT_TEST_FRAMEWORK_HANDLE  FrameworkHandle,
-  IN UNIT_TEST_SAVE_HEADER       *SaveData
+  IN VOID                        *SaveData,
+  IN UINTN                       SaveStateSize
   )
 {
   EFI_DEVICE_PATH_PROTOCOL  *FileDevicePath;
@@ -229,7 +237,7 @@ SaveUnitTestCache (
   //
   // Check the inputs for sanity.
   //
-  if (FrameworkHandle == NULL || SaveData == NULL) {
+  if ((FrameworkHandle == NULL) || (SaveData == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -240,7 +248,7 @@ SaveUnitTestCache (
   FileDevicePath = GetCacheFileDevicePath (FrameworkHandle);
 
   //
-  //First lets open the file if it exists so we can delete it...This is the work around for truncation
+  // First lets open the file if it exists so we can delete it...This is the work around for truncation
   //
   Status = ShellOpenFileByDevicePath (
              &FileDevicePath,
@@ -276,7 +284,7 @@ SaveUnitTestCache (
   //
   // Write the data to the file.
   //
-  WriteCount = SaveData->SaveStateSize;
+  WriteCount = SaveStateSize;
   DEBUG ((DEBUG_INFO, "%a - Writing %d bytes to file...\n", __FUNCTION__, WriteCount));
   Status = ShellWriteFile (
              FileHandle,
@@ -284,7 +292,7 @@ SaveUnitTestCache (
              SaveData
              );
 
-  if (EFI_ERROR (Status) || WriteCount != SaveData->SaveStateSize) {
+  if (EFI_ERROR (Status) || (WriteCount != SaveStateSize)) {
     DEBUG ((DEBUG_ERROR, "%a - Writing to file failed! %r\n", __FUNCTION__, Status));
   } else {
     DEBUG ((DEBUG_INFO, "%a - SUCCESS!\n", __FUNCTION__));
@@ -308,8 +316,9 @@ Exit:
   Will allocate a buffer to hold the loaded data.
 
   @param[in]  FrameworkHandle  A pointer to the framework that is being persisted.
-  @param[in]  SaveData         A pointer pointer that will be updated with the address
+  @param[out] SaveData         A pointer pointer that will be updated with the address
                                of the loaded data buffer.
+  @param[out] SaveStateSize    Return the size of SaveData in bytes.
 
   @retval  EFI_SUCCESS  Data has been loaded successfully and SaveData is updated
                         with a pointer to the buffer.
@@ -321,7 +330,8 @@ EFI_STATUS
 EFIAPI
 LoadUnitTestCache (
   IN  UNIT_TEST_FRAMEWORK_HANDLE  FrameworkHandle,
-  OUT UNIT_TEST_SAVE_HEADER       **SaveData
+  OUT VOID                        **SaveData,
+  OUT UINTN                       *SaveStateSize
   )
 {
   EFI_STATUS                Status;
@@ -330,7 +340,7 @@ LoadUnitTestCache (
   BOOLEAN                   IsFileOpened;
   UINT64                    LargeFileSize;
   UINTN                     FileSize;
-  UNIT_TEST_SAVE_HEADER     *Buffer;
+  VOID                      *Buffer;
 
   IsFileOpened = FALSE;
   Buffer       = NULL;
@@ -338,7 +348,7 @@ LoadUnitTestCache (
   //
   // Check the inputs for sanity.
   //
-  if (FrameworkHandle == NULL || SaveData == NULL) {
+  if ((FrameworkHandle == NULL) || (SaveData == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -376,8 +386,9 @@ LoadUnitTestCache (
   //
   // Now that we know the size, let's allocated a buffer to hold the contents.
   //
-  FileSize = (UINTN)LargeFileSize;    // You know what... if it's too large, this lib don't care.
-  Buffer = AllocatePool (FileSize);
+  FileSize       = (UINTN)LargeFileSize; // You know what... if it's too large, this lib don't care.
+  *SaveStateSize = FileSize;
+  Buffer         = AllocatePool (FileSize);
   if (Buffer == NULL) {
     DEBUG ((DEBUG_ERROR, "%a - Failed to allocate a pool to hold the file contents! %r\n", __FUNCTION__, Status));
     Status = EFI_OUT_OF_RESOURCES;
@@ -399,6 +410,7 @@ Exit:
   if (FileDevicePath != NULL) {
     FreePool (FileDevicePath);
   }
+
   if (IsFileOpened) {
     ShellCloseFile (&FileHandle);
   }
@@ -406,7 +418,7 @@ Exit:
   //
   // If we're returning an error, make sure
   // the state is sane.
-  if (EFI_ERROR (Status) && Buffer != NULL) {
+  if (EFI_ERROR (Status) && (Buffer != NULL)) {
     FreePool (Buffer);
     Buffer = NULL;
   }

@@ -2,7 +2,7 @@
 # Create makefile for MS nmake and GNU make
 #
 # Copyright (c) 2007 - 2021, Intel Corporation. All rights reserved.<BR>
-# Copyright (c) 2020, ARM Limited. All rights reserved.<BR>
+# Copyright (c) 2020 - 2021, Arm Limited. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
@@ -120,7 +120,7 @@ class BuildFile(object):
         },
 
         POSIX_PLATFORM : {
-            "CP"    :   "cp -f",
+            "CP"    :   "cp -p -f",
             "MV"    :   "mv -f",
             "RM"    :   "rm -f",
             "MD"    :   "mkdir -p",
@@ -166,7 +166,7 @@ class BuildFile(object):
         GMAKE_FILETYPE :   "include"
     }
 
-    _INC_FLAG_ = {TAB_COMPILER_MSFT : "/I", "GCC" : "-I", "INTEL" : "-I", "RVCT" : "-I", "NASM" : "-I"}
+    _INC_FLAG_ = {TAB_COMPILER_MSFT : "/I", "GCC" : "-I", "INTEL" : "-I", "NASM" : "-I"}
 
     ## Constructor of BuildFile
     #
@@ -177,11 +177,11 @@ class BuildFile(object):
 
         MakePath = AutoGenObject.BuildOption.get('MAKE', {}).get('PATH')
         if not MakePath:
-            self._FileType = ""
-        elif "nmake" in MakePath:
+            MakePath = AutoGenObject.ToolDefinition.get('MAKE', {}).get('PATH')
+        if "nmake" in MakePath:
             self._FileType = NMAKE_FILETYPE
         else:
-            self._FileType = "gmake"
+            self._FileType = GMAKE_FILETYPE
 
         if sys.platform == "win32":
             self._Platform = WIN32_PLATFORM
@@ -1127,7 +1127,8 @@ cleanlib:
                         CmdTargetDict[CmdSign].append(SingleCommandList[-1])
                     Index = CommandList.index(Item)
                     CommandList.pop(Index)
-                    if SingleCommandList[-1].endswith("%s%s.c" % (TAB_SLASH, CmdSumDict[CmdSign[3:].rsplit(TAB_SLASH, 1)[0]])):
+                    BaseName = SingleCommandList[-1].rsplit('.',1)[0]
+                    if BaseName.endswith("%s%s" % (TAB_SLASH, CmdSumDict[CmdSign[3:].rsplit(TAB_SLASH, 1)[0]])):
                         Cpplist = CmdCppDict[T.Target.SubDir]
                         Cpplist.insert(0, '$(OBJLIST_%d): ' % list(self.ObjTargetDict.keys()).index(T.Target.SubDir))
                         source_files = CmdTargetDict[CmdSign][1:]

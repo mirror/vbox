@@ -2,12 +2,19 @@
 # CI configuration for CryptoPkg
 #
 # Copyright (c) Microsoft Corporation
-# Copyright (c) 2020, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2020 - 2022, Intel Corporation. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 {
     "LicenseCheck": {
-        "IgnoreFiles": []
+        "IgnoreFiles": [
+            # These directories contain auto-generated OpenSSL content
+            "Library/OpensslLib/IA32",
+            "Library/OpensslLib/IA32Gcc",
+            "Library/OpensslLib/X64",
+            "Library/OpensslLib/X64Gcc",
+            "Library/Include/openssl"
+        ]
     },
     "EccCheck": {
         ## Exception sample looks like below:
@@ -15,16 +22,31 @@
         ##     "<ErrorID>", "<KeyWord>"
         ## ]
         "ExceptionList": [
+            "8001", "IsLeap",
+            "8001", "OBJ_get0_data",
+            "8001", "OBJ_length",
+            "5005", "X509PopCertificate"
         ],
         ## Both file path and directory path are accepted.
         "IgnoreFiles": [
             "Library/OpensslLib/openssl",
+            "Library/Include/openssl",
+            "Library/Include/crypto",
             # The unit testing folder is not to be checked
             "Test/UnitTest",
             # This has OpenSSL interfaces that aren't UEFI spec compliant
-            "Library/BaseCryptLib/SysCall/UnitTestHostCrtWrapper.c",
-            # this has OpenSSL interfaces that aren't UEFI spec compliant
-            "Library/OpensslLib/rand_pool.c"
+            "Library/BaseCryptLib/SysCall",
+            # This has OpenSSL interfaces that aren't UEFI spec compliant
+            "Library/OpensslLib/rand_pool.c",
+            # This has OpenSSL interfaces that aren't UEFI spec compliant
+            "Library/Include/CrtLibSupport.h",
+            # This has OpenSSL interfaces that aren't UEFI spec compliant
+            "Library/BaseCryptLib/Hash/CryptParallelHash.h",
+            "Library/Include/fcntl.h",
+            # These directories contain auto-generated OpenSSL content
+            "Library/OpensslLib",
+            "Library/IntrinsicLib",
+            "Library/BaseCryptLib/Pk/CryptPkcs7VerifyBase.c"
         ]
     },
     "CompilerPlugin": {
@@ -69,5 +91,14 @@
         "ExtendWords": [],           # words to extend to the dictionary for this package
         "IgnoreStandardPaths": [],   # Standard Plugin defined paths that should be ignore
         "AdditionalIncludePaths": [] # Additional paths to spell check (wildcards supported)
+    },
+
+    # options defined in .pytool/Plugin/UncrustifyCheck
+    "UncrustifyCheck": {
+        "IgnoreFiles": [
+            "opensslconf.h",
+            "dso_conf.h",
+            "opensslconf_generated.h"
+        ]
     }
 }

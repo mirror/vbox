@@ -2,6 +2,7 @@
   NULL instace of RedfishPlatformHostInterfaceLib
 
   (C) Copyright 2020 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -23,12 +24,13 @@
 **/
 EFI_STATUS
 RedfishPlatformHostInterfaceDeviceDescriptor (
-  IN UINT8 *DeviceType,
+  OUT UINT8                   *DeviceType,
   OUT REDFISH_INTERFACE_DATA  **DeviceDescriptor
-)
+  )
 {
   return EFI_NOT_FOUND;
 }
+
 /**
   Get platform Redfish host interface protocol data.
   Caller should pass NULL in ProtocolRecord to retrive the first protocol record.
@@ -44,9 +46,32 @@ RedfishPlatformHostInterfaceDeviceDescriptor (
 **/
 EFI_STATUS
 RedfishPlatformHostInterfaceProtocolData (
-  IN OUT MC_HOST_INTERFACE_PROTOCOL_RECORD **ProtocolRecord,
-  IN UINT8  IndexOfProtocolData
-)
+  IN OUT MC_HOST_INTERFACE_PROTOCOL_RECORD  **ProtocolRecord,
+  IN UINT8                                  IndexOfProtocolData
+  )
 {
   return EFI_NOT_FOUND;
+}
+
+/**
+  Get the EFI protocol GUID installed by platform library which
+  indicates the necessary information is ready for building
+  SMBIOS 42h record.
+
+  @param[out] InformationReadinessGuid  Pointer to retrive the protocol
+                                        GUID.
+
+  @retval EFI_SUCCESS          Notification is required for building up
+                               SMBIOS type 42h record.
+  @retval EFI_UNSUPPORTED      Notification is not required for building up
+                               SMBIOS type 42h record.
+  @retval EFI_ALREADY_STARTED  Platform host information is already ready.
+  @retval Others               Other errors.
+**/
+EFI_STATUS
+RedfishPlatformHostInterfaceNotification (
+  OUT EFI_GUID  **InformationReadinessGuid
+  )
+{
+  return EFI_UNSUPPORTED;
 }

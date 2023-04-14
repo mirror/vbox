@@ -10,20 +10,20 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #ifndef _EFI_XHCI_MEM_H_
 #define _EFI_XHCI_MEM_H_
 
-#define USB_HC_BIT(a)                  ((UINTN)(1 << (a)))
+#define USB_HC_BIT(a)  ((UINTN)(1 << (a)))
 
 #define USB_HC_BIT_IS_SET(Data, Bit)   \
           ((BOOLEAN)(((Data) & USB_HC_BIT(Bit)) == USB_HC_BIT(Bit)))
 
 typedef struct _USBHC_MEM_BLOCK USBHC_MEM_BLOCK;
 struct _USBHC_MEM_BLOCK {
-  UINT8                   *Bits;    // Bit array to record which unit is allocated
-  UINTN                   BitsLen;
-  UINT8                   *Buf;
-  UINT8                   *BufHost;
-  UINTN                   BufLen;   // Memory size in bytes
-  VOID                    *Mapping;
-  USBHC_MEM_BLOCK         *Next;
+  UINT8              *Bits;         // Bit array to record which unit is allocated
+  UINTN              BitsLen;
+  UINT8              *Buf;
+  UINT8              *BufHost;
+  UINTN              BufLen;        // Memory size in bytes
+  VOID               *Mapping;
+  USBHC_MEM_BLOCK    *Next;
 };
 
 //
@@ -32,21 +32,23 @@ struct _USBHC_MEM_BLOCK {
 // data to be on the same 4G memory.
 //
 typedef struct _USBHC_MEM_POOL {
-  EFI_PCI_IO_PROTOCOL     *PciIo;
-  BOOLEAN                 Check4G;
-  UINT32                  Which4G;
-  USBHC_MEM_BLOCK         *Head;
+  EFI_PCI_IO_PROTOCOL    *PciIo;
+  BOOLEAN                Check4G;
+  UINT32                 Which4G;
+  USBHC_MEM_BLOCK        *Head;
 } USBHC_MEM_POOL;
 
 //
 // Memory allocation unit, must be 2^n, n>4
 //
-#define USBHC_MEM_UNIT           64
+#define USBHC_MEM_UNIT  64
 
 #define USBHC_MEM_UNIT_MASK      (USBHC_MEM_UNIT - 1)
 #define USBHC_MEM_DEFAULT_PAGES  16
 
 #define USBHC_MEM_ROUND(Len)  (((Len) + USBHC_MEM_UNIT_MASK) & (~USBHC_MEM_UNIT_MASK))
+
+#define USBHC_MEM_TRB_RINGS_BOUNDARY  SIZE_64KB
 
 //
 // Advance the byte and bit to the next bit, adjust byte accordingly.
@@ -59,8 +61,6 @@ typedef struct _USBHC_MEM_POOL {
               (Bit) = 0;      \
             }                 \
           } while (0)
-
-
 
 /**
   Initialize the memory management pool for the host controller.
@@ -76,7 +76,6 @@ UsbHcInitMemPool (
   IN EFI_PCI_IO_PROTOCOL  *PciIo
   );
 
-
 /**
   Release the memory management pool.
 
@@ -88,26 +87,26 @@ UsbHcInitMemPool (
 **/
 EFI_STATUS
 UsbHcFreeMemPool (
-  IN USBHC_MEM_POOL       *Pool
+  IN USBHC_MEM_POOL  *Pool
   );
-
 
 /**
   Allocate some memory from the host controller's memory pool
   which can be used to communicate with host controller.
 
-  @param  Pool  The host controller's memory pool.
-  @param  Size  Size of the memory to allocate.
+  @param  Pool                 The host controller's memory pool.
+  @param  Size                 Size of the memory to allocate.
+  @param  AllocationForRing    The allocated memory is for Ring or not.
 
   @return The allocated memory or NULL.
 
 **/
 VOID *
 UsbHcAllocateMem (
-  IN  USBHC_MEM_POOL      *Pool,
-  IN  UINTN               Size
+  IN  USBHC_MEM_POOL  *Pool,
+  IN  UINTN           Size,
+  IN  BOOLEAN         AllocationForRing
   );
-
 
 /**
   Free the allocated memory back to the memory pool.
@@ -119,9 +118,9 @@ UsbHcAllocateMem (
 **/
 VOID
 UsbHcFreeMem (
-  IN USBHC_MEM_POOL       *Pool,
-  IN VOID                 *Mem,
-  IN UINTN                Size
+  IN USBHC_MEM_POOL  *Pool,
+  IN VOID            *Mem,
+  IN UINTN           Size
   );
 
 /**
@@ -136,9 +135,9 @@ UsbHcFreeMem (
 **/
 EFI_PHYSICAL_ADDRESS
 UsbHcGetPciAddrForHostAddr (
-  IN USBHC_MEM_POOL       *Pool,
-  IN VOID                 *Mem,
-  IN UINTN                Size
+  IN USBHC_MEM_POOL  *Pool,
+  IN VOID            *Mem,
+  IN UINTN           Size
   );
 
 /**
@@ -153,9 +152,9 @@ UsbHcGetPciAddrForHostAddr (
 **/
 EFI_PHYSICAL_ADDRESS
 UsbHcGetHostAddrForPciAddr (
-  IN USBHC_MEM_POOL       *Pool,
-  IN VOID                 *Mem,
-  IN UINTN                Size
+  IN USBHC_MEM_POOL  *Pool,
+  IN VOID            *Mem,
+  IN UINTN           Size
   );
 
 /**
@@ -198,10 +197,10 @@ UsbHcAllocateAlignedPages (
 **/
 VOID
 UsbHcFreeAlignedPages (
-  IN EFI_PCI_IO_PROTOCOL    *PciIo,
-  IN VOID                   *HostAddress,
-  IN UINTN                  Pages,
-  VOID                      *Mapping
+  IN EFI_PCI_IO_PROTOCOL  *PciIo,
+  IN VOID                 *HostAddress,
+  IN UINTN                Pages,
+  VOID                    *Mapping
   );
 
 #endif

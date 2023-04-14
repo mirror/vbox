@@ -55,9 +55,6 @@ extern "C" {
 #ifndef OPENSSL_NO_DSA
 # define OPENSSL_NO_DSA
 #endif
-#ifndef OPENSSL_NO_EC
-# define OPENSSL_NO_EC
-#endif
 #ifndef OPENSSL_NO_IDEA
 # define OPENSSL_NO_IDEA
 #endif
@@ -88,9 +85,6 @@ extern "C" {
 #ifndef OPENSSL_NO_SEED
 # define OPENSSL_NO_SEED
 #endif
-#ifndef OPENSSL_NO_SM2
-# define OPENSSL_NO_SM2
-#endif
 #ifndef OPENSSL_NO_SRP
 # define OPENSSL_NO_SRP
 #endif
@@ -111,9 +105,6 @@ extern "C" {
 #endif
 #ifndef OPENSSL_NO_ASAN
 # define OPENSSL_NO_ASAN
-#endif
-#ifndef OPENSSL_NO_ASM
-# define OPENSSL_NO_ASM
 #endif
 #ifndef OPENSSL_NO_ASYNC
 # define OPENSSL_NO_ASYNC
@@ -156,12 +147,6 @@ extern "C" {
 #endif
 #ifndef OPENSSL_NO_EC_NISTP_64_GCC_128
 # define OPENSSL_NO_EC_NISTP_64_GCC_128
-#endif
-#ifndef OPENSSL_NO_ECDH
-# define OPENSSL_NO_ECDH
-#endif
-#ifndef OPENSSL_NO_ECDSA
-# define OPENSSL_NO_ECDSA
 #endif
 #ifndef OPENSSL_NO_EGD
 # define OPENSSL_NO_EGD
@@ -229,9 +214,6 @@ extern "C" {
 #ifndef OPENSSL_NO_TESTS
 # define OPENSSL_NO_TESTS
 #endif
-#ifndef OPENSSL_NO_TLS1_3
-# define OPENSSL_NO_TLS1_3
-#endif
 #ifndef OPENSSL_NO_UBSAN
 # define OPENSSL_NO_UBSAN
 #endif
@@ -268,11 +250,11 @@ extern "C" {
 #   undef DECLARE_DEPRECATED
 #   define DECLARE_DEPRECATED(f)    f __attribute__ ((deprecated));
 #  endif
-#elif defined(__SUNPRO_C)
-#if (__SUNPRO_C >= 0x5130)
-#undef DECLARE_DEPRECATED
-#define DECLARE_DEPRECATED(f)    f __attribute__ ((deprecated));
-#endif
+# elif defined(__SUNPRO_C)
+#  if (__SUNPRO_C >= 0x5130)
+#   undef DECLARE_DEPRECATED
+#   define DECLARE_DEPRECATED(f)    f __attribute__ ((deprecated));
+#  endif
 # endif
 #endif
 

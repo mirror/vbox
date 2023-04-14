@@ -47,7 +47,7 @@ endif
 #
 # Globals.
 #
-VBOX_PATH_EFI_FIRMWARE = $(PATH_ROOT)/src/VBox/Devices/EFI/Firmware
+VBOX_PATH_EFI_FIRMWARE = $(PATH_ROOT)/src/VBox/Devices/EFI/FirmwareNew
 VBOX_PATH_STAGE_EFI_BLDPROGS = $(PATH_STAGE)/EfiBldProgs
 VBOX_EFI_BUILD_TARGET  = $(if-expr $(intersects release profile, $(KBUILD_TYPE)),RELEASE,DEBUG)
 VBOX_EFI_OUTPUT_SUBDIR = $(VBOX_EFI_BUILD_TARGET)_$(VBOX_EFI_TOOL_CHAIN)
@@ -136,6 +136,9 @@ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
  TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4703 # VfrCompile\VfrFormPkg.cpp(1344) : warning C4703: potentially uninitialized local pointer variable 'pNodeBeforeAdjust' used
  TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd5033 # DLexer.h(68): warning C5033: 'register' is no longer a supported storage class (in c++17 or later mode)
 endif
+
+TEMPLATE_VBoxEfiBldProg_CFLAGS.linux  = $(TEMPLATE_VBoxBldProg_CFLAGS.linux)
+TEMPLATE_VBoxEfiBldProg_CFLAGS.linux += -Wno-misleading-indentation
 
 TEMPLATE_VBoxEfiBldProg_INCS = $(TEMPLATE_VBoxBldProg_INCS) \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include/IndustryStandard \

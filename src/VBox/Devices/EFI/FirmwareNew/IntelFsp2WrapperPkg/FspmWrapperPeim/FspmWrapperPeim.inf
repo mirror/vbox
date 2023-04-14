@@ -6,7 +6,7 @@
 # register TemporaryRamDonePpi to call TempRamExit API, and register MemoryDiscoveredPpi
 # notify to call FspSiliconInit API.
 #
-#  Copyright (c) 2014 - 2020, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2014 - 2021, Intel Corporation. All rights reserved.<BR>
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -37,6 +37,7 @@
   HobLib
   FspWrapperPlatformLib
   FspWrapperHobProcessLib
+  CpuLib
   UefiCpuLib
   PeCoffGetEntryPointLib
   PeCoffExtraActionLib
@@ -45,6 +46,7 @@
   FspWrapperApiLib
   FspWrapperApiTestLib
   FspMeasurementLib
+  FspWrapperMultiPhaseProcessLib
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -60,6 +62,7 @@
   gIntelFsp2WrapperTokenSpaceGuid.PcdFspModeSelection      ## CONSUMES
   gIntelFsp2WrapperTokenSpaceGuid.PcdFsptBaseAddress       ## CONSUMES
   gIntelFsp2WrapperTokenSpaceGuid.PcdFspMeasurementConfig  ## CONSUMES
+  gIntelFsp2WrapperTokenSpaceGuid.PcdFspmUpdDataAddress64  ## CONSUMES
 
 [Sources]
   FspmWrapperPeim.c

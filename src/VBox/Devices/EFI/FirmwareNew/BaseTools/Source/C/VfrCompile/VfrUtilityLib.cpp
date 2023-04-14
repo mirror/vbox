@@ -1136,6 +1136,8 @@ CVfrVarDataTypeDB::DataTypeAddBitField (
   if (FieldName != NULL) {
     strncpy (pNewField->mFieldName, FieldName, MAX_NAME_LEN - 1);
     pNewField->mFieldName[MAX_NAME_LEN - 1] = 0;
+  } else {
+    strncpy (pNewField->mFieldName, "", MAX_NAME_LEN - 1);
   }
   pNewField->mFieldType    = pFieldType;
   pNewField->mIsBitField   = TRUE;
@@ -3917,5 +3919,3 @@ CVfrStringDB::GetUnicodeStringTextSize (
 CVfrVarDataTypeDB gCVfrVarDataTypeDB;
 CVfrDefaultStore  gCVfrDefaultStore;
 CVfrDataStorage  gCVfrDataStorage;
-
-

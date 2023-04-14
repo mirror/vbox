@@ -1,6 +1,6 @@
 ;------------------------------------------------------------------------------
 ;
-; Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+; Copyright (c) 2006 - 2022, Intel Corporation. All rights reserved.<BR>
 ; SPDX-License-Identifier: BSD-2-Clause-Patent
 ;
 ; Module Name:
@@ -37,14 +37,14 @@ ASM_PFX(InternalLongJump):
     bt      eax, 23                ; check if CET is enabled
     jnc     CetDone
 
-    mov     edx, [esp + 4]         ; edx = JumpBuffer
+;    mov     edx, [esp + 4]         ; edx = JumpBuffer
     mov     edx, [edx + 24]        ; edx = target SSP
-    READSSP_EAX
+    rdsspd  eax
     sub     edx, eax               ; edx = delta
     mov     eax, edx               ; eax = delta
 
     shr     eax, 2                 ; eax = delta/sizeof(UINT32)
-    INCSSP_EAX
+    incsspd eax
 
 CetDone:
 

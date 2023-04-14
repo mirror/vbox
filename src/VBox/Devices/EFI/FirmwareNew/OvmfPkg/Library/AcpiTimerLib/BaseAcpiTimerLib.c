@@ -14,7 +14,7 @@
 //
 // Cached ACPI Timer IO Address
 //
-STATIC UINT32 mAcpiTimerIoAddr;
+STATIC UINT32  mAcpiTimerIoAddr;
 
 /**
   The constructor function caches the ACPI tick counter address, and,
@@ -29,12 +29,12 @@ AcpiTimerLibConstructor (
   VOID
   )
 {
-  UINT16 HostBridgeDevId;
-  UINTN Pmba;
-  UINT32 PmbaAndVal;
-  UINT32 PmbaOrVal;
-  UINTN AcpiCtlReg;
-  UINT8 AcpiEnBit;
+  UINT16  HostBridgeDevId;
+  UINTN   Pmba;
+  UINT32  PmbaAndVal;
+  UINT32  PmbaOrVal;
+  UINTN   AcpiCtlReg;
+  UINT8   AcpiEnBit;
 
   //
   // Query Host Bridge DID to determine platform type
@@ -60,10 +60,17 @@ AcpiTimerLibConstructor (
       AcpiCtlReg = POWER_MGMT_REGISTER_Q35 (ICH9_ACPI_CNTL);
       AcpiEnBit  = ICH9_ACPI_CNTL_ACPI_EN;
       break;
+    case CLOUDHV_DEVICE_ID:
+      mAcpiTimerIoAddr =  CLOUDHV_ACPI_TIMER_IO_ADDRESS;
+      return RETURN_SUCCESS;
 #ifndef VBOX
     default:
-      DEBUG ((DEBUG_ERROR, "%a: Unknown Host Bridge Device ID: 0x%04x\n",
-        __FUNCTION__, HostBridgeDevId));
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: Unknown Host Bridge Device ID: 0x%04x\n",
+        __FUNCTION__,
+        HostBridgeDevId
+        ));
       ASSERT (FALSE);
       return RETURN_UNSUPPORTED;
 #endif

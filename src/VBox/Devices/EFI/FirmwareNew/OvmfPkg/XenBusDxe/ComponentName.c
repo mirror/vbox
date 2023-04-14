@@ -14,7 +14,7 @@
 ///
 GLOBAL_REMOVE_IF_UNREFERENCED
 EFI_COMPONENT_NAME_PROTOCOL  gXenBusDxeComponentName = {
-  (EFI_COMPONENT_NAME_GET_DRIVER_NAME)    XenBusDxeComponentNameGetDriverName,
+  (EFI_COMPONENT_NAME_GET_DRIVER_NAME)XenBusDxeComponentNameGetDriverName,
   (EFI_COMPONENT_NAME_GET_CONTROLLER_NAME)XenBusDxeComponentNameGetControllerName,
   "eng"
 };
@@ -33,18 +33,18 @@ EFI_COMPONENT_NAME2_PROTOCOL  gXenBusDxeComponentName2 = {
 /// Table of driver names
 ///
 GLOBAL_REMOVE_IF_UNREFERENCED
-EFI_UNICODE_STRING_TABLE mXenBusDxeDriverNameTable[] = {
+EFI_UNICODE_STRING_TABLE  mXenBusDxeDriverNameTable[] = {
   { "eng;en", (CHAR16 *)L"XenBus Bus Driver" },
-  { NULL, NULL }
+  { NULL,     NULL                           }
 };
 
 ///
 /// Table of controller names
 ///
 GLOBAL_REMOVE_IF_UNREFERENCED
-EFI_UNICODE_STRING_TABLE mXenBusDxeControllerNameTable[] = {
+EFI_UNICODE_STRING_TABLE  mXenBusDxeControllerNameTable[] = {
   { "eng;en", (CHAR16 *)L"XenBus Controller" },
-  { NULL, NULL }
+  { NULL,     NULL                           }
 };
 
 /**
@@ -52,7 +52,7 @@ EFI_UNICODE_STRING_TABLE mXenBusDxeControllerNameTable[] = {
 
   @param  This       A pointer to the EFI_COMPONENT_NAME_PROTOCOL instance.
   @param  Language   A pointer to a three-character ISO 639-2 language identifier.
-                     This is the language of the driver name that that the caller
+                     This is the language of the driver name that the caller
                      is requesting, and it must match one of the languages specified
                      in SupportedLanguages.  The number of languages supported by a
                      driver is up to the driver writer.
