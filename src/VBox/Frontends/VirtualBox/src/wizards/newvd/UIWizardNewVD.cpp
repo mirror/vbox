@@ -171,32 +171,36 @@ QUuid UIWizardNewVD::createVDWithWizard(QWidget *pParent,
                                         const QString &strMachineName /* = QString() */,
                                         const QString &strMachineGuestOSTypeId  /* = QString() */)
 {
-    /* Initialize variables: */
-    QString strDefaultFolder = strMachineFolder;
-    if (strDefaultFolder.isEmpty())
-        strDefaultFolder = uiCommon().defaultFolderPathForType(UIMediumDeviceType_HardDisk);
+    /* Default path: */
+    const QString strDefaultPath = !strMachineFolder.isEmpty()
+                                 ? strMachineFolder
+                                 : uiCommon().defaultFolderPathForType(UIMediumDeviceType_HardDisk);
 
-    /* In case we dont have a 'guest os type id' default back to 'Other': */
+    /* Default name: */
+    const QString strDiskName = uiCommon().findUniqueFileName(strDefaultPath,
+                                                                !strMachineName.isEmpty()
+                                                              ? strMachineName
+                                                              : "NewVirtualDisk");
+
+    /* Default size: */
     const CGuestOSType comGuestOSType = uiCommon().virtualBox().GetGuestOSType(  !strMachineGuestOSTypeId.isEmpty()
-                                                                                 ? strMachineGuestOSTypeId
-                                                                                 : "Other");
-    const QString strDiskName = uiCommon().findUniqueFileName(strDefaultFolder,   !strMachineName.isEmpty()
-                                                                     ? strMachineName
-                                                                     : "NewVirtualDisk");
+                                                                               ? strMachineGuestOSTypeId
+                                                                               : "Other");
+    const qulonglong uDefaultSize = comGuestOSType.GetRecommendedHDD();
 
-    /* Show New VD wizard: */
-    UISafePointerWizardNewVD pWizard = new UIWizardNewVD(pParent,
+    /* Show New VD wizard the safe way: */
+    QWidget *pRealParent = windowManager().realParentWindow(pParent);
+    UISafePointerWizardNewVD pWizard = new UIWizardNewVD(pRealParent,
                                                          strDiskName,
-                                                         strDefaultFolder,
-                                                         comGuestOSType.GetRecommendedHDD());
+                                                         strDefaultPath,
+                                                         uDefaultSize);
     if (!pWizard)
         return QUuid();
-    QWidget *pDialogParent = windowManager().realParentWindow(pParent);
-    windowManager().registerNewParent(pWizard, pDialogParent);
-    QUuid mediumId = pWizard->mediumId();
+    windowManager().registerNewParent(pWizard, pRealParent);
     pWizard->exec();
+    const QUuid uMediumId = pWizard->mediumId();
     delete pWizard;
-    return mediumId;
+    return uMediumId;
 }
 
 void UIWizardNewVD::retranslateUi()
