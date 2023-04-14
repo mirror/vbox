@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Shared Clipboard: Common Shared Clipboard transfer handling code.
+ * Shared Clipboard: Common clipboard transfer handling code.
  */
 
 /*
@@ -66,7 +66,7 @@ PSHCLROOTLIST ShClTransferRootListAlloc(void)
 /**
  * Frees a transfer root list.
  *
- * @param   pRootList           transfer root list to free. The pointer will be
+ * @param   pRootList           Transfer root list to free. The pointer will be
  *                              invalid after returning from this function.
  */
 void ShClTransferRootListFree(PSHCLROOTLIST pRootList)
@@ -246,6 +246,7 @@ int ShClTransferListHdrAlloc(PSHCLLISTHDR *ppListHdr)
  * Frees a transfer list header structure.
  *
  * @param   pListEntry          Transfer list header structure to free.
+ *                              The pointer will be invalid on return.
  */
 void ShClTransferListHdrFree(PSHCLLISTHDR pListHdr)
 {
@@ -272,9 +273,7 @@ PSHCLLISTHDR ShClTransferListHdrDup(PSHCLLISTHDR pListHdr)
 
     PSHCLLISTHDR pListHdrDup = (PSHCLLISTHDR)RTMemAlloc(sizeof(SHCLLISTHDR));
     if (pListHdrDup)
-    {
         *pListHdrDup = *pListHdr;
-    }
 
     return pListHdrDup;
 }
@@ -336,6 +335,13 @@ bool ShClTransferListHdrIsValid(PSHCLLISTHDR pListHdr)
     return true; /** @todo Implement this. */
 }
 
+/**
+ * (Deep-)Copies a transfer list open parameters structure from one into another.
+ *
+ * @returns VBox status code.
+ * @param   pDst                Destination parameters to copy to.
+ * @param   pSrc                Source parameters to copy from.
+ */
 int ShClTransferListOpenParmsCopy(PSHCLLISTOPENPARMS pDst, PSHCLLISTOPENPARMS pSrc)
 {
     AssertPtrReturn(pDst, VERR_INVALID_POINTER);
@@ -442,6 +448,7 @@ void ShClTransferListOpenParmsDestroy(PSHCLLISTOPENPARMS pParms)
 /**
  * Creates (allocates) and initializes a clipboard list entry structure.
  *
+ * @returns VBox status code.
  * @param   ppDirData           Where to return the created clipboard list entry structure on success.
  */
 int ShClTransferListEntryAlloc(PSHCLLISTENTRY *ppListEntry)
@@ -460,7 +467,8 @@ int ShClTransferListEntryAlloc(PSHCLLISTENTRY *ppListEntry)
 /**
  * Frees a clipboard list entry structure.
  *
- * @param   pListEntry         Clipboard list entry structure to free.
+ * @param   pListEntry          Clipboard list entry structure to free.
+ *                              The pointer will be invalid on return.
  */
 void ShClTransferListEntryFree(PSHCLLISTENTRY pListEntry)
 {
@@ -472,10 +480,11 @@ void ShClTransferListEntryFree(PSHCLLISTENTRY pListEntry)
 }
 
 /**
- * (Deep) Copies a clipboard list entry structure.
+ * (Deep-)Copies a clipboard list entry structure.
  *
  * @returns VBox status code.
- * @param   pListEntry          Clipboard list entry to copy.
+ * @param   pDst                Destination list entry to copy to.
+ * @param   pSrc                Source list entry to copy from.
  */
 int ShClTransferListEntryCopy(PSHCLLISTENTRY pDst, PSHCLLISTENTRY pSrc)
 {
@@ -632,7 +641,7 @@ bool ShClTransferListEntryIsValid(PSHCLLISTENTRY pListEntry)
  * Initializes a transfer object context.
  *
  * @returns VBox status code.
- * @param   pObjCtx             transfer object context to initialize.
+ * @param   pObjCtx             Transfer object context to initialize.
  */
 int ShClTransferObjCtxInit(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
 {
@@ -648,7 +657,7 @@ int ShClTransferObjCtxInit(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
 /**
  * Destroys a transfer object context.
  *
- * @param   pObjCtx             transfer object context to destroy.
+ * @param   pObjCtx             Transfer object context to destroy.
  */
 void ShClTransferObjCtxDestroy(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
 {
@@ -661,7 +670,7 @@ void ShClTransferObjCtxDestroy(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
  * Returns if a transfer object context is valid or not.
  *
  * @returns \c true if valid, \c false if not.
- * @param   pObjCtx             transfer object context to check.
+ * @param   pObjCtx             Transfer object context to check.
  */
 bool ShClTransferObjCtxIsValid(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
 {
@@ -710,7 +719,7 @@ void ShClTransferObjHandleInfoDestroy(PSHCLOBJHANDLEINFO pInfo)
  * Initializes a transfer object open parameters structure.
  *
  * @returns VBox status code.
- * @param   pParms              transfer object open parameters structure to initialize.
+ * @param   pParms              Transfer object open parameters structure to initialize.
  */
 int ShClTransferObjOpenParmsInit(PSHCLOBJOPENCREATEPARMS pParms)
 {
@@ -767,7 +776,7 @@ int ShClTransferObjOpenParmsCopy(PSHCLOBJOPENCREATEPARMS pParmsDst, PSHCLOBJOPEN
 /**
  * Destroys a transfer object open parameters structure.
  *
- * @param   pParms              transfer object open parameters structure to destroy.
+ * @param   pParms              Transfer object open parameters structure to destroy.
  */
 void ShClTransferObjOpenParmsDestroy(PSHCLOBJOPENCREATEPARMS pParms)
 {
@@ -1091,12 +1100,11 @@ int ShClTransferObjWrite(PSHCLTRANSFER pTransfer,
  * Duplicates a transfer object data chunk.
  *
  * @returns Duplicated object data chunk on success, or NULL on failure.
- * @param   pDataChunk          transfer object data chunk to duplicate.
+ * @param   pDataChunk          Transfer object data chunk to duplicate.
  */
 PSHCLOBJDATACHUNK ShClTransferObjDataChunkDup(PSHCLOBJDATACHUNK pDataChunk)
 {
-    if (!pDataChunk)
-        return NULL;
+    AssertPtrReturn(pDataChunk, NULL);
 
     PSHCLOBJDATACHUNK pDataChunkDup = (PSHCLOBJDATACHUNK)RTMemAllocZ(sizeof(SHCLOBJDATACHUNK));
     if (!pDataChunkDup)
@@ -1108,6 +1116,7 @@ PSHCLOBJDATACHUNK ShClTransferObjDataChunkDup(PSHCLOBJDATACHUNK pDataChunk)
 
         pDataChunkDup->uHandle = pDataChunk->uHandle;
         pDataChunkDup->pvData  = RTMemDup(pDataChunk->pvData, pDataChunk->cbData);
+        AssertPtrReturn(pDataChunkDup->pvData, NULL);
         pDataChunkDup->cbData  = pDataChunk->cbData;
     }
 
@@ -1117,7 +1126,7 @@ PSHCLOBJDATACHUNK ShClTransferObjDataChunkDup(PSHCLOBJDATACHUNK pDataChunk)
 /**
  * Destroys a transfer object data chunk.
  *
- * @param   pDataChunk          transfer object data chunk to destroy.
+ * @param   pDataChunk          Transfer object data chunk to destroy.
  */
 void ShClTransferObjDataChunkDestroy(PSHCLOBJDATACHUNK pDataChunk)
 {
@@ -1140,8 +1149,8 @@ void ShClTransferObjDataChunkDestroy(PSHCLOBJDATACHUNK pDataChunk)
 /**
  * Frees a transfer object data chunk.
  *
- * @param   pDataChunk          transfer object data chunk to free. The handed-in pointer will
- *                              be invalid after calling this function.
+ * @param   pDataChunk          Transfer object data chunk to free.
+ *                              The pointer will be invalid on return.
  */
 void ShClTransferObjDataChunkFree(PSHCLOBJDATACHUNK pDataChunk)
 {
@@ -1158,7 +1167,7 @@ void ShClTransferObjDataChunkFree(PSHCLOBJDATACHUNK pDataChunk)
  * Creates a clipboard transfer.
  *
  * @returns VBox status code.
- * @param   ppTransfer          Where to return the created Shared Clipboard transfer struct.
+ * @param   ppTransfer          Where to return the created clipboard transfer struct.
  *                              Must be destroyed by ShClTransferDestroy().
  */
 int ShClTransferCreate(PSHCLTRANSFER *ppTransfer)
@@ -1219,7 +1228,7 @@ int ShClTransferCreate(PSHCLTRANSFER *ppTransfer)
 }
 
 /**
- * Destroys a clipboard transfer context struct.
+ * Destroys a clipboard transfer.
  *
  * @returns VBox status code.
  * @param   pTransferCtx                Clipboard transfer to destroy.
@@ -1244,7 +1253,7 @@ int ShClTransferDestroy(PSHCLTRANSFER pTransfer)
 }
 
 /**
- * Initializes a Shared Clipboard transfer object.
+ * Initializes a clipboard transfer.
  *
  * @returns VBox status code.
  * @param   pTransfer           Transfer to initialize.
@@ -1277,7 +1286,7 @@ int ShClTransferInit(PSHCLTRANSFER pTransfer, SHCLTRANSFERDIR enmDir, SHCLSOURCE
 }
 
 /**
- * Returns a specific list handle info of a transfer.
+ * Returns a specific list handle info of a clipboard transfer.
  *
  * @returns Pointer to list handle info if found, or NULL if not found.
  * @param   pTransfer           Clipboard transfer to get list handle info from.
@@ -1427,7 +1436,7 @@ static int shClTransferResolvePathAbs(PSHCLTRANSFER pTransfer, const char *pszPa
 }
 
 /**
- * Opens a list.
+ * Opens a transfer list.
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to handle.
@@ -1551,7 +1560,7 @@ int ShClTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms,
 }
 
 /**
- * Closes a list.
+ * Closes a transfer list.
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to handle.
@@ -1613,7 +1622,7 @@ int ShClTransferListClose(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
 }
 
 /**
- * Adds a file to a list heaer.
+ * Adds a file to a transfer list header.
  *
  * @returns VBox status code.
  * @param   pHdr                List header to add file to.
@@ -1621,6 +1630,9 @@ int ShClTransferListClose(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
  */
 static int shclTransferListHdrAddFile(PSHCLLISTHDR pHdr, const char *pszPath)
 {
+    AssertPtrReturn(pHdr, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+
     uint64_t cbSize = 0;
     int rc = RTFileQuerySizeByPath(pszPath, &cbSize);
     if (RT_SUCCESS(rc))
@@ -1634,14 +1646,11 @@ static int shclTransferListHdrAddFile(PSHCLLISTHDR pHdr, const char *pszPath)
 }
 
 /**
- * Builds a list header, internal version.
+ * Builds a transfer list header, internal version.
  *
  * @returns VBox status code.
  * @param   pHdr                Where to store the build list header.
- * @param   pcszSrcPath         Source path of list.
- * @param   pcszDstPath         Destination path of list.
- * @param   pcszDstBase         Destination base path.
- * @param   cchDstBase          Number of charaters of destination base path.
+ * @param   pcszPathAbs         Absolute path to use for building the transfer list.
  */
 static int shclTransferListHdrFromDir(PSHCLLISTHDR pHdr, const char *pcszPathAbs)
 {
@@ -1727,7 +1736,7 @@ static int shclTransferListHdrFromDir(PSHCLLISTHDR pHdr, const char *pcszPathAbs
 }
 
 /**
- * Retrieves the header of a Shared Clipboard list.
+ * Retrieves the header of a transfer list.
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to handle.
@@ -1805,13 +1814,13 @@ int ShClTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
 }
 
 /**
- * Returns the current transfer object for a Shared Clipboard transfer list.
+ * Returns the current transfer object of a transfer list.
  *
  * Currently not implemented and wil return NULL.
  *
  * @returns Pointer to transfer object, or NULL if not found / invalid.
  * @param   pTransfer           Clipboard transfer to return transfer object for.
- * @param   hList               Handle of Shared Clipboard transfer list to get object for.
+ * @param   hList               Handle of clipboard transfer list to get object for.
  * @param   uIdx                Index of object to get.
  */
 PSHCLTRANSFEROBJ ShClTransferListGetObj(PSHCLTRANSFER pTransfer,
@@ -1827,7 +1836,7 @@ PSHCLTRANSFEROBJ ShClTransferListGetObj(PSHCLTRANSFER pTransfer,
 }
 
 /**
- * Reads a single Shared Clipboard list entry.
+ * Reads a single transfer list entry.
  *
  * @returns VBox status code or VERR_NO_MORE_FILES if the end of the list has been reached.
  * @param   pTransfer           Clipboard transfer to handle.
@@ -1992,7 +2001,7 @@ int ShClTransferListWrite(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
 }
 
 /**
- * Returns whether a given list handle is valid or not.
+ * Returns whether a given transfer list handle is valid or not.
  *
  * @returns \c true if list handle is valid, \c false if not.
  * @param   pTransfer           Clipboard transfer to handle.
@@ -2051,7 +2060,7 @@ void ShClTransferCopyCallbacks(PSHCLTRANSFERCALLBACKTABLE pCallbacksDst,
 }
 
 /**
- * Sets or unsets the callback table to be used for a Shared Clipboard transfer.
+ * Sets or unsets the callback table to be used for a clipboard transfer.
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to set callbacks for.
@@ -2093,7 +2102,7 @@ int ShClTransferSetProviderIface(PSHCLTRANSFER pTransfer,
 }
 
 /**
- * Clears (resets) the root list of a Shared Clipboard transfer.
+ * Clears (resets) the root list of a clipboard transfer.
  *
  * @param   pTransfer           Transfer to clear transfer root list for.
  */
@@ -2122,7 +2131,7 @@ static void shClTransferListRootsClear(PSHCLTRANSFER pTransfer)
 }
 
 /**
- * Resets a Shared Clipboard transfer.
+ * Resets a clipboard transfer.
  *
  * @param   pTransfer           Clipboard transfer to reset.
  */
@@ -2254,7 +2263,7 @@ int ShClTransferRootsEntry(PSHCLTRANSFER pTransfer,
 }
 
 /**
- * Returns the root entries of a Shared Clipboard transfer.
+ * Returns the root entries of a clipboard transfer.
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to return root entries for.
@@ -2324,7 +2333,7 @@ int ShClTransferRootsGet(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRootList)
 }
 
 /**
- * Sets transfer root list entries for a given transfer.
+ * Sets root list entries for a given clipboard transfer.
  *
  * @returns VBox status code.
  * @param   pTransfer           Transfer to set transfer list entries for.
@@ -2439,7 +2448,7 @@ int ShClTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t c
 }
 
 /**
- * Returns the transfer's ID.
+ * Returns the clipboard transfer's ID.
  *
  * @returns The transfer's ID.
  * @param   pTransfer           Clipboard transfer to return ID for.
@@ -2452,7 +2461,7 @@ SHCLTRANSFERID ShClTransferGetID(PSHCLTRANSFER pTransfer)
 }
 
 /**
- * Returns the transfer's direction.
+ * Returns the clipboard transfer's direction.
  *
  * @returns The transfer's direction.
  * @param   pTransfer           Clipboard transfer to return direction for.
@@ -2494,7 +2503,7 @@ SHCLTRANSFERSTATUS ShClTransferGetStatus(PSHCLTRANSFER pTransfer)
 }
 
 /**
- * Runs a started Shared Clipboard transfer in a dedicated thread.
+ * Runs a started clipboard transfer in a dedicated thread.
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to run.
@@ -2553,7 +2562,7 @@ int ShClTransferStart(PSHCLTRANSFER pTransfer)
 }
 
 /**
- * Creates a thread for a Shared Clipboard transfer.
+ * Creates a thread for a clipboard transfer.
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to create thread for.
@@ -2594,7 +2603,7 @@ static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThre
 }
 
 /**
- * Destroys a thread of a Shared Clipboard transfer.
+ * Destroys the thread of a clipboard transfer.
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to destroy thread for.
@@ -2621,7 +2630,7 @@ static int shClTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINTERVAL uTime
 }
 
 /**
- * Initializes a Shared Clipboard transfer context.
+ * Initializes a clipboard transfer context.
  *
  * @returns VBox status code.
  * @param   pTransferCtx                Transfer context to initialize.
@@ -2653,7 +2662,7 @@ int ShClTransferCtxInit(PSHCLTRANSFERCTX pTransferCtx)
 }
 
 /**
- * Destroys a Shared Clipboard transfer context struct.
+ * Destroys a clipboard transfer context.
  *
  * @param   pTransferCtx                Transfer context to destroy.
  */
@@ -2683,7 +2692,7 @@ void ShClTransferCtxDestroy(PSHCLTRANSFERCTX pTransferCtx)
 }
 
 /**
- * Resets a Shared Clipboard transfer.
+ * Resets a clipboard transfer context.
  *
  * @param   pTransferCtx                Transfer context to reset.
  */
@@ -2703,9 +2712,9 @@ void ShClTransferCtxReset(PSHCLTRANSFERCTX pTransferCtx)
 }
 
 /**
- * Returns a specific Shared Clipboard transfer, internal version.
+ * Returns a specific clipboard transfer, internal version.
  *
- * @returns Shared Clipboard transfer, or NULL if not found.
+ * @returns Clipboard transfer found, or NULL if not found.
  * @param   pTransferCtx                Transfer context to return transfer for.
  * @param   uID                         ID of the transfer to return.
  */
@@ -2722,9 +2731,9 @@ static PSHCLTRANSFER shClTransferCtxGetTransferByIdInternal(PSHCLTRANSFERCTX pTr
 }
 
 /**
- * Returns a specific Shared Clipboard transfer by index, internal version.
+ * Returns a specific clipboard transfer by index, internal version.
  *
- * @returns Shared Clipboard transfer, or NULL if not found.
+ * @returns Clipboard transfer found, or NULL if not found.
  * @param   pTransferCtx                Transfer context to return transfer for.
  * @param   uIdx                        Index of the transfer to return.
  */
@@ -2744,9 +2753,9 @@ static PSHCLTRANSFER shClTransferCtxGetTransferByIndexInternal(PSHCLTRANSFERCTX 
 }
 
 /**
- * Returns a Shared Clipboard transfer for a specific transfer ID.
+ * Returns a clipboard transfer for a specific transfer ID.
  *
- * @returns Shared Clipboard transfer, or NULL if not found.
+ * @returns Clipboard transfer found, or NULL if not found.
  * @param   pTransferCtx                Transfer context to return transfer for.
  * @param   uID                         ID of the transfer to return.
  */
@@ -2756,9 +2765,9 @@ PSHCLTRANSFER ShClTransferCtxGetTransferById(PSHCLTRANSFERCTX pTransferCtx, uint
 }
 
 /**
- * Returns a Shared Clipboard transfer for a specific list index.
+ * Returns a clipboard transfer for a specific list index.
  *
- * @returns Shared Clipboard transfer, or NULL if not found.
+ * @returns Clipboard transfer found, or NULL if not found.
  * @param   pTransferCtx                Transfer context to return transfer for.
  * @param   uIdx                        List index of the transfer to return.
  */
@@ -2768,7 +2777,7 @@ PSHCLTRANSFER ShClTransferCtxGetTransferByIndex(PSHCLTRANSFERCTX pTransferCtx, u
 }
 
 /**
- * Returns the number of running Shared Clipboard transfers.
+ * Returns the number of running clipboard transfers for a given transfer context.
  *
  * @returns Number of running transfers.
  * @param   pTransferCtx                Transfer context to return number for.
@@ -2780,7 +2789,7 @@ uint32_t ShClTransferCtxGetRunningTransfers(PSHCLTRANSFERCTX pTransferCtx)
 }
 
 /**
- * Returns the number of total Shared Clipboard transfers.
+ * Returns the number of total clipboard transfers for a given transfer context.
  *
  * @returns Number of total transfers.
  * @param   pTransferCtx                Transfer context to return number for.
@@ -2792,7 +2801,7 @@ uint32_t ShClTransferCtxGetTotalTransfers(PSHCLTRANSFERCTX pTransferCtx)
 }
 
 /**
- * Registers a Shared Clipboard transfer with a transfer context, i.e. allocates a transfer ID.
+ * Registers a clipboard transfer with a transfer context, i.e. allocates a transfer ID.
  *
  * @return  VBox status code.
  * @retval  VERR_SHCLPB_MAX_TRANSFERS_REACHED if the maximum of concurrent transfers
@@ -2851,7 +2860,7 @@ int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER
 }
 
 /**
- * Registers a Shared Clipboard transfer with a transfer context by specifying an ID for the transfer.
+ * Registers a clipboard transfer with a transfer context by specifying an ID for the transfer.
  *
  * @return  VBox status code.
  * @retval  VERR_ALREADY_EXISTS if a transfer with the given ID already exists.
@@ -3111,7 +3120,7 @@ static int shClConvertFileCreateFlags(uint32_t fShClFlags, uint64_t *pfOpen)
 }
 
 /**
- * Translates a Shared Clipboard transfer status (SHCLTRANSFERSTATUS_XXX) into a string.
+ * Translates a clipboard transfer status (SHCLTRANSFERSTATUS_XXX) into a string.
  *
  * @returns Transfer status string name.
  * @param   enmStatus           The transfer status to translate.
@@ -3130,3 +3139,4 @@ const char *ShClTransferStatusToStr(SHCLTRANSFERSTATUS enmStatus)
     }
     return "Unknown";
 }
+
