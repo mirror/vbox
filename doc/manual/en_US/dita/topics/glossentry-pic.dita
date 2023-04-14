@@ -1,12 +1,8 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
-<topic xml:lang="en-us" id="glossentry-pic">
-  <title>PIC</title>
-  <body>
-    <section>
-      <p>
-       See APIC. 
-      </p>
-    </section>
-  </body>
-</topic>
+<!DOCTYPE glossentry PUBLIC "-//OASIS//DTD DITA Glossary//EN" "glossary.dtd">
+<glossentry xml:lang="en-us" id="glossentry-pic">
+  <glossterm>PIC</glossterm>
+  <glossdef>
+    See APIC.
+  </glossdef>
+</glossentry>

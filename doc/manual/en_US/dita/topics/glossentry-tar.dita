@@ -1,16 +1,12 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
-<topic xml:lang="en-us" id="glossentry-tar">
-  <title>TAR</title>
-  <body>
-    <section>
-      <p>
-        A widely used file format for archiving. Originally, this stood for Tape ARchive 
-        and was already supported by very early UNIX versions for backing up data on 
-        tape. The file format is still widely used today. For example, with OVF archives 
-        using an <codeph>.ova</codeph> file extension. 
-        See <xref href="ovf.dita"/>.
-      </p>
-    </section>
-  </body>
-</topic>
+<!DOCTYPE glossentry PUBLIC "-//OASIS//DTD DITA Glossary//EN" "glossary.dtd">
+<glossentry xml:lang="en-us" id="glossentry-tar">
+  <glossterm>TAR</glossterm>
+  <glossdef>
+    A widely used file format for archiving. Originally, this stood for Tape ARchive
+    and was already supported by very early UNIX versions for backing up data on
+    tape. The file format is still widely used today. For example, with OVF archives
+    using an <codeph>.ova</codeph> file extension.
+    See <xref href="ovf.dita"/>.
+  </glossdef>
+</glossentry>

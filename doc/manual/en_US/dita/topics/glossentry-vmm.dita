@@ -1,14 +1,10 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
-<topic xml:lang="en-us" id="glossentry-vmm">
-  <title>VMM</title>
-  <body>
-    <section>
-      <p>
-        Virtual Machine Manager. The component of Oracle VM VirtualBox that controls 
-        VM execution. See <xref href="technical-components.dita">Oracle VM VirtualBox Executables and Components</xref>
-        for a list of Oracle VM VirtualBox components.
-      </p>
-    </section>
-  </body>
-</topic>
+<!DOCTYPE glossentry PUBLIC "-//OASIS//DTD DITA Glossary//EN" "glossary.dtd">
+<glossentry xml:lang="en-us" id="glossentry-vmm">
+  <glossterm>VMM</glossterm>
+  <glossdef>
+    Virtual Machine Manager. The component of Oracle VM VirtualBox that controls
+    VM execution. See <xref href="technical-components.dita">Oracle VM VirtualBox Executables and Components</xref>
+    for a list of Oracle VM VirtualBox components.
+  </glossdef>
+</glossentry>

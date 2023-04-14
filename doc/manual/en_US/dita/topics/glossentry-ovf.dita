@@ -1,13 +1,9 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
-<topic xml:lang="en-us" id="glossentry-ovf">
-  <title>OVF</title>
-  <body>
-    <section>
-      <p>
-        Open Virtualization Format, a cross-platform industry standard to exchange virtual 
-        appliances between virtualization products. See <xref href="ovf.dita"/>. 
-      </p>
-    </section>
-  </body>
-</topic>
+<!DOCTYPE glossentry PUBLIC "-//OASIS//DTD DITA Glossary//EN" "glossary.dtd">
+<glossentry xml:lang="en-us" id="glossentry-ovf">
+  <glossterm>OVF</glossterm>
+  <glossdef>
+    Open Virtualization Format, a cross-platform industry standard to exchange virtual
+    appliances between virtualization products. See <xref href="ovf.dita"/>.
+  </glossdef>
+</glossentry>

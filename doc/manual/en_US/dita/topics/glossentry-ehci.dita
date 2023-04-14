@@ -1,12 +1,8 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
-<topic xml:lang="en-us" id="glossentry-ehci">
-  <title>EHCI</title>
-  <body>
-    <section>
-      <p>
-        Enhanced Host Controller Interface, the interface that implements the USB 2.0 standard. 
-      </p>
-    </section>
-  </body>
-</topic>
+<!DOCTYPE glossentry PUBLIC "-//OASIS//DTD DITA Glossary//EN" "glossary.dtd">
+<glossentry xml:lang="en-us" id="glossentry-ehci">
+  <glossterm>EHCI</glossterm>
+  <glossdef>
+    Enhanced Host Controller Interface, the interface that implements the USB 2.0 standard.
+  </glossdef>
+</glossentry>

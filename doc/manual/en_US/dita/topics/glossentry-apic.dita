@@ -1,19 +1,15 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
-<topic xml:lang="en-us" id="glossentry-apic">
-  <title>APIC</title>
-  <body>
-    <section>
-      <p>
-        Advanced Programmable Interrupt Controller, a newer version of
-        the original PC PIC (programmable interrupt controller). Most
-        modern CPUs contain an on-chip APIC, called a local APIC. Many
-        systems also contain an I/O APIC (input output APIC) as a
-        separate chip which provides more than 16 IRQs. Windows 2000
-        and later use a different kernel if they detect an I/O APIC
-        during installation. Therefore, an I/O APIC must not be
-        removed after installation.
-      </p>
-    </section>
-  </body>
-</topic>
+<!DOCTYPE glossentry PUBLIC "-//OASIS//DTD DITA Glossary//EN" "glossary.dtd">
+<glossentry xml:lang="en-us" id="glossentry-apic">
+  <glossterm>APIC</glossterm>
+  <glossdef>
+    Advanced Programmable Interrupt Controller, a newer version of
+    the original PC PIC (programmable interrupt controller). Most
+    modern CPUs contain an on-chip APIC, called a local APIC. Many
+    systems also contain an I/O APIC (input output APIC) as a
+    separate chip which provides more than 16 IRQs. Windows 2000
+    and later use a different kernel if they detect an I/O APIC
+    during installation. Therefore, an I/O APIC must not be
+    removed after installation.
+  </glossdef>
+</glossentry>

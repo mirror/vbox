@@ -1,16 +1,12 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
-<topic xml:lang="en-us" id="glossentry-uuid">
-  <title>UUID</title>
-  <body>
-    <section>
-      <p>
-        A Universally Unique Identifier, often also called GUID (Globally Unique Identifier). 
-        A UUID is a string of numbers and letters which can be computed dynamically and is 
-        guaranteed to be unique. Generally, it is used as a global handle to identify entities. 
-        Oracle VM VirtualBox makes use of UUIDs to identify VMs, Virtual Disk Images (VDI files), 
-        and other entities.
-      </p>
-    </section>
-  </body>
-</topic>
+<!DOCTYPE glossentry PUBLIC "-//OASIS//DTD DITA Glossary//EN" "glossary.dtd">
+<glossentry xml:lang="en-us" id="glossentry-uuid">
+  <glossterm>UUID</glossterm>
+  <glossdef>
+    A Universally Unique Identifier, often also called GUID (Globally Unique Identifier).
+    A UUID is a string of numbers and letters which can be computed dynamically and is
+    guaranteed to be unique. Generally, it is used as a global handle to identify entities.
+    Oracle VM VirtualBox makes use of UUIDs to identify VMs, Virtual Disk Images (VDI files),
+    and other entities.
+  </glossdef>
+</glossentry>

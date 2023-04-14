@@ -1,12 +1,8 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
-<topic xml:lang="en-us" id="glossentry-xhci">
-  <title>xHCI</title>
-  <body>
-    <section>
-      <p>
-        eXtended Host Controller Interface. The interface that implements the USB 3.0 standard.
-      </p>
-    </section>
-  </body>
-</topic>
+<!DOCTYPE glossentry PUBLIC "-//OASIS//DTD DITA Glossary//EN" "glossary.dtd">
+<glossentry xml:lang="en-us" id="glossentry-xhci">
+  <glossterm>xHCI</glossterm>
+  <glossdef>
+    eXtended Host Controller Interface. The interface that implements the USB 3.0 standard.
+  </glossdef>
+</glossentry>

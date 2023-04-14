@@ -1,15 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
-<topic xml:lang="en-us" id="glossentry-efi">
-  <title>EFI</title>
-  <body>
-    <section>
-      <p>
-        Extensible Firmware Interface, a firmware built into computers which is designed to replace 
-        the aging BIOS. Originally designed by Intel, most modern operating systems can now boot 
-        on computers which have EFI instead of a BIOS built into them. 
-        See <xref href="efi.dita"/>.  
-      </p>
-    </section>
-  </body>
-</topic>
+<!DOCTYPE glossentry PUBLIC "-//OASIS//DTD DITA Glossary//EN" "glossary.dtd">
+<glossentry xml:lang="en-us" id="glossentry-efi">
+  <glossterm>EFI</glossterm>
+  <glossdef>
+    Extensible Firmware Interface, a firmware built into computers which is designed to replace
+    the aging BIOS. Originally designed by Intel, most modern operating systems can now boot
+    on computers which have EFI instead of a BIOS built into them.
+    See <xref href="efi.dita"/>.
+  </glossdef>
+</glossentry>

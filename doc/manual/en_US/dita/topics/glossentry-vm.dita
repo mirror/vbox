@@ -1,14 +1,10 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
-<topic xml:lang="en-us" id="glossentry-vm">
-  <title>VM</title>
-  <body>
-    <section>
-      <p>
-        Virtual Machine. A virtual computer that Oracle VM VirtualBox enables 
-        you to run on top of your actual hardware. 
-        See <xref href="virtintro.dita"/> for details.
-      </p>
-    </section>
-  </body>
-</topic>
+<!DOCTYPE glossentry PUBLIC "-//OASIS//DTD DITA Glossary//EN" "glossary.dtd">
+<glossentry xml:lang="en-us" id="glossentry-vm">
+  <glossterm>VM</glossterm>
+  <glossdef>
+    Virtual Machine. A virtual computer that Oracle VM VirtualBox enables
+    you to run on top of your actual hardware.
+    See <xref href="virtintro.dita"/> for details.
+  </glossdef>
+</glossentry>

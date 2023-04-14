@@ -1,13 +1,9 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
-<topic xml:lang="en-us" id="glossentry-vtx">
-  <title>VT-x</title>
-  <body>
-    <section>
-      <p>
-        The hardware virtualization features built into modern Intel processors.
-        See <xref href="hwvirt.dita">Hardware Virtualization</xref>.
-      </p>
-    </section>
-  </body>
-</topic>
+<!DOCTYPE glossentry PUBLIC "-//OASIS//DTD DITA Glossary//EN" "glossary.dtd">
+<glossentry xml:lang="en-us" id="glossentry-vtx">
+  <glossterm>VT-x</glossterm>
+  <glossdef>
+    The hardware virtualization features built into modern Intel processors.
+    See <xref href="hwvirt.dita">Hardware Virtualization</xref>.
+  </glossdef>
+</glossentry>
