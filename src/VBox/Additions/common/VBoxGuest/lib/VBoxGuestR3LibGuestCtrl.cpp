@@ -2720,7 +2720,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFsObjCbQueryInfoEx(PVBGLR3GUESTCTRLCMDCTX pCtx, u
     VbglHGCMParmPtrSetString(&Msg.u.queryobjinfo.user,   pszUser);
     VbglHGCMParmPtrSetString(&Msg.u.queryobjinfo.groups, pszGroups);
 
-    return VbglR3HGCMCall(&Msg.reply_hdr.hdr, RT_UOFFSET_AFTER(HGCMReplyFsNotify, u.queryinfo));
+    return VbglR3HGCMCall(&Msg.reply_hdr.hdr, RT_UOFFSET_AFTER(HGCMReplyFsNotify, u.queryobjinfo));
 }
 
 
