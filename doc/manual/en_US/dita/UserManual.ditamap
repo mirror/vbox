@@ -681,46 +681,46 @@
 
    <chapter href="topics/privacy.dita"/>
 
-<chapter href="topics/Glossary.dita" chunk="to-content">
-    <topicref href="topics/glossentry-acpi.dita"/>
-    <topicref href="topics/glossentry-ahci.dita"/>
-    <topicref href="topics/glossentry-amdv.dita"/>
-    <topicref href="topics/glossentry-api.dita"/>
-    <topicref href="topics/glossentry-apic.dita"/>
-    <topicref href="topics/glossentry-ata.dita"/>
-    <topicref href="topics/glossentry-bios.dita"/>
-    <topicref href="topics/glossentry-com.dita"/>
-    <topicref href="topics/glossentry-dhcp.dita"/>
-    <topicref href="topics/glossentry-efi.dita"/>
-    <topicref href="topics/glossentry-ehci.dita"/>
-    <topicref href="topics/glossentry-gui.dita"/>
-    <topicref href="topics/glossentry-guid.dita"/>
-    <topicref href="topics/glossentry-ioapic.dita"/>
-    <topicref href="topics/glossentry-ide.dita"/>
-    <topicref href="topics/glossentry-iscsi.dita"/>
-    <topicref href="topics/glossentry-mac.dita"/>
-    <topicref href="topics/glossentry-msi.dita"/>
-    <topicref href="topics/glossentry-nat.dita"/>
-    <topicref href="topics/glossentry-ovf.dita"/>
-    <topicref href="topics/glossentry-pae.dita"/>
-    <topicref href="topics/glossentry-pic.dita"/>
-    <topicref href="topics/glossentry-pxe.dita"/>
-    <topicref href="topics/glossentry-rdp.dita"/>
-    <topicref href="topics/glossentry-sas.dita"/>
-    <topicref href="topics/glossentry-sata.dita"/>
-    <topicref href="topics/glossentry-scsi.dita"/>
-    <topicref href="topics/glossentry-smp.dita"/>
-    <topicref href="topics/glossentry-ssd.dita"/>
-    <topicref href="topics/glossentry-tar.dita"/>
-    <topicref href="topics/glossentry-uuid.dita"/>
-    <topicref href="topics/glossentry-vm.dita"/>
-    <topicref href="topics/glossentry-vmm.dita"/>
-    <topicref href="topics/glossentry-vrde.dita"/>
-    <topicref href="topics/glossentry-vrdp.dita"/>
-    <topicref href="topics/glossentry-vtx.dita"/>
-    <topicref href="topics/glossentry-xhci.dita"/>
-    <topicref href="topics/glossentry-xml.dita"/>
-    <topicref href="topics/glossentry-xpcom.dita"/>
-</chapter>
+   <chapter href="topics/Glossary.dita" chunk="to-content">
+      <topicref toc="no" href="topics/glossentry-acpi.dita"/>
+      <topicref toc="no" href="topics/glossentry-ahci.dita"/>
+      <topicref toc="no" href="topics/glossentry-amdv.dita"/>
+      <topicref toc="no" href="topics/glossentry-api.dita"/>
+      <topicref toc="no" href="topics/glossentry-apic.dita"/>
+      <topicref toc="no" href="topics/glossentry-ata.dita"/>
+      <topicref toc="no" href="topics/glossentry-bios.dita"/>
+      <topicref toc="no" href="topics/glossentry-com.dita"/>
+      <topicref toc="no" href="topics/glossentry-dhcp.dita"/>
+      <topicref toc="no" href="topics/glossentry-efi.dita"/>
+      <topicref toc="no" href="topics/glossentry-ehci.dita"/>
+      <topicref toc="no" href="topics/glossentry-gui.dita"/>
+      <topicref toc="no" href="topics/glossentry-guid.dita"/>
+      <topicref toc="no" href="topics/glossentry-ioapic.dita"/>
+      <topicref toc="no" href="topics/glossentry-ide.dita"/>
+      <topicref toc="no" href="topics/glossentry-iscsi.dita"/>
+      <topicref toc="no" href="topics/glossentry-mac.dita"/>
+      <topicref toc="no" href="topics/glossentry-msi.dita"/>
+      <topicref toc="no" href="topics/glossentry-nat.dita"/>
+      <topicref toc="no" href="topics/glossentry-ovf.dita"/>
+      <topicref toc="no" href="topics/glossentry-pae.dita"/>
+      <topicref toc="no" href="topics/glossentry-pic.dita"/>
+      <topicref toc="no" href="topics/glossentry-pxe.dita"/>
+      <topicref toc="no" href="topics/glossentry-rdp.dita"/>
+      <topicref toc="no" href="topics/glossentry-sas.dita"/>
+      <topicref toc="no" href="topics/glossentry-sata.dita"/>
+      <topicref toc="no" href="topics/glossentry-scsi.dita"/>
+      <topicref toc="no" href="topics/glossentry-smp.dita"/>
+      <topicref toc="no" href="topics/glossentry-ssd.dita"/>
+      <topicref toc="no" href="topics/glossentry-tar.dita"/>
+      <topicref toc="no" href="topics/glossentry-uuid.dita"/>
+      <topicref toc="no" href="topics/glossentry-vm.dita"/>
+      <topicref toc="no" href="topics/glossentry-vmm.dita"/>
+      <topicref toc="no" href="topics/glossentry-vrde.dita"/>
+      <topicref toc="no" href="topics/glossentry-vrdp.dita"/>
+      <topicref toc="no" href="topics/glossentry-vtx.dita"/>
+      <topicref toc="no" href="topics/glossentry-xhci.dita"/>
+      <topicref toc="no" href="topics/glossentry-xml.dita"/>
+      <topicref toc="no" href="topics/glossentry-xpcom.dita"/>
+   </chapter>
 
 </bookmap>
