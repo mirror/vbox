@@ -462,7 +462,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # Reboot the VM and reconnect the TXS session.
         #
         if fRc:
-            reporter.testStart('Rebooting guest w/ updated Guest Additions active');
+            reporter.testStart('Rebooting guest after Guest Additions installation');
             (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout = 15 * 60 * 1000);
             if fRc:
                 pass;
@@ -543,7 +543,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # Do the final reboot to get the just installed Guest Additions up and running.
         if fRc:
             if self.fRebootAfterInstall:
-                reporter.testStart('Rebooting guest w/ updated Guest Additions active');
+                reporter.testStart('Rebooting guest after Guest Additions installation');
                 (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout = 15 * 60 * 1000);
                 if not fRc:
                     reporter.testFailure('Rebooting and reconnecting to TXS service failed');
