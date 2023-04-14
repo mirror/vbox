@@ -537,7 +537,9 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # Ignore errors as all files above might not be present for whatever reason.
         #
         self.txsDownloadFiles(oSession, oTxsSession,
-                              [('/var/log/vboxadd-install.log', 'vboxadd-install-%s.log' % oTestVm.sVmName), ],
+                              [ ('/var/log/vboxadd-install.log', 'vboxadd-install-%s.log' % oTestVm.sVmName),
+                                ('/var/log/vboxadd-setup.log', 'vboxadd-setup-%s.log' % oTestVm.sVmName),
+                                ('/var/log/vboxadd-uninstall.log', 'vboxadd-uninstall-%s.log' % oTestVm.sVmName), ],
                               fIgnoreErrors = True);
 
         # Do the final reboot to get the just installed Guest Additions up and running.
