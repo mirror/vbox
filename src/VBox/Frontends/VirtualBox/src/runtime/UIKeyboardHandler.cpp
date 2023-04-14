@@ -1034,13 +1034,16 @@ void UIKeyboardHandler::loadSettings()
 {
     /* Global settings: */
 #ifdef VBOX_WS_X11
-    /* Initialize the X keyboard subsystem: */
-    initMappedX11Keyboard(NativeWindowSubsystem::X11GetDisplay(), gEDataManager->remappedScanCodes());
-    /* Fix for http://www.virtualbox.org/ticket/1296:
-     * when X11 sends events for repeated keys, it always inserts an XKeyRelease
-     * before the XKeyPress. */
-    /* Disable key release events during key auto-repeat: */
-    XkbSetDetectableAutoRepeat(NativeWindowSubsystem::X11GetDisplay(), True, NULL);
+    if (uiCommon().X11XServerAvailable())
+    {
+        /* Initialize the X keyboard subsystem: */
+        initMappedX11Keyboard(NativeWindowSubsystem::X11GetDisplay(), gEDataManager->remappedScanCodes());
+        /* Fix for http://www.virtualbox.org/ticket/1296:
+        * when X11 sends events for repeated keys, it always inserts an XKeyRelease
+        * before the XKeyPress. */
+        /* Disable key release events during key auto-repeat: */
+        XkbSetDetectableAutoRepeat(NativeWindowSubsystem::X11GetDisplay(), True, NULL);
+    }
 #endif /* VBOX_WS_X11 */
 
     /* Extra data settings: */
@@ -1782,20 +1785,22 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
     delete[] pList;
 
 #elif defined(VBOX_WS_X11)
-
-    Q_UNUSED(pHotKey);
-    Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
-    KeyCode keyCode = XKeysymToKeycode(pDisplay, iHotKey);
-    for (int i = 0; i < 4 && !fWasProcessed; ++i) /* Up to four groups. */
+    if (uiCommon().X11XServerAvailable())
     {
-        KeySym ks = wrapXkbKeycodeToKeysym(pDisplay, keyCode, i, 0);
-        char symbol = 0;
-        if (XkbTranslateKeySym(pDisplay, &ks, 0, &symbol, 1, NULL) == 0)
-            symbol = 0;
-        if (symbol)
+        Q_UNUSED(pHotKey);
+        Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
+        KeyCode keyCode = XKeysymToKeycode(pDisplay, iHotKey);
+        for (int i = 0; i < 4 && !fWasProcessed; ++i) /* Up to four groups. */
         {
-            QChar qtSymbol = QString::fromLocal8Bit(&symbol, 1)[0];
-            fWasProcessed = actionPool()->processHotKey(QKeySequence(qtSymbol.toUpper().unicode()));
+            KeySym ks = wrapXkbKeycodeToKeysym(pDisplay, keyCode, i, 0);
+            char symbol = 0;
+            if (XkbTranslateKeySym(pDisplay, &ks, 0, &symbol, 1, NULL) == 0)
+                symbol = 0;
+            if (symbol)
+            {
+                QChar qtSymbol = QString::fromLocal8Bit(&symbol, 1)[0];
+                fWasProcessed = actionPool()->processHotKey(QKeySequence(qtSymbol.toUpper().unicode()));
+            }
         }
     }
 
@@ -1857,45 +1862,46 @@ void UIKeyboardHandler::fixModifierState(LONG *piCodes, uint *puCount)
     }
 
 #elif defined(VBOX_WS_X11)
-
-    Window   wDummy1, wDummy2;
-    int      iDummy3, iDummy4, iDummy5, iDummy6;
-    unsigned uMask;
-    unsigned uKeyMaskNum = 0, uKeyMaskCaps = 0;
-    Display * const pDisplay = NativeWindowSubsystem::X11GetDisplay();
-
-    uKeyMaskCaps          = LockMask;
-    XModifierKeymap* map  = XGetModifierMapping(pDisplay);
-    KeyCode keyCodeNum    = XKeysymToKeycode(pDisplay, XK_Num_Lock);
-
-    for (int i = 0; i < 8; ++ i)
-        if (keyCodeNum != NoSymbol && map->modifiermap[map->max_keypermod * i] == keyCodeNum)
-            uKeyMaskNum = 1 << i;
-    XQueryPointer(pDisplay, DefaultRootWindow(pDisplay), &wDummy1, &wDummy2,
-                  &iDummy3, &iDummy4, &iDummy5, &iDummy6, &uMask);
-    XFreeModifiermap(map);
-
-    if (uimachine()->numLockAdaptionCnt() && (uimachine()->isNumLock() ^ !!(uMask & uKeyMaskNum)))
+    if (uiCommon().X11XServerAvailable())
     {
-        uimachine()->setNumLockAdaptionCnt(uimachine()->numLockAdaptionCnt() - 1);
-        piCodes[(*puCount)++] = 0x45;
-        piCodes[(*puCount)++] = 0x45 | 0x80;
-    }
-    if (uimachine()->capsLockAdaptionCnt() && (uimachine()->isCapsLock() ^ !!(uMask & uKeyMaskCaps)))
-    {
-        uimachine()->setCapsLockAdaptionCnt(uimachine()->capsLockAdaptionCnt() - 1);
-        piCodes[(*puCount)++] = 0x3a;
-        piCodes[(*puCount)++] = 0x3a | 0x80;
-        /* Some keyboard layouts require shift to be pressed to break
-         * capslock.  For simplicity, only do this if shift is not
-         * already held down. */
-        if (uimachine()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
+        Window   wDummy1, wDummy2;
+        int      iDummy3, iDummy4, iDummy5, iDummy6;
+        unsigned uMask;
+        unsigned uKeyMaskNum = 0, uKeyMaskCaps = 0;
+        Display * const pDisplay = NativeWindowSubsystem::X11GetDisplay();
+
+        uKeyMaskCaps          = LockMask;
+        XModifierKeymap* map  = XGetModifierMapping(pDisplay);
+        KeyCode keyCodeNum    = XKeysymToKeycode(pDisplay, XK_Num_Lock);
+
+        for (int i = 0; i < 8; ++ i)
+            if (keyCodeNum != NoSymbol && map->modifiermap[map->max_keypermod * i] == keyCodeNum)
+                uKeyMaskNum = 1 << i;
+        XQueryPointer(pDisplay, DefaultRootWindow(pDisplay), &wDummy1, &wDummy2,
+                    &iDummy3, &iDummy4, &iDummy5, &iDummy6, &uMask);
+        XFreeModifiermap(map);
+
+        if (uimachine()->numLockAdaptionCnt() && (uimachine()->isNumLock() ^ !!(uMask & uKeyMaskNum)))
         {
-            piCodes[(*puCount)++] = 0x2a;
-            piCodes[(*puCount)++] = 0x2a | 0x80;
+            uimachine()->setNumLockAdaptionCnt(uimachine()->numLockAdaptionCnt() - 1);
+            piCodes[(*puCount)++] = 0x45;
+            piCodes[(*puCount)++] = 0x45 | 0x80;
+        }
+        if (uimachine()->capsLockAdaptionCnt() && (uimachine()->isCapsLock() ^ !!(uMask & uKeyMaskCaps)))
+        {
+            uimachine()->setCapsLockAdaptionCnt(uimachine()->capsLockAdaptionCnt() - 1);
+            piCodes[(*puCount)++] = 0x3a;
+            piCodes[(*puCount)++] = 0x3a | 0x80;
+            /* Some keyboard layouts require shift to be pressed to break
+            * capslock.  For simplicity, only do this if shift is not
+            * already held down. */
+            if (uimachine()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
+            {
+                piCodes[(*puCount)++] = 0x2a;
+                piCodes[(*puCount)++] = 0x2a | 0x80;
+            }
         }
     }
-
 #else
 
 # warning "port me!"
