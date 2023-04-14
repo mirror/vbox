@@ -1164,14 +1164,20 @@ void ShClTransferObjDataChunkFree(PSHCLOBJDATACHUNK pDataChunk)
 }
 
 /**
- * Creates a clipboard transfer.
+ * Creates a clipboard transfer, extended version.
  *
  * @returns VBox status code.
+ * @param   cbMaxChunkSize      Maximum transfer chunk size (in bytes) to use.
+ * @param   cMaxListHandles     Maximum list entries the transfer can have.
+ * @param   cMaxObjHandles      Maximum transfer objects the transfer can have.
  * @param   ppTransfer          Where to return the created clipboard transfer struct.
  *                              Must be destroyed by ShClTransferDestroy().
  */
-int ShClTransferCreate(PSHCLTRANSFER *ppTransfer)
+int ShClTransferCreateEx(uint32_t cbMaxChunkSize, uint32_t cMaxListHandles, uint32_t cMaxObjHandles,
+                         PSHCLTRANSFER *ppTransfer)
 {
+
+
     AssertPtrReturn(ppTransfer, VERR_INVALID_POINTER);
 
     LogFlowFuncEnter();
@@ -1196,9 +1202,9 @@ int ShClTransferCreate(PSHCLTRANSFER *ppTransfer)
 #else
     pTransfer->uTimeoutMs     = RT_MS_30SEC;
 #endif
-    pTransfer->cbMaxChunkSize  = _64K; /** @todo Make this configurable. */
-    pTransfer->cMaxListHandles = _4K;  /** @todo Ditto. */
-    pTransfer->cMaxObjHandles  = _4K;  /** @todo Ditto. */
+    pTransfer->cbMaxChunkSize  = cbMaxChunkSize;
+    pTransfer->cMaxListHandles = cMaxListHandles;
+    pTransfer->cMaxObjHandles  = cMaxObjHandles;
 
     pTransfer->pvUser = NULL;
     pTransfer->cbUser = 0;
@@ -1225,6 +1231,21 @@ int ShClTransferCreate(PSHCLTRANSFER *ppTransfer)
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+/**
+ * Creates a clipboard transfer with default settings.
+ *
+ * @returns VBox status code.
+ * @param   ppTransfer          Where to return the created clipboard transfer struct.
+ *                              Must be destroyed by ShClTransferDestroy().
+ */
+int ShClTransferCreate(PSHCLTRANSFER *ppTransfer)
+{
+    return ShClTransferCreateEx(SHCL_TRANSFER_DEFAULT_MAX_CHUNK_SIZE,
+                                SHCL_TRANSFER_DEFAULT_MAX_LIST_HANDLES,
+                                SHCL_TRANSFER_DEFAULT_MAX_OBJ_HANDLES,
+                                ppTransfer);
 }
 
 /**
