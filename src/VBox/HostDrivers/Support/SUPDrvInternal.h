@@ -377,9 +377,9 @@
 #endif
 
 /** @def SUPDRV_UNFORTIFIED_MEMCPY
- * Use when copying to variable length structures, it prevents a fortified 
- * memcpy (linux 5.18+) from complaining about "field-spanning writes". 
- *  
+ * Use when copying to variable length structures, it prevents a fortified
+ * memcpy (linux 5.18+) from complaining about "field-spanning writes".
+ *
  * @see @ticketref{21410}, @bugref{10209}
  */
 #if !defined(SUPDRV_UNFORTIFIED_MEMCPY) || defined(DOXYGEN_RUNNING) /* (Already defined above if fortified.) */
