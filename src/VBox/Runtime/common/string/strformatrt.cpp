@@ -686,7 +686,8 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                     cch = pfnOutput(pvArgOutput, RT_STR_TUPLE(" - "));
                                 else
                                     cch = pfnOutput(pvArgOutput, RT_STR_TUPLE(": "));
-                                cch += pfnOutput(pvArgOutput, u.pErrInfo->pszMsg, u.pErrInfo->cbMsg);
+                                cch += pfnOutput(pvArgOutput, u.pErrInfo->pszMsg,
+                                                 RTStrNLen(u.pErrInfo->pszMsg, u.pErrInfo->cbMsg));
                             }
                             return cch;
                         }
