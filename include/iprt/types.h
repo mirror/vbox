@@ -3289,7 +3289,7 @@ typedef struct RTERRINFO
     uint32_t    fFlags;
     /** The status code. */
     int32_t     rc;
-    /** The size of the message  */
+    /** The size of the message buffer pointed to by pszMsg. */
     size_t      cbMsg;
     /** The error buffer. */
     char       *pszMsg;
