@@ -2194,12 +2194,12 @@ int AudioMixerSinkSignalUpdateJob(PAUDMIXSINK pSink)
 
 
 /**
- * Checks the caller is the owner of the mixer sink's critical section.
+ * Checks if the caller is the owner of the mixer sink's critical section.
  *
  * @returns \c true if the caller is the lock owner, \c false if not.
  * @param   pSink       The mixer sink to check.
  */
-bool AudioMixerSinkLockIsOwned(PAUDMIXSINK pSink)
+bool AudioMixerSinkLockIsOwner(PAUDMIXSINK pSink)
 {
     return RTCritSectIsOwner(&pSink->CritSect);
 }

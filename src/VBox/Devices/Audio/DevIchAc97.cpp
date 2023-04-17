@@ -2032,7 +2032,7 @@ static int ichac97R3StreamSetUp(PPDMDEVINS pDevIns, PAC97STATE pThis, PAC97STATE
     /* Validate locks -- see @bugref{10350}. */
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     Assert(RTCritSectIsOwned(&pStreamCC->State.CritSect));
-    Assert(AudioMixerSinkLockIsOwned(pMixSink));
+    Assert(AudioMixerSinkLockIsOwner(pMixSink));
 
     /*
      * Don't continue if the frequency is out of range (the rest of the

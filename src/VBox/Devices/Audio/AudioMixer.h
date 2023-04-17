@@ -327,7 +327,7 @@ uint64_t    AudioMixerSinkTransferFromCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCir
                                               uint32_t idStream, PAUDIOHLPFILE pDbgFile);
 uint64_t    AudioMixerSinkTransferToCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBuf, uint64_t offStream,
                                             uint32_t idStream, PAUDIOHLPFILE pDbgFile);
-bool        AudioMixerSinkLockIsOwned(PAUDMIXSINK pSink);
+bool        AudioMixerSinkLockIsOwner(PAUDMIXSINK pSink);
 int         AudioMixerSinkLock(PAUDMIXSINK pSink);
 int         AudioMixerSinkTryLock(PAUDMIXSINK pSink);
 int         AudioMixerSinkUnlock(PAUDMIXSINK pSink);
