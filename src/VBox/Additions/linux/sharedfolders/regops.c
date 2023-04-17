@@ -3072,7 +3072,7 @@ static int vbsf_reg_open(struct inode *inode, struct file *file)
         LogRelFunc(("Failed to allocate a VBOXSFCREATEREQ buffer!\n"));
         return -ENOMEM;
     }
-    VBOX_LINUX_MEMCPY(&pReq->StrPath, sf_i->path, SHFLSTRING_HEADER_SIZE + sf_i->path->u16Size);
+    VBSF_UNFORTIFIED_MEMCPY(&pReq->StrPath, sf_i->path, SHFLSTRING_HEADER_SIZE + sf_i->path->u16Size);
     RT_ZERO(pReq->CreateParms);
     pReq->CreateParms.Handle = SHFL_HANDLE_NIL;
 

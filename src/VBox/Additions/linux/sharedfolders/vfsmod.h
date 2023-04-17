@@ -79,14 +79,23 @@
 #endif
 
 
-/* Simmilar workaround for CONFIG_FORTIFY_SOURCE kernel config option as we have for host drivers.
- * In Linux 5.18-rc1, memcpy became a wrapper which does fortify checks
- * before triggering __underlying_memcpy() call. We do not pass these checks in some places so
- * bypass them for now.  */
+/** Similar workaround for CONFIG_FORTIFY_SOURCE kernel config option as we
+ * have in the host drivers.
+ *
+ * In Linux 5.18-rc1, memcpy became a wrapper which does fortify checks before
+ * making a call to __underlying_memcpy().  There are a number of places where
+ * we trigger the "field-spanning write" fortify check, typically when copying
+ * to SHFLSTRING structure members as these are actually of variable length but
+ * we don't (cannot with gcc) use RT_FLEXIBLE_ARRAY_NESTED. 
+ * 
+ * Use this when copying to structures or members with a variable length member.
+ *
+ * @see @ticketref{21410}, @bugref{10209}
+ */
 #if RTLNX_VER_MIN(5,18,0) && !defined(__NO_FORTIFY) && defined(__OPTIMIZE__) && defined(CONFIG_FORTIFY_SOURCE)
-# define VBOX_LINUX_MEMCPY __underlying_memcpy
+# define VBSF_UNFORTIFIED_MEMCPY __underlying_memcpy
 #else
-#define VBOX_LINUX_MEMCPY  memcpy
+# define VBSF_UNFORTIFIED_MEMCPY memcpy
 #endif
 
 
