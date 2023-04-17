@@ -2964,7 +2964,7 @@ class TestDriver(base.TestDriver):                                              
         """
         sWinDir = '';
         if oTestVm.isWindows():
-            if oTestVm.sKind in ['WindowsNT4', 'WindowsNT3x',]:
+            if oTestVm.sKind in ['WindowsNT4', 'WindowsNT3x', 'Windows2000',]:
                 sWinDir = 'C:\\WinNT\\';
             else:
                 sWinDir = 'C:\\Windows\\';
