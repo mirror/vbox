@@ -769,7 +769,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
 
  ifdef VBOX_WITH_LIBSLIRP
   VBoxDD_LIBS   += $(PATH_STAGE_LIB)/VBox-libslirp$(VBOX_SUFF_LIB)
-  VBoxDD_DEFS	+= VBOX_WITH_LIBSLIRP
+  VBoxDD_DEFS   += VBOX_WITH_LIBSLIRP
   VBoxDD_SOURCES += \
 	Network/DrvNATlibslirp.cpp
   Network/DrvNATlibslirp.cpp_INCS += \
