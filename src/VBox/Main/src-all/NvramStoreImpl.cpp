@@ -918,7 +918,7 @@ int NvramStore::i_saveStore(void)
 
     /*
      * Only store the NVRAM content if the path is not empty, if it is
-     * this means the VM was just created and the store was nnot saved yet,
+     * this means the VM was just created and the store was not saved yet,
      * see @bugref{10191}.
      */
     if (strTmp.isNotEmpty())
@@ -930,12 +930,12 @@ int NvramStore::i_saveStore(void)
          */
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         if (   m->bd->mapNvram.size() == 1
-            && m->bd->mapNvram.find(Utf8Str("efi/nvram")) != m->bd->mapNvram.end())
+            && m->bd->mapNvram.begin()->first == "efi/nvram")
         {
-            RTVFSFILE hVfsFileNvram = m->bd->mapNvram[Utf8Str("efi/nvram")];
+            RTVFSFILE hVfsFileNvram = m->bd->mapNvram.begin()->second;
 
             vrc = RTVfsFileSeek(hVfsFileNvram, 0 /*offSeek*/, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
-            AssertRC(vrc); RT_NOREF(vrc);
+            AssertLogRelRC(vrc);
 
             RTVFSIOSTREAM hVfsIosDst;
             vrc = RTVfsIoStrmOpenNormal(strTmp.c_str(), RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE,
@@ -1059,6 +1059,7 @@ int NvramStore::i_removeAllPasswords()
 
 
 #ifndef VBOX_COM_INPROC
+
 HRESULT NvramStore::i_retainUefiVarStore(PRTVFS phVfs, bool fReadonly)
 {
     /* the machine needs to be mutable */
@@ -1261,7 +1262,8 @@ void NvramStore::i_updateNonVolatileStorageFile(const Utf8Str &aNonVolatileStora
     m->bd->strNvramPath = strTmp;
 }
 
-#else
+#else /* VBOX_COM_INPROC */
+
 //
 // private methods
 //
@@ -1271,8 +1273,12 @@ DECLCALLBACK(int) NvramStore::i_nvramStoreQuerySize(PPDMIVFSCONNECTOR pInterface
 {
     PDRVMAINNVRAMSTORE pThis = RT_FROM_MEMBER(pInterface, DRVMAINNVRAMSTORE, IVfs);
 
+    Utf8Str strKey;
+    int vrc = strKey.printfNoThrow("%s/%s", pszNamespace, pszPath);
+    AssertRCReturn(vrc, vrc);
+
     AutoReadLock rlock(pThis->pNvramStore COMMA_LOCKVAL_SRC_POS);
-    NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.find(Utf8StrFmt("%s/%s", pszNamespace, pszPath));
+    NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.find(strKey);
     if (it != pThis->pNvramStore->m->bd->mapNvram.end())
     {
         RTVFSFILE hVfsFile = it->second;
@@ -1289,14 +1295,18 @@ DECLCALLBACK(int) NvramStore::i_nvramStoreReadAll(PPDMIVFSCONNECTOR pInterface, 
 {
     PDRVMAINNVRAMSTORE pThis = RT_FROM_MEMBER(pInterface, DRVMAINNVRAMSTORE, IVfs);
 
+    Utf8Str strKey;
+    int vrc = strKey.printfNoThrow("%s/%s", pszNamespace, pszPath);
+    AssertRCReturn(vrc, vrc);
+
     AutoReadLock rlock(pThis->pNvramStore COMMA_LOCKVAL_SRC_POS);
-    NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.find(Utf8StrFmt("%s/%s", pszNamespace, pszPath));
+    NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.find(strKey);
     if (it != pThis->pNvramStore->m->bd->mapNvram.end())
     {
         RTVFSFILE hVfsFile = it->second;
 
-        int vrc = RTVfsFileSeek(hVfsFile, 0 /*offSeek*/, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
-        AssertRC(vrc); RT_NOREF(vrc);
+        vrc = RTVfsFileSeek(hVfsFile, 0 /*offSeek*/, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
+        AssertLogRelRC(vrc);
 
         return RTVfsFileRead(hVfsFile, pvBuf, cbRead, NULL /*pcbRead*/);
     }
@@ -1311,16 +1321,19 @@ DECLCALLBACK(int) NvramStore::i_nvramStoreWriteAll(PPDMIVFSCONNECTOR pInterface,
 {
     PDRVMAINNVRAMSTORE pThis = RT_FROM_MEMBER(pInterface, DRVMAINNVRAMSTORE, IVfs);
 
+    Utf8Str strKey;
+    int vrc = strKey.printfNoThrow("%s/%s", pszNamespace, pszPath);
+    AssertRCReturn(vrc, vrc);
+
     AutoWriteLock wlock(pThis->pNvramStore COMMA_LOCKVAL_SRC_POS);
 
-    int vrc = VINF_SUCCESS;
-    NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.find(Utf8StrFmt("%s/%s", pszNamespace, pszPath));
+    NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.find(strKey);
     if (it != pThis->pNvramStore->m->bd->mapNvram.end())
     {
         RTVFSFILE hVfsFile = it->second;
 
         vrc = RTVfsFileSeek(hVfsFile, 0 /*offSeek*/, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
-        AssertRC(vrc);
+        AssertLogRelRC(vrc);
         vrc = RTVfsFileSetSize(hVfsFile, cbWrite, RTVFSFILE_SIZE_F_NORMAL);
         if (RT_SUCCESS(vrc))
             vrc = RTVfsFileWrite(hVfsFile, pvBuf, cbWrite, NULL /*pcbWritten*/);
@@ -1331,7 +1344,18 @@ DECLCALLBACK(int) NvramStore::i_nvramStoreWriteAll(PPDMIVFSCONNECTOR pInterface,
         RTVFSFILE hVfsFile = NIL_RTVFSFILE;
         vrc = RTVfsFileFromBuffer(RTFILE_O_READ | RTFILE_O_WRITE, pvBuf, cbWrite, &hVfsFile);
         if (RT_SUCCESS(vrc))
-            pThis->pNvramStore->m->bd->mapNvram[Utf8StrFmt("%s/%s", pszNamespace, pszPath)] = hVfsFile;
+        {
+            try
+            {
+                pThis->pNvramStore->m->bd->mapNvram[strKey] = hVfsFile;
+            }
+            catch (...)
+            {
+                AssertLogRelFailed();
+                RTVfsFileRelease(hVfsFile);
+                vrc = VERR_UNEXPECTED_EXCEPTION;
+            }
+        }
     }
 
     return vrc;
@@ -1343,8 +1367,12 @@ DECLCALLBACK(int) NvramStore::i_nvramStoreDelete(PPDMIVFSCONNECTOR pInterface, c
 {
     PDRVMAINNVRAMSTORE pThis = RT_FROM_MEMBER(pInterface, DRVMAINNVRAMSTORE, IVfs);
 
+    Utf8Str strKey;
+    int vrc = strKey.printfNoThrow("%s/%s", pszNamespace, pszPath);
+    AssertRCReturn(vrc, vrc);
+
     AutoWriteLock wlock(pThis->pNvramStore COMMA_LOCKVAL_SRC_POS);
-    NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.find(Utf8StrFmt("%s/%s", pszNamespace, pszPath));
+    NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.find(strKey);
     if (it != pThis->pNvramStore->m->bd->mapNvram.end())
     {
         RTVFSFILE hVfsFile = it->second;
@@ -1372,38 +1400,45 @@ DECLCALLBACK(int) NvramStore::i_SsmSaveExec(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 
     void *pvData = NULL;
     size_t cbDataMax = 0;
-    NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.begin();
+    int vrc = i_SsmSaveExecInner(pThis, pHlp, pSSM, &pvData, &cbDataMax);
+    if (pvData)
+        RTMemFree(pvData);
+    AssertRCReturn(vrc, vrc);
 
-    while (it != pThis->pNvramStore->m->bd->mapNvram.end())
+    pThis->pNvramStore->m->fSsmSaved = true;
+    return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX); /* sanity/terminator */
+}
+
+
+/*static*/
+int NvramStore::i_SsmSaveExecInner(PDRVMAINNVRAMSTORE pThis, PCPDMDRVHLPR3 pHlp, PSSMHANDLE pSSM,
+                                   void **ppvData, size_t *pcbDataMax) RT_NOEXCEPT
+{
+    for (NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.begin(); it != pThis->pNvramStore->m->bd->mapNvram.end(); ++it)
     {
         RTVFSFILE hVfsFile = it->second;
-        uint64_t cbFile;
 
+        uint64_t cbFile;
         int vrc = RTVfsFileQuerySize(hVfsFile, &cbFile);
         AssertRCReturn(vrc, vrc);
         AssertReturn(cbFile < _1M, VERR_OUT_OF_RANGE);
 
-        if (cbDataMax < cbFile)
+        if (*pcbDataMax < cbFile)
         {
-            pvData = RTMemRealloc(pvData, cbFile);
-            AssertPtrReturn(pvData, VERR_NO_MEMORY);
-            cbDataMax = cbFile;
+            void *pvNew = RTMemRealloc(*ppvData, cbFile);
+            AssertPtrReturn(pvNew, VERR_NO_MEMORY);
+            *ppvData    = pvNew;
+            *pcbDataMax = cbFile;
         }
 
-        vrc = RTVfsFileReadAt(hVfsFile, 0 /*off*/, pvData, cbFile, NULL /*pcbRead*/);
+        vrc = RTVfsFileReadAt(hVfsFile, 0 /*off*/, *ppvData, cbFile, NULL /*pcbRead*/);
         AssertRCReturn(vrc, vrc);
 
         pHlp->pfnSSMPutStrZ(pSSM, it->first.c_str());
         pHlp->pfnSSMPutU64(pSSM, cbFile);
-        pHlp->pfnSSMPutMem(pSSM, pvData, cbFile);
-        it++;
+        pHlp->pfnSSMPutMem(pSSM, *ppvData, cbFile);
     }
-
-    if (pvData)
-        RTMemFree(pvData);
-
-    pThis->pNvramStore->m->fSsmSaved = true;
-    return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX); /* sanity/terminator */
+    return VINF_SUCCESS;
 }
 
 
@@ -1438,43 +1473,62 @@ DECLCALLBACK(int) NvramStore::i_SsmLoadExec(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM,
 
         void *pvData = NULL;
         size_t cbDataMax = 0;
-        while (cEntries--)
-        {
-            char szId[_1K]; /* Lazy developer */
-            uint64_t cbFile = 0;
-
-            vrc = pHlp->pfnSSMGetStrZ(pSSM, &szId[0], sizeof(szId));
-            AssertRCReturn(vrc, vrc);
-
-            vrc = pHlp->pfnSSMGetU64(pSSM, &cbFile);
-            AssertRCReturn(vrc, vrc);
-            AssertReturn(cbFile < _1M, VERR_OUT_OF_RANGE);
-
-            if (cbDataMax < cbFile)
-            {
-                pvData = RTMemRealloc(pvData, cbFile);
-                AssertPtrReturn(pvData, VERR_NO_MEMORY);
-                cbDataMax = cbFile;
-            }
-
-            vrc = pHlp->pfnSSMGetMem(pSSM, pvData, cbFile);
-            AssertRCReturn(vrc, vrc);
-
-            RTVFSFILE hVfsFile;
-            vrc = RTVfsFileFromBuffer(RTFILE_O_READWRITE, pvData, cbFile, &hVfsFile);
-            AssertRCReturn(vrc, vrc);
-
-            pThis->pNvramStore->m->bd->mapNvram[Utf8Str(szId)] = hVfsFile;
-        }
-
+        vrc = i_SsmLoadExecInner(pThis, pHlp, pSSM, cEntries, &pvData, &cbDataMax);
         if (pvData)
             RTMemFree(pvData);
+        AssertRCReturn(vrc, vrc);
 
         /* The marker. */
         uint32_t u32;
         vrc = pHlp->pfnSSMGetU32(pSSM, &u32);
         AssertRCReturn(vrc, vrc);
         AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/*static*/
+int NvramStore::i_SsmLoadExecInner(PDRVMAINNVRAMSTORE pThis, PCPDMDRVHLPR3 pHlp, PSSMHANDLE pSSM,
+                                   uint32_t cEntries, void **ppvData, size_t *pcbDataMax) RT_NOEXCEPT
+{
+    while (cEntries-- > 0)
+    {
+        char szId[_1K]; /* Lazy developer */
+        int vrc = pHlp->pfnSSMGetStrZ(pSSM, &szId[0], sizeof(szId));
+        AssertRCReturn(vrc, vrc);
+
+        uint64_t cbFile = 0;
+        vrc = pHlp->pfnSSMGetU64(pSSM, &cbFile);
+        AssertRCReturn(vrc, vrc);
+        AssertReturn(cbFile < _1M, VERR_OUT_OF_RANGE);
+
+        if (*pcbDataMax < cbFile)
+        {
+            void *pvNew = RTMemRealloc(*ppvData, cbFile);
+            AssertPtrReturn(pvNew, VERR_NO_MEMORY);
+            *ppvData    = pvNew;
+            *pcbDataMax = cbFile;
+        }
+
+        vrc = pHlp->pfnSSMGetMem(pSSM, *ppvData, cbFile);
+        AssertRCReturn(vrc, vrc);
+
+        RTVFSFILE hVfsFile;
+        vrc = RTVfsFileFromBuffer(RTFILE_O_READWRITE, *ppvData, cbFile, &hVfsFile);
+        AssertRCReturn(vrc, vrc);
+
+        try
+        {
+            pThis->pNvramStore->m->bd->mapNvram[Utf8Str(szId)] = hVfsFile;
+        }
+        catch (...)
+        {
+            AssertLogRelFailed();
+            RTVfsFileRelease(hVfsFile);
+            return VERR_UNEXPECTED_EXCEPTION;
+        }
     }
 
     return VINF_SUCCESS;
@@ -1513,8 +1567,15 @@ DECLCALLBACK(void) NvramStore::i_drvDestruct(PPDMDRVINS pDrvIns)
         if (   !cRefs
             && !pThis->pNvramStore->m->fSsmSaved)
         {
-            int vrc = pThis->pNvramStore->i_saveStore();
-            AssertRC(vrc); /** @todo Disk full error? */
+            try
+            {
+                int vrc = pThis->pNvramStore->i_saveStore();
+                AssertLogRelRC(vrc); /** @todo Disk full error? */
+            }
+            catch (...)
+            {
+                AssertLogRelFailed();
+            }
         }
     }
 }
@@ -1577,7 +1638,15 @@ DECLCALLBACK(int) NvramStore::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     uint32_t cRefs = ASMAtomicIncU32(&pThis->pNvramStore->m->cRefs);
     if (cRefs == 1)
     {
-        int vrc = pThis->pNvramStore->i_loadStore(pThis->pNvramStore->m->bd->strNvramPath.c_str());
+        int vrc;
+        try
+        {
+            vrc = pThis->pNvramStore->i_loadStore(pThis->pNvramStore->m->bd->strNvramPath.c_str());
+        }
+        catch (...)
+        {
+            vrc = VERR_UNEXPECTED_EXCEPTION;
+        }
         if (RT_FAILURE(vrc))
         {
             ASMAtomicDecU32(&pThis->pNvramStore->m->cRefs);
@@ -1640,6 +1709,7 @@ const PDMDRVREG NvramStore::DrvReg =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
-#endif /* !VBOX_COM_INPROC */
+
+#endif /* VBOX_COM_INPROC */
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
