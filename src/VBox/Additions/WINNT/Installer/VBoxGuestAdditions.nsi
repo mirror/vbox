@@ -1044,6 +1044,8 @@ Function .onInit
     StrCpy $g_strEarlyNTDrvInfix "EarlyNT"
   ${ElseIf} $g_strWinVersion == "NT4"
     StrCpy $g_strEarlyNTDrvInfix "EarlyNT"
+  ${ElseIf} $g_strWinVersion == "XP" ; Unconfirmed theory that XP is also having trouble with the VBoxVideo.inf changes ...
+    StrCpy $g_strEarlyNTDrvInfix "EarlyNT"
   ${Else}
     StrCpy $g_strEarlyNTDrvInfix ""
   ${EndIf}
