@@ -2135,13 +2135,16 @@ static int rtEfiVarStoreHdr_Validate(PRTEFIVARSTORE pThis, PCEFI_VARSTORE_HEADER
     else if (!memcmp(&pHdr->GuidVarStore, &GuidVarStore, sizeof(GuidVarStore)))
         *pfAuth = false;
     else
-        return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "Variable store GUID doesn't indicate a variable store");
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                   "Variable store GUID doesn't indicate a variable store (%RTuuid)", pHdr->GuidVarStore);
     if (RT_LE2H_U32(pHdr->cbVarStore) >= pThis->cbBacking)
-        return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "Variable store length exceeds size of backing storage (truncated file?)");
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                   "Variable store length exceeds size of backing storage (truncated file?): %#RX32, max %#RX64",
+                                   RT_LE2H_U32(pHdr->cbVarStore), pThis->cbBacking);
     if (pHdr->bFmt != EFI_VARSTORE_HEADER_FMT_FORMATTED)
-        return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "Variable store is not formatted");
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "Variable store is not formatted (%#x)", pHdr->bFmt);
     if (pHdr->bState != EFI_VARSTORE_HEADER_STATE_HEALTHY)
-        return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "Variable store is not healthy");
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "Variable store is not healthy (%#x)", pHdr->bState);
 
     return VINF_SUCCESS;
 }
@@ -2297,9 +2300,8 @@ static int rtEfiVarStoreFindVar(PRTEFIVARSTORE pThis, uint64_t offStart, uint64_
  */
 static int rtEfiVarStoreLoad(PRTEFIVARSTORE pThis, PRTERRINFO pErrInfo)
 {
-    int rc = VINF_SUCCESS;
     EFI_FIRMWARE_VOLUME_HEADER FvHdr;
-    rc = RTVfsFileReadAt(pThis->hVfsBacking, 0, &FvHdr, sizeof(FvHdr), NULL);
+    int rc = RTVfsFileReadAt(pThis->hVfsBacking, 0, &FvHdr, sizeof(FvHdr), NULL);
     if (RT_FAILURE(rc))
         return RTERRINFO_LOG_SET(pErrInfo, rc, "Error reading firmware volume header");
 
