@@ -458,10 +458,12 @@ HRESULT Guest::createSession(const com::Utf8Str &aUser, const com::Utf8Str &aPas
                                    VBOX_GUESTCTRL_MAX_SESSIONS);
                 break;
 
-            /** @todo Add more errors here. */
+            case VERR_NOT_FOUND: /* Returned by i_sessionCreate(). */
+                hrc = setErrorBoth(VBOX_E_GSTCTL_GUEST_ERROR, vrc, tr("Guest Additions are not installed or not ready (yet)"));
+                break;
 
             default:
-                hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not create guest session: %Rrc"), vrc);
+                hrc = setErrorBoth(VBOX_E_GSTCTL_GUEST_ERROR, vrc, tr("Could not create guest session: %Rrc"), vrc);
                 break;
         }
     }

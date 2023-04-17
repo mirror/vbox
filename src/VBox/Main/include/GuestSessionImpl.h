@@ -427,8 +427,8 @@ private:
         /** Map of registered session objects (files, directories, ...). */
         SessionObjects              mObjects;
         /** Guest control protocol version to be used.
-         *  Guest Additions < VBox 4.3 have version 1,
-         *  any newer version will have version 2. */
+         * Guest Additions < VBox 4.3 have version 1, any newer version will have version 2.
+         * Set to 0 if a valid Guest Additions version was not found (yet). */
         uint32_t                    mProtocolVersion;
         /** Session timeout (in ms). */
         uint32_t                    mTimeout;

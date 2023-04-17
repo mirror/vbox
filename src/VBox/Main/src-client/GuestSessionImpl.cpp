@@ -199,6 +199,7 @@ void GuestSession::FinalRelease(void)
  * yet. This needs to be done via the openSession() / openSessionAsync calls.
  *
  * @returns VBox status code.
+ * @retval  VERR_NOT_FOUND if the Guest Additions were not found (or were not reported yet).
  * @param   pGuest              Guest object the guest session belongs to.
  * @param   ssInfo              Guest session startup info to use.
  * @param   guestCreds          Guest credentials to use for starting a guest session
@@ -3534,10 +3535,10 @@ int GuestSession::i_shutdown(uint32_t fFlags, int *pvrcGuest)
 /**
  * Determines the protocol version (sets mData.mProtocolVersion).
  *
- * This is called from the init method prior to to establishing a guest
- * session.
+ * This is called from the init method prior to to establishing a guest session.
  *
  * @returns VBox status code.
+ * @retval  VERR_NOT_FOUND if the Guest Additions were not found (or were not reported) yet.
  */
 int GuestSession::i_determineProtocolVersion(void)
 {
@@ -3548,6 +3549,8 @@ int GuestSession::i_determineProtocolVersion(void)
     ComObjPtr<Guest> pGuest = mParent;
     AssertReturn(!pGuest.isNull(), VERR_NOT_SUPPORTED);
     uint32_t uGaVersion = pGuest->i_getAdditionsVersion();
+    if (!uGaVersion) /* If 0, there was no Guest Additions version detected (yet), or the VM is in reset state. */
+        return VERR_NOT_FOUND;
 
     /* Everyone supports version one, if they support anything at all. */
     mData.mProtocolVersion = 1;
