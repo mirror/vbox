@@ -2058,6 +2058,17 @@ ifdef VBOX_WITH_TESTCASES
 endif
 
 
+if 0
+ #
+ # Testcase for the delete QPointer<> var issue.
+ #
+ PROGRAMS += tstQPointer
+ tstQPointer_TEMPLATE      := VBoxQtGuiExe
+ tstQPointer_QT_MODULES    := Core Widgets
+ tstQPointer_SOURCES       := src/tstQPointer.cpp
+endif
+
+
 #
 # Doxygen documentation.
 #
