@@ -539,29 +539,32 @@ bool UIMachineView::nativeEventPreprocessor(const QByteArray &eventType, void *p
 
 # elif defined(VBOX_WS_X11)
 
-    /* Make sure it's generic XCB event: */
-    if (eventType != "xcb_generic_event_t")
-        return false;
-    xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
-
-    switch (pEvent->response_type & ~0x80)
+    if (uiCommon().X11ServerAvailable())
     {
-        /* Watch for key-events: */
-        case XCB_KEY_PRESS:
-        case XCB_KEY_RELEASE:
+        /* Make sure it's generic XCB event: */
+        if (eventType != "xcb_generic_event_t")
+            return false;
+        xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
+
+        switch (pEvent->response_type & ~0x80)
         {
-            /* Delegate key-event handling to the keyboard-handler: */
-            return machineLogic()->keyboardHandler()->nativeEventFilter(pMessage, screenId());
+            /* Watch for key-events: */
+            case XCB_KEY_PRESS:
+            case XCB_KEY_RELEASE:
+                {
+                    /* Delegate key-event handling to the keyboard-handler: */
+                    return machineLogic()->keyboardHandler()->nativeEventFilter(pMessage, screenId());
+                }
+                /* Watch for button-events: */
+            case XCB_BUTTON_PRESS:
+            case XCB_BUTTON_RELEASE:
+                {
+                    /* Delegate button-event handling to the mouse-handler: */
+                    return machineLogic()->mouseHandler()->nativeEventFilter(pMessage, screenId());
+                }
+            default:
+                break;
         }
-        /* Watch for button-events: */
-        case XCB_BUTTON_PRESS:
-        case XCB_BUTTON_RELEASE:
-        {
-            /* Delegate button-event handling to the mouse-handler: */
-            return machineLogic()->mouseHandler()->nativeEventFilter(pMessage, screenId());
-        }
-        default:
-            break;
     }
 
 # else
