@@ -465,7 +465,7 @@ class BaseTestVm(object):
 
     def getResourceSet(self):
         """
-        Resturns a list of reosurces that the VM needs.
+        Returns a list of resources that the VM needs.
         """
         return [];
 
