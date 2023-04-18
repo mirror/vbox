@@ -52,7 +52,7 @@ class UIVMInformationDialog;
 class CUSBDevice;
 class CVirtualBoxErrorInfo;
 #if defined(VBOX_WS_X11)
- struct X11ScreenSaverInhibitMethod;
+ struct DBusScreenSaverInhibitMethod;
 #endif
 
 /* Machine logic interface: */
@@ -405,7 +405,7 @@ private:
     /* Holds the cookies returnd by QDBus inhibition calls. Map keys are service name. These are required during uninhibition.*/
     QMap<QString, uint> m_screenSaverInhibitionCookies;
 #if defined(VBOX_WS_X11)
-    QVector<X11ScreenSaverInhibitMethod*> m_methods;
+    QVector<DBusScreenSaverInhibitMethod*> m_methods;
 #endif
 };
 

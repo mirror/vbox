@@ -63,7 +63,7 @@ enum DisplayServerType
 };
 
 /** X11: Screen-saver inhibit methods. */
-struct SHARED_LIBRARY_STUFF X11ScreenSaverInhibitMethod
+struct SHARED_LIBRARY_STUFF DBusScreenSaverInhibitMethod
 {
     QString  m_strServiceName;
     QString  m_strInterface;
@@ -127,9 +127,9 @@ namespace NativeWindowSubsystem
     /** DBus: Returns whether there are any DBus services whose name contains the substring 'screensaver'. */
     bool checkDBusScreenSaverServices();
     /** DBus: Returns the list of Inhibit methods found by introspecting DBus services. */
-    SHARED_LIBRARY_STUFF QVector<X11ScreenSaverInhibitMethod*> findDBusScrenSaverInhibitMethods();
+    SHARED_LIBRARY_STUFF QVector<DBusScreenSaverInhibitMethod*> findDBusScrenSaverInhibitMethods();
     /** DBus: Disables/enables Screen Saver through QDBus. */
-    SHARED_LIBRARY_STUFF void toggleHostScrenSaver(bool fInhibit, QVector<X11ScreenSaverInhibitMethod*> &inOutInhibitMethods);
+    SHARED_LIBRARY_STUFF void toggleHostScrenSaver(bool fInhibit, QVector<DBusScreenSaverInhibitMethod*> &inOutInhibitMethods);
 
     /** Wrapper function for X11ActivateWindow or WaylandActivateWindow. */
     bool activateWindow(bool fIsXServerAvailable, WId wId, bool fSwitchDesktop);

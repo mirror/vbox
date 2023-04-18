@@ -173,7 +173,7 @@ bool NativeWindowSubsystem::WaylandCheckExtension(const char *pExtensionName)
     return false;
 }
 
-bool X11CheckDBusConnection(const QDBusConnection &connection)
+bool checkDBusConnection(const QDBusConnection &connection)
 {
     if (!connection.isConnected())
     {
@@ -191,7 +191,7 @@ bool X11CheckDBusConnection(const QDBusConnection &connection)
     return true;
 }
 
-QStringList X11FindDBusScreenSaverServices(const QDBusConnection &connection)
+QStringList findDBusScreenSaverServices(const QDBusConnection &connection)
 {
     QStringList serviceNames;
 
@@ -219,7 +219,7 @@ QStringList X11FindDBusScreenSaverServices(const QDBusConnection &connection)
 bool NativeWindowSubsystem::checkDBusScreenSaverServices()
 {
     QDBusConnection connection = QDBusConnection::sessionBus();
-    if (!X11CheckDBusConnection(connection))
+    if (!checkDBusConnection(connection))
         return false;
 
     QDBusReply<QStringList> replyr = connection.interface()->registeredServiceNames();
@@ -240,16 +240,16 @@ bool NativeWindowSubsystem::checkDBusScreenSaverServices()
     return false;
 }
 
-void X11IntrospectInterfaceNode(const QDomElement &interface,
+void introspectDBusInterfaceNode(const QDomElement &interface,
                                 const QString &strServiceName,
-                                QVector<X11ScreenSaverInhibitMethod*> &methods)
+                                QVector<DBusScreenSaverInhibitMethod*> &methods)
 {
     QDomElement child = interface.firstChildElement();
     while (!child.isNull())
     {
         if (child.tagName() == "method" && child.attribute("name") == "Inhibit")
         {
-            X11ScreenSaverInhibitMethod *newMethod = new X11ScreenSaverInhibitMethod;
+            DBusScreenSaverInhibitMethod *newMethod = new DBusScreenSaverInhibitMethod;
             newMethod->m_iCookie = 0;
             newMethod->m_strServiceName = strServiceName;
             newMethod->m_strInterface = interface.attribute("name");
@@ -265,7 +265,7 @@ void X11IntrospectInterfaceNode(const QDomElement &interface,
 void introspectDBusServices(const QDBusConnection &connection,
                            const QString &strService,
                            const QString &strPath,
-                           QVector<X11ScreenSaverInhibitMethod*> &methods)
+                           QVector<DBusScreenSaverInhibitMethod*> &methods)
 {
     QDBusMessage call = QDBusMessage::createMethodCall(strService, strPath.isEmpty() ? QLatin1String("/") : strPath,
                                                        QLatin1String("org.freedesktop.DBus.Introspectable"),
@@ -287,30 +287,30 @@ void introspectDBusServices(const QDBusConnection &connection,
             introspectDBusServices(connection, strService, subPath, methods);
         }
         else if (child.tagName() == QLatin1String("interface"))
-            X11IntrospectInterfaceNode(child, strService, methods);
+            introspectDBusInterfaceNode(child, strService, methods);
         child = child.nextSiblingElement();
     }
 }
 
-QVector<X11ScreenSaverInhibitMethod*> NativeWindowSubsystem::findDBusScrenSaverInhibitMethods()
+QVector<DBusScreenSaverInhibitMethod*> NativeWindowSubsystem::findDBusScrenSaverInhibitMethods()
 {
-    QVector<X11ScreenSaverInhibitMethod*> methods;
+    QVector<DBusScreenSaverInhibitMethod*> methods;
 
     QDBusConnection connection = QDBusConnection::sessionBus();
-    if (!X11CheckDBusConnection(connection))
+    if (!checkDBusConnection(connection))
         return methods;
 
-    QStringList services = X11FindDBusScreenSaverServices(connection);
+    QStringList services = findDBusScreenSaverServices(connection);
     foreach(const QString &strServiceName, services)
         introspectDBusServices(connection, strServiceName, "", methods);
 
     return methods;
 }
 
-void NativeWindowSubsystem::toggleHostScrenSaver(bool fInhibit, QVector<X11ScreenSaverInhibitMethod*> &inOutInhibitMethods)
+void NativeWindowSubsystem::toggleHostScrenSaver(bool fInhibit, QVector<DBusScreenSaverInhibitMethod*> &inOutInhibitMethods)
 {
     QDBusConnection connection = QDBusConnection::sessionBus();
-    if (!X11CheckDBusConnection(connection))
+    if (!checkDBusConnection(connection))
         return;
     for (int i = 0; i < inOutInhibitMethods.size(); ++i)
     {
