@@ -244,7 +244,7 @@ void UICommon::prepare()
 
 #ifdef VBOX_WS_X11
     /* Detect display server type: */
-    m_enmDisplayServerType = NativeWindowSubsystem::X11DetectDisplayServerType();
+    m_enmDisplayServerType = NativeWindowSubsystem::detectDisplayServerType();
 #endif
 
     /* Create converter: */
@@ -330,10 +330,10 @@ void UICommon::prepare()
 
 #ifdef VBOX_WS_X11
     /* Check whether we have compositing manager running: */
-    m_fCompositingManagerRunning = NativeWindowSubsystem::IsCompositingManagerRunning(X11XServerAvailable());
+    m_fCompositingManagerRunning = NativeWindowSubsystem::isCompositingManagerRunning(X11XServerAvailable());
 
     /* Acquire current Window Manager type: */
-    m_enmWindowManagerType = NativeWindowSubsystem::WindowManagerType(X11XServerAvailable());
+    m_enmWindowManagerType = NativeWindowSubsystem::windowManagerType(X11XServerAvailable());
 #endif /* VBOX_WS_X11 */
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

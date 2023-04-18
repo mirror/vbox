@@ -104,21 +104,25 @@ struct _XDisplay;
 namespace NativeWindowSubsystem
 {
     /** Wrapper function for X11IsCompositingManagerRunning and WaylandIsCompositingManagerRunning. */
-    bool IsCompositingManagerRunning(bool fIsXServerAvailable);
+    bool isCompositingManagerRunning(bool fIsXServerAvailable);
     /** X11: Determines and returns whether the compositing manager is running. */
     bool X11IsCompositingManagerRunning();
     /** Wayland: Determines and returns whether the compositing manager is running. */
     bool WaylandIsCompositingManagerRunning();
 
     /** Wrapper for window manager type functions. */
-    X11WMType WindowManagerType(bool fIsXServerAvailable);
+    X11WMType windowManagerType(bool fIsXServerAvailable);
     /** X11: Determines and returns current Window Manager type. */
     X11WMType X11WindowManagerType();
     /** Wayland: Determines and returns current Window Manager type. */
     X11WMType WaylandWindowManagerType();
 
+    /** Wrapper for X11CheckExtension and WaylandCheckExtension functions. */
+    bool checkExtension(bool fIsXServerAvailable, const char *extensionName);
     /** X11: Returns true if XLib extension with name @p extensionName is avaible, false otherwise. */
-    bool X11CheckExtension(const char *extensionName);
+    bool X11CheckExtension(const char *pExtensionName);
+    bool WaylandCheckExtension(const char *pExtensionName);
+
 
     /** X11: Returns whether there are any DBus services whose name contains the substring 'screensaver'. */
     bool X11CheckDBusScreenSaverServices();
@@ -127,8 +131,12 @@ namespace NativeWindowSubsystem
     /** X11: Disables/enables Screen Saver through QDBus. */
     SHARED_LIBRARY_STUFF void X11InhibitUninhibitScrenSaver(bool fInhibit, QVector<X11ScreenSaverInhibitMethod*> &inOutInhibitMethods);
 
+    /** Wrapper function for X11ActivateWindow or WaylandActivateWindow. */
+    bool activateWindow(bool fIsXServerAvailable, WId wId, bool fSwitchDesktop);
     /** Activates window with certain @a wId, @a fSwitchDesktop if requested. */
     bool X11ActivateWindow(WId wId, bool fSwitchDesktop);
+    /** Activates window with certain @a wId, @a fSwitchDesktop if requested. */
+    bool WaylandActivateWindow(WId wId, bool fSwitchDesktop);
 
     /** X11: Test whether the current window manager supports full screen mode. */
     SHARED_LIBRARY_STUFF bool X11SupportsFullScreenMonitorsProtocol();
@@ -141,7 +149,7 @@ namespace NativeWindowSubsystem
     SHARED_LIBRARY_STUFF void X11SetSkipPagerFlag(QWidget *pWidget);
 
     /** Wrapper function for WMClass setters. */
-    SHARED_LIBRARY_STUFF void SetWMClass(bool fIsXServerAvailable, QWidget *pWidget, const QString &strNameString, const QString &strClassString);
+    SHARED_LIBRARY_STUFF void setWMClass(bool fIsXServerAvailable, QWidget *pWidget, const QString &strNameString, const QString &strClassString);
     /** X11: Assigns WM_CLASS property for passed @a pWidget. */
     SHARED_LIBRARY_STUFF void X11SetWMClass(QWidget *pWidget, const QString &strNameString, const QString &strClassString);
     /** Wayland: Assigns WM_CLASS property for passed @a pWidget. */
@@ -151,7 +159,7 @@ namespace NativeWindowSubsystem
       *      make the WM turn our grab into a Wayland shortcut inhibition request,
       *      so that e.g. alt+tab will get send to the VM instead of moving the
       *      focus away from the VM. */
-    SHARED_LIBRARY_STUFF void X11SetXwaylandMayGrabKeyboardFlag(QWidget *pWidget);
+    SHARED_LIBRARY_STUFF void setXwaylandMayGrabKeyboardFlag(bool fIsXServerAvailable, QWidget *pWidget);
 
     /** X11: Gets the X11 display pointer. */
     SHARED_LIBRARY_STUFF struct _XDisplay *X11GetDisplay();
@@ -160,7 +168,7 @@ namespace NativeWindowSubsystem
     /** X11: Gets the X11 root (desktop) window. */
     SHARED_LIBRARY_STUFF uint32_t X11GetAppRootWindow();
     /** Detects and returns display server type. */
-    SHARED_LIBRARY_STUFF DisplayServerType X11DetectDisplayServerType();
+    SHARED_LIBRARY_STUFF DisplayServerType detectDisplayServerType();
     /** Returns true if @a enmDisplayServerType is either xorg or xwayland. */
     SHARED_LIBRARY_STUFF bool X11XServerAvailable(DisplayServerType enmDisplayServerType);
 }

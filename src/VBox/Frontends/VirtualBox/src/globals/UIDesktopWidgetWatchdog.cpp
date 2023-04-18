@@ -860,8 +860,8 @@ bool UIDesktopWidgetWatchdog::activateWindow(WId wId, bool fSwitchDesktop /* = t
     fResult &= NativeWindowSubsystem::WinActivateWindow(wId, fSwitchDesktop);
 
 #elif defined(VBOX_WS_X11)
-    if (uiCommon().X11XServerAvailable())
-        fResult &= NativeWindowSubsystem::X11ActivateWindow(wId, fSwitchDesktop);
+
+    fResult &= NativeWindowSubsystem::activateWindow(uiCommon().X11XServerAvailable(), wId, fSwitchDesktop);
 
 #else
 

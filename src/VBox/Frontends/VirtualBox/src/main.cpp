@@ -395,7 +395,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         /* Make sure multi-threaded environment is safe: */
         if (!MakeSureMultiThreadingIsSafe())
             break;
-        DisplayServerType enmDisplayServerType = NativeWindowSubsystem::X11DetectDisplayServerType();
+        DisplayServerType enmDisplayServerType = NativeWindowSubsystem::detectDisplayServerType();
         if (NativeWindowSubsystem::X11XServerAvailable(enmDisplayServerType))
             /* Force using Qt platform plugin 'xcb', we have X11 specific code: */
             RTEnvSet("QT_QPA_PLATFORM", "xcb");

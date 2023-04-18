@@ -59,7 +59,7 @@
 #define BOOL PRBool
 
 
-bool NativeWindowSubsystem::IsCompositingManagerRunning(bool fIsXServerAvailable)
+bool NativeWindowSubsystem::isCompositingManagerRunning(bool fIsXServerAvailable)
 {
     if (fIsXServerAvailable)
         return X11IsCompositingManagerRunning();
@@ -80,7 +80,7 @@ bool NativeWindowSubsystem::WaylandIsCompositingManagerRunning()
     return true;
 }
 
-X11WMType NativeWindowSubsystem::WindowManagerType(bool fIsXServerAvailable)
+X11WMType NativeWindowSubsystem::windowManagerType(bool fIsXServerAvailable)
 {
     if (fIsXServerAvailable)
         return X11WindowManagerType();
@@ -89,7 +89,7 @@ X11WMType NativeWindowSubsystem::WindowManagerType(bool fIsXServerAvailable)
 
 X11WMType NativeWindowSubsystem::WaylandWindowManagerType()
 {
-    /// @todo implement
+    /// @wayland implement
     return X11WMType_Unknown;
 }
 
@@ -149,6 +149,13 @@ X11WMType NativeWindowSubsystem::X11WindowManagerType()
     return wmType;
 }
 
+bool NativeWindowSubsystem::checkExtension(bool fIsXServerAvailable, const char *pExtensionName)
+{
+    if (fIsXServerAvailable)
+        return X11CheckExtension(pExtensionName);
+    return WaylandCheckExtension(pExtensionName);
+}
+
 bool NativeWindowSubsystem::X11CheckExtension(const char *pExtensionName)
 {
     /* Check extension: */
@@ -157,6 +164,13 @@ bool NativeWindowSubsystem::X11CheckExtension(const char *pExtensionName)
     int first_event;
     int first_error;
     return XQueryExtension(pDisplay, pExtensionName, &major_opcode, &first_event, &first_error);
+}
+
+bool NativeWindowSubsystem::WaylandCheckExtension(const char *pExtensionName)
+{
+    Q_UNUSED(pExtensionName);
+    /// @todo implement
+    return false;
 }
 
 bool X11CheckDBusConnection(const QDBusConnection &connection)
@@ -384,6 +398,13 @@ bool XXSendClientMessage(Display *pDpy, Window windowHandle, const char *pszMsg,
                       SubstructureRedirectMask, &ev) != 0;
 }
 
+bool NativeWindowSubsystem::activateWindow(bool fIsXServerAvailable, WId wId, bool fSwitchDesktop)
+{
+    if (fIsXServerAvailable)
+        return X11ActivateWindow(wId, fSwitchDesktop);
+    return WaylandActivateWindow(wId, fSwitchDesktop);
+}
+
 bool NativeWindowSubsystem::X11ActivateWindow(WId wId, bool fSwitchDesktop)
 {
     bool fResult = true;
@@ -421,6 +442,14 @@ bool NativeWindowSubsystem::X11ActivateWindow(WId wId, bool fSwitchDesktop)
 
     XRaiseWindow(pDisplay, wId);
     return fResult;
+}
+
+bool NativeWindowSubsystem::WaylandActivateWindow(WId wId, bool fSwitchDesktop)
+{
+    /// @todo implement
+    Q_UNUSED(wId);
+    Q_UNUSED(fSwitchDesktop);
+    return false;
 }
 
 bool NativeWindowSubsystem::X11SupportsFullScreenMonitorsProtocol()
@@ -614,7 +643,7 @@ void NativeWindowSubsystem::X11SetSkipPagerFlag(QWidget *pWidget)
     }
 }
 
-void NativeWindowSubsystem::SetWMClass(bool fIsXServerAvailable, QWidget *pWidget, const QString &strNameString, const QString &strClassString)
+void NativeWindowSubsystem::setWMClass(bool fIsXServerAvailable, QWidget *pWidget, const QString &strNameString, const QString &strClassString)
 {
     if (fIsXServerAvailable)
         X11SetWMClass(pWidget, strNameString, strClassString);
@@ -654,10 +683,11 @@ void NativeWindowSubsystem::WaylandSetWMClass(QWidget *pWidget, const QString &s
     /// @todo implement
 }
 
-void NativeWindowSubsystem::X11SetXwaylandMayGrabKeyboardFlag(QWidget *pWidget)
+void NativeWindowSubsystem::setXwaylandMayGrabKeyboardFlag(bool fIsXServerAvailable, QWidget *pWidget)
 {
-    XXSendClientMessage(NativeWindowSubsystem::X11GetDisplay(), pWidget->window()->winId(),
-                        "_XWAYLAND_MAY_GRAB_KEYBOARD", 1);
+    if (fIsXServerAvailable)
+        XXSendClientMessage(NativeWindowSubsystem::X11GetDisplay(), pWidget->window()->winId(),
+                            "_XWAYLAND_MAY_GRAB_KEYBOARD", 1);
 }
 
 Display *NativeWindowSubsystem::X11GetDisplay()
@@ -707,7 +737,7 @@ uint32_t NativeWindowSubsystem::X11GetAppRootWindow()
 #endif
 }
 
-DisplayServerType NativeWindowSubsystem::X11DetectDisplayServerType()
+DisplayServerType NativeWindowSubsystem::detectDisplayServerType()
 {
     const char *pSessionType = RTEnvGet("XDG_SESSION_TYPE");
     if (pSessionType != NULL)

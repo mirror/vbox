@@ -265,58 +265,59 @@ bool UIKeyboardHandler::finaliseCaptureKeyboard()
          * S.a. UIKeyboardHandler::eventFilter for more information. */
 
 #elif defined(VBOX_WS_X11)
-
-        /* On X11, we are using XCB stuff to grab the keyboard.
-         * This stuff is a part of the active keyboard grabbing functionality.
-         * Active keyboard grabbing causes a problems on many window managers - a window cannot
-         * be moved using the mouse. So we additionally grab the mouse buttons as well to detect
-         * that the user is trying to click outside of the internal window geometry and release
-         * the keyboard before the target window sees the click. (GNOME Shell's hot corner has
-         * the same problem. At present we just let that problem be.) */
+        if (uiCommon().X11XServerAvailable())
+        {
+            /* On X11, we are using XCB stuff to grab the keyboard.
+             * This stuff is a part of the active keyboard grabbing functionality.
+             * Active keyboard grabbing causes a problems on many window managers - a window cannot
+             * be moved using the mouse. So we additionally grab the mouse buttons as well to detect
+             * that the user is trying to click outside of the internal window geometry and release
+             * the keyboard before the target window sees the click. (GNOME Shell's hot corner has
+             * the same problem. At present we just let that problem be.) */
 
 # if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
-        /* Make sure we really do still have the focus.  Qt as of version 5.13 started
-         * reporting it with delay, so ask the X server directly.  We could remove the
-         * version check some time in the future.  If we do, remove the comment above
-         * about the focus notification dance, as it will no longer be relevant. */
-        xcb_get_input_focus_cookie_t xcbFocusCookie = xcb_get_input_focus(NativeWindowSubsystem::X11GetConnection());
-        xcb_get_input_focus_reply_t *pFocusReply = xcb_get_input_focus_reply(NativeWindowSubsystem::X11GetConnection(),
-                                                                             xcbFocusCookie, 0);
-        xcb_window_t xcbFocusWindow = pFocusReply->focus;
-        free(pFocusReply);
-        if (xcbFocusWindow != m_windows[m_iKeyboardCaptureViewIndex]->winId())
-            return true;
+            /* Make sure we really do still have the focus.  Qt as of version 5.13 started
+             * reporting it with delay, so ask the X server directly.  We could remove the
+             * version check some time in the future.  If we do, remove the comment above
+             * about the focus notification dance, as it will no longer be relevant. */
+            xcb_get_input_focus_cookie_t xcbFocusCookie = xcb_get_input_focus(NativeWindowSubsystem::X11GetConnection());
+            xcb_get_input_focus_reply_t *pFocusReply = xcb_get_input_focus_reply(NativeWindowSubsystem::X11GetConnection(),
+                                                                                 xcbFocusCookie, 0);
+            xcb_window_t xcbFocusWindow = pFocusReply->focus;
+            free(pFocusReply);
+            if (xcbFocusWindow != m_windows[m_iKeyboardCaptureViewIndex]->winId())
+                return true;
 # endif
 
-        /* Grab the mouse button.
-         * We do not check for failure as we do not currently implement a back-up plan. */
-        /* If any previous grab is still in process, release it. */
-        if (m_hButtonGrabWindow != 0)
-            xcb_ungrab_button_checked(NativeWindowSubsystem::X11GetConnection(), XCB_BUTTON_INDEX_ANY,
-                                      m_hButtonGrabWindow, XCB_MOD_MASK_ANY);
-        m_hButtonGrabWindow = NativeWindowSubsystem::X11GetAppRootWindow();
-        xcb_grab_button_checked(NativeWindowSubsystem::X11GetConnection(), 0, m_hButtonGrabWindow,
-                                XCB_EVENT_MASK_BUTTON_PRESS, XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_ASYNC,
-                                XCB_NONE, XCB_NONE, XCB_BUTTON_INDEX_ANY, XCB_MOD_MASK_ANY);
-        /* And grab the keyboard, using XCB directly, as Qt does not report failure. */
-        xcb_grab_keyboard_cookie_t xcbGrabCookie = xcb_grab_keyboard(NativeWindowSubsystem::X11GetConnection(), false,
-                                                                     m_views[m_iKeyboardCaptureViewIndex]->winId(),
-                                                                     XCB_TIME_CURRENT_TIME, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
-        xcb_grab_keyboard_reply_t *pGrabReply = xcb_grab_keyboard_reply(NativeWindowSubsystem::X11GetConnection(),
-                                                                        xcbGrabCookie, NULL);
-        if (pGrabReply == NULL || pGrabReply->status != XCB_GRAB_STATUS_SUCCESS)
-        {
-            /* Release the mouse button grab.
+            /* Grab the mouse button.
              * We do not check for failure as we do not currently implement a back-up plan. */
-            xcb_ungrab_button_checked(NativeWindowSubsystem::X11GetConnection(), XCB_BUTTON_INDEX_ANY,
-                                      m_hButtonGrabWindow, XCB_MOD_MASK_ANY);
-            m_hButtonGrabWindow = 0;
-            /* Try again later: */
+            /* If any previous grab is still in process, release it. */
+            if (m_hButtonGrabWindow != 0)
+                xcb_ungrab_button_checked(NativeWindowSubsystem::X11GetConnection(), XCB_BUTTON_INDEX_ANY,
+                                          m_hButtonGrabWindow, XCB_MOD_MASK_ANY);
+            m_hButtonGrabWindow = NativeWindowSubsystem::X11GetAppRootWindow();
+            xcb_grab_button_checked(NativeWindowSubsystem::X11GetConnection(), 0, m_hButtonGrabWindow,
+                                    XCB_EVENT_MASK_BUTTON_PRESS, XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_ASYNC,
+                                    XCB_NONE, XCB_NONE, XCB_BUTTON_INDEX_ANY, XCB_MOD_MASK_ANY);
+            /* And grab the keyboard, using XCB directly, as Qt does not report failure. */
+            xcb_grab_keyboard_cookie_t xcbGrabCookie = xcb_grab_keyboard(NativeWindowSubsystem::X11GetConnection(), false,
+                                                                         m_views[m_iKeyboardCaptureViewIndex]->winId(),
+                                                                         XCB_TIME_CURRENT_TIME, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+            xcb_grab_keyboard_reply_t *pGrabReply = xcb_grab_keyboard_reply(NativeWindowSubsystem::X11GetConnection(),
+                                                                            xcbGrabCookie, NULL);
+            if (pGrabReply == NULL || pGrabReply->status != XCB_GRAB_STATUS_SUCCESS)
+            {
+                /* Release the mouse button grab.
+                 * We do not check for failure as we do not currently implement a back-up plan. */
+                xcb_ungrab_button_checked(NativeWindowSubsystem::X11GetConnection(), XCB_BUTTON_INDEX_ANY,
+                                          m_hButtonGrabWindow, XCB_MOD_MASK_ANY);
+                m_hButtonGrabWindow = 0;
+                /* Try again later: */
+                free(pGrabReply);
+                return false;
+            }
             free(pGrabReply);
-            return false;
         }
-        free(pGrabReply);
-
 #else
 
         /* On other platforms we are just praying Qt method to work: */
@@ -369,21 +370,22 @@ void UIKeyboardHandler::releaseKeyboard()
          * S.a. UIKeyboardHandler::eventFilter for more information. */
 
 #elif defined(VBOX_WS_X11)
+        if (uiCommon().X11XServerAvailable())
+        {
+            /* On X11, we are using XCB stuff to grab the keyboard.
+             * This stuff is a part of the active keyboard grabbing functionality.
+             * Active keyboard grabbing causes a problems on many window managers - a window cannot
+             * be moved using the mouse. So we finally releasing additionally grabbed mouse as well
+             * to allow further user interactions. */
 
-        /* On X11, we are using XCB stuff to grab the keyboard.
-         * This stuff is a part of the active keyboard grabbing functionality.
-         * Active keyboard grabbing causes a problems on many window managers - a window cannot
-         * be moved using the mouse. So we finally releasing additionally grabbed mouse as well
-         * to allow further user interactions. */
-
-        /* Ungrab using XCB: */
-        xcb_ungrab_keyboard(NativeWindowSubsystem::X11GetConnection(), XCB_TIME_CURRENT_TIME);
-        /* Release the mouse button grab.
-         * We do not check for failure as we do not currently implement a back-up plan. */
-        xcb_ungrab_button_checked(NativeWindowSubsystem::X11GetConnection(), XCB_BUTTON_INDEX_ANY,
-                                  m_hButtonGrabWindow, XCB_MOD_MASK_ANY);
-        m_hButtonGrabWindow = 0;
-
+            /* Ungrab using XCB: */
+            xcb_ungrab_keyboard(NativeWindowSubsystem::X11GetConnection(), XCB_TIME_CURRENT_TIME);
+            /* Release the mouse button grab.
+             * We do not check for failure as we do not currently implement a back-up plan. */
+            xcb_ungrab_button_checked(NativeWindowSubsystem::X11GetConnection(), XCB_BUTTON_INDEX_ANY,
+                                      m_hButtonGrabWindow, XCB_MOD_MASK_ANY);
+            m_hButtonGrabWindow = 0;
+        }
 #else
 
         /* On other platforms we are just praying Qt method to work: */
