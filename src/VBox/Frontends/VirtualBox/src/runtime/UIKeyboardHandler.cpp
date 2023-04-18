@@ -819,81 +819,83 @@ bool UIKeyboardHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
     }
 
 # elif defined(VBOX_WS_X11)
-
-    /* Cast to XCB event: */
-    xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
-
-    /* Depending on event type: */
-    switch (pEvent->response_type & ~0x80)
+    if (uiCommon().X11ServerAvailable())
     {
-        /* Watch for key-events: */
-        case XCB_KEY_PRESS:
-        case XCB_KEY_RELEASE:
+        /* Cast to XCB event: */
+        xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
+
+        /* Depending on event type: */
+        switch (pEvent->response_type & ~0x80)
         {
-            /* Cast to XCB key-event: */
-            xcb_key_press_event_t *pKeyEvent = static_cast<xcb_key_press_event_t*>(pMessage);
-
-            /* Translate the keycode to a PC scan code: */
-            unsigned uScan = handleXKeyEvent(NativeWindowSubsystem::X11GetDisplay(), pKeyEvent->detail);
-
-            /* Scan codes 0x00 (no valid translation) and 0x80 (extended flag) are ignored: */
-            if (!(uScan & 0x7F))
+            /* Watch for key-events: */
+            case XCB_KEY_PRESS:
+            case XCB_KEY_RELEASE:
             {
-                fResult = true;
-                break;
-            }
+                /* Cast to XCB key-event: */
+                xcb_key_press_event_t *pKeyEvent = static_cast<xcb_key_press_event_t*>(pMessage);
 
-            /* Calculate flags: */
-            int iflags = 0;
-            if (uScan >> 8)
-                iflags |= KeyExtended;
-            if ((pEvent->response_type & ~0x80) == XCB_KEY_PRESS)
-                iflags |= KeyPressed;
+                /* Translate the keycode to a PC scan code: */
+                unsigned uScan = handleXKeyEvent(NativeWindowSubsystem::X11GetDisplay(), pKeyEvent->detail);
 
-            /* Remove the extended flag: */
-            uScan &= 0x7F;
-
-            /* Special Korean keys must send scan code 0xF1/0xF2
-             * when pressed and nothing when released. */
-            if (uScan == 0x71 || uScan == 0x72)
-            {
-                if ((pEvent->response_type & ~0x80) == XCB_KEY_RELEASE)
+                /* Scan codes 0x00 (no valid translation) and 0x80 (extended flag) are ignored: */
+                if (!(uScan & 0x7F))
                 {
                     fResult = true;
                     break;
                 }
-                /* Re-create the bizarre scan code: */
-                uScan |= 0x80;
-            }
 
-            /* Translate the keycode to a keysym: */
-            KeySym ks = ::wrapXkbKeycodeToKeysym(NativeWindowSubsystem::X11GetDisplay(), pKeyEvent->detail, 0, 0);
+                /* Calculate flags: */
+                int iflags = 0;
+                if (uScan >> 8)
+                    iflags |= KeyExtended;
+                if ((pEvent->response_type & ~0x80) == XCB_KEY_PRESS)
+                    iflags |= KeyPressed;
 
-            /* Update special flags: */
-            switch (ks)
-            {
-                case XK_Print:
-                    iflags |= KeyPrint;
-                    break;
-                case XK_Pause:
-                    if (pKeyEvent->state & ControlMask) /* Break */
+                /* Remove the extended flag: */
+                uScan &= 0x7F;
+
+                /* Special Korean keys must send scan code 0xF1/0xF2
+                 * when pressed and nothing when released. */
+                if (uScan == 0x71 || uScan == 0x72)
+                {
+                    if ((pEvent->response_type & ~0x80) == XCB_KEY_RELEASE)
                     {
-                        ks = XK_Break;
-                        iflags |= KeyExtended;
-                        uScan = 0x46;
+                        fResult = true;
+                        break;
                     }
-                    else
-                        iflags |= KeyPause;
-                    break;
+                    /* Re-create the bizarre scan code: */
+                    uScan |= 0x80;
+                }
+
+                /* Translate the keycode to a keysym: */
+                KeySym ks = ::wrapXkbKeycodeToKeysym(NativeWindowSubsystem::X11GetDisplay(), pKeyEvent->detail, 0, 0);
+
+                /* Update special flags: */
+                switch (ks)
+                {
+                    case XK_Print:
+                        iflags |= KeyPrint;
+                        break;
+                    case XK_Pause:
+                        if (pKeyEvent->state & ControlMask) /* Break */
+                        {
+                            ks = XK_Break;
+                            iflags |= KeyExtended;
+                            uScan = 0x46;
+                        }
+                        else
+                            iflags |= KeyPause;
+                        break;
+                }
+
+                /* Finally, handle parsed key-event: */
+                fResult = keyEvent(ks, uScan, iflags, uScreenId);
+
+                break;
             }
-
-            /* Finally, handle parsed key-event: */
-            fResult = keyEvent(ks, uScan, iflags, uScreenId);
-
-            break;
+            default:
+                break;
         }
-        default:
-            break;
     }
 
 # else
