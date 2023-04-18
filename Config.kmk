@@ -7590,6 +7590,8 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
  # Handmade configuration of Qt - very annoying, this needs to
  # be cleaned up properly later some time (not important now).
  #
+ # When using a debug QT build set VBOX_QT_DBG:=d in LocalConfig.kmk.
+ #
  ifeq ($(VBOX_PATH_QT),)
   ifeq ($(KBUILD_TARGET),darwin)
    VBOX_PATH_QT := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
@@ -7626,7 +7628,7 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
  VBOX_PATH_QT_LIB        ?= $(VBOX_PATH_QT)/lib
 
  if defined(VBOX_WITH_ORACLE_QT) && (!defined(VBOX_WITH_QT6) || "$(KBUILD_TARGET)" != "darwin")
-  VBOX_QT_INFIX := VBox
+  VBOX_QT_INFIX := VBox$(VBOX_QT_DBG)
  endif
 
  ifeq ($(KBUILD_TARGET),darwin)

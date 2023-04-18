@@ -297,11 +297,11 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
     qt5-bin_SOURCES = \
     	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/bin/$(qtmod)$(SUFF_DLL)))
     qt5-bin_SOURCES += \
-    	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qwindows$(SUFF_DLL))=>platforms/qwindows$(SUFF_DLL) \
-    	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qminimal$(SUFF_DLL))=>platforms/qminimal$(SUFF_DLL) \
-    	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qoffscreen$(SUFF_DLL))=>platforms/qoffscreen$(SUFF_DLL) \
-    	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/sqldrivers/qsqlite$(SUFF_DLL))=>sqldrivers/qsqlite$(SUFF_DLL) \
-    	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/styles/qwindowsvistastyle$(SUFF_DLL))=>styles/qwindowsvistastyle$(SUFF_DLL)
+    	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qwindows$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qwindows$(VBOX_QT_DBG)$(SUFF_DLL) \
+    	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qminimal$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qminimal$(VBOX_QT_DBG)$(SUFF_DLL) \
+    	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qoffscreen$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qoffscreen$(VBOX_QT_DBG)$(SUFF_DLL) \
+    	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/sqldrivers/qsqlite$(VBOX_QT_DBG)$(SUFF_DLL))=>sqldrivers/qsqlite$(VBOX_QT_DBG)$(SUFF_DLL) \
+    	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/styles/qwindowsvistastyle$(VBOX_QT_DBG)$(SUFF_DLL))=>styles/qwindowsvistastyle$(VBOX_QT_DBG)$(SUFF_DLL)
     ifdef VBOX_WITH_QT_PDBS
      qt5-bin_SOURCES += \
      	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(PATH_SDK_QT5)/qt*/$(VBOX_PATH_QT_LIB)/$(qtmod).pdb))
