@@ -2368,7 +2368,16 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
     }
 
     /* Delete message-box: */
+#if 1 /* With a debug Qt 5.15.2 (r175) build and paged heap on windows, the ~QPointer destructor will trigger heap corruption
+         (VERIFIER STOP 0000000000000010: pid 0x253C: corrupted start stamp).  Clearing the QPointer prior to deletion works
+         around the issue (calling clear() after delete just triggers the problem a few lines earlier). */
+    QIMessageBox *pSafe = pMessageBox;
+    pMessageBox.clear();
+    if (pSafe)
+        delete pSafe;
+#else
     delete pMessageBox;
+#endif
 
     /* Return result-code: */
     return iResultCode;
