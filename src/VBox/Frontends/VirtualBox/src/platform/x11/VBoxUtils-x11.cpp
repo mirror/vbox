@@ -216,7 +216,7 @@ QStringList X11FindDBusScreenSaverServices(const QDBusConnection &connection)
     return serviceNames;
 }
 
-bool NativeWindowSubsystem::X11CheckDBusScreenSaverServices()
+bool NativeWindowSubsystem::checkDBusScreenSaverServices()
 {
     QDBusConnection connection = QDBusConnection::sessionBus();
     if (!X11CheckDBusConnection(connection))
@@ -262,7 +262,7 @@ void X11IntrospectInterfaceNode(const QDomElement &interface,
     }
 }
 
-void X11IntrospectServices(const QDBusConnection &connection,
+void introspectDBusServices(const QDBusConnection &connection,
                            const QString &strService,
                            const QString &strPath,
                            QVector<X11ScreenSaverInhibitMethod*> &methods)
@@ -284,7 +284,7 @@ void X11IntrospectServices(const QDBusConnection &connection,
         if (child.tagName() == QLatin1String("node"))
         {
             QString subPath = strPath + QLatin1Char('/') + child.attribute(QLatin1String("name"));
-            X11IntrospectServices(connection, strService, subPath, methods);
+            introspectDBusServices(connection, strService, subPath, methods);
         }
         else if (child.tagName() == QLatin1String("interface"))
             X11IntrospectInterfaceNode(child, strService, methods);
@@ -292,7 +292,7 @@ void X11IntrospectServices(const QDBusConnection &connection,
     }
 }
 
-QVector<X11ScreenSaverInhibitMethod*> NativeWindowSubsystem::X11FindDBusScrenSaverInhibitMethods()
+QVector<X11ScreenSaverInhibitMethod*> NativeWindowSubsystem::findDBusScrenSaverInhibitMethods()
 {
     QVector<X11ScreenSaverInhibitMethod*> methods;
 
@@ -302,12 +302,12 @@ QVector<X11ScreenSaverInhibitMethod*> NativeWindowSubsystem::X11FindDBusScrenSav
 
     QStringList services = X11FindDBusScreenSaverServices(connection);
     foreach(const QString &strServiceName, services)
-        X11IntrospectServices(connection, strServiceName, "", methods);
+        introspectDBusServices(connection, strServiceName, "", methods);
 
     return methods;
 }
 
-void NativeWindowSubsystem::X11InhibitUninhibitScrenSaver(bool fInhibit, QVector<X11ScreenSaverInhibitMethod*> &inOutInhibitMethods)
+void NativeWindowSubsystem::toggleHostScrenSaver(bool fInhibit, QVector<X11ScreenSaverInhibitMethod*> &inOutInhibitMethods)
 {
     QDBusConnection connection = QDBusConnection::sessionBus();
     if (!X11CheckDBusConnection(connection))

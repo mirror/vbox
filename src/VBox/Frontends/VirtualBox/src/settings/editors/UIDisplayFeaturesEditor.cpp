@@ -141,7 +141,7 @@ void UIDisplayFeaturesEditor::prepare()
 #if defined(VBOX_WS_WIN)
         m_pCheckBoxDisableHostScreenSaver = new QCheckBox(this);
 #elif defined(VBOX_WS_X11)
-        if (NativeWindowSubsystem::X11CheckDBusScreenSaverServices())
+        if (NativeWindowSubsystem::checkDBusScreenSaverServices())
             m_pCheckBoxDisableHostScreenSaver = new QCheckBox(this);
 #endif /* VBOX_WS_X11 */
         if (m_pCheckBoxDisableHostScreenSaver)
