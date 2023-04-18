@@ -615,7 +615,7 @@ GROUP FLAT BS3FLAT
  BS3_BEGIN_DATA16
  extern _ %+ %1
  %undef  %1
- %define %1  _ %+ %1
+ %xdefine %1  _ %+ %1
 %endmacro
 
 ;;
@@ -630,7 +630,7 @@ GROUP FLAT BS3FLAT
  BS3_BEGIN_SYSTEM16
  extern _ %+ %1
  %undef  %1
- %define %1  _ %+ %1
+ %xdefine %1  _ %+ %1
 %endmacro
 
 
