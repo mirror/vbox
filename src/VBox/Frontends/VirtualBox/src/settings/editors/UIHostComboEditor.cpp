@@ -572,7 +572,7 @@ UIHostComboEditorPrivate::UIHostComboEditorPrivate()
     m_pAltGrMonitor = new WinAltGrMonitor;
 #elif defined(VBOX_WS_X11)
     /* Initialize the X keyboard subsystem: */
-    if (uiCommon().X11XServerAvailable())
+    if (uiCommon().X11ServerAvailable())
         initMappedX11Keyboard(NativeWindowSubsystem::X11GetDisplay(), gEDataManager->remappedScanCodes());
 #endif /* VBOX_WS_X11 */
 }
@@ -746,7 +746,7 @@ bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pM
     }
 
 # elif defined(VBOX_WS_X11)
-    if (uiCommon().X11XServerAvailable())
+    if (uiCommon().X11ServerAvailable())
     {
         /* Make sure it's generic XCB event: */
         if (eventType != "xcb_generic_event_t")

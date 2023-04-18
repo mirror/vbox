@@ -265,7 +265,7 @@ bool UIKeyboardHandler::finaliseCaptureKeyboard()
          * S.a. UIKeyboardHandler::eventFilter for more information. */
 
 #elif defined(VBOX_WS_X11)
-        if (uiCommon().X11XServerAvailable())
+        if (uiCommon().X11ServerAvailable())
         {
             /* On X11, we are using XCB stuff to grab the keyboard.
              * This stuff is a part of the active keyboard grabbing functionality.
@@ -370,7 +370,7 @@ void UIKeyboardHandler::releaseKeyboard()
          * S.a. UIKeyboardHandler::eventFilter for more information. */
 
 #elif defined(VBOX_WS_X11)
-        if (uiCommon().X11XServerAvailable())
+        if (uiCommon().X11ServerAvailable())
         {
             /* On X11, we are using XCB stuff to grab the keyboard.
              * This stuff is a part of the active keyboard grabbing functionality.
@@ -1036,7 +1036,7 @@ void UIKeyboardHandler::loadSettings()
 {
     /* Global settings: */
 #ifdef VBOX_WS_X11
-    if (uiCommon().X11XServerAvailable())
+    if (uiCommon().X11ServerAvailable())
     {
         /* Initialize the X keyboard subsystem: */
         initMappedX11Keyboard(NativeWindowSubsystem::X11GetDisplay(), gEDataManager->remappedScanCodes());
@@ -1787,7 +1787,7 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
     delete[] pList;
 
 #elif defined(VBOX_WS_X11)
-    if (uiCommon().X11XServerAvailable())
+    if (uiCommon().X11ServerAvailable())
     {
         Q_UNUSED(pHotKey);
         Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
@@ -1864,7 +1864,7 @@ void UIKeyboardHandler::fixModifierState(LONG *piCodes, uint *puCount)
     }
 
 #elif defined(VBOX_WS_X11)
-    if (uiCommon().X11XServerAvailable())
+    if (uiCommon().X11ServerAvailable())
     {
         Window   wDummy1, wDummy2;
         int      iDummy3, iDummy4, iDummy5, iDummy6;

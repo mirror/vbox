@@ -215,7 +215,7 @@ public:
         /** X11: Returns whether the Window Manager we are running under is composition one. */
         bool isCompositingManagerRunning() const { return m_fCompositingManagerRunning; }
         /** Returns true if the detected display server type is either xorg or xwayland. */
-        bool X11XServerAvailable() const;
+        bool X11ServerAvailable() const;
 #endif
     /** @} */
 

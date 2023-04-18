@@ -2145,7 +2145,7 @@ void UIVirtualBoxManager::sltPerformShowHelpBrowser()
 void UIVirtualBoxManager::prepare()
 {
 #ifdef VBOX_WS_X11
-    NativeWindowSubsystem::setWMClass(uiCommon().X11XServerAvailable(), this, "VirtualBox Manager", "VirtualBox Manager");
+    NativeWindowSubsystem::setWMClass(uiCommon().X11ServerAvailable(), this, "VirtualBox Manager", "VirtualBox Manager");
 #endif
 
 #ifdef VBOX_WS_MAC
