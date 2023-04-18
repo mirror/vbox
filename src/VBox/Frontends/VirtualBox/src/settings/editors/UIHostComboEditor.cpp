@@ -572,7 +572,8 @@ UIHostComboEditorPrivate::UIHostComboEditorPrivate()
     m_pAltGrMonitor = new WinAltGrMonitor;
 #elif defined(VBOX_WS_X11)
     /* Initialize the X keyboard subsystem: */
-    initMappedX11Keyboard(NativeWindowSubsystem::X11GetDisplay(), gEDataManager->remappedScanCodes());
+    if (uiCommon().X11XServerAvailable())
+        initMappedX11Keyboard(NativeWindowSubsystem::X11GetDisplay(), gEDataManager->remappedScanCodes());
 #endif /* VBOX_WS_X11 */
 }
 
@@ -745,33 +746,35 @@ bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pM
     }
 
 # elif defined(VBOX_WS_X11)
-
-    /* Make sure it's generic XCB event: */
-    if (eventType != "xcb_generic_event_t")
-        return QLineEdit::nativeEvent(eventType, pMessage, pResult);
-    xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
-
-    /* Check if some XCB event should be filtered out: */
-    // Returning @c true means filtering-out,
-    // Returning @c false means passing event to Qt.
-    switch (pEvent->response_type & ~0x80)
+    if (uiCommon().X11XServerAvailable())
     {
-        /* Watch for key-events: */
-        case XCB_KEY_PRESS:
-        case XCB_KEY_RELEASE:
-        {
-            /* Parse key-event: */
-            xcb_key_press_event_t *pKeyEvent = static_cast<xcb_key_press_event_t*>(pMessage);
-            RT_GCC_NO_WARN_DEPRECATED_BEGIN
-            const KeySym ks = ::XKeycodeToKeysym(NativeWindowSubsystem::X11GetDisplay(), pKeyEvent->detail, 0);
-            RT_GCC_NO_WARN_DEPRECATED_END
-            const int iKeySym = static_cast<int>(ks);
+        /* Make sure it's generic XCB event: */
+        if (eventType != "xcb_generic_event_t")
+            return QLineEdit::nativeEvent(eventType, pMessage, pResult);
+        xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
 
-            /* Handle key-event: */
-            return processKeyEvent(iKeySym, (pEvent->response_type & ~0x80) == XCB_KEY_PRESS);
+        /* Check if some XCB event should be filtered out: */
+        // Returning @c true means filtering-out,
+        // Returning @c false means passing event to Qt.
+        switch (pEvent->response_type & ~0x80)
+        {
+            /* Watch for key-events: */
+            case XCB_KEY_PRESS:
+            case XCB_KEY_RELEASE:
+            {
+                /* Parse key-event: */
+                xcb_key_press_event_t *pKeyEvent = static_cast<xcb_key_press_event_t*>(pMessage);
+                RT_GCC_NO_WARN_DEPRECATED_BEGIN
+                const KeySym ks = ::XKeycodeToKeysym(NativeWindowSubsystem::X11GetDisplay(), pKeyEvent->detail, 0);
+                RT_GCC_NO_WARN_DEPRECATED_END
+                const int iKeySym = static_cast<int>(ks);
+
+                /* Handle key-event: */
+                return processKeyEvent(iKeySym, (pEvent->response_type & ~0x80) == XCB_KEY_PRESS);
+            }
+            default:
+                break;
         }
-        default:
-            break;
     }
 
 # else
