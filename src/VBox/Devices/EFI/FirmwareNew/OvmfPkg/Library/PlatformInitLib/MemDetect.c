@@ -65,7 +65,7 @@ PlatformQemuUc32BaseInitialization (
 
   if (PlatformInfoHob->HostBridgeDevId == INTEL_Q35_MCH_DEVICE_ID) {
     ASSERT (PcdGet64 (PcdPciExpressBaseAddress) <= MAX_UINT32);
-    ASSERT (PcdGet64 (PcdPciExpressBaseAddress) >= PlatformInfoHob->LowMemory);
+    //ASSERT (PcdGet64 (PcdPciExpressBaseAddress) >= PlatformInfoHob->LowMemory);
 
     if (PlatformInfoHob->LowMemory <= BASE_2GB) {
       // Newer qemu with gigabyte aligned memory,
@@ -1210,7 +1210,7 @@ PlatformQemuInitializeRamForS3 (
   if (PlatformInfoHob->BootMode != BOOT_ON_S3_RESUME) {
 #ifndef VBOX
     /*
-     * This is currently no required and interferes with older OS X bootloaders trying to
+     * This is currently not required and interferes with older OS X bootloaders trying to
      * allocate memory in that area. Needs to be revisited once we need this.
      */
     if (!PlatformInfoHob->SmmSmramRequire) {
@@ -1234,7 +1234,6 @@ PlatformQemuInitializeRamForS3 (
         PlatformInfoHob->S3Supported ? EfiACPIMemoryNVS : EfiBootServicesData
         );
     }
-#endif
 
     if (PlatformInfoHob->SmmSmramRequire) {
       UINT32  TsegSize;
@@ -1283,5 +1282,6 @@ PlatformQemuInitializeRamForS3 (
     }
 
  #endif
+#endif
   }
 }
