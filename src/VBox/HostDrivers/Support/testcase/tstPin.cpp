@@ -53,7 +53,12 @@
 int main(int argc, char **argv)
 {
     RTTEST hTest;
-    RTEXITCODE rcExit = RTTestInitExAndCreate(argc, &argv, RTR3INIT_FLAGS_TRY_SUPLIB, "tstPin", &hTest);
+
+    uint32_t fFlags = RTR3INIT_FLAGS_TRY_SUPLIB;
+#if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32) /* For M1 at least. */
+    fFlags |= SUPR3INIT_F_DRIVERLESS << RTR3INIT_FLAGS_SUPLIB_SHIFT;
+#endif
+    RTEXITCODE rcExit = RTTestInitExAndCreate(argc, &argv, fFlags, "tstPin", &hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
     RTTestBanner(hTest);
