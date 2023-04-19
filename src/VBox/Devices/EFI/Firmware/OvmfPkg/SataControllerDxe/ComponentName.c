@@ -20,16 +20,16 @@ GLOBAL_REMOVE_IF_UNREFERENCED EFI_COMPONENT_NAME_PROTOCOL  gSataControllerCompon
 //
 /// EFI Component Name 2 Protocol
 ///
-GLOBAL_REMOVE_IF_UNREFERENCED EFI_COMPONENT_NAME2_PROTOCOL gSataControllerComponentName2 = {
-  (EFI_COMPONENT_NAME2_GET_DRIVER_NAME) SataControllerComponentNameGetDriverName,
-  (EFI_COMPONENT_NAME2_GET_CONTROLLER_NAME) SataControllerComponentNameGetControllerName,
+GLOBAL_REMOVE_IF_UNREFERENCED EFI_COMPONENT_NAME2_PROTOCOL  gSataControllerComponentName2 = {
+  (EFI_COMPONENT_NAME2_GET_DRIVER_NAME)SataControllerComponentNameGetDriverName,
+  (EFI_COMPONENT_NAME2_GET_CONTROLLER_NAME)SataControllerComponentNameGetControllerName,
   "en"
 };
 
 //
 /// Driver Name Strings
 ///
-GLOBAL_REMOVE_IF_UNREFERENCED EFI_UNICODE_STRING_TABLE mSataControllerDriverNameTable[] = {
+GLOBAL_REMOVE_IF_UNREFERENCED EFI_UNICODE_STRING_TABLE  mSataControllerDriverNameTable[] = {
   {
     "eng;en",
     (CHAR16 *)L"Sata Controller Init Driver"
@@ -43,7 +43,7 @@ GLOBAL_REMOVE_IF_UNREFERENCED EFI_UNICODE_STRING_TABLE mSataControllerDriverName
 ///
 /// Controller Name Strings
 ///
-GLOBAL_REMOVE_IF_UNREFERENCED EFI_UNICODE_STRING_TABLE mSataControllerControllerNameTable[] = {
+GLOBAL_REMOVE_IF_UNREFERENCED EFI_UNICODE_STRING_TABLE  mSataControllerControllerNameTable[] = {
   {
     "eng;en",
     (CHAR16 *)L"Sata Controller"
@@ -59,7 +59,7 @@ GLOBAL_REMOVE_IF_UNREFERENCED EFI_UNICODE_STRING_TABLE mSataControllerController
 
   @param This           A pointer to the EFI_COMPONENT_NAME_PROTOCOL instance.
   @param Language       A pointer to a three character ISO 639-2 language identifier.
-                        This is the language of the driver name that that the caller
+                        This is the language of the driver name that the caller
                         is requesting, and it must match one of the languages specified
                         in SupportedLanguages.  The number of languages supported by a
                         driver is up to the driver writer.
@@ -78,9 +78,9 @@ GLOBAL_REMOVE_IF_UNREFERENCED EFI_UNICODE_STRING_TABLE mSataControllerController
 EFI_STATUS
 EFIAPI
 SataControllerComponentNameGetDriverName (
-  IN EFI_COMPONENT_NAME_PROTOCOL    *This,
-  IN CHAR8                          *Language,
-  OUT CHAR16                        **DriverName
+  IN EFI_COMPONENT_NAME_PROTOCOL  *This,
+  IN CHAR8                        *Language,
+  OUT CHAR16                      **DriverName
   )
 {
   return LookupUnicodeString2 (
@@ -108,7 +108,7 @@ SataControllerComponentNameGetDriverName (
                                 that wishes to retrieve the name of a child controller.
   @param Language               A pointer to a three character ISO 639-2 language
                                 identifier.  This is the language of the controller name
-                                that that the caller is requesting, and it must match one
+                                that the caller is requesting, and it must match one
                                 of the languages specified in SupportedLanguages.  The
                                 number of languages supported by a driver is up to the
                                 driver writer.
@@ -135,14 +135,14 @@ SataControllerComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 SataControllerComponentNameGetControllerName (
-  IN EFI_COMPONENT_NAME_PROTOCOL    *This,
-  IN EFI_HANDLE                     ControllerHandle,
-  IN EFI_HANDLE                     ChildHandle OPTIONAL,
-  IN CHAR8                          *Language,
-  OUT CHAR16                        **ControllerName
+  IN EFI_COMPONENT_NAME_PROTOCOL  *This,
+  IN EFI_HANDLE                   ControllerHandle,
+  IN EFI_HANDLE                   ChildHandle OPTIONAL,
+  IN CHAR8                        *Language,
+  OUT CHAR16                      **ControllerName
   )
 {
-  EFI_STATUS    Status;
+  EFI_STATUS  Status;
 
   //
   // Make sure this driver is currently managing ControllHandle
@@ -161,10 +161,10 @@ SataControllerComponentNameGetControllerName (
   }
 
   return LookupUnicodeString2 (
-          Language,
-          This->SupportedLanguages,
-          mSataControllerControllerNameTable,
-          ControllerName,
-          (BOOLEAN)(This == &gSataControllerComponentName)
-          );
+           Language,
+           This->SupportedLanguages,
+           mSataControllerControllerNameTable,
+           ControllerName,
+           (BOOLEAN)(This == &gSataControllerComponentName)
+           );
 }

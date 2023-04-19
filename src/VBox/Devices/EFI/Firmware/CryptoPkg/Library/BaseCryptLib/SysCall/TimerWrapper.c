@@ -15,17 +15,16 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 // -- Time Management Routines --
 //
 
-#define IsLeap(y)   (((y) % 4) == 0 && (((y) % 100) != 0 || ((y) % 400) == 0))
-#define SECSPERMIN  (60)
-#define SECSPERHOUR (60 * 60)
-#define SECSPERDAY  (24 * SECSPERHOUR)
+#define SECSPERMIN   (60)
+#define SECSPERHOUR  (60 * 60)
+#define SECSPERDAY   (24 * SECSPERHOUR)
 
 //
 //  The arrays give the cumulative number of days up to the first of the
 //  month number used as the index (1 -> 12) for regular and leap years.
 //  The value at index 13 is for the whole year.
 //
-UINTN CumulativeDays[2][14] = {
+UINTN  CumulativeDays[2][14] = {
   {
     0,
     0,
@@ -60,11 +59,34 @@ UINTN CumulativeDays[2][14] = {
   }
 };
 
+/* Check the year is leap or not. */
+// BOOLEAN IsLeap(
+//  INTN timer
+//  )
+BOOLEAN
+IsLeap (
+  time_t  timer
+  )
+{
+  INT64  Remainder1;
+  INT64  Remainder2;
+  INT64  Remainder3;
+
+  DivS64x64Remainder (timer, 4, &Remainder1);
+  DivS64x64Remainder (timer, 100, &Remainder2);
+  DivS64x64Remainder (timer, 400, &Remainder3);
+
+  return (Remainder1 == 0 && (Remainder2 != 0 || Remainder3 == 0));
+}
+
 /* Get the system time as seconds elapsed since midnight, January 1, 1970. */
-//INTN time(
+// INTN time(
 //  INTN *timer
 //  )
-time_t time (time_t *timer)
+time_t
+time (
+  time_t  *timer
+  )
 {
   EFI_STATUS  Status;
   EFI_TIME    Time;
@@ -84,7 +106,7 @@ time_t time (time_t *timer)
   // UTime should now be set to 00:00:00 on Jan 1 of the current year.
   //
   for (Year = 1970, CalTime = 0; Year != Time.Year; Year++) {
-    CalTime = CalTime + (time_t)(CumulativeDays[IsLeap(Year)][13] * SECSPERDAY);
+    CalTime = CalTime + (time_t)(CumulativeDays[IsLeap (Year)][13] * SECSPERDAY);
   }
 
   //
@@ -92,7 +114,7 @@ time_t time (time_t *timer)
   //
   CalTime = CalTime +
             (time_t)((Time.TimeZone != EFI_UNSPECIFIED_TIMEZONE) ? (Time.TimeZone * 60) : 0) +
-            (time_t)(CumulativeDays[IsLeap(Time.Year)][Time.Month] * SECSPERDAY) +
+            (time_t)(CumulativeDays[IsLeap (Time.Year)][Time.Month] * SECSPERDAY) +
             (time_t)(((Time.Day > 0) ? Time.Day - 1 : 0) * SECSPERDAY) +
             (time_t)(Time.Hour * SECSPERHOUR) +
             (time_t)(Time.Minute * 60) +
@@ -108,15 +130,19 @@ time_t time (time_t *timer)
 //
 // Convert a time value from type time_t to struct tm.
 //
-struct tm * gmtime (const time_t *timer)
+struct tm *
+gmtime (
+  const time_t  *timer
+  )
 {
   struct tm  *GmTime;
-  UINT16     DayNo;
-  UINT16     DayRemainder;
+  UINT64     DayNo;
+  UINT64     DayRemainder;
   time_t     Year;
   time_t     YearNo;
-  UINT16     TotalDays;
-  UINT16     MonthNo;
+  UINT32     TotalDays;
+  UINT32     MonthNo;
+  INT64      Remainder;
 
   if (timer == NULL) {
     return NULL;
@@ -127,38 +153,41 @@ struct tm * gmtime (const time_t *timer)
     return NULL;
   }
 
-  ZeroMem ((VOID *) GmTime, (UINTN) sizeof (struct tm));
+  ZeroMem ((VOID *)GmTime, (UINTN)sizeof (struct tm));
 
-  DayNo        = (UINT16) (*timer / SECSPERDAY);
-  DayRemainder = (UINT16) (*timer % SECSPERDAY);
+  DayNo        = (UINT64)DivS64x64Remainder (*timer, SECSPERDAY, &Remainder);
+  DayRemainder = (UINT64)Remainder;
 
-  GmTime->tm_sec  = (int) (DayRemainder % SECSPERMIN);
-  GmTime->tm_min  = (int) ((DayRemainder % SECSPERHOUR) / SECSPERMIN);
-  GmTime->tm_hour = (int) (DayRemainder / SECSPERHOUR);
-  GmTime->tm_wday = (int) ((DayNo + 4) % 7);
+  DivS64x64Remainder (DayRemainder, SECSPERMIN, &Remainder);
+  GmTime->tm_sec = (int)Remainder;
+  DivS64x64Remainder (DayRemainder, SECSPERHOUR, &Remainder);
+  GmTime->tm_min  = (int)DivS64x64Remainder (Remainder, SECSPERMIN, NULL);
+  GmTime->tm_hour = (int)DivS64x64Remainder (DayRemainder, SECSPERHOUR, NULL);
+  DivS64x64Remainder ((DayNo + 4), 7, &Remainder);
+  GmTime->tm_wday = (int)Remainder;
 
   for (Year = 1970, YearNo = 0; DayNo > 0; Year++) {
-    TotalDays = (UINT16) (IsLeap (Year) ? 366 : 365);
+    TotalDays = (UINT32)(IsLeap (Year) ? 366 : 365);
     if (DayNo >= TotalDays) {
-      DayNo = (UINT16) (DayNo - TotalDays);
+      DayNo = (UINT64)(DayNo - TotalDays);
       YearNo++;
     } else {
       break;
     }
   }
 
-  GmTime->tm_year = (int) (YearNo + (1970 - 1900));
-  GmTime->tm_yday = (int) DayNo;
+  GmTime->tm_year = (int)(YearNo + (1970 - 1900));
+  GmTime->tm_yday = (int)DayNo;
 
   for (MonthNo = 12; MonthNo > 1; MonthNo--) {
-    if (DayNo >= CumulativeDays[IsLeap(Year)][MonthNo]) {
-      DayNo = (UINT16) (DayNo - (UINT16) (CumulativeDays[IsLeap(Year)][MonthNo]));
+    if (DayNo >= CumulativeDays[IsLeap (Year)][MonthNo]) {
+      DayNo = (UINT64)(DayNo - (UINT32)(CumulativeDays[IsLeap (Year)][MonthNo]));
       break;
     }
   }
 
-  GmTime->tm_mon  = (int) MonthNo - 1;
-  GmTime->tm_mday = (int) DayNo + 1;
+  GmTime->tm_mon  = (int)MonthNo - 1;
+  GmTime->tm_mday = (int)DayNo + 1;
 
   GmTime->tm_isdst  = 0;
   GmTime->tm_gmtoff = 0;

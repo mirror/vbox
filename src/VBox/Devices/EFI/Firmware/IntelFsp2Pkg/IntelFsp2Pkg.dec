@@ -1,7 +1,7 @@
 ## @file
 # Provides driver and definitions to build fsp in EDKII bios.
 #
-# Copyright (c) 2014 - 2021, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2014 - 2022, Intel Corporation. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -37,6 +37,9 @@
   ##  @libraryclass  Provides FSP platform sec related actions.
   FspSecPlatformLib|Include/Library/FspSecPlatformLib.h
 
+  ## @libraryclass  Provides FSP MultiPhase service functions.
+  FspMultiPhaseLib|Include/Library/FspMultiPhaseLib.h
+
 [Ppis]
   #
   # PPI to indicate FSP is ready to enter notify phase
@@ -59,6 +62,12 @@
   #
   gFspTempRamExitPpiGuid                = { 0xbc1cfbdb, 0x7e50, 0x42be, {0xb4, 0x87, 0x22, 0xe0, 0xa9, 0x0c, 0xb0, 0x52}}
 
+  #
+  # PPI for Variable Services
+  #
+  gEdkiiPeiVariablePpiGuid              = { 0xe7b2cd04, 0x4b14, 0x44c2, {0xb7, 0x48, 0xce, 0xaf, 0x2b, 0x66, 0x4a, 0xb0}}
+
+
 [Guids]
   #
   # GUID defined in package
@@ -68,6 +77,7 @@
   # Guid define in FSP EAS
   gFspHeaderFileGuid                    = { 0x912740BE, 0x2284, 0x4734, { 0xB9, 0x71, 0x84, 0xB0, 0x27, 0x35, 0x3F, 0x0C } }
   gFspReservedMemoryResourceHobGuid     = { 0x69a79759, 0x1373, 0x4367, { 0xa6, 0xc4, 0xc7, 0xf5, 0x9e, 0xfd, 0x98, 0x6e } }
+  gFspNonVolatileStorageHob2Guid        = { 0x4866788f, 0x6ba8, 0x47d8, { 0x83, 0x06, 0xac, 0xf7, 0x7f, 0x55, 0x10, 0x46 } }
   gFspNonVolatileStorageHobGuid         = { 0x721acf02, 0x4d77, 0x4c2a, { 0xb3, 0xdc, 0x27, 0x0b, 0x7b, 0xa9, 0xe4, 0xb0 } }
   gFspBootLoaderTolumHobGuid            = { 0x73ff4f56, 0xaa8e, 0x4451, { 0xb3, 0x16, 0x36, 0x35, 0x36, 0x67, 0xad, 0x44 } } # FSP EAS v1.1
 
@@ -105,5 +115,10 @@
   gIntelFsp2PkgTokenSpaceGuid.PcdFspPrivateTemporaryRamSize |0x00000000|UINT32|0x10000006
 
 [PcdsFixedAtBuild,PcdsDynamic,PcdsDynamicEx]
-  gIntelFsp2PkgTokenSpaceGuid.PcdFspReservedMemoryLength |0x00100000|UINT32|0x46530000
-  gIntelFsp2PkgTokenSpaceGuid.PcdBootLoaderEntry         |0xFFFFFFE4|UINT32|0x46530100
+  gIntelFsp2PkgTokenSpaceGuid.PcdFspReservedMemoryLength  |0x00100000|UINT32|0x46530000
+  gIntelFsp2PkgTokenSpaceGuid.PcdBootLoaderEntry          |0xFFFFFFE4|UINT32|0x46530100
+  #
+  # Different FSP Components may have different NumberOfPhases which can be defined
+  # by each FspSecCore module from DSC.
+  #
+  gIntelFsp2PkgTokenSpaceGuid.PcdMultiPhaseNumberOfPhases |0x00000000|UINT32|0x46530101

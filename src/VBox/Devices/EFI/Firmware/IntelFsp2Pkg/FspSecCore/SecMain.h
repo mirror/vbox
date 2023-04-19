@@ -1,13 +1,12 @@
 /** @file
 
-  Copyright (c) 2014 - 2019, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2014 - 2022, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #ifndef _SEC_CORE_H_
 #define _SEC_CORE_H_
-
 
 #include <PiPei.h>
 #include <Ppi/TemporaryRamSupport.h>
@@ -21,13 +20,16 @@
 #include <Library/SerialPortLib.h>
 #include <Library/FspSwitchStackLib.h>
 #include <Library/FspCommonLib.h>
+#include <Library/CpuLib.h>
 #include <Library/UefiCpuLib.h>
 #include <FspEas.h>
 
-typedef VOID (*PEI_CORE_ENTRY) ( \
-  IN CONST  EFI_SEC_PEI_HAND_OFF    *SecCoreData, \
-  IN CONST  EFI_PEI_PPI_DESCRIPTOR  *PpiList \
-);
+typedef
+VOID
+(EFIAPI *PEI_CORE_ENTRY)(
+  IN CONST  EFI_SEC_PEI_HAND_OFF    *SecCoreData,
+  IN CONST  EFI_PEI_PPI_DESCRIPTOR  *PpiList
+  );
 
 typedef struct _SEC_IDT_TABLE {
   //
@@ -36,8 +38,8 @@ typedef struct _SEC_IDT_TABLE {
   // Note: For IA32, only the 4 bytes immediately preceding IDT is used to store
   // EFI_PEI_SERVICES**
   //
-  UINT64            PeiService;
-  UINT64            IdtTable[FixedPcdGet8 (PcdFspMaxInterruptSupported)];
+  UINT64                      PeiService;
+  IA32_IDT_GATE_DESCRIPTOR    IdtTable[FixedPcdGet8 (PcdFspMaxInterruptSupported)];
 } SEC_IDT_TABLE;
 
 /**
@@ -52,8 +54,8 @@ typedef struct _SEC_IDT_TABLE {
 VOID
 EFIAPI
 SecSwitchStack (
-  IN UINT32   TemporaryMemoryBase,
-  IN UINT32   PermenentMemoryBase
+  IN UINTN  TemporaryMemoryBase,
+  IN UINTN  PermenentMemoryBase
   );
 
 /**
@@ -75,12 +77,11 @@ SecSwitchStack (
 EFI_STATUS
 EFIAPI
 SecTemporaryRamSupport (
-  IN CONST EFI_PEI_SERVICES   **PeiServices,
-  IN EFI_PHYSICAL_ADDRESS     TemporaryMemoryBase,
-  IN EFI_PHYSICAL_ADDRESS     PermanentMemoryBase,
-  IN UINTN                    CopySize
+  IN CONST EFI_PEI_SERVICES  **PeiServices,
+  IN EFI_PHYSICAL_ADDRESS    TemporaryMemoryBase,
+  IN EFI_PHYSICAL_ADDRESS    PermanentMemoryBase,
+  IN UINTN                   CopySize
   );
-
 
 /**
 
@@ -102,12 +103,12 @@ SecTemporaryRamSupport (
 VOID
 EFIAPI
 SecStartup (
-  IN UINT32                   SizeOfRam,
-  IN UINT32                   TempRamBase,
-  IN VOID                    *BootFirmwareVolume,
-  IN PEI_CORE_ENTRY           PeiCore,
-  IN UINT32                   BootLoaderStack,
-  IN UINT32                   ApiIdx
+  IN UINT32          SizeOfRam,
+  IN UINT32          TempRamBase,
+  IN VOID            *BootFirmwareVolume,
+  IN PEI_CORE_ENTRY  PeiCore,
+  IN UINTN           BootLoaderStack,
+  IN UINT32          ApiIdx
   );
 
 /**
@@ -129,9 +130,9 @@ ProcessLibraryConstructorList (
   @return  value of esp.
 
 **/
-UINT32
+UINTN
 EFIAPI
-AsmReadEsp (
+AsmReadStackPointer (
   VOID
   );
 

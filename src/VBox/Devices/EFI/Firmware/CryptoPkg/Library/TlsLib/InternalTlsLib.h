@@ -17,6 +17,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/DebugLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/SafeIntLib.h>
+#include <Protocol/Tls.h>
+#include <IndustryStandard/Tls1.h>
+#include <Library/PcdLib.h>
+#include <openssl/obj_mac.h>
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
@@ -26,16 +30,15 @@ typedef struct {
   // Main SSL Connection which is created by a server or a client
   // per established connection.
   //
-  SSL                             *Ssl;
+  SSL    *Ssl;
   //
   // Memory BIO for the TLS/SSL Reading operations.
   //
-  BIO                             *InBio;
+  BIO    *InBio;
   //
   // Memory BIO for the TLS/SSL Writing operations.
   //
-  BIO                             *OutBio;
+  BIO    *OutBio;
 } TLS_CONNECTION;
 
 #endif
-

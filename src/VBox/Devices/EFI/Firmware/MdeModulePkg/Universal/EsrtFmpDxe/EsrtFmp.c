@@ -29,12 +29,12 @@ typedef struct {
   ///
   /// A unique GUID identifying the firmware image type.
   ///
-  EFI_GUID                      ImageTypeGuid;
+  EFI_GUID    ImageTypeGuid;
   ///
   /// An optional number to identify the unique hardware instance within the
   /// system for devices that may have multiple instances whenever possible.
   ///
-  UINT64                        HardwareInstance;
+  UINT64      HardwareInstance;
 } GUID_HARDWAREINSTANCE_PAIR;
 
 /**
@@ -59,10 +59,10 @@ PrintTable (
 **/
 EFI_STATUS
 InstallEfiSystemResourceTableInUefiConfigurationTable (
-  IN EFI_SYSTEM_RESOURCE_TABLE      *Table
+  IN EFI_SYSTEM_RESOURCE_TABLE  *Table
   )
 {
-  EFI_STATUS Status;
+  EFI_STATUS  Status;
 
   Status = EFI_SUCCESS;
   if (Table->FwResourceCount == 0) {
@@ -79,6 +79,7 @@ InstallEfiSystemResourceTableInUefiConfigurationTable (
       DEBUG ((DEBUG_INFO, "EsrtFmpDxe: Installed ESRT table. \n"));
     }
   }
+
   return Status;
 }
 
@@ -100,7 +101,7 @@ IsSystemFmp (
   UINTN  Index;
 
   Guid  = PcdGetPtr (PcdSystemFmpCapsuleImageTypeIdGuid);
-  Count = PcdGetSize (PcdSystemFmpCapsuleImageTypeIdGuid) / sizeof(GUID);
+  Count = PcdGetSize (PcdSystemFmpCapsuleImageTypeIdGuid) / sizeof (GUID);
 
   for (Index = 0; Index < Count; Index++, Guid++) {
     if (CompareGuid (&FmpImageInfo->ImageTypeId, Guid)) {
@@ -152,16 +153,20 @@ CreateEsrtEntry (
 
   //
   // Check to see of FmpImageInfoBuf GUID/HardwareInstance is unique
+  // Skip if HardwareInstance is 0 as this is the case if FmpVersion < 3
+  // or the device can not create a unique ID per UEFI specification
   //
-  for (Index = 0; Index < *NumberOfDescriptors; Index++) {
-    if (CompareGuid (&HardwareInstances[Index].ImageTypeGuid, &FmpImageInfoBuf->ImageTypeId)) {
-      if (HardwareInstances[Index].HardwareInstance == FmpHardwareInstance) {
-        DEBUG ((DEBUG_ERROR, "EsrtFmpDxe: Duplicate firmware image descriptor with GUID %g HardwareInstance:0x%x\n", &FmpImageInfoBuf->ImageTypeId, FmpHardwareInstance));
-        ASSERT (
-          !CompareGuid (&HardwareInstances[Index].ImageTypeGuid, &FmpImageInfoBuf->ImageTypeId) ||
-          HardwareInstances[Index].HardwareInstance != FmpHardwareInstance
-          );
-        return EFI_UNSUPPORTED;
+  if (FmpHardwareInstance != 0) {
+    for (Index = 0; Index < *NumberOfDescriptors; Index++) {
+      if (CompareGuid (&HardwareInstances[Index].ImageTypeGuid, &FmpImageInfoBuf->ImageTypeId)) {
+        if (HardwareInstances[Index].HardwareInstance == FmpHardwareInstance) {
+          DEBUG ((DEBUG_ERROR, "EsrtFmpDxe: Duplicate firmware image descriptor with GUID %g HardwareInstance:0x%x\n", &FmpImageInfoBuf->ImageTypeId, FmpHardwareInstance));
+          ASSERT (
+            !CompareGuid (&HardwareInstances[Index].ImageTypeGuid, &FmpImageInfoBuf->ImageTypeId) ||
+            HardwareInstances[Index].HardwareInstance != FmpHardwareInstance
+            );
+          return EFI_UNSUPPORTED;
+        }
       }
     }
   }
@@ -171,7 +176,7 @@ CreateEsrtEntry (
   //
   CopyGuid (&HardwareInstances[*NumberOfDescriptors].ImageTypeGuid, &FmpImageInfoBuf->ImageTypeId);
   HardwareInstances[*NumberOfDescriptors].HardwareInstance = FmpHardwareInstance;
-  *NumberOfDescriptors = *NumberOfDescriptors + 1;
+  *NumberOfDescriptors                                     = *NumberOfDescriptors + 1;
 
   DEBUG ((DEBUG_INFO, "EsrtFmpDxe: Add new image descriptor with GUID %g HardwareInstance:0x%x\n", &FmpImageInfoBuf->ImageTypeId, FmpHardwareInstance));
 
@@ -183,6 +188,7 @@ CreateEsrtEntry (
     if (!CompareGuid (&Entry->FwClass, &FmpImageInfoBuf->ImageTypeId)) {
       continue;
     }
+
     DEBUG ((DEBUG_INFO, "EsrtFmpDxe: ESRT Entry already exists for FMP Instance with GUID %g\n", &Entry->FwClass));
 
     //
@@ -216,7 +222,7 @@ CreateEsrtEntry (
       //
       if (Entry->LastAttemptStatus == LAST_ATTEMPT_STATUS_SUCCESS) {
         if (FmpImageInfoBuf->LastAttemptStatus != LAST_ATTEMPT_STATUS_SUCCESS) {
-          Entry->LastAttemptStatus = FmpImageInfoBuf->LastAttemptStatus;
+          Entry->LastAttemptStatus  = FmpImageInfoBuf->LastAttemptStatus;
           Entry->LastAttemptVersion = FmpImageInfoBuf->LastAttemptVersion;
         } else {
           Entry->LastAttemptVersion =
@@ -306,16 +312,16 @@ FmpGetFirmwareImageDescriptor (
   EFI_FIRMWARE_IMAGE_DESCRIPTOR  *FmpImageInfoBuf;
 
   ImageInfoSize = 0;
-  Status = Fmp->GetImageInfo (
-                  Fmp,                        // FMP Pointer
-                  &ImageInfoSize,             // Buffer Size (in this case 0)
-                  NULL,                       // NULL so we can get size
-                  FmpImageInfoDescriptorVer,  // DescriptorVersion
-                  FmpImageInfoCount,          // DescriptorCount
-                  DescriptorSize,             // DescriptorSize
-                  &PackageVersion,            // PackageVersion
-                  &PackageVersionName         // PackageVersionName
-                  );
+  Status        = Fmp->GetImageInfo (
+                         Fmp,                       // FMP Pointer
+                         &ImageInfoSize,            // Buffer Size (in this case 0)
+                         NULL,                      // NULL so we can get size
+                         FmpImageInfoDescriptorVer, // DescriptorVersion
+                         FmpImageInfoCount,         // DescriptorCount
+                         DescriptorSize,            // DescriptorSize
+                         &PackageVersion,           // PackageVersion
+                         &PackageVersionName        // PackageVersionName
+                         );
   if (Status != EFI_BUFFER_TOO_SMALL) {
     DEBUG ((DEBUG_ERROR, "EsrtFmpDxe: Unexpected Failure in GetImageInfo.  Status = %r\n", Status));
     return NULL;
@@ -328,19 +334,20 @@ FmpGetFirmwareImageDescriptor (
   }
 
   PackageVersionName = NULL;
-  Status = Fmp->GetImageInfo (
-                  Fmp,                        // FMP Pointer
-                  &ImageInfoSize,             // ImageInfoSize
-                  FmpImageInfoBuf,            // ImageInfo
-                  FmpImageInfoDescriptorVer,  // DescriptorVersion
-                  FmpImageInfoCount,          // DescriptorCount
-                  DescriptorSize,             // DescriptorSize
-                  &PackageVersion,            // PackageVersion
-                  &PackageVersionName         // PackageVersionName
-                  );
+  Status             = Fmp->GetImageInfo (
+                              Fmp,                       // FMP Pointer
+                              &ImageInfoSize,            // ImageInfoSize
+                              FmpImageInfoBuf,           // ImageInfo
+                              FmpImageInfoDescriptorVer, // DescriptorVersion
+                              FmpImageInfoCount,         // DescriptorCount
+                              DescriptorSize,            // DescriptorSize
+                              &PackageVersion,           // PackageVersion
+                              &PackageVersionName        // PackageVersionName
+                              );
   if (PackageVersionName != NULL) {
     FreePool (PackageVersionName);
   }
+
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "EsrtFmpDxe: Failure in GetImageInfo.  Status = %r\n", Status));
     FreePool (FmpImageInfoBuf);
@@ -389,7 +396,7 @@ CreateFmpBasedEsrt (
              &NoProtocols,
              &Buffer
              );
-  if (EFI_ERROR(Status) || (Buffer == NULL)) {
+  if (EFI_ERROR (Status) || (Buffer == NULL)) {
     return NULL;
   }
 
@@ -398,7 +405,7 @@ CreateFmpBasedEsrt (
   //
   for (Index = 0, NumberOfDescriptors = 0; Index < NoProtocols; Index++) {
     FmpImageInfoBuf = FmpGetFirmwareImageDescriptor (
-                        (EFI_FIRMWARE_MANAGEMENT_PROTOCOL *) Buffer[Index],
+                        (EFI_FIRMWARE_MANAGEMENT_PROTOCOL *)Buffer[Index],
                         &FmpImageInfoDescriptorVer,
                         &FmpImageInfoCount,
                         &DescriptorSize
@@ -413,8 +420,8 @@ CreateFmpBasedEsrt (
   // Allocate ESRT Table and GUID/HardwareInstance table
   //
   Table = AllocateZeroPool (
-             (NumberOfDescriptors * sizeof (EFI_SYSTEM_RESOURCE_ENTRY)) + sizeof (EFI_SYSTEM_RESOURCE_TABLE)
-             );
+            (NumberOfDescriptors * sizeof (EFI_SYSTEM_RESOURCE_ENTRY)) + sizeof (EFI_SYSTEM_RESOURCE_TABLE)
+            );
   if (Table == NULL) {
     DEBUG ((DEBUG_ERROR, "EsrtFmpDxe: Failed to allocate memory for ESRT.\n"));
     FreePool (Buffer);
@@ -439,7 +446,7 @@ CreateFmpBasedEsrt (
   NumberOfDescriptors = 0;
   for (Index = 0; Index < NoProtocols; Index++) {
     FmpImageInfoBuf = FmpGetFirmwareImageDescriptor (
-                        (EFI_FIRMWARE_MANAGEMENT_PROTOCOL *) Buffer[Index],
+                        (EFI_FIRMWARE_MANAGEMENT_PROTOCOL *)Buffer[Index],
                         &FmpImageInfoDescriptorVer,
                         &FmpImageInfoCount,
                         &DescriptorSize
@@ -462,6 +469,7 @@ CreateFmpBasedEsrt (
         //
         CreateEsrtEntry (Table, HardwareInstances, &NumberOfDescriptors, FmpImageInfoBuf, FmpImageInfoDescriptorVer);
       }
+
       FmpImageInfoCount--;
       //
       // Increment the buffer pointer ahead by the size of the descriptor

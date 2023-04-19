@@ -13,7 +13,7 @@
 //
 // Global descriptor table (GDT) Template
 //
-STATIC GDT_ENTRIES mGdtTemplate = {
+STATIC GDT_ENTRIES  mGdtTemplate = {
   //
   // NULL_SEL
   //
@@ -148,7 +148,7 @@ InitGlobalDescriptorTable (
                   );
   ASSERT_EFI_ERROR (Status);
   ASSERT ((Memory != 0) && (Memory < SIZE_4GB));
-  Gdt = (GDT_ENTRIES *) (UINTN) Memory;
+  Gdt = (GDT_ENTRIES *)(UINTN)Memory;
 #else
   /*
    * Apples bootloader boot.efi for at least OS X Tiger, Leopard and Snow Leopard
@@ -171,8 +171,8 @@ InitGlobalDescriptorTable (
   //
   // Write GDT register
   //
-  Gdtr.Base  = (UINT32) (UINTN) Gdt;
-  Gdtr.Limit = (UINT16) (sizeof (mGdtTemplate) - 1);
+  Gdtr.Base  = (UINT32)(UINTN)Gdt;
+  Gdtr.Limit = (UINT16)(sizeof (mGdtTemplate) - 1);
   AsmWriteGdtr (&Gdtr);
 
   //

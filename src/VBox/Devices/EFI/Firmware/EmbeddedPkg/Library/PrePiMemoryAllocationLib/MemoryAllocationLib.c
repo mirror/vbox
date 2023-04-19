@@ -14,7 +14,45 @@
 #include <Library/PrePiLib.h>
 #include <Library/DebugLib.h>
 
+STATIC
+VOID *
+EFIAPI
+InternalAllocatePages (
+  IN UINTN            Pages,
+  IN EFI_MEMORY_TYPE  MemoryType
+  )
+{
+  EFI_PEI_HOB_POINTERS  Hob;
+  EFI_PHYSICAL_ADDRESS  NewTop;
 
+  Hob.Raw = GetHobList ();
+
+  NewTop  = Hob.HandoffInformationTable->EfiFreeMemoryTop & ~(EFI_PHYSICAL_ADDRESS)EFI_PAGE_MASK;
+  NewTop -= Pages * EFI_PAGE_SIZE;
+
+  //
+  // Verify that there is sufficient memory to satisfy the allocation
+  //
+  if (NewTop < (Hob.HandoffInformationTable->EfiFreeMemoryBottom + sizeof (EFI_HOB_MEMORY_ALLOCATION))) {
+    return NULL;
+  }
+
+  //
+  // Update the PHIT to reflect the memory usage
+  //
+  Hob.HandoffInformationTable->EfiFreeMemoryTop = NewTop;
+
+  //
+  // Create a memory allocation HOB.
+  //
+  BuildMemoryAllocationHob (
+    Hob.HandoffInformationTable->EfiFreeMemoryTop,
+    Pages * EFI_PAGE_SIZE,
+    MemoryType
+    );
+
+  return (VOID *)(UINTN)Hob.HandoffInformationTable->EfiFreeMemoryTop;
+}
 
 /**
   Allocates one or more 4KB pages of type EfiBootServicesData.
@@ -32,47 +70,33 @@
 VOID *
 EFIAPI
 AllocatePages (
-  IN UINTN            Pages
+  IN UINTN  Pages
   )
 {
-  EFI_PEI_HOB_POINTERS                    Hob;
-  EFI_PHYSICAL_ADDRESS                    Offset;
-
-  Hob.Raw = GetHobList ();
-
-  // Check to see if on 4k boundary
-  Offset = Hob.HandoffInformationTable->EfiFreeMemoryTop & 0xFFF;
-  if (Offset != 0) {
-    // If not aligned, make the allocation aligned.
-    Hob.HandoffInformationTable->EfiFreeMemoryTop -= Offset;
-  }
-
-  //
-  // Verify that there is sufficient memory to satisfy the allocation
-  //
-  if (Hob.HandoffInformationTable->EfiFreeMemoryTop - ((Pages * EFI_PAGE_SIZE) + sizeof (EFI_HOB_MEMORY_ALLOCATION)) < Hob.HandoffInformationTable->EfiFreeMemoryBottom) {
-    return 0;
-  } else {
-    //
-    // Update the PHIT to reflect the memory usage
-    //
-    Hob.HandoffInformationTable->EfiFreeMemoryTop -= Pages * EFI_PAGE_SIZE;
-
-    // This routine used to create a memory allocation HOB a la PEI, but that's not
-    // necessary for us.
-
-    //
-    // Create a memory allocation HOB.
-    //
-    BuildMemoryAllocationHob (
-        Hob.HandoffInformationTable->EfiFreeMemoryTop,
-        Pages * EFI_PAGE_SIZE,
-        EfiBootServicesData
-        );
-    return (VOID *)(UINTN)Hob.HandoffInformationTable->EfiFreeMemoryTop;
-  }
+  return InternalAllocatePages (Pages, EfiBootServicesData);
 }
 
+/**
+  Allocates one or more 4KB pages of type EfiRuntimeServicesData.
+
+  Allocates the number of 4KB pages of type EfiRuntimeServicesData and returns a pointer to the
+  allocated buffer.  The buffer returned is aligned on a 4KB boundary.  If Pages is 0, then NULL
+  is returned.  If there is not enough memory remaining to satisfy the request, then NULL is
+  returned.
+
+  @param  Pages                 The number of 4 KB pages to allocate.
+
+  @return A pointer to the allocated buffer or NULL if allocation fails.
+
+**/
+VOID *
+EFIAPI
+AllocateRuntimePages (
+  IN UINTN  Pages
+  )
+{
+  return InternalAllocatePages (Pages, EfiRuntimeServicesData);
+}
 
 /**
   Allocates one or more 4KB pages of type EfiBootServicesData at a specified alignment.
@@ -97,8 +121,8 @@ AllocateAlignedPages (
   IN UINTN  Alignment
   )
 {
-  VOID    *Memory;
-  UINTN   AlignmentMask;
+  VOID   *Memory;
+  UINTN  AlignmentMask;
 
   //
   // Alignment must be a power of two or zero.
@@ -108,6 +132,7 @@ AllocateAlignedPages (
   if (Pages == 0) {
     return NULL;
   }
+
   //
   // Make sure that Pages plus EFI_SIZE_TO_PAGES (Alignment) does not overflow.
   //
@@ -121,9 +146,9 @@ AllocateAlignedPages (
   } else {
     AlignmentMask = Alignment - 1;
   }
-  return (VOID *) (UINTN) (((UINTN) Memory + AlignmentMask) & ~AlignmentMask);
-}
 
+  return (VOID *)(UINTN)(((UINTN)Memory + AlignmentMask) & ~AlignmentMask);
+}
 
 /**
   Frees one or more 4KB pages that were previously allocated with one of the page allocation
@@ -171,10 +196,9 @@ AllocatePool (
   IN UINTN  AllocationSize
   )
 {
-  EFI_HOB_MEMORY_POOL      *Hob;
+  EFI_HOB_MEMORY_POOL  *Hob;
 
   Hob = GetHobList ();
-
 
   //
   // Verify that there is sufficient memory to satisfy the allocation
@@ -183,10 +207,11 @@ AllocatePool (
     // Please call AllocatePages for big allocations
     return 0;
   } else {
-
-    Hob = (EFI_HOB_MEMORY_POOL *)CreateHob (EFI_HOB_TYPE_MEMORY_POOL,
+    Hob = (EFI_HOB_MEMORY_POOL *)CreateHob (
+                                   EFI_HOB_TYPE_MEMORY_POOL,
                                    (UINT16)(sizeof (EFI_HOB_MEMORY_POOL) +
-                                            AllocationSize));
+                                            AllocationSize)
+                                   );
     return (VOID *)(Hob + 1);
   }
 }
@@ -210,7 +235,7 @@ AllocateZeroPool (
   IN UINTN  AllocationSize
   )
 {
-  VOID *Buffer;
+  VOID  *Buffer;
 
   Buffer = AllocatePool (AllocationSize);
   if (Buffer == NULL) {
@@ -239,7 +264,7 @@ AllocateZeroPool (
 VOID
 EFIAPI
 FreePool (
-  IN VOID   *Buffer
+  IN VOID  *Buffer
   )
 {
   // Not implemented yet

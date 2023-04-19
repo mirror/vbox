@@ -10,6 +10,35 @@
 #ifndef RNGDXE_INTERNALS_H_
 #define RNGDXE_INTERNALS_H_
 
+#include <Protocol/Rng.h>
+
+//
+// Array containing the validated Rng algorithm.
+// The entry with the lowest index will be the default algorithm.
+//
+extern UINTN              mAvailableAlgoArrayCount;
+extern EFI_RNG_ALGORITHM  *mAvailableAlgoArray;
+
+/** Allocate and initialize mAvailableAlgoArray with the available
+    Rng algorithms. Also update mAvailableAlgoArrayCount.
+
+  @retval EFI_SUCCESS             The function completed successfully.
+  @retval EFI_OUT_OF_RESOURCES    Could not allocate memory.
+**/
+EFI_STATUS
+EFIAPI
+GetAvailableAlgorithms (
+  VOID
+  );
+
+/** Free mAvailableAlgoArray.
+**/
+VOID
+EFIAPI
+FreeAvailableAlgorithms (
+  VOID
+  );
+
 /**
   Returns information about the random number generation implementation.
 
@@ -36,9 +65,9 @@
 EFI_STATUS
 EFIAPI
 RngGetInfo (
-  IN EFI_RNG_PROTOCOL             *This,
-  IN OUT UINTN                    *RNGAlgorithmListSize,
-  OUT EFI_RNG_ALGORITHM           *RNGAlgorithmList
+  IN EFI_RNG_PROTOCOL    *This,
+  IN OUT UINTN           *RNGAlgorithmListSize,
+  OUT EFI_RNG_ALGORITHM  *RNGAlgorithmList
   );
 
 /**
@@ -66,35 +95,10 @@ RngGetInfo (
 EFI_STATUS
 EFIAPI
 RngGetRNG (
-  IN EFI_RNG_PROTOCOL            *This,
-  IN EFI_RNG_ALGORITHM           *RNGAlgorithm, OPTIONAL
-  IN UINTN                       RNGValueLength,
-  OUT UINT8                      *RNGValue
-  );
-
-/**
-  Returns information about the random number generation implementation.
-
-  @param[in,out] RNGAlgorithmListSize On input, the size in bytes of RNGAlgorithmList.
-                                      On output with a return code of EFI_SUCCESS, the size
-                                      in bytes of the data returned in RNGAlgorithmList. On output
-                                      with a return code of EFI_BUFFER_TOO_SMALL,
-                                      the size of RNGAlgorithmList required to obtain the list.
-  @param[out] RNGAlgorithmList        A caller-allocated memory buffer filled by the driver
-                                      with one EFI_RNG_ALGORITHM element for each supported
-                                      RNG algorithm. The list must not change across multiple
-                                      calls to the same driver. The first algorithm in the list
-                                      is the default algorithm for the driver.
-
-  @retval EFI_SUCCESS                 The RNG algorithm list was returned successfully.
-  @retval EFI_BUFFER_TOO_SMALL        The buffer RNGAlgorithmList is too small to hold the result.
-
-**/
-UINTN
-EFIAPI
-ArchGetSupportedRngAlgorithms (
-  IN OUT UINTN                     *RNGAlgorithmListSize,
-  OUT    EFI_RNG_ALGORITHM         *RNGAlgorithmList
+  IN EFI_RNG_PROTOCOL   *This,
+  IN EFI_RNG_ALGORITHM  *RNGAlgorithm  OPTIONAL,
+  IN UINTN              RNGValueLength,
+  OUT UINT8             *RNGValue
   );
 
 /**
@@ -110,8 +114,25 @@ ArchGetSupportedRngAlgorithms (
 EFI_STATUS
 EFIAPI
 RngGetBytes (
-  IN UINTN         Length,
-  OUT UINT8        *RandBuffer
+  IN UINTN   Length,
+  OUT UINT8  *RandBuffer
   );
 
-#endif  // RNGDXE_INTERNALS_H_
+/**
+  Generate high-quality entropy source using a TRNG or through RDRAND.
+
+  @param[in]   Length        Size of the buffer, in bytes, to fill with.
+  @param[out]  Entropy       Pointer to the buffer to store the entropy data.
+
+  @retval EFI_SUCCESS        Entropy generation succeeded.
+  @retval EFI_NOT_READY      Failed to request random data.
+
+**/
+EFI_STATUS
+EFIAPI
+GenerateEntropy (
+  IN UINTN   Length,
+  OUT UINT8  *Entropy
+  );
+
+#endif // RNGDXE_INTERNALS_H_

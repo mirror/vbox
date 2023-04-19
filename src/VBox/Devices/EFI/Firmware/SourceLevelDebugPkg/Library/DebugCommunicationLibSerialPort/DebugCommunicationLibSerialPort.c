@@ -55,11 +55,11 @@ DebugPortInitialize (
   IN DEBUG_PORT_CONTINUE  Function
   )
 {
-  RETURN_STATUS      Status;
+  RETURN_STATUS  Status;
 
   Status = SerialPortInitialize ();
-  if (RETURN_ERROR(Status)) {
-    DEBUG ((EFI_D_ERROR, "Debug Serial Port: Initialization failed!\n"));
+  if (RETURN_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "Debug Serial Port: Initialization failed!\n"));
   }
 
   if (Function != NULL) {
@@ -70,7 +70,7 @@ DebugPortInitialize (
 }
 
 /**
-  Read data from debug device and save the datas in buffer.
+  Read data from debug device and save the data in a buffer.
 
   Reads NumberOfBytes data bytes from a debug device into the buffer
   specified by Buffer. The number of bytes actually read is returned.
@@ -89,13 +89,13 @@ DebugPortInitialize (
 UINTN
 EFIAPI
 DebugPortReadBuffer (
-  IN DEBUG_PORT_HANDLE     Handle,
-  IN UINT8                 *Buffer,
-  IN UINTN                 NumberOfBytes,
-  IN UINTN                 Timeout
+  IN DEBUG_PORT_HANDLE  Handle,
+  IN UINT8              *Buffer,
+  IN UINTN              NumberOfBytes,
+  IN UINTN              Timeout
   )
 {
-  if (NumberOfBytes != 1 || Buffer == NULL || Timeout != 0) {
+  if ((NumberOfBytes != 1) || (Buffer == NULL) || (Timeout != 0)) {
     return 0;
   }
 
@@ -122,9 +122,9 @@ DebugPortReadBuffer (
 UINTN
 EFIAPI
 DebugPortWriteBuffer (
-  IN DEBUG_PORT_HANDLE     Handle,
-  IN UINT8                 *Buffer,
-  IN UINTN                 NumberOfBytes
+  IN DEBUG_PORT_HANDLE  Handle,
+  IN UINT8              *Buffer,
+  IN UINTN              NumberOfBytes
   )
 {
   return SerialPortWrite (Buffer, NumberOfBytes);
@@ -146,9 +146,8 @@ DebugPortWriteBuffer (
 BOOLEAN
 EFIAPI
 DebugPortPollBuffer (
-  IN DEBUG_PORT_HANDLE     Handle
+  IN DEBUG_PORT_HANDLE  Handle
   )
 {
   return SerialPortPoll ();
 }
-

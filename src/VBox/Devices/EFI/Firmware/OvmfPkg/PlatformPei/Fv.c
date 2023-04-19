@@ -12,8 +12,9 @@
 #include <Library/HobLib.h>
 #include <Library/PeiServicesLib.h>
 #include <Library/PcdLib.h>
-
-#include <Library/BaseMemoryLib.h>
+#ifdef VBOX
+# include <Library/BaseMemoryLib.h>
+#endif
 
 /**
   Publish PEI & DXE (Decompressed) Memory based FVs to let PEI
@@ -24,10 +25,10 @@
 **/
 EFI_STATUS
 PeiFvInitialization (
-  VOID
+  IN EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
   )
 {
-  BOOLEAN SecureS3Needed;
+  BOOLEAN  SecureS3Needed;
 #ifdef VBOX
   EFI_PHYSICAL_ADDRESS PhysOvmfDxeMemFvBaseRelocated = 0;
   VOID *OvmfDxeMemFvBaseRelocated;
@@ -52,7 +53,7 @@ PeiFvInitialization (
   //
   BuildFvHob (PhysOvmfDxeMemFvBaseRelocated, PcdGet32 (PcdOvmfDxeMemFvSize));
 
-  SecureS3Needed = mS3Supported && FeaturePcdGet (PcdSmmSmramRequire);
+  SecureS3Needed = PlatformInfoHob->S3Supported && PlatformInfoHob->SmmSmramRequire;
 
   //
   // Create a memory allocation HOB for the DXE FV.
@@ -88,7 +89,7 @@ PeiFvInitialization (
   BuildMemoryAllocationHob (
     PcdGet32 (PcdOvmfPeiMemFvBase),
     PcdGet32 (PcdOvmfPeiMemFvSize),
-    mS3Supported ? EfiACPIMemoryNVS : EfiBootServicesData
+    PlatformInfoHob->S3Supported ? EfiACPIMemoryNVS : EfiBootServicesData
     );
 
   //
@@ -96,7 +97,7 @@ PeiFvInitialization (
   //
   BuildFvHob (PcdGet32 (PcdOvmfDxeMemFvBase), PcdGet32 (PcdOvmfDxeMemFvSize));
 
-  SecureS3Needed = mS3Supported && FeaturePcdGet (PcdSmmSmramRequire);
+  SecureS3Needed = PlatformInfoHob->S3Supported && PlatformInfoHob->SmmSmramRequire;
 
   //
   // Create a memory allocation HOB for the DXE FV.
@@ -117,7 +118,7 @@ PeiFvInitialization (
   // of DXEFV, so let's keep away the OS from there too.
   //
   if (SecureS3Needed) {
-    UINT32 DxeMemFvEnd;
+    UINT32  DxeMemFvEnd;
 
     DxeMemFvEnd = PcdGet32 (PcdOvmfDxeMemFvBase) +
                   PcdGet32 (PcdOvmfDxeMemFvSize);
@@ -133,7 +134,7 @@ PeiFvInitialization (
   //
   PeiServicesInstallFvInfoPpi (
     NULL,
-    (VOID *)(UINTN) PcdGet32 (PcdOvmfDxeMemFvBase),
+    (VOID *)(UINTN)PcdGet32 (PcdOvmfDxeMemFvBase),
     PcdGet32 (PcdOvmfDxeMemFvSize),
     NULL,
     NULL
@@ -142,4 +143,3 @@ PeiFvInitialization (
 
   return EFI_SUCCESS;
 }
-

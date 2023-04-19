@@ -14,7 +14,7 @@
 ///
 GLOBAL_REMOVE_IF_UNREFERENCED
 EFI_COMPONENT_NAME_PROTOCOL  gXenPvBlkDxeComponentName = {
-  (EFI_COMPONENT_NAME_GET_DRIVER_NAME)    XenPvBlkDxeComponentNameGetDriverName,
+  (EFI_COMPONENT_NAME_GET_DRIVER_NAME)XenPvBlkDxeComponentNameGetDriverName,
   (EFI_COMPONENT_NAME_GET_CONTROLLER_NAME)XenPvBlkDxeComponentNameGetControllerName,
   "eng"
 };
@@ -33,18 +33,18 @@ EFI_COMPONENT_NAME2_PROTOCOL  gXenPvBlkDxeComponentName2 = {
 /// Table of driver names
 ///
 GLOBAL_REMOVE_IF_UNREFERENCED
-EFI_UNICODE_STRING_TABLE mXenPvBlkDxeDriverNameTable[] = {
+EFI_UNICODE_STRING_TABLE  mXenPvBlkDxeDriverNameTable[] = {
   { "eng;en", (CHAR16 *)L"Xen PV Block Driver" },
-  { NULL, NULL }
+  { NULL,     NULL                             }
 };
 
 ///
 /// Table of controller names
 ///
 GLOBAL_REMOVE_IF_UNREFERENCED
-EFI_UNICODE_STRING_TABLE mXenPvBlkDxeControllerNameTable[] = {
+EFI_UNICODE_STRING_TABLE  mXenPvBlkDxeControllerNameTable[] = {
   { "eng;en", (CHAR16 *)L"Xen PV Block Device" },
-  { NULL, NULL }
+  { NULL,     NULL                             }
 };
 
 /**
@@ -52,7 +52,7 @@ EFI_UNICODE_STRING_TABLE mXenPvBlkDxeControllerNameTable[] = {
 
   @param  This       A pointer to the EFI_COMPONENT_NAME_PROTOCOL instance.
   @param  Language   A pointer to a three-character ISO 639-2 language identifier.
-                     This is the language of the driver name that that the caller
+                     This is the language of the driver name that the caller
                      is requesting, and it must match one of the languages specified
                      in SupportedLanguages.  The number of languages supported by a
                      driver is up to the driver writer.

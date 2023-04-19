@@ -42,6 +42,18 @@
 
 [FixedPcd]
   gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfCpuidBase
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfCpuidSize
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSnpSecretsBase
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSnpSecretsSize
+
+[Protocols]
+  gEdkiiMemoryAcceptProtocolGuid
+  gOvmfSevMemoryAcceptanceProtocolGuid
+
+[Guids]
+  gConfidentialComputingSevSnpBlobGuid
+  gEfiEventBeforeExitBootServicesGuid
 
 [Pcd]
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfHostBridgePciDevId
