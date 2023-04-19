@@ -40,8 +40,6 @@
 #ifdef VBOX
 #define POWER_MGMT_REGISTER_PIIX4(Offset)  PCI_LIB_ADDRESS (0, 7, 0, (Offset))
 #else
-POWER_MGMT_REGISTER_PIIX4(Offset) PCI_LIB_ADDRESS (0, 1, 3, (Offset))
-=======
 #define POWER_MGMT_REGISTER_PIIX4(Offset)  PCI_LIB_ADDRESS (0, 1, 3, (Offset))
 #endif
 
