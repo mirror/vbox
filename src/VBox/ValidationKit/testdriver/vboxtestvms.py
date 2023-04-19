@@ -1966,9 +1966,9 @@ class TestVmManager(object):
         #       The distro has a buggy dbus implementation, which crashes often in some dbus watcher functions when being
         #       invoked by pm_sm_authenticate(). Also, the distro's repositories can't be used either easily anymore due to old
         #       certificates and/or authentication methods. However, newer versions, such as OL6u9 or u10 should work fine.
-        TestVm('tst-ol-6u2-32',             kfGrpStdSmoke,        sHd = '6.1/ol-6u2-x86.vdi',
-               sKind = 'Oracle',    acCpusSup = range(1, 33), fIoApic = True,
-               asParavirtModesSup = [g_ksParavirtProviderKVM,]),
+        #TestVm('tst-ol-6u2-32',             kfGrpStdSmoke,        sHd = '6.1/ol-6u2-x86.vdi',
+        #       sKind = 'Oracle',    acCpusSup = range(1, 33), fIoApic = True,
+        #       asParavirtModesSup = [g_ksParavirtProviderKVM,]),
         TestVm('tst-ubuntu-15_10-64-efi',   kfGrpStdSmoke,        sHd = '6.1/efi/ubuntu-15_10-efi-amd64-3.vdi',
                sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
                asParavirtModesSup = [g_ksParavirtProviderKVM,]),
