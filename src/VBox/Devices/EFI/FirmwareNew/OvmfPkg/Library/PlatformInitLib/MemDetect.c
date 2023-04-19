@@ -43,6 +43,26 @@ Module Name:
 
 #include <Library/PlatformInitLib.h>
 
+#ifdef VBOX
+# include "VBoxPkg.h"
+# include "DevEFI.h"
+# include "iprt/asm.h"
+
+static UINT32
+GetVmVariable(UINT32 Variable, CHAR8 *pbBuf, UINT32 cbBuf)
+{
+  UINT32 cbVar, offBuf;
+
+  ASMOutU32(EFI_INFO_PORT, Variable);
+  cbVar = ASMInU32(EFI_INFO_PORT);
+
+  for (offBuf = 0; offBuf < cbVar && offBuf < cbBuf; offBuf++)
+    pbBuf[offBuf] = ASMInU8(EFI_INFO_PORT);
+
+  return cbVar;
+}
+#endif
+
 #define MEGABYTE_SHIFT  20
 
 VOID
@@ -51,6 +71,10 @@ PlatformQemuUc32BaseInitialization (
   IN OUT EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
   )
 {
+#ifdef VBOX
+  UINT64 McfgBase = 0;
+#endif
+
   if (PlatformInfoHob->HostBridgeDevId == 0xffff /* microvm */) {
     return;
   }
@@ -63,9 +87,25 @@ PlatformQemuUc32BaseInitialization (
 
   PlatformGetSystemMemorySizeBelow4gb (PlatformInfoHob);
 
+#ifdef VBOX
+  /*
+   * Need to initialize the dynamic PcdPciExpressBaseAddress here after the low memory
+   * gets known or the UC base address will become wrong.
+   * The HOBs are not created however but this is done in PlatformMemMapInitialization()
+   * which is called later.
+   */
+  GetVmVariable(EFI_INFO_INDEX_MCFG_BASE, (CHAR8 *)&McfgBase, sizeof(McfgBase));
+  if (PlatformInfoHob->LowMemory < BASE_2GB)
+    PlatformInfoHob->LowMemory = BASE_2GB;
+  if (McfgBase == 0)
+    McfgBase = PlatformInfoHob->LowMemory;   // backward compatibilit with old DevEFI
+
+  PcdSet64S (PcdPciExpressBaseAddress, McfgBase);
+#endif
+
   if (PlatformInfoHob->HostBridgeDevId == INTEL_Q35_MCH_DEVICE_ID) {
     ASSERT (PcdGet64 (PcdPciExpressBaseAddress) <= MAX_UINT32);
-    //ASSERT (PcdGet64 (PcdPciExpressBaseAddress) >= PlatformInfoHob->LowMemory);
+    ASSERT (PcdGet64 (PcdPciExpressBaseAddress) >= PlatformInfoHob->LowMemory);
 
     if (PlatformInfoHob->LowMemory <= BASE_2GB) {
       // Newer qemu with gigabyte aligned memory,
