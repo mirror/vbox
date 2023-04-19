@@ -152,9 +152,9 @@ int main(int argc, char **argv)
      */
     RTTestISub("Contiguous memory");
 
-    size_t cbAlloc = RT_ALIGN_Z(15003, PAGE_SIZE) >> PAGE_SHIFT;
+    size_t cPages = RT_ALIGN_Z(15003, PAGE_SIZE) >> PAGE_SHIFT;
 
-    pv = SUPR3ContAlloc(cbAlloc, NULL, &HCPhys);
+    pv = SUPR3ContAlloc(cPages, NULL, &HCPhys);
     if (pv && HCPhys)
     {
         RTTestIPrintf(RTTESTLVL_DEBUG, "SUPR3ContAlloc(15003) -> HCPhys=%llx pv=%p\n", HCPhys, pv);
@@ -175,7 +175,7 @@ int main(int argc, char **argv)
         /* pv0 is intentionally not freed! */
     }
     else
-        RTTestIFailed("SUPR3ContAlloc(%zu bytes) failed!\n", cbAlloc);
+        RTTestIFailed("SUPR3ContAlloc(%zu pages) failed!\n", cPages);
 
     RTTestISubDone();
 
@@ -186,9 +186,9 @@ int main(int argc, char **argv)
 
     #define BIG_SIZE    72*1024*1024
     #define BIG_SIZEPP  (BIG_SIZE + PAGE_SIZE)
-    pv      = NULL;
-    cbAlloc = BIG_SIZEPP >> PAGE_SHIFT;
-    rc = SUPR3PageAlloc(cbAlloc, 0, &pv);
+    pv     = NULL;
+    cPages = BIG_SIZEPP >> PAGE_SHIFT;
+    rc = SUPR3PageAlloc(cPages, 0, &pv);
     if (RT_SUCCESS(rc))
     {
         AssertPtr(pv);
@@ -214,10 +214,10 @@ int main(int argc, char **argv)
         }
         else
             RTTestIFailed("SUPPageLock(%p) failed with rc=%Rrc\n", pvAligned, rc);
-        SUPR3PageFree(pv, cbAlloc);
+        SUPR3PageFree(pv, cPages);
     }
     else
-        RTTestIFailed("SUPPageAlloc(%zu bytes) failed with rc=%Rrc\n", cbAlloc, rc);
+        RTTestIFailed("SUPPageAlloc(%zu pages) failed with rc=%Rrc\n", cPages, rc);
 
     RTTestISubDone();
 
