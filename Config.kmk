@@ -3754,11 +3754,13 @@ if1of ($(KBUILD_TYPE), debug dbgopt strict)
  #not yet# VBOX_WITH_DEBUG_VCC_CRT = 1
 endif
 ifdef VBOX_WITH_DEBUG_VCC_CRT
- VBOX_VCC_CRT_TYPE   = d
- VBOX_VCC_CRT_TYPE_N =
+ VBOX_VCC_CRT_TYPE       := d
+ VBOX_VCC_CRT_TYPE_UPPER := D
+ VBOX_VCC_CRT_TYPE_N     :=
 else
- VBOX_VCC_CRT_TYPE   =
- VBOX_VCC_CRT_TYPE_N = d
+ VBOX_VCC_CRT_TYPE       :=
+ VBOX_VCC_CRT_TYPE_UPPER :=
+ VBOX_VCC_CRT_TYPE_N     := d
 endif
 
 
@@ -6106,7 +6108,7 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBoxR3Exe_TOOL.win.amd64     = $(VBOX_VCC_TOOL_STEM)AMD64
  TEMPLATE_VBoxR3Exe_RCDEFS             = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
-  TEMPLATE_VBoxR3Exe_SDKS              = ReorderCompilerIncs WINSDK10-UCRT $(VBOX_WINPSDK)
+  TEMPLATE_VBoxR3Exe_SDKS              = ReorderCompilerIncs WINSDK10-UCRT$(VBOX_VCC_CRT_TYPE_UPPER) $(VBOX_WINPSDK)
  else
   TEMPLATE_VBoxR3Exe_SDKS              = ReorderCompilerIncs $(VBOX_WINPSDK)
  endif
@@ -6436,9 +6438,9 @@ endif
 ifeq ($(KBUILD_TARGET),win)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   ifdef VBOX_WITH_NOCRT_STATIC
-   TEMPLATE_VBoxR3StaticBase_SDKS          = $(subst WINSDK10-UCRT,,$(TEMPLATE_VBoxR3Exe_SDKS))
+   TEMPLATE_VBoxR3StaticBase_SDKS          = $(subst WINSDK10-UCRT$(VBOX_VCC_CRT_TYPE_UPPER),,$(TEMPLATE_VBoxR3Exe_SDKS))
   else
-   TEMPLATE_VBoxR3StaticBase_SDKS          = $(subst WINSDK10-UCRT, WINSDK10-UCRT-STATIC,$(TEMPLATE_VBoxR3Exe_SDKS))
+   TEMPLATE_VBoxR3StaticBase_SDKS          = $(subst WINSDK10-UCRT$(VBOX_VCC_CRT_TYPE_UPPER), WINSDK10-UCRT$(VBOX_VCC_CRT_TYPE_UPPER)-STATIC,$(TEMPLATE_VBoxR3Exe_SDKS))
   endif
  endif
  ifdef VBOX_WITH_NOCRT_STATIC
@@ -6668,7 +6670,7 @@ endif
 #
 TEMPLATE_VBoxR3StaticNoCrt               = Static
 TEMPLATE_VBoxR3StaticNoCrt_EXTENDS       = VBoxR3Static
-TEMPLATE_VBoxR3StaticNoCrt_SDKS          = $(subst WINSDK10-UCRT-STATIC,WINSDK10-UCRT-INCS, $(TEMPLATE_VBoxR3Static_SDKS))
+TEMPLATE_VBoxR3StaticNoCrt_SDKS          = $(subst WINSDK10-UCRT$(VBOX_VCC_CRT_TYPE_UPPER)-STATIC,WINSDK10-UCRT-INCS, $(TEMPLATE_VBoxR3Static_SDKS))
 TEMPLATE_VBoxR3StaticNoCrt_SDKS.$(KBUILD_TARGET_ARCH) = $(filter-out VBoxOpenSslStatic,$(TEMPLATE_VBoxR3Static_SDKS.$(KBUILD_TARGET_ARCH)))
 TEMPLATE_VBoxR3StaticNoCrt_DEFS          = $(TEMPLATE_VBoxR3Static_DEFS) \
 	RT_NO_CRT \
@@ -7052,7 +7054,7 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBoxMainExe_TOOL.win.x86       = $(VBOX_VCC_TOOL_STEM)X86
  TEMPLATE_VBoxMainExe_TOOL.win.amd64     = $(VBOX_VCC_TOOL_STEM)AMD64
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
-  TEMPLATE_VBoxMainExe_SDKS              = ReorderCompilerIncs WINSDK10-UCRT $(VBOX_WINPSDK) $(VBOX_WINDDK)
+  TEMPLATE_VBoxMainExe_SDKS              = ReorderCompilerIncs WINSDK10-UCRT$(VBOX_VCC_CRT_TYPE_UPPER) $(VBOX_WINPSDK) $(VBOX_WINDDK)
  else
   TEMPLATE_VBoxMainExe_SDKS              = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
  endif
@@ -7631,6 +7633,14 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
   VBOX_QT_INFIX := VBox$(VBOX_QT_DBG)
  endif
 
+ if "$(VBOX_QT_DBG)" != "" && "$(VBOX_QT_DBG)" != "$(VBOX_VCC_CRT_TYPE)" && "$(KBUILD_TARGET)" == "win"
+  $(warning WARNING! VBOX_QT_DBG (=$(VBOX_QT_DBG)) and VBOX_VCC_CRT_TYPE (=$(VBOX_VCC_CRT_TYPE)) does not match!)
+  $(warning WARNING! This may cause heap troubles in the GUI in places where something is)
+  $(warning WARNING! allocated in the Qt DLLs freed in our code (or vice versa) because they)
+  $(warning WARNING! will be using different allocators.  See r156914 for more details.)
+  $(warning WARNING! VBOX_WITH_DEBUG_VCC_CRT=1 in enabled debug CRT.)
+ endif
+
  ifeq ($(KBUILD_TARGET),darwin)
   VBOX_QT_MOD := QtCore QtGui QtWidgets QtPrintSupport
   ifdef VBOX_WITH_QT6
@@ -7712,16 +7722,17 @@ ifdef VBOX_WITH_QTGUI
  TEMPLATE_VBoxQtGuiExe_RCDEFS = $(TEMPLATE_VBoxR3Exe_RCDEFS)
 
  ifeq ($(KBUILD_TARGET),win)
-  # Note! No use of VBOX_VCC_CRT_TYPE here yet as it requires a /MDd build of Qt as well.
+  # Note! Only use VBOX_VCC_CRT_TYPE when it matches VBOX_QT_DBG.
   TEMPLATE_VBoxQtGuiExe_TOOL = $(VBOX_VCC_TOOL)
   if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
-   TEMPLATE_VBoxQtGuiExe_SDKS = WINSDK10-UCRT
+   TEMPLATE_VBoxQtGuiExe_SDKS = WINSDK10-UCRT$(VBOX_VCC_CRT_TYPE_UPPER)
   endif
   TEMPLATE_VBoxQtGuiExe_DEFS += \
   	_WIN32_WINNT=0x0500 UNICODE _UNICODE \
   	QT_DLL _CRT_SECURE_NO_DEPRECATE \
   	$(QMAKE_PRL_DEFINES)
-  TEMPLATE_VBoxQtGuiExe_CXXFLAGS = -nologo -Zm200 -MD -Zi -EHsc -Zc:wchar_t- $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS) $(VBOX_VCC_std)
+  TEMPLATE_VBoxQtGuiExe_CXXFLAGS = -nologo -Zm200 -MD$(if-expr "$(VBOX_QT_DBG)" == "$(VBOX_VCC_CRT_TYPE)",$(VBOX_VCC_CRT_TYPE),) \
+  	-Zi -EHsc -Zc:wchar_t- $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS) $(VBOX_VCC_std)
   #    -wd4481: nonstandard extension used: override specifier 'override'
   #    -wd4625: 'QRubberBand' : copy constructor could not be generated because a base class copy constructor is inaccessible
   #    -wd4626: 'QRubberBand' : assignment operator could not be generated because a base class assignment operator is inaccessible
@@ -7786,9 +7797,9 @@ ifdef VBOX_WITH_QTGUI
    TEMPLATE_VBoxQtGuiExe_LIBS = \
    	$(VBOX_LIBS_QT) \
    	$(LIB_RUNTIME) \
-   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/vcruntime.lib \
-   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
-   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/vcruntime$(if-expr "$(VBOX_QT_DBG)" == "$(VBOX_VCC_CRT_TYPE)",$(VBOX_VCC_CRT_TYPE),).lib \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt$(if-expr "$(VBOX_QT_DBG)" == "$(VBOX_VCC_CRT_TYPE)",$(VBOX_VCC_CRT_TYPE),).lib \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt$(if-expr "$(VBOX_QT_DBG)" == "$(VBOX_VCC_CRT_TYPE)",$(VBOX_VCC_CRT_TYPE),).lib \
    	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
    	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
    ifeq ($(KBUILD_TYPE),asan)
@@ -7800,8 +7811,8 @@ ifdef VBOX_WITH_QTGUI
    TEMPLATE_VBoxQtGuiExe_LIBS = \
    	$(VBOX_LIBS_QT) \
    	$(LIB_RUNTIME) \
-   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
-   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt$(if-expr "$(VBOX_QT_DBG)" == "$(VBOX_VCC_CRT_TYPE)",$(VBOX_VCC_CRT_TYPE),).lib \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt$(if-expr "$(VBOX_QT_DBG)" == "$(VBOX_VCC_CRT_TYPE)",$(VBOX_VCC_CRT_TYPE),).lib \
    	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
    	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
   endif
@@ -7923,7 +7934,7 @@ ifdef VBOX_WITH_QTGUI
 
  # Add COM/XPCOM stuff
  TEMPLATE_VBoxQtGuiExe_LIBS += \
- 	$(PATH_STAGE_LIB)/VBoxCOM$(if-expr defined(VBOX_WITH_DEBUG_VCC_CRT) && $(KBUILD_TARGET) == win,-GUI,)$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/VBoxCOM$(if-expr "$(VBOX_QT_DBG)" != "$(VBOX_VCC_CRT_TYPE)" && $(KBUILD_TARGET) == win,-GUI,)$(VBOX_SUFF_LIB)
  ifdef VBOX_WITH_XPCOM
   ## @todo may be worth creating the VBOX_XPCOM SDK def, or just a SDK_VBOXXPCOM.
   TEMPLATE_VBoxQtGuiExe_DEFS += VBOX_WITH_XPCOM
@@ -8067,7 +8078,7 @@ endif
 ifeq ($(KBUILD_HOST),win)
  TEMPLATE_VBoxBldProg_TOOL              := $(VBOX_VCC_TOOL_STEM)$(toupper $(KBUILD_HOST_ARCH))
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
-  TEMPLATE_VBoxBldProg_SDKS             := ReorderCompilerIncs WINSDK10-UCRT-STATIC $(VBOX_WINPSDK)
+  TEMPLATE_VBoxBldProg_SDKS             := ReorderCompilerIncs WINSDK10-UCRT$(VBOX_VCC_CRT_TYPE_UPPER)-STATIC $(VBOX_WINPSDK)
  else
   TEMPLATE_VBoxBldProg_SDKS             := ReorderCompilerIncs $(VBOX_WINPSDK)
  endif
@@ -8331,7 +8342,7 @@ ifeq ($(KBUILD_TARGET),win)
   ifdef VBOX_WITH_NOCRT_STATIC
    TEMPLATE_VBoxGuestR3ExeBase_SDKS    = ReorderCompilerIncs $(VBOX_WINPSDK_GST) VBoxNtDll
   else
-   TEMPLATE_VBoxGuestR3ExeBase_SDKS    = ReorderCompilerIncs WINSDK10-UCRT-STATIC $(VBOX_WINPSDK_GST) VBoxNtDll
+   TEMPLATE_VBoxGuestR3ExeBase_SDKS    = ReorderCompilerIncs WINSDK10-UCRT$(VBOX_VCC_CRT_TYPE_UPPER)-STATIC $(VBOX_WINPSDK_GST) VBoxNtDll
   endif
  else
   TEMPLATE_VBoxGuestR3ExeBase_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK_GST) VBoxNtDll
@@ -8606,7 +8617,7 @@ endif
 #
 TEMPLATE_VBoxGuestR3NoCrtExe                := ...
 TEMPLATE_VBoxGuestR3NoCrtExe_EXTENDS        := VBoxGuestR3Exe
-TEMPLATE_VBoxGuestR3NoCrtExe_SDKS            = $(subst WINSDK10-UCRT-STATIC,WINSDK10-UCRT-INCS, $(TEMPLATE_VBoxGuestR3Exe_SDKS))
+TEMPLATE_VBoxGuestR3NoCrtExe_SDKS            = $(subst WINSDK10-UCRT$(VBOX_VCC_CRT_TYPE_UPPER)-STATIC,WINSDK10-UCRT-INCS, $(TEMPLATE_VBoxGuestR3Exe_SDKS))
 TEMPLATE_VBoxGuestR3NoCrtExe_SDKS.$(KBUILD_TARGET_ARCH) = $(filter-out VBoxOpenSslStatic,$(TEMPLATE_VBoxGuestR3Exe_SDKS.$(KBUILD_TARGET_ARCH)))
 TEMPLATE_VBoxGuestR3NoCrtExe_DEFS            = $(TEMPLATE_VBoxGuestR3Exe_DEFS) \
 	RT_NO_CRT \

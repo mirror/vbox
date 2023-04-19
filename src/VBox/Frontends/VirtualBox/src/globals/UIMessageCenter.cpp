@@ -2368,31 +2368,7 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
     }
 
     /* Delete message-box: */
-#if 1 /* With a debug Qt 5.15.2 (r175) build and paged heap on windows, the ~QPointer destructor will trigger heap corruption
-         (VERIFIER STOP 0000000000000010: pid 0x253C: corrupted start stamp).  Clearing the QPointer prior to deletion works
-         around the issue (calling clear() after delete just triggers the problem a few lines earlier).
-
-         Update: The issue is using different allocator and free heap routines.   When using a debug Qt build on windows,
-                 it is linked against the debug runtime DLL (ucrtbased.dll), while this code is still using the release
-                 runtime DLL (ucrtbase.dll).  The QtSharedPointer::ExternalRefCountData instance is allocated by
-                 Qt5CoreVBoxd!QtSharedPointer::ExternalRefCountData::getAndRef() using the debug heap allocator, which adds
-                 an additional 48 byte header on the object.  When we delete and the clear/destroy the QPointer instance
-                 here, we'll be doing the freeing, but since we don't link with ucrtbased.dll, we'll use the regular
-                 heap routines that doesn't expect a 48 byte header and they probably think we're handing them a garbage
-                 pointer.
-
-                 The workaround here, moves the deleting of the QtSharedPointer::ExternalRefCountData structure from
-                 this module to the QObject destructor, which lives in the same module as where it was allocated and
-                 will be using the same allocator.  So, either we subclass the QPointer<> template and formalize this
-                 pattern a bit better, so a workaround can be done in one place, or we do some build time / makefile
-                 checks for this and forces the use of the debug CRT for the whole of VBox as well (not all that tempting)... */
-    QIMessageBox *pSafe = pMessageBox;
-    pMessageBox.clear();
-    if (pSafe)
-        delete pSafe;
-#else
     delete pMessageBox;
-#endif
 
     /* Return result-code: */
     return iResultCode;
