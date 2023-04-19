@@ -1959,6 +1959,9 @@ class TestVmManager(object):
         TestVm('tst-ol-8_1-64-efi-sb',      kfGrpStdSmoke,        sHd = '6.1/efi/ol-8_1-efi-amd64-2.vdi',
                sKind = 'Oracle_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
                asParavirtModesSup = [g_ksParavirtProviderKVM,], fSecureBoot = True, sUefiMokPathPrefix = '7.0/mok/vbox-test-MOK'),
+        TestVm('tst-ol-6u10-32',            kfGrpStdSmoke,        sHd = '7.1/ol-6u10-x86.vdi',
+               sKind = 'Oracle',    acCpusSup = range(1, 33), fIoApic = True,
+               asParavirtModesSup = [g_ksParavirtProviderKVM,]),
         # Note: Don't use this image for VBoxService / Guest Control-related tests anymore;
         #       The distro has a buggy dbus implementation, which crashes often in some dbus watcher functions when being
         #       invoked by pm_sm_authenticate(). Also, the distro's repositories can't be used either easily anymore due to old
