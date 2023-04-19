@@ -1040,11 +1040,11 @@ Function .onInit
   Pop $g_strWinVersion
 
   ; Init global variables that depends on the windows version.
-  ${If} $g_strWinVersion == "2000"
+  ${If} $g_strWinVersion == "XP"
+    StrCpy $g_strEarlyNTDrvInfix "EarlyNT"
+  ${ElseIf} $g_strWinVersion == "2000"
     StrCpy $g_strEarlyNTDrvInfix "EarlyNT"
   ${ElseIf} $g_strWinVersion == "NT4"
-    StrCpy $g_strEarlyNTDrvInfix "EarlyNT"
-  ${ElseIf} $g_strWinVersion == "XP" ; Unconfirmed theory that XP is also having trouble with the VBoxVideo.inf changes ...
     StrCpy $g_strEarlyNTDrvInfix "EarlyNT"
   ${Else}
     StrCpy $g_strEarlyNTDrvInfix ""
