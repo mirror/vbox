@@ -97,7 +97,6 @@ ifndef VBOX_EFI_FIRMWARE_EFI_MODULES_KMK_INCLUDED
  	MdeModulePkg/Universal/MonotonicCounterRuntimeDxe/MonotonicCounterRuntimeDxe/$(VBOX_EFI_DEBUG_DIR)/MonotonicCounterRuntimeDxe \
  	MdeModulePkg/Universal/PCD/Dxe/Pcd/$(VBOX_EFI_DEBUG_DIR)/PcdDxe \
  	MdeModulePkg/Universal/PCD/Pei/Pcd/$(VBOX_EFI_DEBUG_DIR)/PcdPeim \
- 	MdeModulePkg/Universal/PrintDxe/PrintDxe/$(VBOX_EFI_DEBUG_DIR)/PrintDxe \
  	MdeModulePkg/Universal/ReportStatusCodeRouter/Pei/ReportStatusCodeRouterPei/$(VBOX_EFI_DEBUG_DIR)/ReportStatusCodeRouterPei \
  	MdeModulePkg/Universal/ReportStatusCodeRouter/RuntimeDxe/ReportStatusCodeRouterRuntimeDxe/$(VBOX_EFI_DEBUG_DIR)/ReportStatusCodeRouterRuntimeDxe \
  	MdeModulePkg/Universal/ResetSystemRuntimeDxe/ResetSystemRuntimeDxe/$(VBOX_EFI_DEBUG_DIR)/ResetSystemRuntimeDxe \
@@ -119,8 +118,6 @@ ifndef VBOX_EFI_FIRMWARE_EFI_MODULES_KMK_INCLUDED
  	NetworkPkg/Udp4Dxe/Udp4Dxe/$(VBOX_EFI_DEBUG_DIR)/Udp4Dxe \
  	NetworkPkg/UefiPxeBcDxe/UefiPxeBcDxe/$(VBOX_EFI_DEBUG_DIR)/UefiPxeBcDxe \
  	NetworkPkg/VlanConfigDxe/VlanConfigDxe/$(VBOX_EFI_DEBUG_DIR)/VlanConfigDxe \
- 	OvmfPkg/8254TimerDxe/8254Timer/$(VBOX_EFI_DEBUG_DIR)/Timer \
- 	OvmfPkg/8259InterruptControllerDxe/8259/$(VBOX_EFI_DEBUG_DIR)/Legacy8259 \
  	OvmfPkg/EmuVariableFvbRuntimeDxe/Fvb/$(VBOX_EFI_DEBUG_DIR)/EmuVariableFvbRuntimeDxe \
  	OvmfPkg/IncompatiblePciDeviceSupportDxe/IncompatiblePciDeviceSupport/$(VBOX_EFI_DEBUG_DIR)/IncompatiblePciDeviceSupportDxe \
  	OvmfPkg/IoMmuDxe/IoMmuDxe/$(VBOX_EFI_DEBUG_DIR)/IoMmuDxe \
@@ -139,9 +136,7 @@ ifndef VBOX_EFI_FIRMWARE_EFI_MODULES_KMK_INCLUDED
  	PcAtChipsetPkg/PcatRealTimeClockRuntimeDxe/PcatRealTimeClockRuntimeDxe/$(VBOX_EFI_DEBUG_DIR)/PcRtc \
  	ShellPkg/Application/Shell/Shell/$(VBOX_EFI_DEBUG_DIR)/Shell \
  	ShellPkg/DynamicCommand/TftpDynamicCommand/TftpDynamicCommand/$(VBOX_EFI_DEBUG_DIR)/tftpDynamicCommand \
- 	UefiCpuPkg/CpuDxe/CpuDxe/$(VBOX_EFI_DEBUG_DIR)/CpuDxe \
  	UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe/$(VBOX_EFI_DEBUG_DIR)/CpuIo2Dxe \
- 	UefiCpuPkg/CpuMpPei/CpuMpPei/$(VBOX_EFI_DEBUG_DIR)/CpuMpPei \
  	UefiCpuPkg/Universal/Acpi/S3Resume2Pei/S3Resume2Pei/$(VBOX_EFI_DEBUG_DIR)/S3Resume2Pei \
  	VBoxPkg/Logo/LogoDxe/$(VBOX_EFI_DEBUG_DIR)/LogoDxe \
  	VBoxPkg/VBoxAppleSim/VBoxAppleSim/$(VBOX_EFI_DEBUG_DIR)/VBoxAppleSim \
