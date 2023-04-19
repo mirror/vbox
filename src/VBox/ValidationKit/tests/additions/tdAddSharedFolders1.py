@@ -191,7 +191,7 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
         """
         return self.unmountShareEx(oSession, oTxsSession, sShareName, sGuestMountPoint, fMustSucceed = True);
 
-    def testIt(self, oTestVm, oSession, oTxsSession):
+    def testIt(self, oTestVm, oSession, oTxsSession): #pylint: disable=too-many-statements
         """
         Executes the test.
 
