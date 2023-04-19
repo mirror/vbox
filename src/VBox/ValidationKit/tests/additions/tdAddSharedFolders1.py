@@ -307,8 +307,12 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
                     sCopy           = self.oTstDrv.getGuestSystemShell();
                     sCopyArgs       = ( sCopy, "/C", "copy", "/Y",  sFsPerfPath, sFsPerfPathTemp );
                 else:
-                    sCopy           = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'cp');
-                    sCopyArgs       = ( sCopy, "-a", "-v", sFsPerfPath, sFsPerfPathTemp );
+                    # Really old guests (like OL 6) have their coreutils in /bin instead of symlinking /bin to /usr/bin.
+                    if self.oTstDrv.txsIsFile(oSession, oTxsSession, "/bin/cp", fIgnoreErrors = True):
+                        sCopy = "/bin/cp";
+                    else:
+                        sCopy = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'cp');
+                    sCopyArgs = ( sCopy, "-a", "-v", sFsPerfPath, sFsPerfPathTemp );
                 fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Copying FsPerf', 60 * 1000,
                                               sCopy, sCopyArgs, fCheckSessionStatus = True);
                 fRc = fRc and oTxsSession.syncChMod(sFsPerfPathTemp, 0o755);
@@ -322,7 +326,11 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
                 # Do a bit of diagnosis to find out why this failed.
                 if     not oTestVm.isWindows() \
                    and not oTestVm.isOS2():
-                    sCmdLs = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'ls');
+                    # Really old guests (like OL 6) have their coreutils in /bin instead of symlinking /bin to /usr/bin.
+                    if self.oTstDrv.txsIsFile(oSession, oTxsSession, "/bin/ls", fIgnoreErrors = True):
+                        sCmdLs = "/bin/ls";
+                    else:
+                        sCmdLs = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'ls');
                     oTxsSession.syncExec(sCmdLs, (sCmdLs, "-al", sFsPerfPath), fIgnoreErrors = True);
                     oTxsSession.syncExec(sCmdLs, (sCmdLs, "-al", "-R", "/opt"), fIgnoreErrors = True);
                     oTxsSession.syncExec(sCmdLs, (sCmdLs, "-al", "-R", "/media/cdrom"), fIgnoreErrors = True);
