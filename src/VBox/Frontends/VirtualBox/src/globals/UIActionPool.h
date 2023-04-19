@@ -236,7 +236,7 @@ public:
       * @param  enmType  Brings the action type. */
     UIAction(UIActionPool *pParent, UIActionType enmType, bool fMachineMenuAction = false);
     /** Destructs action. */
-    virtual ~UIAction() RT_OVERRIDE { delete menu(); }
+    virtual ~UIAction() RT_OVERRIDE { delete menu(); setShortcuts(QList<QKeySequence>() /*unregister*/); }
 
     /** Returns action-pool this action belongs to. */
     UIActionPool *actionPool() const { return m_pActionPool; }
