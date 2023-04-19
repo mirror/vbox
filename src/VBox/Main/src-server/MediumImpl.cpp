@@ -1490,15 +1490,15 @@ HRESULT Medium::initFromSettings(VirtualBox *aVirtualBox,
         Assert(llSettingsTodo.size() == 0);
         Assert(llParentsTodo.size() == 0);
         /* Create the list of notifications, parent first. */
-        MediaList::const_reverse_iterator itBegin = llMediaTocleanup.rbegin();
-        MediaList::const_reverse_iterator itEnd = llMediaTocleanup.rend();
-        for (MediaList::const_reverse_iterator it = itBegin; it != itEnd; --it)
+        for (MediaList::const_reverse_iterator it = llMediaTocleanup.rbegin(); it != llMediaTocleanup.rend(); ++it)
         {
             ComObjPtr<Medium> pMedium = *it;
             AutoCaller mediumCaller(pMedium);
-            if (FAILED(mediumCaller.hrc())) continue;
-            const Guid &id = pMedium->i_getId();
-            uIdsForNotify.push_back(std::pair<Guid, DeviceType_T>(id, aDeviceType));
+            if (mediumCaller.isOk())
+            {
+                const Guid &id = pMedium->i_getId();
+                uIdsForNotify.push_back(std::pair<Guid, DeviceType_T>(id, aDeviceType));
+            }
         }
     }
     else
