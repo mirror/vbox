@@ -79,6 +79,9 @@ class tdUnitTest1(vbox.TestDriver):
             'testcase/tstAsmStructs': '',               # Fails on arm64 due to different sizes, also not required as there is no
                                                         # assembly code which needs to match with structs.
             'testcase/tstDarwinKeyboard': '',           # Fails for unknown reason.
+            'testcase/tstIntNet-1': '',                 # Not supported on arm64 right now.
+            'testcase/tstLow': '',                      # Ditto.
+            'testcase/tstPin': '',                      # Ditto.
         },
         'linux': {
             'testcase/tstRTFileAio': '',                # See xTracker #8035.
