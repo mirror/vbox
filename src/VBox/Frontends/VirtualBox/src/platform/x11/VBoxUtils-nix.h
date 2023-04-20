@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef FEQT_INCLUDED_SRC_platform_x11_VBoxUtils_x11_h
-#define FEQT_INCLUDED_SRC_platform_x11_VBoxUtils_x11_h
+#ifndef FEQT_INCLUDED_SRC_platform_x11_VBoxUtils_nix_h
+#define FEQT_INCLUDED_SRC_platform_x11_VBoxUtils_nix_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -173,4 +173,4 @@ namespace NativeWindowSubsystem
     SHARED_LIBRARY_STUFF bool X11XServerAvailable(DisplayServerType enmDisplayServerType);
 }
 
-#endif /* !FEQT_INCLUDED_SRC_platform_x11_VBoxUtils_x11_h */
+#endif /* !FEQT_INCLUDED_SRC_platform_x11_VBoxUtils_nix_h */
