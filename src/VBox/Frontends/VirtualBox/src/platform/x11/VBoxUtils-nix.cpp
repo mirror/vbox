@@ -40,7 +40,7 @@
 #endif
 
 /* GUI includes: */
-#include "VBoxUtils-x11.h"
+#include "VBoxUtils-nix.h"
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
