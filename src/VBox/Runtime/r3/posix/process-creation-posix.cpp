@@ -1712,10 +1712,15 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     if (fFlags & RTPROC_FLAGS_DETACHED)
         return VERR_PROC_DETACH_NOT_SUPPORTED;
 #endif
-    AssertReturn(pvExtraData == NULL || (fFlags & (RTPROC_FLAGS_DESIRED_SESSION_ID | RTPROC_FLAGS_CWD)),
-                 VERR_INVALID_PARAMETER);
-    AssertReturn((fFlags & (RTPROC_FLAGS_DESIRED_SESSION_ID | RTPROC_FLAGS_CWD)) != (RTPROC_FLAGS_DESIRED_SESSION_ID | RTPROC_FLAGS_CWD),
-                 VERR_INVALID_PARAMETER);
+
+    /* Extra data: */
+    if (fFlags & RTPROC_FLAGS_CWD)
+    {
+        AssertPtrReturn(pvExtraData, VERR_INVALID_POINTER);
+    }
+    else
+        AssertReturn(pvExtraData == NULL, VERR_INVALID_PARAMETER);
+    /* Note: Windows-specific flags will be quietly ignored. */
 
     /*
      * Get the file descriptors for the handles we've been passed.

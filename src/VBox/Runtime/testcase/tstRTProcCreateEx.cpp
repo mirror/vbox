@@ -106,6 +106,11 @@ static int tstRTCreateProcExCwdChild(int argc, char **argv)
 
     const char *pszCWD = argv[2];
 
+    RTStrmPrintf(g_pStdOut, "childcwd: Called with CWD '%s'\n", pszCWD);
+
+    if (!RTStrICmp(pszCWD, "<cwd-not-specified>")) /* Bail out early if no CWD has been explicitly specified. */
+        return RTEXITCODE_SUCCESS;
+
     /* Validate if we really are in the CWD the parent told us. */
     char szCWD[RTPATH_MAX];
     rc = RTPathGetCurrent(szCWD, sizeof(szCWD));
@@ -154,7 +159,7 @@ static void tstRTCreateProcExCwd(const char *pszAsUser, const char *pszPassword)
     {
         g_szExecName,
         "--testcase-child-cwd",
-        "<invalid-cwd>",
+        "<cwd-not-specified>",
         pszAsUser,
         NULL
     };
@@ -170,16 +175,34 @@ static void tstRTCreateProcExCwd(const char *pszAsUser, const char *pszPassword)
                                          (void *)apszArgs[2] /* pvExtraData (CWD) */, &hProc),
                           VERR_INVALID_PARAMETER);
 
+    /* Invalid flag combinations. Windows flags ignored elsewhere. */
+#ifdef RT_OS_WINDOWS
+    int rc = VERR_INVALID_PARAMETER;
+#else
+    int rc = VERR_INVALID_POINTER; /* Due to missing pvExtraData. */
+#endif
+    fFlags = RTPROC_FLAGS_CWD | RTPROC_FLAGS_DESIRED_SESSION_ID | RTPROC_FLAGS_SERVICE;
+    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, fFlags,
+                                         NULL, NULL, NULL, pszAsUser, pszPassword,
+                                         NULL, &hProc), rc);
+
+    /* Windows-only flags. Ignored elsewhere. */
+#ifdef RT_OS_WINDOWS
+    rc = VERR_INVALID_POINTER;
+#else
+    rc = VINF_SUCCESS;
+#endif
+    fFlags = RTPROC_FLAGS_DESIRED_SESSION_ID | RTPROC_FLAGS_SERVICE;
+    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, fFlags,
+                                         NULL, NULL, NULL, pszAsUser, pszPassword,
+                                         NULL, &hProc), rc);
+
     /* RTPROC_FLAGS_CWD set, but CWD missing as pvExtradata. */
     fFlags = RTPROC_FLAGS_CWD;
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, fFlags,
                                          NULL, NULL, NULL, pszAsUser, pszPassword,
                                          NULL, &hProc),
-                          VINF_SUCCESS);
-
-    /* CWD is "<invalid-cwd>" from above, should fail. */
-    RTPROCSTATUS ProcStatus = { -1, RTPROCEXITREASON_ABEND };
-    RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
+                          VERR_INVALID_POINTER);
 
     char szCWD[RTPATH_MAX];
     char szResolved[RTPATH_MAX];
@@ -192,6 +215,7 @@ static void tstRTCreateProcExCwd(const char *pszAsUser, const char *pszPassword)
                                          NULL, NULL, NULL, pszAsUser, pszPassword,
                                          (void *)szCWD /* pvExtraData (CWD) */, &hProc),
                           VINF_SUCCESS);
+    RTPROCSTATUS ProcStatus = { -1, RTPROCEXITREASON_ABEND };
     RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
     if (ProcStatus.enmReason != RTPROCEXITREASON_NORMAL || ProcStatus.iStatus != 0)
         RTTestIFailed("enmReason=%d iStatus=%d", ProcStatus.enmReason, ProcStatus.iStatus);
