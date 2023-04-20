@@ -764,7 +764,8 @@ DisplayServerType NativeWindowSubsystem::detectDisplayServerType()
                 return DisplayServerType_XWayland;
         }
     }
-    return DisplayServerType_Unknown;
+    /* Default to Xorg since Solaris set XDG_SESSION_TYPE: */
+    return DisplayServerType_XOrg;
 }
 
 bool NativeWindowSubsystem::X11XServerAvailable(DisplayServerType enmDisplayServerType)
