@@ -57,9 +57,6 @@ if !defined(VBOX_WITH_HARDENING) || "$(KBUILD_TARGET)" != "darwin" # No hardened
  	Framebuffer.cpp \
  	Helper.cpp \
  	../Common/PasswordInput.cpp
- VBoxSDL_SOURCES.darwin = \
- 	VBoxSDLMain-darwin.m \
- 	Framebuffer-darwin.m
 
  VBoxSDL_DEFS      =
  VBoxSDL_DEFS.freebsd = VBOXSDL_WITH_X11
@@ -95,8 +92,6 @@ if !defined(VBOX_WITH_HARDENING) || "$(KBUILD_TARGET)" != "darwin" # No hardened
   #VBoxSDL_LIBS.linux += GL
  endif
 
- VBoxSDL_LDFLAGS.darwin = \
- 	-framework Foundation -framework AppKit
  VBoxSDL_LDFLAGS.win = -SubSystem:Windows
 
  VBoxSDL_CLEAN = $(VBoxSDL_0_OUTDIR)/Ico64x01.h
@@ -125,8 +120,6 @@ if !defined(VBOX_WITH_HARDENING) || "$(KBUILD_TARGET)" != "darwin" # No hardened
   tstSDL_INST = $(INST_TESTCASE)
   tstSDL_SOURCES = \
   	VBoxSDLTest.cpp
-  tstSDL_SOURCES.darwin = \
-  	VBoxSDLMain-darwin.m
   tstSDL_DEFS = IN_RING3 IN_RT_R3 _GNU_SOURCE
   tstSDL_DEFS.win.x86 = _WIN32_WINNT=0x0500
   ifdef VBOX_OPENGL

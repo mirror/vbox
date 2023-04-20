@@ -4089,7 +4089,7 @@ int PushSDLEventForSure(SDL_Event *event)
     return -1;
 }
 
-#ifdef VBOXSDL_WITH_X11
+#if defined(VBOXSDL_WITH_X11) || defined(RT_OS_DARWIN)
 /**
  * Special SDL_PushEvent function for NotifyUpdate events. These events may occur in bursts
  * so make sure they don't flood the SDL event queue.
