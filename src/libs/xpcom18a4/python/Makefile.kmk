@@ -551,7 +551,7 @@ ifndef VBOX_ONLY_SDK
 
   ifdef VBOX_PYTHON38_INC
    #
-   # Python 3.8 version
+   # Python 3.8 version (implicitly with pymalloc)
    #
    DLLS += VBoxPython3_8
    VBoxPython3_8_EXTENDS = VBoxPythonBase
@@ -570,30 +570,9 @@ ifndef VBOX_ONLY_SDK
    endif
   endif
 
-  ifdef VBOX_PYTHON38M_INC
-   #
-   # Python 3.8 version with pymalloc
-   #
-   DLLS += VBoxPython3_8m
-   VBoxPython3_8m_EXTENDS = VBoxPythonBase_m
-   VBoxPython3_8m_EXTENDS_BY = appending
-   VBoxPython3_8m_INCS    = $(VBOX_PYTHON38M_INC)
-   VBoxPython3_8m_LIBS    = $(VBOX_PYTHON38M_LIB)
-
-   ifdef VBOX_WITH_32_ON_64_MAIN_API
-    ifdef VBOX_PYTHON38M_LIB_X86
-     DLLS += VBoxPython3_8m_x86
-     VBoxPython3_8m_x86_EXTENDS = VBoxPythonBase_x86_m
-     VBoxPython3_8m_x86_EXTENDS_BY = appending
-     VBoxPython3_8m_x86_INCS  = $(VBOX_PYTHON38M_INC)
-     VBoxPython3_8m_x86_LIBS  = $(VBOX_PYTHON38M_LIB_X86)
-    endif
-   endif
-  endif
-
   ifdef VBOX_PYTHON39_INC
    #
-   # Python 3.9 version
+   # Python 3.9 version (implicitly with pymalloc)
    #
    DLLS += VBoxPython3_9
    VBoxPython3_9_EXTENDS = VBoxPythonBase
@@ -612,30 +591,9 @@ ifndef VBOX_ONLY_SDK
    endif
   endif
 
-  ifdef VBOX_PYTHON39M_INC
-   #
-   # Python 3.9 version with pymalloc
-   #
-   DLLS += VBoxPython3_9m
-   VBoxPython3_9m_EXTENDS = VBoxPythonBase_m
-   VBoxPython3_9m_EXTENDS_BY = appending
-   VBoxPython3_9m_INCS    = $(VBOX_PYTHON39M_INC)
-   VBoxPython3_9m_LIBS    = $(VBOX_PYTHON39M_LIB)
-
-   ifdef VBOX_WITH_32_ON_64_MAIN_API
-    ifdef VBOX_PYTHON39M_LIB_X86
-     DLLS += VBoxPython3_9m_x86
-     VBoxPython3_9m_x86_EXTENDS = VBoxPythonBase_x86_m
-     VBoxPython3_9m_x86_EXTENDS_BY = appending
-     VBoxPython3_9m_x86_INCS  = $(VBOX_PYTHON39M_INC)
-     VBoxPython3_9m_x86_LIBS  = $(VBOX_PYTHON39M_LIB_X86)
-    endif
-   endif
-  endif
-
   ifdef VBOX_PYTHON310_INC
    #
-   # Python 3.10 version
+   # Python 3.10 version (implicitly with pymalloc)
    #
    DLLS += VBoxPython3_10
    VBoxPython3_10_EXTENDS = VBoxPythonBase
@@ -654,23 +612,44 @@ ifndef VBOX_ONLY_SDK
    endif
   endif
 
-  ifdef VBOX_PYTHON310M_INC
+  ifdef VBOX_PYTHON311_INC
    #
-   # Python 3.10 version with pymalloc
+   # Python 3.11 version (implicitly with pymalloc)
    #
-   DLLS += VBoxPython3_10m
-   VBoxPython3_10m_EXTENDS = VBoxPythonBase_m
-   VBoxPython3_10m_EXTENDS_BY = appending
-   VBoxPython3_10m_INCS    = $(VBOX_PYTHON310M_INC)
-   VBoxPython3_10m_LIBS    = $(VBOX_PYTHON310M_LIB)
+   DLLS += VBoxPython3_11
+   VBoxPython3_11_EXTENDS = VBoxPythonBase
+   VBoxPython3_11_EXTENDS_BY = appending
+   VBoxPython3_11_INCS    = $(VBOX_PYTHON311_INC)
+   VBoxPython3_11_LIBS    = $(VBOX_PYTHON311_LIB)
 
    ifdef VBOX_WITH_32_ON_64_MAIN_API
-    ifdef VBOX_PYTHON310M_LIB_X86
-     DLLS += VBoxPython3_10m_x86
-     VBoxPython3_10m_x86_EXTENDS = VBoxPythonBase_x86_m
-     VBoxPython3_10m_x86_EXTENDS_BY = appending
-     VBoxPython3_10m_x86_INCS  = $(VBOX_PYTHON310M_INC)
-     VBoxPython3_10m_x86_LIBS  = $(VBOX_PYTHON310M_LIB_X86)
+    ifdef VBOX_PYTHON311_LIB_X86
+     DLLS += VBoxPython3_11_x86
+     VBoxPython3_11_x86_EXTENDS = VBoxPythonBase_x86
+     VBoxPython3_11_x86_EXTENDS_BY = appending
+     VBoxPython3_11_x86_INCS  = $(VBOX_PYTHON311_INC)
+     VBoxPython3_11_x86_LIBS  = $(VBOX_PYTHON311_LIB_X86)
+    endif
+   endif
+  endif
+
+  ifdef VBOX_PYTHON312_INC
+   #
+   # Python 3.12 version (implicitly with pymalloc)
+   #
+   DLLS += VBoxPython3_12
+   VBoxPython3_12_EXTENDS = VBoxPythonBase
+   VBoxPython3_12_EXTENDS_BY = appending
+   VBoxPython3_12_INCS    = $(VBOX_PYTHON312_INC)
+   VBoxPython3_12_LIBS    = $(VBOX_PYTHON312_LIB)
+
+   ifdef VBOX_WITH_32_ON_64_MAIN_API
+    ifdef VBOX_PYTHON312_LIB_X86
+     DLLS += VBoxPython3_12_x86
+     VBoxPython3_12_x86_EXTENDS = VBoxPythonBase_x86
+     VBoxPython3_12_x86_EXTENDS_BY = appending
+     VBoxPython3_12_x86_INCS  = $(VBOX_PYTHON312_INC)
+     VBoxPython3_12_x86_LIBS  = $(VBOX_PYTHON312_LIB_X86)
     endif
    endif
   endif
@@ -717,7 +696,7 @@ ifndef VBOX_ONLY_SDK
   # TODO: ASSUMING that we don't need a different headers for pymalloc
   #       ('m' builds < 3.8) and CRT malloc.
   #
-  VBOX_PYTHON_LIMITED_API_VER := $(firstword $(foreach ver, 35 36 38 39 310   34 33 \
+  VBOX_PYTHON_LIMITED_API_VER := $(firstword $(foreach ver, 35 36 38 39 310 311 312   34 33 \
   			,$(if-expr defined(VBOX_PYTHON$(ver)_INC),$(ver),)$(if-expr defined(VBOX_PYTHON$(ver)M_INC),$(ver)M,)))
   ifneq ($(VBOX_PYTHON_LIMITED_API_VER),)
    DLLS += VBoxPython3
