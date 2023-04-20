@@ -175,11 +175,25 @@ DECLCALLBACK(int) gicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pC
     /*
      * Register the MMIO ranges.
      */
-#if 0
-    rc = PDMDevHlpMmioCreateAndMap(pDevIns, GCPhysApicBase, sizeof(XAPICPAGE), apicWriteMmio, apicReadMmio,
-                                   IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED, "APIC", &pApicDev->hMmio);
+    RTGCPHYS GCPhysMmioBase = 0;
+    rc = pHlp->pfnCFGMQueryU64(pCfg, "DistributorMmioBase", &GCPhysMmioBase);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"DistributorMmioBase\" value"));
+
+    rc = PDMDevHlpMmioCreateAndMap(pDevIns, GCPhysMmioBase, GIC_DIST_REG_FRAME_SIZE, gicDistMmioWrite, gicDistMmioRead,
+                                   IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED, "GICv3_Dist", &pGicDev->hMmioDist);
     AssertRCReturn(rc, rc);
-#endif
+
+    rc = pHlp->pfnCFGMQueryU64(pCfg, "RedistributorMmioBase", &GCPhysMmioBase);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"RedistributorMmioBase\" value"));
+
+    RTGCPHYS cbRegion = pVM->cCpus * (GIC_REDIST_REG_FRAME_SIZE + GIC_REDIST_SGI_PPI_REG_FRAME_SIZE); /* Adjacent and per vCPU. */
+    rc = PDMDevHlpMmioCreateAndMap(pDevIns, GCPhysMmioBase, cbRegion, gicReDistMmioWrite, gicReDistMmioRead,
+                                   IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED, "GICv3_ReDist", &pGicDev->hMmioReDist);
+    AssertRCReturn(rc, rc);
 
     /*
      * Statistics.

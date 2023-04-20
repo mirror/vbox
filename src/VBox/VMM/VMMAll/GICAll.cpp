@@ -147,11 +147,11 @@ DECLHIDDEN(void) gicResetCpu(PVMCPUCC pVCpu)
 /**
  * @callback_method_impl{FNIOMMMIONEWREAD}
  */
-DECLCALLBACK(VBOXSTRICTRC) apicReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
+DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) gicDistMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
     NOREF(pvUser);
-    Assert(!(off & 0xf));
-    Assert(cb == 4); RT_NOREF_PV(cb);
+    //Assert(!(off & 0xf));
+    //Assert(cb == 4); RT_NOREF_PV(cb);
 
     PVMCPUCC pVCpu    = PDMDevHlpGetVMCPU(pDevIns);
     uint16_t offReg   = off & 0xff0;
@@ -170,11 +170,54 @@ DECLCALLBACK(VBOXSTRICTRC) apicReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPH
 /**
  * @callback_method_impl{FNIOMMMIONEWWRITE}
  */
-DECLCALLBACK(VBOXSTRICTRC) gicWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
+DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) gicDistMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
     NOREF(pvUser);
-    Assert(!(off & 0xf));
-    Assert(cb == 4); RT_NOREF_PV(cb);
+    //Assert(!(off & 0xf));
+    //Assert(cb == 4); RT_NOREF_PV(cb);
+
+    PVMCPUCC pVCpu    = PDMDevHlpGetVMCPU(pDevIns);
+    uint16_t offReg   = off & 0xff0;
+    uint32_t uValue   = *(uint32_t *)pv;
+
+    STAM_COUNTER_INC(&pVCpu->gic.s.CTX_SUFF_Z(StatMmioWrite));
+
+    Log2(("GIC%u: gicWriteMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
+    return gicWriteRegister(pDevIns, pVCpu, offReg, uValue);
+}
+
+
+/**
+ * @callback_method_impl{FNIOMMMIONEWREAD}
+ */
+DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) gicReDistMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
+{
+    NOREF(pvUser);
+    //Assert(!(off & 0xf));
+    //Assert(cb == 4); RT_NOREF_PV(cb);
+
+    PVMCPUCC pVCpu    = PDMDevHlpGetVMCPU(pDevIns);
+    uint16_t offReg   = off & 0xff0;
+    uint32_t uValue   = 0;
+
+    STAM_COUNTER_INC(&pVCpu->gic.s.CTX_SUFF_Z(StatMmioRead));
+
+    VBOXSTRICTRC rc = VBOXSTRICTRC_VAL(gicReadRegister(pDevIns, pVCpu, offReg, &uValue));
+    *(uint32_t *)pv = uValue;
+
+    Log2(("GIC%u: gicReadMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
+    return rc;
+}
+
+
+/**
+ * @callback_method_impl{FNIOMMMIONEWWRITE}
+ */
+DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) gicReDistMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
+{
+    NOREF(pvUser);
+    //Assert(!(off & 0xf));
+    //Assert(cb == 4); RT_NOREF_PV(cb);
 
     PVMCPUCC pVCpu    = PDMDevHlpGetVMCPU(pDevIns);
     uint16_t offReg   = off & 0xff0;
