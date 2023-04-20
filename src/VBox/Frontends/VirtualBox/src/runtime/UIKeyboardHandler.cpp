@@ -70,7 +70,7 @@
 #endif
 #ifdef VBOX_WS_X11
 # include "XKeyboard.h"
-# include "VBoxUtils-x11.h"
+# include "VBoxUtils-nix.h"
 #endif
 
 /* Other VBox includes: */

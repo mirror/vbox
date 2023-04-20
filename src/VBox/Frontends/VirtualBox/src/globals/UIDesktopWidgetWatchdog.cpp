@@ -49,7 +49,7 @@
 #endif
 #ifdef VBOX_WS_X11
 # include "UICommon.h"
-# include "VBoxUtils-x11.h"
+# include "VBoxUtils-nix.h"
 # ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
 #  include "UIConverter.h"
 # endif

@@ -1277,9 +1277,9 @@ VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/UIDesktopServices_darwin.cpp \
 	src/platform/darwin/UIDesktopServices_darwin_cocoa.mm
 
-if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
+if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # U*nix
  VirtualBox_SOURCES += \
- 	src/platform/x11/UIDesktopServices_x11.cpp
+ 	src/platform/x11/UIDesktopServices_nix.cpp
 endif
 
 VirtualBox_SOURCES.win += \
@@ -1614,9 +1614,9 @@ ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  	src/settings/global/UIGlobalSettingsUpdate.cpp
 endif
 
-if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
+if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # Un*x
  UICommon_SOURCES += \
- 	src/platform/x11/VBoxUtils-x11.cpp \
+ 	src/platform/x11/VBoxUtils-nix.cpp \
  	src/platform/x11/XKeyboard-new.cpp
 endif
 

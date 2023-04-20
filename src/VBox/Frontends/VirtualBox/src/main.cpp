@@ -74,7 +74,7 @@
 # include <dlfcn.h>
 # include <unistd.h>
 # include <X11/Xlib.h>
-# include "VBoxUtils-x11.h"
+# include "VBoxUtils-nix.h"
 # if defined(RT_OS_LINUX) && defined(DEBUG)
 #  include <signal.h>
 #  include <execinfo.h>

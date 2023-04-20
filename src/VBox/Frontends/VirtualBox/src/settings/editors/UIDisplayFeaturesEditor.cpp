@@ -33,7 +33,7 @@
 /* GUI includes: */
 #include "UIDisplayFeaturesEditor.h"
 #ifdef VBOX_WS_X11
-# include "VBoxUtils-x11.h"
+# include "VBoxUtils-nix.h"
 #endif
 
 
