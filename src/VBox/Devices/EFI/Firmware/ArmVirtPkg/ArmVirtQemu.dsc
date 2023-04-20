@@ -17,7 +17,15 @@
   PLATFORM_GUID                  = 37d7e986-f7e9-45c2-8067-e371421a626c
   PLATFORM_VERSION               = 0.1
   DSC_SPECIFICATION              = 0x00010005
+!ifndef $(VBOX_OUTPUT_BASE_DIR)
   OUTPUT_DIRECTORY               = Build/ArmVirtQemu-$(ARCH)
+!else
+!if $(ARCH) == AARCH64
+  OUTPUT_DIRECTORY               = $(VBOX_OUTPUT_BASE_DIR)/aarch64
+!else
+  OUTPUT_DIRECTORY               = $(VBOX_OUTPUT_BASE_DIR)/aarch32
+!endif
+!endif
   SUPPORTED_ARCHITECTURES        = AARCH64|ARM
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
