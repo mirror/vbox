@@ -3593,7 +3593,7 @@ struct inode_operations vbsf_reg_iops = {
  * Needed for mmap and reads+writes when the file is mmapped in a
  * shared+writeable fashion.
  */
-#if RTLNX_VER_MIN(5,19,0)
+#if RTLNX_VER_MIN(5,19,0)|| RTLNX_RHEL_RANGE(9,3, 9,99)
 static int vbsf_read_folio(struct file *file, struct folio *folio)
 {
     struct page *page = &folio->page;
@@ -3764,7 +3764,7 @@ static inline void vbsf_write_begin_warn(loff_t pos, unsigned len, unsigned flag
     }
 }
 
-# if RTLNX_VER_MIN(5,19,0)
+# if RTLNX_VER_MIN(5,19,0) || RTLNX_RHEL_RANGE(9,3, 9,99)
 int vbsf_write_begin(struct file *file, struct address_space *mapping, loff_t pos,
                      unsigned len, struct page **pagep, void **fsdata)
 {
@@ -3853,7 +3853,7 @@ static int vbsf_direct_IO(int rw, struct inode *inode, struct kiobuf *buf, unsig
  * @todo the FsPerf touch/flush (mmap) test fails on 4.4.0 (ubuntu 16.04 lts).
  */
 struct address_space_operations vbsf_reg_aops = {
-#if RTLNX_VER_MIN(5,19,0)
+#if RTLNX_VER_MIN(5,19,0) || RTLNX_RHEL_RANGE(9,3, 9,99)
     .read_folio     = vbsf_read_folio,
 #else
     .readpage       = vbsf_readpage,
