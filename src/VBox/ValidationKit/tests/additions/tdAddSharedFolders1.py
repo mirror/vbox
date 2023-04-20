@@ -63,7 +63,8 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
     def __init__(self, oTstDrv):
         base.SubTestDriverBase.__init__(self, oTstDrv, 'add-shared-folders', 'Shared Folders');
 
-        self.asTestsDef         = [ 'fsperf', ];
+        # Note: 'basic' acts as a placeholder, to be able to run w/o 'fsperf' or 'all'.
+        self.asTestsDef         = [ 'basic', 'fsperf', ];
         self.asTests            = self.asTestsDef;
         self.asExtraArgs        = [];
         self.asGstFsPerfPaths   = [
@@ -88,6 +89,9 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
                         raise base.InvalidOption('The "--add-shared-folders-tests" value "%s" is not valid; valid values are: %s'
                                                  % (s, ' '.join(self.asTestsDef)));
             return iNext;
+        if asArgs[iArg] == '--add-shared-folders-quick':
+            self.asTests = [ 'basic' ];
+            return iArg + 1;
         if asArgs[iArg] == '--add-shared-folders-extra-arg':
             iArg += 1;
             iNext = self.oTstDrv.requireMoreArgs(1, asArgs, iArg);
@@ -101,6 +105,8 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
         reporter.log('      Default: all  (%s)' % (':'.join(self.asTestsDef)));
         reporter.log('  --add-shared-folders-extra-arg <fsperf-arg>');
         reporter.log('      Adds an extra FsPerf argument.  Can be repeated.');
+        reporter.log('  --add-shared-folders-quick');
+        reporter.log('      Skips lengthly tests (such as FsPerf).');
 
         return True;
 
