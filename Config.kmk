@@ -7874,7 +7874,6 @@ ifdef VBOX_WITH_QTGUI
 
   ifeq ($(KBUILD_TARGET),linux)
    TEMPLATE_VBoxQtGuiExe_LDFLAGS += -Wl,-z,noexecstack,-z,relro $(VBOX_LD_as_needed)
-   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += -Wl,-rpath,$(PATH_SDK_QT5_LIB)
    TEMPLATE_VBoxQtGuiExe_LIBS += \
    	$(VBOX_XCURSOR_LIBS) \
    	Xext \
