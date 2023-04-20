@@ -278,6 +278,15 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTA
 
     rc = pVMM->pfnCFGMR3InsertNode(pRoot, "Devices", &pDevices);                             UPDATE_RC();
 
+    rc = pVMM->pfnCFGMR3InsertNode(pDevices, "gic",          &pDev);                         UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pDev,     "0",            &pInst);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pInst, "Trusted",      1);                             UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pInst,    "Config",        &pCfg);                        UPDATE_RC();
+
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "DistributorMmioBase",       0x08000000);       UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "RedistributorMmioBase",     0x080a0000);       UPDATE_RC();
+
+
     rc = pVMM->pfnCFGMR3InsertNode(pDevices, "qemu-fw-cfg",   &pDev);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertNode(pDev,     "0",            &pInst);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertNode(pInst,    "Config",        &pCfg);                        UPDATE_RC();
