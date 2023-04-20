@@ -510,10 +510,20 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
         # Make sure to add "--nox11" to the makeself wrapper in order to not getting any blocking
         # xterm window spawned.
+        asArgs = [ '--nox11' ];
+
+        # Ugly kludge to make tst-rhel5 (or any other borked test VM) work which (accidentally?) have old(er) Guest Additions
+        # version pre-installed.
+        #
+        # This forces our installer (inside the makeself wrapper, hence the "--") to install, regardless of whether there already
+        # are any (older) Guest Additions installed already.
+        if oTestVm.sVmName == "tst-rhel5":
+            asArgs.extend( [ "--", "--force" ] );
+
         fRc = self.txsRunTest(oTxsSession, 'VBoxLinuxAdditions.run', 30 * 60 * 1000,
                               self.getGuestSystemShell(oTestVm),
                               (self.getGuestSystemShell(oTestVm),
-                              '${CDROM}/%s/VBoxLinuxAdditions.run' % self.sGstPathGaPrefix, '--nox11'));
+                              '${CDROM}/%s/VBoxLinuxAdditions.run' % self.sGstPathGaPrefix, asArgs));
         if fRc and oTxsSession.isSuccess():
             reporter.log('Installation completed');
         else:
