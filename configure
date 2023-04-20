@@ -111,11 +111,13 @@ WITH_LIBVPX=1
 WITH_LIBOGG=0
 WITH_LIBVORBIS=0
 WITH_LIBTPMS=1
+WITH_LIBLZMA=1
 BUILD_LIBXML2=
 BUILD_LIBCURL=
 BUILD_LIBSSL=
 BUILD_LIBVPX=
 BUILD_LIBTPMS=
+BUILD_LIBLZMA=
 PASSIVE_MESA=0
 CC="gcc"
 CC32=""
@@ -1812,6 +1814,45 @@ EOF
 
 
 #
+# Check for liblzma
+#
+check_liblzma()
+{
+  if [ -z "$BUILD_LIBLZMA" ]; then
+    test_header liblzma
+    if which_wrapper pkg-config > /dev/null; then
+      liblzma_ver=`pkg-config liblzma --modversion 2>> $LOG`
+      if [ $? -eq 0 ]; then
+        FLGLZMA=`pkg-config liblzma --cflags`
+        INCLZMA=`strip_I "$FLGLZMA"`
+        LIBLZMA=`pkg-config liblzma --libs`
+      fi
+      cat > $ODIR.tmp_src.cc << EOF
+#include <cstdio>
+#include <lzma.h>
+extern "C" int main(void)
+{
+  lzma_stream strm = LZMA_STREAM_INIT;
+  uint32_t preset;
+  lzma_ret ret = lzma_easy_encoder(&strm, preset, LZMA_CHECK_CRC64);
+  printf("found, OK.\n");
+}
+EOF
+      [ -n "$INCLZMA" ] && I_INCLZMA=`prefix_I "$INCLZMA"`
+      if test_compile "$LIBLZMA $I_INCLZMA" liblzma liblzma nofatal; then
+        if test_execute; then
+          cnf_append "SDK_VBoxLibLzma_INCS" "$INCLZMA"
+          cnf_append "SDK_VBoxLibLzma_LIBS" "`strip_l "$LIBLZMA"`"
+        fi
+      else
+        echo "not found -- building liblzma from in-tree code."
+      fi
+    fi
+  fi
+}
+
+
+#
 # Check for libvorbis
 #
 check_libvorbis()
@@ -2478,6 +2519,7 @@ EOF
 [ $WITH_LIBVORBIS -eq 0 ] && echo "  --enable-libvorbis       enable system libvorbis"
 [ $WITH_LIBOGG -eq 0 ]  && echo "  --enable-libogg          enable system libogg"
 [ $WITH_LIBTPMS -eq 1 ] && echo "  --disable-libtpms        don't use libtpms for TPM emulation"
+[ $WITH_LIBLZMA -eq 1 ] && echo "  --disable-liblzma        don't use liblzma"
 [ "$OS" = "linux" -o "$OS" = "freebsd" ] && echo "  --enable-vde             enable VDE networking"
 cat << EOF
   --disable-udptunnel      disable UDP tunnel networking
@@ -2486,6 +2528,7 @@ cat << EOF
   --build-libxml2          build libxml2 from sources
   --build-libssl           build openssl from sources
   --build-libtpms          build libtpms from sources
+  --build-liblzma          build liblzma from sources
 EOF
 [ $OSE -eq 0 ] && cat << EOF
   --build-libcurl          build libcurl from sources
@@ -2725,6 +2768,9 @@ for option in "$@"; do
     --disable-libtpms)
       WITH_LIBTPMS=0
       ;;
+    --disable-liblzma)
+      WITH_LIBLZMA=0
+      ;;
     --enable-libogg)
       WITH_LIBOGG=1
       ;;
@@ -2751,6 +2797,12 @@ for option in "$@"; do
       ;;
     --build-libvpx)
       BUILD_LIBVPX=1
+      ;;
+    --build-libtpms)
+      BUILD_LIBTPMS=1
+      ;;
+    --build-liblzma)
+      BUILD_LIBLZMA=1
       ;;
     --build-headless)
       HEADLESS=1
@@ -2919,6 +2971,7 @@ fi
 [ $WITH_HARDENING -eq 2 ] && cnf_append "VBOX_WITH_HARDENING" "2"
 [ $WITH_VMMRAW    -eq 0 ] && cnf_append "VBOX_WITH_RAW_MODE" ""
 [ $WITH_LIBTPMS   -eq 0 ] && cnf_append "VBOX_WITH_LIBTPMS" ""
+[ $WITH_LIBLZMA   -eq 0 ] && cnf_append "VBOX_WITH_LIBLZMA" ""
 if [ $WITH_LIBVPX -eq 0 ]; then
   cnf_append "VBOX_WITH_LIBVPX" ""
   cnf_append "VBOX_WITH_RECORDING" ""
@@ -2954,6 +3007,7 @@ if [ $ONLY_ADDITIONS -eq 0 ]; then
   [ $WITH_LIBOGG -eq 1 ] && check_libogg
   [ $WITH_LIBVORBIS -eq 1 ] && check_libvorbis
   [ $WITH_LIBTPMS -eq 1 ] && check_libtpms
+  [ $WITH_LIBLZMA -eq 1 ] && check_liblzma
   [ "$OS" != "darwin"  ] && check_png
   [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
   if [ $WITH_SDL -eq 1 ]; then
