@@ -123,6 +123,24 @@ VBoxEfiFirmware_CLEAN = \
 	$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/build_rule.txt \
 	$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt
 
+ifdef VBOX_WITH_VIRT_ARMV8
+ VBoxEfiFirmware_SOURCES += \
+ 	$(VBoxEfiFirmware_0_OUTDIR)/aarch32/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/QEMU_EFI.fd=>VBoxEFIAArch32.fd \
+ 	$(VBoxEfiFirmware_0_OUTDIR)/aarch64/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/QEMU_EFI.fd=>VBoxEFIAArch64.fd
+ VBoxEfiFirmware_BLDDIRS += \
+ 	$(VBoxEfiFirmware_0_OUTDIR)/aarch32/ \
+ 	$(VBoxEfiFirmware_0_OUTDIR)/aarch32/Conf/ \
+ 	$(VBoxEfiFirmware_0_OUTDIR)/aarch64/ \
+ 	$(VBoxEfiFirmware_0_OUTDIR)/aarch64/Conf/
+ VBoxEfiFirmware_CLEAN += \
+ 	$(VBoxEfiFirmware_0_OUTDIR)/aarch32/Conf/target.txt \
+ 	$(VBoxEfiFirmware_0_OUTDIR)/aarch32/Conf/build_rule.txt \
+ 	$(VBoxEfiFirmware_0_OUTDIR)/aarch32/Conf/tools_def.txt \
+ 	$(VBoxEfiFirmware_0_OUTDIR)/aarch64/Conf/target.txt \
+ 	$(VBoxEfiFirmware_0_OUTDIR)/aarch64/Conf/build_rule.txt \
+ 	$(VBoxEfiFirmware_0_OUTDIR)/aarch64/Conf/tools_def.txt
+endif
+
 # Install the debug info.
 INSTALLS += VBoxEfiFirmwareDbg32
 VBoxEfiFirmwareDbg32_INST = $(INST_VBOXDBG_SYMS)x86/
@@ -146,6 +164,30 @@ else
  	$(foreach mod,$(VBOX_EFI_MODULES_FLAT),$(VBoxEfiFirmware_0_OUTDIR)/amd64/$(VBOX_EFI_OUTPUT_SUBDIR)/X64/$(mod).debug)
 endif
 
+ifdef VBOX_WITH_VIRT_ARMV8
+ INSTALLS += VBoxEfiFirmwareDbgAarch32
+ VBoxEfiFirmwareDbgAarch32_INST = $(INST_VBOXDBG_SYMS)aarch32/
+ VBoxEfiFirmwareDbgAarch32_MODE = 0644
+ if1of ($(KBUILD_HOST), win)
+  VBoxEfiFirmwareDbgAarch32_SOURCES = \
+  	$(foreach mod,$(VBOX_EFI_MODULES),$(VBoxEfiFirmware_0_OUTDIR)/aarch32/$(VBOX_EFI_OUTPUT_SUBDIR)/ARM/$(mod).pdb)
+ else
+  VBoxEfiFirmwareDbgAarch32_SOURCES = \
+  	$(foreach mod,$(VBOX_EFI_MODULES_FLAT),$(VBoxEfiFirmware_0_OUTDIR)/aarch32/$(VBOX_EFI_OUTPUT_SUBDIR)/ARM/$(mod).debug)
+ endif
+
+ INSTALLS += VBoxEfiFirmwareDbgAarch64
+ VBoxEfiFirmwareDbgAarch64_INST = $(INST_VBOXDBG_SYMS)aarch64/
+ VBoxEfiFirmwareDbgAarch64_MODE = 0644
+ if1of ($(KBUILD_HOST), win)
+  VBoxEfiFirmwareDbgAarch64_SOURCES = \
+  	$(foreach mod,$(VBOX_EFI_MODULES),$(VBoxEfiFirmware_0_OUTDIR)/aarch64/$(VBOX_EFI_OUTPUT_SUBDIR)/AARCH64/$(mod).pdb)
+ else
+  VBoxEfiFirmwareDbgAarch64_SOURCES = \
+  	$(foreach mod,$(VBOX_EFI_MODULES_FLAT),$(VBoxEfiFirmware_0_OUTDIR)/aarch64/$(VBOX_EFI_OUTPUT_SUBDIR)/AARCH64/$(mod).debug)
+ endif
+endif
+
 
 #
 # Install a custom clean up rule for dealing with the EFI build system output.
@@ -154,6 +196,7 @@ PASS_CLEAN_trgs += VBoxEfiFirmwareCleanup
 VBoxEfiFirmwareCleanup:
 	$(if $(VBoxEfiFirmware_0_OUTDIR),,exit 1)
 	$(RM) -Rf -- "$(VBoxEfiFirmware_0_OUTDIR)/amd64/" "$(VBoxEfiFirmware_0_OUTDIR)/x86/"
+	$(if $(VBOX_WITH_VIRT_ARMV8),$(RM) -Rf -- "$(VBoxEfiFirmware_0_OUTDIR)/aarch64/" "$(VBoxEfiFirmware_0_OUTDIR)/aarch32/",)
 .PHONY: VBoxEfiFirmwareCleanup
 
 
@@ -172,6 +215,17 @@ $(PATH_STAGE)/VBoxEfiFirmware.zip:
 	$(REDIRECT) -C "$(PATH_STAGE)/$(INST_VBOXDBG_SYMS)" -- $(TOOL_ZIP_PACK) $(TOOL_ZIP_PACKFLAGS) -9X $@ \
 		$(foreach mod,$(VBOX_EFI_MODULES_FLAT),amd64/$(mod)$(VBOX_EFI_DBG_SUFF)) \
 		$(foreach mod,$(VBOX_EFI_MODULES_FLAT),x86/$(mod)$(VBOX_EFI_DBG_SUFF))
+
+ifdef VBOX_WITH_VIRT_ARMV8
+ VBoxEfiFirmware-armv8.zip: $(PATH_STAGE)/VBoxEfiFirmware-armv8.zip
+ $(PATH_STAGE)/VBoxEfiFirmware-armv8.zip:
+	$(REDIRECT) -C "$(PATH_STAGE_BIN)" -- $(TOOL_ZIP_PACK) $(TOOL_ZIP_PACKFLAGS) -9X $@ \
+ 		VBoxEFIAArch32.fd \
+ 		VBoxEFIAArch64.fd
+	$(REDIRECT) -C "$(PATH_STAGE)/$(INST_VBOXDBG_SYMS)" -- $(TOOL_ZIP_PACK) $(TOOL_ZIP_PACKFLAGS) -9X $@ \
+ 		$(foreach mod,$(VBOX_EFI_MODULES_FLAT),aarch64/$(mod)$(VBOX_EFI_DBG_SUFF)) \
+ 		$(foreach mod,$(VBOX_EFI_MODULES_FLAT),aarch32/$(mod)$(VBOX_EFI_DBG_SUFF))
+endif
 
 #
 # Include the footer early so that we can use VBoxEfiFirmware_0_OUTDIR below.
@@ -235,6 +289,7 @@ VBOX_EFI_BUILD_CMD += \
 	-D "VBOX_OUTPUT_BASE_DIR=$(VBoxEfiFirmware_0_OUTDIR)" \
 	-D "VBOX_PATH_ROOT=$(PATH_ROOT)" \
 	-D "FD_SIZE_4MB=1" \
+	-D "FD_SIZE_IN_MB=3" \
 	$(if $(VBOX_OSE),-D "VBOX_OSE=1") \
 	$(if-expr "$(KBUILD_VERBOSE)" != "",$(if-expr "$(KBUILD_VERBOSE)" >= 3,-v,),--silent --quiet) \
 	--no-cache \
@@ -263,8 +318,27 @@ ifeq ($(KBUILD_HOST),win)
   include $(KBUILD_PATH)/sdk/WINSDK10.kmk
  endif
 endif
+
+#
+# @todo This is temporary and shoud be changed to use proper tools depending
+#       on the build environment
+ifdef VBOX_WITH_VIRT_ARMV8
+ ifeq ($(KBUILD_HOST),darwin)
+  VBOX_PATH_PREFIX_GCC_AARCH64 ?= aarch64-elf-
+  VBOX_PATH_PREFIX_GCC_ARM     ?= arm-none-eabi-
+ else
+  VBOX_PATH_PREFIX_GCC_AARCH64 ?=
+  VBOX_PATH_PREFIX_GCC_ARM     ?=
+ endif
+else
+ VBOX_PATH_PREFIX_GCC_AARCH64 ?=
+ VBOX_PATH_PREFIX_GCC_ARM     ?=
+endif
+
 $(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/tools_def.txt \
-$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt: \
+$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt \
+$(if $(VBOX_WITH_VIRT_ARMV8),$(VBoxEfiFirmware_0_OUTDIR)/aarch32/Conf/tools_def.txt) \
+$(if $(VBOX_WITH_VIRT_ARMV8),$(VBoxEfiFirmware_0_OUTDIR)/aarch64/Conf/tools_def.txt): \
 		$(VBOX_PATH_EFI_FIRMWARE)/vbox-tools_def.txt \
 		$(MAKEFILE) | $$(dir $$@)
 	$(RM) -f -- "$@"
@@ -276,6 +350,8 @@ $(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt: \
                \
 		-e 's,@VBOX_PATH_PREFIX_GCC32@,$(PATH_TOOL_$(VBOX_GCC_TOOL)),' \
 		-e 's,@VBOX_PATH_PREFIX_GCC64@,$(PATH_TOOL_$(VBOX_GCC_TOOL)),' \
+		-e 's,@VBOX_PATH_PREFIX_GCC_AARCH64@,$(VBOX_PATH_PREFIX_GCC_AARCH64),' \
+		-e 's,@VBOX_PATH_PREFIX_GCC_ARM@,$(VBOX_PATH_PREFIX_GCC_ARM),' \
                \
 		-e 's,@PATH_VS2010@,$(PATH_TOOL_$(VBOX_VCC_TOOL)),' \
 		-e 's,@PATH_VS2010_AMD64_BIN@,$(PATH_TOOL_$(VBOX_VCC_TOOL))/bin/$(subst x86,x86_amd64,$(KBUILD_HOST_ARCH)),' \
@@ -289,7 +365,9 @@ $(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt: \
 		--output $@ $<
 
 $(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/build_rule.txt \
-$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/build_rule.txt: \
+$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/build_rule.txt \
+$(if $(VBOX_WITH_VIRT_ARMV8),$(VBoxEfiFirmware_0_OUTDIR)/aarch32/Conf/build_rule.txt) \
+$(if $(VBOX_WITH_VIRT_ARMV8),$(VBoxEfiFirmware_0_OUTDIR)/aarch64/Conf/build_rule.txt): \
 		$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Conf/build_rule.template \
 		$(MAKEFILE) | $$(dir $$@)
 	$(RM) -f -- "$@"
@@ -358,9 +436,77 @@ $(VBoxEfiFirmware_0_OUTDIR)/amd64/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/OVMF.fd \
 		--arch X64 \
 		--platform OvmfPkg/OvmfPkgX64.dsc
 
+ifdef VBOX_WITH_VIRT_ARMV8
+ #
+ # VBoxEFIAArch32
+ #
+ $(VBoxEfiFirmware_0_OUTDIR)/aarch32/Conf/target.txt: $(MAKEFILE) | $$(dir $$@) $(VBOX_EFI_BLDPROGS)
+	$(APPEND) -tn "$@" \
+		"# Automatically generated, do not edit" \
+		"" \
+		"# These variables cannot be overriden by the build.py command line." \
+		"TOOL_CHAIN_CONF = $(VBoxEfiFirmware_0_OUTDIR)/aarch32/Conf/tools_def.txt" \
+		"BUILD_RULE_CONF = $(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Conf/build_rule.template" \
+		"" \
+		"# These variables are overridden and this is just for show." \
+		"ACTIVE_PLATFORM = ArmVirtPkg/ArmVirtQemu.dsc" \
+		"TARGET          = $(VBOX_EFI_BUILD_TARGET)" \
+		"TARGET_ARCH     = ARM" \
+		"TOOL_CHAIN_TAG  = $(VBOX_EFI_TOOL_CHAIN)" \
+		"MAX_CONCURRENT_THREAD_NUMBER = $(VBOX_EFI_MAX_THREADS)"
+
+ $(VBoxEfiFirmware_0_OUTDIR)/aarch32/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/QEMU_EFI.fd \
+ + $(VBoxEfiFirmwareDbgAarch32_SOURCES): \
+ 		$(VBoxEfiFirmware_0_OUTDIR)/aarch32/Conf/target.txt \
+ 		$(VBoxEfiFirmware_0_OUTDIR)/aarch32/Conf/tools_def.txt \
+ 		$(VBoxEfiFirmware_0_OUTDIR)/aarch32/Conf/build_rule.txt \
+ 		$(VBOX_EFI_DEPENDENCIES) \
+ 		$(VBOX_PATH_EFI_FIRMWARE)/ArmVirtPkg/ArmVirtQemu.dsc \
+ 		$(VBOX_PATH_EFI_FIRMWARE)/ArmVirtPkg/ArmVirtQemu.fdf
+	+ $(VBOX_EFI_BUILD_CMD) \
+		--arch ARM \
+		--platform ArmVirtPkg/ArmVirtQemu.dsc
+
+ #
+ # VBoxEFIAArch64
+ #
+ $(VBoxEfiFirmware_0_OUTDIR)/aarch64/Conf/target.txt: $(MAKEFILE) | $$(dir $$@) $(VBOX_EFI_BLDPROGS)
+	$(APPEND) -tn "$@" \
+		"# Automatically generated, do not edit" \
+		"" \
+		"# These variables cannot be overriden by the build.py command line." \
+		"TOOL_CHAIN_CONF = $(VBoxEfiFirmware_0_OUTDIR)/aarch64/Conf/tools_def.txt" \
+		"BUILD_RULE_CONF = $(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Conf/build_rule.template" \
+		"" \
+		"# These variables are overridden and this is just for show." \
+		"ACTIVE_PLATFORM = ArmVirtPkg/ArmVirtQemu.dsc" \
+		"TARGET          = $(VBOX_EFI_BUILD_TARGET)" \
+		"TARGET_ARCH     = AARCH64" \
+		"TOOL_CHAIN_TAG  = $(VBOX_EFI_TOOL_CHAIN)" \
+		"MAX_CONCURRENT_THREAD_NUMBER = $(VBOX_EFI_MAX_THREADS)"
+
+ $(VBoxEfiFirmware_0_OUTDIR)/aarch64/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/QEMU_EFI.fd \
+ + $(VBoxEfiFirmwareDbgAarch64_SOURCES): \
+ 		$(VBoxEfiFirmware_0_OUTDIR)/aarch64/Conf/target.txt \
+ 		$(VBoxEfiFirmware_0_OUTDIR)/aarch64/Conf/tools_def.txt \
+ 		$(VBoxEfiFirmware_0_OUTDIR)/aarch64/Conf/build_rule.txt \
+ 		$(VBOX_EFI_DEPENDENCIES) \
+ 		$(VBOX_PATH_EFI_FIRMWARE)/ArmVirtPkg/ArmVirtQemu.dsc \
+ 		$(VBOX_PATH_EFI_FIRMWARE)/ArmVirtPkg/ArmVirtQemu.fdf
+	+ $(VBOX_EFI_BUILD_CMD) \
+		--arch AARCH64 \
+		--platform ArmVirtPkg/ArmVirtQemu.dsc
+endif
+
+
 #
 # Some aliases.
 #
 build-efi-x86: $$(filter %VBoxEFI32.fd,$$(VBoxEfiFirmware_2_STAGE_TARGETS))
 build-efi-amd64: $$(filter %VBoxEFI64.fd,$$(VBoxEfiFirmware_2_STAGE_TARGETS))
+
+ifdef VBOX_WITH_VIRT_ARMV8
+ build-efi-aarch32: $$(filter %VBoxEFIAArch32.fd,$$(VBoxEfiFirmware_2_STAGE_TARGETS))
+ build-efi-aarch64: $$(filter %VBoxEFIAArch64.fd,$$(VBoxEfiFirmware_2_STAGE_TARGETS))
+endif
 
