@@ -187,9 +187,11 @@ running_module_version()
     version_string_path="/sys/module/"$mod"/version"
 
     [ -n "$mod" ] || return
-    [ -r "$version_string_path" ] || return
-
-    cat "$version_string_path"
+    if [ -r "$version_string_path" ]; then
+        cat "$version_string_path"
+    else
+        echo "UNKNOWN"
+    fi
 }
 
 # Check if currently loaded kernel module version matches to
