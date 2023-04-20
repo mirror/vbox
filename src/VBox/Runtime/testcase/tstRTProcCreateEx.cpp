@@ -499,6 +499,8 @@ static void tstRTCreateProcEx6(const char *pszAsUser, const char *pszPassword)
         else
             RTTestIFailed("RTEnvGetByIndexEx(%s,%u,,,,) failed: %Rrc", pszEnv1, i, rc);
     }
+
+    RTEnvDestroy(hEnvCur);
 }
 
 
