@@ -140,6 +140,9 @@ endif
 TEMPLATE_VBoxEfiBldProg_CFLAGS.linux  = $(TEMPLATE_VBoxBldProg_CFLAGS.linux)
 TEMPLATE_VBoxEfiBldProg_CFLAGS.linux += -Wno-misleading-indentation
 
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.darwin.arm64  = $(TEMPLATE_VBoxBldProg_CXXFLAGS.darwin.arm64)
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.darwin.arm64 += -Wno-register # BaseTools/Source/C/VfrCompile/Pccts/h/AParser.cpp:475:2: error: ISO C++17 does not allow 'register' storage class specifier [-Wregister]
+
 TEMPLATE_VBoxEfiBldProg_INCS = $(TEMPLATE_VBoxBldProg_INCS) \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include/IndustryStandard \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Common \
@@ -151,6 +154,12 @@ TEMPLATE_VBoxEfiBldProg_INCS.x86 = $(TEMPLATE_VBoxBldProg_INCS.x86) \
 
 TEMPLATE_VBoxEfiBldProg_INCS.amd64 = $(TEMPLATE_VBoxBldProg_INCS.amd64) \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include/X64
+
+TEMPLATE_VBoxEfiBldProg_INCS.arm = $(TEMPLATE_VBoxBldProg_INCS.arm) \
+    $(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include/ARM
+
+TEMPLATE_VBoxEfiBldProg_INCS.arm64 = $(TEMPLATE_VBoxBldProg_INCS.arm64) \
+    $(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include/AARCH64
 
 TEMPLATE_VBoxEfiBldProg_LIBS = \
 	$(VBOX_PATH_STAGE_EFI_BLDPROGS)/EfiBldCommonLib$(VBOX_SUFF_LIB) \
