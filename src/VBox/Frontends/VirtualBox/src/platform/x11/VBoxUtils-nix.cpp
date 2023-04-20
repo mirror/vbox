@@ -57,7 +57,7 @@
 #include <X11/extensions/dpms.h>
 #undef  BOOL            /* Restore the VBox/com/defs.h variant */
 #define BOOL PRBool
-
+#include <dlfcn.h>
 
 bool NativeWindowSubsystem::isCompositingManagerRunning(bool fIsXServerAvailable)
 {
@@ -739,32 +739,33 @@ uint32_t NativeWindowSubsystem::X11GetAppRootWindow()
 
 DisplayServerType NativeWindowSubsystem::detectDisplayServerType()
 {
-    /* Warning: All the following assumes:
-         - the system does not have several sessions with different display server configurations,
-         - XDG_SESSION_TYPE is set accordingly.
-    */
-    const char *pSessionType = RTEnvGet("XDG_SESSION_TYPE");
-    if (pSessionType != NULL)
+    void *pWaylandDisplay = NULL;
+    void *pWaylandClientHandle = dlopen("libwayland-client.so", RTLD_LAZY);
+    if (pWaylandClientHandle)
     {
-        if (RTStrIStr(pSessionType, "wayland"))
-        {
-            if (RTProcIsRunningByName("Xwayland"))
-                return DisplayServerType_XWayland;
-            else
-                return DisplayServerType_PureWayland;
-        }
-        else if (RTStrIStr(pSessionType, "x11"))
-            return DisplayServerType_XOrg;
-        /* On systemd systems XDG_SESSION_TYPE is set to tty for ssh sessions. Check xserver processes then:*/
-        else if (RTStrIStr(pSessionType, "tty"))
-        {
-            if (RTProcIsRunningByName("Xorg"))
-                return DisplayServerType_XOrg;
-            else if (RTProcIsRunningByName("Xwayland"))
-                return DisplayServerType_XWayland;
-        }
+        void * (*pWaylandDisplayConnect)(const char *) = (void * (*)(const char *))dlsym(pWaylandClientHandle, "wl_display_connect");
+        if (pWaylandDisplayConnect)
+            pWaylandDisplay = pWaylandDisplayConnect(NULL);
+        dlclose(pWaylandClientHandle);
     }
-    /* Default to Xorg since Solaris set XDG_SESSION_TYPE: */
+
+    void *pXDisplay = NULL;
+    void *pX11Handle = dlopen("libX11.so", RTLD_LAZY);
+    if (pX11Handle)
+    {
+        void * (*pX11DisplayConnect)(const char *) = (void * (*)(const char *))dlsym(pX11Handle, "XOpenDisplay");
+        if (pX11DisplayConnect)
+            pXDisplay = pX11DisplayConnect(NULL);
+        dlclose(pX11Handle);
+    }
+
+    if (pWaylandDisplay && pXDisplay)
+        return DisplayServerType_XWayland;
+    else if (pWaylandDisplay && !pXDisplay)
+        return DisplayServerType_PureWayland;
+    else if (!pWaylandDisplay && pXDisplay)
+        return DisplayServerType_XOrg;
+
     return DisplayServerType_XOrg;
 }
 
