@@ -739,6 +739,7 @@ uint32_t NativeWindowSubsystem::X11GetAppRootWindow()
 
 DisplayServerType NativeWindowSubsystem::detectDisplayServerType()
 {
+    /* Try to connect to the wayland display, assuming it succeeds only when a wayland compositor is active: */
     void *pWaylandDisplay = NULL;
     void *pWaylandClientHandle = dlopen("libwayland-client.so", RTLD_LAZY);
     if (pWaylandClientHandle)
@@ -749,6 +750,7 @@ DisplayServerType NativeWindowSubsystem::detectDisplayServerType()
         dlclose(pWaylandClientHandle);
     }
 
+    /* Also try to connect to the default X11 display to determine if Xserver is running: */
     void *pXDisplay = NULL;
     void *pX11Handle = dlopen("libX11.so", RTLD_LAZY);
     if (pX11Handle)
@@ -759,6 +761,7 @@ DisplayServerType NativeWindowSubsystem::detectDisplayServerType()
         dlclose(pX11Handle);
     }
 
+    /* If both wayland and X11 display can be connected then we should have XWayland: */
     if (pWaylandDisplay && pXDisplay)
         return DisplayServerType_XWayland;
     else if (pWaylandDisplay && !pXDisplay)
@@ -766,6 +769,7 @@ DisplayServerType NativeWindowSubsystem::detectDisplayServerType()
     else if (!pWaylandDisplay && pXDisplay)
         return DisplayServerType_XOrg;
 
+    /* Default to Xserver:*/
     return DisplayServerType_XOrg;
 }
 
