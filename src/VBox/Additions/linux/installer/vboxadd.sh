@@ -149,7 +149,7 @@ MODULE_SRC="$INSTALL_DIR/src/vboxguest-$INSTALL_VER"
 BUILDINTMP="$MODULE_SRC/build_in_tmp"
 
 # Attempt to detect VirtualBox Guest Additions version and revision information.
-VBOXCLIENT="${INSTALL_DIR}/bin/VBoxClient"
+VBOXCLIENT="${INSTALL_DIR}/bin/VBoxControl"
 VBOX_VERSION="`"$VBOXCLIENT" --version | cut -d r -f1`"
 [ -n "$VBOX_VERSION" ] || VBOX_VERSION='unknown'
 VBOX_REVISION="r`"$VBOXCLIENT" --version | cut -d r -f2`"
