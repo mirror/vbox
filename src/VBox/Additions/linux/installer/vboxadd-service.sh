@@ -139,9 +139,13 @@ status() {
     echo -n "Checking for VBoxService"
     if [ -f $PIDFILE ]; then
         echo " ...running"
+        RETVAL=0
     else
         echo " ...not running"
+        RETVAL=1
     fi
+
+    return $RETVAL
 }
 
 case "$1" in
@@ -165,5 +169,3 @@ cleanup)
     echo "Usage: $0 {start|stop|restart|status}"
     exit 1
 esac
-
-exit $RETVAL
