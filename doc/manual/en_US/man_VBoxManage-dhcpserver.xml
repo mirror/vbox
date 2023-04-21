@@ -254,7 +254,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-dhcpserver-description">
     <title>Description</title>
 
     <para>

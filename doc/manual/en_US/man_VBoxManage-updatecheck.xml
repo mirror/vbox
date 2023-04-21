@@ -65,7 +65,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-updatecheck-description">
     <title>Description</title>
 
     <para>The <command>updatecheck</command> subcommand is used to check if a newer

@@ -72,7 +72,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-sharedfolder-description">
     <title>Description</title>
     <para>
       Shared folders enable you to share data between the host system
@@ -194,7 +194,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-sharedfolder-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>

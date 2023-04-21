@@ -85,7 +85,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-convertfromraw-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage convertfromraw</command> command enables
@@ -243,7 +243,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-convertfromraw-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>

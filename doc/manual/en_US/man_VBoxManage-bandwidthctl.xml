@@ -94,7 +94,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-bandwidthctl-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage bandwidthctl</command> command enables you
@@ -279,7 +279,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-bandwidthctl-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>

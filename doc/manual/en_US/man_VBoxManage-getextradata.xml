@@ -62,7 +62,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-getextradata-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage getextradata</command> command enables you
@@ -100,7 +100,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-getextradata-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>
@@ -142,7 +142,7 @@ Key: GUI/UpdateDate, Value: 1 d, 2019-04-10, stable, 5.2.22
 Key: GUI/VirtualMediaManager/Details/Expanded, Value: true</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-getextradata-see-also">
     <title>See Also</title>
     <para>
       <xref linkend="vboxmanage-setextradata" />

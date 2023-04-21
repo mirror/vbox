@@ -60,7 +60,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-encryptmedium-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage encryptmedium</command> command enables
@@ -141,7 +141,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-encryptmedium-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>

@@ -98,7 +98,10 @@ enum
         <!-- Add scoping info for refsect1 and refsect2 IDs that aren't part of the synopsis. -->
         <xsl:for-each select=".//refsect1[@id] | .//refsect2[@id]">
           <xsl:variable name="sThisId" select="@id"/>
-          <xsl:if test="not($RefEntry[@id = $sThisId]) and not($RefEntry/refsynopsisdiv/cmdsynopsis[@id = concat('synopsis-', $sThisId)])">
+          <xsl:if test="    not($RefEntry[@id = $sThisId])
+                        and not($RefEntry/refsynopsisdiv/cmdsynopsis[@id = concat('synopsis-', $sThisId)])
+                        and not(contains($sThisId, '-see-also'))
+                        and not(contains($sThisId, '-examples')) "> <!-- controlvm is too big, so skip these two -->
             <xsl:variable name="sSubNm">
               <xsl:text>HELP_SCOPE_</xsl:text>
               <xsl:choose>

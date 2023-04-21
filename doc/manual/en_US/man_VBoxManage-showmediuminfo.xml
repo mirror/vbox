@@ -61,7 +61,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-showmediuminfo-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage showmediuminfo</command> command shows the
@@ -118,7 +118,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-showmediuminfo-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -133,7 +133,7 @@
 <screen>$ VBoxManage showmediuminfo floppy floppy01.img</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-showmediuminfo-see-also">
     <title>See Also</title>
     <para>
       <xref linkend="vboxmanage-list" />

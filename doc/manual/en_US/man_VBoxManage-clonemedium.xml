@@ -80,7 +80,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-clonemedium-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage clonemedium</command> command enables you
@@ -194,7 +194,7 @@
     </note>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-clonemedium-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -211,7 +211,7 @@
 <screen>$ VBoxManage clonemedium disk01.vdi disk02.vmdk --format VMDK</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-clonemedium-see-also">
     <title>See Also</title>
     <para>
       <xref linkend="vboxmanage-list" />

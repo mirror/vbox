@@ -72,7 +72,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-showvminfo-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage showvminfo</command> command outputs
@@ -163,7 +163,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-showvminfo-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>
@@ -212,7 +212,7 @@ UUID="1bf3464d-57c6-4d49-92a9-a5cc3816b7e7"
 ...</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-showvminfo-see-also">
     <title>See Also</title>
     <para>
       <xref linkend="vboxmanage-list" />

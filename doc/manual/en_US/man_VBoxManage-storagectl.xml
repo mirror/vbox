@@ -90,7 +90,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-storagectl-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage storagectl</command> command enables you
@@ -178,7 +178,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-storagectl-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -196,7 +196,7 @@
 <screen>$ VBoxManage storagectl ol7 --name "ide01" --add ide</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-storagectl-see-also">
     <title>See Also</title>
     <para>
       <xref linkend="vboxmanage-storageattach" />

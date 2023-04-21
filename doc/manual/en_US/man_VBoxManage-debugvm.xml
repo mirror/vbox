@@ -190,7 +190,7 @@
       <arg>--sample-time-us=<replaceable>time</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
-  <refsect1>
+  <refsect1 id="vboxmanage-debugvm-description">
     <title>Description</title>
 
     <para>The "debugvm" commands are for experts who want to tinker with the

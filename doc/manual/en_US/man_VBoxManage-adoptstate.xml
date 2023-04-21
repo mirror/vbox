@@ -57,7 +57,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-adoptstate-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage adoptstate</command> command enables you
@@ -91,7 +91,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-adoptstate-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -103,7 +103,7 @@
 <screen>$ VBoxManage adoptstate vm2 /home/user/mystate.sav</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-adoptstate-see-also">
     <title>See Also</title>
     <para>
       <xref linkend="vboxmanage-discardstate"/>

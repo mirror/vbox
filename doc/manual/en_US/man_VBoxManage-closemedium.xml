@@ -62,7 +62,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-closemedium-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage closemedium</command> command removes a
@@ -101,7 +101,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-closemedium-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>

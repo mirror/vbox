@@ -57,7 +57,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-checkmediumpwd-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage checkmediumpwd</command> command checks
@@ -88,7 +88,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-checkmediumpwd-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -104,7 +104,7 @@
   The given password is correct</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-checkmediumpwd-see-also">
     <title>See Also</title>
     <para>
       <xref linkend="vboxmanage-encryptmedium" />

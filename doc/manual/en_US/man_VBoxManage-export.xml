@@ -109,7 +109,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-export-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage export</command> command enables you to
@@ -423,7 +423,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-export-examples">
     <title>Example</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>

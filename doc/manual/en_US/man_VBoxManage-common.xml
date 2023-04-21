@@ -77,7 +77,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-common-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage</command> command is the command-line
@@ -225,7 +225,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-common-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>
@@ -278,7 +278,7 @@ Settings file: '/home/<replaceable>username</replaceable>/VirtualBox VMs/Win8/Wi
 <screen>$ VBoxManage controlvm ol6u9 audioin on</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-common-see-also">
     <title>See Also</title>
     <para>
       <xref linkend="vboxmanage-controlvm" />,

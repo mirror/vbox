@@ -77,7 +77,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1 id="vboximg-mount-intro">
+  <refsect1 id="vboximg-mount-description">
     <title>Description</title>
     <para>
       The <command>vboximg-mount</command> command enables you to make
@@ -307,7 +307,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboximg-mount-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="MOUNT-MOUNT,MOUNT-LIST"/>
     <para>

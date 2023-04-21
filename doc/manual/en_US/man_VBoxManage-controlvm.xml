@@ -756,7 +756,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-controlvm-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage controlvm</command> command enables you to
@@ -2120,7 +2120,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-controlvm-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -2136,7 +2136,7 @@
 <screen>$ VBoxManage controlvm ol7 clipboard mode bidirectional</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-controlvm-see-also">
     <title>See Also</title>
     <para>
       <xref linkend="vboxmanage-list" />,

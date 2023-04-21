@@ -60,7 +60,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-setextradata-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage setextradata</command> command enables you
@@ -97,7 +97,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-setextradata-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>
@@ -114,7 +114,7 @@
 <screen>$ VBoxManage setextradata Fedora5 installdate</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-setextradata-see-also">
     <title>See Also</title>
     <para>
       <xref linkend="vboxmanage-getextradata" />

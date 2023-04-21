@@ -130,7 +130,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-modifynvram-description">
     <title>Description</title>
 
     <para>The "modifynvram" commands are for experts who want to inspect and modify the

@@ -61,7 +61,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="viso-description">
     <title>Description</title>
     <para>Construct a virtual ISO 9660 / Joliet / UDF / HFS hybrid image and either write it to a
     file (RTIsoMaker) or serve it as a virtual image (VISO).</para>

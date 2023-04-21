@@ -73,7 +73,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-hostonlyif-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage hostonlyif</command> command enables you
@@ -189,7 +189,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-hostonlyif-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>

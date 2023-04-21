@@ -85,7 +85,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-list-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage list</command> subcommands enable you to
@@ -506,7 +506,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-list-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>

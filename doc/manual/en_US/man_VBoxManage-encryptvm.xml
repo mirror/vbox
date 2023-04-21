@@ -93,7 +93,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-encryptvm-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage encryptvm</command> command enables you to
@@ -185,7 +185,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-encryptvm-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -195,7 +195,7 @@
 <screen>$ VBoxManage encryptvm ol7 setencryption --cipher=AES-256 --new-password - --new-password-id vmid</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-encryptvm-see-also">
     <title>See Also</title>
     <para>
       <xref linkend="vboxmanage-createvm" />,

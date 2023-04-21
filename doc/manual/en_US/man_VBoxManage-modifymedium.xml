@@ -69,7 +69,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-modifymedium-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage modifymedium</command> command enables you
@@ -232,7 +232,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-modifymedium-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -247,7 +247,7 @@
 <screen>$ VBoxManage modifymedium disk disk01.vdi --type writethrough</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-modifymedium-see-also">
     <title>See Also</title>
     <para>
       <xref linkend="vboxmanage-list" />

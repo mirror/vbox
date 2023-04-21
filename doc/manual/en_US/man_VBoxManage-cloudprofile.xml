@@ -86,7 +86,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-cloudprofile-description">
     <title>Description</title>
 
     <refsect2 id="vboxmanage-cloudprofile-common-options">

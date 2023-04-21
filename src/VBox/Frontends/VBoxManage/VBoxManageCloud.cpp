@@ -649,11 +649,11 @@ static RTEXITCODE handleCloudLists(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         switch (c)
         {
             case kCloudList_Images:
-                setCurrentSubcommand(HELP_SCOPE_CLOUDLIST_IMAGES);
+                setCurrentSubcommand(HELP_SCOPE_CLOUD_LIST_IMAGES);
                 return listCloudImages(a, GetState.iNext, pCommonOpts);
 
             case kCloudList_Instances:
-                setCurrentSubcommand(HELP_SCOPE_CLOUDLIST_INSTANCES);
+                setCurrentSubcommand(HELP_SCOPE_CLOUD_LIST_INSTANCES);
                 return listCloudInstances(a, GetState.iNext, pCommonOpts);
             case kCloudList_Machines:
                 return listCloudMachines(a, GetState.iNext,
@@ -661,7 +661,7 @@ static RTEXITCODE handleCloudLists(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                                          pCommonOpts->profile.pszProfileName);
 
             case kCloudList_VnicAttachments:
-                setCurrentSubcommand(HELP_SCOPE_CLOUDLIST_VNICATTACHMENTS);
+                setCurrentSubcommand(HELP_SCOPE_CLOUD_LIST_VNICATTACHMENTS);
                 return listCloudVnicAttachments(a, GetState.iNext, pCommonOpts);
 
             case 'h':
@@ -1426,31 +1426,31 @@ static RTEXITCODE handleCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
         {
             /* Sub-commands: */
             case kCloudInstance_Create:
-                setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_CREATE);
+                setCurrentSubcommand(HELP_SCOPE_CLOUD_INSTANCE_CREATE);
                 return createCloudInstance(a, GetState.iNext, pCommonOpts);
 
             case kCloudInstance_Start:
-                setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_START);
+                setCurrentSubcommand(HELP_SCOPE_CLOUD_INSTANCE_START);
                 return startCloudInstance(a, GetState.iNext, pCommonOpts);
 
             case kCloudInstance_Pause:
-                setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_PAUSE);
+                setCurrentSubcommand(HELP_SCOPE_CLOUD_INSTANCE_PAUSE);
                 return pauseCloudInstance(a, GetState.iNext, pCommonOpts);
 
             case kCloudInstance_Info:
-                setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_INFO);
+                setCurrentSubcommand(HELP_SCOPE_CLOUD_INSTANCE_INFO);
                 return showCloudInstanceInfo(a, GetState.iNext, pCommonOpts);
 
             case kCloudInstance_Update:
-//              setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_UPDATE);
+//              setCurrentSubcommand(HELP_SCOPE_CLOUD_INSTANCE_UPDATE);
                 return updateCloudInstance(a, GetState.iNext, pCommonOpts);
 
             case kCloudInstance_Terminate:
-                setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_TERMINATE);
+                setCurrentSubcommand(HELP_SCOPE_CLOUD_INSTANCE_TERMINATE);
                 return terminateCloudInstance(a, GetState.iNext, pCommonOpts);
 
             case kCloudInstance_Reset:
-                setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_RESET);
+                setCurrentSubcommand(HELP_SCOPE_CLOUD_INSTANCE_RESET);
                 return resetCloudInstance(a, GetState.iNext, pCommonOpts);
 
             case 'h':
@@ -2079,27 +2079,27 @@ static RTEXITCODE handleCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         {
             /* Sub-commands: */
             case kCloudImage_Create:
-                setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_CREATE);
+                setCurrentSubcommand(HELP_SCOPE_CLOUD_IMAGE_CREATE);
                 return createCloudImage(a, GetState.iNext, pCommonOpts);
 
             case kCloudImage_Export:
-                setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_EXPORT);
+                setCurrentSubcommand(HELP_SCOPE_CLOUD_IMAGE_EXPORT);
                 return exportCloudImage(a, GetState.iNext, pCommonOpts);
 
             case kCloudImage_Import:
-                setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_IMPORT);
+                setCurrentSubcommand(HELP_SCOPE_CLOUD_IMAGE_IMPORT);
                 return importCloudImage(a, GetState.iNext, pCommonOpts);
 
             case kCloudImage_Info:
-                setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_INFO);
+                setCurrentSubcommand(HELP_SCOPE_CLOUD_IMAGE_INFO);
                 return showCloudImageInfo(a, GetState.iNext, pCommonOpts);
 
             case kCloudImage_Update:
-//              setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_UPDATE);
+//              setCurrentSubcommand(HELP_SCOPE_CLOUD_IMAGE_UPDATE);
                 return updateCloudImage(a, GetState.iNext, pCommonOpts);
 
             case kCloudImage_Delete:
-                setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_DELETE);
+                setCurrentSubcommand(HELP_SCOPE_CLOUD_IMAGE_DELETE);
                 return deleteCloudImage(a, GetState.iNext, pCommonOpts);
 
             case 'h':

@@ -82,7 +82,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-createmedium-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage createmedium</command> command creates a
@@ -207,7 +207,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-createmedium-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>

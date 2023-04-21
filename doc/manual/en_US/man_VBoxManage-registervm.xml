@@ -54,7 +54,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-registervm-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage registervm</command> command enables you
@@ -93,7 +93,7 @@
     </variablelist>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-registervm-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -104,7 +104,7 @@
 <screen>$ VBoxManage registervm "/home/user/VirtualBox VMs/vm2/vm2.vbox"</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-registervm-see-also">
     <title>See Also</title>
     <para>
       <xref linkend="vboxmanage-createvm"/>,

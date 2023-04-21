@@ -100,7 +100,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-natnetwork-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage natnetwork</command> command enables you
@@ -348,7 +348,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-natnetwork-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>

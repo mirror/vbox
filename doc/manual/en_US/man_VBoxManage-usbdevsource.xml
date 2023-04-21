@@ -59,7 +59,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-usbdevsource-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage usbdevsource</command> command adds a USB
@@ -117,7 +117,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-usbdevsource-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>

@@ -81,7 +81,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-hostonlynet-description">
     <title>Description</title>
 
     <para>
