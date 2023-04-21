@@ -408,8 +408,12 @@ InitializePlatform (
    *
    * This worked with 6.0 and earlier firmware because the variable store was much smaller (only 128KB)
    * which happened to work by accident.
+   *
+   * Update: We now allocate two pages, one code and one data. If only one page is allocated, it may
+   * be merged with the next allocation and defeat the workaround.
    */
   PeiServicesAllocatePages (EfiRuntimeServicesCode, 1, &Memory);
+  PeiServicesAllocatePages (EfiRuntimeServicesData, 1, &Memory);
 #endif
 
   if (PlatformInfoHob->BootMode != BOOT_ON_S3_RESUME) {
