@@ -148,6 +148,9 @@ test -n "$INSTALL_DIR" -a -n "$INSTALL_VER" ||
 MODULE_SRC="$INSTALL_DIR/src/vboxguest-$INSTALL_VER"
 BUILDINTMP="$MODULE_SRC/build_in_tmp"
 
+# Path to VBoxService control script.
+VBOX_SERVICE_SCRIPT="/usr/sbin/rcvboxadd-service"
+
 # Attempt to detect VirtualBox Guest Additions version and revision information.
 VBOXCONTROL="${INSTALL_DIR}/bin/VBoxControl"
 VBOX_VERSION="`"$VBOXCONTROL" --version | cut -d r -f1`"
@@ -229,44 +232,6 @@ check_running_module_version()
     [ -n "$expected" ] || return
 
     [ "$expected" = "$(running_module_version "$mod")" ] || return
-}
-
-
-# Checks if systemctl is present and functional (i.e., systemd is the init process).
-use_systemd()
-{
-    systemctl status >/dev/null 2>&1
-}
-
-# Returns if we did install a service as a systemd service.
-#
-# Input $1: Service name to check.
-#
-# Returns true if the service is installed as a systemd service, false if not.
-systemd_service_installed()
-{
-    ## Name of service to test.
-    name="${1}"
-
-    test -f /lib/systemd/system/"${name}".service ||
-        test -f /usr/lib/systemd/system/"${name}".service
-}
-
-## Performs an action on a service
-do_sysvinit_action()
-{
-    ## Name of service to start.
-    name="${1}"
-    ## The action to perform, normally "start", "stop" or "status".
-    action="${2}"
-
-    if use_systemd -a systemd_service_installed "${name}"; then
-        systemctl -q ${action} "${name}"
-    elif test -x "/etc/rc.d/init.d/${name}"; then
-        "/etc/rc.d/init.d/${name}" "${action}" quiet
-    elif test -x "/etc/init.d/${name}"; then
-        "/etc/init.d/${name}" "${action}" quiet
-    fi
 }
 
 do_vboxguest_non_udev()
@@ -1087,9 +1052,9 @@ reload()
     [ `id -u` -eq 0 ] || fail "root privileges are required"
 
     # Stop VBoxService if running.
-    do_sysvinit_action vboxadd-service status >/dev/null 2>&1
+    $VBOX_SERVICE_SCRIPT status >/dev/null 2>&1
     if [ $? -eq 0 ]; then
-        do_sysvinit_action vboxadd-service stop >/dev/null 2>&1 || fail "unable to stop VBoxService"
+        $VBOX_SERVICE_SCRIPT stop >/dev/null 2>&1 || fail "unable to stop VBoxService"
     fi
 
     # Unmount Shared Folders.
@@ -1140,7 +1105,7 @@ reload()
         [ $? -eq 0 ] && modprobe vboxsf >/dev/null 2>&1
 
         # Start VBoxService and VBoxDRMClient (systemctl start vboxadd-service.service).
-        [ $? -eq 0 ] && do_sysvinit_action vboxadd-service start >/dev/null 2>&1
+        [ $? -eq 0 ] && $VBOX_SERVICE_SCRIPT start >/dev/null 2>&1
 
         # Reload VBoxClient processes.
         [ $? -eq 0 ] && send_sig_usr1 "control"
