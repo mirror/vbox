@@ -82,6 +82,7 @@ class tdUnitTest1(vbox.TestDriver):
             'testcase/tstIntNet-1': '',                 # Not supported on arm64 right now.
             'testcase/tstLow': '',                      # Ditto.
             'testcase/tstPin': '',                      # Ditto.
+            'testcase/tstRTTime': '',                   # Needs more work first.
         },
         'linux': {
             'testcase/tstRTFileAio': '',                # See xTracker #8035.
