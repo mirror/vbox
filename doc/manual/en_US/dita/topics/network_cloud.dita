@@ -31,7 +31,7 @@
         <p>
           On the command line, use <userinput>VBoxManage modifyvm
           vmname --nic <varname>x</varname> cloud</userinput>. See
-          <xref href="man_VBoxManage-modifyvm.dita#vboxmanage-modifyvm"/>.
+          <xref href="vboxmanage-modifyvm.dita"/>.
         </p>
       </li>
     </ul>

@@ -35,7 +35,7 @@
           Use the <codeph>--nested-hw-virt</codeph> option of the
           <userinput>VBoxManage modifyvm</userinput> command to enable or
           disable nested virtualization. See
-          <xref href="man_VBoxManage-modifyvm.dita">VBoxManage modifyvm</xref>.
+          <xref href="vboxmanage-modifyvm.dita">VBoxManage modifyvm</xref>.
         </p>
       </li>
     </ul>

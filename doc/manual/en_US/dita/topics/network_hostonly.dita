@@ -75,7 +75,7 @@
         <p>
           On the command line, use <userinput>VBoxManage modifyvm
          vmname --nic <varname>x</varname> hostonly</userinput>. See
-          <xref href="man_VBoxManage-modifyvm.dita#vboxmanage-modifyvm"/>.
+          <xref href="vboxmanage-modifyvm.dita"/>.
         </p>
       </li>
     </ul>
@@ -103,7 +103,7 @@
         <p>
           Alternatively, you can use the <userinput>VBoxManage
           dhcpserver</userinput> command. See
-          <xref href="man_VBoxManage-dhcpserver.dita#vboxmanage-dhcpserver"/>.
+          <xref href="vboxmanage-dhcpserver.dita"/>.
         </p>
       </li>
     </ul>

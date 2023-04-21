@@ -27,7 +27,7 @@
       Oracle VM VirtualBox's iSCSI support has been developed according to the
       iSCSI standard and should work with all standard-conforming iSCSI
       targets. To use an iSCSI target with Oracle VM VirtualBox, you must use
-      the command line. See <xref href="man_VBoxManage-storageattach.dita#vboxmanage-storageattach"/>.
+      the command line. See <xref href="vboxmanage-storageattach.dita"/>.
     </p>
             </body>
             

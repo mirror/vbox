@@ -91,7 +91,7 @@
         fused pages, whereas the per-VM metric
         <codeph>Guest/RAM/Usage/Shared</codeph> will return the amount
         of fused memory for a given VM. See
-        <xref href="man_VBoxManage-metrics.dita#vboxmanage-metrics"/> for information on how to
+        <xref href="vboxmanage-metrics.dita"/> for information on how to
         query metrics.
       </p>
     <note>

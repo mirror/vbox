@@ -16,7 +16,7 @@
             accuracy and performance of guest OSes. The options
             available are documented under the
            <codeph>--paravirt-provider</codeph> option in
-            <xref href="man_VBoxManage-modifyvm.dita#vboxmanage-modifyvm"/>. For further details
+            <xref href="vboxmanage-modifyvm.dita"/>. For further details
             on the paravirtualization providers, see
             <xref href="gimproviders.dita">Paravirtualization Providers</xref>.
           </p>

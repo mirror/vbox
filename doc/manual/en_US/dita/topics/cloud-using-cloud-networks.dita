@@ -45,7 +45,7 @@
                 configure the operating system used for the cloud
                 gateway instance and the IP address range used by the
                 tunneling network. See
-                <xref href="man_VBoxManage-cloud.dita#vboxmanage-cloud"/>.
+                <xref href="vboxmanage-cloud.dita"/>.
               </p>
             <p>
                 For best results, use an Oracle Linux 7 instance for the

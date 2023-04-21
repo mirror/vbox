@@ -368,14 +368,14 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmange-guestcontrol-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage guestcontrol</command> command enables you
       to control a guest (VM) from the host system. See
       <xref linkend="guestadd-guestcontrol" />.
     </para>
-    <refsect2>
+    <refsect2 id="vboxmanage-guestcontrol-common">
       <title>Common Options and Operands</title>
       <para>
         The following options can be used by any of the
@@ -465,7 +465,7 @@
         </varlistentry>
       </variablelist>
     </refsect2>
-    <refsect2>
+    <refsect2 id="vboxmanage-guestcontrol-process-restrictions">
       <title>Guest Process Restrictions</title>
       <para>
         By default, you can run up to five guest processes
@@ -1288,7 +1288,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-guestcontrol-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>

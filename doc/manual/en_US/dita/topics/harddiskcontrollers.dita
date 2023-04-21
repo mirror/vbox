@@ -114,7 +114,7 @@
         </p>
         <p>
           To change the IDE compatibility mode settings for the SATA
-          controller, see <xref href="man_VBoxManage-storagectl.dita#vboxmanage-storagectl"/>.
+          controller, see <xref href="vboxmanage-storagectl.dita"/>.
         </p>
       </li>
       <li>

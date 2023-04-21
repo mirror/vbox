@@ -70,7 +70,7 @@
       operating systems that are participating in the internal network
       to use static IP addresses, you may want to use the DHCP server
       that is built into Oracle VM VirtualBox to manage IP addresses for the
-      internal network. See <xref href="man_VBoxManage-dhcpserver.dita#vboxmanage-dhcpserver"/>.
+      internal network. See <xref href="vboxmanage-dhcpserver.dita"/>.
     </p>
     <p>
       As a security measure, by default, the Linux implementation of

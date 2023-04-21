@@ -53,8 +53,8 @@ $ VBoxManage modifyvm <varname>VM-name</varname> --unplug-cpu 3</pre>
     <pre xml:space="preserve">$ VBoxManage controlvm <varname>VM-name</varname> plugcpu 3
 $ VBoxManage controlvm <varname>VM-name</varname> unplugcpu 3</pre>
     <p>
-      See <xref href="man_VBoxManage-modifyvm.dita">VBoxManage modifyvm</xref> and
-      <xref href="man_VBoxManage-controlvm.dita">VBoxManage controlvm</xref> for details.
+      See <xref href="vboxmanage-modifyvm.dita">VBoxManage modifyvm</xref> and
+      <xref href="vboxmanage-controlvm.dita">VBoxManage controlvm</xref> for details.
     </p>
     <p>
       With Linux guests, the following applies:

@@ -57,7 +57,7 @@
         </p>
                      <pre xml:space="preserve">VBoxManage sharedfolder add "VM name" --name "sharename" --hostpath "C:\test"</pre>
                      <p>
-          See <xref href="man_VBoxManage-sharedfolder.dita#vboxmanage-sharedfolder"/>.
+          See <xref href="vboxmanage-sharedfolder.dita"/>.
         </p>
                   </li>
                </ul>

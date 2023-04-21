@@ -16,7 +16,7 @@
       which must be specified when the image file is created. As opposed
       to a physical disk however, Oracle VM VirtualBox enables you to expand
       an image file after creation, even if it has data already. See
-      <xref href="man_VBoxManage-modifymedium.dita#vboxmanage-modifymedium"/>.
+      <xref href="vboxmanage-modifymedium.dita"/>.
     </p>
                <p>
       Oracle VM VirtualBox supports the following types of disk image files:

@@ -45,7 +45,7 @@
         </p>
         <p>
           You can also use the <userinput>VBoxManage movevm</userinput>
-          command to move a VM. See <xref href="man_VBoxManage-movevm.dita#vboxmanage-movevm"/>.
+          command to move a VM. See <xref href="vboxmanage-movevm.dita"/>.
         </p>
       </li>
     </ul>

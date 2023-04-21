@@ -53,7 +53,7 @@
     <p>
       A more flexible way to use this channel is with the
       <userinput>VBoxManage guestproperty</userinput> command. See
-      <xref href="man_VBoxManage-guestproperty.dita#vboxmanage-guestproperty"/>. For example, to have
+      <xref href="vboxmanage-guestproperty.dita"/>. For example, to have
       <i>all</i> the available guest properties for a
       given running VM listed with their respective values, use this
       command:

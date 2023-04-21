@@ -88,7 +88,7 @@
       To enable host drive passthrough you can use the
       <codeph>--passthrough</codeph> option of the <userinput>VBoxManage
       storageattach</userinput> command. See
-      <xref href="man_VBoxManage-storageattach.dita#vboxmanage-storageattach"/>.
+      <xref href="vboxmanage-storageattach.dita"/>.
     </p>
                <p>
       Even if passthrough is enabled, unsafe commands, such as updating

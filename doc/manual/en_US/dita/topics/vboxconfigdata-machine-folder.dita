@@ -97,7 +97,7 @@
         main window. Then, in the displayed window, click on the
         <b outputclass="bold">General</b> tab. Alternatively, use
         the <userinput>VBoxManage setproperty machinefolder</userinput>
-        command. See <xref href="man_VBoxManage-setproperty.dita">VBoxManage setproperty</xref>.
+        command. See <xref href="vboxmanage-setproperty.dita">VBoxManage setproperty</xref>.
       </p>
   </body>
   

@@ -58,7 +58,7 @@
     <p>
         You can also use <userinput>VBoxManage debugvm</userinput> to create
         a dump of a complete virtual machine. See
-        <xref href="man_VBoxManage-debugvm.dita">VBoxManage debugvm</xref>.
+        <xref href="vboxmanage-debugvm.dita">VBoxManage debugvm</xref>.
       </p>
     <p>
         For network related problems, it is often helpful to capture a

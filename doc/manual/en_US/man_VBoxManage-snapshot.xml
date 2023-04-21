@@ -154,7 +154,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-snapshot-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage snapshot</command> command manages
@@ -182,7 +182,7 @@
       specify the name or the universal unique identifier (UUID) of the
       VM for which you want to take a snapshot.
     </para>
-    <refsect2>
+    <refsect2 id="vboxmanage-snapshot-common-args">
       <title>General Command Operand</title>
       <variablelist>
         <varlistentry>
@@ -378,7 +378,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-snapshot-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>

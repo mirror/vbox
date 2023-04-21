@@ -101,14 +101,14 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
         </p>
                      <p>
           For more details, see
-          <xref href="man_VBoxManage-createvm.dita#vboxmanage-createvm"/>.
+          <xref href="vboxmanage-createvm.dita"/>.
         </p>
                   </li>
                   <li>
                      <p>
           To show the configuration of a particular VM, use
           <userinput>VBoxManage showvminfo</userinput>. See
-          <xref href="man_VBoxManage-showvminfo.dita#vboxmanage-showvminfo"/> for details
+          <xref href="vboxmanage-showvminfo.dita"/> for details
           and an example.
         </p>
                   </li>
@@ -119,7 +119,7 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
         </p>
                      <pre xml:space="preserve">VBoxManage modifyvm "Windows XP" --memory 512</pre>
                      <p>
-          See also <xref href="man_VBoxManage-modifyvm.dita#vboxmanage-modifyvm"/>.
+          See also <xref href="vboxmanage-modifyvm.dita"/>.
         </p>
                   </li>
                   <li>
@@ -128,8 +128,8 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
           controller and then a virtual disk, use <userinput>VBoxManage
           storagectl</userinput> and <userinput>VBoxManage
           storageattach</userinput>. See
-          <xref href="man_VBoxManage-storagectl.dita#vboxmanage-storagectl"/> and
-          <xref href="man_VBoxManage-storageattach.dita#vboxmanage-storageattach"/>.
+          <xref href="vboxmanage-storagectl.dita"/> and
+          <xref href="vboxmanage-storageattach.dita"/>.
         </p>
                   </li>
                   <li>
@@ -141,7 +141,7 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
                            <p>
               To start a VM that is currently powered off, use
               <userinput>VBoxManage startvm</userinput>. See
-              <xref href="man_VBoxManage-startvm.dita#vboxmanage-startvm"/>.
+              <xref href="vboxmanage-startvm.dita"/>.
             </p>
                         </li>
                         <li>
@@ -149,7 +149,7 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
               To pause or save a VM that is currently running or change
               some of its settings, use <userinput>VBoxManage
               controlvm</userinput>. See
-              <xref href="man_VBoxManage-controlvm.dita#vboxmanage-controlvm"/>.
+              <xref href="vboxmanage-controlvm.dita"/>.
             </p>
                         </li>
                      </ul>

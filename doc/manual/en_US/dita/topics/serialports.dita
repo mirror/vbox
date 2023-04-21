@@ -37,7 +37,7 @@
     <p>
       You can use either the Settings tabs or the
       <userinput>VBoxManage</userinput> command to set up virtual serial
-      ports. For the latter, see <xref href="man_VBoxManage-modifyvm.dita#vboxmanage-modifyvm"/>
+      ports. For the latter, see <xref href="vboxmanage-modifyvm.dita"/>
       for information on the <codeph>--uart</codeph>,
       <codeph>--uart-mode</codeph> and <codeph>--uart-type</codeph>
       options.

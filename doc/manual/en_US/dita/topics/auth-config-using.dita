@@ -20,7 +20,7 @@
             stored <i>unencrypted</i> in the machine
             configuration and is therefore potentially readable on the
             host. See <xref href="storage-iscsi.dita">iSCSI Servers</xref> and
-            <xref href="man_VBoxManage-storageattach.dita">VBoxManage storageattach</xref>.
+            <xref href="vboxmanage-storageattach.dita">VBoxManage storageattach</xref>.
           </p>
       </li>
       <li>

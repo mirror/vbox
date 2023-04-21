@@ -119,7 +119,7 @@
         guest OS and the applications you want to install. For a Windows
         or Linux guest, you will probably need several gigabytes for any
         serious use. The limit of the image file size can be changed
-        later, see <xref href="man_VBoxManage-modifymedium.dita#vboxmanage-modifymedium"/>.
+        later, see <xref href="vboxmanage-modifymedium.dita"/>.
       </p>
     <note>
       <p>

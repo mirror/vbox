@@ -203,7 +203,7 @@
         <xsl:attribute name="id">
           <xsl:choose>
             <xsl:when test="@id"><xsl:value-of select="@id"/></xsl:when>
-            <xsl:otherwise><xsl:value-of select="concat(generate-id(),'-',/@id)"/></xsl:otherwise>
+            <xsl:otherwise><xsl:value-of select="concat(../@id, '-no', count(./preceding-sibling::refsect1))"/></xsl:otherwise>
           </xsl:choose>
         </xsl:attribute>
 
@@ -260,7 +260,12 @@
         <xsl:attribute name="id">
           <xsl:choose>
             <xsl:when test="@id"><xsl:value-of select="@id"/></xsl:when>
-            <xsl:otherwise><xsl:value-of select="concat(generate-id(),'-',/@id)"/></xsl:otherwise>
+            <xsl:otherwise>
+              <xsl:if test="not(../@id)">
+                <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>both refsect2 and parent refsect1 are missing an @id attribute! Please fix add at least one of these to facilitate proper dita topic splitting.</xsl:message>
+              </xsl:if>
+              <xsl:value-of select="concat(../@id, '-no', count(./preceding-sibling::refsect2))"/>
+            </xsl:otherwise>
           </xsl:choose>
         </xsl:attribute>
 

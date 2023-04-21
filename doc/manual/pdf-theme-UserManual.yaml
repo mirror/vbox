@@ -134,9 +134,11 @@ style:
 
     h4:
         font-size:          12pt
+        font-weight:        bold
         font-style:         italic
-        space-before:       12pt
-        title-numbering:    false
+        space-before:       15pt
+        start-indent:       'from-parent(start-indent)'
+        title-numbering:    true
 
     link:
         color:              $brand-color-links

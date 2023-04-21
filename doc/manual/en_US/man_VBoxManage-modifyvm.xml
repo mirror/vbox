@@ -673,7 +673,7 @@ it unless this changes. -->
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-modifyvm-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage modifyvm</command> command enables you to
@@ -2788,7 +2788,7 @@ it unless this changes. -->
 
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-modifyvm-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
@@ -2803,7 +2803,7 @@ it unless this changes. -->
 <screen>$ VBoxManage modifyvm ol7 --vrde on</screen>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-modifyvm-see-also">
     <title>See Also</title>
     <para>
       <xref linkend="vboxmanage-showvminfo" />,

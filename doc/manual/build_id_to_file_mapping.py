@@ -61,7 +61,8 @@ def scanDocbookRefentryForIds(dIdToFile, sContent, sFile):
     for oMatch in g_oReRefentry.finditer(sContent):
         sId = oMatch.group(2)[1:-1];
         if sId:
-            dIdToFile[sId] = sFile;
+            #dIdToFile[sId] = sFile;
+            dIdToFile[sId] = '%s.dita' % (sId,);
 
 def isDocbook(sContent):
     """

@@ -29,7 +29,7 @@
     <b outputclass="bold">Settings</b> window in VirtualBox Manager. You
     can configure all eight network cards on the command line using
     <userinput>VBoxManage modifyvm</userinput>. See
-    <xref href="man_VBoxManage-modifyvm.dita#vboxmanage-modifyvm"/>.
+    <xref href="vboxmanage-modifyvm.dita"/>.
   </p>
     <p>
     This chapter explains the various networking settings in more

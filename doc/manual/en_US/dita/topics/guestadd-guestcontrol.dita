@@ -25,7 +25,7 @@
     </p>
     <p>
       To use these features, use the Oracle VM VirtualBox command line. See
-      <xref href="man_VBoxManage-guestcontrol.dita#vboxmanage-guestcontrol"/>.
+      <xref href="vboxmanage-guestcontrol.dita"/>.
     </p>
   </body>
   

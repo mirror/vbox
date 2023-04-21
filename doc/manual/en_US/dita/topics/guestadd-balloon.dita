@@ -70,7 +70,7 @@
         where <varname>VM name</varname> is the name or UUID of
         the virtual machine in question and <varname>n</varname>
         is the amount of memory to allocate from the guest in megabytes.
-        See <xref href="man_VBoxManage-controlvm.dita#vboxmanage-controlvm"/>.
+        See <xref href="vboxmanage-controlvm.dita"/>.
       </p>
     <p>
         You can also set a default balloon that will automatically be
@@ -82,7 +82,7 @@
         By default, no balloon memory is allocated. This is a VM
         setting, like other <userinput>modifyvm</userinput> settings, and
         therefore can only be set while the machine is shut down. See
-        <xref href="man_VBoxManage-modifyvm.dita#vboxmanage-modifyvm"/>.
+        <xref href="vboxmanage-modifyvm.dita"/>.
       </p>
   </body>
   

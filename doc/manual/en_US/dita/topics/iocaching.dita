@@ -88,7 +88,7 @@
     </p>
     <pre xml:space="preserve">VBoxManage storagectl "VM name" --name &lt;controllername&gt; --hostiocache off</pre>
     <p>
-      See <xref href="man_VBoxManage-storagectl.dita#vboxmanage-storagectl"/>.
+      See <xref href="vboxmanage-storagectl.dita"/>.
     </p>
     <p>
       For the above reasons, Oracle VM VirtualBox uses SATA controllers by

@@ -103,7 +103,7 @@
     </ol>
     <p>
         You can use the <userinput>VBoxManage import</userinput> command to
-        import an appliance. See <xref href="man_VBoxManage-import.dita#vboxmanage-import"/>.
+        import an appliance. See <xref href="vboxmanage-import.dita"/>.
       </p>
   </body>
   

@@ -51,7 +51,7 @@
     <p>
         Alternatively, you can use the <userinput>VBoxManage</userinput>
         command line to install and manage Oracle VM VirtualBox extension
-        packs. See <xref href="man_VBoxManage-extpack.dita#vboxmanage-extpack"/>.
+        packs. See <xref href="vboxmanage-extpack.dita"/>.
       </p>
   </body>
   

@@ -152,7 +152,7 @@
     <p>
         You can also use the <userinput>VBoxManage export</userinput>
         command to export a VM to Oracle Cloud Infrastructure. See
-        <xref href="man_VBoxManage-export.dita"/>.
+        <xref href="vboxmanage-export.dita"/>.
       </p>
   </body>
 </topic>

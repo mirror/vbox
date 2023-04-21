@@ -80,7 +80,7 @@
 --id="ocid1.instance.oc1..." </pre>
     <p>
         For more details about the available commands for cloud
-        operations, see <xref href="man_VBoxManage-cloud.dita#vboxmanage-cloud"/>.
+        operations, see <xref href="vboxmanage-cloud.dita"/>.
       </p>
   </body>
   

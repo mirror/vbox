@@ -9,7 +9,7 @@
       quickly produce a second virtual machine with the same OS setup.
       However, you should <i>only</i> make copies of
       virtual disk images using the utility supplied with
-      Oracle VM VirtualBox. See <xref href="man_VBoxManage-clonemedium.dita#vboxmanage-clonemedium"/>.
+      Oracle VM VirtualBox. See <xref href="vboxmanage-clonemedium.dita"/>.
       This is because Oracle VM VirtualBox assigns a UUID to each disk image,
       which is also stored inside the image, and Oracle VM VirtualBox will
       refuse to work with two images that use the same number. If you do

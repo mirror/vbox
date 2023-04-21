@@ -110,6 +110,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  #
  # DITA-OT related globals.
  #
+ VBOX_DITA_TECHNICAL_CONTENT_DTD_PATH = $(VBOX_DITA_ORIGINAL_PATH)/dtd/technicalContent/dtd
 
  ##
  # Copies DITA-OT to $1, runs the dost.jar with /ditadir given and nukes $1 when done.
@@ -145,6 +146,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   VBOX_DITA_USING_LATEST  := 1
   VBOX_JAVA_HOME          := C:/Program Files/Java/jdk-17/
   VBOX_DITA_ORIGINAL_PATH := D:/Tmp/dita/dita-ot-4.0.2
+  VBOX_DITA_TECHNICAL_CONTENT_DTD_PATH = $(VBOX_DITA_ORIGINAL_PATH)/plugins/org.oasis-open.dita.v1_2/dtd/technicalContent/dtd
   VBOX_DITA_CLASSPATH = \
   	$(subst $(SP),;,$(strip \
   			$(VBOX_DITA_ORIGINAL_PATH)/lib/ant-launcher.jar \
@@ -636,7 +638,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   		$$(filter %.dita,$$(VBOX_USER_MANUAL_DITA_STAGED_FILES_$(1))) \
   		| $$$$(dir $$$$@)
 	$$(call MSG_L1, $$<)
-	$$(APPEND) -nt "$$@.lst" $$(filter-out %.py,$$^)
+	$$(QUIET)$$(APPEND) -nt "$$@.lst" $$(filter-out %.py,$$^)
 	$$(QUIET)$$(VBOX_BLD_PYTHON) "$$<" --output "$$@" @"$$@.lst"
 
   # Accumulated list of conversion output file names to be used as a
@@ -649,12 +651,17 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  # @param 1    Language
  # @param 2    Filename w/o extension.
  # @param 3    Alternative fallback filename (for isomakercmd-man.xml).
+ # @note This produces more files that listed in the output, but we currently let kmk be ignorant of that.
  define def_vbox_refentry_file_to_dita
-  VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$1 += $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2).dita
-  $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2).dita \
-  + $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2).xml: \
+  VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$1 += $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2).ditamap
+  $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2).ditamap \
+  + $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).dita \
+  + $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).xml: \
   		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-dita-pre.xsl \
   		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-dita.xsl \
+  		$$(VBOX_PATH_MANUAL_SRC)/dita-refentry-flat-to-single-topic.sh \
+  		$$(VBOX_PATH_MANUAL_SRC)/dita-refentry-flat-to-single-topic.xsl \
+  		$$(VBOX_PATH_MANUAL_SRC)/dita-refentry-flat-topic-ids.xsl \
   		$$(VBOX_PATH_MANUAL_SRC)/add_file_to_id_only_references.py \
   		$$(VBOX_USER_MANUAL_ID_MAPPING_FILE_$1) \
   		$$(qfirstfile , $$(qwildcard , $$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2).xml) $(3) $$(VBOX_PATH_MANUAL_SRC)/en_US/$(2).xml) \
@@ -665,18 +672,36 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   		$$(VBOX_VERSION_STAMP) \
   		| $$$$(dir $$$$@)
 	$$(call MSG_TOOL,xsltproc docbook-refentry-to-manual-dita[-pre].xsl,,$$(firstword $$(filter %.xml,$$^)),$$@)
-	$$(QUIET)$$(RM) -f -- "$$@" "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2).xml"
+	$$(QUIET)$$(RM) -f -- "$$@" \
+		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).xml" \
+		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).dita"
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) \
-		--output "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2).xml" \
+		--output "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).xml" \
  		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-dita-pre.xsl \
 		$$(qfirstfile , $$(qwildcard , $$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2).xml) $(3) $$(VBOX_PATH_MANUAL_SRC)/en_US/$(2).xml)
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) \
 		$(if-expr defined(VBOX_DITA_USING_LATEST),--stringparam "g_fReplaceHypens" "true",) \
-		--output "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2).dita" \
+		--output "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).dita" \
 		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-dita.xsl \
-		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2).xml"
+		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).xml"
 	$$(QUIET)$$(VBOX_BLD_PYTHON) $$(VBOX_PATH_MANUAL_SRC)/add_file_to_id_only_references.py \
-		--mapping-file "$$(VBOX_USER_MANUAL_ID_MAPPING_FILE_$1)" "$$@"
+		--mapping-file "$$(VBOX_USER_MANUAL_ID_MAPPING_FILE_$1)" \
+		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).dita"
+	$$(QUIET)$$(ASH) \
+  		"$$(VBOX_PATH_MANUAL_SRC)/dita-refentry-flat-to-single-topic.sh" \
+		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).dita" \
+  		"$$(VBOX_PATH_MANUAL_SRC)/dita-refentry-flat-topic-ids.xsl" \
+  		"$$(VBOX_PATH_MANUAL_SRC)/dita-refentry-flat-to-single-topic.xsl" \
+		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics" \
+		-- $$(subst $$(REDIRECT),$$(REDIRECT_EXT),$$(call VBOX_XSLTPROC_WITH_CAT)) \
+		--path "$$(VBOX_DITA_TECHNICAL_CONTENT_DTD_PATH)"
+	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) \
+		--path "$$(VBOX_DITA_TECHNICAL_CONTENT_DTD_PATH)" \
+		--stringparam g_sMode map \
+		--output "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/$(2).ditamap" \
+		$$(VBOX_PATH_MANUAL_SRC)/dita-refentry-flat-to-single-topic.xsl \
+		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).dita"
+
  endef # def_vbox_refentry_file_to_dita
 
  $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES) \
@@ -732,7 +757,8 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		"/outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)" \
 		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf" \
 		, \
-               $(if-expr defined(VBOX_DITA_DEBUG),"/cleantemp:no",) \
+               "/grammarcache:yes" \
+               $(if-expr defined(VBOX_DITA_DEBUG),"/cleantemp:no" "/debug:yes",) \
 		, \
 		"--theme=$$(VBOX_PATH_MANUAL_SRC)/pdf-theme-UserManual.yaml" \
 		"--logfile=$$(@D)/UserManual_pdf.log" \
@@ -740,6 +766,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		)
 
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf
+  .PRECIOUS: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_pdf.log
  endef
  $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES),$(evalcall2 def_ditamap_to_pdf,$(lang)))
 
@@ -768,7 +795,10 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		"/filter:$(VBOX_PATH_MANUAL_SRC)/en_US/dita/htmlhelp.ditaval" \
 		"/outdir:$(@D)" \
 		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml_chunks" \
-		,,"--logfile=$(@D)/UserManual_xhtml.log")
+		, \
+               "/grammarcache:yes" \
+               , \
+               "--logfile=$(@D)/UserManual_xhtml.log")
 
  html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
 
@@ -794,7 +824,10 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		"/transtype:xhtml" \
 		"/outdir:$(@D)" \
 		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml_single" \
-		,,"--logfile=$(@D)/UserManual-Single_xhtml.log")
+		, \
+               "/grammarcache:yes" \
+               , \
+               "--logfile=$(@D)/UserManual-Single_xhtml.log")
 	$(SED) -ne '1,/<body>/{p}' \
 		--output "$@" "$(@D)/UserManual-Single.html"
 	$(APPEND) -n "$@" "<!-- index inject: -->"
@@ -887,7 +920,10 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		"/filter:$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/htmlhelp.ditaval" \
 		"/outdir:$(2)" \
 		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_qhelp" \
-		,,"--logfile=$(2)/UserManual_htmlhelp.log")
+		, \
+               "/grammarcache:yes" \
+               , \
+               "--logfile=$(2)/UserManual_htmlhelp.log")
 
 
    ditamap-to-htmlhelp: $(2)/UserManual.hhp

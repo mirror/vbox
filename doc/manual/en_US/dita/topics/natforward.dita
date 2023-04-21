@@ -37,7 +37,7 @@
     <p>
         Alternatively, the command line tool
         <userinput>VBoxManage</userinput> can be used. See
-        <xref href="man_VBoxManage-modifyvm.dita#vboxmanage-modifyvm"/>.
+        <xref href="vboxmanage-modifyvm.dita"/>.
       </p>
     <p>
         You will need to know which ports on the guest the service uses
@@ -89,7 +89,7 @@
       </p>
     <p>
         It is possible to configure incoming NAT connections while the
-        VM is running, see <xref href="man_VBoxManage-controlvm.dita#vboxmanage-controlvm"/>.
+        VM is running, see <xref href="vboxmanage-controlvm.dita"/>.
       </p>
   </body>
   

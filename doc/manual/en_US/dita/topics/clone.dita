@@ -181,7 +181,7 @@
     </p>
     <p>
       You can also use the <userinput>VBoxManage clonevm</userinput> command
-      to clone a VM. See <xref href="man_VBoxManage-clonevm.dita#vboxmanage-clonevm"/>.
+      to clone a VM. See <xref href="vboxmanage-clonevm.dita"/>.
     </p>
   </body>
   

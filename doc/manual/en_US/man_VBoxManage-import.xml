@@ -101,7 +101,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1>
+  <refsect1 id="vboxmanage-import-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage import</command> command imports a virtual
@@ -131,7 +131,7 @@
       both the boot image and some metadata describing the details of the
       VM instance. The temporary file is deleted after successful import.
     </para>
-    <refsect2>
+    <refsect2 id="vboxmanage-import-common-options">
       <title>Common Options</title>
       <variablelist>
         <varlistentry>
@@ -363,7 +363,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1>
+  <refsect1  id="vboxmanage-import-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>

@@ -16,10 +16,10 @@
       By default, images are in <i>normal</i> mode. To
       mark an existing image with one of the non-standard modes listed
       below, use <userinput>VBoxManage modifymedium</userinput>. See
-      <xref href="man_VBoxManage-modifymedium.dita#vboxmanage-modifymedium"/>. Alternatively, use
+      <xref href="vboxmanage-modifymedium.dita"/>. Alternatively, use
       <userinput>VBoxManage storageattach</userinput> to attach the image to
       a VM and specify the <codeph>--mtype</codeph> argument. See
-      <xref href="man_VBoxManage-storageattach.dita#vboxmanage-storageattach"/>.
+      <xref href="vboxmanage-storageattach.dita"/>.
     </p>
     <p>
       The available virtual disk image modes are as follows:
@@ -135,7 +135,7 @@
           startup does not fit your needs, you can turn it off using the
           <codeph>autoreset</codeph> parameter of <userinput>VBoxManage
           modifymedium</userinput>. See
-          <xref href="man_VBoxManage-modifymedium.dita#vboxmanage-modifymedium"/>.
+          <xref href="vboxmanage-modifymedium.dita"/>.
         </p>
       </li>
       <li>

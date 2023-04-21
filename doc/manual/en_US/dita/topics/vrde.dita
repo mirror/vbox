@@ -59,7 +59,7 @@
       <varname>VM-name</varname> --vrde-port
       5000,5010-5012</userinput> configures the server to bind to one of
       the ports 5000, 5010, 5011, or 5012. See
-      <xref href="man_VBoxManage-modifyvm.dita">VBoxManage modifyvm</xref>.
+      <xref href="vboxmanage-modifyvm.dita">VBoxManage modifyvm</xref>.
     </p>
     <p>
       The actual port used by a running VM can be either queried with

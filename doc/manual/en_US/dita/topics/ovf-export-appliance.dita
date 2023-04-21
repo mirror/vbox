@@ -93,7 +93,7 @@
     </ol>
     <p>
         You can use the <userinput>VBoxManage export</userinput> command to
-        export an appliance. See <xref href="man_VBoxManage-export.dita#vboxmanage-export"/>.
+        export an appliance. See <xref href="vboxmanage-export.dita"/>.
       </p>
   </body>
   

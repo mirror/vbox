@@ -34,7 +34,7 @@
       The settings password is used for certain settings which need to
       be stored in encrypted form for security reasons. At the moment,
       the only encrypted setting is the iSCSI initiator secret, see
-      <xref href="man_VBoxManage-storageattach.dita"/>. As long as no
+      <xref href="vboxmanage-storageattach.dita"/>. As long as no
       settings password is specified, this information is stored in
       <i>plain text</i>. After using the
       <!--option not processed within -->--settingspw|--settingspwfile option once, it

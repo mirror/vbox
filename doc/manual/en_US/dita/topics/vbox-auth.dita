@@ -10,7 +10,7 @@
         authenticated. For this, use the <userinput>VBoxManage
         modifyvm</userinput> command with the
         <codeph>--vrde-auth-type</codeph> option. See
-        <xref href="man_VBoxManage-modifyvm.dita">VBoxManage modifyvm</xref>. The following methods of
+        <xref href="vboxmanage-modifyvm.dita">VBoxManage modifyvm</xref>. The following methods of
         authentication are available:
       </p>
     <ul>

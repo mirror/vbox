@@ -78,7 +78,7 @@
           drop down list located in the <b outputclass="bold">Network
           Settings</b> dialog for the network adaptor or use the
           command line tool <userinput>VBoxManage</userinput>. See
-          <xref href="man_VBoxManage-modifyvm.dita#vboxmanage-modifyvm"/>.
+          <xref href="vboxmanage-modifyvm.dita"/>.
         </p>
                      <p>
           Promiscuous mode policies are as follows:

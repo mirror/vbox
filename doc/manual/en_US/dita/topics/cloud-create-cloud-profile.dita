@@ -89,7 +89,7 @@
         <p>
             Automatically, by using the <userinput>VBoxManage
             cloudprofile</userinput> command. See
-            <xref href="man_VBoxManage-cloudprofile.dita#vboxmanage-cloudprofile"/>.
+            <xref href="vboxmanage-cloudprofile.dita"/>.
           </p>
       </li>
       <li>

@@ -10,7 +10,7 @@
         use Internal Networking mode. See
         <xref href="storage-iscsi.dita">iSCSI Servers</xref>,
         <xref href="network_internal.dita">Internal Networking</xref>, and
-        <xref href="man_VBoxManage-storageattach.dita">VBoxManage storageattach</xref>.
+        <xref href="vboxmanage-storageattach.dita">VBoxManage storageattach</xref>.
       </p>
     <p>
         The IP stack accessing Internal Networking must be configured in
