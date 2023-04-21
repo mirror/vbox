@@ -374,10 +374,10 @@
    <chapter href="topics/vboxmanage.dita">
       <topicref href="topics/vboxmanage-intro.dita"/>
       <!-- Commands Overview -->
-      <!--  <topicref href="topics/vboxmanage-cmd-overview.dita"/> -->
+      <topicref href="topics/vboxmanage-cmd-overview.dita"/>
       <topicref href="topics/vboxmanage-general.dita"/>
       <!-- The remainder of the topics in this chapter are generated from docbook XML files.-->
-      <topicref  format="ditamap" href="topics/man_VBoxManage-common.ditamap"/>
+      <topicref format="ditamap" href="topics/man_VBoxManage-common.ditamap"/>
       <!-- Note! We sort these alphabetical unless someone can define a
                  maintainable ordering (previously it seemed to be total
                  random and included several duplicates). -->

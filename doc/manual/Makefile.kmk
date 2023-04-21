@@ -725,8 +725,36 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-dita.xsl \
 		"$(VBOX_PATH_MANUAL_OUTBASE)/testcase-refentry1.xml"
 
+ #
+ # 2b. Generate the VBoxManage commands overview topic based upon the
+ #     command synopis dita files generated in the above step.
+ #
 
- ## @todo Make use of docbook-refentry-to-manual-overview.xsl again (after dita conversion)?
+ ## Convert a single refentry file to dita.
+ # @param 1    Language
+ define def_vbox_generate_vboxmanage_overview
+  VBOX_USER_MANUAL_DITA_STAGED_FILES_$1 += $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/vboxmanage-cmd-overview.dita
+  $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/vboxmanage-cmd-overview.dita \
+  + $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/vboxmanage-cmd-overview.dita.files.xml: \
+  		$$(VBOX_PATH_MANUAL_SRC)/$(1)/vboxmanage-cmd-overview.xsl \
+  		$$(VBOX_PATH_MANUAL_SRC)/vboxmanage-cmd-overview.xsl \
+  		$$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(1)) \
+  		| $$$$(dir $$$$@)
+	$$(call MSG_TOOL,xsltproc vboxmanage-cmd-overview.dita.xsl,,,$$@)
+	$$(QUIET)$$(RM) -f -- "$$@" "$$@.files.xml"
+	$$(APPEND) -tn "$$@.files.xml" '<?xml version="1.0"?>' '<files>'
+	$$(SED) -n \
+		-e 's/^.*topicref .*topics\/man_VBoxManage-\([^.]*\)\.ditamap.*$$(DOLLAR)/<file>vboxmanage-\1-synopsis.dita<\/file>/p' \
+		--append "$$@.files.xml" \
+		$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/UserManual.ditamap
+	$$(APPEND) -n "$$@.files.xml" '</files>'
+	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --path "$$(VBOX_DITA_TECHNICAL_CONTENT_DTD_PATH)" \
+		--output "$$@" \
+ 		$$(VBOX_PATH_MANUAL_SRC)/$(1)/vboxmanage-cmd-overview.xsl \
+		"$$@.files.xml"
+
+ endef # def_vbox_generate_vboxmanage_overview
+ $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES),$(evalcall2 def_vbox_generate_vboxmanage_overview,$(lang)))
 
 
  #
