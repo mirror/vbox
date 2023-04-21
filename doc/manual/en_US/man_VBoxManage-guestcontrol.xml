@@ -368,7 +368,7 @@
     </cmdsynopsis>
   </refsynopsisdiv>
 
-  <refsect1 id="vboxmange-guestcontrol-description">
+  <refsect1 id="vboxmanage-guestcontrol-description">
     <title>Description</title>
     <para>
       The <command>VBoxManage guestcontrol</command> command enables you

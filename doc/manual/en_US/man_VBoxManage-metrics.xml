@@ -137,7 +137,7 @@
       Collected data and collection settings for a VM are discarded when
       the VM shuts down.
     </para>
-    <refsect2 id="vboxmange-metrics-description-metrics">
+    <refsect2 id="vboxmanage-metrics-description-metrics">
       <title>Metrics</title>
       <para>
         The host and VMs have different sets of associated metrics,
@@ -398,7 +398,7 @@
     </refsect2>
   </refsect1>
 
-  <refsect1 id="vboxmange-metrics-examples">
+  <refsect1 id="vboxmanage-metrics-examples">
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>
