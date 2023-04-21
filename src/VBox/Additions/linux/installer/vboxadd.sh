@@ -107,6 +107,15 @@ info()
     fi
 }
 
+# When script is running as non-root, it does not have access to log
+# files in /var. In this case, lets print error message to stdout and
+# exit with bad status.
+early_fail()
+{
+    echo "$1" >&2
+    exit 1
+}
+
 fail()
 {
     log "${1}"
@@ -214,7 +223,7 @@ running_module_version()
     if [ -r "$version_string_path" ]; then
         cat "$version_string_path"
     else
-        echo "UNKNOWN"
+        echo "unknown"
     fi
 }
 
@@ -943,6 +952,12 @@ stop()
     return 0
 }
 
+check_root()
+{
+    # Check if script is running with root privileges and exit if it does not.
+    [ `id -u` -eq 0 ] || early_fail "root privileges are required"
+}
+
 # Check if process with this PID is running.
 check_pid()
 {
@@ -1048,9 +1063,6 @@ reload()
 {
     begin "reloading kernel modules and services"
 
-    # Check if script was started with root privileges.
-    [ `id -u` -eq 0 ] || fail "root privileges are required"
-
     # Stop VBoxService if running.
     $VBOX_SERVICE_SCRIPT status >/dev/null 2>&1
     if [ $? -eq 0 ]; then
@@ -1145,29 +1157,35 @@ case "$1" in
 # Does setup without clean-up first and marks all kernels currently found on the
 # system so that we can see later if any were added.
 start)
+    check_root
     start
     ;;
 # Tries to build kernel modules for kernels added since start.  Tries to unmount
 # shared folders.  Uninstalls our Chromium 3D libraries since we can't always do
 # this fast enough at start time if we discover we do not want to use them.
 stop)
+    check_root
     stop
     ;;
 restart)
+    check_root
     restart
     ;;
 # Tries to reload kernel modules and restart user processes.
 reload)
+    check_root
     reload
     ;;
 # Setup does a clean-up (see below) and re-does all Additions-specific
 # configuration of the guest system, including building kernel modules for the
 # current kernel.
 setup)
+    check_root
     cleanup && start
     ;;
 # Builds kernel modules for the specified kernels if they are not already built.
 quicksetup)
+    check_root
     if test x"$2" = xall; then
        for topi in /lib/modules/*; do
            KERN_VER="${topi%/misc}"
@@ -1183,15 +1201,18 @@ quicksetup)
 # Clean-up removes all Additions-specific configuration of the guest system,
 # including all kernel modules.
 cleanup)
+    check_root
     cleanup
     ;;
 status)
     dmnstatus
     ;;
 status-kernel)
+    check_root
     check_status_kernel && info "Kernel modules are loaded"
     ;;
 status-user)
+    check_root
     check_status_user
     if [ $? -eq 0 ]; then
         info "User-land services are running"
