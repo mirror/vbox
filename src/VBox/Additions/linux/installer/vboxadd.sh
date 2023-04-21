@@ -1116,7 +1116,7 @@ reload()
         [ $? -eq 0 ] && modprobe vboxguest >/dev/null 2>&1
         [ $? -eq 0 ] && modprobe vboxsf >/dev/null 2>&1
 
-        # Start VBoxService and VBoxDRMClient (systemctl start vboxadd-service.service).
+        # Start VBoxService and VBoxDRMClient.
         [ $? -eq 0 ] && $VBOX_SERVICE_SCRIPT start >/dev/null 2>&1
 
         # Reload VBoxClient processes.
