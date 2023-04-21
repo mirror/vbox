@@ -373,10 +373,11 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
 		'<?xml version="1.0"?>' \
 		'<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">' \
 		'<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">' \
-		$$(foreach x,user_VBoxManage_CommandsOverview.xml user_isomakercmd-man.xml $$(addprefix user_,$$(VBOX_MANUAL_XML_REFENTRY_FILES) man_VBoxHeadless.xml man_vboximg-mount.xml)\
-		,'  <system systemId="$$(VBOX_PATH_MANUAL_SRC)/en_US/$$(x)" uri="file://$$(VBOX_FILE_URL_MAYBE_SLASH)$$(VBOX_PATH_MANUAL_SRC)/dummy-sect1.xml"/>' \$$(NLTAB)$$(TAB)) \
+		$$(foreach x, vboxmanage-cmd-overview.dita \
+		,'  <system systemId="$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/topics/$$(x)" uri="file://$$(VBOX_FILE_URL_MAYBE_SLASH)$$(VBOX_PATH_MANUAL_SRC)/dummy-topic.dita"/>' \$$(NLTAB)$$(TAB)) \
 		'  <nextCatalog catalog="file://$$(VBOX_FILE_URL_MAYBE_SLASH)$$(VBOX_XML_CATALOG)"/>' \
 		'</catalog>'
+	cat "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat"
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT,,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat) \
 		--output "$$@.tmp.xml" "$$(VBOX_PATH_MANUAL_SRC)/ditamap-to-single-xml.xsl" $$(filter %.ditamap,$$^)
   if 0 # Enable to see the full combined document.
