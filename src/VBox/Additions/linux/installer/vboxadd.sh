@@ -155,35 +155,56 @@ VBOX_VERSION="`"$VBOXCLIENT" --version | cut -d r -f1`"
 VBOX_REVISION="r`"$VBOXCLIENT" --version | cut -d r -f2`"
 [ "$VBOX_REVISION" != "r" ] || VBOX_REVISION='unknown'
 
+# Returns if the vboxguest module is running or not.
+#
+# Returns true if vboxguest module is running, false if not.
 running_vboxguest()
 {
     lsmod | grep -q "vboxguest[^_-]"
 }
 
+# Returns if the vboxadd module is running or not.
+#
+# Returns true if vboxadd module is running, false if not.
 running_vboxadd()
 {
     lsmod | grep -q "vboxadd[^_-]"
 }
 
+# Returns if the vboxsf module is running or not.
+#
+# Returns true if vboxsf module is running, false if not.
 running_vboxsf()
 {
     lsmod | grep -q "vboxsf[^_-]"
 }
 
+# Returns if the vboxvideo module is running or not.
+#
+# Returns true if vboxvideo module is running, false if not.
 running_vboxvideo()
 {
     lsmod | grep -q "vboxvideo[^_-]"
 }
 
+# Returns if a specific module is running or not.
+#
+# Input $1: Module name to check running status for.
+#
+# Returns true if the module is running, false if not.
 running_module()
 {
     lsmod | grep -q "$1"
 }
 
-# Get version string of currently running kernel module.
+# Returns the version string of a currently running kernel module.
+#
+# Input $1: Module name to check.
+#
+# Returns the module version string if found, or none if not found.
 running_module_version()
 {
-    mod=$1
+    mod="$1"
     version_string_path="/sys/module/"$mod"/version"
 
     [ -n "$mod" ] || return
@@ -194,8 +215,11 @@ running_module_version()
     fi
 }
 
-# Check if currently loaded kernel module version matches to
-# current Guest Additions installed version and revision.
+# Checks if a loaded kernel module version matches to the currently installed Guest Additions version and revision.
+#
+# Input $1: Module name to check.
+#
+# Returns "1" if the module matches the installed Guest Additions, or none if not.
 check_running_module_version()
 {
     mod=$1
@@ -214,7 +238,11 @@ use_systemd()
     systemctl status >/dev/null 2>&1
 }
 
-## Did we install a systemd service?
+# Returns if we did install a service as a systemd service.
+#
+# Input $1: Service name to check.
+#
+# Returns true if the service is installed as a systemd service, false if not.
 systemd_service_installed()
 {
     ## Name of service to test.
@@ -224,7 +252,7 @@ systemd_service_installed()
         test -f /usr/lib/systemd/system/"${name}".service
 }
 
-## Perform an action on a service
+## Performs an action on a service
 do_sysvinit_action()
 {
     ## Name of service to start.
@@ -295,7 +323,7 @@ restart()
     return 0
 }
 
-## Update the initramfs.  Debian and Ubuntu put the graphics driver in, and
+## Updates the initramfs.  Debian and Ubuntu put the graphics driver in, and
 # need the touch(1) command below.  Everyone else that I checked just need
 # the right module alias file from depmod(1) and only use the initramfs to
 # load the root filesystem, not the boot splash.  update-initramfs works
@@ -323,7 +351,7 @@ update_initramfs()
     fi
 }
 
-# Remove any existing VirtualBox guest kernel modules from the disk, but not
+# Removes any existing VirtualBox guest kernel modules from the disk, but not
 # from the kernel as they may still be in use
 cleanup_modules()
 {
@@ -374,7 +402,7 @@ case "`mokutil --test-key "$DEB_PUB_KEY" 2>/dev/null`" in
     *) unset DEB_KEY_ENROLLED;;
 esac
 
-# Check if update-secureboot-policy tool supports required commandline options.
+# Checks if update-secureboot-policy tool supports required commandline options.
 update_secureboot_policy_supports()
 {
     opt_name="$1"
@@ -658,7 +686,11 @@ shared_folder_setup()
     fi
 }
 
-# Returns path to module file as seen by modinfo(8) or empty string.
+# Returns path to a module file as seen by modinfo(8), or none if not found.
+#
+# Input $1: Module name to get path for.
+#
+# Returns the module path as a string.
 module_path()
 {
     mod="$1"
@@ -667,7 +699,11 @@ module_path()
     modinfo "$mod" 2>/dev/null | grep -e "^filename:" | tr -s ' ' | cut -d " " -f2
 }
 
-# Returns module version if module is available or empty string.
+# Returns module version if module is available, or none if not found.
+#
+# Input $1: Module name to get version for.
+#
+# Returns the module version as a string.
 module_version()
 {
     mod="$1"
@@ -676,7 +712,11 @@ module_version()
     modinfo "$mod" 2>/dev/null | grep -e "^version:" | tr -s ' ' | cut -d " " -f2
 }
 
-# Returns module revision if module is available in the system or empty string.
+# Returns the module revision if module is available in the system, or none if not found.
+#
+# Input $1: Module name to get revision for.
+#
+# Returns the module revision as a string.
 module_revision()
 {
     mod="$1"
@@ -685,8 +725,12 @@ module_revision()
     modinfo "$mod" 2>/dev/null | grep -e "^version:" | tr -s ' ' | cut -d " " -f3
 }
 
+# Checks if a given kernel module is properly signed or not.
+#
+# Input $1: Module name to check.
+#
 # Returns "1" if module is signed and signature can be verified
-# with public key provided in DEB_PUB_KEY. Or empty string otherwise.
+# with public key provided in DEB_PUB_KEY, or none otherwise.
 module_signed()
 {
     mod="$1"
@@ -742,9 +786,13 @@ module_signed()
     echo "1"
 }
 
+# Checks if a given kernel module matches the installed VirtualBox Guest Additions version.
+#
+# Input $1: Module name to check.
+#
 # Returns "1" if externally built module is available in the system and its
 # version and revision number do match to current VirtualBox installation.
-# Or empty string otherwise.
+# None otherwise.
 module_available()
 {
     mod="$1"
@@ -780,6 +828,8 @@ module_available()
 }
 
 # Check if required modules are installed in the system and versions match.
+#
+# Returns "1" on success, none otherwise.
 setup_complete()
 {
     [ "$(module_available vboxguest)"   = "1" ] || return
