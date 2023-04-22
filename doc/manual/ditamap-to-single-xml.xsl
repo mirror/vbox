@@ -46,7 +46,7 @@
 
   <!-- topicref -> topicwrap; but not man_xxxx (need converting) and glossentry-xxxx (not topics) references -->
   <xsl:template match="topicref">
-    <xsl:if test="not(contains(@href, 'man_')) and not(contains(@href, '-man.')) and not(contains(@href, 'glossentry-'))">
+    <xsl:if test="not(contains(@href, 'man_')) and not(contains(@href, '-man.')) and not(contains(@href, 'glossentry-')) and not(contains(@href, '.ditamap'))">
       <topicwrap>
         <xi:include href="{./@href}" xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(/topic)" />
         <xsl:apply-templates select="node()" />
