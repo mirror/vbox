@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="ChangeLog">
+  <title>Change Log</title>
+
+  <body>
+    <p>
+      This section summarizes the changes between Oracle VM VirtualBox versions.
+      Note that this change log is not exhaustive and not all changes are
+      listed.
+    </p>
+    <p>
+      Oracle VM VirtualBox version numbers consist of three numbers separated by
+      dots where the first and second number represent the major version
+      and the third number the minor version. Minor version numbers of
+      official releases are always even. An odd minor version number
+      represents an internal development or test build. In addition, each
+      build contains a revision number.
+    </p>
+  </body>
+
+</topic>
+

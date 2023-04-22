@@ -1,8 +1,8 @@
 #!/usr/bin/env kmk_ash
 # $Id$
 ## @file
-# Helper Script for splitting up a convert manpage into separate topic
-# files (named by @id).
+# Helper script for converting the changelog into a ditamap and a topic
+# file per version.
 #
 
 #
@@ -27,40 +27,38 @@
 # SPDX-License-Identifier: GPL-3.0-only
 #
 
+#
+# Globals.
+#
+MY_SED=kmk_sed
 
 #
 # This script is very internal, so we got the following fixed position parameters:
-#   1: The input DITA file (output from docbook-refentry-to-manual-dita.xsl).
-#   2: dita-refentry-flat-topic-ids.xsl
-#   3: dita-refentry-flat-to-single-topic.xsl
-#   4: The out directory.
-#   5: '--'
-#   6+: xsltproc invocation (sans output, input and xslt file).
+#   1: user_ChangeLogImpl.xml to use as input.
+#   2: docbook-changelog-to-manual-dita.xsl
+#   3: The out directory.
+#   4: '--'
+#   5+: xsltproc invocation (sans output, input and xslt file).
 #
 if test $# -lt 6; then
     echo "syntax error: too few arguments" 1>&2;
     exit 2;
 fi
 MY_INPUT_FILE="$1"
-MY_XSLT_TOPIC_IDS="$2"
-MY_XSLT_TO_SINGLE_TOPIC="$3"
-MY_OUTPUT_DIR="$4"
-if test "$5" != "--"; then
-    echo "syntax error: Expected '--' as the 5th parameter, got: $5" 1>&2;
+MY_XSLT="$2"
+MY_OUTPUT_DIR="$3"
+if test "$4" != "--"; then
+    echo "syntax error: Expected '--' as the 4th parameter, got: $4" 1>&2;
     exit 2;
 fi
-shift 5
+shift 4
 
 if ! test -f "${MY_INPUT_FILE}"; then
     echo "error: Input file does not exists or is not a regular file: ${MY_INPUT_FILE}" 1>&2;
     exit 1;
 fi
-if ! test -f "${MY_XSLT_TOPIC_IDS}"; then
+if ! test -f "${MY_XSLT}"; then
     echo "error: The given dita-refentry-flat-topic-ids.xsl file does not exists or is not a regular file: ${MY_XSLT_TOPIC_IDS}" 1>&2;
-    exit 1;
-fi
-if ! test -f "${MY_XSLT_TO_SINGLE_TOPIC}"; then
-    echo "error: The given dita-refentry-flat-to-single-topic.xsl file does not exists or is not a regular file: ${MY_XSLT_TO_SINGLE_TOPIC}" 1>&2;
     exit 1;
 fi
 if ! test -d "${MY_OUTPUT_DIR}"; then
@@ -73,8 +71,9 @@ set -e
 
 #
 # First get the ID list from it.
+# We drop the first line with the <?xml ... ?> stuff.
 #
-MY_TOPIC_IDS=$($* "${MY_XSLT_TOPIC_IDS}" "${MY_INPUT_FILE}")
+MY_TOPIC_IDS=$($* --stringparam g_sMode ids "${MY_XSLT}" "${MY_INPUT_FILE}" | ${MY_SED} -e 1d)
 
 #
 # Extract each topic.
@@ -84,6 +83,11 @@ do
     $* \
         --stringparam g_sMode topic \
         --stringparam g_idTopic "${MY_ID}" \
-        --output "${MY_OUTPUT_DIR}/${MY_ID}.dita" "${MY_XSLT_TO_SINGLE_TOPIC}" "${MY_INPUT_FILE}"
+        --output "${MY_OUTPUT_DIR}/${MY_ID}.dita" "${MY_XSLT}" "${MY_INPUT_FILE}"
 done
+
+#
+# Now for the ditamap file.
+#
+$* --stringparam g_sMode map --output "${MY_OUTPUT_DIR}/changelog-versions.ditamap" "${MY_XSLT}" "${MY_INPUT_FILE}"
 exit 0

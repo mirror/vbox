@@ -676,7 +676,12 @@
       <topicref href="topics/KnownProblems.dita"/>
    </chapter>
 
-   <!-- Change Log-->
+   <!-- Change Log -->
+   <chapter href="topics/ChangeLog.dita">
+      <!-- This map file and all the topics it is referencing is generated from user_ChangeLogImpl.xml. -->
+      <topicref format="ditamap" href="topics/changelog-versions.ditamap"/>
+      <topicref href="topics/changelog-older.dita"/>
+   </chapter>
 
    <!-- Third Party Licenses-->
 

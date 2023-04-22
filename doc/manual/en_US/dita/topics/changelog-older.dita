@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="changelog-older">
+  <title>Change Logs for Legacy Versions</title>
+
+  <body>
+    <p>
+      To view the change log for a legacy version of VirtualBox see the
+      documentation for the relevant Oracle VM VirtualBox release.
+    </p>
+    <p>
+      Change logs are also available at:
+    </p>
+    <p>
+      <xref href="https://www.virtualbox.org/wiki/Changelog" scope="external"/>.
+    </p>
+  </body>
+
+</topic>
+

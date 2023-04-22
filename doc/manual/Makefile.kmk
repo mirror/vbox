@@ -730,7 +730,6 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  #     command synopis dita files generated in the above step.
  #
 
- ## Convert a single refentry file to dita.
  # @param 1    Language
  define def_vbox_generate_vboxmanage_overview
   VBOX_USER_MANUAL_DITA_STAGED_FILES_$1 += $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/vboxmanage-cmd-overview.dita
@@ -758,7 +757,37 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 
 
  #
- # 3a. UserManual.pdf - Run dost.jar from DITA-OT to produce the PDF version.
+ # 3. Convert the changelog from DocBook to a bunch of DITA topics and corresponding map.
+ #
+
+ ##
+ # @param 1    Language
+ # @note  We don't really need to do this for each language, but whatever.
+ # @note  Outputs a bunch of .dita files for each version too...
+ define def_vbox_convert_changelog_to_dita
+  VBOX_USER_MANUAL_DITA_STAGED_FILES_$1 += $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/changelog-versions.ditamap
+  $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/changelog-versions.ditamap: \
+  		$$(VBOX_PATH_MANUAL_SRC)/docbook-changelog-to-manual-dita.sh \
+  		$$(VBOX_PATH_MANUAL_SRC)/docbook-changelog-to-manual-dita.xsl \
+ 		$$(VBOX_XML_CATALOG) \
+ 		$$(VBOX_XML_CATALOG_DOCBOOK) \
+ 		$$(VBOX_XML_CATALOG_MANUAL) \
+  		| $$$$(dir $$$$@)
+	$$(call MSG_TOOL,xsltproc docbook-changelog-to-manual-dita.xsl,,,$$@)
+	$$(QUIET)$$(RM) -f -- "$$@" "$$@.files.xml"
+	$$(QUIET)$$(ASH) \
+		$$(VBOX_PATH_MANUAL_SRC)/docbook-changelog-to-manual-dita.sh \
+		$$(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml \
+		$$(VBOX_PATH_MANUAL_SRC)/docbook-changelog-to-manual-dita.xsl \
+		$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics \
+		-- \
+		$$(call VBOX_XSLTPROC_WITH_CAT)
+ endef # def_vbox_convert_changelog_to_dita
+ $(foreach lang,$(VBOX_MANUAL_ALL_LANGUAGES),$(evalcall2 def_vbox_convert_changelog_to_dita,$(lang)))
+
+
+ #
+ # 4a. UserManual.pdf - Run dost.jar from DITA-OT to produce the PDF version.
  #
  # Note! The /tempdir is deleted, recreated, used and deleted again for each
  #       run. So, be careful where you point it.
@@ -803,7 +832,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 
 
  #
- # 3b. UserManual.html - Run dost.jar from DITA-OT to produce the HTML versions.
+ # 4b. UserManual.html - Run dost.jar from DITA-OT to produce the HTML versions.
  #
  # We produce both chunked and singled paged HTML versions of the en_US manual
  # mainly for uploading to virtualbox.org.  The docs build box produces a zip
@@ -911,7 +940,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 
  if defined(VBOX_WITH_DOCS_QHELP) && !defined(VBOX_ONLY_SDK)
   #
-  # 3c. VirtualBox.qch + VirtualBox.qhc - Qt compressed help and collection file.
+  # 4c. VirtualBox.qch + VirtualBox.qhc - Qt compressed help and collection file.
   #
   # See usermanual.pdf under DITA-OT-xxxxx/doc folder for details.
   #
@@ -940,6 +969,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
    $(2)/UserManual.hhp: \
    		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_$(1)) \
    		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(1))
+	$$(call MSG_L1,dita-ot-qhelp, => $$@)
 	$$(QUIET)$$(RM) -Rf -- "$$(@D)" "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp/"
 	$$(QUIET)$$(MKDIR) -- "$$(@D)"
 	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp, -EHHCDIR="$$(@D)", \
@@ -979,7 +1009,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
    		$(2)/UserManual.qhp \
    		| $$$$(dir $$$$@)
 	$$(call MSG_L1,$$(notdir $$(VBOX_QHELPGENERATOR)) $$<,=> $$@)
-	$$(QUIET)$$(RM) -f $$@
+	$$(QUIET)$$(RM) -f -- "$$@"
    ifdef VBOX_WITH_QT6
 	$$(QUIET)$$(REDIRECT) -- $$(VBOX_QHELPGENERATOR) $$<
    else
