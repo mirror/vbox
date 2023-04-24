@@ -4326,7 +4326,8 @@ class TestDriver(base.TestDriver):                                              
         return fRc;
 
     def txsRunTestRedirectStd(self, oTxsSession, sTestName, cMsTimeout, sExecName, asArgs = (), asAddEnv = (), sAsUser = "",
-                              oStdIn = '/dev/null', oStdOut = '/dev/null', oStdErr = '/dev/null', oTestPipe = '/dev/null'):
+                              oStdIn = '/dev/null', oStdOut = '/dev/null', oStdErr = '/dev/null', oTestPipe = '/dev/null',
+                              fIgnoreErrors = False):
         """
         Executes the specified test task, waiting till it completes or times out,
         redirecting stdin, stdout and stderr to the given objects.
@@ -4345,20 +4346,29 @@ class TestDriver(base.TestDriver):                                              
         # Submit the job.
         fRc = False;
         if oTxsSession.asyncExecEx(sExecName, asArgs, asAddEnv, oStdIn, oStdOut, oStdErr,
-                                   oTestPipe, sAsUser, cMsTimeout = self.adjustTimeoutMs(cMsTimeout)):
+                                   oTestPipe, sAsUser, cMsTimeout = self.adjustTimeoutMs(cMsTimeout),
+                                   fIgnoreErrors = fIgnoreErrors):
             self.addTask(oTxsSession);
 
             # Wait for the job to complete.
             while True:
                 oTask = self.waitForTasks(cMsTimeout + 1);
                 if oTask is None:
-                    reporter.log('txsRunTestRedirectStd: waitForTasks timed out');
+                    if fIgnoreErrors:
+                        reporter.log('txsRunTestRedirectStd: waitForTasks timed out');
+                    else:
+                        reporter.error('txsRunTestRedirectStd: waitForTasks timed out');
                     break;
                 if oTask is oTxsSession:
                     fRc = True;
-                    reporter.log('txsRunTestRedirectStd: isSuccess=%s getResult=%s'
-                                 % (oTxsSession.isSuccess(), oTxsSession.getResult()));
+                    if  not oTxsSession.isSuccess() \
+                    and not fIgnoreErrors:
+                        reporter.error('txsRunTestRedirectStd: failed; result is "%s"' % (oTxsSession.getResult()));
+                    else:
+                        reporter.log('txsRunTestRedirectStd: isSuccess=%s getResult=%s'
+                                     % (oTxsSession.isSuccess(), oTxsSession.getResult()));
                     break;
+
                 if not self.handleTask(oTask, 'txsRunTestRedirectStd'):
                     break;
 
@@ -4370,6 +4380,44 @@ class TestDriver(base.TestDriver):                                              
 
         reporter.testDone();
         return fRc;
+
+    def txsRunTestStdIn(self, oTxsSession, sTestName, cMsTimeout, sExecName, asArgs = (), asAddEnv = (), sAsUser = "",
+                        sStdIn = None, fIgnoreErrors = False):
+        """
+        Executes the specified test task, waiting till it completes or times out.
+        Redirecting simple string input into stdin, redirecting text stdout / stderr output to verbose logging.
+
+        The VM session (if any) must be in the task list.
+
+        Returns True if we executed the task and nothing abnormal happend.
+        Query the process status from the TXS session.
+
+        Returns False if some unexpected task was signalled or we failed to
+        submit the job.
+        """
+        assert sStdIn is not None;
+        # Wrap sStdIn in a file like class.
+        class StdInWrapper(object): # pylint: disable=too-few-public-methods
+            def __init__(self, sStdIn):
+                self.sContent = sStdIn;
+                self.off      = 0;
+
+            def read(self, cbMax):
+                cbLeft = len(self.sContent) - self.off;
+                if cbLeft == 0:
+                    return "";
+                if cbLeft <= cbMax:
+                    sRet = self.sContent[self.off:(self.off + cbLeft)];
+                else:
+                    sRet = self.sContent[self.off:(self.off + cbMax)];
+                self.off = self.off + len(sRet);
+                reporter.log2('Reading from stdin: "%s"' % (sRet,));
+                return sRet;
+
+        return self.txsRunTestRedirectStd(oTxsSession, sTestName, cMsTimeout, sExecName, asArgs, asAddEnv, sAsUser,
+                                          oStdIn  = StdInWrapper(sStdIn),
+                                          oStdErr = reporter.FileWrapper('stderr'), oStdOut = reporter.FileWrapper('stdout'),
+                                          fIgnoreErrors = fIgnoreErrors);
 
     def txsRunTest2(self, oTxsSession1, oTxsSession2, sTestName, cMsTimeout,
             sExecName1, asArgs1,
