@@ -1704,6 +1704,19 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.log('Too old TxS service running')
             fEnableVerboseLogging = False;
 
+        # Some older Linux test VMs (like tst-rhel5) don't have a pre-configured 'vbox' user.
+        # So make sure that this user exists and has the appropriate password set. Ignore any errors.
+        if oTestVm.isLinux():
+            sCmdUserAdd = oTestVm.pathJoin(self.oTstDrv.getGuestSystemAdminDir(oTestVm, sPathPrefix = '/usr'), 'useradd');
+            asArgs = [ sCmdUserAdd, '-m', 'vbox' ];
+            self.oTstDrv.txsRunTest(oTxsSession, sCmdUserAdd, 5 * 60 * 1000, sCmdUserAdd, asArgs,
+                                    fCheckSessionStatus = False);
+            # We must supply the password in an encrypted form using chpasswd (via stdin).
+            sCmdChPasswd = oTestVm.pathJoin(self.oTstDrv.getGuestSystemAdminDir(oTestVm, sPathPrefix = '/usr'), 'chpasswd');
+            asArgs = [ sCmdChPasswd ];
+            self.oTstDrv.txsRunTestStdIn(oTxsSession, sCmdChPasswd, 5 * 60 * 1000, sCmdChPasswd, asArgs,
+                                         sStdIn = 'vbox:password\n', fIgnoreErrors = True);
+
         #
         # Enable VBoxService verbose logging.
         #
