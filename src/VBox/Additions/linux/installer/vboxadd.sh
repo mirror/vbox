@@ -996,9 +996,15 @@ check_status_kernel()
         # In case of error, try to print out proper reason of failure.
         if [ $? -ne 0 ]; then
             # Was module loaded?
-            [ -n "$mod_is_running" ] || fail "module $mod is not loaded"
-            # If module was loaded it means that it has incorrect version.
-            fail "currently loaded module $mod version ($(running_module_version "$mod")) does not match to VirtualBox Guest Additions installation version ($VBOX_VERSION $VBOX_REVISION)"
+            if [ -z "$mod_is_running" ]; then
+                info "module $mod is not loaded"
+            else
+                # If module was loaded it means that it has incorrect version.
+                info "currently loaded module $mod version ($(running_module_version "$mod")) does not match to VirtualBox Guest Additions installation version ($VBOX_VERSION $VBOX_REVISION)"
+            fi
+
+            # Set "bad" rc.
+            false
         fi
 
     done
@@ -1139,16 +1145,15 @@ reload()
         [ $? -eq 0 ] && try_load_preserve_rc "$VBOX_SERVICE_SCRIPT start" "unable to start VBoxService"
 
         # Reload VBoxClient processes.
-        [ $? -eq 0 ] && try_load_preserve_rc "send_signal "-USR1" control" "unable to reload user session services"
+        [ $? -eq 0 ] && try_load_preserve_rc "send_signal -USR1 control" "unable to reload user session services"
+
+        # Check if we just loaded modules of correct version.
+        [ $? -eq 0 ] && try_load_preserve_rc "check_status_kernel" "kernel modules were not reloaded"
+
+        # Check if user-land processes were restarted as well.
+        [ $? -eq 0 ] && try_load_preserve_rc "check_status_user" "user-land services were not started"
 
         if [ $? -eq 0 ]; then
-
-            # Check if we just loaded modules of correct version.
-            check_status_kernel
-
-            # Check if user-land processes were restarted as well.
-            check_status_user
-
             # Take reported version of running Guest Additions from running vboxguest module (as a paranoia check).
             info "kernel modules and services $(running_module_version "vboxguest") reloaded"
             info "NOTE: you may still consider to re-login if some user session specific services (Shared Clipboard, Drag and Drop, Seamless or Guest Screen Resize) were not restarted automatically"
@@ -1231,15 +1236,21 @@ status)
     ;;
 status-kernel)
     check_root
-    check_status_kernel && info "Kernel modules are loaded"
+    check_status_kernel
+    if [ $? -eq 0 ]; then
+        info "kernel modules are loaded"
+    else
+        info "kernel modules were not loaded"
+        false
+    fi
     ;;
 status-user)
     check_root
     check_status_user
     if [ $? -eq 0 ]; then
-        info "User-land services are running"
+        info "user-land services are running"
     else
-        info "User-land services are not running"
+        info "user-land services are not running"
         false
     fi
     ;;
