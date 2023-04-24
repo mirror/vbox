@@ -756,10 +756,6 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                     /* 'VBoxManage import --memory' size is in megabytes */
                                     RTPrintf(Appliance::tr("%2u: Guest memory specified with --memory: %RU32 MB\n"),
                                              a, ulMemMB);
-
-                                    /* IVirtualSystemDescription guest memory size is in bytes */
-                                    uint64_t ullMemBytes = (uint64_t)ulMemMB * _1M;
-                                    strOverride = Utf8StrFmt("%RU64", ullMemBytes);
                                     bstrFinalValue = strOverride;
                                 }
                                 else
@@ -768,7 +764,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                             else
                             {
                                 strOverride = aVBoxValues[a];
-                                uint64_t ullMemMB = strOverride.toUInt64() / _1M;
+                                uint64_t ullMemMB = strOverride.toUInt64();
                                 RTPrintf(Appliance::tr("%2u: Guest memory: %RU64 MB\n    (change with \"--vsys %u --memory <MB>\")\n"),
                                          a, ullMemMB, i);
                             }

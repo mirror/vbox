@@ -341,21 +341,21 @@ HRESULT Appliance::interpret()
             /* If there is a <vbox:Machine>, we always prefer the setting from there. */
             if (   vsysThis.pelmVBoxMachine
                 && pNewDesc->m->pConfig->hardwareMachine.ulMemorySizeMB)
-                ullMemSizeVBox = (uint64_t)pNewDesc->m->pConfig->hardwareMachine.ulMemorySizeMB * _1M;
+                ullMemSizeVBox = (uint64_t)pNewDesc->m->pConfig->hardwareMachine.ulMemorySizeMB;
             else
-                ullMemSizeVBox = vsysThis.ullMemorySize;  /* already in bytes via OVFReader::HandleVirtualSystemContent() */
+                ullMemSizeVBox = vsysThis.ullMemorySize;  /* already in Megabytes via OVFReader::HandleVirtualSystemContent() */
             /* Check for the constraints */
             if (    ullMemSizeVBox != 0
-                 && (    ullMemSizeVBox < MM_RAM_MIN
-                      || ullMemSizeVBox > MM_RAM_MAX
+                 && (    ullMemSizeVBox < MM_RAM_MIN_IN_MB
+                      || ullMemSizeVBox > MM_RAM_MAX_IN_MB
                     )
                )
             {
                 i_addWarning(tr("Virtual appliance \"%s\" was configured with %RU64 MB of memory (RAM) "
                                 "however VirtualBox supports a minimum of %u MB and a maximum of %u MB "
                                 "of memory."),
-                                vsysThis.strName.c_str(), ullMemSizeVBox / _1M, MM_RAM_MIN_IN_MB, MM_RAM_MAX_IN_MB);
-                ullMemSizeVBox = RT_MIN(RT_MAX(ullMemSizeVBox, MM_RAM_MIN), MM_RAM_MAX);
+                                vsysThis.strName.c_str(), ullMemSizeVBox, MM_RAM_MIN_IN_MB, MM_RAM_MAX_IN_MB);
+                ullMemSizeVBox = RT_MIN(RT_MAX(ullMemSizeVBox, MM_RAM_MIN_IN_MB), MM_RAM_MAX_IN_MB);
             }
             if (vsysThis.ullMemorySize == 0)
             {
@@ -368,8 +368,8 @@ HRESULT Appliance::interpret()
                 }
                 else
                     memSizeVBox2 = 1024;
-                /* IGuestOSType::recommendedRAM() returns the size in MB so convert to bytes */
-                ullMemSizeVBox = (uint64_t)memSizeVBox2 * _1M;
+                /* IGuestOSType::recommendedRAM() returns the size in MB */
+                ullMemSizeVBox = (uint64_t)memSizeVBox2;
             }
             pNewDesc->i_addEntry(VirtualSystemDescriptionType_Memory,
                                  "",
@@ -1532,9 +1532,9 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
 
                 // RAM
                 GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_Memory);
-                if (aVBoxValues.size() == 0)//1000MB by default
+                if (aVBoxValues.size() == 0)//1024MB by default, 1,073,741,824 in bytes
                     vsd->AddDescription(VirtualSystemDescriptionType_Memory,
-                                        Bstr("1000").raw(),
+                                        Bstr("1024").raw(),
                                         NULL);
 
                 // audio adapter
@@ -1796,16 +1796,18 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                     LogRel(("%s: Number of CPUs is %s\n", __FUNCTION__, vsdData.c_str()));
                 }
 
-                ULONG memory;//Mb
+                ULONG memory = 1024;//1024MB by default, 1,073,741,824 in bytes
                 pGuestOSType->COMGETTER(RecommendedRAM)(&memory);
                 {
+                    //note! Memory must be stored in Megabytes on the earlier stages for the correct comparison here
                     GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_Memory); //aVBoxValues is set in this #define
                     if (aVBoxValues.size() != 0)
                     {
                         vsdData = aVBoxValues[0];
-                        if (memory > vsdData.toUInt32())
-                            memory = vsdData.toUInt32();
+                        memory = RT_MIN(RT_MAX(vsdData.toUInt32(), MM_RAM_MIN_IN_MB), MM_RAM_MAX_IN_MB);
+
                     }
+                    //and set in ovf::VirtualSystem in Megabytes
                     vsys.ullMemorySize = memory;
                     LogRel(("%s: Size of RAM is %d MB\n", __FUNCTION__, vsys.ullMemorySize));
                 }
@@ -6113,7 +6115,8 @@ void Appliance::i_importMachines(ImportStack &stack)
         std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsdescThis->i_findByType(VirtualSystemDescriptionType_Memory);
         if (vsdeRAM.size() != 1)
             throw setError(VBOX_E_FILE_ERROR, tr("RAM size missing"));
-        uint64_t ullMemorySizeMB = vsdeRAM.front()->strVBoxCurrent.toUInt64() / _1M;
+        //Returned value must be in MB
+        uint64_t ullMemorySizeMB = vsdeRAM.front()->strVBoxCurrent.toUInt64();
         stack.ulMemorySizeMB = (uint32_t)ullMemorySizeMB;
 
 #ifdef VBOX_WITH_USB

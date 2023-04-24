@@ -634,7 +634,7 @@ struct VirtualSystem
 
     HardwareItemVector  vecHardwareItems;       //< vector containing all virtual hardware items in parsing order.
 
-    uint64_t            ullMemorySize;          // always in bytes, copied from llHardwareItems; default = 0 (unspecified)
+    uint64_t            ullMemorySize;          // always in Megabytes, copied from llHardwareItems; default = 0 (unspecified)
     uint16_t            cCPUs;                  // no. of CPUs, copied from llHardwareItems; default = 1
 
     EthernetAdaptersList llEthernetAdapters;    // (one for each VirtualSystem/Item[@ResourceType=10]element)

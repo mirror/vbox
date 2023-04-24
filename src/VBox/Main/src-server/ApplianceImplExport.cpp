@@ -187,7 +187,7 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                              strCpuCount);
 
         /* Memory */
-        Utf8Str strMemory = Utf8StrFmt("%RI64", (uint64_t)ulMemSizeMB * _1M);
+        Utf8Str strMemory = Utf8StrFmt("%RI64", (uint64_t)ulMemSizeMB);
         pNewDesc->i_addEntry(VirtualSystemDescriptionType_Memory,
                              "",
                              strMemory,
@@ -1616,7 +1616,7 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                         strDescription = "Memory Size";
                         type = ovf::ResourceType_Memory; // 4
                         desc.strVBoxCurrent.toInt(uTemp);
-                        lVirtualQuantity = (int32_t)(uTemp / _1M);
+                        lVirtualQuantity = (int32_t)(uTemp);
                         strAllocationUnits = "MegaBytes";
                         strCaption = Utf8StrFmt("%d MB of memory", lVirtualQuantity);     // without this ovftool
                                                                                           // won't eat the item
@@ -1814,7 +1814,6 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                             throw setError(VBOX_E_NOT_SUPPORTED,
                                            tr("Missing or bad extra config string in hard disk image: \"%s\""),
                                            desc.strExtraConfigCurrent.c_str());
-
                         stack.mapDisks[strDiskID] = &desc;
 
                         //use the list stack.mapDiskSequence where the disks go as the "VirtualSystem" should be placed
