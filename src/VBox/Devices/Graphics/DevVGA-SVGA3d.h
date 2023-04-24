@@ -685,5 +685,8 @@ int vmsvga3dVBDXClearRenderTargetViewRegion(PVGASTATECC pThisCC, uint32_t idDXCo
 #endif /* VMSVGA3D_DX */
 
 
+float float16ToFloat(uint16_t f16);
+
+
 #endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_h */
 

@@ -11,6 +11,7 @@
  *  - Log5 for info about GMR pages.
  *  - Log6 for DX shaders.
  *  - Log7 for SVGA command dump.
+ *  - Log8 for content of constant and vertex buffers.
  *  - LogRel for the usual important stuff.
  *  - LogRel2 for cursor.
  *  - LogRel3 for 3D performance data.
