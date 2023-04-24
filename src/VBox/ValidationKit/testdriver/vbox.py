@@ -4396,13 +4396,18 @@ class TestDriver(base.TestDriver):                                              
         submit the job.
         """
         assert sStdIn is not None;
-        # Wrap sStdIn in a file like class.
         class StdInWrapper(object): # pylint: disable=too-few-public-methods
+            """
+            Wraps sStdIn in a file like class.
+            """
             def __init__(self, sStdIn):
                 self.sContent = sStdIn;
                 self.off      = 0;
 
             def read(self, cbMax):
+                """
+                Returns next stdin input (up to cbMax), or an empty string if all input has been supplied already.
+                """
                 cbLeft = len(self.sContent) - self.off;
                 if cbLeft == 0:
                     return "";
