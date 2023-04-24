@@ -66,6 +66,7 @@ PACKAGE=VBoxGuestAdditions
 MODPROBE=/sbin/modprobe
 OLDMODULES="vboxguest vboxadd vboxsf vboxvfs vboxvideo"
 SERVICE="VirtualBox Guest Additions"
+VBOXSERVICE_PIDFILE="/var/run/vboxadd-service.sh"
 ## systemd logs information about service status, otherwise do that ourselves.
 QUIET=
 test -z "${TARGET_VER}" && TARGET_VER=`uname -r`
@@ -119,7 +120,7 @@ early_fail()
 fail()
 {
     log "${1}"
-    echo "$1" >&2
+    echo "${SERVICE}: $1" >&2
     echo "The log file $LOG may contain further information." >&2
     exit 1
 }
@@ -961,7 +962,7 @@ check_root()
 # Check if process with this PID is running.
 check_pid()
 {
-    pid=$1
+    pid="$1"
 
     test -n "$pid" -a -d "/proc/$pid"
 }
@@ -1007,17 +1008,18 @@ check_status_kernel()
 # Currently only check for VBoxService.
 check_status_user()
 {
-    check_pid "$(cat /var/run/vboxadd-service.sh)" >/dev/null 2>&1
+    [ -r "$VBOXSERVICE_PIDFILE" ] && check_pid "$(cat $VBOXSERVICE_PIDFILE)" >/dev/null 2>&1
 }
 
-send_sig_usr1_by_pidfile()
+send_signal_by_pidfile()
 {
-    pidfile=$1
+    sig="$1"
+    pidfile="$2"
 
     if [ -f "$pidfile" ]; then
         check_pid $(cat "$pidfile")
         if [ $? -eq 0 ]; then
-            kill -USR1 $(cat "$pidfile") >/dev/null 2>&1
+            kill "$sig" $(cat "$pidfile") >/dev/null 2>&1
         else
             # Do not spoil $?.
             true
@@ -1031,11 +1033,12 @@ send_sig_usr1_by_pidfile()
 # SIGUSR1 is used in order to notify VBoxClient processes that system
 # update is started or kernel modules are going to be reloaded,
 # so VBoxClient can release vboxguest.ko resources and then restart itself.
-send_sig_usr1()
+send_signal()
 {
+    sig="$1"
     # Specify whether we sending signal to VBoxClient parent (control)
     # process or a child (actual service) process.
-    process_type="$1"
+    process_type="$2"
 
     pidfile_postfix=""
     [ -z "$process_type" ] || pidfile_postfix="-$process_type"
@@ -1052,11 +1055,26 @@ send_sig_usr1()
                 [ -z "$process_type" -a -n "$(echo "$pid_file" | grep "control")" ] && continue
                 [ -z "$process_type" -a -n "$(echo "$pid_file" | grep "service")" ] && continue
 
-                send_sig_usr1_by_pidfile "$pid_file"
+                send_signal_by_pidfile -USR1 "$pid_file"
             done
 
         fi
     done
+}
+
+# Helper function which executes a command, prints error message if command fails,
+# and preserves command execution status for further processing.
+try_load_preserve_rc()
+{
+    cmd="$1"
+    msg="$2"
+
+    $cmd >/dev/null 2>&1
+
+    rc=$?
+    [ $rc -eq 0 ] || info "$msg"
+
+    return $rc
 }
 
 reload()
@@ -1070,17 +1088,17 @@ reload()
     fi
 
     # Unmount Shared Folders.
-    umount -a -t vboxsf >/dev/null 2>&1 || fail "unable to unmount shared folders"
+    umount -a -t vboxsf >/dev/null 2>&1 || fail "unable to unmount shared folders, mount point(s) might be still in use"
 
     # Stop VBoxDRMClient.
-    send_sig_usr1_by_pidfile "/var/run/VBoxDRMClient" || fail "unable to stop VBoxDRMClient"
+    send_signal_by_pidfile "-USR1" "/var/run/VBoxDRMClient" || fail "unable to stop VBoxDRMClient"
 
     if [ $? -eq 0 ]; then
         # Tell legacy VBoxClient processes to release vboxguest.ko references.
-        send_sig_usr1 ""
+        send_signal "-USR1" ""
 
         # Tell compatible VBoxClient processes to release vboxguest.ko references.
-        send_sig_usr1 "service"
+        send_signal "-USR1" "service"
 
         # Try unload.
         for attempt in 1 2 3 4 5; do
@@ -1106,21 +1124,22 @@ reload()
         # Check if we succeeded with unloading vboxguest after several attempts.
         running_vboxguest
         if [ $? -eq 0 ]; then
-            fail "Cannot reload kernel modules: one or more module(s) is still in use"
+            info "cannot reload kernel modules: one or more module(s) is still in use"
+            false
         else
             # Do not spoil $?.
             true
         fi
 
         # Load drivers (skip vboxvideo since it is not loaded for very old guests).
-        [ $? -eq 0 ] && modprobe vboxguest >/dev/null 2>&1
-        [ $? -eq 0 ] && modprobe vboxsf >/dev/null 2>&1
+        [ $? -eq 0 ] && try_load_preserve_rc "modprobe vboxguest" "unable to load vboxguest kernel module, see dmesg"
+        [ $? -eq 0 ] && try_load_preserve_rc "modprobe vboxsf" "unable to load vboxsf kernel module, see dmesg"
 
         # Start VBoxService and VBoxDRMClient.
-        [ $? -eq 0 ] && $VBOX_SERVICE_SCRIPT start >/dev/null 2>&1
+        [ $? -eq 0 ] && try_load_preserve_rc "$VBOX_SERVICE_SCRIPT start" "unable to start VBoxService"
 
         # Reload VBoxClient processes.
-        [ $? -eq 0 ] && send_sig_usr1 "control"
+        [ $? -eq 0 ] && try_load_preserve_rc "send_signal "-USR1" control" "unable to reload user session services"
 
         if [ $? -eq 0 ]; then
 
@@ -1134,7 +1153,10 @@ reload()
             info "kernel modules and services $(running_module_version "vboxguest") reloaded"
             info "NOTE: you may still consider to re-login if some user session specific services (Shared Clipboard, Drag and Drop, Seamless or Guest Screen Resize) were not restarted automatically"
         else
-            fail "cannot verify if kernel modules and services were reloaded"
+            # In case of failure, sent SIGTERM to abandoned control processes to remove leftovers from failed reloading.
+            send_signal "-TERM" "control"
+
+            fail "kernel modules and services were not reloaded"
         fi
     else
         fail "cannot stop user services"
@@ -1217,7 +1239,8 @@ status-user)
     if [ $? -eq 0 ]; then
         info "User-land services are running"
     else
-        fail "User-land services are not running"
+        info "User-land services are not running"
+        false
     fi
     ;;
 *)
