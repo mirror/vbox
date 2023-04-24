@@ -353,10 +353,10 @@ UIVirtualHardwareItem::UIVirtualHardwareItem(UIApplianceModel *pParent,
     , m_pParent(pParent)
     , m_enmVSDType(enmVSDType)
     , m_strRef(strRef)
-    , m_strOrigValue(enmVSDType == KVirtualSystemDescriptionType_Memory ? UITranslator::byteStringToMegaByteString(strOrigValue) : strOrigValue)
-    , m_strConfigValue(enmVSDType == KVirtualSystemDescriptionType_Memory ? UITranslator::byteStringToMegaByteString(strConfigValue) : strConfigValue)
+    , m_strOrigValue(strOrigValue)
+    , m_strConfigValue(strConfigValue)
     , m_strConfigDefaultValue(strConfigValue)
-    , m_strExtraConfigValue(enmVSDType == KVirtualSystemDescriptionType_Memory ? UITranslator::byteStringToMegaByteString(strExtraConfigValue) : strExtraConfigValue)
+    , m_strExtraConfigValue(strExtraConfigValue)
     , m_checkState(Qt::Checked)
     , m_fModified(false)
 {
@@ -1302,8 +1302,8 @@ void UIVirtualHardwareItem::restoreDefaults()
 void UIVirtualHardwareItem::putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues)
 {
     finalStates[m_iNumber] = m_checkState == Qt::Checked;
-    finalValues[m_iNumber] = m_enmVSDType == KVirtualSystemDescriptionType_Memory ? UITranslator::megabyteStringToByteString(m_strConfigValue) : m_strConfigValue;
-    finalExtraValues[m_iNumber] = m_enmVSDType == KVirtualSystemDescriptionType_Memory ? UITranslator::megabyteStringToByteString(m_strExtraConfigValue) : m_strExtraConfigValue;
+    finalValues[m_iNumber] = m_strConfigValue;
+    finalExtraValues[m_iNumber] = m_strExtraConfigValue;
 
     UIApplianceModelItem::putBack(finalStates, finalValues, finalExtraValues);
 }
