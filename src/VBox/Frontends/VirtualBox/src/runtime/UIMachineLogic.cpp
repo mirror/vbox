@@ -501,9 +501,12 @@ void UIMachineLogic::sltMachineStateChanged()
         case KMachineState_Restoring:
         case KMachineState_TeleportingIn:
         {
-            /* The keyboard handler may wish to do some release logging on startup.
-             * Tell it that the logger is now active. */
-            doXKeyboardLogging(NativeWindowSubsystem::X11GetDisplay());
+            if (uiCommon().X11ServerAvailable())
+            {
+                /* The keyboard handler may wish to do some release logging on startup.
+                 * Tell it that the logger is now active. */
+                doXKeyboardLogging(NativeWindowSubsystem::X11GetDisplay());
+            }
             break;
         }
 #endif
