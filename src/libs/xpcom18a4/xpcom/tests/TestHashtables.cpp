@@ -113,7 +113,7 @@ public:
 
 PLDHashOperator
 nsTEnumGo(EntityToUnicodeEntry* aEntry, void* userArg) {
-  printf("  enumerated \"%s\" = %u\n", 
+  printf("  enumerated \"%s\" = %u\n",
          aEntry->mNode->mStr, aEntry->mNode->mUnicode);
 
   return PL_DHASH_NEXT;
@@ -201,14 +201,14 @@ nsDEnum(const PRUint32& aKey, const char*& aData, void* userArg) {
 
 PLDHashOperator
 nsCEnumRead(const nsACString& aKey, TestUniChar* aData, void* userArg) {
-  printf("  enumerated \"%s\" = %c\n",
+  printf("  enumerated \"%s\" = %u\n",
          PromiseFlatCString(aKey).get(), aData->GetChar());
   return PL_DHASH_NEXT;
 }
 
 PLDHashOperator
 nsCEnum(const nsACString& aKey, nsAutoPtr<TestUniChar>& aData, void* userArg) {
-    printf("  enumerated \"%s\" = %c\n", 
+    printf("  enumerated \"%s\" = %u\n",
            PromiseFlatCString(aKey).get(), aData->GetChar());
   return PL_DHASH_NEXT;
 }
@@ -277,7 +277,7 @@ nsrefcnt
 IFoo::AddRef()
   {
     ++refcount_;
-    printf("IFoo@%p::AddRef(), refcount --> %d\n", 
+    printf("IFoo@%p::AddRef(), refcount --> %d\n",
            NS_STATIC_CAST(void*, this), refcount_);
     return refcount_;
   }
@@ -288,7 +288,7 @@ IFoo::Release()
     int wrap_message = (refcount_ == 1);
     if ( wrap_message )
       printf(">>");
-      
+
     nsrefcnt newrefcount = --refcount_;
     printf("IFoo@%p::Release(), refcount --> %d\n",
            NS_STATIC_CAST(void*, this), newrefcount);
@@ -486,17 +486,17 @@ main(void) {
     printf("FOUND! BAD!\n");
     exit (13);
   }
-      
+
   printf("not found; good.\n");
-      
+
   printf("Enumerating:\n");
-  
+
   count = UniToEntity.EnumerateRead(nsDEnumRead, nsnull);
   if (count != ENTITY_COUNT) {
     printf("  Bad count!\n");
     exit (14);
   }
-  
+
   printf("Clearing...");
   UniToEntity.Clear();
   printf("OK\n");
@@ -551,17 +551,17 @@ main(void) {
     printf("FOUND! BAD!\n");
     exit (13);
   }
-      
+
   printf("not found; good.\n");
-      
+
   printf("Enumerating:\n");
-  
+
   count = UniToEntityL.EnumerateRead(nsDEnumRead, nsnull);
   if (count != ENTITY_COUNT) {
     printf("  Bad count!\n");
     exit (14);
   }
-  
+
   printf("Clearing...");
   UniToEntityL.Clear();
   printf("OK\n");
@@ -612,7 +612,7 @@ main(void) {
       exit (18);
     }
 
-    printf("Found %c\n", myChar->GetChar());
+    printf("Found %u\n", myChar->GetChar());
   }
 
   printf("Testing non-existent entries...");
@@ -620,17 +620,17 @@ main(void) {
     printf("FOUND! BAD!\n");
     exit (19);
   }
-      
+
   printf("not found; good.\n");
-      
+
   printf("Enumerating:\n");
-  
+
   count = EntToUniClass.EnumerateRead(nsCEnumRead, nsnull);
   if (count != ENTITY_COUNT) {
     printf("  Bad count!\n");
     exit (20);
   }
-  
+
   printf("Clearing...\n");
   EntToUniClass.Clear();
   printf("  Clearing OK\n");
@@ -680,7 +680,7 @@ main(void) {
       exit (18);
     }
 
-    printf("Found %c\n", myChar->GetChar());
+    printf("Found %u\n", myChar->GetChar());
   }
 
   printf("Testing non-existent entries...");
@@ -688,17 +688,17 @@ main(void) {
     printf("FOUND! BAD!\n");
     exit (19);
   }
-      
+
   printf("not found; good.\n");
-      
+
   printf("Enumerating:\n");
-  
+
   count = EntToUniClassL.EnumerateRead(nsCEnumRead, nsnull);
   if (count != ENTITY_COUNT) {
     printf("  Bad count!\n");
     exit (20);
   }
-  
+
   printf("Clearing...\n");
   EntToUniClassL.Clear();
   printf("  Clearing OK\n");
@@ -734,8 +734,8 @@ main(void) {
     nsCOMPtr<IFoo> foo;
     CreateIFoo(getter_AddRefs(foo));
     foo->SetString(nsDependentCString(gEntities[i].mStr));
-    
-    
+
+
     fooArray.InsertObjectAt(foo, i);
 
     if (!EntToUniClass2.Put(foo, gEntities[i].mUnicode)) {
@@ -750,13 +750,13 @@ main(void) {
 
   for (i = 0; i < ENTITY_COUNT; ++i) {
     printf("  Getting entry %s...", gEntities[i].mStr);
-    
+
     if (!EntToUniClass2.Get(fooArray[i], &myChar2)) {
       printf("FAILED\n");
       exit (24);
     }
 
-    printf("Found %c\n", myChar2);
+    printf("Found %u\n", myChar2);
   }
 
   printf("Testing non-existent entries...");
@@ -764,17 +764,17 @@ main(void) {
     printf("FOUND! BAD!\n");
     exit (25);
   }
-      
+
   printf("not found; good.\n");
-      
+
   printf("Enumerating:\n");
-  
+
   count = EntToUniClass2.EnumerateRead(nsIEnum2Read, nsnull);
   if (count != ENTITY_COUNT) {
     printf("  Bad count!\n");
     exit (26);
   }
-  
+
   printf("Clearing...\n");
   EntToUniClass2.Clear();
   printf("  Clearing OK\n");
@@ -808,7 +808,7 @@ main(void) {
     nsCOMPtr<IFoo> foo;
     CreateIFoo(getter_AddRefs(foo));
     foo->SetString(nsDependentCString(gEntities[i].mStr));
-    
+
     if (!UniToEntClass2.Put(gEntities[i].mUnicode, foo)) {
       printf("FAILED\n");
       exit (29);
@@ -820,13 +820,13 @@ main(void) {
 
   for (i = 0; i < ENTITY_COUNT; ++i) {
     printf("  Getting entry %s...", gEntities[i].mStr);
-    
+
     nsCOMPtr<IFoo> myEnt;
     if (!UniToEntClass2.Get(gEntities[i].mUnicode, getter_AddRefs(myEnt))) {
       printf("FAILED\n");
       exit (30);
     }
-    
+
     nsCAutoString str;
     myEnt->GetString(str);
     printf("Found %s\n", str.get());
@@ -838,17 +838,17 @@ main(void) {
     printf("FOUND! BAD!\n");
     exit (31);
   }
-      
+
   printf("not found; good.\n");
-      
+
   printf("Enumerating:\n");
-  
+
   count = UniToEntClass2.EnumerateRead(nsIEnumRead, nsnull);
   if (count != ENTITY_COUNT) {
     printf("  Bad count!\n");
     exit (32);
   }
-  
+
   printf("Clearing...\n");
   UniToEntClass2.Clear();
   printf("  Clearing OK\n");
@@ -882,7 +882,7 @@ main(void) {
     nsCOMPtr<IFoo> foo;
     CreateIFoo(getter_AddRefs(foo));
     foo->SetString(nsDependentCString(gEntities[i].mStr));
-    
+
     if (!UniToEntClass2L.Put(gEntities[i].mUnicode, foo)) {
       printf("FAILED\n");
       exit (29);
@@ -894,13 +894,13 @@ main(void) {
 
   for (i = 0; i < ENTITY_COUNT; ++i) {
     printf("  Getting entry %s...", gEntities[i].mStr);
-    
+
     nsCOMPtr<IFoo> myEnt;
     if (!UniToEntClass2L.Get(gEntities[i].mUnicode, getter_AddRefs(myEnt))) {
       printf("FAILED\n");
       exit (30);
     }
-    
+
     nsCAutoString str;
     myEnt->GetString(str);
     printf("Found %s\n", str.get());
@@ -911,17 +911,17 @@ main(void) {
     printf("FOUND! BAD!\n");
     exit (31);
   }
-      
+
   printf("not found; good.\n");
-      
+
   printf("Enumerating:\n");
-  
+
   count = UniToEntClass2L.EnumerateRead(nsIEnumRead, nsnull);
   if (count != ENTITY_COUNT) {
     printf("  Bad count!\n");
     exit (32);
   }
-  
+
   printf("Clearing...\n");
   UniToEntClass2L.Clear();
   printf("  Clearing OK\n");
