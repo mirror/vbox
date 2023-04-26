@@ -385,6 +385,9 @@ GaDrvEnvKmt::gaEnvContextCreate(void *pvEnv,
 
 static D3DDDIFORMAT svgaToD3DDDIFormat(SVGA3dSurfaceFormat format)
 {
+    /* The returning D3DDDIFMT_ value is used only to compute bpp, pitch, etc,
+     * so there is not need for an exact match.
+     */
     switch (format)
     {
         case SVGA3D_X8R8G8B8:       return D3DDDIFMT_X8R8G8B8;
@@ -404,6 +407,14 @@ static D3DDDIFORMAT svgaToD3DDDIFormat(SVGA3dSurfaceFormat format)
                                      * because the D3DDDIFMT_ value is used only to compute bpp, pitch, etc. */
         case SVGA3D_A8_UNORM:       return D3DDDIFMT_A8;
         case SVGA3D_B5G5R5A1_UNORM: return D3DDDIFMT_A1R5G5B5;
+
+        case SVGA3D_R8G8_UNORM:         return D3DDDIFMT_A8L8;
+        case SVGA3D_R16_FLOAT:          return D3DDDIFMT_R16F;
+        case SVGA3D_R16G16_FLOAT:       return D3DDDIFMT_G16R16F;
+        case SVGA3D_R16G16B16A16_FLOAT: return D3DDDIFMT_A16B16G16R16F;
+        case SVGA3D_R32G32B32A32_FLOAT: return D3DDDIFMT_A32B32G32R32F;
+        case SVGA3D_R8G8B8A8_TYPELESS:  return D3DDDIFMT_A8R8G8B8;
+        case SVGA3D_R16_UINT:           return D3DDDIFMT_L16;
         default: break;
     }
 
@@ -1055,7 +1066,7 @@ vboxDdiRegionDestroy(GaKmtCallbacks *pKmtCallbacks,
     EscapeData.hAdapter              = pKmtCallbacks->hAdapter;
     EscapeData.hDevice               = pKmtCallbacks->hDevice;
     EscapeData.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
-    // EscapeData.Flags.HardwareAccess  = 0;
+    EscapeData.Flags.HardwareAccess  = 1; /* Sync with submitted commands. */
     EscapeData.pPrivateDriverData    = &data;
     EscapeData.PrivateDriverDataSize = sizeof(data);
     // EscapeData.hContext              = 0;
