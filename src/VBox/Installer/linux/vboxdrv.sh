@@ -354,7 +354,7 @@ kernel_get_config_opt()
             --state "$opt_name" 2>/dev/null
     elif test -f /lib/modules/"$KERN_VER"/build/.config; then
         # Extract config option manually.
-        grep "$opt_name" /lib/modules/"$KERN_VER"/build/.config | sed -e "s/^$opt_name=//" -e "s/\"//g"
+        grep "$opt_name=" /lib/modules/"$KERN_VER"/build/.config | sed -e "s/^$opt_name=//" -e "s/\"//g"
     fi
 }
 
@@ -379,6 +379,39 @@ module_sig_hash_supported()
       -o "$sig_hashalgo" = "sha512" ] || return
 
     echo "1"
+}
+
+# Check if kernel configuration requires modules signature.
+kernel_requires_module_signature()
+{
+    vbox_sys_lockdown_path="/sys/kernel/security/lockdown"
+
+    requires=""
+    # We consider that if kernel is running in the following configurations,
+    # it will require modules to be signed.
+    if [ "$(kernel_get_config_opt "CONFIG_MODULE_SIG")" = "y" ]; then
+
+        # Modules signature verification is hardcoded in kernel config.
+        [ "$(kernel_get_config_opt "CONFIG_MODULE_SIG_FORCE")" = "y" ] && requires="1"
+
+        # Unsigned modules loading is restricted by "lockdown" feature in runtime.
+        if [   "$(kernel_get_config_opt "CONFIG_SECURITY_LOCKDOWN_LSM")" = "y" \
+            -o "$(kernel_get_config_opt "CONFIG_SECURITY_LOCKDOWN_LSM_EARLY")" = "y" ]; then
+
+            # Once lockdown level is set to something different than "none" (e.g., "integrity"
+            # or "confidentiality"), kernel will reject unsigned modules loading.
+            if [ -r "$vbox_sys_lockdown_path" ]; then
+                [ -n "$(cat "$vbox_sys_lockdown_path" | grep "\[integrity\]")" ] && requires="1"
+                [ -n "$(cat "$vbox_sys_lockdown_path" | grep "\[confidentiality\]")" ] && requires="1"
+            fi
+
+            # This configuration is used by a number of modern Linux distributions and restricts
+            # unsigned modules loading when Secure Boot mode is enabled.
+            [ "$(kernel_get_config_opt "CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT")" = "y" -a -n "$HAVE_SEC_BOOT" ] && requires="1"
+        fi
+    fi
+
+    [ -n "$requires" ] && echo "1"
 }
 
 # Returns "1" if module is signed and signature can be verified
@@ -466,8 +499,8 @@ module_available()
     mod_dir="$(dirname "$mod_path" | sed 's;^.*/;;')"
     [ "$mod_dir" = "misc" ] || return
 
-    # In case if system is running in Secure Boot mode, check if module is signed.
-    if test -n "$HAVE_SEC_BOOT"; then
+    # In case if kernel configuration requires module signature, check if module is signed.
+    if test "$(kernel_requires_module_signature)" = "1"; then
         [ "$(module_signed "$mod")" = "1" ] || return
     fi
 
@@ -491,7 +524,7 @@ start()
     if [ -d /proc/xen ]; then
         failure "Running VirtualBox in a Xen environment is not supported"
     fi
-    if test -n "$HAVE_SEC_BOOT" && test -z "$DEB_KEY_ENROLLED"; then
+    if test "$(kernel_requires_module_signature)" = "1" && test -z "$DEB_KEY_ENROLLED"; then
         if test -n "$HAVE_DEB_KEY"; then
             begin_msg "You must re-start your system to finish Debian secure boot set-up." console
         else
@@ -552,7 +585,7 @@ See the documentation for your Linux distribution." console
         failure "modprobe vboxpci failed. Please use 'dmesg' to find out why"
     fi
     # Create the /dev/vboxusb directory if the host supports that method
-    # of USB access.  The USB code checks for the existance of that path.
+    # of USB access.  The USB code checks for the existence of that path.
     if grep -q usb_device /proc/devices; then
         mkdir -p -m 0750 /dev/vboxusb 2>/dev/null
         chown root:vboxusers /dev/vboxusb 2>/dev/null
@@ -700,7 +733,7 @@ setup()
         module_build_log "$myerr"
         failure "Look at $LOG to find out what went wrong"
     fi
-    log "Building the net adaptor module."
+    log "Building the net adapter module."
     if ! myerr=`$BUILDINTMP \
         --use-module-symvers /tmp/vboxdrv-Module.symvers \
         --module-source "$MODULE_SRC/vboxnetadp" \
@@ -725,8 +758,8 @@ setup()
     sync
     succ_msg "VirtualBox kernel modules built"
 
-    # Secure boot on Ubuntu, Debian and Oracle Linux.
-    if test -n "$HAVE_SEC_BOOT"; then
+    # Sign kernel modules if kernel configuration requires it.
+    if test "$(kernel_requires_module_signature)" = "1"; then
         begin_msg "Signing VirtualBox kernel modules" console
 
         # Generate new signing key if needed.

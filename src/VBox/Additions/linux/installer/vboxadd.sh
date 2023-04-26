@@ -396,24 +396,30 @@ fi
 # Reads kernel configuration option.
 kernel_get_config_opt()
 {
-    opt_name="$1"
+    kern_ver="$1"
+    opt_name="$2"
+
+    [ -n "$kern_ver" ] || return
     [ -n "$opt_name" ] || return
 
     # Check if there is a kernel tool which can extract config option.
-    if test -x /lib/modules/"$KERN_VER"/build/scripts/config; then
-        /lib/modules/"$KERN_VER"/build/scripts/config \
-            --file /lib/modules/"$KERN_VER"/build/.config \
+    if test -x /lib/modules/"$kern_ver"/build/scripts/config; then
+        /lib/modules/"$kern_ver"/build/scripts/config \
+            --file /lib/modules/"$kern_ver"/build/.config \
             --state "$opt_name" 2>/dev/null
-    elif test -f /lib/modules/"$KERN_VER"/build/.config; then
+    elif test -f /lib/modules/"$kern_ver"/build/.config; then
         # Extract config option manually.
-        grep "$opt_name" /lib/modules/"$KERN_VER"/build/.config | sed -e "s/^$opt_name=//" -e "s/\"//g"
+        grep "$opt_name=" /lib/modules/"$kern_ver"/build/.config | sed -e "s/^$opt_name=//" -e "s/\"//g"
     fi
 }
 
 # Reads CONFIG_MODULE_SIG_HASH from kernel config.
 kernel_module_sig_hash()
 {
-    kernel_get_config_opt "CONFIG_MODULE_SIG_HASH"
+    kern_ver="$1"
+    [ -n "$kern_ver" ] || return
+
+    kernel_get_config_opt "$kern_ver" "CONFIG_MODULE_SIG_HASH"
 }
 
 # Returns "1" if kernel module signature hash algorithm
@@ -433,6 +439,42 @@ module_sig_hash_supported()
     echo "1"
 }
 
+# Check if kernel configuration requires modules signature.
+kernel_requires_module_signature()
+{
+    kern_ver="$1"
+    vbox_sys_lockdown_path="/sys/kernel/security/lockdown"
+
+    [ -n "$kern_ver" ] || return
+
+    requires=""
+    # We consider that if kernel is running in the following configurations,
+    # it will require modules to be signed.
+    if [ "$(kernel_get_config_opt "$kern_ver" "CONFIG_MODULE_SIG")" = "y" ]; then
+
+        # Modules signature verification is hardcoded in kernel config.
+        [ "$(kernel_get_config_opt "$kern_ver" "CONFIG_MODULE_SIG_FORCE")" = "y" ] && requires="1"
+
+        # Unsigned modules loading is restricted by "lockdown" feature in runtime.
+        if [   "$(kernel_get_config_opt "$kern_ver" "CONFIG_SECURITY_LOCKDOWN_LSM")" = "y" \
+            -o "$(kernel_get_config_opt "$kern_ver" "CONFIG_SECURITY_LOCKDOWN_LSM_EARLY")" = "y" ]; then
+
+            # Once lockdown level is set to something different from "none" (e.g., "integrity"
+            # or "confidentiality"), kernel will reject unsigned modules loading.
+            if [ -r "$vbox_sys_lockdown_path" ]; then
+                [ -n "$(cat "$vbox_sys_lockdown_path" | grep "\[integrity\]")" ] && requires="1"
+                [ -n "$(cat "$vbox_sys_lockdown_path" | grep "\[confidentiality\]")" ] && requires="1"
+            fi
+
+            # This configuration is used by a number of modern Linux distributions and restricts
+            # unsigned modules loading when Secure Boot mode is enabled.
+            [ "$(kernel_get_config_opt "$kern_ver" "CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT")" = "y" -a -n "$HAVE_SEC_BOOT" ] && requires="1"
+        fi
+    fi
+
+    [ -n "$requires" ] && echo "1"
+}
+
 sign_modules()
 {
     KERN_VER="$1"
@@ -443,8 +485,8 @@ sign_modules()
     # vboxvideo might not present on for older kernels.
     [ -f "/lib/modules/"$KERN_VER"/misc/vboxvideo.ko" ] && MODULE_LIST="$MODULE_LIST vboxvideo"
 
-    # Secure boot on Ubuntu, Debian and Oracle Linux.
-    if test -n "$HAVE_SEC_BOOT"; then
+    # Sign kernel modules if kernel configuration requires it.
+    if test "$(kernel_requires_module_signature $KERN_VER)" = "1"; then
         begin "Signing VirtualBox Guest Additions kernel modules"
 
         # Generate new signing key if needed.
@@ -474,7 +516,7 @@ Restart \"rcvboxadd setup\" after system is rebooted.
         fi
 
         # Get kernel signature hash algorithm from kernel config and validate it.
-        sig_hashalgo=$(kernel_module_sig_hash)
+        sig_hashalgo=$(kernel_module_sig_hash "$KERN_VER")
         [ "$(module_sig_hash_supported $sig_hashalgo)" = "1" ] \
             || fail "Unsupported kernel signature hash algorithm $sig_hashalgo"
 
@@ -531,7 +573,7 @@ setup_modules()
 
     # Detect if kernel was built with clang.
     unset LLVM
-    vbox_cc_is_clang=$(kernel_get_config_opt "CONFIG_CC_IS_CLANG")
+    vbox_cc_is_clang=$(kernel_get_config_opt "$KERN_VER" "CONFIG_CC_IS_CLANG")
     if test "${vbox_cc_is_clang}" = "y"; then
         info "Using clang compiler."
         export LLVM=1
@@ -794,8 +836,9 @@ module_available()
     mod_dir="$(dirname "$mod_path" | sed 's;^.*/;;')"
     [ "$mod_dir" = "misc" ] || return
 
-    # In case if system is running in Secure Boot mode, check if module is signed.
-    if test -n "$HAVE_SEC_BOOT"; then
+    # In case if kernel configuration (for currently loaded kernel) requires
+    # module signature, check if module is signed.
+    if test "$(kernel_requires_module_signature $(uname -r))" = "1"; then
         [ "$(module_signed "$mod")" = "1" ] || return
     fi
 
@@ -902,7 +945,7 @@ start()
     test "$(setup_complete)" = "1" || setup
 
     # Warn if Secure Boot setup not yet complete.
-    if test -n "$HAVE_SEC_BOOT" && test -z "$DEB_KEY_ENROLLED"; then
+    if test "$(kernel_requires_module_signature)" = "1" && test -z "$DEB_KEY_ENROLLED"; then
         if test -n "$HAVE_DEB_KEY"; then
             info "You must re-start your system to finish secure boot set-up."
         else
