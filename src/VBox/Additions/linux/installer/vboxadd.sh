@@ -1092,22 +1092,42 @@ send_signal()
     pidfile_postfix=""
     [ -z "$process_type" ] || pidfile_postfix="-$process_type"
 
-    for user_home in $(getent passwd | cut -d ':' -f 6); do
-        if [ -d "$user_home" ]; then
+    for user_name in $(getent passwd | cut -d ':' -f 1); do
 
-            for pid_file in "$user_home"/.vboxclient-*"$pidfile_postfix".pid; do
+        # Filter out empty login names (paranoia).
+        [ -n "$user_name" ] || continue
 
-                # If process type was not specified, we assume that signal supposed
-                # to be sent to legacy VBoxClient processes which have different
-                # pidfile name pattern (it does not contain "control" or "service").
-                # Skip those pidfiles who has.
-                [ -z "$process_type" -a -n "$(echo "$pid_file" | grep "control")" ] && continue
-                [ -z "$process_type" -a -n "$(echo "$pid_file" | grep "service")" ] && continue
+        user_shell=$(getent passwd "$user_name" | cut -d ':' -f 7)
 
-                send_signal_by_pidfile -USR1 "$pid_file"
-            done
+        # Filter out login names with not specified shells (paranoia).
+        [ -n "$user_shell" ] || continue
 
-        fi
+        # Filter out know non-login account names.
+        case "$user_shell" in
+        *nologin)   skip_user_home="1";;
+        *sync)      skip_user_home="1";;
+        *shutdown)  skip_user_home="1";;
+        *halt)      skip_user_home="1";;
+        *)          skip_user_home=""
+        esac
+        [ -z "$skip_user_home" ] || continue;
+
+        user_home=$(getent passwd "$user_name" | cut -d ':' -f 6)
+
+        for pid_file in "$user_home"/.vboxclient-*"$pidfile_postfix".pid; do
+
+            [ -r "$pid_file" ] || continue
+
+            # If process type was not specified, we assume that signal supposed
+            # to be sent to legacy VBoxClient processes which have different
+            # pidfile name pattern (it does not contain "control" or "service").
+            # Skip those pidfiles who has.
+            [ -z "$process_type" -a -n "$(echo "$pid_file" | grep "control")" ] && continue
+            [ -z "$process_type" -a -n "$(echo "$pid_file" | grep "service")" ] && continue
+
+            send_signal_by_pidfile -USR1 "$pid_file"
+
+        done
     done
 }
 
