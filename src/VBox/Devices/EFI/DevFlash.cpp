@@ -77,6 +77,11 @@ typedef struct DEVFLASHR3
 /** Pointer to the ring-3 Flash device state. */
 typedef DEVFLASHR3 *PDEVFLASHR3;
 
+/** The serial device state for the current context. */
+typedef CTX_SUFF(DEVFLASH) DEVFLASHCC;
+/** Pointer to the serial device state for the current context. */
+typedef CTX_SUFF(PDEVFLASH) PDEVFLASHCC;
+
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
@@ -284,7 +289,7 @@ const PDMDEVREG g_DeviceFlash =
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(DEVFLASH),
-    /* .cbInstanceCC = */           0,
+    /* .cbInstanceCC = */           sizeof(DEVFLASHCC),
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         0,
     /* .cMaxMsixVectors = */        0,
