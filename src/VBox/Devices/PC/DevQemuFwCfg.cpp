@@ -73,11 +73,13 @@
 #include <iprt/assert.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>
+#include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/vfs.h>
 #include <iprt/zero.h>
 #include <iprt/zip.h>
+#include <iprt/uuid.h>
 
 #include "VBoxDD.h"
 
@@ -130,6 +132,8 @@
 /** Extracts the selected config item. */
 #define QEMU_FW_CFG_DMA_GET_CFG_ITEM(a_Control)     ((uint16_t)((a_Control) >> 16))
 
+/** The signature when reading the DMA address register and the DMA interace is enabled. */
+#define QEMU_FW_CFG_DMA_ADDR_SIGNATURE              UINT64_C(0x51454d5520434647) /* "QEMU CFG" */
 
 /** @name Known config items.
  * @{ */
@@ -159,7 +163,13 @@
 #define QEMU_FW_CFG_ITEM_KERNEL_SETUP_SIZE          UINT16_C(0x0017)
 #define QEMU_FW_CFG_ITEM_KERNEL_SETUP_DATA          UINT16_C(0x0018)
 #define QEMU_FW_CFG_ITEM_FILE_DIR                   UINT16_C(0x0019)
+
+/** The first index for custom file based data. */
+#define QEMU_FW_CFG_ITEM_FILE_USER_FIRST            UINT16_C(0x0020)
 /** @} */
+
+/** Maximum number of characters for a config item filename (without the zero terminator. */
+#define QEMU_FW_CFG_ITEM_FILE_NAME_MAX              55
 
 /** The size of the directory entry buffer we're using. */
 #define QEMUFWCFG_DIRENTRY_BUF_SIZE (sizeof(RTDIRENTRYEX) + RTPATH_MAX)
@@ -168,6 +178,38 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+
+/**
+ * RAM based framebuffer config.
+ */
+#pragma pack(1)
+typedef struct QEMURAMFBCONFIG
+{
+    /** Base physical address of the framebuffer. */
+    uint64_t                    GCPhysRamfbBase;
+    /** The FourCC code for the image format. */
+    uint32_t                    u32FourCC;
+    /** Flags for the framebuffer. */
+    uint32_t                    u32Flags;
+    /** Width of the framebuffer in pixels. */
+    uint32_t                    cWidth;
+    /** Height of the framebuffer in pixels. */
+    uint32_t                    cHeight;
+    /** Stride of the framebuffer in bytes. */
+    uint32_t                    cbStride;
+} QEMURAMFBCONFIG;
+#pragma pack()
+AssertCompileSize(QEMURAMFBCONFIG, 28);
+/** Pointer to a RAM based framebuffer config. */
+typedef QEMURAMFBCONFIG *PQEMURAMFBCONFIG;
+/** Pointer to a const RAM based framebuffer config. */
+typedef const QEMURAMFBCONFIG *PCQEMURAMFBCONFIG;
+
+/** The FourCC format code for RGB (+ ignored byte). */
+#define QEMU_RAMFB_CFG_FORMAT   0x34325258 /* XRGB8888 */
+/** Number of bytes per pixel. */
+#define QEMU_RAMFB_CFG_BPP               4
+
 
 /**
  * QEMU firmware config DMA descriptor.
@@ -188,46 +230,90 @@ typedef QEMUFWDMADESC *PQEMUFWDMADESC;
 typedef const QEMUFWDMADESC *PCQEMUFWDMADESC;
 
 
+/**
+ * QEMU firmware config file.
+ */
+typedef struct QEMUFWCFGFILE
+{
+    /** Size of the file in bytes. */
+    uint32_t                    cbFile;
+    /** The config selector item. */
+    uint16_t                    uCfgItem;
+    /** Reserved. */
+    uint16_t                    u16Rsvd;
+    /** The filename as an zero terminated ASCII string. */
+    char                        szFilename[QEMU_FW_CFG_ITEM_FILE_NAME_MAX + 1];
+} QEMUFWCFGFILE;
+AssertCompileSize(QEMUFWCFGFILE, 64);
+/** Pointer to a QEMU firmware config file. */
+typedef QEMUFWCFGFILE *PQEMUFWCFGFILE;
+/** Pointer to a const QEMU firmware config file. */
+typedef const QEMUFWCFGFILE *PCQEMUFWCFGFILE;
+
+
+/** Pointer to the QEMU firmware config device instance. */
+typedef struct DEVQEMUFWCFG *PDEVQEMUFWCFG;
 /** Pointer to a const configuration item descriptor. */
 typedef const struct QEMUFWCFGITEM *PCQEMUFWCFGITEM;
 
-/**
- * QEMU firmware config instance data structure.
- */
-typedef struct DEVQEMUFWCFG
-{
-    /** Pointer back to the device instance. */
-    PPDMDEVINS                  pDevIns;
-    /** The configuration handle. */
-    PCFGMNODE                   pCfg;
-    /** Pointer to the currently selected item. */
-    PCQEMUFWCFGITEM             pCfgItem;
-    /** Offset of the next byte to read from the start of the data item. */
-    uint32_t                    offCfgItemNext;
-    /** How many bytes are left for transfer. */
-    uint32_t                    cbCfgItemLeft;
-    /** Version register. */
-    uint32_t                    u32Version;
-    /** Guest physical address of the DMA descriptor. */
-    RTGCPHYS                    GCPhysDma;
-    /** VFS file of the on-the-fly created initramfs. */
-    RTVFSFILE                   hVfsFileInitrd;
 
-    /** Scratch buffer for config item specific data. */
-    union
-    {
-        uint8_t                 u8;
-        uint16_t                u16;
-        uint32_t                u32;
-        uint64_t                u64;
-        /** VFS file handle. */
-        RTVFSFILE               hVfsFile;
-        /** Byte view. */
-        uint8_t                 ab[8];
-    } u;
-} DEVQEMUFWCFG;
-/** Pointer to the QEMU firmware config device instance. */
-typedef DEVQEMUFWCFG *PDEVQEMUFWCFG;
+/**
+ * Setup callback for when the guest writes the selector.
+ *
+ * @returns VBox status code.
+ * @param   pThis           The QEMU fw config device instance.
+ * @param   pItem           Pointer to the selected item.
+ * @param   pcbItem         Where to store the size of the item on success.
+ */
+typedef DECLCALLBACKTYPE(int, FNQEMUFWCFGITEMSETUP,(PDEVQEMUFWCFG pThis, PCQEMUFWCFGITEM pItem, uint32_t *pcbItem));
+/** Pointer to a FNQEMUFWCFGITEMSETUP() function. */
+typedef FNQEMUFWCFGITEMSETUP *PFNQEMUFWCFGITEMSETUP;
+
+
+/**
+ * Read callback to return the data.
+ *
+ * @returns VBox status code.
+ * @param   pThis           The QEMU fw config device instance.
+ * @param   pItem           Pointer to the selected item.
+ * @param   off             Where to start reading from.
+ * @param   pvBuf           Where to store the read data.
+ * @param   cbToRead        How much to read.
+ * @param   pcbRead         Where to store the amount of bytes read.
+ */
+typedef DECLCALLBACKTYPE(int, FNQEMUFWCFGITEMREAD,(PDEVQEMUFWCFG pThis, PCQEMUFWCFGITEM pItem, uint32_t off, void *pvBuf,
+                                                   uint32_t cbToRead, uint32_t *pcbRead));
+/** Pointer to a FNQEMUFWCFGITEMREAD() function. */
+typedef FNQEMUFWCFGITEMREAD *PFNQEMUFWCFGITEMREAD;
+
+
+/**
+ * Write callback to receive data.
+ *
+ * @returns VBox status code.
+ * @param   pThis           The QEMU fw config device instance.
+ * @param   pItem           Pointer to the selected item.
+ * @param   off             Where to start writing to.
+ * @param   pvBuf           The data to write.
+ * @param   cbToWrite       How much to write.
+ * @param   pcbWritten      Where to store the amount of bytes written.
+ */
+typedef DECLCALLBACKTYPE(int, FNQEMUFWCFGITEMWRITE,(PDEVQEMUFWCFG pThis, PCQEMUFWCFGITEM pItem, uint32_t off, const void *pvBuf,
+                                                    uint32_t cbToWrite, uint32_t *pcbWritten));
+/** Pointer to a FNQEMUFWCFGITEMWRITE() function. */
+typedef FNQEMUFWCFGITEMWRITE *PFNQEMUFWCFGITEMWRITE;
+
+
+/**
+ * Cleans up any allocated resources when the item is de-selected.
+ *
+ * @returns nothing.
+ * @param   pThis           The QEMU fw config device instance.
+ * @param   pItem           Pointer to the selected item.
+ */
+typedef DECLCALLBACKTYPE(void, FNQEMUFWCFGITEMCLEANUP,(PDEVQEMUFWCFG pThis, PCQEMUFWCFGITEM pItem));
+/** Pointer to a FNQEMUFWCFGITEMCLEANUP() function. */
+typedef FNQEMUFWCFGITEMCLEANUP *PFNQEMUFWCFGITEMCLEANUP;
 
 
 /**
@@ -235,47 +321,114 @@ typedef DEVQEMUFWCFG *PDEVQEMUFWCFG;
  */
 typedef struct QEMUFWCFGITEM
 {
-    /** The config tiem value. */
+    /** The config item value. */
     uint16_t                    uCfgItem;
     /** Name of the item. */
     const char                  *pszItem;
     /** Optional CFGM key to lookup the content. */
     const char                  *pszCfgmKey;
-    /**
-     * Setup callback for when the guest writes the selector.
-     *
-     * @returns VBox status code.
-     * @param   pThis           The QEMU fw config device instance.
-     * @param   pItem           Pointer to the selected item.
-     * @param   pcbItem         Where to store the size of the item on success.
-     */
-    DECLCALLBACKMEMBER(int, pfnSetup, (PDEVQEMUFWCFG pThis, PCQEMUFWCFGITEM pItem, uint32_t *pcbItem));
-    /**
-     * Read callback to return the data.
-     *
-     * @returns VBox status code.
-     * @param   pThis           The QEMU fw config device instance.
-     * @param   pItem           Pointer to the selected item.
-     * @param   off             Where to start reading from.
-     * @param   pvBuf           Where to store the read data.
-     * @param   cbToRead        How much to read.
-     * @param   pcbRead         Where to store the amount of bytes read.
-     */
-    DECLCALLBACKMEMBER(int, pfnRead, (PDEVQEMUFWCFG pThis, PCQEMUFWCFGITEM pItem, uint32_t off, void *pvBuf,
-                                      uint32_t cbToRead, uint32_t *pcbRead));
 
-    /**
-     * Cleans up any allocated resources when the item is de-selected.
-     *
-     * @returns nothing.
-     * @param   pThis           The QEMU fw config device instance.
-     * @param   pItem           Pointer to the selected item.
-     */
-    DECLCALLBACKMEMBER(void, pfnCleanup, (PDEVQEMUFWCFG pThis, PCQEMUFWCFGITEM pItem));
+    /** Setup callback. */
+    PFNQEMUFWCFGITEMSETUP       pfnSetup;
+    /** Read callback. */
+    PFNQEMUFWCFGITEMREAD        pfnRead;
+    /** Write callback. */
+    PFNQEMUFWCFGITEMWRITE       pfnWrite;
+    /** Cleanup callback. */
+    PFNQEMUFWCFGITEMCLEANUP     pfnCleanup;
 } QEMUFWCFGITEM;
 /** Pointer to a configuration item descriptor. */
 typedef QEMUFWCFGITEM *PQEMUFWCFGITEM;
 
+
+/**
+ * A config file entry.
+ */
+typedef struct QEMUFWCFGFILEENTRY
+{
+    /** The config item structure. */
+    QEMUFWCFGITEM                       Cfg;
+    /** Size of the file in bytes. */
+    uint32_t                            cbFile;
+    /** The stored filename as an zero terminated ASCII string. */
+    char                                szFilename[QEMU_FW_CFG_ITEM_FILE_NAME_MAX + 1];
+} QEMUFWCFGFILEENTRY;
+/** Pointer to a config file entry. */
+typedef QEMUFWCFGFILEENTRY *PQEMUFWCFGFILEENTRY;
+/** Pointer to a const config file entry. */
+typedef const QEMUFWCFGFILEENTRY *PCQEMUFWCFGFILEENTRY;
+
+
+/**
+ * QEMU firmware config instance data structure.
+ */
+typedef struct DEVQEMUFWCFG
+{
+    /** Pointer back to the device instance. */
+    PPDMDEVINS                          pDevIns;
+    /** The configuration handle. */
+    PCFGMNODE                           pCfg;
+
+    /** LUN\#0: The display port base interface. */
+    PDMIBASE                            IBase;
+    /** LUN\#0: The display port interface for the RAM based framebuffer if enabled. */
+    PDMIDISPLAYPORT                     IPortRamfb;
+
+    /** Pointer to base interface of the driver - LUN#0. */
+    R3PTRTYPE(PPDMIBASE)                pDrvBaseL0;
+    /** Pointer to display connector interface of the driver - LUN#0. */
+    R3PTRTYPE(PPDMIDISPLAYCONNECTOR)    pDrvL0;
+
+    /** Pointer to the currently selected item. */
+    PCQEMUFWCFGITEM                     pCfgItem;
+    /** Offset of the next byte to read from the start of the data item. */
+    uint32_t                            offCfgItemNext;
+    /** How many bytes are left for transfer. */
+    uint32_t                            cbCfgItemLeft;
+    /** Version register. */
+    uint32_t                            u32Version;
+    /** Guest physical address of the DMA descriptor. */
+    RTGCPHYS                            GCPhysDma;
+    /** VFS file of the on-the-fly created initramfs. */
+    RTVFSFILE                           hVfsFileInitrd;
+
+    /** Pointer to the array of config file items. */
+    PQEMUFWCFGFILEENTRY                 paCfgFiles;
+    /** Number of entries in the config file item array. */
+    uint32_t                            cCfgFiles;
+    /** Number if entries allocated in the config file items array. */
+    uint32_t                            cCfgFilesMax;
+
+    /** Critical section for synchronizing the RAM framebuffer access. */
+    PDMCRITSECT                         CritSectRamfb;
+    /** The refresh interval for the Ramfb support. */
+    uint32_t                            cMilliesRefreshInterval;
+    /** Refresh timer handle for the Ramfb support. */
+    TMTIMERHANDLE                       hRamfbRefreshTimer;
+    /** The current rambuffer config if enabled. */
+    QEMURAMFBCONFIG                     RamfbCfg;
+    /** Flag whether rendering the VRAM is enabled currently. */
+    bool                                fRenderVRam;
+    /** Flag whether the RAM based framebuffer device is enabled. */
+    bool                                fRamfbSupported;
+    /** Flag whether the DMA interface is available. */
+    bool                                fDmaEnabled;
+
+    /** Scratch buffer for config item specific data. */
+    union
+    {
+        uint8_t                         u8;
+        uint16_t                        u16;
+        uint32_t                        u32;
+        uint64_t                        u64;
+        /** VFS file handle. */
+        RTVFSFILE                       hVfsFile;
+        /** Firmware config file entry. */
+        QEMUFWCFGFILE                   CfgFile;
+        /** Byte view. */
+        uint8_t                         ab[8];
+    } u;
+} DEVQEMUFWCFG;
 
 
 /**
@@ -308,9 +461,10 @@ static DECLCALLBACK(int) qemuFwCfgR3SetupVersion(PDEVQEMUFWCFG pThis, PCQEMUFWCF
  */
 static DECLCALLBACK(int) qemuFwCfgR3SetupFileDir(PDEVQEMUFWCFG pThis, PCQEMUFWCFGITEM pItem, uint32_t *pcbItem)
 {
-    RT_NOREF(pThis, pItem);
-    memset(&pThis->u.ab[0], 0, sizeof(uint32_t)); /** @todo Implement */
-    *pcbItem = sizeof(uint32_t);
+    RT_NOREF(pItem);
+    uint32_t cCfgFiles = RT_H2BE_U32(pThis->cCfgFiles);
+    memcpy(&pThis->u.ab[0], &cCfgFiles, sizeof(cCfgFiles));
+    *pcbItem = sizeof(uint32_t) + pThis->cCfgFiles * sizeof(QEMUFWCFGFILE);
     return VINF_SUCCESS;
 }
 
@@ -525,6 +679,47 @@ static DECLCALLBACK(int) qemuFwCfgR3ReadStr(PDEVQEMUFWCFG pThis, PCQEMUFWCFGITEM
 
 
 /**
+ * @interface_method_impl{QEMUFWCFGITEM,pfnRead, Reads data from the file directory.}
+ */
+static DECLCALLBACK(int) qemuFwCfgR3ReadFileDir(PDEVQEMUFWCFG pThis, PCQEMUFWCFGITEM pItem, uint32_t off, void *pvBuf,
+                                                uint32_t cbToRead, uint32_t *pcbRead)
+{
+    RT_NOREF(pItem);
+
+    /* The first 4 bytes are the number of entries following. */
+    if (off < sizeof(uint32_t))
+    {
+        cbToRead = RT_MIN(cbToRead, sizeof(uint32_t) - off);
+        memcpy(pvBuf, &pThis->u.ab[off], cbToRead);
+        *pcbRead = cbToRead;
+    }
+    else
+    {
+        off -= sizeof(uint32_t);
+
+        /* The entries are static, so we can deduce the entry number from the offset. */
+        uint32_t idxEntry = off / sizeof(*pThis->paCfgFiles);
+        AssertReturn(idxEntry < pThis->cCfgFiles, VERR_INTERNAL_ERROR);
+
+        off %= sizeof(*pThis->paCfgFiles);
+        cbToRead = RT_MIN(cbToRead, sizeof(pThis->u.CfgFile));
+
+        /* Setup the config file item. */
+        PCQEMUFWCFGFILEENTRY pEntry = &pThis->paCfgFiles[idxEntry];
+        pThis->u.CfgFile.cbFile   = RT_H2BE_U32(pEntry->cbFile);
+        pThis->u.CfgFile.uCfgItem = RT_H2BE_U16(pEntry->Cfg.uCfgItem);
+        pThis->u.CfgFile.u16Rsvd  = 0;
+        strncpy(&pThis->u.CfgFile.szFilename[0], pEntry->Cfg.pszItem, sizeof(pThis->u.CfgFile.szFilename));
+        pThis->u.CfgFile.szFilename[QEMU_FW_CFG_ITEM_FILE_NAME_MAX] = '\0';
+
+        memcpy(pvBuf, &pThis->u.ab[off], cbToRead);
+        *pcbRead = cbToRead;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @interface_method_impl{QEMUFWCFGITEM,pfnCleanup, Cleans up a VFS file type configuration item.}
  */
 static DECLCALLBACK(void) qemuFwCfgR3CleanupVfsFile(PDEVQEMUFWCFG pThis, PCQEMUFWCFGITEM pItem)
@@ -536,22 +731,33 @@ static DECLCALLBACK(void) qemuFwCfgR3CleanupVfsFile(PDEVQEMUFWCFG pThis, PCQEMUF
 
 
 /**
+ * @interface_method_impl{QEMUFWCFGITEM,pfnSetup, Generic setup routine for file entries which don't have a dedicated setup routine.}
+ */
+static DECLCALLBACK(int) qemuFwCfgR3SetupFileGeneric(PDEVQEMUFWCFG pThis, PCQEMUFWCFGITEM pItem, uint32_t *pcbItem)
+{
+    RT_NOREF(pItem);
+    *pcbItem = pThis->paCfgFiles[pItem->uCfgItem - QEMU_FW_CFG_ITEM_FILE_USER_FIRST].cbFile;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Supported config items.
  */
 static const QEMUFWCFGITEM g_aQemuFwCfgItems[] =
 {
-    /** u16Selector                         pszItem         pszCfgmKey           pfnSetup                    pfnRead                         pfnCleanup */
-    { QEMU_FW_CFG_ITEM_SIGNATURE,           "Signature",    NULL,                qemuFwCfgR3SetupSignature,  qemuFwCfgR3ReadSimple,          NULL                      },
-    { QEMU_FW_CFG_ITEM_VERSION,             "Version",      NULL,                qemuFwCfgR3SetupVersion,    qemuFwCfgR3ReadSimple,          NULL                      },
-    { QEMU_FW_CFG_ITEM_KERNEL_SIZE,         "KrnlSz",       "KernelImage",       qemuFwCfgR3SetupCfgmFileSz, qemuFwCfgR3ReadSimple,          NULL                      },
-    { QEMU_FW_CFG_ITEM_KERNEL_DATA,         "KrnlDat",      "KernelImage",       qemuFwCfgR3SetupCfgmFile,   qemuFwCfgR3ReadVfsFile,         qemuFwCfgR3CleanupVfsFile },
-    { QEMU_FW_CFG_ITEM_INITRD_SIZE,         "InitrdSz",     "InitrdImage",       qemuFwCfgR3SetupCfgmFileSz, qemuFwCfgR3ReadSimple,          NULL                      },
-    { QEMU_FW_CFG_ITEM_KERNEL_DATA,         "InitrdDat",    "InitrdImage",       qemuFwCfgR3SetupCfgmFile,   qemuFwCfgR3ReadVfsFile,         qemuFwCfgR3CleanupVfsFile },
-    { QEMU_FW_CFG_ITEM_KERNEL_SETUP_SIZE,   "SetupSz",      "SetupImage",        qemuFwCfgR3SetupCfgmFileSz, qemuFwCfgR3ReadSimple,          NULL                      },
-    { QEMU_FW_CFG_ITEM_KERNEL_SETUP_DATA,   "SetupDat",     "SetupImage",        qemuFwCfgR3SetupCfgmFile,   qemuFwCfgR3ReadVfsFile,         qemuFwCfgR3CleanupVfsFile },
-    { QEMU_FW_CFG_ITEM_CMD_LINE_SIZE,       "CmdLineSz",    "CmdLine",           qemuFwCfgR3SetupCfgmStrSz,  qemuFwCfgR3ReadSimple,          NULL                      },
-    { QEMU_FW_CFG_ITEM_CMD_LINE_DATA,       "CmdLineDat",   "CmdLine",           qemuFwCfgR3SetupCfgmStr,    qemuFwCfgR3ReadStr,             NULL                      },
-    { QEMU_FW_CFG_ITEM_FILE_DIR,            "FileDir",      NULL,                qemuFwCfgR3SetupFileDir,    qemuFwCfgR3ReadSimple,          NULL                      }
+    /** u16Selector                         pszItem         pszCfgmKey           pfnSetup                    pfnRead                         pfnWrite                   pfnCleanup */
+    { QEMU_FW_CFG_ITEM_SIGNATURE,           "Signature",    NULL,                qemuFwCfgR3SetupSignature,  qemuFwCfgR3ReadSimple,          NULL,                      NULL                      },
+    { QEMU_FW_CFG_ITEM_VERSION,             "Version",      NULL,                qemuFwCfgR3SetupVersion,    qemuFwCfgR3ReadSimple,          NULL,                      NULL                      },
+    { QEMU_FW_CFG_ITEM_KERNEL_SIZE,         "KrnlSz",       "KernelImage",       qemuFwCfgR3SetupCfgmFileSz, qemuFwCfgR3ReadSimple,          NULL,                      NULL                      },
+    { QEMU_FW_CFG_ITEM_KERNEL_DATA,         "KrnlDat",      "KernelImage",       qemuFwCfgR3SetupCfgmFile,   qemuFwCfgR3ReadVfsFile,         NULL,                      qemuFwCfgR3CleanupVfsFile },
+    { QEMU_FW_CFG_ITEM_INITRD_SIZE,         "InitrdSz",     "InitrdImage",       qemuFwCfgR3SetupCfgmFileSz, qemuFwCfgR3ReadSimple,          NULL,                      NULL                      },
+    { QEMU_FW_CFG_ITEM_KERNEL_DATA,         "InitrdDat",    "InitrdImage",       qemuFwCfgR3SetupCfgmFile,   qemuFwCfgR3ReadVfsFile,         NULL,                      qemuFwCfgR3CleanupVfsFile },
+    { QEMU_FW_CFG_ITEM_KERNEL_SETUP_SIZE,   "SetupSz",      "SetupImage",        qemuFwCfgR3SetupCfgmFileSz, qemuFwCfgR3ReadSimple,          NULL,                      NULL                      },
+    { QEMU_FW_CFG_ITEM_KERNEL_SETUP_DATA,   "SetupDat",     "SetupImage",        qemuFwCfgR3SetupCfgmFile,   qemuFwCfgR3ReadVfsFile,         NULL,                      qemuFwCfgR3CleanupVfsFile },
+    { QEMU_FW_CFG_ITEM_CMD_LINE_SIZE,       "CmdLineSz",    "CmdLine",           qemuFwCfgR3SetupCfgmStrSz,  qemuFwCfgR3ReadSimple,          NULL,                      NULL                      },
+    { QEMU_FW_CFG_ITEM_CMD_LINE_DATA,       "CmdLineDat",   "CmdLine",           qemuFwCfgR3SetupCfgmStr,    qemuFwCfgR3ReadStr,             NULL,                      NULL                      },
+    { QEMU_FW_CFG_ITEM_FILE_DIR,            "FileDir",      NULL,                qemuFwCfgR3SetupFileDir,    qemuFwCfgR3ReadFileDir,         NULL,                      NULL                      }
 };
 
 
@@ -586,23 +792,39 @@ static int qemuFwCfgItemSelect(PDEVQEMUFWCFG pThis, uint16_t uCfgItem)
 
     qemuFwCfgR3ItemReset(pThis);
 
-    for (uint32_t i = 0; i < RT_ELEMENTS(g_aQemuFwCfgItems); i++)
+    PCQEMUFWCFGITEM pCfgItem = NULL;;
+
+    /* Check whether this is a file item. */
+    if (uCfgItem >= QEMU_FW_CFG_ITEM_FILE_USER_FIRST)
     {
-        PCQEMUFWCFGITEM pCfgItem = &g_aQemuFwCfgItems[i];
-
-        if (pCfgItem->uCfgItem == uCfgItem)
+        uCfgItem -= QEMU_FW_CFG_ITEM_FILE_USER_FIRST;
+        if (uCfgItem < pThis->cCfgFiles)
+            pCfgItem = &pThis->paCfgFiles[uCfgItem].Cfg;
+    }
+    else
+    {
+        for (uint32_t i = 0; i < RT_ELEMENTS(g_aQemuFwCfgItems); i++)
         {
-            uint32_t cbItem = 0;
-            int rc = pCfgItem->pfnSetup(pThis, pCfgItem, &cbItem);
-            if (RT_SUCCESS(rc))
-            {
-                pThis->pCfgItem      = pCfgItem;
-                pThis->cbCfgItemLeft = cbItem;
-                return VINF_SUCCESS;
-            }
-
-            return rc;
+            pCfgItem = &g_aQemuFwCfgItems[i];
+            if (pCfgItem->uCfgItem == uCfgItem)
+                break;
         }
+    }
+
+    if (pCfgItem)
+    {
+        uint32_t cbItem = 0;
+        AssertPtrReturn(pCfgItem->pfnSetup, VERR_INVALID_STATE);
+
+        int rc = pCfgItem->pfnSetup(pThis, pCfgItem, &cbItem);
+        if (RT_SUCCESS(rc))
+        {
+            pThis->pCfgItem      = pCfgItem;
+            pThis->cbCfgItemLeft = cbItem;
+            return VINF_SUCCESS;
+        }
+
+        return rc;
     }
 
     return VERR_NOT_FOUND;
@@ -639,9 +861,11 @@ static void qemuFwCfgDmaXfer(PDEVQEMUFWCFG pThis, RTGCPHYS GCPhysDma)
 
     if (RT_SUCCESS(rc))
     {
-        /* We don't support any writes right now. */
-        if (DmaDesc.u32Ctrl & QEMU_FW_CFG_DMA_WRITE)
-            rc = VERR_INVALID_PARAMETER;
+        if (   (   DmaDesc.u32Ctrl & QEMU_FW_CFG_DMA_WRITE
+                && !pThis->pCfgItem->pfnWrite)
+            ||    (   DmaDesc.u32Ctrl & QEMU_FW_CFG_DMA_READ
+                && !pThis->pCfgItem->pfnRead))
+            rc = VERR_NOT_SUPPORTED;
         else if (   !pThis->pCfgItem
                  || !pThis->cbCfgItemLeft)
         {
@@ -662,34 +886,59 @@ static void qemuFwCfgDmaXfer(PDEVQEMUFWCFG pThis, RTGCPHYS GCPhysDma)
                     GCPhysCur += cbZero;
                 }
             }
-            /* else: Assume Skip */
+            /* else: Assume Skip or Write and ignore. */
         }
         else
         {
-            /* Read or skip. */
+            /* Normal path. */
             RTGCPHYS GCPhysCur = DmaDesc.u64GCPhysBuf;
             uint32_t cbLeft = RT_MIN(DmaDesc.u32Length, pThis->cbCfgItemLeft);
 
-            while (   RT_SUCCESS(rc)
-                   && cbLeft)
+            if (DmaDesc.u32Ctrl & QEMU_FW_CFG_DMA_WRITE)
             {
-                uint8_t abTmp[_1K];
-                uint32_t cbThisRead = RT_MIN(sizeof(abTmp), cbLeft);
-                uint32_t cbRead;
-
-                rc = pThis->pCfgItem->pfnRead(pThis, pThis->pCfgItem, pThis->offCfgItemNext, &abTmp[0],
-                                               cbThisRead, &cbRead);
-                if (RT_SUCCESS(rc))
+                while (   RT_SUCCESS(rc)
+                       && cbLeft)
                 {
-                    if (DmaDesc.u32Ctrl & QEMU_FW_CFG_DMA_READ)
-                        PDMDevHlpPhysWriteMeta(pThis->pDevIns, GCPhysCur, &abTmp[0], cbRead);
-                    /* else: Assume Skip */
+                    uint8_t abTmp[_1K];
+                    uint32_t cbThisWrite = RT_MIN(sizeof(abTmp), cbLeft);
+                    uint32_t cbWritten;
 
-                    cbLeft    -= cbRead;
-                    GCPhysCur += cbRead;
+                    PDMDevHlpPhysReadMeta(pThis->pDevIns, GCPhysCur, &abTmp[0], cbThisWrite);
+                    rc = pThis->pCfgItem->pfnWrite(pThis, pThis->pCfgItem, pThis->offCfgItemNext, &abTmp[0],
+                                                   cbThisWrite, &cbWritten);
+                    if (RT_SUCCESS(rc))
+                    {
+                        cbLeft    -= cbWritten;
+                        GCPhysCur += cbWritten;
 
-                    pThis->offCfgItemNext += cbRead;
-                    pThis->cbCfgItemLeft  -= cbRead;
+                        pThis->offCfgItemNext += cbWritten;
+                        pThis->cbCfgItemLeft  -= cbWritten;
+                    }
+                }
+            }
+            else
+            {
+                while (   RT_SUCCESS(rc)
+                       && cbLeft)
+                {
+                    uint8_t abTmp[_1K];
+                    uint32_t cbThisRead = RT_MIN(sizeof(abTmp), cbLeft);
+                    uint32_t cbRead;
+
+                    rc = pThis->pCfgItem->pfnRead(pThis, pThis->pCfgItem, pThis->offCfgItemNext, &abTmp[0],
+                                                   cbThisRead, &cbRead);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (DmaDesc.u32Ctrl & QEMU_FW_CFG_DMA_READ)
+                            PDMDevHlpPhysWriteMeta(pThis->pDevIns, GCPhysCur, &abTmp[0], cbRead);
+                        /* else: Assume Skip */
+
+                        cbLeft    -= cbRead;
+                        GCPhysCur += cbRead;
+
+                        pThis->offCfgItemNext += cbRead;
+                        pThis->cbCfgItemLeft  -= cbRead;
+                    }
                 }
             }
         }
@@ -840,9 +1089,16 @@ static DECLCALLBACK(VBOXSTRICTRC) qemuFwCfgMmioRead(PPDMDEVINS pDevIns, void *pv
                 rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "offMmio=%#x cb=%d\n", off, cb);
             break;
         }
-        case QEU_FW_CFG_MMIO_OFF_SELECTOR:
         case QEU_FW_CFG_MMIO_OFF_DMA:
+            if (   cb == sizeof(uint64_t)
+                && pThis->fDmaEnabled)
+                *(uint64_t *)pv = RT_H2BE_U64(QEMU_FW_CFG_DMA_ADDR_SIGNATURE);
+            else
+                rc = VINF_IOM_MMIO_UNUSED_00;
+            break;
+        case QEU_FW_CFG_MMIO_OFF_SELECTOR:
             /* Writeonly, ignore. */
+            rc = VINF_IOM_MMIO_UNUSED_00;
             break;
         default:
             rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "offMmio=%#x cb=%d\n", off, cb);
@@ -1229,6 +1485,313 @@ static int qemuFwCfgInitrdMaybeCreate(PDEVQEMUFWCFG pThis)
 
 
 /**
+ * Registers a file item with the given name for consumption by the firmware.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The QEMU fw config device instance.
+ * @param   pszFilename         The filename to use.
+ * @param   pvData              The data buffer to read from/write to.
+ * @param   pfnSetup            Setup callback - optional.
+ * @param   pfnRead             Read callback - optional.
+ * @param   pfnWrite            Write callback - optional.
+ * @param   pfnCleanup          Cleanup callback when the item gets de-selected - optional.
+ */
+static int qemuFwCfgR3FileRegister(PDEVQEMUFWCFG pThis, const char *pszFilename, uint32_t cbData,
+                                   PFNQEMUFWCFGITEMSETUP pfnSetup, PFNQEMUFWCFGITEMREAD pfnRead,
+                                   PFNQEMUFWCFGITEMWRITE pfnWrite, PFNQEMUFWCFGITEMCLEANUP pfnCleanup)
+{
+    AssertReturn(strlen(pszFilename) <= QEMU_FW_CFG_ITEM_FILE_NAME_MAX, VERR_FILENAME_TOO_LONG);
+
+    PQEMUFWCFGFILEENTRY pEntry = NULL;
+    if (pThis->cCfgFiles == pThis->cCfgFilesMax)
+    {
+        /* Grow the array. */
+        PQEMUFWCFGFILEENTRY paCfgFilesNew = (PQEMUFWCFGFILEENTRY)RTMemRealloc(pThis->paCfgFiles,
+                                                                              (pThis->cCfgFilesMax + 10) * sizeof(*pThis->paCfgFiles));
+        if (!paCfgFilesNew)
+            return VERR_NO_MEMORY;
+
+        pThis->paCfgFiles = paCfgFilesNew;
+        pThis->cCfgFilesMax += 10;
+    }
+
+    pEntry = &pThis->paCfgFiles[pThis->cCfgFiles];
+    pThis->cCfgFiles++;
+
+    pEntry->cbFile = cbData;
+    strncpy(&pEntry->szFilename[0], pszFilename, sizeof(pEntry->szFilename));
+    pEntry->Cfg.uCfgItem    = QEMU_FW_CFG_ITEM_FILE_USER_FIRST + pThis->cCfgFiles - 1;
+    pEntry->Cfg.pszItem     = &pEntry->szFilename[0];
+    pEntry->Cfg.pszCfgmKey  = NULL;
+    pEntry->Cfg.pfnSetup    = pfnSetup ? pfnSetup : qemuFwCfgR3SetupFileGeneric;
+    pEntry->Cfg.pfnRead     = pfnRead;
+    pEntry->Cfg.pfnWrite    = pfnWrite;
+    pEntry->Cfg.pfnCleanup  = pfnCleanup;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * RAM framebuffer config write callback.
+ *
+ * @param   pThis           The QEMU fw config device instance.
+ * @param   pItem           Pointer to the selected item.
+ * @param   off             Where to start writing to.
+ * @param   pvBuf           The data to write.
+ * @param   cbToWrite       How much to write.
+ * @param   pcbWritten      Where to store the amount of bytes written.
+ */
+static DECLCALLBACK(int) qemuFwCfgR3RamfbCfgWrite(PDEVQEMUFWCFG pThis, PCQEMUFWCFGITEM pItem, uint32_t off, const void *pvBuf,
+                                                  uint32_t cbToWrite, uint32_t *pcbWritten)
+{
+    RT_NOREF(pItem);
+
+    AssertReturn(!off && cbToWrite == sizeof(QEMURAMFBCONFIG), VERR_NOT_SUPPORTED);
+    *pcbWritten = cbToWrite;
+
+    PCQEMURAMFBCONFIG pRamfbCfg = (PCQEMURAMFBCONFIG)pvBuf;
+    if (   RT_BE2H_U32(pRamfbCfg->u32FourCC) != QEMU_RAMFB_CFG_FORMAT
+        || RT_BE2H_U32(pRamfbCfg->u32Flags) != 0)
+        return VERR_NOT_SUPPORTED;
+
+    int const rcLock = PDMDevHlpCritSectEnter(pThis->pDevIns, &pThis->CritSectRamfb, VERR_SEM_BUSY);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pThis->pDevIns, &pThis->CritSectRamfb, rcLock);
+
+    pThis->RamfbCfg.GCPhysRamfbBase = RT_BE2H_U64(pRamfbCfg->GCPhysRamfbBase);
+    pThis->RamfbCfg.cbStride        = RT_BE2H_U32(pRamfbCfg->cbStride);
+    pThis->RamfbCfg.cWidth          = RT_BE2H_U32(pRamfbCfg->cWidth);
+    pThis->RamfbCfg.cHeight         = RT_BE2H_U32(pRamfbCfg->cHeight);
+    pThis->RamfbCfg.u32FourCC       = RT_BE2H_U32(pRamfbCfg->u32FourCC);
+    pThis->RamfbCfg.u32Flags        = RT_BE2H_U32(pRamfbCfg->u32Flags);
+
+    if (pThis->pDrvL0)
+    {
+        int rc = pThis->pDrvL0->pfnResize(pThis->pDrvL0, QEMU_RAMFB_CFG_BPP * 8, NULL /*pvVRAM*/,
+                                          pThis->RamfbCfg.cbStride,
+                                          pThis->RamfbCfg.cWidth,
+                                          pThis->RamfbCfg.cHeight);
+        AssertRC(rc);
+    }
+
+    PDMDevHlpCritSectLeave(pThis->pDevIns, &pThis->CritSectRamfb);
+
+    return VINF_SUCCESS;
+}
+
+
+/* -=-=-=-=-=- Ring 3: IDisplayPort -=-=-=-=-=- */
+
+/**
+ * @interface_method_impl{PDMIDISPLAYPORT,pfnUpdateDisplay}
+ */
+static DECLCALLBACK(int) qemuFwCfgR3RamfbPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
+{
+    PDEVQEMUFWCFG pThis = RT_FROM_MEMBER(pInterface, DEVQEMUFWCFG, IPortRamfb);
+
+    LogFlowFunc(("\n"));
+
+    int const rcLock = PDMDevHlpCritSectEnter(pThis->pDevIns, &pThis->CritSectRamfb, VERR_SEM_BUSY);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pThis->pDevIns, &pThis->CritSectRamfb, rcLock);
+
+    if (   pThis->fRenderVRam
+        && pThis->RamfbCfg.GCPhysRamfbBase)
+    {
+        if (   pThis->RamfbCfg.cWidth == pThis->pDrvL0->cx
+            && pThis->RamfbCfg.cHeight == pThis->pDrvL0->cy
+            && pThis->RamfbCfg.cbStride == pThis->pDrvL0->cbScanline
+            && pThis->pDrvL0->pbData)
+        {
+            PDMDevHlpPhysReadUser(pThis->pDevIns, pThis->RamfbCfg.GCPhysRamfbBase, pThis->pDrvL0->pbData, pThis->RamfbCfg.cbStride * pThis->RamfbCfg.cHeight);
+            AssertPtr(pThis->pDrvL0);
+            pThis->pDrvL0->pfnUpdateRect(pThis->pDrvL0, 0, 0, pThis->RamfbCfg.cWidth, pThis->RamfbCfg.cHeight);
+        }
+        else
+            LogFlowFunc(("Framebuffer dimension mismatch ({%u, %u, %u} vs {%u, %u, %u})\n",
+                         pThis->RamfbCfg.cWidth, pThis->RamfbCfg.cHeight, pThis->RamfbCfg.cbStride,
+                         pThis->pDrvL0->cx, pThis->pDrvL0->cy, pThis->pDrvL0->cbScanline));
+    }
+    else
+        LogFlowFunc(("Rendering disabled or no RAM framebuffer set up\n"));
+
+    PDMDevHlpCritSectLeave(pThis->pDevIns, &pThis->CritSectRamfb);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIDISPLAYPORT,pfnUpdateDisplayAll}
+ */
+static DECLCALLBACK(int) qemuFwCfgR3RamfbPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface, bool fFailOnResize)
+{
+    RT_NOREF(pInterface, fFailOnResize);
+    AssertReleaseFailed();
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * @interface_method_impl{PDMIDISPLAYPORT,pfnSetRefreshRate}
+ */
+static DECLCALLBACK(int) qemuFwCfgR3RamfbPortSetRefreshRate(PPDMIDISPLAYPORT pInterface, uint32_t cMilliesInterval)
+{
+    PDEVQEMUFWCFG pThis = RT_FROM_MEMBER(pInterface, DEVQEMUFWCFG, IPortRamfb);
+
+    /*
+     * Update the interval, then restart or stop the timer.
+     */
+    ASMAtomicWriteU32(&pThis->cMilliesRefreshInterval, cMilliesInterval);
+
+    if (cMilliesInterval)
+        return PDMDevHlpTimerSetMillies(pThis->pDevIns, pThis->hRamfbRefreshTimer, cMilliesInterval);
+    return PDMDevHlpTimerStop(pThis->pDevIns, pThis->hRamfbRefreshTimer);
+}
+
+
+/**
+ * @interface_method_impl{PDMIDISPLAYPORT,pfnQueryVideoMode}
+ */
+static DECLCALLBACK(int) qemuFwCfgR3RamfbPortQueryVideoMode(PPDMIDISPLAYPORT pInterface, uint32_t *pcBits, uint32_t *pcx, uint32_t *pcy)
+{
+    AssertReturn(pcBits, VERR_INVALID_PARAMETER);
+
+    RT_NOREF(pInterface, pcx, pcy);
+    AssertReleaseFailed();
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * @interface_method_impl{PDMIDISPLAYPORT,pfnTakeScreenshot}
+ */
+static DECLCALLBACK(int) qemuFwCfgR3RamfbPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint8_t **ppbData, size_t *pcbData,
+                                                            uint32_t *pcx, uint32_t *pcy)
+{
+    RT_NOREF(pInterface, ppbData, pcbData, pcx, pcy);
+    return VERR_NOT_SUPPORTED;
+}
+
+
+/**
+ * @interface_method_impl{PDMIDISPLAYPORT,pfnFreeScreenshot}
+ */
+static DECLCALLBACK(void) qemuFwCfgR3RamfbPortFreeScreenshot(PPDMIDISPLAYPORT pInterface, uint8_t *pbData)
+{
+    NOREF(pInterface);
+    LogFlowFunc(("pbData=%p\n", pbData));
+    RTMemFree(pbData);
+}
+
+
+/**
+ * @interface_method_impl{PDMIDISPLAYPORT,pfnDisplayBlt}
+ */
+static DECLCALLBACK(int) qemuFwCfgR3RamfbPortDisplayBlt(PPDMIDISPLAYPORT pInterface, const void *pvData,
+                                                        uint32_t x, uint32_t y, uint32_t cx, uint32_t cy)
+{
+    RT_NOREF(pInterface, pvData, x, y, cx, cy);
+    AssertReleaseFailed();
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * @interface_method_impl{PDMIDISPLAYPORT,pfnUpdateDisplayRect}
+ */
+static DECLCALLBACK(void) qemuFwCfgR3RamfbPortUpdateDisplayRect(PPDMIDISPLAYPORT pInterface, int32_t x, int32_t y,
+                                                                uint32_t cx, uint32_t cy)
+{
+    RT_NOREF(pInterface, x, y, cx, cy);
+    AssertReleaseFailed();
+}
+
+
+/**
+ * @interface_method_impl{PDMIDISPLAYPORT,pfnCopyRect}
+ */
+static DECLCALLBACK(int)
+qemuFwCfgR3RamfbPortCopyRect(PPDMIDISPLAYPORT pInterface,
+                             uint32_t cx, uint32_t cy,
+                             const uint8_t *pbSrc, int32_t xSrc, int32_t ySrc, uint32_t cxSrc, uint32_t cySrc,
+                             uint32_t cbSrcLine, uint32_t cSrcBitsPerPixel,
+                             uint8_t *pbDst, int32_t xDst, int32_t yDst, uint32_t cxDst, uint32_t cyDst,
+                             uint32_t cbDstLine, uint32_t cDstBitsPerPixel)
+{
+    RT_NOREF(pInterface, cx, cy, pbSrc, xSrc, ySrc, cxSrc, cySrc, cbSrcLine, cSrcBitsPerPixel, pbDst, xDst, yDst, cxDst, cyDst,
+             cbDstLine, cDstBitsPerPixel);
+    AssertReleaseFailed();
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIDISPLAYPORT,pfnSetRenderVRAM}
+ */
+static DECLCALLBACK(void) qemuFwCfgR3RamfbPortSetRenderVRAM(PPDMIDISPLAYPORT pInterface, bool fRender)
+{
+    PDEVQEMUFWCFG pThis = RT_FROM_MEMBER(pInterface, DEVQEMUFWCFG, IPortRamfb);
+
+    LogFlowFunc(("fRender = %d\n", fRender));
+
+    int const rcLock = PDMDevHlpCritSectEnter(pThis->pDevIns, &pThis->CritSectRamfb, VERR_SEM_BUSY);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pThis->pDevIns, &pThis->CritSectRamfb, rcLock);
+
+    pThis->fRenderVRam = fRender;
+
+    PDMDevHlpCritSectLeave(pThis->pDevIns, &pThis->CritSectRamfb);
+}
+
+
+/**
+ * @interface_method_impl{PDMIDISPLAYPORT,pfnReportHostCursorCapabilities}
+ */
+static DECLCALLBACK(void) qemuFwCfgR3RamfbPortReportHostCursorCapabilities(PPDMIDISPLAYPORT pInterface, bool fSupportsRenderCursor,
+                                                                           bool fSupportsMoveCursor)
+{
+    RT_NOREF(pInterface, fSupportsRenderCursor, fSupportsMoveCursor);
+}
+
+
+/**
+ * @interface_method_impl{PDMIDISPLAYPORT,pfnReportHostCursorPosition}
+ */
+static DECLCALLBACK(void) qemuFwCfgR3RamfbPortReportHostCursorPosition(PPDMIDISPLAYPORT pInterface, uint32_t x, uint32_t y, bool fOutOfRange)
+{
+    RT_NOREF(pInterface, x, y, fOutOfRange);
+}
+
+
+/**
+ * @callback_method_impl{FNTMTIMERDEV, VGA Refresh Timer}
+ */
+static DECLCALLBACK(void) qemuFwCfgR3RamfbTimerRefresh(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
+{
+    PDEVQEMUFWCFG pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVQEMUFWCFG);
+    RT_NOREF(pvUser);
+
+    if (pThis->pDrvL0)
+        pThis->pDrvL0->pfnRefresh(pThis->pDrvL0);
+
+    if (pThis->cMilliesRefreshInterval)
+        PDMDevHlpTimerSetMillies(pDevIns, hTimer, pThis->cMilliesRefreshInterval);
+}
+
+
+/* -=-=-=-=-=- Ring 3: IBase -=-=-=-=-=- */
+
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *) qemuFwCfgR3PortQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    PDEVQEMUFWCFG pThis = RT_FROM_MEMBER(pInterface, DEVQEMUFWCFG, IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
+    if (pThis->fRamfbSupported)
+        PDMIBASE_RETURN_INTERFACE(pszIID, PDMIDISPLAYPORT, &pThis->IPortRamfb);
+    return NULL;
+}
+
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
 static DECLCALLBACK(void) qemuFwCfgReset(PPDMDEVINS pDevIns)
@@ -1247,6 +1810,105 @@ static DECLCALLBACK(void) qemuFwCfgReset(PPDMDEVINS pDevIns)
 
 
 /**
+ * @interface_method_impl{PDMDEVREG,pfnAttach}
+ *
+ * This is like plugging in the monitor after turning on the PC.
+ */
+static DECLCALLBACK(int)  qemuFwCfgR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+{
+    PDEVQEMUFWCFG pThis = PDMDEVINS_2_DATA(pDevIns, PDEVQEMUFWCFG);
+
+    AssertMsgReturn(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
+                    ("QEMU RAM framebuffer device does not support hotplugging\n"),
+                    VERR_INVALID_PARAMETER);
+
+    switch (iLUN)
+    {
+        /* LUN #0: Display port. */
+        case 0:
+        {
+            AssertLogRelMsgReturn(pThis->fRamfbSupported,
+                                  ("QemuFwCfg: Trying to attach a display without the RAM framebuffer support being enabled!\n"),
+                                  VERR_NOT_SUPPORTED);
+
+            int rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThis->IBase, &pThis->pDrvBaseL0, "Display Port");
+            if (RT_SUCCESS(rc))
+            {
+                pThis->pDrvL0 = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBaseL0, PDMIDISPLAYCONNECTOR);
+                if (pThis->pDrvL0)
+                {
+                    /* pThis->pDrvL0->pbData can be NULL when there is no framebuffer. */
+                    if (    pThis->pDrvL0->pfnRefresh
+                        &&  pThis->pDrvL0->pfnResize
+                        &&  pThis->pDrvL0->pfnUpdateRect)
+                        rc = VINF_SUCCESS;
+                    else
+                    {
+                        Assert(pThis->pDrvL0->pfnRefresh);
+                        Assert(pThis->pDrvL0->pfnResize);
+                        Assert(pThis->pDrvL0->pfnUpdateRect);
+                        pThis->pDrvL0     = NULL;
+                        pThis->pDrvBaseL0 = NULL;
+                        rc = VERR_INTERNAL_ERROR;
+                    }
+                }
+                else
+                {
+                    AssertMsgFailed(("LUN #0 doesn't have a display connector interface! rc=%Rrc\n", rc));
+                    pThis->pDrvBaseL0 = NULL;
+                    rc = VERR_PDM_MISSING_INTERFACE;
+                }
+            }
+            else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+            {
+                Log(("%s/%d: warning: no driver attached to LUN #0!\n", pDevIns->pReg->szName, pDevIns->iInstance));
+                rc = VINF_SUCCESS;
+            }
+            else
+                AssertLogRelMsgFailed(("Failed to attach LUN #0! rc=%Rrc\n", rc));
+            return rc;
+        }
+
+        default:
+            AssertMsgFailed(("Invalid LUN #%d\n", iLUN));
+            return VERR_PDM_NO_SUCH_LUN;
+    }
+}
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnDetach}
+ *
+ * This is like unplugging the monitor while the PC is still running.
+ */
+static DECLCALLBACK(void)  qemuFwCfgR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+{
+    PDEVQEMUFWCFG pThis = PDMDEVINS_2_DATA(pDevIns, PDEVQEMUFWCFG);
+    AssertMsg(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG, ("QEMU RAM framebuffer device does not support hotplugging\n"));
+    RT_NOREF(fFlags);
+
+    /*
+     * Reset the interfaces and update the controller state.
+     */
+    switch (iLUN)
+    {
+        /* LUN #0: Display port. */
+        case 0:
+            AssertLogRelMsg(pThis->fRamfbSupported,
+                            ("QemuFwCfg: Trying to detach a display without the RAM framebuffer support being enabled!\n"));
+
+            pThis->pDrvL0     = NULL;
+            pThis->pDrvBaseL0 = NULL;
+            break;
+
+        default:
+            AssertMsgFailed(("Invalid LUN #%d\n", iLUN));
+            break;
+    }
+}
+
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnDestruct}
  */
 static DECLCALLBACK(int) qemuFwCfgDestruct(PPDMDEVINS pDevIns)
@@ -1256,6 +1918,17 @@ static DECLCALLBACK(int) qemuFwCfgDestruct(PPDMDEVINS pDevIns)
 
     qemuFwCfgR3ItemReset(pThis);
     pThis->GCPhysDma = 0;
+
+    if (pThis->paCfgFiles)
+    {
+        Assert(pThis->cCfgFiles && pThis->cCfgFilesMax);
+        RTMemFree(pThis->paCfgFiles);
+        pThis->paCfgFiles   = NULL;
+        pThis->cCfgFiles    = 0;
+        pThis->cCfgFilesMax = 0;
+    }
+    else
+        Assert(!pThis->cCfgFiles && !pThis->cCfgFilesMax);
 
     if (pThis->hVfsFileInitrd != NIL_RTVFSFILE)
         RTVfsFileRelease(pThis->hVfsFileInitrd);
@@ -1284,11 +1957,11 @@ static DECLCALLBACK(int) qemuFwCfgConstruct(PPDMDEVINS pDevIns, int iInstance, P
                                            "|KernelImage"
                                            "|InitrdImage"
                                            "|SetupImage"
-                                           "|CmdLine",
+                                           "|CmdLine"
+                                           "|QemuRamfbSupport",
                                            "");
 
-    bool fDmaEnabled = false;
-    int rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "DmaEnabled", &fDmaEnabled, false);
+    int rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "DmaEnabled", &pThis->fDmaEnabled, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"DmaEnabled\""));
 
@@ -1297,9 +1970,30 @@ static DECLCALLBACK(int) qemuFwCfgConstruct(PPDMDEVINS pDevIns, int iInstance, P
      */
     pThis->pDevIns        = pDevIns;
     pThis->pCfg           = pCfg;
-    pThis->u32Version     = QEMU_FW_CFG_VERSION_LEGACY | (fDmaEnabled ? QEMU_FW_CFG_VERSION_DMA : 0);
+    pThis->u32Version     = QEMU_FW_CFG_VERSION_LEGACY | (pThis->fDmaEnabled ? QEMU_FW_CFG_VERSION_DMA : 0);
     pThis->GCPhysDma      = 0;
     pThis->hVfsFileInitrd = NIL_RTVFSFILE;
+    pThis->paCfgFiles     = NULL;
+    pThis->cCfgFiles      = 0;
+    pThis->cCfgFilesMax   = 0;
+
+    pThis->IBase.pfnQueryInterface                      = qemuFwCfgR3PortQueryInterface;
+
+    pThis->IPortRamfb.pfnUpdateDisplay                  = qemuFwCfgR3RamfbPortUpdateDisplay;
+    pThis->IPortRamfb.pfnUpdateDisplayAll               = qemuFwCfgR3RamfbPortUpdateDisplayAll;
+    pThis->IPortRamfb.pfnQueryVideoMode                 = qemuFwCfgR3RamfbPortQueryVideoMode;
+    pThis->IPortRamfb.pfnSetRefreshRate                 = qemuFwCfgR3RamfbPortSetRefreshRate;
+    pThis->IPortRamfb.pfnTakeScreenshot                 = qemuFwCfgR3RamfbPortTakeScreenshot;
+    pThis->IPortRamfb.pfnFreeScreenshot                 = qemuFwCfgR3RamfbPortFreeScreenshot;
+    pThis->IPortRamfb.pfnDisplayBlt                     = qemuFwCfgR3RamfbPortDisplayBlt;
+    pThis->IPortRamfb.pfnUpdateDisplayRect              = qemuFwCfgR3RamfbPortUpdateDisplayRect;
+    pThis->IPortRamfb.pfnCopyRect                       = qemuFwCfgR3RamfbPortCopyRect;
+    pThis->IPortRamfb.pfnSetRenderVRAM                  = qemuFwCfgR3RamfbPortSetRenderVRAM;
+    pThis->IPortRamfb.pfnSetViewport                    = NULL;
+    pThis->IPortRamfb.pfnReportMonitorPositions         = NULL;
+    pThis->IPortRamfb.pfnSendModeHint                   = NULL;
+    pThis->IPortRamfb.pfnReportHostCursorCapabilities   = qemuFwCfgR3RamfbPortReportHostCursorCapabilities;
+    pThis->IPortRamfb.pfnReportHostCursorPosition       = qemuFwCfgR3RamfbPortReportHostCursorPosition;
 
     RTGCPHYS GCPhysMmioBase = 0;
     rc = pHlp->pfnCFGMQueryU64(pCfg, "MmioBase", &GCPhysMmioBase);
@@ -1335,6 +2029,38 @@ static DECLCALLBACK(int) qemuFwCfgConstruct(PPDMDEVINS pDevIns, int iInstance, P
     }
 
     qemuFwCfgR3ItemReset(pThis);
+
+    /* Setup the RAM based framebuffer support if configured. */
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "QemuRamfbSupport", &pThis->fRamfbSupported, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"QemuRamfbSupport\""));
+
+    if (pThis->fRamfbSupported)
+    {
+        LogRel(("QemuFwCfg: RAM based framebuffer support enabled\n"));
+        if (!pThis->fDmaEnabled)
+            return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER, N_("Configuration error: Enabling \"QemuRamfbSupport\" requires \"DmaEnabled\""));
+
+        /* Critical section for synchronizing access. */
+        rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSectRamfb, RT_SRC_POS, "Ramfb#%u", iInstance);
+        AssertRCReturn(rc, rc);
+
+        /*
+         * Create the refresh timer.
+         */
+        rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_REAL, qemuFwCfgR3RamfbTimerRefresh, NULL,
+                                  TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0, "Ramfb Refresh", &pThis->hRamfbRefreshTimer);
+        AssertRCReturn(rc, rc);
+
+        /* Register a config file item and attach the driver below us. */
+        rc = qemuFwCfgR3Attach(pDevIns, 0 /* display LUN # */, PDM_TACH_FLAGS_NOT_HOT_PLUG);
+        AssertRCReturn(rc, rc);
+
+        rc = qemuFwCfgR3FileRegister(pThis, "etc/ramfb", sizeof(pThis->RamfbCfg),
+                                     NULL /* pfnSetup */, NULL /*pfnRead*/,
+                                     qemuFwCfgR3RamfbCfgWrite, NULL /*pfnCleanup*/);
+        AssertRCReturn(rc, rc);
+    }
 
     rc = qemuFwCfgInitrdMaybeCreate(pThis);
     if (RT_FAILURE(rc))
@@ -1373,8 +2099,8 @@ const PDMDEVREG g_DeviceQemuFwCfg =
     /* .pfnReset = */               qemuFwCfgReset,
     /* .pfnSuspend = */             NULL,
     /* .pfnResume = */              NULL,
-    /* .pfnAttach = */              NULL,
-    /* .pfnDetach = */              NULL,
+    /* .pfnAttach = */              qemuFwCfgR3Attach,
+    /* .pfnDetach = */              qemuFwCfgR3Detach,
     /* .pfnQueryInterface = */      NULL,
     /* .pfnInitComplete = */        NULL,
     /* .pfnPowerOff = */            NULL,
