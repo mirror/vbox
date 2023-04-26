@@ -1490,6 +1490,7 @@ static int qemuFwCfgInitrdMaybeCreate(PDEVQEMUFWCFG pThis)
  * @returns VBox status code.
  * @param   pThis               The QEMU fw config device instance.
  * @param   pszFilename         The filename to use.
+ * @param   cbData              Size of the file in bytes.
  * @param   pfnSetup            Setup callback - optional.
  * @param   pfnRead             Read callback - optional.
  * @param   pfnWrite            Write callback - optional.
