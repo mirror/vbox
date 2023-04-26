@@ -420,7 +420,7 @@ static VBOXSTRICTRC pl011Xmit(PPDMDEVINS pDevIns, PDEVPL011CC pThisCC, PDEVPL011
             rc = VINF_IOM_R3_IOPORT_WRITE;
 #else
             pThis->uRegDr = bVal;
-            pThis->uRegFr |= PL011_REG_UARTFR_BUSY;
+            pThis->uRegFr |= PL011_REG_UARTFR_BUSY | PL011_REG_UARTFR_TXFF;
             pl011IrqUpdate(pDevIns, pThis, pThisCC);
             fNotifyDrv = true;
 #endif
@@ -524,7 +524,7 @@ static void pl011R3ParamsUpdate(PPDMDEVINS pDevIns, PDEVPL011 pThis, PDEVPL011CC
         /* Changed parameters will flush all receive queues, so there won't be any data to read even if indicated. */
         pThisCC->pDrvSerial->pfnQueuesFlush(pThisCC->pDrvSerial, true /*fQueueRecv*/, false /*fQueueXmit*/);
         ASMAtomicWriteU32(&pThis->cbAvailRdr, 0);
-        PL011_REG_CLR(pThis->uRegFr, PL011_REG_UARTFR_BUSY);
+        PL011_REG_CLR(pThis->uRegFr, PL011_REG_UARTFR_BUSY | PL011_REG_UARTFR_TXFF);
     }
 }
 
@@ -592,7 +592,7 @@ static void pl011R3TxQueueCopyFrom(PPDMDEVINS pDevIns, PDEVPL011 pThis, PDEVPL01
     {
         *(uint8_t *)pvBuf = pThis->uRegDr;
         *pcbRead = 1;
-        PL011_REG_CLR(pThis->uRegFr, PL011_REG_UARTFR_BUSY);
+        PL011_REG_CLR(pThis->uRegFr, PL011_REG_UARTFR_BUSY | PL011_REG_UARTFR_TXFF);
         pl011IrqUpdate(pDevIns, pThis, pThisCC);
     }
     else
