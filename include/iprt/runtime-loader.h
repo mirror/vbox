@@ -64,7 +64,9 @@
  * #define RT_RUNTIME_LOADER_INSERT_SYMBOLS \
  *  RT_PROXY_STUB(func_name, ret_type, (long_param_list), (short_param_list)) \
  *  RT_PROXY_STUB(func_name2, ret_type2, (long_param_list2), (short_param_list2)) \
+ *  RT_PROXY_VARIADIC_STUB(func_name3, ret_type3, (long_param_list3, ...)) \
  *  ...
+ * #define func_name3(...) g_pfn_func_name3(__VA_ARGS__)
  * @endcode
  *
  * where long_param_list is a parameter list for declaring the function of the
@@ -77,6 +79,16 @@
  * RT_RUNTIME_LOADER_GENERATE_DECLS (without a value) before including this
  * file.
  *
+ * @note For functions with a variable number of parameters, this approch is
+ *       clumsy as it requires an additional \#define for each function that
+ *       makes use of the g_pfn_XXX function pointer. See func_name3 in the
+ *       snipped above.  Instead, use the VBoxDef2LazyLoad approach.
+ *
+ * @deprecated This is deprecated. Use VBoxDef2LazyLoad instead where possible.
+ *             See VBOX_DEF_2_LAZY_LOAD in /Config.kmk,
+ *             src/bldprog/VBoxDef2LazyLoad.cpp and examples in
+ *             src/VBox/Devices/Makefile.kmk and other places.
+ *
  * @{
  */
 /** @todo this is far too complicated.  A script for generating the files would
@@ -86,6 +98,9 @@
  * requires the symbol names and prefix.  I've done this ages ago when we forked
  * the EMX/GCC toolchain on OS/2...  It's a wee bit more annoying in x86 PIC/PIE
  * mode, but nothing that cannot be dealt with.
+ *
+ * Update: This was done years ago. See src/bldprogs/VBoxDef2LazyLoad.cpp and
+ *         VBOX_DEF_2_LAZY_LOAD in /Config.kmk.
  */
 /** @todo r=bird: The use of RTR3DECL here is an unresolved issue. */
 /** @todo r=bird: The lack of RT_C_DECLS_BEGIN/END is an unresolved issue.  Here
@@ -98,27 +113,37 @@
 
 /* The following are the symbols which we need from the library. */
 # define RT_PROXY_STUB(function, rettype, signature, shortsig) \
-    void (*function ## _fn)(void); \
+    rettype (*g_pfn_ ## function) signature; \
     RTR3DECL(rettype) function signature \
-    { return ( (rettype (*) signature) function ## _fn ) shortsig; }
+    { return g_pfn_ ## function shortsig; }
+
+/* The following are the symbols which correspond to variadic functions
+ * provided by the library. */
+# define RT_PROXY_VARIADIC_STUB(function, rettype, signature) \
+    rettype (*g_pfn_ ## function) signature;
 
 RT_RUNTIME_LOADER_INSERT_SYMBOLS
 
 # undef RT_PROXY_STUB
+# undef RT_PROXY_VARIADIC_STUB
+
+/* Function pointer type for easy casting below. */
+typedef void (*PFNRTLDRSHAREDGENERIC)(void);
 
 /* Now comes a table of functions to be loaded from the library. */
 typedef struct
 {
-    const char *pszName;
-    void (**ppfn)(void);
+    const char            *pszName;
+    PFNRTLDRSHAREDGENERIC *ppfn;
 } RTLDRSHAREDFUNC;
 
-# define RT_PROXY_STUB(s, dummy1, dummy2, dummy3 ) { #s , & s ## _fn } ,
-static RTLDRSHAREDFUNC g_aSharedFuncs[] =
+# define RT_PROXY_STUB(function, rettype, signature, shortsig ) { #function , (PFNRTLDRSHAREDGENERIC *)&g_pfn_ ## function } ,
+# define RT_PROXY_VARIADIC_STUB(function, rettype, signature)   { #function , (PFNRTLDRSHAREDGENERIC *)&g_pfn_ ## function } ,
+static RTLDRSHAREDFUNC const g_aSharedFuncs[] =
 {
     RT_RUNTIME_LOADER_INSERT_SYMBOLS
-    { NULL, NULL }
 };
+# undef RT_PROXY_VARIADIC_STUB
 # undef RT_PROXY_STUB
 
 /**
@@ -127,16 +152,25 @@ static RTLDRSHAREDFUNC g_aSharedFuncs[] =
  */
 static DECLCALLBACK(int) rtldrLoadOnce(void *)
 {
-    RTLDRMOD    hLib;
-    int         rc;
-
     LogFlowFunc(("\n"));
-    rc = RTLdrLoadEx(RT_RUNTIME_LOADER_LIB_NAME, &hLib, RTLDRLOAD_FLAGS_LOCAL | RTLDRLOAD_FLAGS_NO_UNLOAD, NULL);
-    for (unsigned i = 0; RT_SUCCESS(rc) && g_aSharedFuncs[i].pszName != NULL; ++i)
-        rc = RTLdrGetSymbol(hLib, g_aSharedFuncs[i].pszName, (void **)g_aSharedFuncs[i].ppfn);
-    LogFlowFunc(("rc = %Rrc\n", rc));
-
-    return rc;
+    RTLDRMOD hLdrMod;
+    int rcRet = RTLdrLoadEx(RT_RUNTIME_LOADER_LIB_NAME, &hLdrMod, RTLDRLOAD_FLAGS_LOCAL | RTLDRLOAD_FLAGS_NO_UNLOAD, NULL);
+    if (RT_SUCCESS(rcRet))
+    {
+        for (unsigned i = 0; i < RT_ELEMENTS(g_aSharedFuncs); ++i)
+        {
+            int rc2 = RTLdrGetSymbol(hLdrMod, g_aSharedFuncs[i].pszName, (void **)g_aSharedFuncs[i].ppfn);
+            if (RT_FAILURE(rc2))
+            {
+                LogFunc(("RTLdrGetSymbol(%s, %s) failed: %Rrc\n", RT_RUNTIME_LOADER_LIB_NAME, g_aSharedFuncs[i].pszName, rc2));
+                rcRet = rc2;
+            }
+        }
+        LogFlowFunc(("rcRet = %Rrc\n", rcRet));
+    }
+    else
+        LogFunc(("RTLdrLoadEx(%s) failed: %Rrc\n",  RT_RUNTIME_LOADER_LIB_NAME, rcRet));
+    return rcRet;
 }
 
 /**
@@ -150,13 +184,10 @@ static DECLCALLBACK(int) rtldrLoadOnce(void *)
  */
 RTR3DECL(int) RT_RUNTIME_LOADER_FUNCTION(void)
 {
-    static RTONCE   s_Once = RTONCE_INITIALIZER;
-    int             rc;
-
+    static RTONCE s_Once = RTONCE_INITIALIZER;
     LogFlowFunc(("\n"));
-    rc = RTOnce(&s_Once, rtldrLoadOnce, NULL);
+    int rc = RTOnce(&s_Once, rtldrLoadOnce, NULL);
     LogFlowFunc(("rc = %Rrc\n", rc));
-
     return rc;
 }
 
@@ -166,10 +197,16 @@ RTR3DECL(int) RT_RUNTIME_LOADER_FUNCTION(void)
  * RT_RUNTIME_LOADER_LIB_NAME */
 #  define RT_PROXY_STUB(function, rettype, signature, shortsig) \
     RTR3DECL(rettype)  function  signature ;
+/* Variadict functions needs custom mappings via \#defines as we cannot forward
+   the arguments in an inline function, so only make the function pointer available here. */
+# define RT_PROXY_VARIADIC_STUB(function, rettype, signature) \
+    rettype (*g_pfn_ ## function) signature; \
 
 RT_RUNTIME_LOADER_INSERT_SYMBOLS
 
+
 #  undef RT_PROXY_STUB
+#  undef RT_PROXY_VARIADIC_STUB
 # endif /* RT_RUNTIME_LOADER_GENERATE_DECLS */
 
 /**
