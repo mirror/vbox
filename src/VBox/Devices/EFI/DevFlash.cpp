@@ -77,6 +77,17 @@ typedef struct DEVFLASHR3
 /** Pointer to the ring-3 Flash device state. */
 typedef DEVFLASHR3 *PDEVFLASHR3;
 
+/**
+ * The flash device, ring-0 state.
+ */
+typedef struct DEVFLASHR0
+{
+    /** Dummy, no R0 only component so far. */
+    uint8_t            bDummy;
+} DEVFLASHR0;
+/** Pointer to the ring-3 Flash device state. */
+typedef DEVFLASHR0 *PDEVFLASHR0;
+
 /** The serial device state for the current context. */
 typedef CTX_SUFF(DEVFLASH) DEVFLASHCC;
 /** Pointer to the serial device state for the current context. */
