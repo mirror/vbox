@@ -56,7 +56,8 @@
         } \
     } while (0)
 
-#define VGA_SAVEDSTATE_VERSION                   26
+#define VGA_SAVEDSTATE_VERSION                   27
+#define VGA_SAVEDSTATE_VERSION_VMSVGA_REG_CAP2   27 /* SVGA_REG_CAP2. */
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_DX_SFLAGS  26 /* SVGA3dSurfaceAllFlags. */
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_DX_CMDBUF  25 /* Command buffers capability is not tied to VGPU10 setting. */
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_DX         24 /* VGPU10. */

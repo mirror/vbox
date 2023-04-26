@@ -3436,10 +3436,9 @@ static int vmsvga3dCmdDXBufferUpdate(PVGASTATECC pThisCC, uint32_t idDXContext, 
 static int vmsvga3dCmdDXSetVSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetVSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXSetVSConstantBufferOffset(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXSetConstantBufferOffset(pThisCC, idDXContext, pCmd, SVGA3D_SHADERTYPE_VS);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3451,10 +3450,9 @@ static int vmsvga3dCmdDXSetVSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t 
 static int vmsvga3dCmdDXSetPSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetPSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXSetPSConstantBufferOffset(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXSetConstantBufferOffset(pThisCC, idDXContext, pCmd, SVGA3D_SHADERTYPE_PS);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3466,10 +3464,9 @@ static int vmsvga3dCmdDXSetPSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t 
 static int vmsvga3dCmdDXSetGSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetGSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXSetGSConstantBufferOffset(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXSetConstantBufferOffset(pThisCC, idDXContext, pCmd, SVGA3D_SHADERTYPE_GS);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3481,10 +3478,9 @@ static int vmsvga3dCmdDXSetGSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t 
 static int vmsvga3dCmdDXSetHSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetHSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXSetHSConstantBufferOffset(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXSetConstantBufferOffset(pThisCC, idDXContext, pCmd, SVGA3D_SHADERTYPE_HS);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3496,10 +3492,9 @@ static int vmsvga3dCmdDXSetHSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t 
 static int vmsvga3dCmdDXSetDSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetDSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXSetDSConstantBufferOffset(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXSetConstantBufferOffset(pThisCC, idDXContext, pCmd, SVGA3D_SHADERTYPE_DS);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3511,10 +3506,9 @@ static int vmsvga3dCmdDXSetDSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t 
 static int vmsvga3dCmdDXSetCSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetCSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXSetCSConstantBufferOffset(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXSetConstantBufferOffset(pThisCC, idDXContext, pCmd, SVGA3D_SHADERTYPE_CS);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3601,7 +3595,7 @@ static int vmsvga3dCmdIntraSurfaceCopy(PVGASTATECC pThisCC, uint32_t idDXContext
 static int vmsvga3dCmdDefineGBSurface_v3(PVGASTATECC pThisCC, SVGA3dCmdDefineGBSurface_v3 const *pCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     /* Update the entry in the pSvgaR3State->pGboOTableSurface. */

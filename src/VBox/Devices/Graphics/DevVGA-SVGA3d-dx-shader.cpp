@@ -1782,24 +1782,31 @@ static int dxbcParseOpcode(DXBCTokenReader *r, VGPUOpcode *pOpcode)
             {
                 /* Integer divide. */
                 pOpcode->cOperand = 4; /* dstQuit, dstRem, src0, src1. */
-
-                /* Operands. */
-                uint32_t cOperandRemain = RT_ELEMENTS(pOpcode->aValOperand);
-                for (uint32_t i = 0; i < pOpcode->cOperand; ++i)
-                {
-                    Log6(("  [operand %d]\n", i));
-                    uint32_t const idxOperand = RT_ELEMENTS(pOpcode->aValOperand) - cOperandRemain;
-                    pOpcode->aIdxOperand[i] = idxOperand;
-                    int rc = dxbcParseOperand(r, &pOpcode->aValOperand[idxOperand], &cOperandRemain);
-                    ASSERT_GUEST_RETURN(RT_SUCCESS(rc), VERR_INVALID_PARAMETER);
-                }
             }
-            //else if (opcode.vmwareOpcodeType == VGPU10_VMWARE_OPCODE_DFRC)
-            //else if (opcode.vmwareOpcodeType == VGPU10_VMWARE_OPCODE_DRSQ)
+            else if (opcode.vmwareOpcodeType == VGPU10_VMWARE_OPCODE_DFRC)
+            {
+                /* Double precision fraction. */
+                pOpcode->cOperand = 2; /* dst, src. */
+            }
+            else if (opcode.vmwareOpcodeType == VGPU10_VMWARE_OPCODE_DRSQ)
+            {
+                /* Double precision reciprocal square root. */
+                pOpcode->cOperand = 2; /* dst, src. */
+            }
             else
             {
-                /** @todo implement */
                 ASSERT_GUEST_FAILED_RETURN(VERR_INVALID_PARAMETER);
+            }
+
+            /* Operands. */
+            uint32_t cOperandRemain = RT_ELEMENTS(pOpcode->aValOperand);
+            for (uint32_t i = 0; i < pOpcode->cOperand; ++i)
+            {
+                Log6(("  [operand %d]\n", i));
+                uint32_t const idxOperand = RT_ELEMENTS(pOpcode->aValOperand) - cOperandRemain;
+                pOpcode->aIdxOperand[i] = idxOperand;
+                int rc = dxbcParseOperand(r, &pOpcode->aValOperand[idxOperand], &cOperandRemain);
+                ASSERT_GUEST_RETURN(RT_SUCCESS(rc), VERR_INVALID_PARAMETER);
             }
         }
         else
@@ -1831,17 +1838,11 @@ static void dxbcOutputInit(DXBCOUTPUTCTX *pOutctx, VGPU10ProgramToken const *pPr
 }
 
 
-static int dxbcEmitVmwareIDIV(DXBCOUTPUTCTX *pOutctx, DXBCByteWriter *w, VGPUOpcode *pOpcode)
+static void dxbcEmitCall(DXBCByteWriter *w, VGPUOpcode const *pOpcode, uint32_t label)
 {
-    /* Insert a call and append a subroutne. */
     VGPU10OpcodeToken0 opcode;
     VGPU10OperandToken0 operand;
 
-    uint32_t const label = (pOutctx->offSubroutine - dxbcByteWriterSize(w)) / 4;
-
-    /*
-     * Call
-     */
     opcode.value = 0;
     opcode.opcodeType = VGPU10_OPCODE_CALL;
     opcode.instructionLength = 3;
@@ -1861,15 +1862,14 @@ static int dxbcEmitVmwareIDIV(DXBCOUTPUTCTX *pOutctx, DXBCByteWriter *w, VGPUOpc
     opcode.instructionLength = 1;
     for (unsigned i = 0; i < pOpcode->cOpcodeToken - 3; ++i)
         dxbcByteWriterAddTokens(w, &opcode.value, 1);
+}
 
-    /*
-     * Subroutine.
-     */
-    DXBCByteWriterState savedWriterState;
-    if (!dxbcByteWriterSetOffset(w, pOutctx->offSubroutine, &savedWriterState))
-        return w->rc;
 
-    /* label */
+static void dxbcEmitLabel(DXBCByteWriter *w, uint32_t label)
+{
+    VGPU10OpcodeToken0 opcode;
+    VGPU10OperandToken0 operand;
+
     opcode.value = 0;
     opcode.opcodeType = VGPU10_OPCODE_LABEL;
     opcode.instructionLength = 3;
@@ -1882,6 +1882,37 @@ static int dxbcEmitVmwareIDIV(DXBCOUTPUTCTX *pOutctx, DXBCByteWriter *w, VGPUOpc
     operand.index0Representation = VGPU10_OPERAND_INDEX_IMMEDIATE32;
     dxbcByteWriterAddTokens(w, &operand.value, 1);
     dxbcByteWriterAddTokens(w, &label, 1);
+}
+
+
+static void dxbcEmitRet(DXBCByteWriter *w)
+{
+    VGPU10OpcodeToken0 opcode;
+
+    opcode.value = 0;
+    opcode.opcodeType = VGPU10_OPCODE_RET;
+    opcode.instructionLength = 1;
+    dxbcByteWriterAddTokens(w, &opcode.value, 1);
+}
+
+
+static int dxbcEmitVmwareIDIV(DXBCOUTPUTCTX *pOutctx, DXBCByteWriter *w, VGPUOpcode *pOpcode)
+{
+    /* Insert a call and append a subroutne. */
+    VGPU10OpcodeToken0 opcode;
+
+    uint32_t const label = (pOutctx->offSubroutine - dxbcByteWriterSize(w)) / 4;
+
+    dxbcEmitCall(w, pOpcode, label);
+
+    /*
+     * Subroutine.
+     */
+    DXBCByteWriterState savedWriterState;
+    if (!dxbcByteWriterSetOffset(w, pOutctx->offSubroutine, &savedWriterState))
+        return w->rc;
+
+    dxbcEmitLabel(w, label);
 
     /* Just output UDIV for now. */
     opcode.value = 0;
@@ -1890,11 +1921,75 @@ static int dxbcEmitVmwareIDIV(DXBCOUTPUTCTX *pOutctx, DXBCByteWriter *w, VGPUOpc
     dxbcByteWriterAddTokens(w, &opcode.value, 1);
     dxbcByteWriterAddTokens(w, &pOpcode->paOpcodeToken[1], pOpcode->cOpcodeToken - 1);
 
-    /* ret */
+    dxbcEmitRet(w);
+
+    pOutctx->offSubroutine = dxbcByteWriterSize(w);
+    dxbcByteWriterRestore(w, &savedWriterState);
+
+    return w->rc;
+}
+
+
+static int dxbcEmitVmwareDFRC(DXBCOUTPUTCTX *pOutctx, DXBCByteWriter *w, VGPUOpcode *pOpcode)
+{
+    /* Insert a call and append a subroutine. */
+    VGPU10OpcodeToken0 opcode;
+
+    uint32_t const label = (pOutctx->offSubroutine - dxbcByteWriterSize(w)) / 4;
+
+    dxbcEmitCall(w, pOpcode, label);
+
+    /*
+     * Subroutine.
+     */
+    DXBCByteWriterState savedWriterState;
+    if (!dxbcByteWriterSetOffset(w, pOutctx->offSubroutine, &savedWriterState))
+        return w->rc;
+
+    dxbcEmitLabel(w, label);
+
+    /* Just output a MOV for now. */
     opcode.value = 0;
-    opcode.opcodeType = VGPU10_OPCODE_RET;
-    opcode.instructionLength = 1;
+    opcode.opcodeType = VGPU10_OPCODE_MOV;
+    opcode.instructionLength = pOpcode->cOpcodeToken;
     dxbcByteWriterAddTokens(w, &opcode.value, 1);
+    dxbcByteWriterAddTokens(w, &pOpcode->paOpcodeToken[1], pOpcode->cOpcodeToken - 1);
+
+    dxbcEmitRet(w);
+
+    pOutctx->offSubroutine = dxbcByteWriterSize(w);
+    dxbcByteWriterRestore(w, &savedWriterState);
+
+    return w->rc;
+}
+
+
+static int dxbcEmitVmwareDRSQ(DXBCOUTPUTCTX *pOutctx, DXBCByteWriter *w, VGPUOpcode *pOpcode)
+{
+    /* Insert a call and append a subroutine. */
+    VGPU10OpcodeToken0 opcode;
+
+    uint32_t const label = (pOutctx->offSubroutine - dxbcByteWriterSize(w)) / 4;
+
+    dxbcEmitCall(w, pOpcode, label);
+
+    /*
+     * Subroutine.
+     */
+    DXBCByteWriterState savedWriterState;
+    if (!dxbcByteWriterSetOffset(w, pOutctx->offSubroutine, &savedWriterState))
+        return w->rc;
+
+    dxbcEmitLabel(w, label);
+
+    /* Just output a MOV for now. */
+    opcode.value = 0;
+    opcode.opcodeType = VGPU10_OPCODE_MOV;
+    opcode.instructionLength = pOpcode->cOpcodeToken;
+    dxbcByteWriterAddTokens(w, &opcode.value, 1);
+    dxbcByteWriterAddTokens(w, &pOpcode->paOpcodeToken[1], pOpcode->cOpcodeToken - 1);
+
+    dxbcEmitRet(w);
 
     pOutctx->offSubroutine = dxbcByteWriterSize(w);
     dxbcByteWriterRestore(w, &savedWriterState);
@@ -1933,9 +2028,11 @@ static int dxbcOutputOpcode(DXBCOUTPUTCTX *pOutctx, DXBCByteWriter *w, VGPUOpcod
     else if (pOpcode->opcodeType == VGPU10_OPCODE_VMWARE)
     {
         if (pOpcode->opcodeSubtype == VGPU10_VMWARE_OPCODE_IDIV)
-        {
             return dxbcEmitVmwareIDIV(pOutctx, w, pOpcode);
-        }
+        if (pOpcode->opcodeSubtype == VGPU10_VMWARE_OPCODE_DFRC)
+            return dxbcEmitVmwareDFRC(pOutctx, w, pOpcode);
+        if (pOpcode->opcodeSubtype == VGPU10_VMWARE_OPCODE_DRSQ)
+            return dxbcEmitVmwareDRSQ(pOutctx, w, pOpcode);
 
         ASSERT_GUEST_FAILED_RETURN(VERR_NOT_SUPPORTED);
     }
@@ -2205,6 +2302,7 @@ int DXShaderParse(void const *pvShaderCode, uint32_t cbShaderCode, DXShaderInfo 
     return VINF_SUCCESS;
 }
 
+
 void DXShaderGenerateSemantics(DXShaderInfo *pInfo)
 {
     if (pInfo->cInputSignature)
@@ -2220,6 +2318,28 @@ void DXShaderGenerateSemantics(DXShaderInfo *pInfo)
                               pInfo->aPatchConstantSignature,
                               pInfo->aPatchConstantSemantic, DXBC_BLOB_TYPE_PCSG);
 }
+
+
+void DXShaderSortSignatures(DXShaderInfo *pInfo)
+{
+    /* Sort signatures by register index and mask because the host API need them to be sorted. */
+    if (pInfo->cInputSignature)
+    {
+        RTSortShell(pInfo->aInputSignature, pInfo->cInputSignature, sizeof(pInfo->aInputSignature[0]),
+                    signatureEntryCmp, NULL);
+    }
+    if (pInfo->cOutputSignature)
+    {
+        RTSortShell(pInfo->aOutputSignature, pInfo->cOutputSignature, sizeof(pInfo->aOutputSignature[0]),
+                    signatureEntryCmp, NULL);
+    }
+    if (pInfo->cPatchConstantSignature)
+    {
+        RTSortShell(pInfo->aPatchConstantSignature, pInfo->cPatchConstantSignature, sizeof(pInfo->aPatchConstantSignature[0]),
+                    signatureEntryCmp, NULL);
+    }
+}
+
 
 void DXShaderFree(DXShaderInfo *pInfo)
 {
@@ -2371,6 +2491,11 @@ static int dxbcCreateIOSGNBlob(DXShaderInfo const *pInfo, DXBCHeader *pHdr, uint
     pHdrISGN->cElement = cSignature;
     pHdrISGN->offElement = RT_UOFFSETOF(DXBCBlobIOSGN, aElement[0]);
 
+#ifdef DEBUG
+    /* Check that signatures are sorted by register index because the host API need them to be sorted. */
+    uint32_t idxRegisterLast = 0;
+#endif
+
     for (uint32_t iSignatureEntry = 0; iSignatureEntry < cSignature; ++iSignatureEntry)
     {
         SVGA3dDXSignatureEntry const *srcEntry = &paSignature[iSignatureEntry];
@@ -2397,6 +2522,11 @@ static int dxbcCreateIOSGNBlob(DXShaderInfo const *pInfo, DXBCHeader *pHdr, uint
         Log6(("  [%u]: %s[%u] sv %u type %u reg %u mask %X\n",
               iSignatureEntry, srcSemantic->pcszSemanticName, dst->idxSemantic,
               dst->enmSystemValue, dst->enmComponentType, dst->idxRegister, dst->u.mask));
+
+#ifdef DEBUG
+        Assert(idxRegisterLast <= dst->idxRegister);
+        idxRegisterLast = dst->idxRegister;
+#endif
 
         if (dst->offElementName == 0)
         {

@@ -397,6 +397,11 @@ static SSMFIELD const g_aVGAStateSVGAFields[] =
     SSMFIELD_ENTRY(                 VMSVGAState, u32PitchLock),
     SSMFIELD_ENTRY(                 VMSVGAState, u32CurrentGMRId),
     SSMFIELD_ENTRY(                 VMSVGAState, u32DeviceCaps),
+    SSMFIELD_ENTRY_VER(             VMSVGAState, u32DeviceCaps2, VGA_SAVEDSTATE_VERSION_VMSVGA_REG_CAP2),
+    SSMFIELD_ENTRY_VER(             VMSVGAState, u32GuestDriverId, VGA_SAVEDSTATE_VERSION_VMSVGA_REG_CAP2),
+    SSMFIELD_ENTRY_VER(             VMSVGAState, u32GuestDriverVer1, VGA_SAVEDSTATE_VERSION_VMSVGA_REG_CAP2),
+    SSMFIELD_ENTRY_VER(             VMSVGAState, u32GuestDriverVer2, VGA_SAVEDSTATE_VERSION_VMSVGA_REG_CAP2),
+    SSMFIELD_ENTRY_VER(             VMSVGAState, u32GuestDriverVer3, VGA_SAVEDSTATE_VERSION_VMSVGA_REG_CAP2),
     SSMFIELD_ENTRY(                 VMSVGAState, u32IndexReg),
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, hFIFORequestSem),
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, uLastCursorUpdateCount),
@@ -1519,6 +1524,69 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
             *pu32 = _128M; /** @todo Some actual value. Probably the mapped VRAM size. */
             break;
 
+        case SVGA_REG_BLANK_SCREEN_TARGETS:
+            /// @todo STAM_REL_COUNTER_INC(&pThis->svga.aStatRegRd[idxReg]);
+            *pu32 = 0; /* Not supported. */
+            break;
+
+        case SVGA_REG_CAP2:
+            *pu32 = pThis->svga.u32DeviceCaps2;
+            break;
+
+        case SVGA_REG_DEVEL_CAP:
+            *pu32 = 0; /* Not supported. */
+            break;
+
+        /*
+         * SVGA_REG_GUEST_DRIVER_* registers require SVGA_CAP2_DX2.
+         */
+        case SVGA_REG_GUEST_DRIVER_ID:
+            *pu32 = pThis->svga.u32GuestDriverId;
+            break;
+
+        case SVGA_REG_GUEST_DRIVER_VERSION1:
+            *pu32 = pThis->svga.u32GuestDriverVer1;
+            break;
+
+        case SVGA_REG_GUEST_DRIVER_VERSION2:
+            *pu32 = pThis->svga.u32GuestDriverVer2;
+            break;
+
+        case SVGA_REG_GUEST_DRIVER_VERSION3:
+            *pu32 = pThis->svga.u32GuestDriverVer3;
+            break;
+
+        /*
+         * SVGA_REG_CURSOR_ registers require SVGA_CAP2_CURSOR_MOB which the device does not support currently.
+         */
+        case SVGA_REG_CURSOR_MOBID:
+            *pu32 = SVGA_ID_INVALID;
+            break;
+
+        case SVGA_REG_CURSOR_MAX_BYTE_SIZE:
+            *pu32 = 0;
+            break;
+
+        case SVGA_REG_CURSOR_MAX_DIMENSION:
+            *pu32 = 0;
+            break;
+
+        case SVGA_REG_FIFO_CAPS:
+        case SVGA_REG_FENCE: /* Same as SVGA_FIFO_FENCE for PCI_ID_SVGA3. Our device is PCI_ID_SVGA2 so not supported. */
+        case SVGA_REG_RESERVED1: /* SVGA_REG_RESERVED* correspond to SVGA_REG_CURSOR4_*. Require SVGA_CAP2_EXTRA_REGS. */
+        case SVGA_REG_RESERVED2:
+        case SVGA_REG_RESERVED3:
+        case SVGA_REG_RESERVED4:
+        case SVGA_REG_RESERVED5:
+        case SVGA_REG_SCREENDMA:
+            *pu32 = 0; /* Not supported. */
+            break;
+
+        case SVGA_REG_GBOBJECT_MEM_SIZE_KB:
+            /** @todo "The maximum amount of guest-backed objects that the device can have resident at a time" */
+            *pu32 = _1G / _1K;
+            break;
+
         default:
         {
             uint32_t offReg;
@@ -2260,6 +2328,27 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
             /* Not supported. */
             break;
 
+        case SVGA_REG_GUEST_DRIVER_ID:
+            if (u32 != SVGA_REG_GUEST_DRIVER_ID_SUBMIT)
+                pThis->svga.u32GuestDriverId = u32;
+            break;
+
+        case SVGA_REG_GUEST_DRIVER_VERSION1:
+            pThis->svga.u32GuestDriverVer1 = u32;
+            break;
+
+        case SVGA_REG_GUEST_DRIVER_VERSION2:
+            pThis->svga.u32GuestDriverVer2 = u32;
+            break;
+
+        case SVGA_REG_GUEST_DRIVER_VERSION3:
+            pThis->svga.u32GuestDriverVer3 = u32;
+            break;
+
+        case SVGA_REG_CURSOR_MOBID:
+            /* Not supported, ignore. See correspondent comments in vmsvgaReadPort. */
+            break;
+
         case SVGA_REG_FB_START:
         case SVGA_REG_MEM_START:
         case SVGA_REG_HOST_BITS_PER_PIXEL:
@@ -2285,6 +2374,20 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
         case SVGA_REG_SCREENTARGET_MAX_WIDTH:
         case SVGA_REG_SCREENTARGET_MAX_HEIGHT:
         case SVGA_REG_MOB_MAX_SIZE:
+        case SVGA_REG_BLANK_SCREEN_TARGETS:
+        case SVGA_REG_CAP2:
+        case SVGA_REG_DEVEL_CAP:
+        case SVGA_REG_CURSOR_MAX_BYTE_SIZE:
+        case SVGA_REG_CURSOR_MAX_DIMENSION:
+        case SVGA_REG_FIFO_CAPS:
+        case SVGA_REG_FENCE:
+        case SVGA_REG_RESERVED1:
+        case SVGA_REG_RESERVED2:
+        case SVGA_REG_RESERVED3:
+        case SVGA_REG_RESERVED4:
+        case SVGA_REG_RESERVED5:
+        case SVGA_REG_SCREENDMA:
+        case SVGA_REG_GBOBJECT_MEM_SIZE_KB:
             /* Read only - ignore. */
             Log(("Write to R/O register %x - val %x ignored\n", idxReg, u32));
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegReadOnlyWr);
@@ -5410,6 +5513,11 @@ static DECLCALLBACK(void) vmsvgaR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
     pHlp->pfnPrintf(pHlp, "Pitch lock:         %#x (FIFO:%#x)\n", pThis->svga.u32PitchLock, pFIFO[SVGA_FIFO_PITCHLOCK]);
     pHlp->pfnPrintf(pHlp, "Current GMR ID:     %#x\n", pThis->svga.u32CurrentGMRId);
     pHlp->pfnPrintf(pHlp, "Device Capabilites: %#x\n", pThis->svga.u32DeviceCaps);
+    pHlp->pfnPrintf(pHlp, "Device Cap2:        %#x\n", pThis->svga.u32DeviceCaps2);
+    pHlp->pfnPrintf(pHlp, "Guest driver id:    %#x\n", pThis->svga.u32GuestDriverId);
+    pHlp->pfnPrintf(pHlp, "Guest driver ver1:  %#x\n", pThis->svga.u32GuestDriverVer1);
+    pHlp->pfnPrintf(pHlp, "Guest driver ver2:  %#x\n", pThis->svga.u32GuestDriverVer2);
+    pHlp->pfnPrintf(pHlp, "Guest driver ver3:  %#x\n", pThis->svga.u32GuestDriverVer3);
     pHlp->pfnPrintf(pHlp, "Index reg:          %#x\n", pThis->svga.u32IndexReg);
     pHlp->pfnPrintf(pHlp, "Action flags:       %#x\n", pThis->svga.u32ActionFlags);
     pHlp->pfnPrintf(pHlp, "Max display size:   %ux%u\n", pThis->svga.u32MaxWidth, pThis->svga.u32MaxHeight);
@@ -6305,9 +6413,10 @@ static int vmsvgaR3Init3dInterfaces(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
  * @param   pThis     The shared VGA/VMSVGA instance data.
  * @param   pThisCC   The VGA/VMSVGA state for ring-3.
  * @param   pu32DeviceCaps Device capabilities (SVGA_CAP_*).
+ * @param   pu32DeviceCaps2 Device capabilities (SVGA_CAP2_*).
  * @param   pu32FIFOCaps FIFO capabilities (SVGA_FIFO_CAPS_*).
  */
-static void vmsvgaR3GetCaps(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t *pu32DeviceCaps, uint32_t *pu32FIFOCaps)
+static void vmsvgaR3GetCaps(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t *pu32DeviceCaps, uint32_t *pu32DeviceCaps2, uint32_t *pu32FIFOCaps)
 {
 #ifndef VBOX_WITH_VMSVGA3D
     RT_NOREF(pThisCC);
@@ -6328,8 +6437,9 @@ static void vmsvgaR3GetCaps(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t *pu32
                     | SVGA_CAP_ALPHA_CURSOR;
 
     *pu32DeviceCaps |= SVGA_CAP_COMMAND_BUFFERS   /* Enable register based command buffer submission. */
-//                  |  SVGA_CAP_CMD_BUFFERS_2     /* Support for SVGA_REG_CMD_PREPEND_LOW/HIGH */
                     ;
+
+    *pu32DeviceCaps2 = SVGA_CAP2_NONE;
 
     /* VGPU10 capabilities. */
     if (pThis->fVMSVGA10)
@@ -6338,7 +6448,24 @@ static void vmsvgaR3GetCaps(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t *pu32
         if (pThisCC->svga.pSvgaR3State->pFuncsGBO)
            *pu32DeviceCaps |= SVGA_CAP_GBOBJECTS; /* Enable guest-backed objects and surfaces. */
         if (pThisCC->svga.pSvgaR3State->pFuncsDX)
-           *pu32DeviceCaps |= SVGA_CAP_DX;        /* Enable support for DX commands, and command buffers in a mob. */
+        {
+           *pu32DeviceCaps |= SVGA_CAP_DX                 /* DX commands, and command buffers in a mob. */
+                           |  SVGA_CAP_CAP2_REGISTER      /* Extended capabilities. */
+                           ;
+
+           if (*pu32DeviceCaps & SVGA_CAP_CAP2_REGISTER)
+               *pu32DeviceCaps2 |= SVGA_CAP2_GROW_OTABLE  /* "Allow the GrowOTable/DXGrowCOTable commands" */
+                                |  SVGA_CAP2_DX2          /* Shader Model 4.1.
+                                                           * "Allow the DefineGBSurface_v3, WholeSurfaceCopy, WriteZeroSurface, and
+                                                           * HintZeroSurface commands, and the SVGA_REG_GUEST_DRIVER_ID register."
+                                                           */
+                                |  SVGA_CAP2_GB_MEMSIZE_2 /* "Allow the SVGA_REG_GBOBJECT_MEM_SIZE_KB register" */
+                                |  SVGA_CAP2_OTABLE_PTDEPTH_2
+                                |  SVGA_CAP2_DX3          /* Shader Model 5.
+                                                           * DefineGBSurface_v4, etc
+                                                           */
+                                ;
+        }
 # endif
     }
 
@@ -6484,7 +6611,7 @@ int vmsvgaR3Reset(PPDMDEVINS pDevIns)
     vmsvgaR3InitFIFO(pThis, pThisCC);
 
     /* Initialize FIFO and register capabilities. */
-    vmsvgaR3GetCaps(pThis, pThisCC, &pThis->svga.u32DeviceCaps, &pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES]);
+    vmsvgaR3GetCaps(pThis, pThisCC, &pThis->svga.u32DeviceCaps, &pThis->svga.u32DeviceCaps2, &pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES]);
 
 # ifdef VBOX_WITH_VMSVGA3D
     if (pThis->svga.f3DEnabled)
@@ -6926,18 +7053,20 @@ static void vmsvgaR3PowerOnDevice(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATE
     if (!fLoadState)
     {
         vmsvgaR3InitFIFO(pThis, pThisCC);
-        vmsvgaR3GetCaps(pThis, pThisCC, &pThis->svga.u32DeviceCaps, &pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES]);
+        vmsvgaR3GetCaps(pThis, pThisCC, &pThis->svga.u32DeviceCaps, &pThis->svga.u32DeviceCaps2, &pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES]);
     }
 # ifdef DEBUG
     else
     {
         /* If saved state is being loaded then FIFO and caps are already restored. */
         uint32_t u32DeviceCaps = 0;
+        uint32_t u32DeviceCaps2 = 0;
         uint32_t u32FIFOCaps = 0;
-        vmsvgaR3GetCaps(pThis, pThisCC, &u32DeviceCaps, &u32FIFOCaps);
+        vmsvgaR3GetCaps(pThis, pThisCC, &u32DeviceCaps, &u32DeviceCaps2, &u32FIFOCaps);
 
         /* Capabilities should not change normally. */
         Assert(   pThis->svga.u32DeviceCaps == u32DeviceCaps
+               && pThis->svga.u32DeviceCaps2 == u32DeviceCaps2
                && pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES] == u32FIFOCaps);
     }
 #endif

@@ -4640,7 +4640,7 @@ static DECLCALLBACK(int) vmsvga3dBackQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCap
     }
 
     case SVGA3D_DEVCAP_SM41:
-        *pu32Val = 0; /* boolean */
+        *pu32Val = 1; /* boolean */
         break;
 
     case SVGA3D_DEVCAP_MULTISAMPLE_2X:
@@ -4671,7 +4671,7 @@ static DECLCALLBACK(int) vmsvga3dBackQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCap
         break;
 
     case SVGA3D_DEVCAP_SM5:
-        *pu32Val = 0; /* boolean */
+        *pu32Val = 1; /* boolean */
         break;
 
     case SVGA3D_DEVCAP_MULTISAMPLE_8X:
@@ -9456,66 +9456,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXBufferUpdate(PVGASTATECC pThisCC, PVMSVGA
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXSetVSConstantBufferOffset(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
-{
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-static DECLCALLBACK(int) vmsvga3dBackDXSetPSConstantBufferOffset(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
-{
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-static DECLCALLBACK(int) vmsvga3dBackDXSetGSConstantBufferOffset(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
-{
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-static DECLCALLBACK(int) vmsvga3dBackDXSetHSConstantBufferOffset(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
-{
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-static DECLCALLBACK(int) vmsvga3dBackDXSetDSConstantBufferOffset(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
-{
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-static DECLCALLBACK(int) vmsvga3dBackDXSetCSConstantBufferOffset(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
-{
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
 static DECLCALLBACK(int) vmsvga3dBackDXCondBindAllShader(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
@@ -10243,12 +10183,6 @@ static DECLCALLBACK(int) vmsvga3dBackQueryInterface(PVGASTATECC pThisCC, char co
                 p->pfnDXBindAllShader             = vmsvga3dBackDXBindAllShader;
                 p->pfnDXHint                      = vmsvga3dBackDXHint;
                 p->pfnDXBufferUpdate              = vmsvga3dBackDXBufferUpdate;
-                p->pfnDXSetVSConstantBufferOffset = vmsvga3dBackDXSetVSConstantBufferOffset;
-                p->pfnDXSetPSConstantBufferOffset = vmsvga3dBackDXSetPSConstantBufferOffset;
-                p->pfnDXSetGSConstantBufferOffset = vmsvga3dBackDXSetGSConstantBufferOffset;
-                p->pfnDXSetHSConstantBufferOffset = vmsvga3dBackDXSetHSConstantBufferOffset;
-                p->pfnDXSetDSConstantBufferOffset = vmsvga3dBackDXSetDSConstantBufferOffset;
-                p->pfnDXSetCSConstantBufferOffset = vmsvga3dBackDXSetCSConstantBufferOffset;
                 p->pfnDXCondBindAllShader         = vmsvga3dBackDXCondBindAllShader;
                 p->pfnScreenCopy                  = vmsvga3dBackScreenCopy;
                 p->pfnIntraSurfaceCopy            = vmsvga3dBackIntraSurfaceCopy;
