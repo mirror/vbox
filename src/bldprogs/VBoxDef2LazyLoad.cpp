@@ -1405,12 +1405,6 @@ static RTEXITCODE generateOutputInnerArm64(FILE *pOutput)
      */
     if (g_fWithExplictLoadFunction)
     {
-        if (g_fSystemLibrary) /* Lazy bird. */
-        {
-            fprintf(stderr, "error: cannot use --system with --explicit-load-function, sorry\n");
-            return RTEXITCODE_FAILURE;
-        }
-
         int cchLibBaseName = (int)(strchr(g_pszLibrary, '.') ? strchr(g_pszLibrary, '.') - g_pszLibrary : strlen(g_pszLibrary));
         fprintf(pOutput,
                 ";;\n"
@@ -1453,19 +1447,32 @@ static RTEXITCODE generateOutputInnerArm64(FILE *pOutput)
                 pszNmPfx, cchLibBaseName, g_pszLibrary,
                 pszNmPfx, cchLibBaseName, g_pszLibrary);
         fprintf(pOutput,
-                "Lexplicit_load_module:\n"
-                "    ; Call SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, PRTERRINFO pErrInfo);\n"
-                "    mov     x3, #0\n"
-                "    mov     x2, #0\n"
-                "    adrp    x1, g_hMod@PAGE\n"
-                "    add     x1, x1, g_hMod@PAGEOFF\n"
-                "    adrp    x0, g_szLibrary@PAGE\n"
-                "    add     x0, x0, g_szLibrary@PAGEOFF\n"
-                "    bl      %sSUPR3HardenedLdrLoadAppPriv\n"
+                "Lexplicit_load_module:\n");
+        if (!g_fSystemLibrary)
+            fprintf(pOutput,
+                    "    ; Call SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, PRTERRINFO pErrInfo);\n"
+                    "    mov     x3, x21\n"
+                    "    mov     x2, #0\n"
+                    "    adrp    x1, g_hMod@PAGE\n"
+                    "    add     x1, x1, g_hMod@PAGEOFF\n"
+                    "    adrp    x0, g_szLibrary@PAGE\n"
+                    "    add     x0, x0, g_szLibrary@PAGEOFF\n"
+                    "    bl      %sSUPR3HardenedLdrLoadAppPriv\n"
+                    , pszNmPfx);
+        else
+            fprintf(pOutput,
+                    "    ; Call RTLdrLoadSystem(const char *pszFilename, bool fNoUnload, PRTLDRMOD phLdrMod);\n"
+                    "    adrp    x2, g_hMod@PAGE\n"
+                    "    add     x2, x2, g_hMod@PAGEOFF\n"
+                    "    mov     x1, #1\n"
+                    "    adrp    x0, g_szLibrary@PAGE\n"
+                    "    add     x0, x0, g_szLibrary@PAGEOFF\n"
+                    "    bl      %sRTLdrLoadSystem\n"
+                    , pszNmPfx);
+        fprintf(pOutput,
                 "    cmp     x0, #0\n"
                 "    b.ne    Lexplicit_load_return\n"
-                "\n"
-                , pszNmPfx);
+                "\n");
 
         fprintf(pOutput,
                 "    ;\n"
