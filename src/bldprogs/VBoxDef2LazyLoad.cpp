@@ -384,7 +384,7 @@ static RTEXITCODE generateOutputInnerX86AndAMD64(FILE *pOutput)
         if (pExp->fData)
             fprintf(pOutput,
                     "BEGINPROC LazyGetPtr_%s\n"
-                    "    mov   xAX, [NAME(g_p%s) xWrtRIP]\n"
+                    "    mov   xAX, [NAME(g_LazyPtr_%s) xWrtRIP]\n"
                     "    test  xAX, xAX\n"
                     "    jz    ___LazyLoad___%s\n"
                     "    ret\n"
@@ -429,8 +429,8 @@ static RTEXITCODE generateOutputInnerX86AndAMD64(FILE *pOutput)
                     "%%ifdef ASM_FORMAT_PE\n"
                     ";@todo\n"
                     "%%endif\n"
-                    "global NAME(g_p%s)\n"
-                    "NAME(g_p%s): RTCCPTR_DEF 0\n",
+                    "global NAME(g_LazyPtr_%s)\n"
+                    "NAME(g_LazyPtr_%s): RTCCPTR_DEF 0\n",
                     pExp->pszExportedNm, pExp->pszExportedNm);
         else if (pExp->pszUnstdcallName)
             fprintf(pOutput,
@@ -512,11 +512,11 @@ static RTEXITCODE generateOutputInnerX86AndAMD64(FILE *pOutput)
                     /* "int3\n" */
                     "%%ifdef RT_ARCH_AMD64\n"
                     "    lea     rax, [g_sz%s wrt rip]\n"
-                    "    lea     r10, [NAME(g_p%s%s) wrt rip]\n"
+                    "    lea     r10, [NAME(%s%s) wrt rip]\n"
                     "    call    LazyLoadResolver\n"
                     "%%elifdef RT_ARCH_X86\n"
                     "    push    g_sz%s\n"
-                    "    push    NAME(g_p%s%s)\n"
+                    "    push    NAME(%s%s)\n"
                     "    call    LazyLoadResolver\n"
                     "    add     esp, 8h\n"
                     "%%else\n"
@@ -525,20 +525,20 @@ static RTEXITCODE generateOutputInnerX86AndAMD64(FILE *pOutput)
                     ,
                     pExp->pszExportedNm,
                     pExp->pszExportedNm,
-                    !pExp->fData ? "fn" : "", pExp->pszExportedNm,
+                    !pExp->fData ? "g_pfn" : "g_LazyPtr_", pExp->pszExportedNm,
                     pExp->pszExportedNm,
-                    !pExp->fData ? "fn" : "", pExp->pszExportedNm);
+                    !pExp->fData ? "g_pfn" : "g_LazyPtr_", pExp->pszExportedNm);
         else
             fprintf(pOutput,
                     "___LazyLoad___%s:\n"
                     /* "int3\n" */
                     "%%ifdef RT_ARCH_AMD64\n"
                     "    mov     eax, %u\n"
-                    "    lea     r10, [NAME(g_p%s%s) wrt rip]\n"
+                    "    lea     r10, [NAME(%s%s) wrt rip]\n"
                     "    call    LazyLoadResolver\n"
                     "%%elifdef RT_ARCH_X86\n"
                     "    push    %u\n"
-                    "    push    NAME(g_p%s%s)\n"
+                    "    push    NAME(%s%s)\n"
                     "    call    LazyLoadResolver\n"
                     "    add     esp, 8h\n"
                     "%%else\n"
@@ -547,9 +547,9 @@ static RTEXITCODE generateOutputInnerX86AndAMD64(FILE *pOutput)
                     ,
                     pExp->pszExportedNm,
                     pExp->uOrdinal,
-                    !pExp->fData ? "fn" : "", pExp->pszExportedNm,
+                    !pExp->fData ? "g_pfn" : "g_LazyPtr_", pExp->pszExportedNm,
                     pExp->uOrdinal,
-                    !pExp->fData ? "fn" : "", pExp->pszExportedNm);
+                    !pExp->fData ? "g_pfn" : "g_LazyPtr_", pExp->pszExportedNm);
         if (pExp->fData)
             fprintf(pOutput, "    jmp     NAME(LazyGetPtr_%s)\n", pExp->szName);
         else if (!pExp->pszUnstdcallName)
@@ -1141,8 +1141,8 @@ static RTEXITCODE generateOutputInnerArm64(FILE *pOutput)
                     ".p2align 3\n"
                     ".globl %sLazyGetPtr_%s\n"
                     "%sLazyGetPtr_%s:\n"
-                    "    adrp    x9, %sg_p%s@PAGE\n"
-                    "    ldr     x9, [x9, %sg_p%s@PAGEOFF]\n"
+                    "    adrp    x9, %sg_LazyPtr_%s@PAGE\n"
+                    "    ldr     x9, [x9, %sg_LazyPtr_%s@PAGEOFF]\n"
                     "    cmp     x9, #0\n"
                     "    b.ne    ___LazyLoad___%s\n"
                     "    mov     x0, x9\n"
@@ -1176,8 +1176,8 @@ static RTEXITCODE generateOutputInnerArm64(FILE *pOutput)
                     pExp->pszExportedNm);
         else
             fprintf(pOutput,
-                    ".globl %sg_p%s\n"
-                    "%sg_p%s:\n"
+                    ".globl %sg_LazyPtr_%s\n"
+                    "%sg_LazyPtr_%s:\n"
                     "    .quad 0\n"
                     "\n",
                     pszNmPfx, pExp->szName, pszNmPfx, pExp->szName);
@@ -1231,22 +1231,23 @@ static RTEXITCODE generateOutputInnerArm64(FILE *pOutput)
                     "___LazyLoad___%s:\n"
                     "    adrp    x9, g_sz%s@PAGE\n"
                     "    add     x9, x9, g_sz%s@PAGEOFF\n"
-                    "    adrp    x10, %sg_p%s%s@PAGE\n"
-                    "    add     x10, x10, %sg_p%s%s@PAGEOFF\n"
+                    "    adrp    x10, %s%s%s@PAGE\n"
+                    "    add     x10, x10, %s%s%s@PAGEOFF\n"
                     "    bl      LazyLoadResolver\n"
                     , pExp->pszExportedNm,
                     pExp->pszExportedNm, pExp->pszExportedNm,
-                    pszNmPfx, !pExp->fData ? "fn" : "", pExp->pszExportedNm,
-                    pszNmPfx, !pExp->fData ? "fn" : "", pExp->pszExportedNm);
+                    pszNmPfx, !pExp->fData ? "g_pfn" : "g_LazyPtr_", pExp->pszExportedNm,
+                    pszNmPfx, !pExp->fData ? "g_pfn" : "g_LazyPtr_", pExp->pszExportedNm);
         else
             fprintf(pOutput,
                     "___LazyLoad___%s:\n"
                     "    movk    w9, #%u\n"
-                    "    adrp    x10, %sg_pfn%s@PAGE\n"
-                    "    add     x10, x10, %sg_pfn%s@PAGEOFF\n"
+                    "    adrp    x10, %s%s%s@PAGE\n"
+                    "    add     x10, x10, %s%s%s@PAGEOFF\n"
                     , pExp->pszExportedNm,
                     pExp->uOrdinal,
-                    pszNmPfx, pExp->pszExportedNm, pszNmPfx, pExp->pszExportedNm);
+                    pszNmPfx, !pExp->fData ? "g_pfn" : "g_LazyPtr_", pExp->pszExportedNm,
+                    pszNmPfx, !pExp->fData ? "g_pfn" : "g_LazyPtr_", pExp->pszExportedNm);
         if (!pExp->fData)
             fprintf(pOutput, "    b       %s%s\n", pszNmPfx, pExp->szName);
         else
@@ -1642,13 +1643,58 @@ static RTEXITCODE generateOutput(void)
  */
 static int usage(const char *pszArgv0)
 {
-    printf("usage: %s [options] --libary <loadname> --output <lazyload.asm> <input.def>\n"
+    const char *pszTmp = strrchr(pszArgv0, '/');
+    if (pszTmp)
+        pszArgv0 = pszTmp + 1;
+    pszTmp = strrchr(pszArgv0, '\\');
+    if (pszTmp)
+        pszArgv0 = pszTmp + 1;
+
+    /*      0         1         2         3         4         5         6         7         8
+            012345678901234567890123456789012345678901234567890123456789012345678901234567890 */
+    printf("VBoxDef2LazyLoad - Lazy DLL/SO/DYLIB loader code generator.\n"
+           "Copyright (C) 2013-2016 Oracle Corporation\n"
+           "\n"
+           "Description:\n"
+           "------------\n"
+           "\n"
+           "Takes a Microsoft-style linker definition file for a library (DLL/SO/DYLIB) and\n"
+           "generates assembly code which defines stub functions that lazily loads and\n"
+           "resolves the real symbols before calling them. This is entirely transparent when\n"
+           "used with functions.\n"
+           "\n"
+           "With data symbols it's more messy since the compiler will not invoke code when\n"
+           "using them, but access them directly (ELF executables) or indirectly (ELF SOs,\n"
+           "PE, ++). For data symbols use the DATA keyword after the symbol name in the\n"
+           "def-file and modify the header definition from 'extern type symbol;' to:\n"
+           "\n"
+           "    DECLASM(type *) LazyGetPtr_<symbol>(void);\n"
+           "    #define <symbol> (*LazyGetPtr_<symbol>())\n"
+           "\n"
+           "or, if using --explict-load-function this will work as well:\n"
+           "\n"
+           "    extern type *g_LazyPtr_<symbol>;\n"
+           "    #define <symbol> (*g_LazyPtr_)\n"
+           "\n"
+           "Usage:\n"
+           "------\n"
+           "%s [options] --libary <loadname> --output <lazyload.asm> <input.def>\n"
            "\n"
            "Options:\n"
+           "--------\n"
+           "  --library <loadname>, -l <loadname>\n"
+           "    The name of the library.  This is what will be passed to RTLdrLoadSystem\n"
+           "    or SUPR3HardenedLdrLoadAppPriv.\n"
+           "  --output <filename>, -o <filename>\n"
+           "    The assembly output file.\n"
            "  --explicit-load-function, --no-explicit-load-function\n"
-           "    Whether to include the explicit load function, default is not to.\n"
+           "    Whether to include the explicit load function:\n"
+           "      DECLASM(int) ExplicitlyLoad<basename>(bool fResolveAllImports, pErrInfo);\n"
+           "    The default is not to include it.\n"
+           "  --system\n"
+           "    The library is a system DLL to be loaded using RTLdrLoadSystem.\n"
+           "    The default is to use SUPR3HardenedLdrLoadAppPriv to load it.\n"
            "\n"
-           "Copyright (C) 2013-2016 Oracle Corporation\n"
            , pszArgv0);
 
     return RTEXITCODE_SUCCESS;
