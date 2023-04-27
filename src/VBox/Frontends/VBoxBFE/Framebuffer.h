@@ -28,6 +28,9 @@
 
 #ifndef VBOX_INCLUDED_SRC_VBoxBFE_Framebuffer_h
 #define VBOX_INCLUDED_SRC_VBoxBFE_Framebuffer_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 #include <iprt/critsect.h>

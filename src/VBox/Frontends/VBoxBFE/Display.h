@@ -28,6 +28,9 @@
 
 #ifndef VBOX_INCLUDED_SRC_VBoxBFE_Display_h
 #define VBOX_INCLUDED_SRC_VBoxBFE_Display_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/semaphore.h>
 #include <VBox/vmm/pdm.h>
@@ -91,7 +94,7 @@ private:
     bool mFramebufferOpened;
 
     bool        mfMachineRunning;
-    volatile bool fVGAResizing; 
+    volatile bool fVGAResizing;
 
     void handleResizeCompletedEMT (void);
     volatile uint32_t mu32ResizeStatus;

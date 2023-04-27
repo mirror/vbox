@@ -107,6 +107,7 @@ static char szError[512];
 extern DECL_HIDDEN_DATA(RTSEMEVENT) g_EventSemSDLEvents;
 extern DECL_HIDDEN_DATA(volatile int32_t) g_cNotifyUpdateEventsPending;
 
+
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
