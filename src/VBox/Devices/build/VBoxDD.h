@@ -230,6 +230,7 @@ extern const PDMDEVREG g_DeviceIommuIntel;
 
 #ifdef VBOX_VMM_TARGET_ARMV8
 extern const PDMDEVREG g_DevicePl011;
+extern const PDMDEVREG g_DevicePl031Rtc;
 extern const PDMDEVREG g_DeviceFlashCFI;
 #endif
 

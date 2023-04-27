@@ -252,6 +252,10 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     if (RT_FAILURE(rc))
         return rc;
 
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DevicePl031Rtc);
+    if (RT_FAILURE(rc))
+        return rc;
+
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceFlashCFI);
     if (RT_FAILURE(rc))
         return rc;
