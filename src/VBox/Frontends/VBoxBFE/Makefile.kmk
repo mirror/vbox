@@ -66,8 +66,8 @@ endif
 VBoxBFE_CLEAN = $(VBoxBFE_0_OUTDIR)/Ico64x01.h
 VBoxBFE_INTERMEDIATES = $(VBoxBFE_0_OUTDIR)/Ico64x01.h
 
- # Convert the pnm-file to a byte array.
- $$(VBoxBFE_0_OUTDIR)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxSDL/ico64x01.pnm $(VBOX_BIN2C) | $$(dir $$@)
+# Convert the pnm-file to a byte array.
+$$(VBoxBFE_0_OUTDIR)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxSDL/ico64x01.pnm $(VBOX_BIN2C) | $$(dir $$@)
 	$(call MSG_TOOL,bin2c,VBoxSDL,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) Ico64x01 $< $@
 
