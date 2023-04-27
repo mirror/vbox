@@ -496,11 +496,18 @@ static DECLCALLBACK(int) qemuFwCfgR3SetupCfgmFileSz(PDEVQEMUFWCFG pThis, PCQEMUF
                 LogRel(("QemuFwCfg: Failed to open file \"%s\" -> %Rrc\n", pszFilePath, rc));
             PDMDevHlpMMHeapFree(pThis->pDevIns, pszFilePath);
         }
+        else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        {
+            pThis->u.u32 = 0;
+            *pcbItem     = sizeof(uint32_t);
+            rc = VINF_SUCCESS;
+        }
         else
             LogRel(("QemuFwCfg: Failed to query \"%s\" -> %Rrc\n", pItem->pszCfgmKey, rc));
     }
 
-    if (RT_SUCCESS(rc))
+    if (   RT_SUCCESS(rc)
+        && hVfsFile != NIL_RTVFSFILE)
     {
         uint64_t cbFile = 0;
         rc = RTVfsFileQuerySize(hVfsFile, &cbFile);
@@ -540,6 +547,12 @@ static DECLCALLBACK(int) qemuFwCfgR3SetupCfgmStrSz(PDEVQEMUFWCFG pThis, PCQEMUFW
     {
         pThis->u.u32 = (uint32_t)strlen(&sz[0]) + 1;
         *pcbItem = sizeof(uint32_t);
+    }
+    else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        pThis->u.u32 = 0;
+        *pcbItem = sizeof(uint32_t);
+        rc = VINF_SUCCESS;
     }
     else
         LogRel(("QemuFwCfg: Failed to query \"%s\" -> %Rrc\n", pItem->pszCfgmKey, rc));
