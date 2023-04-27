@@ -50,7 +50,10 @@ typedef struct MYEXPORT
     /** Pointer to the exported name. */
     char const         *pszExportedNm;
     unsigned            uOrdinal;
+    /** NONAME.  */
     bool                fNoName;
+    /** DATA symbol if true, otherwise function. */
+    bool                fData;
     char                szName[1];
 } MYEXPORT;
 typedef MYEXPORT *PMYEXPORT;
@@ -226,11 +229,13 @@ static RTEXITCODE parseInputInner(FILE *pInput, const char *pszInput)
                 }
             }
 
+            bool fData = false;
             while (*psz)
             {
                 cch = wordLength(psz);
                 if (WORD_CMP(psz, cch, "DATA"))
                 {
+                    fData = true;
                     if (!g_fIgnoreData)
                     {
                         fprintf(stderr, "%s:%u: error: Cannot process DATA export '%.*s'.\n",
@@ -238,11 +243,16 @@ static RTEXITCODE parseInputInner(FILE *pInput, const char *pszInput)
                         return RTEXITCODE_SUCCESS;
                     }
                 }
-                else if (!WORD_CMP(psz, cch, "PRIVATE"))
+                else if (WORD_CMP(psz, cch, "PRIVATE"))
                 {
-                    fprintf(stderr, "%s:%u: error: Cannot process DATA export '%.*s'.\n",
+                    fprintf(stderr, "%s:%u: error: Cannot process PRIVATE export '%.*s'.\n",
                             pszInput, iLine, cchName, pchName);
                     return RTEXITCODE_SUCCESS;
+                }
+                else
+                {
+                    fprintf(stderr, "%s:%u: error: Unknown keyword: %.*s.\n", pszInput, iLine, cch, psz);
+                    return RTEXITCODE_FAILURE;
                 }
                 psz = leftStrip(psz + cch);
             }
@@ -265,12 +275,11 @@ static RTEXITCODE parseInputInner(FILE *pInput, const char *pszInput)
             /*
              * Add the export.
              */
-
             PMYEXPORT pExp = (PMYEXPORT)malloc(cbExp);
             if (!pExp)
             {
                 fprintf(stderr, "%s:%u: error: Out of memory.\n", pszInput, iLine);
-                return RTEXITCODE_SUCCESS;
+                return RTEXITCODE_FAILURE;
             }
             memcpy(pExp->szName, pchName, cchName);
             pExp->szName[cchName] = '\0';
@@ -288,6 +297,7 @@ static RTEXITCODE parseInputInner(FILE *pInput, const char *pszInput)
             }
             pExp->uOrdinal   = uOrdinal;
             pExp->fNoName    = fNoName;
+            pExp->fData      = fData;
             pExp->pNext      = NULL;
             *g_ppExpNext     = pExp;
             g_ppExpNext      = &pExp->pNext;
@@ -371,10 +381,19 @@ static RTEXITCODE generateOutputInnerX86AndAMD64(FILE *pOutput)
             ";\n"
             "BEGINCODE\n");
     for (PMYEXPORT pExp = g_pExpHead; pExp; pExp = pExp->pNext)
-        if (!pExp->pszUnstdcallName)
+        if (pExp->fData)
+            fprintf(pOutput,
+                    "BEGINPROC LazyGetPtr_%s\n"
+                    "    mov   xAX, [NAME(g_p%s) xWrtRIP]\n"
+                    "    test  xAX, xAX\n"
+                    "    jz    ___LazyLoad___%s\n"
+                    "    ret\n"
+                    "ENDPROC   LazyGetPtr_%s\n",
+                    pExp->szName, pExp->szName, pExp->szName, pExp->szName);
+        else if (!pExp->pszUnstdcallName)
             fprintf(pOutput,
                     "BEGINPROC %s\n"
-                    "    jmp   RTCCPTR_PRE [g_pfn%s xWrtRIP]\n"
+                    "    jmp   RTCCPTR_PRE [NAME(g_pfn%s) xWrtRIP]\n"
                     "ENDPROC   %s\n",
                     pExp->szName, pExp->szName, pExp->szName);
         else
@@ -382,10 +401,10 @@ static RTEXITCODE generateOutputInnerX86AndAMD64(FILE *pOutput)
                     "%%ifdef RT_ARCH_X86\n"
                     "global    %s\n"
                     "%s:\n"
-                    "    jmp   RTCCPTR_PRE [g_pfn%s xWrtRIP]\n"
+                    "    jmp   RTCCPTR_PRE [NAME(g_pfn%s) xWrtRIP]\n"
                     "%%else\n"
                     "BEGINPROC %s\n"
-                    "    jmp   RTCCPTR_PRE [g_pfn%s xWrtRIP]\n"
+                    "    jmp   RTCCPTR_PRE [NAME(g_pfn%s) xWrtRIP]\n"
                     "ENDPROC   %s\n"
                     "%%endif\n",
                     pExp->szName, pExp->szName, pExp->pszUnstdcallName,
@@ -405,7 +424,15 @@ static RTEXITCODE generateOutputInnerX86AndAMD64(FILE *pOutput)
             "BEGINDATA\n"
             "g_apfnImports:\n");
     for (PMYEXPORT pExp = g_pExpHead; pExp; pExp = pExp->pNext)
-        if (pExp->pszUnstdcallName)
+        if (pExp->fData)
+            fprintf(pOutput,
+                    "%%ifdef ASM_FORMAT_PE\n"
+                    ";@todo\n"
+                    "%%endif\n"
+                    "global NAME(g_p%s)\n"
+                    "NAME(g_p%s): RTCCPTR_DEF 0\n",
+                    pExp->pszExportedNm, pExp->pszExportedNm);
+        else if (pExp->pszUnstdcallName)
             fprintf(pOutput,
                     "%%ifdef ASM_FORMAT_PE\n"
                     " %%ifdef RT_ARCH_X86\n"
@@ -416,7 +443,7 @@ static RTEXITCODE generateOutputInnerX86AndAMD64(FILE *pOutput)
                     "__imp_%s:\n"
                     " %%endif\n"
                     "%%endif\n"
-                    "g_pfn%s RTCCPTR_DEF ___LazyLoad___%s\n"
+                    "NAME(g_pfn%s) RTCCPTR_DEF ___LazyLoad___%s\n"
                     "\n",
                     pExp->szName,
                     pExp->szName,
@@ -430,7 +457,7 @@ static RTEXITCODE generateOutputInnerX86AndAMD64(FILE *pOutput)
                     "global __imp_%s\n"
                     "__imp_%s:\n"
                     "%%endif\n"
-                    "g_pfn%s RTCCPTR_DEF ___LazyLoad___%s\n"
+                    "NAME(g_pfn%s) RTCCPTR_DEF ___LazyLoad___%s\n"
                     "\n",
                     pExp->szName,
                     pExp->szName,
@@ -485,11 +512,11 @@ static RTEXITCODE generateOutputInnerX86AndAMD64(FILE *pOutput)
                     /* "int3\n" */
                     "%%ifdef RT_ARCH_AMD64\n"
                     "    lea     rax, [g_sz%s wrt rip]\n"
-                    "    lea     r10, [g_pfn%s wrt rip]\n"
+                    "    lea     r10, [NAME(g_p%s%s) wrt rip]\n"
                     "    call    LazyLoadResolver\n"
                     "%%elifdef RT_ARCH_X86\n"
                     "    push    g_sz%s\n"
-                    "    push    g_pfn%s\n"
+                    "    push    NAME(g_p%s%s)\n"
                     "    call    LazyLoadResolver\n"
                     "    add     esp, 8h\n"
                     "%%else\n"
@@ -498,20 +525,20 @@ static RTEXITCODE generateOutputInnerX86AndAMD64(FILE *pOutput)
                     ,
                     pExp->pszExportedNm,
                     pExp->pszExportedNm,
+                    !pExp->fData ? "fn" : "", pExp->pszExportedNm,
                     pExp->pszExportedNm,
-                    pExp->pszExportedNm,
-                    pExp->pszExportedNm);
+                    !pExp->fData ? "fn" : "", pExp->pszExportedNm);
         else
             fprintf(pOutput,
                     "___LazyLoad___%s:\n"
                     /* "int3\n" */
                     "%%ifdef RT_ARCH_AMD64\n"
                     "    mov     eax, %u\n"
-                    "    lea     r10, [g_pfn%s wrt rip]\n"
+                    "    lea     r10, [NAME(g_p%s%s) wrt rip]\n"
                     "    call    LazyLoadResolver\n"
                     "%%elifdef RT_ARCH_X86\n"
                     "    push    %u\n"
-                    "    push    g_pfn%s\n"
+                    "    push    NAME(g_p%s%s)\n"
                     "    call    LazyLoadResolver\n"
                     "    add     esp, 8h\n"
                     "%%else\n"
@@ -520,10 +547,12 @@ static RTEXITCODE generateOutputInnerX86AndAMD64(FILE *pOutput)
                     ,
                     pExp->pszExportedNm,
                     pExp->uOrdinal,
-                    pExp->pszExportedNm,
+                    !pExp->fData ? "fn" : "", pExp->pszExportedNm,
                     pExp->uOrdinal,
-                    pExp->pszExportedNm);
-        if (!pExp->pszUnstdcallName)
+                    !pExp->fData ? "fn" : "", pExp->pszExportedNm);
+        if (pExp->fData)
+            fprintf(pOutput, "    jmp     NAME(LazyGetPtr_%s)\n", pExp->szName);
+        else if (!pExp->pszUnstdcallName)
             fprintf(pOutput, "    jmp     NAME(%s)\n", pExp->szName);
         else
             fprintf(pOutput,
@@ -1098,14 +1127,27 @@ static RTEXITCODE generateOutputInnerArm64(FILE *pOutput)
             ";\n"
             ".section __TEXT,__text,regular,pure_instructions\n");
     for (PMYEXPORT pExp = g_pExpHead; pExp; pExp = pExp->pNext)
-        fprintf(pOutput,
-                ".p2align 3\n"
-                ".globl %s%s\n"
-                "%s%s:\n"
-                "    adrp    x9, %sg_pfn%s@PAGE\n"
-                "    ldr     x9, [x9, %sg_pfn%s@PAGEOFF]\n"
-                "    br      x9\n",
-                pszNmPfx, pExp->szName, pszNmPfx, pExp->szName, pszNmPfx, pExp->szName, pszNmPfx, pExp->szName);
+        if (!pExp->fData)
+            fprintf(pOutput,
+                    ".p2align 3\n"
+                    ".globl %s%s\n"
+                    "%s%s:\n"
+                    "    adrp    x9, %sg_pfn%s@PAGE\n"
+                    "    ldr     x9, [x9, %sg_pfn%s@PAGEOFF]\n"
+                    "    br      x9\n",
+                    pszNmPfx, pExp->szName, pszNmPfx, pExp->szName, pszNmPfx, pExp->szName, pszNmPfx, pExp->szName);
+        else
+            fprintf(pOutput,
+                    ".p2align 3\n"
+                    ".globl %sLazyGetPtr_%s\n"
+                    "%sLazyGetPtr_%s:\n"
+                    "    adrp    x9, %sg_p%s@PAGE\n"
+                    "    ldr     x9, [x9, %sg_p%s@PAGEOFF]\n"
+                    "    cmp     x9, #0\n"
+                    "    b.ne    ___LazyLoad___%s\n"
+                    "    mov     x0, x9\n"
+                    "    ret\n",
+                    pszNmPfx, pExp->szName, pszNmPfx, pExp->szName, pszNmPfx, pExp->szName, pszNmPfx, pExp->szName, pExp->pszExportedNm);
     fprintf(pOutput,
             "\n"
             "\n");
@@ -1121,16 +1163,24 @@ static RTEXITCODE generateOutputInnerArm64(FILE *pOutput)
             ".p2align 3\n"
             "g_apfnImports:\n");
     for (PMYEXPORT pExp = g_pExpHead; pExp; pExp = pExp->pNext)
-        fprintf(pOutput,
-                ".globl __imp_%s\n"
-                "__imp_%s:\n"
-                ".globl %sg_pfn%s\n"
-                "%sg_pfn%s:\n"
-                "    .quad ___LazyLoad___%s\n"
-                "\n",
-                pExp->szName, pExp->szName,
-                pszNmPfx, pExp->szName, pszNmPfx, pExp->szName,
-                pExp->pszExportedNm);
+        if (!pExp->fData)
+            fprintf(pOutput,
+                    ".globl __imp_%s\n"
+                    "__imp_%s:\n"
+                    ".globl %sg_pfn%s\n"
+                    "%sg_pfn%s:\n"
+                    "    .quad ___LazyLoad___%s\n"
+                    "\n",
+                    pExp->szName, pExp->szName,
+                    pszNmPfx, pExp->szName, pszNmPfx, pExp->szName,
+                    pExp->pszExportedNm);
+        else
+            fprintf(pOutput,
+                    ".globl %sg_p%s\n"
+                    "%sg_p%s:\n"
+                    "    .quad 0\n"
+                    "\n",
+                    pszNmPfx, pExp->szName, pszNmPfx, pExp->szName);
     fprintf(pOutput,
             "    .quad 0 ; Terminator entry for traversal.\n"
             "\n"
@@ -1181,12 +1231,13 @@ static RTEXITCODE generateOutputInnerArm64(FILE *pOutput)
                     "___LazyLoad___%s:\n"
                     "    adrp    x9, g_sz%s@PAGE\n"
                     "    add     x9, x9, g_sz%s@PAGEOFF\n"
-                    "    adrp    x10, %sg_pfn%s@PAGE\n"
-                    "    add     x10, x10, %sg_pfn%s@PAGEOFF\n"
+                    "    adrp    x10, %sg_p%s%s@PAGE\n"
+                    "    add     x10, x10, %sg_p%s%s@PAGEOFF\n"
                     "    bl      LazyLoadResolver\n"
                     , pExp->pszExportedNm,
                     pExp->pszExportedNm, pExp->pszExportedNm,
-                    pszNmPfx, pExp->pszExportedNm, pszNmPfx, pExp->pszExportedNm);
+                    pszNmPfx, !pExp->fData ? "fn" : "", pExp->pszExportedNm,
+                    pszNmPfx, !pExp->fData ? "fn" : "", pExp->pszExportedNm);
         else
             fprintf(pOutput,
                     "___LazyLoad___%s:\n"
@@ -1196,7 +1247,10 @@ static RTEXITCODE generateOutputInnerArm64(FILE *pOutput)
                     , pExp->pszExportedNm,
                     pExp->uOrdinal,
                     pszNmPfx, pExp->pszExportedNm, pszNmPfx, pExp->pszExportedNm);
-        fprintf(pOutput, "    b       %s%s\n", pszNmPfx, pExp->szName);
+        if (!pExp->fData)
+            fprintf(pOutput, "    b       %s%s\n", pszNmPfx, pExp->szName);
+        else
+            fprintf(pOutput, "    b       %sLazyGetPtr_%s\n", pszNmPfx, pExp->szName);
         fprintf(pOutput, "\n");
     }
     fprintf(pOutput,
