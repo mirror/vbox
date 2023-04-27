@@ -456,7 +456,8 @@ kernel_requires_module_signature()
         [ "$(kernel_get_config_opt "$kern_ver" "CONFIG_MODULE_SIG_FORCE")" = "y" ] && requires="1"
 
         # Unsigned modules loading is restricted by "lockdown" feature in runtime.
-        if [   "$(kernel_get_config_opt "$kern_ver" "CONFIG_SECURITY_LOCKDOWN_LSM")" = "y" \
+        if [   "$(kernel_get_config_opt "$kern_ver" "CONFIG_LOCK_DOWN_KERNEL")" = "y" \
+            -o "$(kernel_get_config_opt "$kern_ver" "CONFIG_SECURITY_LOCKDOWN_LSM")" = "y" \
             -o "$(kernel_get_config_opt "$kern_ver" "CONFIG_SECURITY_LOCKDOWN_LSM_EARLY")" = "y" ]; then
 
             # Once lockdown level is set to something different from "none" (e.g., "integrity"
