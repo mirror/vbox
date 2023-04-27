@@ -50,14 +50,27 @@ else
  PROGRAMS += VBoxBFE
 endif
 VBoxBFE_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBoxMainClientDll,VBoxMainClientExe)
-VBoxHeadless_INCS      = \
+VBoxBFE_SDKS      = LIBSDL2
+VBoxBFE_INCS      = \
+	$(VBoxBFE_0_OUTDIR) \
 	$(VBOX_GRAPHICS_INCS) \
 	../Common
 VBoxBFE_SOURCES   = \
-	VBoxBFE.cpp
+	VBoxBFE.cpp \
+	Display.cpp \
+	Framebuffer.cpp
 ifdef VBOX_WITH_HARDENING
  VBoxBFE_LDFLAGS.darwin += -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxBFE.dylib
 endif
+
+VBoxBFE_CLEAN = $(VBoxBFE_0_OUTDIR)/Ico64x01.h
+VBoxBFE_INTERMEDIATES = $(VBoxBFE_0_OUTDIR)/Ico64x01.h
+
+ # Convert the pnm-file to a byte array.
+ $$(VBoxBFE_0_OUTDIR)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxSDL/ico64x01.pnm $(VBOX_BIN2C) | $$(dir $$@)
+	$(call MSG_TOOL,bin2c,VBoxSDL,$<,$@)
+	$(QUIET)$(VBOX_BIN2C) Ico64x01 $< $@
+
 ifdef VBOX_WITH_HARDENING
  $(call VBOX_SET_VER_INFO_DLL,VBoxBFE,VirtualBox Basic Frontend (dll),$(VBOX_WINDOWS_ICON_FILE)) # Version info / description.
 else

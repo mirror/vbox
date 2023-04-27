@@ -46,10 +46,17 @@
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/ldr.h>
+#include <iprt/mem.h>
 #include <iprt/getopt.h>
 #include <iprt/env.h>
 #include <iprt/errcore.h>
 #include <iprt/thread.h>
+#include <iprt/uuid.h>
+
+#include <SDL.h>
+
+#include "Display.h"
+#include "Framebuffer.h"
 
 
 /*********************************************************************************************************************************
@@ -82,16 +89,62 @@ static PUVM             g_pUVM              = NULL;
 static uint32_t         g_u32MemorySizeMB   = 512;
 static VMSTATE          g_enmVmState        = VMSTATE_CREATING;
 static const char       *g_pszLoadMem       = NULL;
+static const char       *g_pszLoadFlash     = NULL;
 static const char       *g_pszLoadDtb       = NULL;
 static const char       *g_pszSerialLog     = NULL;
+static const char       *g_pszLoadKernel    = NULL;
+static const char       *g_pszLoadInitrd    = NULL;
+static const char       *g_pszCmdLine       = NULL;
+static VMM2USERMETHODS  g_Vmm2UserMethods;
+static Display          *g_pDisplay         = NULL;
+static Framebuffer      *g_pFramebuffer     = NULL;
+static bool gfIgnoreNextResize = false;
+static SDL_TimerID gSdlResizeTimer = 0;
 
 /** @todo currently this is only set but never read. */
 static char szError[512];
 
+extern DECL_HIDDEN_DATA(RTSEMEVENT) g_EventSemSDLEvents;
+extern DECL_HIDDEN_DATA(volatile int32_t) g_cNotifyUpdateEventsPending;
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+
+/**
+ * Wait for the next SDL event. Don't use SDL_WaitEvent since this function
+ * calls SDL_Delay(10) if the event queue is empty.
+ */
+static int WaitSDLEvent(SDL_Event *event)
+{
+    for (;;)
+    {
+        int rc = SDL_PollEvent(event);
+        if (rc == 1)
+            return 1;
+        /* Immediately wake up if new SDL events are available. This does not
+         * work for internal SDL events. Don't wait more than 10ms. */
+        RTSemEventWait(g_EventSemSDLEvents, 10);
+    }
+}
+
+
+/**
+ * Timer callback function to check if resizing is finished
+ */
+static Uint32 ResizeTimer(Uint32 interval, void *param) RT_NOTHROW_DEF
+{
+    RT_NOREF(interval, param);
+
+    /* post message so the window is actually resized */
+    SDL_Event event = {0};
+    event.type      = SDL_USEREVENT;
+    event.user.type = SDL_USER_EVENT_WINDOW_RESIZE_DONE;
+    PushSDLEventForSure(&event);
+    /* one-shot */
+    return 0;
+}
+
 
 /**
  * VM state callback function. Called by the VMM
@@ -199,7 +252,6 @@ DECLCALLBACK(void) vboxbfeSetVMRuntimeErrorCallback(PUVM pUVM, void *pvUser, uin
 }
 
 
-#if 0
 /**
  * Register the main drivers.
  *
@@ -212,12 +264,12 @@ DECLCALLBACK(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_t u32Vers
     LogFlow(("VBoxDriversRegister: u32Version=%#x\n", u32Version));
     AssertReleaseMsg(u32Version == VBOX_VERSION, ("u32Version=%#x VBOX_VERSION=%#x\n", u32Version, VBOX_VERSION));
 
-    /** @todo */
-    RT_NOREF(pCallbacks);
+    int vrc = pCallbacks->pfnRegister(pCallbacks, &Display::DrvReg);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     return VINF_SUCCESS;
 }
-#endif
 
 
 /**
@@ -253,7 +305,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTA
     PCFGMNODE pMemRegion = NULL;
     rc = pVMM->pfnCFGMR3InsertNode(pMem, "Flash", &pMemRegion);                                 UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertInteger(pMemRegion, "GCPhysStart",   0);                          UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pMemRegion, "Size", 128 * _1M);                           UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pMemRegion, "Size", 64 * _1M);                            UPDATE_RC();
 
     rc = pVMM->pfnCFGMR3InsertNode(pMem, "Conventional", &pMemRegion);                          UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertInteger(pMemRegion, "GCPhysStart",   DTB_ADDR);                   UPDATE_RC();
@@ -263,7 +315,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTA
     /*
      * PDM.
      */
-    //rc = pVMM->pfnPDMR3DrvStaticRegistration(pVM, VBoxDriversRegister);                      UPDATE_RC();
+    rc = pVMM->pfnPDMR3DrvStaticRegistration(pVM, VBoxDriversRegister);                         UPDATE_RC();
 
     /*
      * Devices
@@ -292,6 +344,33 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTA
     rc = pVMM->pfnCFGMR3InsertNode(pInst,    "Config",        &pCfg);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "MmioSize",       4096);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "MmioBase", 0x09020000);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "DmaEnabled",        1);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "QemuRamfbSupport",  1);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pInst,    "LUN#0",           &pLunL0);                    UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertString(pLunL0, "Driver",          "MainDisplay");              UPDATE_RC();
+    if (g_pszLoadKernel)
+    {
+        rc = pVMM->pfnCFGMR3InsertString(pCfg,  "KernelImage",  g_pszLoadKernel);            UPDATE_RC();
+    }
+    if (g_pszLoadInitrd)
+    {
+        rc = pVMM->pfnCFGMR3InsertString(pCfg,  "InitrdImage",  g_pszLoadInitrd);            UPDATE_RC();
+    }
+    if (g_pszCmdLine)
+    {
+        rc = pVMM->pfnCFGMR3InsertString(pCfg,  "CmdLine",  g_pszCmdLine);                   UPDATE_RC();
+    }
+
+
+    rc = pVMM->pfnCFGMR3InsertNode(pDevices, "flash-cfi",         &pDev);                    UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pDev,     "0",            &pInst);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pInst,    "Config",        &pCfg);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "BaseAddress", 64 * _1M);                       UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "Size",        64 * _1M);                       UPDATE_RC();
+    if (g_pszLoadFlash)
+    {
+        rc = pVMM->pfnCFGMR3InsertString(pCfg, "FlashFile", g_pszLoadFlash);                 UPDATE_RC();
+    }
 
     rc = pVMM->pfnCFGMR3InsertNode(pDevices, "arm-pl011",     &pDev);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertNode(pDev,     "0",            &pInst);                        UPDATE_RC();
@@ -309,6 +388,11 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTA
         rc = pVMM->pfnCFGMR3InsertString(pLunL1Cfg, "Location",     g_pszSerialLog);         UPDATE_RC();
     }
 
+    rc = pVMM->pfnCFGMR3InsertNode(pDevices, "arm-pl031-rtc", &pDev);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pDev,     "0",            &pInst);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pInst,    "Config",        &pCfg);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "Irq",               2);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "MmioBase", 0x09010000);                        UPDATE_RC();
 
 #undef UPDATE_RC
 #undef UPDATE_RC
@@ -412,6 +496,20 @@ static int vboxbfeLoadFileAtGCPhys(const char *pszFile, RTGCPHYS GCPhysStart)
 }
 
 
+/**
+ * @interface_method_impl{VMM2USERMETHODS,pfnQueryGenericObject}
+ */
+static DECLCALLBACK(void *) vboxbfeVmm2User_QueryGenericObject(PCVMM2USERMETHODS pThis, PUVM pUVM, PCRTUUID pUuid)
+{
+    RT_NOREF(pThis, pUVM);
+
+    if (!RTUuidCompareStr(pUuid, DISPLAY_OID))
+        return g_pDisplay;
+
+    return NULL;
+}
+
+
 /** VM asynchronous operations thread */
 DECLCALLBACK(int) vboxbfeVMPowerUpThread(RTTHREAD hThread, void *pvUser)
 {
@@ -458,10 +556,21 @@ DECLCALLBACK(int) vboxbfeVMPowerUpThread(RTTHREAD hThread, void *pvUser)
      */
     LogFlow(("VMPowerUp\n"));
 
+    g_Vmm2UserMethods.u32Magic                         = VMM2USERMETHODS_MAGIC;
+    g_Vmm2UserMethods.u32Version                       = VMM2USERMETHODS_VERSION;
+    g_Vmm2UserMethods.pfnSaveState                     = NULL;
+    g_Vmm2UserMethods.pfnNotifyEmtInit                 = NULL;
+    g_Vmm2UserMethods.pfnNotifyEmtTerm                 = NULL;
+    g_Vmm2UserMethods.pfnNotifyPdmtInit                = NULL;
+    g_Vmm2UserMethods.pfnNotifyPdmtTerm                = NULL;
+    g_Vmm2UserMethods.pfnNotifyResetTurnedIntoPowerOff = NULL;
+    g_Vmm2UserMethods.pfnQueryGenericObject            = vboxbfeVmm2User_QueryGenericObject;
+    g_Vmm2UserMethods.u32EndMagic                      = VMM2USERMETHODS_MAGIC;
+
     /*
      * Create empty VM.
      */
-    rc = g_pVMM->pfnVMR3Create(1, NULL, 0 /*fFlags*/, vboxbfeSetVMErrorCallback, NULL, vboxbfeConfigConstructor, NULL, &g_pVM, NULL);
+    rc = g_pVMM->pfnVMR3Create(1, &g_Vmm2UserMethods, 0 /*fFlags*/, vboxbfeSetVMErrorCallback, NULL, vboxbfeConfigConstructor, NULL, &g_pVM, NULL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Error: VM creation failed with %Rrc.\n", rc);
@@ -572,8 +681,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "--start-paused",       'p', 0                   },
         { "--memory-size-mib",    'm', RTGETOPT_REQ_UINT32 },
         { "--load-file-into-ram", 'l', RTGETOPT_REQ_STRING },
+        { "--load-flash",         'f', RTGETOPT_REQ_STRING },
         { "--load-dtb",           'd', RTGETOPT_REQ_STRING },
         { "--load-vmm",           'v', RTGETOPT_REQ_STRING },
+        { "--load-kernel",        'k', RTGETOPT_REQ_STRING },
+        { "--load-initrd",        'i', RTGETOPT_REQ_STRING },
+        { "--cmd-line",           'c', RTGETOPT_REQ_STRING },
         { "--serial-log",         's', RTGETOPT_REQ_STRING },
     };
 
@@ -597,11 +710,23 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             case 'l':
                 g_pszLoadMem = ValueUnion.psz;
                 break;
+            case 'f':
+                g_pszLoadFlash = ValueUnion.psz;
+                break;
             case 'd':
                 g_pszLoadDtb = ValueUnion.psz;
                 break;
             case 'v':
                 pszVmmMod = ValueUnion.psz;
+                break;
+            case 'k':
+                g_pszLoadKernel = ValueUnion.psz;
+                break;
+            case 'i':
+                g_pszLoadInitrd = ValueUnion.psz;
+                break;
+            case 'c':
+                g_pszCmdLine = ValueUnion.psz;
                 break;
             case 's':
                 g_pszSerialLog = ValueUnion.psz;
@@ -618,6 +743,15 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 return ch;
         }
     }
+
+    /* static initialization of the SDL stuff */
+    if (!Framebuffer::init(true /*fShowSDLConfig*/))
+        return RTEXITCODE_FAILURE;
+
+    g_pDisplay = new Display();
+    g_pFramebuffer = new Framebuffer(g_pDisplay, 0, false /*fFullscreen*/, false /*fResizable*/, true /*fShowSDLConfig*/, false,
+                                     ~0, ~0, ~0, false /*fSeparate*/);
+    g_pDisplay->SetFramebuffer(0, g_pFramebuffer);
 
     int vrc = vboxbfeLoadVMM(pszVmmMod);
     if (RT_FAILURE(vrc))
@@ -647,9 +781,137 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     while (   g_enmVmState == VMSTATE_CREATING
            || g_enmVmState == VMSTATE_LOADING);
 
-    /** @todo Mainloop. */
-    for (;;)
-        RTThreadSleep(1000);
+    LogFlow(("VBoxSDL: Entering big event loop\n"));
+    SDL_Event event;
+    uint32_t uResizeWidth  = ~(uint32_t)0;
+    uint32_t uResizeHeight = ~(uint32_t)0;
+
+    while (WaitSDLEvent(&event))
+    {
+        switch (event.type)
+        {
+            /*
+             * The screen needs to be repainted.
+             */
+            case SDL_WINDOWEVENT:
+            {
+                switch (event.window.event)
+                {
+                    case SDL_WINDOWEVENT_EXPOSED:
+                    {
+                        g_pFramebuffer->repaint();
+                        break;
+                    }
+                    case SDL_WINDOWEVENT_FOCUS_GAINED:
+                    {
+                        break;
+                    }
+                    case SDL_WINDOWEVENT_FOCUS_LOST:
+                    {
+                        break;
+                    }
+                    case SDL_WINDOWEVENT_RESIZED:
+                    {
+                        if (g_pDisplay)
+                        {
+                            if (gfIgnoreNextResize)
+                            {
+                                gfIgnoreNextResize = FALSE;
+                                break;
+                            }
+                            uResizeWidth  = event.window.data1;
+                            uResizeHeight = event.window.data2;
+                            if (gSdlResizeTimer)
+                                SDL_RemoveTimer(gSdlResizeTimer);
+                            gSdlResizeTimer = SDL_AddTimer(300, ResizeTimer, NULL);
+                        }
+                        break;
+                    }
+                    default:
+                        break;
+                }
+                break;
+            }
+
+            /*
+             * The window was closed.
+             */
+            case SDL_QUIT:
+            {
+                /** @todo */
+                break;
+            }
+
+            /*
+             * User specific update event.
+             */
+            /** @todo use a common user event handler so that SDL_PeepEvents() won't
+             * possibly remove other events in the queue!
+             */
+            case SDL_USER_EVENT_UPDATERECT:
+            {
+                /*
+                 * Decode event parameters.
+                 */
+                ASMAtomicDecS32(&g_cNotifyUpdateEventsPending);
+
+                SDL_Rect *pUpdateRect = (SDL_Rect *)event.user.data1;
+                AssertPtrBreak(pUpdateRect);
+
+                int const x = pUpdateRect->x;
+                int const y = pUpdateRect->y;
+                int const w = pUpdateRect->w;
+                int const h = pUpdateRect->h;
+
+                RTMemFree(event.user.data1);
+
+                Log3Func(("SDL_USER_EVENT_UPDATERECT: x=%d y=%d, w=%d, h=%d\n", x, y, w, h));
+
+                Assert(g_pFramebuffer);
+                g_pFramebuffer->update(x, y, w, h, true /* fGuestRelative */);
+                break;
+            }
+
+            /*
+             * User event: Window resize done
+             */
+            case SDL_USER_EVENT_WINDOW_RESIZE_DONE:
+            {
+                /* communicate the resize event to the guest */
+                //g_pDisplay->SetVideoModeHint(0 /*=display*/, true /*=enabled*/, false /*=changeOrigin*/,
+                //                             0 /*=originX*/, 0 /*=originY*/,
+                //                             uResizeWidth, uResizeHeight, 0 /*=don't change bpp*/, true /*=notify*/);
+                break;
+
+            }
+
+            /*
+             * User specific framebuffer change event.
+             */
+            case SDL_USER_EVENT_NOTIFYCHANGE:
+            {
+                LogFlow(("SDL_USER_EVENT_NOTIFYCHANGE\n"));
+                g_pFramebuffer->notifyChange(event.user.code);
+                break;
+            }
+
+            /*
+             * User specific termination event
+             */
+            case SDL_USER_EVENT_TERMINATE:
+            {
+                if (event.user.code != VBOXSDL_TERM_NORMAL)
+                    RTPrintf("Error: VM terminated abnormally!\n");
+                break;
+            }
+
+            default:
+            {
+                Log8(("unknown SDL event %d\n", event.type));
+                break;
+            }
+        }
+    }
 
     LogRel(("VBoxBFE: exiting\n"));
     return RT_SUCCESS(vrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
