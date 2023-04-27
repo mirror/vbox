@@ -858,6 +858,8 @@ static void qemuFwCfgDmaXfer(PDEVQEMUFWCFG pThis, RTGCPHYS GCPhysDma)
     int rc = VINF_SUCCESS;
     if (DmaDesc.u32Ctrl & QEMU_FW_CFG_DMA_SELECT)
         rc = qemuFwCfgItemSelect(pThis, QEMU_FW_CFG_DMA_GET_CFG_ITEM(DmaDesc.u32Ctrl));
+    else if (!pThis->pCfgItem)
+        rc = VERR_NOT_FOUND;
 
     if (RT_SUCCESS(rc))
     {
