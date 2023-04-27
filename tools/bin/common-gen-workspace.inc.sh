@@ -190,7 +190,7 @@ my_wildcard()
     else
         MY_FOLDER="$1-All.lst"
     fi
-    EXCLUDES="*.log;*.kup;*~;*.bak;*.bak?;*.pyc;*.exe;*.sys;*.dll;*.o;*.obj;*.lib;*.a;*.ko;*.class;*.cvsignore;*.done;*.project;*.actionScriptProperties;*.scm-settings;*.svnpatch.rej;*.svn-base;.svn/*;*.gitignore;*.gitattributes;*.gitmodules;*.swagger-codegen-ignore;*.png;*.bmp;*.jpg;*.jar;*.checksrc;*.clang-format;*.dir-locals.el;*.drirc;*.editorconfig;*.htaccess"
+    EXCLUDES="*.log;*.kup;*~;*.bak;*.bak?;*.pyc;*.exe;*.sys;*.dll;*.o;*.obj;*.lib;*.a;*.ko;*.class;*.cvsignore;*.done;*.project;*.actionScriptProperties;*.scm-settings;*.svnpatch.rej;*.svn-base;.svn/*;*.gitignore;*.gitattributes;*.gitmodules;*.swagger-codegen-ignore;*.png;*.bmp;*.jpg;*.gif;*.jar;*.checksrc;*.clang-format;*.dir-locals.el;*.drirc;*.editorconfig;*.htaccess"
     echo '        <F N="'"${2}"'/*" Recurse="1" Excludes="'"${EXCLUDES}"'"/>' >> "${MY_FOLDER}"
 }
 
