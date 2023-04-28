@@ -3275,6 +3275,9 @@ int AudioTestWaveFileOpen(const char *pszFile, PAUDIOTESTWAVEFILE pWaveFile, PRT
                     RTErrInfoSetF(pErrInfo, rc, "fChannelMask does not match cChannels: %#x (%u bits set) vs %u channels",
                                   uBuf.Wave.u.FmtExt.Data.fChannelMask,
                                   audioTestWaveCountBits(uBuf.Wave.u.FmtExt.Data.fChannelMask), uBuf.Wave.u.Fmt.Data.cChannels);
+                else if (uBuf.Wave.u.Fmt.Data.cChannels > PDMAUDIO_MAX_CHANNELS)
+                    RTErrInfoSetF(pErrInfo, rc, "More than %u channels are not supported (%u given)",
+                                  PDMAUDIO_MAX_CHANNELS, uBuf.Wave.u.Fmt.Data.cChannels);
                 else if (   uBuf.Wave.u.Fmt.Data.uFormatTag == RTRIFFWAVEFMT_TAG_EXTENSIBLE
                          && RTUuidCompareStr(&uBuf.Wave.u.FmtExt.Data.SubFormat, RTRIFFWAVEFMTEXT_SUBTYPE_PCM) != 0)
                     RTErrInfoSetF(pErrInfo, rc, "SubFormat is not PCM: %RTuuid (expected %s)",
@@ -3296,7 +3299,7 @@ int AudioTestWaveFileOpen(const char *pszFile, PAUDIOTESTWAVEFILE pWaveFile, PRT
                         static unsigned const   s_cStdIds = (unsigned)PDMAUDIOCHANNELID_END_STANDARD
                                                           - (unsigned)PDMAUDIOCHANNELID_FIRST_STANDARD;
                         unsigned                iCh       = 0;
-                        for (unsigned idCh = 0; idCh < 32 && iCh < uBuf.Wave.u.Fmt.Data.cChannels; idCh++)
+                        for (unsigned idCh = 0; idCh < PDMAUDIO_MAX_CHANNELS && iCh < uBuf.Wave.u.Fmt.Data.cChannels; idCh++)
                             if (uBuf.Wave.u.FmtExt.Data.fChannelMask & RT_BIT_32(idCh))
                             {
                                 pWaveFile->Props.aidChannels[iCh] = idCh < s_cStdIds
