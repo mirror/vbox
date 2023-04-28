@@ -405,9 +405,9 @@ static const   ext_key_def  aPS2DCKeys[] = {
  */
 
 #define PS2K_PAGE_DC_START      0xb0
-#define PS2K_PAGE_DC_END        (PS2K_PAGE_DC_START + RT_ELEMENTS(aPS2DCKeys))
+#define PS2K_PAGE_DC_END        (PS2K_PAGE_DC_START + RT_ELEMENTS(aPS2DCKeys) - 1)
 #define PS2K_PAGE_CC_START      0xc0
-#define PS2K_PAGE_CC_END        (PS2K_PAGE_CC_START + RT_ELEMENTS(aPS2CCKeys))
+#define PS2K_PAGE_CC_END        (PS2K_PAGE_CC_START + RT_ELEMENTS(aPS2CCKeys) - 1)
 
 AssertCompile(RT_ELEMENTS(aPS2CCKeys) <= 0x20); /* Must fit between 0xC0-0xDF. */
 AssertCompile(RT_ELEMENTS(aPS2DCKeys) <= 0x10); /* Must fit between 0xB0-0xBF. */
