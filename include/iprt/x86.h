@@ -643,6 +643,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_STEXT_FEATURE_ECX_PKU               RT_BIT_32(3)
 /** ECX Bit 4 - OSPKE - Protection keys for user mode pages enabled. */
 #define X86_CPUID_STEXT_FEATURE_ECX_OSPKE             RT_BIT_32(4)
+/** ECX Bit 7 - CET_SS - Supports CET shadow stack features. */
+#define X86_CPUID_STEXT_FEATURE_ECX_CET_SS            RT_BIT_32(7)
 /** ECX Bits 17-21 - MAWAU - Value used by BNDLDX and BNDSTX. */
 #define X86_CPUID_STEXT_FEATURE_ECX_MAWAU             UINT32_C(0x003e0000)
 /** ECX Bit 22 - RDPID - Support pread process ID. */
@@ -652,6 +654,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 
 /** EDX Bit 10 - MD_CLEAR - Supports flushing MDS related buffers. */
 #define X86_CPUID_STEXT_FEATURE_EDX_MD_CLEAR          RT_BIT_32(10)
+/** EDX Bit 20 - CET_IBT - Supports CET indirect branch tracking features. */
+#define X86_CPUID_STEXT_FEATURE_EDX_CET_IBT           RT_BIT_32(20)
 /** EDX Bit 26 - IBRS & IBPB - Supports the IBRS flag in IA32_SPEC_CTRL and
  *  IBPB command in IA32_PRED_CMD. */
 #define X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB         RT_BIT_32(26)
@@ -1759,6 +1763,33 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_TURBO_ACTIVATION_RATIO          0x64c
 /** Core Performance Limit Reasons. */
 #define MSR_CORE_PERF_LIMIT_REASONS         0x64f
+
+/** Userspace Control flow Enforcement Technology setting. */
+#define MSR_IA32_U_CET                      0x6a0
+/** Supervisor space Control flow Enforcement Technology setting. */
+#define MSR_IA32_S_CET                      0x6a2
+/** @name Bit fields for both MSR_IA32_U_CET and MSR_IA32_S_CET
+ * @{ */
+/** Enables the Shadow stack. */
+# define MSR_IA32_CET_SH_STK_EN             RT_BIT_64(0)
+/** Enables WRSS{D,Q}W instructions. */
+# define MSR_IA32_CET_WR_SHSTK_EN           RT_BIT_64(1)
+/** Enables indirect branch tracking. */
+# define MSR_IA32_CET_ENDBR_EN              RT_BIT_64(2)
+/** Enable legacy compatibility treatment for indirect branch tracking. */
+# define MSR_IA32_CET_LEG_IW_EN             RT_BIT_64(3)
+/** Enables the use of no-track prefix for indirect branch tracking. */
+# define MSR_IA32_CET_NO_TRACK_EN           RT_BIT_64(4)
+/** Disables suppression of CET indirect branch tracking on legacy compatibility. */
+# define MSR_IA32_CET_SUPPRESS_DIS          RT_BIT_64(5)
+/** Suppresses indirect branch tracking. */
+# define MSR_IA32_CET_SUPPRESS              RT_BIT_64(10)
+/** Returns the value of the indirect branch tracking state machine: IDLE(0), WAIT_FOR_ENDBRANCH(1). */
+# define MSR_IA32_CET_TRACKER               RT_BIT_64(11)
+/** Linear address of memory containing a bitmap indicating valid pages as CALL/JMP targets not landing
+ * on a ENDBRANCH instruction. */
+# define MSR_IA32_CET_EB_LEG_BITMAP_BASE    UINT64_C(0xfffffffffffff000)
+/** @} */
 
 /** X2APIC MSR range start. */
 #define MSR_IA32_X2APIC_START               0x800
