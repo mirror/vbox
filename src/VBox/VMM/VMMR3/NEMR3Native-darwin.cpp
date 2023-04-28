@@ -530,7 +530,7 @@ DECLINLINE(int) nemR3DarwinHvSts2Rc(hv_return_t hrc)
  */
 DECLINLINE(int) nemR3DarwinUnmap(PVM pVM, RTGCPHYS GCPhys, size_t cb, uint8_t *pu2State)
 {
-    if (*pu2State <= NEM_DARWIN_PAGE_STATE_UNMAPPED)
+    if (*pu2State == NEM_DARWIN_PAGE_STATE_UNMAPPED)
     {
         Log5(("nemR3DarwinUnmap: %RGp == unmapped\n", GCPhys));
         *pu2State = NEM_DARWIN_PAGE_STATE_UNMAPPED;
@@ -556,6 +556,33 @@ DECLINLINE(int) nemR3DarwinUnmap(PVM pVM, RTGCPHYS GCPhys, size_t cb, uint8_t *p
     LogRel(("nemR3DarwinUnmap(%RGp): failed! hrc=%#x\n",
             GCPhys, hrc));
     return VERR_NEM_IPE_6;
+}
+
+
+/**
+ * Resolves a NEM page state from the given protection flags.
+ *
+ * @returns NEM page state.
+ * @param   fPageProt           The page protection flags.
+ */
+DECLINLINE(uint8_t) nemR3DarwinPageStateFromProt(uint32_t fPageProt)
+{
+    switch (fPageProt)
+    {
+        case NEM_PAGE_PROT_NONE:
+            return NEM_DARWIN_PAGE_STATE_UNMAPPED;
+        case NEM_PAGE_PROT_READ | NEM_PAGE_PROT_EXECUTE:
+            return NEM_DARWIN_PAGE_STATE_RX;
+        case NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE:
+            return NEM_DARWIN_PAGE_STATE_RW;
+        case NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE | NEM_PAGE_PROT_EXECUTE:
+            return NEM_DARWIN_PAGE_STATE_RWX;
+        default:
+            break;
+    }
+
+    AssertLogRelMsgFailed(("Invalid combination of page protection flags %#x, can't map to page state!\n", fPageProt));
+    return NEM_DARWIN_PAGE_STATE_UNMAPPED;
 }
 
 
@@ -593,17 +620,25 @@ DECLINLINE(int) nemR3DarwinMap(PVM pVM, RTGCPHYS GCPhys, const void *pvRam, size
     if (hrc == HV_SUCCESS)
     {
         if (pu2State)
-            *pu2State =   (fPageProt & NEM_PAGE_PROT_WRITE)
-                        ? NEM_DARWIN_PAGE_STATE_WRITABLE
-                        : NEM_DARWIN_PAGE_STATE_READABLE;
+            *pu2State = nemR3DarwinPageStateFromProt(fPageProt);
         return VINF_SUCCESS;
     }
 
     return nemR3DarwinHvSts2Rc(hrc);
 }
 
-#if 0 /* unused */
-DECLINLINE(int) nemR3DarwinProtectPage(PVM pVM, RTGCPHYS GCPhys, size_t cb, uint32_t fPageProt)
+
+/**
+ * Changes the protection flags for the given guest physical address range.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The cross context VM structure.
+ * @param   GCPhys              The guest physical address to start mapping.
+ * @param   cb                  The size of the range, page aligned.
+ * @param   fPageProt           The page protection flags to use for this range, combination of NEM_PAGE_PROT_XXX
+ * @param   pu2State            Where to store the state for the new page, optional.
+ */
+DECLINLINE(int) nemR3DarwinProtect(PVM pVM, RTGCPHYS GCPhys, size_t cb, uint32_t fPageProt, uint8_t *pu2State)
 {
     hv_memory_flags_t fHvMemProt = 0;
     if (fPageProt & NEM_PAGE_PROT_READ)
@@ -618,10 +653,16 @@ DECLINLINE(int) nemR3DarwinProtectPage(PVM pVM, RTGCPHYS GCPhys, size_t cb, uint
         hrc = hv_vm_protect_space(pVM->nem.s.uVmAsid, GCPhys, cb, fHvMemProt);
     else
         hrc = hv_vm_protect(GCPhys, cb, fHvMemProt);
+    if (hrc == HV_SUCCESS)
+    {
+        if (pu2State)
+            *pu2State = nemR3DarwinPageStateFromProt(fPageProt);
+        return VINF_SUCCESS;
+    }
 
     return nemR3DarwinHvSts2Rc(hrc);
 }
-#endif
+
 
 DECLINLINE(int) nemR3NativeGCPhys2R3PtrReadOnly(PVM pVM, RTGCPHYS GCPhys, const void **ppv)
 {
@@ -1213,7 +1254,6 @@ nemR3DarwinHandleMemoryAccessPageCheckerCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGC
     switch (u2State)
     {
         case NEM_DARWIN_PAGE_STATE_UNMAPPED:
-        case NEM_DARWIN_PAGE_STATE_NOT_SET:
         {
             if (pInfo->fNemProt == NEM_PAGE_PROT_NONE)
             {
@@ -1254,7 +1294,7 @@ nemR3DarwinHandleMemoryAccessPageCheckerCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGC
             pState->fCanResume    = true;
             return rc;
         }
-        case NEM_DARWIN_PAGE_STATE_READABLE:
+        case NEM_DARWIN_PAGE_STATE_RX:
             if (   !(pInfo->fNemProt & NEM_PAGE_PROT_WRITE)
                 && (pInfo->fNemProt & (NEM_PAGE_PROT_READ | NEM_PAGE_PROT_EXECUTE)))
             {
@@ -1264,11 +1304,13 @@ nemR3DarwinHandleMemoryAccessPageCheckerCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGC
             }
             break;
 
-        case NEM_DARWIN_PAGE_STATE_WRITABLE:
+        case NEM_DARWIN_PAGE_STATE_RW:
+        case NEM_DARWIN_PAGE_STATE_RWX:
             if (pInfo->fNemProt & NEM_PAGE_PROT_WRITE)
             {
                 pState->fCanResume = true;
-                if (pInfo->u2OldNemState == NEM_DARWIN_PAGE_STATE_WRITABLE)
+                if (   pInfo->u2OldNemState == NEM_DARWIN_PAGE_STATE_RW
+                    || pInfo->u2OldNemState == NEM_DARWIN_PAGE_STATE_RWX)
                     Log4(("nemR3DarwinHandleMemoryAccessPageCheckerCallback: Spurious EPT fault\n", GCPhys));
                 return VINF_SUCCESS;
             }
@@ -4235,7 +4277,7 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapEarly(PVM pVM, RTGCPHYS GCPhys, RTGC
     if (pvMmio2)
     {
         Assert(fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2);
-        int rc = nemR3DarwinMap(pVM, GCPhys, pvMmio2, cb, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE | NEM_PAGE_PROT_EXECUTE, pu2State);
+        int rc = nemR3DarwinMap(pVM, GCPhys, pvMmio2, cb, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE, pu2State);
         if (RT_FAILURE(rc))
         {
             LogRel(("NEMR3NotifyPhysMmioExMapEarly: GCPhys=%RGp LB %RGp fFlags=%#x pvMmio2=%p: Map -> rc=%Rrc\n",
@@ -4282,9 +4324,9 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHY
         rc = nemR3DarwinUnmap(pVM, GCPhys, cb, pu2State);
         if (RT_FAILURE(rc))
         {
-            LogRel2(("NEMR3NotifyPhysMmioExUnmap: GCPhys=%RGp LB %RGp fFlags=%#x: Unmap -> rc=%Rrc\n",
-                     GCPhys, cb, fFlags, rc));
-            rc = VERR_NEM_UNMAP_PAGES_FAILED;
+            LogRel(("NEMR3NotifyPhysMmioExUnmap: GCPhys=%RGp LB %RGp fFlags=%#x: Unmap -> rc=%Rrc\n",
+                    GCPhys, cb, fFlags, rc));
+            return VERR_NEM_UNMAP_PAGES_FAILED;
         }
     }
 
@@ -4330,10 +4372,21 @@ VMMR3_INT_DECL(int) NEMR3PhysMmio2QueryAndResetDirtyBitmap(PVM pVM, RTGCPHYS GCP
 VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, void *pvPages, uint32_t fFlags,
                                                      uint8_t *pu2State, uint32_t *puNemRange)
 {
-    RT_NOREF(pVM, GCPhys, cb, pvPages, fFlags, puNemRange);
+    RT_NOREF(pvPages);
 
-    Log5(("nemR3NativeNotifyPhysRomRegisterEarly: %RGp LB %RGp pvPages=%p fFlags=%#x\n", GCPhys, cb, pvPages, fFlags));
-    *pu2State   = UINT8_MAX;
+    Log5(("nemR3NativeNotifyPhysRomRegisterEarly: %RGp LB %RGp pvPages=%p fFlags=%#x pu2State=%p (%d) puNemRange=%p (%#x)\n",
+          GCPhys, cb, pvPages, fFlags, pu2State, *pu2State, puNemRange, *puNemRange));
+    if (fFlags & NEM_NOTIFY_PHYS_ROM_F_REPLACE)
+    {
+        int rc = nemR3DarwinUnmap(pVM, GCPhys, cb, pu2State);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("NEMR3NotifyPhysRomRegisterLate: GCPhys=%RGp LB %RGp fFlags=%#x: Unmap -> rc=%Rrc\n",
+                    GCPhys, cb, fFlags, rc));
+            return VERR_NEM_UNMAP_PAGES_FAILED;
+        }
+    }
+
     *puNemRange = 0;
     return VINF_SUCCESS;
 }
@@ -4345,49 +4398,18 @@ VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RT
     Log5(("nemR3NativeNotifyPhysRomRegisterLate: %RGp LB %RGp pvPages=%p fFlags=%#x pu2State=%p (%d) puNemRange=%p (%#x)\n",
           GCPhys, cb, pvPages, fFlags, pu2State, *pu2State, puNemRange, *puNemRange));
     *pu2State = UINT8_MAX;
-
-#if defined(VBOX_WITH_PGM_NEM_MODE)
-    /*
-     * (Re-)map readonly.
-     */
-    AssertPtrReturn(pvPages, VERR_INVALID_POINTER);
-    int rc = nemR3DarwinMap(pVM, GCPhys, pvPages, cb, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_EXECUTE, pu2State);
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("nemR3NativeNotifyPhysRomRegisterLate: GCPhys=%RGp LB %RGp pvPages=%p fFlags=%#x rc=%Rrc\n",
-                GCPhys, cb, pvPages, fFlags, rc));
-        return VERR_NEM_MAP_PAGES_FAILED;
-    }
-    RT_NOREF(fFlags, puNemRange);
-    return VINF_SUCCESS;
-#else
     RT_NOREF(pVM, GCPhys, cb, pvPages, fFlags, puNemRange);
-    return VERR_NEM_MAP_PAGES_FAILED;
-#endif
+    return VINF_SUCCESS;
 }
 
 
 VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalDeregister(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb,
                                                         RTR3PTR pvMemR3, uint8_t *pu2State)
 {
-    RT_NOREF(pVM);
-
     Log5(("NEMHCNotifyHandlerPhysicalDeregister: %RGp LB %RGp enmKind=%d pvMemR3=%p pu2State=%p (%d)\n",
           GCPhys, cb, enmKind, pvMemR3, pu2State, *pu2State));
-
     *pu2State = UINT8_MAX;
-#if defined(VBOX_WITH_PGM_NEM_MODE)
-    if (pvMemR3)
-    {
-        int rc = nemR3DarwinMap(pVM, GCPhys, pvMemR3, cb, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE | NEM_PAGE_PROT_EXECUTE, pu2State);
-        AssertLogRelMsgRC(rc, ("NEMHCNotifyHandlerPhysicalDeregister: nemR3DarwinMap(,%p,%RGp,%RGp,) -> %Rrc\n",
-                          pvMemR3, GCPhys, cb, rc));
-    }
-    RT_NOREF(enmKind);
-#else
     RT_NOREF(pVM, enmKind, GCPhys, cb, pvMemR3);
-    AssertFailed();
-#endif
 }
 
 
@@ -4428,11 +4450,29 @@ int nemHCNativeNotifyPhysPageAllocated(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS HCPh
 VMM_INT_DECL(void) NEMHCNotifyPhysPageProtChanged(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, RTR3PTR pvR3, uint32_t fPageProt,
                                                   PGMPAGETYPE enmType, uint8_t *pu2State)
 {
-    Log5(("NEMHCNotifyPhysPageProtChanged: %RGp HCPhys=%RHp fPageProt=%#x enmType=%d *pu2State=%d\n",
-          GCPhys, HCPhys, fPageProt, enmType, *pu2State));
+    Log5(("NEMHCNotifyPhysPageProtChanged: %RGp HCPhys=%RHp pvR3=%p fPageProt=%#x enmType=%d *pu2State=%d\n",
+          GCPhys, HCPhys, pvR3, fPageProt, enmType, *pu2State));
     RT_NOREF(HCPhys, pvR3, fPageProt, enmType)
 
-    nemR3DarwinUnmap(pVM, GCPhys, X86_PAGE_SIZE, pu2State);
+    uint8_t u2StateOld = *pu2State;
+    /* Can return early if this is an unmap request and the page is not mapped. */
+    if (   fPageProt == NEM_PAGE_PROT_NONE
+        && u2StateOld == NEM_DARWIN_PAGE_STATE_UNMAPPED)
+    {
+        Assert(!pvR3);
+        return;
+    }
+
+    int rc;
+    if (u2StateOld == NEM_DARWIN_PAGE_STATE_UNMAPPED)
+    {
+        AssertPtr(pvR3);
+        rc = nemR3DarwinMap(pVM, GCPhys, pvR3, X86_PAGE_SIZE, fPageProt, pu2State);
+    }
+    else
+        rc = nemR3DarwinProtect(pVM, GCPhys, X86_PAGE_SIZE, fPageProt, pu2State);
+    AssertLogRelMsgRC(rc, ("NEMHCNotifyPhysPageProtChanged: nemR3DarwinMap/nemR3DarwinProtect(,%p,%RGp,%RGp,) u2StateOld=%u -> %Rrc\n",
+                      pvR3, GCPhys, X86_PAGE_SIZE, u2StateOld, rc));
 }
 
 
