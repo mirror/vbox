@@ -80,7 +80,7 @@ extern "C" DECLEXPORT(int) Entrypoint(void)
 extern "C" DECLEXPORT(uint32_t) SomeExportFunction1(void *pvBuf)
 {
     NOREF(pvBuf);
-    return achBss[0] + achBss[16384];
+    return achBss[0] + achBss[RT_ELEMENTS(achBss) - 1];
 }
 
 
