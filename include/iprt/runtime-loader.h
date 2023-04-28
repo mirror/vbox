@@ -200,7 +200,7 @@ RTR3DECL(int) RT_RUNTIME_LOADER_FUNCTION(void)
 /* Variadict functions needs custom mappings via \#defines as we cannot forward
    the arguments in an inline function, so only make the function pointer available here. */
 # define RT_PROXY_VARIADIC_STUB(function, rettype, signature) \
-    rettype (*g_pfn_ ## function) signature; \
+    rettype (*function) signature;
 
 RT_RUNTIME_LOADER_INSERT_SYMBOLS
 
