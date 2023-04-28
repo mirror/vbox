@@ -246,7 +246,8 @@ else
 endif
 VBox-libtpms_DEFS           = \
 	WITH_TPM1 \
-	WITH_TPM2
+	WITH_TPM2 \
+	TPM_LIBTPMS_CALLBACKS
 VBox-libtpms_INCS           = \
 	$(VBOX_PATH_LIBTPMS) \
 	$(VBOX_PATH_LIBTPMS)/include/libtpms \
