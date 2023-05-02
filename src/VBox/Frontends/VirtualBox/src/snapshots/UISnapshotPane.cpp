@@ -511,6 +511,7 @@ UISnapshotTree::UISnapshotTree(QWidget *pParent)
     : QITreeWidget(pParent)
 {
     /* Configure snapshot tree: */
+    setAutoScroll(false);
     setColumnCount(Column_Max);
     setAllColumnsShowFocus(true);
     setAlternatingRowColors(true);
