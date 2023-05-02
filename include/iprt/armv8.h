@@ -163,8 +163,8 @@
 /** @name Mapping of op0:op1:CRn:CRm:op2 to a system register ID. This is
  * IPRT specific and not part of the ARMv8 specification. */
 #define ARMV8_AARCH64_SYSREG_ID_CREATE(a_Op0, a_Op1, a_CRn, a_CRm, a_Op2) \
-    UINT16_C(  (((a_Op1) & 0x3) << 15) \
-             | (((a_Op1) & 0x7) << 12) \
+    UINT16_C(  (((a_Op0) & 0x3) << 14) \
+             | (((a_Op1) & 0x7) << 11) \
              | (((a_CRn) & 0xf) <<  7) \
              | (((a_CRm) & 0xf) <<  3) \
              |  ((a_Op2) & 0x7))
@@ -183,6 +183,13 @@
 
 /** @name System register IDs.
  * @{ */
+/** OSLAR_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_OSLAR_EL1              ARMV8_AARCH64_SYSREG_ID_CREATE(2, 0, 1, 0, 4)
+/** OSLSR_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_OSLSR_EL1              ARMV8_AARCH64_SYSREG_ID_CREATE(2, 0, 1, 1, 4)
+/** OSDLR_EL1 register - RW. */
+#define ARMV8_AARCH64_SYSREG_OSDLR_EL1              ARMV8_AARCH64_SYSREG_ID_CREATE(2, 0, 1, 3, 4)
+
 /** MIDR_EL1 register - RO. */
 #define ARMV8_AARCH64_SYSREG_MIDR_EL1               ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 0, 0, 0)
 /** MIPDR_EL1 register - RO. */
@@ -759,6 +766,14 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 #define ARMV8_EC_ISS_AARCH64_TRAPPED_SYS_INSN_OP0_GET(a_Iss)    (((a_Iss) & ARMV8_EC_ISS_AARCH64_TRAPPED_SYS_INSN_OP0) >> 20)
 /** Bit 22 - 24 - Reserved. */
 #define ARMV8_EC_ISS_AARCH64_TRAPPED_SYS_INSN_RSVD              (RT_BIT_32(22) | RT_BIT_32(23) | RT_BIT_32(24))
+/** @} */
+
+
+/** @name ISS encoding for trapped HVC instruction exceptions.
+ * @{ */
+/** Bit 0 - 15 - imm16 value of the instruction. */
+#define ARMV8_EC_ISS_AARCH64_TRAPPED_HVC_INSN_IMM               (UINT16_C(0xffff))
+#define ARMV8_EC_ISS_AARCH64_TRAPPED_HVC_INSN_IMM_GET(a_Iss)    ((a_Iss) & ARMV8_EC_ISS_AARCH64_TRAPPED_HVC_INSN_IMM)
 /** @} */
 
 /** @} */
