@@ -32,6 +32,9 @@ include $(KBUILD_PATH)/subheader.kmk
 # This is mostly because the GA build boxes can have a very old xrandr lib, so instead of linking we dlopen.
 VBOX_WITH_DISTRO_XRAND_XINERAMA =
 
+# We want to lazy load as much stuff as possible. See #10427.
+VBOX_WITH_VBOXCLIENT_LAZY_LOAD := 1
+
 # We don't yet have a seamless mode compilation flag, so define it here unconditionally.
 VBOX_WITH_SEAMLESS := 1
 
@@ -89,11 +92,15 @@ VBoxClient_LIBS.netbsd = \
 	crypt
 VBoxClient_LIBS.solaris = \
 	dl
-VBoxClient_LIBS = \
+ifndef VBOX_WITH_VBOXCLIENT_LAZY_LOAD
+ VBoxClient_LIBS = \
 	X11 Xt Xext Xmu
+endif
 ifdef VBOX_WITH_DISTRO_XRAND_XINERAMA
  VBoxClient_DEFS += WITH_DISTRO_XRAND_XINERAMA
- VBoxClient_LIBS += Xrandr
+ ifndef VBOX_WITH_VBOXCLIENT_LAZY_LOAD
+  VBoxClient_LIBS += Xrandr
+ endif
 endif
 
 # XXX: -L comes from the template, but not rpath
@@ -183,6 +190,45 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
    	$(PATH_ROOT)/src/VBox/ImageMounter/vboximg-mount
   endif
  endif
+endif
+
+ifdef VBOX_WITH_VBOXCLIENT_LAZY_LOAD
+ VBoxClient_DEFS    += VBOX_WITH_VBOXCLIENT_LAZY_LOAD
+ # Dynamic import no. 1: libX11.so.6
+ VBoxClient_SOURCES += \
+   	$(VBoxClient_0_OUTDIR)/libX11LazyLoad.asm
+ VBoxClient_CLEAN         += $(VBoxClient_0_OUTDIR)/libX11LazyLoad.asm
+ $$(VBoxClient_0_OUTDIR)/libX11LazyLoad.asm: $(PATH_ROOT)/src/VBox/GuestHost/libX11.def $(VBOX_DEF_2_LAZY_LOAD) | $$(dir $$@)
+	$(call MSG_TOOL,VBoxDef2LazyLoad,VBoxClient,$(filter %.def, $^),$@)
+	$(QUIET)$(RM) -f -- "$@"
+	$(VBOX_DEF_2_LAZY_LOAD) --system --library libX11.so.6 --output "$@" $(filter %.def, $^)
+
+ # Dynamic import no. 2: libXt.so.6
+ VBoxClient_SOURCES += \
+   	$(VBoxClient_0_OUTDIR)/libXtLazyLoad.asm
+ VBoxClient_CLEAN         += $(VBoxClient_0_OUTDIR)/libXtLazyLoad.asm
+ $$(VBoxClient_0_OUTDIR)/libXtLazyLoad.asm: $(PATH_ROOT)/src/VBox/GuestHost/libXt.def $(VBOX_DEF_2_LAZY_LOAD) | $$(dir $$@)
+	$(call MSG_TOOL,VBoxDef2LazyLoad,VBoxClient,$(filter %.def, $^),$@)
+	$(QUIET)$(RM) -f -- "$@"
+	$(VBOX_DEF_2_LAZY_LOAD) --system --library libXt.so.6 --output "$@" $(filter %.def, $^)
+
+ # Dynamic import no. 3: libXmu.so.6
+ VBoxClient_SOURCES += \
+   	$(VBoxClient_0_OUTDIR)/libXmuLazyLoad.asm
+ VBoxClient_CLEAN         += $(VBoxClient_0_OUTDIR)/libXmuLazyLoad.asm
+ $$(VBoxClient_0_OUTDIR)/libXmuLazyLoad.asm: $(PATH_ROOT)/src/VBox/GuestHost/libXmu.def $(VBOX_DEF_2_LAZY_LOAD) | $$(dir $$@)
+	$(call MSG_TOOL,VBoxDef2LazyLoad,VBoxClient,$(filter %.def, $^),$@)
+	$(QUIET)$(RM) -f -- "$@"
+	$(VBOX_DEF_2_LAZY_LOAD) --system --library libXmu.so.6 --output "$@" $(filter %.def, $^)
+
+ # Dynamic import no. 4: libXrandr.so.2
+ VBoxClient_SOURCES += \
+   	$(VBoxClient_0_OUTDIR)/libXrandrLazyLoad.asm
+ VBoxClient_CLEAN         += $(VBoxClient_0_OUTDIR)/libXrandrLazyLoad.asm
+ $$(VBoxClient_0_OUTDIR)/libXrandrLazyLoad.asm: $(PATH_ROOT)/src/VBox/GuestHost/libXrandr.def $(VBOX_DEF_2_LAZY_LOAD) | $$(dir $$@)
+	$(call MSG_TOOL,VBoxDef2LazyLoad,VBoxClient,$(filter %.def, $^),$@)
+	$(QUIET)$(RM) -f -- "$@"
+	$(VBOX_DEF_2_LAZY_LOAD) --system --library libXrandr.so.2 --output "$@" $(filter %.def, $^)
 endif
 
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)

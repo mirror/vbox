@@ -162,11 +162,20 @@ int XmbTextPropertyToTextList(
 {
   return 0;
 }
-# else
+# else /* !RT_OS_SOLARIS_10 */
 const char XtStrings [] = "";
 _WidgetClassRec* applicationShellWidgetClass;
 const char XtShellStrings [] = "";
 # endif /* RT_OS_SOLARIS_10 */
+#else /* !TESTCASE */
+# ifdef VBOX_WITH_VBOXCLIENT_LAZY_LOAD
+/* Defines needed for lazy loading global data from the shared objects (.so).
+ * See r157060. */
+DECLASM(WidgetClass * ) LazyGetPtr_applicationShellWidgetClass(void);
+#define applicationShellWidgetClass (*LazyGetPtr_applicationShellWidgetClass())
+DECLASM(const char *) LazyGetPtr_XtStrings(void);
+#define XtStrings (LazyGetPtr_XtStrings())
+# endif
 #endif /* TESTCASE */
 
 
@@ -1084,8 +1093,9 @@ static int clipInitInternal(PSHCLX11CTX pCtx)
     {
         pCtx->pWidget = XtVaAppCreateShell(0, "VBoxShCl",
                                            applicationShellWidgetClass,
-                                           pDisplay, XtNwidth, 1, XtNheight,
-                                           1, NULL);
+                                           pDisplay,
+                                           XtNwidth, 1, XtNheight, 1,
+                                           NULL);
         if (pCtx->pWidget == NULL)
         {
             LogRel(("Shared Clipboard: Failed to create Xt app shell\n"));
