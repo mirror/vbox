@@ -245,7 +245,7 @@ void importOVF(const char *pcszPrefix,
                 break;
 
                 default:
-                    throw MyError(E_UNEXPECTED, "Invalid VirtualSystemDescriptionType (enum)\n");
+                    throw MyError(E_UNEXPECTED, Utf8StrFmt("Invalid VirtualSystemDescriptionType (enum=%d)\n", t).c_str());
                 break;
             }
 
