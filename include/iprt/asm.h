@@ -6819,7 +6819,7 @@ DECLINLINE(bool) ASMBitTest(const volatile void RT_FAR *pvBitmap, int32_t iBit) 
 
 # else
     int32_t offBitmap = iBit / 32;
-    AssertRelease(!((uintptr_t)pvBitmap & (sizeof(uintptr_t) - 1))); /* This assumes a power of two uintptr_t size. */
+    AssertRelease(!((uintptr_t)pvBitmap & (sizeof(uint32_t) - 1)));
     rc.u32 = RT_LE2H_U32(ASMAtomicUoReadU32(&((uint32_t volatile *)pvBitmap)[offBitmap])) >> (iBit & 31);
     rc.u32 &= 1;
 # endif
