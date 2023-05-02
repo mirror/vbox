@@ -398,7 +398,7 @@ void UIMachineLogic::sltMachineStateChanged()
     /* Update action groups: */
     m_pRunningActions->setEnabled(uimachine()->isRunning());
     m_pRunningOrPausedActions->setEnabled(uimachine()->isRunning() || uimachine()->isPaused());
-    m_pRunningOrPausedOrStackedActions->setEnabled(uimachine()->isRunning() || uimachine()->isPaused() || uimachine()->isStuck());
+    m_pRunningOrPausedOrStuckActions->setEnabled(uimachine()->isRunning() || uimachine()->isPaused() || uimachine()->isStuck());
 
     switch (state)
     {
@@ -755,7 +755,7 @@ UIMachineLogic::UIMachineLogic(UIMachine *pMachine)
     , m_pMouseHandler(0)
     , m_pRunningActions(0)
     , m_pRunningOrPausedActions(0)
-    , m_pRunningOrPausedOrStackedActions(0)
+    , m_pRunningOrPausedOrStuckActions(0)
     , m_pSharedClipboardActions(0)
     , m_pDragAndDropActions(0)
     , m_fIsWindowsCreated(false)
@@ -905,8 +905,8 @@ void UIMachineLogic::prepareActionGroups()
     /* Create group for all actions that are enabled when the VM is running or paused or stucked.
      * Note that only actions whose enabled state depends exclusively on the
      * execution state of the VM are added to this group. */
-    m_pRunningOrPausedOrStackedActions = new QActionGroup(this);
-    m_pRunningOrPausedOrStackedActions->setExclusive(false);
+    m_pRunningOrPausedOrStuckActions = new QActionGroup(this);
+    m_pRunningOrPausedOrStuckActions->setExclusive(false);
 
     /* Move actions into running actions group: */
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_Reset));
@@ -978,16 +978,16 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndex_M_Window));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndex_M_Window_S_Minimize));
 #endif /* VBOX_WS_MAC */
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Debug));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowStatistics));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowCommandLine));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Debug_T_Logging));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Debug_S_GuestControlConsole));
-#endif /* VBOX_WITH_DEBUGGER_GUI */
 
-    /* Move actions into running-n-paused-n-stucked actions group: */
-    m_pRunningOrPausedOrStackedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_PowerOff));
+    /* Move actions into running-n-paused-n-stuck actions group: */
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    m_pRunningOrPausedOrStuckActions->addAction(actionPool()->action(UIActionIndexRT_M_Debug));
+    m_pRunningOrPausedOrStuckActions->addAction(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowStatistics));
+    m_pRunningOrPausedOrStuckActions->addAction(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowCommandLine));
+    m_pRunningOrPausedOrStuckActions->addAction(actionPool()->action(UIActionIndexRT_M_Debug_T_Logging));
+    m_pRunningOrPausedOrStuckActions->addAction(actionPool()->action(UIActionIndexRT_M_Debug_S_GuestControlConsole));
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+    m_pRunningOrPausedOrStuckActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_PowerOff));
 }
 
 void UIMachineLogic::prepareActionConnections()

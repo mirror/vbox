@@ -370,7 +370,7 @@ private:
 
     QActionGroup *m_pRunningActions;
     QActionGroup *m_pRunningOrPausedActions;
-    QActionGroup *m_pRunningOrPausedOrStackedActions;
+    QActionGroup *m_pRunningOrPausedOrStuckActions;
     QActionGroup *m_pSharedClipboardActions;
     QActionGroup *m_pDragAndDropActions;
 
