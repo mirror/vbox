@@ -29,6 +29,7 @@ LIBRARY libX11.so.6
 EXPORTS
     _XData32
     _XGetRequest
+    _XFlush
     _XReply
     _XSend
     XBlackPixel
