@@ -133,6 +133,7 @@ stop() {
     if test -f $PIDFILE; then
         begin_msg "Stopping VirtualBox Test Execution Service" console
         killproc $binary
+        rm -f $PIDFILE
     fi
 }
 
