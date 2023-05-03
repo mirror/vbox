@@ -185,16 +185,6 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
    VBoxClient_SOURCES += \
    	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers-http.cpp
   endif
-  ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
-   VBoxClient_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_FUSE
-   # @todo Make this dynamic loading more generic.
-   VBoxClient_SOURCES += \
-   	$(PATH_ROOT)/src/VBox/ImageMounter/vboximg-mount/fuse.cpp \
-   	clipboard-fuse.cpp
-   # @todo Ditto.
-   VBoxClient_INCS    += \
-   	$(PATH_ROOT)/src/VBox/ImageMounter/vboximg-mount
-  endif
  endif
 endif
 

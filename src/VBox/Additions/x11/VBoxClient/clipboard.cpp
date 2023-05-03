@@ -32,9 +32,6 @@
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
-# include <iprt/dir.h>
-#endif
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
@@ -51,9 +48,6 @@
 #include "VBoxClient.h"
 
 #include "clipboard.h"
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
-# include "clipboard-fuse.h"
-#endif
 
 
 /*********************************************************************************************************************************
@@ -62,9 +56,6 @@
 
 /** Only one context is supported at a time for now. */
 SHCLCONTEXT g_Ctx;
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
-SHCLFUSECTX g_FuseCtx;
-#endif
 
 
 static DECLCALLBACK(int) vbclOnRequestDataFromSourceCallback(PSHCLCONTEXT pCtx,
@@ -370,26 +361,10 @@ static DECLCALLBACK(int) vbclShClWorker(bool volatile *pfShutdown)
     int rc = vboxClipboardConnect();
     if (RT_SUCCESS(rc))
     {
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
-        rc = VbClShClFUSEInit(&g_FuseCtx, &g_Ctx);
-        if (RT_SUCCESS(rc))
-        {
-            rc = VbClShClFUSEStart(&g_FuseCtx);
-            if (RT_SUCCESS(rc))
-            {
-#endif
-                /* Let the main thread know that it can continue spawning services. */
-                RTThreadUserSignal(RTThreadSelf());
+        /* Let the main thread know that it can continue spawning services. */
+        RTThreadUserSignal(RTThreadSelf());
 
-                rc = vboxClipboardMain();
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
-                int rc2 = VbClShClFUSEStop(&g_FuseCtx);
-                if (RT_SUCCESS(rc))
-                    rc = rc2;
-            }
-        }
-#endif
+        rc = vboxClipboardMain();
     }
 
     if (RT_FAILURE(rc))
