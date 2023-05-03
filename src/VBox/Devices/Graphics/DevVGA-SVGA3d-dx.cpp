@@ -2563,7 +2563,7 @@ int vmsvga3dDXGrowCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXGrowCOTable const *pCm
 }
 
 
-int vmsvga3dIntraSurfaceCopy(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dIntraSurfaceCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdIntraSurfaceCopy const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -2575,7 +2575,7 @@ int vmsvga3dIntraSurfaceCopy(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnIntraSurfaceCopy(pThisCC, pDXContext);
+    rc = pSvgaR3State->pFuncsDX->pfnIntraSurfaceCopy(pThisCC, pDXContext, pCmd->surface, pCmd->box);
     return rc;
 }
 

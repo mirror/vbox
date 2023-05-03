@@ -514,7 +514,7 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnDXBufferUpdate,              (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXCondBindAllShader,         (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnScreenCopy,                  (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
-    DECLCALLBACKMEMBER(int, pfnIntraSurfaceCopy,            (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
+    DECLCALLBACKMEMBER(int, pfnIntraSurfaceCopy,            (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dSurfaceImageId const &surface, SVGA3dCopyBox const &box));
     DECLCALLBACKMEMBER(int, pfnDXResolveCopy,               (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXPredResolveCopy,           (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXPredConvertRegion,         (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
@@ -634,7 +634,7 @@ int vmsvga3dDXSetConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext,
 int vmsvga3dDXCondBindAllShader(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dScreenCopy(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXGrowCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXGrowCOTable const *pCmd);
-int vmsvga3dIntraSurfaceCopy(PVGASTATECC pThisCC, uint32_t idDXContext);
+int vmsvga3dIntraSurfaceCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdIntraSurfaceCopy const *pCmd);
 int vmsvga3dDXResolveCopy(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXPredResolveCopy(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXPredConvertRegion(PVGASTATECC pThisCC, uint32_t idDXContext);
