@@ -776,6 +776,221 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 #define ARMV8_EC_ISS_AARCH64_TRAPPED_HVC_INSN_IMM_GET(a_Iss)    ((a_Iss) & ARMV8_EC_ISS_AARCH64_TRAPPED_HVC_INSN_IMM)
 /** @} */
 
+
+/** @name TCR_EL1 - Translation Control Register (EL1)
+ * @{
+ */
+/** Bit 0 - 5 - Size offset of the memory region addressed by TTBR0_EL1 (2^(64-T0SZ)). */
+#define ARMV8_TCR_EL1_AARCH64_T0SZ                              (  RT_BIT_64(0) | RT_BIT_64(1) | RT_BIT_64(2) \
+                                                                 | RT_BIT_64(3) | RT_BIT_64(4) | RT_BIT_64(5))
+#define ARMV8_TCR_EL1_AARCH64_T0SZ_GET(a_Tcr)                   ((a_Tcr) & ARMV8_TCR_EL1_AARCH64_T1SZ)
+/** Bit 7 - Translation table walk disable for translations using TTBR0_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_EPD0                              RT_BIT_64(7)
+#define ARMV8_TCR_EL1_AARCH64_EPD0_BIT                          7
+/** Bit 8 - 9 - Inner cacheability attribute for memory associated with translation table walks using TTBR0_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_IRGN0                             (RT_BIT_64(8) | RT_BIT_64(9))
+#define ARMV8_TCR_EL1_AARCH64_IRGN0_GET(a_Tcr)                  (((a_Tcr) & ARMV8_TCR_EL1_AARCH64_IRGN0) >> 8)
+/** Non cacheable. */
+# define ARMV8_TCR_EL1_AARCH64_IRGN0_NON_CACHEABLE              0
+/** Write-Back, Read-Allocate, Write-Allocate Cacheable. */
+# define ARMV8_TCR_EL1_AARCH64_IRGN0_WB_RA_WA                   1
+/** Write-Through, Read-Allocate, No Write-Allocate Cacheable. */
+# define ARMV8_TCR_EL1_AARCH64_IRGN0_WT_RA_NWA                  2
+/** Write-Back, Read-Allocate, No Write-Allocate Cacheable. */
+# define ARMV8_TCR_EL1_AARCH64_IRGN0_WB_RA_NWA                  3
+/** Bit 27 - 26 - Outer cacheability attribute for memory associated with translation table walks using TTBR0_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_ORGN0                             (RT_BIT_64(10) | RT_BIT_64(11))
+#define ARMV8_TCR_EL1_AARCH64_ORGN0_GET(a_Tcr)                  (((a_Tcr) & ARMV8_TCR_EL1_AARCH64_ORGN0) >> 10)
+/** Non cacheable. */
+# define ARMV8_TCR_EL1_AARCH64_ORGN0_NON_CACHEABLE              0
+/** Write-Back, Read-Allocate, Write-Allocate Cacheable. */
+# define ARMV8_TCR_EL1_AARCH64_ORGN0_WB_RA_WA                   1
+/** Write-Through, Read-Allocate, No Write-Allocate Cacheable. */
+# define ARMV8_TCR_EL1_AARCH64_ORGN0_WT_RA_NWA                  2
+/** Write-Back, Read-Allocate, No Write-Allocate Cacheable. */
+# define ARMV8_TCR_EL1_AARCH64_ORGN0_WB_RA_NWA                  3
+/** Bit 12 - 13 - Shareability attribute memory associated with translation table walks using TTBR0_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_SH0                               (RT_BIT_64(12) | RT_BIT_64(13))
+#define ARMV8_TCR_EL1_AARCH64_SH0_GET(a_Tcr)                    (((a_Tcr) & ARMV8_TCR_EL1_AARCH64_SH0) >> 12)
+/** Non shareable. */
+# define ARMV8_TCR_EL1_AARCH64_SH0_NON_SHAREABLE                0
+/** Invalid value. */
+# define ARMV8_TCR_EL1_AARCH64_SH0_INVALID                      1
+/** Outer Shareable. */
+# define ARMV8_TCR_EL1_AARCH64_SH0_OUTER_SHAREABLE              2
+/** Inner Shareable. */
+# define ARMV8_TCR_EL1_AARCH64_SH0_INNER_SHAREABLE              3
+/** Bit 14 - 15 - Translation Granule Size for TTBR0_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_TG0                               (RT_BIT_64(14) | RT_BIT_64(15))
+#define ARMV8_TCR_EL1_AARCH64_TG0_GET(a_Tcr)                    (((a_Tcr) & ARMV8_TCR_EL1_AARCH64_TG0) >> 14)
+/** Invalid granule size. */
+# define ARMV8_TCR_EL1_AARCH64_TG0_INVALID                      0
+/** 16KiB granule size. */
+# define ARMV8_TCR_EL1_AARCH64_TG0_16KB                         1
+/** 4KiB granule size. */
+# define ARMV8_TCR_EL1_AARCH64_TG0_4KB                          2
+/** 64KiB granule size. */
+# define ARMV8_TCR_EL1_AARCH64_TG0_64KB                         3
+/** Bit 16 - 21 - Size offset of the memory region addressed by TTBR1_EL1 (2^(64-T1SZ)). */
+#define ARMV8_TCR_EL1_AARCH64_T1SZ                              (  RT_BIT_64(16) | RT_BIT_64(17) | RT_BIT_64(18) \
+                                                                 | RT_BIT_64(19) | RT_BIT_64(20) | RT_BIT_64(21))
+#define ARMV8_TCR_EL1_AARCH64_T1SZ_GET(a_Tcr)                   (((a_Tcr) & ARMV8_TCR_EL1_AARCH64_T1SZ) >> 16)
+/** Bit 22 - Selects whether TTBR0_EL1 (0) or TTBR1_EL1 (1) defines the ASID. */
+#define ARMV8_TCR_EL1_AARCH64_A1                                RT_BIT_64(22)
+#define ARMV8_TCR_EL1_AARCH64_A1_BIT                            22
+/** Bit 23 - Translation table walk disable for translations using TTBR1_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_EPD1                              RT_BIT_64(23)
+#define ARMV8_TCR_EL1_AARCH64_EPD1_BIT                          23
+/** Bit 24 - 25 - Inner cacheability attribute for memory associated with translation table walks using TTBR1_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_IRGN1                             (RT_BIT_64(24) | RT_BIT_64(25))
+#define ARMV8_TCR_EL1_AARCH64_IRGN1_GET(a_Tcr)                  (((a_Tcr) & ARMV8_TCR_EL1_AARCH64_IRGN1) >> 26)
+/** Non cacheable. */
+# define ARMV8_TCR_EL1_AARCH64_IRGN1_NON_CACHEABLE              0
+/** Write-Back, Read-Allocate, Write-Allocate Cacheable. */
+# define ARMV8_TCR_EL1_AARCH64_IRGN1_WB_RA_WA                   1
+/** Write-Through, Read-Allocate, No Write-Allocate Cacheable. */
+# define ARMV8_TCR_EL1_AARCH64_IRGN1_WT_RA_NWA                  2
+/** Write-Back, Read-Allocate, No Write-Allocate Cacheable. */
+# define ARMV8_TCR_EL1_AARCH64_IRGN1_WB_RA_NWA                  3
+/** Bit 27 - 26 - Outer cacheability attribute for memory associated with translation table walks using TTBR1_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_ORGN1                             (RT_BIT_64(26) | RT_BIT_64(27))
+#define ARMV8_TCR_EL1_AARCH64_ORGN1_GET(a_Tcr)                  (((a_Tcr) & ARMV8_TCR_EL1_AARCH64_ORGN1) >> 26)
+/** Non cacheable. */
+# define ARMV8_TCR_EL1_AARCH64_ORGN1_NON_CACHEABLE              0
+/** Write-Back, Read-Allocate, Write-Allocate Cacheable. */
+# define ARMV8_TCR_EL1_AARCH64_ORGN1_WB_RA_WA                   1
+/** Write-Through, Read-Allocate, No Write-Allocate Cacheable. */
+# define ARMV8_TCR_EL1_AARCH64_ORGN1_WT_RA_NWA                  2
+/** Write-Back, Read-Allocate, No Write-Allocate Cacheable. */
+# define ARMV8_TCR_EL1_AARCH64_ORGN1_WB_RA_NWA                  3
+/** Bit 28 - 29 - Shareability attribute memory associated with translation table walks using TTBR1_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_SH1                               (RT_BIT_64(28) | RT_BIT_64(29))
+#define ARMV8_TCR_EL1_AARCH64_SH1_GET(a_Tcr)                    (((a_Tcr) & ARMV8_TCR_EL1_AARCH64_SH1) >> 28)
+/** Non shareable. */
+# define ARMV8_TCR_EL1_AARCH64_SH1_NON_SHAREABLE                0
+/** Invalid value. */
+# define ARMV8_TCR_EL1_AARCH64_SH1_INVALID                      1
+/** Outer Shareable. */
+# define ARMV8_TCR_EL1_AARCH64_SH1_OUTER_SHAREABLE              2
+/** Inner Shareable. */
+# define ARMV8_TCR_EL1_AARCH64_SH1_INNER_SHAREABLE              3
+/** Bit 30 - 31 - Translation Granule Size for TTBR1_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_TG1                               (RT_BIT_64(30) | RT_BIT_64(31))
+#define ARMV8_TCR_EL1_AARCH64_TG1_GET(a_Tcr)                    (((a_Tcr) & ARMV8_TCR_EL1_AARCH64_TG1) >> 30)
+/** Invalid granule size. */
+# define ARMV8_TCR_EL1_AARCH64_TG1_INVALID                      0
+/** 16KiB granule size. */
+# define ARMV8_TCR_EL1_AARCH64_TG1_16KB                         1
+/** 4KiB granule size. */
+# define ARMV8_TCR_EL1_AARCH64_TG1_4KB                          2
+/** 64KiB granule size. */
+# define ARMV8_TCR_EL1_AARCH64_TG1_64KB                         3
+/** Bit 32 - 34 - Intermediate Physical Address Size. */
+#define ARMV8_TCR_EL1_AARCH64_IPS                               (RT_BIT_64(32) | RT_BIT_64(33) | RT_BIT_64(34))
+#define ARMV8_TCR_EL1_AARCH64_IPS_GET(a_Tcr)                    (((a_Tcr) & ARMV8_TCR_EL1_AARCH64_IPS) >> 32)
+/** IPA - 32 bits, 4GiB. */
+# define ARMV8_TCR_EL1_AARCH64_IPS_32BITS                       0
+/** IPA - 36 bits, 64GiB. */
+# define ARMV8_TCR_EL1_AARCH64_IPS_36BITS                       1
+/** IPA - 40 bits, 1TiB. */
+# define ARMV8_TCR_EL1_AARCH64_IPS_40BITS                       2
+/** IPA - 42 bits, 4TiB. */
+# define ARMV8_TCR_EL1_AARCH64_IPS_42BITS                       3
+/** IPA - 44 bits, 16TiB. */
+# define ARMV8_TCR_EL1_AARCH64_IPS_44BITS                       4
+/** IPA - 48 bits, 256TiB. */
+# define ARMV8_TCR_EL1_AARCH64_IPS_48BITS                       5
+/** IPA - 52 bits, 4PiB. */
+# define ARMV8_TCR_EL1_AARCH64_IPS_52BITS                       6
+/** Bit 36 - ASID Size (0 - 8 bit, 1 - 16 bit). */
+#define ARMV8_TCR_EL1_AARCH64_AS                                RT_BIT_64(36)
+#define ARMV8_TCR_EL1_AARCH64_AS_BIT                            36
+/** Bit 37 - Top Byte Ignore for translations from TTBR0_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_TBI0                              RT_BIT_64(37)
+#define ARMV8_TCR_EL1_AARCH64_TBI0_BIT                          37
+/** Bit 38 - Top Byte Ignore for translations from TTBR1_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_TBI1                              RT_BIT_64(38)
+#define ARMV8_TCR_EL1_AARCH64_TBI1_BIT                          38
+/** Bit 39 - Hardware Access flag update in stage 1 translations from EL0 and EL1. */
+#define ARMV8_TCR_EL1_AARCH64_HA                                RT_BIT_64(39)
+#define ARMV8_TCR_EL1_AARCH64_HA_BIT                            39
+/** Bit 40 - Hardware management of dirty state in stage 1 translations from EL0 and EL1. */
+#define ARMV8_TCR_EL1_AARCH64_HD                                RT_BIT_64(40)
+#define ARMV8_TCR_EL1_AARCH64_HD_BIT                            40
+/** Bit 41 - Hierarchical Permission Disables for TTBR0_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_HPD0                              RT_BIT_64(41)
+#define ARMV8_TCR_EL1_AARCH64_HPD0_BIT                          41
+/** Bit 42 - Hierarchical Permission Disables for TTBR1_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_HPD1                              RT_BIT_64(42)
+#define ARMV8_TCR_EL1_AARCH64_HPD1_BIT                          42
+/** Bit 43 - Bit[59] Hardware Use for translations using TTBR0_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_HWU059                            RT_BIT_64(43)
+#define ARMV8_TCR_EL1_AARCH64_HWU059_BIT                        43
+/** Bit 44 - Bit[60] Hardware Use for translations using TTBR0_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_HWU060                            RT_BIT_64(44)
+#define ARMV8_TCR_EL1_AARCH64_HWU060_BIT                        44
+/** Bit 46 - Bit[61] Hardware Use for translations using TTBR0_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_HWU061                            RT_BIT_64(45)
+#define ARMV8_TCR_EL1_AARCH64_HWU061_BIT                        45
+/** Bit 46 - Bit[62] Hardware Use for translations using TTBR0_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_HWU062                            RT_BIT_64(46)
+#define ARMV8_TCR_EL1_AARCH64_HWU062_BIT                        46
+/** Bit 47 - Bit[59] Hardware Use for translations using TTBR1_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_HWU159                            RT_BIT_64(47)
+#define ARMV8_TCR_EL1_AARCH64_HWU159_BIT                        47
+/** Bit 48 - Bit[60] Hardware Use for translations using TTBR1_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_HWU160                            RT_BIT_64(48)
+#define ARMV8_TCR_EL1_AARCH64_HWU160_BIT                        48
+/** Bit 49 - Bit[61] Hardware Use for translations using TTBR1_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_HWU161                            RT_BIT_64(49)
+#define ARMV8_TCR_EL1_AARCH64_HWU161_BIT                        49
+/** Bit 50 - Bit[62] Hardware Use for translations using TTBR1_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_HWU162                            RT_BIT_64(50)
+#define ARMV8_TCR_EL1_AARCH64_HWU162_BIT                        50
+/** Bit 51 - Control the use of the top byte of instruction addresses for address matching for translations using TTBR0_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_TBID0                             RT_BIT_64(51)
+#define ARMV8_TCR_EL1_AARCH64_TBID0_BIT                         51
+/** Bit 52 - Control the use of the top byte of instruction addresses for address matching for translations using TTBR1_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_TBID1                             RT_BIT_64(52)
+#define ARMV8_TCR_EL1_AARCH64_TBID1_BIT                         52
+/** Bit 53 - Non fault translation table walk disable for stage 1 translations using TTBR0_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_NFD0                              RT_BIT_64(53)
+#define ARMV8_TCR_EL1_AARCH64_NFD0_BIT                          53
+/** Bit 54 - Non fault translation table walk disable for stage 1 translations using TTBR1_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_NFD1                              RT_BIT_64(54)
+#define ARMV8_TCR_EL1_AARCH64_NFD1_BIT                          54
+/** Bit 55 - Faulting Control for Unprivileged access to any address translated by TTBR0_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_E0PD0                             RT_BIT_64(55)
+#define ARMV8_TCR_EL1_AARCH64_E0PD0_BIT                         55
+/** Bit 56 - Faulting Control for Unprivileged access to any address translated by TTBR1_EL1. */
+#define ARMV8_TCR_EL1_AARCH64_E0PD1                             RT_BIT_64(56)
+#define ARMV8_TCR_EL1_AARCH64_E0PD1_BIT                         56
+/** Bit 57 - TCMA0 */
+#define ARMV8_TCR_EL1_AARCH64_TCMA0                             RT_BIT_64(57)
+#define ARMV8_TCR_EL1_AARCH64_TCMA0_BIT                         57
+/** Bit 58 - TCMA1 */
+#define ARMV8_TCR_EL1_AARCH64_TCMA1                             RT_BIT_64(58)
+#define ARMV8_TCR_EL1_AARCH64_TCMA1_BIT                         58
+/** Bit 59 - Data Sharing(?). */
+#define ARMV8_TCR_EL1_AARCH64_DS                                RT_BIT_64(59)
+#define ARMV8_TCR_EL1_AARCH64_DS_BIT                            59
+/** @} */
+
+
+/** @name TTBR<0,1>_EL1 - Translation Table Base Register <0,1> (EL1)
+ * @{
+ */
+/** Bit 0 - Common not Private (FEAT_TTCNP). */
+#define ARMV8_TTBR_EL1_AARCH64_CNP                              RT_BIT_64(0)
+#define ARMV8_TTBR_EL1_AARCH64_CNP_BIT                          0
+/** Bit 1 - 47 - Translation table base address. */
+#define ARMV8_TTBR_EL1_AARCH64_BADDR                            UINT64_C(0x0000fffffffffffe)
+#define ARMV8_TTBR_EL1_AARCH64_BADDR_GET(a_Ttbr)                (((a_Ttbr) & ARMV8_TTBR_EL1_AARCH64_BADDR) >> 1)
+/** Bit 48 - 63 - ASID. */
+#define ARMV8_TTBR_EL1_AARCH64_ASID                             UINT64_C(0xffff000000000000)
+#define ARMV8_TTBR_EL1_AARCH64_ASID_GET(a_Ttbr)                 (((a_Ttbr) & ARMV8_TTBR_EL1_AARCH64_ASID) >> 48)
+/** @} */
+
 /** @} */
 
 #endif /* !IPRT_INCLUDED_armv8_h */
