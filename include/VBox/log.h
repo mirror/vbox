@@ -594,10 +594,10 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_PROGRESSCREATEDEVENT,
     /** Main group, IProgressEvent. */
     LOG_GROUP_MAIN_PROGRESSEVENT,
-    /** Main group, IRangedIntegerFormValue. */
-    LOG_GROUP_MAIN_RANGEDINTEGERFORMVALUE,
     /** Main group, IRangedInteger64FormValue. */
     LOG_GROUP_MAIN_RANGEDINTEGER64FORMVALUE,
+    /** Main group, IRangedIntegerFormValue. */
+    LOG_GROUP_MAIN_RANGEDINTEGERFORMVALUE,
     /** Main group, IRecordingScreenSettings. */
     LOG_GROUP_MAIN_RECORDINGSCREENSETTINGS,
     /** Main group, IRecordingSettings. */
