@@ -40,6 +40,8 @@
 # pragma once
 #endif
 
+#include <iprt/cpp/utils.h>
+
 int VBGHShowNotify(const char *pszHeader, const char *pszBody);
 
 void VBGHLogInfoV(const char *pszFormat, va_list va);
