@@ -140,29 +140,38 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/saxon/saxon9-dom.jar' \
  	$2 \
  	-- $(ASH) $(VBOX_PATH_MANUAL_SRC)/dita-ot-copy-exec.sh "$(VBOX_DITA_ORIGINAL_PATH)" "$1" \
- 	-- $(VBOX_JAVA) -jar "$1/lib/dost.jar" "/ditadir:$1" $3 $4 # "/outercontrol:fail" ?
+ 	-- $(VBOX_JAVA) -jar "$1/lib/dost.jar" "/ditadir:$1" \
+ 	$(if-expr defined(VBOX_DITA_DEBUG),"/cleantemp:no" "/debug:yes",) \
+ 	$3 $4 # "/outercontrol:fail" ?
 
  ifdef VBOX_DITA_USING_LATEST # Experiments with dita-ot v4.0.2. Requires java 17.
   VBOX_DITA_USING_LATEST  := 1
-  VBOX_JAVA_HOME          := C:/Program Files/Java/jdk-17/
-  VBOX_DITA_ORIGINAL_PATH := D:/Tmp/dita/dita-ot-4.0.2
+  ifeq ($(VBOX_JAVA17PLUS_HOME),)
+   VBOX_JAVA17PLUS_HOME   := $(firstfile \
+   	$(rversortfiles $(qwildcard ,    $(KBUILD_DEVTOOLS_HST)/jdk/v1[789].*     $(KBUILD_DEVTOOLS_HST)/jdk/v[2-9][0-9].* )) \
+   	$(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS_HST_ALT)/jdk/v1[789].* $(KBUILD_DEVTOOLS_HST_ALT)/jdk/v[2-9][0-9].* )) \
+   )
+  endif
+  VBOX_DITA_ORIGINAL_PATH := $(firstfile $(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS)/common/dita-ot/v[4-9].*)) \
+  	$(KBUILD_DEVTOOLS)/common/dita-ot/v4.0.2-r1)
+
   VBOX_DITA_TECHNICAL_CONTENT_DTD_PATH = $(VBOX_DITA_ORIGINAL_PATH)/plugins/org.oasis-open.dita.v1_2/dtd/technicalContent/dtd
   VBOX_DITA_CLASSPATH = \
-  	$(subst $(SP),;,$(strip \
+  	$(subst $(SP),$(HOST_PATH_SEP),$(strip \
   			$(VBOX_DITA_ORIGINAL_PATH)/lib/ant-launcher.jar \
   			$(VBOX_DITA_ORIGINAL_PATH)/config \
   			$(VBOX_DITA_ORIGINAL_PATH)/lib \
   			$(wildcard \
   				$(VBOX_DITA_ORIGINAL_PATH)/lib/*.jar \
   				$(VBOX_DITA_ORIGINAL_PATH)/plugins/*/lib/*.jar)))
-  VBOX_DITA_RUN_DOST = $(REDIRECT) \
+  VBOX_DITA_RUN_DOST = $(REDIRECT_EXT) \
   	-E 'ANT_HOME=$(VBOX_DITA_ORIGINAL_PATH)' \
   	-E 'DITA_DIR=$(VBOX_DITA_ORIGINAL_PATH)' \
-  	-E 'JAVA_HOME=$(VBOX_JAVA_HOME)' \
+  	-E 'JAVA_HOME=$(VBOX_JAVA17PLUS_HOME)' \
   	-E 'CLASSPATH=$(VBOX_DITA_CLASSPATH)' \
   	$2 \
   	-- \
-  	$(VBOX_JAVA) \
+  	$(VBOX_JAVA17PLUS_HOME)/bin/java \
   	"-Djava.awt.headless=true" \
   	"-Dsun.io.useCanonCaches=true" \
   	"-Dant.home=$(VBOX_DITA_ORIGINAL_PATH)" \
@@ -171,13 +180,16 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   	-cp "$(VBOX_DITA_CLASSPATH)" \
   	-buildfile "$(VBOX_DITA_ORIGINAL_PATH)/build.xml" \
   	-main "org.dita.dost.invoker.Main" \
+	--args.grammar.cache=yes \
+       --store-type=memory \
   	$(patsubst "/i:%,"--input=%, \
   		$(patsubst "/transtype:%,"--format=%, \
   			$(patsubst "/outdir:%,"--output=%, \
   				$(patsubst "/tempdir:%,"--temp=%, \
   					$(patsubst "/filter:%,"--filter=%, \
   						$(patsubst "/debug","--debug",$3)))))) \
-  	$5 --verbose --debug
+	$(if-expr defined(VBOX_DITA_DEBUG),"--clean.temp=no" "--debug",) \
+  	$5 --verbose
  endif
 
 
@@ -805,6 +817,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   		$$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(lang)) \
   		$$(VBOX_PATH_MANUAL_SRC)/pdf-theme-UserManual.yaml \
   		$$(VBOX_PATH_MANUAL_SRC)/en_US/images/vboxlogo.png
+	$$(call MSG_L1,Building $@ ($(@D)/UserManual_pdf.log))
 	$$(QUIET)$$(RM) -f -- "$$@" "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_pdf.log"
 	$$(QUIET)$$(RM) -Rf -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf/"
 	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf,, \
@@ -815,11 +828,9 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf" \
 		, \
                "/grammarcache:yes" \
-               $(if-expr defined(VBOX_DITA_DEBUG),"/cleantemp:no" "/debug:yes",) \
 		, \
 		"--theme=$$(VBOX_PATH_MANUAL_SRC)/pdf-theme-UserManual.yaml" \
 		"--logfile=$$(@D)/UserManual_pdf.log" \
-		$(if-expr defined(VBOX_DITA_DEBUG),"--clean.temp=no",) \
 		)
 
   ditamap-to-pdf: $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual.pdf
@@ -843,7 +854,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
  		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_en_US) \
  		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US)
-	$(call MSG_L1,Building html chunks $@)
+	$(call MSG_L1,Building html chunks $@ ($(@D)/UserManual_xhtml.log))
 	$(QUIET)$(RM) -Rf -- "$(@D)" "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks/"
 	$(QUIET)$(MKDIR) -- "$(@D)"
 	$(QUIET)$(call VBOX_DITA_RUN_DOST,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks,, \
@@ -855,7 +866,8 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		, \
                "/grammarcache:yes" \
                , \
-               "--logfile=$(@D)/UserManual_xhtml.log")
+               "--logfile=$(@D)/UserManual_xhtml.log" \
+		)
 
  html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
 
@@ -865,11 +877,35 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  #     https://www.oxygenxml.com/forum/post25114.html?hilit=dita%20xhtml%20chunk#p25114
  # We stich the index.html and UserManual-Single.html files together using
  # SED since we haven't been able to convince DITA-OT to combine them.
+ #
+ ## @todo This is excruciatingly slow with 4.0.2 because of a preprocessing step
+ #        (move-meta in the org.dita.base plugin) is doing 986 read+writes of
+ #        the singled combined dita document (XML).  This is probably the two
+ #        for loops in the pushMetadata() method in
+ #        src/main/java/org/dita/dost/module/MoveMetaModule.java.  The netbeans
+ #        profiler says that ouf 283 sec runtime, 64 secs are spent reading
+ #        the xml big doc and 212 secs spent writing it out again (212+64=276).
+ #
+ #        For the chunked version, the move-meta work is done on each .ditamap
+ #        and .dita (topic) file instead, which is a lot less expensive.
+ #
+ #        The problem is forced by the AbstractDomFilter.read() design, which
+ #        reads XML to DOM, modifies DOM, writes out DOM as XML.  The
+ #        modifications done by the DitaMetaWriter.process function is
+ #        restricted to a single topic, which is means this must be done this
+ #        way.
+ #
+ # 	   A workaround, though, would be to implement a custom cache that
+ #        cache the document and doesn't write it to disk until the loops
+ #        finishes.  This could build on the CacheStore.java code, only
+ #        potential challenge is to clone the job as the Job.store property is
+ #        immutable.
+ #
  ## @todo front page
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html: \
  		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_en_US) \
  		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US)
-	$(call MSG_L1,Building html chunks $@)
+	$(call MSG_L1,Building html chunks $@ ($(@D)/UserManual-Single_xhtml.log))
 	$(QUIET)$(RM) -f -- "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual-Single.ditamap"
 	$(SED) -r -e 's/ chunk=["][^"]+["]//g' -e 's/<bookmap /<bookmap chunk="to-content" /' \
 		--output "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual-Single.ditamap" \
@@ -884,7 +920,8 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		, \
                "/grammarcache:yes" \
                , \
-               "--logfile=$(@D)/UserManual-Single_xhtml.log")
+               "--logfile=$(@D)/UserManual-Single_xhtml.log" \
+		)
 	$(SED) -ne '1,/<body>/{p}' \
 		--output "$@" "$(@D)/UserManual-Single.html"
 	$(APPEND) -n "$@" "<!-- index inject: -->"
@@ -965,23 +1002,35 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
    # Setting HHCDIR here so that it fails to locate hcc.exe and always skips the
    # compilation step that produces the .chm-file, since we don't need it and it
    # mangles the path so it always fails anyway.
+   #
+   # HACK ALERT! Putting MSG_L1 between RM and MKDIR as the latter sometimes fails
+   #             on windows because the deleted directory still exists on Windows.
+   #
+   # HACK ALERT! For 4.0.2 we must set Ant property dita.output.dir to the output
+   #             dir to prevent the *.hhp+*.html+*.png files from being placed in
+   #             the temporary directory and removed upon completion (idea being
+   #             that hhc.exe had run and the files weren't needed any more - the
+   #             htmlhelp plugin sets temp.output.dir.name to 'temp_chm_dir').
+   #
    ## @todo front page.
    $(2)/UserManual.hhp: \
    		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_$(1)) \
    		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(1))
-	$$(call MSG_L1,dita-ot-qhelp, => $$@)
 	$$(QUIET)$$(RM) -Rf -- "$$(@D)" "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp/"
+	$$(call MSG_L1,dita-ot-qhelp, => $$@ ($(2)/UserManual_htmlhelp.log))
 	$$(QUIET)$$(MKDIR) -- "$$(@D)"
-	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp, -EHHCDIR="$$(@D)", \
+	$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp, -EHHCDIR="$$(@D)", \
 		"/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
 		"/transtype:htmlhelp" \
 		"/filter:$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/htmlhelp.ditaval" \
 		"/outdir:$(2)" \
 		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_qhelp" \
 		, \
-               "/grammarcache:yes" \
-               , \
-               "--logfile=$(2)/UserManual_htmlhelp.log")
+		"/grammarcache:yes" \
+		, \
+		"--logfile=$(2)/UserManual_htmlhelp.log" \
+		"-Ddita.output.dir=$(2)" \
+		)
 
 
    ditamap-to-htmlhelp: $(2)/UserManual.hhp
