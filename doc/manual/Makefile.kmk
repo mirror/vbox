@@ -153,7 +153,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
    )
   endif
   VBOX_DITA_ORIGINAL_PATH := $(firstfile $(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS)/common/dita-ot/v[4-9].*)) \
-  	$(KBUILD_DEVTOOLS)/common/dita-ot/v4.0.2-r1)
+	$(KBUILD_DEVTOOLS)/common/dita-ot/v4.0.2-r1)
 
   VBOX_DITA_TECHNICAL_CONTENT_DTD_PATH = $(VBOX_DITA_ORIGINAL_PATH)/plugins/org.oasis-open.dita.v1_2/dtd/technicalContent/dtd
   VBOX_DITA_CLASSPATH = \
@@ -183,13 +183,13 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 	--args.grammar.cache=yes \
        --store-type=memory \
   	$(patsubst "/i:%,"--input=%, \
-  		$(patsubst "/transtype:%,"--format=%, \
-  			$(patsubst "/outdir:%,"--output=%, \
-  				$(patsubst "/tempdir:%,"--temp=%, \
-  					$(patsubst "/filter:%,"--filter=%, \
+		$(patsubst "/transtype:%,"--format=%, \
+			$(patsubst "/outdir:%,"--output=%, \
+				$(patsubst "/tempdir:%,"--temp=%, \
+					$(patsubst "/filter:%,"--filter=%, \
   						$(patsubst "/debug","--debug",$3)))))) \
 	$(if-expr defined(VBOX_DITA_DEBUG),"--clean.temp=no" "--debug",) \
-  	$5 --verbose
+	$5 --verbose
  endif
 
 
