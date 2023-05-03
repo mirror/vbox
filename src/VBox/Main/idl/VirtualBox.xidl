@@ -29364,11 +29364,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   //////////////////////////////////////////////////////////////////////////
   -->
   <enum name="FormValueType"
-        uuid="43d794a0-7c98-11e9-a346-a36d5fa858a5">
+        uuid="5f10e2f2-911f-4f55-8afb-39c790f7dc42">
     <const name="Boolean" value="0"/>
     <const name="String" value="1"/>
     <const name="Choice" value="2"/>
     <const name="RangedInteger" value="3"/>
+    <const name="RangedInteger64" value="4"/>
   </enum>
 
   <interface name="IFormValue" extends="$unknown"
@@ -29414,6 +29415,27 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
     <method name="setInteger">
       <param name="value" type="long" dir="in"/>
+      <param name="progress" type="IProgress" dir="return"/>
+    </method>
+  </interface>
+
+  <interface name="IRangedInteger64FormValue" extends="IFormValue"
+             uuid="f01e8b48-f44d-42cc-8a83-512f6a8552f1"
+             wsmap="managed"
+             reservedMethods="4" reservedAttributes="4">
+    <attribute name="suffix" type="wstring" readonly="yes">
+      <desc>
+        Counterpart of the <link to="IFormValue::label"/> attribute.
+        May be null or empty.  Usually used for units.
+      </desc>
+    </attribute>
+    <attribute name="minimum" type="long long" readonly="yes"/>
+    <attribute name="maximum" type="long long" readonly="yes"/>
+    <method name="getInteger">
+      <param name="value" type="long long" dir="return"/>
+    </method>
+    <method name="setInteger">
+      <param name="value" type="long long" dir="in"/>
       <param name="progress" type="IProgress" dir="return"/>
     </method>
   </interface>
