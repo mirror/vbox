@@ -40,7 +40,7 @@
 # pragma once
 #endif
 
-#include <iprt/cpp/utils.h>
+#include <iprt/types.h>
 
 int VBGHShowNotify(const char *pszHeader, const char *pszBody);
 
