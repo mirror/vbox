@@ -51,7 +51,7 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /**
- * Reads a GIC register.
+ * Reads a GIC distributor register.
  *
  * @returns VBox status code.
  * @param   pDevIns         The device instance.
@@ -59,18 +59,37 @@
  * @param   offReg          The offset of the register being read.
  * @param   puValue         Where to store the register value.
  */
-DECLINLINE(VBOXSTRICTRC) gicReadRegister(PPDMDEVINS pDevIns, PVMCPUCC pVCpu, uint16_t offReg, uint32_t *puValue)
+DECLINLINE(VBOXSTRICTRC) gicDistRegisterRead(PPDMDEVINS pDevIns, PVMCPUCC pVCpu, uint16_t offReg, uint32_t *puValue)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     RT_NOREF(pDevIns, pVCpu, offReg);
 
-    *puValue = 0;
+    switch (offReg)
+    {
+        case GIC_DIST_REG_TYPER_OFF:
+            *puValue =   GIC_DIST_REG_TYPER_NUM_ITLINES_SET(0)  /** @todo 32 SPIs for now. */
+                       | GIC_DIST_REG_TYPER_NUM_PES_SET(0)      /* 1 PE */
+                       /*| GIC_DIST_REG_TYPER_ESPI*/            /** @todo */
+                       /*| GIC_DIST_REG_TYPER_NMI*/             /** @todo Non-maskable interrupts */
+                       /*| GIC_DIST_REG_TYPER_SECURITY_EXTN */  /** @todo */
+                       /*| GIC_DIST_REG_TYPER_MBIS */           /** @todo Message based interrupts */
+                       /*| GIC_DIST_REG_TYPER_LPIS */           /** @todo Support LPIs */
+                       | GIC_DIST_REG_TYPER_IDBITS_SET(16);
+            break;
+        case GIC_DIST_REG_PIDR2_OFF:
+            *puValue = GIC_REDIST_REG_PIDR2_ARCH_REV_SET(GIC_REDIST_REG_PIDR2_ARCH_REV_GICV3);
+            break;
+        case GIC_DIST_REG_IIDR_OFF:
+        case GIC_DIST_REG_TYPER2_OFF:
+        default:
+            *puValue = 0;
+    }
     return VINF_SUCCESS;
 }
 
 
 /**
- * Writes a GIC register.
+ * Writes a GIC distributor register.
  *
  * @returns Strict VBox status code.
  * @param   pDevIns         The device instance.
@@ -78,7 +97,53 @@ DECLINLINE(VBOXSTRICTRC) gicReadRegister(PPDMDEVINS pDevIns, PVMCPUCC pVCpu, uin
  * @param   offReg          The offset of the register being written.
  * @param   uValue          The register value.
  */
-DECLINLINE(VBOXSTRICTRC) gicWriteRegister(PPDMDEVINS pDevIns, PVMCPUCC pVCpu, uint16_t offReg, uint32_t uValue)
+DECLINLINE(VBOXSTRICTRC) gicDistRegisterWrite(PPDMDEVINS pDevIns, PVMCPUCC pVCpu, uint16_t offReg, uint32_t uValue)
+{
+    VMCPU_ASSERT_EMT(pVCpu);
+    RT_NOREF(pDevIns, pVCpu, offReg, uValue);
+
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
+    return rcStrict;
+}
+
+
+/**
+ * Reads a GIC redistributor register.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The device instance.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   offReg          The offset of the register being read.
+ * @param   puValue         Where to store the register value.
+ */
+DECLINLINE(VBOXSTRICTRC) gicReDistRegisterRead(PPDMDEVINS pDevIns, PVMCPUCC pVCpu, uint16_t offReg, uint32_t *puValue)
+{
+    VMCPU_ASSERT_EMT(pVCpu);
+    RT_NOREF(pDevIns, pVCpu, offReg);
+
+    switch (offReg)
+    {
+        case GIC_REDIST_REG_PIDR2_OFF:
+            *puValue = GIC_REDIST_REG_PIDR2_ARCH_REV_SET(GIC_REDIST_REG_PIDR2_ARCH_REV_GICV3);
+            break;
+        default:
+            *puValue = 0;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Writes a GIC redistributor register.
+ *
+ * @returns Strict VBox status code.
+ * @param   pDevIns         The device instance.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   offReg          The offset of the register being written.
+ * @param   uValue          The register value.
+ */
+DECLINLINE(VBOXSTRICTRC) gicReDistRegisterWrite(PPDMDEVINS pDevIns, PVMCPUCC pVCpu, uint16_t offReg, uint32_t uValue)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     RT_NOREF(pDevIns, pVCpu, offReg, uValue);
@@ -154,15 +219,15 @@ DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) gicDistMmioRead(PPDMDEVINS pDevIns, void *pvU
     //Assert(cb == 4); RT_NOREF_PV(cb);
 
     PVMCPUCC pVCpu    = PDMDevHlpGetVMCPU(pDevIns);
-    uint16_t offReg   = off & 0xff0;
+    uint16_t offReg   = off & 0xfffc;
     uint32_t uValue   = 0;
 
     STAM_COUNTER_INC(&pVCpu->gic.s.CTX_SUFF_Z(StatMmioRead));
 
-    VBOXSTRICTRC rc = VBOXSTRICTRC_VAL(gicReadRegister(pDevIns, pVCpu, offReg, &uValue));
+    VBOXSTRICTRC rc = VBOXSTRICTRC_VAL(gicDistRegisterRead(pDevIns, pVCpu, offReg, &uValue));
     *(uint32_t *)pv = uValue;
 
-    Log2(("GIC%u: gicReadMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
+    Log2(("GIC%u: gicDistMmioRead: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
     return rc;
 }
 
@@ -177,13 +242,13 @@ DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) gicDistMmioWrite(PPDMDEVINS pDevIns, void *pv
     //Assert(cb == 4); RT_NOREF_PV(cb);
 
     PVMCPUCC pVCpu    = PDMDevHlpGetVMCPU(pDevIns);
-    uint16_t offReg   = off & 0xff0;
+    uint16_t offReg   = off & 0xfffc;
     uint32_t uValue   = *(uint32_t *)pv;
 
     STAM_COUNTER_INC(&pVCpu->gic.s.CTX_SUFF_Z(StatMmioWrite));
 
-    Log2(("GIC%u: gicWriteMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
-    return gicWriteRegister(pDevIns, pVCpu, offReg, uValue);
+    Log2(("GIC%u: gicDistMmioWrite: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
+    return gicDistRegisterWrite(pDevIns, pVCpu, offReg, uValue);
 }
 
 
@@ -197,15 +262,15 @@ DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) gicReDistMmioRead(PPDMDEVINS pDevIns, void *p
     //Assert(cb == 4); RT_NOREF_PV(cb);
 
     PVMCPUCC pVCpu    = PDMDevHlpGetVMCPU(pDevIns);
-    uint16_t offReg   = off & 0xff0;
+    uint16_t offReg   = off & 0xfffc;
     uint32_t uValue   = 0;
 
     STAM_COUNTER_INC(&pVCpu->gic.s.CTX_SUFF_Z(StatMmioRead));
 
-    VBOXSTRICTRC rc = VBOXSTRICTRC_VAL(gicReadRegister(pDevIns, pVCpu, offReg, &uValue));
+    VBOXSTRICTRC rc = VBOXSTRICTRC_VAL(gicReDistRegisterRead(pDevIns, pVCpu, offReg, &uValue));
     *(uint32_t *)pv = uValue;
 
-    Log2(("GIC%u: gicReadMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
+    Log2(("GIC%u: gicReDistMmioRead: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
     return rc;
 }
 
@@ -220,13 +285,13 @@ DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) gicReDistMmioWrite(PPDMDEVINS pDevIns, void *
     //Assert(cb == 4); RT_NOREF_PV(cb);
 
     PVMCPUCC pVCpu    = PDMDevHlpGetVMCPU(pDevIns);
-    uint16_t offReg   = off & 0xff0;
+    uint16_t offReg   = off & 0xfffc;
     uint32_t uValue   = *(uint32_t *)pv;
 
     STAM_COUNTER_INC(&pVCpu->gic.s.CTX_SUFF_Z(StatMmioWrite));
 
-    Log2(("GIC%u: gicWriteMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
-    return gicWriteRegister(pDevIns, pVCpu, offReg, uValue);
+    Log2(("GIC%u: gicReDistMmioWrite: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
+    return gicReDistRegisterWrite(pDevIns, pVCpu, offReg, uValue);
 }
 
 

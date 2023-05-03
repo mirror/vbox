@@ -47,10 +47,83 @@
  * @{ */
 /** Size of the distributor register frame. */
 #define GIC_DIST_REG_FRAME_SIZE                         _64K
+
 /** Distributor Control Register - RW. */
 #define GIC_DIST_REG_CTLR_OFF                           0x0000
+/** Bit 0 - Enable Group 0 interrupts. */
+# define GIC_DIST_REG_CTRL_ENABLE_GRP0                  RT_BIT_32(0)
+# define GIC_DIST_REG_CTRL_ENABLE_GRP0_BIT              0
+/** Bit 1 - Enable Non-secure Group 1 interrupts. */
+# define GIC_DIST_REG_CTRL_ENABLE_GRP1_NS               RT_BIT_32(1)
+# define GIC_DIST_REG_CTRL_ENABLE_GRP1_NS_BIT           1
+/** Bit 2 - Enable Secure Group 1 interrupts. */
+# define GIC_DIST_REG_CTRL_ENABLE_GRP1_S                RT_BIT_32(2)
+# define GIC_DIST_REG_CTRL_ENABLE_GRP1_S_BIT            2
+/** Bit 4 - Affinity Routing Enable, Secure state. */
+# define GIC_DIST_REG_CTRL_ARE_S                        RT_BIT_32(4)
+# define GIC_DIST_REG_CTRL_ARE_S_BIT                    4
+/** Bit 5 - Affinity Routing Enable, Non-secure state. */
+# define GIC_DIST_REG_CTRL_ARE_NS                       RT_BIT_32(5)
+# define GIC_DIST_REG_CTRL_ARE_NS_BIT                   5
+/** Bit 6 - Disable Security. */
+# define GIC_DIST_REG_CTRL_DS                           RT_BIT_32(6)
+# define GIC_DIST_REG_CTRL_DS_BIT                       6
+/** Bit 7 - Enable 1 of N Wakeup Functionality. */
+# define GIC_DIST_REG_CTRL_E1NWF                        RT_BIT_32(7)
+# define GIC_DIST_REG_CTRL_E1NWF_BIT                    7
+/** Bit 31 - Register Write Pending. */
+# define GIC_DIST_REG_CTRL_RWP                          RT_BIT_32(31)
+# define GIC_DIST_REG_CTRL_RWP_BIT                      31
+
 /** Interrupt Controller Type Register - RO. */
 #define GIC_DIST_REG_TYPER_OFF                          0x0004
+/** Bit 0 - 4 - Maximum number of SPIs supported. */
+# define GIC_DIST_REG_TYPER_NUM_ITLINES                 (  RT_BIT_32(0) | RT_BIT_32(1) | RT_BIT(2) \
+                                                         | RT_BIT_32(3) | RT_BIT_32(4))
+# define GIC_DIST_REG_TYPER_NUM_ITLINES_SET(a_NumSpis)  ((a_NumSpis) & GIC_DIST_REG_TYPER_NUM_ITLINES)
+/** Bit 5 - 7 - Reports number of PEs that can be used when affinity routing is not enabled, minus 1. */
+# define GIC_DIST_REG_TYPER_NUM_PES                     (RT_BIT_32(5) | RT_BIT_32(6) | RT_BIT(7))
+# define GIC_DIST_REG_TYPER_NUM_PES_SET(a_Pes)          (((a_Pes) << 5) & GIC_DIST_REG_TYPER_NUM_PES)
+/** Bit 8 - Extended SPI range implemented. */
+# define GIC_DIST_REG_TYPER_ESPI                        RT_BIT_32(8)
+# define GIC_DIST_REG_TYPER_ESPI_BIT                    8
+/** Bit 9 - Non-maskable interrupt priority supported. */
+# define GIC_DIST_REG_TYPER_NMI                         RT_BIT_32(9)
+# define GIC_DIST_REG_TYPER_NMI_BIT                     9
+/** Bit 10 - Indicates whether the implementation supports two security states. */
+# define GIC_DIST_REG_TYPER_SECURITY_EXTN               RT_BIT_32(10)
+# define GIC_DIST_REG_TYPER_SECURITY_EXTN_BIT           10
+/** Bit 11 - 15 - The number of supported LPIs. */
+# define GIC_DIST_REG_TYPER_NUM_LPIS                    (  RT_BIT_32(11) | RT_BIT_32(12) | RT_BIT(13) \
+                                                         | RT_BIT_32(14) | RT_BIT_32(15))
+# define GIC_DIST_REG_TYPER_NUM_LPIS_SET(a_Lpis)        (((a_Lpis) << 11) & GIC_DIST_REG_TYPER_NUM_LPIS)
+/** Bit 16 - Indicates whether the implementation supports message based interrupts by writing to Distributor registers. */
+# define GIC_DIST_REG_TYPER_MBIS                        RT_BIT_32(16)
+# define GIC_DIST_REG_TYPER_MBIS_BIT                    16
+/** Bit 17 - Indicates whether the implementation supports LPIs. */
+# define GIC_DIST_REG_TYPER_LPIS                        RT_BIT_32(17)
+# define GIC_DIST_REG_TYPER_LPIS_BIT                    17
+/** Bit 18 - Indicates whether the implementation supports Direct Virtual LPI injection (FEAT_GICv4). */
+# define GIC_DIST_REG_TYPER_DVIS                        RT_BIT_32(18)
+# define GIC_DIST_REG_TYPER_DVIS_BIT                    18
+/** Bit 19 - 23 - The number of interrupt identifer bits supported, minus one. */
+# define GIC_DIST_REG_TYPER_IDBITS                      (  RT_BIT_32(19) | RT_BIT_32(20) | RT_BIT(21) \
+                                                         | RT_BIT_32(22) | RT_BIT_32(23))
+# define GIC_DIST_REG_TYPER_IDBITS_SET(a_Bits)          (((a_Bits) << 19) & GIC_DIST_REG_TYPER_IDBITS)
+/** Bit 24 - Affinity 3 valid. Indicates whether the Distributor supports nonzero values of Affinity level 3. */
+# define GIC_DIST_REG_TYPER_A3V                         RT_BIT_32(24)
+# define GIC_DIST_REG_TYPER_A3V_BIT                     24
+/** Bit 25 - Indicates whether 1 of N SPI interrupts are supported. */
+# define GIC_DIST_REG_TYPER_NO1N                        RT_BIT_32(25)
+# define GIC_DIST_REG_TYPER_NO1N_BIT                    25
+/** Bit 26 - Range Selector Support. */
+# define GIC_DIST_REG_TYPER_RSS                         RT_BIT_32(26)
+# define GIC_DIST_REG_TYPER_RSS_BIT                     26
+/** Bit 27 - 31 - Indicates maximum INTID in the Extended SPI range. */
+# define GIC_DIST_REG_TYPER_ESPI_RANGE                  (  RT_BIT_32(27) | RT_BIT_32(28) | RT_BIT(29) \
+                                                         | RT_BIT_32(30) | RT_BIT_32(31))
+# define GIC_DIST_REG_TYPER_ESPI_RANGE_SET(a_Range)     (((a_Range) << 27) & GIC_DIST_REG_TYPER_ESPI_RANGE)
+
 /** Distributor Implementer Identification Register - RO. */
 #define GIC_DIST_REG_IIDR_OFF                           0x0008
 /** Interrupt Controller Type Register 2 - RO. */
@@ -209,6 +282,18 @@
 
 /** Distributor Peripheral ID2 Register - RO. */
 #define GIC_DIST_REG_PIDR2_OFF                          0xffe8
+/** Bit 4 - 7 - GIC architecture revision */
+# define GIC_DIST_REG_PIDR2_ARCH_REV                    (  RT_BIT_32(4) | RT_BIT_32(5) | RT_BIT_32(6) \
+                                                         | RT_BIT_32(7))
+# define GIC_DIST_REG_PIDR2_ARCH_REV_SET(a_ArchRev)     (((a_ArchRev) << 4) & GIC_DIST_REG_PIDR2_ARCH_REV)
+/** GICv1 architecture revision. */
+#  define GIC_DIST_REG_PIDR2_ARCH_REV_GICV1             0x1
+/** GICv2 architecture revision. */
+#  define GIC_DIST_REG_PIDR2_ARCH_REV_GICV2             0x2
+/** GICv3 architecture revision. */
+#  define GIC_DIST_REG_PIDR2_ARCH_REV_GICV3             0x3
+/** GICv4 architecture revision. */
+#  define GIC_DIST_REG_PIDR2_ARCH_REV_GICV4             0x4
 /** @} */
 
 
@@ -247,6 +332,18 @@
 
 /** Redistributor Peripheral ID2 Register - RO. */
 #define GIC_REDIST_REG_PIDR2_OFF                        0xffe8
+/** Bit 4 - 7 - GIC architecture revision */
+# define GIC_REDIST_REG_PIDR2_ARCH_REV                  (  RT_BIT_32(4) | RT_BIT_32(5) | RT_BIT_32(6) \
+                                                         | RT_BIT_32(7))
+# define GIC_REDIST_REG_PIDR2_ARCH_REV_SET(a_ArchRev)   (((a_ArchRev) << 4) & GIC_DIST_REG_PIDR2_ARCH_REV)
+/** GICv1 architecture revision. */
+#  define GIC_REDIST_REG_PIDR2_ARCH_REV_GICV1           0x1
+/** GICv2 architecture revision. */
+#  define GIC_REDIST_REG_PIDR2_ARCH_REV_GICV2           0x2
+/** GICv3 architecture revision. */
+#  define GIC_REDIST_REG_PIDR2_ARCH_REV_GICV3           0x3
+/** GICv4 architecture revision. */
+#  define GIC_REDIST_REG_PIDR2_ARCH_REV_GICV4           0x4
 /** @} */
 
 
