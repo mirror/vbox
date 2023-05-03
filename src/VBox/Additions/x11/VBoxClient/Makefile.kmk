@@ -48,6 +48,11 @@ PROGRAMS += VBoxClient
 #
 PROGRAMS.linux += VBoxDRMClient
 
+# Common Guest / Host sources.
+VBOX_GH_SOURCES := \
+	$(PATH_ROOT)/src/VBox/GuestHost/Log.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SessionType.cpp
+
 VBoxClient_TEMPLATE = VBoxGuestR3Exe
 VBoxClient_DEFS += VBOX_X11_CLIPBOARD VBOX_WITH_HGCM
 ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
@@ -67,6 +72,7 @@ VBoxClient_INCS += ../x11include/randrproto-1.5.0
 VBoxClient_SOURCES = \
 	main.cpp \
 	logging.cpp
+VBoxClient_SOURCES += $(VBOX_GH_SOURCES)
 
 VBoxDRMClient_TEMPLATE = VBoxGuestR3Exe
 ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
@@ -78,7 +84,7 @@ VBoxDRMClient_SOURCES = \
 	display-drm.cpp \
 	display-ipc.cpp \
 	logging.cpp
-
+VBoxDRMClient_SOURCES += $(VBOX_GH_SOURCES)
 
 VBoxClient_SOURCES.linux = \
 	chk_stubs.c

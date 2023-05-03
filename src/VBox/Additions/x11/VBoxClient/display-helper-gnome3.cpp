@@ -963,7 +963,7 @@ static DECLCALLBACK(int) vbcl_hlp_gnome3_set_primary_display(uint32_t idPrimaryD
  */
 static DECLCALLBACK(int) vbcl_hlp_gnome3_probe(void)
 {
-    const char *pszCurrentDesktop = RTEnvGet(VBCL_ENV_XDG_CURRENT_DESKTOP);
+    const char *pszCurrentDesktop = RTEnvGet(VBGH_ENV_XDG_CURRENT_DESKTOP);
 
     /* GNOME3 identifies itself by XDG_CURRENT_DESKTOP environment variable.
      * It can slightly vary for different distributions, but we assume that this
@@ -981,7 +981,7 @@ static DECLCALLBACK(int) vbcl_hlp_gnome3_init(void)
 {
     int rc;
 
-    if (!VBClHasWayland())
+    if (VBClGetSessionType() == VBGHSESSIONTYPE_X11)
     {
         rc = vbcl_hlp_generic_init();
         VBClLogInfo("attempt to start generic helper routines, rc=%Rrc\n", rc);
@@ -997,7 +997,7 @@ static DECLCALLBACK(int) vbcl_hlp_gnome3_term(void)
 {
     int rc;
 
-    if (!VBClHasWayland())
+    if (VBClGetSessionType() == VBGHSESSIONTYPE_X11)
     {
         rc = vbcl_hlp_generic_term();
         VBClLogInfo("attempt to stop generic helper routines, rc=%Rrc\n", rc);

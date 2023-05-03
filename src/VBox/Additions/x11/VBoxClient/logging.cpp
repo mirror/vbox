@@ -40,6 +40,8 @@
 #endif
 #include <VBox/VBoxGuestLib.h>
 
+#include <VBox/GuestHost/Log.h>
+
 #include <package-generated.h>
 #include "VBoxClient.h"
 
@@ -218,23 +220,6 @@ int VBClShowNotify(const char *pszHeader, const char *pszBody)
     return rc;
 }
 
-
-
-/**
- * Logs a verbose message.
- *
- * @param   pszFormat   The message text.
- * @param   va          Format arguments.
- */
-static void vbClLogV(const char *pszFormat, va_list va)
-{
-    char *psz = NULL;
-    RTStrAPrintfV(&psz, pszFormat, va);
-    AssertPtrReturnVoid(psz);
-    LogRel(("%s", psz));
-    RTStrFree(psz);
-}
-
 /**
  * Logs a fatal error, notifies the desktop environment via a message and
  * exits the application immediately.
@@ -244,19 +229,10 @@ static void vbClLogV(const char *pszFormat, va_list va)
  */
 void VBClLogFatalError(const char *pszFormat, ...)
 {
-    va_list args;
-    va_start(args, pszFormat);
-    char *psz = NULL;
-    RTStrAPrintfV(&psz, pszFormat, args);
-    va_end(args);
-
-    AssertPtrReturnVoid(psz);
-    LogFunc(("Fatal Error: %s", psz));
-    LogRel(("Fatal Error: %s", psz));
-
-    VBClShowNotify("VBoxClient - Fatal Error", psz);
-
-    RTStrFree(psz);
+    va_list va;
+    va_start(va, pszFormat);
+    VBGHLogFatalErrorV(pszFormat, va);
+    va_end(va);
 }
 
 /**
@@ -266,17 +242,10 @@ void VBClLogFatalError(const char *pszFormat, ...)
  */
 void VBClLogError(const char *pszFormat, ...)
 {
-    va_list args;
-    va_start(args, pszFormat);
-    char *psz = NULL;
-    RTStrAPrintfV(&psz, pszFormat, args);
-    va_end(args);
-
-    AssertPtrReturnVoid(psz);
-    LogFunc(("Error: %s", psz));
-    LogRel(("Error: %s", psz));
-
-    RTStrFree(psz);
+    va_list va;
+    va_start(va, pszFormat);
+    VBGHLogErrorV(pszFormat, va);
+    va_end(va);
 }
 
 /**
@@ -286,10 +255,10 @@ void VBClLogError(const char *pszFormat, ...)
  */
 void  VBClLogInfo(const char *pszFormat, ...)
 {
-    va_list args;
-    va_start(args, pszFormat);
-    vbClLogV(pszFormat, args);
-    va_end(args);
+    va_list va;
+    va_start(va, pszFormat);
+    VBGHLogInfoV(pszFormat, va);
+    va_end(va);
 }
 
 /**
@@ -302,13 +271,10 @@ void  VBClLogInfo(const char *pszFormat, ...)
  */
 void VBClLogVerbose(unsigned iLevel, const char *pszFormat, ...)
 {
-    if (iLevel <= g_cVerbosity)
-    {
-        va_list va;
-        va_start(va, pszFormat);
-        vbClLogV(pszFormat, va);
-        va_end(va);
-    }
+    va_list va;
+    va_start(va, pszFormat);
+    VBGHLogVerboseV(iLevel, pszFormat, va);
+    va_end(va);
 }
 
 /**
