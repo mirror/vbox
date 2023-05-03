@@ -1106,21 +1106,28 @@ VMMR3_INT_DECL(void) VMR3NotifyCpuFFU(PUVMCPU pUVCpu, uint32_t fFlags)
  *          case an appropriate status code is returned.
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   fIgnoreInterrupts   If set the VM_FF_INTERRUPT flags is ignored.
+ * @param   fFlags      Combination of VMWAITHALTED_F_XXX.
  * @thread  The emulation thread.
  * @remarks Made visible for implementing vmsvga sync register.
  * @internal
  */
-VMMR3_INT_DECL(int) VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts)
+VMMR3_INT_DECL(int) VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
 {
-    LogFlow(("VMR3WaitHalted: fIgnoreInterrupts=%d\n", fIgnoreInterrupts));
+    LogFlow(("VMR3WaitHalted: fFlags=%#x\n", fFlags));
 
     /*
      * Check Relevant FFs.
      */
-    const uint32_t fMask = !fIgnoreInterrupts
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    const uint32_t fMaskInterrupts =   ((fFlags & VMWAITHALTED_F_IGNORE_IRQS) ? VMCPU_FF_INTERRUPT_IRQ : 0)
+                                     | ((fFlags & VMWAITHALTED_F_IGNORE_FIQS) ? VMCPU_FF_INTERRUPT_FIQ : 0);
+    const uint32_t fMask = VMCPU_FF_EXTERNAL_HALTED_MASK & ~fMaskInterrupts;
+#else
+    const uint32_t fMask = !(fFlags & VMWAITHALTED_F_IGNORE_IRQS)
         ? VMCPU_FF_EXTERNAL_HALTED_MASK
         : VMCPU_FF_EXTERNAL_HALTED_MASK & ~(VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC);
+#endif
+
     if (    VM_FF_IS_ANY_SET(pVM, VM_FF_EXTERNAL_HALTED_MASK)
         ||  VMCPU_FF_IS_ANY_SET(pVCpu, fMask))
     {

@@ -1003,8 +1003,13 @@ static DECLCALLBACK(int) pdmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+#if defined(VBOX_VMM_TARGET_ARMV8)
+        SSMR3PutU32(pSSM, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_IRQ));
+        SSMR3PutU32(pSSM, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_FIQ));
+#else
         SSMR3PutU32(pSSM, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC));
         SSMR3PutU32(pSSM, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC));
+#endif
         SSMR3PutU32(pSSM, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI));
         SSMR3PutU32(pSSM, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI));
     }
@@ -1033,9 +1038,15 @@ static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+#if defined(VBOX_VMM_TARGET_ARMV8)
+        LogFlow(("pdmR3LoadPrep: VCPU %u %s%s\n", idCpu,
+                VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_IRQ) ? " VMCPU_FF_INTERRUPT_IRQ" : "",
+                VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_FIQ) ? " VMCPU_FF_INTERRUPT_FIQ" : ""));
+#else
         LogFlow(("pdmR3LoadPrep: VCPU %u %s%s\n", idCpu,
                 VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC) ? " VMCPU_FF_INTERRUPT_APIC" : "",
                 VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC)  ? " VMCPU_FF_INTERRUPT_PIC" : ""));
+#endif
     }
 #endif
     NOREF(pSSM);
@@ -1051,8 +1062,13 @@ static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+#if defined(VBOX_VMM_TARGET_ARMV8)
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_IRQ);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_FIQ);
+#else
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+#endif
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_SMI);
     }
@@ -1103,7 +1119,7 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
         {
             PVMCPU pVCpu = pVM->apCpusR3[idCpu];
 
-            /* APIC interrupt */
+            /* APIC/IRQ interrupt */
             uint32_t fInterruptPending = 0;
             rc = SSMR3GetU32(pSSM, &fInterruptPending);
             if (RT_FAILURE(rc))
@@ -1113,12 +1129,19 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
                 AssertMsgFailed(("fInterruptPending=%#x (APIC)\n", fInterruptPending));
                 return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
             }
+#if defined(VBOX_VMM_TARGET_ARMV8)
+            AssertLogRelMsg(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_IRQ),
+                            ("VCPU%03u: VMCPU_FF_INTERRUPT_IRQ set! Devices shouldn't set interrupts during state restore...\n", idCpu));
+            if (fInterruptPending)
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_IRQ);
+#else
             AssertLogRelMsg(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC),
                             ("VCPU%03u: VMCPU_FF_INTERRUPT_APIC set! Devices shouldn't set interrupts during state restore...\n", idCpu));
             if (fInterruptPending)
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+#endif
 
-            /* PIC interrupt */
+            /* PIC/FIQ interrupt */
             fInterruptPending = 0;
             rc = SSMR3GetU32(pSSM, &fInterruptPending);
             if (RT_FAILURE(rc))
@@ -1128,10 +1151,17 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
                 AssertMsgFailed(("fInterruptPending=%#x (PIC)\n", fInterruptPending));
                 return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
             }
+#if defined(VBOX_VMM_TARGET_ARMV8)
+            AssertLogRelMsg(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_FIQ),
+                            ("VCPU%03u: VMCPU_FF_INTERRUPT_FIQ set!  Devices shouldn't set interrupts during state restore...\n", idCpu));
+            if (fInterruptPending)
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_FIQ);
+#else
             AssertLogRelMsg(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC),
                             ("VCPU%03u: VMCPU_FF_INTERRUPT_PIC set!  Devices shouldn't set interrupts during state restore...\n", idCpu));
             if (fInterruptPending)
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+#endif
 
             if (uVersion > PDM_SAVED_STATE_VERSION_PRE_NMI_FF)
             {
@@ -1654,8 +1684,13 @@ DECLINLINE(void) pdmR3ResetDev(PVM pVM, PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS
  */
 VMMR3_INT_DECL(void) PDMR3ResetCpu(PVMCPU pVCpu)
 {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_IRQ);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_FIQ);
+#else
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+#endif
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_SMI);
 }

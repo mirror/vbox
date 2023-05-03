@@ -273,7 +273,14 @@ VMMR3DECL(int)          CPUMR3SysRegRangesInsert(PVM pVM, PCCPUMSYSREGRANGE pNew
 
 /** @name Guest Register Getters.
  * @{ */
+VMMDECL(bool)           CPUMGetGuestIrqMasked(PVMCPUCC pVCpu);
+VMMDECL(bool)           CPUMGetGuestFiqMasked(PVMCPUCC pVCpu);
 VMMDECL(VBOXSTRICTRC)   CPUMQueryGuestSysReg(PVMCPUCC pVCpu, uint32_t idSysReg, uint64_t *puValue);
+/** @} */
+
+
+/** @name Guest Register Setters.
+ * @{ */
 VMMDECL(VBOXSTRICTRC)   CPUMSetGuestSysReg(PVMCPUCC pVCpu, uint32_t idSysReg, uint64_t uValue);
 /** @} */
 

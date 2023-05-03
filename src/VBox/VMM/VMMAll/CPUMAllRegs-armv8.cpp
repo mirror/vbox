@@ -45,6 +45,8 @@
 #include <VBox/log.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/tm.h>
+
+#include <iprt/armv8.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #ifdef IN_RING3
@@ -98,6 +100,32 @@ VMMDECL(uint64_t)   CPUMGetGuestFlatSP(PVMCPU pVCpu)
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_SP);
     AssertReleaseFailed(); /** @todo Exception level. */
     return pVCpu->cpum.s.Guest.aSpReg[0].u64;
+}
+
+
+/**
+ * Returns whether IRQs are currently masked.
+ *
+ * @returns true if IRQs are masked as indicated by the PState value.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+VMMDECL(bool)       CPUMGetGuestIrqMasked(PVMCPUCC pVCpu)
+{
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_PSTATE);
+    return RT_BOOL(pVCpu->cpum.s.Guest.fPState & ARMV8_SPSR_EL2_AARCH64_I);
+}
+
+
+/**
+ * Returns whether FIQs are currently masked.
+ *
+ * @returns true if FIQs are masked as indicated by the PState value.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+VMMDECL(bool)       CPUMGetGuestFiqMasked(PVMCPUCC pVCpu)
+{
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_PSTATE);
+    return RT_BOOL(pVCpu->cpum.s.Guest.fPState & ARMV8_SPSR_EL2_AARCH64_F);
 }
 
 

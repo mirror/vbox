@@ -462,7 +462,18 @@ VMMR3_INT_DECL(int)     VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu, bool fPrior
 VMMR3_INT_DECL(void)        VMR3NotifyGlobalFFU(PUVM pUVM, uint32_t fFlags);
 VMMR3_INT_DECL(void)        VMR3NotifyCpuFFU(PUVMCPU pUVMCpu, uint32_t fFlags);
 VMMR3DECL(int)              VMR3NotifyCpuDeviceReady(PVM pVM, VMCPUID idCpu);
-VMMR3_INT_DECL(int)         VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts);
+
+/** @name Flags for VMR3WaitHalted.
+ * @{ */
+/** Flag whether to ignore interrupts. */
+#define VMWAITHALTED_F_IGNORE_IRQS  RT_BIT_32(0)
+#if defined(VBOX_VMM_TARGET_ARMV8)
+/** Flag whether to ignore fast interrupts. */
+# define VMWAITHALTED_F_IGNORE_FIQS RT_BIT_32(1)
+#endif
+/** @} */
+VMMR3_INT_DECL(int)         VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, uint32_t fFlags);
+
 VMMR3_INT_DECL(int)         VMR3WaitU(PUVMCPU pUVMCpu);
 VMMR3DECL(int)              VMR3WaitForDeviceReady(PVM pVM, VMCPUID idCpu);
 VMMR3_INT_DECL(int)         VMR3AsyncPdmNotificationWaitU(PUVMCPU pUVCpu);

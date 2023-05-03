@@ -458,12 +458,21 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 #define VM_FF_DEBUG_SUSPEND_BIT             31
 
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+/** This action forces the VM to inject an IRQ into the guest. */
+# define VMCPU_FF_INTERRUPT_IRQ              RT_BIT_64(VMCPU_FF_INTERRUPT_IRQ_BIT)
+# define VMCPU_FF_INTERRUPT_IRQ_BIT          0
+/** This action forces the VM to inject an FIQ into the guest. */
+# define VMCPU_FF_INTERRUPT_FIQ              RT_BIT_64(VMCPU_FF_INTERRUPT_FIQ_BIT)
+# define VMCPU_FF_INTERRUPT_FIQ_BIT          1
+#else
 /** This action forces the VM to check any pending interrupts on the APIC. */
-#define VMCPU_FF_INTERRUPT_APIC             RT_BIT_64(VMCPU_FF_INTERRUPT_APIC_BIT)
-#define VMCPU_FF_INTERRUPT_APIC_BIT         0
+# define VMCPU_FF_INTERRUPT_APIC             RT_BIT_64(VMCPU_FF_INTERRUPT_APIC_BIT)
+# define VMCPU_FF_INTERRUPT_APIC_BIT         0
 /** This action forces the VM to check any pending interrups on the PIC. */
-#define VMCPU_FF_INTERRUPT_PIC              RT_BIT_64(VMCPU_FF_INTERRUPT_PIC_BIT)
-#define VMCPU_FF_INTERRUPT_PIC_BIT          1
+# define VMCPU_FF_INTERRUPT_PIC              RT_BIT_64(VMCPU_FF_INTERRUPT_PIC_BIT)
+# define VMCPU_FF_INTERRUPT_PIC_BIT          1
+#endif
 /** This action forces the VM to schedule and run pending timer (TM).
  * @remarks Don't move - PATM compatibility.  */
 #define VMCPU_FF_TIMER                      RT_BIT_64(VMCPU_FF_TIMER_BIT)
@@ -580,21 +589,32 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 #define VM_FF_EXTERNAL_HALTED_MASK              (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF    | VM_FF_REQUEST \
                                                  | VM_FF_PDM_QUEUES     | VM_FF_PDM_DMA | VM_FF_EMT_RENDEZVOUS )
 /** Externally forced VMCPU actions. Used to quit the idle/wait loop. */
-#define VMCPU_FF_EXTERNAL_HALTED_MASK           (  VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC \
+#if defined(VBOX_VMM_TARGET_ARMV8)
+# define VMCPU_FF_EXTERNAL_HALTED_MASK          (  VMCPU_FF_INTERRUPT_IRQ | VMCPU_FF_INTERRUPT_FIQ \
+                                                 | VMCPU_FF_REQUEST       | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI \
+                                                 | VMCPU_FF_UNHALT        | VMCPU_FF_TIMER          | VMCPU_FF_DBGF )
+#else
+# define VMCPU_FF_EXTERNAL_HALTED_MASK          (  VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC \
                                                  | VMCPU_FF_REQUEST     | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI \
                                                  | VMCPU_FF_UNHALT      | VMCPU_FF_TIMER          | VMCPU_FF_DBGF \
                                                  | VMCPU_FF_INTERRUPT_NESTED_GUEST)
+#endif
 
 /** High priority VM pre-execution actions. */
 #define VM_FF_HIGH_PRIORITY_PRE_MASK            (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF                 | VM_FF_TM_VIRTUAL_SYNC \
                                                  | VM_FF_DEBUG_SUSPEND  | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY \
                                                  | VM_FF_EMT_RENDEZVOUS )
 /** High priority VMCPU pre-execution actions. */
-#define VMCPU_FF_HIGH_PRIORITY_PRE_MASK         (  VMCPU_FF_TIMER        | VMCPU_FF_INTERRUPT_APIC     | VMCPU_FF_INTERRUPT_PIC \
-                                                 | VMCPU_FF_UPDATE_APIC  | VMCPU_FF_DBGF \
-                                                 | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL \
-                                                 | VMCPU_FF_INTERRUPT_NESTED_GUEST | VMCPU_FF_VMX_MTF  | VMCPU_FF_VMX_APIC_WRITE \
-                                                 | VMCPU_FF_VMX_PREEMPT_TIMER | VMCPU_FF_VMX_NMI_WINDOW | VMCPU_FF_VMX_INT_WINDOW )
+#if defined(VBOX_VMM_TARGET_ARMV8)
+# define VMCPU_FF_HIGH_PRIORITY_PRE_MASK         (  VMCPU_FF_TIMER        | VMCPU_FF_INTERRUPT_IRQ     | VMCPU_FF_INTERRUPT_FIQ \
+                                                  | VMCPU_FF_DBGF )
+#else
+# define VMCPU_FF_HIGH_PRIORITY_PRE_MASK         (  VMCPU_FF_TIMER        | VMCPU_FF_INTERRUPT_APIC     | VMCPU_FF_INTERRUPT_PIC \
+                                                  | VMCPU_FF_UPDATE_APIC  | VMCPU_FF_DBGF \
+                                                  | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL \
+                                                  | VMCPU_FF_INTERRUPT_NESTED_GUEST | VMCPU_FF_VMX_MTF  | VMCPU_FF_VMX_APIC_WRITE \
+                                                  | VMCPU_FF_VMX_PREEMPT_TIMER | VMCPU_FF_VMX_NMI_WINDOW | VMCPU_FF_VMX_INT_WINDOW )
+#endif
 
 /** High priority VM pre raw-mode execution mask. */
 #define VM_FF_HIGH_PRIORITY_PRE_RAW_MASK        (  VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY )
@@ -635,18 +655,21 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 # define VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK (  VMCPU_FF_TO_R3 | VMCPU_FF_IEM | VMCPU_FF_IOM | VMCPU_FF_PGM_SYNC_CR3 \
                                                   | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_DBGF | VMCPU_FF_VMX_MTF )
 #endif
+
+#if !defined(VBOX_VMM_TARGET_ARMV8)
 /** VMCPU flags that cause the REP[|NE|E] STRINS loops to yield, interrupts
  *  enabled. */
-#define VMCPU_FF_YIELD_REPSTR_MASK              (  VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK \
-                                                 | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC   | VMCPU_FF_INTERRUPT_PIC \
-                                                 | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_PDM_CRITSECT \
-                                                 | VMCPU_FF_TIMER          | VMCPU_FF_REQUEST       \
-                                                 | VMCPU_FF_INTERRUPT_NESTED_GUEST )
+# define VMCPU_FF_YIELD_REPSTR_MASK              (  VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK \
+                                                  | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC   | VMCPU_FF_INTERRUPT_PIC \
+                                                  | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_PDM_CRITSECT \
+                                                  | VMCPU_FF_TIMER          | VMCPU_FF_REQUEST       \
+                                                  | VMCPU_FF_INTERRUPT_NESTED_GUEST )
 /** VMCPU flags that cause the REP[|NE|E] STRINS loops to yield, interrupts
  *  disabled. */
-#define VMCPU_FF_YIELD_REPSTR_NOINT_MASK        (  VMCPU_FF_YIELD_REPSTR_MASK \
-                                                 & ~(  VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_PIC \
-                                                     | VMCPU_FF_INTERRUPT_NESTED_GUEST) )
+# define VMCPU_FF_YIELD_REPSTR_NOINT_MASK        (  VMCPU_FF_YIELD_REPSTR_MASK \
+                                                  & ~(  VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_PIC \
+                                                      | VMCPU_FF_INTERRUPT_NESTED_GUEST) )
+#endif
 
 /** VM Flags that cause the HM loops to go back to ring-3. */
 #define VM_FF_HM_TO_R3_MASK                     (  VM_FF_TM_VIRTUAL_SYNC | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY \

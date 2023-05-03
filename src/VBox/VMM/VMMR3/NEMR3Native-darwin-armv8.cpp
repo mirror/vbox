@@ -1083,6 +1083,7 @@ static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu)
         case HV_EXIT_REASON_EXCEPTION:
             return nemR3DarwinHandleExitException(pVM, pVCpu, pExit);
         case HV_EXIT_REASON_VTIMER_ACTIVATED:
+            /** @todo Set interrupt. */
             return VINF_EM_RESCHEDULE;
         default:
             AssertReleaseFailed();
@@ -1123,6 +1124,9 @@ static hv_return_t nemR3DarwinRunGuest(PVM pVM, PVMCPU pVCpu)
 static VBOXSTRICTRC nemR3DarwinPreRunGuest(PVM pVM, PVMCPU pVCpu, bool fSingleStepping)
 {
 #ifdef LOG_ENABLED
+    bool fIrq = false;
+    bool fFiq = false;
+
     if (LogIs3Enabled())
         nemR3DarwinLogState(pVM, pVCpu);
 #endif
@@ -1131,7 +1135,39 @@ static VBOXSTRICTRC nemR3DarwinPreRunGuest(PVM pVM, PVMCPU pVCpu, bool fSingleSt
     int rc = nemR3DarwinExportGuestState(pVM, pVCpu);
     AssertRCReturn(rc, rc);
 
-    LogFlowFunc(("Running vCPU\n"));
+    /* Set the pending interrupt state. */
+    if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_IRQ | VMCPU_FF_INTERRUPT_FIQ))
+    {
+        hv_return_t hrc = HV_SUCCESS;
+
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_IRQ))
+        {
+            hrc = hv_vcpu_set_pending_interrupt(pVCpu->nem.s.hVCpu, HV_INTERRUPT_TYPE_IRQ, true);
+            AssertReturn(hrc == HV_SUCCESS, VERR_NEM_IPE_9);
+#ifdef LOG_ENABLED
+            fIrq = true;
+#endif
+        }
+
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_FIQ))
+        {
+            hrc = hv_vcpu_set_pending_interrupt(pVCpu->nem.s.hVCpu, HV_INTERRUPT_TYPE_FIQ, true);
+            AssertReturn(hrc == HV_SUCCESS, VERR_NEM_IPE_9);
+#ifdef LOG_ENABLED
+            fFiq = true;
+#endif
+        }
+    }
+    else
+    {
+        hv_return_t hrc = hv_vcpu_set_pending_interrupt(pVCpu->nem.s.hVCpu, HV_INTERRUPT_TYPE_IRQ, false);
+        AssertReturn(hrc == HV_SUCCESS, VERR_NEM_IPE_9);
+
+        hrc = hv_vcpu_set_pending_interrupt(pVCpu->nem.s.hVCpu, HV_INTERRUPT_TYPE_FIQ, false);
+        AssertReturn(hrc == HV_SUCCESS, VERR_NEM_IPE_9);
+    }
+
+    LogFlowFunc(("Running vCPU [%s,%s]\n", fIrq ? "I" : "nI", fFiq ? "F" : "nF"));
     pVCpu->nem.s.fEventPending = false;
     return VINF_SUCCESS;
 }
@@ -1253,7 +1289,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
         if (   (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST)
             || RT_FAILURE(rcStrict))
             fImport = CPUMCTX_EXTRN_ALL;
-        else if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_INTERRUPT_APIC
+        else if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_IRQ | VMCPU_FF_INTERRUPT_FIQ
                                           | VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI))
             fImport |= IEM_CPUMCTX_EXTRN_XCPT_MASK;
 

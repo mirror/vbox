@@ -2556,8 +2556,13 @@ static DECLCALLBACK(void) vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
         /* show the flag mnemonics */
         c = 0;
         f = fLocalForcedActions;
+#if defined(VBOX_VMM_TARGET_ARMV8)
+        PRINT_FLAG(VMCPU_FF_,INTERRUPT_IRQ);
+        PRINT_FLAG(VMCPU_FF_,INTERRUPT_FIQ);
+#else
         PRINT_FLAG(VMCPU_FF_,INTERRUPT_APIC);
         PRINT_FLAG(VMCPU_FF_,INTERRUPT_PIC);
+#endif
         PRINT_FLAG(VMCPU_FF_,TIMER);
         PRINT_FLAG(VMCPU_FF_,INTERRUPT_NMI);
         PRINT_FLAG(VMCPU_FF_,INTERRUPT_SMI);

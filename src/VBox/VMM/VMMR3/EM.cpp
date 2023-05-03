@@ -2121,7 +2121,11 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 
         /* check that we got them all  */
         AssertCompile(VM_FF_HIGH_PRIORITY_PRE_MASK == (VM_FF_TM_VIRTUAL_SYNC | VM_FF_DBGF | VM_FF_CHECK_VM_STATE | VM_FF_DEBUG_SUSPEND | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS));
+#if defined(VBOX_VMM_TARGET_ARMV8)
+        AssertCompile(VMCPU_FF_HIGH_PRIORITY_PRE_MASK == (VMCPU_FF_TIMER | VMCPU_FF_INTERRUPT_IRQ | VMCPU_FF_INTERRUPT_FIQ | VMCPU_FF_DBGF));
+#else
         AssertCompile(VMCPU_FF_HIGH_PRIORITY_PRE_MASK == (VMCPU_FF_TIMER | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_DBGF | VMCPU_FF_INTERRUPT_NESTED_GUEST | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_PREEMPT_TIMER | VMCPU_FF_VMX_INT_WINDOW | VMCPU_FF_VMX_NMI_WINDOW));
+#endif
     }
 
 #undef UPDATE_RC
@@ -2672,11 +2676,15 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         if (rc == VINF_SUCCESS)
                         {
 #if defined(VBOX_VMM_TARGET_ARMV8)
-                            AssertReleaseFailed();
+                            if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_IRQ | VMCPU_FF_INTERRUPT_FIQ
+                                                         | VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
+                            {
+                                Log(("EMR3ExecuteVM: Triggering reschedule on pending IRQ after MWAIT\n"));
+                                rc = VINF_EM_RESCHEDULE;
+                            }
 #else
                             if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
                                 APICUpdatePendingInterrupts(pVCpu);
-#endif
 
                             if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
                                                          | VMCPU_FF_INTERRUPT_NESTED_GUEST
@@ -2685,17 +2693,18 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                                 Log(("EMR3ExecuteVM: Triggering reschedule on pending IRQ after MWAIT\n"));
                                 rc = VINF_EM_RESCHEDULE;
                             }
+#endif
                         }
                     }
                     else
                     {
 #if defined(VBOX_VMM_TARGET_ARMV8)
-                        bool fIgnoreInterrupts = false;
-                        AssertReleaseFailed();
+                        uint32_t fWaitHalted =   (CPUMGetGuestIrqMasked(pVCpu) ? VMWAITHALTED_F_IGNORE_IRQS : 0)
+                                               | (CPUMGetGuestFiqMasked(pVCpu) ? VMWAITHALTED_F_IGNORE_FIQS : 0);
 #else
-                        bool fIgnoreInterrupts = !(CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF);
+                        uint32_t fWaitHalted = (CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF) ? 0 : VMWAITHALTED_F_IGNORE_IRQS;
 #endif
-                        rc = VMR3WaitHalted(pVM, pVCpu, fIgnoreInterrupts);
+                        rc = VMR3WaitHalted(pVM, pVCpu, fWaitHalted);
                         /* We're only interested in NMI/SMIs here which have their own FFs, so we don't need to
                            check VMCPU_FF_UPDATE_APIC here. */
                         if (   rc == VINF_SUCCESS
