@@ -174,7 +174,8 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
  VBoxClient_SOURCES  += \
  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-x11.cpp \
- 	clipboard.cpp
+ 	clipboard.cpp \
+ 	clipboard-x11.cpp
  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
   VBoxClient_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS VBOX_WITH_SHARED_CLIPBOARD_GUEST
   VBoxClient_SOURCES += \

@@ -25,34 +25,14 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef GA_INCLUDED_SRC_x11_VBoxClient_clipboard_h
-#define GA_INCLUDED_SRC_x11_VBoxClient_clipboard_h
+#ifndef GA_INCLUDED_SRC_x11_VBoxClient_clipboard_x11_h
+#define GA_INCLUDED_SRC_x11_VBoxClient_clipboard_x11_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
-/**
- * Struct keeping a Shared Clipboard context.
- */
-struct SHCLCONTEXT
-{
-    /** Client command context */
-    VBGLR3SHCLCMDCTX CmdCtx;
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    /** Associated transfer data. */
-    SHCLTRANSFERCTX  TransferCtx;
-#endif
-    union
-    {
-        /** X11 clipboard context. */
-        SHCLX11CTX       X11;
-        /** @todo Way clipboard context goes here. */
-        /* SHCLWAYLANDCTX Wl; */
-    };
-};
+int VBClX11ClipboardInit(void);
+int VBClX11ClipboardDestroy(void);
+int VBClX11ClipboardMain(void);
 
-/** Shared Clipboard context.
- *  Only one context is supported at a time for now. */
-extern SHCLCONTEXT g_Ctx;
-
-#endif /* !GA_INCLUDED_SRC_x11_VBoxClient_clipboard_h */
+#endif /* !GA_INCLUDED_SRC_x11_VBoxClient_clipboard_x11_h */
