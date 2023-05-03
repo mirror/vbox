@@ -393,7 +393,6 @@ static D3DDDIFORMAT svgaToD3DDDIFormat(SVGA3dSurfaceFormat format)
         case SVGA3D_X8R8G8B8:       return D3DDDIFMT_X8R8G8B8;
         case SVGA3D_A8R8G8B8:       return D3DDDIFMT_A8R8G8B8;
         case SVGA3D_ALPHA8:         return D3DDDIFMT_A8;
-        case SVGA3D_R8G8B8A8_UNORM: return D3DDDIFMT_A8B8G8R8;
         case SVGA3D_A4R4G4B4:       return D3DDDIFMT_A4R4G4B4;
         case SVGA3D_LUMINANCE8:     return D3DDDIFMT_L8;
         case SVGA3D_A1R5G5B5:       return D3DDDIFMT_A1R5G5B5;
@@ -401,20 +400,62 @@ static D3DDDIFORMAT svgaToD3DDDIFormat(SVGA3dSurfaceFormat format)
         case SVGA3D_R5G6B5:         return D3DDDIFMT_R5G6B5;
         case SVGA3D_ARGB_S10E5:     return D3DDDIFMT_A16B16G16R16F;
         case SVGA3D_ARGB_S23E8:     return D3DDDIFMT_A32B32G32R32F;
-        case SVGA3D_B8G8R8A8_UNORM: return D3DDDIFMT_A8R8G8B8;
-        case SVGA3D_B8G8R8X8_UNORM: return D3DDDIFMT_X8R8G8B8;
-        case SVGA3D_R8_UNORM:       /* R8->A8 conversion is not correct, but it does not matter here,
-                                     * because the D3DDDIFMT_ value is used only to compute bpp, pitch, etc. */
         case SVGA3D_A8_UNORM:       return D3DDDIFMT_A8;
         case SVGA3D_B5G5R5A1_UNORM: return D3DDDIFMT_A1R5G5B5;
 
-        case SVGA3D_R8G8_UNORM:         return D3DDDIFMT_A8L8;
+        case SVGA3D_B8G8R8X8_TYPELESS:
+        case SVGA3D_B8G8R8X8_UNORM:     return D3DDDIFMT_X8R8G8B8;
         case SVGA3D_R16_FLOAT:          return D3DDDIFMT_R16F;
         case SVGA3D_R16G16_FLOAT:       return D3DDDIFMT_G16R16F;
         case SVGA3D_R16G16B16A16_FLOAT: return D3DDDIFMT_A16B16G16R16F;
+        case SVGA3D_R32_FLOAT:          return D3DDDIFMT_R32F;
+        case SVGA3D_R32G32_FLOAT:       return D3DDDIFMT_G32R32F;
         case SVGA3D_R32G32B32A32_FLOAT: return D3DDDIFMT_A32B32G32R32F;
-        case SVGA3D_R8G8B8A8_TYPELESS:  return D3DDDIFMT_A8R8G8B8;
-        case SVGA3D_R16_UINT:           return D3DDDIFMT_L16;
+        case SVGA3D_R8_TYPELESS:
+        case SVGA3D_R8_SINT:
+        case SVGA3D_R8_UINT:
+        case SVGA3D_R8_SNORM:
+        case SVGA3D_R8_UNORM:           return D3DDDIFMT_L8;
+        case SVGA3D_R8G8_TYPELESS:
+        case SVGA3D_R8G8_SINT:
+        case SVGA3D_R8G8_UINT:
+        case SVGA3D_R8G8_SNORM:
+        case SVGA3D_R8G8_UNORM:         return D3DDDIFMT_A8L8;
+        case SVGA3D_R8G8B8A8_TYPELESS:
+        case SVGA3D_R8G8B8A8_SINT:
+        case SVGA3D_R8G8B8A8_UINT:
+        case SVGA3D_R8G8B8A8_SNORM:
+        case SVGA3D_R8G8B8A8_UNORM:     return D3DDDIFMT_A8R8G8B8;
+        case SVGA3D_R16_TYPELESS:
+        case SVGA3D_R16_SINT:
+        case SVGA3D_R16_UINT:
+        case SVGA3D_R16_SNORM:
+        case SVGA3D_R16_UNORM:          return D3DDDIFMT_L16;
+        case SVGA3D_R16G16_TYPELESS:
+        case SVGA3D_R16G16_SINT:
+        case SVGA3D_R16G16_UINT:
+        case SVGA3D_R16G16_SNORM:
+        case SVGA3D_R16G16_UNORM:       return D3DDDIFMT_G16R16;
+        case SVGA3D_R16G16B16A16_TYPELESS:
+        case SVGA3D_R16G16B16A16_SINT:
+        case SVGA3D_R16G16B16A16_UINT:
+        case SVGA3D_R16G16B16A16_SNORM:
+        case SVGA3D_R16G16B16A16_UNORM: return D3DDDIFMT_A16B16G16R16;
+        case SVGA3D_R32_TYPELESS:
+        case SVGA3D_R32_SINT:
+        case SVGA3D_R32_UINT:           return D3DDDIFMT_R32F; /* Same size in bytes. */
+        case SVGA3D_R32G32_TYPELESS:
+        case SVGA3D_R32G32_SINT:
+        case SVGA3D_R32G32_UINT:        return D3DDDIFMT_G32R32F; /* Same size in bytes. */
+        case SVGA3D_R32G32B32A32_TYPELESS:
+        case SVGA3D_R32G32B32A32_SINT:
+        case SVGA3D_R32G32B32A32_UINT:  return D3DDDIFMT_A32B32G32R32F; /* Same size in bytes. */
+        case SVGA3D_R10G10B10A2_TYPELESS:
+        case SVGA3D_R10G10B10A2_UINT:
+        case SVGA3D_R10G10B10A2_UNORM:  return D3DDDIFMT_A2B10G10R10;
+        case SVGA3D_B5G6R5_UNORM:       return D3DDDIFMT_R5G6B5;
+        case SVGA3D_R11G11B10_FLOAT:    return D3DDDIFMT_R32F;
+        case SVGA3D_B8G8R8A8_UNORM:     return D3DDDIFMT_A8R8G8B8;
         default: break;
     }
 
