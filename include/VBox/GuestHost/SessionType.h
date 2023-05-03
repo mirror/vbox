@@ -59,7 +59,7 @@ typedef enum
     /** X11 (X.org). */
     VBGHSESSIONTYPE_X11,
     /** Wayland. */
-    VBGHSESSIONTYPE_WAYLAND,
+    VBGHSESSIONTYPE_WAYLAND
 } VBGHSESSIONTYPE;
 
 const char *VBGHSessionTypeToStr(VBGHSESSIONTYPE enmType);
