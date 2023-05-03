@@ -283,6 +283,33 @@ static const char *nemR3DarwinEsrEl2EcStringify(uint32_t u32Ec)
 
 
 /**
+ * Resolves a NEM page state from the given protection flags.
+ *
+ * @returns NEM page state.
+ * @param   fPageProt           The page protection flags.
+ */
+DECLINLINE(uint8_t) nemR3DarwinPageStateFromProt(uint32_t fPageProt)
+{
+    switch (fPageProt)
+    {
+        case NEM_PAGE_PROT_NONE:
+            return NEM_DARWIN_PAGE_STATE_UNMAPPED;
+        case NEM_PAGE_PROT_READ | NEM_PAGE_PROT_EXECUTE:
+            return NEM_DARWIN_PAGE_STATE_RX;
+        case NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE:
+            return NEM_DARWIN_PAGE_STATE_RW;
+        case NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE | NEM_PAGE_PROT_EXECUTE:
+            return NEM_DARWIN_PAGE_STATE_RWX;
+        default:
+            break;
+    }
+
+    AssertLogRelMsgFailed(("Invalid combination of page protection flags %#x, can't map to page state!\n", fPageProt));
+    return NEM_DARWIN_PAGE_STATE_UNMAPPED;
+}
+
+
+/**
  * Unmaps the given guest physical address range (page aligned).
  *
  * @returns VBox status code.
@@ -349,9 +376,7 @@ DECLINLINE(int) nemR3DarwinMap(PVM pVM, RTGCPHYS GCPhys, const void *pvRam, size
     if (hrc == HV_SUCCESS)
     {
         if (pu2State)
-            *pu2State =   (fPageProt & NEM_PAGE_PROT_WRITE)
-                        ? NEM_DARWIN_PAGE_STATE_WRITABLE
-                        : NEM_DARWIN_PAGE_STATE_READABLE;
+            *pu2State = nemR3DarwinPageStateFromProt(fPageProt);
         return VINF_SUCCESS;
     }
 
@@ -491,125 +516,6 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
         pVCpu->cpum.GstCtx.fExtrn = 0;
 
     return nemR3DarwinHvSts2Rc(hrc);
-}
-
-
-/**
- * State to pass between vmxHCExitEptViolation
- * and nemR3DarwinHandleMemoryAccessPageCheckerCallback.
- */
-typedef struct NEMHCDARWINHMACPCCSTATE
-{
-    /** Input: Write access. */
-    bool    fWriteAccess;
-    /** Output: Set if we did something. */
-    bool    fDidSomething;
-    /** Output: Set it we should resume. */
-    bool    fCanResume;
-} NEMHCDARWINHMACPCCSTATE;
-
-/**
- * @callback_method_impl{FNPGMPHYSNEMCHECKPAGE,
- *      Worker for vmxHCExitEptViolation; pvUser points to a
- *      NEMHCDARWINHMACPCCSTATE structure. }
- */
-static DECLCALLBACK(int)
-nemR3DarwinHandleMemoryAccessPageCheckerCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, PPGMPHYSNEMPAGEINFO pInfo, void *pvUser)
-{
-    RT_NOREF(pVCpu);
-
-    NEMHCDARWINHMACPCCSTATE *pState = (NEMHCDARWINHMACPCCSTATE *)pvUser;
-    pState->fDidSomething = false;
-    pState->fCanResume    = false;
-
-    uint8_t  u2State = pInfo->u2NemState;
-
-    /*
-     * Consolidate current page state with actual page protection and access type.
-     * We don't really consider downgrades here, as they shouldn't happen.
-     */
-    switch (u2State)
-    {
-        case NEM_DARWIN_PAGE_STATE_UNMAPPED:
-        case NEM_DARWIN_PAGE_STATE_NOT_SET:
-        {
-            if (pInfo->fNemProt == NEM_PAGE_PROT_NONE)
-            {
-                Log4(("nemR3DarwinHandleMemoryAccessPageCheckerCallback: %RGp - #1\n", GCPhys));
-                return VINF_SUCCESS;
-            }
-
-            /* Don't bother remapping it if it's a write request to a non-writable page. */
-            if (   pState->fWriteAccess
-                && !(pInfo->fNemProt & NEM_PAGE_PROT_WRITE))
-            {
-                Log4(("nemR3DarwinHandleMemoryAccessPageCheckerCallback: %RGp - #1w\n", GCPhys));
-                return VINF_SUCCESS;
-            }
-
-            int rc = VINF_SUCCESS;
-            if (pInfo->fNemProt & NEM_PAGE_PROT_WRITE)
-            {
-                void *pvPage;
-                rc = nemR3NativeGCPhys2R3PtrWriteable(pVM, GCPhys, &pvPage);
-                if (RT_SUCCESS(rc))
-                    rc = nemR3DarwinMap(pVM, GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, pvPage, X86_PAGE_SIZE, pInfo->fNemProt, &u2State);
-            }
-            else if (pInfo->fNemProt & NEM_PAGE_PROT_READ)
-            {
-                const void *pvPage;
-                rc = nemR3NativeGCPhys2R3PtrReadOnly(pVM, GCPhys, &pvPage);
-                if (RT_SUCCESS(rc))
-                    rc = nemR3DarwinMap(pVM, GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, pvPage, X86_PAGE_SIZE, pInfo->fNemProt, &u2State);
-            }
-            else /* Only EXECUTE doesn't work. */
-                AssertReleaseFailed();
-
-            pInfo->u2NemState = u2State;
-            Log4(("nemR3DarwinHandleMemoryAccessPageCheckerCallback: %RGp - synced => %s + %Rrc\n",
-                  GCPhys, g_apszPageStates[u2State], rc));
-            pState->fDidSomething = true;
-            pState->fCanResume    = true;
-            return rc;
-        }
-        case NEM_DARWIN_PAGE_STATE_READABLE:
-            if (   !(pInfo->fNemProt & NEM_PAGE_PROT_WRITE)
-                && (pInfo->fNemProt & (NEM_PAGE_PROT_READ | NEM_PAGE_PROT_EXECUTE)))
-            {
-                pState->fCanResume = true;
-                Log4(("nemR3DarwinHandleMemoryAccessPageCheckerCallback: %RGp - #2\n", GCPhys));
-                return VINF_SUCCESS;
-            }
-            break;
-
-        case NEM_DARWIN_PAGE_STATE_WRITABLE:
-            if (pInfo->fNemProt & NEM_PAGE_PROT_WRITE)
-            {
-                pState->fCanResume = true;
-                if (pInfo->u2OldNemState == NEM_DARWIN_PAGE_STATE_WRITABLE)
-                    Log4(("nemR3DarwinHandleMemoryAccessPageCheckerCallback: Spurious EPT fault\n", GCPhys));
-                return VINF_SUCCESS;
-            }
-            break;
-
-        default:
-            AssertLogRelMsgFailedReturn(("u2State=%#x\n", u2State), VERR_NEM_IPE_4);
-    }
-
-    /* Unmap and restart the instruction. */
-    int rc = nemR3DarwinUnmap(pVM, GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, X86_PAGE_SIZE, &u2State);
-    if (RT_SUCCESS(rc))
-    {
-        pInfo->u2NemState     = u2State;
-        pState->fDidSomething = true;
-        pState->fCanResume    = true;
-        Log5(("NEM GPA unmapped/exit: %RGp (was %s)\n", GCPhys, g_apszPageStates[u2State]));
-        return VINF_SUCCESS;
-    }
-
-    LogRel(("nemR3DarwinHandleMemoryAccessPageCheckerCallback/unmap: GCPhys=%RGp %s rc=%Rrc\n",
-            GCPhys, g_apszPageStates[u2State], rc));
-    return VERR_NEM_UNMAP_PAGES_FAILED;
 }
 
 
@@ -946,7 +852,10 @@ DECLINLINE(void) nemR3DarwinSetGReg(PVMCPU pVCpu, uint8_t uReg, bool f64BitReg, 
  */
 DECLINLINE(uint64_t) nemR3DarwinGetGReg(PVMCPU pVCpu, uint8_t uReg)
 {
-    AssertReturn(uReg < 31, 0);
+    AssertReturn(uReg <= ARMV8_AARCH64_REG_ZR, 0);
+
+    if (uReg == ARMV8_AARCH64_REG_ZR)
+        return 0;
 
     /** @todo Import the register if extern. */
     AssertRelease(!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_GPRS_MASK));
@@ -990,7 +899,7 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionDataAbort(PVM pVM, PVMCPU pVCp
                      pVCpu->cpum.GstCtx.Pc.u64, ASMReadTSC());
 
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
-    uint64_t u64Val;
+    uint64_t u64Val = 0;
     if (fWrite)
     {
         u64Val = nemR3DarwinGetGReg(pVCpu, uReg);
@@ -1075,6 +984,38 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedSysInsn(PVM pVM, PVMCPU
 
 
 /**
+ * Works on the trapped HVC instruction exception.
+ *
+ * @returns VBox strict status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT.
+ * @param   uIss            The instruction specific syndrome value.
+ */
+static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedHvcInsn(PVM pVM, PVMCPU pVCpu, uint32_t uIss)
+{
+    uint16_t u16Imm = ARMV8_EC_ISS_AARCH64_TRAPPED_HVC_INSN_IMM_GET(uIss);
+    LogFlowFunc(("u16Imm=%#RX16\n", u16Imm));
+
+#if 0 /** @todo For later */
+    EMHistoryAddExit(pVCpu,
+                     fRead
+                     ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_READ)
+                     : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_WRITE),
+                     pVCpu->cpum.GstCtx.Pc.u64, ASMReadTSC());
+#endif
+
+    RT_NOREF(pVM);
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
+    /** @todo Raise exception to EL1 if PSCI not configured. */
+    /** @todo Need a generic mechanism here to pass this to, GIM maybe?. Always return -1 for now (PSCI). */
+    nemR3DarwinSetGReg(pVCpu, ARMV8_AARCH64_REG_X0, true /*f64BitReg*/, false /*fSignExtend*/, (uint64_t)-1);
+
+    return rcStrict;
+}
+
+
+/**
  * Handles an exception VM exit.
  *
  * @returns VBox strict status code.
@@ -1099,10 +1040,15 @@ static VBOXSTRICTRC nemR3DarwinHandleExitException(PVM pVM, PVMCPU pVCpu, const 
                                                            pExit->exception.physical_address);
         case ARMV8_ESR_EL2_EC_AARCH64_TRAPPED_SYS_INSN:
             return nemR3DarwinHandleExitExceptionTrappedSysInsn(pVM, pVCpu, uIss, fInsn32Bit);
+        case ARMV8_ESR_EL2_EC_AARCH64_HVC_INSN:
+            return nemR3DarwinHandleExitExceptionTrappedHvcInsn(pVM, pVCpu, uIss);
+        case ARMV8_ESR_EL2_EC_TRAPPED_WFX:
+            return VINF_EM_HALT;
         case ARMV8_ESR_EL2_EC_UNKNOWN:
         default:
             LogRel(("NEM/Darwin: Unknown Exception Class in syndrome: uEc=%u{%s} uIss=%#RX32 fInsn32Bit=%RTbool\n",
                     uEc, nemR3DarwinEsrEl2EcStringify(uEc), uIss, fInsn32Bit));
+            AssertReleaseFailed();
             return VERR_NOT_IMPLEMENTED;
     }
 
@@ -1136,6 +1082,8 @@ static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu)
             return VINF_EM_RAW_INTERRUPT;
         case HV_EXIT_REASON_EXCEPTION:
             return nemR3DarwinHandleExitException(pVM, pVCpu, pExit);
+        case HV_EXIT_REASON_VTIMER_ACTIVATED:
+            return VINF_EM_RESCHEDULE;
         default:
             AssertReleaseFailed();
             break;
