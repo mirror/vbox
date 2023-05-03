@@ -9552,7 +9552,7 @@ static DECLCALLBACK(int) vmsvga3dBackIntraSurfaceCopy(PVGASTATECC pThisCC, PVMSV
             uint8_t const *pu8PlaneSrc = pu8Src;
             uint8_t *pu8PlaneDst = pu8Dst;
 
-            for (uint32_t y = 0; y < clipBox.h; ++y)
+            for (uint32_t y = 0; y < cyBlocks; ++y)
             {
                 memmove(pu8PlaneDst, pu8PlaneSrc, cbRow);
                 pu8PlaneDst += pMipLevel->cbSurfacePitch;
