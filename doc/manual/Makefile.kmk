@@ -144,7 +144,10 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  	$(if-expr defined(VBOX_DITA_DEBUG),"/cleantemp:no" "/debug:yes",) \
  	$3 $4 # "/outercontrol:fail" ?
 
- ifdef VBOX_DITA_USING_LATEST # Experiments with dita-ot v4.0.2. Requires java 17.
+ if1of ($(KBUILD_HOST), linux win)
+  VBOX_DITA_USING_LATEST := 1
+ endif
+ ifdef VBOX_DITA_USING_LATEST
   VBOX_DITA_USING_LATEST  := 1
   ifeq ($(VBOX_JAVA17PLUS_HOME),)
    VBOX_JAVA17PLUS_HOME   := $(firstfile \
@@ -816,7 +819,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   		$$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(lang)) \
   		$$(VBOX_PATH_MANUAL_SRC)/pdf-theme-UserManual.yaml \
   		$$(VBOX_PATH_MANUAL_SRC)/en_US/images/vboxlogo.png
-	$$(call MSG_L1,Building $@ ($(@D)/UserManual_pdf.log))
+	$$(call MSG_L1,Building $$@ ($$(@D)/UserManual_pdf.log))
 	$$(QUIET)$$(RM) -f -- "$$@" \
 		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf" \
 		$$(if-expr defined(VBOX_DITA_USING_LATEST),,"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_pdf.log")
