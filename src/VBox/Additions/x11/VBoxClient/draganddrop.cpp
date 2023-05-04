@@ -80,7 +80,17 @@ static DECLCALLBACK(void) vbclDnDStop(void)
  */
 static DECLCALLBACK(int) vbclDnDTerm(void)
 {
-    return g_pSvc->term();
+    int rc = VINF_SUCCESS;
+
+    if (g_pSvc)
+    {
+        rc = g_pSvc->term();
+
+        delete g_pSvc;
+        g_pSvc = NULL;
+    }
+
+    return rc;
 }
 
 VBCLSERVICE g_SvcDragAndDrop =

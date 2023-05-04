@@ -82,6 +82,10 @@ protected:
 
 public:
 
+    virtual ~VBClDnDSvc(void) { }
+
+public:
+
     virtual int  init(void) = 0;
     virtual int  worker(bool volatile *pfShutdown) = 0;
     virtual void reset(void) = 0;
