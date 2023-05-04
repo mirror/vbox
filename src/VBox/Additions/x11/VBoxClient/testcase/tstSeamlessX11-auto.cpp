@@ -675,7 +675,7 @@ static void smlsPrintDiffRects(RTRECT *pExp, RTRECT *pGot)
 /** Run through a test fixture */
 static unsigned smlsDoFixture(SMLSFIXTURE *pFixture, const char *pszDesc)
 {
-    SeamlessX11 subject;
+    VBClX11SeamlessMonitor subject;
     unsigned cErrs = 0;
 
     subject.init(sendRegionUpdate);

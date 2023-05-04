@@ -32,11 +32,18 @@
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
+
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/GuestHost/SessionType.h>
 
 #include "../seamless.h"
 
 static RTSEMEVENT eventSem;
+
+VBGHSESSIONTYPE VBClGetSessionType(void)
+{
+    return VBGHSESSIONTYPE_X11;
+}
 
 void VBClLogError(const char *pszFormat, ...)
 {
@@ -168,7 +175,7 @@ int main( int argc, char **argv)
     RTPrintf("\nType Ctrl-C to exit...\n");
     RTSemEventCreate(&eventSem);
     /** Our instance of the seamless class. */
-    SeamlessMain seamless;
+    VBClX11SeamlessSvc seamless;
     LogRel(("Starting seamless Guest Additions...\n"));
     rc = seamless.init();
     if (rc != VINF_SUCCESS)

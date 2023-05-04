@@ -32,6 +32,7 @@
 # pragma once
 #endif
 
+#include <iprt/asm.h>
 #include <iprt/thread.h>
 
 #include <VBox/log.h>
@@ -39,18 +40,69 @@
 
 #include "seamless-x11.h"
 
-/**
- * Interface to the host
- */
-class SeamlessMain
-{
-private:
-    // We don't want a copy constructor or assignment operator
-    SeamlessMain(const SeamlessMain&);
-    SeamlessMain& operator=(const SeamlessMain&);
+/** @name Generic seamless functions
+ * @{ */
+void VBClSeamnlessSendRegionUpdate(RTRECT *pRects, size_t cRects);
+/** @} */
 
-    /** X11 event monitor object */
-    SeamlessX11 mX11Monitor;
+/**
+ * Interface class for seamless mode service implementation.
+ */
+class VBClSeamlessSvc
+{
+protected:
+
+    /* Note: Constructor must not throw, as we don't have exception handling on the guest side. */
+    VBClSeamlessSvc(void) { }
+
+public:
+
+    virtual ~VBClSeamlessSvc(void) { }
+
+public:
+
+    virtual int  init(void) { return VINF_SUCCESS; }
+    virtual int  worker(bool volatile *pfShutdown) { RT_NOREF(pfShutdown); return VINF_SUCCESS; }
+    virtual void reset(void) { }
+    virtual void stop(void) { }
+    virtual int  term(void) { return VINF_SUCCESS; }
+
+#ifdef IN_GUEST
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#endif
+};
+
+/**
+ * Service class which implements seamless mode for X11.
+ */
+class VBClX11SeamlessSvc : public VBClSeamlessSvc
+{
+public:
+    VBClX11SeamlessSvc(void);
+
+    virtual ~VBClX11SeamlessSvc();
+
+public:
+
+    /** @copydoc VBCLSERVICE::pfnInit */
+    virtual int init(void);
+
+    /** @copydoc VBCLSERVICE::pfnWorker */
+    virtual int worker(bool volatile *pfShutdown);
+
+    /** @copydoc VBCLSERVICE::pfnStop */
+    virtual void stop(void);
+
+    /** @copydoc VBCLSERVICE::pfnTerm */
+    virtual int term(void);
+
+private:
+    /** Note: We don't want a copy constructor or assignment operator. */
+    VBClX11SeamlessSvc(const VBClX11SeamlessSvc&);
+    VBClX11SeamlessSvc& operator=(const VBClX11SeamlessSvc&);
+
+    /** X11 event monitor object. */
+    VBClX11SeamlessMonitor mX11Monitor;
 
     /** Thread to start and stop when we enter and leave seamless mode which
      *  monitors X11 windows in the guest. */
@@ -85,25 +137,6 @@ private:
     {
         return mX11MonitorThread != NIL_RTTHREAD;
     }
-
-public:
-    SeamlessMain(void);
-    virtual ~SeamlessMain();
-#ifdef RT_NEED_NEW_AND_DELETE
-    RTMEM_IMPLEMENT_NEW_AND_DELETE();
-#endif
-
-    /** @copydoc VBCLSERVICE::pfnInit */
-    int init(void);
-
-    /** @copydoc VBCLSERVICE::pfnWorker */
-    int worker(bool volatile *pfShutdown);
-
-    /** @copydoc VBCLSERVICE::pfnStop */
-    void stop(void);
-
-    /** @copydoc VBCLSERVICE::pfnTerm */
-    int term(void);
 };
 
 #endif /* !GA_INCLUDED_SRC_x11_VBoxClient_seamless_h */

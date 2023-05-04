@@ -35,6 +35,7 @@
 #include <iprt/thread.h>
 #include <VBox/log.h>
 
+#include "seamless.h"
 #include "seamless-x11.h"
 #include "VBoxClient.h"
 
@@ -89,7 +90,7 @@ static unsigned char *XXGetProperty (Display *aDpy, Window aWnd, Atom aPropType,
  * @param  pHostCallback   host callback.
  * @returns true if it can handle seamless, false otherwise
  */
-int SeamlessX11::init(PFNSENDREGIONUPDATE pHostCallback)
+int VBClX11SeamlessMonitor::init(PFNSENDREGIONUPDATE pHostCallback)
 {
     int rc = VINF_SUCCESS;
 
@@ -114,7 +115,7 @@ int SeamlessX11::init(PFNSENDREGIONUPDATE pHostCallback)
 /**
  * Shutdown seamless event monitoring.
  */
-void SeamlessX11::uninit(void)
+void VBClX11SeamlessMonitor::uninit(void)
 {
     if (mHostCallback)
         stop();
@@ -149,7 +150,7 @@ void SeamlessX11::uninit(void)
  *       call nextConfigurationEvent() for as long as events are wished.
  * @todo This function should switch the guest to fullscreen mode.
  */
-int SeamlessX11::start(void)
+int VBClX11SeamlessMonitor::start(void)
 {
     int rc = VINF_SUCCESS;
     /** Dummy values for XShapeQueryExtension */
@@ -168,7 +169,7 @@ int SeamlessX11::start(void)
 
 /** Stop reporting seamless events to the host.  Free information about guest windows
     and stop requesting updates. */
-void SeamlessX11::stop(void)
+void VBClX11SeamlessMonitor::stop(void)
 {
     LogRelFlowFuncEnter();
     if (!mEnabled)
@@ -179,13 +180,13 @@ void SeamlessX11::stop(void)
     LogRelFlowFuncLeave();
 }
 
-void SeamlessX11::monitorClientList(void)
+void VBClX11SeamlessMonitor::monitorClientList(void)
 {
     LogRelFlowFuncEnter();
     XSelectInput(mDisplay, DefaultRootWindow(mDisplay), PropertyChangeMask | SubstructureNotifyMask);
 }
 
-void SeamlessX11::unmonitorClientList(void)
+void VBClX11SeamlessMonitor::unmonitorClientList(void)
 {
     LogRelFlowFuncEnter();
     XSelectInput(mDisplay, DefaultRootWindow(mDisplay), PropertyChangeMask);
@@ -195,7 +196,7 @@ void SeamlessX11::unmonitorClientList(void)
  * Recreate the table of toplevel windows of clients on the default root window of the
  * X server.
  */
-void SeamlessX11::rebuildWindowTree(void)
+void VBClX11SeamlessMonitor::rebuildWindowTree(void)
 {
     LogRelFlowFuncEnter();
     freeWindowTree();
@@ -210,7 +211,7 @@ void SeamlessX11::rebuildWindowTree(void)
  *
  * @param hRoot the virtual root window to be examined
  */
-void SeamlessX11::addClients(const Window hRoot)
+void VBClX11SeamlessMonitor::addClients(const Window hRoot)
 {
     /** Unused out parameters of XQueryTree */
     Window hRealRoot, hParent;
@@ -232,7 +233,7 @@ void SeamlessX11::addClients(const Window hRoot)
 }
 
 
-void SeamlessX11::addClientWindow(const Window hWin)
+void VBClX11SeamlessMonitor::addClientWindow(const Window hWin)
 {
     LogRelFlowFuncEnter();
     XWindowAttributes winAttrib;
@@ -296,7 +297,7 @@ void SeamlessX11::addClientWindow(const Window hWin)
  * @returns true if it is, false otherwise
  * @param hWin the window to be examined
  */
-bool SeamlessX11::isVirtualRoot(Window hWin)
+bool VBClX11SeamlessMonitor::isVirtualRoot(Window hWin)
 {
     unsigned char *windowTypeRaw = NULL;
     Atom *windowType;
@@ -330,7 +331,7 @@ DECLCALLBACK(int) VBoxGuestWinFree(VBoxGuestWinInfo *pInfo, void *pvParam)
 /**
  * Free all information in the tree of visible windows
  */
-void SeamlessX11::freeWindowTree(void)
+void VBClX11SeamlessMonitor::freeWindowTree(void)
 {
     /* We use post-increment in the operation to prevent the iterator from being invalidated. */
     LogRelFlowFuncEnter();
@@ -344,7 +345,7 @@ void SeamlessX11::freeWindowTree(void)
  *
  * @note Called from the guest event thread.
  */
-void SeamlessX11::nextConfigurationEvent(void)
+void VBClX11SeamlessMonitor::nextConfigurationEvent(void)
 {
     XEvent event;
 
@@ -422,7 +423,7 @@ void SeamlessX11::nextConfigurationEvent(void)
  *
  * @param hWin the window to be examined
  */
-void SeamlessX11::doConfigureEvent(Window hWin)
+void VBClX11SeamlessMonitor::doConfigureEvent(Window hWin)
 {
     VBoxGuestWinInfo *pInfo = mGuestWindows.find(hWin);
     if (pInfo)
@@ -444,7 +445,7 @@ void SeamlessX11::doConfigureEvent(Window hWin)
  *
  * @param hWin the window to be examined
  */
-void SeamlessX11::doShapeEvent(Window hWin)
+void VBClX11SeamlessMonitor::doShapeEvent(Window hWin)
 {
     LogRelFlowFuncEnter();
     VBoxGuestWinInfo *pInfo = mGuestWindows.find(hWin);
@@ -470,7 +471,7 @@ void SeamlessX11::doShapeEvent(Window hWin)
 /**
  * Gets the list of visible rectangles
  */
-RTRECT *SeamlessX11::getRects(void)
+RTRECT *VBClX11SeamlessMonitor::getRects(void)
 {
     return mpRects;
 }
@@ -478,7 +479,7 @@ RTRECT *SeamlessX11::getRects(void)
 /**
  * Gets the number of rectangles in the visible rectangle list
  */
-size_t SeamlessX11::getRectCount(void)
+size_t VBClX11SeamlessMonitor::getRectCount(void)
 {
     return mcRects;
 }
@@ -528,7 +529,7 @@ static DECLCALLBACK(int) getRectsCallback(VBoxGuestWinInfo *pInfo, struct RectLi
 /**
  * Updates the list of seamless rectangles
  */
-int SeamlessX11::updateRects(void)
+int VBClX11SeamlessMonitor::updateRects(void)
 {
     LogRelFlowFuncEnter();
     struct RectList rects = RTVEC_INITIALIZER;
@@ -553,7 +554,7 @@ int SeamlessX11::updateRects(void)
  *
  * @note This function should only be called from the host event thread.
  */
-bool SeamlessX11::interruptEventWait(void)
+bool VBClX11SeamlessMonitor::interruptEventWait(void)
 {
     LogRelFlowFuncEnter();
 
@@ -586,3 +587,244 @@ bool SeamlessX11::interruptEventWait(void)
     LogRelFlowFunc(("returning %RTbool\n", rc));
     return rc;
 }
+
+
+/*********************************************************************************************************************************
+ * VBClX11SeamlessSvc implementation                                                                                             *
+ ********************************************************************************************************************************/
+
+VBClX11SeamlessSvc::VBClX11SeamlessSvc(void)
+{
+    mX11MonitorThread         = NIL_RTTHREAD;
+    mX11MonitorThreadStopping = false;
+
+    mMode    = VMMDev_Seamless_Disabled;
+    mfPaused = true;
+}
+
+VBClX11SeamlessSvc::~VBClX11SeamlessSvc()
+{
+    /* Stopping will be done via main.cpp. */
+}
+
+/** @copydoc VBCLSERVICE::pfnInit */
+int VBClX11SeamlessSvc::init(void)
+{
+    int rc;
+    const char *pcszStage;
+
+    do
+    {
+        pcszStage = "Connecting to the X server";
+        rc = mX11Monitor.init(VBClSeamnlessSendRegionUpdate);
+        if (RT_FAILURE(rc))
+            break;
+        pcszStage = "Setting guest IRQ filter mask";
+        rc = VbglR3CtlFilterMask(VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST, 0);
+        if (RT_FAILURE(rc))
+            break;
+        pcszStage = "Reporting support for seamless capability";
+        rc = VbglR3SeamlessSetCap(true);
+        if (RT_FAILURE(rc))
+            break;
+        rc = startX11MonitorThread();
+        if (RT_FAILURE(rc))
+            break;
+
+    } while(0);
+
+    if (RT_FAILURE(rc))
+        VBClLogError("Failed to start in stage '%s' -- error %Rrc\n", pcszStage, rc);
+
+    return rc;
+}
+
+/** @copydoc VBCLSERVICE::pfnWorker */
+int VBClX11SeamlessSvc::worker(bool volatile *pfShutdown)
+{
+    int rc = VINF_SUCCESS;
+
+    /* Let the main thread know that it can continue spawning services. */
+    RTThreadUserSignal(RTThreadSelf());
+
+    /* This will only exit if something goes wrong. */
+    for (;;)
+    {
+        if (ASMAtomicReadBool(pfShutdown))
+            break;
+
+        rc = nextStateChangeEvent();
+
+        if (rc == VERR_TRY_AGAIN)
+            rc = VINF_SUCCESS;
+
+        if (RT_FAILURE(rc))
+            break;
+
+        if (ASMAtomicReadBool(pfShutdown))
+            break;
+
+        /* If we are not stopping, sleep for a bit to avoid using up too
+           much CPU while retrying. */
+        RTThreadYield();
+    }
+
+    return rc;
+}
+
+/** @copydoc VBCLSERVICE::pfnStop */
+void VBClX11SeamlessSvc::stop(void)
+{
+    VbglR3SeamlessSetCap(false);
+    VbglR3CtlFilterMask(0, VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST);
+    stopX11MonitorThread();
+}
+
+/** @copydoc VBCLSERVICE::pfnTerm */
+int VBClX11SeamlessSvc::term(void)
+{
+    mX11Monitor.uninit();
+    return VINF_SUCCESS;
+}
+
+/**
+ * Waits for a seamless state change events from the host and dispatch it.
+ *
+ * @returns VBox return code, or
+ *          VERR_TRY_AGAIN if no new status is available and we have to try it again
+ *          at some later point in time.
+ */
+int VBClX11SeamlessSvc::nextStateChangeEvent(void)
+{
+    VMMDevSeamlessMode newMode = VMMDev_Seamless_Disabled;
+
+    int rc = VbglR3SeamlessWaitEvent(&newMode);
+    if (RT_SUCCESS(rc))
+    {
+        mMode = newMode;
+        switch (newMode)
+        {
+            case VMMDev_Seamless_Visible_Region:
+                /* A simplified seamless mode, obtained by making the host VM window
+                 * borderless and making the guest desktop transparent. */
+                VBClLogVerbose(2, "\"Visible region\" mode requested\n");
+                break;
+            case VMMDev_Seamless_Disabled:
+                VBClLogVerbose(2, "\"Disabled\" mode requested\n");
+                break;
+            case VMMDev_Seamless_Host_Window:
+                /* One host window represents one guest window.  Not yet implemented. */
+                VBClLogVerbose(2, "Unsupported \"host window\" mode requested\n");
+                return VERR_NOT_SUPPORTED;
+            default:
+                VBClLogError("Unsupported mode %d requested\n", newMode);
+                return VERR_NOT_SUPPORTED;
+        }
+    }
+    if (   RT_SUCCESS(rc)
+        || rc == VERR_TRY_AGAIN)
+    {
+        if (mMode == VMMDev_Seamless_Visible_Region)
+            mfPaused = false;
+        else
+            mfPaused = true;
+        mX11Monitor.interruptEventWait();
+    }
+    else
+        VBClLogError("VbglR3SeamlessWaitEvent returned %Rrc\n", rc);
+
+    return rc;
+}
+
+/**
+ * The actual X11 window configuration change monitor thread function.
+ */
+int VBClX11SeamlessSvc::x11MonitorThread(RTTHREAD hThreadSelf, void *pvUser)
+{
+    RT_NOREF(hThreadSelf);
+
+    VBClX11SeamlessSvc *pThis = (VBClX11SeamlessSvc *)pvUser;
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+
+    RTThreadUserSignal(hThreadSelf);
+
+    VBClLogVerbose(2, "X11 monitor thread started\n");
+
+    while (!pThis->mX11MonitorThreadStopping)
+    {
+        if (!pThis->mfPaused)
+        {
+            rc = pThis->mX11Monitor.start();
+            if (RT_FAILURE(rc))
+                VBClLogFatalError("Failed to change the X11 seamless service state, mfPaused=%RTbool, rc=%Rrc\n",
+                                  pThis->mfPaused, rc);
+        }
+
+        pThis->mX11Monitor.nextConfigurationEvent();
+
+        if (   pThis->mfPaused
+            || pThis->mX11MonitorThreadStopping)
+        {
+            pThis->mX11Monitor.stop();
+        }
+    }
+
+    VBClLogVerbose(2, "X11 monitor thread ended\n");
+
+    return rc;
+}
+
+/**
+ * Start the X11 window configuration change monitor thread.
+ */
+int VBClX11SeamlessSvc::startX11MonitorThread(void)
+{
+    mX11MonitorThreadStopping = false;
+
+    if (isX11MonitorThreadRunning())
+        return VINF_SUCCESS;
+
+    int rc = RTThreadCreate(&mX11MonitorThread, x11MonitorThread, this, 0,
+                            RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
+                            "seamless x11");
+    if (RT_SUCCESS(rc))
+        rc = RTThreadUserWait(mX11MonitorThread, RT_MS_30SEC);
+
+    if (RT_FAILURE(rc))
+        VBClLogError("Failed to start X11 monitor thread, rc=%Rrc\n", rc);
+
+    return rc;
+}
+
+/**
+ * Stops the monitor thread.
+ */
+int VBClX11SeamlessSvc::stopX11MonitorThread(void)
+{
+    if (!isX11MonitorThreadRunning())
+        return VINF_SUCCESS;
+
+    mX11MonitorThreadStopping = true;
+    if (!mX11Monitor.interruptEventWait())
+    {
+        VBClLogError("Unable to notify X11 monitor thread\n");
+        return VERR_INVALID_STATE;
+    }
+
+    int rcThread;
+    int rc = RTThreadWait(mX11MonitorThread, RT_MS_30SEC, &rcThread);
+    if (RT_SUCCESS(rc))
+        rc = rcThread;
+
+    if (RT_SUCCESS(rc))
+    {
+        mX11MonitorThread = NIL_RTTHREAD;
+    }
+    else
+        VBClLogError("Waiting for X11 monitor thread to stop failed, rc=%Rrc\n", rc);
+
+    return rc;
+}
+

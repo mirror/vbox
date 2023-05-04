@@ -174,12 +174,12 @@ public:
     }
 };
 
-class SeamlessX11
+class VBClX11SeamlessMonitor
 {
 private:
     // We don't want a copy constructor or assignment operator
-    SeamlessX11(const SeamlessX11&);
-    SeamlessX11& operator=(const SeamlessX11&);
+    VBClX11SeamlessMonitor(const VBClX11SeamlessMonitor&);
+    VBClX11SeamlessMonitor& operator=(const VBClX11SeamlessMonitor&);
 
     // Private member variables
     /** Pointer to the host callback. */
@@ -258,11 +258,11 @@ public:
     void doConfigureEvent(Window hWin);
     void doShapeEvent(Window hWin);
 
-    SeamlessX11(void)
+    VBClX11SeamlessMonitor(void)
         : mHostCallback(NULL), mDisplay(NULL), mpRects(NULL), mcRects(0),
           mSupportsShape(false), mEnabled(false), mChanged(false) {}
 
-    ~SeamlessX11()
+    ~VBClX11SeamlessMonitor()
     {
         uninit();
     }
