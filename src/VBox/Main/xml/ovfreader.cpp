@@ -520,16 +520,17 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                         break;
 
                     case ResourceType_Memory:        // 4
+                        /* It's alway stored in bytes in VSD according to the old internal agreement within the team */
                         if (    i.strAllocationUnits == "MegaBytes"           // found in OVF created by OVF toolkit
                              || i.strAllocationUnits == "MB"                  // found in MS docs
                              || i.strAllocationUnits == "byte * 2^20"         // suggested by OVF spec DSP0243 page 21
                            )
-                            vsys.ullMemorySize = i.ullVirtualQuantity;
+                            vsys.ullMemorySize = i.ullVirtualQuantity * _1M;
                         else if ( i.strAllocationUnits == "GigaBytes"
                                   || i.strAllocationUnits == "GB"
                                   || i.strAllocationUnits == "byte * 2^30"
                            )
-                            vsys.ullMemorySize = i.ullVirtualQuantity/_1K;//back to MB
+                            vsys.ullMemorySize = i.ullVirtualQuantity * _1G;
                         else
                             throw OVFLogicError(N_("Error reading \"%s\": Invalid allocation unit \"%s\" specified with memory size item, line %d"),
                                                 m_strPath.c_str(),

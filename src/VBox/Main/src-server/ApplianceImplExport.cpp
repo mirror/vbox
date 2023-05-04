@@ -186,8 +186,8 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                              strCpuCount,
                              strCpuCount);
 
-        /* Memory */
-        Utf8Str strMemory = Utf8StrFmt("%RI64", (uint64_t)ulMemSizeMB);
+        /* Memory, it's alway stored in bytes in VSD according to the old internal agreement within the team */
+        Utf8Str strMemory = Utf8StrFmt("%RI64", (uint64_t)ulMemSizeMB * _1M);
         pNewDesc->i_addEntry(VirtualSystemDescriptionType_Memory,
                              "",
                              strMemory,
@@ -1616,7 +1616,8 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                         strDescription = "Memory Size";
                         type = ovf::ResourceType_Memory; // 4
                         desc.strVBoxCurrent.toInt(uTemp);
-                        lVirtualQuantity = (int32_t)(uTemp);
+                        /* It's alway stored in bytes in VSD according to the old internal agreement within the team */
+                        lVirtualQuantity = (int32_t)(uTemp / _1M);
                         strAllocationUnits = "MegaBytes";
                         strCaption = Utf8StrFmt("%d MB of memory", lVirtualQuantity);     // without this ovftool
                                                                                           // won't eat the item

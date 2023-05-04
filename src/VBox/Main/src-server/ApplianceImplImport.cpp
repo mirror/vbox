@@ -341,20 +341,21 @@ HRESULT Appliance::interpret()
             /* If there is a <vbox:Machine>, we always prefer the setting from there. */
             if (   vsysThis.pelmVBoxMachine
                 && pNewDesc->m->pConfig->hardwareMachine.ulMemorySizeMB)
-                ullMemSizeVBox = (uint64_t)pNewDesc->m->pConfig->hardwareMachine.ulMemorySizeMB;
+                ullMemSizeVBox = (uint64_t)pNewDesc->m->pConfig->hardwareMachine.ulMemorySizeMB * _1M;
             else
-                ullMemSizeVBox = vsysThis.ullMemorySize;  /* already in Megabytes via OVFReader::HandleVirtualSystemContent() */
+                /* already in bytes via OVFReader::HandleVirtualSystemContent() */
+                ullMemSizeVBox = vsysThis.ullMemorySize;
             /* Check for the constraints */
             if (    ullMemSizeVBox != 0
-                 && (    ullMemSizeVBox < MM_RAM_MIN_IN_MB
-                      || ullMemSizeVBox > MM_RAM_MAX_IN_MB
+                 && (    ullMemSizeVBox < MM_RAM_MIN
+                      || ullMemSizeVBox > MM_RAM_MAX
                     )
                )
             {
                 i_addWarning(tr("Virtual appliance \"%s\" was configured with %RU64 MB of memory (RAM) "
                                 "however VirtualBox supports a minimum of %u MB and a maximum of %u MB "
                                 "of memory."),
-                                vsysThis.strName.c_str(), ullMemSizeVBox, MM_RAM_MIN_IN_MB, MM_RAM_MAX_IN_MB);
+                                vsysThis.strName.c_str(), ullMemSizeVBox / _1M, MM_RAM_MIN_IN_MB, MM_RAM_MAX_IN_MB);
                 ullMemSizeVBox = RT_MIN(RT_MAX(ullMemSizeVBox, MM_RAM_MIN_IN_MB), MM_RAM_MAX_IN_MB);
             }
             if (vsysThis.ullMemorySize == 0)
@@ -368,9 +369,10 @@ HRESULT Appliance::interpret()
                 }
                 else
                     memSizeVBox2 = 1024;
-                /* IGuestOSType::recommendedRAM() returns the size in MB */
-                ullMemSizeVBox = (uint64_t)memSizeVBox2;
+                /* IGuestOSType::recommendedRAM() returns the size in MB so convert to bytes */
+                ullMemSizeVBox = (uint64_t)memSizeVBox2 * _1M;
             }
+            /* It's alway stored in bytes in VSD according to the old internal agreement within the team */
             pNewDesc->i_addEntry(VirtualSystemDescriptionType_Memory,
                                  "",
                                  Utf8StrFmt("%RU64", vsysThis.ullMemorySize),
@@ -1531,10 +1533,11 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                                         NULL);
 
                 // RAM
+                /* It's alway stored in bytes in VSD according to the old internal agreement within the team */
                 GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_Memory);
                 if (aVBoxValues.size() == 0)//1024MB by default, 1,073,741,824 in bytes
                     vsd->AddDescription(VirtualSystemDescriptionType_Memory,
-                                        Bstr("1024").raw(),
+                                        Bstr("1073741824").raw(),
                                         NULL);
 
                 // audio adapter
@@ -1796,20 +1799,21 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                     LogRel(("%s: Number of CPUs is %s\n", __FUNCTION__, vsdData.c_str()));
                 }
 
-                ULONG memory = 1024;//1024MB by default, 1,073,741,824 in bytes
-                pGuestOSType->COMGETTER(RecommendedRAM)(&memory);
+                ULONG memory;
+                pGuestOSType->COMGETTER(RecommendedRAM)(&memory);//returned in MB
+                memory *= _1M;//convert to bytes
                 {
-                    //note! Memory must be stored in Megabytes on the earlier stages for the correct comparison here
+                    /* It's alway stored in bytes in VSD according to the old internal agreement within the team */
                     GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_Memory); //aVBoxValues is set in this #define
                     if (aVBoxValues.size() != 0)
                     {
                         vsdData = aVBoxValues[0];
-                        memory = RT_MIN(RT_MAX(vsdData.toUInt32(), MM_RAM_MIN_IN_MB), MM_RAM_MAX_IN_MB);
+                        memory = RT_MIN(RT_MAX(vsdData.toUInt64(), MM_RAM_MIN), MM_RAM_MAX);
 
                     }
-                    //and set in ovf::VirtualSystem in Megabytes
+                    //and set in ovf::VirtualSystem in bytes
                     vsys.ullMemorySize = memory;
-                    LogRel(("%s: Size of RAM is %d MB\n", __FUNCTION__, vsys.ullMemorySize));
+                    LogRel(("%s: Size of RAM is %d MB\n", __FUNCTION__, vsys.ullMemorySize / _1M));
                 }
 
                 {
@@ -6115,8 +6119,8 @@ void Appliance::i_importMachines(ImportStack &stack)
         std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsdescThis->i_findByType(VirtualSystemDescriptionType_Memory);
         if (vsdeRAM.size() != 1)
             throw setError(VBOX_E_FILE_ERROR, tr("RAM size missing"));
-        //Returned value must be in MB
-        uint64_t ullMemorySizeMB = vsdeRAM.front()->strVBoxCurrent.toUInt64();
+        /* It's alway stored in bytes in VSD according to the old internal agreement within the team */
+        uint64_t ullMemorySizeMB = vsdeRAM.front()->strVBoxCurrent.toUInt64() / _1M;
         stack.ulMemorySizeMB = (uint32_t)ullMemorySizeMB;
 
 #ifdef VBOX_WITH_USB
