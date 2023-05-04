@@ -154,6 +154,9 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
    		$(rversortfiles $(qwildcard ,    $(KBUILD_DEVTOOLS_HST)/jdk/v1[789].*     $(KBUILD_DEVTOOLS_HST)/jdk/v[2-9][0-9].* )) \
    		$(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS_HST_ALT)/jdk/v1[789].* $(KBUILD_DEVTOOLS_HST_ALT)/jdk/v[2-9][0-9].* )) \
    		)
+   if "$(KBUILD_HOST)" == "darwin" && "$(VBOX_JAVA17PLUS_HOME)" != ""
+    VBOX_JAVA17PLUS_HOME := $(VBOX_JAVA17PLUS_HOME)/Contents/Home
+   endif
   endif
   VBOX_DITA_ORIGINAL_PATH := $(firstfile $(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS)/common/dita-ot/v[4-9].*)) \
   		$(KBUILD_DEVTOOLS)/common/dita-ot/v4.0.2-r1)
