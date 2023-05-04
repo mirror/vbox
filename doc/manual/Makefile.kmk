@@ -181,7 +181,6 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   	-buildfile "$(VBOX_DITA_ORIGINAL_PATH)/build.xml" \
   	-main "org.dita.dost.invoker.Main" \
   	--args.grammar.cache=yes \
-  	--store-type=memory \
   	$(patsubst "/i:%,"--input=%, \
   		$(patsubst "/transtype:%,"--format=%, \
   			$(patsubst "/outdir:%,"--output=%, \
@@ -818,7 +817,9 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   		$$(VBOX_PATH_MANUAL_SRC)/pdf-theme-UserManual.yaml \
   		$$(VBOX_PATH_MANUAL_SRC)/en_US/images/vboxlogo.png
 	$$(call MSG_L1,Building $@ ($(@D)/UserManual_pdf.log))
-	$$(QUIET)$$(RM) -f -- "$$@" "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_pdf.log"
+	$$(QUIET)$$(RM) -f -- "$$@" \
+		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf" \
+		$$(if-expr defined(VBOX_DITA_USING_LATEST),,"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_pdf.log")
 	$$(QUIET)$$(RM) -Rf -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf/"
 	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf,, \
 		"/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
@@ -854,8 +855,10 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
  		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_en_US) \
  		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US)
+	$(QUIET)$(RM) -Rf -- "$(@D)" \
+		"$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml_chunks" \
+		$(if-expr defined(VBOX_DITA_USING_LATEST),,"$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks/")
 	$(call MSG_L1,Building html chunks $@ ($(@D)/UserManual_xhtml.log))
-	$(QUIET)$(RM) -Rf -- "$(@D)" "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks/"
 	$(QUIET)$(MKDIR) -- "$(@D)"
 	$(QUIET)$(call VBOX_DITA_RUN_DOST,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks,, \
 		"/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap" \
@@ -867,6 +870,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
                "/grammarcache:yes" \
                , \
                "--logfile=$(@D)/UserManual_xhtml.log" \
+       	"--store-type=memory" \
 		)
 
  html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
@@ -921,6 +925,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
                "/grammarcache:yes" \
                , \
                "--logfile=$(@D)/UserManual-Single_xhtml.log" \
+       	"--store-type=memory" \
 		)
 	$(SED) -ne '1,/<body>/{p}' \
 		--output "$@" "$(@D)/UserManual-Single.html"
@@ -1016,7 +1021,9 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
    $(2)/UserManual.hhp: \
    		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_$(1)) \
    		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(1))
-	$$(QUIET)$$(RM) -Rf -- "$$(@D)" "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp/"
+	$$(QUIET)$$(RM) -Rf -- "$$(@D)" \
+		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_qhelp" \
+		$(if-expr defined(VBOX_DITA_USING_LATEST),,"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp/")
 	$$(call MSG_L1,dita-ot-qhelp, => $$@ ($(2)/UserManual_htmlhelp.log))
 	$$(QUIET)$$(MKDIR) -- "$$(@D)"
 	$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp, -EHHCDIR="$$(@D)", \
