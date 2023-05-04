@@ -1808,8 +1808,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                     if (aVBoxValues.size() != 0)
                     {
                         vsdData = aVBoxValues[0];
-                        memory = RT_MIN(RT_MAX(vsdData.toUInt64(), MM_RAM_MIN), MM_RAM_MAX);
-
+                        memory = RT_MIN((uint64_t)(RT_MAX(vsdData.toUInt64(), (uint64_t)MM_RAM_MIN)), MM_RAM_MAX);
                     }
                     //and set in ovf::VirtualSystem in bytes
                     vsys.ullMemorySize = memory;
