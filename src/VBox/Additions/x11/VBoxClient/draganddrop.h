@@ -110,11 +110,11 @@ public:
         RT_ZERO(m_dndCtx);
     }
 
-    int  init(void);
-    int  worker(bool volatile *pfShutdown);
-    void reset(void);
-    void stop(void);
-    int  term(void);
+    virtual int  init(void) override;
+    virtual int  worker(bool volatile *pfShutdown) override;
+    virtual void reset(void) override;
+    virtual void stop(void) override;
+    virtual int  term(void) override;
 
 private:
 
@@ -124,7 +124,7 @@ private:
     /* Private member vars */
     Display                   *m_pDisplay;
     /** Our (thread-safe) event queue with mixed events (DnD HGCM / X11). */
-    RTCMTList<VBCLDNDEVENT> m_eventQueue;
+    RTCMTList<VBCLDNDEVENT>    m_eventQueue;
     /** Critical section for providing serialized access to list
      *  event queue's contents. */
     RTCRITSECT                 m_eventQueueCS;
