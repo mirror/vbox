@@ -42,7 +42,7 @@
 
 /** @name Generic seamless functions
  * @{ */
-void VBClSeamnlessSendRegionUpdate(RTRECT *pRects, size_t cRects);
+void VBClSeamlessSendRegionUpdate(RTRECT *pRects, size_t cRects);
 /** @} */
 
 /**

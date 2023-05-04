@@ -62,7 +62,7 @@ static VBClSeamlessSvc *g_pSvc = NULL;
  * @param   pRects              Pointer to array of regions to report.
  * @param   cRects              Number of regions in \a pRect.
  */
-void VBClSeamnlessSendRegionUpdate(RTRECT *pRects, size_t cRects)
+void VBClSeamlessSendRegionUpdate(RTRECT *pRects, size_t cRects)
 {
     if (   cRects
         && !pRects)  /* Assertion */

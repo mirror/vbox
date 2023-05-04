@@ -616,7 +616,7 @@ int VBClX11SeamlessSvc::init(void)
     do
     {
         pcszStage = "Connecting to the X server";
-        rc = mX11Monitor.init(VBClSeamnlessSendRegionUpdate);
+        rc = mX11Monitor.init(VBClSeamlessSendRegionUpdate);
         if (RT_FAILURE(rc))
             break;
         pcszStage = "Setting guest IRQ filter mask";
