@@ -86,11 +86,11 @@ public:
 
 public:
 
-    virtual int  init(void) = 0;
-    virtual int  worker(bool volatile *pfShutdown) = 0;
-    virtual void reset(void) = 0;
-    virtual void stop(void) = 0;
-    virtual int  term(void) = 0;
+    virtual int  init(void) { return VINF_SUCCESS; }
+    virtual int  worker(bool volatile *pfShutdown) { RT_NOREF(pfShutdown); return VINF_SUCCESS; }
+    virtual void reset(void) { }
+    virtual void stop(void) { }
+    virtual int  term(void) { return VINF_SUCCESS; }
 
 #ifdef IN_GUEST
     RTMEM_IMPLEMENT_NEW_AND_DELETE();
