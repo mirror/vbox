@@ -164,6 +164,8 @@ private slots:
         void sltHandleItemChange(QTreeWidgetItem *pItem);
         /** Handles tree-widget @a pItem double-click. */
         void sltHandleItemDoubleClick(QTreeWidgetItem *pItem);
+        /** Handles tree-widget's scroll-bar visibility change. */
+        void sltHandleScrollBarVisibilityChange();
     /** @} */
 
 private:

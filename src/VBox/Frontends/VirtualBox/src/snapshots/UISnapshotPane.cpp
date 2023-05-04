@@ -177,10 +177,37 @@ private:
 };
 
 
+/** QScrollBar subclass for snapshots widget. */
+class UISnapshotScrollBar : public QScrollBar
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notify listeners about our visibility changed. */
+    void sigNotifyAboutVisibilityChange();
+
+public:
+
+    /** Constructs scroll-bar passing @a enmOrientation and @a pParent to the base-class. */
+    UISnapshotScrollBar(Qt::Orientation enmOrientation, QWidget *pParent = 0);
+
+protected:
+
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
+};
+
+
 /** QITreeWidget subclass for snapshots items. */
 class UISnapshotTree : public QITreeWidget
 {
     Q_OBJECT;
+
+signals:
+
+    /** Notify listeners about one of scroll-bars visibility changed. */
+    void sigNotifyAboutScrollBarVisibilityChange();
 
 public:
 
@@ -504,6 +531,21 @@ void UISnapshotItem::recacheToolTip()
 
 
 /*********************************************************************************************************************************
+*   Class UISnapshotScrollBar implementation.                                                                                    *
+*********************************************************************************************************************************/
+UISnapshotScrollBar::UISnapshotScrollBar(Qt::Orientation enmOrientation, QWidget *pParent /* = 0 */)
+    : QScrollBar(enmOrientation, pParent)
+{
+}
+
+void UISnapshotScrollBar::showEvent(QShowEvent *pEvent)
+{
+    QScrollBar::showEvent(pEvent);
+    emit sigNotifyAboutVisibilityChange();
+}
+
+
+/*********************************************************************************************************************************
 *   Class UISnapshotTree implementation.                                                                                         *
 *********************************************************************************************************************************/
 
@@ -519,6 +561,22 @@ UISnapshotTree::UISnapshotTree(QWidget *pParent)
     setContextMenuPolicy(Qt::CustomContextMenu);
     setEditTriggers(  QAbstractItemView::SelectedClicked
                     | QAbstractItemView::EditKeyPressed);
+
+    /* Replace scroll-bars: */
+    UISnapshotScrollBar *pScrollBarH = new UISnapshotScrollBar(Qt::Horizontal, this);
+    if (pScrollBarH)
+    {
+        connect(pScrollBarH, &UISnapshotScrollBar::sigNotifyAboutVisibilityChange,
+                this, &UISnapshotTree::sigNotifyAboutScrollBarVisibilityChange);
+        setHorizontalScrollBar(pScrollBarH);
+    }
+    UISnapshotScrollBar *pScrollBarV = new UISnapshotScrollBar(Qt::Vertical, this);
+    if (pScrollBarV)
+    {
+        connect(pScrollBarV, &UISnapshotScrollBar::sigNotifyAboutVisibilityChange,
+                this, &UISnapshotTree::sigNotifyAboutScrollBarVisibilityChange);
+        setVerticalScrollBar(pScrollBarV);
+    }
 }
 
 
@@ -1097,12 +1155,7 @@ void UISnapshotPane::sltHandleCurrentItemChange()
     const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
 
     /* Make the current item visible: */
-    if (pSnapshotItem)
-    {
-        m_pSnapshotTree->horizontalScrollBar()->setValue(0);
-        m_pSnapshotTree->scrollToItem(pSnapshotItem);
-        m_pSnapshotTree->horizontalScrollBar()->setValue(m_pSnapshotTree->indentation() * pSnapshotItem->level());
-    }
+    sltHandleScrollBarVisibilityChange();
 
     /* Update action states: */
     updateActionStates();
@@ -1236,6 +1289,20 @@ void UISnapshotPane::sltHandleItemDoubleClick(QTreeWidgetItem *pItem)
             /* As show details-widget procedure: */
             m_pActionPool->action(UIActionIndexMN_M_Snapshot_T_Properties)->setChecked(true);
         }
+    }
+}
+
+void UISnapshotPane::sltHandleScrollBarVisibilityChange()
+{
+    /* Acquire "current snapshot" item: */
+    const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
+
+    /* Make the current item visible: */
+    if (pSnapshotItem)
+    {
+        m_pSnapshotTree->horizontalScrollBar()->setValue(0);
+        m_pSnapshotTree->scrollToItem(pSnapshotItem);
+        m_pSnapshotTree->horizontalScrollBar()->setValue(m_pSnapshotTree->indentation() * pSnapshotItem->level());
     }
 }
 
@@ -1377,6 +1444,8 @@ void UISnapshotPane::prepareTreeWidget()
                 this, &UISnapshotPane::sltHandleItemChange);
         connect(m_pSnapshotTree, &UISnapshotTree::itemDoubleClicked,
                 this, &UISnapshotPane::sltHandleItemDoubleClick);
+        connect(m_pSnapshotTree, &UISnapshotTree::sigNotifyAboutScrollBarVisibilityChange,
+                this, &UISnapshotPane::sltHandleScrollBarVisibilityChange, Qt::QueuedConnection);
 
         /* Add into layout: */
         m_pLayoutMain->addWidget(m_pSnapshotTree, 1);
@@ -1460,7 +1529,6 @@ void UISnapshotPane::refreshAll()
                 pCurrentItem = m_currentStateItems.value(uMachineId);
 
             /* Choose current item: */
-            m_pSnapshotTree->scrollToItem(pCurrentItem);
             m_pSnapshotTree->setCurrentItem(pCurrentItem);
             sltHandleCurrentItemChange();
         }
