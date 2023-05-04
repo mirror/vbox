@@ -64,6 +64,7 @@ static DECLCALLBACK(int) vbclDnDInit(void)
  */
 static DECLCALLBACK(int) vbclDnDWorker(bool volatile *pfShutdown)
 {
+    AssertPtrReturn(g_pSvc, VERR_NOT_IMPLEMENTED);
     return g_pSvc->worker(pfShutdown);
 }
 
@@ -72,7 +73,8 @@ static DECLCALLBACK(int) vbclDnDWorker(bool volatile *pfShutdown)
  */
 static DECLCALLBACK(void) vbclDnDStop(void)
 {
-    g_pSvc->stop();
+    if (g_pSvc)
+        g_pSvc->stop();
 }
 
 /**

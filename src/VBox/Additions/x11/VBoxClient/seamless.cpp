@@ -106,6 +106,7 @@ static DECLCALLBACK(int) vbclSeamlessInit(void)
  */
 static DECLCALLBACK(int) vbclSeamlessWorker(bool volatile *pfShutdown)
 {
+    AssertPtrReturn(g_pSvc, VERR_NOT_IMPLEMENTED);
     return g_pSvc->worker(pfShutdown);
 }
 
@@ -114,7 +115,8 @@ static DECLCALLBACK(int) vbclSeamlessWorker(bool volatile *pfShutdown)
  */
 static DECLCALLBACK(void) vbclSeamlessStop(void)
 {
-    return g_pSvc->stop();
+    if (g_pSvc)
+        g_pSvc->stop();
 }
 
 /**
