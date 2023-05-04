@@ -1754,13 +1754,20 @@ void UISnapshotPane::adjustTreeWidget()
 
     /* Calculate the total snapshot tree width: */
     const int iTotal = m_pSnapshotTree->viewport()->width();
-    /* Look for a minimum width hints for non-important columns: */
+
+    /* Look for a minimum width hint for Taken column: */
     const int iMinWidth1 = qMax(pItemView->sizeHintForColumn(Column_Taken), pItemHeader->sectionSizeHint(Column_Taken));
-    /* Propose suitable width hints for non-important columns: */
+    /* Propose suitable width hint for Taken column (but no more than the half of existing space): */
     const int iWidth1 = iMinWidth1 < iTotal / Column_Max ? iMinWidth1 : iTotal / Column_Max;
+
+    /* Look for a minimum width hint for Name column: */
+    const int iMinWidth0 = qMax(pItemView->sizeHintForColumn(Column_Name), pItemHeader->sectionSizeHint(Column_Name));
+    /* Propose suitable width hint for important column (at least all remaining space and no less than the hint itself): */
+    const int iWidth0 = iMinWidth0 > iTotal - iWidth1 ? iMinWidth0 : iTotal - iWidth1;
+
     /* Apply the proposal: */
     m_pSnapshotTree->setColumnWidth(Column_Taken, iWidth1);
-    m_pSnapshotTree->setColumnWidth(Column_Name, iTotal - iWidth1);
+    m_pSnapshotTree->setColumnWidth(Column_Name, iWidth0);
 }
 
 UISnapshotItem *UISnapshotPane::findItem(const QUuid &uSnapshotID) const
