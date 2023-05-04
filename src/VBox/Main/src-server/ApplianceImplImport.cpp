@@ -1799,7 +1799,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                     LogRel(("%s: Number of CPUs is %s\n", __FUNCTION__, vsdData.c_str()));
                 }
 
-                ULONG memory;
+                uint64_t memory;
                 pGuestOSType->COMGETTER(RecommendedRAM)(&memory);//returned in MB
                 memory *= _1M;//convert to bytes
                 {
