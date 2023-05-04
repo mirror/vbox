@@ -1799,19 +1799,19 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                     LogRel(("%s: Number of CPUs is %s\n", __FUNCTION__, vsdData.c_str()));
                 }
 
-                uint64_t memory;
-                pGuestOSType->COMGETTER(RecommendedRAM)(&memory);//returned in MB
-                memory *= _1M;//convert to bytes
+                ULONG memoryInMB;
+                pGuestOSType->COMGETTER(RecommendedRAM)(&memoryInMB);//returned in MB
+                uint64_t memoryInBytes = memoryInMB * _1M;//convert to bytes
                 {
                     /* It's alway stored in bytes in VSD according to the old internal agreement within the team */
                     GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_Memory); //aVBoxValues is set in this #define
                     if (aVBoxValues.size() != 0)
                     {
                         vsdData = aVBoxValues[0];
-                        memory = RT_MIN((uint64_t)(RT_MAX(vsdData.toUInt64(), (uint64_t)MM_RAM_MIN)), MM_RAM_MAX);
+                        memoryInBytes = RT_MIN((uint64_t)(RT_MAX(vsdData.toUInt64(), (uint64_t)MM_RAM_MIN)), MM_RAM_MAX);
                     }
                     //and set in ovf::VirtualSystem in bytes
-                    vsys.ullMemorySize = memory;
+                    vsys.ullMemorySize = memoryInBytes;
                     LogRel(("%s: Size of RAM is %d MB\n", __FUNCTION__, vsys.ullMemorySize / _1M));
                 }
 
