@@ -1553,6 +1553,10 @@ ifdef VBOX_WITH_DOCS_FROM_BUILD_SERVER
  ifdef VBOX_ONLY_DOCS
   $(error VBOX_ONLY_DOCS + VBOX_WITH_DOCS_FROM_BUILD_SERVER does not add up!)
  endif
+else ifeq ($(KBUILD_HOST),solaris)
+ # We require JDK 17 for the user manual now, and since that isn't available for solaris
+ # (see JEP-381) we're forced to get the docs from the doc build server or disable them.
+ VBOX_WITHOUT_DOCS := 1
 endif
 
 ifdef VBOX_ONLY_DOCS
