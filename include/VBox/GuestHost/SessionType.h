@@ -40,6 +40,8 @@
 # pragma once
 #endif
 
+#include <iprt/types.h>
+
 /** Environment variable which is exported when in Wayland Desktop Environment. */
 #define VBGH_ENV_WAYLAND_DISPLAY        "WAYLAND_DISPLAY"
 /** Environment variable which contains information about currently running Desktop Environment. */
