@@ -129,9 +129,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  VBOX_DITA_TECHNICAL_CONTENT_DTD_PATH = $(VBOX_DITA_OT_PATH)/plugins/org.oasis-open.dita.v1_2/dtd/technicalContent/dtd
 
  ##
- # Copies DITA-OT to $1, runs the dost.jar with /ditadir given and nukes $1 when done.
- #
- # Additional options for dost.jar can be specified following the call to VBOX_DITA_RUN_DOST
+ # Runs the dost.jar.
  #
  # @param 1    Additional kmk_redirect options.
  # @param 2    Parameters for the invoker.
@@ -155,7 +153,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  	--args.grammar.cache=yes \
  	--verbose \
  	$(if-expr defined(VBOX_DITA_DEBUG),"--clean.temp=no" "--debug",) \
-	$2
+ 	$2
 
  VBOX_DITA_CLASSPATH = \
  	$(subst $(SP),$(HOST_PATH_SEP),$(strip \
@@ -992,7 +990,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		$(if-expr defined(VBOX_DITA_USING_LATEST),,"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp/")
 	$$(call MSG_L1,dita-ot-qhelp, => $$@ ($(2)/UserManual_htmlhelp.log))
 	$$(QUIET)$$(MKDIR) -- "$$(@D)"
-	$$(call VBOX_DITA_RUN_DOST, -EHHCDIR="$$(@D)", \
+	$$(QUIET)$$(call VBOX_DITA_RUN_DOST, -EHHCDIR="$$(@D)", \
 		"--input=$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
 		"--format=htmlhelp" \
 		"--filter=$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/htmlhelp.ditaval" \

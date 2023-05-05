@@ -42,8 +42,8 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
  VBOX_DITA_OT_PATH  ?= $(PATH_ROOT)/src/libs/dita-ot-1.8.5
  ifneq ($(VBOX_DITA_OT_PATH),)
   VBOX_DITA_OT_PATH := $(firstfile \
-  	$(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS)/common/dita-ot/v[4-9].*)) \
-  	$(KBUILD_DEVTOOLS)/common/dita-ot/v4.0.2-r1)
+  		$(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS)/common/dita-ot/v[4-9].*)) \
+  		$(KBUILD_DEVTOOLS)/common/dita-ot/v4.0.2-r1)
  endif
 
 
