@@ -113,8 +113,8 @@ static RTFILE          g_hPidFile;
 static char            g_szControlPidFile[RTPATH_MAX] = "";
 /** The file handle of parent process pidfile. */
 static RTFILE          g_hControlPidFile;
-/** The session type to use. */
-static VBGHSESSIONTYPE g_enmSessionType = VBGHSESSIONTYPE_AUTO;
+/** The display server type to use. */
+static VBGHDISPLAYSERVERTYPE g_enmDisplayServerType = VBGHDISPLAYSERVERTYPE_AUTO;
 
 /** Global critical section held during the clean-up routine (to prevent it
  * being called on multiple threads at once) or things which may not happen
@@ -164,13 +164,13 @@ void VBClShutdown(bool fExit /*=true*/)
 }
 
 /**
- * Returns the current session type.
+ * Returns the current display server type.
  *
- * @returns The session type.
+ * @returns The display server type.
  */
-VBGHSESSIONTYPE VBClGetSessionType(void)
+VBGHDISPLAYSERVERTYPE VBClGetDisplayServerType(void)
 {
-    return g_enmSessionType;
+    return g_enmDisplayServerType;
 }
 
 /**
@@ -667,17 +667,17 @@ int main(int argc, char *argv[])
             case VBOXCLIENT_OPT_SESSION_TYPE:
             {
                 if (!RTStrICmp(ValueUnion.psz, "x11"))
-                    g_enmSessionType = VBGHSESSIONTYPE_X11;
+                    g_enmDisplayServerType = VBGHDISPLAYSERVERTYPE_X11;
                 else if (!RTStrICmp(ValueUnion.psz, "wayland"))
-                    g_enmSessionType = VBGHSESSIONTYPE_WAYLAND;
+                    g_enmDisplayServerType = VBGHDISPLAYSERVERTYPE_WAYLAND;
                 else if (!RTStrICmp(ValueUnion.psz, "none"))
-                    g_enmSessionType = VBGHSESSIONTYPE_NONE;
+                    g_enmDisplayServerType = VBGHDISPLAYSERVERTYPE_NONE;
                 else if (!RTStrICmp(ValueUnion.psz, "auto"))
-                    g_enmSessionType = VBGHSESSIONTYPE_AUTO;
+                    g_enmDisplayServerType = VBGHDISPLAYSERVERTYPE_AUTO;
                 else
                 {
                     RTMsgError("Session type \"%s\" is invalid; defaulting to \"auto\" instead.\n", ValueUnion.psz);
-                    g_enmSessionType = VBGHSESSIONTYPE_AUTO;
+                    g_enmDisplayServerType = VBGHDISPLAYSERVERTYPE_AUTO;
                 }
                 break;
             }
@@ -740,14 +740,14 @@ int main(int argc, char *argv[])
     VBGHLogVerbositySet(g_cVerbosity);
 
     /* Try to detect the current session type early on, if needed. */
-    if (g_enmSessionType == VBGHSESSIONTYPE_AUTO)
+    if (g_enmDisplayServerType == VBGHDISPLAYSERVERTYPE_AUTO)
     {
-        g_enmSessionType = VBGHSessionTypeDetect();
+        g_enmDisplayServerType = VBGHDisplayServerTypeDetect();
     }
     else
-        VBClLogInfo("Session type was manually set to: %s\n", VBGHSessionTypeToStr(g_enmSessionType));
+        VBClLogInfo("Session type was manually set to: %s\n", VBGHDisplayServerTypeToStr(g_enmDisplayServerType));
 
-    VBClLogInfo("Session type is: %s\n", VBGHSessionTypeToStr(g_enmSessionType));
+    VBClLogInfo("Session type is: %s\n", VBGHDisplayServerTypeToStr(g_enmDisplayServerType));
 
     VBClLogInfo("Service: %s\n", g_Service.pDesc->pszDesc);
 
@@ -795,7 +795,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (g_enmSessionType == VBGHSESSIONTYPE_X11)
+    if (g_enmDisplayServerType == VBGHDISPLAYSERVERTYPE_X11)
     {
         /* This should never be called twice in one process - in fact one Display
          * object should probably never be used from multiple threads anyway. */

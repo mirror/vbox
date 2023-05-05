@@ -981,7 +981,7 @@ static DECLCALLBACK(int) vbcl_hlp_gnome3_init(void)
 {
     int rc;
 
-    if (VBClGetSessionType() == VBGHSESSIONTYPE_X11)
+    if (VBClGetDisplayServerType() == VBGHDISPLAYSERVERTYPE_X11)
     {
         rc = vbcl_hlp_generic_init();
         VBClLogInfo("attempt to start generic helper routines, rc=%Rrc\n", rc);
@@ -997,7 +997,7 @@ static DECLCALLBACK(int) vbcl_hlp_gnome3_term(void)
 {
     int rc;
 
-    if (VBClGetSessionType() == VBGHSESSIONTYPE_X11)
+    if (VBClGetDisplayServerType() == VBGHDISPLAYSERVERTYPE_X11)
     {
         rc = vbcl_hlp_generic_term();
         VBClLogInfo("attempt to stop generic helper routines, rc=%Rrc\n", rc);

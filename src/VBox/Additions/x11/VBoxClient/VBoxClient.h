@@ -37,7 +37,7 @@
 #include <iprt/string.h>
 
 #include <VBox/GuestHost/Log.h>
-#include <VBox/GuestHost/SessionType.h>
+#include <VBox/GuestHost/DisplayServerType.h>
 
 int VBClShowNotify(const char *pszHeader, const char *pszBody);
 
@@ -53,7 +53,7 @@ void VBClLogDestroy(void);
 /** Call clean-up for the current service and exit. */
 extern void VBClShutdown(bool fExit = true);
 
-extern VBGHSESSIONTYPE VBClGetSessionType(void);
+extern VBGHDISPLAYSERVERTYPE VBClGetDisplayServerType(void);
 
 /**
  * A service descriptor.

@@ -34,15 +34,15 @@
 #include <iprt/stream.h>
 
 #include <VBox/VBoxGuestLib.h>
-#include <VBox/GuestHost/SessionType.h>
+#include <VBox/GuestHost/DisplayServerType.h>
 
 #include "../seamless.h"
 
 static RTSEMEVENT eventSem;
 
-VBGHSESSIONTYPE VBClGetSessionType(void)
+VBGHDISPLAYSERVERTYPE VBClGetDisplayServerType(void)
 {
-    return VBGHSESSIONTYPE_X11;
+    return VBGHDISPLAYSERVERTYPE_X11;
 }
 
 void VBClLogError(const char *pszFormat, ...)

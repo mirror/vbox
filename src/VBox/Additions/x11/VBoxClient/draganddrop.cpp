@@ -41,13 +41,13 @@ static VBClDnDSvc *g_pSvc = NULL;
  */
 static DECLCALLBACK(int) vbclDnDInit(void)
 {
-    switch (VBClGetSessionType())
+    switch (VBClGetDisplayServerType())
     {
-        case VBGHSESSIONTYPE_X11:
+        case VBGHDISPLAYSERVERTYPE_X11:
             g_pSvc = new VBClX11DnDSvc();
             break;
 
-        case VBGHSESSIONTYPE_WAYLAND:
+        case VBGHDISPLAYSERVERTYPE_WAYLAND:
             RT_FALL_THROUGH();
         default:
             return VERR_NOT_SUPPORTED;

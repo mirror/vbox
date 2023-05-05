@@ -82,7 +82,7 @@ static DECLCALLBACK(int) vbclShClWorker(bool volatile *pfShutdown)
 
     int rc = VINF_SUCCESS;
 
-    if (VBClGetSessionType() == VBGHSESSIONTYPE_X11)
+    if (VBClGetDisplayServerType() == VBGHDISPLAYSERVERTYPE_X11)
     {
         rc = VBClX11ClipboardInit();
         if (RT_SUCCESS(rc))
@@ -94,7 +94,7 @@ static DECLCALLBACK(int) vbclShClWorker(bool volatile *pfShutdown)
         }
     }
 #if 0
-    else (VBClGetSessionType() == VBGHSESSIONTYPE_WAYLAND)
+    else (VBClGetSessionType() == GHDISPLAYSERVERTYPE_WAYLAND)
     {
 
     }

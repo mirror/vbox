@@ -35,7 +35,7 @@
 #include <iprt/ldr.h>
 
 #include <VBox/GuestHost/Log.h>
-#include <VBox/GuestHost/SessionType.h>
+#include <VBox/GuestHost/DisplayServerType.h>
 
 
 /*********************************************************************************************************************************
@@ -43,20 +43,20 @@
 *********************************************************************************************************************************/
 
 /**
- * Returns the VBGHSESSIONTYPE as a string.
+ * Returns the VBGHDISPLAYSERVERTYPE as a string.
  *
- * @returns VBGHSESSIONTYPE as a string.
- * @param   enmType             VBGHSESSIONTYPE to return as a string.
+ * @returns VBGHDISPLAYSERVERTYPE as a string.
+ * @param   enmType             VBGHDISPLAYSERVERTYPE to return as a string.
  */
-const char *VBGHSessionTypeToStr(VBGHSESSIONTYPE enmType)
+const char *VBGHDisplayServerTypeToStr(VBGHDISPLAYSERVERTYPE enmType)
 {
     switch (enmType)
     {
-        RT_CASE_RET_STR(VBGHSESSIONTYPE_NONE);
-        RT_CASE_RET_STR(VBGHSESSIONTYPE_AUTO);
-        RT_CASE_RET_STR(VBGHSESSIONTYPE_X11);
-        RT_CASE_RET_STR(VBGHSESSIONTYPE_WAYLAND);
-        RT_CASE_RET_STR(VBGHSESSIONTYPE_XWAYLAND);
+        RT_CASE_RET_STR(VBGHDISPLAYSERVERTYPE_NONE);
+        RT_CASE_RET_STR(VBGHDISPLAYSERVERTYPE_AUTO);
+        RT_CASE_RET_STR(VBGHDISPLAYSERVERTYPE_X11);
+        RT_CASE_RET_STR(VBGHDISPLAYSERVERTYPE_WAYLAND);
+        RT_CASE_RET_STR(VBGHDISPLAYSERVERTYPE_XWAYLAND);
         default: break;
     }
 
@@ -64,9 +64,9 @@ const char *VBGHSessionTypeToStr(VBGHSESSIONTYPE enmType)
 }
 
 /**
- * Tries to detect the desktop session type the process is running in.
+ * Tries to detect the desktop display server type the process is running in.
  *
- * @returns A value of VBGHSESSIONTYPE, or VBGHSESSIONTYPE_NONE if detection was not successful.
+ * @returns A value of VBGHDISPLAYSERVERTYPE, or VBGHDISPLAYSERVERTYPE_NONE if detection was not successful.
  *
  * @note    Precedence is:
  *            - Connecting to Wayland (via libwayland-client.so) and/or X11  (via libX11.so).
@@ -76,9 +76,9 @@ const char *VBGHSessionTypeToStr(VBGHSESSIONTYPE enmType)
  *
  *          Will print a warning to the release log if configuration mismatches.
  */
-VBGHSESSIONTYPE VBGHSessionTypeDetect(void)
+VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void)
 {
-    VBGHLogVerbose(1, "Detecting session type ...\n");
+    VBGHLogVerbose(1, "Detecting display server ...\n");
 
     /* Try to connect to the wayland display, assuming it succeeds only when a wayland compositor is active: */
     void *pWaylandDisplay = NULL;
@@ -109,19 +109,19 @@ VBGHSESSIONTYPE VBGHSessionTypeDetect(void)
     }
 
     /* If both wayland and X11 display can be connected then we should have XWayland: */
-    VBGHSESSIONTYPE retSessionType = VBGHSESSIONTYPE_NONE;
+    VBGHDISPLAYSERVERTYPE retSessionType = VBGHDISPLAYSERVERTYPE_NONE;
     if (pWaylandDisplay && pXDisplay)
-        retSessionType = VBGHSESSIONTYPE_XWAYLAND;
+        retSessionType = VBGHDISPLAYSERVERTYPE_XWAYLAND;
     else if (pWaylandDisplay && !pXDisplay)
-        retSessionType = VBGHSESSIONTYPE_WAYLAND;
+        retSessionType = VBGHDISPLAYSERVERTYPE_WAYLAND;
     else if (!pWaylandDisplay && pXDisplay)
-        retSessionType = VBGHSESSIONTYPE_X11;
+        retSessionType = VBGHDISPLAYSERVERTYPE_X11;
 
-    VBGHLogVerbose(1, "Detected via connection: %s\n", VBGHSessionTypeToStr(retSessionType));
+    VBGHLogVerbose(1, "Detected via connection: %s\n", VBGHDisplayServerTypeToStr(retSessionType));
 
     /* If retSessionType is set, we assume we're done here;
      * otherwise try the environment variables as a fallback. */
-    if (retSessionType != VBGHSESSIONTYPE_NONE)
+    if (retSessionType != VBGHDISPLAYSERVERTYPE_NONE)
         return retSessionType;
 
     /*
@@ -129,56 +129,56 @@ VBGHSESSIONTYPE VBGHSessionTypeDetect(void)
      * set in non-systemd environments or remote logins.
      * Therefore we check the Wayland specific display environment variable first.
      */
-    VBGHSESSIONTYPE waylandDisplayType = VBGHSESSIONTYPE_NONE;
+    VBGHDISPLAYSERVERTYPE waylandDisplayType = VBGHDISPLAYSERVERTYPE_NONE;
     const char *const pWaylandDisplayType = RTEnvGet(VBGH_ENV_WAYLAND_DISPLAY);
     if (pWaylandDisplayType != NULL)
-        waylandDisplayType = VBGHSESSIONTYPE_WAYLAND;
+        waylandDisplayType = VBGHDISPLAYSERVERTYPE_WAYLAND;
 
-    VBGHLogVerbose(1, "Wayland display type is: %s\n", VBGHSessionTypeToStr(waylandDisplayType));
+    VBGHLogVerbose(1, "Wayland display type is: %s\n", VBGHDisplayServerTypeToStr(waylandDisplayType));
 
-    VBGHSESSIONTYPE xdgSessionType = VBGHSESSIONTYPE_NONE;
+    VBGHDISPLAYSERVERTYPE xdgSessionType = VBGHDISPLAYSERVERTYPE_NONE;
     const char *pSessionType = RTEnvGet(VBGH_ENV_XDG_SESSION_TYPE);
     if (pSessionType)
     {
         if (RTStrIStartsWith(pSessionType, "wayland"))
-            xdgSessionType = VBGHSESSIONTYPE_WAYLAND;
+            xdgSessionType = VBGHDISPLAYSERVERTYPE_WAYLAND;
         else if (RTStrIStartsWith(pSessionType, "x11"))
-            xdgSessionType = VBGHSESSIONTYPE_X11;
+            xdgSessionType = VBGHDISPLAYSERVERTYPE_X11;
     }
 
-    VBGHLogVerbose(1, "XDG session type is: %s\n", VBGHSessionTypeToStr(xdgSessionType));
+    VBGHLogVerbose(1, "XDG session type is: %s\n", VBGHDisplayServerTypeToStr(xdgSessionType));
 
-    VBGHSESSIONTYPE xdgCurrentDesktopType = VBGHSESSIONTYPE_NONE;
+    VBGHDISPLAYSERVERTYPE xdgCurrentDesktopType = VBGHDISPLAYSERVERTYPE_NONE;
 
     const char *pszCurDesktop = RTEnvGet(VBGH_ENV_XDG_CURRENT_DESKTOP);
     if (pszCurDesktop)
     {
         if (RTStrIStr(pszCurDesktop, "wayland"))
-            xdgCurrentDesktopType = VBGHSESSIONTYPE_WAYLAND;
+            xdgCurrentDesktopType = VBGHDISPLAYSERVERTYPE_WAYLAND;
         else if (RTStrIStr(pszCurDesktop, "x11"))
-            xdgCurrentDesktopType = VBGHSESSIONTYPE_X11;
+            xdgCurrentDesktopType = VBGHDISPLAYSERVERTYPE_X11;
     }
 
-    VBGHLogVerbose(1, "XDG current desktop type is: %s\n", VBGHSessionTypeToStr(xdgCurrentDesktopType));
+    VBGHLogVerbose(1, "XDG current desktop type is: %s\n", VBGHDisplayServerTypeToStr(xdgCurrentDesktopType));
 
     /* Set the returning type according to the precedence. */
-    if      (waylandDisplayType    != VBGHSESSIONTYPE_NONE) retSessionType = waylandDisplayType;
-    else if (xdgSessionType        != VBGHSESSIONTYPE_NONE) retSessionType = xdgSessionType;
-    else if (xdgCurrentDesktopType != VBGHSESSIONTYPE_NONE) retSessionType = xdgCurrentDesktopType;
-    else                                                    retSessionType = VBGHSESSIONTYPE_NONE;
+    if      (waylandDisplayType    != VBGHDISPLAYSERVERTYPE_NONE) retSessionType = waylandDisplayType;
+    else if (xdgSessionType        != VBGHDISPLAYSERVERTYPE_NONE) retSessionType = xdgSessionType;
+    else if (xdgCurrentDesktopType != VBGHDISPLAYSERVERTYPE_NONE) retSessionType = xdgCurrentDesktopType;
+    else                                                    retSessionType = VBGHDISPLAYSERVERTYPE_NONE;
 
     /* Try to detect any mismatches between the variables above.
      * This might indicate a misconfigred / broken system, and we can warn the user then. */
 #define COMPARE_SESSION_TYPES(a_Type1, a_Type2) \
-    if (   (a_Type1 != VBGHSESSIONTYPE_NONE) \
-        && (a_Type2 != VBGHSESSIONTYPE_NONE) \
+    if (   (a_Type1 != VBGHDISPLAYSERVERTYPE_NONE) \
+        && (a_Type2 != VBGHDISPLAYSERVERTYPE_NONE) \
         && (a_Type1 != a_Type2)) \
         { \
             VBGHLogError("Unable to reliably detect desktop environment:\n"); \
             VBGHLogError("Mismatch between %s (%s) and %s (%s) detected! This might indicate a misconfigured and/or broken system!\n", \
-                         #a_Type1, VBGHSessionTypeToStr(a_Type1), #a_Type2, VBGHSessionTypeToStr(a_Type2)); \
+                         #a_Type1, VBGHDisplayServerTypeToStr(a_Type1), #a_Type2, VBGHDisplayServerTypeToStr(a_Type2)); \
             VBGHLogError("Use --session-type to override this detection.\n"); \
-            retSessionType = VBGHSESSIONTYPE_NONE; \
+            retSessionType = VBGHDISPLAYSERVERTYPE_NONE; \
         }
 
     COMPARE_SESSION_TYPES(waylandDisplayType, xdgSessionType);
@@ -196,10 +196,10 @@ VBGHSESSIONTYPE VBGHSessionTypeDetect(void)
  * @returns \c true if @a enmType is running X, \c false if not.
  * @param   enmType             Type to check.
  */
-bool VBGHSessionTypeIsXAvailable(VBGHSESSIONTYPE enmType)
+bool VBGHDisplayServerTypeIsXAvailable(VBGHDISPLAYSERVERTYPE enmType)
 {
-    return    enmType == VBGHSESSIONTYPE_XWAYLAND
-           || enmType == VBGHSESSIONTYPE_X11;
+    return    enmType == VBGHDISPLAYSERVERTYPE_XWAYLAND
+           || enmType == VBGHDISPLAYSERVERTYPE_X11;
 }
 
 /**
@@ -208,9 +208,9 @@ bool VBGHSessionTypeIsXAvailable(VBGHSESSIONTYPE enmType)
  * @returns \c true if @a enmType is running Wayland, \c false if not.
  * @param   enmType             Type to check.
  */
-bool VBGHSessionTypeIsWaylandAvailable(VBGHSESSIONTYPE enmType)
+bool VBGHDisplayServerTypeIsWaylandAvailable(VBGHDISPLAYSERVERTYPE enmType)
 {
-    return    enmType == VBGHSESSIONTYPE_XWAYLAND
-           || enmType == VBGHSESSIONTYPE_WAYLAND;
+    return    enmType == VBGHDISPLAYSERVERTYPE_XWAYLAND
+           || enmType == VBGHDISPLAYSERVERTYPE_WAYLAND;
 }
 

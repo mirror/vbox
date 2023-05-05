@@ -83,13 +83,13 @@ void VBClSeamlessSendRegionUpdate(RTRECT *pRects, size_t cRects)
  */
 static DECLCALLBACK(int) vbclSeamlessInit(void)
 {
-    switch (VBClGetSessionType())
+    switch (VBClGetDisplayServerType())
     {
-        case VBGHSESSIONTYPE_X11:
+        case VBGHDISPLAYSERVERTYPE_X11:
             g_pSvc = new VBClX11SeamlessSvc();
             break;
 
-        case VBGHSESSIONTYPE_WAYLAND:
+        case VBGHDISPLAYSERVERTYPE_WAYLAND:
             RT_FALL_THROUGH();
         default:
             return VERR_NOT_SUPPORTED;

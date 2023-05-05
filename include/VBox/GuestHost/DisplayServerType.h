@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Guest / Host common code - Session type detection + handling.
+ * Guest / Host common code - Display server type detection + handling.
  */
 
 /*
@@ -50,26 +50,26 @@
 #define VBGH_ENV_XDG_SESSION_TYPE       "XDG_SESSION_TYPE"
 
 /**
- * Enumeration holding a guest / host desktop session type.
+ * Enumeration holding a guest / host desktop display server type.
  */
 typedef enum
 {
-    /** No session detected or (explicitly) not set. */
-    VBGHSESSIONTYPE_NONE = 0,
+    /** No display server detected or (explicitly) not set. */
+    VBGHDISPLAYSERVERTYPE_NONE = 0,
     /** Automatic detection -- might not work reliably on all systems. */
-    VBGHSESSIONTYPE_AUTO,
+    VBGHDISPLAYSERVERTYPE_AUTO,
     /** X11 (X.org). */
-    VBGHSESSIONTYPE_X11,
+    VBGHDISPLAYSERVERTYPE_X11,
     /** Wayland. */
-    VBGHSESSIONTYPE_WAYLAND,
+    VBGHDISPLAYSERVERTYPE_WAYLAND,
     /** XWayland; Wayland is running, but some (older) apps need X as a bridge as well. */
-    VBGHSESSIONTYPE_XWAYLAND
-} VBGHSESSIONTYPE;
+    VBGHDISPLAYSERVERTYPE_XWAYLAND
+} VBGHDISPLAYSERVERTYPE;
 
-const char *VBGHSessionTypeToStr(VBGHSESSIONTYPE enmType);
-VBGHSESSIONTYPE VBGHSessionTypeDetect(void);
-bool VBGHSessionTypeIsXAvailable(VBGHSESSIONTYPE enmType);
-bool VBGHSessionTypeIsWaylandAvailable(VBGHSESSIONTYPE enmType);
+const char *VBGHDisplayServerTypeToStr(VBGHDISPLAYSERVERTYPE enmType);
+VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void);
+bool VBGHServerTypeIsXAvailable(VBGHDISPLAYSERVERTYPE enmType);
+bool VBGHDisplayServerTypeIsWaylandAvailable(VBGHDISPLAYSERVERTYPE enmType);
 
 #endif /* !VBOX_INCLUDED_GuestHost_SessionType_h */
 

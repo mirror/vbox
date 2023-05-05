@@ -51,7 +51,7 @@ PROGRAMS.linux += VBoxDRMClient
 # Common Guest / Host sources.
 VBOX_GH_SOURCES := \
 	$(PATH_ROOT)/src/VBox/GuestHost/Log.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SessionType.cpp
+	$(PATH_ROOT)/src/VBox/GuestHost/DisplayServerType.cpp
 
 VBoxClient_TEMPLATE = VBoxGuestR3Exe
 VBoxClient_DEFS += VBOX_X11_CLIPBOARD VBOX_WITH_HGCM
