@@ -59,11 +59,15 @@ typedef enum
     /** X11 (X.org). */
     VBGHSESSIONTYPE_X11,
     /** Wayland. */
-    VBGHSESSIONTYPE_WAYLAND
+    VBGHSESSIONTYPE_WAYLAND,
+    /** XWayland; Wayland is running, but some (older) apps need X as a bridge as well. */
+    VBGHSESSIONTYPE_XWAYLAND
 } VBGHSESSIONTYPE;
 
 const char *VBGHSessionTypeToStr(VBGHSESSIONTYPE enmType);
 VBGHSESSIONTYPE VBGHSessionTypeDetect(void);
+bool VBGHSessionTypeIsXAvailable(VBGHSESSIONTYPE enmType);
+bool VBGHSessionTypeIsWaylandAvailable(VBGHSESSIONTYPE enmType);
 
 #endif /* !VBOX_INCLUDED_GuestHost_SessionType_h */
 

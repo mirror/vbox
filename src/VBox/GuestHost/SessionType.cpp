@@ -32,6 +32,7 @@
 #include <iprt/assert.h>
 #include <iprt/env.h>
 #include <iprt/string.h>
+#include <iprt/ldr.h>
 
 #include <VBox/GuestHost/Log.h>
 #include <VBox/GuestHost/SessionType.h>
@@ -53,8 +54,9 @@ const char *VBGHSessionTypeToStr(VBGHSESSIONTYPE enmType)
     {
         RT_CASE_RET_STR(VBGHSESSIONTYPE_NONE);
         RT_CASE_RET_STR(VBGHSESSIONTYPE_AUTO);
-        RT_CASE_RET_STR(VBGHSESSIONTYPE_WAYLAND);
         RT_CASE_RET_STR(VBGHSESSIONTYPE_X11);
+        RT_CASE_RET_STR(VBGHSESSIONTYPE_WAYLAND);
+        RT_CASE_RET_STR(VBGHSESSIONTYPE_XWAYLAND);
         default: break;
     }
 
@@ -66,11 +68,61 @@ const char *VBGHSessionTypeToStr(VBGHSESSIONTYPE enmType)
  *
  * @returns A value of VBGHSESSIONTYPE, or VBGHSESSIONTYPE_NONE if detection was not successful.
  *
- * @note    Precedence is: VBGH_ENV_WAYLAND_DISPLAY, VBGH_ENV_XDG_SESSION_TYPE, VBGH_ENV_XDG_CURRENT_DESKTOP.
+ * @note    Precedence is:
+ *            - Connecting to Wayland (via libwayland-client.so) and/or X11  (via libX11.so).
+ *            - VBGH_ENV_WAYLAND_DISPLAY
+ *            - VBGH_ENV_XDG_SESSION_TYPE
+ *            - VBGH_ENV_XDG_CURRENT_DESKTOP.
+ *
+ *          Will print a warning to the release log if configuration mismatches.
  */
 VBGHSESSIONTYPE VBGHSessionTypeDetect(void)
 {
     VBGHLogVerbose(1, "Detecting session type ...\n");
+
+    /* Try to connect to the wayland display, assuming it succeeds only when a wayland compositor is active: */
+    void *pWaylandDisplay = NULL;
+    RTLDRMOD hWaylandClient = NIL_RTLDRMOD;
+    int rc = RTLdrLoadSystem("libwayland-client.so", /* fNoUnload = */ true, &hWaylandClient);
+    if (RT_SUCCESS(rc))
+    {
+        void * (*pWaylandDisplayConnect)(const char *);
+        rc = RTLdrGetSymbol(hWaylandClient, "wl_display_connect", (void **)&pWaylandDisplayConnect);
+        if (   RT_SUCCESS(rc)
+            && pWaylandDisplayConnect)
+            pWaylandDisplay = pWaylandDisplayConnect(NULL);
+        RTLdrClose(hWaylandClient);
+    }
+
+    /* Also try to connect to the default X11 display to determine if Xserver is running: */
+    void *pXDisplay = NULL;
+    RTLDRMOD hX11 = NIL_RTLDRMOD;
+    rc = RTLdrLoadSystem("libX11.so", /* fNoUnload = */ true, &hX11);
+    if (RT_SUCCESS(rc))
+    {
+        void * (*pfnOpenDisplay)(const char *);
+        rc = RTLdrGetSymbol(hX11, "XOpenDisplay", (void **)&pfnOpenDisplay);
+        if (   RT_SUCCESS(rc)
+            && pfnOpenDisplay)
+            pXDisplay = pfnOpenDisplay(NULL);
+        RTLdrClose(hX11);
+    }
+
+    /* If both wayland and X11 display can be connected then we should have XWayland: */
+    VBGHSESSIONTYPE retSessionType = VBGHSESSIONTYPE_NONE;
+    if (pWaylandDisplay && pXDisplay)
+        retSessionType = VBGHSESSIONTYPE_XWAYLAND;
+    else if (pWaylandDisplay && !pXDisplay)
+        retSessionType = VBGHSESSIONTYPE_WAYLAND;
+    else if (!pWaylandDisplay && pXDisplay)
+        retSessionType = VBGHSESSIONTYPE_X11;
+
+    VBGHLogVerbose(1, "Detected via connection: %s\n", VBGHSessionTypeToStr(retSessionType));
+
+    /* If retSessionType is set, we assume we're done here;
+     * otherwise try the environment variables as a fallback. */
+    if (retSessionType != VBGHSESSIONTYPE_NONE)
+        return retSessionType;
 
     /*
      * XDG_SESSION_TYPE is a systemd(1) environment variable and is unlikely
@@ -110,7 +162,6 @@ VBGHSESSIONTYPE VBGHSessionTypeDetect(void)
     VBGHLogVerbose(1, "XDG current desktop type is: %s\n", VBGHSessionTypeToStr(xdgCurrentDesktopType));
 
     /* Set the returning type according to the precedence. */
-    VBGHSESSIONTYPE retSessionType;
     if      (waylandDisplayType    != VBGHSESSIONTYPE_NONE) retSessionType = waylandDisplayType;
     else if (xdgSessionType        != VBGHSESSIONTYPE_NONE) retSessionType = xdgSessionType;
     else if (xdgCurrentDesktopType != VBGHSESSIONTYPE_NONE) retSessionType = xdgCurrentDesktopType;
@@ -137,5 +188,29 @@ VBGHSESSIONTYPE VBGHSessionTypeDetect(void)
 #undef COMPARE_SESSION_TYPES
 
     return retSessionType;
+}
+
+/**
+ * Returns true if @a enmType is indicating running X.
+ *
+ * @returns \c true if @a enmType is running X, \c false if not.
+ * @param   enmType             Type to check.
+ */
+bool VBGHSessionTypeIsXAvailable(VBGHSESSIONTYPE enmType)
+{
+    return    enmType == VBGHSESSIONTYPE_XWAYLAND
+           || enmType == VBGHSESSIONTYPE_X11;
+}
+
+/**
+ * Returns true if @a enmType is indicating running Wayland.
+ *
+ * @returns \c true if @a enmType is running Wayland, \c false if not.
+ * @param   enmType             Type to check.
+ */
+bool VBGHSessionTypeIsWaylandAvailable(VBGHSESSIONTYPE enmType)
+{
+    return    enmType == VBGHSESSIONTYPE_XWAYLAND
+           || enmType == VBGHSESSIONTYPE_WAYLAND;
 }
 
