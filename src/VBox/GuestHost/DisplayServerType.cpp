@@ -81,40 +81,64 @@ VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void)
     VBGHLogVerbose(1, "Detecting display server ...\n");
 
     /* Try to connect to the wayland display, assuming it succeeds only when a wayland compositor is active: */
-    void *pWaylandDisplay = NULL;
+    bool     fHasWayland    = false;
     RTLDRMOD hWaylandClient = NIL_RTLDRMOD;
     int rc = RTLdrLoadSystem("libwayland-client.so", /* fNoUnload = */ true, &hWaylandClient);
     if (RT_SUCCESS(rc))
     {
         void * (*pWaylandDisplayConnect)(const char *);
+        void (*pWaylandDisplayDisconnect)(void *);
         rc = RTLdrGetSymbol(hWaylandClient, "wl_display_connect", (void **)&pWaylandDisplayConnect);
-        if (   RT_SUCCESS(rc)
-            && pWaylandDisplayConnect)
-            pWaylandDisplay = pWaylandDisplayConnect(NULL);
+        if (RT_SUCCESS(rc))
+            rc = RTLdrGetSymbol(hWaylandClient, "wl_display_disconnect", (void **)&pWaylandDisplayDisconnect);
+        if (RT_SUCCESS(rc))
+        {
+            AssertPtrReturn(pWaylandDisplayConnect, VBGHDISPLAYSERVERTYPE_NONE);
+            AssertPtrReturn(pWaylandDisplayDisconnect, VBGHDISPLAYSERVERTYPE_NONE);
+            void *pDisplay = pWaylandDisplayConnect(NULL);
+            if (pDisplay)
+            {
+                fHasWayland = true;
+                pWaylandDisplayDisconnect(pDisplay);
+            }
+        }
         RTLdrClose(hWaylandClient);
     }
 
     /* Also try to connect to the default X11 display to determine if Xserver is running: */
-    void *pXDisplay = NULL;
-    RTLDRMOD hX11 = NIL_RTLDRMOD;
+    bool     fHasX = false;
+    RTLDRMOD hX11  = NIL_RTLDRMOD;
     rc = RTLdrLoadSystem("libX11.so", /* fNoUnload = */ true, &hX11);
     if (RT_SUCCESS(rc))
     {
         void * (*pfnOpenDisplay)(const char *);
+        int (*pfnCloseDisplay)(void *);
         rc = RTLdrGetSymbol(hX11, "XOpenDisplay", (void **)&pfnOpenDisplay);
-        if (   RT_SUCCESS(rc)
-            && pfnOpenDisplay)
-            pXDisplay = pfnOpenDisplay(NULL);
+        if (RT_SUCCESS(rc))
+            rc = RTLdrGetSymbol(hX11, "XCloseDisplay", (void **)&pfnCloseDisplay);
+
+        if (RT_SUCCESS(rc))
+        {
+            AssertPtrReturn(pfnOpenDisplay, VBGHDISPLAYSERVERTYPE_NONE);
+            AssertPtrReturn(pfnCloseDisplay, VBGHDISPLAYSERVERTYPE_NONE);
+            void *pDisplay = pfnOpenDisplay(NULL);
+            if (pDisplay)
+            {
+                fHasX = true;
+                pfnCloseDisplay(pDisplay);
+            }
+        }
+
         RTLdrClose(hX11);
     }
 
     /* If both wayland and X11 display can be connected then we should have XWayland: */
     VBGHDISPLAYSERVERTYPE retSessionType = VBGHDISPLAYSERVERTYPE_NONE;
-    if (pWaylandDisplay && pXDisplay)
+    if (fHasWayland && fHasX)
         retSessionType = VBGHDISPLAYSERVERTYPE_XWAYLAND;
-    else if (pWaylandDisplay && !pXDisplay)
+    else if (fHasWayland)
         retSessionType = VBGHDISPLAYSERVERTYPE_WAYLAND;
-    else if (!pWaylandDisplay && pXDisplay)
+    else if (fHasX)
         retSessionType = VBGHDISPLAYSERVERTYPE_X11;
 
     VBGHLogVerbose(1, "Detected via connection: %s\n", VBGHDisplayServerTypeToStr(retSessionType));
