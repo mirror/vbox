@@ -64,6 +64,29 @@ const char *VBGHDisplayServerTypeToStr(VBGHDISPLAYSERVERTYPE enmType)
 }
 
 /**
+ * Tries to load a (system) library via a set of different names / versions.
+ *
+ * @returns VBox status code.
+ * @returns VERR_NOT_FOUND if the library was not found.
+ *
+ * @param   apszLibs            Array of library (version) names to search for.
+ *                              Descending order (e.g. "libfoo.so", "libfoo.so.2", "libfoo.so.2.6").
+ * @param   cLibs               Number of library names in \a apszLibs.
+ * @param   phLdrMod            Where to return the library handle on success.
+ */
+static int vbghDisplayServerTryLoadLib(const char **apszLibs, size_t cLibs, PRTLDRMOD phLdrMod)
+{
+    for (size_t i = 0; i < cLibs; i++)
+    {
+        int rc2 = RTLdrLoadSystem(apszLibs[i], /* fNoUnload = */ true, phLdrMod);
+        if (RT_SUCCESS(rc2))
+            return VINF_SUCCESS;
+    }
+
+    return VERR_NOT_FOUND;
+}
+
+/**
  * Tries to detect the desktop display server type the process is running in.
  *
  * @returns A value of VBGHDISPLAYSERVERTYPE, or VBGHDISPLAYSERVERTYPE_NONE if detection was not successful.
@@ -83,7 +106,16 @@ VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void)
     /* Try to connect to the wayland display, assuming it succeeds only when a wayland compositor is active: */
     bool     fHasWayland    = false;
     RTLDRMOD hWaylandClient = NIL_RTLDRMOD;
-    int rc = RTLdrLoadSystem("libwayland-client.so", /* fNoUnload = */ true, &hWaylandClient);
+
+    /* Array of libwayland-client.so versions to search for.
+     * Descending precedence. */
+    const char* aLibsWayland[] =
+    {
+        "libwayland-client.so",
+        "libwayland-client.so.0" /* Needed for Ubuntu */
+    };
+
+    int rc = vbghDisplayServerTryLoadLib(aLibsWayland, RT_ELEMENTS(aLibsWayland), &hWaylandClient);
     if (RT_SUCCESS(rc))
     {
         void * (*pWaylandDisplayConnect)(const char *);
@@ -105,10 +137,17 @@ VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void)
         RTLdrClose(hWaylandClient);
     }
 
+    /* Array of libX11.so versions to search for.
+     * Descending precedence. */
+    const char* aLibsX11[] =
+    {
+        "libX11.so"
+    };
+
     /* Also try to connect to the default X11 display to determine if Xserver is running: */
     bool     fHasX = false;
     RTLDRMOD hX11  = NIL_RTLDRMOD;
-    rc = RTLdrLoadSystem("libX11.so", /* fNoUnload = */ true, &hX11);
+    rc = vbghDisplayServerTryLoadLib(aLibsX11, RT_ELEMENTS(aLibsX11), &hX11);
     if (RT_SUCCESS(rc))
     {
         void * (*pfnOpenDisplay)(const char *);
