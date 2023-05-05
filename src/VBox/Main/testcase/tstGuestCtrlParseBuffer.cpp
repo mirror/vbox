@@ -215,8 +215,8 @@ static int tstReadFromFile(const char *pszFile)
     size_t cPairs = 0;
     size_t cBlocks = 0;
 
-    unsigned aToRead[] = { 256, 23, 13 };
-    unsigned i = 0;
+    unsigned aToRead[] = { 256, 23, 13 }; /* Array of certain read amounts to check for in a sequence. */
+    unsigned idxToRead = 0; /* Index within aToRead. */
 
     uint64_t cbToRead = cbFileSize;
 
@@ -225,9 +225,11 @@ static int tstReadFromFile(const char *pszFile)
         uint8_t buf[_64K];
         do
         {
-            size_t cbChunk = RT_MIN(cbToRead, i < RT_ELEMENTS(aToRead) ? aToRead[i++] : RTRandU64Ex(8, RT_MIN(sizeof(buf), 64)));
-            if (cbChunk > cbToRead)
-                cbChunk = cbToRead;
+            size_t       cbChunk           = cbToRead;
+            size_t const cbToReadFromArray = idxToRead < RT_ELEMENTS(aToRead) ? aToRead[idxToRead++] : 0;
+            if (cbToReadFromArray)
+                cbChunk = RT_MIN(cbChunk, cbToReadFromArray);
+            cbChunk = RT_MIN(cbChunk, RTRandU64Ex(8, RT_MIN(sizeof(buf), 64)));
             if (cbChunk)
             {
                 RTTestIPrintf(RTTESTLVL_DEBUG, "Reading %zu bytes (of %zu left) ...\n", cbChunk, cbToRead);
