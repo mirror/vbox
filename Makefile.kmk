@@ -2171,6 +2171,7 @@ ifdef VBOX_WITH_PARFAIT
 	$(TIME) -- $(VBOX_PARFAIT) \
 	 -p \
 	 $(if-expr defined(VBOX_PARFAIT_SERVER),-s $(VBOX_PARFAIT_SERVER),) \
+	 $(if-expr defined(VBOX_PARFAIT_SERVER_BASELINE),-b $(VBOX_PARFAIT_SERVER_BASELINE),) \
 	 -j $(if-expr $(KMK_OPTS_JOBS) > 0,$(expr $(KMK_OPTS_JOBS) / 2),$(NUMBER_OF_PROCESSORS)) \
 	 -o $(PATH_OUT)/report.txt \
 	 -g $(PATH_OUT)/html \
