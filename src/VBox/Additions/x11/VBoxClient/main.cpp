@@ -737,6 +737,8 @@ int main(int argc, char *argv[])
     VBClLogInfo("VBoxClient %s r%s started. Verbose level = %d\n",
                 RTBldCfgVersion(), RTBldCfgRevisionStr(), g_cVerbosity);
 
+    VBGHLogVerbositySet(g_cVerbosity);
+
     /* Try to detect the current session type early on, if needed. */
     if (g_enmSessionType == VBGHSESSIONTYPE_AUTO)
     {

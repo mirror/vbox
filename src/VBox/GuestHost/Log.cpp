@@ -36,9 +36,9 @@
 
 
 /*********************************************************************************************************************************
-*   Externals                                                                                                                    *
+*   Globals                                                                                                                      *
 *********************************************************************************************************************************/
-extern unsigned g_cVerbosity; /* Current verbosity level; must be provided by the implementation using this code. */
+static unsigned g_vbghLogVerbosity = 0; /* Current guest/host log verbosity level. */
 
 
 /*********************************************************************************************************************************
@@ -129,8 +129,8 @@ int VBGHShowNotify(const char *pszHeader, const char *pszFormat, ...)
 /**
  * Logs an error message with a va_list.
  *
- * @param   pszFormat   Format string..
- * @param   va          Format arguments.
+ * @param   pszFormat           Format string..
+ * @param   va                  Format arguments.
  */
 void VBGHLogErrorV(const char *pszFormat, va_list va)
 {
@@ -140,7 +140,7 @@ void VBGHLogErrorV(const char *pszFormat, va_list va)
 /**
  * Logs an error message to the (release) logging instance.
  *
- * @param   pszFormat               Format string to log.
+ * @param   pszFormat           Format string to log.
  */
 void VBGHLogError(const char *pszFormat, ...)
 {
@@ -150,8 +150,8 @@ void VBGHLogError(const char *pszFormat, ...)
 /**
  * Logs a info message with a va_list.
  *
- * @param   pszFormat   Format string..
- * @param   va          Format arguments.
+ * @param   pszFormat           Format string..
+ * @param   va                  Format arguments.
  */
 void VBGHLogInfoV(const char *pszFormat, va_list va)
 {
@@ -171,8 +171,8 @@ void  VBGHLogInfo(const char *pszFormat, ...)
 /**
  * Logs a fatal error, notifies the desktop environment via a message (if available).
  *
- * @param   pszFormat   Format string..
- * @param   va          Format arguments.
+ * @param   pszFormat           Format string..
+ * @param   va                  Format arguments.
  */
 void VBGHLogFatalErrorV(const char *pszFormat, va_list va)
 {
@@ -196,13 +196,13 @@ void VBGHLogFatalError(const char *pszFormat, ...)
  * Displays a verbose message based on the currently
  * set global verbosity level.
  *
- * @param   iLevel      Minimum log level required to display this message.
- * @param   pszFormat   Format string.
- * @param   ...         Format arguments.
+ * @param   iLevel              Minimum log level required to display this message.
+ * @param   pszFormat           Format string.
+ * @param   ...                 Format arguments.
  */
 void VBGHLogVerbose(unsigned iLevel, const char *pszFormat, ...)
 {
-    if (iLevel <= g_cVerbosity)
+    if (iLevel <= g_vbghLogVerbosity)
         VBGH_LOG_VA("", pszFormat);
 }
 
@@ -210,13 +210,36 @@ void VBGHLogVerbose(unsigned iLevel, const char *pszFormat, ...)
  * Displays a verbose message based on the currently
  * set global verbosity level with a va_list.
  *
- * @param   iLevel      Minimum log level required to display this message.
- * @param   pszFormat   Format string.
- * @param   va          Format arguments.
+ * @param   iLevel              Minimum log level required to display this message.
+ * @param   pszFormat           Format string.
+ * @param   va                  Format arguments.
  */
 void VBGHLogVerboseV(unsigned iLevel, const char *pszFormat, va_list va)
 {
-    if (iLevel <= g_cVerbosity)
+    if (iLevel <= g_vbghLogVerbosity)
         VBGH_LOG_VALIST("", pszFormat, va);
+}
+
+/**
+ * Sets the verbosity level.
+ * @param   iLevel              Verbosity level to set.
+ *
+ * @note Not thread safe.
+ */
+void VBGHLogVerbositySet(unsigned iLevel)
+{
+    g_vbghLogVerbosity = iLevel;
+}
+
+/**
+ * Gets the current verbosity level.
+ *
+ * @returns The current verbosity level.
+ *
+ * @note Not thread safe.
+ */
+unsigned VBGHLogVerbosityGet(void)
+{
+    return g_vbghLogVerbosity;
 }
 

@@ -52,6 +52,8 @@ void VBGHLogFatalError(const char *pszFormat, ...);
 void VBGHLogFatalErrorV(const char *pszFormat, va_list va);
 void VBGHLogVerbose(unsigned iLevel, const char *pszFormat, ...);
 void VBGHLogVerboseV(unsigned iLevel, const char *pszFormat, va_list va);
+void VBGHLogVerbositySet(unsigned iLevel);
+unsigned VBGHLogVerbosityGet(void);
 
 #endif /* !VBOX_INCLUDED_GuestHost_Log_h */
 
