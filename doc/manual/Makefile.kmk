@@ -664,7 +664,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-dita-pre.xsl \
 		$$(qfirstfile , $$(qwildcard , $$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2).xml) $(3) $$(VBOX_PATH_MANUAL_SRC)/en_US/$(2).xml)
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) \
-		$(if-expr defined(VBOX_DITA_USING_LATEST),--stringparam "g_fReplaceHypens" "true",) \
+		--stringparam "g_fReplaceHypens" "true" \
 		--output "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).dita" \
 		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-dita.xsl \
 		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/topics/flat-$(2).xml"
@@ -790,10 +790,8 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   		$$(VBOX_PATH_MANUAL_SRC)/pdf-theme-UserManual.yaml \
   		$$(VBOX_PATH_MANUAL_SRC)/en_US/images/vboxlogo.png
 	$$(call MSG_L1,Building $$@ ($$(@D)/UserManual_pdf.log))
-	$$(QUIET)$$(RM) -f -- "$$@" \
-		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf" \
-		$$(if-expr defined(VBOX_DITA_USING_LATEST),,"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_pdf.log")
-	$$(QUIET)$$(RM) -Rf -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf/"
+	$$(QUIET)$$(RM) -f -- "$$@"
+	$$(QUIET)$$(RM) -f -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf"
 	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,, \
 		"--input=$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
 		"--format=pdf" \
@@ -826,8 +824,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_en_US) \
  		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US)
 	$(QUIET)$(RM) -Rf -- "$(@D)" \
-		"$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml_chunks" \
-		$(if-expr defined(VBOX_DITA_USING_LATEST),,"$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks/")
+		"$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml_chunks"
 	$(call MSG_L1,Building html chunks $@ ($(@D)/UserManual_xhtml.log))
 	$(QUIET)$(MKDIR) -- "$(@D)"
 	$(QUIET)$(call VBOX_DITA_RUN_DOST,, \
@@ -877,11 +874,12 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_en_US) \
  		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_en_US)
 	$(call MSG_L1,Building html chunks $@ ($(@D)/UserManual-Single_xhtml.log))
-	$(QUIET)$(RM) -f -- "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual-Single.ditamap"
+	$(QUIET)$(RM) -Rf -- "$(@D)" \
+		"$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-single/" \
+		"$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual-Single.ditamap"
 	$(SED) -r -e 's/ chunk=["][^"]+["]//g' -e 's/<bookmap /<bookmap chunk="to-content" /' \
 		--output "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual-Single.ditamap" \
 		"$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap"
-	$(QUIET)$(RM) -Rf -- "$(@D)" "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-single/"
 	$(QUIET)$(MKDIR) -- "$(@D)"
 	$(QUIET)$(call VBOX_DITA_RUN_DOST,, \
 		"--input=$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual-Single.ditamap" \
@@ -986,8 +984,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
    		$(VBOX_USER_MANUAL_DITA_STAGED_FILES_$(1)) \
    		$(VBOX_USER_MANUAL_CONVERTED_REFENTRY_DITA_FILES_$(1))
 	$$(QUIET)$$(RM) -Rf -- "$$(@D)" \
-		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_qhelp" \
-		$(if-expr defined(VBOX_DITA_USING_LATEST),,"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp/")
+		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_qhelp"
 	$$(call MSG_L1,dita-ot-qhelp, => $$@ ($(2)/UserManual_htmlhelp.log))
 	$$(QUIET)$$(MKDIR) -- "$$(@D)"
 	$$(QUIET)$$(call VBOX_DITA_RUN_DOST, -EHHCDIR="$$(@D)", \
@@ -1000,14 +997,12 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		"-Ddita.output.dir=$(2)" \
 		)
 
-
    ditamap-to-htmlhelp: $(2)/UserManual.hhp
 
    # 2. Generate a Qt Help Project file (QHP) using htmlhelp-qthelp.py.
    $(2)/UserManual.qhp: \
    		$(2)/UserManual.hhp \
-   		$$(VBOX_PATH_MANUAL_SRC)/htmlhelp-qthelp.py \
-   		| $$$$(dir $$$$@)
+   		$$(VBOX_PATH_MANUAL_SRC)/htmlhelp-qthelp.py
 	$$(call MSG_L1,htmlhelp-qthelp.py $$<,=> $$@)
 	$$(QUIET)$$(RM) -f -- "$$@"
 	$$(QUIET)$$(VBOX_BLD_PYTHON) $$(VBOX_PATH_MANUAL_SRC)/htmlhelp-qthelp.py \
@@ -1023,8 +1018,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
    $(2)/UserManual.qch \
    + $(2)/UserManual.qhc: \
    		$(2)/UserManual.qhcp \
-   		$(2)/UserManual.qhp \
-   		| $$$$(dir $$$$@)
+   		$(2)/UserManual.qhp
 	$$(call MSG_L1,$$(notdir $$(VBOX_QHELPGENERATOR)) $$<,=> $$@)
 	$$(QUIET)$$(RM) -f -- "$$@"
    ifdef VBOX_WITH_QT6
