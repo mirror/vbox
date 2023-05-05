@@ -191,7 +191,7 @@ UICommon::UICommon(UIType enmType)
 #ifdef VBOX_WS_X11
     , m_enmWindowManagerType(X11WMType_Unknown)
     , m_fCompositingManagerRunning(false)
-    , m_enmDisplayServerType(DisplayServerType_Unknown)
+    , m_enmDisplayServerType(VBGHDISPLAYSERVERTYPE_NONE)
 #endif
     , m_fSeparateProcess(false)
     , m_fShowStartVMErrors(true)
@@ -244,7 +244,7 @@ void UICommon::prepare()
 
 #ifdef VBOX_WS_X11
     /* Detect display server type: */
-    m_enmDisplayServerType = NativeWindowSubsystem::detectDisplayServerType();
+    m_enmDisplayServerType = VBGHDisplayServerTypeDetect();
 #endif
 
     /* Create converter: */
@@ -3025,7 +3025,6 @@ void UICommon::comWrappersReinit()
 #ifdef VBOX_WS_X11
 bool UICommon::X11ServerAvailable() const
 {
-    return m_enmDisplayServerType == DisplayServerType_XWayland
-        || m_enmDisplayServerType == DisplayServerType_XOrg;
+    return VBGHDisplayServerTypeIsXAvailable(m_enmDisplayServerType);
 }
 #endif

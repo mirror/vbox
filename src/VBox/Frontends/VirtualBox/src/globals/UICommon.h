@@ -647,11 +647,11 @@ private:
      * @{ */
 #ifdef VBOX_WS_X11
         /** X11: Holds the #X11WMType of the Window Manager we are running under. */
-        X11WMType  m_enmWindowManagerType;
+        X11WMType             m_enmWindowManagerType;
         /** X11: Holds whether the Window Manager we are running at is composition one. */
-        bool       m_fCompositingManagerRunning;
+        bool                  m_fCompositingManagerRunning;
         /** Unixes: Holds the display server type. */
-        DisplayServerType m_enmDisplayServerType;
+        VBGHDISPLAYSERVERTYPE m_enmDisplayServerType;
 #endif
     /** @} */
 

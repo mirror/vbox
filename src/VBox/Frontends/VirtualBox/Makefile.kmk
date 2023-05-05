@@ -1148,6 +1148,10 @@ ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
  	src/globals/UIDesktopWidgetWatchdog.cpp
 endif
 
+# Common Guest / Host sources.
+VBOX_GH_SOURCES := \
+	$(PATH_ROOT)/src/VBox/GuestHost/Log.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/DisplayServerType.cpp
 
 #
 # VirtualBox Manager Application
@@ -1271,7 +1275,8 @@ VirtualBox_SOURCES = \
 	src/wizards/importappliance/UIWizardImportApp.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageSettings.cpp \
-	src/wizards/importappliance/UIWizardImportAppPageSource.cpp
+	src/wizards/importappliance/UIWizardImportAppPageSource.cpp \
+	$(VBOX_GH_SOURCES)
 
 VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/UIDesktopServices_darwin.cpp \
@@ -1334,7 +1339,8 @@ VirtualBoxVM_SOURCES = \
 	src/runtime/seamless/UIMachineViewSeamless.cpp \
 	src/runtime/seamless/UIMachineWindowSeamless.cpp \
 	src/softkeyboard/UISoftKeyboard.cpp \
-	src/widgets/UIMiniToolBar.cpp
+	src/widgets/UIMiniToolBar.cpp \
+	$(VBOX_GH_SOURCES)
 
 ifdef VBOX_WITH_DRAG_AND_DROP
  VirtualBoxVM_SOURCES += \
@@ -1633,6 +1639,11 @@ UICommon_SOURCES.darwin += \
 	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
 	src/platform/darwin/VBoxUtils-darwin.cpp
 
+#
+# Include common guest / host sources.
+#
+UICommon_SOURCES += \
+	$(VBOX_GH_SOURCES)
 
 #
 # VirtualBox Manager Application
