@@ -1390,7 +1390,7 @@ ifdef VBOX_WITH_PARFAIT
  #
  # This includes the tool overrides for running with parfait.
  # Ideally there would be a dedicated parfait tool but when targetting
- # different hosts with different compiler toolchains and compiler flags 
+ # different hosts with different compiler toolchains and compiler flags
  # we would have to duplicate a lot of the already existing tools for each
  # supported toolchain. Instead we just override the paths to the compilers
  # for the currently used tools (as this is kind of static and doesn't change that often).
