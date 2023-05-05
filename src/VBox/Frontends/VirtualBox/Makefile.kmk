@@ -1275,7 +1275,7 @@ VirtualBox_SOURCES = \
 	src/wizards/importappliance/UIWizardImportApp.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageSettings.cpp \
-	src/wizards/importappliance/UIWizardImportAppPageSource.cpp \
+	src/wizards/importappliance/UIWizardImportAppPageSource.cpp
 
 VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/UIDesktopServices_darwin.cpp \
@@ -1339,7 +1339,7 @@ VirtualBoxVM_SOURCES = \
 	src/runtime/seamless/UIMachineViewSeamless.cpp \
 	src/runtime/seamless/UIMachineWindowSeamless.cpp \
 	src/softkeyboard/UISoftKeyboard.cpp \
-	src/widgets/UIMiniToolBar.cpp \
+	src/widgets/UIMiniToolBar.cpp
 
 ifdef VBOX_WITH_DRAG_AND_DROP
  VirtualBoxVM_SOURCES += \
