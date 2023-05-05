@@ -1276,7 +1276,6 @@ VirtualBox_SOURCES = \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageSettings.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageSource.cpp \
-	$(VBOX_GH_SOURCES)
 
 VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/UIDesktopServices_darwin.cpp \
@@ -1284,7 +1283,8 @@ VirtualBox_SOURCES.darwin += \
 
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # U*nix
  VirtualBox_SOURCES += \
- 	src/platform/x11/UIDesktopServices_nix.cpp
+ 	src/platform/x11/UIDesktopServices_nix.cpp \
+ 	$(VBOX_GH_SOURCES) # For detecting display server
 endif
 
 VirtualBox_SOURCES.win += \
@@ -1340,7 +1340,6 @@ VirtualBoxVM_SOURCES = \
 	src/runtime/seamless/UIMachineWindowSeamless.cpp \
 	src/softkeyboard/UISoftKeyboard.cpp \
 	src/widgets/UIMiniToolBar.cpp \
-	$(VBOX_GH_SOURCES)
 
 ifdef VBOX_WITH_DRAG_AND_DROP
  VirtualBoxVM_SOURCES += \
@@ -1358,6 +1357,11 @@ endif
 VirtualBoxVM_SOURCES.darwin += \
 	src/platform/darwin/UIAbstractDockIconPreview.cpp \
 	src/platform/darwin/UICocoaDockIconPreview.mm
+
+if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # U*nix
+ VirtualBoxVM_SOURCES += \
+ 	$(VBOX_GH_SOURCES) # For detecting display server
+endif
 
 ifdef VBOX_WITH_HARDENING
  $(call VBOX_SET_VER_INFO_DLL,VirtualBoxVM,VirtualBox Virtual Machine (dll),$(VBOX_WINDOWS_ICON_FILE))
