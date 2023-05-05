@@ -553,7 +553,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  # incomplete manual translations.
  # Note! This includes .png as well as .dita and .ditamap files.
  VBOX_USER_MANUAL_DITA_BASIC_SRC_FILES := \
- 	$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/*.ditamap)) \
+ 	$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/*.dita*)) \
  	$(addprefix topics/,$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/*dita))) \
  	$(addprefix topics/images/,$(notdir $(wildcard $(VBOX_PATH_MANUAL_SRC)/en_US/dita/topics/images/*png)))
 
