@@ -880,6 +880,7 @@
   </xsl:variable>
   <xsl:if test="$sLeadSeps != ''">
     <xsl:element name="sep">
+      <xsl:attribute name="rev"><xsl:value-of select="concat(local-name(.), '-leadseps')"/></xsl:attribute>
       <xsl:value-of select="$sLeadSeps"/>
     </xsl:element>
   </xsl:if>
