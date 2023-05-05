@@ -947,7 +947,10 @@ bool GlobalNetworkPermissionsConfig::forbids(NetworkAddress& address)
                 fprintf(stderr, "Info: %s(%d) matching against '%s' => %s\n", VBOX_GLOBAL_NETWORK_CONFIG_PATH, line, pszToken,
                     address.matches(pszToken) ? "MATCH" : "no match");
             if (address.matches(pszToken))
+            {
+                fclose(fp);
                 return false;
+            }
         }
     }
     fclose(fp);
