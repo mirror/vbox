@@ -49,6 +49,7 @@ set _MY_OPT_EXTPACK_ENTERPRISE=%_MY_OPT_UNTAR_DIR%\Oracle_VM_VirtualBox_Extensio
 set _MY_OPT_BUILD_TYPE=@KBUILD_TYPE@
 set _MY_OPT_OUTDIR=%_MY_OPT_UNTAR_DIR%\output
 set _MY_OPT_SIGNED=
+set _MY_OPT_NOEXTPACK=
 
 :argument_loop
 if ".%1" == "."             goto no_more_arguments
@@ -63,6 +64,8 @@ if ".%1" == ".--help"       goto opt_h
 
 if ".%1" == ".-e"                   goto opt_e
 if ".%1" == ".--extpack"            goto opt_e
+if ".%1" == ".-n"                   goto opt_n
+if ".%1" == ".--no-extpack"         goto opt_n
 if ".%1" == ".-o"                   goto opt_o
 if ".%1" == ".--outdir"             goto opt_o
 if ".%1" == ".-s"                   goto opt_s
@@ -102,6 +105,11 @@ echo Default -o/--outdir value:             %_MY_OPT_OUTDIR%
 echo Default -t/--build-type value:         %_MY_OPT_BUILD_TYPE%
 echo .
 goto end_failed
+
+:opt_n
+set _MY_OPT_NOEXTPACK=1
+shift
+goto argument_loop
 
 :opt_o
 if ".%~2" == "."            goto syntax_error_missing_value
@@ -172,8 +180,10 @@ if not exist "%_MY_BINDIR%"             goto error_bindir_not_found
 set _MY_REPACK_DIR=%_MY_OPT_UNTAR_DIR%\repack
 if not exist "%_MY_REPACK_DIR%"         goto error_repack_dir_not_found
 
+if ".%_MY_OPT_NOEXTPACK%" == ".1"       goto no_enterprise_check
 if not exist "%_MY_OPT_EXTPACK%"        goto error_extpack_not_found
 if not ".%_MY_OPT_EXTPACK_ENTERPRISE%" == "." if not exist "%_MY_OPT_EXTPACK_ENTERPRISE%" goto error_enterprise_extpack_not_found
+:no_enterprise_check
 
 if not exist "%_MY_OPT_SIGNED%"         goto error_signed_not_found
 
@@ -227,6 +237,7 @@ for %%i in (VirtualBox-*MultiArch*exe) do (
 )
 
 
+if ".%_MY_OPT_NOEXTPACK%" == ".1" goto no_enterprise_repacking
 rem
 rem Repack the extension packs.
 rem
