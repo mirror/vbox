@@ -1648,7 +1648,7 @@ UICommon_SOURCES.darwin += \
 #
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # U*nix
  UICommon_SOURCES += \
-	$(VBOX_GH_SOURCES)
+ 	$(VBOX_GH_SOURCES)
 endif
 
 #
