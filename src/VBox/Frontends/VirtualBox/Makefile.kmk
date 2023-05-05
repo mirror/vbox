@@ -1646,8 +1646,10 @@ UICommon_SOURCES.darwin += \
 #
 # Include common guest / host sources.
 #
-UICommon_SOURCES += \
+if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # U*nix
+ UICommon_SOURCES += \
 	$(VBOX_GH_SOURCES)
+endif
 
 #
 # VirtualBox Manager Application
