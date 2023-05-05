@@ -150,12 +150,16 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  ifdef VBOX_DITA_USING_LATEST
   VBOX_DITA_USING_LATEST  := 1
   ifeq ($(VBOX_JAVA17PLUS_HOME),)
-   VBOX_JAVA17PLUS_HOME   := $(firstfile \
-   		$(rversortfiles $(qwildcard ,    $(KBUILD_DEVTOOLS_HST)/jdk/v1[789].*     $(KBUILD_DEVTOOLS_HST)/jdk/v[2-9][0-9].* )) \
-   		$(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS_HST_ALT)/jdk/v1[789].* $(KBUILD_DEVTOOLS_HST_ALT)/jdk/v[2-9][0-9].* )) \
-   		)
-   if "$(KBUILD_HOST)" == "darwin" && "$(VBOX_JAVA17PLUS_HOME)" != ""
-    VBOX_JAVA17PLUS_HOME := $(VBOX_JAVA17PLUS_HOME)/Contents/Home
+   if defined(VBOX_JAVA_VERSION) && $(VBOX_JAVA_VERSION) >= 170000 && "$(VBOX_JAVA_BIN_PATH)" != ""
+    VBOX_JAVA17PLUS_HOME   := $(qabspath ,$(VBOX_JAVA_BIN_PATH)/..)
+   else
+    VBOX_JAVA17PLUS_HOME   := $(firstfile \
+    		$(rversortfiles $(qwildcard ,    $(KBUILD_DEVTOOLS_HST)/jdk/v1[789].*     $(KBUILD_DEVTOOLS_HST)/jdk/v[2-9][0-9].* )) \
+    		$(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS_HST_ALT)/jdk/v1[789].* $(KBUILD_DEVTOOLS_HST_ALT)/jdk/v[2-9][0-9].* )) \
+    		)
+    if "$(KBUILD_HOST)" == "darwin" && "$(VBOX_JAVA17PLUS_HOME)" != ""
+     VBOX_JAVA17PLUS_HOME := $(VBOX_JAVA17PLUS_HOME)/Contents/Home
+    endif
    endif
   endif
   VBOX_DITA_ORIGINAL_PATH := $(firstfile $(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS)/common/dita-ot/v[4-9].*)) \
