@@ -118,8 +118,8 @@ VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void)
     int rc = vbghDisplayServerTryLoadLib(aLibsWayland, RT_ELEMENTS(aLibsWayland), &hWaylandClient);
     if (RT_SUCCESS(rc))
     {
-        void * (*pWaylandDisplayConnect)(const char *);
-        void (*pWaylandDisplayDisconnect)(void *);
+        void * (*pWaylandDisplayConnect)(const char *) = NULL;
+        void (*pWaylandDisplayDisconnect)(void *) = NULL;
         rc = RTLdrGetSymbol(hWaylandClient, "wl_display_connect", (void **)&pWaylandDisplayConnect);
         if (RT_SUCCESS(rc))
             rc = RTLdrGetSymbol(hWaylandClient, "wl_display_disconnect", (void **)&pWaylandDisplayDisconnect);
@@ -150,12 +150,11 @@ VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void)
     rc = vbghDisplayServerTryLoadLib(aLibsX11, RT_ELEMENTS(aLibsX11), &hX11);
     if (RT_SUCCESS(rc))
     {
-        void * (*pfnOpenDisplay)(const char *);
-        int (*pfnCloseDisplay)(void *);
+        void * (*pfnOpenDisplay)(const char *) = NULL;
+        int (*pfnCloseDisplay)(void *) = NULL;
         rc = RTLdrGetSymbol(hX11, "XOpenDisplay", (void **)&pfnOpenDisplay);
         if (RT_SUCCESS(rc))
             rc = RTLdrGetSymbol(hX11, "XCloseDisplay", (void **)&pfnCloseDisplay);
-
         if (RT_SUCCESS(rc))
         {
             AssertPtrReturn(pfnOpenDisplay, VBGHDISPLAYSERVERTYPE_NONE);
