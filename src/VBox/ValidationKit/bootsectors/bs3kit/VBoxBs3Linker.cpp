@@ -224,6 +224,7 @@ int main(int argc, char **argv)
             if (pFile)
             {
                 free(paInputs);
+                fclose(pFile);
                 return 1;
             }
             cInputs++;
