@@ -106,100 +106,65 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   VBOX_PDFLATEX_CMD         = pdflatex $(VBOX_PDFLATEX_HALT) -interaction $(VBOX_PDFLATEX_INTERACTION)
  endif
 
+ #
+ # Java v17 or later (JAVA_HOME), used by DITA-OT.
+ #
+ ifeq ($(VBOX_JAVA17PLUS_HOME),)
+  if defined(VBOX_JAVA_VERSION) && $(VBOX_JAVA_VERSION) >= 170000 && "$(VBOX_JAVA_BIN_PATH)" != ""
+   VBOX_JAVA17PLUS_HOME   := $(qabspath ,$(VBOX_JAVA_BIN_PATH)/..)
+  else
+   VBOX_JAVA17PLUS_HOME   := $(firstfile \
+   		$(rversortfiles $(qwildcard ,    $(KBUILD_DEVTOOLS_HST)/jdk/v1[789].*     $(KBUILD_DEVTOOLS_HST)/jdk/v[2-9][0-9].* )) \
+   		$(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS_HST_ALT)/jdk/v1[789].* $(KBUILD_DEVTOOLS_HST_ALT)/jdk/v[2-9][0-9].* )) \
+   		)
+   if "$(KBUILD_HOST)" == "darwin" && "$(VBOX_JAVA17PLUS_HOME)" != ""
+    VBOX_JAVA17PLUS_HOME := $(VBOX_JAVA17PLUS_HOME)/Contents/Home
+   endif
+  endif
+ endif
 
  #
  # DITA-OT related globals.
  #
- VBOX_DITA_TECHNICAL_CONTENT_DTD_PATH = $(VBOX_DITA_ORIGINAL_PATH)/dtd/technicalContent/dtd
+ VBOX_DITA_TECHNICAL_CONTENT_DTD_PATH = $(VBOX_DITA_OT_PATH)/plugins/org.oasis-open.dita.v1_2/dtd/technicalContent/dtd
 
  ##
  # Copies DITA-OT to $1, runs the dost.jar with /ditadir given and nukes $1 when done.
  #
  # Additional options for dost.jar can be specified following the call to VBOX_DITA_RUN_DOST
  #
- # @param 1    Temporary+unique DITA-OT path.
- # @param 2    Additional kmk_redirect options.
- # @param 3    Parameters for the invoker.
- # @param 4    Parameters only for 1.8.5.
- # @param 5    Parameters only for 4.0.2.
+ # @param 1    Additional kmk_redirect options.
+ # @param 2    Parameters for the invoker.
  #
- VBOX_DITA_RUN_DOST ?= $(REDIRECT) \
- 	-E 'ANT_OPTS=-Xmx512m -Djavax.xml.transform.TransformerFactory=net.sf.saxon.TransformerFactoryImpl' \
- 	-E 'ANT_HOME=$1/tools/ant' \
- 	-E 'DITA_DIR=$1' \
- 	-E 'JAVA_HOME=$(VBOX_JAVA_HOME)' \
- 	-A 'PATH=$(HOST_PATH_SEP)$1/tools/ant/bin' \
- 	-E 'CLASSPATH=$1/lib/dost.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/commons-codec-1.4.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/resolver.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/icu4j.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/xercesImpl.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/xml-apis.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/saxon/saxon9.jar' \
- 	-A 'CLASSPATH=$(HOST_PATH_SEP)$1/lib/saxon/saxon9-dom.jar' \
- 	$2 \
- 	-- $(ASH) $(VBOX_PATH_MANUAL_SRC)/dita-ot-copy-exec.sh "$(VBOX_DITA_ORIGINAL_PATH)" "$1" \
- 	-- $(VBOX_JAVA) -jar "$1/lib/dost.jar" "/ditadir:$1" \
- 	$(if-expr defined(VBOX_DITA_DEBUG),"/cleantemp:no" "/debug:yes",) \
- 	$3 $4 # "/outercontrol:fail" ?
+ VBOX_DITA_RUN_DOST = $(REDIRECT_EXT) \
+ 	-E 'ANT_HOME=$(VBOX_DITA_OT_PATH)' \
+ 	-E 'DITA_DIR=$(VBOX_DITA_OT_PATH)' \
+ 	-E 'JAVA_HOME=$(VBOX_JAVA17PLUS_HOME)' \
+ 	-E 'CLASSPATH=$(VBOX_DITA_CLASSPATH)' \
+ 	$1 \
+ 	-- \
+ 	"$(VBOX_JAVA17PLUS_HOME)/bin/java" \
+ 	"-Djava.awt.headless=true" \
+ 	"-Dsun.io.useCanonCaches=true" \
+ 	"-Dant.home=$(VBOX_DITA_OT_PATH)" \
+ 	"-Ddita.dir=$(VBOX_DITA_OT_PATH)" \
+ 	org.apache.tools.ant.launch.Launcher \
+ 	-cp "$(VBOX_DITA_CLASSPATH)" \
+ 	-buildfile "$(VBOX_DITA_OT_PATH)/build.xml" \
+ 	-main "org.dita.dost.invoker.Main" \
+ 	--args.grammar.cache=yes \
+ 	--verbose \
+ 	$(if-expr defined(VBOX_DITA_DEBUG),"--clean.temp=no" "--debug",) \
+	$2
 
- if1of ($(KBUILD_HOST), darwin linux win)
-  VBOX_DITA_USING_LATEST := 1
- endif
- ifdef VBOX_DITA_USING_LATEST
-  VBOX_DITA_USING_LATEST  := 1
-  ifeq ($(VBOX_JAVA17PLUS_HOME),)
-   if defined(VBOX_JAVA_VERSION) && $(VBOX_JAVA_VERSION) >= 170000 && "$(VBOX_JAVA_BIN_PATH)" != ""
-    VBOX_JAVA17PLUS_HOME   := $(qabspath ,$(VBOX_JAVA_BIN_PATH)/..)
-   else
-    VBOX_JAVA17PLUS_HOME   := $(firstfile \
-    		$(rversortfiles $(qwildcard ,    $(KBUILD_DEVTOOLS_HST)/jdk/v1[789].*     $(KBUILD_DEVTOOLS_HST)/jdk/v[2-9][0-9].* )) \
-    		$(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS_HST_ALT)/jdk/v1[789].* $(KBUILD_DEVTOOLS_HST_ALT)/jdk/v[2-9][0-9].* )) \
-    		)
-    if "$(KBUILD_HOST)" == "darwin" && "$(VBOX_JAVA17PLUS_HOME)" != ""
-     VBOX_JAVA17PLUS_HOME := $(VBOX_JAVA17PLUS_HOME)/Contents/Home
-    endif
-   endif
-  endif
-  VBOX_DITA_ORIGINAL_PATH := $(firstfile $(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS)/common/dita-ot/v[4-9].*)) \
-  		$(KBUILD_DEVTOOLS)/common/dita-ot/v4.0.2-r1)
-
-  VBOX_DITA_TECHNICAL_CONTENT_DTD_PATH = $(VBOX_DITA_ORIGINAL_PATH)/plugins/org.oasis-open.dita.v1_2/dtd/technicalContent/dtd
-  VBOX_DITA_CLASSPATH = \
-  	$(subst $(SP),$(HOST_PATH_SEP),$(strip \
-  			$(VBOX_DITA_ORIGINAL_PATH)/lib/ant-launcher.jar \
-  			$(VBOX_DITA_ORIGINAL_PATH)/config \
-  			$(VBOX_DITA_ORIGINAL_PATH)/lib \
-  			$(wildcard \
-  				$(VBOX_DITA_ORIGINAL_PATH)/lib/*.jar \
-  				$(VBOX_DITA_ORIGINAL_PATH)/plugins/*/lib/*.jar)))
-  VBOX_DITA_RUN_DOST = $(REDIRECT_EXT) \
-  	-E 'ANT_HOME=$(VBOX_DITA_ORIGINAL_PATH)' \
-  	-E 'DITA_DIR=$(VBOX_DITA_ORIGINAL_PATH)' \
-  	-E 'JAVA_HOME=$(VBOX_JAVA17PLUS_HOME)' \
-  	-E 'CLASSPATH=$(VBOX_DITA_CLASSPATH)' \
-  	$2 \
-  	-- \
-  	$(VBOX_JAVA17PLUS_HOME)/bin/java \
-  	"-Djava.awt.headless=true" \
-  	"-Dsun.io.useCanonCaches=true" \
-  	"-Dant.home=$(VBOX_DITA_ORIGINAL_PATH)" \
-  	"-Ddita.dir=$(VBOX_DITA_ORIGINAL_PATH)" \
-  	org.apache.tools.ant.launch.Launcher \
-  	-cp "$(VBOX_DITA_CLASSPATH)" \
-  	-buildfile "$(VBOX_DITA_ORIGINAL_PATH)/build.xml" \
-  	-main "org.dita.dost.invoker.Main" \
-  	--args.grammar.cache=yes \
-  	$(patsubst "/i:%,"--input=%, \
-  		$(patsubst "/transtype:%,"--format=%, \
-  			$(patsubst "/outdir:%,"--output=%, \
-  				$(patsubst "/tempdir:%,"--temp=%, \
-  					$(patsubst "/filter:%,"--filter=%, \
-  						$(patsubst "/debug","--debug",$3)))))) \
-  	$(if-expr defined(VBOX_DITA_DEBUG),"--clean.temp=no" "--debug",) \
-  	$5 --verbose
- endif
+ VBOX_DITA_CLASSPATH = \
+ 	$(subst $(SP),$(HOST_PATH_SEP),$(strip \
+ 			$(VBOX_DITA_OT_PATH)/lib/ant-launcher.jar \
+ 			$(VBOX_DITA_OT_PATH)/config \
+ 			$(VBOX_DITA_OT_PATH)/lib \
+ 			$(wildcard \
+ 				$(VBOX_DITA_OT_PATH)/lib/*.jar \
+ 				$(VBOX_DITA_OT_PATH)/plugins/*/lib/*.jar)))
 
 
  #
@@ -810,7 +775,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  #
  # 4a. UserManual.pdf - Run dost.jar from DITA-OT to produce the PDF version.
  #
- # Note! The /tempdir is deleted, recreated, used and deleted again for each
+ # Note! The --temp (dir) is deleted, recreated, used and deleted again for each
  #       run. So, be careful where you point it.
  # Note! This crappy utility may fail to find files (or fail to parse the
  #       command line) and still return a successfully (0) exit code.
@@ -831,15 +796,12 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf" \
 		$$(if-expr defined(VBOX_DITA_USING_LATEST),,"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/UserManual_pdf.log")
 	$$(QUIET)$$(RM) -Rf -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf/"
-	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-pdf,, \
-		"/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
-		"/transtype:pdf" \
-		"/filter:$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/ohc.ditaval" \
-		"/outdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)" \
-		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf" \
-		, \
-               "/grammarcache:yes" \
-		, \
+	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,, \
+		"--input=$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
+		"--format=pdf" \
+		"--filter=$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/ohc.ditaval" \
+		"--output=$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)" \
+		"--temp=$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf" \
 		"--theme=$$(VBOX_PATH_MANUAL_SRC)/pdf-theme-UserManual.yaml" \
 		"--logfile=$$(@D)/UserManual_pdf.log" \
 		)
@@ -870,15 +832,12 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		$(if-expr defined(VBOX_DITA_USING_LATEST),,"$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks/")
 	$(call MSG_L1,Building html chunks $@ ($(@D)/UserManual_xhtml.log))
 	$(QUIET)$(MKDIR) -- "$(@D)"
-	$(QUIET)$(call VBOX_DITA_RUN_DOST,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-chunks,, \
-		"/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap" \
-		"/transtype:xhtml" \
-		"/filter:$(VBOX_PATH_MANUAL_SRC)/en_US/dita/htmlhelp.ditaval" \
-		"/outdir:$(@D)" \
-		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml_chunks" \
-		, \
-               "/grammarcache:yes" \
-               , \
+	$(QUIET)$(call VBOX_DITA_RUN_DOST,, \
+		"--input=$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap" \
+		"--format=xhtml" \
+		"--filter=$(VBOX_PATH_MANUAL_SRC)/en_US/dita/htmlhelp.ditaval" \
+		"--output=$(@D)" \
+		"--temp=$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml_chunks" \
                "--logfile=$(@D)/UserManual_xhtml.log" \
        	"--store-type=memory" \
 		)
@@ -926,14 +885,11 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		"$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual.ditamap"
 	$(QUIET)$(RM) -Rf -- "$(@D)" "$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-single/"
 	$(QUIET)$(MKDIR) -- "$(@D)"
-	$(QUIET)$(call VBOX_DITA_RUN_DOST,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita-ot-html-single,, \
-		"/i:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual-Single.ditamap" \
-		"/transtype:xhtml" \
-		"/outdir:$(@D)" \
-		"/tempdir:$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml_single" \
-		, \
-               "/grammarcache:yes" \
-               , \
+	$(QUIET)$(call VBOX_DITA_RUN_DOST,, \
+		"--input=$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/UserManual-Single.ditamap" \
+		"--format=xhtml" \
+		"--output=$(@D)" \
+		"--temp=$(VBOX_PATH_MANUAL_OUTBASE)/en_US/dita/temp_xhtml_single" \
                "--logfile=$(@D)/UserManual-Single_xhtml.log" \
        	"--store-type=memory" \
 		)
@@ -1036,15 +992,12 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 		$(if-expr defined(VBOX_DITA_USING_LATEST),,"$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp/")
 	$$(call MSG_L1,dita-ot-qhelp, => $$@ ($(2)/UserManual_htmlhelp.log))
 	$$(QUIET)$$(MKDIR) -- "$$(@D)"
-	$$(call VBOX_DITA_RUN_DOST,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita-ot-qhelp, -EHHCDIR="$$(@D)", \
-		"/i:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
-		"/transtype:htmlhelp" \
-		"/filter:$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/htmlhelp.ditaval" \
-		"/outdir:$(2)" \
-		"/tempdir:$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_qhelp" \
-		, \
-		"/grammarcache:yes" \
-		, \
+	$$(call VBOX_DITA_RUN_DOST, -EHHCDIR="$$(@D)", \
+		"--input=$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
+		"--format=htmlhelp" \
+		"--filter=$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/htmlhelp.ditaval" \
+		"--output=$(2)" \
+		"--temp=$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_qhelp" \
 		"--logfile=$(2)/UserManual_htmlhelp.log" \
 		"-Ddita.output.dir=$(2)" \
 		)

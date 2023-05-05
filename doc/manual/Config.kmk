@@ -39,8 +39,12 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
  #
 
  # DITA stuff.
- VBOX_DITA_CONVERTER_PATH ?= $(PATH_ROOT)/src/libs/dbdita-1.0
- VBOX_DITA_ORIGINAL_PATH  ?= $(PATH_ROOT)/src/libs/dita-ot-1.8.5
+ VBOX_DITA_OT_PATH  ?= $(PATH_ROOT)/src/libs/dita-ot-1.8.5
+ ifneq ($(VBOX_DITA_OT_PATH),)
+  VBOX_DITA_OT_PATH := $(firstfile \
+  	$(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS)/common/dita-ot/v[4-9].*)) \
+  	$(KBUILD_DEVTOOLS)/common/dita-ot/v4.0.2-r1)
+ endif
 
 
  # Source location.
@@ -383,14 +387,14 @@ ifndef VBOX_DOC_MANUAL_CONFIG_KMK_INCLUDED
   if 0 # Enable to see the full combined document.
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT,,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat) \
 		--path "$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/topics" \
-		--path "$(VBOX_DITA_ORIGINAL_PATH)/dtd/bookmap/dtd" \
-		--path "$(VBOX_DITA_ORIGINAL_PATH)/dtd/technicalContent/dtd" \
+		--path "$(VBOX_DITA_OT_PATH)/dtd/bookmap/dtd" \
+		--path "$(VBOX_DITA_OT_PATH)/dtd/technicalContent/dtd" \
 		--output "$$@.tmp2.xml" "$$(VBOX_PATH_MANUAL_SRC)/ditamap-to-single-xml.xsl" "$$@.tmp.xml"
   endif
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT,,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat) \
 		--path "$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita/topics" \
-		--path "$(VBOX_DITA_ORIGINAL_PATH)/dtd/bookmap/dtd" \
-		--path "$(VBOX_DITA_ORIGINAL_PATH)/dtd/technicalContent/dtd" \
+		--path "$(VBOX_DITA_OT_PATH)/dtd/bookmap/dtd" \
+		--path "$(VBOX_DITA_OT_PATH)/dtd/technicalContent/dtd" \
 		--stringparam 'g_sMode' 'first' \
 		--output "$$@" \
 		"$$(VBOX_PATH_MANUAL_SRC)/$(1)/dita-refentry-link-replacement-xsl-gen.xsl" \
