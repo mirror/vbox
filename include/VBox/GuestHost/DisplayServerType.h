@@ -34,8 +34,8 @@
  * SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
  */
 
-#ifndef VBOX_INCLUDED_GuestHost_SessionType_h
-#define VBOX_INCLUDED_GuestHost_SessionType_h
+#ifndef VBOX_INCLUDED_GuestHost_DisplayServerType_h
+#define VBOX_INCLUDED_GuestHost_DisplayServerType_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -71,5 +71,5 @@ VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void);
 bool VBGHServerTypeIsXAvailable(VBGHDISPLAYSERVERTYPE enmType);
 bool VBGHDisplayServerTypeIsWaylandAvailable(VBGHDISPLAYSERVERTYPE enmType);
 
-#endif /* !VBOX_INCLUDED_GuestHost_SessionType_h */
+#endif /* !VBOX_INCLUDED_GuestHost_DisplayServerType_h */
 
