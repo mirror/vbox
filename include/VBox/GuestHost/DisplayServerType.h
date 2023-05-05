@@ -68,7 +68,7 @@ typedef enum
 
 const char *VBGHDisplayServerTypeToStr(VBGHDISPLAYSERVERTYPE enmType);
 VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void);
-bool VBGHServerTypeIsXAvailable(VBGHDISPLAYSERVERTYPE enmType);
+bool VBGHDisplayServerTypeIsXAvailable(VBGHDISPLAYSERVERTYPE enmType);
 bool VBGHDisplayServerTypeIsWaylandAvailable(VBGHDISPLAYSERVERTYPE enmType);
 
 #endif /* !VBOX_INCLUDED_GuestHost_DisplayServerType_h */
