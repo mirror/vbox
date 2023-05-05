@@ -144,7 +144,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  	$(if-expr defined(VBOX_DITA_DEBUG),"/cleantemp:no" "/debug:yes",) \
  	$3 $4 # "/outercontrol:fail" ?
 
- if1of ($(KBUILD_HOST), linux win)
+ if1of ($(KBUILD_HOST), darwin linux win)
   VBOX_DITA_USING_LATEST := 1
  endif
  ifdef VBOX_DITA_USING_LATEST
