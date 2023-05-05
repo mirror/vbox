@@ -2160,3 +2160,26 @@ quick: \
 		$(if-expr defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win",VBoxProxyStub,) \
 		$(if-expr defined(VBOX_WITH_SDS),VBoxSDS,) \
 		$(if-expr defined(VBOX_WITH_QTGUI),VirtualBox,)
+
+
+#
+# Runs the analysis with parfait
+#
+run-parfait:
+ifdef VBOX_WITH_PARFAIT
+	+ $(TIME) -- $(KMK) all
+	$(TIME) -- $(VBOX_PARFAIT) \
+	 -p \
+	 $(if-expr defined(VBOX_PARFAIT_SERVER),-s $(VBOX_PARFAIT_SERVER),) \
+	 -j $(if-expr $(KMK_OPTS_JOBS) > 0,$(expr $(KMK_OPTS_JOBS) / 2),$(NUMBER_OF_PROCESSORS)) \
+	 -o $(PATH_OUT)/report.txt \
+	 -g $(PATH_OUT)/html \
+	 -c $(PATH_ROOT)/webtools/tinderbox/client/parfait-vbox.conf \
+	 -e all -d misaligned-access \
+	 -z $(PATH_ROOT) \
+	 -r $(VBOX_SVN_REV) \
+	 $(PATH_OUT)/obj
+else
+	$(ECHO) This target requires VBOX_WITH_PARFAIT to be set.
+	exit 1
+endif
