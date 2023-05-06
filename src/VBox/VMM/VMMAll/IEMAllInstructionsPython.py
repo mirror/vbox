@@ -1867,7 +1867,7 @@ class McCppGeneric(McStmt):
     """
     Generic C++/C statement.
     """
-    def __init__(self, sCode, fDecode, sName = 'C++'):
+    def __init__(self, sCode, fDecode = True, sName = 'C++'):
         McStmt.__init__(self, sName, [sCode,]);
         self.fDecode = fDecode;
 
