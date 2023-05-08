@@ -351,7 +351,6 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) && !defined(VBOX_
  	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/alt-md5.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/alt-sha1.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/alt-sha256.cpp \
- 	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/alt-sha384.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/alt-sha512.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/alt-sha3.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/md2str.cpp \
