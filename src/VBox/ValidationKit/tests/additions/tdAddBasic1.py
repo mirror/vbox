@@ -575,7 +575,12 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                                           (self.getGuestSystemShell(oTestVm),
                                           '/sbin/rcvboxadd', 'status-user'));
                     if fRc and oTxsSession.isSuccess():
-                        pass;
+                        # Try to detect the display server running on the guest OS.
+                        # This might fail on pure server guest OSes (no X, no Wayland).
+                        if  self.oTstDrv.fpApiVer >= 7.1 and self.oTstDrv.uRevision >= 157189:
+                            sVBoxClient = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm, 'usr'), 'VBoxClient');
+                            fRc = self.txsRunTest(oTxsSession, 'Check display server detection', 5 * 60 * 1000,
+                                                  sVBoxClient, (sVBoxClient, '--session-detect'));
                     else:
                         fRc = False;
                         reporter.testFailure('User services were not reloaded');
