@@ -73,6 +73,8 @@ class tdUnitTest1(vbox.TestDriver):
             'testcase/tstLow': '>=7.0.0',               # Driverless package.
             'testcase/tstPin': '>=7.0.0',               # Driverless package.
             'testcase/tstIntNet-1': '>=7.0.0',          # Driverless package.
+            'testcase/tstVBoxAPIXPCOM': '',             # Can't instantiate the VirtualBox object (binary would need moving to the
+                                                        # VirtualBox installation directory, merely a compile time test anyway)
         },
         'darwin.arm64': {
             'testcase/tstRTDarwinMachKernel': '',       # Not supported on arm64 right now (and not required due to driverless).
