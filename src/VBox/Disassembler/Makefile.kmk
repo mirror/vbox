@@ -57,7 +57,7 @@ ifdef VBOX_WITH_VIRT_ARMV8
  DisasmR3-armv8_SOURCES        = \
  	Disasm.cpp \
  	DisasmCore-armv8.cpp \
- 	DisasmTables-armv8.cpp \
+ 	DisasmTables-armv8-a64.cpp \
  	DisasmFormatBytes.cpp \
  	DisasmFormatArmV8.cpp
 endif
@@ -90,17 +90,17 @@ ifndef VBOX_ONLY_VALIDATIONKIT
   	DisasmMisc.cpp
  endif # VBOX_WITH_RAW_MODE
 
-ifdef VBOX_WITH_R0_MODULES
- LIBRARIES              += DisasmR0
- DisasmR0_TEMPLATE       = VBoxR0
- DisasmR0_DEFS           = IN_DIS IN_RT_R0 DIS_CORE_ONLY VBOX_DIS_WITH_X86_AMD64
- DisasmR0_SOURCES        = \
- 	Disasm.cpp \
- 	DisasmCore-x86-amd64.cpp \
- 	DisasmTables-x86-amd64.cpp \
- 	DisasmTablesX64.cpp \
- 	DisasmMisc.cpp
-endif
+ ifdef VBOX_WITH_R0_MODULES
+  LIBRARIES              += DisasmR0
+  DisasmR0_TEMPLATE       = VBoxR0
+  DisasmR0_DEFS           = IN_DIS IN_RT_R0 DIS_CORE_ONLY VBOX_DIS_WITH_X86_AMD64
+  DisasmR0_SOURCES        = \
+  	Disasm.cpp \
+  	DisasmCore-x86-amd64.cpp \
+  	DisasmTables-x86-amd64.cpp \
+  	DisasmTablesX64.cpp \
+  	DisasmMisc.cpp
+ endif
 
 endif # !VBOX_ONLY_VALIDATIONKIT
 
