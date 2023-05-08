@@ -190,6 +190,7 @@ typedef struct RTLDROPSPE
 typedef union RTLDRPEHASHCTXUNION
 {
     RTSHA512CONTEXT Sha512;
+    RTSHA384CONTEXT Sha384;
     RTSHA256CONTEXT Sha256;
     RTSHA1CONTEXT   Sha1;
     RTMD5CONTEXT    Md5;
@@ -204,6 +205,7 @@ typedef RTLDRPEHASHCTXUNION *PRTLDRPEHASHCTXUNION;
 typedef union RTLDRPEHASHRESUNION
 {
     uint8_t abSha512[RTSHA512_HASH_SIZE];
+    uint8_t abSha384[RTSHA384_HASH_SIZE];
     uint8_t abSha256[RTSHA256_HASH_SIZE];
     uint8_t abSha1[RTSHA1_HASH_SIZE];
     uint8_t abMd5[RTMD5_HASH_SIZE];
@@ -2180,6 +2182,7 @@ static int rtLdrPE_HashInit(PRTLDRPEHASHCTXUNION pHashCtx, RTDIGESTTYPE enmDiges
     switch (enmDigest)
     {
         case RTDIGESTTYPE_SHA512:  RTSha512Init(&pHashCtx->Sha512); break;
+        case RTDIGESTTYPE_SHA384:  RTSha384Init(&pHashCtx->Sha384); break;
         case RTDIGESTTYPE_SHA256:  RTSha256Init(&pHashCtx->Sha256); break;
         case RTDIGESTTYPE_SHA1:    RTSha1Init(&pHashCtx->Sha1); break;
         case RTDIGESTTYPE_MD5:     RTMd5Init(&pHashCtx->Md5); break;
@@ -2202,6 +2205,7 @@ static void rtLdrPE_HashUpdate(PRTLDRPEHASHCTXUNION pHashCtx, RTDIGESTTYPE enmDi
     switch (enmDigest)
     {
         case RTDIGESTTYPE_SHA512:  RTSha512Update(&pHashCtx->Sha512, pvBuf, cbBuf); break;
+        case RTDIGESTTYPE_SHA384:  RTSha384Update(&pHashCtx->Sha384, pvBuf, cbBuf); break;
         case RTDIGESTTYPE_SHA256:  RTSha256Update(&pHashCtx->Sha256, pvBuf, cbBuf); break;
         case RTDIGESTTYPE_SHA1:    RTSha1Update(&pHashCtx->Sha1, pvBuf, cbBuf); break;
         case RTDIGESTTYPE_MD5:     RTMd5Update(&pHashCtx->Md5, pvBuf, cbBuf); break;
@@ -2222,6 +2226,7 @@ static void rtLdrPE_HashFinalize(PRTLDRPEHASHCTXUNION pHashCtx, RTDIGESTTYPE enm
     switch (enmDigest)
     {
         case RTDIGESTTYPE_SHA512:  RTSha512Final(&pHashCtx->Sha512, pHashRes->abSha512); break;
+        case RTDIGESTTYPE_SHA384:  RTSha384Final(&pHashCtx->Sha384, pHashRes->abSha384); break;
         case RTDIGESTTYPE_SHA256:  RTSha256Final(&pHashCtx->Sha256, pHashRes->abSha256); break;
         case RTDIGESTTYPE_SHA1:    RTSha1Final(&pHashCtx->Sha1, pHashRes->abSha1); break;
         case RTDIGESTTYPE_MD5:     RTMd5Final(pHashRes->abMd5, &pHashCtx->Md5); break;
@@ -2241,10 +2246,33 @@ static uint32_t rtLdrPE_HashGetHashSize(RTDIGESTTYPE enmDigest)
     switch (enmDigest)
     {
         case RTDIGESTTYPE_SHA512:  return RTSHA512_HASH_SIZE;
+        case RTDIGESTTYPE_SHA384:  return RTSHA384_HASH_SIZE;
         case RTDIGESTTYPE_SHA256:  return RTSHA256_HASH_SIZE;
         case RTDIGESTTYPE_SHA1:    return RTSHA1_HASH_SIZE;
         case RTDIGESTTYPE_MD5:     return RTMD5_HASH_SIZE;
         default:                   AssertReleaseFailedReturn(0);
+    }
+}
+
+
+/**
+ * Checks if the hash type is supported.
+ *
+ * @returns true/false.
+ * @param   enmDigest           The hash type in question.
+ */
+static bool rtLdrPE_HashIsSupported(RTDIGESTTYPE enmDigest)
+{
+    switch (enmDigest)
+    {
+        case RTDIGESTTYPE_SHA512:
+        case RTDIGESTTYPE_SHA384:
+        case RTDIGESTTYPE_SHA256:
+        case RTDIGESTTYPE_SHA1:
+        case RTDIGESTTYPE_MD5:
+            return true;
+        default:
+            return false;
     }
 }
 
@@ -3246,6 +3274,10 @@ static int rtldrPE_VerifySignatureValidateOneImageHash(PRTLDRMODPE pModPe, PRTLD
     AssertPtrReturn(pInfo->pIndData, VERR_INTERNAL_ERROR_5);
     AssertReturn(RTASN1CORE_IS_PRESENT(&pInfo->pIndData->DigestInfo.Digest.Asn1Core), VERR_INTERNAL_ERROR_5);
     AssertPtrReturn(pInfo->pIndData->DigestInfo.Digest.Asn1Core.uData.pv, VERR_INTERNAL_ERROR_5);
+
+    /* Check that the hash is supported by the code here before continuing. */
+    AssertReturn(rtLdrPE_HashIsSupported(pInfo->enmDigest),
+                 RTErrInfoSetF(pErrInfo, VERR_CR_DIGEST_NOT_SUPPORTED, "Unsupported digest type: %d", pInfo->enmDigest));
 
     /*
      * Skip it if we've already verified it.
