@@ -386,19 +386,24 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool
     if (RT_SUCCESS(rc))
     {
         *pfInjected = true;
-# ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-        if (   CPUMIsGuestInVmxNonRootMode(pCtx)
-            && CPUMIsGuestVmxInterceptEvents(pCtx)
-            && CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
-        {
-            VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, u8Interrupt, false /* fIntPending */);
-            Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
-            return VBOXSTRICTRC_VAL(rcStrict);
-        }
-# endif
 # ifdef RT_OS_WINDOWS
         if (!VM_IS_NEM_ENABLED(pVM))
         {
+# endif
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+            /*
+             * If we are NOT calling IEMInjectTrap, we need to handle the
+             * VMX nested-guest external-interrupt VM-exit here.
+             */
+            if (   CPUMIsGuestInVmxNonRootMode(pCtx)
+                && CPUMIsGuestVmxInterceptEvents(pCtx)
+                && CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
+            {
+                Assert(CPUMIsGuestVmxExitCtlsSet(pCtx, VMX_EXIT_CTLS_ACK_EXT_INT));
+                VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, u8Interrupt, false /* fIntPending */);
+                Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+                return VBOXSTRICTRC_VAL(rcStrict);
+            }
 # endif
             rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
             AssertRC(rc);
