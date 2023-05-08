@@ -2577,8 +2577,14 @@ VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint64_t u64Exit
             Assert(uExitReason != VMX_EXIT_INT_WINDOW);
         }
 
-        /* For exception or NMI VM-exits the VM-exit interruption info. field must be valid. */
+        /* For exception or NMI VM-exits, the VM-exit interruption info. field must be valid. */
         Assert(uExitReason != VMX_EXIT_XCPT_OR_NMI || VMX_EXIT_INT_INFO_IS_VALID(pVmcs->u32RoExitIntInfo));
+
+        /* For external interrupts that occur while "acknowledge interrupt on exit" VM-exit is set,
+           the VM-exit interruption info. field must be valid. */
+        Assert(   uExitReason != VMX_EXIT_EXT_INT
+               || !(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_ACK_EXT_INT)
+               || VMX_EXIT_INT_INFO_IS_VALID(pVmcs->u32RoExitIntInfo));
 
         /*
          * If we support storing EFER.LMA into IA32e-mode guest field on VM-exit, we need to do that now.
@@ -2633,6 +2639,13 @@ VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint64_t u64Exit
      */
     if (pVmcs->u32PinCtls & VMX_PIN_CTLS_PREEMPT_TIMER)
         CPUMStopGuestVmxPremptTimer(pVCpu);
+
+    /*
+     * Clear the state of "NMI unblocked due to IRET" as otherwise we risk
+     * reporting a stale state on a subsequent VM-exit. This state will be
+     * re-established while emulating IRET in VMX non-root mode.
+     */
+    pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret = false;
 
     /*
      * Clear any pending VMX nested-guest force-flags.
@@ -7609,18 +7622,20 @@ static void iemVmxVmentryInjectTrpmEvent(PVMCPUCC pVCpu, const char *pszInstr, u
         TRPMSetFaultAddress(pVCpu, GCPtrFaultAddress);
         Log(("%s: Injecting: fault_addr=%RGp\n", pszInstr, GCPtrFaultAddress));
     }
-    else if (   uType == VMX_ENTRY_INT_INFO_TYPE_SW_INT
-             || uType == VMX_ENTRY_INT_INFO_TYPE_SW_XCPT
-             || uType == VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT)
+    else
     {
-        TRPMSetInstrLength(pVCpu, cbInstr);
-        Log(("%s: Injecting: instr_len=%u\n", pszInstr, cbInstr));
-    }
-
-    if (VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo) == VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT)
-    {
-        TRPMSetTrapDueToIcebp(pVCpu);
-        Log(("%s: Injecting: icebp\n", pszInstr));
+        switch (uType)
+        {
+            case VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT:
+                TRPMSetTrapDueToIcebp(pVCpu);
+                Log(("%s: Injecting: icebp\n", pszInstr));
+                RT_FALL_THRU();
+            case VMX_ENTRY_INT_INFO_TYPE_SW_INT:
+            case VMX_ENTRY_INT_INFO_TYPE_SW_XCPT:
+                TRPMSetInstrLength(pVCpu, cbInstr);
+                Log(("%s: Injecting: instr_len=%u\n", pszInstr, cbInstr));
+                break;
+        }
     }
 
     NOREF(pszInstr);
