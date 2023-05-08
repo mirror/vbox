@@ -4968,7 +4968,13 @@ void MachineConfigFile::readAudioAdapter(const xml::ElementNode &elmAudioAdapter
         else if (strTemp == "MMPM") /* Deprecated; only kept for backwards compatibility. */
             aa.driverType = AudioDriverType_MMPM;
         else
-            throw ConfigFileError(this, &elmAudioAdapter, N_("Invalid value '%s' in AudioAdapter/@driver attribute"), strTemp.c_str());
+        {
+            /* Be nice when loading the settings on downgraded versions: In case the selected backend isn't available / known
+             * to this version, fall back to the default backend, telling the user in the release log. See @bugref{10051c7}. */
+            LogRel(("WARNING: Invalid value '%s' in AudioAdapter/@driver attribute found; falling back to default audio backend\n",
+                    strTemp.c_str()));
+            aa.driverType = AudioDriverType_Default;
+        }
 
         /* When loading settings >= 1.19 (VBox 7.0), the attribute "useDefault" will determine if the VM should use
          * the OS' default audio driver or not. This additional attribute is necessary in order to be backwards compatible
