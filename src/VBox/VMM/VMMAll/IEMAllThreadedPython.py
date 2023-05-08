@@ -514,16 +514,22 @@ class ThreadedFunctionVariation(object):
                 ## @todo figure out how to do this in the input part...
                 if self.sVariation == self.ksVariation_Addr16:
                     self.aoParamRefs.append(ThreadedParamRef('bRm',     'uint8_t',  oStmt));
-                    self.aoParamRefs.append(ThreadedParamRef('u16Disp', 'uint16_t', oStmt));
+                    self.aoParamRefs.append(ThreadedParamRef('(uint16_t)uEffAddrInfo' ,
+                                                             'uint16_t', oStmt, sStdRef = 'u16Disp'));
                 elif self.sVariation in (self.ksVariation_Addr32, self.ksVariation_Addr32Flat):
                     self.aoParamRefs.append(ThreadedParamRef('bRm',     'uint8_t',  oStmt));
-                    self.aoParamRefs.append(ThreadedParamRef('bSib',    'uint8_t',  oStmt));
-                    self.aoParamRefs.append(ThreadedParamRef('u32Disp', 'uint32_t', oStmt));
+                    self.aoParamRefs.append(ThreadedParamRef('(uint8_t)(uEffAddrInfo >> 32)',
+                                                             'uint8_t',  oStmt, sStdRef = 'bSib'));
+                    self.aoParamRefs.append(ThreadedParamRef('(uint32_t)uEffAddrInfo',
+                                                             'uint32_t', oStmt, sStdRef = 'u32Disp'));
                 else:
                     assert self.sVariation in (self.ksVariation_Addr64, self.ksVariation_Addr64_32);
-                    self.aoParamRefs.append(ThreadedParamRef('bRmEx',   'uint8_t',  oStmt));
-                    self.aoParamRefs.append(ThreadedParamRef('bSib',    'uint8_t',  oStmt));
-                    self.aoParamRefs.append(ThreadedParamRef('u32Disp', 'uint32_t', oStmt));
+                    self.aoParamRefs.append(ThreadedParamRef('IEM_GET_MODRM_EX(pVCpu, bRm)',
+                                                             'uint8_t',  oStmt, sStdRef = 'bRmEx'));
+                    self.aoParamRefs.append(ThreadedParamRef('(uint8_t)(uEffAddrInfo >> 32)',
+                                                             'uint8_t',  oStmt, sStdRef = 'bSib'));
+                    self.aoParamRefs.append(ThreadedParamRef('(uint32_t)uEffAddrInfo',
+                                                             'uint32_t', oStmt, sStdRef = 'u32Disp'));
                     self.aoParamRefs.append(ThreadedParamRef('IEM_GET_INSTR_LEN(pVCpu)', 'uint4_t', oStmt, sStdRef = 'cbInstr'));
                     assert len(oStmt.asParams) == 3;
                     assert oStmt.asParams[1].startswith('bRm');
