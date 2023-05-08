@@ -102,7 +102,7 @@ VBCLSERVICESTATE       g_Service = { 0 };
 static volatile bool   g_fSignalHandlerCalled = false;
 /** Critical section for the signal handler. */
 static RTCRITSECT      g_csSignalHandler;
-/** Flag indicating Whether the service starts in daemonized  mode or not. */
+/** Flag indicating Whether the service starts in daemonized mode or not. */
 bool                   g_fDaemonized = false;
 /** The name of our pidfile.  It is global for the benefit of the cleanup
  * routine. */
@@ -786,15 +786,19 @@ int main(int argc, char *argv[])
 
     if (fDaemonise)
     {
+        VBClLogInfo("Daemonizing service ...\n");
         rc = VbglR3DaemonizeEx(false /* fNoChDir */, false /* fNoClose */, fRespawn, &g_cRespawn,
                                true /* fReturnOnUpdate */, &fUpdateStarted, g_szControlPidFile, &g_hControlPidFile);
-        /* This combination only works in context of parent process. */
-        if (RT_SUCCESS(rc) && fUpdateStarted)
-            vbclHandleUpdateStarted(argv);
-    }
+        if (RT_SUCCESS(rc))
+        {
+            g_fDaemonized = true;
 
-    if (RT_FAILURE(rc))
-        VBClLogFatalError("Daemonizing service failed: %Rrc\n", rc);
+            if (fUpdateStarted) /* This combination only works in context of parent process. */
+                vbclHandleUpdateStarted(argv);
+        }
+        else
+            return RTMsgErrorExitFailure("Daemonizing service failed: %Rrc\n", rc);
+    }
 
     if (g_szPidFile[0])
     {
