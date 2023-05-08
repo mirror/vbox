@@ -53,13 +53,15 @@ VBoxSampleDriver_LIBS     = \
 #
 # VBoxPlaygroundDevice - A device module demonstrating some unusual features.
 #
-DLLS += VBoxPlaygroundDevice
-VBoxPlaygroundDevice_TEMPLATE = VBoxR3Dll
-VBoxPlaygroundDevice_SOURCES  = \
-	DevPlayground.cpp
-VBoxPlaygroundDevice_LIBS     = \
-	$(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
-	$(LIB_RUNTIME)
+ifdef VBOX_WITH_MAIN
+ DLLS += VBoxPlaygroundDevice
+ VBoxPlaygroundDevice_TEMPLATE = VBoxR3Dll
+ VBoxPlaygroundDevice_SOURCES  = \
+ 	DevPlayground.cpp
+ VBoxPlaygroundDevice_LIBS     = \
+ 	$(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
+ 	$(LIB_RUNTIME)
+endif
 
 ifdef VBOX_WITH_XPCOM
  ## @todo may be worth creating the VBOX_XPCOM SDK def, or just a SDK_VBOXXPCOM.
