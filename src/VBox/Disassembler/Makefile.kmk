@@ -57,7 +57,7 @@ ifdef VBOX_WITH_VIRT_ARMV8
  DisasmR3-armv8_SOURCES        = \
  	Disasm.cpp \
  	DisasmCore-armv8.cpp \
- 	DisasmTables-armv8-a64.cpp \
+ 	DisasmTables-armv8.cpp \
  	DisasmFormatBytes.cpp \
  	DisasmFormatArmV8.cpp
 endif
