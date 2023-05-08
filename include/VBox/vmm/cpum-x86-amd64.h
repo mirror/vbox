@@ -2663,6 +2663,7 @@ DECLINLINE(bool) CPUMIsGuestVmxPhysIntrEnabled(PCCPUMCTX pCtx)
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     if (CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
         return true;
+    CPUMCTX_ASSERT_NOT_EXTRN(pCtx, CPUMCTX_EXTRN_RFLAGS);
     return RT_BOOL(pCtx->eflags.u & X86_EFL_IF);
 #endif
 }
