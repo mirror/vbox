@@ -351,12 +351,14 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) && !defined(VBOX_
  	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/alt-md5.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/alt-sha1.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/alt-sha256.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/alt-sha384.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/alt-sha512.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/alt-sha3.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/md2str.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/md5str.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/sha1str.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/sha256str.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/sha384str.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/sha512str.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/err/errinfo.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/path/RTPathChangeToUnixSlashes.cpp \
