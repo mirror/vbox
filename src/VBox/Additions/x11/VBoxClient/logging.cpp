@@ -31,6 +31,7 @@
 
 #include <iprt/buildconfig.h>
 #include <iprt/file.h>
+#include <iprt/message.h>
 #include <iprt/process.h>
 #include <iprt/stream.h>
 #include <iprt/system.h>
@@ -364,14 +365,13 @@ static DECLCALLBACK(size_t) vbClLogPrefixCb(PRTLOGGER pLogger, char *pchBuf, siz
 }
 
 /**
- * Creates the default release logger outputting to the specified file.
- *
- * Pass NULL to disabled logging.
+ * Creates the default release logger outputting to the specified file, extended version.
  *
  * @return  IPRT status code.
- * @param   pszLogFile      Filename for log output.  NULL disables custom handling.
+ * @param   pszLogFile      Filename for log output. Empty filename allowed.
+ * @param   fPrintHeader    Whether to print the VBoxClient logging header or not.
  */
-int VBClLogCreate(const char *pszLogFile)
+int VBClLogCreateEx(const char *pszLogFile, bool fPrintHeader)
 {
     if (!pszLogFile)
         return VINF_SUCCESS;
@@ -385,7 +385,7 @@ int VBClLogCreate(const char *pszLogFile)
     int rc = RTLogCreateEx(&g_pLoggerRelease, "VBOXCLIENT_RELEASE_LOG", fFlags, "all",
                            RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX /*cMaxEntriesPerGroup*/,
                            0 /*cBufDescs*/, NULL /*paBufDescs*/, RTLOGDEST_STDOUT | RTLOGDEST_USER,
-                           vbClLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
+                           fPrintHeader ? vbClLogHeaderFooter : NULL, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
                            NULL /*pOutputIf*/, NULL /*pvOutputIfUser*/,
                            NULL /*pErrInfo*/, "%s", pszLogFile ? pszLogFile : "");
     if (RT_SUCCESS(rc))
@@ -395,13 +395,26 @@ int VBClLogCreate(const char *pszLogFile)
 
         rc = RTLogSetCustomPrefixCallback(g_pLoggerRelease, vbClLogPrefixCb, NULL);
         if (RT_FAILURE(rc))
-            VBClLogError("unable to register custom log prefix callback\n");
+            RTMsgError("unable to register custom log prefix callback\n");
 
         /* Explicitly flush the log in case of VBOXSERVICE_RELEASE_LOG=buffered. */
         RTLogFlush(g_pLoggerRelease);
     }
+    else
+        RTMsgError("Failed to create release log '%s', rc=%Rrc\n", pszLogFile, rc);
 
     return rc;
+}
+
+/**
+ * Creates the default release logger outputting to the specified file.
+ *
+ * @return  IPRT status code.
+ * @param   pszLogFile      Filename for log output. Empty filename allowed.
+ */
+int VBClLogCreate(const char *pszLogFile)
+{
+    return VBClLogCreateEx(pszLogFile, true /* fPrintHeader */);
 }
 
 /**

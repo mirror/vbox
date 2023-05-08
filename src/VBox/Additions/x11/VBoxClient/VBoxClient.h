@@ -47,6 +47,7 @@ void VBClLogFatalError(const char *pszFormat, ...);
 void VBClLogVerbose(unsigned iLevel, const char *pszFormat, ...);
 
 int VBClLogCreate(const char *pszLogFile);
+int VBClLogCreateEx(const char *pszLogFile, bool fPrintHeader);
 void VBClLogSetLogPrefix(const char *pszPrefix);
 void VBClLogDestroy(void);
 

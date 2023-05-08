@@ -63,7 +63,8 @@
 #define VBOXCLIENT_OPT_VMSVGA               VBOXCLIENT_OPT_SERVICES + 4
 #define VBOXCLIENT_OPT_VMSVGA_SESSION       VBOXCLIENT_OPT_SERVICES + 5
 #define VBOXCLIENT_OPT_DISPLAY              VBOXCLIENT_OPT_SERVICES + 6
-#define VBOXCLIENT_OPT_SESSION_TYPE         VBOXCLIENT_OPT_SERVICES + 7
+#define VBOXCLIENT_OPT_SESSION_DETECT       VBOXCLIENT_OPT_SERVICES + 7
+#define VBOXCLIENT_OPT_SESSION_TYPE         VBOXCLIENT_OPT_SERVICES + 8
 
 
 /*********************************************************************************************************************************
@@ -326,6 +327,8 @@ static void vboxClientUsage(const char *pcszFileName)
     RTPrintf("  --display            starts VMSVGA dynamic resizing for legacy guests\n");
 #endif
     RTPrintf("  --session-type       specifies the session type to use (auto, x11, wayland)\n");
+    RTPrintf("  --session-detect     detects and prints the current session type\n"
+             "                       (exit code 0 if detection succeeded)\n");
     RTPrintf("  -f, --foreground     run in the foreground (no daemonizing)\n");
     RTPrintf("  -d, --nodaemon       continues running as a system service\n");
     RTPrintf("  -h, --help           shows this help text\n");
@@ -533,6 +536,7 @@ int main(int argc, char *argv[])
         { "--vmsvga-session",               VBOXCLIENT_OPT_VMSVGA_SESSION,      RTGETOPT_REQ_NOTHING },
         { "--display",                      VBOXCLIENT_OPT_DISPLAY,             RTGETOPT_REQ_NOTHING },
 #endif
+        { "--session-detect",               VBOXCLIENT_OPT_SESSION_DETECT,      RTGETOPT_REQ_NOTHING },
         { "--session-type",                 VBOXCLIENT_OPT_SESSION_TYPE,        RTGETOPT_REQ_STRING }
     };
 
@@ -664,6 +668,20 @@ int main(int argc, char *argv[])
                 break;
             }
 #endif
+            case VBOXCLIENT_OPT_SESSION_DETECT:
+            {
+                rc = VBClLogCreateEx("" /* No file logging */, false /* No header */);
+                if (RT_SUCCESS(rc))
+                {
+                    VBGHLogVerbositySet(2);
+                    VBGHDISPLAYSERVERTYPE const enmType = VBGHDisplayServerTypeDetect();
+                    VBClLogInfo("Detected session: %s\n", VBGHDisplayServerTypeToStr(enmType));
+                    return enmType != VBGHDISPLAYSERVERTYPE_NONE ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+                }
+
+                return RTEXITCODE_FAILURE;
+            }
+
             case VBOXCLIENT_OPT_SESSION_TYPE:
             {
                 if (!RTStrICmp(ValueUnion.psz, "x11"))
@@ -719,8 +737,7 @@ int main(int argc, char *argv[])
 
     rc = VBClLogCreate(g_szLogFile[0] ? g_szLogFile : "");
     if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("Failed to create release log '%s', rc=%Rrc\n",
-                              g_szLogFile[0] ? g_szLogFile : "<None>", rc);
+        return RTEXITCODE_FAILURE; /* Error message already printed in VBClLogCreateEx(). */
 
     if (!fDaemonise)
     {
