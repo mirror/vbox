@@ -5039,8 +5039,8 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEventNested(PVMCPUCC pVCpu, PVMXVMCSINFO
      * See Intel spec. 25.4.1 "Event Blocking".
      * See Intel spec. 6.7 "Nonmaskable Interrupt (NMI)".
      */
-    if (   CPUMIsInInterruptShadowWithUpdate(&pVCpu->cpum.GstCtx)
-        || CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx))
+    if (   !CPUMIsInInterruptShadowWithUpdate(&pVCpu->cpum.GstCtx)
+        && !CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx))
     { /* likely */ }
     else
         return VINF_SUCCESS;
