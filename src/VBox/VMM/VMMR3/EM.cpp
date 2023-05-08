@@ -1411,13 +1411,14 @@ static int emR3VmxNstGstIntrIntercept(PVMCPU pVCpu)
 {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     /* Handle the "external interrupt" VM-exit intercept. */
-    if (CPUMIsGuestVmxPinCtlsSet(&pVCpu->cpum.GstCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
+    if (    CPUMIsGuestVmxPinCtlsSet(&pVCpu->cpum.GstCtx, VMX_PIN_CTLS_EXT_INT_EXIT)
+        && !CPUMIsGuestVmxExitCtlsSet(&pVCpu->cpum.GstCtx, VMX_EXIT_CTLS_ACK_EXT_INT))
     {
         VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, 0 /* uVector */, true /* fIntPending */);
-        AssertMsg(   rcStrict != VINF_VMX_VMEXIT
-                  && rcStrict != VINF_NO_CHANGE, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-        if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
-            return VBOXSTRICTRC_TODO(rcStrict);
+        AssertMsg(   rcStrict != VINF_VMX_VMEXIT    /* VM-exit should have been converted to VINF_SUCCESS. */
+                  && rcStrict != VINF_NO_CHANGE
+                  && rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+        return VBOXSTRICTRC_VAL(rcStrict);
     }
 #else
     RT_NOREF(pVCpu);
@@ -1780,7 +1781,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          *        delivered. */
 
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-        if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_PREEMPT_TIMER))
+        if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_PREEMPT_TIMER
+                                     | VMCPU_FF_VMX_NMI_WINDOW | VMCPU_FF_VMX_INT_WINDOW))
         {
             /*
              * VMX Nested-guest APIC-write pending (can cause VM-exits).
@@ -1795,27 +1797,92 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             }
 
             /*
-             * VMX Nested-guest monitor-trap flag (MTF) VM-exit.
-             * Takes priority over "Traps on the previous instruction".
-             * See Intel spec. 6.9 "Priority Among Simultaneous Exceptions And Interrupts".
+             * APIC write emulation MAY have a caused a VM-exit.
+             * If it did cause a VM-exit, there's no point checking the other VMX non-root mode FFs here.
              */
-            if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF))
+            if (CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
             {
-                rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_MTF, 0 /* uExitQual */));
-                Assert(rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE);
-                UPDATE_RC();
+                /*
+                 * VMX Nested-guest monitor-trap flag (MTF) VM-exit.
+                 * Takes priority over "Traps on the previous instruction".
+                 * See Intel spec. 6.9 "Priority Among Simultaneous Exceptions And Interrupts".
+                 */
+                if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF))
+                {
+                    rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_MTF, 0 /* uExitQual */));
+                    Assert(rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+                    UPDATE_RC();
+                }
+                /*
+                 * VMX Nested-guest preemption timer VM-exit.
+                 * Takes priority over NMI-window VM-exits.
+                 */
+                else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER))
+                {
+                    rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitPreemptTimer(pVCpu));
+                    Assert(rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+                    UPDATE_RC();
+                }
+                /*
+                 * VMX interrupt-window and NMI-window VM-exits.
+                 * Takes priority over non-maskable interrupts (NMIs) and external interrupts respectively.
+                 * If we are in an interrupt shadow or if we already in the process of delivering
+                 * an event then these VM-exits cannot occur.
+                 *
+                 * Interrupt shadows block NMI-window VM-exits.
+                 * Any event that is already in TRPM (e.g. injected during VM-entry) takes priority.
+                 * NMIs block delivery of other interrupts including NMIs.
+                 *
+                 * See Intel spec. 25.2 "Other Causes Of VM Exits".
+                 * See Intel spec. 26.7.6 "NMI-Window Exiting".
+                 * See Intel spec. 6.7 "Nonmaskable Interrupt (NMI)".
+                 */
+                else if (   !CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx)
+                         && !CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx)
+                         && !TRPMHasTrap(pVCpu))
+                {
+                    /*
+                     * VMX NMI-window VM-exit.
+                     */
+                    if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW)
+                        && !CPUMIsGuestVmxVirtNmiBlocking(&pVCpu->cpum.GstCtx))
+                    {
+                        Assert(CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_NMI_WINDOW_EXIT));
+                        Assert(CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx));
+                        rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW, 0 /* uExitQual */));
+                        AssertMsg(   rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE
+                                  && rc2 != VINF_VMX_VMEXIT
+                                  && rc2 != VINF_NO_CHANGE, ("%Rrc\n", rc2));
+                        UPDATE_RC();
+                    }
+                    /*
+                     * VMX interrupt-window VM-exit.
+                     * This is a bit messy with the way the code below is currently structured,
+                     * but checking VMCPU_FF_INTERRUPT_NMI here should allow pending NMI to be delivered
+                     * prior to causing an interrupt-window VM-exit.
+                     */
+                    /** @todo Restructure this later to happen after injecting NMI/causing NMI-exit, see
+                     *        code in VMX R0 event delivery. */
+                    else if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_INT_WINDOW)
+                             && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)
+                             &&  CPUMIsGuestVmxVirtIntrEnabled(&pVCpu->cpum.GstCtx))
+                    {
+                        Assert(CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT));
+                        Assert(CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx));
+                        rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_INT_WINDOW, 0 /* uExitQual */));
+                        AssertMsg(   rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE
+                                  && rc2 != VINF_VMX_VMEXIT
+                                  && rc2 != VINF_NO_CHANGE, ("%Rrc\n", rc2));
+                        UPDATE_RC();
+                    }
+                }
             }
 
             /*
-             * VMX Nested-guest preemption timer VM-exit.
-             * Takes priority over NMI-window VM-exits.
+             * Interrupt-window and NMI-window force flags might still be pending if we didn't actually cause
+             * a VM-exit above. They will get cleared eventually when ANY nested-guest VM-exit occurs.
+             * However, the force flags asserted below MUST have been cleared at this point.
              */
-            if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER))
-            {
-                rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitPreemptTimer(pVCpu));
-                Assert(rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE);
-                UPDATE_RC();
-            }
             Assert(!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_PREEMPT_TIMER));
         }
 # endif
@@ -1831,7 +1898,6 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             && !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)
             && (!rc || rc >= VINF_EM_RESCHEDULE_HM)
             && !CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx)             /* Interrupt shadows block both NMIs and interrupts. */
-            /** @todo r=bird: But interrupt shadows probably do not block vmexits due to host interrupts... */
             && !TRPMHasTrap(pVCpu))                                      /* An event could already be scheduled for dispatching. */
         {
             if (CPUMGetGuestGif(&pVCpu->cpum.GstCtx))
@@ -1849,40 +1915,18 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                     fInSvmHwvirtMode  = CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx);
                 }
 
-                if (0)
-                { }
-# ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-                /*
-                 * VMX NMI-window VM-exit.
-                 * Takes priority over non-maskable interrupts (NMIs).
-                 * Interrupt shadows block NMI-window VM-exits.
-                 * Any event that is already in TRPM (e.g. injected during VM-entry) takes priority.
-                 *
-                 * See Intel spec. 25.2 "Other Causes Of VM Exits".
-                 * See Intel spec. 26.7.6 "NMI-Window Exiting".
-                 */
-                else if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW)
-                         && !CPUMIsGuestVmxVirtNmiBlocking(&pVCpu->cpum.GstCtx))
-                {
-                    Assert(CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_NMI_WINDOW_EXIT));
-                    Assert(CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx));
-                    rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW, 0 /* uExitQual */));
-                    AssertMsg(   rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE
-                              && rc2 != VINF_VMX_VMEXIT
-                              && rc2 != VINF_NO_CHANGE, ("%Rrc\n", rc2));
-                    UPDATE_RC();
-                }
-# endif
                 /*
                  * NMIs (take priority over external interrupts).
                  */
-                else if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)
-                         && !CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx))
+                if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)
+                    && !CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx))
                 {
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX
                     if (   fInVmxNonRootMode
                         && CPUMIsGuestVmxPinCtlsSet(&pVCpu->cpum.GstCtx, VMX_PIN_CTLS_NMI_EXIT))
                     {
+                        /* We MUST clear the NMI force-flag here, see @bugref{10318#c19}. */
+                        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
                         rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitXcptNmi(pVCpu));
                         Assert(rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE);
                         UPDATE_RC();
@@ -1918,23 +1962,6 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                         UPDATE_RC();
                     }
                 }
-# ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-                /*
-                 * VMX Interrupt-window VM-exits.
-                 * Takes priority over external interrupts.
-                 */
-                else if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_INT_WINDOW)
-                         && CPUMIsGuestVmxVirtIntrEnabled(&pVCpu->cpum.GstCtx))
-                {
-                    Assert(CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT));
-                    Assert(CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx));
-                    rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_INT_WINDOW, 0 /* uExitQual */));
-                    AssertMsg(   rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE
-                              && rc2 != VINF_VMX_VMEXIT
-                              && rc2 != VINF_NO_CHANGE, ("%Rrc\n", rc2));
-                    UPDATE_RC();
-                }
-# endif
 # ifdef VBOX_WITH_NESTED_HWVIRT_SVM
                 /** @todo NSTSVM: Handle this for SVM here too later not when an interrupt is
                  *        actually pending like we currently do. */
