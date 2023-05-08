@@ -2255,6 +2255,7 @@ static uint32_t rtLdrPE_HashGetHashSize(RTDIGESTTYPE enmDigest)
 }
 
 
+#ifndef IPRT_WITHOUT_LDR_VERIFY
 /**
  * Checks if the hash type is supported.
  *
@@ -2275,6 +2276,7 @@ static bool rtLdrPE_HashIsSupported(RTDIGESTTYPE enmDigest)
             return false;
     }
 }
+#endif
 
 
 /**
