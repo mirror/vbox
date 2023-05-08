@@ -17822,22 +17822,22 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_sha1msg2_u128_fallback,(PRTUINT128U puDst, PCRT
 typedef IEM_DECL_IMPL_TYPE(uint32_t, FNIEMAIMPLSHA1RNDS4FN, (uint32_t u32B, uint32_t u32C, uint32_t u32D));
 typedef FNIEMAIMPLSHA1RNDS4FN *PFNIEMAIMPLSHA1RNDS4FN;
 
-static DECLCALLBACK(uint32_t) iemAImpl_sha1rnds4_f0(uint32_t u32B, uint32_t u32C, uint32_t u32D)
+static DECLCALLBACK(uint32_t) iemAImpl_sha1rnds4_f0(uint32_t u32B, uint32_t u32C, uint32_t u32D) RT_NOEXCEPT
 {
     return (u32B & u32C) ^ (~u32B & u32D);
 }
 
-static DECLCALLBACK(uint32_t) iemAImpl_sha1rnds4_f1(uint32_t u32B, uint32_t u32C, uint32_t u32D)
+static DECLCALLBACK(uint32_t) iemAImpl_sha1rnds4_f1(uint32_t u32B, uint32_t u32C, uint32_t u32D) RT_NOEXCEPT
 {
     return u32B ^ u32C ^ u32D;
 }
 
-static DECLCALLBACK(uint32_t) iemAImpl_sha1rnds4_f2(uint32_t u32B, uint32_t u32C, uint32_t u32D)
+static DECLCALLBACK(uint32_t) iemAImpl_sha1rnds4_f2(uint32_t u32B, uint32_t u32C, uint32_t u32D) RT_NOEXCEPT
 {
     return (u32B & u32C) ^ (u32B & u32D) ^ (u32C & u32D);
 }
 
-static DECLCALLBACK(uint32_t) iemAImpl_sha1rnds4_f3(uint32_t u32B, uint32_t u32C, uint32_t u32D)
+static DECLCALLBACK(uint32_t) iemAImpl_sha1rnds4_f3(uint32_t u32B, uint32_t u32C, uint32_t u32D) RT_NOEXCEPT
 {
     return u32B ^ u32C ^ u32D;
 }
