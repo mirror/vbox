@@ -30,6 +30,7 @@
 #include <QEvent>
 #include <QHeaderView>
 #include <QItemEditorFactory>
+#include <QLineEdit>
 #include <QPointer>
 #include <QPushButton>
 #include <QSortFilterProxyModel>
@@ -53,11 +54,16 @@
 #include "CForm.h"
 #include "CFormValue.h"
 #include "CRangedIntegerFormValue.h"
+#include "CRangedInteger64FormValue.h"
 #include "CStringFormValue.h"
+#include "CSystemProperties.h"
 #include "CVirtualSystemDescriptionForm.h"
 
 /* VirtualBox interface declarations: */
 #include <VBox/com/VirtualBox.h>
+
+/* External includes: */
+#include <math.h>
 
 
 /** Form Editor data types. */
@@ -204,6 +210,57 @@ private:
 Q_DECLARE_METATYPE(RangedIntegerData);
 
 
+/** Class used to hold ranged-integer64 data. */
+class RangedInteger64Data
+{
+public:
+
+    /** Constructs null ranged-integer64 data. */
+    RangedInteger64Data()
+        : m_iMinimum(-1), m_iMaximum(-1)
+        , m_iInteger(-1), m_strSuffix(QString()) {}
+    /** Constructs ranged-integer64 data on the basis of passed @a iMinimum, @a iMaximum, @a iInteger and @a strSuffix. */
+    RangedInteger64Data(qlonglong iMinimum, qlonglong iMaximum, qlonglong iInteger, const QString strSuffix)
+        : m_iMinimum(iMinimum), m_iMaximum(iMaximum)
+        , m_iInteger(iInteger), m_strSuffix(strSuffix) {}
+    /** Constructs ranged-integer64 data on the basis of @a another ranged-integer data. */
+    RangedInteger64Data(const RangedInteger64Data &another)
+        : m_iMinimum(another.minimum()), m_iMaximum(another.maximum())
+        , m_iInteger(another.integer()), m_strSuffix(another.suffix()) {}
+
+    /** Assigns values of @a another ranged-integer to this one. */
+    RangedInteger64Data &operator=(const RangedInteger64Data &another)
+    {
+        m_iMinimum = another.minimum();
+        m_iMaximum = another.maximum();
+        m_iInteger = another.integer();
+        m_strSuffix = another.suffix();
+        return *this;
+    }
+
+    /** Returns minimum value. */
+    qlonglong minimum() const { return m_iMinimum; }
+    /** Returns maximum value. */
+    qlonglong maximum() const { return m_iMaximum; }
+    /** Returns current value. */
+    qlonglong integer() const { return m_iInteger; }
+    /** Returns suffix value. */
+    QString suffix() const { return m_strSuffix; }
+
+private:
+
+    /** Holds minimum value. */
+    qlonglong  m_iMinimum;
+    /** Holds maximum value. */
+    qlonglong  m_iMaximum;
+    /** Holds current value. */
+    qlonglong  m_iInteger;
+    /** Holds suffix value. */
+    QString    m_strSuffix;
+};
+Q_DECLARE_METATYPE(RangedInteger64Data);
+
+
 /** QWidget extension used as dummy TextData editor.
   * It's not actually an editor, but Edit... button instead which opens
   * real editor passing stored model index received from TextData value. */
@@ -299,6 +356,38 @@ private:
 };
 
 
+/** QLineEdit extension used as RangedInteger64Data editor. */
+class RangedInteger64Editor : public QLineEdit
+{
+    Q_OBJECT;
+    Q_PROPERTY(RangedInteger64Data rangedInteger64 READ rangedInteger64 WRITE setRangedInteger64 USER true);
+
+public:
+
+    /** Constructs RangedInteger64Data editor passing @a pParent to the base-class. */
+    RangedInteger64Editor(QWidget *pParent = 0);
+
+private:
+
+    /** Defines @a rangedInteger. */
+    void setRangedInteger64(const RangedInteger64Data &rangedInteger64);
+    /** Returns ranged-integer. */
+    RangedInteger64Data rangedInteger64() const;
+
+    /** Holds the minimum guest RAM in MBs. */
+    qlonglong  m_iMinimumGuestRAM;
+    /** Holds the maximum value. */
+    qlonglong  m_iMaximumGuestRAM;
+
+    /** Holds the minimum value. */
+    qlonglong  m_iMinimum;
+    /** Holds the maximum value. */
+    qlonglong  m_iMaximum;
+    /** Holds the unchanged suffix. */
+    QString    m_strSuffix;
+};
+
+
 /** QITableViewCell extension used as Form Editor table-view cell. */
 class UIFormEditorCell : public QITableViewCell
 {
@@ -374,6 +463,11 @@ public:
     /** Defines @a rangedInteger value. */
     void setRangedInteger(const RangedIntegerData &rangedInteger);
 
+    /** Returns value cast to ranged-integer64. */
+    RangedInteger64Data toRangedInteger64() const;
+    /** Defines @a rangedInteger64 value. */
+    void setRangedInteger64(const RangedInteger64Data &rangedInteger64);
+
     /** Updates value cells. */
     void updateValueCells();
 
@@ -407,17 +501,19 @@ private:
     int  m_iGeneration;
 
     /** Holds cached bool value. */
-    bool               m_fBool;
+    bool                 m_fBool;
     /** Holds whether cached string value is multiline. */
-    bool               m_fMultilineString;
+    bool                 m_fMultilineString;
     /** Holds cached text value. */
-    TextData           m_text;
+    TextData             m_text;
     /** Holds cached string value. */
-    QString            m_strString;
+    QString              m_strString;
     /** Holds cached choice value. */
-    ChoiceData         m_choice;
+    ChoiceData           m_choice;
     /** Holds cached ranged-integer value. */
-    RangedIntegerData  m_rangedInteger;
+    RangedIntegerData    m_rangedInteger;
+    /** Holds cached ranged-integer64 value. */
+    RangedInteger64Data  m_rangedInteger64;
 
     /** Holds the cell instances. */
     QVector<UIFormEditorCell*>  m_cells;
@@ -674,6 +770,80 @@ RangedIntegerData RangedIntegerEditor::rangedInteger() const
 
 
 /*********************************************************************************************************************************
+*   Class RangedInteger64Editor implementation.                                                                                  *
+*********************************************************************************************************************************/
+
+RangedInteger64Editor::RangedInteger64Editor(QWidget *pParent /* = 0 */)
+    : QLineEdit(pParent)
+    , m_iMinimumGuestRAM(0)
+    , m_iMaximumGuestRAM(0)
+    , m_iMinimum(0)
+    , m_iMaximum(0)
+{
+    /* Acquire min/max amount of RAM guest in theory could have: */
+    CSystemProperties comProps = uiCommon().virtualBox().GetSystemProperties();
+    if (comProps.isOk())
+    {
+        m_iMinimumGuestRAM = comProps.GetMinGuestRAM();
+        m_iMaximumGuestRAM = comProps.GetMaxGuestRAM();
+    }
+}
+
+void RangedInteger64Editor::setRangedInteger64(const RangedInteger64Data &rangedInteger64)
+{
+    /* Parse incoming rangedInteger64: */
+    m_iMinimum = rangedInteger64.minimum();
+    m_iMaximum = rangedInteger64.maximum();
+    m_strSuffix = rangedInteger64.suffix();
+    const qlonglong iValue = rangedInteger64.integer();
+
+    /* Acquire effective values: */
+    qlonglong iMinEffective = 0;
+    qlonglong iMaxEffective = 0;
+    qlonglong iValueEffective = 0;
+    /* We wish to represent bytes as megabytes: */
+    if (m_strSuffix == "B")
+    {
+        iMinEffective = m_iMinimum / _1M;
+        iMaxEffective = m_iMaximum / _1M;
+        iValueEffective = iValue / _1M;
+    }
+    /* For now we will keep all the other suffixes untouched: */
+    else
+    {
+        iMinEffective = m_iMinimum;
+        iMaxEffective = m_iMaximum;
+        iValueEffective = iValue;
+    }
+
+    /* Make sure minimum, maximum and actual values are within the bounds: */
+    iMinEffective = qMax(iMinEffective, m_iMinimumGuestRAM);
+    iMaxEffective = qMin(iMaxEffective, m_iMaximumGuestRAM);
+    iValueEffective = qMax(iValueEffective, m_iMinimumGuestRAM);
+    iValueEffective = qMin(iValueEffective, m_iMaximumGuestRAM);
+
+    /* Finally assign validator bounds and actual value: */
+    setValidator(new QIntValidator((int)iMinEffective, (int)iMaxEffective, this));
+    setText(QString::number(iValueEffective));
+}
+
+RangedInteger64Data RangedInteger64Editor::rangedInteger64() const
+{
+    const qlonglong iValueEffective = locale().toLongLong(text());
+
+    /* Acquire literal value: */
+    qlonglong iValue = 0;
+    /* We should bring megabytes back to bytes: */
+    if (m_strSuffix == "B")
+        iValue = iValueEffective * _1M;
+    /* For now we will keep all the other suffixes untouched: */
+    else
+        iValue = iValueEffective;
+    return RangedInteger64Data(m_iMinimum, m_iMaximum, iValue, m_strSuffix);
+}
+
+
+/*********************************************************************************************************************************
 *   Class UIFormEditorCell implementation.                                                                                       *
 *********************************************************************************************************************************/
 
@@ -700,6 +870,7 @@ UIFormEditorRow::UIFormEditorRow(QITableView *pParent, UIFormEditorWidget *pForm
     , m_strString(QString())
     , m_choice(ChoiceData())
     , m_rangedInteger(RangedIntegerData())
+    , m_rangedInteger64(RangedInteger64Data())
 {
     prepare();
 }
@@ -829,6 +1000,24 @@ void UIFormEditorRow::setRangedInteger(const RangedIntegerData &rangedInteger)
     updateValueCells();
 }
 
+RangedInteger64Data UIFormEditorRow::toRangedInteger64() const
+{
+    AssertReturn(valueType() == KFormValueType_RangedInteger64, RangedInteger64Data());
+    return m_rangedInteger64;
+}
+
+void UIFormEditorRow::setRangedInteger64(const RangedInteger64Data &rangedInteger64)
+{
+    AssertReturnVoid(valueType() == KFormValueType_RangedInteger64);
+    CRangedInteger64FormValue comValue(m_comValue);
+    UINotificationProgressVsdFormValueSet *pNotification = new UINotificationProgressVsdFormValueSet(comValue,
+                                                                                                     rangedInteger64.integer());
+    UINotificationCenter *pCenter = m_pFormEditorWidget->notificationCenter()
+                                  ? m_pFormEditorWidget->notificationCenter() : gpNotificationCenter;
+    pCenter->handleNow(pNotification);
+    updateValueCells();
+}
+
 void UIFormEditorRow::updateValueCells()
 {
     m_iGeneration = m_comValue.GetGeneration();
@@ -875,10 +1064,35 @@ void UIFormEditorRow::updateValueCells()
             const int iInteger = comValue.GetInteger();
             const QString strSuffix = comValue.GetSuffix();
             m_rangedInteger = RangedIntegerData(iMinimum, iMaximum, iInteger, strSuffix);
-            m_cells[UIFormEditorDataType_Value]->setText(  m_rangedInteger.suffix().isEmpty()
-                                                         ? QString::number(m_rangedInteger.integer())
-                                                         : QString("%1 %2").arg(m_rangedInteger.integer())
-                                                                           .arg(m_rangedInteger.suffix()));
+            m_cells[UIFormEditorDataType_Value]->setText(  strSuffix.isEmpty()
+                                                         ? QString::number(iInteger)
+                                                         : QString("%1 %2").arg(iInteger)
+                                                                           .arg(strSuffix));
+            /// @todo check for errors
+            break;
+        }
+        case KFormValueType_RangedInteger64:
+        {
+            CRangedInteger64FormValue comValue(m_comValue);
+            const qlonglong iMinimum = comValue.GetMinimum();
+            const qlonglong iMaximum = comValue.GetMaximum();
+            const qlonglong iInteger = comValue.GetInteger();
+            const QString strSuffix = comValue.GetSuffix();
+            m_rangedInteger64 = RangedInteger64Data(iMinimum, iMaximum, iInteger, strSuffix);
+            /* Display suffix and effective value can be different: */
+            QString strEffectiveSuffix = strSuffix;
+            QString strEffectiveValue;
+            if (strSuffix.isEmpty())
+                strEffectiveValue = QString::number(iInteger);
+            else if (strSuffix != "B")
+                strEffectiveValue = QString("%1 %2").arg(iInteger).arg(strEffectiveSuffix);
+            else
+            {
+                /* We wish to convert bytes to megabytes: */
+                strEffectiveSuffix = "MB";
+                strEffectiveValue = QString("%1 %2").arg(iInteger / _1M).arg(strEffectiveSuffix);
+            }
+            m_cells[UIFormEditorDataType_Value]->setText(strEffectiveValue);
             /// @todo check for errors
             break;
         }
@@ -1111,6 +1325,13 @@ bool UIFormEditorModel::setData(const QModelIndex &index, const QVariant &value,
                             updateGeneration();
                             return true;
                         }
+                        case KFormValueType_RangedInteger64:
+                        {
+                            m_dataList[index.row()]->setRangedInteger64(value.value<RangedInteger64Data>());
+                            emit dataChanged(index, index);
+                            updateGeneration();
+                            return true;
+                        }
                         default:
                             return false;
                     }
@@ -1199,6 +1420,8 @@ QVariant UIFormEditorModel::data(const QModelIndex &index, int iRole) const
                             return QVariant::fromValue(m_dataList[index.row()]->toChoice());
                         case KFormValueType_RangedInteger:
                             return QVariant::fromValue(m_dataList[index.row()]->toRangedInteger());
+                        case KFormValueType_RangedInteger64:
+                            return QVariant::fromValue(m_dataList[index.row()]->toRangedInteger64());
                         default:
                             return QVariant();
                     }
@@ -1537,6 +1760,11 @@ void UIFormEditorWidget::prepare()
                         int iRangedIntegerId = qRegisterMetaType<RangedIntegerData>();
                         QStandardItemEditorCreator<RangedIntegerEditor> *pRangedIntegerEditorItemCreator = new QStandardItemEditorCreator<RangedIntegerEditor>();
                         m_pItemEditorFactory->registerEditor((QVariant::Type)iRangedIntegerId, pRangedIntegerEditorItemCreator);
+
+                        /* Register RangedInteger64Editor as the RangedInteger64Data editor: */
+                        int iRangedInteger64Id = qRegisterMetaType<RangedInteger64Data>();
+                        QStandardItemEditorCreator<RangedInteger64Editor> *pRangedInteger64EditorItemCreator = new QStandardItemEditorCreator<RangedInteger64Editor>();
+                        m_pItemEditorFactory->registerEditor((QVariant::Type)iRangedInteger64Id, pRangedInteger64EditorItemCreator);
 
                         /* Set newly created item editor factory for table delegate: */
                         pStyledItemDelegate->setItemEditorFactory(m_pItemEditorFactory);

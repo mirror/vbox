@@ -2565,6 +2565,11 @@ public:
       * @param  iInteger  Brings the value our value being set to. */
     UINotificationProgressVsdFormValueSet(const CRangedIntegerFormValue &comValue, int iInteger);
 
+    /** Constructs virtual system description form value set notification-progress.
+      * @param  comValue    Brings our value being set.
+      * @param  iInteger64  Brings the value our value being set to. */
+    UINotificationProgressVsdFormValueSet(const CRangedInteger64FormValue &comValue, qlonglong iInteger64);
+
 protected:
 
     /** Returns object name. */
@@ -2583,13 +2588,15 @@ private:
     CFormValue  m_comValue;
 
     /** Holds the bool value. */
-    bool     m_fBool;
+    bool       m_fBool;
     /** Holds the string value. */
-    QString  m_strString;
+    QString    m_strString;
     /** Holds the choice value. */
-    int      m_iChoice;
+    int        m_iChoice;
     /** Holds the integer value. */
-    int      m_iInteger;
+    int        m_iInteger;
+    /** Holds the integer64 value. */
+    qlonglong  m_iInteger64;
 };
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
