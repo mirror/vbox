@@ -4998,6 +4998,7 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
  */
 static VBOXSTRICTRC vmxHCEvaluatePendingEventNested(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint32_t *pfIntrState)
 {
+    NOREF(pVmcsInfo);
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
 
     Assert(pfIntrState);
