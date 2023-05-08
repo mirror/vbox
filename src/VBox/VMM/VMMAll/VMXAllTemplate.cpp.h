@@ -5031,16 +5031,13 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEventNested(PVMCPUCC pVCpu, PVMXVMCSINFO
     Assert(CPUMIsGuestVmxInterceptEvents(pCtx));
 
     /*
-     * Interrupt shadows may block NMIs.
-     * Interrupt shadows may block external-interrupt VM-exits.
-     * NMI inhibition blocks NMIs in addition to external interrupts.
+     * Interrupt shadows MAY block NMIs.
+     * They also blocks external-interrupts and MAY block external-interrupt VM-exits.
      *
      * See Intel spec. 24.4.2 "Guest Non-Register State".
      * See Intel spec. 25.4.1 "Event Blocking".
-     * See Intel spec. 6.7 "Nonmaskable Interrupt (NMI)".
      */
-    if (   !CPUMIsInInterruptShadowWithUpdate(&pVCpu->cpum.GstCtx)
-        && !CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx))
+    if (!CPUMIsInInterruptShadowWithUpdate(&pVCpu->cpum.GstCtx))
     { /* likely */ }
     else
         return VINF_SUCCESS;
@@ -5048,35 +5045,42 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEventNested(PVMCPUCC pVCpu, PVMXVMCSINFO
     /** @todo SMI. SMIs take priority over NMIs. */
 
     /*
-     * Nested-guest NMI-window exiting.
-     * The NMI-window exit must happen regardless of whether an NMI is pending
-     * provided virtual-NMI blocking is not in effect.
-     *
-     * See Intel spec. 25.2 "Other Causes Of VM Exits".
+     * NMIs.
+     * NMIs take priority over interrupts.
      */
-    if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW)
-        && !CPUMIsGuestVmxVirtNmiBlocking(pCtx))
+    if (!CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx))
     {
-        Assert(CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_NMI_WINDOW_EXIT));
-        return IEMExecVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW, 0 /* u64ExitQual */);
-    }
+        /*
+         * Nested-guest NMI-window exiting.
+         * The NMI-window exit must happen regardless of whether an NMI is pending
+         * provided virtual-NMI blocking is not in effect.
+         *
+         * See Intel spec. 25.2 "Other Causes Of VM Exits".
+         */
+        if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW)
+            && !CPUMIsGuestVmxVirtNmiBlocking(pCtx))
+        {
+            Assert(CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_NMI_WINDOW_EXIT));
+            return IEMExecVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW, 0 /* u64ExitQual */);
+        }
 
-    /*
-     * For a nested-guest, the FF always indicates the outer guest's ability to
-     * receive an NMI while the guest-interruptibility state bit depends on whether
-     * the nested-hypervisor is using virtual-NMIs.
-     *
-     * It is very important that we also clear the force-flag if we are causing
-     * an NMI VM-exit as it is the responsibility of the nested-hypervisor to deal
-     * with re-injecting or discarding the NMI. This fixes the bug that showed up
-     * with SMP Windows Server 2008 R2 with Hyper-V enabled, see @bugref{10318#c19}.
-     */
-    if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI))
-    {
-        if (CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_NMI_EXIT))
-            return IEMExecVmxVmexitXcptNmi(pVCpu);
-        vmxHCSetPendingXcptNmi(pVCpu);
-        return VINF_SUCCESS;
+        /*
+         * For a nested-guest, the FF always indicates the outer guest's ability to
+         * receive an NMI while the guest-interruptibility state bit depends on whether
+         * the nested-hypervisor is using virtual-NMIs.
+         *
+         * It is very important that we also clear the force-flag if we are causing
+         * an NMI VM-exit as it is the responsibility of the nested-hypervisor to deal
+         * with re-injecting or discarding the NMI. This fixes the bug that showed up
+         * with SMP Windows Server 2008 R2 with Hyper-V enabled, see @bugref{10318#c19}.
+         */
+        if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI))
+        {
+            if (CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_NMI_EXIT))
+                return IEMExecVmxVmexitXcptNmi(pVCpu);
+            vmxHCSetPendingXcptNmi(pVCpu);
+            return VINF_SUCCESS;
+        }
     }
 
     /*
@@ -5104,6 +5108,12 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEventNested(PVMCPUCC pVCpu, PVMXVMCSINFO
      * by other VM-exits (like a preemption timer), see @bugref{9562#c18}.
      *
      * See Intel spec. 25.4.1 "Event Blocking".
+     *
+     * NMIs block external interrupts as they are dispatched through the interrupt gate (vector 2)
+     * which automatically clears EFLAGS.IF. Also it's possible an NMI handler could enable interrupts
+     * and thus we should not check for NMI inhibition here.
+     *
+     * See Intel spec. 6.8.1 "Masking Maskable Hardware Interrupts".
      */
     if (    VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
         && !VCPU_2_VMXSTATE(pVCpu).fSingleInstruction
