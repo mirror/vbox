@@ -350,6 +350,7 @@ NTSTATUS APIENTRY DxgkDdiDXCreateAllocation(
     /* Init allocation data. */
     pAllocation->enmType = VBOXWDDM_ALLOC_TYPE_D3D;
     pAllocation->dx.desc = *(PVBOXDXALLOCATIONDESC)pAllocationInfo->pPrivateDriverData;
+    pAllocation->dx.desc.cbAllocation = RT_ALIGN_32(pAllocation->dx.desc.cbAllocation, PAGE_SIZE); /* DXGK expects it to be page aligned. */
     pAllocation->dx.sid = SVGA3D_INVALID_ID;
     pAllocation->dx.mobid = SVGA3D_INVALID_ID;
     pAllocation->dx.SegmentId = 0;
