@@ -76,13 +76,6 @@
 # define PageUptodate(a_pPage) Page_Uptodate(a_pPage)
 #endif
 
-/** Starting from 6.4.0, iter_iov() macro should be used in order to access to iov field.  */
-#if RTLNX_VER_MIN(6,4,0)
-# define VBOX_ITER_IOV(_iter) iter_iov(_iter)
-#else
-# define VBOX_ITER_IOV(_iter) iter->iov
-#endif
-
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -93,6 +86,14 @@
 # define VBSF_GET_ITER_TYPE(a_pIter) ((a_pIter)->iter_type)
 #else
 # define VBSF_GET_ITER_TYPE(a_pIter) ((a_pIter)->type)
+#endif
+
+/** Starting from 6.4.0, iter_iov() macro should be used in order to access to iov field
+ * of struct iov_iter. */
+#if RTLNX_VER_MIN(6,4,0)
+# define VBSF_GET_ITER_IOV(_iter) iter_iov(_iter)
+#else
+# define VBSF_GET_ITER_IOV(_iter) iter->iov
 #endif
 
 
@@ -2406,7 +2407,7 @@ static size_t vbsf_iter_max_span_of_pages(struct iov_iter *iter)
 # if RTLNX_VER_MIN(3,16,0)
     if (iter_is_iovec(iter) || (VBSF_GET_ITER_TYPE(iter) & ITER_KVEC)) {
 # endif
-        const struct iovec *pCurIov    = VBOX_ITER_IOV(iter);
+        const struct iovec *pCurIov    = VBSF_GET_ITER_IOV(iter);
         size_t              cLeft      = iter->nr_segs;
         size_t              cPagesSpan = 0;
 
