@@ -3977,12 +3977,26 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
     /*
      * Call a mode specific worker.
      */
+    VBOXSTRICTRC rcStrict;
     if (IEM_IS_REAL_OR_V86_MODE(pVCpu))
-        return IEM_CIMPL_CALL_1(iemCImpl_iret_real_v8086, enmEffOpSize);
-    IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_GDTR | CPUMCTX_EXTRN_LDTR);
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
-        return IEM_CIMPL_CALL_1(iemCImpl_iret_64bit, enmEffOpSize);
-    return     IEM_CIMPL_CALL_1(iemCImpl_iret_prot, enmEffOpSize);
+        rcStrict = IEM_CIMPL_CALL_1(iemCImpl_iret_real_v8086, enmEffOpSize);
+    else
+    {
+        IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_GDTR | CPUMCTX_EXTRN_LDTR);
+        if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+            rcStrict = IEM_CIMPL_CALL_1(iemCImpl_iret_64bit, enmEffOpSize);
+        else
+            rcStrict = IEM_CIMPL_CALL_1(iemCImpl_iret_prot, enmEffOpSize);
+    }
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /*
+     * Clear NMI unblocking IRET state with the completion of IRET.
+     */
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+        pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret = false;
+#endif
+    return rcStrict;
 }
 
 
