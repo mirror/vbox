@@ -5923,10 +5923,12 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
         vmxHCTrpmTrapToPendingEvent(pVCpu);
 
     uint32_t fIntrState;
-    rcStrict = vmxHCEvaluatePendingEvent(pVCpu, pVmxTransient->pVmcsInfo, pVmxTransient->fIsNestedGuest,
-                                         &fIntrState);
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (!pVmxTransient->fIsNestedGuest)
+        rcStrict = vmxHCEvaluatePendingEvent(pVCpu, pVmxTransient->pVmcsInfo, &fIntrState);
+    else
+        rcStrict = vmxHCEvaluatePendingEventNested(pVCpu, pVmxTransient->pVmcsInfo, &fIntrState);
+
     /*
      * While evaluating pending events if something failed (unlikely) or if we were
      * preparing to run a nested-guest but performed a nested-guest VM-exit, we should bail.
@@ -5940,6 +5942,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
         return VINF_VMX_VMEXIT;
     }
 #else
+    rcStrict = vmxHCEvaluatePendingEvent(pVCpu, pVmxTransient->pVmcsInfo, &fIntrState);
     Assert(rcStrict == VINF_SUCCESS);
 #endif
 

@@ -3039,6 +3039,7 @@ DECLINLINE(void) vmxHCSetPendingExtInt(PVMCPUCC pVCpu, uint8_t u8Interrupt)
                               | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID, 0)
                               | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,          1);
     vmxHCSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
+    Log4Func(("External interrupt (%#x) pending injection\n", u8Interrupt));
 }
 
 
@@ -3054,6 +3055,7 @@ DECLINLINE(void) vmxHCSetPendingXcptNmi(PVMCPUCC pVCpu)
                               | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID, 0)
                               | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,          1);
     vmxHCSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
+    Log4Func(("NMI pending injection\n"));
 }
 
 
@@ -4373,16 +4375,22 @@ static VBOXSTRICTRC vmxHCCheckForceFlags(PVMCPUCC pVCpu, bool fIsNestedGuest, bo
      * Please note the priority of these events are specified and important.
      * See Intel spec. 29.4.3.2 "APIC-Write Emulation".
      * See Intel spec. 6.9 "Priority Among Simultaneous Exceptions And Interrupts".
+     *
+     * Interrupt-window and NMI-window VM-exits for the nested-guest need not be
+     * handled here. They'll be handled by the hardware while executing the nested-guest
+     * or by us when we injecting events that are not part of VM-entry of the nested-guest.
      */
     if (fIsNestedGuest)
     {
-        /* Pending nested-guest APIC-write. */
+        /* Pending nested-guest APIC-write (may or may not cause a VM-exit). */
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
         {
             Log4Func(("Pending nested-guest APIC-write\n"));
             VBOXSTRICTRC rcStrict = IEMExecVmxVmexitApicWrite(pVCpu);
             Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
-            return rcStrict;
+            if (    rcStrict == VINF_SUCCESS
+                && !CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
+                return rcStrict;
         }
 
         /* Pending nested-guest monitor-trap flag (MTF). */
@@ -4515,6 +4523,7 @@ static void vmxHCSetIntWindowExitVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
             int rc = VMX_VMCS_WRITE_32(pVCpu, VMX_VMCS32_CTRL_PROC_EXEC, pVmcsInfo->u32ProcCtls);
             AssertRC(rc);
         }
+        Log4Func(("Enabled interrupt-window exiting\n"));
     } /* else we will deliver interrupts whenever the guest Vm-exits next and is in a state to receive the interrupt. */
 }
 
@@ -4532,6 +4541,7 @@ DECLINLINE(void) vmxHCClearIntWindowExitVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsI
         pVmcsInfo->u32ProcCtls &= ~VMX_PROC_CTLS_INT_WINDOW_EXIT;
         int rc = VMX_VMCS_WRITE_32(pVCpu, VMX_VMCS32_CTRL_PROC_EXEC, pVmcsInfo->u32ProcCtls);
         AssertRC(rc);
+        Log4Func(("Disabled interrupt-window exiting\n"));
     }
 }
 
@@ -4552,7 +4562,7 @@ static void vmxHCSetNmiWindowExitVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
             pVmcsInfo->u32ProcCtls |= VMX_PROC_CTLS_NMI_WINDOW_EXIT;
             int rc = VMX_VMCS_WRITE_32(pVCpu, VMX_VMCS32_CTRL_PROC_EXEC, pVmcsInfo->u32ProcCtls);
             AssertRC(rc);
-            Log4Func(("Setup NMI-window exiting\n"));
+            Log4Func(("Enabled NMI-window exiting\n"));
         }
     } /* else we will deliver NMIs whenever we VM-exit next, even possibly nesting NMIs. Can't be helped on ancient CPUs. */
 }
@@ -4571,6 +4581,7 @@ DECLINLINE(void) vmxHCClearNmiWindowExitVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsI
         pVmcsInfo->u32ProcCtls &= ~VMX_PROC_CTLS_NMI_WINDOW_EXIT;
         int rc = VMX_VMCS_WRITE_32(pVCpu, VMX_VMCS32_CTRL_PROC_EXEC, pVmcsInfo->u32ProcCtls);
         AssertRC(rc);
+        Log4Func(("Disabled NMI-window exiting\n"));
     }
 }
 
@@ -4851,7 +4862,7 @@ static VBOXSTRICTRC vmxHCInjectEventVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo,
  * @param   fIsNestedGuest  Flag whether the evaluation happens for a nested guest.
  * @param   pfIntrState     Where to store the VT-x guest-interruptibility state.
  */
-static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNestedGuest, uint32_t *pfIntrState)
+static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint32_t *pfIntrState)
 {
     Assert(pfIntrState);
     Assert(!TRPMHasTrap(pVCpu));
@@ -4875,40 +4886,30 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
          * NMIs.
          * NMIs take priority over external interrupts.
          */
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-        PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-#endif
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI))
         {
-            /*
-             * For a guest, the FF always indicates the guest's ability to receive an NMI.
-             *
-             * For a nested-guest, the FF always indicates the outer guest's ability to
-             * receive an NMI while the guest-interruptibility state bit depends on whether
-             * the nested-hypervisor is using virtual-NMIs.
-             */
             if (!CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx))
             {
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-                if (   fIsNestedGuest
-                    && CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_NMI_EXIT))
-                    return IEMExecVmxVmexitXcptNmi(pVCpu);
-#endif
+                /* Finally, inject the NMI and we're done. */
                 vmxHCSetPendingXcptNmi(pVCpu);
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
-                Log4Func(("NMI pending injection\n"));
-
-                /* We've injected the NMI, bail. */
+                vmxHCClearNmiWindowExitVmcs(pVCpu, pVmcsInfo);
                 return VINF_SUCCESS;
             }
-            if (!fIsNestedGuest)
-                vmxHCSetNmiWindowExitVmcs(pVCpu, pVmcsInfo);
+
+            /*
+             * Setup NMI-window exiting and also clear any interrupt-window exiting that might
+             * still be active. This can happen if we got VM-exits that were higher priority
+             * than an interrupt-window VM-exit.
+             */
+            vmxHCSetNmiWindowExitVmcs(pVCpu, pVmcsInfo);
+            vmxHCClearIntWindowExitVmcs(pVCpu, pVmcsInfo);
         }
+        else
+            Assert(!(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT));
 
         /*
          * External interrupts (PIC/APIC).
-         * Once PDMGetInterrupt() returns a valid interrupt we -must- deliver it.
-         * We cannot re-request the interrupt from the controller again.
          */
         if (    VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
             && !VCPU_2_VMXSTATE(pVCpu).fSingleInstruction)
@@ -4917,51 +4918,21 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
             int rc = vmxHCImportGuestStateEx(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_RFLAGS);
             AssertRC(rc);
 
-            /*
-             * We must not check EFLAGS directly when executing a nested-guest, use
-             * CPUMIsGuestPhysIntrEnabled() instead as EFLAGS.IF does not control the blocking of
-             * external interrupts when "External interrupt exiting" is set. This fixes a nasty
-             * SMP hang while executing nested-guest VCPUs on spinlocks which aren't rescued by
-             * other VM-exits (like a preemption timer), see @bugref{9562#c18}.
-             *
-             * See Intel spec. 25.4.1 "Event Blocking".
-             */
-            if (CPUMIsGuestPhysIntrEnabled(pVCpu))
+            if (pVCpu->cpum.GstCtx.eflags.u & X86_EFL_IF)
             {
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-                if (    fIsNestedGuest
-                    &&  CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
-                {
-                    VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, 0 /* uVector */, true /* fIntPending */);
-                    if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
-                        return rcStrict;
-                }
-#endif
+                /*
+                 * Once PDMGetInterrupt() returns an interrupt we -must- deliver it.
+                 * We cannot re-request the interrupt from the controller again.
+                 */
                 uint8_t u8Interrupt;
                 rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
                 if (RT_SUCCESS(rc))
-                {
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-                    if (   fIsNestedGuest
-                        && CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
-                    {
-                        VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, u8Interrupt, false /* fIntPending */);
-                        Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
-                        return rcStrict;
-                    }
-#endif
                     vmxHCSetPendingExtInt(pVCpu, u8Interrupt);
-                    Log4Func(("External interrupt (%#x) pending injection\n", u8Interrupt));
-                }
                 else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
                 {
                     STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchTprMaskedIrq);
-
-                    if (   !fIsNestedGuest
-                        && (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW))
+                    if (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
                         vmxHCApicSetTprThreshold(pVCpu, pVmcsInfo, u8Interrupt >> 4);
-                    /* else: for nested-guests, TPR threshold is picked up while merging VMCS controls. */
-
                     /*
                      * If the CPU doesn't have TPR shadowing, we will always get a VM-exit on TPR changes and
                      * APICSetTpr() will end up setting the VMCPU_FF_INTERRUPT_APIC if required, so there is no
@@ -4971,30 +4942,215 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
                 else
                     STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchGuestIrq);
 
-                /* We've injected the interrupt or taken necessary action, bail. */
+                /* We must clear interrupt-window exiting for the same reason mentioned above for NMIs. */
+                vmxHCClearIntWindowExitVmcs(pVCpu, pVmcsInfo);
                 return VINF_SUCCESS;
             }
-            if (!fIsNestedGuest)
-                vmxHCSetIntWindowExitVmcs(pVCpu, pVmcsInfo);
+
+            /* Setup interrupt-window exiting. */
+            vmxHCSetIntWindowExitVmcs(pVCpu, pVmcsInfo);
+            Assert(!(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT));
+        }
+        else
+        {
+            vmxHCClearIntWindowExitVmcs(pVCpu, pVmcsInfo);
+            Assert(!(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT));
         }
     }
-    else if (!fIsNestedGuest)
+    else
     {
         /*
-         * An event is being injected or we are in an interrupt shadow. Check if another event is
-         * pending. If so, instruct VT-x to cause a VM-exit as soon as the guest is ready to accept
-         * the pending event.
+         * An event is being injected or we are in an interrupt shadow.
+         * If another event is pending currently, instruct VT-x to cause a VM-exit as
+         * soon as the guest is ready to accept it.
          */
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI))
             vmxHCSetNmiWindowExitVmcs(pVCpu, pVmcsInfo);
-        else if (   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
-                 && !VCPU_2_VMXSTATE(pVCpu).fSingleInstruction)
-            vmxHCSetIntWindowExitVmcs(pVCpu, pVmcsInfo);
+        else
+        {
+            Assert(!(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT));
+            if (    VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
+                && !VCPU_2_VMXSTATE(pVCpu).fSingleInstruction)
+                vmxHCSetIntWindowExitVmcs(pVCpu, pVmcsInfo);
+            else
+                Assert(!(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_INT_WINDOW_EXIT));
+        }
     }
-    /* else: for nested-guests, NMI/interrupt-window exiting will be picked up when merging VMCS controls. */
 
     return VINF_SUCCESS;
 }
+
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/**
+ * Evaluates the event to be delivered to the nested-guest and sets it as the
+ * pending event.
+ *
+ * Toggling of interrupt force-flags here is safe since we update TRPM on premature
+ * exits to ring-3 before executing guest code, see vmxHCExitToRing3(). We must
+ * NOT restore these force-flags.
+ *
+ * @returns Strict VBox status code (i.e. informational status codes too).
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmcsInfo       The VMCS information structure.
+ * @param   pfIntrState     Where to store the VT-x guest-interruptibility state.
+ *
+ * @remarks The guest must be in VMX non-root mode.
+ */
+static VBOXSTRICTRC vmxHCEvaluatePendingEventNested(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint32_t *pfIntrState)
+{
+    PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+
+    Assert(pfIntrState);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+    Assert(!TRPMHasTrap(pVCpu));
+
+    /*
+     * Compute/update guest-interruptibility state related FFs.
+     * The FFs will be used below while evaluating events to be injected.
+     */
+    *pfIntrState = vmxHCGetGuestIntrStateAndUpdateFFs(pVCpu);
+
+    /*
+     * If we are injecting an event, we must not setup any interrupt/NMI-window
+     * exiting or we would get into an infinite VM-exit loop. An event that's
+     * already pending has already performed all necessary checks.
+     */
+    if (VCPU_2_VMXSTATE(pVCpu).Event.fPending)
+        return VINF_SUCCESS;
+
+    /*
+     * An event injected by VMLAUNCH/VMRESUME instruction emulation should've been
+     * made pending (TRPM to HM event) and would be handled above if we resumed
+     * execution in HM. If somehow we fell back to emulation after the
+     * VMLAUNCH/VMRESUME instruction, it would have been handled in iemRaiseXcptOrInt
+     * (calling iemVmxVmexitEvent). Thus, if we get here the nested-hypervisor's VMX
+     * intercepts should be active and any events pending here have been generated
+     * while executing the guest in VMX non-root mode after virtual VM-entry completed.
+     */
+    Assert(CPUMIsGuestVmxInterceptEvents(pCtx));
+
+    /*
+     * Interrupt shadows can also block NMIs. If we are in an interrupt shadow there's
+     * nothing more to do here.
+     *
+     * See Intel spec. 24.4.2 "Guest Non-Register State".
+     * See Intel spec. 25.4.1 "Event Blocking".
+     */
+    if (!CPUMIsInInterruptShadowWithUpdate(&pVCpu->cpum.GstCtx))
+    { /* likely */ }
+    else
+        return VINF_SUCCESS;
+
+    /** @todo SMI. SMIs take priority over NMIs. */
+
+    /*
+     * NMIs.
+     * NMIs take priority over external interrupts.
+     *
+     * NMI blocking is in effect after delivering an NMI until the execution of IRET.
+     * Only when there isn't any NMI blocking can an NMI-window VM-exit or delivery of an NMI happen.
+     */
+    if (!CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx))
+    {
+        /*
+         * Nested-guest NMI-window exiting.
+         * The NMI-window exit must happen regardless of whether an NMI is pending
+         * provided virtual-NMI blocking is not in effect.
+         *
+         * See Intel spec. 25.2 "Other Causes Of VM Exits".
+         */
+        if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW)
+            && !CPUMIsGuestVmxVirtNmiBlocking(pCtx))
+        {
+            Assert(CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_NMI_WINDOW_EXIT));
+            return IEMExecVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW, 0 /* u64ExitQual */);
+        }
+
+        /*
+         * For a nested-guest, the FF always indicates the outer guest's ability to
+         * receive an NMI while the guest-interruptibility state bit depends on whether
+         * the nested-hypervisor is using virtual-NMIs.
+         *
+         * It is very important that we also clear the force-flag if we are causing
+         * an NMI VM-exit as it is the responsibility of the nested-hypervisor to deal
+         * with re-injecting or discarding the NMI. This fixes the bug that showed up
+         * with SMP Windows Server 2008 R2 with Hyper-V enabled, see @bugref{10318#c19}.
+         */
+        if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI))
+        {
+            if (CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_NMI_EXIT))
+                return IEMExecVmxVmexitXcptNmi(pVCpu);
+            vmxHCSetPendingXcptNmi(pVCpu);
+            return VINF_SUCCESS;
+        }
+    }
+
+    /*
+     * Nested-guest interrupt-window exiting.
+     *
+     * We must cause the interrupt-window exit regardless of whether an interrupt is pending
+     * provided virtual interrupts are enabled.
+     *
+     * See Intel spec. 25.2 "Other Causes Of VM Exits".
+     * See Intel spec. 26.7.5 "Interrupt-Window Exiting and Virtual-Interrupt Delivery".
+     */
+    if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_INT_WINDOW)
+        && CPUMIsGuestVmxVirtIntrEnabled(pCtx))
+    {
+        Assert(CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT));
+        return IEMExecVmxVmexit(pVCpu, VMX_EXIT_INT_WINDOW, 0 /* u64ExitQual */);
+    }
+
+    /*
+     * External interrupts (PIC/APIC).
+     *
+     * When "External interrupt exiting" is set the VM-exit happens regardless of RFLAGS.IF.
+     * When it isn't set, RFLAGS.IF controls delivery of the interrupt as always.
+     * This fixes a nasty SMP hang while executing nested-guest VCPUs on spinlocks which aren't rescued
+     * by other VM-exits (like a preemption timer), see @bugref{9562#c18}.
+     *
+     * See Intel spec. 25.4.1 "Event Blocking".
+     */
+    if (    VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
+        && !VCPU_2_VMXSTATE(pVCpu).fSingleInstruction
+        &&  CPUMIsGuestVmxPhysIntrEnabled(pCtx))
+    {
+        Assert(!DBGFIsStepping(pVCpu));
+
+        /* Nested-guest external interrupt VM-exit. */
+        if (    CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_EXT_INT_EXIT)
+            && !CPUMIsGuestVmxExitCtlsSet(pCtx, VMX_EXIT_CTLS_ACK_EXT_INT))
+        {
+            VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, 0 /* uVector */, true /* fIntPending */);
+            Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+            return rcStrict;
+        }
+
+        /*
+         * Fetch the external interrupt from the interrupt controller.
+         * Once PDMGetInterrupt() returns an interrupt we -must- deliver it or pass it to
+         * the nested-hypervisor. We cannot re-request the interrupt from the controller again.
+         */
+        uint8_t u8Interrupt;
+        int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
+        if (RT_SUCCESS(rc))
+        {
+            /* Nested-guest external interrupt VM-exit when the "acknowledge interrupt on exit" is enabled. */
+            if (CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
+            {
+                Assert(CPUMIsGuestVmxExitCtlsSet(pCtx, VMX_EXIT_CTLS_ACK_EXT_INT));
+                VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, u8Interrupt, false /* fIntPending */);
+                Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+                return rcStrict;
+            }
+            vmxHCSetPendingExtInt(pVCpu, u8Interrupt);
+            return VINF_SUCCESS;
+        }
+    }
+    return VINF_SUCCESS;
+}
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
 
 /**
@@ -7662,7 +7818,7 @@ HMVMX_EXIT_NSRC_DECL vmxHCExitNmiWindow(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
         AssertRC(rc);
     }
 
-    /* Indicate that we no longer need to VM-exit when the guest is ready to receive NMIs, it is now ready */
+    /* Indicate that we no longer need to VM-exit when the guest is ready to receive NMIs, it is now ready. */
     vmxHCClearNmiWindowExitVmcs(pVCpu, pVmcsInfo);
 
     /* Evaluate and deliver pending events and resume guest execution. */
@@ -10060,7 +10216,7 @@ HMVMX_EXIT_NSRC_DECL vmxHCExitNmiWindowNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmx
 
     if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_NMI_WINDOW_EXIT))
         return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason, 0 /* uExitQual */);
-    return vmxHCExitIntWindow(pVCpu, pVmxTransient);
+    return vmxHCExitNmiWindow(pVCpu, pVmxTransient);
 }
 
 
