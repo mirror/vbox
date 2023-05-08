@@ -90,6 +90,7 @@ ifndef VBOX_ONLY_VALIDATIONKIT
   	DisasmMisc.cpp
  endif # VBOX_WITH_RAW_MODE
 
+ifdef VBOX_WITH_R0_MODULES
  LIBRARIES              += DisasmR0
  DisasmR0_TEMPLATE       = VBoxR0
  DisasmR0_DEFS           = IN_DIS IN_RT_R0 DIS_CORE_ONLY VBOX_DIS_WITH_X86_AMD64
@@ -99,6 +100,7 @@ ifndef VBOX_ONLY_VALIDATIONKIT
  	DisasmTables-x86-amd64.cpp \
  	DisasmTablesX64.cpp \
  	DisasmMisc.cpp
+endif
 
 endif # !VBOX_ONLY_VALIDATIONKIT
 
