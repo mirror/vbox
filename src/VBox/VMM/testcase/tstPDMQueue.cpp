@@ -312,11 +312,14 @@ static DECLCALLBACK(int) Test1Emt(PVM pVM)
      */
     PTEST1ITEM pMyItem = (PTEST1ITEM)PDMQueueAlloc(pVM, hQueue, pVM);
     RTTEST_CHECK(g_hTest, pMyItem);
-    pMyItem->iSeqNo = 1;
-    RTTEST_CHECK_RC(g_hTest, PDMQueueInsert(pVM, hQueue, pVM, &pMyItem->Core), VINF_SUCCESS);
+    if (pMyItem)
+    {
+        pMyItem->iSeqNo = 1;
+        RTTEST_CHECK_RC(g_hTest, PDMQueueInsert(pVM, hQueue, pVM, &pMyItem->Core), VINF_SUCCESS);
 
-    PDMR3QueueFlushAll(pVM);
-    RTTEST_CHECK(g_hTest, g_cTest1Callbacks == 1);
+        PDMR3QueueFlushAll(pVM);
+        RTTEST_CHECK(g_hTest, g_cTest1Callbacks == 1);
+    }
 
     /*
      * All items:
