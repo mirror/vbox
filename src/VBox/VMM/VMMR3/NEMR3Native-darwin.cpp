@@ -3737,8 +3737,8 @@ static VBOXSTRICTRC nemR3DarwinPreRunGuest(PVM pVM, PVMCPU pVCpu, PVMXTRANSIENT 
     if (TRPMHasTrap(pVCpu))
         vmxHCTrpmTrapToPendingEvent(pVCpu);
 
-    uint32_t fIntrState;
-    rcStrict = vmxHCEvaluatePendingEvent(pVCpu, &pVCpu->nem.s.VmcsInfo, &fIntrState);
+    uint32_t const fIntrState = vmxHCGetGuestIntrStateWithUpdate(pVCpu);
+    rcStrict = vmxHCEvaluatePendingEvent(pVCpu, &pVCpu->nem.s.VmcsInfo);
 
     /*
      * Event injection may take locks (currently the PGM lock for real-on-v86 case) and thus

@@ -5922,12 +5922,12 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
     if (TRPMHasTrap(pVCpu))
         vmxHCTrpmTrapToPendingEvent(pVCpu);
 
-    uint32_t fIntrState;
+    uint32_t const fIntrState = vmxHCGetGuestIntrStateWithUpdate(pVCpu);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (!pVmxTransient->fIsNestedGuest)
-        rcStrict = vmxHCEvaluatePendingEvent(pVCpu, pVmxTransient->pVmcsInfo, &fIntrState);
+        rcStrict = vmxHCEvaluatePendingEvent(pVCpu, pVmxTransient->pVmcsInfo);
     else
-        rcStrict = vmxHCEvaluatePendingEventNested(pVCpu, pVmxTransient->pVmcsInfo, &fIntrState);
+        rcStrict = vmxHCEvaluatePendingEventNested(pVCpu, pVmxTransient->pVmcsInfo);
 
     /*
      * While evaluating pending events if something failed (unlikely) or if we were
@@ -5942,7 +5942,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
         return VINF_VMX_VMEXIT;
     }
 #else
-    rcStrict = vmxHCEvaluatePendingEvent(pVCpu, pVmxTransient->pVmcsInfo, &fIntrState);
+    rcStrict = vmxHCEvaluatePendingEvent(pVCpu, pVmxTransient->pVmcsInfo);
     Assert(rcStrict == VINF_SUCCESS);
 #endif
 
@@ -5954,8 +5954,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
      * With nested-guests, the above does not apply since unrestricted guest execution is a
      * requirement. Regardless, we do this here to avoid duplicating code elsewhere.
      */
-    rcStrict = vmxHCInjectPendingEvent(pVCpu, pVmxTransient->pVmcsInfo, pVmxTransient->fIsNestedGuest,
-                                       fIntrState, fStepping);
+    rcStrict = vmxHCInjectPendingEvent(pVCpu, pVmxTransient->pVmcsInfo, pVmxTransient->fIsNestedGuest, fIntrState, fStepping);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
     { /* likely */ }
     else
