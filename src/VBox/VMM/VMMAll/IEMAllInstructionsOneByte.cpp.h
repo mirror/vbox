@@ -5213,9 +5213,9 @@ FNIEMOP_DEF_1(iemOp_pop_Ev, uint8_t, bRm)
     VBOXSTRICTRC    rcStrict;
     switch (pVCpu->iem.s.enmEffOpSize)
     {
-        case IEMMODE_16BIT: rcStrict = iemOpHlpCalcRmEffAddrEx(pVCpu, bRm, 0, &GCPtrEff, 2); break;
-        case IEMMODE_32BIT: rcStrict = iemOpHlpCalcRmEffAddrEx(pVCpu, bRm, 0, &GCPtrEff, 4); break;
-        case IEMMODE_64BIT: rcStrict = iemOpHlpCalcRmEffAddrEx(pVCpu, bRm, 0, &GCPtrEff, 8); break;
+        case IEMMODE_16BIT: rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 2 << 8, &GCPtrEff); break;
+        case IEMMODE_32BIT: rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 4 << 8, &GCPtrEff); break;
+        case IEMMODE_64BIT: rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 8 << 8, &GCPtrEff); break;
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
     if (rcStrict != VINF_SUCCESS)
