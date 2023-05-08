@@ -4996,9 +4996,9 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEventNested(PVMCPUCC pVCpu, PVMXVMCSINFO
     Assert(!TRPMHasTrap(pVCpu));
 
     /*
-     * If we are injecting an event, we must not setup any interrupt/NMI-window
-     * exiting or we would get into an infinite VM-exit loop. An event that's
-     * already pending has already performed all necessary checks.
+     * If we are injecting an event, all necessary checks have been performed.
+     * Any interrupt-window or NMI-window exiting would have been setup by the
+     * nested-guest while we merged controls.
      */
     if (VCPU_2_VMXSTATE(pVCpu).Event.fPending)
         return VINF_SUCCESS;
