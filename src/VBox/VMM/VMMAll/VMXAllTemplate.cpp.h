@@ -4858,12 +4858,17 @@ static VBOXSTRICTRC vmxHCInjectEventVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo,
  * NOT restore these force-flags.
  *
  * @returns Strict VBox status code (i.e. informational status codes too).
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pVmcsInfo   The VMCS information structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmcsInfo       The VMCS information structure.
+ * @param   pfIntrState     Where to store the updated VMX guest-interruptibility
+ *                          state.
  */
-static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
+static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint32_t *pfIntrState)
 {
+    Assert(pfIntrState);
     Assert(!TRPMHasTrap(pVCpu));
+
+    *pfIntrState = vmxHCGetGuestIntrStateWithUpdate(pVCpu);
 
     /*
      * Evaluate if a new event needs to be injected.
@@ -4983,17 +4988,22 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
  * NOT restore these force-flags.
  *
  * @returns Strict VBox status code (i.e. informational status codes too).
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pVmcsInfo   The VMCS information structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmcsInfo       The VMCS information structure.
+ * @param   pfIntrState     Where to store the updated VMX guest-interruptibility
+ *                          state.
  *
  * @remarks The guest must be in VMX non-root mode.
  */
-static VBOXSTRICTRC vmxHCEvaluatePendingEventNested(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
+static VBOXSTRICTRC vmxHCEvaluatePendingEventNested(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint32_t *pfIntrState)
 {
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
 
+    Assert(pfIntrState);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     Assert(!TRPMHasTrap(pVCpu));
+
+    *pfIntrState = vmxHCGetGuestIntrStateWithUpdate(pVCpu);
 
     /*
      * If we are injecting an event, all necessary checks have been performed.
