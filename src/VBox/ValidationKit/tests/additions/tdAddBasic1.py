@@ -289,7 +289,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
             # Wait for the GAs to come up.
             reporter.testStart('IGuest::additionsRunLevel');
-            fRc = self.testIGuest_additionsRunLevel(oSession, oTestVm, oGuest);
+            fRc = self.testIGuest_additionsRunLevel(oSession, oTxsSession, oTestVm, oGuest);
             reporter.testDone();
 
             # Check the additionsVersion attribute. It must not be empty.
@@ -587,7 +587,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
         return (fRc, oTxsSession);
 
-    def testIGuest_additionsRunLevel(self, oSession, oTestVm, oGuest):
+    def testIGuest_additionsRunLevel(self, oSession, oTxsSession, oTestVm, oGuest):
         """
         Do run level tests.
 
