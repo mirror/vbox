@@ -73,14 +73,22 @@ const char *VBGHDisplayServerTypeToStr(VBGHDISPLAYSERVERTYPE enmType)
  *                              Descending order (e.g. "libfoo.so", "libfoo.so.2", "libfoo.so.2.6").
  * @param   cLibs               Number of library names in \a apszLibs.
  * @param   phLdrMod            Where to return the library handle on success.
+ *
+ * @note    Will print loading statuses to verbose release log.
  */
 static int vbghDisplayServerTryLoadLib(const char **apszLibs, size_t cLibs, PRTLDRMOD phLdrMod)
 {
     for (size_t i = 0; i < cLibs; i++)
     {
-        int rc2 = RTLdrLoadSystem(apszLibs[i], /* fNoUnload = */ true, phLdrMod);
+        const char *pszLib = apszLibs[i];
+        int rc2 = RTLdrLoadSystem(pszLib, /* fNoUnload = */ true, phLdrMod);
         if (RT_SUCCESS(rc2))
+        {
+            LogRel2(("Loaded display server system library '%s'\n", pszLib));
             return VINF_SUCCESS;
+        }
+        else
+            LogRel2(("Unable to load display server system library '%s': %Rrc\n", pszLib, rc2));
     }
 
     return VERR_NOT_FOUND;
