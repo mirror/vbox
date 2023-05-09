@@ -97,7 +97,7 @@ def testbox_data_processing(oDb):
 def os_results_separating(dResult, sTestName, sTestBoxOs, sTestBoxCpuArch, enmStatus):
     if sTestBoxOs == 'win':
         sTestBoxOs = 'windows'
-    elif sTestBoxOs != 'linux' and sTestBoxOs != 'darwin' and sTestBoxOs != 'solaris':
+    elif sTestBoxOs not in ('linux', 'darwin', 'solaris'):
         sTestBoxOs = 'other'
     dict_update(dResult, '%s / %s.%s' % (sTestName, sTestBoxOs, sTestBoxCpuArch), enmStatus)
 
