@@ -94,6 +94,11 @@ typedef struct VMSVGA3D_MAPPED_SURFACE
     void *pvData;
 } VMSVGA3D_MAPPED_SURFACE;
 
+void vmsvga3dReset(PVGASTATECC pThisCC);
+void vmsvga3dTerminate(PVGASTATECC pThisCC);
+
+int vmsvga3dInit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC);
+
 /* Write render targets to bitmaps. */
 //#define DUMP_BITMAPS
 void vmsvga3dMapWriteBmpFile(VMSVGA3D_MAPPED_SURFACE const *pMap, char const *pszPrefix);

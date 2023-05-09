@@ -3247,13 +3247,9 @@ static DECLCALLBACK(int) vmsvga3dBackInit(PPDMDEVINS pDevIns, PVGASTATE pThis, P
     }
 #endif
 
-    PVMSVGA3DSTATE pState = (PVMSVGA3DSTATE)RTMemAllocZ(sizeof(VMSVGA3DSTATE));
-    AssertReturn(pState, VERR_NO_MEMORY);
-    pThisCC->svga.p3dState = pState;
-
     PVMSVGA3DBACKEND pBackend = (PVMSVGA3DBACKEND)RTMemAllocZ(sizeof(VMSVGA3DBACKEND));
     AssertReturn(pBackend, VERR_NO_MEMORY);
-    pState->pBackend = pBackend;
+    pThisCC->svga.p3dState->pBackend = pBackend;
 
     rc = RTLdrLoadSystem(VBOX_D3D11_LIBRARY_NAME, /* fNoUnload = */ true, &pBackend->hD3D11);
     AssertRC(rc);
@@ -3319,24 +3315,7 @@ static DECLCALLBACK(int) vmsvga3dBackPowerOn(PPDMDEVINS pDevIns, PVGASTATE pThis
 
 static DECLCALLBACK(int) vmsvga3dBackReset(PVGASTATECC pThisCC)
 {
-    PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
-    AssertReturn(pState, VERR_INVALID_STATE);
-
-    /** @todo This is generic code. Must be moved to in DevVGA-SVGA3d.cpp */
-    /* Destroy all leftover surfaces. */
-    for (uint32_t i = 0; i < pState->cSurfaces; i++)
-    {
-        if (pState->papSurfaces[i]->id != SVGA3D_INVALID_ID)
-            vmsvga3dSurfaceDestroy(pThisCC, pState->papSurfaces[i]->id);
-    }
-
-    /* Destroy all leftover DX contexts. */
-    for (uint32_t i = 0; i < pState->cDXContexts; i++)
-    {
-        if (pState->papDXContexts[i]->cid != SVGA3D_INVALID_ID)
-            vmsvga3dDXDestroyContext(pThisCC, pState->papDXContexts[i]->cid);
-    }
-
+    RT_NOREF(pThisCC);
     return VINF_SUCCESS;
 }
 
@@ -3347,15 +3326,7 @@ static DECLCALLBACK(int) vmsvga3dBackTerminate(PVGASTATECC pThisCC)
     AssertReturn(pState, VERR_INVALID_STATE);
 
     if (pState->pBackend)
-    {
-        /* Clean up backends. For example release resources from surfaces. */
-        vmsvga3dBackReset(pThisCC);
-
         dxDeviceDestroy(pState->pBackend, &pState->pBackend->dxDevice);
-
-        RTMemFree(pState->pBackend);
-        pState->pBackend = NULL;
-    }
 
     return VINF_SUCCESS;
 }
@@ -5614,6 +5585,11 @@ static DECLCALLBACK(int) vmsvga3dBackDXDestroyContext(PVGASTATECC pThisCC, PVMSV
             for (uint32_t i = 0; i < pBackendDXContext->cStreamOutput; ++i)
                 dxDestroyStreamOutput(&pBackendDXContext->paStreamOutput[i]);
         }
+        if (pBackendDXContext->paUnorderedAccessView)
+        {
+            for (uint32_t i = 0; i < pBackendDXContext->cUnorderedAccessView; ++i)
+                D3D_RELEASE(pBackendDXContext->paRenderTargetView[i].u.pUnorderedAccessView);
+        }
 
         RTMemFreeZ(pBackendDXContext->papBlendState, sizeof(pBackendDXContext->papBlendState[0]) * pBackendDXContext->cBlendState);
         RTMemFreeZ(pBackendDXContext->papDepthStencilState, sizeof(pBackendDXContext->papDepthStencilState[0]) * pBackendDXContext->cDepthStencilState);
@@ -5626,6 +5602,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXDestroyContext(PVGASTATECC pThisCC, PVMSV
         RTMemFreeZ(pBackendDXContext->paQuery, sizeof(pBackendDXContext->paQuery[0]) * pBackendDXContext->cQuery);
         RTMemFreeZ(pBackendDXContext->paShader, sizeof(pBackendDXContext->paShader[0]) * pBackendDXContext->cShader);
         RTMemFreeZ(pBackendDXContext->paStreamOutput, sizeof(pBackendDXContext->paStreamOutput[0]) * pBackendDXContext->cStreamOutput);
+        RTMemFreeZ(pBackendDXContext->paUnorderedAccessView, sizeof(pBackendDXContext->paUnorderedAccessView[0]) * pBackendDXContext->cUnorderedAccessView);
 
         /* Destroy backend surfaces which belong to this context. */
         /** @todo The context should have a list of surfaces (and also shared resources). */
@@ -8945,6 +8922,7 @@ static int dxDefineShader(PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderId shaderId
 static int dxDestroyShader(DXSHADER *pDXShader)
 {
     pDXShader->enmShaderType = SVGA3D_SHADERTYPE_INVALID;
+    DXShaderFree(&pDXShader->shaderInfo);
     D3D_RELEASE(pDXShader->pShader);
     RTMemFree(pDXShader->pvDXBC);
     pDXShader->pvDXBC = NULL;

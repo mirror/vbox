@@ -200,9 +200,7 @@ static DECLCALLBACK(int) vmsvga3dBackInit(PPDMDEVINS pDevIns, PVGASTATE pThis, P
 {
     RT_NOREF(pDevIns, pThis);
 
-    PVMSVGA3DSTATE pState;
-    pThisCC->svga.p3dState = pState = (PVMSVGA3DSTATE)RTMemAllocZ(sizeof(VMSVGA3DSTATE));
-    AssertReturn(pThisCC->svga.p3dState, VERR_NO_MEMORY);
+    PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
 
     /* Create event semaphore. */
     int rc = RTSemEventCreate(&pState->WndRequestSem);
@@ -310,22 +308,7 @@ static DECLCALLBACK(int) vmsvga3dBackPowerOn(PPDMDEVINS pDevIns, PVGASTATE pThis
 
 static DECLCALLBACK(int) vmsvga3dBackReset(PVGASTATECC pThisCC)
 {
-    PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
-    AssertReturn(pThisCC->svga.p3dState, VERR_NO_MEMORY);
-
-    /* Destroy all leftover surfaces. */
-    for (uint32_t i = 0; i < pState->cSurfaces; i++)
-    {
-        if (pState->papSurfaces[i]->id != SVGA3D_INVALID_ID)
-            vmsvga3dSurfaceDestroy(pThisCC, pState->papSurfaces[i]->id);
-    }
-
-    /* Destroy all leftover contexts. */
-    for (uint32_t i = 0; i < pState->cContexts; i++)
-    {
-        if (pState->papContexts[i]->id != SVGA3D_INVALID_ID)
-            vmsvga3dBackContextDestroy(pThisCC, pState->papContexts[i]->id);
-    }
+    RT_NOREF(pThisCC);
     return VINF_SUCCESS;
 }
 
@@ -334,11 +317,8 @@ static DECLCALLBACK(int) vmsvga3dBackTerminate(PVGASTATECC pThisCC)
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pThisCC->svga.p3dState, VERR_NO_MEMORY);
 
-    int rc = vmsvga3dBackReset(pThisCC);
-    AssertRCReturn(rc, rc);
-
     /* Terminate the window creation thread. */
-    rc = vmsvga3dSendThreadMessage(pState->pWindowThread, pState->WndRequestSem, WM_VMSVGA3D_EXIT, 0, 0);
+    int rc = vmsvga3dSendThreadMessage(pState->pWindowThread, pState->WndRequestSem, WM_VMSVGA3D_EXIT, 0, 0);
     AssertRCReturn(rc, rc);
 
     RTSemEventDestroy(pState->WndRequestSem);

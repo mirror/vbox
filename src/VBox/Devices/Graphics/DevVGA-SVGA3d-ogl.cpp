@@ -608,7 +608,7 @@ static DECLCALLBACK(bool) vmsvga3dShaderIfGetNextExtension(PVBOXVMSVGASHADERIF p
 static DECLCALLBACK(int) vmsvga3dBackInit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC)
 {
     int rc;
-    RT_NOREF(pDevIns, pThis);
+    RT_NOREF(pDevIns, pThis, pThisCC);
 
     AssertCompile(GL_TRUE == 1);
     AssertCompile(GL_FALSE == 0);
@@ -641,12 +641,6 @@ static DECLCALLBACK(int) vmsvga3dBackInit(PPDMDEVINS pDevIns, PVGASTATE pThis, P
     }
 #endif
 
-    /*
-     * Allocate the state.
-     */
-    pThisCC->svga.p3dState = (PVMSVGA3DSTATE)RTMemAllocZ(sizeof(VMSVGA3DSTATE));
-    AssertReturn(pThisCC->svga.p3dState, VERR_NO_MEMORY);
-
 #ifdef RT_OS_WINDOWS
     /* Create event semaphore and async IO thread. */
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
@@ -664,8 +658,6 @@ static DECLCALLBACK(int) vmsvga3dBackInit(PPDMDEVINS pDevIns, PVGASTATE pThis, P
     }
     else
         LogRel(("VMSVGA3d: RTSemEventCreate failed: %Rrc\n", rc));
-    RTMemFree(pThisCC->svga.p3dState);
-    pThisCC->svga.p3dState = NULL;
     return rc;
 #else
     return VINF_SUCCESS;
@@ -1182,20 +1174,6 @@ static DECLCALLBACK(int) vmsvga3dBackReset(PVGASTATECC pThisCC)
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pThisCC->svga.p3dState, VERR_NO_MEMORY);
 
-    /* Destroy all leftover surfaces. */
-    for (uint32_t i = 0; i < pState->cSurfaces; i++)
-    {
-        if (pState->papSurfaces[i]->id != SVGA3D_INVALID_ID)
-            vmsvga3dSurfaceDestroy(pThisCC, pState->papSurfaces[i]->id);
-    }
-
-    /* Destroy all leftover contexts. */
-    for (uint32_t i = 0; i < pState->cContexts; i++)
-    {
-        if (pState->papContexts[i]->id != SVGA3D_INVALID_ID)
-            vmsvga3dBackContextDestroy(pThisCC, pState->papContexts[i]->id);
-    }
-
     if (pState->SharedCtx.id == VMSVGA3D_SHARED_CTX_ID)
         vmsvga3dContextDestroyOgl(pThisCC, &pState->SharedCtx, VMSVGA3D_SHARED_CTX_ID);
 
@@ -1207,9 +1185,6 @@ static DECLCALLBACK(int) vmsvga3dBackTerminate(PVGASTATECC pThisCC)
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_WRONG_ORDER);
     int            rc;
-
-    rc = vmsvga3dBackReset(pThisCC);
-    AssertRCReturn(rc, rc);
 
     /* Terminate the shader library. */
     rc = ShaderDestroyLib();
@@ -1239,36 +1214,6 @@ static DECLCALLBACK(int) vmsvga3dBackTerminate(PVGASTATECC pThisCC)
 #endif
     pState->pszOtherExtensions = NULL;
 
-    /* Free all leftover surface states. */
-    for (uint32_t i = 0; i < pState->cSurfaces; i++)
-    {
-        AssertPtr(pState->papSurfaces[i]);
-        RTMemFree(pState->papSurfaces[i]);
-        pState->papSurfaces[i] = NULL;
-    }
-
-    /* Destroy all leftover contexts. */
-    for (uint32_t i = 0; i < pState->cContexts; i++)
-    {
-        AssertPtr(pState->papContexts[i]);
-        RTMemFree(pState->papContexts[i]);
-        pState->papContexts[i] = NULL;
-    }
-
-    if (pState->papSurfaces)
-    {
-        RTMemFree(pState->papSurfaces);
-        pState->papSurfaces = NULL;
-    }
-
-    if (pState->papContexts)
-    {
-        RTMemFree(pState->papContexts);
-        pState->papContexts = NULL;
-    }
-
-    pThisCC->svga.p3dState = NULL;
-    RTMemFree(pState);
     return VINF_SUCCESS;
 }
 
@@ -6714,7 +6659,7 @@ static int vmsvga3dSetVertexAttrib(PVMSVGA3DSTATE pState, GLuint index, SVGA3dVe
             /** @todo Test */
             /* "Three-component, signed, 10 10 10 format normalized and expanded to (v[0]/511.0, v[1]/511.0, v[2]/511.0, 1)." */
             uint32_t const u32 = *(uint32_t *)pv;
-            GLfloat const v[4] = { (u32 & 0x3ff) / 511.0f, ((u32 >> 10) & 0x3ff) / 511.0f, ((u32 >> 20) & 0x3ff) / 511.0f, 1.0f };
+            GLfloat const v[4] = { (float)(u32 & 0x3ff) / 511.0f, (float)((u32 >> 10) & 0x3ff) / 511.0f, (float)((u32 >> 20) & 0x3ff) / 511.0f, 1.0f };
             pState->ext.glVertexAttrib4fv(index, v);
             break;
         }

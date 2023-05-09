@@ -1270,8 +1270,13 @@ static bool dxbcByteWriterRealloc(DXBCByteWriter *w, uint32_t cbNew)
     }
 
     uint32_t const cbCurrent = dxbcByteWriterSize(w);
-    memcpy(pvNew, w->pu8ByteCodeBegin, cbCurrent);
-    RTMemFree(w->pu8ByteCodeBegin);
+    if (cbCurrent)
+    {
+        memcpy(pvNew, w->pu8ByteCodeBegin, cbCurrent);
+        RTMemFree(w->pu8ByteCodeBegin);
+    }
+    else
+        Assert(w->pu8ByteCodeBegin == NULL);
 
     w->pu8ByteCodeBegin = (uint8_t *)pvNew;
     w->pu8ByteCodePtr   = w->pu8ByteCodeBegin + cbCurrent;

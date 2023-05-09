@@ -1814,3 +1814,100 @@ bool vmsvga3dIsLegacyBackend(PVGASTATECC pThisCC)
     return pSvgaR3State->pFuncsDX == NULL;
 }
 
+
+void vmsvga3dReset(PVGASTATECC pThisCC)
+{
+    /* Deal with data from PVMSVGA3DSTATE */
+    PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
+    Assert(pThisCC->svga.p3dState);
+
+    if ((pThisCC->svga.p3dState))
+    {
+        /* Destroy all leftover surfaces. */
+        for (uint32_t i = 0; i < p3dState->cSurfaces; i++)
+        {
+            if (p3dState->papSurfaces[i]->id != SVGA3D_INVALID_ID)
+                vmsvga3dSurfaceDestroy(pThisCC, p3dState->papSurfaces[i]->id);
+            RTMemFree(p3dState->papSurfaces[i]);
+            p3dState->papSurfaces[i] = NULL;
+        }
+        RTMemFree(p3dState->papSurfaces);
+        p3dState->papSurfaces = NULL;
+        p3dState->cSurfaces = 0;
+
+        /* Destroy all leftover contexts. */
+        for (uint32_t i = 0; i < p3dState->cContexts; i++)
+        {
+            if (p3dState->papContexts[i]->id != SVGA3D_INVALID_ID)
+                vmsvga3dContextDestroy(pThisCC, p3dState->papContexts[i]->id);
+            RTMemFree(p3dState->papContexts[i]);
+            p3dState->papContexts[i] = NULL;
+        }
+        RTMemFree(p3dState->papContexts);
+        p3dState->papContexts = NULL;
+        p3dState->cContexts = 0;
+
+        if (!vmsvga3dIsLegacyBackend(pThisCC))
+        {
+            /* Destroy all leftover DX contexts. */
+            for (uint32_t i = 0; i < p3dState->cDXContexts; i++)
+            {
+                if (p3dState->papDXContexts[i]->cid != SVGA3D_INVALID_ID)
+                    vmsvga3dDXDestroyContext(pThisCC, p3dState->papDXContexts[i]->cid);
+                RTMemFree(p3dState->papDXContexts[i]);
+                p3dState->papDXContexts[i] = NULL;
+            }
+            RTMemFree(p3dState->papDXContexts);
+            p3dState->papDXContexts = NULL;
+            p3dState->cDXContexts = 0;
+        }
+    }
+
+    /* Reset the backend. */
+    PVMSVGAR3STATE pSvgaR3State = pThisCC->svga.pSvgaR3State;
+    if (pSvgaR3State->pFuncs3D && pSvgaR3State->pFuncs3D->pfnReset)
+        pSvgaR3State->pFuncs3D->pfnReset(pThisCC);
+}
+
+
+void vmsvga3dTerminate(PVGASTATECC pThisCC)
+{
+    /* Clean up backend. */
+    vmsvga3dReset(pThisCC);
+
+    /* Deal with data from PVMSVGA3DSTATE */
+    PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
+    AssertReturnVoid(p3dState);
+
+    /* Terminate the backend. */
+    PVMSVGAR3STATE pSvgaR3State = pThisCC->svga.pSvgaR3State;
+    if (pSvgaR3State->pFuncs3D && pSvgaR3State->pFuncs3D->pfnTerminate)
+        pSvgaR3State->pFuncs3D->pfnTerminate(pThisCC);
+
+    RTMemFree(p3dState->pBackend);
+    p3dState->pBackend = NULL;
+
+    RTMemFree(p3dState);
+    pThisCC->svga.p3dState = NULL;
+}
+
+
+int vmsvga3dInit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC)
+{
+    PVMSVGAR3STATE pSvgaR3State = pThisCC->svga.pSvgaR3State;
+
+    /* 3D interface is required. */
+    AssertReturn(pSvgaR3State->pFuncs3D && pSvgaR3State->pFuncs3D->pfnInit, VERR_NOT_SUPPORTED);
+
+    PVMSVGA3DSTATE p3dState = (PVMSVGA3DSTATE)RTMemAllocZ(sizeof(VMSVGA3DSTATE));
+    AssertReturn(p3dState, VERR_NO_MEMORY);
+    pThisCC->svga.p3dState = p3dState;
+
+    int rc = pSvgaR3State->pFuncs3D->pfnInit(pDevIns, pThis, pThisCC);
+    if (RT_SUCCESS(rc))
+        return VINF_SUCCESS;
+
+    pThisCC->svga.p3dState = NULL;
+    RTMemFree(p3dState);
+    return rc;
+}

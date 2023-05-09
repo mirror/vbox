@@ -258,7 +258,12 @@ DECLCALLBACK(int) vmsvgaR3ResetGmrHandlers(PVGASTATE pThis);
 DECLCALLBACK(int) vmsvgaR3DeregisterGmr(PPDMDEVINS pDevIns, uint32_t gmrId);
 #endif
 
+int vmsvgaR3DestroyScreen(PVGASTATE pThis, PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen);
+
 void vmsvgaR3ResetScreens(PVGASTATE pThis, PVGASTATECC pThisCC);
+void vmsvgaR3ResetSvgaState(PVGASTATE pThis, PVGASTATECC pThisCC);
+
+void vmsvgaR3TerminateSvgaState(PVGASTATE pThis, PVGASTATECC pThisCC);
 
 int vmsvgaR3ChangeMode(PVGASTATE pThis, PVGASTATECC pThisCC);
 int vmsvgaR3UpdateScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, int x, int y, int w, int h);

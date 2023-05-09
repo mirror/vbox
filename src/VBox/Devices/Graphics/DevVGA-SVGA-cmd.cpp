@@ -538,6 +538,7 @@ static void vmsvgaR3GboDestroy(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo)
 
     if (RT_LIKELY(VMSVGA_IS_GBO_CREATED(pGbo)))
     {
+        RTMemFree(pGbo->pvHost);
         RTMemFree(pGbo->paDescriptors);
         RT_ZERO(*pGbo);
     }
@@ -854,6 +855,13 @@ static int vmsvgaR3MobCreate(PVMSVGAR3STATE pSvgaR3State,
 }
 
 
+static void vmsvgaR3MobFree(PVMSVGAR3STATE pSvgaR3State, PVMSVGAMOB pMob)
+{
+    vmsvgaR3GboDestroy(pSvgaR3State, &pMob->Gbo);
+    RTMemFree(pMob);
+}
+
+
 static int vmsvgaR3MobDestroy(PVMSVGAR3STATE pSvgaR3State, SVGAMobId mobid)
 {
     /* Update the entry in the pSvgaR3State->pGboOTableMob. */
@@ -866,8 +874,7 @@ static int vmsvgaR3MobDestroy(PVMSVGAR3STATE pSvgaR3State, SVGAMobId mobid)
     if (pMob)
     {
         RTListNodeRemove(&pMob->nodeLRU);
-        vmsvgaR3GboDestroy(pSvgaR3State, &pMob->Gbo);
-        RTMemFree(pMob);
+        vmsvgaR3MobFree(pSvgaR3State, pMob);
         return VINF_SUCCESS;
     }
 
@@ -956,7 +963,42 @@ void *vmsvgaR3MobBackingStorePtr(PVMSVGAMOB pMob, uint32_t off)
     return NULL;
 }
 
+
+static DECLCALLBACK(int) vmsvgaR3MobFreeCb(PAVLU32NODECORE pNode, void *pvUser)
+{
+    PVMSVGAMOB pMob = (PVMSVGAMOB)pNode;
+    PVMSVGAR3STATE pSvgaR3State = (PVMSVGAR3STATE)pvUser;
+    vmsvgaR3MobFree(pSvgaR3State, pMob);
+    return 0;
+}
+
+
 #endif /* VBOX_WITH_VMSVGA3D */
+
+
+
+void vmsvgaR3ResetSvgaState(PVGASTATE pThis, PVGASTATECC pThisCC)
+{
+#ifdef VBOX_WITH_VMSVGA3D
+    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+    RT_NOREF(pThis);
+
+    RTAvlU32Destroy(&pSvgaR3State->MOBTree, vmsvgaR3MobFreeCb, pSvgaR3State);
+    RTListInit(&pSvgaR3State->MOBLRUList);
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pSvgaR3State->aGboOTables); ++i)
+        vmsvgaR3GboDestroy(pSvgaR3State, &pSvgaR3State->aGboOTables[i]);
+#else
+    RT_NOREF(pThis, pThisCC);
+#endif
+}
+
+
+void vmsvgaR3TerminateSvgaState(PVGASTATE pThis, PVGASTATECC pThisCC)
+{
+    vmsvgaR3ResetSvgaState(pThis, pThisCC);
+}
+
 
 /*
  * Screen objects.
@@ -973,21 +1015,35 @@ VMSVGASCREENOBJECT *vmsvgaR3GetScreenObject(PVGASTATECC pThisCC, uint32_t idScre
     return NULL;
 }
 
+
+int vmsvgaR3DestroyScreen(PVGASTATE pThis, PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen)
+{
+    pScreen->fModified = true;
+    pScreen->fDefined  = false;
+
+    /* Notify frontend that the screen is about to be deleted. */
+    vmsvgaR3ChangeMode(pThis, pThisCC);
+
+#ifdef VBOX_WITH_VMSVGA3D
+    if (RT_LIKELY(pThis->svga.f3DEnabled))
+        vmsvga3dDestroyScreen(pThisCC, pScreen);
+#endif
+
+    RTMemFree(pScreen->pvScreenBitmap);
+    pScreen->pvScreenBitmap = NULL;
+
+    return VINF_SUCCESS;
+}
+
+
 void vmsvgaR3ResetScreens(PVGASTATE pThis, PVGASTATECC pThisCC)
 {
-#ifdef VBOX_WITH_VMSVGA3D
-    if (pThis->svga.f3DEnabled)
+    for (uint32_t idScreen = 0; idScreen < (uint32_t)RT_ELEMENTS(pThisCC->svga.pSvgaR3State->aScreens); ++idScreen)
     {
-        for (uint32_t idScreen = 0; idScreen < (uint32_t)RT_ELEMENTS(pThisCC->svga.pSvgaR3State->aScreens); ++idScreen)
-        {
-            VMSVGASCREENOBJECT *pScreen = vmsvgaR3GetScreenObject(pThisCC, idScreen);
-            if (pScreen)
-                vmsvga3dDestroyScreen(pThisCC, pScreen);
-        }
+        VMSVGASCREENOBJECT *pScreen = vmsvgaR3GetScreenObject(pThisCC, idScreen);
+        if (pScreen)
+            vmsvgaR3DestroyScreen(pThis, pThisCC, pScreen);
     }
-#else
-    RT_NOREF(pThis, pThisCC);
-#endif
 }
 
 
@@ -1798,17 +1854,7 @@ static void vmsvga3dCmdDestroyGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisC
         /* Screen objects and screen targets are similar, therefore we will use the same for both. */
         /** @todo Generic screen object/target interface. */
         VMSVGASCREENOBJECT *pScreen = &pSvgaR3State->aScreens[pCmd->stid];
-        pScreen->fModified = true;
-        pScreen->fDefined  = false;
-        pScreen->idScreen  = pCmd->stid;
-
-        if (RT_LIKELY(pThis->svga.f3DEnabled))
-            vmsvga3dDestroyScreen(pThisCC, pScreen);
-
-        vmsvgaR3ChangeMode(pThis, pThisCC);
-
-        RTMemFree(pScreen->pvScreenBitmap);
-        pScreen->pvScreenBitmap = NULL;
+        vmsvgaR3DestroyScreen(pThis, pThisCC, pScreen);
     }
 }
 
@@ -6718,15 +6764,7 @@ void vmsvgaR3CmdDestroyScreen(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdD
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     VMSVGASCREENOBJECT *pScreen = &pSvgaR3State->aScreens[idScreen];
-    pScreen->fModified = true;
-    pScreen->fDefined  = false;
-    pScreen->idScreen  = idScreen;
-
-#ifdef VBOX_WITH_VMSVGA3D
-    if (RT_LIKELY(pThis->svga.f3DEnabled))
-        vmsvga3dDestroyScreen(pThisCC, pScreen);
-#endif
-    vmsvgaR3ChangeMode(pThis, pThisCC);
+    vmsvgaR3DestroyScreen(pThis, pThisCC, pScreen);
 }
 
 
