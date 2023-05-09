@@ -3534,13 +3534,13 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
 #define IEM_GET_MODRM_RM_8(a_bRm)           ( ((a_bRm) & X86_MODRM_RM_MASK) )
 
 /**
- * Combines the prefix REX and ModR/M byte for passing to 
+ * Combines the prefix REX and ModR/M byte for passing to
  * iemOpHlpCalcRmEffAddrThreadedAddr64().
- * 
+ *
  * @returns The ModRM byte but with bit 3 set to REX.B and bit 4 to REX.X.
  *          The two bits are part of the REG sub-field, which isn't needed in
  *          iemOpHlpCalcRmEffAddrThreadedAddr64().
- *  
+ *
  * For use during decoding/recompiling.
  */
 #define IEM_GET_MODRM_EX(a_pVCpu, a_bRm) \
