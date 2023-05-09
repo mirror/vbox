@@ -397,8 +397,6 @@
 #define ARMV8_AARCH64_SYSREG_ICC_IGRPEN1_EL1        ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 12, 12, 7)
 /** @} */
 
-/** @} */
-
 
 /**
  * SPSR_EL2 (according to chapter C5.2.19)
@@ -536,7 +534,7 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 #define ARMV8_ESR_EL2_ISS2                          (  RT_BIT_64(32) | RT_BIT_64(33) | RT_BIT_64(34) \
                                                      | RT_BIT_64(35) | RT_BIT_64(36))
 #define ARMV8_ESR_EL2_ISS2_GET(a_Esr)               (((a_Esr) & ARMV8_ESR_EL2_ISS2) >> 32)
-/*+ @} */
+/** @} */
 
 
 /** @name ESR_EL2 Exception Classes (EC)
@@ -724,7 +722,8 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 /** @} */
 
 
-/** @name SAS encoding. */
+/** @name SAS encoding.
+ * @{ */
 /** Byte access. */
 #define ARMV8_EC_ISS_DATA_ABRT_SAS_BYTE                         0
 /** Halfword access (uint16_t). */
@@ -733,8 +732,6 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 #define ARMV8_EC_ISS_DATA_ABRT_SAS_WORD                         2
 /** Doubleword access (uint64_t). */
 #define ARMV8_EC_ISS_DATA_ABRT_SAS_DWORD                        3
-/** @} */
-
 /** @} */
 
 
@@ -990,6 +987,7 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 #define ARMV8_TTBR_EL1_AARCH64_ASID                             UINT64_C(0xffff000000000000)
 #define ARMV8_TTBR_EL1_AARCH64_ASID_GET(a_Ttbr)                 (((a_Ttbr) & ARMV8_TTBR_EL1_AARCH64_ASID) >> 48)
 /** @} */
+
 
 /** @} */
 
