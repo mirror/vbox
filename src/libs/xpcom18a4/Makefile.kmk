@@ -689,6 +689,8 @@ VBox-xpcom-nspr_CLEAN += \
 	$(VBox-xpcom-nspr_0_OUTDIR)/_pr_bld.h \
 	$(VBox-xpcom-nspr_0_OUTDIR)/_pl_bld.h
 
+$(call KB_FN_DO_PASS0_ON_TARGET,VBox-xpcom-nspr)
+
 $$(VBox-xpcom-nspr_0_OUTDIR)/_pr_bld.h: | $$(VBox-xpcom-nspr_0_OUTDIR)/
 	$(call MSG_GENERATE,,$@)
 	$(QUIET)$(APPEND) -t $@ '#define _BUILD_STRING "$(date +%Y-%m-%d %T)"'

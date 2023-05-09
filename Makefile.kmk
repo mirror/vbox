@@ -223,145 +223,141 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
  #       https://developer.apple.com/library/mac/documentation/MacOSX/Conceptual/BPFrameworks/Concepts/FrameworkAnatomy.html
  #       the Info.plist file goes into Resources.
  #
- ifeq ($(KBUILD_TARGET),darwin)
-  ifdef VBOX_WITH_QT6
-   include $(KBUILD_PATH)/units/qt6.kmk
-   VBOX_QT_FWRK_VER = A
-   VBOX_QT_PATH    = $(PATH_SDK_QT6)
-   VBOX_QT_PATH_LIB = $(PATH_SDK_QT6_LIB)
-  else
-   include $(KBUILD_PATH)/units/qt5.kmk
-   VBOX_QT_FWRK_VER = 5
-   VBOX_QT_PATH    = $(PATH_SDK_QT5)
-   VBOX_QT_PATH_LIB = $(PATH_SDK_QT5_LIB)
-  endif
-  if defined(VBOX_WITH_QTGUI) && !defined(VBOX_ONLY_SDK)
+ if defined(VBOX_WITH_QTGUI) && !defined(VBOX_ONLY_SDK)
+  ifeq ($(KBUILD_TARGET),darwin)
+   ifdef VBOX_WITH_QT6
+    include $(KBUILD_PATH)/units/qt6.kmk
+    VBOX_QT_FWRK_VER = A
+    VBOX_QT_PATH   = $(PATH_SDK_QT6)
+    VBOX_QT_PATH_LIB = $(PATH_SDK_QT6_LIB)
+   else
+    include $(KBUILD_PATH)/units/qt5.kmk
+    VBOX_QT_FWRK_VER = 5
+    VBOX_QT_PATH   = $(PATH_SDK_QT5)
+    VBOX_QT_PATH_LIB = $(PATH_SDK_QT5_LIB)
+   endif
    INSTALLS += qt5-bin
-  endif
-  qt5-bin_INST = $(INST_VIRTUALBOX)Contents/
-  qt5-bin_EXEC_SOURCES = $(foreach qtmod,$(VBOX_QT_MOD_NAMES), \
-  		$(VBOX_QT_PATH_LIB)/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/$(qtmod)=>Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/$(qtmod))
-  qt5-bin_SOURCES = $(foreach qtmod,$(VBOX_QT_MOD_NAMES), \
-  		$(VBOX_QT_PATH_LIB)/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/Resources/Info.plist=>Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/Resources/Info.plist)
-  ifdef VBOX_WITH_QT_DSYMS
-   qt5-bin_SOURCES += $(foreach qtmod,$(VBOX_QT_MOD_NAMES), \
-   		$(VBOX_QT_PATH_LIB)/$(qtmod).framework.dSYM/Contents/Info.plist=>Frameworks/$(qtmod).framework.dSYM/Contents/Info.plist \
-   		$(VBOX_QT_PATH_LIB)/$(qtmod).framework.dSYM/Contents/Resources/DWARF/$(qtmod)=>Frameworks/$(qtmod).framework.dSYM/Contents/Resources/DWARF/$(qtmod))
-  endif
-  qt5-bin_EXEC_SOURCES += \
-  	$(VBOX_QT_PATH)/plugins/platforms/libqcocoa$(SUFF_DLL)=>plugins/platforms/libqcocoa$(SUFF_DLL) \
-  	$(VBOX_QT_PATH)/plugins/platforms/libqminimal$(SUFF_DLL)=>plugins/platforms/libqminimal$(SUFF_DLL) \
-  	$(VBOX_QT_PATH)/plugins/platforms/libqoffscreen$(SUFF_DLL)=>plugins/platforms/libqoffscreen$(SUFF_DLL) \
-  	$(VBOX_QT_PATH)/plugins/sqldrivers/libqsqlite$(SUFF_DLL)=>plugins/sqldrivers/libqsqlite$(SUFF_DLL) \
-  	$(VBOX_QT_PATH)/plugins/styles/libqmacstyle$(SUFF_DLL)=>plugins/styles/libqmacstyle$(SUFF_DLL)
-  ifdef VBOX_WITH_QT_DSYMS
-   qt5-bin_SOURCES += $(foreach qtplat, libqcocoa libqminimal libqoffscreen, \
-   		$(VBOX_QT_PATH)/plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Info.plist \
-   		$(VBOX_QT_PATH)/plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtplat)$(SUFF_DLL)=>plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtplat)$(SUFF_DLL))
-   qt5-bin_SOURCES += $(foreach qtsqldrv, libqsqlite, \
-   		$(VBOX_QT_PATH)/plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Info.plist \
-   		$(VBOX_QT_PATH)/plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtsqldrv)$(SUFF_DLL)=>plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtsqldrv)$(SUFF_DLL))
-   qt5-bin_SOURCES += $(foreach qtstyl, libqmacstyle, \
-   		$(VBOX_QT_PATH)/plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Info.plist \
-   		$(VBOX_QT_PATH)/plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtstyl)$(SUFF_DLL)=>plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtstyl)$(SUFF_DLL))
-  endif
-  qt5-bin_SYMLINKS = $(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
-  		Frameworks/$(qtmod).framework/Versions/Current=>$(VBOX_QT_FWRK_VER) \
-  		Frameworks/$(qtmod).framework/$(qtmod)=>Versions/$(VBOX_QT_FWRK_VER)/$(qtmod) \
-  		Frameworks/$(qtmod).framework/Resources=>Versions/$(VBOX_QT_FWRK_VER)/Resources)
-  qt5-bin_INSTALLER = $(INSTALL) $(if $(uid),-o $(uid)) $(if $(gid),-g $(gid)) $(if $(mode),-m $(mode)) $(4) -- \
-  	"$(1)" "$(2)" $(if-expr "$(source_type_prefix)" == "EXEC_" \
-  		,$(NLTAB)install_name_tool \
-  		$(if-expr "$(suffix $2)" == "", -id "$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Framework,@rpath)/$(notdir $(2)).framework/Version/$(VBOX_QT_FWRK_VER)/$(notdir $(2))",) \
-  		$(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
-  			$(foreach prefix, @executable_path/../Frameworks/ $(VBOX_PATH_QT)/Frameworks/ $(VBOX_QT_PATH)/, \
-  				-change "$(prefix)$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/$(qtmod)" \
-  				"$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Frameworks,@rpath)/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/$(qtmod)" ) ) \
-  		"$(2)",) # HACK ALERT! Using $(source_type_prefix) to detect EXEC_SOURCES.
- else # win x11
-  if1of ($(KBUILD_TARGET), linux solaris)
-   if !defined(VBOX_ONLY_BUILD) && defined(VBOX_WITH_QTGUI)
-    ifneq ($(VBOX_GCC_VERSION_CXX),)
-     if $(VBOX_GCC_VERSION_CXX) < 40400
-      $(error gcc >= 4.4 required when compiling against Qt5!)
+   qt5-bin_INST = $(INST_VIRTUALBOX)Contents/
+   qt5-bin_EXEC_SOURCES = $(foreach qtmod,$(VBOX_QT_MOD_NAMES), \
+   		$(VBOX_QT_PATH_LIB)/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/$(qtmod)=>Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/$(qtmod))
+   qt5-bin_SOURCES = $(foreach qtmod,$(VBOX_QT_MOD_NAMES), \
+   		$(VBOX_QT_PATH_LIB)/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/Resources/Info.plist=>Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/Resources/Info.plist)
+   ifdef VBOX_WITH_QT_DSYMS
+    qt5-bin_SOURCES += $(foreach qtmod,$(VBOX_QT_MOD_NAMES), \
+    		$(VBOX_QT_PATH_LIB)/$(qtmod).framework.dSYM/Contents/Info.plist=>Frameworks/$(qtmod).framework.dSYM/Contents/Info.plist \
+    		$(VBOX_QT_PATH_LIB)/$(qtmod).framework.dSYM/Contents/Resources/DWARF/$(qtmod)=>Frameworks/$(qtmod).framework.dSYM/Contents/Resources/DWARF/$(qtmod))
+   endif
+   qt5-bin_EXEC_SOURCES += \
+   	$(VBOX_QT_PATH)/plugins/platforms/libqcocoa$(SUFF_DLL)=>plugins/platforms/libqcocoa$(SUFF_DLL) \
+   	$(VBOX_QT_PATH)/plugins/platforms/libqminimal$(SUFF_DLL)=>plugins/platforms/libqminimal$(SUFF_DLL) \
+   	$(VBOX_QT_PATH)/plugins/platforms/libqoffscreen$(SUFF_DLL)=>plugins/platforms/libqoffscreen$(SUFF_DLL) \
+   	$(VBOX_QT_PATH)/plugins/sqldrivers/libqsqlite$(SUFF_DLL)=>plugins/sqldrivers/libqsqlite$(SUFF_DLL) \
+   	$(VBOX_QT_PATH)/plugins/styles/libqmacstyle$(SUFF_DLL)=>plugins/styles/libqmacstyle$(SUFF_DLL)
+   ifdef VBOX_WITH_QT_DSYMS
+    qt5-bin_SOURCES += $(foreach qtplat, libqcocoa libqminimal libqoffscreen, \
+    		$(VBOX_QT_PATH)/plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Info.plist \
+    		$(VBOX_QT_PATH)/plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtplat)$(SUFF_DLL)=>plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtplat)$(SUFF_DLL))
+    qt5-bin_SOURCES += $(foreach qtsqldrv, libqsqlite, \
+    		$(VBOX_QT_PATH)/plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Info.plist \
+    		$(VBOX_QT_PATH)/plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtsqldrv)$(SUFF_DLL)=>plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtsqldrv)$(SUFF_DLL))
+    qt5-bin_SOURCES += $(foreach qtstyl, libqmacstyle, \
+    		$(VBOX_QT_PATH)/plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Info.plist \
+    		$(VBOX_QT_PATH)/plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtstyl)$(SUFF_DLL)=>plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtstyl)$(SUFF_DLL))
+   endif
+   qt5-bin_SYMLINKS = $(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
+   		Frameworks/$(qtmod).framework/Versions/Current=>$(VBOX_QT_FWRK_VER) \
+   		Frameworks/$(qtmod).framework/$(qtmod)=>Versions/$(VBOX_QT_FWRK_VER)/$(qtmod) \
+   		Frameworks/$(qtmod).framework/Resources=>Versions/$(VBOX_QT_FWRK_VER)/Resources)
+   qt5-bin_INSTALLER = $(INSTALL) $(if $(uid),-o $(uid)) $(if $(gid),-g $(gid)) $(if $(mode),-m $(mode)) $(4) -- \
+   	"$(1)" "$(2)" $(if-expr "$(source_type_prefix)" == "EXEC_" \
+   		,$(NLTAB)install_name_tool \
+   		$(if-expr "$(suffix $2)" == "", -id "$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Framework,@rpath)/$(notdir $(2)).framework/Version/$(VBOX_QT_FWRK_VER)/$(notdir $(2))",) \
+   		$(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
+   			$(foreach prefix, @executable_path/../Frameworks/ $(VBOX_PATH_QT)/Frameworks/ $(VBOX_QT_PATH)/, \
+   				-change "$(prefix)$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/$(qtmod)" \
+   				"$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Frameworks,@rpath)/$(qtmod).framework/Versions/$(VBOX_QT_FWRK_VER)/$(qtmod)" ) ) \
+   		"$(2)",) # HACK ALERT! Using $(source_type_prefix) to detect EXEC_SOURCES.
+  else # win x11
+   if1of ($(KBUILD_TARGET), linux solaris)
+    if !defined(VBOX_ONLY_BUILD) && defined(VBOX_WITH_QTGUI)
+     ifneq ($(VBOX_GCC_VERSION_CXX),)
+      if $(VBOX_GCC_VERSION_CXX) < 40400
+       $(error gcc >= 4.4 required when compiling against Qt5!)
+      endif
      endif
     endif
    endif
-  endif
-  if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD)
-   include $(KBUILD_PATH)/units/qt5.kmk
-   ifeq ($(KBUILD_TARGET),win)
-    if defined(VBOX_WITH_QTGUI) && !defined(VBOX_ONLY_SDK)
+   if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD)
+    include $(KBUILD_PATH)/units/qt5.kmk
+    ifeq ($(KBUILD_TARGET),win)
      INSTALLS += qt5-bin
-    endif
-    qt5-bin_MODE = 755
-    qt5-bin_INST = $(INST_BIN)
-    qt5-bin_SOURCES = \
-    	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/bin/$(qtmod)$(SUFF_DLL)))
-    qt5-bin_SOURCES += \
-    	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qwindows$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qwindows$(VBOX_QT_DBG)$(SUFF_DLL) \
-    	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qminimal$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qminimal$(VBOX_QT_DBG)$(SUFF_DLL) \
-    	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qoffscreen$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qoffscreen$(VBOX_QT_DBG)$(SUFF_DLL) \
-    	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/sqldrivers/qsqlite$(VBOX_QT_DBG)$(SUFF_DLL))=>sqldrivers/qsqlite$(VBOX_QT_DBG)$(SUFF_DLL) \
-    	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/styles/qwindowsvistastyle$(VBOX_QT_DBG)$(SUFF_DLL))=>styles/qwindowsvistastyle$(VBOX_QT_DBG)$(SUFF_DLL)
-    ifdef VBOX_WITH_QT_PDBS
+     qt5-bin_MODE = 755
+     qt5-bin_INST = $(INST_BIN)
+     qt5-bin_SOURCES = \
+     	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/bin/$(qtmod)$(SUFF_DLL)))
      qt5-bin_SOURCES += \
-     	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(PATH_SDK_QT5)/qt*/$(VBOX_PATH_QT_LIB)/$(qtmod).pdb))
-    endif # VBOX_WITH_QT_PDBS
-   else # x11
-    if defined(VBOX_WITH_QTGUI) && !defined(VBOX_ONLY_SDK)
+     	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qwindows$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qwindows$(VBOX_QT_DBG)$(SUFF_DLL) \
+     	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qminimal$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qminimal$(VBOX_QT_DBG)$(SUFF_DLL) \
+     	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qoffscreen$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qoffscreen$(VBOX_QT_DBG)$(SUFF_DLL) \
+     	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/sqldrivers/qsqlite$(VBOX_QT_DBG)$(SUFF_DLL))=>sqldrivers/qsqlite$(VBOX_QT_DBG)$(SUFF_DLL) \
+     	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/styles/qwindowsvistastyle$(VBOX_QT_DBG)$(SUFF_DLL))=>styles/qwindowsvistastyle$(VBOX_QT_DBG)$(SUFF_DLL)
+     ifdef VBOX_WITH_QT_PDBS
+      qt5-bin_SOURCES += \
+      	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(PATH_SDK_QT5)/qt*/$(VBOX_PATH_QT_LIB)/$(qtmod).pdb))
+     endif # VBOX_WITH_QT_PDBS
+    else # x11
      INSTALLS += qt5-bin
-    endif
-    qt5-bin_MODE = 755
-    qt5-bin_INST = $(INST_BIN)
-    ifdef VBOX_WITH_HARDENING
-     # The wildcards are necessary to install the libs instead of the symlinks
-     qt5-bin_SOURCES = \
-     	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(VBOX_PATH_QT_LIB)/lib$(qtmod).so.*.*.*[0-9])=>lib$(qtmod).so.5) \
-     	$(foreach lib,$(VBOX_QT_PLUGINS),$(VBOX_PATH_QT)/$(lib)=>$(lib))
-    else # !VBOX_WITH_HARDENING
-     # For non-hardened builds we need to remove the RUNPATH. This stuff is
-     # ugly but we need to prevent kBuild from hard-linking otherwise we
-     # (indirectly) change the binaries in tools
-     ifneq ($(KBUILD_TARGET),solaris)
-      QT5_VERSION = 5.15.2
-     else
-      QT5_VERSION = 5.15.2
-     endif
-     qt5-bin_SOURCES = \
-     	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.$(QT5_VERSION)=>lib$(qtmod).so.5) \
-     	$(foreach lib,$(VBOX_QT_PLUGINS),$(qt5-bin_0_OUTDIR)/$(lib)=>$(lib))
+     qt5-bin_MODE = 755
+     qt5-bin_INST = $(INST_BIN)
+     ifdef VBOX_WITH_HARDENING
+      # The wildcards are necessary to install the libs instead of the symlinks
+      qt5-bin_SOURCES = \
+      	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(VBOX_PATH_QT_LIB)/lib$(qtmod).so.*.*.*[0-9])=>lib$(qtmod).so.5) \
+      	$(foreach lib,$(VBOX_QT_PLUGINS),$(VBOX_PATH_QT)/$(lib)=>$(lib))
+     else # !VBOX_WITH_HARDENING
+      # For non-hardened builds we need to remove the RUNPATH. This stuff is
+      # ugly but we need to prevent kBuild from hard-linking otherwise we
+      # (indirectly) change the binaries in tools
+      ifneq ($(KBUILD_TARGET),solaris)
+       QT5_VERSION = 5.15.2
+      else
+       QT5_VERSION = 5.15.2
+      endif
+      qt5-bin_SOURCES = \
+      	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.$(QT5_VERSION)=>lib$(qtmod).so.5) \
+      	$(foreach lib,$(VBOX_QT_PLUGINS),$(qt5-bin_0_OUTDIR)/$(lib)=>$(lib))
 
-     $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.$(QT5_VERSION)): \
-     		$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT_LIB)/% | $$(qt5-bin_0_OUTDIR)/
+      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.$(QT5_VERSION)): \
+      		$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT_LIB)/% | $$(qt5-bin_0_OUTDIR)/
 	$(call MSG_INST_FILE,$^,$@)
 	$(QUIET)$(CP) $^ $@
 	$(QUIET)chrpath --replace "\$$ORIGIN" $@
 
-     ifn1of ($(KBUILD_TARGET), solaris linux)
-      $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
-      		$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt5-bin_0_OUTDIR)/
+      ifn1of ($(KBUILD_TARGET), solaris linux)
+       $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
+       		$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt5-bin_0_OUTDIR)/
 	$(call MSG_INST_FILE,$^,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(CP) $^ $@
 	$(QUIET)chrpath --delete $@
-     endif # !solaris and !linux
+      endif # !solaris and !linux
 
-     # @todo For solaris and some linuxes dlopen fails to navigate executable rpath to dependent libraries,
-     #       so add explicit rpath for libqxcb.so, find better solution later.
-     if1of ($(KBUILD_TARGET), solaris linux)
-      $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
-      		$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt5-bin_0_OUTDIR)/
+      # @todo For solaris and some linuxes dlopen fails to navigate executable rpath to dependent libraries,
+      #       so add explicit rpath for libqxcb.so, find better solution later.
+      if1of ($(KBUILD_TARGET), solaris linux)
+       $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
+       		$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt5-bin_0_OUTDIR)/
 	$(call MSG_INST_FILE,$^,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(CP) $^ $@
 	$(QUIET)chrpath --replace "\$$ORIGIN/../../" $@
-     endif # solaris linux
+      endif # solaris linux
 
-    endif # !VBOX_WITH_HARDENING
-   endif # x11
-  endif # VBOX_WITH_ORACLE_QT || VBOX_WITH_QT_PAYLOAD
- endif # win x11
+     endif # !VBOX_WITH_HARDENING
+    endif # x11
+   endif # VBOX_WITH_ORACLE_QT || VBOX_WITH_QT_PAYLOAD
+  endif # win x11
+ endif # defined(VBOX_WITH_QTGUI) && !defined(VBOX_ONLY_SDK)
 
 
  #
