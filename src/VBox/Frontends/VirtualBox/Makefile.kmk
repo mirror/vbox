@@ -2177,7 +2177,7 @@ $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui: $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui $$(
 	$(call MSG_L1,doxygen qtgui)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(RM) -Rf -- $(QTGUI_DOXYFILE_OUTPUT)/html/
-	doxygen $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui
+	$(VBOX_DOXYGEN) $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui
 	$(APPEND) $@
 
 # aliases

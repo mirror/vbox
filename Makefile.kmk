@@ -990,7 +990,7 @@ $(VBOX_CORE_DOXYFILE_OUTPUT)/docs.Core: $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Co
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(RM) -Rf $(VBOX_CORE_DOXYFILE_OUTPUT)/html/
 	$(if-expr $(VBOX_JAVA_VERSION)+0 >= 70000, $(REDIRECT) -E "PATH=$(VBOX_JAVA_BIN_PATH)$(HOST_PATH_SEP)$(PATH)" --,) \
-		doxygen $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core
+		$(VBOX_DOXYGEN) $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core
 	$(SED) -n \
                -e ':nextwarning' \
                -e '/^ *$(DOLLAR)/d' \
