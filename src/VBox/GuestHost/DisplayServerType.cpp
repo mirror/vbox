@@ -123,14 +123,18 @@ VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void)
         "libwayland-client.so.0" /* Needed for Ubuntu */
     };
 
+#define GET_SYMBOL(a_Mod, a_Name, a_Fn) \
+    rc = RTLdrGetSymbol(a_Mod, a_Name, (void **)&a_Fn); \
+    if (RT_FAILURE(rc)) \
+        LogRel2(("Symbol '%s' unable to load, rc=%Rrc\n", a_Name, rc));
+
     int rc = vbghDisplayServerTryLoadLib(aLibsWayland, RT_ELEMENTS(aLibsWayland), &hWaylandClient);
     if (RT_SUCCESS(rc))
     {
         void * (*pWaylandDisplayConnect)(const char *) = NULL;
+        GET_SYMBOL(hWaylandClient, "wl_display_connect", pWaylandDisplayConnect);
         void (*pWaylandDisplayDisconnect)(void *) = NULL;
-        rc = RTLdrGetSymbol(hWaylandClient, "wl_display_connect", (void **)&pWaylandDisplayConnect);
-        if (RT_SUCCESS(rc))
-            rc = RTLdrGetSymbol(hWaylandClient, "wl_display_disconnect", (void **)&pWaylandDisplayDisconnect);
+        GET_SYMBOL(hWaylandClient, "wl_display_disconnect", pWaylandDisplayDisconnect);
         if (RT_SUCCESS(rc))
         {
             AssertPtrReturn(pWaylandDisplayConnect, VBGHDISPLAYSERVERTYPE_NONE);
@@ -141,6 +145,8 @@ VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void)
                 fHasWayland = true;
                 pWaylandDisplayDisconnect(pDisplay);
             }
+            else
+                LogRel2(("Connecting to Wayland display failed\n"));
         }
         RTLdrClose(hWaylandClient);
     }
@@ -159,10 +165,9 @@ VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void)
     if (RT_SUCCESS(rc))
     {
         void * (*pfnOpenDisplay)(const char *) = NULL;
+        GET_SYMBOL(hX11, "XOpenDisplay", pfnOpenDisplay);
         int (*pfnCloseDisplay)(void *) = NULL;
-        rc = RTLdrGetSymbol(hX11, "XOpenDisplay", (void **)&pfnOpenDisplay);
-        if (RT_SUCCESS(rc))
-            rc = RTLdrGetSymbol(hX11, "XCloseDisplay", (void **)&pfnCloseDisplay);
+        GET_SYMBOL(hX11, "XCloseDisplay", pfnCloseDisplay);
         if (RT_SUCCESS(rc))
         {
             AssertPtrReturn(pfnOpenDisplay, VBGHDISPLAYSERVERTYPE_NONE);
@@ -173,10 +178,14 @@ VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void)
                 fHasX = true;
                 pfnCloseDisplay(pDisplay);
             }
+            else
+                LogRel2(("Opening X display failed\n"));
         }
 
         RTLdrClose(hX11);
     }
+
+#undef GET_SYMBOL
 
     /* If both wayland and X11 display can be connected then we should have XWayland: */
     VBGHDISPLAYSERVERTYPE retSessionType = VBGHDISPLAYSERVERTYPE_NONE;
