@@ -44,15 +44,15 @@ ifndef VBOX_ONLY_EXTPACKS
  endif
  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
  include $(PATH_SUB_CURRENT)/cbinding/Makefile.kmk
- include $(PATH_SUB_CURRENT)/UnattendedTemplates/Makefile.kmk
  ifndef VBOX_ONLY_SDK
+  include $(PATH_SUB_CURRENT)/UnattendedTemplates/Makefile.kmk
   include $(PATH_SUB_CURRENT)/src-helper-apps/OpenGLTest/Makefile.kmk
- endif
- if defined(VBOX_WITH_OPEN_WATCOM) && defined(VBOX_WITH_UNATTENDED)
-  include $(PATH_SUB_CURRENT)/src-helper-apps/os2/Makefile.kmk
- endif
- if defined(VBOX_WITH_DEVMAPPER) && !defined(VBOX_ONLY_SDK)
-  include $(PATH_SUB_CURRENT)/src-helper-apps/VBoxVolInfo/Makefile.kmk
+  if defined(VBOX_WITH_OPEN_WATCOM) && defined(VBOX_WITH_UNATTENDED)
+   include $(PATH_SUB_CURRENT)/src-helper-apps/os2/Makefile.kmk
+  endif
+  ifdef VBOX_WITH_DEVMAPPER
+   include $(PATH_SUB_CURRENT)/src-helper-apps/VBoxVolInfo/Makefile.kmk
+  endif
  endif
 endif
 
@@ -220,7 +220,7 @@ VBOX_IDL_TYPELIB.XPCOM = $(PATH_STAGE_BIN)/components/VirtualBox_XPCOM.xpt
 VBOX_IDL_HEADER.XPCOM  = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
 
 # The MS COM specific stuff.
-if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
+if "$(KBUILD_TARGET)" == "win" || (defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_SDK_ON_WINDOWS))
  OTHERS         += \
  	$(VBOX_IDL_FILE.MSCOM)
  OTHER_CLEAN    += \
@@ -1478,7 +1478,7 @@ if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "linux" && !defined(VBO
 endif
 
 
-if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win" && !defined(VBOX_ONLY_EXTPACKS)
+if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win" && !defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_SDK)
  #
  # Experimental COM proxy + stub DLL w/ automatic registration updating.
  #
@@ -1658,7 +1658,7 @@ $(VBoxCOM_0_OUTDIR)/VirtualBox_XPCOM_i.c: $(VBOX_PATH_MAIN_SRC)/idl/xpidl_iid.xs
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $< $(VBOX_XIDL_FILE)
 
-if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
+if "$(KBUILD_TARGET)" == "win" || (defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_SDK_ON_WINDOWS))
 
  # Note! Because we've got a different proxy stub DLL for pre windows 7 64-bit hosts, we target windows 7 for AMD64.
  #       The output is different and hopefully more efficient, at least memory wise (using more helpers in OLE32).
@@ -1730,7 +1730,7 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
 	$(call def_VBoxMidlOutputDisableMscWarnings,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c)
  endif
 
-endif # defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
+endif # "$(KBUILD_TARGET)" == "win" || (defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_SDK_ON_WINDOWS))
 
 #
 # Translation stuff

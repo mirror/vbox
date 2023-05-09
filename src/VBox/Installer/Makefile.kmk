@@ -72,7 +72,7 @@ if defined(VBOX_ONLY_SDK) ## @todo || defined(VBOX_WITH_SDK)
  		$(PATH_STAGE_BIN)/sdk \
  		$(VBOX_VERSION_STAMP)
 	$(call MSG_L1,Making SDK delivery $@)
-	$(QUIET)$(REDIRECT) $(if $(QUIET),-wo /dev/null,) -C $(PATH_STAGE_BIN) -- $(VBOX_ZIP) -r9 $@ sdk
+	$(QUIET)$(REDIRECT) $(if $(QUIET),-wo /dev/null,) -C $(PATH_STAGE_BIN) -- $(VBOX_ZIP) -r9 "$@" sdk
 endif
 
 

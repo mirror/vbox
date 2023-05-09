@@ -98,7 +98,9 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
  # To avoid dragging in unnecessary tools and sdks here, we don't use the .win
  # and .linux property suffixes.
  #
- INSTALLS += InstallExternalLibs
+ if !defined(VBOX_ONLY_SDK_ON_WINDOWS)
+  INSTALLS += InstallExternalLibs
+ endif
 
  InstallExternalLibs_INST = $(INST_BIN)
 
@@ -233,7 +235,7 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
    VBOX_QT_PATH    = $(PATH_SDK_QT5)
    VBOX_QT_PATH_LIB = $(PATH_SDK_QT5_LIB)
   endif
-  ifdef VBOX_WITH_QTGUI
+  if defined(VBOX_WITH_QTGUI) && !defined(VBOX_ONLY_SDK)
    INSTALLS += qt5-bin
   endif
   qt5-bin_INST = $(INST_VIRTUALBOX)Contents/
@@ -289,7 +291,7 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
   if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD)
    include $(KBUILD_PATH)/units/qt5.kmk
    ifeq ($(KBUILD_TARGET),win)
-    ifdef VBOX_WITH_QTGUI
+    if defined(VBOX_WITH_QTGUI) && !defined(VBOX_ONLY_SDK)
      INSTALLS += qt5-bin
     endif
     qt5-bin_MODE = 755
@@ -307,7 +309,7 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
      	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(PATH_SDK_QT5)/qt*/$(VBOX_PATH_QT_LIB)/$(qtmod).pdb))
     endif # VBOX_WITH_QT_PDBS
    else # x11
-    ifdef VBOX_WITH_QTGUI
+    if defined(VBOX_WITH_QTGUI) && !defined(VBOX_ONLY_SDK)
      INSTALLS += qt5-bin
     endif
     qt5-bin_MODE = 755
@@ -2136,11 +2138,12 @@ endif
 #
 .NOTPARALLEL: sdk sdk-fetch
 sdk:
-	+ $(KMK) VBOX_ONLY_SDK=1 \
+	+ $(KMK) VBOX_ONLY_SDK=1 $(if-expr "$(KBUILD_HOST)" == "win",VBOX_ONLY_SDK_ON_WINDOWS=1,) \
 		pass_bldprogs pass_others pass_installs pass_packing
 
 sdk-fetch:
-	+ $(KMK) VBOX_ONLY_SDK=1 -C tools
+	+ $(KMK) VBOX_ONLY_SDK=1 $(if-expr "$(KBUILD_HOST)" == "win",VBOX_ONLY_SDK_ON_WINDOWS=1,) \
+		-C tools
 
 
 #

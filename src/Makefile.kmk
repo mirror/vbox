@@ -30,7 +30,9 @@ include $(KBUILD_PATH)/subheader.kmk
 
 include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
-include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
+if !defined(VBOX_ONLY_SDK_ON_WINDOWS) || "$(KBUILD_TARGET)" != "win"
+ include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
+endif
 ifndef VBOX_ONLY_BUILD
  # Normal build.
  ifneq ($(wildcard $(PATH_SUB_CURRENT)/apps),)

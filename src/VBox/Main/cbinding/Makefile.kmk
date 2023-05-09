@@ -81,7 +81,7 @@ $$(CAPIHeaders_0_OUTDIR)/VBoxCAPI.h: \
 	$(call MSG_TOOL,xsltproc,CAPIHeaders,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
 
-if !defined(VBOX_ONLY_SDK)
+ifndef VBOX_ONLY_SDK
 
  #
  # The C API binding utility DLL
@@ -181,7 +181,7 @@ if !defined(VBOX_ONLY_SDK)
   endif
  endif
 
-endif # ! VBOX_ONLY_SDK
+endif # !VBOX_ONLY_SDK
 
 # generate rules.
 include $(FILE_KBUILD_SUB_FOOTER)

@@ -2378,12 +2378,12 @@ VBOX_PYLINT_FLAGS = $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--reports=n,--repo
 
 
 # Define the macro for win path conversion.
-ifndef VBOX_ONLY_SDK
+if !defined(VBOX_ONLY_SDK) || defined(VBOX_ONLY_SDK_ON_WINDOWS)
  VBOX_FN_MAKE_WIN_PATH = "$(quote-sh-dq $(subst /,\,$(requote unq, $(1))))"
 else
  # Z: is always FS root for Wine.
  VBOX_FN_MAKE_WIN_PATH  = $(subst /,\\,$(patsubst /%,Z:/%,$(1)))
-endif #!VBOX_ONLY_SDK
+endif
 
 # The kprofile build automagically links with kProfile.
 ifeq ($(KBUILD_TYPE),kprofile)
