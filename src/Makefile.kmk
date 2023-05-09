@@ -31,20 +31,12 @@ include $(KBUILD_PATH)/subheader.kmk
 include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
 include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
-if defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) && defined(VBOX_WITH_REM)
- include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
-
-else if !defined(VBOX_ONLY_BUILD)
+ifndef VBOX_ONLY_BUILD
  # Normal build.
- if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
-  ifdef VBOX_WITH_REM
-   include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
-  endif
- endif
  ifneq ($(wildcard $(PATH_SUB_CURRENT)/apps),)
   include $(PATH_SUB_CURRENT)/apps/Makefile.kmk
  endif
-endif # !VBOX_ONLY_BUILD
+endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
