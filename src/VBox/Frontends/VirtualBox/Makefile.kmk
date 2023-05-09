@@ -400,8 +400,12 @@ else
  VirtualBox_LDFLAGS.win   += /SUBSYSTEM:console
 endif
 
+#
+# Parfait fails with an error that ../MacOS can't be accessed while standard clang has no problem with it.
+# As we don't want to run the output just omit the -rpath arguments to make it build
+#
 VirtualBox_LDFLAGS.darwin = \
-	$(if $(VBOX_WITH_HARDENING),,-rpath @executable_path/../MacOS -rpath @executable_path/../Frameworks) \
+	$(if $(VBOX_WITH_HARDENING) || $(VBOX_WITH_PARFAIT),,-rpath @executable_path/../MacOS -rpath @executable_path/../Frameworks) \
 	-framework AppKit -framework Carbon -framework IOKit
 
 ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
@@ -431,12 +435,20 @@ else
  VirtualBoxVM_LDFLAGS.win   += /SUBSYSTEM:console
 endif
 
-VirtualBoxVM_LDFLAGS.darwin = \
-	$(if $(VBOX_WITH_HARDENING) \
-		,-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VirtualBoxVM.dylib \
-		,-rpath @executable_path/../../../../MacOS \
-		-rpath @executable_path/../../../../Frameworks) \
-	-framework AppKit -framework Carbon -framework IOKit
+#
+# Parfait fails with an error that ../MacOS can't be accessed while standard clang has no problem with it.
+# As we don't want to run the output just omit the -rpath arguments to make it build
+#
+ifndef VBOX_WITH_PARFAIT
+ VirtualBoxVM_LDFLAGS.darwin = \
+ 	$(if $(VBOX_WITH_HARDENING)) \
+ 		,-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VirtualBoxVM.dylib \
+ 		,-rpath @executable_path/../../../../MacOS \
+ 		-rpath @executable_path/../../../../Frameworks) \
+ 	-framework AppKit -framework Carbon -framework IOKit
+else
+ VirtualBoxVM_LDFLAGS.darwin = -framework AppKit -framework Carbon -framework IOKit
+endif
 
 ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  VirtualBoxVM_LDFLAGS.darwin += -framework OpenGL

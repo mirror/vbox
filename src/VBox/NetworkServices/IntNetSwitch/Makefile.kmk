@@ -45,8 +45,15 @@ VBoxIntNetSwitch_SOURCES = \
 	VBoxIntNetSwitch.cpp \
 	SrvIntNetWrapper.cpp
 VBoxIntNetSwitch_LIBS = $(LIB_RUNTIME)
-VBoxIntNetSwitch_LDFLAGS.darwin = \
-	-rpath @executable_path/../../../../MacOS
+
+#
+# Parfait fails with an error that ../../../../MacOS can't be accessed while standard clang has no problem with it.
+# As we don't want to run the output just omit the -rpath arguments to make it build
+#
+ifndef VBOX_WITH_PARFAIT
+ VBoxIntNetSwitch_LDFLAGS.darwin = \
+ 	-rpath @executable_path/../../../../MacOS
+endif
 
 ifeq ($(KBUILD_TARGET),darwin)
  INSTALLS += VBoxIntNetSwitch.xpc
