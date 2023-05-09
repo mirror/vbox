@@ -2434,7 +2434,7 @@ endif
 
 # Doxygen
 ifeq ($(VBOX_DOXYGEN),)
- VBOX_DOXYGEN   := $(firstfile $(rversortfiles $(qwildcard , $(KBUILD_DEVTOOLS_HST)/doxygen/v*))) doxygen$(HOSTSUFF_EXE)
+ VBOX_DOXYGEN   := $(firstfile $(rversortfiles $(qwildcard , $(KBUILD_DEVTOOLS_HST)/doxygen/v*/doxygen$(HOSTSUFF_EXE))) doxygen$(HOSTSUFF_EXE))
 endif
 
 # bin2c (convert binary files into C arrays)
