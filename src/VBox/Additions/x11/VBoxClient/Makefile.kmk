@@ -50,7 +50,6 @@ PROGRAMS.linux += VBoxDRMClient
 
 # Common Guest / Host sources.
 VBOX_GH_SOURCES := \
-	$(PATH_ROOT)/src/VBox/GuestHost/Log.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/DisplayServerType.cpp
 
 VBoxClient_TEMPLATE = VBoxGuestR3Exe

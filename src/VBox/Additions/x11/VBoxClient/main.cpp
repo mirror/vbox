@@ -673,10 +673,15 @@ int main(int argc, char *argv[])
                 rc = VBClLogCreateEx("" /* No file logging */, false /* No header */);
                 if (RT_SUCCESS(rc))
                 {
-                    VBGHLogVerbositySet(2);
-                    VBGHDISPLAYSERVERTYPE const enmType = VBGHDisplayServerTypeDetect();
-                    VBClLogInfo("Detected session: %s\n", VBGHDisplayServerTypeToStr(enmType));
-                    return enmType != VBGHDISPLAYSERVERTYPE_NONE ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+                    /* Make sure that we increase the verbosity (if needed), to gain some more insights
+                     * when detecting the display server. */
+                    rc = VBClLogModify("stdout", g_cVerbosity);
+                    if (RT_SUCCESS(rc))
+                    {
+                        VBGHDISPLAYSERVERTYPE const enmType = VBGHDisplayServerTypeDetect();
+                        VBClLogInfo("Detected session: %s\n", VBGHDisplayServerTypeToStr(enmType));
+                        return enmType != VBGHDISPLAYSERVERTYPE_NONE ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+                    }
                 }
 
                 return RTEXITCODE_FAILURE;
@@ -739,22 +744,13 @@ int main(int argc, char *argv[])
     if (RT_FAILURE(rc))
         return RTEXITCODE_FAILURE; /* Error message already printed in VBClLogCreateEx(). */
 
-    if (!fDaemonise)
-    {
-        /* If the user is running in "no daemon" mode, send critical logging to stdout as well. */
-        PRTLOGGER pReleaseLog = RTLogRelGetDefaultInstance();
-        if (pReleaseLog)
-        {
-            rc = RTLogDestinations(pReleaseLog, "stdout");
-            if (RT_FAILURE(rc))
-                return RTMsgErrorExitFailure("Failed to redivert error output, rc=%Rrc", rc);
-        }
-    }
+    /* If the user is running in "no daemon" mode, send critical logging to stdout as well. */
+    rc = VBClLogModify(fDaemonise ? "" : "stdout", g_cVerbosity);
+    if (RT_FAILURE(rc))
+        return RTEXITCODE_FAILURE; /* Error message already printed in VBClLogModify(). */
 
     VBClLogInfo("VBoxClient %s r%s started. Verbose level = %d\n",
                 RTBldCfgVersion(), RTBldCfgRevisionStr(), g_cVerbosity);
-
-    VBGHLogVerbositySet(g_cVerbosity);
 
     /* Try to detect the current session type early on, if needed. */
     if (g_enmDisplayServerType == VBGHDISPLAYSERVERTYPE_AUTO)

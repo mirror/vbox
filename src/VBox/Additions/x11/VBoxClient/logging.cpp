@@ -41,8 +41,6 @@
 #endif
 #include <VBox/VBoxGuestLib.h>
 
-#include <VBox/GuestHost/Log.h>
-
 #include <package-generated.h>
 #include "VBoxClient.h"
 
@@ -222,6 +220,22 @@ int VBClShowNotify(const char *pszHeader, const char *pszBody)
 }
 
 /**
+ * Logs a message with a given prefix, format string and a va_list.
+ *
+ * @param   pszPrefix           Log prefix to use.
+ * @param   pszFormat           Format string to use.
+ * @param   va                  va_list to use.
+ */
+static void vbclLogV(const char *pszPrefix, const char *pszFormat, va_list va)
+{
+    char *psz = NULL;
+    RTStrAPrintfV(&psz, pszFormat, va);
+    AssertPtrReturnVoid(psz);
+    LogRel(("%s%s", pszPrefix ? pszPrefix : "", psz));
+    RTStrFree(psz);
+}
+
+/**
  * Logs a fatal error, notifies the desktop environment via a message and
  * exits the application immediately.
  *
@@ -232,7 +246,7 @@ void VBClLogFatalError(const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    VBGHLogFatalErrorV(pszFormat, va);
+    vbclLogV("Fatal Error: ", pszFormat, va);
     va_end(va);
 }
 
@@ -245,7 +259,7 @@ void VBClLogError(const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    VBGHLogErrorV(pszFormat, va);
+    vbclLogV("Error: ", pszFormat, va);
     va_end(va);
 }
 
@@ -258,7 +272,7 @@ void  VBClLogInfo(const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    VBGHLogInfoV(pszFormat, va);
+    vbclLogV("", pszFormat, va);
     va_end(va);
 }
 
@@ -274,7 +288,8 @@ void VBClLogVerbose(unsigned iLevel, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    VBGHLogVerboseV(iLevel, pszFormat, va);
+    if (iLevel <= g_cVerbosity)
+        vbclLogV("", pszFormat, va);
     va_end(va);
 }
 
@@ -418,6 +433,51 @@ int VBClLogCreate(const char *pszLogFile)
 }
 
 /**
+ * Destroys the currently active logging instance.
+ */
+void VBClLogDestroy(void)
+{
+    RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
+}
+
+/**
+ * Modifies the (release) log settings.
+ *
+ * @returns VBox status code.
+ * @param   pszDest             Log destination string to set.
+ * @param   uVerbosity          Verbosity level to set.
+ *
+ * @note    Errors will be logged to stderr.
+ */
+int VBClLogModify(const char *pszDest, unsigned uVerbosity)
+{
+    AssertPtrReturn(pszDest, VERR_INVALID_POINTER);
+    AssertPtrReturn(g_pLoggerRelease, VERR_INVALID_POINTER);
+
+    int rc = RTLogDestinations(g_pLoggerRelease, pszDest);
+    if (RT_SUCCESS(rc))
+    {
+#define LOG_GROUP_SET_BREAK(a_Val) \
+        rc = RTLogGroupSettings(g_pLoggerRelease, "all.e" a_Val); break;
+
+        switch (uVerbosity)
+        {
+            case 0:  LOG_GROUP_SET_BREAK("");
+            case 1:  LOG_GROUP_SET_BREAK(".l");
+            case 2:  LOG_GROUP_SET_BREAK(".l.l2");
+            case 3:  LOG_GROUP_SET_BREAK(".l.l2.l3");
+            default: LOG_GROUP_SET_BREAK(".l.l2.l3.l4");
+        }
+#undef LOG_GROUP_SET_BREAK
+    }
+
+    if (RT_FAILURE(rc)) /* Print to stderr in the hope that anyone can read this. */
+        RTMsgError("Failed to set/modify log output, rc=%Rrc", rc);
+
+    return rc;
+}
+
+/**
  * Set custom log prefix.
  *
  * @param pszPrefix     Custom log prefix string.
@@ -425,13 +485,5 @@ int VBClLogCreate(const char *pszLogFile)
 void VBClLogSetLogPrefix(const char *pszPrefix)
 {
     g_pszCustomLogPrefix = (char *)pszPrefix;
-}
-
-/**
- * Destroys the currently active logging instance.
- */
-void VBClLogDestroy(void)
-{
-    RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
 }
 
