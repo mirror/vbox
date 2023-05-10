@@ -39,7 +39,9 @@
 
 <xsl:import href="string.xsl"/>
 
-<xsl:output method="html" indent="yes"/>
+<!-- Don't indent the output, as it's not exactly html but IDL.
+     (doxygen 1.9.6 gets confused by <dl> indent.) -->
+<xsl:output method="html" indent="no"/>
 
 <xsl:strip-space elements="*"/>
 
@@ -56,6 +58,73 @@
 <!--xsl:template match="desc//text()">
     <xsl:value-of select="concat(' ',normalize-space(.),' ')"/>
 </xsl:template-->
+
+<!--
+  Replace /* and */ sequences in the text so they won't confuse doxygen with
+  comment nesting (see IPerformanceCollector).  Doxygen doesn't have any escape
+  sequence for '/' nor for '*', and xsltproc is in html mode so we cannot easily
+  output dummy elements.  So, we replace the '*' with '@SLASH-ASTERISK@' and
+  '@ASTERISK-SLASH@' and run sed afterwards to change them to sequences with
+  a dummy 'b' element in-between the characters (&#42; does not work).
+
+  TODO: Find better fix for this.
+
+  ~~Also, strip leading whitespace from the first child of a 'desc' element so
+  that doxygen 1.9.6 doesn't confuse the text for a tt or pre block (older
+  versions (1.8.13) didn't used to do this).~~ - fixed by MARKDOWN_SUPPORT=NO.
+  -->
+<xsl:template match="desc//text()" name="default-text-processing">
+  <xsl:param name="text" select="."/>
+
+  <!-- xsl:variable name="stripped">
+    <xsl:choose>
+      <xsl:when test="parent::desc and position() = 1">
+        <xsl:call-template name="strip-left">
+          <xsl:with-param name="text" select="$text"/>
+        </xsl:call-template>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:value-of select="$text"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable -->
+
+  <xsl:variable name="subst1">
+    <xsl:call-template name="str:subst">
+      <!-- xsl:with-param name="text" select="$stripped" / -->
+      <xsl:with-param name="text" select="$text" />
+      <xsl:with-param name="replace" select="'/*'" />
+      <xsl:with-param name="with" select="'/@SLASH-ASTERISK@'"/>
+    </xsl:call-template>
+  </xsl:variable>
+  <xsl:variable name="subst2">
+    <xsl:call-template name="str:subst">
+      <xsl:with-param name="text" select="$subst1" />
+      <xsl:with-param name="replace" select="'*/'" />
+      <xsl:with-param name="with" select="'@ASTERISK-SLASH@/'" />
+    </xsl:call-template>
+  </xsl:variable>
+
+  <!-- xsl:value-of select="concat('-dbg-',position(),'-gbd-')"/ -->
+  <xsl:value-of select="$subst2"/>
+</xsl:template>
+
+<!-- Strips leading spaces from $text.  Helper for default-text-processing.  -->
+<xsl:template name="strip-left">
+  <xsl:param name="text"/>
+  <xsl:choose>
+    <xsl:when test="string-length($text) > 0 and (substring($text, 1, 1) = ' ' or substring($text, 1, 1) = '&#x0A;' or substring($text, 1, 1) = '&#x0D;')">
+      <xsl:call-template name="strip-left">
+        <xsl:with-param name="text" select="substring($text, 2)"/>
+      </xsl:call-template>
+    </xsl:when>
+
+    <xsl:otherwise>
+      <xsl:value-of select="$text"/>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
+
 
 <!--
  *  all elements that are not explicitly matched are considered to be html tags
@@ -79,7 +148,9 @@
       <xsl:with-param name="with" select="'\::'" />
     </xsl:call-template>
   </xsl:variable>
-  <xsl:value-of select="$subst1"/>
+  <xsl:call-template name="default-text-processing">
+    <xsl:with-param name="text" select="$subst1"/>
+  </xsl:call-template>
 </xsl:template>
 
 <!--
@@ -219,7 +290,7 @@
   <xsl:if test="$id">
     <xsl:value-of select="concat(' @ingroup ',$id,'&#x0A;')"/>
   </xsl:if>
-  <xsl:text> @brief&#x0A;</xsl:text>
+  <xsl:text> @brief </xsl:text>
 </xsl:template>
 
 <!--
@@ -400,7 +471,7 @@ owns the object will most likely fail or crash your application.
   <!-- group (module) definitions -->
   <xsl:for-each select="//descGroup">
     <xsl:if test="@id and (@title or desc)">
-      <xsl:value-of select="concat('/** @defgroup ',@id,' ',@title)"/>
+      <xsl:value-of select="concat('/** @defgroup ', @id, ' ', @title, '&#x0A;')"/>
       <xsl:apply-templates select="desc" mode="middle"/>
       <xsl:text>&#x0A;*/&#x0A;</xsl:text>
     </xsl:if>

@@ -286,15 +286,25 @@ OTHER_CLEAN += $(VBOX_XIDL_FILE) $(VBOX_XIDL_FILE).ts
 VBOX_MAIN_DOC_DIR = $(VBOX_PATH_SDK)/docs
 BLDDIRS += $(VBOX_MAIN_DOC_DIR)
 
+$(PATH_TARGET)/VirtualBox.idl: \
+		$(VBOX_XIDL_FILE_SRC) \
+		$(VBOX_PATH_MAIN_SRC)/idl/doxygen.xsl \
+		| $(PATH_TARGET)/
+	$(call MSG_TOOL,xsltproc,,$<,$@)
+	$(QUIET)$(VBOX_XSLTPROC) --path ".:$(PATH_ROOT)/doc/manual" \
+		-o "$@.tmp" $(VBOX_PATH_MAIN_SRC)/idl/doxygen.xsl $(VBOX_XIDL_FILE_SRC)
+	$(QUIET)$(SED) \
+		-e 's,@SLASH-ASTERISK@,<b></b>*,g' \
+		-e 's,@ASTERISK-SLASH@,*<b></b>,g' \
+		--output "$@" "$@.tmp"
+
 $(PATH_TARGET)/docs.Main: \
 		$(VBOX_PATH_MAIN_SRC)/Doxyfile.Main \
-		$(VBOX_PATH_MAIN_SRC)/idl/doxygen.xsl \
+		$(PATH_TARGET)/VirtualBox.idl \
 		$(VBOX_XIDL_FILE_SRC) \
-		| $(PATH_TARGET)/ \
-		$(VBOX_MAIN_DOC_DIR)/
-	$(call MSG_TOOL,xsltproc,doxygen input,$<,$@)
-	$(QUIET)$(RM) -f $(wildcard $(VBOX_MAIN_DOC_DIR)/html/*) $(PATH_TARGET)/docs.Main
-	$(QUIET)$(VBOX_XSLTPROC) --path ".:$(PATH_ROOT)/doc/manual" -o $(PATH_TARGET)/VirtualBox.idl $(VBOX_PATH_MAIN_SRC)/idl/doxygen.xsl $(VBOX_XIDL_FILE_SRC)
+		| $(VBOX_MAIN_DOC_DIR)/
+	$(call MSG_TOOL,doxygen,,$<,$@)
+	$(QUIET)$(RM) -f -- $(wildcard $(VBOX_MAIN_DOC_DIR)/html/*) $(PATH_TARGET)/docs.Main
 	$(QUIET)$(REDIRECT) -E 'DOCDIR=$(VBOX_MAIN_DOC_DIR)' -E 'PATH_TARGET=$(PATH_TARGET)' \
 		-- $(VBOX_DOXYGEN) $(VBOX_PATH_MAIN_SRC)/Doxyfile.Main
 	$(QUIET)$(TEST) -s "$(PATH_TARGET)/Main.err" -- $(ECHO_EXT) ">>>>>>>>>>>>>>>>>>>> Main.err: >>>>>>>>>>>>>>>>>>>>>>>>"
