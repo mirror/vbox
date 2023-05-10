@@ -8939,8 +8939,11 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
     if (s_enmLinuxDriver == AudioDriverType_Null) /* Already determined from a former run? */
     {
 # ifdef VBOX_WITH_AUDIO_PULSE
-        /* Check for the pulse library & that the pulse audio daemon is running. */
-        if (   RTProcIsRunningByName("pulseaudio")
+        /* Check for the pulse library & that the PulseAudio daemon is running. */
+        if (   (   RTProcIsRunningByName("pulseaudio")
+                /* We also use the PulseAudio backend when we find pipewire-pulse running, which
+                 * acts as a PulseAudio-compatible daemon for Pipewire-enabled applications. See @ticketref{21575} */
+                || RTProcIsRunningByName("pipewire-pulse"))
             && RTLdrIsLoadable("libpulse.so.0"))
         {
             s_enmLinuxDriver = AudioDriverType_Pulse;
