@@ -448,7 +448,7 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
  endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
 
 
- ifdef VBOX_WITH_EFI
+ if defined(VBOX_WITH_EFI) && !defined(VBOX_ONLY_SDK)
   #
   # Install EFI firmware image
   #
@@ -517,7 +517,7 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
    	$(PATH_ROOT)/src/VBox/Devices/EFI/FirmwareBin/VBoxEFI32.fd=>VBoxEFI32.fd \
    	$(PATH_ROOT)/src/VBox/Devices/EFI/FirmwareBin/VBoxEFI64.fd=>VBoxEFI64.fd
   endif # !VBOX_WITH_EFIFW_FROM_BUILD_SERVER
- endif # VBOX_WITH_EFI
+ endif # VBOX_WITH_EFI && !VBOX_ONLY_SDK
 
 
  ifdef VBOX_WITH_EXTPACKS_FROM_BUILD_SERVER
@@ -2107,7 +2107,9 @@ else
 		'--exclude=src/VBox/Debugger/**' \
 		'--exclude=src/VBox/Disassembler/**' \
 		'--exclude=src/VBox/ExtPacks/**' \
-		'--exclude=src/VBox/Frontends/VirtualBox/**' \
+		'--include=src/VBox/Frontends/' \
+		'--include=src/VBox/Frontends/VBoxShell**' \
+		'--exclude=src/VBox/Frontends/**' \
 		'--exclude=src/VBox/GuestHost/**' \
 		'--exclude=src/VBox/HostDrivers/**' \
 		'--exclude=src/VBox/HostServices/**' \
@@ -2116,6 +2118,10 @@ else
 		'--exclude=src/VBox/Runtime/**' \
 		'--exclude=src/VBox/Storage/**' \
 		'--exclude=src/VBox/VMM/**' \
+		'--include=src/libs/' \
+		'--include=src/libs/Makefile.kmk' \
+		'--include=src/libs/xpcom**' \
+		'--exclude=src/libs/**' \
 		. $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_SDK_BUILD_SUBDIRNAME)
 
  sdk-build-linux.build-it: sdk-build-linux.rsync-into-vm
