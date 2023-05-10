@@ -395,6 +395,9 @@
 #define ARMV8_AARCH64_SYSREG_ICC_IGRPEN0_EL1        ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 12, 12, 6)
 /** ICC_IGRPEN1_EL1 register - RW. */
 #define ARMV8_AARCH64_SYSREG_ICC_IGRPEN1_EL1        ARMV8_AARCH64_SYSREG_ID_CREATE(3, 0, 12, 12, 7)
+
+/** CNTV_CTL_EL0 register - RW. */
+#define ARMV8_AARCH64_SYSREG_CNTV_CTL_EL0           ARMV8_AARCH64_SYSREG_ID_CREATE(3, 3, 14,  3, 1)
 /** @} */
 
 
@@ -986,6 +989,103 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 /** Bit 48 - 63 - ASID. */
 #define ARMV8_TTBR_EL1_AARCH64_ASID                             UINT64_C(0xffff000000000000)
 #define ARMV8_TTBR_EL1_AARCH64_ASID_GET(a_Ttbr)                 (((a_Ttbr) & ARMV8_TTBR_EL1_AARCH64_ASID) >> 48)
+/** @} */
+
+
+/** @name ICC_PMR_EL1 - 
+ * @{ */
+/** Bit 0 - 7 - Priority - The priority mask level for the CPU interface. */
+#define ARMV8_ICC_PMR_EL1_AARCH64_PRIORITY                      UINT64_C(0xff)
+#define ARMV8_ICC_PMR_EL1_AARCH64_PRIORITY_GET(a_Pmr)           ((a_Pmr) & ARMV8_ICC_PMR_EL1_AARCH64_PRIORITY)
+#define ARMV8_ICC_PMR_EL1_AARCH64_PRIORITY_SET(a_Prio)          ((a_Prio) & ARMV8_ICC_PMR_EL1_AARCH64_PRIORITY)
+/** @} */
+
+
+/** @name ICC_BPR0_EL1 - The group priority for Group 0 interrupts.
+ * @{ */
+/** Bit 0 - 2 - BinaryPoint - Controls how the 8-bit interrupt priority field is split into a group priority and subpriority field. */
+#define ARMV8_ICC_BPR0_EL1_AARCH64_BINARYPOINT                  (RT_BIT_64(0) | RT_BIT_64(1) | RT_BIT_64(2))
+#define ARMV8_ICC_BPR0_EL1_AARCH64_BINARYPOINT_GET(a_Bpr0)      ((a_Bpr0) & ARMV8_ICC_BPR0_EL1_AARCH64_BINARYPOINT)
+#define ARMV8_ICC_BPR0_EL1_AARCH64_BINARYPOINT_SET(a_BinaryPt)  ((a_BinaryPt) & ARMV8_ICC_BPR0_EL1_AARCH64_BINARYPOINT)
+/** @} */
+
+
+/** @name ICC_BPR1_EL1 - The group priority for Group 1 interrupts.
+ * @{ */
+/** Bit 0 - 2 - BinaryPoint - Controls how the 8-bit interrupt priority field is split into a group priority and subpriority field. */
+#define ARMV8_ICC_BPR1_EL1_AARCH64_BINARYPOINT                  (RT_BIT_64(0) | RT_BIT_64(1) | RT_BIT_64(2))
+#define ARMV8_ICC_BPR1_EL1_AARCH64_BINARYPOINT_GET(a_Bpr1)      ((a_Bpr1) & ARMV8_ICC_BPR1_EL1_AARCH64_BINARYPOINT)
+#define ARMV8_ICC_BPR1_EL1_AARCH64_BINARYPOINT_SET(a_BinaryPt)  ((a_BinaryPt) & ARMV8_ICC_BPR1_EL1_AARCH64_BINARYPOINT)
+/** @} */
+
+
+/** @name ICC_CTLR_EL1 - Interrupt Controller Control Register (EL1)
+ * @{ */
+/** Bit 0 - Common Binary Pointer Register - RW. */
+#define ARMV8_ICC_CTLR_EL1_AARCH64_CBPR                         RT_BIT_64(0)
+#define ARMV8_ICC_CTLR_EL1_AARCH64_CBPR_BIT                     0
+/** Bit 1 - EOI mode for current security state, when set ICC_DIR_EL1 provides interrupt deactivation functionality - RW. */
+#define ARMV8_ICC_CTLR_EL1_AARCH64_EOIMODE                      RT_BIT_64(1)
+#define ARMV8_ICC_CTLR_EL1_AARCH64_EOIMODE_BIT                  1
+/** Bit 7 - Priority Mask Hint Enable - RW (under circumstances). */
+#define ARMV8_ICC_CTLR_EL1_AARCH64_PMHE                         RT_BIT_64(7)
+#define ARMV8_ICC_CTLR_EL1_AARCH64_PMHE_BIT                     7
+/** Bit 8 - 10 - Priority bits - RO. */
+#define ARMV8_ICC_CTLR_EL1_AARCH64_PRIBITS                      (RT_BIT_64(8) | RT_BIT_64(9) | RT_BIT_64(10))
+#define ARMV8_ICC_CTLR_EL1_AARCH64_PRIBITS_SET(a_PriBits)       (((a_PriBits) << 8) & ARMV8_ICC_CTLR_EL1_AARCH64_PRIBITS)
+/** Bit 11 - 13 - Interrupt identifier bits - RO. */
+#define ARMV8_ICC_CTLR_EL1_AARCH64_IDBITS                       (RT_BIT_64(11) | RT_BIT_64(12) | RT_BIT_64(13))
+#define ARMV8_ICC_CTLR_EL1_AARCH64_IDBITS_SET(a_IdBits)         (((a_IdBits) << 11) & ARMV8_ICC_CTLR_EL1_AARCH64_IDBITS)
+/** INTIDS are 16-bit wide. */
+# define ARMV8_ICC_CTLR_EL1_AARCH64_IDBITS_16BITS               0
+/** INTIDS are 24-bit wide. */
+# define ARMV8_ICC_CTLR_EL1_AARCH64_IDBITS_24BITS               1
+/** Bit 14 - SEI Supported - RO. */
+#define ARMV8_ICC_CTLR_EL1_AARCH64_SEIS                         RT_BIT_64(14)
+#define ARMV8_ICC_CTLR_EL1_AARCH64_SEIS_BIT                     14
+/** Bit 15 - Affinity 3 Valid - RO. */
+#define ARMV8_ICC_CTLR_EL1_AARCH64_A3V                          RT_BIT_64(15)
+#define ARMV8_ICC_CTLR_EL1_AARCH64_A3V_BIT                      15
+/** Bit 18 - Range Selector Support - RO. */
+#define ARMV8_ICC_CTLR_EL1_AARCH64_RSS                          RT_BIT_64(18)
+#define ARMV8_ICC_CTLR_EL1_AARCH64_RSS_BIT                      18
+/** Bit 19 - Extended INTID range supported - RO. */
+#define ARMV8_ICC_CTLR_EL1_AARCH64_EXTRANGE                     RT_BIT_64(19)
+#define ARMV8_ICC_CTLR_EL1_AARCH64_EXTRANGE_BIT                 19
+/** All RW bits. */
+#define ARMV8_ICC_CTLR_EL1_RW                                   (ARMV8_ICC_CTLR_EL1_AARCH64_CBPR | ARMV8_ICC_CTLR_EL1_AARCH64_EOIMODE | ARMV8_ICC_CTLR_EL1_AARCH64_PMHE)
+/** All RO bits (including Res0). */
+#define ARMV8_ICC_CTLR_EL1_RO                                   ~ARMV8_ICC_CTLR_EL1_RW
+/** @} */
+
+
+/** @name ICC_IGRPEN0_EL1 - Interrupt Controller Interrupt Group 0 Enable Register (EL1)
+ * @{ */
+/** Bit 0 - Enables Group 0 interrupts for the current Security state. */
+#define ARMV8_ICC_IGRPEN0_EL1_AARCH64_ENABLE                    RT_BIT_64(0)
+#define ARMV8_ICC_IGRPEN0_EL1_AARCH64_ENABLE_BIT                0
+/** @} */
+
+/** @name ICC_IGRPEN1_EL1 - Interrupt Controller Interrupt Group 1 Enable Register (EL1)
+ * @{ */
+/** Bit 0 - Enables Group 1 interrupts for the current Security state. */
+#define ARMV8_ICC_IGRPEN1_EL1_AARCH64_ENABLE                    RT_BIT_64(0)
+#define ARMV8_ICC_IGRPEN1_EL1_AARCH64_ENABLE_BIT                0
+/** @} */
+
+
+
+/** @name CNTV_CTL_EL0 - Counter-timer Virtual Timer Control register.
+ * @{ */
+/** Bit 0 - Enables the timer. */
+#define ARMV8_CNTV_CTL_EL0_AARCH64_ENABLE                       RT_BIT_64(0)
+#define ARMV8_CNTV_CTL_EL0_AARCH64_ENABLE_BIT                   0
+/** Bit 1 - Timer interrupt mask bit. */
+#define ARMV8_CNTV_CTL_EL0_AARCH64_IMASK                        RT_BIT_64(1)
+#define ARMV8_CNTV_CTL_EL0_AARCH64_IMASK_BIT                    1
+/** Bit 2 - Timer status bit. */
+#define ARMV8_CNTV_CTL_EL0_AARCH64_ISTATUS                      RT_BIT_64(2)
+#define ARMV8_CNTV_CTL_EL0_AARCH64_ISTATUS_BIT                  2
 /** @} */
 
 
