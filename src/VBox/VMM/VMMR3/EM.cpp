@@ -1857,8 +1857,9 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                     /*
                      * VMX interrupt-window VM-exit.
                      * This is a bit messy with the way the code below is currently structured,
-                     * but checking VMCPU_FF_INTERRUPT_NMI here should allow pending NMI to be delivered
-                     * prior to causing an interrupt-window VM-exit.
+                     * but checking VMCPU_FF_INTERRUPT_NMI here (combined with CPUMAreInterruptsInhibitedByNmi
+                     * already checked at this point) should allow a pending NMI to be delivered prior to
+                     * causing an interrupt-window VM-exit.
                      */
                     /** @todo Restructure this later to happen after injecting NMI/causing NMI-exit, see
                      *        code in VMX R0 event delivery. */
