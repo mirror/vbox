@@ -663,7 +663,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
             # In case it's busy for some reason or another, just retry after a little delay.
             for iTry in range(6):
                 time.sleep(5);
-                reporter.error('Retry #%s unmount DMT at %s' % (iTry + 1, sMountPath,));
+                reporter.log('Retry #%s unmount DMG at %s' % (iTry + 1, sMountPath,));
                 fRc = self._executeSync(['hdiutil', 'detach', sMountPath ]);
                 if fRc:
                     break;
