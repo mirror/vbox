@@ -235,9 +235,13 @@ static DECLCALLBACK(int) rtVfsStdDir_SetMode(void *pvThis, RTFMODE fMode, RTFMOD
             return rc;
         fMode |= ~fMask & ObjInfo.Attr.fMode;
     }
-    //RTPathSetMode
-    //return RTFileSetMode(pThis->hDir, fMode);
+#if 0
+    RTPathSetMode
+    return RTFileSetMode(pThis->hDir, fMode);
+#else
+    RT_NOREF(fMode);
     return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 

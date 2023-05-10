@@ -892,11 +892,11 @@ const ElementNode *ElementNode::findChildElementFromId(const char *pcszId) const
     return NULL;
 }
 
-
 const ElementNode *ElementNode::findChildElementP(const char *pcszPath, const char *pcszNamespace /*= NULL*/) const
 {
-    size_t cchThis = strchr(pcszPath, '/') - pcszPath;
-    if (cchThis == (size_t)((const char *)0 - pcszPath))
+    const char *pszElm   = strchr(pcszPath, '/');
+    size_t const cchThis = pszElm ? pszElm - pcszPath : 0;
+    if (!cchThis)
         return findChildElementNS(pcszNamespace, pcszPath);
 
     /** @todo Can be done without recursion as we have both sibling lists and parent
