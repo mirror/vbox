@@ -791,7 +791,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   		$$(VBOX_PATH_MANUAL_SRC)/en_US/images/vboxlogo.png
 	$$(call MSG_L1,Building $$@ ($$(@D)/UserManual_pdf.log))
 	$$(QUIET)$$(RM) -f -- "$$@"
-	$$(QUIET)$$(RM) -f -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf"
+	$$(QUIET)$$(RM) -Rf -- "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/temp_pdf"
 	$$(QUIET)$$(call VBOX_DITA_RUN_DOST,, \
 		"--input=$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/dita/UserManual.ditamap" \
 		"--format=pdf" \
