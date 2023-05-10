@@ -42,6 +42,45 @@
 #include <iprt/types.h>
 #include <iprt/armv8.h>
 
+/** @name INTIDs - Interrupt identifier ranges.
+ * @{ */
+/** Start of the SGI (Software Generated Interrupts) range. */
+#define GIC_INTID_RANGE_SGI_START                          0
+/** Last valid SGI (Software Generated Interrupts) identifier. */
+#define GIC_INTID_RANGE_SGI_LAST                          15
+
+/** Start of the PPI (Private Peripheral Interrupts) range. */
+#define GIC_INTID_RANGE_PPI_START                         16
+/** Last valid PPI (Private Peripheral Interrupts) identifier. */
+#define GIC_INTID_RANGE_PPI_LAST                          31
+
+/** Start of the SPI (Shared Peripheral Interrupts) range. */
+#define GIC_INTID_RANGE_SPI_START                         32
+/** Last valid SPI (Shared Peripheral Interrupts) identifier. */
+#define GIC_INTID_RANGE_SPI_LAST                        1019
+
+/** Start of the special interrupt range. */
+#define GIC_INTID_RANGE_SPECIAL_START                   1020
+/** Last valid special interrupt identifier. */
+#define GIC_INTID_RANGE_SPECIAL_LAST                    1023
+/** Value for an interrupt acknowledge if no pending interrupt with sufficient
+ * priority, security state or interrupt group. */
+# define GIC_INTID_RANGE_SPECIAL_NO_INTERRUPT           1023
+
+/** Start of the extended PPI (Private Peripheral Interrupts) range. */
+#define GIC_INTID_RANGE_EPPI_START                      1056
+/** Last valid extended PPI (Private Peripheral Interrupts) identifier. */
+#define GIC_INTID_RANGE_EPPI_LAST                       1119
+
+/** Start of the extended SPI (Shared Peripheral Interrupts) range. */
+#define GIC_INTID_RANGE_ESPI_START                      4096
+/** Last valid extended SPI (Shared Peripheral Interrupts) identifier. */
+#define GIC_INTID_RANGE_ESPI_LAST                       5119
+
+/** Start of the LPI (Locality-specific Peripheral Interrupts) range. */
+#define GIC_INTID_RANGE_LPI_START                       8192
+/** @} */
+
 
 /** @name GICD - GIC Distributor registers.
  * @{ */
@@ -367,11 +406,11 @@
 #define GIC_REDIST_SGI_PPI_REG_ISENABLER2E_OFF          0x0108
 
 /** Interrupt Clear Enable Register 0 - RW. */
-#define GIC_REDIST_SGI_PPI_REG_ICENABLER0_OFF           0x0100
+#define GIC_REDIST_SGI_PPI_REG_ICENABLER0_OFF           0x0180
 /** Interrupt Clear Enable Register 1 for extended PPI range - RW. */
-#define GIC_REDIST_SGI_PPI_REG_ICENABLER1E_OFF          0x0104
+#define GIC_REDIST_SGI_PPI_REG_ICENABLER1E_OFF          0x0184
 /** Interrupt Clear Enable Register 2 for extended PPI range - RW. */
-#define GIC_REDIST_SGI_PPI_REG_ICENABLER2E_OFF          0x0108
+#define GIC_REDIST_SGI_PPI_REG_ICENABLER2E_OFF          0x0188
 
 /** Interrupt Set Pend Register 0 - RW. */
 #define GIC_REDIST_SGI_PPI_REG_ISPENDR0_OFF             0x0200

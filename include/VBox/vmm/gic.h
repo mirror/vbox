@@ -56,9 +56,12 @@ extern const PDMDEVREG g_DeviceGIC;
 /* These functions are VMM internal. */
 VMM_INT_DECL(VBOXSTRICTRC)  GICReadSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint64_t *pu64Value);
 VMM_INT_DECL(VBOXSTRICTRC)  GICWriteSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint64_t u64Value);
+VMM_INT_DECL(int)           GICSpiSet(PVMCC pVM, uint32_t uIntId, bool fAsserted);
+VMM_INT_DECL(int)           GICPpiSet(PVMCPUCC pVCpu, uint32_t uIntId, bool fAsserted);
+VMM_INT_DECL(int)           GICSgiSet(PVMCPUCC pVCpu, uint32_t uIntId, bool fAsserted);
 
 #ifdef IN_RING3
-/** @defgroup grp_gic_r3  The APIC Host Context Ring-3 API
+/** @defgroup grp_gic_r3  The GIC Host Context Ring-3 API
  * @{
  */
 VMMR3_INT_DECL(int)         GICR3RegisterDevice(struct PDMDEVREGCB *pCallbacks);

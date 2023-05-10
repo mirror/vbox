@@ -85,6 +85,45 @@ AssertCompileSizeAlignment(GIC, 8);
  */
 typedef struct GICCPU
 {
+    /** @name The per vCPU redistributor data is kept here.
+     * @{ */
+
+    /** @name Physical LPI register state.
+     * @{ */
+    /** @} */
+
+    /** @name SGI and PPI redistributor register state.
+     * @{ */
+    /** Interrupt Group 0 Register. */
+    volatile uint32_t           u32RegIGrp0;
+    /** Interrupt Configuration Register 0. */
+    volatile uint32_t           u32RegICfg0;
+    /** Interrupt Configuration Register 1. */
+    volatile uint32_t           u32RegICfg1;
+    /** Interrupt enabled bitmap. */
+    volatile uint32_t           bmIntEnabled;
+    /** Current interrupt pending state. */
+    volatile uint32_t           bmIntPending;
+    /** The current interrupt active state. */
+    volatile uint32_t           bmIntActive;
+    /** The interrupt priority for each of the SGI/PPIs */
+    volatile uint8_t            abIntPriority[GIC_INTID_RANGE_PPI_LAST + 1];
+    /** @} */
+
+    /** @name ICC system register state.
+     * @{ */
+    /** Flag whether group 0 interrupts are currently enabled. */
+    volatile bool               fIrqGrp0Enabled;
+    /** Flag whether group 1 interrupts are currently enabled. */
+    volatile bool               fIrqGrp1Enabled;
+    /** The current interrupt priority, only interrupts with a higher priority get signalled. */
+    volatile uint8_t            bInterruptPriority;
+    /** The interrupt controller Binary Point Register for Group 0 interrupts. */
+    uint8_t                     bBinaryPointGrp0;
+    /** The interrupt controller Binary Point Register for Group 1 interrupts. */
+    uint8_t                     bBinaryPointGrp1;
+    /** @} */
+
     /** @name Log Max counters
      * @{ */
     uint32_t                    cLogMaxAccessError;
