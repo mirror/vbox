@@ -1932,6 +1932,8 @@ else
 		'--exclude=src/VBox/GuestHost/**' \
 		'--exclude=src/VBox/HostServices/**' \
 		'--exclude=src/VBox/ImageMounter/**' \
+		'--include=src/VBox/Main/' \
+		'--include=src/VBox/Main/idl**' \
 		'--exclude=src/VBox/Main/**' \
 		'--exclude=src/VBox/NetworkServices/**' \
 		'--exclude=src/VBox/RDP/**' \
