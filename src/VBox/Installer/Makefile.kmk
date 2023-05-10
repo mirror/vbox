@@ -58,7 +58,7 @@ endif
 
 include $(PATH_SUB_CURRENT)/common/Makefile.kmk
 
-if defined(VBOX_ONLY_SDK) ## @todo || defined(VBOX_WITH_SDK)
+if defined(VBOX_ONLY_SDK) || defined(VBOX_WITH_SDK)
  #
  # Package the VirtualBox SDK.
  #
@@ -72,7 +72,19 @@ if defined(VBOX_ONLY_SDK) ## @todo || defined(VBOX_WITH_SDK)
  		$(PATH_STAGE_BIN)/sdk \
  		$(VBOX_VERSION_STAMP)
 	$(call MSG_L1,Making SDK delivery $@)
+ ifdef VBOX_ONLY_SDK_ON_HOST
+	$(QUIET)$(RM) -f -- "$@"
+  if defined(VBOX_WITH_SDK_PACKING.linux.amd64) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" != "linux.amd64"
+	$(REDIRECT) -C "$(PATH_OUT_BASE)/linux.amd64/$(KBUILD_TYPE)/bin/" -- $(VBOX_ZIP) -r9Xv "$@" sdk
+  endif
+  if defined(VBOX_WITH_SDK_PACKING.win.amd64) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" != "win.amd64"
+	$(REDIRECT) -C "$(PATH_OUT_BASE)/win.amd64/$(KBUILD_TYPE)/bin/"   -- $(VBOX_ZIP) -r9Xv "$@" sdk
+  endif
+	$(REDIRECT) -C "$(PATH_STAGE_BIN)/"                               -- $(VBOX_ZIP) -r9Xv "$@" sdk
+	$(call MSG_L1, Ready: $@)
+ else  # !VBOX_ONLY_SDK_ON_HOST
 	$(QUIET)$(REDIRECT) $(if $(QUIET),-wo /dev/null,) -C $(PATH_STAGE_BIN) -- $(VBOX_ZIP) -r9 "$@" sdk
+ endif # !VBOX_ONLY_SDK_ON_HOST
 endif
 
 

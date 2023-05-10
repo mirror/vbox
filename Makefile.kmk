@@ -33,7 +33,9 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 ifndef VBOX_ONLY_ROOT_MAKEFILE
  if   (defined(VBOX_WITH_DOCS) || defined(VBOX_WITH_MAIN)) \
-   && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK)) \
+   && (   !defined(VBOX_ONLY_BUILD) \
+       || defined(VBOX_ONLY_DOCS) \
+       || (defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_SDK_IN_VM))) \
    && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
   include $(PATH_SUB_CURRENT)/doc/manual/Makefile.kmk
  endif
@@ -98,7 +100,7 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
  # To avoid dragging in unnecessary tools and sdks here, we don't use the .win
  # and .linux property suffixes.
  #
- if !defined(VBOX_ONLY_SDK_ON_WINDOWS)
+ if !defined(VBOX_ONLY_SDK)
   INSTALLS += InstallExternalLibs
  endif
 
@@ -2004,6 +2006,94 @@ efi-packing:
 	+ $(KMK) -C src/VBox/Devices/EFI/Firmware$(VBOX_EFI_FIRMWARE_SUFFIX) $(PATH_STAGE)/VBoxEfiFirmware.zip
 
 
+
+#
+# Build the SDK, all of it.
+#
+# Hosting the build on windows, with the linux part in a VM.
+#
+sdk-fetch:
+	+ $(KMK) -C tools fetch VBOX_ONLY_SDK=1 VBOX_ONLY_SDK_ON_HOST=1
+	+ $(KMK) -C tools fetch VBOX_ONLY_SDK=1 VBOX_ONLY_SDK_IN_VM=1 KBUILD_TARGET=linux KBUILD_HOST=linux
+	+ $(KMK) -C tools fetch VBOX_ONLY_SDK=1 VBOX_ONLY_SDK_IN_VM=1 KBUILD_TARGET=win   KBUILD_HOST=win
+
+sdk-build: \
+		sdk-build-rsync-into-vms \
+		sdk-build-linux \
+		sdk-build-win
+
+sdk-build-rsync-into-vms: \
+		sdk-build-linux.rsync-into-vm
+	$(call MSG_L1,Rsynced the sources + tools into the VM(s).)
+.NOTPARALLEL: sdk-build-rsync-into-vms
+.PHONY: sdk-build-rsync-into-vms
+
+VBOX_SDK_BUILD.amd64 = VBOX_ONLY_SDK=1 KBUILD_TYPE=$(KBUILD_TYPE) KBUILD_TARGET_ARCH=amd64 VBOX_SVN_REV=$(VBOX_SVN_REV)
+
+# Automatically determine the SDL build subdir name. Used for figuring
+# out directory names inside the test suite building VMs.
+VBOX_SDK_BUILD_SUBDIRNAME := $(lastword $(subst /, ,$(PATH_ROOT)))
+
+sdk-build-win:
+ifeq ($(KBUILD_TARGET),win)
+	+ $(TIME) -- $(KMK) $(VBOX_SDK_BUILD.amd64) VBOX_ONLY_SDK_ON_HOST=1 all $(VBOX_SDK_HOST_BUILD_TWEAK)
+else
+	$(call VBOX_BLD_VM_MSG_BEGIN,Windows/amd64 SDK)
+	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_WIN_X86_IP) 'cd e:/$(VBOX_SDK_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_SDK_BUILD.amd64) VBOX_ONLY_SDK_IN_VM=1 all '
+	$(call VBOX_BLD_VM_MSG_END__,Windows/amd64 SDK)
+endif
+
+ifeq ($(KBUILD_TARGET),linux)
+ sdk-build-linux:
+	+ $(TIME) -- $(KMK) $(VBOX_SDK_BUILD.amd64) all $(VBOX_SDK_HOST_BUILD_TWEAK)
+
+else
+ sdk-build-linux.rsync-into-vm: $(VBOX_SDK_BUILD_WIN_HOST_FIRST)
+	$(TIME) -- $(call VBOX_RSYNC_IN_FN,linux,*) \
+		'--exclude=src/VBox/Additions/**' \
+		'--exclude=src/VBox/Artwork/**' \
+		'--exclude=src/VBox/Devices**' \
+		'--exclude=src/VBox/Debugger/**' \
+		'--exclude=src/VBox/Disassembler/**' \
+		'--exclude=src/VBox/ExtPacks/**' \
+		'--exclude=src/VBox/Frontends/VirtualBox/**' \
+		'--exclude=src/VBox/GuestHost/**' \
+		'--exclude=src/VBox/HostDrivers/**' \
+		'--exclude=src/VBox/HostServices/**' \
+		'--exclude=src/VBox/ImageMounter/**' \
+		'--exclude=src/VBox/NetworkServices/**' \
+		'--exclude=src/VBox/Runtime/**' \
+		'--exclude=src/VBox/Storage/**' \
+		'--exclude=src/VBox/VMM/**' \
+		. $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_SDK_BUILD_SUBDIRNAME)
+
+ sdk-build-linux.build-it: sdk-build-linux.rsync-into-vm
+	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/amd64 SDK)
+	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_LNX_IP) 'dchroot -c debian-4.0-amd64 "cd /mnt/tinderbox/$(VBOX_SDK_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_SDK_BUILD.amd64) VBOX_ONLY_SDK_IN_VM=1 all " '
+	$(call VBOX_BLD_VM_MSG_END__,Linux/amd64 SDK)
+
+ sdk-build-linux.rsync-out-of-vm: sdk-build-linux.build-it
+	$(TIME) -- $(VBOX_RSYNC) -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_SDK_BUILD_SUBDIRNAME)/out/linux.amd64 out/
+
+ .PHONY: sdk-build-linux.rsync-out-of-vm sdk-build-linux.rsync-into-vm sdk-build-linux.build-it
+
+ sdk-build-linux: sdk-build-linux.rsync-out-of-vm
+endif
+
+
+sdk-packing:
+	+ $(KMK) VBOX_ONLY_SDK=1 VBOX_ONLY_SDK_ON_HOST=1 \
+		VBOX_WITH_SDK_PACKING.linux.amd64=1 \
+		VBOX_WITH_SDK_PACKING.win.amd64=1 \
+		-C src/VBox/Installer packing
+.PHONY: \
+		sdk-fetch \
+		sdk-build \
+		sdk-build-linux \
+		sdk-build-win \
+		sdk-packing
+
+
 #
 # Generate VirtualBox-x.x.x.zip (PUEL) snapshot archive for internal use only
 # - includes kBuild
@@ -2128,18 +2218,6 @@ else
 	$(MAKE) -C tools -f Makefile-ose.kmk fetch
 endif
 
-
-#
-# Aliases for building the SDK.
-#
-.NOTPARALLEL: sdk sdk-fetch
-sdk:
-	+ $(KMK) VBOX_ONLY_SDK=1 $(if-expr "$(KBUILD_HOST)" == "win",VBOX_ONLY_SDK_ON_WINDOWS=1,) \
-		pass_bldprogs pass_others pass_installs pass_packing
-
-sdk-fetch:
-	+ $(KMK) VBOX_ONLY_SDK=1 $(if-expr "$(KBUILD_HOST)" == "win",VBOX_ONLY_SDK_ON_WINDOWS=1,) \
-		-C tools
 
 
 #

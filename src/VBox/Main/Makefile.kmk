@@ -62,7 +62,7 @@ endif
 #
 VBOX_PATH_MAIN_SRC := $(PATH_SUB_CURRENT)
 
-if defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_SDK_ON_WINDOWS)
+if defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_SDK_ON_HOST) && !defined(VBOX_ONLY_SDK_IN_VM) # Hacks for building SDK using wine.
  ifndef TOOL_$(VBOX_VCC_TOOL)
   include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL).kmk # For the idl /cpp statement.
  endif
@@ -217,7 +217,7 @@ VBOX_IDL_TYPELIB.XPCOM = $(PATH_STAGE_BIN)/components/VirtualBox_XPCOM.xpt
 VBOX_IDL_HEADER.XPCOM  = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
 
 # The MS COM specific stuff.
-if "$(KBUILD_TARGET)" == "win" || (defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_SDK_ON_WINDOWS))
+if "$(KBUILD_TARGET)" == "win" || (defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_SDK_ON_HOST) && !defined(VBOX_ONLY_SDK_IN_VM))
  OTHERS         += \
  	$(VBOX_IDL_FILE.MSCOM)
  OTHER_CLEAN    += \
@@ -306,7 +306,7 @@ $(PATH_TARGET)/docs.Main: \
 	$(QUIET)$(TEST) -s "$(PATH_TARGET)/Main.err" -- $(ECHO_EXT) "===> **************************************************"
 	$(APPEND) $(PATH_TARGET)/docs.Main
 
-if defined(VBOX_ONLY_SDK) || defined(VBOX_WITH_SDK)
+if (defined(VBOX_ONLY_SDK) || defined(VBOX_WITH_SDK)) && !defined(VBOX_ONLY_SDK_IN_VM)
  OTHERS += $(PATH_TARGET)/docs.Main
 endif
 
@@ -1667,7 +1667,7 @@ $(VBoxCOM_0_OUTDIR)/VirtualBox_XPCOM_i.c: $(VBOX_PATH_MAIN_SRC)/idl/xpidl_iid.xs
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $< $(VBOX_XIDL_FILE)
 
-if "$(KBUILD_TARGET)" == "win" || (defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_SDK_ON_WINDOWS))
+if "$(KBUILD_TARGET)" == "win" || (defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_SDK_ON_HOST) && !defined(VBOX_ONLY_SDK_IN_VM))
 
  # Note! Because we've got a different proxy stub DLL for pre windows 7 64-bit hosts, we target windows 7 for AMD64.
  #       The output is different and hopefully more efficient, at least memory wise (using more helpers in OLE32).
@@ -1739,7 +1739,7 @@ if "$(KBUILD_TARGET)" == "win" || (defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_
 	$(call def_VBoxMidlOutputDisableMscWarnings,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c)
  endif
 
-endif # "$(KBUILD_TARGET)" == "win" || (defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_SDK_ON_WINDOWS))
+endif # "$(KBUILD_TARGET)" == "win" || (defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_SDK_ON_HOST) && !defined(VBOX_ONLY_SDK_IN_VM))
 
 #
 # Translation stuff
