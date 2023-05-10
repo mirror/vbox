@@ -482,6 +482,8 @@ typedef struct NEMCPU
     hv_vcpu_exit_t              *pHvExit;
     /** Flag whether an event is pending. */
     bool                        fEventPending;
+    /** Flag whether the vTimer got activated and is masked. */
+    bool                        fVTimerActivated;
 # else
     /** The vCPU handle associated with the EMT executing this vCPU. */
     hv_vcpuid_t                 hVCpuId;

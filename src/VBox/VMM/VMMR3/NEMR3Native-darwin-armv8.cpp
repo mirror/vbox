@@ -39,10 +39,8 @@
 #include <VBox/vmm/nem.h>
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/em.h>
-#include <VBox/vmm/apic.h>
+#include <VBox/vmm/gic.h>
 #include <VBox/vmm/pdm.h>
-#include <VBox/vmm/hm.h>
-#include <VBox/vmm/hm_vmx.h>
 #include <VBox/vmm/dbgftrace.h>
 #include <VBox/vmm/gcm.h>
 #include "NEMInternal.h"
@@ -67,6 +65,10 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+
+
+/** @todo The vTimer PPI for the virt platform, make it configurable. */
+#define NEM_DARWIN_VTIMER_GIC_PPI_IRQ           11
 
 
 /*********************************************************************************************************************************
@@ -1083,8 +1085,8 @@ static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu)
         case HV_EXIT_REASON_EXCEPTION:
             return nemR3DarwinHandleExitException(pVM, pVCpu, pExit);
         case HV_EXIT_REASON_VTIMER_ACTIVATED:
-            /** @todo Set interrupt. */
-            return VINF_EM_RESCHEDULE;
+            pVCpu->nem.s.fVTimerActivated = true;
+            return GICPpiSet(pVCpu, NEM_DARWIN_VTIMER_GIC_PPI_IRQ, true /*fAsserted*/);
         default:
             AssertReleaseFailed();
             break;
@@ -1134,6 +1136,27 @@ static VBOXSTRICTRC nemR3DarwinPreRunGuest(PVM pVM, PVMCPU pVCpu, bool fSingleSt
     /** @todo */ RT_NOREF(fSingleStepping);
     int rc = nemR3DarwinExportGuestState(pVM, pVCpu);
     AssertRCReturn(rc, rc);
+
+    /* Check whether the vTimer interrupt was handled by the guest and we can unmask the vTimer. */
+    if (pVCpu->nem.s.fVTimerActivated)
+    {
+        /* Read the CNTV_CTL_EL0 register. */
+        uint64_t u64CntvCtl = 0;
+
+        hv_return_t hrc = hv_vcpu_get_sys_reg(pVCpu->nem.s.hVCpu, HV_SYS_REG_CNTV_CTL_EL0, &u64CntvCtl);
+        AssertRCReturn(hrc == HV_SUCCESS, VERR_NEM_IPE_9);
+
+        if (   (u64CntvCtl & (ARMV8_CNTV_CTL_EL0_AARCH64_ENABLE | ARMV8_CNTV_CTL_EL0_AARCH64_IMASK | ARMV8_CNTV_CTL_EL0_AARCH64_ISTATUS))
+            != (ARMV8_CNTV_CTL_EL0_AARCH64_ENABLE | ARMV8_CNTV_CTL_EL0_AARCH64_ISTATUS))
+        {
+            /* Clear the interrupt. */
+            GICPpiSet(pVCpu, NEM_DARWIN_VTIMER_GIC_PPI_IRQ, false /*fAsserted*/);
+
+            pVCpu->nem.s.fVTimerActivated = false;
+            hrc = hv_vcpu_set_vtimer_mask(pVCpu->nem.s.hVCpu, false /*vtimer_is_masked*/);
+            AssertReturn(hrc == HV_SUCCESS, VERR_NEM_IPE_9);
+        }
+    }
 
     /* Set the pending interrupt state. */
     if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_IRQ | VMCPU_FF_INTERRUPT_FIQ))
