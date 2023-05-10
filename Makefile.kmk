@@ -2126,7 +2126,7 @@ else
 
  sdk-build-linux.build-it: sdk-build-linux.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/amd64 SDK)
-	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_LNX_IP) 'dchroot -c debian-4.0-amd64 "cd /mnt/tinderbox/$(VBOX_SDK_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_SDK_BUILD.amd64) VBOX_ONLY_SDK_IN_VM=1 all " '
+	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_LNX_IP) 'cd /mnt/tinderbox/$(VBOX_SDK_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_SDK_BUILD.amd64) VBOX_ONLY_SDK_IN_VM=1 all '
 	$(call VBOX_BLD_VM_MSG_END__,Linux/amd64 SDK)
 
  sdk-build-linux.rsync-out-of-vm: sdk-build-linux.build-it
