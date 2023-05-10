@@ -305,6 +305,11 @@ $(PATH_TARGET)/docs.Main: \
 	$(QUIET)$(TEST) -s "$(PATH_TARGET)/Main.err" -- $(ECHO_EXT) "===> $(PATH_TARGET)/Main.err"
 	$(QUIET)$(TEST) -s "$(PATH_TARGET)/Main.err" -- $(ECHO_EXT) "===> **************************************************"
 	$(APPEND) $(PATH_TARGET)/docs.Main
+
+if defined(VBOX_ONLY_SDK) || defined(VBOX_WITH_SDK)
+ OTHERS += $(PATH_TARGET)/docs.Main
+endif
+
 # aliases
 docs.main docs.Main: $(PATH_TARGET)/docs.Main
 if !defined(VBOX_ONLY_DOCS) && defined(VBOX_WITH_ALL_DOXYGEN_TARGETS)
