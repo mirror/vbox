@@ -992,7 +992,7 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 /** @} */
 
 
-/** @name ICC_PMR_EL1 - 
+/** @name ICC_PMR_EL1 - Interrupt Controller Interrupt Priority Mask Register
  * @{ */
 /** Bit 0 - 7 - Priority - The priority mask level for the CPU interface. */
 #define ARMV8_ICC_PMR_EL1_AARCH64_PRIORITY                      UINT64_C(0xff)
