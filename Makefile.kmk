@@ -1325,8 +1325,42 @@ else
  additions-build-linux.rsync-into-vm:
 	$(TIME) -- $(call VBOX_RSYNC_IN_FN,linux,*) \
 		'--exclude=src/VBox/Additions/WINNT/**' \
+		'--include=src/VBox/Devices/' \
+		'--include=src/VBox/Devices/Audio/' \
+		'--include=src/VBox/Devices/Audio/**' \
+		'--include=src/VBox/Devices/build/' \
+		'--include=src/VBox/Devices/build/**' \
+		'--exclude=src/VBox/Devices/**' \
+		'--exclude=src/VBox/Debugger/**' \
+		'--exclude=src/VBox/ExtPacks/**' \
 		'--exclude=src/VBox/Frontends/**' \
+		'--exclude=src/VBox/HostService/**' \
+		'--exclude=src/VBox/ImageMounter/**' \
+		'--exclude=src/VBox/Main/**' \
+		'--exclude=src/VBox/NetworkServices/**' \
+		'--exclude=src/VBox/RDP/**' \
+		'--exclude=src/VBox/Storage/**' \
+		'--include=src/VBox/ValidationKit/' \
+		'--include=src/VBox/ValidationKit/Config.kmk' \
+		'--include=src/VBox/ValidationKit/utils/' \
+		'--include=src/VBox/ValidationKit/utils/audio/' \
+		'--include=src/VBox/ValidationKit/utils/audio/**' \
+		'--exclude=src/VBox/ValidationKit/**' \
 		'--exclude=src/VBox/VMM/**' \
+		'--exclude=src/libs/dxvk-native-**' \
+		'--exclude=src/libs/curl-**' \
+		'--exclude=src/libs/libjpeg-turbo-**' \
+		'--exclude=src/libs/libogg-**' \
+		'--exclude=src/libs/libpng-**' \
+		'--exclude=src/libs/libssh-**' \
+		'--exclude=src/libs/libtpms-**' \
+		'--exclude=src/libs/libvorbis-**' \
+		'--exclude=src/libs/libvpx-**' \
+		'--exclude=src/libs/libxml-**' \
+		'--exclude=src/libs/softfloat-**' \
+		'--exclude=src/libs/TestFloat-**' \
+		'--exclude=src/libs/xpcom18a4/**' \
+		'--exclude=src/apps/**' \
 		. $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
 
  additions-build-linux.build-it: additions-build-linux.rsync-into-vm
@@ -1640,7 +1674,16 @@ ifeq ($(KBUILD_TARGET),linux)
 else
  # Serialize 32-bit and 64-bit ASSUMING the same VM builds both.
  extpacks-build-linux.rsync-into-vm: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
-	$(TIME) -- $(call VBOX_RSYNC_IN_FN,linux,*) . $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
+	$(TIME) -- $(call VBOX_RSYNC_IN_FN,linux,*) \
+		'--exclude=src/VBox/Additions/**' \
+		'--exclude=src/VBox/Debugger/**' \
+		'--exclude=src/VBox/Frontends/**' \
+		'--exclude=src/VBox/GuestHost/**' \
+		'--exclude=src/VBox/HostServices/**' \
+		'--exclude=src/VBox/ImageMounter/**' \
+		'--exclude=src/VBox/NetworkServices/**' \
+		'--exclude=src/app/**' \
+		. $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
 
  extpacks-build-linux.build-it: extpacks-build-linux.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/amd64 extension packs)
@@ -1853,8 +1896,7 @@ else # !OS/2
  validationkit-build-os2.rsync-into-vm:
 	-$(VBOX_BLD_VM_OS2_KKILL_STUFF)
 	$(TIME) -- $(call VBOX_RSYNC_IN_FN,os2,*,nossh) \
-		'--exclude=src/VBox/Additions/x11/**' \
-		'--exclude=src/VBox/Additions/WINNT/**' \
+		'--exclude=src/VBox/Additions/**' \
 		'--exclude=src/VBox/Frontends/**' \
 		'--exclude=src/VBox/VMM/**' \
 		. rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
@@ -1884,9 +1926,18 @@ ifeq ($(KBUILD_TARGET),linux)
 else
  validationkit-build-linux.rsync-into-vm: $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
 	$(TIME) -- $(call VBOX_RSYNC_IN_FN,linux,*) \
-		'--exclude=src/VBox/Additions/WINNT/**' \
+		'--exclude=src/VBox/Additions/**' \
+		'--exclude=src/VBox/Debugger/**' \
 		'--exclude=src/VBox/Frontends/**' \
+		'--exclude=src/VBox/GuestHost/**' \
+		'--exclude=src/VBox/HostServices/**' \
+		'--exclude=src/VBox/ImageMounter/**' \
+		'--exclude=src/VBox/Main/**' \
+		'--exclude=src/VBox/NetworkServices/**' \
+		'--exclude=src/VBox/RDP/**' \
+		'--exclude=src/VBox/Storage/**' \
 		'--exclude=src/VBox/VMM/**' \
+		'--exclude=src/app/**' \
 		. $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
 
  validationkit-build-linux.build-it: validationkit-build-linux.rsync-into-vm
