@@ -40,9 +40,9 @@
  * To use this interface for a particular VM the following extra data needs to be
  * set besides enabling the EFI firmware:
  *
- *     VBoxManage setextradata <VM name> "VBoxInternal/Devices/qemu-fw-cfg/0/Config/KernelImage" /path/to/kernel
- *     VBoxManage setextradata <VM name> "VBoxInternal/Devices/qemu-fw-cfg/0/Config/InitrdImage" /path/to/initrd
- *     VBoxManage setextradata <VM name> "VBoxInternal/Devices/qemu-fw-cfg/0/Config/CmdLine"     "<cmd line string>"
+ *     VBoxManage setextradata &lt;VM name&gt; "VBoxInternal/Devices/qemu-fw-cfg/0/Config/KernelImage" /path/to/kernel
+ *     VBoxManage setextradata &lt;VM name&gt; "VBoxInternal/Devices/qemu-fw-cfg/0/Config/InitrdImage" /path/to/initrd
+ *     VBoxManage setextradata &lt;VM name&gt; "VBoxInternal/Devices/qemu-fw-cfg/0/Config/CmdLine"     "&lt;cmd line string&gt;"
  *
  * The only mandatory item is the KernelImage one, the others are optional if the
  * kernel is configured to not require it. The InitrdImage item accepts a path to a directory as well.
@@ -50,14 +50,14 @@
  * If the kernel is not an EFI compatible executable (CONFIG_EFI_STUB=y for Linux) a dedicated setup image might be required
  * which can be set with:
  *
- *     VBoxManage setextradata <VM name> "VBoxInternal/Devices/qemu-fw-cfg/0/Config/SetupImage" /path/to/setup_image
+ *     VBoxManage setextradata &lt;VM name&gt; "VBoxInternal/Devices/qemu-fw-cfg/0/Config/SetupImage" /path/to/setup_image
  *
  * @section sec_qemufwcfg_dma    DMA
  *
  * The QEMU firmware configuration device supports an optional DMA interface to speed up transferring the data into the guest.
  * It currently is not enabled by default but needs to be enabled with:
  *
- *     VBoxManage setextradata <VM name> "VBoxInternal/Devices/qemu-fw-cfg/0/Config/DmaEnabled" 1
+ *     VBoxManage setextradata &lt;VM name&gt; "VBoxInternal/Devices/qemu-fw-cfg/0/Config/DmaEnabled" 1
  */
 
 
