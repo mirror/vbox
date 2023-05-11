@@ -307,7 +307,7 @@ VMMR3DECL(uint32_t)         CPUMR3DbGetEntries(void)
  */
 VMMR3DECL(PCCPUMDBENTRY)    CPUMR3DbGetEntryByIndex(uint32_t idxCpuDb)
 {
-    AssertReturn(idxCpuDb <= RT_ELEMENTS(g_apCpumDbEntries), NULL);
+    AssertReturn(idxCpuDb < RT_ELEMENTS(g_apCpumDbEntries), NULL);
     return g_apCpumDbEntries[idxCpuDb];
 }
 
