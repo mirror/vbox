@@ -3574,7 +3574,7 @@ else
  VBOX_GCC_PEDANTIC_OPTION ?=
 endif
 VBOX_GCC_PEDANTIC_CXX ?= $(VBOX_GCC_PEDANTIC_OPTION) $(VBOX_GCC_WARN_PEDANTIC) \
-                         $(VBOX_GCC_Wno-return-type-c-linkage) $(VBOX_GCC_Wno-overloaded-virtual) $(VBOX_GCC_Wno-undefined-var-template) $(VBOX_GCC_Wno-deprecated-copy)
+	$(VBOX_GCC_Wno-return-type-c-linkage) $(VBOX_GCC_Wno-overloaded-virtual) $(VBOX_GCC_Wno-undefined-var-template) $(VBOX_GCC_Wno-deprecated-copy)
 VBOX_GCC_PEDANTIC_C   ?= $(VBOX_GCC_PEDANTIC_OPTION) $(VBOX_GCC_WARN_PEDANTIC) -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -Werror-implicit-function-declaration
 
 # Avoid freaking out when using flexible arrays in C++ code (ldrPE.cpp, ++).
