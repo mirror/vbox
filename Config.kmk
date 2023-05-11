@@ -3556,7 +3556,6 @@ endif
 VBOX_GCC_WARN     ?= -Wall $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initializers) -Wno-unused -Wno-trigraphs \
 	$(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_Wno-unused-parameter) $(VBOX_GCC_Wno-language-extension-token) \
 	$(VBOX_GCC_Wno-extended-offsetof) $(VBOX_GCC_Wno-gnu-folding-constant) $(VBOX_GCC_Wno-gnu-anonymous-struct) \
-	$(VBOX_GCC_Wno-deprecated-copy) \
 	$(VBOX_GCC_Wlogical-op) $(VBOX_GCC_Wno-string-plus-int) $(VBOX_GCC_Wno-nested-anon-types) $(VBOX_GCC_Wno-variadic-macros) \
 	$(VBOX_GCC_Wno-c++17-compat-mangling)
 VBOX_GCC_WARN_PEDANTIC = -Wshadow $(VBOX_GCC_WARN) -Wno-long-long
@@ -3574,7 +3573,8 @@ ifdef VBOX_GCC_Wno-variadic-macros # Don't use -pedantic unless -Wno-variadic-ma
 else
  VBOX_GCC_PEDANTIC_OPTION ?=
 endif
-VBOX_GCC_PEDANTIC_CXX ?= $(VBOX_GCC_PEDANTIC_OPTION) $(VBOX_GCC_WARN_PEDANTIC) $(VBOX_GCC_Wno-return-type-c-linkage) $(VBOX_GCC_Wno-overloaded-virtual) $(VBOX_GCC_Wno-undefined-var-template)
+VBOX_GCC_PEDANTIC_CXX ?= $(VBOX_GCC_PEDANTIC_OPTION) $(VBOX_GCC_WARN_PEDANTIC) \
+                         $(VBOX_GCC_Wno-return-type-c-linkage) $(VBOX_GCC_Wno-overloaded-virtual) $(VBOX_GCC_Wno-undefined-var-template) $(VBOX_GCC_Wno-deprecated-copy)
 VBOX_GCC_PEDANTIC_C   ?= $(VBOX_GCC_PEDANTIC_OPTION) $(VBOX_GCC_WARN_PEDANTIC) -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -Werror-implicit-function-declaration
 
 # Avoid freaking out when using flexible arrays in C++ code (ldrPE.cpp, ++).
