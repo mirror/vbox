@@ -456,7 +456,6 @@ typedef struct USBPROXYDEVUSBIP
 /**
  * Converts a request/reply header from network to host endianness.
  *
- * @returns nothing.
  * @param   pHdr    The header to convert.
  */
 DECLINLINE(void) usbProxyUsbIpReqRetHdrN2H(PUsbIpReqRetHdr pHdr)
@@ -471,7 +470,6 @@ DECLINLINE(void) usbProxyUsbIpReqRetHdrN2H(PUsbIpReqRetHdr pHdr)
 /**
  * Converts a request/reply header from host to network endianness.
  *
- * @returns nothing.
  * @param   pHdr              The header to convert.
  */
 DECLINLINE(void) usbProxyUsbIpReqRetHdrH2N(PUsbIpReqRetHdr pHdr)
@@ -486,7 +484,6 @@ DECLINLINE(void) usbProxyUsbIpReqRetHdrH2N(PUsbIpReqRetHdr pHdr)
 /**
  * Converts a submit request from host to network endianness.
  *
- * @returns nothing.
  * @param   pReqSubmit        The submit request to convert.
  */
 DECLINLINE(void) usbProxyUsbIpReqSubmitH2N(PUsbIpReqSubmit pReqSubmit)
@@ -502,7 +499,6 @@ DECLINLINE(void) usbProxyUsbIpReqSubmitH2N(PUsbIpReqSubmit pReqSubmit)
 /**
  * Converts a submit reply from network to host endianness.
  *
- * @returns nothing.
  * @param   pReqSubmit        The submit reply to convert.
  */
 DECLINLINE(void) usbProxyUsbIpRetSubmitN2H(PUsbIpRetSubmit pRetSubmit)
@@ -518,7 +514,6 @@ DECLINLINE(void) usbProxyUsbIpRetSubmitN2H(PUsbIpRetSubmit pRetSubmit)
 /**
  * Converts a isochronous packet descriptor from host to network endianness.
  *
- * @returns nothing.
  * @param   pIsocPktDesc      The packet descriptor to convert.
  */
 DECLINLINE(void) usbProxyUsbIpIsocPktDescH2N(PUsbIpIsocPktDesc pIsocPktDesc)
@@ -532,7 +527,6 @@ DECLINLINE(void) usbProxyUsbIpIsocPktDescH2N(PUsbIpIsocPktDesc pIsocPktDesc)
 /**
  * Converts a isochronous packet descriptor from network to host endianness.
  *
- * @returns nothing.
  * @param   pIsocPktDesc      The packet descriptor to convert.
  */
 DECLINLINE(void) usbProxyUsbIpIsocPktDescN2H(PUsbIpIsocPktDesc pIsocPktDesc)
@@ -546,7 +540,6 @@ DECLINLINE(void) usbProxyUsbIpIsocPktDescN2H(PUsbIpIsocPktDesc pIsocPktDesc)
 /**
  * Converts a unlink request from host to network endianness.
  *
- * @returns nothing.
  * @param   pReqUnlink        The unlink request to convert.
  */
 DECLINLINE(void) usbProxyUsbIpReqUnlinkH2N(PUsbIpReqUnlink pReqUnlink)
@@ -558,7 +551,6 @@ DECLINLINE(void) usbProxyUsbIpReqUnlinkH2N(PUsbIpReqUnlink pReqUnlink)
 /**
  * Converts a unlink reply from network to host endianness.
  *
- * @returns nothing.
  * @param   pRetUnlink        The unlink reply to convert.
  */
 DECLINLINE(void) usbProxyUsbIpRetUnlinkN2H(PUsbIpRetUnlink pRetUnlink)
@@ -570,7 +562,6 @@ DECLINLINE(void) usbProxyUsbIpRetUnlinkN2H(PUsbIpRetUnlink pRetUnlink)
 /**
  * Convert the given exported device structure from host to network byte order.
  *
- * @returns nothing.
  * @param   pDevice           The device structure to convert.
  */
 DECLINLINE(void) usbProxyUsbIpExportedDeviceN2H(PUsbIpExportedDevice pDevice)
@@ -623,7 +614,6 @@ DECLINLINE(uint32_t) usbProxyUsbIpSeqNumGet(PUSBPROXYDEVUSBIP pProxyDevUsbIp)
 /**
  * Links a given URB into the given list.
  *
- * @returns nothing.
  * @param   pProxyDevUsbIp    The USB/IP proxy device data.
  * @param   pList             The list to link the URB into.
  * @param   pUrbUsbIp         The URB to link.
@@ -639,7 +629,6 @@ DECLINLINE(void) usbProxyUsbIpLinkUrb(PUSBPROXYDEVUSBIP pProxyDevUsbIp, PRTLISTA
 /**
  * Unlinks a given URB from the current assigned list.
  *
- * @returns nothing.
  * @param   pProxyDevUsbIp    The USB/IP proxy device data.
  * @param   pUrbUsbIp         The URB to unlink.
  */
@@ -666,7 +655,6 @@ static PUSBPROXYURBUSBIP usbProxyUsbIpUrbAlloc(PUSBPROXYDEVUSBIP pProxyDevUsbIp)
 /**
  * Frees the given USB/IP URB state.
  *
- * @returns nothing.
  * @param   pProxyDevUsbIp    The USB/IP proxy device data.
  * @param   pUrbUsbIp         The USB/IP speciic URB data.
  */
@@ -896,7 +884,6 @@ static PUSBPROXYURBUSBIP usbProxyUsbIpGetCancelledUrbFromSeqNum(PUSBPROXYDEVUSBI
 /**
  * Resets the receive state for a new reply.
  *
- * @returns nothing.
  * @param  pProxyDevUsbIp    The USB/IP proxy device data.
  */
 static void usbProxyUsbIpResetRecvState(PUSBPROXYDEVUSBIP pProxyDevUsbIp)

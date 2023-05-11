@@ -710,7 +710,6 @@ DECLINLINE(bool) pcnetIsLinkUp(PPCNETSTATE pThis)
 /**
  * Memory write helper to handle PCI/ISA differences.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       Pointer to the PCNet device instance
  * @param   GCPhys      Guest physical memory address
@@ -729,7 +728,6 @@ static void pcnetPhysWrite(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS GCPhy
 /**
  * Memory read helper to handle PCI/ISA differences.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       Pointer to the PCNet device instance.
  * @param   GCPhys      Guest physical memory address.

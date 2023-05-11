@@ -337,7 +337,6 @@ DECLINLINE(bool) vdScriptTokenizerIsEos(PVDTOKENIZER pTokenizer)
 /**
  * Skip one character in the input stream.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  */
 DECLINLINE(void) vdScriptTokenizerSkipCh(PVDTOKENIZER pTokenizer)
@@ -382,7 +381,6 @@ DECLINLINE(char) vdScriptTokenizerGetCh(PVDTOKENIZER pTokenizer)
 /**
  * Sets a new line for the tokenizer.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  */
 DECLINLINE(void) vdScriptTokenizerNewLine(PVDTOKENIZER pTokenizer, unsigned cSkip)
@@ -419,7 +417,6 @@ DECLINLINE(bool) vdScriptTokenizerIsSkipNewLine(PVDTOKENIZER pTokenizer)
 /**
  * Skips a multi line comment.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  */
 DECLINLINE(void) vdScriptTokenizerSkipComment(PVDTOKENIZER pTokenizer)
@@ -442,7 +439,6 @@ DECLINLINE(void) vdScriptTokenizerSkipComment(PVDTOKENIZER pTokenizer)
  * Skip all whitespace starting from the current input buffer position.
  * Skips all present comments too.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  */
 DECLINLINE(void) vdScriptTokenizerSkipWhitespace(PVDTOKENIZER pTokenizer)
@@ -472,7 +468,6 @@ DECLINLINE(void) vdScriptTokenizerSkipWhitespace(PVDTOKENIZER pTokenizer)
 /**
  * Get an identifier token from the tokenizer.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  * @param   pToken        The uninitialized token.
  */
@@ -519,7 +514,6 @@ static void vdScriptTokenizerGetIdeOrKeyword(PVDTOKENIZER pTokenizer, PVDSCRIPTT
 /**
  * Get a numerical constant from the tokenizer.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  * @param   pToken        The uninitialized token.
  */
@@ -565,11 +559,10 @@ static void vdScriptTokenizerGetNumberConst(PVDTOKENIZER pTokenizer, PVDSCRIPTTO
 /**
  * Parses a string constant.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  * @param   pToken        The uninitialized token.
  *
- * @remarks: No escape sequences allowed at this time.
+ * @remarks No escape sequences allowed at this time.
  */
 static void vdScriptTokenizerGetStringConst(PVDTOKENIZER pTokenizer, PVDSCRIPTTOKEN pToken)
 {
@@ -597,7 +590,6 @@ static void vdScriptTokenizerGetStringConst(PVDTOKENIZER pTokenizer, PVDSCRIPTTO
 /**
  * Get the end of stream token.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  * @param   pToken        The uninitialized token.
  */
@@ -612,7 +604,6 @@ static void vdScriptTokenizerGetEos(PVDTOKENIZER pTokenizer, PVDSCRIPTTOKEN pTok
 /**
  * Get operator or punctuator token.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  * @param   pToken        The uninitialized token.
  */
@@ -668,7 +659,6 @@ static void vdScriptTokenizerGetOperatorOrPunctuator(PVDTOKENIZER pTokenizer, PV
 /**
  * Read the next token from the tokenizer stream.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer to read from.
  * @param   pToken        Uninitialized token to fill the token data into.
  */
@@ -720,7 +710,6 @@ static PVDTOKENIZER vdScriptTokenizerCreate(const char *pszInput)
 /**
  * Destroys a given tokenizer state.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer to destroy.
  */
 static void vdScriptTokenizerDestroy(PVDTOKENIZER pTokenizer)
@@ -765,7 +754,6 @@ DECLINLINE(VDTOKENCLASS) vdScriptTokenizerPeekNextClass(PVDTOKENIZER pTokenizer)
 /**
  * Consume the current token advancing to the next in the stream.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  */
 static void vdScriptTokenizerConsume(PVDTOKENIZER pTokenizer)
@@ -1320,7 +1308,6 @@ static int vdScriptParseUnaryExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR 
 /**
  * Parse a storage class specifier.
  *
- * @returns nothing.
  * @param   pThis                The script context.
  * @param   penmStorageClass     Where to return the parsed storage classe.
  *                               Contains VDSCRIPTASTSTORAGECLASS_INVALID if no
@@ -1354,7 +1341,6 @@ static void vdScriptParseStorageClassSpecifier(PVDSCRIPTCTXINT pThis, PVDSCRIPTA
 /**
  * Parse a type qualifier.
  *
- * @returns nothing.
  * @param   pThis                The script context.
  * @param   penmTypeQualifier    Where to return the parsed type qualifier.
  *                               Contains VDSCRIPTASTTYPEQUALIFIER_INVALID if no

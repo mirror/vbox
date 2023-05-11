@@ -1045,7 +1045,6 @@ DECLHIDDEN(int) dbgfR3TracerInit(PVM pVM)
 /**
  * Terminates any configured tracer for the given VM instance.
  *
- * @returns nothing.
  * @param   pVM                     The cross context VM structure.
  */
 DECLHIDDEN(void) dbgfR3TracerTerm(PVM pVM)

@@ -306,7 +306,6 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
 /**
  * Resets the CPU.
  *
- * @returns VINF_SUCCESS.
  * @param   pVM         The cross context VM structure.
  */
 VMMR3DECL(void) CPUMR3Reset(PVM pVM)
@@ -631,7 +630,6 @@ VMMR3DECL(void) CPUMR3LogCpuIdAndMsrFeatures(PVM pVM)
 /**
  * Marks the guest debug state as active.
  *
- * @returns nothing.
  * @param   pVCpu       The cross context virtual CPU structure.
  *
  * @note This is used solely by NEM (hence the name) to set the correct flags here
@@ -648,7 +646,6 @@ VMMR3_INT_DECL(void) CPUMR3NemActivateGuestDebugState(PVMCPUCC pVCpu)
 /**
  * Marks the hyper debug state as active.
  *
- * @returns nothing.
  * @param   pVCpu       The cross context virtual CPU structure.
  *
  * @note This is used solely by NEM (hence the name) to set the correct flags here

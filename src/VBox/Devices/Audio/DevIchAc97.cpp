@@ -1623,7 +1623,6 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTime
 /**
  * Locks an AC'97 stream for serialized access.
  *
- * @returns VBox status code.
  * @param   pStreamCC           The AC'97 stream to lock (ring-3).
  */
 DECLINLINE(void) ichac97R3StreamLock(PAC97STREAMR3 pStreamCC)
@@ -1635,7 +1634,6 @@ DECLINLINE(void) ichac97R3StreamLock(PAC97STREAMR3 pStreamCC)
 /**
  * Unlocks a formerly locked AC'97 stream.
  *
- * @returns VBox status code.
  * @param   pStreamCC           The AC'97 stream to unlock (ring-3).
  */
 DECLINLINE(void) ichac97R3StreamUnlock(PAC97STREAMR3 pStreamCC)
@@ -2406,7 +2404,6 @@ static bool ichac97R3StreamIsEnabled(PAC97STATER3 pThisCC, PAC97STREAM pStream)
  *
  * This is called by ichac97R3StreamsDestroy during VM poweroff & destruction.
  *
- * @returns VBox status code.
  * @param   pThisCC             The ring-3 AC'97 state.
  * @param   pStream             The AC'97 stream to destroy (shared).
  * @param   pStreamCC           The AC'97 stream to destroy (ring-3).
@@ -3021,7 +3018,6 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
 /**
  * Sets a AC'97 mixer control to a specific value.
  *
- * @returns VBox status code.
  * @param   pThis               The shared AC'97 state.
  * @param   uMixerIdx           Mixer control to set value for.
  * @param   uVal                Value to set.

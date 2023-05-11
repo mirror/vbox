@@ -1727,7 +1727,6 @@ VMMDECL(bool) CPUMIsHyperDebugStateActive(PVMCPU pVCpu)
 /**
  * Mark the guest's debug state as inactive.
  *
- * @returns boolean
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @todo    This API doesn't make sense any more.
  */

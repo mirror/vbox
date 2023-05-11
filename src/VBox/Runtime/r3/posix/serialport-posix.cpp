@@ -644,7 +644,6 @@ static int rtSerialPortMonitorThreadCreate(PRTSERIALPORTINTERNAL pThis)
 /**
  * Shuts down the status line monitor thread.
  *
- * @returns nothing.
  * @param   pThis                   The internal serial port instance data.
  */
 static void rtSerialPortMonitorThreadShutdown(PRTSERIALPORTINTERNAL pThis)

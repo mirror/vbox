@@ -304,7 +304,6 @@ DECLINLINE(int) rtTraceLogRdrStreamRead(PRTTRACELOGRDRINT pThis, void *pvBuf, si
 /**
  * Converts the header endianess to the host endianess.
  *
- * @returns nothing.
  * @param   pHdr                The trace log header to convert.
  */
 static void rtTraceLogRdrHdrEndianessConv(PTRACELOGHDR pHdr)
@@ -320,7 +319,6 @@ static void rtTraceLogRdrHdrEndianessConv(PTRACELOGHDR pHdr)
 /**
  * Converts the event descriptor endianess to the host endianess.
  *
- * @returns nothing.
  * @param   pEvtDesc            The trace log event descriptor to convert.
  */
 static void rtTraceLogRdrEvtDescEndianessConv(PTRACELOGEVTDESC pEvtDesc)
@@ -336,7 +334,6 @@ static void rtTraceLogRdrEvtDescEndianessConv(PTRACELOGEVTDESC pEvtDesc)
 /**
  * Converts the event item descriptor endianess to host endianess.
  *
- * @returns nothing.
  * @param   pEvtItemDesc        The trace log event item descriptor to convert.
  */
 static void rtTraceLogRdrEvtItemDescEndianessConv(PTRACELOGEVTITEMDESC pEvtItemDesc)
@@ -351,7 +348,6 @@ static void rtTraceLogRdrEvtItemDescEndianessConv(PTRACELOGEVTITEMDESC pEvtItemD
 /**
  * Converts the event marker endianess to host endianess.
  *
- * @returns nothing.
  * @param   pEvt                The trace log event marker to convert.
  */
 static void rtTraceLogRdrEvtEndianessConv(PTRACELOGEVT pEvt)
@@ -532,7 +528,6 @@ static size_t rtTraceLogRdrGetEvtItemDataSz(PRTTRACELOGRDRINT pThis, PCRTTRACELO
 /**
  * Calculates the overall event data size from the items in the event descriptor.
  *
- * @returns nothing.
  * @param   pThis               The trace log reader instance.
  * @param   pEvtDesc            The event descriptor.
  */

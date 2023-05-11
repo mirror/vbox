@@ -4414,7 +4414,6 @@ const ComObjPtr<PerformanceCollector>& VirtualBox::i_performanceCollector() cons
 /**
  * Returns the default machine folder from the system properties
  * with proper locking.
- * @return
  */
 void VirtualBox::i_getDefaultMachineFolder(Utf8Str &str) const
 {
@@ -4425,7 +4424,6 @@ void VirtualBox::i_getDefaultMachineFolder(Utf8Str &str) const
 /**
  * Returns the default hard disk format from the system properties
  * with proper locking.
- * @return
  */
 void VirtualBox::i_getDefaultHardDiskFormat(Utf8Str &str) const
 {
@@ -5513,8 +5511,6 @@ void VirtualBox::i_unmarkRegistryModified(const Guid &uuid)
  *
  * This locks machines and the VirtualBox object as necessary, so better not
  * hold any locks before calling this.
- *
- * @return
  */
 void VirtualBox::i_saveModifiedRegistries()
 {

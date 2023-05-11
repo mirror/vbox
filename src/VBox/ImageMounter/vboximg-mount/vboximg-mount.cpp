@@ -818,8 +818,6 @@ static int vboximgOp_readlink(const char *pszPath, char *buf, size_t size)
 
 /**
  * Displays the list of volumes on the opened image.
- *
- * @returns nothing.
  */
 static void vboxImgMntVolumesDisplay(void)
 {

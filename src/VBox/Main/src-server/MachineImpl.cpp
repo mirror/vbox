@@ -5414,7 +5414,6 @@ private:
  * @note Locks this object for writing.
  *
  * @param task
- * @return
  */
 void Machine::i_deleteConfigHandler(DeleteConfigTask &task)
 {
@@ -13535,7 +13534,6 @@ private:
  * @note Locks this object for writing.
  *
  * @param task
- * @return
  */
 void SessionMachine::i_saveStateHandler(SaveStateTask &task)
 {

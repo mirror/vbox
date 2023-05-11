@@ -49,7 +49,7 @@ typedef PVDIOSTORAGE *PPVDIOSTORAGE;
 /**
  * Completion handler.
  *
- * @returns nothing.
+ * @returns IPRT status code.
  * @param   pvUser    Opaque user data.
  * @param   rcReq     Completion code for the request.
  */
@@ -68,8 +68,6 @@ int VDIoBackendCreate(PPVDIOBACKEND ppIoBackend);
 
 /**
  * Destroys a memory I/O backend.
- *
- * @returns nothing.
  *
  * @param pIoBackend     The backend to destroy.
  */

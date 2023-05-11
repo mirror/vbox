@@ -1522,7 +1522,6 @@ DECLINLINE(void) ehciR3WriteQTD(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PEHCI_QTD p
  * Updates the QHD in guest memory only updating portions of the QHD the controller
  * is allowed to write to.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   GCPhys      Physical guest address of the QHD.
  * @param   pQHD        The QHD to update the guest memory with.
@@ -4793,7 +4792,6 @@ static DECLCALLBACK(void) ehciR3Reset(PPDMDEVINS pDevIns)
 /**
  * Reset notification.
  *
- * @returns VBox status code.
  * @param   pDevIns     The device instance data.
  */
 static DECLCALLBACK(void) ehciR3Resume(PPDMDEVINS pDevIns)

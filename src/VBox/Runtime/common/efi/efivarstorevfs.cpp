@@ -332,10 +332,10 @@ static int rtEfiVarStore_NewDirByType(PRTEFIVARSTORE pThis, RTEFIVARSTOREDIRTYPE
 
 
 #ifdef LOG_ENABLED
+
 /**
  * Logs a firmware volume header.
  *
- * @returns nothing.
  * @param   pFvHdr              The firmware volume header.
  */
 static void rtEfiVarStoreFvHdr_Log(PCEFI_FIRMWARE_VOLUME_HEADER pFvHdr)
@@ -360,7 +360,6 @@ static void rtEfiVarStoreFvHdr_Log(PCEFI_FIRMWARE_VOLUME_HEADER pFvHdr)
 /**
  * Logs a variable store header.
  *
- * @returns nothing.
  * @param   pStoreHdr           The variable store header.
  */
 static void rtEfiVarStoreHdr_Log(PCEFI_VARSTORE_HEADER pStoreHdr)
@@ -379,7 +378,6 @@ static void rtEfiVarStoreHdr_Log(PCEFI_VARSTORE_HEADER pStoreHdr)
 /**
  * Logs a authenticated variable header.
  *
- * @returns nothing.
  * @param   pVarHdr             The authenticated variable header.
  * @param   offVar              Offset of the authenticated variable header.
  */
@@ -410,8 +408,8 @@ static void rtEfiVarStoreAuthVarHdr_Log(PCEFI_AUTH_VAR_HEADER pVarHdr, uint64_t 
         Log2(("EfiVarStore:   GuidVendor                  %#.*Rhxs\n", sizeof(pVarHdr->GuidVendor), &pVarHdr->GuidVendor));
     }
 }
-#endif
 
+#endif /* LOG_ENABLED */
 
 /**
  * Worker for rtEfiVarStoreFile_QueryInfo() and rtEfiVarStoreDir_QueryInfo().

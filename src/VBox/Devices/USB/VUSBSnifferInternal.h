@@ -87,7 +87,6 @@ typedef struct VUSBSNIFFERFMT
     /**
      * Destroys the format instance.
      *
-     * @returns nothing.
      * @param   pThis    Pointer to the format specific state.
      */
     DECLR3CALLBACKMEMBER(void, pfnDestroy, (PVUSBSNIFFERFMTINT pThis));

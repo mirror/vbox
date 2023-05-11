@@ -159,7 +159,6 @@ static const DBGCSTUB g_aStubs[] =
 /**
  * Destroys all allocated data for the given dbeugger console I/O instance.
  *
- * @returns nothing.
  * @param   pDbgcIo             Pointer to the dbeugger console I/O instance data.
  */
 static void dbgcIoDestroy(PDBGCIOINT pDbgcIo)

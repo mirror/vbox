@@ -1028,7 +1028,6 @@ typedef BUSLOGICCOPYARGS *PBUSLOGICCOPYARGS;
 /**
  * Memory buffer callback.
  *
- * @returns nothing.
  * @param   pDevIns The device instance.
  * @param   pThis   Pointer to the shared BusLogic instance data.
  * @param   GCPhys  The guest physical address of the memory buffer.
@@ -1064,7 +1063,6 @@ static int buslogicR3RegisterISARange(PPDMDEVINS pDevIns, PBUSLOGIC pThis, uint8
  * interrupts at once. Instead, new interrupts are postponed if
  * an interrupt of a different type is still pending.
  *
- * @returns nothing.
  * @param   pDevIns         The device instance.
  * @param   pThis           Pointer to the shared BusLogic instance data.
  * @param   fSuppressIrq    Flag to suppress IRQ generation regardless of fIRQEnabled
@@ -1118,7 +1116,6 @@ static void buslogicSetInterrupt(PPDMDEVINS pDevIns, PBUSLOGIC pThis, bool fSupp
 /**
  * Deasserts the interrupt line of the BusLogic adapter.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       Pointer to the shared BusLogic instance data.
  */
@@ -1145,7 +1142,6 @@ static void buslogicClearInterrupt(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
 /**
  * Advances the mailbox pointer to the next slot.
  *
- * @returns nothing.
  * @param   pThis       Pointer to the shared BusLogic instance data.
  */
 DECLINLINE(void) buslogicR3OutgoingMailboxAdvance(PBUSLOGIC pThis)
@@ -1156,7 +1152,6 @@ DECLINLINE(void) buslogicR3OutgoingMailboxAdvance(PBUSLOGIC pThis)
 /**
  * Initialize local RAM of host adapter with default values.
  *
- * @returns nothing.
  * @param   pThis       Pointer to the shared BusLogic instance data.
  */
 static void buslogicR3InitializeLocalRam(PBUSLOGIC pThis)
@@ -1231,7 +1226,6 @@ static int buslogicR3HwReset(PPDMDEVINS pDevIns, PBUSLOGIC pThis, bool fResetIO)
  * Resets the command state machine for the next command and notifies the guest.
  * Note that suppressing CMDC also suppresses the interrupt, but not vice versa.
  *
- * @returns nothing.
  * @param   pDevIns         The device instance.
  * @param   pThis           Pointer to the shared BusLogic instance data.
  * @param   fSuppressIrq    Flag to suppress IRQ generation regardless of current state
@@ -1262,7 +1256,6 @@ static void buslogicCommandComplete(PPDMDEVINS pDevIns, PBUSLOGIC pThis, bool fS
 /**
  * Memory write helper to handle PCI/ISA differences - metadata writes.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       Pointer to the shared BusLogic instance data.
  * @param   GCPhys      Guest physical memory address
@@ -1280,7 +1273,6 @@ static void blPhysWriteMeta(PPDMDEVINS pDevIns, PBUSLOGIC pThis, RTGCPHYS GCPhys
 /**
  * Memory read helper to handle PCI/ISA differences - metadata reads.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       Pointer to the shared BusLogic instance data.
  * @param   GCPhys      Guest physical memory address.
@@ -1295,12 +1287,11 @@ static void blPhysReadMeta(PPDMDEVINS pDevIns, PBUSLOGIC pThis, RTGCPHYS GCPhys,
         PDMDevHlpPhysReadMeta(pDevIns, GCPhys, pvBuf, cbRead);
 }
 
-#if defined(IN_RING3)
+#ifdef IN_RING3
 
 /**
  * Memory write helper to handle PCI/ISA differences - userdata writes.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       Pointer to the shared BusLogic instance data.
  * @param   GCPhys      Guest physical memory address
@@ -1318,7 +1309,6 @@ static void blPhysWriteUser(PPDMDEVINS pDevIns, PBUSLOGIC pThis, RTGCPHYS GCPhys
 /**
  * Memory read helper to handle PCI/ISA differences - userdata reads.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       Pointer to the shared BusLogic instance data.
  * @param   GCPhys      Guest physical memory address.
@@ -1336,7 +1326,6 @@ static void blPhysReadUser(PPDMDEVINS pDevIns, PBUSLOGIC pThis, RTGCPHYS GCPhys,
 /**
  * Initiates a hard reset which was issued from the guest.
  *
- * @returns nothing
  * @param   pDevIns     The device instance.
  * @param   pThis       Pointer to the shared BusLogic instance data.
  * @param   fHardReset  Flag initiating a hard (vs. soft) reset.
@@ -1362,7 +1351,6 @@ static void buslogicR3InitiateReset(PPDMDEVINS pDevIns, PBUSLOGIC pThis, bool fH
 /**
  * Send a mailbox with set status codes to the guest.
  *
- * @returns nothing.
  * @param   pDevIns                 The device instance.
  * @param   pThis                   Pointer to the shared BusLogic instance data.
  * @param   GCPhysAddrCCB           The physical guest address of the CCB the mailbox is for.
@@ -1468,7 +1456,6 @@ static void buslogicR3DumpMailboxInfo(PMailbox32 pMailbox, bool fOutgoing)
 /**
  * Dumps the content of a command control block for debugging purposes.
  *
- * @returns nothing.
  * @param   pCCB            Pointer to the command control block to dump.
  * @param   fIs24BitCCB     Flag to determine CCB format.
  */
@@ -1841,7 +1828,6 @@ static uint32_t buslogicR3ConvertSenseBufferLength(uint32_t cbSense)
 /**
  * Free the sense buffer.
  *
- * @returns nothing.
  * @param   pReq         Pointer to the request state.
  * @param   fCopy        If sense data should be copied to guest memory.
  */
@@ -2854,7 +2840,7 @@ buslogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
 /**
  * Update the ISA I/O range.
  *
- * @returns nothing.
+ * @returns VBox status code.
  * @param   pDevIns         The device instance.
  * @param   pThis           Pointer to the shared BusLogic instance data.
  * @param   uBaseCode       Encoded ISA I/O base; only low 3 bits are used.
@@ -2913,7 +2899,6 @@ static int buslogicR3RegisterISARange(PPDMDEVINS pDevIns, PBUSLOGIC pThis, uint8
 /**
  * Completes a request initiated by the BIOS through the BUSLOGICCOMMAND_EXECUTE_SCSI_COMMAND command.
  *
- * @returns nothing.
  * @param   pThis       Pointer to the shared BusLogic instance data.
  * @param   u8ScsiSts   The SCSI status code.
  */
@@ -3384,7 +3369,6 @@ static int buslogicR3ProcessMailboxNext(PPDMDEVINS pDevIns, PBUSLOGIC pThis, PBU
 /**
  * Processes a SCSI request issued by the BIOS with the BUSLOGICCOMMAND_EXECUTE_SCSI_COMMAND command.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       Pointer to the shared BusLogic instance data.
  * @param   pThisCC     Pointer to the ring-3 BusLogic instance data.

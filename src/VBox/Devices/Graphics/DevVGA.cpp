@@ -4068,8 +4068,6 @@ static int vbeR3ParseBitmap(PVGASTATECC pThisCC)
 /**
  * Show logo bitmap data.
  *
- * @returns VBox status code.
- *
  * @param   cBits       Logo depth.
  * @param   xLogo       Logo X position.
  * @param   yLogo       Logo Y position.

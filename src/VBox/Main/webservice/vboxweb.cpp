@@ -1789,7 +1789,6 @@ static bool SplitManagedObjectRef(const WSDLT_ID &id,
  * @param sz Buffer with at least 34 bytes space to receive MOR string.
  * @param websessId
  * @param objId
- * @return
  */
 static void MakeManagedObjectRef(char *sz,
                                  uint64_t websessId,

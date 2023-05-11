@@ -1069,7 +1069,6 @@ static int utsClientReqProcess(PUTSCLIENT pClient)
 /**
  * Destroys a client instance.
  *
- * @returns nothing.
  * @param   pClient             The UTS client structure.
  */
 static void utsClientDestroy(PUTSCLIENT pClient)

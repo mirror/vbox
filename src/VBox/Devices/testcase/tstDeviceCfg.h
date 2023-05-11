@@ -160,7 +160,6 @@ DECLHIDDEN(int) tstDevCfgLoad(const char *pszCfgFilename, PRTERRINFO pErrInfo, P
 /**
  * Destroys the given test configuration freeing all allocated resources.
  *
- * @returns nothing.
  * @param   pDevTstCfg              The test configuration to destroy.
  */
 DECLHIDDEN(void) tstDevCfgDestroy(PCTSTDEVCFG pDevTstCfg);

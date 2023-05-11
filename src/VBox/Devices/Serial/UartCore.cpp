@@ -283,7 +283,6 @@ static const char *s_aszStopBits[] =
 /**
  * Updates the IRQ state based on the current device state.
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared serial port instance data.
  * @param   pThisCC             The serial port instance data for the current context.
@@ -420,7 +419,6 @@ DECLINLINE(uint8_t) uartFifoGet(PUARTFIFO pFifo)
 /**
  * Clears the given FIFO.
  *
- * @returns nothing.
  * @param   pFifo               The FIFO to clear.
  */
 DECLINLINE(void) uartFifoClear(PUARTFIFO pFifo)
@@ -510,7 +508,6 @@ DECLINLINE(size_t) uartFifoCopyFrom(PUARTFIFO pFifo, void *pvSrc, size_t cbCopy)
  * Updates the delta bits for the given MSR register value which has the status line
  * bits set.
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared serial port instance data.
  * @param   pThisCC             The serial port instance data for the current context.
@@ -537,7 +534,6 @@ static void uartR3MsrUpdate(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pTh
 /**
  * Updates the serial port parameters of the attached driver with the current configuration.
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared serial port instance data.
  * @param   pThisCC             The serial port instance data for the current context.
@@ -609,7 +605,6 @@ static void uartR3ParamsUpdate(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC 
 /**
  * Updates the internal device state with the given PDM status line states.
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared serial port instance data.
  * @param   pThisCC             The serial port instance data for the current context.
@@ -635,7 +630,6 @@ static void uartR3StsLinesUpdate(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCOREC
 /**
  * Fills up the receive FIFO with as much data as possible.
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared serial port instance data.
  * @param   pThisCC             The serial port instance data for the current context.
@@ -689,7 +683,6 @@ static void uartR3RecvFifoFill(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC 
 /**
  * Fetches a single byte and writes it to RBR.
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared serial port instance data.
  * @param   pThisCC             The serial port instance data for the current context.
@@ -710,7 +703,6 @@ static void uartR3ByteFetch(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pTh
 /**
  * Fetches a ready data based on the FIFO setting.
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared serial port instance data.
  * @param   pThisCC             The serial port instance data for the current context.
@@ -730,7 +722,6 @@ static void uartR3DataFetch(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pTh
  * Reset the transmit/receive related bits to the standard values
  * (after a detach/attach/reset event).
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared serial port instance data.
  * @param   pThisCC             The serial port instance data for the current context.
@@ -770,7 +761,6 @@ static void uartR3XferReset(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pTh
 /**
  * Tries to copy the specified amount of data from the active TX queue (register or FIFO).
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared serial port instance data.
  * @param   pThisCC             The serial port instance data for the current context.
@@ -1919,7 +1909,6 @@ DECLHIDDEN(int) uartR3LoadDone(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC 
 /**
  * Resets the given UART core instance.
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared serial port instance data.
  * @param   pThisCC             The serial port instance data for the current context.
@@ -1998,7 +1987,6 @@ DECLHIDDEN(int) uartR3Attach(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pT
 /**
  * Detaches any attached driver from the given UART core instance.
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared serial port instance data.
  * @param   pThisCC             The serial port instance data for the current context.
@@ -2020,7 +2008,6 @@ DECLHIDDEN(void) uartR3Detach(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC p
 /**
  * Destroys the given UART core instance freeing all allocated resources.
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared UART core instance data..
  */

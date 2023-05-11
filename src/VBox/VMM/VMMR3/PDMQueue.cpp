@@ -861,7 +861,6 @@ static DECLCALLBACK(void) pdmR3QueueTimer(PVM pVM, TMTIMERHANDLE hTimer, void *p
 /**
  * Terminate the queues, freeing any resources still allocated.
  *
- * @returns nothing.
  * @param   pVM                 The cross-context VM structure.
  */
 DECLHIDDEN(void) pdmR3QueueTerm(PVM pVM)

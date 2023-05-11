@@ -947,7 +947,7 @@ VBOX_CORE_DOXYFILE_INPUT := \
 		, $(wildcard $(dir)/*.cpp $(dir)/*.c $(dir)/*.m $(dir)/*.mm $(dir)/*.py $(dir)/.asm))
 VBOX_CORE_DOXYFILE_INPUT := \
 	$(VBOX_CORE_DOXYFILE_INPUT_FIRST) \
-	$(sort $(filter-out $(VBOX_CORE_DOXYFILE_INPUT_FIRST), $(VBOX_CORE_DOXYFILE_INPUT)))
+	$(sort $(filter-out $(VBOX_CORE_DOXYFILE_INPUT_FIRST) %/CPUM-armv8.cpp, $(VBOX_CORE_DOXYFILE_INPUT)))
 
 VBOX_CORE_DOXYFILE_INPUT += \
 	$(wildcard $(PATH_ROOT)/src/VBox/VMM/VMMAll/*.h $(PATH_ROOT)/src/VBox/VMM/VMMR3/*.h $(PATH_ROOT)/src/VBox/VMM/VMMR0/*.h )
@@ -972,7 +972,17 @@ $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core: Doxyfile.Core \
 		"$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserver/main.c" \
 		"$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib/server_main.c" \
 		"$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/unpacker/unpack_arrays.c" \
-		"$(PATH_ROOT)/src/VBox/Additions/common/crOpenGL/context.c"
+		"$(PATH_ROOT)/src/VBox/Additions/common/crOpenGL/context.c" \
+		\
+		"$(PATH_ROOT)/src/VBox/VMM/include/IEMInternal-armv8.h" \
+		             "src/VBox/VMM/include/IEMInternal-armv8.h" \
+		"$(PATH_ROOT)/src/VBox/VMM/VMMAll/CPUMAllRegs-armv8.cpp" \
+		             "src/VBox/VMM/VMMAll/CPUMAllRegs-armv8.cpp" \
+		"$(PATH_ROOT)/src/VBox/VMM/VMMR3/CPUM-armv8.cpp" \
+		             "src/VBox/VMM/VMMR3/CPUM-armv8.cpp" \
+		"$(PATH_ROOT)/src/VBox/VMM/VMMR3/HM-armv8.cpp" \
+		             "src/VBox/VMM/VMMR3/HM-armv8.cpp"
+## @todo ARMv8: crap is duplicated multiple times or in different sections. Clean up the above *armv8* mess.
 	$(QUIET)$(APPEND) $@.tmp
 	$(QUIET)$(APPEND) $@.tmp 'INPUT = $(foreach x,$(VBOX_CORE_DOXYFILE_INPUT),\$(NLTAB)$(x))'
 	$(QUIET)$(APPEND) $@.tmp
@@ -1002,6 +1012,7 @@ $(VBOX_CORE_DOXYFILE_OUTPUT)/docs.Core: $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Co
                -e '/\/src\/VBox\/Additions\/x11\/VBoxClient\/seamless-x11\.h.* warning/b ignore' \
                -e '/\/src\/VBox\/HostDrivers\/Support\/win\/SUPR3HardenedMain-win\.cpp.* warning/b ignore' \
                -e '/\/src\/VBox\/ValidationKit\/.* warning/b ignore' \
+               -e '/WRAPPED_MODULE_SYMBOL_INCLUDE/b ignore' \
                \
                -e '/unable to resolve link to .dtrace_pops_t./b ignore' \
                \

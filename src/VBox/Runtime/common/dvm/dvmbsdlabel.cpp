@@ -209,7 +209,6 @@ static uint16_t rtDvmFmtBsdLblDiskLabelChkSum(PBsdLabel pBsdLabel)
 /**
  * Converts a partition entry to the host endianness.
  *
- * @returns nothing.
  * @param   pPartition    The partition to decode.
  */
 static void rtDvmFmtBsdLblDiskLabelDecodePartition(PBsdLabelPartition pPartition)

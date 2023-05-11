@@ -54,8 +54,6 @@ int VDMemDiskCreate(PPVDMEMDISK ppMemDisk, uint64_t cbSize);
 /**
  * Destroys a memory disk.
  *
- * @returns nothing.
- *
  * @param pMemDisk The memory disk to destroy.
  */
 void VDMemDiskDestroy(PVDMEMDISK pMemDisk);

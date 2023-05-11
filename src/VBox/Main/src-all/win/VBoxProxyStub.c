@@ -1319,7 +1319,6 @@ LSTATUS VbpsRegisterClassId(VBPSREGSTATE *pState, const CLSID *pClsId, const cha
 /**
  * Register modules and classes from the VirtualBox.xidl file.
  *
- * @returns COM status code.
  * @param   pState
  * @param   pwszVBoxDir         The VirtualBox application directory.
  * @param   fIs32On64           Set if this is the 32-bit on 64-bit component.

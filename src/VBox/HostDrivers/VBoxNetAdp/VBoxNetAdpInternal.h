@@ -176,7 +176,6 @@ DECLHIDDEN(int) vboxNetAdpOsInit(PVBOXNETADP pThis);
 /**
  * Counter part to vboxNetAdpOsCreate().
  *
- * @return  IPRT status code.
  * @param   pThis           The new instance.
  *
  * @remarks May own the semaphores for the global list, the network lock and the out-bound trunk port.

@@ -3428,7 +3428,6 @@ VMM_INT_DECL(bool) APICGetHighestPendingInterrupt(PVMCPUCC pVCpu, uint8_t *pu8Pe
 /**
  * Posts an interrupt to a target APIC, Hyper-V interface.
  *
- * @returns true if the interrupt was accepted, false otherwise.
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   uVector             The vector of the interrupt to be posted.
  * @param   fAutoEoi            Whether this interrupt has automatic EOI

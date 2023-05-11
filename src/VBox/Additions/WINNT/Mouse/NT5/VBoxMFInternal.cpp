@@ -134,8 +134,6 @@ static bool vboxNewProtLazyRegister(void)
 
 /**
  * This is called when the last device instance is destroyed.
- *
- * @returns NT status.
  */
 static void vboxNewProtTerm(void)
 {

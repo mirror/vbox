@@ -100,7 +100,6 @@ typedef struct LSILOGICSCSI *PLSILOGICSCSI;
 /**
  * Memory buffer callback.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   GCPhys      The guest physical address of the memory buffer.
  * @param   pSgBuf      The pointer to the host R3 S/G buffer.
@@ -448,7 +447,6 @@ static const uint8_t g_lsilogicDiagnosticAccess[] = {0x04, 0x0b, 0x02, 0x07, 0x0
 /**
  * Updates the status of the interrupt pin of the device.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       Pointer to the shared LsiLogic device state.
  */
@@ -479,7 +477,6 @@ static void lsilogicUpdateInterrupt(PPDMDEVINS pDevIns, PLSILOGICSCSI pThis)
  * Sets a given interrupt status bit in the status register and
  * updates the interrupt status.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       Pointer to the shared LsiLogic device state.
  * @param   uStatus     The status bit to set.
@@ -494,7 +491,6 @@ DECLINLINE(void) lsilogicSetInterrupt(PPDMDEVINS pDevIns, PLSILOGICSCSI pThis, u
  * Clears a given interrupt status bit in the status register and
  * updates the interrupt status.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       Pointer to the shared LsiLogic device state.
  * @param   uStatus     The status bit to set.
@@ -510,7 +506,6 @@ DECLINLINE(void) lsilogicClearInterrupt(PPDMDEVINS pDevIns, PLSILOGICSCSI pThis,
 /**
  * Sets the I/O controller into fault state and sets the fault code.
  *
- * @returns nothing
  * @param   pThis           Pointer to the shared LsiLogic device state.
  * @param   uIOCFaultCode   Fault code to set.
  */
@@ -617,7 +612,7 @@ static int lsilogicR3HardReset(PPDMDEVINS pDevIns, PLSILOGICSCSI pThis, PLSILOGI
 /**
  * Allocates the configuration pages based on the device.
  *
- * @returns nothing.
+ * @returns VBox status code.
  * @param   pThis    Pointer to the shared LsiLogic device state.
  * @param   pThisCC  Pointer to the ring-3 LsiLogic device state.
  */
@@ -685,7 +680,6 @@ static int lsilogicR3ConfigurationPagesAlloc(PLSILOGICSCSI pThis, PLSILOGICSCSIC
 /**
  * Frees the configuration pages if allocated.
  *
- * @returns nothing.
  * @param   pThis    Pointer to the shared LsiLogic device state.
  * @param   pThisCC  Pointer to the ring-3 LsiLogic device state.
  */
@@ -731,7 +725,6 @@ static void lsilogicR3ConfigurationPagesFree(PLSILOGICSCSI pThis, PLSILOGICSCSIC
 /**
  * Finishes a context reply.
  *
- * @returns nothing
  * @param   pDevIns             The device instance.
  * @param   pThis               Pointer to the shared LsiLogic device state.
  * @param   u32MessageContext   The message context ID to post.
@@ -770,7 +763,6 @@ static void lsilogicR3FinishContextReply(PPDMDEVINS pDevIns, PLSILOGICSCSI pThis
 /**
  * Takes necessary steps to finish a reply frame.
  *
- * @returns nothing
  * @param   pDevIns         The device instance.
  * @param   pThis           Pointer to the shared LsiLogic device state.
  * @param   pReply          Pointer to the reply message.
@@ -890,7 +882,6 @@ static PLSILOGICMEMREGN lsilogicR3MemRegionFindByAddr(PLSILOGICSCSICC pThisCC, u
 /**
  * Frees all allocated memory regions.
  *
- * @returns nothing.
  * @param   pThisCC         Pointer to the ring-3 LsiLogic device state.
  */
 static void lsilogicR3MemRegionsFree(PLSILOGICSCSICC pThisCC)
@@ -909,7 +900,6 @@ static void lsilogicR3MemRegionsFree(PLSILOGICSCSICC pThisCC)
 /**
  * Inserts a given memory region into the list.
  *
- * @returns nothing.
  * @param   pThisCC         Pointer to the ring-3 LsiLogic device state.
  * @param   pRegion         The region to insert.
  */
@@ -954,7 +944,6 @@ static uint32_t lsilogicR3MemRegionsCount(PLSILOGICSCSICC pThisCC)
 /**
  * Handles a write to the diagnostic data register.
  *
- * @returns nothing.
  * @param   pThis           Pointer to the shared LsiLogic device state.
  * @param   pThisCC         Pointer to the ring-3 LsiLogic device state.
  * @param   u32Data         Data to write.
@@ -1044,7 +1033,6 @@ static void lsilogicR3DiagRegDataWrite(PLSILOGICSCSI pThis, PLSILOGICSCSICC pThi
 /**
  * Handles a read from the diagnostic data register.
  *
- * @returns nothing.
  * @param   pThis           Pointer to the shared LsiLogic device state.
  * @param   pThisCC         Pointer to the ring-3 LsiLogic device state.
  * @param   pu32Data        Where to store the data.
@@ -1076,7 +1064,6 @@ static void lsilogicR3DiagRegDataRead(PLSILOGICSCSI pThis, PLSILOGICSCSICC pThis
 /**
  * Handles a write to the diagnostic memory address register.
  *
- * @returns nothing.
  * @param   pThis           Pointer to the shared LsiLogic device state.
  * @param   u32Addr         Address to write.
  */
@@ -1088,7 +1075,6 @@ static void lsilogicR3DiagRegAddressWrite(PLSILOGICSCSI pThis, uint32_t u32Addr)
 /**
  * Handles a read from the diagnostic memory address register.
  *
- * @returns nothing.
  * @param   pThis           Pointer to the shared LsiLogic device state.
  * @param   pu32Addr        Where to store the current address.
  */
@@ -1909,7 +1895,6 @@ static DECLCALLBACK(VBOXSTRICTRC) lsilogicDiagnosticRead(PPDMDEVINS pDevIns, voi
 /**
  * Dump an SG entry.
  *
- * @returns nothing.
  * @param   pSGEntry    Pointer to the SG entry to dump
  */
 static void lsilogicDumpSGEntry(PMptSGEntryUnion pSGEntry)
@@ -2219,7 +2204,6 @@ static void lsilogicR3DumpSCSIIORequest(PMptSCSIIORequest pSCSIIORequest)
 /**
  * Handles the completion of th given request.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       Pointer to the shared LsiLogic device state.
  * @param   pReq        The request to complete.
@@ -3345,7 +3329,6 @@ static int lsilogicR3ProcessConfigurationRequest(PPDMDEVINS pDevIns, PLSILOGICSC
 /**
  * Initializes the configuration pages for the SPI SCSI controller.
  *
- * @returns nothing
  * @param   pThis       Pointer to the shared LsiLogic device state.
  * @param   pThisCC     Pointer to the ring-3 LsiLogic device state.
  */
@@ -3449,7 +3432,6 @@ DECLINLINE(uint16_t) lsilogicGetHandle(PLSILOGICSCSI pThis)
 /**
  * Generates a SAS address (WWID)
  *
- * @returns nothing.
  * @param   pSASAddress Pointer to an unitialised SAS address.
  * @param   iId         iId which will go into the address.
  *
@@ -3470,7 +3452,6 @@ void lsilogicSASAddressGenerate(PSASADDRESS pSASAddress, unsigned iId)
 /**
  * Initializes the configuration pages for the SAS SCSI controller.
  *
- * @returns nothing
  * @param   pThis       Pointer to the shared LsiLogic device state.
  * @param   pThisCC     Pointer to the ring-3 LsiLogic device state.
  */
@@ -3649,7 +3630,6 @@ static void lsilogicR3InitializeConfigurationPagesSas(PLSILOGICSCSI pThis, PLSIL
 /**
  * Initializes the configuration pages.
  *
- * @returns nothing
  * @param   pDevIns     The device instance.
  * @param   pThis       Pointer to the shared LsiLogic device state.
  * @param   pThisCC     Pointer to the ring-3 LsiLogic device state.
@@ -4105,7 +4085,6 @@ static DECLCALLBACK(int) lsilogicR3WorkerWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD p
  * Kicks the controller to process pending tasks after the VM was resumed
  * or loaded from a saved state.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       Pointer to the shared LsiLogic device state.
  */

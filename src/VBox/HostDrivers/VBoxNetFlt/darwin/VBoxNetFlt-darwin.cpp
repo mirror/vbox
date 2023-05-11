@@ -591,7 +591,6 @@ DECLINLINE(unsigned) vboxNetFltDarwinMBufCalcSGSegs(PVBOXNETFLTINS pThis, mbuf_t
 /**
  * Initializes a SG list from an mbuf.
  *
- * @returns Number of segments.
  * @param   pThis               The instance.
  * @param   pMBuf               The mbuf.
  * @param   pSG                 The SG.

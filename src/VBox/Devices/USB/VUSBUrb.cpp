@@ -471,7 +471,6 @@ int vusbUrbQueueAsyncRh(PVUSBURB pUrb)
 
 /**
  * Send a control message *synchronously*.
- * @return
  */
 static void vusbMsgSubmitSynchronously(PVUSBURB pUrb, bool fSafeRequest)
 {
@@ -1304,7 +1303,6 @@ void vusbUrbDoReapAsync(PRTLISTANCHOR pUrbLst, RTMSINTERVAL cMillies)
 /**
  * Reap URBs on a per device level.
  *
- * @returns nothing.
  * @param   pDev        The device instance to reap URBs for.
  * @param   cMillies    Number of milliseconds to block in each reap operation.
  *                      Use 0 to not block at all.

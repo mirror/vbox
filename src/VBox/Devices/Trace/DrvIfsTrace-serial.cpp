@@ -430,7 +430,6 @@ static DECLCALLBACK(int) drvIfTraceISerialConnector_QueuesFlush(PPDMISERIALCONNE
 /**
  * Initializes serial port relaated interfaces.
  *
- * @returns nothing.
  * @param   pThis                   The interface callback trace driver instance.
  */
 DECLHIDDEN(void) drvIfsTrace_SerialIfInit(PDRVIFTRACE pThis)

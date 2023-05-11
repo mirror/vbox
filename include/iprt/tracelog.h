@@ -601,7 +601,6 @@ RTDECL(int) RTTraceLogRdrEvtMapToStruct(RTTRACELOGRDR hTraceLogRdr, uint32_t fFl
 /**
  * Frees all resources of the given array of event headers as allocated by RTTraceLogRdrEvtMapToStruct().
  *
- * @returns nothing.
  * @param   paEvtHdr            Pointer to the array of events as returned by RTTraceLogRdrEvtMapToStruct().
  * @param   cEvts               Number of events as returned by RTTraceLogRdrEvtMapToStruct().
  */
@@ -611,7 +610,6 @@ RTDECL(void) RTTraceLogRdrEvtMapFree(PCRTTRACELOGRDREVTHDR paEvtHdr, uint32_t cE
 /**
  * Frees a previously created iterator.
  *
- * @returns nothing.
  * @param   hIt                 The iterator handle to free.
  */
 RTDECL(void) RTTraceLogRdrIteratorFree(RTTRACELOGRDRIT hIt);

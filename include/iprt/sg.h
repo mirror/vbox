@@ -195,7 +195,6 @@ DECLINLINE(bool) RTSgBufIsAtStartOfSegment(PCRTSGBUF pSgBuf)
 /**
  * Initialize a S/G buffer structure.
  *
- * @returns nothing.
  * @param   pSgBuf    Pointer to the S/G buffer to initialize.
  * @param   paSegs    Pointer to the start of the segment array.
  * @param   cSegs     Number of segments in the array.
@@ -209,7 +208,6 @@ RTDECL(void) RTSgBufInit(PRTSGBUF pSgBuf, PCRTSGSEG paSegs, size_t cSegs);
 /**
  * Resets the internal buffer position of the S/G buffer to the beginning.
  *
- * @returns nothing.
  * @param   pSgBuf    The S/G buffer to reset.
  */
 RTDECL(void) RTSgBufReset(PRTSGBUF pSgBuf);
@@ -217,7 +215,6 @@ RTDECL(void) RTSgBufReset(PRTSGBUF pSgBuf);
 /**
  * Clones a given S/G buffer.
  *
- * @returns nothing.
  * @param   pSgBufNew    The new S/G buffer to clone to.
  * @param   pSgBufOld    The source S/G buffer to clone from.
  *

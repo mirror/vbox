@@ -323,7 +323,6 @@ RTR3DECL(int)  RTStrConsoleCPToUtf8Tag(char **ppszString, const char *pszString,
 /**
  * Free string allocated by any of the non-UCS-2 string functions.
  *
- * @returns iprt status code.
  * @param   pszString      Pointer to buffer with string to free.
  *                         NULL is accepted.
  */

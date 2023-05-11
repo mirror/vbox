@@ -687,7 +687,6 @@ typedef enum RTTHREADCTXEVENT
  * Do NOT acquire locks, sleep or yield the thread for instance.  IRQ safe
  * spinlocks are fine though.
  *
- * @returns IPRT status code.
  * @param   enmEvent    The thread-context event.  Please quitely ignore unknown
  *                      events, we may add more (thread exit, ++) later.
  * @param   pvUser      User argument.

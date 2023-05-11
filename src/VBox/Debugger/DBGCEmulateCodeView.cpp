@@ -1565,7 +1565,6 @@ static bool dbgcCmdUnassembleCfgAddrLower(PDBGFADDRESS pAddr1, PDBGFADDRESS pAdd
  * Calculates the size required for the given basic block including the
  * border and spacing on the edges.
  *
- * @returns nothing.
  * @param   hFlowBb              The basic block handle.
  * @param   pDumpBb             The dumper state to fill in for the basic block.
  */
@@ -1609,7 +1608,6 @@ static void dbgcCmdUnassembleCfgDumpCalcBbSize(DBGFFLOWBB hFlowBb, PDBGCFLOWBBDU
 /**
  * Dumps a top or bottom boundary line.
  *
- * @returns nothing.
  * @param   hScreen             The screen to draw to.
  * @param   uStartX             Where to start drawing the boundary.
  * @param   uStartY             Y coordinate.
@@ -1629,7 +1627,6 @@ static void dbgcCmdUnassembleCfgDumpBbBoundary(DBGCSCREEN hScreen, uint32_t uSta
 /**
  * Dumps a spacing line between the top or bottom boundary and the actual disassembly.
  *
- * @returns nothing.
  * @param   hScreen             The screen to draw to.
  * @param   uStartX             Where to start drawing the spacing.
  * @param   uStartY             Y coordinate.
@@ -1649,7 +1646,6 @@ static void dbgcCmdUnassembleCfgDumpBbSpacing(DBGCSCREEN hScreen, uint32_t uStar
 /**
  * Writes a given text to the screen.
  *
- * @returns nothing.
  * @param   hScreen             The screen to draw to.
  * @param   uStartX             Where to start drawing the line.
  * @param   uStartY             Y coordinate.
@@ -1672,7 +1668,6 @@ static void dbgcCmdUnassembleCfgDumpBbText(DBGCSCREEN hScreen, uint32_t uStartX,
 /**
  * Dumps one basic block using the dumper callback.
  *
- * @returns nothing.
  * @param   pDumpBb             The basic block dump state to dump.
  * @param   hScreen             The screen to draw to.
  */
@@ -1719,7 +1714,6 @@ static void dbgcCmdUnassembleCfgDumpBb(PDBGCFLOWBBDUMP pDumpBb, DBGCSCREEN hScre
 /**
  * Dumps one branch table using the dumper callback.
  *
- * @returns nothing.
  * @param   pDumpBranchTbl      The basic block dump state to dump.
  * @param   hScreen             The screen to draw to.
  */
@@ -5808,7 +5802,6 @@ static DECLCALLBACK(int) dbgcCmdEventCtrlReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdH
 /**
  * Used during DBGC initialization to configure events with defaults.
  *
- * @returns VBox status code.
  * @param   pDbgc       The DBGC instance.
  */
 void dbgcEventInit(PDBGC pDbgc)

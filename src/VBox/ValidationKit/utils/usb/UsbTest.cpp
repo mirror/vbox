@@ -477,7 +477,6 @@ static int usbTestIoctl(int iDevFd, int iInterface, PUSBTESTPARAMS pParams)
 /**
  * Test execution worker.
  *
- * @returns nothing.
  * @param   pszDevice    The device to use for testing.
  */
 static void usbTestExec(const char *pszDevice)

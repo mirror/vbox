@@ -636,7 +636,6 @@ AssertCompileSize(SGLEntry, 16);
 /**
  * Memory buffer callback.
  *
- * @returns nothing.
  * @param   pDevIns  The device instance.
  * @param   GCPhys   The guest physical address of the memory buffer.
  * @param   pSgBuf   The pointer to the host R3 S/G buffer.
@@ -984,7 +983,6 @@ static DECLCALLBACK(void) ahciCccTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer,
 /**
  * Finishes the port reset of the given port.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared AHCI state.
  * @param   pAhciPort   The port to finish the reset on, shared bits.
@@ -1048,7 +1046,6 @@ static void ahciPortResetFinish(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT pAhci
 /**
  * Kicks the I/O thread from RC or R0.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pAhciPort   The port to kick, shared bits.
  */
@@ -2533,7 +2530,6 @@ static DECLCALLBACK(int) ahciR3PortQueryScsiInqStrings(PPDMIMEDIAPORT pInterface
 /**
  * Dump info about the FIS
  *
- * @returns nothing
  * @param   pAhciPort     The port the command FIS was read from (shared bits).
  * @param   cmdFis        The FIS to print info from.
  */
@@ -2615,7 +2611,6 @@ static void ahciDumpFisInfo(PAHCIPORT pAhciPort, uint8_t *cmdFis)
 /**
  * Dump info about the command header
  *
- * @returns nothing
  * @param   pAhciPort   Pointer to the port the command header was read from
  *                      (shared bits).
  * @param   pCmdHdr     The command header to print info from.
@@ -2650,7 +2645,6 @@ static void ahciDumpCmdHdrInfo(PAHCIPORT pAhciPort, CmdHdr *pCmdHdr)
 /**
  * Post the first D2H FIS from the device into guest memory.
  *
- * @returns nothing
  * @param   pDevIns     The device instance.
  * @param   pAhciPort   Pointer to the port which "receives" the FIS (shared bits).
  */
@@ -2935,7 +2929,6 @@ static int ahciR3AtapiIdentify(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq, PAHCIPORT 
 /**
  * Reset all values after a reset of the attached storage device.
  *
- * @returns nothing
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared AHCI state.
  * @param   pAhciPort   The port the device is attached to, shared bits(shared
@@ -2965,7 +2958,6 @@ static void ahciFinishStorageDeviceReset(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIP
 /**
  * Initiates a device reset caused by ATA_DEVICE_RESET (ATAPI only).
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared AHCI state.
  * @param   pAhciPort   The device to reset(shared bits).
@@ -2987,7 +2979,6 @@ static void ahciDeviceReset(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT pAhciPort
 /**
  * Create a PIO setup FIS and post it into the memory area of the guest.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared AHCI state.
  * @param   pAhciPort   The port of the SATA controller (shared bits).
@@ -3055,7 +3046,6 @@ static void ahciSendPioSetupFis(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT pAhci
 /**
  * Build a D2H FIS and post into the memory area of the guest.
  *
- * @returns Nothing
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared AHCI state.
  * @param   pAhciPort   The port of the SATA controller (shared bits).
@@ -3125,7 +3115,6 @@ static void ahciSendD2HFis(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT pAhciPort,
 /**
  * Build a SDB Fis and post it into the memory area of the guest.
  *
- * @returns Nothing
  * @param   pDevIns         The device instance.
  * @param   pThis           The shared AHCI state.
  * @param   pAhciPort       The port for which the SDB Fis is send, shared bits.
@@ -3584,7 +3573,6 @@ static PAHCIREQ ahciR3ReqAlloc(PAHCIPORTR3 pAhciPortR3, uint32_t uTag)
 /**
  * Frees a given AHCI request structure.
  *
- * @returns nothing.
  * @param   pAhciPortR3 The AHCI port, ring-3 bits.
  * @param   pAhciReq    The request to free.
  */

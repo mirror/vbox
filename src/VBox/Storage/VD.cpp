@@ -1486,7 +1486,6 @@ static int vdDiskProcessWaitingIoCtx(PVDISK pDisk, PVDIOCTX pIoCtxRc)
 /**
  * Processes the list of blocked I/O contexts.
  *
- * @returns nothing.
  * @param   pDisk    The disk structure.
  */
 static void vdDiskProcessBlockedIoCtx(PVDISK pDisk)
@@ -3604,7 +3603,6 @@ static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnCo
 /**
  * Processes a list of waiting I/O tasks. The disk lock must be held by caller.
  *
- * @returns nothing.
  * @param   pDisk    The disk to process the list for.
  */
 static void vdIoTaskProcessWaitingList(PVDISK pDisk)
@@ -3649,7 +3647,6 @@ static void vdIoTaskProcessWaitingList(PVDISK pDisk)
 /**
  * Process any I/O context on the halted list.
  *
- * @returns nothing.
  * @param   pDisk    The disk.
  */
 static void vdIoCtxProcessHaltedList(PVDISK pDisk)
@@ -3739,7 +3736,6 @@ static int vdDiskUnlock(PVDISK pDisk, PVDIOCTX pIoCtxRc)
  * Try to lock the disk to complete pressing of the I/O task.
  * The completion is deferred if the disk is locked already.
  *
- * @returns nothing.
  * @param   pIoTask  The I/O task to complete.
  */
 static void vdXferTryLockDiskDeferIoTask(PVDIOTASK pIoTask)
@@ -4933,7 +4929,6 @@ static void vdFixupLCHSGeometry(PVDGEOMETRY pLCHS, uint64_t cbSize)
 /**
  * Sets the I/O callbacks of the given interface to the fallback methods
  *
- * @returns nothing.
  * @param   pIfIo    The I/O interface to setup.
  */
 static void vdIfIoFallbackCallbacksSetup(PVDINTERFACEIO pIfIo)
@@ -4958,7 +4953,6 @@ static void vdIfIoFallbackCallbacksSetup(PVDINTERFACEIO pIfIo)
 /**
  * Sets the internal I/O callbacks of the given interface.
  *
- * @returns nothing.
  * @param   pIfIoInt    The internal I/O interface to setup.
  */
 static void vdIfIoIntCallbacksSetup(PVDINTERFACEIOINT pIfIoInt)

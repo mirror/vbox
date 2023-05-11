@@ -721,7 +721,6 @@ typedef struct VUSBIROOTHUBPORT
      * Informs the callee about a change in the frame rate due to too many idle cycles or
      * when seeing activity after some idle time.
      *
-     * @returns nothing.
      * @param   pInterface      Pointer to this structure.
      * @param   u32FrameRate    The new frame rate.
      */
@@ -835,10 +834,6 @@ typedef struct VUSBIROOTHUBCONNECTOR
      * Reaped URBs will be finished by calling the completion callback,
      * thus there is no return code or input or anything from this function
      * except for potential state changes elsewhere.
-     *
-     * @returns VINF_SUCCESS if no URBs are pending upon return.
-     * @returns VERR_TIMEOUT if one or more URBs are still in flight upon returning.
-     * @returns Other VBox status code.
      *
      * @param   pInterface  Pointer to this struct.
      * @param   uPort       Port of the device to reap URBs on.

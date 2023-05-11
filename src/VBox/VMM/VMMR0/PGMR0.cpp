@@ -165,7 +165,6 @@ VMMR0_INT_DECL(int) PGMR0InitVM(PGVM pGVM)
 /**
  * Called at the end of the ring-0 initialization to seal access handler types.
  *
- * @returns VBox status code.
  * @param   pGVM    Pointer to the global VM structure.
  */
 VMMR0_INT_DECL(void) PGMR0DoneInitVM(PGVM pGVM)

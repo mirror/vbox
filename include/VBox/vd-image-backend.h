@@ -333,7 +333,6 @@ typedef struct VDIMAGEBACKEND
     /**
      * Releases the region list acquired with VDIMAGEBACKEND::pfnQueryRegions() before.
      *
-     * @returns nothing.
      * @param   pBackendData    Opaque state data for this image.
      * @param   pRegionList     The region list to release.
      */

@@ -139,7 +139,6 @@ typedef struct RTIOQUEUEPROVVTABLE
      * Destroys the provider specific parts of the I/O queue and frees all
      * associated resources.
      *
-     * @returns nothing.
      * @param   hIoQueueProv    The I/O queue provider instance to destroy.
      */
     DECLCALLBACKMEMBER(void, pfnQueueDestroy,(RTIOQUEUEPROV hIoQueueProv));

@@ -296,7 +296,6 @@ uint16_t scsi_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
 /**
  * Enumerate attached devices.
  *
- * @returns nothing.
  * @param   hba_seg    Segement of the HBA controller block.
  * @param   idx_hba    The HBA driver index used for accessing the enumerated devices.
  */

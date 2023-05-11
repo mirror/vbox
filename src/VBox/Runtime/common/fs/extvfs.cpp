@@ -270,10 +270,10 @@ typedef struct RTFSEXTVOL
 static int rtFsExtVol_OpenDirByInode(PRTFSEXTVOL pThis, uint32_t iInode, PRTVFSDIR phVfsDir);
 
 #ifdef LOG_ENABLED
+
 /**
  * Logs the ext filesystem superblock.
  *
- * @returns nothing.
  * @param   pSb                 Pointer to the superblock.
  */
 static void rtFsExtSb_Log(PCEXTSUPERBLOCK pSb)
@@ -415,7 +415,6 @@ static void rtFsExtSb_Log(PCEXTSUPERBLOCK pSb)
 /**
  * Logs a ext filesystem block group descriptor.
  *
- * @returns nothing.
  * @param   pThis               The ext volume instance.
  * @param   iBlockGroup         Block group number.
  * @param   pBlockGroup         Pointer to the block group.
@@ -459,7 +458,6 @@ static void rtFsExtBlockGroup_Log(PRTFSEXTVOL pThis, uint32_t iBlockGroup, PCEXT
 /**
  * Logs a ext filesystem inode.
  *
- * @returns nothing.
  * @param   pThis               The ext volume instance.
  * @param   iInode              Inode number.
  * @param   pInode              Pointer to the inode.
@@ -520,7 +518,6 @@ static void rtFsExtInode_Log(PRTFSEXTVOL pThis, uint32_t iInode, PCEXTINODECOMB 
 /**
  * Logs a ext filesystem directory entry.
  *
- * @returns nothing.
  * @param   pThis               The ext volume instance.
  * @param   idxDirEntry         Directory entry index number.
  * @param   pDirEntry           The directory entry.
@@ -553,7 +550,6 @@ static void rtFsExtDirEntry_Log(PRTFSEXTVOL pThis, uint32_t idxDirEntry, PCEXTDI
 /**
  * Logs an extent header.
  *
- * @returns nothing.
  * @param   pExtentHdr          The extent header node.
  */
 static void rtFsExtExtentHdr_Log(PCEXTEXTENTHDR pExtentHdr)
@@ -573,7 +569,6 @@ static void rtFsExtExtentHdr_Log(PCEXTEXTENTHDR pExtentHdr)
 /**
  * Logs an extent index node.
  *
- * @returns nothing.
  * @param   pExtentIdx          The extent index node.
  */
 static void rtFsExtExtentIdx_Log(PCEXTEXTENTIDX pExtentIdx)
@@ -591,7 +586,6 @@ static void rtFsExtExtentIdx_Log(PCEXTEXTENTIDX pExtentIdx)
 /**
  * Logs an extent.
  *
- * @returns nothing.
  * @param   pExtent             The extent.
  */
 static void rtFsExtExtent_Log(PCEXTEXTENT pExtent)
@@ -605,8 +599,8 @@ static void rtFsExtExtent_Log(PCEXTEXTENT pExtent)
         Log2(("EXT:   offStartLow                         %#RX16\n", RT_LE2H_U16(pExtent->offStartLow)));
     }
 }
-#endif
 
+#endif /* LOG_ENABLED */
 
 /**
  * Converts a block number to a byte offset.
@@ -722,7 +716,6 @@ static PRTFSEXTBLOCKENTRY rtFsExtVol_BlockGetNew(PRTFSEXTVOL pThis, uint64_t iBl
 /**
  * Frees the given block.
  *
- * @returns nothing.
  * @param   pThis               The ext volume instance.
  * @param   pBlock              The block to free.
  */
@@ -808,7 +801,6 @@ static int rtFsExtVol_BlockLoad(PRTFSEXTVOL pThis, uint64_t iBlock, PRTFSEXTBLOC
 /**
  * Releases a reference of the given block.
  *
- * @returns nothing.
  * @param   pThis               The ext volume instance.
  * @param   pBlock              The block to release.
  */
@@ -846,7 +838,6 @@ static PRTFSEXTBLKGRP rtFsExtBlockGroupAlloc(PRTFSEXTVOL pThis, size_t cbAlloc, 
 /**
  * Frees the given block group.
  *
- * @returns nothing.
  * @param   pThis               The ext volume instance.
  * @param   pBlockGroup         The block group to free.
  */
@@ -984,7 +975,6 @@ static int rtFsExtBlockGroupLoad(PRTFSEXTVOL pThis, uint32_t iBlockGroup, PRTFSE
 /**
  * Releases a reference of the given block group.
  *
- * @returns nothing.
  * @param   pThis               The ext volume instance.
  * @param   pBlockGroup         The block group to release.
  */
@@ -1020,7 +1010,6 @@ static PRTFSEXTINODE rtFsExtInodeAlloc(PRTFSEXTVOL pThis, uint32_t iInode)
 /**
  * Frees the given inode.
  *
- * @returns nothing.
  * @param   pThis               The ext volume instance.
  * @param   pInode              The inode to free.
  */
@@ -1235,7 +1224,6 @@ static int rtFsExtInodeLoad(PRTFSEXTVOL pThis, uint32_t iInode, PRTFSEXTINODE *p
 /**
  * Releases a reference of the given inode.
  *
- * @returns nothing.
  * @param   pThis               The ext volume instance.
  * @param   pInode              The inode to release.
  */

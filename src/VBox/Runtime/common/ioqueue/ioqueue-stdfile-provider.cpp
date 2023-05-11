@@ -152,7 +152,6 @@ typedef RTIOQUEUEPROVINT *PRTIOQUEUEPROVINT;
 /**
  * Processes the given submission queue entry and reports back the result in the completion queue.
  *
- * @returns nothing.
  * @param   pSqEntry            The submission queue entry to process.
  * @param   pCqEntry            The comppletion queue entry to store the result in.
  */

@@ -1077,7 +1077,6 @@ static int usbMsdResetWorker(PUSBMSD pThis, PVUSBURB pUrb, bool fSetConfig)
 /**
  * Process a completed request.
  *
- * @returns nothing.
  * @param   pThis               The MSD instance.
  * @param   pReq                The request.
  * @param   rcReq               The completion status.

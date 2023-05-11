@@ -120,7 +120,6 @@ static void *cfgmR3MemAlloc(PVM pVM, MMTAG enmTag, size_t cb)
 /**
  * Free wrapper.
  *
- * @returns Pointer to the allocated memory, NULL on failure.
  * @param   pVM         The cross context VM structure, if the tree
  *                      is associated with one.
  * @param   pv          The memory block to free.
@@ -154,7 +153,6 @@ static char *cfgmR3StrAlloc(PVM pVM, MMTAG enmTag,  size_t cbString)
 /**
  * String free wrapper.
  *
- * @returns Pointer to the allocated memory, NULL on failure.
  * @param   pVM         The cross context VM structure, if the tree
  *                      is associated with one.
  * @param   pszString   The memory block to free.

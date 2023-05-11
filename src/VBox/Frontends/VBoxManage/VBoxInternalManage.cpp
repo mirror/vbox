@@ -404,7 +404,6 @@ static RTEXITCODE errorGetOptInternal(USAGECATEGORY enmCommand, int vrc, union R
  * Externally visible wrapper around printUsageInternal() to dump the
  * complete usage text.
  *
- * @returns nothing.
  * @param   pStrm           The stream to dump the usage text to.
  */
 DECLHIDDEN(void) printUsageInternalCmds(PRTSTREAM pStrm)

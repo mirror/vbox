@@ -75,7 +75,6 @@ static int tstDevCfgErrorRc(PRTERRINFO pErrInfo, int rc, const char *pszFormat, 
 /**
  * Destroys the given configuration item array freeing all allocated resources.
  *
- * @returns nothing.
  * @param   paCfg               The configuration item array to destroy.
  * @param   cCfgItems           Number of items in the array.
  */

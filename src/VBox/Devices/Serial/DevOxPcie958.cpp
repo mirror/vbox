@@ -211,7 +211,6 @@ typedef CTX_SUFF(PDEVOX958) PDEVOX958CC;
 /**
  * Update IRQ status of the device.
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared OXPCIe958 device instance data.
  */
@@ -290,7 +289,6 @@ static VBOXSTRICTRC ox958UartRegWrite(PPDMDEVINS pDevIns, PDEVOX958 pThis, POX95
 /**
  * UART core IRQ request callback.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pUart       The UART requesting an IRQ update.
  * @param   iLUN        The UART index.

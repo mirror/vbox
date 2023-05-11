@@ -78,7 +78,6 @@ typedef const RTKRNLMODINFOINT *PCRTKRNLMODINFOINT;
 /**
  * Destroy the given kernel module information record.
  *
- * @returns nothing.
  * @param   pThis            The record to destroy.
  */
 static void rtKrnlModInfoDestroy(PRTKRNLMODINFOINT pThis)

@@ -616,7 +616,6 @@ static SSMFIELD const g_aTpmFields[] =
 /**
  * Sets the IRQ line of the given device to the given state.
  *
- * @returns nothing.
  * @param   pDevIns             Pointer to the PDM device instance data.
  * @param   pThis               Pointer to the shared TPM device.
  * @param   iLvl                The interrupt level to set.
@@ -630,7 +629,6 @@ DECLINLINE(void) tpmIrqReq(PPDMDEVINS pDevIns, PDEVTPM pThis, int iLvl)
 /**
  * Updates the IRQ status of the given locality.
  *
- * @returns nothing.
  * @param   pDevIns             Pointer to the PDM device instance data.
  * @param   pThis               Pointer to the shared TPM device.
  * @param   pLoc                The locality state.
@@ -648,7 +646,6 @@ static void tpmLocIrqUpdate(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOCALITY p
 /**
  * Sets the interrupt status for the given locality, firing an interrupt if necessary.
  *
- * @returns nothing.
  * @param   pDevIns             Pointer to the PDM device instance data.
  * @param   pThis               Pointer to the shared TPM device.
  * @param   pLoc                The locality state.
@@ -664,7 +661,6 @@ static void tpmLocSetIntSts(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOCALITY p
 /**
  * Selects the next locality which has requested access.
  *
- * @returns nothing.
  * @param   pDevIns             Pointer to the PDM device instance data.
  * @param   pThis               Pointer to the shared TPM device.
  */
@@ -1456,7 +1452,6 @@ static DECLCALLBACK(void) tpmR3CmdExecWorker(PPDMDEVINS pDevIns, void *pvUser)
 /**
  * Resets the shared hardware TPM state.
  *
- * @returns nothing.
  * @param   pThis               Pointer to the shared TPM device.
  */
 static void tpmR3HwReset(PDEVTPM pThis)

@@ -88,7 +88,6 @@ static const PCUTSGADGETCLASSIF g_apUtsGadgetClass[] =
 /**
  * Destroys a gadget instance.
  *
- * @returns nothing.
  * @param   pThis    The gadget instance.
  */
 static void utsGadgetDestroy(PUTSGADGETINT pThis)

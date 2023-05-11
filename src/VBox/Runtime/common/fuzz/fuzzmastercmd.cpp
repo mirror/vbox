@@ -1579,7 +1579,6 @@ static int rtFuzzCmdMasterFuzzCfgLoadFromFile(PRTFUZZCMDMASTER pThis, const char
 /**
  * Destroys all running fuzzers for the given master state.
  *
- * @returns nothing.
  * @param   pThis               The fuzzing master command state.
  */
 static void rtFuzzCmdMasterDestroy(PRTFUZZCMDMASTER pThis)
@@ -1591,7 +1590,6 @@ static void rtFuzzCmdMasterDestroy(PRTFUZZCMDMASTER pThis)
 /**
  * Sends an ACK response to the client.
  *
- * @returns nothing.
  * @param   hSocket             The socket handle to send the ACK to.
  * @param   pszResponse         Additional response data.
  */
@@ -1622,7 +1620,6 @@ static void rtFuzzCmdMasterTcpSendAck(RTSOCKET hSocket, const char *pszResponse)
 /**
  * Sends an NACK response to the client.
  *
- * @returns nothing.
  * @param   hSocket             The socket handle to send the ACK to.
  * @param   pErrInfo            Optional error information to send along.
  */

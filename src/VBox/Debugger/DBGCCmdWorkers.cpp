@@ -273,7 +273,6 @@ DECLHIDDEN(PDBGCTFLOW) dbgcFlowTraceModGet(PDBGC pDbgc, uint32_t iTraceFlowMod)
 /**
  * Inserts the given trace flow module into the list.
  *
- * @returns nothing.
  * @param   pDbgc         The DBGC instance.
  * @param   pTraceFlow    The trace flow module.
  */

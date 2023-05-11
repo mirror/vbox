@@ -684,7 +684,6 @@ static int drvdiskintDiscardRecords(PDRVDISKINTEGRITY pThis, PCRTRANGE paRanges,
 /**
  * Adds a request to the active list.
  *
- * @returns nothing.
  * @param   pThis    The driver instance data.
  * @param   pIoReq   The request to add.
  */
@@ -705,7 +704,6 @@ static void drvdiskintIoReqAdd(PDRVDISKINTEGRITY pThis, PDRVDISKAIOREQ pIoReq)
 /**
  * Removes a request from the active list.
  *
- * @returns nothing.
  * @param   pThis    The driver instance data.
  * @param   pIoReq   The request to remove.
  */
@@ -786,7 +784,6 @@ static int drvdiskintReadAfterWriteVerify(PDRVDISKINTEGRITY pThis, PDRVDISKAIORE
 /**
  * Fires a read event if enabled.
  *
- * @returns nothing.
  * @param   pThis    The driver instance data.
  * @param   uGrp     The group ID.
  * @param   fAsync   Flag whether this is an async request.
@@ -807,7 +804,6 @@ DECLINLINE(void) drvdiskintTraceLogFireEvtRead(PDRVDISKINTEGRITY pThis, uintptr_
 /**
  * Fires a write event if enabled.
  *
- * @returns nothing.
  * @param   pThis    The driver instance data.
  * @param   uGrp     The group ID.
  * @param   fAsync   Flag whether this is an async request.
@@ -828,7 +824,6 @@ DECLINLINE(void) drvdiskintTraceLogFireEvtWrite(PDRVDISKINTEGRITY pThis, uintptr
 /**
  * Fires a flush event if enabled.
  *
- * @returns nothing.
  * @param   pThis    The driver instance data.
  * @param   uGrp     The group ID.
  * @param   fAsync   Flag whether this is an async request.
@@ -847,7 +842,6 @@ DECLINLINE(void) drvdiskintTraceLogFireEvtFlush(PDRVDISKINTEGRITY pThis, uintptr
 /**
  * Fires a request complete event if enabled.
  *
- * @returns nothing.
  * @param   pThis    The driver instance data.
  * @param   uGrp     The group ID.
  * @param   rcReq    Status code the request completed with.

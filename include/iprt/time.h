@@ -346,7 +346,6 @@ DECLINLINE(PRTTIMESPEC) RTTimeSpecSubSeconds(PRTTIMESPEC pTime, int64_t i64Secon
 /**
  * Gives the time in seconds and nanoseconds.
  *
- * @returns pTime.
  * @param   pTime           The time spec to interpret.
  * @param   *pi32Seconds    Where to store the time period in seconds.
  * @param   *pi32Nano       Where to store the time period in nanoseconds.

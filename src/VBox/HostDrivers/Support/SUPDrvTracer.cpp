@@ -2477,7 +2477,6 @@ int VBOXCALL supdrvTracerInit(PSUPDRVDEVEXT pDevExt)
 /**
  * Late module termination hook.
  *
- * @returns VBox status code.
  * @param   pDevExt             The device extension structure.
  */
 void VBOXCALL supdrvTracerTerm(PSUPDRVDEVEXT pDevExt)

@@ -1257,7 +1257,6 @@ static DECLCALLBACK(int) dbgDiggerLinuxCfgDbDestroyWorker(PRTSTRSPACECORE pStr, 
 /**
  * Destroy the config database.
  *
- * @returns nothing.
  * @param   pThis               The Linux digger data.
  */
 static void dbgDiggerLinuxCfgDbDestroy(PDBGDIGGERLINUX pThis)

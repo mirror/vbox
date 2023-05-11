@@ -531,7 +531,6 @@ static int tstPDMACStressTestFileOpen(PVM pVM, PPDMACTESTFILE pTestFile, unsigne
 /**
  * Closes a test file.
  *
- * @returns nothing.
  * @param pTestFile    Pointer to the test file.
  */
 static void tstPDMACStressTestFileClose(PPDMACTESTFILE pTestFile)

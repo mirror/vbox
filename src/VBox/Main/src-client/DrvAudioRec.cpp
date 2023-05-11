@@ -629,7 +629,6 @@ static DECLCALLBACK(void *) drvAudioVideoRecQueryInterface(PPDMIBASE pInterface,
 /**
  * Shuts down (closes) a recording sink,
  *
- * @returns VBox status code.
  * @param   pSink               Recording sink to shut down.
  */
 static void avRecSinkShutdown(PAVRECSINK pSink)

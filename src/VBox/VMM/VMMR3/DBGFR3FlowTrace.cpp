@@ -281,7 +281,6 @@ static PDBGFFLOWTRACERECORDINT dbgfR3FlowTraceRecordCreate(PDBGFFLOWTRACEMODPROB
 /**
  * Destroys the given record.
  *
- * @returns nothing.
  * @param   pRecord                 The record to destroy.
  */
 static void dbgfR3FlowTraceRecordDestroy(PDBGFFLOWTRACERECORDINT pRecord)
@@ -317,7 +316,6 @@ static PDBGFFLOWTRACEREPORTINT dbgfR3FlowTraceReportCreate(PUVM pUVM, uint32_t c
 /**
  * Destroys the given report releasing all references hold to the containing records.
  *
- * @returns nothing.
  * @param   pReport                 The report to destroy.
  */
 static void dbgfR3FlowTraceReportDestroy(PDBGFFLOWTRACEREPORTINT pReport)
@@ -410,7 +408,6 @@ static int dbgfR3FlowTraceModProbeResolveIndirectAddr(PUVM pUVM, VMCPUID idCpu, 
 /**
  * Destroys the given flow trace module freeing all allocated resources.
  *
- * @returns nothing.
  * @param   pThis                   The flow trace module instance data.
  */
 static void dbgfR3FlowTraceModDestroy(PDBGFFLOWTRACEMODINT pThis)
@@ -964,7 +961,6 @@ static PDBGFFLOWTRACEMODPROBELOC dbgfR3TraceModGetProbeLocAtAddr(PDBGFFLOWTRACEM
 /**
  * Cleans up any allocated resources for each entry in the given probe for the given range.
  *
- * @returns nothing.
  * @param   pProbe                  The probe instance.
  * @param   idxStart                Start index to clean up.
  * @param   cEntries                How many entries to clean up.
@@ -1013,7 +1009,6 @@ static void dbgfR3ProbeEntryCleanup(PDBGFFLOWTRACEPROBEINT pProbe, uint32_t idxS
 /**
  * Destroys the given flow trace probe freeing all allocated resources.
  *
- * @returns nothing.
  * @param   pProbe                  The flow trace probe instance data.
  */
 static void dbgfR3FlowTraceProbeDestroy(PDBGFFLOWTRACEPROBEINT pProbe)
@@ -1150,7 +1145,6 @@ static int dbgfR3ProbeEntryDup(PUVM pUVM, PDBGFFLOWTRACEPROBEENTRY pDst, PCDBGFF
 /**
  * Recalculates the size occupied by the data of this probe for each invocation.
  *
- * @returns nothing.
  * @param   pProbe                  The probe instance.
  */
 static void dbgfR3ProbeRecalcSize(PDBGFFLOWTRACEPROBEINT pProbe)

@@ -2475,7 +2475,6 @@ static int drvvdMediaExIoReqRemove(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq)
  * Retires a given I/O request marking it as complete and notiyfing the
  * device/driver above about the completion if requested.
  *
- * @returns VBox status code.
  * @param   pThis     VBox disk container instance data.
  * @param   pIoReq    I/O request to complete.
  * @param   rcReq     The status code the request completed with.
@@ -3026,7 +3025,6 @@ static int drvvdMediaExIoReqReadWriteProcess(PVBOXDISK pThis, PPDMMEDIAEXIOREQIN
 /**
  * Tries to process any requests waiting for available I/O memory.
  *
- * @returns nothing.
  * @param   pThis     VBox disk container instance data.
  */
 static void drvvdMediaExIoReqProcessWaiting(PVBOXDISK pThis)
@@ -3107,7 +3105,6 @@ static void drvvdMediaExIoReqProcessWaiting(PVBOXDISK pThis)
 /**
  * Frees a I/O memory buffer allocated previously.
  *
- * @returns nothing.
  * @param   pThis     VBox disk container instance data.
  * @param   pIoReq    I/O request for which to free memory.
  */
@@ -3185,7 +3182,6 @@ DECLINLINE(const char *) drvvdMediaExIoReqTypeStringify(PDMMEDIAEXIOREQTYPE enmT
 /**
  * Dumps the interesting bits about the given I/O request to the release log.
  *
- * @returns nothing.
  * @param   pThis     VBox disk container instance data.
  * @param   pIoReq    The I/O request to dump.
  */
@@ -4200,7 +4196,6 @@ static int drvvdStatsRegister(PVBOXDISK pThis)
 /**
  * Deregisters statistics associated with the given media driver.
  *
- * @returns nothing.
  * @param   pThis      The media driver instance.
  */
 static void drvvdStatsDeregister(PVBOXDISK pThis)
@@ -4283,7 +4278,6 @@ static DECLCALLBACK(int) drvvdLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 /**
  * Worker for the power off or destruct callback.
  *
- * @returns nothing.
  * @param   pDrvIns    The driver instance.
  */
 static void drvvdPowerOffOrDestructOrUnmount(PPDMDRVINS pDrvIns)

@@ -713,7 +713,6 @@ uint32_t UefiVariableStore::i_uefiVarAttrToMask(const std::vector<UefiVariableAt
 /**
  * Converts the given aatribute mask to the attribute vector used externally.
  *
- * @returns nothing.
  * @param   fAttr               The attribute mask.
  * @param   aAttributes         The vector to store the attibutes in.
  */

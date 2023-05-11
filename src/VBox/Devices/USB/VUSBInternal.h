@@ -522,7 +522,6 @@ DECLHIDDEN(int) vusbUrbPoolInit(PVUSBURBPOOL pUrbPool);
 /**
  * Destroy a given URB pool freeing all ressources.
  *
- * @returns nothing.
  * @param   pUrbPool    The URB pool to destroy.
  */
 DECLHIDDEN(void) vusbUrbPoolDestroy(PVUSBURBPOOL pUrbPool);
@@ -546,17 +545,16 @@ DECLHIDDEN(PVUSBURB) vusbUrbPoolAlloc(PVUSBURBPOOL pUrbPool, VUSBXFERTYPE enmTyp
 /**
  * Frees a given URB.
  *
- * @returns nothing.
  * @param   pUrbPool    The URB pool the URB was allocated from.
  * @param   pUrb        The URB to free.
  */
 DECLHIDDEN(void) vusbUrbPoolFree(PVUSBURBPOOL pUrbPool, PVUSBURB pUrb);
 
 #ifdef LOG_ENABLED
+
 /**
  * Logs an URB in the debug log.
  *
- * @returns nothing.
  * @param   pUrb        The URB to log.
  * @param   pszMsg      Additional message to log.
  * @param   fComplete   Flag whther the URB is completing.
@@ -577,7 +575,8 @@ DECLHIDDEN(const char *) vusbUrbTypeName(VUSBXFERTYPE enmType);
  * Return the URB status as string from the given enum.
  */
 DECLHIDDEN(const char *) vusbUrbStatusName(VUSBSTATUS enmStatus);
-#endif
+
+#endif /* LOG_ENABLED*/
 
 DECLINLINE(void) vusbUrbUnlink(PVUSBURB pUrb)
 {

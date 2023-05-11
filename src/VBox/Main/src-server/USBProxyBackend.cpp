@@ -200,7 +200,6 @@ int USBProxyBackend::captureDevice(HostUSBDevice *aDevice)
  *
  * This is used by the proxy to release temporary filters.
  *
- * @returns VBox status code.
  * @param   aDevice     The device in question.
  * @param   aSuccess    Whether it succeeded or failed.
  */
@@ -232,7 +231,6 @@ int USBProxyBackend::releaseDevice(HostUSBDevice *aDevice)
  *
  * This is used by the proxy to release temporary filters.
  *
- * @returns VBox status code.
  * @param   aDevice     The device in question.
  * @param   aSuccess    Whether it succeeded or failed.
  */

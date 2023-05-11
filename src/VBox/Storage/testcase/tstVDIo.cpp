@@ -2777,7 +2777,6 @@ static int tstVDIoPatternGetBuffer(PVDPATTERN pPattern, void **ppv, size_t cb)
 /**
  * Executes the given script.
  *
- * @returns nothing.
  * @param   pszName      The script name.
  * @param   pszScript    The script to execute.
  */
@@ -2902,8 +2901,6 @@ static void tstVDIoScriptExec(const char *pszName, const char *pszScript)
 /**
  * Executes the given I/O script using the new scripting engine.
  *
- * @returns nothing.
- *
  * @param pcszFilename    The script to execute.
  */
 static void tstVDIoScriptRun(const char *pcszFilename)
@@ -2929,8 +2926,6 @@ static void tstVDIoScriptRun(const char *pcszFilename)
 
 /**
  * Run builtin tests.
- *
- * @returns nothing.
  */
 static void tstVDIoRunBuiltinTests(void)
 {

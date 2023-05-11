@@ -76,7 +76,6 @@ typedef struct UTSGADGETHOSTIF
     /**
      * Terminates the gadget host interface.
      *
-     * @returns nothing.
      * @param   pIf           The interface specific instance data.
      */
     DECLR3CALLBACKMEMBER(void, pfnTerm, (PUTSGADGETHOSTTYPEINT pIf));

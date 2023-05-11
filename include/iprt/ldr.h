@@ -528,7 +528,6 @@ typedef FNRTLDRRDRMEMREAD *PFNRTLDRRDRMEMREAD;
  * Called to when the module is unloaded (or done loading) to release resources
  * associated with it (@a pvUser).
  *
- * @returns IPRT status code
  * @param   pvUser      The user parameter.
  * @param   cbImage     The image size.
  */

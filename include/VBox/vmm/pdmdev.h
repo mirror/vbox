@@ -133,7 +133,6 @@ typedef FNPDMDEVRELOCATE *PFNPDMDEVRELOCATE;
 /**
  * Power On notification.
  *
- * @returns VBox status.
  * @param   pDevIns     The device instance data.
  *
  * @remarks Caller enters the device critical section.
@@ -145,7 +144,6 @@ typedef FNPDMDEVPOWERON *PFNPDMDEVPOWERON;
 /**
  * Reset notification.
  *
- * @returns VBox status.
  * @param   pDevIns     The device instance data.
  *
  * @remarks Caller enters the device critical section.
@@ -160,7 +158,6 @@ typedef FNPDMDEVRESET *PFNPDMDEVRESET;
  * This is mainly for emulating the 286 style protected mode exits, in which
  * most devices should remain in their current state.
  *
- * @returns VBox status.
  * @param   pDevIns     The device instance data.
  * @param   fFlags      PDMVMRESET_F_XXX (only bits relevant to soft resets).
  *
@@ -195,7 +192,6 @@ typedef FNPDMDEVSOFTRESET *PFNPDMDEVSOFTRESET;
 /**
  * Suspend notification.
  *
- * @returns VBox status.
  * @param   pDevIns     The device instance data.
  * @thread  EMT(0)
  *
@@ -208,7 +204,6 @@ typedef FNPDMDEVSUSPEND *PFNPDMDEVSUSPEND;
 /**
  * Resume notification.
  *
- * @returns VBox status.
  * @param   pDevIns     The device instance data.
  *
  * @remarks Caller enters the device critical section.
@@ -3612,7 +3607,6 @@ typedef struct PDMDEVHLPR3
      * Same as pfnSTAMRegister except that the name is specified in a
      * RTStrPrintfV like fashion.
      *
-     * @returns VBox status.
      * @param   pDevIns             Device instance of the DMA.
      * @param   pvSample            Pointer to the sample.
      * @param   enmType             Sample type. This indicates what pvSample is
@@ -7714,7 +7708,6 @@ DECLINLINE(void) PDMDevHlpSTAMRegister(PPDMDEVINS pDevIns, void *pvSample, STAMT
  * Same as pfnSTAMRegister except that the name is specified in a
  * RTStrPrintf like fashion.
  *
- * @returns VBox status.
  * @param   pDevIns             Device instance of the DMA.
  * @param   pvSample            Pointer to the sample.
  * @param   enmType             Sample type. This indicates what pvSample is

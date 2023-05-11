@@ -5519,7 +5519,6 @@ static void xhciR3PortPower(PXHCI pThis, PXHCICC pThisCC, unsigned iPort, bool f
 /**
  * Port reset done callback.
  *
- * @returns nothing.
  * @param   pDevIns             The device instance data.
  * @param   iPort               The XHCI port index of the port being resetted.
  */

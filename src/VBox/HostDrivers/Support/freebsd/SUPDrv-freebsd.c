@@ -281,7 +281,6 @@ static int VBoxDrvFreeBSDOpenUsr(struct cdev *pDev, int fOpen, int iDevType, str
 /**
  * Close a file device previously opened by VBoxDrvFreeBSDOpen.
  *
- * @returns 0 on success.
  * @param   pvData      The session being closed.
  */
 static void vboxdrvFreeBSDDtr(void *pvData)

@@ -1726,7 +1726,6 @@ HRESULT SessionMachine::takeSnapshot(const com::Utf8Str &aName,
  * @note Locks this object for writing.
  *
  * @param task
- * @return
  */
 void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
 {

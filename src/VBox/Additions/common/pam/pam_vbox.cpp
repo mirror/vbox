@@ -311,7 +311,6 @@ static int pam_vbox_init(pam_handle_t *hPAM)
 /**
  * Shuts down pam_vbox.
  *
- * @return  IPRT status code.
  * @param   hPAM                    PAM handle.
  */
 static void pam_vbox_shutdown(pam_handle_t *hPAM)

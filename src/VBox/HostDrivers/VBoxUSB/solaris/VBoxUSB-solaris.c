@@ -1567,8 +1567,6 @@ LOCAL int vboxUsbSolarisInitPower(vboxusb_state_t *pState)
  *
  * @param   pState          The USB device instance.
  * @remarks Requires the device state mutex to be held.
- *
- * @returns VBox status code.
  */
 LOCAL void vboxUsbSolarisDestroyPower(vboxusb_state_t *pState)
 {

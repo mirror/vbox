@@ -453,7 +453,6 @@ static bool qcowHdrConvertToHostEndianess(PQCowHeader pHeader)
 /**
  * Creates a QCOW header from the given image state.
  *
- * @returns nothing.
  * @param   pImage     Image instance data.
  * @param   pHeader    Pointer to the header to convert.
  * @param   pcbHeader  Where to store the size of the header to write.
@@ -499,13 +498,12 @@ static void qcowHdrConvertFromHostEndianess(PQCOWIMAGE pImage, PQCowHeader pHead
 /**
  * Convert table entries from little endian to host endianess.
  *
- * @returns nothing.
  * @param   paTbl       Pointer to the table.
  * @param   cEntries    Number of entries in the table.
  */
 static void qcowTableConvertToHostEndianess(uint64_t *paTbl, uint32_t cEntries)
 {
-    while(cEntries-- > 0)
+    while (cEntries-- > 0)
     {
         *paTbl = RT_BE2H_U64(*paTbl);
         paTbl++;
@@ -515,15 +513,14 @@ static void qcowTableConvertToHostEndianess(uint64_t *paTbl, uint32_t cEntries)
 /**
  * Convert table entries from host to little endian format.
  *
- * @returns nothing.
  * @param   paTblImg    Pointer to the table which will store the little endian table.
  * @param   paTbl       The source table to convert.
  * @param   cEntries    Number of entries in the table.
  */
-static void qcowTableConvertFromHostEndianess(uint64_t *paTblImg, uint64_t *paTbl,
+static void qcowTableConvertFromHostEndianess(uint64_t *paTblImg, uint64_t const *paTbl,
                                               uint32_t cEntries)
 {
-    while(cEntries-- > 0)
+    while (cEntries-- > 0)
     {
         *paTblImg = RT_H2BE_U64(*paTbl);
         paTbl++;
@@ -549,7 +546,6 @@ static int qcowL2TblCacheCreate(PQCOWIMAGE pImage)
 /**
  * Destroys the L2 table cache.
  *
- * @returns nothing.
  * @param   pImage    The image instance data.
  */
 static void qcowL2TblCacheDestroy(PQCOWIMAGE pImage)
@@ -608,7 +604,6 @@ static PQCOWL2CACHEENTRY qcowL2TblCacheRetain(PQCOWIMAGE pImage, uint64_t offL2T
 /**
  * Releases a L2 table cache entry.
  *
- * @returns nothing.
  * @param   pL2Entry    The L2 cache entry.
  */
 static void qcowL2TblCacheEntryRelease(PQCOWL2CACHEENTRY pL2Entry)
@@ -674,7 +669,6 @@ static PQCOWL2CACHEENTRY qcowL2TblCacheEntryAlloc(PQCOWIMAGE pImage)
 /**
  * Frees a L2 table cache entry.
  *
- * @returns nothing.
  * @param   pImage    The image instance data.
  * @param   pL2Entry  The L2 cache entry to free.
  */
@@ -690,7 +684,6 @@ static void qcowL2TblCacheEntryFree(PQCOWIMAGE pImage, PQCOWL2CACHEENTRY pL2Entr
 /**
  * Inserts an entry in the L2 table cache.
  *
- * @returns nothing.
  * @param   pImage    The image instance data.
  * @param   pL2Entry  The L2 cache entry to insert.
  */
@@ -789,7 +782,6 @@ static int qcowL2TblCacheFetch(PQCOWIMAGE pImage, PVDIOCTX pIoCtx, uint64_t offL
 /**
  * Sets the L1, L2 and offset bitmasks and L1 and L2 bit shift members.
  *
- * @returns nothing.
  * @param   pImage    The image instance data.
  */
 static void qcowTableMasksInit(PQCOWIMAGE pImage)
@@ -810,7 +802,6 @@ static void qcowTableMasksInit(PQCOWIMAGE pImage)
 /**
  * Converts a given logical offset into the
  *
- * @returns nothing.
  * @param   pImage         The image instance data.
  * @param   off            The logical offset to convert.
  * @param   pidxL1         Where to store the index in the L1 table on success.

@@ -523,7 +523,6 @@ static void *ioPerfJobTestGetWriteBufForOffset(PIOPERFJOB pJob, uint64_t off)
 /**
  * Initialize the given request for submission.
  *
- * @returns nothing.
  * @param   pJob                The job data for the current worker.
  * @param   pIoReq              The request to initialize.
  */
@@ -639,7 +638,6 @@ static int ioPerfJobTestInit(PIOPERFJOB pJob)
 /**
  * Frees allocated resources specific for the current test.
  *
- * @returns nothing.
  * @param   pJob                The job data for the current worker.
  */
 static void ioPerfJobTestFinish(PIOPERFJOB pJob)
@@ -808,7 +806,6 @@ static int ioPerfJobTestIoLoop(PIOPERFJOB pJob)
  * Calculates the statistic values for the given job after a
  * test finished.
  *
- * @returns nothing.
  * @param   pJob                The job data.
  */
 static void ioPerfJobStats(PIOPERFJOB pJob)

@@ -1226,7 +1226,6 @@ VMMR3DECL(int) DBGFR3TypeQueryValByType(PUVM pUVM, PCDBGFADDRESS pAddress, const
  * Frees all acquired resources of a value previously obtained with
  * DBGFR3TypeQueryValByType().
  *
- * @returns nothing.
  * @param   pVal                The value to free.
  */
 VMMR3DECL(void) DBGFR3TypeValFree(PDBGFTYPEVAL pVal)

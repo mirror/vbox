@@ -354,7 +354,6 @@ static int dbgcGdbStubTpRegister(PGDBSTUBCTX pThis, GDBSTUBTPTYPE enmTpType, uin
 /**
  * Deregisters the given trace point (needs to be unregistered from DBGF by the caller before).
  *
- * @returns nothing.
  * @param   pTp                 The trace point to deregister.
  */
 static void dbgcGdbStubTpDeregister(PGDBSTUBTP pTp)
@@ -2133,7 +2132,6 @@ static int dbgcGdbStubCtxPktProcess(PGDBSTUBCTX pThis)
 /**
  * Resets the packet buffer.
  *
- * @returns nothing.
  * @param   pThis               The GDB stub context.
  */
 static void dbgcGdbStubCtxPktBufReset(PGDBSTUBCTX pThis)
@@ -2147,7 +2145,6 @@ static void dbgcGdbStubCtxPktBufReset(PGDBSTUBCTX pThis)
 /**
  * Resets the given GDB stub context to the initial state.
  *
- * @returns nothing.
  * @param   pThis               The GDB stub context.
  */
 static void dbgcGdbStubCtxReset(PGDBSTUBCTX pThis)
@@ -2776,7 +2773,6 @@ static int dbgcGdbStubCtxCreate(PPGDBSTUBCTX ppGdbStubCtx, PCDBGCIO pIo, unsigne
 /**
  * Destroys the given GDB stub context.
  *
- * @returns nothing.
  * @param   pThis                   The GDB stub context to destroy.
  */
 static void dbgcGdbStubDestroy(PGDBSTUBCTX pThis)

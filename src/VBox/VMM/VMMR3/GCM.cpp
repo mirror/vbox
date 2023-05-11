@@ -249,7 +249,6 @@ VMMR3_INT_DECL(void) GCMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  *
  * Do whatever fixer-specific resetting that needs to be done.
  *
- * @returns VBox status code.
  * @param   pVM     The cross context VM structure.
  */
 VMMR3_INT_DECL(void) GCMR3Reset(PVM pVM)

@@ -240,7 +240,6 @@ vboxEnableVbva(ScrnInfoPtr pScrn)
  * information. This function is intended to be called when an X
  * virtual terminal is disabled, or the X server is terminated.
  *
- * @returns TRUE for success, FALSE for failure
  * @param   pScrn   Pointer to a structure describing the X screen in use
  */
 void

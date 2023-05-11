@@ -184,7 +184,6 @@ static int vdScriptInterpreterError(PVDSCRIPTINTERPCTX pThis, int rc, RT_SRC_POS
 /**
  * Pops the topmost value from the value stack.
  *
- * @returns nothing.
  * @param   pThis      The interpreter context.
  * @param   pVal       Where to store the value.
  */
@@ -429,7 +428,6 @@ static int vdScriptInterpreterScopeCreate(PVDSCRIPTINTERPCTX pThis)
 /**
  * Destroys the current scope.
  *
- * @returns nothing.
  * @param   pThis          The interpreter context.
  */
 static void vdScriptInterpreterScopeDestroyCurr(PVDSCRIPTINTERPCTX pThis)

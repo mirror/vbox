@@ -127,7 +127,6 @@ typedef struct RTDVMFMTOPS
     /**
      * Closes the volume format.
      *
-     * @returns nothing.
      * @param   hVolMgrFmt      The format specific volume manager handle.
      */
     DECLCALLBACKMEMBER(void, pfnClose,(RTDVMFMT hVolMgrFmt));
@@ -219,7 +218,6 @@ typedef struct RTDVMFMTOPS
     /**
      * Closes a volume handle.
      *
-     * @returns nothing.
      * @param   hVolFmt         The format specific volume handle.
      */
     DECLCALLBACKMEMBER(void, pfnVolumeClose,(RTDVMVOLUMEFMT hVolFmt));

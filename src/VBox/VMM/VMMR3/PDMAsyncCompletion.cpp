@@ -786,7 +786,6 @@ bool pdmacEpIsTransferAllowed(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, uint32_t cb
 /**
  * Called by the endpoint if a task has finished.
  *
- * @returns nothing
  * @param   pTask                     Pointer to the finished task.
  * @param   rc                        Status code of the completed request.
  * @param   fCallCompletionHandler    Flag whether the completion handler should be called to
@@ -940,7 +939,6 @@ int pdmR3AsyncCompletionEpClassInit(PVM pVM, PCPDMASYNCCOMPLETIONEPCLASSOPS pEpC
 /**
  * Worker terminating all endpoint classes.
  *
- * @returns nothing
  * @param   pEndpointClass    Pointer to the endpoint class to terminate.
  *
  * @remarks This method ensures that any still open endpoint is closed.
@@ -977,7 +975,6 @@ static void pdmR3AsyncCompletionEpClassTerminate(PPDMASYNCCOMPLETIONEPCLASS pEnd
 /**
  * Records the size of the request in the statistics.
  *
- * @returns nothing.
  * @param   pEndpoint    The endpoint to register the request size for.
  * @param   cbReq        Size of the request.
  */
@@ -1020,7 +1017,6 @@ static void pdmR3AsyncCompletionStatisticsRecordSize(PPDMASYNCCOMPLETIONENDPOINT
 /**
  * Records the required processing time of a request.
  *
- * @returns nothing.
  * @param   pEndpoint    The endpoint.
  * @param   cNsRun       The request time in nanoseconds.
  */
@@ -1233,7 +1229,6 @@ static int pdmR3AsyncCompletionStatisticsRegister(PPDMASYNCCOMPLETIONENDPOINT pE
 /**
  * Deregisters advanced statistics for one endpoint.
  *
- * @returns nothing.
  * @param   pEndpoint    The endpoint to deregister the advanced statistics for.
  */
 static void pdmR3AsyncCompletionStatisticsDeregister(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
@@ -1286,7 +1281,6 @@ int pdmR3AsyncCompletionTerm(PVM pVM)
 /**
  * Resume worker for the async completion manager.
  *
- * @returns nothing.
  * @param   pVM The cross context VM structure.
  */
 void pdmR3AsyncCompletionResume(PVM pVM)
@@ -1373,7 +1367,6 @@ static PPDMASYNCCOMPLETIONTASK pdmR3AsyncCompletionGetTask(PPDMASYNCCOMPLETIONEN
 /**
  * Puts a task in one of the caches.
  *
- * @returns nothing.
  * @param   pEndpoint    The endpoint the task belongs to.
  * @param   pTask        The task to cache.
  */
@@ -1511,7 +1504,6 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpCreateForFile(PPPDMASYNCCOMPLETIONENDPOINT 
 /**
  * Closes a endpoint waiting for any pending tasks to finish.
  *
- * @returns nothing.
  * @param   pEndpoint       Handle of the endpoint.
  */
 VMMR3DECL(void) PDMR3AsyncCompletionEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)

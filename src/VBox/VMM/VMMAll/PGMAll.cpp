@@ -3857,7 +3857,6 @@ int pgmLock(PVMCC pVM, bool fVoid)
 /**
  * Release the PGM lock.
  *
- * @returns VBox status code
  * @param   pVM         The cross context VM structure.
  */
 void pgmUnlock(PVMCC pVM)

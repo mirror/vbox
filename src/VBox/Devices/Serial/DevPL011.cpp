@@ -379,7 +379,6 @@ static const char *s_aszStopBits[] =
 /**
  * Updates the IRQ state based on the current device state.
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared serial port instance data.
  * @param   pThisCC             The serial port instance data for the current context.
@@ -460,7 +459,6 @@ static VBOXSTRICTRC pl011Xmit(PPDMDEVINS pDevIns, PDEVPL011CC pThisCC, PDEVPL011
 /**
  * Updates the serial port parameters of the attached driver with the current configuration.
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared serial port instance data.
  * @param   pThisCC             The serial port instance data for the current context.
@@ -533,7 +531,6 @@ static void pl011R3ParamsUpdate(PPDMDEVINS pDevIns, PDEVPL011 pThis, PDEVPL011CC
  * Reset the transmit/receive related bits to the standard values
  * (after a detach/attach/reset event).
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared serial port instance data.
  * @param   pThisCC             The serial port instance data for the current context.
@@ -572,7 +569,6 @@ static void pl011R3XferReset(PPDMDEVINS pDevIns, PDEVPL011 pThis, PDEVPL011CC pT
 /**
  * Tries to copy the specified amount of data from the active TX queue (register or FIFO).
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared serial port instance data.
  * @param   pThisCC             The serial port instance data for the current context.

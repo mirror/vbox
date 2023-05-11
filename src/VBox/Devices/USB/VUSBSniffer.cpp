@@ -201,7 +201,6 @@ DECLHIDDEN(int) VUSBSnifferCreate(PVUSBSNIFFER phSniffer, uint32_t fFlags,
 /**
  * Destroys the given VUSB sniffer instance.
  *
- * @returns nothing.
  * @param   hSniffer              The sniffer instance to destroy.
  */
 DECLHIDDEN(void) VUSBSnifferDestroy(VUSBSNIFFER hSniffer)

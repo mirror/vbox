@@ -511,7 +511,6 @@ static int rtZipTarFssWriter_ObjInfoToHdrTar(PRTZIPTARFSSTREAMWRITER pThis, cons
 /**
  * Formats a given 32-bit value into a CPIO header field.
  *
- * @returns nothing.
  * @param   pach8Field      The field to format the value into.
  * @param   u32             The value to format.
  */

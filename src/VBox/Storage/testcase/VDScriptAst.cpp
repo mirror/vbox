@@ -37,7 +37,6 @@
 /**
  * Put all child nodes of the given expression AST node onto the given to free list.
  *
- * @returns nothing.
  * @param   pList    The free list to append everything to.
  * @param   pAstNode The expression node to free.
  */
@@ -146,7 +145,6 @@ static void vdScriptAstNodeExpressionPutOnFreeList(PRTLISTANCHOR pList, PVDSCRIP
 /**
  * Free a given statement AST node and put everything on the given to free list.
  *
- * @returns nothing.
  * @param   pList    The free list to append everything to.
  * @param   pAstNode The statement node to free.
  */

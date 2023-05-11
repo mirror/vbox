@@ -365,7 +365,6 @@ void ShClBackendDestroy(PSHCLBACKEND pBackend);
 /**
  * Called when a new HGCM client connects.
  *
- * @returns VBox status code.
  * @param   pBackend            Shared Clipboard backend to set callbacks for.
  * @param   pCallbacks          Backend callbacks to use.
  *                              When NULL is specified, the backend's default callbacks are being used.

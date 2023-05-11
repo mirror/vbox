@@ -361,7 +361,6 @@ DECLINLINE(bool) rtJsonTokenizerIsEos(PRTJSONTOKENIZER pTokenizer)
 /**
  * Skip one character in the input stream.
  *
- * @returns nothing.
  * @param   pTokenizer      The tokenizer state.
  */
 DECLINLINE(void) rtJsonTokenizerSkipCh(PRTJSONTOKENIZER pTokenizer)
@@ -406,7 +405,6 @@ DECLINLINE(char) rtJsonTokenizerGetCh(PRTJSONTOKENIZER pTokenizer)
 /**
  * Sets a new line for the tokenizer.
  *
- * @returns nothing.
  * @param   pTokenizer      The tokenizer state.
  * @param   cSkip           Amount of characters to skip making up the new line.
  */
@@ -445,7 +443,6 @@ DECLINLINE(bool) rtJsonTokenizerIsSkipNewLine(PRTJSONTOKENIZER pTokenizer)
  * Skip all whitespace starting from the current input buffer position.
  * Skips all present comments too.
  *
- * @returns nothing.
  * @param   pTokenizer      The tokenizer state.
  */
 DECLINLINE(void) rtJsonTokenizerSkipWhitespace(PRTJSONTOKENIZER pTokenizer)
@@ -947,7 +944,6 @@ static int rtJsonTokenizerInit(PRTJSONTOKENIZER pTokenizer, PFNRTJSONTOKENIZERRE
 /**
  * Cleans up any resources still in control of the given token.
  *
- * @returns nothing.
  * @param   pToken              The toke nto clean up.
  */
 static void rtJsonTokenizerTokenCleanup(PRTJSONTOKEN pToken)
@@ -960,7 +956,6 @@ static void rtJsonTokenizerTokenCleanup(PRTJSONTOKEN pToken)
 /**
  * Destroys a given tokenizer state.
  *
- * @returns nothing.
  * @param   pTokenizer      The tokenizer to destroy.
  */
 static void rtJsonTokenizerDestroy(PRTJSONTOKENIZER pTokenizer)
@@ -990,7 +985,6 @@ DECLINLINE(int) rtJsonTokenizerGetToken(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKE
 /**
  * Consume the current token advancing to the next in the stream.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  */
 static void rtJsonTokenizerConsume(PRTJSONTOKENIZER pTokenizer)
@@ -1030,7 +1024,6 @@ static bool rtJsonTokenizerConsumeIfMatched(PRTJSONTOKENIZER pTokenizer, RTJSONT
 /**
  * Destroys a given JSON value releasing the reference to all child values.
  *
- * @returns nothing.
  * @param   pThis           The JSON value to destroy.
  */
 static void rtJsonValDestroy(PRTJSONVALINT pThis)

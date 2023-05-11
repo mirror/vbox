@@ -643,7 +643,6 @@ void USBProxyService::i_deviceRemoved(ComObjPtr<HostUSBDevice> &aDevice)
  *
  * This is responsible for calling HostUSBDevice::updateState().
  *
- * @returns true if there is a state change.
  * @param   aDevice         The device in question.
  * @param   aUSBDevice      The USB device structure for the last enumeration.
  * @param   fFakeUpdate     Flag whether to fake updating state.

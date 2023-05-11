@@ -243,7 +243,6 @@ static void vgsvcToolboxPrintStrmHeader(const char *pszToolName, uint32_t uVersi
 /**
  * Prints a standardized termination sequence indicating that the
  * parseable stream just ended.
- *
  */
 static void vgsvcToolboxPrintStrmTermination()
 {
@@ -267,7 +266,6 @@ static int vgsvcToolboxParseMode(const char *pcszMode, RTFMODE *pfMode)
 /**
  * Destroys a path buffer list.
  *
- * @return  IPRT status code.
  * @param   pList                   Pointer to list to destroy.
  */
 static void vgsvcToolboxPathBufDestroy(PRTLISTNODE pList)

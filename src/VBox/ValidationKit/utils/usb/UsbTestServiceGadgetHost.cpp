@@ -87,7 +87,6 @@ static const PCUTSGADGETHOSTIF g_apUtsGadgetHostIf[] =
 /**
  * Destroys a gadget host instance.
  *
- * @returns nothing.
  * @param   pThis    The gadget host instance.
  */
 static void utsGadgetHostDestroy(PUTSGADGETHOSTINT pThis)

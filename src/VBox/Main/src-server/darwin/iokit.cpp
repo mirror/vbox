@@ -927,7 +927,6 @@ static bool darwinUSBDeviceIsGrabbedDetermineState(PUSBDEVICE pCur, io_object_t 
  * Worker for determining the USB device state for devices which are not captured by the VBoxUSB driver
  * Works for both, IOUSBDevice (legacy on release >= El Capitan) and IOUSBHostDevice (available on >= El Capitan).
  *
- * @returns nothing.
  * @param   pCur      The USB device data.
  * @param   USBDevice I/O Kit USB device object (either IOUSBDevice or IOUSBHostDevice).
  */

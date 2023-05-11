@@ -742,7 +742,6 @@ typedef struct PDMIMEDIAEXPORT
     /**
      * Notify the request owner about a state change for the request.
      *
-     * @returns nothing.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   hIoReq          The I/O request handle.
      * @param   pvIoReqAlloc    The allocator specific memory for this request.
@@ -754,7 +753,6 @@ typedef struct PDMIMEDIAEXPORT
     /**
      * Informs the device that the underlying medium was ejected.
      *
-     * @returns nothing.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      */
     DECLR3CALLBACKMEMBER(void, pfnMediumEjected, (PPDMIMEDIAEXPORT pInterface));
@@ -786,7 +784,6 @@ typedef struct PDMIMEDIAEX
     /**
      * Notifies the driver below that the device received a suspend notification.
      *
-     * @returns nothing.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      *
      * @note this is required because the PDM drivers in the storage area usually get their suspend notification

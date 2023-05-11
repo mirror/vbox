@@ -214,8 +214,6 @@ DECLR0VBGL(int) VbglR0GRPerform(struct VMMDevRequestHeader *pReq);
  * Free the generic request memory.
  *
  * @param pReq     pointer the request structure.
- *
- * @return VBox status code.
  */
 DECLR0VBGL(void) VbglR0GRFree(struct VMMDevRequestHeader *pReq);
 

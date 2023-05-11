@@ -175,7 +175,6 @@ DECLINLINE(void *) iobufMgrBinObjRemove(PIOBUFMGRBIN pBin)
 /**
  * Resets the bins to factory default (memory resigin in the largest bin).
  *
- * @returns nothing.
  * @param   pThis       The I/O buffer manager instance.
  */
 static void iobufMgrResetBins(PIOBUFMGRINT pThis)

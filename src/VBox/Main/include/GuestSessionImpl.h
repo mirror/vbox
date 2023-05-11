@@ -360,7 +360,8 @@ public:
     /** @}  */
 
     /** @name Public internal methods for supporting older Guest Additions via
-              VBoxService' built-in toolbox (< 7.1). */
+     *        VBoxService' built-in toolbox (< 7.1).
+     * @{  */
     int                     i_directoryCreateViaToolbox(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, int *pvrcGuest);
     int                     i_fileRemoveViaToolbox(const Utf8Str &strPath, int *pvrcGuest);
     int                     i_fsCreateTempViaToolbox(const Utf8Str &strTemplate, const Utf8Str &strPath, bool fDirectory, Utf8Str &strName,

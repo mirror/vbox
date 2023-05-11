@@ -154,7 +154,6 @@ typedef FNPDMDRVPOWERON *PFNPDMDRVPOWERON;
 /**
  * Reset notification.
  *
- * @returns VBox status.
  * @param   pDrvIns     The driver instance data.
  */
 typedef DECLCALLBACKTYPE(void, FNPDMDRVRESET,(PPDMDRVINS pDrvIns));
@@ -164,7 +163,6 @@ typedef FNPDMDRVRESET *PFNPDMDRVRESET;
 /**
  * Suspend notification.
  *
- * @returns VBox status.
  * @param   pDrvIns     The driver instance data.
  */
 typedef DECLCALLBACKTYPE(void, FNPDMDRVSUSPEND,(PPDMDRVINS pDrvIns));
@@ -174,7 +172,6 @@ typedef FNPDMDRVSUSPEND *PFNPDMDRVSUSPEND;
 /**
  * Resume notification.
  *
- * @returns VBox status.
  * @param   pDrvIns     The driver instance data.
  */
 typedef DECLCALLBACKTYPE(void, FNPDMDRVRESUME,(PPDMDRVINS pDrvIns));

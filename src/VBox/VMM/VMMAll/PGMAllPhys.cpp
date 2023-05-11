@@ -1210,8 +1210,6 @@ int pgmPhysRecheckLargePage(PVMCC pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage)
 /**
  * Deal with a write monitored page.
  *
- * @returns VBox strict status code.
- *
  * @param   pVM         The cross context VM structure.
  * @param   pPage       The physical page tracking structure.
  * @param   GCPhys      The guest physical address of the page.

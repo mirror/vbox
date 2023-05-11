@@ -72,7 +72,6 @@ typedef struct DBGCIOPROVREG
     /**
      * Destroys the given I/O provider instance.
      *
-     * @returns nothing.
      * @param   hDbgcIoProv     The I/O provider instance handle to destroy.
      */
     DECLCALLBACKMEMBER(void, pfnDestroy, (DBGCIOPROV hDbgcIoProv));

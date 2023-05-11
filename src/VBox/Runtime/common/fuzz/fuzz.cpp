@@ -574,7 +574,6 @@ static void *rtFuzzCtxMemoryAlloc(PRTFUZZCTXINT pThis, size_t cb)
 /**
  * Frees the given memory.
  *
- * @returns nothing.
  * @param   pThis               The fuzzer context instance.
  * @param   pv                  Pointer to the memory area to free.
  */
@@ -619,7 +618,6 @@ static bool rtFuzzCtxMutationAllocReclaim(PRTFUZZCTXINT pThis, size_t cb)
 /**
  * Updates the cache status of the given mutation.
  *
- * @returns nothing.
  * @param   pThis               The fuzzer context instance.
  * @param   pMutation           The mutation to update.
  */
@@ -654,7 +652,6 @@ static void rtFuzzCtxMutationMaybeEnterCache(PRTFUZZCTXINT pThis, PRTFUZZMUTATIO
 /**
  * Removes a cached mutation from the cache.
  *
- * @returns nothing.
  * @param   pThis               The fuzzer context instance.
  * @param   pMutation           The mutation to remove.
  */
@@ -674,7 +671,6 @@ static void rtFuzzCtxMutationCacheRemove(PRTFUZZCTXINT pThis, PRTFUZZMUTATION pM
 /**
  * Destroys the given mutation.
  *
- * @returns nothing.
  * @param   pMutation           The mutation to destroy.
  */
 static void rtFuzzMutationDestroy(PRTFUZZMUTATION pMutation)
@@ -869,7 +865,6 @@ DECLINLINE(PRTFUZZMUTATION) rtFuzzMutationCreate(PRTFUZZCTXINT pThis, uint64_t o
 /**
  * Destroys the given fuzzer context freeing all allocated resources.
  *
- * @returns nothing.
  * @param   pThis               The fuzzer context instance.
  */
 static void rtFuzzCtxDestroy(PRTFUZZCTXINT pThis)
@@ -1512,7 +1507,6 @@ static int rtFuzzCtxCreateEmpty(PRTFUZZCTXINT *ppThis, RTFUZZCTXTYPE enmType)
 /**
  * Destroys the given fuzzing input.
  *
- * @returns nothing.
  * @param   pThis               The fuzzing input to destroy.
  */
 static void rtFuzzInputDestroy(PRTFUZZINPUTINT pThis)

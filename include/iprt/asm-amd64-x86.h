@@ -2189,7 +2189,6 @@ DECLINLINE(uint64_t) ASMRdMsr(uint32_t uRegister)
 /**
  * Writes a machine specific register.
  *
- * @returns Register content.
  * @param   uRegister   Register to write to.
  * @param   u64Val      Value to write.
  */
@@ -2263,7 +2262,6 @@ DECLINLINE(uint64_t) ASMRdMsrEx(uint32_t uRegister, RTCCUINTXREG uXDI)
 /**
  * Writes a machine specific register, extended version (for AMD).
  *
- * @returns Register content.
  * @param   uRegister   Register to write to.
  * @param   uXDI        RDI/EDI value.
  * @param   u64Val      Value to write.

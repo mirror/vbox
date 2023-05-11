@@ -881,13 +881,6 @@ VBoxDbgConsole::backSetReady(PCDBGCIO pBack, bool fReady)
 }
 
 
-/**
- * The Debugger Console Thread
- *
- * @returns VBox status code (ignored).
- * @param   Thread      The thread handle.
- * @param   pvUser      Pointer to the VBoxDbgConsole object.s
- */
 /*static*/ DECLCALLBACK(int)
 VBoxDbgConsole::backThread(RTTHREAD Thread, void *pvUser)
 {

@@ -343,7 +343,6 @@ DECLINLINE(bool) utsIsSameOpcode(PCUTSPKTHDR pPktHdr, const char *pszOpcode2)
 /**
  * Converts a UTS request packet from host to network byte ordering.
  *
- * @returns nothing.
  * @param   pPktHdr           The packet to convert.
  */
 DECLHIDDEN(void) utsProtocolReqH2N(PUTSPKTHDR pPktHdr);
@@ -351,7 +350,6 @@ DECLHIDDEN(void) utsProtocolReqH2N(PUTSPKTHDR pPktHdr);
 /**
  * Converts a UTS request packet from network to host byte ordering.
  *
- * @returns nothing.
  * @param   pPktHdr           The packet to convert.
  */
 DECLHIDDEN(void) utsProtocolReqN2H(PUTSPKTHDR pPktHdr);
@@ -359,7 +357,6 @@ DECLHIDDEN(void) utsProtocolReqN2H(PUTSPKTHDR pPktHdr);
 /**
  * Converts a UTS reply packet from host to network byte ordering.
  *
- * @returns nothing.
  * @param   pPktHdr           The packet to convert.
  */
 DECLHIDDEN(void) utsProtocolRepH2N(PUTSPKTHDR pPktHdr);
@@ -367,7 +364,6 @@ DECLHIDDEN(void) utsProtocolRepH2N(PUTSPKTHDR pPktHdr);
 /**
  * Converts a UTS reply packet from network to host byte ordering.
  *
- * @returns nothing.
  * @param   pPktHdr           The packet to convert.
  */
 DECLHIDDEN(void) utsProtocolRepN2H(PUTSPKTHDR pPktHdr);

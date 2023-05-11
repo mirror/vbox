@@ -174,7 +174,6 @@ DECLINLINE(size_t) drvHostSerialReadBufGetRead(PDRVHOSTSERIAL pThis, void **ppv)
 /**
  * Advances the write position of the read buffer by the given amount of bytes.
  *
- * @returns nothing.
  * @param   pThis               The host serial driver instance.
  * @param   cbAdv               Number of bytes to advance.
  */
@@ -190,7 +189,6 @@ DECLINLINE(void) drvHostSerialReadBufWriteAdv(PDRVHOSTSERIAL pThis, size_t cbAdv
 /**
  * Advances the read position of the read buffer by the given amount of bytes.
  *
- * @returns nothing.
  * @param   pThis               The host serial driver instance.
  * @param   cbAdv               Number of bytes to advance.
  */
@@ -595,7 +593,6 @@ static int drvHostSerialIoLoopNormal(PPDMDRVINS pDrvIns, PDRVHOSTSERIAL pThis, P
 /**
  * The error I/O loop.
  *
- * @returns VBox status code.
  * @param   pThis               Host serial driver instance data.
  * @param   pThread             Thread instance data.
  */

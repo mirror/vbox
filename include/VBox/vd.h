@@ -1126,7 +1126,6 @@ VBOXDDU_DECL(int) VDQueryRegions(PVDISK pDisk, unsigned nImage, uint32_t fFlags,
 /**
  * Frees a region list previously queried with VDQueryRegions().
  *
- * @return  nothing.
  * @param   pRegionList     The region list to free.
  */
 VBOXDDU_DECL(void) VDRegionListFree(PVDREGIONLIST pRegionList);
@@ -1428,7 +1427,6 @@ VBOXDDU_DECL(int) VDIfTcpNetInstDefaultCreate(PVDIFINST phTcpNetInst, PVDINTERFA
 /**
  * Destroys the given VD TCP/IP interface instance.
  *
- * @returns nothing.
  * @param   hTcpNetInst         The TCP/IP interface instance handle.
  */
 VBOXDDU_DECL(void) VDIfTcpNetInstDefaultDestroy(VDIFINST hTcpNetInst);
@@ -1725,7 +1723,6 @@ typedef VDIOREQTYPE *PVDIOREQTYPE;
 /**
  * I/O queue request completion callback.
  *
- * @returns nothing.
  * @param   hVdIoQueue      The VD I/O queue handle.
  * @param   pDisk           The disk the queue is attached to.
  * @param   hVdIoReq        The VD I/O request which completed.

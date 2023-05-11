@@ -56,7 +56,6 @@
 /**
  * Used by DBGFR0InitPerVM() to initialize the breakpoint manager.
  *
- * @returns nothing.
  * @param   pGVM        The global (ring-0) VM structure.
  */
 DECLHIDDEN(void) dbgfR0BpInit(PGVM pGVM)

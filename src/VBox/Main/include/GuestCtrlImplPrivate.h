@@ -512,7 +512,7 @@ public:
     }
 
     /**
-     * @copydoc copy()
+     * @copydoc GuestEnvironment::copy()
      */
     GuestEnvironment &operator=(const GuestEnvironmentBase &rThat)
     {
@@ -522,11 +522,11 @@ public:
         return *this;
     }
 
-    /** @copydoc copy() */
+    /** @copydoc GuestEnvironment::copy() */
     GuestEnvironment &operator=(const GuestEnvironment &rThat)
     {   return operator=((const GuestEnvironmentBase &)rThat); }
 
-    /** @copydoc copy() */
+    /** @copydoc GuestEnvironment::copy() */
     GuestEnvironment &operator=(const GuestEnvironmentChanges &rThat)
     {   return operator=((const GuestEnvironmentBase &)rThat); }
 
@@ -594,7 +594,8 @@ public:
     }
 
     /**
-     * @copydoc copy()
+     * @copydoc GuestEnvironmentChanges::copy() 
+     * @throws  HRESULT
      */
     GuestEnvironmentChanges &operator=(const GuestEnvironmentBase &rThat)
     {
@@ -604,11 +605,13 @@ public:
         return *this;
     }
 
-    /** @copydoc copy() */
+    /** @copydoc GuestEnvironmentChanges::copy()
+     * @throws  HRESULT */
     GuestEnvironmentChanges &operator=(const GuestEnvironmentChanges &rThat)
     {   return operator=((const GuestEnvironmentBase &)rThat); }
 
-    /** @copydoc copy() */
+    /** @copydoc GuestEnvironmentChanges::copy()
+     * @throws  HRESULT */
     GuestEnvironmentChanges &operator=(const GuestEnvironment &rThat)
     {   return operator=((const GuestEnvironmentBase &)rThat); }
 };

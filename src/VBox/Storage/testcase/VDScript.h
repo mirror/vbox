@@ -165,7 +165,6 @@ DECLHIDDEN(int) VDScriptCtxCreate(PVDSCRIPTCTX phScriptCtx);
 /**
  * Destroys the given scripting context.
  *
- * @returns nothing.
  * @param   hScriptCtx     The script context to destroy.
  */
 DECLHIDDEN(void) VDScriptCtxDestroy(VDSCRIPTCTX hScriptCtx);

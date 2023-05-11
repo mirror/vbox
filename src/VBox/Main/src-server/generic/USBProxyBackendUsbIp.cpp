@@ -262,7 +262,6 @@ struct USBProxyBackendUsbIp::Data
 /**
  * Convert the given exported device structure from host to network byte order.
  *
- * @returns nothing.
  * @param   pDevice           The device structure to convert.
  */
 DECLINLINE(void) usbProxyBackendUsbIpExportedDeviceN2H(PUsbIpExportedDevice pDevice)
@@ -659,7 +658,6 @@ PUSBDEVICE USBProxyBackendUsbIp::getDevices(void)
 /**
  * Frees a given device list.
  *
- * @returns nothing.
  * @param   pHead    The head of the device list to free.
  */
 void USBProxyBackendUsbIp::freeDeviceList(PUSBDEVICE pHead)
@@ -675,8 +673,6 @@ void USBProxyBackendUsbIp::freeDeviceList(PUSBDEVICE pHead)
 
 /**
  * Resets the receive state to the idle state.
- *
- * @returns nothing.
  */
 void USBProxyBackendUsbIp::resetRecvState()
 {
@@ -694,8 +690,6 @@ void USBProxyBackendUsbIp::resetRecvState()
 
 /**
  * Disconnects from the host and resets the receive state.
- *
- * @returns nothing.
  */
 void USBProxyBackendUsbIp::disconnect()
 {
@@ -803,7 +797,6 @@ int USBProxyBackendUsbIp::startListExportedDevicesReq()
 /**
  * Advances the state machine to the given state.
  *
- * @returns nothing.
  * @param   enmRecvState    The new receive state.
  */
 void USBProxyBackendUsbIp::advanceState(USBIPRECVSTATE enmRecvState)

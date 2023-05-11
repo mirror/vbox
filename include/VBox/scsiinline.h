@@ -50,7 +50,6 @@
 /**
  * Converts a given 16bit value to big endian and stores it in the given buffer.
  *
- * @returns nothing.
  * @param   pbBuf               The buffer to store the value into.
  * @param   u16Val              The value to store.
  */
@@ -64,7 +63,6 @@ DECLINLINE(void) scsiH2BE_U16(uint8_t *pbBuf, uint16_t u16Val)
 /**
  * Converts a given 24bit value to big endian and stores it in the given buffer.
  *
- * @returns nothing.
  * @param   pbBuf               The buffer to store the value into.
  * @param   u32Val              The value to store.
  */
@@ -79,7 +77,6 @@ DECLINLINE(void) scsiH2BE_U24(uint8_t *pbBuf, uint32_t u32Val)
 /**
  * Converts a given 32bit value to big endian and stores it in the given buffer.
  *
- * @returns nothing.
  * @param   pbBuf               The buffer to store the value into.
  * @param   u32Val              The value to store.
  */
@@ -95,7 +92,6 @@ DECLINLINE(void) scsiH2BE_U32(uint8_t *pbBuf, uint32_t u32Val)
 /**
  * Converts a given 64bit value to big endian and stores it in the given buffer.
  *
- * @returns nothing.
  * @param   pbBuf               The buffer to store the value into.
  * @param   u64Val              The value to store.
  */
@@ -170,7 +166,6 @@ DECLINLINE(uint64_t) scsiBE2H_U64(const uint8_t *pbBuf)
  * Converts the given LBA number to the MSF (Minutes:Seconds:Frames) format
  * and stores it in the given buffer.
  *
- * @returns nothing.
  * @param   pbBuf               The buffer to store the value into.
  * @param   iLBA                The LBA to convert.
  */
@@ -201,7 +196,6 @@ DECLINLINE(uint32_t) scsiMSF2LBA(const uint8_t *pbBuf)
  * Copies a given string to the given destination padding all unused space
  * in the destination with spaces.
  *
- * @returns nothing.
  * @param   pbDst               Where to store the string padded with spaces.
  * @param   pbSrc               The string to copy.
  * @param   cbSize              Size of the destination buffer.
@@ -223,7 +217,6 @@ DECLINLINE(void) scsiPadStr(uint8_t *pbDst, const char *pbSrc, uint32_t cbSize)
  * Copies a given string to the given destination padding all unused space
  * in the destination with spaces.
  *
- * @returns nothing.
  * @param   pbDst               Where to store the string padded with spaces.
  * @param   pbSrc               The string to copy.
  * @param   cbSize              Size of the destination buffer.

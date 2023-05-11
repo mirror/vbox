@@ -2135,6 +2135,8 @@ PREDEFINED += \
     RT_ASM_DECL_PRAGMA_WATCOM(type)=type \
     RT_ASM_DECL_PRAGMA_WATCOM_386(type)=type \
     DECLNORETURN(type)=type \
+    DECL_CHECK_RETURN(type)=type \
+    DECL_CHECK_RETURN_NOT_R3(type)=type \
     RTCALL=
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this

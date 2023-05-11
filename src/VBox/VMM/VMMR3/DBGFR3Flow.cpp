@@ -342,7 +342,6 @@ dbgfR3FlowBranchTblCreate(PDBGFFLOWINT pThis, PDBGFADDRESS pAddrStart, uint8_t i
 /**
  * Destroys a control flow graph.
  *
- * @returns nothing.
  * @param   pThis               The control flow graph to destroy.
  */
 static void dbgfR3FlowDestroy(PDBGFFLOWINT pThis)
@@ -375,7 +374,6 @@ static void dbgfR3FlowDestroy(PDBGFFLOWINT pThis)
 /**
  * Destroys a basic block.
  *
- * @returns nothing.
  * @param   pFlowBb              The basic block to destroy.
  * @param   fMayDestroyFlow      Flag whether the control flow graph container
  *                               should be destroyed when there is nothing referencing it.
@@ -399,7 +397,6 @@ static void dbgfR3FlowBbDestroy(PDBGFFLOWBBINT pFlowBb, bool fMayDestroyFlow)
 /**
  * Destroys a given branch table.
  *
- * @returns nothing.
  * @param   pFlowBranchTbl      The flow branch table to destroy.
  */
 static void dbgfR3FlowBranchTblDestroy(PDBGFFLOWBRANCHTBLINT pFlowBranchTbl)
@@ -431,7 +428,6 @@ static uint32_t dbgfR3FlowBbReleaseInt(PDBGFFLOWBBINT pFlowBb, bool fMayDestroyF
 /**
  * Links the given basic block into the control flow graph.
  *
- * @returns nothing.
  * @param   pThis               The control flow graph to link into.
  * @param   pFlowBb             The basic block to link.
  */
@@ -445,7 +441,6 @@ DECLINLINE(void) dbgfR3FlowLink(PDBGFFLOWINT pThis, PDBGFFLOWBBINT pFlowBb)
 /**
  * Links the given branch table into the control flow graph.
  *
- * @returns nothing.
  * @param   pThis               The control flow graph to link into.
  * @param   pBranchTbl          The branch table to link.
  */
@@ -498,7 +493,6 @@ DECLINLINE(PDBGFFLOWBRANCHTBLINT) dbgfR3FlowBranchTblFindByAddr(PDBGFFLOWINT pTh
 /**
  * Sets the given error status for the basic block.
  *
- * @returns nothing.
  * @param   pFlowBb              The basic block causing the error.
  * @param   rcError             The error to set.
  * @param   pszFmt              Format string of the error description.
@@ -2133,7 +2127,6 @@ VMMR3DECL(int) DBGFR3FlowItCreate(DBGFFLOW hFlow, DBGFFLOWITORDER enmOrder, PDBG
 /**
  * Destroys a given control flow graph iterator.
  *
- * @returns nothing.
  * @param   hFlowIt              The control flow graph iterator handle.
  */
 VMMR3DECL(void) DBGFR3FlowItDestroy(DBGFFLOWIT hFlowIt)
@@ -2271,7 +2264,6 @@ VMMR3DECL(int) DBGFR3FlowBranchTblItCreate(DBGFFLOW hFlow, DBGFFLOWITORDER enmOr
 /**
  * Destroys a given control flow graph branch table iterator.
  *
- * @returns nothing.
  * @param   hFlowBranchTblIt              The control flow graph branch table iterator handle.
  */
 VMMR3DECL(void) DBGFR3FlowBranchTblItDestroy(DBGFFLOWBRANCHTBLIT hFlowBranchTblIt)

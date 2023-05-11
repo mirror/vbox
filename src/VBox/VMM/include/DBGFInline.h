@@ -35,7 +35,6 @@
 /**
  * Initializes the given L2 table entry with the given values.
  *
- * @returns nothing.
  * @param   pL2Entry            The L2 entry to intialize.
  * @param   hBp                 The breakpoint handle.
  * @param   GCPtr               The GC pointer used as the key (only the upper 6 bytes are used).
@@ -61,7 +60,6 @@ DECLINLINE(void) dbgfBpL2TblEntryInit(PDBGFBPL2ENTRY pL2Entry, DBGFBP hBp, RTGCP
 /**
  * Updates the given L2 table entry with the new pointers.
  *
- * @returns nothing.
  * @param   pL2Entry            The L2 entry to update.
  * @param   idxL2Left           The new left L2 table index.
  * @param   idxL2Right          The new right L2 table index.
@@ -82,7 +80,6 @@ DECLINLINE(void) dbgfBpL2TblEntryUpdate(PDBGFBPL2ENTRY pL2Entry, uint32_t idxL2L
 /**
  * Updates the given L2 table entry with the left pointer.
  *
- * @returns nothing.
  * @param   pL2Entry            The L2 entry to update.
  * @param   idxL2Left           The new left L2 table index.
  * @param   iDepth              The new depth of the tree.
@@ -102,7 +99,6 @@ DECLINLINE(void) dbgfBpL2TblEntryUpdateLeft(PDBGFBPL2ENTRY pL2Entry, uint32_t id
 /**
  * Updates the given L2 table entry with the right pointer.
  *
- * @returns nothing.
  * @param   pL2Entry            The L2 entry to update.
  * @param   idxL2Right          The new right L2 table index.
  * @param   iDepth              The new depth of the tree.

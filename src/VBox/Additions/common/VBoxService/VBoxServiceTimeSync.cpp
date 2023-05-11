@@ -504,8 +504,6 @@ static void vgsvcTimeSyncCancelAdjust(void)
 /**
  * Set the wall clock to compensate for drift.
  *
- * @returns true on success, false on failure.
- *
  * @param   pDrift              The time adjustment.
  */
 static void vgsvcTimeSyncSet(PCRTTIMESPEC pDrift)

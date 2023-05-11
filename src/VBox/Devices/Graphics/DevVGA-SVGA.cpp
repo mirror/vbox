@@ -6399,9 +6399,9 @@ static int vmsvgaR3Init3dInterfaces(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
 
 /**
  * Compute the host capabilities: device and FIFO.
+ * 
  * Depends on 3D backend initialization.
  *
- * @returns VBox status code.
  * @param   pThis     The shared VGA/VMSVGA instance data.
  * @param   pThisCC   The VGA/VMSVGA state for ring-3.
  * @param   pu32DeviceCaps Device capabilities (SVGA_CAP_*).
@@ -7089,7 +7089,6 @@ static void vmsvgaR3PowerOnDevice(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATE
 /**
  * Power On notification.
  *
- * @returns VBox status code.
  * @param   pDevIns     The device instance data.
  *
  * @remarks Caller enters the device critical section.

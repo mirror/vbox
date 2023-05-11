@@ -320,7 +320,6 @@ typedef struct VSCSILUNDESC
 /**
  * Completes a SCSI request and calls the completion handler.
  *
- * @returns nothing.
  * @param   pVScsiDevice    The virtual SCSI device.
  * @param   pVScsiReq       The request which completed.
  * @param   rcScsiCode      The status code
@@ -334,7 +333,6 @@ void vscsiDeviceReqComplete(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVScsiReq
 /**
  * Init the sense data state.
  *
- * @returns nothing.
  * @param   pVScsiSense  The SCSI sense data state to init.
  */
 void vscsiSenseInit(PVSCSISENSE pVScsiSense);
@@ -395,7 +393,6 @@ int vscsiVpdPagePoolInit(PVSCSIVPDPOOL pVScsiVpdPool);
 /**
  * Destroys the given VPD page pool freeing all pages in it.
  *
- * @returns nothing.
  * @param   pVScsiVpdPool    The VPD page pool to destroy.
  */
 void vscsiVpdPagePoolDestroy(PVSCSIVPDPOOL pVScsiVpdPool);
@@ -494,7 +491,6 @@ uint32_t vscsiIoReqOutstandingCountGet(PVSCSILUNINT pVScsiLun);
 /**
  * Sets the transfer size for the given request.
  *
- * @returns nothing.
  * @param   pVScsiReq     The SCSI request.
  * @param   cbXfer        The transfer size for the request.
  */
@@ -506,7 +502,6 @@ DECLINLINE(void) vscsiReqSetXferSize(PVSCSIREQINT pVScsiReq, size_t cbXfer)
 /**
  * Sets the transfer direction for the given request.
  *
- * @returns nothing.
  * @param   pVScsiReq     The SCSI request.
  * @param   cbXfer        The transfer size for the request.
  */

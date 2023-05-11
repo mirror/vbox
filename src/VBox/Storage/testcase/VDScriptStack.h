@@ -56,7 +56,6 @@ typedef VDSCRIPTSTACK *PVDSCRIPTSTACK;
 /**
  * Init the stack structure.
  *
- * @returns nothing.
  * @param   pStack          The stack to initialize.
  * @param   cbStackEntry    The size of one stack entry.
  */
@@ -71,7 +70,6 @@ DECLINLINE(void) vdScriptStackInit(PVDSCRIPTSTACK pStack, size_t cbStackEntry)
 /**
  * Destroys the given stack freeing all memory.
  *
- * @returns nothing.
  * @param   pStack         The stack to destroy.
  */
 DECLINLINE(void) vdScriptStackDestroy(PVDSCRIPTSTACK pStack)
@@ -134,7 +132,6 @@ DECLINLINE(void *)vdScriptStackGetUsed(PVDSCRIPTSTACK pStack)
 /**
  * Increases the used element count for the given stack.
  *
- * @returns nothing.
  * @param   pStack          The stack.
  */
 DECLINLINE(void) vdScriptStackPush(PVDSCRIPTSTACK pStack)
@@ -145,7 +142,6 @@ DECLINLINE(void) vdScriptStackPush(PVDSCRIPTSTACK pStack)
 /**
  * Decreases the used element count for the given stack.
  *
- * @returns nothing.
  * @param   pStack          The stack.
  */
 DECLINLINE(void) vdScriptStackPop(PVDSCRIPTSTACK pStack)

@@ -129,7 +129,6 @@ HRESULT VFSExplorer::init(VFSType_T aType, Utf8Str aFilePath, Utf8Str aHostname,
 
 /**
  * VFSExplorer COM uninitializer.
- * @return
  */
 void VFSExplorer::uninit()
 {
@@ -140,7 +139,7 @@ void VFSExplorer::uninit()
 /**
  * Public method implementation.
  * @param   aPath   Where to store the path.
- * @return
+ * @return  S_OK
  */
 HRESULT VFSExplorer::getPath(com::Utf8Str &aPath)
 {

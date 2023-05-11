@@ -399,7 +399,6 @@ static DECLCALLBACK(void) pdmR3NsUnchokeTimer(PVM pVM, TMTIMERHANDLE hTimer, voi
 /**
  * Terminate the network shaper, groups, lock and everything.
  *
- * @returns VBox error code.
  * @param   pVM  The cross context VM structure.
  */
 void pdmR3NetShaperTerm(PVM pVM)

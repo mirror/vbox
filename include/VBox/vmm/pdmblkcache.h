@@ -304,7 +304,6 @@ VMMR3DECL(int) PDMR3BlkCacheRetainInt(PVM pVM, void *pvUser, PPPDMBLKCACHE ppBlk
 /**
  * Releases a block cache handle.
  *
- * @returns nothing.
  * @param   pBlkCache       Block cache handle.
  */
 VMMR3DECL(void) PDMR3BlkCacheRelease(PPDMBLKCACHE pBlkCache);
@@ -312,7 +311,6 @@ VMMR3DECL(void) PDMR3BlkCacheRelease(PPDMBLKCACHE pBlkCache);
 /**
  * Releases all block cache handles for a device instance.
  *
- * @returns nothing.
  * @param   pVM             The cross context VM structure.
  * @param   pDevIns         The device instance.
  */
@@ -321,7 +319,6 @@ VMMR3DECL(void) PDMR3BlkCacheReleaseDevice(PVM pVM, PPDMDEVINS pDevIns);
 /**
  * Releases all block cache handles for a driver instance.
  *
- * @returns nothing.
  * @param   pVM             The cross context VM structure.
  * @param   pDrvIns         The driver instance.
  */
@@ -330,7 +327,6 @@ VMMR3DECL(void) PDMR3BlkCacheReleaseDriver(PVM pVM, PPDMDRVINS pDrvIns);
 /**
  * Releases all block cache handles for a USB device instance.
  *
- * @returns nothing.
  * @param   pVM             The cross context VM structure.
  * @param   pUsbIns         The USB device instance.
  */
@@ -387,7 +383,6 @@ VMMR3DECL(int) PDMR3BlkCacheDiscard(PPDMBLKCACHE pBlkCache, PCRTRANGE paRanges, 
 /**
  * Notify the cache of a complete I/O transfer.
  *
- * @returns nothing.
  * @param   pBlkCache       The cache instance.
  * @param   hIoXfer         The I/O transfer handle which completed.
  * @param   rcIoXfer        The status code of the completed request.

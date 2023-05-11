@@ -535,7 +535,6 @@ VMMR3DECL(int) MMR3Term(PVM pVM)
  * Termination means cleaning up and freeing all resources,
  * the VM it self is at this point powered off or suspended.
  *
- * @returns VBox status code.
  * @param   pUVM        Pointer to the user mode VM structure.
  */
 VMMR3DECL(void) MMR3TermUVM(PUVM pUVM)

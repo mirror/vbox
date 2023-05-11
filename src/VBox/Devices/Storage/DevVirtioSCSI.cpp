@@ -720,7 +720,6 @@ static uint8_t virtioScsiEstimateCdbLen(uint8_t uCmd, uint8_t cbMax)
 /**
  * Wrapper around virtioCoreR3VirtqUsedBufPut() and virtioCoreVirtqUsedRingSync() doing some device locking.
  *
- * @returns nothing.
  * @param   pDevIns         The PDM device instance.
  * @param   pVirtio         Pointer to the shared virtio core structure.
  * @param   uVirtqNbr       The virtq number.
@@ -828,7 +827,6 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
 /**
  * Releases one reference from the given controller instances active request counter.
  *
- * @returns nothing.
  * @param   pDevIns     The device instance.
  * @param   pThis       VirtIO SCSI shared instance data.
  * @param   pThisCC     VirtIO SCSI ring-3 instance data.
@@ -844,7 +842,6 @@ DECLINLINE(void) virtioScsiR3Release(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIR
 /**
  * Retains one reference for the given controller instances active request counter.
  *
- * @returns nothing.
  * @param   pThis       VirtIO SCSI shared instance data.
  */
 DECLINLINE(void) virtioScsiR3Retain(PVIRTIOSCSI pThis)

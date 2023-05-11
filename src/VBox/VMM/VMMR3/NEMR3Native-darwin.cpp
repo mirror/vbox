@@ -3389,7 +3389,6 @@ void nemR3NativeResetCpu(PVMCPU pVCpu, bool fInitIpi)
 /**
  * Dumps the VMCS in response to a faild hv_vcpu_run{_until}() call.
  *
- * @returns nothing.
  * @param   pVCpu           The cross context virtual CPU structure.
  */
 static void nemR3DarwinVmcsDump(PVMCPU pVCpu)

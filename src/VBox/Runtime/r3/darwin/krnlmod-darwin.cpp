@@ -166,7 +166,6 @@ static CFDictionaryRef rtKrnlModDarwinGetKextInfoByName(const char *pszName)
 /**
  * Destroy the given kernel module information record.
  *
- * @returns nothing.
  * @param   pThis            The record to destroy.
  */
 static void rtKrnlModInfoDestroy(PRTKRNLMODINFOINT pThis)

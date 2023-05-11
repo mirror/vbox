@@ -645,7 +645,6 @@ static void vusbRhR3CalcTimerIntervals(PVUSBROOTHUB pThis, uint32_t u32FrameRate
  * Calculates the new frame rate based on the idle detection and number of idle
  * cycles.
  *
- * @returns nothing.
  * @param   pThis    The roothub instance data.
  * @param   fIdle    Flag whether the last frame didn't produce any activity.
  */

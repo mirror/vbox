@@ -90,7 +90,6 @@ typedef FNPDMSRVPOWERON *PFNPDMSRVPOWERON;
 /**
  * Reset notification.
  *
- * @returns VBox status.
  * @param   pSrvIns     The service instance data.
  */
 typedef DECLCALLBACKTYPE(void, FNPDMSRVRESET,(PPDMSRVINS pSrvIns));
@@ -100,7 +99,6 @@ typedef FNPDMSRVRESET *PFNPDMSRVRESET;
 /**
  * Suspend notification.
  *
- * @returns VBox status.
  * @param   pSrvIns     The service instance data.
  */
 typedef DECLCALLBACKTYPE(void, FNPDMSRVSUSPEND,(PPDMSRVINS pSrvIns));
@@ -110,7 +108,6 @@ typedef FNPDMSRVSUSPEND *PFNPDMSRVSUSPEND;
 /**
  * Resume notification.
  *
- * @returns VBox status.
  * @param   pSrvIns     The service instance data.
  */
 typedef DECLCALLBACKTYPE(void, FNPDMSRVRESUME,(PPDMSRVINS pSrvIns));

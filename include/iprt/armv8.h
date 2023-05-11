@@ -159,6 +159,7 @@
 #define ARMV8_AARCH64_SYSREG_MASK                   (  ARMV8_AARCH64_SYSREG_OP0_MASK | ARMV8_AARCH64_SYSREG_OP1_MASK \
                                                      | ARMV8_AARCH64_SYSREG_CRN_MASK | ARMV8_AARCH64_SYSREG_CRN_MASK \
                                                      | ARMV8_AARCH64_SYSREG_OP2_MASK)
+/** @} */
 
 /** @name Mapping of op0:op1:CRn:CRm:op2 to a system register ID. This is
  * IPRT specific and not part of the ARMv8 specification. */

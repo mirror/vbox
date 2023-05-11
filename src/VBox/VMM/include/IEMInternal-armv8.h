@@ -741,7 +741,6 @@ typedef struct IEM
 
 /** Hint to IEMAllInstructionPython.py that this macro should be skipped.  */
 #define IEMOPHINT_SKIP_PYTHON       RT_BIT_32(31)
-/** @} */
 
 /** @def IEM_DECL_IMPL_TYPE
  * For typedef'ing an instruction implementation function.

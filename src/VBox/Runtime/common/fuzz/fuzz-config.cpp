@@ -519,7 +519,6 @@ static int rtFuzzCfgAddFuzzCtxInputs(PRTFUZZCFGINT pThis, RTJSONVAL hJsonValCorp
 /**
  * Destroys the given fuzzing config.
  *
- * @returns nothing.
  * @param   pThis                   The fuzzing config instance to destroy.
  */
 static void rtFuzzCfgDestroy(PRTFUZZCFGINT pThis)

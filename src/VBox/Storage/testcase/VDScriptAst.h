@@ -568,7 +568,6 @@ typedef VDSCRIPTASTFN *PVDSCRIPTASTFN;
  * Free the given AST node and all subsequent nodes pointed to
  * by the given node.
  *
- * @returns nothing.
  * @param   pAstNode    The AST node to free.
  */
 DECLHIDDEN(void) vdScriptAstNodeFree(PVDSCRIPTASTCORE pAstNode);

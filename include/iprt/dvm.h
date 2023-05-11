@@ -389,7 +389,6 @@ RTDECL(uint32_t) RTDvmVolumeRelease(RTDVMVOLUME hVol);
  * Sets the callback to query the block allocation status for a volume.
  * This overwrites any other callback set previously.
  *
- * @returns nothing.
  * @param   hVol                   The volume handle.
  * @param   pfnQueryBlockStatus    The callback to set. Can be NULL to disable
  *                                 a previous callback.

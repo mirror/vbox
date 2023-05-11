@@ -1148,7 +1148,6 @@ static int drvHostBaseStatsRegister(PDRVHOSTBASE pThis)
 /**
  * Deregisters statistics associated with the given media driver.
  *
- * @returns nothing.
  * @param   pThis      The media driver instance.
  */
 static void drvhostBaseStatsDeregister(PDRVHOSTBASE pThis)

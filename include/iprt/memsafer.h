@@ -244,7 +244,6 @@ RTDECL(void *) RTMemSaferReallocZTag(size_t cbOld, void *pvOld, size_t cbNew, co
  * Before freeing the allocated memory, it will be wiped clean using
  * RTMemWipeThorougly.
  *
- * @returns Pointer to the allocated memory.
  * @param   pv          The allocation.
  * @param   cb          The allocation size.
  */

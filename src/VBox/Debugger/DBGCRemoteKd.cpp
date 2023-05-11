@@ -1460,7 +1460,7 @@ static const char *dbgcKdPktDumpSubTypeToStr(uint16_t u16SubType)
 /**
  * Returns a human readable string of the given manipulate request ID.
  *
- * @returns nothing.
+ * @returns Human readable string (read only).
  * @param   idReq               Request ID (API number in KD speak).
  */
 static const char *dbgcKdPktDumpManipulateReqToStr(uint32_t idReq)
@@ -1506,7 +1506,6 @@ static const char *dbgcKdPktDumpManipulateReqToStr(uint32_t idReq)
 /**
  * Dumps the content of a manipulate packet.
  *
- * @returns nothing.
  * @param   pSgBuf              S/G buffer containing the manipulate packet payload.
  */
 static void dbgcKdPktDumpManipulate(PRTSGBUF pSgBuf)
@@ -1688,7 +1687,6 @@ static void dbgcKdPktDump(PCKDPACKETHDR pPktHdr, PCRTSGSEG paSegs, uint32_t cSeg
 /**
  * Resets the emulated hardware breakpoint state to a state similar after a reboot.
  *
- * @returns nothing.
  * @param   pThis               The KD context.
  */
 static void dbgcKdCtxHwBpReset(PKDCTX pThis)
@@ -1867,7 +1865,6 @@ static uint32_t dbgcKdCtxHwBpDr7Get(PKDCTX pThis)
 /**
  * Updates emulated hardware breakpoints based on the written DR6 value.
  *
- * @returns nothing.
  * @param   pThis               The KD context.
  * @param   uDr6                The DR7 value which is written.
  */
@@ -2659,7 +2656,6 @@ DECLINLINE(int) dbgcKdCtxPktSendAck(PKDCTX pThis)
 /**
  * Resets the packet receive state machine.
  *
- * @returns nothing.
  * @param   pThis               The KD context.
  */
 static void dbgcKdCtxPktRecvReset(PKDCTX pThis)
@@ -2714,7 +2710,6 @@ static int dbgcKdCtxDebugIoStrSend(PKDCTX pThis, VMCPUID idCpu, const char *pach
 /**
  * Sends a message to the remotes end.
  *
- * @returns nothing.
  * @param   pThis               The KD context data.
  * @param   fWarning            Flag whether this is a warning or an informational message.
  * @param   pszMsg              The message to send.
@@ -3722,7 +3717,6 @@ static int dbgcKdCtxPktManipulate64Process(PKDCTX pThis)
 /**
  * Tries to detect the guest OS running in the VM looking specifically for the Windows NT kind.
  *
- * @returns Nothing.
  * @param   pThis               The KD context.
  */
 static void dbgcKdCtxDetectGstOs(PKDCTX pThis)
@@ -4468,7 +4462,6 @@ static int dbgcKdCtxCreate(PPKDCTX ppKdCtx, PCDBGCIO pIo, unsigned fFlags)
 /**
  * Destroys the given KD context.
  *
- * @returns nothing.
  * @param   pThis                   The KD context to destroy.
  */
 static void dbgcKdCtxDestroy(PKDCTX pThis)

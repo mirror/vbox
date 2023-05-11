@@ -433,9 +433,8 @@ static bool vboxTrayHandleGlobalMessages(PVBOXGLOBALMESSAGE pTable, UINT uMsg,
 }
 
 /**
- * Release logger callback.
+ * Header/footer callback for the release logger.
  *
- * @return  IPRT status code.
  * @param   pLoggerRelease
  * @param   enmPhase
  * @param   pfnLog

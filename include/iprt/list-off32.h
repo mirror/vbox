@@ -484,7 +484,6 @@ DECLINLINE(void) RTListOff32Move(PRTLISTOFF32NODE pListDst, PRTLISTOFF32NODE pLi
 /**
  * List concatenation.
  *
- * @returns nothing.
  * @param   pListDst            The destination list.
  * @param   pListSrc            The source list to concatenate.
  */

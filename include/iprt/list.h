@@ -532,7 +532,6 @@ DECLINLINE(void) RTListMove(PRTLISTNODE pListDst, PRTLISTNODE pListSrc)
 /**
  * List concatenation.
  *
- * @returns nothing.
  * @param   pListDst            The destination list.
  * @param   pListSrc            The source list to concatenate.
  */

@@ -56,7 +56,6 @@ DECLHIDDEN(int) HBDMgrCreate(PHBDMGR phHbdMgr);
 /**
  * Destroys the given block device manager unclaiming all managed block devices.
  *
- * @returns nothing.
  * @param   hHbdMgr     The block device manager.
  */
 DECLHIDDEN(void) HBDMgrDestroy(HBDMGR hHbdMgr);

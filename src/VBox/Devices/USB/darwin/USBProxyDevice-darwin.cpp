@@ -309,7 +309,6 @@ static DECLCALLBACK(int32_t) usbProxyDarwinInitOnce(void *pvUser1)
  * Kicks the reaper thread if it sleeps currently to respond to state changes
  * or to pick up completed URBs.
  *
- * @returns nothing.
  * @param   pDevOsX    The darwin device instance data.
  */
 static void usbProxyDarwinReaperKick(PUSBPROXYDEVOSX pDevOsX)

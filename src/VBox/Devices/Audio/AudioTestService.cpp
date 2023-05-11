@@ -858,7 +858,6 @@ static int atsClientDisconnect(PATSSERVER pThis, PATSCLIENTINST pInst)
 /**
  * Free's (destroys) a client instance.
  *
- * @returns nothing.
  * @param   pInst               The opaque ATS instance structure.
  */
 static void atsClientFree(PATSCLIENTINST pInst)

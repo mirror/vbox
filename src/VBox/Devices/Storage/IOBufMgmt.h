@@ -110,7 +110,6 @@ DECLHIDDEN(int) IOBUFMgrAllocBuf(IOBUFMGR hIoBufMgr, PIOBUFDESC pIoBufDesc, size
 /**
  * Frees a given I/O buffer.
  *
- * @returns nothing.
  * @param   pIoBufDesc         The I/O buffer descriptor to free.
  */
 DECLHIDDEN(void) IOBUFMgrFreeBuf(PIOBUFDESC pIoBufDesc);

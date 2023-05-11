@@ -1080,7 +1080,6 @@ bool Guest::i_facilityUpdate(VBoxGuestFacilityType a_enmFacility, VBoxGuestFacil
 /**
  * Issued by the guest when a guest user changed its state.
  *
- * @return  IPRT status code.
  * @param   aUser               Guest user name.
  * @param   aDomain             Domain of guest user account. Optional.
  * @param   enmState            New state to indicate.

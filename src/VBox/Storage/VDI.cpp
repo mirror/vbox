@@ -350,7 +350,6 @@ static unsigned vdiTranslateVDI2ImageFlags(VDIIMAGETYPE enmType)
 /**
  * Internal: Init VDI header. Always use latest header version.
  *
- * @returns nothing.
  * @param   pHeader      Assumes it was initially initialized to all zeros.
  * @param   uImageFlags  Flags for this image.
  * @param   pszComment   Optional comment to set for the image.

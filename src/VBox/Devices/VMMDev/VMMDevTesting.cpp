@@ -998,7 +998,6 @@ static DECLCALLBACK(int) vmmdevR3TestingLockingThreadWakeup(PPDMDEVINS pDevIns, 
 /**
  * Initializes the testing part of the VMMDev if enabled.
  *
- * @returns VBox status code.
  * @param   pDevIns             The VMMDev device instance.
  */
 void vmmdevR3TestingTerminate(PPDMDEVINS pDevIns)

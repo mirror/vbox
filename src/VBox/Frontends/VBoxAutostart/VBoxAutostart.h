@@ -149,7 +149,6 @@ DECLHIDDEN(void) autostartSvcShowVersion(bool fBrief);
 /**
  * Log messages to the system and release log.
  *
- * @returns nothing.
  * @param   pszMsg            Message to log.
  * @param   enmLogType        Log type to use.
  */
@@ -185,7 +184,6 @@ DECLHIDDEN(int) autostartParseConfig(const char *pszFilename, PCFGAST *ppCfgAst)
 /**
  * Destroys the config AST and frees all resources.
  *
- * @returns nothing.
  * @param   pCfgAst        The config AST.
  */
 DECLHIDDEN(void) autostartConfigAstDestroy(PCFGAST pCfgAst);

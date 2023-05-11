@@ -1069,7 +1069,6 @@ int VBOXCALL    supdrvOSInitGipGroupTable(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOP
  *
  * This is currently only implemented on windows [lazy bird].
  *
- * @returns CPU group number.
  * @param   pDevExt             The device globals.
  * @param   pGip                The GIP.
  * @param   pGipCpu             The GIP CPU structure being initialized.

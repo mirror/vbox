@@ -1733,7 +1733,6 @@ static int hmR0SvmExportGuestControlRegs(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
 /**
  * Exports the guest (or nested-guest) segment registers into the VMCB.
  *
- * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcb       Pointer to the VM control block.
  *
@@ -5606,7 +5605,6 @@ static void hmR0SvmPreRunGuestDebugStateApply(PSVMTRANSIENT pSvmTransient, PSVMR
  * Restores VMCB fields that were changed by hmR0SvmPreRunGuestDebugStateApply
  * for re-entry next time around.
  *
- * @returns Strict VBox status code (i.e. informational status codes too).
  * @param   pSvmTransient   The SVM-transient structure.
  * @param   pDbgState       The debug state.
  */

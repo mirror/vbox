@@ -459,7 +459,6 @@ DECLHIDDEN(int) vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis);
 /**
  * Counter part to vboxNetFltOsInitInstance().
  *
- * @return  IPRT status code.
  * @param   pThis           The new instance.
  *
  * @remarks May own the semaphores for the global list, the network lock and the out-bound trunk port.

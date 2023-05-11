@@ -147,7 +147,6 @@ static int drvTcpPollerKick(PDRVTCP pThis, uint8_t bReason)
 /**
  * Closes the connection.
  *
- * @returns nothing.
  * @param   pThis                  The TCP driver instance.
  */
 static void drvTcpConnectionClose(PDRVTCP pThis)

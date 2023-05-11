@@ -131,7 +131,6 @@ typedef struct CFGTOKENIZER
 /**
  * Free a config token.
  *
- * @returns nothing.
  * @param   pCfgTokenizer    The config tokenizer.
  * @param   pToken           The token to free.
  */
@@ -321,7 +320,6 @@ static int autostartConfigTokenizerCreateToken(PCFGTOKENIZER pCfgTokenizer,
 /**
  * Destroys the given config tokenizer.
  *
- * @returns nothing.
  * @param   pCfgTokenizer    The config tokenizer to destroy.
  */
 static void autostartConfigTokenizerDestroy(PCFGTOKENIZER pCfgTokenizer)

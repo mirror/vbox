@@ -838,7 +838,6 @@ static PISCSICMD iscsiCmdRemoveAll(PISCSIIMAGE pImage)
 /**
  * Dumps an iSCSI packet if enabled.
  *
- * @returns nothing.
  * @param   pImage         The iSCSI image instance data.
  * @param   paISCSISegs    Pointer to the segments array.
  * @param   cnISCSISegs    Number of segments in the array.

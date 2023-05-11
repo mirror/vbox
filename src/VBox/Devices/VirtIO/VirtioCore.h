@@ -550,7 +550,6 @@ void  virtioCoreResetAll(PVIRTIOCORE pVirtio);
 /**
  * Resets the device state upon a VM reset for instance.
  *
- * @returns nothing.
  * @param   pVirtio     Pointer to the virtio state.
  *
  * @note Calls back into the upper device when the status changes.

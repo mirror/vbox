@@ -262,7 +262,6 @@ static void dbgfR3SampleReportInfoHlpDelete(PDBGFSAMPLEREPORTINFOHLP pHlp)
 /**
  * Frees the given frame and all its descendants.
  *
- * @returns nothing.
  * @param   pFrame                  The frame to free.
  */
 static void dbgfR3SampleReportFrameFree(PDBGFSAMPLEFRAME pFrame)
@@ -278,7 +277,6 @@ static void dbgfR3SampleReportFrameFree(PDBGFSAMPLEFRAME pFrame)
 /**
  * Destroys the given sample report freeing all allocated resources.
  *
- * @returns nothing.
  * @param   pThis                   The sample report instance data.
  */
 static void dbgfR3SampleReportDestroy(PDBGFSAMPLEREPORTINT pThis)
@@ -363,7 +361,6 @@ static DECLCALLBACK(int) dbgfR3SampleReportFrameSortCmp(void const *pvElement1, 
 /**
  * Dumps a single given frame to the release log.
  *
- * @returns nothing.
  * @param   pHlp                    The debug info helper used for printing.
  * @param   pUVM                    The usermode VM handle.
  * @param   pFrame                  The frame to dump.
@@ -410,7 +407,6 @@ static void dbgfR3SampleReportDumpFrame(PCDBGFINFOHLP pHlp, PUVM pUVM, PCDBGFSAM
  * Worker for dbgfR3SampleReportTakeSample(), doing the work in an EMT rendezvous point on
  * each VCPU.
  *
- * @returns nothing.
  * @param   pThis                    Pointer to the sample report instance.
  */
 static DECLCALLBACK(void) dbgfR3SampleReportSample(PDBGFSAMPLEREPORTINT pThis)

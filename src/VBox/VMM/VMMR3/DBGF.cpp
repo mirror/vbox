@@ -228,7 +228,6 @@ VMMR3_INT_DECL(int) DBGFR3Term(PVM pVM)
 /**
  * This is for tstCFGM and others to avoid trigger leak detection.
  *
- * @returns VBox status code.
  * @param   pUVM    The user mode VM structure.
  */
 VMMR3DECL(void) DBGFR3TermUVM(PUVM pUVM)

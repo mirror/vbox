@@ -986,8 +986,6 @@ void pgmHandlerPhysicalResetAliasedPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
 /**
  * Resets ram range flags.
  *
- * @returns VBox status code.
- * @retval  VINF_SUCCESS when shadow PTs was successfully updated.
  * @param   pVM     The cross context VM structure.
  * @param   pCur    The physical handler.
  *

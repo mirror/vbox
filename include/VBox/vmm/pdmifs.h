@@ -1599,7 +1599,6 @@ typedef struct PDMIVMMDEVPORT
     /**
      * Notify the driver about a VBVA status change.
      *
-     * @returns Nothing. Because it is informational callback.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   fEnabled        Current VBVA status.
      */

@@ -5190,7 +5190,6 @@ bool Medium::i_isReadOnly()
 
 /**
  * Internal method to update the medium's id. Must have caller + locking!
- * @return
  */
 void Medium::i_updateId(const Guid &id)
 {

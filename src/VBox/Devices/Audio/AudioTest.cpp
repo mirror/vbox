@@ -2418,7 +2418,6 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
 /**
  * Initializes a audio test audio beacon.
  *
- * @returns VBox status code.
  * @param   pBeacon             Audio test beacon to (re-)initialize.
  * @param   uTest               Test number to set beacon to.
  * @param   enmType             Beacon type to set.

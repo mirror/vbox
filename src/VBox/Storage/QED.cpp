@@ -1,6 +1,13 @@
 /* $Id$ */
 /** @file
  * QED - QED Disk image.
+ *
+ * The QED backend implements support for the qemu enhanced disk format (short QED)
+ * The specification for the format is available under http://wiki.qemu.org/Features/QED/Specification
+ *
+ * Missing things to implement:
+ *    - compaction
+ *    - resizing which requires block relocation (very rare case)
  */
 
 /*
@@ -43,15 +50,6 @@
 
 #include "VDBackends.h"
 #include "VDBackendsInline.h"
-
-/**
- * The QED backend implements support for the qemu enhanced disk format (short QED)
- * The specification for the format is available under http://wiki.qemu.org/Features/QED/Specification
- *
- * Missing things to implement:
- *    - compaction
- *    - resizing which requires block relocation (very rare case)
- */
 
 
 /*********************************************************************************************************************************
@@ -329,7 +327,6 @@ static bool qedHdrConvertToHostEndianess(PQedHeader pHeader)
 /**
  * Creates a QED header from the given image state.
  *
- * @returns nothing.
  * @param   pImage     Image instance data.
  * @param   pHeader    Pointer to the header to convert.
  */
@@ -351,13 +348,12 @@ static void qedHdrConvertFromHostEndianess(PQEDIMAGE pImage, PQedHeader pHeader)
 /**
  * Convert table entries from little endian to host endianess.
  *
- * @returns nothing.
  * @param   paTbl       Pointer to the table.
  * @param   cEntries    Number of entries in the table.
  */
 static void qedTableConvertToHostEndianess(uint64_t *paTbl, uint32_t cEntries)
 {
-    while(cEntries-- > 0)
+    while (cEntries-- > 0)
     {
         *paTbl = RT_LE2H_U64(*paTbl);
         paTbl++;
@@ -368,15 +364,14 @@ static void qedTableConvertToHostEndianess(uint64_t *paTbl, uint32_t cEntries)
 /**
  * Convert table entries from host to little endian format.
  *
- * @returns nothing.
  * @param   paTblImg    Pointer to the table which will store the little endian table.
  * @param   paTbl       The source table to convert.
  * @param   cEntries    Number of entries in the table.
  */
-static void qedTableConvertFromHostEndianess(uint64_t *paTblImg, uint64_t *paTbl,
+static void qedTableConvertFromHostEndianess(uint64_t *paTblImg, uint64_t const *paTbl,
                                              uint32_t cEntries)
 {
-    while(cEntries-- > 0)
+    while (cEntries-- > 0)
     {
         *paTblImg = RT_H2LE_U64(*paTbl);
         paTbl++;
@@ -403,7 +398,6 @@ static int qedL2TblCacheCreate(PQEDIMAGE pImage)
 /**
  * Destroys the L2 table cache.
  *
- * @returns nothing.
  * @param   pImage    The image instance data.
  */
 static void qedL2TblCacheDestroy(PQEDIMAGE pImage)
@@ -462,7 +456,6 @@ static PQEDL2CACHEENTRY qedL2TblCacheRetain(PQEDIMAGE pImage, uint64_t offL2Tbl)
 /**
  * Releases a L2 table cache entry.
  *
- * @returns nothing.
  * @param   pL2Entry    The L2 cache entry.
  */
 static void qedL2TblCacheEntryRelease(PQEDL2CACHEENTRY pL2Entry)
@@ -528,7 +521,6 @@ static PQEDL2CACHEENTRY qedL2TblCacheEntryAlloc(PQEDIMAGE pImage)
 /**
  * Frees a L2 table cache entry.
  *
- * @returns nothing.
  * @param   pImage    The image instance data.
  * @param   pL2Entry  The L2 cache entry to free.
  */
@@ -544,7 +536,6 @@ static void qedL2TblCacheEntryFree(PQEDIMAGE pImage, PQEDL2CACHEENTRY pL2Entry)
 /**
  * Inserts an entry in the L2 table cache.
  *
- * @returns nothing.
  * @param   pImage    The image instance data.
  * @param   pL2Entry  The L2 cache entry to insert.
  */
@@ -662,7 +653,6 @@ static uint32_t qedGetPowerOfTwo(uint32_t u32)
 /**
  * Sets the L1, L2 and offset bitmasks and L1 and L2 bit shift members.
  *
- * @returns nothing.
  * @param   pImage    The image instance data.
  */
 static void qedTableMasksInit(PQEDIMAGE pImage)
@@ -684,7 +674,6 @@ static void qedTableMasksInit(PQEDIMAGE pImage)
 /**
  * Converts a given logical offset into the
  *
- * @returns nothing.
  * @param   pImage         The image instance data.
  * @param   off            The logical offset to convert.
  * @param   pidxL1         Where to store the index in the L1 table on success.

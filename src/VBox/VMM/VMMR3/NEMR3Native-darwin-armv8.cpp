@@ -805,7 +805,6 @@ DECLINLINE(size_t) nemR3DarwinGetByteCountFromSas(uint8_t uSas)
 /**
  * Sets the given general purpose register to the given value.
  *
- * @returns nothing.
  * @param   pVCpu           The cross context virtual CPU structure of the
  *                          calling EMT.
  * @param   uReg            The register index.

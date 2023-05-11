@@ -107,24 +107,24 @@ static WCHAR *utf8ToWideChar(const char *pszString)
 }
 
 /* Prototype it to make sure we've got the right prototype. */
-extern "C"
 #if defined(_MSC_VER)
-__declspec(dllexport)
+extern "C" __declspec(dllexport) FNAUTHENTRY3 AuthEntry;
+#else
+extern "C" FNAUTHENTRY3 AuthEntry;
 #endif
-FNAUTHENTRY3 AuthEntry;
 
 /**
  * @callback_method_impl{FNAUTHENTRY3}
  */
-extern "C"
-AuthResult AUTHCALL AuthEntry(const char *pszCaller,
-                              PAUTHUUID pUuid,
-                              AuthGuestJudgement guestJudgement,
-                              const char *pszUser,
-                              const char *pszPassword,
-                              const char *pszDomain,
-                              int fLogon,
-                              unsigned clientId)
+extern "C" DECLEXPORT(AuthResult) AUTHCALL
+AuthEntry(const char *pszCaller,
+          PAUTHUUID pUuid,
+          AuthGuestJudgement guestJudgement,
+          const char *pszUser,
+          const char *pszPassword,
+          const char *pszDomain,
+          int fLogon,
+          unsigned clientId)
 {
     RT_NOREF4(pszCaller, pUuid, guestJudgement, clientId);
     if (!fLogon)

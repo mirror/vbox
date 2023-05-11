@@ -87,7 +87,6 @@ typedef struct SUPSVCSERVICE
     /**
      * Start the service.
      *
-     * @returns VBox status code, log entry is written on failure.
      * @param   pvInstance      The instance handle.
      */
     DECLCALLBACKMEMBER(void, pfnStart,(void *pvInstance));

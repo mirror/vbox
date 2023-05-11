@@ -76,7 +76,6 @@ typedef struct UTSGADGETCLASSIF
     /**
      * Terminates the gadget class instance.
      *
-     * @returns nothing.
      * @param   pClass        The interface specific instance data.
      */
     DECLR3CALLBACKMEMBER(void, pfnTerm, (PUTSGADGETCLASSINT pClass));

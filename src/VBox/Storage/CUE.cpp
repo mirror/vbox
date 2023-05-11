@@ -333,7 +333,6 @@ DECLINLINE(bool) cueTokenizerIsEos(PCUETOKENIZER pTokenizer)
 /**
  * Skip one character in the input stream.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  */
 DECLINLINE(void) cueTokenizerSkipCh(PCUETOKENIZER pTokenizer)
@@ -378,7 +377,6 @@ DECLINLINE(char) cueTokenizerGetCh(PCUETOKENIZER pTokenizer)
 /**
  * Sets a new line for the tokenizer.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  * @param   cSkip         How many characters to skip.
  */
@@ -414,7 +412,6 @@ DECLINLINE(bool) cueTokenizerIsSkipNewLine(PCUETOKENIZER pTokenizer)
  * Skip all whitespace starting from the current input buffer position.
  * Skips all present comments too.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  */
 DECLINLINE(void) cueTokenizerSkipWhitespace(PCUETOKENIZER pTokenizer)
@@ -434,7 +431,6 @@ DECLINLINE(void) cueTokenizerSkipWhitespace(PCUETOKENIZER pTokenizer)
 /**
  * Skips a multi line comment.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  */
 DECLINLINE(void) cueTokenizerSkipComment(PCUETOKENIZER pTokenizer)
@@ -448,7 +444,6 @@ DECLINLINE(void) cueTokenizerSkipComment(PCUETOKENIZER pTokenizer)
 /**
  * Get an identifier token from the tokenizer.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  * @param   pToken        The uninitialized token.
  */
@@ -511,7 +506,6 @@ static void cueTokenizerGetKeyword(PCUETOKENIZER pTokenizer, PCUETOKEN pToken)
 /**
  * Get an integer value or MSF location indicator from the tokenizer.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  * @param   pToken        The uninitialized token.
  */
@@ -576,7 +570,6 @@ static void cueTokenizerGetIntegerOrMsf(PCUETOKENIZER pTokenizer, PCUETOKEN pTok
 /**
  * Parses a string constant.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  * @param   pToken        The uninitialized token.
  *
@@ -612,7 +605,6 @@ static void cueTokenizerGetStringConst(PCUETOKENIZER pTokenizer, PCUETOKEN pToke
 /**
  * Get the end of stream token.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  * @param   pToken        The uninitialized token.
  */
@@ -626,7 +618,6 @@ static void cueTokenizerGetEos(PCUETOKENIZER pTokenizer, PCUETOKEN pToken)
 /**
  * Read the next token from the tokenizer stream.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer to read from.
  * @param   pToken        Uninitialized token to fill the token data into.
  */
@@ -696,7 +687,6 @@ DECLINLINE(CUETOKENTYPE) cueTokenizerGetTokenType(PCUETOKENIZER pTokenizer)
 /**
  * Consume the current token advancing to the next in the stream.
  *
- * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
  */
 static void cueTokenizerConsume(PCUETOKENIZER pTokenizer)

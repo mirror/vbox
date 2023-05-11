@@ -781,7 +781,6 @@ static int dbgfR3BpAlloc(PUVM pUVM, DBGFBPOWNER hOwner, void *pvUser, DBGFBPTYPE
 /**
  * Frees the given breakpoint handle.
  *
- * @returns nothing.
  * @param   pUVM                The user mode VM handle.
  * @param   hBp                 The breakpoint handle to free.
  * @param   pBp                 The internal breakpoint state pointer.
@@ -977,7 +976,6 @@ static int dbgfR3BpL2TblEntryAlloc(PUVM pUVM, uint32_t *pidxL2Tbl, PDBGFBPL2ENTR
 /**
  * Frees the given breakpoint handle.
  *
- * @returns nothing.
  * @param   pUVM                The user mode VM handle.
  * @param   idxL2Tbl            The L2 table index to free.
  * @param   pL2TblEntry         The L2 table entry pointer to free.
@@ -1004,7 +1002,6 @@ static void dbgfR3BpL2TblEntryFree(PUVM pUVM, uint32_t idxL2Tbl, PDBGFBPL2ENTRY 
 /**
  * Sets the enabled flag of the given breakpoint to the given value.
  *
- * @returns nothing.
  * @param   pBp                 The breakpoint to set the state.
  * @param   fEnabled            Enabled status.
  */

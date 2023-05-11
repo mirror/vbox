@@ -72,7 +72,6 @@ DECLINLINE(bool) IntNetIsValidFrameType(uint8_t u8Type)
  * Partly initializes a scatter / gather buffer, leaving the segments to the
  * caller.
  *
- * @returns Pointer to the start of the frame.
  * @param   pSG         Pointer to the scatter / gather structure.
  * @param   cbTotal     The total size.
  * @param   cSegs       The number of segments.
@@ -108,7 +107,6 @@ DECLINLINE(void) IntNetSgInitTempSegs(PINTNETSG pSG, uint32_t cbTotal, unsigned 
  * Partly initializes a scatter / gather buffer w/ GSO, leaving the segments to
  * the caller.
  *
- * @returns Pointer to the start of the frame.
  * @param   pSG         Pointer to the scatter / gather structure.
  * @param   cbTotal     The total size.
  * @param   cSegs       The number of segments.
@@ -146,7 +144,6 @@ DECLINLINE(void) IntNetSgInitTempSegsGso(PINTNETSG pSG, uint32_t cbTotal, unsign
 /**
  * Initializes a scatter / gather buffer describing a simple linear buffer.
  *
- * @returns Pointer to the start of the frame.
  * @param   pSG         Pointer to the scatter / gather structure.
  * @param   pvFrame     Pointer to the frame
  * @param   cbFrame     The size of the frame.
@@ -162,7 +159,6 @@ DECLINLINE(void) IntNetSgInitTemp(PINTNETSG pSG, void *pvFrame, uint32_t cbFrame
 /**
  * Initializes a scatter / gather buffer describing a simple linear buffer.
  *
- * @returns Pointer to the start of the frame.
  * @param   pSG         Pointer to the scatter / gather structure.
  * @param   pvFrame     Pointer to the frame
  * @param   cbFrame     The size of the frame.
@@ -547,7 +543,6 @@ DECLINLINE(int) IntNetRingAllocateGsoFrame(PINTNETRINGBUF pRingBuf, uint32_t cbF
  *
  * Make sure to commit the frames in the order they've been allocated!
  *
- * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
  * @param   pRingBuf            The ring buffer.
  * @param   pHdr                The frame header returned by
  *                              IntNetRingAllocateFrame.
@@ -586,7 +581,6 @@ DECLINLINE(void) IntNetRingCommitFrame(PINTNETRINGBUF pRingBuf, PINTNETHDR pHdr)
  *
  * Make sure to commit the frames in the order they've been allocated!
  *
- * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
  * @param   pRingBuf            The ring buffer.
  * @param   pHdr                The frame header returned by
  *                              IntNetRingAllocateFrame.

@@ -423,7 +423,6 @@ DECLHIDDEN(int) flashR3Init(PFLASHCORE pThis, PPDMDEVINS pDevIns, uint16_t idFla
 /**
  * Destroys the given flash device instance.
  *
- * @returns nothing.
  * @param   pDevIns             The parent device instance.
  * @param   pThis               The flash device core instance.
  */
@@ -564,7 +563,6 @@ DECLHIDDEN(int) flashR3SaveToVfs(PFLASHCORE pThis, PPDMDEVINS pDevIns, PPDMIVFSC
 /**
  * Resets the dynamic part of the flash device state.
  *
- * @returns nothing.
  * @param   pThis               The flash device core instance.
  */
 DECLHIDDEN(void) flashR3Reset(PFLASHCORE pThis)

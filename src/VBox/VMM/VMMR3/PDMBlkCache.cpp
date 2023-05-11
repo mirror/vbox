@@ -97,7 +97,6 @@ static bool pdmBlkCacheAddDirtyEntry(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEENTRY p
 /**
  * Add message to the VM trace buffer.
  *
- * @returns nothing.
  * @param   pBlkCache     The block cache.
  * @param   pszFmt        The format string.
  * @param   ...           Additional parameters for the string formatter.
@@ -117,7 +116,6 @@ DECLINLINE(void) pdmBlkCacheR3TraceMsgF(PPDMBLKCACHE pBlkCache, const char *pszF
 /**
  * Decrement the reference counter of the given cache entry.
  *
- * @returns nothing.
  * @param   pEntry    The entry to release.
  */
 DECLINLINE(void) pdmBlkCacheEntryRelease(PPDMBLKCACHEENTRY pEntry)
@@ -129,7 +127,6 @@ DECLINLINE(void) pdmBlkCacheEntryRelease(PPDMBLKCACHEENTRY pEntry)
 /**
  * Increment the reference counter of the given cache entry.
  *
- * @returns nothing.
  * @param   pEntry    The entry to reference.
  */
 DECLINLINE(void) pdmBlkCacheEntryRef(PPDMBLKCACHEENTRY pEntry)
@@ -195,7 +192,6 @@ DECLINLINE(void) pdmBlkCacheListSub(PPDMBLKLRULIST pList, uint32_t cbAmount)
 /**
  * Checks consistency of a LRU list.
  *
- * @returns nothing
  * @param    pList         The LRU list to check.
  * @param    pNotInList    Element which is not allowed to occur in the list.
  */
@@ -229,7 +225,6 @@ static void pdmBlkCacheCheckList(PPDMBLKLRULIST pList, PPDMBLKCACHEENTRY pNotInL
 /**
  * Unlinks a cache entry from the LRU list it is assigned to.
  *
- * @returns nothing.
  * @param   pEntry    The entry to unlink.
  */
 static void pdmBlkCacheEntryRemoveFromList(PPDMBLKCACHEENTRY pEntry)
@@ -284,7 +279,6 @@ static void pdmBlkCacheEntryRemoveFromList(PPDMBLKCACHEENTRY pEntry)
  * Adds a cache entry to the given LRU list unlinking it from the currently
  * assigned list if needed.
  *
- * @returns nothing.
  * @param    pList    List to the add entry to.
  * @param    pEntry   Entry to add.
  */
@@ -320,7 +314,6 @@ static void pdmBlkCacheEntryAddToList(PPDMBLKLRULIST pList, PPDMBLKCACHEENTRY pE
 /**
  * Destroys a LRU list freeing all entries.
  *
- * @returns nothing
  * @param   pList    Pointer to the LRU list to destroy.
  *
  * @note The caller must own the critical section of the cache.
@@ -621,8 +614,8 @@ static int pdmBlkCacheEntryReadFromMedium(PPDMBLKCACHEENTRY pEntry)
 /**
  * Initiates a write I/O task for the given entry.
  *
- * @returns nothing.
- * @param    pEntry The entry to read the data from.
+ * @returns VBox status code.
+ * @param   pEntry  The entry to read the data from.
  */
 static int pdmBlkCacheEntryWriteToMedium(PPDMBLKCACHEENTRY pEntry)
 {
@@ -685,7 +678,6 @@ static int pdmBlkCacheRequestPassthrough(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEREQ
 /**
  * Commit a single dirty entry to the endpoint
  *
- * @returns nothing
  * @param   pEntry    The entry to commit.
  */
 static void pdmBlkCacheEntryCommit(PPDMBLKCACHEENTRY pEntry)
@@ -700,7 +692,6 @@ static void pdmBlkCacheEntryCommit(PPDMBLKCACHEENTRY pEntry)
 /**
  * Commit all dirty entries for a single endpoint.
  *
- * @returns nothing.
  * @param   pBlkCache    The endpoint cache to commit.
  */
 static void pdmBlkCacheCommit(PPDMBLKCACHE pBlkCache)
@@ -757,7 +748,6 @@ static void pdmBlkCacheCommit(PPDMBLKCACHE pBlkCache)
 /**
  * Commit all dirty entries in the cache.
  *
- * @returns nothing.
  * @param   pCache    The global cache instance.
  */
 static void pdmBlkCacheCommitDirtyEntries(PPDMBLKCACHEGLOBAL pCache)
@@ -1611,7 +1601,6 @@ static PPDMBLKCACHEENTRY pdmBlkCacheGetCacheEntryByOffset(PPDMBLKCACHE pBlkCache
 /**
  * Return the best fit cache entries for the given offset.
  *
- * @returns nothing.
  * @param   pBlkCache    The endpoint cache.
  * @param   off          The offset.
  * @param   ppEntryAbove Where to store the pointer to the best fit entry above
@@ -1727,12 +1716,10 @@ DECLINLINE(bool) pdmBlkCacheEntryFlagIsSetClearAcquireLock(PPDMBLKCACHE pBlkCach
  * Adds a segment to the waiting list for a cache entry
  * which is currently in progress.
  *
- * @returns nothing.
  * @param   pEntry      The cache entry to add the segment to.
  * @param   pWaiter     The waiter entry to add.
  */
-DECLINLINE(void) pdmBlkCacheEntryAddWaiter(PPDMBLKCACHEENTRY pEntry,
-                                           PPDMBLKCACHEWAITER pWaiter)
+DECLINLINE(void) pdmBlkCacheEntryAddWaiter(PPDMBLKCACHEENTRY pEntry, PPDMBLKCACHEWAITER pWaiter)
 {
     pWaiter->pNext = NULL;
 

@@ -555,7 +555,6 @@ DECLINLINE(int) rtIoQueueLnxEventfd2(uint32_t uValInit, uint32_t fFlags, int *pi
 /**
  * Checks the completion event queue for pending events.
  *
- * @returns nothing.
  * @param   pThis               The provider instance.
  * @param   paCEvt              Pointer to the array of completion events.
  * @param   cCEvt               Maximum number of completion events the array can hold.

@@ -836,7 +836,6 @@ DECLINLINE(unsigned) vboxNetFltLinuxGetChecksumStartOffset(struct sk_buff *pBuf)
 /**
  * Initializes a SG list from an sk_buff.
  *
- * @returns Number of segments.
  * @param   pThis               The instance.
  * @param   pBuf                The sk_buff.
  * @param   pSG                 The SG.

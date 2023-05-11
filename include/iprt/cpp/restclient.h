@@ -531,8 +531,6 @@ public:
 
     /**
      * Called after status, headers and body all have been presented.
-     *
-     * @returns IPRT status code.
      */
     virtual void receiveFinal() RT_NOEXCEPT;
 

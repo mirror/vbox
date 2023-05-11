@@ -94,7 +94,6 @@ typedef HBDMGRINT *PHBDMGRINT;
 /**
  * Unclaims the given block device and frees its state removing it from the list.
  *
- * @returns nothing.
  * @param   pDev           The block device to unclaim.
  */
 static void hbdMgrDevUnclaim(PHBDMGRDEV pDev)

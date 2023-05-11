@@ -46,8 +46,6 @@
 /**
  * Resolves a symbol.
  *
- * @returns Pointer to the symbol on success, NULL on failure.
- *
  * @param   pHandle     The IDC handle.
  * @param   ppfn        Where to return the address of the symbol.
  * @param   pszName     The name of the symbol.
@@ -73,8 +71,6 @@ static void supR0IdcGetSymbol(PSUPDRVIDCHANDLE pHandle, PFNRT *ppfn, const char 
 
 /**
  * Resolves a symbol.
- *
- * @returns Pointer to the symbol on success, NULL on failure.
  *
  * @param   pSession    The IDC session.
  * @param   ppfn        Where to return the address of the symbol.

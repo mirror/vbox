@@ -1165,7 +1165,6 @@ static int vmdkAllocGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
 /**
  * Converts the grain directory from little to host endianess.
  *
- * @returns nothing.
  * @param   pGD             The grain directory.
  * @param   cGDEntries      Number of entries in the grain directory to convert.
  */
@@ -7370,7 +7369,6 @@ static int vmdkRenameStatePrepare(PVMDKIMAGE pImage, PVMDKRENAMESTATE pRenameSta
 /**
  * Destroys the given rename state, freeing all allocated memory.
  *
- * @returns nothing.
  * @param   pRenameState    The rename state to destroy.
  */
 static void vmdkRenameStateDestroy(PVMDKRENAMESTATE pRenameState)

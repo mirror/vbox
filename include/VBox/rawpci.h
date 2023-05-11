@@ -566,8 +566,6 @@ typedef struct RAWPCIFACTORY
     /**
      * Deinitialize per-VM data related to PCI passthrough.
      *
-     * @returns VBox status code.
-     *
      * @param   pFactory    Pointer to this structure.
      * @param   pVM         The cross context VM structure.
      * @param   pVmData     Pointer to PCI data.

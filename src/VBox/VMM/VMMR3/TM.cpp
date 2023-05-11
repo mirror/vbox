@@ -3571,8 +3571,8 @@ VMMR3DECL(int) TMR3GetCpuLoadPercents(PUVM pUVM, VMCPUID idCpu, uint64_t *pcMsIn
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
 
 /**
- * Helper for tmR3CpuLoadTimer.
- * @returns
+ * Helper for tmR3CpuLoadTimer. 
+ *  
  * @param   pState          The state to update.
  * @param   cNsTotal        Total time.
  * @param   cNsExecuting    Time executing.

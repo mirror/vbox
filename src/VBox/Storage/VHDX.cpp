@@ -616,7 +616,6 @@ static const VHDXMETADATAITEMPROPS s_aVhdxMetadataItemProps[] =
 /**
  * Converts the file identifier between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv             Direction of the conversion.
  * @param   pFileIdentifierConv Where to store the converted file identifier.
  * @param   pFileIdentifier     The file identifier to convert.
@@ -634,7 +633,6 @@ DECLINLINE(void) vhdxConvFileIdentifierEndianess(VHDXECONV enmConv, PVhdxFileIde
 /**
  * Converts a UUID between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv             Direction of the conversion.
  * @param   pUuidConv           Where to store the converted UUID.
  * @param   pUuid               The UUID to convert.
@@ -664,7 +662,6 @@ DECLINLINE(void) vhdxConvUuidEndianess(VHDXECONV enmConv, PRTUUID pUuidConv, PRT
 /**
  * Converts a VHDX header between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv             Direction of the conversion.
  * @param   pHdrConv            Where to store the converted header.
  * @param   pHdr                The VHDX header to convert.
@@ -688,7 +685,6 @@ DECLINLINE(void) vhdxConvHeaderEndianess(VHDXECONV enmConv, PVhdxHeader pHdrConv
 /**
  * Converts a VHDX region table header between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv             Direction of the conversion.
  * @param   pRegTblHdrConv      Where to store the converted header.
  * @param   pRegTblHdr          The VHDX region table header to convert.
@@ -707,7 +703,6 @@ DECLINLINE(void) vhdxConvRegionTblHdrEndianess(VHDXECONV enmConv, PVhdxRegionTbl
 /**
  * Converts a VHDX region table entry between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv             Direction of the conversion.
  * @param   pRegTblEntConv      Where to store the converted region table entry.
  * @param   pRegTblEnt          The VHDX region table entry to convert.
@@ -728,7 +723,6 @@ DECLINLINE(void) vhdxConvRegionTblEntryEndianess(VHDXECONV enmConv, PVhdxRegionT
 /**
  * Converts a VHDX log entry header between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv             Direction of the conversion.
  * @param   pLogEntryHdrConv    Where to store the converted log entry header.
  * @param   pLogEntryHdr        The VHDX log entry header to convert.
@@ -752,7 +746,6 @@ DECLINLINE(void) vhdxConvLogEntryHdrEndianess(VHDXECONV enmConv, PVhdxLogEntryHd
 /**
  * Converts a VHDX log zero descriptor between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv             Direction of the conversion.
  * @param   pLogZeroDescConv    Where to store the converted log zero descriptor.
  * @param   pLogZeroDesc        The VHDX log zero descriptor to convert.
@@ -773,7 +766,6 @@ DECLINLINE(void) vhdxConvLogZeroDescEndianess(VHDXECONV enmConv, PVhdxLogZeroDes
 /**
  * Converts a VHDX log data descriptor between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv             Direction of the conversion.
  * @param   pLogDataDescConv    Where to store the converted log data descriptor.
  * @param   pLogDataDesc        The VHDX log data descriptor to convert.
@@ -794,7 +786,6 @@ DECLINLINE(void) vhdxConvLogDataDescEndianess(VHDXECONV enmConv, PVhdxLogDataDes
 /**
  * Converts a VHDX log data sector between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv             Direction of the conversion.
  * @param   pLogDataSectorConv  Where to store the converted log data sector.
  * @param   pLogDataSector      The VHDX log data sector to convert.
@@ -814,7 +805,6 @@ DECLINLINE(void) vhdxConvLogDataSectorEndianess(VHDXECONV enmConv, PVhdxLogDataS
 /**
  * Converts a BAT between file and host endianess.
  *
- * @returns nothing.
  * @param   enmConv             Direction of the conversion.
  * @param   paBatEntriesConv    Where to store the converted BAT.
  * @param   paBatEntries        The VHDX BAT to convert.
@@ -832,7 +822,6 @@ DECLINLINE(void) vhdxConvBatTableEndianess(VHDXECONV enmConv, PVhdxBatEntry paBa
 /**
  * Converts a VHDX metadata table header between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv             Direction of the conversion.
  * @param   pMetadataTblHdrConv Where to store the converted metadata table header.
  * @param   pMetadataTblHdr     The VHDX metadata table header to convert.
@@ -852,7 +841,6 @@ DECLINLINE(void) vhdxConvMetadataTblHdrEndianess(VHDXECONV enmConv, PVhdxMetadat
 /**
  * Converts a VHDX metadata table entry between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv               Direction of the conversion.
  * @param   pMetadataTblEntryConv Where to store the converted metadata table entry.
  * @param   pMetadataTblEntry     The VHDX metadata table entry to convert.
@@ -872,7 +860,6 @@ DECLINLINE(void) vhdxConvMetadataTblEntryEndianess(VHDXECONV enmConv, PVhdxMetad
 /**
  * Converts a VHDX file parameters item between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv               Direction of the conversion.
  * @param   pFileParamsConv       Where to store the converted file parameters item entry.
  * @param   pFileParams           The VHDX file parameters item to convert.
@@ -889,7 +876,6 @@ DECLINLINE(void) vhdxConvFileParamsEndianess(VHDXECONV enmConv, PVhdxFileParamet
 /**
  * Converts a VHDX virtual disk size item between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv               Direction of the conversion.
  * @param   pVDiskSizeConv        Where to store the converted virtual disk size item entry.
  * @param   pVDiskSize            The VHDX virtual disk size item to convert.
@@ -907,7 +893,6 @@ DECLINLINE(void) vhdxConvVDiskSizeEndianess(VHDXECONV enmConv, PVhdxVDiskSize pV
 /**
  * Converts a VHDX page 83 data item between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv               Direction of the conversion.
  * @param   pPage83DataConv       Where to store the converted page 83 data item entry.
  * @param   pPage83Data           The VHDX page 83 data item to convert.
@@ -924,7 +909,6 @@ DECLINLINE(void) vhdxConvPage83DataEndianess(VHDXECONV enmConv, PVhdxPage83Data 
 /**
  * Converts a VHDX logical sector size item between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv               Direction of the conversion.
  * @param   pVDiskLogSectSizeConv Where to store the converted logical sector size item entry.
  * @param   pVDiskLogSectSize     The VHDX logical sector size item to convert.
@@ -942,7 +926,6 @@ DECLINLINE(void) vhdxConvVDiskLogSectSizeEndianess(VHDXECONV enmConv, PVhdxVDisk
 /**
  * Converts a VHDX physical sector size item between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv                Direction of the conversion.
  * @param   pVDiskPhysSectSizeConv Where to store the converted physical sector size item entry.
  * @param   pVDiskPhysSectSize     The VHDX physical sector size item to convert.
@@ -959,7 +942,6 @@ DECLINLINE(void) vhdxConvVDiskPhysSectSizeEndianess(VHDXECONV enmConv, PVhdxVDis
 /**
  * Converts a VHDX parent locator header item between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv                Direction of the conversion.
  * @param   pParentLocatorHdrConv  Where to store the converted parent locator header item entry.
  * @param   pParentLocatorHdr      The VHDX parent locator header item to convert.
@@ -978,7 +960,6 @@ DECLINLINE(void) vhdxConvParentLocatorHeaderEndianness(VHDXECONV enmConv, PVhdxP
 /**
  * Converts a VHDX parent locator entry between file and host endianness.
  *
- * @returns nothing.
  * @param   enmConv                 Direction of the conversion.
  * @param   pParentLocatorEntryConv Where to store the converted parent locator entry.
  * @param   pParentLocatorEntry     The VHDX parent locator entry to convert.

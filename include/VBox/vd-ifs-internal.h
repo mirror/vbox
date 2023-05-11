@@ -345,7 +345,6 @@ typedef struct VDINTERFACEIOINT
      * Releases a metadata transfer handle.
      * The free space can be used for another transfer.
      *
-     * @returns nothing.
      * @param   pvUser         The opaque user data passed on container creation.
      * @param   pMetaXfer      The metadata transfer handle to release.
      */
@@ -423,7 +422,6 @@ typedef struct VDINTERFACEIOINT
     /**
      * Marks the given number of bytes as completed and continues the I/O context.
      *
-     * @returns nothing.
      * @param   pvUser         The opaque user data passed on container creation.
      * @param   pIoCtx         The I/O context.
      * @param   rcReq          Status code the request completed with.

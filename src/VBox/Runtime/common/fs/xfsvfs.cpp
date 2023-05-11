@@ -266,7 +266,6 @@ static int rtFsXfsVol_OpenDirByInode(PRTFSXFSVOL pThis, uint32_t iInode, PRTVFSD
 /**
  * Logs the XFS filesystem superblock.
  *
- * @returns nothing.
  * @param   iAg                 The allocation group number for the given super block.
  * @param   pSb                 Pointer to the superblock.
  */
@@ -348,7 +347,6 @@ static void rtFsXfsSb_Log(uint32_t iAg, PCXFSSUPERBLOCK pSb)
 /**
  * Logs a AG free space block.
  *
- * @returns nothing.
  * @param   iAg                 The allocation group number for the given free space block.
  * @param   pAgf                The AG free space block.
  */
@@ -387,7 +385,6 @@ static void rtFsXfsAgf_Log(uint32_t iAg, PCXFSAGF pAgf)
 /**
  * Loads an AG inode information block.
  *
- * @returns nothing.
  * @param   iAg                 The allocation group number for the given inode information block.
  * @param   pAgi                The AG inode information block.
  */
@@ -418,7 +415,6 @@ static void rtFsXfsAgi_Log(uint32_t iAg, PCXFSAGI pAgi)
 /**
  * Logs a XFS filesystem inode.
  *
- * @returns nothing.
  * @param   pThis               The XFS volume instance.
  * @param   iInode              Inode number.
  * @param   pInode              Pointer to the inode.
@@ -491,7 +487,6 @@ static void rtFsXfsInode_Log(PRTFSXFSVOL pThis, XFSINO iInode, PCXFSINODECORE pI
 /**
  * Logs a XFS filesystem directory entry.
  *
- * @returns nothing.
  * @param   pThis               The XFS volume instance.
  * @param   idxDirEntry         Directory entry index number.
  * @param   pDirEntry           The directory entry.
@@ -536,7 +531,6 @@ DECLINLINE(uint64_t) rtFsXfsDiskOffsetToBlockIdx(PRTFSXFSVOL pThis, uint64_t off
  * Splits the given absolute inode number into the AG number, block inside the AG
  * and the offset into the block where to find the inode structure.
  *
- * @returns nothing.
  * @param   pThis               The XFS volume instance.
  * @param   iInode              The inode to split.
  * @param   piAg                Where to store the AG number.
@@ -647,7 +641,6 @@ static PRTFSXFSBLOCKENTRY rtFsXfsVol_BlockGetNew(PRTFSXFSVOL pThis, uint64_t iBl
 /**
  * Frees the given block.
  *
- * @returns nothing.
  * @param   pThis               The XFS volume instance.
  * @param   pBlock              The block to free.
  */
@@ -733,7 +726,6 @@ static int rtFsXfsVol_BlockLoad(PRTFSXFSVOL pThis, uint64_t iBlock, PRTFSXFSBLOC
 /**
  * Releases a reference of the given block.
  *
- * @returns nothing.
  * @param   pThis               The XFS volume instance.
  * @param   pBlock              The block to release.
  */
@@ -769,7 +761,6 @@ static PRTFSXFSAG rtFsXfsAg_Alloc(PRTFSXFSVOL pThis, uint32_t iAg)
 /**
  * Frees the given allocation group.
  *
- * @returns nothing.
  * @param   pThis               The XFS volume instance.
  * @param   pAg                 The allocation group to free.
  */
@@ -888,7 +879,6 @@ static int rtFsXfsAg_Load(PRTFSXFSVOL pThis, uint32_t iAg, PRTFSXFSAG *ppAg)
 /**
  * Releases a reference of the given allocation group.
  *
- * @returns nothing.
  * @param   pThis               The XFS volume instance.
  * @param   pAg                 The allocation group to release.
  */
@@ -925,7 +915,6 @@ static PRTFSXFSINODE rtFsXfsInode_Alloc(PRTFSXFSVOL pThis, uint32_t iInode)
 /**
  * Frees the given inode.
  *
- * @returns nothing.
  * @param   pThis               The XFS volume instance.
  * @param   pInode              The inode to free.
  */
@@ -1132,7 +1121,6 @@ static int rtFsXfsInode_Load(PRTFSXFSVOL pThis, XFSINO iInode, PRTFSXFSINODE *pp
 /**
  * Releases a reference of the given inode.
  *
- * @returns nothing.
  * @param   pThis               The XFS volume instance.
  * @param   pInode              The inode to release.
  */

@@ -642,8 +642,6 @@ static DECLCALLBACK(void) supR3HardenedPosixMonitorDlmopenResolve(void)
 /**
  * Hardening initialization for POSIX compatible hosts.
  *
- * @returns nothing.
- *
  * @note Doesn't return on error.
  */
 DECLHIDDEN(void) supR3HardenedPosixInit(void)

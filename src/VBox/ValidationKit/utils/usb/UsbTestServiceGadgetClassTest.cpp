@@ -243,7 +243,6 @@ static int utsGadgetClassTestUnlinkFuncFromCfg(PUTSGADGETCLASSINT pClass, const 
 /**
  * Cleans up any leftover configurations from the gadget class.
  *
- * @returns nothing.
  * @param   pClass            The gadget class instance data.
  */
 static void utsGadgetClassTestCleanup(PUTSGADGETCLASSINT pClass)

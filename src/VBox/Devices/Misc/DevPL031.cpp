@@ -192,7 +192,6 @@ typedef CTX_SUFF(PDEVPL031) PDEVPL031CC;
 /**
  * Updates the IRQ state based on the current device state.
  *
- * @returns nothing.
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared RTC instance data.
  */

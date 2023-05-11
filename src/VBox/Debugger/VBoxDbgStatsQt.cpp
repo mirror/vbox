@@ -364,7 +364,6 @@ protected:
      * updateCallback() worker that advances the update state to the next data node
      * in anticipation of the next updateCallback call.
      *
-     * @returns The current node.
      * @param   pNode       The current node.
      */
     void updateCallbackAdvance(PDBGGUISTATSNODE pNode);

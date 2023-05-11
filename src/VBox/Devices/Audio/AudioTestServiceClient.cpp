@@ -228,13 +228,12 @@ static int audioTestSvcClientSendMsg(PATSCLIENT pClient, void *pvHdr, size_t cbH
 /**
  * Initializes a client request header.
  *
- * @returns VBox status code.
  * @param   pReqHdr             Request header to initialize.
  * @param   cbReq               Size (in bytes) the request will have (does *not* include payload).
  * @param   pszOp               Operation to perform with the request.
  * @param   cbPayload           Size (in bytes) of payload that will follow the header. Optional and can be 0.
  */
-DECLINLINE (void) audioTestSvcClientReqHdrInit(PATSPKTHDR pReqHdr, size_t cbReq, const char *pszOp, size_t cbPayload)
+DECLINLINE(void) audioTestSvcClientReqHdrInit(PATSPKTHDR pReqHdr, size_t cbReq, const char *pszOp, size_t cbPayload)
 {
     AssertReturnVoid(strlen(pszOp) >= 2);
     AssertReturnVoid(strlen(pszOp) <= ATSPKT_OPCODE_MAX_LEN);
@@ -318,7 +317,6 @@ int AudioTestSvcClientCreate(PATSCLIENT pClient)
 /**
  * Destroys an ATS client.
  *
- * @returns VBox status code.
  * @param   pClient             Client to destroy.
  */
 void AudioTestSvcClientDestroy(PATSCLIENT pClient)
