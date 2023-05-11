@@ -980,6 +980,7 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
    $$(VBoxSVCM_0_OUTDIR)/VBoxSVCM.def:
 	$(RM) -f $@
 	$(APPEND) $@ _NSGetModule
+   VBoxSVCM_CXXFLAGS += -Wno-deprecated-copy    # To shut up Clang 13 (-Wdeprecated-copy).
   endif
   VBoxSVCM_INTERMEDIATES += $(VBOX_IDL_HEADER.XPCOM)
 
