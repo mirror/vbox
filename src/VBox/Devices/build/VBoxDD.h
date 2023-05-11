@@ -232,6 +232,7 @@ extern const PDMDEVREG g_DeviceIommuIntel;
 extern const PDMDEVREG g_DevicePl011;
 extern const PDMDEVREG g_DevicePl031Rtc;
 extern const PDMDEVREG g_DeviceFlashCFI;
+extern const PDMDEVREG g_DevicePciGenericEcam;
 #endif
 
 /* VBoxAcpi.cpp */

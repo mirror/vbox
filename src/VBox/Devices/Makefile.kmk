@@ -920,6 +920,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  if defined(VBOX_WITH_VIRT_ARMV8)
   VBoxDD_DEFS       += VBOX_VMM_TARGET_ARMV8
   VBoxDD_SOURCES    += \
+  	Bus/DevPciGenericEcam.cpp \
   	Misc/DevFlashCFI.cpp \
   	Misc/DevPL031.cpp \
   	Serial/DevPL011.cpp

@@ -115,7 +115,6 @@ static void ich9pciSetIrqInternal(PPDMDEVINS pDevIns, PDEVPCIROOT pPciRoot, PDEV
                                   uint8_t uDevFn, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc);
 #ifdef IN_RING3
 static int ich9pciFakePCIBIOS(PPDMDEVINS pDevIns);
-DECLINLINE(PPDMPCIDEV) ich9pciFindBridge(PDEVPCIBUS pBus, uint8_t uBus);
 static void ich9pciBiosInitAllDevicesOnBus(PPDMDEVINS pDevIns, PDEVPCIROOT pPciRoot, PDEVPCIBUS pBus);
 static bool ich9pciBiosInitAllDevicesPrefetchableOnBus(PPDMDEVINS pDevIns, PDEVPCIROOT pPciRoot, PDEVPCIBUS pBus, bool fUse64Bit, bool fDryrun);
 #endif
@@ -341,7 +340,7 @@ static VBOXSTRICTRC ich9pciConfigWrite(PPDMDEVINS pDevIns, PDEVPCIROOT pPciRoot,
         if (pPciRoot->PciBus.cBridges)
         {
 #ifdef IN_RING3 /** @todo do lookup in R0/RC too! r=klaus don't think that it can work, since the config space access callback only works in R3 */
-            PPDMPCIDEV pBridgeDevice = ich9pciFindBridge(&pPciRoot->PciBus, pPciAddr->iBus);
+            PPDMPCIDEV pBridgeDevice = devpciR3FindBridge(&pPciRoot->PciBus, pPciAddr->iBus);
             if (pBridgeDevice)
             {
                 AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
@@ -436,7 +435,7 @@ static VBOXSTRICTRC ich9pciConfigRead(PDEVPCIROOT pPciRoot, PciAddress* pPciAddr
         if (pPciRoot->PciBus.cBridges)
         {
 #ifdef IN_RING3 /** @todo do lookup in R0/RC too! r=klaus don't think that it can work, since the config space access callback only works in R3 */
-            PPDMPCIDEV pBridgeDevice = ich9pciFindBridge(&pPciRoot->PciBus, pPciAddr->iBus);
+            PPDMPCIDEV pBridgeDevice = devpciR3FindBridge(&pPciRoot->PciBus, pPciAddr->iBus);
             if (pBridgeDevice)
             {
                 AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigRead);
@@ -657,7 +656,7 @@ static void ich9pciSetIrqInternal(PPDMDEVINS pDevIns, PDEVPCIROOT pPciRoot, PDEV
  * @callback_method_impl{FNIOMMMIONEWWRITE,
  * Emulates writes to configuration space.}
  */
-static DECLCALLBACK(VBOXSTRICTRC) ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
+DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) devpciCommonMcfgMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
     PDEVPCIROOT pPciRoot = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
     Log2Func(("%RGp LB %d\n", off, cb));
@@ -699,7 +698,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void 
  * @callback_method_impl{FNIOMMMIONEWWRITE,
  * Emulates reads from configuration space.}
  */
-static DECLCALLBACK(VBOXSTRICTRC) ich9pciMcfgMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
+DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) devpciCommonMcfgMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
     PDEVPCIROOT pPciRoot = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
     LogFlowFunc(("%RGp LB %u\n", off, cb));
@@ -738,31 +737,6 @@ static DECLCALLBACK(VBOXSTRICTRC) ich9pciMcfgMMIORead(PPDMDEVINS pDevIns, void *
 }
 
 #ifdef IN_RING3
-
-DECLINLINE(PPDMPCIDEV) ich9pciFindBridge(PDEVPCIBUS pBus, uint8_t uBus)
-{
-    /* Search for a fitting bridge. */
-    for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
-    {
-        /*
-         * Examine secondary and subordinate bus number.
-         * If the target bus is in the range we pass the request on to the bridge.
-         */
-        PPDMPCIDEV pBridge = pBus->papBridgesR3[iBridge];
-        AssertMsg(pBridge && pciDevIsPci2PciBridge(pBridge),
-                  ("Device is not a PCI bridge but on the list of PCI bridges\n"));
-        /* safe, only needs to go to the config space array */
-        uint32_t uSecondary   = PDMPciDevGetByte(pBridge, VBOX_PCI_SECONDARY_BUS);
-        /* safe, only needs to go to the config space array */
-        uint32_t uSubordinate = PDMPciDevGetByte(pBridge, VBOX_PCI_SUBORDINATE_BUS);
-        Log3Func(("bus %p, bridge %d: %d in %d..%d\n", pBus, iBridge, uBus, uSecondary, uSubordinate));
-        if (uBus >= uSecondary && uBus <= uSubordinate)
-            return pBridge;
-    }
-
-    /* Nothing found. */
-    return NULL;
-}
 
 uint32_t devpciR3GetCfg(PPDMPCIDEV pPciDev, int32_t iRegister, int cb)
 {
@@ -977,7 +951,7 @@ static int devpciR3CommonRegisterDeviceOnBus(PPDMDEVINS pDevIns, PDEVPCIBUS pBus
     pPciDev->Int.s.pfnConfigRead    = NULL;
     pPciDev->Int.s.pfnConfigWrite   = NULL;
     pPciDev->Int.s.hMmioMsix        = NIL_IOMMMIOHANDLE;
-    if (pBus->fTypePiix3 && pPciDev->cbConfig > 256)
+    if (pBus->enmType == DEVPCIBUSTYPE_PIIX3 && pPciDev->cbConfig > 256)
         pPciDev->cbConfig = 256;
 
     /* Remember and mark bridges. */
@@ -1175,7 +1149,7 @@ static int ich9pciR3CommonSaveExec(PCPDMDEVHLPR3 pHlp, PDEVPCIBUS pBus, PSSMHAND
     return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX); /* terminator */
 }
 
-static DECLCALLBACK(int) ich9pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+DECL_HIDDEN_CALLBACK(int) devpciR3CommonSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PDEVPCIROOT     pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
@@ -1220,7 +1194,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ich9pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns,
     /* safe, only needs to go to the config space array */
     if (iBus != PDMPciDevGetByte(pDevIns->apPciDevs[0], VBOX_PCI_SECONDARY_BUS))
     {
-        PPDMPCIDEV pBridgeDevice = ich9pciFindBridge(pBus, iBus);
+        PPDMPCIDEV pBridgeDevice = devpciR3FindBridge(pBus, iBus);
         if (pBridgeDevice)
         {
             AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
@@ -1260,7 +1234,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ich9pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, 
     /* safe, only needs to go to the config space array */
     if (iBus != PDMPciDevGetByte(pDevIns->apPciDevs[0], VBOX_PCI_SECONDARY_BUS))
     {
-        PPDMPCIDEV pBridgeDevice = ich9pciFindBridge(pBus, iBus);
+        PPDMPCIDEV pBridgeDevice = devpciR3FindBridge(pBus, iBus);
         if (pBridgeDevice)
         {
             AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigRead);
@@ -1748,7 +1722,7 @@ static int ich9pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHAND
     return rc;
 }
 
-static DECLCALLBACK(int) ich9pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+DECL_HIDDEN_CALLBACK(int) devpciR3CommonLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PDEVPCIROOT     pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
@@ -3078,6 +3052,21 @@ static const char *devpciR3InInfoPciBusClassName(uint8_t iBaseClass)
     return "device does not fit in any defined classes";
 }
 
+static const char *devpciR3InInfoPciBusType(DEVPCIBUSTYPE enmType)
+{
+    static const char *s_szBusType[] =
+    {
+        /* 00h */ "INVALID",
+        /* 01h */ "PIIX3",
+        /* 02h */ "ICH9",
+        /* 03h */ "GenericEcam",
+        /* 04h */ "?32-bit hack?",
+    };
+
+    if (enmType < RT_ELEMENTS(s_szBusType))
+        return s_szBusType[enmType];
+    return "?type?";
+}
 
 /**
  * Recursive worker for devpciR3InfoPci.
@@ -3112,7 +3101,7 @@ static void devpciR3InfoPciBus(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, unsigned iIn
                             pPciDev->pszNameR3,
                             pciDevIsPassthrough(pPciDev) ? " (PASSTHROUGH)" : "",
                             devpciR3GetWord(pPciDev, VBOX_PCI_VENDOR_ID), devpciR3GetWord(pPciDev, VBOX_PCI_DEVICE_ID),
-                            pBus->fTypeIch9 ? "ICH9" : pBus->fTypePiix3 ? "PIIX3" : "?type?",
+                            devpciR3InInfoPciBusType(pBus->enmType),
                             pciDevIsMsiCapable(pPciDev)  ? " MSI" : "",
                             pciDevIsMsixCapable(pPciDev) ? " MSI-X" : ""
                             );
@@ -3358,8 +3347,7 @@ static DECLCALLBACK(int) ich9pciR3Construct(PPDMDEVINS pDevIns, int iInstance, P
     pPciRoot->hIoPortData           = NIL_IOMIOPORTHANDLE;
     pPciRoot->hIoPortMagic          = NIL_IOMIOPORTHANDLE;
     pPciRoot->hMmioMcfg             = NIL_IOMMMIOHANDLE;
-    pPciRoot->PciBus.fTypePiix3     = false;
-    pPciRoot->PciBus.fTypeIch9      = true;
+    pPciRoot->PciBus.enmType        = DEVPCIBUSTYPE_GENERIC_ECAM;
     pPciRoot->PciBus.fPureBridge    = false;
     pPciRoot->PciBus.papBridgesR3   = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPDMPCIDEV) * RT_ELEMENTS(pPciRoot->PciBus.apDevices));
     AssertLogRelReturn(pPciRoot->PciBus.papBridgesR3, VERR_NO_MEMORY);
@@ -3440,7 +3428,7 @@ static DECLCALLBACK(int) ich9pciR3Construct(PPDMDEVINS pDevIns, int iInstance, P
     if (pPciRoot->u64PciConfigMMioAddress != 0)
     {
         rc = PDMDevHlpMmioCreateAndMap(pDevIns, pPciRoot->u64PciConfigMMioAddress, pPciRoot->u64PciConfigMMioLength,
-                                       ich9pciMcfgMMIOWrite, ich9pciMcfgMMIORead,
+                                       devpciCommonMcfgMmioWrite, devpciCommonMcfgMmioRead,
                                        IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
                                        "MCFG ranges", &pPciRoot->hMmioMcfg);
         AssertMsgRCReturn(rc, ("rc=%Rrc %#RX64/%#RX64\n", rc,  pPciRoot->u64PciConfigMMioAddress, pPciRoot->u64PciConfigMMioLength), rc);
@@ -3452,8 +3440,8 @@ static DECLCALLBACK(int) ich9pciR3Construct(PPDMDEVINS pDevIns, int iInstance, P
     rc = PDMDevHlpSSMRegisterEx(pDevIns, VBOX_ICH9PCI_SAVED_STATE_VERSION,
                                 sizeof(*pBus) + 16*128, "pgm",
                                 NULL, NULL, NULL,
-                                NULL, ich9pciR3SaveExec, NULL,
-                                NULL, ich9pciR3LoadExec, NULL);
+                                NULL, devpciR3CommonSaveExec, NULL,
+                                NULL, devpciR3CommonLoadExec, NULL);
     AssertRCReturn(rc, rc);
 
     /** @todo other chipset devices shall be registered too */
@@ -3571,7 +3559,7 @@ static uint8_t ich9pcibridgeR3GetExpressPortTypeFromString(const char *pszExpres
  *
  * @param   pDevIns     ICH9 bridge (root or PCI-to-PCI) instance.
  */
-static void ich9pciResetBridge(PPDMDEVINS pDevIns)
+DECLHIDDEN(void) devpciR3CommonResetBridge(PPDMDEVINS pDevIns)
 {
     PDEVPCIBUS pBus = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
 
@@ -3585,7 +3573,7 @@ static void ich9pciResetBridge(PPDMDEVINS pDevIns)
     for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
     {
         if (pBus->papBridgesR3[iBridge])
-            ich9pciResetBridge(pBus->papBridgesR3[iBridge]->Int.s.CTX_SUFF(pDevIns));
+            devpciR3CommonResetBridge(pBus->papBridgesR3[iBridge]->Int.s.CTX_SUFF(pDevIns));
     }
 
     /* Reset topology config for non-root bridge. Last thing to do, otherwise
@@ -3609,7 +3597,7 @@ static void ich9pciResetBridge(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) ich9pciReset(PPDMDEVINS pDevIns)
 {
     /* Reset everything under the root bridge. */
-    ich9pciResetBridge(pDevIns);
+    devpciR3CommonResetBridge(pDevIns);
 }
 
 
@@ -3677,8 +3665,7 @@ static DECLCALLBACK(int) ich9pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInsta
     PDEVPCIBUSCC pBusCC = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC);
     PDEVPCIBUS   pBus   = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
 
-    pBus->fTypePiix3  = false;
-    pBus->fTypeIch9   = true;
+    pBus->enmType     = DEVPCIBUSTYPE_ICH9;
     pBus->fPureBridge = true;
     pBusCC->pDevInsR3 = pDevIns;
     pBus->papBridgesR3 = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPDMPCIDEV) * RT_ELEMENTS(pBus->apDevices));
@@ -3858,7 +3845,7 @@ DECLCALLBACK(int) ich9pciRZConstruct(PPDMDEVINS pDevIns)
     /* Set up MMIO callbacks: */
     if (pPciRoot->hMmioMcfg != NIL_IOMMMIOHANDLE)
     {
-        rc = PDMDevHlpMmioSetUpContext(pDevIns, pPciRoot->hMmioMcfg, ich9pciMcfgMMIOWrite, ich9pciMcfgMMIORead, NULL /*pvUser*/);
+        rc = PDMDevHlpMmioSetUpContext(pDevIns, pPciRoot->hMmioMcfg, devpciCommonMcfgMmioWrite, devpciCommonMcfgMmioRead, NULL /*pvUser*/);
         AssertLogRelRCReturn(rc, rc);
     }
 

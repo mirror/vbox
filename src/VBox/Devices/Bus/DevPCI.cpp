@@ -1304,8 +1304,7 @@ static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pGlobals->fUseIoApic   = fUseIoApic;
     memset((void *)&pGlobals->auPciApicIrqLevels, 0, sizeof(pGlobals->auPciApicIrqLevels));
 
-    pGlobals->PciBus.fTypePiix3  = true;
-    pGlobals->PciBus.fTypeIch9   = false;
+    pGlobals->PciBus.enmType     = DEVPCIBUSTYPE_PIIX3;
     pGlobals->PciBus.fPureBridge = false;
     pGlobals->PciBus.papBridgesR3 = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns,
                                                                         sizeof(PPDMPCIDEV)
@@ -1695,9 +1694,8 @@ static DECLCALLBACK(int)   pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInstanc
     /*
      * Init data and register the PCI bus.
      */
-    pBus->fTypePiix3  = true;
-    pBus->fTypeIch9   = false;
-    pBus->fPureBridge = true;
+    pBus->enmType      = DEVPCIBUSTYPE_PIIX3;
+    pBus->fPureBridge  = true;
     pBus->papBridgesR3 = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPDMPCIDEV) * RT_ELEMENTS(pBus->apDevices));
     AssertLogRelReturn(pBus->papBridgesR3, VERR_NO_MEMORY);
 

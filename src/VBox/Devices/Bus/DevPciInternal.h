@@ -36,6 +36,26 @@
 #endif
 #include <VBox/vmm/pdmdev.h>
 
+#include "PciInline.h"
+
+
+/**
+ * Supported PCI bus types.
+ */
+typedef enum DEVPCIBUSTYPE
+{
+    /** The usual invalid type. */
+    DEVPCIBUSTYPE_INVALID = 0,
+    /** PIIX3 PCI bus type. */
+    DEVPCIBUSTYPE_PIIX3,
+    /** ICH9 PCI bus type. */
+    DEVPCIBUSTYPE_ICH9,
+    /** Generic ECAM PCI bus type. */
+    DEVPCIBUSTYPE_GENERIC_ECAM,
+    /** 32bit blowup. */
+    DEVPCIBUSTYPE_32BIT_HACK = 0x7fffffff
+} DEVPCIBUSTYPE;
+
 
 /**
  * PCI bus shared instance data (common to both PCI buses).
@@ -50,24 +70,24 @@ typedef struct DEVPCIBUS
     uint32_t                cBridges;
     /** Start device number - always zero (only for DevPCI source compat). */
     uint32_t                iDevSearch;
-    /** Set if PIIX3 type. */
-    uint32_t                fTypePiix3 : 1;
-    /** Set if ICH9 type. */
-    uint32_t                fTypeIch9 : 1;
+    /** PCI Bus type. */
+    DEVPCIBUSTYPE           enmType;
     /** Set if this is a pure bridge, i.e. not part of DEVPCIGLOBALS struct. */
     uint32_t                fPureBridge : 1;
     /** Reserved for future config flags. */
-    uint32_t                uReservedConfigFlags : 29;
+    uint32_t                uReservedConfigFlags : 31;
 
     /** Array of bridges attached to the bus. */
     R3PTRTYPE(PPDMPCIDEV *) papBridgesR3;
     /** Cache line align apDevices. */
-    uint32_t                au32Alignment1[HC_ARCH_BITS == 32 ? 3 + 8 : 2 + 8];
+    uint32_t                au32Alignment1[HC_ARCH_BITS == 32 ? 2 + 8 : 8];
     /** Array of PCI devices. We assume 32 slots, each with 8 functions. */
     R3PTRTYPE(PPDMPCIDEV)   apDevices[256];
 } DEVPCIBUS;
 /** Pointer to PCI bus shared instance data. */
 typedef DEVPCIBUS *PDEVPCIBUS;
+AssertCompileMemberAlignment(DEVPCIBUS, apDevices, 64);
+
 
 /**
  * PCI bus ring-3 instance data (common to both PCI buses).
@@ -144,6 +164,11 @@ typedef struct DEVPCIROOT
     uint64_t            u64PciConfigMMioAddress;
     /** Length of PCI config space MMIO region. */
     uint64_t            u64PciConfigMMioLength;
+    /** Physical address of PCI PIO emulation MMIO region. */
+    RTGCPHYS            GCPhysMmioPioEmuBase;
+    /** Length of PCI PIO emulation MMIO region. */
+    RTGCPHYS            GCPhysMmioPioEmuSize;
+
 
     /** I/O APIC irq levels */
     volatile uint32_t   auPciApicIrqLevels[DEVPCI_APIC_IRQ_PINS];
@@ -175,6 +200,8 @@ typedef struct DEVPCIROOT
     IOMIOPORTHANDLE         hIoPortMagic;
     /** The MCFG MMIO region. */
     IOMMMIOHANDLE           hMmioMcfg;
+    /** The PIO emulation MMIO region. */
+    IOMMMIOHANDLE           hMmioPioEmu;
 
 #if 1 /* Will be moved into the BIOS "soon". */
     /** Current bus number - obsolete (still used by DevPCI, but merge will fix that). */
@@ -216,8 +243,13 @@ typedef DEVPCIROOT *PDEVPCIROOT;
 DECLHIDDEN(PPDMDEVINS)     devpcibridgeCommonSetIrqRootWalk(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq,
                                                             PDEVPCIBUS *ppBus, uint8_t *puDevFnBridge, int *piIrqPinBridge);
 
+DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) devpciCommonMcfgMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb);
+DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) devpciCommonMcfgMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb);
+
+
 #ifdef IN_RING3
 
+# ifndef VBOX_DEVICE_STRUCT_TESTCASE
 DECLCALLBACK(void) devpciR3InfoPci(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs);
 DECLCALLBACK(void) devpciR3InfoPciIrq(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs);
 DECLCALLBACK(int)  devpciR3CommonRegisterDevice(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t fFlags,
@@ -242,6 +274,10 @@ void devpciR3ResetDevice(PPDMDEVINS pDevIns, PPDMPCIDEV pDev);
 void devpciR3BiosInitSetRegionAddress(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PPDMPCIDEV pPciDev, int iRegion, uint64_t addr);
 uint32_t devpciR3GetCfg(PPDMPCIDEV pPciDev, int32_t iRegister, int cb);
 void devpciR3SetCfg(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int32_t iRegister, uint32_t u32, int cb);
+DECLHIDDEN(void) devpciR3CommonResetBridge(PPDMDEVINS pDevIns);
+DECL_HIDDEN_CALLBACK(int) devpciR3CommonSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
+DECL_HIDDEN_CALLBACK(int) devpciR3CommonLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+
 
 DECLINLINE(uint8_t) devpciR3GetByte(PPDMPCIDEV pPciDev, int32_t iRegister)
 {
@@ -272,6 +308,33 @@ DECLINLINE(void) devpciR3SetDWord(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int32_
 {
     devpciR3SetCfg(pDevIns, pPciDev, iRegister, u32, 4);
 }
+
+
+DECLINLINE(PPDMPCIDEV) devpciR3FindBridge(PDEVPCIBUS pBus, uint8_t uBus)
+{
+    /* Search for a fitting bridge. */
+    for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
+    {
+        /*
+         * Examine secondary and subordinate bus number.
+         * If the target bus is in the range we pass the request on to the bridge.
+         */
+        PPDMPCIDEV pBridge = pBus->papBridgesR3[iBridge];
+        AssertMsg(pBridge && pciDevIsPci2PciBridge(pBridge),
+                  ("Device is not a PCI bridge but on the list of PCI bridges\n"));
+        /* safe, only needs to go to the config space array */
+        uint32_t uSecondary   = PDMPciDevGetByte(pBridge, VBOX_PCI_SECONDARY_BUS);
+        /* safe, only needs to go to the config space array */
+        uint32_t uSubordinate = PDMPciDevGetByte(pBridge, VBOX_PCI_SUBORDINATE_BUS);
+        Log3Func(("bus %p, bridge %d: %d in %d..%d\n", pBus, iBridge, uBus, uSecondary, uSubordinate));
+        if (uBus >= uSecondary && uBus <= uSubordinate)
+            return pBridge;
+    }
+
+    /* Nothing found. */
+    return NULL;
+}
+# endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 
 #endif /* IN_RING3 */
 
