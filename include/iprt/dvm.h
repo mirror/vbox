@@ -44,7 +44,8 @@
 RT_C_DECLS_BEGIN
 
 
-/** @defgroup grp_dvm           IPRT Disk Volume Management
+/** @defgroup grp_rt_dvm           IPRT Disk Volume Management
+ * @ingroup grp_rt
  * @{
  */
 

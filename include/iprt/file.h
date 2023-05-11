@@ -1074,7 +1074,7 @@ RTDECL(int) RTFileCreateTempSecure(char *pszTemplate);
 RTDECL(int) RTFileOpenTemp(PRTFILE phFile, char *pszFilename, size_t cbFilename, uint64_t fOpen);
 
 
-/** @page   pg_rt_filelock      RT File locking API description
+/** @defgroup   grp_rt_fileio_locking   RT File locking API
  *
  * File locking general rules:
  *
@@ -1102,9 +1102,11 @@ RTDECL(int) RTFileOpenTemp(PRTFILE phFile, char *pszFilename, size_t cbFilename,
  * to ignore locks and access the file in any way they choose to.
  *
  * Additional reading:
- *     http://en.wikipedia.org/wiki/File_locking
- *     http://unixhelp.ed.ac.uk/CGI/man-cgi?fcntl+2
- *     http://msdn.microsoft.com/library/default.asp?url=/library/en-us/fileio/fs/lockfileex.asp
+ *     - http://en.wikipedia.org/wiki/File_locking
+ *     - http://unixhelp.ed.ac.uk/CGI/man-cgi?fcntl+2
+ *     - http://msdn.microsoft.com/library/default.asp?url=/library/en-us/fileio/fs/lockfileex.asp
+ *
+ * @{
  */
 
 /** @name Lock flags (bit masks).
@@ -1136,6 +1138,7 @@ RTDECL(int)  RTFileLock(RTFILE File, unsigned fLock, int64_t offLock, uint64_t c
 
 /**
  * Changes a lock type from read to write or from write to read.
+ *
  * The region to type change must correspond exactly to an existing locked region.
  * If change can't be done due to locking conflict and non-blocking mode is used, error is
  * returned and lock keeps its state (see next warning).
@@ -1170,6 +1173,8 @@ RTDECL(int)  RTFileChangeLock(RTFILE File, unsigned fLock, int64_t offLock, uint
  * @param   cbLock      Length of region to unlock, may overlap the end of file.
  */
 RTDECL(int)  RTFileUnlock(RTFILE File, int64_t offLock, uint64_t cbLock);
+
+/** @} */
 
 
 /**
@@ -1440,113 +1445,113 @@ RTDECL(int) RTFileSetAllocationSize(RTFILE hFile, uint64_t cbSize, uint32_t fFla
 
 #ifdef IN_RING3
 
-/** @page pg_rt_asyncio RT File async I/O API
+/** @defgroup grp_rt_fileio_async   RT File Async I/O API
  *
- * File operations are usually blocking the calling thread until
- * they completed making it impossible to let the thread do anything
- * else in-between.
- * The RT File async I/O API provides an easy and efficient way to
- * access files asynchronously using the native facilities provided
- * by each operating system.
+ * File operations are usually blocking the calling thread until they completed
+ * making it impossible to let the thread do anything else in-between. The RT
+ * File async I/O API provides an easy and efficient way to access files
+ * asynchronously using the native facilities provided by each operating system.
  *
  * @section sec_rt_asyncio_objects       Objects
  *
  * There are two objects used in this API.
- * The first object is the request. A request contains every information
- * needed two complete the file operation successfully like the start offset
- * and pointer to the source or destination buffer.
- * Requests are created with RTFileAioReqCreate() and destroyed with
- * RTFileAioReqDestroy().
- * Because creating a request may require allocating various operating
- * system dependent resources and may be quite expensive it is possible
- * to use a request more than once to save CPU cycles.
- * A request is constructed with either RTFileAioReqPrepareRead()
- * which will set up a request to read from the given file or
- * RTFileAioReqPrepareWrite() which will write to a given file.
  *
- * The second object is the context. A file is associated with a context
- * and requests for this file may complete only on the context the file
- * was associated with and not on the context given in RTFileAioCtxSubmit()
- * (see below for further information).
- * RTFileAioCtxWait() is used to wait for completion of requests which were
- * associated with the context. While waiting for requests the thread can not
- * respond to global state changes. That's why the API provides a way to let
- * RTFileAioCtxWait() return immediately no matter how many requests
- * have finished through RTFileAioCtxWakeup(). The return code is
- * VERR_INTERRUPTED to let the thread know that he got interrupted.
+ * The first object is the request. A request contains every information needed
+ * two complete the file operation successfully like the start offset and
+ * pointer to the source or destination buffer. Requests are created with
+ * RTFileAioReqCreate() and destroyed with RTFileAioReqDestroy(). Because
+ * creating a request may require allocating various operating system dependent
+ * resources and may be quite expensive it is possible to use a request more
+ * than once to save CPU cycles. A request is constructed with either
+ * RTFileAioReqPrepareRead() which will set up a request to read from the given
+ * file or RTFileAioReqPrepareWrite() which will write to a given file.
+ *
+ * The second object is the context. A file is associated with a context and
+ * requests for this file may complete only on the context the file was
+ * associated with and not on the context given in RTFileAioCtxSubmit() (see
+ * below for further information). RTFileAioCtxWait() is used to wait for
+ * completion of requests which were associated with the context. While waiting
+ * for requests the thread can not respond to global state changes. That's why
+ * the API provides a way to let RTFileAioCtxWait() return immediately no matter
+ * how many requests have finished through RTFileAioCtxWakeup(). The return code
+ * is VERR_INTERRUPTED to let the thread know that he got interrupted.
  *
  * @section sec_rt_asyncio_request_states  Request states
  *
- * Created:
+ * @b Created:
  * After a request was created with RTFileAioReqCreate() it is in the same state
- * like it just completed successfully. RTFileAioReqGetRC() will return VINF_SUCCESS
- * and a transfer size of 0. RTFileAioReqGetUser() will return NULL. The request can be
- * destroyed RTFileAioReqDestroy(). It is also allowed to prepare a the request
- * for a data transfer with the RTFileAioReqPrepare* methods.
- * Calling any other method like RTFileAioCtxSubmit() will return VERR_FILE_AIO_NOT_PREPARED
- * and RTFileAioReqCancel() returns VERR_FILE_AIO_NOT_SUBMITTED.
+ * like it just completed successfully. RTFileAioReqGetRC() will return
+ * VINF_SUCCESS and a transfer size of 0. RTFileAioReqGetUser() will return
+ * NULL. The request can be destroyed RTFileAioReqDestroy(). It is also allowed
+ * to prepare a the request for a data transfer with the RTFileAioReqPrepare*
+ * methods. Calling any other method like RTFileAioCtxSubmit() will return
+ * VERR_FILE_AIO_NOT_PREPARED and RTFileAioReqCancel() returns
+ * VERR_FILE_AIO_NOT_SUBMITTED.
  *
- * Prepared:
- * A request will enter this state if one of the RTFileAioReqPrepare* methods
- * is called. In this state you can still destroy and retrieve the user data
- * associated with the request but trying to cancel the request or getting
- * the result of the operation will return VERR_FILE_AIO_NOT_SUBMITTED.
+ * @b Prepared:
+ * A request will enter this state if one of the RTFileAioReqPrepare* methods is
+ * called. In this state you can still destroy and retrieve the user data
+ * associated with the request but trying to cancel the request or getting the
+ * result of the operation will return VERR_FILE_AIO_NOT_SUBMITTED.
  *
- * Submitted:
- * A prepared request can be submitted with RTFileAioCtxSubmit(). If the operation
- * succeeds it is not allowed to touch the request or free any resources until
- * it completed through RTFileAioCtxWait(). The only allowed method is RTFileAioReqCancel()
- * which tries to cancel the request. The request will go into the completed state
- * and RTFileAioReqGetRC() will return VERR_FILE_AIO_CANCELED.
- * If the request completes not matter if successfully or with an error it will
- * switch into the completed state. RTFileReqDestroy() fails if the given request
- * is in this state.
+ * @b Submitted:
+ * A prepared request can be submitted with RTFileAioCtxSubmit(). If the
+ * operation succeeds it is not allowed to touch the request or free any
+ * resources until it completed through RTFileAioCtxWait(). The only allowed
+ * method is RTFileAioReqCancel() which tries to cancel the request. The request
+ * will go into the completed state and RTFileAioReqGetRC() will return
+ * VERR_FILE_AIO_CANCELED. If the request completes not matter if successfully
+ * or with an error it will switch into the completed state. RTFileReqDestroy()
+ * fails if the given request is in this state.
  *
- * Completed:
+ * @b Completed:
  * The request will be in this state after it completed and returned through
- * RTFileAioCtxWait(). RTFileAioReqGetRC() returns the final result code
- * and the number of bytes transferred.
- * The request can be used for new data transfers.
+ * RTFileAioCtxWait(). RTFileAioReqGetRC() returns the final result code and the
+ * number of bytes transferred. The request can be used for new data transfers.
  *
  * @section sec_rt_asyncio_threading       Threading
  *
  * The API is a thin wrapper around the specific host OS APIs and therefore
- * relies on the thread safety of the underlying API.
- * The interesting functions with regards to thread safety are RTFileAioCtxSubmit()
- * and RTFileAioCtxWait(). RTFileAioCtxWait() must not be called from different
+ * relies on the thread safety of the underlying API. The interesting functions
+ * with regards to thread safety are RTFileAioCtxSubmit() and
+ * RTFileAioCtxWait(). RTFileAioCtxWait() must not be called from different
  * threads at the same time with the same context handle. The same applies to
- * RTFileAioCtxSubmit(). However it is possible to submit new requests from a different
- * thread while waiting for completed requests on another thread with RTFileAioCtxWait().
+ * RTFileAioCtxSubmit(). However it is possible to submit new requests from a
+ * different thread while waiting for completed requests on another thread with
+ * RTFileAioCtxWait().
  *
  * @section sec_rt_asyncio_implementations  Differences in implementation
  *
- * Because the host APIs are quite different on every OS and every API has other limitations
- * there are some things to consider to make the code as portable as possible.
+ * Because the host APIs are quite different on every OS and every API has other
+ * limitations there are some things to consider to make the code as portable as
+ * possible.
  *
- * The first restriction at the moment is that every buffer has to be aligned to a 512 byte boundary.
- * This limitation comes from the Linux io_* interface. To use the interface the file
- * must be opened with O_DIRECT. This flag disables the kernel cache too which may
- * degrade performance but is unfortunately the only way to make asynchronous
- * I/O work till today (if O_DIRECT is omitted io_submit will revert to sychronous behavior
- * and will return when the requests finished and when they are queued).
- * It is mostly used by DBMS which do theire own caching.
- * Furthermore there is no filesystem independent way to discover the restrictions at least
- * for the 2.4 kernel series. Since 2.6 the 512 byte boundary seems to be used by all
- * file systems. So Linus comment about this flag is comprehensible but Linux
- * lacks an alternative at the moment.
+ * The first restriction at the moment is that every buffer has to be aligned to
+ * a 512 byte boundary. This limitation comes from the Linux io_* interface. To
+ * use the interface the file must be opened with O_DIRECT. This flag disables
+ * the kernel cache too which may degrade performance but is unfortunately the
+ * only way to make asynchronous I/O work till today (if O_DIRECT is omitted
+ * io_submit will revert to sychronous behavior and will return when the
+ * requests finished and when they are queued). It is mostly used by DBMS which
+ * do theire own caching. Furthermore there is no filesystem independent way to
+ * discover the restrictions at least for the 2.4 kernel series. Since 2.6 the
+ * 512 byte boundary seems to be used by all file systems. So Linus comment
+ * about this flag is comprehensible but Linux lacks an alternative at the
+ * moment.
  *
- * The next limitation applies only to Windows. Requests are not associated with the
- * I/O context they are associated with but with the file the request is for.
- * The file needs to be associated with exactly one I/O completion port and requests
- * for this file will only arrive at that context after they completed and not on
- * the context the request was submitted.
- * To associate a file with a specific context RTFileAioCtxAssociateWithFile() is
- * used. It is only implemented on Windows and does nothing on the other platforms.
- * If the file needs to be associated with different context for some reason
- * the file must be closed first. After it was opened again the new context
- * can be associated with the other context.
- * This can't be done by the API because there is no way to retrieve the flags
- * the file was opened with.
+ * The next limitation applies only to Windows. Requests are not associated with
+ * the I/O context they are associated with but with the file the request is
+ * for. The file needs to be associated with exactly one I/O completion port and
+ * requests for this file will only arrive at that context after they completed
+ * and not on the context the request was submitted. To associate a file with a
+ * specific context RTFileAioCtxAssociateWithFile() is used. It is only
+ * implemented on Windows and does nothing on the other platforms. If the file
+ * needs to be associated with different context for some reason the file must
+ * be closed first. After it was opened again the new context can be associated
+ * with the other context. This can't be done by the API because there is no way
+ * to retrieve the flags the file was opened with.
+ *
+ * @{
  */
 
 /**
@@ -1815,6 +1820,8 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, RTMSINTERVAL
  * @param   hAioCtx         The handle of the async I/O context to wakeup.
  */
 RTDECL(int) RTFileAioCtxWakeup(RTFILEAIOCTX hAioCtx);
+
+/** @} */
 
 #endif /* IN_RING3 */
 

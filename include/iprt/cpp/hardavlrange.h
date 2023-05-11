@@ -42,6 +42,7 @@
 #include <iprt/cpp/hardavlslaballocator.h>
 
 /** @defgroup grp_rt_cpp_hardavl    Hardened AVL Trees
+ * @ingroup grp_rt_cpp
  * @{
  */
 

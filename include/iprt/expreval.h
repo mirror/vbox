@@ -45,6 +45,7 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_expr_eval  RTExprEval - Expression Evaluator
+ * @ingroup grp_rt
  * @{ */
 
 /** Handle to an expression evaluator. */
