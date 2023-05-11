@@ -2326,7 +2326,8 @@ ifdef VBOX_WITH_PARFAIT
 	 -e all -d misaligned-access \
 	 -z $(PATH_ROOT) \
 	 -r $(VBOX_SVN_REV) \
-	 $(PATH_OUT)/obj
+	 $(PATH_OUT)/obj \
+   || test $$? -eq 1 || false
 else
 	$(ECHO) This target requires VBOX_WITH_PARFAIT to be set.
 	exit 1
