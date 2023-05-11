@@ -4443,86 +4443,95 @@
  * Pointer validation macro.
  * @param   ptr         The pointer.
  */
+#ifdef VBOX_WITH_PARFAIT
+/*
+ * Parfait will report memory leaks when something returns after a memory allocation
+ * using a check containing RT_VALID_PTR() (AssertPtrReturn and friends for example).
+ * To avoid those false positives the macro will just check for the pointer being != NULL.
+ */
+# define RT_VALID_PTR(ptr)       (ptr != NULL)
+#else
 #if defined(RT_ARCH_AMD64)
-# ifdef IN_RING3
-#  if defined(RT_OS_DARWIN) /* first 4GB is reserved for legacy kernel. */
-#   define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) >= _4G \
+#  ifdef IN_RING3
+#   if defined(RT_OS_DARWIN) /* first 4GB is reserved for legacy kernel. */
+#    define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) >= _4G \
                                  && !((uintptr_t)(ptr) & 0xffff800000000000ULL) )
-#  elif defined(RT_OS_SOLARIS) /* The kernel only used the top 2TB, but keep it simple. */
-#   define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
-                                 && (   ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0xffff800000000000ULL \
-                                     || ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0) )
-#  elif defined(RT_OS_LINUX) /* May use 5-level paging  (see Documentation/x86/x86_64/mm.rst). */
-#   define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) >= 0x1000U /* one invalid page at the bottom */ \
-                                 && !((uintptr_t)(ptr) & 0xff00000000000000ULL) )
-#  else
-#   define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) >= 0x1000U \
-                                 && !((uintptr_t)(ptr) & 0xffff800000000000ULL) )
-#  endif
-# else /* !IN_RING3 */
-#  if defined(RT_OS_LINUX) /* May use 5-level paging (see Documentation/x86/x86_64/mm.rst). */
-#   if 1 /* User address are no longer considered valid in kernel mode (SMAP, etc). */
-#    define RT_VALID_PTR(ptr)   ((uintptr_t)(ptr) - 0xff00000000000000ULL < 0x00ffffffffe00000ULL) /* 2MB invalid space at the top */
+#   elif defined(RT_OS_SOLARIS) /* The kernel only used the top 2TB, but keep it simple. */
+#    define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
+                                  && (   ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0xffff800000000000ULL \
+                                      || ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0) )
+#   elif defined(RT_OS_LINUX) /* May use 5-level paging  (see Documentation/x86/x86_64/mm.rst). */
+#    define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) >= 0x1000U /* one invalid page at the bottom */ \
+                                  && !((uintptr_t)(ptr) & 0xff00000000000000ULL) )
 #   else
-#    define RT_VALID_PTR(ptr)   (   (uintptr_t)(ptr) + 0x200000 >= 0x201000U /* one invalid page at the bottom and 2MB at the top */ \
-                                 && (   ((uintptr_t)(ptr) & 0xff00000000000000ULL) == 0xff00000000000000ULL \
-                                     || ((uintptr_t)(ptr) & 0xff00000000000000ULL) == 0) )
+#    define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) >= 0x1000U \
+                                  && !((uintptr_t)(ptr) & 0xffff800000000000ULL) )
 #   endif
-#  else
-#   define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
-                                 && (   ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0xffff800000000000ULL \
-                                     || ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0) )
-#  endif
-# endif /* !IN_RING3 */
+#  else /* !IN_RING3 */
+#   if defined(RT_OS_LINUX) /* May use 5-level paging (see Documentation/x86/x86_64/mm.rst). */
+#    if 1 /* User address are no longer considered valid in kernel mode (SMAP, etc). */
+#     define RT_VALID_PTR(ptr)   ((uintptr_t)(ptr) - 0xff00000000000000ULL < 0x00ffffffffe00000ULL) /* 2MB invalid space at the top */
+#    else
+#     define RT_VALID_PTR(ptr)   (   (uintptr_t)(ptr) + 0x200000 >= 0x201000U /* one invalid page at the bottom and 2MB at the top */ \
+                                  && (   ((uintptr_t)(ptr) & 0xff00000000000000ULL) == 0xff00000000000000ULL \
+                                      || ((uintptr_t)(ptr) & 0xff00000000000000ULL) == 0) )
+#    endif
+#   else
+#    define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
+                                  && (   ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0xffff800000000000ULL \
+                                      || ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0) )
+#   endif
+#  endif /* !IN_RING3 */
 
-#elif defined(RT_ARCH_X86)
-# define RT_VALID_PTR(ptr)      ( (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
+# elif defined(RT_ARCH_X86)
+#  define RT_VALID_PTR(ptr)      ( (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
 
-#elif defined(RT_ARCH_SPARC64)
-# ifdef IN_RING3
-#  if defined(RT_OS_SOLARIS)
+# elif defined(RT_ARCH_SPARC64)
+#  ifdef IN_RING3
+#   if defined(RT_OS_SOLARIS)
 /** Sparc64 user mode: According to Figure 9.4 in solaris internals */
 /** @todo #   define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) + 0x80004000U >= 0x80004000U + 0x100000000ULL ) - figure this. */
-#   define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) + 0x80000000U >= 0x80000000U + 0x100000000ULL )
-#  else
-#   error "Port me"
-#  endif
-# else  /* !IN_RING3 */
-#  if defined(RT_OS_SOLARIS)
+#    define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) + 0x80000000U >= 0x80000000U + 0x100000000ULL )
+#   else
+#    error "Port me"
+#   endif
+#  else  /* !IN_RING3 */
+#   if defined(RT_OS_SOLARIS)
 /** @todo Sparc64 kernel mode: This is according to Figure 11.1 in solaris
  *        internals. Verify in sources. */
-#   define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) >= 0x01000000U )
-#  else
-#   error "Port me"
-#  endif
-# endif /* !IN_RING3 */
+#    define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) >= 0x01000000U )
+#   else
+#    error "Port me"
+#   endif
+#  endif /* !IN_RING3 */
 
-#elif defined(RT_ARCH_SPARC)
-# ifdef IN_RING3
-#  ifdef RT_OS_SOLARIS
+# elif defined(RT_ARCH_SPARC)
+#  ifdef IN_RING3
+#   ifdef RT_OS_SOLARIS
 /** Sparc user mode: According to
  * http://cvs.opensolaris.org/source/xref/onnv/onnv-gate/usr/src/uts/sun4/os/startup.c#510 */
-#   define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) + 0x400000U >= 0x400000U + 0x2000U )
+#    define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) + 0x400000U >= 0x400000U + 0x2000U )
 
-#  else
-#   error "Port me"
-#  endif
-# else  /* !IN_RING3 */
-#  ifdef RT_OS_SOLARIS
+#   else
+#    error "Port me"
+#   endif
+#  else  /* !IN_RING3 */
+#   ifdef RT_OS_SOLARIS
 /** @todo Sparc kernel mode: Check the sources! */
-#   define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
-#  else
-#   error "Port me"
-#  endif
-# endif /* !IN_RING3 */
+#    define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
+#   else
+#    error "Port me"
+#   endif
+#  endif /* !IN_RING3 */
 
-#elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
+# elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
 /* ASSUMES that at least the last and first 4K are out of bounds. */
-# define RT_VALID_PTR(ptr)      ( (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
+#  define RT_VALID_PTR(ptr)      ( (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
 
-#else
-# error "Architecture identifier missing / not implemented."
-#endif
+# else
+#  error "Architecture identifier missing / not implemented."
+# endif
+#endif /*!VBOX_WITH_PARFAIT*/
 
 /** @def RT_VALID_ALIGNED_PTR
  * Pointer validation macro that also checks the alignment.
