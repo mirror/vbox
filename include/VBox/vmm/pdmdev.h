@@ -2524,8 +2524,8 @@ typedef struct PDMDEVHLPR3
      *                                      status code must be passed on to EM.
      *
      * @param   pDevIns     The device instance to register the ports with.
-     * @param   Port        The port to write to.
-     * @param   u32Value    The value to write.
+     * @param   Port        The port to read from.
+     * @param   pu32Value   Where to store the read value.
      * @param   cbValue     The size of the register to read in bytes. 1, 2 or 4 bytes.
      *
      * @thread EMT
@@ -2546,7 +2546,7 @@ typedef struct PDMDEVHLPR3
      * @param   pDevIns     The device instance to register the ports with.
      * @param   Port        The port to write to.
      * @param   u32Value    The value to write.
-     * @param   cbValue     The size of the register to read in bytes. 1, 2 or 4 bytes.
+     * @param   cbValue     The size of the register to write in bytes. 1, 2 or 4 bytes.
      *
      * @thread EMT
      *
