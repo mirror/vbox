@@ -378,6 +378,7 @@ ifdef VBOX_WITH_VIRT_ARMV8
  	VMMR3/GIM.cpp \
  	VMMR3/IEMR3.cpp \
  	VMMR3/IOM.cpp \
+ 	VMMR3/IOMR3IoPort.cpp \
  	VMMR3/IOMR3Mmio.cpp \
  	VMMR3/GMM.cpp \
  	VMMR3/GVMMR3.cpp \

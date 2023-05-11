@@ -2429,7 +2429,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 65, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 66, 0)
 
 /**
  * PDM Device API.
@@ -2515,6 +2515,26 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(uint32_t, pfnIoPortGetMappingAddress,(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts));
 
     /**
+     * Reads from an I/O port register.
+     *
+     * @returns Strict VBox status code. Informational status codes other than the one documented
+     *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
+     * @retval  VINF_SUCCESS                Success.
+     * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the
+     *                                      status code must be passed on to EM.
+     *
+     * @param   pDevIns     The device instance to register the ports with.
+     * @param   Port        The port to write to.
+     * @param   u32Value    The value to write.
+     * @param   cbValue     The size of the register to read in bytes. 1, 2 or 4 bytes.
+     *
+     * @thread EMT
+     *
+     * @note This is required for the ARM platform in order to emulate PIO accesses through a dedicated MMIO region.
+     */
+    DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnIoPortRead,(PPDMDEVINS pDevIns, RTIOPORT Port, uint32_t *pu32Value, size_t cbValue));
+
+    /**
      * Writes to an I/O port register.
      *
      * @returns Strict VBox status code. Informational status codes other than the one documented
@@ -2529,8 +2549,8 @@ typedef struct PDMDEVHLPR3
      * @param   cbValue     The size of the register to read in bytes. 1, 2 or 4 bytes.
      *
      * @thread EMT
-     * @todo r=aeichner This is only used by DevPCI.cpp to write the ELCR of the PIC. This shouldn't be done that way
-     *       and removed again as soon as possible (no time right now)...
+     *
+     * @note This is required for the ARM platform in order to emulate PIO accesses through a dedicated MMIO region.
      */
     DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnIoPortWrite,(PPDMDEVINS pDevIns, RTIOPORT Port, uint32_t u32Value, size_t cbValue));
     /** @}  */
@@ -6635,6 +6655,22 @@ DECLINLINE(int) PDMDevHlpIoPortUnmap(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPort
 DECLINLINE(uint32_t) PDMDevHlpIoPortGetMappingAddress(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts)
 {
     return pDevIns->pHlpR3->pfnIoPortGetMappingAddress(pDevIns, hIoPorts);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnIoPortRead
+ */
+DECLINLINE(VBOXSTRICTRC) PDMDevHlpIoPortRead(PPDMDEVINS pDevIns, RTIOPORT Port, uint32_t *pu32Value, size_t cbValue)
+{
+    return pDevIns->pHlpR3->pfnIoPortRead(pDevIns, Port, pu32Value, cbValue);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnIoPortWrite
+ */
+DECLINLINE(VBOXSTRICTRC) PDMDevHlpIoPortWrite(PPDMDEVINS pDevIns, RTIOPORT Port, uint32_t u32Value, size_t cbValue)
+{
+    return pDevIns->pHlpR3->pfnIoPortWrite(pDevIns, Port, u32Value, cbValue);
 }
 
 
