@@ -132,6 +132,10 @@ class nsTPromiseFlatString_CharT : public nsTString_CharT
           // into ourselves.
           Assign(tuple);
         }
+
+#if RT_CLANG_PREREQ(13, 0) /* To shut up Clang 13 (-Wdeprecated-copy). */
+      nsTPromiseFlatString_CharT(nsTPromiseFlatString_CharT const&) = default;
+#endif
   };
 
 inline

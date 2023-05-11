@@ -79,7 +79,9 @@ class nsTDependentSubstring_CharT : public nsTSubstring_CharT
         : substring_type(NS_CONST_CAST(char_type*, start.get()), end.get() - start.get(), F_NONE) {}
 
       // auto-generated copy-constructor OK (XXX really?? what about base class copy-ctor?)
-
+#if RT_CLANG_PREREQ(13, 0) /* To shut up Clang 13 (-Wdeprecated-copy). */
+      nsTDependentSubstring_CharT(nsTDependentSubstring_CharT const&) = default;
+#endif
     private:
         // we're immutable, you can't assign into a substring
       void operator=( const self_type& ) NS_DELETE;
