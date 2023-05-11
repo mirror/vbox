@@ -144,7 +144,6 @@ tstVBoxAPIXPCOM_LIBS = \
 	$(LIB_XPCOM) \
 	$(LIB_RUNTIME)
 tstVBoxAPIXPCOM_CXXFLAGS = -fshort-wchar
-tstVBoxAPIXPCOM_CXXFLAGS.darwin += -Wno-deprecated-copy    # To shut up Clang 13 (-Wdeprecated-copy).
 ifdef VBOX_WITH_RUNPATH
  tstVBoxAPIXPCOM_LDFLAGS = '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)' $(TEMPLATE_VBoxBldProg_LDFLAGS)
 else ifdef VBOX_WITH_RELATIVE_RUNPATH
