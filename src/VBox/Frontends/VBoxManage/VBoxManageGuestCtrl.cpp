@@ -1408,7 +1408,7 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
                                                          RT_MIN(500 /*ms*/, RT_MAX(cMsTimeLeft, 1 /*ms*/)),
                                                          &waitResult));
                 if (pCtx->cVerbose)
-                    RTPrintf(GuestCtrl::tr("waitResult: %d\n"), waitResult);
+                    RTPrintf(GuestCtrl::tr("Wait result is '%s' (%d)\n"), gctlProcessWaitResultToText(waitResult), waitResult);
                 switch (waitResult)
                 {
                     case ProcessWaitResult_Start: /** @todo you always wait for 'start', */
