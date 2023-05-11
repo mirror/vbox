@@ -70,12 +70,6 @@
     } while (0)
 
 
-/**
- * Init a Ping-Pong construct.
- *
- * @returns iprt status code.
- * @param   pPP         Pointer to the ping-pong structure which needs initialization.
- */
 RTDECL(int) RTSemPingPongInit(PRTPINGPONG pPP)
 {
     /*
@@ -97,13 +91,6 @@ RTDECL(int) RTSemPingPongInit(PRTPINGPONG pPP)
 RT_EXPORT_SYMBOL(RTSemPingPongInit);
 
 
-/**
- * Destroys a Ping-Pong construct.
- *
- * @returns iprt status code.
- * @param   pPP         Pointer to the ping-pong structure which is to be destroyed.
- *                      (I.e. put into uninitialized state.)
- */
 RTDECL(int) RTSemPingPongDelete(PRTPINGPONG pPP)
 {
     /*
@@ -128,13 +115,6 @@ RTDECL(int) RTSemPingPongDelete(PRTPINGPONG pPP)
 RT_EXPORT_SYMBOL(RTSemPingPongDelete);
 
 
-/**
- * Signals the pong thread in a ping-pong construct. (I.e. sends ping.)
- * This is called by the ping thread.
- *
- * @returns iprt status code.
- * @param   pPP         Pointer to the ping-pong structure to ping.
- */
 RTDECL(int) RTSemPing(PRTPINGPONG pPP)
 {
     /*
@@ -161,13 +141,6 @@ RTDECL(int) RTSemPing(PRTPINGPONG pPP)
 RT_EXPORT_SYMBOL(RTSemPing);
 
 
-/**
- * Signals the ping thread in a ping-pong construct. (I.e. sends pong.)
- * This is called by the pong thread.
- *
- * @returns iprt status code.
- * @param   pPP         Pointer to the ping-pong structure to pong.
- */
 RTDECL(int) RTSemPong(PRTPINGPONG pPP)
 {
     /*
@@ -194,14 +167,6 @@ RTDECL(int) RTSemPong(PRTPINGPONG pPP)
 RT_EXPORT_SYMBOL(RTSemPong);
 
 
-/**
- * Wait function for the ping thread.
- *
- * @returns iprt status code.
- *          Will not return VERR_INTERRUPTED.
- * @param   pPP         Pointer to the ping-pong structure to wait on.
- * @param   cMillies    Number of milliseconds to wait.
- */
 RTDECL(int) RTSemPingWait(PRTPINGPONG pPP, RTMSINTERVAL cMillies)
 {
     /*
@@ -227,14 +192,6 @@ RTDECL(int) RTSemPingWait(PRTPINGPONG pPP, RTMSINTERVAL cMillies)
 RT_EXPORT_SYMBOL(RTSemPingWait);
 
 
-/**
- * Wait function for the pong thread.
- *
- * @returns iprt status code.
- *          Will not return VERR_INTERRUPTED.
- * @param   pPP         Pointer to the ping-pong structure to wait on.
- * @param   cMillies    Number of milliseconds to wait.
- */
 RTDECL(int) RTSemPongWait(PRTPINGPONG pPP, RTMSINTERVAL cMillies)
 {
     /*

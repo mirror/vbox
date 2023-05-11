@@ -471,7 +471,7 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 /** @def IPRT_LINUX_HAS_HRTIMER
  * Whether the kernel support high resolution timers (Linux kernel versions
  * 2.6.28 and later (hrtimer_add_expires_ns() & schedule_hrtimeout). */
-#if RTLNX_VER_MIN(2,6,28)
+#if RTLNX_VER_MIN(2,6,28) || defined(DOXYGEN_RUNNING)
 # define IPRT_LINUX_HAS_HRTIMER
 #endif
 

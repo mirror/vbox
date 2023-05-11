@@ -156,12 +156,6 @@ static int rtR0MemObjLink(PRTR0MEMOBJINTERNAL pParent, PRTR0MEMOBJINTERNAL pChil
 }
 
 
-/**
- * Checks if this is mapping or not.
- *
- * @returns true if it's a mapping, otherwise false.
- * @param   MemObj      The ring-0 memory object handle.
- */
 RTR0DECL(bool) RTR0MemObjIsMapping(RTR0MEMOBJ MemObj)
 {
     /* Validate the object handle. */
@@ -177,13 +171,6 @@ RTR0DECL(bool) RTR0MemObjIsMapping(RTR0MEMOBJ MemObj)
 RT_EXPORT_SYMBOL(RTR0MemObjIsMapping);
 
 
-/**
- * Gets the address of a ring-0 memory object.
- *
- * @returns The address of the memory object.
- * @returns NULL if the handle is invalid (asserts in strict builds) or if there isn't any mapping.
- * @param   MemObj  The ring-0 memory object handle.
- */
 RTR0DECL(void *) RTR0MemObjAddress(RTR0MEMOBJ MemObj)
 {
     /* Validate the object handle. */
@@ -201,18 +188,6 @@ RTR0DECL(void *) RTR0MemObjAddress(RTR0MEMOBJ MemObj)
 RT_EXPORT_SYMBOL(RTR0MemObjAddress);
 
 
-/**
- * Gets the ring-3 address of a ring-0 memory object.
- *
- * This only applies to ring-0 memory object with ring-3 mappings of some kind, i.e.
- * locked user memory, reserved user address space and user mappings. This API should
- * not be used on any other objects.
- *
- * @returns The address of the memory object.
- * @returns NIL_RTR3PTR if the handle is invalid or if it's not an object with a ring-3 mapping.
- *          Strict builds will assert in both cases.
- * @param   MemObj  The ring-0 memory object handle.
- */
 RTR0DECL(RTR3PTR) RTR0MemObjAddressR3(RTR0MEMOBJ MemObj)
 {
     PRTR0MEMOBJINTERNAL pMem;
@@ -240,18 +215,6 @@ RTR0DECL(RTR3PTR) RTR0MemObjAddressR3(RTR0MEMOBJ MemObj)
 RT_EXPORT_SYMBOL(RTR0MemObjAddressR3);
 
 
-/**
- * Gets the size of a ring-0 memory object.
- *
- * The returned value may differ from the one specified to the API creating the
- * object because of alignment adjustments.  The minimal alignment currently
- * employed by any API is PAGE_SIZE, so the result can safely be shifted by
- * PAGE_SHIFT to calculate a page count.
- *
- * @returns The object size.
- * @returns 0 if the handle is invalid (asserts in strict builds) or if there isn't any mapping.
- * @param   MemObj  The ring-0 memory object handle.
- */
 RTR0DECL(size_t) RTR0MemObjSize(RTR0MEMOBJ MemObj)
 {
     PRTR0MEMOBJINTERNAL pMem;
@@ -271,16 +234,6 @@ RTR0DECL(size_t) RTR0MemObjSize(RTR0MEMOBJ MemObj)
 RT_EXPORT_SYMBOL(RTR0MemObjSize);
 
 
-/**
- * Get the physical address of an page in the memory object.
- *
- * @returns The physical address.
- * @returns NIL_RTHCPHYS if the object doesn't contain fixed physical pages.
- * @returns NIL_RTHCPHYS if the iPage is out of range.
- * @returns NIL_RTHCPHYS if the object handle isn't valid.
- * @param   MemObj  The ring-0 memory object handle.
- * @param   iPage   The page number within the object.
- */
 /* Work around gcc bug 55940 */
 #if defined(__GNUC__) && defined(RT_ARCH_X86) && (__GNUC__ * 100 + __GNUC_MINOR__) == 407
  __attribute__((__optimize__ ("no-shrink-wrap")))
@@ -321,21 +274,6 @@ RTR0DECL(RTHCPHYS) RTR0MemObjGetPagePhysAddr(RTR0MEMOBJ MemObj, size_t iPage)
 RT_EXPORT_SYMBOL(RTR0MemObjGetPagePhysAddr);
 
 
-/**
- * Checks whether the allocation was zero initialized or not.
- *
- * This only works on allocations.  It is not meaningful for mappings, reserved
- * memory and entered physical address, and will return false for these.
- *
- * @returns true if the allocation was initialized to zero at allocation time,
- *          false if not or query not meaningful to the object type.
- * @param   hMemObj             The ring-0 memory object to be freed.
- *
- * @remarks It can be expected that memory allocated in the same fashion will
- *          have the same initialization state.  So, if this returns true for
- *          one allocation it will return true for all other similarly made
- *          allocations.
- */
 RTR0DECL(bool) RTR0MemObjWasZeroInitialized(RTR0MEMOBJ hMemObj)
 {
     PRTR0MEMOBJINTERNAL pMem;
@@ -357,15 +295,6 @@ RTR0DECL(bool) RTR0MemObjWasZeroInitialized(RTR0MEMOBJ hMemObj)
 RT_EXPORT_SYMBOL(RTR0MemObjWasZeroInitialized);
 
 
-/**
- * Frees a ring-0 memory object.
- *
- * @returns IPRT status code.
- * @retval  VERR_INVALID_HANDLE if
- * @param   MemObj          The ring-0 memory object to be freed. NIL is
- *                          accepted.
- * @param   fFreeMappings   Whether or not to free mappings of the object.
- */
 RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings)
 {
     /*

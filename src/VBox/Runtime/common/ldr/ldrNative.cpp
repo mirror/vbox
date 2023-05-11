@@ -101,22 +101,6 @@ static const RTLDROPS g_rtldrNativeOps =
 
 
 
-/**
- * Loads a dynamic load library (/shared object) image file using native
- * OS facilities.
- *
- * The filename will be appended the default DLL/SO extension of
- * the platform if it have been omitted. This means that it's not
- * possible to load DLLs/SOs with no extension using this interface,
- * but that's not a bad tradeoff.
- *
- * If no path is specified in the filename, the OS will usually search it's library
- * path to find the image file.
- *
- * @returns iprt status code.
- * @param   pszFilename Image filename.
- * @param   phLdrMod    Where to store the handle to the loaded module.
- */
 RTDECL(int) RTLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod)
 {
     return RTLdrLoadEx(pszFilename, phLdrMod, RTLDRLOAD_FLAGS_LOCAL, NULL);
@@ -250,16 +234,6 @@ RTDECL(void *) RTLdrGetSystemSymbolEx(const char *pszFilename, const char *pszSy
 }
 
 
-/**
- * Loads a dynamic load library (/shared object) image file residing in the
- * RTPathAppPrivateArch() directory.
- *
- * Suffix is not required.
- *
- * @returns iprt status code.
- * @param   pszFilename Image filename. No path.
- * @param   phLdrMod    Where to store the handle to the loaded module.
- */
 RTDECL(int) RTLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod)
 {
     LogFlow(("RTLdrLoadAppPriv: pszFilename=%p:{%s} phLdrMod=%p\n", pszFilename, pszFilename, phLdrMod));
@@ -316,11 +290,6 @@ RTDECL(int) RTLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod)
 RT_EXPORT_SYMBOL(RTLdrLoadAppPriv);
 
 
-/**
- * Gets the default file suffix for DLL/SO/DYLIB/whatever.
- *
- * @returns The stuff (readonly).
- */
 RTDECL(const char *) RTLdrGetSuff(void)
 {
 #if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)

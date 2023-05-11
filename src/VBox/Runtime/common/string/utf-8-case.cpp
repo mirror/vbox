@@ -49,25 +49,6 @@
 
 
 
-/**
- * Performs a case insensitive string compare between two UTF-8 strings.
- *
- * This is a simplified compare, as only the simplified lower/upper case folding
- * specified by the unicode specs are used. It does not consider character pairs
- * as they are used in some languages, just simple upper & lower case compares.
- *
- * The result is the difference between the mismatching codepoints after they
- * both have been lower cased.
- *
- * If the string encoding is invalid the function will assert (strict builds)
- * and use RTStrCmp for the remainder of the string.
- *
- * @returns < 0 if the first string less than the second string.
- * @returns 0 if the first string identical to the second string.
- * @returns > 0 if the first string greater than the second string.
- * @param   psz1        First UTF-8 string. Null is allowed.
- * @param   psz2        Second UTF-8 string. Null is allowed.
- */
 RTDECL(int) RTStrICmp(const char *psz1, const char *psz2)
 {
     if (psz1 == psz2)
@@ -124,27 +105,6 @@ RTDECL(int) RTStrICmp(const char *psz1, const char *psz2)
 RT_EXPORT_SYMBOL(RTStrICmp);
 
 
-/**
- * Performs a case insensitive string compare between two UTF-8 strings, given a
- * maximum string length.
- *
- * This is a simplified compare, as only the simplified lower/upper case folding
- * specified by the unicode specs are used. It does not consider character pairs
- * as they are used in some languages, just simple upper & lower case compares.
- *
- * The result is the difference between the mismatching codepoints after they
- * both have been lower cased.
- *
- * If the string encoding is invalid the function will assert (strict builds)
- * and use RTStrCmp for the remainder of the string.
- *
- * @returns < 0 if the first string less than the second string.
- * @returns 0 if the first string identical to the second string.
- * @returns > 0 if the first string greater than the second string.
- * @param   psz1        First UTF-8 string. Null is allowed.
- * @param   psz2        Second UTF-8 string. Null is allowed.
- * @param   cchMax      Maximum string length
- */
 RTDECL(int) RTStrNICmp(const char *psz1, const char *psz2, size_t cchMax)
 {
     if (cchMax == 0)

@@ -247,7 +247,7 @@ ALIASES += udf260{2}="<a href=\"http://www.osta.org/specs/pdf/udf260.pdf#page=\2
 # Generic ECMA spec reference - 1=spec-number 2=section, 3=page
 ALIASES += ecma{3}="<a href=\"https://www.ecma-international.org/publications/files/ECMA-ST/Ecma-\1.pdf#page=\3\">ECMA-\1:\2</a>"
 # ECMA-167 spec reference - 1=part 2=section, 3=page
-ALIASES += ecma167{3}=\ecma{167,Part\1/\2,\3}
+ALIASES += "ecma167{3}=\ecma{167,Part\1/\2,\3}"
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding "class=itcl::class"
@@ -1666,7 +1666,7 @@ COMPACT_LATEX          = NO
 # The default value is: a4.
 # This tag requires that the tag GENERATE_LATEX is set to YES.
 
-PAPER_TYPE             = a4wide
+PAPER_TYPE             = a4
 
 # The EXTRA_PACKAGES tag can be used to specify one or more LaTeX package names
 # that should be included in the LaTeX output. The package can be specified just
@@ -2139,6 +2139,18 @@ PREDEFINED += \
     DECL_CHECK_RETURN_NOT_R3(type)=type \
     RTCALL=
 
+# context hacks.
+PREDEFINED            += RCPTRTYPE(RCType)=RCType
+PREDEFINED            += R3PTRTYPE(R3Type)=R3Type
+PREDEFINED            += R0PTRTYPE(R0Type)=R0Type
+PREDEFINED            += HCPTRTYPE(HCType)=HCType
+PREDEFINED            += R3R0PTRTYPE(R3R0Type)=R3R0Type
+PREDEFINED += \
+        "CTX_SUFF(var)=var##R3" \
+        "CTX_SUFF_Z(var)=var##RZ" \
+        "CTX_MID(first,last)=firstr##R3##last" \
+        "CTX_MID_Z(first,last)=firstr##RZ##last" \
+
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The
 # macro definition that is found in the sources will be used. Use the PREDEFINED
@@ -2153,10 +2165,6 @@ EXPAND_AS_DEFINED      = ARCH_BITS \
                          R0_ARCH_BITS \
                          GCTYPE \
                          GCPTRTYPE \
-                         HCPTRTYPE \
-                         R0PTRTYPE \
-                         R3PTRTYPE \
-                         R3R0PTRTYPE \
                          DECLASMTYPE \
                          RTR3DECL \
                          RTR0DECL \

@@ -299,15 +299,7 @@ static int rtThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, uint32_t fIntFla
     return rc;
 }
 
-/**
- * Adopts a non-IPRT thread.
- *
- * @returns IPRT status code.
- * @param   enmType         The thread type.
- * @param   fFlags          The thread flags. RTTHREADFLAGS_WAITABLE is not currently allowed.
- * @param   pszName         The thread name. Optional.
- * @param   pThread         Where to store the thread handle. Optional.
- */
+
 RTDECL(int) RTThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, const char *pszName, PRTTHREAD pThread)
 {
     int      rc;
@@ -351,12 +343,6 @@ RTDECL(int) RTThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, const char *psz
 RT_EXPORT_SYMBOL(RTThreadAdopt);
 
 
-/**
- * Get the thread handle of the current thread, automatically adopting alien
- * threads.
- *
- * @returns Thread handle.
- */
 RTDECL(RTTHREAD) RTThreadSelfAutoAdopt(void)
 {
     RTTHREAD hSelf = RTThreadSelf();
@@ -775,20 +761,6 @@ DECL_HIDDEN_CALLBACK(int) rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD Nati
 }
 
 
-/**
- * Create a new thread.
- *
- * @returns iprt status code.
- * @param   pThread     Where to store the thread handle to the new thread. (optional)
- * @param   pfnThread   The thread function.
- * @param   pvUser      User argument.
- * @param   cbStack     The size of the stack for the new thread.
- *                      Use 0 for the default stack size.
- * @param   enmType     The thread type. Used for deciding scheduling attributes
- *                      of the thread.
- * @param   fFlags      Flags of the RTTHREADFLAGS type (ORed together).
- * @param   pszName     Thread name.
- */
 RTDECL(int) RTThreadCreate(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUser, size_t cbStack,
                            RTTHREADTYPE enmType, unsigned fFlags, const char *pszName)
 {
@@ -843,21 +815,6 @@ RTDECL(int) RTThreadCreate(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUse
 RT_EXPORT_SYMBOL(RTThreadCreate);
 
 
-/**
- * Create a new thread.
- *
- * Same as RTThreadCreate except the name is given in the RTStrPrintfV form.
- *
- * @returns iprt status code.
- * @param   pThread     See RTThreadCreate.
- * @param   pfnThread   See RTThreadCreate.
- * @param   pvUser      See RTThreadCreate.
- * @param   cbStack     See RTThreadCreate.
- * @param   enmType     See RTThreadCreate.
- * @param   fFlags      See RTThreadCreate.
- * @param   pszNameFmt  Thread name format.
- * @param   va          Format arguments.
- */
 RTDECL(int) RTThreadCreateV(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUser, size_t cbStack,
                             RTTHREADTYPE enmType, uint32_t fFlags, const char *pszNameFmt, va_list va)
 {
@@ -868,21 +825,6 @@ RTDECL(int) RTThreadCreateV(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUs
 RT_EXPORT_SYMBOL(RTThreadCreateV);
 
 
-/**
- * Create a new thread.
- *
- * Same as RTThreadCreate except the name is given in the RTStrPrintf form.
- *
- * @returns iprt status code.
- * @param   pThread     See RTThreadCreate.
- * @param   pfnThread   See RTThreadCreate.
- * @param   pvUser      See RTThreadCreate.
- * @param   cbStack     See RTThreadCreate.
- * @param   enmType     See RTThreadCreate.
- * @param   fFlags      See RTThreadCreate.
- * @param   pszNameFmt  Thread name format.
- * @param   ...         Format arguments.
- */
 RTDECL(int) RTThreadCreateF(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUser, size_t cbStack,
                             RTTHREADTYPE enmType, uint32_t fFlags, const char *pszNameFmt, ...)
 {
@@ -896,12 +838,6 @@ RTDECL(int) RTThreadCreateF(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUs
 RT_EXPORT_SYMBOL(RTThreadCreateF);
 
 
-/**
- * Gets the native thread id of a IPRT thread.
- *
- * @returns The native thread id.
- * @param   Thread      The IPRT thread.
- */
 RTDECL(RTNATIVETHREAD) RTThreadGetNative(RTTHREAD Thread)
 {
     PRTTHREADINT pThread = rtThreadGet(Thread);
@@ -916,13 +852,6 @@ RTDECL(RTNATIVETHREAD) RTThreadGetNative(RTTHREAD Thread)
 RT_EXPORT_SYMBOL(RTThreadGetNative);
 
 
-/**
- * Gets the IPRT thread of a native thread.
- *
- * @returns The IPRT thread handle
- * @returns NIL_RTTHREAD if not a thread known to IPRT.
- * @param   NativeThread        The native thread handle/id.
- */
 RTDECL(RTTHREAD) RTThreadFromNative(RTNATIVETHREAD NativeThread)
 {
     PRTTHREADINT pThread = rtThreadGetByNative(NativeThread);
@@ -933,12 +862,6 @@ RTDECL(RTTHREAD) RTThreadFromNative(RTNATIVETHREAD NativeThread)
 RT_EXPORT_SYMBOL(RTThreadFromNative);
 
 
-/**
- * Gets the name of the current thread thread.
- *
- * @returns Pointer to readonly name string.
- * @returns NULL on failure.
- */
 RTDECL(const char *) RTThreadSelfName(void)
 {
     RTTHREAD Thread = RTThreadSelf();
@@ -957,13 +880,6 @@ RTDECL(const char *) RTThreadSelfName(void)
 RT_EXPORT_SYMBOL(RTThreadSelfName);
 
 
-/**
- * Gets the name of a thread.
- *
- * @returns Pointer to readonly name string.
- * @returns NULL on failure.
- * @param   Thread      Thread handle of the thread to query the name of.
- */
 RTDECL(const char *) RTThreadGetName(RTTHREAD Thread)
 {
     PRTTHREADINT pThread;
@@ -981,13 +897,6 @@ RTDECL(const char *) RTThreadGetName(RTTHREAD Thread)
 RT_EXPORT_SYMBOL(RTThreadGetName);
 
 
-/**
- * Sets the name of a thread.
- *
- * @returns iprt status code.
- * @param   Thread      Thread handle of the thread to query the name of.
- * @param   pszName     The thread name.
- */
 RTDECL(int) RTThreadSetName(RTTHREAD Thread, const char *pszName)
 {
     /*
@@ -1015,18 +924,6 @@ RTDECL(int) RTThreadSetName(RTTHREAD Thread, const char *pszName)
 RT_EXPORT_SYMBOL(RTThreadSetName);
 
 
-/**
- * Checks if the specified thread is the main thread.
- *
- * @returns true if it is, false if it isn't.
- *
- * @param   hThread     The thread handle.
- *
- * @remarks This function may not return the correct value when rtR3Init was
- *          called on a thread of the than the main one.  This could for
- *          instance happen when the DLL/DYLIB/SO containing IPRT is dynamically
- *          loaded at run time by a different thread.
- */
 RTDECL(bool) RTThreadIsMain(RTTHREAD hThread)
 {
     if (hThread != NIL_RTTHREAD)
@@ -1085,11 +982,6 @@ RTDECL(bool) RTThreadIsInitialized(void)
 RT_EXPORT_SYMBOL(RTThreadIsInitialized);
 
 
-/**
- * Signal the user event.
- *
- * @returns     iprt status code.
- */
 RTDECL(int) RTThreadUserSignal(RTTHREAD Thread)
 {
     int             rc;
@@ -1106,14 +998,6 @@ RTDECL(int) RTThreadUserSignal(RTTHREAD Thread)
 RT_EXPORT_SYMBOL(RTThreadUserSignal);
 
 
-/**
- * Wait for the user event, resume on interruption.
- *
- * @returns     iprt status code.
- * @param       Thread          The thread to wait for.
- * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
- *                              an indefinite wait.
- */
 RTDECL(int) RTThreadUserWait(RTTHREAD Thread, RTMSINTERVAL cMillies)
 {
     int             rc;
@@ -1130,14 +1014,6 @@ RTDECL(int) RTThreadUserWait(RTTHREAD Thread, RTMSINTERVAL cMillies)
 RT_EXPORT_SYMBOL(RTThreadUserWait);
 
 
-/**
- * Wait for the user event, return on interruption.
- *
- * @returns     iprt status code.
- * @param       Thread          The thread to wait for.
- * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
- *                              an indefinite wait.
- */
 RTDECL(int) RTThreadUserWaitNoResume(RTTHREAD Thread, RTMSINTERVAL cMillies)
 {
     int             rc;
@@ -1154,12 +1030,6 @@ RTDECL(int) RTThreadUserWaitNoResume(RTTHREAD Thread, RTMSINTERVAL cMillies)
 RT_EXPORT_SYMBOL(RTThreadUserWaitNoResume);
 
 
-/**
- * Reset the user event.
- *
- * @returns     iprt status code.
- * @param       Thread          The thread to reset.
- */
 RTDECL(int) RTThreadUserReset(RTTHREAD Thread)
 {
     int     rc;
@@ -1251,16 +1121,6 @@ static int rtThreadWait(RTTHREAD Thread, RTMSINTERVAL cMillies, int *prc, bool f
 }
 
 
-/**
- * Wait for the thread to terminate, resume on interruption.
- *
- * @returns     iprt status code.
- *              Will not return VERR_INTERRUPTED.
- * @param       Thread          The thread to wait for.
- * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
- *                              an indefinite wait.
- * @param       prc             Where to store the return code of the thread. Optional.
- */
 RTDECL(int) RTThreadWait(RTTHREAD Thread, RTMSINTERVAL cMillies, int *prc)
 {
     int rc = rtThreadWait(Thread, cMillies, prc, true);
@@ -1270,15 +1130,6 @@ RTDECL(int) RTThreadWait(RTTHREAD Thread, RTMSINTERVAL cMillies, int *prc)
 RT_EXPORT_SYMBOL(RTThreadWait);
 
 
-/**
- * Wait for the thread to terminate, return on interruption.
- *
- * @returns     iprt status code.
- * @param       Thread          The thread to wait for.
- * @param       cMillies        The number of milliseconds to wait. Use RT_INDEFINITE_WAIT for
- *                              an indefinite wait.
- * @param       prc             Where to store the return code of the thread. Optional.
- */
 RTDECL(int) RTThreadWaitNoResume(RTTHREAD Thread, RTMSINTERVAL cMillies, int *prc)
 {
     return rtThreadWait(Thread, cMillies, prc, false);
@@ -1286,13 +1137,6 @@ RTDECL(int) RTThreadWaitNoResume(RTTHREAD Thread, RTMSINTERVAL cMillies, int *pr
 RT_EXPORT_SYMBOL(RTThreadWaitNoResume);
 
 
-/**
- * Changes the type of the specified thread.
- *
- * @returns iprt status code.
- * @param   Thread      The thread which type should be changed.
- * @param   enmType     The new thread type.
- */
 RTDECL(int) RTThreadSetType(RTTHREAD Thread, RTTHREADTYPE enmType)
 {
     /*
@@ -1335,13 +1179,6 @@ RTDECL(int) RTThreadSetType(RTTHREAD Thread, RTTHREADTYPE enmType)
 RT_EXPORT_SYMBOL(RTThreadSetType);
 
 
-/**
- * Gets the type of the specified thread.
- *
- * @returns The thread type.
- * @returns RTTHREADTYPE_INVALID if the thread handle is invalid.
- * @param   Thread      The thread in question.
- */
 RTDECL(RTTHREADTYPE) RTThreadGetType(RTTHREAD Thread)
 {
     RTTHREADTYPE enmType = RTTHREADTYPE_INVALID;
@@ -1442,13 +1279,6 @@ DECLHIDDEN(int) rtThreadDoSetProcPriority(RTPROCPRIORITY enmPriority)
 }
 
 
-/**
- * Change the thread state to blocking.
- *
- * @param   hThread         The current thread.
- * @param   enmState        The sleep state.
- * @param   fReallySleeping Really going to sleep now.
- */
 RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState, bool fReallySleeping)
 {
     Assert(RTTHREAD_IS_SLEEPING(enmState));
@@ -1464,15 +1294,6 @@ RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState, bool fRe
 RT_EXPORT_SYMBOL(RTThreadBlocking);
 
 
-/**
- * Unblocks a thread.
- *
- * This function is paired with rtThreadBlocking.
- *
- * @param   hThread     The current thread.
- * @param   enmCurState The current state, used to check for nested blocking.
- *                      The new state will be running.
- */
 RTDECL(void) RTThreadUnblocked(RTTHREAD hThread, RTTHREADSTATE enmCurState)
 {
     PRTTHREADINT pThread = hThread;
@@ -1501,12 +1322,6 @@ RTDECL(void) RTThreadUnblocked(RTTHREAD hThread, RTTHREADSTATE enmCurState)
 RT_EXPORT_SYMBOL(RTThreadUnblocked);
 
 
-/**
- * Get the current thread state.
- *
- * @returns The thread state.
- * @param   hThread         The thread.
- */
 RTDECL(RTTHREADSTATE) RTThreadGetState(RTTHREAD hThread)
 {
     RTTHREADSTATE   enmState = RTTHREADSTATE_INVALID;

@@ -93,7 +93,6 @@ static DECLCALLBACK(int) rtRandInitOnce(void *pvUser)
 /**
  * Termination counterpart to rtRandInitOnce.
  *
- * @returns IPRT status code.
  * @param   pvUser          Ignored.
  * @param   fLazyCleanUpOk  Set if we're terminating the process.
  */

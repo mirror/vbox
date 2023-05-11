@@ -641,27 +641,6 @@ static int rtStrmOpenComon(const char *pszFilename, RTFILE hFile, const char *ps
 }
 
 
-/**
- * Opens a file stream.
- *
- * @returns iprt status code.
- * @param   pszFilename     Path to the file to open.
- * @param   pszMode         The open mode. See fopen() standard.
- *                          Format: <a|r|w>[+][b|t][x][e|N|E]
- *                              - 'a': Open or create file and writes
- *                                append tos it.
- *                              - 'r': Open existing file and read from it.
- *                              - 'w': Open or truncate existing file and write
- *                                to it.
- *                              - '+': Open for both read and write access.
- *                              - 'b' / 't': binary / text
- *                              - 'x': exclusively create, no open. Only
- *                                possible with 'w'.
- *                              - 'e' / 'N': No inherit on exec.  (The 'e' is
- *                                how Linux and FreeBSD expresses this, the
- *                                latter is Visual C++).
- * @param   ppStream        Where to store the opened stream.
- */
 RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM *ppStream)
 {
     *ppStream = NULL;
@@ -670,16 +649,6 @@ RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM
 }
 
 
-/**
- * Opens a file stream.
- *
- * @returns iprt status code.
- * @param   pszMode         The open mode. See fopen() standard.
- *                          Format: <a|r|w>[+][b]
- * @param   ppStream        Where to store the opened stream.
- * @param   pszFilenameFmt  Filename path format string.
- * @param   args            Arguments to the format string.
- */
 RTR3DECL(int) RTStrmOpenFV(const char *pszMode, PRTSTREAM *ppStream, const char *pszFilenameFmt, va_list args)
 {
     int     rc;
@@ -696,16 +665,6 @@ RTR3DECL(int) RTStrmOpenFV(const char *pszMode, PRTSTREAM *ppStream, const char 
 }
 
 
-/**
- * Opens a file stream.
- *
- * @returns iprt status code.
- * @param   pszMode         The open mode. See fopen() standard.
- *                          Format: <a|r|w>[+][b]
- * @param   ppStream        Where to store the opened stream.
- * @param   pszFilenameFmt  Filename path format string.
- * @param   ...             Arguments to the format string.
- */
 RTR3DECL(int) RTStrmOpenF(const char *pszMode, PRTSTREAM *ppStream, const char *pszFilenameFmt, ...)
 {
     va_list args;
@@ -716,19 +675,6 @@ RTR3DECL(int) RTStrmOpenF(const char *pszMode, PRTSTREAM *ppStream, const char *
 }
 
 
-/**
- * Opens a file stream for a RTFILE handle, taking ownership of the handle.
- *
- * @returns iprt status code.
- * @param   hFile           The file handle to use.  On success, handle
- *                          ownership is transfered to the stream and it will be
- *                          closed when the stream closes.
- * @param   pszMode         The open mode, accept the same as RTStrOpen and
- *                          friends however it is only used to figure out what
- *                          we can do with the handle.
- * @param   fFlags          Reserved, must be zero.
- * @param   ppStream        Where to store the opened stream.
- */
 RTR3DECL(int) RTStrmOpenFileHandle(RTFILE hFile, const char *pszMode, uint32_t fFlags, PRTSTREAM *ppStream)
 {
     *ppStream = NULL;
@@ -738,12 +684,6 @@ RTR3DECL(int) RTStrmOpenFileHandle(RTFILE hFile, const char *pszMode, uint32_t f
 }
 
 
-/**
- * Closes the specified stream.
- *
- * @returns iprt status code.
- * @param   pStream         The stream to close.
- */
 RTR3DECL(int) RTStrmClose(PRTSTREAM pStream)
 {
     /*
@@ -814,12 +754,6 @@ RTR3DECL(int) RTStrmClose(PRTSTREAM pStream)
 }
 
 
-/**
- * Get the pending error of the stream.
- *
- * @returns iprt status code. of the stream.
- * @param   pStream         The stream.
- */
 RTR3DECL(int) RTStrmError(PRTSTREAM pStream)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
@@ -828,15 +762,6 @@ RTR3DECL(int) RTStrmError(PRTSTREAM pStream)
 }
 
 
-/**
- * Clears stream error condition.
- *
- * All stream operations save RTStrmClose and this will fail
- * while an error is asserted on the stream
- *
- * @returns iprt status code.
- * @param   pStream         The stream.
- */
 RTR3DECL(int) RTStrmClearError(PRTSTREAM pStream)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
@@ -1673,18 +1598,6 @@ IPRT_COMPILER_TERM_CALLBACK(rtStrmFlushAndCloseAll);
 #endif /* RTSTREAM_STANDALONE */
 
 
-/**
- * Rewinds the stream.
- *
- * Stream errors will be reset on success.
- *
- * @returns IPRT status code.
- *
- * @param   pStream         The stream.
- *
- * @remarks Not all streams are rewindable and that behavior is currently
- *          undefined for those.
- */
 RTR3DECL(int) RTStrmRewind(PRTSTREAM pStream)
 {
     AssertPtrReturn(pStream, VERR_INVALID_HANDLE);
@@ -1711,18 +1624,6 @@ RTR3DECL(int) RTStrmRewind(PRTSTREAM pStream)
 }
 
 
-/**
- * Changes the file position.
- *
- * @returns IPRT status code.
- *
- * @param   pStream         The stream.
- * @param   off             The seek offset.
- * @param   uMethod         Seek method, i.e. one of the RTFILE_SEEK_* defines.
- *
- * @remarks Not all streams are seekable and that behavior is currently
- *          undefined for those.
- */
 RTR3DECL(int) RTStrmSeek(PRTSTREAM pStream, RTFOFF off, uint32_t uMethod)
 {
     AssertReturn(uMethod <= RTFILE_SEEK_END, VERR_INVALID_PARAMETER);
@@ -1752,17 +1653,6 @@ RTR3DECL(int) RTStrmSeek(PRTSTREAM pStream, RTFOFF off, uint32_t uMethod)
 }
 
 
-/**
- * Tells the stream position.
- *
- * @returns Stream position or IPRT error status. Non-negative numbers are
- *          stream positions, while negative numbers are IPRT error stauses.
- *
- * @param   pStream         The stream.
- *
- * @remarks Not all streams have a position and that behavior is currently
- *          undefined for those.
- */
 RTR3DECL(RTFOFF) RTStrmTell(PRTSTREAM pStream)
 {
 #ifdef RTSTREAM_STANDALONE
@@ -1849,17 +1739,6 @@ static void rtStreamRecheckMode(PRTSTREAM pStream)
 }
 
 
-/**
- * Reads from a file stream.
- *
- * @returns iprt status code.
- * @param   pStream         The stream.
- * @param   pvBuf           Where to put the read bits.
- *                          Must be cbRead bytes or more.
- * @param   cbToRead        Number of bytes to read.
- * @param   pcbRead         Where to store the number of bytes actually read.
- *                          If NULL cbRead bytes are read or an error is returned.
- */
 RTR3DECL(int) RTStrmReadEx(PRTSTREAM pStream, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
     AssertPtrReturn(pStream, VERR_INVALID_HANDLE);
@@ -2320,17 +2199,6 @@ DECLINLINE(int) rtStrmWrite(PRTSTREAM pStream, const void *pvBuf, size_t cbToWri
 }
 
 
-/**
- * Writes to a file stream.
- *
- * @returns iprt status code.
- * @param   pStream         The stream.
- * @param   pvBuf           Where to get the bits to write from.
- * @param   cbToWrite       Number of bytes to write.
- * @param   pcbWritten      Where to store the number of bytes actually written.
- *                          If NULL cbToWrite bytes are written or an error is
- *                          returned.
- */
 RTR3DECL(int) RTStrmWriteEx(PRTSTREAM pStream, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
 {
     AssertReturn(RT_VALID_PTR(pStream) && pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_PARAMETER);
@@ -2338,13 +2206,6 @@ RTR3DECL(int) RTStrmWriteEx(PRTSTREAM pStream, const void *pvBuf, size_t cbToWri
 }
 
 
-/**
- * Reads a character from a file stream.
- *
- * @returns The char as an unsigned char cast to int.
- * @returns -1 on failure.
- * @param   pStream         The stream.
- */
 RTR3DECL(int) RTStrmGetCh(PRTSTREAM pStream)
 {
     unsigned char ch;
@@ -2355,28 +2216,12 @@ RTR3DECL(int) RTStrmGetCh(PRTSTREAM pStream)
 }
 
 
-/**
- * Writes a character to a file stream.
- *
- * @returns iprt status code.
- * @param   pStream         The stream.
- * @param   ch              The char to write.
- */
 RTR3DECL(int) RTStrmPutCh(PRTSTREAM pStream, int ch)
 {
     return rtStrmWrite(pStream, &ch, 1, NULL, true /*fSureIsText*/);
 }
 
 
-/**
- * Writes a string to a file stream.
- *
- * @returns iprt status code.
- * @param   pStream         The stream.
- * @param   pszString       The string to write.
- *                          No newlines or anything is appended or prepended.
- *                          The terminating '\\0' is not written, of course.
- */
 RTR3DECL(int) RTStrmPutStr(PRTSTREAM pStream, const char *pszString)
 {
     size_t cch = strlen(pszString);
@@ -2540,12 +2385,6 @@ RTR3DECL(int) RTStrmGetLine(PRTSTREAM pStream, char *pszString, size_t cbString)
 }
 
 
-/**
- * Flushes a stream.
- *
- * @returns iprt status code.
- * @param   pStream         The stream to flush.
- */
 RTR3DECL(int) RTStrmFlush(PRTSTREAM pStream)
 {
     AssertPtrReturn(pStream, VERR_INVALID_HANDLE);
@@ -2582,14 +2421,6 @@ static DECLCALLBACK(size_t) rtstrmOutput(void *pvArg, const char *pachChars, siz
 }
 
 
-/**
- * Prints a formatted string to the specified stream.
- *
- * @returns Number of bytes printed.
- * @param   pStream         The stream to print to.
- * @param   pszFormat       IPRT format string.
- * @param   args            Arguments specified by pszFormat.
- */
 RTR3DECL(int) RTStrmPrintfV(PRTSTREAM pStream, const char *pszFormat, va_list args)
 {
     AssertReturn(RT_VALID_PTR(pStream) && pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_PARAMETER);
@@ -2608,14 +2439,6 @@ RTR3DECL(int) RTStrmPrintfV(PRTSTREAM pStream, const char *pszFormat, va_list ar
 }
 
 
-/**
- * Prints a formatted string to the specified stream.
- *
- * @returns Number of bytes printed.
- * @param   pStream         The stream to print to.
- * @param   pszFormat       IPRT format string.
- * @param   ...             Arguments specified by pszFormat.
- */
 RTR3DECL(int) RTStrmPrintf(PRTSTREAM pStream, const char *pszFormat, ...)
 {
     va_list args;
@@ -2626,39 +2449,18 @@ RTR3DECL(int) RTStrmPrintf(PRTSTREAM pStream, const char *pszFormat, ...)
 }
 
 
-/**
- * Dumper vprintf-like function outputting to a stream.
- *
- * @param   pvUser          The stream to print to.  NULL means standard output.
- * @param   pszFormat       Runtime format string.
- * @param   va              Arguments specified by pszFormat.
- */
 RTDECL(void) RTStrmDumpPrintfV(void *pvUser, const char *pszFormat, va_list va)
 {
     RTStrmPrintfV(pvUser ? (PRTSTREAM)pvUser : g_pStdOut, pszFormat, va);
 }
 
 
-/**
- * Prints a formatted string to the standard output stream (g_pStdOut).
- *
- * @returns Number of bytes printed.
- * @param   pszFormat       IPRT format string.
- * @param   args            Arguments specified by pszFormat.
- */
 RTR3DECL(int) RTPrintfV(const char *pszFormat, va_list args)
 {
     return RTStrmPrintfV(g_pStdOut, pszFormat, args);
 }
 
 
-/**
- * Prints a formatted string to the standard output stream (g_pStdOut).
- *
- * @returns Number of bytes printed.
- * @param   pszFormat       IPRT format string.
- * @param   ...             Arguments specified by pszFormat.
- */
 RTR3DECL(int) RTPrintf(const char *pszFormat, ...)
 {
     va_list args;

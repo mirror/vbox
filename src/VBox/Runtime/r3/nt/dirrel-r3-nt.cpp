@@ -481,20 +481,6 @@ RTDECL(int) RTDirRelPathQueryInfo(RTDIR hDir, const char *pszRelPath, PRTFSOBJIN
 }
 
 
-/**
- * Changes the mode flags of a file system object relative to @a hDir.
- *
- * The API requires at least one of the mode flag sets (Unix/Dos) to
- * be set. The type is ignored.
- *
- * @returns IPRT status code.
- * @param   hDir            The directory @a pszRelPath is relative to.
- * @param   pszRelPath      The relative path to the file system object.
- * @param   fMode           The new file mode, see @ref grp_rt_fs for details.
- * @param   fFlags          RTPATH_F_ON_LINK or RTPATH_F_FOLLOW_LINK.
- *
- * @sa      RTPathSetMode
- */
 RTDECL(int) RTDirRelPathSetMode(RTDIR hDir, const char *pszRelPath, RTFMODE fMode, uint32_t fFlags)
 {
     PRTDIRINTERNAL pThis = hDir;
@@ -549,32 +535,6 @@ RTDECL(int) RTDirRelPathSetMode(RTDIR hDir, const char *pszRelPath, RTFMODE fMod
 }
 
 
-/**
- * Changes one or more of the timestamps associated of file system object
- * relative to @a hDir.
- *
- * @returns IPRT status code.
- * @param   hDir                The directory @a pszRelPath is relative to.
- * @param   pszRelPath          The relative path to the file system object.
- * @param   pAccessTime         Pointer to the new access time.
- * @param   pModificationTime   Pointer to the new modification time.
- * @param   pChangeTime         Pointer to the new change time. NULL if not to be changed.
- * @param   pBirthTime          Pointer to the new time of birth. NULL if not to be changed.
- * @param   fFlags              RTPATH_F_ON_LINK or RTPATH_F_FOLLOW_LINK.
- *
- * @remark  The file system might not implement all these time attributes,
- *          the API will ignore the ones which aren't supported.
- *
- * @remark  The file system might not implement the time resolution
- *          employed by this interface, the time will be chopped to fit.
- *
- * @remark  The file system may update the change time even if it's
- *          not specified.
- *
- * @remark  POSIX can only set Access & Modification and will always set both.
- *
- * @sa      RTPathSetTimesEx
- */
 RTDECL(int) RTDirRelPathSetTimes(RTDIR hDir, const char *pszRelPath, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
                                  PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime, uint32_t fFlags)
 {
@@ -585,28 +545,11 @@ RTDECL(int) RTDirRelPathSetTimes(RTDIR hDir, const char *pszRelPath, PCRTTIMESPE
     char szPath[RTPATH_MAX];
     int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszRelPath);
     if (RT_SUCCESS(rc))
-    {
-RTAssertMsg2("DBG: RTDirRelPathSetTimes(%s)...\n", szPath);
         rc = RTPathSetTimesEx(szPath, pAccessTime, pModificationTime, pChangeTime, pBirthTime, fFlags);
-    }
     return rc;
 }
 
 
-/**
- * Changes the owner and/or group of a file system object relative to @a hDir.
- *
- * @returns IPRT status code.
- * @param   hDir            The directory @a pszRelPath is relative to.
- * @param   pszRelPath      The relative path to the file system object.
- * @param   uid             The new file owner user id.  Pass NIL_RTUID to leave
- *                          this unchanged.
- * @param   gid             The new group id.  Pass NIL_RTGID to leave this
- *                          unchanged.
- * @param   fFlags          RTPATH_F_ON_LINK or RTPATH_F_FOLLOW_LINK.
- *
- * @sa      RTPathSetOwnerEx
- */
 RTDECL(int) RTDirRelPathSetOwner(RTDIR hDir, const char *pszRelPath, uint32_t uid, uint32_t gid, uint32_t fFlags)
 {
     PRTDIRINTERNAL pThis = hDir;
@@ -617,7 +560,6 @@ RTDECL(int) RTDirRelPathSetOwner(RTDIR hDir, const char *pszRelPath, uint32_t ui
     int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszRelPath);
     if (RT_SUCCESS(rc))
     {
-RTAssertMsg2("DBG: RTDirRelPathSetOwner(%s)...\n", szPath);
 #ifndef RT_OS_WINDOWS
         rc = RTPathSetOwnerEx(szPath, uid, gid, fFlags);
 #else
@@ -629,21 +571,6 @@ RTAssertMsg2("DBG: RTDirRelPathSetOwner(%s)...\n", szPath);
 }
 
 
-/**
- * Renames a directory relative path within a filesystem.
- *
- * This will rename symbolic links.  If RTPATHRENAME_FLAGS_REPLACE is used and
- * pszDst is a symbolic link, it will be replaced and not its target.
- *
- * @returns IPRT status code.
- * @param   hDirSrc         The directory the source path is relative to.
- * @param   pszSrc          The source path, relative to @a hDirSrc.
- * @param   hDirSrc         The directory the destination path is relative to.
- * @param   pszDst          The destination path, relative to @a hDirDst.
- * @param   fRename         Rename flags, RTPATHRENAME_FLAGS_XXX.
- *
- * @sa      RTPathRename
- */
 RTDECL(int) RTDirRelPathRename(RTDIR hDirSrc, const char *pszSrc, RTDIR hDirDst, const char *pszDst, unsigned fRename)
 {
     PRTDIRINTERNAL pThis = hDirSrc;
@@ -664,25 +591,12 @@ RTDECL(int) RTDirRelPathRename(RTDIR hDirSrc, const char *pszSrc, RTDIR hDirDst,
         char szDstPath[RTPATH_MAX];
         rc = rtDirRelBuildFullPath(pThis, szDstPath, sizeof(szDstPath), pszDst);
         if (RT_SUCCESS(rc))
-        {
-RTAssertMsg2("DBG: RTDirRelPathRename(%s,%s)...\n", szSrcPath, szDstPath);
             rc = RTPathRename(szSrcPath, szDstPath, fRename);
-        }
     }
     return rc;
 }
 
 
-/**
- * Removes the last component of the directory relative path.
- *
- * @returns IPRT status code.
- * @param   hDir            The directory @a pszRelPath is relative to.
- * @param   pszRelPath      The relative path to the file system object.
- * @param   fUnlink         Unlink flags, RTPATHUNLINK_FLAGS_XXX.
- *
- * @sa      RTPathUnlink
- */
 RTDECL(int) RTDirRelPathUnlink(RTDIR hDir, const char *pszRelPath, uint32_t fUnlink)
 {
     PRTDIRINTERNAL pThis = hDir;
@@ -692,10 +606,7 @@ RTDECL(int) RTDirRelPathUnlink(RTDIR hDir, const char *pszRelPath, uint32_t fUnl
     char szPath[RTPATH_MAX];
     int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszRelPath);
     if (RT_SUCCESS(rc))
-    {
-RTAssertMsg2("DBG: RTDirRelPathUnlink(%s)...\n", szPath);
         rc = RTPathUnlink(szPath, fUnlink);
-    }
     return rc;
 }
 
@@ -710,24 +621,6 @@ RTAssertMsg2("DBG: RTDirRelPathUnlink(%s)...\n", szPath);
  */
 
 
-/**
- * Creates a symbolic link (@a pszSymlink) relative to @a hDir targeting @a
- * pszTarget.
- *
- * @returns IPRT status code.
- * @param   hDir            The directory @a pszSymlink is relative to.
- * @param   pszSymlink      The relative path of the symbolic link.
- * @param   pszTarget       The path to the symbolic link target.  This is
- *                          relative to @a pszSymlink or an absolute path.
- * @param   enmType         The symbolic link type.  For Windows compatability
- *                          it is very important to set this correctly.  When
- *                          RTSYMLINKTYPE_UNKNOWN is used, the API will try
- *                          make a guess and may attempt query information
- *                          about @a pszTarget in the process.
- * @param   fCreate         Create flags, RTSYMLINKCREATE_FLAGS_XXX.
- *
- * @sa      RTSymlinkCreate
- */
 RTDECL(int) RTDirRelSymlinkCreate(RTDIR hDir, const char *pszSymlink, const char *pszTarget,
                                   RTSYMLINKTYPE enmType, uint32_t fCreate)
 {
@@ -738,32 +631,11 @@ RTDECL(int) RTDirRelSymlinkCreate(RTDIR hDir, const char *pszSymlink, const char
     char szPath[RTPATH_MAX];
     int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszSymlink);
     if (RT_SUCCESS(rc))
-    {
-RTAssertMsg2("DBG: RTDirRelSymlinkCreate(%s)...\n", szPath);
         rc = RTSymlinkCreate(szPath, pszTarget, enmType, fCreate);
-    }
     return rc;
 }
 
 
-/**
- * Read the symlink target relative to @a hDir.
- *
- * @returns IPRT status code.
- * @retval  VERR_NOT_SYMLINK if @a pszSymlink does not specify a symbolic link.
- * @retval  VERR_BUFFER_OVERFLOW if the link is larger than @a cbTarget.  The
- *          buffer will contain what all we managed to read, fully terminated
- *          if @a cbTarget > 0.
- *
- * @param   hDir            The directory @a pszSymlink is relative to.
- * @param   pszSymlink      The relative path to the symbolic link that should
- *                          be read.
- * @param   pszTarget       The target buffer.
- * @param   cbTarget        The size of the target buffer.
- * @param   fRead           Read flags, RTSYMLINKREAD_FLAGS_XXX.
- *
- * @sa      RTSymlinkRead
- */
 RTDECL(int) RTDirRelSymlinkRead(RTDIR hDir, const char *pszSymlink, char *pszTarget, size_t cbTarget, uint32_t fRead)
 {
     PRTDIRINTERNAL pThis = hDir;
@@ -773,10 +645,7 @@ RTDECL(int) RTDirRelSymlinkRead(RTDIR hDir, const char *pszSymlink, char *pszTar
     char szPath[RTPATH_MAX];
     int rc = rtDirRelBuildFullPath(pThis, szPath, sizeof(szPath), pszSymlink);
     if (RT_SUCCESS(rc))
-    {
-RTAssertMsg2("DBG: RTDirRelSymlinkRead(%s)...\n", szPath);
         rc = RTSymlinkRead(szPath, pszTarget, cbTarget, fRead);
-    }
     return rc;
 }
 

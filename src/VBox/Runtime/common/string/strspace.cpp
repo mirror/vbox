@@ -84,14 +84,6 @@
 
 
 
-/**
- * Inserts a string into a unique string space.
- *
- * @returns true on success.
- * @returns false if the string collided with an existing string.
- * @param   pStrSpace       The space to insert it into.
- * @param   pStr            The string node.
- */
 RTDECL(bool) RTStrSpaceInsert(PRTSTRSPACE pStrSpace, PRTSTRSPACECORE pStr)
 {
     pStr->Key = sdbm(pStr->pszString, &pStr->cchString);
@@ -111,14 +103,6 @@ RTDECL(bool) RTStrSpaceInsert(PRTSTRSPACE pStrSpace, PRTSTRSPACECORE pStr)
 RT_EXPORT_SYMBOL(RTStrSpaceInsert);
 
 
-/**
- * Removes a string from a unique string space.
- *
- * @returns Pointer to the removed string node.
- * @returns NULL if the string was not found in the string space.
- * @param   pStrSpace       The space to insert it into.
- * @param   pszString       The string to remove.
- */
 RTDECL(PRTSTRSPACECORE) RTStrSpaceRemove(PRTSTRSPACE pStrSpace, const char *pszString)
 {
     size_t  cchString;
@@ -160,14 +144,6 @@ RTDECL(PRTSTRSPACECORE) RTStrSpaceRemove(PRTSTRSPACE pStrSpace, const char *pszS
 RT_EXPORT_SYMBOL(RTStrSpaceRemove);
 
 
-/**
- * Gets a string from a unique string space.
- *
- * @returns Pointer to the string node.
- * @returns NULL if the string was not found in the string space.
- * @param   pStrSpace       The space to insert it into.
- * @param   pszString       The string to get.
- */
 RTDECL(PRTSTRSPACECORE) RTStrSpaceGet(PRTSTRSPACE pStrSpace, const char *pszString)
 {
     size_t  cchString;
@@ -186,17 +162,6 @@ RTDECL(PRTSTRSPACECORE) RTStrSpaceGet(PRTSTRSPACE pStrSpace, const char *pszStri
 RT_EXPORT_SYMBOL(RTStrSpaceGet);
 
 
-/**
- * Gets a string from a unique string space.
- *
- * @returns Pointer to the string node.
- * @returns NULL if the string was not found in the string space.
- * @param   pStrSpace       The space to insert it into.
- * @param   pszString       The string to get.
- * @param   cchMax          The max string length to evaluate.  Passing
- *                          RTSTR_MAX is ok and makes it behave just like
- *                          RTStrSpaceGet.
- */
 RTDECL(PRTSTRSPACECORE) RTStrSpaceGetN(PRTSTRSPACE pStrSpace, const char *pszString, size_t cchMax)
 {
     size_t  cchString;
@@ -215,17 +180,6 @@ RTDECL(PRTSTRSPACECORE) RTStrSpaceGetN(PRTSTRSPACE pStrSpace, const char *pszStr
 RT_EXPORT_SYMBOL(RTStrSpaceGetN);
 
 
-/**
- * Enumerates the string space.
- * The caller supplies a callback which will be called for each of
- * the string nodes.
- *
- * @returns 0 or what ever non-zero return value pfnCallback returned
- *          when aborting the destruction.
- * @param   pStrSpace       The space to insert it into.
- * @param   pfnCallback     The callback.
- * @param   pvUser          The user argument.
- */
 RTDECL(int) RTStrSpaceEnumerate(PRTSTRSPACE pStrSpace, PFNRTSTRSPACECALLBACK pfnCallback, void *pvUser)
 {
     return KAVL_FN(DoWithAll)(pStrSpace, true, pfnCallback, pvUser);
@@ -233,17 +187,6 @@ RTDECL(int) RTStrSpaceEnumerate(PRTSTRSPACE pStrSpace, PFNRTSTRSPACECALLBACK pfn
 RT_EXPORT_SYMBOL(RTStrSpaceEnumerate);
 
 
-/**
- * Destroys the string space.
- * The caller supplies a callback which will be called for each of
- * the string nodes in for freeing their memory and other resources.
- *
- * @returns 0 or what ever non-zero return value pfnCallback returned
- *          when aborting the destruction.
- * @param   pStrSpace       The space to insert it into.
- * @param   pfnCallback     The callback.
- * @param   pvUser          The user argument.
- */
 RTDECL(int) RTStrSpaceDestroy(PRTSTRSPACE pStrSpace, PFNRTSTRSPACECALLBACK pfnCallback, void *pvUser)
 {
     return KAVL_FN(Destroy)(pStrSpace, pfnCallback, pvUser);

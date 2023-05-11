@@ -113,54 +113,12 @@ static int rtPathCompare(const char *pszPath1, const char *pszPath2, bool fLimit
 }
 
 
-/**
- * Compares two paths.
- *
- * The comparison takes platform-dependent details into account,
- * such as:
- * <ul>
- * <li>On DOS-like platforms, both separator chars (|\| and |/|) are considered
- *     to be equal.
- * <li>On platforms with case-insensitive file systems, mismatching characters
- *     are uppercased and compared again.
- * </ul>
- *
- * @returns @< 0 if the first path less than the second path.
- * @returns 0 if the first path identical to the second path.
- * @returns @> 0 if the first path greater than the second path.
- *
- * @param   pszPath1    Path to compare (must be an absolute path).
- * @param   pszPath2    Path to compare (must be an absolute path).
- *
- * @remarks File system details are currently ignored. This means that you won't
- *          get case-insensitive compares on unix systems when a path goes into a
- *          case-insensitive filesystem like FAT, HPFS, HFS, NTFS, JFS, or
- *          similar. For NT, OS/2 and similar you'll won't get case-sensitive
- *          compares on a case-sensitive file system.
- */
 RTDECL(int) RTPathCompare(const char *pszPath1, const char *pszPath2)
 {
     return rtPathCompare(pszPath1, pszPath2, false /* full path lengths */);
 }
 
 
-/**
- * Checks if a path starts with the given parent path.
- *
- * This means that either the path and the parent path matches completely, or
- * that the path is to some file or directory residing in the tree given by the
- * parent directory.
- *
- * The path comparison takes platform-dependent details into account,
- * see RTPathCompare() for details.
- *
- * @returns |true| when \a pszPath starts with \a pszParentPath (or when they
- *          are identical), or |false| otherwise.
- *
- * @param   pszPath         Path to check, must be an absolute path.
- * @param   pszParentPath   Parent path, must be an absolute path.
- *                          No trailing directory slash!
- */
 RTDECL(bool) RTPathStartsWith(const char *pszPath, const char *pszParentPath)
 {
     if (pszPath == pszParentPath)

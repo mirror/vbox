@@ -274,13 +274,6 @@ DECLINLINE(bool) rtTimeIsLeapYear(int32_t i32Year)
 }
 
 
-/**
- * Checks if a year is a leap year or not.
- *
- * @returns true if it's a leap year.
- * @returns false if it's a common year.
- * @param   i32Year     The year in question.
- */
 RTDECL(bool) RTTimeIsLeapYear(int32_t i32Year)
 {
     return rtTimeIsLeapYear(i32Year);
@@ -288,13 +281,6 @@ RTDECL(bool) RTTimeIsLeapYear(int32_t i32Year)
 RT_EXPORT_SYMBOL(RTTimeIsLeapYear);
 
 
-/**
- * Explodes a time spec (UTC).
- *
- * @returns pTime.
- * @param   pTime       Where to store the exploded time.
- * @param   pTimeSpec   The time spec to exploded.
- */
 RTDECL(PRTTIME) RTTimeExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
 {
     int64_t         i64Div;
@@ -400,20 +386,6 @@ RTDECL(PRTTIME) RTTimeExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
 RT_EXPORT_SYMBOL(RTTimeExplode);
 
 
-/**
- * Implodes exploded time to a time spec (UTC).
- *
- * @returns pTime on success.
- * @returns NULL if the pTime data is invalid.
- * @param   pTimeSpec   Where to store the imploded UTC time.
- *                      If pTime specifies a time which outside the range, maximum or
- *                      minimum values will be returned.
- * @param   pTime       Pointer to the exploded time to implode.
- *                      The fields u8Month, u8WeekDay and u8MonthDay are not used,
- *                      and all the other fields are expected to be within their
- *                      bounds. Use RTTimeNormalize() or RTTimeLocalNormalize() to
- *                      calculate u16YearDay and normalize the ranges of the fields.
- */
 RTDECL(PRTTIMESPEC) RTTimeImplode(PRTTIMESPEC pTimeSpec, PCRTTIME pTime)
 {
     int32_t     i32Days;
@@ -678,28 +650,6 @@ static PRTTIME rtTimeNormalizeInternal(PRTTIME pTime)
 }
 
 
-/**
- * Normalizes the fields of a time structure.
- *
- * It is possible to calculate year-day from month/day and vice
- * versa. If you adjust any of these, make sure to zero the
- * other so you make it clear which of the fields to use. If
- * it's ambiguous, the year-day field is used (and you get
- * assertions in debug builds).
- *
- * All the time fields and the year-day or month/day fields will
- * be adjusted for overflows. (Since all fields are unsigned, there
- * is no underflows.) It is possible to exploit this for simple
- * date math, though the recommended way of doing that to implode
- * the time into a timespec and do the math on that.
- *
- * @returns pTime on success.
- * @returns NULL if the data is invalid.
- *
- * @param   pTime       The time structure to normalize.
- *
- * @remarks This function doesn't work with local time, only with UTC time.
- */
 RTDECL(PRTTIME) RTTimeNormalize(PRTTIME pTime)
 {
     /*
@@ -718,28 +668,6 @@ RTDECL(PRTTIME) RTTimeNormalize(PRTTIME pTime)
 RT_EXPORT_SYMBOL(RTTimeNormalize);
 
 
-/**
- * Normalizes the fields of a time structure, assuming local time.
- *
- * It is possible to calculate year-day from month/day and vice
- * versa. If you adjust any of these, make sure to zero the
- * other so you make it clear which of the fields to use. If
- * it's ambiguous, the year-day field is used (and you get
- * assertions in debug builds).
- *
- * All the time fields and the year-day or month/day fields will
- * be adjusted for overflows. (Since all fields are unsigned, there
- * is no underflows.) It is possible to exploit this for simple
- * date math, though the recommended way of doing that to implode
- * the time into a timespec and do the math on that.
- *
- * @returns pTime on success.
- * @returns NULL if the data is invalid.
- *
- * @param   pTime       The time structure to normalize.
- *
- * @remarks This function doesn't work with UTC time, only with local time.
- */
 RTDECL(PRTTIME) RTTimeLocalNormalize(PRTTIME pTime)
 {
     /*
@@ -757,15 +685,6 @@ RTDECL(PRTTIME) RTTimeLocalNormalize(PRTTIME pTime)
 RT_EXPORT_SYMBOL(RTTimeLocalNormalize);
 
 
-/**
- * Converts a time spec to a ISO date string.
- *
- * @returns psz on success.
- * @returns NULL on buffer underflow.
- * @param   pTime       The time. Caller should've normalized this.
- * @param   psz         Where to store the string.
- * @param   cb          The size of the buffer.
- */
 RTDECL(char *) RTTimeToString(PCRTTIME pTime, char *psz, size_t cb)
 {
     size_t cch;
@@ -809,16 +728,6 @@ RTDECL(char *) RTTimeToString(PCRTTIME pTime, char *psz, size_t cb)
 RT_EXPORT_SYMBOL(RTTimeToString);
 
 
-/**
- * Converts a time spec to a ISO date string, extended version.
- *
- * @returns Output string length on success (positive), VERR_BUFFER_OVERFLOW
- *          (negative) or VERR_OUT_OF_RANGE (negative) on failure.
- * @param   pTime           The time. Caller should've normalized this.
- * @param   psz             Where to store the string.
- * @param   cb              The size of the buffer.
- * @param   cFractionDigits Number of digits in the fraction.  Max is 9.
- */
 RTDECL(ssize_t) RTTimeToStringEx(PCRTTIME pTime, char *psz, size_t cb, unsigned cFractionDigits)
 {
     size_t cch;
@@ -877,15 +786,6 @@ RTDECL(ssize_t) RTTimeToStringEx(PCRTTIME pTime, char *psz, size_t cb, unsigned 
 RT_EXPORT_SYMBOL(RTTimeToStringEx);
 
 
-/**
- * Converts a time spec to a ISO date string.
- *
- * @returns psz on success.
- * @returns NULL on buffer underflow.
- * @param   pTime       The time spec.
- * @param   psz         Where to store the string.
- * @param   cb          The size of the buffer.
- */
 RTDECL(char *) RTTimeSpecToString(PCRTTIMESPEC pTime, char *psz, size_t cb)
 {
     RTTIME Time;
@@ -895,17 +795,6 @@ RT_EXPORT_SYMBOL(RTTimeSpecToString);
 
 
 
-/**
- * Attempts to convert an ISO date string to a time structure.
- *
- * We're a little forgiving with zero padding, unspecified parts, and leading
- * and trailing spaces.
- *
- * @retval  pTime on success,
- * @retval  NULL on failure.
- * @param   pTime       Where to store the time on success.
- * @param   pszString   The ISO date string to convert.
- */
 RTDECL(PRTTIME) RTTimeFromString(PRTTIME pTime, const char *pszString)
 {
     /* Ignore leading spaces. */
@@ -1071,17 +960,6 @@ RTDECL(PRTTIME) RTTimeFromString(PRTTIME pTime, const char *pszString)
 RT_EXPORT_SYMBOL(RTTimeFromString);
 
 
-/**
- * Attempts to convert an ISO date string to a time structure.
- *
- * We're a little forgiving with zero padding, unspecified parts, and leading
- * and trailing spaces.
- *
- * @retval  pTime on success,
- * @retval  NULL on failure.
- * @param   pTime       The time spec.
- * @param   pszString   The ISO date string to convert.
- */
 RTDECL(PRTTIMESPEC) RTTimeSpecFromString(PRTTIMESPEC pTime, const char *pszString)
 {
     RTTIME Time;
@@ -1092,15 +970,6 @@ RTDECL(PRTTIMESPEC) RTTimeSpecFromString(PRTTIMESPEC pTime, const char *pszStrin
 RT_EXPORT_SYMBOL(RTTimeSpecFromString);
 
 
-/**
- * Formats the given time on a RTC-2822 compliant format.
- *
- * @returns Output string length on success (positive), VERR_BUFFER_OVERFLOW
- *          (negative) on failure.
- * @param   pTime       The time. Caller should've normalized this.
- * @param   psz         Where to store the string.
- * @param   cb          The size of the buffer.
- */
 RTDECL(ssize_t) RTTimeToRfc2822(PRTTIME pTime, char *psz, size_t cb, uint32_t fFlags)
 {
     Assert(pTime->u8Month > 0 && pTime->u8Month <= 12);
@@ -1160,17 +1029,6 @@ RTDECL(ssize_t) RTTimeToRfc2822(PRTTIME pTime, char *psz, size_t cb, uint32_t fF
 RT_EXPORT_SYMBOL(RTTimeToRfc2822);
 
 
-/**
- * Attempts to convert an RFC-2822 date string to a time structure.
- *
- * We're a little forgiving with zero padding, unspecified parts, and leading
- * and trailing spaces.
- *
- * @retval  pTime on success,
- * @retval  NULL on failure.
- * @param   pTime       Where to store the time on success.
- * @param   pszString   The ISO date string to convert.
- */
 RTDECL(PRTTIME) RTTimeFromRfc2822(PRTTIME pTime, const char *pszString)
 {
     /*
@@ -1551,13 +1409,6 @@ static PRTTIME rtTimeConvertToZulu(PRTTIME pTime)
 }
 
 
-/**
- * Converts a time structure to UTC, relying on UTC offset information if it contains local time.
- *
- * @returns pTime on success.
- * @returns NULL if the data is invalid.
- * @param   pTime       The time structure to convert.
- */
 RTDECL(PRTTIME) RTTimeConvertToZulu(PRTTIME pTime)
 {
     /*
@@ -1571,19 +1422,6 @@ RTDECL(PRTTIME) RTTimeConvertToZulu(PRTTIME pTime)
 RT_EXPORT_SYMBOL(RTTimeConvertToZulu);
 
 
-/**
- * Compares two normalized time structures.
- *
- * @retval  0 if equal.
- * @retval  -1 if @a pLeft is earlier than @a pRight.
- * @retval  1 if @a pRight is earlier than @a pLeft.
- *
- * @param   pLeft       The left side time.  NULL is accepted.
- * @param   pRight      The right side time.  NULL is accepted.
- *
- * @note    A NULL time is considered smaller than anything else.  If both are
- *          NULL, they are considered equal.
- */
 RTDECL(int) RTTimeCompare(PCRTTIME pLeft, PCRTTIME pRight)
 {
 #ifdef RT_STRICT

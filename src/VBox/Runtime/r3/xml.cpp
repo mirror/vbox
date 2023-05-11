@@ -750,13 +750,6 @@ ElementNode::~ElementNode()
 }
 
 
-/**
- * Gets the next tree element in a full tree enumeration.
- *
- * @returns Pointer to the next element in the tree, NULL if we're done.
- * @param   pElmRoot            The root of the tree we're enumerating.  NULL if
- *                              it's the entire tree.
- */
 ElementNode const *ElementNode::getNextTreeElement(ElementNode const *pElmRoot /*= NULL */) const
 {
     /*

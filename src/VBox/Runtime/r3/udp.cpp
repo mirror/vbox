@@ -184,24 +184,6 @@ static int rtUdpServerDestroySocket(RTSOCKET volatile *pSock, const char *pszMsg
 }
 
 
-/**
- * Create single datagram at a time UDP Server in a separate thread.
- *
- * The thread will loop waiting for datagrams and call pfnServe for
- * each of the incoming datagrams in turn. The pfnServe function can
- * return VERR_UDP_SERVER_STOP too terminate this loop. RTUdpServerDestroy()
- * should be used to terminate the server.
- *
- * @returns iprt status code.
- * @param   pszAddress      The address for creating a datagram socket.
- *                          If NULL or empty string the server is bound to all interfaces.
- * @param   uPort           The port for creating a datagram socket.
- * @param   enmType         The thread type.
- * @param   pszThrdName     The name of the worker thread.
- * @param   pfnServe        The function which will handle incoming datagrams.
- * @param   pvUser          User argument passed to pfnServe.
- * @param   ppServer        Where to store the serverhandle.
- */
 RTR3DECL(int)  RTUdpServerCreate(const char *pszAddress, unsigned uPort, RTTHREADTYPE enmType, const char *pszThrdName,
                                  PFNRTUDPSERVE pfnServe, void *pvUser, PPRTUDPSERVER ppServer)
 {
@@ -271,16 +253,6 @@ static DECLCALLBACK(int)  rtUdpServerThread(RTTHREAD ThreadSelf, void *pvServer)
 }
 
 
-/**
- * Create single datagram at a time UDP Server.
- * The caller must call RTUdpServerReceive() to actually start the server.
- *
- * @returns iprt status code.
- * @param   pszAddress      The address for creating a datagram socket.
- *                          If NULL the server is bound to all interfaces.
- * @param   uPort           The port for creating a datagram socket.
- * @param   ppServer        Where to store the serverhandle.
- */
 RTR3DECL(int) RTUdpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTUDPSERVER ppServer)
 {
 
@@ -346,22 +318,6 @@ RTR3DECL(int) RTUdpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTUD
 }
 
 
-/**
- * Listen for incoming datagrams.
- *
- * The function will loop waiting for datagrams and call pfnServe for
- * each of the incoming datagrams in turn. The pfnServe function can
- * return VERR_UDP_SERVER_STOP too terminate this loop. A stopped server
- * can only be destroyed.
- *
- * @returns IPRT status code.
- * @retval  VERR_UDP_SERVER_STOP if stopped by pfnServe.
- * @retval  VERR_UDP_SERVER_SHUTDOWN if shut down by RTUdpServerShutdown.
- *
- * @param   pServer         The server handle as returned from RTUdpServerCreateEx().
- * @param   pfnServe        The function which will handle incoming datagrams.
- * @param   pvUser          User argument passed to pfnServe.
- */
 RTR3DECL(int) RTUdpServerListen(PRTUDPSERVER pServer, PFNRTUDPSERVE pfnServe, void *pvUser)
 {
     /*
@@ -515,12 +471,6 @@ static int rtUdpServerListenCleanup(PRTUDPSERVER pServer)
 }
 
 
-/**
- * Shuts down the server.
- *
- * @returns IPRT status code.
- * @param   pServer         Handle to the server.
- */
 RTR3DECL(int) RTUdpServerShutdown(PRTUDPSERVER pServer)
 {
     /*
@@ -568,12 +518,6 @@ RTR3DECL(int) RTUdpServerShutdown(PRTUDPSERVER pServer)
 }
 
 
-/**
- * Closes down and frees a UDP Server.
- *
- * @returns iprt status code.
- * @param   pServer         Handle to the server.
- */
 RTR3DECL(int) RTUdpServerDestroy(PRTUDPSERVER pServer)
 {
     /*

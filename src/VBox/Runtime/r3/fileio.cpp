@@ -209,13 +209,6 @@ int rtFileRecalcAndValidateFlags(uint64_t *pfOpen)
 }
 
 
-/**
- * Gets the current file position.
- *
- * @returns File offset.
- * @returns ~0UUL on failure.
- * @param   File        File handle.
- */
 RTR3DECL(uint64_t)  RTFileTell(RTFILE File)
 {
     /*

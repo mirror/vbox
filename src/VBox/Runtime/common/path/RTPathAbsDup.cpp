@@ -42,13 +42,6 @@
 #include <iprt/path.h>
 
 
-/**
- * Same as RTPathAbs only the result is RTStrDup()'ed.
- *
- * @returns Pointer to real path. Use RTStrFree() to free this string.
- * @returns NULL if RTPathAbs() or RTStrDup() fails.
- * @param   pszPath         The path to resolve.
- */
 RTDECL(char *) RTPathAbsDup(const char *pszPath)
 {
     return RTPathAbsExDup(NULL, pszPath, RTPATH_STR_F_STYLE_HOST);

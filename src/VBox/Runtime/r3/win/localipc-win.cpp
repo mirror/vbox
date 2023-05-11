@@ -566,7 +566,6 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
 /**
  * Retains a reference to the server instance.
  *
- * @returns
  * @param   pThis               The server instance.
  */
 DECLINLINE(void) rtLocalIpcServerRetain(PRTLOCALIPCSERVERINT pThis)

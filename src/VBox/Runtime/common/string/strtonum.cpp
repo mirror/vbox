@@ -118,28 +118,6 @@ int main()
 */
 
 
-/**
- * Converts a string representation of a number to a 64-bit unsigned number.
- *
- * @returns iprt status code.
- *          Warnings are used to indicate conversion problems.
- * @retval  VWRN_NUMBER_TOO_BIG
- * @retval  VWRN_NEGATIVE_UNSIGNED
- * @retval  VWRN_TRAILING_CHARS
- * @retval  VWRN_TRAILING_SPACES
- * @retval  VINF_SUCCESS
- * @retval  VERR_NO_DIGITS
- *
- * @param   pszValue        Pointer to the string value.
- * @param   ppszNext        Where to store the pointer to the first char
- *                          following the number. (Optional)
- * @param   uBaseAndMaxLen  The low byte is the base of the representation, the
- *                          upper 24 bits are the max length to parse.  If the base
- *                          is zero the function will look for known prefixes before
- *                          defaulting to 10.  A max length of zero means no length
- *                          restriction.
- * @param   pu64            Where to store the converted number. (optional)
- */
 RTDECL(int) RTStrToUInt64Ex(const char *pszValue, char **ppszNext, unsigned uBaseAndMaxLen, uint64_t *pu64)
 {
     const char   *psz = pszValue;
@@ -264,27 +242,6 @@ RTDECL(int) RTStrToUInt64Ex(const char *pszValue, char **ppszNext, unsigned uBas
 RT_EXPORT_SYMBOL(RTStrToUInt64Ex);
 
 
-/**
- * Converts a string representation of a number to a 64-bit unsigned number,
- * making sure the full string is converted.
- *
- * @returns iprt status code.
- *          Warnings are used to indicate conversion problems.
- * @retval  VWRN_NUMBER_TOO_BIG
- * @retval  VWRN_NEGATIVE_UNSIGNED
- * @retval  VINF_SUCCESS
- * @retval  VERR_NO_DIGITS
- * @retval  VERR_TRAILING_SPACES
- * @retval  VERR_TRAILING_CHARS
- *
- * @param   pszValue        Pointer to the string value.
- * @param   uBaseAndMaxLen  The low byte is the base of the representation, the
- *                          upper 24 bits are the max length to parse.  If the base
- *                          is zero the function will look for known prefixes before
- *                          defaulting to 10.  A max length of zero means no length
- *                          restriction.
- * @param   pu64            Where to store the converted number. (optional)
- */
 RTDECL(int) RTStrToUInt64Full(const char *pszValue, unsigned uBaseAndMaxLen, uint64_t *pu64)
 {
     char *psz;
@@ -313,14 +270,6 @@ RTDECL(int) RTStrToUInt64Full(const char *pszValue, unsigned uBaseAndMaxLen, uin
 RT_EXPORT_SYMBOL(RTStrToUInt64Full);
 
 
-/**
- * Converts a string representation of a number to a 64-bit unsigned number.
- * The base is guessed.
- *
- * @returns 64-bit unsigned number on success.
- * @returns 0 on failure.
- * @param   pszValue    Pointer to the string value.
- */
 RTDECL(uint64_t) RTStrToUInt64(const char *pszValue)
 {
     uint64_t u64;
@@ -332,28 +281,6 @@ RTDECL(uint64_t) RTStrToUInt64(const char *pszValue)
 RT_EXPORT_SYMBOL(RTStrToUInt64);
 
 
-/**
- * Converts a string representation of a number to a 32-bit unsigned number.
- *
- * @returns iprt status code.
- *          Warnings are used to indicate conversion problems.
- * @retval  VWRN_NUMBER_TOO_BIG
- * @retval  VWRN_NEGATIVE_UNSIGNED
- * @retval  VWRN_TRAILING_CHARS
- * @retval  VWRN_TRAILING_SPACES
- * @retval  VINF_SUCCESS
- * @retval  VERR_NO_DIGITS
- *
- * @param   pszValue        Pointer to the string value.
- * @param   ppszNext        Where to store the pointer to the first char
- *                          following the number. (Optional)
- * @param   uBaseAndMaxLen  The low byte is the base of the representation, the
- *                          upper 24 bits are the max length to parse.  If the base
- *                          is zero the function will look for known prefixes before
- *                          defaulting to 10.  A max length of zero means no length
- *                          restriction.
- * @param   pu32            Where to store the converted number. (optional)
- */
 RTDECL(int) RTStrToUInt32Ex(const char *pszValue, char **ppszNext, unsigned uBaseAndMaxLen, uint32_t *pu32)
 {
     uint64_t u64;
@@ -370,27 +297,6 @@ RTDECL(int) RTStrToUInt32Ex(const char *pszValue, char **ppszNext, unsigned uBas
 RT_EXPORT_SYMBOL(RTStrToUInt32Ex);
 
 
-/**
- * Converts a string representation of a number to a 32-bit unsigned number,
- * making sure the full string is converted.
- *
- * @returns iprt status code.
- *          Warnings are used to indicate conversion problems.
- * @retval  VWRN_NUMBER_TOO_BIG
- * @retval  VWRN_NEGATIVE_UNSIGNED
- * @retval  VINF_SUCCESS
- * @retval  VERR_NO_DIGITS
- * @retval  VERR_TRAILING_SPACES
- * @retval  VERR_TRAILING_CHARS
- *
- * @param   pszValue        Pointer to the string value.
- * @param   uBaseAndMaxLen  The low byte is the base of the representation, the
- *                          upper 24 bits are the max length to parse.  If the base
- *                          is zero the function will look for known prefixes before
- *                          defaulting to 10.  A max length of zero means no length
- *                          restriction.
- * @param   pu32            Where to store the converted number. (optional)
- */
 RTDECL(int) RTStrToUInt32Full(const char *pszValue, unsigned uBaseAndMaxLen, uint32_t *pu32)
 {
     uint64_t u64;
@@ -407,14 +313,6 @@ RTDECL(int) RTStrToUInt32Full(const char *pszValue, unsigned uBaseAndMaxLen, uin
 RT_EXPORT_SYMBOL(RTStrToUInt32Full);
 
 
-/**
- * Converts a string representation of a number to a 64-bit unsigned number.
- * The base is guessed.
- *
- * @returns 32-bit unsigned number on success.
- * @returns 0 on failure.
- * @param   pszValue    Pointer to the string value.
- */
 RTDECL(uint32_t) RTStrToUInt32(const char *pszValue)
 {
     uint32_t u32;
@@ -426,28 +324,6 @@ RTDECL(uint32_t) RTStrToUInt32(const char *pszValue)
 RT_EXPORT_SYMBOL(RTStrToUInt32);
 
 
-/**
- * Converts a string representation of a number to a 16-bit unsigned number.
- *
- * @returns iprt status code.
- *          Warnings are used to indicate conversion problems.
- * @retval  VWRN_NUMBER_TOO_BIG
- * @retval  VWRN_NEGATIVE_UNSIGNED
- * @retval  VWRN_TRAILING_CHARS
- * @retval  VWRN_TRAILING_SPACES
- * @retval  VINF_SUCCESS
- * @retval  VERR_NO_DIGITS
- *
- * @param   pszValue        Pointer to the string value.
- * @param   ppszNext        Where to store the pointer to the first char
- *                          following the number. (Optional)
- * @param   uBaseAndMaxLen  The low byte is the base of the representation, the
- *                          upper 24 bits are the max length to parse.  If the base
- *                          is zero the function will look for known prefixes before
- *                          defaulting to 10.  A max length of zero means no length
- *                          restriction.
- * @param   pu16            Where to store the converted number. (optional)
- */
 RTDECL(int) RTStrToUInt16Ex(const char *pszValue, char **ppszNext, unsigned uBaseAndMaxLen, uint16_t *pu16)
 {
     uint64_t u64;
@@ -464,27 +340,6 @@ RTDECL(int) RTStrToUInt16Ex(const char *pszValue, char **ppszNext, unsigned uBas
 RT_EXPORT_SYMBOL(RTStrToUInt16Ex);
 
 
-/**
- * Converts a string representation of a number to a 16-bit unsigned number,
- * making sure the full string is converted.
- *
- * @returns iprt status code.
- *          Warnings are used to indicate conversion problems.
- * @retval  VWRN_NUMBER_TOO_BIG
- * @retval  VWRN_NEGATIVE_UNSIGNED
- * @retval  VINF_SUCCESS
- * @retval  VERR_NO_DIGITS
- * @retval  VERR_TRAILING_SPACES
- * @retval  VERR_TRAILING_CHARS
- *
- * @param   pszValue        Pointer to the string value.
- * @param   uBaseAndMaxLen  The low byte is the base of the representation, the
- *                          upper 24 bits are the max length to parse.  If the base
- *                          is zero the function will look for known prefixes before
- *                          defaulting to 10.  A max length of zero means no length
- *                          restriction.
- * @param   pu16            Where to store the converted number. (optional)
- */
 RTDECL(int) RTStrToUInt16Full(const char *pszValue, unsigned uBaseAndMaxLen, uint16_t *pu16)
 {
     uint64_t u64;
@@ -501,14 +356,6 @@ RTDECL(int) RTStrToUInt16Full(const char *pszValue, unsigned uBaseAndMaxLen, uin
 RT_EXPORT_SYMBOL(RTStrToUInt16Full);
 
 
-/**
- * Converts a string representation of a number to a 16-bit unsigned number.
- * The base is guessed.
- *
- * @returns 16-bit unsigned number on success.
- * @returns 0 on failure.
- * @param   pszValue    Pointer to the string value.
- */
 RTDECL(uint16_t) RTStrToUInt16(const char *pszValue)
 {
     uint16_t u16;
@@ -520,28 +367,6 @@ RTDECL(uint16_t) RTStrToUInt16(const char *pszValue)
 RT_EXPORT_SYMBOL(RTStrToUInt16);
 
 
-/**
- * Converts a string representation of a number to a 8-bit unsigned number.
- *
- * @returns iprt status code.
- *          Warnings are used to indicate conversion problems.
- * @retval  VWRN_NUMBER_TOO_BIG
- * @retval  VWRN_NEGATIVE_UNSIGNED
- * @retval  VWRN_TRAILING_CHARS
- * @retval  VWRN_TRAILING_SPACES
- * @retval  VINF_SUCCESS
- * @retval  VERR_NO_DIGITS
- *
- * @param   pszValue        Pointer to the string value.
- * @param   ppszNext        Where to store the pointer to the first char
- *                          following the number. (Optional)
- * @param   uBaseAndMaxLen  The low byte is the base of the representation, the
- *                          upper 24 bits are the max length to parse.  If the base
- *                          is zero the function will look for known prefixes before
- *                          defaulting to 10.  A max length of zero means no length
- *                          restriction.
- * @param   pu8             Where to store the converted number. (optional)
- */
 RTDECL(int) RTStrToUInt8Ex(const char *pszValue, char **ppszNext, unsigned uBaseAndMaxLen, uint8_t *pu8)
 {
     uint64_t u64;
@@ -558,27 +383,6 @@ RTDECL(int) RTStrToUInt8Ex(const char *pszValue, char **ppszNext, unsigned uBase
 RT_EXPORT_SYMBOL(RTStrToUInt8Ex);
 
 
-/**
- * Converts a string representation of a number to a 8-bit unsigned number,
- * making sure the full string is converted.
- *
- * @returns iprt status code.
- *          Warnings are used to indicate conversion problems.
- * @retval  VWRN_NUMBER_TOO_BIG
- * @retval  VWRN_NEGATIVE_UNSIGNED
- * @retval  VINF_SUCCESS
- * @retval  VERR_NO_DIGITS
- * @retval  VERR_TRAILING_SPACES
- * @retval  VERR_TRAILING_CHARS
- *
- * @param   pszValue        Pointer to the string value.
- * @param   uBaseAndMaxLen  The low byte is the base of the representation, the
- *                          upper 24 bits are the max length to parse.  If the base
- *                          is zero the function will look for known prefixes before
- *                          defaulting to 10.  A max length of zero means no length
- *                          restriction.
- * @param   pu8             Where to store the converted number. (optional)
- */
 RTDECL(int) RTStrToUInt8Full(const char *pszValue, unsigned uBaseAndMaxLen, uint8_t *pu8)
 {
     uint64_t u64;
@@ -595,14 +399,6 @@ RTDECL(int) RTStrToUInt8Full(const char *pszValue, unsigned uBaseAndMaxLen, uint
 RT_EXPORT_SYMBOL(RTStrToUInt8Full);
 
 
-/**
- * Converts a string representation of a number to a 8-bit unsigned number.
- * The base is guessed.
- *
- * @returns 8-bit unsigned number on success.
- * @returns 0 on failure.
- * @param   pszValue    Pointer to the string value.
- */
 RTDECL(uint8_t) RTStrToUInt8(const char *pszValue)
 {
     uint8_t u8;
@@ -614,32 +410,6 @@ RTDECL(uint8_t) RTStrToUInt8(const char *pszValue)
 RT_EXPORT_SYMBOL(RTStrToUInt8);
 
 
-
-
-
-
-
-/**
- * Converts a string representation of a number to a 64-bit signed number.
- *
- * @returns iprt status code.
- *          Warnings are used to indicate conversion problems.
- * @retval  VWRN_NUMBER_TOO_BIG
- * @retval  VWRN_TRAILING_CHARS
- * @retval  VWRN_TRAILING_SPACES
- * @retval  VINF_SUCCESS
- * @retval  VERR_NO_DIGITS
- *
- * @param   pszValue        Pointer to the string value.
- * @param   ppszNext        Where to store the pointer to the first char
- *                          following the number. (Optional)
- * @param   uBaseAndMaxLen  The low byte is the base of the representation, the
- *                          upper 24 bits are the max length to parse.  If the base
- *                          is zero the function will look for known prefixes before
- *                          defaulting to 10.  A max length of zero means no length
- *                          restriction.
- * @param   pi64            Where to store the converted number. (optional)
- */
 RTDECL(int) RTStrToInt64Ex(const char *pszValue, char **ppszNext, unsigned uBaseAndMaxLen, int64_t *pi64)
 {
     const char   *psz = pszValue;
@@ -772,26 +542,6 @@ RTDECL(int) RTStrToInt64Ex(const char *pszValue, char **ppszNext, unsigned uBase
 RT_EXPORT_SYMBOL(RTStrToInt64Ex);
 
 
-/**
- * Converts a string representation of a number to a 64-bit signed number,
- * making sure the full string is converted.
- *
- * @returns iprt status code.
- *          Warnings are used to indicate conversion problems.
- * @retval  VWRN_NUMBER_TOO_BIG
- * @retval  VINF_SUCCESS
- * @retval  VERR_TRAILING_CHARS
- * @retval  VERR_TRAILING_SPACES
- * @retval  VERR_NO_DIGITS
- *
- * @param   pszValue        Pointer to the string value.
- * @param   uBaseAndMaxLen  The low byte is the base of the representation, the
- *                          upper 24 bits are the max length to parse.  If the base
- *                          is zero the function will look for known prefixes before
- *                          defaulting to 10.  A max length of zero means no length
- *                          restriction.
- * @param   pi64            Where to store the converted number. (optional)
- */
 RTDECL(int) RTStrToInt64Full(const char *pszValue, unsigned uBaseAndMaxLen, int64_t *pi64)
 {
     char *psz;
@@ -820,14 +570,6 @@ RTDECL(int) RTStrToInt64Full(const char *pszValue, unsigned uBaseAndMaxLen, int6
 RT_EXPORT_SYMBOL(RTStrToInt64Full);
 
 
-/**
- * Converts a string representation of a number to a 64-bit signed number.
- * The base is guessed.
- *
- * @returns 64-bit signed number on success.
- * @returns 0 on failure.
- * @param   pszValue    Pointer to the string value.
- */
 RTDECL(int64_t) RTStrToInt64(const char *pszValue)
 {
     int64_t i64;
@@ -839,27 +581,6 @@ RTDECL(int64_t) RTStrToInt64(const char *pszValue)
 RT_EXPORT_SYMBOL(RTStrToInt64);
 
 
-/**
- * Converts a string representation of a number to a 32-bit signed number.
- *
- * @returns iprt status code.
- *          Warnings are used to indicate conversion problems.
- * @retval  VWRN_NUMBER_TOO_BIG
- * @retval  VWRN_TRAILING_CHARS
- * @retval  VWRN_TRAILING_SPACES
- * @retval  VINF_SUCCESS
- * @retval  VERR_NO_DIGITS
- *
- * @param   pszValue        Pointer to the string value.
- * @param   ppszNext        Where to store the pointer to the first char
- *                          following the number. (Optional)
- * @param   uBaseAndMaxLen  The low byte is the base of the representation, the
- *                          upper 24 bits are the max length to parse.  If the base
- *                          is zero the function will look for known prefixes before
- *                          defaulting to 10.  A max length of zero means no length
- *                          restriction.
- * @param   pi32            Where to store the converted number. (optional)
- */
 RTDECL(int) RTStrToInt32Ex(const char *pszValue, char **ppszNext, unsigned uBaseAndMaxLen, int32_t *pi32)
 {
     int64_t i64;
@@ -877,26 +598,6 @@ RTDECL(int) RTStrToInt32Ex(const char *pszValue, char **ppszNext, unsigned uBase
 RT_EXPORT_SYMBOL(RTStrToInt32Ex);
 
 
-/**
- * Converts a string representation of a number to a 32-bit signed number,
- * making sure the full string is converted.
- *
- * @returns iprt status code.
- *          Warnings are used to indicate conversion problems.
- * @retval  VWRN_NUMBER_TOO_BIG
- * @retval  VINF_SUCCESS
- * @retval  VERR_TRAILING_CHARS
- * @retval  VERR_TRAILING_SPACES
- * @retval  VERR_NO_DIGITS
- *
- * @param   pszValue        Pointer to the string value.
- * @param   uBaseAndMaxLen  The low byte is the base of the representation, the
- *                          upper 24 bits are the max length to parse.  If the base
- *                          is zero the function will look for known prefixes before
- *                          defaulting to 10.  A max length of zero means no length
- *                          restriction.
- * @param   pi32            Where to store the converted number. (optional)
- */
 RTDECL(int) RTStrToInt32Full(const char *pszValue, unsigned uBaseAndMaxLen, int32_t *pi32)
 {
     int64_t i64;
@@ -914,14 +615,6 @@ RTDECL(int) RTStrToInt32Full(const char *pszValue, unsigned uBaseAndMaxLen, int3
 RT_EXPORT_SYMBOL(RTStrToInt32Full);
 
 
-/**
- * Converts a string representation of a number to a 32-bit signed number.
- * The base is guessed.
- *
- * @returns 32-bit signed number on success.
- * @returns 0 on failure.
- * @param   pszValue    Pointer to the string value.
- */
 RTDECL(int32_t) RTStrToInt32(const char *pszValue)
 {
     int32_t i32;
@@ -933,28 +626,6 @@ RTDECL(int32_t) RTStrToInt32(const char *pszValue)
 RT_EXPORT_SYMBOL(RTStrToInt32);
 
 
-/**
- * Converts a string representation of a number to a 16-bit signed number.
- *
- * @returns iprt status code.
- *          Warnings are used to indicate conversion problems.
- * @retval  VWRN_NUMBER_TOO_BIG
- * @retval  VWRN_TRAILING_CHARS
- * @retval  VWRN_TRAILING_SPACES
- * @retval  VINF_SUCCESS
- * @retval  VERR_NO_DIGITS
- *
- * @param   pszValue        Pointer to the string value.
- * @param   ppszNext        Where to store the pointer to the first char
- *                          following the number. (Optional)
- * @param   pszValue        Pointer to the string value.
- * @param   uBaseAndMaxLen  The low byte is the base of the representation, the
- *                          upper 24 bits are the max length to parse.  If the base
- *                          is zero the function will look for known prefixes before
- *                          defaulting to 10.  A max length of zero means no length
- *                          restriction.
- * @param   pi16            Where to store the converted number. (optional)
- */
 RTDECL(int) RTStrToInt16Ex(const char *pszValue, char **ppszNext, unsigned uBaseAndMaxLen, int16_t *pi16)
 {
     int64_t i64;
@@ -972,26 +643,6 @@ RTDECL(int) RTStrToInt16Ex(const char *pszValue, char **ppszNext, unsigned uBase
 RT_EXPORT_SYMBOL(RTStrToInt16Ex);
 
 
-/**
- * Converts a string representation of a number to a 16-bit signed number,
- * making sure the full string is converted.
- *
- * @returns iprt status code.
- *          Warnings are used to indicate conversion problems.
- * @retval  VWRN_NUMBER_TOO_BIG
- * @retval  VINF_SUCCESS
- * @retval  VERR_TRAILING_CHARS
- * @retval  VERR_TRAILING_SPACES
- * @retval  VERR_NO_DIGITS
- *
- * @param   pszValue        Pointer to the string value.
- * @param   uBaseAndMaxLen  The low byte is the base of the representation, the
- *                          upper 24 bits are the max length to parse.  If the base
- *                          is zero the function will look for known prefixes before
- *                          defaulting to 10.  A max length of zero means no length
- *                          restriction.
- * @param   pi16            Where to store the converted number. (optional)
- */
 RTDECL(int) RTStrToInt16Full(const char *pszValue, unsigned uBaseAndMaxLen, int16_t *pi16)
 {
     int64_t i64;
@@ -1009,14 +660,6 @@ RTDECL(int) RTStrToInt16Full(const char *pszValue, unsigned uBaseAndMaxLen, int1
 RT_EXPORT_SYMBOL(RTStrToInt16Full);
 
 
-/**
- * Converts a string representation of a number to a 16-bit signed number.
- * The base is guessed.
- *
- * @returns 16-bit signed number on success.
- * @returns 0 on failure.
- * @param   pszValue    Pointer to the string value.
- */
 RTDECL(int16_t) RTStrToInt16(const char *pszValue)
 {
     int16_t i16;
@@ -1028,27 +671,6 @@ RTDECL(int16_t) RTStrToInt16(const char *pszValue)
 RT_EXPORT_SYMBOL(RTStrToInt16);
 
 
-/**
- * Converts a string representation of a number to a 8-bit signed number.
- *
- * @returns iprt status code.
- *          Warnings are used to indicate conversion problems.
- * @retval  VWRN_NUMBER_TOO_BIG
- * @retval  VWRN_TRAILING_CHARS
- * @retval  VWRN_TRAILING_SPACES
- * @retval  VINF_SUCCESS
- * @retval  VERR_NO_DIGITS
- *
- * @param   pszValue        Pointer to the string value.
- * @param   ppszNext        Where to store the pointer to the first char
- *                          following the number. (Optional)
- * @param   uBaseAndMaxLen  The low byte is the base of the representation, the
- *                          upper 24 bits are the max length to parse.  If the base
- *                          is zero the function will look for known prefixes before
- *                          defaulting to 10.  A max length of zero means no length
- *                          restriction.
- * @param   pi8             Where to store the converted number. (optional)
- */
 RTDECL(int) RTStrToInt8Ex(const char *pszValue, char **ppszNext, unsigned uBaseAndMaxLen, int8_t *pi8)
 {
     int64_t i64;
@@ -1066,26 +688,6 @@ RTDECL(int) RTStrToInt8Ex(const char *pszValue, char **ppszNext, unsigned uBaseA
 RT_EXPORT_SYMBOL(RTStrToInt8Ex);
 
 
-/**
- * Converts a string representation of a number to a 8-bit signed number,
- * making sure the full string is converted.
- *
- * @returns iprt status code.
- *          Warnings are used to indicate conversion problems.
- * @retval  VWRN_NUMBER_TOO_BIG
- * @retval  VINF_SUCCESS
- * @retval  VERR_TRAILING_CHARS
- * @retval  VERR_TRAILING_SPACES
- * @retval  VERR_NO_DIGITS
- *
- * @param   pszValue        Pointer to the string value.
- * @param   uBaseAndMaxLen  The low byte is the base of the representation, the
- *                          upper 24 bits are the max length to parse.  If the base
- *                          is zero the function will look for known prefixes before
- *                          defaulting to 10.  A max length of zero means no length
- *                          restriction.
- * @param   pi8             Where to store the converted number. (optional)
- */
 RTDECL(int) RTStrToInt8Full(const char *pszValue, unsigned uBaseAndMaxLen, int8_t *pi8)
 {
     int64_t i64;
@@ -1103,14 +705,6 @@ RTDECL(int) RTStrToInt8Full(const char *pszValue, unsigned uBaseAndMaxLen, int8_
 RT_EXPORT_SYMBOL(RTStrToInt8Full);
 
 
-/**
- * Converts a string representation of a number to a 8-bit signed number.
- * The base is guessed.
- *
- * @returns 8-bit signed number on success.
- * @returns 0 on failure.
- * @param   pszValue    Pointer to the string value.
- */
 RTDECL(int8_t) RTStrToInt8(const char *pszValue)
 {
     int8_t i8;

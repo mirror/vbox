@@ -92,15 +92,6 @@ DECLHIDDEN(void) rtR0MemFree(PRTMEMHDR pHdr)
 }
 
 
-/**
- * Allocates physical contiguous memory (below 4GB).
- * The allocation is page aligned and its contents is undefined.
- *
- * @returns Pointer to the memory block. This is page aligned.
- * @param   pPhys   Where to store the physical address.
- * @param   cb      The allocation size in bytes. This is always
- *                  rounded up to PAGE_SIZE.
- */
 RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
 {
     /*
@@ -142,12 +133,6 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
 }
 
 
-/**
- * Frees memory allocated ysing RTMemContAlloc().
- *
- * @param   pv      Pointer to return from RTMemContAlloc().
- * @param   cb      The cb parameter passed to RTMemContAlloc().
- */
 RTR0DECL(void) RTMemContFree(void *pv, size_t cb)
 {
     if (pv)

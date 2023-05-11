@@ -314,15 +314,6 @@ static int rtIniFileLoad(PRTINIFILEINT pThis)
 }
 
 
-/**
- * Creates a INI-file instance from a VFS file handle.
- *
- * @returns IPRT status code
- * @param   phIniFile       Where to return the INI-file handle.
- * @param   hVfsFile        The VFS file handle (not consumed, additional
- *                          reference is retained).
- * @param   fFlags          Flags, RTINIFILE_F_XXX.
- */
 RTDECL(int) RTIniFileCreateFromVfsFile(PRTINIFILE phIniFile, RTVFSFILE hVfsFile, uint32_t fFlags)
 {
     /*
@@ -360,12 +351,6 @@ RTDECL(int) RTIniFileCreateFromVfsFile(PRTINIFILE phIniFile, RTVFSFILE hVfsFile,
 }
 
 
-/**
- * Retains a reference to an INI-file instance.
- *
- * @returns New reference count, UINT32_MAX on failure.
- * @param   hIniFile        The INI-file handle.
- */
 RTDECL(uint32_t) RTIniFileRetain(RTINIFILE hIniFile)
 {
     PRTINIFILEINT pThis = hIniFile;
@@ -379,13 +364,6 @@ RTDECL(uint32_t) RTIniFileRetain(RTINIFILE hIniFile)
 }
 
 
-/**
- * Releases a reference to an INI-file instance, destroying it if the count
- * reaches zero.
- *
- * @returns New reference count, UINT32_MAX on failure.
- * @param   hIniFile        The INI-file handle.  NIL is ignored.
- */
 RTDECL(uint32_t) RTIniFileRelease(RTINIFILE hIniFile)
 {
     if (hIniFile == NIL_RTINIFILE)
@@ -525,26 +503,6 @@ static int rtIniFileQueryValueInSection(PRTINIFILEINT pThis, PRTINIFILESECTION p
 }
 
 
-/**
- * Queries a value in a section.
- *
- * The first matching value is returned.  The matching is by default case
- * insensitive.
- *
- * @returns IPRT status code.
- * @retval  VERR_NOT_FOUND if section or key not found.
- *
- * @param   hIniFile        The INI-file handle.
- * @param   pszSection      The section name.  Pass NULL to refer to the
- *                          unsectioned key space at the top of the file.
- * @param   pszKey          The key name.
- * @param   pszValue        Where to return the value.
- * @param   cbValue         Size of the buffer @a pszValue points to.
- * @param   pcbActual       Where to return the actual value size excluding
- *                          terminator on success.  On VERR_BUFFER_OVERFLOW this
- *                          will be set to the buffer size needed to hold the
- *                          value, terminator included.  Optional.
- */
 RTDECL(int) RTIniFileQueryValue(RTINIFILE hIniFile, const char *pszSection, const char *pszKey,
                                 char *pszValue, size_t cbValue, size_t *pcbActual)
 {
@@ -731,32 +689,6 @@ static int rtIniFileQueryPairInSection(PRTINIFILEINT pThis, PRTINIFILESECTION pS
 }
 
 
-/**
- * Queries a key-value pair in a section by ordinal.
- *
- * @returns IPRT status code.
- * @retval  VERR_NOT_FOUND if the section wasn't found or if it contains no pair
- *          with the given ordinal value.
- *
- * @param   hIniFile        The INI-file handle.
- * @param   pszSection      The section name.  Pass NULL to refer to the
- *                          unsectioned key space at the top of the file.
- * @param   idxPair         The pair to fetch (counting from 0).
- *
- * @param   pszKey          Where to return the key name.
- * @param   cbKey           Size of the buffer @a pszKey points to.
- * @param   pcbKeyActual    Where to return the actual key size excluding
- *                          terminator on success.  On VERR_BUFFER_OVERFLOW this
- *                          will be set to the buffer size needed to hold the
- *                          value, terminator included.  Optional.
- *
- * @param   pszValue        Where to return the value.
- * @param   cbValue         Size of the buffer @a pszValue points to.
- * @param   pcbValueActual  Where to return the actual value size excluding
- *                          terminator on success.  On VERR_BUFFER_OVERFLOW this
- *                          will be set to the buffer size needed to hold the
- *                          value, terminator included. Optional.
- */
 RTDECL(int) RTIniFileQueryPair(RTINIFILE hIniFile, const char *pszSection, uint32_t idxPair,
                                char *pszKey, size_t cbKey, size_t *pcbKeyActual,
                                char *pszValue, size_t cbValue, size_t *pcbValueActual)

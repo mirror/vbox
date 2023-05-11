@@ -532,23 +532,6 @@ static RTVFSIOSTREAMOPS g_rtManifestPassthruIosOps =
 
 
 
-/**
- * Add an entry for an I/O stream using a passthru stream.
- *
- * The passthru I/O stream will hash all the data read from or written to the
- * stream and automatically add an entry to the manifest with the desired
- * attributes when it is released.  Alternatively one can call
- * RTManifestPtIosAddEntryNow() to have more control over exactly when this
- * action is performed and which status it yields.
- *
- * @returns IPRT status code.
- * @param   hManifest           The manifest to add the entry to.
- * @param   hVfsIos             The I/O stream to pass thru to/from.
- * @param   pszEntry            The entry name.
- * @param   fAttrs              The attributes to create for this stream.
- * @param   fReadOrWrite        Whether it's a read or write I/O stream.
- * @param   phVfsIosPassthru    Where to return the new handle.
- */
 RTDECL(int) RTManifestEntryAddPassthruIoStream(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos, const char *pszEntry,
                                                uint32_t fAttrs, bool fReadOrWrite, PRTVFSIOSTREAM phVfsIosPassthru)
 {
@@ -601,13 +584,6 @@ RTDECL(int) RTManifestEntryAddPassthruIoStream(RTMANIFEST hManifest, RTVFSIOSTRE
 }
 
 
-/**
- * Adds the entry to the manifest right now.
- *
- * @returns IPRT status code.
- * @param   hVfsPtIos           The manifest passthru I/O stream returned by
- *                              RTManifestEntryAddPassthruIoStream().
- */
 RTDECL(int) RTManifestPtIosAddEntryNow(RTVFSIOSTREAM hVfsPtIos)
 {
     PRTMANIFESTPTIOS pThis = (PRTMANIFESTPTIOS)RTVfsIoStreamToPrivate(hVfsPtIos, &g_rtManifestPassthruIosOps);
@@ -620,12 +596,6 @@ RTDECL(int) RTManifestPtIosAddEntryNow(RTVFSIOSTREAM hVfsPtIos)
 }
 
 
-/**
- * Checks if the give I/O stream is a manifest passthru instance or not.
- *
- * @returns true if it's a manifest passthru I/O stream, false if not.
- * @param   hVfsPtIos   Possible the manifest passthru I/O stream handle.
- */
 RTDECL(bool) RTManifestPtIosIsInstanceOf(RTVFSIOSTREAM hVfsPtIos)
 {
     if (hVfsPtIos != NIL_RTVFSIOSTREAM)
@@ -638,19 +608,6 @@ RTDECL(bool) RTManifestPtIosIsInstanceOf(RTVFSIOSTREAM hVfsPtIos)
 }
 
 
-/**
- * Adds an entry for a file with the specified set of attributes.
- *
- * @returns IPRT status code.
- *
- * @param   hManifest           The manifest handle.
- * @param   hVfsIos             The I/O stream handle of the entry.  This will
- *                              be processed to its end on successful return.
- *                              (Must be positioned at the start to get
- *                              the expected results.)
- * @param   pszEntry            The entry name.
- * @param   fAttrs              The attributes to create for this stream.
- */
 RTDECL(int) RTManifestEntryAddIoStream(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos, const char *pszEntry, uint32_t fAttrs)
 {
     /*

@@ -214,24 +214,6 @@ static int rtTcpServerDestroySocket(RTSOCKET volatile *pSock, const char *pszMsg
 }
 
 
-/**
- * Create single connection at a time TCP Server in a separate thread.
- *
- * The thread will loop accepting connections and call pfnServe for
- * each of the incoming connections in turn. The pfnServe function can
- * return VERR_TCP_SERVER_STOP too terminate this loop. RTTcpServerDestroy()
- * should be used to terminate the server.
- *
- * @returns iprt status code.
- * @param   pszAddress      The address for creating a listening socket.
- *                          If NULL or empty string the server is bound to all interfaces.
- * @param   uPort           The port for creating a listening socket.
- * @param   enmType         The thread type.
- * @param   pszThrdName     The name of the worker thread.
- * @param   pfnServe        The function which will serve a new client connection.
- * @param   pvUser          User argument passed to pfnServe.
- * @param   ppServer        Where to store the serverhandle.
- */
 RTR3DECL(int)  RTTcpServerCreate(const char *pszAddress, unsigned uPort, RTTHREADTYPE enmType, const char *pszThrdName,
                                  PFNRTTCPSERVE pfnServe, void *pvUser, PPRTTCPSERVER ppServer)
 {
@@ -301,16 +283,6 @@ static DECLCALLBACK(int)  rtTcpServerThread(RTTHREAD ThreadSelf, void *pvServer)
 }
 
 
-/**
- * Create single connection at a time TCP Server.
- * The caller must call RTTcpServerListen() to actually start the server.
- *
- * @returns iprt status code.
- * @param   pszAddress      The address for creating a listening socket.
- *                          If NULL the server is bound to all interfaces.
- * @param   uPort           The port for creating a listening socket.
- * @param   ppServer        Where to store the serverhandle.
- */
 RTR3DECL(int) RTTcpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTTCPSERVER ppServer)
 {
     /*
@@ -378,22 +350,6 @@ RTR3DECL(int) RTTcpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTTC
 }
 
 
-/**
- * Listen for incoming connections.
- *
- * The function will loop accepting connections and call pfnServe for
- * each of the incoming connections in turn. The pfnServe function can
- * return VERR_TCP_SERVER_STOP too terminate this loop. A stopped server
- * can only be destroyed.
- *
- * @returns IPRT status code.
- * @retval  VERR_TCP_SERVER_STOP if stopped by pfnServe.
- * @retval  VERR_TCP_SERVER_SHUTDOWN if shut down by RTTcpServerShutdown.
- *
- * @param   pServer         The server handle as returned from RTTcpServerCreateEx().
- * @param   pfnServe        The function which will serve a new client connection.
- * @param   pvUser          User argument passed to pfnServe.
- */
 RTR3DECL(int) RTTcpServerListen(PRTTCPSERVER pServer, PFNRTTCPSERVE pfnServe, void *pvUser)
 {
     /*
@@ -559,21 +515,6 @@ static int rtTcpServerListenCleanup(PRTTCPSERVER pServer)
 }
 
 
-/**
- * Listen and accept one incoming connection.
- *
- * This is an alternative to RTTcpServerListen for the use the callbacks are not
- * possible.
- *
- * @returns IPRT status code.
- * @retval  VERR_TCP_SERVER_SHUTDOWN if shut down by RTTcpServerShutdown.
- * @retval  VERR_INTERRUPTED if the listening was interrupted.
- *
- * @param   pServer         The server handle as returned from RTTcpServerCreateEx().
- * @param   phClientSocket  Where to return the socket handle to the client
- *                          connection (on success only).  This must be closed
- *                          by calling RTTcpServerDisconnectClient2().
- */
 RTR3DECL(int) RTTcpServerListen2(PRTTCPSERVER pServer, PRTSOCKET phClientSocket)
 {
     /*
@@ -655,12 +596,6 @@ RTR3DECL(int) RTTcpServerListen2(PRTTCPSERVER pServer, PRTSOCKET phClientSocket)
 }
 
 
-/**
- * Terminate the open connection to the server.
- *
- * @returns iprt status code.
- * @param   pServer         Handle to the server.
- */
 RTR3DECL(int) RTTcpServerDisconnectClient(PRTTCPSERVER pServer)
 {
     /*
@@ -677,26 +612,12 @@ RTR3DECL(int) RTTcpServerDisconnectClient(PRTTCPSERVER pServer)
 }
 
 
-/**
- * Terminates an open client connect when using RTTcpListen2
- *
- * @returns IPRT status code.
- * @param   hClientSocket   The client socket handle.  This will be invalid upon
- *                          return, whether successful or not.  NIL is quietly
- *                          ignored (VINF_SUCCESS).
- */
 RTR3DECL(int) RTTcpServerDisconnectClient2(RTSOCKET hClientSocket)
 {
     return rtTcpClose(hClientSocket, "RTTcpServerDisconnectClient2", true /*fTryGracefulShutdown*/);
 }
 
 
-/**
- * Shuts down the server, leaving client connections open.
- *
- * @returns IPRT status code.
- * @param   pServer         Handle to the server.
- */
 RTR3DECL(int) RTTcpServerShutdown(PRTTCPSERVER pServer)
 {
     /*
@@ -744,13 +665,6 @@ RTR3DECL(int) RTTcpServerShutdown(PRTTCPSERVER pServer)
 }
 
 
-/**
- * Closes down and frees a TCP Server.
- * This will also terminate any open connections to the server.
- *
- * @returns iprt status code.
- * @param   pServer         Handle to the server.
- */
 RTR3DECL(int) RTTcpServerDestroy(PRTTCPSERVER pServer)
 {
     /*
@@ -1027,15 +941,6 @@ static int rtTcpClose(RTSOCKET Sock, const char *pszMsg, bool fTryGracefulShutdo
 }
 
 
-/**
- * Creates connected pair of TCP sockets.
- *
- * @returns IPRT status code.
- * @param   phServer            Where to return the "server" side of the pair.
- * @param   phClient            Where to return the "client" side of the pair.
- *
- * @note    There is no server or client side, but we gotta call it something.
- */
 RTR3DECL(int) RTTcpCreatePair(PRTSOCKET phServer, PRTSOCKET phClient, uint32_t fFlags)
 {
     /*

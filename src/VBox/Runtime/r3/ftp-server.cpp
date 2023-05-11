@@ -1240,7 +1240,6 @@ static int rtFtpServerDataConnStop(PRTFTPSERVERDATACONN pDataConn)
 /**
  * Destroys a data connection.
  *
- * @returns VBox status code.
  * @param   pDataConn           Data connection to destroy. The pointer is not valid anymore after successful return.
  */
 static void rtFtpServerDataConnDestroy(PRTFTPSERVERDATACONN pDataConn)
@@ -1265,7 +1264,6 @@ static void rtFtpServerDataConnDestroy(PRTFTPSERVERDATACONN pDataConn)
 /**
  * Resets a data connection structure.
  *
- * @returns VBox status code.
  * @param   pDataConn           Data connection structure to reset.
  */
 static void rtFtpServerDataConnReset(PRTFTPSERVERDATACONN pDataConn)

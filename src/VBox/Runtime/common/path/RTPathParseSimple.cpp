@@ -45,24 +45,6 @@
 #include <iprt/ctype.h>
 
 
-/**
- * Parses a path.
- *
- * It figures the length of the directory component, the offset of
- * the file name and the location of the suffix dot.
- *
- * @returns The path length.
- *
- * @param   pszPath     Path to find filename in.
- * @param   pcchDir     Where to put the length of the directory component. If
- *                      no directory, this will be 0. Optional.
- * @param   poffName    Where to store the filename offset.
- *                      If empty string or if it's ending with a slash this
- *                      will be set to -1. Optional.
- * @param   poffSuff    Where to store the suffix offset (the last dot).
- *                      If empty string or if it's ending with a slash this
- *                      will be set to -1. Optional.
- */
 RTDECL(size_t) RTPathParseSimple(const char *pszPath, size_t *pcchDir, ssize_t *poffName, ssize_t *poffSuff)
 {
     /*

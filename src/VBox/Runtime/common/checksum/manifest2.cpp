@@ -191,13 +191,6 @@ typedef struct RTMANIFESTQUERYATTRARGS
 typedef RTMANIFESTQUERYATTRARGS *PRTMANIFESTQUERYATTRARGS;
 
 
-/**
- * Creates an empty manifest.
- *
- * @returns IPRT status code.
- * @param   fFlags              Flags, MBZ.
- * @param   phManifest          Where to return the handle to the manifest.
- */
 RTDECL(int) RTManifestCreate(uint32_t fFlags, PRTMANIFEST phManifest)
 {
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
@@ -222,12 +215,7 @@ RTDECL(int) RTManifestCreate(uint32_t fFlags, PRTMANIFEST phManifest)
     return VINF_SUCCESS;
 }
 
-/**
- * Retains a reference to the manifest handle.
- *
- * @returns The new reference count, UINT32_MAX if the handle is invalid.
- * @param   hManifest           The handle to retain.
- */
+
 RTDECL(uint32_t) RTManifestRetain(RTMANIFEST hManifest)
 {
     RTMANIFESTINT *pThis = hManifest;
@@ -267,14 +255,6 @@ static DECLCALLBACK(int) rtManifestDestroyEntry(PRTSTRSPACECORE pStr, void *pvUs
 }
 
 
-/**
- * Releases a reference to the manifest handle.
- *
- * @returns The new reference count, 0 if free. UINT32_MAX is returned if the
- *          handle is invalid.
- * @param   hManifest           The handle to release.
- *                              NIL is quietly ignored (returns 0).
- */
 RTDECL(uint32_t) RTManifestRelease(RTMANIFEST hManifest)
 {
     RTMANIFESTINT *pThis = hManifest;
@@ -297,13 +277,6 @@ RTDECL(uint32_t) RTManifestRelease(RTMANIFEST hManifest)
 }
 
 
-/**
- * Creates a duplicate of the specified manifest.
- *
- * @returns IPRT status code
- * @param   hManifestSrc        The manifest to clone.
- * @param   phManifestDst       Where to store the handle to the duplicate.
- */
 RTDECL(int) RTManifestDup(RTMANIFEST hManifestSrc, PRTMANIFEST phManifestDst)
 {
     RTMANIFESTINT *pThis = hManifestSrc;
@@ -739,17 +712,6 @@ static int rtManifestSetAttrWorker(PRTMANIFESTENTRY pEntry, const char *pszAttr,
 }
 
 
-/**
- * Sets a manifest attribute.
- *
- * @returns IPRT status code.
- * @param   hManifest           The manifest handle.
- * @param   pszAttr             The attribute name.  If this already exists,
- *                              its value will be replaced.
- * @param   pszValue            The value string.
- * @param   fType               The attribute type, pass
- *                              RTMANIFEST_ATTR_UNKNOWN if not known.
- */
 RTDECL(int) RTManifestSetAttr(RTMANIFEST hManifest, const char *pszAttr, const char *pszValue, uint32_t fType)
 {
     RTMANIFESTINT *pThis = hManifest;
@@ -783,15 +745,6 @@ static int rtManifestUnsetAttrWorker(PRTMANIFESTENTRY pEntry, const char *pszAtt
 }
 
 
-/**
- * Unsets (removes) a manifest attribute if it exists.
- *
- * @returns IPRT status code.
- * @retval  VWRN_NOT_FOUND if not found.
- *
- * @param   hManifest           The manifest handle.
- * @param   pszAttr             The attribute name.
- */
 RTDECL(int) RTManifestUnsetAttr(RTMANIFEST hManifest, const char *pszAttr)
 {
     RTMANIFESTINT *pThis = hManifest;
@@ -1040,21 +993,6 @@ static int rtManifestGetEntry(RTMANIFESTINT *pThis, const char *pszEntry, bool f
 }
 
 
-/**
- * Sets an attribute of a manifest entry.
- *
- * @returns IPRT status code.
- * @param   hManifest           The manifest handle.
- * @param   pszEntry            The entry name.  This will automatically be
- *                              added if there was no previous call to
- *                              RTManifestEntryAdd for this name.  See
- *                              RTManifestEntryAdd for the entry name rules.
- * @param   pszAttr             The attribute name.  If this already exists,
- *                              its value will be replaced.
- * @param   pszValue            The value string.
- * @param   fType               The attribute type, pass
- *                              RTMANIFEST_ATTR_UNKNOWN if not known.
- */
 RTDECL(int) RTManifestEntrySetAttr(RTMANIFEST hManifest, const char *pszEntry, const char *pszAttr,
                                    const char *pszValue, uint32_t fType)
 {
@@ -1106,16 +1044,6 @@ RTDECL(int) RTManifestEntrySetAttr(RTMANIFEST hManifest, const char *pszEntry, c
 }
 
 
-/**
- * Unsets (removes) an attribute of a manifest entry if they both exist.
- *
- * @returns IPRT status code.
- * @retval  VWRN_NOT_FOUND if not found.
- *
- * @param   hManifest           The manifest handle.
- * @param   pszEntry            The entry name.
- * @param   pszAttr             The attribute name.
- */
 RTDECL(int) RTManifestEntryUnsetAttr(RTMANIFEST hManifest, const char *pszEntry, const char *pszAttr)
 {
     RTMANIFESTINT *pThis = hManifest;
@@ -1166,27 +1094,6 @@ RTDECL(int) RTManifestEntryQueryAttr(RTMANIFEST hManifest, const char *pszEntry,
 }
 
 
-/**
- * Adds a new entry to a manifest.
- *
- * The entry name rules:
- *     - The entry name can contain any character defined by unicode, except
- *       control characters, ':', '(' and ')'.  The exceptions are mainly there
- *       because of uncertainty around how various formats handles these.
- *     - It is considered case sensitive.
- *     - Forward (unix) and backward (dos) slashes are considered path
- *       separators and converted to forward slashes.
- *
- * @returns IPRT status code.
- * @retval  VWRN_ALREADY_EXISTS if the entry already exists.
- *
- * @param   hManifest           The manifest handle.
- * @param   pszEntry            The entry name (UTF-8).
- *
- * @remarks Some manifest formats will not be able to store an entry without
- *          any attributes.  So, this is just here in case it comes in handy
- *          when dealing with formats which can.
- */
 RTDECL(int) RTManifestEntryAdd(RTMANIFEST hManifest, const char *pszEntry)
 {
     RTMANIFESTINT *pThis = hManifest;
@@ -1238,13 +1145,6 @@ RTDECL(int) RTManifestEntryAdd(RTMANIFEST hManifest, const char *pszEntry)
 }
 
 
-/**
- * Removes an entry.
- *
- * @returns IPRT status code.
- * @param   hManifest           The manifest handle.
- * @param   pszEntry            The entry name.
- */
 RTDECL(int) RTManifestEntryRemove(RTMANIFEST hManifest, const char *pszEntry)
 {
     RTMANIFESTINT *pThis = hManifest;

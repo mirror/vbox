@@ -160,13 +160,6 @@ static const uint64_t g_au64CRC64[] =
 };
 
 
-/**
- * Calculate CRC64 for a memory block.
- *
- * @returns CRC64 for the memory block.
- * @param   pv      Pointer to the memory block.
- * @param   cb      Size of the memory block in bytes.
- */
 RTDECL(uint64_t) RTCrc64(const void *pv, size_t cb)
 {
     const uint8_t  *pu8 = (const uint8_t *)pv;
@@ -178,11 +171,6 @@ RTDECL(uint64_t) RTCrc64(const void *pv, size_t cb)
 RT_EXPORT_SYMBOL(RTCrc64);
 
 
-/**
- * Start a multiblock CRC64 calculation.
- *
- * @returns Start CRC64.
- */
 RTDECL(uint64_t) RTCrc64Start(void)
 {
     return 0ULL;
@@ -190,14 +178,6 @@ RTDECL(uint64_t) RTCrc64Start(void)
 RT_EXPORT_SYMBOL(RTCrc64Start);
 
 
-/**
- * Processes a multiblock of a CRC64 calculation.
- *
- * @returns Intermediate CRC64 value.
- * @param   uCRC64  Current CRC64 intermediate value.
- * @param   pv      The data block to process.
- * @param   cb      The size of the data block in bytes.
- */
 RTDECL(uint64_t) RTCrc64Process(uint64_t uCRC64, const void *pv, size_t cb)
 {
     const uint8_t *pu8 = (const uint8_t *)pv;
@@ -208,12 +188,6 @@ RTDECL(uint64_t) RTCrc64Process(uint64_t uCRC64, const void *pv, size_t cb)
 RT_EXPORT_SYMBOL(RTCrc64Process);
 
 
-/**
- * Complete a multiblock CRC64 calculation.
- *
- * @returns CRC64 value.
- * @param   uCRC64  Current CRC64 intermediate value.
- */
 RTDECL(uint64_t) RTCrc64Finish(uint64_t uCRC64)
 {
     return uCRC64;

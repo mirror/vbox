@@ -226,20 +226,6 @@ RTDECL(size_t) RTLdrSize(RTLDRMOD hLdrMod)
 RT_EXPORT_SYMBOL(RTLdrSize);
 
 
-/**
- * Loads the image into a buffer provided by the user and applies fixups
- * for the given base address.
- *
- * @returns iprt status code.
- * @param   hLdrMod         The load module handle.
- * @param   pvBits          Where to put the bits.
- *                          Must be as large as RTLdrSize() suggests.
- * @param   BaseAddress     The base address.
- * @param   pfnGetImport    Callback function for resolving imports one by one.
- *                          If this is NULL, imports will not be resolved.
- * @param   pvUser          User argument for the callback.
- * @remark  Not supported for RTLdrLoad() images.
- */
 RTDECL(int) RTLdrGetBits(RTLDRMOD hLdrMod, void *pvBits, RTLDRADDR BaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
     LogFlow(("RTLdrGetBits: hLdrMod=%RTldrm pvBits=%p BaseAddress=%RTptr pfnGetImport=%p pvUser=%p\n",
@@ -264,20 +250,6 @@ RTDECL(int) RTLdrGetBits(RTLDRMOD hLdrMod, void *pvBits, RTLDRADDR BaseAddress, 
 RT_EXPORT_SYMBOL(RTLdrGetBits);
 
 
-/**
- * Relocates bits after getting them.
- * Useful for code which moves around a bit.
- *
- * @returns iprt status code.
- * @param   hLdrMod             The loader module handle.
- * @param   pvBits              Where the image bits are.
- *                              Must have been passed to RTLdrGetBits().
- * @param   NewBaseAddress      The new base address.
- * @param   OldBaseAddress      The old base address.
- * @param   pfnGetImport        Callback function for resolving imports one by one.
- * @param   pvUser              User argument for the callback.
- * @remark  Not supported for RTLdrLoad() images.
- */
 RTDECL(int) RTLdrRelocate(RTLDRMOD hLdrMod, void *pvBits, RTLDRADDR NewBaseAddress, RTLDRADDR OldBaseAddress,
                           PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
@@ -380,19 +352,6 @@ RTDECL(int) RTLdrQueryForwarderInfo(RTLDRMOD hLdrMod, const void *pvBits, uint32
 RT_EXPORT_SYMBOL(RTLdrQueryForwarderInfo);
 
 
-/**
- * Enumerates all symbols in a module.
- *
- * @returns iprt status code.
- * @param   hLdrMod         The loader module handle.
- * @param   fFlags          Flags indicating what to return and such.
- * @param   pvBits          Optional pointer to the loaded image.
- *                          Set this to NULL if no RTLdrGetBits() processed image bits are available.
- * @param   BaseAddress     Image load address.
- * @param   pfnCallback     Callback function.
- * @param   pvUser          User argument for the callback.
- * @remark  Not supported for RTLdrLoad() images.
- */
 RTDECL(int) RTLdrEnumSymbols(RTLDRMOD hLdrMod, unsigned fFlags, const void *pvBits, RTLDRADDR BaseAddress,
                              PFNRTLDRENUMSYMS pfnCallback, void *pvUser)
 {
@@ -791,12 +750,6 @@ DECLHIDDEN(int) rtLdrReadAt(RTLDRMOD hLdrMod, void *pvBuf, uint32_t iDbgInfo, RT
 }
 
 
-/**
- * Translates a RTLDRARCH value to a string.
- *
- * @returns Name corresponding to @a enmArch
- * @param   enmArch             The value to name.
- */
 RTDECL(const char *) RTLdrArchName(RTLDRARCH enmArch)
 {
     switch (enmArch)

@@ -151,17 +151,6 @@ static unsigned rtStrFormatStrNLenUni(PCRTUNICP pusz, unsigned cchMax)
 }
 
 
-/**
- * Formats an integer number according to the parameters.
- *
- * @returns   Length of the number.
- * @param     psz            Pointer to output string.
- * @param     u64Value       Value.
- * @param     uiBase         Number representation base.
- * @param     cchWidth       Width
- * @param     cchPrecision   Precision.
- * @param     fFlags         Flags (NTFS_*).
- */
 RTDECL(int) RTStrFormatNumber(char *psz, uint64_t u64Value, unsigned int uiBase, signed int cchWidth, signed int cchPrecision,
                               unsigned int fFlags)
 {
@@ -359,21 +348,6 @@ RTDECL(int) RTStrFormatNumber(char *psz, uint64_t u64Value, unsigned int uiBase,
 RT_EXPORT_SYMBOL(RTStrFormatNumber);
 
 
-/**
- * Partial implementation of a printf like formatter.
- * It doesn't do everything correct, and there is no floating point support.
- * However, it supports custom formats by the means of a format callback.
- *
- * @returns number of bytes formatted.
- * @param   pfnOutput   Output worker.
- *                      Called in two ways. Normally with a string an it's length.
- *                      For termination, it's called with NULL for string, 0 for length.
- * @param   pvArgOutput Argument to the output worker.
- * @param   pfnFormat   Custom format worker.
- * @param   pvArgFormat Argument to the format worker.
- * @param   pszFormat   Format string.
- * @param   InArgs      Argument list.
- */
 RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRFORMAT pfnFormat, void *pvArgFormat,
                             const char *pszFormat, va_list InArgs)
 {

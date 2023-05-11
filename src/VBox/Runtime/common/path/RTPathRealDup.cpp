@@ -46,13 +46,6 @@
 
 
 
-/**
- * Same as RTPathReal only the result is RTStrDup()'ed.
- *
- * @returns Pointer to real path. Use RTStrFree() to free this string.
- * @returns NULL if RTPathReal() or RTStrDup() fails.
- * @param   pszPath
- */
 RTDECL(char *) RTPathRealDup(const char *pszPath)
 {
     char szPath[RTPATH_MAX];

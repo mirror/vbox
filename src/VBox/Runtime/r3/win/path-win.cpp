@@ -60,14 +60,7 @@
 typedef HRESULT WINAPI FNSHGETFOLDERPATHW(HWND, int, HANDLE, DWORD, LPWSTR);
 typedef FNSHGETFOLDERPATHW *PFNSHGETFOLDERPATHW;
 
-/**
- * Get the real (no symlinks, no . or .. components) path, must exist.
- *
- * @returns iprt status code.
- * @param   pszPath         The path to resolve.
- * @param   pszRealPath     Where to store the real path.
- * @param   cchRealPath     Size of the buffer.
- */
+
 RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, size_t cchRealPath)
 {
     /*
@@ -100,14 +93,6 @@ RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, size_t cchRealPat
 }
 
 #if 0
-/**
- * Get the absolute path (no symlinks, no . or .. components), doesn't have to exit.
- *
- * @returns iprt status code.
- * @param   pszPath         The path to resolve.
- * @param   pszAbsPath      Where to store the absolute path.
- * @param   cchAbsPath      Size of the buffer.
- */
 RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
 {
     /*
@@ -159,13 +144,6 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
 #endif
 
 
-/**
- * Gets the user home directory.
- *
- * @returns iprt status code.
- * @param   pszPath     Buffer where to store the path.
- * @param   cchPath     Buffer size in bytes.
- */
 RTDECL(int) RTPathUserHome(char *pszPath, size_t cchPath)
 {
     /*
