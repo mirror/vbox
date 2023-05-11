@@ -594,7 +594,7 @@ public:
     }
 
     /**
-     * @copydoc GuestEnvironmentChanges::copy() 
+     * @copydoc GuestEnvironmentChanges::copy()
      * @throws  HRESULT
      */
     GuestEnvironmentChanges &operator=(const GuestEnvironmentBase &rThat)

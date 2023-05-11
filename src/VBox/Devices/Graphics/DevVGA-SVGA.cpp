@@ -6399,7 +6399,7 @@ static int vmsvgaR3Init3dInterfaces(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
 
 /**
  * Compute the host capabilities: device and FIFO.
- * 
+ *
  * Depends on 3D backend initialization.
  *
  * @param   pThis     The shared VGA/VMSVGA instance data.
