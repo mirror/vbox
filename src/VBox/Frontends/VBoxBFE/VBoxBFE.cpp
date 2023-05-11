@@ -316,6 +316,16 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTA
     /*
      * PDM.
      */
+#ifdef DEBUG_aeichner
+    PCFGMNODE pPdm = NULL;
+    PCFGMNODE pPdmDevices = NULL;
+    PCFGMNODE pPdmDevicesNvme = NULL;
+    rc = pVMM->pfnCFGMR3InsertNode(pRoot, "PDM", &pPdm);                                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pPdm, "Devices", &pPdmDevices);                              UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pPdmDevices, "VBoxNvme", &pPdmDevicesNvme);                  UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertString(pPdmDevicesNvme, "Path", "/Users/vbox/vbox-intern/out/darwin.arm64/debug/dist/VirtualBox.app/Contents/MacOS/ExtensionPacks/Oracle_VM_VirtualBox_Extension_Pack/darwin.arm64/VBoxNvmeR3.dylib"); UPDATE_RC();
+#endif
+
     rc = pVMM->pfnPDMR3DrvStaticRegistration(pVM, VBoxDriversRegister);                         UPDATE_RC();
 
     /*
@@ -394,6 +404,79 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTA
     rc = pVMM->pfnCFGMR3InsertNode(pInst,    "Config",        &pCfg);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "Irq",               2);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "MmioBase", 0x09010000);                        UPDATE_RC();
+
+    rc = pVMM->pfnCFGMR3InsertNode(pDevices, "pci-generic-ecam",  &pDev);                    UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pDev,     "0",            &pInst);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pInst,    "Config",        &pCfg);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "MmioEcamBase",   0x3f000000);                  UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "MmioEcamLength", 0x01000000);                  UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "MmioPioBase",    0x3eff0000);                  UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "MmioPioSize",    0x0000ffff);                  UPDATE_RC();
+
+    rc = pVMM->pfnCFGMR3InsertNode(pDevices, "usb-xhci",      &pDev);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pDev,     "0",            &pInst);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "Trusted",           1);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIBusNo",          0);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIDeviceNo",       2);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIFunctionNo",     0);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pInst,    "Config",        &pCfg);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pInst,    "LUN#0",       &pLunL0);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertString(pLunL0, "Driver","VUSBRootHub");                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pInst,    "LUN#1",       &pLunL0);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertString(pLunL0, "Driver","VUSBRootHub");                        UPDATE_RC();
+
+#ifdef DEBUG_aeichner
+    rc = pVMM->pfnCFGMR3InsertNode(pDevices, "virtio-net",    &pDev);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pDev,     "0",            &pInst);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "Trusted",           1);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIBusNo",          0);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIDeviceNo",       1);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIFunctionNo",     0);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pInst,    "Config",        &pCfg);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "CableConnected",    1);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "LineSpeed",         0);                        UPDATE_RC();
+
+    const char *pszMac = "080027ede92c";
+    Assert(strlen(pszMac) == 12);
+    RTMAC Mac;
+    RT_ZERO(Mac);
+    char *pMac = (char*)&Mac;
+    for (uint32_t i = 0; i < 6; ++i)
+    {
+        int c1 = *pszMac++ - '0';
+        if (c1 > 9)
+            c1 -= 7;
+        int c2 = *pszMac++ - '0';
+        if (c2 > 9)
+            c2 -= 7;
+        *pMac++ = (char)(((c1 & 0x0f) << 4) | (c2 & 0x0f));
+    }
+    rc = pVMM->pfnCFGMR3InsertBytes(pCfg,    "MAC",   &Mac, sizeof(Mac));                   UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pInst,    "LUN#0",       &pLunL0);                       UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertString(pLunL0, "Driver",        "NAT");                       UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pLunL0,    "Config",  &pLunL1Cfg);                       UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertString(pLunL1Cfg, "Network", "10.0.2.0/24");                  UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertString(pLunL1Cfg, "TFTPPrefix", "/Users/vbox/Library/VirtualBox/TFTP");                  UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertString(pLunL1Cfg, "BootFile", "default.pxe");                 UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pLunL1Cfg,  "AliasMode",         0);                  UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pLunL1Cfg,  "DNSProxy",          0);                  UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pLunL1Cfg,  "LocalhostReachable", 1);                 UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pLunL1Cfg,  "PassDomain",         1);                 UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pLunL1Cfg,  "UseHostResolver",    0);                 UPDATE_RC();
+
+    rc = pVMM->pfnCFGMR3InsertNode(pDevices, "nvme",          &pDev);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pDev,     "0",            &pInst);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "Trusted",           1);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIBusNo",          0);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIDeviceNo",       3);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIFunctionNo",     0);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pInst,    "Config",        &pCfg);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "CtrlMemBufSize",    0);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pInst,    "LUN#0",       &pLunL0);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertString(pLunL0, "Driver","RamDisk");                            UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pLunL0,    "Config",  &pLunL1Cfg);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pLunL1Cfg,  "Size", 1073741824);                       UPDATE_RC();
+#endif
 
 #undef UPDATE_RC
 #undef UPDATE_RC
