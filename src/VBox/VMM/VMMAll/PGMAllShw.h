@@ -728,6 +728,8 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint
                 }
 
                 SHW_PTE_ATOMIC_SET2(pPT->a[iPTE], NewPte);
+                Assert((SHW_PTE_GET_U(NewPte) & EPT_E_LEAF) == (SHW_PTE_GET_U(OrgPte) & EPT_E_LEAF));
+
 # if PGM_SHW_TYPE == PGM_TYPE_EPT
                 HMInvalidatePhysPage(pVM, (RTGCPHYS)GCPtr);
 # else
