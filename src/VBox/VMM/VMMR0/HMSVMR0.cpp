@@ -6040,7 +6040,7 @@ static VBOXSTRICTRC hmR0SvmHandleExitDtraceEvents(PVMCPUCC pVCpu, PSVMTRANSIENT 
     if (fDtrace1 || fDtrace2)
     {
         hmR0SvmImportGuestState(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
-        PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+        PCPUMCTX pCtx = &pVCpu->cpum.GstCtx; RT_NOREF(pCtx); /* Shut up Clang 13. */
         switch (enmEvent1)
         {
             /** @todo consider which extra parameters would be helpful for each probe.   */
