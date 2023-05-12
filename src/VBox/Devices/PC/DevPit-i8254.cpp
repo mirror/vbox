@@ -230,17 +230,8 @@ typedef struct PITSTATE
 #endif
     /** Config: I/O port base. */
     RTIOPORT                IOPortBaseCfg;
-    /** Config: Speaker enabled. */
-    bool                    fSpeakerCfg;
     /** Disconnect PIT from the interrupt controllers if requested by HPET. */
     bool                    fDisabledByHpet;
-    /** Config: What to do with speaker activity. */
-    PITSPEAKEREMU           enmSpeakerEmu;
-#ifdef RT_OS_LINUX
-    /** File handle for host speaker functionality. */
-    int                     hHostSpeaker;
-    int                     afAlignment2;
-#endif
     /** Number of IRQs that's been raised. */
     STAMCOUNTER             StatPITIrq;
     /** Profiling the timer callback handler. */
@@ -265,6 +256,15 @@ typedef struct PITSTATER3
     PDMIHPETLEGACYNOTIFY    IHpetLegacyNotify;
     /** Pointer to the device instance. */
     PPDMDEVINSR3            pDevIns;
+    /** Config: Speaker enabled. */
+    bool                    fSpeakerCfg;
+    /** Config: What to do with speaker activity. */
+    PITSPEAKEREMU           enmSpeakerEmu;
+#ifdef RT_OS_LINUX
+    /** File handle for host speaker functionality. */
+    int                     hHostSpeaker;
+    int                     afAlignment2;
+#endif
 } PITSTATER3;
 /** Pointer to the ring-3 PIT device state. */
 typedef PITSTATER3 *PPITSTATER3;
@@ -880,22 +880,24 @@ pitR3IOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint
          * abstract the details, and if necessary create a thread to minimize
          * impact on VM execution. */
 # ifdef RT_OS_LINUX
-        if (pThis->enmSpeakerEmu != PIT_SPEAKER_EMU_NONE)
+        PPITSTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPITSTATER3);
+
+        if (pThisCC->enmSpeakerEmu != PIT_SPEAKER_EMU_NONE)
         {
             PPITCHANNEL pChan = &pThis->channels[2];
             if (pThis->speaker_data_on)
             {
                 Log2Func(("starting beep freq=%d\n", PIT_FREQ / pChan->count));
-                switch (pThis->enmSpeakerEmu)
+                switch (pThisCC->enmSpeakerEmu)
                 {
                     case PIT_SPEAKER_EMU_CONSOLE:
                     {
                         int res;
-                        res = ioctl(pThis->hHostSpeaker, KIOCSOUND, pChan->count);
+                        res = ioctl(pThisCC->hHostSpeaker, KIOCSOUND, pChan->count);
                         if (res == -1)
                         {
                             LogRel(("PIT: speaker: ioctl failed errno=%d, disabling emulation\n", errno));
-                            pThis->enmSpeakerEmu = PIT_SPEAKER_EMU_NONE;
+                            pThisCC->enmSpeakerEmu = PIT_SPEAKER_EMU_NONE;
                         }
                         break;
                     }
@@ -905,27 +907,27 @@ pitR3IOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint
                         e.type = EV_SND;
                         e.code = SND_TONE;
                         e.value = PIT_FREQ / pChan->count;
-                        int res = write(pThis->hHostSpeaker, &e, sizeof(struct input_event));
+                        int res = write(pThisCC->hHostSpeaker, &e, sizeof(struct input_event));
                         NOREF(res);
                         break;
                     }
                     case PIT_SPEAKER_EMU_TTY:
                     {
-                        int res = write(pThis->hHostSpeaker, "\a", 1);
+                        int res = write(pThisCC->hHostSpeaker, "\a", 1);
                         NOREF(res);
                         break;
                     }
                     case PIT_SPEAKER_EMU_NONE:
                         break;
                     default:
-                        Log2Func(("unknown speaker emulation %d, disabling emulation\n", pThis->enmSpeakerEmu));
-                        pThis->enmSpeakerEmu = PIT_SPEAKER_EMU_NONE;
+                        Log2Func(("unknown speaker emulation %d, disabling emulation\n", pThisCC->enmSpeakerEmu));
+                        pThisCC->enmSpeakerEmu = PIT_SPEAKER_EMU_NONE;
                 }
             }
             else
             {
                 Log2Func(("stopping beep\n"));
-                switch (pThis->enmSpeakerEmu)
+                switch (pThisCC->enmSpeakerEmu)
                 {
                     case PIT_SPEAKER_EMU_CONSOLE:
                         /* No error checking here. The Linux device driver
@@ -935,7 +937,7 @@ pitR3IOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint
                          * for enabled->disabled transitions and ignoring
                          * disabled->disabled ones, but it's not worth the
                          * effort. */
-                        ioctl(pThis->hHostSpeaker, KIOCSOUND, 0);
+                        ioctl(pThisCC->hHostSpeaker, KIOCSOUND, 0);
                         break;
                     case PIT_SPEAKER_EMU_EVDEV:
                     {
@@ -943,7 +945,7 @@ pitR3IOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint
                         e.type = EV_SND;
                         e.code = SND_TONE;
                         e.value = 0;
-                        int res = write(pThis->hHostSpeaker, &e, sizeof(struct input_event));
+                        int res = write(pThisCC->hHostSpeaker, &e, sizeof(struct input_event));
                         NOREF(res);
                         break;
                     }
@@ -952,8 +954,8 @@ pitR3IOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint
                     case PIT_SPEAKER_EMU_NONE:
                         break;
                     default:
-                        Log2Func(("unknown speaker emulation %d, disabling emulation\n", pThis->enmSpeakerEmu));
-                        pThis->enmSpeakerEmu = PIT_SPEAKER_EMU_NONE;
+                        Log2Func(("unknown speaker emulation %d, disabling emulation\n", pThisCC->enmSpeakerEmu));
+                        pThisCC->enmSpeakerEmu = PIT_SPEAKER_EMU_NONE;
                 }
             }
         }
@@ -973,12 +975,14 @@ pitR3IOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint
  */
 static DECLCALLBACK(int) pitR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
-    PPITSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
+    PPITSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
+    PPITSTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPITSTATER3);
+
     PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
     RT_NOREF(uPass);
     pHlp->pfnSSMPutIOPort(pSSM, pThis->IOPortBaseCfg);
     pHlp->pfnSSMPutU8(    pSSM, pThis->channels[0].irq);
-    pHlp->pfnSSMPutBool(  pSSM, pThis->fSpeakerCfg);
+    pHlp->pfnSSMPutBool(  pSSM, pThisCC->fSpeakerCfg);
     return VINF_SSM_DONT_CALL_AGAIN;
 }
 
@@ -1039,8 +1043,9 @@ static DECLCALLBACK(int) pitR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) pitR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PPITSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
-    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
+    PPITSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
+    PPITSTATER3   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPITSTATER3);
+    PCPDMDEVHLPR3 pHlp    = pDevIns->pHlpR3;
     int           rc;
 
     if (    uVersion != PIT_SAVED_STATE_VERSION
@@ -1065,9 +1070,9 @@ static DECLCALLBACK(int) pitR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 
         bool fSpeakerCfg;
         rc = pHlp->pfnSSMGetBool(pSSM, &fSpeakerCfg); AssertRCReturn(rc, rc);
-        if (fSpeakerCfg != pThis->fSpeakerCfg)
+        if (fSpeakerCfg != pThisCC->fSpeakerCfg)
             return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - fSpeakerCfg: saved=%RTbool config=%RTbool"),
-                                    fSpeakerCfg, pThis->fSpeakerCfg);
+                                    fSpeakerCfg, pThisCC->fSpeakerCfg);
     }
 
     if (uPass != SSM_PASS_FINAL)
@@ -1303,6 +1308,28 @@ static int pitR3TryDeviceOpenSanitizeIoctl(const char *pszPath, int flags)
 # endif /* RT_OS_LINUX */
 
 /**
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
+ */
+static DECLCALLBACK(int)  pitR3Destruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+
+#ifdef RT_OS_LINUX
+    PPITSTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPITSTATER3);
+
+    if (pThisCC->enmSpeakerEmu != PIT_SPEAKER_EMU_NONE)
+    {
+        Assert(pThisCC->hHostSpeaker != -1);
+        close(pThisCC->hHostSpeaker);
+        pThisCC->hHostSpeaker = -1;
+    }
+#endif
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int)  pitR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
@@ -1357,8 +1384,8 @@ static DECLCALLBACK(int)  pitR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         pThis->channels[i].hTimer = NIL_TMTIMERHANDLE;
         pThis->channels[i].iChan  = i;
     }
-    pThis->fSpeakerCfg     = fSpeaker;
-    pThis->enmSpeakerEmu   = PIT_SPEAKER_EMU_NONE;
+    pThisCC->fSpeakerCfg   = fSpeaker;
+    pThisCC->enmSpeakerEmu = PIT_SPEAKER_EMU_NONE;
     if (uPassthroughSpeaker)
     {
         /** @todo r=klaus move this to a (system-specific) driver */
@@ -1376,17 +1403,17 @@ static DECLCALLBACK(int)  pitR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         }
         if ((uPassthroughSpeaker == 9 || uPassthroughSpeaker == 100) && pszPassthroughSpeakerDevice && fd == -1)
             fd = pitR3TryDeviceOpenSanitizeIoctl(pszPassthroughSpeakerDevice, O_WRONLY);
-        if (pThis->enmSpeakerEmu == PIT_SPEAKER_EMU_NONE && fd != -1)
+        if (pThisCC->enmSpeakerEmu == PIT_SPEAKER_EMU_NONE && fd != -1)
         {
-            pThis->hHostSpeaker = fd;
+            pThisCC->hHostSpeaker = fd;
             if (ioctl(fd, EVIOCGSND(0)) != -1)
             {
-                pThis->enmSpeakerEmu = PIT_SPEAKER_EMU_EVDEV;
+                pThisCC->enmSpeakerEmu = PIT_SPEAKER_EMU_EVDEV;
                 LogRel(("PIT: speaker: emulation mode evdev\n"));
             }
             else
             {
-                pThis->enmSpeakerEmu = PIT_SPEAKER_EMU_CONSOLE;
+                pThisCC->enmSpeakerEmu = PIT_SPEAKER_EMU_CONSOLE;
                 LogRel(("PIT: speaker: emulation mode console\n"));
             }
         }
@@ -1394,13 +1421,13 @@ static DECLCALLBACK(int)  pitR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
             fd = pitR3TryDeviceOpen("/dev/tty", O_WRONLY);
         if ((uPassthroughSpeaker == 79 || uPassthroughSpeaker == 100) && pszPassthroughSpeakerDevice && fd == -1)
             fd = pitR3TryDeviceOpen(pszPassthroughSpeakerDevice, O_WRONLY);
-        if (pThis->enmSpeakerEmu == PIT_SPEAKER_EMU_NONE && fd != -1)
+        if (pThisCC->enmSpeakerEmu == PIT_SPEAKER_EMU_NONE && fd != -1)
         {
-            pThis->hHostSpeaker = fd;
-            pThis->enmSpeakerEmu = PIT_SPEAKER_EMU_TTY;
+            pThisCC->hHostSpeaker = fd;
+            pThisCC->enmSpeakerEmu = PIT_SPEAKER_EMU_TTY;
             LogRel(("PIT: speaker: emulation mode tty\n"));
         }
-        if (pThis->enmSpeakerEmu == PIT_SPEAKER_EMU_NONE)
+        if (pThisCC->enmSpeakerEmu == PIT_SPEAKER_EMU_NONE)
         {
             Assert(fd == -1);
             LogRel(("PIT: speaker: no emulation possible\n"));
@@ -1525,7 +1552,7 @@ const PDMDEVREG g_DeviceI8254 =
     /* .pszRCMod = */               "VBoxDDRC.rc",
     /* .pszR0Mod = */               "VBoxDDR0.r0",
     /* .pfnConstruct = */           pitR3Construct,
-    /* .pfnDestruct = */            NULL,
+    /* .pfnDestruct = */            pitR3Destruct,
     /* .pfnRelocate = */            NULL,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
