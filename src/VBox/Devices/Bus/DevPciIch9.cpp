@@ -331,7 +331,7 @@ ich9pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uin
  * Perform configuration space write.
  */
 static VBOXSTRICTRC ich9pciConfigWrite(PPDMDEVINS pDevIns, PDEVPCIROOT pPciRoot, PciAddress const *pPciAddr,
-                                       uint32_t u32Value, int cb, int rcReschedule)
+                                       uint32_t u32Value, unsigned cb, int rcReschedule)
 {
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
 
@@ -421,7 +421,7 @@ ich9pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
 /**
  * Perform configuration space read.
  */
-static VBOXSTRICTRC ich9pciConfigRead(PDEVPCIROOT pPciRoot, PciAddress* pPciAddr, int cb, uint32_t *pu32Value, int rcReschedule)
+static VBOXSTRICTRC ich9pciConfigRead(PDEVPCIROOT pPciRoot, PciAddress* pPciAddr, unsigned cb, uint32_t *pu32Value, int rcReschedule)
 {
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
 #ifdef IN_RING3
