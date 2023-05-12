@@ -5251,6 +5251,7 @@ HRESULT GuestSession::symlinkRead(const com::Utf8Str &aSymlink, const std::vecto
     ReturnComNotImplemented();
 }
 
+/* Deprecated; use GuestSession::waitForArray() instead. */
 HRESULT GuestSession::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, GuestSessionWaitResult_T *aReason)
 {
     /* Note: No call to i_isStartedExternal() needed here, as the session might not has been started (yet). */

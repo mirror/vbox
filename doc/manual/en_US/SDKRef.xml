@@ -4177,6 +4177,12 @@ AuthResult AUTHCALL AuthEntry(
           <link linkend="IGuestSession__fsQueryFreeSpace">IGuestSession::fsQueryFreeSpace</link> for more information.</para>
         </listitem>
 
+        <listitem><para>The APIs <link linkend="IGuestSession__waitFor">IGuestSession::waitFor</link> and
+          <link linkend="IGuestProcess__waitFor">IGuestProcess::waitFor</link> are now marked
+          as being deprecated. Use <link linkend="IGuestSession__waitForArray">IGuestSession::waitForArray</link>
+          and <link linkend="IGuestProcess__waitForArray">IGuestProcess::waitForArray</link> instead.</para>
+        </listitem>
+
       </itemizedlist>
     </sect1>
 

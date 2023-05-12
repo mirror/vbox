@@ -2145,6 +2145,7 @@ HRESULT GuestProcess::terminate()
     return hrc;
 }
 
+/* Deprecated; use GuestProcess::waitForArray() instead. */
 HRESULT GuestProcess::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, ProcessWaitResult_T *aReason)
 {
     AutoCaller autoCaller(this);

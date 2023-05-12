@@ -16201,6 +16201,9 @@
     <method name="waitFor">
       <desc>
         Waits for one or more events to happen.
+        <note>
+          Deprecated and will be removed. Use <link to="IGuestSession::waitForArray"/> instead.
+        </note>
       </desc>
       <param name="waitFor" type="unsigned long" dir="in">
         <desc>
@@ -16303,6 +16306,9 @@
     <method name="waitFor">
       <desc>
         Waits for one or more events to happen.
+        <note>
+          Deprecated and will be removed. Use <link to="IProcess::waitForArray"/> instead.
+        </note>
       </desc>
       <param name="waitFor" type="unsigned long" dir="in">
         <desc>
