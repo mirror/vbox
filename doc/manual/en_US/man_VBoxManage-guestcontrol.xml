@@ -80,7 +80,7 @@
       <arg>--username=<replaceable>username</replaceable></arg>
       <arg>--cwd=<replaceable>directory</replaceable></arg>
       <arg>--verbose</arg>
-      <arg choice="req">-- <replaceable>program/arg0</replaceable> <arg rep="repeat"><replaceable>argument</replaceable></arg></arg>
+      <arg choice="req">--<arg rep="repeat"><replaceable>argument</replaceable></arg></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-start">
@@ -106,7 +106,7 @@
       <arg>--username=<replaceable>username</replaceable></arg>
       <arg>--cwd=<replaceable>directory</replaceable></arg>
       <arg>--verbose</arg>
-      <arg choice="req">-- <replaceable>program/arg0</replaceable> <arg rep="repeat"><replaceable>argument</replaceable></arg></arg>
+      <arg choice="req">--<arg rep="repeat"><replaceable>argument</replaceable></arg></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-guestcontrol-copyfrom">
@@ -652,7 +652,7 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>-- <replaceable>program/arg0</replaceable> [<replaceable>argument</replaceable>...]</option></term>
+          <term><option>--[<replaceable>argument</replaceable>...]</option></term>
           <listitem><para>
               Specifies the name of the program and any arguments to
               pass to the program.
