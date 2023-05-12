@@ -840,7 +840,7 @@ public:
 #ifdef VBOX_WITH_XPCOM
             SafeArray::Copy(m.arr[i - 1], m.arr[i]);
 #else
-            Copy(m.arr[i - 1], m.arr[i]);
+            Copy(m.raw[i - 1], m.raw[i]);
 #endif
         }
 
@@ -848,7 +848,7 @@ public:
         SafeArray::Copy(aElement, m.arr[0]);
         ++ m.size;
 #else
-        Copy(aElement, m.arr[0]);
+        Copy(aElement, m.raw[0]);
 #endif
         return true;
     }
