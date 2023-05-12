@@ -13860,26 +13860,26 @@
     </const>
     <const name="StdIn"                 value="4">
       <desc>Wait for stdin becoming available.
-        <para>Not implemented; will currently return <link to="ProcessWaitResult_WaitFlagNotSupported"/>.
-          Writing process input can be performed via <link to="IProcess::write"/> or waiting for the
-          <link to="IGuestProcessInputNotifyEvent"/> event.
-        </para>
+        Not implemented; will currently return <link to="ProcessWaitResult_WaitFlagNotSupported"/>.
+
+        Writing process input can be performed via <link to="IProcess::write"/> or waiting for the
+        <link to="IGuestProcessInputNotifyEvent"/> event.
       </desc>
     </const>
     <const name="StdOut"                value="8">
       <desc>Wait for data becoming available on stdout.
-        <para>Not implemented; will currently return <link to="ProcessWaitResult_WaitFlagNotSupported"/>.
-          Reading process stdout output can be performed via <link to="IProcess::read"/> or waiting for the
-          <link to="IGuestProcessOutputEvent"/> event.
-        </para>
+        Not implemented; will currently return <link to="ProcessWaitResult_WaitFlagNotSupported"/>.
+
+        Reading process stdout output can be performed via <link to="IProcess::read"/> or waiting for the
+        <link to="IGuestProcessOutputEvent"/> event.
       </desc>
     </const>
     <const name="StdErr"                value="16">
       <desc>Wait for data becoming available on stderr.
-        <para>Not implemented; will currently return <link to="ProcessWaitResult_WaitFlagNotSupported"/>.
-          Reading process stderr output can be performed via <link to="IProcess::read"/> or waiting for the
-          <link to="IGuestProcessOutputEvent"/> event.
-        </para>
+        Not implemented; will currently return <link to="ProcessWaitResult_WaitFlagNotSupported"/>.
+
+        Reading process stderr output can be performed via <link to="IProcess::read"/> or waiting for the
+        <link to="IGuestProcessOutputEvent"/> event.
       </desc>
     </const>
   </enum>
