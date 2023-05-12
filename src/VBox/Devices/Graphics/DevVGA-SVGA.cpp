@@ -898,7 +898,7 @@ DECLCALLBACK(void) vmsvgaR3PortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t
  * @param   pThis       The The shared VGA/VMSVGA instance data.
  * @param   pThisCC     The VGA/VMSVGA state for ring-3.
  */
-void vmsvgaR3VBVAResize(PVGASTATE pThis, PVGASTATECC pThisCC)
+static void vmsvgaR3VBVAResize(PVGASTATE pThis, PVGASTATECC pThisCC)
 {
     int rc;
 
@@ -4562,7 +4562,7 @@ void vmsvgaR3FifoWatchdogTimer(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC 
  * @param   pThis       The shared VGA/VMSVGA instance data.
  * @param   pThisCC     The VGA/VMSVGA state for ring-3.
  */
-void vmsvgaR3FifoPendingActions(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC)
+static void vmsvgaR3FifoPendingActions(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC)
 {
     RT_NOREF(pDevIns);
 
@@ -5392,7 +5392,7 @@ void vmsvgaR33dSurfaceUpdateHeapBuffersOnFifoThread(PPDMDEVINS pDevIns, PVGASTAT
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV, "vmsvga3dsfc"}
  */
-DECLCALLBACK(void) vmsvgaR3Info3dSurface(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) vmsvgaR3Info3dSurface(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     /* There might be a specific surface ID at the start of the
        arguments, if not show all surfaces. */
@@ -5437,7 +5437,7 @@ DECLCALLBACK(void) vmsvgaR3Info3dSurface(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV, "vmsvga3dsurf"}
  */
-DECLCALLBACK(void) vmsvgaR3Info3dSurfaceBmp(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) vmsvgaR3Info3dSurfaceBmp(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     /* pszArg = "sid[>dir]"
      * Writes %dir%/info-S-sidI.bmp, where S - sequential bitmap number, I - decimal surface id.
@@ -5462,7 +5462,7 @@ DECLCALLBACK(void) vmsvgaR3Info3dSurfaceBmp(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV, "vmsvga3dctx"}
  */
-DECLCALLBACK(void) vmsvgaR3Info3dContext(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) vmsvgaR3Info3dContext(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     /* There might be a specific surface ID at the start of the
        arguments, if not show all contexts. */

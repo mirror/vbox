@@ -468,7 +468,7 @@ static DECLCALLBACK(int) utsTcpOption(int ch, PCRTGETOPTUNION pVal)
 /**
  * @interface_method_impl{UTSTRANSPORT,pfnUsage}
  */
-DECLCALLBACK(void) utsTcpUsage(PRTSTREAM pStream)
+static DECLCALLBACK(void) utsTcpUsage(PRTSTREAM pStream)
 {
     RTStrmPrintf(pStream,
                  "  --tcp-bind-address <address>\n"

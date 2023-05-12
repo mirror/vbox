@@ -1044,7 +1044,7 @@ HRESULT UnattendedOs2Installer::addFilesToAuxVisoVectors(RTCList<RTCString> &rVe
 /**
  * Helper for splitFile.
  */
-const char *splitFileLocateSubstring(const char *pszSrc, size_t cchSrc, const char *pszSubstring, size_t cchSubstring)
+static const char *splitFileLocateSubstring(const char *pszSrc, size_t cchSrc, const char *pszSubstring, size_t cchSubstring)
 {
     char const ch0 = *pszSubstring;
     while (cchSrc >= cchSubstring)

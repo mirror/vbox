@@ -54,7 +54,7 @@
 /**
  * Format the time into a string using a static buffer.
  */
-char *ToString(PRTTIME pTime)
+static char *ToString(PRTTIME pTime)
 {
     static char szBuf[128];
     RTStrPrintf(szBuf, sizeof(szBuf), "%04d-%02d-%02dT%02u:%02u:%02u.%09u [YD%u WD%u UO%d F%#x]",

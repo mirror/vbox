@@ -422,8 +422,8 @@ RT_EXPORT_SYMBOL(RTDbgAsModuleCount);
  *
  * @remarks The caller must have locked the address space for writing.
  */
-int rtDbgAsModuleLinkCommon(PRTDBGASINT pDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg,
-                            RTUINTPTR Addr, RTUINTPTR cb, const char *pszName, uint32_t fFlags)
+static int rtDbgAsModuleLinkCommon(PRTDBGASINT pDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg,
+                                   RTUINTPTR Addr, RTUINTPTR cb, const char *pszName, uint32_t fFlags)
 {
     /*
      * Check that the requested space is undisputed.

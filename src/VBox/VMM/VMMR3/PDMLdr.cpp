@@ -1100,12 +1100,13 @@ char *pdmR3FileR3(const char *pszFile, bool fShared)
  *                          not qualified with a path.  Can be NULL, in which
  *                          case the arch dependent install dir is searched.
  */
-char *pdmR3FileR0(const char *pszFile, const char *pszSearchPath)
+static char *pdmR3FileR0(const char *pszFile, const char *pszSearchPath)
 {
     return pdmR3File(pszFile, NULL, pszSearchPath, /*fShared=*/false);
 }
 
 
+#if 0 /* unused */
 /**
  * Constructs the full filename for a RC image file.
  *
@@ -1118,10 +1119,11 @@ char *pdmR3FileR0(const char *pszFile, const char *pszSearchPath)
  *                          not qualified with a path.  Can be NULL, in which
  *                          case the arch dependent install dir is searched.
  */
-char *pdmR3FileRC(const char *pszFile, const char *pszSearchPath)
+static char *pdmR3FileRC(const char *pszFile, const char *pszSearchPath)
 {
     return pdmR3File(pszFile, NULL, pszSearchPath, /*fShared=*/false);
 }
+#endif
 
 
 /**

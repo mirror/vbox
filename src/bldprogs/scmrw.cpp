@@ -2941,8 +2941,8 @@ typedef struct
 } SCMMATCHWORD;
 
 
-int ScmMatchWords(const char *pchLine, size_t cchLine, SCMMATCHWORD const *paWords, size_t cWords,
-                  size_t *poffNext, PRTSTRTUPLE paIdentifiers, PRTERRINFO pErrInfo)
+static int ScmMatchWords(const char *pchLine, size_t cchLine, SCMMATCHWORD const *paWords, size_t cWords,
+                         size_t *poffNext, PRTSTRTUPLE paIdentifiers, PRTERRINFO pErrInfo)
 {
     int rc = VINF_SUCCESS;
 

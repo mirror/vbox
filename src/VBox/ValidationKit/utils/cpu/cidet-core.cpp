@@ -138,19 +138,19 @@ static const int64_t g_ai64ByteSizeToMax[] =
 };
 
 
-bool CidetInstrHasMrmMemOperand(PCCIDETINSTR pInstr)
+static bool CidetInstrHasMrmMemOperand(PCCIDETINSTR pInstr)
 {
     return CIDET_INSTR_TEST_OP_FLAG(pInstr, CIDET_OF_M_RM_ONLY_M);
 }
 
 
-bool CidetInstrHasMrmRegOperand(PCCIDETINSTR pInstr)
+static bool CidetInstrHasMrmRegOperand(PCCIDETINSTR pInstr)
 {
     return CIDET_INSTR_TEST_OP_FLAG(pInstr, CIDET_OF_M_RM_ONLY_R);
 }
 
 
-bool CidetInstrRespondsToOperandSizePrefixes(PCCIDETINSTR pInstr)
+static bool CidetInstrRespondsToOperandSizePrefixes(PCCIDETINSTR pInstr)
 {
     return CIDET_INSTR_TEST_OP_MASK_VALUE(pInstr, CIDET_OF_Z_MASK, CIDET_OF_Z_VAR_WDQ);
 }
@@ -187,7 +187,7 @@ void CidetCoreDelete(PCIDETCORE pThis)
  * @param   pszFormat       Format string containing failure details.
  * @param   va              Arguments referenced in @a pszFormat.
  */
-int CidetCoreSetErrorV(PCIDETCORE pThis, const char *pszFormat, va_list va)
+static int CidetCoreSetErrorV(PCIDETCORE pThis, const char *pszFormat, va_list va)
 {
     pThis->pfnFailure(pThis, pszFormat, va);
     return false;
@@ -202,7 +202,7 @@ int CidetCoreSetErrorV(PCIDETCORE pThis, const char *pszFormat, va_list va)
  * @param   pszFormat       Format string containing failure details.
  * @param   ...             Arguments referenced in @a pszFormat.
  */
-bool CidetCoreSetError(PCIDETCORE pThis, const char *pszFormat, ...)
+static bool CidetCoreSetError(PCIDETCORE pThis, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -219,7 +219,7 @@ bool CidetCoreSetError(PCIDETCORE pThis, const char *pszFormat, ...)
  * @param   pThis           Pointer to the core structure.
  * @param   cbSignificant   The number of significant bytes.
  */
-int64_t CidetCoreGetRandS64(PCIDETCORE pThis, uint8_t cbSignificant)
+static int64_t CidetCoreGetRandS64(PCIDETCORE pThis, uint8_t cbSignificant)
 {
     int64_t iVal = RTRandAdvS64(pThis->hRand);
     switch (cbSignificant)
@@ -242,7 +242,7 @@ int64_t CidetCoreGetRandS64(PCIDETCORE pThis, uint8_t cbSignificant)
  * @param   pThis           Pointer to the core structure.
  * @param   cbSignificant   The number of significant bytes.
  */
-uint64_t CidetCoreGetRandU64(PCIDETCORE pThis, uint8_t cbSignificant)
+static uint64_t CidetCoreGetRandU64(PCIDETCORE pThis, uint8_t cbSignificant)
 {
     Assert(cbSignificant == 1 || cbSignificant == 2 || cbSignificant == 4 || cbSignificant == 8);
 
@@ -254,7 +254,7 @@ uint64_t CidetCoreGetRandU64(PCIDETCORE pThis, uint8_t cbSignificant)
 
 
 
-void CidetCoreInitializeCtxTemplate(PCIDETCORE pThis)
+static void CidetCoreInitializeCtxTemplate(PCIDETCORE pThis)
 {
     pThis->InTemplateCtx.rip = UINT64_MAX;
     pThis->InTemplateCtx.rfl = X86_EFL_1 | X86_EFL_ID | X86_EFL_IF;
@@ -326,7 +326,7 @@ int CidetCoreSetTargetMode(PCIDETCORE pThis, uint8_t bMode)
 }
 
 
-bool CidetCoreIsEncodingCompatibleWithInstruction(PCIDETCORE pThis)
+static bool CidetCoreIsEncodingCompatibleWithInstruction(PCIDETCORE pThis)
 {
     RT_NOREF_PV(pThis);
     return true;
@@ -1226,7 +1226,7 @@ static bool cidetCoreSetupNextBaseEncoding_OperandSize(PCIDETCORE pThis)
 }
 
 
-bool CidetCoreSetupNextBaseEncoding(PCIDETCORE pThis)
+static bool CidetCoreSetupNextBaseEncoding(PCIDETCORE pThis)
 {
     if (pThis->fUsesModRm)
     {
@@ -1277,7 +1277,7 @@ bool CidetCoreSetupNextBaseEncoding(PCIDETCORE pThis)
 }
 
 
-bool CidetCoreSetupFirstBaseEncoding(PCIDETCORE pThis)
+static bool CidetCoreSetupFirstBaseEncoding(PCIDETCORE pThis)
 {
     /*
      * Reset all the knobs and wheels.
@@ -1330,7 +1330,7 @@ bool CidetCoreSetupFirstBaseEncoding(PCIDETCORE pThis)
  * @returns true if new one to test, false if we've reached end already.
  * @param   pThis               The core state structure.
  */
-bool CidetCoreSetupNextMemoryOperandConfig(PCIDETCORE pThis)
+static bool CidetCoreSetupNextMemoryOperandConfig(PCIDETCORE pThis)
 {
     RT_NOREF_PV(pThis);
     return false;
@@ -1343,7 +1343,7 @@ bool CidetCoreSetupNextMemoryOperandConfig(PCIDETCORE pThis)
  * @returns true on success, false if no data buffers configured or failure.
  * @param   pThis               The core state structure.
  */
-bool CidetCoreSetupFirstMemoryOperandConfig(PCIDETCORE pThis)
+static bool CidetCoreSetupFirstMemoryOperandConfig(PCIDETCORE pThis)
 {
     pThis->cMemoryOperands = 0;
     PCIDETBUF pDataBuf = &pThis->DataBuf;
@@ -1383,7 +1383,7 @@ bool CidetCoreSetupFirstMemoryOperandConfig(PCIDETCORE pThis)
  * @returns true if new one to test, false if we've reached end already.
  * @param   pThis               The core state structure.
  */
-bool CidetCoreSetupNextCodeBufferConfig(PCIDETCORE pThis)
+static bool CidetCoreSetupNextCodeBufferConfig(PCIDETCORE pThis)
 {
     RT_NOREF_PV(pThis);
     return false;
@@ -1396,7 +1396,7 @@ bool CidetCoreSetupNextCodeBufferConfig(PCIDETCORE pThis)
  * @returns true on success, false if no data buffers configured or failure.
  * @param   pThis               The core state structure.
  */
-bool CidetCoreSetupFirstCodeBufferConfig(PCIDETCORE pThis)
+static bool CidetCoreSetupFirstCodeBufferConfig(PCIDETCORE pThis)
 {
     Assert(pThis->cCodeBufConfigs > 0);
     Assert(CIDETBUF_IS_CODE(pThis->paCodeBufConfigs[0].fFlags));
@@ -1475,7 +1475,7 @@ uint32_t CidetCoreGetOperandSize(PCIDETCORE pThis, uint8_t iOp)
 }
 
 
-bool CideCoreSetInstruction(PCIDETCORE pThis, PCCIDETINSTR pInstr)
+static bool CideCoreSetInstruction(PCIDETCORE pThis, PCCIDETINSTR pInstr)
 {
     AssertReleaseMsgReturn(RT_VALID_PTR(pInstr), ("%p\n", pInstr), false);
 
@@ -1567,7 +1567,7 @@ bool CideCoreSetInstruction(PCIDETCORE pThis, PCCIDETINSTR pInstr)
 }
 
 
-bool CidetCoreSetupInOut(PCIDETCORE pThis)
+static bool CidetCoreSetupInOut(PCIDETCORE pThis)
 {
     /*
      * Enumerate the operands.
@@ -1885,7 +1885,7 @@ bool CidetCoreSetupInOut(PCIDETCORE pThis)
  * @returns true and pThis->cbInstr on success, false on failure.
  * @param   pThis           The core state structure (for context).
  */
-bool CidetCoreAssembleLength(PCIDETCORE pThis)
+static bool CidetCoreAssembleLength(PCIDETCORE pThis)
 {
     uint8_t off = 0;
 
@@ -2003,7 +2003,7 @@ bool CidetCoreAssembleLength(PCIDETCORE pThis)
  *          failure.
  * @param   pThis           The core state structure (for context).
  */
-bool CidetCoreAssemble(PCIDETCORE pThis)
+static bool CidetCoreAssemble(PCIDETCORE pThis)
 {
     uint8_t off = 0;
 
@@ -2112,7 +2112,7 @@ bool CidetCoreAssemble(PCIDETCORE pThis)
 }
 
 
-bool CidetCoreReInitCodeBuf(PCIDETCORE pThis)
+static bool CidetCoreReInitCodeBuf(PCIDETCORE pThis)
 {
     /*
      * Re-initialize the buffer.  Requires instruction length and positioning.
@@ -2160,7 +2160,7 @@ static DECLCALLBACK(int) cidetCoreDisReadBytes(PDISSTATE pDis, uint8_t offInstr,
 #endif
 
 
-bool CidetCoreSetupCodeBuf(PCIDETCORE pThis, unsigned iSubTest)
+static bool CidetCoreSetupCodeBuf(PCIDETCORE pThis, unsigned iSubTest)
 {
     if (CidetCoreAssemble(pThis))
     {
@@ -2201,7 +2201,7 @@ bool CidetCoreSetupCodeBuf(PCIDETCORE pThis, unsigned iSubTest)
  * @returns true if ok, false if not (calls pfnFailure too).
  * @param   pThis           The core state structure.
  */
-bool CidetCoreCheckResults(PCIDETCORE pThis)
+static bool CidetCoreCheckResults(PCIDETCORE pThis)
 {
     if (memcmp(&pThis->ActualCtx, &pThis->ExpectedCtx, CIDETCPUCTX_COMPARE_SIZE) == 0)
         return true;
@@ -2264,7 +2264,7 @@ AssertMsgFailed(("cDiffs=%d\n", cDiffs));
 }
 
 
-bool CidetCoreTest_Basic(PCIDETCORE pThis)
+static bool CidetCoreTest_Basic(PCIDETCORE pThis)
 {
     /*
      * Iterate all encodings.

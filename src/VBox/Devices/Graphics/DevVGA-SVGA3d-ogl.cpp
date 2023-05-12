@@ -3224,7 +3224,7 @@ static DECLCALLBACK(int) vmsvga3dBackGenerateMipmaps(PVGASTATECC pThisCC, uint32
  * @param   hThreadSelf     thread handle
  * @param   pvUser          pointer to pState structure
  */
-DECLCALLBACK(int) vmsvga3dXEventThread(RTTHREAD hThreadSelf, void *pvUser)
+static DECLCALLBACK(int) vmsvga3dXEventThread(RTTHREAD hThreadSelf, void *pvUser)
 {
     RT_NOREF(hThreadSelf);
     PVMSVGA3DSTATE pState = (PVMSVGA3DSTATE)pvUser;
@@ -5596,13 +5596,15 @@ static GLenum vmsvga3dTextureFilter2OGL(SVGA3dTextureFilter value)
     }
 }
 
-uint32_t vmsvga3dSVGA3dColor2RGBA(SVGA3dColor value)
+#if 0 /* unused */
+static uint32_t vmsvga3dSVGA3dColor2RGBA(SVGA3dColor value)
 {
     /* flip the red and blue bytes */
     uint8_t blue = value & 0xff;
     uint8_t red  = (value >> 16) & 0xff;
     return (value & 0xff00ff00) | red | (blue << 16);
 }
+#endif
 
 static DECLCALLBACK(int) vmsvga3dBackSetTextureState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cTextureStates, SVGA3dTextureState *pTextureState)
 {
@@ -6425,7 +6427,7 @@ static DECLCALLBACK(int) vmsvga3dBackCommandClear(PVGASTATECC pThisCC, uint32_t 
 }
 
 /* Convert VMWare vertex declaration to its OpenGL equivalent. */
-int vmsvga3dVertexDecl2OGL(SVGA3dVertexArrayIdentity &identity, GLint &size, GLenum &type, GLboolean &normalized, uint32_t &cbAttrib)
+static int vmsvga3dVertexDecl2OGL(SVGA3dVertexArrayIdentity &identity, GLint &size, GLenum &type, GLboolean &normalized, uint32_t &cbAttrib)
 {
     normalized = GL_FALSE;
     switch (identity.type)
@@ -6690,7 +6692,7 @@ static int vmsvga3dSetVertexAttrib(PVMSVGA3DSTATE pState, GLuint index, SVGA3dVe
 
 /* Convert VMWare primitive type to its OpenGL equivalent. */
 /* Calculate the vertex count based on the primitive type and nr of primitives. */
-int vmsvga3dPrimitiveType2OGL(SVGA3dPrimitiveType PrimitiveType, GLenum *pMode, uint32_t cPrimitiveCount, uint32_t *pcVertices)
+static int vmsvga3dPrimitiveType2OGL(SVGA3dPrimitiveType PrimitiveType, GLenum *pMode, uint32_t cPrimitiveCount, uint32_t *pcVertices)
 {
     switch (PrimitiveType)
     {

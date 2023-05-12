@@ -48,7 +48,7 @@
 #include <iprt/string.h>
 
 
-bool MyDisBlock(uint8_t const *pbCodeBlock, int32_t cbMax)
+static bool MyDisBlock(uint8_t const *pbCodeBlock, int32_t cbMax)
 {
     DISSTATE Dis;
     int32_t i = 0;

@@ -80,7 +80,7 @@ static DECLCALLBACK(int) test3Server(RTSOCKET hSocket, void *pvUser)
 }
 
 
-void test3()
+static void test3()
 {
     RTTestSub(g_hTest, "Graceful disconnect");
 
@@ -150,7 +150,7 @@ static DECLCALLBACK(int) test2Server(RTSOCKET hSocket, void *pvUser)
 }
 
 
-void test2()
+static void test2()
 {
     RTTestSub(g_hTest, "Rude client");
 
@@ -204,7 +204,7 @@ static DECLCALLBACK(int) test1Server(RTSOCKET hSocket, void *pvUser)
 }
 
 
-void test1()
+static void test1()
 {
     RTTestSub(g_hTest, "Simple server-client setup");
 

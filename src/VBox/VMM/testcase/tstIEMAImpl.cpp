@@ -755,7 +755,7 @@ static RTPBCD80U RandD80Src(uint32_t iTest)
 }
 
 
-const char *GenFormatR80(PCRTFLOAT80U plrd)
+static const char *GenFormatR80(PCRTFLOAT80U plrd)
 {
     if (RTFLOAT80U_IS_ZERO(plrd))
         return plrd->s.fSign ? "RTFLOAT80U_INIT_ZERO(1)" : "RTFLOAT80U_INIT_ZERO(0)";
@@ -774,7 +774,7 @@ const char *GenFormatR80(PCRTFLOAT80U plrd)
     return pszBuf;
 }
 
-const char *GenFormatR64(PCRTFLOAT64U prd)
+static const char *GenFormatR64(PCRTFLOAT64U prd)
 {
     char *pszBuf = g_aszBuf[g_idxBuf++ % RT_ELEMENTS(g_aszBuf)];
     RTStrPrintf(pszBuf, sizeof(g_aszBuf[0]), "RTFLOAT64U_INIT_C(%d,%#RX64,%u)",
@@ -783,7 +783,7 @@ const char *GenFormatR64(PCRTFLOAT64U prd)
 }
 
 
-const char *GenFormatR32(PCRTFLOAT32U pr)
+static const char *GenFormatR32(PCRTFLOAT32U pr)
 {
     char *pszBuf = g_aszBuf[g_idxBuf++ % RT_ELEMENTS(g_aszBuf)];
     RTStrPrintf(pszBuf, sizeof(g_aszBuf[0]), "RTFLOAT32U_INIT_C(%d,%#RX32,%u)", pr->s.fSign, pr->s.uFraction, pr->s.uExponent);
@@ -791,7 +791,7 @@ const char *GenFormatR32(PCRTFLOAT32U pr)
 }
 
 
-const char *GenFormatD80(PCRTPBCD80U pd80)
+static const char *GenFormatD80(PCRTPBCD80U pd80)
 {
     char *pszBuf = g_aszBuf[g_idxBuf++ % RT_ELEMENTS(g_aszBuf)];
     size_t off;
@@ -810,7 +810,7 @@ const char *GenFormatD80(PCRTPBCD80U pd80)
 }
 
 
-const char *GenFormatI64(int64_t i64)
+static const char *GenFormatI64(int64_t i64)
 {
     if (i64 == INT64_MIN) /* This one is problematic */
         return "INT64_MIN";
@@ -821,14 +821,14 @@ const char *GenFormatI64(int64_t i64)
     return pszBuf;
 }
 
-
-const char *GenFormatI64(int64_t const *pi64)
+#if 0 /* unused */
+static const char *GenFormatI64(int64_t const *pi64)
 {
     return GenFormatI64(*pi64);
 }
+#endif
 
-
-const char *GenFormatI32(int32_t i32)
+static const char *GenFormatI32(int32_t i32)
 {
     if (i32 == INT32_MIN) /* This one is problematic */
         return "INT32_MIN";
@@ -1860,7 +1860,7 @@ static void CmpXchg16bTest(void)
  */
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
 # define GEN_SHIFT_DBL(a_cBits, a_Fmt, a_TestType, a_aSubTests) \
-void ShiftDblU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
+static void ShiftDblU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
@@ -1966,7 +1966,7 @@ static void ShiftDblTest(void)
  */
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
 # define GEN_UNARY(a_cBits, a_Type, a_Fmt, a_TestType, a_SubTestType) \
-void UnaryU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
+static void UnaryU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aUnaryU ## a_cBits); iFn++) \
     { \
@@ -2068,7 +2068,7 @@ static void UnaryTest(void)
  */
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
 # define GEN_SHIFT(a_cBits, a_Fmt, a_TestType, a_aSubTests) \
-void ShiftU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
+static void ShiftU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \

@@ -609,7 +609,7 @@ void BugReportTarGzip::complete(void)
 
 /* Implementation - Main */
 
-void createBugReport(BugReport* report, const char *pszHome, MachineInfoList& machines)
+static void createBugReport(BugReport* report, const char *pszHome, MachineInfoList& machines)
 {
     /* Collect all log files from VBoxSVC */
     VBRDir HomeDir(PathJoin(pszHome, "VBoxSVC.log*"));
@@ -648,7 +648,8 @@ void createBugReport(BugReport* report, const char *pszHome, MachineInfoList& ma
     createBugReportOsSpecific(report, pszHome);
 }
 
-void addMachine(MachineInfoList& list, ComPtr<IMachine> machine)
+
+static void addMachine(MachineInfoList& list, ComPtr<IMachine> machine)
 {
     BOOL fAccessible = FALSE;
     HRESULT hrc = machine->COMGETTER(Accessible)(&fAccessible);

@@ -49,8 +49,8 @@
 #include "internal/string.h"
 
 
-DECLHIDDEN(int) rtNetStrToIPv4AddrEx(const char *pcszAddr, PRTNETADDRIPV4 pAddr,
-                                     char **ppszNext)
+static int rtNetStrToIPv4AddrEx(const char *pcszAddr, PRTNETADDRIPV4 pAddr,
+                                char **ppszNext)
 {
     char *pszNext;
     int rc;
@@ -351,8 +351,8 @@ static int rtNetStrToHexGroup(const char *pcszValue, char **ppszNext,
  * This function deals only with the hex-group IPv6 address syntax
  * proper (with possible embedded IPv4).
  */
-DECLHIDDEN(int) rtNetStrToIPv6AddrBase(const char *pcszAddr, PRTNETADDRIPV6 pAddrResult,
-                                       char **ppszNext)
+static int rtNetStrToIPv6AddrBase(const char *pcszAddr, PRTNETADDRIPV6 pAddrResult,
+                                  char **ppszNext)
 {
     RTNETADDRIPV6 ipv6;
     RTNETADDRIPV4 ipv4;
@@ -487,8 +487,8 @@ DECLHIDDEN(int) rtNetStrToIPv6AddrBase(const char *pcszAddr, PRTNETADDRIPV6 pAdd
 }
 
 
-DECLHIDDEN(int) rtNetStrToIPv6AddrEx(const char *pcszAddr, PRTNETADDRIPV6 pAddr,
-                                     char **ppszZone, char **ppszNext)
+static int rtNetStrToIPv6AddrEx(const char *pcszAddr, PRTNETADDRIPV6 pAddr,
+                                char **ppszZone, char **ppszNext)
 {
     char *pszNext, *pszZone;
     int rc;

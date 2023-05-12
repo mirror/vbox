@@ -102,7 +102,7 @@ NS_GENERIC_FACTORY_CONSTRUCTOR(tmTransactionService)
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(ipcDConnectService, Init)
 
 // enable this code to make the IPC DCONNECT service auto-start.
-NS_METHOD
+static NS_METHOD
 ipcDConnectServiceRegisterProc(nsIComponentManager *aCompMgr,
                                nsIFile *aPath,
                                const char *registryLocation,
@@ -122,7 +122,7 @@ ipcDConnectServiceRegisterProc(nsIComponentManager *aCompMgr,
     return NS_OK;
 }
 
-NS_METHOD
+static NS_METHOD
 ipcDConnectServiceUnregisterProc(nsIComponentManager *aCompMgr,
                                  nsIFile *aPath,
                                  const char *registryLocation,

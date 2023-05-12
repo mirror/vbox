@@ -905,7 +905,7 @@ static DECLCALLBACK(int) atsTcpOption(PATSTRANSPORTINST pThis, int ch, PCRTGETOP
 /**
  * @interface_method_impl{ATSTRANSPORT,pfnUsage}
  */
-DECLCALLBACK(void) atsTcpUsage(PRTSTREAM pStream)
+static DECLCALLBACK(void) atsTcpUsage(PRTSTREAM pStream)
 {
     RTStrmPrintf(pStream,
                  "  --tcp-conn-mode <0=both|1=client|2=server>\n"

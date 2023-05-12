@@ -59,7 +59,7 @@ static uint32_t volatile    g_cbConcurrent;
 static uint32_t volatile    g_cErrors;
 
 
-int PrintError(const char *pszFormat, ...)
+static int PrintError(const char *pszFormat, ...)
 {
     ASMAtomicIncU32(&g_cErrors);
 

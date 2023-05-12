@@ -3437,7 +3437,7 @@ DECLINLINE(uint16_t) lsilogicGetHandle(PLSILOGICSCSI pThis)
  *
  * @todo Generate better SAS addresses. (Request a block from SUN probably)
  */
-void lsilogicSASAddressGenerate(PSASADDRESS pSASAddress, unsigned iId)
+DECLINLINE(void) lsilogicSASAddressGenerate(PSASADDRESS pSASAddress, unsigned iId)
 {
     pSASAddress->u8Address[0] = (0x5 << 5);
     pSASAddress->u8Address[1] = 0x01;

@@ -61,8 +61,8 @@
 static RTTEST g_hTest = NIL_RTTEST;
 
 
-void tstFileAioTestReadWriteBasic(RTFILE File, bool fWrite, void *pvTestBuf,
-                                  size_t cbTestBuf, size_t cbTestFile, uint32_t cMaxReqsInFlight)
+static void tstFileAioTestReadWriteBasic(RTFILE File, bool fWrite, void *pvTestBuf,
+                                         size_t cbTestBuf, size_t cbTestFile, uint32_t cMaxReqsInFlight)
 {
     /* Allocate request array. */
     RTFILEAIOREQ *paReqs;

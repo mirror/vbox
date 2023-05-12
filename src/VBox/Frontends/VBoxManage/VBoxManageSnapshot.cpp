@@ -59,11 +59,11 @@ DECLARE_TRANSLATION_CONTEXT(Snapshot);
  * @param uSnapshotLevel
  * @return
  */
-bool FindAndPrintSnapshotUsingMedium(ComPtr<IMedium> &pMedium,
-                                     ComPtr<ISnapshot> &pThisSnapshot,
-                                     ComPtr<ISnapshot> &pCurrentSnapshot,
-                                     uint32_t uMediumLevel,
-                                     uint32_t uSnapshotLevel)
+static bool FindAndPrintSnapshotUsingMedium(ComPtr<IMedium> &pMedium,
+                                            ComPtr<ISnapshot> &pThisSnapshot,
+                                            ComPtr<ISnapshot> &pCurrentSnapshot,
+                                            uint32_t uMediumLevel,
+                                            uint32_t uSnapshotLevel)
 {
     HRESULT hrc;
 
@@ -137,11 +137,11 @@ bool FindAndPrintSnapshotUsingMedium(ComPtr<IMedium> &pMedium,
  * @param pCurrentSnapshot constant, the machine's current snapshot (so we can mark it in the output).
  * @param uLevel variant, the recursion level for output indentation.
  */
-void DumpMediumWithChildren(ComPtr<IMedium> &pCurrentStateMedium,
-                            ComPtr<IMedium> &pMedium,
-                            ComPtr<ISnapshot> &pRootSnapshot,
-                            ComPtr<ISnapshot> &pCurrentSnapshot,
-                            uint32_t uLevel)
+static void DumpMediumWithChildren(ComPtr<IMedium> &pCurrentStateMedium,
+                                   ComPtr<IMedium> &pMedium,
+                                   ComPtr<ISnapshot> &pRootSnapshot,
+                                   ComPtr<ISnapshot> &pCurrentSnapshot,
+                                   uint32_t uLevel)
 {
     HRESULT hrc;
     do
@@ -226,7 +226,7 @@ static RTEXITCODE handleSnapshotList(HandlerArg *pArgs, ComPtr<IMachine> &pMachi
  * snapshots.
  * @param pMachine Machine to dump snapshots for.
  */
-void DumpSnapshot(ComPtr<IMachine> &pMachine)
+static void DumpSnapshot(ComPtr<IMachine> &pMachine)
 {
     HRESULT hrc;
 

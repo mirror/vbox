@@ -724,7 +724,7 @@ static void drvramdiskMediaExIoReqWarningOutOfMemory(PPDMDRVINS pDrvIns)
  * @param   pThis     VBox disk container instance data.
  * @param   rc        Status code to check.
  */
-bool drvramdiskMediaExIoReqIsRedoSetWarning(PDRVRAMDISK pThis, int rc)
+static bool drvramdiskMediaExIoReqIsRedoSetWarning(PDRVRAMDISK pThis, int rc)
 {
     if (rc == VERR_NO_MEMORY)
     {

@@ -285,7 +285,7 @@ VMMR3_INT_DECL(void) DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  *
  * @thread  EMT(pVCpu)
  */
-bool dbgfR3WaitForAttach(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent)
+static bool dbgfR3WaitForAttach(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent)
 {
     /*
      * First a message.

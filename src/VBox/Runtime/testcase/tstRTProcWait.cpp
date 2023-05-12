@@ -57,7 +57,7 @@ typedef struct SpawnerArgs
 } SPAWNERARGS, *PSPAWNERARGS;
 
 
-DECLCALLBACK(int) SpawnerThread(RTTHREAD Thread, void *pvUser)
+static DECLCALLBACK(int) SpawnerThread(RTTHREAD Thread, void *pvUser)
 {
     RT_NOREF1(Thread);
     PSPAWNERARGS pArgs = (PSPAWNERARGS)pvUser;

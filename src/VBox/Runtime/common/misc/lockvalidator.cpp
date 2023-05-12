@@ -955,7 +955,7 @@ DECLINLINE(void) rtLockValidatorSerializeDetectionEnter(void)
 /**
  * Call after rtLockValidatorSerializeDetectionEnter.
  */
-DECLHIDDEN(void) rtLockValidatorSerializeDetectionLeave(void)
+DECLINLINE(void) rtLockValidatorSerializeDetectionLeave(void)
 {
     RTSEMXROADS hXRoads = g_hLockValidatorXRoads;
     if (hXRoads != NIL_RTSEMXROADS)

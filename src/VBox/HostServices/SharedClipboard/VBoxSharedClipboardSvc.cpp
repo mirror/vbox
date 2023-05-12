@@ -1774,7 +1774,7 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
  * @param   cParms              Number of HGCM parameters supplied in \a paParms.
  * @param   paParms             Array of HGCM parameters.
  */
-int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+static int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     LogFlowFuncEnter();
 

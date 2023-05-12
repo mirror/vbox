@@ -137,7 +137,7 @@ static void testPerformance(const char *pszSub, uint8_t const *pabInstrs, uintpt
     RTTestIValueF(cNsElapsed / cInstrs, RTTESTUNIT_NS_PER_CALL, "%s-per-instruction", pszSub);
 }
 
-void testTwo(void)
+static void testTwo(void)
 {
     static const struct
     {

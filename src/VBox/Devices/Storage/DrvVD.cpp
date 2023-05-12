@@ -2330,7 +2330,7 @@ static void drvvdMediaExIoReqWarningDekMissing(PPDMDRVINS pDrvIns)
  * @param   pThis     VBox disk container instance data.
  * @param   rc        Status code to check.
  */
-bool drvvdMediaExIoReqIsRedoSetWarning(PVBOXDISK pThis, int rc)
+static bool drvvdMediaExIoReqIsRedoSetWarning(PVBOXDISK pThis, int rc)
 {
     if (rc == VERR_DISK_FULL)
     {

@@ -88,10 +88,10 @@ struct MyError
  * @param pcszOVF0 File to import.
  * @param llMachinesCreated out: UUIDs of machines that were created so that caller can clean up.
  */
-void importOVF(const char *pcszPrefix,
-               ComPtr<IVirtualBox> &pVirtualBox,
-               const char *pcszOVF0,
-               std::list<Guid> &llMachinesCreated)
+static void importOVF(const char *pcszPrefix,
+                      ComPtr<IVirtualBox> &pVirtualBox,
+                      const char *pcszOVF0,
+                      std::list<Guid> &llMachinesCreated)
 {
     char szAbsOVF[RTPATH_MAX];
     RTPathExecDir(szAbsOVF, sizeof(szAbsOVF));
@@ -288,9 +288,9 @@ void importOVF(const char *pcszPrefix,
  * @param llFiles2Delete List of strings to append the target file path to.
  * @param pcszDest Target for dummy VMDK.
  */
-void copyDummyDiskImage(const char *pcszPrefix,
-                        std::list<Utf8Str> &llFiles2Delete,
-                        const char *pcszDest)
+static void copyDummyDiskImage(const char *pcszPrefix,
+                               std::list<Utf8Str> &llFiles2Delete,
+                               const char *pcszDest)
 {
     char szSrc[RTPATH_MAX];
     RTPathExecDir(szSrc, sizeof(szSrc));

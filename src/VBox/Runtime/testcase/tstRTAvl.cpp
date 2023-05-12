@@ -565,7 +565,7 @@ static DECLCALLBACK(int) avlogcphysCallbackCounter(PAVLOGCPHYSNODECORE pNode, vo
     return 0;
 }
 
-int avlogcphysRand(unsigned cMax, unsigned cMax2, uint32_t fCountMask)
+static int avlogcphysRand(unsigned cMax, unsigned cMax2, uint32_t fCountMask)
 {
     PAVLOGCPHYSTREE pTree = (PAVLOGCPHYSTREE)RTMemAllocZ(sizeof(*pTree));
     unsigned i;
@@ -681,7 +681,7 @@ int avlogcphysRand(unsigned cMax, unsigned cMax2, uint32_t fCountMask)
 
 
 
-int avlrogcphys(void)
+static int avlrogcphys(void)
 {
     unsigned            i;
     unsigned            j;
@@ -985,7 +985,7 @@ int avlrogcphys(void)
 }
 
 
-int avlul(void)
+static int avlul(void)
 {
     RTTestISubF("RTAvlUL");
 
@@ -1216,7 +1216,7 @@ static uint32_t PickSetBitAndClearIt(uint64_t *pbm, uint32_t cItems)
 /**
  * @return meaningless value, just for shortening 'return RTTestIFailed();'.
  */
-int hardAvlRangeTreeGCPhys(RTTEST hTest)
+static int hardAvlRangeTreeGCPhys(RTTEST hTest)
 {
     RTTestISubF("RTCHardAvlRangeTreeGCPhys");
 

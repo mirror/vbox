@@ -783,7 +783,7 @@ static DECLCALLBACK(int) txsTcpOption(int ch, PCRTGETOPTUNION pVal)
 /**
  * @interface_method_impl{TXSTRANSPORT,pfnUsage}
  */
-DECLCALLBACK(void) txsTcpUsage(PRTSTREAM pStream)
+static DECLCALLBACK(void) txsTcpUsage(PRTSTREAM pStream)
 {
     RTStrmPrintf(pStream,
                  "  --tcp-mode <both|client|server>\n"

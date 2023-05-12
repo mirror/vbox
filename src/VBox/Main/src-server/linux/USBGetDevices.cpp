@@ -1471,11 +1471,6 @@ static void *testDLSym(void *handle, const char *symbol)
     return (void *)(uintptr_t)testInotifyInitBad;
 }
 
-void TestUSBSetInotifyAvailable(bool fHaveInotifyLibC, bool fHaveInotifyKernel)
-{
-    s_fHaveInotifyLibC = fHaveInotifyLibC;
-    s_fHaveInotifyKernel = fHaveInotifyKernel;
-}
 # define dlsym testDLSym
 # define close(a) do {} while (0)
 

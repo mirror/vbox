@@ -116,7 +116,7 @@ static const char *g_apszSUBDIREntries[] =
     "z.bat",
 };
 
-int rtDirOpenFiltered(RTDIR *phDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags)
+static int rtDirOpenFiltered(RTDIR *phDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags)
 {
     RT_NOREF2(enmFilter, fFlags);
     if (!strcmp(pszPath, "c:\\*"))
@@ -132,14 +132,14 @@ int rtDirOpenFiltered(RTDIR *phDir, const char *pszPath, RTDIRFILTER enmFilter, 
     return VINF_SUCCESS;
 }
 
-int rtDirClose(RTDIR hDir)
+static int rtDirClose(RTDIR hDir)
 {
     RT_NOREF1(hDir);
     iDirFile = 0;
     return VINF_SUCCESS;
 }
 
-int rtDirReadEx(RTDIR hDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags)
+static int rtDirReadEx(RTDIR hDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags)
 {
     RT_NOREF4(hDir, pcbDirEntry, enmAdditionalAttribs, fFlags);
     switch (iDirList)
@@ -166,7 +166,7 @@ int rtDirReadEx(RTDIR hDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOB
     return VINF_SUCCESS;
 }
 
-int rtPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs)
+static int rtPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs)
 {
     RT_NOREF2(pObjInfo, enmAdditionalAttribs);
     int cMax;
@@ -281,7 +281,7 @@ end:
 
 
 
-int testCase(char *pszFullPath, bool fWildCard = false)
+static int testCase(char *pszFullPath, bool fWildCard = false)
 {
     int rc;
     RTFSOBJINFO info;

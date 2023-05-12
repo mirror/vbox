@@ -1183,7 +1183,7 @@ DECLINLINE(void) cpumR3ResetVmxHwVirtState(PVMCPU pVCpu)
  * @param   pHlp        The info helper functions.
  * @param   pszArgs     "terse", "default" or "verbose".
  */
-DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pszArgs);
     PCCPUMFEATURES pHostFeatures  = &pVM->cpum.s.HostFeatures;

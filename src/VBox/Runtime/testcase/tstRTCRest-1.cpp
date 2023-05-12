@@ -600,7 +600,7 @@ void testInteger(void)
 }
 
 
-void testDouble(void)
+static void testDouble(void)
 {
     RTTestSub(g_hTest, "RTCRestDouble");
 #define TST_DBL_MAX                 (1.79769313486231571e+308)
@@ -901,7 +901,7 @@ void testDouble(void)
 }
 
 
-void testString(const char *pszDummy, ...)
+static void testString(const char *pszDummy, ...)
 {
     RTTestSub(g_hTest, "RTCRestString");
 
@@ -1217,7 +1217,7 @@ void testString(const char *pszDummy, ...)
 }
 
 
-void testDate()
+static void testDate()
 {
     RTTestSub(g_hTest, "RTCRestDate");
     int64_t const iRecent    = INT64_C(1536580687739632500);
@@ -1841,7 +1841,7 @@ static void verifyMap(RTCRestStringMap<MyRestInt16> const &rMap, int iLine, unsi
 }
 
 
-void testStringMap(void)
+static void testStringMap(void)
 {
     RTTestSub(g_hTest, "RTCRestMap");
 
@@ -2139,7 +2139,7 @@ public:
 };
 
 
-void testClientRequestBase()
+static void testClientRequestBase()
 {
     RTTestSub(g_hTest, "RTCRestClientRequestBase");
     {
@@ -2274,7 +2274,7 @@ public:
 };
 
 
-void testClientResponseBase()
+static void testClientResponseBase()
 {
     RTTestSub(g_hTest, "RTCRestClientResponseBase");
     {

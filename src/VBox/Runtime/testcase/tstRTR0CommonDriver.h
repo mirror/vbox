@@ -83,7 +83,7 @@ void               *g_pvImageBase;
  *                                  chars and appending 'SrvReqHandler'.
  *
  */
-RTEXITCODE RTR3TestR0CommonDriverInit(const char *pszTestServiceName)
+static RTEXITCODE RTR3TestR0CommonDriverInit(const char *pszTestServiceName)
 {
     /*
      * Init the test.
@@ -237,7 +237,7 @@ static bool rtR3TestR0ProcessMessages(PRTTSTR0REQ pReq)
  * @param   pszTestFmt          The sub-test name.
  * @param   ...                 Format arguments.
  */
-bool RTR3TestR0SimpleTestWithArg(uint32_t uOperation, uint64_t u64Arg, const char *pszTestFmt, ...)
+DECLINLINE(bool) RTR3TestR0SimpleTestWithArg(uint32_t uOperation, uint64_t u64Arg, const char *pszTestFmt, ...)
 {
     va_list va;
     va_start(va, pszTestFmt);
@@ -267,7 +267,7 @@ bool RTR3TestR0SimpleTestWithArg(uint32_t uOperation, uint64_t u64Arg, const cha
  * @param   pszTestFmt          The sub-test name.
  * @param   ...                 Format arguments.
  */
-bool RTR3TestR0SimpleTest(uint32_t uOperation, const char *pszTestFmt, ...)
+static bool RTR3TestR0SimpleTest(uint32_t uOperation, const char *pszTestFmt, ...)
 {
     va_list va;
     va_start(va, pszTestFmt);

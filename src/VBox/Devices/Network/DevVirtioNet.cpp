@@ -1579,7 +1579,7 @@ DECLINLINE(void) virtioNetR3Calc16BitChecksum(uint8_t *pBuf, size_t cb, uint16_t
  * @param   pThis          Pointer to the device state structure.
  * @param   fOn             New LED state.
  */
-void virtioNetR3SetReadLed(PVIRTIONETR3 pThisR3, bool fOn)
+static void virtioNetR3SetReadLed(PVIRTIONETR3 pThisR3, bool fOn)
 {
     if (fOn)
         pThisR3->led.Asserted.s.fReading = pThisR3->led.Actual.s.fReading = 1;
@@ -1594,7 +1594,7 @@ void virtioNetR3SetReadLed(PVIRTIONETR3 pThisR3, bool fOn)
  * @param   pThis          Pointer to the device state structure.
  * @param   fOn            New LED state.
  */
-void virtioNetR3SetWriteLed(PVIRTIONETR3 pThisR3, bool fOn)
+static void virtioNetR3SetWriteLed(PVIRTIONETR3 pThisR3, bool fOn)
 {
     if (fOn)
         pThisR3->led.Asserted.s.fWriting = pThisR3->led.Actual.s.fWriting = 1;

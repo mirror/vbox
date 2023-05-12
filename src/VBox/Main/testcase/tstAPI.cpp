@@ -64,7 +64,8 @@ static void listAffectedMetrics(ComPtr<IVirtualBox> aVirtualBox,
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
 
-HRESULT readAndChangeMachineSettings(IMachine *machine, IMachine *readonlyMachine = 0)
+#if 0 /* unused */
+static HRESULT readAndChangeMachineSettings(IMachine *machine, IMachine *readonlyMachine = 0)
 {
     HRESULT hrc = S_OK;
 
@@ -198,6 +199,7 @@ HRESULT readAndChangeMachineSettings(IMachine *machine, IMachine *readonlyMachin
 
     return hrc;
 }
+#endif
 
 // main
 ///////////////////////////////////////////////////////////////////////////////

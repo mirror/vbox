@@ -367,7 +367,8 @@ static bool balloonIsPossible(MachineState_T enmState)
     return false;
 }
 
-int balloonMachineSetup(const Bstr& strUuid)
+#if 0 /* unused */
+static int balloonMachineSetup(const Bstr& strUuid)
 {
     int vrc = VINF_SUCCESS;
 
@@ -413,6 +414,7 @@ int balloonMachineSetup(const Bstr& strUuid)
 
     return vrc;
 }
+#endif
 
 /**
  * Does the actual ballooning and assumes the machine is

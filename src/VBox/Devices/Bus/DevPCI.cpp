@@ -1222,7 +1222,7 @@ static DECLCALLBACK(void) pciR3IrqRouteInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV, 'pirq'}
  */
-DECLCALLBACK(void) devpciR3InfoPIRQ(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) devpciR3InfoPIRQ(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PDEVPCIROOT pGlobals = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
     NOREF(pszArgs);

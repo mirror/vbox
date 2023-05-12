@@ -1666,7 +1666,7 @@ static int hgsmiGuestCommandComplete(HGSMIINSTANCE *pIns, HGSMIOFFSET offMem)
     return rc;
 }
 
-int hgsmiCompleteGuestCommand(PHGSMIINSTANCE pIns, HGSMIOFFSET offBuffer, bool fDoIrq)
+static int hgsmiCompleteGuestCommand(PHGSMIINSTANCE pIns, HGSMIOFFSET offBuffer, bool fDoIrq)
 {
     int rc = hgsmiGuestCommandComplete(pIns, offBuffer);
     if (RT_SUCCESS (rc))

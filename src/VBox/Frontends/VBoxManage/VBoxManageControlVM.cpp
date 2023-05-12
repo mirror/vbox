@@ -53,8 +53,6 @@
 
 DECLARE_TRANSLATION_CONTEXT(ControlVM);
 
-VMProcPriority_T nameToVMProcPriority(const char *pszName);
-
 /**
  * Parses a number.
  *

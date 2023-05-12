@@ -359,14 +359,14 @@ DECLHIDDEN(void) utsProtocolReqN2H(PUTSPKTHDR pPktHdr);
  *
  * @param   pPktHdr           The packet to convert.
  */
-DECLHIDDEN(void) utsProtocolRepH2N(PUTSPKTHDR pPktHdr);
+DECLHIDDEN(void) utsProtocolRepH2N(PUTSPKTSTS pPktHdr);
 
 /**
  * Converts a UTS reply packet from network to host byte ordering.
  *
  * @param   pPktHdr           The packet to convert.
  */
-DECLHIDDEN(void) utsProtocolRepN2H(PUTSPKTHDR pPktHdr);
+DECLHIDDEN(void) utsProtocolRepN2H(PUTSPKTSTS pPktHdr);
 
 RT_C_DECLS_END
 

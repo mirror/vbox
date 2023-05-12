@@ -57,7 +57,7 @@
  * {"hello": "world"}
  */
 
-void testHeaderSigning()
+static void testHeaderSigning()
 {
     static const char s_szPublicKey1[] =
         "-----BEGIN PUBLIC KEY-----\n"

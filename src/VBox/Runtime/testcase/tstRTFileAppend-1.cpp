@@ -45,7 +45,7 @@
 #include <iprt/test.h>
 
 
-void tstFileAppend1(RTTEST hTest)
+static void tstFileAppend1(RTTEST hTest)
 {
     /*
      * Open it write only and do some appending.

@@ -335,7 +335,7 @@ static void whereami(int cBits, size_t off)
     }
 }
 
-int mymemcmp(const void *pv1, const void *pv2, size_t cb, int cBits)
+static int mymemcmp(const void *pv1, const void *pv2, size_t cb, int cBits)
 {
     const uint8_t  *pb1 = (const uint8_t *)pv1;
     const uint8_t  *pb2 = (const uint8_t *)pv2;
@@ -358,7 +358,7 @@ int mymemcmp(const void *pv1, const void *pv2, size_t cb, int cBits)
 }
 
 
-void InitStrings()
+static void InitStrings()
 {
     /*
      * Generate unicode string containing all the legal UTF-16 codepoints, both UTF-16 and UTF-8 version.
@@ -451,7 +451,7 @@ void InitStrings()
 }
 
 
-void test2(RTTEST hTest)
+static void test2(RTTEST hTest)
 {
     /*
      * Convert to UTF-8 and back.
@@ -669,7 +669,7 @@ void test2(RTTEST hTest)
 /**
  * Check case insensitivity.
  */
-void test3(RTTEST hTest)
+static void test3(RTTEST hTest)
 {
     RTTestSub(hTest, "Case Sensitivity");
 
@@ -714,7 +714,7 @@ void test3(RTTEST hTest)
 /**
  * Test the RTStr*Cmp functions.
  */
-void TstRTStrXCmp(RTTEST hTest)
+static void TstRTStrXCmp(RTTEST hTest)
 {
 #define CHECK_DIFF(expr, op) \
     do \
@@ -840,7 +840,7 @@ void TstRTStrXCmp(RTTEST hTest)
 /**
  * Check UTF-8 encoding purging.
  */
-void TstRTStrPurgeEncoding(RTTEST hTest)
+static void TstRTStrPurgeEncoding(RTTEST hTest)
 {
     RTTestSub(hTest, "RTStrPurgeEncoding");
 
@@ -897,7 +897,7 @@ void TstRTStrPurgeEncoding(RTTEST hTest)
 /**
  * Check string sanitising.
  */
-void TstRTStrPurgeComplementSet(RTTEST hTest)
+static void TstRTStrPurgeComplementSet(RTTEST hTest)
 {
     RTTestSub(hTest, "RTStrPurgeComplementSet");
     RTUNICP aCpSet[]    = { '1', '5', 'w', 'w', 'r', 'r', 'e', 'f', 't', 't',
@@ -946,7 +946,7 @@ void TstRTStrPurgeComplementSet(RTTEST hTest)
 /**
  * Check string sanitising.
  */
-void TstRTUtf16PurgeComplementSet(RTTEST hTest)
+static void TstRTUtf16PurgeComplementSet(RTTEST hTest)
 {
     RTTestSub(hTest, "RTUtf16PurgeComplementSet");
     RTUNICP aCpSet[]    = { '1', '5', 'w', 'w', 'r', 'r', 'e', 'f', 't', 't',
@@ -1012,7 +1012,7 @@ void TstRTUtf16PurgeComplementSet(RTTEST hTest)
 /**
  * Benchmark stuff.
  */
-void Benchmarks(RTTEST hTest)
+static void Benchmarks(RTTEST hTest)
 {
     static union
     {
@@ -1200,7 +1200,7 @@ static void testStrStr(RTTEST hTest)
 }
 
 
-void testUtf8Latin1(RTTEST hTest)
+static void testUtf8Latin1(RTTEST hTest)
 {
     RTTestSub(hTest, "Latin-1 <-> Utf-8 conversion functions");
 
@@ -1335,7 +1335,7 @@ void testUtf8Latin1(RTTEST hTest)
 }
 
 
-void testUtf16Latin1(RTTEST hTest)
+static void testUtf16Latin1(RTTEST hTest)
 {
     RTTestSub(hTest, "Latin-1 <-> Utf-16 conversion functions");
 

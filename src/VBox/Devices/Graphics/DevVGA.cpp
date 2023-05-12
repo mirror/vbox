@@ -575,7 +575,7 @@ static uint8_t vga_retrace(PPDMDEVINS pDevIns, PVGASTATE pThis)
     }
 }
 
-int vga_ioport_invalid(PVGASTATE pThis, uint32_t addr)
+static int vga_ioport_invalid(PVGASTATE pThis, uint32_t addr)
 {
     if (pThis->msr & MSR_COLOR_EMULATION) {
         /* Color */

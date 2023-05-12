@@ -65,7 +65,7 @@ static DECLCALLBACK(int) callComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc)
  * @return IPRT status code.
  * @param  pTable the table to initialise
  */
-int initTable(VBOXHGCMSVCFNTABLE *pTable, VBOXHGCMSVCHELPERS *pHelpers)
+static int initTable(VBOXHGCMSVCFNTABLE *pTable, VBOXHGCMSVCHELPERS *pHelpers)
 {
     pTable->cbSize = sizeof (VBOXHGCMSVCFNTABLE);
     pTable->u32Version = VBOX_HGCM_SVC_VERSION;

@@ -422,7 +422,7 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, PPS2QHDR pQHdr, size_t cQEl
 
 
 /* Determine whether a reporting rate is one of the valid ones. */
-bool ps2mIsRateSupported(uint8_t rate)
+static bool ps2mIsRateSupported(uint8_t rate)
 {
     static uint8_t  aValidRates[] = { 10, 20, 40, 60, 80, 100, 200 };
     size_t          i;

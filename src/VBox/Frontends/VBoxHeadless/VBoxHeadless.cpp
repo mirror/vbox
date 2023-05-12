@@ -875,7 +875,7 @@ ConsoleCtrlHandler(DWORD dwCtrlType) RT_NOTHROW_DEF
  * Note that machine power up/down operations are not cancelable, so
  * we don't bother checking for signals.
  */
-HRESULT
+static HRESULT
 showProgress(const ComPtr<IProgress> &progress)
 {
     BOOL fCompleted = FALSE;

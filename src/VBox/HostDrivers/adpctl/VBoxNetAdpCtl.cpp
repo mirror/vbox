@@ -128,7 +128,7 @@ CmdList& CmdList::operator<<(const char *pcszArgument)
 }
 
 /** Simple helper to distinguish IPv4 and IPv6 addresses. */
-inline bool isAddrV6(const char *pcszAddress)
+DECLINLINE(bool) isAddrV6(const char *pcszAddress)
 {
     return !!(strchr(pcszAddress, ':'));
 }

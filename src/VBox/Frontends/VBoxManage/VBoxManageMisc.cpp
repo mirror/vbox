@@ -931,7 +931,7 @@ static const RTGETOPTDEF g_aSetVMEncryptionOptions[] =
     { "--force",           'f', RTGETOPT_REQ_NOTHING},
 };
 
-RTEXITCODE handleSetVMEncryption(HandlerArg *a, const char *pszFilenameOrUuid)
+static RTEXITCODE handleSetVMEncryption(HandlerArg *a, const char *pszFilenameOrUuid)
 {
     HRESULT           hrc;
     ComPtr<IMachine>  machine;
@@ -1064,7 +1064,7 @@ RTEXITCODE handleSetVMEncryption(HandlerArg *a, const char *pszFilenameOrUuid)
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-RTEXITCODE handleCheckVMPassword(HandlerArg *a, const char *pszFilenameOrUuid)
+static RTEXITCODE handleCheckVMPassword(HandlerArg *a, const char *pszFilenameOrUuid)
 {
     HRESULT hrc;
     ComPtr<IMachine> machine;
@@ -1107,7 +1107,7 @@ static const RTGETOPTDEF g_aAddVMOptions[] =
     { "--password-id", 'i', RTGETOPT_REQ_STRING }
 };
 
-RTEXITCODE handleAddVMPassword(HandlerArg *a, const char *pszFilenameOrUuid)
+static RTEXITCODE handleAddVMPassword(HandlerArg *a, const char *pszFilenameOrUuid)
 {
     HRESULT hrc;
     ComPtr<IMachine> machine;
@@ -1188,7 +1188,7 @@ RTEXITCODE handleAddVMPassword(HandlerArg *a, const char *pszFilenameOrUuid)
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-RTEXITCODE handleRemoveVMPassword(HandlerArg *a, const char *pszFilenameOrUuid)
+static RTEXITCODE handleRemoveVMPassword(HandlerArg *a, const char *pszFilenameOrUuid)
 {
     HRESULT hrc;
     ComPtr<IMachine> machine;
@@ -1966,7 +1966,7 @@ RTEXITCODE handleExtPack(HandlerArg *a)
     return RTEXITCODE_SUCCESS;
 }
 
-RTEXITCODE handleUnattendedDetect(HandlerArg *a)
+static RTEXITCODE handleUnattendedDetect(HandlerArg *a)
 {
     HRESULT hrc;
 
@@ -2086,7 +2086,7 @@ RTEXITCODE handleUnattendedDetect(HandlerArg *a)
     return rcExit;
 }
 
-RTEXITCODE handleUnattendedInstall(HandlerArg *a)
+static RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 {
     HRESULT hrc;
     char    szAbsPath[RTPATH_MAX];

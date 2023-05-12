@@ -187,7 +187,7 @@ static RTTEST g_hTest;
 
 #if !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 
-const char *getCacheAss(unsigned u)
+static const char *getCacheAss(unsigned u)
 {
     if (u == 0)
         return "res0  ";
@@ -203,7 +203,7 @@ const char *getCacheAss(unsigned u)
 }
 
 
-const char *getL2CacheAss(unsigned u)
+static const char *getL2CacheAss(unsigned u)
 {
     switch (u)
     {
@@ -235,7 +235,7 @@ const char *getL2CacheAss(unsigned u)
  * @remark  Bits shared with the libc cpuid.c program. This all written by me, so no worries.
  * @todo transform the dumping into a generic runtime function. We'll need it for logging!
  */
-void tstASMCpuId(void)
+static void tstASMCpuId(void)
 {
     RTTestISub("ASMCpuId");
 
@@ -2410,7 +2410,7 @@ static void tstASMMemZeroPage(void)
 }
 
 
-void tstASMMemIsZeroPage(RTTEST hTest)
+static void tstASMMemIsZeroPage(RTTEST hTest)
 {
     RTTestSub(hTest, "ASMMemIsZeroPage");
 
@@ -2445,7 +2445,7 @@ void tstASMMemIsZeroPage(RTTEST hTest)
 }
 
 
-void tstASMMemFirstMismatchingU8(RTTEST hTest)
+static void tstASMMemFirstMismatchingU8(RTTEST hTest)
 {
     RTTestSub(hTest, "ASMMemFirstMismatchingU8");
 
@@ -2592,7 +2592,7 @@ DECLINLINE(void) tstASMMemZero32Worker(TSTBUF32 *pBuf)
 }
 
 
-void tstASMMemZero32(void)
+static void tstASMMemZero32(void)
 {
     RTTestSub(g_hTest, "ASMMemZero32");
 
@@ -2656,7 +2656,7 @@ DECLINLINE(void) tstASMMemFill32Worker(TSTBUF32 *pBuf)
         RTTestFailed(g_hTest, "ASMMemFirstMismatchingU32(,,UINT32_C(0x12345678)) returns non-NULL after ASMMemFill32!\n");
 }
 
-void tstASMMemFill32(void)
+static void tstASMMemFill32(void)
 {
     RTTestSub(g_hTest, "ASMMemFill32");
 
@@ -2712,7 +2712,7 @@ void tstASMMemFill32(void)
 }
 
 
-void tstASMProbe(RTTEST hTest)
+static void tstASMProbe(RTTEST hTest)
 {
     RTTestSub(hTest, "ASMProbeReadByte/Buffer");
 
@@ -2740,7 +2740,7 @@ void tstASMProbe(RTTEST hTest)
 }
 
 
-void tstASMMisc(void)
+static void tstASMMisc(void)
 {
     RTTestSub(g_hTest, "Misc");
     for (uint32_t i = 0; i < 20; i++)
@@ -2755,7 +2755,7 @@ void tstASMMisc(void)
 }
 
 
-void tstASMBit(void)
+static void tstASMBit(void)
 {
     RTTestSub(g_hTest, "ASMBitFirstSetU16");
     RTTESTI_CHECK(ASMBitFirstSetU16(0x0000) == 0);
@@ -2891,7 +2891,7 @@ void tstASMBit(void)
 }
 
 
-void tstASMMath(void)
+static void tstASMMath(void)
 {
     RTTestSub(g_hTest, "Math");
 
@@ -2983,7 +2983,7 @@ void tstASMMath(void)
 }
 
 
-void tstASMByteSwap(void)
+static void tstASMByteSwap(void)
 {
     RTTestSub(g_hTest, "ASMByteSwap*");
 
@@ -3046,7 +3046,7 @@ void tstASMByteSwap(void)
 }
 
 
-void tstASMBench(void)
+static void tstASMBench(void)
 {
     /*
      * Make this static. We don't want to have this located on the stack.

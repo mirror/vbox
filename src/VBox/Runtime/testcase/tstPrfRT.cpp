@@ -66,7 +66,7 @@ static RTTEST g_hTest;
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 
-void PrintResult(uint64_t u64Ticks, uint64_t u64MaxTicks, uint64_t u64MinTicks, unsigned cTimes, const char *pszOperation)
+static void PrintResult(uint64_t u64Ticks, uint64_t u64MaxTicks, uint64_t u64MinTicks, unsigned cTimes, const char *pszOperation)
 {
     //RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
     //             "%-32s %5lld / %5lld / %5lld ticks per call (%u calls %lld ticks)\n",

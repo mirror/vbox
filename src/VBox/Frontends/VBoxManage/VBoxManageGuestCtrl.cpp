@@ -369,7 +369,7 @@ const char *gctlProcessStatusToText(ProcessStatus_T enmStatus)
 /**
  * Translates a guest process wait result to a human readable string.
  */
-const char *gctlProcessWaitResultToText(ProcessWaitResult_T enmWaitResult)
+static const char *gctlProcessWaitResultToText(ProcessWaitResult_T enmWaitResult)
 {
     switch (enmWaitResult)
     {
@@ -454,7 +454,7 @@ const char *gctlFileStatusToText(FileStatus_T enmStatus)
 /**
  * Translates a file system objec type to a string.
  */
-const char *gctlFsObjTypeToName(FsObjType_T enmType)
+static const char *gctlFsObjTypeToName(FsObjType_T enmType)
 {
     switch (enmType)
     {

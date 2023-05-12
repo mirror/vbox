@@ -144,7 +144,7 @@ typedef DBGFMODINMEMBUF *PDBGFMODINMEMBUF;
  * @param   pszBuf          Buffer to use if work is needed.
  * @param   cbBuf           Size of buffer.
  */
-const char *dbgfR3ModNormalizeName(const char *pszName, char *pszBuf, size_t cbBuf)
+static const char *dbgfR3ModNormalizeName(const char *pszName, char *pszBuf, size_t cbBuf)
 {
     /*
      * Skip to the filename in case someone gave us a full filename path.

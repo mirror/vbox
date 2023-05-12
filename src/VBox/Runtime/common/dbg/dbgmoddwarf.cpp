@@ -3330,9 +3330,9 @@ static int rtDwarfUnwind_LoadCie(PRTDWARFCURSOR pCursor, PRTDWARFCIEINFO pNewCie
  *                          with different CIE_pointer values.
  * @param   enmImageArch    The image architecture.
  */
-DECLHIDDEN(int) rtDwarfUnwind_Slow(PRTDWARFCURSOR pCursor, RTUINTPTR uRvaCursor,
-                                   RTDBGSEGIDX idxSeg, RTUINTPTR offSeg, RTUINTPTR uRva,
-                                   PRTDBGUNWINDSTATE pState, uint8_t bDefaultPtrEnc, bool fIsEhFrame, RTLDRARCH enmImageArch)
+static int rtDwarfUnwind_Slow(PRTDWARFCURSOR pCursor, RTUINTPTR uRvaCursor,
+                              RTDBGSEGIDX idxSeg, RTUINTPTR offSeg, RTUINTPTR uRva,
+                              PRTDBGUNWINDSTATE pState, uint8_t bDefaultPtrEnc, bool fIsEhFrame, RTLDRARCH enmImageArch)
 {
     Log8(("rtDwarfUnwind_Slow: idxSeg=%#x offSeg=%RTptr uRva=%RTptr enmArch=%d PC=%#RX64\n", idxSeg, offSeg, uRva, pState->enmArch, pState->uPc));
 

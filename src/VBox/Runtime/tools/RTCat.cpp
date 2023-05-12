@@ -163,7 +163,7 @@ static RTEXITCODE rtCmdCatOpenInput(const char *pszFile, PRTVFSIOSTREAM phVfsIos
  * @param   papszArgs           The argument vector.  (Note that this may be
  *                              reordered, so the memory must be writable.)
  */
-RTEXITCODE RTCmdCat(unsigned cArgs, char **papszArgs)
+static RTEXITCODE RTCmdCat(unsigned cArgs, char **papszArgs)
 {
 
     /*

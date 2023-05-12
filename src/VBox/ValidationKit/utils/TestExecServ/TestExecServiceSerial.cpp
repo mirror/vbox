@@ -374,7 +374,7 @@ static DECLCALLBACK(int) txsSerialOption(int ch, PCRTGETOPTUNION pVal)
 /**
  * @interface_method_impl{TXSTRANSPORT,pfnUsage}
  */
-DECLCALLBACK(void) txsSerialUsage(PRTSTREAM pStream)
+static DECLCALLBACK(void) txsSerialUsage(PRTSTREAM pStream)
 {
     RTStrmPrintf(pStream,
                  "  --serial-device <device>\n"

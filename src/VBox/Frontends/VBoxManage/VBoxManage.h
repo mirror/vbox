@@ -174,6 +174,7 @@ void parseGroups(const char *pcszGroups, com::SafeArray<BSTR> *pGroups);
 int parseScreens(const char *pcszScreens, com::SafeArray<BOOL> *pScreens);
 #endif
 RTEXITCODE handleModifyVM(HandlerArg *a);
+VMProcPriority_T nameToVMProcPriority(const char *pszName);
 
 /* VBoxManageDebugVM.cpp */
 RTEXITCODE handleDebugVM(HandlerArg *a);

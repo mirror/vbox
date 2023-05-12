@@ -189,7 +189,7 @@ static bool vbsfErrorStyleIsWindowsInvalidNameForNonDir(char *pszPath)
 
 #endif /* RT_OS_WINDOWS */
 
-void vbsfStripLastComponent(char *pszFullPath, uint32_t cbFullPathRoot)
+static void vbsfStripLastComponent(char *pszFullPath, uint32_t cbFullPathRoot)
 {
     RTUNICP cp;
 
@@ -2168,7 +2168,7 @@ static int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE H
     return rc;
 }
 
-int vbsfQueryVolumeInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
+static int vbsfQueryVolumeInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
     RT_NOREF2(root, flags);
     int            rc = VINF_SUCCESS;

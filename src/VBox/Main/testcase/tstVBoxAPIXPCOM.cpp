@@ -103,7 +103,7 @@ void printErrorInfo();
  *
  * @param virtualBox VirtualBox instance object.
  */
-void listVMs(IVirtualBox *virtualBox)
+static void listVMs(IVirtualBox *virtualBox)
 {
     nsresult rc;
 
@@ -187,7 +187,7 @@ void listVMs(IVirtualBox *virtualBox)
  *
  * @param virtualBox VirtualBox instance object.
  */
-void createVM(IVirtualBox *virtualBox)
+static void createVM(IVirtualBox *virtualBox)
 {
     nsresult rc;
     /*

@@ -392,10 +392,10 @@ DECLINLINE(void) pdmacFileEpTaskInit(PPDMASYNCCOMPLETIONTASK pTask, size_t cbTra
     ASMAtomicWriteS32(&pTaskFile->rc, VINF_SUCCESS);
 }
 
-int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
-                            PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
-                            PCRTSGSEG paSegments, size_t cSegments,
-                            size_t cbTransfer, PDMACTASKFILETRANSFER enmTransfer)
+static int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
+                                   PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
+                                   PCRTSGSEG paSegments, size_t cSegments,
+                                   size_t cbTransfer, PDMACTASKFILETRANSFER enmTransfer)
 {
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
     PPDMASYNCCOMPLETIONTASKFILE pTaskFile = (PPDMASYNCCOMPLETIONTASKFILE)pTask;

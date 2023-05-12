@@ -245,7 +245,7 @@ static int audioTestSetMasterVolumeWASAPI(unsigned uVolPercent)
  * @returns VBox status code. VERR_NOT_SUPPORTED if not supported.
  * @param   uVolPercent         Volume (in percent) to set.
  */
-int audioTestSetMasterVolume(unsigned uVolPercent)
+static int audioTestSetMasterVolume(unsigned uVolPercent)
 {
     int rc = VINF_SUCCESS;
 
@@ -1311,7 +1311,7 @@ static DECLCALLBACK(int) audioTestGstAtsTestSetSendEndCallback(void const *pvUse
  * @param   pszWhat             Hint of what to connect to where.
  * @param   pTcpOpts            Pointer to TCP options to use.
  */
-int audioTestEnvConnectViaTcp(PAUDIOTESTENV pTstEnv, PATSCLIENT pClient, const char *pszWhat, PAUDIOTESTENVTCPOPTS pTcpOpts)
+static int audioTestEnvConnectViaTcp(PAUDIOTESTENV pTstEnv, PATSCLIENT pClient, const char *pszWhat, PAUDIOTESTENVTCPOPTS pTcpOpts)
 {
     RT_NOREF(pTstEnv);
 
@@ -1391,8 +1391,8 @@ int audioTestEnvConnectViaTcp(PAUDIOTESTENV pTstEnv, PATSCLIENT pClient, const c
  * @param   pszDesc             Hint of server type which is being started.
  * @param   pTcpOpts            TCP options to use.
  */
-int audioTestEnvConfigureAndStartTcpServer(PATSSERVER pSrv, PCATSCALLBACKS pCallbacks, const char *pszDesc,
-                                           PAUDIOTESTENVTCPOPTS pTcpOpts)
+static int audioTestEnvConfigureAndStartTcpServer(PATSSERVER pSrv, PCATSCALLBACKS pCallbacks, const char *pszDesc,
+                                                  PAUDIOTESTENVTCPOPTS pTcpOpts)
 {
     RTGETOPTUNION Val;
     RT_ZERO(Val);

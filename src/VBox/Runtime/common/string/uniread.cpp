@@ -1026,7 +1026,7 @@ static int Stream2Printf(const char *pszFormat, ...)
 /**
  * Print the unidata.cpp file header and include list.
  */
-int PrintHeader(const char *argv0, const char *pszBaseDir)
+static int PrintHeader(const char *argv0, const char *pszBaseDir)
 {
     char szBuf[1024];
     if (!pszBaseDir)
@@ -1093,7 +1093,7 @@ int PrintHeader(const char *argv0, const char *pszBaseDir)
 /**
  * Print the flag tables.
  */
-int PrintFlags(void)
+static int PrintFlags(void)
 {
     /*
      * Print flags table.

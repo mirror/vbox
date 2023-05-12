@@ -34,6 +34,7 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 
+#include "vbsfpath.h"
 
 #if defined(RT_OS_WINDOWS)
 static void vbsfPathResolveRelative(char *pszPathBegin)

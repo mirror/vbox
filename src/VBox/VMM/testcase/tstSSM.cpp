@@ -76,7 +76,7 @@ uint8_t         gabBigMem[8*_1M];
 
 
 /** initializes gabBigMem with some non zero stuff. */
-void initBigMem(void)
+static void initBigMem(void)
 {
 #if 0
     uint32_t *puch = (uint32_t *)&gabBigMem[0];
@@ -111,7 +111,7 @@ void initBigMem(void)
  * @param   pVM             The cross context VM handle.
  * @param   pSSM            SSM operation handle.
  */
-DECLCALLBACK(int) Item01Save(PVM pVM, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) Item01Save(PVM pVM, PSSMHANDLE pSSM)
 {
     uint64_t u64Start = RTTimeNanoTS();
     NOREF(pVM);
@@ -196,7 +196,7 @@ DECLCALLBACK(int) Item01Save(PVM pVM, PSSMHANDLE pSSM)
  * @param   uVersion        The data layout version.
  * @param   uPass           The data pass.
  */
-DECLCALLBACK(int) Item01Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) Item01Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     NOREF(pVM); NOREF(uPass);
     if (uVersion != 0)
@@ -290,7 +290,7 @@ DECLCALLBACK(int) Item01Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
  * @param   pVM             The cross context VM handle.
  * @param   pSSM            SSM operation handle.
  */
-DECLCALLBACK(int) Item02Save(PVM pVM, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) Item02Save(PVM pVM, PSSMHANDLE pSSM)
 {
     NOREF(pVM);
     uint64_t u64Start = RTTimeNanoTS();
@@ -354,7 +354,7 @@ DECLCALLBACK(int) Item02Save(PVM pVM, PSSMHANDLE pSSM)
  * @param   uVersion        The data layout version.
  * @param   uPass           The data pass.
  */
-DECLCALLBACK(int) Item02Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) Item02Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     NOREF(pVM); NOREF(uPass);
     if (uVersion != 0)
@@ -420,7 +420,7 @@ DECLCALLBACK(int) Item02Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
  * @param   pVM             The cross context VM handle.
  * @param   pSSM            SSM operation handle.
  */
-DECLCALLBACK(int) Item03Save(PVM pVM, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) Item03Save(PVM pVM, PSSMHANDLE pSSM)
 {
     NOREF(pVM);
     uint64_t u64Start = RTTimeNanoTS();
@@ -470,7 +470,7 @@ DECLCALLBACK(int) Item03Save(PVM pVM, PSSMHANDLE pSSM)
  * @param   uVersion        The data layout version.
  * @param   uPass           The data pass.
  */
-DECLCALLBACK(int) Item03Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) Item03Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     NOREF(pVM); NOREF(uPass);
     if (uVersion != 123)
@@ -532,7 +532,7 @@ DECLCALLBACK(int) Item03Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
  * @param   pVM             The cross context VM handle.
  * @param   pSSM            SSM operation handle.
  */
-DECLCALLBACK(int) Item04Save(PVM pVM, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) Item04Save(PVM pVM, PSSMHANDLE pSSM)
 {
     NOREF(pVM);
     uint64_t u64Start = RTTimeNanoTS();
@@ -578,7 +578,7 @@ DECLCALLBACK(int) Item04Save(PVM pVM, PSSMHANDLE pSSM)
  * @param   uVersion        The data layout version.
  * @param   uPass           The data pass.
  */
-DECLCALLBACK(int) Item04Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) Item04Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     NOREF(pVM); NOREF(uPass);
     if (uVersion != 42)

@@ -923,8 +923,8 @@ static int dbgfR3TracerInitR3(PDBGFTRACERINSR3 pThis, const char *pszTraceFilePa
  * @param   cbRingBuf               Size of the ring buffer in bytes.
  * @param   ppDbgfTracerR3          Where to store the pointer to the tracer on success.
  */
-DECLHIDDEN(int) dbgfR3TracerCreate(PVM pVM, bool fR0Enabled, const char *pszTraceFilePath,
-                                   uint32_t cbRingBuf, PDBGFTRACERINSR3 *ppDbgfTracerR3)
+static int dbgfR3TracerCreate(PVM pVM, bool fR0Enabled, const char *pszTraceFilePath,
+                              uint32_t cbRingBuf, PDBGFTRACERINSR3 *ppDbgfTracerR3)
 {
     PDBGFTRACERINSR3 pThis = NULL;
 

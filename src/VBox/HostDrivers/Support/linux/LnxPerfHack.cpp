@@ -120,7 +120,7 @@ typedef struct MYMODULE
 typedef MYMODULE *PMYMODULE;
 
 
-DECLCALLBACK(int) CompModuleRecordOffset(void const *pvElement1, void const *pvElement2, void *pvUser)
+static DECLCALLBACK(int) CompModuleRecordOffset(void const *pvElement1, void const *pvElement2, void *pvUser)
 {
     PMYMODULE pLeft  = (PMYMODULE)pvElement1;
     PMYMODULE pRight = (PMYMODULE)pvElement2;
@@ -131,7 +131,7 @@ DECLCALLBACK(int) CompModuleRecordOffset(void const *pvElement1, void const *pvE
 }
 
 
-DECLCALLBACK(int) CompModuleNameLengthDesc(void const *pvElement1, void const *pvElement2, void *pvUser)
+static DECLCALLBACK(int) CompModuleNameLengthDesc(void const *pvElement1, void const *pvElement2, void *pvUser)
 {
     PMYMODULE pLeft  = (PMYMODULE)pvElement1;
     PMYMODULE pRight = (PMYMODULE)pvElement2;

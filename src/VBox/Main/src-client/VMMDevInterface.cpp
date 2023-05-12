@@ -164,8 +164,8 @@ int VMMDev::SetCredentialsJudgementResult(uint32_t u32Flags)
 /**
  * @interface_method_impl{PDMIVMMDEVCONNECTOR,pfnUpdateGuestStatus}
  */
-DECLCALLBACK(void) vmmdevUpdateGuestStatus(PPDMIVMMDEVCONNECTOR pInterface, uint32_t uFacility, uint16_t uStatus,
-                                           uint32_t fFlags, PCRTTIMESPEC pTimeSpecTS)
+static DECLCALLBACK(void) vmmdevUpdateGuestStatus(PPDMIVMMDEVCONNECTOR pInterface, uint32_t uFacility, uint16_t uStatus,
+                                                  uint32_t fFlags, PCRTTIMESPEC pTimeSpecTS)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
@@ -182,10 +182,10 @@ DECLCALLBACK(void) vmmdevUpdateGuestStatus(PPDMIVMMDEVCONNECTOR pInterface, uint
 /**
  * @interface_method_impl{PDMIVMMDEVCONNECTOR,pfnUpdateGuestUserState}
  */
-DECLCALLBACK(void) vmmdevUpdateGuestUserState(PPDMIVMMDEVCONNECTOR pInterface,
-                                              const char *pszUser, const char *pszDomain,
-                                              uint32_t uState,
-                                              const uint8_t *pabDetails, uint32_t cbDetails)
+static DECLCALLBACK(void) vmmdevUpdateGuestUserState(PPDMIVMMDEVCONNECTOR pInterface,
+                                                     const char *pszUser, const char *pszDomain,
+                                                     uint32_t uState,
+                                                     const uint8_t *pabDetails, uint32_t cbDetails)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     AssertPtr(pDrv);
@@ -210,7 +210,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestUserState(PPDMIVMMDEVCONNECTOR pInterface,
  * @param   guestInfo           Pointer to guest information structure.
  * @thread  The emulation thread.
  */
-DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const VBoxGuestInfo *guestInfo)
+static DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const VBoxGuestInfo *guestInfo)
 {
     AssertPtrReturnVoid(guestInfo);
 
@@ -256,8 +256,8 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const 
 /**
  * @interface_method_impl{PDMIVMMDEVCONNECTOR,pfnUpdateGuestInfo2}
  */
-DECLCALLBACK(void) vmmdevUpdateGuestInfo2(PPDMIVMMDEVCONNECTOR pInterface, uint32_t uFullVersion,
-                                          const char *pszName, uint32_t uRevision, uint32_t fFeatures)
+static DECLCALLBACK(void) vmmdevUpdateGuestInfo2(PPDMIVMMDEVCONNECTOR pInterface, uint32_t uFullVersion,
+                                                 const char *pszName, uint32_t uRevision, uint32_t fFeatures)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     AssertPtr(pszName);
@@ -286,7 +286,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo2(PPDMIVMMDEVCONNECTOR pInterface, uint3
  * @param   newCapabilities     New capabilities.
  * @thread  The emulation thread.
  */
-DECLCALLBACK(void) vmmdevUpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface, uint32_t newCapabilities)
+static DECLCALLBACK(void) vmmdevUpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface, uint32_t newCapabilities)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     AssertPtr(pDrv);
@@ -325,7 +325,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface
  * @param   fNewCaps            New capabilities.
  * @thread  The emulation thread.
  */
-DECLCALLBACK(void) vmmdevUpdateMouseCapabilities(PPDMIVMMDEVCONNECTOR pInterface, uint32_t fNewCaps)
+static DECLCALLBACK(void) vmmdevUpdateMouseCapabilities(PPDMIVMMDEVCONNECTOR pInterface, uint32_t fNewCaps)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
@@ -355,10 +355,10 @@ DECLCALLBACK(void) vmmdevUpdateMouseCapabilities(PPDMIVMMDEVCONNECTOR pInterface
  * @param   pShape              The shape buffer. If NULL, then only pointer visibility is being changed.
  * @thread  The emulation thread.
  */
-DECLCALLBACK(void) vmmdevUpdatePointerShape(PPDMIVMMDEVCONNECTOR pInterface, bool fVisible, bool fAlpha,
-                                            uint32_t xHot, uint32_t yHot,
-                                            uint32_t width, uint32_t height,
-                                            void *pShape)
+static DECLCALLBACK(void) vmmdevUpdatePointerShape(PPDMIVMMDEVCONNECTOR pInterface, bool fVisible, bool fAlpha,
+                                                   uint32_t xHot, uint32_t yHot,
+                                                   uint32_t width, uint32_t height,
+                                                   void *pShape)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
@@ -373,7 +373,7 @@ DECLCALLBACK(void) vmmdevUpdatePointerShape(PPDMIVMMDEVCONNECTOR pInterface, boo
     pConsole->i_onMousePointerShapeChange(fVisible, fAlpha, xHot, yHot, width, height, (uint8_t *)pShape, cbShape);
 }
 
-DECLCALLBACK(int) iface_VideoAccelEnable(PPDMIVMMDEVCONNECTOR pInterface, bool fEnable, VBVAMEMORY *pVbvaMemory)
+static DECLCALLBACK(int) iface_VideoAccelEnable(PPDMIVMMDEVCONNECTOR pInterface, bool fEnable, VBVAMEMORY *pVbvaMemory)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
@@ -388,7 +388,8 @@ DECLCALLBACK(int) iface_VideoAccelEnable(PPDMIVMMDEVCONNECTOR pInterface, bool f
 
     return VERR_NOT_SUPPORTED;
 }
-DECLCALLBACK(void) iface_VideoAccelFlush(PPDMIVMMDEVCONNECTOR pInterface)
+
+static DECLCALLBACK(void) iface_VideoAccelFlush(PPDMIVMMDEVCONNECTOR pInterface)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
@@ -402,8 +403,8 @@ DECLCALLBACK(void) iface_VideoAccelFlush(PPDMIVMMDEVCONNECTOR pInterface)
     }
 }
 
-DECLCALLBACK(int) vmmdevVideoModeSupported(PPDMIVMMDEVCONNECTOR pInterface, uint32_t display, uint32_t width, uint32_t height,
-                                           uint32_t bpp, bool *fSupported)
+static DECLCALLBACK(int) vmmdevVideoModeSupported(PPDMIVMMDEVCONNECTOR pInterface, uint32_t display, uint32_t width, uint32_t height,
+                                                  uint32_t bpp, bool *fSupported)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
@@ -430,7 +431,7 @@ DECLCALLBACK(int) vmmdevVideoModeSupported(PPDMIVMMDEVCONNECTOR pInterface, uint
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) vmmdevGetHeightReduction(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *heightReduction)
+static DECLCALLBACK(int) vmmdevGetHeightReduction(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *heightReduction)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
@@ -449,7 +450,7 @@ DECLCALLBACK(int) vmmdevGetHeightReduction(PPDMIVMMDEVCONNECTOR pInterface, uint
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) vmmdevSetCredentialsJudgementResult(PPDMIVMMDEVCONNECTOR pInterface, uint32_t u32Flags)
+static DECLCALLBACK(int) vmmdevSetCredentialsJudgementResult(PPDMIVMMDEVCONNECTOR pInterface, uint32_t u32Flags)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
 
@@ -459,7 +460,7 @@ DECLCALLBACK(int) vmmdevSetCredentialsJudgementResult(PPDMIVMMDEVCONNECTOR pInte
     return VERR_GENERAL_FAILURE;
 }
 
-DECLCALLBACK(int) vmmdevSetVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32_t cRect, PRTRECT pRect)
+static DECLCALLBACK(int) vmmdevSetVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32_t cRect, PRTRECT pRect)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
@@ -483,7 +484,7 @@ static DECLCALLBACK(int) vmmdevUpdateMonitorPositions(PPDMIVMMDEVCONNECTOR pInte
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) vmmdevQueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pcRects, PRTRECT paRects)
+static DECLCALLBACK(int) vmmdevQueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pcRects, PRTRECT paRects)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
@@ -502,7 +503,7 @@ DECLCALLBACK(int) vmmdevQueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint
  * @param   pulInterval         Pointer to interval in seconds
  * @thread  The emulation thread.
  */
-DECLCALLBACK(int) vmmdevQueryStatisticsInterval(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pulInterval)
+static DECLCALLBACK(int) vmmdevQueryStatisticsInterval(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pulInterval)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
@@ -528,7 +529,7 @@ DECLCALLBACK(int) vmmdevQueryStatisticsInterval(PPDMIVMMDEVCONNECTOR pInterface,
  * @param   pcbBalloon          Balloon size
  * @thread  The emulation thread.
  */
-DECLCALLBACK(int) vmmdevQueryBalloonSize(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pcbBalloon)
+static DECLCALLBACK(int) vmmdevQueryBalloonSize(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pcbBalloon)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
@@ -554,7 +555,7 @@ DECLCALLBACK(int) vmmdevQueryBalloonSize(PPDMIVMMDEVCONNECTOR pInterface, uint32
  * @param   pfPageFusionEnabled Pointer to boolean
  * @thread  The emulation thread.
  */
-DECLCALLBACK(int) vmmdevIsPageFusionEnabled(PPDMIVMMDEVCONNECTOR pInterface, bool *pfPageFusionEnabled)
+static DECLCALLBACK(int) vmmdevIsPageFusionEnabled(PPDMIVMMDEVCONNECTOR pInterface, bool *pfPageFusionEnabled)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
@@ -578,7 +579,7 @@ DECLCALLBACK(int) vmmdevIsPageFusionEnabled(PPDMIVMMDEVCONNECTOR pInterface, boo
  * @param   pGuestStats         Guest statistics
  * @thread  The emulation thread.
  */
-DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGuestStatistics *pGuestStats)
+static DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGuestStatistics *pGuestStats)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();

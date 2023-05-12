@@ -834,7 +834,7 @@ void pdmR3AsyncCompletionCompleteTask(PPDMASYNCCOMPLETIONTASK pTask, int rc, boo
  * @param   pEpClassOps Pointer to the endpoint class structure.
  * @param   pCfgHandle  Pointer to the CFGM tree.
  */
-int pdmR3AsyncCompletionEpClassInit(PVM pVM, PCPDMASYNCCOMPLETIONEPCLASSOPS pEpClassOps, PCFGMNODE pCfgHandle)
+static int pdmR3AsyncCompletionEpClassInit(PVM pVM, PCPDMASYNCCOMPLETIONEPCLASSOPS pEpClassOps, PCFGMNODE pCfgHandle)
 {
     /* Validate input. */
     AssertPtrReturn(pEpClassOps, VERR_INVALID_POINTER);

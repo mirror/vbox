@@ -1857,7 +1857,7 @@ static int fsPrepTestArea(void)
  * @param   pchName             The name.
  * @param   cchName             The name length.
  */
-PFSPERFNAMEENTRY fsPerfCreateNameEntry(const char *pchName, size_t cchName)
+static PFSPERFNAMEENTRY fsPerfCreateNameEntry(const char *pchName, size_t cchName)
 {
     PFSPERFNAMEENTRY pEntry = (PFSPERFNAMEENTRY)RTMemAllocVar(RT_UOFFSETOF_DYN(FSPERFNAMEENTRY, szName[cchName + 1]));
     if (pEntry)
@@ -1891,7 +1891,7 @@ static int fsPerfManyTreeRecursiveDirCreator(size_t cchDir, uint32_t iDepth)
 }
 
 
-void fsPerfManyFiles(void)
+static void fsPerfManyFiles(void)
 {
     RTTestISub("manyfiles");
 
@@ -2069,7 +2069,7 @@ static void tstOpenExTest(unsigned uLine, int cbExist, int cbNext, const char *p
 }
 
 
-void fsPerfOpen(void)
+static void fsPerfOpen(void)
 {
     RTTestISub("open");
 
@@ -2138,7 +2138,7 @@ void fsPerfOpen(void)
 }
 
 
-void fsPerfFStat(void)
+static void fsPerfFStat(void)
 {
     RTTestISub("fstat");
     RTFILE hFile1;
@@ -2740,7 +2740,7 @@ void fsPerfNtQueryVolInfoFile(void)
 
 #endif /* RT_OS_WINDOWS */
 
-void fsPerfFChMod(void)
+static void fsPerfFChMod(void)
 {
     RTTestISub("fchmod");
     RTFILE hFile1;
@@ -2757,7 +2757,7 @@ void fsPerfFChMod(void)
 }
 
 
-void fsPerfFUtimes(void)
+static void fsPerfFUtimes(void)
 {
     RTTestISub("futimes");
     RTFILE hFile1;
@@ -2795,7 +2795,7 @@ void fsPerfFUtimes(void)
 }
 
 
-void fsPerfStat(void)
+static void fsPerfStat(void)
 {
     RTTestISub("stat");
     RTFSOBJINFO ObjInfo;
@@ -2839,7 +2839,7 @@ void fsPerfStat(void)
 }
 
 
-void fsPerfChmod(void)
+static void fsPerfChmod(void)
 {
     RTTestISub("chmod");
 
@@ -2879,7 +2879,7 @@ void fsPerfChmod(void)
 }
 
 
-void fsPerfUtimes(void)
+static void fsPerfUtimes(void)
 {
     RTTestISub("utimes");
 
@@ -2953,7 +2953,7 @@ DECL_FORCE_INLINE(int) fsPerfRenameMany(const char *pszFile, uint32_t iIteration
 }
 
 
-void fsPerfRename(void)
+static void fsPerfRename(void)
 {
     RTTestISub("rename");
     char szPath[FSPERF_MAX_PATH];
@@ -3018,7 +3018,7 @@ DECL_FORCE_INLINE(int) fsPerfOpenClose(const char *pszDir)
 }
 
 
-void vsPerfDirOpen(void)
+static void vsPerfDirOpen(void)
 {
     RTTestISub("dir open");
     RTDIR hDir;
@@ -3089,7 +3089,7 @@ DECL_FORCE_INLINE(int) fsPerfEnumManyFiles(void)
 }
 
 
-void vsPerfDirEnum(void)
+static void vsPerfDirEnum(void)
 {
     RTTestISub("dir enum");
     RTDIR hDir;
@@ -3186,7 +3186,7 @@ void vsPerfDirEnum(void)
 }
 
 
-void fsPerfMkRmDir(void)
+static void fsPerfMkRmDir(void)
 {
     RTTestISub("mkdir/rmdir");
 
@@ -3293,7 +3293,7 @@ void fsPerfMkRmDir(void)
 }
 
 
-void fsPerfStatVfs(void)
+static void fsPerfStatVfs(void)
 {
     RTTestISub("statvfs");
 
@@ -3319,7 +3319,7 @@ void fsPerfStatVfs(void)
 }
 
 
-void fsPerfRm(void)
+static void fsPerfRm(void)
 {
     RTTestISub("rm");
 
@@ -3410,7 +3410,7 @@ void fsPerfRm(void)
 }
 
 
-void fsPerfChSize(void)
+static void fsPerfChSize(void)
 {
     RTTestISub("chsize");
 
@@ -3494,7 +3494,7 @@ void fsPerfChSize(void)
 }
 
 
-int fsPerfIoPrepFileWorker(RTFILE hFile1, uint64_t cbFile, uint8_t *pbBuf, size_t cbBuf)
+static int fsPerfIoPrepFileWorker(RTFILE hFile1, uint64_t cbFile, uint8_t *pbBuf, size_t cbBuf)
 {
     /*
      * Fill the file with 0xf6 and insert offset markers with 1KB intervals.
@@ -3520,7 +3520,7 @@ int fsPerfIoPrepFileWorker(RTFILE hFile1, uint64_t cbFile, uint8_t *pbBuf, size_
     return VINF_SUCCESS;
 }
 
-int fsPerfIoPrepFile(RTFILE hFile1, uint64_t cbFile, uint8_t **ppbFree)
+static int fsPerfIoPrepFile(RTFILE hFile1, uint64_t cbFile, uint8_t **ppbFree)
 {
     /*
      * Seek to the end - 4K and write the last 4K.
@@ -3559,7 +3559,7 @@ int fsPerfIoPrepFile(RTFILE hFile1, uint64_t cbFile, uint8_t **ppbFree)
 /**
  * Used in relation to the mmap test when in non-default position.
  */
-int fsPerfReinitFile(RTFILE hFile1, uint64_t cbFile)
+static int fsPerfReinitFile(RTFILE hFile1, uint64_t cbFile)
 {
     size_t   cbBuf = RT_MIN(_1M, g_cbMaxBuffer);
     uint8_t *pbBuf = (uint8_t *)RTMemAlloc(cbBuf);
@@ -3574,7 +3574,7 @@ int fsPerfReinitFile(RTFILE hFile1, uint64_t cbFile)
 /**
  * Checks the content read from the file fsPerfIoPrepFile() prepared.
  */
-bool fsPerfCheckReadBuf(unsigned uLineNo, uint64_t off, uint8_t const *pbBuf, size_t cbBuf, uint8_t bFiller = 0xf6)
+static bool fsPerfCheckReadBuf(unsigned uLineNo, uint64_t off, uint8_t const *pbBuf, size_t cbBuf, uint8_t bFiller = 0xf6)
 {
     uint32_t cMismatches = 0;
     size_t   offBuf      = 0;
@@ -3636,7 +3636,7 @@ bool fsPerfCheckReadBuf(unsigned uLineNo, uint64_t off, uint8_t const *pbBuf, si
 /**
  * Sets up write buffer with offset markers and fillers.
  */
-void fsPerfFillWriteBuf(uint64_t off, uint8_t *pbBuf, size_t cbBuf, uint8_t bFiller = 0xf6)
+static void fsPerfFillWriteBuf(uint64_t off, uint8_t *pbBuf, size_t cbBuf, uint8_t bFiller = 0xf6)
 {
     uint32_t offBlock = (uint32_t)(off & (_1K - 1));
     while (cbBuf > 0)
@@ -3674,7 +3674,7 @@ void fsPerfFillWriteBuf(uint64_t off, uint8_t *pbBuf, size_t cbBuf, uint8_t bFil
 
 
 
-void fsPerfIoSeek(RTFILE hFile1, uint64_t cbFile)
+static void fsPerfIoSeek(RTFILE hFile1, uint64_t cbFile)
 {
     /*
      * Do a bunch of search tests, most which are random.
@@ -4559,7 +4559,7 @@ DECL_FORCE_INLINE(int) fsPerfIoReadWorker(RTFILE hFile1, uint64_t cbFile, uint32
 }
 
 
-void fsPerfIoReadBlockSize(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock)
+static void fsPerfIoReadBlockSize(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock)
 {
     RTTestISubF("IO - Sequential read %RU32", cbBlock);
     if (cbBlock <= cbFile)
@@ -4590,7 +4590,7 @@ DECLINLINE(int) myFileSgReadAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t
 }
 
 
-void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
+static void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
 {
     RTTestISubF("IO - RTFileRead");
 
@@ -5051,7 +5051,7 @@ DECL_FORCE_INLINE(int) fsPerfIoWriteWorker(RTFILE hFile1, uint64_t cbFile, uint3
 }
 
 
-void fsPerfIoWriteBlockSize(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock)
+static void fsPerfIoWriteBlockSize(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock)
 {
     RTTestISubF("IO - Sequential write %RU32", cbBlock);
 
@@ -5082,7 +5082,7 @@ DECLINLINE(int) myFileSgWriteAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_
 }
 
 
-void fsPerfWrite(RTFILE hFile1, RTFILE hFileNoCache, RTFILE hFileWriteThru, uint64_t cbFile)
+static void fsPerfWrite(RTFILE hFile1, RTFILE hFileNoCache, RTFILE hFileWriteThru, uint64_t cbFile)
 {
     RTTestISubF("IO - RTFileWrite");
 
@@ -5362,7 +5362,7 @@ DECL_FORCE_INLINE(int) fsPerfFSyncWorker(RTFILE hFile1, uint64_t cbFile, uint8_t
 }
 
 
-void fsPerfFSync(RTFILE hFile1, uint64_t cbFile)
+static void fsPerfFSync(RTFILE hFile1, uint64_t cbFile)
 {
     RTTestISub("fsync");
 
@@ -5404,7 +5404,7 @@ DECL_FORCE_INLINE(int) fsPerfMSyncWorker(uint8_t *pbMapping, size_t offMapping, 
 #endif /* !RT_OS_OS2 */
 
 
-void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
+static void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
 {
     RTTestISub("mmap");
 #if !defined(RT_OS_OS2)
@@ -5755,7 +5755,7 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
 /**
  * This does the read, write and seek tests.
  */
-void fsPerfIo(void)
+static void fsPerfIo(void)
 {
     RTTestISub("I/O");
 

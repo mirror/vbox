@@ -971,6 +971,7 @@ static DECLCALLBACK(int) drvNATHostResWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 }
 
 
+#if 0 /* unused */
 /**
  * Function called by slirp to check if it's possible to feed incoming data to the network port.
  * @returns 1 if possible.
@@ -982,12 +983,13 @@ int slirp_can_output(void *pvUser)
     return 1;
 }
 
-void slirp_push_recv_thread(void *pvUser)
+static void slirp_push_recv_thread(void *pvUser)
 {
     PDRVNAT pThis = (PDRVNAT)pvUser;
     Assert(pThis);
     drvNATUrgRecvWakeup(pThis->pDrvIns, pThis->pUrgRecvThread);
 }
+#endif
 
 void slirp_urg_output(void *pvUser, struct mbuf *m, const uint8_t *pu8Buf, int cb)
 {

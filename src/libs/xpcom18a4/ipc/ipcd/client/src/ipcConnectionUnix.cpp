@@ -413,7 +413,7 @@ static PRThread *gConnThread = NULL;
 static PRThread *gMainThread = NULL;
 #endif
 
-nsresult
+static nsresult
 TryConnect(PRFileDesc **result)
 {
   PRFileDesc *fd;

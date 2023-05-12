@@ -81,13 +81,13 @@
         RTPrintf("%70s -- %u calls per second\n", #fn, nCalls); \
   } while (0)
 
-void shutdownProcessList(std::vector<RTPROCESS> const &rProcesses)
+static void shutdownProcessList(std::vector<RTPROCESS> const &rProcesses)
 {
     for (size_t i = 0; i < rProcesses.size(); i++)
         RTProcTerminate(rProcesses[i]);
 }
 
-void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cVMs)
+static void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cVMs)
 {
 
     const char * const args[] = { pszName, "-child", NULL };
@@ -163,7 +163,7 @@ void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cV
 #else
 #define NETIFNAME "eth0"
 #endif
-int testNetwork(pm::CollectorHAL *collector)
+static int testNetwork(pm::CollectorHAL *collector)
 {
     pm::CollectorHints hints;
     uint64_t hostRxStart, hostTxStart;
@@ -221,7 +221,7 @@ int testNetwork(pm::CollectorHAL *collector)
 }
 
 #define FSNAME "/"
-int testFsUsage(pm::CollectorHAL *collector)
+static int testFsUsage(pm::CollectorHAL *collector)
 {
     RTPrintf("tstCollector: TESTING - File system usage\n");
 
@@ -244,7 +244,7 @@ int testFsUsage(pm::CollectorHAL *collector)
     return 0;
 }
 
-int testDisk(pm::CollectorHAL *collector)
+static int testDisk(pm::CollectorHAL *collector)
 {
     pm::CollectorHints hints;
     uint64_t diskMsStart, totalMsStart;

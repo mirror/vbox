@@ -113,7 +113,7 @@ static DECLCALLBACK(int) infoDeregister(void *pvInstance, const char *pszName)
  * service
  * @param  pTable the table to initialise
  */
-void initTable(VBOXHGCMSVCFNTABLE *pTable, VBOXHGCMSVCHELPERS *pHelpers)
+static void initTable(VBOXHGCMSVCFNTABLE *pTable, VBOXHGCMSVCHELPERS *pHelpers)
 {
     pTable->cbSize               = sizeof (VBOXHGCMSVCFNTABLE);
     pTable->u32Version           = VBOX_HGCM_SVC_VERSION;

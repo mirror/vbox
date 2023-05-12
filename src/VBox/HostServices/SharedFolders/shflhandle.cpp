@@ -155,8 +155,8 @@ static int vbsfFreeHandle(PSHFLCLIENTDATA pClient, SHFLHANDLE handle)
     return VERR_INVALID_HANDLE;
 }
 
-uintptr_t vbsfQueryHandle(PSHFLCLIENTDATA pClient, SHFLHANDLE handle,
-                          uint32_t uType)
+static uintptr_t vbsfQueryHandle(PSHFLCLIENTDATA pClient, SHFLHANDLE handle,
+                                 uint32_t uType)
 {
     if (   handle < SHFLHANDLE_MAX
         && (g_pHandles[handle].uFlags & SHFL_HF_VALID)

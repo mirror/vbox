@@ -223,7 +223,7 @@ static RTEXITCODE rtCmdCpDoIt(PCRTCMDCPOPTS pOpts)
  * @param   papszArgs           The argument vector.  (Note that this may be
  *                              reordered, so the memory must be writable.)
  */
-RTEXITCODE RTCmdCp(unsigned cArgs, char **papszArgs)
+static RTEXITCODE RTCmdCp(unsigned cArgs, char **papszArgs)
 {
 
     /*

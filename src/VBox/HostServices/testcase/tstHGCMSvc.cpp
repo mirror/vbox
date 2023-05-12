@@ -47,8 +47,8 @@
  *                getString to return.
  * @param  rcExp  the expected return value of the call to getString.
  */
-void doTestGetString(VBOXHGCMSVCPARM *pParm, RTTEST hTest, uint32_t type,
-                     const char *pcch, uint32_t cb, int rcExp)
+static void doTestGetString(VBOXHGCMSVCPARM *pParm, RTTEST hTest, uint32_t type,
+                            const char *pcch, uint32_t cb, int rcExp)
 {
     /* An RTTest API like this, which would print out an additional line
      * of context if a test failed, would be nice.  This is because the
@@ -76,7 +76,7 @@ void doTestGetString(VBOXHGCMSVCPARM *pParm, RTTEST hTest, uint32_t type,
 
 /** Run some unit tests on the getString method and indirectly test
  * getPointer and getBuffer as well. */
-void testGetString(VBOXHGCMSVCPARM *pParm, RTTEST hTest)
+static void testGetString(VBOXHGCMSVCPARM *pParm, RTTEST hTest)
 {
     RTTestSub(hTest, "HGCM string parameter handling");
     doTestGetString(pParm, hTest, VBOX_HGCM_SVC_PARM_32BIT, "test", 3,

@@ -1194,6 +1194,7 @@ RT_EXPORT_SYMBOL(RTThreadGetType);
 
 #ifdef IN_RING3
 
+#if 0 /* unused */
 /**
  * Recalculates scheduling attributes for the default process
  * priority using the specified priority type for the calling thread.
@@ -1205,13 +1206,14 @@ RT_EXPORT_SYMBOL(RTThreadGetType);
  * @returns iprt status code.
  * @remarks Will only work for strict builds.
  */
-int rtThreadDoCalcDefaultPriority(RTTHREADTYPE enmType)
+static int rtThreadDoCalcDefaultPriority(RTTHREADTYPE enmType)
 {
     RT_THREAD_LOCK_RW();
     int rc = rtSchedNativeCalcDefaultPriority(enmType);
     RT_THREAD_UNLOCK_RW();
     return rc;
 }
+#endif
 
 
 /**

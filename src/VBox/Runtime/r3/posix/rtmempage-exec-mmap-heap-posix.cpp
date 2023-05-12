@@ -209,7 +209,7 @@ static int munmap(void *pv, size_t cb)
  * @param   fExec           Whether the heap memory should be marked as
  *                          executable or not.
  */
-int RTHeapPageInit(PRTHEAPPAGE pHeap, bool fExec)
+static int RTHeapPageInit(PRTHEAPPAGE pHeap, bool fExec)
 {
     int rc = RTCritSectInitEx(&pHeap->CritSect,
                               RTCRITSECT_FLAGS_NO_LOCK_VAL | RTCRITSECT_FLAGS_NO_NESTING | RTCRITSECT_FLAGS_BOOTSTRAP_HACK,
@@ -235,7 +235,7 @@ int RTHeapPageInit(PRTHEAPPAGE pHeap, bool fExec)
  * @returns IPRT status code.
  * @param   pHeap           The page heap to delete.
  */
-int RTHeapPageDelete(PRTHEAPPAGE pHeap)
+static int RTHeapPageDelete(PRTHEAPPAGE pHeap)
 {
     NOREF(pHeap);
     return VERR_NOT_IMPLEMENTED;
@@ -503,7 +503,7 @@ static int rtHeapPageAllocLocked(PRTHEAPPAGE pHeap, size_t cPages, const char *p
  * @param   fFlags          RTMEMPAGEALLOC_F_XXX.
  * @param   ppv             Where to return the pointer to the pages.
  */
-int RTHeapPageAlloc(PRTHEAPPAGE pHeap, size_t cPages, const char *pszTag, uint32_t fFlags, void **ppv)
+static int RTHeapPageAlloc(PRTHEAPPAGE pHeap, size_t cPages, const char *pszTag, uint32_t fFlags, void **ppv)
 {
     /*
      * Validate input.
@@ -556,7 +556,7 @@ static DECLCALLBACK(int) rtHeapPageFindUnusedBlockCallback(PAVLRPVNODECORE pNode
  * @param   pv              Pointer to what RTHeapPageAlloc returned.
  * @param   cPages          The number of pages that was allocated.
  */
-int RTHeapPageFree(PRTHEAPPAGE pHeap, void *pv, size_t cPages)
+static int RTHeapPageFree(PRTHEAPPAGE pHeap, void *pv, size_t cPages)
 {
     /*
      * Validate input.
