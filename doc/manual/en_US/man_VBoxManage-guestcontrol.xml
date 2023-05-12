@@ -1407,6 +1407,6 @@ $ VBoxManage --nologo guestcontrol "My OL VM" run --exe "/usr/bin/busybox" \
     The default behavior of argument 0 is to either use
     the value from <option>--exe</option>, or, if not set, the first
     value passed after <option>--</option>.
-  </para>        
+  </para>
   </refsect1>
 </refentry>
