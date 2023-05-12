@@ -473,7 +473,7 @@ FindSpecial(input_data *data, char **startp, int *lenp)
 }
 
 /* set this with a debugger to see exactly what libIDL sees */
-static FILE *tracefile;
+static FILE *tracefile = NULL;
 
 static int
 input_callback(IDL_input_reason reason, union IDL_input_data *cb_data,
