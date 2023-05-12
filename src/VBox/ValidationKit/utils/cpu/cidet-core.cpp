@@ -325,13 +325,13 @@ int CidetCoreSetTargetMode(PCIDETCORE pThis, uint8_t bMode)
     return VINF_SUCCESS;
 }
 
-
+#if 0 /* unused */
 static bool CidetCoreIsEncodingCompatibleWithInstruction(PCIDETCORE pThis)
 {
     RT_NOREF_PV(pThis);
     return true;
 }
-
+#endif
 
 /**
  * Selects the next address size mode.
