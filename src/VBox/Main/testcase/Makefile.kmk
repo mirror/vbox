@@ -46,6 +46,7 @@ ifndef VBOX_ONLY_SDK
   	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlParseBuffer,) \
   	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlPaths,) \
   	tstMediumLock \
+  	tstSafeArray \
   	tstBstr \
   	tstGuid \
   	tstUnattendedScript \
@@ -284,6 +285,13 @@ tstUSBProxyLinux_LIBS     += \
 #
 tstMediumLock_TEMPLATE = VBoxMainClientTstExe
 tstMediumLock_SOURCES  = tstMediumLock.cpp
+
+
+#
+# tstSafeArray
+#
+tstSafeArray_TEMPLATE = VBoxMainClientTstExe
+tstSafeArray_SOURCES  = tstSafeArray.cpp
 
 
 #
