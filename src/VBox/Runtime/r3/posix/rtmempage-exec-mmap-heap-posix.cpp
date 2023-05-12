@@ -702,7 +702,7 @@ static void *rtMemPagePosixAlloc(size_t cb, const char *pszTag, uint32_t fFlags,
     /*
      * If the allocation is relatively large, we use mmap/munmap directly.
      */
-    void *pv;
+    void *pv = NULL; /* shut up gcc */
     if (cb >= RTMEMPAGEPOSIX_MMAP_THRESHOLD)
     {
 
