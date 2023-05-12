@@ -59,7 +59,7 @@ int main()
         RTTESTI_CHECK(aInt2.size() == 42);
         aInt2.setNull();
 
-        com::SafeArray<int> aInt3(0);
+        com::SafeArray<int> aInt3((size_t)0);
         RTTESTI_CHECK(aInt3.size() == 0);
         aInt3.setNull();
         RTTESTI_CHECK(aInt3.size() == 0);
