@@ -6564,10 +6564,10 @@ static int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr) RT_NOEXC
             /*
              * Disallow APIC-access page and virtual-APIC page from being the same address.
              * Note! This is not an Intel requirement, but one imposed by our implementation.
+             * This is done primarily to simplify recursion scenarios while redirecting accesses
+             * between the APIC-access page and the virtual-APIC page. If any nested hypervisor
+             * requires this, we can implement it later
              */
-            /** @todo r=ramshankar: This is done primarily to simplify recursion scenarios while
-             *        redirecting accesses between the APIC-access page and the virtual-APIC
-             *        page. If any nested hypervisor requires this, we can implement it later. */
             if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
             {
                 RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
@@ -7667,14 +7667,14 @@ static void iemVmxVmentryInjectEvent(PVMCPUCC pVCpu, const char *pszInstr) RT_NO
     CPUMSetGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx, !fEntryIntInfoValid);
     if (fEntryIntInfoValid)
     {
-        if (VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo) == VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT)
+        if (VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo) != VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT)
+            iemVmxVmentryInjectTrpmEvent(pVCpu, pszInstr, uEntryIntInfo, pVmcs->u32EntryXcptErrCode, pVmcs->u32EntryInstrLen,
+                                         pVCpu->cpum.GstCtx.cr2);
+        else
         {
             Assert(VMX_ENTRY_INT_INFO_VECTOR(uEntryIntInfo) == VMX_ENTRY_INT_INFO_VECTOR_MTF);
             VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_MTF);
         }
-        else
-            iemVmxVmentryInjectTrpmEvent(pVCpu, pszInstr, uEntryIntInfo, pVmcs->u32EntryXcptErrCode, pVmcs->u32EntryInstrLen,
-                                         pVCpu->cpum.GstCtx.cr2);
 
         /*
          * We need to clear the VM-entry interruption information field's valid bit on VM-exit.
