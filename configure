@@ -117,7 +117,11 @@ BUILD_LIBCURL=
 BUILD_LIBSSL=
 BUILD_LIBVPX=
 BUILD_LIBTPMS=
-BUILD_LIBLZMA=
+if [ "$OS" = "darwin" ]; then # Do not use the /opt/local version of this! We end up using the wrong iconv.h then.
+    BUILD_LIBLZMA=1
+else
+    BUILD_LIBLZMA=
+fi
 PASSIVE_MESA=0
 CC="gcc"
 CC32=""
