@@ -54,6 +54,7 @@
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="plain">run</arg>
+      <arg>--arg0=<replaceable>argument 0</replaceable></arg>
       <arg>--domain=<replaceable>domainname</replaceable></arg>
       <arg>--dos2unix</arg>
       <arg>--exe=<replaceable>filename</replaceable></arg>
@@ -89,6 +90,7 @@
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="plain">start</arg>
+      <arg>--arg0=<replaceable>argument 0</replaceable></arg>
       <arg>--domain=<replaceable>domainname</replaceable></arg>
       <arg>--exe=<replaceable>filename</replaceable></arg>
       <arg>--ignore-orphaned-processes</arg>
@@ -1366,5 +1368,45 @@ $ VBoxManage --nologo guestcontrol "My Win VM" start \
 --exe "c:\\windows\\system32\\ipconfig.exe" \
 --username user1 --passwordfile pw.txt
 </screen>
+    <para>
+      The following <command>VBoxManage guestcontrol run</command>
+      command executes a <command>/usr/bin/busybox -l /usr</command>
+      command on the <literal>My OL VM</literal> Oracle Linux VM as the
+      <literal>user1</literal> user, explicitly using <literal>ls</literal>
+      as argument 0.
+    </para>
+<screen>
+$ VBoxManage --nologo guestcontrol "My OL VM" run --exe "/usr/bin/busybox" \
+--username user1 --passwordfile pw.txt --wait-stdout --arg0 ls -- -l /usr
+</screen>
+    <para>
+      The <option>--exe</option> option specifies the absolute path of
+      the command to run in the guest VM, <filename>/usr/bin/busybox</filename>.
+      Use the <option>--</option> option to pass any arguments that
+      follow it to the <command>busybox</command> command.
+    </para>
+    <para>
+      Use the <option>--username</option> option to specify the user
+      name, <literal>user1</literal> and use the
+      <option>--passwordfile</option> option to specify the name of a
+      file that includes the password for the <literal>user1</literal>
+      user, <filename>pw.txt</filename>.
+    </para>
+    <para>
+      The <option>--wait-stdout</option> option waits for the
+      <command>ls</command> guest process to complete before providing
+      the exit code and the command output. The
+      <option>--nologo</option> option suppresses the output of the logo
+      information.
+    </para>
+    <para>
+      The <option>--arg0</option> option explicitly specifies the argument 0
+      to use for the command to execute.
+    </para>
+  <para>
+    The default behavior of argument 0 is to either use
+    the value from <option>--exe</option>, or, if not set, the first
+    value passed after <option>--</option>.
+  </para>        
   </refsect1>
 </refentry>

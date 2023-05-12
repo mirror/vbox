@@ -1169,6 +1169,7 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
     static const RTGETOPTDEF s_aOptions[] =
     {
         GCTLCMD_COMMON_OPTION_DEFS()
+        { "--arg0",                         '0',                                      RTGETOPT_REQ_STRING  },
         { "--cwd",                          'C',                                      RTGETOPT_REQ_STRING  },
         { "--putenv",                       'E',                                      RTGETOPT_REQ_STRING  },
         { "--exe",                          'e',                                      RTGETOPT_REQ_STRING  },
@@ -1200,6 +1201,7 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
     com::SafeArray<IN_BSTR>                 aArgs;
     com::SafeArray<IN_BSTR>                 aEnv;
     const char *                            pszImage            = NULL;
+    const char *                            pszArg0             = NULL; /* Argument 0 to use. pszImage will be used if not specified. */
     const char *                            pszCwd              = NULL;
     bool                                    fWaitForStdOut      = fRunCmd;
     bool                                    fWaitForStdErr      = fRunCmd;
@@ -1240,6 +1242,10 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
 
                 case kGstCtrlRunOpt_Profile:
                     aCreateFlags.push_back(ProcessCreateFlag_Profile);
+                    break;
+
+                case '0':
+                    pszArg0 = ValueUnion.psz;
                     break;
 
                 case 'C':
@@ -1289,12 +1295,13 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
                     break;
 
                 case VINF_GETOPT_NOT_OPTION:
-                    aArgs.push_back(Bstr(ValueUnion.psz).raw());
+                    /* VINF_GETOPT_NOT_OPTION comes after all options have been specified;
+                     * so if pszImage still is zero at this stage, we use the first non-option found
+                     * as the image being executed. */
                     if (!pszImage)
-                    {
-                        Assert(aArgs.size() == 1);
                         pszImage = ValueUnion.psz;
-                    }
+                    else /* Add anything else to the arguments vector. */
+                        aArgs.push_back(Bstr(ValueUnion.psz).raw());
                     break;
 
                 default:
@@ -1306,6 +1313,23 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
         /* Must have something to execute. */
         if (!pszImage || !*pszImage)
             return errorSyntax(GuestCtrl::tr("No executable specified!"));
+
+        /* Set the arg0 argument (descending precedence):
+         *   - If an argument 0 is explicitly specified (via "--arg0"), use this as argument 0.
+         *   - When an image is specified explicitly (via "--exe <image>"), use <image> as argument 0.
+         *     Note: This is (and ever was) the default behavior users expect, so don't change this! */
+        if (pszArg0)
+            aArgs.push_front(Bstr(pszArg0).raw());
+        else
+            aArgs.push_front(Bstr(pszImage).raw());
+
+        if (pCtx->cVerbose) /* Print the final execution parameters in verbose mode. */
+        {
+            RTPrintf(GuestCtrl::tr("Executing:\n  Image : %s\n"), pszImage);
+            for (size_t i = 0; i < aArgs.size(); i++)
+                RTPrintf(GuestCtrl::tr("  arg[%d]: %ls\n"), i, aArgs[i]);
+        }
+        /* No altering of aArgs and/or pszImage after this point! */
 
         /*
          * Finalize process creation and wait flags and input/output streams.
