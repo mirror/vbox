@@ -6378,7 +6378,7 @@ static void dxDbgDumpVertices_DrawIndexed(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEX
 
     void *pvIndexBuffer;
     uint32_t cbIndexBuffer;
-    int rc = dxReadBuffer(pDXDevice, pIB->pBuffer, pIB->indexBufferOffset + startIndexLocation, indexCount * BytesPerIndex, &pvIndexBuffer, &cbIndexBuffer);
+    int rc = dxReadBuffer(pDXDevice, pIB->pBuffer, pIB->indexBufferOffset + startIndexLocation * BytesPerIndex, indexCount * BytesPerIndex, &pvIndexBuffer, &cbIndexBuffer);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
@@ -6968,19 +6968,19 @@ static int dxReadBuffer(DXDEVICE *pDevice, ID3D11Buffer *pBuffer, UINT Offset, U
     int rc = dxStagingBufferRealloc(pDevice, Bytes);
     if (RT_SUCCESS(rc))
     {
-        /* Copy from the buffer to the staging buffer. */
+        /* Copy 'Bytes' bytes starting at 'Offset' from the buffer to the start of staging buffer. */
         ID3D11Resource *pDstResource = pDevice->pStagingBuffer;
         UINT DstSubresource = 0;
-        UINT DstX = Offset;
+        UINT DstX = 0;
         UINT DstY = 0;
         UINT DstZ = 0;
         ID3D11Resource *pSrcResource = pBuffer;
         UINT SrcSubresource = 0;
         D3D11_BOX SrcBox;
-        SrcBox.left   = 0;
+        SrcBox.left   = Offset;
         SrcBox.top    = 0;
         SrcBox.front  = 0;
-        SrcBox.right  = Bytes;
+        SrcBox.right  = Offset + Bytes;
         SrcBox.bottom = 1;
         SrcBox.back   = 1;
         pDevice->pImmediateContext->CopySubresourceRegion(pDstResource, DstSubresource, DstX, DstY, DstZ,
