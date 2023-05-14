@@ -162,8 +162,11 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  Storage/DrvHostDVD.cpp_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK)
  VBoxDD_INCS             = \
  	build \
- 	Network/slirp \
  	$(VBOX_GRAPHICS_INCS)
+
+ ifndef VBOX_WITH_LIBSLIRP
+	VBoxDD_INCS += Network/slirp
+ endif
  VBoxDD_DEFS             = \
  	VBOX_HGCM_HOST_CODE \
  	$(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,) \
@@ -773,7 +776,8 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
   VBoxDD_SOURCES += \
   	Network/DrvNATlibslirp.cpp
   Network/DrvNATlibslirp.cpp_INCS += \
-  	$(PATH_ROOT)/src/libs/libslirp-4.7.0/libslirp.h
+  	$(PATH_ROOT)/src/libs/libslirp-4.7.0/src \
+  	$(PATH_ROOT)/src/libs/libslirp-4.7.0/build
  endif
 
  # --- WARNING! SLIRP MESS AHEAD! ;-) ---
