@@ -511,7 +511,7 @@ class ThreadedFunctionVariation(object):
                 self.aoParamRefs.append(ThreadedParamRef('pVCpu->iem.s.enmEffOpSize', 'IEMMODE', oStmt));
 
             if oStmt.sName == 'IEM_MC_CALC_RM_EFF_ADDR':
-                ## @todo figure out how to do this in the input part...
+                # This is being pretty presumptive about bRm always being the RM byte...
                 if self.sVariation == self.ksVariation_Addr16:
                     self.aoParamRefs.append(ThreadedParamRef('bRm',     'uint8_t',  oStmt));
                     self.aoParamRefs.append(ThreadedParamRef('(uint16_t)uEffAddrInfo' ,
@@ -530,7 +530,8 @@ class ThreadedFunctionVariation(object):
                                                              'uint8_t',  oStmt, sStdRef = 'bSib'));
                     self.aoParamRefs.append(ThreadedParamRef('(uint32_t)uEffAddrInfo',
                                                              'uint32_t', oStmt, sStdRef = 'u32Disp'));
-                    self.aoParamRefs.append(ThreadedParamRef('IEM_GET_INSTR_LEN(pVCpu)', 'uint4_t', oStmt, sStdRef = 'cbInstr'));
+                    self.aoParamRefs.append(ThreadedParamRef('IEM_GET_INSTR_LEN(pVCpu)',
+                                                             'uint4_t',  oStmt, sStdRef = 'cbInstr'));
                     assert len(oStmt.asParams) == 3;
                     assert oStmt.asParams[1].startswith('bRm');
                     aiSkipParams[1] = True; # Skip the bRm parameter
@@ -835,7 +836,7 @@ class ThreadedFunction(object):
 
         return aoStmts;
 
-    def morphInputCode(self, aoStmts, fCallEmitted = False):
+    def morphInputCode(self, aoStmts, fCallEmitted = False, cDepth = 0):
         """
         Adjusts (& copies) the statements for the input/decoder so it will emit
         calls to the right threaded functions for each block.
@@ -856,7 +857,17 @@ class ThreadedFunction(object):
             # statements which it would naturally follow or preceed.
             if not fCallEmitted:
                 if not oStmt.isCppStmt():
-                    pass;
+                    if (   oStmt.sName.startswith('IEM_MC_MAYBE_RAISE_') \
+                        or oStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH', \
+                                           'IEM_MC_CALL_CIMPL_1',
+                                           'IEM_MC_CALL_CIMPL_2',
+                                           'IEM_MC_CALL_CIMPL_3',
+                                           'IEM_MC_CALL_CIMPL_4',
+                                           'IEM_MC_CALL_CIMPL_5', )):
+                        aoDecoderStmts.pop();
+                        aoDecoderStmts.extend(self.emitThreadedCallStmts());
+                        aoDecoderStmts.append(oNewStmt);
+                        fCallEmitted = True;
                 elif (    oStmt.fDecode
                       and (   oStmt.asParams[0].find('IEMOP_HLP_DONE_') >= 0
                            or oStmt.asParams[0].find('IEMOP_HLP_DECODED_') >= 0)):
@@ -865,12 +876,15 @@ class ThreadedFunction(object):
 
             # Process branches of conditionals recursively.
             if isinstance(oStmt, iai.McStmtCond):
-                (oNewStmt.aoIfBranch, fCallEmitted1) = self.morphInputCode(oStmt.aoIfBranch, fCallEmitted);
+                (oNewStmt.aoIfBranch, fCallEmitted1) = self.morphInputCode(oStmt.aoIfBranch, fCallEmitted, cDepth + 1);
                 if oStmt.aoElseBranch:
-                    (oNewStmt.aoElseBranch, fCallEmitted2) = self.morphInputCode(oStmt.aoElseBranch, fCallEmitted);
+                    (oNewStmt.aoElseBranch, fCallEmitted2) = self.morphInputCode(oStmt.aoElseBranch, fCallEmitted, cDepth + 1);
                 else:
                     fCallEmitted2 = False;
                 fCallEmitted = fCallEmitted or (fCallEmitted1 and fCallEmitted2);
+
+        if not fCallEmitted and cDepth == 0:
+            self.raiseProblem('Unable to insert call to threaded function.');
 
         return (aoDecoderStmts, fCallEmitted);
 
