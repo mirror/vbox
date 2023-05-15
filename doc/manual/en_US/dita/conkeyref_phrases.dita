@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="vbox-conkeyref-phrases">
+  <title>ConKeyRef Phrases for VirtualBox</title>
+  <body>
+    <p>
+      <ph id="product-name">Oracle VM VirtualBox</ph>
+    </p>
+    <p>
+      <ph id="product-version">7.0</ph>
+    </p>
+    <p>
+      <ph id="vbox-mgr">VirtualBox Manager</ph>
+    </p>
+    <p>
+      <ph id="vbox-base">Oracle VM VirtualBox Base Package</ph>
+    </p>
+    <p>
+      <ph id="vbox-ext">Oracle VM VirtualBox Extension Pack</ph>
+    </p>
+    <p>
+      <ph id="oci">Oracle Cloud Infrastructure</ph>
+    </p>
+    <p>
+      <ph id="company-name">Oracle</ph>
+    </p>
+  </body>
+</topic>
