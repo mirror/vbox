@@ -2312,9 +2312,19 @@ quick: \
 #
 # Runs the analysis with parfait
 #
+# @todo A lot of stuff doesn't compile with parfait under
+#       Windows yet due to insufficient MSVC emulation.
+#       Thatswhy the build is just ignoring errors and we let
+#       parfait work on whats there, even if incomplete.
+#       See @bugref{3409} for updates.
+#
 run-parfait:
 ifdef VBOX_WITH_PARFAIT
-	+ $(TIME) -- $(KMK) all
+ ifeq ($(KBUILD_TARGET),win)
+	 - $(TIME) -- $(KMK) all -k
+ else
+	 + $(TIME) -- $(KMK) all
+ endif
 	$(TIME) -- $(VBOX_PARFAIT) \
 	 -p \
 	 $(if-expr defined(VBOX_PARFAIT_SERVER),-s $(VBOX_PARFAIT_SERVER),) \
