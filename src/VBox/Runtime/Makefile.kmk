@@ -115,7 +115,9 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_VALIDATIONKIT && !VBOX_ONLY_DOCS
  endif
  LIBRARIES.solaris += RuntimeR0Stub
  LIBRARIES.win += RuntimeR0Stub RuntimeR3NoCrt
- LIBRARIES.win.amd64 += RuntimeR3-x86
+ ifndef VBOX_WITH_PARFAIT
+  LIBRARIES.win.amd64 += RuntimeR3-x86
+ endif
  ifdef VBOX_WITH_RAW_MODE
   LIBRARIES += RuntimeRC
   LIBRARIES.win += RuntimeRCStub

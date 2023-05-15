@@ -737,7 +737,8 @@ ifdef VBOX_WITH_TESTCASES # The whole file
 
  tstRTNoCrt-5_TEMPLATE := VBoxR3TstExeStatic
  if   "$(KBUILD_TARGET_ARCH)" == "amd64" \
-   && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_VALIDATIONKIT) && !defined(VBOX_ONLY_DOCS) # mirrors RuntimeR3-x86 cond
+   && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_VALIDATIONKIT) && !defined(VBOX_ONLY_DOCS) \
+   && !defined(VBOX_WITH_PARFAIT) # mirrors RuntimeR3-x86 cond
   tstRTNoCrt-5_BLD_TRG_ARCH := x86
  endif
  tstRTNoCrt-5_SOURCES := tstRTNoCrt-5.cpp
