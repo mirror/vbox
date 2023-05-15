@@ -336,8 +336,10 @@ ifndef VBOX_ONLY_SDK
  LIBRARIES += VBoxAPIWrap
  VBoxAPIWrap_TEMPLATE        = VBoxMainLib
  ifeq ($(KBUILD_TARGET),win)
-  VBoxAPIWrap_USES           = vccprecomp
-  VBoxAPIWrap_PCH_HDR       := $(PATH_SUB_CURRENT)/src-all/win/VBoxAPIWrap-precomp_vcc.h
+  ifndef VBOX_WITHOUT_PRECOMPILED_HEADERS
+   VBoxAPIWrap_USES           = vccprecomp
+   VBoxAPIWrap_PCH_HDR       := $(PATH_SUB_CURRENT)/src-all/win/VBoxAPIWrap-precomp_vcc.h
+  endif
  else if $(KBUILD_KMK_REVISION) >= 3256 && "$(KBUILD_TARGET)" != "darwin" && !defined(VBOX_WITHOUT_PRECOMPILED_HEADERS)
   if $(VBOX_GCC_VERSION_CXX) >= 50000 # GCC 4.x runs into trouble compiling the header.
    VBoxAPIWrap_USES        = gccprecomp
