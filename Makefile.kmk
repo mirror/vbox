@@ -2321,9 +2321,9 @@ quick: \
 run-parfait:
 ifdef VBOX_WITH_PARFAIT
  ifeq ($(KBUILD_TARGET),win)
-	 - $(TIME) -- $(KMK) all -k
+	- $(TIME) -- $(KMK) all -k
  else
-	 + $(TIME) -- $(KMK) all
+	+ $(TIME) -- $(KMK) all
  endif
 	$(TIME) -- $(VBOX_PARFAIT) \
 	 -p \
