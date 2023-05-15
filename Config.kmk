@@ -2005,6 +2005,12 @@ endif
 ifdef VBOX_WITH_DRIVERLESS_FORCED
  DEFS += VBOX_WITH_DRIVERLESS_FORCED
 endif
+ifdef VBOX_WITH_PARFAIT
+ DEFS += VBOX_WITH_PARFAIT
+ ifeq ($(KBUILD_TARGET),win)
+  DEFS += RT_RELAXED_CALLBACKS_TYPES
+ endif
+endif
 
 # Don't flood CDEFS, old MASMs doesn't like too many defines.
 ifdef VBOX_WITH_DEBUGGER
@@ -2569,12 +2575,22 @@ VBOX_WIN_MIDL ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(qfirstfile ,$(
 
 # Tricks to work around midl.exe problems with spaces in the /cpp_cmd value, it
 # forgets to quote it when creating the commandline and cl.exe gets very confused.
-if1of (quote, $(KMK_FEATURES))
- VBOX_MIDL_REDIRECT    = $(REDIRECT) --prepend "$(quote-sh-dq PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL)_BIN);$(qaddsuffix ,;,$(PATH_TOOL_$(VBOX_VCC_TOOL)_DLL_BIN)))" --
- VBOX_MIDL_REDIRECT_X86 = $(REDIRECT) --prepend "$(quote-sh-dq PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN);$(qaddsuffix ,;,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_DLL_BIN)))" --
+ifndef VBOX_WITH_PARFAIT
+ if1of (quote, $(KMK_FEATURES))
+  VBOX_MIDL_REDIRECT    = $(REDIRECT) --prepend "$(quote-sh-dq PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL)_BIN);$(qaddsuffix ,;,$(PATH_TOOL_$(VBOX_VCC_TOOL)_DLL_BIN)))" --
+  VBOX_MIDL_REDIRECT_X86 = $(REDIRECT) --prepend "$(quote-sh-dq PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN);$(qaddsuffix ,;,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_DLL_BIN)))" --
+ else
+  VBOX_MIDL_REDIRECT    = $(REDIRECT) --prepend 'PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL)_BIN);$(PATH)' --
+  VBOX_MIDL_REDIRECT_X86 = $(REDIRECT) --prepend 'PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN);$(PATH)' --
+ endif
 else
- VBOX_MIDL_REDIRECT    = $(REDIRECT) --prepend 'PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL)_BIN);$(PATH)' --
- VBOX_MIDL_REDIRECT_X86 = $(REDIRECT) --prepend 'PATH=$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN);$(PATH)' --
+ if1of (quote, $(KMK_FEATURES))
+  VBOX_MIDL_REDIRECT    = $(REDIRECT) --prepend "$(quote-sh-dq PATH=$(VBOX_PARFAIT_PATH_BIN);$(qaddsuffix ,;,$(PATH_TOOL_$(VBOX_VCC_TOOL)_DLL_BIN)))" --
+  VBOX_MIDL_REDIRECT_X86 = $(REDIRECT) --prepend "$(quote-sh-dq PATH=$(VBOX_PARFAIT_PATH_BIN);$(qaddsuffix ,;,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_DLL_BIN)))" --
+ else
+  VBOX_MIDL_REDIRECT    = $(REDIRECT) --prepend 'PATH=$(VBOX_PARFAIT_PATH_BIN);$(PATH)' --
+  VBOX_MIDL_REDIRECT_X86 = $(REDIRECT) --prepend 'PATH=$(VBOX_PARFAIT_PATH_BIN);$(PATH)' --
+ endif
 endif
 VBOX_MIDL_CPP_CMD      = $(lastword $(notdir ,$(subst $(EXEC_X86_WIN32),,$(TOOL_$(VBOX_VCC_TOOL)_CC))))
 VBOX_MIDL_CPP_CMD_X86  = $(lastword $(notdir ,$(subst $(EXEC_X86_WIN32),,$(TOOL_$(VBOX_VCC_TOOL_STEM)X86_CC))))

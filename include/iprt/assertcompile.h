@@ -87,7 +87,7 @@ RT_C_DECLS_END
  * Indicates that the compiler implements static_assert(expr, msg).
  */
 #ifdef _MSC_VER
-# if _MSC_VER >= 1600 && defined(__cplusplus)
+# if _MSC_VER >= 1600 && defined(__cplusplus) && !defined(VBOX_WITH_PARFAIT)
 #  define RTASSERT_HAVE_STATIC_ASSERT
 # endif
 #endif

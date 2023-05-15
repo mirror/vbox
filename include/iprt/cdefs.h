@@ -1170,6 +1170,18 @@
 # error "Port me!"
 #endif
 
+
+/*
+ * The cl.exe frontend emulation of parfait is incorrect and
+ * it still defines __SIZEOF_INT128__ despite msvc not supporting this
+ * type and our code relying on the uint18_t type being a struct
+ * in inline assembler code.
+ */
+#if defined(_MSC_VER) && defined(VBOX_WITH_PARFAIT)
+# undef __SIZEOF_INT128__
+#endif
+
+
 /** @def RT_COMPILER_WITH_128BIT_INT_TYPES
  * Defined when uint128_t and int128_t are native integer types.  If
  * undefined, they are structure with Hi & Lo members. */
