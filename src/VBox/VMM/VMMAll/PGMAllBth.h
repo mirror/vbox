@@ -2546,6 +2546,7 @@ static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTG
     Assert(PGMPOOL_PAGE_IS_NESTED(pShwPage));
     Assert(!pShwPage->fDirty);
     Assert(pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT);
+    AssertMsg(!(pGstWalkAll->u.Ept.Pte.u & EPT_E_LEAF), ("Large page unexpected: %RX64\n", pGstWalkAll->u.Ept.Pte.u));
     AssertMsg((pGstWalkAll->u.Ept.Pte.u & EPT_PTE_PG_MASK) == GCPhysPage,
               ("PTE address mismatch. GCPhysPage=%RGp Pte=%RX64\n", GCPhysPage, pGstWalkAll->u.Ept.Pte.u & EPT_PTE_PG_MASK));
 
@@ -2879,155 +2880,158 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
     Assert(!SHW_PDE_IS_P(Pde));    /* We're only supposed to call SyncPT on PDE!P and conflicts. */
 
 # ifdef PGM_WITH_LARGE_PAGES
-    if (BTH_IS_NP_ACTIVE(pVM))
+    Assert(BTH_IS_NP_ACTIVE(pVM));
+
+    /*
+     * Check if the guest is mapping a 2M page.
+     */
+    if (pGstWalkAll->u.Ept.Pde.u & EPT_E_LEAF)
     {
-        /*
-         * Check if the guest is mapping a 2M page here.
-         */
         PPGMPAGE pPage;
         rc = pgmPhysGetPageEx(pVM, GCPhysPage & X86_PDE2M_PAE_PG_MASK, &pPage);
         AssertRCReturn(rc, rc);
-        if (pGstWalkAll->u.Ept.Pde.u & EPT_E_LEAF)
-        {
-            /* A20 is always enabled in VMX root and non-root operation. */
-            Assert(PGM_A20_IS_ENABLED(pVCpu));
 
-            RTHCPHYS HCPhys = NIL_RTHCPHYS;
-            if (PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE)
+        /* A20 is always enabled in VMX root and non-root operation. */
+        Assert(PGM_A20_IS_ENABLED(pVCpu));
+
+        /*
+         * Check if we have or can get a 2M backing page here.
+         */
+        RTHCPHYS HCPhys = NIL_RTHCPHYS;
+        if (PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE)
+        {
+            STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageReused);
+            AssertRelease(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
+            HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+        }
+        else if (PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE_DISABLED)
+        {
+            /* Recheck the entire 2 MB range to see if we can use it again as a large page. */
+            rc = pgmPhysRecheckLargePage(pVM, GCPhysPage, pPage);
+            if (RT_SUCCESS(rc))
             {
-                STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageReused);
-                AssertRelease(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
+                Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
+                Assert(PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE);
                 HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
             }
-            else if (PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE_DISABLED)
-            {
-                /* Recheck the entire 2 MB range to see if we can use it again as a large page. */
-                rc = pgmPhysRecheckLargePage(pVM, GCPhysPage, pPage);
-                if (RT_SUCCESS(rc))
-                {
-                    Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
-                    Assert(PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE);
-                    HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
-                }
-            }
-            else if (PGMIsUsingLargePages(pVM))
-            {
-                rc = pgmPhysAllocLargePage(pVM, GCPhysPage);
-                if (RT_SUCCESS(rc))
-                {
-                    Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
-                    Assert(PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE);
-                    HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
-                }
-            }
-
-            /*
-             * If we have a 2M large page, we can map the guest's 2M large page right away.
-             */
-            uint64_t const fShwBigPdeFlags = pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptShadowedBigPdeMask;
-            if (HCPhys != NIL_RTHCPHYS)
-            {
-                Pde.u = HCPhys | fShwBigPdeFlags;
-                Assert(!(Pde.u & pVCpu->pgm.s.fGstEptMbzBigPdeMask));
-                Assert(Pde.u & EPT_E_LEAF);
-                SHW_PDE_ATOMIC_SET2(*pPde, Pde);
-
-                /* Add a reference to the first page only. */
-                PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVCpu, pShwPde, PGM_PAGE_GET_TRACKING(pPage), pPage, iPde);
-
-                Assert(PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED);
-
-                STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncPT), a);
-                Log7Func(("GstPde=%RGp ShwPde=%RX64 [2M]\n", pGstWalkAll->u.Ept.Pde.u, Pde.u));
-                return VINF_SUCCESS;
-            }
-
-            /*
-             * We didn't get a perfect 2M fit. Split the 2M page into 4K pages.
-             * The page ought not to be marked as a big (2M) page at this point.
-             */
-            Assert(PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE);
-
-            /* Determine the right kind of large page to avoid incorrect cached entry reuse. */
-            PGMPOOLACCESS enmAccess;
-            {
-                Assert(!(pGstWalkAll->u.Ept.Pde.u & EPT_E_USER_EXECUTE));  /* Mode-based execute control for EPT not supported. */
-                bool const fNoExecute = !(pGstWalkAll->u.Ept.Pde.u & EPT_E_EXECUTE);
-                if (pGstWalkAll->u.Ept.Pde.u & EPT_E_WRITE)
-                    enmAccess = fNoExecute ? PGMPOOLACCESS_SUPERVISOR_RW_NX : PGMPOOLACCESS_SUPERVISOR_RW;
-                else
-                    enmAccess = fNoExecute ? PGMPOOLACCESS_SUPERVISOR_R_NX  : PGMPOOLACCESS_SUPERVISOR_R;
-            }
-
-            /*
-             * Allocate & map a 4K shadow table to cover the 2M guest page.
-             */
-            PPGMPOOLPAGE   pShwPage;
-            RTGCPHYS const GCPhysPt = pGstWalkAll->u.Ept.Pde.u & EPT_PDE2M_PG_MASK;
-            rc = pgmPoolAlloc(pVM, GCPhysPt, PGMPOOLKIND_EPT_PT_FOR_EPT_2MB, enmAccess, PGM_A20_IS_ENABLED(pVCpu),
-                              pShwPde->idx, iPde, false /*fLockPage*/, &pShwPage);
-            if (   rc == VINF_SUCCESS
-                || rc == VINF_PGM_CACHED_PAGE)
-            { /* likely */ }
-            else
-            {
-               STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncPT), a);
-               AssertMsgFailedReturn(("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_IPE_UNEXPECTED_INFO_STATUS);
-            }
-
-            PSHWPT pPt = (PSHWPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
-            Assert(pPt);
-            Assert(PGMPOOL_PAGE_IS_NESTED(pShwPage));
-            if (rc == VINF_SUCCESS)
-            {
-                /* The 4K PTEs shall inherit the flags of the 2M PDE page sans the leaf bit. */
-                uint64_t const fShwPteFlags = fShwBigPdeFlags & ~EPT_E_LEAF;
-
-                /* Sync each 4K pages in the 2M range. */
-                for (unsigned iPte = 0; iPte < RT_ELEMENTS(pPt->a); iPte++)
-                {
-                    RTGCPHYS const GCPhysSubPage = GCPhysPt | (iPte << GUEST_PAGE_SHIFT);
-                    pGstWalkAll->u.Ept.Pte.u = GCPhysSubPage | fShwPteFlags;
-                    Assert(!(pGstWalkAll->u.Ept.Pte.u & pVCpu->pgm.s.fGstEptMbzPteMask));
-                    PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPte], GCPhysSubPage, pShwPage, iPte, pGstWalkAll);
-                    Log7Func(("GstPte=%RGp ShwPte=%RX64 iPte=%u [2M->4K]\n", pGstWalkAll->u.Ept.Pte, pPt->a[iPte].u, iPte));
-                    if (RT_UNLIKELY(VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)))
-                        break;
-                }
-
-                /* Restore modifications did to the guest-walk result above in case callers might inspect them later. */
-                pGstWalkAll->u.Ept.Pte.u = 0;
-            }
-            else
-            {
-                Assert(rc == VINF_PGM_CACHED_PAGE);
-#  if defined(VBOX_STRICT) && defined(DEBUG_ramshankar)
-                /* Paranoia - Verify address of each of the subpages are what they should be. */
-                RTGCPHYS GCPhysSubPage = GCPhysPt;
-                for (unsigned iPte = 0; iPte < RT_ELEMENTS(pPt->a); iPte++, GCPhysSubPage += GUEST_PAGE_SIZE)
-                {
-                    PPGMPAGE pSubPage;
-                    rc = pgmPhysGetPageEx(pVM, GCPhysSubPage, &pSubPage);
-                    AssertRC(rc);
-                    AssertMsg(   PGM_PAGE_GET_HCPHYS(pSubPage) == SHW_PTE_GET_HCPHYS(pPt->a[iPte])
-                              || !SHW_PTE_IS_P(pPt->a[iPte]),
-                              ("PGM 2M page and shadow PTE conflict. GCPhysSubPage=%RGp Page=%RHp Shw=%RHp\n",
-                               GCPhysSubPage, PGM_PAGE_GET_HCPHYS(pSubPage), SHW_PTE_GET_HCPHYS(pPt->a[iPte])));
-                }
-#  endif
-                rc = VINF_SUCCESS; /* Cached entry; assume it's still fully valid. */
-            }
-
-            /* Save the new PDE. */
-            uint64_t const fShwPdeFlags = pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptShadowedPdeMask;
-            Pde.u = pShwPage->Core.Key | fShwPdeFlags;
-            Assert(!(Pde.u & EPT_E_LEAF));
-            Assert(!(Pde.u & pVCpu->pgm.s.fGstEptMbzPdeMask));
-            SHW_PDE_ATOMIC_SET2(*pPde, Pde);
-            STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncPT), a);
-            Log7Func(("GstPde=%RGp ShwPde=%RX64 iPde=%u\n", pGstWalkAll->u.Ept.Pde.u, pPde->u, iPde));
-            return rc;
         }
+        else if (PGMIsUsingLargePages(pVM))
+        {
+            rc = pgmPhysAllocLargePage(pVM, GCPhysPage);
+            if (RT_SUCCESS(rc))
+            {
+                Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
+                Assert(PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE);
+                HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+            }
+        }
+
+        /*
+         * If we have a 2M backing page, we can map the guest's 2M page right away.
+         */
+        uint64_t const fShwBigPdeFlags = pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptShadowedBigPdeMask;
+        if (HCPhys != NIL_RTHCPHYS)
+        {
+            Pde.u = HCPhys | fShwBigPdeFlags;
+            Assert(!(Pde.u & pVCpu->pgm.s.fGstEptMbzBigPdeMask));
+            Assert(Pde.u & EPT_E_LEAF);
+            SHW_PDE_ATOMIC_SET2(*pPde, Pde);
+
+            /* Add a reference to the first page only. */
+            PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVCpu, pShwPde, PGM_PAGE_GET_TRACKING(pPage), pPage, iPde);
+
+            Assert(PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED);
+
+            STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncPT), a);
+            Log7Func(("GstPde=%RGp ShwPde=%RX64 [2M]\n", pGstWalkAll->u.Ept.Pde.u, Pde.u));
+            return VINF_SUCCESS;
+        }
+
+        /*
+         * We didn't get a perfect 2M fit. Split the 2M page into 4K pages.
+         * The page ought not to be marked as a big (2M) page at this point.
+         */
+        Assert(PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE);
+
+        /* Determine the right kind of large page to avoid incorrect cached entry reuse. */
+        PGMPOOLACCESS enmAccess;
+        {
+            Assert(!(pGstWalkAll->u.Ept.Pde.u & EPT_E_USER_EXECUTE));  /* Mode-based execute control for EPT not supported. */
+            bool const fNoExecute = !(pGstWalkAll->u.Ept.Pde.u & EPT_E_EXECUTE);
+            if (pGstWalkAll->u.Ept.Pde.u & EPT_E_WRITE)
+                enmAccess = fNoExecute ? PGMPOOLACCESS_SUPERVISOR_RW_NX : PGMPOOLACCESS_SUPERVISOR_RW;
+            else
+                enmAccess = fNoExecute ? PGMPOOLACCESS_SUPERVISOR_R_NX  : PGMPOOLACCESS_SUPERVISOR_R;
+        }
+
+        /*
+         * Allocate & map a 4K shadow table to cover the 2M guest page.
+         */
+        PPGMPOOLPAGE   pShwPage;
+        RTGCPHYS const GCPhysPt = pGstWalkAll->u.Ept.Pde.u & EPT_PDE2M_PG_MASK;
+        rc = pgmPoolAlloc(pVM, GCPhysPt, PGMPOOLKIND_EPT_PT_FOR_EPT_2MB, enmAccess, PGM_A20_IS_ENABLED(pVCpu),
+                          pShwPde->idx, iPde, false /*fLockPage*/, &pShwPage);
+        if (   rc == VINF_SUCCESS
+            || rc == VINF_PGM_CACHED_PAGE)
+        { /* likely */ }
+        else
+        {
+           STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncPT), a);
+           AssertMsgFailedReturn(("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_IPE_UNEXPECTED_INFO_STATUS);
+        }
+
+        PSHWPT pPt = (PSHWPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
+        Assert(pPt);
+        Assert(PGMPOOL_PAGE_IS_NESTED(pShwPage));
+        if (rc == VINF_SUCCESS)
+        {
+            /* The 4K PTEs shall inherit the flags of the 2M PDE page sans the leaf bit. */
+            uint64_t const fShwPteFlags = fShwBigPdeFlags & ~EPT_E_LEAF;
+
+            /* Sync each 4K pages in the 2M range. */
+            for (unsigned iPte = 0; iPte < RT_ELEMENTS(pPt->a); iPte++)
+            {
+                RTGCPHYS const GCPhysSubPage = GCPhysPt | (iPte << GUEST_PAGE_SHIFT);
+                pGstWalkAll->u.Ept.Pte.u = GCPhysSubPage | fShwPteFlags;
+                Assert(!(pGstWalkAll->u.Ept.Pte.u & pVCpu->pgm.s.fGstEptMbzPteMask));
+                PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPte], GCPhysSubPage, pShwPage, iPte, pGstWalkAll);
+                Log7Func(("GstPte=%RGp ShwPte=%RX64 iPte=%u [2M->4K]\n", pGstWalkAll->u.Ept.Pte, pPt->a[iPte].u, iPte));
+                if (RT_UNLIKELY(VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)))
+                    break;
+            }
+
+            /* Restore modifications did to the guest-walk result above in case callers might inspect them later. */
+            pGstWalkAll->u.Ept.Pte.u = 0;
+        }
+        else
+        {
+            Assert(rc == VINF_PGM_CACHED_PAGE);
+#  if defined(VBOX_STRICT) && defined(DEBUG_ramshankar)
+            /* Paranoia - Verify address of each of the subpages are what they should be. */
+            RTGCPHYS GCPhysSubPage = GCPhysPt;
+            for (unsigned iPte = 0; iPte < RT_ELEMENTS(pPt->a); iPte++, GCPhysSubPage += GUEST_PAGE_SIZE)
+            {
+                PPGMPAGE pSubPage;
+                rc = pgmPhysGetPageEx(pVM, GCPhysSubPage, &pSubPage);
+                AssertRC(rc);
+                AssertMsg(   PGM_PAGE_GET_HCPHYS(pSubPage) == SHW_PTE_GET_HCPHYS(pPt->a[iPte])
+                          || !SHW_PTE_IS_P(pPt->a[iPte]),
+                          ("PGM 2M page and shadow PTE conflict. GCPhysSubPage=%RGp Page=%RHp Shw=%RHp\n",
+                           GCPhysSubPage, PGM_PAGE_GET_HCPHYS(pSubPage), SHW_PTE_GET_HCPHYS(pPt->a[iPte])));
+            }
+#  endif
+            rc = VINF_SUCCESS; /* Cached entry; assume it's still fully valid. */
+        }
+
+        /* Save the new PDE. */
+        uint64_t const fShwPdeFlags = pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptShadowedPdeMask;
+        Pde.u = pShwPage->Core.Key | fShwPdeFlags;
+        Assert(!(Pde.u & EPT_E_LEAF));
+        Assert(!(Pde.u & pVCpu->pgm.s.fGstEptMbzPdeMask));
+        SHW_PDE_ATOMIC_SET2(*pPde, Pde);
+        STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncPT), a);
+        Log7Func(("GstPde=%RGp ShwPde=%RX64 iPde=%u\n", pGstWalkAll->u.Ept.Pde.u, pPde->u, iPde));
+        return rc;
     }
 # endif /* PGM_WITH_LARGE_PAGES */
 
