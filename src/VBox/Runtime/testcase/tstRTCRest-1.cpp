@@ -773,13 +773,13 @@ static void testDouble(void)
     /* deserialize: */
     RTERRINFOSTATIC ErrInfo;
     {
-        /* Some linux systems and probably all solaris fail to parse the longer MIN string, so just detect and skip. */
+        /* Some linux systems and probably all Solaris fail to parse the longer MIN string, so just detect and skip. */
         bool fGroksMinString = true;
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
         RTJSONVAL hTmpValue = NIL_RTJSONVAL;
         int rcTmp = RTJsonParseFromString(&hTmpValue, TST_DBL_MIN_STRING1, NULL);
         RTJsonValueRelease(hTmpValue);
-        if (rcTmp == VERR_INVALID_PARAMETER)
+        if (rcTmp == VERR_INVALID_PARAMETER || rcTmp == VERR_OUT_OF_RANGE)
             fGroksMinString = false;
 #endif
 
@@ -889,7 +889,7 @@ static void testDouble(void)
 
         RTTESTI_CHECK_RC(fromString(&obj4, "false", NULL, RT_XSTR(__LINE__)), VERR_NO_DIGITS);
 
-#if (!defined(RT_OS_SOLARIS) && !defined(RT_OS_WINDOWS)) || RT_MSC_PREREQ(RT_MSC_VER_VS2015)
+#if (!defined(RT_OS_WINDOWS) && !defined(VBOX_SOLARIS_WITHOUT_XPG6_ENABLED)) || RT_MSC_PREREQ(RT_MSC_VER_VS2015)
         RTTESTI_CHECK_RC(fromString(&obj4, " 0x42 ", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
         RTTESTI_CHECK(obj4.m_rdValue == 66.0);
 #else

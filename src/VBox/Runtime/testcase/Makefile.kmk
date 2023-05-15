@@ -359,6 +359,9 @@ ifdef VBOX_WITH_TESTCASES # The whole file
  ifdef VBOX_WITH_LIBCURL
   tstRTCRest-1_TEMPLATE = VBoxR3TstExe
   tstRTCRest-1_SOURCES = tstRTCRest-1.cpp
+  if ("$(KBUILD_TARGET)" == "solaris" && $(VBOX_GCC_VERSION_CXX) <= 70500)
+   tstRTCRest-1_DEFS = VBOX_SOLARIS_WITHOUT_XPG6_ENABLED
+  endif
  endif
 
  tstRTDigest_TEMPLATE = VBoxR3TstExe
