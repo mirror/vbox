@@ -5,7 +5,7 @@
   
   <body>
     <p>
-          When using the Oracle VM VirtualBox Extension Pack provided by
+          When using the <ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/> provided by
           Oracle for VRDP remote desktop support, you can optionally use
           various methods to configure RDP authentication. The "null"
           method is very insecure and should be avoided in a public

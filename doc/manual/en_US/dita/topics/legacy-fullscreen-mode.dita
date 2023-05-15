@@ -5,10 +5,10 @@
   
   <body>
     <p>
-        Oracle VM VirtualBox uses special window manager facilities to switch
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses special window manager facilities to switch
         a multi-screen machine to full-screen on a multi-monitor host
         system. However, not all window managers provide these
-        facilities correctly. Oracle VM VirtualBox can be configured to use a
+        facilities correctly. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can be configured to use a
         legacy method of switching to full-screen mode instead, by using
         the command:
       </p>

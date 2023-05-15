@@ -89,7 +89,7 @@
                          </image>
                        </fig>
                         <p>
-            Oracle VM VirtualBox imposes no limits on the number of snapshots
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> imposes no limits on the number of snapshots
             you can take. The only practical limitation is disk space on
             your host. Each snapshot stores the state of the virtual
             machine and thus occupies some disk space. See
@@ -141,7 +141,7 @@
                         <p>
                            <b outputclass="bold">Delete a snapshot.</b> This
             does not affect the state of the virtual machine, but only
-            releases the files on disk that Oracle VM VirtualBox used to store
+            releases the files on disk that <ph conkeyref="vbox-conkeyref-phrases/product-name"/> used to store
             the snapshot data, thus freeing disk space. To delete a
             snapshot, select the snapshot name in the Snapshots window
             and click <b outputclass="bold">Delete</b> in the

@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        By default, Oracle VM VirtualBox's NAT engine will route TCP/IP
+        By default, <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s NAT engine will route TCP/IP
         packets through the default interface assigned by the host's
         TCP/IP stack. The technical reason for this is that the NAT
         engine uses sockets for communication. If you want to change

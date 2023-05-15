@@ -8,7 +8,7 @@
 
   <body>
     <p>
-      Oracle VM VirtualBox provides a <i>soft keyboard</i> that
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides a <i>soft keyboard</i> that
       enables you to input keyboard characters on the guest. A soft
       keyboard is an on-screen keyboard that can be used as an
       alternative to a physical keyboard. See
@@ -20,7 +20,7 @@
       <p>
         For best results, ensure that the keyboard layout configured on
         the guest OS matches the keyboard layout used by the soft
-        keyboard. Oracle VM VirtualBox does not do this automatically.
+        keyboard. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> does not do this automatically.
       </p>
     </note>
     <fig id="fig-soft-keyb">

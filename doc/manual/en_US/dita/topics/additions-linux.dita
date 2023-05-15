@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        Like the Windows Guest Additions, the Oracle VM VirtualBox Guest
+        Like the Windows Guest Additions, the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest
         Additions for Linux are a set of device drivers and system
         applications which may be installed in the guest operating
         system.
@@ -53,11 +53,11 @@
       </p>
     <p>
         Note that some Linux distributions already come with all or part
-        of the Oracle VM VirtualBox Guest Additions. You may choose to keep
+        of the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions. You may choose to keep
         the distribution's version of the Guest Additions but these are
         often not up to date and limited in functionality, so we
         recommend replacing them with the Guest Additions that come with
-        Oracle VM VirtualBox. The Oracle VM VirtualBox Linux Guest Additions
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Linux Guest Additions
         installer tries to detect an existing installation and replace
         them but depending on how the distribution integrates the Guest
         Additions, this may require some manual interaction. It is

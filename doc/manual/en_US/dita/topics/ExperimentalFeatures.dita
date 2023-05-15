@@ -5,7 +5,7 @@
   
   <body>
     <p>
-      Some Oracle VM VirtualBox features are labeled as experimental. Such
+      Some <ph conkeyref="vbox-conkeyref-phrases/product-name"/> features are labeled as experimental. Such
       features are provided on an "as-is" basis and are not formally
       supported. However, feedback and suggestions about such features
       are welcome. A comprehensive list of experimental features is as
@@ -51,7 +51,7 @@
       </li>
       <li>
         <p>
-          Using Oracle VM VirtualBox and Hyper-V on the same host
+          Using <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and Hyper-V on the same host
         </p>
       </li>
     </ul>

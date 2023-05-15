@@ -31,7 +31,7 @@
       </p>
     </note>
     <p>
-      Oracle VM VirtualBox provides a wide range of parameters that can be
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides a wide range of parameters that can be
       changed for a virtual machine. The various settings that can be
       changed in the <b outputclass="bold">Settings</b> window
       are described in detail in <xref href="BasicConcepts.dita#BasicConcepts"/>. Even

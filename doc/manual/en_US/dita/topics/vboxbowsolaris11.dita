@@ -6,7 +6,7 @@
   
   <body>
     <p>
-      Oracle VM VirtualBox includes a network filter driver that utilizes
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> includes a network filter driver that utilizes
       Oracle Solaris 11's Crossbow functionality. By default, this new
       driver is installed for Oracle Solaris 11 hosts that have support
       for it.
@@ -14,22 +14,22 @@
     <p>
       To force installation of the older STREAMS based network filter
       driver, execute as root the following command before installing
-      the Oracle VM VirtualBox package:
+      the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> package:
     </p>
     <pre xml:space="preserve">$ touch /etc/vboxinst_vboxflt</pre>
     <p>
       To force installation of the Crossbow based network filter driver,
       execute as root the following command before installing the
-      Oracle VM VirtualBox package:
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> package:
     </p>
     <pre xml:space="preserve">$ touch /etc/vboxinst_vboxbow</pre>
     <p>
-      To check which driver is currently being used by Oracle VM VirtualBox,
+      To check which driver is currently being used by <ph conkeyref="vbox-conkeyref-phrases/product-name"/>,
       execute:
     </p>
     <pre xml:space="preserve">$ modinfo | grep vbox</pre>
     <p>
-      If the output contains "vboxbow", it indicates Oracle VM VirtualBox is
+      If the output contains "vboxbow", it indicates <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is
       using the Crossbow network filter driver, while the name "vboxflt"
       indicates usage of the older STREAMS network filter.
     </p>

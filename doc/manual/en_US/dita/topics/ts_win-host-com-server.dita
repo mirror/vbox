@@ -5,21 +5,21 @@
   
   <body>
     <p>
-        Oracle VM VirtualBox makes use of the Microsoft Component Object Model
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> makes use of the Microsoft Component Object Model
         (COM) for interprocess and intraprocess communication. This
-        enables Oracle VM VirtualBox to share a common configuration among
+        enables <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to share a common configuration among
         different virtual machine processes and provide several user
         interface options based on a common architecture. All global
         status information and configuration is maintained by the
         process <filepath>VBoxSVC.exe</filepath>, which is an
-        out-of-process COM server. Whenever an Oracle VM VirtualBox process is
+        out-of-process COM server. Whenever an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> process is
         started, it requests access to the COM server and Windows
         automatically starts the process. Note that it should never be
         started by the end user.
       </p>
     <p>
         When the last process disconnects from the COM server, it will
-        terminate itself after some seconds. The Oracle VM VirtualBox
+        terminate itself after some seconds. The <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         configuration XML files are maintained and owned by the COM
         server and the files are locked whenever the server runs.
       </p>

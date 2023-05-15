@@ -13,7 +13,7 @@
     <p>
           This will unpack all the files needed for installation in the
           directory <codeph>install</codeph> under the current
-          directory. The Oracle VM VirtualBox application files are contained
+          directory. The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> application files are contained
           in <filepath>VirtualBox.tar.bz2</filepath> which you can
           unpack to any directory on your system. For example:
         </p>
@@ -25,7 +25,7 @@ sudo tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</pre>
     <pre xml:space="preserve">mkdir /opt/VirtualBox
 tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</pre>
     <p>
-          The sources for Oracle VM VirtualBox's kernel module are provided in
+          The sources for <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s kernel module are provided in
           the <filepath>src</filepath> directory. To build the module,
           change to the directory and use the following command:
         </p>
@@ -41,7 +41,7 @@ tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</pre>
         </p>
     <pre xml:space="preserve">make install</pre>
     <p>
-          The Oracle VM VirtualBox kernel module needs a device node to
+          The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> kernel module needs a device node to
           operate. The above <userinput>make</userinput> command will tell
           you how to create the device node, depending on your Linux
           system. The procedure is slightly different for a classical
@@ -68,11 +68,11 @@ tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</pre>
         </p>
     <pre xml:space="preserve">cp /opt/VirtualBox/vboxdrv.sh /sbin/rcvboxdrv</pre>
     <p>
-          This example assumes you installed Oracle VM VirtualBox to the
+          This example assumes you installed <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to the
           <filepath>/opt/VirtualBox</filepath> directory.
         </p>
     <p>
-          Create a configuration file for Oracle VM VirtualBox, as follows:
+          Create a configuration file for <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, as follows:
         </p>
     <pre xml:space="preserve">mkdir /etc/vbox
 echo INSTALL_DIR=/opt/VirtualBox &gt; /etc/vbox/vbox.cfg</pre>

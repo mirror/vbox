@@ -5,7 +5,7 @@
   
   <body>
     <p>
-          The Oracle VM VirtualBox Guest Additions for Oracle Solaris are
+          The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions for Oracle Solaris are
           provided on the same ISO CD-ROM as the Additions for Windows
           and Linux. They come with an installation program that guides
           you through the setup process.

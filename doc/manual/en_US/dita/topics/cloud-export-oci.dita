@@ -1,23 +1,23 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="cloud-export-oci">
-  <title>Exporting an Appliance to Oracle Cloud Infrastructure</title>
-  
+  <title>Exporting an Appliance to <ph conkeyref="vbox-conkeyref-phrases/oci"/></title>
+
   <body>
     <p>
-        Oracle VM VirtualBox supports the export of VMs to an Oracle Cloud Infrastructure service.
-        The exported VM is stored on Oracle Cloud Infrastructure as a custom Linux image. You
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports the export of VMs to an <ph conkeyref="vbox-conkeyref-phrases/oci"/> service.
+        The exported VM is stored on <ph conkeyref="vbox-conkeyref-phrases/oci"/> as a custom Linux image. You
         can configure whether a cloud instance is created and started
         after the export process has completed.
       </p>
     <note>
       <p>
-          Before you export a VM to Oracle Cloud Infrastructure, you must prepare the VM as
+          Before you export a VM to <ph conkeyref="vbox-conkeyref-phrases/oci"/>, you must prepare the VM as
           described in <xref href="cloud-export-oci-prepare-vm.dita#cloud-export-oci-prepare-vm"/>.
         </p>
     </note>
     <p>
-        Use the following steps to export a VM to Oracle Cloud Infrastructure:
+        Use the following steps to export a VM to <ph conkeyref="vbox-conkeyref-phrases/oci"/>:
       </p>
     <ol>
       <li>
@@ -36,11 +36,11 @@
       <li>
         <p>
             From the <b outputclass="bold">Format</b> drop-down
-            list, select <b outputclass="bold">Oracle Cloud Infrastructure</b>.
+            list, select <b outputclass="bold"><ph conkeyref="vbox-conkeyref-phrases/oci"/></b>.
           </p>
         <p>
             In the <b outputclass="bold">Profile</b> drop-down
-            list, select the cloud profile used for your Oracle Cloud Infrastructure account.
+            list, select the cloud profile used for your <ph conkeyref="vbox-conkeyref-phrases/oci"/> account.
           </p>
         <fig id="fig-export-appliance-oci">
           <title>Export Virtual Appliance Wizard: Format Settings</title>
@@ -56,7 +56,7 @@
         <p>
             In the <b outputclass="bold">Machine Creation</b>
             field, select an option to configure settings for the cloud
-            instance created when you export to Oracle Cloud Infrastructure. The options
+            instance created when you export to <ph conkeyref="vbox-conkeyref-phrases/oci"/>. The options
             enable you to do one of the following:
           </p>
         <ul>
@@ -81,14 +81,14 @@
         </ul>
         <p>
             Click <b outputclass="bold">Next</b> to make an API
-            request to the Oracle Cloud Infrastructure service and open the
+            request to the <ph conkeyref="vbox-conkeyref-phrases/oci"/> service and open the
             <b outputclass="bold">Appliance Settings</b> page.
           </p>
       </li>
       <li>
         <p>
             (Optional) Edit storage settings used for the exported
-            virtual machine in Oracle Cloud Infrastructure. You can change the following
+            virtual machine in <ph conkeyref="vbox-conkeyref-phrases/oci"/>. You can change the following
             settings:
           </p>
         <ul>
@@ -99,12 +99,12 @@
           </li>
           <li>
             <p>
-                Whether to store the custom image in Oracle Cloud Infrastructure.
+                Whether to store the custom image in <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
               </p>
           </li>
           <li>
             <p>
-                The display name for the custom image in Oracle Cloud Infrastructure.
+                The display name for the custom image in <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
               </p>
           </li>
           <li>
@@ -113,7 +113,7 @@
               </p>
             <p><b outputclass="bold">Paravirtualized</b> mode
                 gives improved performance and should be suitable for
-                most Oracle VM VirtualBox VMs.
+                most <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VMs.
               </p>
             <p><b outputclass="bold">Emulated</b> mode is
                 suitable for legacy OS images.
@@ -135,24 +135,23 @@
           </p>
         <p>
             Click <b outputclass="bold">Finish</b>. The VM is
-            exported to Oracle Cloud Infrastructure.
+            exported to <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
           </p>
         <p>
             Depending on the <b outputclass="bold">Machine
             Creation</b> setting, a cloud instance may be started
-            after upload to Oracle Cloud Infrastructure is completed.
+            after upload to <ph conkeyref="vbox-conkeyref-phrases/oci"/> is completed.
           </p>
       </li>
       <li>
         <p>
-            Monitor the export process by using the Oracle Cloud Infrastructure Console.
+            Monitor the export process by using the <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console.
           </p>
       </li>
     </ol>
     <p>
-        You can also use the <userinput>VBoxManage export</userinput>
-        command to export a VM to Oracle Cloud Infrastructure. See
-        <xref href="vboxmanage-export.dita"/>.
-      </p>
+        You can also use the <userinput>VBoxManage export</userinput> command to export a VM to
+        <ph conkeyref="vbox-conkeyref-phrases/oci"/>. See <xref href="vboxmanage-export.dita"/>.
+    </p>
   </body>
 </topic>

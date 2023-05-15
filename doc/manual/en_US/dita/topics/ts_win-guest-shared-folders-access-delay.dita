@@ -7,7 +7,7 @@
     <p>
         The performance for accesses to shared folders from a Windows
         guest might be decreased due to delays during the resolution of
-        the Oracle VM VirtualBox shared folders name service. To fix these
+        the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> shared folders name service. To fix these
         delays, add the following entries to the file
         <filepath>\windows\system32\drivers\etc\lmhosts</filepath> of
         the Windows guest:

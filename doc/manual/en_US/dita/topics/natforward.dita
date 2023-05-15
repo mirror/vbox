@@ -2,16 +2,16 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="natforward">
   <title>Configuring Port Forwarding with NAT</title>
-  
+
   <body>
     <p>
         As the virtual machine is connected to a private network
-        internal to Oracle VM VirtualBox and invisible to the host, network
+        internal to <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and invisible to the host, network
         services on the guest are not accessible to the host machine or
         to other computers on the same network. However, like a physical
-        router, Oracle VM VirtualBox can make selected services available to
+        router, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can make selected services available to
         the world outside the guest through <i>port
-        forwarding</i>. This means that Oracle VM VirtualBox listens to
+        forwarding</i>. This means that <ph conkeyref="vbox-conkeyref-phrases/product-name"/> listens to
         certain ports on the host and resends all packets which arrive
         there to the guest, on the same or a different port.
       </p>
@@ -35,10 +35,9 @@
         traffic to be routed to a specific port in the guest.
       </p>
     <p>
-        Alternatively, the command line tool
-        <userinput>VBoxManage</userinput> can be used. See
+        Alternatively, the command line tool <userinput>VBoxManage</userinput> can be used. See
         <xref href="vboxmanage-modifyvm.dita"/>.
-      </p>
+    </p>
     <p>
         You will need to know which ports on the guest the service uses
         and to decide which ports to use on the host. You may want to
@@ -88,9 +87,9 @@
         guest.
       </p>
     <p>
-        It is possible to configure incoming NAT connections while the
-        VM is running, see <xref href="vboxmanage-controlvm.dita"/>.
-      </p>
+        It is possible to configure incoming NAT connections while the VM is running, see <xref
+        href="vboxmanage-controlvm.dita"/>.
+    </p>
   </body>
-  
+
 </topic>

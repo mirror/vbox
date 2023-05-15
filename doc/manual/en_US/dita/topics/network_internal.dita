@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="network_internal">
   <title>Internal Networking</title>
-  
+
   <body>
     <p>
       Internal Networking is similar to bridged networking in that the
@@ -26,9 +26,9 @@
       Internal networks are created automatically as needed. There is no
       central configuration. Every internal network is identified simply
       by its name. Once there is more than one active virtual network
-      card with the same internal network ID, the Oracle VM VirtualBox support
+      card with the same internal network ID, the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> support
       driver will automatically <i>wire</i> the cards and
-      act as a network switch. The Oracle VM VirtualBox support driver
+      act as a network switch. The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> support driver
       implements a complete Ethernet switch and supports both
       broadcast/multicast frames and promiscuous mode.
     </p>
@@ -41,7 +41,7 @@
       <li>
         <p>
           Use the VM's <b outputclass="bold">Settings</b> window
-          in VirtualBox Manager. In the <b outputclass="bold">Network</b>
+          in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. In the <b outputclass="bold">Network</b>
           category of the Settings window, select
           <b outputclass="bold">Internal Network</b> from the
           drop-down list of networking modes. Select the name of an
@@ -66,11 +66,10 @@
       </li>
     </ul>
     <p>
-      Unless you configure the virtual network cards in the guest
-      operating systems that are participating in the internal network
-      to use static IP addresses, you may want to use the DHCP server
-      that is built into Oracle VM VirtualBox to manage IP addresses for the
-      internal network. See <xref href="vboxmanage-dhcpserver.dita"/>.
+      Unless you configure the virtual network cards in the guest operating systems that are
+      participating in the internal network to use static IP addresses, you may want to use the DHCP
+      server that is built into <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to manage IP addresses for the internal
+      network. See <xref href="vboxmanage-dhcpserver.dita"/>.
     </p>
     <p>
       As a security measure, by default, the Linux implementation of
@@ -80,5 +79,5 @@
       with different user IDs.
     </p>
   </body>
-  
+
 </topic>

@@ -1,12 +1,12 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="vboxbowvnictemplates">
-  <title>Oracle VM VirtualBox VNIC Templates for VLANs on Oracle Solaris 11 Hosts</title>
+  <title><ph conkeyref="vbox-conkeyref-phrases/product-name"/> VNIC Templates for VLANs on Oracle Solaris 11 Hosts</title>
   
   <body>
     <p>
-      Oracle VM VirtualBox supports Virtual Network Interface (VNIC) templates
-      for configuring VMs over VLANs. An Oracle VM VirtualBox VNIC template is
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports Virtual Network Interface (VNIC) templates
+      for configuring VMs over VLANs. An <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VNIC template is
       a VNIC whose name starts with
       <filepath>vboxvnic_template</filepath>. The string is
       case-sensitive.
@@ -18,7 +18,7 @@
     </p>
     <p>
       The following is an example of how to use a VNIC template to
-      configure a VM over a VLAN. Create an Oracle VM VirtualBox VNIC
+      configure a VM over a VLAN. Create an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VNIC
       template, by executing as root:
     </p>
     <pre xml:space="preserve"># dladm create-vnic -t -l nge0 -v 23 vboxvnic_template0</pre>

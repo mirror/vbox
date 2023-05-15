@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        On macOS, launchd is used to start the Oracle VM VirtualBox autostart
+        On macOS, launchd is used to start the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> autostart
         service. An example configuration file can be found in
         <filepath>/Applications/VirtualBox.app/Contents/MacOS/org.virtualbox.vboxautostart.plist</filepath>.
         To enable the service copy the file to

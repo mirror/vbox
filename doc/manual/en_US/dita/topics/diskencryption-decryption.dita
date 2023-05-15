@@ -6,7 +6,7 @@
   <body>
     <p>
         In some circumstances it might be required to decrypt previously
-        encrypted images. This can be done in VirtualBox Manager for a complete
+        encrypted images. This can be done in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> for a complete
         VM or using <userinput>VBoxManage</userinput> with the following
         command:
       </p>

@@ -6,9 +6,9 @@
   <body>
     <p>
         With Windows Vista, Microsoft dropped support for the AMD PCNet
-        card that legacy versions of Oracle VM VirtualBox used to provide as
+        card that legacy versions of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> used to provide as
         the default virtual network card. For Windows Vista guests,
-        Oracle VM VirtualBox now uses an Intel E1000 card by default.
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> now uses an Intel E1000 card by default.
       </p>
     <p>
         If, for some reason, you still want to use the AMD card, you

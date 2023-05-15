@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="vboxconfigdata-machine-folder">
   <title>The Machine Folder</title>
-  
+
   <body>
     <p>
         By default, each virtual machine has a directory on your host
@@ -13,7 +13,7 @@
       </p>
     <p>
         By default, this machine folder is located in a common folder
-        called <filepath>VirtualBox VMs</filepath>, which Oracle VM VirtualBox
+        called <filepath>VirtualBox VMs</filepath>, which <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         creates in the current system user's home directory. The
         location of this home directory depends on the conventions of
         the host operating system, as follows:
@@ -36,7 +36,7 @@
             <filepath>$HOME</filepath>, except for the user
             <codeph>root</codeph> where it is taken from the account
             database. This is a workaround for the frequent trouble
-            caused by users using Oracle VM VirtualBox in combination with the
+            caused by users using <ph conkeyref="vbox-conkeyref-phrases/product-name"/> in combination with the
             tool <userinput>sudo</userinput>, which by default does not
             reset the environment variable <filepath>$HOME</filepath>.
           </p>
@@ -58,7 +58,7 @@
       </p>
     <p>
         As an example, when you create a virtual machine called "Example
-        VM", Oracle VM VirtualBox creates the following:
+        VM", <ph conkeyref="vbox-conkeyref-phrases/product-name"/> creates the following:
       </p>
     <ul>
       <li>
@@ -91,14 +91,12 @@
         change the location of its snapshots folder in the VM settings.
       </p>
     <p>
-        You can change the default machine folder by selecting
-        <b outputclass="bold">Preferences</b> from the
-        <b outputclass="bold">File</b> menu in the Oracle VM VirtualBox
-        main window. Then, in the displayed window, click on the
-        <b outputclass="bold">General</b> tab. Alternatively, use
-        the <userinput>VBoxManage setproperty machinefolder</userinput>
-        command. See <xref href="vboxmanage-setproperty.dita">VBoxManage setproperty</xref>.
-      </p>
+        You can change the default machine folder by selecting <b outputclass="bold">Preferences</b>
+        from the <b outputclass="bold">File</b> menu in the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> main window. Then, in
+        the displayed window, click on the <b outputclass="bold">General</b> tab. Alternatively, use
+        the <userinput>VBoxManage setproperty machinefolder</userinput> command. See
+        <xref href="vboxmanage-setproperty.dita">VBoxManage setproperty</xref>.
+    </p>
   </body>
-  
+
 </topic>

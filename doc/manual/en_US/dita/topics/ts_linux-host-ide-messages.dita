@@ -9,14 +9,14 @@
         incorrect host or guest configuration, it is possible that any
         attempt to access the CD or DVD writer fails and simply results
         in guest kernel error messages for Linux guests or application
-        error messages for Windows guests. Oracle VM VirtualBox performs the
+        error messages for Windows guests. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> performs the
         usual consistency checks when a VM is powered up. In particular,
         it aborts with an error message if the device for the CD or DVD
         writer is not writable by the user starting the VM. But
-        Oracle VM VirtualBox cannot detect all misconfigurations. The
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> cannot detect all misconfigurations. The
         necessary host and guest OS configuration is not specific for
-        Oracle VM VirtualBox, but a few frequent problems are listed here
-        which occurred in connection with Oracle VM VirtualBox.
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, but a few frequent problems are listed here
+        which occurred in connection with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
       </p>
     <p>
         Special care must be taken to use the correct device. The
@@ -34,7 +34,7 @@
         kernels. Many Linux distributions load this module whenever a CD
         or DVD writer is detected in the system, even if the kernel
         would support CD or DVD writers without the module.
-        Oracle VM VirtualBox supports the use of IDE device files, such as
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports the use of IDE device files, such as
         <filepath>/dev/hdc</filepath>, provided the kernel supports this
         and the <userinput>ide-scsi</userinput> module is not loaded.
       </p>

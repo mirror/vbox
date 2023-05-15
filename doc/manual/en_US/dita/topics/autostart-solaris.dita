@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        On Oracle Solaris hosts, the Oracle VM VirtualBox autostart daemon is
+        On Oracle Solaris hosts, the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> autostart daemon is
         integrated into the SMF framework. To enable it you must point
         the service to an existing configuration file which has the same
         format as on Linux, see <xref href="autostart-linux.dita#autostart-linux"/>. For
@@ -15,7 +15,7 @@
   config/config=/etc/vbox/autostart.cfg</pre>
     <p>
         When everything is configured correctly you can start the
-        Oracle VM VirtualBox autostart service with the following command:
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> autostart service with the following command:
       </p>
     <pre xml:space="preserve"># svcadm enable svc:/application/virtualbox/autostart:default</pre>
     <p>

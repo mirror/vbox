@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        To uninstall Oracle VM VirtualBox, open the disk image
+        To uninstall <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, open the disk image
         <filepath>dmg</filepath> file and double-click on the uninstall
         icon shown.
       </p>

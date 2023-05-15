@@ -10,12 +10,12 @@
       security issues. By default, UAC and UIPI are enabled.
     </p>
     <p>
-      When an Oracle VM VirtualBox VM process is running with a higher so-called
+      When an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VM process is running with a higher so-called
       privilege level than another process that wants to interact with the
       VM process via drag'n drop (or system clipboard), Windows prevents this
-      by default due to security reasons. This results in Oracle VM VirtualBox not
+      by default due to security reasons. This results in <ph conkeyref="vbox-conkeyref-phrases/product-name"/> not
       being able to receive any Windows messages for drag'n drop. To make this work, 
-      the Oracle VM VirtualBox VM process must be running with
+      the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VM process must be running with
       the same (or lower) privilege level as the process it is interacting with
       using drag'n drop.</p>
       

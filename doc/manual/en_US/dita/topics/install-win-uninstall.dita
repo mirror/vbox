@@ -5,8 +5,8 @@
   
   <body>
     <p>
-        As Oracle VM VirtualBox uses the standard Microsoft Windows installer,
-        Oracle VM VirtualBox can be safely uninstalled at any time. Click the
+        As <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses the standard Microsoft Windows installer,
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can be safely uninstalled at any time. Click the
         program entry in the <b outputclass="bold">Add/Remove
         Programs</b> list in the Windows Control Panel.
       </p>

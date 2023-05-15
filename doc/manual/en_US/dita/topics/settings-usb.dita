@@ -8,12 +8,12 @@
                   <p>
         The <b outputclass="bold">USB</b> section in a virtual
         machine's <b outputclass="bold">Settings</b> window
-        enables you to configure Oracle VM VirtualBox's sophisticated USB
+        enables you to configure <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s sophisticated USB
         support.
       </p>
                   <p>
-        Oracle VM VirtualBox can enable virtual machines to access the USB
-        devices on your host directly. To achieve this, Oracle VM VirtualBox
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can enable virtual machines to access the USB
+        devices on your host directly. To achieve this, <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         presents the guest OS with a virtual USB controller. As soon as
         the guest system starts using a USB device, it will appear as
         unavailable on the host.
@@ -40,7 +40,7 @@
                   </note>
                   <p>
         In addition to allowing a guest access to your local USB
-        devices, Oracle VM VirtualBox even enables your guests to connect to
+        devices, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> even enables your guests to connect to
         remote USB devices by use of the VirtualBox Remote Desktop
         Extension (VRDE). See <xref href="usb-over-rdp.dita">Remote USB</xref>.
       </p>

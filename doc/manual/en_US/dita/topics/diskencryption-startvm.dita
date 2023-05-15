@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        When a VM is started using VirtualBox Manager, a dialog will open where
+        When a VM is started using <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, a dialog will open where
         the user needs to enter all passwords for all encrypted images
         attached to the VM. If another frontend like VBoxHeadless is
         used, the VM will be paused as soon as the guest tries to access

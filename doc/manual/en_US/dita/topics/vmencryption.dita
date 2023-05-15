@@ -5,14 +5,14 @@
   
   <body>
     <p>
-      Oracle VM VirtualBox enables you to transparently encrypt the VM data
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables you to transparently encrypt the VM data
       stored in the configuration file, saved state, and EFI boot data
       for the guest.
     </p>
     <p>
-      Oracle VM VirtualBox uses the AES algorithm in various modes. The
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses the AES algorithm in various modes. The
       selected mode depends on the encrypting component of the VM.
-      Oracle VM VirtualBox supports 128-bit or 256-bit data encryption keys
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports 128-bit or 256-bit data encryption keys
       (DEK). The DEK is stored encrypted in the VM configuration file
       and is decrypted during VM startup.
     </p>

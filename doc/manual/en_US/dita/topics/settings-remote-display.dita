@@ -7,7 +7,7 @@
     <p>
         On the <b outputclass="bold">Remote Display</b> tab, if
         the VirtualBox Remote Display Extension (VRDE) is installed, you
-        can enable the VRDP server that is built into Oracle VM VirtualBox.
+        can enable the VRDP server that is built into <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
         This enables you to connect to the console of the virtual
         machine remotely with any standard RDP viewer, such as
         <userinput>mstsc.exe</userinput> that comes with Microsoft Windows.

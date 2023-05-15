@@ -7,18 +7,18 @@
     <p>
       As an experimental feature, primarily due to being limited to
       Linux host only and unknown Linux distribution coverage,
-      Oracle VM VirtualBox supports passing through the PC speaker to the
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports passing through the PC speaker to the
       host. The PC speaker, sometimes called the system speaker, is a
       way to produce audible feedback such as beeps without the need for
       regular audio and sound card support.
     </p>
     <p>
-      The PC speaker passthrough feature in Oracle VM VirtualBox handles beeps
+      The PC speaker passthrough feature in <ph conkeyref="vbox-conkeyref-phrases/product-name"/> handles beeps
       only. Advanced PC speaker use by the VM, such as PCM audio, will
       not work, resulting in undefined host behavior.
     </p>
     <p>
-      Producing beeps on Linux is a very complex topic. Oracle VM VirtualBox
+      Producing beeps on Linux is a very complex topic. <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
       offers a collection of options, in an attempt to make this work
       deterministically and reliably on as many Linux distributions and
       system configurations as possible. These are summarized in the
@@ -191,7 +191,7 @@
     </p>
     <p>
       Enabling PC speaker passthrough for the VM is usually the simple
-      part. The real difficulty is making sure that Oracle VM VirtualBox can
+      part. The real difficulty is making sure that <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can
       access the necessary device, because in a typical Linux install
       most of them can only be accessed by user <codeph>root</codeph>.
       You should follow the preferred way to persistently change this,
@@ -208,7 +208,7 @@
       access. For example, that the VM process must have the same
       controlling terminal as the device configured to be used for
       beeping, something which is often very difficult to achieve for
-      GUI applications such as Oracle VM VirtualBox. The table above contains
+      GUI applications such as <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. The table above contains
       some hints, but in general refer to the Linux documentation.
     </p>
     <p>

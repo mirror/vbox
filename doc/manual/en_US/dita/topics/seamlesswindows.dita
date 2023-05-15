@@ -6,7 +6,7 @@
   <body>
     <p>
       With the <i>seamless windows</i> feature of
-      Oracle VM VirtualBox, you can have the windows that are displayed within
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, you can have the windows that are displayed within
       a virtual machine appear side by side next to the windows of your
       host. This feature is supported for the following guest operating
       systems, provided that the Guest Additions are installed:
@@ -25,7 +25,7 @@
       </li>
     </ul>
     <p>
-      After seamless windows are enabled, Oracle VM VirtualBox suppresses the
+      After seamless windows are enabled, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> suppresses the
       display of the desktop background of your guest, allowing you to
       run the windows of your guest operating system seamlessly next to
       the windows of your host.

@@ -8,7 +8,7 @@
           The RPM format does not provide a configuration system
           comparable to the debconf system. See
           <xref href="linux_install_opts.dita#linux_install_opts"/> for how to set some
-          common installation options provided by Oracle VM VirtualBox.
+          common installation options provided by <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
         </p>
   </body>
   

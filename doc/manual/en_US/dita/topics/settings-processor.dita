@@ -12,7 +12,7 @@
       <li>
         <p><b outputclass="bold">Processor(s):</b> Sets the
             number of virtual CPU cores the guest OSes can see.
-            Oracle VM VirtualBox supports symmetrical multiprocessing (SMP)
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports symmetrical multiprocessing (SMP)
             and can present up to 32 virtual CPU cores to each virtual
             machine.
           </p>
@@ -60,7 +60,7 @@
       </li>
     </ul>
     <p>
-        With virtual machines running modern server OSes, Oracle VM VirtualBox
+        With virtual machines running modern server OSes, <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         also supports CPU hot-plugging. For details, see
         <xref href="cpuhotplug.dita">CPU Hot-Plugging</xref>.
       </p>

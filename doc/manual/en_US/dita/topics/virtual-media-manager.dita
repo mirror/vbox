@@ -6,7 +6,7 @@
             
             <body>
                <p>
-      Oracle VM VirtualBox keeps track of all the hard disk, CD/DVD-ROM, and
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> keeps track of all the hard disk, CD/DVD-ROM, and
       floppy disk images which are in use by virtual machines. These are
       often referred to as <i>known media</i> and come
       from two sources:
@@ -19,7 +19,7 @@
                   </li>
                   <li>
                      <p>
-          Registered media, for compatibility with legacy Oracle VM VirtualBox
+          Registered media, for compatibility with legacy <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
           versions.
         </p>
                   </li>
@@ -29,7 +29,7 @@
       <b outputclass="bold">Virtual Media Manager</b> tool, which
       you access by clicking <b outputclass="bold">Media</b> on
       the global <b outputclass="bold">Tools</b> menu in
-      VirtualBox Manager.
+      <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>.
     </p>
               <fig id="fig-virtual-media-manager">
                 <title>The Virtual Media Manager, Showing Hard Disk Images</title>
@@ -49,7 +49,7 @@
                <ul>
                   <li>
                      <p>
-          Hard disk images, either in Oracle VM VirtualBox's own Virtual Disk
+          Hard disk images, either in <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s own Virtual Disk
           Image (VDI) format, or in the third-party formats listed in
           <xref href="vdidetails.dita#vdidetails"/>.
         </p>
@@ -128,7 +128,7 @@
         </p>
                      <p>
           When you use the Virtual Media Manager to move a disk image,
-          Oracle VM VirtualBox updates all related configuration files
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> updates all related configuration files
           automatically.
         </p>
                      <note>
@@ -142,7 +142,7 @@
             a disk image to a new location, run the <userinput>VBoxManage
               modifymedium --setlocation</userinput>                       
             command to configure the new path of the disk image on the
-            host file system. This command updates the Oracle VM VirtualBox
+            host file system. This command updates the <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
             configuration automatically.
           </p>
                      </note>
@@ -261,11 +261,11 @@
                <note>
                   <p>
         Do not simply make copies of virtual disk images. If you import
-        such a second copy into a VM, Oracle VM VirtualBox issues an error
-        because Oracle VM VirtualBox assigns a universally unique identifier
+        such a second copy into a VM, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> issues an error
+        because <ph conkeyref="vbox-conkeyref-phrases/product-name"/> assigns a universally unique identifier
         (UUID) to each disk image to ensure that it is only used one
         time. See <xref href="cloningvdis.dita#cloningvdis"/>. Also, if you want to
-        copy a VM to another system, use the Oracle VM VirtualBox import and
+        copy a VM to another system, use the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> import and
         export features. See <xref href="ovf.dita#ovf"/>.
       </p>
                </note>

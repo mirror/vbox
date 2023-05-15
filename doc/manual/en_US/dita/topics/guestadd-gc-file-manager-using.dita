@@ -24,7 +24,7 @@
           </li>
           <li>
             <p>
-                In VirtualBox Manager, click on the machine name. Click
+                In <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, click on the machine name. Click
                 <b outputclass="bold">File Manager</b> in the
                 machine tools menu for the VM.
               </p>

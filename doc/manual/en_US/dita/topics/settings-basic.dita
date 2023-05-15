@@ -13,14 +13,14 @@
       <li>
         <p><b outputclass="bold">Name:</b> The name of the the
             VM, as shown in the list of VMs in the main VirtualBox
-            Manager window. Using this name, Oracle VM VirtualBox also saves
+            Manager window. Using this name, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> also saves
             the VM's configuration files. If you change the name,
-            Oracle VM VirtualBox renames these files as well. As a result, you
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> renames these files as well. As a result, you
             can only use characters which are allowed for file names on
             your host OS.
           </p>
         <p>
-            Note that internally, Oracle VM VirtualBox uses unique identifiers
+            Note that internally, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses unique identifiers
             (UUIDs) to identify virtual machines. You can display these
             using the <userinput>VBoxManage</userinput> commands.
           </p>

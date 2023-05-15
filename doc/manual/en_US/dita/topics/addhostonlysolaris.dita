@@ -6,7 +6,7 @@
   
   <body>
     <p>
-      By default Oracle VM VirtualBox provides you with one host-only network
+      By default <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides you with one host-only network
       interface. Adding more host-only network interfaces on Oracle
       Solaris hosts requires manual configuration. Here is how to add
       another host-only network interface.
@@ -68,7 +68,7 @@ net1              Ethernet             up         1000   full      vboxnet0</pre
       <filepath>/etc/inet/netmasks</filepath>, and if you are using NWAM
       <filepath>/etc/nwam/llp</filepath> and add the appropriate entries
       to set the netmask and static IP for each of those interfaces. The
-      Oracle VM VirtualBox installer only updates these configuration files
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> installer only updates these configuration files
       for the one "vboxnet0" interface it creates by default.
     </p>
   </body>

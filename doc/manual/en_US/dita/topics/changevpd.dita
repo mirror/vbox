@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        Oracle VM VirtualBox reports vendor product data for its virtual hard
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> reports vendor product data for its virtual hard
         disks which consist of hard disk serial number, firmware
         revision and model number. These can be changed using the
         following commands:

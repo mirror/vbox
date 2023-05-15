@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        The Oracle VM VirtualBox NAT stack performance is often determined by
+        The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> NAT stack performance is often determined by
         its interaction with the host's TCP/IP stack and the size of
         several buffers, <codeph>SO_RCVBUF</codeph> and
         <codeph>SO_SNDBUF</codeph>. For certain setups users might

@@ -6,31 +6,31 @@
   <body>
     <p>
       As briefly mentioned in <xref href="features-overview.dita#features-overview"/>,
-      Oracle VM VirtualBox has a very flexible internal design that enables
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has a very flexible internal design that enables
       you to use multiple interfaces to control the same virtual
       machines. For example, you can start a virtual machine with the
-      VirtualBox Manager window and then stop it from the command line. With
-      Oracle VM VirtualBox's support for the Remote Desktop Protocol (RDP),
+      <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window and then stop it from the command line. With
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s support for the Remote Desktop Protocol (RDP),
       you can even run virtual machines remotely on a headless server
       and have all the graphical output redirected over the network.
     </p>
     <p>
       The following front-ends are shipped in the standard
-      Oracle VM VirtualBox package:
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> package:
     </p>
     <ul>
       <li>
         <p><b outputclass="bold">VirtualBox.</b> This is the
-          VirtualBox Manager, a graphical user interface that uses the Qt
+          <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, a graphical user interface that uses the Qt
           toolkit. This interface is described throughout this manual.
           While this is the simplest and easiest front-end to use, some
-          of the more advanced Oracle VM VirtualBox features are not included.
+          of the more advanced <ph conkeyref="vbox-conkeyref-phrases/product-name"/> features are not included.
         </p>
       </li>
       <li>
         <p><b outputclass="bold">VBoxManage.</b> A command-line
           interface for automated and detailed control of every aspect
-          of Oracle VM VirtualBox. See
+          of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. See
           <xref href="vboxmanage.dita#vboxmanage"/>.
         </p>
       </li>
@@ -50,9 +50,9 @@
     <p>
       If the above front-ends still do not satisfy your particular
       needs, it is possible to create yet another front-end to the
-      complex virtualization engine that is the core of Oracle VM VirtualBox,
-      as the Oracle VM VirtualBox core neatly exposes all of its features in a
-      clean API. See <xref href="VirtualBoxAPI.dita">Oracle VM VirtualBox Programming Interfaces</xref>.
+      complex virtualization engine that is the core of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>,
+      as the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> core neatly exposes all of its features in a
+      clean API. See <xref href="VirtualBoxAPI.dita"><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Programming Interfaces</xref>.
     </p>
   </body>
   

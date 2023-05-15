@@ -5,13 +5,13 @@
   
   <body>
     <p>
-      Oracle VM VirtualBox includes experimental support for the Extensible
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> includes experimental support for the Extensible
       Firmware Interface (EFI), which is an industry standard intended
       to replace the legacy BIOS as the primary interface for
       bootstrapping computers and certain system services later.
     </p>
     <p>
-      By default, Oracle VM VirtualBox uses the BIOS firmware for virtual
+      By default, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses the BIOS firmware for virtual
       machines. To use EFI for a given virtual machine, you can enable
       EFI in the machine's <b outputclass="bold">Settings</b>
       window. See <xref href="settings-motherboard.dita#settings-motherboard"/>. Alternatively,
@@ -29,14 +29,14 @@
       special versions that can be booted using EFI.
     </p>
     <p>
-      Another possible use of EFI in Oracle VM VirtualBox is development and
+      Another possible use of EFI in <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is development and
       testing of EFI applications, without booting any OS.
     </p>
     <p>
-      Note that the Oracle VM VirtualBox EFI support is experimental and will
+      Note that the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> EFI support is experimental and will
       be enhanced as EFI matures and becomes more widespread. Mac OS X,
       Linux, and newer Windows guests are known to work fine. Windows 7
-      guests are unable to boot with the Oracle VM VirtualBox EFI
+      guests are unable to boot with the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> EFI
       implementation.
     </p>
   </body>

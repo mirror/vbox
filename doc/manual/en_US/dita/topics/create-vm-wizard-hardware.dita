@@ -25,7 +25,7 @@
     <ul>
       <li>
         <p><b outputclass="bold">Base Memory.</b> Select the
-            amount of RAM that Oracle VM VirtualBox should allocate every time
+            amount of RAM that <ph conkeyref="vbox-conkeyref-phrases/product-name"/> should allocate every time
             the virtual machine is started. The amount of memory
             selected here will be taken away from your host machine and
             presented to the guest OS, which will report this size as

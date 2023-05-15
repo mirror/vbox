@@ -8,7 +8,7 @@
       Another extension pack called VNC is available. This extension
       pack is open source and replaces the previous integration of the
       VNC remote access protocol. This is experimental code, and is
-      initially available in the Oracle VM VirtualBox source code package
+      initially available in the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> source code package
       only. It is to a large portion code contributed by users, and is
       not supported in any way by Oracle.
     </p>
@@ -20,7 +20,7 @@
       differences to the US keyboard layout it is most likely unusable.
     </p>
     <p>
-      It is possible to install both the Oracle VM VirtualBox Extension Pack
+      It is possible to install both the <ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/>
       and VNC, but only one VRDE module can be active at any time. The
       following command switches to the VNC VRDE module in VNC:
     </p>
@@ -46,7 +46,7 @@
     <p>
       The following command switches back to VRDP, if installed:
     </p>
-    <pre xml:space="preserve">VBoxManage setproperty vrdeextpack "Oracle VM VirtualBox Extension Pack"</pre>
+    <pre xml:space="preserve">VBoxManage setproperty vrdeextpack "<ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/>"</pre>
   </body>
   
 </topic>

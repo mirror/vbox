@@ -2,11 +2,11 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="cloud-create-cloud-profile">
   <title>Creating a Cloud Profile</title>
-  
+
   <body>
     <p>
-        Oracle VM VirtualBox uses a <i>cloud profile</i> to
-        connect to Oracle Cloud Infrastructure. A cloud profile is a text file that contains
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses a <i>cloud profile</i> to
+        connect to <ph conkeyref="vbox-conkeyref-phrases/oci"/>. A cloud profile is a text file that contains
         details of your key files and Oracle Cloud Identifier (OCID)
         resource identifiers for your cloud account, such as the
         following:
@@ -32,7 +32,7 @@
           </p>
       </li>
       <li>
-        <p><b outputclass="bold">Region</b>. Shown on the Oracle Cloud Infrastructure
+        <p><b outputclass="bold">Region</b>. Shown on the <ph conkeyref="vbox-conkeyref-phrases/oci"/>
             Console. Click
             <b outputclass="bold">Administration</b>,
             <b outputclass="bold">Tenancy Details</b>.
@@ -40,7 +40,7 @@
       </li>
       <li>
         <p><b outputclass="bold">Tenancy OCID.</b> Shown on the
-            Oracle Cloud Infrastructure Console. Click
+            <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console. Click
             <b outputclass="bold">Administration</b>,
             <b outputclass="bold">Tenancy Details</b>.
           </p>
@@ -50,7 +50,7 @@
       </li>
       <li>
         <p><b outputclass="bold">Compartment OCID.</b> Shown on
-            the Oracle Cloud Infrastructure Console. Click
+            the <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console. Click
             <b outputclass="bold">Identity</b>,
             <b outputclass="bold">Compartments</b>.
           </p>
@@ -60,7 +60,7 @@
       </li>
       <li>
         <p><b outputclass="bold">User OCID.</b> Shown on the
-            Oracle Cloud Infrastructure Console. Click
+            <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console. Click
             <b outputclass="bold">Profile</b>,
             <b outputclass="bold">User Settings</b>.
           </p>
@@ -80,22 +80,21 @@
             <xref href="cloud-using-cloud-profile-manager.dita#cloud-using-cloud-profile-manager"/>.
           </p>
         <p>
-            The Cloud Profile Manager is a VirtualBox Manager tool that enables
+            The Cloud Profile Manager is a <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> tool that enables
             you to create, edit, and manage cloud profiles for your
             cloud service accounts.
           </p>
       </li>
       <li>
         <p>
-            Automatically, by using the <userinput>VBoxManage
-            cloudprofile</userinput> command. See
-            <xref href="vboxmanage-cloudprofile.dita"/>.
-          </p>
+          Automatically, by using the <userinput>VBoxManage cloudprofile</userinput> command. See
+          <xref href="vboxmanage-cloudprofile.dita"/>.
+        </p>
       </li>
       <li>
         <p>
             Manually, by creating an <filepath>oci_config</filepath>
-            file in your Oracle VM VirtualBox global configuration directory.
+            file in your <ph conkeyref="vbox-conkeyref-phrases/product-name"/> global configuration directory.
             For example, this is
             <filepath>$HOME/.config/VirtualBox/oci_config</filepath> on
             a Linux host.
@@ -104,15 +103,15 @@
       <li>
         <p>
             Manually, by creating a <filepath>config</filepath> file in
-            your Oracle Cloud Infrastructure configuration directory. For example, this is
+            your <ph conkeyref="vbox-conkeyref-phrases/oci"/> configuration directory. For example, this is
             <filepath>$HOME/.oci/config</filepath> on a Linux host.
           </p>
         <p>
-            This is the same file that is used by the Oracle Cloud Infrastructure command line
+            This is the same file that is used by the <ph conkeyref="vbox-conkeyref-phrases/oci"/> command line
             interface.
           </p>
         <p>
-            Oracle VM VirtualBox automatically uses the
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> automatically uses the
             <filepath>config</filepath> file if no cloud profile file is
             present in your global configuration directory.
             Alternatively, you can import this file manually into the
@@ -121,5 +120,5 @@
       </li>
     </ul>
   </body>
-  
+
 </topic>

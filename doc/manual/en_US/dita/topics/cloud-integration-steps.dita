@@ -1,25 +1,25 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="cloud-integration-steps">
-  <title>Preparing for Oracle Cloud Infrastructure Integration</title>
+  <title>Preparing for <ph conkeyref="vbox-conkeyref-phrases/oci"/> Integration</title>
   
   <body>
     <p>
         Perform the following configuration steps before using
-        Oracle VM VirtualBox to integrate with your Oracle Cloud Infrastructure account.
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to integrate with your <ph conkeyref="vbox-conkeyref-phrases/oci"/> account.
       </p>
     <ol>
       <li>
         <p><b outputclass="bold">Install the Extension Pack.</b>
             Cloud integration features are only available when you
-            install the Oracle VM VirtualBox Extension Pack. See
+            install the <ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/>. See
             <xref href="intro-installing.dita#intro-installing"/>.
           </p>
       </li>
       <li>
         <p><b outputclass="bold">Create a key pair.</b> Generate
             an API signing key pair that is used for API requests to
-            Oracle Cloud Infrastructure. See <xref href="cloud-create-api-keypair.dita#cloud-create-api-keypair"/>.
+            <ph conkeyref="vbox-conkeyref-phrases/oci"/>. See <xref href="cloud-create-api-keypair.dita#cloud-create-api-keypair"/>.
           </p>
         <p>
             Upload the public key of the key pair from your client

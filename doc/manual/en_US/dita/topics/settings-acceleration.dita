@@ -5,21 +5,17 @@
   
   <body>
     <p>
-        On this tab, you can configure Oracle VM VirtualBox to use hardware
+        On this tab, you can configure <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to use hardware
         virtualization extensions that your host CPU supports.
       </p>
     <ul>
       <li>
-        <p><b outputclass="bold">Paravirtualization
-            Interface:</b> Oracle VM VirtualBox provides
-            paravirtualization interfaces to improve time-keeping
-            accuracy and performance of guest OSes. The options
-            available are documented under the
-           <codeph>--paravirt-provider</codeph> option in
-            <xref href="vboxmanage-modifyvm.dita"/>. For further details
-            on the paravirtualization providers, see
-            <xref href="gimproviders.dita">Paravirtualization Providers</xref>.
-          </p>
+        <p><b outputclass="bold">Paravirtualization Interface:</b> <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides
+          paravirtualization interfaces to improve time-keeping accuracy and performance of guest
+          OSes. The options available are documented under the <codeph>--paravirt-provider</codeph>
+          option in <xref href="vboxmanage-modifyvm.dita"/>. For further details on the
+          paravirtualization providers, see <xref href="gimproviders.dita">Paravirtualization
+            Providers</xref>. </p>
       </li>
       <li>
         <p><b outputclass="bold">Hardware Virtualization:</b>
@@ -48,7 +44,7 @@
     <p>
         In most cases, the default settings on the
         <b outputclass="bold">Acceleration</b> tab will work
-        well. Oracle VM VirtualBox selects sensible defaults, depending on the
+        well. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> selects sensible defaults, depending on the
         OS that you selected when you created the virtual machine. In
         certain situations, however, you may want to change the
         preconfigured defaults.

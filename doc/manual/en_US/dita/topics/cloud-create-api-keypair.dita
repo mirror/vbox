@@ -6,19 +6,19 @@
   <body>
     <p/>
     <p>
-        To use the cloud integration features of Oracle VM VirtualBox, you
+        To use the cloud integration features of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, you
         must generate an API signing key pair that is used for API
-        requests to Oracle Cloud Infrastructure.
+        requests to <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
       </p>
     <p>
-        Your API requests are signed with your private key, and Oracle Cloud Infrastructure
+        Your API requests are signed with your private key, and <ph conkeyref="vbox-conkeyref-phrases/oci"/>
         uses the public key to verify the authenticity of the request.
-        You must upload the public key to the Oracle Cloud Infrastructure Console.
+        You must upload the public key to the <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console.
       </p>
     <note>
       <p>
           This key pair is not the same SSH key that you use to access
-          compute instances on Oracle Cloud Infrastructure.
+          compute instances on <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
         </p>
     </note>
     <ol>

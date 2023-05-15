@@ -2,14 +2,14 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="iocaching">
   <title>Host Input/Output Caching</title>
-  
+
   <body>
     <p>
-      Oracle VM VirtualBox can optionally disable the I/O caching that the
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can optionally disable the I/O caching that the
       host OS would otherwise perform on disk image files.
     </p>
     <p>
-      Traditionally, Oracle VM VirtualBox has opened disk image files as
+      Traditionally, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has opened disk image files as
       normal files, which results in them being cached by the host OS
       like any other file. The main advantage of this is speed: when the
       guest OS writes to disk and the host OS cache uses delayed
@@ -65,9 +65,9 @@
     </ul>
     <p>
       If you decide to disable host I/O caching for the above reasons,
-      Oracle VM VirtualBox uses its own small cache to buffer writes, but no
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses its own small cache to buffer writes, but no
       read caching since this is typically already performed by the
-      guest OS. In addition, Oracle VM VirtualBox fully supports asynchronous
+      guest OS. In addition, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> fully supports asynchronous
       I/O for its virtual SATA, SCSI, and SAS controllers through
       multiple I/O threads.
     </p>
@@ -77,7 +77,7 @@
       for your VM's virtual IDE controllers.
     </p>
     <p>
-      For this reason, Oracle VM VirtualBox enables you to configure whether
+      For this reason, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables you to configure whether
       the host I/O cache is used for each I/O controller separately.
       Either select the <b outputclass="bold">Use Host I/O
       Cache</b> check box in the
@@ -91,9 +91,9 @@
       See <xref href="vboxmanage-storagectl.dita"/>.
     </p>
     <p>
-      For the above reasons, Oracle VM VirtualBox uses SATA controllers by
+      For the above reasons, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses SATA controllers by
       default for new virtual machines.
     </p>
   </body>
-  
+
 </topic>

@@ -6,15 +6,15 @@
   <body>
     <p>
         As a special feature additional to the VRDP support,
-        Oracle VM VirtualBox also supports remote USB devices over the wire.
-        That is, an Oracle VM VirtualBox guest that runs on one computer can
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> also supports remote USB devices over the wire.
+        That is, an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> guest that runs on one computer can
         access the USB devices of the remote computer on which the VRDP
         data is being displayed the same way as USB devices that are
         connected to the actual host. This enables running of virtual
-        machines on an Oracle VM VirtualBox host that acts as a server, where
+        machines on an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> host that acts as a server, where
         a client can connect from elsewhere that needs only a network
         adapter and a display capable of running an RDP viewer. When USB
-        devices are plugged into the client, the remote Oracle VM VirtualBox
+        devices are plugged into the client, the remote <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         server can access them.
       </p>
     <p>
@@ -29,7 +29,7 @@
         <userinput>uttsc</userinput>, a client tailored for the use with Sun
         Ray thin clients, support accessing remote USB devices. RDP
         clients for other platforms will be provided in future
-        Oracle VM VirtualBox versions.
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> versions.
       </p>
   </body>
   

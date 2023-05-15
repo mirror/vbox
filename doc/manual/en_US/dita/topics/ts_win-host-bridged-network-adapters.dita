@@ -27,7 +27,7 @@
         <pre xml:space="preserve">HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Network\MaxNumFilters</pre>
         <p>
             The maximum number allowed is 14. After a reboot, try to
-            reinstall Oracle VM VirtualBox.
+            reinstall <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
           </p>
       </li>
       <li>
@@ -37,9 +37,9 @@
             typically mention the failure to find a suitable driver
             package for either the <userinput>sun_VBoxNetFlt</userinput> or
             <userinput>sun_VBoxNetFltmp</userinput> components. The solution
-            then is to uninstall Oracle VM VirtualBox, remove the INF cache
+            then is to uninstall <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, remove the INF cache
             (<filepath>%windir%\inf\INFCACHE.1</filepath>), reboot and
-            try to reinstall Oracle VM VirtualBox.
+            try to reinstall <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
           </p>
       </li>
     </ul>

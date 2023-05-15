@@ -16,12 +16,12 @@
                      <p>
                         <b outputclass="bold">Host operating system (host
           OS).</b> This is the OS of the physical computer on
-          which Oracle VM VirtualBox was installed. There are versions of
-          Oracle VM VirtualBox for Windows, macOS, Linux, and Oracle Solaris
+          which <ph conkeyref="vbox-conkeyref-phrases/product-name"/> was installed. There are versions of
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> for Windows, macOS, Linux, and Oracle Solaris
           hosts. See <xref href="hostossupport.dita#hostossupport"/>.
         </p>
                      <p>
-          Most of the time, this manual discusses all Oracle VM VirtualBox
+          Most of the time, this manual discusses all <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
           versions together. There may be platform-specific differences
           which we will point out where appropriate.
         </p>
@@ -30,7 +30,7 @@
                      <p>
                         <b outputclass="bold">Guest operating system (guest
           OS).</b> This is the OS that is running inside the
-          virtual machine. Theoretically, Oracle VM VirtualBox can run any x86
+          virtual machine. Theoretically, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can run any x86
           OS such as DOS, Windows, OS/2, FreeBSD, and OpenBSD. But to
           achieve near-native performance of the guest code on your
           machine, we had to go through a lot of optimizations that are
@@ -46,22 +46,22 @@
                   <li>
                      <p>
                         <b outputclass="bold">Virtual machine (VM).</b> This is
-          the special environment that Oracle VM VirtualBox creates for your
+          the special environment that <ph conkeyref="vbox-conkeyref-phrases/product-name"/> creates for your
           guest OS while it is running. In other words, you run your
           guest OS <i>in</i> a VM. Normally, a VM is shown
           as a window on your computer's desktop. Depending on which of
-          the various frontends of Oracle VM VirtualBox you use, the VM might
+          the various frontends of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> you use, the VM might
           be shown in full screen mode or remotely on another computer.
         </p>
                      <p>
-          Internally, Oracle VM VirtualBox treats a VM as a set of parameters
+          Internally, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> treats a VM as a set of parameters
           that specify its behavior. Some parameters describe hardware
           settings, such as the amount of memory and number of CPUs
           assigned. Other parameters describe the state information,
           such as whether the VM is running or saved.
         </p>
                      <p>
-          You can view these VM settings in VirtualBox Manager, in the
+          You can view these VM settings in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, in the
           <b outputclass="bold">Settings</b> window, and by
           running the <userinput>VBoxManage</userinput> command. See
           <xref href="vboxmanage.dita#vboxmanage"/>.
@@ -71,7 +71,7 @@
                      <p>
                         <b outputclass="bold">Guest Additions.</b> This refers
           to special software packages which are shipped with
-          Oracle VM VirtualBox but designed to be installed
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> but designed to be installed
           <i>inside</i> a VM to improve performance of the
           guest OS and to add extra features. See
           <xref href="guestadditions.dita#guestadditions"/>.

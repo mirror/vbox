@@ -6,12 +6,12 @@
   <body>
     <p>
         As an alternative to using virtual disk images as described in
-        <xref href="storage.dita">Virtual Storage</xref>, Oracle VM VirtualBox can also present
+        <xref href="storage.dita">Virtual Storage</xref>, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can also present
         either entire physical hard disks or selected partitions as
         virtual disks to virtual machines.
       </p>
     <p>
-        With Oracle VM VirtualBox, this type of access is called <i>raw
+        With <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, this type of access is called <i>raw
         hard disk access</i>. It enables a guest operating system
         to access its virtual hard disk without going through the host
         OS file system. The actual performance difference for image

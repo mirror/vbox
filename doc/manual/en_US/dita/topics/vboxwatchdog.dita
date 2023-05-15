@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="vboxwatchdog">
-  <title>Oracle VM VirtualBox Watchdog</title>
+  <title><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Watchdog</title>
   
   <body>
     <p>
@@ -29,7 +29,7 @@
       <li>
         <p><b outputclass="bold">Host isolation detection.</b>
           This service provides a way to detect whether the host cannot
-          reach the specific Oracle VM VirtualBox server instance anymore and
+          reach the specific <ph conkeyref="vbox-conkeyref-phrases/product-name"/> server instance anymore and
           take appropriate actions, such as shutting down, saving the
           current state or even powering down certain VMs.
         </p>

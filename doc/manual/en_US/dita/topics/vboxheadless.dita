@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        While any VM started from VirtualBox Manager is capable of running
+        While any VM started from <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> is capable of running
         virtual machines remotely, it is not convenient to have to run
         the full GUI if you never want to have VMs displayed locally in
         the first place. In particular, if you are running server
@@ -13,12 +13,12 @@
         supposed to run remotely over VRDP, then it is pointless to have
         a graphical user interface on the server at all. This is
         especially true for Linux or Oracle Solaris hosts, as the
-        VirtualBox Manager comes with dependencies on the Qt and SDL libraries.
+        <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> comes with dependencies on the Qt and SDL libraries.
         This is inconvenient if you would rather not have the X Window
         system on your server at all.
       </p>
     <p>
-        Oracle VM VirtualBox therefore comes with a front-end called
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> therefore comes with a front-end called
         <userinput>VBoxHeadless</userinput>, which produces no visible
         output on the host at all, but still can optionally deliver VRDP
         data. This front-end has no dependencies on the X Window system
@@ -26,9 +26,9 @@
       </p>
     <note>
       <p>
-          In legacy releases of Oracle VM VirtualBox, the headless server was
+          In legacy releases of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, the headless server was
           called <userinput>VBoxVRDP</userinput>. For backwards
-          compatibility, the Oracle VM VirtualBox installation still includes
+          compatibility, the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> installation still includes
           an executable with that name.
         </p>
     </note>
@@ -43,7 +43,7 @@
           </p>
         <pre xml:space="preserve">$ VBoxManage startvm <varname>VM-name</varname> --type headless</pre>
         <p>
-            The <codeph>--type</codeph> option causes Oracle VM VirtualBox to
+            The <codeph>--type</codeph> option causes <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to
             use <userinput>VBoxHeadless</userinput> as the front-end to the
             internal virtualization engine, instead of the Qt front-end.
           </p>
@@ -69,7 +69,7 @@
       </li>
       <li>
         <p>
-            Start <userinput>VBoxHeadless</userinput> from VirtualBox Manager, by
+            Start <userinput>VBoxHeadless</userinput> from <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, by
             pressing the Shift key when starting a virtual machine or by
             selecting <b outputclass="bold">Headless Start</b>
             from the <b outputclass="bold">Machine</b> menu.

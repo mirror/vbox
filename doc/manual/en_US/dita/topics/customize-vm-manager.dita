@@ -1,12 +1,12 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="customize-vm-manager">
-  <title>Customizing VirtualBox Manager</title>
+  <title>Customizing <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></title>
   
   <body>
     <p>
         There are several advanced customization settings for locking
-        down VirtualBox Manager. Locking down means removing some features that
+        down <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. Locking down means removing some features that
         the user should not see.
       </p>
     <pre xml:space="preserve">VBoxManage setextradata global GUI/Customizations <varname>property</varname>[,<varname>property</varname> ...]</pre>
@@ -20,7 +20,7 @@
         </dt>
         <dd>
           <p>
-              Do not allow users to start VirtualBox Manager. Trying to do so
+              Do not allow users to start <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. Trying to do so
               will show a window containing a proper error message.
             </p>
         </dd>
@@ -47,7 +47,7 @@
       </dlentry>
     </dl>
     <p>
-        To disable any of these VirtualBox Manager customizations use the
+        To disable any of these <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> customizations use the
         following command:
       </p>
     <pre xml:space="preserve">$ VBoxManage setextradata global GUI/Customizations</pre>

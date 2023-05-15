@@ -7,7 +7,7 @@
     <p>
       For each card, you can individually select what kind of
       <i>hardware</i> will be presented to the virtual
-      machine. Oracle VM VirtualBox can virtualize the following types of
+      machine. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can virtualize the following types of
       networking hardware:
     </p>
     <ul>
@@ -58,13 +58,13 @@
     </p>
     <p>
       The Paravirtualized network adapter (virtio-net) is special. If
-      you select this adapter, then Oracle VM VirtualBox does
+      you select this adapter, then <ph conkeyref="vbox-conkeyref-phrases/product-name"/> does
       <i>not</i> virtualize common networking hardware
       that is supported by common guest operating systems. Instead,
-      Oracle VM VirtualBox expects a special software interface for
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> expects a special software interface for
       virtualized environments to be provided by the guest, thus
       avoiding the complexity of emulating networking hardware and
-      improving network performance. Oracle VM VirtualBox provides support for
+      improving network performance. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides support for
       the industry-standard <i>virtio</i> networking
       drivers, which are part of the open source KVM project.
     </p>
@@ -90,7 +90,7 @@
       </li>
     </ul>
     <p>
-      Oracle VM VirtualBox also has limited support for <i>jumbo
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> also has limited support for <i>jumbo
       frames</i>. These are networking packets with more than
       1500 bytes of data, provided that you use the Intel card
       virtualization and bridged networking. Jumbo frames are not

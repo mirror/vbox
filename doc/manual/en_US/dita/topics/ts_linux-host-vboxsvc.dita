@@ -5,26 +5,26 @@
   
   <body>
     <p>
-        On Linux, Oracle VM VirtualBox makes use of a custom version of
+        On Linux, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> makes use of a custom version of
         Mozilla XPCOM (cross platform component object model) for
         interprocess and intraprocess communication (IPC). The process
         <userinput>VBoxSVC</userinput> serves as a communication hub between
-        different Oracle VM VirtualBox processes and maintains the global
+        different <ph conkeyref="vbox-conkeyref-phrases/product-name"/> processes and maintains the global
         configuration, such as the XML database. When starting an
-        Oracle VM VirtualBox component, the processes
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> component, the processes
         <userinput>VBoxSVC</userinput> and <userinput>VBoxXPCOMIPCD</userinput>
         are started automatically. They are only accessible from the
         user account they are running under. <userinput>VBoxSVC</userinput>
-        owns the Oracle VM VirtualBox configuration database which normally
+        owns the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> configuration database which normally
         resides in <filepath>~/.config/VirtualBox</filepath>, or the
         appropriate configuration directory for your operating system.
         While it is running, the configuration files are locked.
-        Communication between the various Oracle VM VirtualBox components and
+        Communication between the various <ph conkeyref="vbox-conkeyref-phrases/product-name"/> components and
         <userinput>VBoxSVC</userinput> is performed through a local domain
         socket residing in
         <filepath>/tmp/.vbox-<varname>username</varname>-ipc</filepath>.
         In case there are communication problems, such as an
-        Oracle VM VirtualBox application cannot communicate with
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> application cannot communicate with
         <userinput>VBoxSVC</userinput>, terminate the daemons and remove the
         local domain socket directory.
       </p>

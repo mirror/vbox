@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        Oracle VM VirtualBox provides a custom PAM module (Pluggable
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides a custom PAM module (Pluggable
         Authentication Module) which can be used to perform automated
         guest logins on platforms which support this framework.
         Virtually all modern Linux and UNIX distributions rely on PAM.
@@ -81,13 +81,13 @@
             <filepath>pam_unix.so</filepath> or
             <codeph>use_first_pass</codeph> for
             <filepath>pam_unix2.so</filepath> is needed in order to pass
-            the credentials from the Oracle VM VirtualBox module to the shadow
+            the credentials from the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> module to the shadow
             database authentication module. For Ubuntu, this needs to be
             added to <filepath>/etc/pam.d/common-auth</filepath>, to the
             end of the line referencing
             <filepath>pam_unix.so</filepath>. This argument tells the
             PAM module to use credentials already present in the stack,
-            such as the ones provided by the Oracle VM VirtualBox PAM module.
+            such as the ones provided by the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> PAM module.
           </p>
       </li>
     </ol>

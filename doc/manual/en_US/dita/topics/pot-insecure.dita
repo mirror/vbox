@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        The following features of Oracle VM VirtualBox can present security
+        The following features of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can present security
         problems:
       </p>
     <ul>
@@ -50,8 +50,8 @@
       </li>
       <li>
         <p>
-            When using the Oracle VM VirtualBox web service to control an
-            Oracle VM VirtualBox host remotely, connections to the web
+            When using the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> web service to control an
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> host remotely, connections to the web
             service, over which the API calls are transferred using SOAP
             XML, are not encrypted. They use plain HTTP by default. This
             is a potential security risk. For details about the web
@@ -78,7 +78,7 @@
       <li>
         <p>
             Because of shortcomings in older Windows versions, using
-            Oracle VM VirtualBox on Windows versions older than Vista with
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> on Windows versions older than Vista with
             Service Pack 1 is not recommended.
           </p>
       </li>

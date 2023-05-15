@@ -14,7 +14,7 @@
             resolutions and color depths may be available.
           </p>
         <p>
-            VirtualBox Manager will show a warning if the amount of video memory
+            <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> will show a warning if the amount of video memory
             is too small to be able to switch the VM into full screen
             mode. The minimum value depends on the number of virtual
             monitors, the screen resolution and the color depth of the
@@ -30,9 +30,9 @@
       </li>
       <li>
         <p><b outputclass="bold">Monitor Count:</b> With this
-            setting, Oracle VM VirtualBox can provide more than one virtual
+            setting, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can provide more than one virtual
             monitor to a virtual machine. If a guest OS supports
-            multiple attached monitors, Oracle VM VirtualBox can pretend that
+            multiple attached monitors, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can pretend that
             multiple virtual monitors are present. Up to eight such
             virtual monitors are supported.
           </p>
@@ -44,7 +44,7 @@
             result, for full screen and seamless modes to work with
             multiple monitors, you will need at least as many physical
             monitors as you have virtual monitors configured, or
-            Oracle VM VirtualBox will report an error.
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will report an error.
           </p>
         <p>
             You can configure the relationship between guest and host

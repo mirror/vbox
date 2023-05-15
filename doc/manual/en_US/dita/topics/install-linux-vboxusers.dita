@@ -7,7 +7,7 @@
     <p>
         The Linux installers create the system user group
         <codeph>vboxusers</codeph> during installation. Any system
-        user who is going to use USB devices from Oracle VM VirtualBox guests
+        user who is going to use USB devices from <ph conkeyref="vbox-conkeyref-phrases/product-name"/> guests
         must be a member of that group. A user can be made a member of
         the group <codeph>vboxusers</codeph> either by using the
         desktop user and group tools, or with the following command:

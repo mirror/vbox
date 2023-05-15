@@ -6,7 +6,7 @@
   <body>
     <p>
         The following table gives a brief overview of the configuration
-        data locations on an Oracle VM VirtualBox host.
+        data locations on an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> host.
       </p>
     <table id="table-config-summary">
       <title>Configuration File Locations</title>

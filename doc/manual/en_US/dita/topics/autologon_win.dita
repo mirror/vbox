@@ -10,19 +10,19 @@
         so-called GINA (Graphical Identification and Authentication)
         modules. In Windows Vista and later releases, the GINA modules
         were replaced with a new mechanism called credential providers.
-        The Oracle VM VirtualBox Guest Additions for Windows come with both, a
+        The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions for Windows come with both, a
         GINA and a credential provider module, and therefore enable any
         Windows guest to perform automated logins.
       </p>
     <p>
-        To activate the Oracle VM VirtualBox GINA or credential provider
+        To activate the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> GINA or credential provider
         module, install the Guest Additions using the command line
         switch <codeph>/with_autologon</codeph>. All the following
         manual steps required for installing these modules will be then
         done by the installer.
       </p>
     <p>
-        To manually install the Oracle VM VirtualBox GINA module, extract the
+        To manually install the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> GINA module, extract the
         Guest Additions as shown in
         <xref href="windows-guest-file-extraction.dita">Manual File Extraction</xref>, and copy the
         <filepath>VBoxGINA.dll</filepath> file to the Windows
@@ -33,14 +33,14 @@
     <pre xml:space="preserve">HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\GinaDLL</pre>
     <note>
       <p>
-          The Oracle VM VirtualBox GINA module is implemented as a wrapper
+          The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> GINA module is implemented as a wrapper
           around the <filepath>MSGINA.DLL</filepath> standard Windows
           GINA module. As a result, it might not work correctly with
           third-party GINA modules.
         </p>
     </note>
     <p>
-        To manually install the Oracle VM VirtualBox credential provider
+        To manually install the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> credential provider
         module, extract the Guest Additions as shown in
         <xref href="windows-guest-file-extraction.dita">Manual File Extraction</xref> and copy the
         <filepath>VBoxCredProv.dll</filepath> file to the Windows
@@ -69,8 +69,8 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</p
     <pre xml:space="preserve">$ VBoxManage controlvm "Windows XP" setcredentials "John Doe" "secretpassword" "DOMTEST"</pre>
     <p>
         While the VM is running, the credentials can be queried by the
-        Oracle VM VirtualBox login modules, GINA or credential provider, using
-        the Oracle VM VirtualBox Guest Additions device driver. When Windows
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> login modules, GINA or credential provider, using
+        the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions device driver. When Windows
         is in <i>logged out</i> mode, the login modules
         will constantly poll for credentials and if they are present, a
         login will be attempted. After retrieving the credentials, the
@@ -93,7 +93,7 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</p
         <p>
             For <b outputclass="bold">Windows XP guests.</b> The
             login subsystem needs to be configured to use the classic
-            login dialog, as the Oracle VM VirtualBox GINA module does not
+            login dialog, as the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> GINA module does not
             support the Windows XP-style welcome dialog.
           </p>
       </li>
@@ -123,7 +123,7 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</p
       </li>
     </ul>
     <p>
-        The following command forces Oracle VM VirtualBox to keep the
+        The following command forces <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to keep the
         credentials after they were read by the guest and on VM reset:
       </p>
     <pre xml:space="preserve">$ VBoxManage setextradata "Windows XP" VBoxInternal/Devices/VMMDev/0/Config/KeepCredentials 1</pre>

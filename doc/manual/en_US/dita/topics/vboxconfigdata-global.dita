@@ -6,7 +6,7 @@
   <body>
     <p>
         In addition to the files for the virtual machines,
-        Oracle VM VirtualBox maintains global configuration data in the
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> maintains global configuration data in the
         following directory:
       </p>
     <ul>
@@ -24,7 +24,7 @@
       </li>
     </ul>
     <p>
-        Oracle VM VirtualBox creates this configuration directory
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> creates this configuration directory
         automatically, if necessary. You can specify an alternate
         configuration directory by either setting the
         <codeph>VBOX_USER_HOME</codeph> environment variable, or on
@@ -32,10 +32,10 @@
         <codeph>XDG_CONFIG_HOME</codeph> variable. Since the global
         <filepath>VirtualBox.xml</filepath> settings file points to all
         other configuration files, this enables switching between
-        several Oracle VM VirtualBox configurations.
+        several <ph conkeyref="vbox-conkeyref-phrases/product-name"/> configurations.
       </p>
     <p>
-        In this configuration directory, Oracle VM VirtualBox stores its
+        In this configuration directory, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> stores its
         global settings file, an XML file called
         <filepath>VirtualBox.xml</filepath>. This file includes global
         configuration options and a list of registered virtual machines

@@ -5,11 +5,11 @@
   
   <body>
     <p>
-      With bridged networking, Oracle VM VirtualBox uses a device driver on
+      With bridged networking, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses a device driver on
       your <i>host</i> system that filters data from your
       physical network adapter. This driver is therefore called a
       <i>net filter</i> driver. This enables
-      Oracle VM VirtualBox to intercept data from the physical network and
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to intercept data from the physical network and
       inject data into it, effectively creating a new network interface
       in software. When a guest is using such a new software interface,
       it looks to the host system as though the guest were physically
@@ -45,13 +45,13 @@
         bridging to a wired interface, because most wireless adapters do
         not support promiscuous mode. All traffic has to use the MAC
         address of the host's wireless adapter, and therefore
-        Oracle VM VirtualBox needs to replace the source MAC address in the
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> needs to replace the source MAC address in the
         Ethernet header of an outgoing packet to make sure the reply
-        will be sent to the host interface. When Oracle VM VirtualBox sees an
+        will be sent to the host interface. When <ph conkeyref="vbox-conkeyref-phrases/product-name"/> sees an
         incoming packet with a destination IP address that belongs to
         one of the virtual machine adapters it replaces the destination
         MAC address in the Ethernet header with the VM adapter's MAC
-        address and passes it on. Oracle VM VirtualBox examines ARP and DHCP
+        address and passes it on. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> examines ARP and DHCP
         packets in order to learn the IP addresses of virtual machines.
       </p>
     </note>
@@ -63,7 +63,7 @@
       <li>
         <p><b outputclass="bold">macOS hosts.</b> Functionality is
           limited when using AirPort, the Mac's wireless networking
-          system, for bridged networking. Currently, Oracle VM VirtualBox
+          system, for bridged networking. Currently, <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
           supports only IPv4 and IPv6 over AirPort. For other protocols,
           such as IPX, you must choose a wired interface.
         </p>
@@ -71,7 +71,7 @@
       <li>
         <p><b outputclass="bold">Linux hosts.</b> Functionality is
           limited when using wireless interfaces for bridged networking.
-          Currently, Oracle VM VirtualBox supports only IPv4 and IPv6 over
+          Currently, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports only IPv4 and IPv6 over
           wireless. For other protocols, such as IPX, you must choose a
           wired interface.
         </p>
@@ -99,12 +99,12 @@
         <p>
           On Oracle Solaris 11 hosts build 159 and above, it is possible
           to use Oracle Solaris Crossbow Virtual Network Interfaces
-          (VNICs) directly with Oracle VM VirtualBox without any additional
+          (VNICs) directly with <ph conkeyref="vbox-conkeyref-phrases/product-name"/> without any additional
           configuration other than each VNIC must be exclusive for every
           guest network interface.
         </p>
         <p>
-          When using VLAN interfaces with Oracle VM VirtualBox, they must be
+          When using VLAN interfaces with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, they must be
           named according to the PPA-hack naming scheme, such as
           e1000g513001. Otherwise, the guest may receive packets in an
           unexpected format.

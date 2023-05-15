@@ -35,7 +35,7 @@
           guest.
         </p>
     <p>
-          Oracle VM VirtualBox uses the same partition numbering as your Linux
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses the same partition numbering as your Linux
           host. As a result, the numbers given in the above example
           would refer to the first primary partition and the first
           logical drive in the extended partition, respectively.

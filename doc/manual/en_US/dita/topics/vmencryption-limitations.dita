@@ -28,7 +28,7 @@
       <li>
         <p>
             When encrypting or decrypting the VM, the password is passed
-            in clear text using the Oracle VM VirtualBox API. This needs to be
+            in clear text using the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> API. This needs to be
             kept in mind, especially when using third party API clients
             which make use of the web service where the password might
             be transmitted over the network. The use of HTTPS is

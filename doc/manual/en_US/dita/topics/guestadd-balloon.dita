@@ -14,7 +14,7 @@
       <ul>
         <li>
           <p>
-              Oracle VM VirtualBox supports memory ballooning only on 64-bit
+              <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports memory ballooning only on 64-bit
               hosts. It is not supported on macOS hosts.
             </p>
         </li>
@@ -36,18 +36,18 @@
         machine without having to shut the machine down.
       </p>
     <p>
-        When memory ballooning is requested, the Oracle VM VirtualBox Guest
+        When memory ballooning is requested, the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest
         Additions, which run inside the guest, allocate physical memory
         from the guest operating system on the kernel level and lock
         this memory down in the guest. This ensures that the guest will
         not use that memory any longer. No guest applications can
         allocate it, and the guest kernel will not use it either.
-        Oracle VM VirtualBox can then reuse this memory and give it to another
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can then reuse this memory and give it to another
         virtual machine.
       </p>
     <p>
         The memory made available through the ballooning mechanism is
-        only available for reuse by Oracle VM VirtualBox. It is
+        only available for reuse by <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. It is
         <i>not</i> returned as free memory to the host.
         Requesting balloon memory from a running guest will therefore
         not increase the amount of free, unallocated memory on the host.

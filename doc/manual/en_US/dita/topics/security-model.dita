@@ -6,7 +6,7 @@
   <body>
     <p>
         One property of virtual machine monitors (VMMs) like
-        Oracle VM VirtualBox is to encapsulate a guest by executing it in a
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is to encapsulate a guest by executing it in a
         protected environment, a virtual machine, running as a user
         process on the host operating system. The guest cannot
         communicate directly with the hardware or other computers but

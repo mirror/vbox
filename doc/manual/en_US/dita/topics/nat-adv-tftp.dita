@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        For network booting in NAT mode, by default Oracle VM VirtualBox uses
+        For network booting in NAT mode, by default <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses
         a built-in TFTP server at the IP address 10.0.2.4. This default
         behavior should work fine for typical remote-booting scenarios.
         However, it is possible to change the boot server IP and the

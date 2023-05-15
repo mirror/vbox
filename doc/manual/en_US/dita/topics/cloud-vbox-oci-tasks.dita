@@ -1,42 +1,42 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="cloud-vbox-oci-tasks">
-  <title>Using Oracle VM VirtualBox With Oracle Cloud Infrastructure</title>
+  <title>Using <ph conkeyref="vbox-conkeyref-phrases/product-name"/> With <ph conkeyref="vbox-conkeyref-phrases/oci"/></title>
   
   <body>
     <p>
-        This section describes how you can use Oracle VM VirtualBox with Oracle Cloud Infrastructure
+        This section describes how you can use <ph conkeyref="vbox-conkeyref-phrases/product-name"/> with <ph conkeyref="vbox-conkeyref-phrases/oci"/>
         to do the following tasks:
       </p>
     <ul>
       <li>
         <p>
-            Create, add, and manage Oracle Cloud Infrastructure cloud instances using
-            VirtualBox Manager. See <xref href="cloud-vm.dita#cloud-vm"/>.
+            Create, add, and manage <ph conkeyref="vbox-conkeyref-phrases/oci"/> cloud instances using
+            <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. See <xref href="cloud-vm.dita#cloud-vm"/>.
           </p>
       </li>
       <li>
         <p>
-            Export an Oracle VM VirtualBox VM to Oracle Cloud Infrastructure. See
+            Export an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VM to <ph conkeyref="vbox-conkeyref-phrases/oci"/>. See
             <xref href="cloud-export-oci.dita#cloud-export-oci"/>.
           </p>
       </li>
       <li>
         <p>
-            Import a cloud instance into Oracle VM VirtualBox. See
+            Import a cloud instance into <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. See
             <xref href="cloud-import-oci.dita#cloud-import-oci"/>.
           </p>
       </li>
       <li>
         <p>
-            Connect from a local VM to an Oracle Cloud Infrastructure cloud subnet. See
+            Connect from a local VM to an <ph conkeyref="vbox-conkeyref-phrases/oci"/> cloud subnet. See
             <xref href="cloud-using-cloud-networks.dita#cloud-using-cloud-networks"/>.
           </p>
       </li>
       <li>
         <p>
             Use the <userinput>VBoxManage</userinput> commands to integrate
-            with Oracle Cloud Infrastructure and perform cloud operations. See
+            with <ph conkeyref="vbox-conkeyref-phrases/oci"/> and perform cloud operations. See
             <xref href="cloud-using-cli.dita#cloud-using-cli"/>.
           </p>
       </li>

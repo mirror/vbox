@@ -1,39 +1,39 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="vboxconfigdata-XML-files">
-  <title>Oracle VM VirtualBox XML Files</title>
+  <title><ph conkeyref="vbox-conkeyref-phrases/product-name"/> XML Files</title>
   
   <body>
     <p>
-        Oracle VM VirtualBox uses XML for both the machine settings files and
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses XML for both the machine settings files and
         the global configuration file,
         <filepath>VirtualBox.xml</filepath>.
       </p>
     <p>
-        All Oracle VM VirtualBox XML files are versioned. When a new settings
+        All <ph conkeyref="vbox-conkeyref-phrases/product-name"/> XML files are versioned. When a new settings
         file is created, for example because a new virtual machine is
-        created, Oracle VM VirtualBox automatically uses the settings format
-        of the current Oracle VM VirtualBox version. These files may not be
+        created, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> automatically uses the settings format
+        of the current <ph conkeyref="vbox-conkeyref-phrases/product-name"/> version. These files may not be
         readable if you downgrade to an earlier version of
-        Oracle VM VirtualBox. However, when Oracle VM VirtualBox encounters a
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. However, when <ph conkeyref="vbox-conkeyref-phrases/product-name"/> encounters a
         settings file from an earlier version, such as after upgrading
-        Oracle VM VirtualBox, it attempts to preserve the settings format as
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, it attempts to preserve the settings format as
         much as possible. It will only silently upgrade the settings
         format if the current settings cannot be expressed in the old
         format, for example because you enabled a feature that was not
-        present in an earlier version of Oracle VM VirtualBox.
+        present in an earlier version of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
       </p>
     <p>
-        In such cases, Oracle VM VirtualBox backs up the old settings file in
+        In such cases, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> backs up the old settings file in
         the virtual machine's configuration directory. If you need to go
-        back to the earlier version of Oracle VM VirtualBox, then you will
+        back to the earlier version of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, then you will
         need to manually copy these backup files back.
       </p>
     <p>
         We intentionally do not document the specifications of the
-        Oracle VM VirtualBox XML files, as we must reserve the right to modify
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> XML files, as we must reserve the right to modify
         them in the future. We therefore strongly suggest that you do
-        not edit these files manually. Oracle VM VirtualBox provides complete
+        not edit these files manually. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides complete
         access to its configuration data through its the
         <userinput>VBoxManage</userinput> command line tool, see
         <xref href="vboxmanage.dita">VBoxManage</xref> and its API, see

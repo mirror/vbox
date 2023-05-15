@@ -22,7 +22,7 @@
         to an increased host load can cause guest failures. Note further
         that any time synchronization mechanism will frequently try to
         resynchronize the guest clock with the reference clock, which is
-        the host clock if the Oracle VM VirtualBox Guest Additions are active.
+        the host clock if the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions are active.
         Therefore any time synchronization should be disabled if the
         rate of the guest clock is changed as described above. See
         <xref href="changetimesync.dita#changetimesync"/>.

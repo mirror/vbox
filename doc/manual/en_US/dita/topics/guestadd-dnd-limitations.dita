@@ -11,7 +11,7 @@
         On Windows hosts, dragging and dropping content between
         UAC-elevated (User Account Control) programs and
         non-UAC-elevated programs is not allowed. If you start
-        Oracle VM VirtualBox with Administrator privileges then drag and drop
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> with Administrator privileges then drag and drop
         will not work with Windows Explorer, which runs with regular
         user privileges by default.
       </p>

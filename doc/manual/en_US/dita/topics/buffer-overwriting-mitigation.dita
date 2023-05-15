@@ -29,7 +29,7 @@
           mitigation depends on it.
         </p>
     <p>
-          The default action taken by Oracle VM VirtualBox is to clear the
+          The default action taken by <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is to clear the
           affected buffers when a thread is scheduled to execute guest
           code, rather than on each VM entry. This reduces the
           performance impact, while making the assumption that the host

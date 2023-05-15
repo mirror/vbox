@@ -5,7 +5,7 @@
   
   <body>
     <p>
-      You can configure Oracle VM VirtualBox to present up to four custom ACPI
+      You can configure <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to present up to four custom ACPI
       tables to the guest. Use a command such as the following to
       configure custom ACPI tables. Note that
       <codeph>CustomTable1</codeph>, <codeph>CustomTable2</codeph>,

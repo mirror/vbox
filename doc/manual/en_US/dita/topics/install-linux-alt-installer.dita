@@ -18,7 +18,7 @@
       </li>
       <li>
         <p>
-              Builds and installs the Oracle VM VirtualBox kernel modules:
+              Builds and installs the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> kernel modules:
               <userinput>vboxdrv</userinput>, <userinput>vboxnetflt</userinput>,
               and <userinput>vboxnetadp</userinput>.
             </p>
@@ -26,7 +26,7 @@
       <li>
         <p>
               Creates <filepath>/sbin/rcvboxdrv</filepath>, an init
-              script to start the Oracle VM VirtualBox kernel module.
+              script to start the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> kernel module.
             </p>
       </li>
       <li>

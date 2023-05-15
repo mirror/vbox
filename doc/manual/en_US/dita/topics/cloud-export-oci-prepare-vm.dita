@@ -1,16 +1,16 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="cloud-export-oci-prepare-vm">
-  <title>Preparing a VM for Export to Oracle Cloud Infrastructure</title>
+  <title>Preparing a VM for Export to <ph conkeyref="vbox-conkeyref-phrases/oci"/></title>
   
   <body>
     <p>
-          Oracle Cloud Infrastructure provides the option to import a custom Linux image.
-          Before an Oracle VM VirtualBox image can be exported to Oracle Cloud Infrastructure, the
+          <ph conkeyref="vbox-conkeyref-phrases/oci"/> provides the option to import a custom Linux image.
+          Before an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> image can be exported to <ph conkeyref="vbox-conkeyref-phrases/oci"/>, the
           custom image needs to be prepared to ensure that instances
           launched from the custom image can boot correctly and that
           network connections will work. This section provides advice on
-          how to prepare a Linux image for export from Oracle VM VirtualBox.
+          how to prepare a Linux image for export from <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
         </p>
     <p>
           The following list shows some tasks to consider when preparing
@@ -21,7 +21,7 @@
         <p><b outputclass="bold">Use DHCP for network
               addresses.</b> Configure the VM to use a DHCP
               server to allocate network addresses, rather than using a
-              static IP address. The Oracle Cloud Infrastructure instance will then be
+              static IP address. The <ph conkeyref="vbox-conkeyref-phrases/oci"/> instance will then be
               allocated an IP address automatically.
             </p>
       </li>
@@ -38,7 +38,7 @@
       </li>
       <li>
         <p><b outputclass="bold">Disable persistent network device
-              naming rules.</b> This means that the Oracle Cloud Infrastructure
+              naming rules.</b> This means that the <ph conkeyref="vbox-conkeyref-phrases/oci"/>
               instance will use the same network device names as the VM.
             </p>
         <ol>
@@ -77,7 +77,7 @@
       <li>
         <p><b outputclass="bold">Enable the serial
               console.</b> This enables you to troubleshoot the
-              instance when it is running on Oracle Cloud Infrastructure.
+              instance when it is running on <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
             </p>
         <ol>
           <li>
@@ -170,7 +170,7 @@
     </ul>
     <p>
           For more information about importing a custom Linux image into
-          Oracle Cloud Infrastructure, see also:
+          <ph conkeyref="vbox-conkeyref-phrases/oci"/>, see also:
         </p>
     <p>
       <ph>https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/importingcustomimagelinux.htm</ph>

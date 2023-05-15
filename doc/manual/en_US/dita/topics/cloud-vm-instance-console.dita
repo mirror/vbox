@@ -45,7 +45,7 @@
       </li>
     </ol>
     <p>
-          See the Oracle Cloud Infrastructure documentation for details about how you can use
+          See the <ph conkeyref="vbox-conkeyref-phrases/oci"/> documentation for details about how you can use
           an instance console connection to troubleshoot instance
           problems.
         </p>

@@ -18,7 +18,7 @@
     </note>
     <p>
         If you use the <b outputclass="bold">Create VM</b> wizard
-        of VirtualBox Manager, Oracle VM VirtualBox automatically uses the correct
+        of <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> automatically uses the correct
         settings for each selected 64-bit OS type. See
         <xref href="create-vm-wizard.dita#create-vm-wizard"/>.
       </p>

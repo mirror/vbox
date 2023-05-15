@@ -6,7 +6,7 @@
                
                <body>
                   <p>
-        Oracle VM VirtualBox provides the option to mount shared folders
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides the option to mount shared folders
         automatically. When automatic mounting is enabled for a shared
         folder, the Guest Additions service will mount it for you
         automatically. For Windows or OS/2, a preferred drive letter can

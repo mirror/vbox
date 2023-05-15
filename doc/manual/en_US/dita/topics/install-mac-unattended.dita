@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        To perform a non-interactive installation of Oracle VM VirtualBox you
+        To perform a non-interactive installation of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> you
         can use the command line version of the installer application.
       </p>
     <p>

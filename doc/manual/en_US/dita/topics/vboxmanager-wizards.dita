@@ -2,13 +2,13 @@
 <!DOCTYPE topic
   PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="vboxmanager-wizards">
-               <title>About VirtualBox Manager Wizards</title>
+               <title>About <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> Wizards</title>
                
                <body>
                   <p>
-        VirtualBox Manager includes wizards that enable you to complete tasks
+        <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> includes wizards that enable you to complete tasks
         easily. Examples of such tasks are when you create a new virtual
-        machine or use the cloud integration features of Oracle VM VirtualBox.
+        machine or use the cloud integration features of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
       </p>
                   <p>
         To display a help topic for the wizard, click the
@@ -32,7 +32,7 @@
                               <b outputclass="bold">Expert
             mode.</b>
                            </b> This display mode is designed
-            for more advanced users of Oracle VM VirtualBox. All settings are
+            for more advanced users of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. All settings are
             displayed on a single page, enabling quicker completion of
             tasks.
           </p>

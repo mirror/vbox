@@ -5,7 +5,7 @@
   
   <body>
     <p>
-      Oracle VM VirtualBox can install a guest OS automatically. You only need
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can install a guest OS automatically. You only need
       to provide the installation medium and a few other parameters,
       such as the name of the default user.
     </p>
@@ -23,9 +23,9 @@
           <xref href="create-vm-wizard.dita#create-vm-wizard"/>.
         </p>
         <p>
-          During this step, Oracle VM VirtualBox scans the installation medium
+          During this step, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> scans the installation medium
           and changes certain parameters to ensure a seamless
-          installation as a guest running on Oracle VM VirtualBox.
+          installation as a guest running on <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
         </p>
       </li>
       <li>

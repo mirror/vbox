@@ -5,9 +5,9 @@
   
   <body>
     <p>
-    The previous chapter covered getting started with Oracle VM VirtualBox and
+    The previous chapter covered getting started with <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and
     installing operating systems in a virtual machine. For any serious
-    and interactive use, the Oracle VM VirtualBox Guest Additions will make
+    and interactive use, the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions will make
     your life much easier by providing closer integration between host
     and guest and improving the interactive performance of guest
     systems. This chapter describes the Guest Additions in detail.

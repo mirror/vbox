@@ -30,7 +30,7 @@
     <ul>
       <li>
         <p>
-          Create a group using VirtualBox Manager. Do one of the following:
+          Create a group using <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. Do one of the following:
         </p>
         <ul>
           <li>
@@ -100,7 +100,7 @@
       </li>
       <li>
         <p>
-          Use VirtualBox Manager menu options to control and manage all the VMs
+          Use <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> menu options to control and manage all the VMs
           in a group. For example:
           <b outputclass="bold">Start</b>,
           <b outputclass="bold">Pause</b>,

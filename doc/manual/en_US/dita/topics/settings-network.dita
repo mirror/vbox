@@ -7,11 +7,11 @@
     <p>
       The <b outputclass="bold">Network</b> section in a virtual
       machine's <b outputclass="bold">Settings</b> window enables
-      you to configure how Oracle VM VirtualBox presents virtual network cards
+      you to configure how <ph conkeyref="vbox-conkeyref-phrases/product-name"/> presents virtual network cards
       to your VM, and how they operate.
     </p>
     <p>
-      When you first create a virtual machine, Oracle VM VirtualBox by default
+      When you first create a virtual machine, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> by default
       enables one virtual network card and selects the Network Address
       Translation (NAT) mode for it. This way the guest can connect to
       the outside world using the host's networking and the outside
@@ -19,11 +19,11 @@
       make visible outside of the virtual machine.
     </p>
     <p>
-      This default setup is good for the majority of Oracle VM VirtualBox
-      users. However, Oracle VM VirtualBox is extremely flexible in how it can
+      This default setup is good for the majority of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
+      users. However, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is extremely flexible in how it can
       virtualize networking. It supports many virtual network cards per
       virtual machine. The first four virtual network cards can be
-      configured in detail in VirtualBox Manager. Additional network cards can
+      configured in detail in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. Additional network cards can
       be configured using the <userinput>VBoxManage</userinput> command.
     </p>
     <p>

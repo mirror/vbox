@@ -8,23 +8,23 @@
                <p>
       Disk image files reside on the host system and are seen by the
       guest systems as hard disks of a certain geometry. When a guest OS
-      reads from or writes to a hard disk, Oracle VM VirtualBox redirects the
+      reads from or writes to a hard disk, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> redirects the
       request to the image file.
     </p>
                <p>
       Like a physical disk, a virtual disk has a size, or capacity,
       which must be specified when the image file is created. As opposed
-      to a physical disk however, Oracle VM VirtualBox enables you to expand
+      to a physical disk however, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables you to expand
       an image file after creation, even if it has data already. See
       <xref href="vboxmanage-modifymedium.dita"/>.
     </p>
                <p>
-      Oracle VM VirtualBox supports the following types of disk image files:
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports the following types of disk image files:
     </p>
                <ul>
                   <li>
                      <p>
-                        <b outputclass="bold">VDI.</b> Normally, Oracle VM VirtualBox
+                        <b outputclass="bold">VDI.</b> Normally, <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
           uses its own container format for guest hard disks. This is
           called a Virtual Disk Image (VDI) file. This format is used
           when you create a new virtual machine with a new disk.
@@ -32,14 +32,14 @@
                   </li>
                   <li>
                      <p>
-                        <b outputclass="bold">VMDK.</b> Oracle VM VirtualBox also
+                        <b outputclass="bold">VMDK.</b> <ph conkeyref="vbox-conkeyref-phrases/product-name"/> also
           fully supports the popular and open VMDK container format that
           is used by many other virtualization products, such as VMware.
         </p>
                   </li>
                   <li>
                      <p>
-                        <b outputclass="bold">VHD.</b> Oracle VM VirtualBox also
+                        <b outputclass="bold">VHD.</b> <ph conkeyref="vbox-conkeyref-phrases/product-name"/> also
           fully supports the VHD format used by Microsoft.
         </p>
                   </li>
@@ -82,7 +82,7 @@
           time a disk sector is written to for the first time, until the
           drive reaches the maximum capacity chosen when the drive was
           created. While this format takes less space initially, the
-          fact that Oracle VM VirtualBox needs to expand the image file
+          fact that <ph conkeyref="vbox-conkeyref-phrases/product-name"/> needs to expand the image file
           consumes additional computing resources, so until the disk
           file size has stabilized, write operations may be slower than
           with fixed size disks. However, after a time the rate of

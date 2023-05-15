@@ -21,7 +21,7 @@
     <p>
           Virtual machine settings can also be changed using the
           <b outputclass="bold">Settings</b> button on the
-          VirtualBox Manager toolbar.
+          <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> toolbar.
         </p>
     <p>
           The virtual machine settings on the Details pane are organized

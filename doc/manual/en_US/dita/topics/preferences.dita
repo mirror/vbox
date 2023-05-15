@@ -21,7 +21,7 @@
       <li>
         <p>
           Click <b outputclass="bold">Preferences</b> on the
-          Welcome screen in VirtualBox Manager.
+          Welcome screen in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>.
         </p>
       </li>
     </ul>
@@ -53,7 +53,7 @@
       <li>
         <p><b outputclass="bold">Language.</b> Enables you to
           specify the language used for menus, labels, and text in
-          VirtualBox Manager.
+          <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>.
         </p>
       </li>
       <li>
@@ -69,7 +69,7 @@
       </li>
       <li>
         <p><b outputclass="bold">Interface.</b> Enables you to
-          select a color theme for the VirtualBox Manager user interface.
+          select a color theme for the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> user interface.
         </p>
         <note>
           <p>

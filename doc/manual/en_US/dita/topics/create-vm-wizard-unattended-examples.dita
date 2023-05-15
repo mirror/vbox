@@ -7,7 +7,7 @@
     <p>
         To configure unattended installation, you typically just need to
         specify an ISO image in the <b outputclass="bold">Create Virtual
-        Machine</b> wizard. Oracle VM VirtualBox then detects the OS
+        Machine</b> wizard. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> then detects the OS
         type and the unattended installation process is done
         automatically when the wizard is completed. However, in some
         situations the installation may need be completed manually.

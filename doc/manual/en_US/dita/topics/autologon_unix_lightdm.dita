@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="autologon_unix_lightdm">
-  <title>Oracle VM VirtualBox Greeter for Ubuntu/LightDM</title>
+  <title><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Greeter for Ubuntu/LightDM</title>
   
   <body>
     <p>
-          Oracle VM VirtualBox comes with a greeter module, named
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> comes with a greeter module, named
           <userinput>vbox-greeter</userinput>, that can be used with
           LightDM. LightDM is the default display manager for Ubuntu
           Linux and therefore can also be used for automated guest
@@ -40,7 +40,7 @@
         </p>
     <p>
           The <userinput>vbox-greeter</userinput> module is installed by the
-          Oracle VM VirtualBox Guest Additions installer and is located in
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions installer and is located in
           <filepath>/usr/sbin/</filepath>. To enable
           <userinput>vbox-greeter</userinput> as the standard greeter
           module, edit the file

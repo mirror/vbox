@@ -6,11 +6,11 @@
   <body>
     <p>
       With virtual machines running modern server operating systems,
-      Oracle VM VirtualBox supports CPU hot-plugging.
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports CPU hot-plugging.
     </p>
     <p>
       On a physical computer CPU hot-plugging would mean that a CPU can
-      be added or removed while the machine is running. Oracle VM VirtualBox
+      be added or removed while the machine is running. <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
       supports adding and removing of virtual CPUs while a virtual
       machine is running.
     </p>

@@ -8,7 +8,7 @@
         When you click on the <b outputclass="bold">Close</b>
         button of your virtual machine window, at the top right of the
         window, just like you would close any other window on your
-        system, Oracle VM VirtualBox asks you whether you want to save or
+        system, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> asks you whether you want to save or
         power off the VM. As a shortcut, you can also press
         <b outputclass="bold">Host key + Q</b>.
       </p>
@@ -30,7 +30,7 @@
     <ul>
       <li>
         <p><b outputclass="bold">Save the machine state:</b>
-            With this option, Oracle VM VirtualBox
+            With this option, <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
             <i>freezes</i> the virtual machine by
             completely saving its state to your local disk.
           </p>
@@ -52,7 +52,7 @@
       </li>
       <li>
         <p><b outputclass="bold">Power off the machine:</b> With
-            this option, Oracle VM VirtualBox also stops running the virtual
+            this option, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> also stops running the virtual
             machine, but <i>without</i> saving its state.
           </p>
         <note type="attention">
@@ -79,7 +79,7 @@
     </ul>
     <p>
         The <b outputclass="bold">Discard</b> button in the
-        VirtualBox Manager window discards a virtual machine's saved state. This
+        <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window discards a virtual machine's saved state. This
         has the same effect as powering it off, and the same warnings
         apply.
       </p>

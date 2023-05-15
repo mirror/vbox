@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        Like the Windows Guest Additions, the Oracle VM VirtualBox Guest
+        Like the Windows Guest Additions, the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest
         Additions for Oracle Solaris take the form of a set of device
         drivers and system applications which may be installed in the
         guest operating system.

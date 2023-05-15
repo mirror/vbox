@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="install-solaris-starting">
-  <title>Starting Oracle VM VirtualBox on Oracle Solaris</title>
+  <title>Starting <ph conkeyref="vbox-conkeyref-phrases/product-name"/> on Oracle Solaris</title>
   
   <body>
     <p>
-        The easiest way to start an Oracle VM VirtualBox program is by running
+        The easiest way to start an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> program is by running
         the program of your choice (<userinput>VirtualBox</userinput>,
         <userinput>VBoxManage</userinput>, or
         <userinput>VBoxHeadless</userinput>) from a terminal. These are

@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        As Oracle VM VirtualBox can run on a variety of host operating systems
+        As <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can run on a variety of host operating systems
         and also supports a wide range of guests, certain data formats
         must be translated after transfer. This is so that the
         destination operating system, which receives the data, is able
@@ -20,7 +20,7 @@
         </p>
     </note>
     <p>
-        The following formats are handled by the Oracle VM VirtualBox drag and
+        The following formats are handled by the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> drag and
         drop service:
       </p>
     <ul>

@@ -2,10 +2,10 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="serialports">
   <title>Serial Ports</title>
-  
+
   <body>
     <p>
-      Oracle VM VirtualBox supports the use of virtual serial ports in a
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports the use of virtual serial ports in a
       virtual machine.
     </p>
     <p>
@@ -35,12 +35,10 @@
       details depend on your host OS.
     </p>
     <p>
-      You can use either the Settings tabs or the
-      <userinput>VBoxManage</userinput> command to set up virtual serial
-      ports. For the latter, see <xref href="vboxmanage-modifyvm.dita"/>
-      for information on the <codeph>--uart</codeph>,
-      <codeph>--uart-mode</codeph> and <codeph>--uart-type</codeph>
-      options.
+      You can use either the Settings tabs or the <userinput>VBoxManage</userinput> command to set
+      up virtual serial ports. For the latter, see <xref href="vboxmanage-modifyvm.dita"/> for
+      information on the <codeph>--uart</codeph>, <codeph>--uart-mode</codeph> and
+      <codeph>--uart-type</codeph> options.
     </p>
     <p>
       You can configure up to four virtual serial ports per virtual
@@ -97,14 +95,14 @@
               host. On a Windows host, this will be a name like
               <codeph>COM1</codeph>. On Linux or Oracle Solaris hosts,
               it will be a device node like
-              <filepath>/dev/ttyS0</filepath>. Oracle VM VirtualBox will then
+              <filepath>/dev/ttyS0</filepath>. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will then
               simply redirect all data received from and sent to the
               virtual serial port to the physical device.
             </p>
           </li>
           <li>
             <p><b outputclass="bold">Host Pipe:</b> Configure
-              Oracle VM VirtualBox to connect the virtual serial port to a
+              <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to connect the virtual serial port to a
               software pipe on the host. This depends on your host OS,
               as follows:
             </p>
@@ -125,7 +123,7 @@
                   On a Mac OS, Linux, or Oracle Solaris host, a local
                   domain socket is used instead. The socket filename
                   must be chosen such that the user running
-                  Oracle VM VirtualBox has sufficient privileges to create and
+                  <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has sufficient privileges to create and
                   write to it. The <filepath>/tmp</filepath> directory
                   is often a good candidate.
                 </p>
@@ -138,9 +136,9 @@
               </li>
             </ul>
             <p>
-              In this case, you can configure whether Oracle VM VirtualBox
+              In this case, you can configure whether <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
               should create the named pipe, or the local domain socket
-              non-Windows hosts, itself or whether Oracle VM VirtualBox should
+              non-Windows hosts, itself or whether <ph conkeyref="vbox-conkeyref-phrases/product-name"/> should
               assume that the pipe or socket exists already. With the
               <userinput>VBoxManage</userinput> command-line options, this
               is referred to as server mode or client mode,
@@ -157,7 +155,7 @@
               virtual serial port output to a file. This option is very
               useful for capturing diagnostic output from a guest. Any
               file may be used for this purpose, as long as the user
-              running Oracle VM VirtualBox has sufficient privileges to create
+              running <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has sufficient privileges to create
               and write to the file.
             </p>
           </li>
@@ -210,5 +208,5 @@
       for example COM1 and COM2, but not COM1 and COM3.
     </p>
   </body>
-  
+
 </topic>

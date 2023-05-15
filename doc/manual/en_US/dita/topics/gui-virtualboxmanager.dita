@@ -1,53 +1,53 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="gui-virtualboxmanager">
-  <title>VirtualBox Manager</title>
+  <title><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></title>
   
   <body>
     <p>
-      VirtualBox Manager is the user interface for Oracle VM VirtualBox. You can use
-      VirtualBox Manager to create, configure, and manage your virtual machines.
+      <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> is the user interface for <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. You can use
+      <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> to create, configure, and manage your virtual machines.
     </p>
     <p>
-      This section describes the main features of the VirtualBox Manager user
+      This section describes the main features of the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> user
       interface. Subsequent sections and chapters describe how to use
-      VirtualBox Manager to perform tasks in Oracle VM VirtualBox.
+      <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> to perform tasks in <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
     </p>
     <p>
-      When you start Oracle VM VirtualBox, the
-      <b outputclass="bold">VirtualBox Manager</b> window is displayed.
+      When you start <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, the
+      <b outputclass="bold"><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/></b> window is displayed.
     </p>
-    <p><xref href="#gui-virtualboxmanager/fig-vbox-manager-initial"/> shows VirtualBox Manager the
-      first time you start Oracle VM VirtualBox, before you have created any
+    <p><xref href="#gui-virtualboxmanager/fig-vbox-manager-initial"/> shows <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> the
+      first time you start <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, before you have created any
       virtual machines.
     </p>
     <fig id="fig-vbox-manager-initial">
-      <title>VirtualBox Manager, Showing Welcome Screen After Initial Startup</title>
+      <title><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, Showing Welcome Screen After Initial Startup</title>
       <xref href="images/virtualbox-main-empty.png" format="png" platform="htmlhelp">
         <image href="images/virtualbox-main-empty.png" width="12cm" placement="break">
-          <alt>VirtualBox Manager, Showing Welcome Screen After Initial Startup</alt>
+          <alt><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, Showing Welcome Screen After Initial Startup</alt>
         </image>
       </xref>
       <image platform="ohc" href="images/virtualbox-main-empty.png" width="12cm" placement="break">
-        <alt>VirtualBox Manager, Showing Welcome Screen After Initial Startup</alt>
+        <alt><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, Showing Welcome Screen After Initial Startup</alt>
       </image>
     </fig>
-    <p><xref href="#gui-virtualboxmanager/fig-vbox-manager-populated"/> shows how VirtualBox Manager
+    <p><xref href="#gui-virtualboxmanager/fig-vbox-manager-populated"/> shows how <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>
       might look after you have created some virtual machines.
     </p>
     <fig id="fig-vbox-manager-populated">
-      <title>VirtualBox Manager Window, After Creating Virtual Machines</title>
+      <title><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> Window, After Creating Virtual Machines</title>
       <xref href="images/virtualbox-main.png" format="png" platform="htmlhelp">
         <image href="images/virtualbox-main.png" width="12cm" placement="break">
-          <alt>VirtualBox Manager Window, After Creating Virtual Machines</alt>
+          <alt><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> Window, After Creating Virtual Machines</alt>
         </image>
       </xref>
       <image platform="ohc" href="images/virtualbox-main.png" width="12cm" placement="break">
-        <alt>VirtualBox Manager Window, After Creating Virtual Machines</alt>
+        <alt><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> Window, After Creating Virtual Machines</alt>
       </image>
     </fig>
     <p>
-      The main components of the VirtualBox Manager window are as follows:
+      The main components of the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window are as follows:
     </p>
     <ul>
       <li>
@@ -72,7 +72,7 @@
       </li>
       <li>
         <p><b outputclass="bold">Help Viewer.</b> A window that
-          displays context-sensitive help topics for VirtualBox Manager tasks.
+          displays context-sensitive help topics for <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> tasks.
           See <xref href="help-viewer.dita#help-viewer"/>.
         </p>
       </li>

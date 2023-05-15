@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="vboxexpertstoragemgmt">
-  <title>Oracle VM VirtualBox Expert Storage Management</title>
+  <title><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Expert Storage Management</title>
   
   <body>
     <p>
-      In case the snapshot model of Oracle VM VirtualBox is not sufficient it
+      In case the snapshot model of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is not sufficient it
       is possible to enable a special mode which makes it possible to
       reconfigure storage attachments while the VM is paused. The user
       has to make sure that the disk data stays consistent to the guest

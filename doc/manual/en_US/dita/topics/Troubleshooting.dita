@@ -6,7 +6,7 @@
   <body>
     <p>
     This chapter provides answers to commonly asked questions. In order
-    to improve your user experience with Oracle VM VirtualBox, it is
+    to improve your user experience with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, it is
     recommended to read this section to learn more about common pitfalls
     and get recommendations on how to use the product.
   </p>

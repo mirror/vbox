@@ -5,14 +5,14 @@
   
   <body>
     <p>
-        The Oracle VM VirtualBox base package should be downloaded only from a
+        The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> base package should be downloaded only from a
         trusted source, for instance the official website
         <ph>http://www.virtualbox.org</ph>. The integrity of the
         package should be verified with the provided SHA256 checksum
         which can be found on the official website.
       </p>
     <p>
-        General Oracle VM VirtualBox installation instructions for the
+        General <ph conkeyref="vbox-conkeyref-phrases/product-name"/> installation instructions for the
         supported hosts can be found in <xref href="installation.dita">Installation Details</xref>.
       </p>
     <p>
@@ -23,7 +23,7 @@
         enabled by default but disabling some of them could be
         appropriate if the corresponding functionality is not required
         by any virtual machine. The Python language bindings are only
-        required if the Oracle VM VirtualBox API is to be used by external
+        required if the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> API is to be used by external
         Python applications. In particular USB support and support for
         the two networking modes require the installation of Windows
         kernel drivers on the host. Therefore disabling those selected
@@ -32,17 +32,17 @@
         potential attacker.
       </p>
     <p>
-        The general case is to install the complete Oracle VM VirtualBox
+        The general case is to install the complete <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         package. The installation must be done with system privileges.
-        All Oracle VM VirtualBox binaries should be executed as a regular user
+        All <ph conkeyref="vbox-conkeyref-phrases/product-name"/> binaries should be executed as a regular user
         and never as a privileged user.
       </p>
     <p>
-        The Oracle VM VirtualBox Extension Pack provides additional features
+        The <ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/> provides additional features
         and must be downloaded and installed separately, see
-        <xref href="intro-installing.dita">Installing Oracle VM VirtualBox and Extension Packs</xref>. As for the base package, the
+        <xref href="intro-installing.dita">Installing <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and Extension Packs</xref>. As for the base package, the
         SHA256 checksum of the extension pack should be verified. As the
-        installation requires system privileges, Oracle VM VirtualBox will ask
+        installation requires system privileges, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will ask
         for the system password during the installation of the extension
         pack.
       </p>

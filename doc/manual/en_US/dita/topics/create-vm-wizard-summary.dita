@@ -16,7 +16,7 @@
     <p>
         Click <b outputclass="bold">Finish</b> to create your new
         virtual machine. The virtual machine is displayed in the machine
-        list on the left side of the VirtualBox Manager window, with the name
+        list on the left side of the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window, with the name
         that you entered on the first page of the wizard.
       </p>
   </body>

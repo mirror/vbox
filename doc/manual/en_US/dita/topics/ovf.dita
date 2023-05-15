@@ -5,7 +5,7 @@
   
   <body>
     <p>
-      Oracle VM VirtualBox can import and export virtual machines in the
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can import and export virtual machines in the
       following formats:
     </p>
     <ul>
@@ -17,7 +17,7 @@
       </li>
       <li>
         <p><b outputclass="bold">Cloud service formats.</b> Export
-          to and import from cloud services such as Oracle Cloud Infrastructure is supported.
+          to and import from cloud services such as <ph conkeyref="vbox-conkeyref-phrases/oci"/> is supported.
           See <xref href="cloud-integration.dita#cloud-integration"/>.
         </p>
       </li>

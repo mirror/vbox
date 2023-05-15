@@ -2,12 +2,12 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="harddiskcontrollers">
   <title>Hard Disk Controllers</title>
-  
+
   <body>
     <p>
       In a computing device, hard disks and CD/DVD drives are connected
       to a device called a hard disk controller, which drives hard disk
-      operation and data transfers. Oracle VM VirtualBox can emulate the most
+      operation and data transfers. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can emulate the most
       common types of hard disk controllers typically found in computing
       devices: IDE, SATA (AHCI), SCSI, SAS, USB-based, NVMe and
       virtio-scsi mass storage devices.
@@ -27,7 +27,7 @@
           device 1, secondary device 0, and secondary device 1.
         </p>
         <p>
-          In Oracle VM VirtualBox, each virtual machine may have one IDE
+          In <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, each virtual machine may have one IDE
           controller enabled, which gives you up to four virtual storage
           devices that you can attach to the machine. By default, one of
           these virtual storage devices, device 0 on the secondary
@@ -40,7 +40,7 @@
         </p>
         <p>
           You can also select which exact type of IDE controller
-          hardware Oracle VM VirtualBox should present to the virtual machine:
+          hardware <ph conkeyref="vbox-conkeyref-phrases/product-name"/> should present to the virtual machine:
           PIIX3, PIIX4, or ICH6. This makes no difference in terms of
           performance, but if you import a virtual machine from another
           virtualization product, the OS in that machine may expect a
@@ -49,7 +49,7 @@
         <p>
           After you have created a new virtual machine with the
           <b outputclass="bold">New Virtual Machine</b> wizard in
-          VirtualBox Manager, you will typically see one IDE controller in the
+          <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, you will typically see one IDE controller in the
           machine's <b outputclass="bold">Storage</b> settings.
           The virtual CD/DVD drive will be attached to one of the four
           ports of this controller.
@@ -64,16 +64,16 @@
           is called Advanced Host Controller Interface (AHCI).
         </p>
         <p>
-          Like a real SATA controller, Oracle VM VirtualBox's virtual SATA
+          Like a real SATA controller, <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s virtual SATA
           controller operates faster and also consumes fewer CPU
           resources than the virtual IDE controller. Also, this enables
           you to connect up to 30 virtual hard disks to one machine
-          instead of just three, when compared to the Oracle VM VirtualBox IDE
+          instead of just three, when compared to the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> IDE
           controller with a DVD drive attached.
         </p>
         <p>
           For this reason, depending on the selected guest OS,
-          Oracle VM VirtualBox uses SATA as the default for newly created
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses SATA as the default for newly created
           virtual machines. One virtual SATA controller is created by
           default, and the default disk that is created with a new VM is
           attached to this controller.
@@ -93,7 +93,7 @@
             <b outputclass="bold">Settings</b> window.
           </p>
           <p>
-            Oracle VM VirtualBox recommends the Intel Matrix Storage drivers,
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> recommends the Intel Matrix Storage drivers,
             which can be downloaded from
             <ph>http://downloadcenter.intel.com/Product_Filter.aspx?ProductID=2101</ph>.
           </p>
@@ -101,7 +101,7 @@
         <p>
           To add a SATA controller to a machine for which it has not
           been enabled by default, either because it was created by an
-          earlier version of Oracle VM VirtualBox, or because SATA is not
+          earlier version of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, or because SATA is not
           supported by default by the selected guest OS, do the
           following. Go to the <b outputclass="bold">Storage</b>
           page of the machine's
@@ -113,8 +113,8 @@
           virtual disks to it.
         </p>
         <p>
-          To change the IDE compatibility mode settings for the SATA
-          controller, see <xref href="vboxmanage-storagectl.dita"/>.
+            To change the IDE compatibility mode settings for the SATA controller, see <xref
+            href="vboxmanage-storagectl.dita"/>.
         </p>
       </li>
       <li>
@@ -129,7 +129,7 @@
         </p>
         <p>
           Primarily for compatibility with other virtualization
-          software, Oracle VM VirtualBox optionally supports LSI Logic and
+          software, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> optionally supports LSI Logic and
           BusLogic SCSI controllers, to each of which up to fifteen
           virtual hard disks can be attached.
         </p>
@@ -163,7 +163,7 @@
         </p>
         <p>
           To support high-end guests which require SAS controllers,
-          Oracle VM VirtualBox emulates a LSI Logic SAS controller, which can
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> emulates a LSI Logic SAS controller, which can
           be enabled much the same way as a SCSI controller. At this
           time, up to 255 devices can be connected to the SAS
           controller.
@@ -189,7 +189,7 @@
           mass storage devices.
         </p>
         <p>
-          The virtual USB storage controller offered by Oracle VM VirtualBox
+          The virtual USB storage controller offered by <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
           works differently to the other storage controller types. While
           most storage controllers appear as a single PCI device to the
           guest with multiple disks attached to it, the USB-based
@@ -244,7 +244,7 @@
       </li>
     </ul>
     <p>
-      In summary, Oracle VM VirtualBox gives you the following categories of
+      In summary, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> gives you the following categories of
       virtual storage slots:
     </p>
     <ul>
@@ -297,9 +297,9 @@
       which one to choose. In general, you should avoid IDE unless it is
       the only controller supported by your guest. Whether you use SATA,
       SCSI, or SAS does not make any real difference. The variety of
-      controllers is only supplied by Oracle VM VirtualBox for compatibility
+      controllers is only supplied by <ph conkeyref="vbox-conkeyref-phrases/product-name"/> for compatibility
       with existing hardware and other hypervisors.
     </p>
   </body>
-  
+
 </topic>

@@ -6,7 +6,7 @@
   <body>
     <p>
             To avoid popups when performing an unattended installation
-            of the Oracle VM VirtualBox Guest Additions, the code signing
+            of the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions, the code signing
             certificates used to sign the drivers needs to be installed
             in the correct certificate stores on the guest operating
             system. Failure to do this will cause a typical Windows
@@ -39,14 +39,14 @@
       </li>
       <li>
         <p>
-                Mount the Oracle VM VirtualBox Guest Additions .ISO.
+                Mount the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions .ISO.
               </p>
       </li>
       <li>
         <p>
                 Open a command line window on the guest and change to
                 the <filepath>cert</filepath> folder on the
-                Oracle VM VirtualBox Guest Additions CD.
+                <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions CD.
               </p>
       </li>
       <li>

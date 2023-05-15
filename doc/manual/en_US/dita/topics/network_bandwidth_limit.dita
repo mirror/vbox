@@ -5,14 +5,14 @@
   
   <body>
     <p>
-      Oracle VM VirtualBox supports limiting of the maximum bandwidth used for
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports limiting of the maximum bandwidth used for
       network transmission. Several network adapters of one VM may share
       limits through bandwidth groups. It is possible to have more than
       one such limit.
     </p>
     <note>
       <p>
-        Oracle VM VirtualBox shapes VM traffic only in the transmit direction,
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> shapes VM traffic only in the transmit direction,
         delaying the packets being sent by virtual machines. It does not
         limit the traffic being received by virtual machines.
       </p>

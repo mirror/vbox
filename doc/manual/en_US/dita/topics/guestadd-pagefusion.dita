@@ -12,13 +12,13 @@
     <p>
         In a server environment running several similar VMs on the same
         host, lots of memory pages are identical. For example, if the
-        VMs are using identical operating systems. Oracle VM VirtualBox's Page
+        VMs are using identical operating systems. <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s Page
         Fusion technology can efficiently identify these identical
         memory pages and share them between multiple VMs.
       </p>
     <note>
       <p>
-          Oracle VM VirtualBox supports Page Fusion only on 64-bit hosts, and
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports Page Fusion only on 64-bit hosts, and
           it is not supported on macOS hosts. Page Fusion currently
           works only with Windows 2000 and later guests.
         </p>
@@ -62,8 +62,8 @@
             virtualization overhead by 10 to 20%.
           </p>
         <p>
-            Page Fusion in Oracle VM VirtualBox uses logic in the
-            Oracle VM VirtualBox Guest Additions to quickly identify memory
+            Page Fusion in <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses logic in the
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions to quickly identify memory
             cells that are most likely identical across VMs. It can
             therefore achieve most of the possible savings of page
             sharing almost immediately and with almost no overhead.
@@ -85,15 +85,10 @@
         To enable Page Fusion for a VM, use the following command:
       </p>
     <pre xml:space="preserve">VBoxManage modifyvm "VM name" --page-fusion on</pre>
-    <p>
-        You can observe Page Fusion operation using some metrics.
-        <codeph>RAM/VMM/Shared</codeph> shows the total amount of
-        fused pages, whereas the per-VM metric
-        <codeph>Guest/RAM/Usage/Shared</codeph> will return the amount
-        of fused memory for a given VM. See
-        <xref href="vboxmanage-metrics.dita"/> for information on how to
-        query metrics.
-      </p>
+    <p> You can observe Page Fusion operation using some metrics. <codeph>RAM/VMM/Shared</codeph>
+      shows the total amount of fused pages, whereas the per-VM metric
+        <codeph>Guest/RAM/Usage/Shared</codeph> will return the amount of fused memory for a given
+      VM. See <xref href="vboxmanage-metrics.dita"/> for information on how to query metrics. </p>
     <note>
       <p>
           Enabling Page Fusion might indirectly increase the chances for

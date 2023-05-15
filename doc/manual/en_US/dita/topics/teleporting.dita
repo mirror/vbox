@@ -5,9 +5,9 @@
   
   <body>
     <p>
-      Oracle VM VirtualBox supports <i>teleporting</i>.
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports <i>teleporting</i>.
       Teleporting is moving a virtual machine over a network from one
-      Oracle VM VirtualBox host to another, while the virtual machine is
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> host to another, while the virtual machine is
       running. This works regardless of the host operating system that
       is running on the hosts. You can teleport virtual machines between
       Oracle Solaris and macOS hosts, for example.
@@ -34,7 +34,7 @@
       <li>
         <p>
           On the target host, you must configure a virtual machine in
-          Oracle VM VirtualBox with exactly the same hardware settings as the
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> with exactly the same hardware settings as the
           machine on the source that you want to teleport. This does not
           apply to settings which are merely descriptive, such as the VM
           name, but obviously for teleporting to work, the target
@@ -117,7 +117,7 @@
         target may hang. This may happen especially if the VM is running
         application software that is highly optimized to run on a
         particular CPU without correctly checking that certain CPU
-        features are actually present. Oracle VM VirtualBox filters what CPU
+        features are actually present. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> filters what CPU
         capabilities are presented to the guest operating system.
         Advanced users can attempt to restrict these virtual CPU
         capabilities with the <userinput>VBoxManage modifyvm

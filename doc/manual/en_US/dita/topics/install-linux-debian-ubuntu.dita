@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="install-linux-debian-ubuntu">
-  <title>Installing Oracle VM VirtualBox from a Debian or Ubuntu Package</title>
+  <title>Installing <ph conkeyref="vbox-conkeyref-phrases/product-name"/> from a Debian or Ubuntu Package</title>
   
   <body>
     <p>
@@ -34,7 +34,7 @@
           further information.
         </p>
     <p>
-          Once Oracle VM VirtualBox has been successfully installed and
+          Once <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has been successfully installed and
           configured, you can start it by clicking
           <b outputclass="bold">VirtualBox</b> in your
           <b outputclass="bold">Start</b> menu or from the

@@ -8,8 +8,8 @@
         The installer creates the system user group
         <codeph>vboxuser</codeph> during installation for Oracle
         Solaris hosts that support the USB features required by
-        Oracle VM VirtualBox. Any system user who is going to use USB devices
-        from Oracle VM VirtualBox guests must be a member of this group. A
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. Any system user who is going to use USB devices
+        from <ph conkeyref="vbox-conkeyref-phrases/product-name"/> guests must be a member of this group. A
         user can be made a member of this group either by using the
         desktop user and group tools or by running the following command
         as root:

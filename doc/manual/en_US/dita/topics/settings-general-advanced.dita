@@ -11,9 +11,9 @@
     <ul>
       <li>
         <p><b outputclass="bold">Snapshot Folder:</b> By
-            default, Oracle VM VirtualBox saves snapshot data together with
-            your other Oracle VM VirtualBox configuration data. See
-            <xref href="vboxconfigdata.dita">Where Oracle VM VirtualBox Stores its Files</xref>. With this setting, you
+            default, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> saves snapshot data together with
+            your other <ph conkeyref="vbox-conkeyref-phrases/product-name"/> configuration data. See
+            <xref href="vboxconfigdata.dita">Where <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Stores its Files</xref>. With this setting, you
             can specify any other folder for each VM.
           </p>
       </li>
@@ -22,15 +22,15 @@
             select here whether the clipboard of the guest OS should be
             shared with that of your host. If you select
             <b outputclass="bold">Bidirectional</b>, then
-            Oracle VM VirtualBox will always make sure that both clipboards
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will always make sure that both clipboards
             contain the same data. If you select
             <b outputclass="bold">Host to Guest</b> or
             <b outputclass="bold">Guest to Host</b>, then
-            Oracle VM VirtualBox will only ever copy clipboard data in one
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will only ever copy clipboard data in one
             direction.
           </p>
         <p>
-            Clipboard sharing requires that the Oracle VM VirtualBox Guest
+            Clipboard sharing requires that the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest
             Additions be installed. In such a case, this setting has no
             effect. See <xref href="guestadditions.dita#guestadditions"/>.
           </p>

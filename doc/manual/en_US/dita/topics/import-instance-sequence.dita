@@ -6,7 +6,7 @@
   <body>
     <p>
           The following describes the sequence of events when you import
-          an instance from Oracle Cloud Infrastructure.
+          an instance from <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
         </p>
     <ul>
       <li>
@@ -17,14 +17,14 @@
       </li>
       <li>
         <p>
-              The custom image is exported to an Oracle Cloud Infrastructure object and is
+              The custom image is exported to an <ph conkeyref="vbox-conkeyref-phrases/oci"/> object and is
               stored using Object Storage in the bucket specified by the
               user.
             </p>
       </li>
       <li>
         <p>
-              The Oracle Cloud Infrastructure object is downloaded to the local host. The
+              The <ph conkeyref="vbox-conkeyref-phrases/oci"/> object is downloaded to the local host. The
               object is a TAR archive which contains a boot volume of
               the instance in QCOW2 format and a JSON file containing
               metadata related to the instance.
@@ -35,7 +35,7 @@
               The boot volume of the instance is extracted from the
               archive and a new VMDK image is created by converting the
               boot volume into the VMDK format. The VMDK image is
-              registered with Oracle VM VirtualBox.
+              registered with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
             </p>
       </li>
       <li>
@@ -45,7 +45,7 @@
             </p>
         <p>
               By default, the new VM is not started after import from
-              Oracle Cloud Infrastructure.
+              <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
             </p>
       </li>
       <li>

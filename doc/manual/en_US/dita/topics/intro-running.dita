@@ -11,12 +11,12 @@
       <li>
         <p>
           Double-click on the VM's entry in the machine list in
-          VirtualBox Manager.
+          <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>.
         </p>
       </li>
       <li>
         <p>
-          Select the VM's entry in the machine list in VirtualBox Manager, and
+          Select the VM's entry in the machine list in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, and
           click <b outputclass="bold">Start</b> in the toolbar
           the top of the window.
         </p>

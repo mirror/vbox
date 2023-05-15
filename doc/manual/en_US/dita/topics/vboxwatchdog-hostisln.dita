@@ -6,7 +6,7 @@
   <body>
     <p>
         To detect whether a host is being isolated, that is, the host
-        cannot reach the Oracle VM VirtualBox server instance anymore, the
+        cannot reach the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> server instance anymore, the
         host needs to set an alternating value to a global extradata
         value within a time period. If this value is not set within that
         time period a timeout occurred and the so-called host isolation

@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        On macOS, launchd is used to start the Oracle VM VirtualBox
+        On macOS, launchd is used to start the <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         webservice. An example configuration file can be found in
         <filepath>$HOME/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist</filepath>.
         It can be enabled by changing the <codeph>Disabled</codeph>

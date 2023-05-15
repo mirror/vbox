@@ -5,7 +5,7 @@
   
   <body>
     <p>
-      Some host power management events are handled by Oracle VM VirtualBox.
+      Some host power management events are handled by <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
       The actual behavior depends on the platform:
     </p>
     <ul>
@@ -16,7 +16,7 @@
         </p>
         <p>
           This event is currently only handled on Windows hosts and Mac
-          OS X hosts. When this event is generated, Oracle VM VirtualBox will
+          OS X hosts. When this event is generated, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will
           pause all running VMs.
         </p>
       </li>
@@ -26,7 +26,7 @@
         </p>
         <p>
           This event is currently only handled on Windows hosts and Mac
-          OS X hosts. When this event is generated, Oracle VM VirtualBox will
+          OS X hosts. When this event is generated, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will
           resume all VMs which are where paused before.
         </p>
       </li>
@@ -37,7 +37,7 @@
         </p>
         <p>
           This event is currently only handled on Windows hosts and Mac
-          OS X hosts. When this event is generated, Oracle VM VirtualBox will
+          OS X hosts. When this event is generated, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will
           save the state and terminate all VMs in preparation of a
           potential host powerdown.
         </p>

@@ -5,7 +5,7 @@
   
   <body>
     <p>
-      Oracle VM VirtualBox enables you to drag and drop content from the host
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables you to drag and drop content from the host
       to the guest, and vice versa. For this to work the latest version
       of the Guest Additions must be installed on the guest.
     </p>
@@ -23,7 +23,7 @@
       X-Windows supports many different drag and drop protocols only the
       most common one, XDND, is supported for now. Applications using
       other protocols, such as Motif or OffiX, will not be recognized by
-      Oracle VM VirtualBox.
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
     </p>
     <p>
       In the context of using drag and drop, the origin of the data is
@@ -96,7 +96,7 @@
     <note>
       <p>
         Drag and drop support depends on the frontend being used. At the
-        moment, only the VirtualBox Manager frontend provides this
+        moment, only the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> frontend provides this
         functionality.
       </p>
     </note>

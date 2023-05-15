@@ -12,7 +12,7 @@
         machines will be affected just as much as physical ones.
       </p>
     <p>
-        If a true Oracle VM VirtualBox problem is encountered, it helps to
+        If a true <ph conkeyref="vbox-conkeyref-phrases/product-name"/> problem is encountered, it helps to
         categorize and isolate the problem first. Here are some of the
         questions that should be answered before reporting a problem:
       </p>
@@ -29,7 +29,7 @@
         <p>
             Is the problem specific to a certain host OS? Problems are
             usually not host OS specific, because most of the
-            Oracle VM VirtualBox code base is shared across all supported
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> code base is shared across all supported
             platforms, but especially in the areas of networking and USB
             support, there are significant differences between host
             platforms. Some GUI related issues are also host specific.

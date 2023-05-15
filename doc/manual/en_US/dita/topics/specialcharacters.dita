@@ -8,7 +8,7 @@
                   <p>
         Some OSes expect certain key combinations to initiate certain
         procedures. The key combinations that you type into a VM might
-        target the host OS, the Oracle VM VirtualBox software, or the guest
+        target the host OS, the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> software, or the guest
         OS. The recipient of these keypresses depends on a number of
         factors, including the key combination itself.
       </p>
@@ -31,7 +31,7 @@
             interface. As the X server intercepts this combination,
             pressing it will usually restart your
             <i>host</i> graphical user interface and kill
-            all running programs, including Oracle VM VirtualBox, in the
+            all running programs, including <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, in the
             process.
           </p>
                         <p>
@@ -69,7 +69,7 @@
                            <li>
                               <p>
                 Use special key combinations with the Host key, which is
-                normally the right Control key. Oracle VM VirtualBox then
+                normally the right Control key. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> then
                 translates the following key combinations for the VM:
               </p>
                               <ul>
@@ -106,7 +106,7 @@
                         <p>
             For some other keyboard combinations such as
             <b outputclass="bold">Alt+Tab</b> to switch between
-            open windows, Oracle VM VirtualBox enables you to configure
+            open windows, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables you to configure
             whether these combinations will affect the host or the
             guest, if a virtual machine currently has the focus. This is
             a global setting for all virtual machines and can be found

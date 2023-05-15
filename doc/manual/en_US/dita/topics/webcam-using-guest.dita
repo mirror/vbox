@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        Oracle VM VirtualBox includes a feature called <i>webcam
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> includes a feature called <i>webcam
         passthrough</i>, which enables a guest to use a host
         webcam. This complements the general USB passthrough support
         which was the typical way of using host webcams in legacy
@@ -15,8 +15,8 @@
     <note>
       <p>
           The webcam passthrough module is shipped as part of the
-          Oracle VM VirtualBox extension pack, which must be installed
-          separately. See <xref href="intro-installing.dita">Installing Oracle VM VirtualBox and Extension Packs</xref>.
+        <ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/>, which must be installed
+          separately. See <xref href="intro-installing.dita">Installing <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and Extension Packs</xref>.
         </p>
     </note>
     <p>

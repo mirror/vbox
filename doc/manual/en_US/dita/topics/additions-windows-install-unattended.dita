@@ -6,7 +6,7 @@
   <body>
     <p>
           You can configure unattended installation of the
-          Oracle VM VirtualBox Guest Additions when you create a new VM using
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions when you create a new VM using
           the <b outputclass="bold">Create Virtual Machine</b>
           wizard. Select the <b outputclass="bold">Guest
           Additions</b> check box on the

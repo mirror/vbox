@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        Oracle VM VirtualBox is available in a number of package formats
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is available in a number of package formats
         native to various common Linux distributions. See
         <xref href="hostossupport.dita#hostossupport"/>. In addition, there is an
         alternative generic installer (.run) which you can use on

@@ -2,37 +2,34 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="auth-config-using">
   <title>Configuring and Using Authentication</title>
-  
+
   <body>
     <p>
-        The following components of Oracle VM VirtualBox can use passwords for
+        The following components of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can use passwords for
         authentication:
       </p>
     <ul>
       <li>
         <p>
-            When using remote iSCSI storage and the storage server
-            requires authentication, an initiator secret can optionally
-            be supplied with the <userinput>VBoxManage
-            storageattach</userinput> command. As long as no settings
-            password is provided, by using the command line option
-           <codeph>--settingspwfile</codeph>, then this secret is
-            stored <i>unencrypted</i> in the machine
-            configuration and is therefore potentially readable on the
-            host. See <xref href="storage-iscsi.dita">iSCSI Servers</xref> and
-            <xref href="vboxmanage-storageattach.dita">VBoxManage storageattach</xref>.
-          </p>
+          When using remote iSCSI storage and the storage server requires authentication, an
+          initiator secret can optionally be supplied with the <userinput>VBoxManage
+          storageattach</userinput> command. As long as no settings password is provided, by using
+          the command line option <codeph>--settingspwfile</codeph>, then this secret is stored
+          <i>unencrypted</i> in the machine configuration and is therefore potentially readable on
+          the host. See <xref href="storage-iscsi.dita">iSCSI Servers</xref> and <xref
+          href="vboxmanage-storageattach.dita">VBoxManage storageattach</xref>.
+        </p>
       </li>
       <li>
         <p>
-            When using the Oracle VM VirtualBox web service to control an
-            Oracle VM VirtualBox host remotely, connections to the web service
+            When using the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> web service to control an
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> host remotely, connections to the web service
             are authenticated in various ways. This is described in
-            detail in the Oracle VM VirtualBox Software Development Kit (SDK)
+            detail in the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Software Development Kit (SDK)
             reference. See <xref href="VirtualBoxAPI.dita#VirtualBoxAPI"/>.
           </p>
       </li>
     </ul>
   </body>
-  
+
 </topic>

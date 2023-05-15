@@ -8,8 +8,8 @@
         OVF is a cross-platform standard supported by many
         virtualization products which enables the creation of ready-made
         virtual machines that can then be imported into a hypervisor
-        such as Oracle VM VirtualBox. Oracle VM VirtualBox makes OVF import and
-        export easy to do, using VirtualBox Manager or the command-line
+        such as <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> makes OVF import and
+        export easy to do, using <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> or the command-line
         interface.
       </p>
     <p>
@@ -18,13 +18,13 @@
         configuration settings that can be distributed easily. This way
         one can offer complete ready-to-use software packages, including
         OSes with applications, that need no configuration or
-        installation except for importing into Oracle VM VirtualBox.
+        installation except for importing into <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
       </p>
     <note>
       <p>
-          The OVF standard is complex, and support in Oracle VM VirtualBox is
+          The OVF standard is complex, and support in <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is
           an ongoing process. In particular, no guarantee is made that
-          Oracle VM VirtualBox supports all appliances created by other
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports all appliances created by other
           virtualization software. For a list of known limitations, see
           <xref href="KnownIssues.dita">Known Limitations</xref>.
         </p>
@@ -40,7 +40,7 @@
             <xref href="vdidetails.dita"/>. They also include a textual
             description file in an XML dialect with an
             <filepath>.ovf</filepath> extension. These files must then
-            reside in the same directory for Oracle VM VirtualBox to be able
+            reside in the same directory for <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to be able
             to import them.
           </p>
       </li>
@@ -50,7 +50,7 @@
             single archive file, typically with an
             <filepath>.ova</filepath> extension. Such archive files use
             a variant of the TAR archive format and can therefore be
-            unpacked outside of Oracle VM VirtualBox with any utility that can
+            unpacked outside of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> with any utility that can
             unpack standard TAR files.
           </p>
       </li>

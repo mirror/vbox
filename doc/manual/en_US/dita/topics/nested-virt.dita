@@ -2,14 +2,14 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="nested-virt">
   <title>Nested Virtualization</title>
-  
+
   <body>
     <p>
-      Oracle VM VirtualBox supports <i>nested
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports <i>nested
       virtualization</i>. This feature enables the passthrough of
       hardware virtualization functions to the guest VM. That means that
-      you can install a hypervisor, such as Oracle VM VirtualBox, Oracle VM
-      Server or KVM, on an Oracle VM VirtualBox guest. You can then create and
+      you can install a hypervisor, such as <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, Oracle VM
+      Server or KVM, on an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> guest. You can then create and
       run VMs within the guest VM.
     </p>
     <p>
@@ -24,7 +24,7 @@
     <ul>
       <li>
         <p>
-          From VirtualBox Manager, select the <b outputclass="bold">Enable
+          From <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, select the <b outputclass="bold">Enable
           Nested VT-x/AMD-V</b> check box on the
           <b outputclass="bold">Processor</b> tab. To disable the
           feature, deselect the check box.
@@ -32,13 +32,12 @@
       </li>
       <li>
         <p>
-          Use the <codeph>--nested-hw-virt</codeph> option of the
-          <userinput>VBoxManage modifyvm</userinput> command to enable or
-          disable nested virtualization. See
+          Use the <codeph>--nested-hw-virt</codeph> option of the <userinput>VBoxManage
+          modifyvm</userinput> command to enable or disable nested virtualization. See
           <xref href="vboxmanage-modifyvm.dita">VBoxManage modifyvm</xref>.
         </p>
       </li>
     </ul>
   </body>
-  
+
 </topic>

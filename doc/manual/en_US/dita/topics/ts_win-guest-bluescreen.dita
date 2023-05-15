@@ -32,9 +32,9 @@
         <p>
             Changing the storage controller hardware will cause bootup
             failures as well. This might also apply to you if you copy a
-            disk image from an older version of Oracle VM VirtualBox to a new
+            disk image from an older version of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to a new
             virtual machine. The default subtype of IDE controller
-            hardware used by Oracle VM VirtualBox is PIIX4. Make sure that the
+            hardware used by <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is PIIX4. Make sure that the
             storage controller settings are identical.
           </p>
       </li>

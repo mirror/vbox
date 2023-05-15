@@ -10,7 +10,7 @@
             Due to different Windows sessions having their own set of
             resources, there might be some issues with accessing network
             shares created in the interactive user session when at least
-            one of the Oracle VM VirtualBox processes are running in session
+            one of the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> processes are running in session
             0.
           </p>
         <p>

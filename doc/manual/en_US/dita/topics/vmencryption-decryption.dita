@@ -6,7 +6,7 @@
   <body>
     <p>
         In some circumstances it might be required to decrypt previously
-        encrypted VMs. This can be done in VirtualBox Manager or using
+        encrypted VMs. This can be done in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> or using
         <userinput>VBoxManage</userinput> with the following command:
       </p>
     <pre xml:space="preserve">VBoxManage encryptvm <varname>uuid</varname>|<varname>vmname</varname> setencryption --old-password <varname>file</varname>|-</pre>

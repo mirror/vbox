@@ -11,7 +11,7 @@
     <ul>
       <li>
         <p><b outputclass="bold">Not attached.</b> In this mode,
-          Oracle VM VirtualBox reports to the guest that a network card is
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> reports to the guest that a network card is
           present, but that there is no connection. This is as if no
           Ethernet cable was plugged into the card. Using this mode, it
           is possible to <i>pull</i> the virtual Ethernet
@@ -40,7 +40,7 @@
         <p><b outputclass="bold">Bridged networking.</b> This is
           for more advanced networking needs, such as network
           simulations and running servers in a guest. When enabled,
-          Oracle VM VirtualBox connects to one of your installed network cards
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> connects to one of your installed network cards
           and exchanges network packets directly, circumventing your
           host operating system's network stack.
         </p>
@@ -71,7 +71,7 @@
         <p><b outputclass="bold"> Generic networking.</b> Rarely
           used modes which share the same generic network interface, by
           allowing the user to select a driver which can be included
-          with Oracle VM VirtualBox or be distributed in an extension pack.
+          with <ph conkeyref="vbox-conkeyref-phrases/product-name"/> or be distributed in an extension pack.
         </p>
         <p>
           The following sub-modes are available:
@@ -89,7 +89,7 @@
               networking:</b> Used to connect to a Virtual
               Distributed Ethernet switch on a Linux or a FreeBSD host.
               At the moment this option requires compilation of
-              Oracle VM VirtualBox from sources, as the Oracle packages do not
+              <ph conkeyref="vbox-conkeyref-phrases/product-name"/> from sources, as the Oracle packages do not
               include it.
             </p>
           </li>

@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        To perform a non-interactive installation of Oracle VM VirtualBox
+        To perform a non-interactive installation of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         there is a response file named
         <filepath>autoresponse</filepath>. The installer uses this for
         responses to inputs, rather than prompting the user.

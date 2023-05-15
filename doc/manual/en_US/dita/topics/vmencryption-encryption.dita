@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        Encrypting a VM can be done either using VirtualBox Manager or the
+        Encrypting a VM can be done either using <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> or the
         <userinput>VBoxManage</userinput>. To encrypt an unencrypted VM with
         <userinput>VBoxManage</userinput>, use:
       </p>

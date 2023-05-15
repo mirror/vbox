@@ -67,6 +67,7 @@
     DitaUtils.py chunk -d template.ditamap or 'DitaUtils.py map-prep -d template.ditamap'
   -->
     <frontmatter>
+       <mapref href="conkeyrefs.ditamap" format="ditamap" toc="no" processing-role="resource-only"/>
        <booklists>
           <toc/>
           <figurelist/>

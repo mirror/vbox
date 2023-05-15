@@ -5,14 +5,14 @@
   
   <body>
     <p>
-        The Oracle VM VirtualBox Guest Additions contain experimental hardware
+        The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions contain experimental hardware
         3D support for Windows, Linux, and Oracle Solaris guests.
       </p>
     <p>
         With this feature, if an application inside your virtual machine
         uses 3D features through the OpenGL or Direct3D 8/9 programming
         interfaces, instead of emulating them in software, which would
-        be slow, Oracle VM VirtualBox will attempt to use your host's 3D
+        be slow, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will attempt to use your host's 3D
         hardware. This works for all supported host platforms, provided
         that your host operating system can make use of your accelerated
         3D hardware in the first place.
@@ -58,7 +58,7 @@
         <note>
           <p>
               For the basic Direct3D acceleration to work in a Windows
-              Guest, Oracle VM VirtualBox needs to replace Windows system
+              Guest, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> needs to replace Windows system
               files in the virtual machine. As a result, the Guest
               Additions installation program offers Direct3D
               acceleration as an option that must be explicitly enabled.
@@ -79,14 +79,14 @@
         <note>
           <p>
               Untrusted guest systems should not be allowed to use the
-              3D acceleration features of Oracle VM VirtualBox, just as
+              3D acceleration features of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, just as
               untrusted host software should not be allowed to use 3D
               acceleration. Drivers for 3D hardware are generally too
               complex to be made properly secure and any software which
               is allowed to access them may be able to compromise the
               operating system running them. In addition, enabling 3D
               acceleration gives the guest direct access to a large body
-              of additional program code in the Oracle VM VirtualBox host
+              of additional program code in the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> host
               process which it might conceivably be able to use to crash
               the virtual machine.
             </p>
@@ -94,7 +94,7 @@
       </li>
     </ul>
     <p>
-        To enable Aero theme support, the Oracle VM VirtualBox WDDM video
+        To enable Aero theme support, the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> WDDM video
         driver must be installed, which is available with the Guest
         Additions installation. The WDDM driver is not installed by
         default for Vista and Windows 7 guests and must be
@@ -110,7 +110,7 @@
         Aero theme.
       </p>
     <p>
-        Technically, Oracle VM VirtualBox implements 3D acceleration by
+        Technically, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> implements 3D acceleration by
         installing an additional hardware 3D driver inside the guest
         when the Guest Additions are installed. This driver acts as a
         hardware 3D driver and reports to the guest operating system
@@ -118,7 +118,7 @@
         acceleration. When an application in the guest then requests
         hardware acceleration through the OpenGL or Direct3D programming
         interfaces, these are sent to the host through a special
-        communication tunnel implemented by Oracle VM VirtualBox. The
+        communication tunnel implemented by <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. The
         <i>host</i> then performs the requested 3D
         operation using the host's programming interfaces.
       </p>

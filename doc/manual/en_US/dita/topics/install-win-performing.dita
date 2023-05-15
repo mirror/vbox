@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        The Oracle VM VirtualBox installation can be started in either of the
+        The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> installation can be started in either of the
         following ways:
       </p>
     <ul>
@@ -30,22 +30,22 @@
     <p>
         Using either way displays the installation
         <b outputclass="bold">Welcome</b> dialog and enables you
-        to choose where to install Oracle VM VirtualBox, and which components
-        to install. In addition to the Oracle VM VirtualBox application, the
+        to choose where to install <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, and which components
+        to install. In addition to the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> application, the
         following components are available:
       </p>
     <ul>
       <li>
         <p><b outputclass="bold">USB support.</b> This package
             contains special drivers for your Windows host that
-            Oracle VM VirtualBox requires to fully support USB devices inside
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> requires to fully support USB devices inside
             your virtual machines.
           </p>
       </li>
       <li>
         <p><b outputclass="bold">Networking.</b> This package
             contains extra networking drivers for your Windows host that
-            Oracle VM VirtualBox needs to support Bridged Networking. This
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> needs to support Bridged Networking. This
             enables your VM's virtual network cards to be accessed from
             other machines on your physical network.
           </p>
@@ -53,7 +53,7 @@
       <li>
         <p><b outputclass="bold">Python support.</b> This
             package contains Python scripting support for the
-            Oracle VM VirtualBox API, see <xref href="VirtualBoxAPI.dita">Oracle VM VirtualBox Programming Interfaces</xref>.
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> API, see <xref href="VirtualBoxAPI.dita"><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Programming Interfaces</xref>.
             For this to work, an already working Windows Python
             installation on the system is required.
           </p>
@@ -73,29 +73,29 @@
         Depending on your Windows configuration, you may see warnings
         about unsigned drivers, or similar. Click
         <b outputclass="bold">Continue</b> for these warnings, as
-        otherwise Oracle VM VirtualBox might not function correctly after
+        otherwise <ph conkeyref="vbox-conkeyref-phrases/product-name"/> might not function correctly after
         installation.
       </p>
     <p>
-        The installer will create an Oracle VM VirtualBox group in the Windows
+        The installer will create an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> group in the Windows
         <b outputclass="bold">Start</b> menu, which enables you
         to launch the application and access its documentation.
       </p>
     <p>
-        With standard settings, Oracle VM VirtualBox will be installed for all
+        With standard settings, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will be installed for all
         users on the local system. If this is not wanted, you must
         invoke the installer by first extracting as follows:
       </p>
     <pre xml:space="preserve">VirtualBox.exe -extract</pre>
     <p>
         Then, run either of the following commands on the extracted .MSI
-        file. This will install Oracle VM VirtualBox only for the current
+        file. This will install <ph conkeyref="vbox-conkeyref-phrases/product-name"/> only for the current
         user.
       </p>
     <pre xml:space="preserve">VirtualBox.exe -msiparams ALLUSERS=2</pre>
     <pre xml:space="preserve">msiexec /i VirtualBox-&lt;version&gt;-Win.msi ALLUSERS=2</pre>
     <p>
-        If you do not want to install all features of Oracle VM VirtualBox,
+        If you do not want to install all features of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>,
         you can set the optional <codeph>ADDLOCAL</codeph> parameter
         to explicitly name the features to be installed. The following
         features are available:
@@ -107,12 +107,12 @@
           </dt>
         <dd>
           <p>
-              Main binaries of Oracle VM VirtualBox.
+              Main binaries of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
             </p>
           <note>
             <p>
                 This feature must not be absent, since it contains the
-                minimum set of files to have working Oracle VM VirtualBox
+                minimum set of files to have working <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
                 installation.
               </p>
           </note>

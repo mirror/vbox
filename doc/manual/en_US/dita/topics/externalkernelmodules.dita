@@ -1,17 +1,17 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="externalkernelmodules">
-  <title>The Oracle VM VirtualBox Kernel Modules</title>
+  <title>The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Kernel Modules</title>
   
   <body>
     <p>
         In order to run other operating systems in virtual machines
-        alongside your main operating system, Oracle VM VirtualBox needs to
+        alongside your main operating system, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> needs to
         integrate very tightly with your system. To do this it installs
         a driver module called <userinput>vboxdrv</userinput> into the
         system kernel. The kernel is the part of the operating system
         which controls your processor and physical hardware. Without
-        this kernel module, you can still use VirtualBox Manager to configure
+        this kernel module, you can still use <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> to configure
         virtual machines, but they will not start.
       </p>
     <p>
@@ -23,7 +23,7 @@
       </p>
     <p>
         Since distributing driver modules separately from the kernel is
-        not something which Linux supports well, the Oracle VM VirtualBox
+        not something which Linux supports well, the <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         install process creates the modules on the system where they
         will be used. This means that you may need to install some
         software packages from the distribution which are needed for the

@@ -8,7 +8,7 @@
         For resolving network names, the DHCP server of the NAT engine
         offers a list of registered DNS servers of the host. If for some
         reason you need to hide this DNS server list and use the host's
-        resolver settings, thereby forcing the Oracle VM VirtualBox NAT engine
+        resolver settings, thereby forcing the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> NAT engine
         to intercept DNS requests and forward them to host's resolver,
         use the following command:
       </p>

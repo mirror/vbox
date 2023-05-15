@@ -5,7 +5,7 @@
   
   <body>
     <p>
-          You can use VirtualBox Manager to remove a cloud VM as follows:
+          You can use <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> to remove a cloud VM as follows:
         </p>
     <p>
           Right-click on the cloud VM name and select
@@ -22,8 +22,8 @@
       <li>
         <p>
               Click <b outputclass="bold">Delete Everything</b>
-              to remove the cloud VM from VirtualBox Manager and also to delete
-              the Oracle Cloud Infrastructure instance and any associated boot volumes.
+              to remove the cloud VM from <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> and also to delete
+              the <ph conkeyref="vbox-conkeyref-phrases/oci"/> instance and any associated boot volumes.
             </p>
       </li>
     </ul>

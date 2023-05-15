@@ -6,8 +6,8 @@
   <body>
     <p>
     This chapter provides detailed steps for configuring an
-    Oracle VM VirtualBox virtual machine (VM). For an introduction to
-    Oracle VM VirtualBox and steps to get your first virtual machine running,
+    <ph conkeyref="vbox-conkeyref-phrases/product-name"/> virtual machine (VM). For an introduction to
+    <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and steps to get your first virtual machine running,
     see <xref href="Introduction.dita#Introduction"/>.
   </p>
     <p>
@@ -19,7 +19,7 @@
     <ul>
       <li>
         <p>
-        Have Oracle VM VirtualBox present an ISO CD-ROM image to a guest
+        Have <ph conkeyref="vbox-conkeyref-phrases/product-name"/> present an ISO CD-ROM image to a guest
         system as if it were a physical CD-ROM.
       </p>
       </li>

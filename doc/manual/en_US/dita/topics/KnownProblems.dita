@@ -6,22 +6,22 @@
   <body>
     <p>
       The following section describes known problems with this release
-      of Oracle VM VirtualBox. Unless marked otherwise, these issues are
+      of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. Unless marked otherwise, these issues are
       planned to be fixed in later releases.
     </p>
     <ul>
       <li>
         <p>
-          The macOS installer packages for Oracle VM VirtualBox 7 currently do
+          The macOS installer packages for <ph conkeyref="vbox-conkeyref-phrases/product-name"/> 7 currently do
           not include the Internal Networking feature, which is
           available on all other platforms. This will be addressed with
-          an update of Oracle VM VirtualBox 7. For setups which depend on this
-          functionality it is best to keep using Oracle VM VirtualBox 6.1.
+          an update of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> 7. For setups which depend on this
+          functionality it is best to keep using <ph conkeyref="vbox-conkeyref-phrases/product-name"/> 6.1.
         </p>
       </li>
       <li>
         <p>
-          Poor performance when using Oracle VM VirtualBox and
+          Poor performance when using <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and
           <b outputclass="bold">Hyper-V</b> on the same host. To
           fix this, certain Windows features like "Hyper-V Platform",
           "Virtual Machine Platform" and "Windows Hypervisor Platform"
@@ -145,7 +145,7 @@
       </li>
       <li>
         <p>
-          The RDP server in the Oracle VM VirtualBox extension pack supports
+          The RDP server in the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> extension pack supports
           only audio streams in format 22.05kHz stereo 16-bit. If the
           RDP client requests any other audio format there will be no
           audio.
@@ -201,7 +201,7 @@
           </li>
           <li>
             <p>
-              Oracle VM VirtualBox does not provide Guest Additions for Mac OS
+              <ph conkeyref="vbox-conkeyref-phrases/product-name"/> does not provide Guest Additions for Mac OS
               X at this time.
             </p>
           </li>
@@ -229,7 +229,7 @@
           </li>
           <li>
             <p>
-              By default, the Oracle VM VirtualBox EFI enables debug output of
+              By default, the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> EFI enables debug output of
               the Mac OS X kernel to help you diagnose boot problems.
               Note that there is a lot of output and not all errors are
               fatal. They would also show when using a physical Apple

@@ -7,12 +7,12 @@
             <body>
                <p>
       With the <i>shared folders</i> feature of
-      Oracle VM VirtualBox, you can access files of your host system from
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, you can access files of your host system from
       within the guest system. This is similar to how you would use
       network shares in Windows networks, except that shared folders do
       not require networking, only the Guest Additions. Shared folders
       are supported with Windows 2000 or later, Linux, and Oracle
-      Solaris guests. Oracle VM VirtualBox includes experimental support for
+      Solaris guests. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> includes experimental support for
       Mac OS X and OS/2 guests.
     </p>
                <p>
@@ -24,7 +24,7 @@
       Additions provide a virtual file system.
     </p>
                <p>
-      To share a host folder with a virtual machine in Oracle VM VirtualBox,
+      To share a host folder with a virtual machine in <ph conkeyref="vbox-conkeyref-phrases/product-name"/>,
       you must specify the path of the folder and choose a
       <i>share name</i> that the guest can use to access
       the shared folder. This happens on the host. In the guest you can
@@ -56,9 +56,7 @@
           <userinput>VBoxManage</userinput>, as follows:
         </p>
                      <pre xml:space="preserve">VBoxManage sharedfolder add "VM name" --name "sharename" --hostpath "C:\test"</pre>
-                     <p>
-          See <xref href="vboxmanage-sharedfolder.dita"/>.
-        </p>
+                     <p> See <xref href="vboxmanage-sharedfolder.dita"/>. </p>
                   </li>
                </ul>
                <p>
@@ -74,7 +72,7 @@
                      <p>
           Transient shares, that are added at runtime and disappear when
           the VM is powered off. These can be created using a check box
-          in VirtualBox Manager, or by using the <codeph>--transient</codeph>
+          in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, or by using the <codeph>--transient</codeph>
           option of the <userinput>VBoxManage sharedfolder add</userinput>
           command.
         </p>
@@ -85,11 +83,11 @@
       that the guest is either allowed to both read and write, or just
       read files on the host. By default, shared folders are read-write.
       Read-only folders can be created using a check box in the
-      VirtualBox Manager, or with the <codeph>--readonly option</codeph> of the
+      <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, or with the <codeph>--readonly option</codeph> of the
       <userinput>VBoxManage sharedfolder add</userinput> command.
     </p>
                <p>
-      Oracle VM VirtualBox shared folders also support symbolic links, also
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> shared folders also support symbolic links, also
       called <i>symlinks</i>, under the following
       conditions:
     </p>

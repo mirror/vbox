@@ -41,9 +41,9 @@
             <xref href="hdimagewrites.dita#hdimagewrites"/>. In technical terms, it is
             not the virtual disk itself that is restored when a snapshot
             is restored. Instead, when a snapshot is taken,
-            Oracle VM VirtualBox creates differencing images which contain
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> creates differencing images which contain
             only the changes since the snapshot were taken. When the
-            snapshot is restored, Oracle VM VirtualBox throws away that
+            snapshot is restored, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> throws away that
             differencing image, thus going back to the previous state.
             This is both faster and uses less disk space. For the
             details, which can be complex, see

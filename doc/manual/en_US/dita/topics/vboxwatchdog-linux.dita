@@ -22,8 +22,8 @@
         used.
       </p>
     <table id="table-vboxwatchdog-config-params">
-      <title>Oracle VM VirtualBox Watchdog Configuration Parameters</title>
-      <desc>Oracle VM VirtualBox Watchdog Configuration Parameters</desc>
+      <title><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Watchdog Configuration Parameters</title>
+      <desc><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Watchdog Configuration Parameters</desc>
       <tgroup cols="3">       
         <thead>
           <row>

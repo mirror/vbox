@@ -6,7 +6,7 @@
   <body>
     <p>
         Normally there is no post installation configuration of
-        Oracle VM VirtualBox components required. However, on Oracle Solaris
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> components required. However, on Oracle Solaris
         and Linux hosts it is necessary to configure the proper
         permissions for users executing VMs and who should be able to
         access certain host resources. For instance, Linux users must be

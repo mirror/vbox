@@ -12,16 +12,16 @@
     <p>
       In a real computer, so-called <i>storage
       controllers</i> connect physical disk drives to the rest of
-      the computer. Similarly, Oracle VM VirtualBox presents virtual storage
+      the computer. Similarly, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> presents virtual storage
       controllers to a virtual machine. Under each controller, the
       virtual devices, such as hard disks, CD/DVD or floppy drives,
       attached to the controller are shown.
     </p>
     <note>
       <p>
-        This section gives a quick introduction to the Oracle VM VirtualBox
+        This section gives a quick introduction to the <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         storage settings. See <xref href="storage.dita#storage"/> for a full
-        description of the available storage settings in Oracle VM VirtualBox.
+        description of the available storage settings in <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
       </p>
     </note>
     <p>
@@ -63,17 +63,17 @@
       </li>
     </ul>
     <p>
-      If you created your VM with an older version of Oracle VM VirtualBox,
+      If you created your VM with an older version of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>,
       the default storage layout may differ. You might then only have an
       IDE controller to which both the CD/DVD drive and the hard disks
       have been attached. This might also apply if you selected an older
       OS type when you created the VM. Since older OSes do not support
-      SATA without additional drivers, Oracle VM VirtualBox will make sure
+      SATA without additional drivers, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will make sure
       that no such devices are present initially. See
       <xref href="harddiskcontrollers.dita#harddiskcontrollers"/>.
     </p>
     <p>
-      Oracle VM VirtualBox also provides a <i>floppy
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> also provides a <i>floppy
       controller</i>. You cannot add devices other than floppy
       drives to this controller. Virtual floppy drives, like virtual
       CD/DVD drives, can be connected to either a host floppy drive, if
@@ -112,7 +112,7 @@
         </p>
         <p>
           See <xref href="vdidetails.dita#vdidetails"/> for information on the image
-          file types that are supported by Oracle VM VirtualBox.
+          file types that are supported by <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
         </p>
         <p>
           For virtual CD/DVD drives, the image files will typically be

@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        On Oracle Solaris hosts, the Oracle VM VirtualBox watchdog service
+        On Oracle Solaris hosts, the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> watchdog service
         daemon is integrated into the SMF framework. You can change the
         parameters, but do not have to if the defaults already match
         your needs:
@@ -31,7 +31,7 @@ config/balloon_safetymargin=134217728</pre>
     <pre xml:space="preserve">svcprop -p config svc:/application/virtualbox/balloonctrl:default</pre>
     <p>
         When everything is configured correctly you can start the
-        Oracle VM VirtualBox watchdog service with the following command:
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> watchdog service with the following command:
       </p>
     <pre xml:space="preserve">svcadm enable svc:/application/virtualbox/balloonctrl:default</pre>
     <p>

@@ -2,11 +2,11 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="guestadd-guestprops">
   <title>Guest Properties</title>
-  
+
   <body>
     <p>
-      Oracle VM VirtualBox enables requests of some properties from a running
-      guest, provided that the Oracle VM VirtualBox Guest Additions are
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables requests of some properties from a running
+      guest, provided that the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions are
       installed and the VM is running. This provides the following
       advantages:
     </p>
@@ -14,7 +14,7 @@
       <li>
         <p>
           A number of predefined VM characteristics are automatically
-          maintained by Oracle VM VirtualBox and can be retrieved on the host.
+          maintained by <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and can be retrieved on the host.
           For example, to monitor VM performance and statistics.
         </p>
       </li>
@@ -26,8 +26,8 @@
       </li>
     </ul>
     <p>
-      To accomplish this, Oracle VM VirtualBox establishes a private
-      communication channel between the Oracle VM VirtualBox Guest Additions
+      To accomplish this, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> establishes a private
+      communication channel between the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions
       and the host, and software on both sides can use this channel to
       exchange string data for arbitrary purposes. Guest properties are
       simply string keys to which a value is attached. They can be set,
@@ -37,7 +37,7 @@
     <p>
       In addition to establishing the general mechanism of reading and
       writing values, a set of predefined guest properties is
-      automatically maintained by the Oracle VM VirtualBox Guest Additions to
+      automatically maintained by the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions to
       allow for retrieving interesting guest data such as the guest's
       exact operating system and service pack level, the installed
       version of the Guest Additions, users that are currently logged
@@ -51,12 +51,10 @@
       virtual machine's <b outputclass="bold">Machine</b> menu.
     </p>
     <p>
-      A more flexible way to use this channel is with the
-      <userinput>VBoxManage guestproperty</userinput> command. See
-      <xref href="vboxmanage-guestproperty.dita"/>. For example, to have
-      <i>all</i> the available guest properties for a
-      given running VM listed with their respective values, use this
-      command:
+      A more flexible way to use this channel is with the <userinput>VBoxManage
+      guestproperty</userinput> command. See <xref href="vboxmanage-guestproperty.dita"/>.
+      For example, to have <i>all</i> the available guest properties for a given running VM
+      listed with their respective values, use this command:
     </p>
     <pre xml:space="preserve">$ VBoxManage guestproperty enumerate "Windows Vista III"
 VirtualBox Command Line Management Interface Version <varname>version-number</varname>
@@ -138,8 +136,8 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
     timestamp: 1265813265836305000, flags: &lt;NULL&gt;
       ...</pre>
     <p>
-      For more complex needs, you can use the Oracle VM VirtualBox programming
-      interfaces. See <xref href="VirtualBoxAPI.dita">Oracle VM VirtualBox Programming Interfaces</xref>.
+      For more complex needs, you can use the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> programming
+      interfaces. See <xref href="VirtualBoxAPI.dita"><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Programming Interfaces</xref>.
     </p>
   </body>
 </topic>

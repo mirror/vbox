@@ -7,7 +7,7 @@
   <body>
     <p>
         When guest systems with the Guest Additions installed are
-        started using the graphical frontend, the normal Oracle VM VirtualBox
+        started using the graphical frontend, the normal <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         application, they will not be allowed to use screen resolutions
         greater than the host's screen size unless the user manually
         resizes them by dragging the window, switching to full screen or

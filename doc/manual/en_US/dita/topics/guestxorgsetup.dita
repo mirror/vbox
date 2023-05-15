@@ -11,7 +11,7 @@
         them by studying the documentation which comes with X.Org.
       </p>
     <p>
-        The Oracle VM VirtualBox Guest Additions includes drivers for X.Org.
+        The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions includes drivers for X.Org.
         By default these drivers are in the following directory:
       </p>
     <p>
@@ -25,7 +25,7 @@
         For graphics integration to work correctly, the X server must
         load the <codeph>vboxvideo</codeph> driver. Many recent X
         server versions look for it automatically if they see that they
-        are running in Oracle VM VirtualBox. For an optimal user experience,
+        are running in <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. For an optimal user experience,
         the guest kernel drivers must be loaded and the Guest Additions
         tool <userinput>VBoxClient</userinput> must be running as a client
         in the X session.
@@ -40,7 +40,7 @@
         be associated with <filepath>/dev/vboxguest</filepath>.
       </p>
     <p>
-        The Oracle VM VirtualBox guest graphics driver can use any graphics
+        The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> guest graphics driver can use any graphics
         configuration for which the virtual resolution fits into the
         virtual video memory allocated to the virtual machine, minus a
         small amount used by the guest driver, as described in

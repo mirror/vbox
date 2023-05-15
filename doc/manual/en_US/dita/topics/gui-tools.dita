@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="gui-tools">
-  <title>VirtualBox Manager Tools</title>
+  <title><ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> Tools</title>
   
   <body>
     <p>
-        VirtualBox Manager provides two types of user tools, to enable you to
+        <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> provides two types of user tools, to enable you to
         perform common tasks easily.
       </p>
     <ul>

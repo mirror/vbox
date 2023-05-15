@@ -8,7 +8,7 @@
         Linux kernels including the grsec patch, see
         <ph>http://www.grsecurity.net/</ph>, and derivates have
         to disable PAX_MPROTECT for the <userinput>VBox</userinput> binaries
-        to be able to start a VM. The reason is that Oracle VM VirtualBox has
+        to be able to start a VM. The reason is that <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has
         to create executable code on anonymous memory.
       </p>
   </body>

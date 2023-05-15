@@ -11,7 +11,7 @@
     <ul>
       <li>
         <p>
-            This feature is part of the Oracle VM VirtualBox Extension Pack,
+            This feature is part of the <ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/>,
             which needs to be installed. Otherwise disk encryption is
             unavailable.
           </p>
@@ -44,7 +44,7 @@
       <li>
         <p>
             When encrypting or decrypting the images, the password is
-            passed in clear text using the Oracle VM VirtualBox API. This
+            passed in clear text using the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> API. This
             needs to be kept in mind, especially when using third party
             API clients which make use of the webservice where the
             password might be transmitted over the network. The use of
@@ -55,7 +55,7 @@
         <p>
             Encrypting images with differencing images is only possible
             if there are no snapshots or a linear chain of snapshots.
-            This limitation may be addressed in a future Oracle VM VirtualBox
+            This limitation may be addressed in a future <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
             version.
           </p>
       </li>

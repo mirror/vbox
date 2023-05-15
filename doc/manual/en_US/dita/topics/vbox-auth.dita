@@ -2,17 +2,15 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="vbox-auth">
   <title>RDP Authentication</title>
-  
+
   <body>
     <p>
-        For each virtual machine that is remotely accessible using RDP,
-        you can individually determine if and how client connections are
-        authenticated. For this, use the <userinput>VBoxManage
-        modifyvm</userinput> command with the
-        <codeph>--vrde-auth-type</codeph> option. See
-        <xref href="vboxmanage-modifyvm.dita">VBoxManage modifyvm</xref>. The following methods of
-        authentication are available:
-      </p>
+        For each virtual machine that is remotely accessible using RDP, you can individually
+        determine if and how client connections are authenticated. For this, use the
+        <userinput>VBoxManage modifyvm</userinput> command with the
+        <codeph>--vrde-auth-type</codeph> option. See <xref href="vboxmanage-modifyvm.dita">
+        VBoxManage modifyvm</xref>. The following methods of authentication are available:
+    </p>
     <ul>
       <li>
         <p>
@@ -26,7 +24,7 @@
         <p>
             The <b outputclass="bold">external</b> method
             provides external authentication through a special
-            authentication library. Oracle VM VirtualBox ships with two
+            authentication library. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> ships with two
             special authentication libraries:
           </p>
         <ol>
@@ -104,7 +102,7 @@
                     the XML machine settings file, into whose
                     <codeph>extradata</codeph> section the password
                     needs to be written, is a plain text file,
-                    Oracle VM VirtualBox uses hashes to encrypt passwords. The
+                    <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses hashes to encrypt passwords. The
                     following command must be used:
                   </p>
                 <pre xml:space="preserve">VBoxManage setextradata <varname>VM-name</varname> "VBoxAuthSimple/users/<varname>user</varname>" <varname>hash</varname>
@@ -155,11 +153,11 @@
     <p>
         In addition to the methods described above, you can replace the
         default external authentication module with any other module.
-        For this, Oracle VM VirtualBox provides a well-defined interface that
+        For this, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides a well-defined interface that
         enables you to write your own authentication module. This is
-        described in detail in the Oracle VM VirtualBox Software Development
+        described in detail in the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Software Development
         Kit (SDK) reference. See <xref href="VirtualBoxAPI.dita#VirtualBoxAPI"/>.
       </p>
   </body>
-  
+
 </topic>

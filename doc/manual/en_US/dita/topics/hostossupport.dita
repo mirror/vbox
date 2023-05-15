@@ -5,7 +5,7 @@
   
   <body>
     <p>
-      Currently, Oracle VM VirtualBox runs on the following host OSes:
+      Currently, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> runs on the following host OSes:
     </p>
     <ul>
       <li>
@@ -147,9 +147,9 @@
           </li>
         </ul>
         <p>
-          It should be possible to use Oracle VM VirtualBox on most systems
+          It should be possible to use <ph conkeyref="vbox-conkeyref-phrases/product-name"/> on most systems
           based on Linux kernel 2.6, 3.x, 4.x or 5.x using either the
-          Oracle VM VirtualBox installer or by doing a manual installation.
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> installer or by doing a manual installation.
           See <xref href="install-linux-host.dita#install-linux-host"/>. However, the
           formally tested and supported Linux distributions are those
           for which we offer a dedicated package.

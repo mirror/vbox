@@ -5,12 +5,12 @@
   
   <body>
     <p>
-        Oracle VM VirtualBox enables you to install and execute unmodified
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables you to install and execute unmodified
         versions of Mac OS X guests on supported host hardware. Note
         that this feature is experimental and thus unsupported.
       </p>
     <p>
-        Oracle VM VirtualBox is the first product to provide the modern PC
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is the first product to provide the modern PC
         architecture expected by OS X without requiring any of the
         modifications used by competing virtualization solutions. For
         example, some competing solutions perform modifications to the
@@ -39,7 +39,7 @@
             level. Mac OS X verifies that it is running on Apple
             hardware. Most DVDs that accompany Apple hardware check for
             the exact model. These restrictions are
-            <i>not</i> circumvented by Oracle VM VirtualBox and
+            <i>not</i> circumvented by <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and
             continue to apply.
           </p>
       </li>
@@ -68,7 +68,7 @@
       </li>
       <li>
         <p>
-            In addition, Mac OS X support in Oracle VM VirtualBox is an
+            In addition, Mac OS X support in <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is an
             experimental feature. See <xref href="KnownIssues.dita">Known Limitations</xref>.
           </p>
       </li>

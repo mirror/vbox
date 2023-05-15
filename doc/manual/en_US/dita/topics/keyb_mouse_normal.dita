@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        Oracle VM VirtualBox provides a virtual USB tablet device to new
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides a virtual USB tablet device to new
         virtual machines through which mouse events are communicated to
         the guest OS. If you are running a modern guest OS that can
         handle such devices, mouse support may work out of the box
@@ -33,7 +33,7 @@
       </p>
     <p>
         To return ownership of keyboard and mouse to your host OS,
-        Oracle VM VirtualBox reserves a special key on your keyboard: the
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> reserves a special key on your keyboard: the
         <i>Host key</i>. By default, this is the
         <i>right Ctrl key</i> on your keyboard. On a Mac
         host, the default Host key is the left Command key. You can
@@ -103,9 +103,9 @@
       </li>
     </ul>
     <p>
-        As this behavior is inconvenient, Oracle VM VirtualBox provides a set
+        As this behavior is inconvenient, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides a set
         of tools and device drivers for guest systems called the
-        Oracle VM VirtualBox Guest Additions. These tools make VM keyboard and
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions. These tools make VM keyboard and
         mouse operations much more seamless. Most importantly, the Guest
         Additions suppress the second "guest" mouse pointer and make
         your host mouse pointer work directly in the guest. See

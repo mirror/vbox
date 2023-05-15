@@ -5,11 +5,11 @@
   
   <body>
     <p>
-        Oracle VM VirtualBox is available as a standard Oracle Solaris
-        package. Download the Oracle VM VirtualBox SunOS package, which
-        includes the 64-bit version of Oracle VM VirtualBox. <i>The
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is available as a standard Oracle Solaris
+        package. Download the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> SunOS package, which
+        includes the 64-bit version of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. <i>The
         installation must be performed as root and from the global
-        zone</i>. This is because the Oracle VM VirtualBox installer
+        zone</i>. This is because the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> installer
         loads kernel drivers, which cannot be done from non-global
         zones. To verify which zone you are currently in, execute the
         <userinput>zonename</userinput> command.
@@ -19,8 +19,8 @@
       </p>
     <pre xml:space="preserve">gunzip -cd VirtualBox-<varname>version-number</varname>-SunOS.tar.gz | tar xvf -</pre>
     <p>
-        The Oracle VM VirtualBox kernel package is integrated into the main
-        package. Install the Oracle VM VirtualBox package as follows:
+        The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> kernel package is integrated into the main
+        package. Install the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> package as follows:
       </p>
     <pre xml:space="preserve">pkgadd -d VirtualBox-<varname>version-number</varname>-SunOS.pkg</pre>
     <p>
@@ -30,20 +30,20 @@
         installer will ask you if you want to allow the postinstall
         script to be executed. Choose <b outputclass="bold">y</b>
         and proceed, as it is essential to execute this script which
-        installs the Oracle VM VirtualBox kernel module. Following this
-        confirmation the installer will install Oracle VM VirtualBox and
+        installs the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> kernel module. Following this
+        confirmation the installer will install <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and
         execute the postinstall setup script.
       </p>
     <p>
         Once the postinstall script has been executed your installation
         is now complete. You may now safely delete the uncompressed
         package and <filepath>autoresponse</filepath> files from your
-        system. Oracle VM VirtualBox is installed in
+        system. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is installed in
         <filepath>/opt/VirtualBox</filepath>.
       </p>
     <note>
       <p>
-          If you need to use Oracle VM VirtualBox from non-global zones, see
+          If you need to use <ph conkeyref="vbox-conkeyref-phrases/product-name"/> from non-global zones, see
           <xref href="solaris-zones.dita#solaris-zones"/>.
         </p>
     </note>

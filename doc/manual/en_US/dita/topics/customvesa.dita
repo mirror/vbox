@@ -5,10 +5,10 @@
   
   <body>
     <p>
-        Apart from the standard VESA resolutions, the Oracle VM VirtualBox
+        Apart from the standard VESA resolutions, the <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         VESA BIOS enables you to add up to 16 custom video modes which
         will be reported to the guest operating system. When using
-        Windows guests with the Oracle VM VirtualBox Guest Additions, a custom
+        Windows guests with the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions, a custom
         graphics driver will be used instead of the fallback VESA
         solution so this information does not apply.
       </p>
@@ -33,7 +33,7 @@
     <pre xml:space="preserve">vga = 0x200 | 0x160
 vga = 864</pre>
     <p>
-        For guest operating systems with Oracle VM VirtualBox Guest Additions,
+        For guest operating systems with <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions,
         a custom video mode can be set using the video mode hint
         feature.
       </p>

@@ -2,10 +2,10 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="hdimagewrites">
   <title>Special Image Write Modes</title>
-  
+
   <body>
     <p>
-      For each virtual disk image supported by Oracle VM VirtualBox, you can
+      For each virtual disk image supported by <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, you can
       determine separately how it should be affected by write operations
       from a virtual machine and snapshot operations. This applies to
       all of the aforementioned image formats (VDI, VMDK, VHD, or HDD)
@@ -13,13 +13,11 @@
       allocated.
     </p>
     <p>
-      By default, images are in <i>normal</i> mode. To
-      mark an existing image with one of the non-standard modes listed
-      below, use <userinput>VBoxManage modifymedium</userinput>. See
-      <xref href="vboxmanage-modifymedium.dita"/>. Alternatively, use
-      <userinput>VBoxManage storageattach</userinput> to attach the image to
-      a VM and specify the <codeph>--mtype</codeph> argument. See
-      <xref href="vboxmanage-storageattach.dita"/>.
+      By default, images are in <i>normal</i> mode. To mark an existing image with one of the
+      non-standard modes listed below, use <userinput>VBoxManage modifymedium</userinput>. See
+      <xref href="vboxmanage-modifymedium.dita"/>. Alternatively, use <userinput>VBoxManage
+      storageattach</userinput> to attach the image to a VM and specify the
+      <codeph>--mtype</codeph> argument. See <xref href="vboxmanage-storageattach.dita"/>.
     </p>
     <p>
       The available virtual disk image modes are as follows:
@@ -38,7 +36,7 @@
         </p>
         <p>
           The image file itself is not reset. Instead, when a snapshot
-          is taken, Oracle VM VirtualBox <i>freezes</i> the
+          is taken, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> <i>freezes</i> the
           image file and no longer writes to it. For the write
           operations from the VM, a second,
           <i>differencing</i> image file is created which
@@ -117,7 +115,7 @@
           </p>
         </note>
         <p>
-          Oracle VM VirtualBox never writes to an immutable image directly at
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> never writes to an immutable image directly at
           all. All write operations from the machine are directed to a
           differencing image. The next time the VM is powered on, the
           differencing image is reset so that every time the VM starts,
@@ -125,18 +123,15 @@
         </p>
         <p>
           The differencing image is only reset when the machine is
-          powered on from within Oracle VM VirtualBox, not when you reboot by
+          powered on from within <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, not when you reboot by
           requesting a reboot from within the machine. This is also why
           immutable images behave as described above when snapshots are
           also present, which use differencing images as well.
         </p>
-        <p>
-          If the automatic discarding of the differencing image on VM
-          startup does not fit your needs, you can turn it off using the
-          <codeph>autoreset</codeph> parameter of <userinput>VBoxManage
-          modifymedium</userinput>. See
-          <xref href="vboxmanage-modifymedium.dita"/>.
-        </p>
+        <p> If the automatic discarding of the differencing image on VM startup does not fit your
+          needs, you can turn it off using the <codeph>autoreset</codeph> parameter of
+            <userinput>VBoxManage modifymedium</userinput>. See <xref
+            href="vboxmanage-modifymedium.dita"/>. </p>
       </li>
       <li>
         <p><b outputclass="bold">Multiattach mode images</b> can
@@ -194,5 +189,5 @@
       for the OS and one write-through image for your data files.
     </p>
   </body>
-  
+
 </topic>

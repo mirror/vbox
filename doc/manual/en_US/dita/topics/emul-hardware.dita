@@ -5,25 +5,25 @@
   
   <body>
     <p>
-      Oracle VM VirtualBox virtualizes nearly all hardware of the host.
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> virtualizes nearly all hardware of the host.
       Depending on a VM's configuration, the guest will see the
       following virtual hardware:
     </p>
     <ul>
       <li>
-        <p><b outputclass="bold">Input devices.</b> Oracle VM VirtualBox
+        <p><b outputclass="bold">Input devices.</b> <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
           can emulate a standard PS/2 keyboard and mouse. These devices
           are supported by most guest OSes.
         </p>
         <p>
-          In addition, Oracle VM VirtualBox can provide virtual USB input
+          In addition, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can provide virtual USB input
           devices to avoid having to capture mouse and keyboard, as
           described in <xref href="keyb_mouse_normal.dita#keyb_mouse_normal"/>.
         </p>
       </li>
       <li>
         <p><b outputclass="bold">Graphics.</b> The default
-          Oracle VM VirtualBox graphics device for Windows guests is an SVGA
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> graphics device for Windows guests is an SVGA
           device. For Linux guests, the default graphics device emulates
           a VMware SVGA graphics device. See
           <xref href="settings-screen.dita#settings-screen"/>.
@@ -34,11 +34,11 @@
         </p>
       </li>
       <li>
-        <p><b outputclass="bold">Storage.</b> Oracle VM VirtualBox
+        <p><b outputclass="bold">Storage.</b> <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
           emulates the most common types of hard disk controllers. See
           <xref href="harddiskcontrollers.dita#harddiskcontrollers"/>. Whereas supporting
           only one of these controllers would be enough for
-          Oracle VM VirtualBox by itself, this multitude of storage adapters
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> by itself, this multitude of storage adapters
           is required for compatibility with other hypervisors. Windows
           is very selective about its boot devices, and migrating VMs
           between hypervisors is very difficult or impossible if the
@@ -51,7 +51,7 @@
         </p>
       </li>
       <li>
-        <p><b outputclass="bold">USB.</b> Oracle VM VirtualBox emulates
+        <p><b outputclass="bold">USB.</b> <ph conkeyref="vbox-conkeyref-phrases/product-name"/> emulates
           these types of USB host controllers: xHCI, EHCI, and OHCI.
           While xHCI handles all USB transfer speeds, some legacy guest
           OSes may not support xHCI. Note that for some legacy Windows

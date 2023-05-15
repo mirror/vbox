@@ -8,7 +8,7 @@
         By default, the mouse is captured if the user clicks on the
         guest window and the guest expects relative mouse coordinates at
         this time. This happens if the pointing device is configured as
-        PS/2 mouse and the guest has not yet started the Oracle VM VirtualBox
+        PS/2 mouse and the guest has not yet started the <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         Guest Additions. For instance, the guest is booting or the Guest
         Additions are not installed, or if the pointing device is
         configured as a USB tablet but the guest has no USB driver

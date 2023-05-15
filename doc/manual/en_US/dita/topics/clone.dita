@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="clone">
   <title>Cloning Virtual Machines</title>
-  
+
   <body>
     <p>
       You can create a full copy or a linked copy of an existing VM.
@@ -66,7 +66,7 @@
       </li>
       <li>
         <p><b outputclass="bold">Path:</b> Choose a location for
-          the cloned virtual machine, otherwise Oracle VM VirtualBox uses the
+          the cloned virtual machine, otherwise <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses the
           default machines folder.
         </p>
       </li>
@@ -128,7 +128,7 @@
         <p><b outputclass="bold">Linked Clone:</b> Creates new
           differencing disk images based on the source VM disk images.
           If you select the current state of the source VM as the clone
-          point, Oracle VM VirtualBox creates a new snapshot.
+          point, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> creates a new snapshot.
         </p>
       </li>
     </ul>
@@ -180,9 +180,9 @@
       all the differencing disk images of a snapshot.
     </p>
     <p>
-      You can also use the <userinput>VBoxManage clonevm</userinput> command
-      to clone a VM. See <xref href="vboxmanage-clonevm.dita"/>.
+      You can also use the <userinput>VBoxManage clonevm</userinput> command to clone a VM. See
+      <xref href="vboxmanage-clonevm.dita"/>.
     </p>
   </body>
-  
+
 </topic>

@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="privacy">
-  <title>Oracle VM VirtualBox Privacy Information</title>
+  <title><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Privacy Information</title>
   
   <body>
     <p>
@@ -12,7 +12,7 @@
     <ph>https://www.oracle.com/legal/privacy/privacy-policy.html</ph>
     apply to your personal data collected and used by Oracle. The
     following privacy information describes in more detail which
-    information is exchanged between the Oracle VM VirtualBox application and
+    information is exchanged between the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> application and
     Oracle, and which information is collected by the virtualbox.org
     website.
   </p>
@@ -33,22 +33,22 @@
     cookies disabled, logging into the bug tracker and forum services
     will most likely not work without them.
   </p>
-    <p><b outputclass="bold">§ 3 Oracle VM VirtualBox registration
-    process.</b> The Oracle VM VirtualBox application may ask that the
+    <p><b outputclass="bold">§ 3 <ph conkeyref="vbox-conkeyref-phrases/product-name"/> registration
+    process.</b> The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> application may ask that the
     user optionally register with Oracle. If you choose to register,
     your name, e-mail address, country and company will be submitted to
     Oracle and stored together with the IP address of the submitter as
     well as product version and platform being used.
   </p>
     <p><b outputclass="bold">§ 4 Update notifications.</b> The
-    Oracle VM VirtualBox application may contact Oracle to find out whether a
-    new version of Oracle VM VirtualBox has been released and notify the user
+    <ph conkeyref="vbox-conkeyref-phrases/product-name"/> application may contact Oracle to find out whether a
+    new version of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has been released and notify the user
     if that is the case. In the process, anonymous data such as your IP
     address and a non-identifying counter, together with the product
     version and the platform being used, is sent so that the server can
     find out whether an update is available. By default, this check is
     performed once a day. You change this interval or disable these
-    checks altogether in the Oracle VM VirtualBox preferences.
+    checks altogether in the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> preferences.
   </p>
     <p><b outputclass="bold">§ 5 Usage of personal information.</b>
     Oracle may use anonymous and personal data collected by the means
@@ -56,7 +56,7 @@
     you about new notices related to your posts on the bug tracker and
     forum services, to administer the website and to contact you due to
     technical issues. Oracle may also inform you about new product
-    releases related to Oracle VM VirtualBox.
+    releases related to <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
   </p>
     <p>
     In no event will personal data without your express consent be
@@ -67,7 +67,7 @@
     privacy policy at any time by posting a new version at
     <ph>https://www.oracle.com/legal/privacy/privacy-policy.html</ph>
     and the privacy information will be kept up to date in the
-    documentation which comes with the Oracle VM VirtualBox application. You
+    documentation which comes with the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> application. You
     should check these places occasionally to ensure you are happy with
     any changes.
   </p>

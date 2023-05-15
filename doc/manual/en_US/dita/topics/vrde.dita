@@ -5,25 +5,25 @@
   
   <body>
     <p>
-      Oracle VM VirtualBox can display virtual machines remotely, meaning that
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can display virtual machines remotely, meaning that
       a virtual machine can execute on one computer even though the
       machine will be displayed on a second computer, and the machine
       will be controlled from there as well, as if the virtual machine
       was running on that second computer.
     </p>
     <p>
-      For maximum flexibility, Oracle VM VirtualBox implements remote machine
+      For maximum flexibility, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> implements remote machine
       display through a generic extension interface called the
       VirtualBox Remote Desktop Extension (VRDE). The base open source
-      Oracle VM VirtualBox package only provides this interface, while
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> package only provides this interface, while
       implementations can be supplied by third parties with
-      Oracle VM VirtualBox extension packages, which must be installed
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> extension packages, which must be installed
       separately from the base package. See
-      <xref href="intro-installing.dita">Installing Oracle VM VirtualBox and Extension Packs</xref>.
+      <xref href="intro-installing.dita">Installing <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and Extension Packs</xref>.
     </p>
     <p>
       Oracle provides support for the VirtualBox Remote Display Protocol
-      (VRDP) in such an Oracle VM VirtualBox extension package.
+      (VRDP) in such an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> extension package.
     </p>
     <p>
       VRDP is a backwards-compatible extension to Microsoft's Remote
@@ -33,7 +33,7 @@
     <p>
       Even when the extension is installed, the VRDP server is disabled
       by default. It can easily be enabled on a per-VM basis either from
-      VirtualBox Manager in the <b outputclass="bold">Display</b>
+      <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> in the <b outputclass="bold">Display</b>
       settings, see <xref href="settings-display.dita">Display Settings</xref>, or with the
       <userinput>VBoxManage</userinput> command, as follows:
     </p>
@@ -64,13 +64,13 @@
     <p>
       The actual port used by a running VM can be either queried with
       the <userinput>VBoxManage showvminfo</userinput> command or seen in
-      VirtualBox Manager on the <b outputclass="bold">Runtime</b> tab of
+      <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> on the <b outputclass="bold">Runtime</b> tab of
       the <b outputclass="bold">Session Information</b> dialog,
       which is accessible from the
       <b outputclass="bold">Machine</b> menu of the VM window.
     </p>
     <p>
-      Oracle VM VirtualBox supports IPv6. If the host OS supports IPv6 the
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports IPv6. If the host OS supports IPv6 the
       VRDP server will automatically listen for IPv6 connections in
       addition to IPv4.
     </p>

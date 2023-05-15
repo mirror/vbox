@@ -5,30 +5,30 @@
   
   <body>
     <p>
-      Oracle VM VirtualBox enables software in the virtual machine to run
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables software in the virtual machine to run
       directly on the processor of the host, but an array of complex
       techniques is employed to intercept operations that would
       interfere with your host. Whenever the guest attempts to do
       something that could be harmful to your computer and its data,
-      Oracle VM VirtualBox steps in and takes action. In particular, for lots
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> steps in and takes action. In particular, for lots
       of hardware that the guest believes to be accessing,
-      Oracle VM VirtualBox simulates a certain <i>virtual</i>
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> simulates a certain <i>virtual</i>
       environment according to how you have configured a virtual
       machine. For example, when the guest attempts to access a hard
-      disk, Oracle VM VirtualBox redirects these requests to whatever you have
+      disk, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> redirects these requests to whatever you have
       configured to be the virtual machine's virtual hard disk. This is
       normally an image file on your host.
     </p>
     <p>
       Unfortunately, the x86 platform was never designed to be
-      virtualized. Detecting situations in which Oracle VM VirtualBox needs to
+      virtualized. Detecting situations in which <ph conkeyref="vbox-conkeyref-phrases/product-name"/> needs to
       take control over the guest code that is executing, as described
-      above, is difficult. To achieve this, Oracle VM VirtualBox uses
+      above, is difficult. To achieve this, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses
       <i>hardware virtualization</i>.
     </p>
     <p>
       Intel and AMD processors have support for hardware virtualization.
-      This means that these processors can help Oracle VM VirtualBox to
+      This means that these processors can help <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to
       intercept potentially dangerous operations that a guest operating
       system may be attempting and also makes it easier to present
       virtual hardware to a virtual machine.
@@ -42,7 +42,7 @@
     <note>
       <p>
         On many systems, the hardware virtualization features first need
-        to be enabled in the BIOS before Oracle VM VirtualBox can use them.
+        to be enabled in the BIOS before <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can use them.
       </p>
     </note>
     <p>
@@ -60,7 +60,7 @@
       </li>
       <li>
         <p>
-          Oracle VM VirtualBox's 64-bit guest and multiprocessing (SMP)
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s 64-bit guest and multiprocessing (SMP)
           support both require hardware virtualization to be enabled.
           This is not much of a limitation since the vast majority of
           64-bit and multicore CPUs ship with hardware virtualization.
@@ -72,11 +72,11 @@
     <note type="attention">
       <p>
         Do not run other hypervisors, either open source or commercial
-        virtualization products, together with Oracle VM VirtualBox. While
+        virtualization products, together with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. While
         several hypervisors can normally be
         <i>installed</i> in parallel, do not attempt to
         <i>run</i> several virtual machines from competing
-        hypervisors at the same time. Oracle VM VirtualBox cannot track what
+        hypervisors at the same time. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> cannot track what
         another hypervisor is currently attempting to do on the same
         host, and especially if several products attempt to use hardware
         virtualization features such as VT-x, this can crash the entire

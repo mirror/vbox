@@ -2,12 +2,12 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="install-ext-pack-manager">
   <title>The Extension Pack Manager</title>
-  
+
   <body>
     <p>
         Extension packs can be installed and managed using the
         <b outputclass="bold">Extension Pack Manager</b> tool in
-        VirtualBox Manager.
+        <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>.
       </p>
     <p>
         The Extension Pack Manager lists the extension packs that are
@@ -49,10 +49,9 @@
       </li>
     </ol>
     <p>
-        Alternatively, you can use the <userinput>VBoxManage</userinput>
-        command line to install and manage Oracle VM VirtualBox extension
-        packs. See <xref href="vboxmanage-extpack.dita"/>.
-      </p>
+        Alternatively, you can use the <userinput>VBoxManage</userinput> command line to install and
+        manage an <ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/>. See <xref href="vboxmanage-extpack.dita"/>.
+    </p>
   </body>
-  
+
 </topic>

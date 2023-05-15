@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        If the Oracle VM VirtualBox kernel module, <userinput>vboxdrv</userinput>,
+        If the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> kernel module, <userinput>vboxdrv</userinput>,
         refuses to load you may see an <codeph>Error inserting vboxdrv:
         Invalid argument</codeph> message. As root, check the output of
         the <userinput>dmesg</userinput> command to find out why the load

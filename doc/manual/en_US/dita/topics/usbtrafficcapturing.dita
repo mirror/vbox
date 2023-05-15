@@ -7,7 +7,7 @@
     <p>
       You can capture USB traffic for single USB devices or on the root
       hub level, which captures the traffic of all USB devices attached
-      to the root hub. Oracle VM VirtualBox stores the traffic in a format
+      to the root hub. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> stores the traffic in a format
       which is compatible with Wireshark. To capture the traffic of a
       specific USB device it must be attached to the VM with
       <userinput>VBoxManage</userinput> using the following command:

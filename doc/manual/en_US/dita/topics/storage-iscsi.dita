@@ -17,18 +17,16 @@
       <i>iSCSI initiator</i>.
     </p>
                <p>
-      Oracle VM VirtualBox can transparently present iSCSI remote storage to a
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can transparently present iSCSI remote storage to a
       virtual machine as a virtual hard disk. The guest OS will not see
       any difference between a virtual disk image (VDI file) and an
-      iSCSI target. To achieve this, Oracle VM VirtualBox has an integrated
+      iSCSI target. To achieve this, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has an integrated
       iSCSI initiator.
     </p>
-               <p>
-      Oracle VM VirtualBox's iSCSI support has been developed according to the
-      iSCSI standard and should work with all standard-conforming iSCSI
-      targets. To use an iSCSI target with Oracle VM VirtualBox, you must use
-      the command line. See <xref href="vboxmanage-storageattach.dita"/>.
-    </p>
+               <p> <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s iSCSI support has been developed according to the iSCSI
+      standard and should work with all standard-conforming iSCSI targets. To use an iSCSI target
+      with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, you must use the command line. See <xref
+        href="vboxmanage-storageattach.dita"/>. </p>
             </body>
             
          </topic>

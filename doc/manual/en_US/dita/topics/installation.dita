@@ -5,7 +5,7 @@
   
   <body>
     <p>
-    As installation of Oracle VM VirtualBox varies depending on your host
+    As installation of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> varies depending on your host
     operating system, the following sections provide installation
     instructions for Windows, macOS, Linux, and Oracle Solaris.
   </p>

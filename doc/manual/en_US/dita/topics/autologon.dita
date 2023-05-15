@@ -5,7 +5,7 @@
   
   <body>
     <p>
-      Oracle VM VirtualBox provides Guest Addition modules for Windows, Linux,
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides Guest Addition modules for Windows, Linux,
       and Oracle Solaris to enable automated logins on the guest.
     </p>
     <p>

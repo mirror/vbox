@@ -5,7 +5,7 @@
   
   <body>
     <p>
-      Oracle VM VirtualBox ships a simple heartbeat service. Once the Guest
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> ships a simple heartbeat service. Once the Guest
       Additions are active, the guest sends frequent heartbeat pings to
       the host. If the guest stops sending the heartbeat pings without
       properly terminating the service, the VM process will log this
@@ -17,7 +17,7 @@
       There are two parameters to configure. The <i>heartbeat
       interval</i> defines the time between two heartbeat pings.
       The default value is 2 seconds, that is, the heartbeat service of
-      the Oracle VM VirtualBox Guest Additions will send a heartbeat ping
+      the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions will send a heartbeat ping
       every two seconds. The value in nanoseconds can be configured like
       this:
     </p>

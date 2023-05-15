@@ -24,7 +24,7 @@
                   <li>
                      <p>
                         <b outputclass="bold">Mini ToolBar:</b> In full screen
-          or seamless mode, Oracle VM VirtualBox can display a small toolbar
+          or seamless mode, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can display a small toolbar
           that contains some of the items that are normally available
           from the virtual machine's menu bar. This toolbar reduces
           itself to a small gray line unless you move the mouse over it.

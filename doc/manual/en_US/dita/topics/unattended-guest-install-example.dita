@@ -32,7 +32,7 @@
                            <li>
                               <p>
                 The <userinput>VBoxManage list ostypes</userinput> command
-                lists the guest OSes supported by Oracle VM VirtualBox,
+                lists the guest OSes supported by <ph conkeyref="vbox-conkeyref-phrases/product-name"/>,
                 including the name used for each OS in the
                 <userinput>VBoxManage</userinput> commands.
               </p>
@@ -40,7 +40,7 @@
                            <li>
                               <p>
                 A 64-bit Oracle Linux 7 VM is created and registered
-                with Oracle VM VirtualBox.
+                with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
               </p>
                            </li>
                            <li>
@@ -168,7 +168,7 @@
                         <pre xml:space="preserve"># VBoxManage startvm $VM --type headless</pre>
                         <p>
             The VM starts in headless mode, which means that the
-            VirtualBox Manager window does not open.
+            <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window does not open.
           </p>
                      </li>
                      <li>

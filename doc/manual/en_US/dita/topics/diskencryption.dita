@@ -5,14 +5,14 @@
   
   <body>
     <p>
-      Oracle VM VirtualBox enables you to transparently encrypt the data
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables you to transparently encrypt the data
       stored in hard disk images for the guest. It does not depend on a
       specific image format to be used. Images which have the data
-      encrypted are not portable between Oracle VM VirtualBox and other
+      encrypted are not portable between <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and other
       virtualization software.
     </p>
     <p>
-      Oracle VM VirtualBox uses the AES algorithm in XTS mode and supports
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses the AES algorithm in XTS mode and supports
       128-bit or 256-bit data encryption keys (DEK). The DEK is stored
       encrypted in the medium properties and is decrypted during VM
       startup by entering a password which was chosen when the image was

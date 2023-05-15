@@ -14,7 +14,7 @@
             Some frequently used network debugging tools, such as
             <userinput>ping</userinput> or <userinput>traceroute</userinput>,
             rely on the ICMP protocol for sending and receiving
-            messages. Oracle VM VirtualBox ICMP support has some limitations,
+            messages. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> ICMP support has some limitations,
             meaning <userinput>ping</userinput> should work but some other
             tools may not work reliably.
           </p>

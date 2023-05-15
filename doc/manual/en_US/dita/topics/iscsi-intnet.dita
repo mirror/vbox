@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        As an experimental feature, Oracle VM VirtualBox enables access to an
+        As an experimental feature, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables access to an
         iSCSI target running in a virtual machine which is configured to
         use Internal Networking mode. See
         <xref href="storage-iscsi.dita">iSCSI Servers</xref>,

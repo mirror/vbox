@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="network_hostonly">
   <title>Host-Only Networking</title>
-  
+
   <body>
     <p>
       Host-only networking can be thought of as a hybrid between the
@@ -15,7 +15,7 @@
       interface.
     </p>
     <p>
-      When host-only networking is used, Oracle VM VirtualBox creates a new
+      When host-only networking is used, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> creates a new
       software interface on the host which then appears next to your
       existing network interfaces. In other words, whereas with bridged
       networking an existing physical interface is used to attach
@@ -50,7 +50,7 @@
       together and designed to cooperate. For example, one virtual
       machine may contain a web server and a second one a database, and
       since they are intended to talk to each other, the appliance can
-      instruct Oracle VM VirtualBox to set up a host-only network for the two.
+      instruct <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to set up a host-only network for the two.
       A second, bridged, network would then connect the web server to
       the outside world to serve data to, but the outside world cannot
       connect to the database.
@@ -73,15 +73,14 @@
       </li>
       <li>
         <p>
-          On the command line, use <userinput>VBoxManage modifyvm
-         vmname --nic <varname>x</varname> hostonly</userinput>. See
-          <xref href="vboxmanage-modifyvm.dita"/>.
+          On the command line, use <userinput>VBoxManage modifyvm vmname --nic
+          <varname>x</varname> hostonly</userinput>. See <xref href="vboxmanage-modifyvm.dita"/>.
         </p>
       </li>
     </ul>
     <p>
       For host-only networking, as with internal networking, you may
-      find the DHCP server useful that is built into Oracle VM VirtualBox.
+      find the DHCP server useful that is built into <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
       This is enabled by default and manages the IP addresses in the
       host-only network. Without the DHCP server you would need to
       configure all IP addresses statically.
@@ -89,7 +88,7 @@
     <ul>
       <li>
         <p>
-          In VirtualBox Manager you can configure the DHCP server by choosing
+          In <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> you can configure the DHCP server by choosing
           <b outputclass="bold">File</b>,
           <b outputclass="bold">Tools</b>,
           <b outputclass="bold">Network Manager</b>. The Network
@@ -100,11 +99,8 @@
         </p>
       </li>
       <li>
-        <p>
-          Alternatively, you can use the <userinput>VBoxManage
-          dhcpserver</userinput> command. See
-          <xref href="vboxmanage-dhcpserver.dita"/>.
-        </p>
+        <p> Alternatively, you can use the <userinput>VBoxManage dhcpserver</userinput> command. See
+            <xref href="vboxmanage-dhcpserver.dita"/>. </p>
       </li>
     </ul>
     <note>
@@ -115,7 +111,7 @@
       </p>
     </note>
     <p>
-      On Linux, macOS and Solaris Oracle VM VirtualBox will only allow IP
+      On Linux, macOS and Solaris <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will only allow IP
       addresses in 192.168.56.0/21 range to be assigned to host-only
       adapters. For IPv6 only link-local addresses are allowed. If other
       ranges are desired, they can be enabled by creating
@@ -142,5 +138,5 @@
     <pre xml:space="preserve">      # No addresses are allowed for host-only adapters
       </pre>
   </body>
-  
+
 </topic>

@@ -5,13 +5,13 @@
   
   <body>
     <p>
-        The following components of Oracle VM VirtualBox use encryption to
+        The following components of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> use encryption to
         protect sensitive data:
       </p>
     <ul>
       <li>
         <p>
-            When using the Oracle VM VirtualBox Extension Pack provided by
+            When using the <ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/> provided by
             Oracle for VRDP remote desktop support, RDP data can
             optionally be encrypted. See <xref href="vrde-crypt.dita#vrde-crypt"/>.
             Only the Enhanced RDP Security method (RDP5.2) with TLS
@@ -22,7 +22,7 @@
       </li>
       <li>
         <p>
-            When using the Oracle VM VirtualBox Extension Pack provided by
+            When using the <ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/> provided by
             Oracle for disk encryption, the data stored in disk images
             can optionally be encrypted. See
             <xref href="diskencryption.dita#diskencryption"/>. This feature covers disk

@@ -13,7 +13,7 @@
         The RDP client can select the virtual monitor number to connect
         to using the <codeph>domain</codeph> login parameter
         (<codeph>-d</codeph>). If the parameter ends with
-        <codeph>@</codeph> followed by a number, Oracle VM VirtualBox
+        <codeph>@</codeph> followed by a number, <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         interprets this number as the screen index. The primary guest
         screen is selected with <codeph>@1</codeph>, the first
         secondary screen is <codeph>@2</codeph>, and so on.

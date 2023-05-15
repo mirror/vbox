@@ -5,8 +5,8 @@
   
   <body>
     <p>
-        Encrypting disk images can be done either using VirtualBox Manager or
-        the <userinput>VBoxManage</userinput>. While VirtualBox Manager is easier to
+        Encrypting disk images can be done either using <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> or
+        the <userinput>VBoxManage</userinput>. While <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> is easier to
         use, it works on a per VM basis and encrypts all disk images
         attached to the specific VM. With <userinput>VBoxManage</userinput>
         one can encrypt individual images, including all differencing

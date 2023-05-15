@@ -5,7 +5,7 @@
   
   <body>
     <p>
-      Because Oracle VM VirtualBox is designed to provide a generic
+      Because <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is designed to provide a generic
       virtualization environment for x86 systems, it can run guest
       operating systems (OSes) of any kind.
     </p>
@@ -22,7 +22,7 @@
       <li>
         <p><b outputclass="bold">Platforms With Limited
           Support.</b> These legacy guest OS platforms can be
-          used with Oracle VM VirtualBox, but only qualify for <i>best
+          used with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, but only qualify for <i>best
           effort</i> support. Therefore, resolution of customer
           issues is not guaranteed. See
           <xref href="#guestossupport/table-limited-support"/>.

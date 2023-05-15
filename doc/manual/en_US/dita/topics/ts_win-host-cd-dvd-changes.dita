@@ -15,7 +15,7 @@
     <p>
         Certain applications may disable this key against Microsoft's
         advice. If it is set to 0, change it to 1 and reboot your
-        system. Oracle VM VirtualBox relies on Windows notifying it of media
+        system. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> relies on Windows notifying it of media
         changes.
       </p>
   </body>

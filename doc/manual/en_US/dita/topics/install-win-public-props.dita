@@ -20,7 +20,7 @@
             VBOX_INSTALLDESKTOPSHORTCUT
           </p>
         <p>
-            Specifies whether or not an Oracle VM VirtualBox icon on the
+            Specifies whether or not an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> icon on the
             desktop should be created.
           </p>
         <p>
@@ -33,7 +33,7 @@
             VBOX_INSTALLQUICKLAUNCHSHORTCUT
           </p>
         <p>
-            Specifies whether or not an Oracle VM VirtualBox icon in the Quick
+            Specifies whether or not an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> icon in the Quick
             Launch Bar should be created.
           </p>
         <p>
@@ -48,8 +48,8 @@
         <p>
             Specifies whether or not the file extensions .vbox,
             .vbox-extpack, .ovf, .ova, .vdi, .vmdk, .vhd and .vdd should
-            be associated with Oracle VM VirtualBox. Files of these types then
-            will be opened with Oracle VM VirtualBox.
+            be associated with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. Files of these types then
+            will be opened with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
           </p>
         <p>
             Set to <codeph>1</codeph> to enable, <codeph>0</codeph>
@@ -61,7 +61,7 @@
             VBOX_START
           </p>
         <p>
-            Specifies whether to start Oracle VM VirtualBox right after
+            Specifies whether to start <ph conkeyref="vbox-conkeyref-phrases/product-name"/> right after
             successful installation.
           </p>
         <p>

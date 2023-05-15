@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        The VRDP server of Oracle VM VirtualBox supports multiple simultaneous
+        The VRDP server of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports multiple simultaneous
         connections to the same running VM from different clients. All
         connected clients see the same screen output and share a mouse
         pointer and keyboard focus. This is similar to several people

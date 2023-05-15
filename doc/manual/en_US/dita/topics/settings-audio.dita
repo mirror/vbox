@@ -18,7 +18,7 @@
     <ul>
       <li>
         <p><b outputclass="bold">Host Audio Driver:</b> The audio
-          driver that Oracle VM VirtualBox uses on the host.
+          driver that <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses on the host.
         </p>
         <p>
           The <b outputclass="bold">Default</b> option is enabled

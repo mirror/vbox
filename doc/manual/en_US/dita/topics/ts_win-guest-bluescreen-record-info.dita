@@ -14,7 +14,7 @@
         information which might be important for problem determination.
       </p>
     <p>
-        Oracle VM VirtualBox provides a method of halting a guest when it
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides a method of halting a guest when it
         wants to perform a reset. In order to enable this feature, use
         the following command:
       </p>

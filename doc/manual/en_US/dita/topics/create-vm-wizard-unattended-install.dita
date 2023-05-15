@@ -18,7 +18,7 @@
     <p>
         Use this page to set up the required parameters for unattended
         guest OS installation and to configure automatic installation of
-        the Oracle VM VirtualBox Guest Additions. See also
+        the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions. See also
         <xref href="create-vm-wizard-unattended-examples.dita#create-vm-wizard-unattended-examples"/> for some
         typical scenarios when using automated installation.
       </p>

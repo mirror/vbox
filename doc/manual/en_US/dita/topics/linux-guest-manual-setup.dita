@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        The Oracle VM VirtualBox Guest Additions contain several different
+        The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions contain several different
         drivers. If you do not want to configure them all, use the
         following command to install the Guest Additions:
       </p>

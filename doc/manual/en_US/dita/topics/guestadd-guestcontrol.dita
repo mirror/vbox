@@ -24,7 +24,7 @@
       guest directories is available.
     </p>
     <p>
-      To use these features, use the Oracle VM VirtualBox command line. See
+      To use these features, use the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> command line. See
       <xref href="vboxmanage-guestcontrol.dita"/>.
     </p>
   </body>

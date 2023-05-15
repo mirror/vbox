@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
 <val>
   <prop action="exclude" att="platform" val="htmlhelp"/>
   <prop action="include" att="platform" val="ohc"/>

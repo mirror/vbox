@@ -7,7 +7,7 @@
     <p>
         To disable all Host key combinations, open the preferences and
         change the Host key to None. This might be useful when using
-        Oracle VM VirtualBox in a kiosk mode.
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> in a kiosk mode.
       </p>
     <p>
         To redefine or disable certain Host key actions, use the

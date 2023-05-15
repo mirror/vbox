@@ -6,7 +6,7 @@
   <body>
     <p>
           In the <b outputclass="bold">Devices</b> menu in the
-          virtual machine's menu bar, Oracle VM VirtualBox has a menu item
+          virtual machine's menu bar, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has a menu item
           <b outputclass="bold">Insert Guest Additions CD
           Image</b>, which mounts the Guest Additions ISO file
           inside your virtual machine. A Windows guest should then
@@ -63,7 +63,7 @@
         <ul>
           <li>
             <p>
-                  On a Windows host, this file is in the Oracle VM VirtualBox
+                  On a Windows host, this file is in the <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
                   installation directory, usually in
                   <filepath>C:\Program
                   files\Oracle\VirtualBox</filepath>.
@@ -72,7 +72,7 @@
           <li>
             <p>
                   On macOS hosts, this file is in the application bundle
-                  of Oracle VM VirtualBox. Right-click on the Oracle VM VirtualBox
+                  of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. Right-click on the <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
                   icon in Finder and choose <b outputclass="bold">Show
                   Package Contents</b>. The file is located in
                   the <filepath>Contents/MacOS</filepath> folder.
@@ -82,7 +82,7 @@
             <p>
                   On a Linux host, this file is in the
                   <filepath>additions</filepath> folder where you
-                  installed Oracle VM VirtualBox, usually
+                  installed <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, usually
                   <filepath>/opt/VirtualBox/</filepath>.
                 </p>
           </li>
@@ -90,7 +90,7 @@
             <p>
                   On Oracle Solaris hosts, this file is in the
                   <filepath>additions</filepath> folder where you
-                  installed Oracle VM VirtualBox, usually
+                  installed <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, usually
                   <filepath>/opt/VirtualBox</filepath>.
                 </p>
           </li>
@@ -107,7 +107,7 @@
     </ol>
     <p>
           Unless you have the Autostart feature disabled in your Windows
-          guest, Windows will now autostart the Oracle VM VirtualBox Guest
+          guest, Windows will now autostart the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest
           Additions installation program from the Additions ISO. If the
           Autostart feature has been turned off, choose
           <filepath>VBoxWindowsAdditions.exe</filepath> from the CD/DVD

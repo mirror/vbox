@@ -1,16 +1,16 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="vboxwebsrv-daemon">
-  <title>Starting the Oracle VM VirtualBox Web Service Automatically</title>
+  <title>Starting the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Web Service Automatically</title>
   
   <body>
     <p>
-      The Oracle VM VirtualBox web service, <userinput>vboxwebsrv</userinput>, is
-      used for controlling Oracle VM VirtualBox remotely. It is documented in
-      detail in the Oracle VM VirtualBox Software Development Kit (SDK). See
+      The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> web service, <userinput>vboxwebsrv</userinput>, is
+      used for controlling <ph conkeyref="vbox-conkeyref-phrases/product-name"/> remotely. It is documented in
+      detail in the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Software Development Kit (SDK). See
       <xref href="VirtualBoxAPI.dita#VirtualBoxAPI"/>. Web service start scripts are
       available for supported host operating systems. The following
-      sections describe how to use the scripts. The Oracle VM VirtualBox web
+      sections describe how to use the scripts. The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> web
       service is never started automatically as a result of a standard
       installation.
     </p>

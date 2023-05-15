@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        For macOS hosts, Oracle VM VirtualBox ships in a
+        For macOS hosts, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> ships in a
         <filepath>dmg</filepath> disk image file. Perform the following
         steps to install on a macOS host:
       </p>
@@ -26,12 +26,12 @@
       <li>
         <p>
             This starts the installer, which enables you to select where
-            to install Oracle VM VirtualBox.
+            to install <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
           </p>
       </li>
       <li>
         <p>
-            An Oracle VM VirtualBox icon is added to the
+            An <ph conkeyref="vbox-conkeyref-phrases/product-name"/> icon is added to the
             <filepath>Applications</filepath> folder in the Finder.
           </p>
       </li>

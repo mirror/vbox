@@ -8,12 +8,12 @@
         While a virtual machine is running, you can change removable
         media in the <b outputclass="bold">Devices</b> menu of
         the VM's window. Here you can select in detail what
-        Oracle VM VirtualBox presents to your VM as a CD, DVD, or floppy
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> presents to your VM as a CD, DVD, or floppy
         drive.
       </p>
     <p>
         The settings are the same as those available for the VM in the
-        <b outputclass="bold">Settings</b> window of VirtualBox Manager.
+        <b outputclass="bold">Settings</b> window of <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>.
         But as the <b outputclass="bold">Settings</b> window is
         disabled while the VM is in the Running or Saved state, the
         <b outputclass="bold">Devices</b> menu saves you from

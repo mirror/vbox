@@ -6,7 +6,7 @@
   <body>
     <p>
       This section outlines the specific security mechanisms offered by
-      Oracle VM VirtualBox.
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
     </p>
   </body>
 </topic>

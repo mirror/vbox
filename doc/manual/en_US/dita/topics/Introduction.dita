@@ -5,10 +5,10 @@
   
   <body>
     <p>
-    Welcome to Oracle VM VirtualBox.
+    Welcome to <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
   </p>
     <p>
-    Oracle VM VirtualBox is a cross-platform virtualization application. What
+    <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is a cross-platform virtualization application. What
     does that mean? For one thing, it installs on your existing Intel or
     AMD-based computers, whether they are running Windows, macOS, Linux,
     or Oracle Solaris operating systems (OSes). Secondly, it extends the
@@ -21,13 +21,13 @@
     are disk space and memory.
   </p>
     <p>
-    Oracle VM VirtualBox is deceptively simple yet also very powerful. It can
+    <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is deceptively simple yet also very powerful. It can
     run everywhere from small embedded systems or desktop class machines
     all the way up to datacenter deployments and even Cloud
     environments.
   </p>
     <p>
-    The following screenshot shows how Oracle VM VirtualBox, installed on an
+    The following screenshot shows how <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, installed on an
     Apple Mac computer, is running Windows Server 2016 in a virtual
     machine window.
   </p>
@@ -45,16 +45,16 @@
     <p>
     In this User Manual, we will begin simply with a quick introduction
     to virtualization and how to get your first virtual machine running
-    with the easy-to-use Oracle VM VirtualBox graphical user interface.
+    with the easy-to-use <ph conkeyref="vbox-conkeyref-phrases/product-name"/> graphical user interface.
     Subsequent chapters will go into much more detail covering more
     powerful tools and features, but fortunately, it is not necessary to
-    read the entire User Manual before you can use Oracle VM VirtualBox.
+    read the entire User Manual before you can use <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
   </p>
     <p>
-    You can find a summary of Oracle VM VirtualBox's capabilities in
-    <xref href="features-overview.dita#features-overview"/>. For existing Oracle VM VirtualBox
+    You can find a summary of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s capabilities in
+    <xref href="features-overview.dita#features-overview"/>. For existing <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
     users who just want to find out what is new in this release, see the
-    <xref href="https://docs.oracle.com/en/virtualization/virtualbox/7.0/relnotes/ChangeLog.html" format="html" scope="external">Change Log</xref>.
+    <xref href="https://docs.oracle.com/en/virtualization/virtualbox/7.0/relnotes/relnotes-ChangeLog.html" format="html" scope="external">Change Log</xref>.
   </p>
   </body>
 </topic>

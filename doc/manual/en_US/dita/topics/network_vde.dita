@@ -8,7 +8,7 @@
       Virtual Distributed Ethernet (VDE) is a flexible, virtual network
       infrastructure system, spanning across multiple hosts in a secure
       way. It enables L2/L3 switching, including spanning-tree protocol,
-      VLANs, and WAN emulation. It is an optional part of Oracle VM VirtualBox
+      VLANs, and WAN emulation. It is an optional part of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
       which is only included in the source code.
     </p>
     <p>
@@ -20,7 +20,7 @@
       VDE plugs, and VDE wires which interconnect the switches.
     </p>
     <p>
-      The Oracle VM VirtualBox VDE driver has a single parameter: VDE network.
+      The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VDE driver has a single parameter: VDE network.
       This is the name of the VDE network switch socket to which the VM
       will be connected.
     </p>

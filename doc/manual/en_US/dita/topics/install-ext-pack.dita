@@ -5,12 +5,12 @@
   
   <body>
     <p>
-      Extension packs provide extra functionality to the Oracle VM VirtualBox
+      Extension packs provide extra functionality to the <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
       base package, such as extended USB device support and cloud
       integration features. See <xref href="intro-installing.dita#intro-installing"/>.
     </p>
     <p>
-      To install an Oracle VM VirtualBox extension pack, do the following:
+      To install an <ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/>, do the following:
     </p>
     <ol>
       <li>
@@ -18,7 +18,7 @@
           Double-click on the extension package file name.
         </p>
         <p>
-          Oracle VM VirtualBox extension packs have a
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> extension packs have a
           <filepath>.vbox-extpack</filepath> file name extension.
         </p>
       </li>

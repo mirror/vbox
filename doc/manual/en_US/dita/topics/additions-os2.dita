@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        Oracle VM VirtualBox also ships with a set of drivers that improve
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> also ships with a set of drivers that improve
         running OS/2 in a virtual machine. Due to restrictions of OS/2
         itself, this variant of the Guest Additions has a limited
         feature set. See <xref href="KnownIssues.dita">Known Limitations</xref> for details.

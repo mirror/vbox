@@ -14,7 +14,7 @@
             Double-click on the OVF or OVA file.
           </p>
         <p>
-            Oracle VM VirtualBox creates file type associations automatically
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> creates file type associations automatically
             for any OVF and OVA files on your host OS.
           </p>
         <p>
@@ -42,7 +42,7 @@
           </p>
         <p>
             By default, membership of VM groups is preserved on import
-            for VMs that were initially exported from Oracle VM VirtualBox.
+            for VMs that were initially exported from <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
             You can change this behavior by using the
             <b outputclass="bold">Primary Group</b> setting for
             the VM.
@@ -86,7 +86,7 @@
             appliance.
           </p>
         <p>
-            Oracle VM VirtualBox copies the disk images and creates local VMs
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> copies the disk images and creates local VMs
             with the settings described on the
             <b outputclass="bold">Appliance Settings</b> page.
             The imported VMs are shown in the list of VMs in VirtualBox
@@ -101,10 +101,8 @@
           </p>
       </li>
     </ol>
-    <p>
-        You can use the <userinput>VBoxManage import</userinput> command to
-        import an appliance. See <xref href="vboxmanage-import.dita"/>.
-      </p>
+    <p> You can use the <userinput>VBoxManage import</userinput> command to import an appliance. See
+        <xref href="vboxmanage-import.dita"/>. </p>
   </body>
   
 </topic>

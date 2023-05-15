@@ -1,35 +1,35 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="vboxandsolzvmm">
-  <title>Oracle VM VirtualBox and Oracle Solaris Kernel Zones</title>
+  <title><ph conkeyref="vbox-conkeyref-phrases/product-name"/> and Oracle Solaris Kernel Zones</title>
   
   <body>
     <p>
       Oracle Solaris kernel zones on x86-based systems make use of
-      hardware-assisted virtualization features like Oracle VM VirtualBox
-      does. However, for kernel zones and Oracle VM VirtualBox to share this
+      hardware-assisted virtualization features like <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
+      does. However, for kernel zones and <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to share this
       hardware resource, they need to cooperate.
     </p>
     <p>
-      By default, due to performance reasons, Oracle VM VirtualBox acquires
+      By default, due to performance reasons, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> acquires
       the hardware-assisted virtualization resource (VT-x/AMD-V)
       globally on the host machine and uses it until the last
-      Oracle VM VirtualBox VM that requires it is powered off. This prevents
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VM that requires it is powered off. This prevents
       other software from using VT-x/AMD-V during the time
-      Oracle VM VirtualBox has taken control of it.
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has taken control of it.
     </p>
     <p>
-      Oracle VM VirtualBox can be instructed to relinquish use of
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can be instructed to relinquish use of
       hardware-assisted virtualization features when not executing guest
       code, thereby allowing kernel zones to make use of them. To do
-      this, shutdown all Oracle VM VirtualBox VMs and execute the following
+      this, shutdown all <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VMs and execute the following
       command:
     </p>
     <pre xml:space="preserve">$ VBoxManage setproperty hwvirtexclusive off</pre>
     <p>
       This command needs to be executed only once as the setting is
-      stored as part of the global Oracle VM VirtualBox settings which will
-      continue to persist across host-reboots and Oracle VM VirtualBox
+      stored as part of the global <ph conkeyref="vbox-conkeyref-phrases/product-name"/> settings which will
+      continue to persist across host-reboots and <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
       upgrades.
     </p>
   </body>

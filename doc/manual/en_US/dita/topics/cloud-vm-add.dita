@@ -6,7 +6,7 @@
   <body>
     <p>
           When you add a cloud VM, an <i>existing</i>
-          Oracle Cloud Infrastructure instance is associated with the cloud VM. You can only
+          <ph conkeyref="vbox-conkeyref-phrases/oci"/> instance is associated with the cloud VM. You can only
           add one cloud VM for each instance.
         </p>
     <p>
@@ -53,7 +53,7 @@
             <p><b outputclass="bold">Source:</b> The cloud
                   service provider that hosts the instance used for the
                   cloud VM. Select
-                  <b outputclass="bold">Oracle Cloud Infrastructure</b>.
+                  <b outputclass="bold"><ph conkeyref="vbox-conkeyref-phrases/oci"/></b>.
                 </p>
           </li>
           <li>
@@ -78,7 +78,7 @@
         <p>
               A cloud VM with the same name as the instance is added to
               the <b outputclass="bold">OCI</b> group in
-              VirtualBox Manager.
+              <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>.
             </p>
       </li>
       <li>
@@ -88,7 +88,7 @@
               the <b outputclass="bold">Display Name</b> field.
             </p>
         <p>
-              The cloud VM name in VirtualBox Manager is updated automatically.
+              The cloud VM name in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> is updated automatically.
             </p>
       </li>
     </ol>

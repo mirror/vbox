@@ -1,16 +1,16 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="cloud-upload-public-key">
-  <title>Uploading the Public Key to Oracle Cloud Infrastructure</title>
+  <title>Uploading the Public Key to <ph conkeyref="vbox-conkeyref-phrases/oci"/></title>
   
   <body>
     <p>
-        Use the following steps to upload your public key to Oracle Cloud Infrastructure.
+        Use the following steps to upload your public key to <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
       </p>
     <ol>
       <li>
         <p>
-            Log in to the Oracle Cloud Infrastructure Console.
+            Log in to the <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console.
           </p>
       </li>
       <li>
@@ -44,14 +44,14 @@
             is displayed.
           </p>
         <fig id="fig-upload-key-oci">
-          <title>Upload Public Key Dialog in Oracle Cloud Infrastructure Console</title>
+          <title>Upload Public Key Dialog in <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console</title>
           <xref href="images/upload-key.png" format="png" platform="htmlhelp">
             <image href="images/upload-key.png" width="12cm" placement="break">
-              <alt>Upload Public Key Dialog in Oracle Cloud Infrastructure Console</alt>
+              <alt>Upload Public Key Dialog in <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console</alt>
             </image>
           </xref>
           <image href="images/upload-key.png" width="12cm" placement="break" platform="ohc">
-            <alt>Upload Public Key Dialog in Oracle Cloud Infrastructure Console</alt>
+            <alt>Upload Public Key Dialog in <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console</alt>
           </image>
         </fig>
         <p>

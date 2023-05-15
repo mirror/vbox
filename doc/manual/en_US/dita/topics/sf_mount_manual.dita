@@ -17,7 +17,7 @@
             shared folder to your Windows guest, open Windows Explorer
             and look for the folder in <b outputclass="bold">My
             Networking Places</b>, <b outputclass="bold">Entire
-            Network</b>, <b outputclass="bold">Oracle VM VirtualBox
+            Network</b>, <b outputclass="bold"><ph conkeyref="vbox-conkeyref-phrases/product-name"/>
             Shared Folders</b>. By right-clicking on a shared
             folder and selecting <b outputclass="bold">Map Network
             Drive</b> from the menu that pops up, you can assign
@@ -56,7 +56,7 @@
                         <p>
             Replace <varname>sharename</varname>, use a
             lowercase string, with the share name specified with
-            <userinput>VBoxManage</userinput> or VirtualBox Manager. Replace
+            <userinput>VBoxManage</userinput> or <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>. Replace
             <varname>mountpoint</varname> with the path where
             you want the share to be mounted on the guest, such as
             <filepath>/mnt/share</filepath>. The usual mount rules

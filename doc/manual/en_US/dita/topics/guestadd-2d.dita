@@ -5,13 +5,13 @@
   
   <body>
     <p>
-        The Oracle VM VirtualBox Guest Additions contain experimental hardware
+        The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions contain experimental hardware
         2D video acceleration support for Windows guests.
       </p>
     <p>
         With this feature, if an application such as a video player
         inside your Windows VM uses 2D video overlays to play a movie
-        clip, then Oracle VM VirtualBox will attempt to use your host's video
+        clip, then <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will attempt to use your host's video
         acceleration hardware instead of performing overlay stretching
         and color conversion in software, which would be slow. This
         currently works for Windows, Linux and macOS host platforms,
@@ -44,11 +44,11 @@
       </li>
     </ul>
     <p>
-        Technically, Oracle VM VirtualBox implements this by exposing video
+        Technically, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> implements this by exposing video
         overlay DirectDraw capabilities in the Guest Additions video
         driver. The driver sends all overlay commands to the host
         through a special communication tunnel implemented by
-        Oracle VM VirtualBox. On the host side, OpenGL is then used to
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. On the host side, OpenGL is then used to
         implement color space transformation and scaling.
       </p>
   </body>

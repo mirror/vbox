@@ -4,14 +4,11 @@
   <title>VM Core Format</title>
   
   <body>
-    <p>
-        Oracle VM VirtualBox uses the 64-bit ELF format for its VM core files
-        created by <userinput>VBoxManage debugvm</userinput>, see
-        <xref href="vboxmanage-debugvm.dita">VBoxManage debugvm</xref>. The VM core file contain
-        the memory and CPU dumps of the VM and can be useful for
-        debugging your guest OS. The 64-bit ELF object format
-        specification can be obtained at:
-      </p>
+    <p> <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses the 64-bit ELF format for its VM core files created by
+        <userinput>VBoxManage debugvm</userinput>, see <xref href="vboxmanage-debugvm.dita"
+        >VBoxManage debugvm</xref>. The VM core file contain the memory and CPU dumps of the VM and
+      can be useful for debugging your guest OS. The 64-bit ELF object format specification can be
+      obtained at: </p>
     <p><ph>http://downloads.openwatcom.org/ftp/devel/docs/elf-64-gen.pdf</ph>.
       </p>
     <p>
@@ -41,7 +38,7 @@
       </p>
     <p>
         The relevant data structures and definitions can be found in the
-        Oracle VM VirtualBox sources under the following header files:
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> sources under the following header files:
         <filepath>include/VBox/dbgfcorefmt.h</filepath>,
         <filepath>include/iprt/x86.h</filepath> and
         <filepath>src/VBox/Runtime/include/internal/ldrELFCommon.h</filepath>.

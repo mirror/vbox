@@ -6,13 +6,13 @@
                
                <body>
                   <p>
-        Uninstallation of Oracle VM VirtualBox on Oracle Solaris requires root
+        Uninstallation of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> on Oracle Solaris requires root
         permissions. To perform the uninstallation, start a root
         terminal session and run the following command:
       </p>
                   <pre xml:space="preserve">pkgrm SUNWvbox</pre>
                   <p>
-        After confirmation, this will remove Oracle VM VirtualBox from your
+        After confirmation, this will remove <ph conkeyref="vbox-conkeyref-phrases/product-name"/> from your
         system.
       </p>
                </body>

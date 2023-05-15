@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        Oracle VM VirtualBox includes a built-in VM debugger, which advanced
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> includes a built-in VM debugger, which advanced
         users may find useful. This debugger enables you to examine and,
         to some extent, control the VM state.
       </p>
@@ -22,7 +22,7 @@
     </note>
     <p>
         The VM debugger is available in all regular production versions
-        of Oracle VM VirtualBox, but it is disabled by default because the
+        of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, but it is disabled by default because the
         average user will have little use for it. There are two ways to
         access the debugger:
       </p>
@@ -57,9 +57,9 @@
             Set the <codeph>VBOX_GUI_DBG_ENABLED</codeph> or
             <codeph>VBOX_GUI_DBG_AUTO_SHOW</codeph> environment
             variable to <codeph>true</codeph> before launching the
-            Oracle VM VirtualBox process. Setting these variables, only their
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> process. Setting these variables, only their
             presence is checked, is effective even when the first
-            Oracle VM VirtualBox process is the VM selector window. VMs
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> process is the VM selector window. VMs
             subsequently launched from the selector will have the
             debugger enabled.
           </p>
@@ -74,14 +74,14 @@
     </ul>
     <p>
         A new <b outputclass="bold">Debug</b> menu entry is added
-        to the Oracle VM VirtualBox application. This menu enables the user to
+        to the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> application. This menu enables the user to
         open the debugger console.
       </p>
     <p>
         The VM debugger command syntax is loosely modeled on Microsoft
         and IBM debuggers used on DOS, OS/2, and Windows. Users familiar
         with symdeb, CodeView, or the OS/2 kernel debugger will find the
-        Oracle VM VirtualBox VM debugger familiar.
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VM debugger familiar.
       </p>
     <p>
         The most important command is <userinput>help</userinput>. This will
@@ -261,7 +261,7 @@
     <p>
         The output of the <userinput>info</userinput> commands generally
         requires in-depth knowledge of the emulated device or
-        Oracle VM VirtualBox VMM internals. However, when used properly, the
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VMM internals. However, when used properly, the
         information provided can be invaluable.
       </p>
   </body>

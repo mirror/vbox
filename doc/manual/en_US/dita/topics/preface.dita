@@ -6,7 +6,7 @@
   <body>
     <p>
       This document provides information on the advanced features 
-      of Oracle VM VirtualBox.
+      of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
   </p>
   </body>
 </topic>

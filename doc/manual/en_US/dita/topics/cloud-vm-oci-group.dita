@@ -5,7 +5,7 @@
   
   <body>
     <p>
-          All cloud VMs are shown in the machine list in VirtualBox Manager, in
+          All cloud VMs are shown in the machine list in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>, in
           a special VM group called
           <b outputclass="bold">OCI</b>.
         </p>
@@ -28,11 +28,11 @@
       </image>
     </fig>
     <p>
-          All cloud profiles registered with Oracle VM VirtualBox are listed
+          All cloud profiles registered with <ph conkeyref="vbox-conkeyref-phrases/product-name"/> are listed
           automatically in the OCI group.
         </p>
     <p>
-          To enable or disable listing of cloud VMs in VirtualBox Manager for a
+          To enable or disable listing of cloud VMs in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> for a
           specific cloud profile, do the following:
         </p>
     <p>

@@ -17,12 +17,12 @@
     <ul>
       <li>
         <p>
-              Oracle VM VirtualBox Graphics Adapter
+              <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Graphics Adapter
             </p>
       </li>
       <li>
         <p>
-              Oracle VM VirtualBox System Device
+              <ph conkeyref="vbox-conkeyref-phrases/product-name"/> System Device
             </p>
       </li>
     </ul>

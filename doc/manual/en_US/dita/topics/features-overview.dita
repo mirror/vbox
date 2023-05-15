@@ -5,26 +5,26 @@
   
   <body>
     <p>
-      The following is a brief outline of Oracle VM VirtualBox's main
+      The following is a brief outline of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s main
       features:
     </p>
     <ul>
       <li>
-        <p><b outputclass="bold">Portability.</b> Oracle VM VirtualBox
+        <p><b outputclass="bold">Portability.</b> <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
           runs on a large number of 64-bit host operating systems. See
           <xref href="hostossupport.dita#hostossupport"/>.
         </p>
         <p>
-          Oracle VM VirtualBox is a so-called <i>hosted</i>
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is a so-called <i>hosted</i>
           hypervisor, sometimes referred to as a <i>type
           2</i> hypervisor. Whereas a
           <i>bare-metal</i> or <i>type 1</i>
-          hypervisor runs directly on the hardware, Oracle VM VirtualBox
+          hypervisor runs directly on the hardware, <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
           requires an existing OS to be installed. It can thus run
           alongside existing applications on that host.
         </p>
         <p>
-          To a very large degree, Oracle VM VirtualBox is functionally
+          To a very large degree, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is functionally
           identical on all of the host platforms, and the same file and
           image formats are used. This enables you to run virtual
           machines created on one host on another host with a different
@@ -39,7 +39,7 @@
           software. See <xref href="ovf.dita#ovf"/>.
         </p>
         <p>
-          For users of Oracle Cloud Infrastructure the functionality extends to exporting and
+          For users of <ph conkeyref="vbox-conkeyref-phrases/oci"/> the functionality extends to exporting and
           importing virtual machines to and from the cloud. This
           simplifies development of applications and deployment to the
           production environment. See
@@ -49,7 +49,7 @@
       <li>
         <p><b outputclass="bold">Guest Additions: shared folders,
           seamless windows, 3D virtualization.</b> The
-          Oracle VM VirtualBox Guest Additions are software packages which can
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions are software packages which can
           be installed <i>inside</i> of supported guest
           systems to improve their performance and to provide additional
           integration and communication with the host system. After
@@ -67,20 +67,20 @@
       </li>
       <li>
         <p><b outputclass="bold">Comprehensive hardware
-          support.</b> Among other features, Oracle VM VirtualBox
+          support.</b> Among other features, <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
           supports the following:
         </p>
         <ul>
           <li>
             <p><b outputclass="bold">Guest multiprocessing
-              (SMP).</b> Oracle VM VirtualBox can present up to 32
+              (SMP).</b> <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can present up to 32
               virtual CPUs to each virtual machine, irrespective of how
               many CPU cores are physically present on your host.
             </p>
           </li>
           <li>
             <p><b outputclass="bold">USB device support.</b>
-              Oracle VM VirtualBox implements a virtual USB controller and
+              <ph conkeyref="vbox-conkeyref-phrases/product-name"/> implements a virtual USB controller and
               enables you to connect arbitrary USB devices to your
               virtual machines without having to install device-specific
               drivers on the host. USB support is not limited to certain
@@ -89,7 +89,7 @@
           </li>
           <li>
             <p><b outputclass="bold">Hardware compatibility.</b>
-              Oracle VM VirtualBox virtualizes a vast array of virtual
+              <ph conkeyref="vbox-conkeyref-phrases/product-name"/> virtualizes a vast array of virtual
               devices, among them many devices that are typically
               provided by other virtualization platforms. That includes
               IDE, SCSI, and SATA hard disk controllers, several virtual
@@ -98,17 +98,17 @@
               Controller (I/O APIC), which is found in many computer
               systems. This enables easy cloning of disk images from
               real machines and importing of third-party virtual
-              machines into Oracle VM VirtualBox.
+              machines into <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
             </p>
           </li>
           <li>
             <p><b outputclass="bold">Full ACPI support.</b> The
               Advanced Configuration and Power Interface (ACPI) is fully
-              supported by Oracle VM VirtualBox. This enables easy cloning of
+              supported by <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. This enables easy cloning of
               disk images from real machines or third-party virtual
-              machines into Oracle VM VirtualBox. With its unique
+              machines into <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. With its unique
               <i>ACPI power status support</i>,
-              Oracle VM VirtualBox can even report to ACPI-aware guest OSes
+              <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can even report to ACPI-aware guest OSes
               the power status of the host. For mobile systems running
               on battery, the guest can thus enable energy saving and
               notify the user of the remaining power, for example in
@@ -117,7 +117,7 @@
           </li>
           <li>
             <p><b outputclass="bold">Multiscreen resolutions.</b>
-              Oracle VM VirtualBox virtual machines support screen resolutions
+              <ph conkeyref="vbox-conkeyref-phrases/product-name"/> virtual machines support screen resolutions
               many times that of a physical screen, allowing them to be
               spread over a large number of screens attached to the host
               system.
@@ -135,7 +135,7 @@
           </li>
           <li>
             <p><b outputclass="bold">PXE Network boot.</b> The
-              integrated virtual network cards of Oracle VM VirtualBox fully
+              integrated virtual network cards of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> fully
               support remote booting using the Preboot Execution
               Environment (PXE).
             </p>
@@ -144,7 +144,7 @@
       </li>
       <li>
         <p><b outputclass="bold">Multigeneration branched
-          snapshots.</b> Oracle VM VirtualBox can save arbitrary
+          snapshots.</b> <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can save arbitrary
           snapshots of the state of the virtual machine. You can go back
           in time and revert the virtual machine to any such snapshot
           and start an alternative VM configuration from there,
@@ -154,7 +154,7 @@
         </p>
       </li>
       <li>
-        <p><b outputclass="bold">VM groups.</b> Oracle VM VirtualBox
+        <p><b outputclass="bold">VM groups.</b> <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
           provides a groups feature that enables the user to organize
           and control virtual machines collectively, as well as
           individually. In addition to basic groups, it is also possible
@@ -168,22 +168,22 @@
       </li>
       <li>
         <p><b outputclass="bold">Clean architecture and unprecedented
-          modularity.</b> Oracle VM VirtualBox has an extremely modular
+          modularity.</b> <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has an extremely modular
           design with well-defined internal programming interfaces and a
           clean separation of client and server code. This makes it easy
           to control it from several interfaces at once. For example,
           you can start a VM simply by clicking on a button in the
-          Oracle VM VirtualBox graphical user interface and then control that
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> graphical user interface and then control that
           machine from the command line, or even remotely. See
           <xref href="frontends.dita#frontends"/>.
         </p>
         <p>
-          Due to its modular architecture, Oracle VM VirtualBox can also
+          Due to its modular architecture, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can also
           expose its full functionality and configurability through a
           comprehensive <b outputclass="bold">software development kit
-          (SDK),</b> which enables integration of Oracle VM VirtualBox
+          (SDK),</b> which enables integration of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
           with other software systems. See
-          <xref href="VirtualBoxAPI.dita">Oracle VM VirtualBox Programming Interfaces</xref>.
+          <xref href="VirtualBoxAPI.dita"><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Programming Interfaces</xref>.
         </p>
       </li>
       <li>
@@ -203,13 +203,13 @@
           VRDE is described in detail in <xref href="vrde.dita">Remote Display (VRDP Support)</xref>.
         </p>
         <p>
-          On top of this special capacity, Oracle VM VirtualBox offers you
+          On top of this special capacity, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> offers you
           more unique features:
         </p>
         <ul>
           <li>
             <p><b outputclass="bold">Extensible RDP
-              authentication.</b> Oracle VM VirtualBox already supports
+              authentication.</b> <ph conkeyref="vbox-conkeyref-phrases/product-name"/> already supports
               Winlogon on Windows and PAM on Linux for RDP
               authentication. In addition, it includes an easy-to-use
               SDK which enables you to create arbitrary interfaces for
@@ -219,9 +219,9 @@
           </li>
           <li>
             <p><b outputclass="bold">USB over RDP.</b> Using RDP
-              virtual channel support, Oracle VM VirtualBox also enables you
+              virtual channel support, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> also enables you
               to connect arbitrary USB devices locally to a virtual
-              machine which is running remotely on an Oracle VM VirtualBox RDP
+              machine which is running remotely on an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> RDP
               server. See <xref href="usb-over-rdp.dita">Remote USB</xref>.
             </p>
           </li>

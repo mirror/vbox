@@ -2,11 +2,11 @@
 <!DOCTYPE topic
   PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="startingvboxonlinux">
-               <title>Starting Oracle VM VirtualBox on Linux</title>
+               <title>Starting <ph conkeyref="vbox-conkeyref-phrases/product-name"/> on Linux</title>
                
                <body>
                   <p>
-        The easiest way to start an Oracle VM VirtualBox program is by running
+        The easiest way to start an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> program is by running
         the program of your choice (<userinput>VirtualBox</userinput>,
         <userinput>VBoxManage</userinput>, or
         <userinput>VBoxHeadless</userinput>) from a terminal. These are
@@ -15,13 +15,13 @@
       </p>
                   <p>
         The following detailed instructions should only be of interest
-        if you wish to execute Oracle VM VirtualBox without installing it
+        if you wish to execute <ph conkeyref="vbox-conkeyref-phrases/product-name"/> without installing it
         first. You should start by compiling the
         <userinput>vboxdrv</userinput> kernel module and inserting it into
-        the Linux kernel. Oracle VM VirtualBox consists of a service daemon,
+        the Linux kernel. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> consists of a service daemon,
         <userinput>VBoxSVC</userinput>, and several application programs.
         The daemon is automatically started if necessary. All
-        Oracle VM VirtualBox applications will communicate with the daemon
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> applications will communicate with the daemon
         through UNIX local domain sockets. There can be multiple daemon
         instances under different user accounts and applications can
         only communicate with the daemon running under the user account
@@ -32,9 +32,9 @@
         try to remove this directory.
       </p>
                   <p>
-        All Oracle VM VirtualBox applications (<userinput>VirtualBox</userinput>,
+        All <ph conkeyref="vbox-conkeyref-phrases/product-name"/> applications (<userinput>VirtualBox</userinput>,
         <userinput>VBoxManage</userinput>, and
-        <userinput>VBoxHeadless</userinput>) require the Oracle VM VirtualBox
+        <userinput>VBoxHeadless</userinput>) require the <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         directory to be in the library path, as follows:
       </p>
                   <pre xml:space="preserve">LD_LIBRARY_PATH=. ./VBoxManage showvminfo "Windows XP"</pre>

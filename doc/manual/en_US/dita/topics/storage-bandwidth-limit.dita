@@ -6,7 +6,7 @@
             
             <body>
                <p>
-      Oracle VM VirtualBox supports limiting of the maximum bandwidth used for
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports limiting of the maximum bandwidth used for
       asynchronous I/O. Additionally it supports sharing limits through
       bandwidth groups for several images. It is possible to have more
       than one such limit.

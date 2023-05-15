@@ -6,7 +6,7 @@
             
             <body>
                <p>
-      VirtualBox Manager includes the following tools for viewing runtime
+      <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> includes the following tools for viewing runtime
       information and changing the configuration of virtual machines.
     </p>
                <ul>

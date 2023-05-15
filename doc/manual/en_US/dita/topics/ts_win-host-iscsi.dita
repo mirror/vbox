@@ -20,7 +20,7 @@
         environment variable to <codeph>1</codeph> enables a
         workaround for this problem until Microsoft addresses the issue.
         For example, open a command prompt window and start
-        Oracle VM VirtualBox like this:
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> like this:
       </p>
     <pre xml:space="preserve">set VBOX_DISABLE_HOST_DISK_CACHE=1
 VirtualBox</pre>

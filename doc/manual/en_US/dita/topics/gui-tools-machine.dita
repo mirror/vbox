@@ -5,7 +5,7 @@
   
   <body>
     <p>
-          In the machine list in the left pane of the VirtualBox Manager window,
+          In the machine list in the left pane of the <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> window,
           select a virtual machine.
         </p>
     <p>

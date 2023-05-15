@@ -12,7 +12,7 @@
         To open the Cloud Profile Manager click
         <b outputclass="bold">File</b>,
         <b outputclass="bold">Cloud Profile Manager</b> in
-        VirtualBox Manager.
+        <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>.
       </p>
     <fig id="fig-cloud-profile-manager">
       <title>The Cloud Profile Manager</title>
@@ -37,7 +37,7 @@
       <li>
         <p>
             To create a cloud profile by importing settings from your
-            Oracle Cloud Infrastructure configuration file.
+            <ph conkeyref="vbox-conkeyref-phrases/oci"/> configuration file.
           </p>
       </li>
     </ul>
@@ -91,8 +91,8 @@
           </li>
         </ul>
         <p>
-            Some of these are settings for your Oracle Cloud Infrastructure account, which you
-            can view from the Oracle Cloud Infrastructure Console.
+            Some of these are settings for your <ph conkeyref="vbox-conkeyref-phrases/oci"/> account, which you
+            can view from the <ph conkeyref="vbox-conkeyref-phrases/oci"/> Console.
           </p>
       </li>
       <li>
@@ -103,7 +103,7 @@
           </p>
         <p>
             This creates a new subgroup of the
-            <b outputclass="bold">OCI</b> group in VirtualBox Manager.
+            <b outputclass="bold">OCI</b> group in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>.
             See <xref href="cloud-vm-oci-group.dita#cloud-vm-oci-group"/>.
           </p>
       </li>
@@ -114,20 +114,20 @@
           </p>
         <p>
             The cloud profile settings are saved to the
-            <filepath>oci_config</filepath> file in your Oracle VM VirtualBox
+            <filepath>oci_config</filepath> file in your <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
             global settings directory.
           </p>
       </li>
     </ol>
     <p>
-        Perform the following steps to import an existing Oracle Cloud Infrastructure
+        Perform the following steps to import an existing <ph conkeyref="vbox-conkeyref-phrases/oci"/>
         configuration file into the Cloud Profile Manager:
       </p>
     <ol>
       <li>
         <p>
             Ensure that a <filepath>config</filepath> file is present in
-            your Oracle Cloud Infrastructure configuration directory. For example, this is
+            your <ph conkeyref="vbox-conkeyref-phrases/oci"/> configuration directory. For example, this is
             <filepath>$HOME/.oci/config</filepath> on a Linux host.
           </p>
       </li>
@@ -140,7 +140,7 @@
         <note type="attention">
           <p>
               This action overwrites any cloud profiles that are in your
-              Oracle VM VirtualBox global settings directory.
+              <ph conkeyref="vbox-conkeyref-phrases/product-name"/> global settings directory.
             </p>
         </note>
       </li>
@@ -150,7 +150,7 @@
           </p>
         <p>
             Your cloud profile settings are saved to the
-            <filepath>oci_config</filepath> file in your Oracle VM VirtualBox
+            <filepath>oci_config</filepath> file in your <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
             global settings directory.
           </p>
       </li>

@@ -25,7 +25,7 @@
       disk that have changed since the differencing image was created.
       When the machine reads a sector from such a virtual hard disk, it
       looks into the differencing image first. If the sector is present,
-      it is returned from there. If not, Oracle VM VirtualBox looks into the
+      it is returned from there. If not, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> looks into the
       parent. In other words, the parent becomes
       <i>read-only</i>. It is never written to again, but
       it is read from if a sector has not changed.
@@ -37,7 +37,7 @@
       original parent. The first differencing image then becomes
       read-only as well, and write operations only go to the
       second-level differencing image. When reading from the virtual
-      disk, Oracle VM VirtualBox needs to look into the second differencing
+      disk, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> needs to look into the second differencing
       image first, then into the first if the sector was not found, and
       then into the original image.
     </p>
@@ -48,7 +48,7 @@
       children, depending on how complex your machine configuration is.
       Write operations always go to the one <i>active</i>
       differencing image that is attached to the machine, and for read
-      operations, Oracle VM VirtualBox may need to look up all the parents in
+      operations, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> may need to look up all the parents in
       the chain until the sector in question is found. You can view such
       a tree in the Virtual Media Manager.
     </p>
@@ -67,7 +67,7 @@
       In all of these situations, from the point of view of the virtual
       machine, the virtual hard disk behaves like any other disk. While
       the virtual machine is running, there is a slight run-time I/O
-      overhead because Oracle VM VirtualBox might need to look up sectors
+      overhead because <ph conkeyref="vbox-conkeyref-phrases/product-name"/> might need to look up sectors
       several times. This is not noticeable however since the tables
       with sector information are always kept in memory and can be
       looked up quickly.
@@ -78,7 +78,7 @@
     <ul>
       <li>
         <p><b outputclass="bold">Snapshots.</b> When you create a
-          snapshot, as explained in the previous section, Oracle VM VirtualBox
+          snapshot, as explained in the previous section, <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
           <i>freezes</i> the images attached to the
           virtual machine and creates differencing images for each image
           that is not in <i>write-through</i> mode. From
@@ -101,7 +101,7 @@
         <ul>
           <li>
             <p>
-              Oracle VM VirtualBox copies the virtual machine settings that
+              <ph conkeyref="vbox-conkeyref-phrases/product-name"/> copies the virtual machine settings that
               were copied into the snapshot back to the virtual machine.
               As a result, if you have made changes to the machine
               configuration since taking the snapshot, they are undone.
@@ -135,7 +135,7 @@
           to free disk space, for each disk attachment, one of the
           differencing images becomes obsolete. In this case, the
           differencing image of the disk attachment cannot simply be
-          deleted. Instead, Oracle VM VirtualBox needs to look at each sector
+          deleted. Instead, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> needs to look at each sector
           of the differencing image and needs to copy it back into its
           parent. This is called "merging" images and can be a
           potentially lengthy process, depending on how large the

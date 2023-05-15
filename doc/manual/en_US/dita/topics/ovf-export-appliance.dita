@@ -2,7 +2,7 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="ovf-export-appliance">
   <title>Exporting an Appliance in OVF Format</title>
-  
+
   <body>
     <p>
         The following steps show how to export an appliance in OVF
@@ -38,8 +38,8 @@
                 Format</b> value for the output files.
               </p>
             <p>
-                The <b outputclass="bold">Oracle Cloud Infrastructure</b> value exports
-                the appliance to Oracle Cloud Infrastructure. See
+                The <b outputclass="bold"><ph conkeyref="vbox-conkeyref-phrases/oci"/></b> value exports
+                the appliance to <ph conkeyref="vbox-conkeyref-phrases/oci"/>. See
                 <xref href="cloud-export-oci.dita#cloud-export-oci"/>.
               </p>
           </li>
@@ -92,9 +92,9 @@
       </li>
     </ol>
     <p>
-        You can use the <userinput>VBoxManage export</userinput> command to
-        export an appliance. See <xref href="vboxmanage-export.dita"/>.
-      </p>
+      You can use the <userinput>VBoxManage export</userinput> command to export an appliance. See
+      <xref href="vboxmanage-export.dita"/>.
+    </p>
   </body>
-  
+
 </topic>

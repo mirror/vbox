@@ -6,20 +6,20 @@
   <body>
     <p>
         The Help Viewer is a window that displays context-sensitive help
-        to assist you in completing common VirtualBox Manager tasks. You can
+        to assist you in completing common <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> tasks. You can
         display the Help Viewer in the following ways:
       </p>
     <ul>
       <li>
         <p>
-            In a VirtualBox Manager wizard or dialog, click
+            In a <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> wizard or dialog, click
             <b outputclass="bold">Help</b> to display the
             relevant help topic.
           </p>
       </li>
       <li>
         <p>
-            In VirtualBox Manager or from a guest VM, do either of the
+            In <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> or from a guest VM, do either of the
             following:
           </p>
         <ul>
@@ -53,7 +53,7 @@
         <ul>
           <li>
             <p><b outputclass="bold">Contents.</b> Displays the
-                help topic location in the Oracle VM VirtualBox documentation.
+                help topic location in the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> documentation.
               </p>
           </li>
           <li>

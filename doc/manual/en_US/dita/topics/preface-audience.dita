@@ -6,7 +6,7 @@
   <body>
     <p>
       This document is intended for administrators with previous
-      experience of using Oracle VM VirtualBox. It is assumed that readers are
+      experience of using <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. It is assumed that readers are
       familiar with Web technologies and have a general understanding of
       Windows and UNIX platforms.
     </p>

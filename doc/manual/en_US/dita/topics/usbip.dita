@@ -5,10 +5,10 @@
   
   <body>
     <p>
-      Oracle VM VirtualBox supports passing through USB devices which are
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports passing through USB devices which are
       exposed over the network using the USB over IP protocol without
       the need to configure the client side provided by the kernel and
-      usbip tools. Furthermore, this feature works with Oracle VM VirtualBox
+      usbip tools. Furthermore, this feature works with <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
       running on any supported host, rather than just Linux alone, as is
       the case with the official client.
     </p>
@@ -20,7 +20,7 @@
     <pre xml:space="preserve">VBoxManage usbdevsource add <varname>unique-name</varname> --backend <varname>USBIP</varname> --address <varname>device-server</varname>[:<varname>port</varname>]</pre>
     <p>
       USB devices exported on the device server are then accessible
-      through VirtualBox Manager or <userinput>VBoxManage</userinput>, like any USB
+      through <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> or <userinput>VBoxManage</userinput>, like any USB
       devices attached locally. This can be used multiple times to
       access different device servers.
     </p>

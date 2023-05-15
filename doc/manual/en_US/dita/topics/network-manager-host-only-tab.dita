@@ -44,7 +44,7 @@
         <p>
             Use the <b outputclass="bold">DHCP Server</b> tab to
             configure settings for the DHCP server used by the host-only
-            network. The DHCP server is built into Oracle VM VirtualBox and
+            network. The DHCP server is built into <ph conkeyref="vbox-conkeyref-phrases/product-name"/> and
             manages IP addresses for the network automatically.
           </p>
       </li>

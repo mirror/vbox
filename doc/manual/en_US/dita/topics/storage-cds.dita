@@ -39,7 +39,7 @@
       program.
     </p>
                <p>
-      Medium changes can be prevented by the guest, and Oracle VM VirtualBox
+      Medium changes can be prevented by the guest, and <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
       reflects that by locking the host drive if appropriate. You can
       force a medium removal in such situations by using the VirtualBox
       Manager or the <userinput>VBoxManage</userinput> command line tool.
@@ -84,12 +84,9 @@
         </p>
                   </li>
                </ul>
-               <p>
-      To enable host drive passthrough you can use the
-      <codeph>--passthrough</codeph> option of the <userinput>VBoxManage
-      storageattach</userinput> command. See
-      <xref href="vboxmanage-storageattach.dita"/>.
-    </p>
+               <p> To enable host drive passthrough you can use the <codeph>--passthrough</codeph>
+      option of the <userinput>VBoxManage storageattach</userinput> command. See <xref
+        href="vboxmanage-storageattach.dita"/>. </p>
                <p>
       Even if passthrough is enabled, unsafe commands, such as updating
       the drive firmware, will be blocked. Video CD formats are never
@@ -98,7 +95,7 @@
     </p>
                <p>
       On Oracle Solaris hosts, passthrough requires running
-      Oracle VM VirtualBox with real root permissions due to security measures
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> with real root permissions due to security measures
       enforced by the host.
     </p>
             </body>

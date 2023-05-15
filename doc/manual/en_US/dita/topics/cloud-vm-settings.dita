@@ -5,21 +5,21 @@
   
   <body>
     <p>
-          Select the cloud VM in VirtualBox Manager and click
+          Select the cloud VM in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> and click
           <b outputclass="bold">Settings</b>.
         </p>
     <ul>
       <li>
         <p>
               For a <i>new</i> cloud VM, you can change
-              many settings for the Oracle Cloud Infrastructure instance, such as the display
+              many settings for the <ph conkeyref="vbox-conkeyref-phrases/oci"/> instance, such as the display
               name, shape, and disk size.
             </p>
       </li>
       <li>
         <p>
               When you <i>add</i> a cloud VM based on an
-              existing Oracle Cloud Infrastructure instance you can only change the display
+              existing <ph conkeyref="vbox-conkeyref-phrases/oci"/> instance you can only change the display
               name.
             </p>
       </li>

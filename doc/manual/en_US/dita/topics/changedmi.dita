@@ -5,7 +5,7 @@
   
   <body>
     <p>
-      The DMI data that Oracle VM VirtualBox provides to guests can be changed
+      The DMI data that <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides to guests can be changed
       for a specific VM. Use the following commands to configure the DMI
       BIOS information. In case your VM is configured to use EFI
       firmware you need to replace <codeph>pcbios</codeph> by
@@ -105,7 +105,7 @@ $ VBoxManage setextradata <varname>VM-name</varname> \
       </li>
     </ul>
     <p>
-      If a DMI string is not set, the default value of Oracle VM VirtualBox is
+      If a DMI string is not set, the default value of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is
       used. To set an empty string use
       <codeph>"&lt;EMPTY&gt;"</codeph>.
     </p>

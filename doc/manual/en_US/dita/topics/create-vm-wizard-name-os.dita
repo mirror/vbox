@@ -32,7 +32,7 @@
       <li>
         <p><b outputclass="bold">Name.</b> A name for the new
             VM. The name you enter is shown in the machine list of
-            VirtualBox Manager and is also used for the virtual machine's files
+            <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> and is also used for the virtual machine's files
             on disk.
           </p>
         <p>
@@ -69,14 +69,14 @@
             The supported OSes are grouped into types. If you want to
             install something very unusual that is not listed, select
             the <b outputclass="bold">Other</b> type. Depending
-            on your selection, Oracle VM VirtualBox will enable or disable
+            on your selection, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will enable or disable
             certain VM settings that your guest OS may require. This is
             particularly important for 64-bit guests. See
             <xref href="intro-64bitguests.dita#intro-64bitguests"/>. It is therefore
             recommended to always set this field to the correct value.
           </p>
         <p>
-            If an ISO image is selected and Oracle VM VirtualBox detects the
+            If an ISO image is selected and <ph conkeyref="vbox-conkeyref-phrases/product-name"/> detects the
             operating system for the ISO, the
             <b outputclass="bold">Type</b> and
             <b outputclass="bold">Version</b> fields are

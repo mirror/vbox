@@ -7,7 +7,7 @@
   <body>
     <p>
         If a Windows guest is a member of an Active Directory domain and
-        the snapshot feature of Oracle VM VirtualBox is used, it could be
+        the snapshot feature of <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is used, it could be
         removed from the Active Direcory domain after you restore an
         older snapshot.
       </p>

@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        The Oracle VM VirtualBox Guest Additions ensure that the guest's
+        The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions ensure that the guest's
         system time is synchronized with the host time. There are
         several parameters which can be tuned. The parameters can be set
         for a specific VM using the following command:

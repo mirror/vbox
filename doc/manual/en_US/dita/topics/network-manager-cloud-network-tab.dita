@@ -41,7 +41,7 @@
       </li>
       <li>
         <p><b outputclass="bold">Provider:</b> The cloud service
-            provider, such as Oracle Cloud Infrastructure.
+            provider, such as <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
           </p>
       </li>
       <li>
@@ -53,13 +53,13 @@
         <p><b outputclass="bold">ID:</b> The OCID for the cloud
             tunneling network. Click the
             <b outputclass="bold">Network</b> icon to view the
-            subnets on Oracle Cloud Infrastructure that are available for tunneling traffic.
+            subnets on <ph conkeyref="vbox-conkeyref-phrases/oci"/> that are available for tunneling traffic.
           </p>
         <p>
             See <xref href="cloud-using-cloud-networks.dita#cloud-using-cloud-networks"/> for details
             of how you can use the <userinput>VBoxManage cloud</userinput>
             command to create and configure a virtual cloud network
-            (VCN) on Oracle Cloud Infrastructure.
+            (VCN) on <ph conkeyref="vbox-conkeyref-phrases/oci"/>.
           </p>
       </li>
     </ul>

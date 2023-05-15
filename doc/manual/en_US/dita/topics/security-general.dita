@@ -13,9 +13,9 @@
         <p><b outputclass="bold">Keep software up to date</b>. One
           of the principles of good security practise is to keep all
           software versions and patches up to date. Activate the
-          Oracle VM VirtualBox update notification to get notified when a new
-          Oracle VM VirtualBox release is available. When updating
-          Oracle VM VirtualBox, do not forget to update the Guest Additions.
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> update notification to get notified when a new
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> release is available. When updating
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, do not forget to update the Guest Additions.
           Keep the host operating system as well as the guest operating
           system up to date.
         </p>
@@ -33,9 +33,9 @@
         <p><b outputclass="bold">Follow the principle of least
           privilege.</b> The principle of least privilege states
           that users should be given the least amount of privilege
-          necessary to perform their jobs. Always execute Oracle VM VirtualBox
+          necessary to perform their jobs. Always execute <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
           as a regular user. We strongly discourage anyone from
-          executing Oracle VM VirtualBox with system privileges.
+          executing <ph conkeyref="vbox-conkeyref-phrases/product-name"/> with system privileges.
         </p>
         <p>
           Choose restrictive permissions when creating configuration

@@ -6,14 +6,14 @@
   <body>
     <p>
         The following bugs in Linux kernels prevent them from executing
-        correctly in Oracle VM VirtualBox, causing VM boot crashes:
+        correctly in <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, causing VM boot crashes:
       </p>
     <ul>
       <li>
         <p>
             The Linux kernel version 2.6.18, and some 2.6.17 versions,
             introduced a race condition that can cause boot crashes in
-            Oracle VM VirtualBox. Please use a kernel version 2.6.19 or later.
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. Please use a kernel version 2.6.19 or later.
           </p>
       </li>
       <li>

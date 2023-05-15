@@ -2,16 +2,16 @@
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="collect-debug-info">
   <title>Collecting Debugging Information</title>
-  
+
   <body>
     <p>
         For problem determination, it is often important to collect
-        debugging information which can be analyzed by Oracle VM VirtualBox
+        debugging information which can be analyzed by <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         support. This section contains information about what kind of
         information can be obtained.
       </p>
     <p>
-        Every time Oracle VM VirtualBox starts up a VM, a so-called
+        Every time <ph conkeyref="vbox-conkeyref-phrases/product-name"/> starts up a VM, a so-called
         <i>release log file</i> is created, containing
         lots of information about the VM configuration and runtime
         events. The log file is called <filepath>VBox.log</filepath> and
@@ -25,11 +25,11 @@
         be renamed to <filepath>.1</filepath>, up to
         <filepath>.3</filepath>. Sometimes when there is a problem, it
         is useful to have a look at the logs. Also when requesting
-        support for Oracle VM VirtualBox, supplying the corresponding log file
+        support for <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, supplying the corresponding log file
         is mandatory.
       </p>
     <p>
-        For convenience, for each virtual machine, VirtualBox Manager can show
+        For convenience, for each virtual machine, <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> can show
         these logs in a window. Select a virtual machine from the
         machine list on the left and click
         <b outputclass="bold">Logs</b> in the machine tools menu.
@@ -37,7 +37,7 @@
     <p>
         The release log file, <filepath>VBox.log</filepath>, contains a
         wealth of diagnostic information, such as Host OS type and
-        version, Oracle VM VirtualBox version and build. It also includes a
+        version, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> version and build. It also includes a
         complete dump of the guest's configuration (CFGM), detailed
         information about the host CPU type and supported features,
         whether hardware virtualization is enabled, information about
@@ -51,15 +51,14 @@
         <i>crash dumps</i>. This is true for both host and
         guest crashes. For information about enabling core dumps on
         Linux, Oracle Solaris, and macOS systems, refer to the following
-        core dump article on the Oracle VM VirtualBox website:
+        core dump article on the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> website:
       </p>
     <p><ph>http://www.virtualbox.org/wiki/Core_dump</ph>.
       </p>
     <p>
-        You can also use <userinput>VBoxManage debugvm</userinput> to create
-        a dump of a complete virtual machine. See
-        <xref href="vboxmanage-debugvm.dita">VBoxManage debugvm</xref>.
-      </p>
+        You can also use <userinput>VBoxManage debugvm</userinput> to create a dump of a complete
+        virtual machine. See <xref href="vboxmanage-debugvm.dita">VBoxManage debugvm</xref>.
+    </p>
     <p>
         For network related problems, it is often helpful to capture a
         trace of network traffic. If the traffic is routed through an
@@ -68,18 +67,18 @@
         also includes a lot of traffic unrelated to the VM.
       </p>
     <p>
-        Oracle VM VirtualBox provides an ability to capture network traffic
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides an ability to capture network traffic
         only on a specific VM's network adapter. Refer to the following
-        network tracing article on the Oracle VM VirtualBox website for
+        network tracing article on the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> website for
         information on enabling this capture:
       </p>
     <p><ph>http://www.virtualbox.org/wiki/Network_tips</ph>.
       </p>
     <p>
-        The trace files created by Oracle VM VirtualBox are in
+        The trace files created by <ph conkeyref="vbox-conkeyref-phrases/product-name"/> are in
         <filepath>.pcap</filepath> format and can be easily analyzed
         with Wireshark.
       </p>
   </body>
-  
+
 </topic>

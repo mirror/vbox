@@ -5,9 +5,9 @@
   
   <body>
     <p>
-          In Linux and Oracle Solaris guests, Oracle VM VirtualBox graphics
+          In Linux and Oracle Solaris guests, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> graphics
           and mouse integration goes through the X Window System.
-          Oracle VM VirtualBox can use the X.Org variant of the system, or
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can use the X.Org variant of the system, or
           XFree86 version 4.3 which is identical to the first X.Org
           release. During the installation process, the X.Org display
           server will be set up to use the graphics and mouse drivers
@@ -18,7 +18,7 @@
           of a supported Linux distribution or Oracle Solaris system,
           many unsupported systems will work correctly too, the guest's
           graphics mode will change to fit the size of the
-          Oracle VM VirtualBox window on the host when it is resized. You can
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> window on the host when it is resized. You can
           also ask the guest system to switch to a particular resolution
           by sending a video mode hint using the
           <userinput>VBoxManage</userinput> tool.
@@ -37,7 +37,7 @@
           correctly, see <xref href="guestxorgsetup.dita">Guest Graphics and Mouse Driver Setup in Depth</xref>.
         </p>
     <p>
-          Starting from Oracle VM VirtualBox 7, Linux guest screen resize
+          Starting from <ph conkeyref="vbox-conkeyref-phrases/product-name"/> 7, Linux guest screen resize
           functionality for guests running VMSVGA graphics configuration
           has been changed. Since then, this functionality consists of a
           standalone daemon called VBoxDRMClient and its Desktop

@@ -5,9 +5,9 @@
   
   <body>
     <p>
-        To use 2D Video Acceleration within Oracle VM VirtualBox, your host's
+        To use 2D Video Acceleration within <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, your host's
         video card should support certain OpenGL extensions. On startup,
-        Oracle VM VirtualBox checks for those extensions, and, if the test
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> checks for those extensions, and, if the test
         fails, this option is silently grayed out.
       </p>
     <p>

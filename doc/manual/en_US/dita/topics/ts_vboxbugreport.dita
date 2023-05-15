@@ -7,7 +7,7 @@
   <body>
     <p>
         The <userinput>VBoxBugReport</userinput> command is used to collect
-        debug information automatically for an Oracle VM VirtualBox
+        debug information automatically for an <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         installation. This command can be useful when you need to gather
         information to send to Oracle Support.
       </p>
@@ -18,7 +18,7 @@
     <p>
         By default, the command collects <userinput>VBoxSVC</userinput>
         process logs, device settings, and global configuration data for
-        an Oracle VM VirtualBox host.
+        an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> host.
       </p>
     <pre xml:space="preserve">$ VBoxBugReport
   ...

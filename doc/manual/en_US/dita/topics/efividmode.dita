@@ -8,7 +8,7 @@
         EFI provides two distinct video interfaces: GOP (Graphics Output
         Protocol) and UGA (Universal Graphics Adapter). Modern OSes,
         such as Mac OS X, generally use GOP, while some older ones still
-        use UGA. Oracle VM VirtualBox provides a configuration option to
+        use UGA. <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides a configuration option to
         control the graphics resolution for both interfaces, making the
         difference mostly irrelevant for users.
       </p>

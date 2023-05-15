@@ -7,9 +7,9 @@
     <p>
     This chapter provides additional information for readers who are
     familiar with computer architecture and technology and wish to find
-    out more about how Oracle VM VirtualBox works <i>under the
+    out more about how <ph conkeyref="vbox-conkeyref-phrases/product-name"/> works <i>under the
     hood</i>. The contents of this chapter are not required
-    reading in order to use Oracle VM VirtualBox successfully.
+    reading in order to use <ph conkeyref="vbox-conkeyref-phrases/product-name"/> successfully.
   </p>
   </body>
 </topic>

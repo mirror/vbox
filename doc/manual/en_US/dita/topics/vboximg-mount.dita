@@ -7,13 +7,13 @@
             <body>
                <p>
                   <userinput>vboximg-mount</userinput> is a command line utility for Mac
-      OS and Linux hosts that provides raw access to an Oracle VM VirtualBox
+      OS and Linux hosts that provides raw access to an <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
       virtual disk image on the host system. Use this utility to mount,
       view, and optionally modify the disk image contents.
     </p>
                <p>
       The utility is based on Filesystem in Userspace (FUSE) technology
-      and uses the VirtualBox runtime engine. Ensure that Oracle VM VirtualBox
+      and uses the VirtualBox runtime engine. Ensure that <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
       is running on the host system.
     </p>
                <note>
@@ -63,7 +63,7 @@
       <xref href="man_vboximg-mount.dita"/>.
     </p>
                <p>
-      When <userinput>vboximg-mount</userinput> mounts an Oracle VM VirtualBox
+      When <userinput>vboximg-mount</userinput> mounts an <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
       disk image, it creates a one level deep file system at a mount
       point that you specify. The file system includes a device node
       that represents the synthesized disk image as a readable or

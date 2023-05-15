@@ -9,13 +9,13 @@
         machine.
       </p>
     <p>
-        There are many ways in which Oracle VM VirtualBox can provide hard
+        There are many ways in which <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can provide hard
         disk space to a VM, see <xref href="storage.dita#storage"/>. The most
         common way is to use a large image file on your physical hard
-        disk, whose contents Oracle VM VirtualBox presents to your VM as if it
+        disk, whose contents <ph conkeyref="vbox-conkeyref-phrases/product-name"/> presents to your VM as if it
         were a complete hard disk. This file then represents an entire
         hard disk, so you can even copy it to another host and use it
-        with another Oracle VM VirtualBox installation.
+        with another <ph conkeyref="vbox-conkeyref-phrases/product-name"/> installation.
       </p>
     <fig id="fig-create-vm-hard-disk">
       <title>Creating a New Virtual Machine: Virtual Hard Disk</title>
@@ -94,7 +94,7 @@
           </p>
         <p>
             The drop-down list presented in the window lists all disk
-            images which are known by Oracle VM VirtualBox. These disk images
+            images which are known by <ph conkeyref="vbox-conkeyref-phrases/product-name"/>. These disk images
             are currently attached to a virtual machine, or have been
             attached to a virtual machine.
           </p>
@@ -114,7 +114,7 @@
     </ul>
     <p>
         To prevent your physical hard disk on the host OS from filling
-        up, Oracle VM VirtualBox limits the size of the image file. But the
+        up, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> limits the size of the image file. But the
         image file must be large enough to hold the contents of the
         guest OS and the applications you want to install. For a Windows
         or Linux guest, you will probably need several gigabytes for any

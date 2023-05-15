@@ -15,8 +15,8 @@
     <ul>
       <li>
         <p>
-            Oracle VM VirtualBox on a server machine with a supported host
-            operating system. The Oracle VM VirtualBox Extension Pack for the
+            <ph conkeyref="vbox-conkeyref-phrases/product-name"/> on a server machine with a supported host
+            operating system. The <ph conkeyref="vbox-conkeyref-phrases/vbox-ext"/> for the
             VRDP server must be installed, see <xref href="vrde.dita#vrde"/>.
             The procedures assume a Linux server is used.
           </p>

@@ -1,15 +1,15 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="VirtualBoxAPI">
-  <title>Oracle VM VirtualBox Programming Interfaces</title>
+  <title><ph conkeyref="vbox-conkeyref-phrases/product-name"/> Programming Interfaces</title>
   
   <body>
     <p>
-    Oracle VM VirtualBox comes with comprehensive support for third-party
+    <ph conkeyref="vbox-conkeyref-phrases/product-name"/> comes with comprehensive support for third-party
     developers. The so-called <i>Main API</i> of
-    Oracle VM VirtualBox exposes the entire feature set of the virtualization
+    <ph conkeyref="vbox-conkeyref-phrases/product-name"/> exposes the entire feature set of the virtualization
     engine. It is completely documented and available to anyone who
-    wishes to control Oracle VM VirtualBox programmatically.
+    wishes to control <ph conkeyref="vbox-conkeyref-phrases/product-name"/> programmatically.
   </p>
     <p>
     The Main API is made available to C++ clients through COM on Windows

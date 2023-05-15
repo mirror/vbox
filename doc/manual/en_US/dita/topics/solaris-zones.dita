@@ -2,12 +2,12 @@
 <!DOCTYPE topic
   PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="solaris-zones">
-               <title>Configuring a Zone for Running Oracle VM VirtualBox</title>
+               <title>Configuring a Zone for Running <ph conkeyref="vbox-conkeyref-phrases/product-name"/></title>
                
                <body>
                   <p>
-        Assuming that Oracle VM VirtualBox has already been installed into
-        your zone, you need to give the zone access to Oracle VM VirtualBox's
+        Assuming that <ph conkeyref="vbox-conkeyref-phrases/product-name"/> has already been installed into
+        your zone, you need to give the zone access to <ph conkeyref="vbox-conkeyref-phrases/product-name"/>'s
         device node. This is done by performing the following steps.
         Start a root terminal and run the following command:
       </p>
@@ -15,7 +15,7 @@
                   </pre>
                   <p>
         Replace <varname>vboxzone</varname> with the name of the
-        zone where you intend to run Oracle VM VirtualBox.
+        zone where you intend to run <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
       </p>
                   <p>
         Use <userinput>zonecfg</userinput> to add the
@@ -49,7 +49,7 @@ zonecfg:vboxzone:device&gt;end
 zonecfg:vboxzone&gt;exit</pre>
                   <p>
         Reboot the zone using <userinput>zoneadm</userinput> and you should
-        be able to run Oracle VM VirtualBox from within the configured zone.
+        be able to run <ph conkeyref="vbox-conkeyref-phrases/product-name"/> from within the configured zone.
       </p>
                </body>
                

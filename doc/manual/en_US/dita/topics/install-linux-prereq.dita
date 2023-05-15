@@ -11,7 +11,7 @@
     <p>
         You may need to install the following packages on your Linux
         system before starting the installation. Some systems will do
-        this for you automatically when you install Oracle VM VirtualBox.
+        this for you automatically when you install <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
       </p>
     <ul>
       <li>
@@ -29,7 +29,7 @@
     <note>
       <p>
           These packages are only required if you want to run the
-          Oracle VM VirtualBox graphical user interfaces. In particular,
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> graphical user interfaces. In particular,
           <userinput>VirtualBox</userinput>, the graphical VirtualBox
           Manager, requires both Qt and SDL. If you only want to run
           <userinput>VBoxHeadless</userinput>, neither Qt nor SDL are

@@ -5,7 +5,7 @@
   
   <body>
     <p>
-          The Oracle VM VirtualBox Guest Additions for Linux are provided on
+          The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions for Linux are provided on
           the same virtual CD-ROM file as the Guest Additions for
           Windows. See <xref href="mountingadditionsiso.dita#mountingadditionsiso"/>. They also
           come with an installation program that guides you through the

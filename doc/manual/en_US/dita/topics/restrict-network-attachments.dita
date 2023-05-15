@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        It is possible to remove networking modes from Oracle VM VirtualBox
+        It is possible to remove networking modes from <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         GUI. To do this, use the following command:
       </p>
     <pre xml:space="preserve">VBoxManage setextradata global GUI/RestrictedNetworkAttachmentTypes <varname>property</varname>[,<varname>property</varname>...]</pre>

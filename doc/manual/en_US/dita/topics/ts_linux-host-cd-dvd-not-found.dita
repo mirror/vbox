@@ -16,7 +16,7 @@
         <userinput>cdrw</userinput> or <userinput>floppy</userinput>.
       </p>
     <p>
-        On supported Linux distributions, Oracle VM VirtualBox uses
+        On supported Linux distributions, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> uses
         <userinput>udev</userinput> to locate hardware such as CD/DVD drives
         and floppy disk drives.
       </p>

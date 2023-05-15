@@ -6,7 +6,7 @@
             
             <body>
                <p>
-      Oracle VM VirtualBox provides a variety of virtual network adapters that
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> provides a variety of virtual network adapters that
       can be attached to the host's network in a number of ways.
       Depending on which types of adapters and attachments are used the
       network performance will be different. Performance-wise the virtio
@@ -73,13 +73,10 @@
           possible on the following network types: NAT Network, Bridged
           Adapter, Internal Network, and Host-Only Adapter.
         </p>
-                     <p>
-          To setup a promiscuous mode policy, either select from the
-          drop down list located in the <b outputclass="bold">Network
-          Settings</b> dialog for the network adaptor or use the
-          command line tool <userinput>VBoxManage</userinput>. See
-          <xref href="vboxmanage-modifyvm.dita"/>.
-        </p>
+                     <p> To setup a promiscuous mode policy, either select from the drop down list
+          located in the <b outputclass="bold">Network Settings</b> dialog for the network adaptor
+          or use the command line tool <userinput>VBoxManage</userinput>. See <xref
+            href="vboxmanage-modifyvm.dita"/>. </p>
                      <p>
           Promiscuous mode policies are as follows:
         </p>

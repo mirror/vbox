@@ -22,7 +22,7 @@ virtualbox virtualbox/delete-old-modules boolean true</pre>
         </p>
     <p>
           These default settings can be applied prior to the
-          installation of the Oracle VM VirtualBox Debian package, as follows:
+          installation of the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Debian package, as follows:
         </p>
     <pre xml:space="preserve">debconf-set-selections vboxconf</pre>
     <p>

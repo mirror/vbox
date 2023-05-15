@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        On Oracle Solaris hosts, the Oracle VM VirtualBox web service daemon
+        On Oracle Solaris hosts, the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> web service daemon
         is integrated into the SMF framework. You can change the
         parameters, but do not have to if the defaults below already
         match your needs:
@@ -32,7 +32,7 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
     <pre xml:space="preserve">svcprop -p config svc:/application/virtualbox/webservice:default</pre>
     <p>
         When everything is configured correctly you can start the
-        Oracle VM VirtualBox web service with the following command:
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/> web service with the following command:
       </p>
     <pre xml:space="preserve">svcadm enable svc:/application/virtualbox/webservice:default</pre>
     <p>

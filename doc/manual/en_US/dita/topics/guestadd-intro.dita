@@ -12,13 +12,13 @@
       the guest operating system for better performance and usability.
       See <xref href="guestossupport.dita#guestossupport"/> for details on what guest
       operating systems are fully supported with Guest Additions by
-      Oracle VM VirtualBox.
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
     </p>
     <p>
-      The Oracle VM VirtualBox Guest Additions for all supported guest
+      The <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions for all supported guest
       operating systems are provided as a single CD-ROM image file which
       is called <filepath>VBoxGuestAdditions.iso</filepath>. This image
-      file is located in the installation directory of Oracle VM VirtualBox.
+      file is located in the installation directory of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>.
       To install the Guest Additions for a particular VM, you mount this
       ISO file in your VM as a virtual CD-ROM and install from there.
     </p>
@@ -43,8 +43,8 @@
         <p><b outputclass="bold">Shared folders.</b> These provide
           an easy way to exchange files between the host and the guest.
           Much like ordinary Windows network shares, you can tell
-          Oracle VM VirtualBox to treat a certain host directory as a shared
-          folder, and Oracle VM VirtualBox will make it available to the guest
+          <ph conkeyref="vbox-conkeyref-phrases/product-name"/> to treat a certain host directory as a shared
+          folder, and <ph conkeyref="vbox-conkeyref-phrases/product-name"/> will make it available to the guest
           operating system as a network share, irrespective of whether
           the guest actually has a network. See
           <xref href="sharedfolders.dita#sharedfolders"/>.
@@ -52,7 +52,7 @@
       </li>
       <li>
         <p><b outputclass="bold">Better video support.</b> While
-          the virtual graphics card which Oracle VM VirtualBox emulates for
+          the virtual graphics card which <ph conkeyref="vbox-conkeyref-phrases/product-name"/> emulates for
           any guest operating system provides all the basic features,
           the custom video drivers that are installed with the Guest
           Additions provide you with extra high and non-standard video
@@ -97,7 +97,7 @@
       </li>
       <li>
         <p><b outputclass="bold">Time synchronization.</b> With
-          the Guest Additions installed, Oracle VM VirtualBox can ensure that
+          the Guest Additions installed, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> can ensure that
           the guest's system time is better synchronized with that of
           the host.
         </p>
@@ -135,18 +135,18 @@
       </li>
     </ul>
     <p>
-      Each version of Oracle VM VirtualBox, even minor releases, ship with
+      Each version of <ph conkeyref="vbox-conkeyref-phrases/product-name"/>, even minor releases, ship with
       their own version of the Guest Additions. While the interfaces
-      through which the Oracle VM VirtualBox core communicates with the Guest
+      through which the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> core communicates with the Guest
       Additions are kept stable so that Guest Additions already
-      installed in a VM should continue to work when Oracle VM VirtualBox is
+      installed in a VM should continue to work when <ph conkeyref="vbox-conkeyref-phrases/product-name"/> is
       upgraded on the host, for best results, it is recommended to keep
       the Guest Additions at the same version.
     </p>
     <p>
       The Windows and Linux Guest Additions therefore check
       automatically whether they have to be updated. If the host is
-      running a newer Oracle VM VirtualBox version than the Guest Additions, a
+      running a newer <ph conkeyref="vbox-conkeyref-phrases/product-name"/> version than the Guest Additions, a
       notification with further instructions is displayed in the guest.
     </p>
     <p>

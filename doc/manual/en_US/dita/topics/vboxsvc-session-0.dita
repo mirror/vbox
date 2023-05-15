@@ -5,7 +5,7 @@
   
   <body>
     <p>
-      Oracle VM VirtualBox supports executing the VBoxSVC in Windows session
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> supports executing the VBoxSVC in Windows session
       0. This allows VBoxSVC to run like a regular Windows service,
       which in turn enables headless VMs to continue running even if the
       user logs out.

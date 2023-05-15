@@ -6,7 +6,7 @@
   <body>
     <p>
           When you create a new cloud VM, a <i>new</i>
-          Oracle Cloud Infrastructure instance is created and associated with the cloud VM.
+          <ph conkeyref="vbox-conkeyref-phrases/oci"/> instance is created and associated with the cloud VM.
         </p>
     <p>
           Perform the following steps to create a new cloud VM:
@@ -52,7 +52,7 @@
           <li>
             <p><b outputclass="bold">Location:</b> The cloud
                   service provider that will host the new instance.
-                  Select <b outputclass="bold">Oracle Cloud Infrastructure</b>.
+                  Select <b outputclass="bold"><ph conkeyref="vbox-conkeyref-phrases/oci"/></b>.
                 </p>
           </li>
           <li>
@@ -77,7 +77,7 @@
             </p>
         <p>
               You can use this page to change the default settings for
-              the new Oracle Cloud Infrastructure instance, such as the display name, shape,
+              the new <ph conkeyref="vbox-conkeyref-phrases/oci"/> instance, such as the display name, shape,
               and networking configuration.
             </p>
         <p>
@@ -89,12 +89,12 @@
       <li>
         <p>
               Click <b outputclass="bold">Finish</b> to create a
-              new Oracle Cloud Infrastructure instance using the selected image or boot
+              new <ph conkeyref="vbox-conkeyref-phrases/oci"/> instance using the selected image or boot
               volume. The new instance is started automatically.
             </p>
         <p>
               The new cloud VM is shown in the
-              <b outputclass="bold">OCI</b> group in VirtualBox Manager.
+              <b outputclass="bold">OCI</b> group in <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/>.
             </p>
       </li>
     </ol>

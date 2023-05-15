@@ -6,8 +6,8 @@
   <body>
     <p>
       The <b outputclass="bold">Network Manager</b> tool in
-      VirtualBox Manager enables you to create, delete, and configure the
-      following types of networks used by Oracle VM VirtualBox:
+      <ph conkeyref="vbox-conkeyref-phrases/vbox-mgr"/> enables you to create, delete, and configure the
+      following types of networks used by <ph conkeyref="vbox-conkeyref-phrases/product-name"/>:
     </p>
     <ul>
       <li>

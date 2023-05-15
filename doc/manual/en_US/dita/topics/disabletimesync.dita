@@ -5,7 +5,7 @@
   
   <body>
     <p>
-        Once installed and started, the Oracle VM VirtualBox Guest Additions
+        Once installed and started, the <ph conkeyref="vbox-conkeyref-phrases/product-name"/> Guest Additions
         will try to synchronize the guest time with the host time. This
         can be prevented by forbidding the guest service from reading
         the host clock:

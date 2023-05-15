@@ -6,7 +6,7 @@
   
   <body>
     <p>
-        By default, Oracle VM VirtualBox keeps all sources of time visible to
+        By default, <ph conkeyref="vbox-conkeyref-phrases/product-name"/> keeps all sources of time visible to
         the guest synchronized to a single time source, the monotonic
         host time. This reflects the assumptions of many guest operating
         systems, which expect all time sources to reflect "wall clock"

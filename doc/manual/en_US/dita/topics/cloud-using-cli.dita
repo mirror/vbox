@@ -1,13 +1,13 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic xml:lang="en-us" id="cloud-using-cli">
-  <title>Using VBoxManage Commands With Oracle Cloud Infrastructure</title>
-  
+  <title>Using VBoxManage Commands With <ph conkeyref="vbox-conkeyref-phrases/oci"/></title>
+
   <body>
     <p>
         This section includes some examples of how
         <userinput>VBoxManage</userinput> commands can be used to integrate
-        with Oracle Cloud Infrastructure and perform common cloud operations.
+        with <ph conkeyref="vbox-conkeyref-phrases/oci"/> and perform common cloud operations.
       </p>
     <p>
       <b outputclass="bold">Creating a Cloud Profile</b>
@@ -21,7 +21,7 @@
 </pre>
     <p>
         The new cloud profile is added to the
-        <filepath>oci_config</filepath> file in your Oracle VM VirtualBox
+        <filepath>oci_config</filepath> file in your <ph conkeyref="vbox-conkeyref-phrases/product-name"/>
         global configuration directory. For example, this is
         <filepath>$HOME/.VirtualBox/oci_config</filepath> on a Windows
         host.
@@ -30,12 +30,12 @@
       <b outputclass="bold">Listing Cloud Instances</b>
     </p>
     <p>
-        To list the instances in your Oracle Cloud Infrastructure compartment:
+        To list the instances in your <ph conkeyref="vbox-conkeyref-phrases/oci"/> compartment:
       </p>
     <pre xml:space="preserve">VBoxManage cloud --provider="OCI" --profile="vbox-oci" list instances
 </pre>
     <p>
-      <b outputclass="bold">Exporting an Oracle VM VirtualBox VM to the
+      <b outputclass="bold">Exporting an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VM to the
         Cloud</b>
     </p>
     <p>
@@ -50,10 +50,10 @@
       </pre>
     <p>
       <b outputclass="bold">Importing a Cloud Instance Into
-        Oracle VM VirtualBox</b>
+        <ph conkeyref="vbox-conkeyref-phrases/product-name"/></b>
     </p>
     <p>
-        To import a cloud instance and create an Oracle VM VirtualBox VM
+        To import a cloud instance and create an <ph conkeyref="vbox-conkeyref-phrases/product-name"/> VM
         called <codeph>oci_Import</codeph>:
       </p>
     <pre xml:space="preserve">VBoxManage import OCI:// --cloud --vmname oci_Import --memory 4000
@@ -65,7 +65,7 @@
         Custom Image</b>
     </p>
     <p>
-        To create a new cloud instance from a custom image on Oracle Cloud Infrastructure:
+        To create a new cloud instance from a custom image on <ph conkeyref="vbox-conkeyref-phrases/oci"/>:
       </p>
     <pre xml:space="preserve">VBoxManage cloud --provider="OCI" --profile="vbox-oci" instance create \
 --domain-name="oraclecloud.com" --image-id="ocid1.image.oc1..." --display-name="myInstance" \
@@ -74,14 +74,14 @@
       <b outputclass="bold">Terminating a Cloud Instance</b>
     </p>
     <p>
-        To terminate an instance in your compartment on Oracle Cloud Infrastructure:
+        To terminate an instance in your compartment on <ph conkeyref="vbox-conkeyref-phrases/oci"/>:
       </p>
     <pre xml:space="preserve">VBoxManage cloud --provider="OCI" --profile="vbox-oci" instance terminate \
 --id="ocid1.instance.oc1..." </pre>
     <p>
-        For more details about the available commands for cloud
-        operations, see <xref href="vboxmanage-cloud.dita"/>.
-      </p>
+        For more details about the available commands for cloud operations, see <xref
+        href="vboxmanage-cloud.dita"/>.
+    </p>
   </body>
-  
+
 </topic>
