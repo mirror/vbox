@@ -3385,7 +3385,7 @@ typedef const RTUNICP   RT_FAR *PCRTUNICP;
 /**
  * UTF-16 character.
  *
- * @remark  wchar_t is not usable since it's compiler defined and can be 8 thru 
+ * @remark  wchar_t is not usable since it's compiler defined and can be 8 thru
  *          64 bit wide.  On Windows it is 16-bit, though, and for various
  *          reasons of convenience we need to use the native compiler type when
  *          compling without the /Zc:wchar_t- option (only relevant for C++ and
