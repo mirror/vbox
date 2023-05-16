@@ -1556,7 +1556,6 @@ VOID GaDxgkDdiDpcRoutine(const PVOID MiniportDeviceContext)
     /* Scan fence objects and mark all with u32FenceId < u32LastCompletedFenceId as SIGNALED */
     const uint32_t u32LastCompletedFenceId = ASMAtomicReadU32(&pGaDevExt->u32LastCompletedFenceId);
 
-    GALOG((" enter\n"));
     gaFenceObjectsLock(pGaDevExt);
 
     {
@@ -1620,8 +1619,6 @@ VOID GaDxgkDdiDpcRoutine(const PVOID MiniportDeviceContext)
 
     if (ASMAtomicCmpXchgBool(&pSvga->fCommandBufferIrq, false, true) && pSvga->pCBState)
         SvgaCmdBufProcess(pSvga);
-
-    GALOG((" leave\n"));
 }
 
 typedef struct GAPREEMPTCOMMANDCBCTX
