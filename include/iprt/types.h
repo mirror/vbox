@@ -3390,7 +3390,7 @@ typedef const RTUNICP   RT_FAR *PCRTUNICP;
  *          reasons of convenience we need to use the native compiler type when
  *          compling without the /Zc:wchar_t- option (only relevant for C++ and
  *          _NATIVE_WCHAR_T_DEFINED indicates the absense of /Zc:wchar_t-).
- *  
+ *
  * @remark  When we use the term character we're not talking about unicode code point, but
  *          the basic unit of the string encoding. Thus cwc - count of wide chars - means
  *          count of RTUTF16; cuc - count of unicode chars - means count of RTUNICP;
