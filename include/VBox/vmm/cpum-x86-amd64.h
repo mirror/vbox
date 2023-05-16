@@ -915,6 +915,9 @@ typedef struct CPUMFEATURES
      * is only saved and restored if an exception is pending. */
     uint32_t        fLeakyFxSR : 1;
 
+    /** Supports VEX instruction encoding (AVX, BMI, etc.). */
+    uint32_t        fVex : 1;
+
     /** AMD64: Supports AMD SVM. */
     uint32_t        fSvm : 1;
 
@@ -944,7 +947,7 @@ typedef struct CPUMFEATURES
 
     /** Alignment padding / reserved for future use (96 bits total, plus 12 bytes
      *  prior to the bit fields -> total of 24 bytes) */
-    uint32_t        fPadding0 : 24;
+    uint32_t        fPadding0 : 23;
 
 
     /** @name SVM

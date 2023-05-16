@@ -7166,7 +7166,7 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp__vex3)
         || IEM_IS_MODRM_REG_MODE(bRm) )
     {
         IEMOP_MNEMONIC(vex3_prefix, "vex3");
-        if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx)
+        if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVex)
         {
             /* Note! The real mode, v8086 mode and invalid prefix checks are done once
                      the instruction is fully decoded.  Even when XCR0=3 and CR4.OSXSAVE=0. */
@@ -7213,7 +7213,7 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp__vex3)
                     return IEMOP_RAISE_INVALID_OPCODE();
             }
         }
-        Log(("VEX3: AVX support disabled!\n"));
+        Log(("VEX3: VEX support disabled!\n"));
         return IEMOP_RAISE_INVALID_OPCODE();
     }
 
@@ -7238,7 +7238,7 @@ FNIEMOP_DEF(iemOp_lds_Gv_Mp__vex2)
         || IEM_IS_MODRM_REG_MODE(bRm))
     {
         IEMOP_MNEMONIC(vex2_prefix, "vex2");
-        if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx)
+        if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVex)
         {
             /* Note! The real mode, v8086 mode and invalid prefix checks are done once
                      the instruction is fully decoded.  Even when XCR0=3 and CR4.OSXSAVE=0. */
@@ -7258,7 +7258,7 @@ FNIEMOP_DEF(iemOp_lds_Gv_Mp__vex2)
         }
 
         /** @todo does intel completely decode the sequence with SIB/disp before \#UD? */
-        Log(("VEX2: AVX support disabled!\n"));
+        Log(("VEX2: VEX support disabled!\n"));
         return IEMOP_RAISE_INVALID_OPCODE();
     }
 

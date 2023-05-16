@@ -1598,6 +1598,12 @@ int cpumCpuIdExplodeFeaturesX86(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCCP
                 AssertLogRelMsgFailedStmt(("Expected leaf eax=0xd/ecx=0 with the XSAVE/XRSTOR feature!\n"),
                                           pFeatures->fXSaveRstor = 0);
         }
+
+        /*
+         * Enable or disable VEX support depending on whether it's needed. Note that AVX,
+         * BMI1, and BMI2 all use VEX encoding but are theoretically independent of each other.
+         */
+        pFeatures->fVex = pFeatures->fAvx | pFeatures->fBmi1 | pFeatures->fBmi2;
     }
     else
         AssertLogRelReturn(cLeaves == 0, VERR_CPUM_IPE_1);
