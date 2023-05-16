@@ -845,7 +845,7 @@ static int hmR3InitFinalizeR3(PVM pVM)
 #ifdef VBOX_WITH_STATISTICS
         HM_REG_COUNTER(&pHmCpu->StatExitAll,                "/HM/CPU%u/Exit/All", "Total exits (excludes nested-guest and debug loops exits).");
         HM_REG_COUNTER(&pHmCpu->StatDebugExitAll,           "/HM/CPU%u/Exit/DebugAll", "Total debug-loop exits.");
-        HM_REG_COUNTER(&pHmCpu->StatNestedExitAll,          "/HM/CPU%u/Exit/NestedGuest/All", "Total nested-guest exits.");
+        HM_REG_COUNTER(&pHmCpu->StatNestedExitAll,          "/HM/CPU%u/ExitNestedGuest/All", "Total nested-guest exits.");
         HM_REG_COUNTER(&pHmCpu->StatExitShadowNM,           "/HM/CPU%u/Exit/Trap/Shw/#NM", "Shadow #NM (device not available, no math co-processor) exception.");
         HM_REG_COUNTER(&pHmCpu->StatExitGuestNM,            "/HM/CPU%u/Exit/Trap/Gst/#NM", "Guest #NM (device not available, no math co-processor) exception.");
         HM_REG_COUNTER(&pHmCpu->StatExitShadowPF,           "/HM/CPU%u/Exit/Trap/Shw/#PF", "Shadow #PF (page fault) exception.");
@@ -1028,7 +1028,7 @@ static int hmR3InitFinalizeR3(PVM pVM)
                 if (pszExitName)
                 {
                     rc = STAMR3RegisterF(pVM, &pHmCpu->aStatNestedExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
-                                         STAMUNIT_OCCURENCES, pszExitName, "/HM/CPU%u/Exit/NestedGuest/Reason/%02x", idCpu, j);
+                                         STAMUNIT_OCCURENCES, pszExitName, "/HM/CPU%u/ExitNestedGuest/Reason/%02x", idCpu, j);
                     AssertRC(rc);
                 }
             }
@@ -1041,12 +1041,12 @@ static int hmR3InitFinalizeR3(PVM pVM)
                 if (pszExitName)
                 {
                     rc = STAMR3RegisterF(pVM, &pHmCpu->aStatNestedExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
-                                         STAMUNIT_OCCURENCES, pszExitName, "/HM/CPU%u/Exit/NestedGuest/Reason/%02x", idCpu, j);
+                                         STAMUNIT_OCCURENCES, pszExitName, "/HM/CPU%u/ExitNestedGuest/Reason/%02x", idCpu, j);
                     AssertRC(rc);
                 }
             }
         }
-        HM_REG_COUNTER(&pHmCpu->StatNestedExitReasonNpf, "/HM/CPU%u/Exit/NestedGuest/Reason/#NPF", "Nested page faults");
+        HM_REG_COUNTER(&pHmCpu->StatNestedExitReasonNpf, "/HM/CPU%u/ExitNestedGuest/Reason/#NPF", "Nested page faults");
 #endif
 
         /*
