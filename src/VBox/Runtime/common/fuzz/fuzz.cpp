@@ -1619,7 +1619,7 @@ RTDECL(int) RTFuzzCtxCreateFromStateMem(PRTFUZZCTX phFuzzCtx, const void *pvStat
 {
     AssertPtrReturn(phFuzzCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pvState, VERR_INVALID_POINTER);
-    AssertPtrReturn(cbState, VERR_INVALID_POINTER);
+    AssertReturn(cbState, VERR_INVALID_POINTER);
 
     return VERR_NOT_IMPLEMENTED;
 }
