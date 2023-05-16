@@ -808,8 +808,9 @@ class ThreadedFunction(object):
             aoStmts.append(iai.McCppGeneric('    case IEMMODE_32BIT | (IEMMODE_32BIT << 2):'));
             if ThreadedFunctionVariation.ksVariation_Addr32Flat in dByVariation:
                 aoStmts.extend([
-                    iai.McCppGeneric('        if (false /** @todo */) '),
+                    iai.McCppGeneric('        if (false /** @todo */)'),
                     dByVariation[ThreadedFunctionVariation.ksVariation_Addr32Flat].emitThreadedCallStmt(12),
+                    iai.McCppGeneric('        RT_FALL_THRU();'),
                 ]);
             aoStmts.extend([
                 iai.McCppGeneric('    case IEMMODE_16BIT | (IEMMODE_32BIT << 2):'),
@@ -858,12 +859,9 @@ class ThreadedFunction(object):
             if not fCallEmitted:
                 if not oStmt.isCppStmt():
                     if (   oStmt.sName.startswith('IEM_MC_MAYBE_RAISE_') \
-                        or oStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH', \
-                                           'IEM_MC_CALL_CIMPL_1',
-                                           'IEM_MC_CALL_CIMPL_2',
-                                           'IEM_MC_CALL_CIMPL_3',
-                                           'IEM_MC_CALL_CIMPL_4',
-                                           'IEM_MC_CALL_CIMPL_5', )):
+                        or (oStmt.sName.endswith('_AND_FINISH') and oStmt.sName.startswith('IEM_MC_'))
+                        or oStmt.sName.startswith('IEM_MC_CALL_CIMPL_')
+                        or oStmt.sName in ('IEM_MC_RAISE_DIVIDE_ERROR',)):
                         aoDecoderStmts.pop();
                         aoDecoderStmts.extend(self.emitThreadedCallStmts());
                         aoDecoderStmts.append(oNewStmt);

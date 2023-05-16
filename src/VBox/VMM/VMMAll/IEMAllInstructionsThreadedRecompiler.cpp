@@ -111,7 +111,33 @@
 
 
 /*
+ * IEM_MC_DEFER_TO_CIMPL_0 is easily wrapped up.
+ *
+ * Doing so will also take care of IEMOP_RAISE_DIVIDE_ERROR, IEMOP_RAISE_INVALID_LOCK_PREFIX,
+ * IEMOP_RAISE_INVALID_OPCODE and their users.
+ */
+#undef IEM_MC_DEFER_TO_CIMPL_0
+#define IEM_MC_DEFER_TO_CIMPL_0(a_pfnCImpl) iemThreadedRecompilerMcDeferToCImpl0(pVCpu, a_pfnCImpl)
+
+typedef IEM_CIMPL_DECL_TYPE_0(FNIEMCIMPL0);
+typedef FNIEMCIMPL0 *PFNIEMCIMPL0;
+
+DECLINLINE(VBOXSTRICTRC) iemThreadedRecompilerMcDeferToCImpl0(PVMCPUCC pVCpu, PFNIEMCIMPL0 pfnCImpl)
+{
+    return pfnCImpl(pVCpu, IEM_GET_INSTR_LEN(pVCpu));
+}
+
+/** @todo deal with IEM_MC_DEFER_TO_CIMPL_1, IEM_MC_DEFER_TO_CIMPL_2 and
+ *        IEM_MC_DEFER_TO_CIMPL_3 as well. */
+
+/*
  * Include the "annotated" IEMAllInstructions*.cpp.h files.
  */
 #include "IEMThreadedInstructions.cpp.h"
+
+
+
+/*
+ * Real code.
+ */
 
