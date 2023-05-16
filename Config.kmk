@@ -3810,6 +3810,13 @@ else
  VBOX_VCC_CRT_TYPE_N     := d
 endif
 
+#
+# Select whether wchar_t is a native compiler defined type or not with
+# Microsoft Visual C++.  We've been avoiding the native type for ever,
+# but now that is causing issues with Qt 6.x.
+#
+VBOX_VCC_WCHAR_T_VARIANT = -Zc:wchar_t-
+
 
 #
 # Warnings as errors.
@@ -5255,7 +5262,7 @@ ifdef VBOX_WITH_RAW_MODE
  ifeq ($(VBOX_LDR_FMT32),pe)
   TEMPLATE_VBoxRc_TOOL               = $(VBOX_VCC_TOOL_STEM)X86
   TEMPLATE_VBoxRc_RCDEFS             = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
-  TEMPLATE_VBoxRc_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- -Gs8192 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) \
+  TEMPLATE_VBoxRc_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -GS- $(VBOX_VCC_WCHAR_T_VARIANT) -Gs8192 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) \
   	-Gy $(VBOX_VCC_WARN_ALL) -wd4505 $(VBOX_VCC_WERR)
   if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
    TEMPLATE_VBoxRc_CXXFLAGS         += -Gw
@@ -5403,7 +5410,7 @@ endif
 ifeq ($(VBOX_LDR_FMT),pe)
  TEMPLATE_VBoxR0_TOOL               = $(VBOX_VCC_TOOL)
  TEMPLATE_VBoxR0_RCDEFS             = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
- TEMPLATE_VBoxR0_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
+ TEMPLATE_VBoxR0_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -GS- $(VBOX_VCC_WCHAR_T_VARIANT) $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
  	-Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_std) $(VBOX_VCC_WARN_ALL) -wd4505 $(VBOX_VCC_WERR)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBoxR0_CXXFLAGS         += -Gw
@@ -5595,7 +5602,7 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBoxR0Drv_DEFS.amd64        += WIN9X_COMPAT_SPINLOCK     # For Windows 8+ WDKs where it is no longer inlined but imported from ntoskrnl.
  TEMPLATE_VBoxR0Drv_DEFS.amd64        += NT_INLINE_IRQL NT_INLINE_GET_CURRENT_IRQL # Prevent W10 WDK from importing KeLowerIrql and KeGetCurrentIrql.
  TEMPLATE_VBoxR0Drv_DEFS.win           = IPRT_NT_MAP_TO_ZW
- TEMPLATE_VBoxR0Drv_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -Gz -GS- -Zc:wchar_t- $(VBOX_VCC_FP) -Gs4096 $(VBOX_VCC_OPT) \
+ TEMPLATE_VBoxR0Drv_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -Gz -GS- $(VBOX_VCC_WCHAR_T_VARIANT) $(VBOX_VCC_FP) -Gs4096 $(VBOX_VCC_OPT) \
  	-Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBoxR0Drv_CXXFLAGS         += -Gw
@@ -6159,7 +6166,7 @@ ifeq ($(KBUILD_TARGET),win)
  else
   TEMPLATE_VBoxR3Exe_SDKS              = ReorderCompilerIncs $(VBOX_WINPSDK)
  endif
- TEMPLATE_VBoxR3Exe_CXXFLAGS           = -Zi -Zl -GR- -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
+ TEMPLATE_VBoxR3Exe_CXXFLAGS           = -Zi -Zl -GR- -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) $(VBOX_VCC_WCHAR_T_VARIANT) $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
  	-Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS) $(VBOX_VCC_std) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBoxR3Exe_CXXFLAGS         += -Gw
@@ -7105,7 +7112,7 @@ ifeq ($(KBUILD_TARGET),win)
  else
   TEMPLATE_VBoxMainExe_SDKS              = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
  endif
- TEMPLATE_VBoxMainExe_CXXFLAGS           = -Zi -Zl -GR -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -Zc:wchar_t- \
+ TEMPLATE_VBoxMainExe_CXXFLAGS           = -Zi -Zl -GR -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) $(VBOX_VCC_WCHAR_T_VARIANT) \
  	$(VBOX_VCC_OPT) $(VBOX_VCC_FP) $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS) $(VBOX_VCC_std)
  #    -wd4625: 'DisplaySourceBitmap' : copy constructor could not be generated because a base class copy constructor is inaccessible
  #    -wd4626: 'DisplaySourceBitmap' : assignment operator could not be generated because a base class assignment operator is inaccessible
@@ -7779,7 +7786,7 @@ ifdef VBOX_WITH_QTGUI
   	QT_DLL _CRT_SECURE_NO_DEPRECATE \
   	$(QMAKE_PRL_DEFINES)
   TEMPLATE_VBoxQtGuiExe_CXXFLAGS = -nologo -Zm200 -MD$(if-expr "$(VBOX_QT_DBG)" == "$(VBOX_VCC_CRT_TYPE)",$(VBOX_VCC_CRT_TYPE),) \
-  	-Zi -EHsc -Zc:wchar_t- $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS) $(VBOX_VCC_std)
+  	-Zi -EHsc $(VBOX_VCC_WCHAR_T_VARIANT) $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS) $(VBOX_VCC_std)
   #    -wd4481: nonstandard extension used: override specifier 'override'
   #    -wd4625: 'QRubberBand' : copy constructor could not be generated because a base class copy constructor is inaccessible
   #    -wd4626: 'QRubberBand' : assignment operator could not be generated because a base class assignment operator is inaccessible
@@ -8129,7 +8136,7 @@ ifeq ($(KBUILD_HOST),win)
  else
   TEMPLATE_VBoxBldProg_SDKS             := ReorderCompilerIncs $(VBOX_WINPSDK)
  endif
- TEMPLATE_VBoxBldProg_CXXFLAGS          := -Zi -Zl -GR- -EHsc -GF -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
+ TEMPLATE_VBoxBldProg_CXXFLAGS          := -Zi -Zl -GR- -EHsc -GF $(VBOX_VCC_WCHAR_T_VARIANT) $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
  	-MT$(VBOX_VCC_CRT_TYPE) -Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_std) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBoxBldProg_CXXFLAGS         += -Gw

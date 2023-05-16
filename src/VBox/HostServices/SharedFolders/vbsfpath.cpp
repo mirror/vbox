@@ -490,12 +490,12 @@ int vbsfPathGuestToHost(SHFLCLIENTDATA *pClient, SHFLROOT hRoot,
 #ifdef RT_OS_DARWIN /* Misplaced hack! See todo! */
         uint32_t cwcSrc  = 0;
         PRTUTF16 pwszSrc = NULL;
-        rc = vbsfNormalizeStringDarwin(&pGuestString->String.ucs2[0],
+        rc = vbsfNormalizeStringDarwin(&pGuestString->String.utf16[0],
                                        pGuestString->u16Length / sizeof(RTUTF16),
                                        &pwszSrc, &cwcSrc);
 #else
         uint32_t  const cwcSrc  = pGuestString->u16Length / sizeof(RTUTF16);
-        PCRTUTF16 const pwszSrc = &pGuestString->String.ucs2[0];
+        PCRTUTF16 const pwszSrc = &pGuestString->String.utf16[0];
 #endif
 
         if (RT_SUCCESS(rc))

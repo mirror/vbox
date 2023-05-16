@@ -187,17 +187,14 @@ QString UINativeHotKey::toString(int iKeyCode)
         case VK_NUMLOCK: iScan = (::MapVirtualKey(iKeyCode, 0) | 256) << 16; break;
         default: iScan = ::MapVirtualKey(iKeyCode, 0) << 16;
     }
-    TCHAR *pKeyName = new TCHAR[256];
-    if (::GetKeyNameText(iScan, pKeyName, 256))
-    {
-        strKeyName = QString::fromUtf16(pKeyName);
-    }
+    WCHAR wszKeyName[256];
+    if (::GetKeyNameTextW(iScan, wszKeyName, RT_ELEMENTS(wszKeyName)))
+        strKeyName = QString::fromUtf16((const ushort *)wszKeyName);
     else
     {
         AssertMsgFailed(("That key have no name!\n"));
         strKeyName = UIHostComboEditor::tr("<key_%1>").arg(iKeyCode);
     }
-    delete[] pKeyName;
 
 #elif defined(VBOX_WS_X11)
 

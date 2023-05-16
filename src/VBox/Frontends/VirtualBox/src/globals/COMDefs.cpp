@@ -200,9 +200,10 @@ void COMBase::ToSafeArray (const QVector <QString> &aVec,
 void COMBase::FromSafeArray (const com::SafeArray <BSTR> &aArr,
                              QVector <QString> &aVec)
 {
+    AssertCompile(sizeof(aArr[0][0]) == sizeof(ushort));
     aVec.resize (static_cast <int> (aArr.size()));
     for (int i = 0; i < aVec.size(); ++ i)
-        aVec [i] = QString::fromUtf16 (aArr [i]);
+        aVec [i] = QString::fromUtf16 ((const ushort *)aArr [i]);
 }
 
 /* static */
@@ -247,9 +248,10 @@ void COMBase::ToSafeArray (const QVector <QUuid> &aVec,
 void COMBase::FromSafeArray (const com::SafeArray <BSTR> &aArr,
                              QVector <QUuid> &aVec)
 {
+    AssertCompile(sizeof(aArr[0][0]) == sizeof(ushort));
     aVec.resize (static_cast <int> (aArr.size()));
     for (int i = 0; i < aVec.size(); ++ i)
-        aVec [i] = QUuid(QString::fromUtf16 (aArr [i]));
+        aVec [i] = QUuid(QString::fromUtf16 ((const ushort *)aArr [i]));
 }
 
 ////////////////////////////////////////////////////////////////////////////////

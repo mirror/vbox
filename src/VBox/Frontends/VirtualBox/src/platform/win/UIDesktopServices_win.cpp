@@ -49,25 +49,26 @@ bool UIDesktopServices::createMachineShortcut(const QString & /* strSrcFile */, 
         return false;
     do
     {
-        rc = pShl->SetPath(strVBox.utf16());
+/** @todo Not really BSTR, so using PCWSTR, but whatever...   */
+        rc = pShl->SetPath((PCWSTR)strVBox.utf16());
         if (FAILED(rc))
             break;
-        rc = pShl->SetWorkingDirectory(strVBoxDir.utf16());
+        rc = pShl->SetWorkingDirectory((PCWSTR)strVBoxDir.utf16());
         if (FAILED(rc))
             break;
         QString strArgs = QString("--comment \"%1\" --startvm \"%2\"").arg(strName).arg(uUuid.toString());
-        rc = pShl->SetArguments(strArgs.utf16());
+        rc = pShl->SetArguments((PCWSTR)strArgs.utf16());
         if (FAILED(rc))
             break;
         QString strDesc = QString("Starts the VirtualBox machine %1").arg(strName);
-        rc = pShl->SetDescription(strDesc.utf16());
+        rc = pShl->SetDescription((PCWSTR)strDesc.utf16());
         if (FAILED(rc))
             break;
         rc = pShl->QueryInterface(IID_IPersistFile, (void**)&pPPF);
         if (FAILED(rc))
             break;
         QString strLink = QString("%1\\%2.lnk").arg(strDstPath).arg(strName);
-        rc = pPPF->Save(strLink.utf16(), TRUE);
+        rc = pPPF->Save((PCWSTR)strLink.utf16(), TRUE);
     } while(0);
     if (pPPF)
         pPPF->Release();
@@ -81,7 +82,7 @@ bool UIDesktopServices::openInFileManager(const QString &strFile)
     QFileInfo fi(strFile);
     QString strTmp = QDir::toNativeSeparators(fi.absolutePath());
 
-    intptr_t rc = (intptr_t)ShellExecute(NULL, L"explore", strTmp.utf16(), NULL, NULL, SW_SHOWNORMAL);
+    intptr_t rc = (intptr_t)ShellExecute(NULL, L"explore", (PCWSTR)strTmp.utf16(), NULL, NULL, SW_SHOWNORMAL);
 
     return rc > 32 ? true : false;
 }

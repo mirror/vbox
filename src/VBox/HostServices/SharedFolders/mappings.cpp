@@ -182,7 +182,7 @@ int vbsfMappingLoaded(const MAPPING *pLoadedMapping, SHFLROOT root)
      * Add a 'placeholder' mapping.
      */
     LogRel2(("SharedFolders: mapping a placeholder for '%ls' -> '%s'\n",
-              pLoadedMapping->pMapName->String.ucs2, pLoadedMapping->pszFolderName));
+              pLoadedMapping->pMapName->String.utf16, pLoadedMapping->pszFolderName));
     return vbsfMappingsAdd(pLoadedMapping->pszFolderName, pLoadedMapping->pMapName,
                            pLoadedMapping->fWritable, pLoadedMapping->fAutoMount, pLoadedMapping->pAutoMountPoint,
                            pLoadedMapping->fSymlinksCreate, /* fMissing = */ true, /* fPlaceholder = */ true);
@@ -213,7 +213,7 @@ void vbsfMappingLoadingDone(void)
                     g_aIndexFromRoot[idRoot] = iMapping;
                 else
                     LogRel(("SharedFolders: Warning! No free root ID entry for mapping #%u: %ls [%s]\n", iMapping,
-                            g_FolderMapping[iMapping].pMapName->String.ucs2, g_FolderMapping[iMapping].pszFolderName));
+                            g_FolderMapping[iMapping].pMapName->String.utf16, g_FolderMapping[iMapping].pszFolderName));
             }
         }
 
@@ -224,7 +224,7 @@ void vbsfMappingLoadingDone(void)
             SHFLROOT const iMapping = g_aIndexFromRoot[idRoot];
             if (iMapping != SHFL_ROOT_NIL)
                 LogRel2(("SharedFolders: idRoot %u: iMapping #%u: %ls [%s]\n", idRoot, iMapping,
-                         g_FolderMapping[iMapping].pMapName->String.ucs2, g_FolderMapping[iMapping].pszFolderName));
+                         g_FolderMapping[iMapping].pMapName->String.utf16, g_FolderMapping[iMapping].pszFolderName));
         }
 }
 
@@ -267,7 +267,7 @@ static MAPPING *vbsfMappingGetByName(PRTUTF16 pwszName, SHFLROOT *pRoot)
         if (   g_FolderMapping[i].fValid
             && !g_FolderMapping[i].fPlaceholder) /* Don't allow mapping placeholders. */
         {
-            if (!RTUtf16LocaleICmp(g_FolderMapping[i].pMapName->String.ucs2, pwszName))
+            if (!RTUtf16LocaleICmp(g_FolderMapping[i].pMapName->String.utf16, pwszName))
             {
                 SHFLROOT root = vbsfMappingGetRootFromIndex(i);
 
@@ -345,7 +345,7 @@ int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName, bool fWrita
 
     Assert(pszFolderName && pMapName);
 
-    Log(("vbsfMappingsAdd %ls\n", pMapName->String.ucs2));
+    Log(("vbsfMappingsAdd %ls\n", pMapName->String.utf16));
 
     /* Check for duplicates, ignoring placeholders to give the GUI to change stuff at runtime. */
     /** @todo bird: Not entirely sure about ignoring placeholders, but you cannot
@@ -357,9 +357,9 @@ int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName, bool fWrita
             if (   g_FolderMapping[i].fValid
                 && !g_FolderMapping[i].fPlaceholder)
             {
-                if (!RTUtf16LocaleICmp(g_FolderMapping[i].pMapName->String.ucs2, pMapName->String.ucs2))
+                if (!RTUtf16LocaleICmp(g_FolderMapping[i].pMapName->String.utf16, pMapName->String.utf16))
                 {
-                    AssertMsgFailed(("vbsfMappingsAdd: %ls mapping already exists!!\n", pMapName->String.ucs2));
+                    AssertMsgFailed(("vbsfMappingsAdd: %ls mapping already exists!!\n", pMapName->String.utf16));
                     return VERR_ALREADY_EXISTS;
                 }
             }
@@ -413,12 +413,12 @@ int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName, bool fWrita
     }
     if (i == SHFL_MAX_MAPPINGS)
     {
-        AssertLogRelMsgFailed(("vbsfMappingsAdd: no more room to add mapping %s to %ls!!\n", pszFolderName, pMapName->String.ucs2));
+        AssertLogRelMsgFailed(("vbsfMappingsAdd: no more room to add mapping %s to %ls!!\n", pszFolderName, pMapName->String.utf16));
         return VERR_TOO_MUCH_DATA;
     }
 
     Log(("vbsfMappingsAdd: added mapping %s to %ls (slot %u, root %u)\n",
-         pszFolderName, pMapName->String.ucs2, i, vbsfMappingGetRootFromIndex(i)));
+         pszFolderName, pMapName->String.utf16, i, vbsfMappingGetRootFromIndex(i)));
     return VINF_SUCCESS;
 }
 
@@ -435,7 +435,7 @@ void testMappingsRemove(RTTEST hTest)
 int vbsfMappingsRemove(PSHFLSTRING pMapName)
 {
     Assert(pMapName);
-    Log(("vbsfMappingsRemove %ls\n", pMapName->String.ucs2));
+    Log(("vbsfMappingsRemove %ls\n", pMapName->String.utf16));
 
     /*
      * We must iterate thru the whole table as may have 0+ placeholder entries
@@ -447,11 +447,11 @@ int vbsfMappingsRemove(PSHFLSTRING pMapName)
     {
         if (g_FolderMapping[i].fValid == true)
         {
-            if (!RTUtf16LocaleICmp(g_FolderMapping[i].pMapName->String.ucs2, pMapName->String.ucs2))
+            if (!RTUtf16LocaleICmp(g_FolderMapping[i].pMapName->String.utf16, pMapName->String.utf16))
             {
                 if (g_FolderMapping[i].cMappings != 0)
                 {
-                    LogRel2(("SharedFolders: removing '%ls' -> '%s'%s, which is still used by the guest\n", pMapName->String.ucs2,
+                    LogRel2(("SharedFolders: removing '%ls' -> '%s'%s, which is still used by the guest\n", pMapName->String.utf16,
                              g_FolderMapping[i].pszFolderName, g_FolderMapping[i].fPlaceholder ? " (again)" : ""));
                     g_FolderMapping[i].fMissing = true;
                     g_FolderMapping[i].fPlaceholder = true;
@@ -462,7 +462,7 @@ int vbsfMappingsRemove(PSHFLSTRING pMapName)
                 {
                     /* pMapName can be the same as g_FolderMapping[i].pMapName when
                      * called from vbsfUnmapFolder, log it before deallocating the memory. */
-                    Log(("vbsfMappingsRemove: mapping %ls removed\n", pMapName->String.ucs2));
+                    Log(("vbsfMappingsRemove: mapping %ls removed\n", pMapName->String.utf16));
                     bool fSame = g_FolderMapping[i].pMapName == pMapName;
 
                     RTStrFree(g_FolderMapping[i].pszFolderName);
@@ -620,7 +620,7 @@ int vbsfMappingsQueryName(PSHFLCLIENTDATA pClient, SHFLROOT root, SHFLSTRING *pS
                 else
                 {
                     pString->u16Length = pFolderMapping->pMapName->u16Length;
-                    memcpy(pString->String.ucs2, pFolderMapping->pMapName->String.ucs2,
+                    memcpy(pString->String.utf16, pFolderMapping->pMapName->String.utf16,
                            pFolderMapping->pMapName->u16Size);
                     rc = VINF_SUCCESS;
                 }
@@ -785,13 +785,9 @@ int vbsfMapFolder(PSHFLCLIENTDATA pClient, PSHFLSTRING pszMapName,
     MAPPING *pFolderMapping = NULL;
 
     if (BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
-    {
         Log(("vbsfMapFolder %s\n", pszMapName->String.utf8));
-    }
     else
-    {
-        Log(("vbsfMapFolder %ls\n", pszMapName->String.ucs2));
-    }
+        Log(("vbsfMapFolder %ls\n", pszMapName->String.utf16));
 
     AssertMsgReturn(wcDelimiter == '/' || wcDelimiter == '\\',
                     ("Invalid path delimiter: %#x\n", wcDelimiter),
@@ -824,7 +820,7 @@ int vbsfMapFolder(PSHFLCLIENTDATA pClient, PSHFLSTRING pszMapName,
     }
     else
     {
-        pFolderMapping = vbsfMappingGetByName(pszMapName->String.ucs2, pRoot);
+        pFolderMapping = vbsfMappingGetByName(pszMapName->String.utf16, pRoot);
     }
 
     if (!pFolderMapping)
@@ -900,7 +896,7 @@ int vbsfUnmapFolder(PSHFLCLIENTDATA pClient, SHFLROOT root)
         /* Automatically remove, it is not used by the guest anymore. */
         Assert(pFolderMapping->fMissing);
         LogRel2(("SharedFolders: unmapping placeholder '%ls' -> '%s'\n",
-                pFolderMapping->pMapName->String.ucs2, pFolderMapping->pszFolderName));
+                pFolderMapping->pMapName->String.utf16, pFolderMapping->pszFolderName));
         vbsfMappingsRemove(pFolderMapping->pMapName);
     }
 

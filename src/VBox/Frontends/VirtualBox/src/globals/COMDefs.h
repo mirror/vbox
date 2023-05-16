@@ -397,7 +397,7 @@ protected:
         ~BSTROut()
         {
             if (bstr) {
-                str = QString::fromUtf16(bstr);
+                str = QString::fromUtf16((const ushort *)bstr);
                 SysFreeString(bstr);
             }
         }
@@ -441,7 +441,7 @@ protected:
         ~GuidAsBStrOut()
         {
             if (bstr) {
-                uuid = QUuid(QString::fromUtf16(bstr));
+                uuid = QUuid(QString::fromUtf16((const ushort *)bstr));
                 SysFreeString(bstr);
             }
         }

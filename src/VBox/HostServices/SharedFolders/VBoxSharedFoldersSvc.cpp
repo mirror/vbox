@@ -358,7 +358,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
                                                         "Bad folder name string: %#x/%#x cb=%#x",
                                                         pFolderName->u16Size, pFolderName->u16Length, cb));
 
-                rc = RTUtf16ToUtf8(pFolderName->String.ucs2, &pszFolderName);
+                rc = RTUtf16ToUtf8(pFolderName->String.utf16, &pszFolderName);
                 RTMemFree(pFolderName);
                 AssertRCReturn(rc, rc);
             }
@@ -432,7 +432,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
             if (RT_FAILURE(rc))
             {
                 LogRel(("SharedFolders host service: %Rrc loading %d [%ls] -> [%s]\n",
-                        rc, i, pMapName->String.ucs2, pszFolderName));
+                        rc, i, pMapName->String.utf16, pszFolderName));
             }
 
             RTMemFree(pAutoMountPoint);
@@ -1069,7 +1069,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                      ((PSHFLSTRING)paParms[0].u.pointer.addr)->String.utf8));
             else
                 Log(("SharedFolders host service: request to map folder '%ls'\n",
-                     ((PSHFLSTRING)paParms[0].u.pointer.addr)->String.ucs2));
+                     ((PSHFLSTRING)paParms[0].u.pointer.addr)->String.utf16));
 
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_MAP_FOLDER)
@@ -1105,7 +1105,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                     if (   !(pClient->fu32Flags & SHFL_CF_UTF8)
                         && paParms[0].u.pointer.size >= sizeof(SHFLSTRING)
                         && pszMapName->u16Length >= 2
-                        && pszMapName->String.ucs2[pszMapName->u16Length / 2 - 1] == 0x0000)
+                        && pszMapName->String.utf16[pszMapName->u16Length / 2 - 1] == 0x0000)
                     {
                         pszMapName->u16Length -= 2;
                         if (ShflStringIsValidIn(pszMapName, paParms[0].u.pointer.size, false /*fUtf8Not16*/))
@@ -1730,7 +1730,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                         RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_MISSING) ? "true" : "false"));
 
                 char *pszHostPath;
-                rc = RTUtf16ToUtf8(pHostPath->String.ucs2, &pszHostPath);
+                rc = RTUtf16ToUtf8(pHostPath->String.utf16, &pszHostPath);
                 if (RT_SUCCESS(rc))
                 {
                     /* Execute the function. */
@@ -1759,7 +1759,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
     {
         Log(("SharedFolders host service: svcCall: SHFL_FN_REMOVE_MAPPING\n"));
         LogRel(("SharedFolders host service: Removing host mapping '%ls'\n",
-                ((SHFLSTRING *)paParms[0].u.pointer.addr)->String.ucs2));
+                ((SHFLSTRING *)paParms[0].u.pointer.addr)->String.utf16));
 
         /* Verify parameter count and types. */
         if (cParms != SHFL_CPARMS_REMOVE_MAPPING)

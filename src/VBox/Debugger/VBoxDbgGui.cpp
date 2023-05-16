@@ -295,7 +295,7 @@ VBoxDbgGui::getMachineName() const
     HRESULT hrc = m_pMachine->COMGETTER(Name)(&bstr);
     if (SUCCEEDED(hrc))
     {
-        strName = QString::fromUtf16(bstr);
+        strName = QString::fromUtf16((const ushort *)bstr);
         SysFreeString(bstr);
     }
     return strName;

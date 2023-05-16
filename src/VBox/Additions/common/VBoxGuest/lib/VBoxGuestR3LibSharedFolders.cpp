@@ -237,7 +237,7 @@ VBGLR3DECL(int) VbglR3SharedFolderGetName(HGCMCLIENTID idClient, uint32_t u32Roo
         if (RT_SUCCESS(rc))
         {
             *ppszName = NULL;
-            rc = RTUtf16ToUtf8(&pString->String.ucs2[0], ppszName);
+            rc = RTUtf16ToUtf8(&pString->String.utf16[0], ppszName);
         }
         RTMemFree(pString);
     }

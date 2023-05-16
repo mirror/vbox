@@ -265,7 +265,7 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PCSHFLSTRIN
     }
     else
     {
-        LogRel2(("SharedFolders: GuestToHost 0x%RX32 [%.*ls]->[%s] %Rrc\n", fu32PathFlags, pPath->u16Length / 2, &pPath->String.ucs2[0], pszHostPath, rc));
+        LogRel2(("SharedFolders: GuestToHost 0x%RX32 [%.*ls]->[%s] %Rrc\n", fu32PathFlags, pPath->u16Length / 2, &pPath->String.utf16[0], pszHostPath, rc));
     }
 
     if (RT_SUCCESS(rc))
@@ -1059,7 +1059,7 @@ int vbsfCreate(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32
     /** @todo */
 
     /* Build a host full path for the given path, handle file name case issues (if the guest
-     * expects case-insensitive paths but the host is case-sensitive) and convert ucs2 to utf8 if
+     * expects case-insensitive paths but the host is case-sensitive) and convert utf16 to utf8 if
      * necessary.
      */
     char *pszFullPath = NULL;
@@ -1674,7 +1674,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
         if (pHandle->dir.SearchHandle == 0)
         {
             /* Build a host full path for the given path
-             * and convert ucs2 to utf8 if necessary.
+             * and convert utf16 to utf8 if necessary.
              */
             char *pszFullPath = NULL;
 
@@ -1786,8 +1786,8 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
         }
         else
         {
-            pSFDEntry->name.String.ucs2[0] = 0;
-            pwszString = pSFDEntry->name.String.ucs2;
+            pSFDEntry->name.String.utf16[0] = 0;
+            pwszString = pSFDEntry->name.String.utf16;
             int rc2 = RTStrToUtf16Ex(pDirEntry->szName, RTSTR_MAX, &pwszString, pDirEntry->cbName+1, NULL);
             AssertRC(rc2);
 
@@ -1816,11 +1816,11 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
                 CFRelease(inStr);
             }
 #endif
-            pSFDEntry->name.u16Length = (uint32_t)RTUtf16Len(pSFDEntry->name.String.ucs2) * 2;
+            pSFDEntry->name.u16Length = (uint32_t)RTUtf16Len(pSFDEntry->name.String.utf16) * 2;
             pSFDEntry->name.u16Size = pSFDEntry->name.u16Length + 2;
 
             Log(("SHFL: File name size %d\n", pSFDEntry->name.u16Size));
-            Log(("SHFL: File name %ls\n", &pSFDEntry->name.String.ucs2));
+            Log(("SHFL: File name %ls\n", &pSFDEntry->name.String.utf16));
 
             // adjust cbNeeded (it was overestimated before)
             cbNeeded = RT_OFFSETOF(SHFLDIRINFO, name.String) + pSFDEntry->name.u16Size;
@@ -1877,7 +1877,7 @@ int vbsfReadLink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint
 
     /* Build a host full path for the given path, handle file name case issues
      * (if the guest expects case-insensitive paths but the host is
-     * case-sensitive) and convert ucs2 to utf8 if necessary.
+     * case-sensitive) and convert utf16 to utf8 if necessary.
      */
     char *pszFullPath = NULL;
     uint32_t cbFullPathRoot = 0;
@@ -2193,7 +2193,7 @@ static int vbsfQueryVolumeInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, uint32_t 
     pSFDEntry   = (PSHFLVOLINFO)pBuffer;
 
     ShflStringInitBuffer(&Buf.Dummy, sizeof(Buf));
-    Buf.Dummy.String.ucs2[0] = '\0';
+    Buf.Dummy.String.utf16[0] = '\0';
     rc = vbsfBuildFullPath(pClient, root, &Buf.Dummy, sizeof(Buf), &pszFullPath, NULL);
 
     if (RT_SUCCESS(rc))
@@ -2409,7 +2409,7 @@ int vbsfRemove(SHFLCLIENTDATA *pClient, SHFLROOT root, PCSHFLSTRING pPath, uint3
     if (RT_SUCCESS(rc))
     {
         /*
-         * Build a host full path for the given path and convert ucs2 to utf8 if necessary.
+         * Build a host full path for the given path and convert utf16 to utf8 if necessary.
          */
         char *pszFullPath = NULL;
         rc = vbsfBuildFullPath(pClient, root, pPath, cbPath, &pszFullPath, NULL);
@@ -2487,7 +2487,7 @@ int vbsfRename(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSrc, SHFLSTR
     }
 
     /* Build a host full path for the given path
-     * and convert ucs2 to utf8 if necessary.
+     * and convert utf16 to utf8 if necessary.
      */
     char *pszFullPathSrc = NULL;
     char *pszFullPathDest = NULL;

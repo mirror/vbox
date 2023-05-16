@@ -53,6 +53,18 @@
 # define CHAR_MIN       0
 #endif
 
+#if !defined(WCHAR_MIN)
+# if defined(RT_OS_WINDOWS)
+#  define WCHAR_MIN     0
+# endif
+#endif
+#if !defined(WCHAR_MAX)
+# if defined(RT_OS_WINDOWS)
+#  define WCHAR_MAX     0xffff
+# endif
+#endif
+/** @todo Define WCHAR_MIN+WCHAR_MAX on non-windows */
+
 #define WORD_BIT        16
 #define USHRT_MAX       0xffff
 #define SHRT_MAX        0x7fff

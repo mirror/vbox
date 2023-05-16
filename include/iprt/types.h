@@ -3383,14 +3383,24 @@ typedef const RTUNICP   RT_FAR *PCRTUNICP;
 
 
 /**
- * UTF-16 character.
- * @remark  wchar_t is not usable since it's compiler defined.
+ * UTF-16 character. 
+ *  
+ * @remark  wchar_t is not usable since it's compiler defined and can be 8 thru 
+ *          64 bit wide.  On Windows it is 16-bit, though, and for various
+ *          reasons of convenience we need to use the native compiler type when
+ *          compling without the /Zc:wchar_t- option (only relevant for C++ and
+ *          _NATIVE_WCHAR_T_DEFINED indicates the absense of /Zc:wchar_t-).
+ *  
  * @remark  When we use the term character we're not talking about unicode code point, but
  *          the basic unit of the string encoding. Thus cwc - count of wide chars - means
  *          count of RTUTF16; cuc - count of unicode chars - means count of RTUNICP;
  *          and cch means count of the typedef 'char', which is assumed to be an octet.
  */
+#if defined(_MSC_VER) && defined(__cplusplus) && defined(_NATIVE_WCHAR_T_DEFINED)
+typedef __wchar_t               RTUTF16;
+#else
 typedef uint16_t                RTUTF16;
+#endif
 /** Pointer to a UTF-16 character. */
 typedef RTUTF16         RT_FAR *PRTUTF16;
 /** Pointer to a const UTF-16 character. */
