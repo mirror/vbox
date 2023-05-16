@@ -152,6 +152,8 @@ int main(int argc, char **argv)
     RTTestISubDone();
 
 
+/* Support for allocating Ring-0 executable memory with contiguous physical backing isn't implemented on Solaris. */
+#if !defined(RT_OS_SOLARIS)
     /*
      * Allocate a bit of contiguous memory.
      */
@@ -183,6 +185,7 @@ int main(int argc, char **argv)
         RTTestIFailed("SUPR3ContAlloc(%zu pages) failed!\n", cPages);
 
     RTTestISubDone();
+#endif
 
     /*
      * Allocate a big chunk of virtual memory and then lock it.
@@ -191,6 +194,9 @@ int main(int argc, char **argv)
 
     #define BIG_SIZE    72*1024*1024
     #define BIG_SIZEPP  (BIG_SIZE + PAGE_SIZE)
+#if defined(RT_OS_SOLARIS)
+    size_t cPages = RT_ALIGN_Z(15003, PAGE_SIZE) >> PAGE_SHIFT;
+#endif
     pv     = NULL;
     cPages = BIG_SIZEPP >> PAGE_SHIFT;
     rc = SUPR3PageAlloc(cPages, 0, &pv);
