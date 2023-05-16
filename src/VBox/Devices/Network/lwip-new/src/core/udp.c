@@ -690,7 +690,14 @@ udp_proxy_tmr(void)
   while (pcb != NULL) {
     struct udp_pcb *xpcb;
 
-    if (++pcb->proxy_cnt < limit) {
+    /*
+     * Although a strict inequality '<' seems appropriate here (20 < 3 * 7),
+     * the fact that UDP proxy timer is shared by all UDP proxies may cause
+     * the first timer interval to expire anywhere between 0 to 3 seconds,
+     * which results in UDP proxy timeout being in 18 to 21 second range. By
+     * using '<=' we shift it to 21-24 second range. See @ticketref{21560}.
+     */
+    if (++pcb->proxy_cnt <= limit) {
       pprev = &pcb->next;
       pcb = pcb->next;
       continue;
