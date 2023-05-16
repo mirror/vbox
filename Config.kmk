@@ -265,6 +265,8 @@ VBOX_FULL_VERSION_MAKE = $(expr ($1 << 24) | ($2 << 16) | $3)
 VBOX_VERSION_PREREQ = $(expr $(call VBOX_FULL_VERSION_MAKE,$(VBOX_VERSION_MAJOR),$(VBOX_VERSION_MINOR),$(VBOX_VERSION_BUILD)) \
 		>= $(call VBOX_FULL_VERSION_MAKE,$1,$2,$3))
 
+# Enable host screen saver toggle by default
+VBOX_WITH_SCREENSAVER_CONTROL = 1
 
 # Force the additions.sh script to get an exact additions build when we're doing the release.
 if $(VBOX_VERSION_BUILD) % 2 == 0

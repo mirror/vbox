@@ -26,12 +26,14 @@
  */
 
 /* Qt includes: */
-#include <QtDBus/QDBusConnection>
-#include <QtDBus/QDBusConnectionInterface>
-#include <QtDBus/QDBusInterface>
-#include <QtDBus/QDBusReply>
-#include <QtXml/QDomDocument>
-#include <QtXml/QDomElement>
+#ifdef VBOX_WITH_SCREENSAVER_CONTROL
+# include <QtDBus/QDBusConnection>
+# include <QtDBus/QDBusConnectionInterface>
+# include <QtDBus/QDBusInterface>
+# include <QtDBus/QDBusReply>
+# include <QtXml/QDomDocument>
+# include <QtXml/QDomElement>
+#endif /* VBOX_WITH_SCREENSAVER_CONTROL */
 #include <QWidget>
 #ifdef VBOX_IS_QT6_OR_LATER /** @todo qt6: ... */
 # include <QGuiApplication>
@@ -173,6 +175,7 @@ bool NativeWindowSubsystem::WaylandCheckExtension(const char *pExtensionName)
     return false;
 }
 
+#ifdef VBOX_WITH_SCREENSAVER_CONTROL
 bool checkDBusConnection(const QDBusConnection &connection)
 {
     if (!connection.isConnected())
@@ -215,9 +218,11 @@ QStringList findDBusScreenSaverServices(const QDBusConnection &connection)
 
     return serviceNames;
 }
+#endif /* VBOX_WITH_SCREENSAVER_CONTROL */
 
 bool NativeWindowSubsystem::checkDBusScreenSaverServices()
 {
+#ifdef VBOX_WITH_SCREENSAVER_CONTROL
     QDBusConnection connection = QDBusConnection::sessionBus();
     if (!checkDBusConnection(connection))
         return false;
@@ -237,9 +242,13 @@ bool NativeWindowSubsystem::checkDBusScreenSaverServices()
             return true;
     }
     LogRel(("QDBus error. No screen saver service found among registered DBus services."));
+#else
+    printf("not defined\n");
+#endif /* VBOX_WITH_SCREENSAVER_CONTROL */
     return false;
 }
 
+#ifdef VBOX_WITH_SCREENSAVER_CONTROL
 void introspectDBusInterfaceNode(const QDomElement &interface,
                                 const QString &strServiceName,
                                 QVector<DBusScreenSaverInhibitMethod*> &methods)
@@ -291,11 +300,12 @@ void introspectDBusServices(const QDBusConnection &connection,
         child = child.nextSiblingElement();
     }
 }
+#endif /* VBOX_WITH_SCREENSAVER_CONTROL */
 
 QVector<DBusScreenSaverInhibitMethod*> NativeWindowSubsystem::findDBusScrenSaverInhibitMethods()
 {
     QVector<DBusScreenSaverInhibitMethod*> methods;
-
+#ifdef VBOX_WITH_SCREENSAVER_CONTROL
     QDBusConnection connection = QDBusConnection::sessionBus();
     if (!checkDBusConnection(connection))
         return methods;
@@ -303,12 +313,13 @@ QVector<DBusScreenSaverInhibitMethod*> NativeWindowSubsystem::findDBusScrenSaver
     QStringList services = findDBusScreenSaverServices(connection);
     foreach(const QString &strServiceName, services)
         introspectDBusServices(connection, strServiceName, "", methods);
-
+#endif /* VBOX_WITH_SCREENSAVER_CONTROL */
     return methods;
 }
 
 void NativeWindowSubsystem::toggleHostScrenSaver(bool fInhibit, QVector<DBusScreenSaverInhibitMethod*> &inOutInhibitMethods)
 {
+#ifdef VBOX_WITH_SCREENSAVER_CONTROL
     QDBusConnection connection = QDBusConnection::sessionBus();
     if (!checkDBusConnection(connection))
         return;
@@ -345,6 +356,10 @@ void NativeWindowSubsystem::toggleHostScrenSaver(bool fInhibit, QVector<DBusScre
                     error.message().toUtf8().constData()));
         }
     }
+#else
+    Q_UNUSED(fInhibit);
+    Q_UNUSED(inOutInhibitMethods);
+#endif /* VBOX_WITH_SCREENSAVER_CONTROL */
 }
 
 char *XXGetProperty(Display *pDpy, Window windowHandle, Atom propType, const char *pszPropName)
