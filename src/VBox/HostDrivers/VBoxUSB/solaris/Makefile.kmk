@@ -37,31 +37,34 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-#
-# vboxusbmon - The Solaris USB Monitor Kernel module.
-#
-SYSMODS.solaris         += vboxusbmon
-vboxusbmon_TEMPLATE      = VBoxR0Drv
-vboxusbmon_DEFS          = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV)
-vboxusbmon_DEPS         += $(VBOX_SVN_REV_KMK)
-vboxusbmon_INCS         := . .. include
-vboxusbmon_LDFLAGS      += -N drv/vboxdrv -N misc/usba
-vboxusbmon_SOURCES       = \
-	VBoxUSBMon-solaris.c \
-	../USBFilter.cpp \
-	../VBoxUSBFilterMgr.cpp
+ifdef VBOX_WITH_VBOXDRV
+ #
+ # vboxusbmon - The Solaris USB Monitor Kernel module.
+ #
+ SYSMODS.solaris         += vboxusbmon
+ vboxusbmon_TEMPLATE      = VBoxR0Drv
+ vboxusbmon_DEFS          = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV)
+ vboxusbmon_DEPS         += $(VBOX_SVN_REV_KMK)
+ vboxusbmon_INCS         := . .. include
+ vboxusbmon_LDFLAGS      += -N drv/vboxdrv -N misc/usba
+ vboxusbmon_SOURCES       = \
+ 	VBoxUSBMon-solaris.c \
+ 	../USBFilter.cpp \
+ 	../VBoxUSBFilterMgr.cpp
 
-#
-# vboxusb - The Solaris Generic USB Client Kernel module.
-#
-SYSMODS.solaris         += vboxusb
-vboxusb_TEMPLATE         = VBoxR0Drv
-vboxusb_DEFS             = IN_RT_R0 IN_SUP_R0 VBOX_SVN_REV=$(VBOX_SVN_REV)
-vboxusb_DEPS            += $(VBOX_SVN_REV_KMK)
-vboxusb_INCS            := . include/
-vboxusb_LDFLAGS         += -N drv/vboxdrv -N drv/vboxusbmon -N misc/usba
-vboxusb_SOURCES          = \
-	VBoxUSB-solaris.c
+ #
+ # vboxusb - The Solaris Generic USB Client Kernel module.
+ #
+ SYSMODS.solaris         += vboxusb
+ vboxusb_TEMPLATE         = VBoxR0Drv
+ vboxusb_DEFS             = IN_RT_R0 IN_SUP_R0 VBOX_SVN_REV=$(VBOX_SVN_REV)
+ vboxusb_DEPS            += $(VBOX_SVN_REV_KMK)
+ vboxusb_INCS            := . include/
+ vboxusb_LDFLAGS         += -N drv/vboxdrv -N drv/vboxusbmon -N misc/usba
+ vboxusb_SOURCES          = \
+ 	VBoxUSB-solaris.c
+
+endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
