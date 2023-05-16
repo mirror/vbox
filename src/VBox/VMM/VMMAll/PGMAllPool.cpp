@@ -633,6 +633,7 @@ static void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPA
                 X86PGPAEUINT const uPde = uShw.pEptPd->a[iShw].u;
                 if (uPde & EPT_PRESENT_MASK)
                 {
+                    Assert(!(uPde & EPT_E_LEAF));
                     Log7Func(("EPT PD iShw=%#x: %RX64 (%RGp) -> freeing it!\n", iShw, uPde, pPage->GCPhys));
                     pgmPoolFree(pVM, uPde & EPT_PDE_PG_MASK, pPage->idx, iShw);
                     ASMAtomicWriteU64(&uShw.pEptPd->a[iShw].u, 0);
@@ -647,6 +648,7 @@ static void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPA
                     X86PGPAEUINT const uPde2 = uShw.pEptPd->a[iShw2].u;
                     if (uPde2 & EPT_PRESENT_MASK)
                     {
+                        Assert(!(uPde2 & EPT_E_LEAF));
                         Log7Func(("EPT PD (2): iShw2=%#x: %RX64 (%RGp) -> freeing it!\n", iShw2, uPde2, pPage->GCPhys));
                         pgmPoolFree(pVM, uPde2 & EPT_PDE_PG_MASK, pPage->idx, iShw2);
                         ASMAtomicWriteU64(&uShw.pEptPd->a[iShw2].u, 0);
@@ -3514,11 +3516,15 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
 #ifdef PGM_WITH_LARGE_PAGES
         /* Large page case only. */
         case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PD_FOR_EPT_PD:
         {
             Assert(pVM->pgm.s.fNestedPaging);
 
             const uint64_t  u64 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PDE4M_P | X86_PDE4M_PS;
             PEPTPD          pPD = (PEPTPD)PGMPOOL_PAGE_2_PTR(pVM, pPage);
+
+            Assert(   pPage->enmKind != PGMPOOLKIND_EPT_PD_FOR_EPT_PD
+                   || (pPD->a[iPte].u & EPT_E_LEAF));
 
             if ((pPD->a[iPte].u & (EPT_PDE2M_PG_MASK | X86_PDE4M_P | X86_PDE4M_PS)) == u64)
             {
