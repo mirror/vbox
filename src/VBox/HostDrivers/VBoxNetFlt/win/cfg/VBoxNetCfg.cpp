@@ -1356,7 +1356,7 @@ static HRESULT netIfWinAdapterConfigPath(IWbemClassObject *pObj, com::Bstr *pRet
 }
 
 static HRESULT netIfExecMethod(IWbemServices * pSvc, IWbemClassObject *pClass, com::Bstr const &rObjPath,
-                               const char *pszMethodName, LPWSTR *papwszArgNames, LPVARIANT *pArgs, UINT cArgs,
+                               const char *pszMethodName, LPCWSTR *papwszArgNames, LPVARIANT *pArgs, UINT cArgs,
                                IWbemClassObject **ppOutParams)
 {
     *ppOutParams = NULL;
@@ -1502,8 +1502,8 @@ static HRESULT netIfWinEnableStatic(IWbemServices *pSvc, const GUID *pGuid, com:
         hr = pSvc->GetObject(bstrClassName.raw(), 0, NULL, pClass.asOutParam(), NULL);
         if (SUCCEEDED(hr))
         {
-            LPWSTR argNames[] = {L"IPAddress", L"SubnetMask"};
-            LPVARIANT  args[] = {         pIp,        pMask };
+            LPCWSTR argNames[] = {L"IPAddress", L"SubnetMask"};
+            LPVARIANT   args[] = {         pIp,        pMask };
 
             ComPtr<IWbemClassObject> pOutParams;
             hr = netIfExecMethod(pSvc, pClass, rObjPath.raw(), "EnableStatic", argNames, args,
@@ -1595,8 +1595,8 @@ static HRESULT netIfWinSetGateways(IWbemServices * pSvc, BSTR ObjPath, VARIANT *
         hr = pSvc->GetObject(ClassName, 0, NULL, pClass.asOutParam(), NULL);
         if (SUCCEEDED(hr))
         {
-            LPWSTR argNames[] = {L"DefaultIPGateway"};
-            LPVARIANT args[] = {pGw};
+            LPCWSTR argNames[] = {L"DefaultIPGateway"};
+            LPVARIANT args[]   = {pGw};
             ComPtr<IWbemClassObject> pOutParams;
 
             hr = netIfExecMethod(pSvc, pClass, ObjPath, com::Bstr(L"SetGateways"), argNames, args, 1, pOutParams.asOutParam());

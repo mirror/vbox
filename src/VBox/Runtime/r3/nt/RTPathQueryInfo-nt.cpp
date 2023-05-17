@@ -117,7 +117,7 @@ static void ntPathNtSplitName(UNICODE_STRING const *pNtName, UNICODE_STRING *pNt
         AssertFailed(); /* This is impossible and won't work (NT doesn't know '.' or '..').  */
         /** @todo query the whole path as it is possible relative. Use the buffer for
          *        temporary name storage. */
-        pNtParent->Buffer        = L".";
+        pNtParent->Buffer        = (PWCH)L".";
         pNtParent->Length        = 1 * sizeof(RTUTF16);
         pNtParent->MaximumLength = 2 * sizeof(RTUTF16);
     }

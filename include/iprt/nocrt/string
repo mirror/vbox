@@ -157,7 +157,7 @@ namespace std
     /*static*/ std::size_t char_traits<a_CharType>::length(const char_type *a_psz) RT_NOEXCEPT
     {
         const char_type * const pszStart = a_psz;
-        while (!eq(*a_pszLeft, char_type()))
+        while (!eq(*a_psz, char_type()))
                a_psz++;
         return static_cast<std::size_t>(a_psz - pszStart);
     }
@@ -215,19 +215,19 @@ namespace std
         char_type * const         pchRet  = a_pchDst;
         char_type volatile       *pchDstV = static_cast<char_type const volatile *>(a_pchDst);
         char_type const volatile *pchSrcV = static_cast<char_type const volatile *>(a_pchSrc);
-        if ((uintptr_t)a_pchDst < (uintptr_t)a_pchSrc)
+        if ((uintptr_t)pchDstV < (uintptr_t)pchSrcV)
         {
             /* forward copy */
             while (a_cch-- > 0)
-                *a_pchDstV++ = *a_pchSrcV++;
+                *pchDstV++ = *pchSrcV++;
         }
         else
         {
             /* reverse copy */
-            a_pchSrcV += a_cch;
-            a_pchDstV += a_cch;
-            while (a_cchDst-- > 0)
-                *a_pchDstV-- = *a_pchSrcV--;
+            pchSrcV += a_cch;
+            pchDstV += a_cch;
+            while (a_cch-- > 0)
+                *pchDstV-- = *pchSrcV--;
         }
         return pchRet;
     }

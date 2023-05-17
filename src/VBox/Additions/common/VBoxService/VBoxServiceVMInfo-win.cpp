@@ -79,8 +79,8 @@ typedef struct VBOXSERVICEVMINFOUSER
 /** Structure for the file information lookup. */
 typedef struct VBOXSERVICEVMINFOFILE
 {
-    char *pszFilePath;
-    char *pszFileName;
+    const char *pszFilePath;
+    const char *pszFileName;
 } VBOXSERVICEVMINFOFILE, *PVBOXSERVICEVMINFOFILE;
 
 /** Structure for process information lookup. */

@@ -1392,7 +1392,7 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
     NetRsrc.dwType          = RESOURCETYPE_DISK;
     NetRsrc.lpLocalName     = wszDrive;
     NetRsrc.lpRemoteName    = wszPrefixedName;
-    NetRsrc.lpProvider      = L"VirtualBox Shared Folders"; /* Only try our provider. */
+    NetRsrc.lpProvider      = (PWSTR)L"VirtualBox Shared Folders"; /* Only try our provider. */
     NetRsrc.lpComment       = pwszName;
 
     DWORD dwErr = WNetAddConnection2W(&NetRsrc, NULL /*pwszPassword*/, NULL /*pwszUserName*/, 0 /*dwFlags*/);

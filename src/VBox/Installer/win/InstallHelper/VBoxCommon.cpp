@@ -45,8 +45,9 @@ UINT VBoxGetMsiProp(MSIHANDLE hMsi, const WCHAR *pwszName, WCHAR *pwszValueBuf, 
 
     /** @todo r=bird: why do we need to query the size first and then the data.
      *        The API should be perfectly capable of doing that without our help. */
+    WCHAR wcDummy   = 0;
     DWORD cwcNeeded = 0;
-    UINT  uiRet = MsiGetPropertyW(hMsi, pwszName, L"", &cwcNeeded);
+    UINT  uiRet = MsiGetPropertyW(hMsi, pwszName, &wcDummy, &cwcNeeded);
     if (uiRet == ERROR_MORE_DATA)
     {
         ++cwcNeeded;     /* On output does not include terminating null, so add 1. */

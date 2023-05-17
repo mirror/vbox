@@ -157,7 +157,7 @@ static const WCHAR *g_pwszRegKeyReconnectActions  = L"Software\\Oracle\\Sun Ray\
 static const char g_szCommandPrefix[] = "Command";
 
 
-static BOOL laGetRegistryDWORD(WCHAR *pwszRegKey, WCHAR *pwszName, DWORD *pdwValue)
+static BOOL laGetRegistryDWORD(const WCHAR *pwszRegKey, const WCHAR *pwszName, DWORD *pdwValue)
 {
     LONG lErr;
 

@@ -1433,7 +1433,7 @@ static void rtProcWinStationPrep(HANDLE hTokenToUse, STARTUPINFOW *pStartupInfo,
                     if (   rtProcWinAddSidToWinStation(hWinStation0, pSid)
                         && rtProcWinAddSidToDesktop(hDesktop, pSid))
                     {
-                        pStartupInfo->lpDesktop = L"winsta0\\default";
+                        pStartupInfo->lpDesktop = (PWSTR)L"winsta0\\default";
                     }
                     RTMemFree(pSid);
                 }

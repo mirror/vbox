@@ -55,7 +55,7 @@ namespace std
 
     public:
         basic_filebuf(PRTSTREAM a_pStrm = NULL, bool a_fStdStream = false)
-            : basic_streambuf()
+            : basic_streambuf<a_CharType, a_CharTraits>()
             , m_pStrm(a_pStrm)
             , m_fStdStream(a_fStdStream)
             , m_fMode(ios_base::openmode(0))
@@ -141,7 +141,8 @@ namespace std
         //    return traits_type::eof();
         //}
 
-        std::streamsize xsputn(char_type const *a_pchSrc, std::streamsize a_cchSrc) //RT_OVERRIDE
+        std::streamsize xsputn(typename basic_streambuf<a_CharType, a_CharTraits>::char_type const *a_pchSrc,
+                               std::streamsize a_cchSrc) //RT_OVERRIDE
         {
             if (flushBuffered())
             {
@@ -166,13 +167,13 @@ namespace std
 
     public:
         basic_ofstream()
-            : basic_ostream(&m_FileBuf) /** @todo m_FileBuf isn't initialized yet... */
+            : basic_ostream<a_CharType, a_CharTraits>(&m_FileBuf) /** @todo m_FileBuf isn't initialized yet... */
             , m_FileBuf()
         {
         }
 
         explicit basic_ofstream(const char *a_pszFilename, ios_base::openmode a_fMode = ios_base::out)
-            : basic_ostream(&m_FileBuf) /** @todo m_FileBuf isn't initialized yet... */
+            : basic_ostream<a_CharType, a_CharTraits>(&m_FileBuf) /** @todo m_FileBuf isn't initialized yet... */
             , m_FileBuf()
         {
             m_FileBuf.open(a_pszFilename, a_fMode);

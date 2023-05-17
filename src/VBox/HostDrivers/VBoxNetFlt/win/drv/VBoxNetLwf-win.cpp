@@ -1372,7 +1372,7 @@ static NDIS_STATUS vboxNetLwfWinRestart(IN NDIS_HANDLE hModuleCtx, IN PNDIS_FILT
     NDIS_STATUS Status = NdisOpenConfigurationEx(&cfgObj, &hConfig);
     if (Status == NDIS_STATUS_SUCCESS)
     {
-        NDIS_STRING strCfgParam = NDIS_STRING_CONST("PassVmTrafficToHost");
+        NDIS_STRING strCfgParam = VBOX_NDIS_STRING_CONST("PassVmTrafficToHost");
         PNDIS_CONFIGURATION_PARAMETER pParam = NULL;
         NdisReadConfiguration(&Status, &pParam, hConfig, &strCfgParam, NdisParameterInteger);
         if (Status != NDIS_STATUS_SUCCESS)

@@ -265,7 +265,7 @@ namespace std
 
         char_type *epptr()  const RT_NOEXCEPT
         {
-            return &m_pachBuf[m_cchPut];
+            return &m_pachPut[m_cchPut];
         }
 
         void pbump(int a_cchAdvance)  const RT_NOEXCEPT
@@ -497,7 +497,7 @@ namespace std
             return m_pBuf;
         }
 
-        std::basic_streambuf<a_CharType, a_CharTraits> *rdbuf(std::basic_streambuf<a_CharType, a_CharTraits> *a_pNewbuf) RT_NOEXCEPT
+        std::basic_streambuf<a_CharType, a_CharTraits> *rdbuf(std::basic_streambuf<a_CharType, a_CharTraits> *a_pNewBuf) RT_NOEXCEPT
         {
             std::basic_streambuf<a_CharType, a_CharTraits> *pOldBuf = m_pBuf;
             m_pBuf = a_pNewBuf;

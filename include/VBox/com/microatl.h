@@ -238,7 +238,7 @@ public:
     {
         if (fInitialLock)
         {
-            HRESULT hrc = Lock();
+            HRESULT hrc = this->Lock();
             if (FAILED(hrc))
                 throw hrc;
         }
@@ -723,14 +723,14 @@ public:
     virtual ~CComObjectCached()
     {
         // Catch refcount screwups by setting refcount to -(LONG_MAX/2).
-        m_iRef = -(LONG_MAX/2);
-        FinalRelease();
+        this->m_iRef = -(LONG_MAX/2);
+        this->FinalRelease();
     }
     STDMETHOD_(ULONG, AddRef)() throw()
     {
         // If you get errors about undefined InternalAddRef then Base does not
         // derive from CComObjectRootEx.
-        ULONG l = InternalAddRef();
+        ULONG l = this->InternalAddRef();
         if (l == 2)
         {
             AssertMsg(_pAtlModule, ("ATL: referring to ATL module without having one declared in this linking namespace\n"));
@@ -742,7 +742,7 @@ public:
     {
         // If you get errors about undefined InternalRelease then Base does not
         // derive from CComObjectRootEx.
-        ULONG l = InternalRelease();
+        ULONG l = this->InternalRelease();
         if (l == 0)
             delete this;
         else if (l == 1)
@@ -756,7 +756,7 @@ public:
     {
         // If you get errors about undefined _InternalQueryInterface then
         // double check BEGIN_COM_MAP in the class definition.
-        return _InternalQueryInterface(iid, ppvObj);
+        return this->_InternalQueryInterface(iid, ppvObj);
     }
     static HRESULT WINAPI CreateInstance(CComObjectCached<Base> **pp) throw()
     {
@@ -791,20 +791,20 @@ public:
     virtual ~CComObjectNoLock()
     {
         // Catch refcount screwups by setting refcount to -(LONG_MAX/2).
-        m_iRef = -(LONG_MAX/2);
-        FinalRelease();
+        this->m_iRef = -(LONG_MAX/2);
+        this->FinalRelease();
     }
     STDMETHOD_(ULONG, AddRef)() throw()
     {
         // If you get errors about undefined InternalAddRef then Base does not
         // derive from CComObjectRootEx.
-        return InternalAddRef();
+        return this->InternalAddRef();
     }
     STDMETHOD_(ULONG, Release)() throw()
     {
         // If you get errors about undefined InternalRelease then Base does not
         // derive from CComObjectRootEx.
-        ULONG l = InternalRelease();
+        ULONG l = this->InternalRelease();
         if (l == 0)
             delete this;
         return l;
@@ -813,7 +813,7 @@ public:
     {
         // If you get errors about undefined _InternalQueryInterface then
         // double check BEGIN_COM_MAP in the class definition.
-        return _InternalQueryInterface(iid, ppvObj);
+        return this->_InternalQueryInterface(iid, ppvObj);
     }
 };
 
@@ -1050,21 +1050,21 @@ public:
     {
         AssertMsg(_pAtlModule, ("ATL: referring to ATL module without having one declared in this linking namespace\n"));
         // Catch refcount screwups by setting refcount to -(LONG_MAX/2).
-        m_iRef = -(LONG_MAX/2);
-        FinalRelease();
+        this->m_iRef = -(LONG_MAX/2);
+        this->FinalRelease();
         _pAtlModule->Unlock();
     }
     STDMETHOD_(ULONG, AddRef)()
     {
         // If you get errors about undefined InternalAddRef then Base does not
         // derive from CComObjectRootEx.
-        return InternalAddRef();
+        return this->InternalAddRef();
     }
     STDMETHOD_(ULONG, Release)()
     {
         // If you get errors about undefined InternalRelease then Base does not
         // derive from CComObjectRootEx.
-        ULONG l = InternalRelease();
+        ULONG l = this->InternalRelease();
         if (l == 0)
             delete this;
         return l;
@@ -1073,7 +1073,7 @@ public:
     {
         // If you get errors about undefined _InternalQueryInterface then
         // double check BEGIN_COM_MAP in the class definition.
-        return _InternalQueryInterface(iid, ppvObj);
+        return this->_InternalQueryInterface(iid, ppvObj);
     }
 
     static HRESULT WINAPI CreateInstance(CComObject<Base> **pp) throw()
@@ -1083,27 +1083,35 @@ public:
 
         HRESULT hrc = E_OUTOFMEMORY;
         CComObject<Base> *p = NULL;
+#ifdef RT_EXCEPTIONS_ENABLED
         try
         {
+#endif
             p = new CComObject<Base>();
+#ifdef RT_EXCEPTIONS_ENABLED
         }
         catch (std::bad_alloc &)
         {
             p = NULL;
         }
+#endif
         if (p)
         {
             p->InternalFinalConstructAddRef();
+#ifdef RT_EXCEPTIONS_ENABLED
             try
             {
+#endif
                 hrc = p->_AtlInitialConstruct();
                 if (SUCCEEDED(hrc))
                     hrc = p->FinalConstruct();
+#ifdef RT_EXCEPTIONS_ENABLED
             }
             catch (std::bad_alloc &)
             {
                 hrc = E_OUTOFMEMORY;
             }
+#endif
             p->InternalFinalConstructRelease();
             if (FAILED(hrc))
             {
@@ -1155,20 +1163,20 @@ template <class Base> class CComContainedObject : public Base
 public:
     CComContainedObject(void *pv)
     {
-        m_pOuterUnknown = (IUnknown *)pv;
+        this->m_pOuterUnknown = (IUnknown *)pv;
     }
 
     STDMETHOD_(ULONG, AddRef)() throw()
     {
-        return OuterAddRef();
+        return this->OuterAddRef();
     }
     STDMETHOD_(ULONG, Release)() throw()
     {
-        return OuterRelease();
+        return this->OuterRelease();
     }
     STDMETHOD(QueryInterface)(REFIID iid, void **ppvObj) throw()
     {
-        return OuterQueryInterface(iid, ppvObj);
+        return this->OuterQueryInterface(iid, ppvObj);
     }
 };
 
@@ -1187,17 +1195,15 @@ public:
     {
         AssertMsg(_pAtlModule, ("ATL: referring to ATL module without having one declared in this linking namespace\n"));
         // Catch refcount screwups by setting refcount to -(LONG_MAX/2).
-        m_iRef = -(LONG_MAX/2);
-        FinalRelease();
+        this->m_iRef = -(LONG_MAX/2);
+        this->FinalRelease();
         _pAtlModule->Unlock();
     }
     HRESULT _AtlInitialConstruct()
     {
         HRESULT hrc = m_Aggregated._AtlInitialConstruct();
         if (SUCCEEDED(hrc))
-        {
             hrc = CComObjectRootEx<typename Aggregated::_ThreadModel::ThreadModelNoCS>::_AtlInitialConstruct();
-        }
         return hrc;
     }
     HRESULT FinalConstruct()
@@ -1213,11 +1219,11 @@ public:
 
     STDMETHOD_(ULONG, AddRef)()
     {
-        return InternalAddRef();
+        return this->InternalAddRef();
     }
     STDMETHOD_(ULONG, Release)()
     {
-        ULONG l = InternalRelease();
+        ULONG l = this->InternalRelease();
         if (l == 0)
             delete this;
         return l;
@@ -1328,7 +1334,7 @@ public:
             m_pObj->Release();
     }
     // IClassFactory
-    STDMETHOD(CreateInstance)(LPUNKNOWN pUnkOuter, REFIID riid, void **pvObj)
+    STDMETHOD(CreateInstance)(LPUNKNOWN pUnkOuter, REFIID riid, void **ppvObj)
     {
         HRESULT hrc = E_POINTER;
         if (ppvObj)

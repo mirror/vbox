@@ -771,7 +771,7 @@ static UINT RenameDir(MSIHANDLE hModule, const WCHAR *pwszzDstDir, const WCHAR *
 }
 
 /** RTPathAppend-like function. */
-static UINT AppendToPath(wchar_t *pwszPath, size_t cwcPath, wchar_t *pwszAppend, bool fDoubleTerm = false)
+static UINT AppendToPath(wchar_t *pwszPath, size_t cwcPath, const wchar_t *pwszAppend, bool fDoubleTerm = false)
 {
     size_t cwcCurPath = RTUtf16Len(pwszPath);
     size_t cwcSlash   = cwcCurPath > 1 && RTPATH_IS_SLASH(pwszPath[cwcCurPath - 1]) ? 0 : 1;
@@ -791,7 +791,7 @@ static UINT AppendToPath(wchar_t *pwszPath, size_t cwcPath, wchar_t *pwszAppend,
 }
 
 /** RTPathJoin-like function. */
-static UINT JoinPaths(wchar_t *pwszPath, size_t cwcPath, wchar_t *pwszPath1, wchar_t *pwszAppend, bool fDoubleTerm = false)
+static UINT JoinPaths(wchar_t *pwszPath, size_t cwcPath, wchar_t *pwszPath1, const wchar_t *pwszAppend, bool fDoubleTerm = false)
 {
     size_t cwcCurPath = RTUtf16Len(pwszPath1);
     if (cwcCurPath < cwcPath)

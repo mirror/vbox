@@ -404,7 +404,7 @@ NTSTATUS vboxWddmRegQueryVideoGuidString(PVBOXMP_DEVEXT pDevExt, ULONG cbBuf, PW
     return Status;
 }
 
-NTSTATUS vboxWddmRegOpenKeyEx(OUT PHANDLE phKey, IN HANDLE hRootKey, IN PWCHAR pName, IN ACCESS_MASK fAccess)
+NTSTATUS vboxWddmRegOpenKeyEx(OUT PHANDLE phKey, IN HANDLE hRootKey, IN PCWCHAR pName, IN ACCESS_MASK fAccess)
 {
     OBJECT_ATTRIBUTES ObjAttr;
     UNICODE_STRING RtlStr;
@@ -415,7 +415,7 @@ NTSTATUS vboxWddmRegOpenKeyEx(OUT PHANDLE phKey, IN HANDLE hRootKey, IN PWCHAR p
     return ZwOpenKey(phKey, fAccess, &ObjAttr);
 }
 
-NTSTATUS vboxWddmRegOpenKey(OUT PHANDLE phKey, IN PWCHAR pName, IN ACCESS_MASK fAccess)
+NTSTATUS vboxWddmRegOpenKey(OUT PHANDLE phKey, IN PCWCHAR pName, IN ACCESS_MASK fAccess)
 {
     return vboxWddmRegOpenKeyEx(phKey, NULL, pName, fAccess);
 }
@@ -561,7 +561,7 @@ DWORD vboxWddmRegDrvFlagsGet(PVBOXMP_DEVEXT pDevExt, DWORD fDefault)
     return dwVal;
 }
 
-NTSTATUS vboxWddmRegQueryValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT PDWORD pDword)
+NTSTATUS vboxWddmRegQueryValueDword(IN HANDLE hKey, IN PCWCHAR pName, OUT PDWORD pDword)
 {
     struct
     {
@@ -590,7 +590,7 @@ NTSTATUS vboxWddmRegQueryValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT PDWORD 
     return STATUS_INVALID_PARAMETER;
 }
 
-NTSTATUS vboxWddmRegSetValueDword(IN HANDLE hKey, IN PWCHAR pName, IN DWORD val)
+NTSTATUS vboxWddmRegSetValueDword(IN HANDLE hKey, IN PCWCHAR pName, IN DWORD val)
 {
     UNICODE_STRING RtlStr;
     RtlInitUnicodeString(&RtlStr, pName);

@@ -50,6 +50,13 @@ namespace std
     template<typename a_CharType, typename a_CharTraits /*= std::char_traits<a_CharType>*/ >
     class basic_ostream : public basic_ios<a_CharType, a_CharTraits>
     {
+    public:
+        typedef a_CharType                          char_type;
+        typedef a_CharTraits                        traits_type;
+        typedef typename a_CharTraits::int_type     int_type;
+        typedef typename a_CharTraits::pos_type     pos_type;
+        typedef typename a_CharTraits::off_type     off_type;
+
     protected:
         /** Sentry class that performs pre and post output work. */
         class sentry
@@ -70,7 +77,7 @@ namespace std
                     {
                         pTiedStream->flush();
                         if (!pTiedStream->good())
-                            a_rParent.setstate(failbit);
+                            a_rParent.setstate(ios::failbit);
                     }
                 }
             }
@@ -90,7 +97,7 @@ namespace std
 
     public:
         explicit basic_ostream(std::basic_streambuf<a_CharType,a_CharTraits> *a_pBuf)
-            : basic_ios(a_pBuf)
+            : basic_ios<a_CharType, a_CharTraits>(a_pBuf)
         { }
 
         /** For cerr initialization.
@@ -98,11 +105,11 @@ namespace std
         explicit basic_ostream(std::basic_streambuf<a_CharType,a_CharTraits> *a_pBuf,
                                std::basic_ostream<a_CharType, a_CharTraits> *a_pTiedStream,
                                bool a_fUnbuffered)
-            : basic_ios(a_pBuf)
+            : basic_ios<a_CharType, a_CharTraits>(a_pBuf)
         {
-            m_pTiedStream = a_pTiedStream;
+            this->m_pTiedStream = a_pTiedStream;
             if (!a_fUnbuffered)
-                setf(std::ios_base::unitbuf);
+                this->setf(std::ios_base::unitbuf);
         }
 
     private:
@@ -115,39 +122,39 @@ namespace std
         }
 
     public:
-        basic_ostream &put(char_type a_ch)
+        basic_ostream &put(a_CharType a_ch)
         {
             sentry PrePost(*this);
             if (PrePost)
             {
-                if (m_pBuf->sputc(a_ch) == traits_type::eof())
-                    m_fState |= badbit;
+                if (this->m_pBuf->sputc(a_ch) == traits_type::eof())
+                    this->m_fState |= ios::badbit;
             }
             return *this;
         }
 
-        basic_ostream &write(const char_type *a_pchSrc, std::streamsize a_cchToWrite)
+        basic_ostream &write(const a_CharType *a_pchSrc, std::streamsize a_cchToWrite)
         {
             sentry PrePost(*this);
             if (PrePost)
             {
-                std::streamsize cchWritten = m_pBuf->sputn(a_pchSrc, a_cchToWrite);
+                std::streamsize cchWritten = this->m_pBuf->sputn(a_pchSrc, a_cchToWrite);
                 if (cchWritten != a_cchToWrite)
-                    m_fState |= badbit;
+                    this->m_fState |= ios::badbit;
             }
             return *this;
         }
 
         basic_ostream &flush()
         {
-            if (m_pBuf)
-                m_pBuf->pubsync();
+            if (this->m_pBuf)
+                this->m_pBuf->pubsync();
             return *this;
         }
 
         pos_type       tellp() RT_NOEXCEPT;
         basic_ostream &seekp(pos_type a_off) RT_NOEXCEPT;
-        basic_ostream &seekp(off_type a_off, seekdir enmDir) RT_NOEXCEPT;
+        basic_ostream &seekp(off_type a_off, ios::seekdir enmDir) RT_NOEXCEPT;
 
         /** @name Internal support methods
          * @{ */
@@ -156,12 +163,12 @@ namespace std
         /** @returns 8, 10 or 16. */
         inline unsigned intGetIntegerBase() const RT_NOEXCEPT
         {
-            switch (m_fFlags & basefield)
+            switch (this->m_fFlags & ios::basefield)
             {
                 default:
-                case dec: return 10;
-                case hex: return 16;
-                case oct: return 8;
+                case ios::dec: return 10;
+                case ios::hex: return 16;
+                case ios::oct: return 8;
             }
         }
 
@@ -169,11 +176,11 @@ namespace std
         inline unsigned intGetIntegerFlags() const RT_NOEXCEPT
         {
             unsigned fFlags = 0;
-            if (m_fFlags & uppercase)
+            if (this->m_fFlags & ios::uppercase)
                 fFlags |= RTSTR_F_CAPITAL;
-            if (m_fFlags & showbase)
+            if (this->m_fFlags & ios::showbase)
                 fFlags |= RTSTR_F_SPECIAL;
-            if (m_fFlags & showpos)
+            if (this->m_fFlags & ios::showpos)
                 fFlags |= RTSTR_F_PLUS;
             return fFlags;
         }

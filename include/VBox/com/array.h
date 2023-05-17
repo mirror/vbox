@@ -690,17 +690,15 @@ public:
             HRESULT rc = SafeArrayGetVartype(arg, &vt);
             AssertComRCReturnVoid(rc);
 # ifndef VBOX_WITH_TYPE_TRAITS
-            AssertMsgReturnVoid(
-                                   vt == VarType()
-                                || vt == VarTypeUnsigned(),
+            AssertMsgReturnVoid(   vt == Traits::VarType()
+                                || vt == Traits::VarTypeUnsigned(),
                                 ("Expected vartype %d or %d, got %d.\n",
-                                 VarType(), VarTypeUnsigned(), vt));
-# else /* !VBOX_WITH_TYPE_TRAITS */
-            AssertMsgReturnVoid(
-                                   vt == VarType(),
+                                 Traits::VarType(), Traits::VarTypeUnsigned(), vt));
+# else  /* VBOX_WITH_TYPE_TRAITS */
+            AssertMsgReturnVoid(vt == Traits::VarType(),
                                 ("Expected vartype %d, got %d.\n",
-                                 VarType(), vt));
-# endif
+                                 Traits::VarType(), vt));
+# endif /* VBOX_WITH_TYPE_TRAITS */
             rc = SafeArrayAccessData(arg, (void HUGEP **)&m.raw);
             AssertComRCReturnVoid(rc);
 
@@ -732,7 +730,7 @@ public:
 #ifdef VBOX_WITH_XPCOM
             SafeArray::Copy(*it, m.arr[i]);
 #else
-            Copy(*it, m.raw[i]);
+            SafeArray::Copy(*it, m.raw[i]);
 #endif
     }
 
@@ -761,9 +759,9 @@ public:
         for (typename Map::const_iterator it = aMap.begin();
              it != aMap.end(); ++ it, ++ i)
 #ifdef VBOX_WITH_XPCOM
-            Copy(it->second, m.arr[i]);
+            SafeArray::Copy(it->second, m.arr[i]);
 #else
-            Copy(it->second, m.raw[i]);
+            SafeArray::Copy(it->second, m.raw[i]);
 #endif
     }
 
@@ -809,7 +807,7 @@ public:
         return 0;
 #else
         if (m.arr)
-            return Size(m.arr->rgsabound[0].cElements);
+            return Traits::Size(m.arr->rgsabound[0].cElements);
         return 0;
 #endif
     }
@@ -840,7 +838,7 @@ public:
 #ifdef VBOX_WITH_XPCOM
             SafeArray::Copy(m.arr[i - 1], m.arr[i]);
 #else
-            Copy(m.raw[i - 1], m.raw[i]);
+            SafeArray::Copy(m.raw[i - 1], m.raw[i]);
 #endif
         }
 
@@ -848,7 +846,7 @@ public:
         SafeArray::Copy(aElement, m.arr[0]);
         ++ m.size;
 #else
-        Copy(aElement, m.raw[0]);
+        SafeArray::Copy(aElement, m.raw[0]);
 #endif
         return true;
     }
@@ -878,7 +876,7 @@ public:
         SafeArray::Copy(aElement, m.arr[m.size]);
         ++ m.size;
 #else
-        Copy(aElement, m.raw[size() - 1]);
+        SafeArray::Copy(aElement, m.raw[size() - 1]);
 #endif
         return true;
     }
@@ -1245,12 +1243,12 @@ protected:
 
 #else
 
-        SAFEARRAYBOUND bound = { VarCount(aNewSize), 0 };
+        SAFEARRAYBOUND bound = { Traits::VarCount(aNewSize), 0 };
         HRESULT rc;
 
         if (m.arr == NULL)
         {
-            m.arr = CreateSafeArray(VarType(), &bound);
+            m.arr = Traits::CreateSafeArray(Traits::VarType(), &bound);
             AssertReturn(m.arr != NULL, false);
         }
         else
@@ -1484,7 +1482,7 @@ public:
         nsIDRef &operator= (const nsID &aThat)
         {
             if (mVal == NULL)
-                Copy(&aThat, mVal);
+                SafeGUIDArray::Copy(&aThat, mVal);
             else
                 *mVal = aThat;
             return *this;
@@ -1722,11 +1720,11 @@ public:
             AssertMsgReturnVoid(InlineIsEqualGUID(COM_IIDOF(I), guid) || arg->rgsabound[0].cElements == 0 /* IDispatch if empty */,
                                 ("Expected IID {%RTuuid}, got {%RTuuid}.\n", &COM_IIDOF(I), &guid));
 
-            rc = SafeArrayAccessData(arg, (void HUGEP **)&m.raw);
+            rc = SafeArrayAccessData(arg, (void HUGEP **)&this->m.raw);
             AssertComRCReturnVoid(rc);
 
-            m.arr = arg;
-            m.isWeak = true;
+            this->m.arr = arg;
+            this->m.isWeak = true;
 
 #endif /* !VBOX_WITH_XPCOM */
         }
@@ -1752,12 +1750,11 @@ public:
         AssertReturnVoid(!Base::isNull());
 
         size_t i = 0;
-        for (typename List::const_iterator it = aCntr.begin();
-             it != aCntr.end(); ++ it, ++ i)
+        for (typename List::const_iterator it = aCntr.begin(); it != aCntr.end(); ++it, ++i)
 #ifdef VBOX_WITH_XPCOM
-            this->Copy(*it, Base::m.arr[i]);
+            SafeIfaceArray::Copy(*it, Base::m.arr[i]);
 #else
-            Copy(*it, Base::m.raw[i]);
+            SafeIfaceArray::Copy(*it, Base::m.raw[i]);
 #endif
     }
 
@@ -1781,12 +1778,11 @@ public:
         AssertReturnVoid(!Base::isNull());
 
         size_t i = 0;
-        for (typename List::const_iterator it = aCntr.begin();
-             it != aCntr.end(); ++ it, ++ i)
+        for (typename List::const_iterator it = aCntr.begin(); it != aCntr.end(); ++it, ++i)
 #ifdef VBOX_WITH_XPCOM
             SafeIfaceArray::Copy(*it, Base::m.arr[i]);
 #else
-            Copy(*it, Base::m.raw[i]);
+            SafeIfaceArray::Copy(*it, Base::m.raw[i]);
 #endif
     }
 
@@ -1813,12 +1809,11 @@ public:
         AssertReturnVoid(!Base::isNull());
 
         size_t i = 0;
-        for (typename Map::const_iterator it = aMap.begin();
-             it != aMap.end(); ++ it, ++ i)
+        for (typename Map::const_iterator it = aMap.begin(); it != aMap.end(); ++it, ++i)
 #ifdef VBOX_WITH_XPCOM
             SafeIfaceArray::Copy(it->second, Base::m.arr[i]);
 #else
-            Copy(it->second, Base::m.raw[i]);
+            SafeIfaceArray::Copy(it->second, Base::m.raw[i]);
 #endif
     }
 
@@ -1846,11 +1841,11 @@ public:
 
         size_t i = 0;
         for (typename Map::const_iterator it = aMap.begin();
-             it != aMap.end(); ++ it, ++ i)
+             it != aMap.end(); ++it, ++i)
 #ifdef VBOX_WITH_XPCOM
             SafeIfaceArray::Copy(it->second, Base::m.arr[i]);
 #else
-            Copy(it->second, Base::m.raw[i]);
+            SafeIfaceArray::Copy(it->second, Base::m.raw[i]);
 #endif
     }
 
@@ -1859,7 +1854,7 @@ public:
 #ifdef VBOX_WITH_XPCOM
         SafeIfaceArray::Copy(obj, Base::m.arr[iIdx]);
 #else
-        Copy(obj, Base::m.raw[iIdx]);
+        SafeIfaceArray::Copy(obj, Base::m.raw[iIdx]);
 #endif
     }
 };

@@ -99,10 +99,10 @@
 *********************************************************************************************************************************/
 typedef struct
 {
-    PWSTR pApplicationId;
-    PWSTR pDisplayName;
-    PWSTR pProductName;
-    PWSTR pMfgName;
+    PCWSTR pApplicationId;
+    PCWSTR pDisplayName;
+    PCWSTR pProductName;
+    PCWSTR pMfgName;
 } INSTALLERINFO, *PINSTALLERINFO;
 typedef const PINSTALLERINFO PCINSTALLERINFO;
 

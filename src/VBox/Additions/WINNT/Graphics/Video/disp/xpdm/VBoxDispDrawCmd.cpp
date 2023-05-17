@@ -157,7 +157,7 @@ static void VBoxDispPrintStats(void)
        ));
 }
 
-void VBoxDispDumpPSO(SURFOBJ *pso, char *s)
+void VBoxDispDumpPSO(SURFOBJ *pso, const char *s)
 {
     RT_NOREF(pso, s);
     if (pso)

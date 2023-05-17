@@ -101,7 +101,7 @@ HRESULT DrvHostAudioDSoundMMNotifClient::Initialize(void)
  */
 STDMETHODIMP DrvHostAudioDSoundMMNotifClient::OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState)
 {
-    char *pszState = "unknown";
+    const char *pszState = "unknown";
 
     switch (dwNewState)
     {
@@ -179,7 +179,7 @@ STDMETHODIMP DrvHostAudioDSoundMMNotifClient::OnDefaultDeviceChanged(EDataFlow e
     if (eRole == eMultimedia)
     {
         PDMAUDIODIR enmDir  = PDMAUDIODIR_INVALID;
-        char       *pszRole = "unknown";
+        const char *pszRole = "unknown";
         if (eFlow == eRender)
         {
             pszRole = "output";

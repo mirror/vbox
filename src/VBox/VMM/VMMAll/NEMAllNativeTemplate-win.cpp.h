@@ -1155,7 +1155,7 @@ DECLINLINE(VID_PROCESSOR_STATUS) nemHCWinCpuGetRunningStatus(PVMCPUCC pVCpu)
      */
     VID_PROCESSOR_STATUS enmCpuStatus = VidProcessorStatusUndefined;
     NTSTATUS rcNt = g_pfnVidGetVirtualProcessorRunningStatus(pVCpu->pVMR3->nem.s.hPartitionDevice, pVCpu->idCpu, &enmCpuStatus);
-    AssertRC(rcNt);
+    AssertMsg(NT_SUCCESS(rcNt), ("rcNt=%#x\n", rcNt));
 
     RTErrVarsRestore(&Saved);
     return enmCpuStatus;

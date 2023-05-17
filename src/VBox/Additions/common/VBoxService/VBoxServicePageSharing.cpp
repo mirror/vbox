@@ -119,32 +119,14 @@ static DECLCALLBACK(int) vgsvcPageSharingEmptyTreeCallback(PAVLPVNODECORE pNode,
 /**
  * Registers a new module with the VMM
  * @param   pModule         Module ptr
- * @param   fValidateMemory Validate/touch memory pages or not
+ * @param   fValidateMemory Validate/touch memory pages or not 
+ * @param   pVersionInfo    Version info bytes.
  */
-static void vgsvcPageSharingRegisterModule(PVGSVCPGSHKNOWNMOD pModule, bool fValidateMemory)
+static void vgsvcPageSharingRegisterModuleInner(PVGSVCPGSHKNOWNMOD pModule, bool fValidateMemory, BYTE *pVersionInfo)
 {
     VMMDEVSHAREDREGIONDESC   aRegions[VMMDEVSHAREDREGIONDESC_MAX];
     DWORD                    dwModuleSize = pModule->Info.modBaseSize;
     BYTE                    *pBaseAddress = pModule->Info.modBaseAddr;
-
-    VGSvcVerbose(3, "vgsvcPageSharingRegisterModule\n");
-
-    DWORD dwDummy;
-    DWORD cbVersion = GetFileVersionInfoSize(pModule->Info.szExePath, &dwDummy);
-    if (!cbVersion)
-    {
-        VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: GetFileVersionInfoSize failed with %d\n", GetLastError());
-        return;
-    }
-    BYTE *pVersionInfo = (BYTE *)RTMemAllocZ(cbVersion);
-    if (!pVersionInfo)
-        return;
-
-    if (!GetFileVersionInfo(pModule->Info.szExePath, 0, cbVersion, pVersionInfo))
-    {
-        VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: GetFileVersionInfo failed with %d\n", GetLastError());
-        goto end;
-    }
 
     /* Fetch default code page. */
     struct LANGANDCODEPAGE
@@ -159,7 +141,7 @@ static void vgsvcPageSharingRegisterModule(PVGSVCPGSHKNOWNMOD pModule, bool fVal
         || cbTranslate < 4)
     {
         VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: VerQueryValue failed with %d (cb=%d)\n", GetLastError(), cbTranslate);
-        goto end;
+        return;
     }
 
     unsigned i;
@@ -171,7 +153,7 @@ static void vgsvcPageSharingRegisterModule(PVGSVCPGSHKNOWNMOD pModule, bool fVal
     for (i = 0; i < cTranslationBlocks; i++)
     {
         /* Fetch file version string. */
-        char   szFileVersionLocation[256];
+        char szFileVersionLocation[256];
 
 /** @todo r=bird: Mixing ANSI and TCHAR crap again.  This code is a mess.  We
  * always use the wide version of the API and convert to UTF-8/whatever. */
@@ -188,11 +170,10 @@ static void vgsvcPageSharingRegisterModule(PVGSVCPGSHKNOWNMOD pModule, bool fVal
     if (i == cTranslationBlocks)
     {
         VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: no file version found!\n");
-        goto end;
+        return;
     }
 
     unsigned idxRegion = 0;
-
     if (fValidateMemory)
     {
         do
@@ -255,8 +236,7 @@ static void vgsvcPageSharingRegisterModule(PVGSVCPGSHKNOWNMOD pModule, bool fVal
 
             if (idxRegion >= RT_ELEMENTS(aRegions))
                 break;  /* out of room */
-        }
-        while (dwModuleSize);
+        } while (dwModuleSize);
     }
     else
     {
@@ -269,15 +249,40 @@ static void vgsvcPageSharingRegisterModule(PVGSVCPGSHKNOWNMOD pModule, bool fVal
         aRegions[idxRegion].cbRegion     = dwModuleSize;
         idxRegion++;
     }
-    VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: VbglR3RegisterSharedModule %s %s base=%p size=%x cregions=%d\n", pModule->Info.szModule, pModule->szFileVersion, pModule->Info.modBaseAddr, pModule->Info.modBaseSize, idxRegion);
+    VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: VbglR3RegisterSharedModule %s %s base=%p size=%x cregions=%d\n",
+                 pModule->Info.szModule, pModule->szFileVersion, pModule->Info.modBaseAddr, pModule->Info.modBaseSize, idxRegion);
     int rc = VbglR3RegisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (uintptr_t)pModule->Info.modBaseAddr,
                                         pModule->Info.modBaseSize, idxRegion, aRegions);
     if (RT_FAILURE(rc))
         VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: VbglR3RegisterSharedModule failed with %Rrc\n", rc);
+}
 
-end:
-    RTMemFree(pVersionInfo);
-    return;
+
+/**
+ * Registers a new module with the VMM
+ * @param   pModule         Module ptr
+ * @param   fValidateMemory Validate/touch memory pages or not
+ */
+static void vgsvcPageSharingRegisterModule(PVGSVCPGSHKNOWNMOD pModule, bool fValidateMemory)
+{
+    VGSvcVerbose(3, "vgsvcPageSharingRegisterModule\n");
+
+    DWORD dwDummy;
+    DWORD cbVersion = GetFileVersionInfoSize(pModule->Info.szExePath, &dwDummy);
+    if (cbVersion)
+    {
+        BYTE *pVersionInfo = (BYTE *)RTMemTmpAllocZ(cbVersion);
+        if (pVersionInfo)
+        {
+            if (GetFileVersionInfo(pModule->Info.szExePath, 0, cbVersion, pVersionInfo))
+                vgsvcPageSharingRegisterModuleInner(pModule, fValidateMemory, pVersionInfo);
+            else
+                VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: GetFileVersionInfo failed with %d\n", GetLastError());
+            RTMemTmpFree(pVersionInfo);
+        }
+    }
+    else
+        VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: GetFileVersionInfoSize failed with %d\n", GetLastError());
 }
 
 

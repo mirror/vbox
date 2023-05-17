@@ -385,7 +385,7 @@ static int autostartUpdatePolicy(const com::Utf8Str &sUser)
                                 /* Add privilege */
                                 LSA_UNICODE_STRING lwsPrivilege;
                                 // Create an LSA_UNICODE_STRING for the privilege names.
-                                lwsPrivilege.Buffer = L"SeServiceLogonRight";
+                                lwsPrivilege.Buffer = (PWSTR)L"SeServiceLogonRight";
                                 size_t cwPrivilege = wcslen(lwsPrivilege.Buffer);
                                 lwsPrivilege.Length = (USHORT)cwPrivilege * sizeof(WCHAR);
                                 lwsPrivilege.MaximumLength = (USHORT)(cwPrivilege + 1) * sizeof(WCHAR);

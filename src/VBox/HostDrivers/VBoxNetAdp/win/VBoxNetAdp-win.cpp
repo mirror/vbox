@@ -1375,7 +1375,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqQuery(PVBOXNETADP_ADAPTER pThis,
 
     uint64_t u64Tmp = 0;
     ULONG ulTmp = 0;
-    PVOID pInfo = &ulTmp;
+    void const *pvInfo = &ulTmp;
     ULONG cbInfo = sizeof(ulTmp);
 
     switch (pQuery->Oid)
@@ -1392,7 +1392,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqQuery(PVBOXNETADP_ADAPTER pThis,
             pParams->Header.Size = NDIS_SIZEOF_INTERRUPT_MODERATION_PARAMETERS_REVISION_1;
             pParams->Flags = 0;
             pParams->InterruptModeration = NdisInterruptModerationNotSupported;
-            pInfo = NULL; /* Do not copy */
+            pvInfo = NULL; /* Do not copy */
             break;
         }
         case OID_GEN_MAXIMUM_TOTAL_SIZE:
@@ -1406,10 +1406,10 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqQuery(PVBOXNETADP_ADAPTER pThis,
             ulTmp = VBOXNETADP_MAX_FRAME_SIZE * 40;
             break;
         case OID_GEN_RCV_OK:
-            pInfo = vboxNetAdpWinStatsU64(&u64Tmp, &cbInfo, vboxNetAdpWinStatsTotals(pThis->au64StatsInPackets));
+            pvInfo = vboxNetAdpWinStatsU64(&u64Tmp, &cbInfo, vboxNetAdpWinStatsTotals(pThis->au64StatsInPackets));
             break;
         case OID_GEN_XMIT_OK:
-            pInfo = vboxNetAdpWinStatsU64(&u64Tmp, &cbInfo, vboxNetAdpWinStatsTotals(pThis->au64StatsOutPackets));
+            pvInfo = vboxNetAdpWinStatsU64(&u64Tmp, &cbInfo, vboxNetAdpWinStatsTotals(pThis->au64StatsOutPackets));
             break;
         case OID_GEN_STATISTICS:
         {
@@ -1418,7 +1418,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqQuery(PVBOXNETADP_ADAPTER pThis,
             cbInfo = NDIS_SIZEOF_STATISTICS_INFO_REVISION_1;
             if (cbInfo > pQuery->InformationBufferLength)
                 break;
-            pInfo = NULL; /* Do not copy */
+            pvInfo = NULL; /* Do not copy */
             memset(pStats, 0, cbInfo);
             pStats->Header.Type = NDIS_OBJECT_TYPE_DEFAULT;
             pStats->Header.Revision = NDIS_STATISTICS_INFO_REVISION_1;
@@ -1460,7 +1460,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqQuery(PVBOXNETADP_ADAPTER pThis,
             break;
         }
         case OID_GEN_VENDOR_DESCRIPTION:
-            pInfo = VBOXNETADP_VENDOR_NAME;
+            pvInfo = VBOXNETADP_VENDOR_NAME;
             cbInfo = sizeof(VBOXNETADP_VENDOR_NAME);
             break;
         case OID_GEN_VENDOR_DRIVER_VERSION:
@@ -1471,7 +1471,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqQuery(PVBOXNETADP_ADAPTER pThis,
             break;
         case OID_802_3_PERMANENT_ADDRESS:
         case OID_802_3_CURRENT_ADDRESS:
-            pInfo = &pThis->MacAddr;
+            pvInfo = &pThis->MacAddr;
             cbInfo = sizeof(pThis->MacAddr);
             break;
             //case OID_802_3_MULTICAST_LIST:
@@ -1479,11 +1479,11 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqQuery(PVBOXNETADP_ADAPTER pThis,
             ulTmp = VBOXNETADP_MCAST_LIST_SIZE;
             break;
         case OID_PNP_CAPABILITIES:
-            pInfo = &pThis->pGlobals->PMCaps;
+            pvInfo = &pThis->pGlobals->PMCaps;
             cbInfo = sizeof(pThis->pGlobals->PMCaps);
             break;
         case OID_PNP_QUERY_POWER:
-            pInfo = NULL; /* Do not copy */
+            pvInfo = NULL; /* Do not copy */
             cbInfo = 0;
             break;
         default:
@@ -1500,8 +1500,8 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqQuery(PVBOXNETADP_ADAPTER pThis,
         }
         else
         {
-            if (pInfo)
-                NdisMoveMemory(pQuery->InformationBuffer, pInfo, cbInfo);
+            if (pvInfo)
+                NdisMoveMemory(pQuery->InformationBuffer, pvInfo, cbInfo);
             pQuery->BytesWritten = cbInfo;
         }
     }

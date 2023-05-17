@@ -90,15 +90,15 @@ DEFINE_GUID(CPFG_CREDENTIAL_PROVIDER_LABEL, 0x286BBFF3, 0xBAD4, 0x438F, 0xB0 ,0x
 static const VBOXCREDPROV_FIELD s_VBoxCredProvDefaultFields[] =
 {
     /** The user's profile image (tile). */
-    { { VBOXCREDPROV_FIELDID_TILEIMAGE,      CPFT_TILE_IMAGE,    L"Tile Image",     {0}                            }, CPFS_DISPLAY_IN_BOTH,            CPFIS_NONE    },
-    { { VBOXCREDPROV_FIELDID_USERNAME,       CPFT_LARGE_TEXT,    L"Username",       CPFG_LOGON_USERNAME            }, CPFS_DISPLAY_IN_BOTH,            CPFIS_NONE    },
-    { { VBOXCREDPROV_FIELDID_PASSWORD,       CPFT_PASSWORD_TEXT, L"Password",       CPFG_LOGON_PASSWORD            }, CPFS_DISPLAY_IN_SELECTED_TILE,   CPFIS_FOCUSED },
-    { { VBOXCREDPROV_FIELDID_DOMAINNAME,     CPFT_LARGE_TEXT,    L"",               {0}                            }, CPFS_DISPLAY_IN_SELECTED_TILE,   CPFIS_FOCUSED },
-    { { VBOXCREDPROV_FIELDID_SUBMIT_BUTTON,  CPFT_SUBMIT_BUTTON, L"Submit",         {0}                            }, CPFS_DISPLAY_IN_SELECTED_TILE,   CPFIS_FOCUSED },
+    { { VBOXCREDPROV_FIELDID_TILEIMAGE,      CPFT_TILE_IMAGE,    (LPWSTR)L"Tile Image",     {0}                            }, CPFS_DISPLAY_IN_BOTH,            CPFIS_NONE    },
+    { { VBOXCREDPROV_FIELDID_USERNAME,       CPFT_LARGE_TEXT,    (LPWSTR)L"Username",       CPFG_LOGON_USERNAME            }, CPFS_DISPLAY_IN_BOTH,            CPFIS_NONE    },
+    { { VBOXCREDPROV_FIELDID_PASSWORD,       CPFT_PASSWORD_TEXT, (LPWSTR)L"Password",       CPFG_LOGON_PASSWORD            }, CPFS_DISPLAY_IN_SELECTED_TILE,   CPFIS_FOCUSED },
+    { { VBOXCREDPROV_FIELDID_DOMAINNAME,     CPFT_LARGE_TEXT,    (LPWSTR)L"",               {0}                            }, CPFS_DISPLAY_IN_SELECTED_TILE,   CPFIS_FOCUSED },
+    { { VBOXCREDPROV_FIELDID_SUBMIT_BUTTON,  CPFT_SUBMIT_BUTTON, (LPWSTR)L"Submit",         {0}                            }, CPFS_DISPLAY_IN_SELECTED_TILE,   CPFIS_FOCUSED },
     /** New since Windows 8: The image used to represent a credential provider on the logon page. */
-    { { VBOXCREDPROV_FIELDID_PROVIDER_LOGO,  CPFT_TILE_IMAGE,    L"Provider Logo",  CPFG_CREDENTIAL_PROVIDER_LOGO  }, CPFS_HIDDEN /* Not used yet. */, CPFIS_NONE },
+    { { VBOXCREDPROV_FIELDID_PROVIDER_LOGO,  CPFT_TILE_IMAGE,    (LPWSTR)L"Provider Logo",  CPFG_CREDENTIAL_PROVIDER_LOGO  }, CPFS_HIDDEN /* Not used yet. */, CPFIS_NONE },
     /** New since Windows 8: The label associated with a credential provider on the logon page. */
-    { { VBOXCREDPROV_FIELDID_PROVIDER_LABEL, CPFT_SMALL_TEXT,    L"Provider Label", CPFG_CREDENTIAL_PROVIDER_LABEL }, CPFS_HIDDEN /* Not used yet. */, CPFIS_NONE }
+    { { VBOXCREDPROV_FIELDID_PROVIDER_LABEL, CPFT_SMALL_TEXT,    (LPWSTR)L"Provider Label", CPFG_CREDENTIAL_PROVIDER_LABEL }, CPFS_HIDDEN /* Not used yet. */, CPFIS_NONE }
 };
 
 /** Prototypes. */

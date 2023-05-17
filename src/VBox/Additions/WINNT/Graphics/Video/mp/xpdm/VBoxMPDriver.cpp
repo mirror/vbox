@@ -107,19 +107,19 @@ VBoxDrvFindAdapter(IN PVOID HwDeviceExtension, IN PVOID HwContext, IN PWSTR Argu
     cbVRAM = VideoPortReadPortUlong((PULONG)VBE_DISPI_IOPORT_DATA);
 
     /* Write hw information to registry, so that it's visible in windows property dialog */
-    rc = VideoPortSetRegistryParameters(pExt, L"HardwareInformation.ChipType",
+    rc = VideoPortSetRegistryParameters(pExt, (PWSTR)L"HardwareInformation.ChipType",
                                         g_wszVBoxChipType, sizeof(g_wszVBoxChipType));
     VBOXMP_WARN_VPS(rc);
-    rc = VideoPortSetRegistryParameters(pExt, L"HardwareInformation.DacType",
+    rc = VideoPortSetRegistryParameters(pExt, (PWSTR)L"HardwareInformation.DacType",
                                         g_wszVBoxDACType, sizeof(g_wszVBoxDACType));
     VBOXMP_WARN_VPS(rc);
-    rc = VideoPortSetRegistryParameters(pExt, L"HardwareInformation.MemorySize",
+    rc = VideoPortSetRegistryParameters(pExt, (PWSTR)L"HardwareInformation.MemorySize",
                                         &cbVRAM, sizeof(ULONG));
     VBOXMP_WARN_VPS(rc);
-    rc = VideoPortSetRegistryParameters(pExt, L"HardwareInformation.AdapterString",
+    rc = VideoPortSetRegistryParameters(pExt, (PWSTR)L"HardwareInformation.AdapterString",
                                         g_wszVBoxAdapterString, sizeof(g_wszVBoxAdapterString));
     VBOXMP_WARN_VPS(rc);
-    rc = VideoPortSetRegistryParameters(pExt, L"HardwareInformation.BiosString",
+    rc = VideoPortSetRegistryParameters(pExt, (PWSTR)L"HardwareInformation.BiosString",
                                         g_wszVBoxBiosString, sizeof(g_wszVBoxBiosString));
     VBOXMP_WARN_VPS(rc);
 

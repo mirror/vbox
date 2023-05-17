@@ -57,19 +57,15 @@ VP_STATUS VBoxMPCmnRegFini(IN VBOXMPCMNREGISTRY Reg)
     return NO_ERROR;
 }
 
-VP_STATUS VBoxMPCmnRegSetDword(IN VBOXMPCMNREGISTRY Reg, PWSTR pName, uint32_t Val)
+VP_STATUS VBoxMPCmnRegSetDword(IN VBOXMPCMNREGISTRY Reg, PCWSTR pName, uint32_t Val)
 {
-    return VideoPortSetRegistryParameters(Reg, pName, &Val, sizeof(Val));
+    return VideoPortSetRegistryParameters(Reg, (PWSTR)pName, &Val, sizeof(Val));
 }
 
-VP_STATUS VBoxMPCmnRegQueryDword(IN VBOXMPCMNREGISTRY Reg, PWSTR pName, uint32_t *pVal)
+VP_STATUS VBoxMPCmnRegQueryDword(IN VBOXMPCMNREGISTRY Reg, PCWSTR pName, uint32_t *pVal)
 {
-    VP_STATUS rc;
-
-    rc = VideoPortGetRegistryParameters(Reg, pName, FALSE, VBoxMPQueryNamedValueCB, pVal);
-    if (rc!=NO_ERROR && pVal)
-    {
+    VP_STATUS rc = VideoPortGetRegistryParameters(Reg, (PWSTR)pName, FALSE, VBoxMPQueryNamedValueCB, pVal);
+    if (rc != NO_ERROR && pVal)
         *pVal = 0;
-    }
     return rc;
 }

@@ -1996,8 +1996,8 @@ static DECLCALLBACK(int) drvHostAudioWasHA_StreamCreate(PPDMIHOSTAUDIO pInterfac
         pIDevice->AddRef();
     pThis->pNotifyClient->lockLeave();
 
-    PRTUTF16       pwszDevId     = pCfgReq->enmDir == PDMAUDIODIR_IN ? pThis->pwszInputDevId : pThis->pwszOutputDevId;
-    PRTUTF16 const pwszDevIdDesc = pwszDevId ? pwszDevId : pCfgReq->enmDir == PDMAUDIODIR_IN ? L"{Default-In}" : L"{Default-Out}";
+    PCRTUTF16       pwszDevId     = pCfgReq->enmDir == PDMAUDIODIR_IN ? pThis->pwszInputDevId : pThis->pwszOutputDevId;
+    PCRTUTF16 const pwszDevIdDesc = pwszDevId ? pwszDevId : pCfgReq->enmDir == PDMAUDIODIR_IN ? L"{Default-In}" : L"{Default-Out}";
     if (!pIDevice)
     {
         /* This might not strictly be necessary anymore, however it shouldn't

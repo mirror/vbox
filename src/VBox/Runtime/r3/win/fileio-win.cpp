@@ -1020,7 +1020,7 @@ RTR3DECL(int) RTFileSetSize(RTFILE hFile, uint64_t cbSize)
     if (hDupFile != INVALID_HANDLE_VALUE)
         NtClose(hDupFile);
 
-    if (RT_SUCCESS(rcNt))
+    if (NT_SUCCESS(rcNt))
         return VINF_SUCCESS;
     return RTErrConvertFromNtStatus(rcNt);
 

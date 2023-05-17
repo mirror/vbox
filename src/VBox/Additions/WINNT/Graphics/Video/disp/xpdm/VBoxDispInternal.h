@@ -162,7 +162,7 @@ BOOL vrdpReportOrderGeneric(PVBOXDISPDEV pDev, const VRDPCLIPRECTS *pClipRects,
                              const void *pvOrder, unsigned cbOrder, unsigned code);
 
 BOOL VBoxDispIsScreenSurface(SURFOBJ *pso);
-void VBoxDispDumpPSO(SURFOBJ *pso, char *s);
+void VBoxDispDumpPSO(SURFOBJ *pso, const char *s);
 
 BOOL vrdpDrvRealizeBrush(BRUSHOBJ *pbo, SURFOBJ *psoTarget, SURFOBJ *psoPattern, SURFOBJ *psoMask,
                          XLATEOBJ *pxlo, ULONG iHatch);

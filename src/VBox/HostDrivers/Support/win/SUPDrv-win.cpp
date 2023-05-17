@@ -426,7 +426,7 @@ static RTL_QUERY_REGISTRY_TABLE     g_aRegValues[] =
     {
         /* .QueryRoutine = */   NULL,
         /* .Flags = */          RTL_QUERY_REGISTRY_DIRECT | RTL_QUERY_REGISTRY_TYPECHECK,
-        /* .Name = */           L"ForceAsyncTsc",
+        /* .Name = */           (PWSTR)L"ForceAsyncTsc",
         /* .EntryContext = */   &g_Options.fOptForceAsyncTsc,
         /* .DefaultType = */    (REG_DWORD << RTL_QUERY_REGISTRY_TYPECHECK_SHIFT) | REG_DWORD,
         /* .DefaultData = */    &g_fOptDefaultZero,

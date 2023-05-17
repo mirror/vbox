@@ -68,12 +68,12 @@ static IEventSystem *g_pIEventSystem = NULL; /**< Pointer to IEventSystem interf
 static struct VBOXCREDPROVSENSEVENTS
 {
     /** The actual method name the subscription is for. */
-    char *pszMethod;
+    const char *pszMethod;
     /** A friendly name for the subscription. */
-    char *pszSubscriptionName;
+    const char *pszSubscriptionName;
     /** The actual subscription UUID.
      *  Should not be changed. */
-    char *pszSubscriptionUUID;
+    const char *pszSubscriptionUUID;
 } g_aSENSEvents[] = {
     { "Logon",             "VBoxCredProv SENS Logon",             "{561D0791-47C0-4BC3-87C0-CDC2621EA653}" },
     { "Logoff",            "VBoxCredProv SENS Logoff",            "{12B618B1-F2E0-4390-BADA-7EB1DC31A70A}" },
@@ -283,7 +283,7 @@ static HRESULT VBoxCredentialProviderRegisterSENS(void)
         if (FAILED(hr))
             break;
 
-        hr = g_pIEventSystem->Store(PROGID_EventSubscription, (IUnknown*)pIEventSubscription);
+        hr = g_pIEventSystem->Store((BSTR)PROGID_EventSubscription, (IUnknown*)pIEventSubscription);
         if (FAILED(hr))
             break;
 
@@ -345,7 +345,7 @@ static void VBoxCredentialProviderUnregisterSENS(void)
         hr = bstrSubToRemove.printfNoThrow("SubscriptionID=%s", g_aSENSEvents[i].pszSubscriptionUUID);
         AssertContinue(SUCCEEDED(hr)); /* keep going */
         int  iErrorIdX;
-        hr = g_pIEventSystem->Remove(PROGID_EventSubscription, bstrSubToRemove.raw(), &iErrorIdX);
+        hr = g_pIEventSystem->Remove((BSTR)PROGID_EventSubscription, bstrSubToRemove.raw(), &iErrorIdX);
         if (FAILED(hr))
         {
             VBoxCredProvVerbose(0, "VBoxCredentialProviderUnregisterSENS: Could not unregister \"%s\" (query: %ls), hr=%Rhrc (index: %d)\n",

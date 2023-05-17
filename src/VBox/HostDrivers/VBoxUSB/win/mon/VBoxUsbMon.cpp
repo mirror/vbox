@@ -803,12 +803,13 @@ typedef struct VBOXUSBMONHOOKDRIVERWALKER
  * @param   ReturnedStatus Error that was reported by the driver to the caller.
  * @param   uErrId         Unique error id representing the location in the driver.
  * @param   cbDumpData     Number of bytes at pDumpData.
- * @param   pDumpData      Pointer to data that will be added to the message (see 'details' tab).
+ * @param   pvDumpData     Pointer to data that will be added to the message
+ *                         (see 'details' tab).
  *
  * NB: We only use IoLogMsg.dll as the message file, limiting
  * ErrCode to status codes and messages defined in ntiologc.h
  */
-static void vboxUsbMonLogError(NTSTATUS ErrCode, NTSTATUS ReturnedStatus, ULONG uErrId, USHORT cbDumpData, PVOID pDumpData)
+static void vboxUsbMonLogError(NTSTATUS ErrCode, NTSTATUS ReturnedStatus, ULONG uErrId, USHORT cbDumpData, void const *pvDumpData)
 {
     PIO_ERROR_LOG_PACKET pErrEntry;
 
@@ -823,7 +824,7 @@ static void vboxUsbMonLogError(NTSTATUS ErrCode, NTSTATUS ReturnedStatus, ULONG 
     {
         uint8_t *pDump = (uint8_t *)pErrEntry->DumpData;
         if (cbDumpData)
-            memcpy(pDump, pDumpData, cbDumpData);
+            memcpy(pDump, pvDumpData, cbDumpData);
         pErrEntry->MajorFunctionCode = 0;
         pErrEntry->RetryCount = 0;
         pErrEntry->DumpDataSize = cbDumpData;

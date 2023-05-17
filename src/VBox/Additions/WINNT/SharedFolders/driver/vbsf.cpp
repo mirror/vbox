@@ -1123,19 +1123,16 @@ static NTSTATUS vbsfVerifyConnectionName(PUNICODE_STRING ConnectionName)
      */
     NTSTATUS Status = STATUS_BAD_NETWORK_NAME;
 
-    ULONG i;
-    PWCHAR pwc;
-    PWCHAR pwc1;
-
-    static PWCHAR spwszPrefix = L"\\Device\\VBoxMiniRdr\\;";
+    static WCHAR const s_wszPrefix[] = L"\\Device\\VBoxMiniRdr\\;";
 
     /* Unicode chars in the string. */
     ULONG cConnectionName = ConnectionName->Length / sizeof(WCHAR);
     ULONG cRemainingName;
 
     /* Check that the name starts with correct prefix. */
-    pwc1 = &spwszPrefix[0];
-    pwc = ConnectionName->Buffer;
+    PCWCHAR pwc1 = &s_wszPrefix[0];
+    PCWCHAR pwc  = ConnectionName->Buffer;
+    ULONG   i;
     for (i = 0; i < cConnectionName; i++, pwc1++, pwc++)
     {
         if (*pwc1 == 0 || *pwc == 0 || *pwc1 != *pwc)
