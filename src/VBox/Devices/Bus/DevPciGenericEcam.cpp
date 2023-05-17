@@ -286,10 +286,10 @@ static DECLCALLBACK(int) pciGenEcamR3Construct(PPDMDEVINS pDevIns, int iInstance
     rc = pHlp->pfnCFGMQueryU32(pCfg, "IntPinB", &pPciRoot->u.GenericEcam.auPciIrqNr[1]);
     AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IntPinB\"")));
 
-    rc = pHlp->pfnCFGMQueryU32(pCfg, "IntPinB", &pPciRoot->u.GenericEcam.auPciIrqNr[2]);
+    rc = pHlp->pfnCFGMQueryU32(pCfg, "IntPinC", &pPciRoot->u.GenericEcam.auPciIrqNr[2]);
     AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IntPinC\"")));
 
-    rc = pHlp->pfnCFGMQueryU32(pCfg, "IntPinB", &pPciRoot->u.GenericEcam.auPciIrqNr[3]);
+    rc = pHlp->pfnCFGMQueryU32(pCfg, "IntPinD", &pPciRoot->u.GenericEcam.auPciIrqNr[3]);
     AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IntPinD\"")));
 
     Log(("PCI: fUseIoApic=%RTbool McfgBase=%#RX64 McfgLength=%#RX64 fR0Enabled=%RTbool fRCEnabled=%RTbool\n", pPciRoot->fUseIoApic,
