@@ -7057,10 +7057,12 @@ static void vmsvgaR3PowerOnDevice(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATE
         uint32_t u32FIFOCaps = 0;
         vmsvgaR3GetCaps(pThis, pThisCC, &u32DeviceCaps, &u32DeviceCaps2, &u32FIFOCaps);
 
-        /* Capabilities should not change normally. */
-        Assert(   pThis->svga.u32DeviceCaps == u32DeviceCaps
-               && pThis->svga.u32DeviceCaps2 == u32DeviceCaps2
-               && pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES] == u32FIFOCaps);
+        /* Capabilities should not change normally.
+         * However the saved state might have a subset of currently implemented caps.
+         */
+        Assert(   (pThis->svga.u32DeviceCaps & u32DeviceCaps) == pThis->svga.u32DeviceCaps
+               && (pThis->svga.u32DeviceCaps2 & u32DeviceCaps2) == pThis->svga.u32DeviceCaps2
+               && (pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES] & u32FIFOCaps) == pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES]);
     }
 #endif
 
