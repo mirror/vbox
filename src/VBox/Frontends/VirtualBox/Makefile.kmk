@@ -311,7 +311,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/platform \
 	./src/platform/darwin \
 	./src/platform/win \
-	./src/platform/x11 \
+	./src/platform/nix \
 	./src/runtime \
 	./src/runtime/fullscreen \
 	./src/runtime/normal \
@@ -1295,7 +1295,7 @@ VirtualBox_SOURCES.darwin += \
 
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # U*nix
  VirtualBox_SOURCES += \
- 	src/platform/x11/UIDesktopServices_nix.cpp \
+ 	src/platform/nix/UIDesktopServices_nix.cpp \
  	$(VBOX_GH_SOURCES) # For detecting display server
 endif
 
@@ -1638,8 +1638,8 @@ endif
 
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # Un*x
  UICommon_SOURCES += \
- 	src/platform/x11/VBoxUtils-nix.cpp \
- 	src/platform/x11/XKeyboard-new.cpp
+ 	src/platform/nix/VBoxUtils-nix.cpp \
+ 	src/platform/nix/XKeyboard-new.cpp
 endif
 
 UICommon_SOURCES.win += \
@@ -2123,7 +2123,7 @@ QTGUI_DOXYFILE_INPUT_DIRS := \
 		platform/darwin \
 		platform/os2 \
 		platform/win \
-		platform/x11 \
+		platform/nix \
 		runtime \
 		runtime/fullscreen \
 		runtime/information \
