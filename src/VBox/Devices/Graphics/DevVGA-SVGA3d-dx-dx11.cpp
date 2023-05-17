@@ -5588,7 +5588,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXDestroyContext(PVGASTATECC pThisCC, PVMSV
         if (pBackendDXContext->paUnorderedAccessView)
         {
             for (uint32_t i = 0; i < pBackendDXContext->cUnorderedAccessView; ++i)
-                D3D_RELEASE(pBackendDXContext->paRenderTargetView[i].u.pUnorderedAccessView);
+                D3D_RELEASE(pBackendDXContext->paUnorderedAccessView[i].u.pUnorderedAccessView);
         }
 
         RTMemFreeZ(pBackendDXContext->papBlendState, sizeof(pBackendDXContext->papBlendState[0]) * pBackendDXContext->cBlendState);
