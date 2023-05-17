@@ -216,6 +216,8 @@ public:
         bool isCompositingManagerRunning() const { return m_fCompositingManagerRunning; }
         /** Returns true if the detected display server type is either xorg or xwayland. */
         bool X11ServerAvailable() const;
+        /** Returns display server type. */
+        VBGHDISPLAYSERVERTYPE displayServerType() const;
 #endif
     /** @} */
 

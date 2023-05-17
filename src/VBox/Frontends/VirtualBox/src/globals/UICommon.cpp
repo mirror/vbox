@@ -3027,4 +3027,9 @@ bool UICommon::X11ServerAvailable() const
 {
     return VBGHDisplayServerTypeIsXAvailable(m_enmDisplayServerType);
 }
+
+VBGHDISPLAYSERVERTYPE UICommon::displayServerType() const
+{
+    return m_enmDisplayServerType;
+}
 #endif

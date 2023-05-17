@@ -245,6 +245,7 @@ unsigned handleXKeyEvent(Display *pDisplay, unsigned int iDetail)
     unsigned iKey = X11DRV_KeyEvent(pDisplay, iDetail);
     LogRel3(("VBoxKeyboard: converting keycode %d to scancode %s0x%x\n",
              iDetail, iKey > 0x100 ? "0xe0 " : "", iKey & 0xff));
+    printf("detail %d iKey %u\n", iDetail, iKey);
     return iKey;
 }
 
