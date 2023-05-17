@@ -67,11 +67,44 @@
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 
+/**
+ * Returns the interrupt pin for a given device slot on the root port
+ * due to swizzeling.
+ *
+ * @returns Interrupt pin on the root port.
+ * @param   uDevFn      The device.
+ * @param   uPin        The interrupt pin on the device.
+ */
+DECLINLINE(uint8_t) pciGenEcamGetPirq(uint8_t uDevFn, uint8_t uPin)
+{
+    uint8_t uSlot = (uDevFn >> 3) - 1;
+    return (uPin + uSlot) & 3;
+}
+
+
+/**
+ * Returns whether the interrupt line is asserted on the PCI root for the given pin.
+ *
+ * @returns Flag whther the interrupt line is asserted (true) or not (false).
+ * @param   pPciRoot    The PCI root bus.
+ * @param   u8IrqPin    The IRQ pin being checked.
+ */
+DECLINLINE(bool) pciGenEcamGetIrqLvl(PDEVPCIROOT pPciRoot, uint8_t u8IrqPin)
+{
+    return (pPciRoot->u.GenericEcam.auPciIrqLevels[u8IrqPin] != 0);
+}
+
+
+/**
+ * @interface_method_impl{PDMPCIBUSREGCC,pfnSetIrqR3}
+ */
 static DECLCALLBACK(void) pciGenEcamSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     PDEVPCIROOT pPciRoot = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
+    PDEVPCIBUS  pBus = &pPciRoot->PciBus;
     PDEVPCIBUSCC pBusCC = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC);
     uint8_t uDevFn = pPciDev->uDevFn;
+    uint16_t const uBusDevFn = PCIBDF_MAKE(pBus->iBus, uDevFn);
 
     LogFlowFunc(("invoked by %p/%d: iIrq=%d iLevel=%d uTagSrc=%#x\n", pDevIns, pDevIns->iInstance, iIrq, iLevel, uTagSrc));
 
@@ -95,7 +128,6 @@ static DECLCALLBACK(void) pciGenEcamSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDe
         return;
     }
 
-    PDEVPCIBUS pBus = &pPciRoot->PciBus;
     LogFlowFunc(("PCI Dev %p : IRQ\n", pPciDev));
 
     /* Check if the state changed. */
@@ -103,14 +135,37 @@ static DECLCALLBACK(void) pciGenEcamSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDe
     {
         pPciDev->Int.s.uIrqPinState = (iLevel & PDM_IRQ_LEVEL_HIGH);
 
-        /** @todo */
+        /* Get the pin. */
+        uint8_t uIrqPin = devpciR3GetByte(pPciDev, VBOX_PCI_INTERRUPT_PIN);
+        uint8_t uIrq = pciGenEcamGetPirq(pPciDev->uDevFn, uIrqPin);
+
+        if ((iLevel & PDM_IRQ_LEVEL_HIGH) == PDM_IRQ_LEVEL_HIGH)
+            ASMAtomicIncU32(&pPciRoot->u.GenericEcam.auPciIrqLevels[uIrq]);
+        else if ((iLevel & PDM_IRQ_LEVEL_HIGH) == PDM_IRQ_LEVEL_LOW)
+            ASMAtomicDecU32(&pPciRoot->u.GenericEcam.auPciIrqLevels[uIrq]);
+
+        bool fIrqLvl = pciGenEcamGetIrqLvl(pPciRoot, uIrq);
+        uint32_t u32IrqNr = pPciRoot->u.GenericEcam.auPciIrqNr[uIrq];
+
+        Log3Func(("%s: uIrqPin=%u uIrqRoot=%u fIrqLvl=%RTbool uIrqNr=%u\n",
+              R3STRING(pPciDev->pszNameR3), uIrqPin, uIrq, fIrqLvl, u32IrqNr));
+        pBusCC->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pDevIns, uBusDevFn, u32IrqNr, fIrqLvl, uTagSrc);
+
+        if ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP) {
+            ASMAtomicDecU32(&pPciRoot->u.GenericEcam.auPciIrqLevels[uIrq]);
+            pPciDev->Int.s.uIrqPinState = PDM_IRQ_LEVEL_LOW;
+            fIrqLvl = pciGenEcamGetIrqLvl(pPciRoot, uIrq);
+            Log3Func(("%s: uIrqPin=%u uIrqRoot=%u fIrqLvl=%RTbool uIrqNr=%u\n",
+                  R3STRING(pPciDev->pszNameR3), uIrqPin, uIrq, fIrqLvl, u32IrqNr));
+            pBusCC->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pDevIns, uBusDevFn, u32IrqNr, fIrqLvl, uTagSrc);
+        }
     }
 }
 
 
 /**
  * @callback_method_impl{FNIOMMMIONEWWRITE,
- * Emulates writes to configuration space.}
+ * Emulates writes to PIO space.}
  */
 static DECLCALLBACK(VBOXSTRICTRC) pciHostR3MmioPioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
@@ -145,7 +200,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pciHostR3MmioPioWrite(PPDMDEVINS pDevIns, void
 
 /**
  * @callback_method_impl{FNIOMMMIONEWWRITE,
- * Emulates reads from configuration space.}
+ * Emulates reads from PIO space.}
  */
 static DECLCALLBACK(VBOXSTRICTRC) pciHostR3MmioPioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
@@ -155,7 +210,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pciHostR3MmioPioRead(PPDMDEVINS pDevIns, void 
     AssertReturn(off < _64K, VERR_INVALID_PARAMETER);
     AssertReturn(cb <= 4, VERR_INVALID_PARAMETER);
 
-    /* Perform configuration space read */
+    /* Perform PIO space read */
     uint32_t     u32Value = 0;
     VBOXSTRICTRC rcStrict = PDMDevHlpIoPortRead(pDevIns, (RTIOPORT)off, &u32Value, cb);
 
@@ -204,7 +259,14 @@ static DECLCALLBACK(int) pciGenEcamR3Construct(PPDMDEVINS pDevIns, int iInstance
     /*
      * Validate and read configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "MmioEcamBase|MmioEcamLength|MmioPioBase|MmioPioSize", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "MmioEcamBase"
+                                           "|MmioEcamLength"
+                                           "|MmioPioBase"
+                                           "|MmioPioSize"
+                                           "|IntPinA"
+                                           "|IntPinB"
+                                           "|IntPinC"
+                                           "|IntPinD", "");
 
     int rc = pHlp->pfnCFGMQueryU64Def(pCfg, "MmioEcamBase", &pPciRoot->u64PciConfigMMioAddress, 0);
     AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"McfgBase\"")));
@@ -218,8 +280,22 @@ static DECLCALLBACK(int) pciGenEcamR3Construct(PPDMDEVINS pDevIns, int iInstance
     rc = pHlp->pfnCFGMQueryU64Def(pCfg, "MmioPioSize", &pPciRoot->GCPhysMmioPioEmuSize, 0);
     AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"MmioPioSize\"")));
 
+    rc = pHlp->pfnCFGMQueryU32(pCfg, "IntPinA", &pPciRoot->u.GenericEcam.auPciIrqNr[0]);
+    AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IntPinA\"")));
+
+    rc = pHlp->pfnCFGMQueryU32(pCfg, "IntPinB", &pPciRoot->u.GenericEcam.auPciIrqNr[1]);
+    AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IntPinB\"")));
+
+    rc = pHlp->pfnCFGMQueryU32(pCfg, "IntPinB", &pPciRoot->u.GenericEcam.auPciIrqNr[2]);
+    AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IntPinC\"")));
+
+    rc = pHlp->pfnCFGMQueryU32(pCfg, "IntPinB", &pPciRoot->u.GenericEcam.auPciIrqNr[3]);
+    AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"IntPinD\"")));
+
     Log(("PCI: fUseIoApic=%RTbool McfgBase=%#RX64 McfgLength=%#RX64 fR0Enabled=%RTbool fRCEnabled=%RTbool\n", pPciRoot->fUseIoApic,
          pPciRoot->u64PciConfigMMioAddress, pPciRoot->u64PciConfigMMioLength, pDevIns->fR0Enabled, pDevIns->fRCEnabled));
+    Log(("PCI: IntPinA=%u IntPinB=%u IntPinC=%u IntPinD=%u\n", pPciRoot->u.GenericEcam.auPciIrqNr[0],
+         pPciRoot->u.GenericEcam.auPciIrqNr[1], pPciRoot->u.GenericEcam.auPciIrqNr[2], pPciRoot->u.GenericEcam.auPciIrqNr[3]));
 
     /*
      * Init data.

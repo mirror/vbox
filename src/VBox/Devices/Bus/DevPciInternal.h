@@ -176,21 +176,36 @@ typedef struct DEVPCIROOT
     uint32_t            uConfigReg;
     /** Alignment padding.   */
     uint32_t            u32Alignment1;
-    /** Members only used by the PIIX3 code variant.
-     * (The PCI device for the PCI-to-ISA bridge is PDMDEVINSR3::apPciDevs[1].) */
-    struct
+    /** PCI bus dependent data. */
+    union
     {
-        /** ACPI IRQ level */
-        uint32_t            iAcpiIrqLevel;
-        /** ACPI PIC IRQ */
-        int32_t             iAcpiIrq;
-        /** Irq levels for the four PCI Irqs.
-         * These count how many devices asserted the IRQ line.  If greater 0 an IRQ
-         * is sent to the guest.  If it drops to 0 the IRQ is deasserted.
-         * @remarks Labling this "legacy" might be a bit off...
-         */
-        volatile uint32_t   auPciLegacyIrqLevels[DEVPCI_LEGACY_IRQ_PINS];
-    } Piix3;
+        /** Members only used by the PIIX3 code variant.
+         * (The PCI device for the PCI-to-ISA bridge is PDMDEVINSR3::apPciDevs[1].) */
+        struct
+        {
+            /** ACPI IRQ level */
+            uint32_t            iAcpiIrqLevel;
+            /** ACPI PIC IRQ */
+            int32_t             iAcpiIrq;
+            /** Irq levels for the four PCI Irqs.
+             * These count how many devices asserted the IRQ line.  If greater 0 an IRQ
+             * is sent to the guest.  If it drops to 0 the IRQ is deasserted.
+             * @remarks Labling this "legacy" might be a bit off...
+             */
+            volatile uint32_t   auPciLegacyIrqLevels[DEVPCI_LEGACY_IRQ_PINS];
+        } Piix3;
+        /** Members only used by the generic ECAM variant. */
+        struct
+        {
+            /** The interrupt config for INT#A ... INT#D. */
+            uint32_t            auPciIrqNr[DEVPCI_LEGACY_IRQ_PINS];
+            /** Irq levels for the four PCI Irqs.
+             * These count how many devices asserted the IRQ line.  If greater 0 an IRQ
+             * is sent to the guest.  If it drops to 0 the IRQ is deasserted.
+             */
+            volatile uint32_t   auPciIrqLevels[DEVPCI_LEGACY_IRQ_PINS];
+        } GenericEcam;
+    } u;
 
     /** The address I/O port handle. */
     IOMIOPORTHANDLE         hIoPortAddress;
