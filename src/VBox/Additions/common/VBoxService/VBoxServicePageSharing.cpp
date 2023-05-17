@@ -119,7 +119,7 @@ static DECLCALLBACK(int) vgsvcPageSharingEmptyTreeCallback(PAVLPVNODECORE pNode,
 /**
  * Registers a new module with the VMM
  * @param   pModule         Module ptr
- * @param   fValidateMemory Validate/touch memory pages or not 
+ * @param   fValidateMemory Validate/touch memory pages or not
  * @param   pVersionInfo    Version info bytes.
  */
 static void vgsvcPageSharingRegisterModuleInner(PVGSVCPGSHKNOWNMOD pModule, bool fValidateMemory, BYTE *pVersionInfo)

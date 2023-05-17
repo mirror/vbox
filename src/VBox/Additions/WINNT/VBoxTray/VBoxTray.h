@@ -165,7 +165,7 @@ typedef struct VBOXSERVICEINFO
     bool             fEnabled;
 } VBOXSERVICEINFO, *PVBOXSERVICEINFO;
 
-/** 
+/**
  * Globally unique (system wide) message registration.
  */
 typedef struct VBOXGLOBALMESSAGE
