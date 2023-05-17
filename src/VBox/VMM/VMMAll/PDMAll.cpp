@@ -35,7 +35,11 @@
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/vmcc.h>
 #include <VBox/err.h>
-#include <VBox/vmm/apic.h>
+#ifdef VBOX_VMM_TARGET_ARMV8
+# include <VBox/vmm/gic.h>
+#else
+# include <VBox/vmm/apic.h>
+#endif
 
 #include <VBox/log.h>
 #include <iprt/asm.h>
@@ -143,6 +147,10 @@ VMMDECL(int) PDMIsaSetIrq(PVMCC pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uT
     }
     Log9(("PDMIsaSetIrq: irq=%#x lvl=%u tag=%#x\n", u8Irq, u8Level, uTagSrc));
 
+#ifdef VBOX_VMM_TARGET_ARMV8
+    int rc = VINF_SUCCESS;
+    GICSpiSet(pVM, u8Level, u8Level == PDM_IRQ_LEVEL_HIGH ? true : false);
+#else
     int rc = VERR_PDM_NO_PIC_INSTANCE;
 /** @todo r=bird: This code is incorrect, as it ASSUMES the PIC and I/O APIC
  *        are always ring-0 enabled! */
@@ -172,6 +180,7 @@ VMMDECL(int) PDMIsaSetIrq(PVMCC pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uT
         pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), NIL_PCIBDF, u8Irq, u8Level, uTagSrc);
         rc = VINF_SUCCESS;
     }
+#endif
 
     if (!uTagSrc && u8Level == PDM_IRQ_LEVEL_LOW)
         VBOXVMM_PDM_IRQ_LOW(VMMGetCpu(pVM), 0, 0);
@@ -194,6 +203,12 @@ VMMDECL(int) PDMIsaSetIrq(PVMCC pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uT
 VMM_INT_DECL(int) PDMIoApicSetIrq(PVM pVM, PCIBDF uBusDevFn, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc)
 {
     Log9(("PDMIoApicSetIrq: irq=%#x lvl=%u tag=%#x src=%#x\n", u8Irq, u8Level, uTagSrc, uBusDevFn));
+
+#ifdef VBOX_VMM_TARGET_ARMV8
+    int rc = VINF_SUCCESS;
+    RT_NOREF(uBusDevFn, uTagSrc);
+    GICSpiSet(pVM, u8Irq, u8Level == PDM_IRQ_LEVEL_HIGH ? true : false);
+#else
     if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq));
@@ -201,6 +216,7 @@ VMM_INT_DECL(int) PDMIoApicSetIrq(PVM pVM, PCIBDF uBusDevFn, uint8_t u8Irq, uint
         return VINF_SUCCESS;
     }
     return VERR_PDM_NO_PIC_INSTANCE;
+#endif
 }
 
 

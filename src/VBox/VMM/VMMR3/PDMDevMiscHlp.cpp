@@ -34,7 +34,9 @@
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/hm.h>
-#include <VBox/vmm/apic.h>
+#ifndef VBOX_VMM_TARGET_ARMV8
+# include <VBox/vmm/apic.h>
+#endif
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/vmm.h>
 
