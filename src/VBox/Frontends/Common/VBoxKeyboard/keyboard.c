@@ -385,7 +385,6 @@ X11DRV_InitKeyboardByLayout(Display *display)
             }
         }
         keyc2scan[keyc] = scan;
-        printf("%d %u = %u\n", keyc, keyc2scan[keyc], scan);
     } /* for */
     /* Did we find a match for all keys in the layout?  Count them first.
      * Note that we skip the 102nd key, so that owners of 101 key keyboards
