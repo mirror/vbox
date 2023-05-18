@@ -290,23 +290,45 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
     endif
    endif
    if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD)
-    include $(KBUILD_PATH)/units/qt5.kmk
+    ifndef VBOX_WITH_QT6
+     include $(KBUILD_PATH)/units/qt5.kmk
+    else
+     include $(KBUILD_PATH)/units/qt6.kmk
+    endif
     ifeq ($(KBUILD_TARGET),win)
-     INSTALLS += qt5-bin
-     qt5-bin_MODE = 755
-     qt5-bin_INST = $(INST_BIN)
-     qt5-bin_SOURCES = \
-     	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/bin/$(qtmod)$(SUFF_DLL)))
-     qt5-bin_SOURCES += \
-     	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qwindows$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qwindows$(VBOX_QT_DBG)$(SUFF_DLL) \
-     	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qminimal$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qminimal$(VBOX_QT_DBG)$(SUFF_DLL) \
-     	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qoffscreen$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qoffscreen$(VBOX_QT_DBG)$(SUFF_DLL) \
-     	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/sqldrivers/qsqlite$(VBOX_QT_DBG)$(SUFF_DLL))=>sqldrivers/qsqlite$(VBOX_QT_DBG)$(SUFF_DLL) \
-     	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/styles/qwindowsvistastyle$(VBOX_QT_DBG)$(SUFF_DLL))=>styles/qwindowsvistastyle$(VBOX_QT_DBG)$(SUFF_DLL)
-     ifdef VBOX_WITH_QT_PDBS
+     ifndef VBOX_WITH_QT6
+      INSTALLS += qt5-bin
+      qt5-bin_MODE = 755
+      qt5-bin_INST = $(INST_BIN)
+      qt5-bin_SOURCES = \
+      	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/bin/$(qtmod)$(SUFF_DLL)))
       qt5-bin_SOURCES += \
-      	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(PATH_SDK_QT5)/qt*/$(VBOX_PATH_QT_LIB)/$(qtmod).pdb))
-     endif # VBOX_WITH_QT_PDBS
+      	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qwindows$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qwindows$(VBOX_QT_DBG)$(SUFF_DLL) \
+      	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qminimal$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qminimal$(VBOX_QT_DBG)$(SUFF_DLL) \
+      	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/platforms/qoffscreen$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qoffscreen$(VBOX_QT_DBG)$(SUFF_DLL) \
+      	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/sqldrivers/qsqlite$(VBOX_QT_DBG)$(SUFF_DLL))=>sqldrivers/qsqlite$(VBOX_QT_DBG)$(SUFF_DLL) \
+      	$(call VBOX_RE_SIGN_DLL_FN,qt5-bin,$(PATH_SDK_QT5)/plugins/styles/qwindowsvistastyle$(VBOX_QT_DBG)$(SUFF_DLL))=>styles/qwindowsvistastyle$(VBOX_QT_DBG)$(SUFF_DLL)
+      ifdef VBOX_WITH_QT_PDBS
+       qt5-bin_SOURCES += \
+       	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(PATH_SDK_QT5)/qt*/$(VBOX_PATH_QT_LIB)/$(qtmod).pdb))
+      endif # VBOX_WITH_QT_PDBS
+     else # qt6
+      INSTALLS += qt6-bin
+      qt6-bin_MODE = 755
+      qt6-bin_INST = $(INST_BIN)
+      qt6-bin_SOURCES = \
+      	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(call VBOX_RE_SIGN_DLL_FN,qt6-bin,$(PATH_SDK_QT6)/bin/$(qtmod)$(SUFF_DLL)))
+      qt6-bin_SOURCES += \
+      	$(call VBOX_RE_SIGN_DLL_FN,qt6-bin,$(PATH_SDK_QT6)/plugins/platforms/qwindowsVBox$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qwindowsVBox$(VBOX_QT_DBG)$(SUFF_DLL) \
+      	$(call VBOX_RE_SIGN_DLL_FN,qt6-bin,$(PATH_SDK_QT6)/plugins/platforms/qminimalVBox$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qminimalVBox$(VBOX_QT_DBG)$(SUFF_DLL) \
+      	$(call VBOX_RE_SIGN_DLL_FN,qt6-bin,$(PATH_SDK_QT6)/plugins/platforms/qoffscreenVBox$(VBOX_QT_DBG)$(SUFF_DLL))=>platforms/qoffscreenVBox$(VBOX_QT_DBG)$(SUFF_DLL) \
+      	$(call VBOX_RE_SIGN_DLL_FN,qt6-bin,$(PATH_SDK_QT6)/plugins/sqldrivers/qsqliteVBox$(VBOX_QT_DBG)$(SUFF_DLL))=>sqldrivers/qsqliteVBox$(VBOX_QT_DBG)$(SUFF_DLL) \
+      	$(call VBOX_RE_SIGN_DLL_FN,qt6-bin,$(PATH_SDK_QT6)/plugins/styles/qwindowsvistastyleVBox$(VBOX_QT_DBG)$(SUFF_DLL))=>styles/qwindowsvistastyleVBox$(VBOX_QT_DBG)$(SUFF_DLL)
+      ifdef VBOX_WITH_QT_PDBS
+       qt6-bin_SOURCES += \
+       	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(PATH_SDK_QT6)/qt*/$(VBOX_PATH_QT_LIB)/$(qtmod).pdb))
+      endif # VBOX_WITH_QT_PDBS
+     endif # qt6
     else # x11
      INSTALLS += qt5-bin
      qt5-bin_MODE = 755
