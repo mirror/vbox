@@ -102,7 +102,7 @@ void UIExtension::install(QString const &strFilePath,
     QString strDisplayInfo;
 #ifdef VBOX_WS_WIN
     if (pParent)
-        strDisplayInfo.sprintf("hwnd=%#llx", (uint64_t)(uintptr_t)pParent->winId());
+        strDisplayInfo = QString::asprintf("hwnd=%#llx", (uint64_t)(uintptr_t)pParent->winId());
 #endif
 
     /* Install extension pack: */

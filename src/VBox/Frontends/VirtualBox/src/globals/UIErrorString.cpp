@@ -55,9 +55,7 @@ QString UIErrorString::formatRC(HRESULT rc)
             && RTErrWinQueryDefine(rc | 0x80000000, szDefine, sizeof(szDefine), true /*fFailIfUnknown*/) == VERR_NOT_FOUND))
         RTErrWinQueryDefine(rc, szDefine, sizeof(szDefine), false /*fFailIfUnknown*/);
 
-    QString str;
-    str.sprintf("%s", szDefine);
-    return str;
+    return QString::asprintf("%s", szDefine);
 #else
     const char *pszDefine = RTErrCOMGet(SUCCEEDED_WARNING(rc) ? rc | 0x80000000 : rc)->pszDefine;
     Assert(pszDefine);
