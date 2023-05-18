@@ -31,7 +31,11 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # Targets and units.
 #
-USES += qt5
+ifndef VBOX_WITH_QT6
+ USES += qt5
+else
+ USES += qt6
+endif
 PROGRAMS.linux += tstDragAndDropQt # Just needed for Linux right now.
 
 #

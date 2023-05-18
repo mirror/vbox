@@ -1462,7 +1462,11 @@ ifndef VBOX_ONLY_SDK
  ifeq ($(KBUILD_TARGET).$(VBOX_VCC_CRT_TYPE),win.d)
   ifndef VBOX_ONLY_EXTPACKS
    LIBRARIES += VBoxCOM-GUI
-   USES += qt5
+   ifndef VBOX_WITH_QT6
+    USES += qt5
+   else
+    USES += qt6
+   endif
    VBoxCOM-GUI_TEMPLATE = $(if-expr defined(VBOX_WITH_HARDENING),VBoxQtGuiDll,VBoxQtGuiExe)
    VBoxCOM-GUI_EXTENDS = VBoxCOM
   endif
@@ -1470,7 +1474,11 @@ ifndef VBOX_ONLY_SDK
 
  # define qt5 tools for translation even if VBOX_ONLY_EXTPACKS is enabled
  ifdef VBOX_WITH_NLS
-  USES += qt5
+  ifndef VBOX_WITH_QT6
+   USES += qt5
+  else
+   USES += qt6
+  endif
  endif
 
 endif # !VBOX_ONLY_SDK
