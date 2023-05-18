@@ -25,6 +25,10 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
+/* Qt includes: */
+#include <QList>
+#include <QRect>
+
 /* GUI includes: */
 #include "VBoxUtils-win.h"
 
