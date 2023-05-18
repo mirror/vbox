@@ -1695,8 +1695,8 @@ ifndef VBOX_WITH_QT6
  VirtualBox_QT_MODULES.solaris += X11Extras
  VirtualBox_QT_MODULES.freebsd += X11Extras
  VirtualBox_QT_MODULES.darwin  += MacExtras
+ VirtualBox_QT_MODULES.win     += WinExtras
 endif
-VirtualBox_QT_MODULES.win     += WinExtras
 ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  VirtualBox_QT_MODULES += OpenGL
 endif
@@ -1716,8 +1716,8 @@ ifndef VBOX_WITH_QT6
  VirtualBoxVM_QT_MODULES.solaris += X11Extras
  VirtualBoxVM_QT_MODULES.freebsd += X11Extras
  VirtualBoxVM_QT_MODULES.darwin  += MacExtras
+ VirtualBoxVM_QT_MODULES.win     += WinExtras
 endif
-VirtualBoxVM_QT_MODULES.win     += WinExtras
 ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  VirtualBoxVM_QT_MODULES += OpenGL
 endif
@@ -1755,8 +1755,8 @@ ifdef VBOX_WITH_SCREENSAVER_CONTROL
 endif
 ifndef VBOX_WITH_QT6
  UICommon_QT_MODULES.darwin  += MacExtras
+ UICommon_QT_MODULES.win     += WinExtras
 endif
-UICommon_QT_MODULES.win      += WinExtras
 
 ifdef VBOX_WITH_QHELP_VIEWER
  UICommon_QT_MODULES   += Help
