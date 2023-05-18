@@ -216,7 +216,7 @@ void UISharedFolderDetailsEditor::sltSelectPath()
     {
         /* Processing root folder: */
 #if defined (VBOX_WS_WIN) || defined (Q_OS_OS2)
-        m_pEditorName->setText(strFolderName.toUpper()[0] + "_DRIVE");
+        m_pEditorName->setText(strFolderName.toUpper().left(1) + "_DRIVE");
 #elif defined (VBOX_WS_X11)
         m_pEditorName->setText("ROOT");
 #endif
