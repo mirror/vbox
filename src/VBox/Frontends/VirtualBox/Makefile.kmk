@@ -387,6 +387,10 @@ ifneq ($(KBUILD_TARGET),win)
  VirtualBox_CXXFLAGS += -Wno-switch
 endif
 
+ifdef VBOX_WITH_QT6
+ VirtualBox_CXXFLAGS.win += /permissive-
+endif
+
 VirtualBox_CXXFLAGS.linux += $(VBOX_GCC_Wno-class-memaccess)
 
 ## @todo we're using a number of deprecated APIs, please fix and remove these!
@@ -420,6 +424,10 @@ endif
 #
 ifneq ($(KBUILD_TARGET),win)
  VirtualBoxVM_CXXFLAGS += -Wno-switch
+endif
+
+ifdef VBOX_WITH_QT6
+ VirtualBoxVM_CXXFLAGS.win += /permissive-
 endif
 
 VirtualBoxVM_CXXFLAGS.linux += $(VBOX_GCC_Wno-class-memaccess)
@@ -464,6 +472,9 @@ endif
 UICommon_CXXFLAGS.linux += $(VBOX_GCC_Wno-class-memaccess)
 UICommon_CXXFLAGS.win += -wd4868 # prevents std::stable_sort from using functor/function comparator
 UICommon_CXXFLAGS.win += -bigobj # COMWrappers.cpp fails with too many sections on win64-dep otherwise.
+ifdef VBOX_WITH_QT6
+ UICommon_CXXFLAGS.win += /permissive-
+endif
 
 ## @todo we're using a number of deprecated APIs, please fix and remove these!
 UICommon_CXXFLAGS.darwin    += -Wno-error=deprecated-declarations

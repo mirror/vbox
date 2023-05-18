@@ -99,6 +99,10 @@ if   defined(VBOX_WITH_QTGUI) \
   VBoxTestOGL_SOURCES        += VBoxGLSupportInfo.cpp
  endif
 
+ ifdef VBOX_WITH_QT6
+  VBoxTestOGL_CXXFLAGS.win += /permissive-
+ endif
+
  # Don't let ld strip out explicitly linked libraries even when they are not needed.
  # This was causing some dynamic library loading problems in case of indirect dependencies
  # in systems where RUNPATH instead of RPATH is utilized.
