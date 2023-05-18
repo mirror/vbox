@@ -1365,22 +1365,21 @@ bool UIKeyboardHandler::winKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event)
     if (UICommon::instance()->isCleaningUp())
         return false;
 
+    if (!m_fKeyboardCaptured)
+        return false;
+
     /* It's possible that a key has been pressed while the keyboard was not
      * captured, but is being released under the capture. Detect this situation
      * and do not pass on the key press to the virtual machine. */
-/** @todo r=bird: Why do this complicated test before the simple m_fKeyboardCaptured one? */
     uint8_t what_pressed =      (event.flags & 0x01)
                              && (event.vkCode != VK_RSHIFT)
                            ? IsExtKeyPressed : IsKeyPressed;
     if (   (event.flags & 0x80) /* released */
-        && (   (   UIHostCombo::toKeyCodeList(gEDataManager->hostKeyCombination()).contains(event.vkCode)
+        && (   (   UIHostCombo::toKeyCodeList(gEDataManager->hostKeyCombination()).contains((int)event.vkCode)
                 && !m_fIsHostkeyInCapture)
             ||    (  m_pressedKeys[event.scanCode & 0x7F]
                    & (IsKbdCaptured | what_pressed))
                == what_pressed))
-        return false;
-
-    if (!m_fKeyboardCaptured)
         return false;
 
     /* For normal user applications, Windows defines AltGr to be the same as
@@ -1784,7 +1783,7 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
         if (!ToUnicodeEx(iHotKey, 0, keys, &symbol, 1, 0, pList[i]) == 1)
             symbol = 0;
         if (symbol)
-            fWasProcessed = actionPool()->processHotKey(QKeySequence((Qt::UNICODE_ACCEL + QChar(symbol).toUpper().unicode())));
+            fWasProcessed = actionPool()->processHotKey(QKeySequence(QChar(symbol).toUpper().unicode()));
     }
     delete[] pList;
 
