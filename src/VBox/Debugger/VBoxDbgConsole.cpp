@@ -88,13 +88,13 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, IVirtual
      */
     m_pGreenOnBlackAction = new QAction(tr("Green On Black"), this);
     m_pGreenOnBlackAction->setCheckable(true);
-    m_pGreenOnBlackAction->setShortcut(Qt::ControlModifier + Qt::Key_1);
+    m_pGreenOnBlackAction->setShortcut(QString("Ctrl+1"));
     m_pGreenOnBlackAction->setData((int)kGreenOnBlack);
     connect(m_pGreenOnBlackAction, SIGNAL(triggered()), this, SLOT(sltSelectColorScheme()));
 
     m_pBlackOnWhiteAction = new QAction(tr("Black On White"), this);
     m_pBlackOnWhiteAction->setCheckable(true);
-    m_pBlackOnWhiteAction->setShortcut(Qt::ControlModifier + Qt::Key_2);
+    m_pBlackOnWhiteAction->setShortcut(QString("Ctrl+2"));
     m_pBlackOnWhiteAction->setData((int)kBlackOnWhite);
     connect(m_pBlackOnWhiteAction, SIGNAL(triggered()), this, SLOT(sltSelectColorScheme()));
 
@@ -109,13 +109,13 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, IVirtual
      */
     m_pCourierFontAction = new QAction(tr("Courier"), this);
     m_pCourierFontAction->setCheckable(true);
-    m_pCourierFontAction->setShortcut(Qt::ControlModifier + Qt::Key_D);
+    m_pCourierFontAction->setShortcut(QString("Ctrl+D"));
     m_pCourierFontAction->setData((int)kFontType_Courier);
     connect(m_pCourierFontAction, SIGNAL(triggered()), this, SLOT(sltSelectFontType()));
 
     m_pMonospaceFontAction = new QAction(tr("Monospace"), this);
     m_pMonospaceFontAction->setCheckable(true);
-    m_pMonospaceFontAction->setShortcut(Qt::ControlModifier + Qt::Key_M);
+    m_pMonospaceFontAction->setShortcut(QString("Ctrl+M"));
     m_pMonospaceFontAction->setData((int)kFontType_Monospace);
     connect(m_pMonospaceFontAction, SIGNAL(triggered()), this, SLOT(sltSelectFontType()));
 
