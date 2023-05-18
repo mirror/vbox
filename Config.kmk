@@ -3817,7 +3817,11 @@ endif
 # Microsoft Visual C++.  We've been avoiding the native type for ever,
 # but now that is causing issues with Qt 6.x.
 #
-VBOX_VCC_WCHAR_T_VARIANT = -Zc:wchar_t-
+ifndef VBOX_WITH_QT6
+ VBOX_VCC_WCHAR_T_VARIANT = -Zc:wchar_t-
+else
+ VBOX_VCC_WCHAR_T_VARIANT = -Zc:wchar_t
+endif
 
 
 #
