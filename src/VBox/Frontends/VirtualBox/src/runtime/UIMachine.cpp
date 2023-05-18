@@ -2029,7 +2029,7 @@ void UIMachine::updateMousePointerShape()
     if (fHasAlpha)
     {
         QImage image(uCursorWidth, uCursorHeight, QImage::Format_ARGB32);
-        memset(image.bits(), 0, image.byteCount());
+        memset(image.bits(), 0, image.sizeInBytes());
 
         const uint32_t *pu32SrcShapeScanline = (uint32_t *)pSrcShapePtr;
         for (uint y = 0; y < uHeight; ++y, pu32SrcShapeScanline += uWidth)
@@ -2065,11 +2065,11 @@ void UIMachine::updateMousePointerShape()
 
             QImage bitmap(uCursorWidth, uCursorHeight, QImage::Format_Mono);
             bitmap.setColorTable(colors);
-            memset(bitmap.bits(), 0xFF, bitmap.byteCount());
+            memset(bitmap.bits(), 0xFF, bitmap.sizeInBytes());
 
             QImage mask(uCursorWidth, uCursorHeight, QImage::Format_Mono);
             mask.setColorTable(colors);
-            memset(mask.bits(), 0xFF, mask.byteCount());
+            memset(mask.bits(), 0xFF, mask.sizeInBytes());
 
             const uint8_t *pu8SrcAndScanline = pSrcAndMaskPtr;
             const uint32_t *pu32SrcShapeScanline = (uint32_t *)pSrcShapePtr;
@@ -2129,7 +2129,7 @@ void UIMachine::updateMousePointerShape()
         {
             /* Assign alpha channel values according to the AND mask: 1 -> 0x00, 0 -> 0xFF: */
             QImage image(uCursorWidth, uCursorHeight, QImage::Format_ARGB32);
-            memset(image.bits(), 0, image.byteCount());
+            memset(image.bits(), 0, image.sizeInBytes());
 
             const uint8_t *pu8SrcAndScanline = pSrcAndMaskPtr;
             const uint32_t *pu32SrcShapeScanline = (uint32_t *)pSrcShapePtr;
