@@ -7683,7 +7683,11 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
     endif
    endif # qt6
   else if1of ($(KBUILD_TARGET), linux solaris)
-   VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
+   ifndef VBOX_WITH_QT6
+    VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
+   else # qt6
+    VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v6*)))
+   endif # qt6
    ifneq ($(VBOX_PATH_QT),)
     VBOX_WITH_ORACLE_QT = 1
    endif
