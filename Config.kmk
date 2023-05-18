@@ -7683,7 +7683,7 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
     endif
    endif # qt6
   else if1of ($(KBUILD_TARGET), linux solaris)
-    VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
+   VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
    ifneq ($(VBOX_PATH_QT),)
     VBOX_WITH_ORACLE_QT = 1
    endif
@@ -7722,18 +7722,18 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
    VBOX_QT_MOD += QtOpenGL
   endif
  else if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris win)
-    VBOX_QT_MOD += Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport $(if $(VBOX_GUI_USE_QGL),Qt5OpenGL,)
+  VBOX_QT_MOD += Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport $(if $(VBOX_GUI_USE_QGL),Qt5OpenGL,)
   if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris)
-    VBOX_QT_MOD += Qt5DBus Qt5Xml Qt5XcbQpa Qt5X11Extras
-    VBOX_QT_PLUGINS = \
-     plugins/platforms/libqxcb.so \
-     plugins/platformthemes/libqgtk2.so \
-     plugins/platformthemes/libqgtk3.so \
-     plugins/sqldrivers/libqsqlite.so \
-     plugins/styles/libqgtk2style.so \
-     plugins/xcbglintegrations/libqxcb-glx-integration.so
+   VBOX_QT_MOD += Qt5DBus Qt5Xml Qt5XcbQpa Qt5X11Extras
+   VBOX_QT_PLUGINS = \
+   	plugins/platforms/libqxcb.so \
+   	plugins/platformthemes/libqgtk2.so \
+   	plugins/platformthemes/libqgtk3.so \
+   	plugins/sqldrivers/libqsqlite.so \
+   	plugins/styles/libqgtk2style.so \
+   	plugins/xcbglintegrations/libqxcb-glx-integration.so
   else ifeq ($(KBUILD_TARGET),win)
-    VBOX_QT_MOD += Qt5WinExtras
+   VBOX_QT_MOD += Qt5WinExtras
   endif # win
  endif # linux freebsd netbsd openbsd solaris win
 
@@ -7741,7 +7741,7 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
   ifeq ($(KBUILD_TARGET),darwin)
    VBOX_QT_MOD  += QtHelp QtNetwork QtSql
   else if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris win)
-    VBOX_QT_MOD += Qt5Help Qt5Network Qt5Sql
+   VBOX_QT_MOD  += Qt5Help Qt5Network Qt5Sql
   endif
  endif
 
