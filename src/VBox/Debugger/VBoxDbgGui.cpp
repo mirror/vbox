@@ -295,7 +295,11 @@ VBoxDbgGui::getMachineName() const
     HRESULT hrc = m_pMachine->COMGETTER(Name)(&bstr);
     if (SUCCEEDED(hrc))
     {
+#ifndef VBOX_IS_QT6_OR_LATER
         strName = QString::fromUtf16((const ushort *)bstr);
+#else
+        strName = QString::fromUtf16((char16_t *)bstr);
+#endif
         SysFreeString(bstr);
     }
     return strName;
