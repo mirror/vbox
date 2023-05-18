@@ -64,7 +64,7 @@ extern volatile uint32_t g_fu32GaLogControl;
 #define GALOG_(a_Group, a_Msg, a_Logger) do { \
     if (GALOG_ENABLED(a_Group)) \
     { \
-        a_Logger(("%s: CPU%u IRQL%u ", __FUNCTION__, KeGetCurrentProcessorNumber(), KeGetCurrentIrql())); a_Logger(a_Msg); \
+        a_Logger(("%s: ", __FUNCTION__)); a_Logger(a_Msg); \
     } \
 } while (0)
 

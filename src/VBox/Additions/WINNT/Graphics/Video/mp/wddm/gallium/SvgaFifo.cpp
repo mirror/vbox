@@ -427,7 +427,7 @@ static NTSTATUS svgaCBAlloc(PVMSVGACBSTATE pCBState, VMSVGACBTYPE enmType, uint3
 
     PVMSVGACB pCB = (PVMSVGACB)GaMemAllocZero(sizeof(VMSVGACB));
     AssertReturn(pCB, STATUS_INSUFFICIENT_RESOURCES);
-    GALOG(("CB: type %u, %p\n", enmType, pCB));
+    GALOG(("CB: %p\n", pCB));
 
     NTSTATUS Status;
 
