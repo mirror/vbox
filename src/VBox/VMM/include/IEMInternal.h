@@ -535,6 +535,10 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 #define IEMTLB_TAG_TO_ENTRY(a_pTlb, a_uTag) ( &(a_pTlb)->aEntries[IEMTLB_TAG_TO_INDEX(a_uTag)] )
 
 
+/** Pointer to a translation block. */
+typedef struct IEMTB *PIEMTB;
+
+
 /**
  * The per-CPU IEM state.
  */
@@ -812,6 +816,15 @@ typedef struct IEMCPU
     uint8_t                 cLogRelWrMsr;
     /** Alignment padding. */
     uint8_t                 abAlignment8[42];
+
+    /** @name Recompilation
+     * @{ */
+    /** Pointer to the current translation block.
+     * This can either be one being executed or one being compiled. */
+    R3PTRTYPE(PIEMTB)       pCurTbR3;
+    /** Spaced reserved for recompiler data / alignment. */
+    uint64_t                auRecompilerStuff[7];
+    /** @} */
 
     /** Data TLB.
      * @remarks Must be 64-byte aligned. */

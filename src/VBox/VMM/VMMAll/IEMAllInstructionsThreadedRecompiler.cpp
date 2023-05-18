@@ -77,6 +77,101 @@
 
 
 /*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/**
+ * A call for the threaded call table.
+ */
+typedef struct IEMTHRDEDCALLENTRY
+{
+    /** The function to call (IEMTHREADEDFUNCS). */
+    uint16_t    enmFunction;
+    uint16_t    uUnused0;
+
+    /** The opcode length. */
+    uint8_t     cbOpcode;
+    /** The opcode chunk number.
+     * @note sketches for discontiguous opcode support  */
+    uint8_t     idxOpcodeChunk;
+    /** The offset into the opcode chunk of this function.
+     * @note sketches for discontiguous opcode support  */
+    uint16_t    offOpcodeChunk;
+
+    /** Generic parameters. */
+    uint64_t    auParams[3];
+} IEMTHRDEDCALLENTRY;
+AssertCompileSize(IEMTHRDEDCALLENTRY, sizeof(uint64_t) * 4);
+/** Pointer to a threaded call entry. */
+typedef IEMTHRDEDCALLENTRY       *PIEMTHRDEDCALLENTRY;
+/** Pointer to a const threaded call entry. */
+typedef IEMTHRDEDCALLENTRY const *PCIEMTHRDEDCALLENTRY;
+
+/** @name IEMTB_F_XXX - Translation block flags.
+ * @{ */
+#define IEMTB_F_MODE_MASK               UINT32_C(0x00000007)
+#define IEMTB_F_MODE_X86_16BIT          UINT32_C(0x00000001)
+#define IEMTB_F_MODE_X86_32BIT          UINT32_C(0x00000002)
+#define IEMTB_F_MODE_X86_32BIT_FLAT     UINT32_C(0x00000003)
+#define IEMTB_F_MODE_X86_64BIT          UINT32_C(0x00000004)
+
+#define IEMTB_F_COMPILING   RT_BIT_32(0)
+#define IEMTB_F_NATIVE      RT_BIT_32(1)
+/** @} */
+
+/**
+ * Translation block.
+ */
+typedef struct IEMTB
+{
+    /** Next block with the same hash table entry. */
+    PIEMTB volatile     pNext;
+    /** List on the local VCPU for blocks. */
+    RTLISTNODE          LocalList;
+
+    /** @name What uniquely identifies the block.
+     * @{ */
+    RTGCPHYS            GCPhysPc;
+    uint64_t            uPc;
+    uint32_t            fFlags;
+    union
+    {
+        struct
+        {
+            /** The CS base. */
+            uint32_t uCsBase;
+            /** The CS limit (UINT32_MAX for 64-bit code). */
+            uint32_t uCsLimit;
+            /** The CS selector value. */
+            uint16_t CS;
+            /**< Relevant X86DESCATTR_XXX bits. */
+            uint16_t fAttr;
+        } x86;
+    };
+    /** @} */
+
+    /** Number of bytes of opcodes covered by this block.
+     * @todo Support discontiguous chunks of opcodes in same block, though maybe 
+     *       restrict to the initial page or smth. */
+    uint32_t    cbPC;
+
+    union
+    {
+        struct
+        {
+            /** Number of calls in paCalls. */
+            uint32_t            cCalls;
+            /** Number of calls allocated. */
+            uint32_t            cAllocated;
+            /** The call sequence table. */
+            PIEMTHRDEDCALLENTRY paCalls;
+        } Thrd;
+    };
+
+
+} IEMTB;
+
+
+/*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 #define g_apfnOneByteMap    g_apfnIemThreadedRecompilerOneByteMap
@@ -96,17 +191,41 @@
 #define IEM_MC2_EMIT_CALL_1(a_enmFunction, a_uArg0) do { \
         IEMTHREADEDFUNCS const enmFunctionCheck = a_enmFunction; RT_NOREF(enmFunctionCheck); \
         uint64_t         const uArg0Check       = (a_uArg0);     RT_NOREF(uArg0Check); \
+        \
+        PIEMTB              const pTb   = pVCpu->iem.s.pCurTbR3; \
+        PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
+        pCall->enmFunction = a_enmFunction; \
+        pCall->cbOpcode    = IEM_GET_INSTR_LEN(pVCpu); \
+        pCall->auParams[0] = a_uArg0; \
+        pCall->auParams[1] = 0; \
+        pCall->auParams[2] = 0; \
     } while (0)
 #define IEM_MC2_EMIT_CALL_2(a_enmFunction, a_uArg0, a_uArg1) do { \
         IEMTHREADEDFUNCS const enmFunctionCheck = a_enmFunction; RT_NOREF(enmFunctionCheck); \
         uint64_t         const uArg0Check       = (a_uArg0);     RT_NOREF(uArg0Check); \
         uint64_t         const uArg1Check       = (a_uArg1);     RT_NOREF(uArg1Check); \
+        \
+        PIEMTB              const pTb   = pVCpu->iem.s.pCurTbR3; \
+        PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
+        pCall->enmFunction = a_enmFunction; \
+        pCall->cbOpcode    = IEM_GET_INSTR_LEN(pVCpu); \
+        pCall->auParams[0] = a_uArg0; \
+        pCall->auParams[1] = a_uArg1; \
+        pCall->auParams[2] = 0; \
     } while (0)
 #define IEM_MC2_EMIT_CALL_3(a_enmFunction, a_uArg0, a_uArg1, a_uArg2) do { \
         IEMTHREADEDFUNCS const enmFunctionCheck = a_enmFunction; RT_NOREF(enmFunctionCheck); \
         uint64_t         const uArg0Check       = (a_uArg0);     RT_NOREF(uArg0Check); \
         uint64_t         const uArg1Check       = (a_uArg1);     RT_NOREF(uArg1Check); \
         uint64_t         const uArg2Check       = (a_uArg2);     RT_NOREF(uArg2Check); \
+        \
+        PIEMTB              const pTb   = pVCpu->iem.s.pCurTbR3; \
+        PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
+        pCall->enmFunction = a_enmFunction; \
+        pCall->cbOpcode    = IEM_GET_INSTR_LEN(pVCpu); \
+        pCall->auParams[0] = a_uArg0; \
+        pCall->auParams[1] = a_uArg1; \
+        pCall->auParams[2] = a_uArg2; \
     } while (0)
 
 
