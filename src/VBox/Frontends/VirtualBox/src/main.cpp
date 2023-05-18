@@ -463,11 +463,13 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         qInstallMessageHandler(QtMessageOutput);
 
         /* Enable HiDPI support: */
+#ifndef VBOX_IS_QT6_OR_LATER
         QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-#if (!defined(DEBUG_bird) || defined(RT_OS_DARWIN))
-# ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
+# if (!defined(DEBUG_bird) || defined(RT_OS_DARWIN))
+#  ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
         /* This shouldn't be enabled for customer WM, since Qt has conflicts in that case. */
         QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#  endif
 # endif
 #endif
 
