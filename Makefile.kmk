@@ -330,54 +330,97 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
       endif # VBOX_WITH_QT_PDBS
      endif # qt6
     else # x11
-     INSTALLS += qt5-bin
-     qt5-bin_MODE = 755
-     qt5-bin_INST = $(INST_BIN)
-     ifdef VBOX_WITH_HARDENING
-      # The wildcards are necessary to install the libs instead of the symlinks
-      qt5-bin_SOURCES = \
-      	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(VBOX_PATH_QT_LIB)/lib$(qtmod).so.*.*.*[0-9])=>lib$(qtmod).so.5) \
-      	$(foreach lib,$(VBOX_QT_PLUGINS),$(VBOX_PATH_QT)/$(lib)=>$(lib))
-     else # !VBOX_WITH_HARDENING
-      # For non-hardened builds we need to remove the RUNPATH. This stuff is
-      # ugly but we need to prevent kBuild from hard-linking otherwise we
-      # (indirectly) change the binaries in tools
-      ifneq ($(KBUILD_TARGET),solaris)
+     ifndef VBOX_WITH_QT6
+      INSTALLS += qt5-bin
+      qt5-bin_MODE = 755
+      qt5-bin_INST = $(INST_BIN)
+      ifdef VBOX_WITH_HARDENING
+       # The wildcards are necessary to install the libs instead of the symlinks
+       qt5-bin_SOURCES = \
+       	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(VBOX_PATH_QT_LIB)/lib$(qtmod).so.*.*.*[0-9])=>lib$(qtmod).so.5) \
+       	$(foreach lib,$(VBOX_QT_PLUGINS),$(VBOX_PATH_QT)/$(lib)=>$(lib))
+      else # !VBOX_WITH_HARDENING
+       # For non-hardened builds we need to remove the RUNPATH. This stuff is
+       # ugly but we need to prevent kBuild from hard-linking otherwise we
+       # (indirectly) change the binaries in tools
        QT5_VERSION = 5.15.2
-      else
-       QT5_VERSION = 5.15.2
-      endif
-      qt5-bin_SOURCES = \
-      	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.$(QT5_VERSION)=>lib$(qtmod).so.5) \
-      	$(foreach lib,$(VBOX_QT_PLUGINS),$(qt5-bin_0_OUTDIR)/$(lib)=>$(lib))
+       qt5-bin_SOURCES = \
+       	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.$(QT5_VERSION)=>lib$(qtmod).so.5) \
+       	$(foreach lib,$(VBOX_QT_PLUGINS),$(qt5-bin_0_OUTDIR)/$(lib)=>$(lib))
 
-      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.$(QT5_VERSION)): \
-      		$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT_LIB)/% | $$(qt5-bin_0_OUTDIR)/
-	$(call MSG_INST_FILE,$^,$@)
-	$(QUIET)$(CP) $^ $@
-	$(QUIET)chrpath --replace "\$$ORIGIN" $@
+       $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.$(QT5_VERSION)): \
+       		$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT_LIB)/% | $$(qt5-bin_0_OUTDIR)/
+		$(call MSG_INST_FILE,$^,$@)
+		$(QUIET)$(CP) $^ $@
+		$(QUIET)chrpath --replace "\$$ORIGIN" $@
 
-      ifn1of ($(KBUILD_TARGET), solaris linux)
-       $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
-       		$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt5-bin_0_OUTDIR)/
-	$(call MSG_INST_FILE,$^,$@)
-	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(CP) $^ $@
-	$(QUIET)chrpath --delete $@
-      endif # !solaris and !linux
+       ifn1of ($(KBUILD_TARGET), solaris linux)
+        $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
+        		$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt5-bin_0_OUTDIR)/
+			$(call MSG_INST_FILE,$^,$@)
+			$(QUIET)$(MKDIR) -p $(@D)
+			$(QUIET)$(CP) $^ $@
+			$(QUIET)chrpath --delete $@
+       endif # !solaris and !linux
 
-      # @todo For solaris and some linuxes dlopen fails to navigate executable rpath to dependent libraries,
-      #       so add explicit rpath for libqxcb.so, find better solution later.
-      if1of ($(KBUILD_TARGET), solaris linux)
-       $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
-       		$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt5-bin_0_OUTDIR)/
-	$(call MSG_INST_FILE,$^,$@)
-	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(CP) $^ $@
-	$(QUIET)chrpath --replace "\$$ORIGIN/../../" $@
-      endif # solaris linux
+       # @todo For solaris and some linuxes dlopen fails to navigate executable rpath to dependent libraries,
+       #       so add explicit rpath for libqxcb.so, find better solution later.
+       if1of ($(KBUILD_TARGET), solaris linux)
+        $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
+        		$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt5-bin_0_OUTDIR)/
+			$(call MSG_INST_FILE,$^,$@)
+			$(QUIET)$(MKDIR) -p $(@D)
+			$(QUIET)$(CP) $^ $@
+			$(QUIET)chrpath --replace "\$$ORIGIN/../../" $@
+       endif # solaris linux
 
-     endif # !VBOX_WITH_HARDENING
+      endif # !VBOX_WITH_HARDENING
+     else # qt6
+      INSTALLS += qt6-bin
+      qt6-bin_MODE = 755
+      qt6-bin_INST = $(INST_BIN)
+      ifdef VBOX_WITH_HARDENING
+       # The wildcards are necessary to install the libs instead of the symlinks
+       qt6-bin_SOURCES = \
+       	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(VBOX_PATH_QT_LIB)/lib$(qtmod).so.*.*.*[0-9])=>lib$(qtmod).so.6) \
+       	$(foreach lib,$(VBOX_QT_PLUGINS),$(VBOX_PATH_QT)/$(lib)=>$(lib))
+      else # !VBOX_WITH_HARDENING
+       # For non-hardened builds we need to remove the RUNPATH. This stuff is
+       # ugly but we need to prevent kBuild from hard-linking otherwise we
+       # (indirectly) change the binaries in tools
+       QT5_VERSION = 6.3.0
+       qt6-bin_SOURCES = \
+       	$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(qt6-bin_0_OUTDIR)/lib$(qtmod).so.$(QT5_VERSION)=>lib$(qtmod).so.6) \
+       	$(foreach lib,$(VBOX_QT_PLUGINS),$(qt6-bin_0_OUTDIR)/$(lib)=>$(lib))
+
+       $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$$(qt6-bin_0_OUTDIR)/lib$(qtmod).so.$(QT5_VERSION)): \
+       		$$(qt6-bin_0_OUTDIR)/% : $(VBOX_PATH_QT_LIB)/% | $$(qt6-bin_0_OUTDIR)/
+		$(call MSG_INST_FILE,$^,$@)
+		$(QUIET)$(CP) $^ $@
+		$(QUIET)chrpath --replace "\$$ORIGIN" $@
+
+       ifn1of ($(KBUILD_TARGET), solaris linux)
+        $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt6-bin_0_OUTDIR)/$(lib)): \
+        		$$(qt6-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt6-bin_0_OUTDIR)/
+			$(call MSG_INST_FILE,$^,$@)
+			$(QUIET)$(MKDIR) -p $(@D)
+			$(QUIET)$(CP) $^ $@
+			$(QUIET)chrpath --delete $@
+       endif # !solaris and !linux
+
+       # @todo For solaris and some linuxes dlopen fails to navigate executable rpath to dependent libraries,
+       #       so add explicit rpath for libqxcb.so, find better solution later.
+       if1of ($(KBUILD_TARGET), solaris linux)
+        $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt6-bin_0_OUTDIR)/$(lib)): \
+        		$$(qt6-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt6-bin_0_OUTDIR)/
+			$(call MSG_INST_FILE,$^,$@)
+			$(QUIET)$(MKDIR) -p $(@D)
+			$(QUIET)$(CP) $^ $@
+			$(QUIET)chrpath --replace "\$$ORIGIN/../../" $@
+       endif # solaris linux
+
+      endif # !VBOX_WITH_HARDENING
+     endif # qt6
     endif # x11
    endif # VBOX_WITH_ORACLE_QT || VBOX_WITH_QT_PAYLOAD
   endif # win x11
