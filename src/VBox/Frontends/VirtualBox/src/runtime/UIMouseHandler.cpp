@@ -1297,8 +1297,11 @@ void UIMouseHandler::updateMouseCursorClipping()
         {
             /* Choose the largest rectangle: */
             QRect largestRect;
-            foreach (const QRect &rect, viewportRegion.rects())
+            for (QRegion::const_iterator it = viewportRegion.begin(); it != viewportRegion.end(); ++it)
+            {
+                const QRect rect = *it;
                 largestRect = largestRect.width() * largestRect.height() < rect.width() * rect.height() ? rect : largestRect;
+            }
             /* Assign the partial-viewport-region to the largest rect: */
             viewportRegion = largestRect;
         }
