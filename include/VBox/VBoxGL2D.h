@@ -41,6 +41,11 @@
 # pragma once
 #endif
 
+#if defined(VBOX_IS_QT6_OR_LATER) && defined(RT_OS_WINDOWS)
+// Qt6 has this included no more, adding ourselves:
+# include <GL/gl.h>
+#endif /* VBOX_IS_QT6_OR_LATER && RT_OS_WINDOWS */
+
 #include <iprt/types.h>
 
 typedef char GLchar;

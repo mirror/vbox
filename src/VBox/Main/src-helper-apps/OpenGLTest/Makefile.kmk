@@ -71,6 +71,9 @@ if   defined(VBOX_WITH_QTGUI) \
  else
   VBoxTestOGL_DEFS            = VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
  endif
+ ifdef VBOX_WITH_QT6
+  VBoxTestOGL_DEFS           += VBOX_IS_QT6_OR_LATER
+ endif
  VBoxTestOGL_SOURCES          = OpenGLTestApp.cpp
  VBoxTestOGL_SOURCES.win      = VBoxTestOGL.rc
  VBoxTestOGL_LIBS             = \
