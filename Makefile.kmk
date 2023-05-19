@@ -350,17 +350,17 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
 
        $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.$(QT5_VERSION)): \
        		$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT_LIB)/% | $$(qt5-bin_0_OUTDIR)/
-        $(call MSG_INST_FILE,$^,$@)
-        $(QUIET)$(CP) $^ $@
-        $(QUIET)chrpath --replace "\$$ORIGIN" $@
+ 	$(call MSG_INST_FILE,$^,$@)
+ 	$(QUIET)$(CP) $^ $@
+ 	$(QUIET)chrpath --replace "\$$ORIGIN" $@
 
        ifn1of ($(KBUILD_TARGET), solaris linux)
         $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
         		$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt5-bin_0_OUTDIR)/
-         $(call MSG_INST_FILE,$^,$@)
-         $(QUIET)$(MKDIR) -p $(@D)
-         $(QUIET)$(CP) $^ $@
-         $(QUIET)chrpath --delete $@
+ 	$(call MSG_INST_FILE,$^,$@)
+ 	$(QUIET)$(MKDIR) -p $(@D)
+ 	$(QUIET)$(CP) $^ $@
+ 	$(QUIET)chrpath --delete $@
        endif # !solaris and !linux
 
        # @todo For solaris and some linuxes dlopen fails to navigate executable rpath to dependent libraries,
@@ -368,10 +368,10 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
        if1of ($(KBUILD_TARGET), solaris linux)
         $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
         		$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt5-bin_0_OUTDIR)/
-         $(call MSG_INST_FILE,$^,$@)
-         $(QUIET)$(MKDIR) -p $(@D)
-         $(QUIET)$(CP) $^ $@
-         $(QUIET)chrpath --replace "\$$ORIGIN/../../" $@
+ 	$(call MSG_INST_FILE,$^,$@)
+ 	$(QUIET)$(MKDIR) -p $(@D)
+ 	$(QUIET)$(CP) $^ $@
+ 	$(QUIET)chrpath --replace "\$$ORIGIN/../../" $@
        endif # solaris linux
 
       endif # !VBOX_WITH_HARDENING
@@ -395,17 +395,17 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
 
        $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$$(qt6-bin_0_OUTDIR)/lib$(qtmod).so.$(QT5_VERSION)): \
        		$$(qt6-bin_0_OUTDIR)/% : $(VBOX_PATH_QT_LIB)/% | $$(qt6-bin_0_OUTDIR)/
-        $(call MSG_INST_FILE,$^,$@)
-        $(QUIET)$(CP) $^ $@
-        $(QUIET)chrpath --replace "\$$ORIGIN" $@
+ 	$(call MSG_INST_FILE,$^,$@)
+ 	$(QUIET)$(CP) $^ $@
+ 	$(QUIET)chrpath --replace "\$$ORIGIN" $@
 
        ifn1of ($(KBUILD_TARGET), solaris linux)
         $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt6-bin_0_OUTDIR)/$(lib)): \
         		$$(qt6-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt6-bin_0_OUTDIR)/
-         $(call MSG_INST_FILE,$^,$@)
-         $(QUIET)$(MKDIR) -p $(@D)
-         $(QUIET)$(CP) $^ $@
-         $(QUIET)chrpath --delete $@
+ 	$(call MSG_INST_FILE,$^,$@)
+ 	$(QUIET)$(MKDIR) -p $(@D)
+ 	$(QUIET)$(CP) $^ $@
+ 	$(QUIET)chrpath --delete $@
        endif # !solaris and !linux
 
        # @todo For solaris and some linuxes dlopen fails to navigate executable rpath to dependent libraries,
@@ -413,10 +413,10 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
        if1of ($(KBUILD_TARGET), solaris linux)
         $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt6-bin_0_OUTDIR)/$(lib)): \
         		$$(qt6-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt6-bin_0_OUTDIR)/
-         $(call MSG_INST_FILE,$^,$@)
-         $(QUIET)$(MKDIR) -p $(@D)
-         $(QUIET)$(CP) $^ $@
-         $(QUIET)chrpath --replace "\$$ORIGIN/../../" $@
+ 	$(call MSG_INST_FILE,$^,$@)
+ 	$(QUIET)$(MKDIR) -p $(@D)
+ 	$(QUIET)$(CP) $^ $@
+ 	$(QUIET)chrpath --replace "\$$ORIGIN/../../" $@
        endif # solaris linux
 
       endif # !VBOX_WITH_HARDENING
