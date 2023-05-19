@@ -181,6 +181,7 @@ typedef struct VBOXDXKMRESOURCE
     RTLISTNODE                  nodeResource;               /* VBOXDX_DEVICE::listResources, listDestroyedResources. */
     struct VBOXDX_RESOURCE     *pResource;                  /* The structure allocated by D3D runtime. */
     D3DKMT_HANDLE               hAllocation;
+    RTLISTNODE                  nodeStaging;                /* VBOXDX_DEVICE::listStagingResources if this resource is a staging buffer. */
 } VBOXDXKMRESOURCE, *PVBOXDXKMRESOURCE;
 
 typedef struct VBOXDX_RESOURCE
@@ -197,7 +198,6 @@ typedef struct VBOXDX_RESOURCE
         D3D10_DDI_MAP              DDIMap;
         UINT                       uMap;
     };
-    struct VBOXDX_RESOURCE         *pStagingResource;
 
     RTLISTANCHOR                   listSRV;                 /* Shader resource views created for this resource. */
     RTLISTANCHOR                   listRTV;                 /* Render target views. */
@@ -385,6 +385,7 @@ typedef struct VBOXDX_DEVICE
     /* Resources */
     RTLISTANCHOR                listResources;              /* All resources of this device, for cleanup. */
     RTLISTANCHOR                listDestroyedResources;     /* DestroyResource adds to this list. Flush actually deleted them. */
+    RTLISTANCHOR                listStagingResources;       /* List of staging resources for uploads. */
 
     /* Shaders */
     D3DKMT_HANDLE               hShaderAllocation;          /* Shader allocation for this context. */
@@ -435,7 +436,7 @@ bool vboxDXCreateResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource,
                           const D3D11DDIARG_CREATERESOURCE *pCreateResource);
 bool vboxDXOpenResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource,
                         const D3D10DDIARG_OPENRESOURCE *pOpenResource);
-bool vboxDXDestroyResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource);
+void vboxDXDestroyResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource);
 
 HRESULT vboxDXRotateResourceIdentities(PVBOXDX_DEVICE pDevice, UINT cResources, PVBOXDX_RESOURCE *papResources);
 HRESULT vboxDXOfferResources(PVBOXDX_DEVICE pDevice, UINT cResources, PVBOXDX_RESOURCE *papResources, D3DDDI_OFFER_PRIORITY Priority);

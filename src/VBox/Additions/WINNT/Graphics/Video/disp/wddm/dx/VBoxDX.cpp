@@ -678,7 +678,6 @@ int vboxDXInitResourceData(PVBOXDX_RESOURCE pResource, const D3D11DDIARG_CREATER
     pResource->cSubresources = pCreateResource->MipLevels * pCreateResource->ArraySize;
     pResource->pKMResource = NULL;
     pResource->uMap = 0;
-    pResource->pStagingResource = 0;
     RTListInit(&pResource->listSRV);
     RTListInit(&pResource->listRTV);
     RTListInit(&pResource->listDSV);
@@ -688,12 +687,8 @@ int vboxDXInitResourceData(PVBOXDX_RESOURCE pResource, const D3D11DDIARG_CREATER
 }
 
 
-bool vboxDXCreateResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource,
-                          const D3D11DDIARG_CREATERESOURCE *pCreateResource)
+static HRESULT dxAllocate(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, D3DKMT_HANDLE *phAllocation)
 {
-    pResource->pKMResource = (PVBOXDXKMRESOURCE)RTMemAllocZ(sizeof(VBOXDXKMRESOURCE));
-    AssertReturnStmt(pResource->pKMResource, vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY), false);
-
     D3DDDI_ALLOCATIONINFO2 ddiAllocationInfo;
     RT_ZERO(ddiAllocationInfo);
     //ddiAllocationInfo.pSystemMem            = 0;
@@ -715,10 +710,32 @@ bool vboxDXCreateResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource,
 
     HRESULT hr = pDevice->pRTCallbacks->pfnAllocateCb(pDevice->hRTDevice.handle, &ddiAllocate);
     LogFlowFunc((" pfnAllocateCb returned %d, hKMResource 0x%X, hAllocation 0x%X", hr, ddiAllocate.hKMResource, ddiAllocationInfo.hAllocation));
+
+    if (SUCCEEDED(hr))
+        *phAllocation = ddiAllocationInfo.hAllocation;
+
+    return hr;
+}
+
+
+bool vboxDXCreateResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource,
+                          const D3D11DDIARG_CREATERESOURCE *pCreateResource)
+{
+    pResource->pKMResource = (PVBOXDXKMRESOURCE)RTMemAllocZ(sizeof(VBOXDXKMRESOURCE));
+    AssertReturnStmt(pResource->pKMResource, vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY), false);
+
+    D3DKMT_HANDLE hAllocation = 0;
+    HRESULT hr = dxAllocate(pDevice, pResource, &hAllocation);
+    if (FAILED(hr))
+    {
+        /* Might be not enough memory due to temporary staging buffers. */
+        vboxDXFlush(pDevice, true);
+        hr = dxAllocate(pDevice, pResource, &hAllocation);
+    }
     AssertReturnStmt(SUCCEEDED(hr), RTMemFree(pResource->pKMResource); vboxDXDeviceSetError(pDevice, hr), false);
 
     pResource->pKMResource->pResource = pResource;
-    pResource->pKMResource->hAllocation = ddiAllocationInfo.hAllocation;
+    pResource->pKMResource->hAllocation = hAllocation;
     RTListAppend(&pDevice->listResources, &pResource->pKMResource->nodeResource);
 
     if (pCreateResource->pInitialDataUP)
@@ -747,7 +764,7 @@ bool vboxDXCreateResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource,
             {
                 memset(ddiLock.pData, 0, pResource->AllocationDesc.cbAllocation);
 
-                D3DKMT_HANDLE hAllocation = vboxDXGetAllocation(pResource);
+                hAllocation = vboxDXGetAllocation(pResource);
 
                 D3DDDICB_UNLOCK ddiUnlock;
                 ddiUnlock.NumAllocations = 1;
@@ -786,7 +803,6 @@ bool vboxDXOpenResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource,
     /* Init remaining fields. */
     pResource->cSubresources = pDesc->surfaceInfo.numMipLevels * pDesc->surfaceInfo.arraySize;
     pResource->uMap             = 0;
-    pResource->pStagingResource = 0;
     RTListInit(&pResource->listSRV);
     RTListInit(&pResource->listRTV);
     RTListInit(&pResource->listDSV);
@@ -799,73 +815,54 @@ bool vboxDXOpenResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource,
 }
 
 
-static bool dxDestroyResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource)
-{
-    Assert(RTListIsEmpty(&pResource->listSRV));
-    Assert(RTListIsEmpty(&pResource->listRTV));
-    Assert(RTListIsEmpty(&pResource->listDSV));
-    Assert(RTListIsEmpty(&pResource->listUAV));
-
-    if (pResource->pStagingResource)
-    {
-        dxDestroyResource(pDevice, pResource->pStagingResource);
-        RTMemFree(pResource->pStagingResource);
-        pResource->pStagingResource = NULL;
-    }
-
-    D3DKMT_HANDLE const hAllocation = pResource->pKMResource->hAllocation;
-    RTMemFree(pResource->pKMResource);
-
-    if (!RT_BOOL(pResource->AllocationDesc.resourceInfo.MiscFlags & D3D10_DDI_RESOURCE_MISC_SHARED))
-    {
-        D3DDDICB_DEALLOCATE ddiDeallocate;
-        RT_ZERO(ddiDeallocate);
-        ddiDeallocate.hResource      = NULL;
-        ddiDeallocate.NumAllocations = 1;
-        ddiDeallocate.HandleList     = &hAllocation;
-
-        HRESULT hr = pDevice->pRTCallbacks->pfnDeallocateCb(pDevice->hRTDevice.handle, &ddiDeallocate);
-        LogFlowFunc(("pfnDeallocateCb returned %d", hr));
-        AssertReturnStmt(SUCCEEDED(hr), vboxDXDeviceSetError(pDevice, hr), false);
-    }
-
-    return true;
-}
-
-
-bool vboxDXDestroyResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource)
+/* Destroy a resource created by the system (via DDI). Primary resources are freed immediately.
+ * Other resources are moved to the deferred destruction queue (pDevice->listDestroyedResources).
+ * The 'pResource' structure will be deleted by D3D runtime in any case.
+ */
+void vboxDXDestroyResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource)
 {
     /* "the driver must process its deferred-destruction queue during calls to its Flush(D3D10) function"
      * "Primary destruction cannot be deferred by the Direct3D runtime, and the driver must call
      * the pfnDeallocateCb function appropriately within a call to the driver's DestroyResource(D3D10) function."
      */
 
-    if (pResource->pStagingResource)
-    {
-        vboxDXDestroyResource(pDevice, pResource->pStagingResource);
-        RTMemFree(pResource->pStagingResource);
-        pResource->pStagingResource = NULL;
-    }
+    Assert(RTListIsEmpty(&pResource->listSRV));
+    Assert(RTListIsEmpty(&pResource->listRTV));
+    Assert(RTListIsEmpty(&pResource->listDSV));
+    Assert(RTListIsEmpty(&pResource->listUAV));
 
     /* Remove from the list of active resources. */
     RTListNodeRemove(&pResource->pKMResource->nodeResource);
 
     if (pResource->AllocationDesc.fPrimary)
-        return dxDestroyResource(pDevice, pResource);
-
-    if (!RT_BOOL(pResource->AllocationDesc.resourceInfo.MiscFlags & D3D10_DDI_RESOURCE_MISC_SHARED))
     {
-        /* Set the resource for deferred destruction. */
-        pResource->pKMResource->pResource = NULL;
-        RTListAppend(&pDevice->listDestroyedResources, &pResource->pKMResource->nodeResource);
+        /* Delete immediately. */
+        D3DDDICB_DEALLOCATE ddiDeallocate;
+        RT_ZERO(ddiDeallocate);
+        //ddiDeallocate.hResource      = NULL;
+        ddiDeallocate.NumAllocations = 1;
+        ddiDeallocate.HandleList     = &pResource->pKMResource->hAllocation;
+
+        HRESULT hr = pDevice->pRTCallbacks->pfnDeallocateCb(pDevice->hRTDevice.handle, &ddiDeallocate);
+        LogFlowFunc(("pfnDeallocateCb returned %d", hr));
+        AssertStmt(SUCCEEDED(hr), vboxDXDeviceSetError(pDevice, hr));
+
+        RTMemFree(pResource->pKMResource);
     }
     else
     {
-        /* Opened shared resources must not be actually deleted. Just free the KM structure. */
-        RTMemFree(pResource->pKMResource);
+        if (!RT_BOOL(pResource->AllocationDesc.resourceInfo.MiscFlags & D3D10_DDI_RESOURCE_MISC_SHARED))
+        {
+            /* Set the resource for deferred destruction. */
+            pResource->pKMResource->pResource = NULL;
+            RTListAppend(&pDevice->listDestroyedResources, &pResource->pKMResource->nodeResource);
+        }
+        else
+        {
+            /* Opened shared resources must not be actually deleted. Just free the KM structure. */
+            RTMemFree(pResource->pKMResource);
+        }
     }
-
-    return true;
 }
 
 
@@ -2232,7 +2229,7 @@ static bool vboxDXUpdateStagingBufferUP(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE
 }
 
 
-static bool vboxDXCreateStagingBuffer(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource)
+static PVBOXDX_RESOURCE vboxDXCreateStagingBuffer(PVBOXDX_DEVICE pDevice, UINT cbAllocation)
 {
     PVBOXDX_RESOURCE pStagingResource = (PVBOXDX_RESOURCE)RTMemAlloc(sizeof(VBOXDX_RESOURCE)
                                                                      + 1 * sizeof(D3D10DDI_MIPINFO));
@@ -2241,8 +2238,7 @@ static bool vboxDXCreateStagingBuffer(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE p
     D3D11DDIARG_CREATERESOURCE createResource;
     D3D10DDI_MIPINFO mipInfo;
 
-    /* Buffer is large enough to hold the entire resource. */
-    mipInfo.TexelWidth     = pResource->AllocationDesc.cbAllocation;
+    mipInfo.TexelWidth     = cbAllocation;
     mipInfo.TexelHeight    = 1;
     mipInfo.TexelDepth     = 1;
     mipInfo.PhysicalWidth  = mipInfo.TexelWidth;
@@ -2271,13 +2267,44 @@ static bool vboxDXCreateStagingBuffer(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE p
     if (RT_SUCCESS(rc))
     {
         if (vboxDXCreateResource(pDevice, pStagingResource, &createResource))
-        {
-            pResource->pStagingResource = pStagingResource;
-            return true;
-        }
+            return pStagingResource;
     }
     RTMemFree(pStagingResource);
-    return false;
+    vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY);
+    return NULL;
+}
+
+
+static HRESULT dxReclaimStagingAllocation(PVBOXDX_DEVICE pDevice, PVBOXDXKMRESOURCE pStagingKMResource)
+{
+    BOOL fDiscarded = FALSE;
+    D3DDDICB_RECLAIMALLOCATIONS ddiReclaimAllocations;
+    RT_ZERO(ddiReclaimAllocations);
+    ddiReclaimAllocations.pResources = NULL;
+    ddiReclaimAllocations.HandleList = &pStagingKMResource->hAllocation;
+    ddiReclaimAllocations.pDiscarded = &fDiscarded;
+    ddiReclaimAllocations.NumAllocations = 1;
+
+    HRESULT hr = pDevice->pRTCallbacks->pfnReclaimAllocationsCb(pDevice->hRTDevice.handle, &ddiReclaimAllocations);
+    LogFlowFunc(("pfnReclaimAllocationsCb returned %d, fDiscarded %d", hr, fDiscarded));
+    Assert(SUCCEEDED(hr));
+    return hr;
+}
+
+
+static HRESULT dxOfferStagingAllocation(PVBOXDX_DEVICE pDevice, PVBOXDXKMRESOURCE pStagingKMResource)
+{
+    D3DDDICB_OFFERALLOCATIONS ddiOfferAllocations;
+    RT_ZERO(ddiOfferAllocations);
+    ddiOfferAllocations.pResources = NULL;
+    ddiOfferAllocations.HandleList = &pStagingKMResource->hAllocation;
+    ddiOfferAllocations.NumAllocations = 1;
+    ddiOfferAllocations.Priority = D3DDDI_OFFER_PRIORITY_LOW;
+
+    HRESULT hr = pDevice->pRTCallbacks->pfnOfferAllocationsCb(pDevice->hRTDevice.handle, &ddiOfferAllocations);
+    LogFlowFunc(("pfnOfferAllocationsCb returned %d", hr));
+    Assert(SUCCEEDED(hr));
+    return hr;
 }
 
 
@@ -2294,12 +2321,22 @@ void vboxDXResourceUpdateSubresourceUP(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE 
     }
 
     /* DEFAULT resources are updated via a staging buffer. */
-    if (!pDstResource->pStagingResource)
-    {
-        if (!vboxDXCreateStagingBuffer(pDevice, pDstResource))
-            return;
-    }
 
+    /*
+     * A simple approach for now: allocate a staging buffer for each upload and delete the buffers after a flush.
+     */
+
+    /*
+     * Allocate a staging buffer big enough to hold the entire subresource.
+     */
+    uint32_t const cbStagingBuffer = vboxDXGetSubresourceSize(pDstResource, DstSubresource);
+    PVBOXDX_RESOURCE pStagingBuffer = vboxDXCreateStagingBuffer(pDevice, cbStagingBuffer);
+    if (!pStagingBuffer)
+        return;
+
+    /*
+     * Copy data to staging via map/unmap.
+     */
     SVGA3dBox destBox;
     if (pDstBox)
     {
@@ -2319,33 +2356,36 @@ void vboxDXResourceUpdateSubresourceUP(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE 
     UINT Depth;
     vboxDXGetResourceBoxDimensions(pDstResource, DstSubresource, &destBox, &offPixel, &cbRow, &cRows, &Depth);
 
-    uint32_t const offSubresource = vboxDXGetSubresourceOffset(pDstResource, DstSubresource);
-
     UINT cbRowPitch;
     UINT cbDepthPitch;
     vboxDXGetSubresourcePitch(pDstResource, DstSubresource, &cbRowPitch, &cbDepthPitch);
 
-    if (!vboxDXUpdateStagingBufferUP(pDevice, pDstResource->pStagingResource,
-                                     offSubresource + offPixel, cbRow, cRows, cbRowPitch, Depth, cbDepthPitch,
+    if (!vboxDXUpdateStagingBufferUP(pDevice, pStagingBuffer,
+                                     offPixel, cbRow, cRows, cbRowPitch, Depth, cbDepthPitch,
                                      pSysMemUP, RowPitch, DepthPitch))
         return;
 
+    /*
+     * Copy from staging to destination.
+     */
     /* Inform the host that the staging buffer has been updated. Part occupied by the DstSubresource. */
     SVGA3dBox box;
-    box.x = offSubresource;
+    box.x = 0;
     box.y = 0;
     box.z = 0;
-    box.w = vboxDXGetSubresourceSize(pDstResource, DstSubresource);
+    box.w = cbStagingBuffer;
     box.h = 1;
     box.d = 1;
-    vgpu10UpdateSubResource(pDevice, vboxDXGetAllocation(pDstResource->pStagingResource), 0, &box);
+    vgpu10UpdateSubResource(pDevice, vboxDXGetAllocation(pStagingBuffer), 0, &box);
 
     /* Issue SVGA_3D_CMD_DX_TRANSFER_FROM_BUFFER */
-    uint32 srcOffset = offSubresource + offPixel;
+    uint32 srcOffset = offPixel;
     uint32 srcPitch = cbRowPitch;
     uint32 srcSlicePitch = cbDepthPitch;
-    vgpu10TransferFromBuffer(pDevice, vboxDXGetAllocation(pDstResource->pStagingResource), srcOffset, srcPitch, srcSlicePitch,
+    vgpu10TransferFromBuffer(pDevice, vboxDXGetAllocation(pStagingBuffer), srcOffset, srcPitch, srcSlicePitch,
                              vboxDXGetAllocation(pDstResource), DstSubresource, destBox);
+
+    RTListPrepend(&pDevice->listStagingResources, &pStagingBuffer->pKMResource->nodeStaging);
 }
 
 #ifndef D3DERR_WASSTILLDRAWING
@@ -3180,22 +3220,47 @@ HRESULT vboxDXBlt(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pDstResource, UINT Ds
 }
 
 
+static void dxDeallocateStagingResources(PVBOXDX_DEVICE pDevice)
+{
+    /* Move staging resources to the deferred destruction queue. */
+    PVBOXDXKMRESOURCE pKMResource, pNextKMResource;
+    RTListForEachSafe(&pDevice->listStagingResources, pKMResource, pNextKMResource, VBOXDXKMRESOURCE, nodeStaging)
+    {
+        RTListNodeRemove(&pKMResource->nodeStaging);
+
+        PVBOXDX_RESOURCE pStagingResource = pKMResource->pResource;
+        pKMResource->pResource = NULL;
+
+        Assert(pStagingResource->pKMResource == pKMResource);
+
+        /* Remove from the list of active resources. */
+        RTListNodeRemove(&pKMResource->nodeResource);
+        RTListAppend(&pDevice->listDestroyedResources, &pKMResource->nodeResource);
+
+        /* Staging resources are allocated by the driver. */
+        RTMemFree(pStagingResource);
+    }
+}
+
+
 static void dxDestroyDeferredResources(PVBOXDX_DEVICE pDevice)
 {
     PVBOXDXKMRESOURCE pKMResource, pNext;
     RTListForEachSafe(&pDevice->listDestroyedResources, pKMResource, pNext, VBOXDXKMRESOURCE, nodeResource)
     {
-        D3DKMT_HANDLE const hAllocation = pKMResource->hAllocation;
         RTListNodeRemove(&pKMResource->nodeResource);
-        RTMemFree(pKMResource);
 
         D3DDDICB_DEALLOCATE ddiDeallocate;
         RT_ZERO(ddiDeallocate);
         //ddiDeallocate.hResource      = NULL;
         ddiDeallocate.NumAllocations = 1;
-        ddiDeallocate.HandleList     = &hAllocation;
+        ddiDeallocate.HandleList     = &pKMResource->hAllocation;
 
-        pDevice->pRTCallbacks->pfnDeallocateCb(pDevice->hRTDevice.handle, &ddiDeallocate);
+        HRESULT hr = pDevice->pRTCallbacks->pfnDeallocateCb(pDevice->hRTDevice.handle, &ddiDeallocate);
+        LogFlowFunc(("pfnDeallocateCb returned %d", hr));
+        AssertStmt(SUCCEEDED(hr), vboxDXDeviceSetError(pDevice, hr));
+
+        RTMemFree(pKMResource);
     }
 }
 
@@ -3208,6 +3273,11 @@ HRESULT vboxDXFlush(PVBOXDX_DEVICE pDevice, bool fForce)
         HRESULT hr = vboxDXDeviceFlushCommands(pDevice);
         AssertReturnStmt(SUCCEEDED(hr), vboxDXDeviceSetError(pDevice, hr), hr);
     }
+
+    /* Free the staging resources which used for uploads in this command buffer.
+     * They are moved to the deferred destruction queue.
+     */
+    dxDeallocateStagingResources(pDevice);
 
     /* Process deferred-destruction queue. */
     dxDestroyDeferredResources(pDevice);
@@ -3312,6 +3382,7 @@ static int vboxDXDeviceCreateObjects(PVBOXDX_DEVICE pDevice)
 
     RTListInit(&pDevice->listResources);
     RTListInit(&pDevice->listDestroyedResources);
+    RTListInit(&pDevice->listStagingResources);
     RTListInit(&pDevice->listShaders);
     RTListInit(&pDevice->listQueries);
     RTListInit(&pDevice->listCOAQuery);
@@ -3414,11 +3485,12 @@ HRESULT vboxDXDeviceInit(PVBOXDX_DEVICE pDevice)
 
 void vboxDXDestroyDevice(PVBOXDX_DEVICE pDevice)
 {
+    /* Flush will deallocate staging resources. */
     vboxDXFlush(pDevice, true);
 
     PVBOXDXKMRESOURCE pKMResource, pNextKMResource;
     RTListForEachSafe(&pDevice->listResources, pKMResource, pNextKMResource, VBOXDXKMRESOURCE, nodeResource)
-        dxDestroyResource(pDevice, pKMResource->pResource);
+        vboxDXDestroyResource(pDevice, pKMResource->pResource);
 
     dxDestroyDeferredResources(pDevice);
 
