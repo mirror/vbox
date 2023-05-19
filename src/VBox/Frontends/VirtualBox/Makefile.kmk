@@ -262,7 +262,7 @@ UICommon_DEFS         += \
 	$(if $(VBOX_GUI_WITH_PIDFILE),VBOX_GUI_WITH_PIDFILE) \
 	$(if $(VBOX_GUI_WITH_CUSTOMIZATIONS1),VBOX_GUI_WITH_CUSTOMIZATIONS1) \
 	$(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE) \
-	$(if $(VBOX_WITH_DOCS_QHELP),VBOX_WITH_DOCS_QHELP) \
+	$(if $(VBOX_WITH_QHELP_VIEWER),VBOX_WITH_QHELP_VIEWER) \
 	$(if $(VBOX_WITH_SCREENSAVER_CONTROL),VBOX_WITH_SCREENSAVER_CONTROL) \
 	$(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,) \
 	$(if $(VBOX_WITH_UPDATE_AGENT),VBOX_WITH_UPDATE_AGENT)
@@ -1030,7 +1030,7 @@ UICommon_QT_MOCHDRS = \
 	src/wizards/newvd/UIWizardNewVDSizeLocationPage.h \
 	src/wizards/newvd/UIWizardNewVDExpertPage.h
 
-ifdef VBOX_WITH_DOCS_QHELP
+ifdef VBOX_WITH_QHELP_VIEWER
  UICommon_QT_MOCHDRS += \
  	src/helpbrowser/UIHelpViewer.h \
  	src/helpbrowser/UIHelpBrowserWidget.h
@@ -1143,7 +1143,7 @@ UICommon_QT_MOCSRCS = \
 	src/widgets/UIStatusBarEditorWindow.cpp \
 	src/widgets/UIToolBox.cpp
 
-ifdef VBOX_WITH_DOCS_QHELP
+ifdef VBOX_WITH_QHELP_VIEWER
  UICommon_QT_MOCSRCS += \
  	src/helpbrowser/UIHelpViewer.cpp \
  	src/helpbrowser/UIHelpBrowserWidget.cpp
@@ -1623,7 +1623,7 @@ UICommon_SOURCES = \
 	src/wizards/newvd/UIWizardNewVDSizeLocationPage.cpp \
 	src/wizards/newvd/UIWizardNewVDExpertPage.cpp
 
-ifdef VBOX_WITH_DOCS_QHELP
+ifdef VBOX_WITH_QHELP_VIEWER
  UICommon_SOURCES += \
  	src/helpbrowser/UIHelpViewer.cpp \
  	src/helpbrowser/UIHelpBrowserWidget.cpp
@@ -1769,7 +1769,7 @@ ifndef VBOX_WITH_QT6
  UICommon_QT_MODULES.win     += WinExtras
 endif
 
-ifdef VBOX_WITH_DOCS_QHELP
+ifdef VBOX_WITH_QHELP_VIEWER
  UICommon_QT_MODULES   += Help
 endif
 

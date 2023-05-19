@@ -71,7 +71,7 @@ UIHelpBrowserDialog::UIHelpBrowserDialog(QWidget *pParent, QWidget *pCenterWidge
 
 void UIHelpBrowserDialog::showHelpForKeyword(const QString &strKeyword)
 {
-#ifdef VBOX_WITH_DOCS_QHELP
+#ifdef VBOX_WITH_QHELP_VIEWER
     if (m_pWidget)
         m_pWidget->showHelpForKeyword(strKeyword);
 #else
@@ -81,7 +81,7 @@ void UIHelpBrowserDialog::showHelpForKeyword(const QString &strKeyword)
 
 void UIHelpBrowserDialog::retranslateUi()
 {
-#ifdef VBOX_WITH_DOCS_QHELP
+#ifdef VBOX_WITH_QHELP_VIEWER
     setWindowTitle(UIHelpBrowserWidget::tr("Oracle VM VirtualBox User Manual"));
 #endif
 }
@@ -118,7 +118,7 @@ bool UIHelpBrowserDialog::event(QEvent *pEvent)
 
 void UIHelpBrowserDialog::prepareCentralWidget()
 {
-#ifdef VBOX_WITH_DOCS_QHELP
+#ifdef VBOX_WITH_QHELP_VIEWER
     m_pWidget = new UIHelpBrowserWidget(EmbedTo_Dialog, m_strHelpFilePath);
     AssertPtrReturnVoid(m_pWidget);
     setCentralWidget((m_pWidget));

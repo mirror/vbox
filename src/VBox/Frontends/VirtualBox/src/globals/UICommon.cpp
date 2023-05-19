@@ -2376,7 +2376,7 @@ int UICommon::supportedRecordingFeatures() const
 /* static */
 QString UICommon::helpFile()
 {
-#if defined (VBOX_WITH_DOCS_QHELP)
+#if defined (VBOX_WITH_QHELP_VIEWER)
     const QString strName = "UserManual";
     const QString strSuffix = "qhc";
 #else

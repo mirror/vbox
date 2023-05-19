@@ -28,7 +28,7 @@
 /* Qt includes: */
 #include <QClipboard>
 #include <QtGlobal>
-#ifdef VBOX_WITH_DOCS_QHELP
+#ifdef VBOX_WITH_QHELP_VIEWER
  #include <QtHelp/QHelpEngine>
  #include <QtHelp/QHelpContentWidget>
  #include <QtHelp/QHelpIndexWidget>
@@ -63,7 +63,7 @@
 #include "COMEnums.h"
 #include "CSystemProperties.h"
 
-#ifdef VBOX_WITH_DOCS_QHELP
+#ifdef VBOX_WITH_QHELP_VIEWER
 
 
 /*********************************************************************************************************************************
@@ -1069,4 +1069,4 @@ void UIHelpViewer::loadImage(const QUrl &imageFileUrl)
 
 #include "UIHelpViewer.moc"
 
-#endif /* #ifdef VBOX_WITH_DOCS_QHELP */
+#endif /* #ifdef VBOX_WITH_QHELP_VIEWER */
