@@ -242,7 +242,7 @@
 #           undef X86_CR4_VMXE
 #       endif
 #   endif
-#   if RTLNX_VER_MIN(5,18,0) && !defined(__NO_FORTIFY) && defined(__OPTIMIZE__) && defined(CONFIG_FORTIFY_SOURCE)
+#   if (RTLNX_VER_MIN(5,18,0) || RTLNX_RHEL_RANGE(9,3, 9,99)) && !defined(__NO_FORTIFY) && defined(__OPTIMIZE__) && defined(CONFIG_FORTIFY_SOURCE)
 #    define SUPDRV_UNFORTIFIED_MEMCPY __underlying_memcpy
 #   endif
 #   define SUPR0_EXPORT_SYMBOL(a_Name) EXPORT_SYMBOL(a_Name)
