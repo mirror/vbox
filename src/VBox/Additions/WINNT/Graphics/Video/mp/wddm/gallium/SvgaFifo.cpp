@@ -461,6 +461,14 @@ static NTSTATUS svgaCBAlloc(PVMSVGACBSTATE pCBState, VMSVGACBTYPE enmType, uint3
     return STATUS_SUCCESS;
 }
 
+static void svgaCBSubmitHeaderLocked(PVBOXWDDM_EXT_VMSVGA pSvga, PHYSICAL_ADDRESS CBHeaderPhysAddr, SVGACBContext CBContext)
+{
+    RT_NOREF(pSvga);
+
+    SVGARegWrite(pSvga, SVGA_REG_COMMAND_HIGH, CBHeaderPhysAddr.HighPart);
+    SVGARegWrite(pSvga, SVGA_REG_COMMAND_LOW, CBHeaderPhysAddr.LowPart | CBContext);
+}
+
 static void svgaCBSubmitHeader(PVBOXWDDM_EXT_VMSVGA pSvga, PHYSICAL_ADDRESS CBHeaderPhysAddr, SVGACBContext CBContext)
 {
     PVMSVGACBSTATE pCBState = pSvga->pCBState;
@@ -819,7 +827,7 @@ void SvgaCmdBufProcess(PVBOXWDDM_EXT_VMSVGA pSvga)
 
             RTListAppend(&pCBCtx->QueueSubmitted, &pCB->nodeQueue);
             ++pCBCtx->cSubmitted;
-            svgaCBSubmitHeader(pSvga, pCB->CBHeaderPhysAddr, (SVGACBContext)i);
+            svgaCBSubmitHeaderLocked(pSvga, pCB->CBHeaderPhysAddr, (SVGACBContext)i);
             GALOG(("Submitted pending %p\n", pCB));
         }
     }
