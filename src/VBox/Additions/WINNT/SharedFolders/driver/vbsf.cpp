@@ -1130,8 +1130,8 @@ static NTSTATUS vbsfVerifyConnectionName(PUNICODE_STRING ConnectionName)
     ULONG cRemainingName;
 
     /* Check that the name starts with correct prefix. */
-    PCWCHAR pwc1 = &s_wszPrefix[0];
-    PCWCHAR pwc  = ConnectionName->Buffer;
+    WCHAR const *pwc1 = &s_wszPrefix[0];
+    WCHAR const *pwc  = ConnectionName->Buffer;
     ULONG   i;
     for (i = 0; i < cConnectionName; i++, pwc1++, pwc++)
     {
