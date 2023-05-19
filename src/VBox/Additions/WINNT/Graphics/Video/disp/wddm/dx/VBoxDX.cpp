@@ -278,6 +278,27 @@ void vboxDXStorePatchLocation(PVBOXDX_DEVICE pDevice, void *pvPatch, VBOXDXALLOC
 }
 
 
+static bool dxIsAllocationInUse(PVBOXDX_DEVICE pDevice, D3DKMT_HANDLE hAllocation)
+{
+    if (!hAllocation)
+        return false;
+
+    /* Find the same hAllocation */
+    int idxAllocation = -1;
+    for (unsigned i = 0; i < pDevice->cAllocations; ++i)
+    {
+         D3DDDI_ALLOCATIONLIST *p = &pDevice->pAllocationList[i];
+         if (p->hAllocation == hAllocation)
+         {
+             idxAllocation = i;
+             break;
+         }
+    }
+
+    return idxAllocation >= 0;
+}
+
+
 static void vboxDXEmitSetConstantBuffers(PVBOXDX_DEVICE pDevice)
 {
     for (unsigned idxShaderType = 0; idxShaderType < RT_ELEMENTS(pDevice->pipeline.aConstantBuffers); ++idxShaderType)
@@ -2398,6 +2419,14 @@ void vboxDXResourceMap(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, UINT 
     /** @todo Need to take into account various variants Dynamic/Staging/ Discard/NoOverwrite, etc. */
     Assert(pResource->uMap == 0); /* Must not be already mapped */
 
+    if (   RT_BOOL(Flags & D3D10_DDI_MAP_FLAG_DONOTWAIT)
+        && dxIsAllocationInUse(pDevice, vboxDXGetAllocation(pResource)))
+    {
+        vboxDXFlush(pDevice, true);
+        vboxDXDeviceSetError(pDevice, DXGI_DDI_ERR_WASSTILLDRAWING);
+        return;
+    }
+
     HRESULT hr;
     D3DDDICB_LOCK ddiLock;
     do
@@ -2405,7 +2434,7 @@ void vboxDXResourceMap(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, UINT 
         RT_ZERO(ddiLock);
         ddiLock.hAllocation = vboxDXGetAllocation(pResource);
         ddiLock.Flags.ReadOnly =   DDIMap == D3D10_DDI_MAP_READ;
-        ddiLock.Flags.WriteOnly =  0 /** @todo Is it? DDIMap == D3D10_DDI_MAP_WRITE */
+        ddiLock.Flags.WriteOnly =  DDIMap == D3D10_DDI_MAP_WRITE
                                 || DDIMap == D3D10_DDI_MAP_WRITE_DISCARD
                                 || DDIMap == D3D10_DDI_MAP_WRITE_NOOVERWRITE;
         ddiLock.Flags.DonotWait = RT_BOOL(Flags & D3D10_DDI_MAP_FLAG_DONOTWAIT);
@@ -2416,7 +2445,15 @@ void vboxDXResourceMap(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, UINT 
 
         hr = pDevice->pRTCallbacks->pfnLockCb(pDevice->hRTDevice.handle, &ddiLock);
         if (hr == D3DERR_WASSTILLDRAWING)
+        {
+            if (RT_BOOL(Flags & D3D10_DDI_MAP_FLAG_DONOTWAIT))
+            {
+                vboxDXDeviceSetError(pDevice, DXGI_DDI_ERR_WASSTILLDRAWING);
+                return;
+            }
+
             RTThreadYield();
+        }
     } while (hr == D3DERR_WASSTILLDRAWING);
 
     if (SUCCEEDED(hr))
