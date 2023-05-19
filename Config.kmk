@@ -7665,18 +7665,19 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
     endif
    endif
   else if1of ($(KBUILD_TARGET), win)
+   ## @todo kBuild: Use qfilter[-out] here once kmk.exe is updated.
    ifndef VBOX_WITH_QT6
     VBOX_PATH_QT := $(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS_TRG)/qt/v5*))
-    VBOX_PATH_QT := $(firstfile $(qfilter ,%-$(tolower $(VBOX_VCC_TOOL_STEM)),$(VBOX_PATH_QT)) \
-    		$(qfilter-out ,%-vcc100 %-vcc110 %-vcc120 %-vcc140 %-vcc141 %-vcc142 %-vcc143 %-vcc150, $(VBOX_PATH_QT)))
+    VBOX_PATH_QT := $(firstfile $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(VBOX_PATH_QT)) \
+    		$(filter-out %-vcc100 %-vcc110 %-vcc120 %-vcc140 %-vcc141 %-vcc142 %-vcc143 %-vcc150, $(VBOX_PATH_QT)))
     ifdef VBOX_PATH_QT
      PATH_SDK_QT5  := $(VBOX_PATH_QT)
      PATH_TOOL_QT5 := $(VBOX_PATH_QT)
     endif
    else # qt6
     VBOX_PATH_QT := $(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS_TRG)/qt/v6*))
-    VBOX_PATH_QT := $(firstfile $(qfilter ,%-$(tolower $(VBOX_VCC_TOOL_STEM)),$(VBOX_PATH_QT)) \
-    		$(qfilter-out %-vcc100 %-vcc110 %-vcc120 %-vcc140 %-vcc141 %-vcc142 %-vcc143 %-vcc150, $(VBOX_PATH_QT)))
+    VBOX_PATH_QT := $(firstfile $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(VBOX_PATH_QT)) \
+    		$(filter-out %-vcc100 %-vcc110 %-vcc120 %-vcc140 %-vcc141 %-vcc142 %-vcc143 %-vcc150, $(VBOX_PATH_QT)))
     ifdef VBOX_PATH_QT
      PATH_SDK_QT6  := $(VBOX_PATH_QT)
      PATH_TOOL_QT6 := $(VBOX_PATH_QT)
@@ -7684,24 +7685,17 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
    endif # qt6
   else if1of ($(KBUILD_TARGET), linux solaris)
    ifndef VBOX_WITH_QT6
-    VBOX_PATH_QT ?= $(firstfile $(qversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
-   else # qt6
-    VBOX_PATH_QT ?= $(firstfile $(qversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS_TRG)/qt/v6*)))
-   endif # qt6
+    VBOX_PATH_QT ?= $(firstfile $(versortfiles $(qwildcard ,$(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
+   else
+    VBOX_PATH_QT ?= $(firstfile $(versortfiles $(qwildcard ,$(KBUILD_DEVTOOLS_TRG)/qt/v6*)))
+   endif
    ifneq ($(VBOX_PATH_QT),)
     VBOX_WITH_ORACLE_QT = 1
    endif
   endif
  endif
- ifeq ($(VBOX_PATH_QT),)
-  if1of ($(USERNAME), bird)
-   # gentoo (64-bit)
-   VBOX_PATH_QT          ?= /usr
-   VBOX_PATH_QT_LIB      ?= /usr/lib/qt5
-  endif
- endif
- VBOX_PATH_QT            ?= /usr
- VBOX_PATH_QT_LIB        ?= $(VBOX_PATH_QT)/lib
+ VBOX_PATH_QT     ?= /usr
+ VBOX_PATH_QT_LIB ?= $(VBOX_PATH_QT)/lib
 
  if defined(VBOX_WITH_ORACLE_QT) && (!defined(VBOX_WITH_QT6) || "$(KBUILD_TARGET)" != "darwin")
   VBOX_QT_INFIX := VBox$(VBOX_QT_DBG)
