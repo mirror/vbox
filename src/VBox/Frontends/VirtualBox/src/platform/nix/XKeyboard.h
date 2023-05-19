@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef FEQT_INCLUDED_SRC_platform_x11_XKeyboard_h
-#define FEQT_INCLUDED_SRC_platform_x11_XKeyboard_h
+#ifndef FEQT_INCLUDED_SRC_platform_nix_XKeyboard_h
+#define FEQT_INCLUDED_SRC_platform_nix_XKeyboard_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -51,5 +51,5 @@ SHARED_LIBRARY_STUFF void doXKeyboardLogging(Display *pDisplay);
 SHARED_LIBRARY_STUFF unsigned long wrapXkbKeycodeToKeysym(Display *pDisplay, unsigned char cCode,
                                                           unsigned int cGroup, unsigned int cIndex);
 
-#endif /* !FEQT_INCLUDED_SRC_platform_x11_XKeyboard_h */
+#endif /* !FEQT_INCLUDED_SRC_platform_nix_XKeyboard_h */
 
