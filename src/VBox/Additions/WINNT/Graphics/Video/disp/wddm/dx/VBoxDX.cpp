@@ -2419,12 +2419,15 @@ void vboxDXResourceMap(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, UINT 
     /** @todo Need to take into account various variants Dynamic/Staging/ Discard/NoOverwrite, etc. */
     Assert(pResource->uMap == 0); /* Must not be already mapped */
 
-    if (   RT_BOOL(Flags & D3D10_DDI_MAP_FLAG_DONOTWAIT)
-        && dxIsAllocationInUse(pDevice, vboxDXGetAllocation(pResource)))
+    if (dxIsAllocationInUse(pDevice, vboxDXGetAllocation(pResource)))
     {
         vboxDXFlush(pDevice, true);
-        vboxDXDeviceSetError(pDevice, DXGI_DDI_ERR_WASSTILLDRAWING);
-        return;
+
+        if (RT_BOOL(Flags & D3D10_DDI_MAP_FLAG_DONOTWAIT))
+        {
+            vboxDXDeviceSetError(pDevice, DXGI_DDI_ERR_WASSTILLDRAWING);
+            return;
+        }
     }
 
     HRESULT hr;

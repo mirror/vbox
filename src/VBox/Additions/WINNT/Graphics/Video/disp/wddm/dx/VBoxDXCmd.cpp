@@ -419,7 +419,6 @@ int vgpu10Draw(PVBOXDX_DEVICE pDevice,
     SET_CMD_FIELD(startVertexLocation);
 
     vboxDXCommandBufferCommit(pDevice);
-vboxDXDeviceFlushCommands(pDevice);
     return VINF_SUCCESS;
 }
 
@@ -439,7 +438,6 @@ int vgpu10DrawIndexed(PVBOXDX_DEVICE pDevice,
     SET_CMD_FIELD(baseVertexLocation);
 
     vboxDXCommandBufferCommit(pDevice);
-vboxDXDeviceFlushCommands(pDevice);
     return VINF_SUCCESS;
 }
 
