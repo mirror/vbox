@@ -7731,20 +7731,20 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
     VBOX_QT_MOD += Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport $(if $(VBOX_GUI_USE_QGL),Qt5OpenGL,)
     VBOX_QT_MOD += Qt5DBus Qt5Xml Qt5XcbQpa Qt5X11Extras
     VBOX_QT_PLUGINS = \
-     plugins/platforms/libqxcb.so \
-     plugins/platformthemes/libqgtk2.so \
-     plugins/platformthemes/libqgtk3.so \
-     plugins/sqldrivers/libqsqlite.so \
-     plugins/styles/libqgtk2style.so \
-     plugins/xcbglintegrations/libqxcb-glx-integration.so
+        plugins/platforms/libqxcb.so \
+        plugins/platformthemes/libqgtk2.so \
+        plugins/platformthemes/libqgtk3.so \
+        plugins/sqldrivers/libqsqlite.so \
+        plugins/styles/libqgtk2style.so \
+        plugins/xcbglintegrations/libqxcb-glx-integration.so
    else # qt6
     VBOX_QT_MOD += Qt6Core Qt6Gui Qt6Widgets Qt6PrintSupport Qt6StateMachine Qt6Core5Compat $(if $(VBOX_GUI_USE_QGL),Qt6OpenGL,)
     VBOX_QT_MOD += Qt6DBus Qt6Xml Qt6XcbQpa
     VBOX_QT_PLUGINS = \
-     plugins/platforms/libqxcbVBox.so \
-     plugins/platformthemes/libqgtk3VBox.so \
-     plugins/sqldrivers/libqsqliteVBox.so \
-     plugins/xcbglintegrations/libqxcb-glx-integrationVBox.so
+        plugins/platforms/libqxcbVBox.so \
+        plugins/platformthemes/libqgtk3VBox.so \
+        plugins/sqldrivers/libqsqliteVBox.so \
+        plugins/xcbglintegrations/libqxcb-glx-integrationVBox.so
    endif # qt6
   else ifeq ($(KBUILD_TARGET),win)
    ifndef VBOX_WITH_QT6

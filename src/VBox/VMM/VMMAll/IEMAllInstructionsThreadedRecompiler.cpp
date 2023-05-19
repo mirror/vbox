@@ -150,7 +150,7 @@ typedef struct IEMTB
     /** @} */
 
     /** Number of bytes of opcodes covered by this block.
-     * @todo Support discontiguous chunks of opcodes in same block, though maybe 
+     * @todo Support discontiguous chunks of opcodes in same block, though maybe
      *       restrict to the initial page or smth. */
     uint32_t    cbPC;
 
