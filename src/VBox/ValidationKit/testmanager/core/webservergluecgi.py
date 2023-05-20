@@ -40,10 +40,10 @@ __version__ = "$Revision$"
 
 
 # Standard python imports.
-import cgitb;
+import cgi;     # pylint: disable=deprecated-module ## @todo these will be retired in python 3.13!
+import cgitb;   # pylint: disable=deprecated-module ## @todo these will be retired in python 3.13!
 import os;
 import sys;
-import cgi;
 
 # Validation Kit imports.
 from testmanager.core.webservergluebase import WebServerGlueBase;

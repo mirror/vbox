@@ -40,7 +40,7 @@ __version__ = "$Revision$"
 
 
 # Standard python imports.
-import cgitb
+import cgitb;   # pylint: disable=deprecated-module ## @todo these will be retired in python 3.13!
 import codecs;
 import os
 import sys

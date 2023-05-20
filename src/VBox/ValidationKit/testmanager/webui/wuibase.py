@@ -948,7 +948,7 @@ class WuiDispatcherBase(object):
 
         sRedirAction is what action to redirect to on success.
         """
-        import cgitb;
+        import cgitb;   # pylint: disable=deprecated-module ## @todo these will be retired in python 3.13!
 
         idEntry = self.getIntParam(sParamId, iMin = 1, iMax = 0x7ffffffe)
         fCascade = self.getBoolParam('fCascadeDelete', False);
