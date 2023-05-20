@@ -677,7 +677,7 @@ static DECLCALLBACK(int) vmsvga3dBackQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCap
         break;
 
     case SVGA3D_DEVCAP_SURFACEFMT_R5G6B5:
-        *pu32Val = vmsvga3dGetSurfaceFormatSupport(pState, idx3dCaps, D3DFMT_A4R4G4B4);
+        *pu32Val = vmsvga3dGetSurfaceFormatSupport(pState, idx3dCaps, D3DFMT_R5G6B5);
         break;
 
     case SVGA3D_DEVCAP_SURFACEFMT_LUMINANCE16:
