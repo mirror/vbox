@@ -794,10 +794,7 @@ endif
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.arm64)
  VBOX_WITH_QT6 := 1
 endif
-# Enable the QHelp based help function in UI.
-if1of ($(KBUILD_TARGET), darwin linux solaris win)
- VBOX_WITH_QHELP_VIEWER = 1
-endif
+
 # VBox Ballooning Control frontend.
 VBOX_WITH_FE_BALLOONCTRL = 1
 # VBox Autostart Service.
