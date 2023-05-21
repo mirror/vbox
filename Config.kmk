@@ -7750,7 +7750,7 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
   endif # win
  endif # linux freebsd netbsd openbsd solaris win
 
- ifdef VBOX_WITH_QHELP_VIEWER
+ ifdef VBOX_WITH_DOCS_QHELP
   ifeq ($(KBUILD_TARGET),darwin)
    VBOX_QT_MOD  += QtHelp QtNetwork QtSql
   else if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris win)
