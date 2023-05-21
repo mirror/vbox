@@ -1031,7 +1031,7 @@ UICommon_QT_MOCHDRS = \
 	src/wizards/newvd/UIWizardNewVDSizeLocationPage.h \
 	src/wizards/newvd/UIWizardNewVDExpertPage.h
 
-ifdef VBOX_WITH_QHELP_VIEWER
+ifdef VBOX_WITH_DOCS_QHELP
  UICommon_QT_MOCHDRS += \
  	src/helpbrowser/UIHelpViewer.h \
  	src/helpbrowser/UIHelpBrowserWidget.h
@@ -1144,7 +1144,7 @@ UICommon_QT_MOCSRCS = \
 	src/widgets/UIStatusBarEditorWindow.cpp \
 	src/widgets/UIToolBox.cpp
 
-ifdef VBOX_WITH_QHELP_VIEWER
+ifdef VBOX_WITH_DOCS_QHELP
  UICommon_QT_MOCSRCS += \
  	src/helpbrowser/UIHelpViewer.cpp \
  	src/helpbrowser/UIHelpBrowserWidget.cpp
@@ -1624,7 +1624,7 @@ UICommon_SOURCES = \
 	src/wizards/newvd/UIWizardNewVDSizeLocationPage.cpp \
 	src/wizards/newvd/UIWizardNewVDExpertPage.cpp
 
-ifdef VBOX_WITH_QHELP_VIEWER
+ifdef VBOX_WITH_DOCS_QHELP
  UICommon_SOURCES += \
  	src/helpbrowser/UIHelpViewer.cpp \
  	src/helpbrowser/UIHelpBrowserWidget.cpp
@@ -1770,7 +1770,7 @@ ifndef VBOX_WITH_QT6
  UICommon_QT_MODULES.win     += WinExtras
 endif
 
-ifdef VBOX_WITH_QHELP_VIEWER
+ifdef VBOX_WITH_DOCS_QHELP
  UICommon_QT_MODULES   += Help
 endif
 
