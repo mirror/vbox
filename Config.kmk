@@ -7710,7 +7710,7 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
  endif
 
  ifeq ($(KBUILD_TARGET),darwin)
-  VBOX_QT_MOD := QtCore QtGui QtWidgets QtPrintSupport
+  VBOX_QT_MOD := QtCore QtGui QtWidgets QtPrintSupport QtHelp QtNetwork QtSql
   ifdef VBOX_WITH_QT6
    VBOX_QT_MOD += QtStateMachine QtCore5Compat
   else
@@ -7723,7 +7723,7 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
   if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris)
    ifndef VBOX_WITH_QT6
     VBOX_QT_MOD += Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport $(if $(VBOX_GUI_USE_QGL),Qt5OpenGL,)
-    VBOX_QT_MOD += Qt5DBus Qt5Xml Qt5XcbQpa Qt5X11Extras
+    VBOX_QT_MOD += Qt5DBus Qt5Xml Qt5XcbQpa Qt5X11Extras Qt5Help Qt5Network Qt5Sql
     VBOX_QT_PLUGINS = \
     	plugins/platforms/libqxcb.so \
     	plugins/platformthemes/libqgtk2.so \
@@ -7733,7 +7733,7 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
     	plugins/xcbglintegrations/libqxcb-glx-integration.so
    else # qt6
     VBOX_QT_MOD += Qt6Core Qt6Gui Qt6Widgets Qt6PrintSupport Qt6StateMachine Qt6Core5Compat $(if $(VBOX_GUI_USE_QGL),Qt6OpenGL,)
-    VBOX_QT_MOD += Qt6DBus Qt6Xml Qt6XcbQpa
+    VBOX_QT_MOD += Qt6DBus Qt6Xml Qt6XcbQpa Qt6Help Qt6Network Qt6Sql
     VBOX_QT_PLUGINS = \
     	plugins/platforms/libqxcbVBox.so \
     	plugins/platformthemes/libqgtk3VBox.so \
@@ -7743,24 +7743,12 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
   else ifeq ($(KBUILD_TARGET),win)
    ifndef VBOX_WITH_QT6
     VBOX_QT_MOD += Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport $(if $(VBOX_GUI_USE_QGL),Qt5OpenGL,)
-    VBOX_QT_MOD += Qt5WinExtras
+    VBOX_QT_MOD += Qt5WinExtras Qt5Help Qt5Network Qt5Sql
    else # qt6
-    VBOX_QT_MOD += Qt6Core Qt6Gui Qt6Widgets Qt6PrintSupport Qt6StateMachine Qt6Core5Compat $(if $(VBOX_GUI_USE_QGL),Qt6OpenGL,)
+    VBOX_QT_MOD += Qt6Core Qt6Gui Qt6Widgets Qt6PrintSupport Qt6StateMachine Qt6Core5Compat $(if $(VBOX_GUI_USE_QGL),Qt6OpenGL,) Qt6Help Qt6Network Qt6Sql
    endif # qt6
   endif # win
  endif # linux freebsd netbsd openbsd solaris win
-
- ifdef VBOX_WITH_DOCS_QHELP
-  ifeq ($(KBUILD_TARGET),darwin)
-   VBOX_QT_MOD  += QtHelp QtNetwork QtSql
-  else if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris win)
-   ifndef VBOX_WITH_QT6
-    VBOX_QT_MOD += Qt5Help Qt5Network Qt5Sql
-   else # qt6
-    VBOX_QT_MOD += Qt6Help Qt6Network Qt6Sql
-   endif # qt6
-  endif
- endif
 
  VBOX_QT_MOD_NAMES = $(foreach qtmod,$(VBOX_QT_MOD),$(qtmod)$(VBOX_QT_INFIX))
 
