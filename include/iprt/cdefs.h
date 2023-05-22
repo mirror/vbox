@@ -1563,7 +1563,7 @@
  * How to declare a non-exported function that may throw C++ exceptions.
  * @param   a_RetType   The return type of the function.
  */
-#define DECL_HIDDEN_THROW(a_RetType)    DECL_HIDDEN_ONLY(a_Type)
+#define DECL_HIDDEN_THROW(a_RetType)    DECL_HIDDEN_ONLY(a_RetType)
 
 /** @def DECL_HIDDEN_DATA
  * How to declare a non-exported variable.
