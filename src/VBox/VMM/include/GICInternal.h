@@ -50,6 +50,9 @@
 # error "Not implemented!"
 #endif
 
+/** Maximum number of SPI interrupts. */
+#define GIC_SPI_MAX                         32
+
 /**
  * GIC PDM instance data (per-VM).
  */
@@ -59,6 +62,30 @@ typedef struct GICDEV
     IOMMMIOHANDLE               hMmioDist;
     /** The redistributor MMIO handle. */
     IOMMMIOHANDLE               hMmioReDist;
+
+    /** @name SPI disitributor register state.
+     * @{ */
+    /** Interrupt Group 0 Register. */
+    volatile uint32_t           u32RegIGrp0;
+    /** Interrupt Configuration Register 0. */
+    volatile uint32_t           u32RegICfg0;
+    /** Interrupt Configuration Register 1. */
+    volatile uint32_t           u32RegICfg1;
+    /** Interrupt enabled bitmap. */
+    volatile uint32_t           bmIntEnabled;
+    /** Current interrupt pending state. */
+    volatile uint32_t           bmIntPending;
+    /** The current interrupt active state. */
+    volatile uint32_t           bmIntActive;
+    /** The interrupt priority for each of the SGI/PPIs */
+    volatile uint8_t            abIntPriority[GIC_SPI_MAX];
+
+    /** Flag whether group 0 interrupts are currently enabled. */
+    volatile bool               fIrqGrp0Enabled;
+    /** Flag whether group 1 interrupts are currently enabled. */
+    volatile bool               fIrqGrp1Enabled;
+    /** @} */
+
 } GICDEV;
 /** Pointer to a GIC device. */
 typedef GICDEV *PGICDEV;

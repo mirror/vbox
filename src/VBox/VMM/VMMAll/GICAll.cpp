@@ -133,14 +133,17 @@ DECLINLINE(void) gicClearInterruptFF(PVMCPUCC pVCpu, bool fIrq, bool fFiq)
 }
 
 
-/**
- * Updates the internal IRQ state and sets or clears the appropirate force action flags.
- *
- * @returns Strict VBox status code.
- * @param   pThis           The GIC re-distributor state for the associated vCPU.
- * @param   pVCpu           The cross context virtual CPU structure.
- */
-static VBOXSTRICTRC gicReDistUpdateIrqState(PGICCPU pThis, PVMCPUCC pVCpu)
+DECLINLINE(void) gicUpdateInterruptFF(PVMCPUCC pVCpu, bool fIrq, bool fFiq)
+{
+    if (fIrq || fFiq)
+        gicSetInterruptFF(pVCpu, fIrq, fFiq);
+
+    if (!fIrq || !fFiq)
+        gicClearInterruptFF(pVCpu, !fIrq, !fFiq);
+}
+
+
+DECLINLINE(void) gicReDistHasIrqPending(PGICCPU pThis, bool *pfIrq, bool *pfFiq)
 {
     /* Read the interrupt state. */
     uint32_t u32RegIGrp0  = ASMAtomicReadU32(&pThis->u32RegIGrp0);
@@ -155,18 +158,87 @@ static VBOXSTRICTRC gicReDistUpdateIrqState(PGICCPU pThis, PVMCPUCC pVCpu)
     if (bmIntForward)
     {
         /* Determine whether we have to assert the IRQ or FIQ line. */
-        bool fIrq = RT_BOOL(bmIntForward & u32RegIGrp0) && fIrqGrp1Enabled;
-        bool fFiq = RT_BOOL(bmIntForward & ~u32RegIGrp0) && fIrqGrp0Enabled;
-
-        if (fIrq || fFiq)
-            gicSetInterruptFF(pVCpu, fIrq, fFiq);
-
-        if (!fIrq || !fFiq)
-            gicClearInterruptFF(pVCpu, !fIrq, !fFiq);
+        *pfIrq = RT_BOOL(bmIntForward & u32RegIGrp0) && fIrqGrp1Enabled;
+        *pfFiq = RT_BOOL(bmIntForward & ~u32RegIGrp0) && fIrqGrp0Enabled;
     }
     else
-        gicClearInterruptFF(pVCpu, true /*fIrq*/, true /*fFiq*/);
+    {
+        *pfIrq = false;
+        *pfFiq = false;
+    }
+}
 
+
+DECLINLINE(void) gicDistHasIrqPendingForVCpu(PGICDEV pThis, bool *pfIrq, bool *pfFiq)
+{
+    /* Read the interrupt state. */
+    uint32_t u32RegIGrp0  = ASMAtomicReadU32(&pThis->u32RegIGrp0);
+    uint32_t bmIntEnabled = ASMAtomicReadU32(&pThis->bmIntEnabled);
+    uint32_t bmIntPending = ASMAtomicReadU32(&pThis->bmIntPending);
+    uint32_t bmIntActive  = ASMAtomicReadU32(&pThis->bmIntActive);
+    bool fIrqGrp0Enabled  = ASMAtomicReadBool(&pThis->fIrqGrp0Enabled);
+    bool fIrqGrp1Enabled  = ASMAtomicReadBool(&pThis->fIrqGrp1Enabled);
+
+    /* Is anything enabled at all? */
+    uint32_t bmIntForward = (bmIntPending & bmIntEnabled) & ~bmIntActive; /* Exclude the currently active interrupt. */
+    if (bmIntForward)
+    {
+        /* Determine whether we have to assert the IRQ or FIQ line. */
+        *pfIrq = RT_BOOL(bmIntForward & u32RegIGrp0) && fIrqGrp1Enabled;
+        *pfFiq = RT_BOOL(bmIntForward & ~u32RegIGrp0) && fIrqGrp0Enabled;
+    }
+    else
+    {
+        *pfIrq = false;
+        *pfFiq = false;
+    }
+}
+
+
+/**
+ * Updates the internal IRQ state and sets or clears the appropirate force action flags.
+ *
+ * @returns Strict VBox status code.
+ * @param   pThis           The GIC re-distributor state for the associated vCPU.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ */
+static VBOXSTRICTRC gicReDistUpdateIrqState(PGICCPU pThis, PVMCPUCC pVCpu)
+{
+    bool fIrq, fFiq;
+    gicReDistHasIrqPending(pThis, &fIrq, &fFiq);
+
+    PPDMDEVINS pDevIns = VMCPU_TO_DEVINS(pVCpu);
+    PGICDEV pGicDev = PDMDEVINS_2_DATA(pDevIns, PGICDEV);
+    bool fIrqDist, fFiqDist;
+    gicDistHasIrqPendingForVCpu(pGicDev, &fIrqDist, &fFiqDist);
+    fIrq |= fIrqDist;
+    fFiq |= fFiqDist;
+
+    gicUpdateInterruptFF(pVCpu, fIrq, fFiq);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Updates the internal IRQ state of the distributor and sets or clears the appropirate force action flags.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVM             The cross context VM state.
+ * @param   pThis           The GIC distributor state.
+ */
+static VBOXSTRICTRC gicDistUpdateIrqState(PVMCC pVM, PGICDEV pThis)
+{
+    PVMCPUCC pVCpu = pVM->CTX_SUFF(apCpus)[0]; /** @todo SMP */
+
+    bool fIrq, fFiq;
+    gicReDistHasIrqPending(VMCPU_TO_GICCPU(pVCpu), &fIrq, &fFiq);
+
+    bool fIrqDist, fFiqDist;
+    gicDistHasIrqPendingForVCpu(pThis, &fIrqDist, &fFiqDist);
+    fIrq |= fIrqDist;
+    fFiq |= fFiqDist;
+
+    gicUpdateInterruptFF(pVCpu, fIrq, fFiq);
     return VINF_SUCCESS;
 }
 
@@ -204,11 +276,15 @@ static int gicReDistInterruptSet(PVMCPUCC pVCpu, uint32_t uIntId, bool fAsserted
  */
 DECLINLINE(VBOXSTRICTRC) gicDistRegisterRead(PPDMDEVINS pDevIns, PVMCPUCC pVCpu, uint16_t offReg, uint32_t *puValue)
 {
-    VMCPU_ASSERT_EMT(pVCpu);
-    RT_NOREF(pDevIns, pVCpu, offReg);
+    VMCPU_ASSERT_EMT(pVCpu); RT_NOREF(pVCpu);
+    PGICDEV pThis  = PDMDEVINS_2_DATA(pDevIns, PGICDEV);
 
     switch (offReg)
     {
+        case GIC_DIST_REG_CTLR_OFF:
+            *puValue =   (ASMAtomicReadBool(&pThis->fIrqGrp0Enabled) ? GIC_DIST_REG_CTRL_ENABLE_GRP0 : 0)
+                       | (ASMAtomicReadBool(&pThis->fIrqGrp1Enabled) ? GIC_DIST_REG_CTRL_ENABLE_GRP1_NS : 0);
+            break;
         case GIC_DIST_REG_TYPER_OFF:
             *puValue =   GIC_DIST_REG_TYPER_NUM_ITLINES_SET(1)  /** @todo 32 SPIs for now. */
                        | GIC_DIST_REG_TYPER_NUM_PES_SET(0)      /* 1 PE */
@@ -219,11 +295,75 @@ DECLINLINE(VBOXSTRICTRC) gicDistRegisterRead(PPDMDEVINS pDevIns, PVMCPUCC pVCpu,
                        /*| GIC_DIST_REG_TYPER_LPIS */           /** @todo Support LPIs */
                        | GIC_DIST_REG_TYPER_IDBITS_SET(16);
             break;
+        case GIC_DIST_REG_STATUSR_OFF:
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_IGROUPRn_OFF_START: /* Only 32 lines for now. */
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_ISENABLERn_OFF_START + 4: /* Only 32 lines for now. */
+        case GIC_DIST_REG_ICENABLERn_OFF_START + 4: /* Only 32 lines for now. */
+            *puValue = ASMAtomicReadU32(&pThis->bmIntEnabled);
+            break;
+        case GIC_DIST_REG_ISPENDRn_OFF_START: /* Only 32 lines for now. */
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_ICPENDRn_OFF_START: /* Only 32 lines for now. */
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_ISACTIVERn_OFF_START: /* Only 32 lines for now. */
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_ICACTIVERn_OFF_START: /* Only 32 lines for now. */
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_IPRIORITYn_OFF_START + 32: /* Only 32 lines for now. */
+        {
+            /* Figure out the register which is written. */
+            uint8_t idxPrio = offReg - GIC_REDIST_SGI_PPI_REG_IPRIORITYn_OFF_START - 32;
+            Assert(idxPrio <= RT_ELEMENTS(pThis->abIntPriority) - sizeof(uint32_t));
+
+            uint32_t u32Value = 0;
+            for (uint32_t i = idxPrio; i < idxPrio + sizeof(uint32_t); i++)
+                u32Value |= pThis->abIntPriority[i] << ((i - idxPrio) * 8);
+
+            *puValue = u32Value;
+            break;
+        }
+        case GIC_DIST_REG_ITARGETSRn_OFF_START: /* Only 32 lines for now. */
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_ICFGRn_OFF_START: /* Only 32 lines for now. */
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_IGRPMODRn_OFF_START: /* Only 32 lines for now. */
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_NSACRn_OFF_START: /* Only 32 lines for now. */
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_SGIR_OFF:
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_CPENDSGIRn_OFF_START:
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_SPENDSGIRn_OFF_START:
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_INMIn_OFF_START:
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_IROUTERn_OFF_START: /* Only 32 lines for now. */
+            *puValue = 0; /** @todo */
+            break;
         case GIC_DIST_REG_PIDR2_OFF:
             *puValue = GIC_REDIST_REG_PIDR2_ARCH_REV_SET(GIC_REDIST_REG_PIDR2_ARCH_REV_GICV3);
             break;
         case GIC_DIST_REG_IIDR_OFF:
         case GIC_DIST_REG_TYPER2_OFF:
+            *puValue = 0;
+            break;
         default:
             *puValue = 0;
     }
@@ -242,10 +382,119 @@ DECLINLINE(VBOXSTRICTRC) gicDistRegisterRead(PPDMDEVINS pDevIns, PVMCPUCC pVCpu,
  */
 DECLINLINE(VBOXSTRICTRC) gicDistRegisterWrite(PPDMDEVINS pDevIns, PVMCPUCC pVCpu, uint16_t offReg, uint32_t uValue)
 {
-    VMCPU_ASSERT_EMT(pVCpu);
-    RT_NOREF(pDevIns, pVCpu, offReg, uValue);
+    VMCPU_ASSERT_EMT(pVCpu); RT_NOREF(pVCpu);
+    PGICDEV pThis  = PDMDEVINS_2_DATA(pDevIns, PGICDEV);
+    PVMCC    pVM   = PDMDevHlpGetVM(pDevIns);
 
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
+    switch (offReg)
+    {
+        case GIC_DIST_REG_CTLR_OFF:
+            ASMAtomicWriteBool(&pThis->fIrqGrp0Enabled, RT_BOOL(uValue & GIC_DIST_REG_CTRL_ENABLE_GRP0));
+            ASMAtomicWriteBool(&pThis->fIrqGrp1Enabled, RT_BOOL(uValue & GIC_DIST_REG_CTRL_ENABLE_GRP1_NS));
+            rcStrict = gicDistUpdateIrqState(pVM, pThis);
+            break;
+        case GIC_DIST_REG_STATUSR_OFF:
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_SETSPI_NSR_OFF:
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_CLRSPI_NSR_OFF:
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_SETSPI_SR_OFF:
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_CLRSPI_SR_OFF:
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_IGROUPRn_OFF_START: /* Only 32 lines for now. */
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_IGROUPRn_OFF_START + 4: /* Only 32 lines for now. */
+            ASMAtomicOrU32(&pThis->u32RegIGrp0, uValue);
+            rcStrict = gicDistUpdateIrqState(pVM, pThis);
+            break;
+        case GIC_DIST_REG_ISENABLERn_OFF_START + 4: /* Only 32 lines for now. */
+            ASMAtomicOrU32(&pThis->bmIntEnabled, uValue);
+            rcStrict = gicDistUpdateIrqState(pVM, pThis);
+            break;
+        case GIC_DIST_REG_ICENABLERn_OFF_START:
+            //AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_ICENABLERn_OFF_START + 4: /* Only 32 lines for now. */
+            ASMAtomicAndU32(&pThis->bmIntEnabled, ~uValue);
+            rcStrict = gicDistUpdateIrqState(pVM, pThis);
+            break;
+        case GIC_DIST_REG_ISPENDRn_OFF_START: /* Only 32 lines for now. */
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_ICPENDRn_OFF_START: /* Only 32 lines for now. */
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_ISACTIVERn_OFF_START: /* Only 32 lines for now. */
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_ICACTIVERn_OFF_START + 4: /* Only 32 lines for now. */
+            ASMAtomicAndU32(&pThis->bmIntActive, ~uValue);
+            rcStrict = gicDistUpdateIrqState(pVM, pThis);
+            break;
+        case GIC_DIST_REG_IPRIORITYn_OFF_START + 32: /* Only 32 lines for now. */
+        case GIC_DIST_REG_IPRIORITYn_OFF_START + 36:
+        case GIC_DIST_REG_IPRIORITYn_OFF_START + 40:
+        case GIC_DIST_REG_IPRIORITYn_OFF_START + 44:
+        case GIC_DIST_REG_IPRIORITYn_OFF_START + 48:
+        case GIC_DIST_REG_IPRIORITYn_OFF_START + 52:
+        case GIC_DIST_REG_IPRIORITYn_OFF_START + 56:
+        case GIC_DIST_REG_IPRIORITYn_OFF_START + 60:
+        {
+            /* Figure out the register whch is written. */
+            uint8_t idxPrio = offReg - GIC_REDIST_SGI_PPI_REG_IPRIORITYn_OFF_START - 32;
+            Assert(idxPrio <= RT_ELEMENTS(pThis->abIntPriority) - sizeof(uint32_t));
+            for (uint32_t i = idxPrio; i < idxPrio + sizeof(uint32_t); i++)
+            {
+                pThis->abIntPriority[i] = (uint8_t)(uValue & 0xff);
+                uValue >>= 8;
+            }
+            break;
+        }
+        case GIC_DIST_REG_ITARGETSRn_OFF_START: /* Only 32 lines for now. */
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_ICFGRn_OFF_START + 8: /* Only 32 lines for now. */
+            ASMAtomicWriteU32(&pThis->u32RegICfg0, uValue);
+            break;
+        case GIC_DIST_REG_ICFGRn_OFF_START+ 12:
+            ASMAtomicWriteU32(&pThis->u32RegICfg1, uValue);
+            break;
+        case GIC_DIST_REG_IGRPMODRn_OFF_START: /* Only 32 lines for now. */
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_NSACRn_OFF_START: /* Only 32 lines for now. */
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_SGIR_OFF:
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_CPENDSGIRn_OFF_START:
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_SPENDSGIRn_OFF_START:
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_INMIn_OFF_START:
+            AssertReleaseFailed();
+            break;
+        case GIC_DIST_REG_IROUTERn_OFF_START ... GIC_DIST_REG_IROUTERn_OFF_LAST: /* Only 32 lines for now. */
+            /** @todo Ignored for now, probably make this a MMIO2 region as it begins on 0x6000, see 12.9.22 of the GICv3 architecture
+             * reference manual. */
+            break;
+        default:
+            //AssertReleaseFailed();
+            break;
+    }
+
     return rcStrict;
 }
 
@@ -315,7 +564,7 @@ DECLINLINE(VBOXSTRICTRC) gicReDistSgiPpiRegisterRead(PPDMDEVINS pDevIns, PVMCPUC
         case GIC_REDIST_SGI_PPI_REG_IPRIORITYn_OFF_START + 24:
         case GIC_REDIST_SGI_PPI_REG_IPRIORITYn_OFF_START + 28:
         {
-            /* Figure out the register whch is written. */
+            /* Figure out the register which is written. */
             uint8_t idxPrio = offReg - GIC_REDIST_SGI_PPI_REG_IPRIORITYn_OFF_START;
             Assert(idxPrio <= RT_ELEMENTS(pThis->abIntPriority) - sizeof(uint32_t));
 
@@ -457,6 +706,8 @@ VMM_INT_DECL(VBOXSTRICTRC) GICReadSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint64
 
     *pu64Value = 0;
     PGICCPU pThis = VMCPU_TO_GICCPU(pVCpu);
+    PPDMDEVINS pDevIns = VMCPU_TO_DEVINS(pVCpu);
+    PGICDEV pGicDev = PDMDEVINS_2_DATA(pDevIns, PGICDEV);
     switch (u32Reg)
     {
         case ARMV8_AARCH64_SYSREG_ICC_PMR_EL1:
@@ -528,7 +779,19 @@ VMM_INT_DECL(VBOXSTRICTRC) GICReadSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint64
                 *pu64Value = idxIntPending;
             }
             else
-                *pu64Value = GIC_INTID_RANGE_SPECIAL_NO_INTERRUPT;
+            {
+                /** @todo This is wrong as the guest might decide to prioritize PPIs and SPIs differently. */
+                bmPending = ASMAtomicReadU32(&pGicDev->bmIntPending);
+                idxIntPending = ASMBitFirstSet(&bmPending, sizeof(bmPending) * 8);
+                if (idxIntPending > -1)
+                {
+                    /* Mark the interrupt as active. */
+                    ASMAtomicOrU32(&pGicDev->bmIntActive, idxIntPending);
+                    *pu64Value = idxIntPending + GIC_INTID_RANGE_SPI_START;
+                }
+                else
+                    *pu64Value = GIC_INTID_RANGE_SPECIAL_NO_INTERRUPT;
+            }
             break;
         }
         case ARMV8_AARCH64_SYSREG_ICC_EOIR1_EL1:
@@ -582,6 +845,8 @@ VMM_INT_DECL(VBOXSTRICTRC) GICWriteSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint6
     LogFlowFunc(("pVCpu=%p u32Reg=%#x u64Value=%RX64\n", pVCpu, u32Reg, u64Value));
 
     PGICCPU pThis = VMCPU_TO_GICCPU(pVCpu);
+    PPDMDEVINS pDevIns = VMCPU_TO_DEVINS(pVCpu);
+    PGICDEV pGicDev = PDMDEVINS_2_DATA(pDevIns, PGICDEV);
     switch (u32Reg)
     {
         case ARMV8_AARCH64_SYSREG_ICC_PMR_EL1:
@@ -647,8 +912,11 @@ VMM_INT_DECL(VBOXSTRICTRC) GICWriteSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint6
         case ARMV8_AARCH64_SYSREG_ICC_EOIR1_EL1:
         {
             /* Mark the interrupt as not active anymore, though it might still be pending. */
-            Assert(u64Value < GIC_INTID_RANGE_SPI_START);
-            ASMAtomicAndU32(&pThis->bmIntActive, (uint32_t)u64Value);
+            if (u64Value < GIC_INTID_RANGE_SPI_START)
+                ASMAtomicAndU32(&pThis->bmIntActive, (uint32_t)u64Value);
+            else
+                ASMAtomicAndU32(&pGicDev->bmIntActive, (uint32_t)u64Value);
+            gicReDistUpdateIrqState(pThis, pVCpu);
             break;
         }
         case ARMV8_AARCH64_SYSREG_ICC_HPPIR1_EL1:
@@ -689,9 +957,18 @@ VMM_INT_DECL(VBOXSTRICTRC) GICWriteSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint6
  */
 VMM_INT_DECL(int) GICSpiSet(PVMCC pVM, uint32_t uIntId, bool fAsserted)
 {
-    RT_NOREF(pVM, uIntId, fAsserted);
-    AssertReleaseFailed();
-    return VERR_NOT_IMPLEMENTED;
+    AssertReturn(uIntId < GIC_SPI_MAX, VERR_INVALID_PARAMETER);
+
+    PGIC    pGic   = VM_TO_GIC(pVM);
+    PGICDEV pThis  = PDMDEVINS_2_DATA(pGic->CTX_SUFF(pDevIns), PGICDEV);
+
+    /* Update the interrupts pending state. */
+    if (fAsserted)
+        ASMAtomicOrU32(&pThis->bmIntPending, RT_BIT_32(uIntId));
+    else
+        ASMAtomicAndU32(&pThis->bmIntPending, ~RT_BIT_32(uIntId));
+
+    return VBOXSTRICTRC_VAL(gicDistUpdateIrqState(pVM, pThis));
 }
 
 
@@ -705,6 +982,9 @@ VMM_INT_DECL(int) GICSpiSet(PVMCC pVM, uint32_t uIntId, bool fAsserted)
  */
 VMM_INT_DECL(int) GICPpiSet(PVMCPUCC pVCpu, uint32_t uIntId, bool fAsserted)
 {
+    LogFlowFunc(("pVCpu=%p{.idCpu=%u} uIntId=%u fAsserted=%RTbool\n",
+                 pVCpu, pVCpu->idCpu, uIntId, fAsserted));
+
     AssertReturn(uIntId >= 0 && uIntId <= (GIC_INTID_RANGE_PPI_LAST - GIC_INTID_RANGE_PPI_START), VERR_INVALID_PARAMETER);
     return gicReDistInterruptSet(pVCpu, uIntId + GIC_INTID_RANGE_PPI_START, fAsserted);
 }
