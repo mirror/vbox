@@ -899,14 +899,20 @@ RTDECL(RTTHREADNATIVESTATE) RTThreadGetNativeState(RTTHREAD hThread);
 
 
 /**
- * Get the execution times of the specified thread
+ * Get the execution times of the calling thread.
  *
- * @returns IPRT status code.
- * @param   pKernelTime         Kernel execution time in ms (out)
- * @param   pUserTime           User execution time in ms (out)
- *
+ * @returns IPRT status code. 
+ * @retval  VERR_NOT_IMPLEMENTED if not implemented/supported.
+ * 
+ * @param[out]  pcMsKernelTime  Kernel execution time in ms (out).
+ * @param[out]  pcMsUserTime    User execution time in ms (out).
+ * 
+ * @remarks Linux and FreeBSD is currently reporting both kernel and user time
+ *          together via @a *pcMsUserTime and @a *pcMsKernelTime will always be
+ *          set to zero.
  */
-RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUserTime);
+RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pcMsKernelTime, uint64_t *pcMsUserTime);
+
 
 /** @name Thread Local Storage
  * @{

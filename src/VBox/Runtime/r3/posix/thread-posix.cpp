@@ -731,27 +731,25 @@ RTDECL(int) RTThreadControlPokeSignal(RTTHREAD hThread, bool fEnable)
 #endif
 
 /** @todo move this into platform specific files. */
-RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUserTime)
+RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pcMsKernelTime, uint64_t *pcMsUserTime)
 {
 #if defined(RT_OS_SOLARIS)
     struct rusage ts;
-    int rc = getrusage(RUSAGE_LWP, &ts);
-    if (rc)
-        return RTErrConvertFromErrno(rc);
+    int const rc = getrusage(RUSAGE_LWP, &ts);
+    AsserReturn(rc == 0, RTErrConvertFromErrno(rc));
 
-    *pKernelTime = ts.ru_stime.tv_sec * 1000 + ts.ru_stime.tv_usec / 1000;
-    *pUserTime   = ts.ru_utime.tv_sec * 1000 + ts.ru_utime.tv_usec / 1000;
+    *pcMsKernelTime = ts.ru_stime.tv_sec * 1000 + ts.ru_stime.tv_usec / 1000;
+    *pcMsUserTime   = ts.ru_utime.tv_sec * 1000 + ts.ru_utime.tv_usec / 1000;
     return VINF_SUCCESS;
 
 #elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
-    /* on Linux, getrusage(RUSAGE_THREAD, ...) is available since 2.6.26 */
+    /* on Linux, getrusage(RUSAGE_THREAD, ...) is available since 2.6.26. maybe it's slower? */
     struct timespec ts;
-    int rc = clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts);
-    if (rc)
-        return RTErrConvertFromErrno(rc);
+    int const rc = clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts);
+    AssertReturn(rc == 0, RTErrConvertFromErrno(rc));
 
-    *pKernelTime = 0;
-    *pUserTime = (uint64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+    *pcMsKernelTime = 0;
+    *pcMsUserTime   = (uint64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
     return VINF_SUCCESS;
 
 #elif defined(RT_OS_DARWIN)
@@ -760,20 +758,21 @@ RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUs
     kern_return_t krc = thread_info(mach_thread_self(), THREAD_BASIC_INFO, (thread_info_t)&ThreadInfo, &Count);
     AssertReturn(krc == KERN_SUCCESS, RTErrConvertFromDarwinKern(krc));
 
-    *pKernelTime = ThreadInfo.system_time.seconds * 1000 + ThreadInfo.system_time.microseconds / 1000;
-    *pUserTime   = ThreadInfo.user_time.seconds   * 1000 + ThreadInfo.user_time.microseconds   / 1000;
-
+    *pcMsKernelTime = ThreadInfo.system_time.seconds * 1000 + ThreadInfo.system_time.microseconds / 1000;
+    *pcMsUserTime   = ThreadInfo.user_time.seconds   * 1000 + ThreadInfo.user_time.microseconds   / 1000;
     return VINF_SUCCESS;
+
 #elif defined(RT_OS_HAIKU)
     thread_info       ThreadInfo;
     status_t status = get_thread_info(find_thread(NULL), &ThreadInfo);
     AssertReturn(status == B_OK, RTErrConvertFromErrno(status));
 
-    *pKernelTime = ThreadInfo.kernel_time / 1000;
-    *pUserTime   = ThreadInfo.user_time / 1000;
-
+    *pcMsKernelTime = ThreadInfo.kernel_time / 1000;
+    *pcMsUserTime   = ThreadInfo.user_time / 1000;
     return VINF_SUCCESS;
+
 #else
+    RT_NOREF(pcMsKernelTime, pcMsUserTime);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }

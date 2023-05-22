@@ -528,20 +528,20 @@ RTR3DECL(int) RTThreadGetAffinity(PRTCPUSET pCpuSet)
 }
 
 
-RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUserTime)
+RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pcMsKernelTime, uint64_t *pcMsUserTime)
 {
     uint64_t u64CreationTime, u64ExitTime, u64KernelTime, u64UserTime;
 
     if (GetThreadTimes(GetCurrentThread(), (LPFILETIME)&u64CreationTime, (LPFILETIME)&u64ExitTime, (LPFILETIME)&u64KernelTime, (LPFILETIME)&u64UserTime))
     {
-        *pKernelTime = u64KernelTime / 10000;    /* GetThreadTimes returns time in 100 ns units */
-        *pUserTime   = u64UserTime / 10000;    /* GetThreadTimes returns time in 100 ns units */
+        *pcMsKernelTime = u64KernelTime / 10000;    /* GetThreadTimes returns time in 100 ns units */
+        *pcMsUserTime   = u64UserTime / 10000;    /* GetThreadTimes returns time in 100 ns units */
         return VINF_SUCCESS;
     }
 
-    int iLastError = GetLastError();
-    AssertMsgFailed(("GetThreadTimes failed, LastError=%d\n", iLastError));
-    return RTErrConvertFromWin32(iLastError);
+    DWORD const dwErr = GetLastError();
+    AssertMsgFailed(("GetThreadTimes failed, LastError=%d\n", dwErr));
+    return RTErrConvertFromWin32(dwErr);
 }
 
 

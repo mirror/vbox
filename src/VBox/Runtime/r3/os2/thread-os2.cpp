@@ -324,7 +324,8 @@ RTR3DECL(int) RTTlsSet(RTTLS iTls, void *pvValue)
 }
 
 
-RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUserTime)
+RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pcMsKernelTime, uint64_t *pcMsUserTime)
 {
+    RT_NOREF(pcMsKernelTime, pcMsUserTime);
     return VERR_NOT_IMPLEMENTED;
 }

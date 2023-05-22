@@ -51,44 +51,76 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 static RTTEST g_hTest;
-static volatile uint64_t g_kernel, g_user;
+static volatile uint64_t g_cMsKernel;
+static volatile uint64_t g_cMsUser;
 
 
 static DECLCALLBACK(int) testThread(RTTHREAD hSelf, void *pvUser)
 {
-    RT_NOREF_PV(hSelf); RT_NOREF_PV(pvUser);
+    RTMSINTERVAL const msWait = *(RTMSINTERVAL const *)pvUser;
+    RT_NOREF_PV(hSelf);
 
-    uint64_t u64Now = RTTimeMilliTS();
-    uint64_t kernel, kernelStart, user, userStart;
-    RTThreadGetExecutionTimeMilli(&kernelStart, &userStart);
-    while (RTTimeMilliTS() < u64Now + 1000)
-        ;
-    RTThreadGetExecutionTimeMilli(&kernel, &user);
-    RTPrintf("kernel = %4lldms, user = %4lldms\n", kernel - kernelStart, user - userStart);
-    ASMAtomicAddU64(&g_kernel, kernel);
-    ASMAtomicAddU64(&g_user, user);
+    uint64_t const msNow = RTTimeMilliTS();
+    uint64_t cMsKernelStart, cMsUserStart;
+    RTTEST_CHECK_RC_RET(g_hTest, RTThreadGetExecutionTimeMilli(&cMsKernelStart, &cMsUserStart), VINF_SUCCESS, rcCheck);
+
+    while (RTTimeMilliTS() < msNow + msWait)
+        ASMNopPause();
+
+    uint64_t cMsKernel, cMsUser;
+    RTTEST_CHECK_RC_RET(g_hTest, RTThreadGetExecutionTimeMilli(&cMsKernel, &cMsUser), VINF_SUCCESS, rcCheck);
+
+    cMsKernel -= cMsKernelStart;
+    cMsUser   -= cMsUserStart;
+    RTPrintf("kernel = %4lldms, user = %4lldms\n", cMsKernel, cMsUser);
+    ASMAtomicAddU64(&g_cMsKernel, cMsKernel);
+    ASMAtomicAddU64(&g_cMsUser,   cMsUser);
 
     return VINF_SUCCESS;
 }
 
 
-static void test1(void)
+static void test1(RTMSINTERVAL msWait)
 {
-    RTTestSub(g_hTest, "Interrupt RTThreadSleep");
-    RTTHREAD hThread[16];
-    RTMSINTERVAL msWait = 1000;
-    for (unsigned i = 0; i < RT_ELEMENTS(hThread); i++)
-    {
-        RTTESTI_CHECK_RC_RETV(RTThreadCreate(&hThread[i], testThread, NULL, 0, RTTHREADTYPE_DEFAULT,
+    RTTHREAD ahThreads[16];
+    RTTestSubF(g_hTest, "RTThreadGetExecutionTimeMilli - %zu thread for %u ms", RT_ELEMENTS(ahThreads), (unsigned)msWait);
+    for (unsigned i = 0; i < RT_ELEMENTS(ahThreads); i++)
+        RTTESTI_CHECK_RC_RETV(RTThreadCreate(&ahThreads[i], testThread, &msWait, 0, RTTHREADTYPE_DEFAULT,
                               RTTHREADFLAGS_WAITABLE, "test"), VINF_SUCCESS);
-    }
-    RTThreadSleep(500);
-    RTPrintf("Waiting for %dms ...\n", msWait);
-    RTThreadSleep(msWait);
-    for (unsigned i = 0; i < RT_ELEMENTS(hThread); i++)
-        RTTESTI_CHECK_RC(RTThreadWait(hThread[i], RT_INDEFINITE_WAIT, NULL), VINF_SUCCESS);
 
-    RTPrintf("sum kernel = %lldms, sum user = %lldms\n", g_kernel, g_user);
+    RTPrintf("Waiting for the threads to complete...\n");
+    for (unsigned i = 0; i < RT_ELEMENTS(ahThreads); i++)
+        RTTESTI_CHECK_RC(RTThreadWait(ahThreads[i], msWait * 5, NULL), VINF_SUCCESS);
+
+    RTPrintf("sum kernel = %lldms, sum user = %lldms\n", g_cMsKernel, g_cMsUser);
+}
+
+
+static void test2(void)
+{
+    RTTestSub(g_hTest, "RTThreadGetExecutionTimeMilli perf");
+
+    /* Run it for ~3 seconds. */
+    RTThreadYield();
+    uint64_t       cCalls  = 0;
+    uint64_t const nsStart = RTTimeNanoTS();
+    for (;;)
+    {
+        uint32_t cLeftBeforeCheck = 16384;
+        while (cLeftBeforeCheck-- > 0)
+        {
+            uint64_t uIgn;
+            RTThreadGetExecutionTimeMilli(&uIgn, &uIgn);
+            cCalls++;
+        }
+        uint64_t const cNsElapsed = RTTimeNanoTS() - nsStart;
+        if (cNsElapsed >= RT_NS_1SEC_64 * 3)
+        {
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "%'RU64 calls in %'RU64 ns\n", cCalls, cNsElapsed);
+            RTTestValue(g_hTest, "RTThreadGetExecutionTimeMilli avg.", cNsElapsed * 1000 / cCalls, RTTESTUNIT_PS_PER_CALL);
+            return;
+        }
+    }
 }
 
 
@@ -97,7 +129,14 @@ int main()
     RTEXITCODE rcExit = RTTestInitAndCreate("tstRTThreadExecutionTime", &g_hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
-    test1();
+
+    uint64_t uIgn;
+    int rc = RTThreadGetExecutionTimeMilli(&uIgn, &uIgn);
+    if (rc == VERR_NOT_IMPLEMENTED)
+        return RTTestSkipAndDestroy(g_hTest, "VERR_NOT_IMPLEMENTED");
+
+    test1(RT_MS_1SEC);
+    test2();
 
     return RTTestSummaryAndDestroy(g_hTest);
 }
