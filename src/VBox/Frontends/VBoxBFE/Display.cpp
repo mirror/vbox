@@ -145,7 +145,7 @@ void Display::i_handleDisplayUpdate (int x, int y, int w, int h)
 }
 
 
-int Display::i_invalidateAndUpdateScreen(uint32_t aScreenId)
+void Display::i_invalidateAndUpdateScreen(uint32_t aScreenId)
 {
     mpDrv->IConnector.pbData     = m_pFramebuffer->getPixelData();
     mpDrv->IConnector.cbScanline = m_pFramebuffer->getBytesPerLine();

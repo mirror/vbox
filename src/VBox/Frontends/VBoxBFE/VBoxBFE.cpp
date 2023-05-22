@@ -32,6 +32,11 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_GUI
 
+#ifdef RT_OS_DARWIN
+# include <Carbon/Carbon.h>
+# undef PVM
+#endif
+
 #include <VBox/log.h>
 #include <VBox/version.h>
 #include <VBox/vmm/vmmr3vtable.h>
@@ -57,6 +62,7 @@
 
 #include "Display.h"
 #include "Framebuffer.h"
+#include "Keyboard.h"
 
 
 /*********************************************************************************************************************************
@@ -76,10 +82,37 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 
+enum TitlebarMode
+{
+    TITLEBAR_NORMAL   = 1,
+    TITLEBAR_STARTUP  = 2,
+    TITLEBAR_SAVE     = 3,
+    TITLEBAR_SNAPSHOT = 4
+};
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+static int gHostKeyMod  = KMOD_RCTRL;
+static int gHostKeySym1 = SDLK_RCTRL;
+static int gHostKeySym2 = SDLK_UNKNOWN;
+static bool gfGrabbed = FALSE;
+static bool gfGrabOnMouseClick = TRUE;
+static bool gfFullscreenResize = FALSE;
+static bool gfAllowFullscreenToggle = TRUE;
+static bool gfAbsoluteMouseHost = FALSE;
+static bool gfAbsoluteMouseGuest = FALSE;
+static bool gfRelativeMouseGuest = TRUE;
+static bool gfGuestNeedsHostCursor = FALSE;
+static bool gfOffCursorActive = FALSE;
+static bool gfGuestNumLockPressed = FALSE;
+static bool gfGuestCapsLockPressed = FALSE;
+static bool gfGuestScrollLockPressed = FALSE;
+
+/** modifier keypress status (scancode as index) */
+static uint8_t gaModifiersState[256];
+
 /** flag whether frontend should terminate */
 static volatile bool    g_fTerminateFE      = false;
 static RTLDRMOD         g_hModVMM           = NIL_RTLDRMOD;
@@ -98,7 +131,9 @@ static const char       *g_pszCmdLine       = NULL;
 static VMM2USERMETHODS  g_Vmm2UserMethods;
 static Display          *g_pDisplay         = NULL;
 static Framebuffer      *g_pFramebuffer     = NULL;
+static Keyboard         *g_pKeyboard        = NULL;
 static bool gfIgnoreNextResize = false;
+static uint32_t gcMonitors = 1;
 static SDL_TimerID gSdlResizeTimer = 0;
 
 /** @todo currently this is only set but never read. */
@@ -108,9 +143,402 @@ extern DECL_HIDDEN_DATA(RTSEMEVENT) g_EventSemSDLEvents;
 extern DECL_HIDDEN_DATA(volatile int32_t) g_cNotifyUpdateEventsPending;
 
 
+/* The damned GOTOs forces this to be up here - totally out of place. */
+/*
+ * Host key handling.
+ *
+ * The golden rule is that host-key combinations should not be seen
+ * by the guest. For instance a CAD should not have any extra RCtrl down
+ * and RCtrl up around itself. Nor should a resume be followed by a Ctrl-P
+ * that could encourage applications to start printing.
+ *
+ * We must not confuse the hostkey processing into any release sequences
+ * either, the host key is supposed to be explicitly pressing one key.
+ *
+ * Quick state diagram:
+ *
+ *            host key down alone
+ *  (Normal) ---------------
+ *    ^ ^                  |
+ *    | |                  v          host combination key down
+ *    | |            (Host key down) ----------------
+ *    | | host key up v    |                        |
+ *    | |--------------    | other key down         v           host combination key down
+ *    |                    |                  (host key used) -------------
+ *    |                    |                        |      ^              |
+ *    |              (not host key)--               |      |---------------
+ *    |                    |     |  |               |
+ *    |                    |     ---- other         |
+ *    |  modifiers = 0     v                        v
+ *    -----------------------------------------------
+ */
+enum HKEYSTATE
+{
+    /** The initial and most common state, pass keystrokes to the guest.
+     * Next state: HKEYSTATE_DOWN
+     * Prev state: Any */
+    HKEYSTATE_NORMAL = 1,
+    /** The first host key was pressed down
+     */
+    HKEYSTATE_DOWN_1ST,
+    /** The second host key was pressed down (if gHostKeySym2 != SDLK_UNKNOWN)
+     */
+    HKEYSTATE_DOWN_2ND,
+    /** The host key has been pressed down.
+     * Prev state: HKEYSTATE_NORMAL
+     * Next state: HKEYSTATE_NORMAL - host key up, capture toggle.
+     * Next state: HKEYSTATE_USED   - host key combination down.
+     * Next state: HKEYSTATE_NOT_IT - non-host key combination down.
+     */
+    HKEYSTATE_DOWN,
+    /** A host key combination was pressed.
+     * Prev state: HKEYSTATE_DOWN
+     * Next state: HKEYSTATE_NORMAL - when modifiers are all 0
+     */
+    HKEYSTATE_USED,
+    /** A non-host key combination was attempted. Send hostkey down to the
+     * guest and continue until all modifiers have been released.
+     * Prev state: HKEYSTATE_DOWN
+     * Next state: HKEYSTATE_NORMAL - when modifiers are all 0
+     */
+    HKEYSTATE_NOT_IT
+} enmHKeyState = HKEYSTATE_NORMAL;
+
+
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+
+/**
+ * Build the titlebar string
+ */
+static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User = 0)
+{
+    static char szTitle[1024] = {0};
+
+    /* back up current title */
+    char szPrevTitle[1024];
+    strcpy(szPrevTitle, szTitle);
+
+    RTStrPrintf(szTitle, sizeof(szTitle), "%s - " VBOX_PRODUCT,
+                "<noname>");
+
+    /* which mode are we in? */
+    switch (mode)
+    {
+        case TITLEBAR_NORMAL:
+        {
+            if (gfGrabbed)
+                RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle), " - [Input captured]");
+            break;
+        }
+
+        case TITLEBAR_STARTUP:
+        {
+            RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
+                        " - Starting...");
+            /* ignore other states, we could already be in running or aborted state */
+            break;
+        }
+
+        case TITLEBAR_SAVE:
+        {
+            AssertMsg(u32User <= 100, ("%d\n", u32User));
+            RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
+                        " - Saving %d%%...", u32User);
+            break;
+        }
+
+        case TITLEBAR_SNAPSHOT:
+        {
+            AssertMsg(u32User <= 100, ("%d\n", u32User));
+            RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
+                        " - Taking snapshot %d%%...", u32User);
+            break;
+        }
+
+        default:
+            RTPrintf("Error: Invalid title bar mode %d!\n", mode);
+            return;
+    }
+
+    /*
+     * Don't update if it didn't change.
+     */
+    if (!strcmp(szTitle, szPrevTitle))
+        return;
+
+    /*
+     * Set the new title
+     */
+    g_pFramebuffer->setWindowTitle(szTitle);
+}
+
+
+#ifdef RT_OS_DARWIN
+RT_C_DECLS_BEGIN
+/* Private interface in 10.3 and later. */
+typedef int CGSConnection;
+typedef enum
+{
+    kCGSGlobalHotKeyEnable = 0,
+    kCGSGlobalHotKeyDisable,
+    kCGSGlobalHotKeyInvalid = -1 /* bird */
+} CGSGlobalHotKeyOperatingMode;
+extern CGSConnection _CGSDefaultConnection(void);
+extern CGError CGSGetGlobalHotKeyOperatingMode(CGSConnection Connection, CGSGlobalHotKeyOperatingMode *enmMode);
+extern CGError CGSSetGlobalHotKeyOperatingMode(CGSConnection Connection, CGSGlobalHotKeyOperatingMode enmMode);
+RT_C_DECLS_END
+
+/** Keeping track of whether we disabled the hotkeys or not. */
+static bool g_fHotKeysDisabled = false;
+/** Whether we've connected or not. */
+static bool g_fConnectedToCGS = false;
+/** Cached connection. */
+static CGSConnection g_CGSConnection;
+
+/**
+ * Disables or enabled global hot keys.
+ */
+static void DisableGlobalHotKeys(bool fDisable)
+{
+    if (!g_fConnectedToCGS)
+    {
+        g_CGSConnection = _CGSDefaultConnection();
+        g_fConnectedToCGS = true;
+    }
+
+    /* get current mode. */
+    CGSGlobalHotKeyOperatingMode enmMode = kCGSGlobalHotKeyInvalid;
+    CGSGetGlobalHotKeyOperatingMode(g_CGSConnection, &enmMode);
+
+    /* calc new mode. */
+    if (fDisable)
+    {
+        if (enmMode != kCGSGlobalHotKeyEnable)
+            return;
+        enmMode = kCGSGlobalHotKeyDisable;
+    }
+    else
+    {
+        if (    enmMode != kCGSGlobalHotKeyDisable
+            /*||  !g_fHotKeysDisabled*/)
+            return;
+        enmMode = kCGSGlobalHotKeyEnable;
+    }
+
+    /* try set it and check the actual result. */
+    CGSSetGlobalHotKeyOperatingMode(g_CGSConnection, enmMode);
+    CGSGlobalHotKeyOperatingMode enmNewMode = kCGSGlobalHotKeyInvalid;
+    CGSGetGlobalHotKeyOperatingMode(g_CGSConnection, &enmNewMode);
+    if (enmNewMode == enmMode)
+        g_fHotKeysDisabled = enmMode == kCGSGlobalHotKeyDisable;
+}
+#endif /* RT_OS_DARWIN */
+
+
+/**
+ * Start grabbing the mouse.
+ */
+static void InputGrabStart(void)
+{
+#ifdef RT_OS_DARWIN
+    DisableGlobalHotKeys(true);
+#endif
+    if (!gfGuestNeedsHostCursor && gfRelativeMouseGuest)
+        SDL_ShowCursor(SDL_DISABLE);
+    SDL_SetRelativeMouseMode(SDL_TRUE);
+    gfGrabbed = TRUE;
+    UpdateTitlebar(TITLEBAR_NORMAL);
+}
+
+/**
+ * End mouse grabbing.
+ */
+static void InputGrabEnd(void)
+{
+    SDL_SetRelativeMouseMode(SDL_FALSE);
+    if (!gfGuestNeedsHostCursor && gfRelativeMouseGuest)
+        SDL_ShowCursor(SDL_ENABLE);
+#ifdef RT_OS_DARWIN
+    DisableGlobalHotKeys(false);
+#endif
+    gfGrabbed = FALSE;
+    UpdateTitlebar(TITLEBAR_NORMAL);
+}
+
+
+
+/**
+ * Handles a host key down event
+ */
+static int HandleHostKey(const SDL_KeyboardEvent *pEv)
+{
+    /*
+     * Revalidate the host key modifier
+     */
+    if ((SDL_GetModState() & ~(KMOD_MODE | KMOD_NUM | KMOD_RESERVED)) != gHostKeyMod)
+        return VERR_NOT_SUPPORTED;
+
+    /*
+     * What was pressed?
+     */
+    switch (pEv->keysym.sym)
+    {
+#if 0
+        /* Control-Alt-Delete */
+        case SDLK_DELETE:
+        {
+            //g_pKeyboard->PutCAD();
+            break;
+        }
+
+        /*
+         * Fullscreen / Windowed toggle.
+         */
+        case SDLK_f:
+        {
+            if (   strchr(gHostKeyDisabledCombinations, 'f')
+                || !gfAllowFullscreenToggle)
+                return VERR_NOT_SUPPORTED;
+
+            /*
+             * We have to pause/resume the machine during this
+             * process because there might be a short moment
+             * without a valid framebuffer
+             */
+            /** @todo */
+            //SetFullscreen(!g_pFramebuffer->getFullscreen());
+
+            /*
+             * We have switched from/to fullscreen, so request a full
+             * screen repaint, just to be sure.
+             */
+            gpDisplay->InvalidateAndUpdate();
+            break;
+        }
+
+        /*
+         * Pause / Resume toggle.
+         */
+        case SDLK_p:
+        {
+            if (strchr(gHostKeyDisabledCombinations, 'p'))
+                return VERR_NOT_SUPPORTED;
+
+            /** @todo */
+            UpdateTitlebar(TITLEBAR_NORMAL);
+            break;
+        }
+
+        /*
+         * Reset the VM
+         */
+        case SDLK_r:
+        {
+            if (strchr(gHostKeyDisabledCombinations, 'r'))
+                return VERR_NOT_SUPPORTED;
+
+            ResetVM();
+            break;
+        }
+
+        /*
+         * Terminate the VM
+         */
+        case SDLK_q:
+        {
+            if (strchr(gHostKeyDisabledCombinations, 'q'))
+                return VERR_NOT_SUPPORTED;
+
+            return VINF_EM_TERMINATE;
+        }
+
+        /*
+         * Save the machine's state and exit
+         */
+        case SDLK_s:
+        {
+            if (strchr(gHostKeyDisabledCombinations, 's'))
+                return VERR_NOT_SUPPORTED;
+
+            SaveState();
+            return VINF_EM_TERMINATE;
+        }
+
+        case SDLK_h:
+        {
+            if (strchr(gHostKeyDisabledCombinations, 'h'))
+                return VERR_NOT_SUPPORTED;
+
+            if (gpConsole)
+                gpConsole->PowerButton();
+            break;
+        }
+#endif
+
+        case SDLK_F1: case SDLK_F2: case SDLK_F3:
+        case SDLK_F4: case SDLK_F5: case SDLK_F6:
+        case SDLK_F7: case SDLK_F8: case SDLK_F9:
+        case SDLK_F10: case SDLK_F11: case SDLK_F12:
+        {
+            /* send Ctrl-Alt-Fx to guest */
+            g_pKeyboard->PutUsageCode(0xE0 /*left ctrl*/, 0x07 /*usage code page id*/, FALSE);
+            g_pKeyboard->PutUsageCode(0xE2 /*left alt*/, 0x07 /*usage code page id*/, FALSE);
+            g_pKeyboard->PutUsageCode(pEv->keysym.sym,  0x07 /*usage code page id*/, FALSE);
+            g_pKeyboard->PutUsageCode(pEv->keysym.sym,  0x07 /*usage code page id*/, TRUE);
+            g_pKeyboard->PutUsageCode(0xE0 /*left ctrl*/, 0x07 /*usage code page id*/, TRUE);
+            g_pKeyboard->PutUsageCode(0xE2 /*left alt*/, 0x07 /*usage code page id*/, TRUE);
+            return VINF_SUCCESS;
+        }
+
+        /*
+         * Not a host key combination.
+         * Indicate this by returning false.
+         */
+        default:
+            return VERR_NOT_SUPPORTED;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Releases any modifier keys that are currently in pressed state.
+ */
+static void ResetKeys(void)
+{
+    int i;
+
+    if (!g_pKeyboard)
+        return;
+
+    for(i = 0; i < 256; i++)
+    {
+        if (gaModifiersState[i])
+        {
+            if (i & 0x80)
+                g_pKeyboard->PutScancode(0xe0);
+            g_pKeyboard->PutScancode(i | 0x80);
+            gaModifiersState[i] = 0;
+        }
+    }
+}
+
+/**
+ * Keyboard event handler.
+ *
+ * @param ev SDL keyboard event.
+ */
+static void ProcessKey(SDL_KeyboardEvent *ev)
+{
+    /* According to SDL2/SDL_scancodes.h ev->keysym.sym stores scancodes which are
+    * based on USB usage page standard. This is what we can directly pass to
+    * IKeyboard::putUsageCode. */
+    g_pKeyboard->PutUsageCode(SDL_GetScancodeFromKey(ev->keysym.sym), 0x07 /*usage code page id*/, ev->type == SDL_KEYUP ? TRUE : FALSE);
+}
+
 
 /**
  * Wait for the next SDL event. Don't use SDL_WaitEvent since this function
@@ -269,6 +697,10 @@ DECLCALLBACK(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_t u32Vers
     if (RT_FAILURE(vrc))
         return vrc;
 
+    vrc = pCallbacks->pfnRegister(pCallbacks, &Keyboard::DrvReg);
+    if (RT_FAILURE(vrc))
+        return vrc;
+
     return VINF_SUCCESS;
 }
 
@@ -316,16 +748,6 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTA
     /*
      * PDM.
      */
-#ifdef DEBUG_aeichner
-    PCFGMNODE pPdm = NULL;
-    PCFGMNODE pPdmDevices = NULL;
-    PCFGMNODE pPdmDevicesNvme = NULL;
-    rc = pVMM->pfnCFGMR3InsertNode(pRoot, "PDM", &pPdm);                                        UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertNode(pPdm, "Devices", &pPdmDevices);                              UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertNode(pPdmDevices, "VBoxNvme", &pPdmDevicesNvme);                  UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertString(pPdmDevicesNvme, "Path", "/Users/vbox/vbox-intern/out/darwin.arm64/debug/dist/VirtualBox.app/Contents/MacOS/ExtensionPacks/Oracle_VM_VirtualBox_Extension_Pack/darwin.arm64/VBoxNvmeR3.dylib"); UPDATE_RC();
-#endif
-
     rc = pVMM->pfnPDMR3DrvStaticRegistration(pVM, VBoxDriversRegister);                         UPDATE_RC();
 
     /*
@@ -412,29 +834,33 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTA
     rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "MmioEcamLength", 0x01000000);                  UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "MmioPioBase",    0x3eff0000);                  UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "MmioPioSize",    0x0000ffff);                  UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "IntPinA",        3);                           UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "IntPinB",        4);                           UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "IntPinC",        5);                           UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "IntPinD",        6);                           UPDATE_RC();
 
     rc = pVMM->pfnCFGMR3InsertNode(pDevices, "usb-xhci",      &pDev);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertNode(pDev,     "0",            &pInst);                        UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "Trusted",           1);                        UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIBusNo",          0);                        UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIDeviceNo",       2);                        UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIFunctionNo",     0);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pInst, "Trusted",           1);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pInst, "PCIBusNo",          0);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pInst, "PCIDeviceNo",       2);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pInst, "PCIFunctionNo",     0);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertNode(pInst,    "Config",        &pCfg);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertNode(pInst,    "LUN#0",       &pLunL0);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertString(pLunL0, "Driver","VUSBRootHub");                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertNode(pInst,    "LUN#1",       &pLunL0);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertString(pLunL0, "Driver","VUSBRootHub");                        UPDATE_RC();
 
-#ifdef DEBUG_aeichner
-    rc = pVMM->pfnCFGMR3InsertNode(pDevices, "virtio-net",    &pDev);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pDevices, "e1000",         &pDev);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertNode(pDev,     "0",            &pInst);                        UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "Trusted",           1);                        UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIBusNo",          0);                        UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIDeviceNo",       1);                        UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIFunctionNo",     0);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pInst, "Trusted",           1);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pInst, "PCIBusNo",          0);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pInst, "PCIDeviceNo",       1);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pInst, "PCIFunctionNo",     0);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertNode(pInst,    "Config",        &pCfg);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "CableConnected",    1);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "LineSpeed",         0);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "AdapterType",       0);                        UPDATE_RC();
 
     const char *pszMac = "080027ede92c";
     Assert(strlen(pszMac) == 12);
@@ -464,19 +890,29 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTA
     rc = pVMM->pfnCFGMR3InsertInteger(pLunL1Cfg,  "PassDomain",         1);                 UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertInteger(pLunL1Cfg,  "UseHostResolver",    0);                 UPDATE_RC();
 
-    rc = pVMM->pfnCFGMR3InsertNode(pDevices, "nvme",          &pDev);                        UPDATE_RC();
+    PCFGMNODE pUsb = NULL;
+    rc = pVMM->pfnCFGMR3InsertNode(pRoot,    "USB",           &pUsb);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pUsb,     "Msd",           &pDev);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertNode(pDev,     "0",            &pInst);                        UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "Trusted",           1);                        UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIBusNo",          0);                        UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIDeviceNo",       3);                        UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pDev,  "PCIFunctionNo",     0);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pInst, "Trusted",           1);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertNode(pInst,    "Config",        &pCfg);                        UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pCfg,  "CtrlMemBufSize",    0);                        UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertNode(pInst,    "LUN#0",       &pLunL0);                        UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertString(pLunL0, "Driver","RamDisk");                            UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertNode(pLunL0,    "Config",  &pLunL1Cfg);                        UPDATE_RC();
-    rc = pVMM->pfnCFGMR3InsertInteger(pLunL1Cfg,  "Size", 1073741824);                       UPDATE_RC();
-#endif
+    rc = pVMM->pfnCFGMR3InsertString(pLunL0, "Driver",       "SCSI");                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pLunL0,   "AttachedDriver",  &pLunL1);                    UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertString(pLunL1, "Driver",          "VD");                       UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pLunL1,    "Config",         &pLunL1Cfg);                 UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertString(pLunL1Cfg,  "Path", "/Users/vbox/rootfs.img");          UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertString(pLunL1Cfg,  "Type", "HardDisk");                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertString(pLunL1Cfg,  "Format", "Raw");                           UPDATE_RC();
+
+    rc = pVMM->pfnCFGMR3InsertNode(pUsb,     "HidKeyboard",   &pDev);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pDev,     "0",            &pInst);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertInteger(pInst, "Trusted",           1);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pInst,    "Config",        &pCfg);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pInst,    "LUN#0",       &pLunL0);                        UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertString(pLunL0, "Driver",       "KeyboardQueue");               UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertNode(pLunL0,   "AttachedDriver",  &pLunL1);                    UPDATE_RC();
+    rc = pVMM->pfnCFGMR3InsertString(pLunL1, "Driver",          "MainKeyboard");             UPDATE_RC();
 
 #undef UPDATE_RC
 #undef UPDATE_RC
@@ -589,6 +1025,9 @@ static DECLCALLBACK(void *) vboxbfeVmm2User_QueryGenericObject(PCVMM2USERMETHODS
 
     if (!RTUuidCompareStr(pUuid, DISPLAY_OID))
         return g_pDisplay;
+
+    if (!RTUuidCompareStr(pUuid, KEYBOARD_OID))
+        return g_pKeyboard;
 
     return NULL;
 }
@@ -832,6 +1271,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (!Framebuffer::init(true /*fShowSDLConfig*/))
         return RTEXITCODE_FAILURE;
 
+    g_pKeyboard = new Keyboard();
     g_pDisplay = new Display();
     g_pFramebuffer = new Framebuffer(g_pDisplay, 0, false /*fFullscreen*/, false /*fResizable*/, true /*fShowSDLConfig*/, false,
                                      ~0, ~0, ~0, false /*fSeparate*/);
@@ -867,6 +1307,11 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     LogFlow(("VBoxSDL: Entering big event loop\n"));
     SDL_Event event;
+    /** The host key down event which we have been hiding from the guest.
+     * Used when going from HKEYSTATE_DOWN to HKEYSTATE_NOT_IT. */
+    SDL_Event EvHKeyDown1;
+    SDL_Event EvHKeyDown2;
+
     uint32_t uResizeWidth  = ~(uint32_t)0;
     uint32_t uResizeHeight = ~(uint32_t)0;
 
@@ -914,6 +1359,133 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     default:
                         break;
                 }
+                break;
+            }
+
+            /*
+             * Keyboard events.
+             */
+            case SDL_KEYDOWN:
+            case SDL_KEYUP:
+            {
+                SDL_Keycode ksym = event.key.keysym.sym;
+                switch (enmHKeyState)
+                {
+                    case HKEYSTATE_NORMAL:
+                    {
+                        if (   event.type == SDL_KEYDOWN
+                            && ksym != SDLK_UNKNOWN
+                            && (ksym == gHostKeySym1 || ksym == gHostKeySym2))
+                        {
+                            EvHKeyDown1  = event;
+                            enmHKeyState = ksym == gHostKeySym1 ? HKEYSTATE_DOWN_1ST
+                                                                : HKEYSTATE_DOWN_2ND;
+                            break;
+                        }
+                        ProcessKey(&event.key);
+                        break;
+                    }
+
+                    case HKEYSTATE_DOWN_1ST:
+                    case HKEYSTATE_DOWN_2ND:
+                    {
+                        if (gHostKeySym2 != SDLK_UNKNOWN)
+                        {
+                            if (   event.type == SDL_KEYDOWN
+                                && ksym != SDLK_UNKNOWN
+                                && (   (enmHKeyState == HKEYSTATE_DOWN_1ST && ksym == gHostKeySym2)
+                                    || (enmHKeyState == HKEYSTATE_DOWN_2ND && ksym == gHostKeySym1)))
+                            {
+                                EvHKeyDown2  = event;
+                                enmHKeyState = HKEYSTATE_DOWN;
+                                break;
+                            }
+                            enmHKeyState = event.type == SDL_KEYUP ? HKEYSTATE_NORMAL
+                                                                 : HKEYSTATE_NOT_IT;
+                            ProcessKey(&EvHKeyDown1.key);
+                            /* ugly hack: Some guests (e.g. mstsc.exe on Windows XP)
+                             * expect a small delay between two key events. 5ms work
+                             * reliable here so use 10ms to be on the safe side. A
+                             * better but more complicated fix would be to introduce
+                             * a new state and don't wait here. */
+                            RTThreadSleep(10);
+                            ProcessKey(&event.key);
+                            break;
+                        }
+                    }
+                    RT_FALL_THRU();
+
+                    case HKEYSTATE_DOWN:
+                    {
+                        if (event.type == SDL_KEYDOWN)
+                        {
+                            /* potential host key combination, try execute it */
+                            int irc = HandleHostKey(&event.key);
+                            if (irc == VINF_SUCCESS)
+                            {
+                                enmHKeyState = HKEYSTATE_USED;
+                                break;
+                            }
+                            if (RT_SUCCESS(irc))
+                                goto leave;
+                        }
+                        else /* SDL_KEYUP */
+                        {
+                            if (   ksym != SDLK_UNKNOWN
+                                && (ksym == gHostKeySym1 || ksym == gHostKeySym2))
+                            {
+                                /* toggle grabbing state */
+                                if (!gfGrabbed)
+                                    InputGrabStart();
+                                else
+                                    InputGrabEnd();
+
+                                /* SDL doesn't always reset the keystates, correct it */
+                                ResetKeys();
+                                enmHKeyState = HKEYSTATE_NORMAL;
+                                break;
+                            }
+                        }
+
+                        /* not host key */
+                        enmHKeyState = HKEYSTATE_NOT_IT;
+                        ProcessKey(&EvHKeyDown1.key);
+                        /* see the comment for the 2-key case above */
+                        RTThreadSleep(10);
+                        if (gHostKeySym2 != SDLK_UNKNOWN)
+                        {
+                            ProcessKey(&EvHKeyDown2.key);
+                            /* see the comment for the 2-key case above */
+                            RTThreadSleep(10);
+                        }
+                        ProcessKey(&event.key);
+                        break;
+                    }
+
+                    case HKEYSTATE_USED:
+                    {
+                        if ((SDL_GetModState() & ~(KMOD_MODE | KMOD_NUM | KMOD_RESERVED)) == 0)
+                            enmHKeyState = HKEYSTATE_NORMAL;
+                        if (event.type == SDL_KEYDOWN)
+                        {
+                            int irc = HandleHostKey(&event.key);
+                            if (RT_SUCCESS(irc) && irc != VINF_SUCCESS)
+                                goto leave;
+                        }
+                        break;
+                    }
+
+                    default:
+                        AssertMsgFailed(("enmHKeyState=%d\n", enmHKeyState));
+                        RT_FALL_THRU();
+                    case HKEYSTATE_NOT_IT:
+                    {
+                        if ((SDL_GetModState() & ~(KMOD_MODE | KMOD_NUM | KMOD_RESERVED)) == 0)
+                            enmHKeyState = HKEYSTATE_NORMAL;
+                        ProcessKey(&event.key);
+                        break;
+                    }
+                } /* state switch */
                 break;
             }
 
@@ -997,6 +1569,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
     }
 
+leave:
     LogRel(("VBoxBFE: exiting\n"));
     return RT_SUCCESS(vrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }

@@ -66,7 +66,7 @@ public:
                               int32_t xOrigin, int32_t yOrigin, bool fVGAResize);
     void i_handleDisplayUpdate (int x, int y, int w, int h);
 
-    int i_invalidateAndUpdateScreen(uint32_t aScreenId);
+    void i_invalidateAndUpdateScreen(uint32_t aScreenId);
 
 
 private:

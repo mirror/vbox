@@ -58,7 +58,8 @@ VBoxBFE_INCS      = \
 VBoxBFE_SOURCES   = \
 	VBoxBFE.cpp \
 	Display.cpp \
-	Framebuffer.cpp
+	Framebuffer.cpp \
+	Keyboard.cpp
 ifdef VBOX_WITH_HARDENING
  VBoxBFE_LDFLAGS.darwin += -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxBFE.dylib
 endif
