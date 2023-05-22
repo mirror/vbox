@@ -736,7 +736,7 @@ RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pcMsKernelTime, uint64_t *
 #if defined(RT_OS_SOLARIS)
     struct rusage ts;
     int const rc = getrusage(RUSAGE_LWP, &ts);
-    AsserReturn(rc == 0, RTErrConvertFromErrno(rc));
+    AssertReturn(rc == 0, RTErrConvertFromErrno(rc));
 
     *pcMsKernelTime = ts.ru_stime.tv_sec * 1000 + ts.ru_stime.tv_usec / 1000;
     *pcMsUserTime   = ts.ru_utime.tv_sec * 1000 + ts.ru_utime.tv_usec / 1000;
