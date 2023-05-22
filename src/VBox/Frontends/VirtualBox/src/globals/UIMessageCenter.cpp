@@ -2140,29 +2140,28 @@ void UIMessageCenter::sltResetSuppressedMessages()
     gEDataManager->setSuppressedMessages(QStringList());
 }
 
-void UIMessageCenter::sltShowUserManual(const QString &strLocation)
+void UIMessageCenter::sltShowUserManual(const QString &strHelpFilePath)
 {
-    Q_UNUSED(strLocation);
-#if defined (VBOX_WITH_DOCS_QHELP)
-    showHelpBrowser(strLocation);
-#else
- #if defined (VBOX_WS_WIN)
-        HtmlHelp(GetDesktopWindow(), strLocation.utf16(), HH_DISPLAY_TOPIC, NULL);
- #endif
+#if defined(VBOX_WITH_DOCS_QHELP)
+    if (!QFileInfo(strHelpFilePath).exists())
+    {
+        UINotificationMessage::cannotFindHelpFile(strHelpFilePath);
+        return;
+    }
+    if (!m_pHelpBrowserDialog)
+    {
+        m_pHelpBrowserDialog = new UIHelpBrowserDialog(0 /* parent */, 0 /* Center Widget */, strHelpFilePath);
+        AssertReturnVoid(m_pHelpBrowserDialog);
+        connect(m_pHelpBrowserDialog, &QMainWindow::destroyed, this, &UIMessageCenter::sltHelpBrowserClosed);
+    }
 
- #if !defined(VBOX_OSE)
-    char szViewerPath[RTPATH_MAX];
-    int rc;
-    rc = RTPathAppPrivateArch(szViewerPath, sizeof(szViewerPath));
-    AssertRC(rc);
-    QProcess::startDetached(QString(szViewerPath) + "/kchmviewer", QStringList(strLocation));
- # else /* #ifndef VBOX_OSE */
-    uiCommon().openURL("file://" + strLocation);
- # endif /* #ifdef VBOX_OSE */
- #if defined (VBOX_WS_MAC)
-    uiCommon().openURL("file://" + strLocation);
- #endif
+    m_pHelpBrowserDialog->show();
+    m_pHelpBrowserDialog->setWindowState(m_pHelpBrowserDialog->windowState() & ~Qt::WindowMinimized);
+    m_pHelpBrowserDialog->activateWindow();
+#else
+    Q_UNUSED(strHelpFilePath);
 #endif
+
 }
 
 void UIMessageCenter::sltHelpBrowserClosed()
@@ -2181,7 +2180,7 @@ void UIMessageCenter::sltHandleHelpRequestWithKeyword(const QString &strHelpKeyw
 {
 #if defined(VBOX_WITH_DOCS_QHELP)
     /* First open or show the help browser: */
-    showHelpBrowser(uiCommon().helpFile());
+    sltShowUserManual(uiCommon().helpFile());
     /* Show the help page for the @p strHelpKeyword: */
     if (m_pHelpBrowserDialog)
         m_pHelpBrowserDialog->showHelpForKeyword(strHelpKeyword);
@@ -2372,27 +2371,4 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
 
     /* Return result-code: */
     return iResultCode;
-}
-
-void UIMessageCenter::showHelpBrowser(const QString &strHelpFilePath)
-{
-#if defined(VBOX_WITH_DOCS_QHELP)
-    if (!QFileInfo(strHelpFilePath).exists())
-    {
-        UINotificationMessage::cannotFindHelpFile(strHelpFilePath);
-        return;
-    }
-    if (!m_pHelpBrowserDialog)
-    {
-        m_pHelpBrowserDialog = new UIHelpBrowserDialog(0 /* parent */, 0 /* Center Widget */, strHelpFilePath);
-        AssertReturnVoid(m_pHelpBrowserDialog);
-        connect(m_pHelpBrowserDialog, &QMainWindow::destroyed, this, &UIMessageCenter::sltHelpBrowserClosed);
-    }
-
-    m_pHelpBrowserDialog->show();
-    m_pHelpBrowserDialog->setWindowState(m_pHelpBrowserDialog->windowState() & ~Qt::WindowMinimized);
-    m_pHelpBrowserDialog->activateWindow();
-#else
-    Q_UNUSED(strHelpFilePath);
-#endif
 }

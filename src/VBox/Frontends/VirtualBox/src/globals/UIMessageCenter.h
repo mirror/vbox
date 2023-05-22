@@ -466,7 +466,7 @@ public slots:
     void sltShowHelpAboutDialog();
     void sltShowHelpHelpDialog();
     void sltResetSuppressedMessages();
-    void sltShowUserManual(const QString &strLocation);
+    void sltShowUserManual(const QString &strHelpFilePath);
 
     /// @todo move it away ..
     void sltHelpBrowserClosed();
@@ -524,9 +524,6 @@ private:
                        int iButton1, int iButton2, int iButton3,
                        const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
                        const QString &strAutoConfirmId, const QString &strHelpKeyword) const;
-
-    /// @todo move it away ..
-    void showHelpBrowser(const QString &strHelpFilePath);
 
     /** Holds the list of shown warnings. */
     mutable QStringList m_warnings;
