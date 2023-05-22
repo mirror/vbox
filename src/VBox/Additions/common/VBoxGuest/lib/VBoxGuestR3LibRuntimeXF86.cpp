@@ -46,7 +46,7 @@
 #if defined(VBOX_VBGLR3_XFREE86)
 extern "C" {
 # define XFree86LOADER
-# ifdef RT_GNUC_PREREQ(13,0) /* cmath gets dragged in and the c++/13/cmath header is allergic to -ffreestanding.  */
+# if RT_GNUC_PREREQ(13,0) /* cmath gets dragged in and the c++/13/cmath header is allergic to -ffreestanding.  */
 #  define _GLIBCXX_INCLUDE_NEXT_C_HEADERS
 # endif
 # include <xf86_ansic.h>
