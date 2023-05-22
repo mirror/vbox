@@ -157,11 +157,7 @@ typedef struct EMCPU
     bool                    fHypercallEnabled;
 
     /** Explicit padding. */
-    uint8_t                 abPadding0[3];
-
-    /** The number of instructions we've executed in IEM since switching to the
-     *  EMSTATE_IEM_THEN_REM state. */
-    uint32_t                cIemThenRemInstructions;
+    uint8_t                 abPadding0[7];
 
     /** Start of the current time slice in ms. */
     uint64_t                u64TimeSliceStart;

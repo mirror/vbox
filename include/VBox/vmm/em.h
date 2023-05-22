@@ -51,9 +51,6 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-/** Enable to allow V86 code to run in raw mode. */
-#define VBOX_RAW_V86
-
 /**
  * The Execution Manager State.
  *
@@ -74,9 +71,11 @@ typedef enum EMSTATE
     EMSTATE_IEM,
     /** Recompiled mode execution. */
     EMSTATE_RECOMPILER,
-    /** Execution is halted. (waiting for interrupt) */
+    /** Execution is halted. (waiting for interrupt)
+     * @note Relevant for saved state. */
     EMSTATE_HALTED,
-    /** Application processor execution is halted. (waiting for startup IPI (SIPI)) */
+    /** Application processor execution is halted (waiting for startup IPI (SIPI)).
+     * @note Relevant for saved state. */
     EMSTATE_WAIT_SIPI,
     /** Execution is suspended. */
     EMSTATE_SUSPENDED,
@@ -96,8 +95,8 @@ typedef enum EMSTATE
     EMSTATE_GURU_MEDITATION,
     /** Executing in IEM, falling back on REM if we cannot switch back to HM or
      * RAW after a short while. 
-     * @todo Obsolete this one.  */
-    EMSTATE_IEM_THEN_REM,
+     * @note obsolete, here only for saved state reasons.  */
+    EMSTATE_IEM_THEN_REM_OBSOLETE,
     /** Executing in native (API) execution monitor. */
     EMSTATE_NEM,
     /** Guest debug event from NEM mode is being processed. */
@@ -107,6 +106,8 @@ typedef enum EMSTATE
     /** Just a hack to ensure that we get a 32-bit integer. */
     EMSTATE_MAKE_32BIT_HACK = 0x7fffffff
 } EMSTATE;
+AssertCompile(EMSTATE_HALTED == 6);
+AssertCompile(EMSTATE_WAIT_SIPI == 7);
 
 VMM_INT_DECL(EMSTATE)           EMGetState(PVMCPU pVCpu);
 VMM_INT_DECL(void)              EMSetState(PVMCPU pVCpu, EMSTATE enmNewState);

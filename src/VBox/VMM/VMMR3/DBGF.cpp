@@ -431,8 +431,6 @@ static DBGFEVENTCTX dbgfR3FigureEventCtx(PVMCPU pVCpu)
             return DBGFEVENTCTX_HM;
 
         case EMSTATE_IEM:
-        case EMSTATE_RAW_OBSOLETE:
-        case EMSTATE_IEM_THEN_REM:
         case EMSTATE_DEBUG_GUEST_IEM:
         case EMSTATE_DEBUG_GUEST_RAW:
             return DBGFEVENTCTX_RAW;
