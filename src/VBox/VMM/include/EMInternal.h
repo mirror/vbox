@@ -165,7 +165,7 @@ typedef struct EMCPU
      * current slice. */
     uint64_t                cMsTimeSliceStartExec;
     /** Number of milliseconds into the current time slice last we checked.
-     * This is in terms of the RTThreadGetExecutionTimeMilli() total, like for 
+     * This is in terms of the RTThreadGetExecutionTimeMilli() total, like for
      * cMsTimeSliceStartExec. */
     uint64_t                cMsTimeSliceExec;
 
