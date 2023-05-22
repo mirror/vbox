@@ -464,7 +464,7 @@ ifdef VBOX_WITH_VIRT_ARMV8
  VBoxVMMArm_LDFLAGS.darwin.arm64 = -framework Hypervisor
 
  VBoxVMMArm_LIBS = \
- 	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/DisasmR3-armv8$(VBOX_SUFF_LIB)
  ifdef VBOX_WITH_DEBUGGER
   VBoxVMMArm_LIBS += \
   	$(PATH_STAGE_LIB)/Debugger-armv8$(VBOX_SUFF_LIB)
