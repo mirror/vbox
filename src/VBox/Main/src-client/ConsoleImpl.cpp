@@ -542,8 +542,19 @@ HRESULT Console::initWithMachine(IMachine *aMachine, IInternalMachineControl *aC
     /** @todo r=bird: aLockType is always LockType_VM.   */
     if (aLockType == LockType_VM)
     {
+        const char *pszVMM = "VBoxVMM";
+
+#ifdef VBOX_WITH_VIRT_ARMV8
+        Bstr value;
+        hrc = mMachine->GetExtraData(Bstr("VBoxInternal2/ArmV8Virt").raw(),
+                                     value.asOutParam());
+        if (   hrc   == S_OK
+            && value == "1")
+            pszVMM = "VBoxVMMArm";
+#endif
+
         /* Load the VMM. We won't continue without it being successfully loaded here. */
-        hrc = i_loadVMM();
+        hrc = i_loadVMM(pszVMM);
         AssertComRCReturnRC(hrc);
 
         hrc = mMachine->COMGETTER(VRDEServer)(unconst(mVRDEServer).asOutParam());
@@ -7816,9 +7827,10 @@ HRESULT Console::i_onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
  * Loads the VMM if needed.
  *
  * @returns COM status.
+ * @param   pszVMMMod       The VMM module to load.
  * @remarks Caller must write lock the console object.
  */
-HRESULT Console::i_loadVMM(void) RT_NOEXCEPT
+HRESULT Console::i_loadVMM(const char *pszVMMMod) RT_NOEXCEPT
 {
     if (   mhModVMM == NIL_RTLDRMOD
         || mpVMM == NULL)
@@ -7828,7 +7840,7 @@ HRESULT Console::i_loadVMM(void) RT_NOEXCEPT
         HRESULT         hrc;
         RTERRINFOSTATIC ErrInfo;
         RTLDRMOD        hModVMM = NIL_RTLDRMOD;
-        int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxVMM", &hModVMM, RTLDRLOAD_FLAGS_LOCAL, RTErrInfoInitStatic(&ErrInfo));
+        int vrc = SUPR3HardenedLdrLoadAppPriv(pszVMMMod, &hModVMM, RTLDRLOAD_FLAGS_LOCAL, RTErrInfoInitStatic(&ErrInfo));
         if (RT_SUCCESS(vrc))
         {
             PFNVMMGETVTABLE pfnGetVTable = NULL;

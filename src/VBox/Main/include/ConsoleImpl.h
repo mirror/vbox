@@ -668,7 +668,7 @@ private:
     typedef std::list <ComObjPtr<OUSBDevice> > USBDeviceList;
     typedef std::list <ComObjPtr<RemoteUSBDevice> > RemoteUSBDeviceList;
 
-    HRESULT i_loadVMM(void) RT_NOEXCEPT;
+    HRESULT i_loadVMM(const char *pszVMMMod) RT_NOEXCEPT;
     HRESULT i_addVMCaller(bool aQuiet = false, bool aAllowNullVM = false);
     void    i_releaseVMCaller();
     HRESULT i_safeVMPtrRetainer(PUVM *a_ppUVM, PCVMMR3VTABLE *a_ppVMM, bool aQuiet) RT_NOEXCEPT;
@@ -721,7 +721,11 @@ private:
                          Bstr controllerName, const char * const s_apszBiosConfig[4]);
     void i_configAudioDriver(IVirtualBox *pVirtualBox, IMachine *pMachine, PCFGMNODE pLUN, const char *pszDriverName,
                              bool fAudioEnabledIn, bool fAudioEnabledOut);
-    int i_configConstructorInnerX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, AutoWriteLock *pAlock);
+    int i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, AutoWriteLock *pAlock);
+    int i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, AutoWriteLock *pAlock);
+#ifdef VBOX_WITH_VIRT_ARMV8
+    int i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, AutoWriteLock *pAlock);
+#endif
     int i_configCfgmOverlay(PCFGMNODE pRoot, IVirtualBox *pVirtualBox, IMachine *pMachine);
     int i_configDumpAPISettingsTweaks(IVirtualBox *pVirtualBox, IMachine *pMachine);
 

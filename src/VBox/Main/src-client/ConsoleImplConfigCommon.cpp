@@ -476,7 +476,7 @@ Console::i_configConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, void *pvCon
     int vrc;
     try
     {
-        vrc = pConsole->i_configConstructorInnerX86(pUVM, pVM, pVMM, &alock);
+        vrc = pConsole->i_configConstructorInner(pUVM, pVM, pVMM, &alock);
     }
     catch (...)
     {
@@ -489,6 +489,33 @@ Console::i_configConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, void *pvCon
     }
 
     return vrc;
+}
+
+
+/**
+ * Worker for configConstructor.
+ *
+ * @return  VBox status code.
+ * @param   pUVM        The user mode VM handle.
+ * @param   pVM         The cross context VM handle.
+ * @param   pVMM        The VMM vtable.
+ * @param   pAlock      The automatic lock instance.  This is for when we have
+ *                      to leave it in order to avoid deadlocks (ext packs and
+ *                      more).
+ */
+int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, AutoWriteLock *pAlock)
+{
+#ifdef VBOX_WITH_VIRT_ARMV8
+        ComPtr<IMachine> pMachine = i_machine();
+
+        Bstr strArmV8VirtFlag;
+        HRESULT hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/ArmV8Virt").raw(),
+                                             strArmV8VirtFlag.asOutParam());
+        if (   hrc == S_OK
+            && strArmV8VirtFlag == "1")
+            return i_configConstructorArmV8(pUVM, pVM, pVMM, pAlock);
+#endif
+        return i_configConstructorX86(pUVM, pVM, pVMM, pAlock);
 }
 
 
