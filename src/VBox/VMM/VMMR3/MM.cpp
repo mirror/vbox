@@ -384,6 +384,8 @@ static int mmR3InitRamArmV8(PVM pVM, PCFGMNODE pMMCfg)
             LogRel(("Failed to query \"PrepopulateFromFile\" for memory region %s -> %Rrc\n", szMemRegion, rc));
             break;
         }
+        else
+            rc = VINF_SUCCESS;
 
         pVM->mm.s.cbRamBase += u64MemSize;
         if (u64GCPhysStart >= _4G)
