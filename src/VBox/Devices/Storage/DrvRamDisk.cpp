@@ -589,7 +589,7 @@ static DECLCALLBACK(int) drvramdiskBiosGetPCHSGeometry(PPDMIMEDIA pInterface,
                                                        PPDMMEDIAGEOMETRY pPCHSGeometry)
 {
     RT_NOREF2(pInterface, pPCHSGeometry);
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_PDM_GEOMETRY_NOT_SET;
 }
 
 /** @copydoc PDMIMEDIA::pfnBiosSetPCHSGeometry */
@@ -605,7 +605,7 @@ static DECLCALLBACK(int) drvramdiskBiosGetLCHSGeometry(PPDMIMEDIA pInterface,
                                                        PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
     RT_NOREF2(pInterface, pLCHSGeometry);
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_PDM_GEOMETRY_NOT_SET;
 }
 
 /** @copydoc PDMIMEDIA::pfnBiosSetLCHSGeometry */
