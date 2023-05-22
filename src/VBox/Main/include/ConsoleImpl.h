@@ -31,6 +31,8 @@
 # pragma once
 #endif
 
+#include <iprt/cpp/exception.h>
+
 #include "VirtualBoxBase.h"
 #include "VBox/com/array.h"
 #include "EventImpl.h"
@@ -719,7 +721,7 @@ private:
                          Bstr controllerName, const char * const s_apszBiosConfig[4]);
     void i_configAudioDriver(IVirtualBox *pVirtualBox, IMachine *pMachine, PCFGMNODE pLUN, const char *pszDriverName,
                              bool fAudioEnabledIn, bool fAudioEnabledOut);
-    int i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, AutoWriteLock *pAlock);
+    int i_configConstructorInnerX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, AutoWriteLock *pAlock);
     int i_configCfgmOverlay(PCFGMNODE pRoot, IVirtualBox *pVirtualBox, IMachine *pMachine);
     int i_configDumpAPISettingsTweaks(IVirtualBox *pVirtualBox, IMachine *pMachine);
 
@@ -1217,6 +1219,25 @@ private:
     friend class VMTask;
     friend class ConsoleVRDPServer;
 };
+
+
+class ConfigError : public RTCError
+{
+public:
+
+    ConfigError(const char *pcszFunction,
+                int vrc,
+                const char *pcszName)
+        : RTCError(Utf8StrFmt(Console::tr("%s failed: vrc=%Rrc, pcszName=%s"), pcszFunction, vrc, pcszName)),
+          m_vrc(vrc)
+    {
+        AssertMsgFailed(("%s\n", what())); // in strict mode, hit a breakpoint here
+    }
+
+    int m_vrc;
+};
+
+DECL_HIDDEN_THROW(Utf8Str *) GetExtraDataBoth(IVirtualBox *pVirtualBox, IMachine *pMachine, const char *pszName, Utf8Str *pStrValue);
 
 #endif /* !MAIN_INCLUDED_ConsoleImpl_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
