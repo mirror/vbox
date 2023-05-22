@@ -526,7 +526,7 @@ private:
                        const QString &strAutoConfirmId, const QString &strHelpKeyword) const;
 
     /// @todo move it away ..
-    void showHelpBrowser(const QString &strHelpFilePath, QWidget *pParent = 0);
+    void showHelpBrowser(const QString &strHelpFilePath);
 
     /** Holds the list of shown warnings. */
     mutable QStringList m_warnings;

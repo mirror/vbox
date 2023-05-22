@@ -2374,9 +2374,8 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
     return iResultCode;
 }
 
-void UIMessageCenter::showHelpBrowser(const QString &strHelpFilePath, QWidget *pParent /* = 0 */)
+void UIMessageCenter::showHelpBrowser(const QString &strHelpFilePath)
 {
-    Q_UNUSED(pParent);
 #if defined(VBOX_WITH_DOCS_QHELP)
     if (!QFileInfo(strHelpFilePath).exists())
     {
