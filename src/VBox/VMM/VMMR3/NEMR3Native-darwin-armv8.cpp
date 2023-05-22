@@ -1022,7 +1022,7 @@ static VBOXSTRICTRC nemR3DarwinHandleExitException(PVM pVM, PVMCPU pVCpu, const 
         case ARMV8_ESR_EL2_EC_AARCH64_HVC_INSN:
             return nemR3DarwinHandleExitExceptionTrappedHvcInsn(pVM, pVCpu, uIss);
         case ARMV8_ESR_EL2_EC_TRAPPED_WFX:
-            return VINF_EM_HALT;
+            return VINF_SUCCESS; /** @todo VINF_EM_HALT; We don't get notified about the vTimer if halting here currently leading to a guest hang...*/
         case ARMV8_ESR_EL2_EC_UNKNOWN:
         default:
             LogRel(("NEM/Darwin: Unknown Exception Class in syndrome: uEc=%u{%s} uIss=%#RX32 fInsn32Bit=%RTbool\n",
@@ -1136,33 +1136,31 @@ static VBOXSTRICTRC nemR3DarwinPreRunGuest(PVM pVM, PVMCPU pVCpu, bool fSingleSt
     }
 
     /* Set the pending interrupt state. */
-    if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_IRQ | VMCPU_FF_INTERRUPT_FIQ))
+    hv_return_t hrc = HV_SUCCESS;
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_IRQ))
     {
-        hv_return_t hrc = HV_SUCCESS;
-
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_IRQ))
-        {
-            hrc = hv_vcpu_set_pending_interrupt(pVCpu->nem.s.hVCpu, HV_INTERRUPT_TYPE_IRQ, true);
-            AssertReturn(hrc == HV_SUCCESS, VERR_NEM_IPE_9);
+        hrc = hv_vcpu_set_pending_interrupt(pVCpu->nem.s.hVCpu, HV_INTERRUPT_TYPE_IRQ, true);
+        AssertReturn(hrc == HV_SUCCESS, VERR_NEM_IPE_9);
 #ifdef LOG_ENABLED
-            fIrq = true;
+        fIrq = true;
 #endif
-        }
-
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_FIQ))
-        {
-            hrc = hv_vcpu_set_pending_interrupt(pVCpu->nem.s.hVCpu, HV_INTERRUPT_TYPE_FIQ, true);
-            AssertReturn(hrc == HV_SUCCESS, VERR_NEM_IPE_9);
-#ifdef LOG_ENABLED
-            fFiq = true;
-#endif
-        }
     }
     else
     {
-        hv_return_t hrc = hv_vcpu_set_pending_interrupt(pVCpu->nem.s.hVCpu, HV_INTERRUPT_TYPE_IRQ, false);
+        hrc = hv_vcpu_set_pending_interrupt(pVCpu->nem.s.hVCpu, HV_INTERRUPT_TYPE_IRQ, false);
         AssertReturn(hrc == HV_SUCCESS, VERR_NEM_IPE_9);
+    }
 
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_FIQ))
+    {
+        hrc = hv_vcpu_set_pending_interrupt(pVCpu->nem.s.hVCpu, HV_INTERRUPT_TYPE_FIQ, true);
+        AssertReturn(hrc == HV_SUCCESS, VERR_NEM_IPE_9);
+#ifdef LOG_ENABLED
+        fFiq = true;
+#endif
+    }
+    else
+    {
         hrc = hv_vcpu_set_pending_interrupt(pVCpu->nem.s.hVCpu, HV_INTERRUPT_TYPE_FIQ, false);
         AssertReturn(hrc == HV_SUCCESS, VERR_NEM_IPE_9);
     }
