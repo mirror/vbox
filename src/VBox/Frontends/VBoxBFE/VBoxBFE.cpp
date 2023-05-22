@@ -739,11 +739,19 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTA
     rc = pVMM->pfnCFGMR3InsertNode(pMem, "Flash", &pMemRegion);                                 UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertInteger(pMemRegion, "GCPhysStart",   0);                          UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertInteger(pMemRegion, "Size", 64 * _1M);                            UPDATE_RC();
+    if (g_pszLoadMem)
+    {
+        rc = pVMM->pfnCFGMR3InsertString(pMemRegion, "PrepopulateFromFile", g_pszLoadMem);      UPDATE_RC();
+    }
 
     rc = pVMM->pfnCFGMR3InsertNode(pMem, "Conventional", &pMemRegion);                          UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertInteger(pMemRegion, "GCPhysStart",   DTB_ADDR);                   UPDATE_RC();
     rc = pVMM->pfnCFGMR3InsertInteger(pMemRegion, "Size", (uint64_t)g_u32MemorySizeMB * _1M);   UPDATE_RC();
+    if (g_pszLoadDtb)
+    {
+        rc = pVMM->pfnCFGMR3InsertString(pMemRegion, "PrepopulateFromFile", g_pszLoadDtb);      UPDATE_RC();
 
+    }
 
     /*
      * PDM.
@@ -982,47 +990,6 @@ int vboxbfeLoadVMM(const char *pszVmmMod)
 
 
 /**
- * Loads the content of a given file into guest RAM starting at the given guest physical address.
- *
- * @returns VBox status code.
- * @param   pszFile         The file to load.
- * @param   GCPhysStart     The physical start address to load the file at.
- */
-static int vboxbfeLoadFileAtGCPhys(const char *pszFile, RTGCPHYS GCPhysStart)
-{
-    RTFILE hFile = NIL_RTFILE;
-    int rc = RTFileOpen(&hFile, pszFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-    if (RT_SUCCESS(rc))
-    {
-        uint8_t abRead[GUEST_PAGE_SIZE];
-        RTGCPHYS GCPhys = GCPhysStart;
-
-        for (;;)
-        {
-            size_t cbThisRead = 0;
-            rc = RTFileRead(hFile, &abRead[0], sizeof(abRead), &cbThisRead);
-            if (RT_FAILURE(rc))
-                break;
-
-            rc = g_pVMM->pfnPGMPhysSimpleWriteGCPhys(g_pVM, GCPhys, &abRead[0], cbThisRead);
-            if (RT_FAILURE(rc))
-                break;
-
-            GCPhys += cbThisRead;
-            if (cbThisRead < sizeof(abRead))
-                break;
-        }
-
-        RTFileClose(hFile);
-    }
-    else
-        RTPrintf("Loading file %s failed -> %Rrc\n", pszFile, rc);
-
-    return rc;
-}
-
-
-/**
  * @interface_method_impl{VMM2USERMETHODS,pfnQueryGenericObject}
  */
 static DECLCALLBACK(void *) vboxbfeVmm2User_QueryGenericObject(PCVMM2USERMETHODS pThis, PUVM pUVM, PCRTUUID pUuid)
@@ -1115,23 +1082,6 @@ DECLCALLBACK(int) vboxbfeVMPowerUpThread(RTTHREAD hThread, void *pvUser)
     {
         RTPrintf("Error: VMR3AtStateRegister failed with %Rrc.\n", rc);
         goto failure;
-    }
-
-    /*
-     * Prepopulate the memory?
-     */
-    if (g_pszLoadMem)
-    {
-        rc = vboxbfeLoadFileAtGCPhys(g_pszLoadMem, 0 /*GCPhysStart*/);
-        if (RT_FAILURE(rc))
-            goto failure;
-    }
-
-    if (g_pszLoadDtb)
-    {
-        rc = vboxbfeLoadFileAtGCPhys(g_pszLoadDtb, DTB_ADDR);
-        if (RT_FAILURE(rc))
-            goto failure;
     }
 
     /*
