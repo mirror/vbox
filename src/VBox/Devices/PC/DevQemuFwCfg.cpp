@@ -1635,9 +1635,8 @@ static DECLCALLBACK(int) qemuFwCfgR3RamfbPortUpdateDisplay(PPDMIDISPLAYPORT pInt
  */
 static DECLCALLBACK(int) qemuFwCfgR3RamfbPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface, bool fFailOnResize)
 {
-    RT_NOREF(pInterface, fFailOnResize);
-    AssertReleaseFailed();
-    return VERR_NOT_IMPLEMENTED;
+    RT_NOREF(fFailOnResize);
+    return qemuFwCfgR3RamfbPortUpdateDisplay(pInterface);
 }
 
 
@@ -1750,6 +1749,17 @@ static DECLCALLBACK(void) qemuFwCfgR3RamfbPortSetRenderVRAM(PPDMIDISPLAYPORT pIn
     pThis->fRenderVRam = fRender;
 
     PDMDevHlpCritSectLeave(pThis->pDevIns, &pThis->CritSectRamfb);
+}
+
+
+/**
+ * @interface_method_impl{PDMIDISPLAYPORT,pfnSendModeHint}
+ */
+DECLCALLBACK(int) qemuFwCfgR3RamfbPortSendModeHint(PPDMIDISPLAYPORT pInterface,  uint32_t cx, uint32_t cy, uint32_t cBPP,
+                                                   uint32_t iDisplay, uint32_t dx, uint32_t dy, uint32_t fEnabled, uint32_t fNotifyGuest)
+{
+    RT_NOREF(pInterface, cx, cy, cBPP, iDisplay, dx, dy, fEnabled, fNotifyGuest);
+    return VINF_SUCCESS;
 }
 
 
@@ -2003,7 +2013,7 @@ static DECLCALLBACK(int) qemuFwCfgConstruct(PPDMDEVINS pDevIns, int iInstance, P
     pThis->IPortRamfb.pfnSetRenderVRAM                  = qemuFwCfgR3RamfbPortSetRenderVRAM;
     pThis->IPortRamfb.pfnSetViewport                    = NULL;
     pThis->IPortRamfb.pfnReportMonitorPositions         = NULL;
-    pThis->IPortRamfb.pfnSendModeHint                   = NULL;
+    pThis->IPortRamfb.pfnSendModeHint                   = qemuFwCfgR3RamfbPortSendModeHint;
     pThis->IPortRamfb.pfnReportHostCursorCapabilities   = qemuFwCfgR3RamfbPortReportHostCursorCapabilities;
     pThis->IPortRamfb.pfnReportHostCursorPosition       = qemuFwCfgR3RamfbPortReportHostCursorPosition;
 
