@@ -38,7 +38,7 @@
  */
 
 
-/** 
+/**
  * Check if the preset execution time cap restricts guest execution scheduling.
  *
  * @returns true if allowed, false otherwise
