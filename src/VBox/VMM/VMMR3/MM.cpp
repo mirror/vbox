@@ -170,6 +170,9 @@ Hypervisor Memory Area (HMA) Layout: Base 00000000a0000000, 0x00800000 bytes
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
+#if defined(VBOX_VMM_TARGET_ARMV8)
+# include <iprt/file.h>
+#endif
 
 
 /*********************************************************************************************************************************
@@ -270,6 +273,49 @@ VMMR3DECL(int) MMR3Init(PVM pVM)
 
 #if defined(VBOX_VMM_TARGET_ARMV8)
 /**
+ * Initializes the given RAM range with data from the given file.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   GCPhysStart Where to start putting the file content.
+ * @param   pszFilename The file to read the data from.
+ */
+static int mmR3RamRegionInitFromFile(PVM pVM, RTGCPHYS GCPhysStart, const char *pszFilename)
+{
+    RTFILE hFile = NIL_RTFILE;
+    int rc = RTFileOpen(&hFile, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(rc))
+    {
+        uint8_t abRead[GUEST_PAGE_SIZE];
+        RTGCPHYS GCPhys = GCPhysStart;
+
+        for (;;)
+        {
+            size_t cbThisRead = 0;
+            rc = RTFileRead(hFile, &abRead[0], sizeof(abRead), &cbThisRead);
+            if (RT_FAILURE(rc))
+                break;
+
+            rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhys, &abRead[0], cbThisRead);
+            if (RT_FAILURE(rc))
+                break;
+
+            GCPhys += cbThisRead;
+            if (cbThisRead < sizeof(abRead))
+                break;
+        }
+
+        RTFileClose(hFile);
+    }
+
+    if (RT_FAILURE(rc))
+        LogRel(("RAM#%RGp: Loading file %s failed -> %Rrc\n", GCPhysStart, pszFilename, rc));
+
+    return rc;
+}
+
+
+/**
  * This sets up the RAM ranges from the VM config.
  *
  * @returns VBox status code.
@@ -321,6 +367,21 @@ static int mmR3InitRamArmV8(PVM pVM, PCFGMNODE pMMCfg)
         {
             LogRel(("Failed to register memory region '%s' GCPhysStart=%RGp Size=%#RX64 -> %Rrc\n",
                     szMemRegion, u64GCPhysStart, u64MemSize));
+            break;
+        }
+
+        char *pszFilename = NULL;
+        rc = CFGMR3QueryStringAlloc(pCur, "PrepopulateFromFile", &pszFilename);
+        if (RT_SUCCESS(rc))
+        {
+            rc = mmR3RamRegionInitFromFile(pVM, u64GCPhysStart, pszFilename);
+            MMR3HeapFree(pszFilename);
+            if (RT_FAILURE(rc))
+                break;
+        }
+        else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
+        {
+            LogRel(("Failed to query \"PrepopulateFromFile\" for memory region %s -> %Rrc\n", szMemRegion, rc));
             break;
         }
 
