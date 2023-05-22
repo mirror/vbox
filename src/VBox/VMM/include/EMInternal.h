@@ -159,12 +159,15 @@ typedef struct EMCPU
     /** Explicit padding. */
     uint8_t                 abPadding0[7];
 
-    /** Start of the current time slice in ms. */
-    uint64_t                u64TimeSliceStart;
-    /** Start of the current time slice in thread execution time (ms). */
-    uint64_t                u64TimeSliceStartExec;
-    /** Current time slice value. */
-    uint64_t                u64TimeSliceExec;
+    /** Start of the current time slice in ms (RTTimeMilliTS). */
+    uint64_t                msTimeSliceStart;
+    /** The sum of the RTThreadGetExecutionTimeMilli() values at the start of the
+     * current slice. */
+    uint64_t                cMsTimeSliceStartExec;
+    /** Number of milliseconds into the current time slice last we checked.
+     * This is in terms of the RTThreadGetExecutionTimeMilli() total, like for 
+     * cMsTimeSliceStartExec. */
+    uint64_t                cMsTimeSliceExec;
 
     /** Pending ring-3 I/O port access (VINF_EM_PENDING_R3_IOPORT_READ / VINF_EM_PENDING_R3_IOPORT_WRITE). */
     struct

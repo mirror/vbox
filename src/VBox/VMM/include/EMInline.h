@@ -56,4 +56,3 @@ DECLINLINE(bool) emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
 
 #endif /* !VMM_INCLUDED_SRC_include_EMInline_h */
 
-

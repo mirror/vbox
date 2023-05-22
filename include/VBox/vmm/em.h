@@ -94,7 +94,7 @@ typedef enum EMSTATE
     /** The VM has encountered a fatal error. (And everyone is panicing....) */
     EMSTATE_GURU_MEDITATION,
     /** Executing in IEM, falling back on REM if we cannot switch back to HM or
-     * RAW after a short while. 
+     * RAW after a short while.
      * @note obsolete, here only for saved state reasons.  */
     EMSTATE_IEM_THEN_REM_OBSOLETE,
     /** Executing in native (API) execution monitor. */

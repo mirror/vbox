@@ -218,7 +218,7 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
 
         pVCpu->em.s.enmState            = idCpu == 0 ? EMSTATE_NONE : EMSTATE_WAIT_SIPI;
         pVCpu->em.s.enmPrevState        = EMSTATE_NONE;
-        pVCpu->em.s.u64TimeSliceStart   = 0; /* paranoia */
+        pVCpu->em.s.msTimeSliceStart    = 0; /* paranoia */
         pVCpu->em.s.idxContinueExitRec  = UINT16_MAX;
 
 # define EM_REG_COUNTER(a, b, c) \
@@ -2032,18 +2032,18 @@ bool emR3IsExecutionAllowedSlow(PVM pVM, PVMCPU pVCpu)
     if (RT_SUCCESS(RTThreadGetExecutionTimeMilli(&cMsKernelTime, &cMsUserTime)))
     {
         uint64_t const msTimeNow = RTTimeMilliTS();
-        if (pVCpu->em.s.u64TimeSliceStart + EM_TIME_SLICE < msTimeNow)
+        if (pVCpu->em.s.msTimeSliceStart + EM_TIME_SLICE < msTimeNow)
         {
             /* New time slice. */
-            pVCpu->em.s.u64TimeSliceStart     = msTimeNow;
-            pVCpu->em.s.u64TimeSliceStartExec = cMsKernelTime + cMsUserTime;
-            pVCpu->em.s.u64TimeSliceExec      = 0;
+            pVCpu->em.s.msTimeSliceStart      = msTimeNow;
+            pVCpu->em.s.cMsTimeSliceStartExec = cMsKernelTime + cMsUserTime;
+            pVCpu->em.s.cMsTimeSliceExec      = 0;
         }
-        pVCpu->em.s.u64TimeSliceExec = cMsKernelTime + cMsUserTime - pVCpu->em.s.u64TimeSliceStartExec;
+        pVCpu->em.s.cMsTimeSliceExec = cMsKernelTime + cMsUserTime - pVCpu->em.s.cMsTimeSliceStartExec;
 
-        bool const fRet = pVCpu->em.s.u64TimeSliceExec < (EM_TIME_SLICE * pVM->uCpuExecutionCap) / 100;
-        Log2(("emR3IsExecutionAllowed: start=%RX64 startexec=%RX64 exec=%RX64 (cap=%x)\n", pVCpu->em.s.u64TimeSliceStart,
-              pVCpu->em.s.u64TimeSliceStartExec, pVCpu->em.s.u64TimeSliceExec, (EM_TIME_SLICE * pVM->uCpuExecutionCap) / 100));
+        bool const fRet = pVCpu->em.s.cMsTimeSliceExec < (EM_TIME_SLICE * pVM->uCpuExecutionCap) / 100;
+        Log2(("emR3IsExecutionAllowed: start=%RX64 startexec=%RX64 exec=%RX64 (cap=%x)\n", pVCpu->em.s.msTimeSliceStart,
+              pVCpu->em.s.cMsTimeSliceStartExec, pVCpu->em.s.cMsTimeSliceExec, (EM_TIME_SLICE * pVM->uCpuExecutionCap) / 100));
         return fRet;
     }
     return true;
