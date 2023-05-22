@@ -40,31 +40,50 @@
 #include <iprt/ctype.h>
 
 
-/** @callback_method_impl{FNDBGCCMD,
- * Implements the '.alliem' command. }
+/**
+ * Common worker for the  '.alliem' and '.iemrecompiled' commands.
  */
-static DECLCALLBACK(int) emR3DbgCmdAllIem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+static int emR3DbgCmdSetPolicyCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs,
+                                     EMEXECPOLICY enmPolicy, const char *pszPolicy)
 {
     int  rc;
     bool f;
 
     if (cArgs == 0)
     {
-        rc = EMR3QueryExecutionPolicy(pUVM, EMEXECPOLICY_IEM_ALL, &f);
+        rc = EMR3QueryExecutionPolicy(pUVM, enmPolicy, &f);
         if (RT_FAILURE(rc))
-            return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "EMR3QueryExecutionPolicy(,EMEXECPOLICY_IEM_ALL,");
-        DBGCCmdHlpPrintf(pCmdHlp, f ? "alliem: enabled\n" : "alliem: disabled\n");
+            return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "EMR3QueryExecutionPolicy(,%s,", pszPolicy);
+        DBGCCmdHlpPrintf(pCmdHlp, f ? "%s: enabled\n" : "%s: disabled\n", pszPolicy);
     }
     else
     {
         rc = DBGCCmdHlpVarToBool(pCmdHlp, &paArgs[0], &f);
         if (RT_FAILURE(rc))
             return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGCCmdHlpVarToBool");
-        rc = EMR3SetExecutionPolicy(pUVM, EMEXECPOLICY_IEM_ALL, f);
+        rc = EMR3SetExecutionPolicy(pUVM, enmPolicy, f);
         if (RT_FAILURE(rc))
-            return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "EMR3SetExecutionPolicy(,EMEXECPOLICY_IEM_ALL,%RTbool)", f);
+            return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "EMR3SetExecutionPolicy(,%s,%RTbool)", pszPolicy, f);
     }
     return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNDBGCCMD,
+ * Implements the '.alliem' command. }
+ */
+static DECLCALLBACK(int) emR3DbgCmdAllIem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    return emR3DbgCmdSetPolicyCommon(pCmd, pCmdHlp, pUVM, paArgs, cArgs, EMEXECPOLICY_IEM_ALL, "EMEXECPOLICY_IEM_ALL");
+}
+
+
+/** @callback_method_impl{FNDBGCCMD,
+ * Implements the '.iemrecompiled' command. }
+ */
+static DECLCALLBACK(int) emR3DbgCmdIemRecompiled(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    return emR3DbgCmdSetPolicyCommon(pCmd, pCmdHlp, pUVM, paArgs, cArgs, EMEXECPOLICY_IEM_RECOMPILED, "EMEXECPOLICY_IEM_RECOMPILED");
 }
 
 
@@ -76,7 +95,11 @@ static DBGCCMD const g_aCmds[] =
 {
     {
         "alliem", 0, 1, &g_BoolArg, 1, 0, emR3DbgCmdAllIem, "[boolean]",
-        "Enables or disabled executing ALL code in IEM, if no arguments are given it displays the current status."
+        "Enables or disables executing ALL code in IEM, if no arguments are given it displays the current status."
+    },
+    {
+        "iemrecompiled", 0, 1, &g_BoolArg, 1, 0, emR3DbgCmdIemRecompiled, "[boolean]",
+        "Enables or disables recompiled ALL-in-IEM execution, if no arguments are given it displays the current status."
     },
 };
 
