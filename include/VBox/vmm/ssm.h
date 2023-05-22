@@ -1342,7 +1342,7 @@ VMMR3DECL(int) SSMR3SetCfgErrorV(PSSMHANDLE pSSM, RT_SRC_POS_DECL, const char *p
 
 /** Wrapper around SSMR3GetU32 for simplifying getting standard conforming enum
  * values saved as uint32_t.  (The valid ragne is between the _INVALID and
- * _END values.) */ 
+ * _END values.) */
 # define SSM_GET_STD_ENUM32_RET(a_pSSM, a_enmDst, a_EnumType) \
     do { \
         uint32_t u32GetEnumTmp = 0; \
