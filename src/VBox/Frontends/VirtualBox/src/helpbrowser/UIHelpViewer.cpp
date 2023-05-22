@@ -28,14 +28,12 @@
 /* Qt includes: */
 #include <QClipboard>
 #include <QtGlobal>
-#ifdef VBOX_WITH_DOCS_QHELP
- #include <QtHelp/QHelpEngine>
- #include <QtHelp/QHelpContentWidget>
- #include <QtHelp/QHelpIndexWidget>
- #include <QtHelp/QHelpSearchEngine>
- #include <QtHelp/QHelpSearchQueryWidget>
- #include <QtHelp/QHelpSearchResultWidget>
-#endif
+#include <QtHelp/QHelpEngine>
+#include <QtHelp/QHelpContentWidget>
+#include <QtHelp/QHelpIndexWidget>
+#include <QtHelp/QHelpSearchEngine>
+#include <QtHelp/QHelpSearchQueryWidget>
+#include <QtHelp/QHelpSearchResultWidget>
 #include <QLabel>
 #include <QMenu>
 #include <QHBoxLayout>
@@ -62,8 +60,6 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CSystemProperties.h"
-
-#ifdef VBOX_WITH_DOCS_QHELP
 
 
 /*********************************************************************************************************************************
@@ -1068,5 +1064,3 @@ void UIHelpViewer::loadImage(const QUrl &imageFileUrl)
 
 
 #include "UIHelpViewer.moc"
-
-#endif /* #ifdef VBOX_WITH_DOCS_QHELP */

@@ -29,17 +29,16 @@
 #include <QClipboard>
 #include <QComboBox>
 #include <QtGlobal>
-#ifdef VBOX_WITH_DOCS_QHELP
-# include <QtHelp/QHelpEngine>
-# include <QtHelp/QHelpContentWidget>
-# include <QtHelp/QHelpIndexWidget>
-# include <QtHelp/QHelpSearchEngine>
-# include <QtHelp/QHelpSearchQueryWidget>
-# include <QtHelp/QHelpSearchResultWidget>
-# if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
-#  include <QtHelp/QHelpLink>
-# endif
+#include <QtHelp/QHelpEngine>
+#include <QtHelp/QHelpContentWidget>
+#include <QtHelp/QHelpIndexWidget>
+#include <QtHelp/QHelpSearchEngine>
+#include <QtHelp/QHelpSearchQueryWidget>
+#include <QtHelp/QHelpSearchResultWidget>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+# include <QtHelp/QHelpLink>
 #endif
+
 #include <QLabel>
 #include <QListWidget>
 #include <QMenu>
@@ -69,7 +68,6 @@
 #include "COMEnums.h"
 #include "CSystemProperties.h"
 
-#ifdef VBOX_WITH_DOCS_QHELP
 
 enum HelpBrowserTabs
 {
@@ -2273,5 +2271,3 @@ void UIHelpBrowserWidget::addActionToMenu(QMenu *pMenu, QAction *pAction)
 }
 
 #include "UIHelpBrowserWidget.moc"
-
-#endif /*#ifdef VBOX_WITH_DOCS_QHELP*/

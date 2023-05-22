@@ -2096,11 +2096,52 @@ void UIMessageCenter::sltShowHelpAboutDialog()
     (new VBoxAboutDlg(windowManager().mainWindowShown(), strFullVersion))->show();
 }
 
+void UIMessageCenter::sltResetSuppressedMessages()
+{
+    /* Nullify suppressed message list: */
+    gEDataManager->setSuppressedMessages(QStringList());
+}
+
+void UIMessageCenter::sltShowUserManual(const QString &strHelpFilePath)
+{
+    if (!QFileInfo(strHelpFilePath).exists())
+    {
+        UINotificationMessage::cannotFindHelpFile(strHelpFilePath);
+        return;
+    }
+    if (!m_pHelpBrowserDialog)
+    {
+        m_pHelpBrowserDialog = new UIHelpBrowserDialog(0 /* parent */, 0 /* Center Widget */, strHelpFilePath);
+        AssertReturnVoid(m_pHelpBrowserDialog);
+        connect(m_pHelpBrowserDialog, &QMainWindow::destroyed, this, &UIMessageCenter::sltHelpBrowserClosed);
+    }
+
+    m_pHelpBrowserDialog->show();
+    m_pHelpBrowserDialog->setWindowState(m_pHelpBrowserDialog->windowState() & ~Qt::WindowMinimized);
+    m_pHelpBrowserDialog->activateWindow();
+}
+
+void UIMessageCenter::sltHelpBrowserClosed()
+{
+    m_pHelpBrowserDialog = 0;
+}
+
+void UIMessageCenter::sltHandleHelpRequest()
+{
+    sltHandleHelpRequestWithKeyword(uiCommon().helpKeyword(sender()));
+}
+
+void UIMessageCenter::sltHandleHelpRequestWithKeyword(const QString &strHelpKeyword)
+{
+    /* First open or show the help browser: */
+    sltShowUserManual(uiCommon().helpFile());
+    /* Show the help page for the @p strHelpKeyword: */
+    if (m_pHelpBrowserDialog)
+        m_pHelpBrowserDialog->showHelpForKeyword(strHelpKeyword);
+}
+
 void UIMessageCenter::sltShowHelpHelpDialog()
 {
-    /* Currently I am sure how this logic should be changed. I will just disable it for now: */
-    sltShowUserManual(uiCommon().helpFile());
-#if 0
 #ifndef VBOX_OSE
     /* For non-OSE version we just open it: */
     sltShowUserManual(uiCommon().helpFile());
@@ -2131,62 +2172,6 @@ void UIMessageCenter::sltShowHelpHelpDialog()
     }
 # endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #endif /* #ifdef VBOX_OSE */
-#endif
-}
-
-void UIMessageCenter::sltResetSuppressedMessages()
-{
-    /* Nullify suppressed message list: */
-    gEDataManager->setSuppressedMessages(QStringList());
-}
-
-void UIMessageCenter::sltShowUserManual(const QString &strHelpFilePath)
-{
-#if defined(VBOX_WITH_DOCS_QHELP)
-    if (!QFileInfo(strHelpFilePath).exists())
-    {
-        UINotificationMessage::cannotFindHelpFile(strHelpFilePath);
-        return;
-    }
-    if (!m_pHelpBrowserDialog)
-    {
-        m_pHelpBrowserDialog = new UIHelpBrowserDialog(0 /* parent */, 0 /* Center Widget */, strHelpFilePath);
-        AssertReturnVoid(m_pHelpBrowserDialog);
-        connect(m_pHelpBrowserDialog, &QMainWindow::destroyed, this, &UIMessageCenter::sltHelpBrowserClosed);
-    }
-
-    m_pHelpBrowserDialog->show();
-    m_pHelpBrowserDialog->setWindowState(m_pHelpBrowserDialog->windowState() & ~Qt::WindowMinimized);
-    m_pHelpBrowserDialog->activateWindow();
-#else
-    Q_UNUSED(strHelpFilePath);
-#endif
-
-}
-
-void UIMessageCenter::sltHelpBrowserClosed()
-{
-    m_pHelpBrowserDialog = 0;
-}
-
-void UIMessageCenter::sltHandleHelpRequest()
-{
-#if defined(VBOX_WITH_DOCS_QHELP)
-    sltHandleHelpRequestWithKeyword(uiCommon().helpKeyword(sender()));
-#endif /* #if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
-}
-
-void UIMessageCenter::sltHandleHelpRequestWithKeyword(const QString &strHelpKeyword)
-{
-#if defined(VBOX_WITH_DOCS_QHELP)
-    /* First open or show the help browser: */
-    sltShowUserManual(uiCommon().helpFile());
-    /* Show the help page for the @p strHelpKeyword: */
-    if (m_pHelpBrowserDialog)
-        m_pHelpBrowserDialog->showHelpForKeyword(strHelpKeyword);
-#else
-    Q_UNUSED(strHelpKeyword);
-# endif /* #if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
 }
 
 void UIMessageCenter::sltShowMessageBox(QWidget *pParent, MessageType enmType,

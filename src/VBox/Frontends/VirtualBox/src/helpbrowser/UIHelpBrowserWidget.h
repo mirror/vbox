@@ -57,7 +57,6 @@ class UIBookmarksListContainer;
 class UIHelpBrowserTabManager;
 class UIZoomMenuAction;
 
-#ifdef VBOX_WITH_DOCS_QHELP
 class SHARED_LIBRARY_STUFF UIHelpBrowserWidget  : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -219,5 +218,4 @@ private:
     QStringList          m_keywordList;
 };
 
-#endif /* #ifdef VBOX_WITH_DOCS_QHELP */
 #endif /* !FEQT_INCLUDED_SRC_helpbrowser_UIHelpBrowserWidget_h */

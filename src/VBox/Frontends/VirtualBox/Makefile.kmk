@@ -897,6 +897,8 @@ UICommon_QT_MOCHDRS = \
 	src/guestctrl/UIFileManagerOptionsPanel.h \
 	src/guestctrl/UIFileManagerTable.h \
 	src/helpbrowser/UIHelpBrowserDialog.h \
+	src/helpbrowser/UIHelpViewer.h \
+	src/helpbrowser/UIHelpBrowserWidget.h \
 	src/logviewer/UIVMLogPage.h \
 	src/logviewer/UIVMLogViewerBookmarksPanel.h \
 	src/logviewer/UIVMLogViewerDialog.h \
@@ -1030,12 +1032,6 @@ UICommon_QT_MOCHDRS = \
 	src/wizards/newvd/UIWizardNewVDSizeLocationPage.h \
 	src/wizards/newvd/UIWizardNewVDExpertPage.h
 
-ifdef VBOX_WITH_DOCS_QHELP
- UICommon_QT_MOCHDRS += \
- 	src/helpbrowser/UIHelpViewer.h \
- 	src/helpbrowser/UIHelpBrowserWidget.h
-endif
-
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  UICommon_QT_MOCHDRS += \
  	src/networking/UIDownloader.h \
@@ -1118,6 +1114,8 @@ UICommon_QT_MOCSRCS = \
 	src/guestctrl/UIFileManagerTable.cpp \
 	src/guestctrl/UIFileManagerGuestTable.cpp \
 	src/guestctrl/UIFileManagerHostTable.cpp \
+	src/helpbrowser/UIHelpViewer.cpp \
+	src/helpbrowser/UIHelpBrowserWidget.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/logviewer/UIVMLogViewerWidget.cpp \
@@ -1142,12 +1140,6 @@ UICommon_QT_MOCSRCS = \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp \
 	src/widgets/UIToolBox.cpp
-
-ifdef VBOX_WITH_DOCS_QHELP
- UICommon_QT_MOCSRCS += \
- 	src/helpbrowser/UIHelpViewer.cpp \
- 	src/helpbrowser/UIHelpBrowserWidget.cpp
-endif
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  UICommon_QT_MOCSRCS += \
@@ -1485,6 +1477,8 @@ UICommon_SOURCES = \
 	src/guestctrl/UIFileManagerOptionsPanel.cpp \
 	src/guestctrl/UIFileManagerTable.cpp \
 	src/helpbrowser/UIHelpBrowserDialog.cpp \
+	src/helpbrowser/UIHelpViewer.cpp \
+	src/helpbrowser/UIHelpBrowserWidget.cpp \
 	src/logviewer/UIVMLogPage.cpp \
 	src/logviewer/UIVMLogViewerBookmarksPanel.cpp \
 	src/logviewer/UIVMLogViewerDialog.cpp \
@@ -1623,12 +1617,6 @@ UICommon_SOURCES = \
 	src/wizards/newvd/UIWizardNewVDSizeLocationPage.cpp \
 	src/wizards/newvd/UIWizardNewVDExpertPage.cpp
 
-ifdef VBOX_WITH_DOCS_QHELP
- UICommon_SOURCES += \
- 	src/helpbrowser/UIHelpViewer.cpp \
- 	src/helpbrowser/UIHelpBrowserWidget.cpp
-endif
-
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  UICommon_SOURCES += \
  	src/networking/UIDownloader.cpp \
@@ -1739,7 +1727,7 @@ endif
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt unit.)
 #
-UICommon_QT_MODULES = Core Gui Widgets
+UICommon_QT_MODULES = Core Gui Widgets Help
 ifdef VBOX_WITH_QT6
  UICommon_QT_MODULES += StateMachine
 endif
@@ -1767,10 +1755,6 @@ endif
 ifndef VBOX_WITH_QT6
  UICommon_QT_MODULES.darwin  += MacExtras
  UICommon_QT_MODULES.win     += WinExtras
-endif
-
-ifdef VBOX_WITH_DOCS_QHELP
- UICommon_QT_MODULES   += Help
 endif
 
 ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER

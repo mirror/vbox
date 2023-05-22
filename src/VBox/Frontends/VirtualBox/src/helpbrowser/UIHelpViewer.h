@@ -43,8 +43,6 @@ class QGraphicsBlurEffect;
 class QLabel;
 class UIFindInPageWidget;
 
-#ifdef VBOX_WITH_DOCS_QHELP
-
 /** A QTextBrowser extension used as poor man's html viewer. Since we were not happy with the quality of QTextBrowser's image
   * rendering and didn't want to use WebKit module, this extension redraws the document images as overlays with improved QPainter
   * parameters. There is also a small hack to render clicked image 1:1 (and the rest of the document blurred)
@@ -171,5 +169,4 @@ private:
     int m_iZoomPercentage;
 };
 
-#endif /* #ifdef VBOX_WITH_DOCS_QHELP */
 #endif /* !FEQT_INCLUDED_SRC_helpbrowser_UIHelpViewer_h */
