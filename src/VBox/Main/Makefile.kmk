@@ -1156,8 +1156,8 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	src-client/ClientTokenHolder.cpp \
  	src-client/ConsoleImpl.cpp \
  	src-client/ConsoleImplConfigCommon.cpp \
-    src-client/ConsoleImplConfigX86.cpp \
-	$(if $(VBOX_WITH_VIRT_ARMV8),src-client/ConsoleImplConfigArmV8.cpp,) \
+ 	src-client/ConsoleImplConfigX86.cpp \
+ 	$(if $(VBOX_WITH_VIRT_ARMV8),src-client/ConsoleImplConfigArmV8.cpp,) \
  	src-client/ConsoleImplTeleporter.cpp \
  	src-client/ConsoleVRDPServer.cpp \
  	src-client/DisplayImpl.cpp \
