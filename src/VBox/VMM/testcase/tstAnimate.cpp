@@ -880,8 +880,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     rc = VERR_NOT_IMPLEMENTED; /** @todo need some EM single-step indicator (was REMR3DisasEnableStepping) */
                     if (RT_SUCCESS(rc))
                     {
-                        rc = EMR3SetExecutionPolicy(pUVM, EMEXECPOLICY_RECOMPILE_RING0, true); AssertReleaseRC(rc);
-                        rc = EMR3SetExecutionPolicy(pUVM, EMEXECPOLICY_RECOMPILE_RING3, true); AssertReleaseRC(rc);
+                        rc = EMR3SetExecutionPolicy(pUVM, EMEXECPOLICY_IEM_ALL, true); AssertReleaseRC(rc);
                         DBGFR3Info(pUVM, "cpumguest", "verbose", NULL);
                         if (fPowerOn)
                             rc = VMR3PowerOn(pUVM);

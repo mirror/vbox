@@ -43,7 +43,7 @@
 /** @callback_method_impl{FNDBGCCMD,
  * Implements the '.alliem' command. }
  */
-static DECLCALLBACK(int) enmR3DbgCmdAllIem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) emR3DbgCmdAllIem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     int  rc;
     bool f;
@@ -75,7 +75,7 @@ static DBGCVARDESC const g_BoolArg = { 0, 1, DBGCVAR_CAT_ANY, 0, "boolean", "Boo
 static DBGCCMD const g_aCmds[] =
 {
     {
-        "alliem", 0, 1, &g_BoolArg, 1, 0, enmR3DbgCmdAllIem, "[boolean]",
+        "alliem", 0, 1, &g_BoolArg, 1, 0, emR3DbgCmdAllIem, "[boolean]",
         "Enables or disabled executing ALL code in IEM, if no arguments are given it displays the current status."
     },
 };

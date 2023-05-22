@@ -61,16 +61,19 @@ RT_C_DECLS_BEGIN
  */
 typedef enum EMSTATE
 {
+    /** Invalid zero value. */
+    EMSTATE_INVALID = 0,
     /** Not yet started. */
-    EMSTATE_NONE = 1,
-    /** Raw-mode execution. */
-    EMSTATE_RAW,
+    EMSTATE_NONE,
+    /** Raw-mode execution.
+     * @note obsolete, here only for saved state reasons.  */
+    EMSTATE_RAW_OBSOLETE,
     /** Hardware accelerated raw-mode execution. */
     EMSTATE_HM,
     /** Executing in IEM. */
     EMSTATE_IEM,
     /** Recompiled mode execution. */
-    EMSTATE_REM,
+    EMSTATE_RECOMPILER,
     /** Execution is halted. (waiting for interrupt) */
     EMSTATE_HALTED,
     /** Application processor execution is halted. (waiting for startup IPI (SIPI)) */
@@ -86,57 +89,27 @@ typedef enum EMSTATE
     /** Guest debug event from interpreted execution mode is being processed. */
     EMSTATE_DEBUG_GUEST_IEM,
     /** Guest debug event from recompiled-mode is being processed. */
-    EMSTATE_DEBUG_GUEST_REM,
+    EMSTATE_DEBUG_GUEST_RECOMPILER,
     /** Hypervisor debug event being processed. */
     EMSTATE_DEBUG_HYPER,
     /** The VM has encountered a fatal error. (And everyone is panicing....) */
     EMSTATE_GURU_MEDITATION,
     /** Executing in IEM, falling back on REM if we cannot switch back to HM or
-     * RAW after a short while. */
+     * RAW after a short while. 
+     * @todo Obsolete this one.  */
     EMSTATE_IEM_THEN_REM,
     /** Executing in native (API) execution monitor. */
     EMSTATE_NEM,
     /** Guest debug event from NEM mode is being processed. */
     EMSTATE_DEBUG_GUEST_NEM,
+    /** End of valid values. */
+    EMSTATE_END,
     /** Just a hack to ensure that we get a 32-bit integer. */
     EMSTATE_MAKE_32BIT_HACK = 0x7fffffff
 } EMSTATE;
 
-
-/**
- * EMInterpretInstructionCPU execution modes.
- */
-typedef enum
-{
-    /** Only supervisor code (CPL=0). */
-    EMCODETYPE_SUPERVISOR,
-    /** User-level code only. */
-    EMCODETYPE_USER,
-    /** Supervisor and user-level code (use with great care!). */
-    EMCODETYPE_ALL,
-    /** Just a hack to ensure that we get a 32-bit integer. */
-    EMCODETYPE_32BIT_HACK = 0x7fffffff
-} EMCODETYPE;
-
 VMM_INT_DECL(EMSTATE)           EMGetState(PVMCPU pVCpu);
 VMM_INT_DECL(void)              EMSetState(PVMCPU pVCpu, EMSTATE enmNewState);
-
-/** @name Callback handlers for instruction emulation functions.
- * These are placed here because IOM wants to use them as well.
- * @{
- */
-typedef DECLCALLBACKTYPE(uint32_t, FNEMULATEPARAM2UINT32,(void *pvParam1, uint64_t val2));
-typedef FNEMULATEPARAM2UINT32    *PFNEMULATEPARAM2UINT32;
-typedef DECLCALLBACKTYPE(uint32_t, FNEMULATEPARAM2,(void *pvParam1, size_t val2));
-typedef FNEMULATEPARAM2          *PFNEMULATEPARAM2;
-typedef DECLCALLBACKTYPE(uint32_t, FNEMULATEPARAM3,(void *pvParam1, uint64_t val2, size_t val3));
-typedef FNEMULATEPARAM3          *PFNEMULATEPARAM3;
-typedef DECLCALLBACKTYPE(int, FNEMULATELOCKPARAM2,(void *pvParam1, uint64_t val2, RTGCUINTREG32 *pf));
-typedef FNEMULATELOCKPARAM2 *PFNEMULATELOCKPARAM2;
-typedef DECLCALLBACKTYPE(int, FNEMULATELOCKPARAM3,(void *pvParam1, uint64_t val2, size_t cb, RTGCUINTREG32 *pf));
-typedef FNEMULATELOCKPARAM3 *PFNEMULATELOCKPARAM3;
-/** @}  */
-
 VMMDECL(void)                   EMSetHypercallInstructionsEnabled(PVMCPU pVCpu, bool fEnabled);
 VMMDECL(bool)                   EMAreHypercallInstructionsEnabled(PVMCPU pVCpu);
 VMM_INT_DECL(bool)              EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx);
@@ -299,7 +272,7 @@ VMMR0_INT_DECL(int)             EMR0InitVM(PGVM pGVM);
  */
 
 /**
- * Command argument for EMR3RawSetMode().
+ * For use with EMR3SetExecutionPolicy() and EMR3QueryExecutionPolicy().
  *
  * It's possible to extend this interface to change several
  * execution modes at once should the need arise.
@@ -308,12 +281,10 @@ typedef enum EMEXECPOLICY
 {
     /** The customary invalid zero entry. */
     EMEXECPOLICY_INVALID = 0,
-    /** Whether to recompile ring-0 code or execute it in raw/hm. */
-    EMEXECPOLICY_RECOMPILE_RING0,
-    /** Whether to recompile ring-3 code or execute it in raw/hm. */
-    EMEXECPOLICY_RECOMPILE_RING3,
     /** Whether to only use IEM for execution. */
     EMEXECPOLICY_IEM_ALL,
+    /** Whether IEM is recompiled when used for mass execution. */
+    EMEXECPOLICY_IEM_RECOMPILED,
     /** End of valid value (not included). */
     EMEXECPOLICY_END,
     /** The customary 32-bit type blowup. */

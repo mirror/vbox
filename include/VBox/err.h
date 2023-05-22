@@ -875,6 +875,8 @@
 /** A field contained an transformation that should only be used when loading
  * old states. */
 #define VERR_SSM_FIELD_LOAD_ONLY_TRANSFORMATION (-1879)
+/** Out of range enum value. */
+#define VERR_SSM_ENUM_VALUE_OUT_OF_RANGE        (-1880)
 /** @} */
 
 
@@ -1070,25 +1072,6 @@
 #define VERR_TM_IPE_8                       (-2298)
 /** TM internal processing error \#9. */
 #define VERR_TM_IPE_9                       (-2299)
-/** @} */
-
-
-/** @name Recompiled Execution Manager (REM) Status Codes
- * @{
- */
-/** Fatal error in virtual hardware. */
-#define VERR_REM_VIRTUAL_HARDWARE_ERROR     (-2300)
-/** Fatal error in the recompiler cpu. */
-#define VERR_REM_VIRTUAL_CPU_ERROR          (-2301)
-/** Recompiler execution was interrupted by forced action. */
-#define VINF_REM_INTERRUPED_FF              2302
-/** Too many similar traps. This is a very useful debug only
- * check (we don't do double/triple faults in REM). */
-#define VERR_REM_TOO_MANY_TRAPS             (-2304)
-/** The REM is out of breakpoint slots. */
-#define VERR_REM_NO_MORE_BP_SLOTS           (-2305)
-/** The REM could not find any breakpoint on the specified address. */
-#define VERR_REM_BP_NOT_FOUND               (-2306)
 /** @} */
 
 

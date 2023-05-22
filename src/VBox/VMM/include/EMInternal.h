@@ -129,13 +129,12 @@ typedef struct EM
 {
     /** Whether IEM executes everything. */
     bool                    fIemExecutesAll;
+    /** Whether IEM execution (pure) is recompiled (true) or interpreted (false). */
+    bool                    fIemRecompiled;
     /** Whether a triple fault triggers a guru. */
     bool                    fGuruOnTripleFault;
     /** Alignment padding. */
-    bool                    afPadding[2];
-
-    /** Id of the VCPU that last executed code in the recompiler. */
-    VMCPUID                 idLastRemCpu;
+    bool                    afPadding[5];
 } EM;
 /** Pointer to EM VM instance data. */
 typedef EM *PEM;
@@ -223,14 +222,8 @@ typedef struct EMCPU
     STAMPROFILE             StatIEMThenREM;
     STAMPROFILEADV          StatNEMEntry;
     STAMPROFILE             StatNEMExec;
-    STAMPROFILE             StatREMEmu;
     STAMPROFILE             StatREMExec;
-    STAMPROFILE             StatREMSync;
-    STAMPROFILEADV          StatREMTotal;
-    STAMPROFILE             StatRAWExec;
-    STAMPROFILEADV          StatRAWEntry;
-    STAMPROFILEADV          StatRAWTail;
-    STAMPROFILEADV          StatRAWTotal;
+    STAMPROFILE             StatREMTotal;
     STAMPROFILEADV          StatTotal;
     /** @} */
 
@@ -325,9 +318,7 @@ int             emR3RawStep(PVM pVM, PVMCPU pVCpu);
 
 VBOXSTRICTRC    emR3NemSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags);
 
-int             emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations);
-
-bool            emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu);
+bool            emR3IsExecutionAllowedSlow(PVM pVM, PVMCPU pVCpu);
 
 VBOXSTRICTRC    emR3ExecutePendingIoPortWrite(PVM pVM, PVMCPU pVCpu);
 VBOXSTRICTRC    emR3ExecutePendingIoPortRead(PVM pVM, PVMCPU pVCpu);
