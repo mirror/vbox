@@ -1101,7 +1101,6 @@ VMMDECL(int) PGMPrefetchPage(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
  * @returns Strict VBox status code, special care required.
  * @retval  VINF_PGM_SYNC_CR3 - handled.
  * @retval  VINF_EM_RAW_EMULATE_INSTR - not handled (RC only).
- * @retval  VERR_REM_FLUSHED_PAGES_OVERFLOW - not handled.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPtrPage   Page to invalidate.
