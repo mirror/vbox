@@ -168,7 +168,7 @@
 /** Interrupt Controller Type Register 2 - RO. */
 #define GIC_DIST_REG_TYPER2_OFF                         0x000c
 /** Error Reporting Status Register (optional) - RW. */
-#define GIC_DIST_RG_STATUSR_OFF                         0x0010
+#define GIC_DIST_REG_STATUSR_OFF                        0x0010
 /** Set SPI Register - WO. */
 #define GIC_DIST_REG_SETSPI_NSR_OFF                     0x0040
 /** Clear SPI Register - WO. */
