@@ -308,8 +308,12 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigNode(pDevices, "flash-cfi",         &pDev);
         InsertConfigNode(pDev,     "0",            &pInst);
         InsertConfigNode(pInst,    "Config",        &pCfg);
-        InsertConfigInteger(pCfg,  "BaseAddress", 64 * _1M);
-        InsertConfigInteger(pCfg,  "Size",        64 * _1M);
+        InsertConfigInteger(pCfg,  "BaseAddress",  64 * _1M);
+        InsertConfigInteger(pCfg,  "Size",        768 * _1K);
+        InsertConfigString(pCfg,   "FlashFile",   "nvram");
+        /* Attach the NVRAM storage driver. */
+        InsertConfigNode(pInst,    "LUN#0",       &pLunL0);
+        InsertConfigString(pLunL0, "Driver",      "NvramStore");
 
         InsertConfigNode(pDevices, "arm-pl011",     &pDev);
         for (ULONG ulInstance = 0; ulInstance < 1 /** @todo SchemaDefs::SerialPortCount*/; ++ulInstance)
@@ -501,16 +505,69 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     break;
                 }
 
+                case StorageControllerType_IntelAhci:
+                {
+                    InsertConfigInteger(pCtlInst, "PCIBusNo",          0);
+                    InsertConfigInteger(pCtlInst, "PCIDeviceNo",       3);
+                    InsertConfigInteger(pCtlInst, "PCIFunctionNo",     0);
+
+                    ULONG cPorts = 0;
+                    hrc = ctrls[i]->COMGETTER(PortCount)(&cPorts);                          H();
+                    InsertConfigInteger(pCfg, "PortCount", cPorts);
+                    InsertConfigInteger(pCfg, "Bootable",  fBootable);
+
+                    com::SafeIfaceArray<IMediumAttachment> atts;
+                    hrc = pMachine->GetMediumAttachmentsOfController(controllerName.raw(),
+                                                                     ComSafeArrayAsOutParam(atts));  H();
+
+                    /* Configure the hotpluggable flag for the port. */
+                    for (unsigned idxAtt = 0; idxAtt < atts.size(); ++idxAtt)
+                    {
+                        IMediumAttachment *pMediumAtt = atts[idxAtt];
+
+                        LONG lPortNum = 0;
+                        hrc = pMediumAtt->COMGETTER(Port)(&lPortNum);                       H();
+
+                        BOOL fHotPluggable = FALSE;
+                        hrc = pMediumAtt->COMGETTER(HotPluggable)(&fHotPluggable);          H();
+                        if (SUCCEEDED(hrc))
+                        {
+                            PCFGMNODE pPortCfg;
+                            char szName[24];
+                            RTStrPrintf(szName, sizeof(szName), "Port%d", lPortNum);
+
+                            InsertConfigNode(pCfg, szName, &pPortCfg);
+                            InsertConfigInteger(pPortCfg, "Hotpluggable", fHotPluggable ? 1 : 0);
+                        }
+                    }
+                    break;
+                }
+                case StorageControllerType_VirtioSCSI:
+                {
+                    InsertConfigInteger(pCtlInst, "PCIBusNo",          0);
+                    InsertConfigInteger(pCtlInst, "PCIDeviceNo",       3);
+                    InsertConfigInteger(pCtlInst, "PCIFunctionNo",     0);
+
+                    ULONG cPorts = 0;
+                    hrc = ctrls[i]->COMGETTER(PortCount)(&cPorts);                          H();
+                    InsertConfigInteger(pCfg, "NumTargets", cPorts);
+                    InsertConfigInteger(pCfg, "Bootable",   fBootable);
+
+                    /* Attach the status driver */
+                    i_attachStatusDriver(pCtlInst, RT_BIT_32(DeviceType_HardDisk) | RT_BIT_32(DeviceType_DVD) /*?*/,
+                                         cPorts, &paLedDevType, &mapMediumAttachments, pszCtrlDev, ulInstance);
+                    break;
+                }
+
                 case StorageControllerType_LsiLogic:
                 case StorageControllerType_BusLogic:
-                case StorageControllerType_IntelAhci:
                 case StorageControllerType_PIIX3:
                 case StorageControllerType_PIIX4:
                 case StorageControllerType_ICH6:
                 case StorageControllerType_I82078:
                 case StorageControllerType_LsiLogicSas:
                 case StorageControllerType_NVMe:
-                case StorageControllerType_VirtioSCSI:
+
                 default:
                     AssertLogRelMsgFailedReturn(("invalid storage controller type: %d\n", enmCtrlType), VERR_MAIN_CONFIG_CONSTRUCTOR_IPE);
             }
