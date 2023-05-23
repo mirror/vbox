@@ -72,6 +72,7 @@
 /* Darwin compile kludge */
 #undef PVM
 
+#ifdef VBOX_WITH_VIRT_ARMV8
 /**
  * Worker for configConstructor.
  *
@@ -641,3 +642,5 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 
     return vrc;
 }
+#endif /* !VBOX_WITH_VIRT_ARMV8 */
+
