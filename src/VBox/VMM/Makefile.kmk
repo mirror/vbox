@@ -319,7 +319,9 @@ ifdef VBOX_WITH_VIRT_ARMV8
  #
  # The VMM DLL - ARMv8 variant.
  #
- DLLS += VBoxVMMArm
+ ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
+  DLLS += VBoxVMMArm
+ endif
  VBoxVMMArm_TEMPLATE = VBoxR3DllNoPic
  VBoxVMMArm_SONAME.linux = VBoxVMMArm.so
 
