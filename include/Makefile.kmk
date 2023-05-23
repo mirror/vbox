@@ -120,7 +120,6 @@ VBOX_HDRS_OMIT := \
 	VBox/HostServices/glext.h \
 	VBox/HostServices/glxext.h \
 	VBox/HostServices/wglext.h \
-	VBox/VBoxGL2D.h \
 	$(if-expr "$(KBUILD_TARGET)" != "linux", \
 		VBox/GuestHost/SharedClipboard-x11.h \
 		,) \

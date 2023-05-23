@@ -46,7 +46,6 @@ ifndef VBOX_ONLY_EXTPACKS
  include $(PATH_SUB_CURRENT)/cbinding/Makefile.kmk
  ifndef VBOX_ONLY_SDK
   include $(PATH_SUB_CURRENT)/UnattendedTemplates/Makefile.kmk
-  include $(PATH_SUB_CURRENT)/src-helper-apps/OpenGLTest/Makefile.kmk
   if defined(VBOX_WITH_OPEN_WATCOM) && defined(VBOX_WITH_UNATTENDED)
    include $(PATH_SUB_CURRENT)/src-helper-apps/os2/Makefile.kmk
   endif
@@ -803,9 +802,7 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  VBoxSVC_LDFLAGS.darwin   = -framework IOKit -framework SystemConfiguration
 
  ifdef VBOX_WITH_3D_ACCELERATION
-  VBoxSVC_DEFS           += VBOX_WITH_3D_ACCELERATION
-  VBoxSVC_LIBS           += $(PATH_STAGE_LIB)/VBoxOGLTest$(VBOX_SUFF_LIB)
-  VBoxSVC_LDFLAGS.darwin += -framework OpenGL
+  VBoxSVC_DEFS += VBOX_WITH_3D_ACCELERATION
  endif
 
  ifeq ($(KBUILD_TYPE),debug)

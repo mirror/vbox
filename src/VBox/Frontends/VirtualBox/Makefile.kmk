@@ -517,11 +517,6 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
  VirtualBox_LIBS += $(PATH_STAGE_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
 endif
 
-# These are 2D Video Acceleration and 3D Acceleration related libs:
-ifdef VBOX_WITH_3D_ACCELERATION
- VirtualBox_LIBS += $(PATH_STAGE_LIB)/VBoxOGLTest$(VBOX_SUFF_LIB)
-endif
-
 # This one is global shared GUI library:
 ifeq ($(KBUILD_TARGET),win)
  VirtualBox_LIBS += $(PATH_STAGE_LIB)/UICommon$(VBOX_SUFF_LIB)
@@ -571,11 +566,6 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
  VirtualBoxVM_LIBS += $(PATH_STAGE_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
 endif
 
-# These are 2D Video Acceleration and 3D Acceleration related libs:
-ifdef VBOX_WITH_3D_ACCELERATION
- VirtualBoxVM_LIBS += $(PATH_STAGE_LIB)/VBoxOGLTest$(VBOX_SUFF_LIB)
-endif
-
 ifeq ($(KBUILD_TARGET),win)
  VirtualBoxVM_LIBS += $(PATH_STAGE_LIB)/UICommon$(VBOX_SUFF_LIB)
 else
@@ -600,11 +590,6 @@ UICommon_LIBS.win = \
 # VBox keyboard shared library for X11 hosts:
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
  UICommon_LIBS += $(PATH_STAGE_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
-endif
-
-# These are 2D Video Acceleration and 3D Acceleration related libs:
-ifdef VBOX_WITH_3D_ACCELERATION
- UICommon_LIBS += $(PATH_STAGE_LIB)/VBoxOGLTest$(VBOX_SUFF_LIB)
 endif
 
 
