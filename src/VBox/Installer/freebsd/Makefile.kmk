@@ -111,7 +111,6 @@ VBOX_FBSD_STRIP_BIN = \
 		components/VBoxXPCOMIPCC.so \
 		components/VBoxSVCM.so \
 		components/VBoxC.so,) \
-	VBoxTestOGL \
 	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \
 	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,) \
 	$(if $(VBOX_WITH_HOST_SHIPPING_AUDIO_TEST),VBoxAudioTest,)

@@ -28,7 +28,6 @@ lib/virtualbox/VBoxOGLhostcrutil.so
 lib/virtualbox/VBoxOGLhosterrorspu.so
 lib/virtualbox/VBoxOGLrenderspu.so
 lib/virtualbox/vboxwebsrv
-lib/virtualbox/VBoxTestOGL
 @mode 4755
 lib/virtualbox/VBoxSDL
 lib/virtualbox/VirtualBox

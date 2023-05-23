@@ -377,11 +377,6 @@
               Source="$(env.PATH_OUT)\bin\VirtualBox_70px.png" />
         <File Id="file_VirtualBox_150px.png" Name="VirtualBox_150px.png"
               Source="$(env.PATH_OUT)\bin\VirtualBox_150px.png" />
-
- <?if $(env.VBOX_WITH_VMSVGA3D) = "yes" or $(env.VBOX_WITH_VIDEOHWACCEL) = "yes" ?>
-        <File Id="file_VBoxTestOGL.exe" Name="VBoxTestOGL.exe"
-              Source="$(env.PATH_OUT)\bin\VBoxTestOGL.exe" />
- <?endif ?>
 <?endif ?>
 <?if $(env.VBOX_WITH_DEBUGGER_GUI) = "yes" ?>
         <File Id="file_VBoxDbg.dll" Name="VBoxDbg.dll"
