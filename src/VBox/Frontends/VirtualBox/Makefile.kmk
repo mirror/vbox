@@ -214,9 +214,6 @@ ifdef VBOX_WITH_DEBUGGER_GUI
   VirtualBoxVM_DEFS         += VBOX_WITH_DEBUGGER_GUI_MENU
  endif
 endif
-ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
- VirtualBoxVM_DEFS          += VBOX_GUI_WITH_QTGLFRAMEBUFFER
-endif
 ifdef VBOX_WITH_LIBCURL
  VirtualBoxVM_DEFS          += VBOX_GUI_WITH_NETWORK_MANAGER
  VBOX_GUI_WITH_NETWORK_MANAGER := 1
@@ -413,10 +410,6 @@ VirtualBox_LDFLAGS.darwin = \
 	$(if-expr $(VBOX_WITH_HARDENING) || $(VBOX_WITH_PARFAIT),,-rpath @executable_path/../MacOS -rpath @executable_path/../Frameworks) \
 	-framework AppKit -framework Carbon -framework IOKit
 
-ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
- VirtualBox_LDFLAGS.darwin += -framework OpenGL
-endif
-
 
 #
 # VirtualBox Virtual Machine Application
@@ -459,10 +452,6 @@ else
  VirtualBoxVM_LDFLAGS.darwin = -framework AppKit -framework Carbon -framework IOKit
 endif
 
-ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
- VirtualBoxVM_LDFLAGS.darwin += -framework OpenGL
-endif
-
 
 #
 # VirtualBox - GUI Global Shared Library.
@@ -486,10 +475,6 @@ UICommon_LDFLAGS.darwin = \
 	-framework AppKit \
 	-framework Carbon \
 	-framework IOKit
-
-ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
- UICommon_LDFLAGS.darwin += -framework OpenGL
-endif
 
 #
 # VirtualBox Manager Application
@@ -533,12 +518,6 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
 endif
 
 # These are 2D Video Acceleration and 3D Acceleration related libs:
-ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
- VirtualBox_LIBS.win       += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
- VirtualBox_LIBS.solaris   += GL
- VirtualBox_LIBS.linux     += GL
- VirtualBox_LIBS.freebsd   += GL
-endif
 ifdef VBOX_WITH_3D_ACCELERATION
  VirtualBox_LIBS += $(PATH_STAGE_LIB)/VBoxOGLTest$(VBOX_SUFF_LIB)
 endif
@@ -593,12 +572,6 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
 endif
 
 # These are 2D Video Acceleration and 3D Acceleration related libs:
-ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
- VirtualBoxVM_LIBS.win       += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
- VirtualBoxVM_LIBS.solaris   += GL
- VirtualBoxVM_LIBS.linux     += GL
- VirtualBoxVM_LIBS.freebsd   += GL
-endif
 ifdef VBOX_WITH_3D_ACCELERATION
  VirtualBoxVM_LIBS += $(PATH_STAGE_LIB)/VBoxOGLTest$(VBOX_SUFF_LIB)
 endif
@@ -630,12 +603,6 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
 endif
 
 # These are 2D Video Acceleration and 3D Acceleration related libs:
-ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
- UICommon_LIBS.win     += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
- UICommon_LIBS.solaris += GL
- UICommon_LIBS.linux   += GL
- UICommon_LIBS.freebsd += GL
-endif
 ifdef VBOX_WITH_3D_ACCELERATION
  UICommon_LIBS += $(PATH_STAGE_LIB)/VBoxOGLTest$(VBOX_SUFF_LIB)
 endif
@@ -1696,9 +1663,6 @@ ifndef VBOX_WITH_QT6
  VirtualBox_QT_MODULES.darwin  += MacExtras
  VirtualBox_QT_MODULES.win     += WinExtras
 endif
-ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
- VirtualBox_QT_MODULES += OpenGL
-endif
 
 
 #
@@ -1716,9 +1680,6 @@ ifndef VBOX_WITH_QT6
  VirtualBoxVM_QT_MODULES.freebsd += X11Extras
  VirtualBoxVM_QT_MODULES.darwin  += MacExtras
  VirtualBoxVM_QT_MODULES.win     += WinExtras
-endif
-ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
- VirtualBoxVM_QT_MODULES += OpenGL
 endif
 
 
@@ -1755,10 +1716,6 @@ endif
 ifndef VBOX_WITH_QT6
  UICommon_QT_MODULES.darwin  += MacExtras
  UICommon_QT_MODULES.win     += WinExtras
-endif
-
-ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
- UICommon_QT_MODULES += OpenGL
 endif
 
 
