@@ -373,7 +373,7 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
     if (strCompartmentId.isNotEmpty())
     {
         CHECK_ERROR2_RET(hrc, pCloudProfile,
-                         SetProperty(Bstr("compartment").raw(), Bstr(strCompartmentId).raw()),\
+                         SetProperty(Bstr("compartment").raw(), Bstr(strCompartmentId).raw()),
                          RTEXITCODE_FAILURE);
     }
     else
@@ -519,7 +519,7 @@ static RTEXITCODE listCloudVnicAttachments(HandlerArg *a, int iFirst, PCLOUDCOMM
     if (strCompartmentId.isNotEmpty())
     {
         CHECK_ERROR2_RET(hrc, pCloudProfile,
-                         SetProperty(Bstr("compartment").raw(), Bstr(strCompartmentId).raw()),\
+                         SetProperty(Bstr("compartment").raw(), Bstr(strCompartmentId).raw()),
                          RTEXITCODE_FAILURE);
     }
     else
