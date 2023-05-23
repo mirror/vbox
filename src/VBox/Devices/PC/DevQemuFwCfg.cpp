@@ -1677,8 +1677,38 @@ static DECLCALLBACK(int) qemuFwCfgR3RamfbPortQueryVideoMode(PPDMIDISPLAYPORT pIn
 static DECLCALLBACK(int) qemuFwCfgR3RamfbPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint8_t **ppbData, size_t *pcbData,
                                                             uint32_t *pcx, uint32_t *pcy)
 {
-    RT_NOREF(pInterface, ppbData, pcbData, pcx, pcy);
-    return VERR_NOT_SUPPORTED;
+    PDEVQEMUFWCFG pThis = RT_FROM_MEMBER(pInterface, DEVQEMUFWCFG, IPortRamfb);
+
+    LogFlowFunc(("\n"));
+
+    int const rcLock = PDMDevHlpCritSectEnter(pThis->pDevIns, &pThis->CritSectRamfb, VERR_SEM_BUSY);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pThis->pDevIns, &pThis->CritSectRamfb, rcLock);
+
+    int rc;
+    size_t cbData = pThis->RamfbCfg.cHeight * pThis->RamfbCfg.cbStride;
+    if (   pThis->RamfbCfg.GCPhysRamfbBase
+        && cbData)
+    {
+        uint8_t *pbData = (uint8_t *)RTMemAlloc(cbData);
+        if (pbData)
+        {
+            rc = PDMDevHlpPhysReadUser(pThis->pDevIns, pThis->RamfbCfg.GCPhysRamfbBase, pbData, cbData);
+            if (RT_SUCCESS(rc))
+            {
+                *ppbData = pbData;
+                *pcbData = cbData;
+                *pcx     = pThis->RamfbCfg.cWidth;
+                *pcy     = pThis->RamfbCfg.cHeight;
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else
+        rc = VERR_NOT_SUPPORTED;
+
+    PDMDevHlpCritSectLeave(pThis->pDevIns, &pThis->CritSectRamfb);
+    return rc;
 }
 
 
