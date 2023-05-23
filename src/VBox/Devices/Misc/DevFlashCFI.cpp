@@ -40,6 +40,7 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/file.h>
+#include <iprt/uuid.h>
 
 #include "VBoxDD.h"
 
@@ -79,6 +80,9 @@
 #define FLASH_CFI_SR_PROGRAM_ERASE              RT_BIT(7)
 /** @} */
 
+/** The namespace the NVRAM content is stored under (historical reasons). */
+#define FLASH_CFI_VFS_NAMESPACE                 "efi"
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -117,6 +121,26 @@ typedef struct DEVFLASHCFI
     RTGCPHYS                GCPhysFlashBase;
     /** The handle to the MMIO region. */
     IOMMMIOHANDLE           hMmio;
+
+    /** The offset of the block to write. */
+    uint32_t                offBlock;
+    /** Number of bytes to write. */
+    uint32_t                cbWrite;
+    /** The word buffer for the buffered program command (32 16-bit words for each emulated chip). */
+    uint8_t                 abProgramBuf[2 * 32 * sizeof(uint16_t)];
+
+    /**
+     * NVRAM port - LUN\#0.
+     */
+    struct
+    {
+        /** The base interface we provide the NVRAM driver. */
+        PDMIBASE            IBase;
+        /** The NVRAM driver base interface. */
+        PPDMIBASE           pDrvBase;
+        /** The VFS interface of the driver below for NVRAM state loading and storing. */
+        PPDMIVFSCONNECTOR   pDrvVfs;
+    } Lun0;
 } DEVFLASHCFI;
 /** Pointer to the Flash device state. */
 typedef DEVFLASHCFI *PDEVFLASHCFI;
@@ -157,7 +181,8 @@ static DECLCALLBACK(VBOXSTRICTRC) flashMMIOWrite(PPDMDEVINS pDevIns, void *pvUse
                 break;
             case FLASH_CFI_CMD_BUFFERED_PROGRAM_SETUP:
                 Assert(pThis->bStatus & FLASH_CFI_SR_PROGRAM_ERASE);
-                pThis->u16Cmd = u32Val;
+                pThis->u16Cmd   = u32Val;
+                pThis->offBlock = (uint32_t)off;
                 pThis->cBusCycle++;
                 break;
             case FLASH_CFI_CMD_CLEAR_STATUS_REG:
@@ -177,13 +202,18 @@ static DECLCALLBACK(VBOXSTRICTRC) flashMMIOWrite(PPDMDEVINS pDevIns, void *pvUse
                 /* This contains the address. */
                 pThis->u16Cmd = FLASH_CFI_CMD_READ_STATUS_REG;
                 pThis->cBusCycle = 0;
+                memset(pThis->pbFlash + off, 0xff, RT_MIN(pThis->cbFlashSize - off, pThis->cbBlockSize));
                 break;
             }
             case FLASH_CFI_CMD_BUFFERED_PROGRAM_SETUP:
             {
                 /* Receives the number of words to be transfered. */
-                pThis->cWordsTransfered = u32Val & 0xffff;
-                pThis->cBusCycle++;
+                pThis->cWordsTransfered = (u32Val & 0xffff) + 1;
+                pThis->cbWrite = pThis->cWordsTransfered * 2 * sizeof(uint16_t);
+                if (pThis->cbWrite <= sizeof(pThis->abProgramBuf))
+                    pThis->cBusCycle++;
+                else
+                    AssertReleaseFailed();
                 break;
             }
         }
@@ -200,14 +230,25 @@ static DECLCALLBACK(VBOXSTRICTRC) flashMMIOWrite(PPDMDEVINS pDevIns, void *pvUse
                     /* Should be the confirm now. */
                     if ((u32Val & 0xffff) == FLASH_CFI_CMD_BUFFERED_PROGRAM_CONFIRM)
                     {
-                        /** @todo Write out data to flash. */
+                        if (pThis->offBlock + pThis->cbWrite <= pThis->cbFlashSize)
+                            memcpy(pThis->pbFlash + pThis->offBlock, &pThis->abProgramBuf[0], pThis->cbWrite);
                         /* Reset to read array. */
                         pThis->cBusCycle = 0;
                         pThis->u16Cmd    = FLASH_CFI_CMD_ARRAY_READ;
                     }
+                    else
+                        AssertReleaseFailed();
                 }
                 else
+                {
+                    if (   off >= pThis->offBlock
+                        && (off + cb >= pThis->offBlock)
+                        && ((off + cb) - pThis->offBlock) <= sizeof(pThis->abProgramBuf))
+                        memcpy(&pThis->abProgramBuf[off - pThis->offBlock], pv, cb);
+                    else
+                        AssertReleaseFailed();
                     pThis->cWordsTransfered--;
+                }
                 break;
             }
         }
@@ -264,6 +305,19 @@ static DECLCALLBACK(VBOXSTRICTRC) flashMMIORead(PPDMDEVINS pDevIns, void *pvUser
 }
 
 
+/**
+ * @copydoc(PDMIBASE::pfnQueryInterface)
+ */
+static DECLCALLBACK(void *) flashR3QueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    LogFlowFunc(("ENTER: pIBase=%p pszIID=%p\n", pInterface, pszIID));
+    PDEVFLASHCFI pThis = RT_FROM_MEMBER(pInterface, DEVFLASHCFI, Lun0.IBase);
+
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->Lun0.IBase);
+    return NULL;
+}
+
+
 #if 0 /** @todo Later */
 /**
  * @callback_method_impl{FNSSMDEVSAVEEXEC}
@@ -304,6 +358,39 @@ static DECLCALLBACK(void) flashR3Reset(PPDMDEVINS pDevIns)
     pThis->u16Cmd    = FLASH_CFI_CMD_ARRAY_READ;
     pThis->bStatus   = FLASH_CFI_SR_PROGRAM_ERASE; /* Prgram/Erase controller is inactive. */
     pThis->cBusCycle = 0;
+}
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnPowerOff}
+ */
+static DECLCALLBACK(void) flashR3PowerOff(PPDMDEVINS pDevIns)
+{
+    PDEVFLASHCFI pThis = PDMDEVINS_2_DATA(pDevIns, PDEVFLASHCFI);
+
+    if (pThis->Lun0.pDrvVfs)
+    {
+        AssertPtr(pThis->pszFlashFile);
+        int rc = pThis->Lun0.pDrvVfs->pfnWriteAll(pThis->Lun0.pDrvVfs, FLASH_CFI_VFS_NAMESPACE, pThis->pszFlashFile,
+                                                  pThis->pbFlash, pThis->cbFlashSize);
+        if (RT_FAILURE(rc))
+            LogRel(("EFI: Failed to save flash file to NVRAM store: %Rrc\n", rc));
+    }
+    else if (pThis->pszFlashFile)
+    {
+        RTFILE hFlashFile = NIL_RTFILE;
+
+        int rc = RTFileOpen(&hFlashFile, pThis->pszFlashFile, RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTFileWrite(hFlashFile, pThis->pbFlash, pThis->cbFlashSize, NULL);
+            RTFileClose(hFlashFile);
+            if (RT_FAILURE(rc))
+                PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to write flash file"));
+        }
+        else
+            PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to open flash file"));
+    }
 }
 
 
@@ -354,6 +441,12 @@ static DECLCALLBACK(int) flashR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     Assert(iInstance == 0); RT_NOREF1(iInstance);
 
     /*
+     * Initalize the basic variables so that the destructor always works.
+     */
+    pThis->Lun0.IBase.pfnQueryInterface = flashR3QueryInterface;
+
+
+    /*
      * Validate configuration.
      */
     PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "DeviceId|BaseAddress|Size|BlockSize|FlashFile", "");
@@ -375,8 +468,8 @@ static DECLCALLBACK(int) flashR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                 N_("Configuration error: Querying \"BaseAddress\" as an integer failed"));
 
     /* The default flash device size is 128K. */
-    uint32_t cbFlash = 0;
-    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "Size", &cbFlash, 128 * _1K);
+    uint64_t cbFlash = 0;
+    rc = pHlp->pfnCFGMQueryU64Def(pCfg, "Size", &cbFlash, 128 * _1K);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"Size\" as an integer failed"));
@@ -411,18 +504,49 @@ static DECLCALLBACK(int) flashR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /* Reset the dynamic state.*/
     flashR3Reset(pDevIns);
 
-    RTFILE hFlashFile = NIL_RTFILE;
-    rc = RTFileOpen(&hFlashFile, pThis->pszFlashFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to open flash file"));
+    /*
+     * NVRAM storage.
+     */
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->Lun0.IBase, &pThis->Lun0.pDrvBase, "NvramStorage");
+    if (RT_SUCCESS(rc))
+    {
+        pThis->Lun0.pDrvVfs = PDMIBASE_QUERY_INTERFACE(pThis->Lun0.pDrvBase, PDMIVFSCONNECTOR);
+        if (!pThis->Lun0.pDrvVfs)
+            return PDMDevHlpVMSetError(pDevIns, VERR_PDM_MISSING_INTERFACE_BELOW, RT_SRC_POS, N_("NVRAM storage driver is missing VFS interface below"));
+    }
+    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+        rc = VINF_SUCCESS; /* Missing driver is no error condition. */
+    else
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("Can't attach Nvram Storage driver"));
 
-    size_t cbRead = 0;
-    rc = RTFileRead(hFlashFile, pThis->pbFlash, pThis->cbFlashSize, &cbRead);
-    RTFileClose(hFlashFile);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to read flash file"));
-    LogRel(("flash-cfi#%u: Read %zu bytes from file (asked for %u)\n.", cbRead, pThis->cbFlashSize, iInstance));
+    if (pThis->Lun0.pDrvVfs)
+    {
+        AssertPtr(pThis->pszFlashFile);
+        rc = pThis->Lun0.pDrvVfs->pfnQuerySize(pThis->Lun0.pDrvVfs, FLASH_CFI_VFS_NAMESPACE, pThis->pszFlashFile, &cbFlash);
+        if (RT_SUCCESS(rc))
+        {
+            if (cbFlash <= pThis->cbFlashSize)
+                rc = pThis->Lun0.pDrvVfs->pfnReadAll(pThis->Lun0.pDrvVfs, FLASH_CFI_VFS_NAMESPACE, pThis->pszFlashFile,
+                                                     pThis->pbFlash, pThis->cbFlashSize);
+            else
+                return PDMDEV_SET_ERROR(pDevIns, VERR_BUFFER_OVERFLOW, N_("Configured flash size is too small to fit the saved NVRAM content"));
+        }
+    }
+    else if (pThis->pszFlashFile)
+    {
+        RTFILE hFlashFile = NIL_RTFILE;
+        rc = RTFileOpen(&hFlashFile, pThis->pszFlashFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+        if (RT_FAILURE(rc))
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to open flash file"));
 
+        size_t cbRead = 0;
+        rc = RTFileRead(hFlashFile, pThis->pbFlash, pThis->cbFlashSize, &cbRead);
+        RTFileClose(hFlashFile);
+        if (RT_FAILURE(rc))
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to read flash file"));
+
+        LogRel(("flash-cfi#%u: Read %zu bytes from file (asked for %u)\n.", cbRead, pThis->cbFlashSize, iInstance));
+    }
 
     /*
      * Register MMIO region.
@@ -478,7 +602,7 @@ const PDMDEVREG g_DeviceFlashCFI =
     /* .pfnDetach = */              NULL,
     /* .pfnQueryInterface = */      NULL,
     /* .pfnInitComplete = */        NULL,
-    /* .pfnPowerOff = */            NULL,
+    /* .pfnPowerOff = */            flashR3PowerOff,
     /* .pfnSoftReset = */           NULL,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
