@@ -177,10 +177,6 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigNode(pMM, "MemRegions", &pMem);
 
         PCFGMNODE pMemRegion = NULL;
-        InsertConfigNode(pMem, "Flash", &pMemRegion);
-        InsertConfigInteger(pMemRegion, "GCPhysStart", 0);
-        InsertConfigInteger(pMemRegion, "Size", 64 * _1M);
-
         InsertConfigNode(pMem, "Conventional", &pMemRegion);
         InsertConfigInteger(pMemRegion, "GCPhysStart", 0x40000000);
         InsertConfigInteger(pMemRegion, "Size", cbRam);
@@ -284,6 +280,12 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         PCFGMNODE pLunL1Cfg = NULL;     /* /Devices/Dev/0/LUN#0/AttachedDriver/Config */
 
         InsertConfigNode(pRoot, "Devices", &pDevices);
+
+        InsertConfigNode(pDevices, "efi-armv8",             &pDev);
+        InsertConfigNode(pDev,     "0",                     &pInst);
+        InsertConfigNode(pInst,    "Config",                &pCfg);
+        InsertConfigInteger(pCfg,  "GCPhysLoadAddress",     0);
+        InsertConfigString(pCfg,   "EfiRom",                "VBoxEFIAArch64.fd");
 
         InsertConfigNode(pDevices, "gic",                   &pDev);
         InsertConfigNode(pDev,     "0",                     &pInst);

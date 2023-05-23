@@ -925,6 +925,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
   VBoxDD_DEFS       += VBOX_VMM_TARGET_ARMV8
   VBoxDD_SOURCES    += \
   	Bus/DevPciGenericEcam.cpp \
+  	EFI/DevEFI-armv8.cpp \
   	Gpio/DevPL061.cpp \
   	Misc/DevFlashCFI.cpp \
   	Misc/DevPL031.cpp \
@@ -1211,7 +1212,8 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  VBoxDD2_TEMPLATE        = VBoxR3DllWarnNoPic
  VBoxDD2_DEFS            = \
  	IN_VBOXDD2 \
- 	$(if $(VBOX_WITH_PXE_ROM),VBOX_WITH_PXE_ROM,)
+ 	$(if $(VBOX_WITH_PXE_ROM),VBOX_WITH_PXE_ROM,) \
+ 	$(if $(VBOX_WITH_VIRT_ARMV8),VBOX_VMM_TARGET_ARMV8,)
  VBoxDD2_INCS           := \
  	build \
  	$(PATH_SUB_CURRENT)
@@ -1242,6 +1244,11 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
   EFI/DevEFI-binaries.S_DEPS   = \
   	$(PATH_STAGE)/$(INST_BIN)VBoxEFI32.fd \
   	$(PATH_STAGE)/$(INST_BIN)VBoxEFI64.fd
+  ifdef VBOX_WITH_VIRT_ARMV8
+   EFI/DevEFI-binaries.S_DEPS   += \
+   	$(PATH_STAGE)/$(INST_BIN)VBoxEFIAArch32.fd \
+   	$(PATH_STAGE)/$(INST_BIN)VBoxEFIAArch64.fd
+  endif
  endif
 
  $(call VBOX_SET_VER_INFO_DLL,VBoxDD2,VirtualBox VMM Devices and Drivers 2) # (last!)

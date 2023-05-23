@@ -70,3 +70,46 @@ NAME(g_cbEfiFirmware64):
 .size g_cbEfiFirmware64 4
 .type g_cbEfiFirmware64 object
 #endif
+
+#ifdef VBOX_VMM_TARGET_ARMV8
+;
+; The ARMv8 bits
+;
+
+; 32-bit firmware:
+.p2align 6
+.globl NAME(g_abEfiFirmwareAArch32)
+NAME(g_abEfiFirmwareAArch32):
+        .incbin "VBoxEFIAArch32.fd"
+end_aarch32_firmware:
+
+.p2align 2
+.globl NAME(g_cbEfiFirmwareAArch32)
+NAME(g_cbEfiFirmwareAArch32):
+        .long end_aarch32_firmware - NAME(g_abEfiFirmwareAArch32)
+
+
+; 64-bit firmware:
+.p2align 6
+.globl NAME(g_abEfiFirmwareAArch64)
+NAME(g_abEfiFirmwareAArch64):
+        .incbin "VBoxEFIAArch64.fd"
+end_aarch64_firmware:
+
+.p2align 2
+.globl NAME(g_cbEfiFirmwareAArch64)
+NAME(g_cbEfiFirmwareAArch64):
+        .long  end_aarch64_firmware - NAME(g_abEfiFirmwareAArch64)
+
+# ifdef ASM_FORMAT_ELF
+.size g_abEfiFirmwareAArch32 end_aarch32_firmware - NAME(g_abEfiFirmwareAArch32)
+.type g_abEfiFirmwareAArch32 object
+.size g_cbEfiFirmwareAArch32 4
+.type g_cbEfiFirmwareAArch32 object
+
+.size g_abEfiFirmwareAArch64 end_aarch64_firmware - NAME(g_abEfiFirmwareAArch64)
+.type g_abEfiFirmwareAArch64 object
+.size g_cbEfiFirmwareAArch64 4
+.type g_cbEfiFirmwareAArch64 object
+# endif
+#endif
