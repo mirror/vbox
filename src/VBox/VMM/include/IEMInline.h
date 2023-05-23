@@ -588,7 +588,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU16(PVMCPUCC pVCpu, uint16_t *pu16)
     if (RT_UNLIKELY(offOpcode >= pVCpu->iem.s.cbOpcode))
         return iemOpcodeGetNextS8SxU16Slow(pVCpu, pu16);
 
-    *pu16 = (int8_t)pVCpu->iem.s.abOpcode[offOpcode];
+    *pu16 = (uint16_t)(int16_t)(int8_t)pVCpu->iem.s.abOpcode[offOpcode];
     pVCpu->iem.s.offOpcode = offOpcode + 1;
     return VINF_SUCCESS;
 }
@@ -610,7 +610,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU16(PVMCPUCC pVCpu, uint16_t *pu16)
             return rcStrict2; \
     } while (0)
 # else
-#  define IEM_OPCODE_GET_NEXT_S8_SX_U16(a_pu16) (*(a_pu16) = (int8_t)iemOpcodeGetNextU8Jmp(pVCpu))
+#  define IEM_OPCODE_GET_NEXT_S8_SX_U16(a_pu16) (*(a_pu16) = (uint16_t)(int16_t)(int8_t)iemOpcodeGetNextU8Jmp(pVCpu))
 # endif
 
 # ifndef IEM_WITH_SETJMP
@@ -628,7 +628,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU32(PVMCPUCC pVCpu, uint32_t *pu32)
     if (RT_UNLIKELY(offOpcode >= pVCpu->iem.s.cbOpcode))
         return iemOpcodeGetNextS8SxU32Slow(pVCpu, pu32);
 
-    *pu32 = (int8_t)pVCpu->iem.s.abOpcode[offOpcode];
+    *pu32 = (uint32_t)(int32_t)(int8_t)pVCpu->iem.s.abOpcode[offOpcode];
     pVCpu->iem.s.offOpcode = offOpcode + 1;
     return VINF_SUCCESS;
 }
@@ -650,7 +650,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU32(PVMCPUCC pVCpu, uint32_t *pu32)
             return rcStrict2; \
     } while (0)
 # else
-#  define IEM_OPCODE_GET_NEXT_S8_SX_U32(a_pu32) (*(a_pu32) = (int8_t)iemOpcodeGetNextU8Jmp(pVCpu))
+#  define IEM_OPCODE_GET_NEXT_S8_SX_U32(a_pu32) (*(a_pu32) = (uint32_t)(int32_t)(int8_t)iemOpcodeGetNextU8Jmp(pVCpu))
 # endif
 
 
@@ -669,7 +669,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU64(PVMCPUCC pVCpu, uint64_t *pu64)
     if (RT_UNLIKELY(offOpcode >= pVCpu->iem.s.cbOpcode))
         return iemOpcodeGetNextS8SxU64Slow(pVCpu, pu64);
 
-    *pu64 = (int8_t)pVCpu->iem.s.abOpcode[offOpcode];
+    *pu64 = (uint64_t)(int64_t)(int8_t)pVCpu->iem.s.abOpcode[offOpcode];
     pVCpu->iem.s.offOpcode = offOpcode + 1;
     return VINF_SUCCESS;
 }
@@ -691,7 +691,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU64(PVMCPUCC pVCpu, uint64_t *pu64)
             return rcStrict2; \
     } while (0)
 # else
-#  define IEM_OPCODE_GET_NEXT_S8_SX_U64(a_pu64) (*(a_pu64) = (int8_t)iemOpcodeGetNextU8Jmp(pVCpu))
+#  define IEM_OPCODE_GET_NEXT_S8_SX_U64(a_pu64) (*(a_pu64) = (uint64_t)(int64_t)(int8_t)iemOpcodeGetNextU8Jmp(pVCpu))
 # endif
 
 
@@ -1154,7 +1154,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32SxU64(PVMCPUCC pVCpu, uint64_t *pu64
                                       pVCpu->iem.s.abOpcode[offOpcode + 1],
                                       pVCpu->iem.s.abOpcode[offOpcode + 2],
                                       pVCpu->iem.s.abOpcode[offOpcode + 3]);
-    *pu64 = i32;
+    *pu64 = (uint64_t)(int64_t)i32;
     pVCpu->iem.s.offOpcode = offOpcode + 4;
     return VINF_SUCCESS;
 }
@@ -1176,7 +1176,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32SxU64(PVMCPUCC pVCpu, uint64_t *pu64
             return rcStrict2; \
     } while (0)
 # else
-#  define IEM_OPCODE_GET_NEXT_S32_SX_U64(a_pu64) (*(a_pu64) = (int32_t)iemOpcodeGetNextU32Jmp(pVCpu))
+#  define IEM_OPCODE_GET_NEXT_S32_SX_U64(a_pu64) (*(a_pu64) = (uint64_t)(int64_t)(int32_t)iemOpcodeGetNextU32Jmp(pVCpu))
 # endif
 
 # ifndef IEM_WITH_SETJMP
