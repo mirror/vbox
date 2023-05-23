@@ -68,8 +68,21 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
    include $(PATH_SUB_CURRENT)/tstClipboardQt/Makefile.kmk
   endif
 
-
  endif
+
+ ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+   PROGRAMS += tstClipboardHttpServer
+   tstClipboardHttpServer_TEMPLATE = VBoxR3TstExe
+   tstClipboardHttpServer_SOURCES  = \
+  	tstClipboardHttpServer.cpp \
+  	../clipboard-common.cpp \
+  	../clipboard-transfers.cpp \
+  	../clipboard-transfers-http.cpp
+   tstClipboardHttpServer_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+  endif
+ endif
+
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)

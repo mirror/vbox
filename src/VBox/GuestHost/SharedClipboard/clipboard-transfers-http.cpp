@@ -44,8 +44,6 @@
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/list.h>
-#define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
-#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/message.h>
 #include <iprt/path.h>
@@ -55,6 +53,9 @@
 #include <iprt/thread.h>
 #include <iprt/uuid.h>
 #include <iprt/vfs.h>
+
+#define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
+#include <iprt/log.h>
 
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/GuestHost/SharedClipboard-x11.h>
@@ -77,7 +78,8 @@ typedef struct _SHCLHTTPSERVERTRANSFER
     RTCRITSECT          CritSect;
     /** The handle we're going to use for this HTTP transfer. */
     SHCLOBJHANDLE       hObj;
-    /** The virtual path of the HTTP server's root directory for this transfer. */
+    /** The virtual path of the HTTP server's root directory for this transfer.
+     *  Always has to start with a "/". */
     char                szPathVirtual[RTPATH_MAX];
 } SHCLHTTPSERVERTRANSFER;
 typedef SHCLHTTPSERVERTRANSFER *PSHCLHTTPSERVERTRANSFER;
@@ -88,59 +90,7 @@ typedef SHCLHTTPSERVERTRANSFER *PSHCLHTTPSERVERTRANSFER;
 *********************************************************************************************************************************/
 static int shClTransferHttpServerDestroyInternal(PSHCLHTTPSERVER pThis);
 static const char *shClTransferHttpServerGetHost(PSHCLHTTPSERVER pSrv);
-
-
-/*********************************************************************************************************************************
-*   Public Shared Clipboard HTTP transfer functions                                                                              *
-*********************************************************************************************************************************/
-
-/**
- * Registers a Shared Clipboard transfer to a HTTP context.
- *
- * @returns VBox status code.
- * @param   pCtx                HTTP context to register transfer for.
- * @param   pTransfer           Transfer to register.
- */
-int ShClHttpTransferRegister(PSHCLHTTPCONTEXT pCtx, PSHCLTRANSFER pTransfer)
-{
-    int rc = VINF_SUCCESS;
-
-    /* Start the built-in HTTP server to serve file(s). */
-    if (!ShClTransferHttpServerIsRunning(&pCtx->HttpServer)) /* Only one HTTP server per transfer context. */
-        rc = ShClTransferHttpServerCreate(&pCtx->HttpServer, NULL /* puPort */);
-
-    if (RT_SUCCESS(rc))
-        rc = ShClTransferHttpServerRegisterTransfer(&pCtx->HttpServer, pTransfer);
-
-    return rc;
-}
-
-/**
- * Unregisters a formerly registered Shared Clipboard transfer.
- *
- * @returns VBox status code.
- * @param   pCtx                HTTP context to unregister transfer from.
- * @param   pTransfer           Transfer to unregister.
- */
-int ShClHttpTransferUnregister(PSHCLHTTPCONTEXT pCtx, PSHCLTRANSFER pTransfer)
-{
-    int rc = VINF_SUCCESS;
-
-    if (ShClTransferHttpServerIsRunning(&pCtx->HttpServer))
-    {
-        /* Try unregistering transfer (if it was registered before). */
-        rc = ShClTransferHttpServerUnregisterTransfer(&pCtx->HttpServer, pTransfer);
-        if (RT_SUCCESS(rc))
-        {
-            /* No more registered transfers left? Tear down the HTTP server instance then. */
-            if (ShClTransferHttpServerGetTransferCount(&pCtx->HttpServer) == 0)
-                rc = ShClTransferHttpServerDestroy(&pCtx->HttpServer);
-        }
-        AssertRC(rc);
-    }
-
-    return rc;
-}
+static int shClTransferHttpServerDestroyTransfer(PSHCLHTTPSERVER pSrv, PSHCLHTTPSERVERTRANSFER pSrvTx);
 
 
 /*********************************************************************************************************************************
@@ -155,7 +105,7 @@ DECLINLINE(void) shClHttpTransferLock(PSHCLHTTPSERVERTRANSFER pSrvTx)
 
 DECLINLINE(void) shClHttpTransferUnlock(PSHCLHTTPSERVERTRANSFER pSrvTx)
 {
-    int rc2 = RTCritSectEnter(&pSrvTx->CritSect);
+    int rc2 = RTCritSectLeave(&pSrvTx->CritSect);
     AssertRC(rc2);
 }
 
@@ -247,7 +197,9 @@ static int shClTransferHttpGetTransferRoots(PSHCLHTTPSERVER pThis, PSHCLHTTPSERV
 
     if (pSrvTx->pRootList == NULL)
     {
-        AssertPtr(pSrvTx->pTransfer);
+        AssertMsgReturn(ShClTransferRootsCount(pSrvTx->pTransfer) == 1,
+                        ("At the moment only single files are supported!\n"), VERR_NOT_SUPPORTED);
+
         rc = ShClTransferRootsGet(pSrvTx->pTransfer, &pSrvTx->pRootList);
     }
 
@@ -259,43 +211,59 @@ static int shClTransferHttpGetTransferRoots(PSHCLHTTPSERVER pThis, PSHCLHTTPSERV
 *   HTTP server callback implementations                                                                                         *
 *********************************************************************************************************************************/
 
-/** @copydoc RTHTTPSERVERCALLBACKS::pfnOpen */
-static DECLCALLBACK(int) shClTransferHttpOpen(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq, void **ppvHandle)
+/** @copydoc RTHTTPSERVERCALLBACKS::pfnRequestBegin */
+static DECLCALLBACK(int) shClTransferHttpBegin(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq)
 {
-    PSHCLHTTPSERVER pThis = (PSHCLHTTPSERVER)pData->pvUser;
+    PSHCLHTTPSERVER pThis = (PSHCLHTTPSERVER)pData->pvUser; RT_NOREF(pThis);
     Assert(pData->cbUser == sizeof(SHCLHTTPSERVER));
 
-    int rc;
+    LogRel2(("Shared Clipboard: HTTP request begin\n"));
 
     PSHCLHTTPSERVERTRANSFER pSrvTx = shClTransferHttpGetTransferFromUrl(pThis, pReq->pszUrl);
     if (pSrvTx)
     {
         shClHttpTransferLock(pSrvTx);
+        pReq->pvUser = pSrvTx;
+    }
 
-        AssertPtr(pSrvTx->pTransfer);
+    return VINF_SUCCESS;
+}
 
-        SHCLOBJOPENCREATEPARMS openParms;
-        rc = ShClTransferObjOpenParmsInit(&openParms);
-        if (RT_SUCCESS(rc))
-        {
-            openParms.fCreate = SHCL_OBJ_CF_ACCESS_READ
-                              | SHCL_OBJ_CF_ACCESS_DENYWRITE;
+/** @copydoc RTHTTPSERVERCALLBACKS::pfnRequestEnd */
+static DECLCALLBACK(int) shClTransferHttpEnd(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq)
+{
+    PSHCLHTTPSERVER pThis = (PSHCLHTTPSERVER)pData->pvUser; RT_NOREF(pThis);
+    Assert(pData->cbUser == sizeof(SHCLHTTPSERVER));
 
-            rc = RTStrCopy(openParms.pszPath, openParms.cbPath, "foo"); /** @ŧodo BUGBUG !!!! */
-            if (RT_SUCCESS(rc))
-            {
-                rc = ShClTransferObjOpen(pSrvTx->pTransfer, &openParms, &pSrvTx->hObj);
-                if (RT_SUCCESS(rc))
-                {
-                    *ppvHandle = &pSrvTx->hObj;
-                    LogRel2(("Shared Clipboard: HTTP transfer (handle %RU64) started ...\n", pSrvTx->hObj));
-                }
-            }
+    LogRel2(("Shared Clipboard: HTTP request end\n"));
 
-            ShClTransferObjOpenParmsDestroy(&openParms);
-        }
-
+    PSHCLHTTPSERVERTRANSFER pSrvTx = (PSHCLHTTPSERVERTRANSFER)pReq->pvUser;
+    if (pSrvTx)
+    {
         shClHttpTransferUnlock(pSrvTx);
+        pReq->pvUser = NULL;
+    }
+
+    return VINF_SUCCESS;
+
+}
+
+/** @copydoc RTHTTPSERVERCALLBACKS::pfnOpen */
+static DECLCALLBACK(int) shClTransferHttpOpen(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq, void **ppvHandle)
+{
+    PSHCLHTTPSERVER pThis = (PSHCLHTTPSERVER)pData->pvUser; RT_NOREF(pThis);
+    Assert(pData->cbUser == sizeof(SHCLHTTPSERVER));
+
+    int rc;
+
+    AssertPtr(pReq->pvUser);
+    PSHCLHTTPSERVERTRANSFER pSrvTx = (PSHCLHTTPSERVERTRANSFER)pReq->pvUser;
+    if (pSrvTx)
+    {
+        LogRel2(("Shared Clipboard: HTTP transfer (handle %RU64) started ...\n", pSrvTx->hObj));
+
+        Assert(pSrvTx->hObj != NIL_SHCLOBJHANDLE);
+        *ppvHandle = &pSrvTx->hObj;
     }
     else
         rc = VERR_NOT_FOUND;
@@ -308,29 +276,32 @@ static DECLCALLBACK(int) shClTransferHttpOpen(PRTHTTPCALLBACKDATA pData, PRTHTTP
 }
 
 /** @copydoc RTHTTPSERVERCALLBACKS::pfnRead */
-static DECLCALLBACK(int) shClTransferHttpRead(PRTHTTPCALLBACKDATA pData, void *pvHandle, void *pvBuf, size_t cbBuf, size_t *pcbRead)
+static DECLCALLBACK(int) shClTransferHttpRead(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq,
+                                              void *pvHandle, void *pvBuf, size_t cbBuf, size_t *pcbRead)
 {
-    PSHCLHTTPSERVER pThis = (PSHCLHTTPSERVER)pData->pvUser;
-    Assert(pData->cbUser == sizeof(SHCLHTTPSERVER));
-
-    RT_NOREF(pvBuf, cbBuf, pcbRead);
+    RT_NOREF(pData);
 
     int rc;
 
-    PSHCLHTTPSERVERTRANSFER pSrvTx = shClTransferHttpGetTransferFromHandle(pThis, pvHandle);
+    LogRel3(("Shared Clipboard: Reading %RU32 bytes from HTTP ...\n", cbBuf));
+
+    AssertPtr(pReq->pvUser);
+    PSHCLHTTPSERVERTRANSFER pSrvTx = (PSHCLHTTPSERVERTRANSFER)pReq->pvUser;
     if (pSrvTx)
     {
-        Assert(pSrvTx->hObj != SHCLOBJHANDLE_INVALID);
-
-        uint32_t cbRead;
-        rc = ShClTransferObjRead(pSrvTx->pTransfer, pSrvTx->hObj, pvBuf, cbBuf, 0 /* fFlags */, &cbRead);
-        if (RT_SUCCESS(rc))
+        PSHCLOBJHANDLE phObj = (PSHCLOBJHANDLE)pvHandle;
+        if (phObj)
         {
-            *pcbRead = (uint32_t)cbRead;
-        }
+            uint32_t cbRead;
+            rc = ShClTransferObjRead(pSrvTx->pTransfer, *phObj, pvBuf, cbBuf, 0 /* fFlags */, &cbRead);
+            if (RT_SUCCESS(rc))
+                *pcbRead = (uint32_t)cbRead;
 
-        if (RT_FAILURE(rc))
-            LogRel(("Shared Clipboard: Error reading HTTP transfer (handle %RU64), rc=%Rrc\n", pSrvTx->hObj, rc));
+            if (RT_FAILURE(rc))
+                LogRel(("Shared Clipboard: Error reading HTTP transfer (handle %RU64), rc=%Rrc\n", *phObj, rc));
+        }
+        else
+            rc = VERR_NOT_FOUND;
     }
     else
         rc = VERR_NOT_FOUND;
@@ -340,30 +311,32 @@ static DECLCALLBACK(int) shClTransferHttpRead(PRTHTTPCALLBACKDATA pData, void *p
 }
 
 /** @copydoc RTHTTPSERVERCALLBACKS::pfnClose */
-static DECLCALLBACK(int) shClTransferHttpClose(PRTHTTPCALLBACKDATA pData, void *pvHandle)
+static DECLCALLBACK(int) shClTransferHttpClose(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq, void *pvHandle)
 {
-    PSHCLHTTPSERVER pThis = (PSHCLHTTPSERVER)pData->pvUser;
-    Assert(pData->cbUser == sizeof(SHCLHTTPSERVER));
+    RT_NOREF(pData);
 
     int rc;
 
-    PSHCLHTTPSERVERTRANSFER pSrvTx = shClTransferHttpGetTransferFromHandle(pThis, pvHandle);
+    AssertPtr(pReq->pvUser);
+    PSHCLHTTPSERVERTRANSFER pSrvTx = (PSHCLHTTPSERVERTRANSFER)pReq->pvUser;
     if (pSrvTx)
     {
-        shClHttpTransferLock(pSrvTx);
-
-        Assert(pSrvTx->hObj != SHCLOBJHANDLE_INVALID);
-        rc = ShClTransferObjClose(pSrvTx->pTransfer, pSrvTx->hObj);
-        if (RT_SUCCESS(rc))
+        PSHCLOBJHANDLE phObj = (PSHCLOBJHANDLE)pvHandle;
+        if (phObj)
         {
-            pSrvTx->hObj = SHCLOBJHANDLE_INVALID;
-            LogRel2(("Shared Clipboard: HTTP transfer %RU16 done\n", pSrvTx->pTransfer->State.uID));
+            Assert(*phObj != NIL_SHCLOBJHANDLE);
+            rc = ShClTransferObjClose(pSrvTx->pTransfer, *phObj);
+            if (RT_SUCCESS(rc))
+            {
+                pSrvTx->hObj = NIL_SHCLOBJHANDLE;
+                LogRel2(("Shared Clipboard: HTTP transfer %RU16 done\n", pSrvTx->pTransfer->State.uID));
+            }
+
+            if (RT_FAILURE(rc))
+                LogRel(("Shared Clipboard: Error closing HTTP transfer (handle %RU64), rc=%Rrc\n", *phObj, rc));
         }
-
-        if (RT_FAILURE(rc))
-            LogRel(("Shared Clipboard: Error closing HTTP transfer (handle %RU64), rc=%Rrc\n", pSrvTx->hObj, rc));
-
-        shClHttpTransferUnlock(pSrvTx);
+        else
+            rc = VERR_NOT_FOUND;
     }
     else
         rc = VERR_NOT_FOUND;
@@ -376,24 +349,61 @@ static DECLCALLBACK(int) shClTransferHttpClose(PRTHTTPCALLBACKDATA pData, void *
 static DECLCALLBACK(int) shClTransferHttpQueryInfo(PRTHTTPCALLBACKDATA pData,
                                                    PRTHTTPSERVERREQ pReq, PRTFSOBJINFO pObjInfo, char **ppszMIMEHint)
 {
+    RT_NOREF(ppszMIMEHint);
+
     PSHCLHTTPSERVER pThis = (PSHCLHTTPSERVER)pData->pvUser;
     Assert(pData->cbUser == sizeof(SHCLHTTPSERVER));
 
     int rc;
 
-    PSHCLHTTPSERVERTRANSFER pSrvTx = shClTransferHttpGetTransferFromUrl(pThis, pReq->pszUrl);
+    PSHCLHTTPSERVERTRANSFER pSrvTx = (PSHCLHTTPSERVERTRANSFER)pReq->pvUser;
     if (pSrvTx)
     {
-        shClHttpTransferLock(pSrvTx);
-
         rc = shClTransferHttpGetTransferRoots(pThis, pSrvTx);
+        if (RT_SUCCESS(rc))
+        {
+            SHCLOBJOPENCREATEPARMS openParms;
+            rc = ShClTransferObjOpenParmsInit(&openParms);
+            if (RT_SUCCESS(rc))
+            {
+                openParms.fCreate = SHCL_OBJ_CF_ACCESS_READ
+                                  | SHCL_OBJ_CF_ACCESS_DENYWRITE;
 
-        shClHttpTransferUnlock(pSrvTx);
+                PSHCLTRANSFER pTx = pSrvTx->pTransfer;
+                AssertPtr(pTx);
+
+                /* For now we only serve single files, hence index 0 below. */
+                SHCLROOTLISTENTRY ListEntry;
+                rc = ShClTransferRootsEntry(pTx, 0 /* First file */, &ListEntry);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTStrCopy(openParms.pszPath, openParms.cbPath, ListEntry.pszName);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = ShClTransferObjOpen(pTx, &openParms, &pSrvTx->hObj);
+                        if (RT_SUCCESS(rc))
+                        {
+                            char szPath[RTPATH_MAX];
+                            rc = ShClTransferGetRootPathAbs(pTx, szPath, sizeof(szPath));
+                            if (RT_SUCCESS(rc))
+                            {
+                                rc = RTPathAppend(szPath, sizeof(szPath), openParms.pszPath);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    /* Now that the object is locked, query information that we can return. */
+                                    rc = RTPathQueryInfo(szPath, pObjInfo, RTFSOBJATTRADD_NOTHING);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                ShClTransferObjOpenParmsDestroy(&openParms);
+            }
+        }
     }
     else
         rc = VERR_NOT_FOUND;
-
-    RT_NOREF(pObjInfo, ppszMIMEHint);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -421,23 +431,26 @@ static DECLCALLBACK(int) shClTransferHttpDestroy(PRTHTTPCALLBACKDATA pData)
  */
 static int shClTransferHttpServerDestroyInternal(PSHCLHTTPSERVER pSrv)
 {
+    int rc = VINF_SUCCESS;
+
     PSHCLHTTPSERVERTRANSFER pSrvTx, pSrvTxNext;
     RTListForEachSafe(&pSrv->lstTransfers, pSrvTx, pSrvTxNext, SHCLHTTPSERVERTRANSFER, Node)
     {
-        RTListNodeRemove(&pSrvTx->Node);
-
-        RTMemFree(pSrvTx);
-        pSrvTx = NULL;
+        int rc2 = shClTransferHttpServerDestroyTransfer(pSrv, pSrvTx);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
 
     RTHttpServerResponseDestroy(&pSrv->Resp);
 
     pSrv->hHTTPServer = NIL_RTHTTPSERVER;
 
-    int rc = VINF_SUCCESS;
-
     if (RTCritSectIsInitialized(&pSrv->CritSect))
-        rc = RTCritSectDelete(&pSrv->CritSect);
+    {
+        int rc2 = RTCritSectDelete(&pSrv->CritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
 
     return rc;
 }
@@ -497,19 +510,48 @@ void ShClTransferHttpServerInit(PSHCLHTTPSERVER pSrv)
 }
 
 /**
+ * Returns whether a given TCP port is known to be buggy or not.
+ *
+ * @returns \c true if the given port is known to be buggy, or \c false if not.
+ * @param   uPort               TCP port to check.
+ */
+static bool shClTransferHttpServerPortIsBuggy(uint16_t uPort)
+{
+    uint16_t const aBuggyPorts[] = {
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+        /* GNOME Nautilus ("Files") v43 is unable download HTTP files from this port. */
+        8080
+#else   /* Prevents zero-sized arrays. */
+        0
+#endif
+    };
+
+    for (size_t i = 0; i < RT_ELEMENTS(aBuggyPorts); i++)
+        if (uPort == aBuggyPorts[i])
+            return true;
+    return false;
+}
+
+/**
  * Creates a new Shared Clipboard HTTP server instance, extended version.
  *
  * @returns VBox status code.
+ * @return  VERR_ADDRESS_CONFLICT if the port is already taken or the port is known to be buggy.
  * @param   pSrv                HTTP server instance to create.
  * @param   uPort               TCP port number to use.
  */
 int ShClTransferHttpServerCreateEx(PSHCLHTTPSERVER pSrv, uint16_t uPort)
 {
     AssertPtrReturn(pSrv, VERR_INVALID_POINTER);
+    AssertReturn(uPort, VERR_INVALID_PARAMETER);
+
+    AssertReturn(!shClTransferHttpServerPortIsBuggy(uPort), VERR_ADDRESS_CONFLICT);
 
     RTHTTPSERVERCALLBACKS Callbacks;
     RT_ZERO(Callbacks);
 
+    Callbacks.pfnRequestBegin  = shClTransferHttpBegin;
+    Callbacks.pfnRequestEnd    = shClTransferHttpEnd;
     Callbacks.pfnOpen          = shClTransferHttpOpen;
     Callbacks.pfnRead          = shClTransferHttpRead;
     Callbacks.pfnClose         = shClTransferHttpClose;
@@ -541,33 +583,37 @@ int ShClTransferHttpServerCreateEx(PSHCLHTTPSERVER pSrv, uint16_t uPort)
 }
 
 /**
- * Creates a new Shared Clipboard HTTP server instance.
+ * Creates a new Shared Clipboard HTTP server instance using a random port (>= 1024).
  *
- * This does automatic probing of TCP ports if one already is being used.
+ * This does automatic probing of TCP ports if a port already is being used.
  *
  * @returns VBox status code.
  * @param   pSrv                HTTP server instance to create.
+ * @param   cMaxAttempts        Maximum number of attempts to create a HTTP server.
  * @param   puPort              Where to return the TCP port number being used on success. Optional.
  */
-int ShClTransferHttpServerCreate(PSHCLHTTPSERVER pSrv, uint16_t *puPort)
+int ShClTransferHttpServerCreate(PSHCLHTTPSERVER pSrv, unsigned cMaxAttempts, uint16_t *puPort)
 {
     AssertPtrReturn(pSrv, VERR_INVALID_POINTER);
+    AssertReturn(cMaxAttempts, VERR_INVALID_PARAMETER);
     /* puPort is optional. */
-
-    /** @todo Try favorite ports first (e.g. 8080, 8000, ...)? */
 
     RTRAND hRand;
     int rc = RTRandAdvCreateSystemFaster(&hRand); /* Should be good enough for this task. */
     if (RT_SUCCESS(rc))
     {
         uint16_t uPort;
-        for (int i = 0; i < 32; i++)
+        unsigned i = 0;
+        for (i; i < cMaxAttempts; i++)
         {
-#ifdef DEBUG_andy
-            uPort = 8080; /* Make the port predictable, but only for me, mwahaha! :-). */
-#else
+            /* Try some random ports above 1024 (i.e. "unprivileged ports") -- required, as VBoxClient runs as a user process
+             * on the guest. */
             uPort = RTRandAdvU32Ex(hRand, 1024, UINT16_MAX);
-#endif
+
+            /* If the port selected turns is known to be buggy for whatever reason, skip it and try another one. */
+            if (shClTransferHttpServerPortIsBuggy(uPort))
+                continue;
+
             rc = ShClTransferHttpServerCreateEx(pSrv, (uint32_t)uPort);
             if (RT_SUCCESS(rc))
             {
@@ -576,6 +622,10 @@ int ShClTransferHttpServerCreate(PSHCLHTTPSERVER pSrv, uint16_t *puPort)
                 break;
             }
         }
+
+        if (   RT_FAILURE(rc)
+            && i == cMaxAttempts)
+            LogRel(("Shared Clipboard: Maximum attempts to create HTTP server reached (%u), giving up\n", cMaxAttempts));
 
         RTRandAdvDestroy(hRand);
     }
@@ -596,8 +646,6 @@ int ShClTransferHttpServerDestroy(PSHCLHTTPSERVER pSrv)
     if (pSrv->hHTTPServer == NIL_RTHTTPSERVER)
         return VINF_SUCCESS;
 
-    Assert(pSrv->cTransfers == 0); /* Sanity. */
-
     int rc = RTHttpServerDestroy(pSrv->hHTTPServer);
     if (RT_SUCCESS(rc))
         rc = shClTransferHttpServerDestroyInternal(pSrv);
@@ -611,18 +659,73 @@ int ShClTransferHttpServerDestroy(PSHCLHTTPSERVER pSrv)
 }
 
 /**
+ * Returns the host name (scheme) of a HTTP server instance.
+ *
+ * @returns Host name (scheme).
+ * @param   pSrv                HTTP server instance to return host name (scheme) for.
+ *
+ * @note    This is hardcoded to "localhost" for now.
+ */
+static const char *shClTransferHttpServerGetHost(PSHCLHTTPSERVER pSrv)
+{
+    RT_NOREF(pSrv);
+    return "http://localhost"; /* Hardcoded for now. */
+}
+
+/**
+ * Destroys a server transfer, internal version.
+ *
+ * @returns VBox status code.
+ * @param   pSrv                HTTP server instance to unregister transfer from.
+ * @param   pTransfer           Server transfer to destroy
+ *                              The pointer will be invalid on success.
+ */
+static int shClTransferHttpServerDestroyTransfer(PSHCLHTTPSERVER pSrv, PSHCLHTTPSERVERTRANSFER pSrvTx)
+{
+    RTListNodeRemove(&pSrvTx->Node);
+
+    Assert(pSrv->cTransfers);
+    pSrv->cTransfers--;
+
+    LogFunc(("pTransfer=%p, idTransfer=%RU16, szPath=%s -> %RU32 transfers\n",
+             pSrvTx->pTransfer, pSrvTx->pTransfer->State.uID, pSrvTx->szPathVirtual, pSrv->cTransfers));
+
+    LogRel2(("Shared Clipboard: Destroyed HTTP transfer %RU16, now %RU32 HTTP transfers total\n",
+             pSrvTx->pTransfer->State.uID, pSrv->cTransfers));
+
+    int rc = RTCritSectDelete(&pSrvTx->CritSect);
+    AssertRCReturn(rc, rc);
+
+    RTMemFree(pSrvTx);
+    pSrvTx = NULL;
+
+    return rc;
+}
+
+
+/*********************************************************************************************************************************
+*   Public Shared Clipboard HTTP server functions                                                                                *
+*********************************************************************************************************************************/
+
+/**
  * Registers a Shared Clipboard transfer to a HTTP server instance.
  *
  * @returns VBox status code.
  * @param   pSrv                HTTP server instance to register transfer for.
- * @param   pTransfer           Transfer to register.
+ * @param   pTransfer           Transfer to register. Needs to be on the heap.
  */
 int ShClTransferHttpServerRegisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pSrv, VERR_INVALID_POINTER);
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
-    AssertReturn(pTransfer->State.uID, VERR_INVALID_PARAMETER); /* Paranoia. */
+    AssertMsgReturn(pTransfer->State.uID, ("Transfer needs to be registered with a transfer context first\n"),
+                    VERR_INVALID_PARAMETER);
+
+    uint32_t const cRoots = ShClTransferRootsCount(pTransfer);
+    AssertMsgReturn(cRoots  > 0, ("Transfer has no root entries\n"), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cRoots == 1, ("Only single files are supported for now\n"), VERR_NOT_SUPPORTED);
+    /** @todo Check for directories? */
 
     shClTransferHttpServerLock(pSrv);
 
@@ -640,27 +743,36 @@ int ShClTransferHttpServerRegisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER p
             rc = RTCritSectInit(&pSrvTx->CritSect);
             AssertRC(rc);
 
-            /* Create the virtual HTTP path for the transfer.
-             * Every transfer has a dedicated HTTP path. */
+            SHCLROOTLISTENTRY ListEntry;
+            rc = ShClTransferRootsEntry(pTransfer, 0 /* First file */, &ListEntry);
+            if (RT_SUCCESS(rc))
+            {
 #ifdef DEBUG_andy
-            ssize_t cch = RTStrPrintf2(pSrvTx->szPathVirtual, sizeof(pSrvTx->szPathVirtual), "/d1bbda60-80b7-45dc-a41c-ac4686c1d988/10664");
+                /* Create the virtual HTTP path for the transfer.
+                 * Every transfer has a dedicated HTTP path (but live in the same URL namespace). */
+                ssize_t cch = RTStrPrintf2(pSrvTx->szPathVirtual, sizeof(pSrvTx->szPathVirtual), "/%s/uuid/%RU32/%s",
+                                           SHCL_HTTPT_URL_NAMESPACE, pSrv->cTransfers, ListEntry.pszName);
 #else
-            ssize_t cch = RTStrPrintf2(pSrvTx->szPathVirtual, sizeof(pSrvTx->szPathVirtual), "%s/%RU16/", szUuid, pTransfer->State.uID);
+                /* Create the virtual HTTP path for the transfer.
+                 * Every transfer has a dedicated HTTP path (but live in the same URL namespace). */
+                ssize_t cch = RTStrPrintf2(pSrvTx->szPathVirtual, sizeof(pSrvTx->szPathVirtual), "/%s/%s/%RU16/%s",
+                                           SHCL_HTTPT_URL_NAMESPACE, szUuid, pTransfer->State.uID, ListEntry.pszName);
 #endif
-            AssertReturn(cch, VERR_BUFFER_OVERFLOW);
+                AssertReturn(cch, VERR_BUFFER_OVERFLOW);
 
-            pSrvTx->pTransfer = pTransfer;
-            pSrvTx->pRootList = NULL;
-            pSrvTx->hObj      = SHCLOBJHANDLE_INVALID;
+                pSrvTx->pTransfer = pTransfer;
+                pSrvTx->pRootList = NULL;
+                pSrvTx->hObj      = NIL_SHCLOBJHANDLE;
 
-            RTListAppend(&pSrv->lstTransfers, &pSrvTx->Node);
-            pSrv->cTransfers++;
+                RTListAppend(&pSrv->lstTransfers, &pSrvTx->Node);
+                pSrv->cTransfers++;
 
-            LogFunc(("pTransfer=%p, idTransfer=%RU16, szPath=%s -> %RU32 transfers\n",
-                     pSrvTx->pTransfer, pSrvTx->pTransfer->State.uID, pSrvTx->szPathVirtual, pSrv->cTransfers));
+                LogFunc(("pTransfer=%p, idTransfer=%RU16, szPath=%s -> %RU32 transfers\n",
+                         pSrvTx->pTransfer, pSrvTx->pTransfer->State.uID, pSrvTx->szPathVirtual, pSrv->cTransfers));
 
-            LogRel2(("Shared Clipboard: Registered HTTP transfer %RU16, now %RU32 HTTP transfers total\n",
-                     pTransfer->State.uID, pSrv->cTransfers));
+                LogRel2(("Shared Clipboard: Registered HTTP transfer %RU16, now %RU32 HTTP transfers total\n",
+                         pTransfer->State.uID, pSrv->cTransfers));
+            }
         }
     }
 
@@ -697,24 +809,7 @@ int ShClTransferHttpServerUnregisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER
         AssertPtr(pSrvTx->pTransfer);
         if (pSrvTx->pTransfer->State.uID == pTransfer->State.uID)
         {
-            RTListNodeRemove(&pSrvTx->Node);
-
-            Assert(pSrv->cTransfers);
-            pSrv->cTransfers--;
-
-            LogFunc(("pTransfer=%p, idTransfer=%RU16, szPath=%s -> %RU32 transfers\n",
-                     pSrvTx->pTransfer, pSrvTx->pTransfer->State.uID, pSrvTx->szPathVirtual, pSrv->cTransfers));
-
-            LogRel2(("Shared Clipboard: Unregistered HTTP transfer %RU16, now %RU32 HTTP transfers total\n",
-                     pTransfer->State.uID, pSrv->cTransfers));
-
-            rc = RTCritSectDelete(&pSrvTx->CritSect);
-            AssertRC(rc);
-
-            RTMemFree(pSrvTx);
-            pSrvTx = NULL;
-
-            rc = VINF_SUCCESS;
+            rc = shClTransferHttpServerDestroyTransfer(pSrv, pSrvTx);
             break;
         }
     }
@@ -784,19 +879,6 @@ uint32_t ShClTransferHttpServerGetTransferCount(PSHCLHTTPSERVER pSrv)
 }
 
 /**
- * Returns the host name (scheme) of a HTTP server instance.
- *
- * @param   pSrv                HTTP server instance to return host name (scheme) for.
- *
- * @returns Host name (scheme).
- */
-static const char *shClTransferHttpServerGetHost(PSHCLHTTPSERVER pSrv)
-{
-    RT_NOREF(pSrv);
-    return "http://localhost"; /* Hardcoded for now. */
-}
-
-/**
  * Returns an allocated string with a HTTP server instance's address.
  *
  * @returns Allocated string with a HTTP server instance's address, or NULL on OOM.
@@ -823,6 +905,7 @@ char *ShClTransferHttpServerGetAddressA(PSHCLHTTPSERVER pSrv)
  * @returns Allocated string with the URL of a given Shared Clipboard transfer ID, or NULL if not found.
  *          Needs to be free'd by the caller using RTStrFree().
  * @param   pSrv                HTTP server instance to return URL for.
+ * @param   idTransfer          Transfer ID to return the URL for.
  */
 char *ShClTransferHttpServerGetUrlA(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTransfer)
 {
@@ -840,7 +923,7 @@ char *ShClTransferHttpServerGetUrlA(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTrans
     }
 
     AssertReturn(RTStrNLen(pSrvTx->szPathVirtual, RTPATH_MAX), NULL);
-    char *pszUrl = RTStrAPrintf2("%s:%RU16/%s", shClTransferHttpServerGetHost(pSrv), pSrv->uPort, pSrvTx->szPathVirtual);
+    char *pszUrl = RTStrAPrintf2("%s:%RU16%s", shClTransferHttpServerGetHost(pSrv), pSrv->uPort, pSrvTx->szPathVirtual);
     AssertPtr(pszUrl);
 
     shClTransferHttpServerUnlock(pSrv);
@@ -860,3 +943,57 @@ bool ShClTransferHttpServerIsRunning(PSHCLHTTPSERVER pSrv)
 
     return (pSrv->hHTTPServer != NIL_RTHTTPSERVER); /* Seems enough for now. */
 }
+
+
+/*********************************************************************************************************************************
+*   Public Shared Clipboard HTTP context functions                                                                               *
+*********************************************************************************************************************************/
+
+/**
+ * Registers a Shared Clipboard transfer to a HTTP context and starts the HTTP server, if not started already.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                HTTP context to register transfer for.
+ * @param   pTransfer           Transfer to register.
+ */
+int ShClHttpTransferRegisterAndMaybeStart(PSHCLHTTPCONTEXT pCtx, PSHCLTRANSFER pTransfer)
+{
+    int rc = VINF_SUCCESS;
+
+    /* Start the built-in HTTP server to serve file(s). */
+    if (!ShClTransferHttpServerIsRunning(&pCtx->HttpServer)) /* Only one HTTP server per transfer context. */
+        rc = ShClTransferHttpServerCreate(&pCtx->HttpServer, 32 /* cMaxAttempts */, NULL /* puPort */);
+
+    if (RT_SUCCESS(rc))
+        rc = ShClTransferHttpServerRegisterTransfer(&pCtx->HttpServer, pTransfer);
+
+    return rc;
+}
+
+/**
+ * Unregisters a formerly registered Shared Clipboard transfer and stops the HTTP server, if no transfers are left.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                HTTP context to unregister transfer from.
+ * @param   pTransfer           Transfer to unregister.
+ */
+int ShClHttpTransferUnregisterAndMaybeStop(PSHCLHTTPCONTEXT pCtx, PSHCLTRANSFER pTransfer)
+{
+    int rc = VINF_SUCCESS;
+
+    if (ShClTransferHttpServerIsRunning(&pCtx->HttpServer))
+    {
+        /* Try unregistering transfer (if it was registered before). */
+        rc = ShClTransferHttpServerUnregisterTransfer(&pCtx->HttpServer, pTransfer);
+        if (RT_SUCCESS(rc))
+        {
+            /* No more registered transfers left? Tear down the HTTP server instance then. */
+            if (ShClTransferHttpServerGetTransferCount(&pCtx->HttpServer) == 0)
+                rc = ShClTransferHttpServerDestroy(&pCtx->HttpServer);
+        }
+        AssertRC(rc);
+    }
+
+    return rc;
+}
+

@@ -72,6 +72,9 @@ typedef struct RTHTTPSERVERREQ
     RTHTTPHEADERLIST hHdrLst;
     /** Request body data. */
     RTHTTPBODY       Body;
+    /** User-supplied (opaque) pointer.
+     *  Can be used for faster lookups between callbacks. */
+    void            *pvUser;
 } RTHTTPSERVERREQ;
 /** Pointer to a HTTP client request. */
 typedef RTHTTPSERVERREQ *PRTHTTPSERVERREQ;
@@ -133,7 +136,25 @@ typedef RTHTTPCALLBACKDATA *PRTHTTPCALLBACKDATA;
 typedef struct RTHTTPSERVERCALLBACKS
 {
     /**
-     * Called before a given URL will be retrieved by the GET method.
+     * Called before beginning to process a request. Guaranteed.
+     *
+     * @returns VBox status code.
+     * @param   pData           Pointer to HTTP callback data.
+     * @param   pReq            Pointer to request to handle.
+     */
+    DECLCALLBACKMEMBER(int, pfnRequestBegin,(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq));
+    /**
+     * Called after processing a request. Guaranteed.
+     *
+     * @returns VBox status code.
+     * @param   pData           Pointer to HTTP callback data.
+     * @param   pReq            Pointer to request to handle.
+     */
+    DECLCALLBACKMEMBER(int, pfnRequestEnd,(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq));
+    /**
+     * Opens a resource for a GET request.
+     *
+     * Will be called as as a second function for a GET request.
      *
      * Note: High level function, not being called when pfnOnGetRequest is implemented.
      *
@@ -144,34 +165,37 @@ typedef struct RTHTTPSERVERCALLBACKS
      */
     DECLCALLBACKMEMBER(int, pfnOpen,(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq, void **ppvHandle));
     /**
-     * Called when a given URL will be retrieved by the GET method.
+     * Reads a resource for a GET request.
      *
      * Note:  High level function, not being called when pfnOnGetRequest is implemented.
      * Note2: Can be called multiple times, based on the body size to send.
      *
      * @returns VBox status code.
      * @param   pData           Pointer to HTTP callback data.
+     * @param   pReq            Pointer to request to handle.
      * @param   pvHandle        Opaque handle for object identification.
      * @param   pvBuf           Pointer to buffer where to store the read data.
      * @param   cbBuf           Size (in bytes) of the buffer where to store the read data.
      * @param   pcbRead         Where to return the amount (in bytes) of read data. Optional and can be NULL.
      */
-    DECLCALLBACKMEMBER(int, pfnRead,(PRTHTTPCALLBACKDATA pData, void *pvHandle, void *pvBuf, size_t cbBuf, size_t *pcbRead));
+    DECLCALLBACKMEMBER(int, pfnRead,(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq, void *pvHandle, void *pvBuf, size_t cbBuf, size_t *pcbRead));
     /**
-     * Called when a given URL is done retrieving by the GET method.
+     * Closes a resouce for a GET a request.
      *
      * Note: High level function, not being called when pfnOnGetRequest is implemented.
      *
      * @returns VBox status code.
      * @param   pData           Pointer to HTTP callback data.
-     * @param   pszUrl          URL to handle.
+     * @param   pReq            Pointer to request to handle.
      * @param   pvHandle        Opaque handle for object identification.
      */
-    DECLCALLBACKMEMBER(int, pfnClose,(PRTHTTPCALLBACKDATA pData, void *pvHandle));
+    DECLCALLBACKMEMBER(int, pfnClose,(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq, void *pvHandle));
     /**
      * Queries information about a given URL.
      *
-     * Will be called with GET or HEAD request.
+     * Will be called as first function for a GET or HEAD request.
+     *
+     * Note: High level function, not being called when pfnOnGetRequest is implemented.*
      *
      * @returns VBox status code.
      * @param   pData           Pointer to HTTP callback data.

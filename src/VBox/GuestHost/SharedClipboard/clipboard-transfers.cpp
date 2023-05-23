@@ -48,6 +48,7 @@ static PSHCLTRANSFER shClTransferCtxGetTransferByIdInternal(PSHCLTRANSFERCTX pTr
 static PSHCLTRANSFER shClTransferCtxGetTransferByIndexInternal(PSHCLTRANSFERCTX pTransferCtx, uint32_t uIdx);
 static int shClConvertFileCreateFlags(uint32_t fShClFlags, uint64_t *pfOpen);
 static int shClTransferResolvePathAbs(PSHCLTRANSFER pTransfer, const char *pszPath, uint32_t fFlags, char **ppszResolved);
+static int shClTransferValidatePath(const char *pcszPath, bool fMustExist);
 
 /** @todo Split this file up in different modules. */
 
@@ -75,7 +76,7 @@ void ShClTransferRootListFree(PSHCLROOTLIST pRootList)
         return;
 
     for (uint32_t i = 0; i < pRootList->Hdr.cRoots; i++)
-        ShClTransferListEntryInit(&pRootList->paEntries[i]);
+        ShClTransferListEntryDestroy(&pRootList->paEntries[i]);
 
     RTMemFree(pRootList);
     pRootList = NULL;
@@ -106,7 +107,6 @@ void ShClTransferRootListHdrDestroy(PSHCLROOTLISTHDR pRootLstHdr)
     if (!pRootLstHdr)
         return;
 
-    pRootLstHdr->fRoots = 0;
     pRootLstHdr->cRoots = 0;
 }
 
@@ -192,7 +192,7 @@ int ShClTransferListHandleInfoInit(PSHCLLISTHANDLEINFO pInfo)
 {
     AssertPtrReturn(pInfo, VERR_INVALID_POINTER);
 
-    pInfo->hList   = SHCLLISTHANDLE_INVALID;
+    pInfo->hList   = NIL_SHCLLISTHANDLE;
     pInfo->enmType = SHCLOBJTYPE_INVALID;
 
     pInfo->pszPathLocalAbs = NULL;
@@ -555,22 +555,58 @@ PSHCLLISTENTRY ShClTransferListEntryDup(PSHCLLISTENTRY pListEntry)
 }
 
 /**
- * Initializes a clipboard list entry structure.
+ * Returns whether a given list entry name is valid or not.
+ *
+ * @returns \c true if valid, or \c false if not.
+ * @param   pszName             Name to check.
+ * @param   cbName              Size (in bytes) of \a pszName to check.
+ *                              Includes terminator.
+ */
+static bool shclTransferListEntryNameIsValid(const char *pszName, size_t cbName)
+{
+    if (!pszName)
+        return false;
+
+    size_t const cchLen = strlen(pszName);
+
+    if (  !cbName
+        || cchLen == 0
+        || cchLen > cbName                 /* Includes zero termination */ - 1
+        || cchLen > SHCLLISTENTRY_MAX_NAME /* Ditto */ - 1)
+    {
+        return false;
+    }
+
+    int rc = shClTransferValidatePath(pszName, false /* fMustExist */);
+    if (RT_FAILURE(rc))
+        return false;
+
+    return true;
+}
+
+/**
+ * Initializes a clipboard list entry structure, extended version.
  *
  * @returns VBox status code.
  * @param   pListEntry          Clipboard list entry structure to initialize.
+ * @param   pszName             Name (e.g. filename) to use. Can be NULL if not being used.
+ *                              Up to SHCLLISTENTRY_MAX_NAME characters.
  */
-int ShClTransferListEntryInit(PSHCLLISTENTRY pListEntry)
+int ShClTransferListEntryInitEx(PSHCLLISTENTRY pListEntry, const char *pszName)
 {
     AssertPtrReturn(pListEntry, VERR_INVALID_POINTER);
+    AssertReturn   (   pszName == NULL
+                    || shclTransferListEntryNameIsValid(pszName, strlen(pszName) + 1), VERR_INVALID_PARAMETER);
 
     RT_BZERO(pListEntry, sizeof(SHCLLISTENTRY));
 
-    pListEntry->pszName = RTStrAlloc(SHCLLISTENTRY_MAX_NAME);
-    if (!pListEntry->pszName)
-        return VERR_NO_MEMORY;
-
-    pListEntry->cbName = SHCLLISTENTRY_MAX_NAME;
+    if (pszName)
+    {
+        pListEntry->pszName = RTStrDup(pszName);
+        if (!pListEntry->pszName)
+            return VERR_NO_MEMORY;
+        pListEntry->cbName = strlen(pszName) + 1 /* Include terminator */;
+    }
 
     pListEntry->pvInfo = (PSHCLFSOBJINFO)RTMemAlloc(sizeof(SHCLFSOBJINFO));
     if (pListEntry->pvInfo)
@@ -582,6 +618,17 @@ int ShClTransferListEntryInit(PSHCLLISTENTRY pListEntry)
     }
 
     return VERR_NO_MEMORY;
+}
+
+/**
+ * Initializes a clipboard list entry structure (as empty / invalid).
+ *
+ * @returns VBox status code.
+ * @param   pListEntry          Clipboard list entry structure to initialize.
+ */
+int ShClTransferListEntryInit(PSHCLLISTENTRY pListEntry)
+{
+    return ShClTransferListEntryInitEx(pListEntry, NULL);
 }
 
 /**
@@ -620,13 +667,8 @@ bool ShClTransferListEntryIsValid(PSHCLLISTENTRY pListEntry)
 {
     AssertPtrReturn(pListEntry, false);
 
-    if (   !pListEntry->pszName
-        || !pListEntry->cbName
-        || strlen(pListEntry->pszName) == 0
-        || strlen(pListEntry->pszName) > pListEntry->cbName /* Includes zero termination */ - 1)
-    {
+    if (!shclTransferListEntryNameIsValid(pListEntry->pszName, pListEntry->cbName))
         return false;
-    }
 
     if (pListEntry->cbInfo) /* cbInfo / pvInfo is optional. */
     {
@@ -649,7 +691,7 @@ int ShClTransferObjCtxInit(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
 
     LogFlowFuncEnter();
 
-    pObjCtx->uHandle  = SHCLOBJHANDLE_INVALID;
+    pObjCtx->uHandle  = NIL_SHCLOBJHANDLE;
 
     return VINF_SUCCESS;
 }
@@ -675,7 +717,7 @@ void ShClTransferObjCtxDestroy(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
 bool ShClTransferObjCtxIsValid(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
 {
     return (   pObjCtx
-            && pObjCtx->uHandle != SHCLOBJHANDLE_INVALID);
+            && pObjCtx->uHandle != NIL_SHCLOBJHANDLE);
 }
 
 /**
@@ -688,7 +730,7 @@ int ShClTransferObjHandleInfoInit(PSHCLOBJHANDLEINFO pInfo)
 {
     AssertPtrReturn(pInfo, VERR_INVALID_POINTER);
 
-    pInfo->hObj    = SHCLOBJHANDLE_INVALID;
+    pInfo->hObj    = NIL_SHCLOBJHANDLE;
     pInfo->enmType = SHCLOBJTYPE_INVALID;
 
     pInfo->pszPathLocalAbs = NULL;
@@ -1259,6 +1301,8 @@ int ShClTransferDestroy(PSHCLTRANSFER pTransfer)
     if (!pTransfer)
         return VINF_SUCCESS;
 
+    AssertMsgReturn(pTransfer->cRefs == 0, ("Number of references > 0 (%RU32)\n", pTransfer->cRefs), VERR_WRONG_ORDER);
+
     LogFlowFuncEnter();
 
     int rc = shClTransferThreadDestroy(pTransfer, 30 * 1000 /* Timeout in ms */);
@@ -1283,6 +1327,8 @@ int ShClTransferDestroy(PSHCLTRANSFER pTransfer)
  */
 int ShClTransferInit(PSHCLTRANSFER pTransfer, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource)
 {
+    pTransfer->cRefs = 0;
+
     pTransfer->State.enmDir    = enmDir;
     pTransfer->State.enmSource = enmSource;
 
@@ -1304,6 +1350,28 @@ int ShClTransferInit(PSHCLTRANSFER pTransfer, SHCLTRANSFERDIR enmDir, SHCLSOURCE
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+/**
+ * Acquires a reference to this transfer.
+ *
+ * @returns New reference count.
+ * @param   pTransfer           Transfer to acquire reference for.
+ */
+uint32_t ShClTransferAcquire(PSHCLTRANSFER pTransfer)
+{
+    return ASMAtomicIncU32(&pTransfer->cRefs);
+}
+
+/**
+ * Releases a reference to this transfer.
+ *
+ * @returns New reference count.
+ * @param   pTransfer           Transfer to release reference for.
+ */
+uint32_t ShClTransferRelease(PSHCLTRANSFER pTransfer)
+{
+    return ASMAtomicDecU32(&pTransfer->cRefs);
 }
 
 /**
@@ -1591,7 +1659,7 @@ int ShClTransferListClose(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
-    if (hList == SHCLLISTHANDLE_INVALID)
+    if (hList == NIL_SHCLLISTHANDLE)
         return VINF_SUCCESS;
 
     int rc = VINF_SUCCESS;
@@ -2240,19 +2308,19 @@ int ShClTransferRootsEntry(PSHCLTRANSFER pTransfer,
     PSHCLLISTROOT pRoot = shClTransferRootsGetInternal(pTransfer, uIndex);
     AssertPtrReturn(pRoot, VERR_INVALID_PARAMETER);
 
-    /* Make sure that we only advertise relative source paths, not absolute ones. */
-    const char *pcszSrcPath = pRoot->pszPathAbs;
+    const char *pcszSrcPathAbs = pRoot->pszPathAbs;
 
-    char *pszFileName = RTPathFilename(pcszSrcPath);
+    /* Make sure that we only advertise relative source paths, not absolute ones. */
+    char *pszFileName = RTPathFilename(pcszSrcPathAbs);
     if (pszFileName)
     {
-        Assert(pszFileName >= pcszSrcPath);
-        size_t cchDstBase = pszFileName - pcszSrcPath;
-        const char *pszDstPath = &pcszSrcPath[cchDstBase];
+        Assert(pszFileName >= pcszSrcPathAbs);
+        size_t cchDstBase = pszFileName - pcszSrcPathAbs;
+        const char *pszDstPath = &pcszSrcPathAbs[cchDstBase];
 
-        LogFlowFunc(("pcszSrcPath=%s, pszDstPath=%s\n", pcszSrcPath, pszDstPath));
+        LogFlowFunc(("pcszSrcPathAbs=%s, pszDstPath=%s\n", pcszSrcPathAbs, pszDstPath));
 
-        rc = ShClTransferListEntryInit(pEntry);
+        rc = ShClTransferListEntryInitEx(pEntry, pszFileName);
         if (RT_SUCCESS(rc))
         {
             rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pszDstPath);
@@ -2263,7 +2331,7 @@ int ShClTransferRootsEntry(PSHCLTRANSFER pTransfer,
                 if (pEntry->pvInfo)
                 {
                     RTFSOBJINFO fsObjInfo;
-                    rc = RTPathQueryInfo(pcszSrcPath, &fsObjInfo, RTFSOBJATTRADD_NOTHING);
+                    rc = RTPathQueryInfo(pcszSrcPathAbs, &fsObjInfo, RTFSOBJATTRADD_NOTHING);
                     if (RT_SUCCESS(rc))
                     {
                         ShClFsObjFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &fsObjInfo);
@@ -2334,7 +2402,6 @@ int ShClTransferRootsGet(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRootList)
         if (RT_SUCCESS(rc))
         {
             pRootList->Hdr.cRoots = cRoots;
-            pRootList->Hdr.fRoots = 0; /** @todo Implement this. */
 
             *ppRootList = pRootList;
         }
@@ -2469,6 +2536,28 @@ int ShClTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t c
 }
 
 /**
+ * Sets a single file as a transfer root.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Transfer to set transfer list entries for.
+ * @param   pszFile             File to use as transfer root.
+ *
+ * @note    Convenience function, uses ShClTransferRootsSet() internally.
+ */
+int ShClTransferRootsSetAsFile(PSHCLTRANSFER pTransfer, const char *pszFile)
+{
+    char *pszRoots = NULL;
+
+    int rc = RTStrAAppend(&pszRoots, pszFile);
+    AssertRCReturn(rc, rc);
+    rc = RTStrAAppend(&pszRoots, "\r\n");
+    AssertRCReturn(rc, rc);
+    rc =  ShClTransferRootsSet(pTransfer, pszRoots, strlen(pszRoots) + 1);
+    RTStrFree(pszRoots);
+    return rc;
+}
+
+/**
  * Returns the clipboard transfer's ID.
  *
  * @returns The transfer's ID.
@@ -2493,6 +2582,21 @@ SHCLTRANSFERDIR ShClTransferGetDir(PSHCLTRANSFER pTransfer)
 
     LogFlowFunc(("[Transfer %RU32] enmDir=%RU32\n", pTransfer->State.uID, pTransfer->State.enmDir));
     return pTransfer->State.enmDir;
+}
+
+/**
+ * Returns the absolute root path of a transfer.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Clipboard transfer to return absolute root path for.
+ * @param   pszPath             Where to store the returned path.
+ * @param   cbPath              Size (in bytes) of  \a pszPath.
+ */
+int ShClTransferGetRootPathAbs(PSHCLTRANSFER pTransfer, char *pszPath, size_t cbPath)
+{
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+
+    return RTStrCopy(pszPath, cbPath, pTransfer->pszPathRootAbs);
 }
 
 /**
@@ -2673,9 +2777,6 @@ int ShClTransferCtxInit(PSHCLTRANSFERCTX pTransferCtx)
 
         RT_ZERO(pTransferCtx->bmTransferIds);
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
-        ShClTransferHttpServerInit(&pTransferCtx->HttpServer);
-#endif
         ShClTransferCtxReset(pTransferCtx);
     }
 
@@ -2828,7 +2929,7 @@ uint32_t ShClTransferCtxGetTotalTransfers(PSHCLTRANSFERCTX pTransferCtx)
  * @retval  VERR_SHCLPB_MAX_TRANSFERS_REACHED if the maximum of concurrent transfers
  *          is reached.
  * @param   pTransferCtx        Transfer context to register transfer to.
- * @param   pTransfer           Transfer to register.
+ * @param   pTransfer           Transfer to register. The context takes ownership of the transfer on success.
  * @param   pidTransfer         Where to return the transfer ID on success. Optional.
  */
 int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERID *pidTransfer)
@@ -2938,7 +3039,7 @@ static void shclTransferCtxTransferRemoveAndUnregister(PSHCLTRANSFERCTX pTransfe
 }
 
 /**
- * Unregisters a transfer from an Transfer context.
+ * Unregisters a transfer from an transfer context.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_NOT_FOUND if the transfer ID was not found.

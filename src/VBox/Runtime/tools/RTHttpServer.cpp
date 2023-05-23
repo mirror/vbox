@@ -520,8 +520,11 @@ static DECLCALLBACK(int) onOpen(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq
     return rc;
 }
 
-static DECLCALLBACK(int) onRead(PRTHTTPCALLBACKDATA pData, void *pvHandle, void *pvBuf, size_t cbBuf, size_t *pcbRead)
+static DECLCALLBACK(int) onRead(PRTHTTPCALLBACKDATA pData,
+                                PRTHTTPSERVERREQ pReq, void *pvHandle, void *pvBuf, size_t cbBuf, size_t *pcbRead)
 {
+    RT_NOREF(pReq);
+
     PHTTPSERVERDATA pThis = (PHTTPSERVERDATA)pData->pvUser;
     Assert(pData->cbUser == sizeof(HTTPSERVERDATA));
 
@@ -553,8 +556,10 @@ static DECLCALLBACK(int) onRead(PRTHTTPCALLBACKDATA pData, void *pvHandle, void 
     return rc;
 }
 
-static DECLCALLBACK(int) onClose(PRTHTTPCALLBACKDATA pData, void *pvHandle)
+static DECLCALLBACK(int) onClose(PRTHTTPCALLBACKDATA pData, PRTHTTPSERVERREQ pReq, void *pvHandle)
 {
+    RT_NOREF(pReq);
+
     PHTTPSERVERDATA pThis = (PHTTPSERVERDATA)pData->pvUser;
     Assert(pData->cbUser == sizeof(HTTPSERVERDATA));
 

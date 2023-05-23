@@ -1867,7 +1867,7 @@ int shClSvcTransferStart(PSHCLCLIENT pClient,
             SHCLTXPROVIDERCREATIONCTX creationCtx;
             RT_ZERO(creationCtx);
 
-            if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE)
+            if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE) /* Guest -> Host. */
             {
                 creationCtx.Interface.pfnRootsGet      = shClSvcTransferIfaceGetRoots;
 
@@ -1880,7 +1880,7 @@ int shClSvcTransferStart(PSHCLCLIENT pClient,
                 creationCtx.Interface.pfnObjClose      = shClSvcTransferIfaceObjClose;
                 creationCtx.Interface.pfnObjRead       = shClSvcTransferIfaceObjRead;
             }
-            else if (enmDir == SHCLTRANSFERDIR_TO_REMOTE)
+            else if (enmDir == SHCLTRANSFERDIR_TO_REMOTE) /* Host -> Guest. */
             {
                 creationCtx.Interface.pfnListHdrWrite   = shClSvcTransferIfaceListHdrWrite;
                 creationCtx.Interface.pfnListEntryWrite = shClSvcTransferIfaceListEntryWrite;

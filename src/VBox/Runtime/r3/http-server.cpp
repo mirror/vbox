@@ -793,7 +793,7 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
             size_t cbWritten = 0; /* Ditto. */
             while (cbToRead)
             {
-                RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnRead, pvHandle, pvBuf, RT_MIN(cbBuf, cbToRead), &cbRead);
+                RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnRead, pReq, pvHandle, pvBuf, RT_MIN(cbBuf, cbToRead), &cbRead);
                 if (RT_FAILURE(rc))
                     break;
                 rc = rtHttpServerSendResponseBody(pClient, pvBuf, cbRead, &cbWritten);
@@ -814,7 +814,7 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
 
         int rc2 = rc; /* Save rc. */
 
-        RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnClose, pvHandle);
+        RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnClose, pReq, pvHandle);
 
         if (RT_FAILURE(rc2)) /* Restore original rc on failure. */
             rc = rc2;
@@ -962,7 +962,7 @@ static DECLCALLBACK(int) rtHttpServerHandlePROPFIND(PRTHTTPSERVERCLIENT pClient,
             size_t cbWritten = 0; /* Ditto. */
             while (cbToRead)
             {
-                RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnRead, pvHandle, pvBuf, RT_MIN(cbBuf, cbToRead), &cbRead);
+                RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnRead, pReq, pvHandle, pvBuf, RT_MIN(cbBuf, cbToRead), &cbRead);
                 if (RT_FAILURE(rc))
                     break;
                 //rtHttpServerLogProto(pClient, true /* fWrite */, (const char *)pvBuf);
@@ -984,7 +984,7 @@ static DECLCALLBACK(int) rtHttpServerHandlePROPFIND(PRTHTTPSERVERCLIENT pClient,
 
         int rc2 = rc; /* Save rc. */
 
-        RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnClose, pvHandle);
+        RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnClose, pReq, pvHandle);
 
         if (RT_FAILURE(rc2)) /* Restore original rc on failure. */
             rc = rc2;
@@ -1020,7 +1020,7 @@ static bool rtHttpServerPathIsValid(const char *pszPath, bool fIsAbsolute)
             fIsValid =    RTFS_IS_DIRECTORY(objInfo.Attr.fMode)
                        || RTFS_IS_FILE(objInfo.Attr.fMode);
 
-            /* No symlinks and other stuff not allowed. */
+            /* No symlinks and other stuff allowed. */
         }
         else
             fIsValid = false;
@@ -1141,7 +1141,7 @@ static int rtHttpServerParseRequest(PRTHTTPSERVERCLIENT pClient, const char *psz
 
         /*
          * Parse HTTP version to use.
-         * We're picky heree: Only HTTP 1.1 is supported by now.
+         * We're picky here: Only HTTP 1.1 is supported by now.
          */
         const char *pszVer = ppapszFirstLine[2];
         if (RTStrCmp(pszVer, RTHTTPVER_1_1_STR)) /** @todo Use RTStrVersionCompare. Later. */
@@ -1208,6 +1208,8 @@ static int rtHttpServerProcessRequest(PRTHTTPSERVERCLIENT pClient, char *pszReq,
     {
         LogFlowFunc(("Request %s %s\n", RTHttpMethodToStr(pReq->enmMethod), pReq->pszUrl));
 
+        RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnRequestBegin, pReq);
+
         unsigned i = 0;
         for (; i < RT_ELEMENTS(g_aMethodMap); i++)
         {
@@ -1224,6 +1226,8 @@ static int rtHttpServerProcessRequest(PRTHTTPSERVERCLIENT pClient, char *pszReq,
             }
         }
 
+        RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnRequestEnd, pReq);
+
         if (i == RT_ELEMENTS(g_aMethodMap))
             enmSts = RTHTTPSTATUS_NOTIMPLEMENTED;
 
@@ -1232,12 +1236,13 @@ static int rtHttpServerProcessRequest(PRTHTTPSERVERCLIENT pClient, char *pszReq,
     else
         enmSts = RTHTTPSTATUS_BADREQUEST;
 
-    if (enmSts != RTHTTPSTATUS_INTERNAL_NOT_SET)
-    {
-        int rc2 = rtHttpServerSendResponseSimple(pClient, enmSts);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
-    }
+    /* Make sure to return at least *something* to the client, to prevent hangs. */
+    if (enmSts == RTHTTPSTATUS_INTERNAL_NOT_SET)
+        enmSts = RTHTTPSTATUS_INTERNALSERVERERROR;
+
+    int rc2 = rtHttpServerSendResponseSimple(pClient, enmSts);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1268,7 +1273,7 @@ static int rtHttpServerClientMain(PRTHTTPSERVERCLIENT pClient)
         rc = RTTcpSelectOne(pClient->hSocket, cWaitMs);
         if (RT_FAILURE(rc))
         {
-            LogFlowFunc(("RTTcpSelectOne=%Rrc (cWaitMs=%RU64)\n", rc, cWaitMs));
+            Log2Func(("RTTcpSelectOne=%Rrc (cWaitMs=%RU64)\n", rc, cWaitMs));
             if (rc == VERR_TIMEOUT)
             {
                 if (pClient->State.msKeepAlive) /* Keep alive handling needed? */
@@ -1276,8 +1281,8 @@ static int rtHttpServerClientMain(PRTHTTPSERVERCLIENT pClient)
                     if (!tsLastReadMs)
                         tsLastReadMs = RTTimeMilliTS();
                     const uint64_t tsDeltaMs = pClient->State.msKeepAlive - (RTTimeMilliTS() - tsLastReadMs);
-                    LogFlowFunc(("tsLastReadMs=%RU64, tsDeltaMs=%RU64\n", tsLastReadMs, tsDeltaMs));
-                    Log3Func(("Keep alive active (%RU32ms): %RU64ms remaining\n", pClient->State.msKeepAlive, tsDeltaMs));
+                    Log2Func(("tsLastReadMs=%RU64, tsDeltaMs=%RU64\n", tsLastReadMs, tsDeltaMs));
+                    Log2Func(("Keep alive active (%RU32ms): %RU64ms remaining\n", pClient->State.msKeepAlive, tsDeltaMs));
                     if (   tsDeltaMs > cWaitMs
                         && tsDeltaMs < pClient->State.msKeepAlive)
                         continue;
@@ -1331,11 +1336,11 @@ static int rtHttpServerClientMain(PRTHTTPSERVERCLIENT pClient)
 
         } while (cbToRead);
 
+        Log2Func(("Read client request done (%zu bytes) -> rc=%Rrc\n", cbReadTotal, rc));
+
         if (   RT_SUCCESS(rc)
             && cbReadTotal)
         {
-            LogFlowFunc(("Received client request (%zu bytes)\n", cbReadTotal));
-
             rtHttpServerLogProto(pClient, false /* fWrite */, szReq);
 
             rc = rtHttpServerProcessRequest(pClient, szReq, cbReadTotal);
