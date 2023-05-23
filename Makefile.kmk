@@ -524,6 +524,11 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
    local-efifw_SOURCES = \
    	$(PATH_ROOT)/src/VBox/Devices/EFI/FirmwareBin/VBoxEFI32.fd=>VBoxEFI32.fd \
    	$(PATH_ROOT)/src/VBox/Devices/EFI/FirmwareBin/VBoxEFI64.fd=>VBoxEFI64.fd
+   ifdef VBOX_WITH_VIRT_ARMV8
+    local-efifw_SOURCES += \
+    	$(PATH_ROOT)/src/VBox/Devices/EFI/FirmwareBin/VBoxEFIAArch32.fd=>VBoxEFIAArch32.fd \
+    	$(PATH_ROOT)/src/VBox/Devices/EFI/FirmwareBin/VBoxEFIAArch64.fd=>VBoxEFIAArch64.fd
+   endif
   endif # !VBOX_WITH_EFIFW_FROM_BUILD_SERVER
  endif # VBOX_WITH_EFI && !VBOX_ONLY_SDK
 
