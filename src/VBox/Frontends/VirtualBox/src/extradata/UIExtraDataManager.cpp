@@ -1688,7 +1688,7 @@ void UIExtraDataManagerWindow::prepareButtonBox()
         /* Configure button-box: */
         m_pButtonBox->setStandardButtons(QDialogButtonBox::Help | QDialogButtonBox::Close);
         m_pButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
-        connect(m_pButtonBox, &QIDialogButtonBox::helpRequested, &msgCenter(), &UIMessageCenter::sltShowHelpHelpDialog);
+        connect(m_pButtonBox, &QIDialogButtonBox::helpRequested, &msgCenter(), &UIMessageCenter::sltHandleHelpRequest);
         connect(m_pButtonBox, &QIDialogButtonBox::rejected,      this, &UIExtraDataManagerWindow::close);
         /* Add button-box into main layout: */
         m_pMainLayout->addWidget(m_pButtonBox);

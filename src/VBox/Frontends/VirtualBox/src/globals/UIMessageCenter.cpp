@@ -2134,13 +2134,13 @@ void UIMessageCenter::sltHandleHelpRequest()
 void UIMessageCenter::sltHandleHelpRequestWithKeyword(const QString &strHelpKeyword)
 {
     /* First open or show the help browser: */
-    sltShowUserManual(uiCommon().helpFile());
+    checkManualFileAndShow();
     /* Show the help page for the @p strHelpKeyword: */
-    if (m_pHelpBrowserDialog)
+    if (m_pHelpBrowserDialog && !strHelpKeyword.isEmpty())
         m_pHelpBrowserDialog->showHelpForKeyword(strHelpKeyword);
 }
 
-void UIMessageCenter::sltShowHelpHelpDialog()
+void UIMessageCenter::checkManualFileAndShow()
 {
 #ifndef VBOX_OSE
     /* For non-OSE version we just open it: */

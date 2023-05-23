@@ -1086,7 +1086,7 @@ void UIMachineLogic::prepareActionConnections()
     /* 'Help' menu 'Contents' action. Done here since we react differently to this action
      * in manager and runtime UI: */
     connect(actionPool()->action(UIActionIndex_Simple_Contents), &UIAction::triggered,
-            &msgCenter(), &UIMessageCenter::sltShowHelpHelpDialog);
+            &msgCenter(), &UIMessageCenter::sltHandleHelpRequest);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' actions connections: */
