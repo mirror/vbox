@@ -260,3 +260,73 @@ DECLINLINE(VBOXSTRICTRC) iemThreadedRecompilerMcDeferToCImpl0(PVMCPUCC pVCpu, PF
  * Real code.
  */
 
+static VBOXSTRICTRC iemThreadedCompile(PVMCCV pVM, PVMCPUCC pVCpu)
+{
+    RT_NOREF(pVM, pVCpu, pTb);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+static VBOXSTRICTRC iemThreadedCompileLongJumped(PVMCCV pVM, PVMCPUCC pVCpu, VBOXSTRICTRC rcStrict)
+{
+    RT_NOREF(pVM, pVCpu);
+    return rcStrict;
+}
+
+
+static PIEMTB iemThreadedTbLookup(PVMCCV pVM, PVMCPUCC pVCpu)
+{
+    RT_NOREF(pVM, pVCpu);
+    return NULL;
+}
+
+
+static VBOXSTRICTRC iemThreadedTbExec(PVMCCV pVM, PVMCPUCC pVCpu, PIEMTB pTb)
+{
+    RT_NOREF(pVM, pVCpu, pTb);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
+{
+    /*
+     * Run-loop. 
+     *  
+     * If we're using setjmp/longjmp we combine all the catching here to avoid 
+     * having to call setjmp for each block we're executing.
+     */
+    for (;;)
+    {
+        PIEMTB       pTb = NULL;
+        VBOXSTRICTRC rcStrict;
+#ifdef IEM_WITH_SETJMP
+        IEM_TRY_SETJMP(pVCpu, rcStrict)
+#endif
+        {
+            for (;;)
+            {
+                pTb = iemThreadedTbLookup(pVM, pVCpu);
+                if (pTb)
+                    rcStrict = iemThreadedTbExec(pVM, pVCpu, pTb);
+                else
+                    rcStrict = iemThreadedCompile(pVM, pVCpu);
+                if (rcStrict == VINF_SUCCESS)
+                { /* likely */ }
+                else
+                    return rcStrict;
+            }
+        }
+#ifdef IEM_WITH_SETJMP
+        IEM_CATCH_LONGJMP_BEGIN(pVCpu, rcStrict);
+        {
+            pVCpu->iem.s.cLongJumps++;
+            if (pTb)
+                return rcStrict;
+            return iemThreadedCompileLongJumped(pVM, pVCpu, rcStrict);
+        }
+        IEM_CATCH_LONGJMP_END(pVCpu);
+#endif
+    }
+}
+

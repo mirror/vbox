@@ -158,6 +158,7 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPC(PVMCPUCC pVCpu, u
                                                                const void *pvOpcodeBytes, size_t cbOpcodeBytes);
 VMMDECL(VBOXSTRICTRC)       IEMExecOneIgnoreLock(PVMCPUCC pVCpu);
 VMMDECL(VBOXSTRICTRC)       IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uint32_t cPollRate, uint32_t *pcInstructions);
+VMMDECL(VBOXSTRICTRC)       IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu);
 /** Statistics returned by IEMExecForExits. */
 typedef struct IEMEXECFOREXITSTATS
 {

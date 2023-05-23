@@ -1081,7 +1081,7 @@ static VBOXSTRICTRC emR3RecompilerExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             STAM_PROFILE_START(&pVCpu->em.s.StatREMExec, c);
 #ifdef VBOX_WITH_IEM_RECOMPILER
             if (pVM->em.s.fIemRecompiled)
-                rcStrict = IEMExecLots(pVCpu, 8192 /*cMaxInstructions*/, 4095 /*cPollRate*/, NULL /*pcInstructions*/);
+                rcStrict = IEMExecRecompilerThreaded(pVCpu);
             else
 #endif
                 rcStrict = IEMExecLots(pVCpu, 8192 /*cMaxInstructions*/, 4095 /*cPollRate*/, NULL /*pcInstructions*/);
