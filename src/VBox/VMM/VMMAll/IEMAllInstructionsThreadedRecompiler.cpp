@@ -291,9 +291,9 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCCV pVM, PVMCPUCC pVCpu, PIEMTB pTb)
 VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
 {
     /*
-     * Run-loop. 
-     *  
-     * If we're using setjmp/longjmp we combine all the catching here to avoid 
+     * Run-loop.
+     *
+     * If we're using setjmp/longjmp we combine all the catching here to avoid
      * having to call setjmp for each block we're executing.
      */
     for (;;)
