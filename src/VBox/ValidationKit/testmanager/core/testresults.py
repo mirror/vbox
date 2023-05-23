@@ -1369,7 +1369,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
         #       because TestSets.idGenTestBox is a foreign key and unique in TestBoxes.  So, let's do what ever is faster.
         sQuery += '       ) AS TestSets\n' \
                   '       LEFT OUTER JOIN TestBoxesWithStrings\n' \
-                  '                    ON TestSets.idGenTestBox     = TestBoxesWithStrings.idGenTestBox' \
+                  '                    ON TestSets.idGenTestBox     = TestBoxesWithStrings.idGenTestBox\n' \
                   '       LEFT OUTER JOIN Builds AS TestSuiteBits\n' \
                   '                    ON TestSuiteBits.idBuild     =  TestSets.idBuildTestSuite\n' \
                   '                   AND TestSuiteBits.tsExpire    >  TestSets.tsCreated\n' \
