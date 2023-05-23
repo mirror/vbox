@@ -283,7 +283,8 @@ DECLINLINE(VBOXSTRICTRC) gicDistRegisterRead(PPDMDEVINS pDevIns, PVMCPUCC pVCpu,
     {
         case GIC_DIST_REG_CTLR_OFF:
             *puValue =   (ASMAtomicReadBool(&pThis->fIrqGrp0Enabled) ? GIC_DIST_REG_CTRL_ENABLE_GRP0 : 0)
-                       | (ASMAtomicReadBool(&pThis->fIrqGrp1Enabled) ? GIC_DIST_REG_CTRL_ENABLE_GRP1_NS : 0);
+                       | (ASMAtomicReadBool(&pThis->fIrqGrp1Enabled) ? GIC_DIST_REG_CTRL_ENABLE_GRP1_NS : 0)
+                       | GIC_DIST_REG_CTRL_DS;
             break;
         case GIC_DIST_REG_TYPER_OFF:
             *puValue =   GIC_DIST_REG_TYPER_NUM_ITLINES_SET(1)  /** @todo 32 SPIs for now. */
