@@ -1099,8 +1099,6 @@ FNIEMOP_STUB(iemOp_vaesdeclast_Vdq_Wdq);
 FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
 {
     IEMOP_MNEMONIC3(VEX_RVM, ANDN, andn, Gy, By, Ey, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
-    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fBmi1)
-        return iemOp_InvalidNeedRM(pVCpu);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF | X86_EFL_PF);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
@@ -1108,7 +1106,7 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
         /*
          * Register, register.
          */
-        IEMOP_HLP_DONE_VEX_DECODING_L0();
+        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi1);
         if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
         {
             IEM_MC_BEGIN(4, 0);
@@ -1157,7 +1155,7 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
             IEM_MC_ARG(uint32_t *,          pEFlags, 3);
             IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-            IEMOP_HLP_DONE_VEX_DECODING_L0();
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi1);
             IEM_MC_FETCH_MEM_U64(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
             IEM_MC_FETCH_GREG_U64(uSrc1, IEM_GET_EFFECTIVE_VVVV(pVCpu));
             IEM_MC_REF_GREG_U64(pDst,    IEM_GET_MODRM_REG(pVCpu, bRm));
@@ -1176,7 +1174,7 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
             IEM_MC_ARG(uint32_t *,          pEFlags, 3);
             IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-            IEMOP_HLP_DONE_VEX_DECODING_L0();
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi1);
             IEM_MC_FETCH_MEM_U32(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
             IEM_MC_FETCH_GREG_U32(uSrc1, IEM_GET_EFFECTIVE_VVVV(pVCpu));
             IEM_MC_REF_GREG_U32(pDst,    IEM_GET_MODRM_REG(pVCpu, bRm));
@@ -1202,15 +1200,13 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
 
 /** Body for the vex group 17 instructions. */
 #define IEMOP_BODY_By_Ey(a_Instr) \
-    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fBmi1) \
-        return iemOp_InvalidWithRM(pVCpu, bRm); /* decode memory variant? */ \
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF | X86_EFL_PF); \
     if (IEM_IS_MODRM_REG_MODE(bRm)) \
     { \
         /* \
          * Register, register. \
          */ \
-        IEMOP_HLP_DONE_VEX_DECODING_L0(); \
+        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi1); \
         if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W) \
         { \
             IEM_MC_BEGIN(3, 0); \
@@ -1254,7 +1250,7 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
             IEM_MC_ARG(uint32_t *,          pEFlags, 2); \
             IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc); \
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
-            IEMOP_HLP_DONE_VEX_DECODING_L0(); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi1); \
             IEM_MC_FETCH_MEM_U64(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
             IEM_MC_REF_GREG_U64(pDst,  IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
             IEM_MC_REF_EFLAGS(pEFlags); \
@@ -1271,7 +1267,7 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
             IEM_MC_ARG(uint32_t *,          pEFlags, 2); \
             IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc); \
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
-            IEMOP_HLP_DONE_VEX_DECODING_L0(); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi1); \
             IEM_MC_FETCH_MEM_U32(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
             IEM_MC_REF_GREG_U32(pDst,  IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
             IEM_MC_REF_EFLAGS(pEFlags); \
@@ -1353,8 +1349,6 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
 
 /** Body for BZHI, BEXTR, ++; assumes VEX.L must be 0. */
 #define IEMOP_BODY_Gy_Ey_By(a_Instr, a_fFeatureMember, a_fUndefFlags) \
-    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->a_fFeatureMember) \
-        return iemOp_InvalidNeedRM(pVCpu); \
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(a_fUndefFlags); \
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); \
     if (IEM_IS_MODRM_REG_MODE(bRm)) \
@@ -1362,7 +1356,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
         /* \
          * Register, register. \
          */ \
-        IEMOP_HLP_DONE_VEX_DECODING_L0(); \
+        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
         if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W) \
         { \
             IEM_MC_BEGIN(4, 0); \
@@ -1413,7 +1407,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
             IEM_MC_ARG(uint32_t *,          pEFlags, 3); \
             IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc); \
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
-            IEMOP_HLP_DONE_VEX_DECODING_L0(); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
             IEM_MC_FETCH_MEM_U64(uSrc1, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
             IEM_MC_FETCH_GREG_U64(uSrc2, IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
             IEM_MC_REF_GREG_U64(pDst,    IEM_GET_MODRM_REG(pVCpu, bRm)); \
@@ -1433,7 +1427,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
             IEM_MC_ARG(uint32_t *,          pEFlags, 3); \
             IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc); \
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
-            IEMOP_HLP_DONE_VEX_DECODING_L0(); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
             IEM_MC_FETCH_MEM_U32(uSrc1, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
             IEM_MC_FETCH_GREG_U32(uSrc2, IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
             IEM_MC_REF_GREG_U32(pDst,    IEM_GET_MODRM_REG(pVCpu, bRm)); \
@@ -1450,8 +1444,6 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
 
 /** Body for SARX, SHLX, SHRX; assumes VEX.L must be 0. */
 #define IEMOP_BODY_Gy_Ey_By_NoEflags(a_Instr, a_fFeatureMember, a_fUndefFlags) \
-    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->a_fFeatureMember) \
-        return iemOp_InvalidNeedRM(pVCpu); \
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(a_fUndefFlags); \
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); \
     if (IEM_IS_MODRM_REG_MODE(bRm)) \
@@ -1459,7 +1451,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
         /* \
          * Register, register. \
          */ \
-        IEMOP_HLP_DONE_VEX_DECODING_L0(); \
+        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
         if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W) \
         { \
             IEM_MC_BEGIN(3, 0); \
@@ -1503,7 +1495,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
             IEM_MC_ARG(uint64_t,            uSrc2,   2); \
             IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc); \
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
-            IEMOP_HLP_DONE_VEX_DECODING_L0(); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
             IEM_MC_FETCH_MEM_U64(uSrc1, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
             IEM_MC_FETCH_GREG_U64(uSrc2, IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
             IEM_MC_REF_GREG_U64(pDst,    IEM_GET_MODRM_REG(pVCpu, bRm)); \
@@ -1520,7 +1512,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
             IEM_MC_ARG(uint32_t,            uSrc2,   2); \
             IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc); \
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
-            IEMOP_HLP_DONE_VEX_DECODING_L0(); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
             IEM_MC_FETCH_MEM_U32(uSrc1, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
             IEM_MC_FETCH_GREG_U32(uSrc2, IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
             IEM_MC_REF_GREG_U32(pDst,    IEM_GET_MODRM_REG(pVCpu, bRm)); \
@@ -1544,15 +1536,13 @@ FNIEMOP_DEF(iemOp_bzhi_Gy_Ey_By)
 
 /** Body for PDEP and PEXT (similar to ANDN, except no EFLAGS). */
 #define IEMOP_BODY_Gy_By_Ey_NoEflags(a_Instr, a_fFeatureMember) \
-    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->a_fFeatureMember) \
-        return iemOp_InvalidNeedRM(pVCpu); \
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); \
     if (IEM_IS_MODRM_REG_MODE(bRm)) \
     { \
         /* \
          * Register, register. \
          */ \
-        IEMOP_HLP_DONE_VEX_DECODING_L0(); \
+        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
         if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W) \
         { \
             IEM_MC_BEGIN(3, 0); \
@@ -1598,7 +1588,7 @@ FNIEMOP_DEF(iemOp_bzhi_Gy_Ey_By)
             IEM_MC_ARG(uint64_t,            uSrc2,   2); \
             IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc); \
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
-            IEMOP_HLP_DONE_VEX_DECODING_L0(); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
             IEM_MC_FETCH_MEM_U64(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
             IEM_MC_FETCH_GREG_U64(uSrc1, IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
             IEM_MC_REF_GREG_U64(pDst,    IEM_GET_MODRM_REG(pVCpu, bRm)); \
@@ -1616,7 +1606,7 @@ FNIEMOP_DEF(iemOp_bzhi_Gy_Ey_By)
             IEM_MC_ARG(uint32_t,            uSrc2,   2); \
             IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc); \
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0); \
-            IEMOP_HLP_DONE_VEX_DECODING_L0(); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
             IEM_MC_FETCH_MEM_U32(uSrc2, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
             IEM_MC_FETCH_GREG_U32(uSrc1, IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
             IEM_MC_REF_GREG_U32(pDst,    IEM_GET_MODRM_REG(pVCpu, bRm)); \
@@ -1656,15 +1646,13 @@ FNIEMOP_DEF(iemOp_pdep_Gy_By_Ey)
 FNIEMOP_DEF(iemOp_mulx_By_Gy_rDX_Ey)
 {
     IEMOP_MNEMONIC4(VEX_RVM, MULX, mulx, Gy, By, Ey, rDX, DISOPTYPE_HARMLESS, IEMOPHINT_VEX_L_ZERO);
-    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fBmi2)
-        return iemOp_InvalidNeedRM(pVCpu);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /*
          * Register, register.
          */
-        IEMOP_HLP_DONE_VEX_DECODING_L0();
+        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi2);
         if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
         {
             IEM_MC_BEGIN(4, 0);
@@ -1714,7 +1702,7 @@ FNIEMOP_DEF(iemOp_mulx_By_Gy_rDX_Ey)
             IEM_MC_ARG(uint64_t,            uSrc2,   3);
             IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-            IEMOP_HLP_DONE_VEX_DECODING_L0();
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi2);
             IEM_MC_FETCH_MEM_U64(uSrc2,  pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
             IEM_MC_FETCH_GREG_U64(uSrc1, X86_GREG_xDX);
             IEM_MC_REF_GREG_U64(pDst2,   IEM_GET_EFFECTIVE_VVVV(pVCpu));
@@ -1733,7 +1721,7 @@ FNIEMOP_DEF(iemOp_mulx_By_Gy_rDX_Ey)
             IEM_MC_ARG(uint32_t,            uSrc2,   3);
             IEM_MC_LOCAL(RTGCPTR,           GCPtrEffSrc);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-            IEMOP_HLP_DONE_VEX_DECODING_L0();
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi2);
             IEM_MC_FETCH_MEM_U32(uSrc2,  pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
             IEM_MC_FETCH_GREG_U32(uSrc1, X86_GREG_xDX);
             IEM_MC_REF_GREG_U32(pDst2,   IEM_GET_EFFECTIVE_VVVV(pVCpu));
