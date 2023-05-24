@@ -44,49 +44,80 @@
 #include <iprt/asm.h>
 
 
+/**
+ * Gets the next continuous block of buffer data (up to @a *pcbData bytes) and
+ * advances the buffer position past it.
+ */
 static void *rtSgBufGet(PRTSGBUF pSgBuf, size_t *pcbData)
 {
-    size_t cbData;
-    void *pvBuf;
-
-    /* Check that the S/G buffer has memory left. */
-    if (RT_UNLIKELY(   pSgBuf->idxSeg == pSgBuf->cSegs
-                    && !pSgBuf->cbSegLeft))
+    /* 
+     * Check that the S/G buffer has memory left (!RTSgIsEnd(pSgBuf)).
+     */
+    unsigned const idxSeg = pSgBuf->idxSeg;
+    unsigned const cSegs  = pSgBuf->cSegs;
+    if (RT_LIKELY(   idxSeg < cSegs
+                  && (   pSgBuf->cbSegLeft > 0 /* paranoia, this condition shouldn't occur. */
+                      || idxSeg + 1 < cSegs)))
     {
-        *pcbData = 0;
-        return NULL;
-    }
+        /*
+         * Grab the requested segment chunk.
+         */
+        void * const pvBuf     = pSgBuf->pvSegCur;
+        size_t const cbSegLeft = pSgBuf->cbSegLeft;
+        size_t const cbData    = RT_MIN(*pcbData, cbSegLeft);
 
 #ifndef RDESKTOP
-    AssertMsg(      pSgBuf->cbSegLeft <= 128 * _1M
-              &&    (uintptr_t)pSgBuf->pvSegCur                     >= (uintptr_t)pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg
-              &&    (uintptr_t)pSgBuf->pvSegCur + pSgBuf->cbSegLeft <= (uintptr_t)pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg + pSgBuf->paSegs[pSgBuf->idxSeg].cbSeg,
-              ("pSgBuf->idxSeg=%d pSgBuf->cSegs=%d pSgBuf->pvSegCur=%p pSgBuf->cbSegLeft=%zd pSgBuf->paSegs[%d].pvSeg=%p pSgBuf->paSegs[%d].cbSeg=%zd\n",
-               pSgBuf->idxSeg, pSgBuf->cSegs, pSgBuf->pvSegCur, pSgBuf->cbSegLeft, pSgBuf->idxSeg, pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg, pSgBuf->idxSeg,
-               pSgBuf->paSegs[pSgBuf->idxSeg].cbSeg));
+        AssertMsg(   pSgBuf->cbSegLeft <= 128 * _1M
+                  && (uintptr_t)pSgBuf->pvSegCur             >= (uintptr_t)pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg
+                  && (uintptr_t)pSgBuf->pvSegCur + cbSegLeft <= (uintptr_t)pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg + pSgBuf->paSegs[pSgBuf->idxSeg].cbSeg,
+                  ("pSgBuf->idxSeg=%d pSgBuf->cSegs=%d pSgBuf->pvSegCur=%p cbSegLeft=%zd pSgBuf->paSegs[%d].pvSeg=%p pSgBuf->paSegs[%d].cbSeg=%zd\n",
+                   pSgBuf->idxSeg, pSgBuf->cSegs, pSgBuf->pvSegCur, cbSegLeft, pSgBuf->idxSeg, pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg, pSgBuf->idxSeg,
+                   pSgBuf->paSegs[pSgBuf->idxSeg].cbSeg));
 #endif
 
-    cbData = RT_MIN(*pcbData, pSgBuf->cbSegLeft);
-    pvBuf  = pSgBuf->pvSegCur;
-    pSgBuf->cbSegLeft -= cbData;
-
-    /* Advance to the next segment if required. */
-    if (!pSgBuf->cbSegLeft)
-    {
-        pSgBuf->idxSeg++;
-
-        if (pSgBuf->idxSeg < pSgBuf->cSegs)
+        /* 
+         * Advance ...
+         */
+        if (cbSegLeft == cbData)
         {
-            pSgBuf->pvSegCur  = pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg;
-            pSgBuf->cbSegLeft = pSgBuf->paSegs[pSgBuf->idxSeg].cbSeg;
+            *pcbData = cbData;
+
+            /* ... to the next segment. */
+            unsigned idxSegNew = idxSeg + 1;
+            if (idxSegNew < pSgBuf->cSegs)
+            {
+                do
+                {
+                    PCRTSGSEG const pNewSeg = &pSgBuf->paSegs[idxSegNew];
+                    if (pNewSeg->cbSeg > 0)
+                    {
+                        pSgBuf->idxSeg    = idxSegNew;
+                        pSgBuf->cbSegLeft = pNewSeg->cbSeg;
+                        pSgBuf->pvSegCur  = pNewSeg->pvSeg;
+                        return pvBuf;
+                    }
+                    /* Empty segment, skip it. */
+                    idxSegNew++;
+                } while (idxSegNew < pSgBuf->cSegs);
+            }
+            pSgBuf->idxSeg    = idxSegNew;
+            pSgBuf->cbSegLeft = 0;
+            pSgBuf->pvSegCur  = NULL;
+        }
+        else
+        {
+            /* ... within the current segment. */
+            Assert(*pcbData == cbData);
+            pSgBuf->cbSegLeft = cbSegLeft - cbData;
+            pSgBuf->pvSegCur  = (uint8_t *)pvBuf + cbData;
         }
 
-        *pcbData = cbData;
+        return pvBuf;
     }
-    else
-        pSgBuf->pvSegCur = (uint8_t *)pSgBuf->pvSegCur + cbData;
 
-    return pvBuf;
+    Assert(pSgBuf->cbSegLeft == 0);
+    *pcbData = 0;
+    return NULL;
 }
 
 
@@ -207,9 +238,9 @@ RTDECL(int) RTSgBufCmp(PCRTSGBUF pSgBuf1, PCRTSGBUF pSgBuf2, size_t cbCmp)
         void *pvBuf2 = rtSgBufGet(&SgBuf2, &cbTmp);
         Assert(cbTmp == cbThisCmp);
 
-        int rc = memcmp(pvBuf1, pvBuf2, cbThisCmp);
-        if (rc)
-            return rc;
+        int iDiff = memcmp(pvBuf1, pvBuf2, cbThisCmp);
+        if (iDiff)
+            return iDiff;
 
         cbLeft -= cbThisCmp;
     }
@@ -283,26 +314,25 @@ RTDECL(int) RTSgBufCmpEx(PRTSGBUF pSgBuf1, PRTSGBUF pSgBuf2, size_t cbCmp, size_
 }
 
 
-RTDECL(size_t) RTSgBufSet(PRTSGBUF pSgBuf, uint8_t ubFill, size_t cbSet)
+RTDECL(size_t) RTSgBufSet(PRTSGBUF pSgBuf, uint8_t bFill, size_t cbToSet)
 {
     AssertPtrReturn(pSgBuf, 0);
 
-    size_t cbLeft = cbSet;
+    size_t cbLeft = cbToSet;
 
     while (cbLeft)
     {
         size_t cbThisSet = cbLeft;
         void *pvBuf = rtSgBufGet(pSgBuf, &cbThisSet);
-
-        if (!cbThisSet)
+        if (!pvBuf)
             break;
 
-        memset(pvBuf, ubFill, cbThisSet);
+        memset(pvBuf, bFill, cbThisSet);
 
         cbLeft -= cbThisSet;
     }
 
-    return cbSet - cbLeft;
+    return cbToSet - cbLeft;
 }
 
 
@@ -316,15 +346,14 @@ RTDECL(size_t) RTSgBufCopyToBuf(PRTSGBUF pSgBuf, void *pvBuf, size_t cbCopy)
     while (cbLeft)
     {
         size_t cbThisCopy = cbLeft;
-        void *pvSrc = rtSgBufGet(pSgBuf, &cbThisCopy);
-
-        if (!cbThisCopy)
+        void * const pvSrc = rtSgBufGet(pSgBuf, &cbThisCopy);
+        if (!pvSrc)
             break;
 
         memcpy(pvBuf, pvSrc, cbThisCopy);
 
-        cbLeft -= cbThisCopy;
         pvBuf = (void *)((uintptr_t)pvBuf + cbThisCopy);
+        cbLeft -= cbThisCopy;
     }
 
     return cbCopy - cbLeft;
@@ -341,15 +370,14 @@ RTDECL(size_t) RTSgBufCopyFromBuf(PRTSGBUF pSgBuf, const void *pvBuf, size_t cbC
     while (cbLeft)
     {
         size_t cbThisCopy = cbLeft;
-        void *pvDst = rtSgBufGet(pSgBuf, &cbThisCopy);
-
-        if (!cbThisCopy)
+        void * const pvDst = rtSgBufGet(pSgBuf, &cbThisCopy);
+        if (!pvDst)
             break;
 
         memcpy(pvDst, pvBuf, cbThisCopy);
 
-        cbLeft -= cbThisCopy;
         pvBuf = (const void *)((uintptr_t)pvBuf + cbThisCopy);
+        cbLeft -= cbThisCopy;
     }
 
     return cbCopy - cbLeft;
@@ -366,9 +394,8 @@ RTDECL(size_t) RTSgBufCopyToFn(PRTSGBUF pSgBuf, size_t cbCopy, PFNRTSGBUFCOPYTO 
     while (cbLeft)
     {
         size_t cbThisCopy = cbLeft;
-        void *pvSrc = rtSgBufGet(pSgBuf, &cbThisCopy);
-
-        if (!cbThisCopy)
+        void * const pvSrc = rtSgBufGet(pSgBuf, &cbThisCopy);
+        if (!pvSrc)
             break;
 
         size_t cbThisCopied = pfnCopyTo(pSgBuf, pvSrc, cbThisCopy, pvUser);
@@ -391,9 +418,8 @@ RTDECL(size_t) RTSgBufCopyFromFn(PRTSGBUF pSgBuf, size_t cbCopy, PFNRTSGBUFCOPYF
     while (cbLeft)
     {
         size_t cbThisCopy = cbLeft;
-        void *pvDst = rtSgBufGet(pSgBuf, &cbThisCopy);
-
-        if (!cbThisCopy)
+        void * const pvDst = rtSgBufGet(pSgBuf, &cbThisCopy);
+        if (!pvDst)
             break;
 
         size_t cbThisCopied = pfnCopyFrom(pSgBuf, pvDst, cbThisCopy, pvUser);
@@ -411,11 +437,11 @@ RTDECL(size_t) RTSgBufAdvance(PRTSGBUF pSgBuf, size_t cbAdvance)
     AssertPtrReturn(pSgBuf, 0);
 
     size_t cbLeft = cbAdvance;
+
     while (cbLeft)
     {
         size_t cbThisAdvance = cbLeft;
-        rtSgBufGet(pSgBuf, &cbThisAdvance);
-        if (!cbThisAdvance)
+        if (!rtSgBufGet(pSgBuf, &cbThisAdvance))
             break;
 
         cbLeft -= cbThisAdvance;
@@ -425,61 +451,61 @@ RTDECL(size_t) RTSgBufAdvance(PRTSGBUF pSgBuf, size_t cbAdvance)
 }
 
 
-RTDECL(size_t) RTSgBufSegArrayCreate(PRTSGBUF pSgBuf, PRTSGSEG paSeg, unsigned *pcSeg, size_t cbData)
+RTDECL(size_t) RTSgBufSegArrayCreate(PRTSGBUF pSgBuf, PRTSGSEG paSeg, unsigned *pcSegs, size_t cbData)
 {
     AssertPtrReturn(pSgBuf, 0);
-    AssertPtrReturn(pcSeg, 0);
+    AssertPtrReturn(pcSegs, 0);
 
-    unsigned cSeg = 0;
-    size_t   cb = 0;
+    unsigned cSegs = 0;
+    size_t   cbRet = 0;
 
     if (!paSeg)
     {
         if (pSgBuf->cbSegLeft > 0)
         {
             size_t idx = pSgBuf->idxSeg;
-            cSeg = 1;
 
-            cb     += RT_MIN(pSgBuf->cbSegLeft, cbData);
-            cbData -= RT_MIN(pSgBuf->cbSegLeft, cbData);
+            cbRet   = RT_MIN(pSgBuf->cbSegLeft, cbData);
+            cSegs   = cbRet != 0;
+            cbData -= cbRet;
 
             while (   cbData
                    && idx < pSgBuf->cSegs - 1)
             {
                 idx++;
-                cSeg++;
-                cb     += RT_MIN(pSgBuf->paSegs[idx].cbSeg, cbData);
-                cbData -= RT_MIN(pSgBuf->paSegs[idx].cbSeg, cbData);
+                size_t cbThisSeg = RT_MIN(pSgBuf->paSegs[idx].cbSeg, cbData);
+                if (cbThisSeg)
+                {
+                    cbRet  += cbThisSeg;
+                    cbData -= cbThisSeg;
+                    cSegs++;
+                }
             }
         }
     }
     else
     {
         while (   cbData
-               && cSeg < *pcSeg)
+               && cSegs < *pcSegs)
         {
-            size_t  cbThisSeg = cbData;
-            void *pvSeg = rtSgBufGet(pSgBuf, &cbThisSeg);
-
-            if (!cbThisSeg)
-            {
-                Assert(!pvSeg);
+            size_t cbThisSeg = cbData;
+            void * const pvSeg = rtSgBufGet(pSgBuf, &cbThisSeg);
+            if (!pvSeg)
                 break;
-            }
 
             AssertMsg(cbThisSeg <= cbData, ("Impossible!\n"));
 
-            paSeg[cSeg].cbSeg = cbThisSeg;
-            paSeg[cSeg].pvSeg = pvSeg;
-            cSeg++;
+            paSeg[cSegs].cbSeg = cbThisSeg;
+            paSeg[cSegs].pvSeg = pvSeg;
+            cSegs++;
             cbData -= cbThisSeg;
-            cb     += cbThisSeg;
+            cbRet  += cbThisSeg;
         }
     }
 
-    *pcSeg = cSeg;
+    *pcSegs = cSegs;
 
-    return cb;
+    return cbRet;
 }
 
 
@@ -493,13 +519,16 @@ RTDECL(bool) RTSgBufIsZero(PRTSGBUF pSgBuf, size_t cbCheck)
     while (cbLeft)
     {
         size_t cbThisCheck = cbLeft;
-        void *pvBuf = rtSgBufGet(&SgBufTmp, &cbThisCheck);
-        if (!cbThisCheck)
+        void * const pvBuf = rtSgBufGet(&SgBufTmp, &cbThisCheck);
+        if (!pvBuf)
             break;
-        fIsZero = ASMMemIsZero(pvBuf, cbThisCheck);
-        if (!fIsZero)
-            break;
-        cbLeft -= cbThisCheck;
+        if (cbThisCheck > 0)
+        {
+            fIsZero = ASMMemIsZero(pvBuf, cbThisCheck);
+            if (!fIsZero)
+                break;
+            cbLeft -= cbThisCheck;
+        }
     }
 
     return fIsZero;

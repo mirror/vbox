@@ -175,9 +175,9 @@ DECLINLINE(bool) RTSgBufIsAtStart(PCRTSGBUF pSgBuf)
  */
 DECLINLINE(bool) RTSgBufIsAtEnd(PCRTSGBUF pSgBuf)
 {
-    return pSgBuf->idxSeg > pSgBuf->cSegs
-        || (   pSgBuf->idxSeg == pSgBuf->cSegs
-            && pSgBuf->cbSegLeft == 0);
+    return pSgBuf->idxSeg >= pSgBuf->cSegs
+        || (   pSgBuf->cbSegLeft == 0  /* sg.cpp doesn't create this situation, but just in case someone does. */
+            && pSgBuf->idxSeg + 1 == pSgBuf->cSegs);
 }
 
 /**
@@ -199,9 +199,9 @@ DECLINLINE(bool) RTSgBufIsAtStartOfSegment(PCRTSGBUF pSgBuf)
  * @param   paSegs    Pointer to the start of the segment array.
  * @param   cSegs     Number of segments in the array.
  *
- * @note paSegs and cSegs can be NULL and 0 respectively to indicate an empty
- *       S/G buffer.  Operations on the S/G buffer will not do anything in this
- *       case.
+ * @note    paSegs and cSegs can be NULL and 0 respectively to indicate an empty
+ *          S/G buffer.  Operations on the S/G buffer will not do anything in
+ *          this case.
  */
 RTDECL(void) RTSgBufInit(PRTSGBUF pSgBuf, PCRTSGSEG paSegs, size_t cSegs);
 
@@ -214,12 +214,14 @@ RTDECL(void) RTSgBufReset(PRTSGBUF pSgBuf);
 
 /**
  * Clones a given S/G buffer.
- *
+ *  
+ * This is only a shallow copy.  Both S/G buffers will point to the same segment
+ * array. 
+ *  
+ * The buffer position will be preserved.
+ *  
  * @param   pSgBufNew    The new S/G buffer to clone to.
  * @param   pSgBufOld    The source S/G buffer to clone from.
- *
- * @note This is only a shallow copy. Both S/G buffers will point to the
- *       same segment array.
  */
 RTDECL(void) RTSgBufClone(PRTSGBUF pSgBufNew, PCRTSGBUF pSgBufOld);
 
@@ -256,7 +258,7 @@ DECLINLINE(void *) RTSgBufGetCurrentSegment(PRTSGBUF pSgBuf, size_t cbDesired, s
  *                       This may contain fewer bytes on success if the current segment
  *                       is smaller than the amount of bytes requested.
  *
- * @note This operation advances the internal buffer pointer of both S/G buffers.
+ * @note    This operation advances the internal buffer pointer of both S/G buffers.
  */
 RTDECL(void *) RTSgBufGetNextSegment(PRTSGBUF pSgBuf, size_t *pcbSeg);
 
@@ -268,7 +270,7 @@ RTDECL(void *) RTSgBufGetNextSegment(PRTSGBUF pSgBuf, size_t *pcbSeg);
  * @param   pSgBufSrc    The source S/G buffer.
  * @param   cbCopy       Number of bytes to copy.
  *
- * @note This operation advances the internal buffer pointer of both S/G buffers.
+ * @note    This operation advances the internal buffer pointer of both S/G buffers.
  */
 RTDECL(size_t) RTSgBufCopy(PRTSGBUF pSgBufDst, PRTSGBUF pSgBufSrc, size_t cbCopy);
 
@@ -280,7 +282,7 @@ RTDECL(size_t) RTSgBufCopy(PRTSGBUF pSgBufDst, PRTSGBUF pSgBufSrc, size_t cbCopy
  * @param   pSgBuf2      Second S/G buffer.
  * @param   cbCmp        How many bytes to compare.
  *
- * @note This operation doesn't change the internal position of the S/G buffers.
+ * @note    This operation doesn't change the internal position of the S/G buffers.
  */
 RTDECL(int) RTSgBufCmp(PCRTSGBUF pSgBuf1, PCRTSGBUF pSgBuf2, size_t cbCmp);
 
@@ -305,12 +307,12 @@ RTDECL(int) RTSgBufCmpEx(PRTSGBUF pSgBuf1, PRTSGBUF pSgBuf2, size_t cbCmp, size_
  * @returns The number of actually filled bytes.
  *          Can be less than than cbSet if the end of the S/G buffer was reached.
  * @param   pSgBuf       The S/G buffer.
- * @param   ubFill       The byte to fill the buffer with.
- * @param   cbSet        How many bytes to set.
+ * @param   bFill        The byte to fill the buffer with.
+ * @param   cbToSet      How many bytes to set.
  *
- * @note This operation advances the internal buffer pointer of the S/G buffer.
+ * @note    This operation advances the internal buffer pointer of the S/G buffer.
  */
-RTDECL(size_t) RTSgBufSet(PRTSGBUF pSgBuf, uint8_t ubFill, size_t cbSet);
+RTDECL(size_t) RTSgBufSet(PRTSGBUF pSgBuf, uint8_t bFill, size_t cbToSet);
 
 /**
  * Copies data from an S/G buffer into a given non scattered buffer.
@@ -320,7 +322,7 @@ RTDECL(size_t) RTSgBufSet(PRTSGBUF pSgBuf, uint8_t ubFill, size_t cbSet);
  * @param   pvBuf        Buffer to copy the data into.
  * @param   cbCopy       How many bytes to copy.
  *
- * @note This operation advances the internal buffer pointer of the S/G buffer.
+ * @note    This operation advances the internal buffer pointer of the S/G buffer.
  */
 RTDECL(size_t) RTSgBufCopyToBuf(PRTSGBUF pSgBuf, void *pvBuf, size_t cbCopy);
 
@@ -332,7 +334,7 @@ RTDECL(size_t) RTSgBufCopyToBuf(PRTSGBUF pSgBuf, void *pvBuf, size_t cbCopy);
  * @param   pvBuf        Buffer to copy the data from.
  * @param   cbCopy       How many bytes to copy.
  *
- * @note This operation advances the internal buffer pointer of the S/G buffer.
+ * @note    This operation advances the internal buffer pointer of the S/G buffer.
  */
 RTDECL(size_t) RTSgBufCopyFromBuf(PRTSGBUF pSgBuf, const void *pvBuf, size_t cbCopy);
 
@@ -345,7 +347,7 @@ RTDECL(size_t) RTSgBufCopyFromBuf(PRTSGBUF pSgBuf, const void *pvBuf, size_t cbC
  * @param   pfnCopyTo    The callback to call on every S/G buffer segment until the operation finished.
  * @param   pvUser       Opaque user data to pass in the given callback.
  *
- * @note This operation advances the internal buffer pointer of the S/G buffer.
+ * @note    This operation advances the internal buffer pointer of the S/G buffer.
  */
 RTDECL(size_t) RTSgBufCopyToFn(PRTSGBUF pSgBuf, size_t cbCopy, PFNRTSGBUFCOPYTO pfnCopyTo, void *pvUser);
 
@@ -358,7 +360,7 @@ RTDECL(size_t) RTSgBufCopyToFn(PRTSGBUF pSgBuf, size_t cbCopy, PFNRTSGBUFCOPYTO 
  * @param   pfnCopyFrom  The callback to call on every S/G buffer segment until the operation finished.
  * @param   pvUser       Opaque user data to pass in the given callback.
  *
- * @note This operation advances the internal buffer pointer of the S/G buffer.
+ * @note    This operation advances the internal buffer pointer of the S/G buffer.
  */
 RTDECL(size_t) RTSgBufCopyFromFn(PRTSGBUF pSgBuf, size_t cbCopy, PFNRTSGBUFCOPYFROM pfnCopyFrom, void *pvUser);
 
@@ -391,11 +393,13 @@ RTDECL(size_t) RTSgBufSegArrayCreate(PRTSGBUF pSgBuf, PRTSGSEG paSeg, unsigned *
 /**
  * Returns whether the given S/G buffer is zeroed out from the current position
  * upto the number of bytes to check.
- *
- * @returns true if the buffer has only zeros
- *          false otherwise.
+ * 
+ * @retval  true if the buffer has only zeros
+ * @retval  false otherwise.
  * @param   pSgBuf      The S/G buffer.
- * @param   cbCheck     Number of bytes to check.
+ * @param   cbCheck     Number of bytes to check. 
+ *  
+ * @note    This operation advances the internal buffer pointer of the S/G buffer.
  */
 RTDECL(bool) RTSgBufIsZero(PRTSGBUF pSgBuf, size_t cbCheck);
 

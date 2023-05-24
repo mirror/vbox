@@ -141,6 +141,7 @@ ifdef VBOX_WITH_TESTCASES # The whole file
   	tstSemPingPong \
   	tstRTSemRW \
   	tstRTSemXRoads \
+  	tstRTSg \
   	tstRTSort \
   	tstRTStrAlloc \
   	tstRTStrCache \
@@ -828,6 +829,9 @@ ifdef VBOX_WITH_TESTCASES # The whole file
 
  tstRTSemXRoads_TEMPLATE = VBoxR3TstExe
  tstRTSemXRoads_SOURCES = tstRTSemXRoads.cpp
+
+ tstRTSg_TEMPLATE = VBoxR3TstExe
+ tstRTSg_SOURCES = tstRTSg.cpp
 
  tstRTSort_TEMPLATE = VBoxR3TstExe
  tstRTSort_SOURCES = tstRTSort.cpp
