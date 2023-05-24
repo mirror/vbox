@@ -31,6 +31,7 @@
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
+#include "UICommon.h"
 #include "UIHelpBrowserDialog.h"
 #include "UISpecialControls.h"
 
