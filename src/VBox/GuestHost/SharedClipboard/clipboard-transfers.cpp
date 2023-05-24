@@ -1339,6 +1339,14 @@ int ShClTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
     return rc;
 }
 
+/**
+ * Writes a single transfer list entry.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Clipboard transfer to handle.
+ * @param   hList               List handle of list to write to.
+ * @param   pEntry              Entry information to write.
+ */
 int ShClTransferListWrite(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
                           PSHCLLISTENTRY pEntry)
 {

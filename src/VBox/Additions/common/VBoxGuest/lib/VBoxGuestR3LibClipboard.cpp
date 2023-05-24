@@ -1770,14 +1770,14 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListHdrRead(PSHCLTXPROVIDER
 
 /** @copydoc SHCLTXPROVIDERIFACE::pfnListEntryRead */
 static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListEntryRead(PSHCLTXPROVIDERCTX pCtx,
-                                                                   SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry)
+                                                                   SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry)
 {
     LogFlowFuncEnter();
 
     PVBGLR3SHCLCMDCTX pCmdCtx = (PVBGLR3SHCLCMDCTX)pCtx->pvUser;
     AssertPtr(pCmdCtx);
 
-    int rc = VbglR3ClipboardListEntryRead(pCmdCtx, hList, pEntry);
+    int rc = VbglR3ClipboardListEntryRead(pCmdCtx, hList, pListEntry);
 
     LogFlowFuncLeaveRC(rc);
     return rc;

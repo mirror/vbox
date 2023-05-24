@@ -741,24 +741,24 @@ typedef struct _SHCLTXPROVIDERIFACE
      * @returns VBox status code or VERR_NO_MORE_FILES if the end of the list has been reached.
      * @param   pCtx                Provider context to use.
      * @param   hList               List handle of list to read from.
-     * @param   pEntry              Where to store the read information.
+     * @param   pListEntry          Where to store the read information.
      */
-    DECLCALLBACKMEMBER(int, pfnListEntryRead,(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry));
+    DECLCALLBACKMEMBER(int, pfnListEntryRead,(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry));
     /**
      * Writes a single transfer list entry.
      *
      * @returns VBox status code.
      * @param   pCtx                Provider context to use.
      * @param   hList               List handle of list to write to.
-     * @param   pEntry              Entry information to write.
+     * @param   pListEntry          Entry information to write.
      */
-    DECLCALLBACKMEMBER(int, pfnListEntryWrite,(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry));
+    DECLCALLBACKMEMBER(int, pfnListEntryWrite,(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry));
     /**
      * Opens a transfer object.
      *
      * @returns VBox status code.
      * @param   pCtx                Provider context to use.
-     * @param   pOpenCreateParms    Open / create parameters of transfer object to open / create.
+     * @param   pCreateParms        Open / create parameters of transfer object to open / create.
      * @param   phObj               Where to store the handle of transfer object opened on success.
      */
     DECLCALLBACKMEMBER(int, pfnObjOpen,(PSHCLTXPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj));
@@ -776,8 +776,8 @@ typedef struct _SHCLTXPROVIDERIFACE
      * @returns VBox status code.
      * @param   pCtx                Provider context to use.
      * @param   hObj                Handle of transfer object to read from.
-     * @param   pvBuf               Buffer for where to store the read data.
-     * @param   cbBuf               Size (in bytes) of buffer.
+     * @param   pvData              Buffer for where to store the read data.
+     * @param   cbData              Size (in bytes) of buffer.
      * @param   fFlags              Read flags. Optional.
      * @param   pcbRead             Where to return how much bytes were read on success. Optional.
      */
@@ -789,8 +789,8 @@ typedef struct _SHCLTXPROVIDERIFACE
      * @returns VBox status code.
      * @param   pCtx                Provider context to use.
      * @param   hObj                Handle of transfer object to write to.
-     * @param   pvBuf               Buffer of data to write.
-     * @param   cbBuf               Size (in bytes) of buffer to write.
+     * @param   pvData              Buffer of data to write.
+     * @param   cbData              Size (in bytes) of buffer to write.
      * @param   fFlags              Write flags. Optional.
      * @param   pcbWritten          How much bytes were writtenon success. Optional.
      */
