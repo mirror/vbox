@@ -439,6 +439,7 @@ VBOX_DI_VBAPP_DYLIBS = \
 	$(if $(VBOX_WITH_GUEST_PROPS),MacOS/VBoxGuestPropSvc.dylib,) \
 	MacOS/VBoxHostChannel.dylib \
 	MacOS/VBoxVMM.dylib \
+	$(if $(VBOX_WITH_VIRT_ARMV8),MacOS/VBoxVMMArm.dylib,) \
 	MacOS/VBoxXPCOM.dylib \
 	MacOS/VBoxXPCOMC.dylib \
 	MacOS/components/VBoxC.dylib \
