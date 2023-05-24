@@ -463,9 +463,10 @@ time on documenting it. -->
           <arg choice="plain">guesttohost</arg>
           <arg choice="plain">bidirectional</arg>
         </group></arg>
-<!-- There is a currently undocumented option &#45;&#45;clipboard-file-transfers.
-The implementation is not finished, so postpone documenting until it
-actually is ready for users. -->
+      <arg>--clipboard-file-transfers=<group choice="plain">
+          <arg choice="plain">enabled</arg>
+          <arg choice="plain">disabled</arg>
+        </group></arg>
       <arg>--drag-and-drop=<group choice="plain">
           <arg choice="plain">disabled</arg>
           <arg choice="plain">hosttoguest</arg>
@@ -2011,6 +2012,19 @@ it unless this changes. -->
               <xref linkend="generalsettings" />.
             </para><para>
               The clipboard feature is available only if you have the
+              Guest Additions be installed in the VM.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--clipboard-file-transfers=<replaceable>value</replaceable></option></term>
+          <listitem><para>
+              Specifies whether file transfers via clipboard between
+              the guest VM and the host are enabled or not.
+              Valid values are: <literal>disabled</literal>,
+              <literal>enabled</literal>. Depends on the current
+              clipboard mode being set.
+            </para><para>
+              This clipboard file transfer feature is available only if you have the
               Guest Additions be installed in the VM.
             </para></listitem>
         </varlistentry>
