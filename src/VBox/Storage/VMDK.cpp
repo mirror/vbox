@@ -43,8 +43,9 @@
 #include <iprt/uuid.h>
 #include <iprt/path.h>
 #include <iprt/rand.h>
-#include <iprt/string.h>
+#include <iprt/sg.h>
 #include <iprt/sort.h>
+#include <iprt/string.h>
 #include <iprt/zip.h>
 #include <iprt/asm.h>
 #ifdef RT_OS_WINDOWS
@@ -479,7 +480,7 @@ typedef struct VMDKIMAGE
      * and allocating/freeing an array in the read/write functions every time
      * is too expensive.
      */
-    PPDMDATASEG     paSegments;
+    PRTSGSEG        paSegments;
     /** Entries available in the segments array. */
     unsigned        cSegments;
 
