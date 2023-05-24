@@ -36,10 +36,12 @@
 #include <QDialog>
 #include <QEvent>
 #include <QGraphicsWidget>
+#include <QMainWindow>
 #include <QObject>
 #include <QWidget>
 
 /* GUI includes: */
+#include "QIWithRestorableGeometry.h"
 #include "UILibraryDefs.h"
 #include "UITranslator.h"
 
@@ -85,6 +87,7 @@ protected:
   *        to library because latter can have lack of required instantiations (current case). */
 template class SHARED_LIBRARY_STUFF QIWithRetranslateUI<QWidget>;
 template class SHARED_LIBRARY_STUFF QIWithRetranslateUI<QDialog>;
+template class SHARED_LIBRARY_STUFF QIWithRetranslateUI<QIWithRestorableGeometry<QMainWindow> >;
 
 
 /** Template for automatic language translations of underlying QWidget with certain flags. */
