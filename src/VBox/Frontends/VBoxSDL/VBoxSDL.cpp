@@ -3572,11 +3572,6 @@ static void SetPointerShape(const PointerShapeChangeData *data)
 #endif
 
 #if defined(RT_OS_WINDOWS)
-        uint32_t srcShapePtrScan = data->width * 4;
-        const uint8_t *srcAndMaskPtr = shape;
-        const uint8_t *srcShapePtr = shape + ((andMaskSize + 3) & ~3);
-        uint32_t andMaskSize = (data->width + 7) / 8 * data->height;
-        const uint8_t* shape = data->shape.raw();
         BITMAPV5HEADER bi;
         HBITMAP hBitmap;
         void *lpBits;
