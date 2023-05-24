@@ -214,12 +214,12 @@ RTDECL(void) RTSgBufReset(PRTSGBUF pSgBuf);
 
 /**
  * Clones a given S/G buffer.
- *  
+ *
  * This is only a shallow copy.  Both S/G buffers will point to the same segment
- * array. 
- *  
+ * array.
+ *
  * The buffer position will be preserved.
- *  
+ *
  * @param   pSgBufNew    The new S/G buffer to clone to.
  * @param   pSgBufOld    The source S/G buffer to clone from.
  */
@@ -393,12 +393,12 @@ RTDECL(size_t) RTSgBufSegArrayCreate(PRTSGBUF pSgBuf, PRTSGSEG paSeg, unsigned *
 /**
  * Returns whether the given S/G buffer is zeroed out from the current position
  * upto the number of bytes to check.
- * 
+ *
  * @retval  true if the buffer has only zeros
  * @retval  false otherwise.
  * @param   pSgBuf      The S/G buffer.
- * @param   cbCheck     Number of bytes to check. 
- *  
+ * @param   cbCheck     Number of bytes to check.
+ *
  * @note    This operation advances the internal buffer pointer of the S/G buffer.
  */
 RTDECL(bool) RTSgBufIsZero(PRTSGBUF pSgBuf, size_t cbCheck);

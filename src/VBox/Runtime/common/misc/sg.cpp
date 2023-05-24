@@ -50,7 +50,7 @@
  */
 static void *rtSgBufGet(PRTSGBUF pSgBuf, size_t *pcbData)
 {
-    /* 
+    /*
      * Check that the S/G buffer has memory left (!RTSgIsEnd(pSgBuf)).
      */
     unsigned const idxSeg = pSgBuf->idxSeg;
@@ -75,7 +75,7 @@ static void *rtSgBufGet(PRTSGBUF pSgBuf, size_t *pcbData)
                    pSgBuf->paSegs[pSgBuf->idxSeg].cbSeg));
 #endif
 
-        /* 
+        /*
          * Advance ...
          */
         if (cbSegLeft == cbData)
