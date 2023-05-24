@@ -1701,7 +1701,8 @@ VBGLR3DECL(int) VbglR3ClipboardObjWriteSend(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDL
 *   Transfer interface implementations                                                                                           *
 *********************************************************************************************************************************/
 
-static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceGetRoots(PSHCLTXPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList)
+/** @copydoc SHCLTXPROVIDERIFACE::pfnRootsGet */
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceRootsGet(PSHCLTXPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList)
 {
     LogFlowFuncEnter();
 
@@ -1714,6 +1715,7 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceGetRoots(PSHCLTXPROVIDERCTX
     return rc;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnListOpen */
 static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms,
                                                               PSHCLLISTHANDLE phList)
 {
@@ -1728,6 +1730,7 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListOpen(PSHCLTXPROVIDERCTX
     return rc;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnListClose */
 static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListClose(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList)
 {
     LogFlowFuncEnter();
@@ -1741,6 +1744,7 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListClose(PSHCLTXPROVIDERCT
     return rc;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnListHdrRead */
 static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListHdrRead(PSHCLTXPROVIDERCTX pCtx,
                                                                  SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr)
 {
@@ -1764,6 +1768,7 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListHdrRead(PSHCLTXPROVIDER
     return rc;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnListEntryRead */
 static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListEntryRead(PSHCLTXPROVIDERCTX pCtx,
                                                                    SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry)
 {
@@ -1778,6 +1783,7 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListEntryRead(PSHCLTXPROVID
     return rc;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnObjOpen */
 static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjOpen(PSHCLTXPROVIDERCTX pCtx,
                                                              PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj)
 {
@@ -1792,6 +1798,7 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjOpen(PSHCLTXPROVIDERCTX 
     return rc;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnObjClose */
 static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
 {
     LogFlowFuncEnter();
@@ -1805,6 +1812,7 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjClose(PSHCLTXPROVIDERCTX
     return rc;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnObjRead */
 static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjRead(PSHCLTXPROVIDERCTX pCtx,
                                                              SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData,
                                                              uint32_t fFlags, uint32_t *pcbRead)
@@ -1859,7 +1867,7 @@ static int vbglR3ClipboardTransferStart(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFER
                  * our VbglR3 routines here. */
                 if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE)
                 {
-                    creationCtx.Interface.pfnRootsGet      = vbglR3ClipboardTransferIfaceGetRoots;
+                    creationCtx.Interface.pfnRootsGet      = vbglR3ClipboardTransferIfaceRootsGet;
 
                     creationCtx.Interface.pfnListOpen      = vbglR3ClipboardTransferIfaceListOpen;
                     creationCtx.Interface.pfnListClose     = vbglR3ClipboardTransferIfaceListClose;

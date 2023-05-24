@@ -96,6 +96,7 @@ void shClSvcClientTransfersReset(PSHCLCLIENT pClient)
 *   Provider interface implementation                                                                                            *
 *********************************************************************************************************************************/
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnRootsGet */
 DECLCALLBACK(int) shClSvcTransferIfaceRootsGet(PSHCLTXPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList)
 {
     LogFlowFuncEnter();
@@ -219,6 +220,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceRootsGet(PSHCLTXPROVIDERCTX pCtx, PSHCLROO
     return rc;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnListOpen */
 DECLCALLBACK(int) shClSvcTransferIfaceListOpen(PSHCLTXPROVIDERCTX pCtx,
                                                PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList)
 {
@@ -280,6 +282,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceListOpen(PSHCLTXPROVIDERCTX pCtx,
     return rc;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnListClose */
 DECLCALLBACK(int) shClSvcTransferIfaceListClose(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList)
 {
     LogFlowFuncEnter();
@@ -327,6 +330,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceListClose(PSHCLTXPROVIDERCTX pCtx, SHCLLIS
     return rc;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnListHdrRead */
 DECLCALLBACK(int) shClSvcTransferIfaceListHdrRead(PSHCLTXPROVIDERCTX pCtx,
                                                   SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr)
 {
@@ -379,6 +383,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceListHdrRead(PSHCLTXPROVIDERCTX pCtx,
     return rc;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnListHdrWrite */
 DECLCALLBACK(int) shClSvcTransferIfaceListHdrWrite(PSHCLTXPROVIDERCTX pCtx,
                                                    SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr)
 {
@@ -389,6 +394,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceListHdrWrite(PSHCLTXPROVIDERCTX pCtx,
     return VERR_NOT_IMPLEMENTED;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnListEntryRead */
 DECLCALLBACK(int) shClSvcTransferIfaceListEntryRead(PSHCLTXPROVIDERCTX pCtx,
                                                     SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry)
 {
@@ -441,6 +447,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceListEntryRead(PSHCLTXPROVIDERCTX pCtx,
     return rc;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnListEntryWrite */
 DECLCALLBACK(int) shClSvcTransferIfaceListEntryWrite(PSHCLTXPROVIDERCTX pCtx,
                                                      SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry)
 {
@@ -451,6 +458,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceListEntryWrite(PSHCLTXPROVIDERCTX pCtx,
     return VERR_NOT_IMPLEMENTED;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnObjOpen */
 int shClSvcTransferIfaceObjOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms,
                                 PSHCLOBJHANDLE phObj)
 {
@@ -516,6 +524,7 @@ int shClSvcTransferIfaceObjOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS
     return rc;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnObjClose */
 int shClSvcTransferIfaceObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
 {
     LogFlowFuncEnter();
@@ -571,6 +580,7 @@ int shClSvcTransferIfaceObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
     return rc;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnObjRead */
 int shClSvcTransferIfaceObjRead(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                                 void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead)
 {
@@ -632,6 +642,7 @@ int shClSvcTransferIfaceObjRead(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
     return rc;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnObjWrite */
 int shClSvcTransferIfaceObjWrite(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                                  void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten)
 {

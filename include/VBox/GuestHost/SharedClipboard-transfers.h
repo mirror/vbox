@@ -692,17 +692,108 @@ typedef struct SHCLTRANSFERCTX *PSHCLTRANSFERCTX;
  */
 typedef struct _SHCLTXPROVIDERIFACE
 {
+    /**
+     * Returns the root entries of a clipboard transfer.
+     *
+     * @returns VBox status code.
+     * @param   pCtx                Provider context to use.
+     * @param   ppRootList          Where to store the root list on success.
+     */
     DECLCALLBACKMEMBER(int, pfnRootsGet,(PSHCLTXPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList));
+    /**
+     * Opens a transfer list.
+     *
+     * @returns VBox status code.
+     * @param   pCtx                Provider context to use.
+     * @param   pOpenParms          List open parameters to use for opening.
+     * @param   phList              Where to store the List handle of opened list on success.
+     */
     DECLCALLBACKMEMBER(int, pfnListOpen,(PSHCLTXPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList));
+    /**
+     * Closes a transfer list.
+     *
+     * @returns VBox status code.
+     * @param   pCtx                Provider context to use.
+     * @param   hList               Handle of list to close.
+     */
     DECLCALLBACKMEMBER(int, pfnListClose,(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList));
+    /**
+     * Reads the list header.
+     *
+     * @returns VBox status code.
+     * @param   pCtx                Provider context to use.
+     * @param   hList               List handle of list to read header for.
+     * @param   pListHdr            Where to store the list header read.
+     */
     DECLCALLBACKMEMBER(int, pfnListHdrRead,(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr));
+    /**
+     * Writes the list header.
+     *
+     * @returns VBox status code.
+     * @param   pCtx                Provider context to use.
+     * @param   hList               List handle of list to write header for.
+     * @param   pListHdr            List header to write.
+     */
     DECLCALLBACKMEMBER(int, pfnListHdrWrite,(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr));
+    /**
+     * Reads a single transfer list entry.
+     *
+     * @returns VBox status code or VERR_NO_MORE_FILES if the end of the list has been reached.
+     * @param   pCtx                Provider context to use.
+     * @param   hList               List handle of list to read from.
+     * @param   pEntry              Where to store the read information.
+     */
     DECLCALLBACKMEMBER(int, pfnListEntryRead,(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry));
+    /**
+     * Writes a single transfer list entry.
+     *
+     * @returns VBox status code.
+     * @param   pCtx                Provider context to use.
+     * @param   hList               List handle of list to write to.
+     * @param   pEntry              Entry information to write.
+     */
     DECLCALLBACKMEMBER(int, pfnListEntryWrite,(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry));
+    /**
+     * Opens a transfer object.
+     *
+     * @returns VBox status code.
+     * @param   pCtx                Provider context to use.
+     * @param   pOpenCreateParms    Open / create parameters of transfer object to open / create.
+     * @param   phObj               Where to store the handle of transfer object opened on success.
+     */
     DECLCALLBACKMEMBER(int, pfnObjOpen,(PSHCLTXPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj));
+    /**
+     * Closes a transfer object.
+     *
+     * @returns VBox status code.
+     * @param   pCtx                Provider context to use.
+     * @param   hObj                Handle of transfer object to close.
+     */
     DECLCALLBACKMEMBER(int, pfnObjClose,(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj));
+    /**
+     * Reads from a transfer object.
+     *
+     * @returns VBox status code.
+     * @param   pCtx                Provider context to use.
+     * @param   hObj                Handle of transfer object to read from.
+     * @param   pvBuf               Buffer for where to store the read data.
+     * @param   cbBuf               Size (in bytes) of buffer.
+     * @param   fFlags              Read flags. Optional.
+     * @param   pcbRead             Where to return how much bytes were read on success. Optional.
+     */
     DECLCALLBACKMEMBER(int, pfnObjRead,(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData,
                                         uint32_t fFlags, uint32_t *pcbRead));
+    /**
+     * Writes to a transfer object.
+     *
+     * @returns VBox status code.
+     * @param   pCtx                Provider context to use.
+     * @param   hObj                Handle of transfer object to write to.
+     * @param   pvBuf               Buffer of data to write.
+     * @param   cbBuf               Size (in bytes) of buffer to write.
+     * @param   fFlags              Write flags. Optional.
+     * @param   pcbWritten          How much bytes were writtenon success. Optional.
+     */
     DECLCALLBACKMEMBER(int, pfnObjWrite,(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData,
                                          uint32_t fFlags, uint32_t *pcbWritten));
 } SHCLTXPROVIDERIFACE;
