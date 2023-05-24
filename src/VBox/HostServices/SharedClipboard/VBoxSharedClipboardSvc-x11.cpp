@@ -504,22 +504,25 @@ int ShClBackendTransferCreate(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLT
 {
     RT_NOREF(pBackend);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
-    return ShClHttpTransferRegisterAndMaybeStart(&pClient->State.pCtx->X11.HttpCtx, pTransfer);
+    /* We only need to start the HTTP server (and register the transfer to it) when we actually receive data from the guest. */
+    if (ShClTransferGetDir(pTransfer) == SHCLTRANSFERDIR_FROM_REMOTE)
+        return ShClHttpTransferRegisterAndMaybeStart(&pClient->State.pCtx->X11.HttpCtx, pTransfer);
 #else
     RT_NOREF(pClient, pTransfer);
 #endif
-    return VERR_NOT_IMPLEMENTED;
+    return VINF_SUCCESS;
 }
 
 int ShClBackendTransferDestroy(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pBackend);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
-    return ShClHttpTransferUnregisterAndMaybeStop(&pClient->State.pCtx->X11.HttpCtx, pTransfer);
+    /* See comment in ShClBackendTransferCreate(). */
+    if (ShClTransferGetDir(pTransfer) == SHCLTRANSFERDIR_FROM_REMOTE)
+        return ShClHttpTransferUnregisterAndMaybeStop(&pClient->State.pCtx->X11.HttpCtx, pTransfer);
 #else
     RT_NOREF(pClient, pTransfer);
 #endif
-
     return VINF_SUCCESS;
 }
 

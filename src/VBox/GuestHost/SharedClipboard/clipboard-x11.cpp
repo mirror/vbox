@@ -1267,6 +1267,10 @@ void ShClX11Destroy(PSHCLX11CTX pCtx)
 
     LogFlowFunc(("pCtx=%p\n", pCtx));
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+    ShClTransferHttpServerDestroy(&pCtx->HttpCtx.HttpServer);
+#endif
+
 #ifdef TESTCASE
     /** @todo The testcases currently do not utilize the threading code. So uninit stuff here. */
     clipUnregisterContext(pCtx);
