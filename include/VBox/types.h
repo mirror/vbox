@@ -1015,22 +1015,6 @@ typedef struct VMM2USERMETHODS const *PCVMM2USERMETHODS;
 
 
 /**
- * Data transport buffer (scatter/gather)
- */
-typedef struct PDMDATASEG
-{
-    /** Length of buffer in entry. */
-    size_t  cbSeg;
-    /** Pointer to the start of the buffer. */
-    void   *pvSeg;
-} PDMDATASEG;
-/** Pointer to a data transport segment. */
-typedef PDMDATASEG *PPDMDATASEG;
-/** Pointer to a const data transport segment. */
-typedef PDMDATASEG const *PCPDMDATASEG;
-
-
-/**
  * Forms of generic segment offloading.
  */
 typedef enum PDMNETWORKGSOTYPE
