@@ -184,9 +184,9 @@
 
 /** @name System register IDs.
  * @{ */
-/** OSLAR_EL1 register - RW. */
+/** OSLAR_EL1 register - WO. */
 #define ARMV8_AARCH64_SYSREG_OSLAR_EL1              ARMV8_AARCH64_SYSREG_ID_CREATE(2, 0, 1, 0, 4)
-/** OSLSR_EL1 register - RW. */
+/** OSLSR_EL1 register - RO. */
 #define ARMV8_AARCH64_SYSREG_OSLSR_EL1              ARMV8_AARCH64_SYSREG_ID_CREATE(2, 0, 1, 1, 4)
 /** OSDLR_EL1 register - RW. */
 #define ARMV8_AARCH64_SYSREG_OSDLR_EL1              ARMV8_AARCH64_SYSREG_ID_CREATE(2, 0, 1, 3, 4)
@@ -1067,13 +1067,13 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 #define ARMV8_ICC_IGRPEN0_EL1_AARCH64_ENABLE_BIT                0
 /** @} */
 
+
 /** @name ICC_IGRPEN1_EL1 - Interrupt Controller Interrupt Group 1 Enable Register (EL1)
  * @{ */
 /** Bit 0 - Enables Group 1 interrupts for the current Security state. */
 #define ARMV8_ICC_IGRPEN1_EL1_AARCH64_ENABLE                    RT_BIT_64(0)
 #define ARMV8_ICC_IGRPEN1_EL1_AARCH64_ENABLE_BIT                0
 /** @} */
-
 
 
 /** @name CNTV_CTL_EL0 - Counter-timer Virtual Timer Control register.
@@ -1087,6 +1087,31 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 /** Bit 2 - Timer status bit. */
 #define ARMV8_CNTV_CTL_EL0_AARCH64_ISTATUS                      RT_BIT_64(2)
 #define ARMV8_CNTV_CTL_EL0_AARCH64_ISTATUS_BIT                  2
+/** @} */
+
+
+/** @name OSLAR_EL1 - OS Lock Access Register.
+ * @{ */
+/** Bit 0 - The OS Lock status bit. */
+#define ARMV8_OSLAR_EL1_AARCH64_OSLK                            RT_BIT_64(0)
+#define ARMV8_OSLAR_EL1_AARCH64_OSLK_BIT                        0
+/** @} */
+
+
+/** @name OSLSR_EL1 - OS Lock Status Register.
+ * @{ */
+/** Bit 0 - OSLM[0] Bit 0 of OS Lock model implemented. */
+#define ARMV8_OSLSR_EL1_AARCH64_OSLM0                           RT_BIT_64(0)
+#define ARMV8_OSLSR_EL1_AARCH64_OSLM0_BIT                       0
+/** Bit 1 - The OS Lock status bit. */
+#define ARMV8_OSLSR_EL1_AARCH64_OSLK                            RT_BIT_64(1)
+#define ARMV8_OSLSR_EL1_AARCH64_OSLK_BIT                        1
+/** Bit 2 - Not 32-bit access. */
+#define ARMV8_OSLSR_EL1_AARCH64_NTT                             RT_BIT_64(2)
+#define ARMV8_OSLSR_EL1_AARCH64_NTT_BIT                         2
+/** Bit 0 - OSLM[1] Bit 1 of OS Lock model implemented. */
+#define ARMV8_OSLSR_EL1_AARCH64_OSLM1                           RT_BIT_64(3)
+#define ARMV8_OSLSR_EL1_AARCH64_OSLM1_BIT                       3
 /** @} */
 
 

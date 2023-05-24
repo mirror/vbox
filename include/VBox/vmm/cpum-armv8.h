@@ -67,6 +67,8 @@ typedef enum CPUMSYSREGRDFN
 
     /** Read from a GICv3 PE ICC system register. */
     kCpumSysRegRdFn_GicV3Icc,
+    /** Read from the OSLSR_EL1 syste register. */
+    kCpumSysRegRdFn_OslsrEl1,
 
     /** End of valid system register read function indexes. */
     kCpumSysRegRdFn_End
@@ -91,6 +93,8 @@ typedef enum CPUMSYSREGWRFN
 
     /** Write to a GICv3 PE ICC system register. */
     kCpumSysRegWrFn_GicV3Icc,
+    /** Write to the OSLAR_EL1 syste register. */
+    kCpumSysRegWrFn_OslarEl1,
 
     /** End of valid system register write function indexes. */
     kCpumSysRegWrFn_End

@@ -156,10 +156,15 @@ typedef struct CPUMCTX
 
     uint32_t        fPadding0;
 
+    /** OS lock status accessed through OSLAR_EL1 and OSLSR_EL1. */
+    bool            fOsLck;
+
+    uint8_t         afPadding1[7];
+
     /** Externalized state tracker, CPUMCTX_EXTRN_XXX. */
     uint64_t        fExtrn;
 
-    uint64_t        au64Padding1[2];
+    uint64_t        au64Padding2[1];
 } CPUMCTX;
 
 

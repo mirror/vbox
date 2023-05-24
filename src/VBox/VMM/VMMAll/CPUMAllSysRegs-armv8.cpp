@@ -36,6 +36,8 @@
 #include <VBox/vmm/vmcc.h>
 #include <VBox/err.h>
 
+#include <iprt/armv8.h>
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -159,6 +161,26 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumSysRegWr_GicV3Icc(PVMCPUCC pVCpu, uint32_t
 }
 
 
+
+/** @callback_method_impl{FNCPUMRDSYSREG} */
+static DECLCALLBACK(VBOXSTRICTRC) cpumSysRegRd_OslsrEl1(PVMCPUCC pVCpu, uint32_t idSysReg, PCCPUMSYSREGRANGE pRange, uint64_t *puValue)
+{
+    RT_NOREF(idSysReg, pRange);
+    *puValue = pVCpu->cpum.s.Guest.fOsLck ? ARMV8_OSLSR_EL1_AARCH64_OSLK : 0;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRSYSREG} */
+static DECLCALLBACK(VBOXSTRICTRC) cpumSysRegWr_OslarEl1(PVMCPUCC pVCpu, uint32_t idSysReg, PCCPUMSYSREGRANGE pRange, uint64_t uValue, uint64_t uRawValue)
+{
+    RT_NOREF(idSysReg, pRange, uRawValue);
+    Assert(!(uValue & ~ARMV8_OSLAR_EL1_AARCH64_OSLK));
+    pVCpu->cpum.s.Guest.fOsLck = RT_BOOL(uValue);
+    return VINF_SUCCESS;
+}
+
+
 /**
  * System register read function table.
  */
@@ -169,6 +191,7 @@ static const struct READSYSREGCLANG11WEIRDNOTHROW { PFNCPUMRDSYSREG pfnRdSysReg;
     { NULL }, /* Alias */
     { cpumSysRegRd_WriteOnly },
     { cpumSysRegRd_GicV3Icc  },
+    { cpumSysRegRd_OslsrEl1  },
 };
 
 
@@ -182,6 +205,7 @@ static const struct WRITESYSREGCLANG11WEIRDNOTHROW { PFNCPUMWRSYSREG pfnWrSysReg
     { cpumSysRegWr_ReadOnly },
     { NULL }, /* Alias */
     { cpumSysRegWr_GicV3Icc },
+    { cpumSysRegWr_OslarEl1 },
 };
 
 
@@ -401,7 +425,7 @@ VMMDECL(VBOXSTRICTRC) CPUMSetGuestSysReg(PVMCPUCC pVCpu, uint32_t idSysReg, uint
         Log(("CPUM: Unknown MSR %#x, %#llx -> #GP(0)\n", idSysReg, uValue));
         STAM_REL_COUNTER_INC(&pVM->cpum.s.cSysRegWrites);
         STAM_REL_COUNTER_INC(&pVM->cpum.s.cSysRegWritesUnknown);
-        rcStrict = VERR_CPUM_RAISE_GP_0;
+        rcStrict = VERR_CPUM_RAISE_GP_0; /** @todo Better status code. */
     }
     return rcStrict;
 }
@@ -424,11 +448,13 @@ DECLHIDDEN(int) cpumR3SysRegStrictInitChecks(void)
     CPUM_ASSERT_RD_SYSREG_FN(FixedValue);
     CPUM_ASSERT_RD_SYSREG_FN(WriteOnly);
     CPUM_ASSERT_RD_SYSREG_FN(GicV3Icc);
+    CPUM_ASSERT_RD_SYSREG_FN(OslsrEl1);
 
     AssertReturn(g_aCpumWrSysRegFns[kCpumSysRegWrFn_Invalid].pfnWrSysReg == NULL, VERR_CPUM_IPE_2);
     CPUM_ASSERT_WR_SYSREG_FN(IgnoreWrite);
     CPUM_ASSERT_WR_SYSREG_FN(ReadOnly);
     CPUM_ASSERT_WR_SYSREG_FN(GicV3Icc);
+    CPUM_ASSERT_WR_SYSREG_FN(OslarEl1);
 
     return VINF_SUCCESS;
 }

@@ -70,6 +70,31 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+
+/** Internal form used by the macros. */
+#ifdef VBOX_WITH_STATISTICS
+# define RINT(a_uFirst, a_uLast, a_enmRdFn, a_enmWrFn, a_offCpumCpu, a_uInitOrReadValue, a_fWrIgnMask, a_fWrGpMask, a_szName) \
+    { a_uFirst, a_uLast, a_enmRdFn, a_enmWrFn, a_offCpumCpu, 0, 0, a_uInitOrReadValue, a_fWrIgnMask, a_fWrGpMask, a_szName, \
+      { 0 }, { 0 }, { 0 }, { 0 } }
+#else
+# define RINT(a_uFirst, a_uLast, a_enmRdFn, a_enmWrFn, a_offCpumCpu, a_uInitOrReadValue, a_fWrIgnMask, a_fWrGpMask, a_szName) \
+    { a_uFirst, a_uLast, a_enmRdFn, a_enmWrFn, a_offCpumCpu, 0, 0, a_uInitOrReadValue, a_fWrIgnMask, a_fWrGpMask, a_szName }
+#endif
+
+/** Function handlers, extended version. */
+#define MFX(a_uMsr, a_szName, a_enmRdFnSuff, a_enmWrFnSuff, a_uValue, a_fWrIgnMask, a_fWrGpMask) \
+    RINT(a_uMsr, a_uMsr, kCpumSysRegRdFn_##a_enmRdFnSuff, kCpumSysRegWrFn_##a_enmWrFnSuff, 0, a_uValue, a_fWrIgnMask, a_fWrGpMask, a_szName)
+/** Function handlers, read-only. */
+#define MFO(a_uMsr, a_szName, a_enmRdFnSuff) \
+    RINT(a_uMsr, a_uMsr, kCpumSysRegRdFn_##a_enmRdFnSuff, kCpumSysRegWrFn_ReadOnly, 0, 0, 0, UINT64_MAX, a_szName)
+/** Read-only fixed value, ignores all writes. */
+#define MVI(a_uMsr, a_szName, a_uValue) \
+    RINT(a_uMsr, a_uMsr, kCpumSysRegRdFn_FixedValue, kCpumSysRegWrFn_IgnoreWrite, 0, a_uValue, UINT64_MAX, 0, a_szName)
+
+
+/*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 
@@ -102,6 +127,17 @@ static DECLCALLBACK(void) cpumR3InfoGuestInstr(PVM pVM, PCDBGFINFOHLP pHlp, cons
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+/**
+ * System register ranges.
+ */
+static CPUMSYSREGRANGE const g_aSysRegRanges[] =
+{
+    MFX(ARMV8_AARCH64_SYSREG_OSLAR_EL1, "OSLAR_EL1", WriteOnly, OslarEl1, 0, UINT64_C(0xfffffffffffffffe), UINT64_C(0xfffffffffffffffe)),
+    MFO(ARMV8_AARCH64_SYSREG_OSLSR_EL1, "OSLSR_EL1", OslsrEl1),
+    MVI(ARMV8_AARCH64_SYSREG_OSDLR_EL1, "OSDLR_EL1", 0)
+};
+
+
 #if 0 /** @todo Will come later. */
 /** Saved state field descriptors for CPUMCTX. */
 static const SSMFIELD g_aCpumCtxFields[] =
@@ -184,6 +220,24 @@ static const SSMFIELD g_aCpumCtxFields[] =
 
 
 /**
+ * Initializes the guest system register states.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ */
+static int cpumR3InitSysRegs(PVM pVM)
+{
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aSysRegRanges); i++)
+    {
+        int rc = CPUMR3SysRegRangesInsert(pVM, &g_aSysRegRanges[i]);
+        AssertLogRelRCReturn(rc, rc);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Initializes the CPUM.
  *
  * @returns VBox status code.
@@ -227,6 +281,13 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
                                  &cpumR3InfoGuest, DBGFINFO_FLAGS_ALL_EMTS);
 
     rc = cpumR3DbgInit(pVM);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Initialize the Guest system register states.
+     */
+    rc = cpumR3InitSysRegs(pVM);
     if (RT_FAILURE(rc))
         return rc;
 
