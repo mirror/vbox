@@ -158,6 +158,8 @@ protected slots:
     virtual void sltHostScreenGeometryChange();
     /** Handles host-screen available-area change. */
     virtual void sltHostScreenAvailableAreaChange();
+    /* Handles Help Request. */
+    virtual void sltHandleHelpRequest();
 
 protected:
 

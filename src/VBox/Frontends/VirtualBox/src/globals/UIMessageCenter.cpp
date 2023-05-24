@@ -2102,78 +2102,6 @@ void UIMessageCenter::sltResetSuppressedMessages()
     gEDataManager->setSuppressedMessages(QStringList());
 }
 
-void UIMessageCenter::sltShowUserManual(const QString &strHelpFilePath)
-{
-    if (!QFileInfo(strHelpFilePath).exists())
-    {
-        UINotificationMessage::cannotFindHelpFile(strHelpFilePath);
-        return;
-    }
-    if (!m_pHelpBrowserDialog)
-    {
-        m_pHelpBrowserDialog = new UIHelpBrowserDialog(0 /* parent */, 0 /* Center Widget */, strHelpFilePath);
-        AssertReturnVoid(m_pHelpBrowserDialog);
-        connect(m_pHelpBrowserDialog, &QMainWindow::destroyed, this, &UIMessageCenter::sltHelpBrowserClosed);
-    }
-
-    m_pHelpBrowserDialog->show();
-    m_pHelpBrowserDialog->setWindowState(m_pHelpBrowserDialog->windowState() & ~Qt::WindowMinimized);
-    m_pHelpBrowserDialog->activateWindow();
-}
-
-void UIMessageCenter::sltHelpBrowserClosed()
-{
-    m_pHelpBrowserDialog = 0;
-}
-
-void UIMessageCenter::sltHandleHelpRequest()
-{
-    sltHandleHelpRequestWithKeyword(uiCommon().helpKeyword(sender()));
-}
-
-void UIMessageCenter::sltHandleHelpRequestWithKeyword(const QString &strHelpKeyword)
-{
-    /* First open or show the help browser: */
-    checkManualFileAndShow();
-    /* Show the help page for the @p strHelpKeyword: */
-    if (m_pHelpBrowserDialog && !strHelpKeyword.isEmpty())
-        m_pHelpBrowserDialog->showHelpForKeyword(strHelpKeyword);
-}
-
-void UIMessageCenter::checkManualFileAndShow()
-{
-#ifndef VBOX_OSE
-    /* For non-OSE version we just open it: */
-    sltShowUserManual(uiCommon().helpFile());
-#else /* #ifndef VBOX_OSE */
-    /* For OSE version we have to check if it present first: */
-    QString strUserManualFileName1 = uiCommon().helpFile();
-    QString strShortFileName = QFileInfo(strUserManualFileName1).fileName();
-    QString strUserManualFileName2 = QDir(uiCommon().homeFolder()).absoluteFilePath(strShortFileName);
-    /* Show if user manual already present: */
-    if (QFile::exists(strUserManualFileName1))
-        sltShowUserManual(strUserManualFileName1);
-    else if (QFile::exists(strUserManualFileName2))
-        sltShowUserManual(strUserManualFileName2);
-# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    /* If downloader is running already: */
-    else if (UINotificationDownloaderUserManual::exists())
-        gpNotificationCenter->invoke();
-    /* Else propose to download user manual: */
-    else if (confirmLookingForUserManual(strUserManualFileName1))
-    {
-        /* Download user manual: */
-        UINotificationDownloaderUserManual *pNotification = UINotificationDownloaderUserManual::instance(UICommon::helpFile());
-        /* After downloading finished => show User Manual: */
-        connect(pNotification, &UINotificationDownloaderUserManual::sigUserManualDownloaded,
-                this, &UIMessageCenter::sltShowUserManual);
-        /* Append and start notification: */
-        gpNotificationCenter->append(pNotification);
-    }
-# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-#endif /* #ifdef VBOX_OSE */
-}
-
 void UIMessageCenter::sltShowMessageBox(QWidget *pParent, MessageType enmType,
                                         const QString &strMessage, const QString &strDetails,
                                         int iButton1, int iButton2, int iButton3,
@@ -2189,7 +2117,6 @@ void UIMessageCenter::sltShowMessageBox(QWidget *pParent, MessageType enmType,
 }
 
 UIMessageCenter::UIMessageCenter()
-    : m_pHelpBrowserDialog(0)
 {
     /* Assign instance: */
     s_pInstance = this;

@@ -270,7 +270,7 @@ void UIFDCreationDialog::prepare()
             connect(m_pButtonBox, &QDialogButtonBox::accepted, this, &UIFDCreationDialog::accept);
             connect(m_pButtonBox, &QDialogButtonBox::rejected, this, &UIFDCreationDialog::reject);
             connect(m_pButtonBox->button(QDialogButtonBox::Help), &QPushButton::pressed,
-                    &(msgCenter()), &UIMessageCenter::sltHandleHelpRequest);
+                    m_pButtonBox, &QIDialogButtonBox::sltHandleHelpRequest);
             pLayoutMain->addWidget(m_pButtonBox, 3, 0, 1, 3);
         }
     }

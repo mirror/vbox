@@ -37,7 +37,6 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
-#include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "QIToolBar.h"
 #include "UIVisoHostBrowser.h"
@@ -687,7 +686,7 @@ void UIVisoCreatorDialog::prepareWidgets()
         pMainLayout->addWidget(m_pButtonBox);
 
         connect(m_pButtonBox->button(QIDialogButtonBox::Help), &QPushButton::pressed,
-                &(msgCenter()), &UIMessageCenter::sltHandleHelpRequest);
+                m_pButtonBox, &QIDialogButtonBox::sltHandleHelpRequest);
         m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
 
         uiCommon().setHelpKeyword(m_pButtonBox->button(QIDialogButtonBox::Help), "create-optical-disk-image");

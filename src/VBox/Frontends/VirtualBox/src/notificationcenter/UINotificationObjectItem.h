@@ -91,6 +91,11 @@ protected:
     bool  m_fHovered;
     /** Holds whether item is toggled. */
     bool  m_fToggled;
+
+private slots:
+
+    /** Handles help request. */
+    void sltHandleHelpRequest();
 };
 
 /** UINotificationObjectItem extension for notification-progress. */

@@ -52,6 +52,7 @@
 /* GUI includes: */
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
+#include "UIHelpBrowserDialog.h"
 #include "UIIconPool.h"
 #include "UIMachine.h"
 #include "UIMessageCenter.h"
@@ -4242,7 +4243,7 @@ void UISoftKeyboard::sltResetKeyboard()
 
 void UISoftKeyboard::sltHandleHelpRequest()
 {
-    emit sigHelpRequested(uiCommon().helpKeyword(this));
+    UIHelpBrowserDialog::findManualFileAndShow(uiCommon().helpKeyword(this));
 }
 
 void UISoftKeyboard::prepareObjects()
@@ -4326,7 +4327,6 @@ void UISoftKeyboard::prepareConnections()
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigCloseSettingsWidget, this, &UISoftKeyboard::sltShowHideSettingsWidget);
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigColorThemeSelectionChanged, this, &UISoftKeyboard::sltHandleColorThemeListSelection);
 
-    connect(this, &UISoftKeyboard::sigHelpRequested, &msgCenter(), &UIMessageCenter::sltHandleHelpRequest);
     connect(&uiCommon(), &UICommon::sigAskToCommitData, this, &UISoftKeyboard::sltReleaseKeys);
 }
 

@@ -44,6 +44,7 @@
 #include "QIRichTextLabel.h"
 #include "UICommon.h"
 #include "UIIconPool.h"
+#include "UIHelpBrowserDialog.h"
 #include "UIMessageCenter.h"
 
 /* Other VBox includes: */
@@ -289,7 +290,7 @@ void QIMessageBox::prepare()
                 if (m_pButtonHelp)
                 {
                     uiCommon().setHelpKeyword(m_pButtonHelp, m_strHelpKeyword);
-                    connect(m_pButtonHelp, &QPushButton::clicked, &msgCenter(), &UIMessageCenter::sltHandleHelpRequest);
+                    connect(m_pButtonHelp, &QPushButton::clicked, m_pButtonBox, &QIDialogButtonBox::sltHandleHelpRequest);
                 }
             }
 

@@ -235,8 +235,8 @@ public:
 
     /** @name Help browser stuff.
       * @{ */
-        /** Shpws the help browser. */
-        void showHelpBrowser();
+        /** Returns the current help key word. */
+        QString currentHelpKeyword() const;
     /** @} */
 
 public slots:

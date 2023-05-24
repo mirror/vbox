@@ -31,9 +31,13 @@
 # pragma once
 #endif
 
+/* Qt includes: */
+#include <QPointer>
+
 /* GUI includes: */
 #include "QIWithRestorableGeometry.h"
 #include "QIWithRetranslateUI.h"
+
 
 /* Forward declarations: */
 class QLabel;
@@ -45,9 +49,18 @@ class SHARED_LIBRARY_STUFF UIHelpBrowserDialog : public QIWithRetranslateUI<QIWi
 
 public:
 
-    UIHelpBrowserDialog(QWidget *pParent, QWidget *pCenterWidget, const QString &strHelpFilePath);
+
     /** A passthru function for QHelpIndexWidget::showHelpForKeyword. */
     void showHelpForKeyword(const QString &strKeyword);
+
+    static void findManualFileAndShow(const QString &strKeyword = QString());
+
+    /** @name Remove default ctor, and copying.
+     * @{ */
+       UIHelpBrowserDialog() = delete;
+       UIHelpBrowserDialog(const UIHelpBrowserDialog &other) = delete;
+       void operator=(const UIHelpBrowserDialog &other) = delete;
+    /** @} */
 
 protected:
 
@@ -57,9 +70,9 @@ protected:
 
     /** @name Prepare/cleanup cascade.
      * @{ */
-    virtual void prepareCentralWidget();
-    virtual void loadSettings();
-    virtual void saveDialogGeometry();
+       virtual void prepareCentralWidget();
+       virtual void loadSettings();
+       virtual void saveDialogGeometry();
     /** @} */
 
     /** Returns whether the window should be maximized when geometry being restored. */
@@ -73,11 +86,15 @@ private slots:
 
 private:
 
+    UIHelpBrowserDialog(QWidget *pParent, QWidget *pCenterWidget, const QString &strHelpFilePath);
+    static void showUserManual(const QString &strHelpFilePath, const QString &strKeyword);
+
     QString m_strHelpFilePath;
     UIHelpBrowserWidget *m_pWidget;
     QWidget *m_pCenterWidget;
     int m_iGeometrySaveTimerId;
     QLabel *m_pZoomLabel;
+    static QPointer<UIHelpBrowserDialog> m_pInstance;
 };
 
 

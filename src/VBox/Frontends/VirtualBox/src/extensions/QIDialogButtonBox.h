@@ -80,6 +80,11 @@ public:
     /** Defines whether button-box should avoid picking default button. */
     void setDoNotPickDefaultButton(bool fDoNotPickDefaultButton);
 
+public slots:
+
+    /** Handles help request. */
+    void sltHandleHelpRequest();
+
 protected:
 
     /** Handles translation event. */

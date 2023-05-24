@@ -51,6 +51,7 @@
 #include "UIFileManagerDialog.h"
 #include "UIFrameBuffer.h"
 #include "UIGuestProcessControlDialog.h"
+#include "UIHelpBrowserDialog.h"
 #include "UIHostComboEditor.h"
 #include "UIIconPool.h"
 #include "UIKeyboardHandler.h"
@@ -748,6 +749,11 @@ void UIMachineLogic::sltHostScreenAvailableAreaChange()
 #endif /* !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 }
 
+void UIMachineLogic::sltHandleHelpRequest()
+{
+    UIHelpBrowserDialog::findManualFileAndShow();
+}
+
 UIMachineLogic::UIMachineLogic(UIMachine *pMachine)
     : QIWithRetranslateUI3<QObject>(pMachine)
     , m_pMachine(pMachine)
@@ -1086,7 +1092,7 @@ void UIMachineLogic::prepareActionConnections()
     /* 'Help' menu 'Contents' action. Done here since we react differently to this action
      * in manager and runtime UI: */
     connect(actionPool()->action(UIActionIndex_Simple_Contents), &UIAction::triggered,
-            &msgCenter(), &UIMessageCenter::sltHandleHelpRequest);
+            this, &UIMachineLogic::sltHandleHelpRequest);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' actions connections: */

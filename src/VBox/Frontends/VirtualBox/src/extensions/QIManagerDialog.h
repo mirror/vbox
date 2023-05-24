@@ -104,9 +104,6 @@ signals:
 
     /** Notifies listeners about dialog should be closed. */
     void sigClose();
-    /** Notifies listeners about help requested.
-      * @param  strHelpKeyword  Brings the tag to find related section in the manual. */
-    void sigHelpRequested(const QString &strHelpKeyword);
 
 protected:
 

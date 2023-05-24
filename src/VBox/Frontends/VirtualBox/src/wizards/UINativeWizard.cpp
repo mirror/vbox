@@ -40,8 +40,8 @@
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
+#include "UIHelpBrowserDialog.h"
 #include "UIIconPool.h"
-#include "UIMessageCenter.h"
 #include "UINativeWizard.h"
 #include "UINativeWizardPage.h"
 #include "UINotificationCenter.h"
@@ -91,11 +91,11 @@ void UIFrame::paintEvent(QPaintEvent *pEvent)
 UINativeWizard::UINativeWizard(QWidget *pParent,
                                WizardType enmType,
                                WizardMode enmMode /* = WizardMode_Auto */,
-                               const QString &strHelpTag /* = QString() */)
+                               const QString &strHelpKeyword /* = QString() */)
     : QIWithRetranslateUI2<QDialog>(pParent, Qt::Window)
     , m_enmType(enmType)
     , m_enmMode(enmMode == WizardMode_Auto ? gEDataManager->modeForWizardType(m_enmType) : enmMode)
-    , m_strHelpHashtag(strHelpTag)
+    , m_strHelpKeyword(strHelpKeyword)
     , m_iLastIndex(-1)
     , m_fClosed(false)
     , m_pLabelPixmap(0)
@@ -426,6 +426,11 @@ void UINativeWizard::sltNext()
     }
 }
 
+void UINativeWizard::sltHandleHelpRequest()
+{
+    UIHelpBrowserDialog::findManualFileAndShow(uiCommon().helpKeyword(this));
+}
+
 void UINativeWizard::prepare()
 {
     /* Prepare main layout: */
@@ -554,9 +559,9 @@ void UINativeWizard::prepare()
                 for (int i = WizardButtonType_Invalid + 1; i < WizardButtonType_Max; ++i)
                 {
                     const WizardButtonType enmType = (WizardButtonType)i;
-                    /* Create Help button only if help hash tag is set.
+                    /* Create Help button only if help keyword is set.
                      * Create other buttons in any case: */
-                    if (enmType != WizardButtonType_Help || !m_strHelpHashtag.isEmpty())
+                    if (enmType != WizardButtonType_Help || !m_strHelpKeyword.isEmpty())
                         m_buttons[enmType] = new QPushButton(pWidgetBottom);
                     QPushButton *pButton = wizardButton(enmType);
                     if (pButton)
@@ -571,9 +576,9 @@ void UINativeWizard::prepare()
                 if (wizardButton(WizardButtonType_Help))
                 {
                     connect(wizardButton(WizardButtonType_Help), &QPushButton::clicked,
-                            &(msgCenter()), &UIMessageCenter::sltHandleHelpRequest);
+                            this, &UINativeWizard::sltHandleHelpRequest);
                     wizardButton(WizardButtonType_Help)->setShortcut(QKeySequence::HelpContents);
-                    uiCommon().setHelpKeyword(wizardButton(WizardButtonType_Help), m_strHelpHashtag);
+                    uiCommon().setHelpKeyword(this, m_strHelpKeyword);
                 }
                 connect(wizardButton(WizardButtonType_Expert), &QPushButton::clicked,
                         this, &UINativeWizard::sltExpert);

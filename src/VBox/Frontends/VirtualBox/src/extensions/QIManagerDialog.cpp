@@ -36,6 +36,7 @@
 #include "QIManagerDialog.h"
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
+#include "UIHelpBrowserDialog.h"
 #include "UIMessageCenter.h"
 #ifdef VBOX_WS_MAC
 # include "QIToolBar.h"
@@ -90,7 +91,7 @@ void QIManagerDialog::closeEvent(QCloseEvent *pEvent)
 
 void QIManagerDialog::sltHandleHelpRequested()
 {
-    emit sigHelpRequested(uiCommon().helpKeyword(m_pWidget));
+    UIHelpBrowserDialog::findManualFileAndShow(uiCommon().helpKeyword(m_pWidget));
 }
 
 void QIManagerDialog::prepare()
@@ -196,7 +197,6 @@ void QIManagerDialog::prepareButtonBox()
         connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &QIManagerDialog::close);
         /* Connections to enable the context sensitive help: */
         connect(m_pButtonBox, &QDialogButtonBox::helpRequested, this, &QIManagerDialog::sltHandleHelpRequested);
-        connect(this, &QIManagerDialog::sigHelpRequested, &msgCenter(), &UIMessageCenter::sltHandleHelpRequestWithKeyword);
 
         /* Configure button-box: */
         configureButtonBox();

@@ -41,6 +41,7 @@
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIExtraDataManager.h"
+#include "UIHelpBrowserDialog.h"
 #include "UIIconPool.h"
 #include "UIMachine.h"
 #include "UIMessageCenter.h"
@@ -524,10 +525,10 @@ void UIVMCloseDialog::prepareButtonBox()
                                        | QDialogButtonBox::Ok);
         connect(pButtonBox, &QIDialogButtonBox::accepted, this, &UIVMCloseDialog::accept);
         connect(pButtonBox, &QIDialogButtonBox::rejected, this, &UIVMCloseDialog::reject);
-        connect(pButtonBox->button(QIDialogButtonBox::Help), &QPushButton::pressed,
-                &msgCenter(), &UIMessageCenter::sltHandleHelpRequest);
-        pButtonBox->button(QIDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
         uiCommon().setHelpKeyword(pButtonBox->button(QIDialogButtonBox::Help), "intro-save-machine-state");
+        connect(pButtonBox->button(QIDialogButtonBox::Help), &QPushButton::pressed,
+                pButtonBox, &QIDialogButtonBox::sltHandleHelpRequest);
+        pButtonBox->button(QIDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
 
         /* Add into layout: */
         m_pMainLayout->addWidget(pButtonBox);

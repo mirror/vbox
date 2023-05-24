@@ -264,7 +264,7 @@ void UIVMInformationDialog::prepareButtonBox()
         uiCommon().setHelpKeyword(m_pButtonBox->button(QDialogButtonBox::Help), "vm-session-information");
         connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIVMInformationDialog::sigClose);
         connect(m_pButtonBox->button(QDialogButtonBox::Help), &QPushButton::pressed,
-                &(msgCenter()), &UIMessageCenter::sltHandleHelpRequest);
+                m_pButtonBox, &QIDialogButtonBox::sltHandleHelpRequest);
         /* add button-box into main-layout: */
         centralWidget()->layout()->addWidget(m_pButtonBox);
     }

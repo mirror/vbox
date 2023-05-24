@@ -31,6 +31,7 @@
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
+#include "UIHelpBrowserDialog.h"
 #include "UISpecialControls.h"
 
 /* Other VBox includes: */
@@ -166,4 +167,10 @@ int QIDialogButtonBox::findEmptySpace(QBoxLayout *pLayout) const
             break;
     }
     return i;
+}
+
+void QIDialogButtonBox::sltHandleHelpRequest()
+{
+    AssertReturnVoid(sender());
+    UIHelpBrowserDialog::findManualFileAndShow(uiCommon().helpKeyword(sender()));
 }

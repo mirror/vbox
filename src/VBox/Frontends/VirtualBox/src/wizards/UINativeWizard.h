@@ -96,11 +96,11 @@ public:
     /** Constructs wizard passing @a pParent to the base-class.
       * @param  enmType         Brings the wizard type.
       * @param  enmMode         Brings the wizard mode.
-      * @param  strHelpHashtag  Brings the wizard help hashtag. */
+      * @param  strHelpKeyword  Brings the wizard help keyword. */
     UINativeWizard(QWidget *pParent,
                    WizardType enmType,
                    WizardMode enmMode = WizardMode_Auto,
-                   const QString &strHelpHashtag = QString());
+                   const QString &strHelpKeyword = QString());
     /** Destructs wizard. */
     virtual ~UINativeWizard() RT_OVERRIDE;
 
@@ -172,6 +172,9 @@ private slots:
     /** Switches to next page. */
     void sltNext();
 
+    /** Handle help request*/
+    void sltHandleHelpRequest();
+
 private:
 
     /** Prepares all. */
@@ -203,8 +206,8 @@ private:
     WizardType  m_enmType;
     /** Holds the wizard mode. */
     WizardMode  m_enmMode;
-    /** Holds the wizard help hashtag. */
-    QString     m_strHelpHashtag;
+    /** Holds the wizard help keyword. */
+    QString     m_strHelpKeyword;
     /** Holds the pixmap name. */
     QString     m_strPixmapName;
     /** Holds the last entered page index. */

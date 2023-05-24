@@ -287,15 +287,14 @@ void UIVirtualBoxManagerWidget::updateToolBarMenuButtons(bool fSeparateMenuSecti
         pButton->setPopupMode(fSeparateMenuSection ? QToolButton::MenuButtonPopup : QToolButton::DelayedPopup);
 }
 
-void UIVirtualBoxManagerWidget::showHelpBrowser()
+QString UIVirtualBoxManagerWidget::currentHelpKeyword() const
 {
     QString strHelpKeyword;
     if (isGlobalItemSelected())
         strHelpKeyword = m_pPaneToolsGlobal->currentHelpKeyword();
     else if (isMachineItemSelected())
         strHelpKeyword = m_pPaneToolsMachine->currentHelpKeyword();
-
-    msgCenter().sltHandleHelpRequestWithKeyword(strHelpKeyword);
+    return strHelpKeyword;
 }
 
 void UIVirtualBoxManagerWidget::sltHandleToolBarContextMenuRequest(const QPoint &position)

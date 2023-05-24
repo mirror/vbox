@@ -39,11 +39,14 @@
 #include "UIIconPool.h"
 #include "UIHelpBrowserDialog.h"
 #include "UIHelpBrowserWidget.h"
+#include "UINotificationObjects.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
 
 #include <iprt/assert.h>
+
+QPointer<UIHelpBrowserDialog> UIHelpBrowserDialog::m_pInstance;
 
 
 /*********************************************************************************************************************************
@@ -166,4 +169,61 @@ void UIHelpBrowserDialog::sltZoomPercentageChanged(int iPercentage)
 {
     if (m_pZoomLabel)
         m_pZoomLabel->setText(QString("%1%").arg(QString::number(iPercentage)));
+}
+
+/* static */
+void UIHelpBrowserDialog::findManualFileAndShow(const QString &strKeyword /*= QString() */)
+{
+#ifndef VBOX_OSE
+    /* For non-OSE version we just open it: */
+    showUserManual(uiCommon().helpFile(), strKeyword);
+#else /* #ifndef VBOX_OSE */
+    /* For OSE version we have to check if it present first: */
+    QString strUserManualFileName1 = uiCommon().helpFile();
+    QString strShortFileName = QFileInfo(strUserManualFileName1).fileName();
+    QString strUserManualFileName2 = QDir(uiCommon().homeFolder()).absoluteFilePath(strShortFileName);
+    /* Show if user manual already present: */
+    if (QFile::exists(strUserManualFileName1))
+        showUserManual(strUserManualFileName1, strKeyword);
+    else if (QFile::exists(strUserManualFileName2))
+        showUserManual(strUserManualFileName2, strKeyword);
+# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    /* If downloader is running already: */
+    if (UINotificationDownloaderUserManual::exists())
+        gpNotificationCenter->invoke();
+    /* Else propose to download user manual: */
+    else if (confirmLookingForUserManual(strUserManualFileName1))
+    {
+        /* Download user manual: */
+        UINotificationDownloaderUserManual *pNotification = UINotificationDownloaderUserManual::instance(UICommon::helpFile());
+        /* After downloading finished => show User Manual: */
+        /// @todo
+        // connect(pNotification, &UINotificationDownloaderUserManual::sigUserManualDownloaded,
+        //         this, &UIMessageCenter::showUserManual);
+        /* Append and start notification: */
+        gpNotificationCenter->append(pNotification);
+    }
+# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+#endif /* #ifdef VBOX_OSE */
+}
+
+/* static */
+void UIHelpBrowserDialog::showUserManual(const QString &strHelpFilePath, const QString &strKeyword)
+{
+    if (!QFileInfo(strHelpFilePath).exists())
+    {
+        UINotificationMessage::cannotFindHelpFile(strHelpFilePath);
+        return;
+    }
+    if (!m_pInstance)
+    {
+        m_pInstance = new UIHelpBrowserDialog(0 /* parent */, 0 /* Center Widget */, strHelpFilePath);
+        AssertReturnVoid(m_pInstance);
+    }
+
+    if (!strKeyword.isEmpty())
+        m_pInstance->showHelpForKeyword(strKeyword);
+    m_pInstance->show();
+    m_pInstance->setWindowState(m_pInstance->windowState() & ~Qt::WindowMinimized);
+    m_pInstance->activateWindow();
 }

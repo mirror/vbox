@@ -874,7 +874,7 @@ void UISettingsDialog::prepareWidgets()
                 connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UISettingsDialog::accept);
 #ifndef VBOX_WS_MAC
                 connect(m_pButtonBox->button(QDialogButtonBox::Help), &QAbstractButton::pressed,
-                        &msgCenter(), &UIMessageCenter::sltHandleHelpRequest);
+                        m_pButtonBox, &QIDialogButtonBox::sltHandleHelpRequest);
 #endif
 
                 pLayoutMain->addWidget(m_pButtonBox, 2, 0, 1, 2);
