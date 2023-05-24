@@ -46,11 +46,7 @@ static int shClTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINTERVAL uTime
 static void shclTransferCtxTransferRemoveAndUnregister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer);
 static PSHCLTRANSFER shClTransferCtxGetTransferByIdInternal(PSHCLTRANSFERCTX pTransferCtx, uint32_t uId);
 static PSHCLTRANSFER shClTransferCtxGetTransferByIndexInternal(PSHCLTRANSFERCTX pTransferCtx, uint32_t uIdx);
-static int shClConvertFileCreateFlags(uint32_t fShClFlags, uint64_t *pfOpen);
-static int shClTransferResolvePathAbs(PSHCLTRANSFER pTransfer, const char *pszPath, uint32_t fFlags, char **ppszResolved);
-static int shClTransferValidatePath(const char *pcszPath, bool fMustExist);
 
-/** @todo Split this file up in different modules. */
 
 /**
  * Allocates a new transfer root list.
@@ -577,7 +573,7 @@ static bool shclTransferListEntryNameIsValid(const char *pszName, size_t cbName)
         return false;
     }
 
-    int rc = shClTransferValidatePath(pszName, false /* fMustExist */);
+    int rc = ShClTransferValidatePath(pszName, false /* fMustExist */);
     if (RT_FAILURE(rc))
         return false;
 
@@ -839,7 +835,7 @@ void ShClTransferObjOpenParmsDestroy(PSHCLOBJOPENCREATEPARMS pParms)
  * @param   pTransfer           Clipboard transfer to get object handle info from.
  * @param   hObj                Object handle of the object to get handle info for.
  */
-DECLINLINE(PSHCLOBJHANDLEINFO) shClTransferObjGet(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
+PSHCLOBJHANDLEINFO ShClTransferObjGet(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
 {
     PSHCLOBJHANDLEINFO pIt;
     RTListForEach(&pTransfer->lstObj, pIt, SHCLOBJHANDLEINFO, Node) /** @todo Slooow ...but works for now. */
@@ -873,61 +869,10 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
     LogFlowFunc(("pszPath=%s, fCreate=0x%x\n", pOpenCreateParms->pszPath, pOpenCreateParms->fCreate));
 
     int rc;
-    if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
-    {
-        PSHCLOBJHANDLEINFO pInfo = (PSHCLOBJHANDLEINFO)RTMemAllocZ(sizeof(SHCLOBJHANDLEINFO));
-        if (pInfo)
-        {
-            rc = ShClTransferObjHandleInfoInit(pInfo);
-            if (RT_SUCCESS(rc))
-            {
-                uint64_t fOpen;
-                rc = shClConvertFileCreateFlags(pOpenCreateParms->fCreate, &fOpen);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = shClTransferResolvePathAbs(pTransfer, pOpenCreateParms->pszPath, 0 /* fFlags */,
-                                                    &pInfo->pszPathLocalAbs);
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = RTFileOpen(&pInfo->u.Local.hFile, pInfo->pszPathLocalAbs, fOpen);
-                        if (RT_SUCCESS(rc))
-                            LogRel2(("Shared Clipboard: Opened file '%s'\n", pInfo->pszPathLocalAbs));
-                        else
-                            LogRel(("Shared Clipboard: Error opening file '%s': rc=%Rrc\n", pInfo->pszPathLocalAbs, rc));
-                    }
-                }
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                pInfo->hObj    = pTransfer->uObjHandleNext++;
-                pInfo->enmType = SHCLOBJTYPE_FILE;
-
-                RTListAppend(&pTransfer->lstObj, &pInfo->Node);
-                pTransfer->cObjHandles++;
-
-                LogFlowFunc(("cObjHandles=%RU32\n", pTransfer->cObjHandles));
-
-                *phObj = pInfo->hObj;
-            }
-            else
-            {
-                ShClTransferObjHandleInfoDestroy(pInfo);
-                RTMemFree(pInfo);
-            }
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-    else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
-    {
-        if (pTransfer->ProviderIface.pfnObjOpen)
-            rc = pTransfer->ProviderIface.pfnObjOpen(&pTransfer->ProviderCtx, pOpenCreateParms, phObj);
-        else
-            rc = VERR_NOT_SUPPORTED;
-    }
+    if (pTransfer->ProviderIface.pfnObjOpen)
+        rc = pTransfer->ProviderIface.pfnObjOpen(&pTransfer->ProviderCtx, pOpenCreateParms, phObj);
     else
-        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -944,72 +889,11 @@ int ShClTransferObjClose(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
-    int rc = VINF_SUCCESS;
-
-    if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
-    {
-        PSHCLOBJHANDLEINFO pInfo = shClTransferObjGet(pTransfer, hObj);
-        if (pInfo)
-        {
-            switch (pInfo->enmType)
-            {
-                case SHCLOBJTYPE_DIRECTORY:
-                {
-                    rc = RTDirClose(pInfo->u.Local.hDir);
-                    if (RT_SUCCESS(rc))
-                    {
-                        pInfo->u.Local.hDir = NIL_RTDIR;
-
-                        LogRel2(("Shared Clipboard: Closed directory '%s'\n", pInfo->pszPathLocalAbs));
-                    }
-                    else
-                        LogRel(("Shared Clipboard: Closing directory '%s' failed with %Rrc\n", pInfo->pszPathLocalAbs, rc));
-                    break;
-                }
-
-                case SHCLOBJTYPE_FILE:
-                {
-                    rc = RTFileClose(pInfo->u.Local.hFile);
-                    if (RT_SUCCESS(rc))
-                    {
-                        pInfo->u.Local.hFile = NIL_RTFILE;
-
-                        LogRel2(("Shared Clipboard: Closed file '%s'\n", pInfo->pszPathLocalAbs));
-                    }
-                    else
-                        LogRel(("Shared Clipboard: Closing file '%s' failed with %Rrc\n", pInfo->pszPathLocalAbs, rc));
-                    break;
-                }
-
-                default:
-                    rc = VERR_NOT_IMPLEMENTED;
-                    break;
-            }
-
-            RTListNodeRemove(&pInfo->Node);
-
-            Assert(pTransfer->cObjHandles);
-            pTransfer->cObjHandles--;
-
-            ShClTransferObjHandleInfoDestroy(pInfo);
-
-            RTMemFree(pInfo);
-            pInfo = NULL;
-        }
-        else
-            rc = VERR_NOT_FOUND;
-    }
-    else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
-    {
-        if (pTransfer->ProviderIface.pfnObjClose)
-        {
-            rc = pTransfer->ProviderIface.pfnObjClose(&pTransfer->ProviderCtx, hObj);
-        }
-        else
-            rc = VERR_NOT_SUPPORTED;
-    }
+    int rc;
+    if (pTransfer->ProviderIface.pfnObjClose)
+        rc = pTransfer->ProviderIface.pfnObjClose(&pTransfer->ProviderCtx, hObj);
     else
-        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1035,46 +919,11 @@ int ShClTransferObjRead(PSHCLTRANSFER pTransfer,
     /* pcbRead is optional. */
     /** @todo Validate fFlags. */
 
-    int rc = VINF_SUCCESS;
-
-    if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
-    {
-        PSHCLOBJHANDLEINFO pInfo = shClTransferObjGet(pTransfer, hObj);
-        if (pInfo)
-        {
-            switch (pInfo->enmType)
-            {
-                case SHCLOBJTYPE_FILE:
-                {
-                    size_t cbRead;
-                    rc = RTFileRead(pInfo->u.Local.hFile, pvBuf, cbBuf, &cbRead);
-                    if (RT_SUCCESS(rc))
-                    {
-                        if (pcbRead)
-                            *pcbRead = (uint32_t)cbRead;
-                    }
-                    break;
-                }
-
-                default:
-                    rc = VERR_NOT_SUPPORTED;
-                    break;
-            }
-        }
-        else
-            rc = VERR_NOT_FOUND;
-    }
-    else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
-    {
-        if (pTransfer->ProviderIface.pfnObjRead)
-        {
-            rc = pTransfer->ProviderIface.pfnObjRead(&pTransfer->ProviderCtx, hObj, pvBuf, cbBuf, fFlags, pcbRead);
-        }
-        else
-            rc = VERR_NOT_SUPPORTED;
-    }
+    int rc;
+    if (pTransfer->ProviderIface.pfnObjRead)
+        rc = pTransfer->ProviderIface.pfnObjRead(&pTransfer->ProviderCtx, hObj, pvBuf, cbBuf, fFlags, pcbRead);
     else
-        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1099,40 +948,11 @@ int ShClTransferObjWrite(PSHCLTRANSFER pTransfer,
     AssertReturn   (cbBuf,     VERR_INVALID_PARAMETER);
     /* pcbWritten is optional. */
 
-    int rc = VINF_SUCCESS;
-
-    if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
-    {
-        PSHCLOBJHANDLEINFO pInfo = shClTransferObjGet(pTransfer, hObj);
-        if (pInfo)
-        {
-            switch (pInfo->enmType)
-            {
-                case SHCLOBJTYPE_FILE:
-                {
-                    rc = RTFileWrite(pInfo->u.Local.hFile, pvBuf, cbBuf, (size_t *)pcbWritten);
-                    break;
-                }
-
-                default:
-                    rc = VERR_NOT_SUPPORTED;
-                    break;
-            }
-        }
-        else
-            rc = VERR_NOT_FOUND;
-    }
-    else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
-    {
-        if (pTransfer->ProviderIface.pfnObjWrite)
-        {
-            rc = pTransfer->ProviderIface.pfnObjWrite(&pTransfer->ProviderCtx, hObj, pvBuf, cbBuf, fFlags, pcbWritten);
-        }
-        else
-            rc = VERR_NOT_SUPPORTED;
-    }
+    int rc;
+    if (pTransfer->ProviderIface.pfnObjWrite)
+        rc = pTransfer->ProviderIface.pfnObjWrite(&pTransfer->ProviderCtx, hObj, pvBuf, cbBuf, fFlags, pcbWritten);
     else
-        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1375,156 +1195,6 @@ uint32_t ShClTransferRelease(PSHCLTRANSFER pTransfer)
 }
 
 /**
- * Returns a specific list handle info of a clipboard transfer.
- *
- * @returns Pointer to list handle info if found, or NULL if not found.
- * @param   pTransfer           Clipboard transfer to get list handle info from.
- * @param   hList               List handle of the list to get handle info for.
- */
-DECLINLINE(PSHCLLISTHANDLEINFO) shClTransferListGetByHandle(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
-{
-    PSHCLLISTHANDLEINFO pIt;
-    RTListForEach(&pTransfer->lstList, pIt, SHCLLISTHANDLEINFO, Node) /** @todo Sloooow ... improve this. */
-    {
-        if (pIt->hList == hList)
-            return pIt;
-    }
-
-    return NULL;
-}
-
-/**
- * Creates a new list handle (local only).
- *
- * @returns New List handle on success, or SHCLLISTHANDLE_INVALID on error.
- * @param   pTransfer           Clipboard transfer to create new list handle for.
- */
-DECLINLINE(SHCLLISTHANDLE) shClTransferListHandleNew(PSHCLTRANSFER pTransfer)
-{
-    return pTransfer->uListHandleNext++; /** @todo Good enough for now. Improve this later. */
-}
-
-/**
- * Validates whether a given path matches our set of rules or not.
- *
- * @returns VBox status code.
- * @param   pcszPath            Path to validate.
- * @param   fMustExist          Whether the path to validate also must exist.
- */
-static int shClTransferValidatePath(const char *pcszPath, bool fMustExist)
-{
-    int rc = VINF_SUCCESS;
-
-    if (!strlen(pcszPath))
-        rc = VERR_INVALID_PARAMETER;
-
-    if (   RT_SUCCESS(rc)
-        && !RTStrIsValidEncoding(pcszPath))
-    {
-        rc = VERR_INVALID_UTF8_ENCODING;
-    }
-
-    if (   RT_SUCCESS(rc)
-        && RTStrStr(pcszPath, ".."))
-    {
-        rc = VERR_INVALID_PARAMETER;
-    }
-
-    if (   RT_SUCCESS(rc)
-        && fMustExist)
-    {
-        RTFSOBJINFO objInfo;
-        rc = RTPathQueryInfo(pcszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
-        if (RT_SUCCESS(rc))
-        {
-            if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
-            {
-                if (!RTDirExists(pcszPath)) /* Path must exist. */
-                    rc = VERR_PATH_NOT_FOUND;
-            }
-            else if (RTFS_IS_FILE(objInfo.Attr.fMode))
-            {
-                if (!RTFileExists(pcszPath)) /* File must exist. */
-                    rc = VERR_FILE_NOT_FOUND;
-            }
-            else /* Everything else (e.g. symbolic links) are not supported. */
-            {
-                LogRel2(("Shared Clipboard: Path '%s' contains a symbolic link or junktion, which are not supported\n", pcszPath));
-                rc = VERR_NOT_SUPPORTED;
-            }
-        }
-    }
-
-    if (RT_FAILURE(rc))
-        LogRel2(("Shared Clipboard: Validating path '%s' failed: %Rrc\n", pcszPath, rc));
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Resolves a relative path of a specific transfer to its absolute path.
- *
- * @returns VBox status code.
- * @param   pTransfer           Clipboard transfer to resolve path for.
- * @param   pszPath             Path to resolve.
- * @param   fFlags              Resolve flags. Currently not used and must be 0.
- * @param   ppszResolved        Where to store the allocated resolved path. Must be free'd by the called using RTStrFree().
- */
-static int shClTransferResolvePathAbs(PSHCLTRANSFER pTransfer, const char *pszPath, uint32_t fFlags,
-                                      char **ppszResolved)
-{
-    AssertPtrReturn(pTransfer,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pszPath,     VERR_INVALID_POINTER);
-    AssertReturn   (fFlags == 0, VERR_INVALID_PARAMETER);
-
-    LogFlowFunc(("pszPathRootAbs=%s, pszPath=%s\n", pTransfer->pszPathRootAbs, pszPath));
-
-    int rc = shClTransferValidatePath(pszPath, false /* fMustExist */);
-    if (RT_SUCCESS(rc))
-    {
-        char *pszPathAbs = RTPathJoinA(pTransfer->pszPathRootAbs, pszPath);
-        if (pszPathAbs)
-        {
-            char   szResolved[RTPATH_MAX];
-            size_t cbResolved = sizeof(szResolved);
-            rc = RTPathAbsEx(pTransfer->pszPathRootAbs, pszPathAbs, RTPATH_STR_F_STYLE_HOST, szResolved, &cbResolved);
-
-            RTStrFree(pszPathAbs);
-
-            if (RT_SUCCESS(rc))
-            {
-                LogFlowFunc(("pszResolved=%s\n", szResolved));
-
-                rc = VERR_PATH_NOT_FOUND; /* Play safe by default. */
-
-                /* Make sure the resolved path is part of the set of root entries. */
-                PSHCLLISTROOT pListRoot;
-                RTListForEach(&pTransfer->lstRoots, pListRoot, SHCLLISTROOT, Node)
-                {
-                    if (RTPathStartsWith(szResolved, pListRoot->pszPathAbs))
-                    {
-                        rc = VINF_SUCCESS;
-                        break;
-                    }
-                }
-
-                if (RT_SUCCESS(rc))
-                    *ppszResolved = RTStrDup(szResolved);
-            }
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-
-    if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: Resolving absolute path '%s' failed, rc=%Rrc\n", pszPath, rc));
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
  * Opens a transfer list.
  *
  * @returns VBox status code.
@@ -1539,110 +1209,14 @@ int ShClTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms,
     AssertPtrReturn(pOpenParms, VERR_INVALID_POINTER);
     AssertPtrReturn(phList,     VERR_INVALID_POINTER);
 
-    int rc;
-
     if (pTransfer->cListHandles == pTransfer->cMaxListHandles)
         return VERR_SHCLPB_MAX_LISTS_REACHED;
 
-    if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
-    {
-        LogFlowFunc(("pszPath=%s\n", pOpenParms->pszPath));
-
-        PSHCLLISTHANDLEINFO pInfo
-            = (PSHCLLISTHANDLEINFO)RTMemAllocZ(sizeof(SHCLLISTHANDLEINFO));
-        if (pInfo)
-        {
-            rc = ShClTransferListHandleInfoInit(pInfo);
-            if (RT_SUCCESS(rc))
-            {
-                rc = shClTransferResolvePathAbs(pTransfer, pOpenParms->pszPath, 0 /* fFlags */, &pInfo->pszPathLocalAbs);
-                if (RT_SUCCESS(rc))
-                {
-                    RTFSOBJINFO objInfo;
-                    rc = RTPathQueryInfo(pInfo->pszPathLocalAbs, &objInfo, RTFSOBJATTRADD_NOTHING);
-                    if (RT_SUCCESS(rc))
-                    {
-                        if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
-                        {
-                            rc = RTDirOpen(&pInfo->u.Local.hDir, pInfo->pszPathLocalAbs);
-                            if (RT_SUCCESS(rc))
-                            {
-                                pInfo->enmType = SHCLOBJTYPE_DIRECTORY;
-
-                                LogRel2(("Shared Clipboard: Opening directory '%s'\n", pInfo->pszPathLocalAbs));
-                            }
-                            else
-                                LogRel(("Shared Clipboard: Opening directory '%s' failed with %Rrc\n", pInfo->pszPathLocalAbs, rc));
-
-                        }
-                        else if (RTFS_IS_FILE(objInfo.Attr.fMode))
-                        {
-                            rc = RTFileOpen(&pInfo->u.Local.hFile, pInfo->pszPathLocalAbs,
-                                            RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
-                            if (RT_SUCCESS(rc))
-                            {
-                                pInfo->enmType = SHCLOBJTYPE_FILE;
-
-                                LogRel2(("Shared Clipboard: Opening file '%s'\n", pInfo->pszPathLocalAbs));
-                            }
-                            else
-                                LogRel(("Shared Clipboard: Opening file '%s' failed with %Rrc\n", pInfo->pszPathLocalAbs, rc));
-                        }
-                        else
-                            rc = VERR_NOT_SUPPORTED;
-
-                        if (RT_SUCCESS(rc))
-                        {
-                            pInfo->hList = shClTransferListHandleNew(pTransfer);
-
-                            RTListAppend(&pTransfer->lstList, &pInfo->Node);
-                            pTransfer->cListHandles++;
-
-                            if (phList)
-                                *phList = pInfo->hList;
-
-                            LogFlowFunc(("pszPathLocalAbs=%s, hList=%RU64, cListHandles=%RU32\n",
-                                         pInfo->pszPathLocalAbs, pInfo->hList, pTransfer->cListHandles));
-                        }
-                        else
-                        {
-                            if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
-                            {
-                                if (RTDirIsValid(pInfo->u.Local.hDir))
-                                    RTDirClose(pInfo->u.Local.hDir);
-                            }
-                            else if (RTFS_IS_FILE(objInfo.Attr.fMode))
-                            {
-                                if (RTFileIsValid(pInfo->u.Local.hFile))
-                                    RTFileClose(pInfo->u.Local.hFile);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (RT_FAILURE(rc))
-            {
-                ShClTransferListHandleInfoDestroy(pInfo);
-
-                RTMemFree(pInfo);
-                pInfo = NULL;
-            }
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-    else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
-    {
-        if (pTransfer->ProviderIface.pfnListOpen)
-        {
-            rc = pTransfer->ProviderIface.pfnListOpen(&pTransfer->ProviderCtx, pOpenParms, phList);
-        }
-        else
-            rc = VERR_NOT_SUPPORTED;
-    }
+     int rc;
+     if (pTransfer->ProviderIface.pfnListOpen)
+        rc = pTransfer->ProviderIface.pfnListOpen(&pTransfer->ProviderCtx, pOpenParms, phList);
     else
-        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1662,163 +1236,11 @@ int ShClTransferListClose(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
     if (hList == NIL_SHCLLISTHANDLE)
         return VINF_SUCCESS;
 
-    int rc = VINF_SUCCESS;
-
-    if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
-    {
-        PSHCLLISTHANDLEINFO pInfo = shClTransferListGetByHandle(pTransfer, hList);
-        if (pInfo)
-        {
-            switch (pInfo->enmType)
-            {
-                case SHCLOBJTYPE_DIRECTORY:
-                {
-                    if (RTDirIsValid(pInfo->u.Local.hDir))
-                    {
-                        RTDirClose(pInfo->u.Local.hDir);
-                        pInfo->u.Local.hDir = NIL_RTDIR;
-                    }
-                    break;
-                }
-
-                default:
-                    rc = VERR_NOT_SUPPORTED;
-                    break;
-            }
-
-            RTListNodeRemove(&pInfo->Node);
-
-            Assert(pTransfer->cListHandles);
-            pTransfer->cListHandles--;
-
-            RTMemFree(pInfo);
-        }
-        else
-            rc = VERR_NOT_FOUND;
-    }
-    else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
-    {
-        if (pTransfer->ProviderIface.pfnListClose)
-        {
-            rc = pTransfer->ProviderIface.pfnListClose(&pTransfer->ProviderCtx, hList);
-        }
-        else
-            rc = VERR_NOT_SUPPORTED;
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Adds a file to a transfer list header.
- *
- * @returns VBox status code.
- * @param   pHdr                List header to add file to.
- * @param   pszPath             Path of file to add.
- */
-static int shclTransferListHdrAddFile(PSHCLLISTHDR pHdr, const char *pszPath)
-{
-    AssertPtrReturn(pHdr, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
-
-    uint64_t cbSize = 0;
-    int rc = RTFileQuerySizeByPath(pszPath, &cbSize);
-    if (RT_SUCCESS(rc))
-    {
-        pHdr->cbTotalSize  += cbSize;
-        pHdr->cTotalObjects++;
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Builds a transfer list header, internal version.
- *
- * @returns VBox status code.
- * @param   pHdr                Where to store the build list header.
- * @param   pcszPathAbs         Absolute path to use for building the transfer list.
- */
-static int shclTransferListHdrFromDir(PSHCLLISTHDR pHdr, const char *pcszPathAbs)
-{
-    AssertPtrReturn(pcszPathAbs, VERR_INVALID_POINTER);
-
-    LogFlowFunc(("pcszPathAbs=%s\n", pcszPathAbs));
-
-    RTFSOBJINFO objInfo;
-    int rc = RTPathQueryInfo(pcszPathAbs, &objInfo, RTFSOBJATTRADD_NOTHING);
-    if (RT_SUCCESS(rc))
-    {
-        if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
-        {
-            RTDIR hDir;
-            rc = RTDirOpen(&hDir, pcszPathAbs);
-            if (RT_SUCCESS(rc))
-            {
-                size_t        cbDirEntry = 0;
-                PRTDIRENTRYEX pDirEntry  = NULL;
-                do
-                {
-                    /* Retrieve the next directory entry. */
-                    rc = RTDirReadExA(hDir, &pDirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
-                    if (RT_FAILURE(rc))
-                    {
-                        if (rc == VERR_NO_MORE_FILES)
-                            rc = VINF_SUCCESS;
-                        break;
-                    }
-
-                    switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
-                    {
-                        case RTFS_TYPE_DIRECTORY:
-                        {
-                            /* Skip "." and ".." entries. */
-                            if (RTDirEntryExIsStdDotLink(pDirEntry))
-                                break;
-
-                            pHdr->cTotalObjects++;
-                            break;
-                        }
-                        case RTFS_TYPE_FILE:
-                        {
-                            char *pszSrc = RTPathJoinA(pcszPathAbs, pDirEntry->szName);
-                            if (pszSrc)
-                            {
-                                rc = shclTransferListHdrAddFile(pHdr, pszSrc);
-                                RTStrFree(pszSrc);
-                            }
-                            else
-                                rc = VERR_NO_MEMORY;
-                            break;
-                        }
-                        case RTFS_TYPE_SYMLINK:
-                        {
-                            /** @todo Not implemented yet. */
-                        }
-
-                        default:
-                            break;
-                    }
-
-                } while (RT_SUCCESS(rc));
-
-                RTDirReadExAFree(&pDirEntry, &cbDirEntry);
-                RTDirClose(hDir);
-            }
-        }
-        else if (RTFS_IS_FILE(objInfo.Attr.fMode))
-        {
-            rc = shclTransferListHdrAddFile(pHdr, pcszPathAbs);
-        }
-        else if (RTFS_IS_SYMLINK(objInfo.Attr.fMode))
-        {
-            /** @todo Not implemented yet. */
-        }
-        else
-            rc = VERR_NOT_SUPPORTED;
-    }
+    int rc;
+    if (pTransfer->ProviderIface.pfnListClose)
+        rc = pTransfer->ProviderIface.pfnListClose(&pTransfer->ProviderCtx, hList);
+    else
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1838,68 +1260,35 @@ int ShClTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     AssertPtrReturn(pHdr,      VERR_INVALID_POINTER);
 
-    int rc;
-
     LogFlowFunc(("hList=%RU64\n", hList));
 
-    if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
-    {
-        PSHCLLISTHANDLEINFO pInfo = shClTransferListGetByHandle(pTransfer, hList);
-        if (pInfo)
-        {
-            rc = ShClTransferListHdrInit(pHdr);
-            if (RT_SUCCESS(rc))
-            {
-                switch (pInfo->enmType)
-                {
-                    case SHCLOBJTYPE_DIRECTORY:
-                    {
-                        LogFlowFunc(("DirAbs: %s\n", pInfo->pszPathLocalAbs));
-
-                        rc = shclTransferListHdrFromDir(pHdr, pInfo->pszPathLocalAbs);
-                        break;
-                    }
-
-                    case SHCLOBJTYPE_FILE:
-                    {
-                        LogFlowFunc(("FileAbs: %s\n", pInfo->pszPathLocalAbs));
-
-                        pHdr->cTotalObjects = 1;
-
-                        RTFSOBJINFO objInfo;
-                        rc = RTFileQueryInfo(pInfo->u.Local.hFile, &objInfo, RTFSOBJATTRADD_NOTHING);
-                        if (RT_SUCCESS(rc))
-                        {
-                            pHdr->cbTotalSize = objInfo.cbObject;
-                        }
-                        break;
-                    }
-
-                    default:
-                        rc = VERR_NOT_SUPPORTED;
-                        break;
-                }
-            }
-
-            LogFlowFunc(("cTotalObj=%RU64, cbTotalSize=%RU64\n", pHdr->cTotalObjects, pHdr->cbTotalSize));
-        }
-        else
-            rc = VERR_NOT_FOUND;
-    }
-    else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
-    {
-        if (pTransfer->ProviderIface.pfnListHdrRead)
-        {
-            rc = pTransfer->ProviderIface.pfnListHdrRead(&pTransfer->ProviderCtx, hList, pHdr);
-        }
-        else
-            rc = VERR_NOT_SUPPORTED;
-    }
+    int rc;
+    if (pTransfer->ProviderIface.pfnListHdrRead)
+        rc = pTransfer->ProviderIface.pfnListHdrRead(&pTransfer->ProviderCtx, hList, pHdr);
     else
-        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+/**
+ * Returns a specific list handle info of a clipboard transfer.
+ *
+ * @returns Pointer to list handle info if found, or NULL if not found.
+ * @param   pTransfer           Clipboard transfer to get list handle info from.
+ * @param   hList               List handle of the list to get handle info for.
+ */
+PSHCLLISTHANDLEINFO ShClTransferListGetByHandle(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
+{
+    PSHCLLISTHANDLEINFO pIt;
+    RTListForEach(&pTransfer->lstList, pIt, SHCLLISTHANDLEINFO, Node) /** @todo Sloooow ... improve this. */
+    {
+        if (pIt->hList == hList)
+            return pIt;
+    }
+
+    return NULL;
 }
 
 /**
@@ -1938,136 +1327,13 @@ int ShClTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     AssertPtrReturn(pEntry,    VERR_INVALID_POINTER);
 
-    int rc = VINF_SUCCESS;
-
     LogFlowFunc(("hList=%RU64\n", hList));
 
-    if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
-    {
-        PSHCLLISTHANDLEINFO pInfo = shClTransferListGetByHandle(pTransfer, hList);
-        if (pInfo)
-        {
-            switch (pInfo->enmType)
-            {
-                case SHCLOBJTYPE_DIRECTORY:
-                {
-                    LogFlowFunc(("\tDirectory: %s\n", pInfo->pszPathLocalAbs));
-
-                    for (;;)
-                    {
-                        bool fSkipEntry = false; /* Whether to skip an entry in the enumeration. */
-
-                        size_t        cbDirEntry = 0;
-                        PRTDIRENTRYEX pDirEntry  = NULL;
-                        rc = RTDirReadExA(pInfo->u.Local.hDir, &pDirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
-                        if (RT_SUCCESS(rc))
-                        {
-                            switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
-                            {
-                                case RTFS_TYPE_DIRECTORY:
-                                {
-                                    /* Skip "." and ".." entries. */
-                                    if (RTDirEntryExIsStdDotLink(pDirEntry))
-                                    {
-                                        fSkipEntry = true;
-                                        break;
-                                    }
-
-                                    LogFlowFunc(("Directory: %s\n", pDirEntry->szName));
-                                    break;
-                                }
-
-                                case RTFS_TYPE_FILE:
-                                {
-                                    LogFlowFunc(("File: %s\n", pDirEntry->szName));
-                                    break;
-                                }
-
-                                case RTFS_TYPE_SYMLINK:
-                                {
-                                    rc = VERR_NOT_IMPLEMENTED; /** @todo Not implemented yet. */
-                                    break;
-                                }
-
-                                default:
-                                    break;
-                            }
-
-                            if (   RT_SUCCESS(rc)
-                                && !fSkipEntry)
-                            {
-                                rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pDirEntry->szName);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    pEntry->cbName = (uint32_t)strlen(pEntry->pszName) + 1; /* Include termination. */
-
-                                    AssertPtr(pEntry->pvInfo);
-                                    Assert   (pEntry->cbInfo == sizeof(SHCLFSOBJINFO));
-
-                                    ShClFsObjFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &pDirEntry->Info);
-
-                                    LogFlowFunc(("Entry pszName=%s, pvInfo=%p, cbInfo=%RU32\n",
-                                                 pEntry->pszName, pEntry->pvInfo, pEntry->cbInfo));
-                                }
-                            }
-
-                            RTDirReadExAFree(&pDirEntry, &cbDirEntry);
-                        }
-
-                        if (   !fSkipEntry /* Do we have a valid entry? Bail out. */
-                            || RT_FAILURE(rc))
-                        {
-                            break;
-                        }
-                    }
-
-                    break;
-                }
-
-                case SHCLOBJTYPE_FILE:
-                {
-                    LogFlowFunc(("\tSingle file: %s\n", pInfo->pszPathLocalAbs));
-
-                    RTFSOBJINFO objInfo;
-                    rc = RTFileQueryInfo(pInfo->u.Local.hFile, &objInfo, RTFSOBJATTRADD_NOTHING);
-                    if (RT_SUCCESS(rc))
-                    {
-                        pEntry->pvInfo = (PSHCLFSOBJINFO)RTMemAlloc(sizeof(SHCLFSOBJINFO));
-                        if (pEntry->pvInfo)
-                        {
-                            rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pInfo->pszPathLocalAbs);
-                            if (RT_SUCCESS(rc))
-                            {
-                                ShClFsObjFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &objInfo);
-
-                                pEntry->cbInfo = sizeof(SHCLFSOBJINFO);
-                                pEntry->fInfo  = VBOX_SHCL_INFO_FLAG_FSOBJINFO;
-                            }
-                        }
-                        else
-                            rc = VERR_NO_MEMORY;
-                    }
-
-                    break;
-                }
-
-                default:
-                    rc = VERR_NOT_SUPPORTED;
-                    break;
-            }
-        }
-        else
-            rc = VERR_NOT_FOUND;
-    }
-    else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
-    {
-        if (pTransfer->ProviderIface.pfnListEntryRead)
-            rc = pTransfer->ProviderIface.pfnListEntryRead(&pTransfer->ProviderCtx, hList, pEntry);
-        else
-            rc = VERR_NOT_SUPPORTED;
-    }
+    int rc;
+    if (pTransfer->ProviderIface.pfnListEntryRead)
+        rc = pTransfer->ProviderIface.pfnListEntryRead(&pTransfer->ProviderCtx, hList, pEntry);
     else
-        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2102,7 +1368,7 @@ bool ShClTransferListHandleIsValid(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
-        fIsValid = shClTransferListGetByHandle(pTransfer, hList) != NULL;
+        fIsValid = ShClTransferListGetByHandle(pTransfer, hList) != NULL;
     }
     else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
     {
@@ -2365,56 +1631,11 @@ int ShClTransferRootsGet(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRootList)
 
     LogFlowFuncEnter();
 
-    int rc = VINF_SUCCESS;
-
-    if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
-    {
-        PSHCLROOTLIST pRootList = ShClTransferRootListAlloc();
-        if (!pRootList)
-            return VERR_NO_MEMORY;
-
-        const uint64_t cRoots = (uint32_t)pTransfer->cRoots;
-
-        LogFlowFunc(("cRoots=%RU64\n", cRoots));
-
-        if (cRoots)
-        {
-            PSHCLROOTLISTENTRY paRootListEntries
-                = (PSHCLROOTLISTENTRY)RTMemAllocZ(cRoots * sizeof(SHCLROOTLISTENTRY));
-            if (paRootListEntries)
-            {
-                for (uint64_t i = 0; i < cRoots; ++i)
-                {
-                    rc = ShClTransferRootsEntry(pTransfer, i, &paRootListEntries[i]);
-                    if (RT_FAILURE(rc))
-                        break;
-                }
-
-                if (RT_SUCCESS(rc))
-                    pRootList->paEntries = paRootListEntries;
-            }
-            else
-                rc = VERR_NO_MEMORY;
-        }
-        else
-            rc = VERR_NOT_FOUND;
-
-        if (RT_SUCCESS(rc))
-        {
-            pRootList->Hdr.cRoots = cRoots;
-
-            *ppRootList = pRootList;
-        }
-    }
-    else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
-    {
-        if (pTransfer->ProviderIface.pfnRootsGet)
-            rc = pTransfer->ProviderIface.pfnRootsGet(&pTransfer->ProviderCtx, ppRootList);
-        else
-            rc = VERR_NOT_SUPPORTED;
-    }
+    int rc;
+    if (pTransfer->ProviderIface.pfnRootsGet)
+        rc = pTransfer->ProviderIface.pfnRootsGet(&pTransfer->ProviderCtx, ppRootList);
     else
-        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2467,7 +1688,7 @@ int ShClTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t c
                 /* We don't want to have a relative directory here. */
                 if (RTPathStartsWithRoot(pszPathRootAbs))
                 {
-                    rc = shClTransferValidatePath(pszPathRootAbs, true /* Path must exist */);
+                    rc = ShClTransferValidatePath(pszPathRootAbs, true /* Path must exist */);
                 }
                 else
                     rc = VERR_INVALID_PARAMETER;
@@ -2510,7 +1731,7 @@ int ShClTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t c
                 break;
             }
 
-            rc = shClTransferValidatePath(pListRoot->pszPathAbs, true /* Path must exist */);
+            rc = ShClTransferValidatePath(pListRoot->pszPathAbs, true /* Path must exist */);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -3158,90 +2379,6 @@ void ShClFsObjFromIPRT(PSHCLFSOBJINFO pDst, PCRTFSOBJINFO pSrc)
 }
 
 /**
- * Converts Shared Clipboard create flags (see SharedClipboard-transfers.h) into IPRT create flags.
- *
- * @returns IPRT status code.
- * @param       fShClFlags  Shared clipboard create flags.
- * @param[out]  pfOpen      Where to store the RTFILE_O_XXX flags for
- *                          RTFileOpen.
- *
- * @sa Initially taken from vbsfConvertFileOpenFlags().
- */
-static int shClConvertFileCreateFlags(uint32_t fShClFlags, uint64_t *pfOpen)
-{
-    AssertMsgReturnStmt(!(fShClFlags & ~SHCL_OBJ_CF_VALID_MASK), ("%#x4\n", fShClFlags), *pfOpen = 0, VERR_INVALID_FLAGS);
-
-    uint64_t fOpen = 0;
-
-    switch (fShClFlags & SHCL_OBJ_CF_ACCESS_MASK_RW)
-    {
-        case SHCL_OBJ_CF_ACCESS_NONE:
-        {
-#ifdef RT_OS_WINDOWS
-            if ((fShClFlags & SHCL_OBJ_CF_ACCESS_MASK_ATTR) != SHCL_OBJ_CF_ACCESS_ATTR_NONE)
-                fOpen |= RTFILE_O_OPEN | RTFILE_O_ATTR_ONLY;
-            else
-#endif
-                fOpen |= RTFILE_O_OPEN | RTFILE_O_READ;
-            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_NONE\n"));
-            break;
-        }
-
-        case SHCL_OBJ_CF_ACCESS_READ:
-        {
-            fOpen |= RTFILE_O_OPEN | RTFILE_O_READ;
-            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_READ\n"));
-            break;
-        }
-
-        default:
-            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
-    }
-
-    switch (fShClFlags & SHCL_OBJ_CF_ACCESS_MASK_ATTR)
-    {
-        case SHCL_OBJ_CF_ACCESS_ATTR_NONE:
-        {
-            fOpen |= RTFILE_O_ACCESS_ATTR_DEFAULT;
-            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_ATTR_NONE\n"));
-            break;
-        }
-
-        case SHCL_OBJ_CF_ACCESS_ATTR_READ:
-        {
-            fOpen |= RTFILE_O_ACCESS_ATTR_READ;
-            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_ATTR_READ\n"));
-            break;
-        }
-
-        default:
-            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
-    }
-
-    /* Sharing mask */
-    switch (fShClFlags & SHCL_OBJ_CF_ACCESS_MASK_DENY)
-    {
-        case SHCL_OBJ_CF_ACCESS_DENYNONE:
-            fOpen |= RTFILE_O_DENY_NONE;
-            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_DENYNONE\n"));
-            break;
-
-        case SHCL_OBJ_CF_ACCESS_DENYWRITE:
-            fOpen |= RTFILE_O_DENY_WRITE;
-            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_DENYWRITE\n"));
-            break;
-
-        default:
-            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
-    }
-
-    *pfOpen = fOpen;
-
-    LogFlowFuncLeaveRC(VINF_SUCCESS);
-    return VINF_SUCCESS;
-}
-
-/**
  * Translates a clipboard transfer status (SHCLTRANSFERSTATUS_XXX) into a string.
  *
  * @returns Transfer status string name.
@@ -3260,5 +2397,63 @@ const char *ShClTransferStatusToStr(SHCLTRANSFERSTATUS enmStatus)
         RT_CASE_RET_STR(SHCLTRANSFERSTATUS_ERROR);
     }
     return "Unknown";
+}
+
+/**
+ * Validates whether a given path matches our set of rules or not.
+ *
+ * @returns VBox status code.
+ * @param   pcszPath            Path to validate.
+ * @param   fMustExist          Whether the path to validate also must exist.
+ */
+int ShClTransferValidatePath(const char *pcszPath, bool fMustExist)
+{
+    int rc = VINF_SUCCESS;
+
+    if (!strlen(pcszPath))
+        rc = VERR_INVALID_PARAMETER;
+
+    if (   RT_SUCCESS(rc)
+        && !RTStrIsValidEncoding(pcszPath))
+    {
+        rc = VERR_INVALID_UTF8_ENCODING;
+    }
+
+    if (   RT_SUCCESS(rc)
+        && RTStrStr(pcszPath, ".."))
+    {
+        rc = VERR_INVALID_PARAMETER;
+    }
+
+    if (   RT_SUCCESS(rc)
+        && fMustExist)
+    {
+        RTFSOBJINFO objInfo;
+        rc = RTPathQueryInfo(pcszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
+        if (RT_SUCCESS(rc))
+        {
+            if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
+            {
+                if (!RTDirExists(pcszPath)) /* Path must exist. */
+                    rc = VERR_PATH_NOT_FOUND;
+            }
+            else if (RTFS_IS_FILE(objInfo.Attr.fMode))
+            {
+                if (!RTFileExists(pcszPath)) /* File must exist. */
+                    rc = VERR_FILE_NOT_FOUND;
+            }
+            else /* Everything else (e.g. symbolic links) are not supported. */
+            {
+                LogRel2(("Shared Clipboard: Path '%s' contains a symbolic link or junktion, which are not supported\n", pcszPath));
+                rc = VERR_NOT_SUPPORTED;
+            }
+        }
+    }
+
+    if (RT_FAILURE(rc))
+        LogRel2(("Shared Clipboard: Validating path '%s' failed: %Rrc\n", pcszPath, rc));
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 

@@ -96,7 +96,7 @@ void shClSvcClientTransfersReset(PSHCLCLIENT pClient)
 *   Provider interface implementation                                                                                            *
 *********************************************************************************************************************************/
 
-DECLCALLBACK(int) shClSvcTransferIfaceGetRoots(PSHCLTXPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList)
+DECLCALLBACK(int) shClSvcTransferIfaceRootsGet(PSHCLTXPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList)
 {
     LogFlowFuncEnter();
 
@@ -1867,9 +1867,12 @@ int shClSvcTransferStart(PSHCLCLIENT pClient,
             SHCLTXPROVIDERCREATIONCTX creationCtx;
             RT_ZERO(creationCtx);
 
+            /* Assign local provider first and overwrite interface methods below if needed. */
+            VBClTransferQueryIfaceLocal(&creationCtx.Interface);
+
             if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE) /* Guest -> Host. */
             {
-                creationCtx.Interface.pfnRootsGet      = shClSvcTransferIfaceGetRoots;
+                creationCtx.Interface.pfnRootsGet      = shClSvcTransferIfaceRootsGet;
 
                 creationCtx.Interface.pfnListOpen      = shClSvcTransferIfaceListOpen;
                 creationCtx.Interface.pfnListClose     = shClSvcTransferIfaceListClose;

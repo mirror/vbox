@@ -709,6 +709,24 @@ typedef struct _SHCLTXPROVIDERIFACE
 /** Pointer to a Shared Clipboard transfer provider interface table. */
 typedef SHCLTXPROVIDERIFACE *PSHCLTXPROVIDERIFACE;
 
+/** Queries (assigns) a Shared Clipboard provider interface. */
+#define SHCLTXPROVIDERIFACE_QUERY(a_Iface, a_Name) \
+    a_Iface->pfnRootsGet       = a_Name ## RootsGet; \
+    a_Iface->pfnListOpen       = a_Name ## ListOpen; \
+    a_Iface->pfnListClose      = a_Name ## ListClose; \
+    a_Iface->pfnListHdrRead    = a_Name ## ListHdrRead; \
+    a_Iface->pfnListHdrWrite   = a_Name ## ListHdrWrite; \
+    a_Iface->pfnListEntryRead  = a_Name ## ListEntryRead; \
+    a_Iface->pfnListEntryWrite = a_Name ## ListEntryWrite; \
+    a_Iface->pfnObjOpen        = a_Name ## ObjOpen; \
+    a_Iface->pfnObjClose       = a_Name ## ObjClose; \
+    a_Iface->pfnObjRead        = a_Name ## ObjRead; \
+    a_Iface->pfnObjWrite       = a_Name ## ObjWrite;
+
+/** Queries (assigns) a Shared Clipboard provider interface + returns the interface pointer. */
+#define SHCLTXPROVIDERIFACE_QUERY_RET(a_Iface, a_Name) \
+    SHCLTXPROVIDERIFACE_QUERY(a_Iface, a_Name); return a_Iface;
+
 /**
  * Structure for the Shared Clipboard transfer provider creation context.
  */
@@ -953,6 +971,12 @@ struct SHCLTRANSFERCTX
     uint16_t                    cTransfers;
 };
 
+/** @name Shared Clipboard transfer interface providers.
+ *  @{
+ */
+PSHCLTXPROVIDERIFACE VBClTransferQueryIfaceLocal(PSHCLTXPROVIDERIFACE pIface);
+/** @} */
+
 /** @name Shared Clipboard transfer object API.
  *  @{
  */
@@ -972,6 +996,7 @@ int ShClTransferObjClose(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj);
 bool ShClTransferObjIsComplete(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj);
 int ShClTransferObjRead(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t fFlags, uint32_t *pcbRead);
 int ShClTransferObjWrite(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t fFlags, uint32_t *pcbWritten);
+PSHCLOBJHANDLEINFO ShClTransferObjGet(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj);
 
 PSHCLOBJDATACHUNK ShClTransferObjDataChunkDup(PSHCLOBJDATACHUNK pDataChunk);
 void ShClTransferObjDataChunkDestroy(PSHCLOBJDATACHUNK pDataChunk);
@@ -1001,6 +1026,7 @@ SHCLTRANSFERSTATUS ShClTransferGetStatus(PSHCLTRANSFER pTransfer);
 int ShClTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
 int ShClTransferListClose(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList);
 int ShClTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList, PSHCLLISTHDR pHdr);
+PSHCLLISTHANDLEINFO ShClTransferListGetByHandle(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList);
 PSHCLTRANSFEROBJ ShClTransferListGetObj(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList, uint64_t uIdx);
 int ShClTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry);
 int ShClTransferListWrite(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry);
@@ -1103,7 +1129,13 @@ bool ShClTransferHttpServerIsRunning(PSHCLHTTPSERVER pSrv);
 /** @} */
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP */
 
+/** @name Shared Clipboard transfers utility functions.
+ *  @{
+ */
+const char *ShClTransferStatusToStr(SHCLTRANSFERSTATUS enmStatus);
+int ShClTransferValidatePath(const char *pcszPath, bool fMustExist);
 void ShClFsObjFromIPRT(PSHCLFSOBJINFO pDst, PCRTFSOBJINFO pSrc);
+/** @} */
 
 /** @name Shared Clipboard MIME functions.
  *  @{
@@ -1111,7 +1143,5 @@ void ShClFsObjFromIPRT(PSHCLFSOBJINFO pDst, PCRTFSOBJINFO pSrc);
 bool ShClMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax);
 bool ShClMIMENeedsCache(const char *pcszFormat, size_t cchFormatMax);
 /** @} */
-
-const char *ShClTransferStatusToStr(SHCLTRANSFERSTATUS enmStatus);
 
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_transfers_h */
