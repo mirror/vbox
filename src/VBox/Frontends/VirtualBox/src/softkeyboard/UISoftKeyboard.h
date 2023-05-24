@@ -70,7 +70,6 @@ public:
 
     UISoftKeyboard(QWidget *pParent, UIMachine *pMachine,
                    QWidget *pCenterWidget, QString strMachineName = QString());
-    ~UISoftKeyboard();
 
 protected:
 

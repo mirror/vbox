@@ -3956,10 +3956,6 @@ UISoftKeyboard::UISoftKeyboard(QWidget *pParent, UIMachine *pMachine,
     uiCommon().setHelpKeyword(this, "soft-keyb");
 }
 
-UISoftKeyboard::~UISoftKeyboard()
-{
-}
-
 void UISoftKeyboard::retranslateUi()
 {
 }
