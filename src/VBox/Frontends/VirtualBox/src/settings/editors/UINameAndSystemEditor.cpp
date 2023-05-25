@@ -657,7 +657,7 @@ void UINameAndSystemEditor::prepareFamilyCombo()
         {
             UIGuestOSType guiType;
             guiType.typeId = comType.GetId();
-            guiType.typeDescription = comType.GetDescription();
+            guiType.typeDescription = QString(comType.GetDescription()).remove(" (64-bit)", Qt::CaseInsensitive);
             guiType.is64bit = comType.GetIs64Bit();
             m_types[strFamilyId] << guiType;
         }
