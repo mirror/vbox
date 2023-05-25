@@ -1059,11 +1059,7 @@ int ShClTransferCreateEx(uint32_t cbMaxChunkSize, uint32_t cMaxListHandles, uint
 
     pTransfer->pszPathRootAbs    = NULL;
 
-#ifdef DEBUG_andy
-    pTransfer->uTimeoutMs     = RT_MS_5SEC;
-#else
-    pTransfer->uTimeoutMs     = RT_MS_30SEC;
-#endif
+    pTransfer->uTimeoutMs      = SHCL_TIMEOUT_DEFAULT_MS;
     pTransfer->cbMaxChunkSize  = cbMaxChunkSize;
     pTransfer->cMaxListHandles = cMaxListHandles;
     pTransfer->cMaxObjHandles  = cMaxObjHandles;
@@ -1125,7 +1121,7 @@ int ShClTransferDestroy(PSHCLTRANSFER pTransfer)
 
     LogFlowFuncEnter();
 
-    int rc = shClTransferThreadDestroy(pTransfer, 30 * 1000 /* Timeout in ms */);
+    int rc = shClTransferThreadDestroy(pTransfer, RT_MS_30SEC /* Timeout in ms */);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1941,7 +1937,7 @@ static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThre
                             "shclp");
     if (RT_SUCCESS(rc))
     {
-        int rc2 = RTThreadUserWait(pTransfer->Thread.hThread, 30 * 1000 /* Timeout in ms */);
+        int rc2 = RTThreadUserWait(pTransfer->Thread.hThread, RT_MS_30SEC /* Timeout in ms */);
         AssertRC(rc2);
 
         if (pTransfer->Thread.fStarted) /* Did the thread indicate that it started correctly? */

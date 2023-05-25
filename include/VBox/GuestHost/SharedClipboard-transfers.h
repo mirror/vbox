@@ -79,6 +79,8 @@ typedef struct SHCLTRANSFER *PSHCLTRANSFER;
 #define SHCL_TRANSFER_DEFAULT_MAX_LIST_HANDLES  _4K
 /** Defines the default maximum object handles a Shared Clipboard transfer can have. */
 #define SHCL_TRANSFER_DEFAULT_MAX_OBJ_HANDLES   _4K
+/** Defines the default timeout (in ms) to use for clipboard operations. */
+#define SHCL_TIMEOUT_DEFAULT_MS                 RT_MS_30SEC
 
 /**
  * Defines the transfer status codes.
@@ -940,7 +942,7 @@ typedef struct SHCLTRANSFER
     SHCLTRANSFERSTATE         State;
     /** Absolute path to root entries. */
     char                     *pszPathRootAbs;
-    /** Timeout (in ms) for waiting of events. Default is 30s. */
+    /** Timeout (in ms) for waiting of events. */
     RTMSINTERVAL              uTimeoutMs;
     /** Maximum data chunk size (in bytes) to transfer. Default is 64K. */
     uint32_t                  cbMaxChunkSize;

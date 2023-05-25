@@ -287,7 +287,7 @@ int ShClBackendReadData(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLCLIENTC
             if (RT_SUCCESS(rc))
             {
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = ShClEventWait(pEvent, 30 * 1000, &pPayload);
+                rc = ShClEventWait(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     if (pPayload)
@@ -468,7 +468,7 @@ static DECLCALLBACK(int) shClRequestDataFromSourceCallback(PSHCLCONTEXT pCtx, SH
             RTCritSectLeave(&pClient->CritSect);
 
             PSHCLEVENTPAYLOAD pPayload;
-            rc = ShClEventWait(pEvent, 30 * 1000, &pPayload);
+            rc = ShClEventWait(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
             if (RT_SUCCESS(rc))
             {
                 if (   !pPayload
@@ -546,7 +546,7 @@ int ShClBackendTransferGetRoots(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHC
             {
                 /* X supplies the data asynchronously, so we need to wait for data to arrive first. */
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = ShClEventWait(pEvent, 30 * 1000, &pPayload);
+                rc = ShClEventWait(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     rc = ShClTransferRootsSet(pTransfer,

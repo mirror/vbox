@@ -167,7 +167,7 @@ static int vboxClipboardSvcWinDataRead(PSHCLCONTEXT pCtx, UINT uFormat, void **p
     if (RT_SUCCESS(rc))
     {
         PSHCLEVENTPAYLOAD pPayload;
-        rc = ShClEventWait(pEvent, 30 * 1000, &pPayload);
+        rc = ShClEventWait(pEvent, VBOX_SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
         if (RT_SUCCESS(rc))
         {
             *ppvData = pPayload ? pPayload->pvData : NULL;
@@ -637,7 +637,7 @@ int ShClBackendConnect(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, bool fHeadles
                                 RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLIP");
             if (RT_SUCCESS(rc))
             {
-                int rc2 = RTThreadUserWait(pCtx->hThread, 30 * 1000 /* Timeout in ms */);
+                int rc2 = RTThreadUserWait(pCtx->hThread, RT_MS_30SEC /* Timeout in ms */);
                 AssertRC(rc2);
             }
         }
@@ -681,7 +681,7 @@ int ShClBackendDisconnect(PSHCLBACKEND pBackend, PSHCLCLIENT pClient)
             LogFunc(("Waiting for thread to terminate ...\n"));
 
             /* Wait for the window thread to terminate. */
-            rc = RTThreadWait(pCtx->hThread, 30 * 1000 /* Timeout in ms */, NULL);
+            rc = RTThreadWait(pCtx->hThread, RT_MS_30SEC /* Timeout in ms */, NULL);
             if (RT_FAILURE(rc))
                 LogRel(("Shared Clipboard: Waiting for window thread termination failed with rc=%Rrc\n", rc));
 
