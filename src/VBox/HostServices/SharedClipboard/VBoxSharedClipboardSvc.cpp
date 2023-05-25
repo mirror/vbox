@@ -1444,14 +1444,20 @@ int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
     LogFlowFunc(("fFormats=%#x\n", fFormats));
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    /*
-     * If transfer mode is set to disabled, don't report the URI list format to the guest.
-     */
+    bool fSkipTransfers = false;
     if (!(g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_F_ENABLED))
     {
-        fFormats &= ~VBOX_SHCL_FMT_URI_LIST;
         LogRel2(("Shared Clipboard: File transfers are disabled, skipping reporting those to the guest\n"));
+        fSkipTransfers = true;
     }
+    else if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_TRANSFERS))
+    {
+        LogRel2(("Shared Clipboard: File transfers not supported by installed Guest Addtions, skipping reporting those to the guest\n"));
+        fSkipTransfers = true;
+    }
+
+    if (fSkipTransfers)
+        fFormats &= ~VBOX_SHCL_FMT_URI_LIST;
 #endif
 
 #ifdef LOG_ENABLED
@@ -1476,9 +1482,8 @@ int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
         RTCritSectLeave(&pClient->CritSect);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-        /* If we announce an URI list, create a transfer locally and also tell the guest to create
-         * a transfer on the guest side. */
-        if (fFormats & VBOX_SHCL_FMT_URI_LIST)
+        /* Create a transfer locally and also tell the guest to create a transfer on the guest side. */
+        if (!fSkipTransfers)
         {
             rc = shClSvcTransferStart(pClient, SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL,
                                       NULL /* pTransfer */);
@@ -1490,9 +1495,7 @@ int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
         }
         else
 #endif
-        {
             rc = VINF_SUCCESS;
-        }
     }
     else
         rc = VERR_NO_MEMORY;
@@ -2209,6 +2212,9 @@ static DECLCALLBACK(void) svcCall(void *,
                 LogRel(("Shared Clipboard: Error reported from guest side: %Rrc\n", rcGuest));
 
                 shClSvcClientLock(pClient);
+
+                /* Reset message queue. */
+                shClSvcMsgQueueReset(pClient);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
                 shClSvcClientTransfersReset(pClient);
