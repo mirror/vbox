@@ -87,7 +87,7 @@ private:
 
     /** A passthru function for QHelpIndexWidget::showHelpForKeyword. */
     void showHelpForKeyword(const QString &strKeyword);
-    
+
     QString m_strHelpFilePath;
     UIHelpBrowserWidget *m_pWidget;
     QWidget *m_pCenterWidget;
