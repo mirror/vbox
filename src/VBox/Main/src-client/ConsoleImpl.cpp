@@ -10010,7 +10010,7 @@ int Console::i_changeClipboardFileTransferMode(bool aEnabled)
     RT_ZERO(parm);
 
     parm.type     = VBOX_HGCM_SVC_PARM_32BIT;
-    parm.u.uint32 = aEnabled ? VBOX_SHCL_TRANSFER_MODE_ENABLED : VBOX_SHCL_TRANSFER_MODE_DISABLED;
+    parm.u.uint32 = aEnabled ? VBOX_SHCL_TRANSFER_MODE_F_ENABLED : VBOX_SHCL_TRANSFER_MODE_F_NONE;
 
     int vrc = pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE, 1 /* cParms */, &parm);
     if (RT_FAILURE(vrc))
