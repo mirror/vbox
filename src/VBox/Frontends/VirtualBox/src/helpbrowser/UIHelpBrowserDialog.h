@@ -49,10 +49,6 @@ class SHARED_LIBRARY_STUFF UIHelpBrowserDialog : public QIWithRetranslateUI<QIWi
 
 public:
 
-
-    /** A passthru function for QHelpIndexWidget::showHelpForKeyword. */
-    void showHelpForKeyword(const QString &strKeyword);
-
     static void findManualFileAndShow(const QString &strKeyword = QString());
 
     /** @name Remove default ctor, and copying.
@@ -89,6 +85,9 @@ private:
     UIHelpBrowserDialog(QWidget *pParent, QWidget *pCenterWidget, const QString &strHelpFilePath);
     static void showUserManual(const QString &strHelpFilePath, const QString &strKeyword);
 
+    /** A passthru function for QHelpIndexWidget::showHelpForKeyword. */
+    void showHelpForKeyword(const QString &strKeyword);
+    
     QString m_strHelpFilePath;
     UIHelpBrowserWidget *m_pWidget;
     QWidget *m_pCenterWidget;
