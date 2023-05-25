@@ -178,6 +178,7 @@ void UIHelpBrowserDialog::findManualFileAndShow(const QString &strKeyword /*= QS
     /* For non-OSE version we just open it: */
     showUserManual(uiCommon().helpFile(), strKeyword);
 #else /* #ifndef VBOX_OSE */
+#if 0
     /* For OSE version we have to check if it present first: */
     QString strUserManualFileName1 = uiCommon().helpFile();
     QString strShortFileName = QFileInfo(strUserManualFileName1).fileName();
@@ -204,6 +205,7 @@ void UIHelpBrowserDialog::findManualFileAndShow(const QString &strKeyword /*= QS
         gpNotificationCenter->append(pNotification);
     }
 # endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+#endif // 0
 #endif /* #ifdef VBOX_OSE */
 }
 
