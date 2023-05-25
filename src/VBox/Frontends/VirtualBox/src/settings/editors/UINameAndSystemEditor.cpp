@@ -414,9 +414,9 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     else
     {
        QString strDefaultID = "_64";
-       const int iIndex = m_pComboType->findData(strDefaultID, TypeID, Qt::MatchContains);
-       if (iIndex != -1)
-           m_pComboType->setCurrentIndex(iIndex);
+       const int iIndexAll = m_pComboType->findData(strDefaultID, TypeID, Qt::MatchContains);
+       if (iIndexAll != -1)
+           m_pComboType->setCurrentIndex(iIndexAll);
        else
            m_pComboType->setCurrentIndex(0);
     }
