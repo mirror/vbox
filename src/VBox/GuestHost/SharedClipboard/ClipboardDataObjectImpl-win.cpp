@@ -634,7 +634,7 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
 
                 /* Don't block for too long here, as this also will screw other apps running on the OS. */
                 LogFunc(("Waiting for listing to arrive ...\n"));
-                rc = RTSemEventWait(m_EventListComplete, VBOX_SHCL_TIMEOUT_DEFAULT_MS);
+                rc = RTSemEventWait(m_EventListComplete, SHCL_TIMEOUT_DEFAULT_MS);
                 if (RT_SUCCESS(rc))
                 {
                     LogFunc(("Listing complete\n"));
