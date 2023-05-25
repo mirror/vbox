@@ -71,15 +71,15 @@
 #define VBOX_SHCL_MODE_BIDIRECTIONAL 3
 /** @}  */
 
-/** @name VBOX_SHCL_TRANSFER_MODE_XXX - The Shared Clipboard file transfer mode (bit field).
+/** @name VBOX_SHCL_TRANSFER_MODE_XXX - The Shared Clipboard file transfer mode flags.
  * @{
  */
 /** Shared Clipboard file transfers are disabled. */
-#define VBOX_SHCL_TRANSFER_MODE_DISABLED     UINT32_C(0)
+#define VBOX_SHCL_TRANSFER_MODE_F_NONE         UINT32_C(0)
 /** Shared Clipboard file transfers are enabled. */
-#define VBOX_SHCL_TRANSFER_MODE_ENABLED      RT_BIT(0)
+#define VBOX_SHCL_TRANSFER_MODE_F_ENABLED      RT_BIT(0)
 /** Shared Clipboard file transfer mode valid mask. */
-#define VBOX_SHCL_TRANSFER_MODE_VALID_MASK   UINT32_C(0x1)
+#define VBOX_SHCL_TRANSFER_MODE_F_VALID_MASK   UINT32_C(0x1)
 /** @} */
 
 

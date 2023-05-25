@@ -261,7 +261,7 @@ static RTCRITSECT g_CritSect;               /** @todo r=andy Put this into some 
 static uint32_t g_uMode  = VBOX_SHCL_MODE_OFF;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 /** Global Shared Clipboard (file) transfer mode. */
-uint32_t g_fTransferMode = VBOX_SHCL_TRANSFER_MODE_DISABLED;
+uint32_t g_fTransferMode = VBOX_SHCL_TRANSFER_MODE_F_NONE;
 #endif
 
 /** Is the clipboard running in headless mode? */
@@ -1447,7 +1447,7 @@ int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
     /*
      * If transfer mode is set to disabled, don't report the URI list format to the guest.
      */
-    if (!(g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_ENABLED))
+    if (!(g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_F_ENABLED))
     {
         fFormats &= ~VBOX_SHCL_FMT_URI_LIST;
         LogRel2(("Shared Clipboard: File transfers are disabled, skipping reporting those to the guest\n"));
@@ -2224,7 +2224,7 @@ static DECLCALLBACK(void) svcCall(void *,
             if (   u32Function <= VBOX_SHCL_GUEST_FN_LAST
                 && (pClient->State.fGuestFeatures0 &  VBOX_SHCL_GF_0_CONTEXT_ID) )
             {
-                if (g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_ENABLED)
+                if (g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_F_ENABLED)
                     rc = shClSvcTransferHandler(pClient, callHandle, u32Function, cParms, paParms, tsArrival);
                 else
                 {

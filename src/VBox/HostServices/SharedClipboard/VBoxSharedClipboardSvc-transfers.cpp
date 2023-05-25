@@ -2049,20 +2049,16 @@ int shClSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
  */
 int shClSvcTransferModeSet(uint32_t fMode)
 {
-    if (fMode & ~VBOX_SHCL_TRANSFER_MODE_VALID_MASK)
+    if (fMode & ~VBOX_SHCL_TRANSFER_MODE_F_VALID_MASK)
         return VERR_INVALID_FLAGS;
 
     g_fTransferMode = fMode;
 
-#ifdef DEBUG_andy
-g_fTransferMode = VBOX_SHCL_TRANSFER_MODE_ENABLED;
-#endif
-
     LogRel2(("Shared Clipboard: File transfers are now %s\n",
-             g_fTransferMode != VBOX_SHCL_TRANSFER_MODE_DISABLED ? "enabled" : "disabled"));
+             g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_F_ENABLED ? "enabled" : "disabled"));
 
     /* If file transfers are being disabled, make sure to also reset (destroy) all pending transfers. */
-    if (g_fTransferMode == VBOX_SHCL_TRANSFER_MODE_DISABLED)
+    if (!(g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_F_ENABLED))
     {
         ClipboardClientMap::const_iterator itClient = g_mapClients.begin();
         while (itClient != g_mapClients.end())
