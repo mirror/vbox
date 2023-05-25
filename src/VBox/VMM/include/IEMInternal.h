@@ -599,28 +599,30 @@ typedef struct IEMCPU
     /** The program counter corresponding to pbInstrBuf.
      * This is set to a non-canonical address when we need to invalidate it. */
     uint64_t                uInstrBufPc;                                                                    /* 0x18 */
+    /** The guest physical address corresponding to pbInstrBuf. */
+    RTGCPHYS                GCPhysInstrBuf;                                                                 /* 0x20 */
     /** The number of bytes available at pbInstrBuf in total (for IEMExecLots).
      * This takes the CS segment limit into account. */
-    uint16_t                cbInstrBufTotal;                                                                /* 0x20 */
+    uint16_t                cbInstrBufTotal;                                                                /* 0x28 */
     /** Offset into pbInstrBuf of the first byte of the current instruction.
      * Can be negative to efficiently handle cross page instructions. */
-    int16_t                 offCurInstrStart;                                                               /* 0x22 */
+    int16_t                 offCurInstrStart;                                                               /* 0x2a */
 
     /** The prefix mask (IEM_OP_PRF_XXX). */
-    uint32_t                fPrefixes;                                                                      /* 0x24 */
+    uint32_t                fPrefixes;                                                                      /* 0x2c */
     /** The extra REX ModR/M register field bit (REX.R << 3). */
-    uint8_t                 uRexReg;                                                                        /* 0x28 */
+    uint8_t                 uRexReg;                                                                        /* 0x30 */
     /** The extra REX ModR/M r/m field, SIB base and opcode reg bit
      * (REX.B << 3). */
-    uint8_t                 uRexB;                                                                          /* 0x29 */
+    uint8_t                 uRexB;                                                                          /* 0x31 */
     /** The extra REX SIB index field bit (REX.X << 3). */
-    uint8_t                 uRexIndex;                                                                      /* 0x2a */
+    uint8_t                 uRexIndex;                                                                      /* 0x32 */
 
     /** The effective segment register (X86_SREG_XXX). */
-    uint8_t                 iEffSeg;                                                                        /* 0x2b */
+    uint8_t                 iEffSeg;                                                                        /* 0x33 */
 
     /** The offset of the ModR/M byte relative to the start of the instruction. */
-    uint8_t                 offModRm;                                                                       /* 0x2c */
+    uint8_t                 offModRm;                                                                       /* 0x34 */
 # else  /* !IEM_WITH_CODE_TLB */
     /** The size of what has currently been fetched into abOpcode. */
     uint8_t                 cbOpcode;                                                                       /*       0x08 */
@@ -645,77 +647,69 @@ typedef struct IEMCPU
 # endif /* !IEM_WITH_CODE_TLB */
 
     /** The effective operand mode. */
-    IEMMODE                 enmEffOpSize;                                                                   /* 0x2d, 0x13 */
+    IEMMODE                 enmEffOpSize;                                                                   /* 0x35, 0x13 */
     /** The default addressing mode. */
-    IEMMODE                 enmDefAddrMode;                                                                 /* 0x2e, 0x14 */
+    IEMMODE                 enmDefAddrMode;                                                                 /* 0x36, 0x14 */
     /** The effective addressing mode. */
-    IEMMODE                 enmEffAddrMode;                                                                 /* 0x2f, 0x15 */
+    IEMMODE                 enmEffAddrMode;                                                                 /* 0x37, 0x15 */
     /** The default operand mode. */
-    IEMMODE                 enmDefOpSize;                                                                   /* 0x30, 0x16 */
+    IEMMODE                 enmDefOpSize;                                                                   /* 0x38, 0x16 */
 
     /** Prefix index (VEX.pp) for two byte and three byte tables. */
-    uint8_t                 idxPrefix;                                                                      /* 0x31, 0x17 */
+    uint8_t                 idxPrefix;                                                                      /* 0x39, 0x17 */
     /** 3rd VEX/EVEX/XOP register.
      * Please use IEM_GET_EFFECTIVE_VVVV to access.  */
-    uint8_t                 uVex3rdReg;                                                                     /* 0x32, 0x18 */
+    uint8_t                 uVex3rdReg;                                                                     /* 0x3a, 0x18 */
     /** The VEX/EVEX/XOP length field. */
-    uint8_t                 uVexLength;                                                                     /* 0x33, 0x19 */
+    uint8_t                 uVexLength;                                                                     /* 0x3b, 0x19 */
     /** Additional EVEX stuff. */
-    uint8_t                 fEvexStuff;                                                                     /* 0x34, 0x1a */
+    uint8_t                 fEvexStuff;                                                                     /* 0x3c, 0x1a */
 
     /** Explicit alignment padding. */
-    uint8_t                 abAlignment2a[1];                                                               /* 0x35, 0x1b */
+    uint8_t                 abAlignment2a[1];                                                               /* 0x3d, 0x1b */
     /** The FPU opcode (FOP). */
-    uint16_t                uFpuOpcode;                                                                     /* 0x36, 0x1c */
+    uint16_t                uFpuOpcode;                                                                     /* 0x3e, 0x1c */
 # ifndef IEM_WITH_CODE_TLB
     /** Explicit alignment padding. */
     uint8_t                 abAlignment2b[2];                                                               /*       0x1e */
 # endif
 
     /** The opcode bytes. */
-    uint8_t                 abOpcode[15];                                                                   /* 0x48, 0x20 */
+    uint8_t                 abOpcode[15];                                                                   /* 0x40, 0x20 */
     /** Explicit alignment padding. */
 # ifdef IEM_WITH_CODE_TLB
-    uint8_t                 abAlignment2c[0x48 - 0x47];                                                     /* 0x37 */
+    //uint8_t                 abAlignment2c[0x4f - 0x4f];                                                     /* 0x4f */
 # else
-    uint8_t                 abAlignment2c[0x48 - 0x2f];                                                     /*       0x2f */
+    uint8_t                 abAlignment2c[0x4f - 0x2f];                                                     /*       0x2f */
 # endif
 #else  /* IEM_WITH_OPAQUE_DECODER_STATE */
-    uint8_t                 abOpaqueDecoder[0x48 - 0x8];
+    uint8_t                 abOpaqueDecoder[0x4f - 0x8];
 #endif /* IEM_WITH_OPAQUE_DECODER_STATE */
     /** @} */
 
 
-    /** The flags of the current exception / interrupt. */
-    uint32_t                fCurXcpt;                                                                       /* 0x48, 0x48 */
-    /** The current exception / interrupt. */
-    uint8_t                 uCurXcpt;
-    /** Exception / interrupt recursion depth. */
-    int8_t                  cXcptRecursions;
-
     /** The number of active guest memory mappings. */
-    uint8_t                 cActiveMappings;
-    /** The next unused mapping index. */
-    uint8_t                 iNextMapping;
+    uint8_t                 cActiveMappings;                                                                /* 0x4f, 0x4f */
+
     /** Records for tracking guest memory mappings. */
     struct
     {
         /** The address of the mapped bytes. */
-        void               *pv;
+        R3R0PTRTYPE(void *) pv;
         /** The access flags (IEM_ACCESS_XXX).
          * IEM_ACCESS_INVALID if the entry is unused. */
         uint32_t            fAccess;
 #if HC_ARCH_BITS == 64
         uint32_t            u32Alignment4; /**< Alignment padding. */
 #endif
-    } aMemMappings[3];
+    } aMemMappings[3];                                                                                      /* 0x50 LB 0x30 */
 
     /** Locking records for the mapped memory. */
     union
     {
         PGMPAGEMAPLOCK      Lock;
         uint64_t            au64Padding[2];
-    } aMemMappingLocks[3];
+    } aMemMappingLocks[3];                                                                                  /* 0x80 LB 0x30 */
 
     /** Bounce buffer info.
      * This runs in parallel to aMemMappings. */
@@ -733,17 +727,26 @@ typedef struct IEMCPU
         bool                fUnassigned;
         /** Explicit alignment padding. */
         bool                afAlignment5[3];
-    } aMemBbMappings[3];
+    } aMemBbMappings[3];                                                                                    /* 0xb0 LB 0x48 */
 
-    /* Ensure that aBounceBuffers are aligned at a 32 byte boundrary. */
-    uint64_t                abAlignment7[1];
+    /** The flags of the current exception / interrupt. */
+    uint32_t                fCurXcpt;                                                                       /* 0xf8 */
+    /** The current exception / interrupt. */
+    uint8_t                 uCurXcpt;                                                                       /* 0xfc */
+    /** Exception / interrupt recursion depth. */
+    int8_t                  cXcptRecursions;                                                                /* 0xfb */
+
+    /** The next unused mapping index.
+     * @todo try find room for this up with cActiveMappings. */
+    uint8_t                 iNextMapping;                                                                   /* 0xfd */
+    uint8_t                 abAlignment7[1];
 
     /** Bounce buffer storage.
      * This runs in parallel to aMemMappings and aMemBbMappings. */
     struct
     {
         uint8_t             ab[512];
-    } aBounceBuffers[3];
+    } aBounceBuffers[3];                                                                                    /* 0x100 LB 0x600 */
 
 
     /** Pointer set jump buffer - ring-3 context. */
@@ -815,7 +818,7 @@ typedef struct IEMCPU
     /** Counts WRMSR \#GP(0) LogRel(). */
     uint8_t                 cLogRelWrMsr;
     /** Alignment padding. */
-    uint8_t                 abAlignment8[42];
+    uint8_t                 abAlignment9[46];
 
     /** @name Recompilation
      * @{ */
@@ -845,10 +848,9 @@ typedef struct IEMCPU
     IEMINSTRSTATS           StatsR3;
 #endif
 } IEMCPU;
-AssertCompileMemberOffset(IEMCPU, fCurXcpt, 0x48);
-AssertCompileMemberAlignment(IEMCPU, aBounceBuffers, 8);
-AssertCompileMemberAlignment(IEMCPU, aBounceBuffers, 16);
-AssertCompileMemberAlignment(IEMCPU, aBounceBuffers, 32);
+AssertCompileMemberOffset(IEMCPU, cActiveMappings, 0x4f);
+AssertCompileMemberAlignment(IEMCPU, aMemMappings, 16);
+AssertCompileMemberAlignment(IEMCPU, aMemMappingLocks, 16);
 AssertCompileMemberAlignment(IEMCPU, aBounceBuffers, 64);
 AssertCompileMemberAlignment(IEMCPU, DataTlb, 64);
 AssertCompileMemberAlignment(IEMCPU, CodeTlb, 64);

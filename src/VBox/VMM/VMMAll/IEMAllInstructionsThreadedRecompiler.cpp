@@ -76,6 +76,23 @@
 #include "IEMThreadedFunctions.h"
 
 
+/*
+ * Narrow down configs here to avoid wasting time on unused configs here.
+ */
+
+#ifndef IEM_WITH_CODE_TLB
+# error The code TLB must be enabled for the recompiler.
+#endif
+
+#ifndef IEM_WITH_DATA_TLB
+# error The data TLB must be enabled for the recompiler.
+#endif
+
+#ifndef IEM_WITH_SETJMP
+# error The setjmp approach must be enabled for the recompiler.
+#endif
+
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -274,9 +291,9 @@ static VBOXSTRICTRC iemThreadedCompileLongJumped(PVMCCV pVM, PVMCPUCC pVCpu, VBO
 }
 
 
-static PIEMTB iemThreadedTbLookup(PVMCCV pVM, PVMCPUCC pVCpu)
+static PIEMTB iemThreadedTbLookup(PVMCCV pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPC, uint64_t uPc)
 {
-    RT_NOREF(pVM, pVCpu);
+    RT_NOREF(pVM, pVCpu, GCPhysPC, uPc);
     return NULL;
 }
 
@@ -285,6 +302,46 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCCV pVM, PVMCPUCC pVCpu, PIEMTB pTb)
 {
     RT_NOREF(pVM, pVCpu, pTb);
     return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * This is called when the PC doesn't match the current pbInstrBuf.
+ */
+static uint64_t iemGetPcWithPhysAndCodeMissed(PVMCPUCC pVCpu, uint64_t const uPc, PRTGCPHYS pPhys)
+{
+    /** @todo see iemOpcodeFetchBytesJmp */
+    pVCpu->iem.s.pbInstrBuf = NULL;
+
+    pVCpu->iem.s.offInstrNextByte = 0;
+    pVCpu->iem.s.offCurInstrStart = 0;
+    pVCpu->iem.s.cbInstrBuf       = 0;
+    pVCpu->iem.s.cbInstrBufTotal  = 0;
+
+}
+
+/** @todo need private inline decl for throw/nothrow matching IEM_WITH_SETJMP? */
+DECL_INLINE_THROW(uint64_t) iemGetPcWithPhysAndCode(PVMCPUCC pVCpu, PRTGCPHYS pPhys)
+{
+    Assert(pVCpu->cpum.GstCtx.cs.u64Base == 0 || pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT);
+    uint64_t const uPc = pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base;
+    if (pVCpu->iem.s.pbInstrBuf)
+    {
+        uint64_t off = uPc - pVCpu->iem.s.uInstrBufPc;
+        if (off < pVCpu->iem.s.cbInstrBufTotal)
+        {
+            pVCpu->iem.s.offInstrNextByte = (uint32_t)off;
+            pVCpu->iem.s.offCurInstrStart = (uint16_t)off;
+            if ((uint16_t)off + 15 <= pVCpu->iem.s.cbInstrBufTotal)
+                pVCpu->iem.s.cbInstrBuf = (uint16_t)off + 15;
+            else
+                pVCpu->iem.s.cbInstrBuf = pVCpu->iem.s.cbInstrBufTotal;
+
+            *pPhys = pVCpu->iem.s.GCPhysInstrBuf + off;
+            return uPc;
+        }
+    }
+    return iemGetPcWithPhysAndCodeMissed(pVCpu, uPc, pPhys);
 }
 
 
@@ -306,11 +363,15 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
         {
             for (;;)
             {
-                pTb = iemThreadedTbLookup(pVM, pVCpu);
+                /* Translate PC to physical address, we'll need this for both lookup and compilation. */
+                RTGCPHYS       GCPhysPC;
+                uint64_t const uPC = iemGetPcWithPhysAndCode(pVCpu, &GCPhysPC);
+
+                pTb = iemThreadedTbLookup(pVM, pVCpu, GCPhysPC, uPc);
                 if (pTb)
                     rcStrict = iemThreadedTbExec(pVM, pVCpu, pTb);
                 else
-                    rcStrict = iemThreadedCompile(pVM, pVCpu);
+                    rcStrict = iemThreadedCompile(pVM, pVCpu, GCPhysPC, uPc);
                 if (rcStrict == VINF_SUCCESS)
                 { /* likely */ }
                 else

@@ -277,6 +277,7 @@ DECLINLINE(void) iemInitDecoder(PVMCPUCC pVCpu, bool fBypassHandlers, bool fDisr
     pVCpu->iem.s.offInstrNextByte   = 0;
     pVCpu->iem.s.offCurInstrStart   = 0;
 # ifdef VBOX_STRICT
+    pVCpu->iem.s.GCPhysInstrBuf     = NIL_RTGCPHYS;
     pVCpu->iem.s.cbInstrBuf         = UINT16_MAX;
     pVCpu->iem.s.cbInstrBufTotal    = UINT16_MAX;
     pVCpu->iem.s.uInstrBufPc        = UINT64_C(0xc0ffc0ffcff0c0ff);
@@ -383,6 +384,7 @@ DECLINLINE(void) iemReInitDecoder(PVMCPUCC pVCpu)
             pVCpu->iem.s.offCurInstrStart = 0;
             pVCpu->iem.s.cbInstrBuf       = 0;
             pVCpu->iem.s.cbInstrBufTotal  = 0;
+            pVCpu->iem.s.GCPhysInstrBuf   = NIL_RTGCPHYS;
         }
     }
     else
@@ -391,6 +393,9 @@ DECLINLINE(void) iemReInitDecoder(PVMCPUCC pVCpu)
         pVCpu->iem.s.offCurInstrStart = 0;
         pVCpu->iem.s.cbInstrBuf       = 0;
         pVCpu->iem.s.cbInstrBufTotal  = 0;
+# ifdef VBOX_STRICT
+        pVCpu->iem.s.GCPhysInstrBuf   = NIL_RTGCPHYS;
+# endif
     }
 #else
     pVCpu->iem.s.cbOpcode           = 0;
@@ -955,6 +960,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
             {
                 pVCpu->iem.s.offInstrNextByte = offPg + (uint32_t)cbDst;
                 pVCpu->iem.s.uInstrBufPc      = GCPtrFirst & ~(RTGCPTR)X86_PAGE_OFFSET_MASK;
+                pVCpu->iem.s.GCPhysInstrBuf   = pTlbe->GCPhys;
                 pVCpu->iem.s.pbInstrBuf       = pTlbe->pbMappingR3;
                 memcpy(pvDst, &pTlbe->pbMappingR3[offPg], cbDst);
                 return;
@@ -10334,6 +10340,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneWithPrefetchedByPC(PVMCPUCC pVCpu, uint64_t Opco
         pVCpu->iem.s.cbInstrBufTotal  = (uint16_t)RT_MIN(X86_PAGE_SIZE, cbOpcodeBytes);
         pVCpu->iem.s.offCurInstrStart = 0;
         pVCpu->iem.s.offInstrNextByte = 0;
+        pVCpu->iem.s.GCPhysInstrBuf   = NIL_RTGCPHYS;
 #else
         pVCpu->iem.s.cbOpcode = (uint8_t)RT_MIN(cbOpcodeBytes, sizeof(pVCpu->iem.s.abOpcode));
         memcpy(pVCpu->iem.s.abOpcode, pvOpcodeBytes, pVCpu->iem.s.cbOpcode);
@@ -10382,6 +10389,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneBypassWithPrefetchedByPC(PVMCPUCC pVCpu, uint64_
         pVCpu->iem.s.cbInstrBufTotal  = (uint16_t)RT_MIN(X86_PAGE_SIZE, cbOpcodeBytes);
         pVCpu->iem.s.offCurInstrStart = 0;
         pVCpu->iem.s.offInstrNextByte = 0;
+        pVCpu->iem.s.GCPhysInstrBuf   = NIL_RTGCPHYS;
 #else
         pVCpu->iem.s.cbOpcode = (uint8_t)RT_MIN(cbOpcodeBytes, sizeof(pVCpu->iem.s.abOpcode));
         memcpy(pVCpu->iem.s.abOpcode, pvOpcodeBytes, pVCpu->iem.s.cbOpcode);
