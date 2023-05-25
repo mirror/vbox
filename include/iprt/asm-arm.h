@@ -136,6 +136,38 @@ DECLINLINE(uint64_t) ASMReadTSC(void)
 }
 #endif
 
+
+/**
+ * Gets the content of the CNTFRQ_EL0 register.
+ *
+ * @returns CNTFRQ_EL0 value.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(uint64_t) ASMReadCntFrqEl0(void);
+#else
+DECLINLINE(uint64_t) ASMReadCntFrqEl0(void)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+    uint64_t u64;
+#  ifdef RT_ARCH_ARM64
+    __asm__ __volatile__("isb\n\t"
+                         "mrs %0, CNTFRQ_EL0\n\t"
+                         : "=r" (u64));
+#  else
+    u64 = 0;
+    __asm__ __volatile__("isb\n"
+                         "mrc p15, 0, %[uRet], c14, 0, 0\n\t"  /* CNTFRQ */
+                         : [uRet] "=r" (u64));
+#  endif
+    return u64;
+
+# else
+#  error "Unsupported compiler"
+# endif
+}
+#endif
+
+
 #if 0 /* port to arm64, armv7 and check */
 
 /**
