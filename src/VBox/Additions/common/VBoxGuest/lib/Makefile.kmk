@@ -161,6 +161,7 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
  	VBoxGuestR3LibClipboard.cpp
  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
   VBoxGuestR3Lib_SOURCES  += \
+  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers-provider-local.cpp \
   	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardMIME.cpp
  endif
 endif
