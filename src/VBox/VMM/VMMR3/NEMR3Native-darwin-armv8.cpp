@@ -49,6 +49,7 @@
 
 #include <iprt/armv8.h>
 #include <iprt/asm.h>
+#include <iprt/asm-arm.h>
 #include <iprt/ldr.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
@@ -442,9 +443,13 @@ static void nemR3DarwinLogState(PVMCC pVM, PVMCPUCC pVCpu)
 static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
 {
     RT_NOREF(pVM);
-    hv_return_t hrc = HV_SUCCESS;
 
-    if (fWhat & (CPUMCTX_EXTRN_GPRS_MASK | CPUMCTX_EXTRN_PC | CPUMCTX_EXTRN_FPCR | CPUMCTX_EXTRN_FPSR))
+    hv_return_t hrc = hv_vcpu_get_sys_reg(pVCpu->nem.s.hVCpu, HV_SYS_REG_CNTV_CTL_EL0, &pVCpu->cpum.GstCtx.CntvCtlEl0);
+    if (hrc == HV_SUCCESS)
+        hrc = hv_vcpu_get_sys_reg(pVCpu->nem.s.hVCpu, HV_SYS_REG_CNTV_CVAL_EL0, &pVCpu->cpum.GstCtx.CntvCValEl0);
+
+    if (   hrc == HV_SUCCESS
+        && (fWhat & (CPUMCTX_EXTRN_GPRS_MASK | CPUMCTX_EXTRN_PC | CPUMCTX_EXTRN_FPCR | CPUMCTX_EXTRN_FPSR)))
     {
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumRegs); i++)
         {
@@ -594,7 +599,8 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
     hv_return_t hrc = hv_vm_create(NULL);
     if (hrc == HV_SUCCESS)
     {
-        pVM->nem.s.fCreatedVm = true;
+        pVM->nem.s.fCreatedVm  = true;
+        pVM->nem.s.u64CntFrqHz = ASMReadCntFrqEl0();
         VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_NATIVE_API);
         Log(("NEM: Marked active!\n"));
         PGMR3EnableNemMode(pVM);
@@ -631,6 +637,13 @@ static DECLCALLBACK(int) nemR3DarwinNativeInitVCpuOnEmt(PVM pVM, PVMCPU pVCpu, V
     if (hrc != HV_SUCCESS)
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Call to hv_vcpu_create failed on vCPU %u: %#x (%Rrc)", idCpu, hrc, nemR3DarwinHvSts2Rc(hrc));
+
+    /* Set the vTiemr offset so all vCpus start at (nearly) 0. */
+    pVCpu->nem.s.u64VTimerOff = ASMReadTSC();
+
+    hrc = hv_vcpu_set_vtimer_offset(pVCpu->nem.s.hVCpu, pVCpu->nem.s.u64VTimerOff);
+    AssertLogRelMsg(hrc == HV_SUCCESS, ("vCPU#%u: Failed to set vTimer offset to %#RX64 -> hrc = %#x\n",
+                                        pVCpu->idCpu, pVCpu->nem.s.u64VTimerOff, hrc));
 
     if (idCpu == 0)
     {
@@ -1187,6 +1200,23 @@ static VBOXSTRICTRC nemR3DarwinRunGuestNormal(PVM pVM, PVMCPU pVCpu)
      * everything every time.  This will be optimized later.
      */
 
+    /* Update the vTimer offset after resuming if instructed. */
+    if (pVCpu->nem.s.fVTimerOffUpdate)
+    {
+        /*
+         * Program the new offset, first get the new TSC value with the old vTimer offset and then adjust the
+         * the new offset to let the guest not notice the pause.
+         */
+        uint64_t u64TscNew = ASMReadTSC() - pVCpu->nem.s.u64VTimerOff;
+        Assert(u64TscNew >= pVM->nem.s.u64VTimerValuePaused);
+        pVCpu->nem.s.u64VTimerOff += u64TscNew - pVM->nem.s.u64VTimerValuePaused;
+        hv_return_t hrc = hv_vcpu_set_vtimer_offset(pVCpu->nem.s.hVCpu, pVCpu->nem.s.u64VTimerOff);
+        if (hrc != HV_SUCCESS)
+            return nemR3DarwinHvSts2Rc(hrc);
+
+        pVCpu->nem.s.fVTimerOffUpdate = false;
+    }
+
     /*
      * Poll timers and run for a bit.
      */
@@ -1666,8 +1696,10 @@ VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPUCC pVCpu, uint64_t *pcTicks, uint32_t 
     LogFlowFunc(("pVCpu=%p pcTicks=%RX64 puAux=%RX32\n", pVCpu, pcTicks, puAux));
     STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatQueryCpuTick);
 
-    AssertReleaseFailed();
-    return VERR_NOT_IMPLEMENTED;
+    if (puAux)
+        *puAux = 0;
+    *pcTicks = ASMReadTSC() - pVCpu->nem.s.u64VTimerOff; /* This is the host timer minus the offset. */
+    return VINF_SUCCESS;
 }
 
 
@@ -1687,7 +1719,18 @@ VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVMCC pVM, PVMCPUCC pVCpu, uint64_t uP
     VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_VM_THREAD_NOT_EMT);
     AssertReturn(VM_IS_NEM_ENABLED(pVM), VERR_NEM_IPE_9);
 
-    //AssertReleaseFailed();
+    pVM->nem.s.u64VTimerValuePaused = uPausedTscValue;
+
+    /*
+     * Set the flag to update the vTimer offset when the vCPU resumes for the first time
+     * (needs to be done on the actual EMT).
+     */
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPUCC pVCpuDst = pVM->apCpusR3[idCpu];
+        pVCpuDst->nem.s.fVTimerOffUpdate = true;
+    }
+
     return VINF_SUCCESS;
 }
 

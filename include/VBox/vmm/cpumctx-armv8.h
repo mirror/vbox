@@ -164,7 +164,12 @@ typedef struct CPUMCTX
     /** Externalized state tracker, CPUMCTX_EXTRN_XXX. */
     uint64_t        fExtrn;
 
-    uint64_t        au64Padding2[1];
+    /** The CNTV_CTL_EL0 register, always synced during VM-exit. */
+    uint64_t        CntvCtlEl0;
+    /** The CNTV_CVAL_EL0 register, always synced during VM-exit. */
+    uint64_t        CntvCValEl0;
+
+    uint64_t        au64Padding2[7];
 } CPUMCTX;
 
 
