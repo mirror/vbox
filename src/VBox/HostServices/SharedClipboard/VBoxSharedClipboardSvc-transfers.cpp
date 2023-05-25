@@ -1957,8 +1957,13 @@ int shClSvcTransferStart(PSHCLCLIENT pClient,
                                         rc = pReply->rc; /* Set guest rc. */
                                     }
                                     else
-                                       LogRel(("Shared Clipboard: Unable to start transfer %RU32 on guest, rc=%Rrc\n",
-                                               pTransfer->State.uID, rc));
+                                    {
+                                        if (rc == VERR_NOT_SUPPORTED)
+                                            LogRelMax(3, ("Shared Clipboard: File transfers are not supported by the installed Guest Additions.\n"));
+                                        else
+                                            LogRel(("Shared Clipboard: Unable to start transfer %RU32 on guest, rc=%Rrc\n",
+                                                    pTransfer->State.uID, rc));
+                                    }
 
                                     ShClPayloadFree(pPayload);
                                     ShClEventRelease(pEvent);
