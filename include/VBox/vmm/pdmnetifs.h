@@ -53,15 +53,15 @@ RT_C_DECLS_BEGIN
 
 /**
  * PDM scatter/gather buffer.
- *  
- * @note    This is a little bit similar to the RTSGBUF structure in IPRT. 
- *  
+ *
+ * @note    This is a little bit similar to the RTSGBUF structure in IPRT.
+ *
  *          It is possible to reuse the PDMSCATTERGATHER::aSegs member here in a
  *          RTSGBUF, but must always remember to specify
  *          PDMSCATTERGATHER::cbUsed as the max length to any RTSgBufXxxx API
  *          call, since the segments here will (normally) describe the full
  *          PDMSCATTERGATHER::cbAvailable length.
- *  
+ *
  * @todo Promote this to VBox/types.h, VBox/vmm/pdmcommon.h or some such place.
  */
 typedef struct PDMSCATTERGATHER
@@ -83,7 +83,7 @@ typedef struct PDMSCATTERGATHER
     size_t          cSegs;
     /** Variable sized array of segments.
      * This describes the max allocated buffer length, consumers must limit
-     * operations to PDMSCATTERGATHER::cbUser. */ 
+     * operations to PDMSCATTERGATHER::cbUser. */
     RTSGSEG         aSegs[1];
 } PDMSCATTERGATHER;
 /** Pointer to a PDM scatter/gather buffer. */
