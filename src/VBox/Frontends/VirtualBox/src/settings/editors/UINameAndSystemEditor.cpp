@@ -390,9 +390,7 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     /* Or select Windows 10 item for Windows family as default: */
     else if (m_strFamilyId == "Windows")
     {
-        QString strDefaultID = "Windows10";
-        if (ARCH_BITS == 64)
-            strDefaultID += "_64";
+        QString strDefaultID = "Windows10_64";
         const int iIndexWin10 = m_pComboType->findData(strDefaultID, TypeID);
         if (iIndexWin10 != -1)
             m_pComboType->setCurrentIndex(iIndexWin10);
@@ -400,16 +398,21 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     /* Or select Oracle Linux item for Linux family as default: */
     else if (m_strFamilyId == "Linux")
     {
-        QString strDefaultID = "Oracle";
-        if (ARCH_BITS == 64)
-            strDefaultID += "_64";
-        const int iIndexUbuntu = m_pComboType->findData(strDefaultID, TypeID);
-        if (iIndexUbuntu != -1)
-            m_pComboType->setCurrentIndex(iIndexUbuntu);
+        QString strDefaultID = "Oracle_64";
+        const int iIndexOracle = m_pComboType->findData(strDefaultID, TypeID);
+        if (iIndexOracle != -1)
+            m_pComboType->setCurrentIndex(iIndexOracle);
     }
-    /* Else simply select the first one present: */
+    /* Else try to pick the first 64-bit one if it exists.: */
     else
-        m_pComboType->setCurrentIndex(0);
+    {
+       QString strDefaultID = "_64";
+       const int iIndex = m_pComboType->findData(strDefaultID, TypeID, Qt::MatchContains);
+       if (iIndex != -1)
+           m_pComboType->setCurrentIndex(iIndex);
+       else
+           m_pComboType->setCurrentIndex(0);
+    }
 
     /* Update all the stuff: */
     sltTypeChanged(m_pComboType->currentIndex());
