@@ -557,7 +557,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                      * as the host announces the start of the transfer via a VBOX_SHCL_HOST_MSG_TRANSFER_STATUS message.
                      * Transfers always are controlled and initiated on the host side!
                      *
-                     * So don't announce the transfer to the OS here yet. Don't touch the clipboard in any here; otherwise
+                     * So don't announce the transfer to the OS here yet. Don't touch the clipboard in any way here; otherwise
                      * this will trigger a WM_DRAWCLIPBOARD or friends, which will result in fun bugs coming up.
                      */
                 }
