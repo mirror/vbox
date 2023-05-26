@@ -1972,7 +1972,7 @@ FNIEMOP_DEF(iemOp_sysret)
 {
     IEMOP_MNEMONIC(sysret, "sysret");  /** @todo 386 LOADALL   */
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_sysret);
+    return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_sysret, pVCpu->iem.s.enmEffOpSize);
 }
 
 

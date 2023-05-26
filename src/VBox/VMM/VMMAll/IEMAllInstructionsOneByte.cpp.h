@@ -8565,11 +8565,12 @@ FNIEMOP_DEF_1(iemOp_fxch_stN, uint8_t, bRm)
 
     /** @todo Testcase: Check if this raises \#MF?  Intel mentioned it not. AMD
      *        indicates that it does. */
-    IEM_MC_BEGIN(1, 3);
+    IEM_MC_BEGIN(2, 3);
     IEM_MC_LOCAL(PCRTFLOAT80U,          pr80Value1);
     IEM_MC_LOCAL(PCRTFLOAT80U,          pr80Value2);
     IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
     IEM_MC_ARG_CONST(uint8_t,           iStReg, /*=*/ IEM_GET_MODRM_RM_8(bRm), 0);
+    IEM_MC_ARG_CONST(uint16_t,          uFpuOpcode, /*=*/ pVCpu->iem.s.uFpuOpcode, 1);
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
@@ -8579,7 +8580,7 @@ FNIEMOP_DEF_1(iemOp_fxch_stN, uint8_t, bRm)
         IEM_MC_STORE_FPUREG_R80_SRC_REF(IEM_GET_MODRM_RM_8(bRm), pr80Value1);
         IEM_MC_STORE_FPU_RESULT(FpuRes, 0);
     } IEM_MC_ELSE() {
-        IEM_MC_CALL_CIMPL_1(iemCImpl_fxch_underflow, iStReg);
+        IEM_MC_CALL_CIMPL_2(iemCImpl_fxch_underflow, iStReg, uFpuOpcode);
     } IEM_MC_ENDIF();
 
     IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -9858,7 +9859,8 @@ FNIEMOP_DEF(iemOp_frstpm)
 FNIEMOP_DEF_1(iemOp_fucomi_stN, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fucomi_st0_stN, "fucomi st0,stN");
-    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), iemAImpl_fucomi_r80_by_r80, false /*fPop*/);
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), iemAImpl_fucomi_r80_by_r80,
+                                   0 /*fPop*/ | pVCpu->iem.s.uFpuOpcode);
 }
 
 
@@ -9866,7 +9868,8 @@ FNIEMOP_DEF_1(iemOp_fucomi_stN, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fcomi_stN,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fcomi_st0_stN, "fcomi st0,stN");
-    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), iemAImpl_fcomi_r80_by_r80, false /*fPop*/);
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), iemAImpl_fcomi_r80_by_r80,
+                                   false /*fPop*/ | pVCpu->iem.s.uFpuOpcode);
 }
 
 
@@ -10788,7 +10791,8 @@ FNIEMOP_DEF(iemOp_fnstsw_ax)
 FNIEMOP_DEF_1(iemOp_fucomip_st0_stN, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fucomip_st0_stN, "fucomip st0,stN");
-    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), iemAImpl_fcomi_r80_by_r80, true /*fPop*/);
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), iemAImpl_fcomi_r80_by_r80,
+                                   RT_BIT_32(31) /*fPop*/ | pVCpu->iem.s.uFpuOpcode);
 }
 
 
@@ -10796,7 +10800,8 @@ FNIEMOP_DEF_1(iemOp_fucomip_st0_stN, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fcomip_st0_stN,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fcomip_st0_stN, "fcomip st0,stN");
-    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), iemAImpl_fcomi_r80_by_r80, true /*fPop*/);
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), iemAImpl_fcomi_r80_by_r80,
+                                   RT_BIT_32(31) /*fPop*/ | pVCpu->iem.s.uFpuOpcode);
 }
 
 
@@ -11353,7 +11358,7 @@ FNIEMOP_DEF(iemOp_in_AL_Ib)
     IEMOP_MNEMONIC(in_AL_Ib, "in AL,Ib");
     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_in, u8Imm, true /* fImm */, 1);
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_in, u8Imm, 1, 0x80 /* fImm */ | pVCpu->iem.s.enmEffAddrMode);
 }
 
 
@@ -11363,7 +11368,8 @@ FNIEMOP_DEF(iemOp_in_eAX_Ib)
     IEMOP_MNEMONIC(in_eAX_Ib, "in eAX,Ib");
     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_in, u8Imm, true /* fImm */, pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT ? 2 : 4);
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_in, u8Imm, pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT ? 2 : 4,
+                                   0x80 /* fImm */ | pVCpu->iem.s.enmEffAddrMode);
 }
 
 
@@ -11373,7 +11379,7 @@ FNIEMOP_DEF(iemOp_out_Ib_AL)
     IEMOP_MNEMONIC(out_Ib_AL, "out Ib,AL");
     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_out, u8Imm, true /* fImm */, 1);
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_out, u8Imm, 1, 0x80 /* fImm */ | pVCpu->iem.s.enmEffAddrMode);
 }
 
 
@@ -11383,7 +11389,8 @@ FNIEMOP_DEF(iemOp_out_Ib_eAX)
     IEMOP_MNEMONIC(out_Ib_eAX, "out Ib,eAX");
     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_out, u8Imm, true /* fImm */, pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT ? 2 : 4);
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_out, u8Imm, pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT ? 2 : 4,
+                                   0x80 /* fImm */ | pVCpu->iem.s.enmEffAddrMode);
 }
 
 
@@ -11493,7 +11500,7 @@ FNIEMOP_DEF(iemOp_in_AL_DX)
 {
     IEMOP_MNEMONIC(in_AL_DX, "in  AL,DX");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_in_eAX_DX, 1);
+    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_in_eAX_DX, 1, pVCpu->iem.s.enmEffAddrMode);
 }
 
 
@@ -11502,7 +11509,8 @@ FNIEMOP_DEF(iemOp_in_eAX_DX)
 {
     IEMOP_MNEMONIC(in_eAX_DX, "in  eAX,DX");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_in_eAX_DX, pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT ? 2 : 4);
+    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_in_eAX_DX, pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT ? 2 : 4,
+                                   pVCpu->iem.s.enmEffAddrMode);
 }
 
 
@@ -11511,7 +11519,7 @@ FNIEMOP_DEF(iemOp_out_DX_AL)
 {
     IEMOP_MNEMONIC(out_DX_AL, "out DX,AL");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_out_DX_eAX, 1);
+    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_out_DX_eAX, 1, pVCpu->iem.s.enmEffAddrMode);
 }
 
 
@@ -11520,7 +11528,8 @@ FNIEMOP_DEF(iemOp_out_DX_eAX)
 {
     IEMOP_MNEMONIC(out_DX_eAX, "out DX,eAX");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_out_DX_eAX, pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT ? 2 : 4);
+    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_out_DX_eAX, pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT ? 2 : 4,
+                                   pVCpu->iem.s.enmEffAddrMode);
 }
 
 

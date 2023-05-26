@@ -948,12 +948,15 @@ static VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GCPhys
  *
  * @returns VBox strict status code.
  * @param   pVCpu       The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr     The length of the instruction in bytes triggering the
+ *                      event.
  * @param   u8Vector    The interrupt or exception vector.
  * @param   fFlags      The exception flags (see IEM_XCPT_FLAGS_XXX).
  * @param   uErr        The error-code associated with the exception.
  * @param   uCr2        The CR2 value in case of a \#PF exception.
  */
-VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPUCC pVCpu, uint8_t u8Vector, uint32_t fFlags, uint32_t uErr, uint64_t uCr2) RT_NOEXCEPT
+VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t u8Vector, uint32_t fFlags,
+                                        uint32_t uErr, uint64_t uCr2) RT_NOEXCEPT
 {
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu)));
 
@@ -980,7 +983,7 @@ VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPUCC pVCpu, uint8_t u8Vector, uint32
         && IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_ICEBP))
     {
         Log2(("iemHandleSvmNstGstEventIntercept: ICEBP intercept -> #VMEXIT\n"));
-        IEM_SVM_UPDATE_NRIP(pVCpu);
+        IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
         IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_ICEBP, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
@@ -1011,7 +1014,7 @@ VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPUCC pVCpu, uint8_t u8Vector, uint32
 # endif
         }
         if (u8Vector == X86_XCPT_BR)
-            IEM_SVM_UPDATE_NRIP(pVCpu);
+            IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
         Log2(("iemHandleSvmNstGstEventIntercept: Xcpt intercept u32InterceptXcpt=%#RX32 u8Vector=%#x "
               "uExitInfo1=%#RX64 uExitInfo2=%#RX64 -> #VMEXIT\n", pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb.ctrl.u32InterceptXcpt,
               u8Vector, uExitInfo1, uExitInfo2));
@@ -1027,7 +1030,7 @@ VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPUCC pVCpu, uint8_t u8Vector, uint32
     {
         uint64_t const uExitInfo1 = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssists ? u8Vector : 0;
         Log2(("iemHandleSvmNstGstEventIntercept: Software INT intercept (u8Vector=%#x) -> #VMEXIT\n", u8Vector));
-        IEM_SVM_UPDATE_NRIP(pVCpu);
+        IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
         IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_SWINT, uExitInfo1, 0 /* uExitInfo2 */);
     }
 
@@ -1073,7 +1076,7 @@ VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPUCC pVCpu, uint16_t u16Port, SVMIOIOTY
     if (fIntercept)
     {
         Log3(("iemSvmHandleIOIntercept: u16Port=%#x (%u) -> #VMEXIT\n", u16Port, u16Port));
-        IEM_SVM_UPDATE_NRIP(pVCpu);
+        IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
         return iemSvmVmexit(pVCpu, SVM_EXIT_IOIO, IoExitInfo.u, pVCpu->cpum.GstCtx.rip + cbInstr);
     }
 
@@ -1102,7 +1105,7 @@ VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPUCC pVCpu, uint16_t u16Port, SVMIOIOTY
  *                      MSR read.
  * @param   cbInstr     The length of the MSR read/write instruction in bytes.
  */
-VBOXSTRICTRC iemSvmHandleMsrIntercept(PVMCPUCC pVCpu, uint32_t idMsr, bool fWrite) RT_NOEXCEPT
+VBOXSTRICTRC iemSvmHandleMsrIntercept(PVMCPUCC pVCpu, uint32_t idMsr, bool fWrite, uint8_t cbInstr) RT_NOEXCEPT
 {
     /*
      * Check if any MSRs are being intercepted.
@@ -1130,7 +1133,7 @@ VBOXSTRICTRC iemSvmHandleMsrIntercept(PVMCPUCC pVCpu, uint32_t idMsr, bool fWrit
          */
         if (pVCpu->cpum.GstCtx.hwvirt.svm.abMsrBitmap[offMsrpm] & RT_BIT(uMsrpmBit))
         {
-            IEM_SVM_UPDATE_NRIP(pVCpu);
+            IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
             return iemSvmVmexit(pVCpu, SVM_EXIT_MSR, uExitInfo1, 0 /* uExitInfo2 */);
         }
     }
@@ -1551,7 +1554,7 @@ IEM_CIMPL_DEF_0(iemCImpl_svm_pause)
     }
 
     if (fCheckIntercept)
-        IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_PAUSE, SVM_EXIT_PAUSE, 0, 0);
+        IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_PAUSE, SVM_EXIT_PAUSE, 0, 0, cbInstr);
 
     return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }

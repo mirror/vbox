@@ -3815,25 +3815,25 @@ AssertCompile(IEM_OP_PRF_REX_X == RT_BIT_32(27));
 /** Check and handles SVM nested-guest instruction intercept and updates
  *  NRIP if needed.
  */
-# define IEM_SVM_CHECK_INSTR_INTERCEPT(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
+# define IEM_SVM_CHECK_INSTR_INTERCEPT(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2, a_cbInstr) \
     do \
     { \
         if (IEM_SVM_IS_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept)) \
         { \
-            IEM_SVM_UPDATE_NRIP(a_pVCpu); \
+            IEM_SVM_UPDATE_NRIP(a_pVCpu, a_cbInstr); \
             IEM_SVM_VMEXIT_RET(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2); \
         } \
     } while (0)
 
 /** Checks and handles SVM nested-guest CR0 read intercept. */
-# define IEM_SVM_CHECK_READ_CR0_INTERCEPT(a_pVCpu, a_uExitInfo1, a_uExitInfo2) \
+# define IEM_SVM_CHECK_READ_CR0_INTERCEPT(a_pVCpu, a_uExitInfo1, a_uExitInfo2, a_cbInstr) \
     do \
     { \
         if (!IEM_SVM_IS_READ_CR_INTERCEPT_SET(a_pVCpu, 0)) \
         { /* probably likely */ } \
         else \
         { \
-            IEM_SVM_UPDATE_NRIP(a_pVCpu); \
+            IEM_SVM_UPDATE_NRIP(a_pVCpu, a_cbInstr); \
             IEM_SVM_VMEXIT_RET(a_pVCpu, SVM_EXIT_READ_CR0, a_uExitInfo1, a_uExitInfo2); \
         } \
     } while (0)
@@ -3841,24 +3841,25 @@ AssertCompile(IEM_OP_PRF_REX_X == RT_BIT_32(27));
 /**
  * Updates the NextRIP (NRI) field in the nested-guest VMCB.
  */
-# define IEM_SVM_UPDATE_NRIP(a_pVCpu) \
+# define IEM_SVM_UPDATE_NRIP(a_pVCpu, a_cbInstr) \
     do { \
         if (IEM_GET_GUEST_CPU_FEATURES(a_pVCpu)->fSvmNextRipSave) \
-            CPUMGuestSvmUpdateNRip(a_pVCpu, IEM_GET_CTX(a_pVCpu), IEM_GET_INSTR_LEN(a_pVCpu)); \
+            CPUMGuestSvmUpdateNRip(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_cbInstr)); \
     } while (0)
 
 #else
-# define IEM_SVM_IS_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept)                              (false)
-# define IEM_SVM_IS_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)                                 (false)
-# define IEM_SVM_IS_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr)                                (false)
-# define IEM_SVM_IS_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr)                                 (false)
-# define IEM_SVM_IS_WRITE_DR_INTERCEPT_SET(a_pVCpu, a_uDr)                                (false)
-# define IEM_SVM_IS_XCPT_INTERCEPT_SET(a_pVCpu, a_uVector)                                (false)
-# define IEM_SVM_VMEXIT_RET(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2)             do { return VERR_SVM_IPE_1; } while (0)
-# define IEM_SVM_CRX_VMEXIT_RET(a_pVCpu, a_uExitCode, a_enmAccessCrX, a_iGReg)            do { return VERR_SVM_IPE_1; } while (0)
-# define IEM_SVM_CHECK_INSTR_INTERCEPT(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2)   do { } while (0)
-# define IEM_SVM_CHECK_READ_CR0_INTERCEPT(a_pVCpu, a_uExitInfo1, a_uExitInfo2)                          do { } while (0)
-# define IEM_SVM_UPDATE_NRIP(a_pVCpu)                                                     do { } while (0)
+# define IEM_SVM_IS_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept)                                (false)
+# define IEM_SVM_IS_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)                                   (false)
+# define IEM_SVM_IS_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr)                                  (false)
+# define IEM_SVM_IS_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr)                                   (false)
+# define IEM_SVM_IS_WRITE_DR_INTERCEPT_SET(a_pVCpu, a_uDr)                                  (false)
+# define IEM_SVM_IS_XCPT_INTERCEPT_SET(a_pVCpu, a_uVector)                                  (false)
+# define IEM_SVM_VMEXIT_RET(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2)               do { return VERR_SVM_IPE_1; } while (0)
+# define IEM_SVM_CRX_VMEXIT_RET(a_pVCpu, a_uExitCode, a_enmAccessCrX, a_iGReg)              do { return VERR_SVM_IPE_1; } while (0)
+# define IEM_SVM_CHECK_INSTR_INTERCEPT(a_pVCpu, a_Intercept, a_uExitCode, \
+                                       a_uExitInfo1, a_uExitInfo2, a_cbInstr)               do { } while (0)
+# define IEM_SVM_CHECK_READ_CR0_INTERCEPT(a_pVCpu, a_uExitInfo1, a_uExitInfo2, a_cbInstr)   do { } while (0)
+# define IEM_SVM_UPDATE_NRIP(a_pVCpu, a_cbInstr)                                            do { } while (0)
 
 #endif
 
@@ -4177,7 +4178,7 @@ IEM_CIMPL_PROTO_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize);
 IEM_CIMPL_PROTO_1(iemCImpl_iret, IEMMODE, enmEffOpSize);
 IEM_CIMPL_PROTO_0(iemCImpl_loadall286);
 IEM_CIMPL_PROTO_0(iemCImpl_syscall);
-IEM_CIMPL_PROTO_0(iemCImpl_sysret);
+IEM_CIMPL_PROTO_1(iemCImpl_sysret, IEMMODE, enmEffOpSize);
 IEM_CIMPL_PROTO_0(iemCImpl_sysenter);
 IEM_CIMPL_PROTO_1(iemCImpl_sysexit, IEMMODE, enmEffOpSize);
 IEM_CIMPL_PROTO_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel);
@@ -4218,10 +4219,10 @@ IEM_CIMPL_PROTO_0(iemCImpl_rdtscp);
 IEM_CIMPL_PROTO_0(iemCImpl_rdpmc);
 IEM_CIMPL_PROTO_0(iemCImpl_rdmsr);
 IEM_CIMPL_PROTO_0(iemCImpl_wrmsr);
-IEM_CIMPL_PROTO_3(iemCImpl_in, uint16_t, u16Port, bool, fImm, uint8_t, cbReg);
-IEM_CIMPL_PROTO_1(iemCImpl_in_eAX_DX, uint8_t, cbReg);
-IEM_CIMPL_PROTO_3(iemCImpl_out, uint16_t, u16Port, bool, fImm, uint8_t, cbReg);
-IEM_CIMPL_PROTO_1(iemCImpl_out_DX_eAX, uint8_t, cbReg);
+IEM_CIMPL_PROTO_3(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg, uint8_t, bImmAndEffAddrMode);
+IEM_CIMPL_PROTO_2(iemCImpl_in_eAX_DX, uint8_t, cbReg, IEMMODE, enmEffAddrMode);
+IEM_CIMPL_PROTO_3(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg, uint8_t, bImmAndEffAddrMode);
+IEM_CIMPL_PROTO_2(iemCImpl_out_DX_eAX, uint8_t, cbReg, IEMMODE, enmEffAddrMode);
 IEM_CIMPL_PROTO_0(iemCImpl_cli);
 IEM_CIMPL_PROTO_0(iemCImpl_sti);
 IEM_CIMPL_PROTO_0(iemCImpl_hlt);
@@ -4255,8 +4256,8 @@ IEM_CIMPL_PROTO_3(iemCImpl_fnsave, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGC
 IEM_CIMPL_PROTO_3(iemCImpl_fldenv, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc);
 IEM_CIMPL_PROTO_3(iemCImpl_frstor, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc);
 IEM_CIMPL_PROTO_1(iemCImpl_fldcw, uint16_t, u16Fcw);
-IEM_CIMPL_PROTO_1(iemCImpl_fxch_underflow, uint8_t, iStReg);
-IEM_CIMPL_PROTO_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, PFNIEMAIMPLFPUR80EFL, pfnAImpl, bool, fPop);
+IEM_CIMPL_PROTO_2(iemCImpl_fxch_underflow, uint8_t, iStReg, uint16_t, uFpuOpcode);
+IEM_CIMPL_PROTO_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, PFNIEMAIMPLFPUR80EFL, pfnAImpl, uint32_t, uPopAndFpuOpcode);
 /** @} */
 
 /** @name IEMAllCImplStrInstr.cpp.h
@@ -4449,10 +4450,10 @@ IEM_CIMPL_PROTO_0(iemCImpl_vmx_pause);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 VBOXSTRICTRC    iemSvmVmexit(PVMCPUCC pVCpu, uint64_t uExitCode, uint64_t uExitInfo1, uint64_t uExitInfo2) RT_NOEXCEPT;
-VBOXSTRICTRC    iemHandleSvmEventIntercept(PVMCPUCC pVCpu, uint8_t u8Vector, uint32_t fFlags, uint32_t uErr, uint64_t uCr2) RT_NOEXCEPT;
+VBOXSTRICTRC    iemHandleSvmEventIntercept(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t u8Vector, uint32_t fFlags, uint32_t uErr, uint64_t uCr2) RT_NOEXCEPT;
 VBOXSTRICTRC    iemSvmHandleIOIntercept(PVMCPUCC pVCpu, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
                                         uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo, uint8_t cbInstr) RT_NOEXCEPT;
-VBOXSTRICTRC    iemSvmHandleMsrIntercept(PVMCPUCC pVCpu, uint32_t idMsr, bool fWrite) RT_NOEXCEPT;
+VBOXSTRICTRC    iemSvmHandleMsrIntercept(PVMCPUCC pVCpu, uint32_t idMsr, bool fWrite, uint8_t cbInstr) RT_NOEXCEPT;
 IEM_CIMPL_PROTO_0(iemCImpl_vmrun);
 IEM_CIMPL_PROTO_0(iemCImpl_vmload);
 IEM_CIMPL_PROTO_0(iemCImpl_vmsave);

@@ -2367,17 +2367,17 @@ DECLINLINE(void) iemFpuStoreQNan(PRTFLOAT80U pReg) RT_NOEXCEPT
 }
 
 
-#ifndef IEM_WITH_OPAQUE_DECODER_STATE
 /**
- * Updates the FOP, FPU.CS and FPUIP registers.
+ * Updates the FOP, FPU.CS and FPUIP registers, extended version.
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pFpuCtx             The FPU context.
+ * @param   uFpuOpcode          The FPU opcode value (see IEMCPU::uFpuOpcode).
  */
-DECLINLINE(void) iemFpuUpdateOpcodeAndIpWorker(PVMCPUCC pVCpu, PX86FXSTATE pFpuCtx) RT_NOEXCEPT
+DECLINLINE(void) iemFpuUpdateOpcodeAndIpWorkerEx(PVMCPUCC pVCpu, PX86FXSTATE pFpuCtx, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
-    Assert(pVCpu->iem.s.uFpuOpcode != UINT16_MAX);
-    pFpuCtx->FOP = pVCpu->iem.s.uFpuOpcode;
+    Assert(uFpuOpcode != UINT16_MAX);
+    pFpuCtx->FOP = uFpuOpcode;
     /** @todo x87.CS and FPUIP needs to be kept seperately. */
     if (IEM_IS_REAL_OR_V86_MODE(pVCpu))
     {
@@ -2394,9 +2394,21 @@ DECLINLINE(void) iemFpuUpdateOpcodeAndIpWorker(PVMCPUCC pVCpu, PX86FXSTATE pFpuC
     else
         *(uint64_t *)&pFpuCtx->FPUIP = pVCpu->cpum.GstCtx.rip;
 }
+
+
+#ifndef IEM_WITH_OPAQUE_DECODER_STATE
+/**
+ * Updates the FOP, FPU.CS and FPUIP registers.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   pFpuCtx             The FPU context.
+ */
+DECLINLINE(void) iemFpuUpdateOpcodeAndIpWorker(PVMCPUCC pVCpu, PX86FXSTATE pFpuCtx) RT_NOEXCEPT
+{
+    Assert(pVCpu->iem.s.uFpuOpcode != UINT16_MAX);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, pVCpu->iem.s.uFpuOpcode);
+}
 #endif /* !IEM_WITH_OPAQUE_DECODER_STATE */
-
-
 
 
 /**
