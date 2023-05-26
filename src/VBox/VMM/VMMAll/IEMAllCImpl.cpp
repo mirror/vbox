@@ -31,7 +31,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP   LOG_GROUP_IEM
 #define VMCPU_INCL_CPUM_GST_CTX
-///@todo #define IEM_WITH_OPAQUE_DECODER_STATE
+/// @todo #define IEM_WITH_OPAQUE_DECODER_STATE
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/apic.h>
