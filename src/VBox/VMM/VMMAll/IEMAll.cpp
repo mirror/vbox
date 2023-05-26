@@ -10484,6 +10484,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
 {
     uint32_t const cInstructionsAtStart = pVCpu->iem.s.cInstructions;
     AssertMsg(RT_IS_POWER_OF_TWO(cPollRate + 1), ("%#x\n", cPollRate));
+    Assert(cMaxInstructions > 0);
 
     /*
      * See if there is an interrupt pending in TRPM, inject it if we can.
@@ -10611,7 +10612,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
                                               && !pVCpu->cpum.GstCtx.rflags.Bits.u1IF) )
                                       && !VM_FF_IS_ANY_SET(pVM, VM_FF_ALL_MASK) ))
                         {
-                            if (cMaxInstructionsGccStupidity-- > 0)
+                            if (--cMaxInstructionsGccStupidity > 0)
                             {
                                 /* Poll timers every now an then according to the caller's specs. */
                                 if (   (cMaxInstructionsGccStupidity & cPollRate) != 0
