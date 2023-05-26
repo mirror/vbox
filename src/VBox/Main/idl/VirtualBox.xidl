@@ -18257,7 +18257,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="ad47ad09-787b-44ab-b343-a082a3f2dfb1"
+    uuid="7d510820-a678-4730-a862-818dcd3fbed0"
     wsmap="managed"
     rest="managed"
     reservedMethods="7" reservedAttributes="12"
@@ -19631,10 +19631,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <result name="E_NOTIMPL">
           The specified cloning variant is not supported at the moment.
         </result>
-
-        <note>
-          Method will be moved to appropriate location at the next major API release.
-        </note>
       </desc>
 
       <param name="target" type="IMedium" dir="in">
