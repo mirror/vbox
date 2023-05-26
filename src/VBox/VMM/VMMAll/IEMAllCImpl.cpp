@@ -8738,7 +8738,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
             pDst->aXMM[i] = pSrc->aXMM[i];
     }
 
-    pDst->FCW &= ~X86_FCW_ZERO_MASK;
+    pDst->FCW &= ~X86_FCW_ZERO_MASK | X86_FCW_IC_MASK; /* Intel 10980xe allows setting the IC bit. Win 3.11 CALC.EXE sets it. */
     iemFpuRecalcExceptionStatus(pDst);
 
     if (pDst->FSW & X86_FSW_ES)
@@ -9020,7 +9020,7 @@ IEM_CIMPL_DEF_3(iemCImpl_xrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
                 pDst->aRegs[i].au32[3] = 0;
             }
 
-            pDst->FCW &= ~X86_FCW_ZERO_MASK;
+            pDst->FCW &= ~X86_FCW_ZERO_MASK | X86_FCW_IC_MASK; /* Intel 10980xe allows setting the IC bit. Win 3.11 CALC.EXE sets it. */
             iemFpuRecalcExceptionStatus(pDst);
 
             if (pDst->FSW & X86_FSW_ES)
@@ -9375,7 +9375,7 @@ static void iemCImplCommonFpuRestoreEnv(PVMCPUCC pVCpu, IEMMODE enmEffOpSize, RT
 #ifdef LOG_ENABLED
     uint16_t const fOldFsw = pDstX87->FSW;
 #endif
-    pDstX87->FCW &= ~X86_FCW_ZERO_MASK;
+    pDstX87->FCW &= ~X86_FCW_ZERO_MASK | X86_FCW_IC_MASK; /* Intel 10980xe allows setting the IC bit. Win 3.11 CALC.EXE sets it. */
     iemFpuRecalcExceptionStatus(pDstX87);
 #ifdef LOG_ENABLED
     if ((pDstX87->FSW & X86_FSW_ES) ^ (fOldFsw & X86_FSW_ES))
@@ -9562,7 +9562,7 @@ IEM_CIMPL_DEF_1(iemCImpl_fldcw, uint16_t, u16Fcw)
     /** @todo Testcase: Test that it raises and loweres the FPU exception bits
      *        according to FSW. (This is what is currently implemented.) */
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-    pFpuCtx->FCW = u16Fcw & ~X86_FCW_ZERO_MASK;
+    pFpuCtx->FCW = u16Fcw & (~X86_FCW_ZERO_MASK | X86_FCW_IC_MASK); /* Intel 10980xe allows setting the IC bit. Win 3.11 CALC.EXE sets it. */
 #ifdef LOG_ENABLED
     uint16_t fOldFsw = pFpuCtx->FSW;
 #endif
