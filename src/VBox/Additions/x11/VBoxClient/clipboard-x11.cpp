@@ -219,6 +219,46 @@ int VBClX11ClipboardDestroy(void)
     return VINF_SUCCESS;
 }
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnStart */
+static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+{
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
+    AssertPtr(pCtx);
+
+    PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
+    AssertPtr(pTransfer);
+
+    /* We only need to start the HTTP server (and register the transfer to it) when we actually receive data from the host. */
+    if (ShClTransferGetDir(pTransfer) == SHCLTRANSFERDIR_FROM_REMOTE)
+        return ShClHttpTransferRegisterAndMaybeStart(&pCtx->X11.HttpCtx, pTransfer);
+
+    return VINF_SUCCESS;
+}
+
+/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnCompleted */
+static DECLCALLBACK(void) vboxClipboardOnTransferCompletedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rc)
+{
+    RT_NOREF(rc);
+
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
+    AssertPtr(pCtx);
+
+    PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
+    AssertPtr(pTransfer);
+
+    /* See comment in vboxClipboardOnTransferInitCallback(). */
+    if (ShClTransferGetDir(pTransfer) == SHCLTRANSFERDIR_FROM_REMOTE)
+        ShClHttpTransferUnregisterAndMaybeStop(&pCtx->X11.HttpCtx, pTransfer);
+}
+
+/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnError */
+static DECLCALLBACK(void) vboxClipboardOnTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX pCtx, int rc)
+{
+    return vboxClipboardOnTransferCompletedCallback(pCtx, rc);
+}
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP */
+
 /**
  * The main loop of the X11-specifc Shared Clipboard code.
  *
@@ -231,6 +271,25 @@ int VBClX11ClipboardMain(void)
     PSHCLCONTEXT pCtx = &g_Ctx;
 
     bool fShutdown = false;
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+    /*
+     * Set callbacks.
+     * Those will be registered within VbglR3 when a new transfer gets initialized.
+     *
+     * Used for starting / stopping the HTTP server.
+     */
+    RT_ZERO(pCtx->CmdCtx.Transfers.Callbacks);
+
+    pCtx->CmdCtx.Transfers.Callbacks.pvUser = pCtx; /* Assign context as user-provided callback data. */
+    pCtx->CmdCtx.Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
+
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnStart      = vboxClipboardOnTransferStartCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnCompleted  = vboxClipboardOnTransferCompletedCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnError      = vboxClipboardOnTransferErrorCallback;
+# endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP */
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
     /* The thread waits for incoming messages from the host. */
     for (;;)
