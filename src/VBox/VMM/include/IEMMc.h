@@ -1505,7 +1505,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_IF_GREG_BIT_SET(a_iGReg, a_iBitNo)       if (iemGRegFetchU64(pVCpu, (a_iGReg)) & RT_BIT_64(a_iBitNo)) {
 
 #define IEM_MC_REF_FPUREG(a_pr80Dst, a_iSt) \
-    do { (a_pr80Dst) = &pVCpu->cpum.GstCtx.XState.x87.aRegs[X86_FSW_TOP_GET_ST(pVCpu->cpum.GstCtx.XState.x87.FSW, a_iSt)].r80; } while (0)
+    do { (a_pr80Dst) = &pVCpu->cpum.GstCtx.XState.x87.aRegs[a_iSt].r80; } while (0)
 #define IEM_MC_IF_FPUREG_IS_EMPTY(a_iSt) \
     if (iemFpuStRegNotEmpty(pVCpu, (a_iSt)) != VINF_SUCCESS) {
 #define IEM_MC_IF_FPUREG_NOT_EMPTY(a_iSt) \
