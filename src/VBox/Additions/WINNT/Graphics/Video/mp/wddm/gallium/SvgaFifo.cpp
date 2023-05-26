@@ -872,6 +872,29 @@ void SvgaCmdBufProcess(PVBOXWDDM_EXT_VMSVGA pSvga)
 }
 
 
+bool SvgaCmdBufIsIdle(PVBOXWDDM_EXT_VMSVGA pSvga)
+{
+    PVMSVGACBSTATE pCBState = pSvga->pCBState;
+
+    bool fIdle = true;
+
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pCBState->SpinLock, &OldIrql);
+    for (unsigned i = 0; i < RT_ELEMENTS(pCBState->aCBContexts); ++i)
+    {
+        PVMSVGACBCONTEXT pCBCtx = &pCBState->aCBContexts[i];
+        if (pCBCtx->cSubmitted > 0)
+        {
+            fIdle = false;
+            break;
+        }
+    }
+    KeReleaseSpinLock(&pCBState->SpinLock, OldIrql);
+
+    return fIdle;
+}
+
+
 void SvgaCmdBufSetCompletionCallback(PVBOXWDDM_EXT_VMSVGA pSvga, PFNCBCOMPLETION pfn, void const *pv, uint32_t cb)
 {
     VMSVGACBCOMPLETION *p = (VMSVGACBCOMPLETION *)RTMemAlloc(sizeof(VMSVGACBCOMPLETION) + cb);

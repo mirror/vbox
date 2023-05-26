@@ -178,6 +178,9 @@ typedef struct VMSVGAMOB
     AVLU32NODECORE              core;                       /* AVL entry. Key is mobid, allocated by the miniport. */
     HANDLE                      hAllocation;                /* Allocation which is bound to the mob. */
     VMSVGAGBO                   gbo;                        /* Gbo for this mob. */
+    RTR0MEMOBJ                  hMemObj;                    /* The guest memory if allocated by miniport. */
+    uint32_t                    u64MobFence;                /* Free by the guest when the host reports this fence value. */
+    RTLISTNODE                  node;                       /* VBOXWDDM_EXT_VMSVGA::listMobDeferredDestruction */
 } VMSVGAMOB, *PVMSVGAMOB;
 
 #define VMSVGAMOB_ID(a_pMob) ((a_pMob)->core.Key)
@@ -256,6 +259,12 @@ typedef struct VBOXWDDM_EXT_VMSVGA
 
     VMSVGAOT aOT[SVGA_OTABLE_DX_MAX];
 
+    PVMSVGAMOB pMiniportMob; /* Used by miniport to communicate with the device. */
+    struct VMSVGAMINIPORTMOB volatile *pMiniportMobData; /* Pointer to the miniport mob content. */
+
+    uint64_t volatile u64MobFence;
+    RTLISTANCHOR listMobDeferredDestruction; /* Mob to be deleted after. */
+
     /** Bitmap of used GMR ids. Bit 0 - GMR id 0, etc. */
     uint32_t *pu32GMRBits; /* Number of GMRs is controlled by the host (u32GmrMaxIds), so allocate the bitmap. */
     uint32_t cbGMRBits;    /* Bytes allocated for pu32GMRBits */
@@ -274,10 +283,14 @@ typedef struct VBOXWDDM_EXT_VMSVGA
 } VBOXWDDM_EXT_VMSVGA;
 typedef struct VBOXWDDM_EXT_VMSVGA *PVBOXWDDM_EXT_VMSVGA;
 
+typedef struct VMSVGAMINIPORTMOB
+{
+    uint64_t u64MobFence; /* Host writes SVGA3dCmdDXMobFence64::value here. */
+} VMSVGAMINIPORTMOB;
+
 typedef struct VMSVGACOT
 {
     PVMSVGAMOB              pMob;                       /* COTable mob. */
-    RTR0MEMOBJ              hMemObj;                    /* COTable pages. */
     uint32_t                cEntries;                   /* How many objects can be stored in the COTable. */
 } VMSVGACOT, *PVMSVGACOT;
 
@@ -628,6 +641,13 @@ NTSTATUS SvgaMobCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
                        PVMSVGAMOB *ppMob,
                        uint32_t cMobPages,
                        HANDLE hAllocation);
+NTSTATUS SvgaMobSetMemObj(PVMSVGAMOB pMob,
+                          RTR0MEMOBJ hMemObj);
+NTSTATUS SvgaMobDestroy(VBOXWDDM_EXT_VMSVGA *pSvga,
+                        PVMSVGAMOB pMob,
+                        void *pvCmd,
+                        uint32_t cbReserved,
+                        uint32_t *pcbCmd);
 
 NTSTATUS SvgaCOTNotifyId(VBOXWDDM_EXT_VMSVGA *pSvga,
                          PVMSVGACONTEXT pSvgaContext,

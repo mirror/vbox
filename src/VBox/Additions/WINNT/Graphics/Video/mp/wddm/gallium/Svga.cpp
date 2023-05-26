@@ -189,7 +189,7 @@ static NTSTATUS svgaObjectTablesNotify(VBOXWDDM_EXT_VMSVGA *pSvga, SVGAOTableTyp
             AssertFailedReturnStmt(SvgaGboFree(&gbo); RTR0MemObjFree(hMemObjOT, true),
                                    STATUS_INSUFFICIENT_RESOURCES);
 
-        /* Command buffer completion callback to free the COT. */
+        /* Command buffer completion callback to free the OT. */
         struct VMSVGAOTFREE callbackData;
         callbackData.gbo = pOT->gbo;
         callbackData.hMemObj = pOT->hMemObj;
@@ -230,10 +230,18 @@ static void svgaHwStop(VBOXWDDM_EXT_VMSVGA *pSvga)
     if (pSvga->u32Caps & SVGA_CAP_GBOBJECTS)
         SvgaObjectTablesDestroy(pSvga);
 
-    /* Give the host some time to process them. */
-    LARGE_INTEGER Interval;
-    Interval.QuadPart = -(int64_t)100 /* ms */ * 10000;
-    KeDelayExecutionThread(KernelMode, FALSE, &Interval);
+    /* Wait for buffers to complete. Up to 5 seconds, arbitrary. */
+    int cIntervals = 0;
+    while (!SvgaCmdBufIsIdle(pSvga) && cIntervals++ < 50)
+    {
+        /* Give the host some time to process them. */
+        LARGE_INTEGER Interval;
+        Interval.QuadPart = -(int64_t)100 /* ms */ * 10000;
+        KeDelayExecutionThread(KernelMode, FALSE, &Interval);
+    }
+
+    if (pSvga->u32Caps & SVGA_CAP_COMMAND_BUFFERS)
+        SvgaCmdBufDestroy(pSvga);
 
     /* Disable IRQs. */
     SVGARegWrite(pSvga, SVGA_REG_IRQMASK, 0);
@@ -243,9 +251,6 @@ static void svgaHwStop(VBOXWDDM_EXT_VMSVGA *pSvga)
 
     /* Disable SVGA. */
     SVGARegWrite(pSvga, SVGA_REG_ENABLE, SVGA_REG_ENABLE_DISABLE);
-
-    if (pSvga->u32Caps & SVGA_CAP_COMMAND_BUFFERS)
-        SvgaCmdBufDestroy(pSvga);
 }
 
 static NTSTATUS svgaHwStart(VBOXWDDM_EXT_VMSVGA *pSvga)
@@ -333,7 +338,21 @@ void SvgaAdapterStop(PVBOXWDDM_EXT_VMSVGA pSvga,
             pSvga->cbGMRBits = 0;
         }
 
+        /* Free the miniport mob at last. Can't use SvgaMobDestroy here because it tells the host to write a fence
+         * value to this mob. */
+        void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DESTROY_GB_MOB, sizeof(SVGA3dCmdDestroyGBMob), SVGA3D_INVALID_ID);
+        if (pvCmd)
+        {
+            SVGA3dCmdDestroyGBMob *pCmd = (SVGA3dCmdDestroyGBMob *)pvCmd;
+            pCmd->mobid = VMSVGAMOB_ID(pSvga->pMiniportMob);
+            SvgaCmdBufCommit(pSvga, sizeof(*pCmd));
+        }
+        else
+            AssertFailed();
+
         svgaHwStop(pSvga);
+
+        SvgaMobFree(pSvga, pSvga->pMiniportMob); /* After svgaHwStop because it waits for command buffer completion. */
 
         Status = pDxgkInterface->DxgkCbUnmapMemory(pDxgkInterface->DeviceHandle,
                                                    (PVOID)pSvga->pu32FIFO);
@@ -410,6 +429,44 @@ NTSTATUS SvgaAdapterStart(PVBOXWDDM_EXT_VMSVGA *ppSvga,
                         Status = STATUS_INSUFFICIENT_RESOURCES;
                     }
                 }
+
+                if (NT_SUCCESS(Status))
+                {
+                    uint32_t const cbMiniportMob = RT_ALIGN_32(sizeof(VMSVGAMINIPORTMOB), PAGE_SIZE);
+                    RTR0MEMOBJ hMemObjMiniportMob;
+                    int rc = RTR0MemObjAllocPageTag(&hMemObjMiniportMob, cbMiniportMob,
+                                                    false /* executable R0 mapping */, "VMSVGAMOB0");
+                    if (RT_SUCCESS(rc))
+                    {
+                        Status = SvgaMobCreate(pSvga, &pSvga->pMiniportMob, cbMiniportMob / PAGE_SIZE, 0);
+                        if (NT_SUCCESS(Status))
+                        {
+                            Status = SvgaMobSetMemObj(pSvga->pMiniportMob, hMemObjMiniportMob);
+                            if (NT_SUCCESS(Status))
+                            {
+                                void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DEFINE_GB_MOB64, sizeof(SVGA3dCmdDefineGBMob64), SVGA3D_INVALID_ID);
+                                if (pvCmd)
+                                {
+                                    SVGA3dCmdDefineGBMob64 *pCmd = (SVGA3dCmdDefineGBMob64 *)pvCmd;
+                                    pCmd->mobid       = VMSVGAMOB_ID(pSvga->pMiniportMob);
+                                    pCmd->ptDepth     = pSvga->pMiniportMob->gbo.enmMobFormat;
+                                    pCmd->base        = pSvga->pMiniportMob->gbo.base;
+                                    pCmd->sizeInBytes = pSvga->pMiniportMob->gbo.cbGbo;
+                                    SvgaCmdBufCommit(pSvga, sizeof(*pCmd));
+
+                                    pSvga->pMiniportMobData = (VMSVGAMINIPORTMOB volatile *)RTR0MemObjAddress(hMemObjMiniportMob);
+                                    memset((void *)pSvga->pMiniportMobData, 0, cbMiniportMob);
+                                    RTListInit(&pSvga->listMobDeferredDestruction);
+                                    //pSvga->u64MobFence = 0;
+                                }
+                                else
+                                    AssertFailedStmt(Status = STATUS_INSUFFICIENT_RESOURCES);
+                            }
+                        }
+                    }
+                    else
+                       AssertFailedStmt(Status = STATUS_INSUFFICIENT_RESOURCES);
+                }
             }
         }
         else
@@ -419,10 +476,8 @@ NTSTATUS SvgaAdapterStart(PVBOXWDDM_EXT_VMSVGA *ppSvga,
         }
     }
 
-    if (NT_SUCCESS(Status))
-    {
-        *ppSvga = pSvga;
-    }
+    /* Caller's 'cleanup on error' code needs this pointer */
+    *ppSvga = pSvga;
 
     return Status;
 }
@@ -1818,6 +1873,7 @@ typedef struct GAWDDMREGION
     RTHCPHYS   aPhys[1];
 } GAWDDMREGION;
 
+/** @todo Deferred destruction. */
 static void svgaFreeGBMobForGMR(VBOXWDDM_EXT_VMSVGA *pSvga, PVMSVGAMOB pMob)
 {
     if (pMob)
@@ -1844,7 +1900,7 @@ static NTSTATUS svgaCreateGBMobForGMR(VBOXWDDM_EXT_VMSVGA *pSvga, GAWDDMREGION *
     Assert(NT_SUCCESS(Status));
     if (NT_SUCCESS(Status))
     {
-        Status = SvgaGboFillPageTableForMemObj(&pRegion->pMob->gbo, pRegion->MemObj);
+        Status = SvgaMobSetMemObj(pRegion->pMob, pRegion->MemObj);
         Assert(NT_SUCCESS(Status));
         if (NT_SUCCESS(Status))
         {
@@ -1883,11 +1939,15 @@ static void gmrFree(GAWDDMREGION *pRegion)
         AssertRC(rc);
         pRegion->MapObjR3 = NIL_RTR0MEMOBJ;
     }
-    if (pRegion->MemObj != NIL_RTR0MEMOBJ)
+    if (pRegion->pMob == NULL)
     {
-        int rc = RTR0MemObjFree(pRegion->MemObj, true /* fFreeMappings */);
-        AssertRC(rc);
-        pRegion->MemObj = NIL_RTR0MEMOBJ;
+        /* The memory will be deleted by SvgaMobFree. */
+        if (pRegion->MemObj != NIL_RTR0MEMOBJ)
+        {
+            int rc = RTR0MemObjFree(pRegion->MemObj, true /* fFreeMappings */);
+            AssertRC(rc);
+            pRegion->MemObj = NIL_RTR0MEMOBJ;
+        }
     }
 }
 
@@ -2358,6 +2418,13 @@ void SvgaMobFree(VBOXWDDM_EXT_VMSVGA *pSvga,
 
         SvgaGboFree(&pMob->gbo);
 
+        if (pMob->hMemObj != NIL_RTR0MEMOBJ)
+        {
+            int rc = RTR0MemObjFree(pMob->hMemObj, true);
+            AssertRC(rc);
+            pMob->hMemObj = NIL_RTR0MEMOBJ;
+        }
+
         NTSTATUS Status = SvgaMobIdFree(pSvga, VMSVGAMOB_ID(pMob));
         Assert(NT_SUCCESS(Status)); RT_NOREF(Status);
         GaMemFree(pMob);
@@ -2393,20 +2460,13 @@ NTSTATUS SvgaMobCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
     return STATUS_SUCCESS;
 }
 
-
-struct VMSVGACOTFREE
+NTSTATUS SvgaMobSetMemObj(PVMSVGAMOB pMob,
+                          RTR0MEMOBJ hMemObj)
 {
-    PVMSVGAMOB pMob;
-    RTR0MEMOBJ hMemObj;
-};
-
-
-static DECLCALLBACK(void) svgaCOTMobFreeCb(VBOXWDDM_EXT_VMSVGA *pSvga, void *pvData, uint32_t cbData)
-{
-    AssertReturnVoid(cbData == sizeof(struct VMSVGACOTFREE));
-    struct VMSVGACOTFREE *p = (struct VMSVGACOTFREE *)pvData;
-    SvgaMobFree(pSvga, p->pMob);
-    RTR0MemObjFree(p->hMemObj, true);
+    NTSTATUS Status = SvgaGboFillPageTableForMemObj(&pMob->gbo, hMemObj);
+    if (NT_SUCCESS(Status))
+        pMob->hMemObj = hMemObj;
+    return Status;
 }
 
 
@@ -2461,7 +2521,7 @@ NTSTATUS SvgaCOTNotifyId(VBOXWDDM_EXT_VMSVGA *pSvga,
                      RTR0MemObjFree(hMemObjCOT, true),
                      Status);
 
-    Status = SvgaGboFillPageTableForMemObj(&pMob->gbo, hMemObjCOT);
+    Status = SvgaMobSetMemObj(pMob, hMemObjCOT);
     AssertReturnStmt(NT_SUCCESS(Status),
                      SvgaMobFree(pSvga, pMob); RTR0MemObjFree(hMemObjCOT, true),
                      Status);
@@ -2515,32 +2575,92 @@ NTSTATUS SvgaCOTNotifyId(VBOXWDDM_EXT_VMSVGA *pSvga,
             AssertFailedReturnStmt(SvgaMobFree(pSvga, pMob); RTR0MemObjFree(hMemObjCOT, true),
                                    STATUS_INSUFFICIENT_RESOURCES);
 
-        pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DESTROY_GB_MOB, sizeof(SVGA3dCmdDestroyGBMob), SVGA3D_INVALID_ID);
+        uint32_t cbCmdRequired = 0;
+        SvgaMobDestroy(pSvga, pCOT->pMob, NULL, 0, &cbCmdRequired);
+        pvCmd = SvgaCmdBufReserve(pSvga, cbCmdRequired, SVGA3D_INVALID_ID);
         if (pvCmd)
         {
-            SVGA3dCmdDestroyGBMob *pCmd = (SVGA3dCmdDestroyGBMob *)pvCmd;
-            pCmd->mobid = VMSVGAMOB_ID(pCOT->pMob);
-            SvgaCmdBufCommit(pSvga, sizeof(*pCmd));
+            SvgaMobDestroy(pSvga, pCOT->pMob, pvCmd, cbCmdRequired, &cbCmdRequired);
+            SvgaCmdBufCommit(pSvga, cbCmdRequired);
         }
-        else
-            AssertFailedReturnStmt(SvgaMobFree(pSvga, pMob); RTR0MemObjFree(hMemObjCOT, true),
-                                   STATUS_INSUFFICIENT_RESOURCES);
-
-        /* Command buffer completion callback to free the COT. */
-        struct VMSVGACOTFREE callbackData;
-        callbackData.pMob = pCOT->pMob;
-        callbackData.hMemObj = pCOT->hMemObj;
-        SvgaCmdBufSetCompletionCallback(pSvga, svgaCOTMobFreeCb, &callbackData, sizeof(callbackData));
 
         pCOT->pMob = NULL;
-        pCOT->hMemObj = NIL_RTR0MEMOBJ;
     }
 
     SvgaCmdBufFlush(pSvga);
 
     pCOT->pMob = pMob;
-    pCOT->hMemObj = hMemObjCOT;
     pCOT->cEntries = cbCOT / s_acbEntry[enmType];
+
+    return STATUS_SUCCESS;
+}
+
+
+
+/*
+ * Place mob destruction commands into the buffer and add the mob to the deferred destruction list.
+ *
+ * Makes sure that the MOB, in particular the mobid, is deallocated by the guest after the MOB deletion
+ * has been completed by the host.
+ *
+ * SVGA_3D_CMD_DESTROY_GB_MOB can be submitted to the host either in the miniport command buffer
+ * (VMSVGACBSTATE::pCBCurrent) or in a paging buffer due to DXGK_OPERATION_UNMAP_APERTURE_SEGMENT operation.
+ * These two ways are not synchronized. Therefore it is possible that the guest deletes a mob for an aperture segment
+ * in a paging buffer then allocates the same mobid and sends SVGA_3D_CMD_DEFINE_GB_MOB64 to the host for a COTable
+ * before the paging buffer is sent to the host.
+ *
+ * The driver uses SVGA_3D_CMD_DX_MOB_FENCE_64 command to notify the driver that the host had deleted a mob
+ * and frees deleted mobs in the DPC routine
+ */
+NTSTATUS SvgaMobDestroy(VBOXWDDM_EXT_VMSVGA *pSvga,
+                        PVMSVGAMOB pMob,
+                        void *pvCmd,
+                        uint32_t cbReserved,
+                        uint32_t *pcbCmd)
+{
+    uint32_t cbRequired = sizeof(SVGA3dCmdHeader) + sizeof(SVGA3dCmdDestroyGBMob)
+                        + sizeof(SVGA3dCmdHeader) + sizeof(SVGA3dCmdDXMobFence64);
+
+    *pcbCmd = cbRequired;
+    if (cbReserved < cbRequired)
+        return STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
+
+    uint8_t *pu8Cmd = (uint8_t *)pvCmd;
+    SVGA3dCmdHeader *pHdr;
+
+    pHdr = (SVGA3dCmdHeader *)pu8Cmd;
+    pHdr->id   = SVGA_3D_CMD_DESTROY_GB_MOB;
+    pHdr->size = sizeof(SVGA3dCmdDestroyGBMob);
+    pu8Cmd += sizeof(*pHdr);
+
+    {
+    SVGA3dCmdDestroyGBMob *pCmd = (SVGA3dCmdDestroyGBMob *)pu8Cmd;
+    pCmd->mobid = VMSVGAMOB_ID(pMob);
+    pu8Cmd += sizeof(*pCmd);
+    }
+
+    pMob->u64MobFence = ASMAtomicIncU64(&pSvga->u64MobFence);
+
+    pHdr = (SVGA3dCmdHeader *)pu8Cmd;
+    pHdr->id   = SVGA_3D_CMD_DX_MOB_FENCE_64;
+    pHdr->size = sizeof(SVGA3dCmdDXMobFence64);
+    pu8Cmd += sizeof(*pHdr);
+
+    {
+    SVGA3dCmdDXMobFence64 *pCmd = (SVGA3dCmdDXMobFence64 *)pu8Cmd;
+    pCmd->value = pMob->u64MobFence;
+    pCmd->mobId = VMSVGAMOB_ID(pSvga->pMiniportMob);
+    pCmd->mobOffset = RT_OFFSETOF(VMSVGAMINIPORTMOB, u64MobFence);
+    pu8Cmd += sizeof(*pCmd);
+    }
+
+    /* Add the mob to the deferred destruction queue. */
+    KIRQL OldIrql;
+    SvgaHostObjectsLock(pSvga, &OldIrql);
+    RTListAppend(&pSvga->listMobDeferredDestruction, &pMob->node);
+    SvgaHostObjectsUnlock(pSvga, OldIrql);
+
+    Assert((uintptr_t)pu8Cmd - (uintptr_t)pvCmd == cbRequired);
 
     return STATUS_SUCCESS;
 }

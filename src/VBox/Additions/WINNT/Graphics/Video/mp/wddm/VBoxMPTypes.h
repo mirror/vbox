@@ -225,9 +225,8 @@ typedef struct VBOXWDDM_ALLOCATION
             PMDL                pMDL;                       /* Guest backing for aperture segment 2. */
             struct
             {
-                RTR0MEMOBJ      hMemObjGB;                  /* Guest backing pages for host segment 3. */
-                struct VMSVGAMOB *pMob;                     /* Mob for the pages. */
-            } gb;
+                struct VMSVGAMOB *pMob;                     /* Mob for the pages (including RTR0MEMOBJ). */
+            } gb; /** @todo remove the struct */
         };
     } dx;
 #endif /* VBOX_WITH_VMSVGA3D_DX */
