@@ -2471,11 +2471,44 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case EMSTATE_IEM:
                 {
+#if 0 /* For comparing HM and IEM (@bugref{10464}). */
+                    PCPUMCTX const pCtx = &pVCpu->cpum.GstCtx;
+                    PCX86FXSTATE const pX87 = &pCtx->XState.x87;
+                    Log11(("eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
+                           "eip=%08x esp=%08x ebp=%08x eflags=%08x\n"
+                           "cs=%04x ss=%04x ds=%04x es=%04x fs=%04x gs=%04x\n"
+                           "fsw=%04x fcw=%04x ftw=%02x top=%u%s%s%s%s%s%s%s%s%s\n"
+                           "st0=%.10Rhxs st1=%.10Rhxs st2=%.10Rhxs st3=%.10Rhxs\n"
+                           "st4=%.10Rhxs st5=%.10Rhxs st6=%.10Rhxs st7=%.10Rhxs\n",
+                           pCtx->eax, pCtx->ebx, pCtx->ecx, pCtx->edx, pCtx->edi, pCtx->edi,
+                           pCtx->eip, pCtx->esp, pCtx->ebp, pCtx->eflags.u,
+                           pCtx->cs.Sel, pCtx->ss.Sel, pCtx->ds.Sel, pCtx->es.Sel, pCtx->fs.Sel, pCtx->gs.Sel,
+                           pX87->FSW, pX87->FCW, pX87->FTW, X86_FSW_TOP_GET(pX87->FSW),
+                           pX87->FSW & X86_FSW_ES ? " ES!" : "",
+                           pX87->FSW & X86_FSW_IE ? " IE" : "",
+                           pX87->FSW & X86_FSW_DE ? " DE" : "",
+                           pX87->FSW & X86_FSW_SF ? " SF" : "",
+                           pX87->FSW & X86_FSW_B  ? " B!" : "",
+                           pX87->FSW & X86_FSW_C0 ? " C0" : "",
+                           pX87->FSW & X86_FSW_C1 ? " C1" : "",
+                           pX87->FSW & X86_FSW_C2 ? " C2" : "",
+                           pX87->FSW & X86_FSW_C3 ? " C3" : "",
+                           &pX87->aRegs[/*X86_FSW_TOP_GET_ST(pVCpu->cpum.GstCtx.XState.x87.FSW,*/(0)],
+                           &pX87->aRegs[/*X86_FSW_TOP_GET_ST(pVCpu->cpum.GstCtx.XState.x87.FSW,*/(1)],
+                           &pX87->aRegs[/*X86_FSW_TOP_GET_ST(pVCpu->cpum.GstCtx.XState.x87.FSW,*/(2)],
+                           &pX87->aRegs[/*X86_FSW_TOP_GET_ST(pVCpu->cpum.GstCtx.XState.x87.FSW,*/(3)],
+                           &pX87->aRegs[/*X86_FSW_TOP_GET_ST(pVCpu->cpum.GstCtx.XState.x87.FSW,*/(4)],
+                           &pX87->aRegs[/*X86_FSW_TOP_GET_ST(pVCpu->cpum.GstCtx.XState.x87.FSW,*/(5)],
+                           &pX87->aRegs[/*X86_FSW_TOP_GET_ST(pVCpu->cpum.GstCtx.XState.x87.FSW,*/(6)],
+                           &pX87->aRegs[/*X86_FSW_TOP_GET_ST(pVCpu->cpum.GstCtx.XState.x87.FSW,*/(7)]));
+                    DBGFR3DisasInstrCurrentLogInternal(pVCpu, NULL);
+#endif
+
                     uint32_t cInstructions = 0;
 #if 0 /* For testing purposes. */
-                    STAM_PROFILE_START(&pVCpu->em.s.StatHmExec, x1);
+                    //STAM_PROFILE_START(&pVCpu->em.s.StatHmExec, x1);
                     rc = VBOXSTRICTRC_TODO(EMR3HmSingleInstruction(pVM, pVCpu, EM_ONE_INS_FLAGS_RIP_CHANGE));
-                    STAM_PROFILE_STOP(&pVCpu->em.s.StatHmExec, x1);
+                    //STAM_PROFILE_STOP(&pVCpu->em.s.StatHmExec, x1);
                     if (rc == VINF_EM_DBG_STEPPED || rc == VINF_EM_RESCHEDULE_HM || rc == VINF_EM_RESCHEDULE_REM || rc == VINF_EM_RESCHEDULE_RAW)
                         rc = VINF_SUCCESS;
                     else if (rc == VERR_EM_CANNOT_EXEC_GUEST)
