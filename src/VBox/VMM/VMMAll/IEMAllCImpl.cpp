@@ -31,7 +31,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP   LOG_GROUP_IEM
 #define VMCPU_INCL_CPUM_GST_CTX
-/// @todo #define IEM_WITH_OPAQUE_DECODER_STATE
+#define IEM_WITH_OPAQUE_DECODER_STATE
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/apic.h>
@@ -74,24 +74,22 @@
 *********************************************************************************************************************************/
 /**
  * Flushes the prefetch buffer, light version.
+ * @todo The \#if conditions here must match the ones in iemOpcodeFlushLight().
  */
 #ifndef IEM_WITH_CODE_TLB
-# define IEM_FLUSH_PREFETCH_LIGHT(a_pVCpu, a_cbInstr) do { (a_pVCpu)->iem.s.cbOpcode   = (a_cbInstr); } while (0)
+# define IEM_FLUSH_PREFETCH_LIGHT(a_pVCpu, a_cbInstr) iemOpcodeFlushLight(a_pVCpu, a_cbInstr)
 #else
 # define IEM_FLUSH_PREFETCH_LIGHT(a_pVCpu, a_cbInstr) do { } while (0)
 #endif
 
 /**
  * Flushes the prefetch buffer, heavy version.
+ * @todo The \#if conditions here must match the ones in iemOpcodeFlushHeavy().
  */
-#ifndef IEM_WITH_CODE_TLB
-# define IEM_FLUSH_PREFETCH_HEAVY(a_pVCpu, a_cbInstr) do { (a_pVCpu)->iem.s.cbOpcode   = (a_cbInstr); } while (0)
+#if !defined(IEM_WITH_CODE_TLB) || 1
+# define IEM_FLUSH_PREFETCH_HEAVY(a_pVCpu, a_cbInstr) iemOpcodeFlushHeavy(a_pVCpu, a_cbInstr)
 #else
-# if 1
-#  define IEM_FLUSH_PREFETCH_HEAVY(a_pVCpu, a_cbInstr) do { (a_pVCpu)->iem.s.pbInstrBuf = NULL; } while (0)
-# else
-#  define IEM_FLUSH_PREFETCH_HEAVY(a_pVCpu, a_cbInstr) do { } while (0)
-# endif
+# define IEM_FLUSH_PREFETCH_HEAVY(a_pVCpu, a_cbInstr) do { } while (0)
 #endif
 
 
@@ -2632,7 +2630,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     }
 
     /* Flush the prefetch buffer. */
-    IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr); /** @todo use light flush for same privlege? */
+    IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr); /** @todo use light flush for same privilege? */
 
     return iemRegFinishClearingRF(pVCpu);
 }

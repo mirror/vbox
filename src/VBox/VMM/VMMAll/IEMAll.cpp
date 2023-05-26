@@ -764,6 +764,37 @@ VMM_INT_DECL(void) IEMTlbInvalidateAllPhysicalAllCpus(PVMCC pVM, VMCPUID idCpuCa
 #endif
 }
 
+
+/**
+ * Flushes the prefetch buffer, light version.
+ */
+void iemOpcodeFlushLight(PVMCPUCC pVCpu, uint8_t cbInstr)
+{
+#ifndef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.cbOpcode = cbInstr;
+#else
+    RT_NOREF(pVCpu, cbInstr);
+#endif
+}
+
+
+/**
+ * Flushes the prefetch buffer, heavy version.
+ */
+void iemOpcodeFlushHeavy(PVMCPUCC pVCpu, uint8_t cbInstr)
+{
+#ifndef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.cbOpcode = cbInstr;
+#elif 1
+    pVCpu->iem.s.pbInstrBuf = NULL;
+    RT_NOREF(cbInstr);
+#else
+    RT_NOREF(pVCpu, cbInstr);
+#endif
+}
+
+
+
 #ifdef IEM_WITH_CODE_TLB
 
 /**
