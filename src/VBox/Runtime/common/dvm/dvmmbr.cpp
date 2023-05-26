@@ -1002,7 +1002,7 @@ static DECLCALLBACK(int) rtDvmFmtMbrVolumeRead(RTDVMVOLUMEFMT hVolFmt, uint64_t 
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
     AssertReturn(off + cbRead <= pVol->pEntry->cbPart, VERR_INVALID_PARAMETER);
 
-    return rtDvmDiskRead(pVol->pVolMgr->pDisk, pVol->pEntry->offPart + off, pvBuf, cbRead);
+    return rtDvmDiskReadUnaligned(pVol->pVolMgr->pDisk, pVol->pEntry->offPart + off, pvBuf, cbRead);
 }
 
 static DECLCALLBACK(int) rtDvmFmtMbrVolumeWrite(RTDVMVOLUMEFMT hVolFmt, uint64_t off, const void *pvBuf, size_t cbWrite)
