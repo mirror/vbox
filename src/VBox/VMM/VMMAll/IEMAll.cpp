@@ -337,9 +337,9 @@ DECLINLINE(void) iemReInitDecoder(PVMCPUCC pVCpu)
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.ldtr));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.tr));
 
-    pVCpu->iem.s.uCpl               = CPUMGetGuestCPL(pVCpu);   /** @todo this should be updated during execution! */
-    IEMMODE enmMode = iemCalcCpuMode(pVCpu);
-    pVCpu->iem.s.enmCpuMode         = enmMode;                  /** @todo this should be updated during execution! */
+    Assert(pVCpu->iem.s.uCpl == CPUMGetGuestCPL(pVCpu)); /* ASSUMES: Anyone changing CPL will adjust iem.s.uCpl. */
+    IEMMODE const enmMode = pVCpu->iem.s.enmCpuMode;
+    Assert(enmMode == iemCalcCpuMode(pVCpu));            /* ASSUMES: Anyone changing the CPU mode will adjust iem.s.enmCpuMode. */
     pVCpu->iem.s.enmDefAddrMode     = enmMode;  /** @todo check if this is correct... */
     pVCpu->iem.s.enmEffAddrMode     = enmMode;
     if (enmMode != IEMMODE_64BIT)
@@ -2056,6 +2056,9 @@ iemRaiseXcptOrIntInRealMode(PVMCPUCC      pVCpu,
     if (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT)
         iemRaiseXcptAdjustState(pVCpu, u8Vector);
 
+    /* pVCpu->iem.s.enmCpuMode and pVCpu->iem.s.uCpl doesn't really change here,
+       so best leave them alone in case we're in a weird kind of real mode... */
+
     return fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT ? VINF_IEM_RAISED_XCPT : VINF_SUCCESS;
 }
 
@@ -2904,6 +2907,12 @@ iemTaskSwitch(PVMCPUCC        pVCpu,
         Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.cs));
     }
 
+    /* Make sure the CPU mode is correct. */
+    IEMMODE const enmNewCpuMode = iemCalcCpuMode(pVCpu);
+    if (enmNewCpuMode != pVCpu->iem.s.enmCpuMode)
+        Log(("iemTaskSwitch: cpu mode %d -> %d\n", pVCpu->iem.s.enmCpuMode, enmNewCpuMode));
+    pVCpu->iem.s.enmCpuMode = enmNewCpuMode;
+
     /** @todo Debug trap. */
     if (fIsNewTSS386 && fNewDebugTrap)
         Log(("iemTaskSwitch: Debug Trap set in new TSS. Not implemented!\n"));
@@ -2916,9 +2925,7 @@ iemTaskSwitch(PVMCPUCC        pVCpu,
     if (   enmTaskSwitch == IEMTASKSWITCH_INT_XCPT
         && (   !(fFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
             ||  (fFlags & IEM_XCPT_FLAGS_ICEBP_INSTR)))
-    {
         uExt = 1;
-    }
     else
         uExt = 0;
 
@@ -3446,6 +3453,12 @@ iemRaiseXcptOrIntInProtMode(PVMCPUCC    pVCpu,
     if (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT)
         iemRaiseXcptAdjustState(pVCpu, u8Vector);
 
+    /* Make sure the CPU mode is correct. */
+    IEMMODE const enmNewCpuMode = iemCalcCpuMode(pVCpu);
+    if (enmNewCpuMode != pVCpu->iem.s.enmCpuMode)
+        Log(("iemRaiseXcptOrIntInProtMode: cpu mode %d -> %d\n", pVCpu->iem.s.enmCpuMode, enmNewCpuMode));
+    pVCpu->iem.s.enmCpuMode = enmNewCpuMode;
+
     return fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT ? VINF_IEM_RAISED_XCPT : VINF_SUCCESS;
 }
 
@@ -3689,6 +3702,7 @@ iemRaiseXcptOrIntInLongMode(PVMCPUCC    pVCpu,
     pVCpu->cpum.GstCtx.cs.u64Base    = X86DESC_BASE(&DescCS.Legacy);
     pVCpu->cpum.GstCtx.cs.Attr.u     = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
     pVCpu->cpum.GstCtx.rip           = uNewRip;
+    pVCpu->iem.s.enmCpuMode          = IEMMODE_64BIT;
 
     fEfl &= ~fEflToClear;
     IEMMISC_SET_EFL(pVCpu, fEfl);
@@ -4068,7 +4082,7 @@ VBOXSTRICTRC iemRaiseTaskSwitchFaultWithErr(PVMCPUCC pVCpu, uint16_t uErr) RT_NO
 VBOXSTRICTRC iemRaiseTaskSwitchFaultCurrentTSS(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_TS, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR,
-                             pVCpu->cpum.GstCtx.tr.Sel, 0);
+                              pVCpu->cpum.GstCtx.tr.Sel, 0);
 }
 
 

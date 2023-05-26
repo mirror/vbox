@@ -3191,7 +3191,8 @@ IEM_CIMPL_DEF_4(iemCImpl_iret_prot_v8086, uint32_t, uNewEip, uint16_t, uNewCs, u
     iemCImplCommonV8086LoadSeg(&pVCpu->cpum.GstCtx.gs, uNewGs);
     pVCpu->cpum.GstCtx.rip      = (uint16_t)uNewEip;
     pVCpu->cpum.GstCtx.rsp      = uNewEsp; /** @todo check this out! */
-    pVCpu->iem.s.uCpl  = 3;
+    pVCpu->iem.s.enmCpuMode = IEMMODE_16BIT;
+    pVCpu->iem.s.uCpl       = 3;
 
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
@@ -4142,6 +4143,7 @@ IEM_CIMPL_DEF_0(iemCImpl_loadall286)
      * not identical (probably bad things).
      */
     pVCpu->iem.s.uCpl = pVCpu->cpum.GstCtx.cs.Attr.n.u2Dpl;
+    Assert(pVCpu->iem.s.enmCpuMode == IEMMODE_16BIT);
 
     CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_HIDDEN_SEL_REGS | CPUM_CHANGED_IDTR | CPUM_CHANGED_GDTR | CPUM_CHANGED_TR | CPUM_CHANGED_LDTR);
 
@@ -4464,7 +4466,8 @@ IEM_CIMPL_DEF_0(iemCImpl_sysenter)
     pVCpu->cpum.GstCtx.rflags.Bits.u1VM = 0;
     pVCpu->cpum.GstCtx.rflags.Bits.u1RF = 0;
 
-    pVCpu->iem.s.uCpl                   = 0;
+    pVCpu->iem.s.uCpl       = 0;
+    pVCpu->iem.s.enmCpuMode = iemCalcCpuMode(pVCpu);
 
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
@@ -4559,7 +4562,8 @@ IEM_CIMPL_DEF_1(iemCImpl_sysexit, IEMMODE, enmEffOpSize)
     pVCpu->cpum.GstCtx.ss.fFlags        = CPUMSELREG_FLAGS_VALID;
     pVCpu->cpum.GstCtx.rflags.Bits.u1RF = 0;
 
-    pVCpu->iem.s.uCpl                   = 3;
+    pVCpu->iem.s.uCpl       = 3;
+    pVCpu->iem.s.enmCpuMode = iemCalcCpuMode(pVCpu);
 /** @todo single stepping   */
 
     /* Flush the prefetch buffer. */
@@ -6020,6 +6024,12 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
              */
             CPUMSetGuestCR0(pVCpu, uNewCrX);
             Assert(pVCpu->cpum.GstCtx.cr0 == uNewCrX);
+
+            /* Update the CPU mode if we're in 64-bit mode here, just in case
+               we've exited long mode while in 64-bit code... */
+            /** @todo testcase: what happens if we disable paging while in 64-bit code? */
+            if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+                pVCpu->iem.s.enmCpuMode = iemCalcCpuMode(pVCpu);
 
             rcStrict = PGMChangeMode(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER,
                                      false /* fForce */);

@@ -272,6 +272,17 @@ DECLINLINE(void) iemReInitExec(PVMCPUCC pVCpu) RT_NOEXCEPT
 
     pVCpu->iem.s.uCpl             = uCpl;
     pVCpu->iem.s.enmCpuMode       = enmMode;
+/** @todo r=bird: The rest of this function should not be necessary!
+ * All these fields below will be re-initialized before we decode more code - as
+ * they are _not_ relevant to 'Exec' (xcpt rcPassUp), only to 'Decoding'.
+ *
+ * Only exception might be rcPassUp, though, I don't know why anyone other than
+ * the execution loops should need to mess around with it!
+ *
+ * I don't think we really need or want this function, better to just set uCpl
+ * and enmCpuMode explicitly in the relevant code.  We do this in a number of
+ * other scenarios.  Or, rename it to iemReCalcCpuModeAndCpl.
+ */
     pVCpu->iem.s.enmDefAddrMode   = enmMode;  /** @todo check if this is correct... */
     pVCpu->iem.s.enmEffAddrMode   = enmMode;
     if (enmMode != IEMMODE_64BIT)
