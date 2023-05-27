@@ -264,44 +264,13 @@ DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, bool fBypassHandlers) RT_NOEXCEPT
  * hardware-virtualization uses it.
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
+ * @param   cbInstr             The instruction length (for flushing).
  */
-DECLINLINE(void) iemReInitExec(PVMCPUCC pVCpu) RT_NOEXCEPT
+DECLINLINE(void) iemReInitExec(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
 {
-    IEMMODE const enmMode = iemCalcCpuMode(pVCpu);
-    uint8_t const uCpl    = CPUMGetGuestCPL(pVCpu);
-
-    pVCpu->iem.s.uCpl             = uCpl;
-    pVCpu->iem.s.enmCpuMode       = enmMode;
-/** @todo r=bird: The rest of this function should not be necessary!
- * All these fields below will be re-initialized before we decode more code - as
- * they are _not_ relevant to 'Exec' (xcpt rcPassUp), only to 'Decoding'.
- *
- * Only exception might be rcPassUp, though, I don't know why anyone other than
- * the execution loops should need to mess around with it!
- *
- * I don't think we really need or want this function, better to just set uCpl
- * and enmCpuMode explicitly in the relevant code.  We do this in a number of
- * other scenarios.  Or, rename it to iemReCalcCpuModeAndCpl.
- */
-    pVCpu->iem.s.enmDefAddrMode   = enmMode;  /** @todo check if this is correct... */
-    pVCpu->iem.s.enmEffAddrMode   = enmMode;
-    if (enmMode != IEMMODE_64BIT)
-    {
-        pVCpu->iem.s.enmDefOpSize = enmMode;  /** @todo check if this is correct... */
-        pVCpu->iem.s.enmEffOpSize = enmMode;
-    }
-    else
-    {
-        pVCpu->iem.s.enmDefOpSize = IEMMODE_32BIT;
-        pVCpu->iem.s.enmEffOpSize = enmMode;
-    }
-    pVCpu->iem.s.iEffSeg          = X86_SREG_DS;
-#  ifndef IEM_WITH_CODE_TLB
-    /** @todo Shouldn't we be doing this in IEMTlbInvalidateAll()? */
-    pVCpu->iem.s.offOpcode        = 0;
-    pVCpu->iem.s.cbOpcode         = 0;
-#  endif
-    pVCpu->iem.s.rcPassUp         = VINF_SUCCESS;
+    pVCpu->iem.s.uCpl             = CPUMGetGuestCPL(pVCpu);
+    pVCpu->iem.s.enmCpuMode       = iemCalcCpuMode(pVCpu);
+    iemOpcodeFlushHeavy(pVCpu, cbInstr);
 }
 # endif
 

@@ -784,7 +784,7 @@ void iemOpcodeFlushLight(PVMCPUCC pVCpu, uint8_t cbInstr)
 void iemOpcodeFlushHeavy(PVMCPUCC pVCpu, uint8_t cbInstr)
 {
 #ifndef IEM_WITH_CODE_TLB
-    pVCpu->iem.s.cbOpcode = cbInstr;
+    pVCpu->iem.s.cbOpcode = cbInstr; /* Note! SVM and VT-x may set this to zero on exit, rather than the instruction length. */
 #elif 1
     pVCpu->iem.s.pbInstrBuf = NULL;
     RT_NOREF(cbInstr);

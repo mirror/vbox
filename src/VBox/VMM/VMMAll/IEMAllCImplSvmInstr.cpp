@@ -123,8 +123,9 @@ IEM_STATIC uint8_t iemGetSvmEventType(uint32_t uVector, uint32_t fIemXcptFlags)
  *
  * @returns Strict VBox status code from PGMChangeMode.
  * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   cbInstr The length of the current instruction.
  */
-DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPUCC pVCpu)
+DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPUCC pVCpu, uint8_t cbInstr)
 {
     /*
      * Inform PGM about paging mode changes.
@@ -142,7 +143,7 @@ DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPUCC pVCpu)
     CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
 
     /* Re-initialize IEM cache/state after the drastic mode switch. */
-    iemReInitExec(pVCpu);
+    iemReInitExec(pVCpu, cbInstr);
     return rc;
 }
 
@@ -350,7 +351,7 @@ VBOXSTRICTRC iemSvmVmexit(PVMCPUCC pVCpu, uint64_t uExitCode, uint64_t uExitInfo
                 /*
                  * Update PGM, IEM and others of a world-switch.
                  */
-                rcStrict = iemSvmWorldSwitch(pVCpu);
+                rcStrict = iemSvmWorldSwitch(pVCpu, 0 /*cbInstr - whatever*/);
                 if (rcStrict == VINF_SUCCESS)
                     rcStrict = VINF_SVM_VMEXIT;
                 else if (RT_SUCCESS(rcStrict))
@@ -821,7 +822,7 @@ static VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GCPhys
         /*
          * Update PGM, IEM and others of a world-switch.
          */
-        VBOXSTRICTRC rcStrict = iemSvmWorldSwitch(pVCpu);
+        VBOXSTRICTRC rcStrict = iemSvmWorldSwitch(pVCpu, cbInstr);
         if (rcStrict == VINF_SUCCESS)
         { /* likely */ }
         else if (RT_SUCCESS(rcStrict))

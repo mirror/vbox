@@ -1277,8 +1277,9 @@ static void iemVmxVmexitRestoreNmiBlockingFF(PVMCPUCC pVCpu) RT_NOEXCEPT
  * Performs the VMX transition to/from VMX non-root mode.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
-*/
-static int iemVmxTransition(PVMCPUCC pVCpu) RT_NOEXCEPT
+ * @param   cbInstr     The length of the current instruction.
+ */
+static int iemVmxTransition(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
 {
     /*
      * Inform PGM about paging mode changes.
@@ -1299,7 +1300,7 @@ static int iemVmxTransition(PVMCPUCC pVCpu) RT_NOEXCEPT
     CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
 
     /* Re-initialize IEM cache/state after the drastic mode switch. */
-    iemReInitExec(pVCpu);
+    iemReInitExec(pVCpu, cbInstr);
     return rc;
 }
 
@@ -2088,7 +2089,7 @@ static VBOXSTRICTRC iemVmxVmexitLoadHostState(PVMCPUCC pVCpu, uint32_t uExitReas
     EMMonitorWaitClear(pVCpu);
 
     /* Perform the VMX transition (PGM updates). */
-    VBOXSTRICTRC rcStrict = iemVmxTransition(pVCpu);
+    VBOXSTRICTRC rcStrict = iemVmxTransition(pVCpu, 0 /*cbInstr - whatever*/);
     if (rcStrict == VINF_SUCCESS)
     { /* likely */ }
     else if (RT_SUCCESS(rcStrict))
@@ -7922,7 +7923,7 @@ static VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, VMXI
                             pVmcs->fVmcsState = VMX_V_VMCS_LAUNCH_STATE_LAUNCHED;
 
                         /* Perform the VMX transition (PGM updates). */
-                        VBOXSTRICTRC rcStrict = iemVmxTransition(pVCpu);
+                        VBOXSTRICTRC rcStrict = iemVmxTransition(pVCpu, cbInstr);
                         if (rcStrict == VINF_SUCCESS)
                         { /* likely */ }
                         else if (RT_SUCCESS(rcStrict))
