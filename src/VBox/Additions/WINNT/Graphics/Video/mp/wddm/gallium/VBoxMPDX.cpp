@@ -341,7 +341,7 @@ NTSTATUS APIENTRY DxgkDdiDXCreateAllocation(
     /* Init allocation data. */
     pAllocation->enmType = VBOXWDDM_ALLOC_TYPE_D3D;
     pAllocation->dx.desc = *(PVBOXDXALLOCATIONDESC)pAllocationInfo->pPrivateDriverData;
-    pAllocation->dx.desc.cbAllocation = RT_ALIGN_32(pAllocation->dx.desc.cbAllocation, PAGE_SIZE); /* DXGK expects it to be page aligned. */
+    pAllocation->dx.desc.cbAllocation = pAllocation->dx.desc.cbAllocation;
     pAllocation->dx.sid = SVGA3D_INVALID_ID;
     pAllocation->dx.mobid = SVGA3D_INVALID_ID;
     pAllocation->dx.SegmentId = 0;
@@ -652,7 +652,10 @@ static NTSTATUS svgaPagingTransfer(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUILDPAGINGBU
     PVBOXWDDM_ALLOCATION pAllocation = (PVBOXWDDM_ALLOCATION)pBuildPagingBuffer->Transfer.hAllocation;
     AssertReturn(pAllocation, STATUS_INVALID_PARAMETER);
 
-    SIZE_T cbAllocation = svgaGetAllocationSize(pAllocation);
+    /* "The size value is expanded to a multiple of the native host page size (for example, 4 KB on the x86 architecture)."
+     * I.e. TransferOffset and TransferSize are within the aligned size.
+     */
+    SIZE_T const cbAllocation = RT_ALIGN_32(svgaGetAllocationSize(pAllocation), PAGE_SIZE);
     AssertReturn(   pBuildPagingBuffer->Transfer.TransferOffset <= cbAllocation
                  && pBuildPagingBuffer->Transfer.TransferSize <= cbAllocation - pBuildPagingBuffer->Transfer.TransferOffset,
                  STATUS_INVALID_PARAMETER);
