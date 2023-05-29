@@ -1548,6 +1548,46 @@ BOOLEAN GaDxgkDdiInterruptRoutine(const PVOID MiniportDeviceContext,
     return TRUE;
 }
 
+
+static void dxDeferredMobDestruction(PVOID IoObject, PVOID Context, PIO_WORKITEM IoWorkItem)
+{
+    RT_NOREF(IoObject);
+    IoFreeWorkItem(IoWorkItem);
+
+    PVBOXWDDM_EXT_VMSVGA pSvga = (PVBOXWDDM_EXT_VMSVGA)Context;
+    if (pSvga->pMiniportMobData)
+    {
+        uint64_t const u64MobFence = ASMAtomicReadU64(&pSvga->pMiniportMobData->u64MobFence);
+
+        /* Move mobs which were deleted by the host to the local list under the lock. */
+        RTLISTANCHOR listDestroyedMobs;
+        RTListInit(&listDestroyedMobs);
+
+        KIRQL OldIrql;
+        SvgaHostObjectsLock(pSvga, &OldIrql);
+
+        PVMSVGAMOB pIter, pNext;
+        RTListForEachSafe(&pSvga->listMobDeferredDestruction, pIter, pNext, VMSVGAMOB, node)
+        {
+            if (gaFenceCmp64(pIter->u64MobFence, u64MobFence) <= 0)
+            {
+                RTListNodeRemove(&pIter->node);
+                RTListAppend(&listDestroyedMobs, &pIter->node);
+            }
+        }
+
+        SvgaHostObjectsUnlock(pSvga, OldIrql);
+
+        RTListForEachSafe(&listDestroyedMobs, pIter, pNext, VMSVGAMOB, node)
+        {
+            /* Delete the data. SvgaMobFree deallocates pIter. */
+            RTListNodeRemove(&pIter->node);
+            SvgaMobFree(pSvga, pIter);
+        }
+    }
+}
+
+
 VOID GaDxgkDdiDpcRoutine(const PVOID MiniportDeviceContext)
 {
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)MiniportDeviceContext;
@@ -1635,41 +1675,16 @@ VOID GaDxgkDdiDpcRoutine(const PVOID MiniportDeviceContext)
     /*
      * Deferred MOB destruction.
      */
-    if (pSvga->pMiniportMobData)
+    SvgaHostObjectsLock(pSvga, &OldIrql);
+    bool fMobs = !RTListIsEmpty(&pSvga->listMobDeferredDestruction);
+    SvgaHostObjectsUnlock(pSvga, OldIrql);
+
+    if (fMobs)
     {
-        uint64_t const u64MobFence = pSvga->pMiniportMobData->u64MobFence;
-
-        /* Move mobs which were deleted by the host to the local list under the lock. */
-        RTLISTANCHOR listDestroyedMobs;
-        RTListInit(&listDestroyedMobs);
-
-        SvgaHostObjectsLock(pSvga, &OldIrql);
-
-        if (!RTListIsEmpty(&pSvga->listMobDeferredDestruction))
-        {
-            PVMSVGAMOB pIter, pNext;
-            RTListForEachSafe(&pSvga->listMobDeferredDestruction, pIter, pNext, VMSVGAMOB, node)
-            {
-                if (gaFenceCmp64(pIter->u64MobFence, u64MobFence) <= 0)
-                {
-                    RTListNodeRemove(&pIter->node);
-                    RTListAppend(&listDestroyedMobs, &pIter->node);
-                }
-            }
-        }
-
-        SvgaHostObjectsUnlock(pSvga, OldIrql);
-
-        if (!RTListIsEmpty(&listDestroyedMobs))
-        {
-            PVMSVGAMOB pIter, pNext;
-            RTListForEachSafe(&listDestroyedMobs, pIter, pNext, VMSVGAMOB, node)
-            {
-                /* Delete the data. SvgaMobFree deallocates pIter. */
-                RTListNodeRemove(&pIter->node);
-                SvgaMobFree(pSvga, pIter);
-            }
-        }
+        /* Deallocate memory in a worker thread at PASSIVE_LEVEL. */
+        PIO_WORKITEM pWorkItem = IoAllocateWorkItem(pDevExt->pPDO);
+        if (pWorkItem)
+            IoQueueWorkItemEx(pWorkItem, dxDeferredMobDestruction, DelayedWorkQueue, pSvga);
     }
 }
 

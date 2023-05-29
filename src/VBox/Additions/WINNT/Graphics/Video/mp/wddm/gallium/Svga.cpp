@@ -1753,102 +1753,6 @@ NTSTATUS SvgaDefineGMRFB(PVBOXWDDM_EXT_VMSVGA pSvga,
     return Status;
 }
 
-NTSTATUS SvgaGenGMRReport(PVBOXWDDM_EXT_VMSVGA pSvga,
-                          uint32_t u32GmrId,
-                          SVGARemapGMR2Flags fRemapGMR2Flags,
-                          uint32_t u32NumPages,
-                          RTHCPHYS *paPhysAddresses,
-                          void *pvDst,
-                          uint32_t cbDst,
-                          uint32_t *pcbOut)
-{
-    /*
-     * SVGA_CMD_DEFINE_GMR2 + SVGA_CMD_REMAP_GMR2.
-     */
-
-    AssertReturn(u32NumPages <= pSvga->u32GmrMaxPages, STATUS_INVALID_PARAMETER);
-
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    uint32_t const cbCmdDefineGMR2 =   sizeof(uint32_t)
-                                     + sizeof(SVGAFifoCmdDefineGMR2);
-    uint32_t const cbCmdRemapGMR2 =   sizeof(uint32_t)
-                                    + sizeof(SVGAFifoCmdRemapGMR2);
-    uint32_t const cbPPN = (fRemapGMR2Flags & SVGA_REMAP_GMR2_PPN64) ? sizeof(uint64_t) : sizeof(uint32_t);
-    uint32_t const cbPPNArray = u32NumPages * cbPPN;
-
-    uint32_t const cbCmd = cbCmdDefineGMR2 + cbCmdRemapGMR2 + cbPPNArray;
-    if (pcbOut)
-        *pcbOut = cbCmd;
-
-    if (cbCmd <= cbDst)
-    {
-        uint8_t *pu8Dst = (uint8_t *)pvDst;
-
-        SvgaCmdDefineGMR2(pu8Dst, u32GmrId, u32NumPages);
-        pu8Dst += cbCmdDefineGMR2;
-
-        SvgaCmdRemapGMR2(pu8Dst, u32GmrId, fRemapGMR2Flags, 0, u32NumPages);
-        pu8Dst += cbCmdRemapGMR2;
-
-        uint32_t iPage;
-        if (fRemapGMR2Flags & SVGA_REMAP_GMR2_PPN64)
-        {
-           uint64_t *paPPN64 = (uint64_t *)pu8Dst;
-           for (iPage = 0; iPage < u32NumPages; ++iPage)
-           {
-               RTHCPHYS const Phys = paPhysAddresses[iPage];
-               paPPN64[iPage] = Phys >> PAGE_SHIFT;
-           }
-        }
-        else
-        {
-           uint32_t *paPPN32 = (uint32_t *)pu8Dst;
-           for (iPage = 0; iPage < u32NumPages; ++iPage)
-           {
-               RTHCPHYS const Phys = paPhysAddresses[iPage];
-               AssertBreakStmt((Phys & UINT32_C(0xFFFFFFFF)) == Phys, Status = STATUS_INVALID_PARAMETER);
-               paPPN32[iPage] = (uint32_t)(Phys >> PAGE_SHIFT);
-           }
-        }
-    }
-    else
-        Status = STATUS_BUFFER_OVERFLOW;
-
-    return Status;
-}
-
-NTSTATUS SvgaGMRReport(PVBOXWDDM_EXT_VMSVGA pSvga,
-                       uint32_t u32GmrId,
-                       SVGARemapGMR2Flags fRemapGMR2Flags,
-                       uint32_t u32NumPages,
-                       RTHCPHYS *paPhysAddresses)
-{
-    /*
-     * Issue SVGA_CMD_DEFINE_GMR2 + SVGA_CMD_REMAP_GMR2.
-     */
-
-    NTSTATUS Status;
-
-    uint32_t cbSubmit = 0;
-    SvgaGenGMRReport(pSvga, u32GmrId, fRemapGMR2Flags, u32NumPages, paPhysAddresses,
-                     NULL, 0, &cbSubmit);
-
-    void *pvCmd = SvgaReserve(pSvga, cbSubmit);
-    if (pvCmd)
-    {
-        Status = SvgaGenGMRReport(pSvga, u32GmrId, fRemapGMR2Flags, u32NumPages, paPhysAddresses,
-                                  pvCmd, cbSubmit, NULL);
-        AssertStmt(Status == STATUS_SUCCESS, cbSubmit = 0);
-        SvgaCommit(pSvga, cbSubmit);
-    }
-    else
-    {
-        Status = STATUS_INSUFFICIENT_RESOURCES;
-    }
-
-    return Status;
-}
 
 /* SVGA Guest Memory Region (GMR). Memory known for both host and guest.
  * There can be many (hundreds) of regions, therefore use AVL tree.
@@ -1857,15 +1761,12 @@ typedef struct GAWDDMREGION
 {
     /* Key is GMR id (equal to u32GmrId). */
     AVLU32NODECORE Core;
-    /* Device the GMR is associated with. */
+    /* Pointer to a graphics context device (PVBOXWDDM_DEVICE) the GMR is associated with. */
     void      *pvOwner;
-    /* The memory object handle. */
-    RTR0MEMOBJ MemObj;
-    /* The ring-3 mapping memory object handle. */
+    /* The ring-3 mapping memory object handle (from mob). */
     RTR0MEMOBJ MapObjR3;
-    RTR0PTR    pvR0;
     RTR3PTR    pvR3;
-    /* A corresponding MOB, which provides the Guest Memory Region ID. */
+    /* A corresponding MOB, which provides the GMR id and RTR0MEMOBJ for the region memory. */
     PVMSVGAMOB pMob;
     /* The allocated size in pages. */
     uint32_t   u32NumPages;
@@ -1873,124 +1774,214 @@ typedef struct GAWDDMREGION
     RTHCPHYS   aPhys[1];
 } GAWDDMREGION;
 
-/** @todo Deferred destruction. */
-static void svgaFreeGBMobForGMR(VBOXWDDM_EXT_VMSVGA *pSvga, PVMSVGAMOB pMob)
-{
-    if (pMob)
-    {
-        if (RT_BOOL(pSvga->u32Caps & SVGA_CAP_DX))
-        {
-            void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DESTROY_GB_MOB, sizeof(SVGA3dCmdDestroyGBMob), SVGA3D_INVALID_ID);
-            if (pvCmd)
-            {
-                SVGA3dCmdDestroyGBMob *pCmd = (SVGA3dCmdDestroyGBMob *)pvCmd;
-                pCmd->mobid = VMSVGAMOB_ID(pMob);
-                SvgaCmdBufCommit(pSvga, sizeof(SVGA3dCmdDestroyGBMob));
-            }
-        }
 
-        SvgaMobFree(pSvga, pMob);
-    }
-}
-
-static NTSTATUS svgaCreateGBMobForGMR(VBOXWDDM_EXT_VMSVGA *pSvga, GAWDDMREGION *pRegion)
+/* Allocate memory pages and the corresponding mob.
+ */
+static NTSTATUS gmrAllocMemory(VBOXWDDM_EXT_VMSVGA *pSvga, GAWDDMREGION *pRegion, uint32_t u32NumPages)
 {
-    /* Allocate a new mob. */
-    NTSTATUS Status = SvgaMobCreate(pSvga, &pRegion->pMob, pRegion->u32NumPages, 0);
-    Assert(NT_SUCCESS(Status));
-    if (NT_SUCCESS(Status))
+    NTSTATUS Status;
+
+    /* Allocate memory. */
+    RTR0MEMOBJ MemObj;
+    int rc = RTR0MemObjAllocPageTag(&MemObj, u32NumPages << PAGE_SHIFT,
+                                    false /* executable R0 mapping */, "VMSVGAGMR");
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
     {
-        Status = SvgaMobSetMemObj(pRegion->pMob, pRegion->MemObj);
+        if (!RTR0MemObjWasZeroInitialized(MemObj))
+            RT_BZERO(RTR0MemObjAddress(MemObj), (size_t)u32NumPages << PAGE_SHIFT);
+
+        /* Allocate corresponding mob. */
+        Status = SvgaMobCreate(pSvga, &pRegion->pMob, u32NumPages, 0);
         Assert(NT_SUCCESS(Status));
         if (NT_SUCCESS(Status))
         {
-            if (RT_BOOL(pSvga->u32Caps & SVGA_CAP_DX))
-            {
-                void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DEFINE_GB_MOB64, sizeof(SVGA3dCmdDefineGBMob64), SVGA3D_INVALID_ID);
-                if (pvCmd)
-                {
-                    SVGA3dCmdDefineGBMob64 *pCmd = (SVGA3dCmdDefineGBMob64 *)pvCmd;
-                    pCmd->mobid       = VMSVGAMOB_ID(pRegion->pMob);
-                    pCmd->ptDepth     = pRegion->pMob->gbo.enmMobFormat;
-                    pCmd->base        = pRegion->pMob->gbo.base;
-                    pCmd->sizeInBytes = pRegion->pMob->gbo.cbGbo;
-                    SvgaCmdBufCommit(pSvga, sizeof(SVGA3dCmdDefineGBMob64));
-                }
-                else
-                    AssertFailedStmt(Status = STATUS_INSUFFICIENT_RESOURCES);
-            }
-
+            Status = SvgaMobSetMemObj(pRegion->pMob, MemObj);
+            Assert(NT_SUCCESS(Status));
             if (NT_SUCCESS(Status))
                 return STATUS_SUCCESS;
         }
-    }
 
-    svgaFreeGBMobForGMR(pSvga, pRegion->pMob);
-    pRegion->pMob = NULL;
+        if (   pRegion->pMob
+            && pRegion->pMob->hMemObj == NIL_RTR0MEMOBJ)
+        {
+            /* The memory object has not been assigned to the mob yet. Clean up the local object.
+             * Otherwise the caller will clean up.
+             */
+            int rc2 = RTR0MemObjFree(MemObj, false);
+            AssertRC(rc2);
+        }
+    }
+    else
+        AssertFailedStmt(Status = STATUS_INSUFFICIENT_RESOURCES);
+
     return Status;
 }
 
-
-static void gmrFree(GAWDDMREGION *pRegion)
+/* Initialize the GMR to be ready for reporting to the host.
+ */
+static NTSTATUS gmrInit(VBOXWDDM_EXT_VMSVGA *pSvga, GAWDDMREGION *pRegion, void *pvOwner, uint32_t u32NumPages)
 {
+    NTSTATUS Status = gmrAllocMemory(pSvga, pRegion, u32NumPages);
+    if (NT_SUCCESS(Status))
+    {
+        int rc = RTR0MemObjMapUser(&pRegion->MapObjR3, pRegion->pMob->hMemObj, (RTR3PTR)-1, 0,
+                                   RTMEM_PROT_WRITE | RTMEM_PROT_READ, NIL_RTR0PROCESS);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t iPage;
+            for (iPage = 0; iPage < u32NumPages; ++iPage)
+                pRegion->aPhys[iPage] = RTR0MemObjGetPagePhysAddr(pRegion->pMob->hMemObj, iPage);
+
+            pRegion->pvR3 = RTR0MemObjAddressR3(pRegion->MapObjR3);
+
+            pRegion->pvOwner = pvOwner;
+            pRegion->u32NumPages = u32NumPages;
+        }
+        else
+            AssertFailedStmt(Status = STATUS_INSUFFICIENT_RESOURCES);
+    }
+
+    return Status;
+}
+
+/* Send GMR creation commands to the host.
+ */
+static NTSTATUS gmrReportToHost(VBOXWDDM_EXT_VMSVGA *pSvga, GAWDDMREGION *pRegion)
+{
+    /*
+     * Issue SVGA_CMD_DEFINE_GMR2 + SVGA_CMD_REMAP_GMR2 + SVGA_3D_CMD_DEFINE_GB_MOB64.
+     */
+    uint32_t const cbPPNArray = pRegion->u32NumPages * sizeof(uint64_t);
+
+    uint32_t cbSubmit = sizeof(uint32_t) + sizeof(SVGAFifoCmdDefineGMR2);
+    cbSubmit += sizeof(uint32_t) + sizeof(SVGAFifoCmdRemapGMR2) + cbPPNArray;
+    if (RT_BOOL(pSvga->u32Caps & SVGA_CAP_DX))
+        cbSubmit += sizeof(SVGA3dCmdHeader) + sizeof(SVGA3dCmdDefineGBMob64);
+
+    void *pvCmd = SvgaReserve(pSvga, cbSubmit);
+    if (!pvCmd)
+        return STATUS_INSUFFICIENT_RESOURCES;
+
+    uint8_t *pu8Cmd = (uint8_t *)pvCmd;
+
+    uint32_t *pu32CmdId;
+
+    pu32CmdId = (uint32_t *)pu8Cmd;
+    *pu32CmdId = SVGA_CMD_DEFINE_GMR2;
+    pu8Cmd += sizeof(*pu32CmdId);
+
+    {
+    SVGAFifoCmdDefineGMR2 *pCmd = (SVGAFifoCmdDefineGMR2 *)pu8Cmd;
+    pCmd->gmrId = VMSVGAMOB_ID(pRegion->pMob);
+    pCmd->numPages = pRegion->u32NumPages;
+    pu8Cmd += sizeof(*pCmd);
+    }
+
+    pu32CmdId = (uint32_t *)pu8Cmd;
+    *pu32CmdId = SVGA_CMD_REMAP_GMR2;
+    pu8Cmd += sizeof(*pu32CmdId);
+
+    {
+    SVGAFifoCmdRemapGMR2 *pCmd = (SVGAFifoCmdRemapGMR2 *)pu8Cmd;
+    pCmd->gmrId = VMSVGAMOB_ID(pRegion->pMob);
+    pCmd->flags = SVGA_REMAP_GMR2_PPN64;
+    pCmd->offsetPages = 0;
+    pCmd->numPages = pRegion->u32NumPages;
+    pu8Cmd += sizeof(*pCmd);
+    }
+
+    uint64_t *paPPN64 = (uint64_t *)pu8Cmd;
+    for (uint32_t iPage = 0; iPage < pRegion->u32NumPages; ++iPage)
+    {
+        RTHCPHYS const Phys = pRegion->aPhys[iPage];
+        paPPN64[iPage] = Phys >> PAGE_SHIFT;
+    }
+    pu8Cmd += cbPPNArray;
+
+    if (RT_BOOL(pSvga->u32Caps & SVGA_CAP_DX))
+    {
+        SVGA3dCmdHeader *pHdr;
+
+        pHdr = (SVGA3dCmdHeader *)pu8Cmd;
+        pHdr->id   = SVGA_3D_CMD_DEFINE_GB_MOB64;
+        pHdr->size = sizeof(SVGA3dCmdDefineGBMob64);
+        pu8Cmd += sizeof(*pHdr);
+
+        {
+        SVGA3dCmdDefineGBMob64 *pCmd = (SVGA3dCmdDefineGBMob64 *)pu8Cmd;
+        pCmd->mobid       = VMSVGAMOB_ID(pRegion->pMob);
+        pCmd->ptDepth     = pRegion->pMob->gbo.enmMobFormat;
+        pCmd->base        = pRegion->pMob->gbo.base;
+        pCmd->sizeInBytes = pRegion->pMob->gbo.cbGbo;
+        pu8Cmd += sizeof(*pCmd);
+        }
+    }
+
+    Assert((uintptr_t)pu8Cmd - (uintptr_t)pvCmd == cbSubmit);
+    SvgaCommit(pSvga, (uintptr_t)pu8Cmd - (uintptr_t)pvCmd);
+
+    return STATUS_SUCCESS;
+}
+
+/* Destroy exising region.
+ */
+static NTSTATUS gmrDestroy(VBOXWDDM_EXT_VMSVGA *pSvga, GAWDDMREGION *pRegion)
+{
+    AssertReturn(pRegion, STATUS_INVALID_PARAMETER);
+
+    /* Mapping must be freed prior to the mob destruction. Otherwise, due to a race condition,
+     * SvgaMobFree could free the mapping in a system worker thread after DPC, which would not
+     * work obviously, because the mapping was created for another process.
+     */
     if (pRegion->MapObjR3 != NIL_RTR0MEMOBJ)
     {
         int rc = RTR0MemObjFree(pRegion->MapObjR3, false);
         AssertRC(rc);
         pRegion->MapObjR3 = NIL_RTR0MEMOBJ;
     }
-    if (pRegion->pMob == NULL)
-    {
-        /* The memory will be deleted by SvgaMobFree. */
-        if (pRegion->MemObj != NIL_RTR0MEMOBJ)
-        {
-            int rc = RTR0MemObjFree(pRegion->MemObj, true /* fFreeMappings */);
-            AssertRC(rc);
-            pRegion->MemObj = NIL_RTR0MEMOBJ;
-        }
-    }
-}
 
-static NTSTATUS gmrAlloc(GAWDDMREGION *pRegion)
-{
-    int rc = RTR0MemObjAllocPageTag(&pRegion->MemObj, pRegion->u32NumPages << PAGE_SHIFT,
-                                    false /* executable R0 mapping */, "VMSVGAGMR");
-    AssertRC(rc);
-    if (RT_SUCCESS(rc))
-    {
-        if (!RTR0MemObjWasZeroInitialized(pRegion->MemObj))
-            RT_BZERO(RTR0MemObjAddress(pRegion->MemObj), (size_t)pRegion->u32NumPages << PAGE_SHIFT);
+    /* Issue commands to delete the gmr. */
+    uint32_t cbRequired = 0;
+    SvgaMobDestroy(pSvga, pRegion->pMob, NULL, 0, &cbRequired);
+    cbRequired += sizeof(uint32_t) + sizeof(SVGAFifoCmdDefineGMR2);
 
-        rc = RTR0MemObjMapUser(&pRegion->MapObjR3, pRegion->MemObj, (RTR3PTR)-1, 0,
-                               RTMEM_PROT_WRITE | RTMEM_PROT_READ, NIL_RTR0PROCESS);
-        AssertRC(rc);
-        if (RT_SUCCESS(rc))
-        {
-            pRegion->pvR0 = RTR0MemObjAddress(pRegion->MemObj);
-            pRegion->pvR3 = RTR0MemObjAddressR3(pRegion->MapObjR3);
+    void *pvCmd = SvgaCmdBufReserve(pSvga, cbRequired, SVGA3D_INVALID_ID);
+    AssertReturn(pvCmd, STATUS_INSUFFICIENT_RESOURCES);
 
-            uint32_t iPage;
-            for (iPage = 0; iPage < pRegion->u32NumPages; ++iPage)
-            {
-                pRegion->aPhys[iPage] = RTR0MemObjGetPagePhysAddr(pRegion->MemObj, iPage);
-            }
+    uint8_t *pu8Cmd = (uint8_t *)pvCmd;
+    uint32_t *pu32CmdId;
 
-            return STATUS_SUCCESS;
-        }
+    /* Undefine GMR: SVGA_CMD_DEFINE_GMR2 with numPages = 0 */
+    pu32CmdId = (uint32_t *)pu8Cmd;
+    *pu32CmdId = SVGA_CMD_DEFINE_GMR2;
+    pu8Cmd += sizeof(*pu32CmdId);
 
-        int rc2 = RTR0MemObjFree(pRegion->MemObj, false);
-        AssertRC(rc2);
-    }
+    SVGAFifoCmdDefineGMR2 *pCmd = (SVGAFifoCmdDefineGMR2 *)pu8Cmd;
+    pCmd->gmrId = VMSVGAMOB_ID(pRegion->pMob);
+    pCmd->numPages = 0;
+    pu8Cmd += sizeof(*pCmd);
 
-    return STATUS_INSUFFICIENT_RESOURCES;
-}
+    uint32_t cbCmd = 0;
+    NTSTATUS Status = SvgaMobDestroy(pSvga, pRegion->pMob, pu8Cmd,
+                                     cbRequired - ((uintptr_t)pu8Cmd - (uintptr_t)pvCmd),
+                                     &cbCmd);
+    AssertReturn(NT_SUCCESS(Status), Status);
+    pu8Cmd += cbCmd;
 
-static void gaRegionFree(VBOXWDDM_EXT_VMSVGA *pSvga, GAWDDMREGION *pRegion)
-{
-    Assert(pRegion);
-    gmrFree(pRegion);
-    svgaFreeGBMobForGMR(pSvga, pRegion->pMob);
+    Assert(((uintptr_t)pu8Cmd - (uintptr_t)pvCmd) == cbRequired);
+    SvgaCmdBufCommit(pSvga, ((uintptr_t)pu8Cmd - (uintptr_t)pvCmd));
+
+    /* The mob will be deleted in DPC routine after host reports completion of the above commands. */
+    pRegion->pMob = NULL;
+
+#ifdef DEBUG
+    ASMAtomicDecU32(&pSvga->cAllocatedGmrs);
+    ASMAtomicSubU32(&pSvga->cAllocatedGmrPages, pRegion->u32NumPages);
+#endif
     GaMemFree(pRegion);
+    return STATUS_SUCCESS;
 }
 
 typedef struct GAREGIONSDESTROYCTX
@@ -2015,6 +2006,8 @@ static DECLCALLBACK(int) gaRegionsDestroyCb(PAVLU32NODECORE pNode, void *pvUser)
     return 0;
 }
 
+/* Destroy all regions of a particular owner.
+ */
 void SvgaRegionsDestroy(VBOXWDDM_EXT_VMSVGA *pSvga,
                         void *pvOwner)
 {
@@ -2032,8 +2025,7 @@ void SvgaRegionsDestroy(VBOXWDDM_EXT_VMSVGA *pSvga,
     ExReleaseFastMutex(&pSvga->SvgaMutex);
 
     /* Free all found GMRs. */
-    uint32_t i;
-    for (i = 0; i < pCtx->cIds; ++i)
+    for (uint32_t i = 0; i < pCtx->cIds; i++)
     {
         ExAcquireFastMutex(&pSvga->SvgaMutex);
         GAWDDMREGION *pRegion = (GAWDDMREGION *)RTAvlU32Remove(&pSvga->GMRTree, pCtx->au32Ids[i]);
@@ -2045,7 +2037,7 @@ void SvgaRegionsDestroy(VBOXWDDM_EXT_VMSVGA *pSvga,
             GALOG(("Deallocate gmrId %d, pv %p, aPhys[0] %RHp\n",
                    VMSVGAMOB_ID(pRegion->pMob), pRegion->pvR3, pRegion->aPhys[0]));
 
-            gaRegionFree(pSvga, pRegion);
+            gmrDestroy(pSvga, pRegion);
         }
     }
 
@@ -2065,17 +2057,13 @@ NTSTATUS SvgaRegionDestroy(VBOXWDDM_EXT_VMSVGA *pSvga,
 
     ExReleaseFastMutex(&pSvga->SvgaMutex);
 
-    if (pRegion)
-    {
-        Assert(VMSVGAMOB_ID(pRegion->pMob) == u32GmrId);
-        GALOG(("Freed gmrId %d, pv %p, aPhys[0] %RHp\n",
-               VMSVGAMOB_ID(pRegion->pMob), pRegion->pvR3, pRegion->aPhys[0]));
-        gaRegionFree(pSvga, pRegion);
-        return STATUS_SUCCESS;
-    }
+    AssertReturn(pRegion, STATUS_INVALID_PARAMETER);
 
-    AssertFailed();
-    return STATUS_INVALID_PARAMETER;
+    Assert(VMSVGAMOB_ID(pRegion->pMob) == u32GmrId);
+    GALOG(("Freed gmrId %d, pv %p, aPhys[0] %RHp\n",
+           VMSVGAMOB_ID(pRegion->pMob), pRegion->pvR3, pRegion->aPhys[0]));
+
+    return gmrDestroy(pSvga, pRegion);
 }
 
 NTSTATUS SvgaRegionUserAddressAndSize(VBOXWDDM_EXT_VMSVGA *pSvga,
@@ -2093,18 +2081,14 @@ NTSTATUS SvgaRegionUserAddressAndSize(VBOXWDDM_EXT_VMSVGA *pSvga,
 
     ExReleaseFastMutex(&pSvga->SvgaMutex);
 
-    if (pRegion)
-    {
-        Assert(VMSVGAMOB_ID(pRegion->pMob) == u32GmrId);
-        GALOG(("Get gmrId %d, UserAddress 0x%p\n",
-               VMSVGAMOB_ID(pRegion->pMob), pRegion->pvR3));
-        *pu64UserAddress = (uintptr_t)pRegion->pvR3;
-        *pu32Size = pRegion->u32NumPages * PAGE_SIZE;
-        return STATUS_SUCCESS;
-    }
+    AssertReturn(pRegion, STATUS_INVALID_PARAMETER);
 
-    AssertFailed();
-    return STATUS_INVALID_PARAMETER;
+    Assert(VMSVGAMOB_ID(pRegion->pMob) == u32GmrId);
+    GALOG(("Get gmrId %d, UserAddress 0x%p\n",
+           VMSVGAMOB_ID(pRegion->pMob), pRegion->pvR3));
+    *pu64UserAddress = (uintptr_t)pRegion->pvR3;
+    *pu32Size = pRegion->u32NumPages * PAGE_SIZE;
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS SvgaRegionCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
@@ -2119,74 +2103,64 @@ NTSTATUS SvgaRegionCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
 
     NTSTATUS Status;
 
-    const uint32_t cbAlloc = RT_UOFFSETOF(GAWDDMREGION, aPhys) + u32NumPages * sizeof(RTHCPHYS);
+    uint32_t const cbAlloc = RT_UOFFSETOF(GAWDDMREGION, aPhys) + u32NumPages * sizeof(RTHCPHYS);
     GAWDDMREGION *pRegion = (GAWDDMREGION *)GaMemAllocZero(cbAlloc);
     if (pRegion)
     {
-        /* Region id and VGPU10+ mobid are the same. So a mob is allocated along with the gmr.
-         * The mob provides an id and also reported to the host on VGPU10.
+        /* Region id and VGPU10+ mobid are the same. So a mob is always allocated for the gmr.
+         * The mob provides an id and, if SVGA_CAP_DX is available, is reported to the host on VGPU10.
+         *
+         * Allocate memory and init pRegion fields.
          */
-        pRegion->pvOwner = pvOwner;
-        pRegion->u32NumPages = u32NumPages;
-        pRegion->MemObj = NIL_RTR0MEMOBJ;
-        pRegion->MapObjR3 = NIL_RTR0MEMOBJ;
-
-        Status = gmrAlloc(pRegion);
+        Status = gmrInit(pSvga, pRegion, pvOwner, u32NumPages);
         Assert(NT_SUCCESS(Status));
         if (NT_SUCCESS(Status))
         {
-            Status = svgaCreateGBMobForGMR(pSvga, pRegion);
-            Assert(NT_SUCCESS(Status));
-            if (NT_SUCCESS(Status))
+            if (VMSVGAMOB_ID(pRegion->pMob) < pSvga->u32GmrMaxIds)
             {
-                if (VMSVGAMOB_ID(pRegion->pMob) < pSvga->u32GmrMaxIds)
+                GALOG(("Allocated gmrId %d, pv %p, aPhys[0] %RHp\n",
+                       VMSVGAMOB_ID(pRegion->pMob), pRegion->pvR3, pRegion->aPhys[0]));
+
+                Status = gmrReportToHost(pSvga, pRegion);
+                Assert(NT_SUCCESS(Status));
+                if (NT_SUCCESS(Status))
                 {
-                    GALOG(("Allocated gmrId %d, pv %p, aPhys[0] %RHp\n",
-                           VMSVGAMOB_ID(pRegion->pMob), pRegion->pvR3, pRegion->aPhys[0]));
+                    pRegion->Core.Key = VMSVGAMOB_ID(pRegion->pMob);
 
-                    /* Report the GMR to the host vmsvga device. */
-                    Status = SvgaGMRReport(pSvga,
-                                           VMSVGAMOB_ID(pRegion->pMob),
-                                           SVGA_REMAP_GMR2_PPN64,
-                                           pRegion->u32NumPages,
-                                           &pRegion->aPhys[0]);
-                    Assert(NT_SUCCESS(Status));
-                    if (NT_SUCCESS(Status))
-                    {
-                        /* Add to the container. */
-                        ExAcquireFastMutex(&pSvga->SvgaMutex);
+                    ExAcquireFastMutex(&pSvga->SvgaMutex);
+                    RTAvlU32Insert(&pSvga->GMRTree, &pRegion->Core);
+                    ExReleaseFastMutex(&pSvga->SvgaMutex);
 
-                        pRegion->Core.Key = VMSVGAMOB_ID(pRegion->pMob);
-                        RTAvlU32Insert(&pSvga->GMRTree, &pRegion->Core);
+                    *pu32GmrId = VMSVGAMOB_ID(pRegion->pMob);
+                    *pu64UserAddress = (uint64_t)pRegion->pvR3;
 
-                        ExReleaseFastMutex(&pSvga->SvgaMutex);
-
-                        *pu32GmrId = VMSVGAMOB_ID(pRegion->pMob);
-                        *pu64UserAddress = (uint64_t)pRegion->pvR3;
-
-                        /* Everything OK. */
-                        return STATUS_SUCCESS;
-                    }
+#ifdef DEBUG
+                    ASMAtomicIncU32(&pSvga->cAllocatedGmrs);
+                    ASMAtomicAddU32(&pSvga->cAllocatedGmrPages, pRegion->u32NumPages);
+#endif
+                    /* Everything OK. */
+                    return STATUS_SUCCESS;
                 }
-                else
-                {
-                    AssertFailed();
-                    Status = STATUS_INSUFFICIENT_RESOURCES;
-                }
-
-                svgaFreeGBMobForGMR(pSvga, pRegion->pMob);
             }
-
-            gmrFree(pRegion);
+            else
+                AssertFailedStmt(Status = STATUS_INSUFFICIENT_RESOURCES);
         }
+
+        /* Clean up on failure. */
+        if (pRegion->MapObjR3 != NIL_RTR0MEMOBJ)
+        {
+            int rc = RTR0MemObjFree(pRegion->MapObjR3, false);
+            AssertRC(rc);
+            pRegion->MapObjR3 = NIL_RTR0MEMOBJ;
+        }
+
+        SvgaMobFree(pSvga, pRegion->pMob);
+        pRegion->pMob = NULL;
 
         GaMemFree(pRegion);
     }
     else
-    {
-        AssertFailed();
-        Status = STATUS_INSUFFICIENT_RESOURCES;
-    }
+        AssertFailedStmt(Status = STATUS_INSUFFICIENT_RESOURCES);
 
     return Status;
 }
@@ -2416,6 +2390,11 @@ void SvgaMobFree(VBOXWDDM_EXT_VMSVGA *pSvga,
         RTAvlU32Remove(&pSvga->MobTree, pMob->core.Key);
         KeReleaseSpinLock(&pSvga->MobSpinLock, OldIrql);
 
+#ifdef DEBUG
+        ASMAtomicSubU32(&pSvga->cAllocatedMobPages, pMob->gbo.cbGbo / PAGE_SIZE);
+        ASMAtomicDecU32(&pSvga->cAllocatedMobs);
+#endif
+
         SvgaGboFree(&pMob->gbo);
 
         if (pMob->hMemObj != NIL_RTR0MEMOBJ)
@@ -2457,6 +2436,12 @@ NTSTATUS SvgaMobCreate(VBOXWDDM_EXT_VMSVGA *pSvga,
 
     pMob->hAllocation = hAllocation;
     *ppMob = pMob;
+
+#ifdef DEBUG
+    ASMAtomicIncU32(&pSvga->cAllocatedMobs);
+    ASMAtomicAddU32(&pSvga->cAllocatedMobPages, cMobPages);
+#endif
+
     return STATUS_SUCCESS;
 }
 

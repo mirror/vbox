@@ -49,9 +49,6 @@ void SvgaCmdDefineGMRFB(void *pvCmd, uint32_t u32Offset, uint32_t u32BytesPerLin
 void Svga3dCmdDefineContext(void *pvCmd, uint32_t u32Cid);
 void Svga3dCmdDestroyContext(void *pvCmd, uint32_t u32Cid);
 
-void SvgaCmdDefineGMR2(void *pvCmd, uint32_t u32GmrId, uint32_t cPages);
-void SvgaCmdRemapGMR2(void *pvCmd, uint32_t u32GmrId, SVGARemapGMR2Flags flags, uint32 offsetPages, uint32_t numPages);
-
 void Svga3dCmdPresent(void *pvCmd, uint32_t u32Sid, uint32_t u32Width, uint32_t u32Height);
 
 void Svga3dCmdDefineSurface(void *pvCmd, uint32_t sid, GASURFCREATE const *pCreateParms,

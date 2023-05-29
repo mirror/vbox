@@ -211,30 +211,6 @@ void Svga3dCmdDestroySurface(void *pvCmd, uint32_t u32Sid)
     pCommand->sid = u32Sid;
 }
 
-void SvgaCmdDefineGMR2(void *pvCmd, uint32_t u32GmrId, uint32_t cPages)
-{
-    uint32_t *pu32Id = (uint32_t *)pvCmd;
-    SVGAFifoCmdDefineGMR2 *pCommand = (SVGAFifoCmdDefineGMR2 *)&pu32Id[1];
-
-    *pu32Id = SVGA_CMD_DEFINE_GMR2;
-
-    pCommand->gmrId = u32GmrId;
-    pCommand->numPages = cPages;
-}
-
-void SvgaCmdRemapGMR2(void *pvCmd, uint32_t u32GmrId, SVGARemapGMR2Flags flags, uint32 offsetPages, uint32_t numPages)
-{
-    uint32_t *pu32Id = (uint32_t *)pvCmd;
-    SVGAFifoCmdRemapGMR2 *pCommand = (SVGAFifoCmdRemapGMR2 *)&pu32Id[1];
-
-    *pu32Id = SVGA_CMD_REMAP_GMR2;
-
-    pCommand->gmrId = u32GmrId;
-    pCommand->flags = flags;
-    pCommand->offsetPages = offsetPages;
-    pCommand->numPages = numPages;
-}
-
 void Svga3dCmdSurfaceDMAToFB(void *pvCmd, uint32_t u32Sid, uint32_t u32Width, uint32_t u32Height, uint32_t u32Offset)
 {
     SVGA3dCmdHeader *pHeader = (SVGA3dCmdHeader *)pvCmd;
