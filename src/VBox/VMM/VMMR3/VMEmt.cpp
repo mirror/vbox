@@ -591,7 +591,7 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVMCPU pUVCpu, const uint32_t fMas
             ||  VMCPU_FF_IS_ANY_SET(pVCpu, fMask)
 #if defined(VBOX_VMM_TARGET_ARMV8)
             ||  cNsElapsedTimers >= cNsVTimerActivate
-#endif            
+#endif
             )
         {
 #if defined(VBOX_VMM_TARGET_ARMV8)
