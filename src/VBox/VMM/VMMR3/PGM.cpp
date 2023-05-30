@@ -1964,16 +1964,18 @@ VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
 
+#if !defined(VBOX_VMM_TARGET_ARMV8)
         if (!pVCpu->pgm.s.fA20Enabled)
         {
             pVCpu->pgm.s.fA20Enabled = true;
             pVCpu->pgm.s.GCPhysA20Mask = ~((RTGCPHYS)!pVCpu->pgm.s.fA20Enabled << 20);
-#ifdef PGM_WITH_A20
+# ifdef PGM_WITH_A20
             VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
             pgmR3RefreshShadowModeAfterA20Change(pVCpu);
             HMFlushTlb(pVCpu);
-#endif
+# endif
         }
+#endif
     }
 
     //pgmLogState(pVM);
