@@ -69,6 +69,7 @@
     <cmdsynopsis id="synopsis-vboxmanage-convertfromraw-stdin">
       <command>VBoxManage convertfromraw stdin</command>
       <arg choice="req"><replaceable>outputfile</replaceable></arg>
+      <arg choice="req"><replaceable>bytes</replaceable></arg>
       <arg>--format=<group choice="plain">
           <arg choice="plain">VDI</arg>
           <arg choice="plain">VMDK</arg>
@@ -186,8 +187,16 @@
         <varlistentry>
           <term><replaceable>outputfile</replaceable></term>
           <listitem><para>
-              Specifies the name of the file in which to write the VDI
+              Specifies the name of the file in which to write the disk image
               output.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><replaceable>bytes</replaceable></term>
+          <listitem><para>
+              Specifies the capacity of the targe image name. Needs to be
+              given explicitly, because generally pipes do not support
+              querying the overall size of the data stream.
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -258,5 +267,12 @@
       image called <filename>disk02.vmdk</filename>.
     </para>
 <screen>$ VBoxManage convertfromraw disk01.raw disk02.vmdk --format VMDK</screen>
+    <para>
+      The following command reads from disk <filename>/dev/sda</filename>
+      using a pipe and therefore needs the exact disk size in bytes as an
+      additional parameter, which is assumed to be <literal>10737418240</literal>.
+      The output file is a VDI disk image called <filename>disk.vdi</filename>.
+    </para>
+<screen>$ dd if=/dev/sda bs=512 | VBoxManage convertfromraw stdin disk.vdi 10737418240</screen>
   </refsect1>
 </refentry>
