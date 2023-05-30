@@ -105,7 +105,6 @@ RTDECL(int) RTFdtCreateFromFile(PRTFDT phFdt, const char *pszFilename, RTFDTTYPE
 /**
  * Destroys the given flattened devicetree.
  *
- * @returns nothing.
  * @param   hFdt            The flattened devicetree handle to destroy.
  */
 RTDECL(void) RTFdtDestroy(RTFDT hFdt);
