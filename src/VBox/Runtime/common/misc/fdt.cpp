@@ -119,6 +119,7 @@ static void rtFdtDtbHdr_Log(PCDTBFDTHDR pDtbHdr)
  */
 static int rtFdtDtbHdr_Validate(PCDTBFDTHDR pDtbHdr, uint64_t cbDtb, PRTERRINFO pErrInfo)
 {
+    RT_NOREF(pDtbHdr, cbDtb, pErrInfo);
     return VINF_SUCCESS;
 }
 
@@ -151,7 +152,7 @@ static int rtFdtLoadDtb(PRTFDT phFdt, RTVFSIOSTREAM hVfsIos, PRTERRINFO pErrInfo
                 rc = rtFdtDtbHdr_Validate(&DtbHdr, ObjInfo.cbObject, pErrInfo);
                 if (RT_SUCCESS(rc))
                 {
-
+                    RT_NOREF(phFdt);
                 }
             }
             else
