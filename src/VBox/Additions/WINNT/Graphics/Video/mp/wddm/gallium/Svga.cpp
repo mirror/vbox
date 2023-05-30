@@ -496,10 +496,7 @@ NTSTATUS SvgaQueryInfo(PVBOXWDDM_EXT_VMSVGA pSvga,
     if (RT_LIKELY(pSvga->u32Caps & SVGA_CAP_GBOBJECTS))
     {
         for (i = 0; i < RT_ELEMENTS(pSvgaInfo->au32Caps); ++i)
-        {
-            SVGARegWrite(pSvga, SVGA_REG_DEV_CAP, i);
-            pSvgaInfo->au32Caps[i] = SVGARegRead(pSvga, SVGA_REG_DEV_CAP);
-        }
+            pSvgaInfo->au32Caps[i] = SVGADevCapRead(pSvga, i);
     }
 
     /* Beginning of FIFO. */

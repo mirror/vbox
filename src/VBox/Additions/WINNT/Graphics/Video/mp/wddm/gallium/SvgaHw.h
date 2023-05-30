@@ -75,6 +75,19 @@ DECLINLINE(uint32_t) SVGARegRead(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t u32Offset)
     return u32Value;
 }
 
+DECLINLINE(uint32_t) SVGADevCapRead(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t idx)
+{
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pSvga->HwSpinLock, &OldIrql);
+
+    ASMOutU32(SVGAPort(pSvga, SVGA_INDEX_PORT), SVGA_REG_DEV_CAP);
+    ASMOutU32(SVGAPort(pSvga, SVGA_VALUE_PORT), idx);
+    uint32_t const u32Value = ASMInU32(SVGAPort(pSvga, SVGA_VALUE_PORT));
+
+    KeReleaseSpinLock(&pSvga->HwSpinLock, OldIrql);
+    return u32Value;
+}
+
 DECLINLINE(volatile void *) SVGAFifoPtrFromOffset(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t u32Offset)
 {
     return (volatile uint8_t *)pSvga->pu32FIFO + u32Offset;
