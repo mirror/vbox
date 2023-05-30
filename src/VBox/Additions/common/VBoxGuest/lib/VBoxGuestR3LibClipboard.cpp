@@ -639,7 +639,7 @@ static int vbglR3ClipboardRootListHdrRead(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLISTH
     Msg.ReqParms.uContext.SetUInt64(pCtx->idContext);
     Msg.ReqParms.fRoots.SetUInt32(0);
 
-    Msg.cRoots.SetUInt32(0);
+    Msg.cRoots.SetUInt64(0);
 
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -647,7 +647,7 @@ static int vbglR3ClipboardRootListHdrRead(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLISTH
         rc = Msg.ReqParms.fRoots.GetUInt32(&pRootListHdr->fRoots); AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
-            rc = Msg.cRoots.GetUInt32(&pRootListHdr->cRoots);
+            rc = Msg.cRoots.GetUInt64(&pRootListHdr->cRoots);
             AssertRC(rc);
         }
     }
@@ -902,7 +902,7 @@ VBGLR3DECL(int) VbglR3ClipboardRootListHdrReadReply(PVBGLR3SHCLCMDCTX pCtx, PSHC
     Msg.ReqParms.uContext.SetUInt64(pCtx->idContext);
     Msg.ReqParms.fRoots.SetUInt32(pRootListHdr->fRoots);
 
-    Msg.cRoots.SetUInt32(pRootListHdr->cRoots);
+    Msg.cRoots.SetUInt64(pRootListHdr->cRoots);
 
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 
