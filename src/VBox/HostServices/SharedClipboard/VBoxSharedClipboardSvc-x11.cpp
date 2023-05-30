@@ -549,8 +549,13 @@ int ShClBackendTransferGetRoots(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHC
                 rc = ShClEventWait(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = ShClTransferRootsSet(pTransfer,
-                                              (char *)pPayload->pvData, pPayload->cbData + 1 /* Include termination */);
+                    if (pPayload)
+                    {
+                        rc = ShClTransferRootsSet(pTransfer,
+                                                  (char *)pPayload->pvData, pPayload->cbData + 1 /* Include termination */);
+                    }
+                    else
+                        rc = VERR_NO_DATA; /* No payload. */
                 }
             }
         }
