@@ -1740,7 +1740,6 @@ static HRESULT dxRenderTargetViewCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT 
             desc.Texture3D.WSize = pEntry->desc.tex3D.wSize;
             break;
         case SVGA3D_RESOURCE_TEXTURECUBE:
-            AssertFailed(); /** @todo test. Probably not applicable to a render target view. */
             desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
             desc.Texture2DArray.MipSlice = pEntry->desc.tex.mipSlice;
             desc.Texture2DArray.FirstArraySlice = 0;
@@ -6289,6 +6288,13 @@ static void dxDbgLogVertexElement(DXGI_FORMAT Format, void const *pvElementData)
                  pValues[0], pValues[1], pValues[2], pValues[3]));
             break;
         }
+        case DXGI_FORMAT_R8G8_UNORM:
+        {
+            uint8_t const *pValues = (uint8_t const *)pvElementData;
+            Log8(("{ 8unorm  %u, %u },",
+                 pValues[0], pValues[1]));
+            break;
+        }
         default:
             Log8(("{ ??? DXGI_FORMAT %d },",
                  Format));
@@ -7520,7 +7526,7 @@ static int dxSetRenderTargets(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext
     }
 
     /* RTVs are followed by UAVs. */
-    Assert(NumRTVs <= pDXContext->svgaDXContext.uavSpliceIndex);
+    Assert(NumUAVs == 0 || NumRTVs <= pDXContext->svgaDXContext.uavSpliceIndex);
 
     ID3D11DepthStencilView *pDepthStencilView = NULL;
     SVGA3dDepthStencilViewId const depthStencilViewId = pDXContext->svgaDXContext.renderState.depthStencilViewId;

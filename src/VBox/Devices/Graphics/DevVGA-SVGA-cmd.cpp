@@ -1454,6 +1454,43 @@ static int vmsvga3dBmpWrite(const char *pszFilename, VMSVGA3D_MAPPED_SURFACE con
     if (!f)
         return VERR_FILE_NOT_FOUND;
 
+#ifdef RT_OS_WINDOWS
+    if (pMap->cbBlock == 4)
+    {
+        BMPFILEHDR fileHdr;
+        RT_ZERO(fileHdr);
+        fileHdr.uType       = BMP_HDR_MAGIC;
+        fileHdr.cbFileSize = sizeof(fileHdr) + sizeof(BITMAPV4HEADER) + cbBitmap;
+        fileHdr.offBits    = sizeof(fileHdr) + sizeof(BITMAPV4HEADER);
+
+        BITMAPV4HEADER hdrV4;
+        RT_ZERO(hdrV4);
+        hdrV4.bV4Size          = sizeof(hdrV4);
+        hdrV4.bV4Width         = w;
+        hdrV4.bV4Height        = -h;
+        hdrV4.bV4Planes        = 1;
+        hdrV4.bV4BitCount      = 32;
+        hdrV4.bV4V4Compression = BI_BITFIELDS;
+        hdrV4.bV4SizeImage     = cbBitmap;
+        hdrV4.bV4XPelsPerMeter = 2835;
+        hdrV4.bV4YPelsPerMeter = 2835;
+        // hdrV4.bV4ClrUsed       = 0;
+        // hdrV4.bV4ClrImportant  = 0;
+        hdrV4.bV4RedMask       = 0x00ff0000;
+        hdrV4.bV4GreenMask     = 0x0000ff00;
+        hdrV4.bV4BlueMask      = 0x000000ff;
+        hdrV4.bV4AlphaMask     = 0xff000000;
+        hdrV4.bV4CSType        = LCS_WINDOWS_COLOR_SPACE;
+        // hdrV4.bV4Endpoints     = {0};
+        // hdrV4.bV4GammaRed      = 0;
+        // hdrV4.bV4GammaGreen    = 0;
+        // hdrV4.bV4GammaBlue     = 0;
+
+        fwrite(&fileHdr, 1, sizeof(fileHdr), f);
+        fwrite(&hdrV4, 1, sizeof(hdrV4), f);
+    }
+    else
+#endif
     {
         BMPFILEHDR fileHdr;
         RT_ZERO(fileHdr);
