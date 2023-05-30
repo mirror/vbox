@@ -1893,7 +1893,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 }
             } /* CPUMGetGuestGif */
         }
-#else
+
+#else /* VBOX_VMM_TARGET_ARMV8 */
         bool fWakeupPending = false;
 
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VTIMER_ACTIVATED))
@@ -1904,13 +1905,11 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             if (pVM->em.s.fIemExecutesAll)
                 rc2 = VINF_EM_RESCHEDULE;
             else
-            {
                 rc2 = HMR3IsActive(pVCpu)    ? VINF_EM_RESCHEDULE_HM
                     : VM_IS_NEM_ENABLED(pVM) ? VINF_EM_RESCHEDULE
                     :                          VINF_EM_RESCHEDULE_REM;
-            }
         }
-#endif
+#endif /* VBOX_VMM_TARGET_ARMV8 */
 
         /*
          * Allocate handy pages.
