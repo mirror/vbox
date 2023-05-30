@@ -2820,6 +2820,24 @@
  * @{ */
 /** The DTB being parsed is malformed. */
 #define VERR_FDT_DTB_MALFORMED                                  (-27000)
+/** The DTB being parsed has an invalid header magic. */
+#define VERR_FDT_DTB_HDR_MAGIC_INVALID                          (-27001)
+/** The DTB being parsed has a version set which is not supported. */
+#define VERR_FDT_DTB_HDR_VERSION_NOT_SUPPORTED                  (-27002)
+/** The DTB being parsed has an invalid last compatible version set. */
+#define VERR_FDT_DTB_HDR_LAST_COMPAT_VERSION_INVALID            (-27003)
+/** The DTB being parsed has an invalid size set in the header compared to the actual size. */
+#define VERR_FDT_DTB_HDR_SIZE_INVALID                           (-27004)
+/** The DTB being parsed has an invalid memory reservation block offset. */
+#define VERR_FDT_DTB_HDR_MEM_RSV_BLOCK_OFF_INVALID              (-27005)
+/** The DTB being parsed has an invalid struct block offset. */
+#define VERR_FDT_DTB_HDR_STRUCT_BLOCK_OFF_INVALID               (-27006)
+/** The DTB being parsed has an invalid strings block offset. */
+#define VERR_FDT_DTB_HDR_STRINGS_BLOCK_OFF_INVALID              (-27007)
+/** The DTB being parsed has no terminating memory reservation block entry before the start of the structs block. */
+#define VERR_FDT_DTB_MEM_RSV_BLOCK_TERMINATOR_MISSING           (-27008)
+/** The DTB being parsed has an invalid strings block offset. */
+#define VERR_FDT_DTB_STRINGS_BLOCK_NOT_TERMINATED               (-27009)
 /** @} */
 
 /* SED-END */
