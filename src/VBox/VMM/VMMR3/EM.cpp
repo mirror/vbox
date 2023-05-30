@@ -2545,22 +2545,15 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                        should already be the right state to receive it. */
                     if (TRPMHasTrap(pVCpu))
                         rc = VINF_EM_RESCHEDULE;
+#if !defined(VBOX_VMM_TARGET_ARMV8)
                     /* MWAIT has a special extension where it's woken up when
                        an interrupt is pending even when IF=0. */
                     else if (   (pVCpu->em.s.MWait.fWait & (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0))
                              ==                            (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0))
                     {
-                        rc = VMR3WaitHalted(pVM, pVCpu, false /*fIgnoreInterrupts*/);
+                        rc = VMR3WaitHalted(pVM, pVCpu, 0 /*fFlags*/);
                         if (rc == VINF_SUCCESS)
                         {
-#if defined(VBOX_VMM_TARGET_ARMV8)
-                            if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_IRQ | VMCPU_FF_INTERRUPT_FIQ
-                                                         | VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
-                            {
-                                Log(("EMR3ExecuteVM: Triggering reschedule on pending IRQ after MWAIT\n"));
-                                rc = VINF_EM_RESCHEDULE;
-                            }
-#else
                             if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
                                 APICUpdatePendingInterrupts(pVCpu);
 
@@ -2571,22 +2564,28 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                                 Log(("EMR3ExecuteVM: Triggering reschedule on pending IRQ after MWAIT\n"));
                                 rc = VINF_EM_RESCHEDULE;
                             }
-#endif
+
                         }
                     }
+#endif
                     else
                     {
 #if defined(VBOX_VMM_TARGET_ARMV8)
-                        uint32_t fWaitHalted =   (CPUMGetGuestIrqMasked(pVCpu) ? VMWAITHALTED_F_IGNORE_IRQS : 0)
-                                               | (CPUMGetGuestFiqMasked(pVCpu) ? VMWAITHALTED_F_IGNORE_FIQS : 0);
+                        const uint32_t fWaitHalted = 0; /* WFI/WFE always return when an interrupt happens. */
 #else
-                        uint32_t fWaitHalted = (CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF) ? 0 : VMWAITHALTED_F_IGNORE_IRQS;
+                        const uint32_t fWaitHalted = (CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF) ? 0 : VMWAITHALTED_F_IGNORE_IRQS;
 #endif
                         rc = VMR3WaitHalted(pVM, pVCpu, fWaitHalted);
                         /* We're only interested in NMI/SMIs here which have their own FFs, so we don't need to
                            check VMCPU_FF_UPDATE_APIC here. */
                         if (   rc == VINF_SUCCESS
-                            && VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
+#if defined(VBOX_VMM_TARGET_ARMV8)
+                            && VMCPU_FF_IS_ANY_SET(pVCpu,   VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_VTIMER_ACTIVATED
+                                                          | VMCPU_FF_INTERRUPT_FIQ | VMCPU_FF_INTERRUPT_IRQ)
+#else
+                            && VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT)
+#endif
+                            )
                         {
                             Log(("EMR3ExecuteVM: Triggering reschedule on pending NMI/SMI/UNHALT after HLT\n"));
                             rc = VINF_EM_RESCHEDULE;
