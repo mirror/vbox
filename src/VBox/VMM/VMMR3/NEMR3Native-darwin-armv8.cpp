@@ -50,6 +50,7 @@
 #include <iprt/armv8.h>
 #include <iprt/asm.h>
 #include <iprt/asm-arm.h>
+#include <iprt/asm-math.h>
 #include <iprt/ldr.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
@@ -1035,7 +1036,35 @@ static VBOXSTRICTRC nemR3DarwinHandleExitException(PVM pVM, PVMCPU pVCpu, const 
         case ARMV8_ESR_EL2_EC_AARCH64_HVC_INSN:
             return nemR3DarwinHandleExitExceptionTrappedHvcInsn(pVM, pVCpu, uIss);
         case ARMV8_ESR_EL2_EC_TRAPPED_WFX:
-            return VINF_SUCCESS; /** @todo VINF_EM_HALT; We don't get notified about the vTimer if halting here currently leading to a guest hang...*/
+        {
+            /* No need to halt if there is an interrupt pending already. */
+            if (VMCPU_FF_IS_ANY_SET(pVCpu, (VMCPU_FF_INTERRUPT_IRQ | VMCPU_FF_INTERRUPT_FIQ)))
+                return VINF_SUCCESS;
+
+            /* Set the vTimer expiration in order to get out of the halt at the right point in time. */
+            if (   (pVCpu->cpum.GstCtx.CntvCtlEl0 & ARMV8_CNTV_CTL_EL0_AARCH64_ENABLE)
+                && !(pVCpu->cpum.GstCtx.CntvCtlEl0 & ARMV8_CNTV_CTL_EL0_AARCH64_IMASK))
+            {
+                uint64_t cTicksVTimer = ASMReadTSC() - pVCpu->nem.s.u64VTimerOff;
+
+                /* Check whether it expired and start executing guest code. */
+                if (cTicksVTimer >= pVCpu->cpum.GstCtx.CntvCValEl0)
+                    return VINF_SUCCESS;
+
+                uint64_t cTicksVTimerToExpire = pVCpu->cpum.GstCtx.CntvCValEl0 - cTicksVTimer;
+                uint64_t cNanoSecsVTimerToExpire = ASMMultU64ByU32DivByU32(cTicksVTimerToExpire, RT_NS_1SEC, (uint32_t)pVM->nem.s.u64CntFrqHz);
+
+                /* Our halt method doesn't work with sub millisecond granularity at the moment causing a huge slowdown. */
+                if (cNanoSecsVTimerToExpire < 20 * RT_NS_1MS)
+                    return VINF_SUCCESS;
+
+                TMCpuSetVTimerNextActivation(pVCpu, cNanoSecsVTimerToExpire);
+            }
+            else
+                TMCpuSetVTimerNextActivation(pVCpu, UINT64_MAX);
+
+            return VINF_EM_HALT;
+        }
         case ARMV8_ESR_EL2_EC_UNKNOWN:
         default:
             LogRel(("NEM/Darwin: Unknown Exception Class in syndrome: uEc=%u{%s} uIss=%#RX32 fInsn32Bit=%RTbool\n",
@@ -1075,8 +1104,12 @@ static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu)
         case HV_EXIT_REASON_EXCEPTION:
             return nemR3DarwinHandleExitException(pVM, pVCpu, pExit);
         case HV_EXIT_REASON_VTIMER_ACTIVATED:
+        {
+            LogFlowFunc(("vTimer got activated\n"));
+            TMCpuSetVTimerNextActivation(pVCpu, UINT64_MAX);
             pVCpu->nem.s.fVTimerActivated = true;
             return GICPpiSet(pVCpu, NEM_DARWIN_VTIMER_GIC_PPI_IRQ, true /*fAsserted*/);
+        }
         default:
             AssertReleaseFailed();
             break;
