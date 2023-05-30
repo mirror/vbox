@@ -163,71 +163,71 @@
 #define VBOX_SHCL_HOST_MSG_READ_DATA_CID                    5
 
 /** Sends a transfer status to the guest side.
- * @since   6.1.?
+ * @since   7.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_STATUS                   50
 /** Reads the root list header from the guest.
- * @since   6.1.?
+ * @since   7.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_HDR_READ       51
 /** Writes the root list header to the guest.
- * @since   6.1.?
+ * @since   7.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_HDR_WRITE      52
 /** Reads a root list entry from the guest.
- * @since   6.1.?
+ * @since   7.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_ENTRY_READ     53
 /** Writes a root list entry to the guest.
- * @since   6.1.?
+ * @since   7.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_ENTRY_WRITE    54
 /** Open a transfer list on the guest side.
- * @since   6.1.?
+ * @since   7.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_OPEN                55
 /** Closes a formerly opened transfer list on the guest side.
- * @since   6.1.?
+ * @since   7.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_CLOSE               56
 /** Reads a list header from the guest.
- * @since   6.1.?
+ * @since   7.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_HDR_READ            57
 /** Writes a list header to the guest.
- * @since   6.1.?
+ * @since   7.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_HDR_WRITE           58
 /** Reads a list entry from the guest.
- * @since   6.1.?
+ * @since   7.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_ENTRY_READ          59
 /** Writes a list entry to the guest.
- * @since   6.1.?
+ * @since   7.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_ENTRY_WRITE         60
 /** Open a transfer object on the guest side.
- * @since   6.1.?
+ * @since   7.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_OPEN                 61
 /** Closes a formerly opened transfer object on the guest side.
- * @since   6.1.?
+ * @since   7.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_CLOSE                62
 /** Reads from an object on the guest side.
- * @since   6.1.?
+ * @since   7.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_READ                 63
 /** Writes to an object on the guest side.
- * @since   6.1.?
+ * @since   7.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_WRITE                64
 /** Indicates that the host has canceled a transfer.
- * @since   6.1.?
+ * @since   7.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_CANCEL                   65
 /** Indicates that the an unrecoverable error on the host occurred.
- * @since   6.1.?
+ * @since   7.1
  */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_ERROR                    66
 /** @} */
@@ -637,7 +637,7 @@
 #define VBOX_SHCL_HF_0_CONTEXT_ID                 RT_BIT_64(0)
 /** The host can copy & paste files and directories.
  *  This includes messages like
- * @since 6.1.? */
+ * @since 7.1 */
 #define VBOX_SHCL_HF_0_TRANSFERS                  RT_BIT_64(1)
 /** @} */
 
