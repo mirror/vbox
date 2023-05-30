@@ -69,6 +69,7 @@ typedef enum RTLOGGROUP
     RTLOGGROUP_DBG,
     RTLOGGROUP_DBG_DWARF,
     RTLOGGROUP_DIR,
+    RTLOGGROUP_FDT,
     RTLOGGROUP_FILE,
     RTLOGGROUP_FS,
     RTLOGGROUP_FTP,
@@ -110,6 +111,7 @@ typedef enum RTLOGGROUP
     "RT_DBG", \
     "RT_DBG_DWARF", \
     "RT_DIR", \
+    "RT_FDT", \
     "RT_FILE", \
     "RT_FS", \
     "RT_FTP", \
@@ -125,7 +127,6 @@ typedef enum RTLOGGROUP
     "RT_TIME", \
     "RT_TIMER", \
     "RT_VFS", \
-    "RT_20", \
     "RT_21", \
     "RT_22", \
     "RT_23", \

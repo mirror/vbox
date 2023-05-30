@@ -280,6 +280,11 @@ if !defined(VBOX_ONLY_BUILD)
   RTKrnlModInfo_SOURCES = RTKrnlModInfo.cpp
  endif
 
+ # RTDtc - Devicetree compiler tool.
+ PROGRAMS += RTDtc
+ RTDtc_TEMPLATE = VBoxR3Tool
+ RTDtc_SOURCES = RTDtc.cpp
+
 endif # !VBOX_ONLY_BUILD
 
 include $(FILE_KBUILD_SUB_FOOTER)

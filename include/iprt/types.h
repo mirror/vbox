@@ -3194,6 +3194,13 @@ typedef RTEFISIGDB                          RT_FAR *PRTEFISIGDB;
 /** A NIL EFI signature database handle. */
 #define NIL_RTEFISIGDB                             ((RTEFISIGDB)~(uintptr_t)0)
 
+/** Flattened Devicetree handle. */
+typedef struct RTFDTINT                     RT_FAR *RTFDT;
+/** Pointer to a Flattened Devicetree handle. */
+typedef RTFDT                               RT_FAR *PRTFDT;
+/** A NIL Flattened Devicetree handle. */
+#define NIL_RTFDT                                  ((RTFDT)~(uintptr_t)0)
+
 
 /**
  * Handle type.

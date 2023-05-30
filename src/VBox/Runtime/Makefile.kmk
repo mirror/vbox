@@ -567,6 +567,7 @@ RuntimeBaseR3_SOURCES      := \
 	common/misc/buildconfig.cpp \
 	common/misc/cidr.cpp \
 	common/misc/expreval.cpp \
+	common/misc/fdt.cpp \
 	common/misc/getopt.cpp \
 	common/misc/getoptargv.cpp \
 	common/misc/handle.cpp \

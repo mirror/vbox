@@ -2815,6 +2815,13 @@
 #define VERR_HARDAVL_UNBALANCED                                 (-26820)
 /** @} */
 
+
+/** @name RTFdt status codes.
+ * @{ */
+/** The DTB being parsed is malformed. */
+#define VERR_FDT_DTB_MALFORMED                                  (-27000)
+/** @} */
+
 /* SED-END */
 
 /** @} */
