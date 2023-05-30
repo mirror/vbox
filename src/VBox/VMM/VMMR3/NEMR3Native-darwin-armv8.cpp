@@ -1054,8 +1054,13 @@ static VBOXSTRICTRC nemR3DarwinHandleExitException(PVM pVM, PVMCPU pVCpu, const 
                 uint64_t cTicksVTimerToExpire = pVCpu->cpum.GstCtx.CntvCValEl0 - cTicksVTimer;
                 uint64_t cNanoSecsVTimerToExpire = ASMMultU64ByU32DivByU32(cTicksVTimerToExpire, RT_NS_1SEC, (uint32_t)pVM->nem.s.u64CntFrqHz);
 
-                /* Our halt method doesn't work with sub millisecond granularity at the moment causing a huge slowdown. */
-                if (cNanoSecsVTimerToExpire < 20 * RT_NS_1MS)
+                /*
+                 * Our halt method doesn't work with sub millisecond granularity at the moment causing a huge slowdown
+                 * + scheduling overhead which would increase the wakeup latency.
+                 * So only halt when the threshold is exceeded (needs more experimentation but 5ms turned out to be a good compromise
+                 * between CPU load when the guest is idle and performance).
+                 */
+                if (cNanoSecsVTimerToExpire < 5 * RT_NS_1MS)
                     return VINF_SUCCESS;
 
                 TMCpuSetVTimerNextActivation(pVCpu, cNanoSecsVTimerToExpire);
