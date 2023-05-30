@@ -129,8 +129,21 @@ typedef struct VMCPU
     /** The CPU state. */
     VMCPUSTATE volatile     enmState;
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    uint32_t                u32Alignment0;
+    /** The number of nano seconds when the vTimer of the associated vCPU is supposed to activate
+     *  required to get out of a halt (due to wfi/wfe).
+     *
+     * @note This actually should go into TMCPU but this drags in a whole lot of padding changes
+     *       and I'm not sure yet whether this will remain in this form anyway.
+     */
+    uint64_t                cNsVTimerActivate;
+    /** Padding up to 64 bytes. */
+    uint8_t                 abAlignment0[64 - 12 - 8 - 4];
+#else
     /** Padding up to 64 bytes. */
     uint8_t                 abAlignment0[64 - 12];
+#endif
     /** @} */
 
     /** IEM part.
@@ -516,7 +529,12 @@ AssertCompileSizeAlignment(VMCPU, 16384);
  *  (when using nested paging). */
 #define VMCPU_FF_HM_UPDATE_CR3              RT_BIT_64(VMCPU_FF_HM_UPDATE_CR3_BIT)
 #define VMCPU_FF_HM_UPDATE_CR3_BIT          12
+#if defined(VBOX_VMM_TARGET_ARMV8)
+# define VMCPU_FF_VTIMER_ACTIVATED          RT_BIT_64(VMCPU_FF_VTIMER_ACTIVATED_BIT)
+# define VMCPU_FF_VTIMER_ACTIVATED_BIT      13
+#else
 /* Bit 13 used to be VMCPU_FF_HM_UPDATE_PAE_PDPES. */
+#endif
 /** This action forces the VM to resync the page tables before going
  * back to execute guest code. (GLOBAL FLUSH) */
 #define VMCPU_FF_PGM_SYNC_CR3               RT_BIT_64(VMCPU_FF_PGM_SYNC_CR3_BIT)
@@ -592,7 +610,8 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 #if defined(VBOX_VMM_TARGET_ARMV8)
 # define VMCPU_FF_EXTERNAL_HALTED_MASK          (  VMCPU_FF_INTERRUPT_IRQ | VMCPU_FF_INTERRUPT_FIQ \
                                                  | VMCPU_FF_REQUEST       | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI \
-                                                 | VMCPU_FF_UNHALT        | VMCPU_FF_TIMER          | VMCPU_FF_DBGF )
+                                                 | VMCPU_FF_UNHALT        | VMCPU_FF_TIMER          | VMCPU_FF_DBGF \
+                                                 | VMCPU_FF_VTIMER_ACTIVATED)
 #else
 # define VMCPU_FF_EXTERNAL_HALTED_MASK          (  VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC \
                                                  | VMCPU_FF_REQUEST     | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI \

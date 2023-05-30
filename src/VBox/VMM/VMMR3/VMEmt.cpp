@@ -567,6 +567,11 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVMCPU pUVCpu, const uint32_t fMas
         pUVCpu->vm.s.Halt.Method12.u64StartSpinTS = 0;
     }
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    uint64_t cNsVTimerActivate = TMCpuGetVTimerActivationNano(pVCpu);
+    const bool fVTimerActive = cNsVTimerActivate != UINT64_MAX;
+#endif
+
     /*
      * Halt loop.
      */
@@ -583,8 +588,17 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVMCPU pUVCpu, const uint32_t fMas
         uint64_t const cNsElapsedTimers = RTTimeNanoTS() - u64StartTimers;
         STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltTimers, cNsElapsedTimers);
         if (    VM_FF_IS_ANY_SET(pVM, VM_FF_EXTERNAL_HALTED_MASK)
-            ||  VMCPU_FF_IS_ANY_SET(pVCpu, fMask))
+            ||  VMCPU_FF_IS_ANY_SET(pVCpu, fMask)
+#if defined(VBOX_VMM_TARGET_ARMV8)
+            ||  cNsElapsedTimers >= cNsVTimerActivate
+#endif            
+            )
+        {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+            cNsVTimerActivate = 0;
+#endif
             break;
+        }
 
         /*
          * Estimate time left to the next event.
@@ -594,6 +608,10 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVMCPU pUVCpu, const uint32_t fMas
         if (    VM_FF_IS_ANY_SET(pVM, VM_FF_EXTERNAL_HALTED_MASK)
             ||  VMCPU_FF_IS_ANY_SET(pVCpu, fMask))
             break;
+
+#if defined(VBOX_VMM_TARGET_ARMV8)
+        u64NanoTS = RT_MIN(cNsVTimerActivate, u64NanoTS);
+#endif
 
         /*
          * Block if we're not spinning and the interval isn't all that small.
@@ -655,10 +673,26 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVMCPU pUVCpu, const uint32_t fMas
             if (    fBlockOnce
                 &&  Elapsed > 100000 /* 0.1 ms */)
                 fBlockOnce = false;
+
+#if defined(VBOX_VMM_TARGET_ARMV8)
+            cNsVTimerActivate -= RT_MIN(cNsVTimerActivate, Elapsed);
+            /* Did the vTimer expire? */
+            if (!cNsVTimerActivate)
+                break;
+#endif
         }
     }
     //if (fSpinning) RTLogRelPrintf("spun for %RU64 ns %u loops; lag=%RU64 pct=%d\n", RTTimeNanoTS() - u64Now, cLoops, TMVirtualSyncGetLag(pVM), u32CatchUpPct);
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    if (fVTimerActive)
+    {
+        if (!cNsVTimerActivate)
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_VTIMER_ACTIVATED);
+
+        TMCpuSetVTimerNextActivation(pVCpu, cNsVTimerActivate);
+    }
+#endif
     ASMAtomicUoWriteBool(&pUVCpu->vm.s.fWait, false);
     return rc;
 }

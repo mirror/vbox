@@ -170,6 +170,11 @@ VMM_INT_DECL(int)       TMCpuTickSetLastSeen(PVMCPUCC pVCpu, uint64_t u64LastSee
 VMM_INT_DECL(uint64_t)  TMCpuTickGetLastSeen(PVMCPUCC pVCpu);
 VMMDECL(uint64_t)       TMCpuTicksPerSecond(PVMCC pVM);
 VMM_INT_DECL(bool)      TMCpuTickIsTicking(PVMCPUCC pVCpu);
+
+#if defined(VBOX_VMM_TARGET_ARMV8)
+VMM_INT_DECL(void)      TMCpuSetVTimerNextActivation(PVMCPUCC pVCpu, uint64_t cNanoSecs);
+VMM_INT_DECL(uint64_t)  TMCpuGetVTimerActivationNano(PVMCPUCC pVCpu);
+#endif
 /** @} */
 
 

@@ -659,3 +659,30 @@ VMM_INT_DECL(bool) TMCpuTickIsTicking(PVMCPUCC pVCpu)
     return pVCpu->tm.s.fTSCTicking;
 }
 
+
+#if defined(VBOX_VMM_TARGET_ARMV8)
+/**
+ * Sets the number of nanoseconds from now when the vTiemr is supposed to expire next.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cNanoSecs       Number of nano seconds when the timer is supposed to fire.
+ *
+ * @note This is required in order to kick the vCPU out of a halting state because the
+ *       vTimer is supposed to fire an interrupt.
+ */
+VMM_INT_DECL(void) TMCpuSetVTimerNextActivation(PVMCPUCC pVCpu, uint64_t cNanoSecs)
+{
+    pVCpu->cNsVTimerActivate = cNanoSecs;
+}
+
+
+/**
+ * Returns when the vTimer is supposed to expire next in number of nanoseconds.
+ *
+ * @returns Number of nanoseconds when the vTimer is supposed to 
+ */
+VMM_INT_DECL(uint64_t) TMCpuGetVTimerActivationNano(PVMCPUCC pVCpu)
+{
+    return pVCpu->cNsVTimerActivate;
+}
+#endif
