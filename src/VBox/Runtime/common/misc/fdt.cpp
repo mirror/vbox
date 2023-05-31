@@ -441,10 +441,11 @@ DECLINLINE(uint32_t) rtFdtStructsGetToken(PRTFDTDTBDUMP pDump)
     uint32_t u32Token = *(const uint32_t *)pDump->pbStructs;
     pDump->pbStructs += sizeof(uint32_t);
     pDump->cbLeft    -= sizeof(uint32_t);
-    return u32Token;
+    return RT_H2BE_U32(u32Token);
 }
 
 
+#ifdef LOG_ENABLED
 /**
  * Gets the offset inside the structs block given from the current pointer.
  *
@@ -452,10 +453,11 @@ DECLINLINE(uint32_t) rtFdtStructsGetToken(PRTFDTDTBDUMP pDump)
  * @param   pThis           Pointer to the FDT instance.
  * @param   pDump           Pointer to the dump state.
  */
-DECLINLINE(uint32_t) rtFdtStructsGetOffset(PRTFDTINT pThis, PCRTFDTDTBDUMP pDump)
+DECLINLINE(size_t) rtFdtStructsGetOffset(PRTFDTINT pThis, PCRTFDTDTBDUMP pDump)
 {
     return pThis->DtbHdr.cbDtStruct - pDump->cbLeft - sizeof(uint32_t);
 }
+#endif
 
 
 /**
@@ -618,7 +620,7 @@ static DECLCALLBACK(int) rtFdtDtbPropDumpString(PRTFDTINT pThis, RTVFSIOSTREAM h
 
 
 /**
- * Dumps a <u32> cell property.
+ * Dumps a u32 cell property.
  *
  * @returns IPRT status code.
  * @param   pThis           Pointer to the FDT instance.
@@ -788,7 +790,6 @@ static int rtFdtStructsDumpPropertyAsDts(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos,
  * Dumps the node name as a DTS source starting at the given location inside the structs block.
  *
  * @returns IPRT status code.
- * @param   pThis           Pointer to the FDT instance.
  * @param   hVfsIos         The VFS I/O stream handle to dump the DTS to.
  * @param   pDump           The dump state.
  * @param   uIndentLvl      The level of indentation.
@@ -849,11 +850,11 @@ static int rtFdtDumpRootAsDts(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINFO
 
     /* Skip any NOP tokens. */
     uint32_t u32Token = rtFdtStructsGetToken(&Dump);
-    while (u32Token == DTB_FDT_TOKEN_NOP_BE)
+    while (u32Token == DTB_FDT_TOKEN_NOP)
         u32Token = rtFdtStructsGetToken(&Dump);
 
     /* The root node starts with a BEGIN_NODE token. */
-    if (u32Token != DTB_FDT_TOKEN_BEGIN_NODE_BE)
+    if (u32Token != DTB_FDT_TOKEN_BEGIN_NODE)
         return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_STRUCTS_BLOCK_TOKEN_INVALID, "The structs block doesn't start with the BEGIN_NODE token for the root node: %#RX32",
                              RT_BE2H_U32(u32Token));
 
@@ -873,31 +874,31 @@ static int rtFdtDumpRootAsDts(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINFO
 
     uint32_t uNdLvl = 1;
     u32Token = rtFdtStructsGetToken(&Dump);
-    while (u32Token != DTB_FDT_TOKEN_END_BE)
+    while (u32Token != DTB_FDT_TOKEN_END)
     {
-        Log4(("rtFdtDumpAsDtsRoot: Token %#RX32 at offset %#RX32\n", RT_BE2H_U32(u32Token), rtFdtStructsGetOffset(pThis, &Dump)));
+        Log4(("rtFdtDumpAsDtsRoot: Token %#RX32 at offset %#zx\n", RT_BE2H_U32(u32Token), rtFdtStructsGetOffset(pThis, &Dump)));
 
         switch (u32Token)
         {
-            case DTB_FDT_TOKEN_BEGIN_NODE_BE:
-                Log3(("rtFdtDumpAsDtsRoot: BEGIN_NODE token at offset %#RX32\n", rtFdtStructsGetOffset(pThis, &Dump)));
+            case DTB_FDT_TOKEN_BEGIN_NODE:
+                Log3(("rtFdtDumpAsDtsRoot: BEGIN_NODE token at offset %#zx\n", rtFdtStructsGetOffset(pThis, &Dump)));
                 rc = rtFdtStructsDumpNodeAsDts(hVfsIos, &Dump, uNdLvl, pErrInfo);
                 if (RT_FAILURE(rc))
                     return rc;
 
                 uNdLvl++;
                 break;
-            case DTB_FDT_TOKEN_PROPERTY_BE:
-                Log3(("rtFdtDumpAsDtsRoot: PROP token at offset %#RX32\n", rtFdtStructsGetOffset(pThis, &Dump)));
+            case DTB_FDT_TOKEN_PROPERTY:
+                Log3(("rtFdtDumpAsDtsRoot: PROP token at offset %#zx\n", rtFdtStructsGetOffset(pThis, &Dump)));
                 rc = rtFdtStructsDumpPropertyAsDts(pThis, hVfsIos, &Dump, uNdLvl, pErrInfo);
                 if (RT_FAILURE(rc))
                     return rc;
                 break;
-            case DTB_FDT_TOKEN_NOP_BE:
-                Log3(("rtFdtDumpAsDtsRoot: NOP token at offset %#RX32\n", rtFdtStructsGetOffset(pThis, &Dump)));
+            case DTB_FDT_TOKEN_NOP:
+                Log3(("rtFdtDumpAsDtsRoot: NOP token at offset %#zx\n", rtFdtStructsGetOffset(pThis, &Dump)));
                 break;
-            case DTB_FDT_TOKEN_END_NODE_BE:
-                Log3(("rtFdtDumpAsDtsRoot: END_NODE token at offset %#RX32\n", rtFdtStructsGetOffset(pThis, &Dump)));
+            case DTB_FDT_TOKEN_END_NODE:
+                Log3(("rtFdtDumpAsDtsRoot: END_NODE token at offset %#zx\n", rtFdtStructsGetOffset(pThis, &Dump)));
                 if (!uNdLvl)
                     return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_STRUCTS_BLOCK_PREMATURE_END,
                                          "END_NODE token encountered at the root node");
@@ -915,12 +916,12 @@ static int rtFdtDumpRootAsDts(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINFO
         }
 
         u32Token = rtFdtStructsGetToken(&Dump);
-        if (u32Token == DTB_FDT_TOKEN_END_BE)
-            Log3(("rtFdtDumpAsDtsRoot: END token at offset %#RX32\n", rtFdtStructsGetOffset(pThis, &Dump)));
+        if (u32Token == DTB_FDT_TOKEN_END)
+            Log3(("rtFdtDumpAsDtsRoot: END token at offset %#zx\n", rtFdtStructsGetOffset(pThis, &Dump)));
     }
 
     /* Need to end on an END token. */
-    if (u32Token != DTB_FDT_TOKEN_END_BE)
+    if (u32Token != DTB_FDT_TOKEN_END)
         return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_STRUCTS_BLOCK_TOKEN_INVALID, "The structs block doesn't end with an END token (got %#RX32, expected %#RX32)",
                              RT_BE2H_U32(u32Token), DTB_FDT_TOKEN_END);
 
