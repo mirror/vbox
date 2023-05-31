@@ -2146,6 +2146,12 @@ void UIVirtualBoxManager::sltPerformShowHelpBrowser()
     UIHelpBrowserDialog::findManualFileAndShow(strHelpKeyword);
 }
 
+void UIVirtualBoxManager::sltExtensionPackInstalledUninstalled(const QString &strName)
+{
+    Q_UNUSED(strName);
+    updateActionsAppearance();
+}
+
 void UIVirtualBoxManager::prepare()
 {
 #ifdef VBOX_WS_X11
@@ -2287,6 +2293,10 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltHandleCommitData);
     connect(&uiCommon(), &UICommon::sigMediumEnumerationFinished,
             this, &UIVirtualBoxManager::sltHandleMediumEnumerationFinish);
+    connect(&uiCommon(), &UICommon::sigExtensionPackInstalled,
+            this, &UIVirtualBoxManager::sltExtensionPackInstalledUninstalled);
+    connect(&uiCommon(), &UICommon::sigExtensionPackUninstalled,
+            this, &UIVirtualBoxManager::sltExtensionPackInstalledUninstalled);
 
     /* Widget connections: */
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigChooserPaneIndexChange,
@@ -3512,6 +3522,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexMN_M_Machine_S_ExportToOCI:
         {
             return items.size() == 1 &&
+                   uiCommon().isExtentionPackInstalled() &&
                    pItem->toLocal();
         }
         case UIActionIndexMN_M_Machine_S_Remove:

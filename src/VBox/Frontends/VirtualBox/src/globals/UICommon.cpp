@@ -2579,6 +2579,27 @@ QString UICommon::helpKeyword(const QObject *pObject)
     return pObject->property("helpkeyword").toString();
 }
 
+bool UICommon::isExtentionPackInstalled() const
+{
+    const CExtPackManager comEPManager = virtualBox().GetExtensionPackManager();
+
+    if (!virtualBox().isOk())
+        return false;
+
+    const QVector<CExtPack> extensionPacks = comEPManager.GetInstalledExtPacks();
+    if (!comEPManager.isOk())
+        return false;
+    foreach (const CExtPack &comExtensionPack, extensionPacks)
+    {
+        if (!comExtensionPack.isOk())
+            continue;
+        bool fUsable = comExtensionPack.GetUsable();
+        if (comExtensionPack.isOk() && fUsable)
+            return true;
+    }
+    return false;
+}
+
 bool UICommon::openURL(const QString &strUrl) const
 {
     /** Service event. */

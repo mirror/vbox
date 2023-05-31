@@ -338,6 +338,9 @@ private slots:
 
         /** Handles call to show help viewer. */
         void sltPerformShowHelpBrowser();
+
+        /** Handles signals that are emitted when an ext. pack un/installed. */
+        void sltExtensionPackInstalledUninstalled(const QString &strName);
     /** @} */
 
 private:
