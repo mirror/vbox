@@ -54,6 +54,7 @@ ValidationKitTestsApi_EXEC_SOURCES := \
 ifndef VBOX_OSE
  ValidationKitTestsApi_EXEC_SOURCES += \
  	$(PATH_SUB_CURRENT)/tdCloud1.py \
+ 	$(PATH_SUB_CURRENT)/tdOciCloudInit1.py \
  	$(PATH_SUB_CURRENT)/tdOciConnection1.py \
  	$(PATH_SUB_CURRENT)/tdOciExport1.py \
  	$(PATH_SUB_CURRENT)/tdOciImage1.py \
