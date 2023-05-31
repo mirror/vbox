@@ -543,7 +543,6 @@ static int rtFdtStructsQueryString(PRTFDTDTBDUMP pDump, char *pszString, size_t 
     }
 
     /* Not reached */
-    return VERR_INTERNAL_ERROR;
 }
 
 
