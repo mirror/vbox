@@ -181,6 +181,39 @@ DECLINLINE(IEMMODE) iemCalcCpuMode(PVMCPUCC pVCpu) RT_NOEXCEPT
     return IEMMODE_16BIT;
 }
 
+
+/**
+ * Checks if CS, SS, DS and SS are all wide open flat 32-bit segments.
+ *
+ * This will reject expand down data segments and conforming code segments.
+ *
+ * @returns The indicator.
+ * @param   pVCpu               The cross context virtual CPU structure of the
+ *                              calling thread.
+ */
+DECLINLINE(uint8_t) iemCalc32BitFlatIndicator(PVMCPUCC pVCpu) RT_NOEXCEPT
+{
+    AssertCompile(X86_SEL_TYPE_DOWN == X86_SEL_TYPE_CONF);
+    return pVCpu->iem.s.enmCpuMode == IEMMODE_32BIT
+        &&   (  (  pVCpu->cpum.GstCtx.es.Attr.u
+                 | pVCpu->cpum.GstCtx.cs.Attr.u
+                 | pVCpu->cpum.GstCtx.ss.Attr.u
+                 | pVCpu->cpum.GstCtx.ds.Attr.u)
+              & (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_DOWN | X86DESCATTR_UNUSABLE | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_P))
+           ==   (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_DOWN | X86DESCATTR_UNUSABLE | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_P)
+        &&    (  (pVCpu->cpum.GstCtx.es.u32Limit + 1)
+               | (pVCpu->cpum.GstCtx.cs.u32Limit + 1)
+               | (pVCpu->cpum.GstCtx.ss.u32Limit + 1)
+               | (pVCpu->cpum.GstCtx.ds.u32Limit + 1))
+           == 0
+        &&    (  pVCpu->cpum.GstCtx.es.u64Base
+               | pVCpu->cpum.GstCtx.cs.u64Base
+               | pVCpu->cpum.GstCtx.ss.u64Base
+               | pVCpu->cpum.GstCtx.ds.u64Base)
+           == 0
+        ? 1 : 0; /** @todo define a constant/flag for this. */
+}
+
 #ifndef IEM_WITH_OPAQUE_DECODER_STATE
 
 # if defined(VBOX_INCLUDED_vmm_dbgf_h) || defined(DOXYGEN_RUNNING) /* dbgf.ro.cEnabledHwBreakpoints */
