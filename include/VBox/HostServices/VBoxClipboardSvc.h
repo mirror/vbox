@@ -455,7 +455,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1.x
+ * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_WRITE    13
 /** Gets a root list root entry from the host.
@@ -464,7 +464,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1.x
+ * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_READ   14
 /** Sends a root list root entry to the host.
@@ -473,7 +473,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1.x
+ * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_WRITE  15
 /** Opens / gets a list handle from the host.
@@ -482,7 +482,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1.x
+ * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_OPEN              16
 /** Closes a list handle from the host.
@@ -491,7 +491,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1.x
+ * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_CLOSE             17
 /** Reads a list header from the host.
@@ -500,7 +500,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1.x
+ * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_HDR_READ          18
 /** Writes a list header to the host.
@@ -509,7 +509,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1.x
+ * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_HDR_WRITE         19
 /** Reads a list entry from the host.
@@ -518,7 +518,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1.x
+ * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_ENTRY_READ        20
 /** Sends a list entry to the host.
@@ -527,7 +527,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1.x
+ * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_LIST_ENTRY_WRITE       21
 /** Opens an object on the host.
@@ -536,7 +536,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1.x
+ * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_OBJ_OPEN               22
 /** Closes an object on the host.
@@ -545,7 +545,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1.x
+ * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_OBJ_CLOSE              23
 /** Reads from an object on the host.
@@ -554,7 +554,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1.x
+ * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_OBJ_READ               24
 /** Writes to an object on the host.
@@ -563,7 +563,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1.x
+ * @since   7.1.x
  */
 #define VBOX_SHCL_GUEST_FN_OBJ_WRITE              25
 /** Reports an error to the host.
