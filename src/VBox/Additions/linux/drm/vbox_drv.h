@@ -189,7 +189,7 @@
 # include <drm/ttm/ttm_resource.h>
 #endif
 
-#if RTLNX_VER_MIN(6,0,0) || RTLNX_RHEL_RANGE(8,9, 8,99) || RTLNX_RHEL_MAJ_PREREQ(9,2)
+#if RTLNX_VER_MIN(6,0,0) || RTLNX_RHEL_RANGE(8,8, 8,99) || RTLNX_RHEL_MAJ_PREREQ(9,2)
 # include <drm/drm_framebuffer.h>
 #endif
 
