@@ -118,8 +118,9 @@ RTDECL(void) RTFdtDestroy(RTFDT hFdt);
  * @param   enmOutType      The output type.
  * @param   fFlags          Flags controlling the output, MBZ.
  * @param   hVfsIos         The VFS I/O stream handle to dump the DTS to.
+ * @param   pErrInfo        Where to return additional error information.
  */
-RTDECL(int) RTFdtDumpToVfsIoStrm(RTFDT hFdt, RTFDTTYPE enmOutType, uint32_t fFlags, RTVFSIOSTREAM hVfsIos);
+RTDECL(int) RTFdtDumpToVfsIoStrm(RTFDT hFdt, RTFDTTYPE enmOutType, uint32_t fFlags, RTVFSIOSTREAM hVfsIos, PRTERRINFO pErrInfo);
 
 
 /**
@@ -130,8 +131,9 @@ RTDECL(int) RTFdtDumpToVfsIoStrm(RTFDT hFdt, RTFDTTYPE enmOutType, uint32_t fFla
  * @param   enmOutType      The output type.
  * @param   fFlags          Flags controlling the output, MBZ.
  * @param   pszFilename     The filename to dump to.
+ * @param   pErrInfo        Where to return additional error information.
  */
-RTDECL(int) RTFdtDumpToFile(RTFDT hFdt, RTFDTTYPE enmOutType, uint32_t fFlags, const char *pszFilename);
+RTDECL(int) RTFdtDumpToFile(RTFDT hFdt, RTFDTTYPE enmOutType, uint32_t fFlags, const char *pszFilename, PRTERRINFO pErrInfo);
 
 #endif /* IN_RING3 */
 

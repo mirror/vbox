@@ -205,12 +205,21 @@ static RTEXITCODE rtCmdDtcProcess(PCRTCMDDTCOPTS pOpts, RTVFSIOSTREAM hVfsSrc)
         rc = rtCmdDtcOpenOutput(pOpts->pszOutFile, &hVfsIosDst);
         if (RT_SUCCESS(rc))
         {
-            rc = RTFdtDumpToVfsIoStrm(hFdt, pOpts->enmOutType, 0 /*fFlags*/, hVfsIosDst);
-            if (RT_FAILURE(rc))
+            rc = RTFdtDumpToVfsIoStrm(hFdt, pOpts->enmOutType, 0 /*fFlags*/, hVfsIosDst, RTErrInfoInitStatic(&ErrInfo));
+            if (RT_FAILURE(rc) && RTErrInfoIsSet(&ErrInfo.Core))
+                rc =  RTMsgErrorRc(rc, "Writing the devicetree failed: %Rrc - %s", rc, ErrInfo.Core.pszMsg);
+            else if (RT_FAILURE(rc))
                 rc = RTMsgErrorRc(rc, "Writing the devicetree failed: %Rrc\n", rc);
             RTVfsIoStrmRelease(hVfsIosDst);
         }
         RTFdtDestroy(hFdt);
+    }
+    else
+    {
+        if (RTErrInfoIsSet(&ErrInfo.Core))
+            rc = RTMsgErrorRc(rc, "Loading the devicetree blob failed: %Rrc - %s", rc, ErrInfo.Core.pszMsg);
+        else
+            rc = RTMsgErrorRc(rc, "Loading the devicetree blob failed: %Rrc\n", rc);
     }
 
     if (RT_FAILURE(rc))
@@ -274,6 +283,7 @@ static RTEXITCODE RTCmdDtc(unsigned cArgs, char **papszArgs)
                     }
                     if (rcExit2 != RTEXITCODE_SUCCESS)
                         rcExit = rcExit2;
+                    fContinue = false;
                     break;
                 }
 
@@ -284,6 +294,10 @@ static RTEXITCODE RTCmdDtc(unsigned cArgs, char **papszArgs)
                         RTMsgErrorExitFailure("Invalid input type given: %s", ValueUnion.psz);
                         fContinue = false;
                     }
+                    break;
+
+                case 'o':
+                    Opts.pszOutFile = ValueUnion.psz;
                     break;
 
                 case 'O':

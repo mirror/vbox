@@ -56,6 +56,9 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 
+/** Special error token to denote that the end of the structs block was reached trying to query the next token. */
+#define RTFDT_TOKEN_ERROR                       UINT32_MAX
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -79,6 +82,55 @@ typedef struct RTFDTINT
 } RTFDTINT;
 /** Pointer to the internal Flattened Devicetree instance. */
 typedef RTFDTINT *PRTFDTINT;
+
+
+/**
+ * DTB property dump callback.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           Pointer to the FDT instance.
+ * @param   hVfsIos         The VFS I/O stream handle to load the DTB from.
+ * @param   pszProperty     Property name.
+ * @param   pvProperty      Pointer to the raw property data.
+ * @param   cbProperty      Size of the property in bytes.
+ * @param   pErrInfo        Where to return additional error information.
+ */
+typedef DECLCALLBACKTYPE(int, FNRTFDTDTBPROPERTYDUMP,(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, const char *pszProperty,
+                                                      const void *pvProperty, size_t cbProperty, PRTERRINFO pErrInfo));
+/** Pointer to a DTB property dump callback. */
+typedef FNRTFDTDTBPROPERTYDUMP *PFNRTFDTDTBPROPERTYDUMP;
+
+
+/**
+ * DTB property dump descriptor.
+ */
+typedef struct RTFDTDTBPROPDUMPDESC
+{
+    /** Name of the property. */
+    const char              *pszProperty;
+    /** The dump callback. */
+    PFNRTFDTDTBPROPERTYDUMP pfnDump;
+} RTFDTDTBPROPDUMPDESC;
+/** Pointer to a property dump descriptor. */
+typedef RTFDTDTBPROPDUMPDESC *PRTFDTDTBPROPDUMPDESC;
+/** Pointer to a const property dump descriptor. */
+typedef const RTFDTDTBPROPDUMPDESC *PCRTFDTDTBPROPDUMPDESC;
+
+
+/**
+ * DTB struct dump state.
+ */
+typedef struct RTFDTDTBDUMP
+{
+    /** Number of bytes left in the structs block to dump. */
+    size_t                  cbLeft;
+    /** Pointer to the next item in the structs block. */
+    const uint8_t           *pbStructs;
+} RTFDTDTBDUMP;
+/** Pointer to a DTB struct dump state. */
+typedef RTFDTDTBDUMP *PRTFDTDTBDUMP;
+/** Pointer to a constant DTB struct dump state. */
+typedef const RTFDTDTBDUMP *PCRTFDTDTBDUMP;
 
 
 /*********************************************************************************************************************************
@@ -162,7 +214,7 @@ static int rtFdtDtbHdr_Validate(PDTBFDTHDR pDtbHdr, uint64_t cbDtb, PRTERRINFO p
                              pDtbHdr->offMemRsvMap, pDtbHdr->cbFdt);
     if (   pDtbHdr->offDtStruct >= pDtbHdr->cbFdt
         || (pDtbHdr->cbFdt - pDtbHdr->offDtStruct < pDtbHdr->cbDtStruct)
-        || pDtbHdr->offDtStruct <= pDtbHdr->offMemRsvMap + sizeof(DTBFDTRSVENTRY))
+        || pDtbHdr->offDtStruct < pDtbHdr->offMemRsvMap + sizeof(DTBFDTRSVENTRY))
         return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_HDR_STRUCT_BLOCK_OFF_INVALID, "Structs block offset/size is out of bounds (offDtStruct=%#RX32 cbDtStruct=%#RX32 vs. cbFdt=%#RX32 offMemRsvMap=%#RX32)",
                              pDtbHdr->offDtStruct, pDtbHdr->cbDtStruct, pDtbHdr->cbFdt, pDtbHdr->offMemRsvMap);
     if (    pDtbHdr->offDtStrings >= pDtbHdr->cbFdt
@@ -178,7 +230,7 @@ static int rtFdtDtbHdr_Validate(PDTBFDTHDR pDtbHdr, uint64_t cbDtb, PRTERRINFO p
 /**
  * Fres all resources allocated for the given FDT.
  *
- * @param   pThis           The FDT instance to destroy.
+ * @param   pThis           Pointer to the FDT instance to destroy.
  */
 static void rtFdtDestroy(PRTFDTINT pThis)
 {
@@ -202,7 +254,7 @@ static void rtFdtDestroy(PRTFDTINT pThis)
  * Loads the memory reservation block from the underlying VFS I/O stream.
  *
  * @returns IPRT status code.
- * @param   pThis           The FDT instance.
+ * @param   pThis           Pointer to the FDT instance.
  * @param   hVfsIos         The VFS I/O stream handle to load the DTB from.
  * @param   pErrInfo        Where to return additional error information.
  */
@@ -233,20 +285,21 @@ static int rtFdtDtbMemRsvLoad(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINFO
             && MemRsv.cbArea == 0)
             break;
 
+        cMemRsv++;
+
         /*
          * The terminator must be included in the maximum entry count, if not
          * the DTB is malformed and lacks a terminating entry before the start of the structs block.
          */
-        if (cMemRsv + 1 == cMemRsvMax)
+        if (cMemRsv == cMemRsvMax)
             return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_MEM_RSV_BLOCK_TERMINATOR_MISSING,
                                  "The memory reservation block lacks a terminating entry");
 
-        pThis->paMemRsv[cMemRsv].PhysAddrStart = RT_BE2H_U64(MemRsv.PhysAddrStart);
-        pThis->paMemRsv[cMemRsv].cbArea        = RT_BE2H_U64(MemRsv.cbArea);
-        cMemRsv++;
+        pThis->paMemRsv[cMemRsv - 1].PhysAddrStart = RT_BE2H_U64(MemRsv.PhysAddrStart);
+        pThis->paMemRsv[cMemRsv - 1].cbArea        = RT_BE2H_U64(MemRsv.cbArea);
     }
 
-    pThis->cMemRsv = cMemRsv + 1;
+    pThis->cMemRsv = cMemRsv;
     return VINF_SUCCESS;
 }
 
@@ -255,7 +308,7 @@ static int rtFdtDtbMemRsvLoad(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINFO
  * Loads the structs block of the given FDT.
  *
  * @returns IPRT status code.
- * @param   pThis           The FDT instance.
+ * @param   pThis           Pointer to the FDT instance.
  * @param   hVfsIos         The VFS I/O stream handle to load the DTB from.
  * @param   pErrInfo        Where to return additional error information.
  */
@@ -266,7 +319,8 @@ static int rtFdtDtbStructsLoad(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINF
         return RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "Failed to allocate %u bytes of memory for the structs block",
                              pThis->DtbHdr.cbDtStruct);
 
-    int rc = RTVfsIoStrmRead(hVfsIos, pThis->pu32Structs, pThis->DtbHdr.cbDtStruct, true /*fBlocking*/, NULL /*pcbRead*/);
+    int rc = RTVfsIoStrmReadAt(hVfsIos, pThis->DtbHdr.offDtStruct, pThis->pu32Structs, pThis->DtbHdr.cbDtStruct,
+                               true /*fBlocking*/, NULL /*pcbRead*/);
     if (RT_FAILURE(rc))
         return RTErrInfoSetF(pErrInfo, rc, "Failed to read structs block from I/O stream");
 
@@ -278,7 +332,7 @@ static int rtFdtDtbStructsLoad(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINF
  * Loads the strings block of the given FDT.
  *
  * @returns IPRT status code.
- * @param   pThis           The FDT instance.
+ * @param   pThis           Pointer to the FDT instance.
  * @param   hVfsIos         The VFS I/O stream handle to load the DTB from.
  * @param   pErrInfo        Where to return additional error information.
  */
@@ -289,13 +343,14 @@ static int rtFdtDtbStringsLoad(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINF
         return RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "Failed to allocate %u bytes of memory for the strings block",
                              pThis->DtbHdr.cbDtStrings);
 
-    int rc = RTVfsIoStrmRead(hVfsIos, pThis->paszStrings, pThis->DtbHdr.cbDtStrings, true /*fBlocking*/, NULL /*pcbRead*/);
+    int rc = RTVfsIoStrmReadAt(hVfsIos, pThis->DtbHdr.offDtStrings, pThis->paszStrings, pThis->DtbHdr.cbDtStrings,
+                               true /*fBlocking*/, NULL /*pcbRead*/);
     if (RT_FAILURE(rc))
         return RTErrInfoSetF(pErrInfo, rc, "Failed to read strings block from I/O stream");
 
     /* Verify that the strings block is terminated. */
     if (pThis->paszStrings[pThis->DtbHdr.cbDtStrings - 1] != '\0')
-        return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_STRINGS_BLOCK_NOT_TERMINATED, "The strings block is not zero temrinated");
+        return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_STRINGS_BLOCK_NOT_TERMINATED, "The strings block is not zero terminated");
 
     return VINF_SUCCESS;
 }
@@ -371,6 +426,535 @@ static int rtFdtLoadDtb(PRTFDT phFdt, RTVFSIOSTREAM hVfsIos, PRTERRINFO pErrInfo
 }
 
 
+/**
+ * Returns the next token in the structs block from the given start returning an error
+ * if beyond the structs block.
+ *
+ * @returns Next token or RTFDT_TOKEN_ERROR if the end of the structs block is reached.
+ * @param   pDump           Pointer to the dump state.
+ */
+DECLINLINE(uint32_t) rtFdtStructsGetToken(PRTFDTDTBDUMP pDump)
+{
+    if (pDump->cbLeft < sizeof(uint32_t))
+        return RTFDT_TOKEN_ERROR;
+
+    uint32_t u32Token = *(const uint32_t *)pDump->pbStructs;
+    pDump->pbStructs += sizeof(uint32_t);
+    pDump->cbLeft    -= sizeof(uint32_t);
+    return u32Token;
+}
+
+
+/**
+ * Gets the offset inside the structs block given from the current pointer.
+ *
+ * @returns Offset in bytes from the start of the structs block.
+ * @param   pThis           Pointer to the FDT instance.
+ * @param   pDump           Pointer to the dump state.
+ */
+DECLINLINE(uint32_t) rtFdtStructsGetOffset(PRTFDTINT pThis, PCRTFDTDTBDUMP pDump)
+{
+    return pThis->DtbHdr.cbDtStruct - pDump->cbLeft - sizeof(uint32_t);
+}
+
+
+/**
+ * Advances the pointer inside the dump state by the given amount of bytes taking care of the alignment.
+ *
+ * @returns IPRT status code.
+ * @param   pDump           Pointer to the dump state.
+ * @param   cbAdv           How many bytes to advance.
+ * @param   rcOob           The status code to set if advancing goes beyond the end of the structs block.
+ */
+DECLINLINE(int) rtFdtStructsDumpAdvance(PRTFDTDTBDUMP pDump, uint32_t cbAdv, int rcOob)
+{
+    /* Align the pointer to the next 32-bit boundary. */
+    const uint8_t *pbStructsNew = RT_ALIGN_PT(pDump->pbStructs + cbAdv, sizeof(uint32_t), uint8_t *);
+    if (((uintptr_t)pbStructsNew - (uintptr_t)pDump->pbStructs) > pDump->cbLeft)
+        return rcOob;
+
+    pDump->pbStructs = pbStructsNew;
+    pDump->cbLeft   -= (uintptr_t)pbStructsNew - (uintptr_t)pDump->pbStructs;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Adds the proper indentation before a new line.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsIos         The VFS I/O stream handle to dump the DTS to.
+ * @param   uIndentLvl      The level of indentation.
+ */
+static int rtFdtStructsDumpDtsIndent(RTVFSIOSTREAM hVfsIos, uint32_t uIndentLvl)
+{
+    while (uIndentLvl--)
+    {
+        ssize_t cch = RTVfsIoStrmPrintf(hVfsIos, "    ");
+        if (cch != 4)
+            return cch < 0 ? -cch : VERR_BUFFER_UNDERFLOW;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Queries a zero terminated ASCII string from the current location inside the structs block.
+ *
+ * @returns IPRT status code.
+ * @param   pDump           The dump state.
+ * @param   pszString       The string buffer to copy the string to.
+ * @param   cchStringMax    Maximum size of the string buffer in characters (including the terminator).
+ * @param   pErrInfo        Where to return additional error information.
+ */
+static int rtFdtStructsQueryString(PRTFDTDTBDUMP pDump, char *pszString, size_t cchStringMax, PRTERRINFO pErrInfo)
+{
+    const char *pszStrSrc = (const char *)pDump->pbStructs;
+    size_t cbLeft = pDump->cbLeft;
+
+    AssertReturn(cchStringMax, VERR_INTERNAL_ERROR);
+
+    for (;;)
+    {
+        *pszString++ = *pszStrSrc;
+        cchStringMax--;
+        cbLeft--;
+
+        if (*pszStrSrc == '\0')
+        {
+            pszStrSrc++;
+
+            int rc = rtFdtStructsDumpAdvance(pDump, (uintptr_t)pszStrSrc - (uintptr_t)pDump->pbStructs, VERR_FDT_DTB_STRUCTS_BLOCK_MALFORMED_PADDING);
+            if (RT_FAILURE(rc))
+                return RTErrInfoSetF(pErrInfo, rc, "String end + padding exceeds structs block");
+
+            return VINF_SUCCESS;
+        }
+
+        if (!cchStringMax)
+            return RTErrInfoSetF(pErrInfo, VERR_BUFFER_OVERFLOW, "Structs string too long to fit into target buffer");
+
+        *pszStrSrc++;
+        if (!cbLeft)
+            return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_STRUCTS_BLOCK_STRING_NOT_TERMINATED, "Structs block contains an unterminated string");
+    }
+
+    /* Not reached */
+    return VERR_INTERNAL_ERROR;
+}
+
+
+/**
+ * Dumps a string list property.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           Pointer to the FDT instance.
+ * @param   hVfsIos         The VFS I/O stream handle to dump the DTS to.
+ * @param   pszProperty     Name of the property being dumped.
+ * @param   pvProperty      Raw property payload.
+ * @param   cbProperty      Size of the property payload in bytes.
+ * @param   pErrInfo        Where to return additional error information.
+ */
+static DECLCALLBACK(int) rtFdtDtbPropDumpStringList(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, const char *pszProperty,
+                                                    const void *pvProperty, size_t cbProperty, PRTERRINFO pErrInfo)
+{
+    RT_NOREF(pThis);
+
+    const char *pszProp = (const char *)pvProperty;
+    if (pszProp[cbProperty - 1] != '\0')
+        return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_PROP_STRING_NOT_TERMINATED,
+                             "The string payload of property '%s' is not terminated", pszProperty);
+
+    ssize_t cch = RTVfsIoStrmPrintf(hVfsIos, "\"%s\"", pszProp);
+    if (cch <= 0)
+        return RTErrInfoSetF(pErrInfo, cch == 0 ? VERR_NO_MEMORY : -cch, "Failed to write property data");
+
+    cch = strlen(pszProp) + 1;
+    cbProperty -= cch;
+    while (cbProperty)
+    {
+        pszProp += cch;
+
+        cch = RTVfsIoStrmPrintf(hVfsIos, ", \"%s\"", pszProp);
+        if (cch <= 0)
+            return RTErrInfoSetF(pErrInfo, cch == 0 ? VERR_NO_MEMORY : -cch, "Failed to write property data");
+
+        cch = strlen(pszProp) + 1;
+        cbProperty -= cch;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Dumps a string property.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           Pointer to the FDT instance.
+ * @param   hVfsIos         The VFS I/O stream handle to dump the DTS to.
+ * @param   pszProperty     Name of the property being dumped.
+ * @param   pvProperty      Raw property payload.
+ * @param   cbProperty      Size of the property payload in bytes.
+ * @param   pErrInfo        Where to return additional error information.
+ */
+static DECLCALLBACK(int) rtFdtDtbPropDumpString(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, const char *pszProperty,
+                                                const void *pvProperty, size_t cbProperty, PRTERRINFO pErrInfo)
+{
+    RT_NOREF(pThis);
+
+    const char *pszProp = (const char *)pvProperty;
+    if (pszProp[cbProperty - 1] != '\0')
+        return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_PROP_STRING_NOT_TERMINATED,
+                             "The string payload of property '%s' is not terminated", pszProperty);
+
+    ssize_t cch = RTVfsIoStrmPrintf(hVfsIos, "\"%s\"", pszProp);
+    if (cch <= 0)
+        return RTErrInfoSetF(pErrInfo, cch == 0 ? VERR_NO_MEMORY : -cch, "Failed to write property data");
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Dumps a <u32> cell property.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           Pointer to the FDT instance.
+ * @param   hVfsIos         The VFS I/O stream handle to dump the DTS to.
+ * @param   pszProperty     Name of the property being dumped.
+ * @param   pvProperty      Raw property payload.
+ * @param   cbProperty      Size of the property payload in bytes.
+ * @param   pErrInfo        Where to return additional error information.
+ */
+static DECLCALLBACK(int) rtFdtDtbPropDumpCellsU32(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, const char *pszProperty,
+                                                  const void *pvProperty, size_t cbProperty, PRTERRINFO pErrInfo)
+{
+    RT_NOREF(pThis);
+
+    if (cbProperty % sizeof(uint32_t))
+        return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_PROP_SIZE_MALFORMED,
+                             "Property '%s' payload is not a multiple of 32-bit", pszProperty);
+
+    const uint32_t *pu32Prop = (const uint32_t *)pvProperty;
+
+    ssize_t cch = RTVfsIoStrmPrintf(hVfsIos, "<");
+    if (cch == 1)
+    {
+        cch = RTVfsIoStrmPrintf(hVfsIos, "%#RX32", RT_BE2H_U32(*pu32Prop));
+        pu32Prop++;
+        if (cch > 0)
+        {
+            for (uint32_t i = 1; i < cbProperty / sizeof(uint32_t); i++)
+            {
+                cch = RTVfsIoStrmPrintf(hVfsIos, " %#RX32", RT_BE2H_U32(*pu32Prop));
+                pu32Prop++;
+                if (cch <= 0)
+                    break;
+            }
+        }
+
+        if (cch > 0)
+            cch = RTVfsIoStrmPrintf(hVfsIos, ">");
+    }
+
+    if (cch <= 0)
+        return RTErrInfoSetF(pErrInfo, cch == 0 ? VERR_NO_MEMORY : -cch, "Failed to write property data");
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * The known properties to dump.
+ */
+static const RTFDTDTBPROPDUMPDESC g_aPropDump[] =
+{
+    { "compatible",             rtFdtDtbPropDumpStringList  }, /** @todo stringlist */
+    { "model",                  rtFdtDtbPropDumpString      },
+    { "status",                 rtFdtDtbPropDumpString      },
+    { "phandle",                rtFdtDtbPropDumpCellsU32    },
+    { "linux,phandle",          rtFdtDtbPropDumpCellsU32    },
+    { "#address-cells",         rtFdtDtbPropDumpCellsU32    },
+    { "#size-cells",            rtFdtDtbPropDumpCellsU32    },
+    { "reg",                    rtFdtDtbPropDumpCellsU32    },
+    { "virtual-reg",            rtFdtDtbPropDumpCellsU32    },
+    { "ranges",                 rtFdtDtbPropDumpCellsU32    },
+    { "dma-ranges",             rtFdtDtbPropDumpCellsU32    },
+    { "name",                   rtFdtDtbPropDumpString      },
+    { "device_type",            rtFdtDtbPropDumpString      },
+    { "interrupts",             rtFdtDtbPropDumpCellsU32    },
+    { "interrupt-parent",       rtFdtDtbPropDumpCellsU32    },
+    { "interrupts-extended",    rtFdtDtbPropDumpCellsU32    },
+    { "#interrupt-cells",       rtFdtDtbPropDumpCellsU32    },
+    { "interrupt-map",          rtFdtDtbPropDumpCellsU32    },
+    { "interrupt-map-mask",     rtFdtDtbPropDumpCellsU32    },
+    { "serial-number",          rtFdtDtbPropDumpString      },
+    { "chassis-type",           rtFdtDtbPropDumpString      },
+    { "clock-frequency",        rtFdtDtbPropDumpCellsU32    },
+    { "reg-shift",              rtFdtDtbPropDumpCellsU32    },
+    { "label",                  rtFdtDtbPropDumpString      },
+    { "clock-names",            rtFdtDtbPropDumpStringList  },
+    { "clock-output-names",     rtFdtDtbPropDumpStringList  },
+    { "stdout-path",            rtFdtDtbPropDumpString      },
+    { "method",                 rtFdtDtbPropDumpString      },
+};
+
+
+/**
+ * Dumps the property as a DTS source starting at the given location inside the structs block.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           Pointer to the FDT instance.
+ * @param   hVfsIos         The VFS I/O stream handle to dump the DTS to.
+ * @param   pDump           The dump state.
+ * @param   uIndentLvl      The level of indentation.
+ * @param   pErrInfo        Where to return additional error information.
+ */
+static int rtFdtStructsDumpPropertyAsDts(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTFDTDTBDUMP pDump, uint32_t uIndentLvl, PRTERRINFO pErrInfo)
+{
+    DTBFDTPROP Prop;
+
+    if (pDump->cbLeft < sizeof(Prop))
+        return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_STRUCTS_BLOCK_PREMATURE_END,
+                             "Not enough space left in the structs block to read a property entry");
+
+    memcpy(&Prop, pDump->pbStructs, sizeof(Prop));
+    pDump->pbStructs += sizeof(Prop);
+    pDump->cbLeft    -= sizeof(Prop);
+    Prop.offPropertyName = RT_BE2H_U32(Prop.offPropertyName);
+    Prop.cbProperty      = RT_BE2H_U32(Prop.cbProperty);
+
+    if (Prop.offPropertyName >= pThis->DtbHdr.cbDtStrings)
+        return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_PROP_NAME_OFF_TOO_LARGE, "Property name offset points past the string block");
+
+    int rc = rtFdtStructsDumpDtsIndent(hVfsIos, uIndentLvl);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    ssize_t cch = RTVfsIoStrmPrintf(hVfsIos, "%s", &pThis->paszStrings[Prop.offPropertyName]);
+    if (cch <= 0)
+        return RTErrInfoSetF(pErrInfo, cch == 0 ? VERR_NO_MEMORY : -cch, "Failed to write property name: '%s'",
+                             &pThis->paszStrings[Prop.offPropertyName]);
+
+    const uint8_t *pbProp = pDump->pbStructs;
+    if (Prop.cbProperty)
+    {
+        if (Prop.cbProperty > pDump->cbLeft)
+            return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_STRUCTS_BLOCK_PREMATURE_END, "Property '%s' data exceeds struct blocks",
+                                 &pThis->paszStrings[Prop.offPropertyName]);
+
+        cch = RTVfsIoStrmPrintf(hVfsIos, " = ");
+        if (cch <= 0)
+            return RTErrInfoSetF(pErrInfo, cch == 0 ? VERR_NO_MEMORY : -cch, "Failed to output property");
+
+        rc = VERR_NOT_FOUND;
+        for (uint32_t i = 0; i < RT_ELEMENTS(g_aPropDump); i++)
+        {
+            if (!strcmp(g_aPropDump[i].pszProperty, &pThis->paszStrings[Prop.offPropertyName]))
+            {
+                rc = g_aPropDump[i].pfnDump(pThis, hVfsIos, &pThis->paszStrings[Prop.offPropertyName],
+                                            pbProp, Prop.cbProperty, pErrInfo);
+                break;
+            }
+        }
+
+        /* If not found use the standard U32 cells dumper. */
+        if (rc == VERR_NOT_FOUND)
+            rc = rtFdtDtbPropDumpCellsU32(pThis, hVfsIos, &pThis->paszStrings[Prop.offPropertyName],
+                                          pbProp, Prop.cbProperty, pErrInfo);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        cch = RTVfsIoStrmPrintf(hVfsIos, ";\n");
+        if (cch <= 0)
+            return RTErrInfoSetF(pErrInfo, cch == 0 ? VERR_NO_MEMORY : -cch, "Failed to output property");
+
+        rc = rtFdtStructsDumpAdvance(pDump, Prop.cbProperty, VERR_FDT_DTB_STRUCTS_BLOCK_PREMATURE_END);
+    }
+    else
+    {
+        cch = RTVfsIoStrmPrintf(hVfsIos, ";\n");
+        if (cch <= 0)
+            return RTErrInfoSetF(pErrInfo, cch == 0 ? VERR_NO_MEMORY : -cch, "Failed to write newline");
+    }
+
+    return rc;
+}
+
+
+/**
+ * Dumps the node name as a DTS source starting at the given location inside the structs block.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           Pointer to the FDT instance.
+ * @param   hVfsIos         The VFS I/O stream handle to dump the DTS to.
+ * @param   pDump           The dump state.
+ * @param   uIndentLvl      The level of indentation.
+ * @param   pErrInfo        Where to return additional error information.
+ */
+static int rtFdtStructsDumpNodeAsDts(RTVFSIOSTREAM hVfsIos, PRTFDTDTBDUMP pDump, uint32_t uIndentLvl, PRTERRINFO pErrInfo)
+{
+    char szNdName[512]; /* Should be plenty. */
+
+    int rc = rtFdtStructsQueryString(pDump, &szNdName[0], sizeof(szNdName), pErrInfo);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    ssize_t cch = RTVfsIoStrmPrintf(hVfsIos, "\n", szNdName);
+    if (cch <= 0)
+        return RTErrInfoSetF(pErrInfo, cch == 0 ? VERR_NO_MEMORY : -cch, "Failed to write DTS node name");
+
+    rc = rtFdtStructsDumpDtsIndent(hVfsIos, uIndentLvl);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    cch = RTVfsIoStrmPrintf(hVfsIos, "%s {\n", szNdName);
+    if (cch <= 0)
+        return RTErrInfoSetF(pErrInfo, cch == 0 ? VERR_NO_MEMORY : -cch, "Failed to write DTS node name");
+
+    return VINF_SUCCESS;
+}
+
+
+static int rtFdtStructsDumpEndNodeAsDts(RTVFSIOSTREAM hVfsIos, uint32_t uIndentLvl, PRTERRINFO pErrInfo)
+{
+    int rc = rtFdtStructsDumpDtsIndent(hVfsIos, uIndentLvl);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    ssize_t cch = RTVfsIoStrmPrintf(hVfsIos, "};\n");
+    if (cch <= 0)
+        return RTErrInfoSetF(pErrInfo, cch == 0 ? VERR_NO_MEMORY : -cch, "Failed to write DTS node closing");
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Dumps the given FDT as DTS v1 sources from the root node.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           Pointer to the FDT instance.
+ * @param   hVfsIos         The VFS I/O stream handle to dump the DTS to.
+ * @param   pErrInfo        Where to return additional error information.
+ */
+static int rtFdtDumpRootAsDts(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINFO pErrInfo)
+{
+    RTFDTDTBDUMP Dump;
+
+    Dump.cbLeft    = pThis->DtbHdr.cbDtStruct;
+    Dump.pbStructs = (const uint8_t *)pThis->pu32Structs;
+
+    /* Skip any NOP tokens. */
+    uint32_t u32Token = rtFdtStructsGetToken(&Dump);
+    while (u32Token == DTB_FDT_TOKEN_NOP_BE)
+        u32Token = rtFdtStructsGetToken(&Dump);
+
+    /* The root node starts with a BEGIN_NODE token. */
+    if (u32Token != DTB_FDT_TOKEN_BEGIN_NODE_BE)
+        return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_STRUCTS_BLOCK_TOKEN_INVALID, "The structs block doesn't start with the BEGIN_NODE token for the root node: %#RX32",
+                             RT_BE2H_U32(u32Token));
+
+    /* Load the name for the root node (should be an empty string). */
+    char chNdRootName;
+    int rc = rtFdtStructsQueryString(&Dump, &chNdRootName, sizeof(chNdRootName), pErrInfo);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    if (chNdRootName != '\0')
+        return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_STRUCTS_BLOCK_NODE_NAME_INVALID, "The root node name isn't zero terminated: %c",
+                             chNdRootName);
+
+    ssize_t cch = RTVfsIoStrmPrintf(hVfsIos, "/ {\n");
+    if (cch <= 0)
+        return RTErrInfoSetF(pErrInfo, cch == 0 ? VERR_NO_MEMORY : -cch, "Failed to write DTS root node");
+
+    uint32_t uNdLvl = 1;
+    u32Token = rtFdtStructsGetToken(&Dump);
+    while (u32Token != DTB_FDT_TOKEN_END_BE)
+    {
+        Log4(("rtFdtDumpAsDtsRoot: Token %#RX32 at offset %#RX32\n", RT_BE2H_U32(u32Token), rtFdtStructsGetOffset(pThis, &Dump)));
+
+        switch (u32Token)
+        {
+            case DTB_FDT_TOKEN_BEGIN_NODE_BE:
+                Log3(("rtFdtDumpAsDtsRoot: BEGIN_NODE token at offset %#RX32\n", rtFdtStructsGetOffset(pThis, &Dump)));
+                rc = rtFdtStructsDumpNodeAsDts(hVfsIos, &Dump, uNdLvl, pErrInfo);
+                if (RT_FAILURE(rc))
+                    return rc;
+
+                uNdLvl++;
+                break;
+            case DTB_FDT_TOKEN_PROPERTY_BE:
+                Log3(("rtFdtDumpAsDtsRoot: PROP token at offset %#RX32\n", rtFdtStructsGetOffset(pThis, &Dump)));
+                rc = rtFdtStructsDumpPropertyAsDts(pThis, hVfsIos, &Dump, uNdLvl, pErrInfo);
+                if (RT_FAILURE(rc))
+                    return rc;
+                break;
+            case DTB_FDT_TOKEN_NOP_BE:
+                Log3(("rtFdtDumpAsDtsRoot: NOP token at offset %#RX32\n", rtFdtStructsGetOffset(pThis, &Dump)));
+                break;
+            case DTB_FDT_TOKEN_END_NODE_BE:
+                Log3(("rtFdtDumpAsDtsRoot: END_NODE token at offset %#RX32\n", rtFdtStructsGetOffset(pThis, &Dump)));
+                if (!uNdLvl)
+                    return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_STRUCTS_BLOCK_PREMATURE_END,
+                                         "END_NODE token encountered at the root node");
+
+                uNdLvl--;
+                rc = rtFdtStructsDumpEndNodeAsDts(hVfsIos, uNdLvl, pErrInfo);
+                if (RT_FAILURE(rc))
+                    return rc;
+                break;
+            case RTFDT_TOKEN_ERROR:
+                return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_STRUCTS_BLOCK_TOKEN_INVALID, "The structs block is malformed");
+            default:
+                return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_STRUCTS_BLOCK_TOKEN_INVALID, "The structs block contains an invalid/unknown token: %#RX32",
+                                     RT_BE2H_U32(u32Token));
+        }
+
+        u32Token = rtFdtStructsGetToken(&Dump);
+        if (u32Token == DTB_FDT_TOKEN_END_BE)
+            Log3(("rtFdtDumpAsDtsRoot: END token at offset %#RX32\n", rtFdtStructsGetOffset(pThis, &Dump)));
+    }
+
+    /* Need to end on an END token. */
+    if (u32Token != DTB_FDT_TOKEN_END_BE)
+        return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_STRUCTS_BLOCK_TOKEN_INVALID, "The structs block doesn't end with an END token (got %#RX32, expected %#RX32)",
+                             RT_BE2H_U32(u32Token), DTB_FDT_TOKEN_END);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Dumps the given FDT instance as DTS source.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           Pointer to the FDT instance.
+ * @param   hVfsIos         The VFS I/O stream handle to dump the DTS to.
+ * @param   pErrInfo        Where to return additional error information.
+ */
+static int rtFdtDumpAsDts(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINFO pErrInfo)
+{
+    ssize_t cch = RTVfsIoStrmPrintf(hVfsIos, "/dts-v1/;\n");
+    if (cch <= 0)
+        return RTErrInfoSetF(pErrInfo, cch == 0 ? VERR_NO_MEMORY : -cch, "Failed to write DTS header");
+
+    /* Write memory reservations. */
+    for (uint32_t i = 0; i < pThis->cMemRsv; i++)
+    {
+        cch = RTVfsIoStrmPrintf(hVfsIos, "/memreserve/ %#RX64 %#RX64;\n", pThis->paMemRsv[i].PhysAddrStart, pThis->paMemRsv[i].cbArea);
+        if (cch <= 0)
+            return RTErrInfoSetF(pErrInfo, cch == 0 ? VERR_NO_MEMORY : -cch, "Failed to write memory reervation block %u", i);
+    }
+
+    /* Dump the tree. */
+    return rtFdtDumpRootAsDts(pThis, hVfsIos, pErrInfo);
+}
+
+
 RTDECL(int) RTFdtCreateEmpty(PRTFDT phFdt)
 {
     RT_NOREF(phFdt);
@@ -406,15 +990,21 @@ RTDECL(void) RTFdtDestroy(RTFDT hFdt)
 }
 
 
-RTDECL(int) RTFdtDumpToVfsIoStrm(RTFDT hFdt, RTFDTTYPE enmOutType, uint32_t fFlags, RTVFSIOSTREAM hVfsIos)
+RTDECL(int) RTFdtDumpToVfsIoStrm(RTFDT hFdt, RTFDTTYPE enmOutType, uint32_t fFlags, RTVFSIOSTREAM hVfsIos, PRTERRINFO pErrInfo)
 {
-    RT_NOREF(hFdt, enmOutType, fFlags, hVfsIos);
+    PRTFDTINT pThis = hFdt;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+
+    RT_NOREF(fFlags);
+    if (enmOutType == RTFDTTYPE_DTS)
+        return rtFdtDumpAsDts(pThis, hVfsIos, pErrInfo);
+
     return VERR_NOT_IMPLEMENTED;
 }
 
 
-RTDECL(int) RTFdtDumpToFile(RTFDT hFdt, RTFDTTYPE enmOutType, uint32_t fFlags, const char *pszFilename)
+RTDECL(int) RTFdtDumpToFile(RTFDT hFdt, RTFDTTYPE enmOutType, uint32_t fFlags, const char *pszFilename, PRTERRINFO pErrInfo)
 {
-    RT_NOREF(hFdt, enmOutType, fFlags, pszFilename);
+    RT_NOREF(hFdt, enmOutType, fFlags, pszFilename, pErrInfo);
     return VERR_NOT_IMPLEMENTED;
 }
