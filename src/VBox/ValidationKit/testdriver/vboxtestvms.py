@@ -2079,6 +2079,10 @@ class TestVmManager(object):
         #TestVm('tst-win10-64-efi-ich9',     kfGrpStdSmoke,         sHd = '4.2/efi/win10-efi-amd64.vdi',
         #       sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi', sChipsetType = 'ich9'),
 
+        # W11
+        TestVm('tst-win11-64', kfGrpStdSmoke, sHd = '7.0/win11/win11-64-edit-by-ksenia.vdi',
+               sKind = 'Windows11_64', acCpusSup = range(1, 33), fIoApic = True),
+
         # Nested hardware-virtualization
         TestVm('tst-nsthwvirt-ubuntu-64',   kfGrpStdSmoke,       sHd = '5.3/nat/nsthwvirt-ubuntu64/t-nsthwvirt-ubuntu64.vdi',
                sKind = 'Ubuntu_64', acCpusSup = range(1, 2), asVirtModesSup = ['hwvirt-np',], fIoApic = True, fNstHwVirt = True,
