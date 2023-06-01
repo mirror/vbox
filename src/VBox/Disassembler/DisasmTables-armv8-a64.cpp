@@ -283,6 +283,114 @@ DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS(g_ArmV8A64SysResult, DISARMV8INSNCLASS
 DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END;
 
 
+/* SYS */
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(g_ArmV8A64Sys)
+    DIS_ARMV8_OP(0xfff80000, 0xd5080000, "sys   %I, %Cn, %Cm, %I, %X",   OP_ARMV8_A64_SYS,       DISOPTYPE_HARMLESS),
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS(g_ArmV8A64Sys, DISARMV8INSNCLASS_F_FORCED_64BIT,
+                                          kDisArmV8OpcDecodeNop, 0, 0)
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseImm,           16,  3),
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseCRnCRm,         8,  8),
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseImm,            5,  3),
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseReg,            0,  5)
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END;
+
+
+/* SYSL */
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(g_ArmV8A64SysL)
+    DIS_ARMV8_OP(0xfff80000, 0xd5280000, "sysl  %X, %I, %Cn, %Cm, %I",   OP_ARMV8_A64_SYSL,      DISOPTYPE_HARMLESS),
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS(g_ArmV8A64SysL, DISARMV8INSNCLASS_F_FORCED_64BIT,
+                                          kDisArmV8OpcDecodeNop, 0, 0)
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseReg,            0,  5),
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseImm,           16,  3),
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseCRnCRm,         8,  8),
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseImm,            5,  3)
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END;
+
+
+/* MSR */
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(g_ArmV8A64Msr)
+    DIS_ARMV8_OP(0xfff00000, 0xd5080000, "msr   %S, %X",   OP_ARMV8_A64_MSR,       DISOPTYPE_HARMLESS | DISOPTYPE_PRIVILEGED),
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS(g_ArmV8A64Msr, DISARMV8INSNCLASS_F_FORCED_64BIT,
+                                          kDisArmV8OpcDecodeNop, 0, 0)
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseSysReg,         5, 15),
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseReg,            0,  5),
+    DIS_ARMV8_INSN_PARAM_NONE,
+    DIS_ARMV8_INSN_PARAM_NONE
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END;
+
+
+/* MRS */
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(g_ArmV8A64Mrs)
+    DIS_ARMV8_OP(0xfff00000, 0xd5280000, "mrs   %X, %S",   OP_ARMV8_A64_MRS,       DISOPTYPE_HARMLESS | DISOPTYPE_PRIVILEGED),
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS(g_ArmV8A64Mrs, DISARMV8INSNCLASS_F_FORCED_64BIT,
+                                          kDisArmV8OpcDecodeNop, 0, 0)
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseReg,            0,  5),
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseSysReg,         5, 15),
+    DIS_ARMV8_INSN_PARAM_NONE,
+    DIS_ARMV8_INSN_PARAM_NONE
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END;
+
+
+/* Unconditional branch (register) instructions, we divide these instructions further based on the opc field. */
+DIS_ARMV8_DECODE_MAP_DEFINE_BEGIN(g_ArmV8A64UncondBrReg)
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY
+DIS_ARMV8_DECODE_MAP_DEFINE_END(g_ArmV8A64UncondBrReg, RT_BIT_32(21) | RT_BIT_32(22) | RT_BIT_32(23) | RT_BIT_32(24), 21);
+
+
+/* B/BL */
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(g_ArmV8A64UncondBrImm)
+    DIS_ARMV8_OP(0xfc000000, 0x14000000, "b   %J",         OP_ARMV8_A64_B,         DISOPTYPE_HARMLESS | DISOPTYPE_CONTROLFLOW),
+    DIS_ARMV8_OP(0xfc000000, 0x94000000, "bl  %J",         OP_ARMV8_A64_BL,        DISOPTYPE_HARMLESS | DISOPTYPE_CONTROLFLOW),
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS(g_ArmV8A64UncondBrImm, 0 /*fClass*/,
+                                          kDisArmV8OpcDecodeNop, RT_BIT_32(31), 31)
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseImmRel,         0,  26),
+    DIS_ARMV8_INSN_PARAM_NONE,
+    DIS_ARMV8_INSN_PARAM_NONE,
+    DIS_ARMV8_INSN_PARAM_NONE
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END;
+
+
+/* CBZ/CBNZ */
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(g_ArmV8A64CmpBrImm)
+    DIS_ARMV8_OP(0x7f000000, 0x34000000, "cbz   %X, %J",   OP_ARMV8_A64_CBZ,       DISOPTYPE_HARMLESS | DISOPTYPE_CONTROLFLOW),
+    DIS_ARMV8_OP(0x7f000000, 0x35000000, "cbnz  %X, %J",   OP_ARMV8_A64_CBNZ,      DISOPTYPE_HARMLESS | DISOPTYPE_CONTROLFLOW),
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS(g_ArmV8A64CmpBrImm, DISARMV8INSNCLASS_F_SF,
+                                          kDisArmV8OpcDecodeNop, RT_BIT_32(24), 24)
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseReg,            0,  5),
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseImmRel,         5, 19),
+    DIS_ARMV8_INSN_PARAM_NONE,
+    DIS_ARMV8_INSN_PARAM_NONE
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END;
+
+
+/* TBZ/TBNZ */
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_BEGIN(g_ArmV8A64TestBrImm)
+    DIS_ARMV8_OP(0x7f000000, 0x36000000, "tbz   %X, %I, %J",   OP_ARMV8_A64_TBZ,       DISOPTYPE_HARMLESS | DISOPTYPE_CONTROLFLOW),
+    DIS_ARMV8_OP(0x7f000000, 0x37000000, "tbnz  %X, %I, %J",   OP_ARMV8_A64_TBNZ,      DISOPTYPE_HARMLESS | DISOPTYPE_CONTROLFLOW),
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_PARAMS(g_ArmV8A64TestBrImm, DISARMV8INSNCLASS_F_SF,
+                                          kDisArmV8OpcDecodeNop, RT_BIT_32(24), 24)
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseReg,            0,  5),
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseImm,           19,  5),
+    DIS_ARMV8_INSN_PARAM_CREATE(kDisParmParseImmRel,         5, 14),
+    DIS_ARMV8_INSN_PARAM_NONE
+DIS_ARMV8_DECODE_INSN_CLASS_DEFINE_END;
+
+
 DIS_ARMV8_DECODE_TBL_DEFINE_BEGIN(g_ArmV8A64BrExcpSys)
     DIS_ARMV8_DECODE_TBL_ENTRY_INIT(0xfe000000, RT_BIT_32(26) | RT_BIT_32(28) | RT_BIT_32(30),                  g_ArmV8A64CondBr),          /* op0: 010, op1: 0xxxxxxxxxxxxx, op2: - (including o1 from the conditional branch (immediate) class to save us one layer). */
     DIS_ARMV8_DECODE_TBL_ENTRY_INIT(0xff000000, RT_BIT_32(26) | RT_BIT_32(28) | RT_BIT_32(30) | RT_BIT_32(31),  g_ArmV8A64Excp),            /* op0: 110, op1: 00xxxxxxxxxxxx, op2: -. */
@@ -290,8 +398,27 @@ DIS_ARMV8_DECODE_TBL_DEFINE_BEGIN(g_ArmV8A64BrExcpSys)
     DIS_ARMV8_DECODE_TBL_ENTRY_INIT(0xfffff01f, 0xd503201f,                                                     g_ArmV8A64Hints),           /* op0: 110, op1: 01000000110010, op2: 11111. */
     DIS_ARMV8_DECODE_TBL_ENTRY_INIT(0xfffff01f, 0xd503301f,                                                     g_ArmV8A64DecodeBarriers),  /* op0: 110, op1: 01000000110011, op2: - (we include Rt:  11111 from the next stage here). */
     DIS_ARMV8_DECODE_TBL_ENTRY_INIT(0xfff8f01f, 0xd500401f,                                                     g_ArmV8A64PState),          /* op0: 110, op1: 0100000xxx0100, op2: - (we include Rt:  11111 from the next stage here). */
-    DIS_ARMV8_DECODE_TBL_ENTRY_INIT(0xfffff0e0, 0xd5233060,                                                     g_ArmV8A64SysResult)        /* op0: 110, op1: 0100100xxxxxxx, op2: - (we include op1, CRn and op2 from the next stage here). */
+    DIS_ARMV8_DECODE_TBL_ENTRY_INIT(0xfffff0e0, 0xd5233060,                                                     g_ArmV8A64SysResult),       /* op0: 110, op1: 0100100xxxxxxx, op2: - (we include op1, CRn and op2 from the next stage here). */
+    DIS_ARMV8_DECODE_TBL_ENTRY_INIT(0xfff80000, 0xd5080000,                                                     g_ArmV8A64Sys),             /* op0: 110, op1: 0100x01xxxxxxx, op2: - (we include the L field of the next stage here to differentiate between SYS/SYSL as they have a different string representation). */
+    DIS_ARMV8_DECODE_TBL_ENTRY_INIT(0xfff80000, 0xd5280000,                                                     g_ArmV8A64SysL),            /* op0: 110, op1: 0100x01xxxxxxx, op2: - (we include the L field of the next stage here to differentiate between SYS/SYSL as they have a different string representation). */
+    DIS_ARMV8_DECODE_TBL_ENTRY_INIT(0xfff00000, 0xd5100000,                                                     g_ArmV8A64Msr),             /* op0: 110, op1: 0100x1xxxxxxxx, op2: - (we include the L field of the next stage here to differentiate between MSR/MRS as they have a different string representation). */
+    DIS_ARMV8_DECODE_TBL_ENTRY_INIT(0xfff00000, 0xd5300000,                                                     g_ArmV8A64Mrs),             /* op0: 110, op1: 0100x1xxxxxxxx, op2: - (we include the L field of the next stage here to differentiate between MSR/MRS as they have a different string representation). */
+    DIS_ARMV8_DECODE_TBL_ENTRY_INIT(0xfe1f0000, 0xd61f0000,                                                     g_ArmV8A64UncondBrReg),     /* op0: 110, op1: 1xxxxxxxxxxxxx, op2: - (we include the op2 field from the next stage here as it should be always 11111). */
+    DIS_ARMV8_DECODE_TBL_ENTRY_INIT(0x7c000000, 0x14000000,                                                     g_ArmV8A64UncondBrImm),     /* op0: x00, op1: xxxxxxxxxxxxxx, op2: -. */
+    DIS_ARMV8_DECODE_TBL_ENTRY_INIT(0x7e000000, 0x34000000,                                                     g_ArmV8A64CmpBrImm),        /* op0: x01, op1: 0xxxxxxxxxxxxx, op2: -. */
+    DIS_ARMV8_DECODE_TBL_ENTRY_INIT(0x7e000000, 0x36000000,                                                     g_ArmV8A64TestBrImm),       /* op0: x01, op1: 1xxxxxxxxxxxxx, op2: -. */
 DIS_ARMV8_DECODE_TBL_DEFINE_END(g_ArmV8A64BrExcpSys);
+
+
+DIS_ARMV8_DECODE_MAP_DEFINE_BEGIN(g_ArmV8A64LogicalAddSubReg)
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,                             /* Logical (shifted register) */
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,                             /* Add/subtract (shifted/extended register) */
+DIS_ARMV8_DECODE_MAP_DEFINE_END(g_ArmV8A64LogicalAddSubReg, RT_BIT_32(24), 24);
+
+
+DIS_ARMV8_DECODE_MAP_DEFINE_BEGIN(g_ArmV8A64DataProcReg)
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,
+DIS_ARMV8_DECODE_MAP_DEFINE_END(g_ArmV8A64DataProcReg, RT_BIT_32(24), 24);
 
 
 /*
@@ -320,7 +447,7 @@ DIS_ARMV8_DECODE_TBL_DEFINE_END(g_ArmV8A64BrExcpSys);
  *      2    0  0  1  0 SVE encodings
  *      3    0  0  1  1 UNALLOC
  *      4    0  1  0  0 Loads and stores
- *      5    0  1  0  1 Data processing - register
+ *      5    0  1  0  1 Data processing - register (using op1 (bit 28) from the next stage to differentiate further already)
  *      6    0  1  1  0 Loads and stores
  *      7    0  1  1  1 Data processing - SIMD and floating point
  *      8    1  0  0  0 Data processing immediate
@@ -328,7 +455,7 @@ DIS_ARMV8_DECODE_TBL_DEFINE_END(g_ArmV8A64BrExcpSys);
  *     10    1  0  1  0 Branch, exception generation and system instructions
  *     11    1  0  1  1 Branch, exception generation and system instructions
  *     12    1  1  0  0 Loads and stores
- *     13    1  1  0  1 Data processing - register
+ *     13    1  1  0  1 Data processing - register (using op1 (bit 28) from the next stage to differentiate further already)
  *     14    1  1  1  0 Loads and stores
  *     15    1  1  1  1 Data processing - SIMD and floating point
  */
@@ -338,15 +465,15 @@ DIS_ARMV8_DECODE_MAP_DEFINE_BEGIN(g_ArmV8A64DecodeL0)
     DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,                             /** @todo SVE */
     DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,                             /* Unallocated */
     DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,                             /* Load/Stores */
-    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,                             /* Data processing (register). */
-    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,                             /* Lod/Stores */
+    DIS_ARMV8_DECODE_MAP_ENTRY(g_ArmV8A64LogicalAddSubReg),         /* Data processing (register) (see op1 in C4.1.68). */
+    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,                             /* Load/Stores */
     DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,                             /* Data processing (SIMD & FP) */
     DIS_ARMV8_DECODE_MAP_ENTRY(g_aArmV8A64InsnDataProcessingImm),   /* Data processing (immediate). */
     DIS_ARMV8_DECODE_MAP_ENTRY(g_aArmV8A64InsnDataProcessingImm),   /* Data processing (immediate). */
     DIS_ARMV8_DECODE_MAP_ENTRY(g_ArmV8A64BrExcpSys),                /* Branches / Exception generation and system instructions. */
     DIS_ARMV8_DECODE_MAP_ENTRY(g_ArmV8A64BrExcpSys),                /* Branches / Exception generation and system instructions. */
     DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,                             /* Load/Stores. */
-    DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,                             /* Data processing (register). */
+    DIS_ARMV8_DECODE_MAP_ENTRY(g_ArmV8A64DataProcReg),              /* Data processing (register) (see op1 in C4.1.68). */
     DIS_ARMV8_DECODE_MAP_INVALID_ENTRY,                             /* Load/Stores. */
     DIS_ARMV8_DECODE_MAP_INVALID_ENTRY                              /* Data processing (SIMD & FP). */
 DIS_ARMV8_DECODE_MAP_DEFINE_END_NON_STATIC(g_ArmV8A64DecodeL0, RT_BIT_32(25) | RT_BIT_32(26) | RT_BIT_32(27) | RT_BIT_32(28), 25);
