@@ -33,6 +33,7 @@
 #include "LoggingNew.h"
 
 #include "ConsoleImpl.h"
+#include "ResourceStoreImpl.h"
 #include "Global.h"
 
 // generated header
@@ -44,6 +45,7 @@
 #include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
+#include <iprt/fdt.h>
 #include <iprt/file.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
@@ -93,12 +95,17 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     VMMDev         *pVMMDev   = m_pVMMDev; Assert(pVMMDev);
     ComPtr<IMachine> pMachine = i_machine();
 
-    int             vrc;
     HRESULT         hrc;
     Utf8Str         strTmp;
     Bstr            bstr;
 
-#define H()         AssertLogRelMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR)
+    RTFDT hFdt = NIL_RTFDT;
+    int vrc = RTFdtCreateEmpty(&hFdt);
+    AssertRCReturn(vrc, vrc);
+
+#define H()         AssertLogRelMsgReturnStmt(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), RTFdtDestroy(hFdt), VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR)
+#define VRC()       AssertLogRelMsgReturnStmt(RT_SUCCESS(vrc), ("vrc=%Rrc\n", vrc), RTFdtDestroy(hFdt), vrc)
+
 
     /*
      * Get necessary objects and frequently used parameters.
@@ -158,6 +165,75 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigInteger(pRoot, "CpuExecutionCap",      ulCpuExecutionCap);
         InsertConfigInteger(pRoot, "TimerMillies",         10);
 
+        uint32_t idPHandleIntCtrl = RTFdtPHandleAllocate(hFdt);
+        Assert(idPHandleIntCtrl != UINT32_MAX);
+        uint32_t idPHandleIntCtrlMsi = RTFdtPHandleAllocate(hFdt);
+        Assert(idPHandleIntCtrlMsi != UINT32_MAX);
+        uint32_t idPHandleAbpPClk = RTFdtPHandleAllocate(hFdt);
+        Assert(idPHandleAbpPClk != UINT32_MAX);
+        uint32_t idPHandleGpio = RTFdtPHandleAllocate(hFdt);
+        Assert(idPHandleGpio != UINT32_MAX);
+
+        uint32_t aidPHandleCpus[VMM_MAX_CPU_COUNT];
+        for (uint32_t i = 0; i < cCpus; i++)
+        {
+            aidPHandleCpus[i] = RTFdtPHandleAllocate(hFdt);
+            Assert(aidPHandleCpus[i] != UINT32_MAX);
+        }
+
+        vrc = RTFdtNodePropertyAddU32(   hFdt, "interrupt-parent", idPHandleIntCtrl);       VRC();
+        vrc = RTFdtNodePropertyAddString(hFdt, "model",            "linux,dummy-virt");     VRC();
+        vrc = RTFdtNodePropertyAddU32(   hFdt, "#size-cells",      2);                      VRC();
+        vrc = RTFdtNodePropertyAddU32(   hFdt, "#address-cells",   2);                      VRC();
+        vrc = RTFdtNodePropertyAddString(hFdt, "compatible",       "linux,dummy-virt");     VRC();
+
+        /* Configure the Power State Coordination Interface. */
+        vrc = RTFdtNodeAdd(hFdt, "psci");                                                   VRC();
+        vrc = RTFdtNodePropertyAddU32(   hFdt, "migrate",          0x84000005);             VRC();
+        vrc = RTFdtNodePropertyAddU32(   hFdt, "cpu_on",           0x84000003);             VRC();
+        vrc = RTFdtNodePropertyAddU32(   hFdt, "cpu_off",          0x84000002);             VRC();
+        vrc = RTFdtNodePropertyAddU32(   hFdt, "cpu_suspend",      0x84000001);             VRC();
+        vrc = RTFdtNodePropertyAddString(hFdt, "method",           "hvc");                  VRC();
+        vrc = RTFdtNodePropertyAddStringList(hFdt, "compatible",   3,
+                                             "arm,psci-1.0", "arm,psci-0.2", "arm,psci");   VRC();
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
+
+        /* Configure some misc system wide properties. */
+        vrc = RTFdtNodeAdd(hFdt, "chosen");                                                 VRC();
+        vrc = RTFdtNodePropertyAddString(hFdt, "stdout-path",      "/pl011@9000000");       VRC();
+        vrc = RTFdtNodeFinalize(hFdt);
+
+        /* Configure the timer and clock. */
+        vrc = RTFdtNodeAdd(hFdt, "timer");                                                  VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 12,
+                                           0x01, 0x0d, 0x104,
+                                           0x01, 0x0e, 0x104,
+                                           0x01, 0x0b, 0x104,
+                                           0x01, 0x0a, 0x104);                              VRC();
+        vrc = RTFdtNodePropertyAddEmpty(   hFdt, "always-on");                              VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "compatible",       "arm,armv7-timer");    VRC();
+        vrc = RTFdtNodeFinalize(hFdt);
+
+        vrc = RTFdtNodeAdd(hFdt, "apb-clk");                                                VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "phandle", idPHandleAbpPClk);              VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "clock-output-names", "clk24mhz");         VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "clock-frequency",    24 * 1000 * 1000);   VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#clock-cells",       0);                  VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "compatible",         "fixed-clock");      VRC();
+        vrc = RTFdtNodeFinalize(hFdt);
+
+        /* Configure gpio keys (non functional at the moment). */
+        vrc = RTFdtNodeAdd(hFdt, "gpio-keys");                                              VRC();
+        vrc = RTFdtNodePropertyAddString(hFdt, "compatible",           "gpio-keys");        VRC();
+
+        vrc = RTFdtNodeAdd(hFdt, "poweroff");                                               VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "gpios", 3, idPHandleGpio, 3, 0);          VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "linux,code", 0x74);                       VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "label",      "GPIO Key Poweroff");        VRC();
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
+
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
+
         /*
          * NEM
          */
@@ -180,6 +256,44 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigNode(pMem, "Conventional", &pMemRegion);
         InsertConfigInteger(pMemRegion, "GCPhysStart", 0x40000000);
         InsertConfigInteger(pMemRegion, "Size", cbRam);
+
+        vrc = RTFdtNodeAddF(hFdt, "memory@%RX32", 0x40000000);                              VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4,
+                                           0, 0x40000000,
+                                           (uint32_t)(cbRam >> 32), cbRam & UINT32_MAX);    VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "device_type",      "memory");             VRC();
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
+
+        /* Configure the CPUs in the system, only one socket and cluster at the moment. */
+        vrc = RTFdtNodeAdd(hFdt, "cpus");                                                   VRC();
+        vrc = RTFdtNodePropertyAddU32(hFdt, "#size-cells",    0);                           VRC();
+        vrc = RTFdtNodePropertyAddU32(hFdt, "#address-cells", 1);                           VRC();
+
+        vrc = RTFdtNodeAdd(hFdt, "socket0");                                                VRC();
+        vrc = RTFdtNodeAdd(hFdt, "cluster0");                                               VRC();
+
+        for (uint32_t i = 0; i < cCpus; i++)
+        {
+            vrc = RTFdtNodeAddF(hFdt, "core%u", i);                                         VRC();
+            vrc = RTFdtNodePropertyAddU32(hFdt, "cpu", aidPHandleCpus[i]);                  VRC();
+            vrc = RTFdtNodeFinalize(hFdt);                                                  VRC();
+        }
+
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
+
+        for (uint32_t i = 0; i < cCpus; i++)
+        {
+            vrc = RTFdtNodeAddF(hFdt, "cpu@%u", i);                                         VRC();
+            vrc = RTFdtNodePropertyAddU32(hFdt, "phandle", aidPHandleCpus[i]);              VRC();
+            vrc = RTFdtNodePropertyAddU32(hFdt, "reg", 0);                                  VRC();
+            vrc = RTFdtNodePropertyAddString(hFdt, "compatible",  "arm,cortex-a15");        VRC();
+            vrc = RTFdtNodePropertyAddString(hFdt, "device_type", "cpu");                   VRC();
+            vrc = RTFdtNodeFinalize(hFdt);                                                  VRC();
+        }
+
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
+
 
         /*
          * PDM config.
@@ -286,6 +400,19 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigNode(pInst,    "Config",                &pCfg);
         InsertConfigInteger(pCfg,  "GCPhysLoadAddress",     0);
         InsertConfigString(pCfg,   "EfiRom",                "VBoxEFIAArch64.fd");
+        InsertConfigInteger(pCfg,  "GCPhysFdtAddress",      0x40000000);
+        InsertConfigString(pCfg,   "FdtId",                 "fdt");
+        InsertConfigNode(pInst,    "LUN#0",                 &pLunL0);
+        InsertConfigString(pLunL0, "Driver",                "ResourceStore");
+
+        vrc = RTFdtNodeAddF(hFdt, "platform-bus@%RX32", 0x0c000000);                        VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "interrupt-parent", idPHandleIntCtrl);     VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "ranges", 4, 0, 0, 0x0c000000, 0x02000000); VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#address-cells",   1);                    VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#size-cells",      1);                    VRC();
+        vrc = RTFdtNodePropertyAddStringList(hFdt, "compatible",     2,
+                                             "qemu,platform", "simple-bus");                VRC();
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
         InsertConfigNode(pDevices, "gic",                   &pDev);
         InsertConfigNode(pDev,     "0",                     &pInst);
@@ -293,6 +420,31 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigNode(pInst,    "Config",                &pCfg);
         InsertConfigInteger(pCfg,  "DistributorMmioBase",   0x08000000);
         InsertConfigInteger(pCfg,  "RedistributorMmioBase", 0x080a0000);
+
+        vrc = RTFdtNodeAddF(hFdt, "intc@%RX32", 0x08000000);                                VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "phandle",          idPHandleIntCtrl);     VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 8,
+                                           0, 0x08000000, 0, 0x10000,
+                                           0, 0x080a0000, 0, 0xf60000);                     VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#redistributor-regions",   1);             VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "compatible",       "arm,gic-v3");         VRC();
+        vrc = RTFdtNodePropertyAddEmpty(   hFdt, "ranges");                                 VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#size-cells",      2);                    VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#address-cells",   2);                    VRC();
+        vrc = RTFdtNodePropertyAddEmpty(   hFdt, "interrupt-controller");                   VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#interrupt-cells", 3);                    VRC();
+
+#if 0
+        vrc = RTFdtNodeAddF(hFdt, "its@%RX32", 0x08080000);                                 VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "phandle",          idPHandleIntCtrlMsi);  VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x08080000, 0, 0x20000);      VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#msi-cells", 1);                          VRC();
+        vrc = RTFdtNodePropertyAddEmpty(   hFdt, "msi-controller");                         VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "compatible", "arm,gic-v3-its");           VRC();
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
+#endif
+
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
 
         InsertConfigNode(pDevices, "qemu-fw-cfg",   &pDev);
@@ -305,6 +457,13 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigNode(pInst,    "LUN#0",           &pLunL0);
         InsertConfigString(pLunL0, "Driver",          "MainDisplay");
 
+        vrc = RTFdtNodeAddF(hFdt, "fw-cfg@%RX32", 0x09020000);                              VRC();
+        vrc = RTFdtNodePropertyAddEmpty(   hFdt, "dma-coherent");                           VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x09020000, 0, 0x18);         VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "compatible", "qemu,fw-cfg-mmio");         VRC();
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
+
+
         InsertConfigNode(pDevices, "flash-cfi",         &pDev);
         InsertConfigNode(pDev,     "0",            &pInst);
         InsertConfigNode(pInst,    "Config",        &pCfg);
@@ -314,6 +473,14 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         /* Attach the NVRAM storage driver. */
         InsertConfigNode(pInst,    "LUN#0",       &pLunL0);
         InsertConfigString(pLunL0, "Driver",      "NvramStore");
+
+        vrc = RTFdtNodeAddF(hFdt, "flash@%RX32", 0);                                        VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "bank-width", 4);                          VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 8,
+                                           0,          0, 0, 0x04000000,
+                                           0, 0x04000000, 0, 0x04000000);                   VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "compatible", "cfi-flash");                VRC();
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
         InsertConfigNode(pDevices, "arm-pl011",     &pDev);
         for (ULONG ulInstance = 0; ulInstance < 1 /** @todo SchemaDefs::SerialPortCount*/; ++ulInstance)
@@ -354,17 +521,46 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
             }
         }
 
+        vrc = RTFdtNodeAddF(hFdt, "pl011@%RX32", 0x09000000);                               VRC();
+        vrc = RTFdtNodePropertyAddStringList(hFdt, "clock-names", 2, "uartclk", "apb_pclk"); VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "clocks", 2,
+                                           idPHandleAbpPClk, idPHandleAbpPClk);             VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 3, 0x00, 0x01, 0x04);        VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x09000000, 0, 0x1000);       VRC();
+        vrc = RTFdtNodePropertyAddStringList(hFdt, "compatible", 2,
+                                             "arm,pl011", "arm,primecell");                 VRC();
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
+
         InsertConfigNode(pDevices, "arm-pl031-rtc", &pDev);
         InsertConfigNode(pDev,     "0",            &pInst);
         InsertConfigNode(pInst,    "Config",        &pCfg);
         InsertConfigInteger(pCfg,  "Irq",               2);
         InsertConfigInteger(pCfg,  "MmioBase", 0x09010000);
+        vrc = RTFdtNodeAddF(hFdt, "pl032@%RX32", 0x09010000);                               VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "clock-names", "apb_pclk");                VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "clocks", idPHandleAbpPClk);               VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 3, 0x00, 0x02, 0x04);        VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x09010000, 0, 0x1000);       VRC();
+        vrc = RTFdtNodePropertyAddStringList(hFdt, "compatible", 2,
+                                             "arm,pl031", "arm,primecell");                 VRC();
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
         InsertConfigNode(pDevices, "arm-pl061-gpio",&pDev);
         InsertConfigNode(pDev,     "0",            &pInst);
         InsertConfigNode(pInst,    "Config",        &pCfg);
         InsertConfigInteger(pCfg,  "Irq",               7);
         InsertConfigInteger(pCfg,  "MmioBase", 0x09030000);
+        vrc = RTFdtNodeAddF(hFdt, "pl061@%RX32", 0x09030000);                               VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "phandle", idPHandleGpio);                 VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "clock-names", "apb_pclk");                VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "clocks", idPHandleAbpPClk);               VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 3, 0x00, 0x07, 0x04);        VRC();
+        vrc = RTFdtNodePropertyAddEmpty(   hFdt, "gpio-controller");                        VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#gpio-cells", 2);                         VRC();
+        vrc = RTFdtNodePropertyAddStringList(hFdt, "compatible", 2,
+                                             "arm,pl061", "arm,primecell");                 VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x09030000, 0, 0x1000);       VRC();
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
         InsertConfigNode(pDevices, "pci-generic-ecam",  &pDev);
         InsertConfigNode(pDev,     "0",            &pInst);
@@ -377,6 +573,40 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigInteger(pCfg,  "IntPinB",        4);
         InsertConfigInteger(pCfg,  "IntPinC",        5);
         InsertConfigInteger(pCfg,  "IntPinD",        6);
+        vrc = RTFdtNodeAddF(hFdt, "pcie@%RX32", 0x10000000);                                VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupt-map-mask", 4, 0x1800, 0, 0, 7); VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupt-map", 16 * 10,
+                                           0x00,   0x00, 0x00, 0x01, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x03, 0x04,
+                                           0x00,   0x00, 0x00, 0x02, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x04, 0x04,
+                                           0x00,   0x00, 0x00, 0x03, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x05, 0x04,
+                                           0x00,   0x00, 0x00, 0x04, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x06, 0x04,
+                                           0x800,  0x00, 0x00, 0x01, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x04, 0x04,
+                                           0x800,  0x00, 0x00, 0x02, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x05, 0x04,
+                                           0x800,  0x00, 0x00, 0x03, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x06, 0x04,
+                                           0x800,  0x00, 0x00, 0x04, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x03, 0x04,
+                                           0x1000, 0x00, 0x00, 0x01, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x05, 0x04,
+                                           0x1000, 0x00, 0x00, 0x02, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x06, 0x04,
+                                           0x1000, 0x00, 0x00, 0x03, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x03, 0x04,
+                                           0x1000, 0x00, 0x00, 0x04, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x04, 0x04,
+                                           0x1800, 0x00, 0x00, 0x01, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x06, 0x04,
+                                           0x1800, 0x00, 0x00, 0x02, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x03, 0x04,
+                                           0x1800, 0x00, 0x00, 0x03, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x04, 0x04,
+                                           0x1800, 0x00, 0x00, 0x04, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x05, 0x04); VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#interrupt-cells", 1);                    VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "ranges", 14,
+                                           0x1000000, 0, 0, 0, 0x3eff0000, 0, 0x10000,
+                                           0x2000000, 0, 0x10000000, 0, 0x10000000, 0,
+                                           0x2eff0000);                                     VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x3f000000, 0, 0x1000000);    VRC();
+        /** @todo msi-map */
+        vrc = RTFdtNodePropertyAddEmpty(   hFdt, "dma-coherent");                           VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "bus-range", 2, 0, 0xf);                   VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "linux,pci-domain", 0);                    VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#size-cells", 2);                         VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#address-cells", 3);                      VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "device_type", "pci");                     VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "compatible", "pci-host-ecam-generic");    VRC();
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
         InsertConfigNode(pDevices, "usb-xhci",      &pDev);
         InsertConfigNode(pDev,     "0",            &pInst);
@@ -641,12 +871,15 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     }
     catch (ConfigError &x)
     {
+        RTFdtDestroy(hFdt);
+
         // InsertConfig threw something:
         pVMM->pfnVMR3SetError(pUVM, x.m_vrc, RT_SRC_POS, "Caught ConfigError: %Rrc - %s", x.m_vrc, x.what());
         return x.m_vrc;
     }
     catch (HRESULT hrcXcpt)
     {
+        RTFdtDestroy(hFdt);
         AssertLogRelMsgFailedReturn(("hrc=%Rhrc\n", hrcXcpt), VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR);
     }
 
@@ -661,6 +894,35 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         pAlock->acquire();
     }
 #endif
+
+    /* Finalize the FDT and add it to the resource store. */
+    vrc = RTFdtFinalize(hFdt);
+    AssertRCReturnStmt(vrc, RTFdtDestroy(hFdt), vrc);
+
+    RTVFSFILE hVfsFileFdt = NIL_RTVFSFILE;
+    vrc = RTVfsMemFileCreate(NIL_RTVFSIOSTREAM, 0 /*cbEstimate*/, &hVfsFileFdt);
+    AssertRCReturnStmt(vrc, RTFdtDestroy(hFdt), vrc);
+    RTVFSIOSTREAM hVfsIosFdt = RTVfsFileToIoStream(hVfsFileFdt);
+    AssertRelease(hVfsIosFdt != NIL_RTVFSIOSTREAM);
+
+    vrc = RTFdtDumpToVfsIoStrm(hFdt, RTFDTTYPE_DTB, 0 /*fFlags*/, hVfsIosFdt, NULL /*pErrInfo*/);
+    RTVfsIoStrmRelease(hVfsIosFdt);
+    if (RT_SUCCESS(vrc))
+        vrc = mptrResourceStore->i_addItem("fdt", "fdt", hVfsFileFdt);
+    RTVfsFileRelease(hVfsFileFdt);
+    AssertRCReturnStmt(vrc, RTFdtDestroy(hFdt), vrc);
+
+    /* Dump the DTB for debugging purposes if requested. */
+    Bstr DtbDumpVal;
+    hrc = mMachine->GetExtraData(Bstr("VBoxInternal2/DumpDtb").raw(),
+                                 DtbDumpVal.asOutParam());
+    if (   hrc == S_OK
+        && DtbDumpVal.isNotEmpty())
+    {
+        vrc = RTFdtDumpToFile(hFdt, RTFDTTYPE_DTB, 0 /*fFlags*/, Utf8Str(DtbDumpVal).c_str(), NULL /*pErrInfo*/);
+        AssertRCReturnStmt(vrc, RTFdtDestroy(hFdt), vrc);
+    }
+
 
     /*
      * Apply the CFGM overlay.
