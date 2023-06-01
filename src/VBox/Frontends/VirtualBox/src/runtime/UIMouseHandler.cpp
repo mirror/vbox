@@ -1212,15 +1212,25 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
 
     /* Pass all multi-touch events into guest: */
     int iTouchPointIndex = 0;
+#ifdef VBOX_IS_QT6_OR_LATER /* QTouchEvent::TouchPoint was replaced by QEventPoint in 6.0 */
+    foreach (const QEventPoint &touchPoint, pTouchEvent->points())
+#else
     foreach (const QTouchEvent::TouchPoint &touchPoint, pTouchEvent->touchPoints())
+#endif
     {
         /* Get touch-point state: */
         LONG iTouchPointState = KTouchContactState_None;
         switch (touchPoint.state())
         {
+#ifdef VBOX_IS_QT6_OR_LATER /* QTouchEvent::TouchPoint was replaced by QEventPoint in 6.0 */
+            case QEventPoint::Pressed:
+            case QEventPoint::Updated:
+            case QEventPoint::Stationary:
+#else
             case Qt::TouchPointPressed:
             case Qt::TouchPointMoved:
             case Qt::TouchPointStationary:
+#endif
                 iTouchPointState = KTouchContactState_InContact;
                 if (fTouchScreen)
                     iTouchPointState |= KTouchContactState_InRange;
