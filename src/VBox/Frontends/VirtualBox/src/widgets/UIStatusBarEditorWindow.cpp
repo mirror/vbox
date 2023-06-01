@@ -105,7 +105,11 @@ protected:
     /** Handles mouse-release @a pEvent. */
     virtual void mouseReleaseEvent(QMouseEvent *pEvent);
     /** Handles mouse-enter @a pEvent. */
-    virtual void enterEvent(QEvent *pEvent);
+#ifdef VBOX_IS_QT6_OR_LATER /* QWidget::enterEvent uses QEnterEvent since qt6 */
+    virtual void enterEvent(QEnterEvent *pEvent) RT_OVERRIDE;
+#else
+    virtual void enterEvent(QEvent *pEvent) RT_OVERRIDE;
+#endif
     /** Handles mouse-leave @a pEvent. */
     virtual void leaveEvent(QEvent *pEvent);
     /** Handles mouse-move @a pEvent. */
@@ -313,7 +317,11 @@ void UIStatusBarEditorButton::mouseReleaseEvent(QMouseEvent *pEvent)
     emit sigClick();
 }
 
-void UIStatusBarEditorButton::enterEvent(QEvent *)
+#ifdef VBOX_IS_QT6_OR_LATER /* QWidget::enterEvent uses QEnterEvent since qt6 */
+void UIStatusBarEditorButton::enterEvent(QEnterEvent*)
+#else
+void UIStatusBarEditorButton::enterEvent(QEvent*)
+#endif
 {
     /* Make sure button isn't hovered: */
     if (m_fHovered)
