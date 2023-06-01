@@ -120,6 +120,16 @@ RTDECL(int) RTFdtFinalize(RTFDT hFdt);
 
 
 /**
+ * Allocates a new phandle serving as a unique identifer within the given FDT.
+ *
+ * @returns The phandle value
+ * @retval  UINT32_MAX in case the given FDT handle is invalid or the FDT is out of free phandle values.
+ * @param   hFdt            The flattened devicetree handle to destroy.
+ */
+RTDECL(uint32_t) RTFdtPHandleAllocate(RTFDT hFdt);
+
+
+/**
  * Dumps the given flattened devicetree to the given VFS file.
  *
  * @returns IPRT status code.

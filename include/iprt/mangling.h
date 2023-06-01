@@ -964,6 +964,7 @@
 # define RTFdtNodePropertyAddEmpty                      RT_MANGLER(RTFdtNodePropertyAddEmpty)
 # define RTFdtNodePropertyAddString                     RT_MANGLER(RTFdtNodePropertyAddString)
 # define RTFdtNodePropertyAddU32                        RT_MANGLER(RTFdtNodePropertyAddU32)
+# define RTFdtPHandleAllocate                           RT_MANGLER(RTFdtPHandleAllocate)
 # define RTFdtSetPhysBootCpuId                          RT_MANGLER(RTFdtSetPhysBootCpuId)
 # define RTFileAioCtxAssociateWithFile                  RT_MANGLER(RTFileAioCtxAssociateWithFile)
 # define RTFileAioCtxCreate                             RT_MANGLER(RTFileAioCtxCreate)

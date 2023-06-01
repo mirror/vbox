@@ -44,6 +44,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/file.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/sg.h>
@@ -92,6 +93,8 @@ typedef struct RTFDTINT
     uint32_t                u32CpuIdPhysBoot;
     /** Current tree depth in the structure block. */
     uint32_t                cTreeDepth;
+    /** The next free phandle value. */
+    uint32_t                idPHandle;
 } RTFDTINT;
 /** Pointer to the internal Flattened Devicetree instance. */
 typedef RTFDTINT *PRTFDTINT;
@@ -265,6 +268,7 @@ static void rtFdtDestroy(PRTFDTINT pThis)
     pThis->cbStructMax      = 0;
     pThis->u32CpuIdPhysBoot = 0;
     pThis->cTreeDepth       = 0;
+    pThis->idPHandle        = UINT32_MAX;
     RTMemFree(pThis);
 }
 
@@ -414,6 +418,7 @@ static int rtFdtLoadDtb(PRTFDT phFdt, RTVFSIOSTREAM hVfsIos, PRTERRINFO pErrInfo
                         pThis->cbStrings        = DtbHdr.cbDtStrings;
                         pThis->cbStruct         = DtbHdr.cbDtStruct;
                         pThis->u32CpuIdPhysBoot = DtbHdr.u32CpuIdPhysBoot;
+                        pThis->idPHandle        = UINT32_MAX; /** @todo Would need to parse the whole tree to find the next free handle. */
 
                         /* Load the memory reservation block. */
                         rc = rtFdtDtbMemRsvLoad(pThis, &DtbHdr, hVfsIos, pErrInfo);
@@ -1192,6 +1197,7 @@ static int rtFdtStructEnsureSpace(PRTFDTINT pThis, uint32_t cbSpaceRequired)
         return VINF_SUCCESS;
 
     uint32_t cbNew = RT_ALIGN_32(pThis->cbStruct + cbSpaceRequired, _1K);
+    Assert(cbNew > pThis->cbStructMax);
     void *pvStructNew = RTMemReallocZ(pThis->pbStruct, pThis->cbStructMax, cbNew);
     if (!pvStructNew)
         return VERR_NO_MEMORY;
@@ -1300,6 +1306,8 @@ RTDECL(int) RTFdtCreateEmpty(PRTFDT phFdt)
     PRTFDTINT pThis = (PRTFDTINT)RTMemAllocZ(sizeof(*pThis));
     if (pThis)
     {
+        pThis->idPHandle = 1; /* 0 is invalid */
+
         /* Add the root node. */
         rc = RTFdtNodeAdd(pThis, "");
         if (RT_SUCCESS(rc))
@@ -1331,8 +1339,15 @@ RTDECL(int) RTFdtCreateFromVfsIoStrm(PRTFDT phFdt, RTVFSIOSTREAM hVfsIos, RTFDTT
 
 RTDECL(int) RTFdtCreateFromFile(PRTFDT phFdt, const char *pszFilename, RTFDTTYPE enmInType, PRTERRINFO pErrInfo)
 {
-    RT_NOREF(phFdt, pszFilename, enmInType, pErrInfo);
-    return VERR_NOT_IMPLEMENTED;
+    RTVFSIOSTREAM hVfsIos = NIL_RTVFSIOSTREAM;
+    int rc = RTVfsChainOpenIoStream(pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE,
+                                    &hVfsIos, NULL /*poffError*/, pErrInfo);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    rc = RTFdtCreateFromVfsIoStrm(phFdt, hVfsIos, enmInType, pErrInfo);
+    RTVfsIoStrmRelease(hVfsIos);
+    return rc;
 }
 
 
@@ -1359,13 +1374,25 @@ RTDECL(int) RTFdtFinalize(RTFDT hFdt)
     if (RT_FAILURE(rc))
         return rc;
 
-    uint32_t *pu32 = (uint32_t *)pThis->pbStruct;
-    while (pThis->cTreeDepth--)
+    uint32_t *pu32 = (uint32_t *)(pThis->pbStruct + pThis->cbStruct);
+    while (pThis->cTreeDepth)
+    {
         *pu32++ = DTB_FDT_TOKEN_END_NODE_BE;
+        pThis->cTreeDepth--;
+    }
 
     *pu32 = DTB_FDT_TOKEN_END_BE;
     pThis->cbStruct += cbStructSpace;
     return VINF_SUCCESS;
+}
+
+
+RTDECL(uint32_t) RTFdtPHandleAllocate(RTFDT hFdt)
+{
+    PRTFDTINT pThis = hFdt;
+    AssertPtrReturn(pThis, UINT32_MAX);
+
+    return pThis->idPHandle++;
 }
 
 
@@ -1387,8 +1414,15 @@ RTDECL(int) RTFdtDumpToVfsIoStrm(RTFDT hFdt, RTFDTTYPE enmOutType, uint32_t fFla
 
 RTDECL(int) RTFdtDumpToFile(RTFDT hFdt, RTFDTTYPE enmOutType, uint32_t fFlags, const char *pszFilename, PRTERRINFO pErrInfo)
 {
-    RT_NOREF(hFdt, enmOutType, fFlags, pszFilename, pErrInfo);
-    return VERR_NOT_IMPLEMENTED;
+    RTVFSIOSTREAM hVfsIos = NIL_RTVFSIOSTREAM;
+    int rc = RTVfsChainOpenIoStream(pszFilename, RTFILE_O_WRITE | RTFILE_O_CREATE | RTFILE_O_DENY_NONE,
+                                    &hVfsIos, NULL /*poffError*/, pErrInfo);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    rc = RTFdtDumpToVfsIoStrm(hFdt, enmOutType, fFlags, hVfsIos, pErrInfo);
+    RTVfsIoStrmRelease(hVfsIos);
+    return rc;
 }
 
 
@@ -1492,7 +1526,7 @@ RTDECL(int) RTFdtNodePropertyAddU32(RTFDT hFdt, const char *pszProperty, uint32_
     PRTFDTINT pThis = hFdt;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
 
-    RT_H2BE_U32(u32);
+    u32 = RT_H2BE_U32(u32);
     return rtFdtStructAppendProperty(pThis, pszProperty, &u32, sizeof(u32));
 }
 
@@ -1528,9 +1562,9 @@ RTDECL(int) RTFdtNodePropertyAddCellsU32V(RTFDT hFdt, const char *pszProperty, u
     if (RT_FAILURE(rc))
         return rc;
 
-    uint32_t cbPropAligned = RT_ALIGN_32(cCells * sizeof(uint32_t) + 3 * sizeof(uint32_t), sizeof(uint32_t));
+    uint32_t cbProp = cCells * sizeof(uint32_t) + 3 * sizeof(uint32_t);
 
-    rc = rtFdtStructEnsureSpace(pThis, cbPropAligned);
+    rc = rtFdtStructEnsureSpace(pThis, cbProp);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1539,8 +1573,11 @@ RTDECL(int) RTFdtNodePropertyAddCellsU32V(RTFDT hFdt, const char *pszProperty, u
     *pu32++ = RT_H2BE_U32(cCells * sizeof(uint32_t));
     *pu32++ = RT_H2BE_U32(offStr);
     for (uint32_t i = 0; i < cCells; i++)
-        *pu32++ = va_arg(va, uint32_t);
+    {
+        uint32_t u32 = va_arg(va, uint32_t);
+        *pu32++ = RT_H2BE_U32(u32);
+    }
 
-    pThis->cbStruct += cbPropAligned;
+    pThis->cbStruct += cbProp;
     return VINF_SUCCESS;
 }
