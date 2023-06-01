@@ -1129,7 +1129,7 @@ static int rtFdtStringsEnsureSpace(PRTFDTINT pThis, uint32_t cch)
     if (pThis->cbStringsMax - pThis->cbStrings >= cch)
         return VINF_SUCCESS;
 
-    size_t cbNew = RT_ALIGN_32(pThis->cbStrings + cch, 256);
+    uint32_t cbNew = RT_ALIGN_32(pThis->cbStrings + cch, 256);
     void *pvStringsNew = RTMemReallocZ(pThis->paszStrings, pThis->cbStringsMax, cbNew);
     if (!pvStringsNew)
         return VERR_NO_MEMORY;
@@ -1163,11 +1163,11 @@ static int rtFdtStringsInsertString(PRTFDTINT pThis, const char *psz, uint32_t *
         }
 
         /** @todo Optimize? The strings block is not very large though so probably not worth the effort. */
-        off += strlen(&pThis->paszStrings[off]) + 1;
+        off += (uint32_t)strlen(&pThis->paszStrings[off]) + 1;
     }
 
     /* Not found, need to insert. */
-    size_t cch = strlen(psz) + 1;
+    uint32_t cch = (uint32_t)strlen(psz) + 1;
     int rc = rtFdtStringsEnsureSpace(pThis, cch);
     if (RT_FAILURE(rc))
         return rc;
@@ -1191,7 +1191,7 @@ static int rtFdtStructEnsureSpace(PRTFDTINT pThis, uint32_t cbSpaceRequired)
     if (pThis->cbStructMax - pThis->cbStruct >= cbSpaceRequired)
         return VINF_SUCCESS;
 
-    size_t cbNew = RT_ALIGN_32(pThis->cbStruct + cbSpaceRequired, _1K);
+    uint32_t cbNew = RT_ALIGN_32(pThis->cbStruct + cbSpaceRequired, _1K);
     void *pvStructNew = RTMemReallocZ(pThis->pbStruct, pThis->cbStructMax, cbNew);
     if (!pvStructNew)
         return VERR_NO_MEMORY;
@@ -1248,7 +1248,7 @@ static int rtFdtStructAppendTokenAndPayload(PRTFDTINT pThis, uint32_t u32Token, 
     aSegs[1].cbSeg = cbPayload;
     RTSgBufInit(&SgBuf, &aSegs[0], RT_ELEMENTS(aSegs));
 
-    return rtFdtStructAppendSg(pThis, &SgBuf, sizeof(u32Token) + cbPayload);
+    return rtFdtStructAppendSg(pThis, &SgBuf, sizeof(u32Token) + (uint32_t)cbPayload);
 }
 
 
