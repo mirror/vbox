@@ -87,6 +87,9 @@
 #include "PCIDeviceAttachmentImpl.h"
 #include "EmulatedUSBImpl.h"
 #include "NvramStoreImpl.h"
+#ifdef VBOX_WITH_VIRT_ARMV8
+# include "ResourceStoreImpl.h"
+#endif
 #include "StringifyEnums.h"
 
 #include "VBoxEvents.h"
@@ -557,6 +560,12 @@ HRESULT Console::initWithMachine(IMachine *aMachine, IInternalMachineControl *aC
         hrc = i_loadVMM(pszVMM);
         AssertComRCReturnRC(hrc);
 
+#ifdef VBOX_WITH_VIRT_ARMV8
+        unconst(mptrResourceStore).createObject();
+        hrc = mptrResourceStore->init(this);
+        AssertComRCReturnRC(hrc);
+#endif
+
         hrc = mMachine->COMGETTER(VRDEServer)(unconst(mVRDEServer).asOutParam());
         AssertComRCReturnRC(hrc);
 
@@ -868,6 +877,14 @@ void Console::uninit()
     }
 
     unconst(mVRDEServer).setNull();
+
+#ifdef VBOX_WITH_VIRT_ARMV8
+    if (mptrResourceStore)
+    {
+        mptrResourceStore->uninit();
+        unconst(mptrResourceStore).setNull();
+    }
+#endif
 
     unconst(mControl).setNull();
     unconst(mMachine).setNull();
@@ -11635,6 +11652,14 @@ Console::i_vmm2User_QueryGenericObject(PCVMM2USERMETHODS pThis, PUVM pUVM, PCRTU
         NvramStore *pNvramStore = static_cast<NvramStore *>(pConsole->mptrNvramStore);
         return pNvramStore;
     }
+
+#ifdef VBOX_WITH_VIRT_ARMV8
+    if (UuidCopy == COM_IIDOF(IResourceStore))
+    {
+        ResourceStore *pResourceStore = static_cast<ResourceStore *>(pConsole->mptrResourceStore);
+        return pResourceStore;
+    }
+#endif
 
     if (UuidCopy == VMMDEV_OID)
         return pConsole->m_pVMMDev;

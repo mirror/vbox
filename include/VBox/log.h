@@ -602,6 +602,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_RECORDINGSCREENSETTINGS,
     /** Main group, IRecordingSettings. */
     LOG_GROUP_MAIN_RECORDINGSETTINGS,
+    /** Main group, IResourceStore. */
+    LOG_GROUP_MAIN_RESOURCESTORE,
     /** Main group, IReusableEvent. */
     LOG_GROUP_MAIN_REUSABLEEVENT,
     /** Main group, ISerialPort. */
@@ -1122,6 +1124,7 @@ typedef enum VBOXLOGGROUP
     "MAIN_RANGEDINTEGERFORMVALUE", \
     "MAIN_RECORDINGSCREENSETTINGS", \
     "MAIN_RECORDINGSETTINGS", \
+    "MAIN_RESOURCESTORE", \
     "MAIN_REUSABLEEVENT", \
     "MAIN_SERIALPORT", \
     "MAIN_SESSION", \

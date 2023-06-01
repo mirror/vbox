@@ -6517,6 +6517,22 @@
 
   </interface>
 
+  <interface
+    name="IResourceStore" extends="$unknown"
+    uuid="d96a2540-8aab-4c71-8af9-95379f23b23d"
+    wsmap="managed"
+    >
+
+    <desc>
+      Provides access to resources accessed by various device implementations and created when the VM
+      is started (only the FDT currently). This is not accessible from anywhere right now but just for
+      convenience if required later on.
+    </desc>
+
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
+
+  </interface>
+
   <enum
     name="GraphicsControllerType"
     uuid="3e009bb0-2b57-4283-a39b-4c363d4f0808"
