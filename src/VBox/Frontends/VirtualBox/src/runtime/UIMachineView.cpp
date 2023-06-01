@@ -1957,7 +1957,21 @@ void UIMachineView::focusOutEvent(QFocusEvent *pEvent)
     /* Call to base-class: */
     QAbstractScrollArea::focusOutEvent(pEvent);
 }
+#ifdef VBOX_WS_X11
+void UIMachineView::keyPressEvent(QKeyEvent *pEvent)
+{
+    if (uiCommon().displayServerType() == VBGHDISPLAYSERVERTYPE_WAYLAND)
+        uimachine()->putScancode(pEvent->nativeScanCode() - 8);
+    QAbstractScrollArea::keyPressEvent(pEvent);
+}
 
+void UIMachineView::keyReleaseEvent(QKeyEvent *pEvent)
+{
+    if (uiCommon().displayServerType() == VBGHDISPLAYSERVERTYPE_WAYLAND)
+        uimachine()->putScancode((pEvent->nativeScanCode() - 8) | 0x80);
+    QAbstractScrollArea::keyReleaseEvent(pEvent);
+}
+#endif
 #ifdef VBOX_WITH_DRAG_AND_DROP
 
 bool UIMachineView::dragAndDropCanAccept() const
