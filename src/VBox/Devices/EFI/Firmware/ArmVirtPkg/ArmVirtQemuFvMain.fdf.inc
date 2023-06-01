@@ -99,6 +99,11 @@ READ_LOCK_STATUS   = TRUE
   INF OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
   INF OvmfPkg/VirtioRngDxe/VirtioRng.inf
 
+!ifdef $(VBOX)
+  INF OvmfPkg/SataControllerDxe/SataControllerDxe.inf
+!endif
+
+
   INF ShellPkg/Application/Shell/Shell.inf
   INF ShellPkg/DynamicCommand/TftpDynamicCommand/TftpDynamicCommand.inf
   INF ShellPkg/DynamicCommand/HttpDynamicCommand/HttpDynamicCommand.inf
@@ -188,7 +193,11 @@ READ_LOCK_STATUS   = TRUE
   #
   # TianoCore logo (splash screen)
   #
+!ifndef $(VBOX)
   INF MdeModulePkg/Logo/LogoDxe.inf
+!else
+  INF VBoxPkg/Logo/LogoDxe.inf
+!endif
 
   #
   # Ramdisk support

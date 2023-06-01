@@ -459,6 +459,10 @@
   OvmfPkg/VirtioNetDxe/VirtioNet.inf
   OvmfPkg/VirtioRngDxe/VirtioRng.inf
 
+!ifdef $(VBOX)
+  OvmfPkg/SataControllerDxe/SataControllerDxe.inf
+!endif
+
   #
   # FAT filesystem + GPT/MBR partitioning + UDF filesystem + virtio-fs
   #
@@ -481,7 +485,11 @@
   MdeModulePkg/Universal/SetupBrowserDxe/SetupBrowserDxe.inf
   MdeModulePkg/Universal/DriverHealthManagerDxe/DriverHealthManagerDxe.inf
   MdeModulePkg/Universal/BdsDxe/BdsDxe.inf
+!ifndef $(VBOX)
   MdeModulePkg/Logo/LogoDxe.inf
+!else
+  VBoxPkg/Logo/LogoDxe.inf
+!endif
   MdeModulePkg/Application/UiApp/UiApp.inf {
     <LibraryClasses>
       NULL|MdeModulePkg/Library/DeviceManagerUiLib/DeviceManagerUiLib.inf
