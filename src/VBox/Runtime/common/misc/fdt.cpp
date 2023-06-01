@@ -1610,7 +1610,7 @@ RTDECL(int) RTFdtNodePropertyAddStringListV(RTFDT hFdt, const char *pszProperty,
     /* First pass, go over all strings and find out how much we have to add in total. */
     uint32_t cbStrings = 0;
     for (uint32_t i = 0; i < cStrings; i++)
-        cbStrings += strlen(va_arg(vaCopy, const char *)) + 1; /* Include terminator. */
+        cbStrings += (uint32_t)strlen(va_arg(vaCopy, const char *)) + 1; /* Include terminator. */
 
     uint32_t cbProp = RT_ALIGN_32(cbStrings + 3 * sizeof(uint32_t), sizeof(uint32_t)); /* Account for property token and the property data. */
     rc = rtFdtStructEnsureSpace(pThis, cbProp);
@@ -1625,7 +1625,13 @@ RTDECL(int) RTFdtNodePropertyAddStringListV(RTFDT hFdt, const char *pszProperty,
 
     char *pb = (char *)pu32;
     for (uint32_t i = 0; i < cStrings; i++)
-        pb = stpcpy(pb, va_arg(va, const char *)) + 1;
+    {
+        const char *psz = va_arg(va, const char *);
+        /* MSVC doesn't know about stpcpy(), so we have to query the string length again... */
+        uint32_t cbStr = (uint32_t)strlen(psz);
+        strcpy(pb, psz);
+        pb += cbStr + 1;
+    }
 
     pThis->cbStruct += cbProp;
     return VINF_SUCCESS;
