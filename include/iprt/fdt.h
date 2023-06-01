@@ -272,6 +272,30 @@ RTDECL(int) RTFdtNodePropertyAddCellsU32(RTFDT hFdt, const char *pszProperty, ui
  */
 RTDECL(int) RTFdtNodePropertyAddCellsU32V(RTFDT hFdt, const char *pszProperty, uint32_t cCells, va_list va);
 
+
+/**
+ * Adds the given string list property to the given FDT.
+ *
+ * @returns IPRT status code.
+ * @param   hFdt            The flattened devicetree handle.
+ * @param   pszProperty     The property name.
+ * @param   cStrings        How many strings are following.
+ * @param   ...             The strings.
+ */
+RTDECL(int) RTFdtNodePropertyAddStringList(RTFDT hFdt, const char *pszProperty, uint32_t cStrings, ...);
+
+
+/**
+ * Adds the given string list property to the given FDT.
+ *
+ * @returns IPRT status code.
+ * @param   hFdt            The flattened devicetree handle.
+ * @param   pszProperty     The property name.
+ * @param   cStrings        How many strings are following.
+ * @param   va              The strings.
+ */
+RTDECL(int) RTFdtNodePropertyAddStringListV(RTFDT hFdt, const char *pszProperty, uint32_t cStrings, va_list va);
+
 #endif /* IN_RING3 */
 
 /** @} */
