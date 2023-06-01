@@ -96,8 +96,16 @@ bool UIDnDMIMEData::hasFormat(const QString &strMIMEType) const
  *
  * @return QVariant
  */
+#ifndef VBOX_IS_QT6_OR_LATER /* QVariant::Type is repalced with QMetaType in Qt6 */
 QVariant UIDnDMIMEData::retrieveData(const QString &strMIMEType, QVariant::Type vaType) const
 {
+#else
+QVariant UIDnDMIMEData::retrieveData(const QString &strMIMEType, QMetaType metaType) const
+{
+    /* In Qt6 deprecated QVariant::Type is redefined through QMetaType::Type: */
+    const QVariant::Type vaType = (QVariant::Type)metaType.id();
+#endif
+
     LogFlowFunc(("state=%RU32, curAction=0x%x, defAction=0x%x, mimeType=%s, type=%d (%s)\n",
                  m_enmState, m_curAction, m_defAction, strMIMEType.toStdString().c_str(), vaType, QVariant::typeToName(vaType)));
 
