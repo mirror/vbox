@@ -345,7 +345,6 @@ DECLCALLBACK(void *) ResourceStore::i_drvQueryInterface(PPDMIBASE pInterface, co
 /**
  * Destruct a resource store driver instance.
  *
- * @returns VBox status code.
  * @param   pDrvIns     The driver instance data.
  */
 DECLCALLBACK(void) ResourceStore::i_drvDestruct(PPDMDRVINS pDrvIns)
