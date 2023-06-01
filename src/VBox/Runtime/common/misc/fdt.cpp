@@ -1442,7 +1442,7 @@ RTDECL(int) RTFdtNodeAdd(RTFDT hFdt, const char *pszName)
 }
 
 
-RTDECL(int) RTFdtNodeAddF(RTFDT hFdt, const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(2, 3)
+RTDECL(int) RTFdtNodeAddF(RTFDT hFdt, const char *pszNameFmt, ...)
 {
     va_list va;
     va_start(va, pszNameFmt);
@@ -1452,7 +1452,7 @@ RTDECL(int) RTFdtNodeAddF(RTFDT hFdt, const char *pszNameFmt, ...) RT_IPRT_FORMA
 }
 
 
-RTDECL(int) RTFdtNodeAddV(RTFDT hFdt, const char *pszNameFmt, va_list va) RT_IPRT_FORMAT_ATTR(2, 0)
+RTDECL(int) RTFdtNodeAddV(RTFDT hFdt, const char *pszNameFmt, va_list va)
 {
     char szName[512]; /* lazy developer */
     ssize_t cch = RTStrPrintf2V(&szName[0], sizeof(szName), pszNameFmt, va);
