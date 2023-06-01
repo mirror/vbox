@@ -89,6 +89,23 @@ typedef struct DEVEFIR3
     char                   *pszEfiRomFile;
     /** EFI firmware physical load address. */
     RTGCPHYS                GCPhysLoadAddress;
+    /** The FDT load address, RTGCPHYS_MAX if not configured to be loaded. */
+    RTGCPHYS                GCPhysFdtAddress;
+    /** The FDT id used to load from the resource store driver below. */
+    char                   *pszFdtId;
+
+    /**
+     * Resource port - LUN\#0.
+     */
+    struct
+    {
+        /** The base interface we provide the resource driver. */
+        PDMIBASE            IBase;
+        /** The resource driver base interface. */
+        PPDMIBASE           pDrvBase;
+        /** The VFS interface of the driver below for resource state loading and storing. */
+        PPDMIVFSCONNECTOR   pDrvVfs;
+    } Lun0;
 } DEVEFIR3;
 /** Pointer to the ring-3 EFI state. */
 typedef DEVEFIR3 *PDEVEFIR3;
@@ -158,6 +175,53 @@ static const char g_szEfiBuiltinAArch64[] = "VBoxEFIAArch64.fd";
 #ifdef IN_RING3
 
 /**
+ * @copydoc(PDMIBASE::pfnQueryInterface)
+ */
+static DECLCALLBACK(void *) devR3EfiQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    LogFlowFunc(("ENTER: pIBase=%p pszIID=%p\n", pInterface, pszIID));
+    PDEVEFIR3 pThisCC = RT_FROM_MEMBER(pInterface, DEVEFIR3, Lun0.IBase);
+
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThisCC->Lun0.IBase);
+    return NULL;
+}
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnReset}
+ */
+static DECLCALLBACK(void) efiR3Reset(PPDMDEVINS pDevIns)
+{
+    PDEVEFIR3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVEFIR3);
+    LogFlow(("efiR3Reset\n"));
+
+    if (pThisCC->GCPhysFdtAddress != RTGCPHYS_MAX)
+    {
+        AssertPtr(pThisCC->Lun0.pDrvVfs);
+
+        uint64_t cbFdt = 0;
+        int rc = pThisCC->Lun0.pDrvVfs->pfnQuerySize(pThisCC->Lun0.pDrvVfs, pThisCC->pszFdtId, pThisCC->pszFdtId, &cbFdt);
+        if (RT_SUCCESS(rc))
+        {
+            /** @todo Need to add a proper read callback to avoid allocating temporary memory. */
+            void *pvFdt = RTMemAllocZ(cbFdt);
+            if (pvFdt)
+            {
+                rc = pThisCC->Lun0.pDrvVfs->pfnReadAll(pThisCC->Lun0.pDrvVfs, pThisCC->pszFdtId, pThisCC->pszFdtId, pvFdt, cbFdt);
+                if (RT_SUCCESS(rc))
+                    rc = PDMDevHlpPhysWrite(pDevIns, pThisCC->GCPhysFdtAddress, pvFdt, cbFdt);
+
+                RTMemFree(pvFdt);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+        AssertLogRelRC(rc);
+    }
+}
+
+
+/**
  * Destruct a device instance.
  *
  * Most VM resources are freed by the VM. This callback is provided so that any non-VM
@@ -183,6 +247,12 @@ static DECLCALLBACK(int) efiR3Destruct(PPDMDEVINS pDevIns)
     {
         PDMDevHlpMMHeapFree(pDevIns, pThisCC->pszEfiRomFile);
         pThisCC->pszEfiRomFile = NULL;
+    }
+
+    if (pThisCC->pszFdtId)
+    {
+        PDMDevHlpMMHeapFree(pDevIns, pThisCC->pszFdtId);
+        pThisCC->pszFdtId = NULL;
     }
 
     return VINF_SUCCESS;
@@ -262,17 +332,33 @@ static DECLCALLBACK(int)  efiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Initalize the basic variables so that the destructor always works.
      */
-    pThisCC->pDevIns = pDevIns;
+    pThisCC->pDevIns                        = pDevIns;
+    pThisCC->pszFdtId                       = NULL;
+    pThisCC->GCPhysFdtAddress               = RTGCPHYS_MAX;
+    pThisCC->Lun0.IBase.pfnQueryInterface   = devR3EfiQueryInterface;
 
     /*
      * Validate and read the configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "EfiRom|GCPhysLoadAddress", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "EfiRom|GCPhysLoadAddress|GCPhysFdtAddress|FdtId", "");
 
     rc = pHlp->pfnCFGMQueryU64(pCfg, "GCPhysLoadAddress", &pThisCC->GCPhysLoadAddress);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"GCPhysLoadAddress\" as integer failed"));
+
+    rc = pHlp->pfnCFGMQueryU64Def(pCfg, "GCPhysFdtAddress", &pThisCC->GCPhysFdtAddress, RTGCPHYS_MAX);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"GCPhysFdtAddress\" as integer failed"));
+
+    if (pThisCC->GCPhysFdtAddress != RTGCPHYS_MAX)
+    {
+        rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "FdtId", &pThisCC->pszFdtId);
+        if (RT_FAILURE(rc))
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                       N_("Configuration error: Querying \"FdtId\" as a string failed"));
+    }
 
     /*
      * Get the system EFI ROM file name.
@@ -303,6 +389,23 @@ static DECLCALLBACK(int)  efiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return rc;
 
+    /*
+     * Resource storage.
+     */
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThisCC->Lun0.IBase, &pThisCC->Lun0.pDrvBase, "ResourceStorage");
+    if (RT_SUCCESS(rc))
+    {
+        pThisCC->Lun0.pDrvVfs = PDMIBASE_QUERY_INTERFACE(pThisCC->Lun0.pDrvBase, PDMIVFSCONNECTOR);
+        if (!pThisCC->Lun0.pDrvVfs)
+            return PDMDevHlpVMSetError(pDevIns, VERR_PDM_MISSING_INTERFACE_BELOW, RT_SRC_POS, N_("Resource storage driver is missing VFS interface below"));
+    }
+    else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
+             && pThisCC->GCPhysFdtAddress == RTGCPHYS_MAX)
+        rc = VINF_SUCCESS; /* Missing driver is no error condition if no FDT is going to be loaded. */
+    else
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("Can't attach resource Storage driver"));
+
+    efiR3Reset(pDevIns);
     return VINF_SUCCESS;
 }
 
@@ -349,7 +452,7 @@ const PDMDEVREG g_DeviceEfiArmV8 =
     /* .pfnRelocate = */            NULL,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
-    /* .pfnReset = */               NULL,
+    /* .pfnReset = */               efiR3Reset,
     /* .pfnSuspend = */             NULL,
     /* .pfnResume = */              NULL,
     /* .pfnAttach = */              NULL,
