@@ -2808,6 +2808,7 @@ void UICommon::sltHandleCommitDataRequest(QSessionManager &manager)
             if (!isSeparateProcess())
             {
 # if defined(VBOX_WS_MAC) && defined(VBOX_IS_QT6_OR_LATER) /** @todo qt6: ... */
+                Q_UNUSED(manager);
                 /* This code prevents QWindowSystemInterface::handleApplicationTermination
                    for running, so among other things QApplication::closeAllWindows isn't
                    called and we're somehow stuck in a half closed down state.  That said,
