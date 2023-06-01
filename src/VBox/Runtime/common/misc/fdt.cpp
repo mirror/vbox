@@ -46,9 +46,10 @@
 #include <iprt/err.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
-#include <iprt/strcache.h>
+#include <iprt/sg.h>
 #include <iprt/string.h>
 #include <iprt/vfs.h>
+#include <iprt/zero.h>
 #include <iprt/formats/dtb.h>
 
 
@@ -72,13 +73,25 @@ typedef struct RTFDTINT
     /** Pointer to the string block. */
     char                    *paszStrings;
     /** Pointer to the raw structs block. */
-    uint32_t                *pu32Structs;
+    uint8_t                 *pbStruct;
     /** Pointer to the array of memory reservation entries. */
     PDTBFDTRSVENTRY         paMemRsv;
     /** Number of memory reservation entries. */
     uint32_t                cMemRsv;
-    /** The DTB header (converted to host endianess). */
-    DTBFDTHDR               DtbHdr;
+    /** Maximum number of memory reservation entries allocated. */
+    uint32_t                cMemRsvMax;
+    /** Size of the strings block. */
+    uint32_t                cbStrings;
+    /** Allocated size of the string block. */
+    uint32_t                cbStringsMax;
+    /** Size of the struct block. */
+    uint32_t                cbStruct;
+    /** Allocated size of the struct block. */
+    uint32_t                cbStructMax;
+    /** The physical boot CPU ID. */
+    uint32_t                u32CpuIdPhysBoot;
+    /** Current tree depth in the structure block. */
+    uint32_t                cTreeDepth;
 } RTFDTINT;
 /** Pointer to the internal Flattened Devicetree instance. */
 typedef RTFDTINT *PRTFDTINT;
@@ -236,16 +249,22 @@ static void rtFdtDestroy(PRTFDTINT pThis)
 {
     if (pThis->paszStrings)
         RTMemFree(pThis->paszStrings);
-    if (pThis->pu32Structs)
-        RTMemFree(pThis->pu32Structs);
+    if (pThis->pbStruct)
+        RTMemFree(pThis->pbStruct);
     if (pThis->paMemRsv)
         RTMemFree(pThis->paMemRsv);
 
-    pThis->paszStrings = NULL;
-    pThis->pu32Structs = NULL;
-    pThis->paMemRsv    = NULL;
-    pThis->cMemRsv     = 0;
-    RT_ZERO(pThis->DtbHdr);
+    pThis->paszStrings      = NULL;
+    pThis->pbStruct         = NULL;
+    pThis->paMemRsv         = NULL;
+    pThis->cMemRsv          = 0;
+    pThis->cMemRsvMax       = 0;
+    pThis->cbStrings        = 0;
+    pThis->cbStringsMax     = 0;
+    pThis->cbStruct         = 0;
+    pThis->cbStructMax      = 0;
+    pThis->u32CpuIdPhysBoot = 0;
+    pThis->cTreeDepth       = 0;
     RTMemFree(pThis);
 }
 
@@ -255,20 +274,23 @@ static void rtFdtDestroy(PRTFDTINT pThis)
  *
  * @returns IPRT status code.
  * @param   pThis           Pointer to the FDT instance.
+ * @param   pDtbHdr         The DTB header.
  * @param   hVfsIos         The VFS I/O stream handle to load the DTB from.
  * @param   pErrInfo        Where to return additional error information.
  */
-static int rtFdtDtbMemRsvLoad(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINFO pErrInfo)
+static int rtFdtDtbMemRsvLoad(PRTFDTINT pThis, PCDTBFDTHDR pDtbHdr, RTVFSIOSTREAM hVfsIos, PRTERRINFO pErrInfo)
 {
-    AssertReturn(pThis->DtbHdr.offMemRsvMap < pThis->DtbHdr.offDtStruct, VERR_INTERNAL_ERROR);
+    AssertReturn(pDtbHdr->offMemRsvMap < pDtbHdr->offDtStruct, VERR_INTERNAL_ERROR);
 
-    uint32_t cMemRsvMax = (pThis->DtbHdr.offDtStruct - pThis->DtbHdr.offMemRsvMap) / sizeof(*pThis->paMemRsv);
+    uint32_t cMemRsvMax = (pDtbHdr->offDtStruct - pDtbHdr->offMemRsvMap) / sizeof(*pThis->paMemRsv);
     Assert(cMemRsvMax);
 
     pThis->paMemRsv = (PDTBFDTRSVENTRY)RTMemAllocZ(cMemRsvMax * sizeof(*pThis->paMemRsv));
     if (!pThis->paMemRsv)
         return RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "Failed to allocate %u bytes of memory for the memory reservation block",
                              cMemRsvMax * sizeof(*pThis->paMemRsv));
+
+    pThis->cMemRsvMax = cMemRsvMax;
 
     /* Read the entries one after another until the terminator is reached. */
     uint32_t cMemRsv = 0;
@@ -309,17 +331,18 @@ static int rtFdtDtbMemRsvLoad(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINFO
  *
  * @returns IPRT status code.
  * @param   pThis           Pointer to the FDT instance.
+ * @param   pDtbHdr         The DTB header.
  * @param   hVfsIos         The VFS I/O stream handle to load the DTB from.
  * @param   pErrInfo        Where to return additional error information.
  */
-static int rtFdtDtbStructsLoad(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINFO pErrInfo)
+static int rtFdtDtbStructsLoad(PRTFDTINT pThis, PCDTBFDTHDR pDtbHdr, RTVFSIOSTREAM hVfsIos, PRTERRINFO pErrInfo)
 {
-    pThis->pu32Structs = (uint32_t *)RTMemAllocZ(pThis->DtbHdr.cbDtStruct);
-    if (!pThis->pu32Structs)
+    pThis->pbStruct = (uint8_t *)RTMemAllocZ(pDtbHdr->cbDtStruct);
+    if (!pThis->pbStruct)
         return RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "Failed to allocate %u bytes of memory for the structs block",
-                             pThis->DtbHdr.cbDtStruct);
+                             pDtbHdr->cbDtStruct);
 
-    int rc = RTVfsIoStrmReadAt(hVfsIos, pThis->DtbHdr.offDtStruct, pThis->pu32Structs, pThis->DtbHdr.cbDtStruct,
+    int rc = RTVfsIoStrmReadAt(hVfsIos, pDtbHdr->offDtStruct, pThis->pbStruct, pDtbHdr->cbDtStruct,
                                true /*fBlocking*/, NULL /*pcbRead*/);
     if (RT_FAILURE(rc))
         return RTErrInfoSetF(pErrInfo, rc, "Failed to read structs block from I/O stream");
@@ -333,23 +356,24 @@ static int rtFdtDtbStructsLoad(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINF
  *
  * @returns IPRT status code.
  * @param   pThis           Pointer to the FDT instance.
+ * @param   pDtbHdr         The DTB header.
  * @param   hVfsIos         The VFS I/O stream handle to load the DTB from.
  * @param   pErrInfo        Where to return additional error information.
  */
-static int rtFdtDtbStringsLoad(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINFO pErrInfo)
+static int rtFdtDtbStringsLoad(PRTFDTINT pThis, PCDTBFDTHDR pDtbHdr, RTVFSIOSTREAM hVfsIos, PRTERRINFO pErrInfo)
 {
-    pThis->paszStrings = (char *)RTMemAllocZ(pThis->DtbHdr.cbDtStrings);
+    pThis->paszStrings = (char *)RTMemAllocZ(pDtbHdr->cbDtStrings);
     if (!pThis->paszStrings)
         return RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "Failed to allocate %u bytes of memory for the strings block",
-                             pThis->DtbHdr.cbDtStrings);
+                             pDtbHdr->cbDtStrings);
 
-    int rc = RTVfsIoStrmReadAt(hVfsIos, pThis->DtbHdr.offDtStrings, pThis->paszStrings, pThis->DtbHdr.cbDtStrings,
+    int rc = RTVfsIoStrmReadAt(hVfsIos, pDtbHdr->offDtStrings, pThis->paszStrings, pDtbHdr->cbDtStrings,
                                true /*fBlocking*/, NULL /*pcbRead*/);
     if (RT_FAILURE(rc))
         return RTErrInfoSetF(pErrInfo, rc, "Failed to read strings block from I/O stream");
 
     /* Verify that the strings block is terminated. */
-    if (pThis->paszStrings[pThis->DtbHdr.cbDtStrings - 1] != '\0')
+    if (pThis->paszStrings[pDtbHdr->cbDtStrings - 1] != '\0')
         return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_STRINGS_BLOCK_NOT_TERMINATED, "The strings block is not zero terminated");
 
     return VINF_SUCCESS;
@@ -387,18 +411,23 @@ static int rtFdtLoadDtb(PRTFDT phFdt, RTVFSIOSTREAM hVfsIos, PRTERRINFO pErrInfo
                     PRTFDTINT pThis = (PRTFDTINT)RTMemAllocZ(sizeof(*pThis));
                     if (RT_LIKELY(pThis))
                     {
-                        memcpy(&pThis->DtbHdr, &DtbHdr, sizeof(DtbHdr));
+                        pThis->cbStrings        = DtbHdr.cbDtStrings;
+                        pThis->cbStruct         = DtbHdr.cbDtStruct;
+                        pThis->u32CpuIdPhysBoot = DtbHdr.u32CpuIdPhysBoot;
 
                         /* Load the memory reservation block. */
-                        rc = rtFdtDtbMemRsvLoad(pThis, hVfsIos, pErrInfo);
+                        rc = rtFdtDtbMemRsvLoad(pThis, &DtbHdr, hVfsIos, pErrInfo);
                         if (RT_SUCCESS(rc))
                         {
-                            rc = rtFdtDtbStructsLoad(pThis, hVfsIos, pErrInfo);
+                            rc = rtFdtDtbStructsLoad(pThis, &DtbHdr, hVfsIos, pErrInfo);
                             if (RT_SUCCESS(rc))
                             {
-                                rc = rtFdtDtbStringsLoad(pThis, hVfsIos, pErrInfo);
+                                rc = rtFdtDtbStringsLoad(pThis, &DtbHdr, hVfsIos, pErrInfo);
                                 if (RT_SUCCESS(rc))
                                 {
+                                    pThis->cbStringsMax = pThis->cbStrings;
+                                    pThis->cbStructMax  = pThis->cbStruct;
+
                                     *phFdt = pThis;
                                     return VINF_SUCCESS;
                                 }
@@ -455,7 +484,7 @@ DECLINLINE(uint32_t) rtFdtStructsGetToken(PRTFDTDTBDUMP pDump)
  */
 DECLINLINE(size_t) rtFdtStructsGetOffset(PRTFDTINT pThis, PCRTFDTDTBDUMP pDump)
 {
-    return pThis->DtbHdr.cbDtStruct - pDump->cbLeft - sizeof(uint32_t);
+    return pThis->cbStruct - pDump->cbLeft - sizeof(uint32_t);
 }
 #endif
 
@@ -727,7 +756,7 @@ static int rtFdtStructsDumpPropertyAsDts(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos,
     Prop.offPropertyName = RT_BE2H_U32(Prop.offPropertyName);
     Prop.cbProperty      = RT_BE2H_U32(Prop.cbProperty);
 
-    if (Prop.offPropertyName >= pThis->DtbHdr.cbDtStrings)
+    if (Prop.offPropertyName >= pThis->cbStrings)
         return RTErrInfoSetF(pErrInfo, VERR_FDT_DTB_PROP_NAME_OFF_TOO_LARGE, "Property name offset points past the string block");
 
     int rc = rtFdtStructsDumpDtsIndent(hVfsIos, uIndentLvl);
@@ -844,8 +873,8 @@ static int rtFdtDumpRootAsDts(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINFO
 {
     RTFDTDTBDUMP Dump;
 
-    Dump.cbLeft    = pThis->DtbHdr.cbDtStruct;
-    Dump.pbStructs = (const uint8_t *)pThis->pu32Structs;
+    Dump.cbLeft    = pThis->cbStruct;
+    Dump.pbStructs = pThis->pbStruct;
 
     /* Skip any NOP tokens. */
     uint32_t u32Token = rtFdtStructsGetToken(&Dump);
@@ -947,7 +976,7 @@ static int rtFdtDumpAsDts(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINFO pEr
     {
         cch = RTVfsIoStrmPrintf(hVfsIos, "/memreserve/ %#RX64 %#RX64;\n", pThis->paMemRsv[i].PhysAddrStart, pThis->paMemRsv[i].cbArea);
         if (cch <= 0)
-            return RTErrInfoSetF(pErrInfo, cch == 0 ? VERR_NO_MEMORY : -cch, "Failed to write memory reervation block %u", i);
+            return RTErrInfoSetF(pErrInfo, cch == 0 ? VERR_NO_MEMORY : -cch, "Failed to write memory reservation block %u", i);
     }
 
     /* Dump the tree. */
@@ -955,10 +984,336 @@ static int rtFdtDumpAsDts(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINFO pEr
 }
 
 
+/**
+ * Adds the zero padding to align the next block properly.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsIos         The VFS I/O stream handle to dump the DTB to.
+ * @param   cbPad           How many bytes to pad.
+ */
+static int rtFdtDumpAsDtbPad(RTVFSIOSTREAM hVfsIos, uint32_t cbPad)
+{
+    if (!cbPad)
+        return VINF_SUCCESS;
+
+    while (cbPad)
+    {
+        uint32_t cbThisPad = RT_MIN(cbPad, _4K);
+        int rc = RTVfsIoStrmWrite(hVfsIos, &g_abRTZero4K[0], cbThisPad, true /*fBlocking*/, NULL /*pcbWritten*/);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        cbPad -= cbThisPad;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Dumps the given FDT instance as a DTB (Devicetree blob).
+ *
+ * @returns IPRT status code.
+ * @param   pThis           Pointer to the FDT instance.
+ * @param   hVfsIos         The VFS I/O stream handle to dump the DTB to.
+ * @param   pErrInfo        Where to return additional error information.
+ */
+static int rtFdtDumpAsDtb(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINFO pErrInfo)
+{
+    DTBFDTHDR Hdr;
+
+    /* ensure the FDT is finalized. */
+    int rc = RTFdtFinalize(pThis);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint32_t offMemRsvMap = RT_ALIGN_32(sizeof(Hdr), sizeof(uint64_t));
+    uint32_t offDtStruct  = RT_ALIGN_32(offMemRsvMap + (pThis->cMemRsv + 1) * sizeof(DTBFDTRSVENTRY), sizeof(uint32_t));
+    uint32_t offDtStrings = offDtStruct + pThis->cbStruct;
+    uint32_t cbFdt        = offDtStrings + pThis->cbStrings;
+    uint32_t cbCur        = 0;
+
+    Hdr.u32Magic                 = RT_H2BE_U32(DTBFDTHDR_MAGIC);
+    Hdr.cbFdt                    = RT_H2BE_U32(cbFdt);
+    Hdr.offDtStruct              = RT_H2BE_U32(offDtStruct);
+    Hdr.offDtStrings             = RT_H2BE_U32(offDtStrings);
+    Hdr.offMemRsvMap             = RT_H2BE_U32(offMemRsvMap);
+    Hdr.u32Version               = RT_H2BE_U32(DTBFDTHDR_VERSION);
+    Hdr.u32VersionLastCompatible = RT_H2BE_U32(DTBFDTHDR_VERSION_LAST_COMP);
+    Hdr.u32CpuIdPhysBoot         = RT_H2BE_U32(pThis->u32CpuIdPhysBoot);
+    Hdr.cbDtStrings              = RT_H2BE_U32(pThis->cbStrings);
+    Hdr.cbDtStruct               = RT_H2BE_U32(pThis->cbStruct);
+
+    /* Write out header, memory reservation block, struct block and strings block all with appropriate padding. */
+    rc = RTVfsIoStrmWrite(hVfsIos, &Hdr, sizeof(Hdr), true /*fBlocking*/, NULL /*pcbWritten*/);
+    if (RT_FAILURE(rc))
+        return RTErrInfoSetF(pErrInfo, rc, "Failed to write DTB header (%u bytes) to I/O stream", sizeof(Hdr));
+
+    cbCur += sizeof(Hdr);
+    rc = rtFdtDumpAsDtbPad(hVfsIos, offMemRsvMap - cbCur);
+    if (RT_FAILURE(rc))
+        return RTErrInfoSetF(pErrInfo, rc, "Failed to write padding after DTB header (%u bytes) to I/O stream",
+                             offMemRsvMap - cbCur);
+    cbCur += offMemRsvMap - cbCur;
+
+    /* Write memory reservation blocks. */
+    for (uint32_t i = 0; i < pThis->cMemRsv; i++)
+    {
+        DTBFDTRSVENTRY MemRsv;
+
+        MemRsv.PhysAddrStart = RT_H2BE_U32(pThis->paMemRsv[i].PhysAddrStart);
+        MemRsv.cbArea        = RT_H2BE_U32(pThis->paMemRsv[i].cbArea);
+        rc = RTVfsIoStrmWrite(hVfsIos, &MemRsv, sizeof(MemRsv), true /*fBlocking*/, NULL /*pcbWritten*/);
+        if (RT_FAILURE(rc))
+            return RTErrInfoSetF(pErrInfo, rc, "Failed to write memory reservation entry %u (%u bytes) to I/O stream",
+                                 i, sizeof(MemRsv));
+        cbCur += sizeof(MemRsv);
+    }
+
+    /* Always write terminating entry. */
+    DTBFDTRSVENTRY RsvTerm;
+    RsvTerm.PhysAddrStart = RT_H2BE_U32(0); /* Yeah, pretty useful endianess conversion I know */
+    RsvTerm.cbArea        = RT_H2BE_U32(0);
+    rc = RTVfsIoStrmWrite(hVfsIos, &RsvTerm, sizeof(RsvTerm), true /*fBlocking*/, NULL /*pcbWritten*/);
+    if (RT_FAILURE(rc))
+        return RTErrInfoSetF(pErrInfo, rc, "Failed to write terminating memory reservation entry (%u bytes) to I/O stream",
+                             sizeof(RsvTerm));
+    cbCur += sizeof(RsvTerm);
+
+    rc = rtFdtDumpAsDtbPad(hVfsIos, offDtStruct - cbCur);
+    if (RT_FAILURE(rc))
+        return RTErrInfoSetF(pErrInfo, rc, "Failed to write padding after memory reservation block (%u bytes) to I/O stream",
+                             offDtStruct - cbCur);
+    cbCur += offDtStruct - cbCur;
+
+    /* Write struct block. */
+    rc = RTVfsIoStrmWrite(hVfsIos, pThis->pbStruct, pThis->cbStruct, true /*fBlocking*/, NULL /*pcbWritten*/);
+    if (RT_FAILURE(rc))
+        return RTErrInfoSetF(pErrInfo, rc, "Failed to write struct block (%u bytes) to I/O stream",
+                             pThis->cbStruct);
+    cbCur += pThis->cbStruct;
+
+    rc = rtFdtDumpAsDtbPad(hVfsIos, offDtStrings - cbCur);
+    if (RT_FAILURE(rc))
+        return RTErrInfoSetF(pErrInfo, rc, "Failed to write padding after structs block (%u bytes) to I/O stream",
+                             offDtStrings - cbCur);
+    cbCur += offDtStrings - cbCur;
+
+    /* Write strings block. */
+    rc = RTVfsIoStrmWrite(hVfsIos, pThis->paszStrings, pThis->cbStrings, true /*fBlocking*/, NULL /*pcbWritten*/);
+    if (RT_FAILURE(rc))
+        return RTErrInfoSetF(pErrInfo, rc, "Failed to write strings block (%u bytes) to I/O stream",
+                             pThis->cbStrings);
+    cbCur += pThis->cbStrings;
+
+    rc = rtFdtDumpAsDtbPad(hVfsIos, cbFdt - cbCur);
+    if (RT_FAILURE(rc))
+        return RTErrInfoSetF(pErrInfo, rc, "Failed to write padding after strings block (%u bytes) to I/O stream",
+                             cbFdt - cbCur);
+    cbCur += cbFdt - cbCur;
+
+    Assert(cbCur == cbFdt);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Ensures there is enough space in the structure block, allocating more if required.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           Pointer to the FDT instance.
+ * @param   cch             Number of characters required, including the zero terminator.
+ */
+static int rtFdtStringsEnsureSpace(PRTFDTINT pThis, uint32_t cch)
+{
+    if (pThis->cbStringsMax - pThis->cbStrings >= cch)
+        return VINF_SUCCESS;
+
+    size_t cbNew = RT_ALIGN_32(pThis->cbStrings + cch, 256);
+    void *pvStringsNew = RTMemReallocZ(pThis->paszStrings, pThis->cbStringsMax, cbNew);
+    if (!pvStringsNew)
+        return VERR_NO_MEMORY;
+
+    Assert(cbNew - pThis->cbStrings >= cch);
+    pThis->paszStrings = (char *)pvStringsNew;
+    pThis->cbStringsMax = cbNew;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Looks for the given string in the strings block appending it if not found, returning
+ * the offset of the occurrence.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           Pointer to the FDT instance.
+ * @param   psz             The string to insert.
+ * @param   poffStr         Where to store the offset of the start of string from the beginning
+ *                          of the strings block on success.
+ */
+static int rtFdtStringsInsertString(PRTFDTINT pThis, const char *psz, uint32_t *poffStr)
+{
+    uint32_t off = 0;
+    while (off < pThis->cbStrings)
+    {
+        if (!RTStrCmp(psz, &pThis->paszStrings[off]))
+        {
+            *poffStr = off;
+            return VINF_SUCCESS;
+        }
+
+        /** @todo Optimize? The strings block is not very large though so probably not worth the effort. */
+        off += strlen(&pThis->paszStrings[off]) + 1;
+    }
+
+    /* Not found, need to insert. */
+    size_t cch = strlen(psz) + 1;
+    int rc = rtFdtStringsEnsureSpace(pThis, cch);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    memcpy(&pThis->paszStrings[off], psz, cch);
+    pThis->cbStrings += cch;
+    *poffStr = off;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Ensures there is enough space in the structure block, allocating more if required.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           Pointer to the FDT instance.
+ * @param   cbSpaceRequired Number of bytes required.
+ */
+static int rtFdtStructEnsureSpace(PRTFDTINT pThis, uint32_t cbSpaceRequired)
+{
+    if (pThis->cbStructMax - pThis->cbStruct >= cbSpaceRequired)
+        return VINF_SUCCESS;
+
+    size_t cbNew = RT_ALIGN_32(pThis->cbStruct + cbSpaceRequired, _1K);
+    void *pvStructNew = RTMemReallocZ(pThis->pbStruct, pThis->cbStructMax, cbNew);
+    if (!pvStructNew)
+        return VERR_NO_MEMORY;
+
+    Assert(cbNew - pThis->cbStruct >= cbSpaceRequired);
+    pThis->pbStruct    = (uint8_t *)pvStructNew;
+    pThis->cbStructMax = cbNew;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Appends the given token and payload data to the structure block taking care of aligning the data.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           Pointer to the FDT instance.
+ * @param   pSgBuf          The S/G buffer to append.
+ * @param   cbAppend        How many bytes to append.
+ */
+static int rtFdtStructAppendSg(PRTFDTINT pThis, PRTSGBUF pSgBuf, uint32_t cbAppend)
+{
+    uint32_t cbAppendAligned = RT_ALIGN_32(cbAppend, sizeof(uint32_t));
+
+    /* Ensure enough space for the token and the payload + padding. */
+    int rc = rtFdtStructEnsureSpace(pThis, cbAppendAligned);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    size_t cbCopied = RTSgBufCopyToBuf(pSgBuf, pThis->pbStruct + pThis->cbStruct, cbAppend);
+    AssertReturn(cbCopied == cbAppend, VERR_INTERNAL_ERROR);
+
+    pThis->cbStruct += cbAppendAligned;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Appends a token and payload data.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           Pointer to the FDT instance.
+ * @param   u32Token        The token to append.
+ * @param   pvPayload       Pointer to the payload data to append.
+ * @param   cbPayload       Size of the payload data in bytes.
+ */
+static int rtFdtStructAppendTokenAndPayload(PRTFDTINT pThis, uint32_t u32Token, const void *pvPayload, size_t cbPayload)
+{
+    RTSGBUF SgBuf;
+    RTSGSEG aSegs[2];
+
+    aSegs[0].pvSeg = &u32Token;
+    aSegs[0].cbSeg = sizeof(u32Token);
+    aSegs[1].pvSeg = (void *)pvPayload;
+    aSegs[1].cbSeg = cbPayload;
+    RTSgBufInit(&SgBuf, &aSegs[0], RT_ELEMENTS(aSegs));
+
+    return rtFdtStructAppendSg(pThis, &SgBuf, sizeof(u32Token) + cbPayload);
+}
+
+
+/**
+ * Appends a property.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           Pointer to the FDT instance.
+ * @param   pszProperty     Name of the property.
+ * @param   pvProperty      Pointer to the property data.
+ * @param   cbProperty      Size of the property data in bytes.
+ */
+static int rtFdtStructAppendProperty(PRTFDTINT pThis, const char *pszProperty, const void *pvProperty, uint32_t cbProperty)
+{
+    /* Insert the property name into the strings block. */
+    uint32_t offStr;
+    int rc = rtFdtStringsInsertString(pThis, pszProperty, &offStr);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint32_t u32Token = DTB_FDT_TOKEN_PROPERTY_BE;
+    DTBFDTPROP Prop;
+
+    Prop.cbProperty      = RT_H2BE_U32(cbProperty);
+    Prop.offPropertyName = RT_H2BE_U32(offStr);
+
+    RTSGBUF SgBuf;
+    RTSGSEG aSegs[3];
+    aSegs[0].pvSeg = &u32Token;
+    aSegs[0].cbSeg = sizeof(u32Token);
+    aSegs[1].pvSeg = &Prop;
+    aSegs[1].cbSeg = sizeof(Prop);
+    if (cbProperty)
+    {
+        aSegs[2].pvSeg = (void *)pvProperty;
+        aSegs[2].cbSeg = cbProperty;
+    }
+    RTSgBufInit(&SgBuf, &aSegs[0], cbProperty ? RT_ELEMENTS(aSegs) : 2);
+
+    return rtFdtStructAppendSg(pThis, &SgBuf, sizeof(u32Token) + sizeof(Prop) + cbProperty);
+}
+
+
 RTDECL(int) RTFdtCreateEmpty(PRTFDT phFdt)
 {
-    RT_NOREF(phFdt);
-    return VERR_NOT_IMPLEMENTED;
+    AssertPtrReturn(phFdt, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+    PRTFDTINT pThis = (PRTFDTINT)RTMemAllocZ(sizeof(*pThis));
+    if (pThis)
+    {
+        /* Add the root node. */
+        rc = RTFdtNodeAdd(pThis, "");
+        if (RT_SUCCESS(rc))
+        {
+            *phFdt = pThis;
+            return VINF_SUCCESS;
+        }
+
+        RTMemFree(pThis);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    return rc;
 }
 
 
@@ -990,16 +1345,43 @@ RTDECL(void) RTFdtDestroy(RTFDT hFdt)
 }
 
 
-RTDECL(int) RTFdtDumpToVfsIoStrm(RTFDT hFdt, RTFDTTYPE enmOutType, uint32_t fFlags, RTVFSIOSTREAM hVfsIos, PRTERRINFO pErrInfo)
+RTDECL(int) RTFdtFinalize(RTFDT hFdt)
 {
     PRTFDTINT pThis = hFdt;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
 
-    RT_NOREF(fFlags);
+    /* Already finalized? */
+    if (!pThis->cTreeDepth)
+        return VINF_SUCCESS;
+
+    uint32_t cbStructSpace = pThis->cTreeDepth * sizeof(uint32_t) + sizeof(uint32_t); /* One extra for the END token. */
+    int rc = rtFdtStructEnsureSpace(pThis, cbStructSpace);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint32_t *pu32 = (uint32_t *)pThis->pbStruct;
+    while (pThis->cTreeDepth--)
+        *pu32++ = DTB_FDT_TOKEN_END_NODE_BE;
+
+    *pu32 = DTB_FDT_TOKEN_END_BE;
+    pThis->cbStruct += cbStructSpace;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTFdtDumpToVfsIoStrm(RTFDT hFdt, RTFDTTYPE enmOutType, uint32_t fFlags, RTVFSIOSTREAM hVfsIos, PRTERRINFO pErrInfo)
+{
+    PRTFDTINT pThis = hFdt;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(enmOutType == RTFDTTYPE_DTS || enmOutType == RTFDTTYPE_DTB, VERR_INVALID_PARAMETER);
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+
     if (enmOutType == RTFDTTYPE_DTS)
         return rtFdtDumpAsDts(pThis, hVfsIos, pErrInfo);
+    else if (enmOutType == RTFDTTYPE_DTB)
+        return rtFdtDumpAsDtb(pThis, hVfsIos, pErrInfo);
 
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_NOT_SUPPORTED;
 }
 
 
@@ -1007,4 +1389,158 @@ RTDECL(int) RTFdtDumpToFile(RTFDT hFdt, RTFDTTYPE enmOutType, uint32_t fFlags, c
 {
     RT_NOREF(hFdt, enmOutType, fFlags, pszFilename, pErrInfo);
     return VERR_NOT_IMPLEMENTED;
+}
+
+
+RTDECL(int) RTFdtAddMemoryReservation(RTFDT hFdt, uint64_t PhysAddrStart, uint64_t cbArea)
+{
+    PRTFDTINT pThis = hFdt;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(PhysAddrStart > 0 || cbArea > 0, VERR_INVALID_PARAMETER);
+
+    if (pThis->cMemRsv == pThis->cMemRsvMax)
+    {
+        uint32_t cMemRsvMaxNew = pThis->cMemRsvMax + 10;
+        PDTBFDTRSVENTRY paMemRsvNew = (PDTBFDTRSVENTRY)RTMemRealloc(pThis->paMemRsv, cMemRsvMaxNew * sizeof(*paMemRsvNew));
+        if (!paMemRsvNew)
+            return VERR_NO_MEMORY;
+
+        pThis->paMemRsv   = paMemRsvNew;
+        pThis->cMemRsvMax = cMemRsvMaxNew;
+    }
+
+    pThis->paMemRsv[pThis->cMemRsv].PhysAddrStart = PhysAddrStart;
+    pThis->paMemRsv[pThis->cMemRsv].cbArea        = cbArea;
+    pThis->cMemRsv++;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTFdtSetPhysBootCpuId(RTFDT hFdt, uint32_t idPhysBootCpu)
+{
+    PRTFDTINT pThis = hFdt;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+
+    pThis->u32CpuIdPhysBoot = idPhysBootCpu;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTFdtNodeAdd(RTFDT hFdt, const char *pszName)
+{
+    PRTFDTINT pThis = hFdt;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+
+    /** @todo Validate node name against allowed character set. */
+    size_t cchName = strlen(pszName) + 1;
+    int rc = rtFdtStructAppendTokenAndPayload(pThis, DTB_FDT_TOKEN_BEGIN_NODE_BE, pszName, cchName);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    pThis->cTreeDepth++;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTFdtNodeAddF(RTFDT hFdt, const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(2, 3)
+{
+    va_list va;
+    va_start(va, pszNameFmt);
+    int rc = RTFdtNodeAddV(hFdt, pszNameFmt, va);
+    va_end(va);
+    return rc;
+}
+
+
+RTDECL(int) RTFdtNodeAddV(RTFDT hFdt, const char *pszNameFmt, va_list va) RT_IPRT_FORMAT_ATTR(2, 0)
+{
+    char szName[512]; /* lazy developer */
+    ssize_t cch = RTStrPrintf2V(&szName[0], sizeof(szName), pszNameFmt, va);
+    if (cch <= 0)
+        return VERR_BUFFER_OVERFLOW;
+
+    return RTFdtNodeAdd(hFdt, &szName[0]);
+}
+
+
+RTDECL(int) RTFdtNodeFinalize(RTFDT hFdt)
+{
+    PRTFDTINT pThis = hFdt;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->cTreeDepth > 1, VERR_FDT_AT_ROOT_LEVEL);
+
+    int rc = rtFdtStructAppendTokenAndPayload(pThis, DTB_FDT_TOKEN_END_NODE_BE, NULL /*pvPayload*/, 0 /*cbPayload*/);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    pThis->cTreeDepth--;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTFdtNodePropertyAddEmpty(RTFDT hFdt, const char *pszProperty)
+{
+    PRTFDTINT pThis = hFdt;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+
+    return rtFdtStructAppendProperty(pThis, pszProperty, NULL /*pvProperty*/, 0 /*cbProperty*/);
+}
+
+
+RTDECL(int) RTFdtNodePropertyAddU32(RTFDT hFdt, const char *pszProperty, uint32_t u32)
+{
+    PRTFDTINT pThis = hFdt;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+
+    RT_H2BE_U32(u32);
+    return rtFdtStructAppendProperty(pThis, pszProperty, &u32, sizeof(u32));
+}
+
+
+RTDECL(int) RTFdtNodePropertyAddString(RTFDT hFdt, const char *pszProperty, const char *pszVal)
+{
+    PRTFDTINT pThis = hFdt;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+
+    uint32_t cchVal = (uint32_t)strlen(pszVal) + 1;
+    return rtFdtStructAppendProperty(pThis, pszProperty, pszVal, cchVal);
+}
+
+
+RTDECL(int) RTFdtNodePropertyAddCellsU32(RTFDT hFdt, const char *pszProperty, uint32_t cCells, ...)
+{
+    va_list va;
+    va_start(va, cCells);
+    int rc = RTFdtNodePropertyAddCellsU32V(hFdt, pszProperty, cCells, va);
+    va_end(va);
+    return rc;
+}
+
+
+RTDECL(int) RTFdtNodePropertyAddCellsU32V(RTFDT hFdt, const char *pszProperty, uint32_t cCells, va_list va)
+{
+    PRTFDTINT pThis = hFdt;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+
+    /* Insert the property name into the strings block. */
+    uint32_t offStr;
+    int rc = rtFdtStringsInsertString(pThis, pszProperty, &offStr);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint32_t cbPropAligned = RT_ALIGN_32(cCells * sizeof(uint32_t) + 3 * sizeof(uint32_t), sizeof(uint32_t));
+
+    rc = rtFdtStructEnsureSpace(pThis, cbPropAligned);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint32_t *pu32 = (uint32_t *)(pThis->pbStruct + pThis->cbStruct);
+    *pu32++ = DTB_FDT_TOKEN_PROPERTY_BE;
+    *pu32++ = RT_H2BE_U32(cCells * sizeof(uint32_t));
+    *pu32++ = RT_H2BE_U32(offStr);
+    for (uint32_t i = 0; i < cCells; i++)
+        *pu32++ = va_arg(va, uint32_t);
+
+    pThis->cbStruct += cbPropAligned;
+    return VINF_SUCCESS;
 }

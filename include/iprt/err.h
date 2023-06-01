@@ -2852,8 +2852,10 @@
 #define VERR_FDT_DTB_PROP_NAME_OFF_TOO_LARGE                    (-27015)
 /** The DTB property payload size does not match the expectations. */
 #define VERR_FDT_DTB_PROP_SIZE_MALFORMED                        (-27016)
-/** The DTB property payload string is not temrinated. */
+/** The DTB property payload string is not terminated. */
 #define VERR_FDT_DTB_PROP_STRING_NOT_TERMINATED                 (-27017)
+/** Can't finalize the node as the FDT cursor is at the root level already. */
+#define VERR_FDT_AT_ROOT_LEVEL                                  (-27018)
 /** @} */
 
 /* SED-END */

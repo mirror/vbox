@@ -111,6 +111,15 @@ RTDECL(void) RTFdtDestroy(RTFDT hFdt);
 
 
 /**
+ * Finalizes the given FDT for writing out.
+ *
+ * @returns IPRT status code.
+ * @param   hFdt            The flattened devicetree handle.
+ */
+RTDECL(int) RTFdtFinalize(RTFDT hFdt);
+
+
+/**
  * Dumps the given flattened devicetree to the given VFS file.
  *
  * @returns IPRT status code.
@@ -134,6 +143,124 @@ RTDECL(int) RTFdtDumpToVfsIoStrm(RTFDT hFdt, RTFDTTYPE enmOutType, uint32_t fFla
  * @param   pErrInfo        Where to return additional error information.
  */
 RTDECL(int) RTFdtDumpToFile(RTFDT hFdt, RTFDTTYPE enmOutType, uint32_t fFlags, const char *pszFilename, PRTERRINFO pErrInfo);
+
+
+/**
+ * Adds a new memory reservation to the given FDT instance.
+ *
+ * @returns IPRT status code.
+ * @param   hFdt            The flattened devicetree handle.
+ * @param   PhysAddrStart   The physical start address of the reservation.
+ * @param   cbArea          Size of the area in bytes.
+ */
+RTDECL(int) RTFdtAddMemoryReservation(RTFDT hFdt, uint64_t PhysAddrStart, uint64_t cbArea);
+
+
+/**
+ * Sets the physical boot CPU id for the given FDT instance.
+ *
+ * @returns IPRT status code.
+ * @param   hFdt            The flattened devicetree handle.
+ * @param   idPhysBootCpu   The physical boot CPU ID.
+ */
+RTDECL(int) RTFdtSetPhysBootCpuId(RTFDT hFdt, uint32_t idPhysBootCpu);
+
+
+/**
+ * Adds a new ode with the given name under the currently active one.
+ *
+ * @returns IPRT status code.
+ * @param   hFdt            The flattened devicetree handle.
+ * @param   pszName         The name of the node.
+ */
+RTDECL(int) RTFdtNodeAdd(RTFDT hFdt, const char *pszName);
+
+
+/**
+ * Adds a new ode with the given name under the currently active one.
+ *
+ * @returns IPRT status code.
+ * @param   hFdt            The flattened devicetree handle.
+ * @param   pszNameFmt      The name of the node as a format string.
+ * @param   ...             The format arguments.
+ */
+RTDECL(int) RTFdtNodeAddF(RTFDT hFdt, const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(2, 3);
+
+
+/**
+ * Adds a new ode with the given name under the currently active one.
+ *
+ * @returns IPRT status code.
+ * @param   hFdt            The flattened devicetree handle.
+ * @param   pszNameFmt      The name of the node as a format string.
+ * @param   va              The format arguments.
+ */
+RTDECL(int) RTFdtNodeAddV(RTFDT hFdt, const char *pszNameFmt, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
+
+
+/**
+ * Finalizes the current active node and returns the state to the parent node.
+ *
+ * @returns IPRT status code.
+ * @param   hFdt            The flattened devicetree handle.
+ */
+RTDECL(int) RTFdtNodeFinalize(RTFDT hFdt);
+
+
+/**
+ * Adds a single empty property with the given name to the current node acting as a boolean.
+ *
+ * @returns IPRT status code.
+ * @param   hFdt            The flattened devicetree handle.
+ * @param   pszProperty     The property name.
+ */
+RTDECL(int) RTFdtNodePropertyAddEmpty(RTFDT hFdt, const char *pszProperty);
+
+
+/**
+ * Adds a single u32 property with the given name to the current node.
+ *
+ * @returns IPRT status code.
+ * @param   hFdt            The flattened devicetree handle.
+ * @param   pszProperty     The property name.
+ * @param   u32             The u32 value to set the property to.
+ */
+RTDECL(int) RTFdtNodePropertyAddU32(RTFDT hFdt, const char *pszProperty, uint32_t u32);
+
+
+/**
+ * Adds a string property with the given name to the current node.
+ *
+ * @returns IPRT status code.
+ * @param   hFdt            The flattened devicetree handle.
+ * @param   pszProperty     The property name.
+ * @param   pszVal          The string value to set the property to.
+ */
+RTDECL(int) RTFdtNodePropertyAddString(RTFDT hFdt, const char *pszProperty, const char *pszVal);
+
+
+/**
+ * Adds a property with a variable number of u32 items.
+ *
+ * @returns IPRT staus code.
+ * @param   hFdt            The flattened devicetree handle.
+ * @param   pszProperty     The property name.
+ * @param   cCells          The number of cells.
+ * @param   ...             The cell u32 data items.
+ */
+RTDECL(int) RTFdtNodePropertyAddCellsU32(RTFDT hFdt, const char *pszProperty, uint32_t cCells, ...);
+
+
+/**
+ * Adds a property with a variable number of u32 items.
+ *
+ * @returns IPRT staus code.
+ * @param   hFdt            The flattened devicetree handle.
+ * @param   pszProperty     The property name.
+ * @param   cCells          The number of cells.
+ * @param   va              The cell u32 data items.
+ */
+RTDECL(int) RTFdtNodePropertyAddCellsU32V(RTFDT hFdt, const char *pszProperty, uint32_t cCells, va_list va);
 
 #endif /* IN_RING3 */
 
