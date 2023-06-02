@@ -102,7 +102,7 @@ static HRESULT vboxDXAdapterInit(D3D10DDIARG_OPENADAPTER const* pOpenData, VBOXW
         || pHWInfo->u.svga.au32Caps[SVGA3D_DEVCAP_DXCONTEXT] == 0)
     {
         /* The host does not support DX. */
-        AssertFailedReturn(E_FAIL);
+        return E_FAIL;
     }
 
     PVBOXDXADAPTER pAdapter = (PVBOXDXADAPTER)RTMemAllocZ(sizeof(VBOXDXADAPTER));
@@ -297,9 +297,6 @@ static void APIENTRY ddi10Draw(
     //DEBUG_BREAKPOINT_TEST();
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     LogFlowFunc(("pDevice = %p, VertexCount = %u, StartVertexLocation = %u\n", pDevice, VertexCount, StartVertexLocation));
-
-    if (VertexCount == 0)
-        return;
 
     vboxDXDraw(pDevice, VertexCount, StartVertexLocation);
 }
@@ -3810,19 +3807,10 @@ static HRESULT APIENTRY dxgiPresent(DXGI_DDI_ARG_PRESENT *pPresentArg)
     return STATUS_SUCCESS;
 }
 
-static HRESULT APIENTRY dxgiGetGammaCaps(DXGI_DDI_ARG_GET_GAMMA_CONTROL_CAPS *pGammaArg)
+HRESULT APIENTRY vboxDXGIGetGammaCaps(DXGI_DDI_ARG_GET_GAMMA_CONTROL_CAPS *)
 {
-    //DEBUG_BREAKPOINT_TEST();
-    PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)pGammaArg->hDevice;
-    LogFlowFunc(("pDevice 0x%p\n", pDevice));
-    RT_NOREF(pDevice);
-
-    pGammaArg->pGammaCapabilities->ScaleAndOffsetSupported = FALSE;
-    pGammaArg->pGammaCapabilities->MaxConvertedValue = 0.0f;
-    pGammaArg->pGammaCapabilities->MinConvertedValue = 0.0f;
-    pGammaArg->pGammaCapabilities->NumGammaControlPoints = 0;
-    RT_ZERO(pGammaArg->pGammaCapabilities->ControlPointPositions);
-
+    DEBUG_BREAKPOINT_TEST();
+    LogFlowFuncEnter();
     return S_OK;
 }
 
@@ -4670,7 +4658,7 @@ static HRESULT APIENTRY vboxDXCreateDevice(D3D10DDI_HADAPTER hAdapter, D3D10DDIA
     {
         DXGI1_2_DDI_BASE_FUNCTIONS *pDXGIFuncs = pCreateData->DXGIBaseDDI.pDXGIDDIBaseFunctions3;
         pDXGIFuncs->pfnPresent = dxgiPresent;
-        pDXGIFuncs->pfnGetGammaCaps = dxgiGetGammaCaps;
+        pDXGIFuncs->pfnGetGammaCaps = vboxDXGIGetGammaCaps;
         pDXGIFuncs->pfnSetDisplayMode = dxgiSetDisplayMode;
         pDXGIFuncs->pfnSetResourcePriority = vboxDXGISetResourcePriority;
         pDXGIFuncs->pfnQueryResourceResidency = dxgiQueryResourceResidency;
@@ -4690,7 +4678,7 @@ static HRESULT APIENTRY vboxDXCreateDevice(D3D10DDI_HADAPTER hAdapter, D3D10DDIA
     {
         DXGI1_1_DDI_BASE_FUNCTIONS *pDXGIFuncs = pCreateData->DXGIBaseDDI.pDXGIDDIBaseFunctions2;
         pDXGIFuncs->pfnPresent = dxgiPresent;
-        pDXGIFuncs->pfnGetGammaCaps = dxgiGetGammaCaps;
+        pDXGIFuncs->pfnGetGammaCaps = vboxDXGIGetGammaCaps;
         pDXGIFuncs->pfnSetDisplayMode = dxgiSetDisplayMode;
         pDXGIFuncs->pfnSetResourcePriority = vboxDXGISetResourcePriority;
         pDXGIFuncs->pfnQueryResourceResidency = dxgiQueryResourceResidency;
@@ -4702,7 +4690,7 @@ static HRESULT APIENTRY vboxDXCreateDevice(D3D10DDI_HADAPTER hAdapter, D3D10DDIA
     {
         DXGI_DDI_BASE_FUNCTIONS *pDXGIFuncs = pCreateData->DXGIBaseDDI.pDXGIDDIBaseFunctions;
         pDXGIFuncs->pfnPresent = dxgiPresent;
-        pDXGIFuncs->pfnGetGammaCaps = dxgiGetGammaCaps;
+        pDXGIFuncs->pfnGetGammaCaps = vboxDXGIGetGammaCaps;
         pDXGIFuncs->pfnSetDisplayMode = dxgiSetDisplayMode;
         pDXGIFuncs->pfnSetResourcePriority = vboxDXGISetResourcePriority;
         pDXGIFuncs->pfnQueryResourceResidency = dxgiQueryResourceResidency;
