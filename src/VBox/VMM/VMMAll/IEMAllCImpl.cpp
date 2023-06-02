@@ -4018,6 +4018,7 @@ static void iemLoadall286SetDescCache(PVMCPUCC pVCpu, uint8_t iSegReg, uint8_t c
     pHid->u64Base  = pbMem[0] + (pbMem[1] << 8) + (pbMem[2] << 16);
     /* The attributes are in the fourth byte. */
     pHid->Attr.u   = pbMem[3];
+    pHid->Attr.u  &= ~(X86DESCATTR_L | X86DESCATTR_D); /* (just to be on the safe side) */
     /* The limit is in the last two bytes. */
     pHid->u32Limit = pbMem[4] + (pbMem[5] << 8);
 }
