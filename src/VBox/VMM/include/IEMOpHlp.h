@@ -345,7 +345,9 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
 #define IEMOP_HLP_NO_64BIT() \
     do \
     { \
-        if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT) \
+        if (!IEM_IS_64BIT_CODE(pVCpu)) \
+        { /* likely */ } \
+        else \
             return IEMOP_RAISE_INVALID_OPCODE(); \
     } while (0)
 
@@ -354,7 +356,9 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
 #define IEMOP_HLP_ONLY_64BIT() \
     do \
     { \
-        if (pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT) \
+        if (IEM_IS_64BIT_CODE(pVCpu)) \
+        { /* likely */ } \
+        else \
             return IEMOP_RAISE_INVALID_OPCODE(); \
     } while (0)
 
@@ -362,7 +366,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
 #define IEMOP_HLP_DEFAULT_64BIT_OP_SIZE() \
     do \
     { \
-        if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT) \
+        if (IEM_IS_64BIT_CODE(pVCpu)) \
             iemRecalEffOpSize64Default(pVCpu); \
     } while (0)
 
@@ -371,7 +375,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
 #define IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX() \
     do \
     { \
-        if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT) \
+        if (IEM_IS_64BIT_CODE(pVCpu)) \
             iemRecalEffOpSize64DefaultAndIntelIgnoresOpSizePrefix(pVCpu); \
     } while (0)
 
@@ -379,7 +383,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
 #define IEMOP_HLP_64BIT_OP_SIZE() \
     do \
     { \
-        if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT) \
+        if (IEM_IS_64BIT_CODE(pVCpu)) \
             pVCpu->iem.s.enmEffOpSize = pVCpu->iem.s.enmDefOpSize = IEMMODE_64BIT; \
     } while (0)
 

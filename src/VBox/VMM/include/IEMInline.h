@@ -164,38 +164,22 @@ DECLINLINE(int) iemSetPassUpStatus(PVMCPUCC pVCpu, VBOXSTRICTRC rcPassUp) RT_NOE
 
 
 /**
- * Calculates the CPU mode.
+ * Calculates the IEM_F_MODE_X86_32BIT_FLAT flag.
  *
- * This is mainly for updating IEMCPU::enmCpuMode.
+ * Checks if CS, SS, DS and SS are all wide open flat 32-bit segments. This will
+ * reject expand down data segments and conforming code segments.
  *
- * @returns CPU mode.
+ * ASSUMES that the CPU is in 32-bit mode.
+ *
+ * @returns IEM_F_MODE_X86_32BIT_FLAT or zero.
  * @param   pVCpu               The cross context virtual CPU structure of the
  *                              calling thread.
+ * @sa      iemCalc32BitFlatIndicatorEsDs
  */
-DECLINLINE(IEMMODE) iemCalcCpuMode(PVMCPUCC pVCpu) RT_NOEXCEPT
-{
-    if (CPUMIsGuestIn64BitCodeEx(&pVCpu->cpum.GstCtx))
-        return IEMMODE_64BIT;
-    if (pVCpu->cpum.GstCtx.cs.Attr.n.u1DefBig) /** @todo check if this is correct... */
-        return IEMMODE_32BIT;
-    return IEMMODE_16BIT;
-}
-
-
-/**
- * Checks if CS, SS, DS and SS are all wide open flat 32-bit segments.
- *
- * This will reject expand down data segments and conforming code segments.
- *
- * @returns The indicator.
- * @param   pVCpu               The cross context virtual CPU structure of the
- *                              calling thread.
- */
-DECLINLINE(uint8_t) iemCalc32BitFlatIndicator(PVMCPUCC pVCpu) RT_NOEXCEPT
+DECL_FORCE_INLINE(uint32_t) iemCalc32BitFlatIndicator(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     AssertCompile(X86_SEL_TYPE_DOWN == X86_SEL_TYPE_CONF);
-    return pVCpu->iem.s.enmCpuMode == IEMMODE_32BIT
-        &&   (  (  pVCpu->cpum.GstCtx.es.Attr.u
+    return (  (  pVCpu->cpum.GstCtx.es.Attr.u
                  | pVCpu->cpum.GstCtx.cs.Attr.u
                  | pVCpu->cpum.GstCtx.ss.Attr.u
                  | pVCpu->cpum.GstCtx.ds.Attr.u)
@@ -211,8 +195,187 @@ DECLINLINE(uint8_t) iemCalc32BitFlatIndicator(PVMCPUCC pVCpu) RT_NOEXCEPT
                | pVCpu->cpum.GstCtx.ss.u64Base
                | pVCpu->cpum.GstCtx.ds.u64Base)
            == 0
-        ? 1 : 0; /** @todo define a constant/flag for this. */
+        && !(pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_ES | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_SS | CPUMCTX_EXTRN_ES))
+        ? IEM_F_MODE_X86_32BIT_FLAT : 0;
 }
+
+
+/**
+ * Calculates the IEM_F_MODE_X86_32BIT_FLAT flag, ASSUMING the CS and SS are
+ * flat already.
+ *
+ * This is used by sysenter.
+ *
+ * @returns IEM_F_MODE_X86_32BIT_FLAT or zero.
+ * @param   pVCpu               The cross context virtual CPU structure of the
+ *                              calling thread.
+ * @sa      iemCalc32BitFlatIndicator
+ */
+DECL_FORCE_INLINE(uint32_t) iemCalc32BitFlatIndicatorEsDs(PVMCPUCC pVCpu) RT_NOEXCEPT
+{
+    AssertCompile(X86_SEL_TYPE_DOWN == X86_SEL_TYPE_CONF);
+    return (  (  pVCpu->cpum.GstCtx.es.Attr.u
+                 | pVCpu->cpum.GstCtx.ds.Attr.u)
+              & (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_DOWN | X86DESCATTR_UNUSABLE | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_P))
+           ==   (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_DOWN | X86DESCATTR_UNUSABLE | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_P)
+        &&    (  (pVCpu->cpum.GstCtx.es.u32Limit + 1)
+               | (pVCpu->cpum.GstCtx.ds.u32Limit + 1))
+           == 0
+        &&    (  pVCpu->cpum.GstCtx.es.u64Base
+               | pVCpu->cpum.GstCtx.ds.u64Base)
+           == 0
+        && !(pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_ES | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_SS | CPUMCTX_EXTRN_ES))
+        ? IEM_F_MODE_X86_32BIT_FLAT : 0;
+}
+
+
+/**
+ * Calculates the IEM_F_MODE_XXX and CPL flags.
+ *
+ * @returns IEM_F_MODE_XXX
+ * @param   pVCpu               The cross context virtual CPU structure of the
+ *                              calling thread.
+ */
+DECL_FORCE_INLINE(uint32_t) iemCalcExecModeAndCplFlags(PVMCPUCC pVCpu) RT_NOEXCEPT
+{
+    /*
+     * We're duplicates code from CPUMGetGuestCPL and CPUMIsGuestIn64BitCodeEx
+     * here to try get this done as efficiently as possible.
+     */
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_EFER | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_SS | CPUMCTX_EXTRN_CS);
+
+    if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_PE)
+    {
+        if (!pVCpu->cpum.GstCtx.eflags.Bits.u1VM)
+        {
+            Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.ss));
+            uint32_t fExec = ((uint32_t)pVCpu->cpum.GstCtx.ss.Attr.n.u2Dpl << IEM_F_X86_CPL_SHIFT);
+            if (pVCpu->cpum.GstCtx.cs.Attr.n.u1DefBig)
+            {
+                Assert(!pVCpu->cpum.GstCtx.cs.Attr.n.u1Long || !(pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_LMA));
+                fExec |= IEM_F_MODE_X86_32BIT_PROT | iemCalc32BitFlatIndicator(pVCpu);
+            }
+            else if (   pVCpu->cpum.GstCtx.cs.Attr.n.u1Long
+                     && (pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_LMA))
+                fExec |= IEM_F_MODE_X86_64BIT;
+            else if (IEM_GET_TARGET_CPU(pVCpu) >= IEMTARGETCPU_386)
+                fExec |= IEM_F_MODE_X86_16BIT_PROT;
+            else
+                fExec |= IEM_F_MODE_X86_16BIT_PROT_PRE_386;
+            return fExec;
+        }
+        return IEM_F_MODE_X86_16BIT_PROT_V86 | (UINT32_C(3) << IEM_F_X86_CPL_SHIFT);
+    }
+
+    /* Real mode is zero; CPL set to 3 for VT-x real-mode emulation. */
+    if (RT_LIKELY(!pVCpu->cpum.GstCtx.cs.Attr.n.u1DefBig))
+    {
+        if (IEM_GET_TARGET_CPU(pVCpu) >= IEMTARGETCPU_386)
+            return IEM_F_MODE_X86_16BIT;
+        return IEM_F_MODE_X86_16BIT_PRE_386;
+    }
+
+    /* 32-bit unreal mode. */
+    return IEM_F_MODE_X86_32BIT | iemCalc32BitFlatIndicator(pVCpu);
+}
+
+
+/**
+ * Calculates the AMD-V and VT-x related context flags.
+ *
+ * @returns 0 or a combination of IEM_F_X86_CTX_IN_GUEST, IEM_F_X86_CTX_SVM and
+ *          IEM_F_X86_CTX_VMX.
+ * @param   pVCpu               The cross context virtual CPU structure of the
+ *                              calling thread.
+ */
+DECL_FORCE_INLINE(uint32_t) iemCalcExecHwVirtFlags(PVMCPUCC pVCpu) RT_NOEXCEPT
+{
+    /*
+     * This duplicates code from CPUMIsGuestVmxEnabled, CPUMIsGuestSvmEnabled
+     * and CPUMIsGuestInNestedHwvirtMode to some extent.
+     */
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_EFER);
+
+    AssertCompile(X86_CR4_VMXE != MSR_K6_EFER_SVME);
+    uint64_t const fTmp = (pVCpu->cpum.GstCtx.cr4     & X86_CR4_VMXE)
+                        | (pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_SVME);
+    if (RT_LIKELY(!fTmp))
+        return 0; /* likely */
+
+    if (fTmp & X86_CR4_VMXE)
+    {
+        Assert(pVCpu->cpum.GstCtx.hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
+        if (pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode)
+            return IEM_F_X86_CTX_VMX | IEM_F_X86_CTX_IN_GUEST;
+        return IEM_F_X86_CTX_VMX;
+    }
+
+    Assert(pVCpu->cpum.GstCtx.hwvirt.enmHwvirt == CPUMHWVIRT_SVM);
+    if (pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb.ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN)
+        return IEM_F_X86_CTX_SVM | IEM_F_X86_CTX_IN_GUEST;
+    return IEM_F_X86_CTX_SVM;
+}
+
+
+/**
+ * Calculates IEM_F_BRK_PENDING_XXX (IEM_F_PENDING_BRK_MASK) flags.
+ *
+ * @returns IEM_F_BRK_PENDING_XXX or zero.
+ * @param   pVCpu               The cross context virtual CPU structure of the
+ *                              calling thread.
+ */
+DECL_FORCE_INLINE(uint32_t) iemCalcExecDbgFlags(PVMCPUCC pVCpu) RT_NOEXCEPT
+{
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_DR7);
+
+    if (RT_LIKELY(   !(pVCpu->cpum.GstCtx.dr[7] & X86_DR7_ENABLED_MASK)
+                  && pVCpu->CTX_SUFF(pVM)->dbgf.ro.cEnabledHwBreakpoints == 0))
+        return 0;
+    return iemCalcExecDbgFlagsSlow(pVCpu);
+}
+
+/**
+ * Calculates the the IEM_F_XXX flags.
+ *
+ * @returns IEM_F_XXX combination match the current CPU state.
+ * @param   pVCpu               The cross context virtual CPU structure of the
+ *                              calling thread.
+ */
+DECL_FORCE_INLINE(uint32_t) iemCalcExecFlags(PVMCPUCC pVCpu) RT_NOEXCEPT
+{
+    return iemCalcExecModeAndCplFlags(pVCpu)
+         | iemCalcExecHwVirtFlags(pVCpu)
+         /* SMM is not yet implemented */
+         | iemCalcExecDbgFlags(pVCpu)
+         ;
+}
+
+
+/**
+ * Re-calculates the MODE and CPL parts of IEMCPU::fExec.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the
+ *                              calling thread.
+ */
+DECL_FORCE_INLINE(void) iemRecalcExecModeAndCplFlags(PVMCPUCC pVCpu)
+{
+    pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
+                       | iemCalcExecModeAndCplFlags(pVCpu);
+}
+
+
+/**
+ * Re-calculates the IEM_F_PENDING_BRK_MASK part of IEMCPU::fExec.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the
+ *                              calling thread.
+ */
+DECL_FORCE_INLINE(void) iemRecalcExecDbgFlags(PVMCPUCC pVCpu)
+{
+    pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~IEM_F_PENDING_BRK_MASK)
+                       | iemCalcExecDbgFlags(pVCpu);
+}
+
 
 #ifndef IEM_WITH_OPAQUE_DECODER_STATE
 
@@ -222,12 +385,14 @@ DECLINLINE(uint8_t) iemCalc32BitFlatIndicator(PVMCPUCC pVCpu) RT_NOEXCEPT
  *
  * @param   pVCpu               The cross context virtual CPU structure of the
  *                              calling thread.
- * @param   fBypassHandlers     Whether to bypass access handlers.
+ * @param   fExecOpts           Optional execution flags:
+ *                                  - IEM_F_BYPASS_HANDLERS
+ *                                  - IEM_F_X86_DISREGARD_LOCK
  *
  * @remarks Callers of this must call iemUninitExec() to undo potentially fatal
  *          side-effects in strict builds.
  */
-DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, bool fBypassHandlers) RT_NOEXCEPT
+DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, uint32_t fExecOpts) RT_NOEXCEPT
 {
     IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
     Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_IEM));
@@ -240,8 +405,7 @@ DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, bool fBypassHandlers) RT_NOEXCEPT
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.ldtr));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.tr));
 
-    pVCpu->iem.s.uCpl               = CPUMGetGuestCPL(pVCpu);
-    pVCpu->iem.s.enmCpuMode         = iemCalcCpuMode(pVCpu);
+    pVCpu->iem.s.fExec = iemCalcExecFlags(pVCpu) | fExecOpts;
 #  ifdef VBOX_STRICT
     pVCpu->iem.s.enmDefAddrMode     = (IEMMODE)0xfe;
     pVCpu->iem.s.enmEffAddrMode     = (IEMMODE)0xfe;
@@ -274,16 +438,6 @@ DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, bool fBypassHandlers) RT_NOEXCEPT
     pVCpu->iem.s.cActiveMappings    = 0;
     pVCpu->iem.s.iNextMapping       = 0;
     pVCpu->iem.s.rcPassUp           = VINF_SUCCESS;
-    pVCpu->iem.s.fBypassHandlers                = fBypassHandlers;
-    pVCpu->iem.s.fDisregardLock                 = false;
-    pVCpu->iem.s.fPendingInstructionBreakpoints = false;
-    pVCpu->iem.s.fPendingDataBreakpoints        = false;
-    pVCpu->iem.s.fPendingIoBreakpoints          = false;
-    if (RT_LIKELY(   !(pVCpu->cpum.GstCtx.dr[7] & X86_DR7_ENABLED_MASK)
-                  && pVCpu->CTX_SUFF(pVM)->dbgf.ro.cEnabledHwBreakpoints == 0))
-    { /* likely */ }
-    else
-        iemInitPendingBreakpointsSlow(pVCpu);
 }
 # endif /* VBOX_INCLUDED_vmm_dbgf_h */
 
@@ -301,8 +455,7 @@ DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, bool fBypassHandlers) RT_NOEXCEPT
  */
 DECLINLINE(void) iemReInitExec(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
 {
-    pVCpu->iem.s.uCpl             = CPUMGetGuestCPL(pVCpu);
-    pVCpu->iem.s.enmCpuMode       = iemCalcCpuMode(pVCpu);
+    pVCpu->iem.s.fExec = iemCalcExecFlags(pVCpu) | (pVCpu->iem.s.fExec & IEM_F_USER_OPTS);
     iemOpcodeFlushHeavy(pVCpu, cbInstr);
 }
 # endif
@@ -373,7 +526,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetFirstU8(PVMCPUCC pVCpu, uint8_t *pu8) RT_NO
     /*
      * Check for hardware instruction breakpoints.
      */
-    if (RT_LIKELY(!pVCpu->iem.s.fPendingInstructionBreakpoints))
+    if (RT_LIKELY(!(pVCpu->iem.s.fExec & IEM_F_PENDING_BRK_INSTR)))
     { /* likely */ }
     else
     {
@@ -413,7 +566,7 @@ DECL_INLINE_THROW(uint8_t) iemOpcodeGetFirstU8Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_M
     /*
      * Check for hardware instruction breakpoints.
      */
-    if (RT_LIKELY(!pVCpu->iem.s.fPendingInstructionBreakpoints))
+    if (RT_LIKELY(!(pVCpu->iem.s.fExec & IEM_F_PENDING_BRK_INSTR)))
     { /* likely */ }
     else
     {
@@ -1338,7 +1491,7 @@ DECLINLINE(void) iemHlpLoadNullDataSelectorProt(PVMCPUCC pVCpu, PCPUMSELREG pSRe
     if (IEM_IS_GUEST_CPU_INTEL(pVCpu))
     {
         /* VT-x (Intel 3960x) observed doing something like this. */
-        pSReg->Attr.u   = X86DESCATTR_UNUSABLE | X86DESCATTR_G | X86DESCATTR_D | (pVCpu->iem.s.uCpl << X86DESCATTR_DPL_SHIFT);
+        pSReg->Attr.u   = X86DESCATTR_UNUSABLE | X86DESCATTR_G | X86DESCATTR_D | (IEM_GET_CPL(pVCpu) << X86DESCATTR_DPL_SHIFT);
         pSReg->u32Limit = UINT32_MAX;
         pSReg->u64Base  = 0;
     }
@@ -1370,7 +1523,7 @@ DECLINLINE(void) iemHlpLoadNullDataSelectorProt(PVMCPUCC pVCpu, PCPUMSELREG pSRe
  */
 DECLINLINE(void) iemRecalEffOpSize(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
-    switch (pVCpu->iem.s.enmCpuMode)
+    switch (IEM_GET_CPU_MODE(pVCpu))
     {
         case IEMMODE_16BIT:
             pVCpu->iem.s.enmEffOpSize = pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_OP ? IEMMODE_32BIT : IEMMODE_16BIT;
@@ -1407,7 +1560,7 @@ DECLINLINE(void) iemRecalEffOpSize(PVMCPUCC pVCpu) RT_NOEXCEPT
  */
 DECLINLINE(void) iemRecalEffOpSize64Default(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
-    Assert(pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT);
+    Assert(IEM_IS_64BIT_CODE(pVCpu));
     pVCpu->iem.s.enmDefOpSize = IEMMODE_64BIT;
     if ((pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_REX_W | IEM_OP_PRF_SIZE_OP)) != IEM_OP_PRF_SIZE_OP)
         pVCpu->iem.s.enmEffOpSize = IEMMODE_64BIT;
@@ -1426,7 +1579,7 @@ DECLINLINE(void) iemRecalEffOpSize64Default(PVMCPUCC pVCpu) RT_NOEXCEPT
  */
 DECLINLINE(void) iemRecalEffOpSize64DefaultAndIntelIgnoresOpSizePrefix(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
-    Assert(pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT);
+    Assert(IEM_IS_64BIT_CODE(pVCpu));
     pVCpu->iem.s.enmDefOpSize = IEMMODE_64BIT;
     if (   (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_REX_W | IEM_OP_PRF_SIZE_OP)) != IEM_OP_PRF_SIZE_OP
         || pVCpu->iem.s.enmCpuVendor == CPUMCPUVENDOR_INTEL)
@@ -1744,7 +1897,7 @@ DECLINLINE(uint64_t) iemGRegFetchU64(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
  */
 DECLINLINE(RTGCPTR) iemRegGetEffRsp(PCVMCPU pVCpu) RT_NOEXCEPT
 {
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
         return pVCpu->cpum.GstCtx.rsp;
     if (pVCpu->cpum.GstCtx.ss.Attr.n.u1DefBig)
         return pVCpu->cpum.GstCtx.esp;
@@ -1773,7 +1926,7 @@ DECL_FORCE_INLINE(void) iemRegAddToRip(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXC
     uint64_t const uRipPrev = pVCpu->cpum.GstCtx.rip;
     uint64_t const uRipNext = uRipPrev + cbInstr;
     if (RT_LIKELY(   !((uRipNext ^ uRipPrev) & (RT_BIT_64(32) | RT_BIT_64(16)))
-                  || pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT))
+                  || IEM_IS_64BIT_CODE(pVCpu)))
         pVCpu->cpum.GstCtx.rip = uRipNext;
     else if (IEM_GET_TARGET_CPU(pVCpu) >= IEMTARGETCPU_386)
         pVCpu->cpum.GstCtx.rip = (uint32_t)uRipNext;
@@ -2007,7 +2160,7 @@ DECLINLINE(VBOXSTRICTRC) iemRegUpdateRipAndFinishClearingRF(PVMCPUCC pVCpu) RT_N
  */
 DECLINLINE(void) iemRegAddToRsp(PVMCPUCC pVCpu, uint8_t cbToAdd) RT_NOEXCEPT
 {
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
         pVCpu->cpum.GstCtx.rsp += cbToAdd;
     else if (pVCpu->cpum.GstCtx.ss.Attr.n.u1DefBig)
         pVCpu->cpum.GstCtx.esp += cbToAdd;
@@ -2024,7 +2177,7 @@ DECLINLINE(void) iemRegAddToRsp(PVMCPUCC pVCpu, uint8_t cbToAdd) RT_NOEXCEPT
  */
 DECLINLINE(void) iemRegSubFromRsp(PVMCPUCC pVCpu, uint8_t cbToSub) RT_NOEXCEPT
 {
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
         pVCpu->cpum.GstCtx.rsp -= cbToSub;
     else if (pVCpu->cpum.GstCtx.ss.Attr.n.u1DefBig)
         pVCpu->cpum.GstCtx.esp -= cbToSub;
@@ -2042,7 +2195,7 @@ DECLINLINE(void) iemRegSubFromRsp(PVMCPUCC pVCpu, uint8_t cbToSub) RT_NOEXCEPT
  */
 DECLINLINE(void) iemRegAddToRspEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uint16_t cbToAdd) RT_NOEXCEPT
 {
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
         pTmpRsp->u           += cbToAdd;
     else if (pVCpu->cpum.GstCtx.ss.Attr.n.u1DefBig)
         pTmpRsp->DWords.dw0  += cbToAdd;
@@ -2062,7 +2215,7 @@ DECLINLINE(void) iemRegAddToRspEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uint16_t cb
  */
 DECLINLINE(void) iemRegSubFromRspEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uint16_t cbToSub) RT_NOEXCEPT
 {
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
         pTmpRsp->u          -= cbToSub;
     else if (pVCpu->cpum.GstCtx.ss.Attr.n.u1DefBig)
         pTmpRsp->DWords.dw0 -= cbToSub;
@@ -2086,7 +2239,7 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPush(PCVMCPU pVCpu, uint8_t cbItem, uint64_t 
     RTGCPTR     GCPtrTop;
     uTmpRsp.u = pVCpu->cpum.GstCtx.rsp;
 
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
         GCPtrTop = uTmpRsp.u            -= cbItem;
     else if (pVCpu->cpum.GstCtx.ss.Attr.n.u1DefBig)
         GCPtrTop = uTmpRsp.DWords.dw0   -= cbItem;
@@ -2112,7 +2265,7 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPop(PCVMCPU pVCpu, uint8_t cbItem, uint64_t *
     RTGCPTR     GCPtrTop;
     uTmpRsp.u = pVCpu->cpum.GstCtx.rsp;
 
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         GCPtrTop = uTmpRsp.u;
         uTmpRsp.u += cbItem;
@@ -2145,7 +2298,7 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPushEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uin
 {
     RTGCPTR GCPtrTop;
 
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
         GCPtrTop = pTmpRsp->u          -= cbItem;
     else if (pVCpu->cpum.GstCtx.ss.Attr.n.u1DefBig)
         GCPtrTop = pTmpRsp->DWords.dw0 -= cbItem;
@@ -2167,7 +2320,7 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPushEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uin
 DECLINLINE(RTGCPTR) iemRegGetRspForPopEx(PCVMCPU pVCpu, PRTUINT64U pTmpRsp, uint8_t cbItem) RT_NOEXCEPT
 {
     RTGCPTR GCPtrTop;
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         GCPtrTop = pTmpRsp->u;
         pTmpRsp->u          += cbItem;
@@ -2653,7 +2806,7 @@ DECLINLINE(uint16_t) iemFpuCompressFtw(uint16_t u16FullFtw) RT_NOEXCEPT
 DECLINLINE(bool) iemMemAreAlignmentChecksEnabled(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     AssertCompile(X86_CR0_AM == X86_EFL_AC);
-    return pVCpu->iem.s.uCpl == 3
+    return IEM_GET_CPL(pVCpu) == 3
         && (((uint32_t)pVCpu->cpum.GstCtx.cr0 & pVCpu->cpum.GstCtx.eflags.u) & X86_CR0_AM);
 }
 
@@ -2675,7 +2828,7 @@ DECLINLINE(VBOXSTRICTRC) iemMemSegCheckWriteAccessEx(PVMCPUCC pVCpu, PCCPUMSELRE
 {
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
 
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
         *pu64BaseAddr = iSegReg < X86_SREG_FS ? 0 : pHid->u64Base;
     else
     {
@@ -2689,7 +2842,7 @@ DECLINLINE(VBOXSTRICTRC) iemMemSegCheckWriteAccessEx(PVMCPUCC pVCpu, PCCPUMSELRE
 
         if (   (   (pHid->Attr.n.u4Type & X86_SEL_TYPE_CODE)
                 || !(pHid->Attr.n.u4Type & X86_SEL_TYPE_WRITE) )
-            &&  pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT )
+            && !IEM_IS_64BIT_CODE(pVCpu) )
             return iemRaiseSelectorInvalidAccess(pVCpu, iSegReg, IEM_ACCESS_DATA_W);
         *pu64BaseAddr = pHid->u64Base;
     }
@@ -2715,7 +2868,7 @@ DECLINLINE(VBOXSTRICTRC) iemMemSegCheckReadAccessEx(PVMCPUCC pVCpu, PCCPUMSELREG
 {
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
 
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
         *pu64BaseAddr = iSegReg < X86_SREG_FS ? 0 : pHid->u64Base;
     else
     {
@@ -2760,7 +2913,7 @@ DECLINLINE(int) iemMemPageMap(PVMCPUCC pVCpu, RTGCPHYS GCPhysMem, uint32_t fAcce
     int rc = PGMPhysIemGCPhys2Ptr(pVCpu->CTX_SUFF(pVM), pVCpu,
                                   GCPhysMem,
                                   RT_BOOL(fAccess & IEM_ACCESS_TYPE_WRITE),
-                                  pVCpu->iem.s.fBypassHandlers,
+                                  RT_BOOL(pVCpu->iem.s.fExec & IEM_F_BYPASS_HANDLERS),
                                   ppvMem,
                                   pLock);
     /*Log(("PGMPhysIemGCPhys2Ptr %Rrc pLock=%.*Rhxs\n", rc, sizeof(*pLock), pLock));*/
@@ -2801,7 +2954,7 @@ DECL_INLINE_THROW(RTGCPTR) iemMemApplySegmentToReadJmp(PVMCPUCC pVCpu, uint8_t i
     /*
      * 64-bit mode is simpler.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         if (iSegReg >= X86_SREG_FS && iSegReg != UINT8_MAX)
         {
@@ -2879,7 +3032,7 @@ DECL_INLINE_THROW(RTGCPTR) iemMemApplySegmentToWriteJmp(PVMCPUCC pVCpu, uint8_t 
     /*
      * 64-bit mode is simpler.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         if (iSegReg >= X86_SREG_FS)
         {

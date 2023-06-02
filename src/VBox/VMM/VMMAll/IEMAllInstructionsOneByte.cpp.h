@@ -1589,7 +1589,7 @@ FNIEMOP_DEF(iemOp_inc_eAX)
     /*
      * This is a REX prefix in 64-bit mode.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("rex");
         pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_REX;
@@ -1611,7 +1611,7 @@ FNIEMOP_DEF(iemOp_inc_eCX)
     /*
      * This is a REX prefix in 64-bit mode.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("rex.b");
         pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_REX | IEM_OP_PRF_REX_B;
@@ -1634,7 +1634,7 @@ FNIEMOP_DEF(iemOp_inc_eDX)
     /*
      * This is a REX prefix in 64-bit mode.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("rex.x");
         pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_REX | IEM_OP_PRF_REX_X;
@@ -1658,7 +1658,7 @@ FNIEMOP_DEF(iemOp_inc_eBX)
     /*
      * This is a REX prefix in 64-bit mode.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("rex.bx");
         pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_REX | IEM_OP_PRF_REX_B | IEM_OP_PRF_REX_X;
@@ -1682,7 +1682,7 @@ FNIEMOP_DEF(iemOp_inc_eSP)
     /*
      * This is a REX prefix in 64-bit mode.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("rex.r");
         pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_REX | IEM_OP_PRF_REX_R;
@@ -1705,7 +1705,7 @@ FNIEMOP_DEF(iemOp_inc_eBP)
     /*
      * This is a REX prefix in 64-bit mode.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("rex.rb");
         pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_REX | IEM_OP_PRF_REX_R | IEM_OP_PRF_REX_B;
@@ -1729,7 +1729,7 @@ FNIEMOP_DEF(iemOp_inc_eSI)
     /*
      * This is a REX prefix in 64-bit mode.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("rex.rx");
         pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_REX | IEM_OP_PRF_REX_R | IEM_OP_PRF_REX_X;
@@ -1753,7 +1753,7 @@ FNIEMOP_DEF(iemOp_inc_eDI)
     /*
      * This is a REX prefix in 64-bit mode.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("rex.rbx");
         pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_REX | IEM_OP_PRF_REX_R | IEM_OP_PRF_REX_B | IEM_OP_PRF_REX_X;
@@ -1778,7 +1778,7 @@ FNIEMOP_DEF(iemOp_dec_eAX)
     /*
      * This is a REX prefix in 64-bit mode.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("rex.w");
         pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_REX | IEM_OP_PRF_SIZE_REX_W;
@@ -1801,7 +1801,7 @@ FNIEMOP_DEF(iemOp_dec_eCX)
     /*
      * This is a REX prefix in 64-bit mode.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("rex.bw");
         pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_REX | IEM_OP_PRF_REX_B | IEM_OP_PRF_SIZE_REX_W;
@@ -1825,7 +1825,7 @@ FNIEMOP_DEF(iemOp_dec_eDX)
     /*
      * This is a REX prefix in 64-bit mode.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("rex.xw");
         pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_REX | IEM_OP_PRF_REX_X | IEM_OP_PRF_SIZE_REX_W;
@@ -1849,7 +1849,7 @@ FNIEMOP_DEF(iemOp_dec_eBX)
     /*
      * This is a REX prefix in 64-bit mode.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("rex.bxw");
         pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_REX | IEM_OP_PRF_REX_B | IEM_OP_PRF_REX_X | IEM_OP_PRF_SIZE_REX_W;
@@ -1874,7 +1874,7 @@ FNIEMOP_DEF(iemOp_dec_eSP)
     /*
      * This is a REX prefix in 64-bit mode.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("rex.rw");
         pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_REX | IEM_OP_PRF_REX_R | IEM_OP_PRF_SIZE_REX_W;
@@ -1898,7 +1898,7 @@ FNIEMOP_DEF(iemOp_dec_eBP)
     /*
      * This is a REX prefix in 64-bit mode.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("rex.rbw");
         pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_REX | IEM_OP_PRF_REX_R | IEM_OP_PRF_REX_B | IEM_OP_PRF_SIZE_REX_W;
@@ -1923,7 +1923,7 @@ FNIEMOP_DEF(iemOp_dec_eSI)
     /*
      * This is a REX prefix in 64-bit mode.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("rex.rxw");
         pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_REX | IEM_OP_PRF_REX_R | IEM_OP_PRF_REX_X | IEM_OP_PRF_SIZE_REX_W;
@@ -1948,7 +1948,7 @@ FNIEMOP_DEF(iemOp_dec_eDI)
     /*
      * This is a REX prefix in 64-bit mode.
      */
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("rex.rbxw");
         pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_REX | IEM_OP_PRF_REX_R | IEM_OP_PRF_REX_B | IEM_OP_PRF_REX_X | IEM_OP_PRF_SIZE_REX_W;
@@ -1972,7 +1972,7 @@ FNIEMOP_DEF(iemOp_dec_eDI)
 FNIEMOP_DEF_1(iemOpCommonPushGReg, uint8_t, iReg)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         iReg |= pVCpu->iem.s.uRexB;
         pVCpu->iem.s.enmDefOpSize = IEMMODE_64BIT;
@@ -2109,7 +2109,7 @@ FNIEMOP_DEF(iemOp_push_eDI)
 FNIEMOP_DEF_1(iemOpCommonPopGReg, uint8_t, iReg)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         iReg |= pVCpu->iem.s.uRexB;
         pVCpu->iem.s.enmDefOpSize = IEMMODE_64BIT;
@@ -2197,7 +2197,7 @@ FNIEMOP_DEF(iemOp_pop_eBX)
 FNIEMOP_DEF(iemOp_pop_eSP)
 {
     IEMOP_MNEMONIC(pop_rSP, "pop rSP");
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
     {
         if (pVCpu->iem.s.uRexB)
             return FNIEMOP_CALL_1(iemOpCommonPopGReg, X86_GREG_xSP);
@@ -2292,7 +2292,7 @@ FNIEMOP_DEF(iemOp_pusha)
  */
 FNIEMOP_DEF(iemOp_popa__mvex)
 {
-    if (pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT)
+    if (!IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_MNEMONIC(popa, "popa");
         IEMOP_HLP_MIN_186();
@@ -2371,7 +2371,7 @@ FNIEMOP_DEF(iemOp_bound_Gv_Ma__evex)
        the VEX one and means they are inverted wrt REX.R and REX.X.  Thus, just
        like with the 3-byte VEX, 32-bit code is restrict wrt addressable registers. */
     uint8_t bRm;
-    if (pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT)
+    if (!IEM_IS_64BIT_CODE(pVCpu))
     {
         IEMOP_MNEMONIC2(RM_MEM, BOUND, bound, Gv_RO, Ma, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
         IEMOP_HLP_MIN_186();
@@ -4553,7 +4553,7 @@ FNIEMOP_DEF(iemOp_xchg_Eb_Gb)
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
         IEM_MC_MEM_MAP(pu8Mem, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
         IEM_MC_REF_GREG_U8(pu8Reg, IEM_GET_MODRM_REG(pVCpu, bRm));
-        if (!pVCpu->iem.s.fDisregardLock)
+        if (!(pVCpu->iem.s.fExec & IEM_F_X86_DISREGARD_LOCK))
             IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u8_locked, pu8Mem, pu8Reg);
         else
             IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u8_unlocked, pu8Mem, pu8Reg);
@@ -4644,7 +4644,7 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
                 IEM_MC_MEM_MAP(pu16Mem, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
                 IEM_MC_REF_GREG_U16(pu16Reg, IEM_GET_MODRM_REG(pVCpu, bRm));
-                if (!pVCpu->iem.s.fDisregardLock)
+                if (!(pVCpu->iem.s.fExec & IEM_F_X86_DISREGARD_LOCK))
                     IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u16_locked, pu16Mem, pu16Reg);
                 else
                     IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u16_unlocked, pu16Mem, pu16Reg);
@@ -4663,7 +4663,7 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
                 IEM_MC_MEM_MAP(pu32Mem, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
                 IEM_MC_REF_GREG_U32(pu32Reg, IEM_GET_MODRM_REG(pVCpu, bRm));
-                if (!pVCpu->iem.s.fDisregardLock)
+                if (!(pVCpu->iem.s.fExec & IEM_F_X86_DISREGARD_LOCK))
                     IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u32_locked, pu32Mem, pu32Reg);
                 else
                     IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u32_unlocked, pu32Mem, pu32Reg);
@@ -4683,7 +4683,7 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
                 IEM_MC_MEM_MAP(pu64Mem, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
                 IEM_MC_REF_GREG_U64(pu64Reg, IEM_GET_MODRM_REG(pVCpu, bRm));
-                if (!pVCpu->iem.s.fDisregardLock)
+                if (!(pVCpu->iem.s.fExec & IEM_F_X86_DISREGARD_LOCK))
                     IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u64_locked, pu64Mem, pu64Reg);
                 else
                     IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u64_unlocked, pu64Mem, pu64Reg);
@@ -4978,7 +4978,7 @@ FNIEMOP_DEF(iemOp_mov_Gv_Ev)
  */
 FNIEMOP_DEF(iemOp_arpl_Ew_Gw_movsx_Gv_Ev)
 {
-    if (pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT)
+    if (!IEM_IS_64BIT_CODE(pVCpu))
         return FNIEMOP_CALL(iemOp_arpl_Ew_Gw);
     if (pVCpu->iem.s.enmEffOpSize != IEMMODE_64BIT)
         return FNIEMOP_CALL(iemOp_mov_Gv_Ev);
@@ -5295,7 +5295,7 @@ FNIEMOP_DEF(iemOp_Grp1A__xop)
             == 0)
         {
             pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_XOP;
-            if ((bXop2 & 0x80 /* XOP.W */) && pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+            if ((bXop2 & 0x80 /* XOP.W */) && IEM_IS_64BIT_CODE(pVCpu))
                 pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_SIZE_REX_W;
             pVCpu->iem.s.uRexReg    = (~bRm >> (7 - 3)) & 0x8;
             pVCpu->iem.s.uRexIndex  = (~bRm >> (6 - 3)) & 0x8;
@@ -5649,7 +5649,7 @@ FNIEMOP_DEF(iemOp_sahf)
 {
     IEMOP_MNEMONIC(sahf, "sahf");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    if (   pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT
+    if (   IEM_IS_64BIT_CODE(pVCpu)
         && !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLahfSahf)
         return IEMOP_RAISE_INVALID_OPCODE();
     IEM_MC_BEGIN(0, 2);
@@ -5674,7 +5674,7 @@ FNIEMOP_DEF(iemOp_lahf)
 {
     IEMOP_MNEMONIC(lahf, "lahf");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    if (   pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT
+    if (   IEM_IS_64BIT_CODE(pVCpu)
         && !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLahfSahf)
         return IEMOP_RAISE_INVALID_OPCODE();
     IEM_MC_BEGIN(0, 1);
@@ -7162,7 +7162,7 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp__vex3)
        REX.R and REX.X to the two MOD bits, since the REX bits are ignored
        outside of 64-bit mode.  VEX is not available in real or v86 mode. */
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if (   pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT
+    if (   IEM_IS_64BIT_CODE(pVCpu)
         || IEM_IS_MODRM_REG_MODE(bRm) )
     {
         IEMOP_MNEMONIC(vex3_prefix, "vex3");
@@ -7173,7 +7173,7 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp__vex3)
             uint8_t bVex2;   IEM_OPCODE_GET_NEXT_U8(&bVex2);
             uint8_t bOpcode; IEM_OPCODE_GET_NEXT_U8(&bOpcode);
             pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_VEX;
-            if ((bVex2 & 0x80 /* VEX.W */) && pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+            if ((bVex2 & 0x80 /* VEX.W */) && IEM_IS_64BIT_CODE(pVCpu))
                 pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_SIZE_REX_W;
             pVCpu->iem.s.uRexReg    = (~bRm >> (7 - 3)) & 0x8;
             pVCpu->iem.s.uRexIndex  = (~bRm >> (6 - 3)) & 0x8;
@@ -7234,7 +7234,7 @@ FNIEMOP_DEF(iemOp_lds_Gv_Mp__vex2)
        specifier to the bottom MOD bit, thereby effectively limiting 32-bit
        to accessing registers 0..7 in this VEX form. */
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if (   pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT
+    if (   IEM_IS_64BIT_CODE(pVCpu)
         || IEM_IS_MODRM_REG_MODE(bRm))
     {
         IEMOP_MNEMONIC(vex2_prefix, "vex2");
@@ -11539,7 +11539,7 @@ FNIEMOP_DEF(iemOp_out_DX_eAX)
 FNIEMOP_DEF(iemOp_lock)
 {
     IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("lock");
-    if (!pVCpu->iem.s.fDisregardLock)
+    if (!(pVCpu->iem.s.fExec & IEM_F_X86_DISREGARD_LOCK))
         pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_LOCK;
 
     uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
@@ -12624,7 +12624,7 @@ FNIEMOP_DEF_2(iemOpHlp_Grp5_far_Ep, uint8_t, bRm, PFNIEMCIMPLFARBRANCH, pfnCImpl
 
     /* 64-bit mode: Default is 32-bit, but only intel respects a REX.W prefix. */
     /** @todo what does VIA do? */
-    if (pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT || pVCpu->iem.s.enmEffOpSize != IEMMODE_64BIT || IEM_IS_GUEST_CPU_INTEL(pVCpu))
+    if (!IEM_IS_64BIT_CODE(pVCpu) || pVCpu->iem.s.enmEffOpSize != IEMMODE_64BIT || IEM_IS_GUEST_CPU_INTEL(pVCpu))
     { /* likely */ }
     else
         pVCpu->iem.s.enmEffOpSize = IEMMODE_32BIT;

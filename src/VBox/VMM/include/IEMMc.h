@@ -141,7 +141,7 @@ AssertCompile(!((X86_CR0_EM | X86_CR0_TS) & X86_CR4_OSFXSR));
 AssertCompile(!((X86_CR0_EM | X86_CR0_TS) & X86_FSW_ES));
 #define IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO() \
     do { \
-        if (RT_LIKELY(pVCpu->iem.s.uCpl == 0)) { /* probable */ } \
+        if (RT_LIKELY(IEM_GET_CPL(pVCpu) == 0)) { /* probable */ } \
         else return iemRaiseGeneralProtectionFault0(pVCpu); \
     } while (0)
 #define IEM_MC_RAISE_GP0_IF_EFF_ADDR_UNALIGNED(a_EffAddr, a_cbAlign) \
@@ -151,7 +151,7 @@ AssertCompile(!((X86_CR0_EM | X86_CR0_TS) & X86_FSW_ES));
     } while (0)
 #define IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT() \
     do { \
-        if (RT_LIKELY(   ((pVCpu->cpum.GstCtx.cr4 & X86_CR4_FSGSBASE) | pVCpu->iem.s.enmCpuMode) \
+        if (RT_LIKELY(   ((pVCpu->cpum.GstCtx.cr4 & X86_CR4_FSGSBASE) | IEM_GET_CPU_MODE(pVCpu)) \
                       == (X86_CR4_FSGSBASE | IEMMODE_64BIT))) \
         { /* probable */ } \
         else return iemRaiseUndefinedOpcode(pVCpu); \

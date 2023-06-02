@@ -76,7 +76,7 @@
             Log((RT_STR(a_Instr) ": Real or v8086 mode -> #UD\n")); \
             return iemRaiseUndefinedOpcode(a_pVCpu); \
         } \
-        if ((a_pVCpu)->iem.s.uCpl != 0) \
+        if (IEM_GET_CPL(a_pVCpu) != 0) \
         { \
             Log((RT_STR(a_Instr) ": CPL != 0 -> #GP(0)\n")); \
             return iemRaiseGeneralProtectionFault0(a_pVCpu); \
@@ -1164,7 +1164,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
     IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmrun);
 
     /** @todo Check effective address size using address size prefix. */
-    RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? pVCpu->cpum.GstCtx.rax : pVCpu->cpum.GstCtx.eax;
+    RTGCPHYS const GCPhysVmcb = IEM_IS_64BIT_CODE(pVCpu) ? pVCpu->cpum.GstCtx.rax : pVCpu->cpum.GstCtx.eax;
     if (   (GCPhysVmcb & X86_PAGE_4K_OFFSET_MASK)
         || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmcb))
     {
@@ -1202,7 +1202,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmrun(PVMCPUCC pVCpu, uint8_t cbInstr)
     IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
     IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_SVM_VMRUN_MASK);
 
-    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    iemInitExec(pVCpu, 0 /*fExecOpts*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_vmrun);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
@@ -1222,7 +1222,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmload)
     IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmload);
 
     /** @todo Check effective address size using address size prefix. */
-    RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? pVCpu->cpum.GstCtx.rax : pVCpu->cpum.GstCtx.eax;
+    RTGCPHYS const GCPhysVmcb = IEM_IS_64BIT_CODE(pVCpu) ? pVCpu->cpum.GstCtx.rax : pVCpu->cpum.GstCtx.eax;
     if (   (GCPhysVmcb & X86_PAGE_4K_OFFSET_MASK)
         || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmcb))
     {
@@ -1276,7 +1276,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmload(PVMCPUCC pVCpu, uint8_t cbInstr)
 {
     IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
 
-    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    iemInitExec(pVCpu, 0 /*fExecOpts*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_vmload);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
@@ -1296,7 +1296,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
     IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmsave);
 
     /** @todo Check effective address size using address size prefix. */
-    RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? pVCpu->cpum.GstCtx.rax : pVCpu->cpum.GstCtx.eax;
+    RTGCPHYS const GCPhysVmcb = IEM_IS_64BIT_CODE(pVCpu) ? pVCpu->cpum.GstCtx.rax : pVCpu->cpum.GstCtx.eax;
     if (   (GCPhysVmcb & X86_PAGE_4K_OFFSET_MASK)
         || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmcb))
     {
@@ -1356,7 +1356,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmsave(PVMCPUCC pVCpu, uint8_t cbInstr)
 {
     IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
 
-    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    iemInitExec(pVCpu, 0 /*fExecOpts*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_vmsave);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
@@ -1404,7 +1404,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedClgi(PVMCPUCC pVCpu, uint8_t cbInstr)
 {
     IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
 
-    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    iemInitExec(pVCpu, 0 /*fExecOpts*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_clgi);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
@@ -1452,7 +1452,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedStgi(PVMCPUCC pVCpu, uint8_t cbInstr)
 {
     IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
 
-    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    iemInitExec(pVCpu, 0 /*fExecOpts*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_stgi);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
@@ -1465,7 +1465,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedStgi(PVMCPUCC pVCpu, uint8_t cbInstr)
 IEM_CIMPL_DEF_0(iemCImpl_invlpga)
 {
     /** @todo Check effective address size using address size prefix. */
-    RTGCPTR  const GCPtrPage = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? pVCpu->cpum.GstCtx.rax : pVCpu->cpum.GstCtx.eax;
+    RTGCPTR  const GCPtrPage = IEM_IS_64BIT_CODE(pVCpu) ? pVCpu->cpum.GstCtx.rax : pVCpu->cpum.GstCtx.eax;
     /** @todo PGM needs virtual ASID support. */
 # if 0
     uint32_t const uAsid     = pVCpu->cpum.GstCtx.ecx;
@@ -1495,7 +1495,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedInvlpga(PVMCPUCC pVCpu, uint8_t cbInstr
 {
     IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
 
-    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    iemInitExec(pVCpu, 0 /*fExecOpts*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_invlpga);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);

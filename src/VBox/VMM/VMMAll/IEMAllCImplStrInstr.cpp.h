@@ -69,7 +69,7 @@
 #if ADDR_SIZE == 64 || OP_SIZE == 64
 # define IS_64_BIT_CODE(a_pVCpu)    (true)
 #elif ADDR_SIZE == 32
-# define IS_64_BIT_CODE(a_pVCpu)    ((a_pVCpu)->iem.s.enmCpuMode == IEMMODE_64BIT)
+# define IS_64_BIT_CODE(a_pVCpu)    IEM_IS_64BIT_CODE(a_pVCpu)
 #else
 # define IS_64_BIT_CODE(a_pVCpu)    (false)
 #endif
@@ -758,7 +758,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
     /*
      * Be careful with handle bypassing.
      */
-    if (pVCpu->iem.s.fBypassHandlers)
+    if (pVCpu->iem.s.fExec & IEM_F_BYPASS_HANDLERS)
     {
         Log(("%s: declining because we're bypassing handlers\n", __FUNCTION__));
         return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
@@ -909,7 +909,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
      * Be careful with handle bypassing.
      */
     /** @todo Permit doing a page if correctly aligned. */
-    if (pVCpu->iem.s.fBypassHandlers)
+    if (pVCpu->iem.s.fExec & IEM_F_BYPASS_HANDLERS)
     {
         Log(("%s: declining because we're bypassing handlers\n", __FUNCTION__));
         return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
@@ -1160,7 +1160,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
     /*
      * Be careful with handle bypassing.
      */
-    if (pVCpu->iem.s.fBypassHandlers)
+    if (pVCpu->iem.s.fExec & IEM_F_BYPASS_HANDLERS)
     {
         Log(("%s: declining because we're bypassing handlers\n", __FUNCTION__));
         return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
@@ -1325,7 +1325,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
     /*
      * Be careful with handle bypassing.
      */
-    if (pVCpu->iem.s.fBypassHandlers)
+    if (pVCpu->iem.s.fExec & IEM_F_BYPASS_HANDLERS)
     {
         Log(("%s: declining because we're bypassing handlers\n", __FUNCTION__));
         return VERR_IEM_ASPECT_NOT_IMPLEMENTED;

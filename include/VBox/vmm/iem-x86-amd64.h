@@ -125,7 +125,9 @@ typedef uint8_t IEMMODE;
                                                     | CPUMCTX_EXTRN_SS   /* for CPL */ \
                                                     | CPUMCTX_EXTRN_CS   /* for mode */ \
                                                     | CPUMCTX_EXTRN_CR0  /* for mode */ \
-                                                    | CPUMCTX_EXTRN_EFER /* for mode */ )
+                                                    | CPUMCTX_EXTRN_EFER /* for mode */ \
+                                                    | CPUMCTX_EXTRN_DR7  /* for debugging - compulsory */ \
+                                                    | CPUMCTX_EXTRN_CR4  /* for hwvirt mode - compulsory atm */ )
 /** The CPUMCTX_EXTRN_XXX mask required to be cleared when calling any
  * IEMExecDecoded API using memory.  IEM will ASSUME the caller of IEM
  * APIs has ensured these are already present.

@@ -123,138 +123,6 @@ typedef IEMTHRDEDCALLENTRY       *PIEMTHRDEDCALLENTRY;
 /** Pointer to a const threaded call entry. */
 typedef IEMTHRDEDCALLENTRY const *PCIEMTHRDEDCALLENTRY;
 
-/** @name IEM_F_XXX - Execution mode flags (IEMCPU::fExec, IEMTB::fFlags).
- *
- * These flags are set when entering IEM and adjusted as code is executed, such
- * that they will always contain the current values as instructions are
- * finished.
- *
- * In recompiled execution mode, (most of) these flags are included in the
- * translation block selection key and stored in IEMTB::fFlags alongside the
- * IEMTB_F_XXX flags.  The latter flags uses bits 31 thru 24, which are all zero
- * in IEMCPU::fExec.
- *
- * @{ */
-/** Mode: The block target mode mask. */
-#define IEM_F_MODE_MASK                     UINT32_C(0x0000000f)
-/** Mode: The IEMMODE part of the IEMTB_F_MODE_MASK value. */
-#define IEM_F_MODE_CPUMODE_MASK             UINT32_C(0x00000003)
-/** X86 Mode: Bit used to indicating pre-386 CPU in 16-bit mode (for eliminating
- * conditional in EIP/IP updating), and flat wide open CS, SS DS, and ES in
- * 32-bit mode (for simplifying most memory accesses). */
-#define IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK UINT32_C(0x00000004)
-/** X86 Mode: Bit indicating protected mode. */
-#define IEM_F_MODE_X86_PROT_MASK            UINT32_C(0x00000008)
-/** @todo mix in paging as well? it's not all that important compared to
- *        protected mode. */
-
-/** X86 Mode: 16-bit on 386 or later. */
-#define IEM_F_MODE_X86_16BIT                UINT32_C(0x00000000)
-/** X86 Mode: 80286, 80186 and 8086/88 targetting blocks (EIP update opt). */
-#define IEM_F_MODE_X86_16BIT_PRE_386        UINT32_C(0x00000004)
-/** X86 Mode: 16-bit protected mode on 386 or later. */
-#define IEM_F_MODE_X86_16BIT_PROT           UINT32_C(0x00000008)
-/** X86 Mode: 16-bit protected mode on 386 or later. */
-#define IEM_F_MODE_X86_16BIT_PROT_PRE_386   UINT32_C(0x0000000c)
-
-/** X86 Mode: 32-bit on 386 or later. */
-#define IEM_F_MODE_X86_32BIT                UINT32_C(0x00000001)
-/** X86 Mode: 32-bit mode with wide open flat CS, SS, DS and ES. */
-#define IEM_F_MODE_X86_32BIT_FLAT           UINT32_C(0x00000005)
-/** X86 Mode: 32-bit protected mode. */
-#define IEM_F_MODE_X86_32BIT_PROT           UINT32_C(0x00000009)
-/** X86 Mode: 32-bit protected mode with wide open flat CS, SS, DS and ES. */
-#define IEM_F_MODE_X86_32BIT_PROT_FLAT      UINT32_C(0x0000000d)
-
-/** X86 Mode: 64-bit (includes protected, but not the flat bit). */
-#define IEM_F_MODE_X86_64BIT                UINT32_C(0x0000000a)
-
-
-/** Bypass access handlers when set. */
-#define IEM_F_BYPASS_HANDLERS               UINT32_C(0x00000010)
-/** Have pending hardware instruction breakpoints.   */
-#define IEM_F_PENDING_BRK_INSTR             UINT32_C(0x00000020)
-/** Have pending hardware data breakpoints.   */
-#define IEM_F_PENDING_BRK_DATA              UINT32_C(0x00000040)
-
-/** X86: Have pending hardware I/O breakpoints. */
-#define IEM_F_PENDING_BRK_X86_IO            UINT32_C(0x00000400)
-/** X86: Disregard the lock prefix (implied or not) when set. */
-#define IEM_F_X86_DISREGARD_LOCK            UINT32_C(0x00000800)
-
-/** The CPL. */
-#define IEM_F_X86_CPL_MASK                  UINT32_C(0x00000300)
-
-/** X86 execution context.
- * The IEM_F_X86_CTX_XXX values are individual flags that can be combined (with
- * the exception of IEM_F_X86_CTX_NORMAL).  This allows running VMs from SMM
- * mode. */
-#define IEM_F_X86_CTX_MASK                  UINT32_C(0x0000f000)
-/** X86 context: Plain regular execution context. */
-#define IEM_F_X86_CTX_NORMAL                UINT32_C(0x00000000)
-/** X86 context: VT-x enabled. */
-#define IEM_F_X86_CTX_VTX                   UINT32_C(0x00001000)
-/** X86 context: AMD-V enabled. */
-#define IEM_F_X86_CTX_SVM                   UINT32_C(0x00002000)
-/** X86 context: In AMD-V or VT-x guest mode. */
-#define IEM_F_X86_CTX_IN_GUEST              UINT32_C(0x00004000)
-/** X86 context: System management mode (SMM). */
-#define IEM_F_X86_CTX_SMM                   UINT32_C(0x00008000)
-
-/** @} */
-
-
-/** @name IEMTB_F_XXX - Translation block flags (IEMTB::fFlags).
- *
- * Extends the IEM_F_XXX flags (subject to IEMTB_F_IEM_F_MASK) to make up the
- * translation block flags.  The combined flag mask (subject to
- * IEMTB_F_KEY_MASK) is used as part of the lookup key for translation blocks.
- *
- * @{ */
-/** Mask of IEM_F_XXX flags included in IEMTB_F_XXX. */
-#define IEMTB_F_IEM_F_MASK              UINT32_C(0x00ffffff)
-
-/** Type: The block type mask. */
-#define IEMTB_F_TYPE_MASK               UINT32_C(0x03000000)
-/** Type: Purly threaded recompiler (via tables). */
-#define IEMTB_F_TYPE_THREADED           UINT32_C(0x01000000)
-/** Type: Native recompilation.  */
-#define IEMTB_F_TYPE_NATIVE             UINT32_C(0x02000000)
-
-/** Mask of the IEMTB_F_XXX flags that are part of the TB lookup key.
- * @note We don't   */
-#define IEMTB_F_KEY_MASK                ((UINT32_C(0xffffffff) & ~IEM_F_X86_CTX_MASK) | IEM_F_X86_CTX_SMM)
-/** @} */
-
-AssertCompile( (IEM_F_MODE_X86_16BIT              & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_16BIT);
-AssertCompile(!(IEM_F_MODE_X86_16BIT              & IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK));
-AssertCompile(!(IEM_F_MODE_X86_16BIT              & IEM_F_MODE_X86_PROT_MASK));
-AssertCompile( (IEM_F_MODE_X86_16BIT_PRE_386      & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_16BIT);
-AssertCompile(  IEM_F_MODE_X86_16BIT_PRE_386      & IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK);
-AssertCompile(!(IEM_F_MODE_X86_16BIT_PRE_386      & IEM_F_MODE_X86_PROT_MASK));
-AssertCompile( (IEM_F_MODE_X86_16BIT_PROT         & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_16BIT);
-AssertCompile(!(IEM_F_MODE_X86_16BIT_PROT         & IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK));
-AssertCompile(  IEM_F_MODE_X86_16BIT_PROT         & IEM_F_MODE_X86_PROT_MASK);
-AssertCompile( (IEM_F_MODE_X86_16BIT_PROT_PRE_386 & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_16BIT);
-AssertCompile(  IEM_F_MODE_X86_16BIT_PROT_PRE_386 & IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK);
-AssertCompile(  IEM_F_MODE_X86_16BIT_PROT_PRE_386 & IEM_F_MODE_X86_PROT_MASK);
-
-AssertCompile( (IEM_F_MODE_X86_32BIT              & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT);
-AssertCompile(!(IEM_F_MODE_X86_32BIT              & IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK));
-AssertCompile(!(IEM_F_MODE_X86_32BIT              & IEM_F_MODE_X86_PROT_MASK));
-AssertCompile( (IEM_F_MODE_X86_32BIT_FLAT         & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT);
-AssertCompile(  IEM_F_MODE_X86_32BIT_FLAT         & IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK);
-AssertCompile(!(IEM_F_MODE_X86_32BIT_FLAT         & IEM_F_MODE_X86_PROT_MASK));
-AssertCompile( (IEM_F_MODE_X86_32BIT_PROT         & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT);
-AssertCompile(!(IEM_F_MODE_X86_32BIT_PROT         & IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK));
-AssertCompile(  IEM_F_MODE_X86_32BIT_PROT         & IEM_F_MODE_X86_PROT_MASK);
-AssertCompile( (IEM_F_MODE_X86_32BIT_PROT_FLAT    & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT);
-AssertCompile(  IEM_F_MODE_X86_32BIT_PROT_FLAT    & IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK);
-AssertCompile(  IEM_F_MODE_X86_32BIT_PROT_FLAT    & IEM_F_MODE_X86_PROT_MASK);
-
-AssertCompile( (IEM_F_MODE_X86_64BIT              & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_64BIT);
-AssertCompile(  IEM_F_MODE_X86_64BIT              & IEM_F_MODE_X86_PROT_MASK);
-AssertCompile(!(IEM_F_MODE_X86_64BIT              & IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK));
 
 
 /**
@@ -473,7 +341,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
     /*
      * Init the execution environment.
      */
-    iemInitExec(pVCpu, false);
+    iemInitExec(pVCpu, 0 /*fExecOpts*/);
     ...
 
     /*

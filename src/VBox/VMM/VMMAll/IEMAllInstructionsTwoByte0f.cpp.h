@@ -1550,9 +1550,7 @@ FNIEMOP_DEF(iemOp_Grp7_xsetbv)
 FNIEMOP_DEF_1(iemOp_Grp7_lidt, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(lidt, "lidt");
-    IEMMODE enmEffOpSize = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT
-                         ? IEMMODE_64BIT
-                         : pVCpu->iem.s.enmEffOpSize;
+    IEMMODE enmEffOpSize = IEM_IS_64BIT_CODE(pVCpu) ? IEMMODE_64BIT : pVCpu->iem.s.enmEffOpSize;
     IEM_MC_BEGIN(3, 1);
     IEM_MC_ARG(uint8_t,         iEffSeg,                            0);
     IEM_MC_ARG(RTGCPTR,         GCPtrEffSrc,                        1);
@@ -3276,7 +3274,7 @@ FNIEMOP_DEF(iemOp_mov_Rd_Cd)
     /* mod is ignored, as is operand size overrides. */
     IEMOP_MNEMONIC(mov_Rd_Cd, "mov Rd,Cd");
     IEMOP_HLP_MIN_386();
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
         pVCpu->iem.s.enmEffOpSize = pVCpu->iem.s.enmDefOpSize = IEMMODE_64BIT;
     else
         pVCpu->iem.s.enmEffOpSize = pVCpu->iem.s.enmDefOpSize = IEMMODE_32BIT;
@@ -3324,7 +3322,7 @@ FNIEMOP_DEF(iemOp_mov_Cd_Rd)
     /* mod is ignored, as is operand size overrides. */
     IEMOP_MNEMONIC(mov_Cd_Rd, "mov Cd,Rd");
     IEMOP_HLP_MIN_386();
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    if (IEM_IS_64BIT_CODE(pVCpu))
         pVCpu->iem.s.enmEffOpSize = pVCpu->iem.s.enmDefOpSize = IEMMODE_64BIT;
     else
         pVCpu->iem.s.enmEffOpSize = pVCpu->iem.s.enmDefOpSize = IEMMODE_32BIT;
@@ -7085,7 +7083,7 @@ FNIEMOP_DEF(iemOp_vmread_Ey_Gy)
     IEMOP_MNEMONIC(vmread, "vmread Ey,Gy");
     IEMOP_HLP_IN_VMX_OPERATION("vmread", kVmxVDiag_Vmread);
     IEMOP_HLP_VMX_INSTR("vmread", kVmxVDiag_Vmread);
-    IEMMODE const enmEffOpSize = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? IEMMODE_64BIT : IEMMODE_32BIT;
+    IEMMODE const enmEffOpSize = IEM_IS_64BIT_CODE(pVCpu) ? IEMMODE_64BIT : IEMMODE_32BIT;
 
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
@@ -7164,7 +7162,7 @@ FNIEMOP_DEF(iemOp_vmwrite_Gy_Ey)
     IEMOP_MNEMONIC(vmwrite, "vmwrite Gy,Ey");
     IEMOP_HLP_IN_VMX_OPERATION("vmwrite", kVmxVDiag_Vmwrite);
     IEMOP_HLP_VMX_INSTR("vmwrite", kVmxVDiag_Vmwrite);
-    IEMMODE const enmEffOpSize = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? IEMMODE_64BIT : IEMMODE_32BIT;
+    IEMMODE const enmEffOpSize = IEM_IS_64BIT_CODE(pVCpu) ? IEMMODE_64BIT : IEMMODE_32BIT;
 
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (IEM_IS_MODRM_REG_MODE(bRm))
@@ -8912,7 +8910,7 @@ FNIEMOP_DEF(iemOp_setnle_Eb)
 FNIEMOP_DEF_1(iemOpCommonPushSReg, uint8_t, iReg)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    Assert(iReg < X86_SREG_FS || pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT);
+    Assert(iReg < X86_SREG_FS || !IEM_IS_64BIT_CODE(pVCpu));
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
 
     switch (pVCpu->iem.s.enmEffOpSize)
