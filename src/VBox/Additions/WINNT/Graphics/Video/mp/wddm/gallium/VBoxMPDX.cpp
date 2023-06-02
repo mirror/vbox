@@ -984,7 +984,8 @@ static NTSTATUS svgaPagingUnmapApertureSegment(PVBOXMP_DEVEXT pDevExt, DXGKARG_B
 
 NTSTATUS DxgkDdiDXBuildPagingBuffer(PVBOXMP_DEVEXT pDevExt, DXGKARG_BUILDPAGINGBUFFER *pBuildPagingBuffer)
 {
-    AssertReturn(pBuildPagingBuffer->DmaBufferPrivateDataSize >= sizeof(GARENDERDATA), STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER);
+    if (pBuildPagingBuffer->DmaBufferPrivateDataSize < sizeof(GARENDERDATA))
+        return STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
 
     NTSTATUS Status = STATUS_SUCCESS;
     uint32_t cbCommands = 0;

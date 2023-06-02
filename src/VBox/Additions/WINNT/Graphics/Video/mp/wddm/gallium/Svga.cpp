@@ -222,6 +222,48 @@ static NTSTATUS svgaCBContextEnable(VBOXWDDM_EXT_VMSVGA *pSvga, SVGACBContext CB
     return STATUS_SUCCESS;
 }
 
+static NTSTATUS svgaCreateMiniportMob(VBOXWDDM_EXT_VMSVGA *pSvga)
+{
+    NTSTATUS Status;
+
+    uint32_t const cbMiniportMob = RT_ALIGN_32(sizeof(VMSVGAMINIPORTMOB), PAGE_SIZE);
+    RTR0MEMOBJ hMemObjMiniportMob;
+    int rc = RTR0MemObjAllocPageTag(&hMemObjMiniportMob, cbMiniportMob,
+                                    false /* executable R0 mapping */, "VMSVGAMOB0");
+    if (RT_SUCCESS(rc))
+    {
+        Status = SvgaMobCreate(pSvga, &pSvga->pMiniportMob, cbMiniportMob / PAGE_SIZE, 0);
+        if (NT_SUCCESS(Status))
+        {
+            Status = SvgaMobSetMemObj(pSvga->pMiniportMob, hMemObjMiniportMob);
+            if (NT_SUCCESS(Status))
+            {
+                void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DEFINE_GB_MOB64, sizeof(SVGA3dCmdDefineGBMob64), SVGA3D_INVALID_ID);
+                if (pvCmd)
+                {
+                    SVGA3dCmdDefineGBMob64 *pCmd = (SVGA3dCmdDefineGBMob64 *)pvCmd;
+                    pCmd->mobid       = VMSVGAMOB_ID(pSvga->pMiniportMob);
+                    pCmd->ptDepth     = pSvga->pMiniportMob->gbo.enmMobFormat;
+                    pCmd->base        = pSvga->pMiniportMob->gbo.base;
+                    pCmd->sizeInBytes = pSvga->pMiniportMob->gbo.cbGbo;
+                    SvgaCmdBufCommit(pSvga, sizeof(*pCmd));
+
+                    pSvga->pMiniportMobData = (VMSVGAMINIPORTMOB volatile *)RTR0MemObjAddress(hMemObjMiniportMob);
+                    memset((void *)pSvga->pMiniportMobData, 0, cbMiniportMob);
+                    RTListInit(&pSvga->listMobDeferredDestruction);
+                    //pSvga->u64MobFence = 0;
+                }
+                else
+                    AssertFailedStmt(Status = STATUS_INSUFFICIENT_RESOURCES);
+            }
+        }
+    }
+    else
+        AssertFailedStmt(Status = STATUS_INSUFFICIENT_RESOURCES);
+
+    return Status;
+}
+
 static void svgaHwStop(VBOXWDDM_EXT_VMSVGA *pSvga)
 {
     /* Undo svgaHwStart. */
@@ -338,21 +380,25 @@ void SvgaAdapterStop(PVBOXWDDM_EXT_VMSVGA pSvga,
             pSvga->cbGMRBits = 0;
         }
 
-        /* Free the miniport mob at last. Can't use SvgaMobDestroy here because it tells the host to write a fence
-         * value to this mob. */
-        void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DESTROY_GB_MOB, sizeof(SVGA3dCmdDestroyGBMob), SVGA3D_INVALID_ID);
-        if (pvCmd)
+        if (RT_BOOL(pSvga->u32Caps & SVGA_CAP_DX))
         {
-            SVGA3dCmdDestroyGBMob *pCmd = (SVGA3dCmdDestroyGBMob *)pvCmd;
-            pCmd->mobid = VMSVGAMOB_ID(pSvga->pMiniportMob);
-            SvgaCmdBufCommit(pSvga, sizeof(*pCmd));
+            /* Free the miniport mob at last. Can't use SvgaMobDestroy here because it tells the host to write a fence
+             * value to this mob. */
+            void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DESTROY_GB_MOB, sizeof(SVGA3dCmdDestroyGBMob), SVGA3D_INVALID_ID);
+            if (pvCmd)
+            {
+                SVGA3dCmdDestroyGBMob *pCmd = (SVGA3dCmdDestroyGBMob *)pvCmd;
+                pCmd->mobid = VMSVGAMOB_ID(pSvga->pMiniportMob);
+                SvgaCmdBufCommit(pSvga, sizeof(*pCmd));
+            }
+            else
+                AssertFailed();
         }
-        else
-            AssertFailed();
 
         svgaHwStop(pSvga);
 
-        SvgaMobFree(pSvga, pSvga->pMiniportMob); /* After svgaHwStop because it waits for command buffer completion. */
+        if (RT_BOOL(pSvga->u32Caps & SVGA_CAP_DX))
+            SvgaMobFree(pSvga, pSvga->pMiniportMob); /* After svgaHwStop because it waits for command buffer completion. */
 
         Status = pDxgkInterface->DxgkCbUnmapMemory(pDxgkInterface->DeviceHandle,
                                                    (PVOID)pSvga->pu32FIFO);
@@ -432,40 +478,8 @@ NTSTATUS SvgaAdapterStart(PVBOXWDDM_EXT_VMSVGA *ppSvga,
 
                 if (NT_SUCCESS(Status))
                 {
-                    uint32_t const cbMiniportMob = RT_ALIGN_32(sizeof(VMSVGAMINIPORTMOB), PAGE_SIZE);
-                    RTR0MEMOBJ hMemObjMiniportMob;
-                    int rc = RTR0MemObjAllocPageTag(&hMemObjMiniportMob, cbMiniportMob,
-                                                    false /* executable R0 mapping */, "VMSVGAMOB0");
-                    if (RT_SUCCESS(rc))
-                    {
-                        Status = SvgaMobCreate(pSvga, &pSvga->pMiniportMob, cbMiniportMob / PAGE_SIZE, 0);
-                        if (NT_SUCCESS(Status))
-                        {
-                            Status = SvgaMobSetMemObj(pSvga->pMiniportMob, hMemObjMiniportMob);
-                            if (NT_SUCCESS(Status))
-                            {
-                                void *pvCmd = SvgaCmdBuf3dCmdReserve(pSvga, SVGA_3D_CMD_DEFINE_GB_MOB64, sizeof(SVGA3dCmdDefineGBMob64), SVGA3D_INVALID_ID);
-                                if (pvCmd)
-                                {
-                                    SVGA3dCmdDefineGBMob64 *pCmd = (SVGA3dCmdDefineGBMob64 *)pvCmd;
-                                    pCmd->mobid       = VMSVGAMOB_ID(pSvga->pMiniportMob);
-                                    pCmd->ptDepth     = pSvga->pMiniportMob->gbo.enmMobFormat;
-                                    pCmd->base        = pSvga->pMiniportMob->gbo.base;
-                                    pCmd->sizeInBytes = pSvga->pMiniportMob->gbo.cbGbo;
-                                    SvgaCmdBufCommit(pSvga, sizeof(*pCmd));
-
-                                    pSvga->pMiniportMobData = (VMSVGAMINIPORTMOB volatile *)RTR0MemObjAddress(hMemObjMiniportMob);
-                                    memset((void *)pSvga->pMiniportMobData, 0, cbMiniportMob);
-                                    RTListInit(&pSvga->listMobDeferredDestruction);
-                                    //pSvga->u64MobFence = 0;
-                                }
-                                else
-                                    AssertFailedStmt(Status = STATUS_INSUFFICIENT_RESOURCES);
-                            }
-                        }
-                    }
-                    else
-                       AssertFailedStmt(Status = STATUS_INSUFFICIENT_RESOURCES);
+                    if (RT_BOOL(pSvga->u32Caps & SVGA_CAP_DX))
+                        Status = svgaCreateMiniportMob(pSvga);
                 }
             }
         }
