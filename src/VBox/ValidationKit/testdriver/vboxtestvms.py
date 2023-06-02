@@ -2081,7 +2081,7 @@ class TestVmManager(object):
 
         # W11
         TestVm('tst-win11-64',               kfGrpStdSmoke,       sHd = '7.0/win11/win11-64-edit-by-ksenia.vdi',
-               sKind = 'Windows11_64', acCpusSup = range(1, 33), fIoApic = True),
+               sKind = 'Windows11', acCpusSup = range(1, 33), fIoApic = True),
 
         # Nested hardware-virtualization
         TestVm('tst-nsthwvirt-ubuntu-64',   kfGrpStdSmoke,       sHd = '5.3/nat/nsthwvirt-ubuntu64/t-nsthwvirt-ubuntu64.vdi',
