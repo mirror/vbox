@@ -3822,6 +3822,14 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
                  uNewCs, uNewRip, uNewSs, uNewRsp));
             return iemRaiseSelectorBoundsBySelector(pVCpu, uNewCs);
         }
+/** @todo check the location of this... Testcase. */
+        if (RT_LIKELY(!DescCS.Legacy.Gen.u1DefBig))
+        { /* likely */ }
+        else
+        {
+            Log(("iret %04x:%016RX64/%04x:%016RX64 -> both L and D are set -> #GP(0)\n", uNewCs, uNewRip, uNewSs, uNewRsp));
+            return iemRaiseGeneralProtectionFault0(pVCpu);
+        }
     }
     else
     {
