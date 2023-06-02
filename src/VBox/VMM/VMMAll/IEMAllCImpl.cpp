@@ -2571,6 +2571,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         uint32_t cbLimitCs = X86DESC_LIMIT_G(&DescCs.Legacy);
 
         /** @todo Testcase: Is this correct? */
+        bool f64BitCs = false;
         if (   DescCs.Legacy.Gen.u1Long
             && IEM_IS_LONG_MODE(pVCpu) )
         {
@@ -2580,6 +2581,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
                 return iemRaiseNotCanonical(pVCpu);
             }
             u64Base = 0;
+            f64BitCs = true;
         }
         else
         {
@@ -2609,11 +2611,12 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
 
         /* commit */
         if (cbPop)
+/** @todo This cannot be right. We're using the old CS mode here, and iemRegAddToRspEx checks fExec. */
             iemRegAddToRspEx(pVCpu, &NewRsp, cbPop);
-        if (!pVCpu->cpum.GstCtx.ss.Attr.n.u1DefBig)
-            pVCpu->cpum.GstCtx.sp        = (uint16_t)NewRsp.u;
-        else
+        if (pVCpu->cpum.GstCtx.ss.Attr.n.u1DefBig || f64BitCs)
             pVCpu->cpum.GstCtx.rsp       = NewRsp.u;
+        else
+            pVCpu->cpum.GstCtx.sp        = (uint16_t)NewRsp.u;
         if (enmEffOpSize == IEMMODE_16BIT)
             pVCpu->cpum.GstCtx.rip       = uNewRip & UINT16_MAX; /** @todo Testcase: When exactly does this occur? With call it happens prior to the limit check according to Intel... */
         else
