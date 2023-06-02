@@ -1066,8 +1066,8 @@ static int rtFdtDumpAsDtb(PRTFDTINT pThis, RTVFSIOSTREAM hVfsIos, PRTERRINFO pEr
     {
         DTBFDTRSVENTRY MemRsv;
 
-        MemRsv.PhysAddrStart = RT_H2BE_U32(pThis->paMemRsv[i].PhysAddrStart);
-        MemRsv.cbArea        = RT_H2BE_U32(pThis->paMemRsv[i].cbArea);
+        MemRsv.PhysAddrStart = RT_H2BE_U64(pThis->paMemRsv[i].PhysAddrStart);
+        MemRsv.cbArea        = RT_H2BE_U64(pThis->paMemRsv[i].cbArea);
         rc = RTVfsIoStrmWrite(hVfsIos, &MemRsv, sizeof(MemRsv), true /*fBlocking*/, NULL /*pcbWritten*/);
         if (RT_FAILURE(rc))
             return RTErrInfoSetF(pErrInfo, rc, "Failed to write memory reservation entry %u (%u bytes) to I/O stream",
