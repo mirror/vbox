@@ -737,7 +737,7 @@ int D3D11Test::Run()
                     /*
                      * Use the shared texture from the render device.
                      */
-                    mRender.pImmediateContext->OMSetRenderTargets(1, &mRender.pRenderTargetView, mRender.pDepthStencilView);
+                    mRender.pImmediateContext->OMSetRenderTargets(1, &mRender.pRenderTargetView, NULL /*mRender.pDepthStencilView*/);
                     mpRender->DoRender(this);
                 }
                 else
