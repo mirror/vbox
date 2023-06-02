@@ -2080,7 +2080,7 @@ class TestVmManager(object):
         #       sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi', sChipsetType = 'ich9'),
 
         # W11
-        TestVm('tst-win11-64', kfGrpStdSmoke, sHd = '7.0/win11/win11-64-edit-by-ksenia.vdi',
+        TestVm('tst-win11-64',               kfGrpStdSmoke,       sHd = '7.0/win11/win11-64-edit-by-ksenia.vdi',
                sKind = 'Windows11_64', acCpusSup = range(1, 33), fIoApic = True),
 
         # Nested hardware-virtualization
