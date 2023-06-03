@@ -4725,7 +4725,7 @@ DECLINLINE(void) iemFpuUpdateDP(PVMCPUCC pVCpu, PX86FXSTATE pFpuCtx, uint8_t iEf
         pFpuCtx->DS    = 0;
         pFpuCtx->FPUDP = (uint32_t)GCPtrEff + ((uint32_t)sel << 4);
     }
-    else if (!IEM_IS_LONG_MODE(pVCpu))
+    else if (!IEM_IS_LONG_MODE(pVCpu)) /** @todo this is weird. explain. */
     {
         pFpuCtx->DS    = sel;
         pFpuCtx->FPUDP = GCPtrEff;
