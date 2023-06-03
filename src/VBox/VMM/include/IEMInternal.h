@@ -558,7 +558,7 @@ typedef struct IEMTB *PIEMTB;
  * conditional in EIP/IP updating), and flat wide open CS, SS DS, and ES in
  * 32-bit mode (for simplifying most memory accesses). */
 #define IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK UINT32_C(0x00000004)
-/** X86 Mode: Bit indicating protected mode. */
+/** X86 Mode: Bit indicating protected mode, real mode (or SMM) when not set. */
 #define IEM_F_MODE_X86_PROT_MASK            UINT32_C(0x00000008)
 /** X86 Mode: Bit used to indicate virtual 8086 mode (only 16-bit). */
 #define IEM_F_MODE_X86_V86_MASK             UINT32_C(0x00000010)
@@ -3681,7 +3681,8 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
  * @returns @c true if it is, @c false if not.
  * @param   a_pVCpu         The cross context virtual CPU structure of the calling thread.
  */
-#define IEM_IS_REAL_OR_V86_MODE(a_pVCpu)    (CPUMIsGuestInRealOrV86ModeEx(IEM_GET_CTX(a_pVCpu)))
+#define IEM_IS_REAL_OR_V86_MODE(a_pVCpu)    ((  ((a_pVCpu)->iem.s.fExec  ^ IEM_F_MODE_X86_PROT_MASK) \
+                                              & (IEM_F_MODE_X86_V86_MASK | IEM_F_MODE_X86_PROT_MASK)) != 0)
 
 /**
  * Check if we're currently executing in virtual 8086 mode.
@@ -3689,7 +3690,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
  * @returns @c true if it is, @c false if not.
  * @param   a_pVCpu         The cross context virtual CPU structure of the calling thread.
  */
-#define IEM_IS_V86_MODE(a_pVCpu)            (CPUMIsGuestInV86ModeEx(IEM_GET_CTX(a_pVCpu)))
+#define IEM_IS_V86_MODE(a_pVCpu)            (((a_pVCpu)->iem.s.fExec & IEM_F_MODE_X86_V86_MASK) != 0)
 
 /**
  * Check if we're currently executing in long mode.
@@ -3729,7 +3730,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPUCC pVCpu, uint8_t bRm);
  * @returns @c true if it is, @c false if not.
  * @param   a_pVCpu         The cross context virtual CPU structure of the calling thread.
  */
-#define IEM_IS_REAL_MODE(a_pVCpu)           (CPUMIsGuestInRealModeEx(IEM_GET_CTX(a_pVCpu)))
+#define IEM_IS_REAL_MODE(a_pVCpu)           (!((a_pVCpu)->iem.s.fExec & IEM_F_MODE_X86_PROT_MASK))
 
 /**
  * Gets the current protection level (CPL).
@@ -3844,26 +3845,24 @@ AssertCompile(IEM_OP_PRF_REX_X == RT_BIT_32(27));
 /**
  * Check if the guest has entered VMX non-root operation.
  */
-# define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)  (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(a_pVCpu)))
+# define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)  (   ((a_pVCpu)->iem.s.fExec & (IEM_F_X86_CTX_VMX | IEM_F_X86_CTX_IN_GUEST)) \
+                                             ==                           (IEM_F_X86_CTX_VMX | IEM_F_X86_CTX_IN_GUEST) )
 
 /**
  * Check if the nested-guest has the given Pin-based VM-execution control set.
  */
-# define IEM_VMX_IS_PINCTLS_SET(a_pVCpu, a_PinCtl) \
-    (CPUMIsGuestVmxPinCtlsSet(IEM_GET_CTX(a_pVCpu), (a_PinCtl)))
+# define IEM_VMX_IS_PINCTLS_SET(a_pVCpu, a_PinCtl)  (CPUMIsGuestVmxPinCtlsSet(IEM_GET_CTX(a_pVCpu), (a_PinCtl)))
 
 /**
  * Check if the nested-guest has the given Processor-based VM-execution control set.
  */
-# define IEM_VMX_IS_PROCCTLS_SET(a_pVCpu, a_ProcCtl) \
-    (CPUMIsGuestVmxProcCtlsSet(IEM_GET_CTX(a_pVCpu), (a_ProcCtl)))
+# define IEM_VMX_IS_PROCCTLS_SET(a_pVCpu, a_ProcCtl) (CPUMIsGuestVmxProcCtlsSet(IEM_GET_CTX(a_pVCpu), (a_ProcCtl)))
 
 /**
  * Check if the nested-guest has the given Secondary Processor-based VM-execution
  * control set.
  */
-# define IEM_VMX_IS_PROCCTLS2_SET(a_pVCpu, a_ProcCtl2) \
-    (CPUMIsGuestVmxProcCtls2Set(IEM_GET_CTX(a_pVCpu), (a_ProcCtl2)))
+# define IEM_VMX_IS_PROCCTLS2_SET(a_pVCpu, a_ProcCtl2) (CPUMIsGuestVmxProcCtls2Set(IEM_GET_CTX(a_pVCpu), (a_ProcCtl2)))
 
 /** Gets the guest-physical address of the shadows VMCS for the given VCPU. */
 # define IEM_VMX_GET_SHADOW_VMCS(a_pVCpu)           ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysShadowVmcs)
@@ -3949,40 +3948,45 @@ AssertCompile(IEM_OP_PRF_REX_X == RT_BIT_32(27));
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /**
+ * Checks if we're executing a guest using AMD-V.
+ */
+# define IEM_SVM_IS_IN_GUEST(a_pVCpu) (   (a_pVCpu->iem.s.fExec & (IEM_F_X86_CTX_SVM | IEM_F_X86_CTX_IN_GUEST)) \
+                                       ==                         (IEM_F_X86_CTX_SVM | IEM_F_X86_CTX_IN_GUEST))
+/**
  * Check if an SVM control/instruction intercept is set.
  */
 # define IEM_SVM_IS_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept) \
-    (CPUMIsGuestSvmCtrlInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_Intercept)))
+    (IEM_SVM_IS_IN_GUEST(a_pVCpu) && CPUMIsGuestSvmCtrlInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_Intercept)))
 
 /**
  * Check if an SVM read CRx intercept is set.
  */
 # define IEM_SVM_IS_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr) \
-    (CPUMIsGuestSvmReadCRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uCr)))
+    (IEM_SVM_IS_IN_GUEST(a_pVCpu) && CPUMIsGuestSvmReadCRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uCr)))
 
 /**
  * Check if an SVM write CRx intercept is set.
  */
 # define IEM_SVM_IS_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr) \
-    (CPUMIsGuestSvmWriteCRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uCr)))
+    (IEM_SVM_IS_IN_GUEST(a_pVCpu) && CPUMIsGuestSvmWriteCRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uCr)))
 
 /**
  * Check if an SVM read DRx intercept is set.
  */
 # define IEM_SVM_IS_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr) \
-    (CPUMIsGuestSvmReadDRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uDr)))
+    (IEM_SVM_IS_IN_GUEST(a_pVCpu) && CPUMIsGuestSvmReadDRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uDr)))
 
 /**
  * Check if an SVM write DRx intercept is set.
  */
 # define IEM_SVM_IS_WRITE_DR_INTERCEPT_SET(a_pVCpu, a_uDr) \
-    (CPUMIsGuestSvmWriteDRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uDr)))
+    (IEM_SVM_IS_IN_GUEST(a_pVCpu) && CPUMIsGuestSvmWriteDRxInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uDr)))
 
 /**
  * Check if an SVM exception intercept is set.
  */
 # define IEM_SVM_IS_XCPT_INTERCEPT_SET(a_pVCpu, a_uVector) \
-    (CPUMIsGuestSvmXcptInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uVector)))
+    (IEM_SVM_IS_IN_GUEST(a_pVCpu) && CPUMIsGuestSvmXcptInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uVector)))
 
 /**
  * Invokes the SVM \#VMEXIT handler for the nested-guest.

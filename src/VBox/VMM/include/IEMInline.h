@@ -405,7 +405,11 @@ DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, uint32_t fExecOpts) RT_NOEXCEPT
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.ldtr));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.tr));
 
-    pVCpu->iem.s.fExec = iemCalcExecFlags(pVCpu) | fExecOpts;
+    pVCpu->iem.s.rcPassUp           = VINF_SUCCESS;
+    pVCpu->iem.s.fExec              = iemCalcExecFlags(pVCpu) | fExecOpts;
+    pVCpu->iem.s.cActiveMappings    = 0;
+    pVCpu->iem.s.iNextMapping       = 0;
+
 #  ifdef VBOX_STRICT
     pVCpu->iem.s.enmDefAddrMode     = (IEMMODE)0xfe;
     pVCpu->iem.s.enmEffAddrMode     = (IEMMODE)0xfe;
@@ -434,10 +438,6 @@ DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, uint32_t fExecOpts) RT_NOEXCEPT
     pVCpu->iem.s.cbOpcode           = 127;
 #   endif
 #  endif /* VBOX_STRICT */
-
-    pVCpu->iem.s.cActiveMappings    = 0;
-    pVCpu->iem.s.iNextMapping       = 0;
-    pVCpu->iem.s.rcPassUp           = VINF_SUCCESS;
 }
 # endif /* VBOX_INCLUDED_vmm_dbgf_h */
 
