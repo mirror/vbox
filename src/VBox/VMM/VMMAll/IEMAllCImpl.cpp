@@ -617,7 +617,9 @@ IEM_CIMPL_DEF_1(iemCImpl_pushf, IEMMODE, enmEffOpSize)
 {
     VBOXSTRICTRC rcStrict;
 
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_PUSHF))
+    if (!IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_PUSHF))
+    { /* probable */ }
+    else
     {
         Log2(("pushf: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -683,7 +685,9 @@ IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
     VBOXSTRICTRC    rcStrict;
     uint32_t        fEflNew;
 
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_POPF))
+    if (!IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_POPF))
+    { /* probable */ }
+    else
     {
         Log2(("popf: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -3957,8 +3961,10 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
 {
     bool fBlockingNmi = CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx);
 
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    else if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
         /*
          * Record whether NMI (or virtual-NMI) blocking is in effect during the execution
@@ -3983,7 +3989,6 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
         pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtNmiBlocking = false;
     }
 #endif
-
     /*
      * The SVM nested-guest intercept for IRET takes priority over all exceptions,
      * The NMI is still held pending (which I assume means blocking of further NMIs
@@ -3992,7 +3997,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
      * See AMD spec. 15.9 "Instruction Intercepts".
      * See AMD spec. 15.21.9 "NMI Support".
      */
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IRET))
+    else if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IRET))
     {
         Log(("iret: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -5204,14 +5209,15 @@ IEM_CIMPL_DEF_3(iemCImpl_lgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
         return iemRaiseGeneralProtectionFault0(pVCpu);
     Assert(!pVCpu->cpum.GstCtx.eflags.Bits.u1VM);
 
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
+    else if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+             && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
     {
         Log(("lgdt: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_GDTR_IDTR_ACCESS, VMXINSTRID_LGDT, cbInstr);
     }
-
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_GDTR_WRITES))
+    else if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_GDTR_WRITES))
     {
         Log(("lgdt: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -5256,14 +5262,15 @@ IEM_CIMPL_DEF_2(iemCImpl_sgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
      * Note! No CPL or V8086 checks here, it's a really sad story, ask Intel if
      *       you really must know.
      */
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
+    else if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+             && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
     {
         Log(("sgdt: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_GDTR_IDTR_ACCESS, VMXINSTRID_SGDT, cbInstr);
     }
-
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_GDTR_READS))
+    else if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_GDTR_READS))
     {
         Log(("sgdt: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -5291,7 +5298,9 @@ IEM_CIMPL_DEF_3(iemCImpl_lidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
         return iemRaiseGeneralProtectionFault0(pVCpu);
     Assert(!pVCpu->cpum.GstCtx.eflags.Bits.u1VM);
 
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IDTR_WRITES))
+    if (!IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IDTR_WRITES))
+    { /* probable */ }
+    else
     {
         Log(("lidt: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -5335,7 +5344,9 @@ IEM_CIMPL_DEF_2(iemCImpl_sidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
      * Note! No CPL or V8086 checks here, it's a really sad story, ask Intel if
      *       you really must know.
      */
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IDTR_READS))
+    if (!IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IDTR_READS))
+    { /* probable */ }
+    else
     {
         Log(("sidt: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -5370,13 +5381,18 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
         Log(("lldt %04x - CPL is %d -> #GP(0)\n", uNewLdt, IEM_GET_CPL(pVCpu)));
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
-    /* Nested-guest VMX intercept. */
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+
+    /* Nested-guest VMX intercept (SVM is after all checks). */
+    /** @todo testcase: exit vs check order. */
+    if (   !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        || !IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    { /* probable */ }
+    else
     {
         Log(("lldt: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_LDTR_TR_ACCESS, VMXINSTRID_LLDT, cbInstr);
     }
+
     if (uNewLdt & X86_SEL_LDT)
     {
         Log(("lldt %04x - LDT selector -> #GP\n", uNewLdt));
@@ -5389,7 +5405,9 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
     if (!(uNewLdt & X86_SEL_MASK_OFF_RPL))
     {
         /* Nested-guest SVM intercept. */
-        if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_LDTR_WRITES))
+        if (!IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_LDTR_WRITES))
+        { /* probable */ }
+        else
         {
             Log(("lldt: Guest intercept -> #VMEXIT\n"));
             IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -5464,7 +5482,9 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
     }
 
     /* Nested-guest SVM intercept. */
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_LDTR_WRITES))
+    if (!IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_LDTR_WRITES))
+    { /* probable */ }
+    else
     {
         Log(("lldt: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -5494,14 +5514,16 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
  */
 IEM_CIMPL_DEF_2(iemCImpl_sldt_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
 {
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
+    else if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+             && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
     {
         Log(("sldt: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_LDTR_TR_ACCESS, VMXINSTRID_SLDT, cbInstr);
     }
-
-    IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_LDTR_READS, SVM_EXIT_LDTR_READ, 0, 0, cbInstr);
+    else
+        IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_LDTR_READS, SVM_EXIT_LDTR_READ, 0, 0, cbInstr);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_LDTR);
     switch (enmEffOpSize)
@@ -5553,8 +5575,10 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
         Log(("ltr %04x - CPL is %d -> #GP(0)\n", uNewTr, IEM_GET_CPL(pVCpu)));
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    if (   !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        || !IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    { /* probable */ }
+    else
     {
         Log(("ltr: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_LDTR_TR_ACCESS, VMXINSTRID_LTR, cbInstr);
@@ -5569,7 +5593,9 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
         Log(("ltr %04x - NULL selector -> #GP(0)\n", uNewTr));
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_TR_WRITES))
+    if (!IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_TR_WRITES))
+    { /* probable */ }
+    else
     {
         Log(("ltr: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -5670,14 +5696,16 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
  */
 IEM_CIMPL_DEF_2(iemCImpl_str_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
 {
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
+    else if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+             && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
     {
         Log(("str_reg: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_LDTR_TR_ACCESS, VMXINSTRID_STR, cbInstr);
     }
-
-    IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_TR_READS, SVM_EXIT_TR_READ, 0, 0, cbInstr);
+    else
+        IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_TR_READS, SVM_EXIT_TR_READ, 0, 0, cbInstr);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_TR);
     switch (enmEffOpSize)
@@ -5699,14 +5727,16 @@ IEM_CIMPL_DEF_2(iemCImpl_str_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
  */
 IEM_CIMPL_DEF_2(iemCImpl_str_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
 {
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
+    else if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+             && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
     {
         Log(("str_mem: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_LDTR_TR_ACCESS, VMXINSTRID_STR, cbInstr);
     }
-
-    IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_TR_READS, SVM_EXIT_TR_READ, 0, 0, cbInstr);
+    else
+        IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_TR_READS, SVM_EXIT_TR_READ, 0, 0, cbInstr);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_TR);
     VBOXSTRICTRC rcStrict = iemMemStoreDataU16(pVCpu, iEffSeg, GCPtrEffDst, pVCpu->cpum.GstCtx.tr.Sel);
@@ -5728,7 +5758,9 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
         return iemRaiseGeneralProtectionFault0(pVCpu);
     Assert(!pVCpu->cpum.GstCtx.eflags.Bits.u1VM);
 
-    if (IEM_SVM_IS_READ_CR_INTERCEPT_SET(pVCpu, iCrReg))
+    if (!IEM_SVM_IS_READ_CR_INTERCEPT_SET(pVCpu, iCrReg))
+    { /* probable */ }
+    else
     {
         Log(("iemCImpl_mov_Rd_Cd: Guest intercept CR%u -> #VMEXIT\n", iCrReg));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -5760,8 +5792,10 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
         case 8:
         {
             IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_APIC_TPR);
+            if (!IEM_IS_IN_GUEST(pVCpu))
+            { /* probable */ }
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-            if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+            else if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
             {
                 VBOXSTRICTRC rcStrict = iemVmxVmexitInstrMovFromCr8(pVCpu, iGReg, cbInstr);
                 if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
@@ -5783,7 +5817,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
             }
 #endif
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-            if (CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu)))
+            else if (pVCpu->iem.s.fExec & IEM_F_X86_CTX_SVM)
             {
                 PCSVMVMCBCTRL pVmcbCtrl = &pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb.ctrl;
                 if (CPUMIsGuestSvmVirtIntrMasking(pVCpu, IEM_GET_CTX(pVCpu)))
@@ -5805,14 +5839,14 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
     }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
-    {
+    if (!IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    { /* probable */ }
+    else
         switch (iCrReg)
         {
             /* CR0/CR4 reads are subject to masking when in VMX non-root mode. */
             case 0: crX = CPUMGetGuestVmxMaskedCr0(&pVCpu->cpum.GstCtx, pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u64Cr0Mask.u); break;
             case 4: crX = CPUMGetGuestVmxMaskedCr4(&pVCpu->cpum.GstCtx, pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u64Cr4Mask.u); break;
-
             case 3:
             {
                 VBOXSTRICTRC rcStrict = iemVmxVmexitInstrMovFromCr3(pVCpu, iGReg, cbInstr);
@@ -5821,7 +5855,6 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
                 break;
             }
         }
-    }
 #endif
 
     /* Store it. */
@@ -5889,18 +5922,13 @@ IEM_CIMPL_DEF_2(iemCImpl_smsw_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
  */
 IEM_CIMPL_DEF_2(iemCImpl_smsw_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
 {
-    IEM_SVM_CHECK_READ_CR0_INTERCEPT(pVCpu, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */, cbInstr);
-
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    uint64_t u64MaskedCr0;
-    if (!IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
-        u64MaskedCr0 = pVCpu->cpum.GstCtx.cr0;
+    uint64_t u64GuestCr0 = pVCpu->cpum.GstCtx.cr0;
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
+    else if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+        u64GuestCr0 = CPUMGetGuestVmxMaskedCr0(&pVCpu->cpum.GstCtx, pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u64Cr0Mask.u);
     else
-        u64MaskedCr0 = CPUMGetGuestVmxMaskedCr0(&pVCpu->cpum.GstCtx, pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u64Cr0Mask.u);
-    uint64_t const u64GuestCr0 = u64MaskedCr0;
-#else
-    uint64_t const u64GuestCr0 = pVCpu->cpum.GstCtx.cr0;
-#endif
+        IEM_SVM_CHECK_READ_CR0_INTERCEPT(pVCpu, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */, cbInstr);
 
     uint16_t u16Value;
     if (IEM_GET_TARGET_CPU(pVCpu) > IEMTARGETCPU_386)
@@ -6028,10 +6056,12 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
 
             /** @todo testcase: what happens if we disable paging while in 64-bit code? */
 
+            if (!IEM_IS_IN_GUEST(pVCpu))
+            { /* probable */ }
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
             /* Check for bits that must remain set or cleared in VMX operation,
                see Intel spec. 23.8 "Restrictions on VMX operation". */
-            if (IEM_VMX_IS_ROOT_MODE(pVCpu))
+            else if (IEM_VMX_IS_ROOT_MODE(pVCpu))
             {
                 uint64_t const uCr0Fixed0 = iemVmxGetCr0Fixed0(pVCpu, IEM_VMX_IS_NON_ROOT_MODE(pVCpu));
                 if ((uNewCrX & uCr0Fixed0) != uCr0Fixed0)
@@ -6048,17 +6078,16 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 }
             }
 #endif
-
             /*
              * SVM nested-guest CR0 write intercepts.
              */
-            if (IEM_SVM_IS_WRITE_CR_INTERCEPT_SET(pVCpu, iCrReg))
+            else if (IEM_SVM_IS_WRITE_CR_INTERCEPT_SET(pVCpu, iCrReg))
             {
                 Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
                 IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
                 IEM_SVM_CRX_VMEXIT_RET(pVCpu, SVM_EXIT_WRITE_CR0, enmAccessCrX, iGReg);
             }
-            if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CR0_SEL_WRITE))
+            else if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CR0_SEL_WRITE))
             {
                 /* 'lmsw' intercepts regardless of whether the TS/MP bits are actually toggled. */
                 if (   enmAccessCrX == IEMACCESSCRX_LMSW
@@ -6127,7 +6156,9 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
          */
         case 2:
         {
-            if (IEM_SVM_IS_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 2))
+            if (!IEM_SVM_IS_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 2))
+            { /* probable */ }
+            else
             {
                 Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
                 IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -6197,7 +6228,9 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 uNewCrX &= fValid;
             }
 
-            if (IEM_SVM_IS_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 3))
+            if (!IEM_SVM_IS_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 3))
+            { /* probable */ }
+            else
             {
                 Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
                 IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -6266,7 +6299,9 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 return iemRaiseGeneralProtectionFault0(pVCpu);
             }
 
-            if (IEM_SVM_IS_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 4))
+            if (!IEM_SVM_IS_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 4))
+            { /* probable */ }
+            else
             {
                 Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
                 IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -6275,7 +6310,9 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
 
             /* Check for bits that must remain set or cleared in VMX operation,
                see Intel spec. 23.8 "Restrictions on VMX operation". */
-            if (IEM_VMX_IS_ROOT_MODE(pVCpu))
+            if (!IEM_VMX_IS_ROOT_MODE(pVCpu))
+            { /* probable */ }
+            else
             {
                 uint64_t const uCr4Fixed0 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr4Fixed0;
                 if ((uNewCrX & uCr4Fixed0) != uCr4Fixed0)
@@ -6334,9 +6371,11 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 return iemRaiseGeneralProtectionFault0(pVCpu);
             }
 
+            if (!IEM_IS_IN_GUEST(pVCpu))
+            { /* probable */ }
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-            if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-                && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_USE_TPR_SHADOW))
+            else if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+                     && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_USE_TPR_SHADOW))
             {
                 /*
                  * If the Mov-to-CR8 doesn't cause a VM-exit, bits 0:3 of the source operand
@@ -6357,9 +6396,8 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 break;
             }
 #endif
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-            if (CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu)))
+            else if (pVCpu->iem.s.fExec & IEM_F_X86_CTX_SVM)
             {
                 if (IEM_SVM_IS_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 8))
                 {
@@ -6421,7 +6459,9 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
         uNewCrX = iemGRegFetchU32(pVCpu, iGReg);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    if (!IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    { /* probable */ }
+    else
     {
         VBOXSTRICTRC rcStrict = VINF_VMX_INTERCEPT_NOT_ACTIVE;
         switch (iCrReg)
@@ -6457,7 +6497,9 @@ IEM_CIMPL_DEF_2(iemCImpl_lmsw, uint16_t, u16NewMsw, RTGCPTR, GCPtrEffDst)
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     /* Check nested-guest VMX intercept and get updated MSW if there's no VM-exit. */
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    if (!IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    { /* probable */ }
+    else
     {
         VBOXSTRICTRC rcStrict = iemVmxVmexitInstrLmsw(pVCpu, pVCpu->cpum.GstCtx.cr0, &u16NewMsw, GCPtrEffDst, cbInstr);
         if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
@@ -6489,7 +6531,9 @@ IEM_CIMPL_DEF_0(iemCImpl_clts)
     uNewCr0 &= ~X86_CR0_TS;
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    if (!IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    { /* probable */ }
+    else
     {
         VBOXSTRICTRC rcStrict = iemVmxVmexitInstrClts(pVCpu, cbInstr);
         if (rcStrict == VINF_VMX_MODIFIES_BEHAVIOR)
@@ -6519,7 +6563,9 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Dd, uint8_t, iGReg, uint8_t, iDrReg)
      *
      * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
      */
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    if (!IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    { /* probable */ }
+    else
     {
         VBOXSTRICTRC rcStrict = iemVmxVmexitInstrMovDrX(pVCpu, VMXINSTRID_MOV_FROM_DRX, iDrReg, iGReg, cbInstr);
         if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
@@ -6596,7 +6642,9 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Dd, uint8_t, iGReg, uint8_t, iDrReg)
     /*
      * Check for any SVM nested-guest intercepts for the DRx read.
      */
-    if (IEM_SVM_IS_READ_DR_INTERCEPT_SET(pVCpu, iDrReg))
+    if (!IEM_SVM_IS_READ_DR_INTERCEPT_SET(pVCpu, iDrReg))
+    { /* probable */ }
+    else
     {
         Log(("mov r%u,dr%u: Guest intercept -> #VMEXIT\n", iGReg, iDrReg));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -6629,7 +6677,9 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Dd_Rd, uint8_t, iDrReg, uint8_t, iGReg)
      *
      * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
      */
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    if (!IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    { /* probable */ }
+    else
     {
         VBOXSTRICTRC rcStrict = iemVmxVmexitInstrMovDrX(pVCpu, VMXINSTRID_MOV_TO_DRX, iDrReg, iGReg, cbInstr);
         if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
@@ -6713,7 +6763,9 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Dd_Rd, uint8_t, iDrReg, uint8_t, iGReg)
     /*
      * Check for any SVM nested-guest intercepts for the DRx write.
      */
-    if (IEM_SVM_IS_WRITE_DR_INTERCEPT_SET(pVCpu, iDrReg))
+    if (!IEM_SVM_IS_WRITE_DR_INTERCEPT_SET(pVCpu, iDrReg))
+    { /* probable */ }
+    else
     {
         Log2(("mov dr%u,r%u: Guest intercept -> #VMEXIT\n", iDrReg, iGReg));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -6851,16 +6903,17 @@ IEM_CIMPL_DEF_1(iemCImpl_invlpg, RTGCPTR, GCPtrPage)
     Assert(!pVCpu->cpum.GstCtx.eflags.Bits.u1VM);
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_EFER);
 
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_INVLPG_EXIT))
+    else if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+             && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_INVLPG_EXIT))
     {
         Log(("invlpg: Guest intercept (%RGp) -> VM-exit\n", GCPtrPage));
         return iemVmxVmexitInstrInvlpg(pVCpu, GCPtrPage, cbInstr);
     }
 #endif
-
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INVLPG))
+    else if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INVLPG))
     {
         Log(("invlpg: Guest intercept (%RGp) -> #VMEXIT\n", GCPtrPage));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -6900,8 +6953,10 @@ IEM_CIMPL_DEF_3(iemCImpl_invpcid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvpcidDesc, u
         return iemRaiseUndefinedOpcode(pVCpu);
 
     /* When in VMX non-root mode and INVPCID is not enabled, it results in #UD. */
-    if (    IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && !IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_INVPCID))
+    if (RT_LIKELY(   !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+                  || IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_INVPCID)))
+    { /* likely */ }
+    else
     {
         Log(("invpcid: Not enabled for nested-guest execution -> #UD\n"));
         return iemRaiseUndefinedOpcode(pVCpu);
@@ -6928,8 +6983,10 @@ IEM_CIMPL_DEF_3(iemCImpl_invpcid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvpcidDesc, u
      * CPL and virtual-8086 mode checks take priority over this VM-exit.
      * See Intel spec. "25.1.1 Relative Priority of Faults and VM Exits".
      */
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_INVLPG_EXIT))
+    if (   !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        || !IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_INVLPG_EXIT))
+    { /* probable */ }
+    else
     {
         Log(("invpcid: Guest intercept -> #VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_INVPCID, VMXINSTRID_NONE, cbInstr);
@@ -7026,10 +7083,12 @@ IEM_CIMPL_DEF_0(iemCImpl_invd)
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
+    else if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
         IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_INVD, cbInstr);
-
-    IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_INVD, SVM_EXIT_INVD, 0, 0, cbInstr);
+    else
+        IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_INVD, SVM_EXIT_INVD, 0, 0, cbInstr);
 
     /* We currently take no action here. */
     return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
@@ -7047,10 +7106,12 @@ IEM_CIMPL_DEF_0(iemCImpl_wbinvd)
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
+    else if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
         IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_WBINVD, cbInstr);
-
-    IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_WBINVD, SVM_EXIT_WBINVD, 0, 0, cbInstr);
+    else
+        IEM_SVM_CHECK_INSTR_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_WBINVD, SVM_EXIT_WBINVD, 0, 0, cbInstr);
 
     /* We currently take no action here. */
     return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
@@ -7087,14 +7148,15 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtsc)
         }
     }
 
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_RDTSC_EXIT))
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
+    else if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+             && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_RDTSC_EXIT))
     {
         Log(("rdtsc: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_RDTSC, cbInstr);
     }
-
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_RDTSC))
+    else if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_RDTSC))
     {
         Log(("rdtsc: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -7126,8 +7188,10 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtscp)
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fRdTscP)
         return iemRaiseUndefinedOpcode(pVCpu);
 
-    if (    IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && !IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_RDTSCP))
+    if (RT_LIKELY(    !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+                  || IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_RDTSCP)))
+    { /* likely */ }
+    else
     {
         Log(("rdtscp: Not enabled for VMX non-root mode -> #UD\n"));
         return iemRaiseUndefinedOpcode(pVCpu);
@@ -7143,8 +7207,10 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtscp)
         }
     }
 
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_RDTSC_EXIT))
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
+    else if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+             && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_RDTSC_EXIT))
     {
         Log(("rdtscp: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_RDTSCP, cbInstr);
@@ -7191,14 +7257,15 @@ IEM_CIMPL_DEF_0(iemCImpl_rdpmc)
         && !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PCE))
         return iemRaiseGeneralProtectionFault0(pVCpu);
 
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_RDPMC_EXIT))
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
+    else if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+             && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_RDPMC_EXIT))
     {
         Log(("rdpmc: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_RDPMC, cbInstr);
     }
-
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_RDPMC))
+    else if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_RDPMC))
     {
         Log(("rdpmc: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -7232,16 +7299,17 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
     /*
      * Check nested-guest intercepts.
      */
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    else if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
         if (iemVmxIsRdmsrWrmsrInterceptSet(pVCpu, VMX_EXIT_RDMSR, pVCpu->cpum.GstCtx.ecx))
             IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_RDMSR, cbInstr);
     }
 #endif
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MSR_PROT))
+    else if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MSR_PROT))
     {
         VBOXSTRICTRC rcStrict = iemSvmHandleMsrIntercept(pVCpu, pVCpu->cpum.GstCtx.ecx, false /* fWrite */, cbInstr);
         if (rcStrict == VINF_SVM_VMEXIT)
@@ -7318,16 +7386,17 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
     /*
      * Check nested-guest intercepts.
      */
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    else if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
         if (iemVmxIsRdmsrWrmsrInterceptSet(pVCpu, VMX_EXIT_WRMSR, idMsr))
             IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_WRMSR, cbInstr);
     }
 #endif
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MSR_PROT))
+    else if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MSR_PROT))
     {
         VBOXSTRICTRC rcStrict = iemSvmHandleMsrIntercept(pVCpu, idMsr, true /* fWrite */, cbInstr);
         if (rcStrict == VINF_SVM_VMEXIT)
@@ -7387,25 +7456,26 @@ IEM_CIMPL_DEF_3(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg, uint8_t, bImmAnd
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
+
     /*
      * Check VMX nested-guest IO intercept.
      */
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    else if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
         rcStrict = iemVmxVmexitInstrIo(pVCpu, VMXINSTRID_IO_IN, u16Port, RT_BOOL(bImmAndEffAddrMode & 0x80), cbReg, cbInstr);
         if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
             return rcStrict;
     }
-#else
-    RT_NOREF(bImmAndEffAddrMode);
 #endif
 
     /*
      * Check SVM nested-guest IO intercept.
      */
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
+    else if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
     {
         uint8_t cAddrSizeBits;
         switch (bImmAndEffAddrMode & 0xf)
@@ -7426,7 +7496,8 @@ IEM_CIMPL_DEF_3(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg, uint8_t, bImmAnd
             return rcStrict;
         }
     }
-#else
+#endif
+#if defined(VBOX_WITH_NESTED_HWVIRT_VMX) || defined(VBOX_WITH_NESTED_HWVIRT_SVM)
     RT_NOREF(bImmAndEffAddrMode);
 #endif
 
@@ -7501,25 +7572,26 @@ IEM_CIMPL_DEF_3(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg, uint8_t, bImmAn
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
+
     /*
      * Check VMX nested-guest I/O intercept.
      */
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    else if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
         rcStrict = iemVmxVmexitInstrIo(pVCpu, VMXINSTRID_IO_OUT, u16Port, RT_BOOL(bImmAndEffAddrMode & 0x80), cbReg, cbInstr);
         if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
             return rcStrict;
     }
-#else
-    RT_NOREF(bImmAndEffAddrMode);
 #endif
 
     /*
      * Check SVM nested-guest I/O intercept.
      */
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
+    else if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
     {
         uint8_t cAddrSizeBits;
         switch (bImmAndEffAddrMode & 0xf)
@@ -7540,7 +7612,8 @@ IEM_CIMPL_DEF_3(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg, uint8_t, bImmAn
             return rcStrict;
         }
     }
-#else
+#endif
+#if defined(VBOX_WITH_NESTED_HWVIRT_VMX) || defined(VBOX_WITH_NESTED_HWVIRT_SVM)
     RT_NOREF(bImmAndEffAddrMode);
 #endif
 
@@ -7702,14 +7775,15 @@ IEM_CIMPL_DEF_0(iemCImpl_hlt)
     if (IEM_GET_CPL(pVCpu) != 0)
         return iemRaiseGeneralProtectionFault0(pVCpu);
 
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
+    else if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
         && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_HLT_EXIT))
     {
         Log2(("hlt: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_HLT, cbInstr);
     }
-
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_HLT))
+    else if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_HLT))
     {
         Log2(("hlt: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -7750,8 +7824,10 @@ IEM_CIMPL_DEF_1(iemCImpl_monitor, uint8_t, iEffSeg)
      * This should be considered a fault-like VM-exit.
      * See Intel spec. 25.1.1 "Relative Priority of Faults and VM Exits".
      */
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_MONITOR_EXIT))
+    if (   !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        || !IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_MONITOR_EXIT))
+    { /* probable */ }
+    else
     {
         Log2(("monitor: Guest intercept -> #VMEXIT\n"));
         IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_MONITOR, cbInstr);
@@ -7781,9 +7857,11 @@ IEM_CIMPL_DEF_1(iemCImpl_monitor, uint8_t, iEffSeg)
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_VIRT_APIC_ACCESS))
+    else if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+             && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_VIRT_APIC_ACCESS))
     {
         /*
          * MONITOR does not access the memory, just monitors the address. However,
@@ -7798,8 +7876,7 @@ IEM_CIMPL_DEF_1(iemCImpl_monitor, uint8_t, iEffSeg)
                 return rcStrict;
     }
 #endif
-
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MONITOR))
+    else if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MONITOR))
     {
         Log2(("monitor: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -7839,8 +7916,10 @@ IEM_CIMPL_DEF_0(iemCImpl_mwait)
     }
 
     /* Check VMX nested-guest intercept. */
-    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_MWAIT_EXIT))
+    if (   !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        || !IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_MWAIT_EXIT))
+    { /* probable */ }
+    else
         IEM_VMX_VMEXIT_MWAIT_RET(pVCpu, EMMonitorIsArmed(pVCpu), cbInstr);
 
     /*
@@ -7874,29 +7953,30 @@ IEM_CIMPL_DEF_0(iemCImpl_mwait)
          *
          * See Intel spec. 25.3 "Changes to Instruction Behavior In VMX Non-root Operation".
          */
-        if (    IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-            && !pVCpu->cpum.GstCtx.eflags.Bits.u1IF)
-        {
-            if (   IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_INT_WINDOW_EXIT)
-                || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST))
-                /** @todo finish: check up this out after we move int window stuff out of the
-                 *        run loop and into the instruction finishing logic here. */
-                return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
-        }
+        if (   !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+            || pVCpu->cpum.GstCtx.eflags.Bits.u1IF)
+        { /* probable */ }
+        else if (   IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_INT_WINDOW_EXIT)
+                 || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST))
+            /** @todo finish: check up this out after we move int window stuff out of the
+             *        run loop and into the instruction finishing logic here. */
+            return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 #endif
     }
 
     /*
      * Check SVM nested-guest mwait intercepts.
      */
-    if (   IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MWAIT_ARMED)
-        && EMMonitorIsArmed(pVCpu))
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
+    else if (   IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MWAIT_ARMED)
+             && EMMonitorIsArmed(pVCpu))
     {
         Log2(("mwait: Guest intercept (monitor hardware armed) -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
         IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_MWAIT_ARMED, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MWAIT))
+    else if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MWAIT))
     {
         Log2(("mwait: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -8050,13 +8130,14 @@ static VBOXSTRICTRC iemCpuIdVBoxCall(PVMCPUCC pVCpu, uint32_t iFunction,
  */
 IEM_CIMPL_DEF_0(iemCImpl_cpuid)
 {
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    if (!IEM_IS_IN_GUEST(pVCpu))
+    { /* probable */ }
+    else if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
         Log2(("cpuid: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_CPUID, cbInstr);
     }
-
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CPUID))
+    else if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CPUID))
     {
         Log2(("cpuid: Guest intercept -> #VMEXIT\n"));
         IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -8404,7 +8485,10 @@ IEM_CIMPL_DEF_0(iemCImpl_xsetbv)
 {
     if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXSAVE)
     {
-        if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_XSETBV))
+        /** @todo explain why this happens before the CPL check.  */
+        if (!IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_XSETBV))
+        { /* probable */ }
+        else
         {
             Log2(("xsetbv: Guest intercept -> #VMEXIT\n"));
             IEM_SVM_UPDATE_NRIP(pVCpu, cbInstr);
@@ -8415,7 +8499,9 @@ IEM_CIMPL_DEF_0(iemCImpl_xsetbv)
         {
             IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_XCRx);
 
-            if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+            if (!IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+            { /* probable */ }
+            else
                 IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_XSETBV, cbInstr);
 
             uint32_t uEcx = pVCpu->cpum.GstCtx.ecx;
@@ -8549,8 +8635,10 @@ IEM_CIMPL_DEF_2(iemCImpl_clflush_clflushopt, uint8_t, iEffSeg, RTGCPTR, GCPtrEff
         if (rcStrict == VINF_SUCCESS)
         {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-            if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-                && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_VIRT_APIC_ACCESS))
+            if (   !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+                || !IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_VIRT_APIC_ACCESS))
+            { /* probable */ }
+            else
             {
                 /*
                  * CLFLUSH/CLFLUSHOPT does not access the memory, but flushes the cache-line
@@ -8854,8 +8942,10 @@ IEM_CIMPL_DEF_3(iemCImpl_xsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, en
     if (!(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXSAVE))
         return iemRaiseUndefinedOpcode(pVCpu);
     /* When in VMX non-root mode and XSAVE/XRSTOR is not enabled, it results in #UD. */
-    if (    IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && !IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_XSAVES_XRSTORS))
+    if (RT_LIKELY(    !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+                  || IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_XSAVES_XRSTORS)))
+    { /* likely */ }
+    else
     {
         Log(("xrstor: Not enabled for nested-guest execution -> #UD\n"));
         return iemRaiseUndefinedOpcode(pVCpu);
@@ -9005,8 +9095,10 @@ IEM_CIMPL_DEF_3(iemCImpl_xrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
     if (!(pVCpu->cpum.GstCtx.cr4 & X86_CR4_OSXSAVE))
         return iemRaiseUndefinedOpcode(pVCpu);
     /* When in VMX non-root mode and XSAVE/XRSTOR is not enabled, it results in #UD. */
-    if (    IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && !IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_XSAVES_XRSTORS))
+    if (RT_LIKELY(   !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+                  || IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_XSAVES_XRSTORS)))
+    { /* likely */ }
+    else
     {
         Log(("xrstor: Not enabled for nested-guest execution -> #UD\n"));
         return iemRaiseUndefinedOpcode(pVCpu);

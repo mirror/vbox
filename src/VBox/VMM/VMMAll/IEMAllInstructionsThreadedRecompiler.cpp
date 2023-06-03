@@ -342,7 +342,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
      * Init the execution environment.
      */
     iemInitExec(pVCpu, 0 /*fExecOpts*/);
-    ...
 
     /*
      * Run-loop.

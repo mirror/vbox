@@ -3835,6 +3835,16 @@ AssertCompile(IEM_OP_PRF_REX_X == RT_BIT_32(27));
     (IEM_IS_64BIT_CODE(a_pVCpu) ? (a_pVCpu)->iem.s.uVex3rdReg : (a_pVCpu)->iem.s.uVex3rdReg & 7)
 
 
+/**
+ * Checks if we're executing inside an AMD-V or VT-x guest.
+ */
+#if defined(VBOX_WITH_NESTED_HWVIRT_VMX) || defined(VBOX_WITH_NESTED_HWVIRT_SVM)
+# define IEM_IS_IN_GUEST(a_pVCpu)       RT_BOOL((a_pVCpu)->iem.s.fExec & IEM_F_X86_CTX_IN_GUEST)
+#else
+# define IEM_IS_IN_GUEST(a_pVCpu)       false
+#endif
+
+
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 
 /**
