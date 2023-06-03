@@ -95,7 +95,7 @@ static DECLCALLBACK(int) vbclShClWorker(bool volatile *pfShutdown)
             rc = VBClX11ClipboardMain();
         }
     }
-    else if (VBClGetDisplayServerType() == VBGHDISPLAYSERVERTYPE_WAYLAND)
+    else if (VBClGetDisplayServerType() == VBGHDISPLAYSERVERTYPE_PURE_WAYLAND)
     {
         VBClLogError("Shared Clipboard for Wayland not supported yet!\n");
     }

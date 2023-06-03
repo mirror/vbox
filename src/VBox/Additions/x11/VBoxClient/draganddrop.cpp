@@ -47,7 +47,7 @@ static DECLCALLBACK(int) vbclDnDInit(void)
             g_pSvc = new VBClX11DnDSvc();
             break;
 
-        case VBGHDISPLAYSERVERTYPE_WAYLAND:
+        case VBGHDISPLAYSERVERTYPE_PURE_WAYLAND:
             RT_FALL_THROUGH();
         default:
             return VERR_NOT_SUPPORTED;

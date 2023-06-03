@@ -55,7 +55,7 @@ const char *VBGHDisplayServerTypeToStr(VBGHDISPLAYSERVERTYPE enmType)
         RT_CASE_RET_STR(VBGHDISPLAYSERVERTYPE_NONE);
         RT_CASE_RET_STR(VBGHDISPLAYSERVERTYPE_AUTO);
         RT_CASE_RET_STR(VBGHDISPLAYSERVERTYPE_X11);
-        RT_CASE_RET_STR(VBGHDISPLAYSERVERTYPE_WAYLAND);
+        RT_CASE_RET_STR(VBGHDISPLAYSERVERTYPE_PURE_WAYLAND);
         RT_CASE_RET_STR(VBGHDISPLAYSERVERTYPE_XWAYLAND);
         default: break;
     }
@@ -192,7 +192,7 @@ VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void)
     if (fHasWayland && fHasX)
         retSessionType = VBGHDISPLAYSERVERTYPE_XWAYLAND;
     else if (fHasWayland)
-        retSessionType = VBGHDISPLAYSERVERTYPE_WAYLAND;
+        retSessionType = VBGHDISPLAYSERVERTYPE_PURE_WAYLAND;
     else if (fHasX)
         retSessionType = VBGHDISPLAYSERVERTYPE_X11;
 
@@ -211,7 +211,7 @@ VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void)
     VBGHDISPLAYSERVERTYPE waylandDisplayType = VBGHDISPLAYSERVERTYPE_NONE;
     const char *const pWaylandDisplayType = RTEnvGet(VBGH_ENV_WAYLAND_DISPLAY);
     if (pWaylandDisplayType != NULL)
-        waylandDisplayType = VBGHDISPLAYSERVERTYPE_WAYLAND;
+        waylandDisplayType = VBGHDISPLAYSERVERTYPE_PURE_WAYLAND;
 
     LogRel2(("Wayland display type is: %s\n", VBGHDisplayServerTypeToStr(waylandDisplayType)));
 
@@ -220,7 +220,7 @@ VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void)
     if (pSessionType)
     {
         if (RTStrIStartsWith(pSessionType, "wayland"))
-            xdgSessionType = VBGHDISPLAYSERVERTYPE_WAYLAND;
+            xdgSessionType = VBGHDISPLAYSERVERTYPE_PURE_WAYLAND;
         else if (RTStrIStartsWith(pSessionType, "x11"))
             xdgSessionType = VBGHDISPLAYSERVERTYPE_X11;
     }
@@ -233,7 +233,7 @@ VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void)
     if (pszCurDesktop)
     {
         if (RTStrIStr(pszCurDesktop, "wayland"))
-            xdgCurrentDesktopType = VBGHDISPLAYSERVERTYPE_WAYLAND;
+            xdgCurrentDesktopType = VBGHDISPLAYSERVERTYPE_PURE_WAYLAND;
         else if (RTStrIStr(pszCurDesktop, "x11"))
             xdgCurrentDesktopType = VBGHDISPLAYSERVERTYPE_X11;
     }
@@ -290,6 +290,6 @@ bool VBGHDisplayServerTypeIsXAvailable(VBGHDISPLAYSERVERTYPE enmType)
 bool VBGHDisplayServerTypeIsWaylandAvailable(VBGHDISPLAYSERVERTYPE enmType)
 {
     return    enmType == VBGHDISPLAYSERVERTYPE_XWAYLAND
-           || enmType == VBGHDISPLAYSERVERTYPE_WAYLAND;
+           || enmType == VBGHDISPLAYSERVERTYPE_PURE_WAYLAND;
 }
 

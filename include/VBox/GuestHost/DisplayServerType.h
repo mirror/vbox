@@ -61,7 +61,7 @@ typedef enum
     /** X11 (X.org). */
     VBGHDISPLAYSERVERTYPE_X11,
     /** Wayland. */
-    VBGHDISPLAYSERVERTYPE_WAYLAND,
+    VBGHDISPLAYSERVERTYPE_PURE_WAYLAND,
     /** XWayland; Wayland is running, but some (older) apps need X as a bridge as well. */
     VBGHDISPLAYSERVERTYPE_XWAYLAND
 } VBGHDISPLAYSERVERTYPE;

@@ -692,7 +692,7 @@ int main(int argc, char *argv[])
                 if (!RTStrICmp(ValueUnion.psz, "x11"))
                     g_enmDisplayServerType = VBGHDISPLAYSERVERTYPE_X11;
                 else if (!RTStrICmp(ValueUnion.psz, "wayland"))
-                    g_enmDisplayServerType = VBGHDISPLAYSERVERTYPE_WAYLAND;
+                    g_enmDisplayServerType = VBGHDISPLAYSERVERTYPE_PURE_WAYLAND;
                 else if (!RTStrICmp(ValueUnion.psz, "none"))
                     g_enmDisplayServerType = VBGHDISPLAYSERVERTYPE_NONE;
                 else if (!RTStrICmp(ValueUnion.psz, "auto"))

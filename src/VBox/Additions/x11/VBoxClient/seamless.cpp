@@ -89,7 +89,7 @@ static DECLCALLBACK(int) vbclSeamlessInit(void)
             g_pSvc = new VBClX11SeamlessSvc();
             break;
 
-        case VBGHDISPLAYSERVERTYPE_WAYLAND:
+        case VBGHDISPLAYSERVERTYPE_PURE_WAYLAND:
             RT_FALL_THROUGH();
         default:
             return VERR_NOT_SUPPORTED;

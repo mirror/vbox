@@ -580,7 +580,7 @@ static DECLCALLBACK(int) vbclSVGAInit(void)
         return VERR_NOT_AVAILABLE;
     }
 
-    if (VBClGetDisplayServerType() == VBGHDISPLAYSERVERTYPE_WAYLAND)
+    if (VBClGetDisplayServerType() == VBGHDISPLAYSERVERTYPE_PURE_WAYLAND)
     {
         rc = VbglR3DrmClientStart();
         if (RT_SUCCESS(rc))
