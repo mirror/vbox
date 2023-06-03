@@ -1012,7 +1012,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
    $(2)/UserManual.qhcp: \
    		$$(VBOX_PATH_MANUAL_SRC)/UserManual.qhcp \
    		$(2)/UserManual.hhp # Order-only gets confused by rm -Rf, as kmk will cache the existance of the target \
-                                   # file and not remake it because kmk thinks it still exists. Real dep fixes this.
+   		# file and not remake it because kmk thinks it still exists. Real dep fixes this.
 	$$(call MSG_L1,, => $$@ ($(2)/UserManual_htmlhelp.log))
 	$$(QUIET)$$(INSTALL_STAGING) -m0644 -- '$$<' '$$(@D)'
 
