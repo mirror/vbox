@@ -6267,6 +6267,34 @@ static void dxDbgLogVertexElement(DXGI_FORMAT Format, void const *pvElementData)
                  FLOAT_FMT_ARGS(float16ToFloat(pValues[0])), FLOAT_FMT_ARGS(float16ToFloat(pValues[1]))));
             break;
         }
+        case DXGI_FORMAT_R32G32_SINT:
+        {
+            int32_t const *pValues = (int32_t const *)pvElementData;
+            Log8(("{ %d, %d },",
+                 pValues[0], pValues[1]));
+            break;
+        }
+        case DXGI_FORMAT_R32G32_UINT:
+        {
+            uint32_t const *pValues = (uint32_t const *)pvElementData;
+            Log8(("{ %u, %u },",
+                 pValues[0], pValues[1]));
+            break;
+        }
+        case DXGI_FORMAT_R32_SINT:
+        {
+            int32_t const *pValues = (int32_t const *)pvElementData;
+            Log8(("{ %d },",
+                 pValues[0]));
+            break;
+        }
+        case DXGI_FORMAT_R32_UINT:
+        {
+            uint32_t const *pValues = (uint32_t const *)pvElementData;
+            Log8(("{ %u },",
+                 pValues[0]));
+            break;
+        }
         case DXGI_FORMAT_R16G16_SINT:
         {
             int16_t const *pValues = (int16_t const *)pvElementData;
@@ -6303,7 +6331,7 @@ static void dxDbgLogVertexElement(DXGI_FORMAT Format, void const *pvElementData)
 }
 
 
-static void dxDbgDumpVertices_Draw(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t vertexCount, uint32_t startVertexLocation)
+static void dxDbgDumpVertexData(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t vertexCount, uint32_t startVertexLocation)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
 
@@ -6365,12 +6393,12 @@ static void dxDbgDumpVertices_Draw(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXCo
 }
 
 
-static void dxDbgDumpVertices_DrawIndexed(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t indexCount, uint32_t startIndexLocation, int32_t baseVertexLocation)
+static void dxDbgDumpIndexedVertexData(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t indexCount, uint32_t startIndexLocation, int32_t baseVertexLocation)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
     DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     SVGA3dSurfaceImageId image;
-//DEBUG_BREAKPOINT_TEST();
+
     DXBOUNDINDEXBUFFER *pIB = &pBackend->resources.inputAssembly.indexBuffer;
     uint32_t const sidIB = pDXContext->svgaDXContext.inputAssembly.indexBufferSid;
     if (sidIB == SVGA3D_INVALID_ID)
@@ -6435,6 +6463,9 @@ static void dxDbgDumpVertices_DrawIndexed(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEX
                     for (uint32_t iElement = 0; iElement < pDXElementLayout->cElementDesc; ++iElement)
                     {
                         D3D11_INPUT_ELEMENT_DESC *pElement = &pDXElementLayout->aElementDesc[iElement];
+                        if (pElement->InputSlotClass != D3D11_INPUT_PER_VERTEX_DATA)
+                            continue;
+
                         if (pElement->InputSlot == iSlot)
                         {
                             uint8_t const *pu8Vertex = pu8VertexData + Index * pVB->stride;
@@ -6454,6 +6485,100 @@ static void dxDbgDumpVertices_DrawIndexed(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEX
 
         RTMemFree(pvIndexBuffer);
     }
+}
+
+
+static void dxDbgDumpInstanceData(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t instanceCount, uint32_t startInstanceLocation)
+{
+    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    SVGA3dSurfaceImageId image;
+
+    /*
+     * Dump per-instance data.
+     */
+    for (uint32_t iInstance = 0; iInstance < instanceCount; ++iInstance)
+    {
+        for (uint32_t iSlot = 0; iSlot < SVGA3D_DX_MAX_VERTEXBUFFERS; ++iSlot)
+        {
+            DXBOUNDVERTEXBUFFER *pVB = &pBackend->resources.inputAssembly.vertexBuffers[iSlot];
+            uint32_t const sidVB = pDXContext->svgaDXContext.inputAssembly.vertexBuffers[iSlot].bufferId;
+            if (sidVB == SVGA3D_INVALID_ID)
+            {
+                Assert(pVB->pBuffer == 0);
+                continue;
+            }
+
+            Assert(pVB->pBuffer);
+
+            image.sid = sidVB;
+            image.face = 0;
+            image.mipmap = 0;
+
+            VMSVGA3D_MAPPED_SURFACE mapVB;
+            int rc = vmsvga3dBackSurfaceMap(pThisCC, &image, NULL, VMSVGA3D_SURFACE_MAP_READ, &mapVB);
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+            {
+                uint8_t const *pu8VertexData = (uint8_t *)mapVB.pvData;
+                pu8VertexData += pVB->offset;
+                pu8VertexData += startInstanceLocation * pVB->stride;
+
+                SVGA3dElementLayoutId const elementLayoutId = pDXContext->svgaDXContext.inputAssembly.layoutId;
+                DXELEMENTLAYOUT *pDXElementLayout = &pDXContext->pBackendDXContext->paElementLayout[elementLayoutId];
+                Assert(pDXElementLayout->cElementDesc > 0);
+
+                Log8(("Instance data dump: sid = %u, iInstance %u, startInstanceLocation %d, offset = %d, stride = %d:\n",
+                      sidVB, iInstance, startInstanceLocation, pVB->offset, pVB->stride));
+
+                Log8(("slot[%u] i%u { ", iSlot, iInstance));
+                for (uint32_t iElement = 0; iElement < pDXElementLayout->cElementDesc; ++iElement)
+                {
+                    D3D11_INPUT_ELEMENT_DESC *pElement = &pDXElementLayout->aElementDesc[iElement];
+                    if (pElement->InputSlotClass != D3D11_INPUT_PER_INSTANCE_DATA)
+                        continue;
+
+                    if (pElement->InputSlot == iSlot)
+                    {
+                        uint8_t const *pu8Vertex = pu8VertexData + iInstance * pVB->stride;
+                        dxDbgLogVertexElement(pElement->Format, pu8Vertex + pElement->AlignedByteOffset);
+                    }
+                }
+                Log8((" }\n"));
+
+                vmsvga3dBackSurfaceUnmap(pThisCC, &image, &mapVB, /* fWritten =  */ false);
+            }
+        }
+    }
+}
+
+static void dxDbgDumpVertices_Draw(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t vertexCount, uint32_t startVertexLocation)
+{
+    dxDbgDumpVertexData(pThisCC, pDXContext, vertexCount, startVertexLocation);
+}
+
+
+static void dxDbgDumpVertices_DrawIndexed(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t indexCount, uint32_t startIndexLocation, int32_t baseVertexLocation)
+{
+    dxDbgDumpIndexedVertexData(pThisCC, pDXContext, indexCount, startIndexLocation, baseVertexLocation);
+}
+
+
+static void dxDbgDumpVertices_DrawInstanced(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext,
+                                            uint32_t vertexCountPerInstance, uint32_t instanceCount,
+                                            uint32_t startVertexLocation, uint32_t startInstanceLocation)
+{
+    dxDbgDumpVertexData(pThisCC, pDXContext, vertexCountPerInstance, startVertexLocation);
+    dxDbgDumpInstanceData(pThisCC, pDXContext, instanceCount, startInstanceLocation);
+}
+
+
+static void dxDbgDumpVertices_DrawIndexedInstanced(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext,
+                                                   uint32_t indexCountPerInstance, uint32_t instanceCount,
+                                                   uint32_t startIndexLocation, int32_t baseVertexLocation,
+                                                   uint32_t startInstanceLocation)
+{
+    dxDbgDumpIndexedVertexData(pThisCC, pDXContext, indexCountPerInstance, startIndexLocation, baseVertexLocation);
+    dxDbgDumpInstanceData(pThisCC, pDXContext, instanceCount, startInstanceLocation);
 }
 #endif
 
@@ -7225,6 +7350,11 @@ static DECLCALLBACK(int) vmsvga3dBackDXDrawInstanced(PVGASTATECC pThisCC, PVMSVG
 
     dxSetupPipeline(pThisCC, pDXContext);
 
+#ifdef LOG_ENABLED
+    if (LogIs8Enabled())
+        dxDbgDumpVertices_DrawInstanced(pThisCC, pDXContext, vertexCountPerInstance, instanceCount, startVertexLocation, startInstanceLocation);
+#endif
+
     Assert(pDXContext->svgaDXContext.inputAssembly.topology != SVGA3D_PRIMITIVE_TRIANGLEFAN);
 
     pDevice->pImmediateContext->DrawInstanced(vertexCountPerInstance, instanceCount, startVertexLocation, startInstanceLocation);
@@ -7250,6 +7380,11 @@ static DECLCALLBACK(int) vmsvga3dBackDXDrawIndexedInstanced(PVGASTATECC pThisCC,
     AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
 
     dxSetupPipeline(pThisCC, pDXContext);
+
+#ifdef LOG_ENABLED
+    if (LogIs8Enabled())
+        dxDbgDumpVertices_DrawIndexedInstanced(pThisCC, pDXContext, indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
+#endif
 
     Assert(pDXContext->svgaDXContext.inputAssembly.topology != SVGA3D_PRIMITIVE_TRIANGLEFAN);
 
