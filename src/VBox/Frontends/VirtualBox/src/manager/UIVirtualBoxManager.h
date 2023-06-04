@@ -126,7 +126,7 @@ private slots:
 
     /** @name Common stuff.
       * @{ */
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
         /** Handles host-screen available-area change. */
         void sltHandleHostScreenAvailableAreaChange();
 #endif
@@ -489,7 +489,7 @@ private:
         /** Returns whether at least one of passed @a items is detachable. */
         static bool isAtLeastOneItemDetachable(const QList<UIVirtualMachineItem*> &items);
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
         /** Tries to guess default X11 terminal emulator.
           * @returns Data packed into Qt pair of QString(s),
           *          which is `name` and `--execute argument`. */

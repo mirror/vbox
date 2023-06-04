@@ -812,9 +812,9 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuInputA
         case UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings:   strResult = "KeyboardSettings"; break;
         case UIExtraDataMetaDefs::RuntimeMenuInputActionType_SoftKeyboard:       strResult = "SoftKeyboard"; break;
         case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD:            strResult = "TypeCAD"; break;
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
         case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS:           strResult = "TypeCABS"; break;
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
         case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak:      strResult = "TypeCtrlBreak"; break;
         case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert:         strResult = "TypeInsert"; break;
         case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypePrintScreen:    strResult = "TypePrintScreen"; break;
@@ -844,10 +844,10 @@ fromInternalString<UIExtraDataMetaDefs::RuntimeMenuInputActionType>(const QStrin
         return UIExtraDataMetaDefs::RuntimeMenuInputActionType_SoftKeyboard;
     if (strRuntimeMenuInputActionType.compare("TypeCAD", Qt::CaseInsensitive) == 0)
         return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD;
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     if (strRuntimeMenuInputActionType.compare("TypeCABS", Qt::CaseInsensitive) == 0)
         return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS;
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
     if (strRuntimeMenuInputActionType.compare("TypeCtrlBreak", Qt::CaseInsensitive) == 0)
         return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak;
     if (strRuntimeMenuInputActionType.compare("TypeInsert", Qt::CaseInsensitive) == 0)

@@ -41,7 +41,7 @@
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # include "UICommon.h"
 # include "UIDesktopWidgetWatchdog.h"
 #endif
@@ -70,7 +70,7 @@ protected:
         /* Call to base-class: */
         QMainWindow::moveEvent(pEvent);
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
         /* Prevent further handling if fake screen detected: */
         if (UIDesktopWidgetWatchdog::isFakeScreenDetected())
             return;
@@ -95,7 +95,7 @@ protected:
         /* Call to base-class: */
         QMainWindow::resizeEvent(pEvent);
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
         /* Prevent handling if fake screen detected: */
         if (UIDesktopWidgetWatchdog::isFakeScreenDetected())
             return;

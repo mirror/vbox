@@ -904,7 +904,7 @@ private:
         /** Updates mouse states. */
         void updateMouseState();
 
-#if defined(VBOX_WS_X11) || defined(VBOX_WS_MAC)
+#if defined(VBOX_WS_NIX) || defined(VBOX_WS_MAC)
         /** Generate a BGRA bitmap which approximates a XOR/AND mouse pointer.
           *
           * Pixels which has 1 in the AND mask and not 0 in the XOR mask are replaced by
@@ -918,7 +918,7 @@ private:
         static void renderCursorPixels(const uint32_t *pu32XOR, const uint8_t *pu8AND,
                                        uint32_t u32Width, uint32_t u32Height,
                                        uint32_t *pu32Pixels, uint32_t cbPixels);
-#endif /* VBOX_WS_X11 || VBOX_WS_MAC */
+#endif /* VBOX_WS_NIX || VBOX_WS_MAC */
 
 #ifdef VBOX_WS_WIN
         /** Windows: Returns whether pointer of 1bpp depth. */

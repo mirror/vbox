@@ -1982,7 +1982,7 @@ void UIHelpBrowserWidget::sltFindInPageWidgetVisibilityChanged(bool fVisible)
 
 void UIHelpBrowserWidget::sltShowPrintDialog()
 {
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     if (!m_pTabManager)
         return;
     QPrinter printer;

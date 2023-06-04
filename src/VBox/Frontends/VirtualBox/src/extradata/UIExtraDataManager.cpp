@@ -1976,7 +1976,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_RestrictedRuntimeHelpMenuActions
            << GUI_RestrictedVisualStates
            << GUI_Fullscreen << GUI_Seamless << GUI_Scale
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
            << GUI_Fullscreen_LegacyMode
            << GUI_DistinguishMachineWindowGroups
 #endif
@@ -2599,7 +2599,7 @@ QString UIExtraDataManager::hostKeyCombination()
         strHostCombo = "55"; // QZ_LMETA
 #elif defined (VBOX_WS_WIN)
         strHostCombo = "163"; // VK_RCONTROL
-#elif defined (VBOX_WS_X11)
+#elif defined (VBOX_WS_NIX)
         strHostCombo = "65508"; // XK_Control_R
 #else
 # warning "port me!"
@@ -2654,7 +2654,7 @@ bool UIExtraDataManager::autoCaptureEnabled()
     /* Invent some sane default if it's empty: */
     if (strAutoCapture.isEmpty())
     {
-#if defined(VBOX_WS_X11) && defined(DEBUG)
+#if defined(VBOX_WS_NIX) && defined(DEBUG)
         fAutoCapture = false;
 #else
         fAutoCapture = true;
@@ -3833,7 +3833,7 @@ void UIExtraDataManager::setRequestedVisualState(UIVisualStateType visualState, 
     setExtraDataString(GUI_Scale, toFeatureAllowed(visualState == UIVisualStateType_Scale), uID);
 }
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 bool UIExtraDataManager::legacyFullscreenModeRequested()
 {
     /* 'False' unless feature allowed: */
@@ -3851,7 +3851,7 @@ void UIExtraDataManager::setDistinguishMachineWindowGroups(const QUuid &uID, boo
     /* 'True' if feature allowed, null-string otherwise: */
     setExtraDataString(GUI_DistinguishMachineWindowGroups, toFeatureAllowed(fEnabled), uID);
 }
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
 bool UIExtraDataManager::guestScreenAutoResizeEnabled(const QUuid &uID)
 {
@@ -4826,7 +4826,7 @@ void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QStri
             /* Cloud Console Manager restrictions changed: */
             else if (strKey == GUI_CloudConsoleManager_Restrictions)
                 emit sigCloudConsoleManagerRestrictionChange();
-#if defined(VBOX_WS_X11) || defined(VBOX_WS_WIN)
+#if defined(VBOX_WS_NIX) || defined(VBOX_WS_WIN)
             else if (strKey == GUI_DisableHostScreenSaver)
                 emit sigDisableHostScreenSaverStateChange(isFeatureAllowed(GUI_DisableHostScreenSaver));
 #endif

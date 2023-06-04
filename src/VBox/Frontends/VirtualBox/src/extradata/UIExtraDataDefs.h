@@ -330,12 +330,12 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_Seamless;
         /** Holds whether scaled visual-state is requested. */
         SHARED_LIBRARY_STUFF extern const char *GUI_Scale;
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
         /** Holds whether legacy full-screen mode is requested. */
         SHARED_LIBRARY_STUFF extern const char *GUI_Fullscreen_LegacyMode;
         /** Holds whether internal machine-window names should be unique. */
         SHARED_LIBRARY_STUFF extern const char *GUI_DistinguishMachineWindowGroups;
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
         /** Holds whether guest-screen auto-resize according machine-window size is enabled. */
         SHARED_LIBRARY_STUFF extern const char *GUI_AutoresizeGuest;
         /** Prefix used by composite extra-data keys,
@@ -642,7 +642,7 @@ public:
         RuntimeMenuInputActionType_KeyboardSettings   = RT_BIT(1),
         RuntimeMenuInputActionType_SoftKeyboard       = RT_BIT(2),
         RuntimeMenuInputActionType_TypeCAD            = RT_BIT(3),
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
         RuntimeMenuInputActionType_TypeCABS           = RT_BIT(4),
 #endif
         RuntimeMenuInputActionType_TypeCtrlBreak      = RT_BIT(5),

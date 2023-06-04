@@ -211,7 +211,7 @@ private:
     /** Holds the animation framework object. */
     UIAnimation *m_pAnimation;
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     /** X11: Holds whether the parent is currently minimized.
       * Used to restore the full-screen/maximized state
       * when the parent restored again. */

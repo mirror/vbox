@@ -72,7 +72,7 @@ namespace UINativeHotKey
 #if defined(VBOX_WS_WIN)
     /** Distinguishes modifier VKey by @a wParam and @a lParam. */
     SHARED_LIBRARY_STUFF int distinguishModifierVKey(int wParam, int lParam);
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
     /** Retranslates key names. */
     SHARED_LIBRARY_STUFF void retranslateKeyNames();
 #endif

@@ -40,7 +40,7 @@ void UICursor::setCursor(QWidget *pWidget, const QCursor &cursor)
     if (!pWidget)
         return;
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     /* As reported in https://www.virtualbox.org/ticket/16348,
      * in X11 QWidget::setCursor(..) call uses RENDER
      * extension. Qt (before 5.11) fails to handle the case where the mentioned extension
@@ -66,7 +66,7 @@ void UICursor::setCursor(QGraphicsWidget *pWidget, const QCursor &cursor)
     if (!pWidget)
         return;
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     /* As reported in https://www.virtualbox.org/ticket/16348,
      * in X11 QGraphicsWidget::setCursor(..) call uses RENDER
      * extension. Qt (before 5.11) fails to handle the case where the mentioned extension
@@ -92,7 +92,7 @@ void UICursor::unsetCursor(QWidget *pWidget)
     if (!pWidget)
         return;
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     /* As reported in https://www.virtualbox.org/ticket/16348,
      * in X11 QWidget::unsetCursor(..) call uses RENDER
      * extension. Qt (before 5.11) fails to handle the case where the mentioned extension
@@ -118,7 +118,7 @@ void UICursor::unsetCursor(QGraphicsWidget *pWidget)
     if (!pWidget)
         return;
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     /* As reported in https://www.virtualbox.org/ticket/16348,
      * in X11 QGraphicsWidget::unsetCursor(..) call uses RENDER
      * extension. Qt (before 5.11) fails to handle the case where the mentioned extension

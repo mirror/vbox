@@ -34,10 +34,10 @@
 /* GUI includes: */
 #include "UIMachineWindow.h"
 
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
 /* Forward declarations: */
 class UIMiniToolBar;
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_NIX */
 
 /** UIMachineWindow subclass used as full-screen machine window implementation. */
 class UIMachineWindowFullscreen : public UIMachineWindow
@@ -74,7 +74,7 @@ protected:
 
 private slots:
 
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
     /** Handles machine state change event. */
     void sltMachineStateChanged();
 
@@ -84,7 +84,7 @@ private slots:
     /** Handles signal about mini-toolbar auto-hide toggled.
       * @param  fEnabled  Brings whether auto-hide is enabled. */
     void sltHandleMiniToolBarAutoHideToggled(bool fEnabled);
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_NIX */
 
 #ifdef RT_OS_DARWIN
     /** Mac OS X: Commands @a pMachineWindow to enter native 'fullscreen' mode if possible. */
@@ -102,15 +102,15 @@ private:
     void prepareNotificationCenter();
     /** Prepare visual-state routine. */
     void prepareVisualState();
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
     /** Prepare mini-toolbar routine. */
     void prepareMiniToolbar();
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_NIX */
 
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
     /** Cleanup mini-toolbar routine. */
     void cleanupMiniToolbar();
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_NIX */
     /** Cleanup visual-state routine. */
     void cleanupVisualState();
     /** Cleanup notification-center routine. */
@@ -121,12 +121,12 @@ private:
     /** Updates visibility according to visual-state. */
     void showInNecessaryMode();
 
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
     /** Common update routine. */
     void updateAppearanceOf(int iElement);
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_NIX */
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     /** X11: Handles @a pEvent about state change. */
     void changeEvent(QEvent *pEvent);
 #endif
@@ -136,10 +136,10 @@ private:
     void showEvent(QShowEvent *pEvent);
 #endif
 
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
     /** Holds the mini-toolbar instance. */
     UIMiniToolBar *m_pMiniToolBar;
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_NIX */
 
 #ifdef VBOX_WS_MAC
     /** Mac OS X: Reflects whether window is in 'fullscreen' transition. */
@@ -151,7 +151,7 @@ private:
     /** Holds whether the window was minimized before became hidden.
       * Used to restore minimized state when the window shown again. */
     bool m_fWasMinimized;
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     /** X11: Holds whether the window minimization is currently requested.
       * Used to prevent accidentally restoring to full-screen state. */
     bool m_fIsMinimizationRequested;

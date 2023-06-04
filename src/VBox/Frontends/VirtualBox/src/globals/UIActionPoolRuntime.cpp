@@ -1693,7 +1693,7 @@ protected:
     }
 };
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 /** X11: Simple action extension, used as 'Perform Type CABS' action class. */
 class UIActionSimpleRuntimePerformTypeCABS : public UIActionSimple
 {
@@ -1743,7 +1743,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Ctrl-Alt-Backspace"));
     }
 };
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
 /** Simple action extension, used as 'Perform Type Ctrl Break' action class. */
 class UIActionSimpleRuntimePerformTypeCtrlBreak : public UIActionSimple
@@ -3346,9 +3346,9 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_Settings] = new UIActionSimpleRuntimeShowKeyboardSettings(this);
     m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_SoftKeyboard] = new UIActionSimpleRuntimeShowSoftKeyboard(this);
     m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD] = new UIActionSimpleRuntimePerformTypeCAD(this);
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS] = new UIActionSimpleRuntimePerformTypeCABS(this);
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
     m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak] = new UIActionSimpleRuntimePerformTypeCtrlBreak(this);
     m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert] = new UIActionSimpleRuntimePerformTypeInsert(this);
     m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypePrintScreen] = new UIActionSimpleRuntimePerformTypePrintScreen(this);
@@ -4235,7 +4235,7 @@ void UIActionPoolRuntime::updateMenuInputKeyboard()
 
     /* 'Type CAD' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD)) || fSeparator;
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     /* 'Type CABS' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS)) || fSeparator;
 #endif

@@ -34,14 +34,14 @@
 /* Qt includes: */
 #include <QObject>
 #include <QWindow>
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # include <QRect>
 # include <QVector>
 #endif
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
-#if defined(VBOX_WS_X11) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
+#if defined(VBOX_WS_NIX) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
 # include "UIDefs.h"
 #endif
 
@@ -70,7 +70,7 @@ signals:
     /** Notifies about work-area resize for the host-screen with @a iHostScreenIndex. */
     void sigHostScreenWorkAreaResized(int iHostScreenIndex);
 
-#if defined(VBOX_WS_X11) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
+#if defined(VBOX_WS_NIX) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
     /** Notifies about work-area recalculated for the host-screen with @a iHostScreenIndex. */
     void sigHostScreenWorkAreaRecalculated(int iHostScreenIndex);
 #endif
@@ -120,7 +120,7 @@ public:
     /** Returns overall region unifying all the host-screen available-geometries. */
     static QRegion overallAvailableRegion();
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     /** Qt5: X11: Returns whether no or fake screen detected. */
     static bool isFakeScreenDetected();
 #endif
@@ -174,7 +174,7 @@ private slots:
     /** Handles host-screen work-area resize to passed @a availableGeometry. */
     void sltHandleHostScreenWorkAreaResized(const QRect &availableGeometry);
 
-#if defined(VBOX_WS_X11) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
+#if defined(VBOX_WS_NIX) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
     /** Handles @a availableGeometry calculation result for the host-screen with @a iHostScreenIndex. */
     void sltHandleHostScreenAvailableGeometryCalculated(int iHostScreenIndex, QRect availableGeometry);
 #endif
@@ -195,7 +195,7 @@ private:
     /** Holds the static instance of the desktop-widget watchdog. */
     static UIDesktopWidgetWatchdog *s_pInstance;
 
-#if defined(VBOX_WS_X11) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
+#if defined(VBOX_WS_NIX) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
     /** Returns whether Synthetic Test is restricted according to cached policy. */
     bool isSynchTestRestricted() const;
 
@@ -216,7 +216,7 @@ private:
     QVector<QRect>    m_availableGeometryData;
     /** Holds current workers determining host-screen available-geometries. */
     QVector<QWidget*> m_availableGeometryWorkers;
-#endif /* VBOX_WS_X11 && !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
+#endif /* VBOX_WS_NIX && !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 };
 
 /** 'Official' name for the desktop-widget watchdog singleton. */

@@ -1662,13 +1662,13 @@ void UIMachine::prepareHostScreenData()
             this, &UIMachine::sltHandleHostScreenCountChange);
     connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenResized,
             this, &UIMachine::sltHandleHostScreenGeometryChange);
-# if defined(VBOX_WS_X11) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
+# if defined(VBOX_WS_NIX) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
     connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenWorkAreaRecalculated,
             this, &UIMachine::sltHandleHostScreenAvailableAreaChange);
-# else /* !VBOX_WS_X11 || VBOX_GUI_WITH_CUSTOMIZATIONS1 */
+# else /* !VBOX_WS_NIX || VBOX_GUI_WITH_CUSTOMIZATIONS1 */
     connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenWorkAreaResized,
             this, &UIMachine::sltHandleHostScreenAvailableAreaChange);
-# endif /* !VBOX_WS_X11 || VBOX_GUI_WITH_CUSTOMIZATIONS1 */
+# endif /* !VBOX_WS_NIX || VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 #endif /* !VBOX_WS_MAC */
 }
 
@@ -2160,7 +2160,7 @@ void UIMachine::updateMousePointerShape()
     /* Mark mouse pointer shape valid: */
     m_fIsValidPointerShapePresent = true;
 
-#elif defined(VBOX_WS_X11) || defined(VBOX_WS_MAC)
+#elif defined(VBOX_WS_NIX) || defined(VBOX_WS_MAC)
 
     /* Create an ARGB image out of the shape data: */
     QImage image(uWidth, uHeight, QImage::Format_ARGB32);
@@ -2202,7 +2202,7 @@ void UIMachine::updateMouseState()
     uisession()->acquireWhetherNeedsHostCursor(m_fIsMouseHostCursorNeeded);
 }
 
-#if defined(VBOX_WS_X11) || defined(VBOX_WS_MAC)
+#if defined(VBOX_WS_NIX) || defined(VBOX_WS_MAC)
 /* static */
 void UIMachine::renderCursorPixels(const uint32_t *pu32XOR, const uint8_t *pu8AND,
                                    uint32_t u32Width, uint32_t u32Height,
@@ -2290,7 +2290,7 @@ void UIMachine::renderCursorPixels(const uint32_t *pu32XOR, const uint8_t *pu8AN
         pu8ANDSrcLine += cbANDLine;
     }
 }
-#endif /* VBOX_WS_X11 || VBOX_WS_MAC */
+#endif /* VBOX_WS_NIX || VBOX_WS_MAC */
 
 #ifdef VBOX_WS_WIN
 /* static */

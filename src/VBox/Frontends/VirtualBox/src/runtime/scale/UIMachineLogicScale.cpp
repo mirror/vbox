@@ -84,7 +84,7 @@ void UIMachineLogicScale::sltInvokePopupMenu()
 
 void UIMachineLogicScale::sltHostScreenAvailableAreaChange()
 {
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     /* Prevent handling if fake screen detected: */
     if (UIDesktopWidgetWatchdog::isFakeScreenDetected())
         return;
@@ -92,7 +92,7 @@ void UIMachineLogicScale::sltHostScreenAvailableAreaChange()
     /* Make sure all machine-window(s) have previous but normalized geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         pMachineWindow->restoreCachedGeometry();
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
     /* Call to base-class: */
     UIMachineLogic::sltHostScreenAvailableAreaChange();

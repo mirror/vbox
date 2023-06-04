@@ -48,25 +48,25 @@
 # include "DarwinKeyboard.h"
 #elif defined(VBOX_WS_WIN)
 # include "WinKeyboard.h"
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
 # include "XKeyboard.h"
 # include "VBoxUtils-nix.h"
 #endif
 
 /* Other VBox includes: */
-#if defined(VBOX_WS_X11)
+#if defined(VBOX_WS_NIX)
 # include <VBox/VBoxKeyboard.h>
 #endif
 
 /* External includes: */
 #if defined(VBOX_WS_MAC)
 # include <Carbon/Carbon.h>
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
 # include <X11/Xlib.h>
 # include <X11/Xutil.h>
 # include <X11/keysym.h>
 # include <xcb/xcb.h>
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;
@@ -114,12 +114,12 @@ private:
 *   Namespace UINativeHotKey implementation.                                                                                     *
 *********************************************************************************************************************************/
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 namespace UINativeHotKey
 {
     QMap<QString, QString> m_keyNames;
 }
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
 QString UINativeHotKey::toString(int iKeyCode)
 {
@@ -196,7 +196,7 @@ QString UINativeHotKey::toString(int iKeyCode)
         strKeyName = UIHostComboEditor::tr("<key_%1>").arg(iKeyCode);
     }
 
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
 
     if (char *pNativeKeyName = ::XKeysymToString((KeySym)iKeyCode))
     {
@@ -251,7 +251,7 @@ bool UINativeHotKey::isValidKey(int iKeyCode)
         || iKeyCode == VK_APPS
         || iKeyCode == VK_PRINT;
 
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
 
     return (IsModifierKey(iKeyCode) /* allow modifiers */ ||
             IsFunctionKey(iKeyCode) /* allow function keys */ ||
@@ -301,7 +301,7 @@ unsigned UINativeHotKey::modifierToSet1ScanCode(int iKeyCode)
         case VK_APPS:      return 0x15D;
         default:           return 0;
 
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
 
         case XK_Control_L:         return 0x1D;
         case XK_Control_R:         return 0x11D;
@@ -368,7 +368,7 @@ int UINativeHotKey::distinguishModifierVKey(int wParam, int lParam)
     return iKeyCode;
 }
 
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
 
 void UINativeHotKey::retranslateKeyNames()
 {
@@ -386,7 +386,7 @@ void UINativeHotKey::retranslateKeyNames()
     m_keyNames["Scroll_Lock"]      = UIHostComboEditor::tr("Scroll Lock");
 }
 
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
 
 /*********************************************************************************************************************************
@@ -567,11 +567,11 @@ UIHostComboEditorPrivate::UIHostComboEditorPrivate()
 #elif defined(VBOX_WS_WIN)
     /* Prepare AltGR monitor: */
     m_pAltGrMonitor = new WinAltGrMonitor;
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
     /* Initialize the X keyboard subsystem: */
     if (uiCommon().X11ServerAvailable())
         initMappedX11Keyboard(NativeWindowSubsystem::X11GetDisplay(), gEDataManager->remappedScanCodes());
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 }
 
 UIHostComboEditorPrivate::~UIHostComboEditorPrivate()
@@ -742,7 +742,7 @@ bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pM
             break;
     }
 
-# elif defined(VBOX_WS_X11)
+# elif defined(VBOX_WS_NIX)
     if (uiCommon().X11ServerAvailable())
     {
         /* Make sure it's generic XCB event: */

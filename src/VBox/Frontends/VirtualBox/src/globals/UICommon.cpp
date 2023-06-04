@@ -87,7 +87,7 @@
 #ifdef VBOX_WS_WIN
 # include "VBoxUtils-win.h"
 #endif
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # include "UIHostComboEditor.h"
 #endif
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -141,7 +141,7 @@
 #ifdef VBOX_WS_MAC
 # include <sys/utsname.h>
 #endif
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # include <xcb/xcb.h>
 #endif
 
@@ -188,7 +188,7 @@ UICommon::UICommon(UIType enmType)
 #ifdef VBOX_WS_WIN
     , m_fDataCommitted(false)
 #endif
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     , m_enmWindowManagerType(X11WMType_Unknown)
     , m_fCompositingManagerRunning(false)
     , m_enmDisplayServerType(VBGHDISPLAYSERVERTYPE_NONE)
@@ -242,7 +242,7 @@ void UICommon::prepare()
             this, &UICommon::sltHandleCommitDataRequest);
 #endif /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     /* Detect display server type: */
     m_enmDisplayServerType = VBGHDisplayServerTypeDetect();
 #endif
@@ -328,13 +328,13 @@ void UICommon::prepare()
 
     UIVisualStateType visualStateType = UIVisualStateType_Invalid;
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     /* Check whether we have compositing manager running: */
     m_fCompositingManagerRunning = NativeWindowSubsystem::isCompositingManagerRunning(X11ServerAvailable());
 
     /* Acquire current Window Manager type: */
     m_enmWindowManagerType = NativeWindowSubsystem::windowManagerType(X11ServerAvailable());
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # ifdef VBOX_WITH_DEBUGGER_GUI_MENU
@@ -1200,7 +1200,7 @@ bool UICommon::switchToMachine(CMachine &comMachine)
     if (id == 0)
         return true;
 
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
 
     return UIDesktopWidgetWatchdog::activateWindow(id, true);
 
@@ -1287,7 +1287,7 @@ bool UICommon::launchMachine(CMachine &comMachine, UILaunchMode enmLaunchMode /*
     /* Allow started VM process to be foreground window: */
     AllowSetForegroundWindow(ASFW_ANY);
 #endif
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     /* Make sure VM process will start on the same
      * display as window this wrapper is called from: */
     const char *pDisplay = RTEnvGet("DISPLAY");
@@ -2778,7 +2778,7 @@ void UICommon::retranslateUi()
     if (m_fValid)
         refreshMedia();
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     // WORKAROUND:
     // As X11 do not have functionality for providing human readable key names,
     // we keep a table of them, which must be updated when the language is changed.
@@ -3031,7 +3031,7 @@ void UICommon::comWrappersReinit()
     m_fWrappersValid = true;
 }
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 bool UICommon::X11ServerAvailable() const
 {
     return VBGHDisplayServerTypeIsXAvailable(m_enmDisplayServerType);

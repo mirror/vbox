@@ -39,7 +39,7 @@
 #include "UIMachineLogicSeamless.h"
 #include "UIMachineView.h"
 #include "UIMachineWindowSeamless.h"
-#if   defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#if   defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
 # include "UIMachineDefs.h"
 # include "UIMiniToolBar.h"
 #elif defined(VBOX_WS_MAC)
@@ -52,18 +52,18 @@
 
 UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : UIMachineWindow(pMachineLogic, uScreenId)
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
     , m_pMiniToolBar(0)
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_NIX */
     , m_fWasMinimized(false)
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     , m_fIsMinimizationRequested(false)
     , m_fIsMinimized(false)
 #endif
 {
 }
 
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
 void UIMachineWindowSeamless::sltMachineStateChanged()
 {
     /* Call to base-class: */
@@ -75,7 +75,7 @@ void UIMachineWindowSeamless::sltMachineStateChanged()
 
 void UIMachineWindowSeamless::sltRevokeWindowActivation()
 {
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     // WORKAROUND:
     // We could be asked to minimize already, but just
     // not yet executed that order to current moment.
@@ -88,9 +88,9 @@ void UIMachineWindowSeamless::sltRevokeWindowActivation()
         return;
 
     /* Revoke stolen activation: */
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     raise();
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
     activateWindow();
 }
 
@@ -99,11 +99,11 @@ void UIMachineWindowSeamless::sltHandleMiniToolBarAutoHideToggled(bool fEnabled)
     /* Save mini-toolbar settings: */
     gEDataManager->setAutoHideMiniToolbar(fEnabled, uiCommon().managedVMUuid());
 }
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_NIX */
 
 void UIMachineWindowSeamless::sltShowMinimized()
 {
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     /* Remember that we are asked to minimize: */
     m_fIsMinimizationRequested = true;
 #endif
@@ -131,13 +131,13 @@ void UIMachineWindowSeamless::prepareVisualState()
     setMask(m_maskGuest);
 #endif /* VBOX_WITH_MASKED_SEAMLESS */
 
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
     /* Prepare mini-toolbar: */
     prepareMiniToolbar();
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_NIX */
 }
 
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
 void UIMachineWindowSeamless::prepareMiniToolbar()
 {
     /* Make sure mini-toolbar is not restricted: */
@@ -166,23 +166,23 @@ void UIMachineWindowSeamless::prepareMiniToolbar()
                 this, &UIMachineWindowSeamless::sltHandleMiniToolBarAutoHideToggled);
     }
 }
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_NIX */
 
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
 void UIMachineWindowSeamless::cleanupMiniToolbar()
 {
     /* Delete mini-toolbar: */
     delete m_pMiniToolBar;
     m_pMiniToolBar = 0;
 }
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_NIX */
 
 void UIMachineWindowSeamless::cleanupVisualState()
 {
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
     /* Cleanup mini-toolbar: */
     cleanupMiniToolbar();
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_NIX */
 
     /* Call to base-class: */
     UIMachineWindow::cleanupVisualState();
@@ -200,7 +200,7 @@ void UIMachineWindowSeamless::placeOnScreen()
     const QRect workingArea = gpDesktop->availableGeometry(iHostScreen);
     Q_UNUSED(workingArea);
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 
     /* Make sure we are located on corresponding host-screen: */
     if (   UIDesktopWidgetWatchdog::screenCount() > 1
@@ -272,7 +272,7 @@ void UIMachineWindowSeamless::showInNecessaryMode()
         /* Make sure window have appropriate geometry: */
         placeOnScreen();
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
         /* Show window: */
         if (!isMaximized())
             showMaximized();
@@ -296,7 +296,7 @@ void UIMachineWindowSeamless::showInNecessaryMode()
     }
 }
 
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
 void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
 {
     /* Call to base-class: */
@@ -323,9 +323,9 @@ void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
         }
     }
 }
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_NIX */
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 void UIMachineWindowSeamless::changeEvent(QEvent *pEvent)
 {
     switch (pEvent->type())
@@ -365,7 +365,7 @@ void UIMachineWindowSeamless::changeEvent(QEvent *pEvent)
     /* Call to base-class: */
     UIMachineWindow::changeEvent(pEvent);
 }
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
 #ifdef VBOX_WS_WIN
 void UIMachineWindowSeamless::showEvent(QShowEvent *pEvent)

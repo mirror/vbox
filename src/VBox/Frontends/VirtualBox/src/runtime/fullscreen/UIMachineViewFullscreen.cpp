@@ -47,9 +47,9 @@
 #include "VBox/log.h"
 
 /* External includes: */
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # include <limits.h>
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
 
 UIMachineViewFullscreen::UIMachineViewFullscreen(UIMachineWindow *pMachineWindow, ulong uScreenId)

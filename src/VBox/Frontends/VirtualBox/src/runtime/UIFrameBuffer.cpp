@@ -57,10 +57,10 @@
 
 /* Other includes: */
 #include <math.h>
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # include <X11/Xlib.h>
 # undef Bool // Qt5 vs Xlib gift..
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
 
 /** IFramebuffer implementation used to maintain VM display video memory. */
@@ -452,7 +452,7 @@ void UIFrameBufferPrivate::setView(UIMachineView *pMachineView)
     /* Recache window ID: */
     m_iWinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     if (uiCommon().X11ServerAvailable())
         /* Resync Qt and X11 Server (see xTracker #7547). */
         XSync(NativeWindowSubsystem::X11GetDisplay(), false);

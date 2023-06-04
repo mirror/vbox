@@ -57,7 +57,7 @@ class UIMachineWindow;
 #ifdef VBOX_WS_WIN
 class WinAltGrMonitor;
 #endif
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 #  include <xcb/xcb.h>
 #endif
 
@@ -227,10 +227,10 @@ protected:
     WinAltGrMonitor *m_pAltGrMonitor;
     /** Win: Holds the keyboard handler reference to be accessible from the keyboard hook. */
     static UIKeyboardHandler *m_spKeyboardHandler;
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
     /** The root window at the time we grab the mouse buttons. */
     xcb_window_t m_hButtonGrabWindow;
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_UIKeyboardHandler_h */

@@ -51,7 +51,7 @@ class UISoftKeyboard;
 class UIVMInformationDialog;
 class CUSBDevice;
 class CVirtualBoxErrorInfo;
-#if defined(VBOX_WS_X11)
+#if defined(VBOX_WS_NIX)
  struct DBusScreenSaverInhibitMethod;
 #endif
 
@@ -265,9 +265,9 @@ private slots:
     void sltCloseSoftKeyboard(bool fAsync = false);
     void sltCloseSoftKeyboardDefault() { sltCloseSoftKeyboard(true); }
     void sltTypeCAD();
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     void sltTypeCABS();
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
     void sltTypeCtrlBreak();
     void sltTypeInsert();
     void sltTypePrintScreen();
@@ -406,7 +406,7 @@ private:
 
     /* Holds the cookies returnd by QDBus inhibition calls. Map keys are service name. These are required during uninhibition.*/
     QMap<QString, uint> m_screenSaverInhibitionCookies;
-#if defined(VBOX_WS_X11)
+#if defined(VBOX_WS_NIX)
     QVector<DBusScreenSaverInhibitMethod*> m_methods;
 #endif
 };

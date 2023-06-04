@@ -323,7 +323,7 @@ protected:
     void focusInEvent(QFocusEvent *pEvent);
     /** Handles focus-out @a pEvent. */
     void focusOutEvent(QFocusEvent *pEvent);
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     virtual void keyPressEvent(QKeyEvent *pEvent) override;
     virtual void keyReleaseEvent(QKeyEvent *pEvent) override;
 #endif

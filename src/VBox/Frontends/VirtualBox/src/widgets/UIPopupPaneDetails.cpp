@@ -262,7 +262,7 @@ QFont UIPopupPaneDetails::tuneFont(QFont font)
 {
 #if defined(VBOX_WS_MAC)
     font.setPointSize(font.pointSize() - 2);
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
     font.setPointSize(font.pointSize() - 1);
 #endif
     return font;

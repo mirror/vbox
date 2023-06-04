@@ -88,7 +88,7 @@
 #ifdef VBOX_WS_MAC
 # include <Carbon/Carbon.h>
 #endif
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 #  include <xcb/xcb.h>
 #endif
 
@@ -240,13 +240,13 @@ void UIMachineView::applyMachineViewScaleFactor()
     if (fAccelerate3DEnabled)
     {
         double dScaleFactorFor3D = dScaleFactor;
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
         // WORKAROUND:
         // On Windows and Linux opposing to macOS it's only Qt which can auto scale up,
         // not 3D overlay itself, so for auto scale-up mode we have to take that into account.
         if (!fUseUnscaledHiDPIOutput)
             dScaleFactorFor3D *= dDevicePixelRatioActual;
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_NIX */
         uimachine()->notifyScaleFactorChange(m_uScreenId,
                                              (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
                                              (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
@@ -537,7 +537,7 @@ bool UIMachineView::nativeEventPreprocessor(const QByteArray &eventType, void *p
             break;
     }
 
-# elif defined(VBOX_WS_X11)
+# elif defined(VBOX_WS_NIX)
 
     if (uiCommon().X11ServerAvailable())
     {
@@ -1002,13 +1002,13 @@ void UIMachineView::sltHandleScaleFactorChange(const QUuid &uMachineID)
     if (fAccelerate3DEnabled)
     {
         double dScaleFactorFor3D = dScaleFactor;
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
         // WORKAROUND:
         // On Windows and Linux opposing to macOS it's only Qt which can auto scale up,
         // not 3D overlay itself, so for auto scale-up mode we have to take that into account.
         if (!fUseUnscaledHiDPIOutput)
             dScaleFactorFor3D *= frameBuffer()->devicePixelRatioActual();
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_NIX */
         uimachine()->notifyScaleFactorChange(m_uScreenId,
                                              (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
                                              (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
@@ -1228,7 +1228,7 @@ void UIMachineView::prepareFrameBuffer()
         KMachineState enmActualState = KMachineState_Null;
         uimachine()->acquireLiveMachineState(enmActualState);
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
         // WORKAROUND:
         // No idea why this was required for X11 before.
         // Currently I don't see a reason why I should keep it.
@@ -1236,7 +1236,7 @@ void UIMachineView::prepareFrameBuffer()
         if (enmActualState == KMachineState_Saved || enmActualState == KMachineState_AbortedSaved)
             size = storedGuestScreenSizeHint();
 # endif
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
         /* If there is a preview image saved, we will resize the framebuffer to the size of that image: */
         if (enmActualState == KMachineState_Saved || enmActualState == KMachineState_AbortedSaved)
@@ -1957,7 +1957,7 @@ void UIMachineView::focusOutEvent(QFocusEvent *pEvent)
     /* Call to base-class: */
     QAbstractScrollArea::focusOutEvent(pEvent);
 }
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 void UIMachineView::keyPressEvent(QKeyEvent *pEvent)
 {
     if (uiCommon().displayServerType() == VBGHDISPLAYSERVERTYPE_PURE_WAYLAND)
@@ -2162,7 +2162,7 @@ void UIMachineView::updateMousePointerPixmapScaling(QPixmap &pixmap, uint &uXHot
         uYHot /= dDevicePixelRatio;
     }
 
-#elif defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
 
     /* We want to scale the pixmap just once, so let's prepare cumulative multiplier: */
     double dScaleMultiplier = 1.0;

@@ -135,13 +135,13 @@ void UISlidingToolBar::prepare()
     setAttribute(Qt::WA_NoSystemBackground);
     /* Use Qt API to enable translucency: */
     setAttribute(Qt::WA_TranslucentBackground);
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
     if (uiCommon().isCompositingManagerRunning())
     {
         /* Use Qt API to enable translucency: */
         setAttribute(Qt::WA_TranslucentBackground);
     }
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
     /* Prepare contents: */
     prepareContents();
@@ -211,7 +211,7 @@ void UISlidingToolBar::prepareGeometry()
         }
     }
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     if (!uiCommon().isCompositingManagerRunning())
     {
         /* Use Xshape otherwise: */
@@ -269,7 +269,7 @@ void UISlidingToolBar::adjustGeometry()
     /* And move sub-window to corresponding position: */
     m_pWidget->setGeometry(0, 0, qMax(width(), sh.width()), sh.height());
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     if (!uiCommon().isCompositingManagerRunning())
     {
         /* Use Xshape otherwise: */
@@ -305,7 +305,7 @@ void UISlidingToolBar::setWidgetGeometry(const QRect &rect)
     /* Apply sub-window geometry: */
     m_pWidget->setGeometry(rect);
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     if (!uiCommon().isCompositingManagerRunning())
     {
         /* Use Xshape otherwise: */

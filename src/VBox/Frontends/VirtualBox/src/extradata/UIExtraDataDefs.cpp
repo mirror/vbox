@@ -179,10 +179,10 @@ const char *UIExtraDataDefs::GUI_RestrictedVisualStates = "GUI/RestrictedVisualS
 const char *UIExtraDataDefs::GUI_Fullscreen = "GUI/Fullscreen";
 const char *UIExtraDataDefs::GUI_Seamless = "GUI/Seamless";
 const char *UIExtraDataDefs::GUI_Scale = "GUI/Scale";
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 const char *UIExtraDataDefs::GUI_Fullscreen_LegacyMode = "GUI/Fullscreen/LegacyMode";
 const char *UIExtraDataDefs::GUI_DistinguishMachineWindowGroups = "GUI/DistinguishMachineWindowGroups";
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 const char *UIExtraDataDefs::GUI_AutoresizeGuest = "GUI/AutoresizeGuest";
 const char *UIExtraDataDefs::GUI_LastVisibilityStatusForGuestScreen = "GUI/LastVisibilityStatusForGuestScreen";
 const char *UIExtraDataDefs::GUI_LastGuestSizeHint = "GUI/LastGuestSizeHint";

@@ -51,7 +51,7 @@
 #ifdef VBOX_WS_WIN
 # include "VBoxUtils-win.h"
 #endif
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # include "VBoxUtils-nix.h"
 #endif
 
@@ -310,7 +310,7 @@ bool UIMouseHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
     /* Nothing for now. */
     RT_NOREF(pMessage, uScreenId);
 
-# elif defined(VBOX_WS_X11)
+# elif defined(VBOX_WS_NIX)
 
     if (uiCommon().X11ServerAvailable())
     {
@@ -506,11 +506,11 @@ void UIMouseHandler::sltMaybeActivateHoveredWindow()
     {
         /* Activate it: */
         m_pHoveredWindow->activateWindow();
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
         /* On X11 its not enough to just activate window if you
          * want to raise it also, so we will make it separately: */
         m_pHoveredWindow->raise();
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
     }
 }
 
@@ -681,14 +681,14 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                         return true;
                     }
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
                     /* Make sure that we are focused after a click.  Rather
                      * ugly, but works around a problem with GNOME
                      * screensaver, which sometimes removes our input focus
                      * and gives us no way to get it back. */
                     if (pEvent->type() == QEvent::MouseButtonRelease)
                         pWatchedWidget->window()->activateWindow();
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
                     /* Check if we should activate window under cursor: */
                     if (gEDataManager->activateHoveredMachineWindow() &&
                         !uimachine()->isMouseCaptured() &&
@@ -714,7 +714,7 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                 case QEvent::MouseButtonDblClick:
                 {
                     QMouseEvent *pMouseEvent = static_cast<QMouseEvent*>(pEvent);
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
                     /* When the keyboard is captured, we also capture mouse button
                      * events, and release the keyboard and re-capture it delayed
                      * on every mouse click. When the click is inside our window
@@ -723,7 +723,7 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                      * capture is in progress and has no effect if not: */
                     if (pEvent->type() == QEvent::MouseButtonPress)
                         machineLogic()->keyboardHandler()->finaliseCaptureKeyboard();
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
                     /* For various mouse click related events
                      * we also reset last mouse wheel delta: */
@@ -1162,11 +1162,11 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                      * may happen asynchronously on some platforms, after we return from this code): */
                     if (ok)
                     {
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
                         /* Make sure that pending FocusOut events from the previous message box are handled,
                          * otherwise the mouse is immediately ungrabbed again: */
                         qApp->processEvents();
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
                         machineLogic()->keyboardHandler()->captureKeyboard(uScreenId);
                         const MouseCapturePolicy mcp = gEDataManager->mouseCapturePolicy(uiCommon().managedVMUuid());
                         if (mcp == MouseCapturePolicy_Default)

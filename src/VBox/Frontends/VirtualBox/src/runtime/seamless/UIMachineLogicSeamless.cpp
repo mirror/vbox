@@ -283,7 +283,7 @@ void UIMachineLogicSeamless::prepareMachineWindows()
     /* Mark machine-window(s) created: */
     setMachineWindowsCreated(true);
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     switch (uiCommon().typeOfWindowManager())
     {
         case X11WMType_GNOMEShell:
@@ -299,7 +299,7 @@ void UIMachineLogicSeamless::prepareMachineWindows()
         default:
             break;
     }
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 }
 
 #ifndef VBOX_WS_MAC

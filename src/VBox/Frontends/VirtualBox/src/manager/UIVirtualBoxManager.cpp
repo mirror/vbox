@@ -91,7 +91,7 @@
 #else
 # include "UIMenuBar.h"
 #endif
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # include "UIDesktopWidgetWatchdog.h"
 #endif
 
@@ -622,7 +622,7 @@ void UIVirtualBoxManager::dropEvent(QDropEvent *pEvent)
     pEvent->acceptProposedAction();
 }
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 void UIVirtualBoxManager::sltHandleHostScreenAvailableAreaChange()
 {
     /* Prevent handling if fake screen detected: */
@@ -634,7 +634,7 @@ void UIVirtualBoxManager::sltHandleHostScreenAvailableAreaChange()
     resize(geo.size());
     move(geo.topLeft());
 }
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
 void UIVirtualBoxManager::sltHandleCommitData()
 {
@@ -1524,7 +1524,7 @@ void UIVirtualBoxManager::sltExecuteExternalApplication()
 
     /* Execute console application finally: */
     QProcess::startDetached(QString("%1 %2").arg(strPath, arguments.join(' ')));
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
     /* Gather arguments: */
     QStringList arguments;
     arguments << parseShellArguments(strArguments);
@@ -1532,7 +1532,7 @@ void UIVirtualBoxManager::sltExecuteExternalApplication()
 
     /* Execute console application finally: */
     QProcess::startDetached(strPath, arguments);
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 }
 
 void UIVirtualBoxManager::sltPerformCopyCommandSerialUnix()
@@ -2154,7 +2154,7 @@ void UIVirtualBoxManager::sltExtensionPackInstalledUninstalled(const QString &st
 
 void UIVirtualBoxManager::prepare()
 {
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     NativeWindowSubsystem::setWMClass(uiCommon().X11ServerAvailable(), this, "VirtualBox Manager", "VirtualBox Manager");
 #endif
 
@@ -2282,7 +2282,7 @@ void UIVirtualBoxManager::prepareWidgets()
 
 void UIVirtualBoxManager::prepareConnections()
 {
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     /* Desktop event handlers: */
     connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenWorkAreaResized,
             this, &UIVirtualBoxManager::sltHandleHostScreenAvailableAreaChange);
@@ -3131,7 +3131,7 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
         pDefaultAction->setProperty("path", "open");
 #elif defined(VBOX_WS_WIN)
         pDefaultAction->setProperty("path", "powershell");
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
         const QPair<QString, QString> terminalData = defaultTerminalData();
         pDefaultAction->setProperty("path", terminalData.first);
         pDefaultAction->setProperty("arguments", QString("%1 sh -c").arg(terminalData.second));
@@ -3858,7 +3858,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemDetachable(const QList<UIVirtualMachin
     return false;
 }
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 /* static */
 QPair<QString, QString> UIVirtualBoxManager::defaultTerminalData()
 {

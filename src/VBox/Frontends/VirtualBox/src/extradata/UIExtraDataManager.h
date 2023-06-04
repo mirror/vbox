@@ -133,7 +133,7 @@ signals:
     void sigDockIconOverlayAppearanceChange(bool fEnabled);
 #endif /* VBOX_WS_MAC */
 
-#if defined (VBOX_WS_X11) || defined (VBOX_WS_WIN)
+#if defined (VBOX_WS_NIX) || defined (VBOX_WS_WIN)
     /* Is emitted when host screen saver inhibition state changes. */
     void sigDisableHostScreenSaverStateChange(bool fDisable);
 #endif
@@ -611,7 +611,7 @@ public:
         /** Defines requested Runtime UI visual-state as @a visualState. */
         void setRequestedVisualState(UIVisualStateType visualState, const QUuid &uID);
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
         /** Returns whether legacy full-screen mode is requested. */
         bool legacyFullscreenModeRequested();
 
@@ -619,7 +619,7 @@ public:
         bool distinguishMachineWindowGroups(const QUuid &uID);
         /** Defines whether internal machine-window name should be unique. */
         void setDistinguishMachineWindowGroups(const QUuid &uID, bool fEnabled);
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
         /** Returns whether guest-screen auto-resize according machine-window size is enabled. */
         bool guestScreenAutoResizeEnabled(const QUuid &uID);

@@ -81,7 +81,7 @@
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UINetworkRequestManager.h"
 #endif
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # include "VBoxUtils-nix.h"
 #endif
 
@@ -118,7 +118,7 @@
 # include "WinKeyboard.h"
 # include "VBoxUtils-win.h"
 #endif
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # include <XKeyboard.h>
 #endif
 
@@ -497,7 +497,7 @@ void UIMachineLogic::sltMachineStateChanged()
             typeHostKeyComboPressRelease(false);
             break;
         }
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
         case KMachineState_Starting:
         case KMachineState_Restoring:
         case KMachineState_TeleportingIn:
@@ -579,7 +579,7 @@ void UIMachineLogic::sltMouseCapabilityChanged()
 
 void UIMachineLogic::sltDisableHostScreenSaverStateChanged(bool fDisabled)
 {
-#if defined(VBOX_WS_X11)
+#if defined(VBOX_WS_NIX)
     /* Find the methods once and cache them: */
     if (m_methods.isEmpty())
         m_methods = NativeWindowSubsystem::findDBusScrenSaverInhibitMethods();
@@ -784,7 +784,7 @@ UIMachineLogic::UIMachineLogic(UIMachine *pMachine)
 
 UIMachineLogic::~UIMachineLogic()
 {
-#if defined(VBOX_WS_X11)
+#if defined(VBOX_WS_NIX)
     qDeleteAll(m_methods.begin(), m_methods.end());
     m_methods.clear();
 #endif
@@ -922,9 +922,9 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_View_T_Scale));
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize));
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD));
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS));
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak));
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert));
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypePrintScreen));
@@ -1053,10 +1053,10 @@ void UIMachineLogic::prepareActionConnections()
             this, &UIMachineLogic::sltShowSoftKeyboard);
     connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD), &UIAction::triggered,
             this, &UIMachineLogic::sltTypeCAD);
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS), &UIAction::triggered,
             this, &UIMachineLogic::sltTypeCABS);
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
     connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak), &UIAction::triggered,
             this, &UIMachineLogic::sltTypeCtrlBreak);
     connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert), &UIAction::triggered,
@@ -1388,7 +1388,7 @@ void UIMachineLogic::loadSettings()
     /* HID LEDs sync initialization: */
     sltSwitchKeyboardLedsToGuestLeds();
 
-#if defined(VBOX_WS_X11) || defined(VBOX_WS_WIN)
+#if defined(VBOX_WS_NIX) || defined(VBOX_WS_WIN)
     connect(gEDataManager, &UIExtraDataManager::sigDisableHostScreenSaverStateChange,
             this, &UIMachineLogic::sltDisableHostScreenSaverStateChanged);
     sltDisableHostScreenSaverStateChanged(gEDataManager->disableHostScreenSaver());
@@ -1941,7 +1941,7 @@ void UIMachineLogic::sltTakeScreenshot()
         const QImage tmpImage(strTempFile);
 
         /* On X11 Qt Filedialog returns the filepath without the filetype suffix, so adding it ourselves: */
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
         /* Add filetype suffix only if user has not added it explicitly: */
         if (!strFilename.endsWith(QString(".%1").arg(strFormat)))
             tmpImage.save(QDir::toNativeSeparators(QFile::encodeName(QString("%1.%2").arg(strFilename, strFormat))),
@@ -1949,11 +1949,11 @@ void UIMachineLogic::sltTakeScreenshot()
         else
             tmpImage.save(QDir::toNativeSeparators(QFile::encodeName(strFilename)),
                           strFormat.toUtf8().constData());
-#else /* !VBOX_WS_X11 */
+#else /* !VBOX_WS_NIX */
         QFile file(strFilename);
         if (file.open(QIODevice::WriteOnly))
             tmpImage.save(&file, strFormat.toUtf8().constData());
-#endif /* !VBOX_WS_X11 */
+#endif /* !VBOX_WS_NIX */
     }
     QFile::remove(strTempFile);
 }
@@ -2051,7 +2051,7 @@ void UIMachineLogic::sltTypeCAD()
     uimachine()->putCAD();
 }
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 void UIMachineLogic::sltTypeCABS()
 {
     static QVector<LONG> sequence(6);
@@ -2063,7 +2063,7 @@ void UIMachineLogic::sltTypeCABS()
     sequence[5] = 0x1d | 0x80; /* Ctrl up */
     uimachine()->putScancodes(sequence);
 }
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
 void UIMachineLogic::sltTypeCtrlBreak()
 {

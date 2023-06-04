@@ -32,7 +32,7 @@
 
 /* GUI includes: */
 #include "UIDisplayFeaturesEditor.h"
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # include "VBoxUtils-nix.h"
 #endif
 
@@ -140,10 +140,10 @@ void UIDisplayFeaturesEditor::prepare()
         /* Prepare 'disable host screen saver' check-box: */
 #if defined(VBOX_WS_WIN)
         m_pCheckBoxDisableHostScreenSaver = new QCheckBox(this);
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
         if (NativeWindowSubsystem::checkDBusScreenSaverServices())
             m_pCheckBoxDisableHostScreenSaver = new QCheckBox(this);
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
         if (m_pCheckBoxDisableHostScreenSaver)
             m_pLayout->addWidget(m_pCheckBoxDisableHostScreenSaver, 1, 1);
     }

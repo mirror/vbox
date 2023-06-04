@@ -90,7 +90,7 @@
 #include <VBox/com/VirtualBox.h>
 
 /* External includes: */
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # include <X11/Xlib.h>
 # include <X11/Xutil.h>
 #endif
@@ -218,7 +218,7 @@ bool UISession::powerUp()
 
     /* Some logging right after we powered up: */
     LogRel(("GUI: Qt version: %s\n", UICommon::qtRTVersionString().toUtf8().constData()));
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     LogRel(("GUI: X11 Window Manager code: %d\n", (int)uiCommon().typeOfWindowManager()));
 #endif
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)

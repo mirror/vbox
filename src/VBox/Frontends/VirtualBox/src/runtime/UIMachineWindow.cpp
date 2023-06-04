@@ -141,7 +141,7 @@ void UIMachineWindow::prepare()
     /* Update all the elements: */
     updateAppearanceOf(UIVisualElement_AllStuff);
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     /* Prepare default class/name values: */
     const QString strWindowClass = QString("VirtualBox Machine");
     QString strWindowName = strWindowClass;

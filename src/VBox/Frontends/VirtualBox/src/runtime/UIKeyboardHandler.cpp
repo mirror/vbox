@@ -68,7 +68,7 @@
 #ifdef VBOX_WS_WIN
 # include "WinKeyboard.h"
 #endif
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # include "XKeyboard.h"
 # include "VBoxUtils-nix.h"
 #endif
@@ -82,7 +82,7 @@
 #ifdef VBOX_WS_MAC
 # include <Carbon/Carbon.h>
 #endif
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # include <X11/XKBlib.h>
 # include <X11/keysym.h>
 # ifdef KeyPress
@@ -96,7 +96,7 @@ const int XKeyRelease = KeyRelease;
 #  undef FocusIn
 # endif /* KeyPress */
 # include <xcb/xcb.h>
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
 /* Enums representing different keyboard-states: */
 enum { KeyExtended = 0x01, KeyPressed = 0x02, KeyPause = 0x04, KeyPrint = 0x08 };
@@ -264,7 +264,7 @@ bool UIKeyboardHandler::finaliseCaptureKeyboard()
          * It is being installed on focus-in event and uninstalled on focus-out.
          * S.a. UIKeyboardHandler::eventFilter for more information. */
 
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
         if (uiCommon().X11ServerAvailable())
         {
             /* On X11, we are using XCB stuff to grab the keyboard.
@@ -369,7 +369,7 @@ void UIKeyboardHandler::releaseKeyboard()
          * It is being installed on focus-in event and uninstalled on focus-out.
          * S.a. UIKeyboardHandler::eventFilter for more information. */
 
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
         if (uiCommon().X11ServerAvailable())
         {
             /* On X11, we are using XCB stuff to grab the keyboard.
@@ -818,7 +818,7 @@ bool UIKeyboardHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
             break;
     }
 
-# elif defined(VBOX_WS_X11)
+# elif defined(VBOX_WS_NIX)
     if (uiCommon().X11ServerAvailable())
     {
         /* Cast to XCB event: */
@@ -998,9 +998,9 @@ UIKeyboardHandler::UIKeyboardHandler(UIMachineLogic *pMachineLogic)
     , m_fSkipKeyboardEvents(false)
     , m_keyboardHook(NULL)
     , m_pAltGrMonitor(0)
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
     , m_hButtonGrabWindow(0)
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 {
     /* Prepare: */
     prepareCommon();
@@ -1037,7 +1037,7 @@ void UIKeyboardHandler::prepareCommon()
 void UIKeyboardHandler::loadSettings()
 {
     /* Global settings: */
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
     if (uiCommon().X11ServerAvailable())
     {
         /* Initialize the X keyboard subsystem: */
@@ -1048,7 +1048,7 @@ void UIKeyboardHandler::loadSettings()
         /* Disable key release events during key auto-repeat: */
         XkbSetDetectableAutoRepeat(NativeWindowSubsystem::X11GetDisplay(), True, NULL);
     }
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
     /* Extra data settings: */
     {
@@ -1574,13 +1574,13 @@ void UIKeyboardHandler::keyEventHandleHostComboRelease(ulong uScreenId)
                     else
                     {
                         captureKeyboard(uScreenId);
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
                         /* Make sure that pending FocusOut events from the
                          * previous message box are handled, otherwise the
                          * mouse is immediately ungrabbed: */
                         /// @todo Is that really needed?
                         qApp->processEvents();
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
                         finaliseCaptureKeyboard();
                         if (fCaptureMouse)
                         {
@@ -1787,7 +1787,7 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
     }
     delete[] pList;
 
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
     if (uiCommon().X11ServerAvailable())
     {
         Q_UNUSED(pHotKey);
@@ -1864,7 +1864,7 @@ void UIKeyboardHandler::fixModifierState(LONG *piCodes, uint *puCount)
         }
     }
 
-#elif defined(VBOX_WS_X11)
+#elif defined(VBOX_WS_NIX)
     if (uiCommon().X11ServerAvailable())
     {
         Window   wDummy1, wDummy2;

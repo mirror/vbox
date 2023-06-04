@@ -28,7 +28,7 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QMessageBox>
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # ifndef Q_OS_SOLARIS
 #  include <QFontDatabase>
 # endif
@@ -55,7 +55,7 @@
 #  include <iprt/asm.h>
 # endif
 #endif
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # include <iprt/env.h>
 #endif
 #ifdef VBOX_WITH_HARDENING
@@ -70,7 +70,7 @@
 # include <dlfcn.h>
 # include <sys/mman.h>
 #endif /* VBOX_WS_MAC */
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # include <dlfcn.h>
 # include <unistd.h>
 # include <X11/Xlib.h>
@@ -88,7 +88,7 @@
 #   define REG_PC REG_EIP
 #  endif /* !RT_ARCH_AMD64 */
 # endif /* RT_OS_LINUX && DEBUG */
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
 
 /* XXX Temporarily. Don't rely on the user to hack the Makefile himself! */
@@ -134,7 +134,7 @@ QString g_QStrHintReinstall = QApplication::tr(
     );
 
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 /** X11: For versions of Xlib which are aware of multi-threaded environments this function
   *      calls for XInitThreads() which initializes Xlib support for concurrent threads.
   * @returns @c non-zero unless it is unsafe to make multi-threaded calls to Xlib.
@@ -205,7 +205,7 @@ static void InstallSignalHandler()
     sigaction(SIGUSR1, &sa, 0);
 }
 # endif /* RT_OS_LINUX && DEBUG */
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
 /** Qt5 message handler, function that prints out
   * debug, warning, critical, fatal and system error messages.
@@ -215,7 +215,7 @@ static void InstallSignalHandler()
 static void QtMessageOutput(QtMsgType enmType, const QMessageLogContext &context, const QString &strMessage)
 {
     NOREF(context);
-# ifndef VBOX_WS_X11
+# ifndef VBOX_WS_NIX
     NOREF(strMessage);
 # endif
     switch (enmType)
@@ -225,21 +225,21 @@ static void QtMessageOutput(QtMsgType enmType, const QMessageLogContext &context
             break;
         case QtWarningMsg:
             Log(("Qt WARNING: %s\n", strMessage.toUtf8().constData()));
-# ifdef VBOX_WS_X11
+# ifdef VBOX_WS_NIX
             /* Needed for instance for the message ``cannot connect to X server'': */
             RTStrmPrintf(g_pStdErr, "Qt WARNING: %s\n", strMessage.toUtf8().constData());
 # endif
             break;
         case QtCriticalMsg:
             Log(("Qt CRITICAL: %s\n", strMessage.toUtf8().constData()));
-# ifdef VBOX_WS_X11
+# ifdef VBOX_WS_NIX
             /* Needed for instance for the message ``cannot connect to X server'': */
             RTStrmPrintf(g_pStdErr, "Qt CRITICAL: %s\n", strMessage.toUtf8().constData());
 # endif
             break;
         case QtFatalMsg:
             Log(("Qt FATAL: %s\n", strMessage.toUtf8().constData()));
-# ifdef VBOX_WS_X11
+# ifdef VBOX_WS_NIX
             /* Needed for instance for the message ``cannot connect to X server'': */
             RTStrmPrintf(g_pStdErr, "Qt FATAL: %s\n", strMessage.toUtf8().constData());
 # endif
@@ -391,7 +391,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
     /* Simulate try-catch block: */
     do
     {
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
         /* Make sure multi-threaded environment is safe: */
         if (!MakeSureMultiThreadingIsSafe())
             break;
@@ -405,7 +405,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         else
             /* Assume pure Wayland (without a X server):*/
             RTEnvSet("QT_QPA_PLATFORM", "wayland");
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
         /* Console help preprocessing: */
         bool fHelpShown = false;
@@ -452,12 +452,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 # endif /* VBOX_RUNTIME_UI */
 #endif /* VBOX_WS_MAC */
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
 # if defined(RT_OS_LINUX) && defined(DEBUG)
         /* Install signal handler to backtrace the call stack: */
         InstallSignalHandler();
 # endif /* RT_OS_LINUX && DEBUG */
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
         /* Install Qt console message handler: */
         qInstallMessageHandler(QtMessageOutput);
@@ -491,7 +491,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         PlaySound(NULL, NULL, 0);
 #endif /* VBOX_WS_WIN */
 
-#ifdef VBOX_WS_X11
+#ifdef VBOX_WS_NIX
         /* Make all widget native.
          * We did it to avoid various Qt crashes while testing widget attributes or acquiring winIds.
          * Yes, we aware of note that alien widgets faster to draw but the only widget we need to be fast
@@ -525,7 +525,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
             qFatal("%s", strMsg.toUtf8().constData());
             break;
         }
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_NIX */
 
         /* Create modal-window manager: */
         UIModalWindowManager::create();
@@ -637,11 +637,11 @@ DECL_NO_INLINE(static, int) initIprtForDarwinHelperApp(int cArgs, char ***ppapsz
 
 int main(int argc, char **argv, char **envp)
 {
-# ifdef VBOX_WS_X11
+# ifdef VBOX_WS_NIX
     /* Make sure multi-threaded environment is safe: */
     if (!MakeSureMultiThreadingIsSafe())
         return 1;
-# endif /* VBOX_WS_X11 */
+# endif /* VBOX_WS_NIX */
 
     /*
      * Determine the IPRT/SUPLib initialization flags if runtime UI process.
@@ -856,11 +856,11 @@ extern "C" DECLEXPORT(void) TrustedError(const char *pszWhere, SUPINITOP enmWhat
             break;
     }
 
-# ifdef VBOX_WS_X11
+# ifdef VBOX_WS_NIX
     /* We have to to make sure that we display the error-message
      * after the parent displayed its own message. */
     sleep(2);
-# endif /* VBOX_WS_X11 */
+# endif /* VBOX_WS_NIX */
 
     /* Update strText with strDetails: */
     if (!strDetails.isEmpty())
