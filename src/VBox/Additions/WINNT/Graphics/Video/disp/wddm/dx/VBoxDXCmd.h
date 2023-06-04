@@ -238,6 +238,9 @@ int vgpu10UpdateSubResource(PVBOXDX_DEVICE pDevice,
                             D3DKMT_HANDLE hAllocation,
                             uint32 subResource,
                             const SVGA3dBox *pBox);
+int vgpu10ReadbackSubResource(PVBOXDX_DEVICE pDevice,
+                            D3DKMT_HANDLE hAllocation,
+                            uint32 subResource);
 int vgpu10TransferFromBuffer(PVBOXDX_DEVICE pDevice,
                              D3DKMT_HANDLE hSrcAllocation,
                              uint32 srcOffset,

@@ -2430,6 +2430,14 @@ void vboxDXResourceMap(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, UINT 
         }
     }
 
+    /* Readback for read access. */
+    if (DDIMap == D3D10_DDI_MAP_READ || DDIMap == D3D10_DDI_MAP_READWRITE)
+    {
+        vgpu10ReadbackSubResource(pDevice, vboxDXGetAllocation(pResource), Subresource);
+        vboxDXFlush(pDevice, true);
+        /* DXGK now knows that the allocation is in use. So pfnLockCb waits until the data is ready. */
+    }
+
     HRESULT hr;
     D3DDDICB_LOCK ddiLock;
     do
@@ -2443,8 +2451,6 @@ void vboxDXResourceMap(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource, UINT 
         ddiLock.Flags.DonotWait = RT_BOOL(Flags & D3D10_DDI_MAP_FLAG_DONOTWAIT);
         /// @todo ddiLock.Flags.Discard = DDIMap == D3D10_DDI_MAP_WRITE_DISCARD;
         /** @todo Other flags? */
-
-        /** @todo Readback for read access. */
 
         hr = pDevice->pRTCallbacks->pfnLockCb(pDevice->hRTDevice.handle, &ddiLock);
         if (hr == D3DERR_WASSTILLDRAWING)

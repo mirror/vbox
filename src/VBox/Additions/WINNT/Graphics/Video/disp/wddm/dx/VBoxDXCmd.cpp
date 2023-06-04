@@ -1103,6 +1103,30 @@ int vgpu10UpdateSubResource(PVBOXDX_DEVICE pDevice,
 }
 
 
+int vgpu10ReadbackSubResource(PVBOXDX_DEVICE pDevice,
+                              D3DKMT_HANDLE hAllocation,
+                              uint32 subResource)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, SVGA_3D_CMD_DX_READBACK_SUBRESOURCE,
+                                             sizeof(SVGA3dCmdDXReadbackSubResource), 1);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    SVGA3dCmdDXReadbackSubResource *cmd = (SVGA3dCmdDXReadbackSubResource *)pvCmd;
+    cmd->sid = SVGA3D_INVALID_ID;
+    SET_CMD_FIELD(subResource);
+
+    /* fWriteOperation == true should make sure that DXGK waits until the command is completed
+     * before getting the allocation data in pfnLockCb.
+     */
+    vboxDXStorePatchLocation(pDevice, &cmd->sid, VBOXDXALLOCATIONTYPE_SURFACE,
+                             hAllocation, 0, true);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
 int vgpu10TransferFromBuffer(PVBOXDX_DEVICE pDevice,
                              D3DKMT_HANDLE hSrcAllocation,
                              uint32 srcOffset,
