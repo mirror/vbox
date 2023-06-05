@@ -639,12 +639,8 @@ static DECLCALLBACK(int) nemR3DarwinNativeInitVCpuOnEmt(PVM pVM, PVMCPU pVCpu, V
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Call to hv_vcpu_create failed on vCPU %u: %#x (%Rrc)", idCpu, hrc, nemR3DarwinHvSts2Rc(hrc));
 
-    /* Set the vTiemr offset so all vCpus start at (nearly) 0. */
-    pVCpu->nem.s.u64VTimerOff = ASMReadTSC();
-
-    hrc = hv_vcpu_set_vtimer_offset(pVCpu->nem.s.hVCpu, pVCpu->nem.s.u64VTimerOff);
-    AssertLogRelMsg(hrc == HV_SUCCESS, ("vCPU#%u: Failed to set vTimer offset to %#RX64 -> hrc = %#x\n",
-                                        pVCpu->idCpu, pVCpu->nem.s.u64VTimerOff, hrc));
+    /* Will be initialized in NEMHCResumeCpuTickOnAll() before executing guest code. */
+    pVCpu->nem.s.u64VTimerOff = 0;
 
     if (idCpu == 0)
     {
@@ -1063,6 +1059,8 @@ static VBOXSTRICTRC nemR3DarwinHandleExitException(PVM pVM, PVMCPU pVCpu, const 
                 if (cNanoSecsVTimerToExpire < 5 * RT_NS_1MS)
                     return VINF_SUCCESS;
 
+                LogFlowFunc(("Set vTimer activation to cNanoSecsVTimerToExpire=%#RX64 (CntvCValEl0=%#RX64, u64VTimerOff=%#RX64 cTicksVTimer=%#RX64 u64CntFrqHz=%#RX64)\n",
+                             cNanoSecsVTimerToExpire, pVCpu->cpum.GstCtx.CntvCValEl0, pVCpu->nem.s.u64VTimerOff, cTicksVTimer, pVM->nem.s.u64CntFrqHz));
                 TMCpuSetVTimerNextActivation(pVCpu, cNanoSecsVTimerToExpire);
             }
             else
@@ -1245,8 +1243,12 @@ static VBOXSTRICTRC nemR3DarwinRunGuestNormal(PVM pVM, PVMCPU pVCpu)
          * Program the new offset, first get the new TSC value with the old vTimer offset and then adjust the
          * the new offset to let the guest not notice the pause.
          */
-        uint64_t u64TscNew = ASMReadTSC() - pVCpu->nem.s.u64VTimerOff;
+        uint64_t u64TscNew = mach_absolute_time() - pVCpu->nem.s.u64VTimerOff;
         Assert(u64TscNew >= pVM->nem.s.u64VTimerValuePaused);
+        LogFlowFunc(("u64VTimerOffOld=%#RX64 u64TscNew=%#RX64 u64VTimerValuePaused=%#RX64 -> u64VTimerOff=%#RX64\n",
+                     pVCpu->nem.s.u64VTimerOff, u64TscNew, pVM->nem.s.u64VTimerValuePaused,
+                     pVCpu->nem.s.u64VTimerOff + (u64TscNew - pVM->nem.s.u64VTimerValuePaused)));
+
         pVCpu->nem.s.u64VTimerOff += u64TscNew - pVM->nem.s.u64VTimerValuePaused;
         hv_return_t hrc = hv_vcpu_set_vtimer_offset(pVCpu->nem.s.hVCpu, pVCpu->nem.s.u64VTimerOff);
         if (hrc != HV_SUCCESS)
@@ -1736,7 +1738,7 @@ VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPUCC pVCpu, uint64_t *pcTicks, uint32_t 
 
     if (puAux)
         *puAux = 0;
-    *pcTicks = ASMReadTSC() - pVCpu->nem.s.u64VTimerOff; /* This is the host timer minus the offset. */
+    *pcTicks = mach_absolute_time() - pVCpu->nem.s.u64VTimerOff; /* This is the host timer minus the offset. */
     return VINF_SUCCESS;
 }
 
@@ -1753,7 +1755,7 @@ VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPUCC pVCpu, uint64_t *pcTicks, uint32_t 
  */
 VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVMCC pVM, PVMCPUCC pVCpu, uint64_t uPausedTscValue)
 {
-    LogFlowFunc(("pVM=%p pVCpu=%p uPausedTscValue=%RX64\n", pVCpu, uPausedTscValue));
+    LogFlowFunc(("pVM=%p pVCpu=%p uPausedTscValue=%RX64\n", pVM, pVCpu, uPausedTscValue));
     VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_VM_THREAD_NOT_EMT);
     AssertReturn(VM_IS_NEM_ENABLED(pVM), VERR_NEM_IPE_9);
 
