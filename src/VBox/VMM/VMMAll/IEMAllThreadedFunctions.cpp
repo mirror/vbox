@@ -134,27 +134,27 @@
 #undef  IEM_MC_CALC_RM_EFF_ADDR
 
 /** Variant of IEM_MC_CALL_CIMPL_1 with explicit instruction length parameter. */
-#define IEM_MC_CALL_CIMPL_1_THREADED(a_cbInstr, a_pfnCImpl, a0) \
+#define IEM_MC_CALL_CIMPL_1_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0) \
     return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0)
 #undef  IEM_MC_CALL_CIMPL_1
 
 /** Variant of IEM_MC_CALL_CIMPL_2 with explicit instruction length parameter. */
-#define IEM_MC_CALL_CIMPL_2_THREADED(a_cbInstr, a_pfnCImpl, a0, a1) \
+#define IEM_MC_CALL_CIMPL_2_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0, a1) \
     return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1)
 #undef  IEM_MC_CALL_CIMPL_2
 
 /** Variant of IEM_MC_CALL_CIMPL_3 with explicit instruction length parameter. */
-#define IEM_MC_CALL_CIMPL_3_THREADED(a_cbInstr, a_pfnCImpl, a0, a1, a2) \
+#define IEM_MC_CALL_CIMPL_3_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0, a1, a2) \
     return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1, a2)
 #undef  IEM_MC_CALL_CIMPL_3
 
 /** Variant of IEM_MC_CALL_CIMPL_4 with explicit instruction length parameter. */
-#define IEM_MC_CALL_CIMPL_4_THREADED(a_cbInstr, a_pfnCImpl, a0, a1, a2, a3) \
+#define IEM_MC_CALL_CIMPL_4_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0, a1, a2, a3) \
     return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1, a2, a3)
 #undef  IEM_MC_CALL_CIMPL_4
 
 /** Variant of IEM_MC_CALL_CIMPL_5 with explicit instruction length parameter. */
-#define IEM_MC_CALL_CIMPL_5_THREADED(a_cbInstr, a_pfnCImpl, a0, a1, a2, a3, a4) \
+#define IEM_MC_CALL_CIMPL_5_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0, a1, a2, a3, a4) \
     return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1, a2, a3, a4)
 #undef  IEM_MC_CALL_CIMPL_5
 

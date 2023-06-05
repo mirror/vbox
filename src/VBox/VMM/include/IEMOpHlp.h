@@ -79,7 +79,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
     FNIEMOP_DEF(a_Name) \
     { \
         Log(("Unsupported instruction %Rfn\n", __FUNCTION__)); \
-        return IEMOP_RAISE_INVALID_OPCODE(); \
+        IEMOP_RAISE_INVALID_OPCODE_RET(); \
     } \
     typedef int ignore_semicolon
 
@@ -90,7 +90,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
         RT_NOREF_PV(pVCpu); \
         RT_NOREF_PV(a_Name0); \
         Log(("Unsupported instruction %Rfn\n", __FUNCTION__)); \
-        return IEMOP_RAISE_INVALID_OPCODE(); \
+        IEMOP_RAISE_INVALID_OPCODE_RET(); \
     } \
     typedef int ignore_semicolon
 
@@ -224,14 +224,14 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
         else \
         { \
             (void)DBGFSTOP(pVCpu->CTX_SUFF(pVM)); \
-            return IEMOP_RAISE_INVALID_OPCODE(); \
+            IEMOP_RAISE_INVALID_OPCODE_RET(); \
         } \
     } while (0)
 #else
 # define IEMOP_HLP_MIN_CPU(a_uMinCpu, a_fOnlyIf) \
     do { \
         if (IEM_GET_TARGET_CPU(pVCpu) >= (a_uMinCpu) || !(a_fOnlyIf)) { } \
-        else return IEMOP_RAISE_INVALID_OPCODE(); \
+        else IEMOP_RAISE_INVALID_OPCODE_RET(); \
     } while (0)
 #endif
 
@@ -290,7 +290,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
     do \
     { \
         if (!IEM_IS_REAL_OR_V86_MODE(pVCpu)) { /* likely */ } \
-        else return IEMOP_RAISE_INVALID_OPCODE(); \
+        else IEMOP_RAISE_INVALID_OPCODE_RET(); \
     } while (0)
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
@@ -311,13 +311,13 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
             { \
                 pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = a_InsDiagPrefix##_RealOrV86Mode; \
                 Log5((a_szInstr ": Real or v8086 mode -> #UD\n")); \
-                return IEMOP_RAISE_INVALID_OPCODE(); \
+                IEMOP_RAISE_INVALID_OPCODE_RET(); \
             } \
             if (IEM_IS_LONG_MODE(pVCpu) && !IEM_IS_64BIT_CODE(pVCpu)) \
             { \
                 pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = a_InsDiagPrefix##_LongModeCS; \
                 Log5((a_szInstr ": Long mode without 64-bit code segment -> #UD\n")); \
-                return IEMOP_RAISE_INVALID_OPCODE(); \
+                IEMOP_RAISE_INVALID_OPCODE_RET(); \
             } \
         } \
     } while (0)
@@ -335,7 +335,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
         { \
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = a_InsDiagPrefix##_VmxRoot; \
             Log5((a_szInstr ": Not in VMX operation (root mode) -> #UD\n")); \
-            return IEMOP_RAISE_INVALID_OPCODE(); \
+            IEMOP_RAISE_INVALID_OPCODE_RET(); \
         } \
     } while (0)
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
@@ -348,7 +348,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
         if (!IEM_IS_64BIT_CODE(pVCpu)) \
         { /* likely */ } \
         else \
-            return IEMOP_RAISE_INVALID_OPCODE(); \
+            IEMOP_RAISE_INVALID_OPCODE_RET(); \
     } while (0)
 
 /** The instruction is only available in 64-bit mode, throw \#UD if we're not in
@@ -359,7 +359,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
         if (IEM_IS_64BIT_CODE(pVCpu)) \
         { /* likely */ } \
         else \
-            return IEMOP_RAISE_INVALID_OPCODE(); \
+            IEMOP_RAISE_INVALID_OPCODE_RET(); \
     } while (0)
 
 /** The instruction defaults to 64-bit operand size if 64-bit mode. */
@@ -421,7 +421,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
         if (RT_LIKELY(!(pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK))) \
         { /* likely */ } \
         else \
-            return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
+            IEMOP_RAISE_INVALID_LOCK_PREFIX_RET(); \
     } while (0)
 
 /**
@@ -435,7 +435,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
                       && IEM_GET_GUEST_CPU_FEATURES(pVCpu)->a_fFeature)) \
         { /* likely */ } \
         else \
-            return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
+            IEMOP_RAISE_INVALID_LOCK_PREFIX_RET(); \
     } while (0)
 
 /**
@@ -450,7 +450,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
                           || IEM_GET_GUEST_CPU_FEATURES(pVCpu)->a_fFeature2) )) \
         { /* likely */ } \
         else \
-            return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
+            IEMOP_RAISE_INVALID_LOCK_PREFIX_RET(); \
     } while (0)
 
 
@@ -468,7 +468,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
                       && IEM_GET_GUEST_CPU_FEATURES(pVCpu)->a_fFeature)) \
         { /* likely */ } \
         else \
-            return IEMOP_RAISE_INVALID_OPCODE(); \
+            IEMOP_RAISE_INVALID_OPCODE_RET(); \
     } while (0)
 
 /**
@@ -486,7 +486,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
                       && IEM_GET_GUEST_CPU_FEATURES(pVCpu)->a_fFeature)) \
         { /* likely */ } \
         else \
-            return IEMOP_RAISE_INVALID_OPCODE(); \
+            IEMOP_RAISE_INVALID_OPCODE_RET(); \
     } while (0)
 
 /**
@@ -505,7 +505,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
                       && IEM_GET_GUEST_CPU_FEATURES(pVCpu)->a_fFeature )) \
         { /* likely */ } \
         else \
-            return IEMOP_RAISE_INVALID_OPCODE(); \
+            IEMOP_RAISE_INVALID_OPCODE_RET(); \
     } while (0)
 
 /**
@@ -525,7 +525,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
                       && IEM_GET_GUEST_CPU_FEATURES(pVCpu)->a_fFeature )) \
         { /* likely */ } \
         else \
-            return IEMOP_RAISE_INVALID_OPCODE(); \
+            IEMOP_RAISE_INVALID_OPCODE_RET(); \
     } while (0)
 
 #define IEMOP_HLP_DECODED_NL_1(a_uDisOpNo, a_fIemOpFlags, a_uDisParam0, a_fDisOpType) \
@@ -536,7 +536,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
         else \
         { \
             NOREF(a_uDisOpNo); NOREF(a_fIemOpFlags); NOREF(a_uDisParam0); NOREF(a_fDisOpType); \
-            return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
+            IEMOP_RAISE_INVALID_LOCK_PREFIX_RET(); \
         } \
     } while (0)
 #define IEMOP_HLP_DECODED_NL_2(a_uDisOpNo, a_fIemOpFlags, a_uDisParam0, a_uDisParam1, a_fDisOpType) \
@@ -547,7 +547,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
         else \
         { \
             NOREF(a_uDisOpNo); NOREF(a_fIemOpFlags); NOREF(a_uDisParam0); NOREF(a_uDisParam1); NOREF(a_fDisOpType); \
-            return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
+            IEMOP_RAISE_INVALID_LOCK_PREFIX_RET(); \
         } \
     } while (0)
 
@@ -561,7 +561,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
         if (RT_LIKELY(!(pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_LOCK | IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ)))) \
         { /* likely */ } \
         else \
-            return IEMOP_RAISE_INVALID_OPCODE(); \
+            IEMOP_RAISE_INVALID_OPCODE_RET(); \
     } while (0)
 
 /**
@@ -574,7 +574,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
         if (RT_LIKELY(!(pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ)))) \
         { /* likely */ } \
         else \
-            return IEMOP_RAISE_INVALID_OPCODE(); \
+            IEMOP_RAISE_INVALID_OPCODE_RET(); \
     } while (0)
 
 /**
@@ -586,7 +586,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
         if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->a_fFeature) \
         { /* likely */ } \
         else \
-            return IEMOP_RAISE_INVALID_OPCODE(); \
+            IEMOP_RAISE_INVALID_OPCODE_RET(); \
     } while (0)
 
 VBOXSTRICTRC    iemOpHlpCalcRmEffAddr(PVMCPUCC pVCpu, uint8_t bRm, uint32_t cbImmAndRspOffset, PRTGCPTR pGCPtrEff) RT_NOEXCEPT;

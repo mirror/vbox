@@ -605,7 +605,7 @@ FNIEMOP_DEF(iemOp_vmovntdqa_Vx_Mx)
      * @optest      ->
      */
     else
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 

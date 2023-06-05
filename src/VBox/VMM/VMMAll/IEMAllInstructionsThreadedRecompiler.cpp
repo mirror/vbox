@@ -242,8 +242,8 @@ typedef struct IEMTB
  * Doing so will also take care of IEMOP_RAISE_DIVIDE_ERROR, IEMOP_RAISE_INVALID_LOCK_PREFIX,
  * IEMOP_RAISE_INVALID_OPCODE and their users.
  */
-#undef IEM_MC_DEFER_TO_CIMPL_0
-#define IEM_MC_DEFER_TO_CIMPL_0(a_pfnCImpl) iemThreadedRecompilerMcDeferToCImpl0(pVCpu, a_pfnCImpl)
+#undef IEM_MC_DEFER_TO_CIMPL_0_RET
+#define IEM_MC_DEFER_TO_CIMPL_0_RET(a_fFlags, a_pfnCImpl) return iemThreadedRecompilerMcDeferToCImpl0(pVCpu, a_pfnCImpl)
 
 typedef IEM_CIMPL_DECL_TYPE_0(FNIEMCIMPL0);
 typedef FNIEMCIMPL0 *PFNIEMCIMPL0;

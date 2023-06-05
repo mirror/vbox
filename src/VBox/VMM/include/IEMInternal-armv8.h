@@ -1229,7 +1229,7 @@ IEM_CIMPL_DEF_0(iemCImplRaiseInvalidOpcode);
  *
  * @return  Strict VBox status code.
  */
-#define IEMOP_RAISE_DIVIDE_ERROR()          IEM_MC_DEFER_TO_CIMPL_0(iemCImplRaiseDivideError)
+#define IEMOP_RAISE_DIVIDE_ERROR_RET()      IEM_MC_DEFER_TO_CIMPL_0_RET(iemCImplRaiseDivideError)
 
 /**
  * Macro for calling iemCImplRaiseInvalidOpcode().
@@ -1239,7 +1239,7 @@ IEM_CIMPL_DEF_0(iemCImplRaiseInvalidOpcode);
  *
  * @return  Strict VBox status code.
  */
-#define IEMOP_RAISE_INVALID_OPCODE()        IEM_MC_DEFER_TO_CIMPL_0(iemCImplRaiseInvalidOpcode)
+#define IEMOP_RAISE_INVALID_OPCODE_RET()    IEM_MC_DEFER_TO_CIMPL_0_RET(iemCImplRaiseInvalidOpcode)
 /** @} */
 
 /** @name   Memory access.

@@ -4156,7 +4156,7 @@ IEM_CIMPL_DEF_0(iemCImplRaiseInvalidOpcode);
  *
  * @return  Strict VBox status code.
  */
-#define IEMOP_RAISE_DIVIDE_ERROR()          IEM_MC_DEFER_TO_CIMPL_0(iemCImplRaiseDivideError)
+#define IEMOP_RAISE_DIVIDE_ERROR_RET()      IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_XCPT, iemCImplRaiseDivideError)
 
 /**
  * Macro for calling iemCImplRaiseInvalidLockPrefix().
@@ -4166,7 +4166,7 @@ IEM_CIMPL_DEF_0(iemCImplRaiseInvalidOpcode);
  *
  * @return  Strict VBox status code.
  */
-#define IEMOP_RAISE_INVALID_LOCK_PREFIX()   IEM_MC_DEFER_TO_CIMPL_0(iemCImplRaiseInvalidLockPrefix)
+#define IEMOP_RAISE_INVALID_LOCK_PREFIX_RET() IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_XCPT, iemCImplRaiseInvalidLockPrefix)
 
 /**
  * Macro for calling iemCImplRaiseInvalidOpcode().
@@ -4176,7 +4176,7 @@ IEM_CIMPL_DEF_0(iemCImplRaiseInvalidOpcode);
  *
  * @return  Strict VBox status code.
  */
-#define IEMOP_RAISE_INVALID_OPCODE()        IEM_MC_DEFER_TO_CIMPL_0(iemCImplRaiseInvalidOpcode)
+#define IEMOP_RAISE_INVALID_OPCODE_RET()    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_XCPT, iemCImplRaiseInvalidOpcode)
 /** @} */
 
 /** @name Register Access.

@@ -1472,7 +1472,9 @@ IEM_CIMPL_DEF_0(iemCImpl_invlpga)
 # endif
 
     IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, invlpga);
-    if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INVLPGA))
+    if (!IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INVLPGA))
+    { /* probable */ }
+    else
     {
         Log2(("invlpga: Guest intercept (%RGp) -> #VMEXIT\n", GCPtrPage));
         IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_INVLPGA, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);

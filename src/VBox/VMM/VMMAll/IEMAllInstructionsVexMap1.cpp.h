@@ -403,7 +403,7 @@ FNIEMOP_DEF_1(iemOpCommonAvxAvx2_Vx_Wx_Opt, PCIEMOPMEDIAOPTF2, pImpl)
 FNIEMOP_DEF(iemOp_vud2)
 {
     IEMOP_MNEMONIC(vud2, "vud2");
-    return IEMOP_RAISE_INVALID_OPCODE();
+    IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 /*  Opcode VEX.0F 0x0c - invalid */
@@ -1084,7 +1084,7 @@ FNIEMOP_DEF(iemOp_vmovlpd_Vq_Hq_Mq)
      * @optest      ->
      */
     else
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 
@@ -1338,7 +1338,7 @@ FNIEMOP_DEF(iemOp_vmovlps_Mq_Vq)
      * @optest      ->
      */
     else
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 
@@ -1385,7 +1385,7 @@ FNIEMOP_DEF(iemOp_vmovlpd_Mq_Vq)
      * @optest      ->
      */
     else
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 /*  Opcode VEX.F3.0F 0x13 - invalid */
@@ -1540,7 +1540,7 @@ FNIEMOP_DEF(iemOp_vmovhpd_Vdq_Hq_Mq)
      * @optest      ->
      */
     else
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 
@@ -1691,7 +1691,7 @@ FNIEMOP_DEF(iemOp_vmovhps_Mq_Vq)
      * @optest      ->
      */
     else
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 
@@ -1736,7 +1736,7 @@ FNIEMOP_DEF(iemOp_vmovhpd_Mq_Vq)
      * @optest      ->
      */
     else
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 
@@ -2175,7 +2175,7 @@ FNIEMOP_DEF(iemOp_vmovntps_Mps_Vps)
     }
     /* The register, register encoding is invalid. */
     else
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 /**
@@ -2236,7 +2236,7 @@ FNIEMOP_DEF(iemOp_vmovntpd_Mpd_Vpd)
     }
     /* The register, register encoding is invalid. */
     else
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 /**
@@ -2646,7 +2646,7 @@ FNIEMOP_DEF(iemOp_vmovmskps_Gy_Ups)
     }
     /* No memory operand. */
     else
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 
@@ -2697,7 +2697,7 @@ FNIEMOP_DEF(iemOp_vmovmskpd_Gy_Upd)
     }
     /* No memory operand. */
     else
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 
@@ -4292,7 +4292,7 @@ FNIEMOP_DEF_1(iemOp_VGrp15_vstmxcsr,  uint8_t, bRm)
     IEMOP_HLP_DONE_VEX_DECODING_L0_AND_NO_VVVV_EX(fAvx);
     IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
     IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
-    IEM_MC_CALL_CIMPL_2(iemCImpl_vstmxcsr, iEffSeg, GCPtrEff);
+    IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_FPU, iemCImpl_vstmxcsr, iEffSeg, GCPtrEff);
     IEM_MC_END();
 }
 
@@ -4481,7 +4481,7 @@ FNIEMOP_DEF(iemOp_vpextrw_Gd_Udq_Ib)
     }
     /* No memory operand. */
     else
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 
@@ -4784,7 +4784,7 @@ FNIEMOP_DEF(iemOp_vpmovmskb_Gd_Ux)
         }
     }
     else
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 
@@ -5028,7 +5028,7 @@ FNIEMOP_DEF(iemOp_vmovntdq_Mx_Vx)
      * @optest      ->
      */
     else
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 /*  Opcode VEX.F3.0F 0xe7 - invalid */
@@ -5136,7 +5136,7 @@ FNIEMOP_DEF(iemOp_vlddqu_Vx_Mx)
         /*
          * Register, register - (not implemented, assuming it raises \#UD).
          */
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
     }
     else if (pVCpu->iem.s.uVexLength == 0)
     {
@@ -5348,7 +5348,7 @@ FNIEMOP_DEF(iemOp_vud0)
 #endif
         IEMOP_HLP_DONE_DECODING();
     }
-    return IEMOP_RAISE_INVALID_OPCODE();
+    IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 

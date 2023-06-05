@@ -1073,61 +1073,134 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_CALL_AIMPL_3(a_rc, a_pfn, a0, a1, a2)      (a_rc) = (a_pfn)((a0), (a1), (a2))
 #define IEM_MC_CALL_AIMPL_4(a_rc, a_pfn, a0, a1, a2, a3)  (a_rc) = (a_pfn)((a0), (a1), (a2), (a3))
 
+/** @name IEM_CIMPL_F_XXX - State change clues for CIMPL calls.
+ *
+ * These clues are mainly for the recompiler, so that it can
+ *
+ * @{ */
+#define IEM_CIMPL_F_MODE            RT_BIT_32(0)    /**< Execution flags may change (IEMCPU::fExec). */
+#define IEM_CIMPL_F_BRANCH          RT_BIT_32(1)    /**< Branches (changes RIP, maybe CS). */
+#define IEM_CIMPL_F_RFLAGS          RT_BIT_32(2)    /**< May change significant portions of RFLAGS. */
+#define IEM_CIMPL_F_STATUS_FLAGS    RT_BIT_32(3)    /**< May change the status bits (X86_EFL_STATUS_BITS) in RFLAGS . */
+#define IEM_CIMPL_F_VMEXIT          RT_BIT_32(4)    /**< May trigger a VM exit. */
+#define IEM_CIMPL_F_FPU             RT_BIT_32(5)    /**< May modify FPU state. */
+#define IEM_CIMPL_F_REP             RT_BIT_32(6)    /**< REP prefixed instruction which may yield before updating PC. */
+#define IEM_CIMPL_F_END_TB          RT_BIT_32(7)
+/** Convenience: Raise exception (technically unnecessary, since it shouldn't return VINF_SUCCESS). */
+#define IEM_CIMPL_F_XCPT            (IEM_CIMPL_F_MODE | IEM_CIMPL_F_BRANCH | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT)
+/** @} */
+
+/** @def IEM_MC_CALL_CIMPL_HLP_RET
+ * Helper macro for check that all important IEM_CIMPL_F_XXX bits are set.
+ */
+#ifdef VBOX_STRICT
+#define IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, a_CallExpr) \
+    do { \
+        uint8_t      const cbInstr     = IEM_GET_INSTR_LEN(pVCpu); /* may be flushed */ \
+        uint16_t     const uCsBefore   = pVCpu->cpum.GstCtx.cs.Sel; \
+        uint64_t     const uRipBefore  = pVCpu->cpum.GstCtx.rip; \
+        uint32_t     const fEflBefore  = pVCpu->cpum.GstCtx.eflags.u; \
+        uint32_t     const fExecBefore = pVCpu->iem.s.fExec; \
+        VBOXSTRICTRC const rcStrictHlp = a_CallExpr; \
+        if (rcStrictHlp == VINF_SUCCESS) \
+        { \
+            AssertMsg(   ((a_fFlags) & IEM_CIMPL_F_BRANCH) \
+                      || (   uRipBefore + cbInstr == pVCpu->cpum.GstCtx.rip \
+                          && uCsBefore            == pVCpu->cpum.GstCtx.cs.Sel) \
+                      || (   ((a_fFlags) & IEM_CIMPL_F_REP) \
+                          && uRipBefore == pVCpu->cpum.GstCtx.rip \
+                          && uCsBefore  == pVCpu->cpum.GstCtx.cs.Sel), \
+                      ("CS:RIP=%04x:%08RX64 + %x -> %04x:%08RX64, expected %04x:%08RX64\n", uCsBefore, uRipBefore, cbInstr, \
+                       pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, uCsBefore, uRipBefore + cbInstr)); \
+            if ((a_fFlags) & IEM_CIMPL_F_RFLAGS) \
+            { /* No need to check fEflBefore */ Assert(!((a_fFlags) & IEM_CIMPL_F_STATUS_FLAGS)); } \
+            else if ((a_fFlags) & IEM_CIMPL_F_STATUS_FLAGS) \
+                AssertMsg(   (pVCpu->cpum.GstCtx.eflags.u & ~(X86_EFL_STATUS_BITS | X86_EFL_RF)) \
+                          == (fEflBefore                  & ~(X86_EFL_STATUS_BITS | X86_EFL_RF)), \
+                          ("EFL=%#RX32 -> %#RX32\n", fEflBefore, pVCpu->cpum.GstCtx.eflags.u)); \
+            else \
+                AssertMsg(   (pVCpu->cpum.GstCtx.eflags.u & ~(X86_EFL_RF)) \
+                          == (fEflBefore                  & ~(X86_EFL_RF)), \
+                          ("EFL=%#RX32 -> %#RX32\n", fEflBefore, pVCpu->cpum.GstCtx.eflags.u)); \
+            if (!((a_fFlags) & IEM_CIMPL_F_MODE)) \
+            { \
+                uint32_t fExecRecalc = iemCalcExecFlags(pVCpu) | (pVCpu->iem.s.fExec & IEM_F_USER_OPTS); \
+                AssertMsg(fExecBefore == fExecRecalc, \
+                          ("fExec=%#x -> %#x (diff %#x)\n", fExecBefore, fExecRecalc, fExecBefore ^ fExecRecalc)); \
+            } \
+        } \
+        return rcStrictHlp; \
+    } while (0)
+#else
+# define IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, a_CallExpr) return a_CallExpr
+#endif
+
 /**
  * Defers the rest of the instruction emulation to a C implementation routine
  * and returns, only taking the standard parameters.
  *
+ * @param   a_fFlags        IEM_CIMPL_F_XXX.
  * @param   a_pfnCImpl      The pointer to the C routine.
  * @sa      IEM_DECL_IMPL_C_TYPE_0 and IEM_CIMPL_DEF_0.
  */
-#define IEM_MC_CALL_CIMPL_0(a_pfnCImpl)                 return (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu))
+#define IEM_MC_CALL_CIMPL_0(a_fFlags, a_pfnCImpl) \
+    IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu)))
 
 /**
  * Defers the rest of instruction emulation to a C implementation routine and
  * returns, taking one argument in addition to the standard ones.
  *
+ * @param   a_fFlags        IEM_CIMPL_F_XXX.
  * @param   a_pfnCImpl      The pointer to the C routine.
  * @param   a0              The argument.
  */
-#define IEM_MC_CALL_CIMPL_1(a_pfnCImpl, a0)             return (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0)
+#define IEM_MC_CALL_CIMPL_1(a_fFlags, a_pfnCImpl, a0) \
+    IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0))
 
 /**
  * Defers the rest of the instruction emulation to a C implementation routine
  * and returns, taking two arguments in addition to the standard ones.
  *
+ * @param   a_fFlags        IEM_CIMPL_F_XXX.
  * @param   a_pfnCImpl      The pointer to the C routine.
  * @param   a0              The first extra argument.
  * @param   a1              The second extra argument.
  */
-#define IEM_MC_CALL_CIMPL_2(a_pfnCImpl, a0, a1)         return (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0, a1)
+#define IEM_MC_CALL_CIMPL_2(a_fFlags, a_pfnCImpl, a0, a1) \
+    IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0, a1))
 
 /**
  * Defers the rest of the instruction emulation to a C implementation routine
  * and returns, taking three arguments in addition to the standard ones.
  *
+ * @param   a_fFlags        IEM_CIMPL_F_XXX.
  * @param   a_pfnCImpl      The pointer to the C routine.
  * @param   a0              The first extra argument.
  * @param   a1              The second extra argument.
  * @param   a2              The third extra argument.
  */
-#define IEM_MC_CALL_CIMPL_3(a_pfnCImpl, a0, a1, a2)     return (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0, a1, a2)
+#define IEM_MC_CALL_CIMPL_3(a_fFlags, a_pfnCImpl, a0, a1, a2) \
+    IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0, a1, a2))
 
 /**
  * Defers the rest of the instruction emulation to a C implementation routine
  * and returns, taking four arguments in addition to the standard ones.
  *
+ * @param   a_fFlags        IEM_CIMPL_F_XXX.
  * @param   a_pfnCImpl      The pointer to the C routine.
  * @param   a0              The first extra argument.
  * @param   a1              The second extra argument.
  * @param   a2              The third extra argument.
  * @param   a3              The fourth extra argument.
  */
-#define IEM_MC_CALL_CIMPL_4(a_pfnCImpl, a0, a1, a2, a3)     return (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0, a1, a2, a3)
+#define IEM_MC_CALL_CIMPL_4(a_fFlags, a_pfnCImpl, a0, a1, a2, a3) \
+    IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0, a1, a2, a3))
 
 /**
  * Defers the rest of the instruction emulation to a C implementation routine
  * and returns, taking two arguments in addition to the standard ones.
  *
+ * @param   a_fFlags        IEM_CIMPL_F_XXX.
  * @param   a_pfnCImpl      The pointer to the C routine.
  * @param   a0              The first extra argument.
  * @param   a1              The second extra argument.
@@ -1135,7 +1208,8 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * @param   a3              The fourth extra argument.
  * @param   a4              The fifth extra argument.
  */
-#define IEM_MC_CALL_CIMPL_5(a_pfnCImpl, a0, a1, a2, a3, a4) return (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0, a1, a2, a3, a4)
+#define IEM_MC_CALL_CIMPL_5(a_fFlags, a_pfnCImpl, a0, a1, a2, a3, a4) \
+    IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0, a1, a2, a3, a4))
 
 /**
  * Defers the entire instruction emulation to a C implementation routine and
@@ -1143,10 +1217,12 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  *
  * This shall be used without any IEM_MC_BEGIN or IEM_END macro surrounding it.
  *
+ * @param   a_fFlags        IEM_CIMPL_F_XXX.
  * @param   a_pfnCImpl      The pointer to the C routine.
  * @sa      IEM_DECL_IMPL_C_TYPE_0 and IEM_CIMPL_DEF_0.
  */
-#define IEM_MC_DEFER_TO_CIMPL_0(a_pfnCImpl)             (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu))
+#define IEM_MC_DEFER_TO_CIMPL_0_RET(a_fFlags, a_pfnCImpl) \
+    IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu)))
 
 /**
  * Defers the entire instruction emulation to a C implementation routine and
@@ -1154,10 +1230,12 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  *
  * This shall be used without any IEM_MC_BEGIN or IEM_END macro surrounding it.
  *
+ * @param   a_fFlags        IEM_CIMPL_F_XXX.
  * @param   a_pfnCImpl      The pointer to the C routine.
  * @param   a0              The argument.
  */
-#define IEM_MC_DEFER_TO_CIMPL_1(a_pfnCImpl, a0)         (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0)
+#define IEM_MC_DEFER_TO_CIMPL_1_RET(a_fFlags, a_pfnCImpl, a0) \
+    IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0))
 
 /**
  * Defers the entire instruction emulation to a C implementation routine and
@@ -1165,11 +1243,13 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  *
  * This shall be used without any IEM_MC_BEGIN or IEM_END macro surrounding it.
  *
+ * @param   a_fFlags        IEM_CIMPL_F_XXX.
  * @param   a_pfnCImpl      The pointer to the C routine.
  * @param   a0              The first extra argument.
  * @param   a1              The second extra argument.
  */
-#define IEM_MC_DEFER_TO_CIMPL_2(a_pfnCImpl, a0, a1)     (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0, a1)
+#define IEM_MC_DEFER_TO_CIMPL_2_RET(a_fFlags, a_pfnCImpl, a0, a1) \
+    IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0, a1))
 
 /**
  * Defers the entire instruction emulation to a C implementation routine and
@@ -1177,12 +1257,15 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  *
  * This shall be used without any IEM_MC_BEGIN or IEM_END macro surrounding it.
  *
+ * @param   a_fFlags        IEM_CIMPL_F_XXX.
  * @param   a_pfnCImpl      The pointer to the C routine.
  * @param   a0              The first extra argument.
  * @param   a1              The second extra argument.
  * @param   a2              The third extra argument.
  */
-#define IEM_MC_DEFER_TO_CIMPL_3(a_pfnCImpl, a0, a1, a2) (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0, a1, a2)
+#define IEM_MC_DEFER_TO_CIMPL_3_RET(a_fFlags, a_pfnCImpl, a0, a1, a2) \
+    IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0, a1, a2))
+
 
 /**
  * Calls a FPU assembly implementation taking one visible argument.

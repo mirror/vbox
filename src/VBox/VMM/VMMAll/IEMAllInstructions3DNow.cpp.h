@@ -135,7 +135,7 @@ FNIEMOP_DEF_1(iemOp_3DNowDispatcher, uint8_t, b)
         case 0xbb: return FNIEMOP_CALL(iemOp_3Dnow_pswapd_Pq_Qq);
         case 0xbf: return FNIEMOP_CALL(iemOp_3Dnow_pavgusb_PQ_Qq);
         default:
-            return IEMOP_RAISE_INVALID_OPCODE();
+            IEMOP_RAISE_INVALID_OPCODE_RET();
     }
 }
 

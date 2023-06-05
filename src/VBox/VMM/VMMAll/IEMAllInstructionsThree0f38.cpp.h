@@ -1065,7 +1065,7 @@ FNIEMOP_DEF(iemOp_movntdqa_Vdq_Mdq)
      * @optest      ->
      */
     else
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 
@@ -1325,7 +1325,8 @@ FNIEMOP_DEF(iemOp_invept_Gy_Mdq)
             IEM_MC_FETCH_GREG_U64(uInveptType, IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrInveptDesc, bRm, 0);
             IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
-            IEM_MC_CALL_CIMPL_3(iemCImpl_invept, iEffSeg, GCPtrInveptDesc, uInveptType);
+            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_STATUS_FLAGS,
+                                iemCImpl_invept, iEffSeg, GCPtrInveptDesc, uInveptType);
             IEM_MC_END();
         }
         else
@@ -1337,12 +1338,13 @@ FNIEMOP_DEF(iemOp_invept_Gy_Mdq)
             IEM_MC_FETCH_GREG_U32(uInveptType, IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrInveptDesc, bRm, 0);
             IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
-            IEM_MC_CALL_CIMPL_3(iemCImpl_invept, iEffSeg, GCPtrInveptDesc, uInveptType);
+            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_STATUS_FLAGS,
+                                iemCImpl_invept, iEffSeg, GCPtrInveptDesc, uInveptType);
             IEM_MC_END();
         }
     }
     Log(("iemOp_invept_Gy_Mdq: invalid encoding -> #UD\n"));
-    return IEMOP_RAISE_INVALID_OPCODE();
+    IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 #else
 FNIEMOP_STUB(iemOp_invept_Gy_Mdq);
@@ -1369,7 +1371,8 @@ FNIEMOP_DEF(iemOp_invvpid_Gy_Mdq)
             IEM_MC_FETCH_GREG_U64(uInvvpidType, IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrInvvpidDesc, bRm, 0);
             IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
-            IEM_MC_CALL_CIMPL_3(iemCImpl_invvpid, iEffSeg, GCPtrInvvpidDesc, uInvvpidType);
+            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_STATUS_FLAGS,
+                                iemCImpl_invvpid, iEffSeg, GCPtrInvvpidDesc, uInvvpidType);
             IEM_MC_END();
         }
         else
@@ -1381,12 +1384,13 @@ FNIEMOP_DEF(iemOp_invvpid_Gy_Mdq)
             IEM_MC_FETCH_GREG_U32(uInvvpidType, IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrInvvpidDesc, bRm, 0);
             IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
-            IEM_MC_CALL_CIMPL_3(iemCImpl_invvpid, iEffSeg, GCPtrInvvpidDesc, uInvvpidType);
+            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_STATUS_FLAGS,
+                                iemCImpl_invvpid, iEffSeg, GCPtrInvvpidDesc, uInvvpidType);
             IEM_MC_END();
         }
     }
     Log(("iemOp_invvpid_Gy_Mdq: invalid encoding -> #UD\n"));
-    return IEMOP_RAISE_INVALID_OPCODE();
+    IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 #else
 FNIEMOP_STUB(iemOp_invvpid_Gy_Mdq);
@@ -1410,7 +1414,7 @@ FNIEMOP_DEF(iemOp_invpcid_Gy_Mdq)
             IEM_MC_FETCH_GREG_U64(uInvpcidType, IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrInvpcidDesc, bRm, 0);
             IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
-            IEM_MC_CALL_CIMPL_3(iemCImpl_invpcid, iEffSeg, GCPtrInvpcidDesc, uInvpcidType);
+            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT, iemCImpl_invpcid, iEffSeg, GCPtrInvpcidDesc, uInvpcidType);
             IEM_MC_END();
         }
         else
@@ -1422,12 +1426,12 @@ FNIEMOP_DEF(iemOp_invpcid_Gy_Mdq)
             IEM_MC_FETCH_GREG_U32(uInvpcidType, IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrInvpcidDesc, bRm, 0);
             IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
-            IEM_MC_CALL_CIMPL_3(iemCImpl_invpcid, iEffSeg, GCPtrInvpcidDesc, uInvpcidType);
+            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT, iemCImpl_invpcid, iEffSeg, GCPtrInvpcidDesc, uInvpcidType);
             IEM_MC_END();
         }
     }
     Log(("iemOp_invpcid_Gy_Mdq: invalid encoding -> #UD\n"));
-    return IEMOP_RAISE_INVALID_OPCODE();
+    IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
 
@@ -1778,7 +1782,7 @@ FNIEMOP_DEF(iemOp_movbe_Gv_Mv)
     else
     {
         /* Reg/reg not supported. */
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
     }
 }
 
@@ -1894,7 +1898,7 @@ FNIEMOP_DEF(iemOp_movbe_Mv_Gv)
     else
     {
         /* Reg/reg not supported. */
-        return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_RAISE_INVALID_OPCODE_RET();
     }
 }
 

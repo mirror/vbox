@@ -182,12 +182,12 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 
 #define IEMOP_HLP_DECODED_NL_1(a_uDisOpNo, a_fIemOpFlags, a_uDisParam0, a_fDisOpType)               do { } while (0)
 #define IEMOP_HLP_DECODED_NL_2(a_uDisOpNo, a_fIemOpFlags, a_uDisParam0, a_uDisParam1, a_fDisOpType) do { } while (0)
-#undef  IEMOP_RAISE_DIVIDE_ERROR
-#define IEMOP_RAISE_DIVIDE_ERROR()                          VERR_TRPM_ACTIVE_TRAP
-#undef  IEMOP_RAISE_INVALID_OPCODE
-#define IEMOP_RAISE_INVALID_OPCODE()                        VERR_TRPM_ACTIVE_TRAP
-#undef  IEMOP_RAISE_INVALID_LOCK_PREFIX
-#define IEMOP_RAISE_INVALID_LOCK_PREFIX()                   VERR_TRPM_ACTIVE_TRAP
+#undef  IEMOP_RAISE_DIVIDE_ERROR_RET
+#define IEMOP_RAISE_DIVIDE_ERROR_RET()                      return VERR_TRPM_ACTIVE_TRAP
+#undef  IEMOP_RAISE_INVALID_OPCODE_RET
+#define IEMOP_RAISE_INVALID_OPCODE_RET()                    return VERR_TRPM_ACTIVE_TRAP
+#undef  IEMOP_RAISE_INVALID_LOCK_PREFIX_RET
+#define IEMOP_RAISE_INVALID_LOCK_PREFIX_RET()               return VERR_TRPM_ACTIVE_TRAP
 #define IEMOP_MNEMONIC(a_Stats, a_szMnemonic)               do { } while (0)
 #define IEMOP_MNEMONIC0EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_fDisHints, a_fIemHints) do { } while (0)
 #define IEMOP_MNEMONIC1EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_fDisHints, a_fIemHints) do { } while (0)
@@ -208,10 +208,10 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
     typedef int ignore_semicolon
 
 #define FNIEMOP_UD_STUB(a_Name) \
-    FNIEMOP_DEF(a_Name) { return IEMOP_RAISE_INVALID_OPCODE(); } \
+    FNIEMOP_DEF(a_Name) { IEMOP_RAISE_INVALID_OPCODE_RET(); } \
     typedef int ignore_semicolon
 #define FNIEMOP_UD_STUB_1(a_Name, a_Type0, a_Name0) \
-    FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) { return IEMOP_RAISE_INVALID_OPCODE(); } \
+    FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) { IEMOP_RAISE_INVALID_OPCODE_RET(); } \
     typedef int ignore_semicolon
 
 
@@ -895,21 +895,21 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
     do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2);  (a_rc) = VINF_SUCCESS; (void)fMcBegin; } while (0)
 #define IEM_MC_CALL_AIMPL_4(a_rc, a_pfn, a0, a1, a2, a3) \
     do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3);  (a_rc) = VINF_SUCCESS; (void)fMcBegin; } while (0)
-#define IEM_MC_CALL_CIMPL_0(a_pfnCImpl)                                 do { (void)fMcBegin; } while (0)
-#define IEM_MC_CALL_CIMPL_1(a_pfnCImpl, a0) \
+#define IEM_MC_CALL_CIMPL_0(a_fFlags, a_pfnCImpl)                       do { (void)fMcBegin; } while (0)
+#define IEM_MC_CALL_CIMPL_1(a_fFlags, a_pfnCImpl, a0) \
     do { CHK_CALL_ARG(a0, 0);  (void)fMcBegin; return VINF_SUCCESS; } while (0)
-#define IEM_MC_CALL_CIMPL_2(a_pfnCImpl, a0, a1) \
+#define IEM_MC_CALL_CIMPL_2(a_fFlags, a_pfnCImpl, a0, a1) \
     do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); (void)fMcBegin; return VINF_SUCCESS; } while (0)
-#define IEM_MC_CALL_CIMPL_3(a_pfnCImpl, a0, a1, a2) \
+#define IEM_MC_CALL_CIMPL_3(a_fFlags, a_pfnCImpl, a0, a1, a2) \
     do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); (void)fMcBegin; return VINF_SUCCESS; } while (0)
-#define IEM_MC_CALL_CIMPL_4(a_pfnCImpl, a0, a1, a2, a3) \
+#define IEM_MC_CALL_CIMPL_4(a_fFlags, a_pfnCImpl, a0, a1, a2, a3) \
     do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3); (void)fMcBegin; return VINF_SUCCESS; } while (0)
-#define IEM_MC_CALL_CIMPL_5(a_pfnCImpl, a0, a1, a2, a3, a4) \
+#define IEM_MC_CALL_CIMPL_5(a_fFlags, a_pfnCImpl, a0, a1, a2, a3, a4) \
     do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3); CHK_CALL_ARG(a4, 4); (void)fMcBegin; return VINF_SUCCESS; } while (0)
-#define IEM_MC_DEFER_TO_CIMPL_0(a_pfnCImpl)                             (VINF_SUCCESS)
-#define IEM_MC_DEFER_TO_CIMPL_1(a_pfnCImpl, a0)                         (VINF_SUCCESS)
-#define IEM_MC_DEFER_TO_CIMPL_2(a_pfnCImpl, a0, a1)                     (VINF_SUCCESS)
-#define IEM_MC_DEFER_TO_CIMPL_3(a_pfnCImpl, a0, a1, a2)                 (VINF_SUCCESS)
+#define IEM_MC_DEFER_TO_CIMPL_0_RET(a_fFlags, a_pfnCImpl)                   return VINF_SUCCESS
+#define IEM_MC_DEFER_TO_CIMPL_1_RET(a_fFlags, a_pfnCImpl, a0)               return VINF_SUCCESS
+#define IEM_MC_DEFER_TO_CIMPL_2_RET(a_fFlags, a_pfnCImpl, a0, a1)           return VINF_SUCCESS
+#define IEM_MC_DEFER_TO_CIMPL_3_RET(a_fFlags, a_pfnCImpl, a0, a1, a2)       return VINF_SUCCESS
 
 #define IEM_MC_CALL_FPU_AIMPL_1(a_pfnAImpl, a0) \
     do { (void)fFpuHost; (void)fFpuWrite; CHK_CALL_ARG(a0, 0);  (void)fMcBegin; } while (0)
