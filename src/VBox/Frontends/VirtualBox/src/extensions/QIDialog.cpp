@@ -133,6 +133,7 @@ void QIDialog::polishEvent(QShowEvent *)
     setFixedSize(size());
 #endif /* VBOX_WS_MAC */
 
-    /* Explicit centering according to our parent: */
-    gpDesktop->centerWidget(this, parentWidget(), false);
+    /* Explicit centering according to parent if any: */
+    if (parentWidget())
+        gpDesktop->centerWidget(this, parentWidget(), false);
 }
