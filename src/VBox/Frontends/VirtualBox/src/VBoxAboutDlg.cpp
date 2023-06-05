@@ -26,24 +26,26 @@
  */
 
 /* Qt includes: */
-#include <QDialogButtonBox>
-#include <QDir>
 #include <QEvent>
 #include <QLabel>
 #include <QPainter>
 #include <QPushButton>
-#include <QStyle>
 #include <QVBoxLayout>
+#ifdef VBOX_IS_QT6_OR_LATER
+# include <QWindow>
+#endif
 
 /* GUI includes: */
-#include "UIConverter.h"
-#include "UIExtraDataManager.h"
+#include "QIDialogButtonBox.h"
+#include "UICommon.h"
 #include "UIIconPool.h"
 #include "VBoxAboutDlg.h"
-#include "UICommon.h"
+#ifdef VBOX_WS_MAC
+# include "UIDesktopWidgetWatchdog.h"
+#endif
 
 /* Other VBox includes: */
-#include <iprt/path.h>
+#include <iprt/path.h> /* RTPathExecDir */
 #include <VBox/version.h> /* VBOX_VENDOR */
 
 
@@ -53,35 +55,40 @@ VBoxAboutDlg::VBoxAboutDlg(QWidget *pParent, const QString &strVersion)
     // First of all, non of other native apps (Safari, App Store, iTunes) centers About dialog according the app itself, they do
     // it according to screen instead, we should do it as well.  Besides that since About dialog is not modal, it will be in
     // conflict with modal dialogs if there will be a parent passed, because the dialog will not have own event-loop in that case.
-    : QIWithRetranslateUI2<QIDialog>(0)
+    : QIWithRetranslateUI2<QDialog>(0)
     , m_pPseudoParent(pParent)
 #else
     // On other hosts we will keep the current behavior for now.
     // First of all it's quite difficult to find native (Metro UI) Windows app which have About dialog at all.  But non-native
     // cross-platform apps (Qt Creator, VLC) centers About dialog according the app exactly.
-    : QIWithRetranslateUI2<QIDialog>(pParent)
+    : QIWithRetranslateUI2<QDialog>(pParent)
     , m_pPseudoParent(0)
 #endif
+    , m_fPolished(false)
     , m_strVersion(strVersion)
     , m_pMainLayout(0)
     , m_pLabel(0)
-    , m_fFixedSizeSet(false)
 {
-    /* Prepare: */
     prepare();
 }
 
-bool VBoxAboutDlg::event(QEvent *pEvent)
+void VBoxAboutDlg::showEvent(QShowEvent *pEvent)
 {
-    /* Set fixed-size for dialog: */
-    if (!m_fFixedSizeSet && pEvent->type() == QEvent::Show)
-    {
-        m_fFixedSizeSet = true;
-        setFixedSize(m_size);
-    }
-
     /* Call to base-class: */
-    return QIDialog::event(pEvent);
+    QDialog::showEvent(pEvent);
+
+    /* Polish once: */
+    if (!m_fPolished)
+    {
+        m_fPolished = true;
+        setFixedSize(m_size);
+#ifdef VBOX_WS_MAC
+        /* Center according to parent's screen: */
+        QRect geo = geometry();
+        geo.moveCenter(gpDesktop->screenGeometry(m_pPseudoParent).center());
+        setGeometry(geo);
+#endif
+    }
 }
 
 void VBoxAboutDlg::paintEvent(QPaintEvent *)
@@ -94,29 +101,35 @@ void VBoxAboutDlg::paintEvent(QPaintEvent *)
 void VBoxAboutDlg::retranslateUi()
 {
     setWindowTitle(tr("VirtualBox - About"));
-    const QString strAboutText = tr("VirtualBox Graphical User Interface");
+
+    if (m_pLabel)
+    {
+        const QString strAboutText = tr("VirtualBox Graphical User Interface");
 #ifdef VBOX_BLEEDING_EDGE
-    const QString strVersionText = "EXPERIMENTAL build %1 - " + QString(VBOX_BLEEDING_EDGE);
+        const QString strVersionText = "EXPERIMENTAL build %1 - " + QString(VBOX_BLEEDING_EDGE);
 #else
-    const QString strVersionText = tr("Version %1");
+        const QString strVersionText = tr("Version %1");
 #endif
 #ifdef VBOX_OSE
-    m_strAboutText = strAboutText + " " + strVersionText.arg(m_strVersion) + "\n"
-                   + QString("%1 2004-" VBOX_C_YEAR " " VBOX_VENDOR).arg(QChar(0xa9));
+        m_strAboutText = strAboutText + " " + strVersionText.arg(m_strVersion) + "\n"
+                       + QString("%1 2004-" VBOX_C_YEAR " " VBOX_VENDOR).arg(QChar(0xa9));
 #else
-    m_strAboutText = strAboutText + "\n" + strVersionText.arg(m_strVersion);
+        m_strAboutText = strAboutText + "\n" + strVersionText.arg(m_strVersion);
 #endif
-    m_strAboutText = m_strAboutText + QString(" (Qt%1)").arg(qVersion());
-    m_strAboutText = m_strAboutText + "\n" + QString("Copyright %1 %2 %3.")
-                                                     .arg(QChar(0xa9)).arg(VBOX_C_YEAR).arg(VBOX_VENDOR);
-    AssertPtrReturnVoid(m_pLabel);
-    m_pLabel->setText(m_strAboutText);
+        m_strAboutText = m_strAboutText + QString(" (Qt%1)").arg(qVersion());
+        m_strAboutText = m_strAboutText + "\n" + QString("Copyright %1 %2 %3.")
+                                                         .arg(QChar(0xa9)).arg(VBOX_C_YEAR).arg(VBOX_VENDOR);
+        m_pLabel->setText(m_strAboutText);
+    }
 }
 
 void VBoxAboutDlg::prepare()
 {
     /* Delete dialog on close: */
     setAttribute(Qt::WA_DeleteOnClose);
+    /* Do not count that window as important for application,
+     * it will NOT be taken into account when other top-level windows will be closed: */
+    setAttribute(Qt::WA_QuitOnClose, false);
 
     /* Make sure the dialog is deleted on pseudo-parent destruction: */
     if (m_pPseudoParent)
@@ -137,21 +150,9 @@ void VBoxAboutDlg::prepare()
     }
 
     /* Load image: */
-    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
-    const double dRatio = (double)iIconMetric / 32;
     const QIcon icon = UIIconPool::iconSet(strPath);
-    m_size = icon.availableSizes().value(0, QSize(640, 480));
-    m_size *= dRatio;
-    m_pixmap = icon.pixmap(m_size);
-
-    // WORKAROUND:
-    // Since we don't have x3 and x4 HiDPI icons yet,
-    // and we hadn't enabled automatic up-scaling for now,
-    // we have to make sure m_pixmap is upscaled to required size.
-    const QSize actualSize = m_pixmap.size() / m_pixmap.devicePixelRatio();
-    if (   actualSize.width() < m_size.width()
-        || actualSize.height() < m_size.height())
-        m_pixmap = m_pixmap.scaled(m_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    m_size = QSize(640, 480);
+    m_pixmap = icon.pixmap(windowHandle(), m_size);
 
     /* Prepare main-layout: */
     prepareMainLayout();
@@ -166,10 +167,8 @@ void VBoxAboutDlg::prepareMainLayout()
     m_pMainLayout = new QVBoxLayout(this);
     if (m_pMainLayout)
     {
-        /* Prepare label: */
+        /* Prepare stuff: */
         prepareLabel();
-
-        /* Prepare close-button: */
         prepareCloseButton();
     }
 }
@@ -177,7 +176,7 @@ void VBoxAboutDlg::prepareMainLayout()
 void VBoxAboutDlg::prepareLabel()
 {
     /* Create label for version text: */
-    m_pLabel = new QLabel;
+    m_pLabel = new QLabel(this);
     if (m_pLabel)
     {
         /* Prepare label for version text: */
@@ -194,24 +193,25 @@ void VBoxAboutDlg::prepareLabel()
         m_pLabel->setFont(font());
 
         /* Add label to the main-layout: */
-        m_pMainLayout->addWidget(m_pLabel);
-        m_pMainLayout->setAlignment(m_pLabel, Qt::AlignRight | Qt::AlignBottom);
+        if (m_pMainLayout)
+        {
+            m_pMainLayout->addWidget(m_pLabel);
+            m_pMainLayout->setAlignment(m_pLabel, Qt::AlignRight | Qt::AlignBottom);
+        }
     }
 }
 
 void VBoxAboutDlg::prepareCloseButton()
 {
     /* Create button-box: */
-    QDialogButtonBox *pButtonBox = new QDialogButtonBox;
+    QIDialogButtonBox *pButtonBox = new QIDialogButtonBox(QDialogButtonBox::Close, Qt::Horizontal, this);
     if (pButtonBox)
     {
-        /* Create close-button: */
-        QPushButton *pCloseButton = pButtonBox->addButton(QDialogButtonBox::Close);
-        AssertPtrReturnVoid(pCloseButton);
         /* Prepare close-button: */
-        connect(pButtonBox, &QDialogButtonBox::rejected, this, &VBoxAboutDlg::reject);
+        connect(pButtonBox, &QDialogButtonBox::rejected, this, &VBoxAboutDlg::close);
 
         /* Add button-box to the main-layout: */
-        m_pMainLayout->addWidget(pButtonBox);
+        if (m_pMainLayout)
+            m_pMainLayout->addWidget(pButtonBox);
     }
 }

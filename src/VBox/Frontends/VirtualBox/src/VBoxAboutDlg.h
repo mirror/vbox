@@ -32,21 +32,20 @@
 #endif
 
 /* Qt includes: */
+#include <QDialog>
 #include <QPixmap>
 
 /* GUI includes: */
-#include "QIDialog.h"
 #include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
-class QEvent;
 class QLabel;
 class QVBoxLayout;
 
-/** QIDialog extension
+/** QDialog extension
   * used to show the About-VirtualBox dialog. */
-class SHARED_LIBRARY_STUFF VBoxAboutDlg : public QIWithRetranslateUI2<QIDialog>
+class SHARED_LIBRARY_STUFF VBoxAboutDlg : public QIWithRetranslateUI2<QDialog>
 {
     Q_OBJECT;
 
@@ -58,8 +57,8 @@ public:
 
 protected:
 
-    /** Handles any Qt @a pEvent. */
-    virtual bool event(QEvent *pEvent) RT_OVERRIDE;
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
 
     /** Handles paint @a pEvent. */
     virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
@@ -79,7 +78,10 @@ private:
     void prepareCloseButton();
 
     /** Holds the pseudo-parent widget reference. */
-    QObject *m_pPseudoParent;
+    QWidget *m_pPseudoParent;
+
+    /** Holds whether window is polished. */
+    bool  m_fPolished;
 
     /** Holds the About-VirtualBox text. */
     QString  m_strAboutText;
@@ -95,9 +97,6 @@ private:
     QVBoxLayout *m_pMainLayout;
     /** Holds About-VirtualBox text-label instance. */
     QLabel      *m_pLabel;
-    /** Holds size set flag to make sure dialog size if set only once. */
-    bool m_fFixedSizeSet;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_VBoxAboutDlg_h */
-
