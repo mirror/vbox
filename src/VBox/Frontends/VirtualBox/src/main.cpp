@@ -521,7 +521,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
                                               .arg(UICommon::qtCTVersionString().section('.', 0, 1))
                                               .arg(UICommon::qtRTVersionString());
             QMessageBox::critical(0, QApplication::tr("Incompatible Qt Library Error"),
-                                  strMsg, QMessageBox::Abort, 0);
+                                  strMsg, QMessageBox::Abort, QMessageBox::NoButton);
             qFatal("%s", strMsg.toUtf8().constData());
             break;
         }
@@ -750,7 +750,7 @@ int main(int argc, char **argv, char **envp)
 
         /* Show the error-message: */
         QMessageBox::critical(0 /* parent */, strTitle, strText,
-                              QMessageBox::Abort /* 1st button */, 0 /* 2nd button */);
+                              QMessageBox::Abort /* 1st button */, QMessageBox::NoButton /* 2nd button */);
 
         /* Default error-result: */
         return 1;
