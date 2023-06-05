@@ -1540,10 +1540,18 @@ void UIChooserItemGroup::updateVisibleName()
 void UIChooserItemGroup::updatePixmaps()
 {
     const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
     m_groupsPixmap = UIIconPool::iconSet(":/group_abstract_16px.png").pixmap(gpManager->windowHandle(),
                                                                              QSize(iIconMetric, iIconMetric));
     m_machinesPixmap = UIIconPool::iconSet(":/machine_abstract_16px.png").pixmap(gpManager->windowHandle(),
                                                                                  QSize(iIconMetric, iIconMetric));
+#else
+    const qreal fDevicePixelRatio = gpManager->windowHandle() ? gpManager->windowHandle()->devicePixelRatio() : 1;
+    m_groupsPixmap = UIIconPool::iconSet(":/group_abstract_16px.png").pixmap(QSize(iIconMetric, iIconMetric),
+                                                                             fDevicePixelRatio);
+    m_machinesPixmap = UIIconPool::iconSet(":/machine_abstract_16px.png").pixmap(QSize(iIconMetric, iIconMetric),
+                                                                                 fDevicePixelRatio);
+#endif
     m_pixmapSizeGroups = m_groupsPixmap.size() / m_groupsPixmap.devicePixelRatio();
     m_pixmapSizeMachines = m_machinesPixmap.size() / m_machinesPixmap.devicePixelRatio();
 }

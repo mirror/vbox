@@ -35,6 +35,9 @@
 #include <QRadioButton>
 #include <QStyle>
 #include <QVBoxLayout>
+#ifdef VBOX_IS_QT6_OR_LATER
+# include <QWindow>
+#endif
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
@@ -632,6 +635,7 @@ void UIVMCloseDialog::updatePixmaps()
     const int iMetricLarge = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
 
     /* Re-apply pixmap: */
+#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
     m_pLabelIcon->setPixmap(m_icon.pixmap(windowHandle(), QSize(iMetricLarge, iMetricLarge)));
 
     QIcon icon;
@@ -643,4 +647,18 @@ void UIVMCloseDialog::updatePixmaps()
     m_pLabelIconShutdown->setPixmap(icon.pixmap(windowHandle(), QSize(iMetricSmall, iMetricSmall)));
     icon = UIIconPool::iconSet(":/vm_poweroff_16px.png");
     m_pLabelIconPowerOff->setPixmap(icon.pixmap(windowHandle(), QSize(iMetricSmall, iMetricSmall)));
+#else
+    const qreal fDevicePixelRatio = windowHandle() ? windowHandle()->devicePixelRatio() : 1;
+    m_pLabelIcon->setPixmap(m_icon.pixmap(QSize(iMetricLarge, iMetricLarge), fDevicePixelRatio));
+
+    QIcon icon;
+    icon = UIIconPool::iconSet(":/vm_create_shortcut_16px.png");
+    m_pLabelIconDetach->setPixmap(icon.pixmap(QSize(iMetricSmall, iMetricSmall), fDevicePixelRatio));
+    icon = UIIconPool::iconSet(":/vm_save_state_16px.png");
+    m_pLabelIconSave->setPixmap(icon.pixmap(QSize(iMetricSmall, iMetricSmall), fDevicePixelRatio));
+    icon = UIIconPool::iconSet(":/vm_shutdown_16px.png");
+    m_pLabelIconShutdown->setPixmap(icon.pixmap(QSize(iMetricSmall, iMetricSmall), fDevicePixelRatio));
+    icon = UIIconPool::iconSet(":/vm_poweroff_16px.png");
+    m_pLabelIconPowerOff->setPixmap(icon.pixmap(QSize(iMetricSmall, iMetricSmall), fDevicePixelRatio));
+#endif
 }

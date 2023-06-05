@@ -30,6 +30,9 @@
 #include <QLabel>
 #include <QStyle>
 #include <QVBoxLayout>
+#ifdef VBOX_IS_QT6_OR_LATER
+# include <QWindow>
+#endif
 
 /* GUI includes: */
 #include "QILineEdit.h"
@@ -90,7 +93,12 @@ void UIPasswordLineEdit::mark(bool fError, const QString &strErrorToolTip)
         /* Update label content, visibility & position: */
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * .625;
         const int iShift = height() > iIconMetric ? (height() - iIconMetric) / 2 : 0;
+#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
         m_pErrorIconLabel->setPixmap(m_markIcon.pixmap(windowHandle(), QSize(iIconMetric, iIconMetric)));
+#else
+        const qreal fDevicePixelRatio = window() && window()->windowHandle() ? window()->windowHandle()->devicePixelRatio() : 1;
+        m_pErrorIconLabel->setPixmap(m_markIcon.pixmap(QSize(iIconMetric, iIconMetric), fDevicePixelRatio));
+#endif
         m_pErrorIconLabel->setToolTip(m_strErrorToolTip);
         int iIconX = width() - iIconMetric - iShift;
         if (m_pTextVisibilityButton)

@@ -697,7 +697,12 @@ void UIChooserItemMachine::updateStatePixmap()
     const QIcon stateIcon = cache()->machineStateIcon();
     AssertReturnVoid(!stateIcon.isNull());
     const QSize statePixmapSize = QSize(iIconMetric, iIconMetric);
+#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
     const QPixmap statePixmap = stateIcon.pixmap(gpManager->windowHandle(), statePixmapSize);
+#else
+    const qreal fDevicePixelRatio = gpManager->windowHandle() ? gpManager->windowHandle()->devicePixelRatio() : 1;
+    const QPixmap statePixmap = stateIcon.pixmap(statePixmapSize, fDevicePixelRatio);
+#endif
     /* Update linked values: */
     if (m_statePixmapSize != statePixmapSize)
     {
@@ -719,7 +724,12 @@ void UIChooserItemMachine::updateToolPixmap()
     const QIcon toolIcon = UIIconPool::iconSet(":/tools_menu_24px.png");
     AssertReturnVoid(!toolIcon.isNull());
     const QSize toolPixmapSize = QSize(iIconMetric, iIconMetric);
+#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
     const QPixmap toolPixmap = toolIcon.pixmap(gpManager->windowHandle(), toolPixmapSize);
+#else
+    const qreal fDevicePixelRatio = gpManager->windowHandle() ? gpManager->windowHandle()->devicePixelRatio() : 1;
+    const QPixmap toolPixmap = toolIcon.pixmap(toolPixmapSize, fDevicePixelRatio);
+#endif
     /* Update linked values: */
     if (m_toolPixmapSize != toolPixmapSize)
     {

@@ -31,6 +31,9 @@
 #include <QPainter>
 #include <QStyle>
 #include <QWidget>
+#ifdef VBOX_IS_QT6_OR_LATER
+# include <QWindow>
+#endif
 
 /* GUI includes: */
 #include "UIIconPool.h"
@@ -698,7 +701,14 @@ QPixmap UIIconPoolGeneral::guestOSTypePixmapDefault(const QString &strOSTypeID, 
 
         /* Get pixmap of requested size (take into account the DPI of the main shown window, if possible): */
         if (windowManager().mainWindowShown() && windowManager().mainWindowShown()->windowHandle())
+#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
             pixmap = icon.pixmap(windowManager().mainWindowShown()->windowHandle(), iconSize);
+#else
+        {
+            const qreal fDevicePixelRatio = windowManager().mainWindowShown()->windowHandle()->devicePixelRatio();
+            pixmap = icon.pixmap(iconSize, fDevicePixelRatio);
+        }
+#endif
         else
             pixmap = icon.pixmap(iconSize);
     }

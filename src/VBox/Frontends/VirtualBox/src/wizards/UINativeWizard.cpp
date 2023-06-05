@@ -768,7 +768,12 @@ void UINativeWizard::assignBackground()
 
     /* Acquire pixmap of required size and scale (on basis of parent-widget's device pixel ratio): */
     const QSize standardSize(620, 440);
+#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
     const QPixmap pixmapOld = icon.pixmap(parentWidget()->windowHandle(), standardSize);
+#else
+    const qreal fDevicePixelRatio = parentWidget() && parentWidget()->windowHandle() ? parentWidget()->windowHandle()->devicePixelRatio() : 1;
+    const QPixmap pixmapOld = icon.pixmap(standardSize, fDevicePixelRatio);
+#endif
 
     /* Assign background finally: */
     m_pLabelPixmap->setPixmap(pixmapOld);
@@ -784,7 +789,12 @@ void UINativeWizard::assignWatermark()
 
     /* Acquire pixmap of required size and scale (on basis of parent-widget's device pixel ratio): */
     const QSize standardSize(145, 290);
+#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
     const QPixmap pixmapOld = icon.pixmap(parentWidget()->windowHandle(), standardSize);
+#else
+    const qreal fDevicePixelRatio = parentWidget() && parentWidget()->windowHandle() ? parentWidget()->windowHandle()->devicePixelRatio() : 1;
+    const QPixmap pixmapOld = icon.pixmap(standardSize, fDevicePixelRatio);
+#endif
 
     /* Convert watermark to image which allows to manage pixel data directly: */
     const QImage imageOld = pixmapOld.toImage();

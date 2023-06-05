@@ -30,6 +30,9 @@
 #include <QLabel>
 #include <QStyle>
 #include <QVBoxLayout>
+#ifdef VBOX_IS_QT6_OR_LATER
+# include <QWindow>
+#endif
 
 /* GUI includes */
 #include "QIWithRetranslateUI.h"
@@ -245,9 +248,12 @@ void UIWelcomePane::updatePixmap()
     {
         const QList<QSize> sizes = m_icon.availableSizes();
         const QSize firstOne = sizes.isEmpty() ? QSize(200, 200) : sizes.first();
-        m_pLabelIcon->setPixmap(m_icon.pixmap(window()->windowHandle(),
-                                                       QSize(firstOne.width(),
-                                                             firstOne.height())));
+#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
+        m_pLabelIcon->setPixmap(m_icon.pixmap(window()->windowHandle(), QSize(firstOne.width(), firstOne.height())));
+#else
+        const qreal fDevicePixelRatio = window() && window()->windowHandle() ? window()->windowHandle()->devicePixelRatio() : 1;
+        m_pLabelIcon->setPixmap(m_icon.pixmap(QSize(firstOne.width(), firstOne.height()), fDevicePixelRatio));
+#endif
     }
 }
 

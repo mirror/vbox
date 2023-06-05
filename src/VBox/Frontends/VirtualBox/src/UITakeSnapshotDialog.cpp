@@ -31,6 +31,9 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QStyle>
+#ifdef VBOX_IS_QT6_OR_LATER
+# include <QWindow>
+#endif
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
@@ -314,5 +317,10 @@ void UITakeSnapshotDialog::prepareContents()
 void UITakeSnapshotDialog::updatePixmap()
 {
     const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
+#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
     m_pLabelIcon->setPixmap(m_icon.pixmap(windowHandle(), QSize(iIconMetric, iIconMetric)));
+#else
+    const qreal fDevicePixelRatio = windowHandle() ? windowHandle()->devicePixelRatio() : 1;
+    m_pLabelIcon->setPixmap(m_icon.pixmap(QSize(iIconMetric, iIconMetric), fDevicePixelRatio));
+#endif
 }
