@@ -606,6 +606,11 @@ bool UIVisoContentBrowser::tableViewHasSelection() const
     return pSelectionModel->hasSelection();
 }
 
+void UIVisoContentBrowser::parseVisoFileContent(const QString &strFileName)
+{
+    Q_UNUSED(strFileName);
+}
+
 QModelIndex UIVisoContentBrowser::convertIndexToTableIndex(const QModelIndex &index)
 {
     if (!index.isValid())

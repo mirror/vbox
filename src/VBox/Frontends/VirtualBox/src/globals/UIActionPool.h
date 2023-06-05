@@ -157,6 +157,7 @@ enum UIActionIndex
     UIActionIndex_M_VISOCreator_CreateNewDirectory,
     UIActionIndex_M_VISOCreator_Rename,
     UIActionIndex_M_VISOCreator_Reset,
+    UIActionIndex_M_VISOCreator_Open,
 
     /* Medium selector actions : */
     UIActionIndex_M_MediumSelector,

@@ -2549,6 +2549,38 @@ protected:
     }
 };
 
+class UIActionMenuVISOCreatorOpen : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuVISOCreatorOpen(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/cd_remove_16px.png", ":/cd_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
+    {
+        return QString("VISOOpen");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE
+    {
+        setName(QApplication::translate("UIActionPool", "Open"));
+        setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the VISO content."));
+        setToolTip(QApplication::translate("UIActionPool", "Open the VISO content.")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
 /** Menu action extension, used as 'Menu Selector' menu class. */
 class UIActionMenuMediumSelector : public UIActionMenu
 {
@@ -3203,6 +3235,7 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_VISOCreator_CreateNewDirectory] = new UIActionMenuVISOCreatorCreateNewDirectory(this);
     m_pool[UIActionIndex_M_VISOCreator_Rename] = new UIActionMenuVISOCreatorRename(this);
     m_pool[UIActionIndex_M_VISOCreator_Reset] = new UIActionMenuVISOCreatorReset(this);
+    m_pool[UIActionIndex_M_VISOCreator_Open] = new UIActionMenuVISOCreatorOpen(this);
 
     /* Medium Selector actions: */
     m_pool[UIActionIndex_M_MediumSelector] = new UIActionMenuMediumSelector(this);

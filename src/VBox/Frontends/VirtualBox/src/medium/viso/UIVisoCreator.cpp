@@ -32,19 +32,20 @@
 #include <QStyle>
 
 /* GUI includes: */
-#include "UIActionPool.h"
 #include "QIDialogButtonBox.h"
+#include "QIFileDialog.h"
+#include "QIToolBar.h"
+#include "UIActionPool.h"
+#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIModalWindowManager.h"
-#include "QIToolBar.h"
 #include "UIVisoHostBrowser.h"
 #include "UIVisoCreator.h"
 #include "UIVisoConfigurationPanel.h"
 #include "UIVisoCreatorOptionsPanel.h"
 #include "UIVisoContentBrowser.h"
-#include "UICommon.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -68,6 +69,7 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pPa
     , m_pCreateNewDirectoryAction(0)
     , m_pRenameAction(0)
     , m_pResetAction(0)
+    , m_pOpenAction(0)
     , m_pMainLayout(0)
     , m_pHostBrowser(0)
     , m_pVISOContentBrowser(0)
@@ -228,6 +230,14 @@ void UIVisoCreatorWidget::sltHandleShowContextMenu(const QWidget *pContextMenuRe
     menu.exec(pContextMenuRequester->mapToGlobal(point));
 }
 
+void UIVisoCreatorWidget::sltHandleOpenAction()
+{
+    QString strFileName =  QIFileDialog::getOpenFileName(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD),
+                                                         "Viso files (*.viso)", this, UIVisoCreatorWidget::tr("Select a viso file to load"));
+    if (!strFileName.isEmpty() && m_pVISOContentBrowser)
+        m_pVISOContentBrowser->parseVisoFileContent(strFileName);
+}
+
 void UIVisoCreatorWidget::prepareWidgets()
 {
     m_pMainLayout = new QGridLayout(this);
@@ -365,6 +375,9 @@ void UIVisoCreatorWidget::prepareConnections()
     if (m_pRenameAction)
         connect(m_pRenameAction, &QAction::triggered,
                 m_pVISOContentBrowser,&UIVisoContentBrowser::sltHandleItemRenameAction);
+    if (m_pOpenAction)
+        connect(m_pOpenAction, &QAction::triggered,
+                this, &UIVisoCreatorWidget::sltHandleOpenAction);
 }
 
 void UIVisoCreatorWidget::prepareActions()
@@ -375,6 +388,7 @@ void UIVisoCreatorWidget::prepareActions()
     m_pActionConfiguration = m_pActionPool->action(UIActionIndex_M_VISOCreator_ToggleConfigPanel);
     m_pActionOptions = m_pActionPool->action(UIActionIndex_M_VISOCreator_ToggleOptionsPanel);
 
+    m_pOpenAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Open);
     m_pAddAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Add);
     if (m_pAddAction && m_pHostBrowser)
         m_pAddAction->setEnabled(m_pHostBrowser->tableViewHasSelection());
@@ -401,10 +415,16 @@ void UIVisoCreatorWidget::populateMenuMainToolbar()
         m_pMainMenu->addAction(m_pActionConfiguration);
         m_pMainMenu->addAction(m_pActionOptions);
         m_pMainMenu->addSeparator();
-        m_pMainMenu->addAction(m_pAddAction);
-        m_pMainMenu->addAction(m_pRemoveAction);
-        m_pMainMenu->addAction(m_pCreateNewDirectoryAction);
-        m_pMainMenu->addAction(m_pResetAction);
+        if (m_pAddAction)
+            m_pMainMenu->addAction(m_pAddAction);
+        if (m_pOpenAction)
+            m_pMainMenu->addAction(m_pOpenAction);
+        if (m_pRemoveAction)
+            m_pMainMenu->addAction(m_pRemoveAction);
+        if (m_pCreateNewDirectoryAction)
+            m_pMainMenu->addAction(m_pCreateNewDirectoryAction);
+        if (m_pResetAction)
+            m_pMainMenu->addAction(m_pResetAction);
     }
 
     if (m_pVerticalToolBar)

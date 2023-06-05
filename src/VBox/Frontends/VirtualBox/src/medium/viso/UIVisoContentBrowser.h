@@ -69,6 +69,7 @@ public:
     virtual void showHideHiddenObjects(bool bShow)  override final;
     void setVisoName(const QString &strName);
     virtual bool tableViewHasSelection() const final override;
+    void parseVisoFileContent(const QString &strFileName);
 
 public slots:
 

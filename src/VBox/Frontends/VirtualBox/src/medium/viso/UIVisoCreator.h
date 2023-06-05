@@ -120,6 +120,7 @@ private slots:
     void sltHandleHostBrowserTableSelectionChanged(bool fIsSelectionEmpty);
     void sltHandleContentBrowserTableSelectionChanged(bool fIsSelectionEmpty);
     void sltHandleShowContextMenu(const QWidget *pContextMenuRequester, const QPoint &point);
+    void sltHandleOpenAction();
 
 private:
 
@@ -173,6 +174,7 @@ private:
         QAction              *m_pCreateNewDirectoryAction;
         QAction              *m_pRenameAction;
         QAction              *m_pResetAction;
+        QAction              *m_pOpenAction;
     /** @} */
 
     QGridLayout          *m_pMainLayout;
