@@ -123,7 +123,7 @@ g_aaNameToDetails = \
     [ 'Windows2016',    'Windows2016',           g_k64,    1,  64, ['w2k16',  'w2k16sp[0-9]', 'win2k16', 'win2k16sp[0-9]',]], # max cpus/cores??
     [ 'Windows2019',    'Windows2019',           g_k64,    1,  64, ['w2k19',  'w2k19sp[0-9]', 'win2k19', 'win2k19sp[0-9]',]], # max cpus/cores??
     [ 'Windows2022',    'Windows2022',           g_k64,    1,  64, ['w2k22',  'w2k22sp[0-9]', 'win2k22', 'win2k22sp[0-9]',]], # max cpus/cores??
-    [ 'Windows11',      'Windows11',             g_k64,    1,  64, ['w11', 'w11-64', 'w11sp[0-9]-64', 'win11', 'win11-64',]], # max cpus/cores??
+    [ 'Windows11_64',   'Windows11_64',          g_k64,    1,  64, ['w11', 'w11-64', 'w11sp[0-9]-64', 'win11', 'win11-64',]], # max cpus/cores??
     [ 'Linux',          'Debian',                g_k32,    1, 256, ['deb[0-9]*', 'debian[0-9]*', ]],
     [ 'Linux_64',       'Debian_64',             g_k64,    1, 256, ['deb[0-9]*-64', 'debian[0-9]*-64', ]],
     [ 'Linux',          'RedHat',                g_k32,    1, 256, ['rhel',   'rhel[0-9]', 'rhel[0-9]u[0-9]']],
@@ -2081,7 +2081,7 @@ class TestVmManager(object):
 
         # W11
         TestVm('tst-win11-64',               kfGrpStdSmoke,       sHd = '7.0/win11/win11-64-edit-by-ksenia.vdi',
-               sKind = 'Windows11', acCpusSup = range(1, 33), fIoApic = True),
+               sKind = 'Windows11_64', acCpusSup = range(1, 33), fIoApic = True),
 
         # Nested hardware-virtualization
         TestVm('tst-nsthwvirt-ubuntu-64',   kfGrpStdSmoke,       sHd = '5.3/nat/nsthwvirt-ubuntu64/t-nsthwvirt-ubuntu64.vdi',
