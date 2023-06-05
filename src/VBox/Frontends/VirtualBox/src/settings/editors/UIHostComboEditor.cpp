@@ -189,7 +189,11 @@ QString UINativeHotKey::toString(int iKeyCode)
     }
     WCHAR wszKeyName[256];
     if (::GetKeyNameTextW(iScan, wszKeyName, RT_ELEMENTS(wszKeyName)))
+#ifndef VBOX_IS_QT6_OR_LATER
         strKeyName = QString::fromUtf16((const ushort *)wszKeyName);
+#else
+        strKeyName = QString::fromUtf16((const char16_t *)wszKeyName);
+#endif
     else
     {
         AssertMsgFailed(("That key have no name!\n"));
