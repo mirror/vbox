@@ -2862,7 +2862,7 @@ BOOL vboxWddmPointerCopyColorData(CONST DXGKARG_SETPOINTERSHAPE* pSetPointerShap
     ULONG x, y;
     BYTE *pSrc, *pDst, bit;
 
-    /* Windows always uses the maximum pointer size VBOXWDDM_C_POINTER_MAX_*
+    /* Windows often uses the maximum pointer size VBOXWDDM_C_POINTER_MAX_*
      * Exclude zero pixels (which are transparent anyway) from the right and the bottom of the bitmap.
      */
     LONG iMaxFilledPixel;
@@ -2898,9 +2898,9 @@ BOOL vboxWddmPointerCopyColorData(CONST DXGKARG_SETPOINTERSHAPE* pSetPointerShap
     }
 
     memset(pDst, 0xFF, dstBytesPerLine*pPointerAttributes->Height);
-    for (y=0; y<pPointerAttributes->Height; ++y)
+    for (y=0; y<RT_MIN(pSetPointerShape->Height, pPointerAttributes->Height); ++y)
     {
-        for (x=0, bit=7; x<pPointerAttributes->Width; ++x, --bit)
+        for (x=0, bit=7; x<RT_MIN(pSetPointerShape->Width, pPointerAttributes->Width); ++x, --bit)
         {
             if (0xFF==bit) bit=7;
 
@@ -2916,9 +2916,9 @@ BOOL vboxWddmPointerCopyColorData(CONST DXGKARG_SETPOINTERSHAPE* pSetPointerShap
     pDst = pPointerAttributes->Pixels + RT_ALIGN_T(dstBytesPerLine*pPointerAttributes->Height, 4, ULONG);
     dstBytesPerLine = pPointerAttributes->Width * 4;
 
-    for (y=0; y<pPointerAttributes->Height; ++y)
+    for (y=0; y<RT_MIN(pSetPointerShape->Height, pPointerAttributes->Height); ++y)
     {
-        memcpy(pDst+y*dstBytesPerLine, pSrc+y*pSetPointerShape->Pitch, dstBytesPerLine);
+        memcpy(pDst+y*dstBytesPerLine, pSrc+y*pSetPointerShape->Pitch, RT_MIN(dstBytesPerLine, pSetPointerShape->Pitch));
     }
 
     return TRUE;
