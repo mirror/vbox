@@ -823,7 +823,7 @@ void UIFileManagerTable::prepareObjects()
                 this, &UIFileManagerTable::sltSelectionChanged);
         connect(m_pView, &UIGuestControlFileView::customContextMenuRequested,
                 this, &UIFileManagerTable::sltCreateFileViewContextMenu);
-        m_pView->hideColumn(UICustomFileSystemModelColumn_Path);
+        m_pView->hideColumn(UICustomFileSystemModelColumn_ISOPath);
         m_pView->hideColumn(UICustomFileSystemModelColumn_LocalPath);
         m_sessionWidgets << m_pView;
     }

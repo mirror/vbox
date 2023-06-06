@@ -198,7 +198,7 @@ void UICustomFileSystemItem::setIsOpened(bool flag)
 
 QString UICustomFileSystemItem::path(bool fRemoveTrailingDelimiters /* = false */) const
 {
-    const QString &strPath = m_itemData.value(UICustomFileSystemModelColumn_Path, QString()).toString();
+    const QString &strPath = m_itemData.value(UICustomFileSystemModelColumn_ISOPath, QString()).toString();
 
     if (fRemoveTrailingDelimiters)
         return UIPathOperations::removeTrailingDelimiters(strPath);
@@ -210,7 +210,7 @@ void UICustomFileSystemItem::setPath(const QString &path)
 {
     if (path.isNull() || path.isEmpty())
         return;
-    m_itemData[UICustomFileSystemModelColumn_Path] = path;
+    m_itemData[UICustomFileSystemModelColumn_ISOPath] = path;
 }
 
 bool UICustomFileSystemItem::isUpDirectory() const
@@ -622,5 +622,5 @@ void UICustomFileSystemModel::initializeTree()
     m_pRootItem->setData(UICustomFileSystemModel::tr("Owner"), UICustomFileSystemModelColumn_Owner);
     m_pRootItem->setData(UICustomFileSystemModel::tr("Permissions"), UICustomFileSystemModelColumn_Permissions);
     m_pRootItem->setData(UICustomFileSystemModel::tr("Local Path"), UICustomFileSystemModelColumn_LocalPath);
-    m_pRootItem->setData(UICustomFileSystemModel::tr("Path"), UICustomFileSystemModelColumn_Path);
+    m_pRootItem->setData(UICustomFileSystemModel::tr("Path"), UICustomFileSystemModelColumn_ISOPath);
 }

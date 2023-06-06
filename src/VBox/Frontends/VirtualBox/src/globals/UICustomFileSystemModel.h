@@ -47,7 +47,7 @@ enum UICustomFileSystemModelColumn
     UICustomFileSystemModelColumn_ChangeTime,
     UICustomFileSystemModelColumn_Owner,
     UICustomFileSystemModelColumn_Permissions,
-    UICustomFileSystemModelColumn_Path,
+    UICustomFileSystemModelColumn_ISOPath,
     UICustomFileSystemModelColumn_LocalPath,
     UICustomFileSystemModelColumn_Max
 };
