@@ -4953,11 +4953,11 @@ IEM_CIMPL_DEF_5(iemCImpl_load_SReg_Greg, uint16_t, uSel, uint64_t, offSeg, uint8
         switch (enmEffOpSize)
         {
             case IEMMODE_16BIT:
-                *(uint16_t *)iemGRegRef(pVCpu, iGReg) = offSeg;
+                iemGRegStoreU16(pVCpu, iGReg, offSeg);
                 break;
             case IEMMODE_32BIT:
             case IEMMODE_64BIT:
-                *(uint64_t *)iemGRegRef(pVCpu, iGReg) = offSeg;
+                iemGRegStoreU64(pVCpu, iGReg, offSeg);
                 break;
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
@@ -5528,9 +5528,13 @@ IEM_CIMPL_DEF_2(iemCImpl_sldt_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_LDTR);
     switch (enmEffOpSize)
     {
-        case IEMMODE_16BIT: *(uint16_t *)iemGRegRef(pVCpu, iGReg) = pVCpu->cpum.GstCtx.ldtr.Sel; break;
-        case IEMMODE_32BIT: *(uint64_t *)iemGRegRef(pVCpu, iGReg) = pVCpu->cpum.GstCtx.ldtr.Sel; break;
-        case IEMMODE_64BIT: *(uint64_t *)iemGRegRef(pVCpu, iGReg) = pVCpu->cpum.GstCtx.ldtr.Sel; break;
+        case IEMMODE_16BIT:
+            iemGRegStoreU16(pVCpu, iGReg, pVCpu->cpum.GstCtx.ldtr.Sel);
+            break;
+        case IEMMODE_32BIT:
+        case IEMMODE_64BIT:
+            iemGRegStoreU64(pVCpu, iGReg, pVCpu->cpum.GstCtx.ldtr.Sel);
+            break;
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
     return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
@@ -5710,9 +5714,13 @@ IEM_CIMPL_DEF_2(iemCImpl_str_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_TR);
     switch (enmEffOpSize)
     {
-        case IEMMODE_16BIT: *(uint16_t *)iemGRegRef(pVCpu, iGReg) = pVCpu->cpum.GstCtx.tr.Sel; break;
-        case IEMMODE_32BIT: *(uint64_t *)iemGRegRef(pVCpu, iGReg) = pVCpu->cpum.GstCtx.tr.Sel; break;
-        case IEMMODE_64BIT: *(uint64_t *)iemGRegRef(pVCpu, iGReg) = pVCpu->cpum.GstCtx.tr.Sel; break;
+        case IEMMODE_16BIT:
+            iemGRegStoreU16(pVCpu, iGReg, pVCpu->cpum.GstCtx.tr.Sel);
+            break;
+        case IEMMODE_32BIT:
+        case IEMMODE_64BIT:
+            iemGRegStoreU64(pVCpu, iGReg, pVCpu->cpum.GstCtx.tr.Sel);
+            break;
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
     return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
@@ -5859,9 +5867,9 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
 
     /* Store it. */
     if (IEM_IS_64BIT_CODE(pVCpu))
-        *(uint64_t *)iemGRegRef(pVCpu, iGReg) = crX;
+        iemGRegStoreU64(pVCpu, iGReg, crX);
     else
-        *(uint64_t *)iemGRegRef(pVCpu, iGReg) = (uint32_t)crX;
+        iemGRegStoreU64(pVCpu, iGReg, (uint32_t)crX);
 
     return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
@@ -5892,19 +5900,25 @@ IEM_CIMPL_DEF_2(iemCImpl_smsw_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
     {
         case IEMMODE_16BIT:
             if (IEM_GET_TARGET_CPU(pVCpu) > IEMTARGETCPU_386)
-                *(uint16_t *)iemGRegRef(pVCpu, iGReg) = (uint16_t)u64GuestCr0;
+                iemGRegStoreU16(pVCpu, iGReg, (uint16_t)u64GuestCr0);
+            /* Unused bits are set on 386 and older CPU: */
             else if (IEM_GET_TARGET_CPU(pVCpu) >= IEMTARGETCPU_386)
-                *(uint16_t *)iemGRegRef(pVCpu, iGReg) = (uint16_t)u64GuestCr0 | 0xffe0;
+                iemGRegStoreU16(pVCpu, iGReg, (uint16_t)u64GuestCr0 | 0xffe0);
             else
-                *(uint16_t *)iemGRegRef(pVCpu, iGReg) = (uint16_t)u64GuestCr0 | 0xfff0;
+                iemGRegStoreU16(pVCpu, iGReg, (uint16_t)u64GuestCr0 | 0xfff0);
             break;
 
+/** @todo testcase for bits 31:16. We're not doing that correctly. */
+
         case IEMMODE_32BIT:
-            *(uint32_t *)iemGRegRef(pVCpu, iGReg) = (uint32_t)u64GuestCr0;
+            if (IEM_GET_TARGET_CPU(pVCpu) >= IEMTARGETCPU_386)
+                iemGRegStoreU32(pVCpu, iGReg, (uint32_t)u64GuestCr0);
+            else /** @todo test this! */
+                iemGRegStoreU32(pVCpu, iGReg, (uint32_t)u64GuestCr0 | UINT32_C(0x7fffffe0)); /* Unused bits are set on 386. */
             break;
 
         case IEMMODE_64BIT:
-            *(uint64_t *)iemGRegRef(pVCpu, iGReg) = u64GuestCr0;
+            iemGRegStoreU64(pVCpu, iGReg, u64GuestCr0);
             break;
 
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -6653,9 +6667,9 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Dd, uint8_t, iGReg, uint8_t, iDrReg)
     }
 
     if (IEM_IS_64BIT_CODE(pVCpu))
-        *(uint64_t *)iemGRegRef(pVCpu, iGReg) = drX;
+        iemGRegStoreU64(pVCpu, iGReg, drX);
     else
-        *(uint64_t *)iemGRegRef(pVCpu, iGReg) = (uint32_t)drX;
+        iemGRegStoreU32(pVCpu, iGReg, (uint32_t)drX);
 
     return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
@@ -6826,7 +6840,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Td, uint8_t, iGReg, uint8_t, iTrReg)
      * TR6/TR7 registers. Software which actually depends on the TR values
      * (different on 386/486) is exceedingly rare.
      */
-    uint64_t trX;
+    uint32_t trX;
     switch (iTrReg)
     {
         case 6:
@@ -6838,7 +6852,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Td, uint8_t, iGReg, uint8_t, iTrReg)
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* call checks */
     }
 
-    *(uint64_t *)iemGRegRef(pVCpu, iGReg) = (uint32_t)trX;
+    iemGRegStoreU32(pVCpu, iGReg, trX);
 
     return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
@@ -6872,11 +6886,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Td_Rd, uint8_t, iTrReg, uint8_t, iGReg)
     /*
      * Read the new value from the source register.
      */
-    uint64_t uNewTrX;
-    if (IEM_IS_64BIT_CODE(pVCpu)) /** @todo err... 64-bit 386? */
-        uNewTrX = iemGRegFetchU64(pVCpu, iGReg);
-    else
-        uNewTrX = iemGRegFetchU32(pVCpu, iGReg);
+    uint32_t uNewTrX = iemGRegFetchU32(pVCpu, iGReg);
 
     /*
      * Here we would do the actual setting if this weren't a dummy implementation.

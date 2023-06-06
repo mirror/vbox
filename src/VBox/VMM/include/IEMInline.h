@@ -1603,7 +1603,7 @@ DECLINLINE(void) iemRecalEffOpSize64DefaultAndIntelIgnoresOpSizePrefix(PVMCPUCC 
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iSegReg             The segment register.
  */
-DECLINLINE(PCPUMSELREG) iemSRegGetHid(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCEPT
+DECL_FORCE_INLINE(PCPUMSELREG) iemSRegGetHid(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCEPT
 {
     Assert(iSegReg < X86_SREG_COUNT);
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
@@ -1621,7 +1621,7 @@ DECLINLINE(PCPUMSELREG) iemSRegGetHid(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCE
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pSReg               The segment register.
  */
-DECLINLINE(PCPUMSELREG) iemSRegUpdateHid(PVMCPUCC pVCpu, PCPUMSELREG pSReg) RT_NOEXCEPT
+DECL_FORCE_INLINE(PCPUMSELREG) iemSRegUpdateHid(PVMCPUCC pVCpu, PCPUMSELREG pSReg) RT_NOEXCEPT
 {
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg));
     NOREF(pVCpu);
@@ -1637,7 +1637,7 @@ DECLINLINE(PCPUMSELREG) iemSRegUpdateHid(PVMCPUCC pVCpu, PCPUMSELREG pSReg) RT_N
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iSegReg             The segment register.
  */
-DECLINLINE(uint16_t *) iemSRegRef(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCEPT
+DECL_FORCE_INLINE(uint16_t *) iemSRegRef(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCEPT
 {
     Assert(iSegReg < X86_SREG_COUNT);
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
@@ -1652,7 +1652,7 @@ DECLINLINE(uint16_t *) iemSRegRef(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCEPT
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iSegReg             The segment register.
  */
-DECLINLINE(uint16_t) iemSRegFetchU16(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCEPT
+DECL_FORCE_INLINE(uint16_t) iemSRegFetchU16(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCEPT
 {
     Assert(iSegReg < X86_SREG_COUNT);
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
@@ -1667,7 +1667,7 @@ DECLINLINE(uint16_t) iemSRegFetchU16(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCEP
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iSegReg             The segment register.
  */
-DECLINLINE(uint64_t) iemSRegBaseFetchU64(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCEPT
+DECL_FORCE_INLINE(uint64_t) iemSRegBaseFetchU64(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCEPT
 {
     Assert(iSegReg < X86_SREG_COUNT);
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
@@ -1682,7 +1682,7 @@ DECLINLINE(uint64_t) iemSRegBaseFetchU64(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOE
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The general purpose register.
  */
-DECLINLINE(void *) iemGRegRef(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
+DECL_FORCE_INLINE(void *) iemGRegRef(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 16);
     return &pVCpu->cpum.GstCtx.aGRegs[iReg];
@@ -1699,7 +1699,7 @@ DECLINLINE(void *) iemGRegRef(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(uint8_t *) iemGRegRefU8(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
+DECL_FORCE_INLINE(uint8_t *) iemGRegRefU8(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     if (iReg < 4 || (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REX))
     {
@@ -1722,8 +1722,10 @@ DECLINLINE(uint8_t *) iemGRegRefU8(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
  * @param   iRegEx              The register.  The 16 first are regular ones,
  *                              whereas 16 thru 19 maps to AH, CH, DH and BH.
  */
-DECLINLINE(uint8_t *) iemGRegRefU8Ex(PVMCPUCC pVCpu, uint8_t iRegEx) RT_NOEXCEPT
+DECL_FORCE_INLINE(uint8_t *) iemGRegRefU8Ex(PVMCPUCC pVCpu, uint8_t iRegEx) RT_NOEXCEPT
 {
+    /** @todo This could be done by double indexing on little endian hosts:
+     *  return &pVCpu->cpum.GstCtx.aGRegs[iRegEx & 15].ab[iRegEx >> 4]; */
     if (iRegEx < 16)
         return &pVCpu->cpum.GstCtx.aGRegs[iRegEx].u8;
 
@@ -1740,7 +1742,7 @@ DECLINLINE(uint8_t *) iemGRegRefU8Ex(PVMCPUCC pVCpu, uint8_t iRegEx) RT_NOEXCEPT
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(uint16_t *) iemGRegRefU16(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
+DECL_FORCE_INLINE(uint16_t *) iemGRegRefU16(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 16);
     return &pVCpu->cpum.GstCtx.aGRegs[iReg].u16;
@@ -1754,7 +1756,7 @@ DECLINLINE(uint16_t *) iemGRegRefU16(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(uint32_t *) iemGRegRefU32(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
+DECL_FORCE_INLINE(uint32_t *) iemGRegRefU32(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 16);
     return &pVCpu->cpum.GstCtx.aGRegs[iReg].u32;
@@ -1768,7 +1770,7 @@ DECLINLINE(uint32_t *) iemGRegRefU32(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(int32_t *) iemGRegRefI32(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
+DECL_FORCE_INLINE(int32_t *) iemGRegRefI32(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 16);
     return (int32_t *)&pVCpu->cpum.GstCtx.aGRegs[iReg].u32;
@@ -1782,7 +1784,7 @@ DECLINLINE(int32_t *) iemGRegRefI32(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(uint64_t *) iemGRegRefU64(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
+DECL_FORCE_INLINE(uint64_t *) iemGRegRefU64(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 64);
     return &pVCpu->cpum.GstCtx.aGRegs[iReg].u64;
@@ -1796,7 +1798,7 @@ DECLINLINE(uint64_t *) iemGRegRefU64(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(int64_t *) iemGRegRefI64(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
+DECL_FORCE_INLINE(int64_t *) iemGRegRefI64(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 16);
     return (int64_t *)&pVCpu->cpum.GstCtx.aGRegs[iReg].u64;
@@ -1810,7 +1812,7 @@ DECLINLINE(int64_t *) iemGRegRefI64(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iSegReg             The segment selector.
  */
-DECLINLINE(uint64_t *) iemSRegBaseRefU64(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCEPT
+DECL_FORCE_INLINE(uint64_t *) iemSRegBaseRefU64(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOEXCEPT
 {
     Assert(iSegReg < X86_SREG_COUNT);
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
@@ -1826,7 +1828,7 @@ DECLINLINE(uint64_t *) iemSRegBaseRefU64(PVMCPUCC pVCpu, uint8_t iSegReg) RT_NOE
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(uint8_t) iemGRegFetchU8(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
+DECL_FORCE_INLINE(uint8_t) iemGRegFetchU8(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     return *iemGRegRefU8(pVCpu, iReg);
 }
@@ -1842,7 +1844,7 @@ DECLINLINE(uint8_t) iemGRegFetchU8(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
  * @param   iRegEx              The register.  The 16 first are regular ones,
  *                              whereas 16 thru 19 maps to AH, CH, DH and BH.
  */
-DECLINLINE(uint8_t) iemGRegFetchU8Ex(PVMCPUCC pVCpu, uint8_t iRegEx) RT_NOEXCEPT
+DECL_FORCE_INLINE(uint8_t) iemGRegFetchU8Ex(PVMCPUCC pVCpu, uint8_t iRegEx) RT_NOEXCEPT
 {
     return *iemGRegRefU8Ex(pVCpu, iRegEx);
 }
@@ -1855,7 +1857,7 @@ DECLINLINE(uint8_t) iemGRegFetchU8Ex(PVMCPUCC pVCpu, uint8_t iRegEx) RT_NOEXCEPT
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(uint16_t) iemGRegFetchU16(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
+DECL_FORCE_INLINE(uint16_t) iemGRegFetchU16(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 16);
     return pVCpu->cpum.GstCtx.aGRegs[iReg].u16;
@@ -1869,7 +1871,7 @@ DECLINLINE(uint16_t) iemGRegFetchU16(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(uint32_t) iemGRegFetchU32(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
+DECL_FORCE_INLINE(uint32_t) iemGRegFetchU32(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 16);
     return pVCpu->cpum.GstCtx.aGRegs[iReg].u32;
@@ -1883,10 +1885,53 @@ DECLINLINE(uint32_t) iemGRegFetchU32(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-DECLINLINE(uint64_t) iemGRegFetchU64(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
+DECL_FORCE_INLINE(uint64_t) iemGRegFetchU64(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
 {
     Assert(iReg < 16);
     return pVCpu->cpum.GstCtx.aGRegs[iReg].u64;
+}
+
+
+/**
+ * Stores a 16-bit value to a general purpose register.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   iReg                The register.
+ * @param   uValue              The value to store.
+ */
+DECL_FORCE_INLINE(void) iemGRegStoreU16(PVMCPUCC pVCpu, uint8_t iReg, uint16_t uValue) RT_NOEXCEPT
+{
+    Assert(iReg < 16);
+    pVCpu->cpum.GstCtx.aGRegs[iReg].u16 = uValue;
+}
+
+
+/**
+ * Stores a 32-bit value to a general purpose register, implicitly clearing high
+ * values.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   iReg                The register.
+ * @param   uValue              The value to store.
+ */
+DECL_FORCE_INLINE(void) iemGRegStoreU32(PVMCPUCC pVCpu, uint8_t iReg, uint32_t uValue) RT_NOEXCEPT
+{
+    Assert(iReg < 16);
+    pVCpu->cpum.GstCtx.aGRegs[iReg].u64 = uValue;
+}
+
+
+/**
+ * Stores a 64-bit value to a general purpose register.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   iReg                The register.
+ * @param   uValue              The value to store.
+ */
+DECL_FORCE_INLINE(void) iemGRegStoreU64(PVMCPUCC pVCpu, uint8_t iReg, uint64_t uValue) RT_NOEXCEPT
+{
+    Assert(iReg < 16);
+    pVCpu->cpum.GstCtx.aGRegs[iReg].u64 = uValue;
 }
 
 
@@ -1895,7 +1940,7 @@ DECLINLINE(uint64_t) iemGRegFetchU64(PVMCPUCC pVCpu, uint8_t iReg) RT_NOEXCEPT
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(RTGCPTR) iemRegGetEffRsp(PCVMCPU pVCpu) RT_NOEXCEPT
+DECL_FORCE_INLINE(RTGCPTR) iemRegGetEffRsp(PCVMCPU pVCpu) RT_NOEXCEPT
 {
     if (IEM_IS_64BIT_CODE(pVCpu))
         return pVCpu->cpum.GstCtx.rsp;
