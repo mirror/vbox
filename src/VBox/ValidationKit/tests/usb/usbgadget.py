@@ -511,7 +511,7 @@ class Session(TdTaskBase):
         self.fScrewedUpMsgState = False;
         self.fTryConnect    = fTryConnect;
 
-        if not self.startTask(cMsTimeout, False, "connecting", self.taskConnect, (cMsIdleFudge,)):
+        if not self.startTask(cMsTimeout, False, "connecting", self.utsTaskConnect, (cMsIdleFudge,)):
             raise base.GenError("startTask failed");
 
     def __del__(self):
@@ -561,7 +561,7 @@ class Session(TdTaskBase):
         self.fErr           = not fIgnoreErrors;
         self.fnTask         = fnTask;
         self.aTaskArgs      = aArgs;
-        self.oThread        = threading.Thread(target=self.taskThread, args=(), name='UTS-%s' % (sStatus,));
+        self.oThread        = threading.Thread(target=self.utsTaskThread, args=(), name='UTS-%s' % (sStatus,));
         self.oThread.setDaemon(True); # pylint: disable=deprecated-method
         self.msStart        = base.timestampMilli();
 
@@ -607,7 +607,7 @@ class Session(TdTaskBase):
             return oThread.isAlive(); # pylint: disable=no-member,deprecated-method
         return oThread.is_alive();
 
-    def taskThread(self):
+    def utsTaskThread(self):
         """
         The task thread function.
         This does some housekeeping activities around the real task method call.
@@ -617,14 +617,14 @@ class Session(TdTaskBase):
                 fnTask = self.fnTask;
                 oTaskRc = fnTask(*self.aTaskArgs);
             except:
-                reporter.fatalXcpt('taskThread', 15);
+                reporter.fatalXcpt('utsTaskThread', 15);
                 oTaskRc = None;
         else:
-            reporter.log('taskThread: cancelled already');
+            reporter.log('utsTaskThread: cancelled already');
 
         self.lockTask();
 
-        reporter.log('taskThread: signalling task with status "%s", oTaskRc=%s' % (self.sStatus, oTaskRc));
+        reporter.log('utsTaskThread: signalling task with status "%s", oTaskRc=%s' % (self.sStatus, oTaskRc));
         self.oTaskRc = oTaskRc;
         self.oThread = None;
         self.sStatus = '';
@@ -759,25 +759,25 @@ class Session(TdTaskBase):
     # Connection tasks.
     #
 
-    def taskConnect(self, cMsIdleFudge):
+    def utsTaskConnect(self, cMsIdleFudge):
         """Tries to connect to the UTS"""
         while not self.isCancelled():
-            reporter.log2('taskConnect: connecting ...');
+            reporter.log2('utsTaskConnect: connecting ...');
             rc = self.oTransport.connect(self.getMsLeft(500));
             if rc is True:
-                reporter.log('taskConnect: succeeded');
+                reporter.log('utsTaskConnect: succeeded');
                 return self.taskGreet(cMsIdleFudge);
             if rc is None:
-                reporter.log2('taskConnect: unable to connect');
+                reporter.log2('utsTaskConnect: unable to connect');
                 return None;
             if self.hasTimedOut():
-                reporter.log2('taskConnect: timed out');
+                reporter.log2('utsTaskConnect: timed out');
                 if not self.fTryConnect:
-                    reporter.maybeErr(self.fErr, 'taskConnect: timed out');
+                    reporter.maybeErr(self.fErr, 'utsTaskConnect: timed out');
                 return False;
             time.sleep(self.getMsLeft(1, 1000) / 1000.0);
         if not self.fTryConnect:
-            reporter.maybeErr(self.fErr, 'taskConnect: cancelled');
+            reporter.maybeErr(self.fErr, 'utsTaskConnect: cancelled');
         return False;
 
     def taskGreet(self, cMsIdleFudge):
