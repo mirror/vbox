@@ -553,6 +553,12 @@ class ThreadedFunctionVariation(object):
                     self.raiseProblem('Bogus function name in %s: %s' % (oStmt.sName, oStmt.sFn,));
                 aiSkipParams[oStmt.idxFn] = True;
 
+                # Skip the hint parameter (first) for IEM_MC_CALL_CIMPL_X.
+                if oStmt.sName.startswith('IEM_MC_CALL_CIMPL_'):
+                    assert oStmt.idxFn == 1;
+                    aiSkipParams[0] = True;
+
+
             # Check all the parameters for bogus references.
             for iParam, sParam in enumerate(oStmt.asParams):
                 if iParam not in aiSkipParams  and  sParam not in self.oParent.dVariables:
@@ -603,7 +609,11 @@ class ThreadedFunctionVariation(object):
                             # Skip certain macro invocations.
                             elif sRef in ('IEM_GET_HOST_CPU_FEATURES',
                                           'IEM_GET_GUEST_CPU_FEATURES',
-                                          'IEM_IS_GUEST_CPU_AMD'):
+                                          'IEM_IS_GUEST_CPU_AMD',
+                                          'IEM_IS_16BIT_CODE',
+                                          'IEM_IS_32BIT_CODE',
+                                          'IEM_IS_64BIT_CODE',
+                                          ):
                                 offParam = iai.McBlock.skipSpacesAt(sParam, offParam, len(sParam));
                                 if sParam[offParam] != '(':
                                     self.raiseProblem('Expected "(" following %s in "%s"' % (sRef, oStmt.renderCode(),));
@@ -613,7 +623,11 @@ class ThreadedFunctionVariation(object):
                                 offParam = offCloseParam + 1;
 
                                 # Skip any dereference following it, unless it's a predicate like IEM_IS_GUEST_CPU_AMD.
-                                if sRef not in ('IEM_IS_GUEST_CPU_AMD', ):
+                                if sRef not in ('IEM_IS_GUEST_CPU_AMD',
+                                                'IEM_IS_16BIT_CODE',
+                                                'IEM_IS_32BIT_CODE',
+                                                'IEM_IS_64BIT_CODE',
+                                                ):
                                     offParam = iai.McBlock.skipSpacesAt(sParam, offParam, len(sParam));
                                     if offParam + 2 <= len(sParam) and sParam[offParam : offParam + 2] == '->':
                                         offParam = iai.McBlock.skipSpacesAt(sParam, offParam + 2, len(sParam));
@@ -631,6 +645,7 @@ class ThreadedFunctionVariation(object):
                                   or sRef.startswith('X86_FCW_')
                                   or sRef.startswith('X86_XCPT_')
                                   or sRef.startswith('IEMMODE_')
+                                  or sRef.startswith('IEM_F_')
                                   or sRef.startswith('g_')
                                   or sRef in ( 'int8_t',    'int16_t',    'int32_t',
                                                'INT8_C',    'INT16_C',    'INT32_C',    'INT64_C',
@@ -794,12 +809,12 @@ class ThreadedFunction(object):
         # Currently only have variations for address mode.
         dByVariation = { oVar.sVariation: oVar for oVar in self.aoVariations };
         aoStmts = [
-            iai.McCppGeneric('switch (pVCpu->iem.s.enmCpuMode | (pVCpu->iem.s.enmEffAddrMode << 2))'),
-            iai.McCppGeneric('{'),
+            iai.McCppGeneric('switch ((pVCpu->iem.s.fExec & IEM_F_MODE_CPUMODE_MASK) | (pVCpu->iem.s.enmEffAddrMode << 5))'),
+            iai.McCppGeneric('{ /** @todo fix me */'),
         ];
         if ThreadedFunctionVariation.ksVariation_Addr64 in dByVariation:
             aoStmts.extend([
-                iai.McCppGeneric('    case IEMMODE_64BIT | (IEMMODE_64BIT << 2):'),
+                iai.McCppGeneric('    case IEMMODE_64BIT | (IEMMODE_64BIT << 5):'),
                 dByVariation[ThreadedFunctionVariation.ksVariation_Addr64].emitThreadedCallStmt(8),
                 iai.McCppGeneric('        break;'),
             ]);

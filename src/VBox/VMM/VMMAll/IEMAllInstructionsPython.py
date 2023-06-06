@@ -2062,8 +2062,8 @@ class McBlock(object):
     def parseMcCallCImpl(oSelf, sName, asParams):
         """ IEM_MC_CALL_CIMPL_0|1|2|3|4|5 """
         cArgs = int(sName[-1]);
-        oSelf.checkStmtParamCount(sName, asParams, 1 + cArgs);
-        return McStmtCall(sName, asParams, 0);
+        oSelf.checkStmtParamCount(sName, asParams, 2 + cArgs);
+        return McStmtCall(sName, asParams, 1);
 
     @staticmethod
     def stripComments(sCode):
@@ -2516,10 +2516,10 @@ g_dMcStmtParsers = {
     'IEM_MC_COPY_YREG_U128_ZX_VLMAX':                            McBlock.parseMcGeneric,
     'IEM_MC_COPY_YREG_U256_ZX_VLMAX':                            McBlock.parseMcGeneric,
     'IEM_MC_COPY_YREG_U64_ZX_VLMAX':                             McBlock.parseMcGeneric,
-    'IEM_MC_DEFER_TO_CIMPL_0':                                   McBlock.parseMcGeneric,
-    'IEM_MC_DEFER_TO_CIMPL_1':                                   McBlock.parseMcGeneric,
-    'IEM_MC_DEFER_TO_CIMPL_2':                                   McBlock.parseMcGeneric,
-    'IEM_MC_DEFER_TO_CIMPL_3':                                   McBlock.parseMcGeneric,
+    'IEM_MC_DEFER_TO_CIMPL_0_RET':                               McBlock.parseMcGeneric,
+    'IEM_MC_DEFER_TO_CIMPL_1_RET':                               McBlock.parseMcGeneric,
+    'IEM_MC_DEFER_TO_CIMPL_2_RET':                               McBlock.parseMcGeneric,
+    'IEM_MC_DEFER_TO_CIMPL_3_RET':                               McBlock.parseMcGeneric,
     'IEM_MC_END':                                                McBlock.parseMcGeneric,
     'IEM_MC_FETCH_EFLAGS':                                       McBlock.parseMcGeneric,
     'IEM_MC_FETCH_EFLAGS_U8':                                    McBlock.parseMcGeneric,
