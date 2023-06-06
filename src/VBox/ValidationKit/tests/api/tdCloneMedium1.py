@@ -253,7 +253,6 @@ class SubTstDrvCloneMedium1(base.SubTestDriverBase):
         reporter.testStart("testCloneToBase")
 
         try:
-            oVBox = self.oTstDrv.oVBoxMgr.getVirtualBox()
             oVM = self.oTstDrv.createTestVM('test-medium-clone-base', 1, None, 4)
             assert oVM is not None
 
@@ -264,12 +263,11 @@ class SubTstDrvCloneMedium1(base.SubTestDriverBase):
             sHddPath = os.path.join(self.oTstDrv.sScratchPath, 'CloneTest1.vdi')
             hd1 = oSession.createBaseHd(sHddPath, cb=1024*1024)
             if hd1 is None:
-                    fRc = False
+                fRc = False
             for i in range(2, cImages + 1):
                 sHddPath = os.path.join(self.oTstDrv.sScratchPath, 'CloneTest' + str(i) + '.vdi')
                 if i == 2:
                     oHd = oSession.createDiffHd(hd1, sHddPath)
-                    hd2 = oHd
                 else:
                     oHd = oSession.createDiffHd(oHd, sHddPath)
                 if oHd is None:
