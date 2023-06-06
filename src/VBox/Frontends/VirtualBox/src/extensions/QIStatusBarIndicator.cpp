@@ -67,7 +67,12 @@ void QIStatusBarIndicator::mousePressEvent(QMouseEvent *pEvent)
     // which would be some kind of overstated.
     if (pEvent->button() == Qt::LeftButton)
     {
-        QContextMenuEvent cme(QContextMenuEvent::Mouse, pEvent->pos(), pEvent->globalPos());
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
+        const QPoint gPos = pEvent->globalPos();
+#else
+        const QPoint gPos = pEvent->globalPosition().toPoint();
+#endif
+        QContextMenuEvent cme(QContextMenuEvent::Mouse, pEvent->pos(), gPos);
         emit sigContextMenuRequest(this, &cme);
         if (cme.isAccepted())
             pEvent->accept();

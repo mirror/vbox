@@ -1,4 +1,4 @@
-/* $Id$ */
+﻿/* $Id$ */
 /** @file
  * VBox Qt GUI - UIMouseHandler class implementation.
  */
@@ -649,12 +649,17 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                 {
                     /* Get mouse-event: */
                     QMouseEvent *pOldMouseEvent = static_cast<QMouseEvent*>(pEvent);
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
+                    const QPoint gPos = pOldMouseEvent->globalPos();
+#else
+                    const QPoint gPos = pOldMouseEvent->globalPosition().toPoint();
+#endif
 
                     /* Check which viewport(s) we *probably* hover: */
                     QWidgetList probablyHoveredViewports;
                     foreach (QWidget *pViewport, m_viewports)
                     {
-                        QPoint posInViewport = pViewport->mapFromGlobal(pOldMouseEvent->globalPos());
+                        QPoint posInViewport = pViewport->mapFromGlobal(gPos);
                         if (pViewport->geometry().adjusted(0, 0, 1, 1).contains(posInViewport))
                             probablyHoveredViewports << pViewport;
                     }
@@ -668,8 +673,8 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                     {
                         /* Prepare redirected mouse-move event: */
                         QMouseEvent *pNewMouseEvent = new QMouseEvent(pOldMouseEvent->type(),
-                                                                      pHoveredWidget->mapFromGlobal(pOldMouseEvent->globalPos()),
-                                                                      pOldMouseEvent->globalPos(),
+                                                                      pHoveredWidget->mapFromGlobal(gPos),
+                                                                      gPos,
                                                                       pOldMouseEvent->button(),
                                                                       pOldMouseEvent->buttons(),
                                                                       pOldMouseEvent->modifiers());
@@ -714,6 +719,11 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                 case QEvent::MouseButtonDblClick:
                 {
                     QMouseEvent *pMouseEvent = static_cast<QMouseEvent*>(pEvent);
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
+                    const QPoint gPos = pMouseEvent->globalPos();
+#else
+                    const QPoint gPos = pMouseEvent->globalPosition().toPoint();
+#endif
 #ifdef VBOX_WS_NIX
                     /* When the keyboard is captured, we also capture mouse button
                      * events, and release the keyboard and re-capture it delayed
@@ -731,7 +741,7 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                         m_iLastMouseWheelDelta = 0;
 
                     if (mouseEvent(pMouseEvent->type(), uScreenId,
-                                   pMouseEvent->pos(), pMouseEvent->globalPos(),
+                                   pMouseEvent->pos(), gPos,
                                    pMouseEvent->buttons(), 0, Qt::Horizontal))
                         return true;
                     break;

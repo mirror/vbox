@@ -315,6 +315,11 @@ bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
             {
                 const int margin = 3;
                 QMouseEvent *pMouseEvent = static_cast<QMouseEvent*>(pEvent);
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
+                const QPoint gPos = pMouseEvent->globalPos();
+#else
+                const QPoint gPos = pMouseEvent->globalPosition().toPoint();
+#endif
                 for (int i=1; i < count(); ++i)
                 {
                     QWidget *pHandle = handle(i);
@@ -322,7 +327,7 @@ bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
                         && pHandle != pWatched)
                     {
                         /* Check if we hit the handle */
-                        bool fMarginHit = QRect(pHandle->mapToGlobal(QPoint(0, 0)), pHandle->size()).adjusted(-margin, 0, margin, 0).contains(pMouseEvent->globalPos());
+                        bool fMarginHit = QRect(pHandle->mapToGlobal(QPoint(0, 0)), pHandle->size()).adjusted(-margin, 0, margin, 0).contains(gPos);
                         if (pEvent->type() == QEvent::MouseButtonPress)
                         {
                             /* If we have a handle position hit and the left button is pressed, start the grabbing. */
@@ -332,7 +337,7 @@ bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
                                 m_fHandleGrabbed = true;
                                 UICursor::setCursor(this, Qt::SplitHCursor);
                                 qApp->postEvent(pHandle, new QMouseEvent(pMouseEvent->type(),
-                                                                         pHandle->mapFromGlobal(pMouseEvent->globalPos()),
+                                                                         pHandle->mapFromGlobal(gPos),
                                                                          pMouseEvent->button(),
                                                                          pMouseEvent->buttons(),
                                                                          pMouseEvent->modifiers()));
@@ -348,7 +353,7 @@ bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
                             {
                                 UICursor::setCursor(this, Qt::SplitHCursor);
                                 qApp->postEvent(pHandle, new QMouseEvent(pMouseEvent->type(),
-                                                                         pHandle->mapFromGlobal(pMouseEvent->globalPos()),
+                                                                         pHandle->mapFromGlobal(gPos),
                                                                          pMouseEvent->button(),
                                                                          pMouseEvent->buttons(),
                                                                          pMouseEvent->modifiers()));

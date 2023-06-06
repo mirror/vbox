@@ -4039,8 +4039,13 @@ void UIStorageSettingsEditor::sltHandleMouseMove(QMouseEvent *pEvent)
         m_pModelStorage->setData(index, StorageModel::ToolTipType_Default, StorageModel::R_ToolTipType);
 
     /* Check whether we should initiate dragging: */
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
+    const QPoint gPos = pEvent->globalPos();
+#else
+    const QPoint gPos = pEvent->globalPosition().toPoint();
+#endif
     if (   !m_mousePressPosition.isNull()
-        && QLineF(pEvent->screenPos(), m_mousePressPosition).length() >= QApplication::startDragDistance())
+        && QLineF(gPos, m_mousePressPosition).length() >= QApplication::startDragDistance())
     {
         /* Forget last mouse press position: */
         m_mousePressPosition = QPoint();
@@ -4079,6 +4084,12 @@ void UIStorageSettingsEditor::sltHandleMouseClick(QMouseEvent *pEvent)
     /* Make sure event is valid: */
     AssertPtrReturnVoid(pEvent);
 
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
+    const QPoint gPos = pEvent->globalPos();
+#else
+    const QPoint gPos = pEvent->globalPosition().toPoint();
+#endif
+
     /* Acquire indexes: */
     const QModelIndex currentIndex = m_pTreeViewStorage->currentIndex();
     const QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->pos());
@@ -4086,7 +4097,7 @@ void UIStorageSettingsEditor::sltHandleMouseClick(QMouseEvent *pEvent)
 
     /* Remember last mouse press position only if we pressed current index: */
     if (index == currentIndex)
-        m_mousePressPosition = pEvent->globalPos();
+        m_mousePressPosition = gPos;
 
     /* Expander icon: */
     if (m_pModelStorage->data(index, StorageModel::R_IsController).toBool())
