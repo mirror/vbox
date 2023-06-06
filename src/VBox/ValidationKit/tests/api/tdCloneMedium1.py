@@ -245,8 +245,63 @@ class SubTstDrvCloneMedium1(base.SubTestDriverBase):
         reporter.testDone()
         return True
 
+    def testCloneToBase(self):
+        """
+        Tests cloning diff to base
+        """
+
+        reporter.testStart("testCloneToBase")
+
+        try:
+            oVBox = self.oTstDrv.oVBoxMgr.getVirtualBox()
+            oVM = self.oTstDrv.createTestVM('test-medium-clone-base', 1, None, 4)
+            assert oVM is not None
+
+            fRc = True
+            oSession = self.oTstDrv.openSession(oVM)
+            cImages = 10
+            reporter.log('Creating chain with %d disk images' % (cImages))
+            sHddPath = os.path.join(self.oTstDrv.sScratchPath, 'CloneTest1.vdi')
+            hd1 = oSession.createBaseHd(sHddPath, cb=1024*1024)
+            if hd1 is None:
+                    fRc = False
+            for i in range(2, cImages + 1):
+                sHddPath = os.path.join(self.oTstDrv.sScratchPath, 'CloneTest' + str(i) + '.vdi')
+                if i == 2:
+                    oHd = oSession.createDiffHd(hd1, sHddPath)
+                    hd2 = oHd
+                else:
+                    oHd = oSession.createDiffHd(oHd, sHddPath)
+                if oHd is None:
+                    fRc = False
+                    break
+
+
+            # modify the VM config, attach HDD
+            sController='SATA Controller'
+            fRc = fRc and oSession.attachHd(sHddPath, sController, fImmutable=False, fForceResource=False)
+            fRc = fRc and oSession.saveSettings()
+
+            try:
+                oProgressCom = oHd.cloneTo(hd1, (vboxcon.MediumVariant_Standard, ), None);
+            except:
+                reporter.errorXcpt('failed to clone medium %s to %s' % (oHd.name, hd1.name));
+                return False;
+            oProgress = vboxwrappers.ProgressWrapper(oProgressCom, self.oTstDrv.oVBoxMgr, self.oTstDrv,
+                                                     'clone disk %s to base disk %s' % (oHd.name, hd1.name));
+            oProgress.wait(cMsTimeout = 15*60*1000); # 15 min
+            oProgress.logResult();
+
+            fRc = oSession.close() and fRc
+            self.deleteVM(oVM)
+
+        except:
+            reporter.errorXcpt()
+
+        return reporter.testDone()[1] == 0
+
     def testAll(self):
-        return self.testCloneOnly() & self.testResizeAndClone()
+        return self.testCloneOnly() & self.testResizeAndClone() & self.testCloneToBase()
 
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))

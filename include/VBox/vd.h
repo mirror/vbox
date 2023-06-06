@@ -764,9 +764,9 @@ VBOXDDU_DECL(int) VDMerge(PVDISK pDisk, unsigned nImageFrom,
  * @return  VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  *
  * @param   pDiskFrom       Pointer to source HDD container.
- * @param   nImage          Image number, counts from 0. 0 is always base image
- *                          of container.
+ * @param   nImageFrom      Image number to copy from, counts from 0. 0 is always base image of container.
  * @param   pDiskTo         Pointer to destination HDD container.
+ * @param   nImageTo        Image number to copy to, counts from 0. 0 is always base image of container.
  * @param   pszBackend      Name of the image file backend to use (may be NULL
  *                          to use the same as the source, case insensitive).
  * @param   pszFilename     New name of the image (may be NULL to specify that
@@ -821,7 +821,7 @@ VBOXDDU_DECL(int) VDMerge(PVDISK pDisk, unsigned nImageFrom,
  *          image which is achieved with nImageFromSame and nImageToSame.
  *          Setting both to 0 can suppress a lot of I/O.
  */
-VBOXDDU_DECL(int) VDCopyEx(PVDISK pDiskFrom, unsigned nImage, PVDISK pDiskTo,
+VBOXDDU_DECL(int) VDCopyEx(PVDISK pDiskFrom, unsigned nImageFrom, PVDISK pDiskTo, unsigned nImageTo,
                            const char *pszBackend, const char *pszFilename,
                            bool fMoveByRename, uint64_t cbSize,
                            unsigned nImageFromSame, unsigned nImageToSame,
@@ -1841,4 +1841,3 @@ RT_C_DECLS_END
 /** @} */
 
 #endif /* !VBOX_INCLUDED_vd_h */
-

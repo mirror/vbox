@@ -2052,7 +2052,7 @@ static int vdWriteHelper(PVDISK pDisk, PVDIMAGE pImage, uint64_t uOffset,
  * Internal: Copies the content of one disk to another one applying optimizations
  * to speed up the copy process if possible.
  */
-static int vdCopyHelper(PVDISK pDiskFrom, PVDIMAGE pImageFrom, PVDISK pDiskTo,
+static int vdCopyHelper(PVDISK pDiskFrom, PVDIMAGE pImageFrom, PVDISK pDiskTo, PVDIMAGE pImageTo,
                         uint64_t cbSize, unsigned cImagesFromRead, unsigned cImagesToRead,
                         bool fSuppressRedundantIo, PVDINTERFACEPROGRESS pIfProgress,
                         PVDINTERFACEPROGRESS pDstIfProgress)
@@ -2067,8 +2067,8 @@ static int vdCopyHelper(PVDISK pDiskFrom, PVDIMAGE pImageFrom, PVDISK pDiskTo,
     bool fBlockwiseCopy = false;
     unsigned uProgressOld = 0;
 
-    LogFlowFunc(("pDiskFrom=%#p pImageFrom=%#p pDiskTo=%#p cbSize=%llu cImagesFromRead=%u cImagesToRead=%u fSuppressRedundantIo=%RTbool pIfProgress=%#p pDstIfProgress=%#p\n",
-                 pDiskFrom, pImageFrom, pDiskTo, cbSize, cImagesFromRead, cImagesToRead, fSuppressRedundantIo, pDstIfProgress, pDstIfProgress));
+    LogFlowFunc(("pDiskFrom=%#p pImageFrom=%#p pDiskTo=%#p pImageTo=%#p cbSize=%llu cImagesFromRead=%u cImagesToRead=%u fSuppressRedundantIo=%RTbool pIfProgress=%#p pDstIfProgress=%#p\n",
+                 pDiskFrom, pImageFrom, pDiskTo, pImageTo, cbSize, cImagesFromRead, cImagesToRead, fSuppressRedundantIo, pDstIfProgress, pDstIfProgress));
 
     if (   (fSuppressRedundantIo || (cImagesFromRead > 0))
         && RTListIsEmpty(&pDiskFrom->ListFilterChainRead))
@@ -2146,7 +2146,7 @@ static int vdCopyHelper(PVDISK pDiskFrom, PVDIMAGE pImageFrom, PVDISK pDiskTo,
             fLockWriteTo = true;
 
             /* Only do collapsed I/O if we are copying the data blockwise. */
-            rc = vdWriteHelperEx(pDiskTo, pDiskTo->pLast, NULL, uOffset, pvBuf,
+            rc = vdWriteHelperEx(pDiskTo, pImageTo, NULL, uOffset, pvBuf,
                                  cbThisRead, VDIOCTX_FLAGS_DONT_SET_MODIFIED_FLAG /* fFlags */,
                                  fBlockwiseCopy ? cImagesToRead : 0);
             if (RT_FAILURE(rc))
@@ -7182,7 +7182,7 @@ VBOXDDU_DECL(int) VDMerge(PVDISK pDisk, unsigned nImageFrom,
 }
 
 
-VBOXDDU_DECL(int) VDCopyEx(PVDISK pDiskFrom, unsigned nImage, PVDISK pDiskTo,
+VBOXDDU_DECL(int) VDCopyEx(PVDISK pDiskFrom, unsigned nImageFrom, PVDISK pDiskTo, unsigned nImageTo,
                            const char *pszBackend, const char *pszFilename,
                            bool fMoveByRename, uint64_t cbSize,
                            unsigned nImageFromSame, unsigned nImageToSame,
@@ -7196,8 +7196,8 @@ VBOXDDU_DECL(int) VDCopyEx(PVDISK pDiskFrom, unsigned nImage, PVDISK pDiskTo,
     bool fLockReadFrom = false, fLockWriteFrom = false, fLockWriteTo = false;
     PVDIMAGE pImageTo = NULL;
 
-    LogFlowFunc(("pDiskFrom=%#p nImage=%u pDiskTo=%#p pszBackend=\"%s\" pszFilename=\"%s\" fMoveByRename=%d cbSize=%llu nImageFromSame=%u nImageToSame=%u uImageFlags=%#x pDstUuid=%#p uOpenFlags=%#x pVDIfsOperation=%#p pDstVDIfsImage=%#p pDstVDIfsOperation=%#p\n",
-                 pDiskFrom, nImage, pDiskTo, pszBackend, pszFilename, fMoveByRename, cbSize, nImageFromSame, nImageToSame, uImageFlags, pDstUuid, uOpenFlags, pVDIfsOperation, pDstVDIfsImage, pDstVDIfsOperation));
+    LogFlowFunc(("pDiskFrom=%#p nImageFrom=%u pDiskTo=%#p nImageTo=%u pszBackend=\"%s\" pszFilename=\"%s\" fMoveByRename=%d cbSize=%llu nImageFromSame=%u nImageToSame=%u uImageFlags=%#x pDstUuid=%#p uOpenFlags=%#x pVDIfsOperation=%#p pDstVDIfsImage=%#p pDstVDIfsOperation=%#p\n",
+                 pDiskFrom, nImageFrom, nImageTo, pDiskTo, pszBackend, pszFilename, fMoveByRename, cbSize, nImageFromSame, nImageToSame, uImageFlags, pDstUuid, uOpenFlags, pVDIfsOperation, pDstVDIfsImage, pDstVDIfsOperation));
 
     /* Check arguments. */
     AssertReturn(pDiskFrom, VERR_INVALID_POINTER);
@@ -7211,12 +7211,12 @@ VBOXDDU_DECL(int) VDCopyEx(PVDISK pDiskFrom, unsigned nImage, PVDISK pDiskTo,
         rc2 = vdThreadStartRead(pDiskFrom);
         AssertRC(rc2);
         fLockReadFrom = true;
-        PVDIMAGE pImageFrom = vdGetImageByNumber(pDiskFrom, nImage);
+        PVDIMAGE pImageFrom = vdGetImageByNumber(pDiskFrom, nImageFrom);
         AssertPtrBreakStmt(pImageFrom, rc = VERR_VD_IMAGE_NOT_FOUND);
         AssertPtrBreakStmt(pDiskTo, rc = VERR_INVALID_POINTER);
         AssertMsg(pDiskTo->u32Signature == VDISK_SIGNATURE,
                   ("u32Signature=%08x\n", pDiskTo->u32Signature));
-        AssertMsgBreakStmt(   (nImageFromSame < nImage || nImageFromSame == VD_IMAGE_CONTENT_UNKNOWN)
+        AssertMsgBreakStmt(   (nImageFromSame < nImageFrom || nImageFromSame == VD_IMAGE_CONTENT_UNKNOWN)
                            && (nImageToSame < pDiskTo->cImages || nImageToSame == VD_IMAGE_CONTENT_UNKNOWN)
                            && (   (nImageFromSame == VD_IMAGE_CONTENT_UNKNOWN && nImageToSame == VD_IMAGE_CONTENT_UNKNOWN)
                                || (nImageFromSame != VD_IMAGE_CONTENT_UNKNOWN && nImageToSame != VD_IMAGE_CONTENT_UNKNOWN)),
@@ -7224,7 +7224,7 @@ VBOXDDU_DECL(int) VDCopyEx(PVDISK pDiskFrom, unsigned nImage, PVDISK pDiskTo,
                            rc = VERR_INVALID_PARAMETER);
 
         /* Move the image. */
-        if (pDiskFrom == pDiskTo)
+        if (fMoveByRename)
         {
             /* Rename only works when backends are the same, are file based
              * and the rename method is implemented. */
@@ -7344,20 +7344,22 @@ VBOXDDU_DECL(int) VDCopyEx(PVDISK pDiskFrom, unsigned nImage, PVDISK pDiskTo,
                 AssertRC(rc2);
                 fLockWriteTo = true;
 
+                pImageTo = vdGetImageByNumber(pDiskTo, nImageTo);
+                AssertPtrBreakStmt(pImageTo, rc = VERR_VD_IMAGE_NOT_FOUND);
                 if (RT_SUCCESS(rc) && !RTUuidIsNull(&ImageUuid))
-                     pDiskTo->pLast->Backend->pfnSetUuid(pDiskTo->pLast->pBackendData, &ImageUuid);
+                     pImageTo->Backend->pfnSetUuid(pImageTo->pBackendData, &ImageUuid);
             }
             if (RT_FAILURE(rc))
                 break;
 
-            pImageTo = pDiskTo->pLast;
+            pImageTo = vdGetImageByNumber(pDiskTo, nImageTo);
             AssertPtrBreakStmt(pImageTo, rc = VERR_VD_IMAGE_NOT_FOUND);
 
             cbSize = RT_MIN(cbSize, cbSizeFrom);
         }
         else
         {
-            pImageTo = pDiskTo->pLast;
+            pImageTo = vdGetImageByNumber(pDiskTo, nImageTo);
             AssertPtrBreakStmt(pImageTo, rc = VERR_VD_IMAGE_NOT_FOUND);
 
             uint64_t cbSizeTo;
@@ -7386,17 +7388,18 @@ VBOXDDU_DECL(int) VDCopyEx(PVDISK pDiskFrom, unsigned nImage, PVDISK pDiskTo,
         /* Whether we can take the optimized copy path (false) or not.
          * Don't optimize if the image existed or if it is a child image. */
         bool fSuppressRedundantIo = (   !(pszFilename == NULL || cImagesTo > 0)
-                                     || (nImageToSame != VD_IMAGE_CONTENT_UNKNOWN));
+                                     || (nImageToSame != VD_IMAGE_CONTENT_UNKNOWN)
+                                     || (pDiskTo == pDiskFrom));
         unsigned cImagesFromReadBack, cImagesToReadBack;
 
         if (nImageFromSame == VD_IMAGE_CONTENT_UNKNOWN)
             cImagesFromReadBack = 0;
         else
         {
-            if (nImage == VD_LAST_IMAGE)
+            if (nImageFrom == VD_LAST_IMAGE)
                 cImagesFromReadBack = pDiskFrom->cImages - nImageFromSame - 1;
             else
-                cImagesFromReadBack = nImage - nImageFromSame;
+                cImagesFromReadBack = nImageFrom - nImageFromSame;
         }
 
         if (nImageToSame == VD_IMAGE_CONTENT_UNKNOWN)
@@ -7405,7 +7408,7 @@ VBOXDDU_DECL(int) VDCopyEx(PVDISK pDiskFrom, unsigned nImage, PVDISK pDiskTo,
             cImagesToReadBack = pDiskTo->cImages - nImageToSame - 1;
 
         /* Copy the data. */
-        rc = vdCopyHelper(pDiskFrom, pImageFrom, pDiskTo, cbSize,
+        rc = vdCopyHelper(pDiskFrom, pImageFrom, pDiskTo, pImageTo, cbSize,
                           cImagesFromReadBack, cImagesToReadBack,
                           fSuppressRedundantIo, pIfProgress, pDstIfProgress);
 
@@ -7491,7 +7494,7 @@ VBOXDDU_DECL(int) VDCopy(PVDISK pDiskFrom, unsigned nImage, PVDISK pDiskTo,
                          PVDINTERFACE pDstVDIfsImage,
                          PVDINTERFACE pDstVDIfsOperation)
 {
-    return VDCopyEx(pDiskFrom, nImage, pDiskTo, pszBackend, pszFilename, fMoveByRename,
+    return VDCopyEx(pDiskFrom, nImage, pDiskTo, VD_IMAGE_CONTENT_UNKNOWN, pszBackend, pszFilename, fMoveByRename,
                     cbSize, VD_IMAGE_CONTENT_UNKNOWN, VD_IMAGE_CONTENT_UNKNOWN,
                     uImageFlags, pDstUuid, uOpenFlags, pVDIfsOperation,
                     pDstVDIfsImage, pDstVDIfsOperation);
@@ -9673,4 +9676,3 @@ DECLCALLBACK(int) genericFileComposeName(PVDINTERFACE pConfig, char **pszName)
     *pszName = NULL;
     return VINF_SUCCESS;
 }
-

@@ -3168,14 +3168,29 @@ HRESULT Medium::resizeAndCloneTo(const ComPtr<IMedium> &aTarget,
             &&  pTarget->m->state != MediumState_Created)
             throw pTarget->i_setStateError();
 
+        /* Determine if cloning within the list */
+        bool cloningWithinList = false;
+        ComObjPtr<Medium> pMedium = i_getParent();
+        while (!pMedium.isNull() && pMedium != pTarget)
+            pMedium = pMedium->i_getParent();
+        if (pMedium == pTarget)
+            cloningWithinList = true;
+
         /* Build the source lock list. */
         MediumLockList *pSourceMediumLockList(new MediumLockList());
         alock.release();
-        hrc = i_createMediumLockList(true /* fFailIfInaccessible */,
-                                     NULL /* pToLockWrite */,
-                                     false /* fMediumLockWriteAll */,
-                                     NULL,
-                                     *pSourceMediumLockList);
+        if (!cloningWithinList)
+            hrc = i_createMediumLockList(true /* fFailIfInaccessible */,
+                                         NULL /* pToLockWrite */,
+                                         false /* fMediumLockWriteAll */,
+                                         NULL,
+                                         *pSourceMediumLockList);
+        else
+            hrc = i_createMediumLockList(true /* fFailIfInaccessible */,
+                                         pTarget /* pToLockWrite */,
+                                         false /* fMediumLockWriteAll */,
+                                         NULL,
+                                         *pSourceMediumLockList);
         alock.acquire();
         if (FAILED(hrc))
         {
@@ -3186,11 +3201,12 @@ HRESULT Medium::resizeAndCloneTo(const ComPtr<IMedium> &aTarget,
         /* Build the target lock list (including the to-be parent chain). */
         MediumLockList *pTargetMediumLockList(new MediumLockList());
         alock.release();
-        hrc = pTarget->i_createMediumLockList(true /* fFailIfInaccessible */,
-                                              pTarget /* pToLockWrite */,
-                                              false /* fMediumLockWriteAll */,
-                                              pParent,
-                                              *pTargetMediumLockList);
+        if (!cloningWithinList)
+            hrc = pTarget->i_createMediumLockList(true /* fFailIfInaccessible */,
+                                                  pTarget /* pToLockWrite */,
+                                                  false /* fMediumLockWriteAll */,
+                                                  pParent,
+                                                  *pTargetMediumLockList);
         alock.acquire();
         if (FAILED(hrc))
         {
@@ -9566,6 +9582,8 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
     const ComObjPtr<Medium> &pParent = task.mParent;
 
     bool fCreatingTarget = false;
+    bool cloningWithinList = false;
+    unsigned uTargetIdx = VD_LAST_IMAGE;
 
     uint64_t size = 0, logicalSize = 0;
     MediumVariant_T variant = MediumVariant_Standard;
@@ -9615,28 +9633,52 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
                 task.mpSourceMediumLockList->GetBegin();
             MediumLockList::Base::const_iterator sourceListEnd =
                 task.mpSourceMediumLockList->GetEnd();
+            unsigned i=0;
             for (MediumLockList::Base::const_iterator it = sourceListBegin;
                  it != sourceListEnd;
                  ++it)
             {
                 const MediumLock &mediumLock = *it;
                 const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
-                AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
-
-                /* sanity check */
-                Assert(pMedium->m->state == MediumState_LockedRead);
-
-                /** Open all media in read-only mode. */
-                vrc = VDOpen(hdd,
-                             pMedium->m->strFormat.c_str(),
-                             pMedium->m->strLocationFull.c_str(),
-                             VD_OPEN_FLAGS_READONLY | m->uOpenFlagsDef,
-                             pMedium->m->vdImageIfaces);
-                if (RT_FAILURE(vrc))
-                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
-                                       tr("Could not open the medium storage unit '%s'%s"),
-                                       pMedium->m->strLocationFull.c_str(),
-                                       i_vdError(vrc).c_str());
+                if (pMedium == pTarget)
+                {
+                    cloningWithinList = true;
+                    uTargetIdx = i;
+                    AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+                    Assert(pMedium->m->state == MediumState_LockedWrite);
+                    unsigned uOpenFlags = VD_OPEN_FLAGS_NORMAL;
+                    if (pMedium->m->type == MediumType_Shareable)
+                        uOpenFlags |= VD_OPEN_FLAGS_SHAREABLE;
+                    /* Open target in appropriate mode. */
+                    vrc = VDOpen(hdd,
+                                 pMedium->m->strFormat.c_str(),
+                                 pMedium->m->strLocationFull.c_str(),
+                                 uOpenFlags | m->uOpenFlagsDef,
+                                 pMedium->m->vdImageIfaces);
+                    if (RT_FAILURE(vrc))
+                        throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                           tr("Could not open the medium storage unit '%s'%s"),
+                                           pMedium->m->strLocationFull.c_str(),
+                                           i_vdError(vrc).c_str());
+                }
+                i++;
+                if (!cloningWithinList || pMedium != pTarget)
+                {
+                    AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+                    /* sanity check */
+                    Assert(pMedium->m->state == MediumState_LockedRead);
+                    /** Open all media in read-only mode. */
+                    vrc = VDOpen(hdd,
+                                 pMedium->m->strFormat.c_str(),
+                                 pMedium->m->strLocationFull.c_str(),
+                                 VD_OPEN_FLAGS_READONLY | m->uOpenFlagsDef,
+                                 pMedium->m->vdImageIfaces);
+                    if (RT_FAILURE(vrc))
+                        throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                           tr("Could not open the medium storage unit '%s'%s"),
+                                           pMedium->m->strLocationFull.c_str(),
+                                           i_vdError(vrc).c_str());
+                }
             }
 
             Utf8Str targetFormat(pTarget->m->strFormat);
@@ -9667,94 +9709,145 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
 
             try
             {
-                /* Open all media in the target chain. */
-                MediumLockList::Base::const_iterator targetListBegin =
-                    task.mpTargetMediumLockList->GetBegin();
-                MediumLockList::Base::const_iterator targetListEnd =
-                    task.mpTargetMediumLockList->GetEnd();
-                for (MediumLockList::Base::const_iterator it = targetListBegin;
-                     it != targetListEnd;
-                     ++it)
+                if (!cloningWithinList)
                 {
-                    const MediumLock &mediumLock = *it;
-                    const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
-
-                    /* If the target medium is not created yet there's no
-                     * reason to open it. */
-                    if (pMedium == pTarget && fCreatingTarget)
-                        continue;
-
-                    AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
-
-                    /* sanity check */
-                    Assert(    pMedium->m->state == MediumState_LockedRead
-                            || pMedium->m->state == MediumState_LockedWrite);
-
-                    unsigned uOpenFlags = VD_OPEN_FLAGS_NORMAL;
-                    if (pMedium->m->state != MediumState_LockedWrite)
-                        uOpenFlags = VD_OPEN_FLAGS_READONLY;
-                    if (pMedium->m->type == MediumType_Shareable)
-                        uOpenFlags |= VD_OPEN_FLAGS_SHAREABLE;
-
-                    /* Open all media in appropriate mode. */
-                    vrc = VDOpen(targetHdd,
-                                 pMedium->m->strFormat.c_str(),
-                                 pMedium->m->strLocationFull.c_str(),
-                                 uOpenFlags | m->uOpenFlagsDef,
-                                 pMedium->m->vdImageIfaces);
+                    /* Open all media in the target chain. */
+                    MediumLockList::Base::const_iterator targetListBegin =
+                        task.mpTargetMediumLockList->GetBegin();
+                    MediumLockList::Base::const_iterator targetListEnd =
+                        task.mpTargetMediumLockList->GetEnd();
+                    for (MediumLockList::Base::const_iterator it = targetListBegin;
+                         it != targetListEnd;
+                         ++it)
+                    {
+                        const MediumLock &mediumLock = *it;
+                        const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
+                        /* If the target medium is not created yet there's no
+                        * reason to open it. */
+                        if (pMedium == pTarget && fCreatingTarget)
+                            continue;
+                        AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+                        /* sanity check */
+                        Assert(    pMedium->m->state == MediumState_LockedRead
+                               || pMedium->m->state == MediumState_LockedWrite);
+                        unsigned uOpenFlags = VD_OPEN_FLAGS_NORMAL;
+                        if (pMedium->m->state != MediumState_LockedWrite)
+                            uOpenFlags = VD_OPEN_FLAGS_READONLY;
+                        if (pMedium->m->type == MediumType_Shareable)
+                            uOpenFlags |= VD_OPEN_FLAGS_SHAREABLE;
+                        /* Open all media in appropriate mode. */
+                        vrc = VDOpen(targetHdd,
+                                     pMedium->m->strFormat.c_str(),
+                                     pMedium->m->strLocationFull.c_str(),
+                                     uOpenFlags | m->uOpenFlagsDef,
+                                     pMedium->m->vdImageIfaces);
+                        if (RT_FAILURE(vrc))
+                            throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                               tr("Could not open the medium storage unit '%s'%s"),
+                                               pMedium->m->strLocationFull.c_str(),
+                                               i_vdError(vrc).c_str());
+                    }
+                    /* target isn't locked, but no changing data is accessed */
+                    if (task.midxSrcImageSame == UINT32_MAX)
+                    {
+                        vrc = VDCopy(hdd,
+                                     VD_LAST_IMAGE,
+                                     targetHdd,
+                                     targetFormat.c_str(),
+                                     (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
+                                     false /* fMoveByRename */,
+                                     task.mTargetLogicalSize /* cbSize */,
+                                     task.mVariant & ~(MediumVariant_NoCreateDir | MediumVariant_Formatted | MediumVariant_VmdkESX | MediumVariant_VmdkRawDisk),
+                                     targetId.raw(),
+                                     VD_OPEN_FLAGS_NORMAL | m->uOpenFlagsDef,
+                                     NULL /* pVDIfsOperation */,
+                                     pTarget->m->vdImageIfaces,
+                                     task.mVDOperationIfaces);
+                    }
+                    else
+                    {
+                        vrc = VDCopyEx(hdd,
+                                       VD_LAST_IMAGE,
+                                       targetHdd,
+                                       VD_LAST_IMAGE,
+                                       targetFormat.c_str(),
+                                       (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
+                                       false /* fMoveByRename */,
+                                       task.mTargetLogicalSize /* cbSize */,
+                                       task.midxSrcImageSame,
+                                       task.midxDstImageSame,
+                                       task.mVariant & ~(MediumVariant_NoCreateDir | MediumVariant_Formatted | MediumVariant_VmdkESX | MediumVariant_VmdkRawDisk),
+                                       targetId.raw(),
+                                       VD_OPEN_FLAGS_NORMAL | m->uOpenFlagsDef,
+                                       NULL /* pVDIfsOperation */,
+                                       pTarget->m->vdImageIfaces,
+                                       task.mVDOperationIfaces);
+                    }
                     if (RT_FAILURE(vrc))
                         throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
-                                           tr("Could not open the medium storage unit '%s'%s"),
-                                           pMedium->m->strLocationFull.c_str(),
-                                           i_vdError(vrc).c_str());
-                }
+                                           tr("Could not create the clone medium '%s'%s"),
+                                           targetLocation.c_str(), i_vdError(vrc).c_str());
 
-                /* target isn't locked, but no changing data is accessed */
-                if (task.midxSrcImageSame == UINT32_MAX)
-                {
-                    vrc = VDCopy(hdd,
-                                 VD_LAST_IMAGE,
-                                 targetHdd,
-                                 targetFormat.c_str(),
-                                 (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
-                                 false /* fMoveByRename */,
-                                 task.mTargetLogicalSize /* cbSize */,
-                                 task.mVariant & ~(MediumVariant_NoCreateDir | MediumVariant_Formatted | MediumVariant_VmdkESX | MediumVariant_VmdkRawDisk),
-                                 targetId.raw(),
-                                 VD_OPEN_FLAGS_NORMAL | m->uOpenFlagsDef,
-                                 NULL /* pVDIfsOperation */,
-                                 pTarget->m->vdImageIfaces,
-                                 task.mVDOperationIfaces);
+                    size = VDGetFileSize(targetHdd, VD_LAST_IMAGE);
+                    logicalSize = VDGetSize(targetHdd, VD_LAST_IMAGE);
+                    unsigned uImageFlags;
+                    vrc = VDGetImageFlags(targetHdd, 0, &uImageFlags);
+                    if (RT_SUCCESS(vrc))
+                        variant = (MediumVariant_T)uImageFlags;
                 }
-                else
+                else //cloningWithinList - only use source chain
                 {
-                    vrc = VDCopyEx(hdd,
-                                   VD_LAST_IMAGE,
-                                   targetHdd,
-                                   targetFormat.c_str(),
-                                   (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
-                                   false /* fMoveByRename */,
-                                   task.mTargetLogicalSize /* cbSize */,
-                                   task.midxSrcImageSame,
-                                   task.midxDstImageSame,
-                                   task.mVariant & ~(MediumVariant_NoCreateDir | MediumVariant_Formatted | MediumVariant_VmdkESX | MediumVariant_VmdkRawDisk),
-                                   targetId.raw(),
-                                   VD_OPEN_FLAGS_NORMAL | m->uOpenFlagsDef,
-                                   NULL /* pVDIfsOperation */,
-                                   pTarget->m->vdImageIfaces,
-                                   task.mVDOperationIfaces);
-                }
-                if (RT_FAILURE(vrc))
-                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
-                                       tr("Could not create the clone medium '%s'%s"),
-                                       targetLocation.c_str(), i_vdError(vrc).c_str());
+                    if (task.midxSrcImageSame == UINT32_MAX)
+                    {
+                        vrc = VDCopyEx(hdd,
+                                       VD_LAST_IMAGE,
+                                       hdd,
+                                       uTargetIdx,
+                                       targetFormat.c_str(),
+                                       (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
+                                       false /* fMoveByRename */,
+                                       task.mTargetLogicalSize /* cbSize */,
+                                       VD_IMAGE_CONTENT_UNKNOWN,
+                                       VD_IMAGE_CONTENT_UNKNOWN,
+                                       task.mVariant & ~(MediumVariant_NoCreateDir | MediumVariant_Formatted | MediumVariant_VmdkESX | MediumVariant_VmdkRawDisk),
+                                       targetId.raw(),
+                                       VD_OPEN_FLAGS_NORMAL | m->uOpenFlagsDef,
+                                       NULL /* pVDIfsOperation */,
+                                       pTarget->m->vdImageIfaces,
+                                       task.mVDOperationIfaces);
+                    }
+                    else
+                    {
+                        vrc = VDCopyEx(hdd,
+                                       VD_LAST_IMAGE,
+                                       hdd,
+                                       uTargetIdx,
+                                       targetFormat.c_str(),
+                                       (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
+                                       false /* fMoveByRename */,
+                                       task.mTargetLogicalSize /* cbSize */,
+                                       task.midxSrcImageSame,
+                                       task.midxDstImageSame,
+                                       task.mVariant & ~(MediumVariant_NoCreateDir | MediumVariant_Formatted | MediumVariant_VmdkESX | MediumVariant_VmdkRawDisk),
+                                       targetId.raw(),
+                                       VD_OPEN_FLAGS_NORMAL | m->uOpenFlagsDef,
+                                       NULL /* pVDIfsOperation */,
+                                       pTarget->m->vdImageIfaces,
+                                       task.mVDOperationIfaces);
+                    }
+                    if (RT_FAILURE(vrc))
+                        throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                           tr("Could not create the clone medium '%s'%s"),
+                                           targetLocation.c_str(), i_vdError(vrc).c_str());
 
-                size = VDGetFileSize(targetHdd, VD_LAST_IMAGE);
-                logicalSize = VDGetSize(targetHdd, VD_LAST_IMAGE);
-                unsigned uImageFlags;
-                vrc = VDGetImageFlags(targetHdd, 0, &uImageFlags);
-                if (RT_SUCCESS(vrc))
-                    variant = (MediumVariant_T)uImageFlags;
+                    size = VDGetFileSize(hdd, uTargetIdx);
+                    logicalSize = VDGetSize(hdd, uTargetIdx);
+                    unsigned uImageFlags;
+                    vrc = VDGetImageFlags(hdd, 0, &uImageFlags);
+                    if (RT_SUCCESS(vrc))
+                        variant = (MediumVariant_T)uImageFlags;
+
+                }
             }
             catch (HRESULT hrcXcpt) { hrcTmp = hrcXcpt; }
 
