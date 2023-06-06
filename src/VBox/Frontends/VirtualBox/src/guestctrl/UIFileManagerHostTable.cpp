@@ -160,10 +160,10 @@ UIFileManagerHostTable::UIFileManagerHostTable(UIActionPool *pActionPool, QWidge
         if (!item)
             continue;
 
-        item->setData(fileInfo.size(),         UICustomFileSystemModelColumn_Size);
-        item->setData(fileInfo.lastModified(), UICustomFileSystemModelColumn_ChangeTime);
-        item->setData(fileInfo.owner(),        UICustomFileSystemModelColumn_Owner);
-        item->setData(permissionString(fileInfo.permissions()),  UICustomFileSystemModelColumn_Permissions);
+        item->setData(fileInfo.size(),         UICustomFileSystemModelData_Size);
+        item->setData(fileInfo.lastModified(), UICustomFileSystemModelData_ChangeTime);
+        item->setData(fileInfo.owner(),        UICustomFileSystemModelData_Owner);
+        item->setData(permissionString(fileInfo.permissions()),  UICustomFileSystemModelData_Permissions);
         item->setPath(fileInfo.absoluteFilePath());
         /* if the item is a symlink set the target path and
            check the target if it is a directory: */

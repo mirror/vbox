@@ -40,16 +40,16 @@
 /* COM includes: */
 #include "COMEnums.h"
 
-enum UICustomFileSystemModelColumn
+enum UICustomFileSystemModelData
 {
-    UICustomFileSystemModelColumn_Name = 0,
-    UICustomFileSystemModelColumn_Size,
-    UICustomFileSystemModelColumn_ChangeTime,
-    UICustomFileSystemModelColumn_Owner,
-    UICustomFileSystemModelColumn_Permissions,
-    UICustomFileSystemModelColumn_ISOPath,
-    UICustomFileSystemModelColumn_LocalPath,
-    UICustomFileSystemModelColumn_Max
+    UICustomFileSystemModelData_Name = 0,
+    UICustomFileSystemModelData_Size,
+    UICustomFileSystemModelData_ChangeTime,
+    UICustomFileSystemModelData_Owner,
+    UICustomFileSystemModelData_Permissions,
+    UICustomFileSystemModelData_ISOPath,
+    UICustomFileSystemModelData_LocalPath,
+    UICustomFileSystemModelData_Max
 };
 
 /** A UICustomFileSystemItem instance is a tree node representing a file object (file, directory, etc). The tree contructed
@@ -74,7 +74,7 @@ public:
     int columnCount() const;
     QVariant data(int column) const;
     void setData(const QVariant &data, int index);
-    void setData(const QVariant &data, UICustomFileSystemModelColumn enmColumn);
+    void setData(const QVariant &data, UICustomFileSystemModelData enmColumn);
     int row() const;
     UICustomFileSystemItem *parentItem();
 
@@ -120,7 +120,7 @@ private:
     QList<UICustomFileSystemItem*>         m_childItems;
     /** Used to find children by name */
     QMap<QString, UICustomFileSystemItem*> m_childMap;
-    QMap<UICustomFileSystemModelColumn, QVariant>  m_itemData;
+    QMap<UICustomFileSystemModelData, QVariant>  m_itemData;
     UICustomFileSystemItem *m_parentItem;
     bool             m_bIsOpened;
     /** If this is a symlink m_targetPath keeps the absolute path of the target */

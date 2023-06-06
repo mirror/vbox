@@ -52,10 +52,10 @@ UICustomFileSystemItem::UICustomFileSystemItem(const QString &strName, UICustomF
     , m_fIsDriveItem(false)
     , m_fIsHidden(false)
 {
-    for (int i = static_cast<int>(UICustomFileSystemModelColumn_Name);
-         i < static_cast<int>(UICustomFileSystemModelColumn_Max); ++i)
-        m_itemData[static_cast<UICustomFileSystemModelColumn>(i)] = QVariant();
-    m_itemData[UICustomFileSystemModelColumn_Name] = strName;
+    for (int i = static_cast<int>(UICustomFileSystemModelData_Name);
+         i < static_cast<int>(UICustomFileSystemModelData_Max); ++i)
+        m_itemData[static_cast<UICustomFileSystemModelData>(i)] = QVariant();
+    m_itemData[UICustomFileSystemModelData_Name] = strName;
     if (parent)
         parent->appendChild(this);
 }
@@ -131,12 +131,12 @@ int UICustomFileSystemItem::columnCount() const
 
 QVariant UICustomFileSystemItem::data(int column) const
 {
-    return m_itemData.value(static_cast<UICustomFileSystemModelColumn>(column), QVariant());
+    return m_itemData.value(static_cast<UICustomFileSystemModelData>(column), QVariant());
 }
 
 QString UICustomFileSystemItem::name() const
 {
-    QVariant data = m_itemData.value(UICustomFileSystemModelColumn_Name, QVariant());
+    QVariant data = m_itemData.value(UICustomFileSystemModelData_Name, QVariant());
     if (!data.canConvert(QMetaType::QString))
         return QString();
     return data.toString();
@@ -144,10 +144,10 @@ QString UICustomFileSystemItem::name() const
 
 void UICustomFileSystemItem::setData(const QVariant &data, int index)
 {
-    m_itemData[static_cast<UICustomFileSystemModelColumn>(index)] = data;
+    m_itemData[static_cast<UICustomFileSystemModelData>(index)] = data;
 }
 
-void UICustomFileSystemItem::setData(const QVariant &data, UICustomFileSystemModelColumn enmColumn)
+void UICustomFileSystemItem::setData(const QVariant &data, UICustomFileSystemModelData enmColumn)
 {
     m_itemData[enmColumn] = data;
 }
@@ -198,7 +198,7 @@ void UICustomFileSystemItem::setIsOpened(bool flag)
 
 QString UICustomFileSystemItem::path(bool fRemoveTrailingDelimiters /* = false */) const
 {
-    const QString &strPath = m_itemData.value(UICustomFileSystemModelColumn_ISOPath, QString()).toString();
+    const QString &strPath = m_itemData.value(UICustomFileSystemModelData_ISOPath, QString()).toString();
 
     if (fRemoveTrailingDelimiters)
         return UIPathOperations::removeTrailingDelimiters(strPath);
@@ -210,7 +210,7 @@ void UICustomFileSystemItem::setPath(const QString &path)
 {
     if (path.isNull() || path.isEmpty())
         return;
-    m_itemData[UICustomFileSystemModelColumn_ISOPath] = path;
+    m_itemData[UICustomFileSystemModelData_ISOPath] = path;
 }
 
 bool UICustomFileSystemItem::isUpDirectory() const
@@ -306,19 +306,19 @@ bool UICustomFileSystemProxyModel::lessThan(const QModelIndex &left, const QMode
             return (sortOrder() == Qt::DescendingOrder);
 
         /* If the sort column is QDateTime than handle it correctly: */
-        if (sortColumn() == UICustomFileSystemModelColumn_ChangeTime)
+        if (sortColumn() == UICustomFileSystemModelData_ChangeTime)
         {
-            QVariant dataLeft = pLeftItem->data(UICustomFileSystemModelColumn_ChangeTime);
-            QVariant dataRight = pRightItem->data(UICustomFileSystemModelColumn_ChangeTime);
+            QVariant dataLeft = pLeftItem->data(UICustomFileSystemModelData_ChangeTime);
+            QVariant dataRight = pRightItem->data(UICustomFileSystemModelData_ChangeTime);
             QDateTime leftDateTime = dataLeft.toDateTime();
             QDateTime rightDateTime = dataRight.toDateTime();
             return (leftDateTime < rightDateTime);
         }
         /* When we show human readble sizes in size column sorting gets confused, so do it here: */
-        else if(sortColumn() == UICustomFileSystemModelColumn_Size)
+        else if(sortColumn() == UICustomFileSystemModelData_Size)
         {
-            qulonglong leftSize = pLeftItem->data(UICustomFileSystemModelColumn_Size).toULongLong();
-            qulonglong rightSize = pRightItem->data(UICustomFileSystemModelColumn_Size).toULongLong();
+            qulonglong leftSize = pLeftItem->data(UICustomFileSystemModelData_Size).toULongLong();
+            qulonglong rightSize = pRightItem->data(UICustomFileSystemModelData_Size).toULongLong();
             return (leftSize < rightSize);
 
         }
@@ -435,7 +435,7 @@ QVariant UICustomFileSystemModel::data(const QModelIndex &index, int role) const
     if (role == Qt::DisplayRole || role == Qt::EditRole)
     {
         /* dont show anything but the name for up directories: */
-        if (item->isUpDirectory() && index.column() != UICustomFileSystemModelColumn_Name)
+        if (item->isUpDirectory() && index.column() != UICustomFileSystemModelData_Name)
             return QVariant();
         /* Format date/time column: */
         if (item->data(index.column()).canConvert(QMetaType::QDateTime))
@@ -445,7 +445,7 @@ QVariant UICustomFileSystemModel::data(const QModelIndex &index, int role) const
                 return dateTime.toString("dd.MM.yyyy hh:mm:ss");
         }
         /* Decide whether to show human-readable file object sizes: */
-        if (index.column() == UICustomFileSystemModelColumn_Size)
+        if (index.column() == UICustomFileSystemModelData_Size)
         {
             if (m_fShowHumanReadableSizes)
             {
@@ -617,10 +617,10 @@ void UICustomFileSystemModel::deleteItem(UICustomFileSystemItem* pItem)
 void UICustomFileSystemModel::initializeTree()
 {
     m_pRootItem = new UICustomFileSystemItem(UICustomFileSystemModel::tr("Name"), 0, KFsObjType_Directory);
-    m_pRootItem->setData(UICustomFileSystemModel::tr("Size"), UICustomFileSystemModelColumn_Size);
-    m_pRootItem->setData(UICustomFileSystemModel::tr("Change Time"), UICustomFileSystemModelColumn_ChangeTime);
-    m_pRootItem->setData(UICustomFileSystemModel::tr("Owner"), UICustomFileSystemModelColumn_Owner);
-    m_pRootItem->setData(UICustomFileSystemModel::tr("Permissions"), UICustomFileSystemModelColumn_Permissions);
-    m_pRootItem->setData(UICustomFileSystemModel::tr("Local Path"), UICustomFileSystemModelColumn_LocalPath);
-    m_pRootItem->setData(UICustomFileSystemModel::tr("Path"), UICustomFileSystemModelColumn_ISOPath);
+    m_pRootItem->setData(UICustomFileSystemModel::tr("Size"), UICustomFileSystemModelData_Size);
+    m_pRootItem->setData(UICustomFileSystemModel::tr("Change Time"), UICustomFileSystemModelData_ChangeTime);
+    m_pRootItem->setData(UICustomFileSystemModel::tr("Owner"), UICustomFileSystemModelData_Owner);
+    m_pRootItem->setData(UICustomFileSystemModel::tr("Permissions"), UICustomFileSystemModelData_Permissions);
+    m_pRootItem->setData(UICustomFileSystemModel::tr("Local Path"), UICustomFileSystemModelData_LocalPath);
+    m_pRootItem->setData(UICustomFileSystemModel::tr("Path"), UICustomFileSystemModelData_ISOPath);
 }

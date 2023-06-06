@@ -823,8 +823,8 @@ void UIFileManagerTable::prepareObjects()
                 this, &UIFileManagerTable::sltSelectionChanged);
         connect(m_pView, &UIGuestControlFileView::customContextMenuRequested,
                 this, &UIFileManagerTable::sltCreateFileViewContextMenu);
-        m_pView->hideColumn(UICustomFileSystemModelColumn_ISOPath);
-        m_pView->hideColumn(UICustomFileSystemModelColumn_LocalPath);
+        m_pView->hideColumn(UICustomFileSystemModelData_ISOPath);
+        m_pView->hideColumn(UICustomFileSystemModelData_LocalPath);
         m_sessionWidgets << m_pView;
     }
 
@@ -1216,7 +1216,7 @@ void UIFileManagerTable::sltHandleItemRenameAttempt(UICustomFileSystemItem *pIte
     if (!renameItem(pItem, strNewName))
     {
         /* Restore the previous name. relist the view: */
-        pItem->setData(strOldName, static_cast<int>(UICustomFileSystemModelColumn_Name));
+        pItem->setData(strOldName, static_cast<int>(UICustomFileSystemModelData_Name));
         relist();
         emit sigLogOutput(QString(pItem->path()).append(" could not be renamed"), QString(), FileManagerLogType_Error);
     }
@@ -1307,11 +1307,11 @@ void UIFileManagerTable::retranslateUi()
     UICustomFileSystemItem *pRootItem = rootItem();
     if (pRootItem)
     {
-        pRootItem->setData(UIFileManager::tr("Name"), UICustomFileSystemModelColumn_Name);
-        pRootItem->setData(UIFileManager::tr("Size"), UICustomFileSystemModelColumn_Size);
-        pRootItem->setData(UIFileManager::tr("Change Time"), UICustomFileSystemModelColumn_ChangeTime);
-        pRootItem->setData(UIFileManager::tr("Owner"), UICustomFileSystemModelColumn_Owner);
-        pRootItem->setData(UIFileManager::tr("Permissions"), UICustomFileSystemModelColumn_Permissions);
+        pRootItem->setData(UIFileManager::tr("Name"), UICustomFileSystemModelData_Name);
+        pRootItem->setData(UIFileManager::tr("Size"), UICustomFileSystemModelData_Size);
+        pRootItem->setData(UIFileManager::tr("Change Time"), UICustomFileSystemModelData_ChangeTime);
+        pRootItem->setData(UIFileManager::tr("Owner"), UICustomFileSystemModelData_Owner);
+        pRootItem->setData(UIFileManager::tr("Permissions"), UICustomFileSystemModelData_Permissions);
     }
 }
 
