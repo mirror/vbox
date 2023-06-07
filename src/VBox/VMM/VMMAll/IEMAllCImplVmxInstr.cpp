@@ -9840,13 +9840,18 @@ IEM_CIMPL_DEF_3(iemCImpl_invvpid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvvpidDesc, u
 }
 
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+#if defined(VBOX_WITH_NESTED_HWVIRT_VMX_EPT) || defined(VBOX_WITH_IEM_RECOMPILER) /* HACK ALERT: Linking trick. */
 /**
  * Implements 'INVEPT'.
  */
 IEM_CIMPL_DEF_3(iemCImpl_invept, uint8_t, iEffSeg, RTGCPTR, GCPtrInveptDesc, uint64_t, uInveptType)
 {
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
     return iemVmxInvept(pVCpu, cbInstr, iEffSeg, GCPtrInveptDesc, uInveptType, NULL /* pExitInfo */);
+# else
+    RT_NOREF(pVCpu, cbInstr, iEffSeg, GCPtrInveptDesc, uInveptType);
+    AssertFailedReturn(VERR_IEM_ASPECT_NOT_IMPLEMENTED);
+# endif
 }
 #endif
 

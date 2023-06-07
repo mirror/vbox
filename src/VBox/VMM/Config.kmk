@@ -67,7 +67,16 @@ ifndef IEM_WITHOUT_VEX
 else
  VMM_COMMON_DEFS += IEM_WITHOUT_VEX
 endif
-ifdef VBOX_WITH_IEM_TLB ## @todo VMX code doesn't compile with TLBs enabled.
+ifdef VBOX_WITH_IEM_RECOMPILER # Selectely removing hwvirt doesn't work yet with the recompiler. Python code doesn't check #ifdefs.
+ VMM_COMMON_DEFS += VBOX_WITH_IEM_RECOMPILER IEM_WITH_CODE_TLB IEM_WITH_DATA_TLB
+ VMM_COMMON_DEFS += VBOX_WITH_NESTED_HWVIRT_VMX
+ #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT # Busted with TLB enabled.
+ # VMM_COMMON_DEFS += VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+ #endif
+ ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+  VMM_COMMON_DEFS += VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+ endif
+else ifdef VBOX_WITH_IEM_TLB ## @todo VMX code doesn't compile with TLBs enabled.
  VMM_COMMON_DEFS  += IEM_WITH_CODE_TLB IEM_WITH_DATA_TLB
 else
  ifdef VBOX_WITH_NESTED_HWVIRT_VMX
