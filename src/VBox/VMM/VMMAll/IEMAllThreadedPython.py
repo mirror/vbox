@@ -235,7 +235,7 @@ class ThreadedFunctionVariation(object):
             if sRef.startswith('i8'):
                 return 'int8_t';
             if sRef.startswith('i16'):
-                return 'int32_t';
+                return 'int16_t';
             if sRef.startswith('i32'):
                 return 'int32_t';
             if sRef.startswith('i64'):
@@ -403,7 +403,8 @@ class ThreadedFunctionVariation(object):
                 elif oNewStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH', 'IEM_MC_REL_JMP_S8_AND_FINISH',
                                         'IEM_MC_REL_JMP_S16_AND_FINISH', 'IEM_MC_REL_JMP_S32_AND_FINISH'):
                     oNewStmt.asParams.append(self.dParamRefs['cbInstr'][0].sNewName);
-                    if oNewStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH',  'IEM_MC_REL_JMP_S32_AND_FINISH'):
+                    if (    oNewStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH', )
+                        and self.sVariation != self.ksVariation_16_Pre386):
                         oNewStmt.asParams.append(self.dParamRefs['pVCpu->iem.s.enmEffOpSize'][0].sNewName);
                     oNewStmt.sName += '_THREADED';
                     if self.sVariation in (self.ksVariation_64, self.ksVariation_64_Addr32):
@@ -536,7 +537,8 @@ class ThreadedFunctionVariation(object):
                                'IEM_MC_CALL_CIMPL_2', 'IEM_MC_CALL_CIMPL_3', 'IEM_MC_CALL_CIMPL_4', 'IEM_MC_CALL_CIMPL_5', ):
                 self.aoParamRefs.append(ThreadedParamRef('IEM_GET_INSTR_LEN(pVCpu)', 'uint4_t', oStmt, sStdRef = 'cbInstr'));
 
-            if oStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH',  'IEM_MC_REL_JMP_S32_AND_FINISH'):
+            if (    oStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH',)
+                and self.sVariation != self.ksVariation_16_Pre386):
                 self.aoParamRefs.append(ThreadedParamRef('pVCpu->iem.s.enmEffOpSize', 'IEMMODE', oStmt));
 
             if oStmt.sName == 'IEM_MC_CALC_RM_EFF_ADDR':

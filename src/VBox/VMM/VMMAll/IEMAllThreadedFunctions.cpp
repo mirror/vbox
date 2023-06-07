@@ -94,19 +94,59 @@
 #undef  IEM_MC_ADVANCE_RIP_AND_FINISH
 
 
-/** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length as param. */
-#define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED(a_i8, a_cbInstr, a_enmEffOpSize) \
-    return iemRegRipRelativeJumpS8AndFinishClearingRF(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize)
+/** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length as extra
+ *  parameter, for use in 16-bit code on a pre-386 CPU. */
+#define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC16(a_i8, a_cbInstr) \
+    return iemRegIp16RelativeJumpS8AndFinishClearingRF(pVCpu, a_cbInstr, (a_i8))
+
+/** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length and operand
+ * size as extra parameters, for use in 16-bit and 32-bit code on 386 and
+ * later CPUs. */
+#define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC32(a_i8, a_cbInstr, a_enmEffOpSize) \
+    return iemRegEip32RelativeJumpS8AndFinishClearingRF(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize)
+
+/** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length and operand
+ * size as extra parameters, for use in 64-bit code. */
+#define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC64(a_i8, a_cbInstr, a_enmEffOpSize) \
+    return iemRegRip64RelativeJumpS8AndFinishClearingRF(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize)
+
 #undef  IEM_MC_REL_JMP_S8_AND_FINISH
 
-/** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as param. */
-#define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED(a_i16, a_cbInstr) \
-    return iemRegRipRelativeJumpS16AndFinishClearingRF(pVCpu, a_cbInstr, (a_i16))
+
+/** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as
+ *  param, for use in 16-bit code on a pre-386 CPU. */
+#define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC16(a_i16, a_cbInstr) \
+    return iemRegEip32RelativeJumpS16AndFinishClearingRF(pVCpu, a_cbInstr, (a_i16))
+
+/** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as
+ *  param, for use in 16-bit and 32-bit code on 386 and later CPUs. */
+#define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC32(a_i16, a_cbInstr) \
+    return iemRegEip32RelativeJumpS16AndFinishClearingRF(pVCpu, a_cbInstr, (a_i16))
+
+/** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as
+ *  param, for use in 64-bit code. */
+#define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC64(a_i16, a_cbInstr) \
+    return iemRegRip64RelativeJumpS16AndFinishClearingRF(pVCpu, a_cbInstr, (a_i16))
+
 #undef  IEM_MC_REL_JMP_S16_AND_FINISH
 
-/** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as param. */
-#define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED(a_i32, a_cbInstr, a_enmEffOpSize) \
-    return iemRegRipRelativeJumpS32AndFinishClearingRF(pVCpu, a_cbInstr, (a_i32), a_enmEffOpSize)
+
+/** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
+ *  an extra parameter - dummy for pre-386 variations not eliminated by the
+ *  python script. */
+#define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC16(a_i32, a_cbInstr) \
+    do { RT_NOREF(pVCpu, a_i32, a_cbInstr); AssertFailedReturn(VERR_IEM_IPE_9); } while (0)
+
+/** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 16-bit and 32-bit code on 386+. */
+#define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC32(a_i32, a_cbInstr) \
+    return iemRegEip32RelativeJumpS32AndFinishClearingRF(pVCpu, a_cbInstr, (a_i32))
+
+/** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 64-bit code. */
+#define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC64(a_i32, a_cbInstr) \
+    return iemRegRip64RelativeJumpS32AndFinishClearingRF(pVCpu, a_cbInstr, (a_i32))
+
 #undef  IEM_MC_REL_JMP_S32_AND_FINISH
 
 
