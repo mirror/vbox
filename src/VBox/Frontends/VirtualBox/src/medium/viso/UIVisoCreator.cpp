@@ -30,6 +30,7 @@
 #include <QMenuBar>
 #include <QPushButton>
 #include <QStyle>
+#include <QTextStream>
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
@@ -526,29 +527,6 @@ void UIVisoCreatorWidget::prepareVerticalToolBar()
 }
 
 /* static */
-int UIVisoCreatorWidget::visoWriteQuotedString(PRTSTREAM pStrmDst, const char *pszPrefix,
-                                               QString const &rStr, const char *pszPostFix)
-{
-    QByteArray const utf8Array   = rStr.toUtf8();
-    const char      *apszArgv[2] = { utf8Array.constData(), NULL };
-    char            *pszQuoted;
-    int vrc = RTGetOptArgvToString(&pszQuoted, apszArgv, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
-    if (RT_SUCCESS(vrc))
-    {
-        if (pszPrefix)
-            vrc = RTStrmPutStr(pStrmDst, pszPrefix);
-        if (RT_SUCCESS(vrc))
-        {
-            vrc = RTStrmPutStr(pStrmDst, pszQuoted);
-            if (pszPostFix && RT_SUCCESS(vrc))
-                vrc = RTStrmPutStr(pStrmDst, pszPostFix);
-        }
-        RTStrFree(pszQuoted);
-    }
-    return vrc;
-}
-
-/* static */
 QUuid UIVisoCreatorWidget::createViso(UIActionPool *pActionPool, QWidget *pParent,
                                       const QString &strDefaultFolder /* = QString() */,
                                       const QString &strMachineName /* = QString() */)
@@ -563,12 +541,12 @@ QUuid UIVisoCreatorWidget::createViso(UIActionPool *pActionPool, QWidget *pParen
 
     if (pVisoCreator->exec(false /* not application modal */))
     {
-        QStringList files = pVisoCreator->entryList();
+        QStringList VisoEntryList = pVisoCreator->entryList();
         QString strVisoName = pVisoCreator->visoName();
         if (strVisoName.isEmpty())
             strVisoName = strMachineName;
 
-        if (files.empty() || files[0].isEmpty())
+        if (VisoEntryList.empty() || VisoEntryList[0].isEmpty())
         {
             delete pVisoCreator;
             return QUuid();
@@ -576,58 +554,26 @@ QUuid UIVisoCreatorWidget::createViso(UIActionPool *pActionPool, QWidget *pParen
 
         gEDataManager->setVISOCreatorRecentFolder(pVisoCreator->currentPath());
 
-        /* Produce the VISO. */
-        char szVisoPath[RTPATH_MAX];
-        QString strFileName = QString("%1%2").arg(strVisoName).arg(".viso");
-
         QString strVisoSaveFolder(strDefaultFolder);
         if (strVisoSaveFolder.isEmpty())
             strVisoSaveFolder = uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD);
 
-        int vrc = RTPathJoin(szVisoPath, sizeof(szVisoPath), strVisoSaveFolder.toUtf8().constData(), strFileName.toUtf8().constData());
-        if (RT_SUCCESS(vrc))
+        if (QDir(strVisoSaveFolder).exists())
         {
-            PRTSTREAM pStrmViso;
-            vrc = RTStrmOpen(szVisoPath, "w", &pStrmViso);
-            if (RT_SUCCESS(vrc))
+            QString strFileName = QString("%1/%2%3").arg(strVisoSaveFolder).arg(strVisoName).arg(".viso");
+
+            QFile file(strFileName);
+            if (file.open(QFile::WriteOnly | QFile::Truncate))
             {
-                RTUUID Uuid;
-                vrc = RTUuidCreate(&Uuid);
-                if (RT_SUCCESS(vrc))
-                {
-                    RTStrmPrintf(pStrmViso, "--iprt-iso-maker-file-marker-bourne-sh %RTuuid\n", &Uuid);
-                    vrc = UIVisoCreatorWidget::visoWriteQuotedString(pStrmViso, "--volume-id=", strVisoName, "\n");
-
-                    for (int iFile = 0; iFile < files.size() && RT_SUCCESS(vrc); iFile++)
-                        vrc = UIVisoCreatorWidget::visoWriteQuotedString(pStrmViso, NULL, files[iFile], "\n");
-
-                    /* Append custom options if any to the file: */
-                    const QStringList &customOptions = pVisoCreator->customOptions();
-                    foreach (QString strLine, customOptions)
-                        RTStrmPrintf(pStrmViso, "%s\n", strLine.toUtf8().constData());
-
-                    RTStrmFlush(pStrmViso);
-                    if (RT_SUCCESS(vrc))
-                        vrc = RTStrmError(pStrmViso);
-                }
-
-                RTStrmClose(pStrmViso);
+                QTextStream stream(&file);
+                stream << QString("%1 %2").arg("--iprt-iso-maker-file-marker-bourne-sh").arg(QUuid::createUuid().toString());
+                stream << "\n";
+                stream << VisoEntryList.join("\n");
+                stream << pVisoCreator->customOptions().join("\n");
+                file.close();
             }
         }
-
-        /* Done. */
-        if (RT_SUCCESS(vrc))
-        {
-            delete pVisoCreator;
-            return uiCommon().openMedium(UIMediumDeviceType_DVD, QString(szVisoPath), pParent);
-        }
-        /** @todo error message. */
-        else
-        {
-            delete pVisoCreator;
-            return QUuid();
-        }
-    }
+    } // if (pVisoCreator->exec(false /* not application modal */))
     delete pVisoCreator;
     return QUuid();
 }
