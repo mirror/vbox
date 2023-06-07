@@ -27,9 +27,11 @@
 
 /* Qt includes: */
 #include <QGridLayout>
+#include <QLabel>
 #include <QMenuBar>
 #include <QPushButton>
 #include <QStyle>
+#include <QStatusBar>
 #include <QTextStream>
 
 /* GUI includes: */
@@ -61,7 +63,7 @@
 *********************************************************************************************************************************/
 
 UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pParent,
-                                         bool fShowToolBar,const QString& strMachineName /* = QString() */)
+                                         bool fShowToolBar, const QString& strMachineName /* = QString() */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pActionConfiguration(0)
     , m_pActionOptions(0)
@@ -77,7 +79,6 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pPa
     , m_pToolBar(0)
     , m_pVerticalToolBar(0)
     , m_pMainMenu(0)
-    , m_strMachineName(strMachineName)
     , m_pCreatorOptionsPanel(0)
     , m_pConfigurationPanel(0)
     , m_pActionPool(pActionPool)
@@ -527,7 +528,7 @@ void UIVisoCreatorWidget::prepareVerticalToolBar()
 }
 
 /* static */
-QUuid UIVisoCreatorWidget::createViso(UIActionPool *pActionPool, QWidget *pParent,
+QUuid UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParent,
                                       const QString &strDefaultFolder /* = QString() */,
                                       const QString &strMachineName /* = QString() */)
 {
@@ -584,16 +585,17 @@ QUuid UIVisoCreatorWidget::createViso(UIActionPool *pActionPool, QWidget *pParen
 *********************************************************************************************************************************/
 UIVisoCreatorDialog::UIVisoCreatorDialog(UIActionPool *pActionPool, QWidget *pParent, const QString& strMachineName /* = QString() */)
     : QIWithRetranslateUI<QIWithRestorableGeometry<QIMainDialog> >(pParent)
-    , m_strMachineName(strMachineName)
     , m_pVisoCreatorWidget(0)
     , m_pButtonBox(0)
+    , m_pStatusBar(0)
+    , m_pStatusLabel(0)
     , m_pActionPool(pActionPool)
     , m_iGeometrySaveTimerId(-1)
 {
     /* Make sure that the base class does not close this dialog upon pressing escape.
        we manage escape key here with special casing: */
     setRejectByEscape(false);
-    prepareWidgets();
+    prepareWidgets(strMachineName);
     prepareConnections();
     loadSettings();
 }
@@ -632,7 +634,7 @@ void    UIVisoCreatorDialog::setCurrentPath(const QString &strPath)
         m_pVisoCreatorWidget->setCurrentPath(strPath);
 }
 
-void UIVisoCreatorDialog::prepareWidgets()
+void UIVisoCreatorDialog::prepareWidgets(const QString &strMachineName)
 {
     QWidget *pCentralWidget = new QWidget;
     setCentralWidget(pCentralWidget);
@@ -640,7 +642,7 @@ void UIVisoCreatorDialog::prepareWidgets()
     pCentralWidget->setLayout(pMainLayout);
 
 
-    m_pVisoCreatorWidget = new UIVisoCreatorWidget(m_pActionPool, this, true /* show toolbar */, m_strMachineName);
+    m_pVisoCreatorWidget = new UIVisoCreatorWidget(m_pActionPool, this, true /* show toolbar */, strMachineName);
     if (m_pVisoCreatorWidget)
     {
         menuBar()->addMenu(m_pVisoCreatorWidget->menu());
@@ -664,6 +666,14 @@ void UIVisoCreatorDialog::prepareWidgets()
         m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
 
         uiCommon().setHelpKeyword(m_pButtonBox->button(QIDialogButtonBox::Help), "create-optical-disk-image");
+    }
+
+    m_pStatusLabel = new QLabel;
+    m_pStatusBar = new QStatusBar(this);
+    if (m_pButtonBox && m_pStatusLabel)
+    {
+        pMainLayout->addWidget(m_pStatusBar);
+        m_pStatusBar->addPermanentWidget(m_pStatusLabel);
     }
     retranslateUi();
 }

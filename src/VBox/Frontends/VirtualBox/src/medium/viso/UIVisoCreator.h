@@ -42,12 +42,14 @@
 #include <iprt/stream.h>
 
 /* Forward declarations: */
-class QMenu;
 class QGridLayout;
+class QLabel;
+class QMenu;
+class QStatusBar;
 class QIDialogButtonBox;
-class UIDialogPanel;
 class QIToolBar;
 class UIActionPool;
+class UIDialogPanel;
 class UIVisoHostBrowser;
 class UIVisoContentBrowser;
 class UIVisoCreatorOptionsPanel;
@@ -64,6 +66,7 @@ signals:
 
     void sigSetCancelButtonShortCut(QKeySequence keySequence);
     void sigVisoNameChanged(const QString &strVisoName);
+    void sigVisoFilePathChanged(const QString &strPath);
 
 public:
 
@@ -78,15 +81,6 @@ public:
     QString currentPath() const;
     void    setCurrentPath(const QString &strPath);
     QMenu *menu() const;
-
-    /** Creates a VISO by using the VISO creator dialog.
-      * @param  pParent           Passes the dialog parent.
-      * @param  strDefaultFolder  Passes the folder to save the VISO file.
-      * @param  strMachineName    Passes the name of the machine,
-      * returns the UUID of the created medium or a null QUuid. */
-    static QUuid createViso(UIActionPool *pActionPool, QWidget *pParent,
-                            const QString &strDefaultFolder = QString(),
-                            const QString &strMachineName  = QString());
 
 #ifdef VBOX_WS_MAC
     /** Returns the toolbar. */
@@ -175,7 +169,6 @@ private:
     VisoOptions           m_visoOptions;
     BrowserOptions        m_browserOptions;
     QMenu                *m_pMainMenu;
-    QString               m_strMachineName;
     UIVisoCreatorOptionsPanel *m_pCreatorOptionsPanel;
     UIVisoConfigurationPanel  *m_pConfigurationPanel;
     QMap<UIDialogPanel*, QAction*> m_panelActionMap;
@@ -199,6 +192,15 @@ public:
     QString currentPath() const;
     void    setCurrentPath(const QString &strPath);
 
+    /** Creates a VISO by using the VISO creator dialog.
+      * @param  pParent           Passes the dialog parent.
+      * @param  strDefaultFolder  Passes the folder to save the VISO file.
+      * @param  strMachineName    Passes the name of the machine,
+      * returns the UUID of the created medium or a null QUuid. */
+    static QUuid createViso(UIActionPool *pActionPool, QWidget *pParent,
+                            const QString &strDefaultFolder = QString(),
+                            const QString &strMachineName  = QString());
+
 protected:
 
     virtual bool event(QEvent *pEvent) final override;
@@ -209,16 +211,17 @@ private slots:
     void sltsigVisoNameChanged(const QString &strName);
 
 private:
-    void prepareWidgets();
+    void prepareWidgets(const QString &strMachineName);
     void prepareConnections();
     virtual void retranslateUi() final override;
     void loadSettings();
     void saveDialogGeometry();
     void updateWindowTitle();
 
-    QString m_strMachineName;
     UIVisoCreatorWidget *m_pVisoCreatorWidget;
-    QIDialogButtonBox    *m_pButtonBox;
+    QIDialogButtonBox   *m_pButtonBox;
+    QStatusBar          *m_pStatusBar;
+    QLabel              *m_pStatusLabel;
     QPointer<UIActionPool> m_pActionPool;
     int                   m_iGeometrySaveTimerId;
 };
