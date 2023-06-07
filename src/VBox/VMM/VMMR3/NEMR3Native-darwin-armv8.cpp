@@ -45,6 +45,7 @@
 #include <VBox/vmm/gcm.h>
 #include "NEMInternal.h"
 #include <VBox/vmm/vmcc.h>
+#include <VBox/vmm/vmm.h>
 #include "dtrace/VBoxVMM.h"
 
 #include <iprt/armv8.h>
@@ -57,6 +58,8 @@
 #include <iprt/string.h>
 #include <iprt/system.h>
 #include <iprt/utf16.h>
+
+#include <iprt/formats/arm-psci.h>
 
 #include <mach/mach_time.h>
 #include <mach/kern_return.h>
@@ -602,6 +605,10 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
     {
         pVM->nem.s.fCreatedVm  = true;
         pVM->nem.s.u64CntFrqHz = ASMReadCntFrqEl0();
+
+        /* Will be initialized in NEMHCResumeCpuTickOnAll() before executing guest code. */
+        pVM->nem.s.u64VTimerOff = 0;
+
         VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_NATIVE_API);
         Log(("NEM: Marked active!\n"));
         PGMR3EnableNemMode(pVM);
@@ -639,8 +646,10 @@ static DECLCALLBACK(int) nemR3DarwinNativeInitVCpuOnEmt(PVM pVM, PVMCPU pVCpu, V
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Call to hv_vcpu_create failed on vCPU %u: %#x (%Rrc)", idCpu, hrc, nemR3DarwinHvSts2Rc(hrc));
 
-    /* Will be initialized in NEMHCResumeCpuTickOnAll() before executing guest code. */
-    pVCpu->nem.s.u64VTimerOff = 0;
+    hrc = hv_vcpu_set_sys_reg(pVCpu->nem.s.hVCpu, HV_SYS_REG_MPIDR_EL1, idCpu);
+    if (hrc != HV_SUCCESS)
+        return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                          "Setting MPIDR_EL1 failed on vCPU %u: %#x (%Rrc)", idCpu, hrc, nemR3DarwinHvSts2Rc(hrc));
 
     if (idCpu == 0)
     {
@@ -996,9 +1005,44 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedHvcInsn(PVM pVM, PVMCPU
 
     RT_NOREF(pVM);
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
-    /** @todo Raise exception to EL1 if PSCI not configured. */
-    /** @todo Need a generic mechanism here to pass this to, GIM maybe?. Always return -1 for now (PSCI). */
-    nemR3DarwinSetGReg(pVCpu, ARMV8_AARCH64_REG_X0, true /*f64BitReg*/, false /*fSignExtend*/, (uint64_t)-1);
+    if (u16Imm == 0)
+    {
+        /** @todo Raise exception to EL1 if PSCI not configured. */
+        /** @todo Need a generic mechanism here to pass this to, GIM maybe?. */
+        uint32_t uFunId = pVCpu->cpum.GstCtx.aGRegs[ARMV8_AARCH64_REG_X0].w;
+        bool fHvc64 = RT_BOOL(uFunId & ARM_SMCCC_FUNC_ID_64BIT); RT_NOREF(fHvc64);
+        uint32_t uEntity = ARM_SMCCC_FUNC_ID_ENTITY_GET(uFunId);
+        uint32_t uFunNum = ARM_SMCCC_FUNC_ID_NUM_GET(uFunId);
+        if (uEntity == ARM_SMCCC_FUNC_ID_ENTITY_STD_SEC_SERVICE)
+        {
+            switch (uFunNum)
+            {
+                case ARM_PSCI_FUNC_ID_PSCI_VERSION:
+                    nemR3DarwinSetGReg(pVCpu, ARMV8_AARCH64_REG_X0, false /*f64BitReg*/, false /*fSignExtend*/, ARM_PSCI_FUNC_ID_PSCI_VERSION_SET(1, 2));
+                    break;
+                case ARM_PSCI_FUNC_ID_SYSTEM_OFF:
+                    rcStrict = VINF_EM_OFF;
+                    break;
+                case ARM_PSCI_FUNC_ID_SYSTEM_RESET:
+                    rcStrict = VINF_EM_RESET;
+                    break;
+                case ARM_PSCI_FUNC_ID_CPU_ON:
+                {
+                    uint64_t u64TgtCpu      = nemR3DarwinGetGReg(pVCpu, ARMV8_AARCH64_REG_X1);
+                    RTGCPHYS GCPhysExecAddr = nemR3DarwinGetGReg(pVCpu, ARMV8_AARCH64_REG_X2);
+                    uint64_t u64CtxId       = nemR3DarwinGetGReg(pVCpu, ARMV8_AARCH64_REG_X3);
+                    VMMR3CpuOn(pVM, u64TgtCpu & 0xff, GCPhysExecAddr, u64CtxId);
+                    nemR3DarwinSetGReg(pVCpu, ARMV8_AARCH64_REG_X0, true /*f64BitReg*/, false /*fSignExtend*/, ARM_PSCI_STS_SUCCESS);
+                    break;
+                }
+                default:
+                    nemR3DarwinSetGReg(pVCpu, ARMV8_AARCH64_REG_X0, false /*f64BitReg*/, false /*fSignExtend*/, (uint64_t)ARM_PSCI_STS_NOT_SUPPORTED);
+            }
+        }
+        else
+            nemR3DarwinSetGReg(pVCpu, ARMV8_AARCH64_REG_X0, false /*f64BitReg*/, false /*fSignExtend*/, (uint64_t)ARM_PSCI_STS_NOT_SUPPORTED);
+    }
+    /** @todo What to do if immediate is != 0? */
 
     return rcStrict;
 }
@@ -1041,7 +1085,7 @@ static VBOXSTRICTRC nemR3DarwinHandleExitException(PVM pVM, PVMCPU pVCpu, const 
             if (   (pVCpu->cpum.GstCtx.CntvCtlEl0 & ARMV8_CNTV_CTL_EL0_AARCH64_ENABLE)
                 && !(pVCpu->cpum.GstCtx.CntvCtlEl0 & ARMV8_CNTV_CTL_EL0_AARCH64_IMASK))
             {
-                uint64_t cTicksVTimer = ASMReadTSC() - pVCpu->nem.s.u64VTimerOff;
+                uint64_t cTicksVTimer = mach_absolute_time() - pVM->nem.s.u64VTimerOff;
 
                 /* Check whether it expired and start executing guest code. */
                 if (cTicksVTimer >= pVCpu->cpum.GstCtx.CntvCValEl0)
@@ -1056,11 +1100,11 @@ static VBOXSTRICTRC nemR3DarwinHandleExitException(PVM pVM, PVMCPU pVCpu, const 
                  * So only halt when the threshold is exceeded (needs more experimentation but 5ms turned out to be a good compromise
                  * between CPU load when the guest is idle and performance).
                  */
-                if (cNanoSecsVTimerToExpire < 5 * RT_NS_1MS)
+                if (cNanoSecsVTimerToExpire < 2 * RT_NS_1MS)
                     return VINF_SUCCESS;
 
                 LogFlowFunc(("Set vTimer activation to cNanoSecsVTimerToExpire=%#RX64 (CntvCValEl0=%#RX64, u64VTimerOff=%#RX64 cTicksVTimer=%#RX64 u64CntFrqHz=%#RX64)\n",
-                             cNanoSecsVTimerToExpire, pVCpu->cpum.GstCtx.CntvCValEl0, pVCpu->nem.s.u64VTimerOff, cTicksVTimer, pVM->nem.s.u64CntFrqHz));
+                             cNanoSecsVTimerToExpire, pVCpu->cpum.GstCtx.CntvCValEl0, pVM->nem.s.u64VTimerOff, cTicksVTimer, pVM->nem.s.u64CntFrqHz));
                 TMCpuSetVTimerNextActivation(pVCpu, cNanoSecsVTimerToExpire);
             }
             else
@@ -1239,18 +1283,7 @@ static VBOXSTRICTRC nemR3DarwinRunGuestNormal(PVM pVM, PVMCPU pVCpu)
     /* Update the vTimer offset after resuming if instructed. */
     if (pVCpu->nem.s.fVTimerOffUpdate)
     {
-        /*
-         * Program the new offset, first get the new TSC value with the old vTimer offset and then adjust the
-         * the new offset to let the guest not notice the pause.
-         */
-        uint64_t u64TscNew = mach_absolute_time() - pVCpu->nem.s.u64VTimerOff;
-        Assert(u64TscNew >= pVM->nem.s.u64VTimerValuePaused);
-        LogFlowFunc(("u64VTimerOffOld=%#RX64 u64TscNew=%#RX64 u64VTimerValuePaused=%#RX64 -> u64VTimerOff=%#RX64\n",
-                     pVCpu->nem.s.u64VTimerOff, u64TscNew, pVM->nem.s.u64VTimerValuePaused,
-                     pVCpu->nem.s.u64VTimerOff + (u64TscNew - pVM->nem.s.u64VTimerValuePaused)));
-
-        pVCpu->nem.s.u64VTimerOff += u64TscNew - pVM->nem.s.u64VTimerValuePaused;
-        hv_return_t hrc = hv_vcpu_set_vtimer_offset(pVCpu->nem.s.hVCpu, pVCpu->nem.s.u64VTimerOff);
+        hv_return_t hrc = hv_vcpu_set_vtimer_offset(pVCpu->nem.s.hVCpu, pVM->nem.s.u64VTimerOff);
         if (hrc != HV_SUCCESS)
             return nemR3DarwinHvSts2Rc(hrc);
 
@@ -1738,7 +1771,7 @@ VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPUCC pVCpu, uint64_t *pcTicks, uint32_t 
 
     if (puAux)
         *puAux = 0;
-    *pcTicks = mach_absolute_time() - pVCpu->nem.s.u64VTimerOff; /* This is the host timer minus the offset. */
+    *pcTicks = mach_absolute_time() - pVCpu->pVMR3->nem.s.u64VTimerOff; /* This is the host timer minus the offset. */
     return VINF_SUCCESS;
 }
 
@@ -1759,7 +1792,17 @@ VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVMCC pVM, PVMCPUCC pVCpu, uint64_t uP
     VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_VM_THREAD_NOT_EMT);
     AssertReturn(VM_IS_NEM_ENABLED(pVM), VERR_NEM_IPE_9);
 
-    pVM->nem.s.u64VTimerValuePaused = uPausedTscValue;
+    /*
+     * Calculate the new offset, first get the new TSC value with the old vTimer offset and then adjust the
+     * the new offset to let the guest not notice the pause.
+     */
+    uint64_t u64TscNew = mach_absolute_time() - pVCpu->pVMR3->nem.s.u64VTimerOff;
+    Assert(u64TscNew >= uPausedTscValue);
+    LogFlowFunc(("u64VTimerOffOld=%#RX64 u64TscNew=%#RX64 u64VTimerValuePaused=%#RX64 -> u64VTimerOff=%#RX64\n",
+                 pVM->nem.s.u64VTimerOff, u64TscNew, uPausedTscValue,
+                 pVM->nem.s.u64VTimerOff + (u64TscNew - uPausedTscValue)));
+
+    pVM->nem.s.u64VTimerOff += u64TscNew - uPausedTscValue;
 
     /*
      * Set the flag to update the vTimer offset when the vCPU resumes for the first time

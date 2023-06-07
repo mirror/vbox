@@ -290,8 +290,8 @@ typedef struct NEM
      * @{ */
     /** The counter frequency in Hz as obtained from CNTFRQ_EL0. */
     uint64_t                    u64CntFrqHz;
-    /** The CNTVCT_EL0 value after the VM was resumed. */
-    uint64_t                    u64VTimerValuePaused;
+    /** The vTimer offset programmed. */
+    uint64_t                    u64VTimerOff;
     /** @} */
 # else
     /** Set if hv_vm_space_create() was called successfully. */
@@ -492,8 +492,6 @@ typedef struct NEMCPU
     bool                        fVTimerActivated;
     /** Flag whether to update the vTimer offset. */
     bool                        fVTimerOffUpdate;
-    /** The vTimer offset programmed. */
-    uint64_t                    u64VTimerOff;
 # else
     /** The vCPU handle associated with the EMT executing this vCPU. */
     hv_vcpuid_t                 hVCpuId;
