@@ -59,7 +59,7 @@
 #define ARM_PSCI_STS_DENIED                         INT32_C(-3)
 /** CPU is already online. */
 #define ARM_PSCI_STS_ALREADY_ON                     INT32_C(-4)
-/** @todo. */
+/** Operation is already pending. */
 #define ARM_PSCI_STS_ON_PENDING                     INT32_C(-5)
 /** PSCI implementation encountered an internal failure for the operation. */
 #define ARM_PSCI_STS_INTERNAL_FAILURE               INT32_C(-6)
