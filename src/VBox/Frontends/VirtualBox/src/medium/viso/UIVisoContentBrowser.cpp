@@ -730,16 +730,32 @@ void UIVisoContentBrowser::sltHandleItemRenameAttempt(UICustomFileSystemItem *pI
         if (item->name() == strNewName && item != pItem)
             bDuplicate = true;
     }
+    QString strNewPath = UIPathOperations::mergePaths(pItem->parentItem()->path(), pItem->name());
 
     if (bDuplicate)
     {
         /* Restore the previous name in case the @strNewName is a duplicate: */
         pItem->setData(strOldName, static_cast<int>(UICustomFileSystemModelData_Name));
     }
+    else
+    {
+        /* In case renaming is done (no dublicates) then modify the map that holds VISO items by:
+           adding the renamed item, removing the old one (if it exists) and also add a :remove: to
+           VISO file for the old path since in some cases, when remaned item is not top level, it still
+           appears in ISO. So we remove it explicitly: */
+        QString oldItemPath = pItem->data(UICustomFileSystemModelData_ISOPath).toString();
+        m_entryMap.insert(strNewPath, pItem->data(UICustomFileSystemModelData_LocalPath).toString());
+        m_entryMap.remove(oldItemPath);
+        if (!pItem->data(UICustomFileSystemModelData_LocalPath).toString().isEmpty())
+            m_entryMap.insert(oldItemPath, ":remove:");
+    }
 
-    pItem->setData(UIPathOperations::mergePaths(pItem->parentItem()->path(), pItem->name()), UICustomFileSystemModelData_ISOPath);
+    pItem->setData(strNewPath, UICustomFileSystemModelData_ISOPath);
+
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
+
+
 }
 
 void UIVisoContentBrowser::sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
