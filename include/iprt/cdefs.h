@@ -4017,7 +4017,7 @@
 # elif defined(RT_ARCH_SPARC)
 #  define RT_BREAKPOINT()       __asm__ __volatile__("unimp 0\n\t")     /** @todo Sparc: this is just a wild guess (same as Sparc64, just different name). */
 # elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
-#  define RT_BREAKPOINT()       __asm__ __volatile__("brk #0x1\n\t")
+#  define RT_BREAKPOINT()       __asm__ __volatile__("brk #0xf000\n\t")
 # endif
 #endif
 #ifdef _MSC_VER
