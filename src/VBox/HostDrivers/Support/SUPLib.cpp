@@ -1776,7 +1776,7 @@ SUPR3DECL(int) SUPR3QueryVTCaps(uint32_t *pfCaps)
 
 SUPR3DECL(bool) SUPR3IsNemSupportedWhenNoVtxOrAmdV(void)
 {
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
     return suplibOsIsNemSupportedWhenNoVtxOrAmdV();
 #else
     return false;
