@@ -1076,6 +1076,35 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 /** @} */
 
 
+/** @name ICC_SGI1R_EL1 - Interrupt Controller Software Generated Interrupt Group 1 Register (EL1) - WO
+ * @{ */
+/** Bit 0 - 15 - Target List, the set of PEs for which SGI interrupts will be generated. */
+#define ARMV8_ICC_SGI1R_EL1_AARCH64_TARGET_LIST                 (UINT64_C(0x000000000000ffff))
+#define ARMV8_ICC_SGI1R_EL1_AARCH64_TARGET_LIST_GET(a_Sgi1R)    ((a_Sgi1R) & ARMV8_ICC_SGI1R_EL1_AARCH64_TARGET_LIST)
+/** Bit 16 - 23 - The affinity 1 of the affinity path of the cluster for which SGI interrupts will be generated. */
+#define ARMV8_ICC_SGI1R_EL1_AARCH64_AFF1                        (UINT64_C(0x00000000007f0000))
+#define ARMV8_ICC_SGI1R_EL1_AARCH64_AFF1_GET(a_Sgi1R)           (((a_Sgi1R) & ARMV8_ICC_SGI1R_EL1_AARCH64_AFF1) >> 16)
+/** Bit 24 - 27 - The INTID of the SGI. */
+#define ARMV8_ICC_SGI1R_EL1_AARCH64_INTID                       (RT_BIT_64(24) | RT_BIT_64(25) | RT_BIT_64(26) | RT_BIT_64(27))
+#define ARMV8_ICC_SGI1R_EL1_AARCH64_INTID_GET(a_Sgi1R)          (((a_Sgi1R) & ARMV8_ICC_SGI1R_EL1_AARCH64_INTID) >> 24)
+/* Bit 28 - 31 - Reserved. */
+/** Bit 32 - 39 - The affinity 2 of the affinity path of the cluster for which SGI interrupts will be generated. */
+#define ARMV8_ICC_SGI1R_EL1_AARCH64_AFF2                        (UINT64_C(0x000000ff00000000))
+#define ARMV8_ICC_SGI1R_EL1_AARCH64_AFF2_GET(a_Sgi1R)           (((a_Sgi1R) & ARMV8_ICC_SGI1R_EL1_AARCH64_AFF2) >> 32)
+/** Bit 40 - Interrupt Routing Mode - 1 means interrupts to all PEs in the system excluding the generating PE. */
+#define ARMV8_ICC_SGI1R_EL1_AARCH64_IRM                         RT_BIT_64(40)
+#define ARMV8_ICC_SGI1R_EL1_AARCH64_IRM_BIT                     40
+/* Bit 41 - 43 - Reserved. */
+/** Bit 44 - 47 - Range selector. */
+#define ARMV8_ICC_SGI1R_EL1_AARCH64_RS                          (RT_BIT_64(44) | RT_BIT_64(45) | RT_BIT_64(46) | RT_BIT_64(47))
+#define ARMV8_ICC_SGI1R_EL1_AARCH64_RS_GET(a_Sgi1R)             (((a_Sgi1R) & ARMV8_ICC_SGI1R_EL1_AARCH64_RS) >> 44)
+/** Bit 48 - 55 - The affinity 3 of the affinity path of the cluster for which SGI interrupts will be generated. */
+#define ARMV8_ICC_SGI1R_EL1_AARCH64_AFF3                        (UINT64_C(0x00ff000000000000))
+#define ARMV8_ICC_SGI1R_EL1_AARCH64_AFF3_GET(a_Sgi1R)           (((a_Sgi1R) & ARMV8_ICC_SGI1R_EL1_AARCH64_AFF3) >> 48)
+/* Bit 56 - 63 - Reserved. */
+/** @} */
+
+
 /** @name CNTV_CTL_EL0 - Counter-timer Virtual Timer Control register.
  * @{ */
 /** Bit 0 - Enables the timer. */
