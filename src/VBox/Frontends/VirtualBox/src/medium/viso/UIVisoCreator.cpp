@@ -532,8 +532,13 @@ QUuid UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParen
                                       const QString &strDefaultFolder /* = QString() */,
                                       const QString &strMachineName /* = QString() */)
 {
+    QString strVisoSaveFolder(strDefaultFolder);
+    if (strVisoSaveFolder.isEmpty())
+        strVisoSaveFolder = uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD);
+
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
-    UIVisoCreatorDialog *pVisoCreator = new UIVisoCreatorDialog(pActionPool, pDialogParent, strMachineName);
+    UIVisoCreatorDialog *pVisoCreator = new UIVisoCreatorDialog(pActionPool, pDialogParent,
+                                                                strVisoSaveFolder, strMachineName);
 
     if (!pVisoCreator)
         return QUuid();
@@ -543,9 +548,6 @@ QUuid UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParen
     if (pVisoCreator->exec(false /* not application modal */))
     {
         QStringList VisoEntryList = pVisoCreator->entryList();
-        QString strVisoName = pVisoCreator->visoName();
-        if (strVisoName.isEmpty())
-            strVisoName = strMachineName;
 
         if (VisoEntryList.empty() || VisoEntryList[0].isEmpty())
         {
@@ -555,24 +557,15 @@ QUuid UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParen
 
         gEDataManager->setVISOCreatorRecentFolder(pVisoCreator->currentPath());
 
-        QString strVisoSaveFolder(strDefaultFolder);
-        if (strVisoSaveFolder.isEmpty())
-            strVisoSaveFolder = uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD);
-
-        if (QDir(strVisoSaveFolder).exists())
+        QFile file(pVisoCreator->visoFileFullPath());
+        if (file.open(QFile::WriteOnly | QFile::Truncate))
         {
-            QString strFileName = QString("%1/%2%3").arg(strVisoSaveFolder).arg(strVisoName).arg(".viso");
-
-            QFile file(strFileName);
-            if (file.open(QFile::WriteOnly | QFile::Truncate))
-            {
-                QTextStream stream(&file);
-                stream << QString("%1 %2").arg("--iprt-iso-maker-file-marker-bourne-sh").arg(QUuid::createUuid().toString());
-                stream << "\n";
-                stream << VisoEntryList.join("\n");
-                stream << pVisoCreator->customOptions().join("\n");
-                file.close();
-            }
+            QTextStream stream(&file);
+            stream << QString("%1 %2").arg("--iprt-iso-maker-file-marker-bourne-sh").arg(QUuid::createUuid().toString());
+            stream << "\n";
+            stream << VisoEntryList.join("\n");
+            stream << pVisoCreator->customOptions().join("\n");
+            file.close();
         }
     } // if (pVisoCreator->exec(false /* not application modal */))
     delete pVisoCreator;
@@ -583,7 +576,8 @@ QUuid UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParen
 /*********************************************************************************************************************************
 *   UIVisoCreatorDialog implementation.                                                                                          *
 *********************************************************************************************************************************/
-UIVisoCreatorDialog::UIVisoCreatorDialog(UIActionPool *pActionPool, QWidget *pParent, const QString& strMachineName /* = QString() */)
+UIVisoCreatorDialog::UIVisoCreatorDialog(UIActionPool *pActionPool, QWidget *pParent,
+                                         const QString& strVisoSavePath, const QString& strMachineName /* = QString() */)
     : QIWithRetranslateUI<QIWithRestorableGeometry<QIMainDialog> >(pParent)
     , m_pVisoCreatorWidget(0)
     , m_pButtonBox(0)
@@ -591,6 +585,7 @@ UIVisoCreatorDialog::UIVisoCreatorDialog(UIActionPool *pActionPool, QWidget *pPa
     , m_pStatusLabel(0)
     , m_pActionPool(pActionPool)
     , m_iGeometrySaveTimerId(-1)
+    , m_strVisoSavePath(strVisoSavePath)
 {
     /* Make sure that the base class does not close this dialog upon pressing escape.
        we manage escape key here with special casing: */
@@ -697,6 +692,8 @@ void UIVisoCreatorDialog::retranslateUi()
     }
     if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Help))
         m_pButtonBox->button(QDialogButtonBox::Help)->setToolTip(UIVisoCreatorWidget::tr("Opens the help browser and navigates to the related section"));
+    if (m_pStatusLabel)
+        m_pStatusLabel->setText(QString("%1: %2").arg(UIVisoCreatorWidget::tr("Viso file")).arg(visoFileFullPath()));
 }
 
 bool UIVisoCreatorDialog::event(QEvent *pEvent)
@@ -759,4 +756,9 @@ void UIVisoCreatorDialog::saveDialogGeometry()
 void UIVisoCreatorDialog::updateWindowTitle()
 {
     setWindowTitle(QString("%1 - %2.%3").arg(UIVisoCreatorWidget::tr("VISO Creator")).arg(visoName()).arg("viso"));
+}
+
+QString UIVisoCreatorDialog::visoFileFullPath() const
+{
+    return QString("%1/%2%3").arg(m_strVisoSavePath).arg(visoName()).arg(".viso");
 }

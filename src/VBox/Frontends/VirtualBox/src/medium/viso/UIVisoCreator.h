@@ -74,7 +74,7 @@ public:
                         bool fShowToolBar, const QString& strMachineName = QString());
     /** Returns the content of the .viso file. Each element of the list corresponds to a line in the .viso file. */
     QStringList       entryList() const;
-    const QString     &visoName() const;
+    const QString    &visoName() const;
     /** Returns custom ISO options (if any). */
     const QStringList &customOptions() const;
     /** Returns the current path that the host browser is listing. */
@@ -184,14 +184,15 @@ class SHARED_LIBRARY_STUFF UIVisoCreatorDialog : public QIWithRetranslateUI<QIWi
 
 public:
 
-    UIVisoCreatorDialog(UIActionPool *pActionPool, QWidget *pParent, const QString& strMachineName = QString());
+    UIVisoCreatorDialog(UIActionPool *pActionPool, QWidget *pParent,
+                        const QString& strVisoSavePath, const QString& strMachineName = QString());
 
     QStringList  entryList() const;
     QString visoName() const;
     QStringList customOptions() const;
     QString currentPath() const;
     void    setCurrentPath(const QString &strPath);
-
+    QString visoFileFullPath() const;
     /** Creates a VISO by using the VISO creator dialog.
       * @param  pParent           Passes the dialog parent.
       * @param  strDefaultFolder  Passes the folder to save the VISO file.
@@ -223,6 +224,7 @@ private:
     QStatusBar          *m_pStatusBar;
     QLabel              *m_pStatusLabel;
     QPointer<UIActionPool> m_pActionPool;
-    int                   m_iGeometrySaveTimerId;
+    int                  m_iGeometrySaveTimerId;
+    QString              m_strVisoSavePath;
 };
 #endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoCreator_h */
