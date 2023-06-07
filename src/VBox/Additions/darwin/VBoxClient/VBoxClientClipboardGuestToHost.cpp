@@ -45,6 +45,8 @@
 #include <VBox/GuestHost/clipboard-helper.h>
 #include "VBoxClientInternal.h"
 
+RT_GCC_NO_WARN_DEPRECATED_BEGIN /* Much here is deprecated since 12.0 */
+
 /**
  * Walk through pasteboard items and report currently available item types.
  *
@@ -388,3 +390,5 @@ int vbclClipboardForwardToHost(uint32_t u32ClientId, PasteboardRef pPasteboard, 
 
     return rc; /** @todo r=bird: If there are multiple formats available, which rc is returned here? Does it matter? */
 }
+
+RT_GCC_NO_WARN_DEPRECATED_END

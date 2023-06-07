@@ -1762,7 +1762,7 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf)
         const char *pszDiskName = NULL;
         const char *pszArch     = NULL;
         char       *psz         = pBuf->sz;
-        for (unsigned i = 0; *psz != '\0'; i++)
+        while (*psz != '\0')
         {
             while (RT_C_IS_BLANK(*psz))
                 psz++;

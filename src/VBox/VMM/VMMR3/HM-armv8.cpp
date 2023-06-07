@@ -538,5 +538,6 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
 VMMDECL(bool) HMIsEnabledNotMacro(PVM pVM)
 {
     Assert(pVM->bMainExecutionEngine != VM_EXEC_ENGINE_NOT_SET);
+    RT_NOREF(pVM);
     return false;
 }

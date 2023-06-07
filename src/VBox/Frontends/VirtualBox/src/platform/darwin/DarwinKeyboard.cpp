@@ -1723,6 +1723,7 @@ static void darwinUsbHidDeviceMatchCb(void *pData, io_iterator_t iter)
             rc = (*ppUsbDeviceInterface)->GetLocationID    (ppUsbDeviceInterface,  &idLocation);       AssertMsg(rc == 0, ("Failed to get Location ID"));
             rc = (*ppUsbDeviceInterface)->GetDeviceClass   (ppUsbDeviceInterface,  &idDeviceClass);    AssertMsg(rc == 0, ("Failed to get Device Class"));
             rc = (*ppUsbDeviceInterface)->GetDeviceSubClass(ppUsbDeviceInterface,  &idDeviceSubClass); AssertMsg(rc == 0, ("Failed to get Device Subclass"));
+            RT_NOREF(rc);
 
             if (idDeviceClass == kUSBHIDInterfaceClass && idDeviceSubClass == kUSBHIDBootInterfaceSubClass)
             {
@@ -1757,7 +1758,9 @@ static int darwinUsbHidSubscribeInterestNotifications(VBoxHidsState_t *pHidState
 
     if (pDictionary)
     {
-        pHidState->pNotificationPrortRef = IONotificationPortCreate(kIOMasterPortDefault);
+        RT_GCC_NO_WARN_DEPRECATED_BEGIN
+        pHidState->pNotificationPrortRef = IONotificationPortCreate(kIOMasterPortDefault); /* kIOMasterPortDefault: Deprecated since 12.0. */
+        RT_GCC_NO_WARN_DEPRECATED_END
         if (pHidState->pNotificationPrortRef)
         {
             CFRunLoopAddSource(CFRunLoopGetCurrent(), IONotificationPortGetRunLoopSource(pHidState->pNotificationPrortRef), kCFRunLoopDefaultMode);

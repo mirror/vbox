@@ -149,6 +149,7 @@ RTDECL(void) RTLogWriteCom(const char *pach, size_t cb)
         ASMOutU8(IPRT_UART_BASE, *pu8);
     }
 #else
+    RT_NOREF(pach, cb);
     /* PORTME? */
 #endif
 }

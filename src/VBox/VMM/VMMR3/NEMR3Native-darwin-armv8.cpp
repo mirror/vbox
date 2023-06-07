@@ -888,6 +888,7 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionDataAbort(PVM pVM, PVMCPU pVCp
     LogFlowFunc(("fIsv=%RTbool fL2Fault=%RTbool fWrite=%RTbool f64BitReg=%RTbool fSignExtend=%RTbool uReg=%u uAcc=%u GCPtrDataAbrt=%RGv GCPhysDataAbrt=%RGp\n",
                  fIsv, fL2Fault, fWrite, f64BitReg, fSignExtend, uReg, uAcc, GCPtrDataAbrt, GCPhysDataAbrt));
 
+    RT_NOREF(fL2Fault, GCPtrDataAbrt);
     AssertReturn(fIsv, VERR_NOT_SUPPORTED); /** @todo Implement using IEM when this should occur. */
 
     EMHistoryAddExit(pVCpu,

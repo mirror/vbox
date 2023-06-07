@@ -512,10 +512,10 @@ static RTEXITCODE handlerCpuHwVirt(int argc, char **argv)
 static RTEXITCODE handlerCpuNestedPaging(int argc, char **argv)
 {
     NOREF(argc); NOREF(argv);
-    HWVIRTTYPE  enmHwVirt  = isHwVirtSupported();
     int         fSupported = -1;
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+    HWVIRTTYPE  enmHwVirt  = isHwVirtSupported();
     if (enmHwVirt == HWVIRTTYPE_AMDV)
     {
         uint32_t uEax, uEbx, uEcx, uEdx;

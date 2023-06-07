@@ -542,8 +542,10 @@ static int getSmcKeyOs(char *pabKey, uint32_t cbKey)
 
     AssertReturn(cbKey >= 65, VERR_INTERNAL_ERROR);
 
+    RT_GCC_NO_WARN_DEPRECATED_BEGIN /* kIOMasterPortDefault: Deprecated since 12.0. */
     io_service_t service = IOServiceGetMatchingService(kIOMasterPortDefault,
                                                        IOServiceMatching("AppleSMC"));
+    RT_GCC_NO_WARN_DEPRECATED_END
     if (!service)
         return VERR_NOT_FOUND;
 

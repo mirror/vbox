@@ -419,7 +419,11 @@ static int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
         /* Send it off to the I/O manager. */
         pdmacFileEpAddTask(pEpFile, pIoTask);
         off        += paSegments[i].cbSeg;
+#ifdef RT_STRICT
         cbTransfer -= paSegments[i].cbSeg;
+#else
+        RT_NOREF(cbTransfer);
+#endif
     }
 
     AssertMsg(!cbTransfer, ("Incomplete transfer %u bytes left\n", cbTransfer));

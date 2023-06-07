@@ -7507,7 +7507,7 @@ IEM_CIMPL_DEF_3(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg, uint8_t, bImmAnd
         }
     }
 #endif
-#if defined(VBOX_WITH_NESTED_HWVIRT_VMX) || defined(VBOX_WITH_NESTED_HWVIRT_SVM)
+#if !defined(VBOX_WITH_NESTED_HWVIRT_VMX) && !defined(VBOX_WITH_NESTED_HWVIRT_SVM)
     RT_NOREF(bImmAndEffAddrMode);
 #endif
 
@@ -7623,7 +7623,7 @@ IEM_CIMPL_DEF_3(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg, uint8_t, bImmAn
         }
     }
 #endif
-#if defined(VBOX_WITH_NESTED_HWVIRT_VMX) || defined(VBOX_WITH_NESTED_HWVIRT_SVM)
+#if !defined(VBOX_WITH_NESTED_HWVIRT_VMX) && !defined(VBOX_WITH_NESTED_HWVIRT_SVM)
     RT_NOREF(bImmAndEffAddrMode);
 #endif
 

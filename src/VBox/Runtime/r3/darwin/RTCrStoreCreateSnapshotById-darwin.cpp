@@ -180,7 +180,10 @@ static int rtCrStoreAddCertsFromNativeKeychainFile(RTCRSTORE hStore, const char 
      * Open the keychain and call common worker to do the job.
      */
     SecKeychainRef hKeychain;
-    OSStatus orc = SecKeychainOpen(pszKeychain, &hKeychain);
+
+    RT_GCC_NO_WARN_DEPRECATED_BEGIN
+    OSStatus orc = SecKeychainOpen(pszKeychain, &hKeychain); /* Deprecated since 12.0 */
+    RT_GCC_NO_WARN_DEPRECATED_END
     if (orc == noErr)
     {
         rc = rtCrStoreAddCertsFromNativeKeychain(hStore, hKeychain, enmTrustDomain, rc, pErrInfo);

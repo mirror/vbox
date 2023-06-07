@@ -1346,6 +1346,7 @@ HRESULT Host::getProcessorCPUIDLeaf(ULONG aCpuId, ULONG aLeaf, ULONG aSubLeaf,
     *aValECX = uECX;
     *aValEDX = uEDX;
 #else
+    RT_NOREF(aLeaf, aSubLeaf);
     *aValEAX = 0;
     *aValEBX = 0;
     *aValECX = 0;

@@ -269,7 +269,7 @@ void SELFSIZINGTABLE::displayTable()
     while (pColDesc)
     {
         uint8_t colWidth = pColDesc->cbWidestDataInCol;
-        char colHdr[colWidth + 1], *pszColHdr = (char *)colHdr;
+        char *pszColHdr = new char[colWidth + 1];
         switch (pColDesc->alignment)
         {
             case RIGHT:
@@ -287,6 +287,7 @@ void SELFSIZINGTABLE::displayTable()
         RTPrintf("%s%*s", pszColHdr, cbPad, " ");
         RTPrintf(ANSI_RESET);
         pColDesc = pColDesc->next;
+        delete[] pszColHdr;
     }
     RTPrintf("\n");
     /*
@@ -299,7 +300,7 @@ void SELFSIZINGTABLE::displayTable()
         while (pColData)
         {   pColDesc = pColData->pColDesc;
             uint8_t colWidth = pColDesc->cbWidestDataInCol;
-            char aCell[colWidth + 1];
+            char *aCell = new char[colWidth + 1];
             switch (pColDesc->alignment)
             {
                 case RIGHT:
@@ -315,6 +316,7 @@ void SELFSIZINGTABLE::displayTable()
             uint8_t cbPad = pColDesc->cbPadRightOpt ? pColDesc->cbPadRightOpt : this->cbDefaultColPadding;
             RTPrintf("%s%*s", aCell, cbPad, " ");
             pColData = pColData->next;
+            delete[] aCell;
         }
         RTPrintf("\n");
         pRow = pRow->next;

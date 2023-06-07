@@ -62,6 +62,9 @@
 #include <AudioToolbox/AudioQueue.h>
 #include <AudioUnit/AudioUnit.h>
 
+
+RT_GCC_NO_WARN_DEPRECATED_BEGIN /* Much here is deprecated since 12.0 */
+
 #if MAC_OS_X_VERSION_MIN_REQUIRED < 1090 /* possibly 1080 */
 # define kAudioHardwarePropertyTranslateUIDToDevice (AudioObjectPropertySelector)'uidd'
 #endif
@@ -2923,3 +2926,5 @@ const PDMDRVREG g_DrvHostCoreAudio =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
+
+RT_GCC_NO_WARN_DEPRECATED_END

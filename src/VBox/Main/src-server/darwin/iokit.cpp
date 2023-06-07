@@ -120,7 +120,9 @@ static bool darwinOpenMasterPort(void)
 {
     if (!g_MasterPort)
     {
-        kern_return_t krc = IOMasterPort(MACH_PORT_NULL, &g_MasterPort);
+        RT_GCC_NO_WARN_DEPRECATED_BEGIN
+        kern_return_t krc = IOMasterPort(MACH_PORT_NULL, &g_MasterPort); /* Deprecated since 12.0. */
+        RT_GCC_NO_WARN_DEPRECATED_END
         AssertReturn(krc == KERN_SUCCESS, false);
 
         /* Get the darwin version we are running on. */
@@ -1094,7 +1096,6 @@ PUSBDEVICE DarwinGetUSBDevices(void)
      */
     PUSBDEVICE pHead = NULL;
     PUSBDEVICE pTail = NULL;
-    unsigned i = 0;
     io_object_t USBDevice;
     while ((USBDevice = IOIteratorNext(USBDevices)) != IO_OBJECT_NULL)
     {
@@ -1232,7 +1233,6 @@ PUSBDEVICE DarwinGetUSBDevices(void)
             AssertMsgFailed(("krc=%#x\n", krc));
 
         IOObjectRelease(USBDevice);
-        i++;
     }
 
     IOObjectRelease(USBDevices);
@@ -1455,7 +1455,6 @@ PDARWINFIXEDDRIVE DarwinGetFixedDrives(void)
      */
     PDARWINFIXEDDRIVE pHead = NULL;
     PDARWINFIXEDDRIVE pTail = NULL;
-    unsigned i = 0;
     io_object_t MediaService;
     while ((MediaService = IOIteratorNext(MediaServices)) != IO_OBJECT_NULL)
     {
@@ -1576,7 +1575,6 @@ PDARWINFIXEDDRIVE DarwinGetFixedDrives(void)
             CFRelease(DeviceName);
         }
         IOObjectRelease(MediaService);
-        i++;
     }
     IOObjectRelease(MediaServices);
 

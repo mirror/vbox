@@ -318,17 +318,13 @@ void UIVMLogViewerFilterPanel::filter()
 
     /* Prepare filter-data: */
     QString strFilteredText;
-    int count = 0;
     for (int lineIdx = 0; lineIdx < stringLines.size(); ++lineIdx)
     {
         const QString& currentLineString = stringLines[lineIdx];
         if (currentLineString.isEmpty())
             continue;
         if (applyFilterTermsToString(currentLineString))
-        {
             strFilteredText.append(currentLineString).append("\n");
-            ++count;
-        }
     }
 
     document->setPlainText(strFilteredText);

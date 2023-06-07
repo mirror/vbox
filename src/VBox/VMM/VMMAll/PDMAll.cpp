@@ -149,7 +149,7 @@ VMMDECL(int) PDMIsaSetIrq(PVMCC pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uT
 
 #ifdef VBOX_VMM_TARGET_ARMV8
     int rc = VINF_SUCCESS;
-    GICSpiSet(pVM, u8Level, u8Level == PDM_IRQ_LEVEL_HIGH ? true : false);
+    GICSpiSet(pVM, u8Irq, u8Level == PDM_IRQ_LEVEL_HIGH ? true : false);
 #else
     int rc = VERR_PDM_NO_PIC_INSTANCE;
 /** @todo r=bird: This code is incorrect, as it ASSUMES the PIC and I/O APIC

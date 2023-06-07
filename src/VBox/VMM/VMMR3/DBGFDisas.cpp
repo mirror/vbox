@@ -382,7 +382,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
     int     rc;
 
 #if defined(VBOX_VMM_TARGET_ARMV8)
-    RT_NOREF(pVM, Sel, GCPtr, rc, fFlags, pszOutput, cbOutput, pcbInstr, pDisState);
+    RT_NOREF(pVM, pVCpu, Sel, GCPtr, rc, fFlags, pszOutput, cbOutput, pcbInstr, pDisState);
     AssertReleaseFailed(); /** @todo */
     return VERR_NOT_IMPLEMENTED;
 #else

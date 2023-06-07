@@ -45,6 +45,8 @@
 #include <VBox/GuestHost/clipboard-helper.h>
 #include "VBoxClientInternal.h"
 
+RT_GCC_NO_WARN_DEPRECATED_BEGIN /* Much here is deprecated since 12.0 */
+
 /**
  * Allocate memory for host buffer and receive it.
  *
@@ -313,3 +315,5 @@ int vbclClipboardForwardToGuest(uint32_t u32ClientId, PasteboardRef pPasteboard,
 
     return rc;
 }
+
+RT_GCC_NO_WARN_DEPRECATED_END

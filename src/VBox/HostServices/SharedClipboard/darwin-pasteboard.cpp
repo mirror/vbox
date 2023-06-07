@@ -51,6 +51,8 @@
 #define WITH_HTML_H2G 1
 #define WITH_HTML_G2H 1
 
+RT_GCC_NO_WARN_DEPRECATED_BEGIN /* Much here is deprecated since 12.0 */
+
 /* For debugging */
 //#define SHOW_CLIPBOARD_CONTENT
 
@@ -716,3 +718,4 @@ int writeToPasteboard(PasteboardRef hPasteboard, uint64_t idOwnership, const voi
     return rc;
 }
 
+RT_GCC_NO_WARN_DEPRECATED_END

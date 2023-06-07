@@ -1672,7 +1672,7 @@ static int dbgcGdbStubCtxPktProcessH(PGDBSTUBCTX pThis, const uint8_t *pbPktRem,
 
     if (*pbPktRem == 'g')
     {
-        cbPktRem--;
+        /*Unused: cbPktRem--;*/ RT_NOREF(cbPktRem);
         pbPktRem++;
 
         /* We know there is an # character denoting the end so the following must return with VWRN_TRAILING_CHARS. */

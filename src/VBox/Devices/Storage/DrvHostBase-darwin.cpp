@@ -523,7 +523,9 @@ DECLHIDDEN(int) drvHostBaseOpenOs(PDRVHOSTBASE pThis, bool fReadOnly)
     /*
      * Open the master port on the first invocation.
      */
-    kern_return_t krc = IOMasterPort(MACH_PORT_NULL, &pThis->Os.MasterPort);
+    RT_GCC_NO_WARN_DEPRECATED_BEGIN
+    kern_return_t krc = IOMasterPort(MACH_PORT_NULL, &pThis->Os.MasterPort); /* Deprecated since 12.0. */
+    RT_GCC_NO_WARN_DEPRECATED_END
     AssertReturn(krc == KERN_SUCCESS, VERR_GENERAL_FAILURE);
 
     /*

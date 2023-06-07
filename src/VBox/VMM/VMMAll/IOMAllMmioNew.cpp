@@ -1087,6 +1087,7 @@ VMMDECL(int) IOMMmioMapMmio2Page(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hR
 
 #if defined(VBOX_VMM_TARGET_ARMV8)
     /** @todo NEM: MMIO page aliasing. */
+    RT_NOREF(pVM, hRegion, offRegion, hMmio2, offMmio2);
     return VINF_SUCCESS;    /* ignore */ /** @todo return some indicator if we fail here */
 #else
 /** @todo Why is this restricted to protected mode???  Try it in all modes! */
@@ -1257,6 +1258,7 @@ VMMDECL(int) IOMMmioResetRegion(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
 
 #if defined(VBOX_VMM_TARGET_ARMV8)
     /** @todo NEM: MMIO page aliasing. */
+    RT_NOREF(pVM, hRegion);
     return VINF_SUCCESS;    /* ignore */ /** @todo return some indicator if we fail here */
 #else
 /** @todo Get rid of this this real/protected or nested paging restriction,

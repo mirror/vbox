@@ -81,7 +81,10 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
     }
 
     mach_port_t MasterPort;
-    kern_return_t kr = IOMasterPort(MACH_PORT_NULL, &MasterPort);
+
+    RT_GCC_NO_WARN_DEPRECATED_BEGIN
+    kern_return_t kr = IOMasterPort(MACH_PORT_NULL, &MasterPort); /* Deprecated since 12.0. */
+    RT_GCC_NO_WARN_DEPRECATED_END
     if (kr != kIOReturnSuccess)
     {
         if (kr == KERN_NO_ACCESS)

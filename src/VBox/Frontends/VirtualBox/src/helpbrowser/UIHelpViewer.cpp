@@ -825,15 +825,11 @@ void UIHelpViewer::findAllMatches(const QString &searchString)
         return;
     QTextCursor cursor(pDocument);
     QTextDocument::FindFlags flags;
-    int iMatchCount = 0;
     while (!cursor.isNull() && !cursor.atEnd())
     {
         cursor = pDocument->find(searchString, cursor, flags);
         if (!cursor.isNull())
-        {
             m_matchedCursorPosition << cursor.position() - searchString.length();
-            ++iMatchCount;
-        }
     }
 }
 

@@ -123,7 +123,9 @@ io_connect_t    g_hSmcConnect = IO_OBJECT_NULL;
 
 static int ConnectToSmc(void)
 {
-    g_hSmcService = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("AppleSMC"));
+    RT_GCC_NO_WARN_DEPRECATED_BEGIN
+    g_hSmcService = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("AppleSMC")); /* kIOMasterPortDefault: Deprecated since 12.0. */
+    RT_GCC_NO_WARN_DEPRECATED_END
     if (g_hSmcService == IO_OBJECT_NULL)
         return VERR_NOT_FOUND;
 

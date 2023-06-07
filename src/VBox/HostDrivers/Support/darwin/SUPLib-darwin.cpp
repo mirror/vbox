@@ -144,7 +144,9 @@ static int suplibDarwinOpenService(PSUPLIBDATA pThis)
      * Open the IOKit client first - The first step is finding the service.
      */
     mach_port_t MasterPort;
-    kern_return_t kr = IOMasterPort(MACH_PORT_NULL, &MasterPort);
+    RT_GCC_NO_WARN_DEPRECATED_BEGIN
+    kern_return_t kr = IOMasterPort(MACH_PORT_NULL, &MasterPort); /* Deprecated since 12.0. */
+    RT_GCC_NO_WARN_DEPRECATED_END
     if (kr != kIOReturnSuccess)
     {
         LogRel(("IOMasterPort -> %d\n", kr));

@@ -405,6 +405,13 @@ DECLINLINE(VBOXSTRICTRC) gicDistRegisterWrite(PPDMDEVINS pDevIns, PVMCPUCC pVCpu
     PGICDEV pThis  = PDMDEVINS_2_DATA(pDevIns, PGICDEV);
     PVMCC    pVM   = PDMDevHlpGetVM(pDevIns);
 
+    if (offReg >= GIC_DIST_REG_IROUTERn_OFF_START && offReg <= GIC_DIST_REG_IROUTERn_OFF_LAST)
+    {
+        /** @todo Ignored for now, probably make this a MMIO2 region as it begins on 0x6000, see 12.9.22 of the GICv3 architecture
+         * reference manual. */
+        return VINF_SUCCESS;
+    }
+
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     switch (offReg)
     {
@@ -504,10 +511,6 @@ DECLINLINE(VBOXSTRICTRC) gicDistRegisterWrite(PPDMDEVINS pDevIns, PVMCPUCC pVCpu
             break;
         case GIC_DIST_REG_INMIn_OFF_START:
             AssertReleaseFailed();
-            break;
-        case GIC_DIST_REG_IROUTERn_OFF_START ... GIC_DIST_REG_IROUTERn_OFF_LAST: /* Only 32 lines for now. */
-            /** @todo Ignored for now, probably make this a MMIO2 region as it begins on 0x6000, see 12.9.22 of the GICv3 architecture
-             * reference manual. */
             break;
         default:
             //AssertReleaseFailed();
@@ -1110,6 +1113,7 @@ DECLHIDDEN(void) gicResetCpu(PVMCPUCC pVCpu)
 {
     LogFlowFunc(("GIC%u\n", pVCpu->idCpu));
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+    RT_NOREF(pVCpu);
 }
 
 

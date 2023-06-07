@@ -183,7 +183,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pl061MmioRead(PPDMDEVINS pDevIns, void *pvUser
     PDEVPL061 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPL061);
     RT_NOREF(pvUser);
     Assert(cb == 4);
-    Assert(!(off & (cb - 1)));
+    Assert(!(off & (cb - 1))); RT_NOREF(cb);
 
     LogFlowFunc(("%RGp cb=%u\n", off, cb));
 

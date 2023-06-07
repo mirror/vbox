@@ -1236,6 +1236,7 @@ static DECLCALLBACK(uint64_t) pdmR3DevHlp_CpuGetGuestScalableBusFrequency(PPDMDE
 #if defined(VBOX_VMM_TARGET_ARMV8)
     uint64_t u64Fsb = 0;
     AssertReleaseFailed();
+    RT_NOREF(pDevIns);
 #else
     uint64_t u64Fsb = CPUMGetGuestScalableBusFrequency(pDevIns->Internal.s.pVMR3);
 #endif
@@ -4636,6 +4637,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_A20Set(PPDMDEVINS pDevIns, bool fEnable)
     LogFlow(("pdmR3DevHlp_A20Set: caller='%s'/%d: fEnable=%d\n", pDevIns->pReg->szName, pDevIns->iInstance, fEnable));
 #ifdef VBOX_VMM_TARGET_ARMV8
     AssertReleaseFailed();
+    RT_NOREF(pDevIns, fEnable);
 #else
     PGMR3PhysSetA20(VMMGetCpu(pDevIns->Internal.s.pVMR3), fEnable);
 #endif
@@ -4654,7 +4656,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLea
     AssertPtr(pEax); AssertPtr(pEbx); AssertPtr(pEcx); AssertPtr(pEdx);
 
 #ifdef VBOX_VMM_TARGET_ARMV8
-    RT_NOREF(iLeaf, pEax, pEbx, pEcx, pEdx);
+    RT_NOREF(pDevIns, iLeaf, pEax, pEbx, pEcx, pEdx);
     AssertReleaseFailed();
 #else
     CPUMGetGuestCpuId(VMMGetCpu(pDevIns->Internal.s.pVMR3), iLeaf, 0 /*iSubLeaf*/, -1 /*f64BitMode*/, pEax, pEbx, pEcx, pEdx);

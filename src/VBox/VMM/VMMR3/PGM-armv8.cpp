@@ -713,6 +713,7 @@ VMMDECL(int)  PGMGstModifyPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_
     Assert(cb);
 
     LogFlow(("PGMGstModifyPage %RGv %d bytes fFlags=%08llx fMask=%08llx\n", GCPtr, cb, fFlags, fMask));
+    RT_NOREF(pVCpu, GCPtr, cb, fFlags, fMask);
 
     AssertReleaseFailed();
     return VERR_NOT_IMPLEMENTED;

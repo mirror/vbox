@@ -292,7 +292,9 @@ static DECLCALLBACK(int32_t) usbProxyDarwinInitOnce(void *pvUser1)
     RT_NOREF(pvUser1);
 
     int rc;
-    kern_return_t krc = IOMasterPort(MACH_PORT_NULL, &g_MasterPort);
+    RT_GCC_NO_WARN_DEPRECATED_BEGIN
+    kern_return_t krc = IOMasterPort(MACH_PORT_NULL, &g_MasterPort);  /* Deprecated since 12.0. */
+    RT_GCC_NO_WARN_DEPRECATED_END
     if (krc == KERN_SUCCESS)
     {
        g_pRunLoopMode = CFStringCreateWithCString(kCFAllocatorDefault, "VBoxUsbProxyMode", kCFStringEncodingUTF8);

@@ -349,6 +349,10 @@ static DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
  */
 static DECLCALLBACK(int) gimR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
 {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    RT_NOREF(pSSM);
+#endif
+
     switch (pVM->gim.s.enmProviderId)
     {
 #if !defined(VBOX_VMM_TARGET_ARMV8)
@@ -398,6 +402,10 @@ VMMR3_INT_DECL(int) GIMR3Term(PVM pVM)
  */
 VMMR3_INT_DECL(void) GIMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    RT_NOREF(offDelta);
+#endif
+
     switch (pVM->gim.s.enmProviderId)
     {
 #if !defined(VBOX_VMM_TARGET_ARMV8)

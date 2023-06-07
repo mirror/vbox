@@ -199,6 +199,7 @@ VMMDECL(void) CPUMGetGuestAddrWidths(PCVM pVM, uint8_t *pcPhysAddrWidth, uint8_t
     AssertReturnVoid(pcPhysAddrWidth);
     AssertReturnVoid(pcLinearAddrWidth);
     AssertReleaseFailed();
+    RT_NOREF(pVM);
 }
 
 
@@ -319,6 +320,7 @@ VMMDECL(CPUMMODE) CPUMGetGuestMode(PVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_PC | CPUMCTX_EXTRN_PSTATE);
     AssertReleaseFailed();
+    RT_NOREF(pVCpu);
     return CPUMMODE_REAL;
 }
 
@@ -333,6 +335,7 @@ VMMDECL(uint32_t)       CPUMGetGuestCodeBits(PVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_PC | CPUMCTX_EXTRN_PSTATE);
     AssertReleaseFailed();
+    RT_NOREF(pVCpu);
     return 16;
 }
 
@@ -341,6 +344,7 @@ VMMDECL(DISCPUMODE)     CPUMGetGuestDisMode(PVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_PC | CPUMCTX_EXTRN_PSTATE);
     AssertReleaseFailed();
+    RT_NOREF(pVCpu);
     return DISCPUMODE_16BIT;
 }
 
@@ -395,6 +399,8 @@ VMMDECL(const char *) CPUMMicroarchName(CPUMMICROARCH enmMicroarch)
 #define CASE_RET_STR(enmValue)  case enmValue: return #enmValue + (sizeof("kCpumMicroarch_") - 1)
         CASE_RET_STR(kCpumMicroarch_Apple_M1);
 #undef CASE_RET_STR
+        default:
+            break;
     }
 
     return NULL;
