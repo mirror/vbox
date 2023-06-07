@@ -175,7 +175,7 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
             ::PostMessage(pCtx->Win.hWnd, SHCL_WIN_WM_TRANSFER_START, (WPARAM)pTransfer, (LPARAM)pEvent->idEvent);
 
             PSHCLEVENTPAYLOAD pPayload;
-            rc = ShClEventWait(pEvent, 30 * 1000 /* Timeout in ms */, &pPayload);
+            rc = ShClEventWait(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
             if (RT_SUCCESS(rc))
             {
                 Assert(pPayload->cbData == sizeof(int));
@@ -1006,7 +1006,7 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
         /* Not critical, the rest of the clipboard might work. */
     }
     else
-        LogRel(("Shared Clipboard: Initialized OLE in worker thraed\n"));
+        LogRel(("Shared Clipboard: Initialized OLE in worker thread\n"));
 #endif
 
     int rc;
