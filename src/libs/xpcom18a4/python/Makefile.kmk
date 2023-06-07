@@ -62,7 +62,7 @@ ifeq ($(KBUILD_TARGET),darwin) # Relatively predictable, don't script.
  else if "$(VBOX_DEF_MACOSX_VERSION_MIN)" == "10.9" && "$(VBOX_XCODE_VERSION)" == "6.2" # 'effing 10.9 SDK in Xcode 6.2 is missing python. Stupid, stupid Apple!!
   VBOX_PYTHON27_INC = $(VBOX_PATH_MACOSX_SDK)/../MacOSX10.10.sdk/System/Library/Frameworks/Python.framework/Versions/2.7/Headers
   VBOX_PYTHON27_LIB = $(VBOX_PATH_MACOSX_SDK)/../MacOSX10.10.sdk/System/Library/Frameworks/Python.framework/Versions/2.7/Python
- else
+ else if "$(VBOX_DEF_MACOSX_VERSION_MIN)" vlt "12.0"
   VBOX_PYTHON27_INC = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Versions/2.7/Headers
   VBOX_PYTHON27_LIB = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Versions/2.7/Python$(VBOX_PYTHON_SUFFTBD)
  endif
