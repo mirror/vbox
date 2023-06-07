@@ -278,6 +278,18 @@ namespace std
             return m_paItems[iItem];
         }
 
+        reference at(size_type iItem) RT_NOEXCEPT
+        {
+            Assert(iItem < m_cAllocated);
+            return m_paItems[iItem];
+        }
+
+        const_reference at(size_type iItem) const RT_NOEXCEPT
+        {
+            Assert(iItem < m_cAllocated);
+            return m_paItems[iItem];
+        }
+
         reference front() RT_NOEXCEPT
         {
             return m_paItems[0];
