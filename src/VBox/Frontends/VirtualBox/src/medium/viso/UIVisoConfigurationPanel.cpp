@@ -41,8 +41,7 @@ UIVisoConfigurationPanel::UIVisoConfigurationPanel(QWidget *pParent /* =0 */)
     , m_pVisoNameLabel(0)
     , m_pCustomOptionsLabel(0)
     , m_pVisoNameLineEdit(0)
-    , m_pCustomOptionsComboBox(0)
-    , m_pDeleteButton(0)
+    , m_pCustomOptionsLineEdit(0)
 {
     prepareObjects();
     prepareConnections();
@@ -65,11 +64,10 @@ void UIVisoConfigurationPanel::setVisoName(const QString& strVisoName)
 
 void UIVisoConfigurationPanel::setVisoCustomOptions(const QStringList& visoCustomOptions)
 {
-    if (!m_pCustomOptionsComboBox)
+    if (!m_pCustomOptionsLineEdit)
         return;
-    m_pCustomOptionsComboBox->clear();
-    foreach (const QString &strOption, visoCustomOptions)
-        m_pCustomOptionsComboBox->addItem(strOption);
+    m_pCustomOptionsLineEdit->clear();
+    m_pCustomOptionsLineEdit->setText(visoCustomOptions.join(";"));
 }
 
 void UIVisoConfigurationPanel::prepareObjects()
@@ -91,19 +89,14 @@ void UIVisoConfigurationPanel::prepareObjects()
 
     /* Cutom Viso options stuff: */
     m_pCustomOptionsLabel = new QILabel(QApplication::translate("UIVisoCreatorWidget", "Custom VISO options:"));
-    m_pCustomOptionsComboBox = new QComboBox;
-    m_pDeleteButton = new QIToolButton;
+    m_pCustomOptionsLineEdit = new QILineEdit;
 
-    if (m_pCustomOptionsLabel && m_pCustomOptionsComboBox && m_pDeleteButton)
+    if (m_pCustomOptionsLabel && m_pCustomOptionsLineEdit)
     {
-        m_pDeleteButton->setIcon(UIIconPool::iconSet(":/log_viewer_delete_current_bookmark_16px.png"));
-
-        m_pCustomOptionsComboBox->setEditable(true);
-        m_pCustomOptionsLabel->setBuddy(m_pCustomOptionsComboBox);
+        m_pCustomOptionsLabel->setBuddy(m_pCustomOptionsLineEdit);
 
         mainLayout()->addWidget(m_pCustomOptionsLabel, 0, Qt::AlignLeft);
-        mainLayout()->addWidget(m_pCustomOptionsComboBox, Qt::AlignLeft);
-        mainLayout()->addWidget(m_pDeleteButton, 0, Qt::AlignLeft);
+        mainLayout()->addWidget(m_pCustomOptionsLineEdit, Qt::AlignLeft);
     }
     retranslateUi();
 }
@@ -111,9 +104,9 @@ void UIVisoConfigurationPanel::prepareObjects()
 void UIVisoConfigurationPanel::prepareConnections()
 {
     if (m_pVisoNameLineEdit)
-        connect(m_pVisoNameLineEdit, &QILineEdit::editingFinished, this, &UIVisoConfigurationPanel::sltHandleVisoNameChanged);
-    if (m_pDeleteButton)
-        connect(m_pDeleteButton, &QIToolButton::clicked, this, &UIVisoConfigurationPanel::sltHandleDeleteCurrentCustomOption);
+        connect(m_pVisoNameLineEdit, &QILineEdit::editingFinished, this, &UIVisoConfigurationPanel::sltVisoNameChanged);
+    if (m_pCustomOptionsLabel)
+        connect(m_pCustomOptionsLineEdit, &QILineEdit::editingFinished, this, &UIVisoConfigurationPanel::sltCustomOptionsEdited);
 }
 
 void UIVisoConfigurationPanel::retranslateUi()
@@ -122,49 +115,24 @@ void UIVisoConfigurationPanel::retranslateUi()
         m_pVisoNameLabel->setText(QApplication::translate("UIVisoCreatorWidget", "VISO Name:"));
     if (m_pCustomOptionsLabel)
         m_pCustomOptionsLabel->setText(QApplication::translate("UIVisoCreatorWidget", "Custom VISO options:"));
-    if (m_pDeleteButton)
-        m_pDeleteButton->setToolTip(QApplication::translate("UIVisoCreatorWidget", "Remove current option."));
+
     if (m_pVisoNameLineEdit)
         m_pVisoNameLineEdit->setToolTip(QApplication::translate("UIVisoCreatorWidget", "Holds the name of the VISO medium."));
-    if (m_pCustomOptionsComboBox)
-        m_pCustomOptionsComboBox->setToolTip(QApplication::translate("UIVisoCreatorWidget", "Holds options for VISO creation."));
+    if (m_pCustomOptionsLineEdit)
+        m_pCustomOptionsLineEdit->setToolTip(QApplication::translate("UIVisoCreatorWidget", "The list of suctom options delimited with ';'."));
 }
 
-void UIVisoConfigurationPanel::addCustomVisoOption()
+void UIVisoConfigurationPanel::sltCustomOptionsEdited()
 {
-    if (!m_pCustomOptionsComboBox)
+    if (!m_pCustomOptionsLineEdit)
         return;
-    if (m_pCustomOptionsComboBox->currentText().isEmpty())
-        return;
-
-    emitCustomVisoOptions();
-    m_pCustomOptionsComboBox->clearEditText();
-}
-
-void UIVisoConfigurationPanel::emitCustomVisoOptions()
-{
-    if (!m_pCustomOptionsComboBox)
-        return;
-    QStringList customVisoOptions;
-    for (int i = 0; i < m_pCustomOptionsComboBox->count(); ++i)
-        customVisoOptions << m_pCustomOptionsComboBox->itemText(i);
-
+    QStringList customVisoOptions = m_pCustomOptionsLineEdit->text().split(";");
     if (!customVisoOptions.isEmpty())
         emit sigCustomVisoOptionsChanged(customVisoOptions);
 }
 
-void UIVisoConfigurationPanel::sltHandleVisoNameChanged()
+void UIVisoConfigurationPanel::sltVisoNameChanged()
 {
     if (m_pVisoNameLineEdit)
         emit sigVisoNameChanged(m_pVisoNameLineEdit->text());
-}
-
-void UIVisoConfigurationPanel::sltHandleDeleteCurrentCustomOption()
-{
-    if (!m_pCustomOptionsComboBox)
-        return;
-    if (m_pCustomOptionsComboBox->currentText().isEmpty())
-        return;
-    m_pCustomOptionsComboBox->removeItem(m_pCustomOptionsComboBox->currentIndex());
-    emitCustomVisoOptions();
 }

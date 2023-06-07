@@ -62,21 +62,18 @@ protected:
 
 private slots:
 
-    void sltHandleVisoNameChanged();
-    void sltHandleDeleteCurrentCustomOption();
+    void sltVisoNameChanged();
+    void sltCustomOptionsEdited();
 
 private:
 
     void prepareObjects();
     void prepareConnections();
-    void addCustomVisoOption();
-    void emitCustomVisoOptions();
 
     QILabel      *m_pVisoNameLabel;
     QILabel      *m_pCustomOptionsLabel;
     QILineEdit   *m_pVisoNameLineEdit;
-    QComboBox    *m_pCustomOptionsComboBox;
-    QIToolButton *m_pDeleteButton;
+    QILineEdit   *m_pCustomOptionsLineEdit;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoConfigurationPanel_h */
