@@ -170,6 +170,29 @@ class ThreadedFunctionVariation(object):
         ksVariation_64,
         ksVariation_64_Addr32,
     );
+    kasVariationsEmitOrder = (
+        ksVariation_Default,
+        ksVariation_64,
+        ksVariation_32_Flat,
+        ksVariation_32,
+        ksVariation_16,
+        ksVariation_16_Addr32,
+        ksVariation_16_Pre386,
+        ksVariation_32_Addr16,
+        ksVariation_64_Addr32,
+    );
+    kdVariationNames = {
+        ksVariation_Default:    'defer-to-cimpl',
+        ksVariation_16:         '16-bit',
+        ksVariation_16_Addr32:  '16-bit w/ address prefix (Addr32)',
+        ksVariation_16_Pre386:  '16-bit on pre-386 CPU',
+        ksVariation_32:         '32-bit',
+        ksVariation_32_Flat:    '32-bit flat and wide open CS, SS, DS and ES',
+        ksVariation_32_Addr16:  '32-bit w/ address prefix (Addr16)',
+        ksVariation_64:         '64-bit',
+        ksVariation_64_Addr32:  '64-bit w/ address prefix (Addr32)',
+
+    };
     ## @}
 
     def __init__(self, oThreadedFunction, sVariation = ksVariation_Default):
@@ -186,6 +209,9 @@ class ThreadedFunctionVariation(object):
 
         ## List/tree of statements for the threaded function.
         self.aoStmtsForThreadedFunction = [] # type: list(McStmt)
+
+        ## Function enum number, for verification. Set by generateThreadedFunctionsHeader.
+        self.iEnumValue     = -1;
 
     def getIndexName(self):
         sName = self.oParent.oMcBlock.sFunction;
@@ -769,6 +795,8 @@ class ThreadedFunction(object):
         self.oMcBlock       = oMcBlock      # type: IEMAllInstructionsPython.McBlock
         ## Variations for this block. There is at least one.
         self.aoVariations   = []            # type: list(ThreadedFunctionVariation)
+        ## Variation dictionary containing the same as aoVariations.
+        self.dVariations    = {}            # type: dict(str,ThreadedFunctionVariation)
         ## Dictionary of local variables (IEM_MC_LOCAL[_CONST]) and call arguments (IEM_MC_ARG*).
         self.dVariables     = {}            # type: dict(str,McStmtVar)
 
@@ -828,6 +856,9 @@ class ThreadedFunction(object):
             self.aoVariations = [ThreadedFunctionVariation(self, sVar)
                                  for sVar in ThreadedFunctionVariation.kasVariationsWithoutAddress];
 
+        # Dictionary variant of the list.
+        self.dVariations = { oVar.sVariation: oVar for oVar in self.aoVariations };
+
         # Continue the analysis on each variation.
         for oVariation in self.aoVariations:
             oVariation.analyzeVariation(aoStmts);
@@ -845,7 +876,7 @@ class ThreadedFunction(object):
             return self.aoVariations[0].emitThreadedCallStmts(0);
 
         # Currently only have variations for address mode.
-        dByVari = { oVar.sVariation: oVar for oVar in self.aoVariations };
+        dByVari = self.dVariations;
 
         sExecMask = 'IEM_F_MODE_CPUMODE_MASK';
         if (   ThreadedFunctionVariation.ksVariation_64_Addr32 in dByVari
@@ -1079,9 +1110,20 @@ class IEMThreadedGenerator(object):
             '{',
             '    kIemThreadedFunc_Invalid = 0,',
         ];
-        for oThreadedFunction in self.aoThreadedFuncs:
-            for oVariation in oThreadedFunction.aoVariations:
-                asLines.append('    ' + oVariation.getIndexName() + ',');
+        iThreadedFunction = 0;
+        for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
+            asLines += [
+                    '',
+                    '    /*',
+                    '     * Variation: ' + ThreadedFunctionVariation.kdVariationNames[sVariation] + '',
+                    '     */',
+            ];
+            for oThreadedFunction in self.aoThreadedFuncs:
+                oVariation = oThreadedFunction.dVariations.get(sVariation, None);
+                if oVariation:
+                    iThreadedFunction += 1;
+                    oVariation.iEnumValue = iThreadedFunction;
+                    asLines.append('    ' + oVariation.getIndexName() + ',');
         asLines += [
             '    kIemThreadedFunc_End',
             '} IEMTHREADEDFUNCS;',
@@ -1130,68 +1172,80 @@ class IEMThreadedGenerator(object):
         #
         # Emit the function definitions.
         #
-        for oThreadedFunction in self.aoThreadedFuncs:
-            oMcBlock = oThreadedFunction.oMcBlock;
-            for oVariation in oThreadedFunction.aoVariations:
-                # Function header
-                oOut.write(  '\n'
-                           + '\n'
-                           + '/**\n'
-                           + ' * %s at line %s offset %s in %s%s\n'
-                              % (oMcBlock.sFunction, oMcBlock.iBeginLine, oMcBlock.offBeginLine,
-                                 os.path.split(oMcBlock.sSrcFile)[1],
-                                 ' (macro expansion)' if oMcBlock.iBeginLine == oMcBlock.iEndLine else '')
-                           + ' */\n'
-                           + 'static IEM_DECL_IMPL_DEF(VBOXSTRICTRC, ' + oVariation.getFunctionName() + ',\n'
-                           + '                         ' + sParamList
-                           + '{\n');
+        for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
+            sVarName = ThreadedFunctionVariation.kdVariationNames[sVariation];
+            oOut.write(  '\n'
+                       + '\n'
+                       + '\n'
+                       + '\n'
+                       + '/*' + '*' * 128 + '\n'
+                       + '*   Variation: ' + sVarName + ' ' * (129 - len(sVarName) - 15) + '*\n'
+                       + '*' * 128 + '*/\n');
 
-                aasVars = [];
-                for aoRefs in oVariation.dParamRefs.values():
-                    oRef  = aoRefs[0];
-                    if oRef.sType[0] != 'P':
-                        cBits = g_kdTypeInfo[oRef.sType][0];
-                        sType = g_kdTypeInfo[oRef.sType][2];
-                    else:
-                        cBits = 64;
-                        sType = oRef.sType;
+            for oThreadedFunction in self.aoThreadedFuncs:
+                oVariation = oThreadedFunction.dVariations.get(sVariation, None);
+                if oVariation:
+                    oMcBlock = oThreadedFunction.oMcBlock;
 
-                    sTypeDecl = sType + ' const';
+                    # Function header
+                    oOut.write(  '\n'
+                               + '\n'
+                               + '/**\n'
+                               + ' * %s at line %s offset %s in %s%s\n'
+                                  % (oMcBlock.sFunction, oMcBlock.iBeginLine, oMcBlock.offBeginLine,
+                                     os.path.split(oMcBlock.sSrcFile)[1],
+                                     ' (macro expansion)' if oMcBlock.iBeginLine == oMcBlock.iEndLine else '')
+                               + ' */\n'
+                               + 'static IEM_DECL_IMPL_DEF(VBOXSTRICTRC, ' + oVariation.getFunctionName() + ',\n'
+                               + '                         ' + sParamList
+                               + '{\n');
 
-                    if cBits == 64:
-                        assert oRef.offNewParam == 0;
-                        if sType == 'uint64_t':
-                            sUnpack = 'uParam%s;' % (oRef.iNewParam,);
+                    aasVars = [];
+                    for aoRefs in oVariation.dParamRefs.values():
+                        oRef  = aoRefs[0];
+                        if oRef.sType[0] != 'P':
+                            cBits = g_kdTypeInfo[oRef.sType][0];
+                            sType = g_kdTypeInfo[oRef.sType][2];
                         else:
-                            sUnpack = '(%s)uParam%s;' % (sType, oRef.iNewParam,);
-                    elif oRef.offNewParam == 0:
-                        sUnpack = '(%s)(uParam%s & %s);' % (sType, oRef.iNewParam, self.ksBitsToIntMask[cBits]);
-                    else:
-                        sUnpack = '(%s)((uParam%s >> %s) & %s);' \
-                                % (sType, oRef.iNewParam, oRef.offNewParam, self.ksBitsToIntMask[cBits]);
+                            cBits = 64;
+                            sType = oRef.sType;
 
-                    sComment = '/* %s - %s ref%s */' % (oRef.sOrgRef, len(aoRefs), 's' if len(aoRefs) != 1 else '',);
+                        sTypeDecl = sType + ' const';
 
-                    aasVars.append([ '%s:%02u' % (oRef.iNewParam, oRef.offNewParam),
-                                     sTypeDecl, oRef.sNewName, sUnpack, sComment ]);
-                acchVars = [0, 0, 0, 0, 0];
-                for asVar in aasVars:
-                    for iCol, sStr in enumerate(asVar):
-                        acchVars[iCol] = max(acchVars[iCol], len(sStr));
-                sFmt = '    %%-%ss %%-%ss = %%-%ss %%s\n' % (acchVars[1], acchVars[2], acchVars[3]);
-                for asVar in sorted(aasVars):
-                    oOut.write(sFmt % (asVar[1], asVar[2], asVar[3], asVar[4],));
+                        if cBits == 64:
+                            assert oRef.offNewParam == 0;
+                            if sType == 'uint64_t':
+                                sUnpack = 'uParam%s;' % (oRef.iNewParam,);
+                            else:
+                                sUnpack = '(%s)uParam%s;' % (sType, oRef.iNewParam,);
+                        elif oRef.offNewParam == 0:
+                            sUnpack = '(%s)(uParam%s & %s);' % (sType, oRef.iNewParam, self.ksBitsToIntMask[cBits]);
+                        else:
+                            sUnpack = '(%s)((uParam%s >> %s) & %s);' \
+                                    % (sType, oRef.iNewParam, oRef.offNewParam, self.ksBitsToIntMask[cBits]);
 
-                # RT_NOREF for unused parameters.
-                if oVariation.cMinParams < g_kcThreadedParams:
-                    oOut.write('    RT_NOREF('
-                               + ', '.join(['uParam%u' % (i,) for i in range(oVariation.cMinParams, g_kcThreadedParams)])
-                               + ');\n');
+                        sComment = '/* %s - %s ref%s */' % (oRef.sOrgRef, len(aoRefs), 's' if len(aoRefs) != 1 else '',);
 
-                # Now for the actual statements.
-                oOut.write(iai.McStmt.renderCodeForList(oVariation.aoStmtsForThreadedFunction, cchIndent = 4));
+                        aasVars.append([ '%s:%02u' % (oRef.iNewParam, oRef.offNewParam),
+                                         sTypeDecl, oRef.sNewName, sUnpack, sComment ]);
+                    acchVars = [0, 0, 0, 0, 0];
+                    for asVar in aasVars:
+                        for iCol, sStr in enumerate(asVar):
+                            acchVars[iCol] = max(acchVars[iCol], len(sStr));
+                    sFmt = '    %%-%ss %%-%ss = %%-%ss %%s\n' % (acchVars[1], acchVars[2], acchVars[3]);
+                    for asVar in sorted(aasVars):
+                        oOut.write(sFmt % (asVar[1], asVar[2], asVar[3], asVar[4],));
 
-                oOut.write('}\n');
+                    # RT_NOREF for unused parameters.
+                    if oVariation.cMinParams < g_kcThreadedParams:
+                        oOut.write('    RT_NOREF('
+                                   + ', '.join(['uParam%u' % (i,) for i in range(oVariation.cMinParams, g_kcThreadedParams)])
+                                   + ');\n');
+
+                    # Now for the actual statements.
+                    oOut.write(iai.McStmt.renderCodeForList(oVariation.aoStmtsForThreadedFunction, cchIndent = 4));
+
+                    oOut.write('}\n');
 
 
         #
@@ -1206,10 +1260,17 @@ class IEMThreadedGenerator(object):
                    + '{\n'
                    + '    /*Invalid*/ NULL, \n');
         iThreadedFunction = 0;
-        for oThreadedFunction in self.aoThreadedFuncs:
-            for oVariation in oThreadedFunction.aoVariations:
-                iThreadedFunction += 1;
-                oOut.write('    /*%4u*/ %s,\n' % (iThreadedFunction, oVariation.getFunctionName(),));
+        for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
+            oOut.write(  '\n'
+                       + '    /*\n'
+                       + '     * Variation: ' + ThreadedFunctionVariation.kdVariationNames[sVariation] + '\n'
+                       + '     */\n');
+            for oThreadedFunction in self.aoThreadedFuncs:
+                oVariation = oThreadedFunction.dVariations.get(sVariation, None);
+                if oVariation:
+                    iThreadedFunction += 1;
+                    assert oVariation.iEnumValue == iThreadedFunction;
+                    oOut.write('    /*%4u*/ %s,\n' % (iThreadedFunction, oVariation.getFunctionName(),));
         oOut.write('};\n');
 
         return True;
@@ -1222,15 +1283,6 @@ class IEMThreadedGenerator(object):
         if idx < len(self.aoThreadedFuncs):
             return self.aoThreadedFuncs[idx];
         return ThreadedFunction.dummyInstance();
-
-    def findEndOfMcEndStmt(self, sLine, offEndStmt):
-        """
-        Helper that returns the line offset following the 'IEM_MC_END();'.
-        """
-        assert sLine[offEndStmt:].startswith('IEM_MC_END');
-        off = sLine.find(';', offEndStmt + len('IEM_MC_END'));
-        assert off > 0, 'sLine="%s"' % (sLine, );
-        return off + 1 if off > 0 else 99999998;
 
     def generateModifiedInput(self, oOut):
         """
@@ -1273,7 +1325,7 @@ class IEMThreadedGenerator(object):
                     iLine = oThreadedFunction.oMcBlock.iEndLine;
                     sLine = oParser.asLines[iLine - 1];
                     assert sLine.count('IEM_MC_') == 1;
-                    oOut.write(sLine[self.findEndOfMcEndStmt(sLine, oThreadedFunction.oMcBlock.offEndLine) : ]);
+                    oOut.write(sLine[oThreadedFunction.oMcBlock.offAfterEnd : ]);
 
                     # Advance
                     iThreadedFunction += 1;
@@ -1287,10 +1339,11 @@ class IEMThreadedGenerator(object):
                         oOut.write(sLine[offLine : oThreadedFunction.oMcBlock.offBeginLine]);
 
                         sModified = oThreadedFunction.generateInputCode().strip();
-                        assert sModified.startswith('IEM_MC_BEGIN'), 'sModified="%s"' % (sModified,);
+                        assert (   sModified.startswith('IEM_MC_BEGIN')
+                                or sModified.startswith('IEM_MC_DEFER_TO_CIMPL_')), 'sModified="%s"' % (sModified,);
                         oOut.write(sModified);
 
-                        offLine = self.findEndOfMcEndStmt(sLine, oThreadedFunction.oMcBlock.offEndLine);
+                        offLine = oThreadedFunction.oMcBlock.offAfterEnd;
 
                         # Advance
                         iThreadedFunction += 1;

@@ -1917,30 +1917,41 @@ class McCppPreProc(McCppGeneric):
 
 class McBlock(object):
     """
-    Microcode block (IEM_MC_BEGIN ... IEM_MC_END).
+    Microcode block (IEM_MC_BEGIN ... IEM_MC_END, IEM_MC_DEFER_TO_CIMPL_x_RET).
     """
 
     def __init__(self, sSrcFile, iBeginLine, offBeginLine, oFunction, iInFunction, cchIndent = None):
-        self.sSrcFile     = sSrcFile;                           ##< The source file containing the block.
-        self.iBeginLine   = iBeginLine;                         ##< The line with the IEM_MC_BEGIN statement.
-        self.offBeginLine = offBeginLine;                       ##< The offset of the IEM_MC_BEGIN statement within the line.
-        self.iEndLine     = -1;                                 ##< The line with the IEM_MC_END statement.
-        self.offEndLine   = 0;                                  ##< The offset of the IEM_MC_END statement within the line.
-        self.oFunction    = oFunction;                          ##< The function the block resides in.
-        self.sFunction    = oFunction.sName;                    ##< The name of the function the block resides in. DEPRECATED.
-        self.iInFunction  = iInFunction;                        ##< The block number wihtin the function.
+        ## The source file containing the block.
+        self.sSrcFile     = sSrcFile;
+        ## The line with the IEM_MC_BEGIN/IEM_MC_DEFER_TO_CIMPL_X_RET statement.
+        self.iBeginLine   = iBeginLine;
+        ## The offset of the IEM_MC_BEGIN/IEM_MC_DEFER_TO_CIMPL_X_RET statement within the line.
+        self.offBeginLine = offBeginLine;
+        ## The line with the IEM_MC_END statement / last line of IEM_MC_DEFER_TO_CIMPL_X_RET.
+        self.iEndLine     = -1;
+        ## The offset of the IEM_MC_END statement within the line / semicolon offset for defer-to.
+        self.offEndLine   = 0;
+        ## The offset following the IEM_MC_END/IEM_MC_DEFER_TO_CIMPL_X_RET semicolon.
+        self.offAfterEnd  = 0;
+        ## The function the block resides in.
+        self.oFunction    = oFunction;
+        ## The name of the function the block resides in. DEPRECATED.
+        self.sFunction    = oFunction.sName;
+        ## The block number within the function.
+        self.iInFunction  = iInFunction;
         self.cchIndent    = cchIndent if cchIndent else offBeginLine;
         self.asLines      = []              # type: list(str)   ##< The raw lines the block is made up of.
         ## Decoded statements in the block.
         self.aoStmts      = []              # type: list(McStmt)
 
-    def complete(self, iEndLine, offEndLine, asLines):
+    def complete(self, iEndLine, offEndLine, offAfterEnd, asLines):
         """
         Completes the microcode block.
         """
         assert self.iEndLine == -1;
         self.iEndLine     = iEndLine;
         self.offEndLine   = offEndLine;
+        self.offAfterEnd  = offAfterEnd;
         self.asLines      = asLines;
 
     def raiseDecodeError(self, sRawCode, off, sMessage):
@@ -2431,11 +2442,12 @@ class McBlock(object):
 
     def decode(self):
         """
-        Decodes the block, populating self.aoStmts.
+        Decodes the block, populating self.aoStmts if necessary.
         Returns the statement list.
         Raises ParserException on failure.
         """
-        self.aoStmts = self.decodeCode(''.join(self.asLines));
+        if not self.aoStmts:
+            self.aoStmts = self.decodeCode(''.join(self.asLines));
         return self.aoStmts;
 
 
@@ -2914,8 +2926,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         self.oReHashDefine2 = re.compile('(?s)\A\s*([A-Za-z_][A-Za-z0-9_]*)\(([^)]*)\)\s*(.*)\Z'); ##< With arguments.
         self.oReHashDefine3 = re.compile('(?s)\A\s*([A-Za-z_][A-Za-z0-9_]*)[^(]\s*(.*)\Z');        ##< Simple, no arguments.
         self.oReHashUndef   = re.compile('^\s*#\s*undef\s+(.*)$');
-        self.oReMcBeginEnd  = re.compile(r'\bIEM_MC_(BEGIN|END)\s*\(');
-
+        self.oReMcBeginEnd  = re.compile(r'\bIEM_MC_(BEGIN|END|DEFER_TO_CIMPL_[0-5]_RET)\s*\(');
         self.fDebug         = True;
         self.fDebugMc       = False;
         self.fDebugPreProc  = False;
@@ -4600,8 +4611,9 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         #
         while asLines[-1].strip() == '':
             asLines.pop();
-        sFinal      = asLines[-1];
-        offFinalEnd = sFinal.find('IEM_MC_END');
+        sFinal        = asLines[-1];
+        offFinalEnd   = sFinal.find('IEM_MC_END');
+        offEndInFinal = offFinalEnd;
         if offFinalEnd < 0: self.raiseError('bogus IEM_MC_END: Not in final line: %s' % (sFinal,));
         offFinalEnd += len('IEM_MC_END');
 
@@ -4625,8 +4637,58 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         #
         # Complete and discard the current block.
         #
-        self.oCurMcBlock.complete(self.iLine, offEndStatementInLine, asLines);
+        self.oCurMcBlock.complete(self.iLine, offEndStatementInLine,
+                                  offEndStatementInLine + offFinalEnd - offEndInFinal, asLines);
         self.oCurMcBlock = None;
+        return True;
+
+    def workerIemMcDeferToCImplXRet(self, sCode, offBeginStatementInCodeStr, offBeginStatementInLine, cParams):
+        """
+        Process a IEM_MC_DEFER_TO_CIMPL_[0-5]_RET macro invocation.
+        """
+        if self.fDebugMc:
+            self.debug('IEM_MC_DEFER_TO_CIMPL_%d_RET on %s off %s' % (cParams, self.iLine, offBeginStatementInLine,));
+            #self.debug('%s<eos>' % (sCode,));
+
+        # Check preconditions.
+        if not self.oCurFunction:
+            self.raiseError('IEM_MC_DEFER_TO_CIMPL_x_RET w/o current function (%s)' % (sCode,));
+        if self.oCurMcBlock:
+            self.raiseError('IEM_MC_DEFER_TO_CIMPL_x_RET inside IEM_MC_BEGIN blocki starting at line %u'
+                            % (self.oCurMcBlock.iBeginLine,));
+
+        # Figure out the indent level the block starts at, adjusting for expanded multiline macros.
+        cchIndent = offBeginStatementInCodeStr;
+        offPrevNewline = sCode.rfind('\n', 0, offBeginStatementInCodeStr);
+        if offPrevNewline >= 0:
+            cchIndent -= offPrevNewline + 1;
+        #self.debug('cchIndent=%s offPrevNewline=%s sFunc=%s' % (cchIndent, offPrevNewline, self.oCurFunction.sName));
+
+        # Start a new block.
+        oMcBlock = McBlock(self.sSrcFile, self.iLine, offBeginStatementInLine,
+                           self.oCurFunction, self.iMcBlockInFunc, cchIndent);
+
+        # Parse the statment (first call may advance self.iLine!).
+        offAfter, asArgs = self.findAndParseMacroInvocationEx(sCode[offBeginStatementInCodeStr:],
+                                                              'IEM_MC_DEFER_TO_CIMPL_%d_RET' % (cParams,));
+        if asArgs is None:
+            self.raiseError('IEM_MC_DEFER_TO_CIMPL_x_RET: Closing parenthesis not found!');
+        if len(asArgs) != cParams + 3:
+            self.raiseError('IEM_MC_DEFER_TO_CIMPL_%d_RET: findAndParseMacroInvocationEx returns %s args, expected %s!'
+                            % (cParams, len(asArgs), cParams + 3,));
+
+        oMcBlock.aoStmts = [McStmtCall(asArgs[0], asArgs[1:], 1),];
+
+        ## @todo complete this after some sleep...
+        _  = offAfter;
+        #asLines =
+
+        # Complete the block.
+        #oMcBlock.complete(self.iLine, offBeginStatementInCodeStr);
+
+        #g_aoMcBlocks.append(oMcBlock);
+        #self.cTotalMcBlocks += 1;
+        #self.iMcBlockInFunc += 1;
         return True;
 
     def workerStartFunction(self, asArgs):
@@ -4780,8 +4842,11 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
                 for oMatch in self.oReMcBeginEnd.finditer(sCode, offCode):
                     if oMatch.group(1) == 'END':
                         self.workerIemMcEnd(offLine + oMatch.start());
-                    else:
+                    elif oMatch.group(1) == 'BEGIN':
                         self.workerIemMcBegin(sCode, oMatch.start(), offLine + oMatch.start());
+                    else:
+                        self.workerIemMcDeferToCImplXRet(sCode, oMatch.start(), offLine + oMatch.start(),
+                                                         int(oMatch.group(1)[len('DEFER_TO_CIMPL_')]));
                 return True;
 
         return False;
@@ -4951,11 +5016,18 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
     def parse(self):
         """
         Parses the given file.
+
         Returns number or errors.
         Raises exception on fatal trouble.
         """
         #self.debug('Parsing %s' % (self.sSrcFile,));
 
+        #
+        # Loop thru the lines.
+        #
+        # Please mind that self.iLine may be updated by checkCodeForMacro and
+        # other worker methods.
+        #
         while self.iLine < len(self.asLines):
             sLine = self.asLines[self.iLine];
             self.iLine  += 1;
