@@ -75,9 +75,9 @@
 /**
  * Optimization for PAE page tables that are modified often
  */
-//#if 0 /* disabled again while debugging */
-#define PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
-//#endif
+#ifndef VBOX_VMM_TARGET_ARMV8
+# define PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+#endif
 
 /**
  * Large page support enabled only on 64 bits hosts; applies to nested paging only.
