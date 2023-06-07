@@ -147,11 +147,15 @@ DECLCALLBACK(int) gicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pC
      */
     PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "DistributorMmioBase|RedistributorMmioBase", "");
 
+#if 0
     /*
      * Disable automatic PDM locking for this device.
      */
     int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
     AssertRCReturn(rc, rc);
+#else
+    int rc;
+#endif
 
     /*
      * Register the GIC with PDM.

@@ -60,6 +60,9 @@
  */
 static void gicSetInterruptFF(PVMCPUCC pVCpu, bool fIrq, bool fFiq)
 {
+    LogFlowFunc(("pVCpu=%p{.idCpu=%u} fIrq=%RTbool fFiq=%RTbool\n",
+                 pVCpu, pVCpu->idCpu, fIrq, fFiq));
+
     Assert(fIrq || fFiq);
 
 #ifdef IN_RING3
@@ -119,6 +122,9 @@ static void gicSetInterruptFF(PVMCPUCC pVCpu, bool fIrq, bool fFiq)
  */
 DECLINLINE(void) gicClearInterruptFF(PVMCPUCC pVCpu, bool fIrq, bool fFiq)
 {
+    LogFlowFunc(("pVCpu=%p{.idCpu=%u} fIrq=%RTbool fFiq=%RTbool\n",
+                 pVCpu, pVCpu->idCpu, fIrq, fFiq));
+
     Assert(fIrq || fFiq);
 
 #ifdef IN_RING3
@@ -135,6 +141,9 @@ DECLINLINE(void) gicClearInterruptFF(PVMCPUCC pVCpu, bool fIrq, bool fFiq)
 
 DECLINLINE(void) gicUpdateInterruptFF(PVMCPUCC pVCpu, bool fIrq, bool fFiq)
 {
+    LogFlowFunc(("pVCpu=%p{.idCpu=%u} fIrq=%RTbool fFiq=%RTbool\n",
+                 pVCpu, pVCpu->idCpu, fIrq, fFiq));
+
     if (fIrq || fFiq)
         gicSetInterruptFF(pVCpu, fIrq, fFiq);
 
@@ -166,6 +175,9 @@ DECLINLINE(void) gicReDistHasIrqPending(PGICCPU pThis, bool *pfIrq, bool *pfFiq)
         *pfIrq = false;
         *pfFiq = false;
     }
+
+    LogFlowFunc(("pThis=%p bmIntEnabled=%#x bmIntPending=%#x bmIntActive=%#x fIrq=%RTbool fFiq=%RTbool\n",
+                 pThis, bmIntEnabled, bmIntPending, bmIntActive, *pfIrq, *pfFiq));
 }
 
 
@@ -192,6 +204,9 @@ DECLINLINE(void) gicDistHasIrqPendingForVCpu(PGICDEV pThis, bool *pfIrq, bool *p
         *pfIrq = false;
         *pfFiq = false;
     }
+
+    LogFlowFunc(("pThis=%p fIrq=%RTbool fFiq=%RTbool\n",
+                 pThis, *pfIrq, *pfFiq));
 }
 
 
@@ -228,17 +243,20 @@ static VBOXSTRICTRC gicReDistUpdateIrqState(PGICCPU pThis, PVMCPUCC pVCpu)
  */
 static VBOXSTRICTRC gicDistUpdateIrqState(PVMCC pVM, PGICDEV pThis)
 {
-    PVMCPUCC pVCpu = pVM->CTX_SUFF(apCpus)[0]; /** @todo SMP */
+    for (uint32_t i = 0; i < pVM->cCpus; i++)
+    {
+        PVMCPUCC pVCpu = pVM->CTX_SUFF(apCpus)[i];
 
-    bool fIrq, fFiq;
-    gicReDistHasIrqPending(VMCPU_TO_GICCPU(pVCpu), &fIrq, &fFiq);
+        bool fIrq, fFiq;
+        gicReDistHasIrqPending(VMCPU_TO_GICCPU(pVCpu), &fIrq, &fFiq);
 
-    bool fIrqDist, fFiqDist;
-    gicDistHasIrqPendingForVCpu(pThis, &fIrqDist, &fFiqDist);
-    fIrq |= fIrqDist;
-    fFiq |= fFiqDist;
+        bool fIrqDist, fFiqDist;
+        gicDistHasIrqPendingForVCpu(pThis, &fIrqDist, &fFiqDist);
+        fIrq |= fIrqDist;
+        fFiq |= fFiqDist;
 
-    gicUpdateInterruptFF(pVCpu, fIrq, fFiq);
+        gicUpdateInterruptFF(pVCpu, fIrq, fFiq);
+    }
     return VINF_SUCCESS;
 }
 
@@ -506,16 +524,27 @@ DECLINLINE(VBOXSTRICTRC) gicDistRegisterWrite(PPDMDEVINS pDevIns, PVMCPUCC pVCpu
  * @returns VBox status code.
  * @param   pDevIns         The device instance.
  * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   idRedist        The redistributor ID.
  * @param   offReg          The offset of the register being read.
  * @param   puValue         Where to store the register value.
  */
-DECLINLINE(VBOXSTRICTRC) gicReDistRegisterRead(PPDMDEVINS pDevIns, PVMCPUCC pVCpu, uint16_t offReg, uint32_t *puValue)
+DECLINLINE(VBOXSTRICTRC) gicReDistRegisterRead(PPDMDEVINS pDevIns, PVMCPUCC pVCpu, uint32_t idRedist, uint16_t offReg, uint32_t *puValue)
 {
-    VMCPU_ASSERT_EMT(pVCpu);
-    RT_NOREF(pDevIns, pVCpu, offReg);
+    RT_NOREF(pDevIns);
 
     switch (offReg)
     {
+        case GIC_REDIST_REG_TYPER_OFF:
+        {
+            PVMCC pVM = PDMDevHlpGetVM(pDevIns);
+            *puValue =   ((pVCpu->idCpu == pVM->cCpus - 1) ? GIC_REDIST_REG_TYPER_LAST : 0)
+                       | GIC_REDIST_REG_TYPER_CPU_NUMBER_SET(idRedist)
+                       | GIC_REDIST_REG_TYPER_CMN_LPI_AFF_SET(GIC_REDIST_REG_TYPER_CMN_LPI_AFF_ALL);
+            break;
+        }
+        case GIC_REDIST_REG_TYPER_AFFINITY_OFF:
+            *puValue = idRedist;
+            break;
         case GIC_REDIST_REG_PIDR2_OFF:
             *puValue = GIC_REDIST_REG_PIDR2_ARCH_REV_SET(GIC_REDIST_REG_PIDR2_ARCH_REV_GICV3);
             break;
@@ -709,6 +738,10 @@ VMM_INT_DECL(VBOXSTRICTRC) GICReadSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint64
     PGICCPU pThis = VMCPU_TO_GICCPU(pVCpu);
     PPDMDEVINS pDevIns = VMCPU_TO_DEVINS(pVCpu);
     PGICDEV pGicDev = PDMDEVINS_2_DATA(pDevIns, PGICDEV);
+
+    int const  rcLock  = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
+
     switch (u32Reg)
     {
         case ARMV8_AARCH64_SYSREG_ICC_PMR_EL1:
@@ -776,7 +809,10 @@ VMM_INT_DECL(VBOXSTRICTRC) GICReadSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint64
             if (idxIntPending > -1)
             {
                 /* Mark the interrupt as active. */
-                ASMAtomicOrU32(&pThis->bmIntActive, idxIntPending);
+                ASMAtomicOrU32(&pThis->bmIntActive, RT_BIT_32(idxIntPending));
+                /* Clear edge level interrupts like SGIs as pending. */
+                if (idxIntPending <= GIC_INTID_RANGE_SGI_LAST)
+                    ASMAtomicBitClear(&pThis->bmIntPending, idxIntPending);
                 *pu64Value = idxIntPending;
             }
             else
@@ -787,7 +823,7 @@ VMM_INT_DECL(VBOXSTRICTRC) GICReadSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint64
                 if (idxIntPending > -1)
                 {
                     /* Mark the interrupt as active. */
-                    ASMAtomicOrU32(&pGicDev->bmIntActive, idxIntPending);
+                    ASMAtomicOrU32(&pGicDev->bmIntActive, RT_BIT_32(idxIntPending));
                     *pu64Value = idxIntPending + GIC_INTID_RANGE_SPI_START;
                 }
                 else
@@ -823,6 +859,8 @@ VMM_INT_DECL(VBOXSTRICTRC) GICReadSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint64
             break;
     }
 
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
+
     LogFlowFunc(("pVCpu=%p u32Reg=%#x pu64Value=%RX64\n", pVCpu, u32Reg, *pu64Value));
     return VINF_SUCCESS;
 }
@@ -842,12 +880,15 @@ VMM_INT_DECL(VBOXSTRICTRC) GICWriteSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint6
      * Validate.
      */
     VMCPU_ASSERT_EMT(pVCpu);
-    RT_NOREF(pVCpu, u32Reg, u64Value);
     LogFlowFunc(("pVCpu=%p u32Reg=%#x u64Value=%RX64\n", pVCpu, u32Reg, u64Value));
 
     PGICCPU pThis = VMCPU_TO_GICCPU(pVCpu);
     PPDMDEVINS pDevIns = VMCPU_TO_DEVINS(pVCpu);
     PGICDEV pGicDev = PDMDEVINS_2_DATA(pDevIns, PGICDEV);
+
+    int const  rcLock  = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
+
     switch (u32Reg)
     {
         case ARMV8_AARCH64_SYSREG_ICC_PMR_EL1:
@@ -899,8 +940,32 @@ VMM_INT_DECL(VBOXSTRICTRC) GICWriteSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint6
             AssertReleaseFailed();
             break;
         case ARMV8_AARCH64_SYSREG_ICC_SGI1R_EL1:
-            AssertReleaseFailed();
+        {
+            uint32_t uIntId = ARMV8_ICC_SGI1R_EL1_AARCH64_INTID_GET(u64Value) - GIC_INTID_RANGE_SGI_START;
+            if (u64Value & ARMV8_ICC_SGI1R_EL1_AARCH64_IRM)
+            {
+                /* Route to all but this vCPU. */
+                AssertReleaseFailed();
+            }
+            else
+            {
+                /* Examine target list. */
+                /** @todo Range selector support. */
+                VMCPUID idCpu = 0;
+                uint16_t uTgtList = ARMV8_ICC_SGI1R_EL1_AARCH64_TARGET_LIST_GET(u64Value);
+                while (uTgtList)
+                {
+                    if (uTgtList & 0x1)
+                    {
+                        PVMCPUCC pVCpuDst = VMMGetCpuById(pVCpu->CTX_SUFF(pVM), idCpu);
+                        GICSgiSet(pVCpuDst, uIntId, true /*fAsserted*/);
+                    }
+                    uTgtList >>= 1;
+                    idCpu++;
+                }
+            }
             break;
+        }
         case ARMV8_AARCH64_SYSREG_ICC_ASGI1R_EL1:
             AssertReleaseFailed();
             break;
@@ -914,9 +979,9 @@ VMM_INT_DECL(VBOXSTRICTRC) GICWriteSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint6
         {
             /* Mark the interrupt as not active anymore, though it might still be pending. */
             if (u64Value < GIC_INTID_RANGE_SPI_START)
-                ASMAtomicAndU32(&pThis->bmIntActive, (uint32_t)u64Value);
+                ASMAtomicAndU32(&pThis->bmIntActive, ~RT_BIT_32((uint32_t)u64Value));
             else
-                ASMAtomicAndU32(&pGicDev->bmIntActive, (uint32_t)u64Value);
+                ASMAtomicAndU32(&pGicDev->bmIntActive, ~RT_BIT_32((uint32_t)u64Value));
             gicReDistUpdateIrqState(pThis, pVCpu);
             break;
         }
@@ -944,6 +1009,7 @@ VMM_INT_DECL(VBOXSTRICTRC) GICWriteSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint6
             break;
     }
 
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
     return VINF_SUCCESS;
 }
 
@@ -958,10 +1024,17 @@ VMM_INT_DECL(VBOXSTRICTRC) GICWriteSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint6
  */
 VMM_INT_DECL(int) GICSpiSet(PVMCC pVM, uint32_t uIntId, bool fAsserted)
 {
+    LogFlowFunc(("pVM=%p uIntId=%u fAsserted=%RTbool\n",
+                 pVM, uIntId, fAsserted));
+
     AssertReturn(uIntId < GIC_SPI_MAX, VERR_INVALID_PARAMETER);
 
-    PGIC    pGic   = VM_TO_GIC(pVM);
-    PGICDEV pThis  = PDMDEVINS_2_DATA(pGic->CTX_SUFF(pDevIns), PGICDEV);
+    PGIC       pGic    = VM_TO_GIC(pVM);
+    PPDMDEVINS pDevIns = pGic->CTX_SUFF(pDevIns);
+    PGICDEV    pThis   = PDMDEVINS_2_DATA(pDevIns, PGICDEV);
+
+    int const  rcLock  = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
 
     /* Update the interrupts pending state. */
     if (fAsserted)
@@ -969,7 +1042,9 @@ VMM_INT_DECL(int) GICSpiSet(PVMCC pVM, uint32_t uIntId, bool fAsserted)
     else
         ASMAtomicAndU32(&pThis->bmIntPending, ~RT_BIT_32(uIntId));
 
-    return VBOXSTRICTRC_VAL(gicDistUpdateIrqState(pVM, pThis));
+    int rc = VBOXSTRICTRC_VAL(gicDistUpdateIrqState(pVM, pThis));
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
+    return rc;
 }
 
 
@@ -986,8 +1061,16 @@ VMM_INT_DECL(int) GICPpiSet(PVMCPUCC pVCpu, uint32_t uIntId, bool fAsserted)
     LogFlowFunc(("pVCpu=%p{.idCpu=%u} uIntId=%u fAsserted=%RTbool\n",
                  pVCpu, pVCpu->idCpu, uIntId, fAsserted));
 
+    PPDMDEVINS pDevIns = VMCPU_TO_DEVINS(pVCpu);
+
+    int const  rcLock  = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
+
     AssertReturn(uIntId >= 0 && uIntId <= (GIC_INTID_RANGE_PPI_LAST - GIC_INTID_RANGE_PPI_START), VERR_INVALID_PARAMETER);
-    return gicReDistInterruptSet(pVCpu, uIntId + GIC_INTID_RANGE_PPI_START, fAsserted);
+    int rc = gicReDistInterruptSet(pVCpu, uIntId + GIC_INTID_RANGE_PPI_START, fAsserted);
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
+
+    return rc;
 }
 
 
@@ -1001,8 +1084,19 @@ VMM_INT_DECL(int) GICPpiSet(PVMCPUCC pVCpu, uint32_t uIntId, bool fAsserted)
  */
 VMM_INT_DECL(int) GICSgiSet(PVMCPUCC pVCpu, uint32_t uIntId, bool fAsserted)
 {
+    LogFlowFunc(("pVCpu=%p{.idCpu=%u} uIntId=%u fAsserted=%RTbool\n",
+                 pVCpu, pVCpu->idCpu, uIntId, fAsserted));
+
+    PPDMDEVINS pDevIns = VMCPU_TO_DEVINS(pVCpu);
+
+    int const  rcLock  = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
+
     AssertReturn(uIntId >= 0 && uIntId <= (GIC_INTID_RANGE_SGI_LAST - GIC_INTID_RANGE_SGI_START), VERR_INVALID_PARAMETER);
-    return gicReDistInterruptSet(pVCpu, uIntId + GIC_INTID_RANGE_SGI_START, fAsserted);
+    int rc = gicReDistInterruptSet(pVCpu, uIntId + GIC_INTID_RANGE_SGI_START, fAsserted);
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
+
+    return rc;
 }
 
 
@@ -1071,10 +1165,6 @@ DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) gicReDistMmioRead(PPDMDEVINS pDevIns, void *p
     Assert(!(off & 0x3));
     Assert(cb == 4); RT_NOREF_PV(cb);
 
-    PVMCPUCC pVCpu    = PDMDevHlpGetVMCPU(pDevIns);
-
-    STAM_COUNTER_INC(&pVCpu->gic.s.CTX_SUFF_Z(StatMmioRead));
-
     /*
      * Determine the redistributor being targeted. Each redistributor takes GIC_REDIST_REG_FRAME_SIZE + GIC_REDIST_SGI_PPI_REG_FRAME_SIZE bytes
      * and the redistributors are adjacent.
@@ -1082,12 +1172,18 @@ DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) gicReDistMmioRead(PPDMDEVINS pDevIns, void *p
     uint32_t idReDist = off / (GIC_REDIST_REG_FRAME_SIZE + GIC_REDIST_SGI_PPI_REG_FRAME_SIZE);
     off %= (GIC_REDIST_REG_FRAME_SIZE + GIC_REDIST_SGI_PPI_REG_FRAME_SIZE);
 
+    PVMCC pVM = PDMDevHlpGetVM(pDevIns);
+    Assert(idReDist < pVM->cCpus);
+    PVMCPUCC pVCpu = pVM->apCpusR3[idReDist];
+
+    STAM_COUNTER_INC(&pVCpu->gic.s.CTX_SUFF_Z(StatMmioRead));
+
     /* Redistributor or SGI/PPI frame? */
     uint16_t offReg = off & 0xfffc;
     uint32_t uValue = 0;
     VBOXSTRICTRC rcStrict;
     if (off < GIC_REDIST_REG_FRAME_SIZE)
-        rcStrict = gicReDistRegisterRead(pDevIns, pVCpu, offReg, &uValue);
+        rcStrict = gicReDistRegisterRead(pDevIns, pVCpu, idReDist, offReg, &uValue);
     else
         rcStrict = gicReDistSgiPpiRegisterRead(pDevIns, pVCpu, offReg, &uValue);
 
@@ -1107,10 +1203,7 @@ DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) gicReDistMmioWrite(PPDMDEVINS pDevIns, void *
     Assert(!(off & 0x3));
     Assert(cb == 4); RT_NOREF_PV(cb);
 
-    PVMCPUCC pVCpu  = PDMDevHlpGetVMCPU(pDevIns);
     uint32_t uValue = *(uint32_t *)pv;
-
-    STAM_COUNTER_INC(&pVCpu->gic.s.CTX_SUFF_Z(StatMmioWrite));
 
     /*
      * Determine the redistributor being targeted. Each redistributor takes GIC_REDIST_REG_FRAME_SIZE + GIC_REDIST_SGI_PPI_REG_FRAME_SIZE bytes
@@ -1118,6 +1211,12 @@ DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) gicReDistMmioWrite(PPDMDEVINS pDevIns, void *
      */
     uint32_t idReDist = off / (GIC_REDIST_REG_FRAME_SIZE + GIC_REDIST_SGI_PPI_REG_FRAME_SIZE);
     off %= (GIC_REDIST_REG_FRAME_SIZE + GIC_REDIST_SGI_PPI_REG_FRAME_SIZE);
+
+    PVMCC pVM = PDMDevHlpGetVM(pDevIns);
+    Assert(idReDist < pVM->cCpus);
+    PVMCPUCC pVCpu = pVM->apCpusR3[idReDist];
+
+    STAM_COUNTER_INC(&pVCpu->gic.s.CTX_SUFF_Z(StatMmioWrite));
 
     /* Redistributor or SGI/PPI frame? */
     uint16_t offReg = off & 0xfffc;

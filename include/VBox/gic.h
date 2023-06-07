@@ -344,8 +344,68 @@
 #define GIC_REDIST_REG_CTLR_OFF                         0x0000
 /** Implementer Identification Register - RO. */
 #define GIC_REDIST_REG_IIDR_OFF                         0x0004
+
 /** Redistributor Type Register - RO. */
 #define GIC_REDIST_REG_TYPER_OFF                        0x0008
+/** Bit 0 - Indicates whether the GIC implementation supports physical LPIs. */
+# define GIC_REDIST_REG_TYPER_PLPIS                     RT_BIT_32(0)
+# define GIC_REDIST_REG_TYPER_PLPIS_BIT                 0
+/** Bit 1 - Indicates whether the GIC implementation supports virtual LPIs and the direct injection of those. */
+# define GIC_REDIST_REG_TYPER_VLPIS                     RT_BIT_32(1)
+# define GIC_REDIST_REG_TYPER_VLPIS_BIT                 1
+/** Bit 2 - Controls the functionality of GICR_VPENDBASER.Dirty. */
+# define GIC_REDIST_REG_TYPER_DIRTY                     RT_BIT_32(2)
+# define GIC_REDIST_REG_TYPER_DIRTY_BIT                 2
+/** Bit 3 - Indicates whether the redistributor supports direct injection of LPIs. */
+# define GIC_REDIST_REG_TYPER_DIRECT_LPI                RT_BIT_32(3)
+# define GIC_REDIST_REG_TYPER_DIRECT_LPI_BIT            3
+/** Bit 4 - Indicates whether this redistributor is the highest numbered Redistributor in a series. */
+# define GIC_REDIST_REG_TYPER_LAST                      RT_BIT_32(4)
+# define GIC_REDIST_REG_TYPER_LAST_BIT                  4
+/** Bit 5 - Sets support for GICR_CTLR.DPG* bits. */
+# define GIC_REDIST_REG_TYPER_DPGS                      RT_BIT_32(5)
+# define GIC_REDIST_REG_TYPER_DPGS_BIT                  5
+/** Bit 6 - Indicates whether MPAM is supported. */
+# define GIC_REDIST_REG_TYPER_MPAM                      RT_BIT_32(6)
+# define GIC_REDIST_REG_TYPER_MPAM_BIT                  6
+/** Bit 7 - Indicates how the resident vPE is specified. */
+# define GIC_REDIST_REG_TYPER_RVPEID                    RT_BIT_32(7)
+# define GIC_REDIST_REG_TYPER_RVPEID_BIT                7
+/** Bit 8 - 23 - A unique identifier for the PE. */
+# define GIC_REDIST_REG_TYPER_CPU_NUMBER                UINT32_C(0x00ffff00)
+# define GIC_REDIST_REG_TYPER_CPU_NUMBER_SET(a_CpuNum)  (((a_CpuNum) << 8) & GIC_REDIST_REG_TYPER_CPU_NUMBER)
+/** Bit 24 - 25 - The affinity level at Redistributorsshare an LPI Configuration table. */
+# define GIC_REDIST_REG_TYPER_CMN_LPI_AFF               (RT_BIT_32(24) | RT_BIT_32(25))
+# define GIC_REDIST_REG_TYPER_CMN_LPI_AFF_SET(a_LpiAff) (((a_LpiAff) << 24) & GIC_REDIST_REG_TYPER_CMN_LPI_AFF)
+/** All Redistributors must share an LPI Configuration table. */
+#  define GIC_REDIST_REG_TYPER_CMN_LPI_AFF_ALL          0
+/** All Redistributors with the same affinity 3 value must share an LPI Configuration table. */
+#  define GIC_REDIST_REG_TYPER_CMN_LPI_AFF_3            1
+/** All Redistributors with the same affinity 3.2 value must share an LPI Configuration table. */
+#  define GIC_REDIST_REG_TYPER_CMN_LPI_AFF_3_2          2
+/** All Redistributors with the same affinity 3.2.1 value must share an LPI Configuration table. */
+#  define GIC_REDIST_REG_TYPER_CMN_LPI_AFF_3_2_1        3
+/** Bit 26 - Indicates whether vSGIs are supported. */
+# define GIC_REDIST_REG_TYPER_VSGI                      RT_BIT_32(26)
+# define GIC_REDIST_REG_TYPER_VSGI_BIT                  26
+/** Bit 27 - 31 - Indicates the maximum PPI INTID that a GIC implementation can support. */
+# define GIC_REDIST_REG_TYPER_PPI_NUM                  (  RT_BIT_32(27) | RT_BIT_32(28) | RT_BIT_32(29) \
+                                                        | RT_BIT_32(30) | RT_BIT_32(31))
+# define GIC_REDIST_REG_TYPER_PPI_NUM_SET(a_PpiNum)    (((a_PpiNum) << 27) & GIC_REDIST_REG_TYPER_PPI_NUM)
+/** Maximum PPI INTID is 31. */
+#  define GIC_REDIST_REG_TYPER_PPI_NUM_MAX_31          0
+/** Maximum PPI INTID is 1087. */
+#  define GIC_REDIST_REG_TYPER_PPI_NUM_MAX_1087        1
+/** Maximum PPI INTID is 1119. */
+#  define GIC_REDIST_REG_TYPER_PPI_NUM_MAX_1119        2
+
+/** Redistributor Type Register (the affinity value of the 64-bit register) - RO. */
+#define GIC_REDIST_REG_TYPER_AFFINITY_OFF              0x000c
+/** Bit 0 - 31 - The identity of the PE associated with this Redistributor. */
+# define GIC_REDIST_REG_TYPER_AFFINITY_VALUE           UINT32_C(0xffffffff)
+# define GIC_REDIST_REG_TYPER_AFFINITY_VALUE_SET(a_Aff) ((a_Aff) & GIC_REDIST_REG_TYPER_AFFINITY_VALUE)
+
+
 /** Redistributor Error Reporting Status Register (optional) - RW. */
 #define GIC_REDIST_REG_STATUSR_OFF                      0x0010
 /** Redistributor Wake Register - RW. */
