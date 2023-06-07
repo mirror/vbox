@@ -145,6 +145,9 @@
 #include <VBox/vmm/hm.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
+#if defined(VBOX_VMM_TARGET_ARMV8)
+# include <iprt/armv8.h>
+#endif
 #include <iprt/asm.h>
 #include <iprt/time.h>
 #include <iprt/semaphore.h>
@@ -1291,6 +1294,58 @@ VMMR3_INT_DECL(VBOXSTRICTRC) VMMR3CallR0EmtFast(PVM pVM, PVMCPU pVCpu, VMMR0OPER
 }
 
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+/**
+ * VCPU worker for VMMR3CpuOn.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   idCpu           Virtual CPU to perform SIPI on.
+ * @param   GCPhysExecAddr  The guest physical address to start executing at.
+ * @param   u64CtxId        The context ID passed in x0/w0.
+ */
+static DECLCALLBACK(int) vmmR3CpuOn(PVM pVM, VMCPUID idCpu, RTGCPHYS GCPhysExecAddr, uint64_t u64CtxId)
+{
+    PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    if (EMGetState(pVCpu) != EMSTATE_WAIT_SIPI)
+        return VINF_SUCCESS;
+
+    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+
+    pCtx->aGRegs[ARMV8_AARCH64_REG_X0].x = u64CtxId;
+    pCtx->Pc.u64                         = GCPhysExecAddr;
+
+    Log(("vmmR3CpuOn for VCPU %d with GCPhysExecAddr=%RGp u64CtxId=%#RX64\n", idCpu, GCPhysExecAddr, u64CtxId));
+
+# if 1 /* If we keep the EMSTATE_WAIT_SIPI method, then move this to EM.cpp. */
+    EMSetState(pVCpu, EMSTATE_HALTED);
+    return VINF_EM_RESCHEDULE;
+# else /* And if we go the VMCPU::enmState way it can stay here. */
+    VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STOPPED);
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
+    return VINF_SUCCESS;
+# endif
+}
+
+
+/**
+ * Sends a Startup IPI to the virtual CPU by setting CS:EIP into
+ * vector-dependent state and unhalting processor.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   idCpu           Virtual CPU to perform SIPI on.
+ * @param   GCPhysExecAddr  The guest physical address to start executing at.
+ * @param   u64CtxId        The context ID passed in x0/w0.
+ */
+VMMR3_INT_DECL(void)    VMMR3CpuOn(PVM pVM, VMCPUID idCpu, RTGCPHYS GCPhysExecAddr, uint64_t u64CtxId)
+{
+    AssertReturnVoid(idCpu < pVM->cCpus);
+
+    int rc = VMR3ReqCallNoWait(pVM, idCpu, (PFNRT)vmmR3CpuOn, 4, pVM, idCpu, GCPhysExecAddr, u64CtxId);
+    AssertRC(rc);
+}
+#else
 /**
  * VCPU worker for VMMR3SendStartupIpi.
  *
@@ -1298,7 +1353,7 @@ VMMR3_INT_DECL(VBOXSTRICTRC) VMMR3CallR0EmtFast(PVM pVM, PVMCPU pVCpu, VMMR0OPER
  * @param   idCpu       Virtual CPU to perform SIPI on.
  * @param   uVector     The SIPI vector.
  */
-static DECLCALLBACK(int) vmmR3SendStarupIpi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
+static DECLCALLBACK(int) vmmR3SendStartupIpi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
 {
     PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
     VMCPU_ASSERT_EMT(pVCpu);
@@ -1313,9 +1368,6 @@ static DECLCALLBACK(int) vmmR3SendStarupIpi(PVM pVM, VMCPUID idCpu, uint32_t uVe
     if (EMGetState(pVCpu) != EMSTATE_WAIT_SIPI)
         return VINF_SUCCESS;
 
-#if defined(VBOX_VMM_TARGET_ARMV8)
-    AssertReleaseFailed(); /** @todo */
-#else
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (CPUMIsGuestInVmxRootMode(pCtx))
@@ -1335,7 +1387,6 @@ static DECLCALLBACK(int) vmmR3SendStarupIpi(PVM pVM, VMCPUID idCpu, uint32_t uVe
     pCtx->cs.u64Base    = uVector << 12;
     pCtx->cs.u32Limit   = UINT32_C(0x0000ffff);
     pCtx->rip           = 0;
-#endif
 
     Log(("vmmR3SendSipi for VCPU %d with vector %x\n", idCpu, uVector));
 
@@ -1405,7 +1456,7 @@ VMMR3_INT_DECL(void) VMMR3SendStartupIpi(PVM pVM, VMCPUID idCpu,  uint32_t uVect
 {
     AssertReturnVoid(idCpu < pVM->cCpus);
 
-    int rc = VMR3ReqCallNoWait(pVM, idCpu, (PFNRT)vmmR3SendStarupIpi, 3, pVM, idCpu, uVector);
+    int rc = VMR3ReqCallNoWait(pVM, idCpu, (PFNRT)vmmR3SendStartupIpi, 3, pVM, idCpu, uVector);
     AssertRC(rc);
 }
 
@@ -1423,6 +1474,7 @@ VMMR3_INT_DECL(void) VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu)
     int rc = VMR3ReqCallNoWait(pVM, idCpu, (PFNRT)vmmR3SendInitIpi, 2, pVM, idCpu);
     AssertRC(rc);
 }
+#endif
 
 
 /**
