@@ -76,22 +76,23 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 
-/** Variant of IEM_MC_ADVANCE_RIP_AND_FINISH with instruction length as param. */
-#define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED(a_cbInstr) \
-    return iemRegAddToRipAndFinishingClearingRF(pVCpu, a_cbInstr)
-#undef  IEM_MC_ADVANCE_RIP_AND_FINISH
+/** Variant of IEM_MC_ADVANCE_RIP_AND_FINISH with instruction length as param
+ *  and only used when we're in 16-bit code on a pre-386 CPU. */
+#define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC16(a_cbInstr) \
+    return iemRegAddToIp16AndFinishingClearingRF(pVCpu, a_cbInstr)
+
+/** Variant of IEM_MC_ADVANCE_RIP_AND_FINISH with instruction length as param
+ *  and used for 16-bit and 32-bit code on 386 and later CPUs. */
+#define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32(a_cbInstr) \
+    return iemRegAddToEip32AndFinishingClearingRF(pVCpu, a_cbInstr)
 
 /** Variant of IEM_MC_ADVANCE_RIP_AND_FINISH with instruction length as param
  *  and only used when we're in 64-bit code. */
-#define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_LM64(a_cbInstr) \
+#define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64(a_cbInstr) \
     return iemRegAddToRip64AndFinishingClearingRF(pVCpu, a_cbInstr)
+
 #undef  IEM_MC_ADVANCE_RIP_AND_FINISH
 
-/** Variant of IEM_MC_ADVANCE_RIP_AND_FINISH with instruction length as param
- *  and never used in 64-bit code. */
-#define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_NOT64(a_cbInstr) \
-    return iemRegAddToEip32AndFinishingClearingRF(pVCpu, a_cbInstr)
-#undef  IEM_MC_ADVANCE_RIP_AND_FINISH
 
 /** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length as param. */
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED(a_i8, a_cbInstr, a_enmEffOpSize) \
@@ -108,30 +109,44 @@
     return iemRegRipRelativeJumpS32AndFinishClearingRF(pVCpu, a_cbInstr, (a_i32), a_enmEffOpSize)
 #undef  IEM_MC_REL_JMP_S32_AND_FINISH
 
-/** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters. */
-#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR16(a_GCPtrEff, a_bRm, a_u16Disp) \
+
+/** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters, 16-bit. */
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_16(a_GCPtrEff, a_bRm, a_u16Disp) \
     (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr16(pVCpu, a_bRm, a_u16Disp)
-#undef  IEM_MC_CALC_RM_EFF_ADDR
 
-/** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters. */
-#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR32(a_GCPtrEff, a_bRm, a_bSib, a_u32Disp) \
+/** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters, pre-386 16-bit. */
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_16_PRE386(a_GCPtrEff, a_bRm, a_u16Disp) \
+    IEM_MC_CALC_RM_EFF_ADDR_THREADED_16(a_GCPtrEff, a_bRm, a_u16Disp)
+
+/** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters, 32-bit with address prefix. */
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_32_ADDR16(a_GCPtrEff, a_bRm, a_u16Disp) \
+    IEM_MC_CALC_RM_EFF_ADDR_THREADED_16(a_GCPtrEff, a_bRm, a_u16Disp)
+
+
+/** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters, 32-bit. */
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_32(a_GCPtrEff, a_bRm, a_bSib, a_u32Disp) \
     (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr32(pVCpu, a_bRm, a_bSib, a_u32Disp)
-#undef  IEM_MC_CALC_RM_EFF_ADDR
 
-/** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters. */
-#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR32FLAT(a_GCPtrEff, a_bRm, a_bSib, a_u32Disp) \
+/** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters, 32-bit flat. */
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_32_FLAT(a_GCPtrEff, a_bRm, a_bSib, a_u32Disp) \
     (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr32(pVCpu, a_bRm, a_bSib, a_u32Disp)
-#undef  IEM_MC_CALC_RM_EFF_ADDR
+
+/** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters, 16-bit with address prefix. */
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_16_ADDR32(a_GCPtrEff, a_bRm, a_bSib, a_u32Disp) \
+    (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr32(pVCpu, a_bRm, a_bSib, a_u32Disp)
+
 
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters. */
-#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR64(a_GCPtrEff, a_bRmEx, a_bSib, a_u32Disp, a_cbImm) \
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64(a_GCPtrEff, a_bRmEx, a_bSib, a_u32Disp, a_cbImm) \
     (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr64(pVCpu, a_bRmEx, a_bSib, a_u32Disp, a_cbImm)
+
+/** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters.
+ * @todo How did that address prefix thing work for 64-bit code again? */
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_ADDR32(a_GCPtrEff, a_bRmEx, a_bSib, a_u32Disp, a_cbImm) \
+    (a_GCPtrEff) = (uint32_t)iemOpHlpCalcRmEffAddrThreadedAddr64(pVCpu, a_bRmEx, a_bSib, a_u32Disp, a_cbImm)
+
 #undef  IEM_MC_CALC_RM_EFF_ADDR
 
-/** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters. */
-#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR6432(a_GCPtrEff, a_bRmEx, a_bSib, a_u32Disp, a_cbImm) \
-    (a_GCPtrEff) = (uint32_t)iemOpHlpCalcRmEffAddrThreadedAddr64(pVCpu, a_bRmEx, a_bSib, a_u32Disp, a_cbImm)
-#undef  IEM_MC_CALC_RM_EFF_ADDR
 
 /** Variant of IEM_MC_CALL_CIMPL_1 with explicit instruction length parameter. */
 #define IEM_MC_CALL_CIMPL_1_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0) \

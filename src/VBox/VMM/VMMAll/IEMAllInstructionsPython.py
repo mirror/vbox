@@ -1822,10 +1822,10 @@ class McStmtCond(McStmt):
     """
     Base class for conditional statements (IEM_MC_IF_XXX).
     """
-    def __init__(self, sName, asParams):
+    def __init__(self, sName, asParams, aoIfBranch = None, aoElseBranch = None):
         McStmt.__init__(self, sName, asParams);
-        self.aoIfBranch     = [];
-        self.aoElseBranch   = [];
+        self.aoIfBranch     = [] if aoIfBranch   is None else list(aoIfBranch);
+        self.aoElseBranch   = [] if aoElseBranch is None else list(aoElseBranch);
 
     def renderCode(self, cchIndent = 0):
         sRet  = ' ' * cchIndent + self.sName + '(' + ', '.join(self.asParams) + ') {\n';
@@ -1867,11 +1867,13 @@ class McCppGeneric(McStmt):
     """
     Generic C++/C statement.
     """
-    def __init__(self, sCode, fDecode = True, sName = 'C++'):
+    def __init__(self, sCode, fDecode = True, sName = 'C++', cchIndent = 0):
         McStmt.__init__(self, sName, [sCode,]);
-        self.fDecode = fDecode;
+        self.fDecode   = fDecode;
+        self.cchIndent = cchIndent;
 
     def renderCode(self, cchIndent = 0):
+        cchIndent += self.cchIndent;
         sRet = ' ' * cchIndent + self.asParams[0] + '\n';
         if self.fDecode:
             sRet = sRet.replace('\n', ' // C++ decode\n');
@@ -1883,11 +1885,13 @@ class McCppCond(McStmtCond):
     """
     C++/C 'if' statement.
     """
-    def __init__(self, sCode, fDecode):
-        McStmtCond.__init__(self, 'C++/if', [sCode,]);
-        self.fDecode = fDecode;
+    def __init__(self, sCode, fDecode = True, aoIfBranch = None, aoElseBranch = None, cchIndent = 0):
+        McStmtCond.__init__(self, 'C++/if', [sCode,], aoIfBranch, aoElseBranch);
+        self.fDecode   = fDecode;
+        self.cchIndent = cchIndent;
 
     def renderCode(self, cchIndent = 0):
+        cchIndent += self.cchIndent;
         sAnnotation = '// C++ decode' if self.fDecode else '// C++ normal';
         sRet  = ' ' * cchIndent + 'if (' + self.asParams[0] + ') ' + sAnnotation + '\n';
         sRet += ' ' * cchIndent + '{\n';
