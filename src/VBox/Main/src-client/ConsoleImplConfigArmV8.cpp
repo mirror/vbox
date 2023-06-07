@@ -56,6 +56,8 @@
 #endif
 #include <iprt/stream.h>
 
+#include <iprt/formats/arm-psci.h>
+
 #include <VBox/vmm/vmmr3vtable.h>
 #include <VBox/vmm/vmapi.h>
 #include <VBox/err.h>
@@ -189,10 +191,10 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 
         /* Configure the Power State Coordination Interface. */
         vrc = RTFdtNodeAdd(hFdt, "psci");                                                   VRC();
-        vrc = RTFdtNodePropertyAddU32(   hFdt, "migrate",          0x84000005);             VRC();
-        vrc = RTFdtNodePropertyAddU32(   hFdt, "cpu_on",           0x84000003);             VRC();
-        vrc = RTFdtNodePropertyAddU32(   hFdt, "cpu_off",          0x84000002);             VRC();
-        vrc = RTFdtNodePropertyAddU32(   hFdt, "cpu_suspend",      0x84000001);             VRC();
+        vrc = RTFdtNodePropertyAddU32(   hFdt, "migrate",          ARM_PSCI_FUNC_ID_CREATE_FAST_32(ARM_PSCI_FUNC_ID_MIGRATE));             VRC();
+        vrc = RTFdtNodePropertyAddU32(   hFdt, "cpu_on",           ARM_PSCI_FUNC_ID_CREATE_FAST_32(ARM_PSCI_FUNC_ID_CPU_ON));              VRC();
+        vrc = RTFdtNodePropertyAddU32(   hFdt, "cpu_off",          ARM_PSCI_FUNC_ID_CREATE_FAST_32(ARM_PSCI_FUNC_ID_CPU_OFF));             VRC();
+        vrc = RTFdtNodePropertyAddU32(   hFdt, "cpu_suspend",      ARM_PSCI_FUNC_ID_CREATE_FAST_32(ARM_PSCI_FUNC_ID_CPU_SUSPEND));         VRC();
         vrc = RTFdtNodePropertyAddString(hFdt, "method",           "hvc");                  VRC();
         vrc = RTFdtNodePropertyAddStringList(hFdt, "compatible",   3,
                                              "arm,psci-1.0", "arm,psci-0.2", "arm,psci");   VRC();
@@ -286,9 +288,13 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         {
             vrc = RTFdtNodeAddF(hFdt, "cpu@%u", i);                                         VRC();
             vrc = RTFdtNodePropertyAddU32(hFdt, "phandle", aidPHandleCpus[i]);              VRC();
-            vrc = RTFdtNodePropertyAddU32(hFdt, "reg", 0);                                  VRC();
+            vrc = RTFdtNodePropertyAddU32(hFdt, "reg", i);                                  VRC();
             vrc = RTFdtNodePropertyAddString(hFdt, "compatible",  "arm,cortex-a15");        VRC();
             vrc = RTFdtNodePropertyAddString(hFdt, "device_type", "cpu");                   VRC();
+            if (cCpus > 1)
+            {
+                vrc = RTFdtNodePropertyAddString(hFdt, "enable-method",  "psci");           VRC();
+            }
             vrc = RTFdtNodeFinalize(hFdt);                                                  VRC();
         }
 
