@@ -43,6 +43,7 @@
 
 /* Forward declarations: */
 class QGridLayout;
+class QVBoxLayout;
 class QLabel;
 class QMenu;
 class QStatusBar;
@@ -159,7 +160,7 @@ private:
         QAction              *m_pOpenAction;
     /** @} */
 
-    QGridLayout          *m_pMainLayout;
+    QVBoxLayout          *m_pMainLayout;
     UIVisoHostBrowser    *m_pHostBrowser;
     UIVisoContentBrowser *m_pVISOContentBrowser;
 
@@ -175,6 +176,7 @@ private:
     QPointer<UIActionPool> m_pActionPool;
     bool                   m_fShowToolBar;
     UIVisoSettingWidget   *m_pSettingsWidget;
+    QWidget               *m_pBrowserContainerWidget;
 };
 
 

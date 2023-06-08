@@ -96,6 +96,7 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pPa
     , m_pActionPool(pActionPool)
     , m_fShowToolBar(fShowToolBar)
     , m_pSettingsWidget(0)
+    , m_pBrowserContainerWidget(0)
 {
     m_visoOptions.m_strVisoName = !strMachineName.isEmpty() ? strMachineName : "ad-hoc";
     prepareWidgets();
@@ -157,9 +158,10 @@ void UIVisoCreatorWidget::sltHandleAddObjectsToViso(QStringList pathList)
 
 void UIVisoCreatorWidget::sltPanelActionToggled(bool fChecked)
 {
+    Q_UNUSED(fChecked);
     if (m_pSettingsWidget)
         m_pSettingsWidget->setVisible(!m_pSettingsWidget->isVisible());
-    return;
+#if 0
     QAction *pSenderAction = qobject_cast<QAction*>(sender());
     if (!pSenderAction)
         return;
@@ -177,6 +179,7 @@ void UIVisoCreatorWidget::sltPanelActionToggled(bool fChecked)
         showPanel(pPanel);
     else
         hidePanel(pPanel);
+#endif
 }
 
 void UIVisoCreatorWidget::sltHandleVisoNameChanged(const QString &strVisoName)
@@ -260,7 +263,7 @@ void UIVisoCreatorWidget::sltHandleOpenAction()
 
 void UIVisoCreatorWidget::prepareWidgets()
 {
-    m_pMainLayout = new QGridLayout(this);
+    m_pMainLayout = new QVBoxLayout(this);
     if (!m_pMainLayout)
         return;
 
@@ -278,7 +281,7 @@ void UIVisoCreatorWidget::prepareWidgets()
 
     if (m_pActionPool && m_pActionPool->action(UIActionIndex_M_VISOCreator))
         m_pMainMenu = m_pActionPool->action(UIActionIndex_M_VISOCreator)->menu();
-    int iLayoutRow = 0;
+    // int iLayoutRow = 0;
     if (m_fShowToolBar)
     {
         m_pToolBar = new QIToolBar(parentWidget());
@@ -288,58 +291,64 @@ void UIVisoCreatorWidget::prepareWidgets()
             const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize));
             m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
             m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-            m_pMainLayout->addWidget(m_pToolBar, iLayoutRow++, 0, 1, 5);
+            m_pMainLayout->addWidget(m_pToolBar);
         }
     }
 
+    m_pBrowserContainerWidget = new QWidget;
+    if (!m_pBrowserContainerWidget)
+        return;
+    m_pMainLayout->addWidget(m_pBrowserContainerWidget);
+    QGridLayout *pContainerLayout = new QGridLayout(m_pBrowserContainerWidget);
+    pContainerLayout->setContentsMargins(0, 0, 0, 0);
     m_pHostBrowser = new UIVisoHostBrowser;
     if (m_pHostBrowser)
     {
-        m_pMainLayout->addWidget(m_pHostBrowser, iLayoutRow, 0, 1, 4);
+        pContainerLayout->addWidget(m_pHostBrowser, 0, 0, 1, 4);
         //m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pHostBrowser), 2);
     }
 
     prepareVerticalToolBar();
     if (m_pVerticalToolBar)
     {
-        m_pMainLayout->addWidget(m_pVerticalToolBar, iLayoutRow, 4, 1, 1);
+        pContainerLayout->addWidget(m_pVerticalToolBar, 0, 4, 1, 1);
         //m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pVerticalToolBar), 1);
     }
 
     m_pVISOContentBrowser = new UIVisoContentBrowser;
     if (m_pVISOContentBrowser)
     {
-        m_pMainLayout->addWidget(m_pVISOContentBrowser, iLayoutRow, 5, 1, 4);
+        pContainerLayout->addWidget(m_pVISOContentBrowser, 0, 5, 1, 4);
         m_pVISOContentBrowser->setVisoName(m_visoOptions.m_strVisoName);
         //m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pVISOContentBrowser), 2);
     }
-    ++iLayoutRow;
-    m_pConfigurationPanel = new UIVisoConfigurationPanel(this);
-    if (m_pConfigurationPanel)
-    {
-        m_pMainLayout->addWidget(m_pConfigurationPanel, iLayoutRow++, 0, 1, 9);
-        m_pConfigurationPanel->hide();
-        m_pConfigurationPanel->setVisoName(m_visoOptions.m_strVisoName);
-        m_pConfigurationPanel->setVisoCustomOptions(m_visoOptions.m_customOptions);
-    }
+    // ++iLayoutRow;
+    // m_pConfigurationPanel = new UIVisoConfigurationPanel(this);
+    // if (m_pConfigurationPanel)
+    // {
+    //     m_pMainLayout->addWidget(m_pConfigurationPanel, iLayoutRow++, 0, 1, 9);
+    //     m_pConfigurationPanel->hide();
+    //     m_pConfigurationPanel->setVisoName(m_visoOptions.m_strVisoName);
+    //     m_pConfigurationPanel->setVisoCustomOptions(m_visoOptions.m_customOptions);
+    // }
 
-    m_pCreatorOptionsPanel = new UIVisoConfigurationPanel;
-    if (m_pCreatorOptionsPanel)
-    {
-        m_pCreatorOptionsPanel->setShowHiddenbjects(m_browserOptions.m_fShowHiddenObjects);
-        m_pMainLayout->addWidget(m_pCreatorOptionsPanel, iLayoutRow++, 0, 1, 9);
-        m_pCreatorOptionsPanel->hide();
-    }
+    // m_pCreatorOptionsPanel = new UIVisoConfigurationPanel;
+    // if (m_pCreatorOptionsPanel)
+    // {
+    //     m_pCreatorOptionsPanel->setShowHiddenbjects(m_browserOptions.m_fShowHiddenObjects);
+    //     m_pMainLayout->addWidget(m_pCreatorOptionsPanel, iLayoutRow++, 0, 1, 9);
+    //     m_pCreatorOptionsPanel->hide();
+    // }
 
-    m_pSettingsWidget = new UIVisoSettingWidget(this);
-    if (m_pSettingsWidget)
-    {
-        QVBoxLayout *pMainLayout = new QVBoxLayout(m_pSettingsWidget);
-        QPushButton *pB = new QPushButton;
-        pB->setText("ssssasas");
-        pMainLayout->addWidget(pB);
-        m_pSettingsWidget->setVisible(false);
-    }
+    // m_pSettingsWidget = new UIVisoSettingWidget(this);
+    // if (m_pSettingsWidget)
+    // {
+    //     QVBoxLayout *pMainLayout = new QVBoxLayout(m_pSettingsWidget);
+    //     QPushButton *pB = new QPushButton;
+    //     pB->setText("ssssasas");
+    //     pMainLayout->addWidget(pB);
+    //     m_pSettingsWidget->setVisible(false);
+    // }
 }
 
 void UIVisoCreatorWidget::prepareConnections()
@@ -664,7 +673,7 @@ void UIVisoCreatorDialog::prepareWidgets(const QString &strMachineName)
 
 
     m_pVisoCreatorWidget = new UIVisoCreatorWidget(m_pActionPool, this, true /* show toolbar */, strMachineName);
-    if (m_pVisoCreatorWidget)
+    if (m_pVisoCreatorWidget && m_pVisoCreatorWidget->menu())
     {
         menuBar()->addMenu(m_pVisoCreatorWidget->menu());
         pMainLayout->addWidget(m_pVisoCreatorWidget);
