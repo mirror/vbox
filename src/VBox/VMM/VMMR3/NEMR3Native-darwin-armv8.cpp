@@ -1004,7 +1004,6 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedHvcInsn(PVM pVM, PVMCPU
                      pVCpu->cpum.GstCtx.Pc.u64, ASMReadTSC());
 #endif
 
-    RT_NOREF(pVM);
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     if (u16Imm == 0)
     {
@@ -1022,11 +1021,26 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedHvcInsn(PVM pVM, PVMCPU
                     nemR3DarwinSetGReg(pVCpu, ARMV8_AARCH64_REG_X0, false /*f64BitReg*/, false /*fSignExtend*/, ARM_PSCI_FUNC_ID_PSCI_VERSION_SET(1, 2));
                     break;
                 case ARM_PSCI_FUNC_ID_SYSTEM_OFF:
-                    rcStrict = VINF_EM_OFF;
+                    rcStrict = VMR3PowerOff(pVM->pUVM);
                     break;
                 case ARM_PSCI_FUNC_ID_SYSTEM_RESET:
-                    rcStrict = VINF_EM_RESET;
+                case ARM_PSCI_FUNC_ID_SYSTEM_RESET2:
+                {
+                    bool fHaltOnReset;
+                    int rc = CFGMR3QueryBool(CFGMR3GetChild(CFGMR3GetRoot(pVM), "PDM"), "HaltOnReset", &fHaltOnReset);
+                    if (RT_SUCCESS(rc) && fHaltOnReset)
+                    {
+                        Log(("nemR3DarwinHandleExitExceptionTrappedHvcInsn: Halt On Reset!\n"));
+                        rc = VINF_EM_HALT;
+                    }
+                    else
+                    {
+                        /** @todo pVM->pdm.s.fResetFlags = fFlags; */
+                        VM_FF_SET(pVM, VM_FF_RESET);
+                        rc = VINF_EM_RESET;
+                    }
                     break;
+                }
                 case ARM_PSCI_FUNC_ID_CPU_ON:
                 {
                     uint64_t u64TgtCpu      = nemR3DarwinGetGReg(pVCpu, ARMV8_AARCH64_REG_X1);
