@@ -26,6 +26,7 @@
  */
 
 /* Qt includes: */
+#include <QCheckBox>
 #include <QComboBox>
 #include <QGridLayout>
 
@@ -42,6 +43,8 @@ UIVisoConfigurationPanel::UIVisoConfigurationPanel(QWidget *pParent /* =0 */)
     , m_pCustomOptionsLabel(0)
     , m_pVisoNameLineEdit(0)
     , m_pCustomOptionsLineEdit(0)
+    , m_pShowHiddenObjectsCheckBox(0)
+    , m_pShowHiddenObjectsLabel(0)
 {
     prepareObjects();
     prepareConnections();
@@ -68,6 +71,12 @@ void UIVisoConfigurationPanel::setVisoCustomOptions(const QStringList& visoCusto
         return;
     m_pCustomOptionsLineEdit->clear();
     m_pCustomOptionsLineEdit->setText(visoCustomOptions.join(";"));
+}
+
+void UIVisoConfigurationPanel::setShowHiddenbjects(bool fShow)
+{
+    if (m_pShowHiddenObjectsCheckBox)
+        m_pShowHiddenObjectsCheckBox->setChecked(fShow);
 }
 
 void UIVisoConfigurationPanel::prepareObjects()
@@ -98,6 +107,16 @@ void UIVisoConfigurationPanel::prepareObjects()
         mainLayout()->addWidget(m_pCustomOptionsLabel, 0, Qt::AlignLeft);
         mainLayout()->addWidget(m_pCustomOptionsLineEdit, Qt::AlignLeft);
     }
+
+
+    m_pShowHiddenObjectsCheckBox = new QCheckBox;
+    m_pShowHiddenObjectsLabel = new QILabel(QApplication::translate("UIVisoCreatorWidget", "Show Hidden Objects"));
+    m_pShowHiddenObjectsLabel->setBuddy(m_pShowHiddenObjectsCheckBox);
+    mainLayout()->addWidget(m_pShowHiddenObjectsCheckBox, 0, Qt::AlignLeft);
+    mainLayout()->addWidget(m_pShowHiddenObjectsLabel, 0, Qt::AlignLeft);
+    mainLayout()->addStretch(6);
+
+
     retranslateUi();
 }
 
@@ -107,6 +126,9 @@ void UIVisoConfigurationPanel::prepareConnections()
         connect(m_pVisoNameLineEdit, &QILineEdit::editingFinished, this, &UIVisoConfigurationPanel::sltVisoNameChanged);
     if (m_pCustomOptionsLabel)
         connect(m_pCustomOptionsLineEdit, &QILineEdit::editingFinished, this, &UIVisoConfigurationPanel::sltCustomOptionsEdited);
+    if (m_pShowHiddenObjectsCheckBox)
+        connect(m_pShowHiddenObjectsCheckBox, &QCheckBox::stateChanged,
+                this, &UIVisoConfigurationPanel::sltShowHiddenObjectsChange);
 }
 
 void UIVisoConfigurationPanel::retranslateUi()
@@ -120,6 +142,11 @@ void UIVisoConfigurationPanel::retranslateUi()
         m_pVisoNameLineEdit->setToolTip(QApplication::translate("UIVisoCreatorWidget", "Holds the name of the VISO medium."));
     if (m_pCustomOptionsLineEdit)
         m_pCustomOptionsLineEdit->setToolTip(QApplication::translate("UIVisoCreatorWidget", "The list of suctom options delimited with ';'."));
+    if (m_pShowHiddenObjectsLabel)
+        m_pShowHiddenObjectsLabel->setText(QApplication::translate("UIVisoCreatorWidget", "Show Hidden Objects"));
+    if (m_pShowHiddenObjectsCheckBox)
+        m_pShowHiddenObjectsCheckBox->setToolTip(QApplication::translate("UIVisoCreatorWidget", "When checked, "
+                                                                         "multiple hidden objects are shown in the file browser"));
 }
 
 void UIVisoConfigurationPanel::sltCustomOptionsEdited()
@@ -135,4 +162,12 @@ void UIVisoConfigurationPanel::sltVisoNameChanged()
 {
     if (m_pVisoNameLineEdit)
         emit sigVisoNameChanged(m_pVisoNameLineEdit->text());
+}
+
+void UIVisoConfigurationPanel::sltShowHiddenObjectsChange(int iState)
+{
+    if (iState == static_cast<int>(Qt::Checked))
+        sigShowHiddenObjects(true);
+    else
+        sigShowHiddenObjects(false);
 }

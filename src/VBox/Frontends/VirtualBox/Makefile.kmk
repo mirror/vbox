@@ -870,7 +870,6 @@ UICommon_QT_MOCHDRS = \
 	src/medium/viso/UIVisoContentBrowser.h \
 	src/medium/viso/UIVisoCreator.h \
 	src/medium/viso/UIVisoConfigurationPanel.h \
-	src/medium/viso/UIVisoCreatorOptionsPanel.h \
 	src/medium/viso/UIVisoHostBrowser.h \
 	src/notificationcenter/UINotificationCenter.h \
 	src/notificationcenter/UINotificationModel.h \
@@ -1453,7 +1452,6 @@ UICommon_SOURCES = \
 	src/medium/viso/UIVisoContentBrowser.cpp \
 	src/medium/viso/UIVisoCreator.cpp \
 	src/medium/viso/UIVisoConfigurationPanel.cpp \
-	src/medium/viso/UIVisoCreatorOptionsPanel.cpp \
 	src/medium/viso/UIVisoHostBrowser.cpp \
 	src/notificationcenter/UINotificationCenter.cpp \
 	src/notificationcenter/UINotificationModel.cpp \

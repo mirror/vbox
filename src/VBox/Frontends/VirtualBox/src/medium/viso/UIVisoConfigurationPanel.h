@@ -35,6 +35,7 @@
 #include "UIDialogPanel.h"
 
 /* Forward declarations: */
+class QCheckBox;
 class QComboBox;
 class QILabel;
 class QILineEdit;
@@ -48,13 +49,16 @@ signals:
 
     void sigVisoNameChanged(const QString &strVisoName);
     void sigCustomVisoOptionsChanged(const QStringList &customVisoOptions);
+    void sigShowHiddenObjects(bool fShow);
 
 public:
+
     UIVisoConfigurationPanel(QWidget *pParent = 0);
     ~UIVisoConfigurationPanel();
     virtual QString panelName() const RT_OVERRIDE;
     void setVisoName(const QString& strVisoName);
     void setVisoCustomOptions(const QStringList& visoCustomOptions);
+    void setShowHiddenbjects(bool fShow);
 
 protected:
 
@@ -64,6 +68,7 @@ private slots:
 
     void sltVisoNameChanged();
     void sltCustomOptionsEdited();
+    void sltShowHiddenObjectsChange(int iState);
 
 private:
 
@@ -74,6 +79,8 @@ private:
     QILabel      *m_pCustomOptionsLabel;
     QILineEdit   *m_pVisoNameLineEdit;
     QILineEdit   *m_pCustomOptionsLineEdit;
+    QCheckBox    *m_pShowHiddenObjectsCheckBox;
+    QILabel      *m_pShowHiddenObjectsLabel;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoConfigurationPanel_h */

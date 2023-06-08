@@ -52,7 +52,6 @@ class UIActionPool;
 class UIDialogPanel;
 class UIVisoHostBrowser;
 class UIVisoContentBrowser;
-class UIVisoCreatorOptionsPanel;
 class UIVisoConfigurationPanel;
 
 /** A QIMainDialog extension. It hosts two UIVisoBrowserBase extensions, one for host and one
@@ -146,7 +145,6 @@ private:
 
     /** @name Main toolbar (and main menu) actions
       * @{ */
-        QAction         *m_pActionConfiguration;
         QAction         *m_pActionOptions;
     /** @} */
 
@@ -169,7 +167,7 @@ private:
     VisoOptions           m_visoOptions;
     BrowserOptions        m_browserOptions;
     QMenu                *m_pMainMenu;
-    UIVisoCreatorOptionsPanel *m_pCreatorOptionsPanel;
+    UIVisoConfigurationPanel  *m_pCreatorOptionsPanel;
     UIVisoConfigurationPanel  *m_pConfigurationPanel;
     QMap<UIDialogPanel*, QAction*> m_panelActionMap;
     QList<UIDialogPanel*>          m_visiblePanelsList;

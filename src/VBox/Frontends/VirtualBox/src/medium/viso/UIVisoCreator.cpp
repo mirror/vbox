@@ -47,7 +47,6 @@
 #include "UIVisoHostBrowser.h"
 #include "UIVisoCreator.h"
 #include "UIVisoConfigurationPanel.h"
-#include "UIVisoCreatorOptionsPanel.h"
 #include "UIVisoContentBrowser.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
@@ -65,7 +64,6 @@
 UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pParent,
                                          bool fShowToolBar, const QString& strMachineName /* = QString() */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_pActionConfiguration(0)
     , m_pActionOptions(0)
     , m_pAddAction(0)
     , m_pRemoveAction(0)
@@ -307,7 +305,7 @@ void UIVisoCreatorWidget::prepareWidgets()
         m_pConfigurationPanel->setVisoCustomOptions(m_visoOptions.m_customOptions);
     }
 
-    m_pCreatorOptionsPanel = new UIVisoCreatorOptionsPanel;
+    m_pCreatorOptionsPanel = new UIVisoConfigurationPanel;
     if (m_pCreatorOptionsPanel)
     {
         m_pCreatorOptionsPanel->setShowHiddenbjects(m_browserOptions.m_fShowHiddenObjects);
@@ -338,8 +336,6 @@ void UIVisoCreatorWidget::prepareConnections()
                 this, &UIVisoCreatorWidget::sltHandleShowContextMenu);
     }
 
-    if (m_pActionConfiguration)
-        connect(m_pActionConfiguration, &QAction::triggered, this, &UIVisoCreatorWidget::sltPanelActionToggled);
     if (m_pActionOptions)
         connect(m_pActionOptions, &QAction::triggered, this, &UIVisoCreatorWidget::sltPanelActionToggled);
 
@@ -351,14 +347,13 @@ void UIVisoCreatorWidget::prepareConnections()
                 this, &UIVisoCreatorWidget::sltHandleCustomVisoOptionsChanged);
         connect(m_pConfigurationPanel, &UIVisoConfigurationPanel::sigHidePanel,
                 this, &UIVisoCreatorWidget::sltHandleHidePanel);
-        m_panelActionMap.insert(m_pConfigurationPanel, m_pActionConfiguration);
     }
 
     if (m_pCreatorOptionsPanel)
     {
-        connect(m_pCreatorOptionsPanel, &UIVisoCreatorOptionsPanel::sigShowHiddenObjects,
+        connect(m_pCreatorOptionsPanel, &UIVisoConfigurationPanel::sigShowHiddenObjects,
                 this, &UIVisoCreatorWidget::sltHandleShowHiddenObjectsChange);
-        connect(m_pCreatorOptionsPanel, &UIVisoCreatorOptionsPanel::sigHidePanel,
+        connect(m_pCreatorOptionsPanel, &UIVisoConfigurationPanel::sigHidePanel,
                 this, &UIVisoCreatorWidget::sltHandleHidePanel);
         m_panelActionMap.insert(m_pCreatorOptionsPanel, m_pActionOptions);
     }
@@ -389,10 +384,8 @@ void UIVisoCreatorWidget::prepareActions()
     if (!m_pActionPool)
         return;
 
-    m_pActionConfiguration = m_pActionPool->action(UIActionIndex_M_VISOCreator_ToggleConfigPanel);
     m_pActionOptions = m_pActionPool->action(UIActionIndex_M_VISOCreator_ToggleOptionsPanel);
 
-    m_pOpenAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Open);
     m_pAddAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Add);
     if (m_pAddAction && m_pHostBrowser)
         m_pAddAction->setEnabled(m_pHostBrowser->tableViewHasSelection());
@@ -411,14 +404,11 @@ void UIVisoCreatorWidget::populateMenuMainToolbar()
     prepareActions();
     if (m_pToolBar)
     {
-        if (m_pActionConfiguration)
-            m_pToolBar->addAction(m_pActionConfiguration);
         if (m_pActionOptions)
             m_pToolBar->addAction(m_pActionOptions);
     }
     if (m_pMainMenu)
     {
-        m_pMainMenu->addAction(m_pActionConfiguration);
         m_pMainMenu->addAction(m_pActionOptions);
         m_pMainMenu->addSeparator();
         if (m_pAddAction)
