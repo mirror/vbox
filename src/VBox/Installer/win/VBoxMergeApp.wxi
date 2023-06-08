@@ -357,20 +357,35 @@
                 Source="$(env.PATH_OUT)\bin\VirtualBoxVM.dll">
             </File>
         <?endif ?>
-        <File Id="file_Qt5Core$(var.VBOX_QT_INFIX).dll" Name="Qt5Core$(var.VBOX_QT_INFIX).dll"
-              Source="$(env.PATH_OUT)\bin\Qt5Core$(var.VBOX_QT_INFIX).dll" />
-        <File Id="file_Qt5Gui$(var.VBOX_QT_INFIX).dll" Name="Qt5Gui$(var.VBOX_QT_INFIX).dll"
-              Source="$(env.PATH_OUT)\bin\Qt5Gui$(var.VBOX_QT_INFIX).dll" />
-        <File Id="file_Qt5Widgets$(var.VBOX_QT_INFIX).dll" Name="Qt5Widgets$(var.VBOX_QT_INFIX).dll"
-              Source="$(env.PATH_OUT)\bin\Qt5Widgets$(var.VBOX_QT_INFIX).dll" />
-        <File Id="file_Qt5PrintSupport$(var.VBOX_QT_INFIX).dll" Name="Qt5PrintSupport$(var.VBOX_QT_INFIX).dll"
-              Source="$(env.PATH_OUT)\bin\Qt5PrintSupport$(var.VBOX_QT_INFIX).dll" />
-        <File Id="file_Qt5Help$(var.VBOX_QT_INFIX).dll" Name="Qt5Help$(var.VBOX_QT_INFIX).dll"
-              Source="$(env.PATH_OUT)\bin\Qt5Help$(var.VBOX_QT_INFIX).dll" />
-        <File Id="file_Qt5Sql$(var.VBOX_QT_INFIX).dll" Name="Qt5Sql$(var.VBOX_QT_INFIX).dll"
-              Source="$(env.PATH_OUT)\bin\Qt5Sql$(var.VBOX_QT_INFIX).dll" />
-        <File Id="file_Qt5WinExtras$(var.VBOX_QT_INFIX).dll" Name="Qt5WinExtras$(var.VBOX_QT_INFIX).dll"
-              Source="$(env.PATH_OUT)\bin\Qt5WinExtras$(var.VBOX_QT_INFIX).dll" />
+        <?if $(env.VBOX_WITH_QT6) != "yes" ?>
+            <File Id="file_Qt5Core$(var.VBOX_QT_INFIX).dll" Name="Qt5Core$(var.VBOX_QT_INFIX).dll"
+                  Source="$(env.PATH_OUT)\bin\Qt5Core$(var.VBOX_QT_INFIX).dll" />
+            <File Id="file_Qt5Gui$(var.VBOX_QT_INFIX).dll" Name="Qt5Gui$(var.VBOX_QT_INFIX).dll"
+                  Source="$(env.PATH_OUT)\bin\Qt5Gui$(var.VBOX_QT_INFIX).dll" />
+            <File Id="file_Qt5Widgets$(var.VBOX_QT_INFIX).dll" Name="Qt5Widgets$(var.VBOX_QT_INFIX).dll"
+                  Source="$(env.PATH_OUT)\bin\Qt5Widgets$(var.VBOX_QT_INFIX).dll" />
+            <File Id="file_Qt5PrintSupport$(var.VBOX_QT_INFIX).dll" Name="Qt5PrintSupport$(var.VBOX_QT_INFIX).dll"
+                  Source="$(env.PATH_OUT)\bin\Qt5PrintSupport$(var.VBOX_QT_INFIX).dll" />
+            <File Id="file_Qt5Help$(var.VBOX_QT_INFIX).dll" Name="Qt5Help$(var.VBOX_QT_INFIX).dll"
+                  Source="$(env.PATH_OUT)\bin\Qt5Help$(var.VBOX_QT_INFIX).dll" />
+            <File Id="file_Qt5Sql$(var.VBOX_QT_INFIX).dll" Name="Qt5Sql$(var.VBOX_QT_INFIX).dll"
+                  Source="$(env.PATH_OUT)\bin\Qt5Sql$(var.VBOX_QT_INFIX).dll" />
+            <File Id="file_Qt5WinExtras$(var.VBOX_QT_INFIX).dll" Name="Qt5WinExtras$(var.VBOX_QT_INFIX).dll"
+                  Source="$(env.PATH_OUT)\bin\Qt5WinExtras$(var.VBOX_QT_INFIX).dll" />
+        <?else?>
+            <File Id="file_Qt6Core$(var.VBOX_QT_INFIX).dll" Name="Qt6Core$(var.VBOX_QT_INFIX).dll"
+                  Source="$(env.PATH_OUT)\bin\Qt6Core$(var.VBOX_QT_INFIX).dll" />
+            <File Id="file_Qt6Gui$(var.VBOX_QT_INFIX).dll" Name="Qt6Gui$(var.VBOX_QT_INFIX).dll"
+                  Source="$(env.PATH_OUT)\bin\Qt6Gui$(var.VBOX_QT_INFIX).dll" />
+            <File Id="file_Qt6Widgets$(var.VBOX_QT_INFIX).dll" Name="Qt6Widgets$(var.VBOX_QT_INFIX).dll"
+                  Source="$(env.PATH_OUT)\bin\Qt6Widgets$(var.VBOX_QT_INFIX).dll" />
+            <File Id="file_Qt6PrintSupport$(var.VBOX_QT_INFIX).dll" Name="Qt6PrintSupport$(var.VBOX_QT_INFIX).dll"
+                  Source="$(env.PATH_OUT)\bin\Qt6PrintSupport$(var.VBOX_QT_INFIX).dll" />
+            <File Id="file_Qt6Help$(var.VBOX_QT_INFIX).dll" Name="Qt6Help$(var.VBOX_QT_INFIX).dll"
+                  Source="$(env.PATH_OUT)\bin\Qt6Help$(var.VBOX_QT_INFIX).dll" />
+            <File Id="file_vSql$(var.VBOX_QT_INFIX).dll" Name="Qt6Sql$(var.VBOX_QT_INFIX).dll"
+                  Source="$(env.PATH_OUT)\bin\Qt6Sql$(var.VBOX_QT_INFIX).dll" />
+        <?endif ?>
         <File Id="file_VirtualBox.VisualElementsManifest.xml" Name="VirtualBox.VisualElementsManifest.xml"
               Source="$(env.PATH_OUT)\bin\VirtualBox.VisualElementsManifest.xml" />
         <File Id="file_VirtualBox_70px.png" Name="VirtualBox_70px.png"
@@ -385,8 +400,13 @@
               Source="$(env.PATH_OUT)\bin\DbgPlugInDiggers.dll" />
 <?endif ?>
 <?if $(env.VBOX_GUI_USE_QGL) = "yes" ?>
-        <File Id="file_Qt5OpenGL$(var.VBOX_QT_INFIX).dll" Name="Qt5OpenGL$(var.VBOX_QT_INFIX).dll"
-              Source="$(env.PATH_OUT)\bin\Qt5OpenGL$(var.VBOX_QT_INFIX).dll" />
+        <?if $(env.VBOX_WITH_QT6) != "yes" ?>
+            <File Id="file_Qt5OpenGL$(var.VBOX_QT_INFIX).dll" Name="Qt5OpenGL$(var.VBOX_QT_INFIX).dll"
+                  Source="$(env.PATH_OUT)\bin\Qt5OpenGL$(var.VBOX_QT_INFIX).dll" />
+        <?else?>
+            <File Id="file_Qt6OpenGL$(var.VBOX_QT_INFIX).dll" Name="Qt6OpenGL$(var.VBOX_QT_INFIX).dll"
+                  Source="$(env.PATH_OUT)\bin\Qt6OpenGL$(var.VBOX_QT_INFIX).dll" />
+        <?endif ?>
 <?endif?>
 
 <?if $(env.VBOX_WITH_CRT_PACKING) = "yes" ?>
@@ -418,6 +438,7 @@
     </Component> <!-- MainBinaries -->
 
 <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
+    <?if $(env.VBOX_WITH_QT6) != "yes" ?>
         <!-- Qt platforms plugins -->
         <Directory Id="dir_VBoxAppPlatforms" Name="platforms">
             <Component Id="cp_QtPlatforms" Guid="842367ec-6094-4ddc-93d8-6ca70fc1ca24" Win64="$(var.Property_Win64)">
@@ -443,6 +464,33 @@
                       Source="$(env.PATH_OUT)\bin\styles\qwindowsvistastyle.dll" />
             </Component>
         </Directory>
+    <?else?>
+        <!-- Qt platforms plugins -->
+        <Directory Id="dir_VBoxAppPlatforms" Name="platforms">
+            <Component Id="cp_QtPlatforms" Guid="842367ec-6094-4ddc-93d8-6ca70fc1ca24" Win64="$(var.Property_Win64)">
+                <File Id="file_qminimal$(var.VBOX_QT_INFIX).dll" Name="qminimal$(var.VBOX_QT_INFIX).dll"
+                      Source="$(env.PATH_OUT)\bin\platforms\qminimal$(var.VBOX_QT_INFIX).dll" />
+                <File Id="file_qoffscreen$(var.VBOX_QT_INFIX).dll" Name="qoffscreen$(var.VBOX_QT_INFIX).dll"
+                      Source="$(env.PATH_OUT)\bin\platforms\qoffscreen$(var.VBOX_QT_INFIX).dll" />
+                <File Id="file_qwindows$(var.VBOX_QT_INFIX).dll" Name="qwindows$(var.VBOX_QT_INFIX).dll"
+                      Source="$(env.PATH_OUT)\bin\platforms\qwindows$(var.VBOX_QT_INFIX).dll" />
+            </Component>
+        </Directory>
+        <!-- Qt sqldrivers plugins -->
+        <Directory Id="dir_VBoxAppSqldrivers" Name="sqldrivers">
+            <Component Id="cp_QtSqldrivers" Guid="31ba006b-7dca-40b1-aba0-998eb18bd586" Win64="$(var.Property_Win64)">
+                <File Id="file_qsqlite$(var.VBOX_QT_INFIX).dll" Name="qsqlite$(var.VBOX_QT_INFIX).dll"
+                      Source="$(env.PATH_OUT)\bin\sqldrivers\qsqlite$(var.VBOX_QT_INFIX).dll" />
+            </Component>
+        </Directory>
+        <!-- Qt styles plugins -->
+        <Directory Id="dir_VBoxAppStyles" Name="styles">
+            <Component Id="cp_QtStyles" Guid="150837df-f3ae-416f-9ea3-94f1f41b9f41" Win64="$(var.Property_Win64)">
+                <File Id="file_qwindowsvistastyle$(var.VBOX_QT_INFIX).dll" Name="qwindowsvistastyle$(var.VBOX_QT_INFIX).dll"
+                      Source="$(env.PATH_OUT)\bin\styles\qwindowsvistastyle$(var.VBOX_QT_INFIX).dll" />
+            </Component>
+        </Directory>
+    <?endif ?>
 <?endif ?>
 
 <?if $(env.VBOX_WITH_VBOXSDL) = "yes" ?>
