@@ -136,7 +136,12 @@ extern const PDMDRVREG g_DrvVDE;
 #endif
 extern const PDMDRVREG g_DrvIntNet;
 extern const PDMDRVREG g_DrvDedicatedNic;
+#ifndef VBOX_WITH_LIBSLIRP
 extern const PDMDRVREG g_DrvNAT;
+#endif
+#ifdef VBOX_WITH_LIBSLIRP
+extern const PDMDRVREG g_DrvNATlibslirp;
+#endif
 #ifdef VBOX_WITH_NETSHAPER
 extern const PDMDRVREG g_DrvNetShaper;
 #endif /* VBOX_WITH_NETSHAPER */

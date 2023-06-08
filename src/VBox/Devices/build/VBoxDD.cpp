@@ -313,6 +313,11 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     if (RT_FAILURE(rc))
         return rc;
 #endif
+#ifdef VBOX_WITH_LIBSLIRP
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvNATlibslirp);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostInterface);
     if (RT_FAILURE(rc))
