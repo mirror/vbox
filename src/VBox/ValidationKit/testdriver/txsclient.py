@@ -734,6 +734,8 @@ class Session(TdTaskBase):
                     sVer = getSZ(abPayload, 0);
                     if sVer is not None:
                         rc = sVer;
+                elif sOpcode == "UNKNOWN":
+                    reporter.log(self.fErr, 'taskVer got a UNKNOWN, txs server is probably too old, just ignore')
                 else:
                     reporter.maybeErr(self.fErr, 'taskVer got a bad reply: %s' % (sOpcode,));
             else:
