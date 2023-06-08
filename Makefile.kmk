@@ -256,15 +256,27 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
   	$(VBOX_QT_PATH)/plugins/sqldrivers/libqsqlite$(SUFF_DLL)=>plugins/sqldrivers/libqsqlite$(SUFF_DLL) \
   	$(VBOX_QT_PATH)/plugins/styles/libqmacstyle$(SUFF_DLL)=>plugins/styles/libqmacstyle$(SUFF_DLL)
   ifdef VBOX_WITH_QT_DSYMS
-   qt-bin_SOURCES += $(foreach qtplat, libqcocoa libqminimal libqoffscreen, \
-   		$(VBOX_QT_PATH)/plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Info.plist \
-   		$(VBOX_QT_PATH)/plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtplat)$(SUFF_DLL)=>plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtplat)$(SUFF_DLL))
-   qt-bin_SOURCES += $(foreach qtsqldrv, libqsqlite, \
-   		$(VBOX_QT_PATH)/plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Info.plist \
-   		$(VBOX_QT_PATH)/plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtsqldrv)$(SUFF_DLL)=>plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtsqldrv)$(SUFF_DLL))
-   qt-bin_SOURCES += $(foreach qtstyl, libqmacstyle, \
-   		$(VBOX_QT_PATH)/plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Info.plist \
-   		$(VBOX_QT_PATH)/plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtstyl)$(SUFF_DLL)=>plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtstyl)$(SUFF_DLL))
+   ifndef VBOX_WITH_QT6
+    qt-bin_SOURCES += $(foreach qtplat, libqcocoa libqminimal libqoffscreen, \
+    		$(VBOX_QT_PATH)/plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Info.plist \
+    		$(VBOX_QT_PATH)/plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtplat)$(SUFF_DLL)=>plugins/platforms/$(qtplat)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtplat)$(SUFF_DLL))
+    qt-bin_SOURCES += $(foreach qtsqldrv, libqsqlite, \
+    		$(VBOX_QT_PATH)/plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Info.plist \
+    		$(VBOX_QT_PATH)/plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtsqldrv)$(SUFF_DLL)=>plugins/sqldrivers/$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtsqldrv)$(SUFF_DLL))
+    qt-bin_SOURCES += $(foreach qtstyl, libqmacstyle, \
+    		$(VBOX_QT_PATH)/plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Info.plist \
+    		$(VBOX_QT_PATH)/plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtstyl)$(SUFF_DLL)=>plugins/styles/$(qtstyl)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtstyl)$(SUFF_DLL))
+   else # qt6
+    qt-bin_SOURCES += $(foreach qtplat, qcocoa qminimal qoffscreen, \
+    		$(VBOX_QT_PATH)/plugins/platforms/lib$(qtplat)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/platforms/lib$(qtplat)$(SUFF_DLL).dSYM/Contents/Info.plist \
+    		$(VBOX_QT_PATH)/plugins/platforms/lib$(qtplat)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtplat)=>plugins/platforms/lib$(qtplat)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtplat))
+    qt-bin_SOURCES += $(foreach qtsqldrv, qsqlite, \
+    		$(VBOX_QT_PATH)/plugins/sqldrivers/lib$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/sqldrivers/lib$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Info.plist \
+    		$(VBOX_QT_PATH)/plugins/sqldrivers/lib$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtsqldrv)=>plugins/sqldrivers/lib$(qtsqldrv)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtsqldrv))
+    qt-bin_SOURCES += $(foreach qtstyl, qmacstyle, \
+    		$(VBOX_QT_PATH)/plugins/styles/lib$(qtstyl)$(SUFF_DLL).dSYM/Contents/Info.plist=>plugins/styles/lib$(qtstyl)$(SUFF_DLL).dSYM/Contents/Info.plist \
+    		$(VBOX_QT_PATH)/plugins/styles/lib$(qtstyl)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtstyl)=>plugins/styles/lib$(qtstyl)$(SUFF_DLL).dSYM/Contents/Resources/DWARF/$(qtstyl))
+   endif # qt6
   endif
   qt-bin_SYMLINKS = $(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
   		Frameworks/$(qtmod).framework/Versions/Current=>$(VBOX_QT_FWRK_VER) \
