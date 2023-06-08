@@ -40,7 +40,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "GenFw.h"
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__clang__) /* VBOX: Modified */
 #pragma GCC diagnostic ignored "-Wlogical-op"
 #endif
 

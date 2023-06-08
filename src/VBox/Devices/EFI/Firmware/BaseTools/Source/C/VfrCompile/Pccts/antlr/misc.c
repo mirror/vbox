@@ -56,6 +56,10 @@
 #include "dlgdef.h"
 #include <ctype.h>
 
+#if defined(VBOX) && defined(__clang__)
+#pragma GCC diagnostic ignored "-Wself-assign"
+#endif
+
 static int tsize=TSChunk;		/* size of token str arrays */
 
 static void

@@ -32,6 +32,10 @@
 
 #include <assert.h>
 
+#if defined(VBOX) && defined(__clang__)
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#endif
+
 #define ZZINC {if ( track_columns ) (++_endcol);}
 
 #define ZZGETC {ch = input->nextChar(); cl = ZZSHIFT(ch);}
