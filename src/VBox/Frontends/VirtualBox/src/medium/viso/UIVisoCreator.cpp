@@ -53,6 +53,7 @@
 #endif
 
 /* Other VBox includes: */
+#include <iprt/assert.h>
 #include <iprt/getopt.h>
 #include <iprt/path.h>
 
@@ -264,8 +265,7 @@ void UIVisoCreatorWidget::sltHandleOpenAction()
 void UIVisoCreatorWidget::prepareWidgets()
 {
     m_pMainLayout = new QVBoxLayout(this);
-    if (!m_pMainLayout)
-        return;
+    AssertPtrReturnVoid(m_pMainLayout);
 
     /* Configure layout: */
     const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2;
@@ -285,43 +285,35 @@ void UIVisoCreatorWidget::prepareWidgets()
     if (m_fShowToolBar)
     {
         m_pToolBar = new QIToolBar(parentWidget());
-        if (m_pToolBar)
-        {
-            /* Configure toolbar: */
-            const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize));
-            m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
-            m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-            m_pMainLayout->addWidget(m_pToolBar);
-        }
+        AssertPtrReturnVoid(m_pToolBar);
+        /* Configure toolbar: */
+        const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize));
+        m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
+        m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+        m_pMainLayout->addWidget(m_pToolBar);
     }
 
     m_pBrowserContainerWidget = new QWidget;
-    if (!m_pBrowserContainerWidget)
-        return;
+    AssertPtrReturnVoid(m_pBrowserContainerWidget);
+
     m_pMainLayout->addWidget(m_pBrowserContainerWidget);
     QGridLayout *pContainerLayout = new QGridLayout(m_pBrowserContainerWidget);
+    AssertPtrReturnVoid(pContainerLayout);
     pContainerLayout->setContentsMargins(0, 0, 0, 0);
     m_pHostBrowser = new UIVisoHostBrowser;
-    if (m_pHostBrowser)
-    {
-        pContainerLayout->addWidget(m_pHostBrowser, 0, 0, 1, 4);
-        //m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pHostBrowser), 2);
-    }
+    AssertPtrReturnVoid(m_pHostBrowser);
+
+    pContainerLayout->addWidget(m_pHostBrowser, 0, 0, 1, 4);
 
     prepareVerticalToolBar();
-    if (m_pVerticalToolBar)
-    {
-        pContainerLayout->addWidget(m_pVerticalToolBar, 0, 4, 1, 1);
-        //m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pVerticalToolBar), 1);
-    }
+    AssertPtrReturnVoid(m_pVerticalToolBar);
+    pContainerLayout->addWidget(m_pVerticalToolBar, 0, 4, 1, 1);
 
     m_pVISOContentBrowser = new UIVisoContentBrowser;
-    if (m_pVISOContentBrowser)
-    {
-        pContainerLayout->addWidget(m_pVISOContentBrowser, 0, 5, 1, 4);
-        m_pVISOContentBrowser->setVisoName(m_visoOptions.m_strVisoName);
-        //m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pVISOContentBrowser), 2);
-    }
+    AssertPtrReturnVoid(m_pVISOContentBrowser);
+    pContainerLayout->addWidget(m_pVISOContentBrowser, 0, 5, 1, 4);
+    m_pVISOContentBrowser->setVisoName(m_visoOptions.m_strVisoName);
+
     // ++iLayoutRow;
     // m_pConfigurationPanel = new UIVisoConfigurationPanel(this);
     // if (m_pConfigurationPanel)
@@ -332,13 +324,6 @@ void UIVisoCreatorWidget::prepareWidgets()
     //     m_pConfigurationPanel->setVisoCustomOptions(m_visoOptions.m_customOptions);
     // }
 
-    // m_pCreatorOptionsPanel = new UIVisoConfigurationPanel;
-    // if (m_pCreatorOptionsPanel)
-    // {
-    //     m_pCreatorOptionsPanel->setShowHiddenbjects(m_browserOptions.m_fShowHiddenObjects);
-    //     m_pMainLayout->addWidget(m_pCreatorOptionsPanel, iLayoutRow++, 0, 1, 9);
-    //     m_pCreatorOptionsPanel->hide();
-    // }
 
     // m_pSettingsWidget = new UIVisoSettingWidget(this);
     // if (m_pSettingsWidget)
