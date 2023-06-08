@@ -299,7 +299,9 @@ class SubTstDrvCloneMedium1(base.SubTestDriverBase):
         return reporter.testDone()[1] == 0
 
     def testAll(self):
-        return self.testCloneOnly() & self.testResizeAndClone() & self.testCloneToBase()
+        if self.oTstDrv.uRevision > 157768:
+            return self.testCloneOnly() & self.testResizeAndClone() & self.testCloneToBase()
+        return self.testCloneOnly() & self.testResizeAndClone()
 
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
