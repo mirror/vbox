@@ -560,9 +560,13 @@ QUuid UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParen
         QFile file(pVisoCreator->visoFileFullPath());
         if (file.open(QFile::WriteOnly | QFile::Truncate))
         {
+            QString strVisoName = pVisoCreator->visoName();
+            if (strVisoName.isEmpty())
+                strVisoName = strMachineName;
+
             QTextStream stream(&file);
-            stream << QString("%1 %2").arg("--iprt-iso-maker-file-marker-bourne-sh").arg(QUuid::createUuid().toString());
-            stream << "\n";
+            stream << QString("%1 %2").arg("--iprt-iso-maker-file-marker-bourne-sh").arg(QUuid::createUuid().toString()) << "\n";
+            stream<< "--volume-id=" << strVisoName << "\n";
             stream << VisoEntryList.join("\n");
             if (!pVisoCreator->customOptions().isEmpty())
             {
