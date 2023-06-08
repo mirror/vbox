@@ -57,6 +57,20 @@
 #include <iprt/path.h>
 
 
+class UIVisoSettingWidget : public QIWithRetranslateUI<QFrame>
+{
+public:
+    UIVisoSettingWidget(QWidget *pParent);
+    virtual void retranslateUi(){}
+};
+
+UIVisoSettingWidget::UIVisoSettingWidget(QWidget *pParent)
+    :QIWithRetranslateUI<QFrame>(pParent)
+{
+
+}
+
+
 /*********************************************************************************************************************************
 *   UIVisoCreatorWidget implementation.                                                                                          *
 *********************************************************************************************************************************/
@@ -81,6 +95,7 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pPa
     , m_pConfigurationPanel(0)
     , m_pActionPool(pActionPool)
     , m_fShowToolBar(fShowToolBar)
+    , m_pSettingsWidget(0)
 {
     m_visoOptions.m_strVisoName = !strMachineName.isEmpty() ? strMachineName : "ad-hoc";
     prepareWidgets();
@@ -142,6 +157,9 @@ void UIVisoCreatorWidget::sltHandleAddObjectsToViso(QStringList pathList)
 
 void UIVisoCreatorWidget::sltPanelActionToggled(bool fChecked)
 {
+    if (m_pSettingsWidget)
+        m_pSettingsWidget->setVisible(!m_pSettingsWidget->isVisible());
+    return;
     QAction *pSenderAction = qobject_cast<QAction*>(sender());
     if (!pSenderAction)
         return;
@@ -311,6 +329,16 @@ void UIVisoCreatorWidget::prepareWidgets()
         m_pCreatorOptionsPanel->setShowHiddenbjects(m_browserOptions.m_fShowHiddenObjects);
         m_pMainLayout->addWidget(m_pCreatorOptionsPanel, iLayoutRow++, 0, 1, 9);
         m_pCreatorOptionsPanel->hide();
+    }
+
+    m_pSettingsWidget = new UIVisoSettingWidget(this);
+    if (m_pSettingsWidget)
+    {
+        QVBoxLayout *pMainLayout = new QVBoxLayout(m_pSettingsWidget);
+        QPushButton *pB = new QPushButton;
+        pB->setText("ssssasas");
+        pMainLayout->addWidget(pB);
+        m_pSettingsWidget->setVisible(false);
     }
 }
 
