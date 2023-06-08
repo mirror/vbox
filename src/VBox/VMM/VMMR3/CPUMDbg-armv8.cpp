@@ -279,6 +279,7 @@ static DBGFREGDESC const g_aCpumRegGstDescs[] =
     CPU_REG_RW_AS("ttbr0_el1",      TTBR0_EL1,      U64, Ttbr0,           cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
     CPU_REG_RW_AS("ttbr1_el1",      TTBR1_EL1,      U64, Ttbr1,           cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
     CPU_REG_RW_AS("elr_el1",        ELR_EL1,        U64, Elr,             cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
+    CPU_REG_RW_AS("vbar_el1",       VBAR_EL1,       U64, VBar,            cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
     CPU_REG_RW_AS("fpcr",           FPCR,           U64, fpcr,            cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
     CPU_REG_RW_AS("fpsr",           FPSR,           U64, fpsr,            cpumR3RegGet_Generic,         cpumR3RegSet_Generic,         NULL,                       NULL                    ),
     CPU_VREG_REG(0),

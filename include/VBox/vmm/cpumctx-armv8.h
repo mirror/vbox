@@ -146,6 +146,8 @@ typedef struct CPUMCTX
     CPUMCTXSYSREG   Ttbr0;
     /** The TTBR1_EL1 register. */
     CPUMCTXSYSREG   Ttbr1;
+    /** The VBAR_EL1 register. */
+    CPUMCTXSYSREG   VBar;
 
     /** Floating point control register. */
     uint64_t        fpcr;
@@ -169,7 +171,7 @@ typedef struct CPUMCTX
     /** The CNTV_CVAL_EL0 register, always synced during VM-exit. */
     uint64_t        CntvCValEl0;
 
-    uint64_t        au64Padding2[7];
+    uint64_t        au64Padding2[6];
 } CPUMCTX;
 
 
@@ -229,6 +231,9 @@ AssertCompileSizeAlignment(CPUMCTX, 8);
 #define CPUMCTX_EXTRN_FPCR                      UINT64_C(0x0000000000004000)
 /** The FPSR (Floating Point Status Register) is kept externally. */
 #define CPUMCTX_EXTRN_FPSR                      UINT64_C(0x0000000000008000)
+
+/** Various system registers (rarely accessed) are kept externally. */
+#define CPUMCTX_EXTRN_SYSREG                    UINT64_C(0x0000000000010000)
 
 /** Mask of bits the keepers can use for state tracking. */
 #define CPUMCTX_EXTRN_KEEPER_STATE_MASK         UINT64_C(0xffff000000000000)
