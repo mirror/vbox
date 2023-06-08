@@ -361,7 +361,16 @@
   # reserved ones, with the exception of LoaderData regions, of which OS loaders
   # (i.e., GRUB) may assume that its contents are executable.
   #
+!ifdef $(VBOX)
+  #
+  # The default protection includes EfiLoaderData which older grub bootloaders
+  # fail to boot with because they assume being able to execute code from such memory
+  # regions. So don't apply the NX protection there.
+  #
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDxeNxMemoryProtectionPolicy|0xC000000000007FD1
+!else
   gEfiMdeModulePkgTokenSpaceGuid.PcdDxeNxMemoryProtectionPolicy|0xC000000000007FD5
+!endif
 
 [Components.common]
   #
