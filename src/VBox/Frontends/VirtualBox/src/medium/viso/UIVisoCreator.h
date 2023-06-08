@@ -209,7 +209,7 @@ protected:
 private slots:
 
     void sltSetCancelButtonShortCut(QKeySequence keySequence);
-    void sltsigVisoNameChanged(const QString &strName);
+    void sltVisoNameChanged(const QString &strName);
 
 private:
     void prepareWidgets(const QString &strMachineName);
@@ -218,6 +218,7 @@ private:
     void loadSettings();
     void saveDialogGeometry();
     void updateWindowTitle();
+    void updateStatusLabel();
 
     UIVisoCreatorWidget *m_pVisoCreatorWidget;
     QIDialogButtonBox   *m_pButtonBox;

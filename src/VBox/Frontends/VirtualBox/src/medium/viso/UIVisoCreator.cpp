@@ -649,7 +649,7 @@ void UIVisoCreatorDialog::prepareWidgets(const QString &strMachineName)
         connect(m_pVisoCreatorWidget, &UIVisoCreatorWidget::sigSetCancelButtonShortCut,
                 this, &UIVisoCreatorDialog::sltSetCancelButtonShortCut);
         connect(m_pVisoCreatorWidget, &UIVisoCreatorWidget::sigVisoNameChanged,
-                this, &UIVisoCreatorDialog::sltsigVisoNameChanged);
+                this, &UIVisoCreatorDialog::sltVisoNameChanged);
     }
 
     m_pButtonBox = new QIDialogButtonBox;
@@ -696,8 +696,8 @@ void UIVisoCreatorDialog::retranslateUi()
     }
     if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Help))
         m_pButtonBox->button(QDialogButtonBox::Help)->setToolTip(UIVisoCreatorWidget::tr("Opens the help browser and navigates to the related section"));
-    if (m_pStatusLabel)
-        m_pStatusLabel->setText(QString("%1: %2").arg(UIVisoCreatorWidget::tr("Viso file")).arg(visoFileFullPath()));
+    updateWindowTitle();
+    updateStatusLabel();
 }
 
 bool UIVisoCreatorDialog::event(QEvent *pEvent)
@@ -727,10 +727,11 @@ void UIVisoCreatorDialog::sltSetCancelButtonShortCut(QKeySequence keySequence)
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(keySequence);
 }
 
-void UIVisoCreatorDialog::sltsigVisoNameChanged(const QString &strName)
+void UIVisoCreatorDialog::sltVisoNameChanged(const QString &strName)
 {
     Q_UNUSED(strName);
     updateWindowTitle();
+    updateStatusLabel();
 }
 
 void UIVisoCreatorDialog::loadSettings()
@@ -760,6 +761,12 @@ void UIVisoCreatorDialog::saveDialogGeometry()
 void UIVisoCreatorDialog::updateWindowTitle()
 {
     setWindowTitle(QString("%1 - %2.%3").arg(UIVisoCreatorWidget::tr("VISO Creator")).arg(visoName()).arg("viso"));
+}
+
+void UIVisoCreatorDialog::updateStatusLabel()
+{
+    if (m_pStatusLabel)
+        m_pStatusLabel->setText(QString("%1: %2").arg(UIVisoCreatorWidget::tr("Viso file")).arg(visoFileFullPath()));
 }
 
 QString UIVisoCreatorDialog::visoFileFullPath() const
