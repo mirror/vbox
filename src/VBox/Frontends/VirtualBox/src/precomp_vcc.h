@@ -66,7 +66,9 @@
 #include <qflags.h>
 #include <qgenericatomic.h>
 #include <qglobalstatic.h>
-#include <qisenum.h>
+#ifndef VBOX_IS_QT6_OR_LATER
+# include <qisenum.h>
+#endif
 #include <qlogging.h>
 #include <qmutex.h>
 #include <qnamespace.h>
@@ -90,7 +92,9 @@
 #include <qregexp.h>
 #include <qstringlist.h>
 #include <qstringmatcher.h>
-#include <qtypetraits.h>
+#ifndef VBOX_IS_QT6_OR_LATER
+# include <qtypetraits.h>
+#endif
 
 /* Less frequently included: */
 #include <QtWidgets/QGraphicsWidget>
@@ -99,7 +103,9 @@
 #include <QtWidgets/qgraphicswidget.h>
 #include <QtCore/QMetaType>
 #include <QtGui/qevent.h>
-#include <QtGui/qtouchdevice.h>
+#ifndef VBOX_IS_QT6_OR_LATER
+# include <QtGui/qtouchdevice.h>
+#endif
 #include <QtGui/qvector2d.h>
 #include <QtCore/QEvent>
 #include <QtGui/qguiapplication.h>
@@ -129,7 +135,9 @@
 #include <QtCore/qline.h>
 #include <QtGui/qcolor.h>
 #include <QtGui/qimage.h>
-#include <QtGui/qmatrix.h>
+#ifndef VBOX_IS_QT6_OR_LATER
+# include <QtGui/qmatrix.h>
+#endif
 #include <QtGui/qpaintdevice.h>
 #include <QtGui/qpainterpath.h>
 #include <QtGui/qpixelformat.h>
