@@ -225,9 +225,8 @@ VMMDECL(bool) CPUMIsGuestPagingEnabled(PCVMCPU pVCpu)
  */
 VMMDECL(bool) CPUMIsGuestIn64BitCode(PVMCPU pVCpu)
 {
-    RT_NOREF(pVCpu);
-    AssertReleaseFailed();
-    return false;
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_PSTATE);
+    return !RT_BOOL(pVCpu->cpum.s.Guest.fPState & ARMV8_SPSR_EL2_AARCH64_M4);
 }
 
 
@@ -326,26 +325,33 @@ VMMDECL(CPUMMODE) CPUMGetGuestMode(PVMCPU pVCpu)
 
 
 /**
- * Figure whether the CPU is currently executing 16, 32 or 64 bit code.
+ * Figure whether the CPU is currently executing 32 or 64 bit code.
  *
- * @returns 16, 32 or 64.
+ * @returns 32 or 64.
  * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
  */
 VMMDECL(uint32_t)       CPUMGetGuestCodeBits(PVMCPU pVCpu)
 {
-    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_PC | CPUMCTX_EXTRN_PSTATE);
-    AssertReleaseFailed();
-    RT_NOREF(pVCpu);
-    return 16;
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_PSTATE);
+    if (pVCpu->cpum.s.Guest.fPState & ARMV8_SPSR_EL2_AARCH64_M4)
+        return 32;
+
+    return 64;
 }
 
 
 VMMDECL(DISCPUMODE)     CPUMGetGuestDisMode(PVMCPU pVCpu)
 {
-    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_PC | CPUMCTX_EXTRN_PSTATE);
-    AssertReleaseFailed();
-    RT_NOREF(pVCpu);
-    return DISCPUMODE_16BIT;
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_PSTATE);
+    if (pVCpu->cpum.s.Guest.fPState & ARMV8_SPSR_EL2_AARCH64_M4)
+    {
+        if (pVCpu->cpum.s.Guest.fPState & ARMV8_SPSR_EL2_AARCH64_T)
+            return DISCPUMODE_ARMV8_T32;
+
+        return DISCPUMODE_ARMV8_A32;
+    }
+
+    return DISCPUMODE_ARMV8_A64;
 }
 
 

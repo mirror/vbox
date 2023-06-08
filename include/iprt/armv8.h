@@ -443,8 +443,9 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 /** Bit 4 - M[4] - Execution state (0 means AArch64, when 1 this contains a AArch32 state). */
 #define ARMV8_SPSR_EL2_AARCH64_M4                   RT_BIT_64(4)
 #define ARMV8_SPSR_EL2_AARCH64_M4_BIT               4
-/** Bit 5 - Reserved (read as zero). */
-#define ARMV8_SPSR_EL2_AARCH64_RSVD_5               RT_BIT_64(5)
+/** Bit 5 - T - T32 instruction set state (only valid when ARMV8_SPSR_EL2_AARCH64_M4 is set). */
+#define ARMV8_SPSR_EL2_AARCH64_T                    RT_BIT_64(5)
+#define ARMV8_SPSR_EL2_AARCH64_T_BIT                5
 /** Bit 6 - I - FIQ interrupt mask. */
 #define ARMV8_SPSR_EL2_AARCH64_F                    RT_BIT_64(6)
 #define ARMV8_SPSR_EL2_AARCH64_F_BIT                6
