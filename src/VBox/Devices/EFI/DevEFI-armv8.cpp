@@ -188,13 +188,14 @@ static DECLCALLBACK(void *) devR3EfiQueryInterface(PPDMIBASE pInterface, const c
 
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnReset}
+ * @interface_method_impl{PDMDEVREG,pfnMemSetup}
  */
-static DECLCALLBACK(void) efiR3Reset(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) efiR3MemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX enmCtx)
 {
     PDEVEFIR3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVEFIR3);
-    LogFlow(("efiR3Reset\n"));
+    LogFlow(("efiR3MemSetup\n"));
 
+    RT_NOREF(enmCtx);
     if (pThisCC->GCPhysFdtAddress != RTGCPHYS_MAX)
     {
         AssertPtr(pThisCC->Lun0.pDrvVfs);
@@ -405,7 +406,6 @@ static DECLCALLBACK(int)  efiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     else
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("Can't attach resource Storage driver"));
 
-    efiR3Reset(pDevIns);
     return VINF_SUCCESS;
 }
 
@@ -450,9 +450,9 @@ const PDMDEVREG g_DeviceEfiArmV8 =
     /* .pfnConstruct = */           efiR3Construct,
     /* .pfnDestruct = */            efiR3Destruct,
     /* .pfnRelocate = */            NULL,
-    /* .pfnMemSetup = */            NULL,
+    /* .pfnMemSetup = */            efiR3MemSetup,
     /* .pfnPowerOn = */             NULL,
-    /* .pfnReset = */               efiR3Reset,
+    /* .pfnReset = */               NULL,
     /* .pfnSuspend = */             NULL,
     /* .pfnResume = */              NULL,
     /* .pfnAttach = */              NULL,
