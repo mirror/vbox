@@ -1637,7 +1637,8 @@ endif
 #
 VirtualBox_QT_MODULES = Core Gui Widgets PrintSupport
 ifdef VBOX_WITH_QT6
- VirtualBox_QT_MODULES += StateMachine EntryPoint
+ VirtualBox_QT_MODULES     += StateMachine
+ VirtualBox_QT_MODULES.win += EntryPoint
 endif
 ifndef VBOX_WITH_QT6
  VirtualBox_QT_MODULES.linux   += X11Extras
@@ -1655,7 +1656,8 @@ endif
 #
 VirtualBoxVM_QT_MODULES = Core Gui Widgets PrintSupport
 ifdef VBOX_WITH_QT6
- VirtualBoxVM_QT_MODULES += StateMachine EntryPoint
+ VirtualBoxVM_QT_MODULES     += StateMachine
+ VirtualBoxVM_QT_MODULES.win += EntryPoint
 endif
 ifndef VBOX_WITH_QT6
  VirtualBoxVM_QT_MODULES.linux   += X11Extras
