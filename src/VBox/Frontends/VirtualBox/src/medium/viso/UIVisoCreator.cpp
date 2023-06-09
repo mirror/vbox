@@ -27,11 +27,15 @@
 
 /* Qt includes: */
 #include <QGridLayout>
+#include <QGraphicsBlurEffect>
+#include <QGroupBox>
 #include <QLabel>
 #include <QMenuBar>
+#include <QPainter>
 #include <QPushButton>
 #include <QStyle>
 #include <QStatusBar>
+#include <QStackedLayout>
 #include <QTextStream>
 
 /* GUI includes: */
@@ -57,8 +61,27 @@
 #include <iprt/getopt.h>
 #include <iprt/path.h>
 
+// class UIDimmableWidget : public QWidget
+// {
+// public:
+//     UIDimmableWidget(QWidget *pParent = 0);
 
-class UIVisoSettingWidget : public QIWithRetranslateUI<QFrame>
+// protected:
+//     virtual void paintEvent(QPaintEvent *pEvent) final override;
+// private:
+//     // QGraphicsBlurEffect   *m_pOverlayBlurEffect;
+//     // m_pOverlayBlurEffect = new QGraphicsBlurEffect(this);
+//     // AssertPtrReturnVoid(m_pOverlayBlurEffect);
+//     // m_pBrowserContainerWidget->setGraphicsEffect(m_pOverlayBlurEffect);
+//     // m_pOverlayBlurEffect->setEnabled(false);
+//     // m_pOverlayBlurEffect->setBlurRadius(8);
+//     // if (m_pOverlayBlurEffect)
+//     //     m_pOverlayBlurEffect->setEnabled(m_pSettingsWidget->isVisible());
+
+//     QWidget *m_pOverlayWidget;
+// };
+
+class UIVisoSettingWidget : public QIWithRetranslateUI<QGroupBox>
 {
 public:
     UIVisoSettingWidget(QWidget *pParent);
@@ -66,10 +89,11 @@ public:
 };
 
 UIVisoSettingWidget::UIVisoSettingWidget(QWidget *pParent)
-    :QIWithRetranslateUI<QFrame>(pParent)
+    :QIWithRetranslateUI<QGroupBox>(pParent)
 {
 
 }
+
 
 
 /*********************************************************************************************************************************
@@ -96,6 +120,7 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pPa
     , m_pConfigurationPanel(0)
     , m_pActionPool(pActionPool)
     , m_fShowToolBar(fShowToolBar)
+    , m_fShowSettingsDialog(false)
     , m_pSettingsWidget(0)
     , m_pBrowserContainerWidget(0)
 {
@@ -149,6 +174,25 @@ void UIVisoCreatorWidget::retranslateUi()
         m_pHostBrowser->setTitle(tr("Host File System"));
     if (m_pVISOContentBrowser)
         m_pVISOContentBrowser->setTitle(tr("VISO Content"));
+    if (m_pSettingsWidget)
+        m_pSettingsWidget->setTitle(tr("Setting"));
+}
+
+void UIVisoCreatorWidget::paintEvent(QPaintEvent *pEvent)
+{
+    Q_UNUSED(pEvent);
+    if (m_pSettingsWidget && m_pOverlayWidget && m_pOverlayBlurEffect)
+    {
+        m_pSettingsWidget->setVisible(m_fShowSettingsDialog);
+        m_pOverlayWidget->setVisible(m_fShowSettingsDialog);
+        m_pOverlayBlurEffect->setEnabled(m_fShowSettingsDialog);
+        if (m_fShowSettingsDialog)
+        {
+            int x = 0.5 * (m_pOverlayWidget->width() - m_pSettingsWidget->width());
+            int y = 0.5 * (m_pOverlayWidget->height() - m_pSettingsWidget->height());
+            m_pSettingsWidget->move(m_pOverlayWidget->x() + x, m_pOverlayWidget->y() + y);
+        }
+    }
 }
 
 void UIVisoCreatorWidget::sltHandleAddObjectsToViso(QStringList pathList)
@@ -159,28 +203,8 @@ void UIVisoCreatorWidget::sltHandleAddObjectsToViso(QStringList pathList)
 
 void UIVisoCreatorWidget::sltPanelActionToggled(bool fChecked)
 {
-    Q_UNUSED(fChecked);
-    if (m_pSettingsWidget)
-        m_pSettingsWidget->setVisible(!m_pSettingsWidget->isVisible());
-#if 0
-    QAction *pSenderAction = qobject_cast<QAction*>(sender());
-    if (!pSenderAction)
-        return;
-    UIDialogPanel* pPanel = 0;
-    /* Look for the sender() within the m_panelActionMap's values: */
-    for (QMap<UIDialogPanel*, QAction*>::const_iterator iterator = m_panelActionMap.begin();
-        iterator != m_panelActionMap.end(); ++iterator)
-    {
-        if (iterator.value() == pSenderAction)
-            pPanel = iterator.key();
-    }
-    if (!pPanel)
-        return;
-    if (fChecked)
-        showPanel(pPanel);
-    else
-        hidePanel(pPanel);
-#endif
+    m_fShowSettingsDialog = fChecked;
+    update();
 }
 
 void UIVisoCreatorWidget::sltHandleVisoNameChanged(const QString &strVisoName)
@@ -281,7 +305,7 @@ void UIVisoCreatorWidget::prepareWidgets()
 
     if (m_pActionPool && m_pActionPool->action(UIActionIndex_M_VISOCreator))
         m_pMainMenu = m_pActionPool->action(UIActionIndex_M_VISOCreator)->menu();
-    // int iLayoutRow = 0;
+
     if (m_fShowToolBar)
     {
         m_pToolBar = new QIToolBar(parentWidget());
@@ -293,16 +317,19 @@ void UIVisoCreatorWidget::prepareWidgets()
         m_pMainLayout->addWidget(m_pToolBar);
     }
 
+    QStackedLayout *pStackedLayout = new QStackedLayout;
+    AssertPtrReturnVoid(pStackedLayout);
+    m_pMainLayout->addLayout(pStackedLayout);
+
     m_pBrowserContainerWidget = new QWidget;
     AssertPtrReturnVoid(m_pBrowserContainerWidget);
 
-    m_pMainLayout->addWidget(m_pBrowserContainerWidget);
     QGridLayout *pContainerLayout = new QGridLayout(m_pBrowserContainerWidget);
     AssertPtrReturnVoid(pContainerLayout);
     pContainerLayout->setContentsMargins(0, 0, 0, 0);
+
     m_pHostBrowser = new UIVisoHostBrowser;
     AssertPtrReturnVoid(m_pHostBrowser);
-
     pContainerLayout->addWidget(m_pHostBrowser, 0, 0, 1, 4);
 
     prepareVerticalToolBar();
@@ -314,26 +341,35 @@ void UIVisoCreatorWidget::prepareWidgets()
     pContainerLayout->addWidget(m_pVISOContentBrowser, 0, 5, 1, 4);
     m_pVISOContentBrowser->setVisoName(m_visoOptions.m_strVisoName);
 
-    // ++iLayoutRow;
-    // m_pConfigurationPanel = new UIVisoConfigurationPanel(this);
-    // if (m_pConfigurationPanel)
-    // {
-    //     m_pMainLayout->addWidget(m_pConfigurationPanel, iLayoutRow++, 0, 1, 9);
-    //     m_pConfigurationPanel->hide();
-    //     m_pConfigurationPanel->setVisoName(m_visoOptions.m_strVisoName);
-    //     m_pConfigurationPanel->setVisoCustomOptions(m_visoOptions.m_customOptions);
-    // }
+    m_pOverlayWidget = new QWidget(this);
+    m_pOverlayWidget->setAutoFillBackground(true);
+    QPalette pal = QPalette();
+    QColor color = pal.color(QPalette::Window);
+    color.setAlpha(60);
+    pal.setColor(QPalette::Window, color);
+    m_pOverlayWidget->setPalette(pal);
+
+    m_pOverlayBlurEffect = new QGraphicsBlurEffect(this);
+    AssertPtrReturnVoid(m_pOverlayBlurEffect);
+    m_pBrowserContainerWidget->setGraphicsEffect(m_pOverlayBlurEffect);
+    m_pOverlayBlurEffect->setEnabled(false);
+    m_pOverlayBlurEffect->setBlurRadius(6);
+
+    m_pSettingsWidget = new UIVisoSettingWidget(this);
+    m_pSettingsWidget->setFixedWidth(300);
+    m_pSettingsWidget->setFixedHeight(300);
+    AssertPtrReturnVoid(m_pSettingsWidget);
 
 
-    // m_pSettingsWidget = new UIVisoSettingWidget(this);
-    // if (m_pSettingsWidget)
-    // {
-    //     QVBoxLayout *pMainLayout = new QVBoxLayout(m_pSettingsWidget);
-    //     QPushButton *pB = new QPushButton;
-    //     pB->setText("ssssasas");
-    //     pMainLayout->addWidget(pB);
-    //     m_pSettingsWidget->setVisible(false);
-    // }
+    /* When added to stacked layout m_pSettingsWidget cannot be centered: */
+    //pStackedLayout->addWidget(m_pSettingsWidget);
+    //pStackedLayout->setAlignment(m_pSettingsWidget, Qt::AlignRight);
+    pStackedLayout->addWidget(m_pOverlayWidget);
+    pStackedLayout->addWidget(m_pBrowserContainerWidget);
+    pStackedLayout->setStackingMode(QStackedLayout::StackAll);
+
+    m_pSettingsWidget->hide();
+    m_pOverlayWidget->hide();
 }
 
 void UIVisoCreatorWidget::prepareConnections()
