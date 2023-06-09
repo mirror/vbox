@@ -88,8 +88,7 @@ RT_C_DECLS_BEGIN
                              || (   (rc) <= VINF_EM_LAST \
                                  && (rc) != VINF_EM_RESCHEDULE_REM \
                                  && (rc) >= VINF_EM_FIRST \
-                                 && (rc) != VINF_EM_RESCHEDULE_RAW \
-                                 && (rc) != VINF_EM_RESCHEDULE_HM \
+                                 && (rc) != VINF_EM_RESCHEDULE_EXEC_ENGINE \
                                 ) \
                             )
 #else
@@ -97,8 +96,7 @@ RT_C_DECLS_BEGIN
                              || (   (rc) <= VINF_EM_LAST \
                                  && (rc) != VINF_EM_RESCHEDULE_REM \
                                  && (rc) >= VINF_EM_FIRST \
-                                 && (rc) != VINF_EM_RESCHEDULE_RAW \
-                                 && (rc) != VINF_EM_RESCHEDULE_HM \
+                                 && (rc) != VINF_EM_RESCHEDULE_EXEC_ENGINE \
                                 ) \
                              || (rc) == VINF_IOM_R3_IOPORT_COMMIT_WRITE \
                              || (rc) == VINF_IOM_R3_MMIO_COMMIT_WRITE \

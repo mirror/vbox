@@ -964,7 +964,6 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
             case VINF_EM_RESUME:
             case VINF_EM_SUSPEND:
             case VINF_EM_RESCHEDULE:
-            case VINF_EM_RESCHEDULE_RAW:
             case VINF_EM_RESCHEDULE_REM:
             case VINF_EM_HALT:
                 if (pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER)
@@ -1750,7 +1749,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                                          | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_NESTED_GUEST
                                          | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
             && !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)
-            && (!rc || rc >= VINF_EM_RESCHEDULE_HM)
+            && (!rc || rc >= VINF_EM_RESCHEDULE_EXEC_ENGINE)
             && !CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx)             /* Interrupt shadows block both NMIs and interrupts. */
             && !TRPMHasTrap(pVCpu))                                      /* An event could already be scheduled for dispatching. */
         {
@@ -1863,11 +1862,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                             fWakeupPending = true;
                             if (   pVM->em.s.fIemExecutesAll
                                 && (   rc2 == VINF_EM_RESCHEDULE_REM
-                                    || rc2 == VINF_EM_RESCHEDULE_HM
-                                    || rc2 == VINF_EM_RESCHEDULE_RAW))
-                            {
+                                    || rc2 == VINF_EM_RESCHEDULE_EXEC_ENGINE))
                                 rc2 = VINF_EM_RESCHEDULE;
-                            }
 # ifdef VBOX_STRICT
                             if (fInjected)
                                 rcIrq = rc2;
@@ -2159,46 +2155,34 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     break;
 
                 /*
-                 * Reschedule - to raw-mode execution.
+                 * Reschedule - to main execution engine (HM, NEM, IEM/REM).
                  */
-/** @todo r=bird: consider merging VINF_EM_RESCHEDULE_RAW with VINF_EM_RESCHEDULE_HM, they serve the same purpose here at least. */
-                case VINF_EM_RESCHEDULE_RAW:
-                    Assert(!pVM->em.s.fIemExecutesAll || pVCpu->em.s.enmState != EMSTATE_IEM);
-                    AssertLogRelFailed();
-                    pVCpu->em.s.enmState = EMSTATE_NONE;
-                    break;
-
-                /*
-                 * Reschedule - to HM or NEM.
-                 */
-                case VINF_EM_RESCHEDULE_HM:
+                case VINF_EM_RESCHEDULE_EXEC_ENGINE:
                     Assert(!pVM->em.s.fIemExecutesAll || pVCpu->em.s.enmState != EMSTATE_IEM);
 #if !defined(VBOX_VMM_TARGET_ARMV8)
                     if (VM_IS_HM_ENABLED(pVM))
                     {
                         if (HMCanExecuteGuest(pVM, pVCpu, &pVCpu->cpum.GstCtx))
                         {
-                            Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HM: %d -> %d (EMSTATE_HM)\n", enmOldState, EMSTATE_HM));
+                            Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_EXEC_ENGINE: %d -> %d (EMSTATE_HM)\n", enmOldState, EMSTATE_HM));
                             pVCpu->em.s.enmState = EMSTATE_HM;
-                        }
-                        else
-                        {
-                            Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HM: %d -> %d (EMSTATE_RECOMPILER)\n", enmOldState, EMSTATE_RECOMPILER));
-                            pVCpu->em.s.enmState = EMSTATE_RECOMPILER;
+                            break;
                         }
                     }
                     else
 #endif
                     if (VM_IS_NEM_ENABLED(pVM))
                     {
-                        Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HM: %d -> %d (EMSTATE_NEM)\n", enmOldState, EMSTATE_NEM));
-                        pVCpu->em.s.enmState = EMSTATE_NEM;
+                        if (NEMR3CanExecuteGuest(pVM, pVCpu))
+                        {
+                            Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_EXEC_ENGINE: %d -> %d (EMSTATE_NEM)\n", enmOldState, EMSTATE_NEM));
+                            pVCpu->em.s.enmState = EMSTATE_NEM;
+                            break;
+                        }
                     }
-                    else
-                    {
-                        AssertLogRelFailed();
-                        pVCpu->em.s.enmState = EMSTATE_NONE;
-                    }
+
+                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_EXEC_ENGINE: %d -> %d (EMSTATE_RECOMPILER)\n", enmOldState, EMSTATE_RECOMPILER));
+                    pVCpu->em.s.enmState = EMSTATE_RECOMPILER;
                     break;
 
                 /*
@@ -2520,7 +2504,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     //STAM_PROFILE_START(&pVCpu->em.s.StatHmExec, x1);
                     rc = VBOXSTRICTRC_TODO(EMR3HmSingleInstruction(pVM, pVCpu, EM_ONE_INS_FLAGS_RIP_CHANGE));
                     //STAM_PROFILE_STOP(&pVCpu->em.s.StatHmExec, x1);
-                    if (rc == VINF_EM_DBG_STEPPED || rc == VINF_EM_RESCHEDULE_HM || rc == VINF_EM_RESCHEDULE_REM || rc == VINF_EM_RESCHEDULE_RAW)
+                    if (rc == VINF_EM_DBG_STEPPED || rc == VINF_EM_RESCHEDULE_EXEC_ENGINE || rc == VINF_EM_RESCHEDULE_REM)
                         rc = VINF_SUCCESS;
                     else if (rc == VERR_EM_CANNOT_EXEC_GUEST)
 #endif
@@ -2528,8 +2512,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     if (pVM->em.s.fIemExecutesAll)
                     {
                         Assert(rc != VINF_EM_RESCHEDULE_REM);
-                        Assert(rc != VINF_EM_RESCHEDULE_RAW);
-                        Assert(rc != VINF_EM_RESCHEDULE_HM);
+                        Assert(rc != VINF_EM_RESCHEDULE_EXEC_ENGINE);
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
                         if (cInstructions < 2048)
                             TMTimerPollVoid(pVM, pVCpu);

@@ -176,23 +176,22 @@
 #define VINF_EM_NO_MEMORY                   1114
 /** The fatal variant of VINF_EM_NO_MEMORY. */
 #define VERR_EM_NO_MEMORY                   (-1114)
-/** Indicating that a rescheduling to recompiled execution.
- * Typically caused by raw-mode executing code which is difficult/slow
- * to virtualize rawly.
+/** Indicating that we should reschedule to recompiled execution.
+ * Typically caused by the main execution engine not being capable of executing
+ * code in the current CPU state, or would be doing it too slowly, and we must
+ * fall back to recompiled execution.
  * @remarks Important to have a higher priority (lower number) than the other rescheduling status codes. */
 #define VINF_EM_RESCHEDULE_REM              1115
-/** Indicating that a rescheduling to vmx-mode execution (HM/NEM).
- * Typically caused by REM detecting that hardware-accelerated raw-mode execution is possible. */
-#define VINF_EM_RESCHEDULE_HM               1116
-/** Indicating that a rescheduling to raw-mode execution.
- * Typically caused by REM detecting that raw-mode execution is possible.
- * @remarks Important to have a higher priority (lower number) than VINF_EM_RESCHEDULE. */
-#define VINF_EM_RESCHEDULE_RAW              1117
+/** Indicating that we should reschedule to the main execution engine.
+ * Mainly triggered in recompiled execution mode to switch back to the main
+ * execution engine when the CPU state is compatible with it again (or we're
+ * past the expensive portion of code that is deemed faster to recompile). */
+#define VINF_EM_RESCHEDULE_EXEC_ENGINE      1116
+/* VINF_EM_RESCHEDULE_RAW was 1117 */
 /** Indicating that a rescheduling now is required. Typically caused by
  * interrupts having changed the EIP. */
 #define VINF_EM_RESCHEDULE                  1118
-/** PARAV call */
-#define VINF_EM_RESCHEDULE_PARAV            1119
+/* VINF_EM_RESCHEDULE_PARAV was 1119 */
 /** Go back into wait for SIPI mode */
 #define VINF_EM_WAIT_SIPI                   1120
 /** Last scheduling related status code. (inclusive) */

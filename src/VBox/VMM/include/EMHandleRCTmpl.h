@@ -62,8 +62,7 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, int rc)
          */
         case VINF_SUCCESS:
             break;
-        case VINF_EM_RESCHEDULE_RAW:
-        case VINF_EM_RESCHEDULE_HM:
+        case VINF_EM_RESCHEDULE_EXEC_ENGINE:
         case VINF_EM_RAW_INTERRUPT:
         case VINF_EM_RAW_TO_R3:
         case VINF_EM_RAW_TIMER_PENDING:

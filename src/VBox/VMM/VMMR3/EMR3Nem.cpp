@@ -355,10 +355,10 @@ static int emR3NemForcedActions(PVM pVM, PVMCPU pVCpu)
 /**
  * Executes hardware accelerated raw code. (Intel VT-x & AMD-V)
  *
- * This function contains the raw-mode version of the inner
- * execution loop (the outer loop being in EMR3ExecuteVM()).
+ * This function contains the inner EM execution loop for NEM (the outer loop
+ * being in EMR3ExecuteVM()).
  *
- * @returns VBox status code. The most important ones are: VINF_EM_RESCHEDULE, VINF_EM_RESCHEDULE_RAW,
+ * @returns VBox status code. The most important ones are: VINF_EM_RESCHEDULE,
  *          VINF_EM_RESCHEDULE_REM, VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
  * @param   pVM         The cross context VM structure.
@@ -495,7 +495,7 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             rcStrict = emR3ForcedActions(pVM, pVCpu, VBOXSTRICTRC_TODO(rcStrict));
             VBOXVMM_EM_FF_ALL_RET(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
             if (   rcStrict != VINF_SUCCESS
-                && rcStrict != VINF_EM_RESCHEDULE_HM)
+                && rcStrict != VINF_EM_RESCHEDULE_EXEC_ENGINE)
             {
                 *pfFFDone = true;
                 break;

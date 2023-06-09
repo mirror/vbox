@@ -1011,7 +1011,6 @@ static int dbgfR3CpuWait(PVMCPU pVCpu)
                         case VINF_EM_RESUME:
                         case VINF_EM_RESCHEDULE:
                         case VINF_EM_RESCHEDULE_REM:
-                        case VINF_EM_RESCHEDULE_RAW:
                             if (rc < rcRet || rcRet == VINF_SUCCESS)
                                 rcRet = rc;
                             break;
