@@ -121,6 +121,10 @@ typedef struct DEVPL031
     RTGCPHYS                        GCPhysMmioBase;
     /** The IRQ value. */
     uint16_t                        u16Irq;
+    /** Flag whether to preload the load rgeister with the current time. */
+    bool                            fLoadTime;
+    /** Flag whether to use UTC for the time offset. */
+    bool                            fUtcOffset;
 
     /** @name Registers.
      * @{ */
@@ -466,6 +470,20 @@ static DECLCALLBACK(void) pl031R3Reset(PPDMDEVINS pDevIns)
     pThis->fRtcStarted      = false;
     pThis->fRtcIrqMasked    = false;
     pThis->fRtcIrqSts       = false;
+
+    if (pThis->fLoadTime)
+    {
+        RTTIMESPEC  Now;
+        PDMDevHlpTMUtcNow(pDevIns, &Now);
+        if (!pThis->fUtcOffset)
+        {
+            RTTIME Time;
+            RTTimeLocalExplode(&Time, &Now);
+            RTTimeImplode(&Now, &Time);
+        }
+
+        pThis->u32RtcLr = (uint32_t)RTTimeSpecGetSeconds(&Now);
+    }
 }
 
 
@@ -497,7 +515,7 @@ static DECLCALLBACK(int) pl031R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Validate and read the configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Irq|MmioBase", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Irq|MmioBase|LoadTime|UtcOffset", "");
 
     uint16_t u16Irq = 0;
     rc = pHlp->pfnCFGMQueryU16(pCfg, "Irq", &u16Irq);
@@ -509,6 +527,16 @@ static DECLCALLBACK(int) pl031R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"MmioBase\" value"));
+
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "LoadTime", &pThis->fLoadTime, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"LoadTime\" as a bool failed"));
+
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "UtcOffset", &pThis->fUtcOffset, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"UtcOffset\" as a bool failed"));
 
     pThis->u16Irq         = u16Irq;
     pThis->GCPhysMmioBase = GCPhysMmioBase;
