@@ -892,9 +892,9 @@ FNIEMOP_STUB(iemOp_vbroadcasti128_Vqq_Mdq);
 /*  Opcode VEX.66.0F38 0x76 - invalid. */
 /*  Opcode VEX.66.0F38 0x77 - invalid. */
 /** Opcode VEX.66.0F38 0x78. */
-FNIEMOP_STUB(iemOp_vpboardcastb_Vx_Wx);
+FNIEMOP_STUB(iemOp_vpbroadcastb_Vx_Wx);
 /** Opcode VEX.66.0F38 0x79. */
-FNIEMOP_STUB(iemOp_vpboardcastw_Vx_Wx);
+FNIEMOP_STUB(iemOp_vpbroadcastw_Vx_Wx);
 /*  Opcode VEX.66.0F38 0x7a - invalid. */
 /*  Opcode VEX.66.0F38 0x7b - invalid. */
 /*  Opcode VEX.66.0F38 0x7c - invalid. */
@@ -1944,8 +1944,8 @@ IEM_STATIC const PFNIEMOP g_apfnVexMap2[] =
     /* 0x75 */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0x76 */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0x77 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x78 */  iemOp_InvalidNeedRM,        iemOp_vpboardcastb_Vx_Wx,   iemOp_InvalidNeedRM,      iemOp_InvalidNeedRM,
-    /* 0x79 */  iemOp_InvalidNeedRM,        iemOp_vpboardcastw_Vx_Wx,   iemOp_InvalidNeedRM,      iemOp_InvalidNeedRM,
+    /* 0x78 */  iemOp_InvalidNeedRM,        iemOp_vpbroadcastb_Vx_Wx,   iemOp_InvalidNeedRM,      iemOp_InvalidNeedRM,
+    /* 0x79 */  iemOp_InvalidNeedRM,        iemOp_vpbroadcastw_Vx_Wx,   iemOp_InvalidNeedRM,      iemOp_InvalidNeedRM,
     /* 0x7a */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0x7b */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0x7c */  IEMOP_X4(iemOp_InvalidNeedRM),
