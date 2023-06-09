@@ -627,11 +627,11 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVMCPU pUVCpu, const uint32_t fMas
             const uint64_t Start = pUVCpu->vm.s.Halt.Method12.u64LastBlockTS = RTTimeNanoTS();
             VMMR3YieldStop(pVM);
 
-            uint32_t cMilliSecs = RT_MIN(u64NanoTS / 1000000, 15);
-            if (cMilliSecs <= pUVCpu->vm.s.Halt.Method12.cNSBlockedTooLongAvg)
+            uint32_t cMilliSecs = RT_MIN(u64NanoTS / RT_NS_1MS, 15);
+            if (cMilliSecs <= pUVCpu->vm.s.Halt.Method12.cNSBlockedTooLongAvg / RT_NS_1MS)
                 cMilliSecs = 1;
             else
-                cMilliSecs -= pUVCpu->vm.s.Halt.Method12.cNSBlockedTooLongAvg;
+                cMilliSecs -= pUVCpu->vm.s.Halt.Method12.cNSBlockedTooLongAvg / RT_NS_1MS;
 
             //RTLogRelPrintf("u64NanoTS=%RI64 cLoops=%3d sleep %02dms (%7RU64) ", u64NanoTS, cLoops, cMilliSecs, u64NanoTS);
             uint64_t const u64StartSchedHalt   = RTTimeNanoTS();
