@@ -339,7 +339,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pl031MmioWrite(PPDMDEVINS pDevIns, void *pvUse
                 if (fRtcStart)
                 {
                     PDMDevHlpTimerLockClock(pDevIns, pThis->hTimerSecond, VERR_IGNORED);
-                    rcStrict = PDMDevHlpTimerSet(pDevIns, pThis->hTimerSecond, RT_MS_1SEC);
+                    rcStrict = PDMDevHlpTimerSetMillies(pDevIns, pThis->hTimerSecond, RT_MS_1SEC);
                     PDMDevHlpTimerUnlockClock(pDevIns, pThis->hTimerSecond);
                 }
                 else
