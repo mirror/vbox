@@ -319,7 +319,9 @@ VMMR3_INT_DECL(void)            HMR3ResetCpu(PVMCPU pVCpu);
 VMMR3_INT_DECL(void)            HMR3CheckError(PVM pVM, int iStatusCode);
 VMMR3_INT_DECL(void)            HMR3NotifyDebugEventChanged(PVM pVM);
 VMMR3_INT_DECL(void)            HMR3NotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu);
+# if 0 /* evil */
 VMMR3_INT_DECL(bool)            HMR3IsActive(PCVMCPU pVCpu);
+# endif
 VMMR3_INT_DECL(int)             HMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
 VMMR3_INT_DECL(int)             HMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
 VMMR3_INT_DECL(int)             HMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu);

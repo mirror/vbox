@@ -365,6 +365,7 @@ VMMR3_INT_DECL(void) HMR3NotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu)
 }
 
 
+#if 0 /* evil */
 /**
  * Checks if we are currently using hardware acceleration.
  *
@@ -375,6 +376,7 @@ VMMR3_INT_DECL(bool) HMR3IsActive(PCVMCPU pVCpu)
 {
     return pVCpu->hm.s.fActive;
 }
+#endif
 
 
 /**
