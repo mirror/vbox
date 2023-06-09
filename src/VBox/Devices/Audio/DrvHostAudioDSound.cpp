@@ -2769,7 +2769,7 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     else
         LogRel2(("DSound: Notification client is disabled (ver %#RX64)\n", RTSystemGetNtVersion()));
 #endif
-RT_BREAKPOINT();
+
     /*
      * Initialize configuration values and critical section.
      */
