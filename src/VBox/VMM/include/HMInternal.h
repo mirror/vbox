@@ -990,6 +990,10 @@ typedef struct HMCPU
     STAMCOUNTER             StatVmxCheckBadSel;
     STAMCOUNTER             StatVmxCheckBadRpl;
     STAMCOUNTER             StatVmxCheckPmOk;
+    STAMCOUNTER             StatVmxCheck1;
+    STAMCOUNTER             StatVmxCheck2;
+    STAMCOUNTER             StatVmxCheckDisabled;
+    STAMCOUNTER             StatVmxCheckOk;
 
     STAMCOUNTER             StatVmxPreemptionRecalcingDeadline;
     STAMCOUNTER             StatVmxPreemptionRecalcingDeadlineExpired;
