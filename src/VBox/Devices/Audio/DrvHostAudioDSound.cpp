@@ -2634,7 +2634,7 @@ static LPCGUID dsoundConfigQueryGUID(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const c
     {
         rc = RTUuidFromStr(pUuid, pszGuid);
         if (RT_SUCCESS(rc))
-            pGuid = (LPCGUID)&pUuid;
+            pGuid = (LPCGUID)pUuid;
         else
             DSLOGREL(("DSound: Error parsing device GUID for device '%s': %Rrc\n", pszName, rc));
 
@@ -2769,7 +2769,7 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     else
         LogRel2(("DSound: Notification client is disabled (ver %#RX64)\n", RTSystemGetNtVersion()));
 #endif
-
+RT_BREAKPOINT();
     /*
      * Initialize configuration values and critical section.
      */
