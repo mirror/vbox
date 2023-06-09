@@ -1140,6 +1140,31 @@ static VBOXSTRICTRC emR3RecompilerExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             }
         }
 
+        /*
+         * Check if we can switch back to the main execution engine now.
+         */
+#if !defined(VBOX_VMM_TARGET_ARMV8)
+        if (VM_IS_HM_ENABLED(pVM))
+        {
+            if (HMCanExecuteGuest(pVM, pVCpu, &pVCpu->cpum.GstCtx))
+            {
+                *pfFFDone = true;
+                rcStrict  = VINF_EM_RESCHEDULE_EXEC_ENGINE;
+                break;
+            }
+        }
+        else
+#endif
+        if (VM_IS_NEM_ENABLED(pVM))
+        {
+            if (NEMR3CanExecuteGuest(pVM, pVCpu))
+            {
+                *pfFFDone = true;
+                rcStrict  = VINF_EM_RESCHEDULE_EXEC_ENGINE;
+                break;
+            }
+        }
+
     } /* The Inner Loop, recompiled execution mode version. */
 
     STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatREMTotal, a);
