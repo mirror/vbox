@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IEM - Instruction Decoding and Emulation.
+ * IEM - Instruction Decoding and Threaded Recompilation.
  */
 
 /*
