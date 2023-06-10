@@ -299,10 +299,44 @@ static PIEMTB iemThreadedTbLookup(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPC, 
 }
 
 
-static VBOXSTRICTRC iemThreadedTbExec(PVMCC pVM, PVMCPUCC pVCpu, PIEMTB pTb)
+/**
+ * Executes a translation block.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling
+ *                  thread.
+ * @param   pTb     The translation block to execute.
+ */
+static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb)
 {
-    RT_NOREF(pVM, pVCpu, pTb);
-    return VERR_NOT_IMPLEMENTED;
+    /* Set the current TB so CIMPL function may get at it. */
+    pVCpu->iem.s.pCurTbR3 = pTb;
+
+    /* The execution loop. */
+    PCIEMTHRDEDCALLENTRY pCallEntry = pTb->Thrd.paCalls;
+    uint32_t             cCallsLeft = pTb->Thrd.cCalls;
+    while (cCallsLeft-- > 0)
+    {
+        VBOXSTRICTRC const rcStrict = g_apfnIemThreadedFunctions[pCallEntry->enmFunction](pVCpu,
+                                                                                          pCallEntry->auParams[0],
+                                                                                          pCallEntry->auParams[1],
+                                                                                          pCallEntry->auParams[2]);
+        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+            pCallEntry++;
+        else
+        {
+            pVCpu->iem.s.pCurTbR3 = NULL;
+
+            /* Some status codes are just to get us out of this loop and
+               continue in a different translation block. */
+            if (rcStrict == VINF_IEM_REEXEC_MODE_CHANGED)
+                return VINF_SUCCESS;
+            return rcStrict;
+        }
+    }
+
+    pVCpu->iem.s.pCurTbR3 = NULL;
+    return VINF_SUCCESS;
 }
 
 
@@ -378,7 +412,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
 
                 pTb = iemThreadedTbLookup(pVM, pVCpu, GCPhysPc, uPc);
                 if (pTb)
-                    rcStrict = iemThreadedTbExec(pVM, pVCpu, pTb);
+                    rcStrict = iemThreadedTbExec(pVCpu, pTb);
                 else
                     rcStrict = iemThreadedCompile(pVM, pVCpu /*, GCPhysPc, uPc*/);
                 if (rcStrict == VINF_SUCCESS)
