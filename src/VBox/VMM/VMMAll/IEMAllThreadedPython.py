@@ -195,6 +195,19 @@ class ThreadedFunctionVariation(object):
     };
     ## @}
 
+    ## IEM_CIMPL_F_XXX flags that we know.
+    kdCImplFlags = {
+        'IEM_CIMPL_F_MODE':             True,
+        'IEM_CIMPL_F_BRANCH':           False,
+        'IEM_CIMPL_F_RFLAGS':           False,
+        'IEM_CIMPL_F_STATUS_FLAGS':     False,
+        'IEM_CIMPL_F_VMEXIT':           False,
+        'IEM_CIMPL_F_FPU':              False,
+        'IEM_CIMPL_F_REP':              False,
+        'IEM_CIMPL_F_END_TB':           False,
+        'IEM_CIMPL_F_XCPT':             True,
+    };
+
     def __init__(self, oThreadedFunction, sVariation = ksVariation_Default):
         self.oParent        = oThreadedFunction # type: ThreadedFunction
         ##< ksVariation_Xxxx.
@@ -209,6 +222,9 @@ class ThreadedFunctionVariation(object):
 
         ## List/tree of statements for the threaded function.
         self.aoStmtsForThreadedFunction = [] # type: list(McStmt)
+
+        ## Dictionary with any IEM_CIMPL_F_XXX flags associated to the code block.
+        self.dsCImplFlags   = { }           # type: dict(str, bool)
 
         ## Function enum number, for verification. Set by generateThreadedFunctionsHeader.
         self.iEnumValue     = -1;
@@ -463,6 +479,33 @@ class ThreadedFunctionVariation(object):
 
         return (aoThreadedStmts, iParamRef);
 
+    def analyzeCodeOperation(self, aoStmts):
+        """
+        Analyzes the code looking clues as to additional side-effects.
+
+        Currently this is simply looking for any IEM_IMPL_C_F_XXX flags and
+        collecting these in self.dsCImplFlags.
+        """
+        for oStmt in aoStmts:
+            if oStmt.sName.startswith('IEM_MC_CALL_CIMPL_') or oStmt.sName.startswith('IEM_MC_DEFER_TO_CIMPL_'):
+                sFlagsSansComments = iai.McBlock.stripComments(oStmt.asParams[0]);
+                for sFlag in sFlagsSansComments.split('|'):
+                    sFlag = sFlag.strip();
+                    if sFlag != '0':
+                        if sFlag in self.kdCImplFlags:
+                            self.dsCImplFlags[sFlag] = True;
+                        else:
+                            self.raiseProblem('Unknown CIMPL flag value: %s' % (sFlag,));
+
+            # Process branches of conditionals recursively.
+            if isinstance(oStmt, iai.McStmtCond):
+                self.analyzeCodeOperation(oStmt.aoIfBranch);
+                if oStmt.aoElseBranch:
+                    self.analyzeCodeOperation(oStmt.aoElseBranch);
+
+        return True;
+
+
     def analyzeConsolidateThreadedParamRefs(self):
         """
         Consolidate threaded function parameter references into a dictionary
@@ -542,7 +585,7 @@ class ThreadedFunctionVariation(object):
 
     ksHexDigits = '0123456789abcdefABCDEF';
 
-    def analyzeFindThreadedParamRefs(self, aoStmts):
+    def analyzeFindThreadedParamRefs(self, aoStmts): # pylint: disable=too-many-statements
         """
         Scans the statements for things that have to passed on to the threaded
         function (populates self.aoParamRefs).
@@ -776,6 +819,9 @@ class ThreadedFunctionVariation(object):
         self.analyzeFindThreadedParamRefs(aoStmts);
         self.analyzeConsolidateThreadedParamRefs();
 
+        # Scan the code for IEM_CIMPL_F_ and other clues.
+        self.analyzeCodeOperation(aoStmts);
+
         # Morph the statement stream for the block into what we'll be using in the threaded function.
         (self.aoStmtsForThreadedFunction, iParamRef) = self.analyzeMorphStmtForThreaded(aoStmts);
         if iParamRef != len(self.aoParamRefs):
@@ -785,8 +831,10 @@ class ThreadedFunctionVariation(object):
 
     def emitThreadedCallStmts(self, cchIndent):
         """
-        Produces a generic C++ statment that emits a call to the thread function variation.
+        Produces generic C++ statments that emits a call to the thread function
+        variation and any subsequent checks that may be necessary after that.
         """
+        # The call to the threaded function.
         sCode = 'IEM_MC2_EMIT_CALL_%s(%s' % (self.cMinParams, self.getIndexName(), );
         for iParam in range(self.cMinParams):
             asFrags = [];
@@ -800,7 +848,15 @@ class ThreadedFunctionVariation(object):
             assert asFrags;
             sCode += ', ' + ' | '.join(asFrags);
         sCode += ');';
-        return [iai.McCppGeneric(sCode, cchIndent = cchIndent),];
+        aoStmts = [ iai.McCppGeneric(sCode, cchIndent = cchIndent), ];
+
+        # For CIMPL stuff, we need to consult the associated IEM_CIMPL_F_XXX
+        # mask and maybe emit additional checks.
+        if 'IEM_CIMPL_F_MODE' in self.dsCImplFlags or 'IEM_CIMPL_F_XCPT' in self.dsCImplFlags:
+            aoStmts.append(iai.McCppGeneric('IEM_MC2_EMIT_CALL_1(kIemThreadedFunc_CheckMode, pVCpu->iem.s.fExec);',
+                                            cchIndent = cchIndent));
+
+        return aoStmts;
 
 
 class ThreadedFunction(object):
@@ -1138,8 +1194,13 @@ class IEMThreadedGenerator(object):
             'typedef enum IEMTHREADEDFUNCS',
             '{',
             '    kIemThreadedFunc_Invalid = 0,',
+            '',
+            '    /*'
+            '     * Predefined'
+            '     */'
+            '    kIemThreadedFunc_CheckMode,',
         ];
-        iThreadedFunction = 0;
+        iThreadedFunction = 1;
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
             asLines += [
                     '',
@@ -1287,8 +1348,14 @@ class IEMThreadedGenerator(object):
                    + ' */\n'
                    + 'const PFNIEMTHREADEDFUNC g_apfnIemThreadedFunctions[kIemThreadedFunc_End] =\n'
                    + '{\n'
-                   + '    /*Invalid*/ NULL, \n');
-        iThreadedFunction = 0;
+                   + '    /*Invalid*/ NULL,\n'
+                   + '\n'
+                   + '    /*\n'
+                   + '     * Predefined.\n'
+                   + '     */'
+                   + '    iemThreadedFunc_BltIn_CheckMode,\n'
+                   );
+        iThreadedFunction = 1;
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
             oOut.write(  '\n'
                        + '    /*\n'
