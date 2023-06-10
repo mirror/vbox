@@ -5604,15 +5604,15 @@ FNIEMOP_DEF(iemOp_call_Ap)
     IEMOP_HLP_NO_64BIT();
 
     /* Decode the far pointer address and pass it on to the far call C implementation. */
-    uint32_t offSeg;
+    uint32_t off32Seg;
     if (pVCpu->iem.s.enmEffOpSize != IEMMODE_16BIT)
-        IEM_OPCODE_GET_NEXT_U32(&offSeg);
+        IEM_OPCODE_GET_NEXT_U32(&off32Seg);
     else
-        IEM_OPCODE_GET_NEXT_U16_ZX_U32(&offSeg);
-    uint16_t uSel;  IEM_OPCODE_GET_NEXT_U16(&uSel);
+        IEM_OPCODE_GET_NEXT_U16_ZX_U32(&off32Seg);
+    uint16_t u16Sel;  IEM_OPCODE_GET_NEXT_U16(&u16Sel);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_BRANCH | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT,
-                                iemCImpl_callf, uSel, offSeg, pVCpu->iem.s.enmEffOpSize);
+                                iemCImpl_callf, u16Sel, off32Seg, pVCpu->iem.s.enmEffOpSize);
 }
 
 
@@ -11483,15 +11483,15 @@ FNIEMOP_DEF(iemOp_jmp_Ap)
     IEMOP_HLP_NO_64BIT();
 
     /* Decode the far pointer address and pass it on to the far call C implementation. */
-    uint32_t offSeg;
+    uint32_t off32Seg;
     if (pVCpu->iem.s.enmEffOpSize != IEMMODE_16BIT)
-        IEM_OPCODE_GET_NEXT_U32(&offSeg);
+        IEM_OPCODE_GET_NEXT_U32(&off32Seg);
     else
-        IEM_OPCODE_GET_NEXT_U16_ZX_U32(&offSeg);
-    uint16_t uSel;  IEM_OPCODE_GET_NEXT_U16(&uSel);
+        IEM_OPCODE_GET_NEXT_U16_ZX_U32(&off32Seg);
+    uint16_t u16Sel;  IEM_OPCODE_GET_NEXT_U16(&u16Sel);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_BRANCH | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT,
-                                iemCImpl_FarJmp, uSel, offSeg, pVCpu->iem.s.enmEffOpSize);
+                                iemCImpl_FarJmp, u16Sel, off32Seg, pVCpu->iem.s.enmEffOpSize);
 }
 
 

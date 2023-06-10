@@ -4312,21 +4312,25 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
         return True;
 
-    def parseMacroInvocation(self, sInvocation):
+    def parseMacroInvocation(self, sInvocation, offStartInvocation = 0):
         """
         Parses a macro invocation.
 
-        Returns a tuple, first element is the offset following the macro
-        invocation. The second element is a list of macro arguments, where the
-        zero'th is the macro name.
+        Returns three values:
+            1. A list of macro arguments, where the zero'th is the macro name.
+            2. The offset following the macro invocation, into sInvocation of
+               this is on the same line or into the last line if it is on a
+               different line.
+            3. Number of additional lines the invocation spans (i.e. zero if
+               it is all contained within sInvocation).
         """
         # First the name.
-        offOpen = sInvocation.find('(');
-        if offOpen <= 0:
+        offOpen = sInvocation.find('(', offStartInvocation);
+        if offOpen <= offStartInvocation:
             self.raiseError("macro invocation open parenthesis not found");
-        sName = sInvocation[:offOpen].strip();
+        sName = sInvocation[offStartInvocation:offOpen].strip();
         if not self.oReMacroName.match(sName):
-            return self.error("invalid macro name '%s'" % (sName,));
+            self.raiseError("invalid macro name '%s'" % (sName,));
         asRet = [sName, ];
 
         # Arguments.
@@ -4334,14 +4338,16 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         cDepth   = 1;
         off      = offOpen + 1;
         offStart = off;
+        offCurLn = 0;
         chQuote  = None;
         while cDepth > 0:
             if off >= len(sInvocation):
                 if iLine >= len(self.asLines):
                     self.error('macro invocation beyond end of file');
-                    return (off, asRet);
+                    return (asRet, off - offCurLn, iLine - self.iLine);
+                offCurLn     = off;
                 sInvocation += self.asLines[iLine];
-                iLine += 1;
+                iLine       += 1;
             ch = sInvocation[off];
 
             if chQuote:
@@ -4361,23 +4367,23 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
                 cDepth += 1;
             off += 1;
 
-        return (off, asRet);
+        return (asRet, off - offCurLn, iLine - self.iLine);
 
-    def findAndParseMacroInvocationEx(self, sCode, sMacro):
+    def findAndParseMacroInvocationEx(self, sCode, sMacro, offStart = 0):
         """
-        Returns (len(sCode), None) if not found, parseMacroInvocation result if found.
+        Returns (None, len(sCode), 0) if not found, otherwise the
+        parseMacroInvocation() return value.
         """
-        offHit = sCode.find(sMacro);
+        offHit = sCode.find(sMacro, offStart);
         if offHit >= 0 and sCode[offHit + len(sMacro):].strip()[0] == '(':
-            offAfter, asRet = self.parseMacroInvocation(sCode[offHit:])
-            return (offHit + offAfter, asRet);
-        return (len(sCode), None);
+            return self.parseMacroInvocation(sCode, offHit);
+        return (None, len(sCode), 0);
 
     def findAndParseMacroInvocation(self, sCode, sMacro):
         """
         Returns None if not found, arguments as per parseMacroInvocation if found.
         """
-        return self.findAndParseMacroInvocationEx(sCode, sMacro)[1];
+        return self.findAndParseMacroInvocationEx(sCode, sMacro)[0];
 
     def findAndParseFirstMacroInvocation(self, sCode, asMacro):
         """
@@ -4568,6 +4574,27 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         self.iMcBlockInFunc += 1;
         return True;
 
+    @staticmethod
+    def extractLinesFromMacroExpansionLine(sRawLine, offBegin, offEnd, sBeginStmt = 'IEM_MC_BEGIN'):
+        """
+        Helper used by workerIemMcEnd and workerIemMcDeferToCImplXRet for
+        extracting a statement block from a string that's the result of macro
+        expansion and therefore contains multiple "sub-lines" as it were.
+
+        Returns list of lines covering offBegin thru offEnd in sRawLine.
+        """
+
+        off = sRawLine.find('\n', offEnd);
+        if off > 0:
+            sRawLine = sRawLine[:off + 1];
+
+        off = sRawLine.rfind('\n', 0, offBegin) + 1;
+        sRawLine = sRawLine[off:];
+        if not sRawLine.strip().startswith(sBeginStmt):
+            sRawLine = sRawLine[offBegin - off:]
+
+        return [sLine + '\n' for sLine in sRawLine.split('\n')];
+
     def workerIemMcEnd(self, offEndStatementInLine):
         """
         Process a IEM_MC_END macro invocation.
@@ -4591,18 +4618,8 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
             if not asLines[0].strip().startswith('IEM_MC_BEGIN'):
                 self.raiseError('IEM_MC_BEGIN is not the first word on the line');
         else:
-            sRawLine = self.asLines[self.iLine - 1];
-
-            off = sRawLine.find('\n', offEndStatementInLine);
-            if off > 0:
-                sRawLine = sRawLine[:off + 1];
-
-            off = sRawLine.rfind('\n', 0, self.oCurMcBlock.offBeginLine) + 1;
-            sRawLine = sRawLine[off:];
-            if not sRawLine.strip().startswith('IEM_MC_BEGIN'):
-                sRawLine = sRawLine[self.oCurMcBlock.offBeginLine - off:]
-
-            asLines = [sLine + '\n' for sLine in sRawLine.split('\n')];
+            asLines = self.extractLinesFromMacroExpansionLine(self.asLines[self.iLine - 1],
+                                                              self.oCurMcBlock.offBeginLine, offEndStatementInLine);
 
         #
         # Strip anything following the IEM_MC_END(); statement in the final line,
@@ -4646,16 +4663,16 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         """
         Process a IEM_MC_DEFER_TO_CIMPL_[0-5]_RET macro invocation.
         """
+        sStmt = 'IEM_MC_DEFER_TO_CIMPL_%d_RET' % (cParams,);
         if self.fDebugMc:
-            self.debug('IEM_MC_DEFER_TO_CIMPL_%d_RET on %s off %s' % (cParams, self.iLine, offBeginStatementInLine,));
+            self.debug('%s on %s off %s' % (sStmt, self.iLine, offBeginStatementInLine,));
             #self.debug('%s<eos>' % (sCode,));
 
         # Check preconditions.
         if not self.oCurFunction:
-            self.raiseError('IEM_MC_DEFER_TO_CIMPL_x_RET w/o current function (%s)' % (sCode,));
+            self.raiseError('%s w/o current function (%s)' % (sStmt, sCode,));
         if self.oCurMcBlock:
-            self.raiseError('IEM_MC_DEFER_TO_CIMPL_x_RET inside IEM_MC_BEGIN blocki starting at line %u'
-                            % (self.oCurMcBlock.iBeginLine,));
+            self.raiseError('%s inside IEM_MC_BEGIN blocki starting at line %u' % (sStmt, self.oCurMcBlock.iBeginLine,));
 
         # Figure out the indent level the block starts at, adjusting for expanded multiline macros.
         cchIndent = offBeginStatementInCodeStr;
@@ -4668,27 +4685,43 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         oMcBlock = McBlock(self.sSrcFile, self.iLine, offBeginStatementInLine,
                            self.oCurFunction, self.iMcBlockInFunc, cchIndent);
 
-        # Parse the statment (first call may advance self.iLine!).
-        offAfter, asArgs = self.findAndParseMacroInvocationEx(sCode[offBeginStatementInCodeStr:],
-                                                              'IEM_MC_DEFER_TO_CIMPL_%d_RET' % (cParams,));
+        # Parse the statment.
+        asArgs, offAfter, cLines = self.findAndParseMacroInvocationEx(sCode, sStmt, offBeginStatementInCodeStr);
         if asArgs is None:
-            self.raiseError('IEM_MC_DEFER_TO_CIMPL_x_RET: Closing parenthesis not found!');
+            self.raiseError('%s: Closing parenthesis not found!' % (sStmt,));
         if len(asArgs) != cParams + 3:
-            self.raiseError('IEM_MC_DEFER_TO_CIMPL_%d_RET: findAndParseMacroInvocationEx returns %s args, expected %s!'
-                            % (cParams, len(asArgs), cParams + 3,));
+            self.raiseError('%s: findAndParseMacroInvocationEx returns %s args, expected %s!'
+                            % (sStmt, len(asArgs), cParams + 3,));
 
         oMcBlock.aoStmts = [McStmtCall(asArgs[0], asArgs[1:], 1),];
 
-        ## @todo complete this after some sleep...
-        _  = offAfter;
-        #asLines =
+        # These MCs are not typically part of macro expansions, but let's get
+        # it out of the way immediately if it's the case.
+        if cLines > 0 or self.asLines[oMcBlock.iBeginLine - 1].count('\n') <= 1:
+            asLines = self.asLines[self.iLine - 1 : self.iLine - 1 + cLines + 1];
+            assert offAfter < len(asLines[-1]) and asLines[-1][offAfter] == ';', \
+                   'iBeginLine=%d iLine=%d offAfter=%s line: "%s"' % (oMcBlock.iBeginLine, self.iLine, offAfter, asLines[-1],);
+            asLines[-1] = asLines[-1][:offAfter + 1];
+        else:
+            asLines = self.extractLinesFromMacroExpansionLine(self.asLines[self.iLine - 1], offBeginStatementInCodeStr,
+                                                              offAfter, sStmt);
+            assert asLines[-1].find(';') >= 0;
+            asLines[-1] = asLines[-1][:asLines[-1].find(';') + 1];
+
+        assert asLines[0].find(sStmt) >= 0;
+        #if not asLines[0].strip().startswith(sStmt):
+        #    self.raiseError('%s is not the first word on the line: %s' % (sStmt, asLines[0].strip()));
+
+        # Advance to the line with the closing ')'.
+        self.iLine += cLines;
 
         # Complete the block.
-        #oMcBlock.complete(self.iLine, offBeginStatementInCodeStr);
+        oMcBlock.complete(self.iLine, 0 if cLines > 0 else offBeginStatementInCodeStr, offAfter + 1, asLines);
 
-        #g_aoMcBlocks.append(oMcBlock);
-        #self.cTotalMcBlocks += 1;
-        #self.iMcBlockInFunc += 1;
+        g_aoMcBlocks.append(oMcBlock);
+        self.cTotalMcBlocks += 1;
+        self.iMcBlockInFunc += 1;
+
         return True;
 
     def workerStartFunction(self, asArgs):

@@ -266,7 +266,7 @@ class ThreadedFunctionVariation(object):
                 return 'int32_t';
             if sRef.startswith('i64'):
                 return 'int64_t';
-            if sRef in ('iReg', 'iGReg', 'iSegReg', 'iSrcReg', 'iDstReg'):
+            if sRef in ('iReg', 'iGReg', 'iSegReg', 'iSrcReg', 'iDstReg', 'iCrReg'):
                 return 'uint8_t';
         elif ch0 == 'p':
             if sRef.find('-') < 0:
@@ -276,12 +276,16 @@ class ThreadedFunctionVariation(object):
                 if sField in g_kdIemFieldToType:
                     if g_kdIemFieldToType[sField][0]:
                         return g_kdIemFieldToType[sField][0];
-                    self.raiseProblem('Reference out-of-bounds decoder field: %s' % (sRef,));
         elif ch0 == 'G' and sRef.startswith('GCPtr'):
             return 'uint64_t';
         elif ch0 == 'e':
             if sRef == 'enmEffOpSize':
                 return 'IEMMODE';
+        elif ch0 == 'o':
+            if sRef.startswith('off32'):
+                return 'uint32_t';
+        elif sRef == 'cbFrame':  # enter
+            return 'uint16_t';
         elif sRef == 'cShift': ## @todo risky
             return 'uint8_t';
 
@@ -446,8 +450,8 @@ class ThreadedFunctionVariation(object):
                     oNewStmt.asParams[idxReg] = self.dParamRefs[sStdRef][0].sNewName;
                     oNewStmt.sName += '_THREADED';
 
-                # ... and IEM_MC_CALL_CIMPL_[0-5] into *_THREADED ...
-                elif oNewStmt.sName.startswith('IEM_MC_CALL_CIMPL_'):
+                # ... and IEM_MC_CALL_CIMPL_[0-5] and IEM_MC_DEFER_TO_CIMPL_[0-5]_RET into *_THREADED ...
+                elif oNewStmt.sName.startswith('IEM_MC_CALL_CIMPL_') or oNewStmt.sName.startswith('IEM_MC_DEFER_TO_CIMPL_'):
                     oNewStmt.sName += '_THREADED';
                     oNewStmt.asParams.insert(0, self.dParamRefs['cbInstr'][0].sNewName);
 
@@ -560,7 +564,9 @@ class ThreadedFunctionVariation(object):
             # Several statements have implicit parameters and some have different parameters.
             if oStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH', 'IEM_MC_REL_JMP_S8_AND_FINISH', 'IEM_MC_REL_JMP_S16_AND_FINISH',
                                'IEM_MC_REL_JMP_S32_AND_FINISH', 'IEM_MC_CALL_CIMPL_0', 'IEM_MC_CALL_CIMPL_1',
-                               'IEM_MC_CALL_CIMPL_2', 'IEM_MC_CALL_CIMPL_3', 'IEM_MC_CALL_CIMPL_4', 'IEM_MC_CALL_CIMPL_5', ):
+                               'IEM_MC_CALL_CIMPL_2', 'IEM_MC_CALL_CIMPL_3', 'IEM_MC_CALL_CIMPL_4', 'IEM_MC_CALL_CIMPL_5',
+                               'IEM_MC_DEFER_TO_CIMPL_0_RET', 'IEM_MC_DEFER_TO_CIMPL_1_RET', 'IEM_MC_DEFER_TO_CIMPL_2_RET',
+                               'IEM_MC_DEFER_TO_CIMPL_3_RET', 'IEM_MC_DEFER_TO_CIMPL_4_RET', 'IEM_MC_DEFER_TO_CIMPL_5_RET', ):
                 self.aoParamRefs.append(ThreadedParamRef('IEM_GET_INSTR_LEN(pVCpu)', 'uint4_t', oStmt, sStdRef = 'cbInstr'));
 
             if (    oStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH',)
@@ -703,7 +709,9 @@ class ThreadedFunctionVariation(object):
                                   or sRef.startswith('X86_XCPT_')
                                   or sRef.startswith('IEMMODE_')
                                   or sRef.startswith('IEM_F_')
+                                  or sRef.startswith('IEM_CIMPL_F_')
                                   or sRef.startswith('g_')
+                                  or sRef.startswith('iemAImpl_')
                                   or sRef in ( 'int8_t',    'int16_t',    'int32_t',
                                                'INT8_C',    'INT16_C',    'INT32_C',    'INT64_C',
                                                'UINT8_C',   'UINT16_C',   'UINT32_C',   'UINT64_C',
@@ -711,7 +719,7 @@ class ThreadedFunctionVariation(object):
                                                'INT8_MAX',  'INT16_MAX',  'INT32_MAX',  'INT64_MAX',
                                                'INT8_MIN',  'INT16_MIN',  'INT32_MIN',  'INT64_MIN',
                                                'sizeof',    'NOREF',      'RT_NOREF',   'IEMMODE_64BIT',
-                                               'NIL_RTGCPTR' ) ):
+                                               'RT_BIT_32', 'true',       'false',      'NIL_RTGCPTR',) ):
                                 pass;
 
                             # Skip certain macro invocations.
@@ -734,6 +742,15 @@ class ThreadedFunctionVariation(object):
                             else:
                                 while offParam < len(sParam) and sParam[offParam].isdigit():
                                     offParam += 1;
+                        # Comment?
+                        elif (    ch == '/'
+                              and offParam + 4 <= len(sParam)
+                              and sParam[offParam + 1] == '*'):
+                            offParam += 2;
+                            offNext = sParam.find('*/', offParam);
+                            if offNext < offParam:
+                                self.raiseProblem('Unable to find "*/" in "%s" ("%s")' % (sRef, oStmt.renderCode(),));
+                            offParam = offNext + 2;
                         # Whatever else.
                         else:
                             offParam += 1;
@@ -969,6 +986,7 @@ class ThreadedFunction(object):
                     if (   oStmt.sName.startswith('IEM_MC_MAYBE_RAISE_') \
                         or (oStmt.sName.endswith('_AND_FINISH') and oStmt.sName.startswith('IEM_MC_'))
                         or oStmt.sName.startswith('IEM_MC_CALL_CIMPL_')
+                        or oStmt.sName.startswith('IEM_MC_DEFER_TO_CIMPL_')
                         or oStmt.sName in ('IEM_MC_RAISE_DIVIDE_ERROR',)):
                         aoDecoderStmts.pop();
                         aoDecoderStmts.extend(self.emitThreadedCallStmts());
@@ -999,8 +1017,19 @@ class ThreadedFunction(object):
         """
         Modifies the input code.
         """
-        assert len(self.oMcBlock.asLines) > 2, "asLines=%s" % (self.oMcBlock.asLines,);
         cchIndent = (self.oMcBlock.cchIndent + 3) // 4 * 4;
+
+        if len(self.oMcBlock.aoStmts) == 1:
+            # IEM_MC_DEFER_TO_CIMPL_X_RET - need to wrap in {} to make it safe to insert into random code.
+            sCode = iai.McStmt.renderCodeForList(self.morphInputCode(self.oMcBlock.aoStmts)[0],
+                                                 cchIndent = cchIndent).replace('\n', ' /* gen */\n', 1);
+            sCode = ' ' * (min(cchIndent, 2) - 2) + '{\n' \
+                  + sCode \
+                  + ' ' * (min(cchIndent, 2) - 2) + '}\n';
+            return sCode;
+
+        # IEM_MC_BEGIN/END block
+        assert len(self.oMcBlock.asLines) > 2, "asLines=%s" % (self.oMcBlock.asLines,);
         return iai.McStmt.renderCodeForList(self.morphInputCode(self.oMcBlock.aoStmts)[0],
                                             cchIndent = cchIndent).replace('\n', ' /* gen */\n', 1);
 
@@ -1324,7 +1353,7 @@ class IEMThreadedGenerator(object):
 
                     iLine = oThreadedFunction.oMcBlock.iEndLine;
                     sLine = oParser.asLines[iLine - 1];
-                    assert sLine.count('IEM_MC_') == 1;
+                    assert sLine.count('IEM_MC_') == 1 or len(oThreadedFunction.oMcBlock.aoStmts) == 1;
                     oOut.write(sLine[oThreadedFunction.oMcBlock.offAfterEnd : ]);
 
                     # Advance
@@ -1340,7 +1369,8 @@ class IEMThreadedGenerator(object):
 
                         sModified = oThreadedFunction.generateInputCode().strip();
                         assert (   sModified.startswith('IEM_MC_BEGIN')
-                                or sModified.startswith('IEM_MC_DEFER_TO_CIMPL_')), 'sModified="%s"' % (sModified,);
+                                or (sModified.find('IEM_MC_DEFER_TO_CIMPL_') > 0 and sModified.strip().startswith('{\n'))
+                                ), 'sModified="%s"' % (sModified,);
                         oOut.write(sModified);
 
                         offLine = oThreadedFunction.oMcBlock.offAfterEnd;

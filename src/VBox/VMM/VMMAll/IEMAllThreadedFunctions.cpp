@@ -213,6 +213,43 @@
     return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1, a2, a3, a4)
 #undef  IEM_MC_CALL_CIMPL_5
 
+
+/** Variant of IEM_MC_DEFER_TO_CIMPL_0_RET with explicit instruction
+ * length parameter. */
+#define IEM_MC_DEFER_TO_CIMPL_0_RET_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl) \
+    return (a_pfnCImpl)(pVCpu, (a_cbInstr))
+#undef  IEM_MC_DEFER_TO_CIMPL_0_RET
+
+/** Variant of IEM_MC_DEFER_TO_CIMPL_1_RET with explicit instruction
+ * length parameter. */
+#define IEM_MC_DEFER_TO_CIMPL_1_RET_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0) \
+    return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0)
+#undef  IEM_MC_DEFER_TO_CIMPL_1_RET
+
+/** Variant of IEM_MC_CALL_CIMPL_2 with explicit instruction length parameter. */
+#define IEM_MC_DEFER_TO_CIMPL_2_RET_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0, a1) \
+    return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1)
+#undef  IEM_MC_DEFER_TO_CIMPL_2_RET
+
+/** Variant of IEM_MC_DEFER_TO_CIMPL_3 with explicit instruction length
+ *  parameter. */
+#define IEM_MC_DEFER_TO_CIMPL_3_RET_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0, a1, a2) \
+    return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1, a2)
+#undef  IEM_MC_DEFER_TO_CIMPL_3_RET
+
+/** Variant of IEM_MC_DEFER_TO_CIMPL_4 with explicit instruction length
+ *  parameter. */
+#define IEM_MC_DEFER_TO_CIMPL_4_RET_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0, a1, a2, a3) \
+    return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1, a2, a3)
+#undef  IEM_MC_DEFER_TO_CIMPL_4_RET
+
+/** Variant of IEM_MC_DEFER_TO_CIMPL_5 with explicit instruction length
+ *  parameter. */
+#define IEM_MC_DEFER_TO_CIMPL_5_RET_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0, a1, a2, a3, a4) \
+    return (a_pfnCImpl)(pVCpu, (a_cbInstr), a0, a1, a2, a3, a4)
+#undef  IEM_MC_DEFER_TO_CIMPL_5_RET
+
+
 /** Variant of IEM_MC_FETCH_GREG_U8 with extended (20) register index. */
 #define IEM_MC_FETCH_GREG_U8_THREADED(a_u8Dst, a_iGRegEx) \
     (a_u8Dst) = iemGRegFetchU8Ex(pVCpu, (a_iGRegEx))
