@@ -295,9 +295,19 @@ void UIVisoCreatorWidget::retranslateUi()
         m_pSettingsWidget->setTitle(tr("Settings"));
 }
 
-void UIVisoCreatorWidget::paintEvent(QPaintEvent *pEvent)
+void UIVisoCreatorWidget::resizeEvent(QResizeEvent *pEvent)
 {
     Q_UNUSED(pEvent);
+    if (m_pOverlayWidget && m_fShowSettingsDialog)
+    {
+        const QPixmap *pLabelPixmap = m_pOverlayWidget->pixmap();
+        if (pLabelPixmap)
+        {
+            QPixmap newPixmap = pLabelPixmap->scaled(m_pOverlayWidget->size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+            if (!newPixmap.isNull())
+                m_pOverlayWidget->setPixmap(newPixmap);
+        }
+    }
 }
 
 void UIVisoCreatorWidget::sltAddObjectsToViso(QStringList pathList)

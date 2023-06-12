@@ -92,7 +92,7 @@ public:
 protected:
 
     virtual void retranslateUi() final override;
-    virtual void paintEvent(QPaintEvent *pEvent) final override;
+    virtual void resizeEvent(QResizeEvent *pEvent) final override;
 
 private slots:
 
