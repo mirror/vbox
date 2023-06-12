@@ -222,7 +222,7 @@ void UIVisoSettingWidget::sltShowHiddenObjectsChange(int iState)
 UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pParent,
                                          bool fShowToolBar, const QString& strMachineName /* = QString() */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_pActionOptions(0)
+    , m_pActionSettings(0)
     , m_pAddAction(0)
     , m_pRemoveAction(0)
     , m_pCreateNewDirectoryAction(0)
@@ -298,27 +298,6 @@ void UIVisoCreatorWidget::retranslateUi()
 void UIVisoCreatorWidget::paintEvent(QPaintEvent *pEvent)
 {
     Q_UNUSED(pEvent);
-    if (m_pSettingsWidget && m_pSettingsWidget->isVisible() != m_fShowSettingsDialog /*&& m_pOverlayWidget*/ && m_pOverlayBlurEffect)
-    {
-        QPixmap shot = m_pBrowserContainerWidget->grab();
-        m_pOverlayWidget->setPixmap(shot);
-
-        if (m_fShowSettingsDialog)
-            m_pStackedLayout->setCurrentWidget(m_pOverlayWidget);
-        else
-            m_pStackedLayout->setCurrentWidget(m_pBrowserContainerWidget);
-
-        m_pSettingsWidget->setVisible(m_fShowSettingsDialog);
-
-        m_pOverlayBlurEffect->setEnabled(m_fShowSettingsDialog);
-        m_pSettingsWidget->raise();
-        if (m_fShowSettingsDialog)
-        {
-            int x = 0.5 * (m_pBrowserContainerWidget->width() - m_pSettingsWidget->width());
-            int y = 0.5 * (m_pBrowserContainerWidget->height() - m_pSettingsWidget->height());
-            m_pSettingsWidget->move(m_pBrowserContainerWidget->x() + x, m_pBrowserContainerWidget->y() + y);
-        }
-    }
 }
 
 void UIVisoCreatorWidget::sltAddObjectsToViso(QStringList pathList)
@@ -327,11 +306,10 @@ void UIVisoCreatorWidget::sltAddObjectsToViso(QStringList pathList)
         m_pVISOContentBrowser->addObjectsToViso(pathList);
 }
 
-void UIVisoCreatorWidget::sltPanelActionToggled(bool fChecked)
+void UIVisoCreatorWidget::sltSettingsActionToggled(bool fChecked)
 {
     m_fShowSettingsDialog = fChecked;
-    repaint();
-    //update();
+    toggleSettingsWidget();
 }
 
 void UIVisoCreatorWidget::sltVisoNameChanged(const QString &strVisoName)
@@ -504,8 +482,8 @@ void UIVisoCreatorWidget::prepareConnections()
                 this, &UIVisoCreatorWidget::sltShowContextMenu);
     }
 
-    if (m_pActionOptions)
-        connect(m_pActionOptions, &QAction::triggered, this, &UIVisoCreatorWidget::sltPanelActionToggled);
+    if (m_pActionSettings)
+        connect(m_pActionSettings, &QAction::triggered, this, &UIVisoCreatorWidget::sltSettingsActionToggled);
 
     if (m_pSettingsWidget)
     {
@@ -543,7 +521,7 @@ void UIVisoCreatorWidget::prepareActions()
     if (!m_pActionPool)
         return;
 
-    m_pActionOptions = m_pActionPool->action(UIActionIndex_M_VISOCreator_ToggleOptionsPanel);
+    m_pActionSettings = m_pActionPool->action(UIActionIndex_M_VISOCreator_ToggleSettingsDialog);
 
     m_pAddAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Add);
     if (m_pAddAction && m_pHostBrowser)
@@ -563,12 +541,12 @@ void UIVisoCreatorWidget::populateMenuMainToolbar()
     prepareActions();
     if (m_pToolBar)
     {
-        if (m_pActionOptions)
-            m_pToolBar->addAction(m_pActionOptions);
+        if (m_pActionSettings)
+            m_pToolBar->addAction(m_pActionSettings);
     }
     if (m_pMainMenu)
     {
-        m_pMainMenu->addAction(m_pActionOptions);
+        m_pMainMenu->addAction(m_pActionSettings);
         m_pMainMenu->addSeparator();
         if (m_pAddAction)
             m_pMainMenu->addAction(m_pAddAction);
@@ -607,6 +585,31 @@ void UIVisoCreatorWidget::populateMenuMainToolbar()
             m_pVerticalToolBar->addAction(m_pResetAction);
 
         m_pVerticalToolBar->addWidget(bottomSpacerWidget);
+    }
+}
+
+void UIVisoCreatorWidget::toggleSettingsWidget()
+{
+    if (m_pSettingsWidget && m_pSettingsWidget->isVisible() != m_fShowSettingsDialog /*&& m_pOverlayWidget*/ && m_pOverlayBlurEffect)
+    {
+        QPixmap shot = m_pBrowserContainerWidget->grab();
+        m_pOverlayWidget->setPixmap(shot);
+
+        if (m_fShowSettingsDialog)
+            m_pStackedLayout->setCurrentWidget(m_pOverlayWidget);
+        else
+            m_pStackedLayout->setCurrentWidget(m_pBrowserContainerWidget);
+
+        m_pSettingsWidget->setVisible(m_fShowSettingsDialog);
+
+        m_pOverlayBlurEffect->setEnabled(m_fShowSettingsDialog);
+        m_pSettingsWidget->raise();
+        if (m_fShowSettingsDialog)
+        {
+            int x = 0.5 * (m_pBrowserContainerWidget->width() - m_pSettingsWidget->width());
+            int y = 0.5 * (m_pBrowserContainerWidget->height() - m_pSettingsWidget->height());
+            m_pSettingsWidget->move(m_pBrowserContainerWidget->x() + x, m_pBrowserContainerWidget->y() + y);
+        }
     }
 }
 

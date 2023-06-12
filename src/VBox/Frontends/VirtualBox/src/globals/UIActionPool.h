@@ -150,7 +150,7 @@ enum UIActionIndex
 
     /* VISO Creator actions: */
     UIActionIndex_M_VISOCreator,
-    UIActionIndex_M_VISOCreator_ToggleOptionsPanel,
+    UIActionIndex_M_VISOCreator_ToggleSettingsDialog,
     UIActionIndex_M_VISOCreator_Add,
     UIActionIndex_M_VISOCreator_Remove,
     UIActionIndex_M_VISOCreator_CreateNewDirectory,

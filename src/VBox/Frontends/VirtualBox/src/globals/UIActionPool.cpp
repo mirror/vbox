@@ -2291,15 +2291,15 @@ protected:
     }
 };
 
-/** Toggle action extension, used to toggle 'VISO Creator options' panel in file manager. */
-class UIActionMenuVISOCreatorToggleOptionsPanel : public UIActionToggle
+/** Toggle action extension, used to toggle 'VISO Creator settings' dialog in file manager. */
+class UIActionMenuVISOCreatorToggleSettingsDialog : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuVISOCreatorToggleOptionsPanel(UIActionPool *pParent)
+    UIActionMenuVISOCreatorToggleSettingsDialog(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -2314,7 +2314,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
-        return QString("ToggleVISOCreatorOptionsPanel");
+        return QString("ToggleVISOCreatorSettingsDialog");
     }
 
     /** Returns default shortcut. */
@@ -2326,10 +2326,10 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
-        setName(QApplication::translate("UIActionPool", "Options"));
+        setName(QApplication::translate("UIActionPool", "Settings"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open panel for VISO Creator options"));
-        setToolTip(QApplication::translate("UIActionPool", "Open Options Panel")
+        setStatusTip(QApplication::translate("UIActionPool", "Open VISO Creator settings dialog"));
+        setToolTip(QApplication::translate("UIActionPool", "Open Settings Dialog")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -3185,7 +3185,7 @@ void UIActionPool::preparePool()
 
     /* Create VISO Creator actions: */
     m_pool[UIActionIndex_M_VISOCreator] = new UIActionMenuVISOCreator(this);
-    m_pool[UIActionIndex_M_VISOCreator_ToggleOptionsPanel] = new UIActionMenuVISOCreatorToggleOptionsPanel(this);
+    m_pool[UIActionIndex_M_VISOCreator_ToggleSettingsDialog] = new UIActionMenuVISOCreatorToggleSettingsDialog(this);
     m_pool[UIActionIndex_M_VISOCreator_Add] = new UIActionMenuVISOCreatorAdd(this);
     m_pool[UIActionIndex_M_VISOCreator_Remove] = new UIActionMenuVISOCreatorRemove(this);
     m_pool[UIActionIndex_M_VISOCreator_CreateNewDirectory] = new UIActionMenuVISOCreatorCreateNewDirectory(this);

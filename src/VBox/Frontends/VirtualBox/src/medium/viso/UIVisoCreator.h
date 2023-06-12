@@ -97,7 +97,7 @@ protected:
 private slots:
 
     void sltAddObjectsToViso(QStringList pathList);
-    void sltPanelActionToggled(bool fChecked);
+    void sltSettingsActionToggled(bool fChecked);
     void sltVisoNameChanged(const QString& strVisoName);
     void sltCustomVisoOptionsChanged(const QStringList &customVisoOptions);
     void sltShowHiddenObjectsChange(bool fShow);
@@ -133,13 +133,11 @@ private:
     /* Populates the main menu and toolbard with already created actions.
      * Leave out the vertical toolbar which is handled in prepareVerticalToolBar. */
     void populateMenuMainToolbar();
-    /** Set the root index of the m_pTableModel to the current index of m_pTreeModel. */
-    void setTableRootIndex(QModelIndex index = QModelIndex() );
-    void setTreeCurrentIndex(QModelIndex index = QModelIndex() );
 
+     void toggleSettingsWidget();
     /** @name Main toolbar (and main menu) actions
       * @{ */
-        QAction         *m_pActionOptions;
+        QAction         *m_pActionSettings;
     /** @} */
 
     /** @name These actions are addded to vertical toolbar, context menus, and the main menu.
