@@ -298,9 +298,9 @@ void UIVisoCreatorWidget::retranslateUi()
 void UIVisoCreatorWidget::resizeEvent(QResizeEvent *pEvent)
 {
     Q_UNUSED(pEvent);
-#ifndef VBOX_IS_QT6_OR_LATER
     if (m_pOverlayWidget && m_fShowSettingsDialog)
     {
+#ifndef VBOX_IS_QT6_OR_LATER
         const QPixmap *pLabelPixmap = m_pOverlayWidget->pixmap();
         if (pLabelPixmap)
         {
@@ -308,8 +308,13 @@ void UIVisoCreatorWidget::resizeEvent(QResizeEvent *pEvent)
             if (!newPixmap.isNull())
                 m_pOverlayWidget->setPixmap(newPixmap);
         }
-    }
+#else
+        QPixmap labelPixmap = m_pOverlayWidget->pixmap();
+        QPixmap newPixmap = labelPixmap.scaled(m_pOverlayWidget->size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        if (!newPixmap.isNull())
+            m_pOverlayWidget->setPixmap(newPixmap);
 #endif
+    }
 }
 
 void UIVisoCreatorWidget::sltAddObjectsToViso(QStringList pathList)
