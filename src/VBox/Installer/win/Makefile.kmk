@@ -1226,15 +1226,15 @@ else
 		'@echo Created multiarch EXE: $(@F)'
  ifdef VBOX_WIN_ATTESTATION_SIGNING
 	echo "Repacking HERE"
-	cd $(PATH_OUT)/repack && ls -la
-	$(RM) -f $(VBOX_WIN_INST_REPACK_DIR)/*.ddf
+	cd $(VBOX_WIN_INST_REPACK_DIR)
 	$(RM) -f $(VBOX_WIN_INST_REPACK_DIR)/$(PACKAGE_NAME_LANG)-$(KBUILD_TARGET_ARCH).cab
+	$(RM) -f $(VBOX_WIN_INST_REPACK_DIR)/$(PACKAGE_NAME_LANG)-$(KBUILD_TARGET_ARCH).cab.ddf
 	$(RM) -f $(VBOX_WIN_INST_REPACK_DIR)/PackDriversForSubmission_internal.cmd
+	cd $(VBOX_WIN_INST_REPACK_DIR) && ls -la
 	$(APPEND) -nt "$(VBOX_WIN_INST_REPACK_DIR)/PackDriversForSubmission_internal.cmd" \
 	"SET KBUILD_BIN_PATH=$(KBUILD_BIN_PATH)" \
 	"call PackDriversForSubmission.cmd -b $(PATH_STAGE_BIN) -a $(KBUILD_TARGET_ARCH) \
 		-x -n --no-extpack -o $(VBOX_WIN_INST_REPACK_DIR)/$(PACKAGE_NAME_LANG)-$(KBUILD_TARGET_ARCH).cab"
-	cd $(PATH_OUT)/repack && ls -la
 
 	cd $(VBOX_WIN_INST_REPACK_DIR) && $(EXEC_X86_WIN32) cmd.exe /c PackDriversForSubmission_internal.cmd
 	cd $(VBOX_WIN_INST_REPACK_DIR) && $(VBOX_RETRY) $(VBOX_WIN_ATTESTATION_SIGNING_EXE) "Oracle VM VirtualBox Base drivers $(KBUILD_TARGET_ARCH) $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)r$(VBOX_SVN_REV)" "$(KBUILD_TARGET_ARCH)" "r$(VBOX_SVN_REV)" "$(PACKAGE_NAME_LANG)-$(KBUILD_TARGET_ARCH).cab"

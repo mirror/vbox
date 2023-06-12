@@ -289,5 +289,3 @@ goto end
 @cd /d "%_MY_SAVED_CD%"
 @endlocal
 @endlocal
-
-
