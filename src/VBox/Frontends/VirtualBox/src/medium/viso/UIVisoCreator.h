@@ -44,17 +44,17 @@
 /* Forward declarations: */
 class QGridLayout;
 class QGraphicsBlurEffect;
-class QVBoxLayout;
 class QLabel;
+class QStackedLayout;
+class QVBoxLayout;
+class QILabel;
 class QMenu;
 class QStatusBar;
 class QIDialogButtonBox;
 class QIToolBar;
 class UIActionPool;
-class UIDialogPanel;
 class UIVisoHostBrowser;
 class UIVisoContentBrowser;
-class UIVisoConfigurationPanel;
 class UIVisoSettingWidget;
 
 /** A QIMainDialog extension. It hosts two UIVisoBrowserBase extensions, one for host and one
@@ -96,17 +96,16 @@ protected:
 
 private slots:
 
-    void sltHandleAddObjectsToViso(QStringList pathList);
+    void sltAddObjectsToViso(QStringList pathList);
     void sltPanelActionToggled(bool fChecked);
-    void sltHandleVisoNameChanged(const QString& strVisoName);
-    void sltHandleCustomVisoOptionsChanged(const QStringList &customVisoOptions);
-    void sltHandleShowHiddenObjectsChange(bool fShow);
-    void sltHandleHidePanel(UIDialogPanel *pPanel);
-    void sltHandleBrowserTreeViewVisibilityChanged(bool fVisible);
-    void sltHandleHostBrowserTableSelectionChanged(bool fIsSelectionEmpty);
-    void sltHandleContentBrowserTableSelectionChanged(bool fIsSelectionEmpty);
-    void sltHandleShowContextMenu(const QWidget *pContextMenuRequester, const QPoint &point);
-    void sltHandleOpenAction();
+    void sltVisoNameChanged(const QString& strVisoName);
+    void sltCustomVisoOptionsChanged(const QStringList &customVisoOptions);
+    void sltShowHiddenObjectsChange(bool fShow);
+    void sltBrowserTreeViewVisibilityChanged(bool fVisible);
+    void sltHostBrowserTableSelectionChanged(bool fIsSelectionEmpty);
+    void sltContentBrowserTableSelectionChanged(bool fIsSelectionEmpty);
+    void sltShowContextMenu(const QWidget *pContextMenuRequester, const QPoint &point);
+    void sltOpenAction();
 
 private:
 
@@ -137,15 +136,6 @@ private:
     /** Set the root index of the m_pTableModel to the current index of m_pTreeModel. */
     void setTableRootIndex(QModelIndex index = QModelIndex() );
     void setTreeCurrentIndex(QModelIndex index = QModelIndex() );
-    void hidePanel(UIDialogPanel *panel);
-    void showPanel(UIDialogPanel *panel);
-    /** Makes sure escape key is assigned to only a single widget. This is done by checking
-      *  several things in the following order:
-      *  - when (drop-down) tree views of browser panes are visible esc. key used to close those. thus it is taken from the dialog and panels
-      *  - when there are no more panels visible assign it to the parent dialog
-      *  - grab it from the dialog as soon as a panel becomes visible again
-      *  - assign it to the most recently "unhidden" panel */
-    void manageEscapeShortCut();
 
     /** @name Main toolbar (and main menu) actions
       * @{ */
@@ -171,17 +161,14 @@ private:
     VisoOptions           m_visoOptions;
     BrowserOptions        m_browserOptions;
     QMenu                *m_pMainMenu;
-    UIVisoConfigurationPanel  *m_pCreatorOptionsPanel;
-    UIVisoConfigurationPanel  *m_pConfigurationPanel;
-    QMap<UIDialogPanel*, QAction*> m_panelActionMap;
-    QList<UIDialogPanel*>          m_visiblePanelsList;
     QPointer<UIActionPool> m_pActionPool;
     bool                   m_fShowToolBar;
     bool                   m_fShowSettingsDialog;
     UIVisoSettingWidget   *m_pSettingsWidget;
     QWidget               *m_pBrowserContainerWidget;
-    QWidget               *m_pOverlayWidget;
+    QLabel                *m_pOverlayWidget;
     QGraphicsBlurEffect   *m_pOverlayBlurEffect;
+    QStackedLayout        *m_pStackedLayout;
 };
 
 
@@ -230,7 +217,7 @@ private:
     UIVisoCreatorWidget *m_pVisoCreatorWidget;
     QIDialogButtonBox   *m_pButtonBox;
     QStatusBar          *m_pStatusBar;
-    QLabel              *m_pStatusLabel;
+    QILabel             *m_pStatusLabel;
     QPointer<UIActionPool> m_pActionPool;
     int                  m_iGeometrySaveTimerId;
     QString              m_strVisoSavePath;

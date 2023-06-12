@@ -66,7 +66,7 @@ public:
 
 public slots:
 
-    void sltHandleTableViewItemDoubleClick(const QModelIndex &index);
+    void sltTableViewItemDoubleClick(const QModelIndex &index);
 
 protected:
 
@@ -92,8 +92,8 @@ protected slots:
 
 private slots:
 
-    void sltHandleTreeSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
-    void sltHandleTreeItemClicked(const QModelIndex &modelIndex);
+    void sltTreeSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+    void sltTreeItemClicked(const QModelIndex &modelIndex);
     void sltExpandCollapseTreeView();
 
 private:

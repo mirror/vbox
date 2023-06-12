@@ -60,7 +60,7 @@ public:
 
 public slots:
 
-    void sltHandleAddAction();
+    void sltAddAction();
 
 protected:
 
@@ -72,7 +72,7 @@ protected:
 
 private slots:
 
-    void sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+    void sltTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
 
 private:
 

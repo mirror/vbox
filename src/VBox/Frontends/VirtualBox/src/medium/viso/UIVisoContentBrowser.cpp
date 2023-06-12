@@ -296,7 +296,7 @@ void UIVisoContentBrowser::tableViewItemDoubleClick(const QModelIndex &index)
     }
 }
 
-void UIVisoContentBrowser::sltHandleCreateNewDirectory()
+void UIVisoContentBrowser::sltCreateNewDirectory()
 {
     if (!m_pTableView)
         return;
@@ -329,7 +329,7 @@ void UIVisoContentBrowser::sltHandleCreateNewDirectory()
     renameFileObject(pAddedItem);
 }
 
-void UIVisoContentBrowser::sltHandleRemoveItems()
+void UIVisoContentBrowser::sltRemoveItems()
 {
     removeItems(tableSelectedItems());
 }
@@ -458,19 +458,19 @@ void UIVisoContentBrowser::prepareConnections()
     if (m_pTableView)
     {
         connect(m_pTableView, &UIVisoContentTableView::doubleClicked,
-                this, &UIVisoBrowserBase::sltHandleTableViewItemDoubleClick);
+                this, &UIVisoBrowserBase::sltTableViewItemDoubleClick);
         connect(m_pTableView, &UIVisoContentTableView::sigNewItemsDropped,
-                this, &UIVisoContentBrowser::sltHandleDroppedItems);
+                this, &UIVisoContentBrowser::sltDroppedItems);
         connect(m_pTableView, &QTableView::customContextMenuRequested,
                 this, &UIVisoContentBrowser::sltFileTableViewContextMenu);
     }
 
     if (m_pTableView->selectionModel())
         connect(m_pTableView->selectionModel(), &QItemSelectionModel::selectionChanged,
-                this, &UIVisoContentBrowser::sltHandleTableSelectionChanged);
+                this, &UIVisoContentBrowser::sltTableSelectionChanged);
     if (m_pModel)
         connect(m_pModel, &UICustomFileSystemModel::sigItemRenamed,
-                this, &UIVisoContentBrowser::sltHandleItemRenameAttempt);
+                this, &UIVisoContentBrowser::sltItemRenameAttempt);
 }
 
 UICustomFileSystemItem* UIVisoContentBrowser::rootItem()
@@ -710,7 +710,7 @@ void UIVisoContentBrowser::renameFileObject(UICustomFileSystemItem *pItem)
     m_pTableView->edit(m_pTableProxyModel->mapFromSource(m_pModel->index(pItem)));
 }
 
-void UIVisoContentBrowser::sltHandleItemRenameAction()
+void UIVisoContentBrowser::sltItemRenameAction()
 {
     QList<UICustomFileSystemItem*> selectedItems = tableSelectedItems();
     if (selectedItems.empty())
@@ -719,7 +719,7 @@ void UIVisoContentBrowser::sltHandleItemRenameAction()
     renameFileObject(selectedItems.at(0));
 }
 
-void UIVisoContentBrowser::sltHandleItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName)
+void UIVisoContentBrowser::sltItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName)
 {
     if (!pItem || !pItem->parentItem())
         return;
@@ -758,13 +758,13 @@ void UIVisoContentBrowser::sltHandleItemRenameAttempt(UICustomFileSystemItem *pI
 
 }
 
-void UIVisoContentBrowser::sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
+void UIVisoContentBrowser::sltTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
     Q_UNUSED(deselected);
     emit sigTableSelectionChanged(selected.isEmpty());
 }
 
-void UIVisoContentBrowser::sltHandleResetAction()
+void UIVisoContentBrowser::sltResetAction()
 {
     if (!rootItem() || !rootItem()->child(0))
         return;
@@ -776,7 +776,7 @@ void UIVisoContentBrowser::sltHandleResetAction()
         m_pTreeProxyModel->invalidate();
 }
 
-void UIVisoContentBrowser::sltHandleDroppedItems(QStringList pathList)
+void UIVisoContentBrowser::sltDroppedItems(QStringList pathList)
 {
     addObjectsToViso(pathList);
 }

@@ -73,13 +73,13 @@ public:
 
 public slots:
 
-    void sltHandleCreateNewDirectory();
+    void sltCreateNewDirectory();
     /** Handles the signal we get from the model during setData call. Restores the old name of the file object
      *  to @p strOldName if need be (if rename fails for some reason). */
-    void sltHandleItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName);
-    void sltHandleRemoveItems();
-    void sltHandleResetAction();
-    void sltHandleItemRenameAction();
+    void sltItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName);
+    void sltRemoveItems();
+    void sltResetAction();
+    void sltItemRenameAction();
 
 protected:
 
@@ -96,9 +96,9 @@ protected:
 
 private slots:
 
-    void sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+    void sltTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
     /** Adds the dragged-dropped items to VISO. */
-    void sltHandleDroppedItems(QStringList pathList);
+    void sltDroppedItems(QStringList pathList);
 
 private:
 
