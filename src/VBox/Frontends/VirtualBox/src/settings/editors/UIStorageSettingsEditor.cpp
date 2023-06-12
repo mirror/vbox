@@ -3464,7 +3464,7 @@ void UIStorageSettingsEditor::sltGetInformation()
                     }
                 }
                 const KStorageControllerType enmType = m_pModelStorage->data(index, StorageModel::R_CtrType).value<KStorageControllerType>();
-                const int iCtrPos = m_pComboType->findData(enmType, StorageModel::R_CtrType);
+                const int iCtrPos = m_pComboType->findData(QVariant::fromValue(enmType), StorageModel::R_CtrType);
                 m_pComboType->setCurrentIndex(iCtrPos == -1 ? 0 : iCtrPos);
 
                 const KStorageBus enmBus = m_pModelStorage->data(index, StorageModel::R_CtrBusType).value<KStorageBus>();

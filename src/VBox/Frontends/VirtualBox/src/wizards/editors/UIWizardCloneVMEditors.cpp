@@ -244,7 +244,7 @@ MACAddressClonePolicy UICloneVMAdditionalOptionsEditor::macAddressClonePolicy() 
 
 void UICloneVMAdditionalOptionsEditor::setMACAddressClonePolicy(MACAddressClonePolicy enmMACAddressClonePolicy)
 {
-    const int iIndex = m_pMACComboBox->findData(enmMACAddressClonePolicy);
+    const int iIndex = m_pMACComboBox->findData(QVariant::fromValue(enmMACAddressClonePolicy));
     AssertMsg(iIndex != -1, ("Data not found!"));
     m_pMACComboBox->setCurrentIndex(iIndex);
 }

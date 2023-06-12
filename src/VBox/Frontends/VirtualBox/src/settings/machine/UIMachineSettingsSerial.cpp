@@ -738,7 +738,7 @@ void UIMachineSettingsSerial::populateComboboxes()
         }
 
         /* Choose requested port mode: */
-        const int iIndex = m_pComboMode->findData(m_enmPortMode);
+        const int iIndex = m_pComboMode->findData(QVariant::fromValue(m_enmPortMode));
         m_pComboMode->setCurrentIndex(iIndex != -1 ? iIndex : 0);
     }
 }
