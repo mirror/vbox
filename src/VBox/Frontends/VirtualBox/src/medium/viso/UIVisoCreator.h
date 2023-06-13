@@ -73,6 +73,18 @@ signals:
 
 public:
 
+    struct Settings
+    {
+        Settings()
+            : m_strVisoName("ad-hoc-viso")
+            , m_fShowHiddenObjects(true){}
+        QString m_strVisoName;
+        /** Additions viso options to be inserted to the viso file as separate lines. */
+        QStringList m_customOptions;
+        /* If host file browser shows hidden file objects. */
+        bool m_fShowHiddenObjects;
+    };
+
     UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pParent,
                         bool fShowToolBar, const QString& strMachineName = QString());
     /** Returns the content of the .viso file. Each element of the list corresponds to a line in the .viso file. */
@@ -108,22 +120,6 @@ private slots:
 
 private:
 
-    struct VisoOptions
-    {
-        VisoOptions()
-            :m_strVisoName("ad-hoc-viso"){}
-        QString m_strVisoName;
-        /** Additions viso options to be inserted to the viso file as separate lines. */
-        QStringList m_customOptions;
-    };
-
-    struct BrowserOptions
-    {
-        BrowserOptions()
-            :m_fShowHiddenObjects(true){}
-        bool m_fShowHiddenObjects;
-    };
-
     void prepareWidgets();
     void prepareConnections();
     void prepareActions();
@@ -155,8 +151,7 @@ private:
 
     QIToolBar             *m_pToolBar;
     QIToolBar             *m_pVerticalToolBar;
-    VisoOptions            m_visoOptions;
-    BrowserOptions         m_browserOptions;
+    Settings            m_visoOptions;
     QMenu                 *m_pMainMenu;
     QPointer<UIActionPool> m_pActionPool;
     bool                   m_fShowToolBar;

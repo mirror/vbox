@@ -28,6 +28,7 @@
 #include <QFileSystemModel>
 #include <QGridLayout>
 #include <QHeaderView>
+#include <QItemDelegate>
 #include <QMimeData>
 #include <QTextEdit>
 #include <QTreeView>
@@ -35,6 +36,26 @@
 
 /* GUI includes: */
 #include "UIVisoHostBrowser.h"
+
+
+/*********************************************************************************************************************************
+*   UIHostBrowserDelegate definition.                                                                                            *
+*********************************************************************************************************************************/
+/** A QItemDelegate child class to disable dashed lines drawn around selected cells in QTableViews */
+class UIHostBrowserDelegate : public QItemDelegate
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIHostBrowserDelegate(QObject *pParent)
+        : QItemDelegate(pParent){}
+
+protected:
+
+    virtual void drawFocus ( QPainter * /*painter*/, const QStyleOptionViewItem & /*option*/, const QRect & /*rect*/ ) const {}
+};
 
 /*********************************************************************************************************************************
 *   UIVisoHostBrowserModel definition.                                                                                   *
@@ -183,6 +204,7 @@ void UIVisoHostBrowser::prepareObjects()
         m_pTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
         m_pTableView->setAlternatingRowColors(true);
         m_pTableView->setTabKeyNavigation(false);
+        m_pTableView->setItemDelegate(new UIHostBrowserDelegate(this));
         QHeaderView *pVerticalHeader = m_pTableView->verticalHeader();
         if (pVerticalHeader)
         {

@@ -79,6 +79,8 @@ public:
 
     UIVisoSettingWidget(QWidget *pParent);
     virtual void retranslateUi();
+    void setSettings(const UIVisoCreatorWidget::Settings &settings);
+    UIVisoCreatorWidget::Settings settings() const;
 
 private slots:
 
@@ -211,6 +213,29 @@ void UIVisoSettingWidget::sltButtonBoxCancel()
 }
 
 
+void UIVisoSettingWidget::setSettings(const UIVisoCreatorWidget::Settings &settings)
+{
+    if (m_pVisoNameLineEdit)
+        m_pVisoNameLineEdit->setText(settings.m_strVisoName);
+    if (m_pCustomOptionsLineEdit)
+        m_pCustomOptionsLineEdit->setText(settings.m_customOptions.join(";"));
+    if (m_pShowHiddenObjectsCheckBox)
+        m_pShowHiddenObjectsCheckBox->setChecked(settings.m_fShowHiddenObjects);
+}
+
+UIVisoCreatorWidget::Settings UIVisoSettingWidget::settings() const
+{
+    UIVisoCreatorWidget::Settings settings;
+    if (m_pVisoNameLineEdit)
+        settings.m_strVisoName = m_pVisoNameLineEdit->text();
+    if (m_pCustomOptionsLineEdit)
+        settings.m_customOptions = m_pCustomOptionsLineEdit->text().split(";");
+    if (m_pShowHiddenObjectsCheckBox)
+        settings.m_fShowHiddenObjects = m_pShowHiddenObjectsCheckBox->isChecked();
+    return settings;
+}
+
+
 /*********************************************************************************************************************************
 *   UIVisoCreatorWidget implementation.                                                                                          *
 *********************************************************************************************************************************/
@@ -332,8 +357,18 @@ void UIVisoCreatorWidget::sltSettingsDialogClosed(bool fAccepted)
     if (m_pActionSettings)
         m_pActionSettings->setChecked(false);
     /* Update settings:*/
-    if (fAccepted)
+    if (fAccepted && m_pSettingsWidget)
     {
+        Settings newSettings = m_pSettingsWidget->settings();
+        if (m_visoOptions.m_strVisoName != newSettings.m_strVisoName)
+        {
+            m_visoOptions.m_strVisoName = newSettings.m_strVisoName;
+            emit sigVisoNameChanged(m_visoOptions.m_strVisoName);
+        }
+        if (m_visoOptions.m_customOptions != newSettings.m_customOptions)
+            m_visoOptions.m_customOptions = newSettings.m_customOptions;
+        if (m_visoOptions.m_fShowHiddenObjects != newSettings.m_fShowHiddenObjects)
+            m_visoOptions.m_fShowHiddenObjects = newSettings.m_fShowHiddenObjects;
     }
 }
 
@@ -446,13 +481,12 @@ void UIVisoCreatorWidget::prepareWidgets()
     AssertPtrReturnVoid(m_pOverlayBlurEffect);
     m_pOverlayWidget->setGraphicsEffect(m_pOverlayBlurEffect);
     m_pOverlayBlurEffect->setEnabled(false);
-    m_pOverlayBlurEffect->setBlurRadius(6);
+    m_pOverlayBlurEffect->setBlurRadius(4);
 
     m_pSettingsWidget = new UIVisoSettingWidget(this);
-    m_pSettingsWidget->setFixedWidth(300);
-    m_pSettingsWidget->setFixedHeight(300);
     AssertPtrReturnVoid(m_pSettingsWidget);
-
+    m_pSettingsWidget->setMinimumWidth(300);
+    m_pSettingsWidget->setMinimumHeight(300);
     m_pStackedLayout->addWidget(m_pOverlayWidget);
     m_pStackedLayout->addWidget(m_pBrowserContainerWidget);
 
@@ -562,9 +596,11 @@ void UIVisoCreatorWidget::populateMenuMainToolbar()
     {
         /* Add to dummy QWidget to toolbar to center the action icons vertically: */
         QWidget *topSpacerWidget = new QWidget(this);
+        AssertPtrReturnVoid(topSpacerWidget);
         topSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
         topSpacerWidget->setVisible(true);
         QWidget *bottomSpacerWidget = new QWidget(this);
+        AssertPtrReturnVoid(bottomSpacerWidget);
         bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
         bottomSpacerWidget->setVisible(true);
 
@@ -611,14 +647,15 @@ void UIVisoCreatorWidget::toggleSettingsWidget(bool fShown)
         }
         if (m_pMainMenu)
             m_pMainMenu->setEnabled(!m_fShowSettingsDialog);
+        if (m_fShowSettingsDialog)
+            m_pSettingsWidget->setSettings(m_visoOptions);
     }
 }
 
 void UIVisoCreatorWidget::prepareVerticalToolBar()
 {
     m_pVerticalToolBar = new QIToolBar;
-    if (!m_pVerticalToolBar)
-        return;
+    AssertPtrReturnVoid(m_pVerticalToolBar);
 
     m_pVerticalToolBar->setOrientation(Qt::Vertical);
 }
@@ -635,9 +672,8 @@ QUuid UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParen
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
     UIVisoCreatorDialog *pVisoCreator = new UIVisoCreatorDialog(pActionPool, pDialogParent,
                                                                 strVisoSaveFolder, strMachineName);
+    AssertPtrReturn(pVisoCreator, QUuid());
 
-    if (!pVisoCreator)
-        return QUuid();
     windowManager().registerNewParent(pVisoCreator, pDialogParent);
     pVisoCreator->setCurrentPath(gEDataManager->visoCreatorRecentFolder());
 
@@ -736,13 +772,16 @@ void    UIVisoCreatorDialog::setCurrentPath(const QString &strPath)
 void UIVisoCreatorDialog::prepareWidgets(const QString &strMachineName)
 {
     QWidget *pCentralWidget = new QWidget;
+    AssertPtrReturnVoid(pCentralWidget);
     setCentralWidget(pCentralWidget);
     QVBoxLayout *pMainLayout = new QVBoxLayout;
+    AssertPtrReturnVoid(pMainLayout);
     pCentralWidget->setLayout(pMainLayout);
 
 
     m_pVisoCreatorWidget = new UIVisoCreatorWidget(m_pActionPool, this, true /* show toolbar */, strMachineName);
-    if (m_pVisoCreatorWidget && m_pVisoCreatorWidget->menu())
+    AssertPtrReturnVoid(m_pVisoCreatorWidget);
+    if (m_pVisoCreatorWidget->menu())
     {
         menuBar()->addMenu(m_pVisoCreatorWidget->menu());
         pMainLayout->addWidget(m_pVisoCreatorWidget);
@@ -755,28 +794,27 @@ void UIVisoCreatorDialog::prepareWidgets(const QString &strMachineName)
     }
 
     m_pButtonBox = new QIDialogButtonBox;
-    if (m_pButtonBox)
-    {
-        m_pButtonBox->setDoNotPickDefaultButton(true);
-        m_pButtonBox->setStandardButtons(QDialogButtonBox::Help | QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
-        m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(QKeySequence(Qt::Key_Escape));
-        pMainLayout->addWidget(m_pButtonBox);
+    AssertPtrReturnVoid(m_pButtonBox);
+    m_pButtonBox->setDoNotPickDefaultButton(true);
+    m_pButtonBox->setStandardButtons(QDialogButtonBox::Help | QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
+    m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(QKeySequence(Qt::Key_Escape));
+    pMainLayout->addWidget(m_pButtonBox);
 
-        // connect(m_pButtonBox->button(QIDialogButtonBox::Help), &QPushButton::pressed,
-        //         m_pButtonBox, &QIDialogButtonBox::sltHelpRequest);
+    connect(m_pButtonBox->button(QIDialogButtonBox::Help), &QPushButton::pressed,
+            m_pButtonBox, &QIDialogButtonBox::sltHandleHelpRequest);
 
-        m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
+    m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
 
-        uiCommon().setHelpKeyword(m_pButtonBox->button(QIDialogButtonBox::Help), "create-optical-disk-image");
-    }
+    uiCommon().setHelpKeyword(m_pButtonBox->button(QIDialogButtonBox::Help), "create-optical-disk-image");
 
     m_pStatusLabel = new QILabel;
     m_pStatusBar = new QStatusBar(this);
-    if (m_pButtonBox && m_pStatusLabel)
-    {
-        pMainLayout->addWidget(m_pStatusBar);
-        m_pStatusBar->addPermanentWidget(m_pStatusLabel);
-    }
+    AssertPtrReturnVoid(m_pButtonBox);
+    AssertPtrReturnVoid(m_pStatusLabel);
+
+    pMainLayout->addWidget(m_pStatusBar);
+    m_pStatusBar->addPermanentWidget(m_pStatusLabel);
+
     retranslateUi();
 }
 
