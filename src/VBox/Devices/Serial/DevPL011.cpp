@@ -181,15 +181,103 @@
 
 /** The offset of the UARTIMSC register from the beginning of the region. */
 #define PL011_REG_UARTIMSC_INDEX                0x38
+/** Bit 0 - Ring Indicator Modem interrupt mask. */
+# define PL011_REG_UARTIMSC_RIMIM               RT_BIT(0)
+/** Bit 1 - Clear To Send Modem interrupt mask. */
+# define PL011_REG_UARTIMSC_CTSMIM              RT_BIT(1)
+/** Bit 2 - Data Carrier Detect Modem interrupt mask. */
+# define PL011_REG_UARTIMSC_DCDMIM              RT_BIT(2)
+/** Bit 3 - Data Set Ready Modem interrupt mask. */
+# define PL011_REG_UARTIMSC_DSRMIM              RT_BIT(3)
+/** Bit 4 - Receive interrupt mask. */
+# define PL011_REG_UARTIMSC_RXIM                RT_BIT(4)
+/** Bit 5 - Transmit interrupt mask. */
+# define PL011_REG_UARTIMSC_TXIM                RT_BIT(5)
+/** Bit 6 - Receive timeout interrupt mask. */
+# define PL011_REG_UARTIMSC_RTIM                RT_BIT(6)
+/** Bit 7 - Frameing Error interrupt mask. */
+# define PL011_REG_UARTIMSC_FEIM                RT_BIT(7)
+/** Bit 8 - Parity Error interrupt mask. */
+# define PL011_REG_UARTIMSC_PEIM                RT_BIT(8)
+/** Bit 9 - Break Error interrupt mask. */
+# define PL011_REG_UARTIMSC_BEIM                RT_BIT(9)
+/** Bit 10 - Overrun Error interrupt mask. */
+# define PL011_REG_UARTIMSC_OEIM                RT_BIT(10)
 
 /** The offset of the UARTRIS register from the beginning of the region. */
 #define PL011_REG_UARTRIS_INDEX                 0x3c
+/** Bit 0 - Ring Indicator Modem raw interrupt status. */
+# define PL011_REG_UARTRIS_RIRMIS               RT_BIT(0)
+/** Bit 1 - Clear To Send Modem raw interrupt status. */
+# define PL011_REG_UARTRIS_CTSRMIS              RT_BIT(1)
+/** Bit 2 - Data Carrier Detect Modem raw interrupt status. */
+# define PL011_REG_UARTRIS_DCDRMIS              RT_BIT(2)
+/** Bit 3 - Data Set Ready Modem raw interrupt status. */
+# define PL011_REG_UARTRIS_DSRRMIS              RT_BIT(3)
+/** Bit 4 - Receive raw interrupt status. */
+# define PL011_REG_UARTRIS_RXRIS                RT_BIT(4)
+/** Bit 5 - Transmit raw interrupt status. */
+# define PL011_REG_UARTRIS_TXRIS                RT_BIT(5)
+/** Bit 6 - Receive timeout raw interrupt status. */
+# define PL011_REG_UARTRIS_RTRIS                RT_BIT(6)
+/** Bit 7 - Frameing Error raw interrupt status. */
+# define PL011_REG_UARTRIS_FERIS                RT_BIT(7)
+/** Bit 8 - Parity Error raw interrupt status. */
+# define PL011_REG_UARTRIS_PERIS                RT_BIT(8)
+/** Bit 9 - Break Error raw interrupt status. */
+# define PL011_REG_UARTRIS_BERIS                RT_BIT(9)
+/** Bit 10 - Overrun Error raw interrupt status. */
+# define PL011_REG_UARTRIS_OERIS                RT_BIT(10)
 
 /** The offset of the UARTMIS register from the beginning of the region. */
 #define PL011_REG_UARTMIS_INDEX                 0x40
+/** Bit 0 - Ring Indicator Modem masked interrupt status. */
+# define PL011_REG_UARTRIS_RIMMIS               RT_BIT(0)
+/** Bit 1 - Clear To Send Modem masked interrupt status. */
+# define PL011_REG_UARTRIS_CTSMMIS              RT_BIT(1)
+/** Bit 2 - Data Carrier Detect Modem masked interrupt status. */
+# define PL011_REG_UARTRIS_DCDMMIS              RT_BIT(2)
+/** Bit 3 - Data Set Ready Modem masked interrupt status. */
+# define PL011_REG_UARTRIS_DSRMMIS              RT_BIT(3)
+/** Bit 4 - Receive masked interrupt status. */
+# define PL011_REG_UARTRIS_RXMIS                RT_BIT(4)
+/** Bit 5 - Transmit masked interrupt status. */
+# define PL011_REG_UARTRIS_TXMIS                RT_BIT(5)
+/** Bit 6 - Receive timeout masked interrupt status. */
+# define PL011_REG_UARTRIS_RTMIS                RT_BIT(6)
+/** Bit 7 - Frameing Error masked interrupt status. */
+# define PL011_REG_UARTRIS_FEMIS                RT_BIT(7)
+/** Bit 8 - Parity Error masked interrupt status. */
+# define PL011_REG_UARTRIS_PEMIS                RT_BIT(8)
+/** Bit 9 - Break Error masked interrupt status. */
+# define PL011_REG_UARTRIS_BEMIS                RT_BIT(9)
+/** Bit 10 - Overrun Error masked interrupt status. */
+# define PL011_REG_UARTRIS_OEMIS                RT_BIT(10)
 
 /** The offset of the UARTICR register from the beginning of the region. */
 #define PL011_REG_UARTICR_INDEX                 0x44
+/** Bit 0 - Ring Indicator Modem interrupt clear. */
+# define PL011_REG_UARTICR_RIMIC                RT_BIT(0)
+/** Bit 1 - Clear To Send Modem interrupt clear. */
+# define PL011_REG_UARTICR_CTSMIC               RT_BIT(1)
+/** Bit 2 - Data Carrier Detect Modem interrupt clear. */
+# define PL011_REG_UARTICR_DCDMIC               RT_BIT(2)
+/** Bit 3 - Data Set Ready Modem interrupt clear. */
+# define PL011_REG_UARTICR_DSRMIC               RT_BIT(3)
+/** Bit 4 - Receive interrupt clear. */
+# define PL011_REG_UARTICR_RXIC                 RT_BIT(4)
+/** Bit 5 - Transmit interrupt clear. */
+# define PL011_REG_UARTICR_TXIC                 RT_BIT(5)
+/** Bit 6 - Receive timeout interrupt clear. */
+# define PL011_REG_UARTICR_RTIC                 RT_BIT(6)
+/** Bit 7 - Frameing Error interrupt clear. */
+# define PL011_REG_UARTICR_FEIC                 RT_BIT(7)
+/** Bit 8 - Parity Error interrupt clear. */
+# define PL011_REG_UARTICR_PEIC                 RT_BIT(8)
+/** Bit 9 - Break Error interrupt clear. */
+# define PL011_REG_UARTICR_BEIC                 RT_BIT(9)
+/** Bit 10 - Overrun Error interrupt clear. */
+# define PL011_REG_UARTICR_OEIC                 RT_BIT(10)
 
 /** The offset of the UARTDMACR register from the beginning of the region. */
 #define PL011_REG_UARTDMACR_INDEX               0x48
@@ -259,7 +347,10 @@ typedef struct DEVPL011
 
     /** @name Registers.
      * @{ */
+    /** UART data register when written. */
     uint8_t                         uRegDr;
+    /** UART data register when read. */
+    uint8_t                         uRegDrRd;
     /** UART control register. */
     uint16_t                        uRegCr;
     /** UART flag register. */
@@ -270,12 +361,21 @@ typedef struct DEVPL011
     uint16_t                        uRegFbrd;
     /** UART line control register. */
     uint16_t                        uRegLcrH;
+    /** Interrupt FIFO Level Select register. */
+    uint16_t                        uRegFifoLvlSel;
+    /** Interrupt mask register. */
+    uint16_t                        uRegIrqMask;
+    /** Raw interrupt status register. */
+    uint16_t                        uRegIrqSts;
     /** @} */
 
     /** Time it takes to transmit/receive a single symbol in timer ticks. */
     uint64_t                        cSymbolXferTicks;
     /** Number of bytes available for reading from the layer below. */
     volatile uint32_t               cbAvailRdr;
+
+    /** Timer handle for the send loop if no driver is connected/loopback mode is active. */
+    TMTIMERHANDLE                   hTimerTxUnconnected;
 
     /** The transmit FIFO. */
     PL011FIFO                       FifoXmit;
@@ -383,10 +483,135 @@ static const char *s_aszStopBits[] =
  * @param   pThis               The shared serial port instance data.
  * @param   pThisCC             The serial port instance data for the current context.
  */
-static void pl011IrqUpdate(PPDMDEVINS pDevIns, PDEVPL011 pThis, PDEVPL011CC pThisCC)
+DECLINLINE(void) pl011IrqUpdate(PPDMDEVINS pDevIns, PDEVPL011 pThis, PDEVPL011CC pThisCC)
 {
-    LogFlowFunc(("pThis=%#p\n", pThis));
-    RT_NOREF(pDevIns, pThis, pThisCC);
+    LogFlowFunc(("pThis=%#p uRegIrqSts=%#RX16 uRegIrqMask=%#RX16\n",
+                 pThis, pThis->uRegIrqSts, pThis->uRegIrqMask));
+
+    RT_NOREF(pThisCC);
+    if (pThis->uRegIrqSts & ~pThis->uRegIrqMask)
+        PDMDevHlpISASetIrqNoWait(pDevIns, pThis->u16Irq, 1);
+    else
+        PDMDevHlpISASetIrqNoWait(pDevIns, pThis->u16Irq, 0);
+}
+
+
+/**
+ * Returns the amount of bytes stored in the given FIFO.
+ *
+ * @returns Amount of bytes stored in the FIFO.
+ * @param   pFifo               The FIFO.
+ */
+DECLINLINE(size_t) pl011FifoUsedGet(PPL011FIFO pFifo)
+{
+    return pFifo->cbUsed;
+}
+
+
+/**
+ * Puts a new character into the given FIFO.
+ *
+ * @returns Flag whether the FIFO overflowed.
+ * @param   pFifo               The FIFO to put the data into.
+ * @param   fOvrWr              Flag whether to overwrite data if the FIFO is full.
+ * @param   bData               The data to add.
+ */
+DECLINLINE(bool) pl011FifoPut(PPL011FIFO pFifo, bool fOvrWr, uint8_t bData)
+{
+    if (fOvrWr || pFifo->cbUsed < pFifo->cbMax)
+    {
+        pFifo->abBuf[pFifo->offWrite] = bData;
+        pFifo->offWrite = (pFifo->offWrite + 1) % pFifo->cbMax;
+    }
+
+    bool fOverFlow = false;
+    if (pFifo->cbUsed < pFifo->cbMax)
+        pFifo->cbUsed++;
+    else
+    {
+        fOverFlow = true;
+        if (fOvrWr) /* Advance the read position to account for the lost character. */
+           pFifo->offRead = (pFifo->offRead + 1) % pFifo->cbMax;
+    }
+
+    return fOverFlow;
+}
+
+
+/**
+ * Returns the next character in the FIFO.
+ *
+ * @return Next byte in the FIFO.
+ * @param   pFifo               The FIFO to get data from.
+ */
+DECLINLINE(uint8_t) pl011FifoGet(PPL011FIFO pFifo)
+{
+    uint8_t bRet = 0;
+
+    if (pFifo->cbUsed)
+    {
+        bRet = pFifo->abBuf[pFifo->offRead];
+        pFifo->offRead = (pFifo->offRead + 1) % pFifo->cbMax;
+        pFifo->cbUsed--;
+    }
+
+    return bRet;
+}
+
+
+/**
+ * Clears the given FIFO.
+ *
+ * @param   pFifo               The FIFO to clear.
+ */
+DECLINLINE(void) pl011FifoClear(PPL011FIFO pFifo)
+{
+    memset(&pFifo->abBuf[0], 0, sizeof(pFifo->abBuf));
+    pFifo->cbUsed   = 0;
+    pFifo->offWrite = 0;
+    pFifo->offRead  = 0;
+}
+
+
+/**
+ * Returns the amount of free bytes in the given FIFO.
+ *
+ * @returns The amount of bytes free in the given FIFO.
+ * @param   pFifo               The FIFO.
+ */
+DECLINLINE(size_t) pl011FifoFreeGet(PPL011FIFO pFifo)
+{
+    return pFifo->cbMax - pFifo->cbUsed;
+}
+
+
+/**
+ * Tries to copy the requested amount of data from the given FIFO into the provided buffer.
+ *
+ * @returns Amount of bytes actually copied.
+ * @param   pFifo               The FIFO to copy data from.
+ * @param   pvDst               Where to copy the data to.
+ * @param   cbCopy              How much to copy.
+ */
+DECLINLINE(size_t) pl011FifoCopyTo(PPL011FIFO pFifo, void *pvDst, size_t cbCopy)
+{
+    size_t cbCopied = 0;
+    uint8_t *pbDst = (uint8_t *)pvDst;
+
+    cbCopy = RT_MIN(cbCopy, pFifo->cbUsed);
+    while (cbCopy)
+    {
+        uint8_t cbThisCopy = (uint8_t)RT_MIN(cbCopy, (uint8_t)(pFifo->cbMax - pFifo->offRead));
+        memcpy(pbDst, &pFifo->abBuf[pFifo->offRead], cbThisCopy);
+
+        pFifo->offRead = (pFifo->offRead + cbThisCopy) % pFifo->cbMax;
+        pFifo->cbUsed -= cbThisCopy;
+        pbDst    += cbThisCopy;
+        cbCopied += cbThisCopy;
+        cbCopy   -= cbThisCopy;
+    }
+
+    return cbCopied;
 }
 
 
@@ -408,7 +633,24 @@ static VBOXSTRICTRC pl011Xmit(PPDMDEVINS pDevIns, PDEVPL011CC pThisCC, PDEVPL011
 
     if (pThis->uRegLcrH & PL011_REG_UARTLCR_H_FEN)
     {
-        AssertReleaseFailed(); /** @todo */
+#ifndef IN_RING3
+        RT_NOREF(pDevIns, pThisCC);
+        if (!pl011FifoUsedGet(&pThis->FifoXmit))
+            rc = VINF_IOM_R3_MMIO_WRITE;
+        else
+        {
+            pl011FifoPut(&pThis->FifoXmit, true /*fOvrWr*/, bVal);
+            PL011_REG_CLR(pThis->uRegFr, PL011_REG_UARTFR_TXFE);
+            PL011_REG_SET(pThis->uRegFr, PL011_REG_UARTFR_BUSY);
+        }
+#else
+        pl011FifoPut(&pThis->FifoXmit, true /*fOvrWr*/, bVal);
+        PL011_REG_CLR(pThis->uRegFr, PL011_REG_UARTFR_TXFE);
+        PL011_REG_SET(pThis->uRegFr, PL011_REG_UARTFR_BUSY);
+        pl011IrqUpdate(pDevIns, pThis, pThisCC);
+        if (pl011FifoUsedGet(&pThis->FifoXmit) == 1)
+            fNotifyDrv = true;
+#endif
     }
     else
     {
@@ -442,10 +684,7 @@ static VBOXSTRICTRC pl011Xmit(PPDMDEVINS pDevIns, PDEVPL011CC pThisCC, PDEVPL011
                 LogRelMax(10, ("PL011#%d: Failed to send data with %Rrc\n", pDevIns->iInstance, rc2));
         }
         else
-        {
-            AssertReleaseFailed(); /** @todo */
-            //PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
-        }
+            PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
 
         rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VINF_SUCCESS);
     }
@@ -456,6 +695,99 @@ static VBOXSTRICTRC pl011Xmit(PPDMDEVINS pDevIns, PDEVPL011CC pThisCC, PDEVPL011
 
 
 #ifdef IN_RING3
+/**
+ * Fills up the receive FIFO with as much data as possible.
+ *
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
+ */
+static void pl011R3RecvFifoFill(PPDMDEVINS pDevIns, PDEVPL011CC pThisCC, PDEVPL011 pThis)
+{
+    LogFlowFunc(("pThis=%#p\n", pThis));
+
+    PPL011FIFO pFifo = &pThis->FifoRecv;
+    size_t cbFill = RT_MIN(pl011FifoFreeGet(pFifo),
+                           ASMAtomicReadU32(&pThis->cbAvailRdr));
+    size_t cbFilled = 0;
+
+    while (cbFilled < cbFill)
+    {
+        size_t cbThisRead = cbFill - cbFilled;
+
+        if (pFifo->offRead <= pFifo->offWrite)
+            cbThisRead = RT_MIN(cbThisRead, (uint8_t)(pFifo->cbMax - pFifo->offWrite));
+        else
+            cbThisRead = RT_MIN(cbThisRead, (uint8_t)(pFifo->offRead - pFifo->offWrite));
+
+        size_t cbRead = 0;
+        int rc = pThisCC->pDrvSerial->pfnReadRdr(pThisCC->pDrvSerial, &pFifo->abBuf[pFifo->offWrite], cbThisRead, &cbRead);
+        AssertRC(rc); Assert(cbRead <= UINT8_MAX); RT_NOREF(rc);
+
+        pFifo->offWrite = (pFifo->offWrite + (uint8_t)cbRead) % pFifo->cbMax;
+        pFifo->cbUsed   += (uint8_t)cbRead;
+        cbFilled        += cbRead;
+
+        if (cbRead < cbThisRead)
+            break;
+    }
+
+    if (cbFilled)
+    {
+        PL011_REG_CLR(pThis->uRegFr, PL011_REG_UARTFR_RXFE);
+        PL011_REG_SET(pThis->uRegIrqSts, PL011_REG_UARTRIS_RXRIS);
+        if (pFifo->cbUsed < pFifo->cbItl)
+        {
+            //pThis->fIrqCtiPending = false;
+            //PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerRcvFifoTimeout, pThis->cSymbolXferTicks * 4, NULL);
+        }
+        pl011IrqUpdate(pDevIns, pThis, pThisCC);
+    }
+
+    Assert(cbFilled <= (size_t)pThis->cbAvailRdr);
+    ASMAtomicSubU32(&pThis->cbAvailRdr, (uint32_t)cbFilled);
+}
+
+
+/**
+ * Fetches a single byte and writes it to RBR.
+ *
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
+ */
+static void pl011R3ByteFetch(PPDMDEVINS pDevIns, PDEVPL011CC pThisCC, PDEVPL011 pThis)
+{
+    if (ASMAtomicReadU32(&pThis->cbAvailRdr))
+    {
+        size_t cbRead = 0;
+        int rc2 = pThisCC->pDrvSerial->pfnReadRdr(pThisCC->pDrvSerial, &pThis->uRegDrRd, 1, &cbRead);
+        AssertMsg(RT_SUCCESS(rc2) && cbRead == 1, ("This shouldn't fail and always return one byte!\n")); RT_NOREF(rc2);
+        PL011_REG_CLR(pThis->uRegFr, PL011_REG_UARTFR_RXFE);
+        PL011_REG_SET(pThis->uRegIrqSts, PL011_REG_UARTRIS_RXRIS);
+        pl011IrqUpdate(pDevIns, pThis, pThisCC);
+    }
+}
+
+
+/**
+ * Fetches a ready data based on the FIFO setting.
+ *
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The shared serial port instance data.
+ * @param   pThisCC             The serial port instance data for the current context.
+ */
+static void pl011R3DataFetch(PPDMDEVINS pDevIns, PDEVPL011CC pThisCC, PDEVPL011 pThis)
+{
+    AssertPtrReturnVoid(pThisCC->pDrvSerial);
+
+    if (pThis->uRegLcrH & PL011_REG_UARTLCR_H_FEN)
+        pl011R3RecvFifoFill(pDevIns, pThisCC, pThis);
+    else
+        pl011R3ByteFetch(pDevIns, pThisCC, pThis);
+}
+
+
 /**
  * Updates the serial port parameters of the attached driver with the current configuration.
  *
@@ -508,8 +840,8 @@ static void pl011R3ParamsUpdate(PPDMDEVINS pDevIns, PDEVPL011 pThis, PDEVPL011CC
             cFrameBits++;
         }
 
-        //uint64_t uTimerFreq = PDMDevHlpTimerGetFreq(pDevIns, pThis->hTimerRcvFifoTimeout);
-        //pThis->cSymbolXferTicks = (uTimerFreq / uBps) * cFrameBits;
+        uint64_t uTimerFreq = PDMDevHlpTimerGetFreq(pDevIns, pThis->hTimerTxUnconnected);
+        pThis->cSymbolXferTicks = (uTimerFreq / uBps) * cFrameBits;
 
         LogFlowFunc(("Changing parameters to: %u,%s,%u,%s\n",
                      uBps, s_aszParity[enmParity], cDataBits, s_aszStopBits[enmStopBits]));
@@ -538,11 +870,11 @@ static void pl011R3ParamsUpdate(PPDMDEVINS pDevIns, PDEVPL011 pThis, PDEVPL011CC
 static void pl011R3XferReset(PPDMDEVINS pDevIns, PDEVPL011 pThis, PDEVPL011CC pThisCC)
 {
     //PDMDevHlpTimerStop(pDevIns, pThis->hTimerRcvFifoTimeout);
-    //PDMDevHlpTimerStop(pDevIns, pThis->hTimerTxUnconnected);
-    //pThis->uRegLsr = UART_REG_LSR_THRE | UART_REG_LSR_TEMT;
+    PDMDevHlpTimerStop(pDevIns, pThis->hTimerTxUnconnected);
+    pThis->uRegFr = PL011_REG_UARTFR_TXFE | PL011_REG_UARTFR_RXFE;
 
-    //uartFifoClear(&pThis->FifoXmit);
-    //uartFifoClear(&pThis->FifoRecv);
+    pl011FifoClear(&pThis->FifoXmit);
+    pl011FifoClear(&pThis->FifoRecv);
     pl011R3ParamsUpdate(pDevIns, pThis, pThisCC);
     pl011IrqUpdate(pDevIns, pThis, pThisCC);
 
@@ -581,8 +913,16 @@ static void pl011R3TxQueueCopyFrom(PPDMDEVINS pDevIns, PDEVPL011 pThis, PDEVPL01
 {
     if (pThis->uRegLcrH & PL011_REG_UARTLCR_H_FEN)
     {
-        RT_NOREF(cbRead);
-        AssertReleaseFailed();
+        *pcbRead = pl011FifoCopyTo(&pThis->FifoXmit, pvBuf, cbRead);
+        if (!pThis->FifoXmit.cbUsed)
+        {
+            PL011_REG_SET(pThis->uRegFr, PL011_REG_UARTFR_TXFE);
+            PL011_REG_CLR(pThis->uRegFr, PL011_REG_UARTFR_BUSY);
+            //pThis->fThreEmptyPending = true;
+        }
+        if (*pcbRead)
+            PL011_REG_CLR(pThis->uRegFr, PL011_REG_UARTFR_TXFF);
+        pl011IrqUpdate(pDevIns, pThis, pThisCC);
     }
     else if (pThis->uRegFr & PL011_REG_UARTFR_BUSY)
     {
@@ -612,21 +952,108 @@ static void pl011R3TxQueueCopyFrom(PPDMDEVINS pDevIns, PDEVPL011 pThis, PDEVPL01
 static DECLCALLBACK(VBOXSTRICTRC) pl011MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
     PDEVPL011 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPL011);
+    PDEVPL011CC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVPL011CC);
     NOREF(pvUser);
     Assert(cb == 4 || cb == 8);
     Assert(!(off & (cb - 1))); RT_NOREF(cb);
-
-    LogFlowFunc(("%RGp cb=%u\n", off, cb));
 
     uint32_t u32Val = 0;
     VBOXSTRICTRC rc = VINF_SUCCESS;
     switch (off)
     {
+        case PL011_REG_UARTDR_INDEX:
+        {
+            if (pThis->uRegLcrH & PL011_REG_UARTLCR_H_FEN)
+            {
+                /*
+                 * Only go back to R3 if there is new data available for the FIFO
+                 * and we would clear the interrupt to fill it up again.
+                 */
+                if (   pThis->FifoRecv.cbUsed <= pThis->FifoRecv.cbItl
+                    && ASMAtomicReadU32(&pThis->cbAvailRdr) > 0)
+                {
+#ifndef IN_RING3
+                    rc = VINF_IOM_R3_MMIO_READ;
+#else
+                    pl011R3RecvFifoFill(pDevIns, pThisCC, pThis);
+#endif
+                }
+
+                if (rc == VINF_SUCCESS)
+                {
+                    u32Val = pl011FifoGet(&pThis->FifoRecv);
+                    //pThis->fIrqCtiPending = false;
+                    if (!pThis->FifoRecv.cbUsed)
+                    {
+                        //PDMDevHlpTimerStop(pDevIns, pThis->hTimerRcvFifoTimeout);
+                        PL011_REG_CLR(pThis->uRegFr, PL011_REG_UARTFR_RXFF);
+                        PL011_REG_SET(pThis->uRegFr, PL011_REG_UARTFR_RXFE);
+                    }
+                    pl011IrqUpdate(pDevIns, pThis, pThisCC);
+                }
+            }
+            else
+            {
+                u32Val = pThis->uRegDrRd;
+                if (pThis->cbAvailRdr)
+                {
+                    uint32_t cbAvail = ASMAtomicDecU32(&pThis->cbAvailRdr);
+                    if (!cbAvail)
+                    {
+                        PL011_REG_SET(pThis->uRegFr, PL011_REG_UARTFR_RXFE);
+                        PL011_REG_CLR(pThis->uRegIrqSts, PL011_REG_UARTRIS_RXRIS);
+                        pl011IrqUpdate(pDevIns, pThis, pThisCC);
+                    }
+                    else
+                    {
+    #ifndef IN_RING3
+                        /* Restore state and go back to R3. */
+                        ASMAtomicIncU32(&pThis->cbAvailRdr);
+                        rc = VINF_IOM_R3_MMIO_READ;
+    #else
+                        /* Fetch new data and keep the DR bit set. */
+                        pl011R3DataFetch(pDevIns, pThisCC, pThis);
+    #endif
+                    }
+                }
+            }
+            break;
+        }
+        case PL011_REG_UARTRSR_ECR_INDEX:
+        {
+            AssertReleaseFailed();
+            break;
+        }
         case PL011_REG_UARTFR_INDEX:
             u32Val = pThis->uRegFr;
             break;
+        case PL011_REG_UARTILPR_INDEX:
+            u32Val = 0;
+            AssertReleaseFailed();
+            break;
+        case PL011_REG_UARTIBRD_INDEX:
+            u32Val = pThis->uRegIbrd;
+            break;
+        case PL011_REG_UARTFBRD_INDEX:
+            u32Val = pThis->uRegFbrd;
+            break;
+        case PL011_REG_UARTLCR_H_INDEX:
+            u32Val = pThis->uRegLcrH;
+            break;
         case PL011_REG_UARTCR_INDEX:
             u32Val = pThis->uRegCr;
+            break;
+        case PL011_REG_UARTIFLS_INDEX:
+            u32Val = pThis->uRegFifoLvlSel;
+            break;
+        case PL011_REG_UARTIMSC_INDEX:
+            u32Val = pThis->uRegIrqMask;
+            break;
+        case PL011_REG_UARTRIS_INDEX:
+            u32Val = pThis->uRegIrqSts;
+            break;
+        case PL011_REG_UARTMIS_INDEX:
+            u32Val = pThis->uRegIrqSts & ~pThis->uRegIrqMask;
             break;
         case PL011_REG_UART_PERIPH_ID0_INDEX:
             u32Val = 0x11;
@@ -659,6 +1086,8 @@ static DECLCALLBACK(VBOXSTRICTRC) pl011MmioRead(PPDMDEVINS pDevIns, void *pvUser
     if (rc == VINF_SUCCESS)
         *(uint32_t *)pv = u32Val;
 
+    LogFlowFunc(("%RGp cb=%u u32Val=%#RX32 -> %Rrc\n", off, cb, u32Val, rc));
+
     return rc;
 }
 
@@ -684,6 +1113,17 @@ static DECLCALLBACK(VBOXSTRICTRC) pl011MmioWrite(PPDMDEVINS pDevIns, void *pvUse
                 && (pThis->uRegCr & PL011_REG_UARTCR_TXE))
                 rcStrict = pl011Xmit(pDevIns, pThisCC, pThis, (uint8_t)u32Val);
             break;
+        case PL011_REG_UARTLCR_H_INDEX:
+            pThis->uRegLcrH = (uint16_t)u32Val;
+            pl011R3ParamsUpdate(pDevIns, pThis, pThisCC);
+            break;
+        case PL011_REG_UARTIMSC_INDEX:
+            pThis->uRegIrqMask = (uint16_t)u32Val;
+            break;
+        case PL011_REG_UARTICR_INDEX:
+            pThis->uRegIrqSts = 0;
+            pl011IrqUpdate(pDevIns, pThis, pThisCC);
+            break;
         default:
             break;
 
@@ -693,6 +1133,56 @@ static DECLCALLBACK(VBOXSTRICTRC) pl011MmioWrite(PPDMDEVINS pDevIns, void *pvUse
 
 
 #ifdef IN_RING3
+
+/* -=-=-=-=-=-=-=-=- Timer callbacks -=-=-=-=-=-=-=-=- */
+
+/**
+ * @callback_method_impl{FNTMTIMERDEV,
+ *      TX timer function when there is no driver connected for
+ *      draining the THR/FIFO.}
+ */
+static DECLCALLBACK(void) pl011R3TxUnconnectedTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
+{
+    RT_NOREF(pvUser);
+
+    LogFlowFunc(("pDevIns=%#p hTimer=%#p pvUser=%#p\n", pDevIns, hTimer, pvUser));
+    PDEVPL011   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVPL011);
+    PDEVPL011CC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVPL011CC);
+    Assert(hTimer == pThis->hTimerTxUnconnected);
+
+    uint8_t bVal = 0;
+    size_t cbRead = 0;
+    pl011R3TxQueueCopyFrom(pDevIns, pThis, pThisCC, &bVal, sizeof(bVal), &cbRead);
+    if (pThis->uRegCr & PL011_REG_UARTCR_LBE)
+    {
+        /* Loopback mode is active, feed in the data at the receiving end. */
+        uint32_t cbAvailOld = ASMAtomicAddU32(&pThis->cbAvailRdr, 1);
+        if (pThis->uRegLcrH & PL011_REG_UARTLCR_H_FEN)
+        {
+            AssertReleaseFailed();
+            ASMAtomicSubU32(&pThis->cbAvailRdr, 1);
+        }
+        else if (!cbAvailOld)
+        {
+            pThis->uRegDr = bVal;
+            PL011_REG_SET(pThis->uRegFr, PL011_REG_UARTFR_TXFF);
+            PL011_REG_CLR(pThis->uRegFr, PL011_REG_UARTFR_TXFE);
+            pl011IrqUpdate(pDevIns, pThis, pThisCC);
+        }
+        else
+            ASMAtomicSubU32(&pThis->cbAvailRdr, 1);
+    }
+
+    if (cbRead == 1)
+        PDMDevHlpTimerSetRelative(pDevIns, hTimer, pThis->cSymbolXferTicks, NULL);
+    else
+    {
+        /* No data left, set the transmitter holding register as empty. */
+        PL011_REG_CLR(pThis->uRegFr, PL011_REG_UARTFR_BUSY | PL011_REG_UARTFR_TXFF);
+        PL011_REG_SET(pThis->uRegFr, PL011_REG_UARTFR_TXFE);
+    }
+}
+
 
 /* -=-=-=-=-=-=-=-=- PDMISERIALPORT on LUN#0 -=-=-=-=-=-=-=-=- */
 
@@ -712,8 +1202,25 @@ static DECLCALLBACK(int) pl011R3DataAvailRdrNotify(PPDMISERIALPORT pInterface, s
     int const rcLock = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
     PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
 
-    /** @todo */
-    RT_NOREF(pThis, cbAvail);
+    uint32_t cbAvailOld = ASMAtomicAddU32(&pThis->cbAvailRdr, (uint32_t)cbAvail);
+    LogFlow(("    cbAvailRdr=%u -> cbAvailRdr=%u\n", cbAvailOld, cbAvail + cbAvailOld));
+    if (pThis->uRegLcrH & PL011_REG_UARTLCR_H_FEN)
+        pl011R3RecvFifoFill(pDevIns, pThisCC, pThis);
+    else if (!cbAvailOld)
+    {
+        size_t cbRead = 0;
+        int rc = pThisCC->pDrvSerial->pfnReadRdr(pThisCC->pDrvSerial, &pThis->uRegDrRd, 1, &cbRead);
+        AssertRC(rc);
+
+        if (cbRead)
+        {
+            PL011_REG_SET(pThis->uRegIrqSts, PL011_REG_UARTRIS_RXRIS);
+            PL011_REG_CLR(pThis->uRegFr, PL011_REG_UARTFR_TXFE);
+            PL011_REG_SET(pThis->uRegFr, PL011_REG_UARTFR_TXFF);
+
+            pl011IrqUpdate(pDevIns, pThis, pThisCC);
+        }
+    }
 
     PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
     return VINF_SUCCESS;
@@ -799,8 +1306,8 @@ static DECLCALLBACK(int) pl011R3NotifyBrk(PPDMISERIALPORT pInterface)
     int const rcLock = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
     PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
 
-    /** @todo */
-    RT_NOREF(pThis);
+    PL011_REG_SET(pThis->uRegIrqSts, PL011_REG_UARTRIS_BERIS);
+    pl011IrqUpdate(pDevIns, pThis, pThisCC);
 
     PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
     return VINF_SUCCESS;
@@ -926,7 +1433,14 @@ static DECLCALLBACK(void) pl011R3Reset(PPDMDEVINS pDevIns)
     pThis->uRegIbrd = 0;
     pThis->uRegFbrd = 0;
     pThis->uRegLcrH = 0;
+    pThis->uRegFifoLvlSel = 0;
+    pThis->uRegIrqSts     = 0; /** @todo Not entirely correct as the modem status bits should reflect the lower state. */
+    pThis->uRegIrqMask    = 0;
     /** @todo */
+
+    pThis->FifoXmit.cbMax = 32;
+    pThis->FifoRecv.cbMax = 32;
+    pThis->FifoRecv.cbItl = 1;
 
     pl011R3XferReset(pDevIns, pThis, pThisCC);
 }
@@ -1040,12 +1554,7 @@ static DECLCALLBACK(int) pl011R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Validate and read the configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Irq|MmioBase|YieldOnLSRRead", "");
-
-    bool fYieldOnLSRRead = false;
-    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "YieldOnLSRRead", &fYieldOnLSRRead, false);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"YieldOnLSRRead\" value"));
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Irq|MmioBase", "");
 
     uint16_t u16Irq = 0;
     rc = pHlp->pfnCFGMQueryU16(pCfg, "Irq", &u16Irq);
@@ -1056,7 +1565,7 @@ static DECLCALLBACK(int) pl011R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = pHlp->pfnCFGMQueryU64(pCfg, "MmioBase", &GCPhysMmioBase);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the \"IOBase\" value"));
+                                N_("Configuration error: Failed to get the \"MmioBase\" value"));
 
     pThis->u16Irq         = u16Irq;
     pThis->GCPhysMmioBase = GCPhysMmioBase;
@@ -1103,6 +1612,14 @@ static DECLCALLBACK(int) pl011R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         /* Don't call VMSetError here as we assume that the driver already set an appropriate error */
         return rc;
     }
+
+    /*
+     * Create the transmit timer when no device is connected.
+     */
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, pl011R3TxUnconnectedTimer, pThisCC,
+                              TMTIMER_FLAGS_NO_RING0, "UART TX unconnect",
+                              &pThis->hTimerTxUnconnected);
+    AssertRCReturn(rc, rc);
 
     pl011R3Reset(pDevIns);
     return VINF_SUCCESS;
