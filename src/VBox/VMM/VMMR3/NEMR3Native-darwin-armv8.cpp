@@ -1052,6 +1052,26 @@ static VBOXSTRICTRC nemR3DarwinHandleExitExceptionTrappedHvcInsn(PVM pVM, PVMCPU
                     nemR3DarwinSetGReg(pVCpu, ARMV8_AARCH64_REG_X0, true /*f64BitReg*/, false /*fSignExtend*/, ARM_PSCI_STS_SUCCESS);
                     break;
                 }
+                case ARM_PSCI_FUNC_ID_PSCI_FEATURES:
+                {
+                    uint32_t u32FunNum = (uint32_t)nemR3DarwinGetGReg(pVCpu, ARMV8_AARCH64_REG_X1);
+                    switch (u32FunNum)
+                    {
+                        case ARM_PSCI_FUNC_ID_PSCI_VERSION:
+                        case ARM_PSCI_FUNC_ID_SYSTEM_OFF:
+                        case ARM_PSCI_FUNC_ID_SYSTEM_RESET:
+                        case ARM_PSCI_FUNC_ID_SYSTEM_RESET2:
+                        case ARM_PSCI_FUNC_ID_CPU_ON:
+                            nemR3DarwinSetGReg(pVCpu, ARMV8_AARCH64_REG_X0,
+                                               false /*f64BitReg*/, false /*fSignExtend*/,
+                                               (uint64_t)ARM_PSCI_STS_SUCCESS);
+                            break;
+                        default:
+                            nemR3DarwinSetGReg(pVCpu, ARMV8_AARCH64_REG_X0,
+                                               false /*f64BitReg*/, false /*fSignExtend*/,
+                                               (uint64_t)ARM_PSCI_STS_NOT_SUPPORTED);
+                    }
+                }
                 default:
                     nemR3DarwinSetGReg(pVCpu, ARMV8_AARCH64_REG_X0, false /*f64BitReg*/, false /*fSignExtend*/, (uint64_t)ARM_PSCI_STS_NOT_SUPPORTED);
             }
@@ -1468,7 +1488,7 @@ void nemR3NativeNotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
 DECLHIDDEN(bool) nemR3NativeNotifyDebugEventChanged(PVM pVM, bool fUseDebugLoop)
 {
     RT_NOREF(pVM, fUseDebugLoop);
-    AssertReleaseFailed();
+    //AssertReleaseFailed();
     return false;
 }
 
