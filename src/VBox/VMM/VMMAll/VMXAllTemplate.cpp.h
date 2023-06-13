@@ -4970,7 +4970,10 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
                 && !VCPU_2_VMXSTATE(pVCpu).fSingleInstruction)
                 vmxHCSetIntWindowExitVmcs(pVCpu, pVmcsInfo);
             else
-                Assert(!(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_INT_WINDOW_EXIT));
+            {
+                /* It's possible that interrupt-window exiting is still active, clear it as it's now unnecessary. */
+                vmxHCClearIntWindowExitVmcs(pVCpu, pVmcsInfo);
+            }
         }
     }
 
