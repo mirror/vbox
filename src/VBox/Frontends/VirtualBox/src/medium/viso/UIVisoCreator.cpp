@@ -73,9 +73,7 @@ class SHARED_LIBRARY_STUFF UIVisoSettingWidget : public QIWithRetranslateUI<QGro
 
 signals:
 
-    void sigVisoNameChanged(const QString &strVisoName);
-    void sigCustomVisoOptionsChanged(const QStringList &customVisoOptions);
-    void sigShowHiddenObjects(bool fShow);
+    void sigClosed(bool fWithAccept);
 
 public:
 
@@ -84,9 +82,8 @@ public:
 
 private slots:
 
-    void sltVisoNameChanged();
-    void sltCustomOptionsEdited();
-    void sltShowHiddenObjectsChange(int iState);
+    void sltButtonBoxOk();
+    void sltButtonBoxCancel();
 
 private:
 
@@ -99,7 +96,7 @@ private:
     QILineEdit   *m_pCustomOptionsLineEdit;
     QCheckBox    *m_pShowHiddenObjectsCheckBox;
     QILabel      *m_pShowHiddenObjectsLabel;
-
+    QIDialogButtonBox *m_pButtonBox;
 };
 
 
@@ -115,6 +112,7 @@ UIVisoSettingWidget::UIVisoSettingWidget(QWidget *pParent)
     , m_pCustomOptionsLineEdit(0)
     , m_pShowHiddenObjectsCheckBox(0)
     , m_pShowHiddenObjectsLabel(0)
+    , m_pButtonBox(0)
 {
     prepareObjects();
     prepareConnections();
@@ -122,10 +120,12 @@ UIVisoSettingWidget::UIVisoSettingWidget(QWidget *pParent)
 
 void UIVisoSettingWidget::prepareObjects()
 {
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    pMainLayout->setSpacing(0);
-    pMainLayout->setContentsMargins(0, 0, 0, 0);
-    if (!pMainLayout)
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    QGridLayout *pGridLayout = new QGridLayout;
+
+    //pGridLayout->setSpacing(0);
+    //pGridLayout->setContentsMargins(0, 0, 0, 0);
+    if (!pGridLayout)
         return;
 
     /* Name edit and and label: */
@@ -135,8 +135,8 @@ void UIVisoSettingWidget::prepareObjects()
     if (m_pVisoNameLabel && m_pVisoNameLineEdit)
     {
         m_pVisoNameLabel->setBuddy(m_pVisoNameLineEdit);
-        pMainLayout->addWidget(m_pVisoNameLabel,    iRow, 0, 1, 1, Qt::AlignTop);
-        pMainLayout->addWidget(m_pVisoNameLineEdit, iRow, 1, 1, 1, Qt::AlignTop);
+        pGridLayout->addWidget(m_pVisoNameLabel,    iRow, 0, 1, 1, Qt::AlignTop);
+        pGridLayout->addWidget(m_pVisoNameLineEdit, iRow, 1, 1, 1, Qt::AlignTop);
     }
 
     /* Cutom Viso options stuff: */
@@ -146,19 +146,30 @@ void UIVisoSettingWidget::prepareObjects()
     if (m_pCustomOptionsLabel && m_pCustomOptionsLineEdit)
     {
         m_pCustomOptionsLabel->setBuddy(m_pCustomOptionsLineEdit);
-        pMainLayout->addWidget(m_pCustomOptionsLabel,    iRow, 0, 1, 1, Qt::AlignTop);
-        pMainLayout->addWidget(m_pCustomOptionsLineEdit, iRow, 1, 1, 1, Qt::AlignTop);
+        pGridLayout->addWidget(m_pCustomOptionsLabel,    iRow, 0, 1, 1, Qt::AlignTop);
+        pGridLayout->addWidget(m_pCustomOptionsLineEdit, iRow, 1, 1, 1, Qt::AlignTop);
     }
 
     ++iRow;
     m_pShowHiddenObjectsCheckBox = new QCheckBox;
     m_pShowHiddenObjectsLabel = new QILabel(QApplication::translate("UIVisoCreatorWidget", "Show Hidden Objects"));
     m_pShowHiddenObjectsLabel->setBuddy(m_pShowHiddenObjectsCheckBox);
-    pMainLayout->addWidget(m_pShowHiddenObjectsLabel,    iRow, 0, 1, 1, Qt::AlignTop);
-    pMainLayout->addWidget(m_pShowHiddenObjectsCheckBox, iRow, 1, 1, 1, Qt::AlignTop);
+    pGridLayout->addWidget(m_pShowHiddenObjectsLabel,    iRow, 0, 1, 1, Qt::AlignTop);
+    pGridLayout->addWidget(m_pShowHiddenObjectsCheckBox, iRow, 1, 1, 1, Qt::AlignTop);
     ++iRow;
     QSpacerItem *pSpacer = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    pMainLayout->addItem(pSpacer, iRow, 0, 1, 2);
+    pGridLayout->addItem(pSpacer, iRow, 0, 1, 2);
+
+    pMainLayout->addLayout(pGridLayout);
+
+    m_pButtonBox = new QIDialogButtonBox;
+    if (m_pButtonBox)
+    {
+        m_pButtonBox->setDoNotPickDefaultButton(true);
+        m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
+        pMainLayout->addWidget(m_pButtonBox);
+
+    }
     retranslateUi();
 }
 
@@ -182,38 +193,22 @@ void UIVisoSettingWidget::retranslateUi()
 
 void UIVisoSettingWidget::prepareConnections()
 {
-    if (m_pVisoNameLineEdit)
-        connect(m_pVisoNameLineEdit, &QILineEdit::editingFinished, this, &UIVisoSettingWidget::sltVisoNameChanged);
-    if (m_pCustomOptionsLabel)
-        connect(m_pCustomOptionsLineEdit, &QILineEdit::editingFinished, this, &UIVisoSettingWidget::sltCustomOptionsEdited);
-    if (m_pShowHiddenObjectsCheckBox)
-        connect(m_pShowHiddenObjectsCheckBox, &QCheckBox::stateChanged,
-                this, &UIVisoSettingWidget::sltShowHiddenObjectsChange);
+    if (m_pButtonBox)
+    {
+        connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIVisoSettingWidget::sltButtonBoxCancel);
+        connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIVisoSettingWidget::sltButtonBoxOk);
+    }
 }
 
-void UIVisoSettingWidget::sltCustomOptionsEdited()
+void UIVisoSettingWidget::sltButtonBoxOk()
 {
-    if (!m_pCustomOptionsLineEdit)
-        return;
-    QStringList customVisoOptions = m_pCustomOptionsLineEdit->text().split(";");
-    if (!customVisoOptions.isEmpty())
-        emit sigCustomVisoOptionsChanged(customVisoOptions);
+    emit sigClosed(true);
 }
 
-void UIVisoSettingWidget::sltVisoNameChanged()
+void UIVisoSettingWidget::sltButtonBoxCancel()
 {
-    if (m_pVisoNameLineEdit)
-        emit sigVisoNameChanged(m_pVisoNameLineEdit->text());
+    emit sigClosed(false);
 }
-
-void UIVisoSettingWidget::sltShowHiddenObjectsChange(int iState)
-{
-    if (iState == static_cast<int>(Qt::Checked))
-        sigShowHiddenObjects(true);
-    else
-        sigShowHiddenObjects(false);
-}
-
 
 /*********************************************************************************************************************************
 *   UIVisoCreatorWidget implementation.                                                                                          *
@@ -325,33 +320,20 @@ void UIVisoCreatorWidget::sltAddObjectsToViso(QStringList pathList)
 
 void UIVisoCreatorWidget::sltSettingsActionToggled(bool fChecked)
 {
-    m_fShowSettingsDialog = fChecked;
-    toggleSettingsWidget();
+    if (m_fShowSettingsDialog == fChecked)
+        return;
+    toggleSettingsWidget(fChecked);
 }
 
-void UIVisoCreatorWidget::sltVisoNameChanged(const QString &strVisoName)
+void UIVisoCreatorWidget::sltSettingsDialogClosed(bool fAccepted)
 {
-    if (m_visoOptions.m_strVisoName == strVisoName)
-        return;
-    m_visoOptions.m_strVisoName = strVisoName;
-    if(m_pVISOContentBrowser)
-        m_pVISOContentBrowser->setVisoName(m_visoOptions.m_strVisoName);
-    emit sigVisoNameChanged(strVisoName);
-}
-
-void UIVisoCreatorWidget::sltCustomVisoOptionsChanged(const QStringList &customVisoOptions)
-{
-    if (m_visoOptions.m_customOptions == customVisoOptions)
-        return;
-    m_visoOptions.m_customOptions = customVisoOptions;
-}
-
-void UIVisoCreatorWidget::sltShowHiddenObjectsChange(bool fShow)
-{
-    if (m_browserOptions.m_fShowHiddenObjects == fShow)
-        return;
-    m_browserOptions.m_fShowHiddenObjects = fShow;
-    m_pHostBrowser->showHideHiddenObjects(fShow);
+    toggleSettingsWidget(false);
+    if (m_pActionSettings)
+        m_pActionSettings->setChecked(false);
+    /* Update settings:*/
+    if (fAccepted)
+    {
+    }
 }
 
 void UIVisoCreatorWidget::sltBrowserTreeViewVisibilityChanged(bool fVisible)
@@ -504,12 +486,8 @@ void UIVisoCreatorWidget::prepareConnections()
 
     if (m_pSettingsWidget)
     {
-        connect(m_pSettingsWidget, &UIVisoSettingWidget::sigVisoNameChanged,
-                this, &UIVisoCreatorWidget::sltVisoNameChanged);
-        connect(m_pSettingsWidget, &UIVisoSettingWidget::sigCustomVisoOptionsChanged,
-                this, &UIVisoCreatorWidget::sltCustomVisoOptionsChanged);
-        connect(m_pSettingsWidget, &UIVisoSettingWidget::sigShowHiddenObjects,
-                this, &UIVisoCreatorWidget::sltShowHiddenObjectsChange);
+        connect(m_pSettingsWidget, &UIVisoSettingWidget::sigClosed,
+                this, &UIVisoCreatorWidget::sltSettingsDialogClosed);
     }
 
     if (m_pAddAction)
@@ -605,8 +583,11 @@ void UIVisoCreatorWidget::populateMenuMainToolbar()
     }
 }
 
-void UIVisoCreatorWidget::toggleSettingsWidget()
+void UIVisoCreatorWidget::toggleSettingsWidget(bool fShown)
 {
+    m_fShowSettingsDialog = fShown;
+    emit sigSettingDialogToggle(fShown);
+
     if (m_pSettingsWidget && m_pSettingsWidget->isVisible() != m_fShowSettingsDialog /*&& m_pOverlayWidget*/ && m_pOverlayBlurEffect)
     {
         QPixmap shot = m_pBrowserContainerWidget->grab();
@@ -627,6 +608,8 @@ void UIVisoCreatorWidget::toggleSettingsWidget()
             int y = 0.5 * (m_pBrowserContainerWidget->height() - m_pSettingsWidget->height());
             m_pSettingsWidget->move(m_pBrowserContainerWidget->x() + x, m_pBrowserContainerWidget->y() + y);
         }
+        if (m_pMainMenu)
+            m_pMainMenu->setEnabled(!m_fShowSettingsDialog);
     }
 }
 
@@ -766,6 +749,8 @@ void UIVisoCreatorDialog::prepareWidgets(const QString &strMachineName)
                 this, &UIVisoCreatorDialog::sltSetCancelButtonShortCut);
         connect(m_pVisoCreatorWidget, &UIVisoCreatorWidget::sigVisoNameChanged,
                 this, &UIVisoCreatorDialog::sltVisoNameChanged);
+        connect(m_pVisoCreatorWidget, &UIVisoCreatorWidget::sigSettingDialogToggle,
+                this, &UIVisoCreatorDialog::sltSettingDialogToggle);
     }
 
     m_pButtonBox = new QIDialogButtonBox;
@@ -849,6 +834,12 @@ void UIVisoCreatorDialog::sltVisoNameChanged(const QString &strName)
     Q_UNUSED(strName);
     updateWindowTitle();
     updateStatusLabel();
+}
+
+void UIVisoCreatorDialog::sltSettingDialogToggle(bool fIsShown)
+{
+    if (m_pButtonBox)
+        m_pButtonBox->setEnabled(!fIsShown);
 }
 
 void UIVisoCreatorDialog::loadSettings()

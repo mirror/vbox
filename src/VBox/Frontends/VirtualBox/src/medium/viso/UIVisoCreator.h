@@ -69,6 +69,7 @@ signals:
     void sigSetCancelButtonShortCut(QKeySequence keySequence);
     void sigVisoNameChanged(const QString &strVisoName);
     void sigVisoFilePathChanged(const QString &strPath);
+    void sigSettingDialogToggle(bool fDialogShown);
 
 public:
 
@@ -98,9 +99,7 @@ private slots:
 
     void sltAddObjectsToViso(QStringList pathList);
     void sltSettingsActionToggled(bool fChecked);
-    void sltVisoNameChanged(const QString& strVisoName);
-    void sltCustomVisoOptionsChanged(const QStringList &customVisoOptions);
-    void sltShowHiddenObjectsChange(bool fShow);
+    void sltSettingsDialogClosed(bool fAccepted);
     void sltBrowserTreeViewVisibilityChanged(bool fVisible);
     void sltHostBrowserTableSelectionChanged(bool fIsSelectionEmpty);
     void sltContentBrowserTableSelectionChanged(bool fIsSelectionEmpty);
@@ -134,7 +133,7 @@ private:
      * Leave out the vertical toolbar which is handled in prepareVerticalToolBar. */
     void populateMenuMainToolbar();
 
-     void toggleSettingsWidget();
+     void toggleSettingsWidget(bool fShown);
     /** @name Main toolbar (and main menu) actions
       * @{ */
         QAction         *m_pActionSettings;
@@ -154,11 +153,11 @@ private:
     UIVisoHostBrowser    *m_pHostBrowser;
     UIVisoContentBrowser *m_pVISOContentBrowser;
 
-    QIToolBar            *m_pToolBar;
-    QIToolBar            *m_pVerticalToolBar;
-    VisoOptions           m_visoOptions;
-    BrowserOptions        m_browserOptions;
-    QMenu                *m_pMainMenu;
+    QIToolBar             *m_pToolBar;
+    QIToolBar             *m_pVerticalToolBar;
+    VisoOptions            m_visoOptions;
+    BrowserOptions         m_browserOptions;
+    QMenu                 *m_pMainMenu;
     QPointer<UIActionPool> m_pActionPool;
     bool                   m_fShowToolBar;
     bool                   m_fShowSettingsDialog;
@@ -202,6 +201,7 @@ private slots:
 
     void sltSetCancelButtonShortCut(QKeySequence keySequence);
     void sltVisoNameChanged(const QString &strName);
+    void sltSettingDialogToggle(bool fIsShown);
 
 private:
     void prepareWidgets(const QString &strMachineName);
