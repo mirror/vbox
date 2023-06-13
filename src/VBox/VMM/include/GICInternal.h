@@ -63,7 +63,7 @@ typedef struct GICDEV
     /** The redistributor MMIO handle. */
     IOMMMIOHANDLE               hMmioReDist;
 
-    /** @name SPI disitributor register state.
+    /** @name SPI distributor register state.
      * @{ */
     /** Interrupt Group 0 Register. */
     volatile uint32_t           u32RegIGrp0;
@@ -149,6 +149,10 @@ typedef struct GICCPU
     uint8_t                     bBinaryPointGrp0;
     /** The interrupt controller Binary Point Register for Group 1 interrupts. */
     uint8_t                     bBinaryPointGrp1;
+    /** The running poriorities caused by preemption. */
+    volatile uint8_t            abRunningPriorities[256];
+    /** The index to the current running priority. */
+    volatile uint8_t            idxRunningPriority;
     /** @} */
 
     /** @name Log Max counters
