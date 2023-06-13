@@ -1009,7 +1009,7 @@ RTR3DECL(int)  RTTcpSetKeepAlive(RTSOCKET hSocket, bool fEnable, uint32_t cSecsI
     if (RT_FAILURE(rc))
         return rc;
 
-# if defined(TCP_KEEPIDLE) || defined(TCP_KEEPALIVE)
+# if (defined(TCP_KEEPIDLE) || defined(TCP_KEEPALIVE)) && defined(TCP_KEEPINTVL) && defined(TCP_KEEPCNT)
     rc = VINF_SUCCESS;
 
     /* time in seconds that the connection must be idle before sending keep-alive probes */
