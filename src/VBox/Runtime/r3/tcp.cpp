@@ -1000,6 +1000,56 @@ RTR3DECL(int)  RTTcpSetBufferSize(RTSOCKET hSocket, uint32_t cbSize)
 }
 
 
+RTR3DECL(int)  RTTcpSetKeepAlive(RTSOCKET hSocket, bool fEnable, uint32_t cSecsIdle,
+                                 uint32_t cSecsInterval, uint32_t cFailedPktsBeforeClose)
+{
+#if !defined(RT_OS_WINDOWS)
+    int fFlag = fEnable ? 1 : 0;
+    int rc = rtSocketSetOpt(hSocket, SOL_SOCKET, SO_KEEPALIVE, &fFlag, sizeof(fFlag));
+    if (RT_FAILURE(rc))
+        return rc;
+
+# if defined(TCP_KEEPIDLE) || defined(TCP_KEEPALIVE)
+    rc = VINF_SUCCESS;
+
+    /* time in seconds that the connection must be idle before sending keep-alive probes */
+    if (cSecsIdle)
+    {
+#  if defined(TCP_KEEPALIVE) && !defined(TCP_KEEPIDLE)  /* macOS */
+#   define TCP_KEEPIDLE    TCP_KEEPALIVE
+#  endif
+        rc = rtSocketSetOpt(hSocket, IPPROTO_TCP, TCP_KEEPIDLE, &cSecsIdle, sizeof(cSecsIdle));
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    /* time in seconds between each keep-alive probe */
+    if (cSecsInterval)
+    {
+        rc = rtSocketSetOpt(hSocket, IPPROTO_TCP, TCP_KEEPINTVL, &cSecsInterval, sizeof(cSecsInterval));
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    /* count of keep-alive probes to send which don't receive a response before closing connection */
+    if (cFailedPktsBeforeClose)
+    {
+        rc = rtSocketSetOpt(hSocket, IPPROTO_TCP, TCP_KEEPCNT, &cFailedPktsBeforeClose, sizeof(cFailedPktsBeforeClose));
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return rc;
+# else
+    return VERR_NOT_SUPPORTED;
+# endif
+#else
+    NOREF(cFailedPktsBeforeClose);
+    return rtSocketSetKeepAlive(hSocket, fEnable, cSecsIdle, cSecsInterval);
+#endif
+}
+
+
 RTR3DECL(int)  RTTcpSelectOne(RTSOCKET Sock, RTMSINTERVAL cMillies)
 {
     return RTSocketSelectOne(Sock, cMillies);

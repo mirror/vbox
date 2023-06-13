@@ -135,6 +135,8 @@ DECL_HIDDEN_DATA(PFNWSAENUMNETWORKEVENTS)       g_pfnWSAEnumNetworkEvents = NULL
 DECL_HIDDEN_DATA(PFNWSASOCKETW)                 g_pfnWSASocketW = NULL;
 /** WSASend */
 DECL_HIDDEN_DATA(PFNWSASEND)                    g_pfnWSASend = NULL;
+/** WSAIoctl */
+DECL_HIDDEN_DATA(PFNWSAIOCTL)                   g_pfnWSAIoctl = NULL;
 /** socket */
 DECL_HIDDEN_DATA(PFNWINSOCKSOCKET)              g_pfnsocket = NULL;
 /** closesocket */
@@ -446,6 +448,7 @@ static void rtR3InitWinSockApis(void)
     g_pfnWSAEnumNetworkEvents = (decltype(g_pfnWSAEnumNetworkEvents))GetProcAddress(g_hModWinSock,"WSAEnumNetworkEvents");
     g_pfnWSASocketW           = (decltype(g_pfnWSASocketW))         GetProcAddress(g_hModWinSock, "WSASocketW");
     g_pfnWSASend              = (decltype(g_pfnWSASend))            GetProcAddress(g_hModWinSock, "WSASend");
+    g_pfnWSAIoctl             = (decltype(g_pfnWSAIoctl))           GetProcAddress(g_hModWinSock, "WSAIoctl");
     g_pfnsocket               = (decltype(g_pfnsocket))             GetProcAddress(g_hModWinSock, "socket");
     g_pfnclosesocket          = (decltype(g_pfnclosesocket))        GetProcAddress(g_hModWinSock, "closesocket");
     g_pfnrecv                 = (decltype(g_pfnrecv))               GetProcAddress(g_hModWinSock, "recv");
@@ -477,6 +480,7 @@ static void rtR3InitWinSockApis(void)
     Assert(g_pfnWSAEnumNetworkEvents || g_fOldWinSock);
     Assert(g_pfnWSASocketW           || g_fOldWinSock);
     Assert(g_pfnWSASend              || g_fOldWinSock);
+    Assert(g_pfnWSAIoctl             || g_fOldWinSock);
     Assert(g_pfnsocket);
     Assert(g_pfnclosesocket);
     Assert(g_pfnrecv);

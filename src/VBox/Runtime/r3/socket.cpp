@@ -41,6 +41,7 @@
 #ifdef RT_OS_WINDOWS
 # include <iprt/win/winsock2.h>
 # include <iprt/win/ws2tcpip.h>
+# include <mstcpip.h>  /* for struct tcp_keepalive */
 #else /* !RT_OS_WINDOWS */
 # include <errno.h>
 # include <sys/select.h>
@@ -2880,6 +2881,34 @@ static int rtSocketPollUpdateEvents(RTSOCKETINT *pThis, uint32_t fEvents)
      */
     ASMAtomicWriteU32(&pThis->fSubscribedEvts, fEvents);
     return VINF_SUCCESS;
+}
+
+
+DECLHIDDEN(int) rtSocketSetKeepAlive(RTSOCKET hSocket, bool fEnable, uint32_t cSecsIdle, uint32_t cSecsInterval)
+{
+    RTSOCKETINT *pThis = hSocket;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, UINT32_MAX);
+
+    if (!g_pfnWSAIoctl)
+        return VERR_NET_NOT_UNSUPPORTED;
+
+    struct tcp_keepalive keepAliveOptions;
+    DWORD dwBytesReturned;
+
+    keepAliveOptions.onoff = fEnable ? 1 : 0;
+    keepAliveOptions.keepalivetime = cSecsIdle * 1000;
+    keepAliveOptions.keepaliveinterval = cSecsInterval * 1000;
+
+    if (g_pfnWSAIoctl(pThis->hNative,
+                      SIO_KEEPALIVE_VALS,
+                      &keepAliveOptions, sizeof(keepAliveOptions),
+                      NULL, 0, &dwBytesReturned, NULL, NULL) == 0)
+        return VINF_SUCCESS;
+
+    int rc = rtSocketError();
+    AssertMsgFailed(("WSAIoctl(.., SIO_KEEPALIVE_VALS, ...) failed: rc=%Rrc\n", rc));
+    return rc;
 }
 
 #endif  /* RT_OS_WINDOWS */

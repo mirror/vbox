@@ -309,6 +309,38 @@ RTR3DECL(int)  RTTcpSetSendCoalescing(RTSOCKET hSocket, bool fEnable);
 RTR3DECL(int)  RTTcpSetBufferSize(RTSOCKET hSocket, uint32_t cbSize);
 
 /**
+ * Enables or disables sending of periodic keep-alive messages on a socket.
+ * Also set values relating to TCP keep-alive messages on a socket.  The TCP
+ * keep-alive mechanism is described in RFC 1122 which states:
+ * "Keep-alive packets MUST only be sent when no data or acknowledgement
+ * packets have been received for the connection within an interval. This
+ * interval MUST be configurable and MUST default to no less than two hours."
+ * The following per-socket options allow fine-tuning the keep-alive interval,
+ * frequency, and timeout when SO_KEEPALIVE has been set for the socket.
+ *
+ * @returns iprt status code.
+ * @retval  VERR_NOT_SUPPORTED is returned if these keep-alive options aren't
+ *          supported by the OS.
+ *
+ * @param   hSocket                 Socket descriptor.
+ * @param   fEnable                 When set to true enables keep-alive messages.
+ * @param   cSecsIdle               The amount of time, in seconds, that the connection must be idle before
+ *                                  keep-alive probes are sent for this socket. (TCP_KEEPIDLE (TCP_KEEPALIVE on macOS))
+ *                                  If zero then the system default is used (the default value varies by OS
+ *                                  but is typically 2 hours (7200 seconds)).
+ * @param   cSecsInterval           The amount of time, in seconds, between each keep-alive probe sent to a
+ *                                  peer. (TCP_KEEPINTVL)
+ *                                  If zero then the system default is used (the default value varies by OS
+ *                                  but is typically 75 seconds).
+ * @param   cFailedPktsBeforeClose  The number of keep-alive probes to send which receive no response before
+ *                                  closing the connection. (TCP_KEEPCNT)
+ *                                  If zero then the system default is used (the default value varies by OS
+ *                                  but is typically 8 packets).
+ */
+RTR3DECL(int)  RTTcpSetKeepAlive(RTSOCKET hSocket, bool fEnable, uint32_t cSecsIdle, uint32_t cSecsInterval,
+                                 uint32_t cFailedPktsBeforeClose);
+
+/**
  * Socket I/O multiplexing.
  * Checks if the socket is ready for reading.
  *
