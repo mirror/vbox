@@ -299,7 +299,7 @@ class SubTstDrvCloneMedium1(base.SubTestDriverBase):
         return reporter.testDone()[1] == 0
 
     def testAll(self):
-        if self.oTstDrv.uRevision > 157768:
+        if self.oTstDrv.fpApiVer >= 7.0 and self.oTstDrv.uRevision > 157768:
             return self.testCloneOnly() & self.testResizeAndClone() & self.testCloneToBase()
         return self.testCloneOnly() & self.testResizeAndClone()
 
