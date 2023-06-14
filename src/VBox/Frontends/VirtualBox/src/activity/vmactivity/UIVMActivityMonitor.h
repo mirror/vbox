@@ -168,7 +168,7 @@ private:
     void prepareWidgets();
     void prepareMetrics();
     void prepareActions();
-    bool guestAdditionsAvailable(int iMinimumMajorVersion);
+    bool guestAdditionsAvailable(const char *pszMinimumVersion);
     void enableDisableGuestAdditionDependedWidgets(bool fEnable);
 
     /** @name The following functions update corresponding metric charts and labels with new values

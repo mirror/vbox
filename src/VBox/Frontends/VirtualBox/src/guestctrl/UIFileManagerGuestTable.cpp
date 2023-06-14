@@ -423,6 +423,7 @@ UIFileManagerGuestTable::UIFileManagerGuestTable(UIActionPool *pActionPool, cons
     , m_comMachine(comMachine)
     , m_pGuestSessionWidget(0)
     , m_fIsCurrent(false)
+    , pszMinimumGuestAdditionVersion("6.1")
 {
     if (!m_comMachine.isNull())
         m_strTableName = m_comMachine.GetName();
@@ -483,7 +484,11 @@ void UIFileManagerGuestTable::retranslateUi()
                 icon = UIIconPool::iconSet(":/session_info_16px.png");
                 break;
             case State_NoGuestAdditions:
-                strWarningText = UIFileManager::tr("File manager cannot work since the selected guest does not have the guest additions.");
+                strWarningText = UIFileManager::tr("File manager cannot work since no guest additions were detected.");
+                icon = UIIconPool::iconSet(":/status_error_16px.png");
+                break;
+            case State_GuestAdditionsTooOld:
+                strWarningText = UIFileManager::tr("File manager cannot work. The guest additions need to be updated.");
                 icon = UIIconPool::iconSet(":/status_error_16px.png");
                 break;
             case State_SessionPossible:
@@ -1292,11 +1297,24 @@ bool UIFileManagerGuestTable::openMachineSession()
     return true;
 }
 
-bool UIFileManagerGuestTable::isGuestAdditionsAvailable()
+int UIFileManagerGuestTable::isGuestAdditionsAvailable(const char* pszMinimumVersion)
 {
-    if (m_comGuest.isNull())
-        return false;
-    return m_comGuest.GetAdditionsStatus(m_comGuest.GetAdditionsRunLevel());
+    if (m_comGuest.isNull() || !pszMinimumVersion)
+        return 0;
+    bool fGuestAdditionsStatus = m_comGuest.GetAdditionsStatus(m_comGuest.GetAdditionsRunLevel());
+    if (fGuestAdditionsStatus && m_comGuest.isOk())
+    {
+        QString strGAVersion = m_comGuest.GetAdditionsVersion();
+        if (m_comGuest.isOk())
+        {
+            int iCode = RTStrVersionCompare(strGAVersion.toUtf8().constData(), pszMinimumVersion);
+            if (iCode >= 0)
+                return 1;
+            else
+                return -1;
+        }
+    }
+    return 0;
 }
 
 void UIFileManagerGuestTable::cleanupGuestListener()
@@ -1395,38 +1413,43 @@ void UIFileManagerGuestTable::sltGuestSessionStateChanged(const CGuestSessionSta
 
     setStateAndEnableWidgets();
 
-    if (m_comGuestSession.isOk())
-    {
-        emit sigLogOutput(QString("%1: %2").arg("Guest session status has changed").arg(gpConverter->toString(m_comGuestSession.GetStatus())),
-                  m_strTableName, FileManagerLogType_Info);
-
-        switch (m_comGuestSession.GetStatus())
-        {
-            case KGuestSessionStatus_Started:
-            {
-                initFileTable();
-                break;
-            }
-            case KGuestSessionStatus_Terminating:
-            case KGuestSessionStatus_Terminated:
-            case KGuestSessionStatus_TimedOutKilled:
-            case KGuestSessionStatus_TimedOutAbnormally:
-            case KGuestSessionStatus_Down:
-            case KGuestSessionStatus_Error:
-            {
-                cleanupGuestSessionListener();
-                closeGuestSession();
-                break;
-            }
-            case KGuestSessionStatus_Undefined:
-            case KGuestSessionStatus_Starting:
-            case KGuestSessionStatus_Max:
-            default:
-                break;
-        }
-    }
+    if (m_comGuestSession.isNull())
+        emit sigLogOutput("Guest session is invalid!", m_strTableName, FileManagerLogType_Error);
     else
-        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
+    {
+        if (m_comGuestSession.isOk())
+        {
+            emit sigLogOutput(QString("%1: %2").arg("Guest session status has changed").arg(gpConverter->toString(m_comGuestSession.GetStatus())),
+                              m_strTableName, FileManagerLogType_Info);
+
+            switch (m_comGuestSession.GetStatus())
+            {
+                case KGuestSessionStatus_Started:
+                    {
+                        initFileTable();
+                        break;
+                    }
+                case KGuestSessionStatus_Terminating:
+                case KGuestSessionStatus_Terminated:
+                case KGuestSessionStatus_TimedOutKilled:
+                case KGuestSessionStatus_TimedOutAbnormally:
+                case KGuestSessionStatus_Down:
+                case KGuestSessionStatus_Error:
+                    {
+                        cleanupGuestSessionListener();
+                        closeGuestSession();
+                        break;
+                    }
+                case KGuestSessionStatus_Undefined:
+                case KGuestSessionStatus_Starting:
+                case KGuestSessionStatus_Max:
+                default:
+                    break;
+            }
+        }
+        else
+            emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
+    }
 }
 
 void UIFileManagerGuestTable::sltOpenGuestSession(QString strUserName, QString strPassword)
@@ -1458,11 +1481,19 @@ void UIFileManagerGuestTable::setState()
         m_enmState = State_MachineNotRunning;
         return;
     }
-    if (!isGuestAdditionsAvailable())
+
+    int iGADetectCode = isGuestAdditionsAvailable(pszMinimumGuestAdditionVersion);
+    if (iGADetectCode == 0)
     {
         m_enmState = State_NoGuestAdditions;
         return;
     }
+    else if (iGADetectCode == -1)
+    {
+        m_enmState = State_GuestAdditionsTooOld;
+        return;
+    }
+
     if (!m_comGuestSession.isNull() && m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
     {
         m_enmState = State_SessionRunning;
@@ -1537,9 +1568,19 @@ bool UIFileManagerGuestTable::openGuestSession(const QString &strUserName, const
         return false;
     }
 
-    if (!isGuestAdditionsAvailable())
+    int iGADetectCode = isGuestAdditionsAvailable(pszMinimumGuestAdditionVersion);
+    if (iGADetectCode == 0)
     {
-        emit sigLogOutput("Could not find Guest Additions", m_strTableName, FileManagerLogType_Error);
+        emit sigLogOutput("Could not find Guest Additions",
+                          m_strTableName, FileManagerLogType_Error);
+        if (m_pGuestSessionWidget)
+            m_pGuestSessionWidget->markForError(true);
+        return false;
+    }
+    else if (iGADetectCode == -1)
+    {
+        emit sigLogOutput(QString("%1 %2").arg("The Guest Additions are older than ").arg(pszMinimumGuestAdditionVersion),
+                          m_strTableName, FileManagerLogType_Error);
         if (m_pGuestSessionWidget)
             m_pGuestSessionWidget->markForError(true);
         return false;

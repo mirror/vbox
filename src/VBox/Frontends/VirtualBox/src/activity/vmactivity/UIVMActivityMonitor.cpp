@@ -50,6 +50,7 @@
 #include "CGuest.h"
 #include "CPerformanceCollector.h"
 #include "CPerformanceMetric.h"
+#include <iprt/string.h>
 
 /* External includes: */
 #include <math.h>
@@ -1236,7 +1237,7 @@ void UIVMActivityMonitor::sltCreateContextMenu(const QPoint &point)
 
 void UIVMActivityMonitor::sltGuestAdditionsStateChange()
 {
-    bool fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
+    bool fGuestAdditionsAvailable = guestAdditionsAvailable("6.1");
     if (m_fGuestAdditionsAvailable == fGuestAdditionsAvailable)
         return;
     m_fGuestAdditionsAvailable = fGuestAdditionsAvailable;
@@ -1310,25 +1311,16 @@ void UIVMActivityMonitor::prepareActions()
 {
 }
 
-bool UIVMActivityMonitor::guestAdditionsAvailable(int iMinimumMajorVersion)
+bool UIVMActivityMonitor::guestAdditionsAvailable(const char *pszMinimumVersion)
 {
-    if (m_comGuest.isNull())
+    if (m_comGuest.isNull() || !pszMinimumVersion)
         return false;
     bool fGuestAdditionsStatus = m_comGuest.GetAdditionsStatus(m_comGuest.GetAdditionsRunLevel());
-    if (fGuestAdditionsStatus)
+    if (fGuestAdditionsStatus && m_comGuest.isOk())
     {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-        QStringList versionStrings = m_comGuest.GetAdditionsVersion().split('.', Qt::SkipEmptyParts);
-#else
-        QStringList versionStrings = m_comGuest.GetAdditionsVersion().split('.', QString::SkipEmptyParts);
-#endif
-        if (!versionStrings.isEmpty())
-        {
-            bool fConvert = false;
-            int iMajorVersion = versionStrings[0].toInt(&fConvert);
-            if (fConvert && iMajorVersion >= iMinimumMajorVersion)
-                return true;
-        }
+        QString strGAVersion = m_comGuest.GetAdditionsVersion();
+        if (m_comGuest.isOk())
+            return (RTStrVersionCompare(strGAVersion.toUtf8().constData(), pszMinimumVersion) >= 0);
     }
     return false;
 }
@@ -1590,7 +1582,7 @@ void UIVMActivityMonitor::start()
     if (m_comMachine.isNull() || m_comMachine.GetState() != KMachineState_Running)
         return;
 
-    m_fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
+    m_fGuestAdditionsAvailable = guestAdditionsAvailable("6.1");
     enableDisableGuestAdditionDependedWidgets(m_fGuestAdditionsAvailable);
     if (m_pTimer)
         m_pTimer->start(1000 * g_iPeriod);

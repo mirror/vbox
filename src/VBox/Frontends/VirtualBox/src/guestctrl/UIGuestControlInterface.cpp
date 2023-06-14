@@ -584,7 +584,7 @@ void UIGuestControlInterface::prepareSubCommandHandlers()
 
 void UIGuestControlInterface::putCommand(const QString &strCommand)
 {
-    if (!isGuestAdditionsAvailable(m_comGuest))
+    if (!isGuestAdditionsAvailable(m_comGuest, "6.1"))
     {
         emit sigOutputString("No guest addtions detected. Guest control requires guest additions");
         return;
@@ -698,12 +698,20 @@ bool UIGuestControlInterface::createSession(const CommandData &commandData, CGue
 }
 
 /* static */
-bool UIGuestControlInterface::isGuestAdditionsAvailable(const CGuest &guest)
+bool UIGuestControlInterface::isGuestAdditionsAvailable(const CGuest &guest, const char *pszMinimumVersion)
 {
-    if (!guest.isOk())
-        return false;
     CGuest guestNonConst = const_cast<CGuest&>(guest);
-    return guestNonConst.GetAdditionsStatus(guestNonConst.GetAdditionsRunLevel());
+
+    if (guestNonConst.isNull() || !pszMinimumVersion)
+        return false;
+    bool fGuestAdditionsStatus = guestNonConst.GetAdditionsStatus(guestNonConst.GetAdditionsRunLevel());
+    if (fGuestAdditionsStatus && guestNonConst.isOk())
+    {
+        QString strGAVersion = guestNonConst.GetAdditionsVersion();
+        if (guestNonConst.isOk())
+            return (RTStrVersionCompare(strGAVersion.toUtf8().constData(), pszMinimumVersion) >= 0);
+    }
+    return false;
 }
 
 template<typename T>
