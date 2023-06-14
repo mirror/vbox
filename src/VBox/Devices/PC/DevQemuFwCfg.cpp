@@ -710,10 +710,10 @@ static DECLCALLBACK(int) qemuFwCfgR3ReadFileDir(PDEVQEMUFWCFG pThis, PCQEMUFWCFG
         off -= sizeof(uint32_t);
 
         /* The entries are static, so we can deduce the entry number from the offset. */
-        uint32_t idxEntry = off / sizeof(*pThis->paCfgFiles);
+        uint32_t idxEntry = off / sizeof(pThis->u.CfgFile);
         AssertReturn(idxEntry < pThis->cCfgFiles, VERR_INTERNAL_ERROR);
 
-        off %= sizeof(*pThis->paCfgFiles);
+        off %= sizeof(pThis->u.CfgFile);
         cbToRead = RT_MIN(cbToRead, sizeof(pThis->u.CfgFile));
 
         /* Setup the config file item. */
