@@ -6588,7 +6588,14 @@ int vmsvgaR3Reset(PPDMDEVINS pDevIns)
 
     /* Reset the FIFO processing as well as the 3d state (if we have one). */
     pThisCC->svga.pau32FIFO[SVGA_FIFO_NEXT_CMD] = pThisCC->svga.pau32FIFO[SVGA_FIFO_STOP] = 0; /** @todo should probably let the FIFO thread do this ... */
-    int rc = vmsvgaR3RunExtCmdOnFifoThread(pDevIns, pThis, pThisCC, VMSVGA_FIFO_EXTCMD_RESET, NULL /*pvParam*/, 10000 /*ms*/);
+
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect); /* Hack around lock order issue. FIFO thread might take the lock. */
+
+    int rc = vmsvgaR3RunExtCmdOnFifoThread(pDevIns, pThis, pThisCC, VMSVGA_FIFO_EXTCMD_RESET, NULL /*pvParam*/, 60000 /*ms*/);
+    AssertLogRelRC(rc);
+
+    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
 
     /* Reset other stuff. */
     pThis->svga.cScratchRegion = VMSVGA_SCRATCH_SIZE;
