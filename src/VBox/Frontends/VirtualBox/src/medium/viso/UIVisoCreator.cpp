@@ -92,6 +92,7 @@ private:
     void prepareObjects();
     void prepareConnections();
 
+    QTabWidget   *m_pTabWidget;
     QILabel      *m_pVisoNameLabel;
     QILabel      *m_pCustomOptionsLabel;
     QILineEdit   *m_pVisoNameLineEdit;
@@ -108,6 +109,7 @@ private:
 
 UIVisoSettingWidget::UIVisoSettingWidget(QWidget *pParent)
     :QIWithRetranslateUI<QGroupBox>(pParent)
+    , m_pTabWidget(0)
     , m_pVisoNameLabel(0)
     , m_pCustomOptionsLabel(0)
     , m_pVisoNameLineEdit(0)
@@ -123,12 +125,19 @@ UIVisoSettingWidget::UIVisoSettingWidget(QWidget *pParent)
 void UIVisoSettingWidget::prepareObjects()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    QGridLayout *pGridLayout = new QGridLayout;
+    AssertReturnVoid(pMainLayout);
+    m_pTabWidget = new QTabWidget;
+    AssertReturnVoid(m_pTabWidget);
+    pMainLayout->addWidget(m_pTabWidget);
 
-    //pGridLayout->setSpacing(0);
-    //pGridLayout->setContentsMargins(0, 0, 0, 0);
-    if (!pGridLayout)
-        return;
+    QWidget *pVisoOptionsContainerWidget = new QWidget;
+    AssertReturnVoid(pVisoOptionsContainerWidget);
+    QGridLayout *pVisoOptionsGridLayout = new QGridLayout(pVisoOptionsContainerWidget);
+    AssertReturnVoid(pVisoOptionsGridLayout);
+    //pVisoOptionsGridLayout->setSpacing(0);
+    //pVisoOptionsGridLayout->setContentsMargins(0, 0, 0, 0);
+
+    m_pTabWidget->addTab(pVisoOptionsContainerWidget, QApplication::translate("UIVisoCreatorWidget", "VISO options"));
 
     /* Name edit and and label: */
     m_pVisoNameLabel = new QILabel(QApplication::translate("UIVisoCreatorWidget", "VISO Name:"));
@@ -137,41 +146,47 @@ void UIVisoSettingWidget::prepareObjects()
     if (m_pVisoNameLabel && m_pVisoNameLineEdit)
     {
         m_pVisoNameLabel->setBuddy(m_pVisoNameLineEdit);
-        pGridLayout->addWidget(m_pVisoNameLabel,    iRow, 0, 1, 1, Qt::AlignTop);
-        pGridLayout->addWidget(m_pVisoNameLineEdit, iRow, 1, 1, 1, Qt::AlignTop);
+        pVisoOptionsGridLayout->addWidget(m_pVisoNameLabel,    iRow, 0, 1, 1, Qt::AlignTop);
+        pVisoOptionsGridLayout->addWidget(m_pVisoNameLineEdit, iRow, 1, 1, 1, Qt::AlignTop);
     }
 
-    /* Cutom Viso options stuff: */
+    /* Custom Viso options stuff: */
     m_pCustomOptionsLabel = new QILabel(QApplication::translate("UIVisoCreatorWidget", "Custom VISO options:"));
     m_pCustomOptionsLineEdit = new QILineEdit;
     ++iRow;
-    if (m_pCustomOptionsLabel && m_pCustomOptionsLineEdit)
-    {
-        m_pCustomOptionsLabel->setBuddy(m_pCustomOptionsLineEdit);
-        pGridLayout->addWidget(m_pCustomOptionsLabel,    iRow, 0, 1, 1, Qt::AlignTop);
-        pGridLayout->addWidget(m_pCustomOptionsLineEdit, iRow, 1, 1, 1, Qt::AlignTop);
-    }
+    AssertReturnVoid(m_pCustomOptionsLabel);
+    AssertReturnVoid(m_pCustomOptionsLineEdit);
+    m_pCustomOptionsLabel->setBuddy(m_pCustomOptionsLineEdit);
+    pVisoOptionsGridLayout->addWidget(m_pCustomOptionsLabel,    iRow, 0, 1, 1, Qt::AlignTop);
+    pVisoOptionsGridLayout->addWidget(m_pCustomOptionsLineEdit, iRow, 1, 1, 1, Qt::AlignTop);
+
 
     ++iRow;
+    pVisoOptionsGridLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding), iRow, 0, 1, 2);
+
+    QWidget *pDialogSettingsContainerWidget = new QWidget;
+    AssertReturnVoid(pDialogSettingsContainerWidget);
+    QGridLayout *pDialogSettingsContainerLayout = new QGridLayout(pDialogSettingsContainerWidget);
+    AssertReturnVoid(pDialogSettingsContainerLayout);
+
+    m_pTabWidget->addTab(pDialogSettingsContainerWidget, QApplication::translate("UIVisoCreatorWidget", "Dialog Settings"));
+
+    iRow = 0;
     m_pShowHiddenObjectsCheckBox = new QCheckBox;
     m_pShowHiddenObjectsLabel = new QILabel(QApplication::translate("UIVisoCreatorWidget", "Show Hidden Objects"));
     m_pShowHiddenObjectsLabel->setBuddy(m_pShowHiddenObjectsCheckBox);
-    pGridLayout->addWidget(m_pShowHiddenObjectsLabel,    iRow, 0, 1, 1, Qt::AlignTop);
-    pGridLayout->addWidget(m_pShowHiddenObjectsCheckBox, iRow, 1, 1, 1, Qt::AlignTop);
-    ++iRow;
-    QSpacerItem *pSpacer = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    pGridLayout->addItem(pSpacer, iRow, 0, 1, 2);
+    pDialogSettingsContainerLayout->addWidget(m_pShowHiddenObjectsLabel,    iRow, 0, 1, 1, Qt::AlignTop);
+    pDialogSettingsContainerLayout ->addWidget(m_pShowHiddenObjectsCheckBox, iRow, 1, 1, 1, Qt::AlignTop);
 
-    pMainLayout->addLayout(pGridLayout);
+    ++iRow;
+    pDialogSettingsContainerLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding), iRow, 0, 1, 2);
 
     m_pButtonBox = new QIDialogButtonBox;
-    if (m_pButtonBox)
-    {
-        m_pButtonBox->setDoNotPickDefaultButton(true);
-        m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
-        pMainLayout->addWidget(m_pButtonBox);
+    AssertReturnVoid(m_pButtonBox);
+    m_pButtonBox->setDoNotPickDefaultButton(true);
+    m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
+    pMainLayout->addWidget(m_pButtonBox);
 
-    }
     retranslateUi();
 }
 
@@ -415,7 +430,7 @@ void UIVisoCreatorWidget::sltShowContextMenu(const QWidget *pContextMenuRequeste
 void UIVisoCreatorWidget::sltOpenAction()
 {
     QString strFileName =  QIFileDialog::getOpenFileName(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD),
-                                                         "Viso files (*.viso)", this, UIVisoCreatorWidget::tr("Select a viso file to load"));
+                                                         "VISO files (*.viso)", this, UIVisoCreatorWidget::tr("Select a VISO file to load"));
     if (!strFileName.isEmpty() && m_pVISOContentBrowser)
         m_pVISOContentBrowser->parseVisoFileContent(strFileName);
 }
@@ -913,7 +928,7 @@ void UIVisoCreatorDialog::updateWindowTitle()
 void UIVisoCreatorDialog::updateStatusLabel()
 {
     if (m_pStatusLabel)
-        m_pStatusLabel->setText(QString("%1: %2").arg(UIVisoCreatorWidget::tr("Viso file")).arg(visoFileFullPath()));
+        m_pStatusLabel->setText(QString("%1: %2").arg(UIVisoCreatorWidget::tr("VISO file")).arg(visoFileFullPath()));
 }
 
 QString UIVisoCreatorDialog::visoFileFullPath() const
