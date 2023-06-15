@@ -2498,6 +2498,10 @@
 /** Internal status code for indicating that a selector isn't valid (LAR, LSL,
  *  VERR, VERW).  This is not used outside the instruction implementations. */
 #define VINF_IEM_SELECTOR_NOT_OK                    (5305)
+/** Recompiler: Translation block allocation failed. */
+#define VERR_IEM_TB_ALLOC_FAILED                    (-5309)
+/** Recompiled execution: Stop execution TB - Mode (fExec) changed. */
+#define VINF_IEM_REEXEC_MODE_CHANGED                (5310)
 /** Restart the current instruction. For testing only. */
 #define VERR_IEM_RESTART_INSTRUCTION                (-5389)
 /** This particular aspect of the instruction is not yet implemented by IEM. */

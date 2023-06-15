@@ -660,6 +660,8 @@ typedef struct IEMTB *PIEMTB;
 
 /** State mask.  */
 #define IEMTB_F_STATE_MASK              UINT32_C(0x0c000000)
+/** State shift count.  */
+#define IEMTB_F_STATE_SHIFT             26
 /** State: Compiling. */
 #define IEMTB_F_STATE_COMPILING         UINT32_C(0x04000000)
 /** State: Ready.  */
@@ -667,9 +669,18 @@ typedef struct IEMTB *PIEMTB;
 /** State: Obsolete, can be deleted when we're sure it's not used any longer. */
 #define IEMTB_F_STATE_OBSOLETE          UINT32_C(0x0c000000)
 
+/** Checks that EIP/IP is wihin CS.LIM and that RIP is canonical before each
+ *  instruction.  Used when we're close the limit before starting a TB, as
+ *  determined by iemGetTbFlagsForCurrentPc(). */
+#define IEMTB_F_RIP_CHECKS              UINT32_C(0x0c000000)
+
 /** Mask of the IEMTB_F_XXX flags that are part of the TB lookup key.
- * @note We don't   */
-#define IEMTB_F_KEY_MASK                ((UINT32_C(0xffffffff) & ~IEM_F_X86_CTX_MASK) | IEM_F_X86_CTX_SMM)
+ * @note We skip the CPL as we don't currently generate ring-specific code,
+ *       that's all handled in CIMPL functions.
+ *
+ *       For the same reasons, we skip all of IEM_F_X86_CTX_MASK, with the
+ *       exception of SMM (which we don't implement). */
+#define IEMTB_F_KEY_MASK                ((UINT32_C(0xffffffff) & ~(IEM_F_X86_CTX_MASK | IEM_F_X86_CPL_MASK)) | IEM_F_X86_CTX_SMM)
 /** @} */
 
 AssertCompile( (IEM_F_MODE_X86_16BIT              & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_16BIT);
@@ -979,8 +990,20 @@ typedef struct IEMCPU
     /** Pointer to the current translation block.
      * This can either be one being executed or one being compiled. */
     R3PTRTYPE(PIEMTB)       pCurTbR3;
+    /** The PC (RIP) at the start of pCurTbR3/pCurTbR0.
+     * The TBs are based on physical addresses, so this is needed to correleated
+     * RIP to opcode bytes stored in the TB (AMD-V / VT-x). */
+    uint64_t                uCurTbStartPc;
+    /** Statistics: Number of TB allocation calls. */
+    uint64_t                cTbAllocs;
+    /** Statistics: Number of TB free calls. */
+    uint64_t                cTbFrees;
+    /** Whether to end the current TB. */
+    bool                    fEndTb;
     /** Spaced reserved for recompiler data / alignment. */
-    uint64_t                auRecompilerStuff[7];
+    bool                    afRecompilerStuff1[7];
+    /** Spaced reserved for recompiler data / alignment. */
+    uint64_t                auRecompilerStuff2[3];
     /** @} */
 
     /** Data TLB.

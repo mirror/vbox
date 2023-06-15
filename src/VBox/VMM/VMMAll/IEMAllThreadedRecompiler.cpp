@@ -64,6 +64,7 @@
 #include <VBox/disopcode-x86-amd64.h>
 #include <iprt/asm-math.h>
 #include <iprt/assert.h>
+#include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/x86.h>
 
@@ -138,19 +139,44 @@ typedef struct IEMTB
     /** @name What uniquely identifies the block.
      * @{ */
     RTGCPHYS            GCPhysPc;
-    uint64_t            uPc;
+    /** IEMTB_F_XXX (i.e. IEM_F_XXX ++). */
     uint32_t            fFlags;
     union
     {
         struct
         {
+            /** @todo we actually need BASE, LIM and CS?  If we don't tie a TB to a RIP
+             * range, because that's bad for PIC/PIE code on unix with address space
+             * randomization enabled, the assumption is that anything involving PC
+             * (RIP/EIP/IP, maybe + CS.BASE) will be done by reading current register
+             * values and not embedding presumed values into the code. Thus the uCsBase
+             * member here shouldn't be needed.  For the same reason, uCsLimit isn't helpful
+             * either as RIP/EIP/IP may differ between address spaces.  So, before TB
+             * execution we'd need to check CS.LIM against RIP+cbPC (ditto for 64-bit
+             * canonicallity).
+             *
+             * We could bake instruction limit / canonicallity checks into the generated
+             * code if we find ourselves close to the limit and should expect to run into
+             * it by the end of the translation block. That would just be using a very
+             * simple threshold distance and be a special IEMTB_F_XXX flag so we figure out
+             * it out when picking the TB.
+             *
+             * The CS value is likewise useless as we'll always be using the actual CS
+             * register value whenever it is relevant (mainly pushing to the stack in a
+             * call, trap, whatever).
+             *
+             * The segment attributes should be handled via the IEM_F_MODE_XXX and
+             * IEM_F_X86_CPL_MASK portions of fFlags, so we could skip those too, I think.
+             * All the places where they matter, we would be in CIMPL code which would
+             * consult the actual CS.ATTR and not depend on the recompiled code block.
+             */
             /** The CS base. */
             uint32_t uCsBase;
             /** The CS limit (UINT32_MAX for 64-bit code). */
             uint32_t uCsLimit;
             /** The CS selector value. */
             uint16_t CS;
-            /**< Relevant X86DESCATTR_XXX bits. */
+            /**< Relevant CS X86DESCATTR_XXX bits. */
             uint16_t fAttr;
         } x86;
     };
@@ -166,16 +192,20 @@ typedef struct IEMTB
         struct
         {
             /** Number of calls in paCalls. */
-            uint32_t            cCalls;
+            uint16_t            cCalls;
             /** Number of calls allocated. */
-            uint32_t            cAllocated;
+            uint16_t            cAllocated;
             /** The call sequence table. */
             PIEMTHRDEDCALLENTRY paCalls;
         } Thrd;
     };
-
-
 } IEMTB;
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
 
 
 /*********************************************************************************************************************************
@@ -272,18 +302,87 @@ DECLINLINE(VBOXSTRICTRC) iemThreadedRecompilerMcDeferToCImpl0(PVMCPUCC pVCpu, PF
  */
 #include "IEMThreadedInstructions.cpp.h"
 
+/*
+ * Translation block management.
+ */
+
+/**
+ * Allocate a translation block for threadeded recompilation.
+ *
+ * @returns Pointer to the translation block on success, NULL on failure.
+ * @param   pVM         The cross context virtual machine structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      thread.
+ * @param   GCPhysPc    The physical address corresponding to RIP + CS.BASE.
+ * @param   fExtraFlags Extra flags (IEMTB_F_XXX).
+ */
+static PIEMTB iemThreadedTbAlloc(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, uint32_t fExtraFlags)
+{
+    /*
+     * Just using the heap for now.  Will make this more efficient and
+     * complicated later, don't worry. :-)
+     */
+    PIEMTB pTb = (PIEMTB)RTMemAlloc(sizeof(IEMTB));
+    if (pTb)
+    {
+        pTb->Thrd.paCalls = (PIEMTHRDEDCALLENTRY)RTMemAlloc(sizeof(IEMTHRDEDCALLENTRY) * 128);
+        if (pTb->Thrd.paCalls)
+        {
+            pTb->Thrd.cAllocated = 128;
+            pTb->Thrd.cCalls     = 0;
+            pTb->pNext           = NULL;
+            RTListInit(&pTb->LocalList);
+            pTb->cbPC            = 0;
+            pTb->GCPhysPc        = GCPhysPc;
+            pTb->x86.uCsBase     = (uint32_t)pVCpu->cpum.GstCtx.cs.u64Base;
+            pTb->x86.uCsLimit    = (uint32_t)pVCpu->cpum.GstCtx.cs.u32Limit;
+            pTb->x86.CS          = (uint32_t)pVCpu->cpum.GstCtx.cs.Sel;
+            pTb->x86.fAttr       = (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u;
+            pTb->fFlags          = (pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | fExtraFlags;
+            pVCpu->iem.s.cTbAllocs++;
+            return pTb;
+        }
+        RTMemFree(pTb);
+    }
+    RT_NOREF(pVM);
+    return NULL;
+}
+
+
+/**
+ * Frees pTb.
+ *
+ * @param   pVM     The cross context virtual machine structure.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling
+ *                  thread.
+ * @param   pTb     The translation block to free..
+ */
+static void iemThreadedTbFree(PVMCC pVM, PVMCPUCC pVCpu, PIEMTB pTb)
+{
+    RT_NOREF(pVM);
+    AssertPtr(pTb);
+
+    AssertCompile((IEMTB_F_STATE_OBSOLETE >> IEMTB_F_STATE_SHIFT) == (IEMTB_F_STATE_MASK >> IEMTB_F_STATE_SHIFT));
+    pTb->fFlags |= IEMTB_F_STATE_OBSOLETE; /* works, both bits set */
+
+    RTMemFree(pTb->Thrd.paCalls);
+    pTb->Thrd.paCalls = NULL;
+
+    RTMemFree(pTb);
+    pVCpu->iem.s.cTbFrees++;
+}
+
+
+static PIEMTB iemThreadedTbLookup(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, uint64_t uPc, uint32_t fExtraFlags)
+{
+    RT_NOREF(pVM, pVCpu, GCPhysPc, uPc, fExtraFlags);
+    return NULL;
+}
 
 
 /*
  * Real code.
  */
-
-static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu)
-{
-    RT_NOREF(pVM, pVCpu);
-    return VERR_NOT_IMPLEMENTED;
-}
-
 
 static VBOXSTRICTRC iemThreadedCompileLongJumped(PVMCC pVM, PVMCPUCC pVCpu, VBOXSTRICTRC rcStrict)
 {
@@ -292,10 +391,237 @@ static VBOXSTRICTRC iemThreadedCompileLongJumped(PVMCC pVM, PVMCPUCC pVCpu, VBOX
 }
 
 
-static PIEMTB iemThreadedTbLookup(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPC, uint64_t uPc)
+/**
+ * Initializes the decoder state when compiling TBs.
+ *
+ * This presumes that fExec has already be initialized.
+ *
+ * This is very similar to iemInitDecoder() and iemReInitDecoder(), so may need
+ * to apply fixes to them as well.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure of the calling
+ *                  thread.
+ * @param   fReInit Clear for the first call for a TB, set for subsequent calls
+ *                  from inside the compile loop where we can skip a couple of
+ *                  things.
+ */
+DECL_FORCE_INLINE(void) iemThreadedCompileInitDecoder(PVMCPUCC pVCpu, bool const fReInit)
 {
-    RT_NOREF(pVM, pVCpu, GCPhysPC, uPc);
-    return NULL;
+    /* ASSUMES: That iemInitExec was already called and that anyone changing
+       CPU state affecting the fExec bits since then will have updated fExec!  */
+    AssertMsg((pVCpu->iem.s.fExec & ~IEM_F_USER_OPTS) == iemCalcExecFlags(pVCpu),
+              ("fExec=%#x iemCalcExecModeFlags=%#x\n", pVCpu->iem.s.fExec, iemCalcExecFlags(pVCpu)));
+
+    IEMMODE const enmMode = IEM_GET_CPU_MODE(pVCpu);
+
+    /* Decoder state: */
+    pVCpu->iem.s.enmDefAddrMode     = enmMode;  /** @todo check if this is correct... */
+    pVCpu->iem.s.enmEffAddrMode     = enmMode;
+    if (enmMode != IEMMODE_64BIT)
+    {
+        pVCpu->iem.s.enmDefOpSize   = enmMode;  /** @todo check if this is correct... */
+        pVCpu->iem.s.enmEffOpSize   = enmMode;
+    }
+    else
+    {
+        pVCpu->iem.s.enmDefOpSize   = IEMMODE_32BIT;
+        pVCpu->iem.s.enmEffOpSize   = IEMMODE_32BIT;
+    }
+    pVCpu->iem.s.fPrefixes          = 0;
+    pVCpu->iem.s.uRexReg            = 0;
+    pVCpu->iem.s.uRexB              = 0;
+    pVCpu->iem.s.uRexIndex          = 0;
+    pVCpu->iem.s.idxPrefix          = 0;
+    pVCpu->iem.s.uVex3rdReg         = 0;
+    pVCpu->iem.s.uVexLength         = 0;
+    pVCpu->iem.s.fEvexStuff         = 0;
+    pVCpu->iem.s.iEffSeg            = X86_SREG_DS;
+    pVCpu->iem.s.offModRm           = 0;
+    pVCpu->iem.s.iNextMapping       = 0;
+
+    if (!fReInit)
+    {
+        pVCpu->iem.s.cActiveMappings        = 0;
+        pVCpu->iem.s.rcPassUp               = VINF_SUCCESS;
+        pVCpu->iem.s.fEndTb                 = false;
+    }
+    else
+    {
+        Assert(pVCpu->iem.s.cActiveMappings == 0);
+        Assert(pVCpu->iem.s.rcPassUp        == VINF_SUCCESS);
+        Assert(pVCpu->iem.s.fEndTb          == false);
+    }
+
+#ifdef DBGFTRACE_ENABLED
+    switch (IEM_GET_CPU_MODE(pVCpu))
+    {
+        case IEMMODE_64BIT:
+            RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "I64/%u %08llx", IEM_GET_CPL(pVCpu), pVCpu->cpum.GstCtx.rip);
+            break;
+        case IEMMODE_32BIT:
+            RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "I32/%u %04x:%08x", IEM_GET_CPL(pVCpu), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip);
+            break;
+        case IEMMODE_16BIT:
+            RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "I16/%u %04x:%04x", IEM_GET_CPL(pVCpu), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip);
+            break;
+    }
+#endif
+}
+
+
+/**
+ * Initializes the opcode fetcher when starting the compilation.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure of the calling
+ *                  thread.
+ */
+DECL_FORCE_INLINE(void) iemThreadedCompileInitOpcodeFetching(PVMCPUCC pVCpu)
+{
+// // // // // // // // // // figure this out // // // //
+    pVCpu->iem.s.pbInstrBuf         = NULL;
+    pVCpu->iem.s.offInstrNextByte   = 0;
+    pVCpu->iem.s.offCurInstrStart   = 0;
+#ifdef VBOX_STRICT
+    pVCpu->iem.s.GCPhysInstrBuf     = NIL_RTGCPHYS;
+    pVCpu->iem.s.cbInstrBuf         = UINT16_MAX;
+    pVCpu->iem.s.cbInstrBufTotal    = UINT16_MAX;
+    pVCpu->iem.s.uInstrBufPc        = UINT64_C(0xc0ffc0ffcff0c0ff);
+#endif
+// // // // // // // // // // // // // // // // // // //
+}
+
+
+/**
+ * Re-initializes the opcode fetcher between instructions while compiling.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure of the calling
+ *                  thread.
+ */
+DECL_FORCE_INLINE(void) iemThreadedCompileReInitOpcodeFetching(PVMCPUCC pVCpu)
+{
+    if (pVCpu->iem.s.pbInstrBuf)
+    {
+        uint64_t off = pVCpu->cpum.GstCtx.rip;
+        Assert(pVCpu->cpum.GstCtx.cs.u64Base == 0 || !IEM_IS_64BIT_CODE(pVCpu));
+        off += pVCpu->cpum.GstCtx.cs.u64Base;
+        off -= pVCpu->iem.s.uInstrBufPc;
+        if (off < pVCpu->iem.s.cbInstrBufTotal)
+        {
+            pVCpu->iem.s.offInstrNextByte = (uint32_t)off;
+            pVCpu->iem.s.offCurInstrStart = (uint16_t)off;
+            if ((uint16_t)off + 15 <= pVCpu->iem.s.cbInstrBufTotal)
+                pVCpu->iem.s.cbInstrBuf = (uint16_t)off + 15;
+            else
+                pVCpu->iem.s.cbInstrBuf = pVCpu->iem.s.cbInstrBufTotal;
+        }
+        else
+        {
+            pVCpu->iem.s.pbInstrBuf       = NULL;
+            pVCpu->iem.s.offInstrNextByte = 0;
+            pVCpu->iem.s.offCurInstrStart = 0;
+            pVCpu->iem.s.cbInstrBuf       = 0;
+            pVCpu->iem.s.cbInstrBufTotal  = 0;
+            pVCpu->iem.s.GCPhysInstrBuf   = NIL_RTGCPHYS;
+        }
+    }
+    else
+    {
+        pVCpu->iem.s.offInstrNextByte = 0;
+        pVCpu->iem.s.offCurInstrStart = 0;
+        pVCpu->iem.s.cbInstrBuf       = 0;
+        pVCpu->iem.s.cbInstrBufTotal  = 0;
+#ifdef VBOX_STRICT
+        pVCpu->iem.s.GCPhysInstrBuf   = NIL_RTGCPHYS;
+#endif
+    }
+}
+
+
+/**
+ * Compiles a new TB and executes it.
+ *
+ * We combine compilation and execution here as it makes it simpler code flow
+ * in the main loop and it allows interpreting while compiling if we want to
+ * explore that option.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVM         The cross context virtual machine structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      thread.
+ * @param   fExtraFlags Extra translation block flags: IEMTB_F_TYPE_THREADED and
+ *                      maybe IEMTB_F_RIP_CHECKS.
+ */
+static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, uint32_t fExtraFlags)
+{
+    /*
+     * Allocate a new translation block.
+     */
+    if (!(fExtraFlags & IEMTB_F_RIP_CHECKS))
+    { /* likely */  }
+    else if (  !IEM_IS_64BIT_CODE(pVCpu)
+             ? pVCpu->cpum.GstCtx.eip <= pVCpu->cpum.GstCtx.cs.u32Limit
+             : IEM_IS_CANONICAL(pVCpu->cpum.GstCtx.rip))
+    { /* likely */ }
+    else
+        return IEMExecOne(pVCpu);
+    fExtraFlags |= IEMTB_F_STATE_COMPILING;
+
+    PIEMTB pTb = iemThreadedTbAlloc(pVM, pVCpu, GCPhysPc, fExtraFlags);
+    AssertReturn(pTb, VERR_IEM_TB_ALLOC_FAILED);
+
+    /* Set the current TB so iemThreadedCompileLongJumped and the CIMPL
+       functions may get at it. */
+    pVCpu->iem.s.pCurTbR3 = pTb;
+
+    /*
+     * Now for the recomplication. (This mimicks IEMExecLots in many ways.)
+     */
+    iemThreadedCompileInitDecoder(pVCpu, false /*fReInit*/);
+    iemThreadedCompileInitOpcodeFetching(pVCpu);
+    VBOXSTRICTRC rcStrict;
+    for (;;)
+    {
+        /* Process the next instruction. */
+        uint8_t b; IEM_OPCODE_GET_FIRST_U8(&b);
+        uint16_t const cCallsPrev = pTb->Thrd.cCalls;
+        rcStrict = FNIEMOP_CALL(g_apfnIemThreadedRecompilerOneByteMap[b]);
+        if (   rcStrict == VINF_SUCCESS
+            && !pVCpu->iem.s.fEndTb)
+        {
+            Assert(pTb->Thrd.cCalls > cCallsPrev);
+            Assert(cCallsPrev - pTb->Thrd.cCalls < 5);
+
+        }
+        else if (pTb->Thrd.cCalls > 0)
+        {
+            break;
+        }
+        else
+        {
+            pVCpu->iem.s.pCurTbR3 = NULL;
+            iemThreadedTbFree(pVM, pVCpu, pTb);
+            return rcStrict;
+        }
+
+        /* Still space in the TB? */
+        if (pTb->Thrd.cCalls + 5 < pTb->Thrd.cAllocated)
+            iemThreadedCompileInitDecoder(pVCpu, true /*fReInit*/);
+        else
+            break;
+        iemThreadedCompileReInitOpcodeFetching(pVCpu);
+    }
+
+    /*
+     * Complete the TB and link it.
+     */
+
+#ifdef IEM_COMPILE_ONLY_MODE
+    /*
+     * Execute the translation block.
+     */
+#endif
+
+    return rcStrict;
 }
 
 
@@ -359,10 +685,14 @@ static uint64_t iemGetPcWithPhysAndCodeMissed(PVMCPUCC pVCpu, uint64_t const uPc
 
 
 /** @todo need private inline decl for throw/nothrow matching IEM_WITH_SETJMP? */
-DECL_INLINE_THROW(uint64_t) iemGetPcWithPhysAndCode(PVMCPUCC pVCpu, PRTGCPHYS pPhys)
+DECL_FORCE_INLINE_THROW(uint64_t) iemGetPcWithPhysAndCode(PVMCPUCC pVCpu, PRTGCPHYS pPhys)
 {
+    /* Set uCurTbStartPc to RIP and calc the effective PC. */
+    uint64_t uPc = pVCpu->cpum.GstCtx.rip;
+    pVCpu->iem.s.uCurTbStartPc = uPc;
     Assert(pVCpu->cpum.GstCtx.cs.u64Base == 0 || !IEM_IS_64BIT_CODE(pVCpu));
-    uint64_t const uPc = pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base;
+    uPc += pVCpu->cpum.GstCtx.cs.u64Base;
+
     if (pVCpu->iem.s.pbInstrBuf)
     {
         uint64_t off = uPc - pVCpu->iem.s.uInstrBufPc;
@@ -380,6 +710,35 @@ DECL_INLINE_THROW(uint64_t) iemGetPcWithPhysAndCode(PVMCPUCC pVCpu, PRTGCPHYS pP
         }
     }
     return iemGetPcWithPhysAndCodeMissed(pVCpu, uPc, pPhys);
+}
+
+
+/**
+ * Determines the extra IEMTB_F_XXX flags.
+ *
+ * @returns IEMTB_F_TYPE_THREADED and maybe IEMTB_F_RIP_CHECKS.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling
+ *                  thread.
+ */
+DECL_FORCE_INLINE(uint32_t) iemGetTbFlagsForCurrentPc(PVMCPUCC pVCpu)
+{
+    /*
+     * Return IEMTB_F_RIP_CHECKS if the current PC is invalid or if it is
+     * likely to go invalid before the end of the translation block.
+     */
+    if (IEM_IS_64BIT_CODE(pVCpu))
+    {
+        if (RT_LIKELY(   IEM_IS_CANONICAL(pVCpu->cpum.GstCtx.rip)
+                      && IEM_IS_CANONICAL(pVCpu->cpum.GstCtx.rip + 256)))
+            return IEMTB_F_TYPE_THREADED;
+    }
+    else
+    {
+        if (RT_LIKELY(   pVCpu->cpum.GstCtx.eip < pVCpu->cpum.GstCtx.cs.u32Limit
+                      && (uint64_t)256 + pVCpu->cpum.GstCtx.eip < pVCpu->cpum.GstCtx.cs.u32Limit))
+            return IEMTB_F_TYPE_THREADED;
+    }
+    return IEMTB_F_RIP_CHECKS | IEMTB_F_TYPE_THREADED;
 }
 
 
@@ -408,13 +767,14 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
             {
                 /* Translate PC to physical address, we'll need this for both lookup and compilation. */
                 RTGCPHYS       GCPhysPc;
-                uint64_t const uPc = iemGetPcWithPhysAndCode(pVCpu, &GCPhysPc);
+                uint64_t const uPc         = iemGetPcWithPhysAndCode(pVCpu, &GCPhysPc);
+                uint32_t const fExtraFlags = iemGetTbFlagsForCurrentPc(pVCpu);
 
-                pTb = iemThreadedTbLookup(pVM, pVCpu, GCPhysPc, uPc);
+                pTb = iemThreadedTbLookup(pVM, pVCpu, GCPhysPc, uPc, fExtraFlags);
                 if (pTb)
                     rcStrict = iemThreadedTbExec(pVCpu, pTb);
                 else
-                    rcStrict = iemThreadedCompile(pVM, pVCpu /*, GCPhysPc, uPc*/);
+                    rcStrict = iemThreadedCompile(pVM, pVCpu, GCPhysPc, fExtraFlags);
                 if (rcStrict == VINF_SUCCESS)
                 { /* likely */ }
                 else
