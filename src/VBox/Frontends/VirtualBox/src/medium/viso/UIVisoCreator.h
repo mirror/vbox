@@ -113,10 +113,11 @@ private slots:
     void sltSettingsActionToggled(bool fChecked);
     void sltSettingsDialogClosed(bool fAccepted);
     void sltBrowserTreeViewVisibilityChanged(bool fVisible);
-    void sltHostBrowserTableSelectionChanged(bool fIsSelectionEmpty);
+    void sltHostBrowserTableSelectionChanged(QStringList pathList);
     void sltContentBrowserTableSelectionChanged(bool fIsSelectionEmpty);
     void sltShowContextMenu(const QWidget *pContextMenuRequester, const QPoint &point);
     void sltOpenAction();
+    void sltISOImportAction();
 
 private:
 
@@ -129,7 +130,8 @@ private:
      * Leave out the vertical toolbar which is handled in prepareVerticalToolBar. */
     void populateMenuMainToolbar();
 
-     void toggleSettingsWidget(bool fShown);
+    void toggleSettingsWidget(bool fShown);
+    QStringList findISOFiles(const QStringList &pathList) const;
     /** @name Main toolbar (and main menu) actions
       * @{ */
         QAction         *m_pActionSettings;
@@ -143,6 +145,7 @@ private:
         QAction              *m_pRenameAction;
         QAction              *m_pResetAction;
         QAction              *m_pOpenAction;
+        QAction              *m_pImportISOAction;
     /** @} */
 
     QVBoxLayout          *m_pMainLayout;

@@ -157,6 +157,7 @@ enum UIActionIndex
     UIActionIndex_M_VISOCreator_Rename,
     UIActionIndex_M_VISOCreator_Reset,
     UIActionIndex_M_VISOCreator_Open,
+    UIActionIndex_M_VISOCreator_ImportISO,
 
     /* Medium selector actions : */
     UIActionIndex_M_MediumSelector,

@@ -265,6 +265,7 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pPa
     , m_pRenameAction(0)
     , m_pResetAction(0)
     , m_pOpenAction(0)
+    , m_pImportISOAction(0)
     , m_pMainLayout(0)
     , m_pHostBrowser(0)
     , m_pVISOContentBrowser(0)
@@ -392,10 +393,12 @@ void UIVisoCreatorWidget::sltBrowserTreeViewVisibilityChanged(bool fVisible)
     Q_UNUSED(fVisible);
 }
 
-void UIVisoCreatorWidget::sltHostBrowserTableSelectionChanged(bool fIsSelectionEmpty)
+void UIVisoCreatorWidget::sltHostBrowserTableSelectionChanged(QStringList pathList)
 {
     if (m_pAddAction)
-        m_pAddAction->setEnabled(!fIsSelectionEmpty);
+        m_pAddAction->setEnabled(!pathList.isEmpty());
+    if (m_pImportISOAction)
+        m_pImportISOAction->setEnabled(!findISOFiles(pathList).isEmpty());
 }
 
 void UIVisoCreatorWidget::sltContentBrowserTableSelectionChanged(bool fIsSelectionEmpty)
@@ -433,6 +436,14 @@ void UIVisoCreatorWidget::sltOpenAction()
                                                          "VISO files (*.viso)", this, UIVisoCreatorWidget::tr("Select a VISO file to load"));
     if (!strFileName.isEmpty() && m_pVISOContentBrowser)
         m_pVISOContentBrowser->parseVisoFileContent(strFileName);
+}
+
+void UIVisoCreatorWidget::sltISOImportAction()
+{
+    if (!m_pHostBrowser)
+        return;
+    // QStringList selectedObjectPaths = m_pHostBrowser->selectedPathList();
+    // printf("dddd %d\n", findISOFiles(selectedObjectPaths).size());
 }
 
 void UIVisoCreatorWidget::prepareWidgets()
@@ -559,6 +570,9 @@ void UIVisoCreatorWidget::prepareConnections()
     if (m_pOpenAction)
         connect(m_pOpenAction, &QAction::triggered,
                 this, &UIVisoCreatorWidget::sltOpenAction);
+    if (m_pImportISOAction)
+        connect(m_pImportISOAction, &QAction::triggered,
+                this, &UIVisoCreatorWidget::sltISOImportAction);
 }
 
 void UIVisoCreatorWidget::prepareActions()
@@ -579,6 +593,10 @@ void UIVisoCreatorWidget::prepareActions()
     if (m_pRenameAction && m_pVISOContentBrowser)
         m_pRenameAction->setEnabled(m_pVISOContentBrowser->tableViewHasSelection());
     m_pResetAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Reset);
+    m_pOpenAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Open);
+    m_pImportISOAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_ImportISO);
+    if (m_pImportISOAction)
+        m_pImportISOAction->setEnabled(false);
 }
 
 void UIVisoCreatorWidget::populateMenuMainToolbar()
@@ -593,10 +611,12 @@ void UIVisoCreatorWidget::populateMenuMainToolbar()
     {
         m_pMainMenu->addAction(m_pActionSettings);
         m_pMainMenu->addSeparator();
-        if (m_pAddAction)
-            m_pMainMenu->addAction(m_pAddAction);
         if (m_pOpenAction)
             m_pMainMenu->addAction(m_pOpenAction);
+        if (m_pAddAction)
+            m_pMainMenu->addAction(m_pAddAction);
+        if (m_pImportISOAction)
+            m_pMainMenu->addAction(m_pImportISOAction);
         if (m_pRemoveAction)
             m_pMainMenu->addAction(m_pRemoveAction);
         if (m_pRenameAction)
@@ -622,6 +642,8 @@ void UIVisoCreatorWidget::populateMenuMainToolbar()
         m_pVerticalToolBar->addWidget(topSpacerWidget);
         if (m_pAddAction)
             m_pVerticalToolBar->addAction(m_pAddAction);
+        if (m_pImportISOAction)
+            m_pVerticalToolBar->addAction(m_pImportISOAction);
         if (m_pRenameAction)
             m_pVerticalToolBar->addAction(m_pRenameAction);
         if (m_pRemoveAction)
@@ -665,6 +687,17 @@ void UIVisoCreatorWidget::toggleSettingsWidget(bool fShown)
         if (m_fShowSettingsDialog)
             m_pSettingsWidget->setSettings(m_visoOptions);
     }
+}
+
+QStringList UIVisoCreatorWidget::findISOFiles(const QStringList &pathList) const
+{
+    QStringList isoList;
+    foreach (const QString &strPath, pathList)
+    {
+        if (QFileInfo(strPath).suffix().compare("iso", Qt::CaseInsensitive) == 0)
+            isoList << strPath;
+    }
+    return isoList;
 }
 
 void UIVisoCreatorWidget::prepareVerticalToolBar()

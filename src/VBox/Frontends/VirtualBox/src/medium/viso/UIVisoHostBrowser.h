@@ -47,7 +47,7 @@ class UIVisoHostBrowser : public UIVisoBrowserBase
 signals:
 
     void sigAddObjectsToViso(QStringList pathList);
-    void sigTableSelectionChanged(bool fIsSelectionEmpty);
+    void sigTableSelectionChanged(QStringList pathList);
 
 public:
 
@@ -57,6 +57,8 @@ public:
     QString      currentPath() const;
     void         setCurrentPath(const QString &strPath);
     virtual bool tableViewHasSelection() const final override;
+    /* The list of path of the selected file objects. */
+    QStringList selectedPathList() const;
 
 public slots:
 
