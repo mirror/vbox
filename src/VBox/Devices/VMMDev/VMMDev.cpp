@@ -3494,7 +3494,11 @@ static DECLCALLBACK(VBOXSTRICTRC) vmmdevMmioWrite(PPDMDEVINS pDevIns, void *pvUs
     switch (offReg)
     {
         case VMMDEV_MMIO_OFF_REQUEST:
+#ifndef IN_RING3
+            rcStrict = VINF_IOM_R3_MMIO_WRITE;
+#else
             rcStrict = vmmdevRequestHandler(pDevIns, u64Val);
+#endif
             break;
         case VMMDEV_MMIO_OFF_REQUEST_FAST:
 #ifndef IN_RING3
