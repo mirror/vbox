@@ -1627,8 +1627,12 @@ HRESULT SessionMachine::takeSnapshot(const com::Utf8Str &aName,
 
     if (Global::IsTransient(mData->mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Cannot take a snapshot of the machine while it is changing the state (machine state: %s)"),
+                        tr("Cannot take a snapshot of the virtual machine while it is changing state (machine state: %s)"),
                         Global::stringifyMachineState(mData->mMachineState));
+
+    if (!fPause && mData->mMachineState != MachineState_Running)
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Cannot take a live snapshot of a virtual machine unless it is running."));
 
     HRESULT hrc = i_checkStateDependency(MutableOrSavedOrRunningStateDep);
     if (FAILED(hrc))
