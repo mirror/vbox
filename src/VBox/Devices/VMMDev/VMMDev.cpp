@@ -3477,6 +3477,9 @@ static DECLCALLBACK(VBOXSTRICTRC) vmmdevMmioWrite(PPDMDEVINS pDevIns, void *pvUs
 {
     const uint32_t offReg = (uint32_t)off;
     RT_NOREF(pvUser);
+#ifndef IN_RING3
+    RT_NOREF(pDevIns);
+#endif
 
     /* Only 32-bit and 64-bit accesses. */
     ASSERT_GUEST_MSG_RETURN(cb == sizeof(uint32_t) || cb == sizeof(uint64_t),
