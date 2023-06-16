@@ -52,6 +52,19 @@
 #include <iprt/linux/sysfs.h>
 
 
+#if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+# include <sched.h>
+
+RTDECL(RTCPUID) RTMpCpuId(void)
+{
+    int rc = sched_getcpu();
+    if (rc >= 0)
+        return (RTCPUID)rc;
+
+    return NIL_RTCPUID;
+}
+#endif
+
 /**
  * Internal worker that determines the max possible CPU count.
  *
