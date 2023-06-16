@@ -2650,10 +2650,10 @@ RuntimeBldProg_SOURCES.x86 = $(filter-out \
 		, $(RuntimeBaseR3_SOURCES.x86))
 
 RuntimeBldProg_SOURCES.arm32 = \
-		$(RuntimeBaseR3_SOURCES.arm32)
+	$(RuntimeBaseR3_SOURCES.arm32)
 
 RuntimeBldProg_SOURCES.arm64 = \
-		$(RuntimeBaseR3_SOURCES.arm64)
+	$(RuntimeBaseR3_SOURCES.arm64)
 
 RuntimeBldProg_SOURCES.win.amd64 := \
 	$(RuntimeWin64ASM_SOURCES) \
