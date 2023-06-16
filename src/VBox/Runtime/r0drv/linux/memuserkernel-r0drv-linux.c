@@ -92,7 +92,7 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
     /* Couldn't find a straight forward way of doing this... */
 #if defined(RT_ARCH_X86) && defined(CONFIG_X86_HIGH_ENTRY)
     return true; /* ?? */
-#elif defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+#elif defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     return (uintptr_t)pv >= PAGE_OFFSET;
 #else
 # error "PORT ME"
@@ -117,32 +117,33 @@ RTR0DECL(bool) RTR0MemAreKrnlAndUsrDifferent(void)
 RT_EXPORT_SYMBOL(RTR0MemAreKrnlAndUsrDifferent);
 
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 /**
  * Treats both source and destination as unsafe buffers.
  */
 static int rtR0MemKernelCopyLnxWorker(void *pvDst, void const *pvSrc, size_t cb)
 {
-#if RTLNX_VER_MIN(2,5,55)
+# if RTLNX_VER_MIN(2,5,55)
 /* _ASM_EXTABLE was introduced in 2.6.25 from what I can tell. Using #ifndef
    here since it has to be a macro and you never know what someone might have
    backported to an earlier kernel release. */
-# ifndef _ASM_EXTABLE
-#  if ARCH_BITS == 32
-#   define _ASM_EXTABLE(a_Instr, a_Resume) \
-    ".section __ex_table,\"a\"\n" \
-    ".balign 4\n" \
-    ".long   " #a_Instr "\n" \
-    ".long   " #a_Resume "\n" \
-    ".previous\n"
-#  else
-#   define _ASM_EXTABLE(a_Instr, a_Resume) \
-    ".section __ex_table,\"a\"\n" \
-    ".balign 8\n" \
-    ".quad   " #a_Instr "\n" \
-    ".quad   " #a_Resume "\n" \
-    ".previous\n"
-#  endif
-# endif /* !_ASM_EXTABLE */
+#  ifndef _ASM_EXTABLE
+#   if ARCH_BITS == 32
+#    define _ASM_EXTABLE(a_Instr, a_Resume) \
+     ".section __ex_table,\"a\"\n" \
+     ".balign 4\n" \
+     ".long   " #a_Instr "\n" \
+     ".long   " #a_Resume "\n" \
+     ".previous\n"
+#   else
+#    define _ASM_EXTABLE(a_Instr, a_Resume) \
+     ".section __ex_table,\"a\"\n" \
+     ".balign 8\n" \
+     ".quad   " #a_Instr "\n" \
+     ".quad   " #a_Resume "\n" \
+     ".previous\n"
+#   endif
+#  endif /* !_ASM_EXTABLE */
     int rc;
     IPRT_LINUX_SAVE_EFL_AC(); /* paranoia */
     if (!cb)
@@ -170,9 +171,9 @@ static int rtR0MemKernelCopyLnxWorker(void *pvDst, void const *pvSrc, size_t cb)
                           : "memory");
     IPRT_LINUX_RESTORE_EFL_AC();
     return rc;
-#else
+# else
     return VERR_NOT_SUPPORTED;
-#endif
+# endif
 }
 
 
@@ -188,4 +189,5 @@ RTR0DECL(int) RTR0MemKernelCopyTo(void *pvDst, void const *pvSrc, size_t cb)
     return rtR0MemKernelCopyLnxWorker(pvDst, pvSrc, cb);
 }
 RT_EXPORT_SYMBOL(RTR0MemKernelCopyTo);
+#endif /* !RT_ARCH_AMD64 && !RT_ARCH_X86 */
 

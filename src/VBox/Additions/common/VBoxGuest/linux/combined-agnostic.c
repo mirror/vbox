@@ -171,11 +171,20 @@
 #undef LOG_GROUP
 #include "VBox/logbackdoor.c"
 #undef LOG_GROUP
-#include "VBox/RTLogWriteVmm-amd64-x86.c"
+#if defined(RT_ARCH_AMD) || defined(RT_ARCH_X86)
+# include "VBox/RTLogWriteVmm-amd64-x86.c"
+#else
+# include "generic/RTLogWriteVmm-stub-generic.c"
+#endif
 
 #ifdef RT_ARCH_AMD64
 # undef LOG_GROUP
 # include "common/alloc/heapsimple.c"
+#endif
+
+#if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+# undef LOG_GROUP
+# include "common/asm/ASMMultU64ByU32DivByU32-generic.c"
 #endif
 
 #if 0 //def RT_ARCH_X86 - iprt/nocrt/limit.h clashes.

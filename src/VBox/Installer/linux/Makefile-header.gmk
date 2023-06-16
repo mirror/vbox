@@ -59,27 +59,31 @@
 # While at it, warn about *BUILD_* vars found to help with user problems.
 #
 
-# VBOX_KBUILD_TARGET_ARCH = amd64|x86
+# VBOX_KBUILD_TARGET_ARCH = amd64|x86|arm64|arm32
 ifeq ($(filter-out x86_64 amd64 AMD64,$(shell uname -m)),)
  VBOX_KBUILD_TARGET_ARCH_DEFAULT := amd64
+else ifeq ($(filter-out aarch64,$(shell uname -m)),)
+ VBOX_KBUILD_TARGET_ARCH_DEFAULT := arm64
+else ifeq ($(filter-out armv7,$(shell uname -m)),)
+ VBOX_KBUILD_TARGET_ARCH_DEFAULT := arm32
 else
  VBOX_KBUILD_TARGET_ARCH_DEFAULT := x86
 endif
 ifdef VBOX_KBUILD_TARGET_ARCH
- ifneq ($(filter-out amd64 x86,$(VBOX_KBUILD_TARGET_ARCH)),)
+ ifneq ($(filter-out amd64 x86 arm64,$(VBOX_KBUILD_TARGET_ARCH)),)
   $(warning Ignoring unknown VBOX_KBUILD_TARGET_ARCH value '$(VBOX_KBUILD_TARGET_ARCH)'.)
   VBOX_KBUILD_TARGET_ARCH :=
  endif
 else
  ifdef KBUILD_TARGET_ARCH
-  ifneq ($(filter-out amd64 x86,$(KBUILD_TARGET_ARCH)),)
+  ifneq ($(filter-out amd64 x86 arm64,$(KBUILD_TARGET_ARCH)),)
   $(warning Ignoring unknown KBUILD_TARGET_ARCH value '$(KBUILD_TARGET_ARCH)'.)
   VBOX_KBUILD_TARGET_ARCH :=
   endif
   else
    ifdef BUILD_TARGET_ARCH
     $(warning BUILD_TARGET_ARCH is deprecated, use VBOX_KBUILD_TARGET_ARCH instead.)
-    ifneq ($(filter-out amd64 x86,$(BUILD_TARGET_ARCH)),)
+    ifneq ($(filter-out amd64 x86 arm64,$(BUILD_TARGET_ARCH)),)
      $(warning Ignoring unknown BUILD_TARGET_ARCH value '$(BUILD_TARGET_ARCH)'.)
      VBOX_KBUILD_TARGET_ARCH :=
    endif

@@ -1193,11 +1193,21 @@ else
  RuntimeBaseR3_SOURCES.linux.amd64 += \
  	r3/linux/semevent-linux.cpp \
  	r3/linux/semeventmulti-linux.cpp
+ RuntimeBaseR3_SOURCES.linux.arm64 += \
+ 	r3/linux/semevent-linux.cpp \
+ 	r3/linux/semeventmulti-linux.cpp
+ RuntimeBaseR3_SOURCES.linux.arm32 += \
+ 	r3/linux/semevent-linux.cpp \
+ 	r3/linux/semeventmulti-linux.cpp
  ifdef RT_NEW_LINUX_MUTEX_CODE
   RuntimeBaseR3_SOURCES.linux.amd64 += \
   	r3/linux/semmutex-linux.cpp
+  RuntimeBaseR3_SOURCES.linux.arm64 += \
+  	r3/linux/semmutex-linux.cpp
  else
   RuntimeBaseR3_SOURCES.linux.amd64 += \
+  	r3/posix/semmutex-posix.cpp
+  RuntimeBaseR3_SOURCES.linux.arm64 += \
   	r3/posix/semmutex-posix.cpp
  endif
 endif
@@ -2638,6 +2648,12 @@ RuntimeBldProg_SOURCES.amd64 = $(filter-out \
 RuntimeBldProg_SOURCES.x86 = $(filter-out \
 		VBox/RTLogWriteVmm-amd64-x86.asm \
 		, $(RuntimeBaseR3_SOURCES.x86))
+
+RuntimeBldProg_SOURCES.arm32 = \
+		$(RuntimeBaseR3_SOURCES.arm32)
+
+RuntimeBldProg_SOURCES.arm64 = \
+		$(RuntimeBaseR3_SOURCES.arm64)
 
 RuntimeBldProg_SOURCES.win.amd64 := \
 	$(RuntimeWin64ASM_SOURCES) \

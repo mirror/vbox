@@ -195,11 +195,11 @@
 #endif
 
 /* for kernel_fpu_begin / kernel_fpu_end() */
-#if RTLNX_VER_MIN(4,2,0)
+#if RTLNX_VER_MIN(4,2,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 # include <asm/fpu/api.h>
 #endif
 
-#if RTLNX_VER_MIN(3,7,0)
+#if RTLNX_VER_MIN(3,7,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 # include <asm/smap.h>
 #else
 static inline void clac(void) { }
