@@ -62,12 +62,16 @@
 # VBOX_KBUILD_TARGET_ARCH = amd64|x86|arm64|arm32
 ifeq ($(filter-out x86_64 amd64 AMD64,$(shell uname -m)),)
  VBOX_KBUILD_TARGET_ARCH_DEFAULT := amd64
-else ifeq ($(filter-out aarch64,$(shell uname -m)),)
- VBOX_KBUILD_TARGET_ARCH_DEFAULT := arm64
-else ifeq ($(filter-out armv7,$(shell uname -m)),)
- VBOX_KBUILD_TARGET_ARCH_DEFAULT := arm32
 else
- VBOX_KBUILD_TARGET_ARCH_DEFAULT := x86
+ ifeq ($(filter-out aarch64,$(shell uname -m)),)
+  VBOX_KBUILD_TARGET_ARCH_DEFAULT := arm64
+ else
+  ifeq ($(filter-out armv7,$(shell uname -m)),)
+   VBOX_KBUILD_TARGET_ARCH_DEFAULT := arm32
+  else
+   VBOX_KBUILD_TARGET_ARCH_DEFAULT := x86
+  endif
+ endif
 endif
 ifdef VBOX_KBUILD_TARGET_ARCH
  ifneq ($(filter-out amd64 x86 arm64,$(VBOX_KBUILD_TARGET_ARCH)),)
