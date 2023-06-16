@@ -227,7 +227,6 @@ DECLINLINE(RTCCUINTREG) ASMGetFlags(void)
 
 /**
  * Get the CPSR/PSTATE register.
- * @returns CPSR/PSTATE.
  */
 #if RT_INLINE_ASM_EXTERNAL
 DECLASM(void) ASMSetFlags(RTCCUINTREG uFlags);
