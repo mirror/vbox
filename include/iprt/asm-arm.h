@@ -49,54 +49,6 @@
  * @{
  */
 
-
-#if 0 /* figure out arm64 */
-
-/**
- * Get the CPSR (Current Program Status) register.
- * @returns CPSR.
- */
-#if RT_INLINE_ASM_EXTERNAL
-DECLASM(RTCCUINTREG) ASMGetFlags(void);
-#else
-DECLINLINE(RTCCUINTREG) ASMGetFlags(void)
-{
-    RTCCUINTREG uFlags;
-# if RT_INLINE_ASM_GNU_STYLE
-#  ifdef RT_ARCH_ARM64
-    __asm__ __volatile__("mrs %0, nzcv\n\t"  : "=r" (uFlags));
-#  else
-    __asm__ __volatile__("mrs %0, cpsr\n\t"  : "=r" (uFlags));
-#  endif
-# else
-#  error "Unsupported compiler"
-# endif
-    return uFlags;
-}
-#endif
-
-
-/**
- * Set the CPSR register.
- * @param   uFlags      The new CPSR value.
- */
-#if RT_INLINE_ASM_EXTERNAL
-DECLASM(void) ASMSetFlags(RTCCUINTREG uFlags);
-#else
-DECLINLINE(void) ASMSetFlags(RTCCUINTREG uFlags)
-{
-# if RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__("msr cpsr_c, %0\n\t"
-                         : : "r" (uFlags));
-# else
-#  error "Unsupported compiler"
-# endif
-}
-#endif
-
-#endif
-
-
 /**
  * Gets the content of the CNTVCT_EL0 (or CNTPCT) register.
  *
@@ -168,8 +120,6 @@ DECLINLINE(uint64_t) ASMReadCntFrqEl0(void)
 #endif
 
 
-#if 0 /* port to arm64, armv7 and check */
-
 /**
  * Enables interrupts (IRQ and FIQ).
  */
@@ -178,12 +128,16 @@ DECLASM(void) ASMIntEnable(void);
 #else
 DECLINLINE(void) ASMIntEnable(void)
 {
-    RTCCUINTREG uFlags;
 # if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_ARM64
+    __asm__ __volatile__("msr daifclr, #0xf\n\t");
+#  else
+    RTCCUINTREG uFlags;
     __asm__ __volatile__("mrs %0, cpsr\n\t"
                          "bic %0, %0, #0xc0\n\t"
                          "msr cpsr_c, %0\n\t"
                          : "=r" (uFlags));
+#  endif
 # else
 #  error "Unsupported compiler"
 # endif
@@ -199,12 +153,16 @@ DECLASM(void) ASMIntDisable(void);
 #else
 DECLINLINE(void) ASMIntDisable(void)
 {
-    RTCCUINTREG uFlags;
 # if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_ARM64
+    __asm__ __volatile__("msr daifset, #0xf\n\t");
+#  else
+    RTCCUINTREG uFlags;
     __asm__ __volatile__("mrs %0, cpsr\n\t"
                          "orr %0, %0, #0xc0\n\t"
                          "msr cpsr_c, %0\n\t"
                          : "=r" (uFlags));
+#  endif
 # else
 #  error "Unsupported compiler"
 # endif
@@ -222,16 +180,71 @@ DECLINLINE(RTCCUINTREG) ASMIntDisableFlags(void)
 {
     RTCCUINTREG uFlags;
 # if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_ARM64
+    __asm__ __volatile__("mrs %[uRet], daif\n\t"
+                         "msr daifset, #0xf\n\t"
+                         : [uRet] "=r" (uFlags));
+#  else
     RTCCUINTREG uNewFlags;
     __asm__ __volatile__("mrs %0, cpsr\n\t"
                          "orr %1, %0, #0xc0\n\t"
                          "msr cpsr_c, %1\n\t"
                          : "=r" (uFlags)
                          , "=r" (uNewFlags));
+#  endif
 # else
 #  error "Unsupported compiler"
 # endif
     return uFlags;
+}
+
+
+/**
+ * Get the CPSR/PSTATE register.
+ * @returns CPSR/PSTATE.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(RTCCUINTREG) ASMGetFlags(void);
+#else
+DECLINLINE(RTCCUINTREG) ASMGetFlags(void)
+{
+    RTCCUINTREG uFlags;
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_ARM64
+    __asm__ __volatile__("isb\n\t"
+                         "mrs %0, daif\n\t"
+                         : "=r" (uFlags));
+#  else
+#   error "Implementation required for arm32"
+#  endif
+# else
+#  error "Unsupported compiler"
+# endif
+    return uFlags;
+}
+#endif
+
+
+/**
+ * Get the CPSR/PSTATE register.
+ * @returns CPSR/PSTATE.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(void) ASMSetFlags(RTCCUINTREG uFlags);
+#else
+DECLINLINE(void) ASMSetFlags(RTCCUINTREG uFlags)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_ARM64
+    __asm__ __volatile__("isb\n\t"
+                         "msr daif, %[uFlags]\n\t"
+                         : : [uFlags] "r" (uFlags));
+#  else
+#   error "Implementation required for arm32"
+#  endif
+# else
+#  error "Unsupported compiler"
+# endif
 }
 #endif
 
@@ -243,7 +256,6 @@ DECLINLINE(RTCCUINTREG) ASMIntDisableFlags(void)
  */
 DECLINLINE(bool) ASMIntAreEnabled(void)
 {
-/** @todo r=bird: reversed, but does both need to be enabled? */
     return ASMGetFlags() & 0xc0 /* IRQ and FIQ bits */ ? true : false;
 }
 
