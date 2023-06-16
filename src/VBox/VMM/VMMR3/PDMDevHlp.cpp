@@ -1195,6 +1195,21 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysChangeMemBalloon(PPDMDEVINS pDevIns, bo
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnCpuGetGuestArch} */
+static DECLCALLBACK(CPUMARCH) pdmR3DevHlp_CpuGetGuestArch(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    LogFlow(("pdmR3DevHlp_CpuGetGuestArch: caller='%s'/%d\n",
+             pDevIns->pReg->szName, pDevIns->iInstance));
+
+    CPUMARCH enmArch = CPUMGetGuestArch(pVM);
+
+    Log(("pdmR3DevHlp_CpuGetGuestArch: caller='%s'/%d: returns %u\n", pDevIns->pReg->szName, pDevIns->iInstance, enmArch));
+    return enmArch;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnCpuGetGuestMicroarch} */
 static DECLCALLBACK(CPUMMICROARCH) pdmR3DevHlp_CpuGetGuestMicroarch(PPDMDEVINS pDevIns)
 {
@@ -5196,6 +5211,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_PhysBulkGCPhys2CCPtr,
     pdmR3DevHlp_PhysBulkGCPhys2CCPtrReadOnly,
     pdmR3DevHlp_PhysBulkReleasePageMappingLocks,
+    pdmR3DevHlp_CpuGetGuestArch,
     pdmR3DevHlp_CpuGetGuestMicroarch,
     pdmR3DevHlp_CpuGetGuestAddrWidths,
     pdmR3DevHlp_CpuGetGuestScalableBusFrequency,
@@ -5594,6 +5610,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_PhysBulkGCPhys2CCPtr,
     pdmR3DevHlp_PhysBulkGCPhys2CCPtrReadOnly,
     pdmR3DevHlp_PhysBulkReleasePageMappingLocks,
+    pdmR3DevHlp_CpuGetGuestArch,
     pdmR3DevHlp_CpuGetGuestMicroarch,
     pdmR3DevHlp_CpuGetGuestAddrWidths,
     pdmR3DevHlp_CpuGetGuestScalableBusFrequency,
@@ -6312,6 +6329,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_PhysBulkGCPhys2CCPtr,
     pdmR3DevHlp_PhysBulkGCPhys2CCPtrReadOnly,
     pdmR3DevHlp_PhysBulkReleasePageMappingLocks,
+    pdmR3DevHlp_CpuGetGuestArch,
     pdmR3DevHlp_CpuGetGuestMicroarch,
     pdmR3DevHlp_CpuGetGuestAddrWidths,
     pdmR3DevHlp_CpuGetGuestScalableBusFrequency,

@@ -1100,6 +1100,19 @@ VMMDECL(CPUMCPUVENDOR) CPUMGetGuestCpuVendor(PVM pVM)
 
 
 /**
+ * Gets the guest CPU architecture.
+ *
+ * @returns CPU architecture.
+ * @param   pVM     The cross context VM structure.
+ */
+VMMDECL(CPUMARCH) CPUMGetGuestArch(PCVM pVM)
+{
+    RT_NOREF(pVM);
+    return kCpumArch_X86; /* Static as we are in the x86 VMM module here. */
+}
+
+
+/**
  * Gets the guest CPU microarchitecture.
  *
  * @returns CPU microarchitecture.

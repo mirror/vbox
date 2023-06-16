@@ -71,7 +71,7 @@ RT_C_DECLS_BEGIN
 
 
 /** Magic and version for the VMM vtable.  (Magic: Emmet Cohen)   */
-#define VMMR3VTABLE_MAGIC_VERSION         RT_MAKE_U64(0x19900525, 0x00040000)
+#define VMMR3VTABLE_MAGIC_VERSION         RT_MAKE_U64(0x19900525, 0x00050000)
 /** Compatibility mask: These bits must match - magic and major version. */
 #define VMMR3VTABLE_MAGIC_VERSION_MASK    RT_MAKE_U64(0xffffffff, 0xffff0000)
 

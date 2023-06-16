@@ -71,6 +71,29 @@ typedef enum CPUMCPUVENDOR
 
 
 /**
+ * CPU architecture.
+ */
+typedef enum CPUMARCH
+{
+    /** Invalid zero value. */
+    kCpumArch_Invalid = 0,
+    /** x86 based architecture (includes 64-bit). */
+    kCpumArch_X86,
+    /** ARM based architecture (includs both AArch32 and AArch64). */
+    kCpumArch_Arm,
+
+    /** @todo RiscV, Mips, ... ;). */
+
+    /*
+     * Unknown.
+     */
+    kCpumArch_Unknown,
+
+    kCpumArch_32BitHack = 0x7fffffff
+} CPUMARCH;
+
+
+/**
  * CPU microarchitectures and in processor generations.
  *
  * @remarks The separation here is sometimes a little bit too finely grained,
@@ -351,6 +374,7 @@ VMMDECL(DISCPUMODE)     CPUMGetGuestDisMode(PVMCPU pVCpu);
 VMMDECL(uint64_t)       CPUMGetGuestFlatPC(PVMCPU pVCpu);
 VMMDECL(uint64_t)       CPUMGetGuestFlatSP(PVMCPU pVCpu);
 VMMDECL(CPUMCPUVENDOR)  CPUMGetGuestCpuVendor(PVM pVM);
+VMMDECL(CPUMARCH)       CPUMGetGuestArch(PCVM pVM);
 VMMDECL(CPUMMICROARCH)  CPUMGetGuestMicroarch(PCVM pVM);
 VMMDECL(void)           CPUMGetGuestAddrWidths(PCVM pVM, uint8_t *pcPhysAddrWidth, uint8_t *pcLinearAddrWidth);
 /** @} */
@@ -361,6 +385,7 @@ VMMDECL(bool)           CPUMIsGuestIn64BitCode(PVMCPU pVCpu);
 /** @} */
 
 VMMDECL(CPUMCPUVENDOR)  CPUMGetHostCpuVendor(PVM pVM);
+VMMDECL(CPUMARCH)       CPUMGetHostArch(PCVM pVM);
 VMMDECL(CPUMMICROARCH)  CPUMGetHostMicroarch(PCVM pVM);
 
 #ifdef IN_RING3

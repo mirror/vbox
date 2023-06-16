@@ -4610,6 +4610,14 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(void, pfnPhysBulkReleasePageMappingLocks,(PPDMDEVINS pDevIns, uint32_t cPages, PPGMPAGEMAPLOCK paLocks));
 
     /**
+     * Returns the architecture used for the guest.
+     *
+     * @returns CPU architecture enum.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(CPUMARCH, pfnCpuGetGuestArch,(PPDMDEVINS pDevIns));
+
+    /**
      * Returns the micro architecture used for the guest.
      *
      * @returns CPU micro architecture enum.
@@ -7358,6 +7366,36 @@ DECLINLINE(bool) PDMDevHlpPhysIsGCPhysNormal(PPDMDEVINS pDevIns, RTGCPHYS GCPhys
 DECLINLINE(int) PDMDevHlpPhysChangeMemBalloon(PPDMDEVINS pDevIns, bool fInflate, unsigned cPages, RTGCPHYS *paPhysPage)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnPhysChangeMemBalloon(pDevIns, fInflate, cPages, paPhysPage);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnCpuGetGuestArch
+ */
+DECLINLINE(CPUMARCH) PDMDevHlpCpuGetGuestArch(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCpuGetGuestArch(pDevIns);
+}
+
+/**
+ * Returns a flag whether the current guest CPU architecture is x86.
+ *
+ * @returns Flag whether the current guest architecture is x86.
+ * @param   pDevIns     The device instance.
+ */
+DECLINLINE(bool) PDMDevHlpCpuIsGuestArchX86(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCpuGetGuestArch(pDevIns) == kCpumArch_X86;
+}
+
+/**
+ * Returns a flag whether the current guest CPU architecture is ARM.
+ *
+ * @returns Flag whether the current guest architecture is ARM.
+ * @param   pDevIns     The device instance.
+ */
+DECLINLINE(bool) PDMDevHlpCpuIsGuestArchArm(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCpuGetGuestArch(pDevIns) == kCpumArch_Arm;
 }
 
 /**
