@@ -2585,7 +2585,7 @@ static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTG
     if (!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) || PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPage))
     {
 # ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
-        /* Page wasn't allocated, write protect it. */
+        /* If it's the zero page or write to an unallocated page, allocate it to make it writable. */
         if (    PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM
             &&  (   PGM_PAGE_IS_ZERO(pPage)
                  || (   (pGstWalkAll->u.Ept.Pte.u & EPT_E_WRITE)
@@ -2601,16 +2601,14 @@ static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTG
               )
            )
         {
-            Pte.u = PGM_PAGE_GET_HCPHYS(pPage) | (fGstShwPteFlags & ~EPT_E_WRITE);
-            Log7Func(("zero page (%R[pgmpage]) at %RGp -> %RX64\n", pPage, GCPhysPage, Pte.u));
+            rc = pgmPhysPageMakeWritable(pVCpu->CTX_SUFF(pVM), pPage, GCPhysPage);
+            AssertRC(rc);
+            Log7Func(("made writable (%R[pgmpage]) at %RGp\n", pPage, GCPhysPage));
         }
-        else
 # endif
-        {
-            /** @todo access bit. */
-            Pte.u = PGM_PAGE_GET_HCPHYS(pPage) | fGstShwPteFlags;
-            Log7Func(("regular page (%R[pgmpage]) at %RGp -> %RX64\n", pPage, GCPhysPage, Pte.u));
-        }
+        /** @todo access bit. */
+        Pte.u = PGM_PAGE_GET_HCPHYS(pPage) | fGstShwPteFlags;
+        Log7Func(("regular page (%R[pgmpage]) at %RGp -> %RX64\n", pPage, GCPhysPage, Pte.u));
     }
     else if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
     {
