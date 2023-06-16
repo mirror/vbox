@@ -53,23 +53,41 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+/** The VMMDev assumed page size (not the real guest page size which might be different
+ * between guest and host, on ARM for example), 4KiB is the minimum supported by both
+ * ARM and x86 and was the one used back when the device supported x86 only. */
+#define VMMDEV_PAGE_SIZE                                    _4K
+/** The VMMDev assumed page shift. */
+#define VMMDEV_PAGE_SHIFT                                   12
+/** The VMMDev assumed page offset mask. */
+#define VMMDEV_PAGE_OFFSET_MASK                             0xfff
+
 
 /** Size of VMMDev RAM region accessible by guest.
  * Must be big enough to contain VMMDevMemory structure (see further down).
  * For now: 4 megabyte.
  */
-#define VMMDEV_RAM_SIZE                                     (4 * 256 * PAGE_SIZE)
+#define VMMDEV_RAM_SIZE                                     (4 * 256 * VMMDEV_PAGE_SIZE)
 
 /** Size of VMMDev heap region accessible by guest.
  *  (Must be a power of two (pci range).)
  */
-#define VMMDEV_HEAP_SIZE                                    (4 * PAGE_SIZE)
+#define VMMDEV_HEAP_SIZE                                    (4 * VMMDEV_PAGE_SIZE)
 
 /** Port for generic request interface (relative offset). */
 #define VMMDEV_PORT_OFF_REQUEST                             0
 /** Port for requests that can be handled w/o going to ring-3 (relative offset).
  * This works like VMMDevReq_AcknowledgeEvents when read.  */
 #define VMMDEV_PORT_OFF_REQUEST_FAST                        8
+
+
+/** The MMIO region size if MMIO is used instead of PIO. */
+#define VMMDEV_MMIO_SIZE                                    _4K
+/** Port for generic request interface (relative offset). */
+#define VMMDEV_MMIO_OFF_REQUEST                             0
+/** Port for requests that can be handled w/o going to ring-3 (relative offset).
+ * This works like VMMDevReq_AcknowledgeEvents when read.  */
+#define VMMDEV_MMIO_OFF_REQUEST_FAST                        8
 
 
 /** @defgroup grp_vmmdev_req    VMMDev Generic Request Interface

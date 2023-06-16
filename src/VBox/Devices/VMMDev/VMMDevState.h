@@ -267,8 +267,11 @@ typedef struct VMMDEV
 
     /** FLag whether CPU hotplug events are monitored */
     bool                fCpuHotPlugEventsEnabled;
+    /** Flag whether the VMM device is offering the request ports
+     * over MMIO as well (mainly for ARM at the moment). */
+    bool                fMmioReq;
     /** Alignment padding. */
-    bool                afPadding8[3];
+    bool                afPadding8[2];
     /** CPU hotplug event */
     VMMDevCpuEventType  enmCpuHotPlugEvent;
     /** Core id of the CPU to change */
@@ -405,6 +408,8 @@ typedef struct VMMDEV
     IOMIOPORTHANDLE     hIoPortReq;
     /** Handle for the fast VMM request I/O port (PCI region \#0). */
     IOMIOPORTHANDLE     hIoPortFast;
+    /** Handle for the VMM request MMIO region (PCI region \#3). */
+    IOMMMIOHANDLE       hMmioReq;
     /** Handle for the VMMDev RAM (PCI region \#1). */
     PGMMMIO2HANDLE      hMmio2VMMDevRAM;
     /** Handle for the VMMDev Heap (PCI region \#2). */
@@ -566,7 +571,9 @@ void VMMDevCtlSetGuestFilterMask(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pT
 
 
 /** The saved state version. */
-#define VMMDEV_SAVED_STATE_VERSION                              VMMDEV_SAVED_STATE_VERSION_VMM_MOUSE_EXTENDED_DATA
+#define VMMDEV_SAVED_STATE_VERSION                              VMMDEV_SAVED_STATE_VERSION_MMIO_ACCESS
+/** Added support to optionally use MMIO instead of PIO for passing requests to the host (mainly for ARM). */
+#define VMMDEV_SAVED_STATE_VERSION_MMIO_ACCESS                  20
 /** The saved state version with VMMDev mouse buttons state and wheel movement data. */
 #define VMMDEV_SAVED_STATE_VERSION_VMM_MOUSE_EXTENDED_DATA      19
 /** The saved state version with display change data state. */

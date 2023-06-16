@@ -1831,7 +1831,7 @@ static int vmmdevReqHandler_AcknowledgeEvents(PPDMDEVINS pDevIns, PVMMDEV pThis,
     if (!VMMDEV_INTERFACE_VERSION_IS_1_03(pThis))
     {
         /*
-         * Note! This code is duplicated in vmmdevFastRequestIrqAck.
+         * Note! This code is duplicated in vmmdevPioFastRequestIrqAck.
          */
         if (pThis->fNewGuestFilterMaskValid)
         {
@@ -3075,16 +3075,16 @@ static VBOXSTRICTRC vmmdevReqDispatcher(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMD
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTNEWOUT,
- * Port I/O write andler for the generic request interface.}
+ * The request handler shared by the PIO and MMIO access paths.
+ *
+ * @returns Strict VBox status code.
+ * @param   pDevIns         The device instance.
+ * @param   GCPhysReqHdr    Physical address of the request header.
  */
-static DECLCALLBACK(VBOXSTRICTRC)
-vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+static VBOXSTRICTRC vmmdevRequestHandler(PPDMDEVINS pDevIns, RTGCPHYS GCPhysReqHdr)
 {
     uint64_t tsArrival;
     STAM_GET_TS(tsArrival);
-
-    RT_NOREF(offPort, cb, pvUser);
 
     /*
      * The caller has passed the guest context physical address of the request
@@ -3093,7 +3093,7 @@ vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
      */
     VMMDevRequestHeader requestHeader;
     RT_ZERO(requestHeader);
-    PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)u32, &requestHeader, sizeof(requestHeader));
+    PDMDevHlpPhysRead(pDevIns, GCPhysReqHdr, &requestHeader, sizeof(requestHeader));
 
     /* The structure size must be greater or equal to the header size. */
     if (requestHeader.size < sizeof(VMMDevRequestHeader))
@@ -3170,8 +3170,8 @@ vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
                 {
                     if (   (   requestHeader.requestType == VMMDevReq_HGCMCall32
                             || requestHeader.requestType == VMMDevReq_HGCMCall64)
-                        && ((u32 + requestHeader.size) >> X86_PAGE_SHIFT) == (u32 >> X86_PAGE_SHIFT)
-                        && RT_SUCCESS(PDMDevHlpPhysGCPhys2CCPtr(pDevIns, u32, 0 /*fFlags*/, &Lock.pvReq, &Lock.Lock)) )
+                        && ((GCPhysReqHdr + requestHeader.size) >> VMMDEV_PAGE_SHIFT) == (GCPhysReqHdr >> VMMDEV_PAGE_SHIFT)
+                        && RT_SUCCESS(PDMDevHlpPhysGCPhys2CCPtr(pDevIns, GCPhysReqHdr, 0 /*fFlags*/, &Lock.pvReq, &Lock.Lock)) )
                     {
                         memcpy((uint8_t *)pRequestHeader + sizeof(VMMDevRequestHeader),
                                (uint8_t *)Lock.pvReq     + sizeof(VMMDevRequestHeader), cbLeft);
@@ -3179,7 +3179,7 @@ vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
                     }
                     else
                         PDMDevHlpPhysRead(pDevIns,
-                                          (RTGCPHYS)u32             + sizeof(VMMDevRequestHeader),
+                                          GCPhysReqHdr              + sizeof(VMMDevRequestHeader),
                                           (uint8_t *)pRequestHeader + sizeof(VMMDevRequestHeader),
                                           cbLeft);
                 }
@@ -3191,7 +3191,7 @@ vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
                 int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
                 PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
 
-                rcRet = vmmdevReqDispatcher(pDevIns, pThis, pThisCC, pRequestHeader, u32, tsArrival, &fPostOptimize, &pLock);
+                rcRet = vmmdevReqDispatcher(pDevIns, pThis, pThisCC, pRequestHeader, GCPhysReqHdr, tsArrival, &fPostOptimize, &pLock);
 
                 PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 
@@ -3203,7 +3203,7 @@ vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
                     if (pLock)
                         memcpy(pLock->pvReq, pRequestHeader, pRequestHeader->size);
                     else
-                        PDMDevHlpPhysWrite(pDevIns, u32, pRequestHeader, pRequestHeader->size);
+                        PDMDevHlpPhysWrite(pDevIns, GCPhysReqHdr, pRequestHeader, pRequestHeader->size);
                 }
 
                 if (!pRequestHeaderFree)
@@ -3232,12 +3232,97 @@ vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
     /*
      * Write the result back to guest memory.
      */
-    PDMDevHlpPhysWrite(pDevIns, u32, &requestHeader, sizeof(requestHeader));
+    PDMDevHlpPhysWrite(pDevIns, GCPhysReqHdr, &requestHeader, sizeof(requestHeader));
 
     return rcRet;
 }
 
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,
+ * Port I/O write andler for the generic request interface.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC)
+vmmdevPioRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+{
+    RT_NOREF(offPort, cb, pvUser);
+
+    return vmmdevRequestHandler(pDevIns, u32);
+}
+
 #endif /* IN_RING3 */
+
+
+/**
+ * Common worker for hanlding the fast interrupt acknowledge path from both
+ * PIO and MMIO access handlers.
+ *
+ * @returns Strict VBox status code.
+ * @param   pDevIns         The device instance.
+ * @param   pu32            Where to store the host event flags.
+ * @param   rcToR3          The status code to return when locking failed in
+ *                          non ring-3/userspace environments (R0 or RC).
+ */
+static VBOXSTRICTRC vmmdevFastReqIrqAck(PPDMDEVINS pDevIns, uint32_t *pu32, int rcToR3)
+{
+    PVMMDEV   pThis   = PDMDEVINS_2_DATA(pDevIns, PVMMDEV);
+    PVMMDEVCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVMMDEVCC);
+    Assert(PDMDEVINS_2_DATA(pDevIns, PVMMDEV) == pThis);
+
+#ifdef IN_RING3
+    RT_NOREF(rcToR3);
+#endif
+
+    /* The VMMDev memory mapping might've failed, go to ring-3 in that case. */
+    VBOXSTRICTRC rcStrict;
+#ifndef IN_RING3
+    if (pThisCC->CTX_SUFF(pVMMDevRAM) != NULL)
+#endif
+    {
+        /* Enter critical section and check that the additions has been properly
+           initialized and that we're not in legacy v1.3 device mode. */
+        rcStrict = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, rcToR3);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            if (   pThis->fu32AdditionsOk
+                && !VMMDEV_INTERFACE_VERSION_IS_1_03(pThis))
+            {
+                /*
+                 * Do the job.
+                 *
+                 * Note! This code is duplicated in vmmdevReqHandler_AcknowledgeEvents.
+                 */
+                STAM_REL_COUNTER_INC(&pThis->CTX_SUFF_Z(StatFastIrqAck));
+
+                if (pThis->fNewGuestFilterMaskValid)
+                {
+                    pThis->fNewGuestFilterMaskValid = false;
+                    pThis->fGuestFilterMask = pThis->fNewGuestFilterMask;
+                }
+
+                *pu32 = pThis->fHostEventFlags & pThis->fGuestFilterMask;
+
+                pThis->fHostEventFlags &= ~pThis->fGuestFilterMask;
+                pThisCC->CTX_SUFF(pVMMDevRAM)->V.V1_04.fHaveEvents = false;
+
+                PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 0);
+            }
+            else
+            {
+                Log(("vmmdevFastRequestIrqAck: fu32AdditionsOk=%d interfaceVersion=%#x\n", pThis->fu32AdditionsOk,
+                     pThis->guestInfo.interfaceVersion));
+                *pu32 = UINT32_MAX;
+            }
+
+            PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+        }
+    }
+#ifndef IN_RING3
+    else
+        rcStrict = rcToR3;
+#endif
+    return rcStrict;
+}
 
 
 /**
@@ -3245,10 +3330,10 @@ vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
  * that can be handled w/o going to ring-3.}
  */
 static DECLCALLBACK(VBOXSTRICTRC)
-vmmdevFastRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+vmmdevPioFastRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
 #ifndef IN_RING3
-# if 0 /* This functionality is offered through reading the port (vmmdevFastRequestIrqAck). Leaving it here for later. */
+# if 0 /* This functionality is offered through reading the port (vmmdevPioFastRequestIrqAck). Leaving it here for later. */
     PVMMDEV pThis = PDMDEVINS_2_DATA(pDevIns, PVMMDEV);
     RT_NOREF(pvUser, Port, cb);
 
@@ -3333,7 +3418,7 @@ vmmdevFastRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uin
 # endif
 
 #else  /* IN_RING3 */
-    return vmmdevRequestHandler(pDevIns, pvUser, offPort, u32, cb);
+    return vmmdevPioRequestHandler(pDevIns, pvUser, offPort, u32, cb);
 #endif /* IN_RING3 */
 }
 
@@ -3344,64 +3429,87 @@ vmmdevFastRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uin
  * as VMMDevReq_AcknowledgeEvents - just faster).}
  */
 static DECLCALLBACK(VBOXSTRICTRC)
-vmmdevFastRequestIrqAck(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+vmmdevPioFastRequestIrqAck(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    PVMMDEV   pThis   = PDMDEVINS_2_DATA(pDevIns, PVMMDEV);
-    PVMMDEVCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVMMDEVCC);
-    Assert(PDMDEVINS_2_DATA(pDevIns, PVMMDEV) == pThis);
     RT_NOREF(pvUser, offPort);
 
     /* Only 32-bit accesses. */
     ASSERT_GUEST_MSG_RETURN(cb == sizeof(uint32_t), ("cb=%d\n", cb), VERR_IOM_IOPORT_UNUSED);
 
-    /* The VMMDev memory mapping might've failed, go to ring-3 in that case. */
+    return vmmdevFastReqIrqAck(pDevIns, pu32, VINF_IOM_R3_IOPORT_READ);
+}
+
+
+/**
+ * @callback_method_impl{FNIOMMMIONEWREAD, Read a MMIO register.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vmmdevMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
+{
+    const uint32_t offReg = (uint32_t)off;
+    RT_NOREF(pvUser);
+
+    /* Only 32-bit accesses. */
+    ASSERT_GUEST_MSG_RETURN(cb == sizeof(uint32_t), ("cb=%d\n", cb), VINF_IOM_MMIO_UNUSED_FF);
+
+    Log2(("vmmdevMmioRead %RGp (offset %04X) size=%u\n", off, offReg, cb));
+
     VBOXSTRICTRC rcStrict;
-#ifndef IN_RING3
-    if (pThisCC->CTX_SUFF(pVMMDevRAM) != NULL)
-#endif
+    switch (offReg)
     {
-        /* Enter critical section and check that the additions has been properly
-           initialized and that we're not in legacy v1.3 device mode. */
-        rcStrict = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_IOM_R3_IOPORT_READ);
-        if (rcStrict == VINF_SUCCESS)
-        {
-            if (   pThis->fu32AdditionsOk
-                && !VMMDEV_INTERFACE_VERSION_IS_1_03(pThis))
-            {
-                /*
-                 * Do the job.
-                 *
-                 * Note! This code is duplicated in vmmdevReqHandler_AcknowledgeEvents.
-                 */
-                STAM_REL_COUNTER_INC(&pThis->CTX_SUFF_Z(StatFastIrqAck));
-
-                if (pThis->fNewGuestFilterMaskValid)
-                {
-                    pThis->fNewGuestFilterMaskValid = false;
-                    pThis->fGuestFilterMask = pThis->fNewGuestFilterMask;
-                }
-
-                *pu32 = pThis->fHostEventFlags & pThis->fGuestFilterMask;
-
-                pThis->fHostEventFlags &= ~pThis->fGuestFilterMask;
-                pThisCC->CTX_SUFF(pVMMDevRAM)->V.V1_04.fHaveEvents = false;
-
-                PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 0);
-            }
-            else
-            {
-                Log(("vmmdevFastRequestIrqAck: fu32AdditionsOk=%d interfaceVersion=%#x\n", pThis->fu32AdditionsOk,
-                     pThis->guestInfo.interfaceVersion));
-                *pu32 = UINT32_MAX;
-            }
-
-            PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
-        }
+        case VMMDEV_MMIO_OFF_REQUEST_FAST:
+            rcStrict = vmmdevFastReqIrqAck(pDevIns, (uint32_t *)pv, VINF_IOM_R3_MMIO_READ);
+            break;
+        case VMMDEV_MMIO_OFF_REQUEST:
+        default:
+            Log(("VMMDev: Trying to read unimplemented register at offset %04X!\n", offReg));
+            rcStrict = VINF_IOM_MMIO_UNUSED_FF;
+            break;
     }
+
+    return rcStrict;
+}
+
+
+/**
+ * @callback_method_impl{FNIOMMMIONEWWRITE, Write to a MMIO register.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vmmdevMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
+{
+    const uint32_t offReg = (uint32_t)off;
+    RT_NOREF(pvUser);
+
+    /* Only 32-bit and 64-bit accesses. */
+    ASSERT_GUEST_MSG_RETURN(cb == sizeof(uint32_t) || cb == sizeof(uint64_t),
+                            ("cb=%u\n", cb), VINF_IOM_MMIO_UNUSED_FF);
+
+    uint64_t u64Val;
+    if (cb == sizeof(uint64_t))
+        u64Val = *(uint64_t *)pv;
+    else if (cb == sizeof(uint32_t))
+        u64Val = *(uint32_t *)pv;
+
+    Log2(("vmmdevMmioWrite %RGp (offset %04X) %#RX64 size=%u\n", off, offReg, u64Val, cb));
+
+    VBOXSTRICTRC rcStrict;
+    switch (offReg)
+    {
+        case VMMDEV_MMIO_OFF_REQUEST:
+            rcStrict = vmmdevRequestHandler(pDevIns, u64Val);
+            break;
+        case VMMDEV_MMIO_OFF_REQUEST_FAST:
 #ifndef IN_RING3
-    else
-        rcStrict = VINF_IOM_R3_IOPORT_READ;
+            rcStrict = VINF_IOM_R3_MMIO_WRITE;
+#else
+            rcStrict = vmmdevRequestHandler(pDevIns, u64Val);
 #endif
+            break;
+        default:
+            /* Ignore writes to unimplemented or read-only registers. */
+            Log(("VMMDev: Trying to write unimplemented or R/O register at offset %04X!\n", offReg));
+            rcStrict = VINF_SUCCESS;
+            break;
+    }
+
     return rcStrict;
 }
 
@@ -4090,6 +4198,7 @@ static DECLCALLBACK(int) vmmdevLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     pHlp->pfnSSMPutBool(pSSM, pThis->fBackdoorLogDisabled);
     pHlp->pfnSSMPutBool(pSSM, pThis->fKeepCredentials);
     pHlp->pfnSSMPutBool(pSSM, pThis->fHeapEnabled);
+    pHlp->pfnSSMPutBool(pSSM, pThis->fMmioReq);
 
     return VINF_SSM_DONT_CALL_AGAIN;
 }
@@ -4196,6 +4305,16 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         if (pThis->fHeapEnabled != f)
             return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - fHeapEnabled: config=%RTbool saved=%RTbool"),
                                            pThis->fHeapEnabled, f);
+
+        f = false;
+        if (uVersion >= VMMDEV_SAVED_STATE_VERSION_MMIO_ACCESS)
+        {
+            rc = pHlp->pfnSSMGetBool(pSSM, &f);
+            AssertRCReturn(rc, rc);
+        }
+        if (pThis->fMmioReq != f)
+            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - fMmioReq: config=%RTbool saved=%RTbool"),
+                                           pThis->fMmioReq, f);
     }
 
     if (uPass != SSM_PASS_FINAL)
@@ -4725,6 +4844,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                   "GuestCoreDumpCount|"
                                   "HeartbeatInterval|"
                                   "HeartbeatTimeout|"
+                                  "MmioReq|"
                                   "TestingEnabled|"
                                   "TestingMMIO|"
                                   "TestingXmlOutputFile|"
@@ -4770,7 +4890,9 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"KeepCredentials\" as a boolean"));
 
-    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "HeapEnabled", &pThis->fHeapEnabled, true);
+    /* The heap is of no use on non x86 guest architectures. */
+    static const bool fHeapEnabledDef = PDMDevHlpCpuIsGuestArchX86(pDevIns);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "HeapEnabled", &pThis->fHeapEnabled, fHeapEnabledDef);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"HeapEnabled\" as a boolean"));
@@ -4810,6 +4932,12 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Heartbeat timeout \"HeartbeatTimeout\" value (%'ull ns) is too close to the interval (%'ull ns)"),
                                    pThis->cNsHeartbeatTimeout, pThis->cNsHeartbeatInterval);
+
+    /* On everthing els than x86 we have to offer the MMIO interface because port I/O is either not available or emulated through MMIO anyway. */
+    static const bool fMmioReqEnabledDef = !PDMDevHlpCpuIsGuestArchX86(pDevIns);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "MmioReq", &pThis->fMmioReq, fMmioReqEnabledDef);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed querying \"MmioReq\" as a boolean"));
 
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
     rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "TestingEnabled", &pThis->fTestingEnabled, false);
@@ -4937,12 +5065,12 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * The I/O ports, PCI region #0.  This has two separate I/O port mappings in it,
      * so we have to do it via the mapper callback.
      */
-    rc = PDMDevHlpIoPortCreate(pDevIns, 1 /*cPorts*/, pPciDev, RT_MAKE_U32(0, 0), vmmdevRequestHandler, NULL /*pfnIn*/,
+    rc = PDMDevHlpIoPortCreate(pDevIns, 1 /*cPorts*/, pPciDev, RT_MAKE_U32(0, 0), vmmdevPioRequestHandler, NULL /*pfnIn*/,
                                NULL /*pvUser*/, "VMMDev Request Handler",  NULL, &pThis->hIoPortReq);
     AssertRCReturn(rc, rc);
 
-    rc = PDMDevHlpIoPortCreate(pDevIns, 1 /*cPorts*/, pPciDev, RT_MAKE_U32(1, 0),  vmmdevFastRequestHandler,
-                               vmmdevFastRequestIrqAck, NULL, "VMMDev Fast R0/RC Requests", NULL /*pvUser*/, &pThis->hIoPortFast);
+    rc = PDMDevHlpIoPortCreate(pDevIns, 1 /*cPorts*/, pPciDev, RT_MAKE_U32(1, 0),  vmmdevPioFastRequestHandler,
+                               vmmdevPioFastRequestIrqAck, NULL, "VMMDev Fast R0/RC Requests", NULL /*pvUser*/, &pThis->hIoPortFast);
     AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpPCIIORegionRegisterIoCustom(pDevIns, 0, 0x20, vmmdevIOPortRegionMap);
@@ -4975,6 +5103,15 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         /* Register the memory area with PDM so HM can access it before it's mapped. */
         rc = PDMDevHlpRegisterVMMDevHeap(pDevIns, NIL_RTGCPHYS, pThisCC->pVMMDevHeapR3, VMMDEV_HEAP_SIZE);
         AssertLogRelRCReturn(rc, rc);
+    }
+
+    if (pThis->fMmioReq)
+    {
+        rc = PDMDevHlpPCIIORegionCreateMmio(pDevIns, 3 /*iPciRegion*/, VMMDEV_MMIO_SIZE, PCI_ADDRESS_SPACE_MEM,
+                                            vmmdevMmioWrite, vmmdevMmioRead, NULL,
+                                            IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                            "VMMDev MMIO Request Handler", &pThis->hMmioReq);
+        AssertRCReturn(rc, rc);
     }
 
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
@@ -5122,13 +5259,19 @@ static DECLCALLBACK(int) vmmdevRZConstruct(PPDMDEVINS pDevIns)
 
     /*
      * We map the first page of the VMMDevRAM into raw-mode and kernel contexts so we
-     * can handle interrupt acknowledge requests more timely (vmmdevFastRequestIrqAck).
+     * can handle interrupt acknowledge requests more timely (vmmdevPioFastRequestIrqAck).
      */
-    rc = PDMDevHlpMmio2SetUpContext(pDevIns, pThis->hMmio2VMMDevRAM, 0, GUEST_PAGE_SIZE, (void **)&pThisCC->CTX_SUFF(pVMMDevRAM));
+    rc = PDMDevHlpMmio2SetUpContext(pDevIns, pThis->hMmio2VMMDevRAM, 0, VMMDEV_PAGE_SIZE, (void **)&pThisCC->CTX_SUFF(pVMMDevRAM));
     AssertRCReturn(rc, rc);
 
-    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortFast, vmmdevFastRequestHandler, vmmdevFastRequestIrqAck, NULL);
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortFast, vmmdevPioFastRequestHandler, vmmdevPioFastRequestIrqAck, NULL);
     AssertRCReturn(rc, rc);
+
+    if (pThis->fMmioReq)
+    {
+        rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmioReq, vmmdevMmioWrite, vmmdevMmioRead, NULL /*pvUser*/);
+        AssertRCReturn(rc, rc);
+    }
 
 # ifndef VBOX_WITHOUT_TESTING_FEATURES
     /*
