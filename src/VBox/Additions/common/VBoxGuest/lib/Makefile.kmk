@@ -84,7 +84,6 @@ VBoxGuestR0Lib_SOURCES      = \
 	\
 	VBoxGuestR0LibIdc.cpp \
 	VBoxGuestR0LibSharedFolders.c \
-	VBoxGuestR0LibCrOgl.cpp \
 	VBoxGuestR0LibMouse.cpp
 VBoxGuestR0Lib_SOURCES.os2     = VBoxGuestR0LibIdc-os2.cpp
 VBoxGuestR0Lib_SOURCES.solaris = VBoxGuestR0LibIdc-solaris.cpp
