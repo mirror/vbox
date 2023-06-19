@@ -1193,7 +1193,8 @@ static DECLCALLBACK(int) utsClientWorker(RTTHREAD hThread, void *pvUser)
     }
 
     RTPollSetDestroy(hPollSet);
-
+    if (papClients)
+        RTMemFree(papClients);
     return rc;
 }
 
