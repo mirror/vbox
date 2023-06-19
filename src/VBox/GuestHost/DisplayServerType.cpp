@@ -124,7 +124,8 @@ VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void)
     };
 
 #define GET_SYMBOL(a_Mod, a_Name, a_Fn) \
-    rc = RTLdrGetSymbol(a_Mod, a_Name, (void **)&a_Fn); \
+    if (RT_SUCCESS(rc)) \
+        rc = RTLdrGetSymbol(a_Mod, a_Name, (void **)&a_Fn); \
     if (RT_FAILURE(rc)) \
         LogRel2(("Symbol '%s' unable to load, rc=%Rrc\n", a_Name, rc));
 
