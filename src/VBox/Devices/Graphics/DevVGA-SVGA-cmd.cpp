@@ -719,7 +719,7 @@ static int vmsvgaR3GboCopy(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGboDst, uint
 static int vmsvgaR3OTableSetOrGrow(PVMSVGAR3STATE pSvgaR3State, SVGAOTableType type, PPN64 baseAddress,
                                    uint32_t sizeInBytes, uint32 validSizeInBytes, SVGAMobFormat ptDepth, bool fGrow)
 {
-    ASSERT_GUEST_RETURN(type <= RT_ELEMENTS(pSvgaR3State->aGboOTables), VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(type < RT_ELEMENTS(pSvgaR3State->aGboOTables), VERR_INVALID_PARAMETER);
     ASSERT_GUEST_RETURN(sizeInBytes >= validSizeInBytes, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
