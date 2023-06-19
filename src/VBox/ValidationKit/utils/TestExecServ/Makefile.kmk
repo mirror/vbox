@@ -80,7 +80,9 @@ TestExecServiceFiles_SOURCES.win            := \
 	$(PATH_SUB_CURRENT)/win/vboxtxs-nat.reg=>win/vboxtxs-nat.reg
 TestExecServiceFiles_EXEC_SOURCES.win     := \
 	$(PATH_SUB_CURRENT)/win/vboxtxs.cmd=>win/vboxtxs.cmd \
-	$(PATH_SUB_CURRENT)/win/vboxtxs-nat.cmd=>win/vboxtxs-nat.cmd
+	$(PATH_SUB_CURRENT)/win/vboxtxs-add-task.cmd=>win/vboxtxs-add-task.cmd \
+	$(PATH_SUB_CURRENT)/win/vboxtxs-nat.cmd=>win/vboxtxs-nat.cmd \
+	$(PATH_SUB_CURRENT)/win/vboxtxs-add-task-nat.cmd=>win/vboxtxs-add-task-nat.cmd
 
 
 include $(FILE_KBUILD_SUB_FOOTER)

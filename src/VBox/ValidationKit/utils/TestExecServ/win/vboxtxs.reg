@@ -8,6 +8,6 @@ REGEDIT4
 ; Sample password for test VM, see TestExecServ/vboxtxs-readme.txt
 "DefaultPassword"="Please_put_your_secure_password_here_see_TestExecServ/vboxtxs-readme.txt"
 
-[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run]
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run]
 "NTConfiguration"="c:\\Apps\\vboxtxs.cmd"
 
