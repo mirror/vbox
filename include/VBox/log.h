@@ -302,6 +302,10 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_HM,
     /** IEM group. */
     LOG_GROUP_IEM,
+    /** IEM native recompiler group. */
+    LOG_GROUP_IEM_RE_NATIVE,
+    /** IEM threaded recompiler group. */
+    LOG_GROUP_IEM_RE_THREADED,
     /** IEM AMD-V group. */
     LOG_GROUP_IEM_SVM,
     /** IEM VT-x group. */
@@ -744,20 +748,6 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_PGM_SHARED,
     /** Audio + video recording. */
     LOG_GROUP_RECORDING,
-    /** REM group. */
-    LOG_GROUP_REM,
-    /** REM disassembly handler group. */
-    LOG_GROUP_REM_DISAS,
-    /** REM access handler group. */
-    LOG_GROUP_REM_HANDLER,
-    /** REM I/O port access group. */
-    LOG_GROUP_REM_IOPORT,
-    /** REM MMIO access group. */
-    LOG_GROUP_REM_MMIO,
-    /** REM Printf. */
-    LOG_GROUP_REM_PRINTF,
-    /** REM running group. */
-    LOG_GROUP_REM_RUN,
     /** SELM group. */
     LOG_GROUP_SELM,
     /** Shared clipboard host service group. */
@@ -974,6 +964,8 @@ typedef enum VBOXLOGGROUP
     "HGSMI", \
     "HM", \
     "IEM", \
+    "IEM_RE_NATIVE", \
+    "IEM_RE_THREADED", \
     "IEM_SVM", \
     "IEM_VMX", \
     "IOBUFMGMT", \
@@ -1195,13 +1187,6 @@ typedef enum VBOXLOGGROUP
     "PGM_POOL", \
     "PGM_SHARED", \
     "RECORDING", \
-    "REM", \
-    "REM_DISAS", \
-    "REM_HANDLER", \
-    "REM_IOPORT", \
-    "REM_MMIO", \
-    "REM_PRINTF", \
-    "REM_RUN", \
     "SELM", \
     "SHARED_CLIPBOARD", \
     "SHARED_CROPENGL", \
