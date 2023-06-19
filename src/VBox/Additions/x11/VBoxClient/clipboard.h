@@ -32,7 +32,7 @@
 #endif
 
 /**
- * Struct keeping a Shared Clipboard context.
+ * Struct keeping am X11 Shared Clipboard context.
  */
 struct SHCLCONTEXT
 {
@@ -44,6 +44,8 @@ struct SHCLCONTEXT
 #endif
     union
     {
+        /** Event source for waiting for request responses. */
+        SHCLEVENTSOURCE  EventSrc;
         /** X11 clipboard context. */
         SHCLX11CTX       X11;
         /** @todo Way clipboard context goes here. */

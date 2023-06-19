@@ -39,7 +39,9 @@
 #include <iprt/process.h>
 #include <iprt/semaphore.h>
 
-#include <VBox/log.h>
+#define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
+#include <iprt/log.h>
+
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/GuestHost/SharedClipboard.h>
@@ -49,7 +51,233 @@
 
 #include "clipboard.h"
 
+#include <iprt/req.h>
 
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+#if 0
+/**
+ * Worker for reading the transfer root list from the host.
+ */
+static DECLCALLBACK(int) vbclX11ReqTransferReadRootListWorker(PSHCLCONTEXT pCtx, PSHCLTRANSFER pTransfer)
+{
+    RT_NOREF(pCtx);
+
+    LogFlowFuncEnter();
+
+    int rc = ShClTransferRootListRead(pTransfer);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+#endif
+
+/**
+ * Worker for waiting for a transfer status change.
+ */
+static DECLCALLBACK(int) vbclX11TransferWaitForStatusWorker(PSHCLCONTEXT pCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS enmSts,
+                                                            RTMSINTERVAL msTimeout)
+{
+    RT_NOREF(pCtx);
+
+    LogFlowFuncEnter();
+
+    int rc = VERR_TIMEOUT;
+
+    ShClTransferAcquire(pTransfer);
+
+    uint64_t const tsStartMs = RTTimeMilliTS();
+
+    while (RTTimeMilliTS() - tsStartMs <= msTimeout)
+    {
+        if (ShClTransferGetStatus(pTransfer) == enmSts) /* Currently we only have busy waiting here. */
+        {
+            rc = VINF_SUCCESS;
+            break;
+        }
+        RTThreadSleep(100);
+    }
+
+    ShClTransferRelease(pTransfer);
+
+    return rc;
+}
+
+/**
+ * @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnRegistered
+ *
+ * This starts the HTTP server if not done yet and registers the transfer with it.
+ *
+ * @thread Clipbpoard main thread.
+ */
+static DECLCALLBACK(void) vbclX11OnHttpTransferRegisteredCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, PSHCLTRANSFERCTX pTransferCtx)
+{
+    RT_NOREF(pTransferCtx);
+
+    LogFlowFuncEnter();
+
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
+    AssertPtr(pCtx);
+
+    PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
+    AssertPtr(pTransfer);
+
+    ShClTransferAcquire(pTransfer);
+
+    /* We only need to start the HTTP server when we actually receive data from the remote (host). */
+    if (ShClTransferGetDir(pTransfer) == SHCLTRANSFERDIR_FROM_REMOTE)
+    {
+        /* Retrieve the root entries as a first action, so that the transfer is ready to go
+         * once it gets registered to HTTP server below. */
+        int rc2 = ShClTransferRootListRead(pTransfer);
+        if (RT_SUCCESS(rc2))
+        {
+            ShClTransferHttpServerMaybeStart(&pCtx->X11.HttpCtx);
+            rc2 = ShClTransferHttpServerRegisterTransfer(&pCtx->X11.HttpCtx.HttpServer, pTransfer);
+        }
+
+        if (RT_FAILURE(rc2))
+            LogRel(("Shared Clipboard: Registering HTTP transfer failed: %Rrc\n", rc2));
+    }
+
+    LogFlowFuncLeave();
+}
+
+/**
+ * Unregisters a transfer from a HTTP server.
+ *
+ * This also stops the HTTP server if no active transfers are found anymore.
+ *
+ * @param   pCtx                Shared clipboard context to unregister transfer for.
+ * @param   pTransfer           Transfer to unregister.
+ *
+ * @thread Clipbpoard main thread.
+ */
+static void vbclX11HttpTransferUnregister(PSHCLCONTEXT pCtx, PSHCLTRANSFER pTransfer)
+{
+    if (ShClTransferGetDir(pTransfer) == SHCLTRANSFERDIR_FROM_REMOTE)
+    {
+        ShClTransferHttpServerUnregisterTransfer(&pCtx->X11.HttpCtx.HttpServer, pTransfer);
+        ShClTransferHttpServerMaybeStop(&pCtx->X11.HttpCtx);
+    }
+
+    ShClTransferRelease(pTransfer);
+}
+
+/**
+ * @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnUnregistered
+ *
+ * Unregisters a (now) unregistered transfer from the HTTP server.
+ *
+ * @thread Clipbpoard main thread.
+ */
+static DECLCALLBACK(void) vbclX11OnHttpTransferUnregisteredCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, PSHCLTRANSFERCTX pTransferCtx)
+{
+    RT_NOREF(pTransferCtx);
+    vbclX11HttpTransferUnregister((PSHCLCONTEXT)pCbCtx->pvUser, pCbCtx->pTransfer);
+}
+
+/**
+ * @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnCompleted
+ *
+ * Unregisters a complete transfer from the HTTP server.
+ *
+ * @thread Clipbpoard main thread.
+ */
+static DECLCALLBACK(void) vbclX11OnHttpTransferCompletedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rc)
+{
+    RT_NOREF(rc);
+    vbclX11HttpTransferUnregister((PSHCLCONTEXT)pCbCtx->pvUser, pCbCtx->pTransfer);
+}
+
+/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnError
+ *
+ * Unregisters a failed transfer from the HTTP server.
+ *
+ * @thread Clipbpoard main thread.
+ */
+static DECLCALLBACK(void) vbclX11OnHttpTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX pCtx, int rc)
+{
+    return vbclX11OnHttpTransferCompletedCallback(pCtx, rc);
+}
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP */
+
+/**
+ * Worker for a reading clipboard from the host.
+ */
+static DECLCALLBACK(int) vbclX11ReqReadDataWorker(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser)
+{
+    RT_NOREF(pvUser);
+
+    LogFlowFuncEnter();
+
+    int rc = VERR_NO_DATA; /* Play safe. */
+
+    uint32_t cbRead = 0;
+
+    uint32_t cbData = _4K; /** @todo Make this dynamic. */
+    void    *pvData = RTMemAlloc(cbData);
+    if (pvData)
+    {
+        rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmt, pvData, cbData, &cbRead);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    /*
+     * A return value of VINF_BUFFER_OVERFLOW tells us to try again with a
+     * larger buffer.  The size of the buffer needed is placed in *pcb.
+     * So we start all over again.
+     */
+    if (rc == VINF_BUFFER_OVERFLOW)
+    {
+        /* cbRead contains the size required. */
+
+        cbData = cbRead;
+        pvData = RTMemRealloc(pvData, cbRead);
+        if (pvData)
+        {
+            rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmt, pvData, cbData, &cbRead);
+            if (rc == VINF_BUFFER_OVERFLOW)
+                rc = VERR_BUFFER_OVERFLOW;
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    if (!cbRead)
+        rc = VERR_NO_DATA;
+
+    if (RT_SUCCESS(rc))
+    {
+        if (ppv)
+            *ppv = pvData;
+        if (pcb)
+            *pcb = cbRead; /* Actual bytes read. */
+    }
+    else
+    {
+        /*
+         * Catch other errors. This also catches the case in which the buffer was
+         * too small a second time, possibly because the clipboard contents
+         * changed half-way through the operation.  Since we can't say whether or
+         * not this is actually an error, we just return size 0.
+         */
+        RTMemFree(pvData);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * @copydoc SHCLCALLBACKS::pfnOnRequestDataFromSource
+ *
+ * Requests URI data from the host.
+ * This initiates a transfer on the host. Most of the handling will be done VbglR3 then.
+ *
+ * @thread  X11 event thread.
+ */
 static DECLCALLBACK(int) vbclX11OnRequestDataFromSourceCallback(PSHCLCONTEXT pCtx,
                                                                 SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser)
 {
@@ -57,68 +285,47 @@ static DECLCALLBACK(int) vbclX11OnRequestDataFromSourceCallback(PSHCLCONTEXT pCt
 
     LogFlowFunc(("pCtx=%p, uFmt=%#x\n", pCtx, uFmt));
 
-    int rc = VINF_SUCCESS;
+    /* Request reading host clipboard data. */
+    PRTREQ pReq = NULL;
+    int rc = RTReqQueueCallEx(pCtx->X11.hReqQ, &pReq, SHCL_TIMEOUT_DEFAULT_MS, RTREQFLAGS_IPRT_STATUS,
+                              (PFNRT)vbclX11ReqReadDataWorker, 5, pCtx, uFmt, ppv, pcb, pvUser);
+    RTReqRelease(pReq);
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
     if (uFmt == VBOX_SHCL_FMT_URI_LIST)
     {
-        //rc = VbglR3ClipboardRootListRead()
-        rc = VERR_NO_DATA;
-    }
-    else
-#endif
-    {
-        uint32_t cbRead = 0;
+        PSHCLHTTPSERVER pSrv = &pCtx->X11.HttpCtx.HttpServer;
 
-        uint32_t cbData = _4K; /** @todo Make this dynamic. */
-        void    *pvData = RTMemAlloc(cbData);
-        if (pvData)
-        {
-            rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmt, pvData, cbData, &cbRead);
-        }
-        else
-            rc = VERR_NO_MEMORY;
-
-        /*
-         * A return value of VINF_BUFFER_OVERFLOW tells us to try again with a
-         * larger buffer.  The size of the buffer needed is placed in *pcb.
-         * So we start all over again.
-         */
-        if (rc == VINF_BUFFER_OVERFLOW)
-        {
-            /* cbRead contains the size required. */
-
-            cbData = cbRead;
-            pvData = RTMemRealloc(pvData, cbRead);
-            if (pvData)
-            {
-                rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmt, pvData, cbData, &cbRead);
-                if (rc == VINF_BUFFER_OVERFLOW)
-                    rc = VERR_BUFFER_OVERFLOW;
-            }
-            else
-                rc = VERR_NO_MEMORY;
-        }
-
-        if (!cbRead)
-            rc = VERR_NO_DATA;
-
+        rc = ShClTransferHttpServerWaitForStatusChange(pSrv, SHCLHTTPSERVERSTATUS_TRANSFER_REGISTERED, SHCL_TIMEOUT_DEFAULT_MS);
         if (RT_SUCCESS(rc))
         {
-            *pcb = cbRead; /* Actual bytes read. */
-            *ppv = pvData;
+            PSHCLTRANSFER pTransfer = ShClTransferHttpServerGetTransferFirst(pSrv);
+            if (pTransfer)
+            {
+                rc = vbclX11TransferWaitForStatusWorker(pCtx, pTransfer, SHCLTRANSFERSTATUS_STARTED, SHCL_TIMEOUT_DEFAULT_MS);
+                if (RT_SUCCESS(rc))
+                {
+                    char *pszURL = ShClTransferHttpServerGetUrlA(pSrv, pTransfer->State.uID);
+                    char *pszData = NULL;
+                    RTStrAPrintf(&pszData, "copy\n%s", pszURL);
+
+                    *ppv = pszData;
+                    *pcb = strlen(pszData) + 1 /* Include terminator */;
+
+                    RTStrFree(pszURL);
+
+                    rc = VINF_SUCCESS;
+
+                    LogFlowFunc(("pszURL=%s\n", pszURL));
+                }
+            }
+            else
+                AssertMsgFailed(("No registered transfer found for HTTP server\n"));
         }
         else
-        {
-            /*
-             * Catch other errors. This also catches the case in which the buffer was
-             * too small a second time, possibly because the clipboard contents
-             * changed half-way through the operation.  Since we can't say whether or
-             * not this is actually an error, we just return size 0.
-             */
-            RTMemFree(pvData);
-        }
+            LogRel(("Shared Clipboard: Could not start transfer, as the HTTP server is not running\n"));
     }
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP */
 
     if (RT_FAILURE(rc))
         LogRel(("Requesting data in format %#x from host failed with %Rrc\n", uFmt, rc));
@@ -128,43 +335,37 @@ static DECLCALLBACK(int) vbclX11OnRequestDataFromSourceCallback(PSHCLCONTEXT pCt
 }
 
 /**
- * Opaque data structure describing a request from the host for clipboard
- * data, passed in when the request is forwarded to the X11 backend so that
- * it can be completed correctly.
+ * Worker for reporting clipboard formats to the host.
  */
-struct CLIPREADCBREQ
-{
-    /** The data format that was requested. */
-    SHCLFORMAT uFmt;
-};
-
-static DECLCALLBACK(int) vbclX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFormats, void *pvUser)
+static DECLCALLBACK(int) vbclX11ReqReportFormatsWorker(PSHCLCONTEXT pCtx, uint32_t fFormats, void *pvUser)
 {
     RT_NOREF(pvUser);
 
     LogFlowFunc(("fFormats=%#x\n", fFormats));
 
     int rc = VbglR3ClipboardReportFormats(pCtx->CmdCtx.idClient, fFormats);
-    LogFlowFuncLeaveRC(rc);
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-static DECLCALLBACK(int) vbclX11OnSendDataToDestCallback(PSHCLCONTEXT pCtx, void *pv, uint32_t cb, void *pvUser)
+/**
+ * @copydoc SHCLCALLBACKS::pfnReportFormats
+ *
+ * Reports clipboard formats to the host.
+ *
+ * @thread  X11 event thread.
+ */
+static DECLCALLBACK(int) vbclX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFormats, void *pvUser)
 {
-    PSHCLX11READDATAREQ pData = (PSHCLX11READDATAREQ)pvUser;
-    AssertPtrReturn(pData, VERR_INVALID_POINTER);
+    /* Request reading host clipboard data. */
+    PRTREQ pReq = NULL;
+    int rc = RTReqQueueCallEx(pCtx->X11.hReqQ, &pReq, SHCL_TIMEOUT_DEFAULT_MS, RTREQFLAGS_IPRT_STATUS,
+                              (PFNRT)vbclX11ReqReportFormatsWorker, 3, pCtx, fFormats, pvUser);
+    RTReqRelease(pReq);
 
-    LogFlowFunc(("rcCompletion=%Rrc, Format=0x%x, pv=%p, cb=%RU32\n", pData->rcCompletion, pData->pReq->uFmt, pv, cb));
-
-    Assert((cb == 0 && pv == NULL) || (cb != 0 && pv != NULL));
-    pData->rcCompletion = VbglR3ClipboardWriteDataEx(&pCtx->CmdCtx, pData->pReq->uFmt, pv, cb);
-
-    RTMemFree(pData->pReq);
-
-    LogFlowFuncLeaveRC(pData->rcCompletion);
-
-    return VINF_SUCCESS;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /**
@@ -180,7 +381,6 @@ int VBClX11ClipboardInit(void)
     RT_ZERO(Callbacks);
     Callbacks.pfnReportFormats           = vbclX11ReportFormatsCallback;
     Callbacks.pfnOnRequestDataFromSource = vbclX11OnRequestDataFromSourceCallback;
-    Callbacks.pfnOnSendDataToDest        = vbclX11OnSendDataToDestCallback;
 
     int rc = ShClX11Init(&g_Ctx.X11, &Callbacks, &g_Ctx, false /* fHeadless */);
     if (RT_SUCCESS(rc))
@@ -219,56 +419,19 @@ int VBClX11ClipboardDestroy(void)
     return VINF_SUCCESS;
 }
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
-/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnStart */
-static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
-{
-    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
-    AssertPtr(pCtx);
-
-    PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
-    AssertPtr(pTransfer);
-
-    /* We only need to start the HTTP server (and register the transfer to it) when we actually receive data from the host. */
-    if (ShClTransferGetDir(pTransfer) == SHCLTRANSFERDIR_FROM_REMOTE)
-        return ShClHttpTransferRegisterAndMaybeStart(&pCtx->X11.HttpCtx, pTransfer);
-
-    return VINF_SUCCESS;
-}
-
-/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnCompleted */
-static DECLCALLBACK(void) vboxClipboardOnTransferCompletedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rc)
-{
-    RT_NOREF(rc);
-
-    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
-    AssertPtr(pCtx);
-
-    PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
-    AssertPtr(pTransfer);
-
-    /* See comment in vboxClipboardOnTransferInitCallback(). */
-    if (ShClTransferGetDir(pTransfer) == SHCLTRANSFERDIR_FROM_REMOTE)
-        ShClHttpTransferUnregisterAndMaybeStop(&pCtx->X11.HttpCtx, pTransfer);
-}
-
-/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnError */
-static DECLCALLBACK(void) vboxClipboardOnTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX pCtx, int rc)
-{
-    return vboxClipboardOnTransferCompletedCallback(pCtx, rc);
-}
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP */
-
 /**
  * The main loop of the X11-specifc Shared Clipboard code.
  *
  * @returns VBox status code.
+ *
+ * @thread  Clipboard service worker thread.
  */
 int VBClX11ClipboardMain(void)
 {
-    int rc;
-
     PSHCLCONTEXT pCtx = &g_Ctx;
+
+    int rc = RTReqQueueCreate(&pCtx->X11.hReqQ);
+    AssertRCReturn(rc, rc);
 
     bool fShutdown = false;
 
@@ -285,24 +448,27 @@ int VBClX11ClipboardMain(void)
     pCtx->CmdCtx.Transfers.Callbacks.pvUser = pCtx; /* Assign context as user-provided callback data. */
     pCtx->CmdCtx.Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
 
-    pCtx->CmdCtx.Transfers.Callbacks.pfnOnStart      = vboxClipboardOnTransferStartCallback;
-    pCtx->CmdCtx.Transfers.Callbacks.pfnOnCompleted  = vboxClipboardOnTransferCompletedCallback;
-    pCtx->CmdCtx.Transfers.Callbacks.pfnOnError      = vboxClipboardOnTransferErrorCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnRegistered   = vbclX11OnHttpTransferRegisteredCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnUnregistered = vbclX11OnHttpTransferUnregisteredCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnCompleted    = vbclX11OnHttpTransferCompletedCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnError        = vbclX11OnHttpTransferErrorCallback;
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP */
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
-    /* The thread waits for incoming messages from the host. */
+    LogFlowFunc(("fUseLegacyProtocol=%RTbool, fHostFeatures=%#RX64 ...\n",
+                 pCtx->CmdCtx.fUseLegacyProtocol, pCtx->CmdCtx.fHostFeatures));
+
+    /* The thread processes incoming messages from the host and the worker queue. */
+    PVBGLR3CLIPBOARDEVENT pEvent = NULL;
     for (;;)
     {
-        PVBGLR3CLIPBOARDEVENT pEvent = (PVBGLR3CLIPBOARDEVENT)RTMemAllocZ(sizeof(VBGLR3CLIPBOARDEVENT));
+        if (!pEvent)
+            pEvent = (PVBGLR3CLIPBOARDEVENT)RTMemAllocZ(sizeof(VBGLR3CLIPBOARDEVENT));
         AssertPtrBreakStmt(pEvent, rc = VERR_NO_MEMORY);
-
-        LogFlowFunc(("Waiting for host message (fUseLegacyProtocol=%RTbool, fHostFeatures=%#RX64) ...\n",
-                     pCtx->CmdCtx.fUseLegacyProtocol, pCtx->CmdCtx.fHostFeatures));
 
         uint32_t idMsg  = 0;
         uint32_t cParms = 0;
-        rc = VbglR3ClipboardMsgPeekWait(&pCtx->CmdCtx, &idMsg, &cParms, NULL /* pidRestoreCheck */);
+        rc = VbglR3ClipboardMsgPeek(&pCtx->CmdCtx, &idMsg, &cParms, NULL /* pidRestoreCheck */);
         if (RT_SUCCESS(rc))
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
@@ -310,6 +476,11 @@ int VBClX11ClipboardMain(void)
 #else
             rc = VbglR3ClipboardEventGetNext(idMsg, cParms, &pCtx->CmdCtx, pEvent);
 #endif
+        }
+        else if (rc == VERR_TRY_AGAIN) /* No new message (yet). */
+        {
+            RTReqQueueProcess(pCtx->X11.hReqQ, RT_MS_1SEC);
+            continue;
         }
 
         if (RT_FAILURE(rc))
@@ -323,7 +494,7 @@ int VBClX11ClipboardMain(void)
                 break;
 
             /* Wait a bit before retrying. */
-            RTThreadSleep(1000);
+            RTThreadSleep(RT_MS_1SEC);
             continue;
         }
         else
@@ -335,22 +506,46 @@ int VBClX11ClipboardMain(void)
             {
                 case VBGLR3CLIPBOARDEVENTTYPE_REPORT_FORMATS:
                 {
-                    ShClX11ReportFormatsToX11(&g_Ctx.X11, pEvent->u.fReportedFormats);
+                    ShClX11ReportFormatsToX11Async(&g_Ctx.X11, pEvent->u.fReportedFormats);
                     break;
                 }
 
                 case VBGLR3CLIPBOARDEVENTTYPE_READ_DATA:
                 {
-                    /* The host needs data in the specified format. */
-                    CLIPREADCBREQ *pReq;
-                    pReq = (CLIPREADCBREQ *)RTMemAllocZ(sizeof(CLIPREADCBREQ));
-                    if (pReq)
+                    PSHCLEVENT pReadDataEvent;
+                    rc = ShClEventSourceGenerateAndRegisterEvent(&pCtx->EventSrc, &pReadDataEvent);
+                    if (RT_SUCCESS(rc))
                     {
-                        pReq->uFmt = pEvent->u.fReadData;
-                        ShClX11ReadDataFromX11(&g_Ctx.X11, pReq->uFmt, pReq);
+                        rc = ShClX11ReadDataFromX11Async(&g_Ctx.X11, pEvent->u.fReadData, UINT32_MAX, pReadDataEvent);
+                        if (RT_SUCCESS(rc))
+                        {
+                            PSHCLEVENTPAYLOAD pPayload;
+                            rc = ShClEventWait(pReadDataEvent, SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
+                            if (RT_SUCCESS(rc))
+                            {
+                                if (pPayload)
+                                {
+                                    Assert(pPayload->cbData == sizeof(SHCLX11RESPONSE));
+                                    PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
+
+                                    rc = VbglR3ClipboardWriteDataEx(&pCtx->CmdCtx, pEvent->u.fReadData,
+                                                                    pResp->Read.pvData, pResp->Read.cbData);
+
+                                    RTMemFree(pResp->Read.pvData);
+                                    pResp->Read.cbData = 0;
+
+                                    ShClPayloadFree(pPayload);
+                                }
+                            }
+                        }
+
+                        ShClEventRelease(pReadDataEvent);
+                        pReadDataEvent = NULL;
                     }
-                    else
-                        rc = VERR_NO_MEMORY;
+
+                    if (RT_FAILURE(rc))
+                        VbglR3ClipboardWriteDataEx(&pCtx->CmdCtx, pEvent->u.fReadData, NULL, 0);
+
                     break;
                 }
 
@@ -364,7 +559,10 @@ int VBClX11ClipboardMain(void)
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
                 case VBGLR3CLIPBOARDEVENTTYPE_TRANSFER_STATUS:
                 {
-                    /* Nothing to do here. */
+                    if (pEvent->u.TransferStatus.Report.uStatus == SHCLTRANSFERSTATUS_STARTED)
+                    {
+
+                    }
                     rc = VINF_SUCCESS;
                     break;
                 }
@@ -393,7 +591,8 @@ int VBClX11ClipboardMain(void)
             break;
     }
 
+    RTReqQueueDestroy(pCtx->X11.hReqQ);
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-

@@ -37,6 +37,8 @@
 #include <iprt/win/shlobj.h>
 #include <iprt/win/shlwapi.h>
 
+#include <iprt/thread.h> // REMOVE
+
 #include <iprt/asm.h>
 #include <iprt/err.h>
 #include <iprt/path.h>
@@ -51,21 +53,45 @@
  *        !!! WARNING: Buggy, doesn't work yet (some memory corruption / garbage in the file name descriptions) !!! */
 //#define VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT 1
 
-SharedClipboardWinDataObject::SharedClipboardWinDataObject(PSHCLTRANSFER pTransfer,
-                                                           LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed, ULONG cFormats)
-    : m_enmStatus(Uninitialized)
+SharedClipboardWinDataObject::SharedClipboardWinDataObject(void)
+    : m_pCtx(NULL)
+    , m_enmStatus(Uninitialized)
     , m_lRefCount(0)
     , m_cFormats(0)
-    , m_pTransfer(pTransfer)
+    , m_pTransfer(NULL)
     , m_pStream(NULL)
     , m_uObjIdx(0)
-    , m_fRunning(false)
+    , m_fThreadRunning(false)
     , m_EventListComplete(NIL_RTSEMEVENT)
-    , m_EventTransferComplete(NIL_RTSEMEVENT)
+    , m_EventStatusChanged(NIL_RTSEMEVENT)
 {
-    AssertPtr(m_pTransfer);
+}
 
-    HRESULT hr;
+SharedClipboardWinDataObject::~SharedClipboardWinDataObject(void)
+{
+    Destroy();
+
+    LogFlowFunc(("mRefCount=%RI32\n", m_lRefCount));
+}
+
+/**
+ * Initializes a data object instance.
+ *
+ * @returns VBox status code.
+ * @param   pFormatEtc          FormatETC to use.
+ * @param   pStgMed             Storage medium to use.
+ * @param   cFormats            Number of formats in \a pFormatEtc and \a pStgMed.
+ */
+int SharedClipboardWinDataObject::Init(PSHCLCONTEXT pCtx,
+                                       LPFORMATETC pFormatEtc /* = NULL */, LPSTGMEDIUM pStgMed /* = NULL */,
+                                       ULONG cFormats /* = 0 */)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(cFormats == 0 || (RT_VALID_PTR(pFormatEtc) && RT_VALID_PTR(pStgMed)), VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+
+    m_pCtx = pCtx; /* Save opaque context. */
 
     ULONG cFixedFormats = 3; /* CFSTR_FILEDESCRIPTORA + CFSTR_FILECONTENTS + CFSTR_PERFORMEDDROPEFFECT */
 #ifdef VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT
@@ -73,103 +99,150 @@ SharedClipboardWinDataObject::SharedClipboardWinDataObject(PSHCLTRANSFER pTransf
 #endif
     const ULONG cAllFormats   = cFormats + cFixedFormats;
 
-    try
-    {
-        m_pFormatEtc = new FORMATETC[cAllFormats];
-        RT_BZERO(m_pFormatEtc, sizeof(FORMATETC) * cAllFormats);
-        m_pStgMedium = new STGMEDIUM[cAllFormats];
-        RT_BZERO(m_pStgMedium, sizeof(STGMEDIUM) * cAllFormats);
+    m_pFormatEtc = new FORMATETC[cAllFormats];
+    AssertPtrReturn(m_pFormatEtc, VERR_NO_MEMORY);
+    RT_BZERO(m_pFormatEtc, sizeof(FORMATETC) * cAllFormats);
+    m_pStgMedium = new STGMEDIUM[cAllFormats];
+    AssertPtrReturn(m_pStgMedium, VERR_NO_MEMORY);
+    RT_BZERO(m_pStgMedium, sizeof(STGMEDIUM) * cAllFormats);
 
-        /** @todo Do we need CFSTR_FILENAME / CFSTR_SHELLIDLIST here? */
+    /** @todo Do we need CFSTR_FILENAME / CFSTR_SHELLIDLIST here? */
 
-        /*
-         * Register fixed formats.
-         */
-        unsigned uIdx = 0;
+    /*
+     * Register fixed formats.
+     */
+    unsigned uIdx = 0;
 
-        LogFlowFunc(("Registering CFSTR_FILEDESCRIPTORA ...\n"));
-        m_cfFileDescriptorA = RegisterClipboardFormat(CFSTR_FILEDESCRIPTORA);
-        registerFormat(&m_pFormatEtc[uIdx++], m_cfFileDescriptorA);
+    LogFlowFunc(("Registering CFSTR_FILEDESCRIPTORA ...\n"));
+    m_cfFileDescriptorA = RegisterClipboardFormat(CFSTR_FILEDESCRIPTORA);
+    registerFormat(&m_pFormatEtc[uIdx++], m_cfFileDescriptorA);
 #ifdef VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT
-        LogFlowFunc(("Registering CFSTR_FILEDESCRIPTORW ...\n"));
-        m_cfFileDescriptorW = RegisterClipboardFormat(CFSTR_FILEDESCRIPTORW);
-        registerFormat(&m_pFormatEtc[uIdx++], m_cfFileDescriptorW);
+    LogFlowFunc(("Registering CFSTR_FILEDESCRIPTORW ...\n"));
+    m_cfFileDescriptorW = RegisterClipboardFormat(CFSTR_FILEDESCRIPTORW);
+    registerFormat(&m_pFormatEtc[uIdx++], m_cfFileDescriptorW);
 #endif
 
-        /* IStream interface, implemented in ClipboardStreamImpl-win.cpp. */
-        LogFlowFunc(("Registering CFSTR_FILECONTENTS ...\n"));
-        m_cfFileContents = RegisterClipboardFormat(CFSTR_FILECONTENTS);
-        registerFormat(&m_pFormatEtc[uIdx++], m_cfFileContents, TYMED_ISTREAM, 0 /* lIndex */);
+    /* IStream interface, implemented in ClipboardStreamImpl-win.cpp. */
+    LogFlowFunc(("Registering CFSTR_FILECONTENTS ...\n"));
+    m_cfFileContents = RegisterClipboardFormat(CFSTR_FILECONTENTS);
+    registerFormat(&m_pFormatEtc[uIdx++], m_cfFileContents, TYMED_ISTREAM, 0 /* lIndex */);
 
-        /* We want to know from the target what the outcome of the operation was to react accordingly (e.g. abort a transfer). */
-        LogFlowFunc(("Registering CFSTR_PERFORMEDDROPEFFECT ...\n"));
-        m_cfPerformedDropEffect = RegisterClipboardFormat(CFSTR_PERFORMEDDROPEFFECT);
-        registerFormat(&m_pFormatEtc[uIdx++], m_cfPerformedDropEffect, TYMED_HGLOBAL, -1 /* lIndex */, DVASPECT_CONTENT);
+    /* We want to know from the target what the outcome of the operation was to react accordingly (e.g. abort a transfer). */
+    LogFlowFunc(("Registering CFSTR_PERFORMEDDROPEFFECT ...\n"));
+    m_cfPerformedDropEffect = RegisterClipboardFormat(CFSTR_PERFORMEDDROPEFFECT);
+    registerFormat(&m_pFormatEtc[uIdx++], m_cfPerformedDropEffect, TYMED_HGLOBAL, -1 /* lIndex */, DVASPECT_CONTENT);
 
-        /*
-         * Registration of dynamic formats needed?
-         */
-        LogFlowFunc(("%RU32 dynamic formats\n", cFormats));
-        if (cFormats)
-        {
-            AssertPtr(pFormatEtc);
-            AssertPtr(pStgMed);
-
-            for (ULONG i = 0; i < cFormats; i++)
-            {
-                LogFlowFunc(("Format %RU32: cfFormat=%RI16, tyMed=%RU32, dwAspect=%RU32\n",
-                             i, pFormatEtc[i].cfFormat, pFormatEtc[i].tymed, pFormatEtc[i].dwAspect));
-                m_pFormatEtc[cFixedFormats + i] = pFormatEtc[i];
-                m_pStgMedium[cFixedFormats + i] = pStgMed[i];
-            }
-        }
-
-        hr = S_OK;
-    }
-    catch (std::bad_alloc &)
+    /*
+     * Registration of dynamic formats needed?
+     */
+    LogFlowFunc(("%RU32 dynamic formats\n", cFormats));
+    if (cFormats)
     {
-        hr = E_OUTOFMEMORY;
+        for (ULONG i = 0; i < cFormats; i++)
+        {
+            LogFlowFunc(("Format %RU32: cfFormat=%RI16, tyMed=%RU32, dwAspect=%RU32\n",
+                         i, pFormatEtc[i].cfFormat, pFormatEtc[i].tymed, pFormatEtc[i].dwAspect));
+            m_pFormatEtc[cFixedFormats + i] = pFormatEtc[i];
+            m_pStgMedium[cFixedFormats + i] = pStgMed[i];
+        }
     }
 
-    if (SUCCEEDED(hr))
+    if (RT_SUCCESS(rc))
     {
         m_cFormats  = cAllFormats;
         m_enmStatus = Initialized;
 
-        int rc2 = RTSemEventCreate(&m_EventListComplete);
-        AssertRC(rc2);
-        rc2 = RTSemEventCreate(&m_EventTransferComplete);
-        AssertRC(rc2);
+        rc = RTCritSectInit(&m_CritSect);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTSemEventCreate(&m_EventListComplete);
+            if (RT_SUCCESS(rc))
+                rc = RTSemEventCreate(&m_EventStatusChanged);
+        }
     }
 
-    LogFlowFunc(("cAllFormats=%RU32, hr=%Rhrc\n", cAllFormats, hr));
+    LogFlowFunc(("cAllFormats=%RU32, rc=%Rrc\n", cAllFormats, rc));
+    return rc;
 }
 
-SharedClipboardWinDataObject::~SharedClipboardWinDataObject(void)
+/**
+ * Destroys a data object instance.
+ */
+void SharedClipboardWinDataObject::Destroy(void)
 {
     LogFlowFuncEnter();
 
-    RTSemEventDestroy(m_EventListComplete);
-    m_EventListComplete = NIL_RTSEMEVENT;
+    AssertReturnVoid(m_lRefCount == 0);
 
-    RTSemEventDestroy(m_EventTransferComplete);
-    m_EventTransferComplete = NIL_RTSEMEVENT;
+    int rc = RTCritSectDelete(&m_CritSect);
+    AssertRC(rc);
+
+    if (m_EventListComplete != NIL_RTSEMEVENT)
+    {
+        rc = RTSemEventDestroy(m_EventListComplete);
+        AssertRC(rc);
+        m_EventListComplete = NIL_RTSEMEVENT;
+    }
+
+    if (m_EventStatusChanged != NIL_RTSEMEVENT)
+    {
+        rc = RTSemEventDestroy(m_EventStatusChanged);
+        AssertRC(rc);
+        m_EventStatusChanged = NIL_RTSEMEVENT;
+    }
 
     if (m_pStream)
+    {
         m_pStream->Release();
+        m_pStream = NULL;
+    }
 
     if (m_pFormatEtc)
+    {
         delete[] m_pFormatEtc;
+        m_pFormatEtc = NULL;
+    }
 
     if (m_pStgMedium)
+    {
         delete[] m_pStgMedium;
+        m_pStgMedium = NULL;
+    }
 
-    LogFlowFunc(("mRefCount=%RI32\n", m_lRefCount));
+    if (m_pTransfer)
+        ShClTransferRelease(m_pTransfer);
+
+    FsObjEntryList::const_iterator itRoot = m_lstEntries.cbegin();
+    while (itRoot != m_lstEntries.end())
+    {
+        RTStrFree(itRoot->pszPath);
+        ++itRoot;
+    }
+    m_lstEntries.clear();
+
+    m_enmStatus = Uninitialized;
+    m_fThreadRunning = false;
+    m_pTransfer = NULL;
 }
 
-/*
- * IUnknown methods.
+/**
+ * Sets the callbacks for this object.
+ *
+ * @param   pCallbacks          Pointer to callbacks table to use.
  */
+void SharedClipboardWinDataObject::SetCallbacks(PSHCLCALLBACKS pCallbacks)
+{
+    AssertPtrReturnVoid(pCallbacks);
+
+    RT_ZERO(m_Callbacks);
+
+    m_Callbacks.pfnOnRequestDataFromSource = pCallbacks->pfnOnRequestDataFromSource;
+}
+
+
+/*********************************************************************************************************************************
+ * IUnknown methods.
+ ********************************************************************************************************************************/
 
 STDMETHODIMP_(ULONG) SharedClipboardWinDataObject::AddRef(void)
 {
@@ -269,9 +342,9 @@ int SharedClipboardWinDataObject::readDir(PSHCLTRANSFER pTransfer, const Utf8Str
                 if (RT_SUCCESS(rc))
                 {
                     LogFlowFunc(("cTotalObjects=%RU64, cbTotalSize=%RU64\n\n",
-                                 hdrList.cTotalObjects, hdrList.cbTotalSize));
+                                 hdrList.cEntries, hdrList.cbTotalSize));
 
-                    for (uint64_t o = 0; o < hdrList.cTotalObjects; o++)
+                    for (uint64_t o = 0; o < hdrList.cEntries; o++)
                     {
                         SHCLLISTENTRY entryList;
                         rc = ShClTransferListEntryInit(&entryList);
@@ -290,22 +363,19 @@ int SharedClipboardWinDataObject::readDir(PSHCLTRANSFER pTransfer, const Utf8Str
                                     LogFlowFunc(("\t%s (%RU64 bytes) -> %s\n",
                                                  entryList.pszName, pFsObjInfo->cbObject, strPath.c_str()));
 
-                                    if (RTFS_IS_DIRECTORY(pFsObjInfo->Attr.fMode))
+                                    if (   RTFS_IS_DIRECTORY(pFsObjInfo->Attr.fMode)
+                                        || RTFS_IS_FILE     (pFsObjInfo->Attr.fMode))
                                     {
-                                        FSOBJENTRY objEntry = { strPath.c_str(), *pFsObjInfo };
-
-                                        m_lstEntries.push_back(objEntry); /** @todo Can this throw? */
-
-                                        rc = readDir(pTransfer, strPath.c_str());
-                                    }
-                                    else if (RTFS_IS_FILE(pFsObjInfo->Attr.fMode))
-                                    {
-                                        FSOBJENTRY objEntry = { strPath.c_str(), *pFsObjInfo };
+                                        FSOBJENTRY objEntry;
+                                        objEntry.pszPath = RTStrDup(strPath.c_str());
+                                        AssertPtrBreakStmt(objEntry.pszPath, rc = VERR_NO_MEMORY);
+                                        objEntry.objInfo = *pFsObjInfo;
 
                                         m_lstEntries.push_back(objEntry); /** @todo Can this throw? */
                                     }
-                                    else
-                                        rc = VERR_NOT_SUPPORTED;
+                                    else /* Not fatal, just skip. */
+                                        LogRel(("Shared Clipboard: Warning: File system object '%s' of type %#x not supported, skipping\n",
+                                                strPath.c_str(), pFsObjInfo->Attr.fMode & RTFS_TYPE_MASK));
 
                                     /** @todo Handle symlinks. */
                                 }
@@ -328,6 +398,9 @@ int SharedClipboardWinDataObject::readDir(PSHCLTRANSFER pTransfer, const Utf8Str
 
         ShClTransferListOpenParmsDestroy(&openParmsList);
     }
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Reading directory '%s' failed with %Rrc\n", strDir.c_str(), rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -361,25 +434,29 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
 
     LogRel2(("Shared Clipboard: Calculating transfer ...\n"));
 
-    PSHCLROOTLIST pRootList;
-    int rc = ShClTransferRootsGet(pTransfer, &pRootList);
+    int rc = ShClTransferRootListRead(pTransfer);
     if (RT_SUCCESS(rc))
     {
-        LogFlowFunc(("cRoots=%RU32\n\n", pRootList->Hdr.cRoots));
+        uint64_t const cRoots = ShClTransferRootsCount(pTransfer);
 
-        for (uint32_t i = 0; i < pRootList->Hdr.cRoots; i++)
+        LogFlowFunc(("cRoots=%RU64\n\n", cRoots));
+
+        for (uint32_t i = 0; i < cRoots; i++)
         {
-            PSHCLLISTENTRY pRootEntry = &pRootList->paEntries[i];
-            AssertPtr(pRootEntry);
+            PCSHCLLISTENTRY pRootEntry = ShClTransferRootsEntryGet(pTransfer, i);
 
-            Assert(pRootEntry->cbInfo == sizeof(SHCLFSOBJINFO));
-            PSHCLFSOBJINFO pFsObjInfo = (PSHCLFSOBJINFO)pRootEntry->pvInfo;
+            AssertBreakStmt(pRootEntry->cbInfo == sizeof(SHCLFSOBJINFO), rc = VERR_INVALID_PARAMETER);
+            PSHCLFSOBJINFO const pFsObjInfo = (PSHCLFSOBJINFO)pRootEntry->pvInfo;
 
-            LogFlowFunc(("pszRoot=%s, fMode=0x%x\n", pRootEntry->pszName, pFsObjInfo->Attr.fMode));
+            LogFlowFunc(("pszRoot=%s, fMode=0x%x (type %#x)\n",
+                         pRootEntry->pszName, pFsObjInfo->Attr.fMode, (pFsObjInfo->Attr.fMode & RTFS_TYPE_MASK)));
 
             if (RTFS_IS_DIRECTORY(pFsObjInfo->Attr.fMode))
             {
-                FSOBJENTRY objEntry = { pRootEntry->pszName, *pFsObjInfo };
+                FSOBJENTRY objEntry;
+                objEntry.pszPath = RTStrDup(pRootEntry->pszName);
+                AssertPtrBreakStmt(objEntry.pszPath, rc = VERR_NO_MEMORY);
+                objEntry.objInfo = *pFsObjInfo;
 
                 pThis->m_lstEntries.push_back(objEntry); /** @todo Can this throw? */
 
@@ -387,12 +464,19 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
             }
             else if (RTFS_IS_FILE(pFsObjInfo->Attr.fMode))
             {
-                FSOBJENTRY objEntry = { pRootEntry->pszName, *pFsObjInfo };
+                FSOBJENTRY objEntry;
+                objEntry.pszPath = RTStrDup(pRootEntry->pszName);
+                AssertPtrBreakStmt(objEntry.pszPath, rc = VERR_NO_MEMORY);
+                objEntry.objInfo = *pFsObjInfo;
 
                 pThis->m_lstEntries.push_back(objEntry); /** @todo Can this throw? */
             }
             else
+            {
+                LogRel(("Shared Clipboard: Root entry '%s': File type %#x not supported\n",
+                        pRootEntry->pszName, (pFsObjInfo->Attr.fMode & RTFS_TYPE_MASK)));
                 rc = VERR_NOT_SUPPORTED;
+            }
 
             if (ASMAtomicReadBool(&pTransfer->Thread.fStop))
             {
@@ -403,9 +487,6 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
             if (RT_FAILURE(rc))
                 break;
         }
-
-        ShClTransferRootListFree(pRootList);
-        pRootList = NULL;
 
         if (   RT_SUCCESS(rc)
             && !ASMAtomicReadBool(&pTransfer->Thread.fStop))
@@ -423,10 +504,8 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
             {
                 LogRel2(("Shared Clipboard: Waiting for transfer to complete ...\n"));
 
-                LogFlowFunc(("Waiting for transfer to complete ...\n"));
-
                 /* Transferring stuff can take a while, so don't use any timeout here. */
-                rc2 = RTSemEventWait(pThis->m_EventTransferComplete, RT_INDEFINITE_WAIT);
+                rc2 = RTSemEventWait(pThis->m_EventStatusChanged, RT_INDEFINITE_WAIT);
                 AssertRC(rc2);
 
                 switch (pThis->m_enmStatus)
@@ -498,13 +577,13 @@ int SharedClipboardWinDataObject::createFileGroupDescriptorFromTransfer(PSHCLTRA
 
     char *pszFileSpec = NULL;
 
-    FsObjEntryList::const_iterator itRoot = m_lstEntries.begin();
+    FsObjEntryList::const_iterator itRoot = m_lstEntries.cbegin();
     while (itRoot != m_lstEntries.end())
     {
         FILEDESCRIPTOR *pFD = &pFGD->fgd[curIdx];
         RT_BZERO(pFD, cbFileDescriptor);
 
-        const char *pszFile = itRoot->strPath.c_str();
+        const char *pszFile = itRoot->pszPath;
         AssertPtr(pszFile);
 
         pszFileSpec = RTStrDup(pszFile);
@@ -583,22 +662,23 @@ int SharedClipboardWinDataObject::createFileGroupDescriptorFromTransfer(PSHCLTRA
 }
 
 /**
- * Retrieves the data stored in this object and store the result in
- * pMedium.
+ * Retrieves the data stored in this object and store the result in pMedium.
  *
- * @return  IPRT status code.
  * @return  HRESULT
- * @param   pFormatEtc
- * @param   pMedium
+ * @param   pFormatEtc          Format to retrieve.
+ * @param   pMedium             Where to store the data on success.
+ *
+ * @thread  Windows event thread.
  */
 STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium)
 {
     AssertPtrReturn(pFormatEtc, DV_E_FORMATETC);
     AssertPtrReturn(pMedium, DV_E_FORMATETC);
 
-    LogFlowFuncEnter();
+    int rc2 = RTCritSectEnter(&m_CritSect);
+    AssertRCReturn(rc2, E_UNEXPECTED);
 
-    LogFlowFunc(("lIndex=%RI32\n", pFormatEtc->lindex));
+    LogFlowFunc(("lIndex=%RI32, enmStatus=%#x\n", pFormatEtc->lindex, m_enmStatus));
 
     /*
      * Initialize default values.
@@ -607,107 +687,169 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
 
     HRESULT hr = DV_E_FORMATETC; /* Play safe. */
 
+    int rc = VINF_SUCCESS;
+
     if (   pFormatEtc->cfFormat == m_cfFileDescriptorA
 #ifdef VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT
         || pFormatEtc->cfFormat == m_cfFileDescriptorW
 #endif
        )
     {
-        const bool fUnicode = pFormatEtc->cfFormat == m_cfFileDescriptorW;
-
-        const uint32_t enmTransferStatus = ShClTransferGetStatus(m_pTransfer);
-        RT_NOREF(enmTransferStatus);
-
-        LogFlowFunc(("FormatIndex_FileDescriptor%s, enmTransferStatus=%s, m_fRunning=%RTbool\n",
-                     fUnicode ? "W" : "A", ShClTransferStatusToStr(enmTransferStatus), m_fRunning));
-
-        int rc;
-
-        /* The caller can call GetData() several times, so make sure we don't do the same transfer multiple times. */
-        if (!m_fRunning)
+        switch (m_enmStatus)
         {
-            /* Start the transfer asynchronously in a separate thread. */
-            rc = ShClTransferRun(m_pTransfer, &SharedClipboardWinDataObject::readThread, this);
-            if (RT_SUCCESS(rc))
+            case Initialized:
             {
-                m_fRunning = true;
+                LogRel2(("Shared Clipboard: Requesting data for IDataObject ...\n"));
 
-                /* Don't block for too long here, as this also will screw other apps running on the OS. */
-                LogFunc(("Waiting for listing to arrive ...\n"));
-                rc = RTSemEventWait(m_EventListComplete, SHCL_TIMEOUT_DEFAULT_MS);
+                /* Leave lock while requesting + waiting. */
+                rc2 = RTCritSectLeave(&m_CritSect);
+                AssertRCReturn(rc2, E_UNEXPECTED);
+
+                /* Request the transfer from the source.
+                 * This will generate a transfer status message which we're waiting for here. */
+                AssertPtr(m_Callbacks.pfnOnRequestDataFromSource);
+                rc = m_Callbacks.pfnOnRequestDataFromSource(m_pCtx,
+                                                            VBOX_SHCL_FMT_URI_LIST, NULL /* ppv */, NULL /* pv */,
+                                                            this /* pvUser */);
+                AssertRCBreak(rc);
+
+                LogRel2(("Shared Clipboard: Waiting for IDataObject started status ...\n"));
+
+                rc = RTSemEventWait(m_EventStatusChanged, SHCL_TIMEOUT_DEFAULT_MS);
+
+                /* Re-acquire lock. */
+                rc2 = RTCritSectEnter(&m_CritSect);
+                AssertRCReturn(rc2, E_UNEXPECTED);
+
                 if (RT_SUCCESS(rc))
                 {
-                    LogFunc(("Listing complete\n"));
+                    if (m_enmStatus != Running)
+                    {
+                        LogRel(("Shared Clipboard: Received wrong IDataObject status (%#x)\n", m_enmStatus));
+                        rc = VERR_WRONG_ORDER;
+                        break;
+                    }
+
+                    /* There now must be a transfer assigned. */
+                    AssertPtrBreakStmt(m_pTransfer, rc = VERR_WRONG_ORDER);
                 }
-            }
-        }
-        else
-            rc = VINF_SUCCESS;
+                else /* Bail out on failure. */
+                    break;
 
-        if (RT_SUCCESS(rc))
-        {
-            HGLOBAL hGlobal;
-            rc = createFileGroupDescriptorFromTransfer(m_pTransfer, fUnicode, &hGlobal);
-            if (RT_SUCCESS(rc))
+                RT_FALL_THROUGH();
+            }
+
+            case Running:
             {
-                pMedium->tymed   = TYMED_HGLOBAL;
-                pMedium->hGlobal = hGlobal;
-                /* Note: hGlobal now is being owned by pMedium / the caller. */
+                const bool fUnicode = pFormatEtc->cfFormat == m_cfFileDescriptorW;
 
-                hr = S_OK;
+                const uint32_t enmTransferStatus = ShClTransferGetStatus(m_pTransfer);
+                RT_NOREF(enmTransferStatus);
+
+                LogFlowFunc(("FormatIndex_FileDescriptor%s, enmTransferStatus=%s, m_fRunning=%RTbool\n",
+                             fUnicode ? "W" : "A", ShClTransferStatusToStr(enmTransferStatus), m_fThreadRunning));
+
+                /* The caller can call GetData() several times, so make sure we don't do the same transfer multiple times. */
+                if (!m_fThreadRunning)
+                {
+                    /* Start the transfer asynchronously in a separate thread. */
+                    rc = ShClTransferRun(m_pTransfer, &SharedClipboardWinDataObject::readThread, this /* pvUser */);
+                    if (RT_SUCCESS(rc))
+                    {
+                        m_fThreadRunning = true;
+
+                        /* Leave lock while waiting. */
+                        rc2 = RTCritSectLeave(&m_CritSect);
+                        AssertRCReturn(rc2, E_UNEXPECTED);
+
+                        /* Don't block for too long here, as this also will screw other apps running on the OS. */
+                        LogRel2(("Shared Clipboard: Waiting for IDataObject listing to arrive ...\n"));
+                        rc = RTSemEventWait(m_EventListComplete, SHCL_TIMEOUT_DEFAULT_MS);
+
+                        /* Re-acquire lock. */
+                        rc2 = RTCritSectEnter(&m_CritSect);
+                        AssertRCReturn(rc2, E_UNEXPECTED);
+                    }
+                }
+
+                if (RT_SUCCESS(rc))
+                {
+                    HGLOBAL hGlobal;
+                    rc = createFileGroupDescriptorFromTransfer(m_pTransfer, fUnicode, &hGlobal);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pMedium->tymed   = TYMED_HGLOBAL;
+                        pMedium->hGlobal = hGlobal;
+                        /* Note: hGlobal now is being owned by pMedium / the caller. */
+
+                        hr = S_OK;
+                    }
+                }
+
+                break;
             }
-            else /* We can't tell any better to the caller, unfortunately. */
-                hr = E_UNEXPECTED;
+
+            default:
+                break;
         }
 
         if (RT_FAILURE(rc))
-            LogRel(("Shared Clipboard: Data object unable to get data, rc=%Rrc\n", rc));
-    }
-
-    if (pFormatEtc->cfFormat == m_cfFileContents)
-    {
-        if (          pFormatEtc->lindex >= 0
-            && (ULONG)pFormatEtc->lindex <  m_lstEntries.size())
         {
-            m_uObjIdx = pFormatEtc->lindex; /* lIndex of FormatEtc contains the actual index to the object being handled. */
-
-            FSOBJENTRY &fsObjEntry = m_lstEntries.at(m_uObjIdx);
-
-            LogFlowFunc(("FormatIndex_FileContents: m_uObjIdx=%u (entry '%s')\n", m_uObjIdx, fsObjEntry.strPath.c_str()));
-
-            LogRel2(("Shared Clipboard: Receiving object '%s' ...\n", fsObjEntry.strPath.c_str()));
-
-            /* Hand-in the provider so that our IStream implementation can continue working with it. */
-            hr = SharedClipboardWinStreamImpl::Create(this /* pParent */, m_pTransfer,
-                                                      fsObjEntry.strPath.c_str()/* File name */, &fsObjEntry.objInfo /* PSHCLFSOBJINFO */,
-                                                      &m_pStream);
-            if (SUCCEEDED(hr))
-            {
-                /* Hand over the stream to the caller. */
-                pMedium->tymed = TYMED_ISTREAM;
-                pMedium->pstm  = m_pStream;
-            }
+            LogRel(("Shared Clipboard: Error getting data for IDataObject, rc=%Rrc\n", rc));
+            hr = E_UNEXPECTED; /* We can't tell any better to the caller, unfortunately. */
         }
     }
-    else if (pFormatEtc->cfFormat == m_cfPerformedDropEffect)
+
+    if (RT_SUCCESS(rc))
     {
-        HGLOBAL hGlobal = GlobalAlloc(GHND, sizeof(DWORD));
+        if (pFormatEtc->cfFormat == m_cfFileContents)
+        {
+            if (          pFormatEtc->lindex >= 0
+                && (ULONG)pFormatEtc->lindex <  m_lstEntries.size())
+            {
+                m_uObjIdx = pFormatEtc->lindex; /* lIndex of FormatEtc contains the actual index to the object being handled. */
 
-        DWORD* pdwDropEffect = (DWORD*)GlobalLock(hGlobal);
-        *pdwDropEffect = DROPEFFECT_COPY;
+                FSOBJENTRY &fsObjEntry = m_lstEntries.at(m_uObjIdx);
 
-        GlobalUnlock(hGlobal);
+                LogFlowFunc(("FormatIndex_FileContents: m_uObjIdx=%u (entry '%s')\n", m_uObjIdx, fsObjEntry.pszPath));
 
-        pMedium->tymed          = TYMED_HGLOBAL;
-        pMedium->hGlobal        = hGlobal;
-        pMedium->pUnkForRelease = NULL;
+                LogRel2(("Shared Clipboard: Receiving object '%s' ...\n", fsObjEntry.pszPath));
+
+                /* Hand-in the provider so that our IStream implementation can continue working with it. */
+                hr = SharedClipboardWinStreamImpl::Create(this /* pParent */, m_pTransfer,
+                                                          fsObjEntry.pszPath /* File name */, &fsObjEntry.objInfo /* PSHCLFSOBJINFO */,
+                                                          &m_pStream);
+                if (SUCCEEDED(hr))
+                {
+                    /* Hand over the stream to the caller. */
+                    pMedium->tymed = TYMED_ISTREAM;
+                    pMedium->pstm  = m_pStream;
+                }
+            }
+        }
+        else if (pFormatEtc->cfFormat == m_cfPerformedDropEffect)
+        {
+            HGLOBAL hGlobal = GlobalAlloc(GHND, sizeof(DWORD));
+
+            DWORD* pdwDropEffect = (DWORD*)GlobalLock(hGlobal);
+            *pdwDropEffect = DROPEFFECT_COPY;
+
+            GlobalUnlock(hGlobal);
+
+            pMedium->tymed          = TYMED_HGLOBAL;
+            pMedium->hGlobal        = hGlobal;
+            pMedium->pUnkForRelease = NULL;
+        }
+
+        if (   FAILED(hr)
+            && hr != DV_E_FORMATETC) /* Can happen if the caller queries unknown / unhandled formats. */
+        {
+            LogRel(("Shared Clipboard: Error returning data from data object (%Rhrc)\n", hr));
+        }
     }
 
-    if (   FAILED(hr)
-        && hr != DV_E_FORMATETC) /* Can happen if the caller queries unknown / unhandled formats. */
-    {
-        LogRel(("Shared Clipboard: Error returning data from data object (%Rhrc)\n", hr));
-    }
+    rc2 = RTCritSectLeave(&m_CritSect);
+    AssertRCReturn(rc2, E_UNEXPECTED);
 
     LogFlowFunc(("hr=%Rhrc\n", hr));
     return hr;
@@ -785,7 +927,7 @@ STDMETHODIMP SharedClipboardWinDataObject::SetData(LPFORMATETC pFormatEtc, LPSTG
         {
             LogRel2(("Shared Clipboard: Transfer canceled by user interaction\n"));
 
-            OnTransferCanceled();
+            SetStatus(Canceled);
         }
         /** @todo Detect move / overwrite actions here. */
 
@@ -870,54 +1012,56 @@ STDMETHODIMP SharedClipboardWinDataObject::StartOperation(IBindCtx *pbcReserved)
  * Own stuff.
  */
 
-int SharedClipboardWinDataObject::Init(void)
+/**
+ * Assigns a transfer object and starts the transfer for the data object.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Transfer to assign.
+ */
+int SharedClipboardWinDataObject::SetAndStartTransfer(PSHCLTRANSFER pTransfer)
 {
-    LogFlowFuncLeaveRC(VINF_SUCCESS);
-    return VINF_SUCCESS;
-}
+    AssertReturn(m_pTransfer == NULL, VERR_WRONG_ORDER); /* Transfer already set? */
 
-void SharedClipboardWinDataObject::OnTransferComplete(int rc /* = VINF_SUCESS */)
-{
-    RT_NOREF(rc);
-
-    LogFlowFunc(("m_uObjIdx=%RU32 (total: %zu)\n", m_uObjIdx, m_lstEntries.size()));
-
+    int rc = RTCritSectEnter(&m_CritSect);
     if (RT_SUCCESS(rc))
     {
-        const bool fComplete = m_uObjIdx == m_lstEntries.size() - 1 /* Object index is zero-based */;
-        if (fComplete)
+        if (m_enmStatus == Initialized)
         {
-            m_enmStatus = Completed;
-        }
-    }
-    else
-        m_enmStatus = Error;
+            m_pTransfer = pTransfer;
 
-    if (m_enmStatus != Initialized)
-    {
-        if (m_EventTransferComplete != NIL_RTSEMEVENT)
-        {
-            int rc2 = RTSemEventSignal(m_EventTransferComplete);
-            AssertRC(rc2);
+            ShClTransferAcquire(pTransfer);
+
+            rc = setStatusLocked(Running);
         }
+        else
+            AssertFailedStmt(rc = VERR_WRONG_ORDER);
+
+        RTCritSectLeave(&m_CritSect);
     }
 
-    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
-void SharedClipboardWinDataObject::OnTransferCanceled(void)
+/**
+ * Sets a new status to the data object and signals its waiter.
+ *
+ * @returns VBox status code.
+ * @param   enmStatus           New status to signal.
+ * @param   rc                  Result code. Optional.
+ *
+ * @note    Called by the main clipboard thread + SharedClipboardWinStreamImpl.
+ */
+int SharedClipboardWinDataObject::SetStatus(Status enmStatus, int rc /* = VINF_SUCCESS */)
 {
-    LogFlowFuncEnter();
-
-    m_enmStatus = Canceled;
-
-    if (m_EventTransferComplete != NIL_RTSEMEVENT)
+    int rc2 = RTCritSectEnter(&m_CritSect);
+    if (RT_SUCCESS(rc2))
     {
-        int rc2 = RTSemEventSignal(m_EventTransferComplete);
-        AssertRC(rc2);
+        setStatusLocked(enmStatus, rc);
+
+        RTCritSectLeave(&m_CritSect);
     }
 
-    LogFlowFuncLeave();
+    return rc2;
 }
 
 /* static */
@@ -976,3 +1120,56 @@ void SharedClipboardWinDataObject::registerFormat(LPFORMATETC pFormatEtc, CLIPFO
 
     logFormat(pFormatEtc->cfFormat);
 }
+
+/**
+ * Sets a new status to the data object and signals its waiter.
+ *
+ * @returns VBox status code.
+ * @param   enmStatus           New status to signal.
+ * @param   rc                  Result code. Optional.
+ *
+ * @note    Caller must have taken the critical section.
+ */
+int SharedClipboardWinDataObject::setStatusLocked(Status enmStatus, int rc /* = VINF_SUCCESS */)
+{
+    AssertReturn(enmStatus == Error || RT_SUCCESS(rc), VERR_INVALID_PARAMETER);
+    AssertReturn(RTCritSectIsOwned(&m_CritSect), VERR_WRONG_ORDER);
+
+    RT_NOREF(rc);
+
+    int rc2 = RTCritSectEnter(&m_CritSect);
+    if (RT_SUCCESS(rc2))
+    {
+        LogFlowFunc(("enmStatus=%#x (current is: %#x)\n", enmStatus, m_enmStatus));
+
+        switch (enmStatus)
+        {
+            case Completed:
+            {
+                LogFlowFunc(("m_uObjIdx=%RU32 (total: %zu)\n", m_uObjIdx, m_lstEntries.size()));
+
+                const bool fComplete = m_uObjIdx == m_lstEntries.size() - 1 /* Object index is zero-based */;
+                if (fComplete)
+                    m_enmStatus = Completed;
+                break;
+            }
+
+            default:
+            {
+                m_enmStatus = enmStatus;
+                break;
+            }
+        }
+
+        if (RT_FAILURE(rc))
+            LogRel(("Shared Clipboard: Data object received error %Rrc (status %#x)\n", rc, enmStatus));
+
+        if (m_EventStatusChanged != NIL_RTSEMEVENT)
+            rc2 = RTSemEventSignal(m_EventStatusChanged);
+
+        RTCritSectLeave(&m_CritSect);
+    }
+
+    return rc2;
+}
+

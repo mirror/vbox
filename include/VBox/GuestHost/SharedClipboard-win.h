@@ -41,6 +41,7 @@
 
 #include <iprt/critsect.h>
 #include <iprt/types.h>
+#include <iprt/req.h>
 #include <iprt/win/windows.h>
 
 #include <VBox/GuestHost/SharedClipboard.h>
@@ -109,6 +110,9 @@ typedef struct _SHCLWINAPIOLD
     bool                   fCBChainPingInProcess;
 } SHCLWINAPIOLD, *PSHCLWINAPIOLD;
 
+/** Forward declaration for the Windows data object. */
+class SharedClipboardWinDataObject;
+
 /**
  * Structure for maintaining a Shared Clipboard context on Windows platforms.
  */
@@ -130,6 +134,16 @@ typedef struct _SHCLWINCTX
     SHCLWINAPINEW      newAPI;
     /** Structure for maintaining the old clipboard API. */
     SHCLWINAPIOLD      oldAPI;
+    /** The "in-flight" data object for file transfers.
+     *  This is the current data object which has been created and sent to the Windows clipboard.
+     *  That way Windows knows that a potential file transfer is available, but the actual transfer
+     *  hasn't been started yet.
+     *  Can be NULL if currently not being used / no current "in-flight" transfer present. */
+    SharedClipboardWinDataObject
+                      *pDataObjInFlight;
+    /** Request queue.
+     *  Needed for processing HGCM requests within the HGCM (main) thread from the Windows event thread. */
+    RTREQQUEUE         hReqQ;
 } SHCLWINCTX, *PSHCLWINCTX;
 
 int SharedClipboardWinOpen(HWND hWnd);
@@ -153,8 +167,10 @@ SHCLFORMAT SharedClipboardWinClipboardFormatToVBox(UINT uFormat);
 int SharedClipboardWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATS pfFormats);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-int SharedClipboardWinGetRoots(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
-int SharedClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **papszList, uint32_t *pcbList);
+int SharedClipboardWinTransferGetRoots(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
+int SharedClipboardWinTransferDropFilesToStringList(DROPFILES *pDropFiles, char **papszList, uint32_t *pcbList);
+int SharedClipboardWinTransferGetRootsFromClipboard(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
+int SharedClipboardWinTransferCreateAndSetDataObject(PSHCLWINCTX pWinCtx, PSHCLCONTEXT pCtx, PSHCLCALLBACKS pCallbacks);
 #endif
 
 int SharedClipboardWinGetCFHTMLHeaderValue(const char *pszSrc, const char *pszOption, uint32_t *puValue);
@@ -187,8 +203,11 @@ public:
     {
         /** The object is uninitialized (not ready). */
         Uninitialized = 0,
-        /** The object is initialized and ready to use. */
+        /** The object is initialized and ready to use.
+         *  A transfer is *not* running yet! */
         Initialized,
+        /** Transfer is running. */
+        Running,
         /** The operation has been successfully completed. */
         Completed,
         /** The operation has been canceled. */
@@ -199,9 +218,15 @@ public:
 
 public:
 
-    SharedClipboardWinDataObject(PSHCLTRANSFER pTransfer,
-                                 LPFORMATETC pFormatEtc = NULL, LPSTGMEDIUM pStgMed = NULL, ULONG cFormats = 0);
+    SharedClipboardWinDataObject(void);
     virtual ~SharedClipboardWinDataObject(void);
+
+public:
+
+    int Init(PSHCLCONTEXT pCtx, LPFORMATETC pFormatEtc = NULL, LPSTGMEDIUM pStgMed = NULL, ULONG cFormats = 0);
+    void Destroy(void);
+
+    void SetCallbacks(PSHCLCALLBACKS pCallbacks);
 
 public: /* IUnknown methods. */
 
@@ -233,9 +258,8 @@ public: /* IDataObjectAsyncCapability methods. */
 
 public:
 
-    int Init(void);
-    void OnTransferComplete(int rc = VINF_SUCCESS);
-    void OnTransferCanceled();
+    int SetAndStartTransfer(PSHCLTRANSFER pTransfer);
+    int SetStatus(Status enmStatus, int rc = VINF_SUCCESS);
 
 public:
 
@@ -256,6 +280,8 @@ protected:
     bool lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex);
     void registerFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
                         LONG lindex = -1, DWORD dwAspect = DVASPECT_CONTENT, DVTARGETDEVICE *pTargetDevice = NULL);
+    int setStatusLocked(Status enmStatus, int rc = VINF_SUCCESS);
+
 protected:
 
     /**
@@ -264,7 +290,7 @@ protected:
     struct FSOBJENTRY
     {
         /** Relative path of the object. */
-        Utf8Str       strPath;
+        char         *pszPath;
         /** Related (cached) object information. */
         SHCLFSOBJINFO objInfo;
     };
@@ -272,6 +298,10 @@ protected:
     /** Vector containing file system objects with its (cached) objection information. */
     typedef std::vector<FSOBJENTRY> FsObjEntryList;
 
+    /** Shared Clipboard context to use. */
+    PSHCLCONTEXT                m_pCtx;
+    /** Callbacks table to use. */
+    SHCLCALLBACKS               m_Callbacks;
     /** The object's current status. */
     Status                      m_enmStatus;
     /** The object's current reference count. */
@@ -289,12 +319,14 @@ protected:
     ULONG                       m_uObjIdx;
     /** List of (cached) file system objects. */
     FsObjEntryList              m_lstEntries;
+    /** Critical section to serialize access. */
+    RTCRITSECT                  m_CritSect;
     /** Whether the transfer thread is running. */
-    bool                        m_fRunning;
+    bool                        m_fThreadRunning;
     /** Event being triggered when reading the transfer list been completed. */
     RTSEMEVENT                  m_EventListComplete;
-    /** Event being triggered when the transfer has been completed. */
-    RTSEMEVENT                  m_EventTransferComplete;
+    /** Event being triggered when the transfer status has been changed. */
+    RTSEMEVENT                  m_EventStatusChanged;
     /** Registered format for CFSTR_FILEDESCRIPTORA. */
     UINT                        m_cfFileDescriptorA;
     /** Registered format for CFSTR_FILEDESCRIPTORW. */
@@ -309,8 +341,13 @@ class SharedClipboardWinEnumFormatEtc : public IEnumFORMATETC
 {
 public:
 
-    SharedClipboardWinEnumFormatEtc(LPFORMATETC pFormatEtc, ULONG cFormats);
+    SharedClipboardWinEnumFormatEtc(void);
     virtual ~SharedClipboardWinEnumFormatEtc(void);
+
+public:
+
+    int Init(LPFORMATETC pFormatEtc, ULONG cFormats);
+    void Destroy(void);
 
 public: /* IUnknown methods. */
 

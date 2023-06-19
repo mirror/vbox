@@ -128,7 +128,7 @@ static int shClConvertFileCreateFlags(uint32_t fShClFlags, uint64_t *pfOpen)
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to resolve path for.
- * @param   pszPath             Path to resolve.
+ * @param   pszPath             Relative path to resolve.
  * @param   fFlags              Resolve flags. Currently not used and must be 0.
  * @param   ppszResolved        Where to store the allocated resolved path. Must be free'd by the called using RTStrFree().
  */
@@ -144,42 +144,48 @@ static int shClTransferResolvePathAbs(PSHCLTRANSFER pTransfer, const char *pszPa
     int rc = ShClTransferValidatePath(pszPath, false /* fMustExist */);
     if (RT_SUCCESS(rc))
     {
-        char *pszPathAbs = RTPathJoinA(pTransfer->pszPathRootAbs, pszPath);
-        if (pszPathAbs)
+        rc = VERR_PATH_NOT_FOUND; /* Play safe by default. */
+
+        /* Make sure the given path is part of the set of root entries. */
+        PSHCLLISTENTRY pEntry;
+        RTListForEach(&pTransfer->lstRoots.lstEntries, pEntry, SHCLLISTENTRY, Node)
         {
-            char   szResolved[RTPATH_MAX];
-            size_t cbResolved = sizeof(szResolved);
-            rc = RTPathAbsEx(pTransfer->pszPathRootAbs, pszPathAbs, RTPATH_STR_F_STYLE_HOST, szResolved, &cbResolved);
+            LogFlowFunc(("\tpEntry->pszName=%s\n", pEntry->pszName));
 
-            RTStrFree(pszPathAbs);
-
-            if (RT_SUCCESS(rc))
+            if (!RTStrCmp(pszPath, pEntry->pszName)) /* Case-sensitive! */
             {
-                LogFlowFunc(("pszResolved=%s\n", szResolved));
-
-                rc = VERR_PATH_NOT_FOUND; /* Play safe by default. */
-
-                /* Make sure the resolved path is part of the set of root entries. */
-                PSHCLLISTROOT pListRoot;
-                RTListForEach(&pTransfer->lstRoots, pListRoot, SHCLLISTROOT, Node)
-                {
-                    if (RTPathStartsWith(szResolved, pListRoot->pszPathAbs))
-                    {
-                        rc = VINF_SUCCESS;
-                        break;
-                    }
-                }
-
-                if (RT_SUCCESS(rc))
-                    *ppszResolved = RTStrDup(szResolved);
+                rc = VINF_SUCCESS;
+                break;
             }
         }
-        else
-            rc = VERR_NO_MEMORY;
+
+        if (RT_SUCCESS(rc))
+        {
+            char *pszPathAbs = RTPathJoinA(pTransfer->pszPathRootAbs, pszPath);
+            if (pszPathAbs)
+            {
+                char   szResolved[RTPATH_MAX];
+                size_t cbResolved = sizeof(szResolved);
+                rc = RTPathAbsEx(pTransfer->pszPathRootAbs, pszPathAbs, RTPATH_STR_F_STYLE_HOST, szResolved, &cbResolved);
+
+                RTStrFree(pszPathAbs);
+                pszPathAbs = NULL;
+
+                if (RT_SUCCESS(rc))
+                {
+                    LogFlowFunc(("pszResolved=%s\n", szResolved));
+
+                    if (RT_SUCCESS(rc))
+                        *ppszResolved = RTStrDup(szResolved);
+                }
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
     }
 
     if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: Resolving absolute path '%s' failed, rc=%Rrc\n", pszPath, rc));
+        LogRel(("Shared Clipboard: Resolving absolute path for '%s' failed, rc=%Rrc\n", pszPath, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -201,8 +207,8 @@ static int shclTransferListHdrAddFile(PSHCLLISTHDR pHdr, const char *pszPath)
     int rc = RTFileQuerySizeByPath(pszPath, &cbSize);
     if (RT_SUCCESS(rc))
     {
-        pHdr->cbTotalSize  += cbSize;
-        pHdr->cTotalObjects++;
+        pHdr->cbTotalSize += cbSize;
+        pHdr->cEntries++;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -253,7 +259,7 @@ static int shclTransferListHdrFromDir(PSHCLLISTHDR pHdr, const char *pcszPathAbs
                             if (RTDirEntryExIsStdDotLink(pDirEntry))
                                 break;
 
-                            pHdr->cTotalObjects++;
+                            pHdr->cEntries++;
                             break;
                         }
                         case RTFS_TYPE_FILE:
@@ -302,7 +308,7 @@ static int shclTransferListHdrFromDir(PSHCLLISTHDR pHdr, const char *pcszPathAbs
 /**
  * Creates a new list handle (local only).
  *
- * @returns New List handle on success, or SHCLLISTHANDLE_INVALID on error.
+ * @returns New List handle on success, or NIL_SHCLLISTHANDLE on error.
  * @param   pTransfer           Clipboard transfer to create new list handle for.
  */
 DECLINLINE(SHCLLISTHANDLE) shClTransferListHandleNew(PSHCLTRANSFER pTransfer)
@@ -310,55 +316,58 @@ DECLINLINE(SHCLLISTHANDLE) shClTransferListHandleNew(PSHCLTRANSFER pTransfer)
     return pTransfer->uListHandleNext++; /** @todo Good enough for now. Improve this later. */
 }
 
-static DECLCALLBACK(int) vbclTransferIfaceLocalRootsGet(PSHCLTXPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList)
+static int shClTransferListEntryQueryFsInfo(PSHCLLISTENTRY pListEntry, PSHCLFSOBJINFO pFsObjInfo)
+{
+    AssertPtrReturn(pListEntry, VERR_INVALID_POINTER);
+
+    const char *pcszSrcPathAbs = pListEntry->pszName;
+    AssertPtrReturn(pcszSrcPathAbs, VERR_INVALID_POINTER);
+
+    int rc;
+
+    /* Make sure that we only advertise relative source paths, not absolute ones. */
+    char *pszFileName = RTPathFilename(pcszSrcPathAbs);
+    if (pszFileName)
+    {
+        Assert(pszFileName >= pcszSrcPathAbs);
+        size_t cchDstBase = pszFileName - pcszSrcPathAbs;
+        const char *pszDstPath = &pcszSrcPathAbs[cchDstBase];
+
+        LogFlowFunc(("pcszSrcPathAbs=%s, pszDstPath=%s\n", pcszSrcPathAbs, pszDstPath));
+
+        RTFSOBJINFO fsObjInfo;
+        rc = RTPathQueryInfo(pcszSrcPathAbs, &fsObjInfo, RTFSOBJATTRADD_NOTHING);
+        if (RT_SUCCESS(rc))
+            rc = ShClFsObjInfoFromIPRT(pFsObjInfo, &fsObjInfo);
+    }
+    else
+        rc = VERR_INVALID_POINTER;
+
+    return rc;
+}
+
+/** @copydoc SHCLTXPROVIDERIFACE::pfnRootListRead */
+static DECLCALLBACK(int) shclTransferIfaceLocalRootListRead(PSHCLTXPROVIDERCTX pCtx)
 {
     LogFlowFuncEnter();
 
-    PSHCLROOTLIST pRootList = ShClTransferRootListAlloc();
-    if (!pRootList)
-        return VERR_NO_MEMORY;
-
-    AssertPtr(pCtx->pTransfer);
-    const uint64_t cRoots = (uint32_t)pCtx->pTransfer->cRoots;
-
-    LogFlowFunc(("cRoots=%RU64\n", cRoots));
-
     int rc = VINF_SUCCESS;
 
-    if (cRoots)
+    PSHCLLISTENTRY pEntry;
+    RTListForEach(&pCtx->pTransfer->lstRoots.lstEntries, pEntry, SHCLLISTENTRY, Node)
     {
-        PSHCLROOTLISTENTRY paRootListEntries
-            = (PSHCLROOTLISTENTRY)RTMemAllocZ(cRoots * sizeof(SHCLROOTLISTENTRY));
-        if (paRootListEntries)
-        {
-            for (uint64_t i = 0; i < cRoots; ++i)
-            {
-                rc = ShClTransferRootsEntry(pCtx->pTransfer, i, &paRootListEntries[i]);
-                if (RT_FAILURE(rc))
-                    break;
-            }
-
-            if (RT_SUCCESS(rc))
-                pRootList->paEntries = paRootListEntries;
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-    else
-        rc = VERR_NOT_FOUND;
-
-    if (RT_SUCCESS(rc))
-    {
-        pRootList->Hdr.cRoots = cRoots;
-
-        *ppRootList = pRootList;
+        AssertBreakStmt(pEntry->cbInfo == sizeof(SHCLFSOBJINFO), rc = VERR_WRONG_ORDER);
+        rc = shClTransferListEntryQueryFsInfo(pEntry, (PSHCLFSOBJINFO)pEntry->pvInfo);
+        if (RT_FAILURE(rc)) /* Currently this is an all-or-nothing op. */
+            break;
     }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-static DECLCALLBACK(int) vbclTransferIfaceLocalListOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms,
+/** @copydoc SHCLTXPROVIDERIFACE::pfnListOpen */
+static DECLCALLBACK(int) shclTransferIfaceLocalListOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms,
                                                         PSHCLLISTHANDLE phList)
 {
     LogFlowFunc(("pszPath=%s\n", pOpenParms->pszPath));
@@ -415,7 +424,7 @@ static DECLCALLBACK(int) vbclTransferIfaceLocalListOpen(PSHCLTXPROVIDERCTX pCtx,
                     {
                         pInfo->hList = shClTransferListHandleNew(pTransfer);
 
-                        RTListAppend(&pTransfer->lstList, &pInfo->Node);
+                        RTListAppend(&pTransfer->lstHandles, &pInfo->Node);
                         pTransfer->cListHandles++;
 
                         if (phList)
@@ -456,7 +465,8 @@ static DECLCALLBACK(int) vbclTransferIfaceLocalListOpen(PSHCLTXPROVIDERCTX pCtx,
     return rc;
 }
 
-static DECLCALLBACK(int) vbclTransferIfaceLocalListClose(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList)
+/** @copydoc SHCLTXPROVIDERIFACE::pfnListClose */
+static DECLCALLBACK(int) shclTransferIfaceLocalListClose(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList)
 {
     LogFlowFuncEnter();
 
@@ -499,7 +509,8 @@ static DECLCALLBACK(int) vbclTransferIfaceLocalListClose(PSHCLTXPROVIDERCTX pCtx
     return rc;
 }
 
-static DECLCALLBACK(int) vbclTransferIfaceLocalListHdrRead(PSHCLTXPROVIDERCTX pCtx,
+/** @copydoc SHCLTXPROVIDERIFACE::pfnListHdrRead */
+static DECLCALLBACK(int) shclTransferIfaceLocalListHdrRead(PSHCLTXPROVIDERCTX pCtx,
                                                            SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr)
 {
     LogFlowFuncEnter();
@@ -529,7 +540,7 @@ static DECLCALLBACK(int) vbclTransferIfaceLocalListHdrRead(PSHCLTXPROVIDERCTX pC
                 {
                     LogFlowFunc(("FileAbs: %s\n", pInfo->pszPathLocalAbs));
 
-                    pListHdr->cTotalObjects = 1;
+                    pListHdr->cEntries = 1;
 
                     RTFSOBJINFO objInfo;
                     rc = RTFileQueryInfo(pInfo->u.Local.hFile, &objInfo, RTFSOBJATTRADD_NOTHING);
@@ -548,7 +559,7 @@ static DECLCALLBACK(int) vbclTransferIfaceLocalListHdrRead(PSHCLTXPROVIDERCTX pC
             }
         }
 
-        LogFlowFunc(("cTotalObj=%RU64, cbTotalSize=%RU64\n", pListHdr->cTotalObjects, pListHdr->cbTotalSize));
+        LogFlowFunc(("cTotalObj=%RU64, cbTotalSize=%RU64\n", pListHdr->cEntries, pListHdr->cbTotalSize));
     }
     else
         rc = VERR_NOT_FOUND;
@@ -557,7 +568,8 @@ static DECLCALLBACK(int) vbclTransferIfaceLocalListHdrRead(PSHCLTXPROVIDERCTX pC
     return rc;
 }
 
-static DECLCALLBACK(int) vbclTransferIfaceLocalListEntryRead(PSHCLTXPROVIDERCTX pCtx,
+/** @copydoc SHCLTXPROVIDERIFACE::pfnListEntryRead */
+static DECLCALLBACK(int) shclTransferIfaceLocalListEntryRead(PSHCLTXPROVIDERCTX pCtx,
                                                              SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry)
 {
     LogFlowFuncEnter();
@@ -627,7 +639,7 @@ static DECLCALLBACK(int) vbclTransferIfaceLocalListEntryRead(PSHCLTXPROVIDERCTX 
                                 AssertPtr(pEntry->pvInfo);
                                 Assert   (pEntry->cbInfo == sizeof(SHCLFSOBJINFO));
 
-                                ShClFsObjFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &pDirEntry->Info);
+                                ShClFsObjInfoFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &pDirEntry->Info);
 
                                 LogFlowFunc(("Entry pszName=%s, pvInfo=%p, cbInfo=%RU32\n",
                                              pEntry->pszName, pEntry->pvInfo, pEntry->cbInfo));
@@ -661,10 +673,10 @@ static DECLCALLBACK(int) vbclTransferIfaceLocalListEntryRead(PSHCLTXPROVIDERCTX 
                         rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pInfo->pszPathLocalAbs);
                         if (RT_SUCCESS(rc))
                         {
-                            ShClFsObjFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &objInfo);
+                            ShClFsObjInfoFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &objInfo);
 
                             pEntry->cbInfo = sizeof(SHCLFSOBJINFO);
-                            pEntry->fInfo  = VBOX_SHCL_INFO_FLAG_FSOBJINFO;
+                            pEntry->fInfo  = VBOX_SHCL_INFO_F_FSOBJINFO;
                         }
                     }
                     else
@@ -686,7 +698,8 @@ static DECLCALLBACK(int) vbclTransferIfaceLocalListEntryRead(PSHCLTXPROVIDERCTX 
     return rc;
 }
 
-static DECLCALLBACK(int) vbclTransferIfaceLocalObjOpen(PSHCLTXPROVIDERCTX pCtx,
+/** @copydoc SHCLTXPROVIDERIFACE::pfnObjOpen */
+static DECLCALLBACK(int) shclTransferIfaceLocalObjOpen(PSHCLTXPROVIDERCTX pCtx,
                                                        PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj)
 {
     LogFlowFuncEnter();
@@ -744,7 +757,8 @@ static DECLCALLBACK(int) vbclTransferIfaceLocalObjOpen(PSHCLTXPROVIDERCTX pCtx,
     return rc;
 }
 
-static DECLCALLBACK(int) vbclTransferIfaceLocalObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
+/** @copydoc SHCLTXPROVIDERIFACE::pfnObjClose */
+static DECLCALLBACK(int) shclTransferIfaceLocalObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
 {
     LogFlowFuncEnter();
 
@@ -808,7 +822,8 @@ static DECLCALLBACK(int) vbclTransferIfaceLocalObjClose(PSHCLTXPROVIDERCTX pCtx,
     return rc;
 }
 
-static DECLCALLBACK(int) vbclTransferIfaceLocalObjRead(PSHCLTXPROVIDERCTX pCtx,
+/** @copydoc SHCLTXPROVIDERIFACE::pfnObjRead */
+static DECLCALLBACK(int) shclTransferIfaceLocalObjRead(PSHCLTXPROVIDERCTX pCtx,
                                                        SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData,
                                                        uint32_t fFlags, uint32_t *pcbRead)
 {
@@ -850,7 +865,7 @@ static DECLCALLBACK(int) vbclTransferIfaceLocalObjRead(PSHCLTXPROVIDERCTX pCtx,
     return rc;
 }
 
-static DECLCALLBACK(int) vbclTransferIfaceLocalObjWrite(PSHCLTXPROVIDERCTX pCtx,
+static DECLCALLBACK(int) shclTransferIfaceLocalObjWrite(PSHCLTXPROVIDERCTX pCtx,
                                                         SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData, uint32_t fFlags,
                                                         uint32_t *pcbWritten)
 {
@@ -891,21 +906,21 @@ static DECLCALLBACK(int) vbclTransferIfaceLocalObjWrite(PSHCLTXPROVIDERCTX pCtx,
  *
  * The local provider is being used for accessing files on local file systems.
  *
- * @returns Interface pointer the provider get assigned to.
- * @param   pIface              Interface to assign provider to.
+ * @returns Interface pointer assigned to the provider.
+ * @param   pProvider           Provider to assign interface to.
  */
-PSHCLTXPROVIDERIFACE VBClTransferQueryIfaceLocal(PSHCLTXPROVIDERIFACE pIface)
+PSHCLTXPROVIDERIFACE VBClTransferProviderLocalQueryInterface(PSHCLTXPROVIDER pProvider)
 {
-    pIface->pfnRootsGet       = vbclTransferIfaceLocalRootsGet;
-    pIface->pfnListOpen       = vbclTransferIfaceLocalListOpen;
-    pIface->pfnListClose      = vbclTransferIfaceLocalListClose;
-    pIface->pfnListHdrRead    = vbclTransferIfaceLocalListHdrRead;
-    pIface->pfnListEntryRead  = vbclTransferIfaceLocalListEntryRead;
-    pIface->pfnObjOpen        = vbclTransferIfaceLocalObjOpen;
-    pIface->pfnObjClose       = vbclTransferIfaceLocalObjClose;
-    pIface->pfnObjRead        = vbclTransferIfaceLocalObjRead;
-    pIface->pfnObjWrite       = vbclTransferIfaceLocalObjWrite;
+    pProvider->Interface.pfnRootListRead   = shclTransferIfaceLocalRootListRead;
+    pProvider->Interface.pfnListOpen       = shclTransferIfaceLocalListOpen;
+    pProvider->Interface.pfnListClose      = shclTransferIfaceLocalListClose;
+    pProvider->Interface.pfnListHdrRead    = shclTransferIfaceLocalListHdrRead;
+    pProvider->Interface.pfnListEntryRead  = shclTransferIfaceLocalListEntryRead;
+    pProvider->Interface.pfnObjOpen        = shclTransferIfaceLocalObjOpen;
+    pProvider->Interface.pfnObjClose       = shclTransferIfaceLocalObjClose;
+    pProvider->Interface.pfnObjRead        = shclTransferIfaceLocalObjRead;
+    pProvider->Interface.pfnObjWrite       = shclTransferIfaceLocalObjWrite;
 
-    return pIface;
+    return &pProvider->Interface;
 }
 

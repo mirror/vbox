@@ -797,18 +797,25 @@ typedef struct _VBoxShClGetHostMsg
 #define VBOX_SHCL_CPARMS_GET_HOST_MSG 3
 
 /** No listing flags specified. */
-#define VBOX_SHCL_LIST_FLAG_NONE          0
+#define VBOX_SHCL_LIST_F_NONE               0
 /** Only returns one entry per read. */
-#define VBOX_SHCL_LIST_FLAG_RETURN_ONE    RT_BIT(0)
+#define VBOX_SHCL_LIST_F_RETURN_ONE         RT_BIT(0)
 /** Restarts reading a list from the beginning. */
-#define VBOX_SHCL_LIST_FLAG_RESTART       RT_BIT(1)
+#define VBOX_SHCL_LIST_F_RESTART            RT_BIT(1)
+/** Listing flags valid mask. */
+#define VBOX_SHCL_LIST_F_VALID_MASK         0x3
 
-#define VBOX_SHCL_LISTHDR_FLAG_NONE       0
+/** No list header flags specified. */
+#define VBOX_SHCL_LISTHDR_F_NONE            0
+/** List header flags valid mask. */
+#define VBOX_SHCL_LISTHDR_F_VALID_MASK      0x0
 
 /** No additional information provided. */
-#define VBOX_SHCL_INFO_FLAG_NONE          0
+#define VBOX_SHCL_INFO_F_NONE               0
 /** Get object information of type SHCLFSOBJINFO. */
-#define VBOX_SHCL_INFO_FLAG_FSOBJINFO     RT_BIT(0)
+#define VBOX_SHCL_INFO_F_FSOBJINFO          RT_BIT(0)
+/** Info flags valid mask. */
+#define VBOX_SHCL_INFO_F_VALID_MASK         0x1
 
 /**
  * Status message for lists and objects.
@@ -928,7 +935,7 @@ typedef struct _VBoxShClRootListEntryParms
     HGCMFunctionParameter uContext;
     /** uint32_t, in: VBOX_SHCL_INFO_FLAG_XXX. */
     HGCMFunctionParameter fInfo;
-    /** uint32_t, in: Index of root list entry to get (zero-based). */
+    /** uint64_t, in: Index of root list entry to get (zero-based). */
     HGCMFunctionParameter uIndex;
 } VBoxShClRootListEntryParms;
 
@@ -956,7 +963,8 @@ typedef struct _VBoxShClRootListEntryMsg
 
     /** in/out: Request parameters. */
     VBoxShClRootListEntryParms Parms;
-    /** pointer, in/out: Entry name. */
+    /** pointer, in/out: Entry name.
+     *  Up to SHCLLISTENTRY_MAX_NAME. */
     HGCMFunctionParameter      szName;
     /** uint32_t, out: Bytes to be used for information/How many bytes were used.  */
     HGCMFunctionParameter      cbInfo;

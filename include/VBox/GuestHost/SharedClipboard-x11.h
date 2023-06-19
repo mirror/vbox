@@ -41,6 +41,7 @@
 
 #include <X11/Intrinsic.h>
 
+#include <iprt/req.h>
 #include <iprt/thread.h>
 
 #include <VBox/GuestHost/SharedClipboard.h>
@@ -112,6 +113,10 @@ typedef struct _SHCLX11CTX
     RTTHREAD         Thread;
     /** Flag indicating that the thread is in a started state. */
     bool             fThreadStarted;
+    /** Request queue.
+     *  Needed for processing HGCM requests within the HGCM (main) thread from
+     *  the X11 event thread. */
+    RTREQQUEUE       hReqQ;
     /** The X Toolkit widget which we use as our clipboard client.  It is never made visible. */
     Widget           pWidget;
     /** Should we try to grab the clipboard on startup? */
@@ -158,17 +163,51 @@ typedef struct _SHCLX11CTX
 } SHCLX11CTX, *PSHCLX11CTX;
 
 /**
- * Structure for keeping a X11 read data request.
+ * Structure describing an X11 clipboard request.
  */
-typedef struct _SHCLX11READDATAREQ
+typedef struct _SHCLX11REQUEST
 {
-    /** Actual read request to handle. */
-    CLIPREADCBREQ *pReq;
-    /** Result code of the operation on completion. */
-    int            rcCompletion;
-} SHCLX11READDATAREQ;
-/** Pointer to a send data request. */
-typedef SHCLX11READDATAREQ *PSHCLX11READDATAREQ;
+    /** The clipboard context this request is associated with. */
+    SHCLX11CTX      *pCtx;
+    /** Event associated to this request. */
+    PSHCLEVENT       pEvent;
+    union
+    {
+        /** Format announcement to X. */
+        struct
+        {
+            /** VBox formats to announce. */
+            SHCLFORMATS      fFormats;
+        } Formats;
+        /** Read request. */
+        struct
+        {
+            /** The format VBox would like the data in. */
+            SHCLFORMAT       uFmtVBox;
+            /** The format we requested from X11. */
+            SHCLX11FMTIDX    idxFmtX11;
+            /** How much bytes to read at max. */
+            uint32_t         cbMax;
+        } Read;
+    };
+} SHCLX11REQUEST;
+/** Pointer to an X11 clipboard request. */
+typedef SHCLX11REQUEST *PSHCLX11REQUEST;
+
+/**
+ * Structure describing an X11 clipboard response to an X11 clipboard request.
+ */
+typedef struct _SHCLX11RESPONSE
+{
+    int rc;
+    struct
+    {
+        void    *pvData;
+        uint32_t cbData;
+    } Read;
+} SHCLX11RESPONSE;
+/** Pointer to an X11 clipboard response. */
+typedef SHCLX11RESPONSE *PSHCLX11RESPONSE;
 
 /** @name Shared Clipboard APIs for X11.
  * @{
@@ -178,8 +217,8 @@ void ShClX11Destroy(PSHCLX11CTX pCtx);
 int ShClX11ThreadStart(PSHCLX11CTX pCtx, bool grab);
 int ShClX11ThreadStartEx(PSHCLX11CTX pCtx, const char *pszName, bool fGrab);
 int ShClX11ThreadStop(PSHCLX11CTX pCtx);
-int ShClX11ReportFormatsToX11(PSHCLX11CTX pCtx, SHCLFORMATS vboxFormats);
-int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, SHCLFORMATS vboxFormat, CLIPREADCBREQ *pReq);
+int ShClX11ReportFormatsToX11Async(PSHCLX11CTX pCtx, SHCLFORMATS vboxFormats);
+int ShClX11ReadDataFromX11Async(PSHCLX11CTX pCtx, SHCLFORMAT uFmt, uint32_t cbData, PSHCLEVENT pEvent);
 void ShClX11SetCallbacks(PSHCLX11CTX pCtx, PSHCLCALLBACKS pCallbacks);
 /** @} */
 

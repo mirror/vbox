@@ -185,6 +185,8 @@ typedef struct _SHCLIENTTRANSFERS
 {
     /** Transfer context. */
     SHCLTRANSFERCTX             Ctx;
+    /** Transfers callbacks to use. */
+    SHCLTRANSFERCALLBACKTABLE   Callbacks;
 } SHCLIENTTRANSFERS, *PSHCLIENTTRANSFERS;
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
@@ -301,8 +303,9 @@ int shClSvcClientWakeup(PSHCLCLIENT pClient);
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 int shClSvcTransferModeSet(uint32_t fMode);
-int shClSvcTransferStart(PSHCLCLIENT pClient, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource, PSHCLTRANSFER *ppTransfer);
-int shClSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
+int shClSvcTransferInit(PSHCLCLIENT pClient, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource, PSHCLTRANSFER *ppTransfer);
+int shClSvcTransferStart(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
+int shClSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, bool fWaitForGuest);
 bool shClSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg);
 void shClSvcClientTransfersReset(PSHCLCLIENT pClient);
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
@@ -311,7 +314,7 @@ void shClSvcClientTransfersReset(PSHCLCLIENT pClient);
  * Locking is between the (host) service thread and the platform-dependent (window) thread.
  * @{
  */
-int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENT *ppEvent);
+int ShClSvcReadDataFromGuestAsync(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENT *ppEvent);
 int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData);
 int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats);
 PSHCLBACKEND ShClSvcGetBackend(void);
@@ -492,8 +495,7 @@ int shClSvcTransferHostHandler(uint32_t u32Function, uint32_t cParms, VBOXHGCMSV
 
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP */
 
-int shClSvcTransferIfaceRootsGet(PSHCLTXPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList);
-
+int shClSvcTransferIfaceRootsGet(PSHCLTXPROVIDERCTX pCtx, PSHCLLIST pRootList);
 int shClSvcTransferIfaceListOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
 int shClSvcTransferIfaceListClose(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList);
 int shClSvcTransferIfaceListHdrRead(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);

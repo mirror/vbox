@@ -62,8 +62,38 @@ DECLINLINE(PSHCLEVENT) shclEventGet(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEven
  *
  * @returns VBox status code.
  * @param   uID                 Payload ID to set for this payload. Useful for consequtive payloads.
- * @param   pvData              Data block to associate to this payload.
- * @param   cbData              Size (in bytes) of data block to associate.
+ * @param   pvData              Data to associate to this payload.
+ *                              The payload owns the data then.
+ * @param   cbData              Size (in bytes) of data to associate.
+ * @param   ppPayload           Where to store the allocated event payload on success.
+ */
+int ShClPayloadInit(uint32_t uID, void *pvData, uint32_t cbData,
+                    PSHCLEVENTPAYLOAD *ppPayload)
+{
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    AssertReturn(cbData > 0, VERR_INVALID_PARAMETER);
+
+    PSHCLEVENTPAYLOAD pPayload = (PSHCLEVENTPAYLOAD)RTMemAlloc(sizeof(SHCLEVENTPAYLOAD));
+    if (pPayload)
+    {
+        pPayload->pvData = pvData;
+        pPayload->cbData = cbData;
+        pPayload->uID    = uID;
+
+        *ppPayload = pPayload;
+        return VINF_SUCCESS;
+    }
+
+    return VERR_NO_MEMORY;
+}
+
+/**
+ * Allocates a new event payload.
+ *
+ * @returns VBox status code.
+ * @param   uID                 Payload ID to set for this payload. Useful for consequtive payloads.
+ * @param   pvData              Data block to allocate (duplicate) to this payload.
+ * @param   cbData              Size (in bytes) of data block to allocate.
  * @param   ppPayload           Where to store the allocated event payload on success.
  */
 int ShClPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData,
@@ -72,21 +102,10 @@ int ShClPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData,
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData > 0, VERR_INVALID_PARAMETER);
 
-    PSHCLEVENTPAYLOAD pPayload = (PSHCLEVENTPAYLOAD)RTMemAlloc(sizeof(SHCLEVENTPAYLOAD));
-    if (pPayload)
-    {
-        pPayload->pvData = RTMemDup(pvData, cbData);
-        if (pPayload->pvData)
-        {
-            pPayload->cbData = cbData;
-            pPayload->uID    = uID;
+    void *pvDataDup = RTMemDup(pvData, cbData);
+    if (pvDataDup)
+        return ShClPayloadInit(uID, pvDataDup, cbData, ppPayload);
 
-            *ppPayload = pPayload;
-            return VINF_SUCCESS;
-        }
-
-        RTMemFree(pPayload);
-    }
     return VERR_NO_MEMORY;
 }
 
@@ -417,7 +436,7 @@ uint32_t ShClEventGetRefs(PSHCLEVENT pEvent)
 /**
  * Detaches a payload from an event, internal version.
  *
- * @returns Pointer to the detached payload. Can be NULL if the payload has no payload.
+ * @returns Pointer to the detached payload. Can be NULL if the event has no payload.
  * @param   pEvent              Event to detach payload for.
  */
 static PSHCLEVENTPAYLOAD shclEventPayloadDetachInternal(PSHCLEVENT pEvent)
@@ -479,7 +498,7 @@ uint32_t ShClEventRetain(PSHCLEVENT pEvent)
 }
 
 /**
- * Releases an event by decreasing its reference count.
+ * Releases event by decreasing its reference count. Will be destroys once the reference count reaches 0.
  *
  * @returns New reference count, or UINT32_MAX if failed.
  * @param   pEvent              Event to release.

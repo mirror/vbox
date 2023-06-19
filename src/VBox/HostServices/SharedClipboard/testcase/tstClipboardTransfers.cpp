@@ -214,6 +214,10 @@ static void testTransferRootsSetSingle(RTTEST hTest,
     int rc = ShClTransferCreate(&pTransfer);
     RTTESTI_CHECK_RC_OK(rc);
 
+    SHCLTXPROVIDER Provider;
+    RTTESTI_CHECK(VBClTransferProviderLocalQueryInterface(&Provider) != NULL);
+    RTTESTI_CHECK_RC_OK(ShClTransferSetProvider(pTransfer, &Provider));
+
     char szTestTransferRootsSetDir[RTPATH_MAX];
     rc = testCreateTempDir(hTest, "testTransferRootsSet", szTestTransferRootsSetDir, sizeof(szTestTransferRootsSetDir));
     RTTESTI_CHECK_RC_OK_RETV(rc);
@@ -226,7 +230,7 @@ static void testTransferRootsSetSingle(RTTEST hTest,
     rc = testAddRootEntries(hTest, szTestTransferRootsSetDir, lstBase, lstToExtend, &pszRoots);
     RTTESTI_CHECK_RC_OK_RETV(rc);
 
-    rc = ShClTransferRootsSet(pTransfer, pszRoots, strlen(pszRoots) + 1);
+    rc = ShClTransferRootsInitFromStringList(pTransfer, pszRoots, strlen(pszRoots) + 1);
     RTTESTI_CHECK_RC(rc, rcExpected);
 
     RTStrFree(pszRoots);
@@ -242,6 +246,12 @@ static void testTransferObjOpenSingle(RTTEST hTest,
 
     PSHCLTRANSFER pTransfer;
     int rc = ShClTransferCreate(&pTransfer);
+    RTTESTI_CHECK_RC_OK(rc);
+
+    SHCLTXPROVIDER Provider;
+    VBClTransferProviderLocalQueryInterface(&Provider);
+
+    rc = ShClTransferSetProvider(pTransfer, &Provider);
     RTTESTI_CHECK_RC_OK(rc);
 
     rc = ShClTransferInit(pTransfer, SHCLTRANSFERDIR_FROM_REMOTE, SHCLSOURCE_LOCAL);
@@ -261,7 +271,7 @@ static void testTransferObjOpenSingle(RTTEST hTest,
     rc = testAddRootEntries(hTest, szTestTransferObjOpenDir, lstRoots, lstToExtendEmpty, &pszRoots);
     RTTESTI_CHECK_RC_OK_RETV(rc);
 
-    rc = ShClTransferRootsSet(pTransfer, pszRoots, strlen(pszRoots) + 1);
+    rc = ShClTransferRootsInitFromStringList(pTransfer, pszRoots, strlen(pszRoots) + 1);
     RTTESTI_CHECK_RC_OK(rc);
 
     RTStrFree(pszRoots);
@@ -302,6 +312,21 @@ static void testTransferBasics(RTTEST hTest)
     RTTESTI_CHECK_RC_OK(rc);
     rc = ShClTransferDestroy(pTransfer);
     RTTESTI_CHECK_RC_OK(rc);
+    rc = ShClTransferDestroy(pTransfer); /* Second time, intentional. */
+    RTTESTI_CHECK_RC_OK(rc);
+
+    PSHCLLIST pList = ShClTransferListAlloc();
+    RTTESTI_CHECK(pList != NULL);
+    rc = ShClTransferCreate(&pTransfer);
+    RTTESTI_CHECK_RC_OK(rc);
+    ShClTransferListFree(pList);
+    pList = NULL;
+    ShClTransferListFree(pList); /* Second time, intentional. */
+
+    SHCLLISTENTRY Entry;
+    RTTESTI_CHECK_RC_OK(ShClTransferListEntryInit(&Entry));
+    ShClTransferListEntryDestroy(&Entry);
+    ShClTransferListEntryDestroy(&Entry); /* Second time, intentional. */
 }
 
 static void testTransferRootsSet(RTTEST hTest)
@@ -386,4 +411,3 @@ int main(int argc, char *argv[])
      */
     return RTTestSummaryAndDestroy(hTest);
 }
-

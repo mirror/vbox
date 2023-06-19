@@ -551,7 +551,7 @@ int shClSvcMsgAddAndWakeupClient(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg)
     LogFlowFunc(("idMsg=%s (%u) cParms=%u\n", ShClHostMsgToStr(pMsg->idMsg), pMsg->idMsg, pMsg->cParms));
 
     RTListAppend(&pClient->MsgQueue, &pMsg->ListEntry);
-    return shClSvcClientWakeup(pClient);
+    return shClSvcClientWakeup(pClient); /** @todo r=andy Remove message if waking up failed? */
 }
 
 /**
@@ -1172,9 +1172,9 @@ static int shClSvcClientMsgCancel(PSHCLCLIENT pClient, uint32_t cParms)
  *
  * @returns VBox status code.
  * @retval  VINF_NO_CHANGE if the client is not in pending mode.
- *
  * @param   pClient             Client to wake up.
- * @note    Caller must enter pClient->CritSect.
+ *
+ * @note    Caller must enter critical section.
  */
 int shClSvcClientWakeup(PSHCLCLIENT pClient)
 {
@@ -1224,10 +1224,15 @@ int shClSvcClientWakeup(PSHCLCLIENT pClient)
  * @returns VBox status code.
  * @param   pClient             Client to request to read data form.
  * @param   fFormats            The formats being requested, OR'ed together (VBOX_SHCL_FMT_XXX).
- * @param   ppEvent             Where to return the event for waiting for new data on success. Optional.
- *                              Must be released by the caller with ShClEventRelease().
+ * @param   ppEvent             Where to return the event for waiting for new data on success.
+ *                              Must be released by the caller with ShClEventRelease(). Optional.
+ *
+ * @thread  On X11: Called from the X11 event thread.
+ * @thread  On Windows: Called from the Windows event thread.
+ *
+ * @note    This will locally initialize a transfer if VBOX_SHCL_FMT_URI_LIST is being requested from the guest.
  */
-int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENT *ppEvent)
+int ShClSvcReadDataFromGuestAsync(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENT *ppEvent)
 {
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
 
@@ -1247,6 +1252,10 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
             fFormat = VBOX_SHCL_FMT_BITMAP;
         else if (fFormats & VBOX_SHCL_FMT_HTML)
             fFormat = VBOX_SHCL_FMT_HTML;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+        else if (fFormats & VBOX_SHCL_FMT_URI_LIST)
+            fFormat = VBOX_SHCL_FMT_URI_LIST;
+#endif
         else
             AssertMsgFailedBreak(("%#x\n", fFormats));
 
@@ -1268,10 +1277,7 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
                                               2);
         if (pMsg)
         {
-            /*
-             * Enter the critical section and generate an event.
-             */
-            RTCritSectEnter(&pClient->CritSect);
+            shClSvcClientLock(pClient);
 
             PSHCLEVENT pEvent;
             rc = ShClEventSourceGenerateAndRegisterEvent(&pClient->EventSrc, &pEvent);
@@ -1315,31 +1321,49 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
                     HGCMSvcSetU32(&pMsg->aParms[1], fFormat);
 
                     shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
-
-                    /* Return event handle to the caller if requested. */
-                    if (ppEvent)
-                    {
-                        *ppEvent = pEvent;
-                    }
-
+                    /* Wake up the client to let it know that there are new messages. */
                     shClSvcClientWakeup(pClient);
+
+                    /* Return event to caller. */
+                    if (ppEvent)
+                        *ppEvent = pEvent;
                 }
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+                /*
+                 * When the host wants to read URI data from the guest:
+                 *   - Initialize a transfer locally.
+                 *   - Request URI data from the guest; this tells the guest to initialize a transfer on the guest side.
+                 *   - Start the transfer locally once we receive the transfer STARTED status from the guest via VBOX_SHCL_GUEST_FN_REPLY.
+                 */
+                if (   RT_SUCCESS(rc)
+                    && fFormat == VBOX_SHCL_FMT_URI_LIST)
+                {
+                    rc = shClSvcTransferInit(pClient, SHCLTRANSFERDIR_FROM_REMOTE, SHCLSOURCE_REMOTE,
+                                             NULL /* pTransfer */);
+                    if (RT_SUCCESS(rc))
+                        rc = shClSvcSetSource(pClient, SHCLSOURCE_REMOTE);
+
+                    if (RT_FAILURE(rc))
+                        LogRel(("Shared Clipboard: Initializing guest -> host transfer failed with %Rrc\n", rc));
+                }
+#endif
                 /* Remove event from list if caller did not request event handle or in case
                  * of failure (in this case caller should not release event). */
                 if (   RT_FAILURE(rc)
                     || !ppEvent)
                 {
                     ShClEventRelease(pEvent);
+                    pEvent = NULL;
                 }
             }
             else
                 rc = VERR_SHCLPB_MAX_EVENTS_REACHED;
 
-            RTCritSectLeave(&pClient->CritSect);
-
             if (RT_FAILURE(rc))
                 shClSvcMsgFree(pClient, pMsg);
+
+            shClSvcClientUnlock(pClient);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -1349,7 +1373,7 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
     }
 
     if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: Requesting data in formats %#x from guest failed with %Rrc\n", fFormats, rc));
+        LogRel(("Shared Clipboard: Requesting guest clipboard data failed with %Rrc\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1366,6 +1390,8 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
  *                              NULL if @a cbData is zero.
  * @param   cbData              Size (in bytes) of clipboard data received.
  *                              This can be zero.
+ *
+ * @thread  Backend thread.
  */
 int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
 {
@@ -1413,7 +1439,7 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLF
 }
 
 /**
- * Reports available VBox clipboard formats to the guest.
+ * Reports clipboard formats to the guest.
  *
  * @note    Host backend callers must check if it's active (use
  *          ShClSvcIsBackendActive) before calling to prevent mixing up the
@@ -1423,9 +1449,13 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLF
  * @param   pClient             Client to report clipboard formats to.
  * @param   fFormats            The formats to report (VBOX_SHCL_FMT_XXX), zero
  *                              is okay (empty the clipboard).
+ *
+ * @thread  Backend thread.
  */
 int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 {
+    LogFlowFuncEnter();
+
     /*
      * Check if the service mode allows this operation and whether the guest is
      * supposed to be reading from the host. Otherwise, silently ignore reporting
@@ -1478,25 +1508,8 @@ int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
         HGCMSvcSetU32(&pMsg->aParms[1], fFormats);
 
         RTCritSectEnter(&pClient->CritSect);
-        shClSvcMsgAddAndWakeupClient(pClient, pMsg);
+        rc = shClSvcMsgAddAndWakeupClient(pClient, pMsg);
         RTCritSectLeave(&pClient->CritSect);
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-        /* Create a transfer locally and also tell the guest to create a transfer on the guest side. */
-        if (   !fSkipTransfers
-            && fFormats & VBOX_SHCL_FMT_URI_LIST) /* Only start a transfer if we supply an URI list. */
-        {
-            rc = shClSvcTransferStart(pClient, SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL,
-                                      NULL /* pTransfer */);
-            if (RT_SUCCESS(rc))
-                rc = shClSvcSetSource(pClient, SHCLSOURCE_LOCAL);
-
-            if (RT_FAILURE(rc))
-                LogRel(("Shared Clipboard: Initializing host write transfer failed with %Rrc\n", rc));
-        }
-        else
-#endif
-            rc = VINF_SUCCESS;
     }
     else
         rc = VERR_NO_MEMORY;
@@ -1748,6 +1761,29 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
             LogRel2(("Shared Clipboard: Read host clipboard data (max %RU32 bytes), got %RU32 bytes\n", cbData, cbActual));
         else
             LogRel(("Shared Clipboard: Reading host clipboard data failed with %Rrc\n", rc));
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+        /*
+         * When we receive a read request for URI data:
+         *   - Initialize a transfer locally.
+         *   - Tell the guest to initialize a transfer on the guest side.
+         *   - Start the transfer locally once we receive the transfer STARTED status from the guest via VBOX_SHCL_GUEST_FN_REPLY.
+         */
+        if (uFormat == VBOX_SHCL_FMT_URI_LIST) /* Only init a transfer if we supply an URI list. */
+        {
+            shClSvcClientLock(pClient);
+
+            rc = shClSvcTransferInit(pClient, SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL,
+                                     NULL /* pTransfer */);
+            if (RT_SUCCESS(rc))
+                rc = shClSvcSetSource(pClient, SHCLSOURCE_LOCAL);
+
+            if (RT_FAILURE(rc))
+                LogRel(("Shared Clipboard: Initializing host -> guest transfer failed with %Rrc\n", rc));
+
+            shClSvcClientUnlock(pClient);
+        }
+#endif
     }
 
     if (RT_SUCCESS(rc))
@@ -1975,14 +2011,9 @@ int shClSvcSetSource(PSHCLCLIENT pClient, SHCLSOURCE enmSource)
 
     int rc = VINF_SUCCESS;
 
-    if (ShClSvcLock())
-    {
-        pClient->State.enmSource = enmSource;
+    pClient->State.enmSource = enmSource;
 
-        LogFlowFunc(("Source of client %RU32 is now %RU32\n", pClient->State.uClientID, pClient->State.enmSource));
-
-        ShClSvcUnlock();
-    }
+    LogFlowFunc(("Source of client %RU32 is now %RU32\n", pClient->State.uClientID, pClient->State.enmSource));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2724,8 +2755,35 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
 
             /* The service extension wants read data from the guest. */
             case VBOX_CLIPBOARD_EXT_FN_DATA_READ:
-                rc = ShClSvcGuestDataRequest(pClient, u32Format, NULL /* pidEvent */);
+            {
+                PSHCLEVENT pEvent;
+                rc = ShClSvcReadDataFromGuestAsync(pClient, u32Format, &pEvent);
+                if (RT_SUCCESS(rc))
+                {
+                    PSHCLEVENTPAYLOAD pPayload;
+                    rc = ShClEventWait(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (pPayload)
+                        {
+                            memcpy(pvData, pPayload->pvData, RT_MIN(cbData, pPayload->cbData));
+                            /** @todo r=andy How is this supposed to work wrt returning number of bytes read? */
+
+                            ShClPayloadFree(pPayload);
+                            pPayload = NULL;
+                        }
+                        else
+                        {
+                            pvData = NULL;
+                        }
+                    }
+
+                    ShClEventRelease(pEvent);
+                }
                 break;
+            }
+
+            /** @todo BUGBUG Why no VBOX_CLIPBOARD_EXT_FN_DATA_WRITE here? */
 
             default:
                 /* Just skip other messages. */

@@ -687,11 +687,11 @@ typedef struct _VBGLR3CLIPBOARDEVENT
         /** Reports a transfer status to the guest. */
         struct
         {
-            /** ID of the trnasfer. */
+            /** ID of the transfer. */
             SHCLTRANSFERID     uID;
             /** Transfer direction. */
             SHCLTRANSFERDIR    enmDir;
-            /** Additional reproting information. */
+            /** Additional reporting information. */
             SHCLTRANSFERREPORT Report;
         } TransferStatus;
 #  endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
@@ -716,6 +716,7 @@ VBGLR3DECL(int)     VbglR3ClipboardDisconnectEx(PVBGLR3SHCLCMDCTX pCtx);
 
 VBGLR3DECL(int)     VbglR3ClipboardReportFeatures(uint32_t idClient, uint64_t fGuestFeatures, uint64_t *pfHostFeatures);
 VBGLR3DECL(int)     VbglR3ClipboardQueryFeatures(uint32_t idClient, uint64_t *pfHostFeatures);
+VBGLR3DECL(int)     VbglR3ClipboardMsgPeek(PVBGLR3SHCLCMDCTX pCtx, uint32_t *pidMsg, uint32_t *pcParameters, uint64_t *pidRestoreCheck);
 VBGLR3DECL(int)     VbglR3ClipboardMsgPeekWait(PVBGLR3SHCLCMDCTX pCtx, uint32_t *pidMsg, uint32_t *pcParameters, uint64_t *pidRestoreCheck);
 VBGLR3DECL(int)     VbglR3ClipboardEventGetNext(uint32_t idMsg, uint32_t cParms, PVBGLR3SHCLCMDCTX pCtx, PVBGLR3CLIPBOARDEVENT pEvent);
 VBGLR3DECL(void)    VbglR3ClipboardEventFree(PVBGLR3CLIPBOARDEVENT pEvent);
@@ -723,16 +724,16 @@ VBGLR3DECL(void)    VbglR3ClipboardEventFree(PVBGLR3CLIPBOARDEVENT pEvent);
 VBGLR3DECL(int)     VbglR3ClipboardWriteError(HGCMCLIENTID idClient, int rcErr);
 
 #  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-VBGLR3DECL(void)    VbglR3ClipboardTransferSetCallbacks(PSHCLTRANSFERCALLBACKTABLE pCallbacks);
+VBGLR3DECL(void)    VbglR3ClipboardTransferSetCallbacks(PSHCLTRANSFERCALLBACKS pCallbacks);
 VBGLR3DECL(int)     VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms, PVBGLR3SHCLCMDCTX pCtx, PSHCLTRANSFERCTX pTransferCtx, PVBGLR3CLIPBOARDEVENT pEvent);
 
 VBGLR3DECL(int)     VbglR3ClipboardTransferStatusReply(PVBGLR3SHCLCMDCTX pCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS uStatus);
 
-VBGLR3DECL(int)     VbglR3ClipboardRootListRead(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLIST *ppRootList);
+VBGLR3DECL(int)     VbglR3ClipboardRootListRead(PVBGLR3SHCLCMDCTX pCtx, PSHCLLIST *ppRootList);
 
 VBGLR3DECL(int)     VbglR3ClipboardRootListHdrReadReq(PVBGLR3SHCLCMDCTX pCtx, uint32_t *pfRoots);
-VBGLR3DECL(int)     VbglR3ClipboardRootListHdrReadReply(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLIST pRootList);
-VBGLR3DECL(int)     VbglR3ClipboardRootsWrite(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLISTHDR pRoots);
+VBGLR3DECL(int)     VbglR3ClipboardRootListHdrReadReply(PVBGLR3SHCLCMDCTX pCtx, PSHCLLIST pRootList);
+VBGLR3DECL(int)     VbglR3ClipboardRootsWrite(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTHDR pRoots);
 
 VBGLR3DECL(int)     VbglR3ClipboardListOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
 VBGLR3DECL(int)     VbglR3ClipboardListOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTOPENPARMS pOpenParms);

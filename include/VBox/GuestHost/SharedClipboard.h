@@ -54,10 +54,21 @@
 #define VBOX_SHCL_FMT_BITMAP        RT_BIT(1)
 /** Shared Clipboard format is HTML. */
 #define VBOX_SHCL_FMT_HTML          RT_BIT(2)
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-/** Shared Clipboard format is a transfer list. */
+/** Shared Clipboard format is a transfer list.
+ *
+ *  When requesting (reading) data with this format, the following happens:
+ *  - Acts as a beacon for transfer negotiation / handshake.
+ *  - The receiving side (source) initializes a transfer locally.
+ *  - The receiving side reports the transfer status (INIT) to the sending side (target).
+ *  - The sending side proceeds initializing the transfer locally.
+ *  - The sending side reports its transfer status (INIT) to the receiving side.
+ *
+ *  Note: When receiving an error via a transfer status, the transfer must be destroyed and
+ *  is considered as being failed wholesale.
+ *
+ *  @since 7.1
+ */
 # define VBOX_SHCL_FMT_URI_LIST     RT_BIT(3)
-#endif
 /** @}  */
 
 
@@ -70,6 +81,9 @@ typedef SHCLFORMAT *PSHCLFORMAT;
 typedef uint32_t SHCLFORMATS;
 /** Pointer to a bit map of Shared Clipboard formats (VBOX_SHCL_FMT_XXX). */
 typedef SHCLFORMATS *PSHCLFORMATS;
+
+/** Defines the default timeout (in ms) to use for clipboard operations. */
+#define SHCL_TIMEOUT_DEFAULT_MS                 RT_MS_30SEC
 
 
 /**
@@ -192,6 +206,7 @@ typedef struct SHCLEVENTSOURCE
 /** @name Shared Clipboard data payload functions.
  *  @{
  */
+int ShClPayloadInit(uint32_t uID, void *pvData, uint32_t cbData, PSHCLEVENTPAYLOAD *ppPayload);
 int ShClPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData, PSHCLEVENTPAYLOAD *ppPayload);
 void ShClPayloadFree(PSHCLEVENTPAYLOAD pPayload);
 /** @} */
@@ -315,7 +330,8 @@ typedef struct _SHCLCALLBACKS
      *         The function will be invoked for every single target the clipboard requests.
      *         Runs in Xt event thread for the X11 code.
      *
-     * @returns VBox status code. VERR_NO_DATA if no data available.
+     * @returns VBox status code.
+     * @retval  VERR_NO_DATA if no data available.
      * @param   pCtx            Opaque context pointer for the glue code.
      * @param   uFmt            The format in which the data should be transferred
      *                          (VBOX_SHCL_FMT_XXX).
@@ -342,12 +358,6 @@ typedef struct _SHCLCALLBACKS
     DECLCALLBACKMEMBER(int, pfnOnSendDataToDest, (PSHCLCONTEXT pCtx, void *pv, uint32_t cb, void *pvUser));
 } SHCLCALLBACKS;
 typedef SHCLCALLBACKS *PSHCLCALLBACKS;
-/** @} */
-
-/** Opaque request structure for X11 clipboard data.
- * @{ */
-struct CLIPREADCBREQ;
-typedef struct CLIPREADCBREQ CLIPREADCBREQ;
 /** @} */
 
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_h */

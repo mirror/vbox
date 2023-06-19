@@ -139,7 +139,7 @@ static void testSetTransferMode(void)
 /* Adds a host data read request message to the client's message queue. */
 static void testMsgAddReadData(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 {
-    int rc = ShClSvcGuestDataRequest(pClient, fFormats, NULL /* pidEvent */);
+    int rc = ShClSvcReadDataFromGuestAsync(pClient, fFormats, NULL /* ppEvent */);
     RTTESTI_CHECK_RC_OK(rc);
 }
 

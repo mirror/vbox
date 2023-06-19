@@ -38,7 +38,6 @@
 
 #include <VBox/GuestHost/SharedClipboard.h>
 #include <VBox/GuestHost/SharedClipboard-win.h>
-#include <strsafe.h>
 
 #include <VBox/log.h>
 
@@ -60,7 +59,7 @@ SharedClipboardWinStreamImpl::SharedClipboardWinStreamImpl(SharedClipboardWinDat
     : m_pParent(pParent)
     , m_lRefCount(1) /* Our IDataObjct *always* holds the last reference to this object; needed for the callbacks. */
     , m_pTransfer(pTransfer)
-    , m_hObj(SHCLOBJHANDLE_INVALID)
+    , m_hObj(NIL_SHCLOBJHANDLE)
     , m_strPath(strPath)
     , m_objInfo(*pObjInfo)
     , m_cbProcessed(0)
@@ -186,81 +185,72 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRe
 
     int rc;
 
-    try
+    if (   m_hObj == NIL_SHCLOBJHANDLE
+        && m_pTransfer->ProviderIface.pfnObjOpen)
     {
-        if (   m_hObj == SHCLOBJHANDLE_INVALID
-            && m_pTransfer->ProviderIface.pfnObjOpen)
-        {
-            SHCLOBJOPENCREATEPARMS openParms;
-            rc = ShClTransferObjOpenParmsInit(&openParms);
-            if (RT_SUCCESS(rc))
-            {
-                openParms.fCreate = SHCL_OBJ_CF_ACCESS_READ
-                                  | SHCL_OBJ_CF_ACCESS_DENYWRITE;
-
-                rc = RTStrCopy(openParms.pszPath, openParms.cbPath, m_strPath.c_str());
-                if (RT_SUCCESS(rc))
-                {
-                    rc = m_pTransfer->ProviderIface.pfnObjOpen(&m_pTransfer->ProviderCtx, &openParms, &m_hObj);
-                }
-
-                ShClTransferObjOpenParmsDestroy(&openParms);
-            }
-        }
-        else
-            rc = VINF_SUCCESS;
-
-        uint32_t cbRead = 0;
-
-        const uint64_t cbSize   = (uint64_t)m_objInfo.cbObject;
-        const uint32_t cbToRead = RT_MIN(cbSize - m_cbProcessed, nBytesToRead);
-
+        SHCLOBJOPENCREATEPARMS openParms;
+        rc = ShClTransferObjOpenParmsInit(&openParms);
         if (RT_SUCCESS(rc))
         {
-            if (cbToRead)
+            openParms.fCreate = SHCL_OBJ_CF_ACCESS_READ
+                              | SHCL_OBJ_CF_ACCESS_DENYWRITE;
+
+            rc = RTStrCopy(openParms.pszPath, openParms.cbPath, m_strPath.c_str());
+            if (RT_SUCCESS(rc))
             {
-                rc = m_pTransfer->ProviderIface.pfnObjRead(&m_pTransfer->ProviderCtx, m_hObj,
-                                                           pvBuffer, cbToRead, 0 /* fFlags */, &cbRead);
-                if (RT_SUCCESS(rc))
-                {
-                    m_cbProcessed += cbRead;
-                    Assert(m_cbProcessed <= cbSize);
-                }
+                rc = m_pTransfer->ProviderIface.pfnObjOpen(&m_pTransfer->ProviderCtx, &openParms, &m_hObj);
             }
 
-            /* Transfer complete? Make sure to close the object again. */
-            m_fIsComplete = m_cbProcessed == cbSize;
+            ShClTransferObjOpenParmsDestroy(&openParms);
+        }
+    }
+    else
+        rc = VINF_SUCCESS;
 
-            if (m_fIsComplete)
+    uint32_t cbRead = 0;
+
+    const uint64_t cbSize   = (uint64_t)m_objInfo.cbObject;
+    const uint32_t cbToRead = RT_MIN(cbSize - m_cbProcessed, nBytesToRead);
+
+    if (RT_SUCCESS(rc))
+    {
+        if (cbToRead)
+        {
+            rc = m_pTransfer->ProviderIface.pfnObjRead(&m_pTransfer->ProviderCtx, m_hObj,
+                                                       pvBuffer, cbToRead, 0 /* fFlags */, &cbRead);
+            if (RT_SUCCESS(rc))
             {
-                if (m_pTransfer->ProviderIface.pfnObjClose)
-                {
-                    int rc2 = m_pTransfer->ProviderIface.pfnObjClose(&m_pTransfer->ProviderCtx, m_hObj);
-                    AssertRC(rc2);
-                }
-
-                if (m_pParent)
-                    m_pParent->OnTransferComplete();
+                m_cbProcessed += cbRead;
+                Assert(m_cbProcessed <= cbSize);
             }
         }
 
-        LogFlowThisFunc(("Leave: rc=%Rrc, cbSize=%RU64, cbProcessed=%RU64 -> nBytesToRead=%RU32, cbToRead=%RU32, cbRead=%RU32\n",
-                         rc, cbSize, m_cbProcessed, nBytesToRead, cbToRead, cbRead));
+        /* Transfer complete? Make sure to close the object again. */
+        m_fIsComplete = m_cbProcessed == cbSize;
 
-        if (nBytesRead)
-            *nBytesRead = (ULONG)cbRead;
+        if (m_fIsComplete)
+        {
+            if (m_pTransfer->ProviderIface.pfnObjClose)
+            {
+                int rc2 = m_pTransfer->ProviderIface.pfnObjClose(&m_pTransfer->ProviderCtx, m_hObj);
+                AssertRC(rc2);
+            }
 
-        if (nBytesToRead != cbRead)
-            return S_FALSE;
-
-        return S_OK;
+            if (m_pParent)
+                m_pParent->SetStatus(SharedClipboardWinDataObject::Completed);
+        }
     }
-    catch (...)
-    {
-        LogFunc(("Caught exception\n"));
-    }
 
-    return E_FAIL;
+    LogFlowThisFunc(("Leave: rc=%Rrc, cbSize=%RU64, cbProcessed=%RU64 -> nBytesToRead=%RU32, cbToRead=%RU32, cbRead=%RU32\n",
+                     rc, cbSize, m_cbProcessed, nBytesToRead, cbToRead, cbRead));
+
+    if (nBytesRead)
+        *nBytesRead = (ULONG)cbRead;
+
+    if (nBytesToRead != cbRead)
+        return S_FALSE;
+
+    return S_OK;
 }
 
 STDMETHODIMP SharedClipboardWinStreamImpl::Revert(void)

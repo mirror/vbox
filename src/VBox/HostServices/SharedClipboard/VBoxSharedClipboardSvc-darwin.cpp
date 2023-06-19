@@ -261,7 +261,7 @@ int ShClBackendReportFormats(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, SHCLFOR
     /*
      * Now, request the data from the guest.
      */
-    return ShClSvcGuestDataRequest(pClient, fFormats, NULL /* pidEvent */);
+    return ShClSvcReadDataFromGuestAsync(pClient, fFormats, NULL /* ppEvent */);
 }
 
 int ShClBackendReadData(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT fFormat,

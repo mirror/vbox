@@ -92,10 +92,9 @@ static char s_szClipWndClassName[] = SHCL_WIN_WNDCLASS_NAME;
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-static DECLCALLBACK(int)  vboxClipboardOnTransferInitCallback(PSHCLTXPROVIDERCTX pCtx);
-static DECLCALLBACK(int)  vboxClipboardOnTransferStartCallback(PSHCLTXPROVIDERCTX pCtx);
-static DECLCALLBACK(void) vboxClipboardOnTransferCompleteCallback(PSHCLTXPROVIDERCTX pCtx, int rc);
-static DECLCALLBACK(void) vboxClipboardOnTransferErrorCallback(PSHCLTXPROVIDERCTX pCtx, int rc);
+static DECLCALLBACK(void) vbtrShClTransferInitializedCallback(PSHCLTXPROVIDERCTX pCtx);
+static DECLCALLBACK(void) vbtrShClTransferStartedCallback(PSHCLTXPROVIDERCTX pCtx);
+static DECLCALLBACK(void) vbtrShClTransferErrorCallback(PSHCLTXPROVIDERCTX pCtx, int rc);
 #endif
 
 
@@ -107,7 +106,7 @@ static DECLCALLBACK(void) vboxClipboardOnTransferErrorCallback(PSHCLTXPROVIDERCT
  * @param   pTransferCtx        Pointer to transfer context that the transfer contains.
  * @param   pTransfer           Pointer to transfer to cleanup.
  */
-static void vboxClipboardTransferCallbackCleanup(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer)
+static void vbtrShClTransferCallbackCleanup(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer)
 {
     LogFlowFuncEnter();
 
@@ -129,21 +128,102 @@ static void vboxClipboardTransferCallbackCleanup(PSHCLTRANSFERCTX pTransferCtx, 
     pTransfer = NULL;
 }
 
-/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnInitialize */
-static DECLCALLBACK(int) vboxClipboardOnTransferInitCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+/**
+ * Worker for a reading clipboard from the host.
+ *
+ * @thread  Main clipboard thread.
+ */
+static DECLCALLBACK(int) vbtrShClRequestDataFromSourceCallbackWorker(PSHCLCONTEXT pCtx,
+                                                                     SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser)
 {
-    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
-    AssertPtr(pCtx);
+    RT_NOREF(pvUser);
 
-    LogFlowFunc(("pCtx=%p\n", pCtx));
+    LogFlowFuncEnter();
 
-    RT_NOREF(pCtx);
+    int rc = VERR_NO_DATA; /* Play safe. */
 
-    return VINF_SUCCESS;
+    uint32_t cbRead = 0;
+
+    uint32_t cbData = _4K; /** @todo Make this dynamic. */
+    void    *pvData = RTMemAlloc(cbData);
+    if (pvData)
+    {
+        rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmt, pvData, cbData, &cbRead);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    /*
+     * A return value of VINF_BUFFER_OVERFLOW tells us to try again with a
+     * larger buffer.  The size of the buffer needed is placed in *pcb.
+     * So we start all over again.
+     */
+    if (rc == VINF_BUFFER_OVERFLOW)
+    {
+        /* cbRead contains the size required. */
+
+        cbData = cbRead;
+        pvData = RTMemRealloc(pvData, cbRead);
+        if (pvData)
+        {
+            rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmt, pvData, cbData, &cbRead);
+            if (rc == VINF_BUFFER_OVERFLOW)
+                rc = VERR_BUFFER_OVERFLOW;
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    if (!cbRead)
+        rc = VERR_NO_DATA;
+
+    if (RT_SUCCESS(rc))
+    {
+        if (ppv)
+            *ppv = pvData;
+        if (pcb)
+            *pcb = cbRead; /* Actual bytes read. */
+    }
+    else
+    {
+        /*
+         * Catch other errors. This also catches the case in which the buffer was
+         * too small a second time, possibly because the clipboard contents
+         * changed half-way through the operation.  Since we can't say whether or
+         * not this is actually an error, we just return size 0.
+         */
+        RTMemFree(pvData);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
-/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnStart */
-static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+/**
+ * @copydoc SHCLCALLBACKS::pfnOnRequestDataFromSource
+ *
+ * Called from the IDataObject implementation to request data from the host.
+ *
+ * @thread  shclwnd thread.
+ */
+DECLCALLBACK(int) vbtrShClRequestDataFromSourceCallback(PSHCLCONTEXT pCtx,
+                                                        SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser)
+{
+    PRTREQ pReq = NULL;
+    int rc = RTReqQueueCallEx(pCtx->Win.hReqQ, &pReq, SHCL_TIMEOUT_DEFAULT_MS, RTREQFLAGS_IPRT_STATUS,
+                              (PFNRT)vbtrShClRequestDataFromSourceCallbackWorker, 5, pCtx, uFmt, ppv, pcb, pvUser);
+    RTReqRelease(pReq);
+    return rc;
+}
+
+/**
+ * @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnStart
+ *
+ * Called from VbglR3 (main thread) to notify the IDataObject.
+ *
+ * @thread  Clipboard main thread.
+ */
+static DECLCALLBACK(void) vbtrShClTransferStartedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
@@ -157,37 +237,26 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
 
     int rc;
 
-    /* The guest wants to write local data to the host? */
+    /* The guest wants to transfer data to the host. */
     if (enmDir == SHCLTRANSFERDIR_TO_REMOTE)
     {
-        rc = SharedClipboardWinGetRoots(&pCtx->Win, pTransfer);
+        rc = SharedClipboardWinTransferGetRootsFromClipboard(&pCtx->Win, pTransfer);
     }
-    /* The guest wants to read data from a remote source. */
+    /* The guest wants to transfer data from the host. */
     else if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE)
     {
-        /* The IDataObject *must* be created on the same thread as our (proxy) window, so post a message to it
-         * to do the stuff for us. */
-        PSHCLEVENT pEvent;
-        rc = ShClEventSourceGenerateAndRegisterEvent(&pTransfer->Events, &pEvent);
+        rc = RTCritSectEnter(&pCtx->Win.CritSect);
         if (RT_SUCCESS(rc))
         {
-            /* Don't want to rely on SendMessage (synchronous) here, so just post and wait the event getting signalled. */
-            ::PostMessage(pCtx->Win.hWnd, SHCL_WIN_WM_TRANSFER_START, (WPARAM)pTransfer, (LPARAM)pEvent->idEvent);
+            SharedClipboardWinDataObject *pObj = pCtx->Win.pDataObjInFlight;
+            AssertPtrReturnVoid(pObj);
+            rc = pObj->SetAndStartTransfer(pTransfer);
 
-            PSHCLEVENTPAYLOAD pPayload;
-            rc = ShClEventWait(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
-            if (RT_SUCCESS(rc))
-            {
-                Assert(pPayload->cbData == sizeof(int));
-                rc = *(int *)pPayload->pvData;
+            pCtx->Win.pDataObjInFlight = NULL; /* Hand off to Windows. */
 
-                ShClPayloadFree(pPayload);
-            }
-
-            ShClEventRelease(pEvent);
+            int rc2 = RTCritSectLeave(&pCtx->Win.CritSect);
+            AssertRC(rc2);
         }
-        else
-            AssertFailedStmt(rc = VERR_SHCLPB_MAX_EVENTS_REACHED);
     }
     else
         AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
@@ -196,11 +265,10 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
         LogRel(("Shared Clipboard: Starting transfer failed, rc=%Rrc\n", rc));
 
     LogFlowFunc(("LEAVE: idTransfer=%RU32, rc=%Rrc\n", ShClTransferGetID(pTransfer), rc));
-    return rc;
 }
 
 /** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnCompleted */
-static DECLCALLBACK(void) vboxClipboardOnTransferCompletedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rcCompletion)
+static DECLCALLBACK(void) vbtrShClTransferCompletedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rcCompletion)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
@@ -208,23 +276,23 @@ static DECLCALLBACK(void) vboxClipboardOnTransferCompletedCallback(PSHCLTRANSFER
     LogRel2(("Shared Clipboard: Transfer to destination %s\n",
              rcCompletion == VERR_CANCELLED ? "canceled" : "complete"));
 
-    vboxClipboardTransferCallbackCleanup(&pCtx->TransferCtx, pCbCtx->pTransfer);
+    vbtrShClTransferCallbackCleanup(&pCtx->TransferCtx, pCbCtx->pTransfer);
 }
 
 /** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnError */
-static DECLCALLBACK(void) vboxClipboardOnTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rcError)
+static DECLCALLBACK(void) vbtrShClTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rcError)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
 
     LogRel(("Shared Clipboard: Transfer to destination failed with %Rrc\n", rcError));
 
-    vboxClipboardTransferCallbackCleanup(&pCtx->TransferCtx, pCbCtx->pTransfer);
+    vbtrShClTransferCallbackCleanup(&pCtx->TransferCtx, pCbCtx->pTransfer);
 }
 
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
-static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+static LRESULT vbtrShClWndProcWorker(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     AssertPtr(pCtx);
 
@@ -334,7 +402,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
             break;
         }
 
-        case WM_RENDERFORMAT:
+        case WM_RENDERFORMAT: /* Guest wants to render the clipboard data. */
         {
             LogFunc(("WM_RENDERFORMAT\n"));
 
@@ -345,9 +413,15 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
 
             LogFunc(("WM_RENDERFORMAT: cfFormat=%u -> fFormat=0x%x\n", cfFormat, fFormat));
 
+#ifdef LOG_ENABLED
+            char *pszFmts = ShClFormatsToStrA(fFormat);
+            AssertPtrReturn(pszFmts, 0);
+            LogRel(("Shared Clipboard: Rendering Windows format %#x as VBox format '%s'\n", cfFormat, pszFmts));
+            RTStrFree(pszFmts);
+#endif
             if (fFormat == VBOX_SHCL_FMT_NONE)
             {
-                LogFunc(("WM_RENDERFORMAT: Unsupported format requested\n"));
+                LogRel(("Shared Clipboard: Unsupported format (%#x) requested\n", cfFormat));
                 SharedClipboardWinClear();
             }
             else
@@ -534,7 +608,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
             break;
         }
 
-        case SHCL_WIN_WM_REPORT_FORMATS:
+        case SHCL_WIN_WM_REPORT_FORMATS: /* Host reported clipboard formats. */
         {
             LogFunc(("SHCL_WIN_WM_REPORT_FORMATS\n"));
 
@@ -545,27 +619,32 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
 
             const SHCLFORMATS fFormats = pEvent->u.fReportedFormats;
 
+#ifdef LOG_ENABLED
+            char *pszFmts = ShClFormatsToStrA(fFormats);
+            AssertPtrReturn(pszFmts, 0);
+            LogRel(("Shared Clipboard: Host reported formats '%s'\n", pszFmts));
+            RTStrFree(pszFmts);
+#endif
             if (fFormats != VBOX_SHCL_FMT_NONE) /* Could arrive with some older GA versions. */
             {
+                int rc = SharedClipboardWinClearAndAnnounceFormats(pWinCtx, fFormats, hwnd);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-                if (fFormats & VBOX_SHCL_FMT_URI_LIST)
+                if (   RT_SUCCESS(rc)
+                    && fFormats & VBOX_SHCL_FMT_URI_LIST)
                 {
-                    LogFunc(("VBOX_SHCL_FMT_URI_LIST\n"));
-
                     /*
                      * Creating and starting the actual transfer will be done in vbglR3ClipboardTransferStart() as soon
                      * as the host announces the start of the transfer via a VBOX_SHCL_HOST_MSG_TRANSFER_STATUS message.
                      * Transfers always are controlled and initiated on the host side!
                      *
-                     * So don't announce the transfer to the OS here yet. Don't touch the clipboard in any way here; otherwise
-                     * this will trigger a WM_DRAWCLIPBOARD or friends, which will result in fun bugs coming up.
+                     * What we need to do here, however, is, that we create our IDataObject implementation and push it to the
+                     * Windows clibpoard. That way Windows will recognize that there is a data transfer "in flight".
                      */
-                }
-                else
-                {
-#endif
-                    SharedClipboardWinClearAndAnnounceFormats(pWinCtx, fFormats, hwnd);
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+                    SHCLCALLBACKS Callbacks;
+                    RT_ZERO(Callbacks);
+                    Callbacks.pfnOnRequestDataFromSource = vbtrShClRequestDataFromSourceCallback;
+
+                    rc = SharedClipboardWinTransferCreateAndSetDataObject(pWinCtx, pCtx, &Callbacks);
                 }
 #endif
             }
@@ -574,7 +653,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
             break;
         }
 
-        case SHCL_WIN_WM_READ_DATA:
+        case SHCL_WIN_WM_READ_DATA: /* Host wants to read clipboard data from the guest. */
         {
             /* Send data in the specified format to the host. */
             PVBGLR3CLIPBOARDEVENT pEvent = (PVBGLR3CLIPBOARDEVENT)lParam;
@@ -584,7 +663,12 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
             const SHCLFORMAT fFormat = (uint32_t)pEvent->u.fReadData;
 
             LogFlowFunc(("SHCL_WIN_WM_READ_DATA: fFormat=%#x\n", fFormat));
-
+#ifdef LOG_ENABLED
+            char *pszFmts = ShClFormatsToStrA(fFormat);
+            AssertPtrReturn(pszFmts, 0);
+            LogRel(("Shared Clipboard: Sending data to host as '%s'\n", pszFmts));
+            RTStrFree(pszFmts);
+#endif
             int rc = SharedClipboardWinOpen(hwnd);
             HANDLE hClip = NULL;
             if (RT_SUCCESS(rc))
@@ -672,32 +756,6 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
             break;
         }
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-        case SHCL_WIN_WM_TRANSFER_START:
-        {
-            LogFunc(("SHCL_WIN_WM_TRANSFER_START\n"));
-
-            PSHCLTRANSFER pTransfer  = (PSHCLTRANSFER)wParam;
-            AssertPtr(pTransfer);
-
-            const SHCLEVENTID idEvent = (SHCLEVENTID)lParam;
-
-            Assert(ShClTransferGetSource(pTransfer) == SHCLSOURCE_REMOTE); /* Sanity. */
-
-            int rcTransfer = SharedClipboardWinTransferCreate(pWinCtx, pTransfer);
-
-            PSHCLEVENTPAYLOAD pPayload = NULL;
-            int rc = ShClPayloadAlloc(idEvent, &rcTransfer, sizeof(rcTransfer), &pPayload);
-            if (RT_SUCCESS(rc))
-            {
-                rc = ShClEventSignal(&pTransfer->Events, idEvent, pPayload);
-                if (RT_FAILURE(rc))
-                    ShClPayloadFree(pPayload);
-            }
-
-            break;
-        }
-#endif
         case WM_DESTROY:
         {
             LogFunc(("WM_DESTROY\n"));
@@ -725,9 +783,9 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
     return lresultRc;
 }
 
-static LRESULT CALLBACK vboxClipboardWinWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+static LRESULT CALLBACK vbtrShClWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-static int vboxClipboardCreateWindow(PSHCLCONTEXT pCtx)
+static int vbtrShClCreateWindow(PSHCLCONTEXT pCtx)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -746,7 +804,7 @@ static int vboxClipboardCreateWindow(PSHCLCONTEXT pCtx)
     if (!GetClassInfoEx(hInstance, s_szClipWndClassName, &wc))
     {
         wc.style         = CS_NOCLOSE;
-        wc.lpfnWndProc   = vboxClipboardWinWndProc;
+        wc.lpfnWndProc   = vbtrShClWndProc;
         wc.hInstance     = pCtx->pEnv->hInstance;
         wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND + 1);
         wc.lpszClassName = s_szClipWndClassName;
@@ -787,7 +845,7 @@ static int vboxClipboardCreateWindow(PSHCLCONTEXT pCtx)
     return rc;
 }
 
-static DECLCALLBACK(int) vboxClipboardWindowThread(RTTHREAD hThread, void *pvUser)
+static DECLCALLBACK(int) vbtrShClWindowThread(RTTHREAD hThread, void *pvUser)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pvUser;
     AssertPtr(pCtx);
@@ -801,9 +859,9 @@ static DECLCALLBACK(int) vboxClipboardWindowThread(RTTHREAD hThread, void *pvUse
     }
     else
         LogRel(("Shared Clipboard: Initialized OLE in window thread\n"));
-#endif
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
-    int rc = vboxClipboardCreateWindow(pCtx);
+    int rc = vbtrShClCreateWindow(pCtx);
     if (RT_FAILURE(rc))
     {
         LogRel(("Shared Clipboard: Unable to create window, rc=%Rrc\n", rc));
@@ -854,48 +912,16 @@ static DECLCALLBACK(int) vboxClipboardWindowThread(RTTHREAD hThread, void *pvUse
     return rc;
 }
 
-static void vboxClipboardDestroy(PSHCLCONTEXT pCtx)
-{
-    AssertPtrReturnVoid(pCtx);
-
-    LogFlowFunc(("pCtx=%p\n", pCtx));
-
-    LogRel2(("Shared Clipboard: Destroying ...\n"));
-
-    const PSHCLWINCTX pWinCtx = &pCtx->Win;
-
-    if (pCtx->hThread != NIL_RTTHREAD)
-    {
-        int rcThread = VERR_WRONG_ORDER;
-        int rc = RTThreadWait(pCtx->hThread, 60 * 1000 /* Timeout in ms */, &rcThread);
-        LogFlowFunc(("Waiting for thread resulted in %Rrc (thread exited with %Rrc)\n",
-                     rc, rcThread));
-        RT_NOREF(rc);
-    }
-
-    if (pWinCtx->hWnd)
-    {
-        DestroyWindow(pWinCtx->hWnd);
-        pWinCtx->hWnd = NULL;
-    }
-
-    UnregisterClass(s_szClipWndClassName, pCtx->pEnv->hInstance);
-
-    SharedClipboardWinCtxDestroy(&pCtx->Win);
-
-    LogRel2(("Shared Clipboard: Destroyed\n"));
-}
-
-static LRESULT CALLBACK vboxClipboardWinWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK vbtrShClWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     PSHCLCONTEXT pCtx = &g_Ctx; /** @todo r=andy Make pCtx available through SetWindowLongPtr() / GWL_USERDATA. */
     AssertPtr(pCtx);
 
     /* Forward with proper context. */
-    return vboxClipboardWinProcessMsg(pCtx, hWnd, uMsg, wParam, lParam);
+    return vbtrShClWndProcWorker(pCtx, hWnd, uMsg, wParam, lParam);
 }
 
-DECLCALLBACK(int) VBoxShClInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
+DECLCALLBACK(int) vbtrShClInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
 {
     LogFlowFuncEnter();
 
@@ -920,57 +946,39 @@ DECLCALLBACK(int) VBoxShClInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
     pCtx->fStarted  = false;
     pCtx->fShutdown = false;
 
-    int rc = VINF_SUCCESS;
+    int rc = RTReqQueueCreate(&pCtx->Win.hReqQ);
+    AssertRCReturn(rc, rc);
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    /*
-     * Set callbacks.
-     * Those will be registered within VbglR3 when a new transfer gets initialized.
-     */
-    RT_ZERO(pCtx->CmdCtx.Transfers.Callbacks);
-
-    pCtx->CmdCtx.Transfers.Callbacks.pvUser = pCtx; /* Assign context as user-provided callback data. */
-    pCtx->CmdCtx.Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
-
-    pCtx->CmdCtx.Transfers.Callbacks.pfnOnInitialize = vboxClipboardOnTransferInitCallback;
-    pCtx->CmdCtx.Transfers.Callbacks.pfnOnStart      = vboxClipboardOnTransferStartCallback;
-    pCtx->CmdCtx.Transfers.Callbacks.pfnOnCompleted  = vboxClipboardOnTransferCompletedCallback;
-    pCtx->CmdCtx.Transfers.Callbacks.pfnOnError      = vboxClipboardOnTransferErrorCallback;
-#endif
-
+    rc = SharedClipboardWinCtxInit(&pCtx->Win);
+    if (RT_SUCCESS(rc))
+        rc = VbglR3ClipboardConnectEx(&pCtx->CmdCtx, VBOX_SHCL_GF_0_CONTEXT_ID);
     if (RT_SUCCESS(rc))
     {
-        rc = SharedClipboardWinCtxInit(&pCtx->Win);
-        if (RT_SUCCESS(rc))
-            rc = VbglR3ClipboardConnectEx(&pCtx->CmdCtx, VBOX_SHCL_GF_0_CONTEXT_ID);
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+        rc = ShClTransferCtxInit(&pCtx->TransferCtx);
+#endif
         if (RT_SUCCESS(rc))
         {
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-            rc = ShClTransferCtxInit(&pCtx->TransferCtx);
-#endif
+            /* Message pump thread for our proxy window. */
+            rc = RTThreadCreate(&pCtx->hThread, vbtrShClWindowThread, pCtx /* pvUser */,
+                                0, RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
+                                "shclwnd");
             if (RT_SUCCESS(rc))
             {
-                /* Message pump thread for our proxy window. */
-                rc = RTThreadCreate(&pCtx->hThread, vboxClipboardWindowThread, pCtx /* pvUser */,
-                                    0, RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
-                                    "shclwnd");
-                if (RT_SUCCESS(rc))
-                {
-                    int rc2 = RTThreadUserWait(pCtx->hThread, 30 * 1000 /* Timeout in ms */);
-                    AssertRC(rc2);
+                int rc2 = RTThreadUserWait(pCtx->hThread, RT_MS_30SEC /* Timeout in ms */);
+                AssertRC(rc2);
 
-                    if (!pCtx->fStarted) /* Did the thread fail to start? */
-                        rc = VERR_NOT_SUPPORTED; /* Report back Shared Clipboard as not being supported. */
-                }
+                if (!pCtx->fStarted) /* Did the thread fail to start? */
+                    rc = VERR_NOT_SUPPORTED; /* Report back Shared Clipboard as not being supported. */
             }
-
-            if (RT_SUCCESS(rc))
-            {
-                *ppInstance = pCtx;
-            }
-            else
-                VbglR3ClipboardDisconnectEx(&pCtx->CmdCtx);
         }
+
+        if (RT_SUCCESS(rc))
+        {
+            *ppInstance = pCtx;
+        }
+        else
+            VbglR3ClipboardDisconnectEx(&pCtx->CmdCtx);
     }
 
     if (RT_FAILURE(rc))
@@ -980,7 +988,7 @@ DECLCALLBACK(int) VBoxShClInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
     return rc;
 }
 
-DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
+DECLCALLBACK(int) vbtrShClWorker(void *pInstance, bool volatile *pfShutdown)
 {
     AssertPtr(pInstance);
     LogFlowFunc(("pInstance=%p\n", pInstance));
@@ -1007,22 +1015,37 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
     }
     else
         LogRel(("Shared Clipboard: Initialized OLE in worker thread\n"));
-#endif
+
+    /*
+     * Init callbacks.
+     * Those will be registered within VbglR3 when a new transfer gets initialized.
+     */
+    RT_ZERO(pCtx->CmdCtx.Transfers.Callbacks);
+
+    pCtx->CmdCtx.Transfers.Callbacks.pvUser = pCtx; /* Assign context as user-provided callback data. */
+    pCtx->CmdCtx.Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
+
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnStarted     = vbtrShClTransferStartedCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnCompleted   = vbtrShClTransferCompletedCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnError       = vbtrShClTransferErrorCallback;
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
     int rc;
 
     /* The thread waits for incoming messages from the host. */
+    PVBGLR3CLIPBOARDEVENT pEvent = NULL;
     for (;;)
     {
         LogFlowFunc(("Waiting for host message (fUseLegacyProtocol=%RTbool, fHostFeatures=%#RX64) ...\n",
                      pCtx->CmdCtx.fUseLegacyProtocol, pCtx->CmdCtx.fHostFeatures));
 
-        PVBGLR3CLIPBOARDEVENT pEvent = (PVBGLR3CLIPBOARDEVENT)RTMemAllocZ(sizeof(VBGLR3CLIPBOARDEVENT));
+        if (!pEvent)
+            pEvent = (PVBGLR3CLIPBOARDEVENT)RTMemAllocZ(sizeof(VBGLR3CLIPBOARDEVENT));
         AssertPtrBreakStmt(pEvent, rc = VERR_NO_MEMORY);
 
         uint32_t idMsg  = 0;
         uint32_t cParms = 0;
-        rc = VbglR3ClipboardMsgPeekWait(&pCtx->CmdCtx, &idMsg, &cParms, NULL /* pidRestoreCheck */);
+        rc = VbglR3ClipboardMsgPeek(&pCtx->CmdCtx, &idMsg, &cParms, NULL /* pidRestoreCheck */);
         if (RT_SUCCESS(rc))
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
@@ -1030,6 +1053,11 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
 #else
             rc = VbglR3ClipboardEventGetNext(idMsg, cParms, &pCtx->CmdCtx, pEvent);
 #endif
+        }
+        else if (rc == VERR_TRY_AGAIN) /* No new message (yet). */
+        {
+            RTReqQueueProcess(pCtx->Win.hReqQ, RT_MS_1SEC);
+            continue;
         }
 
         if (RT_FAILURE(rc))
@@ -1125,7 +1153,7 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
     return rc;
 }
 
-DECLCALLBACK(int) VBoxShClStop(void *pInstance)
+DECLCALLBACK(int) vbtrShClStop(void *pInstance)
 {
     AssertPtrReturn(pInstance, VERR_INVALID_POINTER);
 
@@ -1149,21 +1177,48 @@ DECLCALLBACK(int) VBoxShClStop(void *pInstance)
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(void) VBoxShClDestroy(void *pInstance)
+DECLCALLBACK(void) vbtrShClDestroy(void *pInstance)
 {
     AssertPtrReturnVoid(pInstance);
 
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pInstance;
-    AssertPtr(pCtx);
+    AssertPtrReturnVoid(pCtx);
 
     /* Make sure that we are disconnected. */
     Assert(pCtx->CmdCtx.idClient == 0);
 
-    vboxClipboardDestroy(pCtx);
+    LogFlowFunc(("pCtx=%p\n", pCtx));
+
+    LogRel2(("Shared Clipboard: Destroying ...\n"));
+
+    const PSHCLWINCTX pWinCtx = &pCtx->Win;
+
+    if (pCtx->hThread != NIL_RTTHREAD)
+    {
+        int rcThread = VERR_WRONG_ORDER;
+        int rc = RTThreadWait(pCtx->hThread, 60 * 1000 /* Timeout in ms */, &rcThread);
+        LogFlowFunc(("Waiting for thread resulted in %Rrc (thread exited with %Rrc)\n",
+                     rc, rcThread));
+        RT_NOREF(rc);
+    }
+
+    if (pWinCtx->hWnd)
+    {
+        DestroyWindow(pWinCtx->hWnd);
+        pWinCtx->hWnd = NULL;
+    }
+
+    UnregisterClass(s_szClipWndClassName, pCtx->pEnv->hInstance);
+
+    SharedClipboardWinCtxDestroy(&pCtx->Win);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     ShClTransferCtxDestroy(&pCtx->TransferCtx);
 #endif
+
+    RTReqQueueDestroy(pCtx->Win.hReqQ);
+
+    LogRel2(("Shared Clipboard: Destroyed\n"));
 
     return;
 }
@@ -1178,8 +1233,8 @@ VBOXSERVICEDESC g_SvcDescClipboard =
     /* pszDescription. */
     "Shared Clipboard",
     /* methods */
-    VBoxShClInit,
-    VBoxShClWorker,
-    VBoxShClStop,
-    VBoxShClDestroy
+    vbtrShClInit,
+    vbtrShClWorker,
+    vbtrShClStop,
+    vbtrShClDestroy
 };
