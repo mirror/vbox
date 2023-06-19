@@ -41,6 +41,7 @@
 
 #include <VBox/AssertGuest.h>
 #include <VBox/param.h>
+#include <VBox/VMMDev.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
@@ -1228,10 +1229,16 @@ static int vbsfPagesToSgBuf(VBOXHGCMSVCPARMPAGES const *pPages, uint32_t cbLeft,
             Assert(iSeg < pPages->cPages);
             Assert(iPage < pPages->cPages);
 
+            /** @todo r=aeichner This was just using PAGE_SIZE before which doesn't work if the host and guest use different
+             * page sizes (think of 16KiB on macOS.arm64 vs linux.arm64) causing data corruption, yay! VMMDev now imposes a page size of 4KiB and
+             * VBOXHGCMSVCPARMPAGES should really have a cbPage member to indicate the used page size instead of dragging
+             * in VMMDev.h here. OTOH the size of VBOXHGCMSVCPARMPAGES can be part of a saved state which would mean increasing
+             * the HGCM saved state version... */
+
             /* Current page. */
             void *pvSeg;
             paSegs[iSeg].pvSeg = pvSeg = pPages->papvPages[iPage];
-            uint32_t cbSeg = PAGE_SIZE - (uint32_t)((uintptr_t)pvSeg & PAGE_OFFSET_MASK);
+            uint32_t cbSeg = VMMDEV_PAGE_SIZE - (uint32_t)((uintptr_t)pvSeg & VMMDEV_PAGE_OFFSET_MASK);
             iPage++;
 
             /* Adjacent to the next page? */
@@ -1239,7 +1246,7 @@ static int vbsfPagesToSgBuf(VBOXHGCMSVCPARMPAGES const *pPages, uint32_t cbLeft,
                    && (uintptr_t)pvSeg + cbSeg == (uintptr_t)pPages->papvPages[iPage])
             {
                 iPage++;
-                cbSeg += PAGE_SIZE;
+                cbSeg += VMMDEV_PAGE_SIZE;
             }
 
             /* Adjust for max size. */
