@@ -110,7 +110,7 @@ VMMR0_INT_DECL(int) TMR0TimerQueueGrow(PGVM pGVM, uint32_t idxQueue, uint32_t cM
      */
     VM_ASSERT_EMT0_RETURN(pGVM, VERR_VM_THREAD_NOT_EMT);
     VM_ASSERT_STATE_RETURN(pGVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE); /** @todo must do better than this! */
-    AssertReturn(idxQueue <= RT_ELEMENTS(pGVM->tmr0.s.aTimerQueues), VERR_TM_INVALID_TIMER_QUEUE);
+    AssertReturn(idxQueue < RT_ELEMENTS(pGVM->tmr0.s.aTimerQueues), VERR_TM_INVALID_TIMER_QUEUE);
     AssertCompile(RT_ELEMENTS(pGVM->tmr0.s.aTimerQueues) == RT_ELEMENTS(pGVM->tm.s.aTimerQueues));
     PTMTIMERQUEUER0 pQueueR0     = &pGVM->tmr0.s.aTimerQueues[idxQueue];
     PTMTIMERQUEUE   pQueueShared = &pGVM->tm.s.aTimerQueues[idxQueue];
