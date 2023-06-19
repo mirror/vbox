@@ -664,7 +664,6 @@ typedef struct _SHCLTXPROVIDERIFACE
      *
      * @returns VBox status code.
      * @param   pCtx                Provider context to use.
-     * @param   pRootList           Where to store the root list on success.
      */
     DECLCALLBACKMEMBER(int, pfnRootListRead,(PSHCLTXPROVIDERCTX pCtx));
     /**
