@@ -186,7 +186,7 @@ typedef struct _SHCLIENTTRANSFERS
     /** Transfer context. */
     SHCLTRANSFERCTX             Ctx;
     /** Transfers callbacks to use. */
-    SHCLTRANSFERCALLBACKTABLE   Callbacks;
+    SHCLTRANSFERCALLBACKS       Callbacks;
 } SHCLIENTTRANSFERS, *PSHCLIENTTRANSFERS;
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 

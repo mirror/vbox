@@ -1439,7 +1439,7 @@ void ShClTransferCopyCallbacks(PSHCLTRANSFERCALLBACKS pCallbacksDst,
         pCallbacksDst->cbUser = pCallbacksSrc->cbUser;
     }
     else /* Unset */
-        RT_BZERO(pCallbacksDst, sizeof(SHCLTRANSFERCALLBACKTABLE));
+        RT_BZERO(pCallbacksDst, sizeof(SHCLTRANSFERCALLBACKS));
 }
 
 /**

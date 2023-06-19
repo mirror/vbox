@@ -217,7 +217,7 @@ DECLCALLBACK(int) vbtrShClRequestDataFromSourceCallback(PSHCLCONTEXT pCtx,
 }
 
 /**
- * @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnStart
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnStart
  *
  * Called from VbglR3 (main thread) to notify the IDataObject.
  *
@@ -267,7 +267,7 @@ static DECLCALLBACK(void) vbtrShClTransferStartedCallback(PSHCLTRANSFERCALLBACKC
     LogFlowFunc(("LEAVE: idTransfer=%RU32, rc=%Rrc\n", ShClTransferGetID(pTransfer), rc));
 }
 
-/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnCompleted */
+/** @copydoc SHCLTRANSFERCALLBACKS::pfnOnCompleted */
 static DECLCALLBACK(void) vbtrShClTransferCompletedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rcCompletion)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
@@ -279,7 +279,7 @@ static DECLCALLBACK(void) vbtrShClTransferCompletedCallback(PSHCLTRANSFERCALLBAC
     vbtrShClTransferCallbackCleanup(&pCtx->TransferCtx, pCbCtx->pTransfer);
 }
 
-/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnError */
+/** @copydoc SHCLTRANSFERCALLBACKS::pfnOnError */
 static DECLCALLBACK(void) vbtrShClTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rcError)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
@@ -646,6 +646,8 @@ static LRESULT vbtrShClWndProcWorker(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPA
 
                     rc = SharedClipboardWinTransferCreateAndSetDataObject(pWinCtx, pCtx, &Callbacks);
                 }
+#else
+                RT_NOREF(rc);
 #endif
             }
 

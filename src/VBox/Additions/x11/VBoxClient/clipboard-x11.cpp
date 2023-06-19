@@ -104,7 +104,7 @@ static DECLCALLBACK(int) vbclX11TransferWaitForStatusWorker(PSHCLCONTEXT pCtx, P
 }
 
 /**
- * @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnRegistered
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnRegistered
  *
  * This starts the HTTP server if not done yet and registers the transfer with it.
  *
@@ -165,7 +165,7 @@ static void vbclX11HttpTransferUnregister(PSHCLCONTEXT pCtx, PSHCLTRANSFER pTran
 }
 
 /**
- * @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnUnregistered
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnUnregistered
  *
  * Unregisters a (now) unregistered transfer from the HTTP server.
  *
@@ -178,7 +178,7 @@ static DECLCALLBACK(void) vbclX11OnHttpTransferUnregisteredCallback(PSHCLTRANSFE
 }
 
 /**
- * @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnCompleted
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnCompleted
  *
  * Unregisters a complete transfer from the HTTP server.
  *
@@ -190,7 +190,7 @@ static DECLCALLBACK(void) vbclX11OnHttpTransferCompletedCallback(PSHCLTRANSFERCA
     vbclX11HttpTransferUnregister((PSHCLCONTEXT)pCbCtx->pvUser, pCbCtx->pTransfer);
 }
 
-/** @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnError
+/** @copydoc SHCLTRANSFERCALLBACKS::pfnOnError
  *
  * Unregisters a failed transfer from the HTTP server.
  *

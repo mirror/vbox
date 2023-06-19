@@ -40,7 +40,7 @@
 #include <iprt/thread.h> // REMOVE
 
 #include <iprt/asm.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/path.h>
 #include <iprt/semaphore.h>
 #include <iprt/uri.h>
@@ -1172,4 +1172,3 @@ int SharedClipboardWinDataObject::setStatusLocked(Status enmStatus, int rc /* = 
 
     return rc2;
 }
-

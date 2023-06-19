@@ -227,8 +227,10 @@ static DECLCALLBACK(int) vboxClipboardSvcWinRequestDataFromSourceCallback(PSHCLC
     return rc;
 }
 
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 /**
- * @copydoc SHCLTRANSFERCALLBACKTABLE::pfnOnStart
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnStart
  *
  * Called on transfer start to notify the "in-flight" IDataObject about a started transfer.
  *
@@ -270,6 +272,7 @@ static DECLCALLBACK(void) vboxClipboardSvcWinTransferStartedCallback(PSHCLTRANSF
 
     LogFlowFunc(("LEAVE: idTransfer=%RU32, rc=%Rrc\n", ShClTransferGetID(pTransfer), rc));
 }
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
                                                        HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) RT_NOTHROW_DEF
@@ -1003,4 +1006,3 @@ int ShClBackendTransferGetRoots(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHC
     return rc;
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
-
