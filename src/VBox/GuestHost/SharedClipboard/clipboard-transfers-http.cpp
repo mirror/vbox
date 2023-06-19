@@ -99,12 +99,22 @@ static SHCLHTTPSERVERSTATUS shclTransferHttpServerSetStatusLocked(PSHCLHTTPSERVE
 *   Internal Shared Clipboard HTTP transfer functions                                                                            *
 *********************************************************************************************************************************/
 
+/**
+ * Locks an HTTP transfer.
+ *
+ * @param   pSrvTx              HTTP transfer to lock.
+ */
 DECLINLINE(void) shClHttpTransferLock(PSHCLHTTPSERVERTRANSFER pSrvTx)
 {
     int rc2 = RTCritSectEnter(&pSrvTx->CritSect);
     AssertRC(rc2);
 }
 
+/**
+ * Unlocks an HTTP transfer.
+ *
+ * @param   pSrvTx              HTTP transfer to unlock.
+ */
 DECLINLINE(void) shClHttpTransferUnlock(PSHCLHTTPSERVERTRANSFER pSrvTx)
 {
     int rc2 = RTCritSectLeave(&pSrvTx->CritSect);

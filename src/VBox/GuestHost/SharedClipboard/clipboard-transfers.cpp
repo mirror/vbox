@@ -49,6 +49,10 @@ static PSHCLTRANSFER shClTransferCtxGetTransferByIdInternal(PSHCLTRANSFERCTX pTr
 static PSHCLTRANSFER shClTransferCtxGetTransferByIndexInternal(PSHCLTRANSFERCTX pTransferCtx, uint32_t uIdx);
 
 
+/*********************************************************************************************************************************
+ * Transfer List                                                                                                                 *
+ ********************************************************************************************************************************/
+
 /**
  * Initializes a transfer list.
  *
@@ -675,6 +679,11 @@ bool ShClTransferListEntryIsValid(PSHCLLISTENTRY pListEntry)
     return true;
 }
 
+
+/*********************************************************************************************************************************
+ * Transfer Object                                                                                                               *
+ ********************************************************************************************************************************/
+
 /**
  * Initializes a transfer object context.
  *
@@ -1026,6 +1035,11 @@ void ShClTransferObjDataChunkFree(PSHCLOBJDATACHUNK pDataChunk)
     pDataChunk = NULL;
 }
 
+
+/*********************************************************************************************************************************
+ * Transfer                                                                                                                      *
+ ********************************************************************************************************************************/
+
 /**
  * Creates a clipboard transfer, extended version.
  *
@@ -1135,6 +1149,9 @@ int ShClTransferDestroy(PSHCLTRANSFER pTransfer)
 
     ShClTransferReset(pTransfer);
 
+    if (RTCritSectIsInitialized(&pTransfer->CritSect))
+        RTCritSectDelete(&pTransfer->CritSect);
+
     ShClEventSourceDestroy(&pTransfer->Events);
 
     LogFlowFuncLeave();
@@ -1175,9 +1192,8 @@ int ShClTransferInit(PSHCLTRANSFER pTransfer, SHCLTRANSFERDIR enmDir, SHCLSOURCE
     pTransfer->CallbackCtx.pvUser    = pTransfer->Callbacks.pvUser;
     pTransfer->CallbackCtx.cbUser    = pTransfer->Callbacks.cbUser;
 
-    int rc = VINF_SUCCESS;
-
-    LogRelFunc(("pfnOnInitialized=%p\n", pTransfer->Callbacks.pfnOnInitialized));
+    int rc = RTCritSectInit(&pTransfer->CritSect);
+    AssertRCReturn(rc, rc);
 
     if (pTransfer->Callbacks.pfnOnInitialized)
         pTransfer->Callbacks.pfnOnInitialized(&pTransfer->CallbackCtx);
@@ -1189,6 +1205,28 @@ int ShClTransferInit(PSHCLTRANSFER pTransfer, SHCLTRANSFERDIR enmDir, SHCLSOURCE
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+/**
+ * Locks a transfer.
+ *
+ * @param   pTransfer           Transfer to lock.
+ */
+DECLINLINE(void) shClTransferLock(PSHCLTRANSFER pTransfer)
+{
+    int rc2 = RTCritSectEnter(&pTransfer->CritSect);
+    AssertRC(rc2);
+}
+
+/**
+ * Unlocks a transfer.
+ *
+ * @param   pTransfer           Transfer to unlock.
+ */
+DECLINLINE(void) shClTransferUnlock(PSHCLTRANSFER pTransfer)
+{
+    int rc2 = RTCritSectLeave(&pTransfer->CritSect);
+    AssertRC(rc2);
 }
 
 /**
@@ -1498,18 +1536,26 @@ uint64_t ShClTransferRootsCount(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, 0);
 
-    LogFlowFunc(("[Transfer %RU32] cRoots=%RU64\n", pTransfer->State.uID, pTransfer->lstRoots.Hdr.cEntries));
-    return (uint32_t)pTransfer->lstRoots.Hdr.cEntries;
+    shClTransferLock(pTransfer);
+
+    uint32_t const cRoots = pTransfer->lstRoots.Hdr.cEntries;
+
+    shClTransferUnlock(pTransfer);
+
+    return cRoots;
 }
 
 /**
  * Resets the root list of a clipboard transfer.
  *
  * @param   pTransfer           Transfer to clear transfer root list for.
+ *
+ * @note    Caller needs to take critical section.
  */
 static void shClTransferRootsReset(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturnVoid(pTransfer);
+    Assert(RTCritSectIsOwner(&pTransfer->CritSect));
 
     if (pTransfer->pszPathRootAbs)
     {
@@ -1530,6 +1576,8 @@ void ShClTransferReset(PSHCLTRANSFER pTransfer)
     AssertPtrReturnVoid(pTransfer);
 
     LogFlowFuncEnter();
+
+    shClTransferLock(pTransfer);
 
     shClTransferRootsReset(pTransfer);
 
@@ -1552,6 +1600,8 @@ void ShClTransferReset(PSHCLTRANSFER pTransfer)
 
         RTMemFree(pItObj);
     }
+
+    shClTransferUnlock(pTransfer);
 }
 
 /**
@@ -1565,10 +1615,19 @@ PCSHCLLISTENTRY ShClTransferRootsEntryGet(PSHCLTRANSFER pTransfer, uint64_t uInd
 {
     AssertPtrReturn(pTransfer, NULL);
 
-    if (uIndex >= pTransfer->lstRoots.Hdr.cEntries)
-        return NULL;
+    shClTransferLock(pTransfer);
 
-    return shClTransferListGetEntryById(&pTransfer->lstRoots, uIndex);
+    if (uIndex >= pTransfer->lstRoots.Hdr.cEntries)
+    {
+        shClTransferUnlock(pTransfer);
+        return NULL;
+    }
+
+    PCSHCLLISTENTRY pEntry = shClTransferListGetEntryById(&pTransfer->lstRoots, uIndex);
+
+    shClTransferUnlock(pTransfer);
+
+    return pEntry;
 }
 
 /**
@@ -1591,6 +1650,8 @@ int ShClTransferRootListRead(PSHCLTRANSFER pTransfer)
     else
         rc = VERR_NOT_SUPPORTED;
 
+    shClTransferLock(pTransfer);
+
     /* Make sure that we have at least an empty root path set. */
     if (   RT_SUCCESS(rc)
         && !pTransfer->pszPathRootAbs)
@@ -1598,6 +1659,8 @@ int ShClTransferRootListRead(PSHCLTRANSFER pTransfer)
         if (RTStrAPrintf(&pTransfer->pszPathRootAbs, "") < 0)
             rc = VERR_NO_MEMORY;
     }
+
+    shClTransferUnlock(pTransfer);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1627,6 +1690,8 @@ int ShClTransferRootsInitFromStringList(PSHCLTRANSFER pTransfer, const char *psz
 
     int rc = VINF_SUCCESS;
 
+    shClTransferLock(pTransfer);
+
     shClTransferRootsReset(pTransfer);
 
     PSHCLLIST pLstRoots      = &pTransfer->lstRoots;
@@ -1634,7 +1699,10 @@ int ShClTransferRootsInitFromStringList(PSHCLTRANSFER pTransfer, const char *psz
 
     RTCList<RTCString> lstRootEntries = RTCString(pszRoots, cbRoots - 1).split(SHCL_TRANSFER_URI_LIST_SEP_STR);
     if (!lstRootEntries.size())
+    {
+        shClTransferUnlock(pTransfer);
         return VINF_SUCCESS;
+    }
 
     for (size_t i = 0; i < lstRootEntries.size(); ++i)
     {
@@ -1755,6 +1823,8 @@ int ShClTransferRootsInitFromStringList(PSHCLTRANSFER pTransfer, const char *psz
         RTStrFree(pszPathRootAbs);
     }
 
+    shClTransferUnlock(pTransfer);
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -1793,7 +1863,13 @@ SHCLTRANSFERID ShClTransferGetID(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, 0);
 
-    return pTransfer->State.uID;
+    shClTransferLock(pTransfer);
+
+    SHCLTRANSFERID const uID = pTransfer->State.uID;
+
+    shClTransferUnlock(pTransfer);
+
+    return uID;
 }
 
 /**
@@ -1806,8 +1882,13 @@ SHCLTRANSFERDIR ShClTransferGetDir(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, SHCLTRANSFERDIR_UNKNOWN);
 
-    LogFlowFunc(("[Transfer %RU32] enmDir=%RU32\n", pTransfer->State.uID, pTransfer->State.enmDir));
-    return pTransfer->State.enmDir;
+    shClTransferLock(pTransfer);
+
+    SHCLTRANSFERDIR const enmDir = pTransfer->State.enmDir;
+
+    shClTransferUnlock(pTransfer);
+
+    return enmDir;
 }
 
 /**
@@ -1821,9 +1902,16 @@ SHCLTRANSFERDIR ShClTransferGetDir(PSHCLTRANSFER pTransfer)
 int ShClTransferGetRootPathAbs(PSHCLTRANSFER pTransfer, char *pszPath, size_t cbPath)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+
+    shClTransferLock(pTransfer);
+
     AssertMsgReturn(pTransfer->pszPathRootAbs, ("Transfer has no root path set (yet)\n"), VERR_WRONG_ORDER);
 
-    return RTStrCopy(pszPath, cbPath, pTransfer->pszPathRootAbs);
+    int const rc = RTStrCopy(pszPath, cbPath, pTransfer->pszPathRootAbs);
+
+    shClTransferUnlock(pTransfer);
+
+    return rc;
 }
 
 /**
@@ -1836,8 +1924,34 @@ SHCLSOURCE ShClTransferGetSource(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, SHCLSOURCE_INVALID);
 
-    LogFlowFunc(("[Transfer %RU32] enmSource=%RU32\n", pTransfer->State.uID, pTransfer->State.enmSource));
-    return pTransfer->State.enmSource;
+    shClTransferLock(pTransfer);
+
+    SHCLSOURCE const enmSource = pTransfer->State.enmSource;
+
+    shClTransferUnlock(pTransfer);
+
+    return enmSource;
+}
+
+/**
+ * Returns the current transfer status.
+ *
+ * @returns Current transfer status.
+ * @param   pTransfer           Clipboard transfer to return status for.
+ *
+ * @note    Caller needs to take critical section.
+ */
+DECLINLINE(SHCLTRANSFERSTATUS) shClTransferGetStatusLocked(PSHCLTRANSFER pTransfer)
+{
+    Assert(RTCritSectIsOwner(&pTransfer->CritSect));
+
+    shClTransferLock(pTransfer);
+
+    SHCLTRANSFERSTATUS const enmStatus = pTransfer->State.enmStatus;
+
+    shClTransferUnlock(pTransfer);
+
+    return enmStatus;
 }
 
 /**
@@ -1850,7 +1964,13 @@ SHCLTRANSFERSTATUS ShClTransferGetStatus(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, SHCLTRANSFERSTATUS_NONE);
 
-    return pTransfer->State.enmStatus;
+    shClTransferLock(pTransfer);
+
+    SHCLTRANSFERSTATUS const enmSts = shClTransferGetStatusLocked(pTransfer);
+
+    shClTransferUnlock(pTransfer);
+
+    return enmSts;
 }
 
 /**
@@ -1889,6 +2009,8 @@ int ShClTransferStart(PSHCLTRANSFER pTransfer)
 
     LogFlowFuncEnter();
 
+    shClTransferLock(pTransfer);
+
     /* Ready to start? */
     AssertMsgReturn(pTransfer->ProviderIface.pfnRootListRead != NULL,
                     ("No provider interface set (yet)\n"),
@@ -1900,6 +2022,8 @@ int ShClTransferStart(PSHCLTRANSFER pTransfer)
     int rc = VINF_SUCCESS;
 
     pTransfer->State.enmStatus = SHCLTRANSFERSTATUS_STARTED;
+
+    shClTransferUnlock(pTransfer);
 
     if (pTransfer->Callbacks.pfnOnStarted)
         pTransfer->Callbacks.pfnOnStarted(&pTransfer->CallbackCtx);
@@ -1921,6 +2045,8 @@ static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThre
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
+    shClTransferLock(pTransfer);
+
     /* Already marked for stopping? */
     AssertMsgReturn(pTransfer->Thread.fStop == false,
                     ("Transfer thread already marked for stopping"), VERR_WRONG_ORDER);
@@ -1934,8 +2060,12 @@ static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThre
                             "shclptx");
     if (RT_SUCCESS(rc))
     {
+        shClTransferUnlock(pTransfer); /* Leave lock while waiting. */
+
         int rc2 = RTThreadUserWait(pTransfer->Thread.hThread, RT_MS_30SEC /* Timeout in ms */);
         AssertRC(rc2);
+
+        shClTransferLock(pTransfer);
 
         if (pTransfer->Thread.fStarted) /* Did the thread indicate that it started correctly? */
         {
@@ -1944,6 +2074,8 @@ static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThre
         else
             rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
     }
+
+    shClTransferUnlock(pTransfer);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1960,13 +2092,20 @@ static int shClTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINTERVAL uTime
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
+    shClTransferLock(pTransfer);
+
     if (pTransfer->Thread.hThread == NIL_RTTHREAD)
+    {
+        shClTransferUnlock(pTransfer);
         return VINF_SUCCESS;
+    }
 
     LogFlowFuncEnter();
 
     /* Set stop indicator. */
     pTransfer->Thread.fStop = true;
+
+    shClTransferUnlock(pTransfer); /* Leave lock while waiting. */
 
     int rcThread = VERR_WRONG_ORDER;
     int rc = RTThreadWait(pTransfer->Thread.hThread, uTimeoutMs, &rcThread);
@@ -1974,6 +2113,33 @@ static int shClTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINTERVAL uTime
     LogFlowFunc(("Waiting for thread resulted in %Rrc (thread exited with %Rrc)\n", rc, rcThread));
 
     return rc;
+}
+
+
+/*********************************************************************************************************************************
+ * Transfer Context                                                                                                              *
+ ********************************************************************************************************************************/
+
+/**
+ * Locks a transfer context.
+ *
+ * @param   pTransferCtx        Transfer context to lock.
+ */
+DECLINLINE(void) shClTransferCtxLock(PSHCLTRANSFERCTX pTransferCtx)
+{
+    int rc2 = RTCritSectEnter(&pTransferCtx->CritSect);
+    AssertRC(rc2);
+}
+
+/**
+ * Unlocks a transfer context.
+ *
+ * @param   pTransferCtx        Transfer context to unlock.
+ */
+DECLINLINE(void) shClTransferCtxUnlock(PSHCLTRANSFERCTX pTransferCtx)
+{
+    int rc2 = RTCritSectLeave(&pTransferCtx->CritSect);
+    AssertRC(rc2);
 }
 
 /**
@@ -2017,8 +2183,7 @@ void ShClTransferCtxDestroy(PSHCLTRANSFERCTX pTransferCtx)
 
     LogFlowFunc(("pTransferCtx=%p\n", pTransferCtx));
 
-    if (RTCritSectIsInitialized(&pTransferCtx->CritSect))
-        RTCritSectDelete(&pTransferCtx->CritSect);
+    shClTransferCtxLock(pTransferCtx);
 
     PSHCLTRANSFER pTransfer, pTransferNext;
     RTListForEachSafe(&pTransferCtx->List, pTransfer, pTransferNext, SHCLTRANSFER, Node)
@@ -2033,6 +2198,11 @@ void ShClTransferCtxDestroy(PSHCLTRANSFERCTX pTransferCtx)
 
     pTransferCtx->cRunning   = 0;
     pTransferCtx->cTransfers = 0;
+
+    shClTransferCtxUnlock(pTransferCtx);
+
+    if (RTCritSectIsInitialized(&pTransferCtx->CritSect))
+        RTCritSectDelete(&pTransferCtx->CritSect);
 }
 
 /**
@@ -2044,6 +2214,8 @@ void ShClTransferCtxReset(PSHCLTRANSFERCTX pTransferCtx)
 {
     AssertPtrReturnVoid(pTransferCtx);
 
+    shClTransferCtxLock(pTransferCtx);
+
     LogFlowFuncEnter();
 
     PSHCLTRANSFER pTransfer;
@@ -2053,6 +2225,8 @@ void ShClTransferCtxReset(PSHCLTRANSFERCTX pTransferCtx)
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
     /** @todo Anything to do here? */
 #endif
+
+    shClTransferCtxUnlock(pTransferCtx);
 }
 
 /**
@@ -2061,9 +2235,13 @@ void ShClTransferCtxReset(PSHCLTRANSFERCTX pTransferCtx)
  * @returns Clipboard transfer found, or NULL if not found.
  * @param   pTransferCtx                Transfer context to return transfer for.
  * @param   uID                         ID of the transfer to return.
+ *
+ * @note    Caller needs to take critical section.
  */
 static PSHCLTRANSFER shClTransferCtxGetTransferByIdInternal(PSHCLTRANSFERCTX pTransferCtx, uint32_t uID)
 {
+    Assert(RTCritSectIsOwner(&pTransferCtx->CritSect));
+
     PSHCLTRANSFER pTransfer;
     RTListForEach(&pTransferCtx->List, pTransfer, SHCLTRANSFER, Node) /** @todo Slow, but works for now. */
     {
@@ -2080,9 +2258,13 @@ static PSHCLTRANSFER shClTransferCtxGetTransferByIdInternal(PSHCLTRANSFERCTX pTr
  * @returns Clipboard transfer found, or NULL if not found.
  * @param   pTransferCtx                Transfer context to return transfer for.
  * @param   uIdx                        Index of the transfer to return.
+ *
+ * @note    Caller needs to take critical section.
  */
 static PSHCLTRANSFER shClTransferCtxGetTransferByIndexInternal(PSHCLTRANSFERCTX pTransferCtx, uint32_t uIdx)
 {
+    Assert(RTCritSectIsOwner(&pTransferCtx->CritSect));
+
     uint32_t idx = 0;
 
     PSHCLTRANSFER pTransfer;
@@ -2105,7 +2287,13 @@ static PSHCLTRANSFER shClTransferCtxGetTransferByIndexInternal(PSHCLTRANSFERCTX 
  */
 PSHCLTRANSFER ShClTransferCtxGetTransferById(PSHCLTRANSFERCTX pTransferCtx, uint32_t uID)
 {
-    return shClTransferCtxGetTransferByIdInternal(pTransferCtx, uID);
+    shClTransferCtxLock(pTransferCtx);
+
+    PSHCLTRANSFER const pTransfer = shClTransferCtxGetTransferByIdInternal(pTransferCtx, uID);
+
+    shClTransferCtxUnlock(pTransferCtx);
+
+    return pTransfer;
 }
 
 /**
@@ -2117,7 +2305,13 @@ PSHCLTRANSFER ShClTransferCtxGetTransferById(PSHCLTRANSFERCTX pTransferCtx, uint
  */
 PSHCLTRANSFER ShClTransferCtxGetTransferByIndex(PSHCLTRANSFERCTX pTransferCtx, uint32_t uIdx)
 {
-    return shClTransferCtxGetTransferByIndexInternal(pTransferCtx, uIdx);
+    shClTransferCtxLock(pTransferCtx);
+
+    PSHCLTRANSFER const pTransfer = shClTransferCtxGetTransferByIndexInternal(pTransferCtx, uIdx);
+
+    shClTransferCtxUnlock(pTransferCtx);
+
+    return pTransfer;
 }
 
 /**
@@ -2129,7 +2323,14 @@ PSHCLTRANSFER ShClTransferCtxGetTransferByIndex(PSHCLTRANSFERCTX pTransferCtx, u
 uint32_t ShClTransferCtxGetRunningTransfers(PSHCLTRANSFERCTX pTransferCtx)
 {
     AssertPtrReturn(pTransferCtx, 0);
-    return pTransferCtx->cRunning;
+
+    shClTransferCtxLock(pTransferCtx);
+
+    uint32_t const cRunning = pTransferCtx->cRunning;
+
+    shClTransferCtxUnlock(pTransferCtx);
+
+    return cRunning;
 }
 
 /**
@@ -2141,7 +2342,14 @@ uint32_t ShClTransferCtxGetRunningTransfers(PSHCLTRANSFERCTX pTransferCtx)
 uint32_t ShClTransferCtxGetTotalTransfers(PSHCLTRANSFERCTX pTransferCtx)
 {
     AssertPtrReturn(pTransferCtx, 0);
-    return pTransferCtx->cTransfers;
+
+    shClTransferCtxLock(pTransferCtx);
+
+    uint32_t const cTransfers = pTransferCtx->cTransfers;
+
+    shClTransferCtxUnlock(pTransferCtx);
+
+    return cTransfers;
 }
 
 /**
@@ -2159,6 +2367,8 @@ int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER
     AssertPtrReturn(pTransferCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     /* pidTransfer is optional. */
+
+    shClTransferCtxLock(pTransferCtx);
 
     /*
      * Pick a random bit as starting point.  If it's in use, search forward
@@ -2182,6 +2392,7 @@ int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER
     else
     {
         LogFunc(("Maximum number of transfers reached (%RU16 transfers)\n", pTransferCtx->cTransfers));
+        shClTransferCtxUnlock(pTransferCtx);
         return VERR_SHCLPB_MAX_TRANSFERS_REACHED;
     }
 
@@ -2192,6 +2403,8 @@ int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER
     pTransferCtx->cTransfers++;
 
     Log2Func(("pTransfer=%p, idTransfer=%RU32 -- now %RU16 transfer(s)\n", pTransfer, idTransfer, pTransferCtx->cTransfers));
+
+    shClTransferCtxUnlock(pTransferCtx);
 
     if (pTransfer->Callbacks.pfnOnRegistered)
         pTransfer->Callbacks.pfnOnRegistered(&pTransfer->CallbackCtx, pTransferCtx);
@@ -2215,7 +2428,7 @@ int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER
  */
 int ShClTransferCtxTransferRegisterById(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERID idTransfer)
 {
-    LogFlowFunc(("cTransfers=%RU16, idTransfer=%RU32\n", pTransferCtx->cTransfers, idTransfer));
+    shClTransferCtxLock(pTransferCtx);
 
     if (pTransferCtx->cTransfers < VBOX_SHCL_MAX_TRANSFERS - 2 /* First and last are not used */)
     {
@@ -2225,10 +2438,18 @@ int ShClTransferCtxTransferRegisterById(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRAN
 
             pTransfer->State.uID = idTransfer;
 
+            shClTransferCtxUnlock(pTransferCtx);
+
             if (pTransfer->Callbacks.pfnOnRegistered)
                 pTransfer->Callbacks.pfnOnRegistered(&pTransfer->CallbackCtx, pTransferCtx);
 
+            shClTransferCtxLock(pTransferCtx);
+
             pTransferCtx->cTransfers++;
+
+            LogFunc(("Registered transfer ID %RU16 -- now %RU16 transfers total\n", idTransfer, pTransferCtx->cTransfers));
+
+            shClTransferCtxUnlock(pTransferCtx);
             return VINF_SUCCESS;
         }
 
@@ -2236,6 +2457,9 @@ int ShClTransferCtxTransferRegisterById(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRAN
     }
 
     LogFunc(("Maximum number of transfers reached (%RU16 transfers)\n", pTransferCtx->cTransfers));
+
+    shClTransferCtxUnlock(pTransferCtx);
+
     return VERR_SHCLPB_MAX_TRANSFERS_REACHED;
 }
 
@@ -2244,9 +2468,13 @@ int ShClTransferCtxTransferRegisterById(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRAN
  *
  * @param   pTransferCtx        Transfer context to remove transfer from.
  * @param   pTransfer           Transfer to remove.
+ *
+ * @note    Caller needs to take critical section.
  */
 static void shclTransferCtxTransferRemoveAndUnregister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer)
 {
+    Assert(RTCritSectIsOwner(&pTransferCtx->CritSect));
+
     RTListNodeRemove(&pTransfer->Node);
 
     Assert(pTransferCtx->cTransfers);
@@ -2254,8 +2482,12 @@ static void shclTransferCtxTransferRemoveAndUnregister(PSHCLTRANSFERCTX pTransfe
 
     Assert(pTransferCtx->cTransfers >= pTransferCtx->cRunning);
 
+    shClTransferCtxUnlock(pTransferCtx);
+
     if (pTransfer->Callbacks.pfnOnUnregistered)
         pTransfer->Callbacks.pfnOnUnregistered(&pTransfer->CallbackCtx, pTransferCtx);
+
+    shClTransferCtxLock(pTransferCtx);
 
     LogFlowFunc(("Now %RU32 transfers left\n", pTransferCtx->cTransfers));
 }
@@ -2270,18 +2502,28 @@ static void shclTransferCtxTransferRemoveAndUnregister(PSHCLTRANSFERCTX pTransfe
  */
 int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, SHCLTRANSFERID idTransfer)
 {
+    AssertPtrReturn(pTransferCtx, VERR_INVALID_POINTER);
+    AssertReturn(idTransfer, VERR_INVALID_PARAMETER);
+
+    shClTransferCtxLock(pTransferCtx);
+
     int rc = VINF_SUCCESS;
     AssertMsgStmt(ASMBitTestAndClear(&pTransferCtx->bmTransferIds, idTransfer), ("idTransfer=%#x\n", idTransfer), rc = VERR_NOT_FOUND);
 
     LogFlowFunc(("idTransfer=%RU32\n", idTransfer));
 
-    PSHCLTRANSFER pTransfer = shClTransferCtxGetTransferByIdInternal(pTransferCtx, idTransfer);
-    if (pTransfer)
+    if (RT_SUCCESS(rc))
     {
-        shclTransferCtxTransferRemoveAndUnregister(pTransferCtx, pTransfer);
+        PSHCLTRANSFER pTransfer = shClTransferCtxGetTransferByIdInternal(pTransferCtx, idTransfer);
+        if (pTransfer)
+        {
+            shclTransferCtxTransferRemoveAndUnregister(pTransferCtx, pTransfer);
+        }
+        else
+            rc = VERR_NOT_FOUND;
     }
-    else
-        rc = VERR_NOT_FOUND;
+
+    shClTransferCtxUnlock(pTransferCtx);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2297,26 +2539,42 @@ void ShClTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx)
 {
     AssertPtrReturnVoid(pTransferCtx);
 
+    shClTransferCtxLock(pTransferCtx);
+
     LogFlowFunc(("pTransferCtx=%p, cTransfers=%RU16 cRunning=%RU16\n",
                  pTransferCtx, pTransferCtx->cTransfers, pTransferCtx->cRunning));
 
     if (pTransferCtx->cTransfers == 0)
+    {
+        shClTransferCtxUnlock(pTransferCtx);
         return;
+    }
 
     /* Remove all transfers which are not in a running state (e.g. only announced). */
     PSHCLTRANSFER pTransfer, pTransferNext;
     RTListForEachSafe(&pTransferCtx->List, pTransfer, pTransferNext, SHCLTRANSFER, Node)
     {
-        if (ShClTransferGetStatus(pTransfer) != SHCLTRANSFERSTATUS_STARTED)
+        shClTransferLock(pTransfer);
+
+        SHCLTRANSFERSTATUS const enmStatus = shClTransferGetStatusLocked(pTransfer);
+        LogFlowFunc(("\tTransfer #%RU16: %s\n", pTransfer->State.uID, ShClTransferStatusToStr(enmStatus)));
+
+        if (enmStatus != SHCLTRANSFERSTATUS_STARTED)
         {
             shclTransferCtxTransferRemoveAndUnregister(pTransferCtx, pTransfer);
+
+            shClTransferUnlock(pTransfer);
 
             ShClTransferDestroy(pTransfer);
 
             RTMemFree(pTransfer);
             pTransfer = NULL;
         }
+        else
+            shClTransferUnlock(pTransfer);
     }
+
+    shClTransferCtxUnlock(pTransferCtx);
 }
 
 /**
@@ -2329,10 +2587,16 @@ bool ShClTransferCtxTransfersMaximumReached(PSHCLTRANSFERCTX pTransferCtx)
 {
     AssertPtrReturn(pTransferCtx, true);
 
+    shClTransferCtxLock(pTransferCtx);
+
     LogFlowFunc(("cRunning=%RU32, cMaxRunning=%RU32\n", pTransferCtx->cRunning, pTransferCtx->cMaxRunning));
 
     Assert(pTransferCtx->cRunning <= pTransferCtx->cMaxRunning);
-    return pTransferCtx->cRunning == pTransferCtx->cMaxRunning;
+    bool const fMaximumReached = pTransferCtx->cRunning == pTransferCtx->cMaxRunning;
+
+    shClTransferCtxUnlock(pTransferCtx);
+
+    return fMaximumReached;
 }
 
 /**
