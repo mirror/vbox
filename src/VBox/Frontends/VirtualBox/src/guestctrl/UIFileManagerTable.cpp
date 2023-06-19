@@ -29,6 +29,7 @@
 #include <QAction>
 #include <QComboBox>
 #include <QCheckBox>
+#include <QDir>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QItemDelegate>
@@ -85,7 +86,7 @@ public:
 *   UIFileManagerBreadCrumbs definition.                                                                                         *
 *********************************************************************************************************************************/
 /** A QLabel extension. It shows the current path as text and hightligts the folder name
-  *  as the mouse hovers over it. Clicking on the highlighted folder name make the file table tp
+  *  as the mouse hovers over it. Clicking on the highlighted folder name make the file table to
   *  navigate to that folder. */
 class UIFileManagerBreadCrumbs : public QLabel
 {
@@ -127,23 +128,34 @@ public:
     void setPath(const QString &strLocation);
     void reset();
     void setPathSeparator(const QChar &separator);
+    bool eventFilter(QObject *pObject, QEvent *pEvent) override;
 
 private slots:
-
     void sltHandleSwitch();
     /* Makes sure that we switch to breadcrumbs widget as soon as the combo box popup is hidden. */
     void sltHandleHidePopup();
     void sltHandlePathChange(const QString &strPath);
+    void sltAddressLineEdited();
 
 private:
+
+    enum StackedWidgets
+    {
+        StackedWidgets_History = 0,
+        StackedWidgets_BreadCrumbs,
+        StackedWidgets_AddressLine
+    };
 
     void prepare();
 
     QStackedWidget               *m_pContainer;
     UIFileManagerBreadCrumbs     *m_pBreadCrumbs;
     UIFileManagerHistoryComboBox *m_pHistoryComboBox;
+    QLineEdit                    *m_pAddressLineEdit;
     QToolButton                  *m_pSwitchButton;
     QChar                         m_pathSeparator;
+    /* With non-native separators. */
+    QString                       m_strCurrentPath;
 };
 
 
@@ -270,6 +282,7 @@ UIFileManagerNavigationWidget::UIFileManagerNavigationWidget(QWidget *pParent /*
     , m_pContainer(0)
     , m_pBreadCrumbs(0)
     , m_pHistoryComboBox(0)
+    , m_pAddressLineEdit(0)
     , m_pSwitchButton(0)
     , m_pathSeparator('/')
 {
@@ -278,6 +291,11 @@ UIFileManagerNavigationWidget::UIFileManagerNavigationWidget(QWidget *pParent /*
 
 void UIFileManagerNavigationWidget::setPath(const QString &strLocation)
 {
+    if (m_strCurrentPath == QDir::fromNativeSeparators(strLocation))
+        return;
+
+    m_strCurrentPath = QDir::fromNativeSeparators(strLocation);
+
     if (m_pBreadCrumbs)
         m_pBreadCrumbs->setPath(strLocation);
 
@@ -329,20 +347,24 @@ void UIFileManagerNavigationWidget::prepare()
     {
         m_pBreadCrumbs = new UIFileManagerBreadCrumbs;
         m_pHistoryComboBox = new UIFileManagerHistoryComboBox;
-
+        m_pAddressLineEdit = new QLineEdit;
         if (m_pBreadCrumbs && m_pHistoryComboBox)
         {
             m_pBreadCrumbs->setIndent(0.5 * qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin));
+            m_pBreadCrumbs->installEventFilter(this);
+            m_pAddressLineEdit->installEventFilter(this);
             connect(m_pBreadCrumbs, &UIFileManagerBreadCrumbs::linkActivated,
                     this, &UIFileManagerNavigationWidget::sltHandlePathChange);
             connect(m_pHistoryComboBox, &UIFileManagerHistoryComboBox::sigHidePopup,
                     this, &UIFileManagerNavigationWidget::sltHandleHidePopup);
             connect(m_pHistoryComboBox, &UIFileManagerHistoryComboBox::currentTextChanged,
                     this, &UIFileManagerNavigationWidget::sltHandlePathChange);
-
-            m_pContainer->addWidget(m_pBreadCrumbs);
-            m_pContainer->addWidget(m_pHistoryComboBox);
-            m_pContainer->setCurrentIndex(0);
+            connect(m_pAddressLineEdit, &QLineEdit::returnPressed,
+                    this, &UIFileManagerNavigationWidget::sltAddressLineEdited);
+            m_pContainer->insertWidget(StackedWidgets_BreadCrumbs, m_pBreadCrumbs);
+            m_pContainer->insertWidget(StackedWidgets_History, m_pHistoryComboBox);
+            m_pContainer->insertWidget(StackedWidgets_AddressLine, m_pAddressLineEdit);
+            m_pContainer->setCurrentIndex(StackedWidgets_BreadCrumbs);
         }
         pLayout->addWidget(m_pContainer);
     }
@@ -364,30 +386,48 @@ void UIFileManagerNavigationWidget::prepare()
     setLayout(pLayout);
 }
 
+bool UIFileManagerNavigationWidget::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+    if (pObject == m_pBreadCrumbs && pEvent && pEvent->type() == QEvent::MouseButtonDblClick)
+    {
+        m_pContainer->setCurrentIndex(StackedWidgets_AddressLine);
+        m_pAddressLineEdit->setText(QDir::toNativeSeparators(m_strCurrentPath));
+        m_pAddressLineEdit->setFocus();
+
+    }
+    else if(pObject == m_pAddressLineEdit && pEvent && pEvent->type() == QEvent::FocusOut)
+        m_pContainer->setCurrentIndex(StackedWidgets_BreadCrumbs);
+
+    return QWidget::eventFilter(pObject, pEvent);
+}
+
 void UIFileManagerNavigationWidget::sltHandleHidePopup()
 {
-    m_pContainer->setCurrentIndex(0);
+    m_pContainer->setCurrentIndex(StackedWidgets_BreadCrumbs);
 }
 
 void UIFileManagerNavigationWidget::sltHandlePathChange(const QString &strPath)
 {
-    QString strNonNativePath(strPath);
-    strNonNativePath.replace(m_pathSeparator, '/');
-    emit sigPathChanged(strNonNativePath);
+    emit sigPathChanged(QDir::fromNativeSeparators(strPath));
 }
 
 void UIFileManagerNavigationWidget::sltHandleSwitch()
 {
-    if (m_pContainer->currentIndex() == 0)
+    if (m_pContainer->currentIndex() == StackedWidgets_BreadCrumbs)
     {
-        m_pContainer->setCurrentIndex(1);
+        m_pContainer->setCurrentIndex(StackedWidgets_History);
         m_pHistoryComboBox->showPopup();
     }
     else
     {
-        m_pContainer->setCurrentIndex(0);
+        m_pContainer->setCurrentIndex(StackedWidgets_BreadCrumbs);
         m_pHistoryComboBox->hidePopup();
     }
+}
+
+void UIFileManagerNavigationWidget::sltAddressLineEdited()
+{
+    sigPathChanged(QDir::fromNativeSeparators(m_pAddressLineEdit->text()));
 }
 
 
