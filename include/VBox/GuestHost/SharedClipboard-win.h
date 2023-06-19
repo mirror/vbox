@@ -110,8 +110,10 @@ typedef struct _SHCLWINAPIOLD
     bool                   fCBChainPingInProcess;
 } SHCLWINAPIOLD, *PSHCLWINAPIOLD;
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 /** Forward declaration for the Windows data object. */
 class SharedClipboardWinDataObject;
+#endif
 
 /**
  * Structure for maintaining a Shared Clipboard context on Windows platforms.
@@ -134,6 +136,7 @@ typedef struct _SHCLWINCTX
     SHCLWINAPINEW      newAPI;
     /** Structure for maintaining the old clipboard API. */
     SHCLWINAPIOLD      oldAPI;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** The "in-flight" data object for file transfers.
      *  This is the current data object which has been created and sent to the Windows clipboard.
      *  That way Windows knows that a potential file transfer is available, but the actual transfer
@@ -141,6 +144,7 @@ typedef struct _SHCLWINCTX
      *  Can be NULL if currently not being used / no current "in-flight" transfer present. */
     SharedClipboardWinDataObject
                       *pDataObjInFlight;
+#endif
     /** Request queue.
      *  Needed for processing HGCM requests within the HGCM (main) thread from the Windows event thread. */
     RTREQQUEUE         hReqQ;

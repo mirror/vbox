@@ -173,6 +173,10 @@ int SharedClipboardWinCtxInit(PSHCLWINCTX pWinCtx)
         pWinCtx->hWnd                 = NULL;
         pWinCtx->hWndClipboardOwnerUs = NULL;
         pWinCtx->hWndNextInChain      = NULL;
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+        pWinCtx->pDataObjInFlight = NULL;
+#endif
     }
 
     LogFlowFuncLeaveRC(rc);
