@@ -155,7 +155,8 @@ VBGHDISPLAYSERVERTYPE VBGHDisplayServerTypeDetect(void)
      * Descending precedence. */
     const char* aLibsX11[] =
     {
-        "libX11.so"
+        "libX11.so",
+        "libX11.so.6"
     };
 
     /* Also try to connect to the default X11 display to determine if Xserver is running: */
