@@ -2069,11 +2069,14 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
 
     LogFlowFunc(("uFmtVBox=%#x, idxFmtX11=%u, pvSrc=%p, cbSrc=%u\n", pReq->Read.uFmtVBox, pReq->Read.idxFmtX11, pvSrc, cbSrc));
 
+    /* Sanity. */
+    AssertReturnVoid(pReq->Read.uFmtVBox != VBOX_SHCL_FMT_NONE);
+    AssertReturnVoid(pReq->Read.idxFmtX11 < SHCL_MAX_X11_FORMATS);
+
+    AssertPtrReturnVoid(pReq->pCtx);
+
     LogRel2(("Shared Clipboard: Converting X11 format '%s' to VBox format %#x (%RU32 bytes max)\n",
              g_aFormats[pReq->Read.idxFmtX11].pcszAtom, pReq->Read.uFmtVBox, pReq->Read.cbMax));
-
-    AssertPtr(pReq->pCtx);
-    Assert(pReq->Read.uFmtVBox != VBOX_SHCL_FMT_NONE); /* Sanity. */
 
     int rc = VINF_SUCCESS;
 
@@ -2358,7 +2361,7 @@ SHCL_X11_DECL(void) clipConvertDataFromX11(Widget widget, XtPointer pClient,
         {
             char *pszFmts = ShClFormatsToStrA(pReq->Read.uFmtVBox);
             AssertPtrReturnVoid(pszFmts);
-            AssertReturnVoid(pReq->Read.idxFmtX11 <= SHCL_MAX_X11_FORMATS); /* Paranoia, should be checked already by the caller. */
+            AssertReturnVoid(pReq->Read.idxFmtX11 < SHCL_MAX_X11_FORMATS); /* Paranoia, should be checked already by the caller. */
             LogRel2(("Shared Clipboard: Converting X11 format '%s' -> VBox format(s) '%s'\n", g_aFormats[pReq->Read.idxFmtX11].pcszAtom, pszFmts));
             RTStrFree(pszFmts);
 
@@ -2405,7 +2408,7 @@ static int clipGetSelectionValueEx(PSHCLX11CTX pCtx, const char *pszWhere, SHCLX
                                    PSHCLX11REQUEST pReq)
 {
     AssertPtrReturn(pszWhere, VERR_INVALID_POINTER);
-    AssertReturn(idxFmt <= SHCL_MAX_X11_FORMATS, VERR_INVALID_PARAMETER);
+    AssertReturn(idxFmt < SHCL_MAX_X11_FORMATS, VERR_INVALID_PARAMETER);
     AssertReturn(clipIsSupportedSelectionType(pCtx, clipGetAtom(pCtx, pszWhere)), VERR_INVALID_PARAMETER);
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
 
