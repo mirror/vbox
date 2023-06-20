@@ -4893,17 +4893,10 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
                 vmxHCClearNmiWindowExitVmcs(pVCpu, pVmcsInfo);
                 return VINF_SUCCESS;
             }
-
-            /*
-             * Setup NMI-window exiting and also clear any interrupt-window exiting that might
-             * still be active. This can happen if we got VM-exits that were higher priority
-             * than an interrupt-window VM-exit.
-             */
             vmxHCSetNmiWindowExitVmcs(pVCpu, pVmcsInfo);
-            vmxHCClearIntWindowExitVmcs(pVCpu, pVmcsInfo);
         }
         else
-            Assert(!(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT));
+            vmxHCClearNmiWindowExitVmcs(pVCpu, pVmcsInfo);
 
         /*
          * External interrupts (PIC/APIC).
@@ -4939,20 +4932,13 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
                 else
                     STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchGuestIrq);
 
-                /* We must clear interrupt-window exiting for the same reason mentioned above for NMIs. */
                 vmxHCClearIntWindowExitVmcs(pVCpu, pVmcsInfo);
                 return VINF_SUCCESS;
             }
-
-            /* Setup interrupt-window exiting. */
             vmxHCSetIntWindowExitVmcs(pVCpu, pVmcsInfo);
-            Assert(!(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT));
         }
         else
-        {
             vmxHCClearIntWindowExitVmcs(pVCpu, pVmcsInfo);
-            Assert(!(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT));
-        }
     }
     else
     {
