@@ -841,10 +841,13 @@ class ThreadedFunctionVariation(object):
             for aoRefs in self.dParamRefs.values():
                 oRef = aoRefs[0];
                 if oRef.iNewParam == iParam:
+                    sCast = '(uint64_t)'
+                    if oRef.sType in ('int8_t', 'int16_t', 'int32_t'): # Make sure these doesn't get sign-extended.
+                        sCast = '(uint64_t)(u' + oRef.sType + ')';
                     if oRef.offNewParam == 0:
-                        asFrags.append('(uint64_t)(' + oRef.sOrgRef + ')');
+                        asFrags.append(sCast + '(' + oRef.sOrgRef + ')');
                     else:
-                        asFrags.append('((uint64_t)(%s) << %s)' % (oRef.sOrgRef, oRef.offNewParam));
+                        asFrags.append('(%s(%s) << %s)' % (sCast, oRef.sOrgRef, oRef.offNewParam));
             assert asFrags;
             sCode += ', ' + ' | '.join(asFrags);
         sCode += ');';
