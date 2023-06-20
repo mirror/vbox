@@ -10978,7 +10978,9 @@ HMVMX_EXIT_DECL vmxHCExitEptViolationNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
             return IEMExecVmxVmexitEptViolation(pVCpu, &ExitInfo, &ExitEventInfo);
         }
 
-        Assert(Walk.fFailed & PGM_WALKFAIL_EPT_MISCONFIG);
+        AssertMsg(Walk.fFailed & PGM_WALKFAIL_EPT_MISCONFIG,
+                  ("uErr=%#RX64 uExitQual=%#RX64 GCPhysNestedFault=%RGp GCPtrNestedFault=%RGv\n", uErr, uExitQual,
+                   GCPhysNestedFault, GCPtrNestedFault));
         return IEMExecVmxVmexitEptMisconfig(pVCpu, pVmxTransient->uGuestPhysicalAddr, &ExitEventInfo);
     }
 
