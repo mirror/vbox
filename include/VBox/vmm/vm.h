@@ -668,11 +668,9 @@ AssertCompileSizeAlignment(VMCPU, 16384);
                                                  | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_DBGF | VM_FF_DEBUG_SUSPEND )
 /** VMCPU flags that cause the REP[|NE|E] STRINS loops to yield immediately. */
 #ifdef IN_RING3
-# define VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK (  VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_DBGF \
-                                                  | VMCPU_FF_VMX_MTF )
+# define VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK (VMCPU_FF_DBGF | VMCPU_FF_VMX_MTF)
 #else
-# define VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK (  VMCPU_FF_TO_R3 | VMCPU_FF_IEM | VMCPU_FF_IOM | VMCPU_FF_PGM_SYNC_CR3 \
-                                                  | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_DBGF | VMCPU_FF_VMX_MTF )
+# define VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK (VMCPU_FF_TO_R3 | VMCPU_FF_IEM | VMCPU_FF_IOM | VMCPU_FF_DBGF | VMCPU_FF_VMX_MTF)
 #endif
 
 #if !defined(VBOX_VMM_TARGET_ARMV8)
@@ -726,6 +724,13 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 /** All the forced VMCPU flags except those related to raw-mode and hardware
  * assisted execution. */
 #define VMCPU_FF_ALL_REM_MASK                   (~(VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK | VMCPU_FF_PDM_CRITSECT | VMCPU_FF_TLB_FLUSH))
+
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompile(  ((VM_FF_HIGH_PRIORITY_POST_REPSTR_MASK | VM_FF_YIELD_REPSTR_MASK)
+               & (VM_FF_HIGH_PRIORITY_PRE_RAW_MASK & ~VM_FF_ALL_REM_MASK)) == 0);
+AssertCompile((VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK & (VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK & ~VMCPU_FF_ALL_REM_MASK)) == 0);
+#endif
+
 /** @} */
 
 /** @def VM_FF_SET
