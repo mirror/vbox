@@ -453,12 +453,12 @@
         <file alias="host_iface_remove_disabled_16px_x3.png">images/x3/host_iface_remove_disabled_16px_x3.png</file>
         <file alias="host_iface_remove_disabled_32px_x3.png">images/x3/host_iface_remove_disabled_32px_x3.png</file>
         <file alias="hostkey_16px_x3.png">images/x3/hostkey_16px_x3.png</file>
-        <file alias="hostkey_disabled_16px_x3.png">images/x3/hostkey_disabled_16px_x3.png</file>
         <file alias="hostkey_captured_16px_x3.png">images/x3/hostkey_captured_16px_x3.png</file>
         <file alias="hostkey_captured_checked_16px_x3.png">images/x3/hostkey_captured_checked_16px_x3.png</file>
         <file alias="hostkey_captured_pressed_16px_x3.png">images/x3/hostkey_captured_pressed_16px_x3.png</file>
         <file alias="hostkey_captured_pressed_checked_16px_x3.png">images/x3/hostkey_captured_pressed_checked_16px_x3.png</file>
         <file alias="hostkey_checked_16px_x3.png">images/x3/hostkey_checked_16px_x3.png</file>
+        <file alias="hostkey_disabled_16px_x3.png">images/x3/hostkey_disabled_16px_x3.png</file>
         <file alias="hostkey_pressed_16px_x3.png">images/x3/hostkey_pressed_16px_x3.png</file>
         <file alias="hostkey_pressed_checked_16px_x3.png">images/x3/hostkey_pressed_checked_16px_x3.png</file>
         <file alias="hostkey_warning_16px_x3.png">images/x3/hostkey_warning_16px_x3.png</file>
@@ -490,6 +490,5 @@
         <file alias="log_viewer_bookmark_32px_x3.png">images/x3/log_viewer_bookmark_32px_x3.png</file>
         <file alias="log_viewer_bookmark_disabled_16px_x3.png">images/x3/log_viewer_bookmark_disabled_16px_x3.png</file>
         <file alias="log_viewer_bookmark_disabled_32px_x3.png">images/x3/log_viewer_bookmark_disabled_32px_x3.png</file>
-        <file alias="log_viewer_bookmark_off_16px_x3.png">images/x3/log_viewer_bookmark_off_16px_x3.png</file>
     </qresource>
 </RCC>

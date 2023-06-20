@@ -453,12 +453,12 @@
         <file alias="host_iface_remove_disabled_16px.png">images/host_iface_remove_disabled_16px.png</file>
         <file alias="host_iface_remove_disabled_32px.png">images/host_iface_remove_disabled_32px.png</file>
         <file alias="hostkey_16px.png">images/hostkey_16px.png</file>
-        <file alias="hostkey_disabled_16px.png">images/hostkey_disabled_16px.png</file>
         <file alias="hostkey_captured_16px.png">images/hostkey_captured_16px.png</file>
         <file alias="hostkey_captured_checked_16px.png">images/hostkey_captured_checked_16px.png</file>
         <file alias="hostkey_captured_pressed_16px.png">images/hostkey_captured_pressed_16px.png</file>
         <file alias="hostkey_captured_pressed_checked_16px.png">images/hostkey_captured_pressed_checked_16px.png</file>
         <file alias="hostkey_checked_16px.png">images/hostkey_checked_16px.png</file>
+        <file alias="hostkey_disabled_16px.png">images/hostkey_disabled_16px.png</file>
         <file alias="hostkey_pressed_16px.png">images/hostkey_pressed_16px.png</file>
         <file alias="hostkey_pressed_checked_16px.png">images/hostkey_pressed_checked_16px.png</file>
         <file alias="hostkey_warning_16px.png">images/hostkey_warning_16px.png</file>
