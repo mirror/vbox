@@ -1,6 +1,21 @@
 /* $Id$ */
 /** @file
  * IEM - Instruction Decoding and Threaded Recompilation.
+ *
+ * Logging group IEM_RE_THREADED assignments:
+ *      - Level 1  (Log)  : Errors, exceptions, interrupts and such major events. [same as IEM]
+ *      - Flow  (LogFlow) :
+ *      - Level 2  (Log2) :
+ *      - Level 3  (Log3) : More detailed enter/exit IEM state info. [same as IEM]
+ *      - Level 4  (Log4) : Decoding mnemonics w/ EIP. [same as IEM]
+ *      - Level 5  (Log5) : Decoding details. [same as IEM]
+ *      - Level 6  (Log6) :
+ *      - Level 7  (Log7) :
+ *      - Level 8  (Log8) : TB compilation.
+ *      - Level 9  (Log9) : TB exec.
+ *      - Level 10 (Log10): TB block lookup.
+ *      - Level 11 (Log11): TB block lookup.
+ *      - Level 12 (Log12): TB insertion.
  */
 
 /*
@@ -294,8 +309,6 @@ DECLINLINE(VBOXSTRICTRC) iemThreadedRecompilerMcDeferToCImpl0(PVMCPUCC pVCpu, PF
     return pfnCImpl(pVCpu, IEM_GET_INSTR_LEN(pVCpu));
 }
 
-/** @todo deal with IEM_MC_DEFER_TO_CIMPL_1, IEM_MC_DEFER_TO_CIMPL_2 and
- *        IEM_MC_DEFER_TO_CIMPL_3 as well. */
 
 /*
  * Include the "annotated" IEMAllInstructions*.cpp.h files.
@@ -433,6 +446,49 @@ static void iemThreadedTbAdd(PVMCC pVM, PVMCPUCC pVCpu, PIEMTB pTb)
 /*
  * Real code.
  */
+
+#ifdef LOG_ENABLED
+/**
+ * Logs the current instruction.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pszFunction The IEM function doing the execution.
+ */
+static void iemThreadedLogCurInstr(PVMCPUCC pVCpu, const char *pszFunction) RT_NOEXCEPT
+{
+# ifdef IN_RING3
+    if (LogIs2Enabled())
+    {
+        char     szInstr[256];
+        uint32_t cbInstr = 0;
+        DBGFR3DisasInstrEx(pVCpu->pVMR3->pUVM, pVCpu->idCpu, 0, 0,
+                           DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                           szInstr, sizeof(szInstr), &cbInstr);
+
+        PCX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
+        Log2(("**** %s fExec=%x pTb=%p\n"
+              " eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
+              " eip=%08x esp=%08x ebp=%08x iopl=%d tr=%04x\n"
+              " cs=%04x ss=%04x ds=%04x es=%04x fs=%04x gs=%04x efl=%08x\n"
+              " fsw=%04x fcw=%04x ftw=%02x mxcsr=%04x/%04x\n"
+              " %s\n"
+              , pszFunction, pVCpu->iem.s.fExec, pVCpu->iem.s.pCurTbR3,
+              pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.ebx, pVCpu->cpum.GstCtx.ecx, pVCpu->cpum.GstCtx.edx, pVCpu->cpum.GstCtx.esi, pVCpu->cpum.GstCtx.edi,
+              pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.esp, pVCpu->cpum.GstCtx.ebp, pVCpu->cpum.GstCtx.eflags.Bits.u2IOPL, pVCpu->cpum.GstCtx.tr.Sel,
+              pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.ds.Sel, pVCpu->cpum.GstCtx.es.Sel,
+              pVCpu->cpum.GstCtx.fs.Sel, pVCpu->cpum.GstCtx.gs.Sel, pVCpu->cpum.GstCtx.eflags.u,
+              pFpuCtx->FSW, pFpuCtx->FCW, pFpuCtx->FTW, pFpuCtx->MXCSR, pFpuCtx->MXCSR_MASK,
+              szInstr));
+
+        if (LogIs3Enabled())
+            DBGFR3InfoEx(pVCpu->pVMR3->pUVM, pVCpu->idCpu, "cpumguest", "verbose", NULL);
+    }
+    else
+# endif
+        LogFlow(("%s: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x\n", pszFunction, pVCpu->cpum.GstCtx.cs.Sel,
+                 pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.rsp, pVCpu->cpum.GstCtx.eflags.u));
+}
+#endif /* LOG_ENABLED */
+
 
 static VBOXSTRICTRC iemThreadedCompileLongJumped(PVMCC pVM, PVMCPUCC pVCpu, VBOXSTRICTRC rcStrict)
 {
@@ -634,6 +690,11 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
     for (;;)
     {
         /* Process the next instruction. */
+#ifdef LOG_ENABLED
+        iemThreadedLogCurInstr(pVCpu, "CC");
+        uint16_t const uCsLog  = pVCpu->cpum.GstCtx.cs.Sel;
+        uint64_t const uRipLog = pVCpu->cpum.GstCtx.rip;
+#endif
         uint8_t b; IEM_OPCODE_GET_FIRST_U8(&b);
         uint16_t const cCallsPrev = pTb->Thrd.cCalls;
         rcStrict = FNIEMOP_CALL(g_apfnIemThreadedRecompilerOneByteMap[b]);
@@ -644,9 +705,13 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
             Assert(cCallsPrev - pTb->Thrd.cCalls < 5);
         }
         else if (pTb->Thrd.cCalls > 0)
+        {
+            Log8(("%04x:%08RX64: End TB - %u calls, rc=%d\n", uCsLog, uRipLog, pTb->Thrd.cCalls, VBOXSTRICTRC_VAL(rcStrict)));
             break;
+        }
         else
         {
+            Log8(("%04x:%08RX64: End TB - 0 calls, rc=%d\n", uCsLog, uRipLog, VBOXSTRICTRC_VAL(rcStrict)));
             pVCpu->iem.s.pCurTbR3 = NULL;
             iemThreadedTbFree(pVM, pVCpu, pTb);
             return rcStrict;
@@ -656,7 +721,10 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
         if (pTb->Thrd.cCalls + 5 < pTb->Thrd.cAllocated)
             iemThreadedCompileInitDecoder(pVCpu, true /*fReInit*/);
         else
+        {
+            Log8(("%04x:%08RX64: End TB - %u calls - full\n", uCsLog, uRipLog, pTb->Thrd.cCalls));
             break;
+        }
         iemThreadedCompileReInitOpcodeFetching(pVCpu);
     }
 
@@ -694,6 +762,11 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb)
     uint32_t             cCallsLeft = pTb->Thrd.cCalls;
     while (cCallsLeft-- > 0)
     {
+#ifdef LOG_ENABLED
+        iemThreadedLogCurInstr(pVCpu, "EX");
+        Log9(("%04x:%08RX64: #%d - %d %s\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
+              pTb->Thrd.cCalls - cCallsLeft - 1, pCallEntry->enmFunction, g_apszIemThreadedFunctions[pCallEntry->enmFunction]));
+#endif
         VBOXSTRICTRC const rcStrict = g_apfnIemThreadedFunctions[pCallEntry->enmFunction](pVCpu,
                                                                                           pCallEntry->auParams[0],
                                                                                           pCallEntry->auParams[1],

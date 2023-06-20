@@ -253,6 +253,10 @@ class ThreadedFunctionVariation(object):
         """ Raises a problem. """
         self.oParent.raiseProblem(sMessage);
 
+    def warning(self, sMessage):
+        """ Emits a warning. """
+        self.oParent.warning(sMessage);
+
     def analyzeReferenceToType(self, sRef):
         """
         Translates a variable or structure reference to a type.
@@ -282,7 +286,7 @@ class ThreadedFunctionVariation(object):
                 return 'int32_t';
             if sRef.startswith('i64'):
                 return 'int64_t';
-            if sRef in ('iReg', 'iGReg', 'iSegReg', 'iSrcReg', 'iDstReg', 'iCrReg'):
+            if sRef in ('iReg', 'iFixedReg', 'iGReg', 'iSegReg', 'iSrcReg', 'iDstReg', 'iCrReg'):
                 return 'uint8_t';
         elif ch0 == 'p':
             if sRef.find('-') < 0:
@@ -371,12 +375,26 @@ class ThreadedFunctionVariation(object):
             idxReg = 1;
 
         sRegRef = oStmt.asParams[idxReg];
-        sOrgExpr = '((%s) < 4 || (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REX) ? (%s) : (%s) | 16)' % (sRegRef, sRegRef, sRegRef);
+        if sRegRef.startswith('IEM_GET_MODRM_RM') >= 0:
+            sOrgExpr = 'IEM_GET_MODRM_RM_EX8(pVCpu, %s)' % (sRegRef,);
+        elif sRegRef.startswith('IEM_GET_MODRM_REG') >= 0:
+            sOrgExpr = 'IEM_GET_MODRM_REG_EX8(pVCpu, %s)' % (sRegRef,);
+        else:
+            sOrgExpr = '((%s) < 4 || (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REX) ? (%s) : (%s) + 12)' % (sRegRef, sRegRef, sRegRef);
 
-        if sRegRef.find('IEM_GET_MODRM_RM') > 0:    sStdRef = 'bRmRm8Ex';
-        elif sRegRef.find('IEM_GET_MODRM_REG') > 0: sStdRef = 'bRmReg8Ex';
-        else:                                       sStdRef = 'bOther8Ex';
+        if sRegRef.find('IEM_GET_MODRM_RM') >= 0:    sStdRef = 'bRmRm8Ex';
+        elif sRegRef.find('IEM_GET_MODRM_REG') >= 0: sStdRef = 'bRmReg8Ex';
+        elif sRegRef == 'X86_GREG_xAX':              sStdRef = 'bGregXAx8Ex';
+        elif sRegRef == 'X86_GREG_xCX':              sStdRef = 'bGregXCx8Ex';
+        elif sRegRef == 'X86_GREG_xSP':              sStdRef = 'bGregXSp8Ex';
+        elif sRegRef == 'iFixedReg':                 sStdRef = 'bFixedReg8Ex';
+        else:
+            self.warning('analyze8BitGRegStmt: sRegRef=%s -> bOther8Ex; %s %s; sOrgExpr=%s'
+                         % (sRegRef, oStmt.sName, oStmt.asParams, sOrgExpr,));
+            sStdRef = 'bOther8Ex';
 
+        #print('analyze8BitGRegStmt: %s %s; sRegRef=%s\n -> idxReg=%s sOrgExpr=%s sStdRef=%s'
+        #      % (oStmt.sName, oStmt.asParams, sRegRef, idxReg, sOrgExpr, sStdRef));
         return (idxReg, sOrgExpr, sStdRef);
 
 
@@ -462,7 +480,7 @@ class ThreadedFunctionVariation(object):
 
                 # ... and IEM_MC_*_GREG_U8 into *_THREADED w/ reworked index taking REX into account
                 elif oNewStmt.sName.startswith('IEM_MC_') and oNewStmt.sName.find('_GREG_U8') > 0:
-                    (idxReg, _, sStdRef) = self.analyze8BitGRegStmt(oNewStmt);
+                    (idxReg, _, sStdRef) = self.analyze8BitGRegStmt(oStmt); # Don't use oNewStmt as it has been modified!
                     oNewStmt.asParams[idxReg] = self.dParamRefs[sStdRef][0].sNewName;
                     oNewStmt.sName += '_THREADED';
 
@@ -479,6 +497,7 @@ class ThreadedFunctionVariation(object):
 
         return (aoThreadedStmts, iParamRef);
 
+
     def analyzeCodeOperation(self, aoStmts):
         """
         Analyzes the code looking clues as to additional side-effects.
@@ -487,6 +506,7 @@ class ThreadedFunctionVariation(object):
         collecting these in self.dsCImplFlags.
         """
         for oStmt in aoStmts:
+            # Pick up hints from CIMPL calls and deferals.
             if oStmt.sName.startswith('IEM_MC_CALL_CIMPL_') or oStmt.sName.startswith('IEM_MC_DEFER_TO_CIMPL_'):
                 sFlagsSansComments = iai.McBlock.stripComments(oStmt.asParams[0]);
                 for sFlag in sFlagsSansComments.split('|'):
@@ -496,6 +516,11 @@ class ThreadedFunctionVariation(object):
                             self.dsCImplFlags[sFlag] = True;
                         else:
                             self.raiseProblem('Unknown CIMPL flag value: %s' % (sFlag,));
+
+            # Set IEM_IMPL_C_F_BRANCH if we see any branching MCs.
+            if (   oStmt.sName.startswith('IEM_MC_SET_RIP')
+                or oStmt.sName.startswith('IEM_MC_REL_JMP')):
+                self.dsCImplFlags['IEM_CIMPL_F_BRANCH'] = True;
 
             # Process branches of conditionals recursively.
             if isinstance(oStmt, iai.McStmtCond):
@@ -645,7 +670,7 @@ class ThreadedFunctionVariation(object):
             # 8-bit register accesses needs to have their index argument reworked to take REX into account.
             if oStmt.sName.startswith('IEM_MC_') and oStmt.sName.find('_GREG_U8') > 0:
                 (idxReg, sOrgRef, sStdRef) = self.analyze8BitGRegStmt(oStmt);
-                self.aoParamRefs.append(ThreadedParamRef(sOrgRef, 'uint4_t', oStmt, idxReg, sStdRef = sStdRef));
+                self.aoParamRefs.append(ThreadedParamRef(sOrgRef, 'uint16_t', oStmt, idxReg, sStdRef = sStdRef));
                 aiSkipParams[idxReg] = True; # Skip the parameter below.
 
             # Inspect the target of calls to see if we need to pass down a
@@ -886,6 +911,10 @@ class ThreadedFunction(object):
         """ Raises a problem. """
         raise Exception('%s:%s: error: %s' % (self.oMcBlock.sSrcFile, self.oMcBlock.iBeginLine, sMessage, ));
 
+    def warning(self, sMessage):
+        """ Emits a warning. """
+        print('%s:%s: warning: %s' % (self.oMcBlock.sSrcFile, self.oMcBlock.iBeginLine, sMessage, ));
+
     def analyzeFindVariablesAndCallArgs(self, aoStmts):
         """ Scans the statements for MC variables and call arguments. """
         for oStmt in aoStmts:
@@ -1031,6 +1060,17 @@ class ThreadedFunction(object):
         """
         #print('McBlock at %s:%s' % (os.path.split(self.oMcBlock.sSrcFile)[1], self.oMcBlock.iBeginLine,));
         aoDecoderStmts = [];
+
+        # Take a very simple approach to problematic instructions for now.
+        if cDepth == 0:
+            dsCImplFlags = {};
+            for oVar in self.aoVariations:
+                dsCImplFlags.update(oVar.dsCImplFlags);
+            if (   'IEM_CIMPL_F_BRANCH' in dsCImplFlags
+                or 'IEM_CIMPL_F_MODE'   in dsCImplFlags
+                or 'IEM_CIMPL_F_REP'    in dsCImplFlags):
+                aoDecoderStmts.append(iai.McCppGeneric('pVCpu->iem.s.fEndTb = true;'));
+
         for oStmt in aoStmts:
             # Copy the statement. Make a deep copy to make sure we've got our own
             # copies of all instance variables, even if a bit overkill at the moment.
@@ -1234,6 +1274,9 @@ class IEMThreadedGenerator(object):
             'typedef FNIEMTHREADEDFUNC *PFNIEMTHREADEDFUNC;',
             '',
             'extern const PFNIEMTHREADEDFUNC g_apfnIemThreadedFunctions[kIemThreadedFunc_End];',
+            '#if defined(IN_RING3) || defined(LOG_ENABLED)',
+            'extern const char * const       g_apszIemThreadedFunctions[kIemThreadedFunc_End];',
+            '#endif',
         ];
 
         oOut.write('\n'.join(asLines));
@@ -1284,8 +1327,8 @@ class IEMThreadedGenerator(object):
                     oOut.write(  '\n'
                                + '\n'
                                + '/**\n'
-                               + ' * %s at line %s offset %s in %s%s\n'
-                                  % (oMcBlock.sFunction, oMcBlock.iBeginLine, oMcBlock.offBeginLine,
+                               + ' * #%u: %s at line %s offset %s in %s%s\n'
+                                  % (oVariation.iEnumValue, oMcBlock.sFunction, oMcBlock.iBeginLine, oMcBlock.offBeginLine,
                                      os.path.split(oMcBlock.sSrcFile)[1],
                                      ' (macro expansion)' if oMcBlock.iBeginLine == oMcBlock.iEndLine else '')
                                + ' */\n'
@@ -1372,6 +1415,42 @@ class IEMThreadedGenerator(object):
                     oOut.write('    /*%4u*/ %s,\n' % (iThreadedFunction, oVariation.getFunctionName(),));
         oOut.write('};\n');
 
+        #
+        # Emit the function name table.
+        #
+        oOut.write(  '\n'
+                   + '\n'
+                   + '#if defined(IN_RING3) || defined(LOG_ENABLED)\n'
+                   + '/**\n'
+                   + ' * Function table.\n'
+                   + ' */\n'
+                   + 'const char * const g_apszIemThreadedFunctions[kIemThreadedFunc_End] =\n'
+                   + '{\n'
+                   + '    "Invalid",\n'
+                   + '\n'
+                   + '    /*\n'
+                   + '     * Predefined.\n'
+                   + '     */'
+                   + '    "BltIn_CheckMode",\n'
+                   );
+        iThreadedFunction = 1;
+        for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
+            oOut.write(  '\n'
+                       + '    /*\n'
+                       + '     * Variation: ' + ThreadedFunctionVariation.kdVariationNames[sVariation] + '\n'
+                       + '     */\n');
+            for oThreadedFunction in self.aoThreadedFuncs:
+                oVariation = oThreadedFunction.dVariations.get(sVariation, None);
+                if oVariation:
+                    iThreadedFunction += 1;
+                    assert oVariation.iEnumValue == iThreadedFunction;
+                    sName = oVariation.getFunctionName();
+                    if sName.startswith('iemThreadedFunc_'):
+                        sName = sName[len('iemThreadedFunc_'):];
+                    oOut.write('    /*%4u*/ "%s",\n' % (iThreadedFunction, sName,));
+        oOut.write(  '};\n'
+                   + '#endif /* IN_RING3 || LOG_ENABLED */\n');
+
         return True;
 
     def getThreadedFunctionByIndex(self, idx):
@@ -1440,6 +1519,7 @@ class IEMThreadedGenerator(object):
                         sModified = oThreadedFunction.generateInputCode().strip();
                         assert (   sModified.startswith('IEM_MC_BEGIN')
                                 or (sModified.find('IEM_MC_DEFER_TO_CIMPL_') > 0 and sModified.strip().startswith('{\n'))
+                                or sModified.startswith('pVCpu->iem.s.fEndTb = true')
                                 ), 'sModified="%s"' % (sModified,);
                         oOut.write(sModified);
 

@@ -6734,14 +6734,14 @@ FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
 /**
  * Common 'mov r8, imm8' helper.
  */
-FNIEMOP_DEF_1(iemOpCommonMov_r8_Ib, uint8_t, iReg)
+FNIEMOP_DEF_1(iemOpCommonMov_r8_Ib, uint8_t, iFixedReg)
 {
     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
 
     IEM_MC_BEGIN(0, 1);
     IEM_MC_LOCAL_CONST(uint8_t, u8Value,/*=*/ u8Imm);
-    IEM_MC_STORE_GREG_U8(iReg, u8Value);
+    IEM_MC_STORE_GREG_U8(iFixedReg, u8Value);
     IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
 }
@@ -6830,7 +6830,7 @@ FNIEMOP_DEF(iemOp_BH_Ib)
 /**
  * Common 'mov regX,immX' helper.
  */
-FNIEMOP_DEF_1(iemOpCommonMov_Rv_Iv, uint8_t, iReg)
+FNIEMOP_DEF_1(iemOpCommonMov_Rv_Iv, uint8_t, iFixedReg)
 {
     switch (pVCpu->iem.s.enmEffOpSize)
     {
@@ -6841,7 +6841,7 @@ FNIEMOP_DEF_1(iemOpCommonMov_Rv_Iv, uint8_t, iReg)
 
             IEM_MC_BEGIN(0, 1);
             IEM_MC_LOCAL_CONST(uint16_t, u16Value,/*=*/ u16Imm);
-            IEM_MC_STORE_GREG_U16(iReg, u16Value);
+            IEM_MC_STORE_GREG_U16(iFixedReg, u16Value);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             break;
@@ -6854,7 +6854,7 @@ FNIEMOP_DEF_1(iemOpCommonMov_Rv_Iv, uint8_t, iReg)
 
             IEM_MC_BEGIN(0, 1);
             IEM_MC_LOCAL_CONST(uint32_t, u32Value,/*=*/ u32Imm);
-            IEM_MC_STORE_GREG_U32(iReg, u32Value);
+            IEM_MC_STORE_GREG_U32(iFixedReg, u32Value);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             break;
@@ -6866,7 +6866,7 @@ FNIEMOP_DEF_1(iemOpCommonMov_Rv_Iv, uint8_t, iReg)
 
             IEM_MC_BEGIN(0, 1);
             IEM_MC_LOCAL_CONST(uint64_t, u64Value,/*=*/ u64Imm);
-            IEM_MC_STORE_GREG_U64(iReg, u64Value);
+            IEM_MC_STORE_GREG_U64(iFixedReg, u64Value);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             break;
@@ -11138,6 +11138,7 @@ FNIEMOP_DEF_1(iemOp_fistp_m64i,  uint8_t, bRm)
 FNIEMOP_DEF(iemOp_EscF7)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    pVCpu->iem.s.uFpuOpcode = RT_MAKE_U16(bRm, 0xdf & 0x7);
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         switch (IEM_GET_MODRM_REG_8(bRm))

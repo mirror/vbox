@@ -334,7 +334,7 @@
  */
 static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr16(PVMCPUCC pVCpu, uint8_t bRm, uint16_t u16Disp) RT_NOEXCEPT
 {
-    Log5(("iemOpHlpCalcRmEffAddrThreadedAddr16: bRm=%#x\n", bRm));
+    Log5(("iemOpHlpCalcRmEffAddrThreadedAddr16: bRm=%#x u16Disp=%#x\n", bRm, u16Disp));
     Assert(!IEM_IS_64BIT_CODE(pVCpu));
 
     /* Handle the disp16 form with no registers first. */
@@ -389,7 +389,7 @@ static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr16(PVMCPUCC pVCpu, uint8_t bRm, 
  */
 static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr32(PVMCPUCC pVCpu, uint8_t bRm, uint8_t bSib, uint32_t u32Disp) RT_NOEXCEPT
 {
-    Log5(("iemOpHlpCalcRmEffAddrThreadedAddr32: bRm=%#x\n", bRm));
+    Log5(("iemOpHlpCalcRmEffAddrThreadedAddr32: bRm=%#x bSib=%#x u32Disp=%#x\n", bRm, bSib, u32Disp));
 
     /* Handle the disp32 form with no registers first. */
     if ((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5)
