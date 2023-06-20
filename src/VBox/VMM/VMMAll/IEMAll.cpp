@@ -10486,6 +10486,63 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneIgnoreLock(PVMCPUCC pVCpu)
 }
 
 
+/**
+ * Code common to IEMExecLots and IEMExecRecompilerThreaded that attempts to
+ * inject a pending TRPM trap.
+ */
+VBOXSTRICTRC iemExecInjectPendingTrap(PVMCPUCC pVCpu)
+{
+    Assert(TRPMHasTrap(pVCpu));
+
+    if (   !CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx)
+        && !CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx))
+    {
+        /** @todo Can we centralize this under CPUMCanInjectInterrupt()? */
+#if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
+        bool fIntrEnabled = CPUMGetGuestGif(&pVCpu->cpum.GstCtx);
+        if (fIntrEnabled)
+        {
+            if (!CPUMIsGuestInNestedHwvirtMode(IEM_GET_CTX(pVCpu)))
+                fIntrEnabled = pVCpu->cpum.GstCtx.eflags.Bits.u1IF;
+            else if (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
+                fIntrEnabled = CPUMIsGuestVmxPhysIntrEnabled(IEM_GET_CTX(pVCpu));
+            else
+            {
+                Assert(CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu)));
+                fIntrEnabled = CPUMIsGuestSvmPhysIntrEnabled(pVCpu, IEM_GET_CTX(pVCpu));
+            }
+        }
+#else
+        bool fIntrEnabled = pVCpu->cpum.GstCtx.eflags.Bits.u1IF;
+#endif
+        if (fIntrEnabled)
+        {
+            uint8_t     u8TrapNo;
+            TRPMEVENT   enmType;
+            uint32_t    uErrCode;
+            RTGCPTR     uCr2;
+            int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrCode, &uCr2, NULL /*pu8InstLen*/, NULL /*fIcebp*/);
+            AssertRC(rc2);
+            Assert(enmType == TRPM_HARDWARE_INT);
+            VBOXSTRICTRC rcStrict = IEMInjectTrap(pVCpu, u8TrapNo, enmType, (uint16_t)uErrCode, uCr2, 0 /*cbInstr*/);
+
+            TRPMResetTrap(pVCpu);
+
+#if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
+            /* Injecting an event may cause a VM-exit. */
+            if (   rcStrict != VINF_SUCCESS
+                && rcStrict != VINF_IEM_RAISED_XCPT)
+                return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+#else
+            NOREF(rcStrict);
+#endif
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uint32_t cPollRate, uint32_t *pcInstructions)
 {
     uint32_t const cInstructionsAtStart = pVCpu->iem.s.cInstructions;
@@ -10501,50 +10558,11 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
     { /* likely */ }
     else
     {
-        if (   !CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx)
-            && !CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx))
-        {
-            /** @todo Can we centralize this under CPUMCanInjectInterrupt()? */
-#if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
-            bool fIntrEnabled = CPUMGetGuestGif(&pVCpu->cpum.GstCtx);
-            if (fIntrEnabled)
-            {
-                if (!CPUMIsGuestInNestedHwvirtMode(IEM_GET_CTX(pVCpu)))
-                    fIntrEnabled = pVCpu->cpum.GstCtx.eflags.Bits.u1IF;
-                else if (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
-                    fIntrEnabled = CPUMIsGuestVmxPhysIntrEnabled(IEM_GET_CTX(pVCpu));
-                else
-                {
-                    Assert(CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu)));
-                    fIntrEnabled = CPUMIsGuestSvmPhysIntrEnabled(pVCpu, IEM_GET_CTX(pVCpu));
-                }
-            }
-#else
-            bool fIntrEnabled = pVCpu->cpum.GstCtx.eflags.Bits.u1IF;
-#endif
-            if (fIntrEnabled)
-            {
-                uint8_t     u8TrapNo;
-                TRPMEVENT   enmType;
-                uint32_t    uErrCode;
-                RTGCPTR     uCr2;
-                int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrCode, &uCr2, NULL /*pu8InstLen*/, NULL /*fIcebp*/);
-                AssertRC(rc2);
-                Assert(enmType == TRPM_HARDWARE_INT);
-                VBOXSTRICTRC rcStrict = IEMInjectTrap(pVCpu, u8TrapNo, enmType, (uint16_t)uErrCode, uCr2, 0 /*cbInstr*/);
-
-                TRPMResetTrap(pVCpu);
-
-#if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
-                /* Injecting an event may cause a VM-exit. */
-                if (   rcStrict != VINF_SUCCESS
-                    && rcStrict != VINF_IEM_RAISED_XCPT)
-                    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
-#else
-                NOREF(rcStrict);
-#endif
-            }
-        }
+        VBOXSTRICTRC rcStrict = iemExecInjectPendingTrap(pVCpu);
+        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        { /*likely */ }
+        else
+            return rcStrict;
     }
 
     /*

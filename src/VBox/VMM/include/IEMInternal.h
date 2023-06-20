@@ -998,12 +998,16 @@ typedef struct IEMCPU
     uint64_t                cTbAllocs;
     /** Statistics: Number of TB free calls. */
     uint64_t                cTbFrees;
+    /** Statistics: Number of TB lookup misses. */
+    uint64_t                cTbLookupMisses;
+    /** Statistics: Number of TB lookup hits (debug only). */
+    uint64_t                cTbLookupHits;
     /** Whether to end the current TB. */
     bool                    fEndTb;
     /** Spaced reserved for recompiler data / alignment. */
     bool                    afRecompilerStuff1[7];
     /** Spaced reserved for recompiler data / alignment. */
-    uint64_t                auRecompilerStuff2[3];
+    uint64_t                auRecompilerStuff2[1];
     /** @} */
 
     /** Data TLB.
@@ -4097,6 +4101,7 @@ AssertCompile(IEM_OP_PRF_REX_X == RT_BIT_32(27));
 /** @} */
 
 uint32_t                iemCalcExecDbgFlagsSlow(PVMCPUCC pVCpu);
+VBOXSTRICTRC            iemExecInjectPendingTrap(PVMCPUCC pVCpu);
 
 
 /**
@@ -4377,6 +4382,9 @@ VBOXSTRICTRC    iemMemStackPopU64Ex(PVMCPUCC pVCpu, uint64_t *pu64Value, PRTUINT
 /** @name IEMAllCImpl.cpp
  * @note sed -e '/IEM_CIMPL_DEF_/!d' -e 's/IEM_CIMPL_DEF_/IEM_CIMPL_PROTO_/' -e 's/$/;/'
  * @{ */
+IEM_CIMPL_PROTO_2(iemCImpl_pop_mem16, uint16_t, iEffSeg, RTGCPTR, GCPtrEffDst);
+IEM_CIMPL_PROTO_2(iemCImpl_pop_mem32, uint16_t, iEffSeg, RTGCPTR, GCPtrEffDst);
+IEM_CIMPL_PROTO_2(iemCImpl_pop_mem64, uint16_t, iEffSeg, RTGCPTR, GCPtrEffDst);
 IEM_CIMPL_PROTO_0(iemCImpl_popa_16);
 IEM_CIMPL_PROTO_0(iemCImpl_popa_32);
 IEM_CIMPL_PROTO_0(iemCImpl_pusha_16);

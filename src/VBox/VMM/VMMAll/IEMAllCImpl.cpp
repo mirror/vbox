@@ -314,6 +314,76 @@ DECLINLINE(void) iemHlpUsedFpu(PVMCPUCC pVCpu)
  * @{
  */
 
+
+/**
+ * Implements a pop [mem16].
+ */
+IEM_CIMPL_DEF_2(iemCImpl_pop_mem16, uint16_t, iEffSeg, RTGCPTR, GCPtrEffDst)
+{
+    uint16_t  u16Value;
+    RTUINT64U TmpRsp;
+    TmpRsp.u = pVCpu->cpum.GstCtx.rsp;
+    VBOXSTRICTRC rcStrict = iemMemStackPopU16Ex(pVCpu, &u16Value, &TmpRsp);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        rcStrict = iemMemStoreDataU16(pVCpu, iEffSeg, GCPtrEffDst, u16Value);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            pVCpu->cpum.GstCtx.rsp = TmpRsp.u;
+            return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+        }
+    }
+    return rcStrict;
+
+}
+
+
+/**
+ * Implements a pop [mem32].
+ */
+IEM_CIMPL_DEF_2(iemCImpl_pop_mem32, uint16_t, iEffSeg, RTGCPTR, GCPtrEffDst)
+{
+    uint32_t  u32Value;
+    RTUINT64U TmpRsp;
+    TmpRsp.u = pVCpu->cpum.GstCtx.rsp;
+    VBOXSTRICTRC rcStrict = iemMemStackPopU32Ex(pVCpu, &u32Value, &TmpRsp);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        rcStrict = iemMemStoreDataU32(pVCpu, iEffSeg, GCPtrEffDst, u32Value);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            pVCpu->cpum.GstCtx.rsp = TmpRsp.u;
+            return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+        }
+    }
+    return rcStrict;
+
+}
+
+
+/**
+ * Implements a pop [mem64].
+ */
+IEM_CIMPL_DEF_2(iemCImpl_pop_mem64, uint16_t, iEffSeg, RTGCPTR, GCPtrEffDst)
+{
+    uint64_t  u64Value;
+    RTUINT64U TmpRsp;
+    TmpRsp.u = pVCpu->cpum.GstCtx.rsp;
+    VBOXSTRICTRC rcStrict = iemMemStackPopU64Ex(pVCpu, &u64Value, &TmpRsp);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        rcStrict = iemMemStoreDataU64(pVCpu, iEffSeg, GCPtrEffDst, u64Value);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            pVCpu->cpum.GstCtx.rsp = TmpRsp.u;
+            return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+        }
+    }
+    return rcStrict;
+
+}
+
+
 /**
  * Implements a 16-bit popa.
  */

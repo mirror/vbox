@@ -30,7 +30,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #ifndef LOG_GROUP /* defined when included by tstIEMCheckMc.cpp */
-# define LOG_GROUP LOG_GROUP_IEM
+# define LOG_GROUP LOG_GROUP_IEM_RE_THREADED
 #endif
 #define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/iem.h>
@@ -305,6 +305,18 @@ DECLINLINE(VBOXSTRICTRC) iemThreadedRecompilerMcDeferToCImpl0(PVMCPUCC pVCpu, PF
 /*
  * Translation block management.
  */
+typedef struct IEMTBCACHE
+{
+    uint32_t cHash;
+    uint32_t uHashMask;
+    PIEMTB   apHash[_64K];
+} IEMTBCACHE;
+
+static IEMTBCACHE g_TbCache = { _64K, 0xffff, }; /**< Quick and dirty. */
+
+#define IEMTBCACHE_HASH(a_paCache, a_fTbFlags, a_GCPhysPc) \
+    ( ((uint32_t)(a_GCPhysPc) ^ (a_fTbFlags)) & (a_paCache)->uHashMask)
+
 
 /**
  * Allocate a translation block for threadeded recompilation.
@@ -373,10 +385,48 @@ static void iemThreadedTbFree(PVMCC pVM, PVMCPUCC pVCpu, PIEMTB pTb)
 }
 
 
-static PIEMTB iemThreadedTbLookup(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, uint64_t uPc, uint32_t fExtraFlags)
+static PIEMTB iemThreadedTbLookup(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, uint32_t fExtraFlags)
 {
-    RT_NOREF(pVM, pVCpu, GCPhysPc, uPc, fExtraFlags);
-    return NULL;
+    uint32_t const fFlags  = (pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | fExtraFlags | IEMTB_F_STATE_READY;
+    uint32_t const idxHash = IEMTBCACHE_HASH(&g_TbCache, fFlags, GCPhysPc);
+    Log10(("TB lookup: idxHash=%#x fFlags=%#x GCPhysPc=%RGp\n", idxHash, fFlags, GCPhysPc));
+    PIEMTB pTb = g_TbCache.apHash[idxHash];
+    while (pTb)
+    {
+        if (pTb->GCPhysPc == GCPhysPc)
+        {
+            if (pTb->fFlags == fFlags)
+            {
+                if (pTb->x86.fAttr == (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u)
+                {
+#ifdef VBOX_WITH_STATISTICS
+                    pVCpu->iem.s.cTbLookupHits++;
+                    return pTb;
+#endif
+                }
+                Log11(("TB miss: CS: %#x, wanted %#x\n", pTb->x86.fAttr, (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u));
+            }
+            else
+                Log11(("TB miss: fFlags: %#x, wanted %#x\n", pTb->fFlags, fFlags));
+        }
+        else
+            Log11(("TB miss: GCPhysPc: %#x, wanted %#x\n", pTb->GCPhysPc, GCPhysPc));
+
+        pTb = pTb->pNext;
+    }
+    RT_NOREF(pVM);
+    pVCpu->iem.s.cTbLookupMisses++;
+    return pTb;
+}
+
+
+static void iemThreadedTbAdd(PVMCC pVM, PVMCPUCC pVCpu, PIEMTB pTb)
+{
+    uint32_t const idxHash = IEMTBCACHE_HASH(&g_TbCache, pTb->fFlags, pTb->GCPhysPc);
+    pTb->pNext = g_TbCache.apHash[idxHash];
+    g_TbCache.apHash[idxHash] = pTb;
+    Log12(("TB added: %p %RGp LB %#x fl=%#x idxHash=%#x\n", pTb, pTb->GCPhysPc, pTb->cbPC, pTb->fFlags, idxHash));
+    RT_NOREF(pVM, pVCpu);
 }
 
 
@@ -592,12 +642,9 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
         {
             Assert(pTb->Thrd.cCalls > cCallsPrev);
             Assert(cCallsPrev - pTb->Thrd.cCalls < 5);
-
         }
         else if (pTb->Thrd.cCalls > 0)
-        {
             break;
-        }
         else
         {
             pVCpu->iem.s.pCurTbR3 = NULL;
@@ -616,6 +663,8 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
     /*
      * Complete the TB and link it.
      */
+    pTb->fFlags = (pTb->fFlags & ~IEMTB_F_STATE_MASK) | IEMTB_F_STATE_READY;
+    iemThreadedTbAdd(pVM, pVCpu, pTb);
 
 #ifdef IEM_COMPILE_ONLY_MODE
     /*
@@ -671,7 +720,7 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb)
 /**
  * This is called when the PC doesn't match the current pbInstrBuf.
  */
-static uint64_t iemGetPcWithPhysAndCodeMissed(PVMCPUCC pVCpu, uint64_t const uPc, PRTGCPHYS pPhys)
+static RTGCPHYS iemGetPcWithPhysAndCodeMissed(PVMCPUCC pVCpu, uint64_t const uPc)
 {
     /** @todo see iemOpcodeFetchBytesJmp */
     pVCpu->iem.s.pbInstrBuf = NULL;
@@ -681,13 +730,30 @@ static uint64_t iemGetPcWithPhysAndCodeMissed(PVMCPUCC pVCpu, uint64_t const uPc
     pVCpu->iem.s.cbInstrBuf       = 0;
     pVCpu->iem.s.cbInstrBufTotal  = 0;
 
-    RT_NOREF(uPc, pPhys);
-    return 0;
+    uint8_t bIgn;
+    iemOpcodeFetchBytesJmp(pVCpu, 1, &bIgn);
+
+    uint64_t off = uPc - pVCpu->iem.s.uInstrBufPc;
+    if (off < pVCpu->iem.s.cbInstrBufTotal)
+    {
+        pVCpu->iem.s.offInstrNextByte = (uint32_t)off;
+        pVCpu->iem.s.offCurInstrStart = (uint16_t)off;
+        if ((uint16_t)off + 15 <= pVCpu->iem.s.cbInstrBufTotal)
+            pVCpu->iem.s.cbInstrBuf = (uint16_t)off + 15;
+        else
+            pVCpu->iem.s.cbInstrBuf = pVCpu->iem.s.cbInstrBufTotal;
+
+        return pVCpu->iem.s.GCPhysInstrBuf + off;
+    }
+
+    AssertFailed();
+    RT_NOREF(uPc);
+    return NIL_RTGCPHYS;
 }
 
 
 /** @todo need private inline decl for throw/nothrow matching IEM_WITH_SETJMP? */
-DECL_FORCE_INLINE_THROW(uint64_t) iemGetPcWithPhysAndCode(PVMCPUCC pVCpu, PRTGCPHYS pPhys)
+DECL_FORCE_INLINE_THROW(RTGCPHYS) iemGetPcWithPhysAndCode(PVMCPUCC pVCpu)
 {
     /* Set uCurTbStartPc to RIP and calc the effective PC. */
     uint64_t uPc = pVCpu->cpum.GstCtx.rip;
@@ -707,11 +773,10 @@ DECL_FORCE_INLINE_THROW(uint64_t) iemGetPcWithPhysAndCode(PVMCPUCC pVCpu, PRTGCP
             else
                 pVCpu->iem.s.cbInstrBuf = pVCpu->iem.s.cbInstrBufTotal;
 
-            *pPhys = pVCpu->iem.s.GCPhysInstrBuf + off;
-            return uPc;
+            return pVCpu->iem.s.GCPhysInstrBuf + off;
         }
     }
-    return iemGetPcWithPhysAndCodeMissed(pVCpu, uPc, pPhys);
+    return iemGetPcWithPhysAndCodeMissed(pVCpu, uPc);
 }
 
 
@@ -747,6 +812,20 @@ DECL_FORCE_INLINE(uint32_t) iemGetTbFlagsForCurrentPc(PVMCPUCC pVCpu)
 VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
 {
     /*
+     * See if there is an interrupt pending in TRPM, inject it if we can.
+     */
+    if (!TRPMHasTrap(pVCpu))
+    { /* likely */ }
+    else
+    {
+        VBOXSTRICTRC rcStrict = iemExecInjectPendingTrap(pVCpu);
+        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        { /*likely */ }
+        else
+            return rcStrict;
+    }
+
+    /*
      * Init the execution environment.
      */
     iemInitExec(pVCpu, 0 /*fExecOpts*/);
@@ -768,17 +847,30 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
             for (;;)
             {
                 /* Translate PC to physical address, we'll need this for both lookup and compilation. */
-                RTGCPHYS       GCPhysPc;
-                uint64_t const uPc         = iemGetPcWithPhysAndCode(pVCpu, &GCPhysPc);
+                RTGCPHYS const GCPhysPc    = iemGetPcWithPhysAndCode(pVCpu);
                 uint32_t const fExtraFlags = iemGetTbFlagsForCurrentPc(pVCpu);
 
-                pTb = iemThreadedTbLookup(pVM, pVCpu, GCPhysPc, uPc, fExtraFlags);
+                pTb = iemThreadedTbLookup(pVM, pVCpu, GCPhysPc, fExtraFlags);
                 if (pTb)
                     rcStrict = iemThreadedTbExec(pVCpu, pTb);
                 else
                     rcStrict = iemThreadedCompile(pVM, pVCpu, GCPhysPc, fExtraFlags);
                 if (rcStrict == VINF_SUCCESS)
-                { /* likely */ }
+                {
+                    Assert(pVCpu->iem.s.cActiveMappings == 0);
+
+                    uint64_t fCpu = pVCpu->fLocalForcedActions;
+                    fCpu &= VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
+                                                  | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
+                                                  | VMCPU_FF_TLB_FLUSH
+                                                  | VMCPU_FF_UNHALT );
+                    if (!fCpu)
+                    {
+                        /* likely */
+                    }
+                    else
+                        return VINF_SUCCESS;
+                }
                 else
                     return rcStrict;
             }
@@ -787,6 +879,8 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
         IEM_CATCH_LONGJMP_BEGIN(pVCpu, rcStrict);
         {
             pVCpu->iem.s.cLongJumps++;
+            if (pVCpu->iem.s.cActiveMappings > 0)
+                iemMemRollback(pVCpu);
             if (pTb)
                 return rcStrict;
             return iemThreadedCompileLongJumped(pVM, pVCpu, rcStrict);

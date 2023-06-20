@@ -5213,7 +5213,47 @@ FNIEMOP_DEF_1(iemOp_pop_Ev, uint8_t, bRm)
      */
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE(); /* The common code does this differently. */
 
-#ifndef TST_IEM_CHECK_MC
+#if 1 /* This can be compiled, optimize later if needed. */
+    switch (pVCpu->iem.s.enmEffOpSize)
+    {
+        case IEMMODE_16BIT:
+        {
+            IEM_MC_BEGIN(2, 0);
+            IEM_MC_ARG_CONST(uint8_t,       iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg, 0);
+            IEM_MC_ARG(      RTGCPTR,       GCPtrEffDst,                         1);
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 2 << 8);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_CALL_CIMPL_2(0, iemCImpl_pop_mem16, iEffSeg, GCPtrEffDst);
+            IEM_MC_END();
+        }
+
+        case IEMMODE_32BIT:
+        {
+            IEM_MC_BEGIN(2, 0);
+            IEM_MC_ARG_CONST(uint8_t,       iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg, 0);
+            IEM_MC_ARG(      RTGCPTR,       GCPtrEffDst,                         1);
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 4 << 8);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_CALL_CIMPL_2(0, iemCImpl_pop_mem32, iEffSeg, GCPtrEffDst);
+            IEM_MC_END();
+        }
+
+        case IEMMODE_64BIT:
+        {
+            IEM_MC_BEGIN(2, 0);
+            IEM_MC_ARG_CONST(uint8_t,       iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg, 0);
+            IEM_MC_ARG(      RTGCPTR,       GCPtrEffDst,                         1);
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 8 << 8);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_CALL_CIMPL_2(0, iemCImpl_pop_mem64, iEffSeg, GCPtrEffDst);
+            IEM_MC_END();
+        }
+
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+
+#else
+# ifndef TST_IEM_CHECK_MC
     /* Calc effective address with modified ESP. */
 /** @todo testcase */
     RTGCPTR         GCPtrEff;
@@ -5270,8 +5310,9 @@ FNIEMOP_DEF_1(iemOp_pop_Ev, uint8_t, bRm)
     }
     return rcStrict;
 
-#else
+# else
     return VERR_IEM_IPE_2;
+# endif
 #endif
 }
 

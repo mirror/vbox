@@ -1017,6 +1017,13 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_POP_U64(a_pu64Value) \
     IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU64(pVCpu, (a_pu64Value)))
 
+#define IEM_MC_POP_EX_U16(a_pu16Value, a_) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU16Ex(pVCpu, (a_pu16Value), (a_pNewRsp)))
+#define IEM_MC_POP_EX_U32(a_pu32Value) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU32(pVCpu, (a_pu32Value)))
+#define IEM_MC_POP_EX_U64(a_pu64Value) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU64(pVCpu, (a_pu64Value)))
+
 /** Maps guest memory for direct or bounce buffered access.
  * The purpose is to pass it to an operand implementation, thus the a_iArg.
  * @remarks     May return.

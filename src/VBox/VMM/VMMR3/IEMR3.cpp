@@ -166,6 +166,15 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.DataTlb.uTlbPhysRev, STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
                         "Data TLB physical revision",               "/IEM/CPU%u/DataTlb-PhysRev", idCpu);
 
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbAllocs,           STAMTYPE_U64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Translation block allocations",            "/IEM/CPU%u/cTbAllocs", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbFrees,            STAMTYPE_U64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Translation block frees",                  "/IEM/CPU%u/cTbFrees", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbLookupHits,       STAMTYPE_U64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Translation block lookup hits",            "/IEM/CPU%u/cTbLookupHits", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbLookupMisses, STAMTYPE_U64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Translation block lookup misses",          "/IEM/CPU%u/cTbLookupMisses", idCpu);
+
         for (uint32_t i = 0; i < RT_ELEMENTS(pVCpu->iem.s.aStatXcpts); i++)
             STAMR3RegisterF(pVM, &pVCpu->iem.s.aStatXcpts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                             "", "/IEM/CPU%u/Exceptions/%02x", idCpu, i);
