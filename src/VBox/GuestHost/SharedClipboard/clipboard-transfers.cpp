@@ -2561,9 +2561,9 @@ void ShClTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx)
 
         if (enmStatus != SHCLTRANSFERSTATUS_STARTED)
         {
-            shclTransferCtxTransferRemoveAndUnregister(pTransferCtx, pTransfer);
-
             shClTransferUnlock(pTransfer);
+
+            shclTransferCtxTransferRemoveAndUnregister(pTransferCtx, pTransfer);
 
             ShClTransferDestroy(pTransfer);
 
